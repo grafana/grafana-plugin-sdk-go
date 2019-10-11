@@ -55,7 +55,7 @@ type datasourcePluginWrapper struct {
 	handler DataSourceHandler
 }
 
-func (p *datasourcePluginWrapper) Query(ctx context.Context, req *datasource.DatasourceRequest) (*datasource.DatasourceResponse, error) {
+func (p *datasourcePluginWrapper) Query(ctx context.Context, req *datasource.DatasourceRequest, api GrafanaAPI) (*datasource.DatasourceResponse, error) {
 	tr := TimeRange{
 		From: time.Unix(0, req.TimeRange.FromEpochMs*int64(time.Millisecond)),
 		To:   time.Unix(0, req.TimeRange.FromEpochMs*int64(time.Millisecond)),
