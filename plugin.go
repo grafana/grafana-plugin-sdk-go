@@ -9,17 +9,17 @@ import (
 )
 
 // DatasourcePlugin implements the plugin interface from github.com/hashicorp/go-plugin.
-type datasourcePlugin struct {
+type DatasourcePlugin struct {
 	plugin.NetRPCUnsupportedPlugin
 
 	Impl datasourcePluginWrapper
 }
 
-func (p *datasourcePlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+func (p *DatasourcePlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
 	datasource.RegisterDatasourcePluginServer(s, &grpcServer{Impl: p.Impl})
 	return nil
 }
 
-func (p *datasourcePlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *DatasourcePlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &grpcClient{client: datasource.NewDatasourcePluginClient(c)}, nil
 }
