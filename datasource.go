@@ -177,25 +177,25 @@ func asTable(df *dataframe.Frame) *datasource.Table {
 			switch f.Type {
 			case dataframe.FieldTypeTime:
 				rowvals[j] = &datasource.RowValue{
-					Kind:        datasource.RowValue_TYPE_DOUBLE,
+					Type:        datasource.RowValue_TYPE_DOUBLE,
 					DoubleValue: float64(f.Vector.At(i).(*time.Time).UnixNano()),
 				}
 			case dataframe.FieldTypeNumber:
 				v := f.Vector.At(i).(*float64)
 				rowvals[j] = &datasource.RowValue{
-					Kind:        datasource.RowValue_TYPE_DOUBLE,
+					Type:        datasource.RowValue_TYPE_DOUBLE,
 					DoubleValue: *v,
 				}
 			case dataframe.FieldTypeString:
 				v := f.Vector.At(i).(*string)
 				rowvals[j] = &datasource.RowValue{
-					Kind:        datasource.RowValue_TYPE_STRING,
+					Type:        datasource.RowValue_TYPE_STRING,
 					StringValue: *v,
 				}
 			case dataframe.FieldTypeBoolean:
 				v := f.Vector.At(i).(*bool)
 				rowvals[j] = &datasource.RowValue{
-					Kind:      datasource.RowValue_TYPE_BOOL,
+					Type:      datasource.RowValue_TYPE_BOOL,
 					BoolValue: *v,
 				}
 			}

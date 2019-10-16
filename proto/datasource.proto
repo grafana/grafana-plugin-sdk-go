@@ -50,7 +50,7 @@ message TableRow {
 }
 
 message RowValue {
-  enum Kind {
+  enum Type {
     // Field type null.
     TYPE_NULL           = 0;
     // Field type double.
@@ -65,7 +65,7 @@ message RowValue {
     TYPE_BYTES          = 5;
   };
 
-  Kind kind = 1;
+  Type type = 1;
   double doubleValue = 2;
   int64 int64Value = 3;
   bool boolValue = 4;
