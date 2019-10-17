@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	"github.com/stretchr/testify/assert"
 )
 
 var update = flag.Bool("update", false, "update .golden.arrow files")
@@ -50,4 +51,33 @@ func TestEncode(t *testing.T) {
 	if !bytes.Equal(b, want) {
 		t.Fatalf("data frame doesn't match golden file")
 	}
+}
+
+func TestDecode(t *testing.T) {
+	df := dataframe.New("http_requests_total", dataframe.Labels{"service": "auth"},
+		dataframe.NewField("timestamp", dataframe.FieldTypeTime, []time.Time{
+			time.Unix(1568039445, 0),
+			time.Unix(1568039450, 0),
+			time.Unix(1568039455, 0),
+		}),
+		dataframe.NewField("value", dataframe.FieldTypeNumber, []float64{
+			0.0,
+			1.0,
+			2.0,
+		}),
+	)
+
+	df.RefID = "A"
+	goldenFile := filepath.Join("testdata", "timeseries.golden.arrow")
+	b, err := ioutil.ReadFile(goldenFile)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	newDf, err := dataframe.UnMarshalArrow(b)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	assert.Equal(t, df, newDf)
 }

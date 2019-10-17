@@ -3,7 +3,6 @@ package grafana
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
@@ -132,90 +131,90 @@ func (p *datasourcePluginWrapper) Query(ctx context.Context, req *datasource.Dat
 //
 // It will use the first time field found as the timestamp, and the first
 // number field as the value.
-func asTimeSeries(df *dataframe.Frame) (*datasource.TimeSeries, error) {
-	timeIdx := indexOfFieldType(df, dataframe.FieldTypeTime)
-	timeVec := df.Fields[timeIdx].Vector
+// func asTimeSeries(df *dataframe.Frame) (*datasource.TimeSeries, error) {
+// 	timeIdx := indexOfFieldType(df, dataframe.FieldTypeTime)
+// 	timeVec := df.Fields[timeIdx].Vector
 
-	valueIdx := indexOfFieldType(df, dataframe.FieldTypeNumber)
-	valueVec := df.Fields[valueIdx].Vector
+// 	valueIdx := indexOfFieldType(df, dataframe.FieldTypeNumber)
+// 	valueVec := df.Fields[valueIdx].Vector
 
-	if timeIdx < 0 || valueIdx < 0 {
-		return nil, errors.New("invalid time series")
-	}
+// 	if timeIdx < 0 || valueIdx < 0 {
+// 		return nil, errors.New("invalid time series")
+// 	}
 
-	pts := []*datasource.Point{}
+// 	pts := []*datasource.Point{}
 
-	for i := 0; i < timeVec.Len(); i++ {
-		t := timeVec.At(i).(*time.Time)
-		v := valueVec.At(i).(*float64)
+// 	for i := 0; i < timeVec.Len(); i++ {
+// 		t := timeVec.At(i).(*time.Time)
+// 		v := valueVec.At(i).(*float64)
 
-		pts = append(pts, &datasource.Point{
-			Timestamp: int64(t.UnixNano()) / int64(time.Millisecond),
-			Value:     *v,
-		})
-	}
+// 		pts = append(pts, &datasource.Point{
+// 			Timestamp: int64(t.UnixNano()) / int64(time.Millisecond),
+// 			Value:     *v,
+// 		})
+// 	}
 
-	return &datasource.TimeSeries{
-		Name:   df.Name,
-		Tags:   df.Labels,
-		Points: pts,
-	}, nil
-}
+// 	return &datasource.TimeSeries{
+// 		Name:   df.Name,
+// 		Tags:   df.Labels,
+// 		Points: pts,
+// 	}, nil
+// }
 
 // asTable converts the data frame into a protobuf table.
-func asTable(df *dataframe.Frame) *datasource.Table {
-	if len(df.Fields) == 0 {
-		return &datasource.Table{}
-	}
+// func asTable(df *dataframe.Frame) *datasource.Table {
+// 	if len(df.Fields) == 0 {
+// 		return &datasource.Table{}
+// 	}
 
-	rows := make([]*datasource.TableRow, df.Fields[0].Len())
+// 	rows := make([]*datasource.TableRow, df.Fields[0].Len())
 
-	for i := 0; i < len(rows); i++ {
-		rowvals := make([]*datasource.RowValue, len(df.Fields))
+// 	for i := 0; i < len(rows); i++ {
+// 		rowvals := make([]*datasource.RowValue, len(df.Fields))
 
-		for j, f := range df.Fields {
-			switch f.Type {
-			case dataframe.FieldTypeTime:
-				rowvals[j] = &datasource.RowValue{
-					Type:        datasource.RowValue_TYPE_DOUBLE,
-					DoubleValue: float64(f.Vector.At(i).(*time.Time).UnixNano()),
-				}
-			case dataframe.FieldTypeNumber:
-				v := f.Vector.At(i).(*float64)
-				rowvals[j] = &datasource.RowValue{
-					Type:        datasource.RowValue_TYPE_DOUBLE,
-					DoubleValue: *v,
-				}
-			case dataframe.FieldTypeString:
-				v := f.Vector.At(i).(*string)
-				rowvals[j] = &datasource.RowValue{
-					Type:        datasource.RowValue_TYPE_STRING,
-					StringValue: *v,
-				}
-			case dataframe.FieldTypeBoolean:
-				v := f.Vector.At(i).(*bool)
-				rowvals[j] = &datasource.RowValue{
-					Type:      datasource.RowValue_TYPE_BOOL,
-					BoolValue: *v,
-				}
-			}
-		}
+// 		for j, f := range df.Fields {
+// 			switch f.Type {
+// 			case dataframe.FieldTypeTime:
+// 				rowvals[j] = &datasource.RowValue{
+// 					Type:        datasource.RowValue_TYPE_DOUBLE,
+// 					DoubleValue: float64(f.Vector.At(i).(*time.Time).UnixNano()),
+// 				}
+// 			case dataframe.FieldTypeNumber:
+// 				v := f.Vector.At(i).(*float64)
+// 				rowvals[j] = &datasource.RowValue{
+// 					Type:        datasource.RowValue_TYPE_DOUBLE,
+// 					DoubleValue: *v,
+// 				}
+// 			case dataframe.FieldTypeString:
+// 				v := f.Vector.At(i).(*string)
+// 				rowvals[j] = &datasource.RowValue{
+// 					Type:        datasource.RowValue_TYPE_STRING,
+// 					StringValue: *v,
+// 				}
+// 			case dataframe.FieldTypeBoolean:
+// 				v := f.Vector.At(i).(*bool)
+// 				rowvals[j] = &datasource.RowValue{
+// 					Type:      datasource.RowValue_TYPE_BOOL,
+// 					BoolValue: *v,
+// 				}
+// 			}
+// 		}
 
-		rows[i] = &datasource.TableRow{
-			Values: rowvals,
-		}
-	}
+// 		rows[i] = &datasource.TableRow{
+// 			Values: rowvals,
+// 		}
+// 	}
 
-	var cols []*datasource.TableColumn
-	for _, f := range df.Fields {
-		cols = append(cols, &datasource.TableColumn{Name: f.Name})
-	}
+// 	var cols []*datasource.TableColumn
+// 	for _, f := range df.Fields {
+// 		cols = append(cols, &datasource.TableColumn{Name: f.Name})
+// 	}
 
-	return &datasource.Table{
-		Columns: cols,
-		Rows:    rows,
-	}
-}
+// 	return &datasource.Table{
+// 		Columns: cols,
+// 		Rows:    rows,
+// 	}
+// }
 
 func indexOfFieldType(df *dataframe.Frame, t dataframe.FieldType) int {
 	for idx, f := range df.Fields {
@@ -269,100 +268,15 @@ func (w *grafanaAPIWrapper) QueryDatasource(ctx context.Context, orgID int64, da
 		return nil, err
 	}
 
-	vals := make([]dataframe.Frame, 0)
-	for _, dsRes := range rawResp.Results {
-		vals = append(vals, FromGRPC(dsRes.GetSeries()).Values...)
-	}
+	_ = rawResp
+
+	//vals := make([]dataframe.Frame, 0)
+	// for _, dsRes := range rawResp.Results {
+	// 	vals = append(vals, FromGRPC(dsRes.GetSeries()).Values...)
+	// }
 
 	resp := []DatasourceQueryResult{}
 	// TODO: Convert to dataframes?
 
 	return resp, nil
 }
-
-
-
-
-
-// // FromGRPC converts time series only (at the moment) from a
-// // GRPC TimeSeries type to a Series Type
-// func FromGRPC(seriesCollection []*datasource.TimeSeries) []dataframe.Frame {
-// 	// for _, series := range seriesCollection {
-// 	// 	dataframe.New
-
-// 	// }
-// 	return []*dataframe.Frame{}
-// 	// results := Results{[]Value{}}
-// 	// results.Values = make([]Value, len(seriesCollection))
-// 	// for seriesIdx, series := range seriesCollection {
-// 	// 	s := NewSeries(series.Name, dataframe.Labels(series.Tags), len(series.Points))
-// 	// 	for pointIdx, point := range series.Points {
-// 	// 		t, f := convertDSTimePoint(point)
-// 	// 		s.SetPoint(pointIdx, t, f)
-// 	// 	}
-// 	// 	results.Values[seriesIdx] = s
-// 	// }
-// 	// return results
-// }
-
-// func convertDSTimePoint(point *datasource.Point) (t *time.Time, f *float64) {
-// 	tI := int64(point.Timestamp)
-// 	uT := time.Unix(tI/int64(1e+3), (tI%int64(1e+3))*int64(1e+6)) // time.Time from millisecond unix ts
-// 	t = &uT
-// 	f = &point.Value
-// 	return t, f
-// }
-
-// // Series has *time.Time and *float64 fields.
-// type Series struct{ Frame *dataframe.Frame }
-
-// // Type returns the Value type and allows it to fulfill the Value interface.
-// func (s Series) Type() parse.ReturnType { return parse.TypeSeriesSet }
-
-// // Value returns the actual value allows it to fulfill the Value interface.
-// func (s Series) Value() interface{} { return &s }
-
-// func (s Series) GetLabels() dataframe.Labels { return s.Frame.Labels }
-
-// func (s Series) SetLabels(ls dataframe.Labels) { s.Frame.Labels = ls }
-
-// func (s Series) GetName() string { return s.Frame.Name }
-
-// // AsDataFrame returns the underlying *dataframe.Frame.
-// func (s Series) AsDataFrame() *dataframe.Frame { return s.Frame }
-
-// // GetPoint returns the time and value at the specified index.
-// func (s Series) GetPoint(pointIdx int) (*time.Time, *float64) {
-// 	return s.GetTime(pointIdx), s.GetValue(pointIdx)
-// }
-
-// // SetPoint sets the time and value on the corresponding vectors at the specified index.
-// func (s Series) SetPoint(pointIdx int, t *time.Time, f *float64) {
-// 	s.Frame.Fields[0].Vector.Set(pointIdx, t) // We switch from tsdb's package value,time to time,value
-// 	s.Frame.Fields[1].Vector.Set(pointIdx, f)
-// }
-
-// // Len returns the length of the series.
-// func (s Series) Len() int {
-// 	return s.Frame.Fields[0].Vector.Len()
-// }
-
-// // GetTime returns the time at the specified index.
-// func (s Series) GetTime(pointIdx int) *time.Time {
-// 	return s.Frame.Fields[0].Vector.At(pointIdx).(*time.Time)
-// }
-
-// // GetValue returns the float value at the specified index.
-// func (s Series) GetValue(pointIdx int) *float64 {
-// 	return s.Frame.Fields[1].Vector.At(pointIdx).(*float64)
-// }
-
-// // NewSeries returns a dataframe of type Series.
-// func NewSeries(name string, labels dataframe.Labels, size int) Series {
-// 	return Series{
-// 		dataframe.New("", labels,
-// 			dataframe.NewField("Time", dataframe.FieldTypeTime, make([]*time.Time, size)),
-// 			dataframe.NewField(name, dataframe.FieldTypeNumber, make([]*float64, size)),
-// 		),
-// 	}
-// }
