@@ -1,7 +1,7 @@
 syntax = "proto3";
 option go_package = "datasource";
 
-package models;
+package modelsV2;
 
 message DatasourceRequest {
   TimeRange timeRange = 1;

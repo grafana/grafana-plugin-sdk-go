@@ -9,9 +9,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-type grpcClient struct {
+type GRPCClient struct {
 	broker *plugin.GRPCBroker
 	client datasource.DatasourcePluginClient
+}
+
+// DatasourcePlugin is the Grafana datasource interface.
+type DatasourcePlugin interface {
+	Query(ctx context.Context, req *datasource.DatasourceRequest, api GrafanaAPI) (*datasource.DatasourceResponse, error)
 }
 
 // GrafanaAPI is the Grafana API interface that allows a datasource plugin to callback and request additional information from Grafana.
@@ -19,7 +24,7 @@ type GrafanaAPI interface {
 	QueryDatasource(ctx context.Context, req *datasource.QueryDatasourceRequest) (*datasource.QueryDatasourceResponse, error)
 }
 
-func (m *grpcClient) Query(ctx context.Context, req *datasource.DatasourceRequest, api GrafanaAPI) (*datasource.DatasourceResponse, error) {
+func (m *GRPCClient) Query(ctx context.Context, req *datasource.DatasourceRequest, api GrafanaAPI) (*datasource.DatasourceResponse, error) {
 	apiServer := &GRPCGrafanaAPIServer{Impl: api}
 
 	var s *grpc.Server

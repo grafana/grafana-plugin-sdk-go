@@ -33,7 +33,7 @@ func (g *Server) Serve() error {
 	plugins := make(map[string]plugin.Plugin)
 
 	for id, h := range g.datasources {
-		plugins[id] = &DatasourcePlugin{
+		plugins[id] = &DatasourcePluginImpl{
 			Impl: datasourcePluginWrapper{
 				handler: h,
 			},
