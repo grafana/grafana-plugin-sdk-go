@@ -93,30 +93,22 @@ func (p *datasourcePluginWrapper) Query(ctx context.Context, req *datasource.Dat
 	var respResults []*datasource.QueryResult
 
 	for _, res := range results {
-		// var tss []*datasource.TimeSeries
-		// var tbs []*datasource.Table
-
-		// for _, df := range res.DataFrames {
-		// 	if len(df.Fields) == 0 {
-		// 		continue
-		// 	}
-
-		// 	// Attempt to convert data frame to time series.
-		// 	// Otherwise convert it to a table.
-		// 	ts, err := asTimeSeries(df)
-		// 	if err != nil {
-		// 		tbs = append(tbs, asTable(df))
-		// 	} else {
-		// 		tss = append(tss, ts)
-		// 	}
-		// }
+		encodedFrames := make([][]byte, len(res.DataFrames))
+		for dfIdx, df := range res.DataFrames {
+			if len(df.Fields) == 0 {
+				continue
+			}
+			encodedFrames[dfIdx], err = dataframe.MarshalArrow(df)
+			if err != nil {
+				return nil, err
+			}
+		}
 
 		queryResult := &datasource.QueryResult{
-			Error:    res.Error,
-			RefId:    res.RefID,
-			MetaJson: res.MetaJSON,
-			// Series:   tss,
-			// Tables:   tbs,
+			Error:      res.Error,
+			RefId:      res.RefID,
+			MetaJson:   res.MetaJSON,
+			Dataframes: encodedFrames,
 		}
 
 		respResults = append(respResults, queryResult)
@@ -268,15 +260,21 @@ func (w *grafanaAPIWrapper) QueryDatasource(ctx context.Context, orgID int64, da
 		return nil, err
 	}
 
-	_ = rawResp
+	results := make([]DatasourceQueryResult, len(rawResp.GetResults()))
 
-	//vals := make([]dataframe.Frame, 0)
-	// for _, dsRes := range rawResp.Results {
-	// 	vals = append(vals, FromGRPC(dsRes.GetSeries()).Values...)
-	// }
+	for resIdx, rawRes := range rawResp.GetResults() {
+		// TODO Error property etc
+		dfs := make([]*dataframe.Frame, len(rawRes.Dataframes))
+		for dfIdx, b := range rawRes.Dataframes {
+			dfs[dfIdx], err = dataframe.UnMarshalArrow(b)
+			if err != nil {
+				return nil, err
+			}
+		}
+		results[resIdx] = DatasourceQueryResult{
+			DataFrames: dfs,
+		}
+	}
 
-	resp := []DatasourceQueryResult{}
-	// TODO: Convert to dataframes?
-
-	return resp, nil
+	return results, nil
 }
