@@ -3,6 +3,7 @@ package grafana
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
@@ -253,6 +254,8 @@ func (w *grafanaAPIWrapper) QueryDatasource(ctx context.Context, orgID int64, da
 		TimeRange: &datasource.TimeRange{
 			FromEpochMs: int64(tr.From.UnixNano()) / int64(time.Millisecond),
 			ToEpochMs:   int64(tr.To.UnixNano()) / int64(time.Millisecond),
+			FromRaw:     fmt.Sprintf("%v", int64(tr.From.UnixNano())/int64(time.Millisecond)),
+			ToRaw:       fmt.Sprintf("%v", int64(tr.From.UnixNano())/int64(time.Millisecond)),
 		},
 		Queries: rawQueries,
 	})
