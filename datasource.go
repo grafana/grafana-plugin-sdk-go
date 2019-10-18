@@ -58,7 +58,7 @@ type datasourcePluginWrapper struct {
 func (p *datasourcePluginWrapper) Query(ctx context.Context, req *datasource.DatasourceRequest, api GrafanaAPI) (*datasource.DatasourceResponse, error) {
 	tr := TimeRange{
 		From: time.Unix(0, req.TimeRange.FromEpochMs*int64(time.Millisecond)),
-		To:   time.Unix(0, req.TimeRange.FromEpochMs*int64(time.Millisecond)),
+		To:   time.Unix(0, req.TimeRange.ToEpochMs*int64(time.Millisecond)),
 	}
 
 	dsi := DataSourceInfo{
@@ -252,10 +252,10 @@ func (w *grafanaAPIWrapper) QueryDatasource(ctx context.Context, orgID int64, da
 		OrgId:        orgID,
 		DatasourceId: datasourceID,
 		TimeRange: &datasource.TimeRange{
-			FromEpochMs: int64(tr.From.UnixNano()) / int64(time.Millisecond),
-			ToEpochMs:   int64(tr.To.UnixNano()) / int64(time.Millisecond),
-			FromRaw:     fmt.Sprintf("%v", int64(tr.From.UnixNano())/int64(time.Millisecond)),
-			ToRaw:       fmt.Sprintf("%v", int64(tr.From.UnixNano())/int64(time.Millisecond)),
+			FromEpochMs: tr.From.UnixNano() / 1e6,
+			ToEpochMs:   tr.To.UnixNano() / 1e6,
+			FromRaw:     fmt.Sprintf("%v", tr.From.UnixNano()/1e6),
+			ToRaw:       fmt.Sprintf("%v", tr.To.UnixNano()/1e6),
 		},
 		Queries: rawQueries,
 	})
