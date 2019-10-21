@@ -3,14 +3,13 @@
 
 package datasource
 
+import proto "github.com/golang/protobuf/proto"
+import fmt "fmt"
+import math "math"
+
 import (
-	context "context"
-	fmt "fmt"
-	proto "github.com/golang/protobuf/proto"
+	context "golang.org/x/net/context"
 	grpc "google.golang.org/grpc"
-	codes "google.golang.org/grpc/codes"
-	status "google.golang.org/grpc/status"
-	math "math"
 )
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -22,56 +21,13 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
-
-type RowValue_Type int32
-
-const (
-	// Field type null.
-	RowValue_TYPE_NULL RowValue_Type = 0
-	// Field type double.
-	RowValue_TYPE_DOUBLE RowValue_Type = 1
-	// Field type int64.
-	RowValue_TYPE_INT64 RowValue_Type = 2
-	// Field type bool.
-	RowValue_TYPE_BOOL RowValue_Type = 3
-	// Field type string.
-	RowValue_TYPE_STRING RowValue_Type = 4
-	// Field type bytes.
-	RowValue_TYPE_BYTES RowValue_Type = 5
-)
-
-var RowValue_Type_name = map[int32]string{
-	0: "TYPE_NULL",
-	1: "TYPE_DOUBLE",
-	2: "TYPE_INT64",
-	3: "TYPE_BOOL",
-	4: "TYPE_STRING",
-	5: "TYPE_BYTES",
-}
-
-var RowValue_Type_value = map[string]int32{
-	"TYPE_NULL":   0,
-	"TYPE_DOUBLE": 1,
-	"TYPE_INT64":  2,
-	"TYPE_BOOL":   3,
-	"TYPE_STRING": 4,
-	"TYPE_BYTES":  5,
-}
-
-func (x RowValue_Type) String() string {
-	return proto.EnumName(RowValue_Type_name, int32(x))
-}
-
-func (RowValue_Type) EnumDescriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{8, 0}
-}
+const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DatasourceRequest struct {
-	TimeRange            *TimeRange      `protobuf:"bytes,1,opt,name=timeRange,proto3" json:"timeRange,omitempty"`
-	Datasource           *DatasourceInfo `protobuf:"bytes,2,opt,name=datasource,proto3" json:"datasource,omitempty"`
-	Queries              []*Query        `protobuf:"bytes,3,rep,name=queries,proto3" json:"queries,omitempty"`
-	RequestId            uint32          `protobuf:"varint,4,opt,name=requestId,proto3" json:"requestId,omitempty"`
+	TimeRange            *TimeRange      `protobuf:"bytes,1,opt,name=timeRange" json:"timeRange,omitempty"`
+	Datasource           *DatasourceInfo `protobuf:"bytes,2,opt,name=datasource" json:"datasource,omitempty"`
+	Queries              []*Query        `protobuf:"bytes,3,rep,name=queries" json:"queries,omitempty"`
+	RequestId            uint32          `protobuf:"varint,4,opt,name=requestId" json:"requestId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
 	XXX_unrecognized     []byte          `json:"-"`
 	XXX_sizecache        int32           `json:"-"`
@@ -81,17 +37,16 @@ func (m *DatasourceRequest) Reset()         { *m = DatasourceRequest{} }
 func (m *DatasourceRequest) String() string { return proto.CompactTextString(m) }
 func (*DatasourceRequest) ProtoMessage()    {}
 func (*DatasourceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{0}
+	return fileDescriptor_datasource_edbaf4ee6ed114da, []int{0}
 }
-
 func (m *DatasourceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DatasourceRequest.Unmarshal(m, b)
 }
 func (m *DatasourceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DatasourceRequest.Marshal(b, m, deterministic)
 }
-func (m *DatasourceRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DatasourceRequest.Merge(m, src)
+func (dst *DatasourceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DatasourceRequest.Merge(dst, src)
 }
 func (m *DatasourceRequest) XXX_Size() int {
 	return xxx_messageInfo_DatasourceRequest.Size(m)
@@ -131,10 +86,10 @@ func (m *DatasourceRequest) GetRequestId() uint32 {
 }
 
 type Query struct {
-	RefId                string   `protobuf:"bytes,1,opt,name=refId,proto3" json:"refId,omitempty"`
-	MaxDataPoints        int64    `protobuf:"varint,2,opt,name=maxDataPoints,proto3" json:"maxDataPoints,omitempty"`
-	IntervalMs           int64    `protobuf:"varint,3,opt,name=intervalMs,proto3" json:"intervalMs,omitempty"`
-	ModelJson            string   `protobuf:"bytes,4,opt,name=modelJson,proto3" json:"modelJson,omitempty"`
+	RefId                string   `protobuf:"bytes,1,opt,name=refId" json:"refId,omitempty"`
+	MaxDataPoints        int64    `protobuf:"varint,2,opt,name=maxDataPoints" json:"maxDataPoints,omitempty"`
+	IntervalMs           int64    `protobuf:"varint,3,opt,name=intervalMs" json:"intervalMs,omitempty"`
+	ModelJson            string   `protobuf:"bytes,4,opt,name=modelJson" json:"modelJson,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -144,17 +99,16 @@ func (m *Query) Reset()         { *m = Query{} }
 func (m *Query) String() string { return proto.CompactTextString(m) }
 func (*Query) ProtoMessage()    {}
 func (*Query) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{1}
+	return fileDescriptor_datasource_edbaf4ee6ed114da, []int{1}
 }
-
 func (m *Query) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_Query.Unmarshal(m, b)
 }
 func (m *Query) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_Query.Marshal(b, m, deterministic)
 }
-func (m *Query) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Query.Merge(m, src)
+func (dst *Query) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_Query.Merge(dst, src)
 }
 func (m *Query) XXX_Size() int {
 	return xxx_messageInfo_Query.Size(m)
@@ -194,10 +148,10 @@ func (m *Query) GetModelJson() string {
 }
 
 type TimeRange struct {
-	FromRaw              string   `protobuf:"bytes,1,opt,name=fromRaw,proto3" json:"fromRaw,omitempty"`
-	ToRaw                string   `protobuf:"bytes,2,opt,name=toRaw,proto3" json:"toRaw,omitempty"`
-	FromEpochMs          int64    `protobuf:"varint,3,opt,name=fromEpochMs,proto3" json:"fromEpochMs,omitempty"`
-	ToEpochMs            int64    `protobuf:"varint,4,opt,name=toEpochMs,proto3" json:"toEpochMs,omitempty"`
+	FromRaw              string   `protobuf:"bytes,1,opt,name=fromRaw" json:"fromRaw,omitempty"`
+	ToRaw                string   `protobuf:"bytes,2,opt,name=toRaw" json:"toRaw,omitempty"`
+	FromEpochMs          int64    `protobuf:"varint,3,opt,name=fromEpochMs" json:"fromEpochMs,omitempty"`
+	ToEpochMs            int64    `protobuf:"varint,4,opt,name=toEpochMs" json:"toEpochMs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -207,17 +161,16 @@ func (m *TimeRange) Reset()         { *m = TimeRange{} }
 func (m *TimeRange) String() string { return proto.CompactTextString(m) }
 func (*TimeRange) ProtoMessage()    {}
 func (*TimeRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{2}
+	return fileDescriptor_datasource_edbaf4ee6ed114da, []int{2}
 }
-
 func (m *TimeRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TimeRange.Unmarshal(m, b)
 }
 func (m *TimeRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TimeRange.Marshal(b, m, deterministic)
 }
-func (m *TimeRange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TimeRange.Merge(m, src)
+func (dst *TimeRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TimeRange.Merge(dst, src)
 }
 func (m *TimeRange) XXX_Size() int {
 	return xxx_messageInfo_TimeRange.Size(m)
@@ -257,7 +210,7 @@ func (m *TimeRange) GetToEpochMs() int64 {
 }
 
 type DatasourceResponse struct {
-	Results              []*QueryResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	Results              []*QueryResult `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -267,17 +220,16 @@ func (m *DatasourceResponse) Reset()         { *m = DatasourceResponse{} }
 func (m *DatasourceResponse) String() string { return proto.CompactTextString(m) }
 func (*DatasourceResponse) ProtoMessage()    {}
 func (*DatasourceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{3}
+	return fileDescriptor_datasource_edbaf4ee6ed114da, []int{3}
 }
-
 func (m *DatasourceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DatasourceResponse.Unmarshal(m, b)
 }
 func (m *DatasourceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DatasourceResponse.Marshal(b, m, deterministic)
 }
-func (m *DatasourceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DatasourceResponse.Merge(m, src)
+func (dst *DatasourceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DatasourceResponse.Merge(dst, src)
 }
 func (m *DatasourceResponse) XXX_Size() int {
 	return xxx_messageInfo_DatasourceResponse.Size(m)
@@ -296,31 +248,29 @@ func (m *DatasourceResponse) GetResults() []*QueryResult {
 }
 
 type QueryResult struct {
-	Error                string        `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
-	RefId                string        `protobuf:"bytes,2,opt,name=refId,proto3" json:"refId,omitempty"`
-	MetaJson             string        `protobuf:"bytes,3,opt,name=metaJson,proto3" json:"metaJson,omitempty"`
-	Series               []*TimeSeries `protobuf:"bytes,4,rep,name=series,proto3" json:"series,omitempty"`
-	Tables               []*Table      `protobuf:"bytes,5,rep,name=tables,proto3" json:"tables,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
+	Error                string   `protobuf:"bytes,1,opt,name=error" json:"error,omitempty"`
+	RefId                string   `protobuf:"bytes,2,opt,name=refId" json:"refId,omitempty"`
+	MetaJson             string   `protobuf:"bytes,3,opt,name=metaJson" json:"metaJson,omitempty"`
+	Dataframes           [][]byte `protobuf:"bytes,4,rep,name=dataframes,proto3" json:"dataframes,omitempty"`
+	XXX_NoUnkeyedLiteral struct{} `json:"-"`
+	XXX_unrecognized     []byte   `json:"-"`
+	XXX_sizecache        int32    `json:"-"`
 }
 
 func (m *QueryResult) Reset()         { *m = QueryResult{} }
 func (m *QueryResult) String() string { return proto.CompactTextString(m) }
 func (*QueryResult) ProtoMessage()    {}
 func (*QueryResult) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{4}
+	return fileDescriptor_datasource_edbaf4ee6ed114da, []int{4}
 }
-
 func (m *QueryResult) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryResult.Unmarshal(m, b)
 }
 func (m *QueryResult) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryResult.Marshal(b, m, deterministic)
 }
-func (m *QueryResult) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryResult.Merge(m, src)
+func (dst *QueryResult) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryResult.Merge(dst, src)
 }
 func (m *QueryResult) XXX_Size() int {
 	return xxx_messageInfo_QueryResult.Size(m)
@@ -352,232 +302,21 @@ func (m *QueryResult) GetMetaJson() string {
 	return ""
 }
 
-func (m *QueryResult) GetSeries() []*TimeSeries {
+func (m *QueryResult) GetDataframes() [][]byte {
 	if m != nil {
-		return m.Series
-	}
-	return nil
-}
-
-func (m *QueryResult) GetTables() []*Table {
-	if m != nil {
-		return m.Tables
-	}
-	return nil
-}
-
-type Table struct {
-	Columns              []*TableColumn `protobuf:"bytes,1,rep,name=columns,proto3" json:"columns,omitempty"`
-	Rows                 []*TableRow    `protobuf:"bytes,2,rep,name=rows,proto3" json:"rows,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
-	XXX_unrecognized     []byte         `json:"-"`
-	XXX_sizecache        int32          `json:"-"`
-}
-
-func (m *Table) Reset()         { *m = Table{} }
-func (m *Table) String() string { return proto.CompactTextString(m) }
-func (*Table) ProtoMessage()    {}
-func (*Table) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{5}
-}
-
-func (m *Table) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Table.Unmarshal(m, b)
-}
-func (m *Table) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Table.Marshal(b, m, deterministic)
-}
-func (m *Table) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Table.Merge(m, src)
-}
-func (m *Table) XXX_Size() int {
-	return xxx_messageInfo_Table.Size(m)
-}
-func (m *Table) XXX_DiscardUnknown() {
-	xxx_messageInfo_Table.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Table proto.InternalMessageInfo
-
-func (m *Table) GetColumns() []*TableColumn {
-	if m != nil {
-		return m.Columns
-	}
-	return nil
-}
-
-func (m *Table) GetRows() []*TableRow {
-	if m != nil {
-		return m.Rows
-	}
-	return nil
-}
-
-type TableColumn struct {
-	Name                 string   `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *TableColumn) Reset()         { *m = TableColumn{} }
-func (m *TableColumn) String() string { return proto.CompactTextString(m) }
-func (*TableColumn) ProtoMessage()    {}
-func (*TableColumn) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{6}
-}
-
-func (m *TableColumn) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TableColumn.Unmarshal(m, b)
-}
-func (m *TableColumn) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TableColumn.Marshal(b, m, deterministic)
-}
-func (m *TableColumn) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TableColumn.Merge(m, src)
-}
-func (m *TableColumn) XXX_Size() int {
-	return xxx_messageInfo_TableColumn.Size(m)
-}
-func (m *TableColumn) XXX_DiscardUnknown() {
-	xxx_messageInfo_TableColumn.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TableColumn proto.InternalMessageInfo
-
-func (m *TableColumn) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-type TableRow struct {
-	Values               []*RowValue `protobuf:"bytes,1,rep,name=values,proto3" json:"values,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}    `json:"-"`
-	XXX_unrecognized     []byte      `json:"-"`
-	XXX_sizecache        int32       `json:"-"`
-}
-
-func (m *TableRow) Reset()         { *m = TableRow{} }
-func (m *TableRow) String() string { return proto.CompactTextString(m) }
-func (*TableRow) ProtoMessage()    {}
-func (*TableRow) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{7}
-}
-
-func (m *TableRow) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TableRow.Unmarshal(m, b)
-}
-func (m *TableRow) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TableRow.Marshal(b, m, deterministic)
-}
-func (m *TableRow) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TableRow.Merge(m, src)
-}
-func (m *TableRow) XXX_Size() int {
-	return xxx_messageInfo_TableRow.Size(m)
-}
-func (m *TableRow) XXX_DiscardUnknown() {
-	xxx_messageInfo_TableRow.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TableRow proto.InternalMessageInfo
-
-func (m *TableRow) GetValues() []*RowValue {
-	if m != nil {
-		return m.Values
-	}
-	return nil
-}
-
-type RowValue struct {
-	Type                 RowValue_Type `protobuf:"varint,1,opt,name=type,proto3,enum=modelsV2.RowValue_Type" json:"type,omitempty"`
-	DoubleValue          float64       `protobuf:"fixed64,2,opt,name=doubleValue,proto3" json:"doubleValue,omitempty"`
-	Int64Value           int64         `protobuf:"varint,3,opt,name=int64Value,proto3" json:"int64Value,omitempty"`
-	BoolValue            bool          `protobuf:"varint,4,opt,name=boolValue,proto3" json:"boolValue,omitempty"`
-	StringValue          string        `protobuf:"bytes,5,opt,name=stringValue,proto3" json:"stringValue,omitempty"`
-	BytesValue           []byte        `protobuf:"bytes,6,opt,name=bytesValue,proto3" json:"bytesValue,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}      `json:"-"`
-	XXX_unrecognized     []byte        `json:"-"`
-	XXX_sizecache        int32         `json:"-"`
-}
-
-func (m *RowValue) Reset()         { *m = RowValue{} }
-func (m *RowValue) String() string { return proto.CompactTextString(m) }
-func (*RowValue) ProtoMessage()    {}
-func (*RowValue) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{8}
-}
-
-func (m *RowValue) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_RowValue.Unmarshal(m, b)
-}
-func (m *RowValue) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_RowValue.Marshal(b, m, deterministic)
-}
-func (m *RowValue) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_RowValue.Merge(m, src)
-}
-func (m *RowValue) XXX_Size() int {
-	return xxx_messageInfo_RowValue.Size(m)
-}
-func (m *RowValue) XXX_DiscardUnknown() {
-	xxx_messageInfo_RowValue.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_RowValue proto.InternalMessageInfo
-
-func (m *RowValue) GetType() RowValue_Type {
-	if m != nil {
-		return m.Type
-	}
-	return RowValue_TYPE_NULL
-}
-
-func (m *RowValue) GetDoubleValue() float64 {
-	if m != nil {
-		return m.DoubleValue
-	}
-	return 0
-}
-
-func (m *RowValue) GetInt64Value() int64 {
-	if m != nil {
-		return m.Int64Value
-	}
-	return 0
-}
-
-func (m *RowValue) GetBoolValue() bool {
-	if m != nil {
-		return m.BoolValue
-	}
-	return false
-}
-
-func (m *RowValue) GetStringValue() string {
-	if m != nil {
-		return m.StringValue
-	}
-	return ""
-}
-
-func (m *RowValue) GetBytesValue() []byte {
-	if m != nil {
-		return m.BytesValue
+		return m.Dataframes
 	}
 	return nil
 }
 
 type DatasourceInfo struct {
-	Id                      int64             `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrgId                   int64             `protobuf:"varint,2,opt,name=orgId,proto3" json:"orgId,omitempty"`
-	Name                    string            `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Type                    string            `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Url                     string            `protobuf:"bytes,5,opt,name=url,proto3" json:"url,omitempty"`
-	JsonData                string            `protobuf:"bytes,6,opt,name=jsonData,proto3" json:"jsonData,omitempty"`
-	DecryptedSecureJsonData map[string]string `protobuf:"bytes,7,rep,name=decryptedSecureJsonData,proto3" json:"decryptedSecureJsonData,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Id                      int64             `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	OrgId                   int64             `protobuf:"varint,2,opt,name=orgId" json:"orgId,omitempty"`
+	Name                    string            `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
+	Type                    string            `protobuf:"bytes,4,opt,name=type" json:"type,omitempty"`
+	Url                     string            `protobuf:"bytes,5,opt,name=url" json:"url,omitempty"`
+	JsonData                string            `protobuf:"bytes,6,opt,name=jsonData" json:"jsonData,omitempty"`
+	DecryptedSecureJsonData map[string]string `protobuf:"bytes,7,rep,name=decryptedSecureJsonData" json:"decryptedSecureJsonData,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	XXX_NoUnkeyedLiteral    struct{}          `json:"-"`
 	XXX_unrecognized        []byte            `json:"-"`
 	XXX_sizecache           int32             `json:"-"`
@@ -587,17 +326,16 @@ func (m *DatasourceInfo) Reset()         { *m = DatasourceInfo{} }
 func (m *DatasourceInfo) String() string { return proto.CompactTextString(m) }
 func (*DatasourceInfo) ProtoMessage()    {}
 func (*DatasourceInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{9}
+	return fileDescriptor_datasource_edbaf4ee6ed114da, []int{5}
 }
-
 func (m *DatasourceInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DatasourceInfo.Unmarshal(m, b)
 }
 func (m *DatasourceInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DatasourceInfo.Marshal(b, m, deterministic)
 }
-func (m *DatasourceInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DatasourceInfo.Merge(m, src)
+func (dst *DatasourceInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DatasourceInfo.Merge(dst, src)
 }
 func (m *DatasourceInfo) XXX_Size() int {
 	return xxx_messageInfo_DatasourceInfo.Size(m)
@@ -657,113 +395,11 @@ func (m *DatasourceInfo) GetDecryptedSecureJsonData() map[string]string {
 	return nil
 }
 
-type TimeSeries struct {
-	Name                 string            `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
-	Tags                 map[string]string `protobuf:"bytes,2,rep,name=tags,proto3" json:"tags,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Points               []*Point          `protobuf:"bytes,3,rep,name=points,proto3" json:"points,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}          `json:"-"`
-	XXX_unrecognized     []byte            `json:"-"`
-	XXX_sizecache        int32             `json:"-"`
-}
-
-func (m *TimeSeries) Reset()         { *m = TimeSeries{} }
-func (m *TimeSeries) String() string { return proto.CompactTextString(m) }
-func (*TimeSeries) ProtoMessage()    {}
-func (*TimeSeries) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{10}
-}
-
-func (m *TimeSeries) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_TimeSeries.Unmarshal(m, b)
-}
-func (m *TimeSeries) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_TimeSeries.Marshal(b, m, deterministic)
-}
-func (m *TimeSeries) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TimeSeries.Merge(m, src)
-}
-func (m *TimeSeries) XXX_Size() int {
-	return xxx_messageInfo_TimeSeries.Size(m)
-}
-func (m *TimeSeries) XXX_DiscardUnknown() {
-	xxx_messageInfo_TimeSeries.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_TimeSeries proto.InternalMessageInfo
-
-func (m *TimeSeries) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *TimeSeries) GetTags() map[string]string {
-	if m != nil {
-		return m.Tags
-	}
-	return nil
-}
-
-func (m *TimeSeries) GetPoints() []*Point {
-	if m != nil {
-		return m.Points
-	}
-	return nil
-}
-
-type Point struct {
-	Timestamp            int64    `protobuf:"varint,1,opt,name=timestamp,proto3" json:"timestamp,omitempty"`
-	Value                float64  `protobuf:"fixed64,2,opt,name=value,proto3" json:"value,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *Point) Reset()         { *m = Point{} }
-func (m *Point) String() string { return proto.CompactTextString(m) }
-func (*Point) ProtoMessage()    {}
-func (*Point) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{11}
-}
-
-func (m *Point) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Point.Unmarshal(m, b)
-}
-func (m *Point) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Point.Marshal(b, m, deterministic)
-}
-func (m *Point) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Point.Merge(m, src)
-}
-func (m *Point) XXX_Size() int {
-	return xxx_messageInfo_Point.Size(m)
-}
-func (m *Point) XXX_DiscardUnknown() {
-	xxx_messageInfo_Point.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Point proto.InternalMessageInfo
-
-func (m *Point) GetTimestamp() int64 {
-	if m != nil {
-		return m.Timestamp
-	}
-	return 0
-}
-
-func (m *Point) GetValue() float64 {
-	if m != nil {
-		return m.Value
-	}
-	return 0
-}
-
 type QueryDatasourceRequest struct {
-	TimeRange            *TimeRange `protobuf:"bytes,1,opt,name=timeRange,proto3" json:"timeRange,omitempty"`
-	DatasourceId         int64      `protobuf:"varint,2,opt,name=datasourceId,proto3" json:"datasourceId,omitempty"`
-	Queries              []*Query   `protobuf:"bytes,3,rep,name=queries,proto3" json:"queries,omitempty"`
-	OrgId                int64      `protobuf:"varint,4,opt,name=orgId,proto3" json:"orgId,omitempty"`
+	TimeRange            *TimeRange `protobuf:"bytes,1,opt,name=timeRange" json:"timeRange,omitempty"`
+	DatasourceId         int64      `protobuf:"varint,2,opt,name=datasourceId" json:"datasourceId,omitempty"`
+	Queries              []*Query   `protobuf:"bytes,3,rep,name=queries" json:"queries,omitempty"`
+	OrgId                int64      `protobuf:"varint,4,opt,name=orgId" json:"orgId,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
 	XXX_unrecognized     []byte     `json:"-"`
 	XXX_sizecache        int32      `json:"-"`
@@ -773,17 +409,16 @@ func (m *QueryDatasourceRequest) Reset()         { *m = QueryDatasourceRequest{}
 func (m *QueryDatasourceRequest) String() string { return proto.CompactTextString(m) }
 func (*QueryDatasourceRequest) ProtoMessage()    {}
 func (*QueryDatasourceRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{12}
+	return fileDescriptor_datasource_edbaf4ee6ed114da, []int{6}
 }
-
 func (m *QueryDatasourceRequest) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryDatasourceRequest.Unmarshal(m, b)
 }
 func (m *QueryDatasourceRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryDatasourceRequest.Marshal(b, m, deterministic)
 }
-func (m *QueryDatasourceRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryDatasourceRequest.Merge(m, src)
+func (dst *QueryDatasourceRequest) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryDatasourceRequest.Merge(dst, src)
 }
 func (m *QueryDatasourceRequest) XXX_Size() int {
 	return xxx_messageInfo_QueryDatasourceRequest.Size(m)
@@ -823,7 +458,7 @@ func (m *QueryDatasourceRequest) GetOrgId() int64 {
 }
 
 type QueryDatasourceResponse struct {
-	Results              []*QueryResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	Results              []*QueryResult `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}       `json:"-"`
 	XXX_unrecognized     []byte         `json:"-"`
 	XXX_sizecache        int32          `json:"-"`
@@ -833,17 +468,16 @@ func (m *QueryDatasourceResponse) Reset()         { *m = QueryDatasourceResponse
 func (m *QueryDatasourceResponse) String() string { return proto.CompactTextString(m) }
 func (*QueryDatasourceResponse) ProtoMessage()    {}
 func (*QueryDatasourceResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_bb096a9d85d590d2, []int{13}
+	return fileDescriptor_datasource_edbaf4ee6ed114da, []int{7}
 }
-
 func (m *QueryDatasourceResponse) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_QueryDatasourceResponse.Unmarshal(m, b)
 }
 func (m *QueryDatasourceResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_QueryDatasourceResponse.Marshal(b, m, deterministic)
 }
-func (m *QueryDatasourceResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_QueryDatasourceResponse.Merge(m, src)
+func (dst *QueryDatasourceResponse) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_QueryDatasourceResponse.Merge(dst, src)
 }
 func (m *QueryDatasourceResponse) XXX_Size() int {
 	return xxx_messageInfo_QueryDatasourceResponse.Size(m)
@@ -862,87 +496,15 @@ func (m *QueryDatasourceResponse) GetResults() []*QueryResult {
 }
 
 func init() {
-	proto.RegisterEnum("modelsV2.RowValue_Type", RowValue_Type_name, RowValue_Type_value)
 	proto.RegisterType((*DatasourceRequest)(nil), "modelsV2.DatasourceRequest")
 	proto.RegisterType((*Query)(nil), "modelsV2.Query")
 	proto.RegisterType((*TimeRange)(nil), "modelsV2.TimeRange")
 	proto.RegisterType((*DatasourceResponse)(nil), "modelsV2.DatasourceResponse")
 	proto.RegisterType((*QueryResult)(nil), "modelsV2.QueryResult")
-	proto.RegisterType((*Table)(nil), "modelsV2.Table")
-	proto.RegisterType((*TableColumn)(nil), "modelsV2.TableColumn")
-	proto.RegisterType((*TableRow)(nil), "modelsV2.TableRow")
-	proto.RegisterType((*RowValue)(nil), "modelsV2.RowValue")
 	proto.RegisterType((*DatasourceInfo)(nil), "modelsV2.DatasourceInfo")
 	proto.RegisterMapType((map[string]string)(nil), "modelsV2.DatasourceInfo.DecryptedSecureJsonDataEntry")
-	proto.RegisterType((*TimeSeries)(nil), "modelsV2.TimeSeries")
-	proto.RegisterMapType((map[string]string)(nil), "modelsV2.TimeSeries.TagsEntry")
-	proto.RegisterType((*Point)(nil), "modelsV2.Point")
 	proto.RegisterType((*QueryDatasourceRequest)(nil), "modelsV2.QueryDatasourceRequest")
 	proto.RegisterType((*QueryDatasourceResponse)(nil), "modelsV2.QueryDatasourceResponse")
-}
-
-func init() { proto.RegisterFile("datasource.proto", fileDescriptor_bb096a9d85d590d2) }
-
-var fileDescriptor_bb096a9d85d590d2 = []byte{
-	// 922 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x56, 0x5b, 0x6f, 0xe3, 0x44,
-	0x18, 0xc5, 0x97, 0xa4, 0xf1, 0x97, 0x5e, 0xcc, 0xb0, 0xd0, 0xa8, 0x54, 0xab, 0xac, 0x85, 0xa0,
-	0x5c, 0x14, 0x44, 0x58, 0xca, 0x0a, 0x9e, 0x08, 0x8d, 0x56, 0xa9, 0x4a, 0x5b, 0xa6, 0xd9, 0x4a,
-	0xcb, 0x0b, 0x38, 0xf1, 0x24, 0x18, 0x6c, 0x4f, 0x76, 0x3c, 0x6e, 0x89, 0x78, 0xe2, 0xff, 0xf0,
-	0xc0, 0x13, 0xef, 0x3c, 0xee, 0xbf, 0x42, 0xf3, 0x8d, 0x6f, 0x49, 0xb3, 0x2b, 0x15, 0xf1, 0xe6,
-	0x39, 0xe7, 0x7c, 0x33, 0xc7, 0xdf, 0x9c, 0x19, 0x1b, 0xdc, 0xc0, 0x97, 0x7e, 0xca, 0x33, 0x31,
-	0x65, 0xbd, 0x85, 0xe0, 0x92, 0x93, 0x56, 0xcc, 0x03, 0x16, 0xa5, 0xd7, 0x7d, 0xef, 0xa5, 0x01,
-	0x6f, 0x9e, 0x94, 0x34, 0x65, 0x2f, 0x32, 0x96, 0x4a, 0xf2, 0x19, 0x38, 0x32, 0x8c, 0x19, 0xf5,
-	0x93, 0x39, 0xeb, 0x18, 0x5d, 0xe3, 0xa8, 0xdd, 0x7f, 0xab, 0x57, 0xd4, 0xf4, 0xc6, 0x05, 0x45,
-	0x2b, 0x15, 0x79, 0x02, 0x50, 0x2d, 0xd3, 0x31, 0xb1, 0xa6, 0x53, 0xd5, 0x54, 0x6b, 0x8c, 0x92,
-	0x19, 0xa7, 0x35, 0x2d, 0xf9, 0x10, 0xb6, 0x5e, 0x64, 0x4c, 0x84, 0x2c, 0xed, 0x58, 0x5d, 0xeb,
-	0xa8, 0xdd, 0xdf, 0xab, 0xca, 0xbe, 0xcf, 0x98, 0x58, 0xd2, 0x82, 0x27, 0x87, 0xe0, 0x08, 0x6d,
-	0x71, 0x14, 0x74, 0xec, 0xae, 0x71, 0xb4, 0x43, 0x2b, 0xc0, 0xfb, 0xc3, 0x80, 0x06, 0x16, 0x90,
-	0x07, 0xd0, 0x10, 0x6c, 0x36, 0x0a, 0xd0, 0xbb, 0x43, 0xf5, 0x80, 0xbc, 0x07, 0x3b, 0xb1, 0xff,
-	0x9b, 0x72, 0x72, 0xc9, 0xc3, 0x44, 0xa6, 0xe8, 0xd2, 0xa2, 0xab, 0x20, 0x79, 0x08, 0x10, 0x26,
-	0x92, 0x89, 0x1b, 0x3f, 0xfa, 0x4e, 0x39, 0x52, 0x92, 0x1a, 0xa2, 0x3c, 0xa0, 0xbd, 0xd3, 0x94,
-	0x27, 0xe8, 0xc1, 0xa1, 0x15, 0xe0, 0xfd, 0x0e, 0x4e, 0xd9, 0x1e, 0xd2, 0x81, 0xad, 0x99, 0xe0,
-	0x31, 0xf5, 0x6f, 0x73, 0x23, 0xc5, 0x50, 0x19, 0x94, 0x5c, 0xe1, 0xa6, 0x36, 0x88, 0x03, 0xd2,
-	0x85, 0xb6, 0x12, 0x0c, 0x17, 0x7c, 0xfa, 0x73, 0xb9, 0x76, 0x1d, 0x52, 0x8b, 0x4b, 0x5e, 0xf0,
-	0x36, 0xf2, 0x15, 0xe0, 0x0d, 0x81, 0xd4, 0xf7, 0x32, 0x5d, 0xf0, 0x24, 0x65, 0xe4, 0x53, 0xd8,
-	0x12, 0x2c, 0xcd, 0x22, 0x99, 0x76, 0x0c, 0xec, 0xef, 0xdb, 0xeb, 0xfd, 0x45, 0x96, 0x16, 0x2a,
-	0xef, 0x4f, 0x03, 0xda, 0x35, 0x42, 0x99, 0x65, 0x42, 0x70, 0x51, 0x74, 0x13, 0x07, 0x55, 0x8f,
-	0xcd, 0x7a, 0x8f, 0x0f, 0xa0, 0x15, 0x33, 0xe9, 0x63, 0x73, 0x2c, 0x24, 0xca, 0x31, 0xf9, 0x04,
-	0x9a, 0xa9, 0xde, 0x67, 0x1b, 0x7d, 0x3c, 0x58, 0x8d, 0xd4, 0x15, 0x72, 0x34, 0xd7, 0x90, 0x0f,
-	0xa0, 0x29, 0xfd, 0x49, 0xc4, 0xd2, 0x4e, 0x63, 0x3d, 0x15, 0x63, 0x85, 0xd3, 0x9c, 0xf6, 0x7e,
-	0x82, 0x06, 0x02, 0xea, 0x45, 0xa7, 0x3c, 0xca, 0xe2, 0x64, 0xc3, 0x8b, 0xa2, 0xe2, 0x5b, 0x64,
-	0x69, 0xa1, 0x22, 0xef, 0x83, 0x2d, 0xf8, 0xad, 0xca, 0x81, 0x52, 0x93, 0xf5, 0x05, 0xf8, 0x2d,
-	0x45, 0xde, 0x7b, 0x04, 0xed, 0x5a, 0x3d, 0x21, 0x60, 0x27, 0x7e, 0xcc, 0xf2, 0x76, 0xe0, 0xb3,
-	0x77, 0x0c, 0xad, 0xa2, 0x88, 0x7c, 0x04, 0xcd, 0x1b, 0x3f, 0xca, 0x58, 0x61, 0xa3, 0x36, 0x31,
-	0xe5, 0xb7, 0xd7, 0x8a, 0xa2, 0xb9, 0xc2, 0xfb, 0xc7, 0x84, 0x56, 0x01, 0x92, 0x8f, 0xc1, 0x96,
-	0xcb, 0x85, 0x9e, 0x78, 0xb7, 0xbf, 0x7f, 0xb7, 0xac, 0x37, 0x5e, 0x2e, 0x18, 0x45, 0x91, 0x0a,
-	0x4b, 0xc0, 0xb3, 0x49, 0xc4, 0x90, 0xc1, 0x5d, 0x30, 0x68, 0x1d, 0xca, 0x93, 0x7c, 0xfc, 0x58,
-	0x0b, 0xaa, 0x24, 0xe7, 0x88, 0x0a, 0xd3, 0x84, 0xf3, 0x48, 0xd3, 0x2a, 0x4c, 0x2d, 0x5a, 0x01,
-	0x6a, 0xfe, 0x54, 0x8a, 0x30, 0x99, 0x6b, 0xbe, 0x81, 0x2f, 0x5b, 0x87, 0xd4, 0xfc, 0x93, 0xa5,
-	0x64, 0xa9, 0x16, 0x34, 0xbb, 0xc6, 0xd1, 0x36, 0xad, 0x21, 0xde, 0x0c, 0x6c, 0xe5, 0x97, 0xec,
-	0x80, 0x33, 0x7e, 0x7e, 0x39, 0xfc, 0xf1, 0xfc, 0xd9, 0xd9, 0x99, 0xfb, 0x06, 0xd9, 0x83, 0x36,
-	0x0e, 0x4f, 0x2e, 0x9e, 0x0d, 0xce, 0x86, 0xae, 0x41, 0x76, 0x01, 0x10, 0x18, 0x9d, 0x8f, 0x8f,
-	0x1f, 0xbb, 0x66, 0xa9, 0x1f, 0x5c, 0x5c, 0x9c, 0xb9, 0x56, 0xa9, 0xbf, 0x1a, 0xd3, 0xd1, 0xf9,
-	0x53, 0xd7, 0x2e, 0xf5, 0x83, 0xe7, 0xe3, 0xe1, 0x95, 0xdb, 0xf0, 0x5e, 0x9a, 0xb0, 0xbb, 0x7a,
-	0xbf, 0x90, 0x5d, 0x30, 0x43, 0x7d, 0xfa, 0x2d, 0x6a, 0x86, 0x81, 0x0a, 0x2b, 0x17, 0xf3, 0x3c,
-	0xac, 0x16, 0xd5, 0x83, 0x72, 0x23, 0xad, 0x6a, 0x23, 0x15, 0x86, 0x7b, 0xa0, 0x4f, 0xb6, 0x6e,
-	0xb5, 0x0b, 0x56, 0x26, 0xa2, 0xbc, 0x05, 0xea, 0x51, 0xc5, 0xfc, 0x97, 0x94, 0x27, 0x6a, 0x55,
-	0x7c, 0x71, 0x87, 0x96, 0x63, 0xc2, 0x61, 0x3f, 0x60, 0x53, 0xb1, 0x5c, 0x48, 0x16, 0x5c, 0xb1,
-	0x69, 0x26, 0xd8, 0x69, 0x21, 0xdd, 0xc2, 0x3c, 0x7c, 0xf1, 0xaa, 0x6b, 0xb1, 0x77, 0xb2, 0xb9,
-	0x6e, 0x98, 0x48, 0xb1, 0xa4, 0xaf, 0x9a, 0xf5, 0xe0, 0x14, 0x0e, 0x5f, 0x57, 0xa8, 0xec, 0xff,
-	0xca, 0x96, 0x79, 0x5c, 0xd5, 0xa3, 0x6a, 0xc7, 0x4d, 0x99, 0x1a, 0x87, 0xea, 0xc1, 0x57, 0xe6,
-	0x13, 0xc3, 0xfb, 0xdb, 0x00, 0xa8, 0x0e, 0xe3, 0xa6, 0xa8, 0x93, 0x3e, 0xd8, 0xd2, 0x9f, 0x17,
-	0xa7, 0xe6, 0xe1, 0xa6, 0x43, 0xdc, 0x1b, 0xfb, 0xf3, 0x54, 0xbb, 0x46, 0xad, 0x3a, 0xcc, 0x0b,
-	0x7d, 0xe7, 0xde, 0xb9, 0xe2, 0xf1, 0xda, 0xa5, 0x39, 0x7d, 0xf0, 0x25, 0x38, 0x65, 0xed, 0xbd,
-	0x8c, 0x7f, 0x0d, 0x0d, 0x9c, 0x09, 0xaf, 0xc8, 0x30, 0x66, 0xa9, 0xf4, 0xe3, 0x45, 0x9e, 0x80,
-	0x0a, 0x58, 0x9d, 0xc0, 0xc8, 0x27, 0xf0, 0xfe, 0x32, 0xe0, 0x1d, 0xbc, 0xf1, 0xfe, 0x97, 0x4f,
-	0xa1, 0x07, 0xdb, 0xd5, 0xe7, 0xad, 0xcc, 0xdc, 0x0a, 0x76, 0x9f, 0x8f, 0x5e, 0x99, 0x5d, 0xbb,
-	0x96, 0x5d, 0xef, 0x14, 0xf6, 0xef, 0x38, 0xfe, 0x8f, 0x17, 0x7e, 0xff, 0x1a, 0xdc, 0x6a, 0x9a,
-	0xcb, 0x28, 0x9b, 0x87, 0x09, 0x19, 0x14, 0xdf, 0xd2, 0x77, 0x37, 0xa5, 0x35, 0xef, 0xce, 0xc1,
-	0xe1, 0x66, 0x52, 0x1b, 0xe9, 0x07, 0x00, 0x4f, 0x85, 0x3f, 0xf3, 0x13, 0xff, 0x9b, 0xcb, 0x11,
-	0xb9, 0x86, 0xbd, 0x35, 0xc7, 0xa4, 0xbb, 0x66, 0xec, 0xee, 0x02, 0x8f, 0x5e, 0xa3, 0xd0, 0xab,
-	0x0c, 0xb6, 0x7f, 0xa8, 0xfd, 0x4d, 0x4c, 0x9a, 0xf8, 0x87, 0xf3, 0xf9, 0xbf, 0x01, 0x00, 0x00,
-	0xff, 0xff, 0x3e, 0xc7, 0xee, 0xe4, 0xf5, 0x08, 0x00, 0x00,
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -977,17 +539,10 @@ func (c *datasourcePluginClient) Query(ctx context.Context, in *DatasourceReques
 	return out, nil
 }
 
-// DatasourcePluginServer is the server API for DatasourcePlugin service.
+// Server API for DatasourcePlugin service
+
 type DatasourcePluginServer interface {
 	Query(context.Context, *DatasourceRequest) (*DatasourceResponse, error)
-}
-
-// UnimplementedDatasourcePluginServer can be embedded to have forward compatible implementations.
-type UnimplementedDatasourcePluginServer struct {
-}
-
-func (*UnimplementedDatasourcePluginServer) Query(ctx context.Context, req *DatasourceRequest) (*DatasourceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method Query not implemented")
 }
 
 func RegisterDatasourcePluginServer(s *grpc.Server, srv DatasourcePluginServer) {
@@ -1049,17 +604,10 @@ func (c *grafanaAPIClient) QueryDatasource(ctx context.Context, in *QueryDatasou
 	return out, nil
 }
 
-// GrafanaAPIServer is the server API for GrafanaAPI service.
+// Server API for GrafanaAPI service
+
 type GrafanaAPIServer interface {
 	QueryDatasource(context.Context, *QueryDatasourceRequest) (*QueryDatasourceResponse, error)
-}
-
-// UnimplementedGrafanaAPIServer can be embedded to have forward compatible implementations.
-type UnimplementedGrafanaAPIServer struct {
-}
-
-func (*UnimplementedGrafanaAPIServer) QueryDatasource(ctx context.Context, req *QueryDatasourceRequest) (*QueryDatasourceResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryDatasource not implemented")
 }
 
 func RegisterGrafanaAPIServer(s *grpc.Server, srv GrafanaAPIServer) {
@@ -1095,4 +643,48 @@ var _GrafanaAPI_serviceDesc = grpc.ServiceDesc{
 	},
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "datasource.proto",
+}
+
+func init() { proto.RegisterFile("datasource.proto", fileDescriptor_datasource_edbaf4ee6ed114da) }
+
+var fileDescriptor_datasource_edbaf4ee6ed114da = []byte{
+	// 599 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x94, 0x4f, 0x6f, 0xd3, 0x4c,
+	0x10, 0xc6, 0x65, 0x3b, 0x69, 0x9a, 0x49, 0xda, 0xe6, 0xdd, 0x17, 0xa8, 0x15, 0x22, 0x14, 0x2c,
+	0x0e, 0xe1, 0x12, 0x44, 0x10, 0x52, 0xc5, 0x8d, 0xaa, 0x11, 0x4a, 0x24, 0xa4, 0xb0, 0xa0, 0x1c,
+	0xb8, 0x2d, 0xf1, 0x24, 0x18, 0x6c, 0x6f, 0xba, 0x5e, 0x17, 0x22, 0x4e, 0x7c, 0x23, 0xbe, 0x46,
+	0xbf, 0x15, 0xda, 0xf5, 0x9f, 0x75, 0xd2, 0xb4, 0x12, 0x88, 0xdb, 0xce, 0x33, 0x33, 0x9e, 0x9f,
+	0x9e, 0xf1, 0x2e, 0x74, 0x7c, 0x26, 0x59, 0xc2, 0x53, 0xb1, 0xc0, 0xe1, 0x5a, 0x70, 0xc9, 0xc9,
+	0x61, 0xc4, 0x7d, 0x0c, 0x93, 0xf9, 0xc8, 0xbb, 0xb6, 0xe0, 0xbf, 0x8b, 0x32, 0x4d, 0xf1, 0x32,
+	0xc5, 0x44, 0x92, 0xe7, 0xd0, 0x94, 0x41, 0x84, 0x94, 0xc5, 0x2b, 0x74, 0xad, 0xbe, 0x35, 0x68,
+	0x8d, 0xfe, 0x1f, 0x16, 0x3d, 0xc3, 0x0f, 0x45, 0x8a, 0x9a, 0x2a, 0x72, 0x06, 0x60, 0xc6, 0xb8,
+	0xb6, 0xee, 0x71, 0x4d, 0x8f, 0x99, 0x31, 0x89, 0x97, 0x9c, 0x56, 0x6a, 0xc9, 0x53, 0x68, 0x5c,
+	0xa6, 0x28, 0x02, 0x4c, 0x5c, 0xa7, 0xef, 0x0c, 0x5a, 0xa3, 0x13, 0xd3, 0xf6, 0x2e, 0x45, 0xb1,
+	0xa1, 0x45, 0x9e, 0xf4, 0xa0, 0x29, 0x32, 0xc4, 0x89, 0xef, 0xd6, 0xfa, 0xd6, 0xe0, 0x88, 0x1a,
+	0xc1, 0xfb, 0x69, 0x41, 0x5d, 0x37, 0x90, 0x7b, 0x50, 0x17, 0xb8, 0x9c, 0xf8, 0x9a, 0xbd, 0x49,
+	0xb3, 0x80, 0x3c, 0x81, 0xa3, 0x88, 0x7d, 0x57, 0x24, 0x33, 0x1e, 0xc4, 0x32, 0xd1, 0x94, 0x0e,
+	0xdd, 0x16, 0xc9, 0x23, 0x80, 0x20, 0x96, 0x28, 0xae, 0x58, 0xf8, 0x56, 0x11, 0xa9, 0x92, 0x8a,
+	0xa2, 0x18, 0x34, 0xde, 0x34, 0xe1, 0xb1, 0x66, 0x68, 0x52, 0x23, 0x78, 0x3f, 0xa0, 0x59, 0xda,
+	0x43, 0x5c, 0x68, 0x2c, 0x05, 0x8f, 0x28, 0xfb, 0x96, 0x83, 0x14, 0xa1, 0x02, 0x94, 0x5c, 0xe9,
+	0x76, 0x06, 0xa8, 0x03, 0xd2, 0x87, 0x96, 0x2a, 0x18, 0xaf, 0xf9, 0xe2, 0x73, 0x39, 0xbb, 0x2a,
+	0xa9, 0xe1, 0x92, 0x17, 0xf9, 0x9a, 0xce, 0x1b, 0xc1, 0x1b, 0x03, 0xa9, 0xee, 0x32, 0x59, 0xf3,
+	0x38, 0x41, 0xf2, 0x0c, 0x1a, 0x02, 0x93, 0x34, 0x94, 0x89, 0x6b, 0x69, 0x7f, 0xef, 0xef, 0xfa,
+	0xab, 0xb3, 0xb4, 0xa8, 0xf2, 0x52, 0x68, 0x55, 0x74, 0xc5, 0x8a, 0x42, 0x70, 0x51, 0x98, 0xa9,
+	0x03, 0x63, 0xb1, 0x5d, 0xb5, 0xb8, 0x0b, 0x87, 0x11, 0x4a, 0xa6, 0xbd, 0x71, 0x74, 0xa2, 0x8c,
+	0x95, 0xb1, 0x6a, 0xeb, 0x4b, 0xc1, 0x22, 0x54, 0xf0, 0xce, 0xa0, 0x4d, 0x2b, 0x8a, 0x77, 0x6d,
+	0xc3, 0xf1, 0xf6, 0x6f, 0x42, 0x8e, 0xc1, 0x0e, 0xb2, 0x25, 0x3a, 0xd4, 0x0e, 0x7c, 0x35, 0x94,
+	0x8b, 0x55, 0x3e, 0xd4, 0xa1, 0x59, 0x40, 0x08, 0xd4, 0x62, 0x16, 0x61, 0x3e, 0x50, 0x9f, 0x95,
+	0x26, 0x37, 0x6b, 0xcc, 0x17, 0xa4, 0xcf, 0xa4, 0x03, 0x4e, 0x2a, 0x42, 0xb7, 0xae, 0x25, 0x75,
+	0x54, 0xb8, 0x5f, 0x12, 0x1e, 0xab, 0xa9, 0xee, 0x41, 0x86, 0x5b, 0xc4, 0x84, 0xc3, 0xa9, 0x8f,
+	0x0b, 0xb1, 0x59, 0x4b, 0xf4, 0xdf, 0xe3, 0x22, 0x15, 0x38, 0x2d, 0x4a, 0x1b, 0xda, 0xc6, 0x97,
+	0xb7, 0xfd, 0xdd, 0xc3, 0x8b, 0xfd, 0x7d, 0xe3, 0x58, 0x8a, 0x0d, 0xbd, 0xed, 0xab, 0xdd, 0x29,
+	0xf4, 0xee, 0x6a, 0x54, 0xf8, 0x5f, 0x71, 0x93, 0x6f, 0x41, 0x1d, 0x95, 0x1d, 0x57, 0x2c, 0x4c,
+	0xb1, 0xd8, 0x81, 0x0e, 0x5e, 0xd9, 0x67, 0x96, 0xf7, 0xcb, 0x82, 0x07, 0x7a, 0x87, 0xff, 0xe4,
+	0x6e, 0x7b, 0xd0, 0x36, 0xf7, 0xb5, 0x74, 0x7f, 0x4b, 0xfb, 0x93, 0x5b, 0x5c, 0x6e, 0xb1, 0x56,
+	0xd9, 0xa2, 0x37, 0x85, 0xd3, 0x1b, 0xc4, 0x7f, 0xf9, 0x07, 0x8f, 0xe6, 0xd0, 0x31, 0x9f, 0x99,
+	0x85, 0xe9, 0x2a, 0x88, 0xc9, 0x79, 0xf1, 0x38, 0x3c, 0xdc, 0xb7, 0xb7, 0xdc, 0x9d, 0x6e, 0x6f,
+	0x7f, 0x32, 0x03, 0x19, 0xf9, 0x00, 0x6f, 0x04, 0x5b, 0xb2, 0x98, 0xbd, 0x9e, 0x4d, 0xc8, 0x1c,
+	0x4e, 0x76, 0x88, 0x49, 0x7f, 0x07, 0xec, 0xe6, 0x80, 0xc7, 0x77, 0x54, 0x64, 0x53, 0xce, 0xdb,
+	0x1f, 0x2b, 0xcf, 0xe3, 0xa7, 0x03, 0xfd, 0x64, 0xbf, 0xf8, 0x1d, 0x00, 0x00, 0xff, 0xff, 0xc1,
+	0xf0, 0xb5, 0x97, 0xc6, 0x05, 0x00, 0x00,
 }
