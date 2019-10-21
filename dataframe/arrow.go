@@ -193,13 +193,21 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 	schema := fR.Schema()
 	metaData := schema.Metadata()
 	frame := &Frame{}
-	if nameIdx := metaData.FindKey("name"); nameIdx > 0 {
-		frame.Name = metaData.Values()[nameIdx]
+	getMDKey := func(key string) (string, bool) {
+		idx := metaData.FindKey(key)
+		if idx < 0 {
+			return "", false
+		}
+		return metaData.Values()[idx], true
 	}
-	if refIdx := metaData.FindKey("refId"); refIdx > 0 {
-		frame.RefID = metaData.Values()[refIdx]
+	frame.Name, _ = getMDKey("name") // No need to check ok, zero value ("") is returned
+	frame.RefID, _ = getMDKey("refId")
+	if labelsAsString, ok := getMDKey("labels"); ok {
+		frame.Labels, err = LabelsFromString(labelsAsString)
+		if err != nil {
+			return nil, err
+		}
 	}
-	// TODO Labels
 	for _, field := range schema.Fields() {
 		sdkField := &Field{
 			Name: field.Name,
@@ -220,7 +228,6 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 	rIdx := 0
 	for {
 		record, err := fR.Read()
-		fmt.Println(rIdx, err)
 		if err == io.EOF {
 			break
 		}

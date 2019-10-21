@@ -184,6 +184,25 @@ func (l Labels) String() string {
 	return sb.String()
 }
 
+// LabelsFromString parses the output of Labels.String() into
+// a Labels object. It probably has some flaws.
+func LabelsFromString(s string) (Labels, error) {
+	labels := make(map[string]string)
+	if s == "" {
+		return labels, nil
+	}
+
+	for _, rawKV := range strings.Split(s, ", ") {
+		kV := strings.SplitN(rawKV, "=", 2)
+		if len(kV) != 2 {
+			return nil, fmt.Errorf(`invalid label key=value pair "%v"`, rawKV)
+		}
+		labels[kV[0]] = kV[1]
+	}
+
+	return labels, nil
+}
+
 // Frame represents a columnar storage with optional labels.
 type Frame struct {
 	Name   string
