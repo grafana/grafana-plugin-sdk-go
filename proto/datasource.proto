@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "datasource";
+option go_package = "github.com/grafana/grafana-plugin-sdk-go/genproto/datasource";
 
 package modelsV2;
 
@@ -49,17 +49,4 @@ service DatasourcePlugin {
     rpc Query(DatasourceRequest) returns (DatasourceResponse);
 }
 
-message QueryDatasourceRequest {
-  TimeRange timeRange = 1;
-  int64 datasourceId = 2;
-  repeated Query queries = 3;
-  int64 orgId = 4;
-}
 
-message QueryDatasourceResponse {
-  repeated QueryResult results = 1;
-}
-
-service GrafanaAPI {
-    rpc QueryDatasource(QueryDatasourceRequest) returns (QueryDatasourceResponse);
-}
