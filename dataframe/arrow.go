@@ -186,10 +186,11 @@ func fieldToArrow(f FieldType) (arrow.DataType, error) {
 func UnMarshalArrow(b []byte) (*Frame, error) {
 	fB := filebuffer.New(b)
 	fR, err := ipc.NewFileReader(fB)
-	defer fR.Close()
 	if err != nil {
 		return nil, err
 	}
+	defer fR.Close()
+
 	schema := fR.Schema()
 	metaData := schema.Metadata()
 	frame := &Frame{}
