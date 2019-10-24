@@ -2,6 +2,8 @@ package dataframe
 
 import (
 	"fmt"
+	"io"
+	"time"
 
 	"github.com/apache/arrow/go/arrow"
 	"github.com/apache/arrow/go/arrow/array"
@@ -178,4 +180,83 @@ func fieldToArrow(f FieldType) (arrow.DataType, error) {
 	default:
 		return nil, fmt.Errorf("unsupported type: %s", f)
 	}
+}
+
+// UnMarshalArrow converts a byte representation of an arrow table to a Frame
+func UnMarshalArrow(b []byte) (*Frame, error) {
+	fB := filebuffer.New(b)
+	fR, err := ipc.NewFileReader(fB)
+	defer fR.Close()
+	if err != nil {
+		return nil, err
+	}
+	schema := fR.Schema()
+	metaData := schema.Metadata()
+	frame := &Frame{}
+	getMDKey := func(key string) (string, bool) {
+		idx := metaData.FindKey(key)
+		if idx < 0 {
+			return "", false
+		}
+		return metaData.Values()[idx], true
+	}
+	frame.Name, _ = getMDKey("name") // No need to check ok, zero value ("") is returned
+	frame.RefID, _ = getMDKey("refId")
+	if labelsAsString, ok := getMDKey("labels"); ok {
+		frame.Labels, err = LabelsFromString(labelsAsString)
+		if err != nil {
+			return nil, err
+		}
+	}
+	for _, field := range schema.Fields() {
+		sdkField := &Field{
+			Name: field.Name,
+		}
+		switch field.Type.ID() {
+		case arrow.FLOAT64:
+			sdkField.Type = FieldTypeNumber
+			sdkField.Vector = newVector(FieldTypeNumber, 0)
+		case arrow.TIMESTAMP:
+			sdkField.Type = FieldTypeTime
+			sdkField.Vector = newVector(FieldTypeTime, 0)
+		default:
+			return nil, fmt.Errorf("unsupported arrow type %s for conversion", field.Type)
+		}
+		frame.Fields = append(frame.Fields, sdkField)
+	}
+
+	rIdx := 0
+	for {
+		record, err := fR.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+		for i := 0; i < len(frame.Fields); i++ {
+			col := record.Column(i)
+			switch col.DataType().ID() {
+			case arrow.FLOAT64:
+				v := array.NewFloat64Data(col.Data())
+				for _, f := range v.Float64Values() {
+					vF := f
+					vec := append(*frame.Fields[i].Vector.(*floatVector), &vF)
+					frame.Fields[i].Vector = &vec
+				}
+			case arrow.TIMESTAMP:
+				v := array.NewTimestampData(col.Data())
+				for _, ts := range v.TimestampValues() {
+					t := time.Unix(0, int64(ts)) // nanosecond assumption
+					vec := append(*frame.Fields[i].Vector.(*timeVector), &t)
+					frame.Fields[i].Vector = &vec
+				}
+			default:
+				return nil, fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())
+			}
+		}
+		rIdx++
+	}
+
+	return frame, nil
 }
