@@ -1,0 +1,13 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/golang:1.13
+    working_directory: ~/build
+    steps:
+      - checkout
+      - run:
+          name: Build
+          command: |
+            go build ./...
+            go test ./...
