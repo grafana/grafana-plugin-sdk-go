@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	gf "github.com/grafana/grafana-plugin-sdk-go"
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	gf "github.com/grafana/grafana-plugin-sdk-go/datasource"
 )
 
 const pluginID = "myorg-custom-datasource"
@@ -16,7 +16,7 @@ type MyDatasource struct {
 	logger *log.Logger
 }
 
-func (d *MyDatasource) Query(ctx context.Context, tr gf.TimeRange, ds gf.DataSourceInfo, queries []gf.Query, _ gf.GrafanaAPIHandler) ([]gf.QueryResult, error) {
+func (d *MyDatasource) Query(ctx context.Context, tr gf.TimeRange, ds gf.DataSourceInfo, queries []gf.Query) ([]gf.QueryResult, error) {
 	return []gf.QueryResult{
 		{
 			RefID: "A",
