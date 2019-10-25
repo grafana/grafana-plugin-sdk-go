@@ -19,14 +19,14 @@ type TransformHandler interface {
 	Query(ctx context.Context, tr datasource.TimeRange, ds datasource.DataSourceInfo, queries []datasource.Query, api GrafanaAPIHandler) ([]datasource.QueryResult, error)
 }
 
-// transformPluginWrapper converts to and from protobuf types by allowing consumers to use the Handler interface.
+// transformPluginWrapper converts protobuf types to sdk go types - allowing consumers to use the TransformHandler interface.
 type transformPluginWrapper struct {
 	plugin.NetRPCUnsupportedPlugin
 
 	handler TransformHandler
 }
 
-// GrafanaAPIHandler handles data source queries.
+// GrafanaAPIHandler handles querying other data sources from the transform plugin.
 type GrafanaAPIHandler interface {
 	QueryDatasource(ctx context.Context, orgID int64, datasourceID int64, tr datasource.TimeRange, queries []datasource.Query) ([]datasource.DatasourceQueryResult, error)
 }
@@ -36,7 +36,7 @@ type GrafanaAPI interface {
 	QueryDatasource(ctx context.Context, req *ptrans.QueryDatasourceRequest) (*ptrans.QueryDatasourceResponse, error)
 }
 
-// grafanaAPIWrapper converts to and from Grafana types for calls from a datasource.
+// grafanaAPIWrapper converts protobuf types to sdk go types - allowing consumers to use the GrafanaAPIHandler interface.
 type grafanaAPIWrapper struct {
 	api GrafanaAPI
 }
