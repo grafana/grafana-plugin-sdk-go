@@ -9,5 +9,5 @@ jobs:
       - run:
           name: Build
           command: |
-            make test
             make lint
+            make test
