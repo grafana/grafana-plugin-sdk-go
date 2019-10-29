@@ -1,0 +1,48 @@
+syntax = "proto3";
+package pluginv2;
+import "common.proto";
+import "datasource.proto";
+
+message TransformQuery {
+  string refId = 1;
+  int64 maxDataPoints = 2;
+  int64 intervalMs = 3;
+  string modelJson = 4;
+}
+
+message TransformRequest {
+  TimeRange timeRange = 1;
+  DatasourceInfo datasource = 2;
+  repeated TransformQuery queries = 3;
+  uint32 requestId = 4;
+}
+
+message TransformResponse {
+  repeated TransformResult results = 1;
+}
+
+message TransformResult {
+  string error = 1;
+  string refId = 2;
+  string metaJson = 3;
+  repeated bytes dataframes = 4;
+}
+
+service TransformPlugin {
+    rpc Transform(TransformRequest) returns (TransformResponse);
+}
+
+service GrafanaAPI {
+    rpc QueryDatasource(QueryDatasourceRequest) returns (QueryDatasourceResponse);
+}
+
+message QueryDatasourceRequest {
+    TimeRange timeRange = 1;
+    int64 datasourceId = 2;
+    repeated DatasourceQuery queries = 3;
+    int64 orgId = 4;
+  }
+
+message QueryDatasourceResponse {
+  repeated DatasourceQueryResult results = 1;
+}

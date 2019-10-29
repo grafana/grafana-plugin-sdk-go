@@ -6,8 +6,8 @@ import (
 	"os"
 	"time"
 
-	gf "github.com/grafana/grafana-plugin-sdk-go"
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	"github.com/grafana/grafana-plugin-sdk-go/datasource"
 )
 
 const pluginID = "myorg-custom-datasource"
@@ -16,8 +16,8 @@ type MyDatasource struct {
 	logger *log.Logger
 }
 
-func (d *MyDatasource) Query(ctx context.Context, tr gf.TimeRange, ds gf.DataSourceInfo, queries []gf.Query, _ gf.GrafanaAPIHandler) ([]gf.QueryResult, error) {
-	return []gf.QueryResult{
+func (d *MyDatasource) Query(ctx context.Context, tr datasource.TimeRange, ds datasource.DataSourceInfo, queries []datasource.Query) ([]datasource.QueryResult, error) {
+	return []datasource.QueryResult{
 		{
 			RefID: "A",
 			DataFrames: []*dataframe.Frame{
@@ -46,13 +46,7 @@ func (d *MyDatasource) Query(ctx context.Context, tr gf.TimeRange, ds gf.DataSou
 func main() {
 	logger := log.New(os.Stderr, "", 0)
 
-	srv := gf.NewServer()
-
-	srv.HandleDataSource(pluginID, &MyDatasource{
-		logger: logger,
-	})
-
-	if err := srv.Serve(); err != nil {
+	if err := datasource.Serve(pluginID, &MyDatasource{logger: logger}); err != nil {
 		logger.Fatal(err)
 	}
 }

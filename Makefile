@@ -1,14 +1,10 @@
-SRC_DIR=./proto
-DST_DIR=./genproto
-
 all: build
 
-${DST_DIR}/datasource/datasource.pb.go: ${SRC_DIR}/datasource.proto
-	protoc -I=${SRC_DIR} --go_out=plugins=grpc:${DST_DIR}/datasource/ ${SRC_DIR}/datasource.proto
+protobuf:
+	bash scripts/protobuf-check.sh
+	bash proto/generate.sh
 
-build-proto: ${DST_DIR}/datasource/datasource.pb.go
-
-build: build-proto
+build:
 	go build ./...
 
-.PHONY: all build build-proto
+.PHONY: all build protobuf
