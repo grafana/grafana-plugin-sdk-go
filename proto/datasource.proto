@@ -1,52 +1,31 @@
 syntax = "proto3";
-option go_package = "github.com/grafana/grafana-plugin-sdk-go/genproto/datasource";
-
-package modelsV2;
+package pluginv2;
+import "common.proto";
 
 message DatasourceRequest {
   TimeRange timeRange = 1;
   DatasourceInfo datasource = 2;
-  repeated Query queries = 3;
-  uint32 requestId = 4;
+  repeated DatasourceQuery queries = 3;
 }
 
-message Query {
+message DatasourceQuery {
   string refId = 1;
   int64 maxDataPoints = 2;
   int64 intervalMs = 3;
   string modelJson = 4;
 }
 
-message TimeRange {
-  string fromRaw = 1;
-  string toRaw = 2;
-  int64 fromEpochMs = 3;
-  int64 toEpochMs = 4;
-}
-
 message DatasourceResponse {
-  repeated QueryResult results = 1;
+  repeated DatasourceQueryResult results = 1;
 }
 
-message QueryResult {
+message DatasourceQueryResult {
   string error = 1;
   string refId = 2;
   string metaJson = 3;
   repeated bytes dataframes = 4;
 }
 
-message DatasourceInfo {
-  int64 id = 1;
-  int64 orgId = 2;
-  string name = 3;
-  string type = 4;
-  string url = 5;
-  string jsonData = 6;
-  map<string,string> decryptedSecureJsonData = 7;
-}
-
 service DatasourcePlugin {
     rpc Query(DatasourceRequest) returns (DatasourceResponse);
 }
-
-
