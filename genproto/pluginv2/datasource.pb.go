@@ -24,9 +24,9 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type DatasourceRequest struct {
-	TimeRange            *TimeRange         `protobuf:"bytes,1,opt,name=timeRange,proto3" json:"timeRange,omitempty"`
-	Datasource           *DatasourceInfo    `protobuf:"bytes,2,opt,name=datasource,proto3" json:"datasource,omitempty"`
-	Queries              []*DatasourceQuery `protobuf:"bytes,3,rep,name=queries,proto3" json:"queries,omitempty"`
+	TimeRange            *TimeRange         `protobuf:"bytes,1,opt,name=timeRange" json:"timeRange,omitempty"`
+	Datasource           *DatasourceInfo    `protobuf:"bytes,2,opt,name=datasource" json:"datasource,omitempty"`
+	Queries              []*DatasourceQuery `protobuf:"bytes,3,rep,name=queries" json:"queries,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}           `json:"-"`
 	XXX_unrecognized     []byte             `json:"-"`
 	XXX_sizecache        int32              `json:"-"`
@@ -78,10 +78,10 @@ func (m *DatasourceRequest) GetQueries() []*DatasourceQuery {
 }
 
 type DatasourceQuery struct {
-	RefId                string   `protobuf:"bytes,1,opt,name=refId,proto3" json:"refId,omitempty"`
-	MaxDataPoints        int64    `protobuf:"varint,2,opt,name=maxDataPoints,proto3" json:"maxDataPoints,omitempty"`
-	IntervalMs           int64    `protobuf:"varint,3,opt,name=intervalMs,proto3" json:"intervalMs,omitempty"`
-	ModelJson            string   `protobuf:"bytes,4,opt,name=modelJson,proto3" json:"modelJson,omitempty"`
+	RefId                string   `protobuf:"bytes,1,opt,name=refId" json:"refId,omitempty"`
+	MaxDataPoints        int64    `protobuf:"varint,2,opt,name=maxDataPoints" json:"maxDataPoints,omitempty"`
+	IntervalMs           int64    `protobuf:"varint,3,opt,name=intervalMs" json:"intervalMs,omitempty"`
+	ModelJson            string   `protobuf:"bytes,4,opt,name=modelJson" json:"modelJson,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -140,7 +140,7 @@ func (m *DatasourceQuery) GetModelJson() string {
 }
 
 type DatasourceResponse struct {
-	Results              []*DatasourceQueryResult `protobuf:"bytes,1,rep,name=results,proto3" json:"results,omitempty"`
+	Results              []*DatasourceQueryResult `protobuf:"bytes,1,rep,name=results" json:"results,omitempty"`
 	XXX_NoUnkeyedLiteral struct{}                 `json:"-"`
 	XXX_unrecognized     []byte                   `json:"-"`
 	XXX_sizecache        int32                    `json:"-"`
@@ -178,9 +178,9 @@ func (m *DatasourceResponse) GetResults() []*DatasourceQueryResult {
 }
 
 type DatasourceQueryResult struct {
-	Error                string   `protobuf:"bytes,1,opt,name=error,proto3" json:"error,omitempty"`
-	RefId                string   `protobuf:"bytes,2,opt,name=refId,proto3" json:"refId,omitempty"`
-	MetaJson             string   `protobuf:"bytes,3,opt,name=metaJson,proto3" json:"metaJson,omitempty"`
+	Error                string   `protobuf:"bytes,1,opt,name=error" json:"error,omitempty"`
+	RefId                string   `protobuf:"bytes,2,opt,name=refId" json:"refId,omitempty"`
+	MetaJson             string   `protobuf:"bytes,3,opt,name=metaJson" json:"metaJson,omitempty"`
 	Dataframes           [][]byte `protobuf:"bytes,4,rep,name=dataframes,proto3" json:"dataframes,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
@@ -278,7 +278,8 @@ func (c *datasourcePluginClient) Query(ctx context.Context, in *DatasourceReques
 	return out, nil
 }
 
-// DatasourcePluginServer is the server API for DatasourcePlugin service.
+// Server API for DatasourcePlugin service
+
 type DatasourcePluginServer interface {
 	Query(context.Context, *DatasourceRequest) (*DatasourceResponse, error)
 }

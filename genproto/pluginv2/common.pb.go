@@ -19,10 +19,10 @@ var _ = math.Inf
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
 type TimeRange struct {
-	FromRaw              string   `protobuf:"bytes,1,opt,name=fromRaw,proto3" json:"fromRaw,omitempty"`
-	ToRaw                string   `protobuf:"bytes,2,opt,name=toRaw,proto3" json:"toRaw,omitempty"`
-	FromEpochMs          int64    `protobuf:"varint,3,opt,name=fromEpochMs,proto3" json:"fromEpochMs,omitempty"`
-	ToEpochMs            int64    `protobuf:"varint,4,opt,name=toEpochMs,proto3" json:"toEpochMs,omitempty"`
+	FromRaw              string   `protobuf:"bytes,1,opt,name=fromRaw" json:"fromRaw,omitempty"`
+	ToRaw                string   `protobuf:"bytes,2,opt,name=toRaw" json:"toRaw,omitempty"`
+	FromEpochMs          int64    `protobuf:"varint,3,opt,name=fromEpochMs" json:"fromEpochMs,omitempty"`
+	ToEpochMs            int64    `protobuf:"varint,4,opt,name=toEpochMs" json:"toEpochMs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -81,13 +81,13 @@ func (m *TimeRange) GetToEpochMs() int64 {
 }
 
 type DatasourceInfo struct {
-	Id                      int64             `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	OrgId                   int64             `protobuf:"varint,2,opt,name=orgId,proto3" json:"orgId,omitempty"`
-	Name                    string            `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
-	Type                    string            `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
-	Url                     string            `protobuf:"bytes,5,opt,name=url,proto3" json:"url,omitempty"`
-	JsonData                string            `protobuf:"bytes,6,opt,name=jsonData,proto3" json:"jsonData,omitempty"`
-	DecryptedSecureJsonData map[string]string `protobuf:"bytes,7,rep,name=decryptedSecureJsonData,proto3" json:"decryptedSecureJsonData,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	Id                      int64             `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
+	OrgId                   int64             `protobuf:"varint,2,opt,name=orgId" json:"orgId,omitempty"`
+	Name                    string            `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
+	Type                    string            `protobuf:"bytes,4,opt,name=type" json:"type,omitempty"`
+	Url                     string            `protobuf:"bytes,5,opt,name=url" json:"url,omitempty"`
+	JsonData                string            `protobuf:"bytes,6,opt,name=jsonData" json:"jsonData,omitempty"`
+	DecryptedSecureJsonData map[string]string `protobuf:"bytes,7,rep,name=decryptedSecureJsonData" json:"decryptedSecureJsonData,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	XXX_NoUnkeyedLiteral    struct{}          `json:"-"`
 	XXX_unrecognized        []byte            `json:"-"`
 	XXX_sizecache           int32             `json:"-"`

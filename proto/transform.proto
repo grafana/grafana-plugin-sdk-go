@@ -12,7 +12,6 @@ message TransformQuery {
 
 message TransformRequest {
   TimeRange timeRange = 1;
-  DatasourceInfo datasource = 2;
   repeated TransformQuery queries = 3;
   uint32 requestId = 4;
 }
