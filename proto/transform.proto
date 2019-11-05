@@ -12,8 +12,8 @@ message TransformQuery {
 
 message TransformRequest {
   TimeRange timeRange = 1;
-  repeated TransformQuery queries = 3;
-  uint32 requestId = 4;
+  repeated TransformQuery queries = 2;
+  uint32 requestId = 3;
 }
 
 message TransformResponse {

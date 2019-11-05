@@ -3,9 +3,11 @@
 
 package pluginv2
 
-import proto "github.com/golang/protobuf/proto"
-import fmt "fmt"
-import math "math"
+import (
+	fmt "fmt"
+	proto "github.com/golang/protobuf/proto"
+	math "math"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -16,13 +18,13 @@ var _ = math.Inf
 // is compatible with the proto package it is being compiled against.
 // A compilation error at this line likely means your copy of the
 // proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
+const _ = proto.ProtoPackageIsVersion3 // please upgrade the proto package
 
 type TimeRange struct {
-	FromRaw              string   `protobuf:"bytes,1,opt,name=fromRaw" json:"fromRaw,omitempty"`
-	ToRaw                string   `protobuf:"bytes,2,opt,name=toRaw" json:"toRaw,omitempty"`
-	FromEpochMs          int64    `protobuf:"varint,3,opt,name=fromEpochMs" json:"fromEpochMs,omitempty"`
-	ToEpochMs            int64    `protobuf:"varint,4,opt,name=toEpochMs" json:"toEpochMs,omitempty"`
+	FromRaw              string   `protobuf:"bytes,1,opt,name=fromRaw,proto3" json:"fromRaw,omitempty"`
+	ToRaw                string   `protobuf:"bytes,2,opt,name=toRaw,proto3" json:"toRaw,omitempty"`
+	FromEpochMs          int64    `protobuf:"varint,3,opt,name=fromEpochMs,proto3" json:"fromEpochMs,omitempty"`
+	ToEpochMs            int64    `protobuf:"varint,4,opt,name=toEpochMs,proto3" json:"toEpochMs,omitempty"`
 	XXX_NoUnkeyedLiteral struct{} `json:"-"`
 	XXX_unrecognized     []byte   `json:"-"`
 	XXX_sizecache        int32    `json:"-"`
@@ -32,16 +34,17 @@ func (m *TimeRange) Reset()         { *m = TimeRange{} }
 func (m *TimeRange) String() string { return proto.CompactTextString(m) }
 func (*TimeRange) ProtoMessage()    {}
 func (*TimeRange) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_efe63640b8634961, []int{0}
+	return fileDescriptor_555bd8c177793206, []int{0}
 }
+
 func (m *TimeRange) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_TimeRange.Unmarshal(m, b)
 }
 func (m *TimeRange) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_TimeRange.Marshal(b, m, deterministic)
 }
-func (dst *TimeRange) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_TimeRange.Merge(dst, src)
+func (m *TimeRange) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_TimeRange.Merge(m, src)
 }
 func (m *TimeRange) XXX_Size() int {
 	return xxx_messageInfo_TimeRange.Size(m)
@@ -81,13 +84,13 @@ func (m *TimeRange) GetToEpochMs() int64 {
 }
 
 type DatasourceInfo struct {
-	Id                      int64             `protobuf:"varint,1,opt,name=id" json:"id,omitempty"`
-	OrgId                   int64             `protobuf:"varint,2,opt,name=orgId" json:"orgId,omitempty"`
-	Name                    string            `protobuf:"bytes,3,opt,name=name" json:"name,omitempty"`
-	Type                    string            `protobuf:"bytes,4,opt,name=type" json:"type,omitempty"`
-	Url                     string            `protobuf:"bytes,5,opt,name=url" json:"url,omitempty"`
-	JsonData                string            `protobuf:"bytes,6,opt,name=jsonData" json:"jsonData,omitempty"`
-	DecryptedSecureJsonData map[string]string `protobuf:"bytes,7,rep,name=decryptedSecureJsonData" json:"decryptedSecureJsonData,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Id                      int64             `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	OrgId                   int64             `protobuf:"varint,2,opt,name=orgId,proto3" json:"orgId,omitempty"`
+	Name                    string            `protobuf:"bytes,3,opt,name=name,proto3" json:"name,omitempty"`
+	Type                    string            `protobuf:"bytes,4,opt,name=type,proto3" json:"type,omitempty"`
+	Url                     string            `protobuf:"bytes,5,opt,name=url,proto3" json:"url,omitempty"`
+	JsonData                string            `protobuf:"bytes,6,opt,name=jsonData,proto3" json:"jsonData,omitempty"`
+	DecryptedSecureJsonData map[string]string `protobuf:"bytes,7,rep,name=decryptedSecureJsonData,proto3" json:"decryptedSecureJsonData,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	XXX_NoUnkeyedLiteral    struct{}          `json:"-"`
 	XXX_unrecognized        []byte            `json:"-"`
 	XXX_sizecache           int32             `json:"-"`
@@ -97,16 +100,17 @@ func (m *DatasourceInfo) Reset()         { *m = DatasourceInfo{} }
 func (m *DatasourceInfo) String() string { return proto.CompactTextString(m) }
 func (*DatasourceInfo) ProtoMessage()    {}
 func (*DatasourceInfo) Descriptor() ([]byte, []int) {
-	return fileDescriptor_common_efe63640b8634961, []int{1}
+	return fileDescriptor_555bd8c177793206, []int{1}
 }
+
 func (m *DatasourceInfo) XXX_Unmarshal(b []byte) error {
 	return xxx_messageInfo_DatasourceInfo.Unmarshal(m, b)
 }
 func (m *DatasourceInfo) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
 	return xxx_messageInfo_DatasourceInfo.Marshal(b, m, deterministic)
 }
-func (dst *DatasourceInfo) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_DatasourceInfo.Merge(dst, src)
+func (m *DatasourceInfo) XXX_Merge(src proto.Message) {
+	xxx_messageInfo_DatasourceInfo.Merge(m, src)
 }
 func (m *DatasourceInfo) XXX_Size() int {
 	return xxx_messageInfo_DatasourceInfo.Size(m)
@@ -172,9 +176,9 @@ func init() {
 	proto.RegisterMapType((map[string]string)(nil), "pluginv2.DatasourceInfo.DecryptedSecureJsonDataEntry")
 }
 
-func init() { proto.RegisterFile("common.proto", fileDescriptor_common_efe63640b8634961) }
+func init() { proto.RegisterFile("common.proto", fileDescriptor_555bd8c177793206) }
 
-var fileDescriptor_common_efe63640b8634961 = []byte{
+var fileDescriptor_555bd8c177793206 = []byte{
 	// 296 bytes of a gzipped FileDescriptorProto
 	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0x7c, 0x91, 0xcf, 0x4a, 0xc3, 0x40,
 	0x10, 0xc6, 0x49, 0xb6, 0xff, 0x32, 0x95, 0x22, 0x8b, 0x60, 0x28, 0x3d, 0x84, 0x9e, 0x72, 0xca,
