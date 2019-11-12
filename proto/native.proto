@@ -1,0 +1,143 @@
+syntax = "proto3";
+package pluginv2;
+
+//-----------------------------------------------
+// Base
+//-----------------------------------------------
+
+message PluginInfo {
+  int64 id = 1;
+  int64 orgId = 2;
+  string name = 3;
+  string type = 4;
+  string url = 5;
+  string jsonData = 6;
+  map<string,string> decryptedSecureJsonData = 7;
+}
+
+message TimeRange {
+  string fromRaw = 1;
+  string toRaw = 2;
+  int64 fromEpochMs = 3;
+  int64 toEpochMs = 4;
+}
+
+
+//-----------------------------------------------
+// QUERY
+//-----------------------------------------------
+
+message QueryRequest {
+  // Plugin Configuration
+  PluginConfig config = 2;
+
+  // List of queries
+  repeated DataQuery queries = 3;
+
+  // Environment: with enterprise license, also pass:
+  //  user info?
+  //  license info?
+  map<string,string> env = 7; // JWT, etc??
+}
+
+message DataQuery {
+  string refId = 1;
+  int64 maxDataPoints = 2;
+  int64 intervalMs = 3;
+  TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
+  string json = 4; // Arbitrary structure (model?  modelJson in v1)
+}
+
+message QueryResponse {
+  // Arrow encoded DataFrames
+  // Each frame encodes its own: Errors, meta, and refId
+  repeated bytes data = 1;
+
+  // Include etag for caching?
+  // other cache headers?
+  map<string,string> headers = 2; // ??? or more specific?
+}
+
+
+//-----------------------------------------------
+// Streaming Query
+//-----------------------------------------------
+
+message StreamRequest {
+  // Plugin Configuration Info
+  PluginConfig config = 2;
+
+  // Single Query
+  DataQuery query = 3;
+
+  // Environment (with enterprise license, this includes user info?)
+  map<string,string> env = 7; // JWT, etc??
+}
+
+message StreamResponse {
+  enum Action {
+    HEARTBEAT = 0; // Do not do anythign with the data -- just note we are alive
+    REPLACE = 1; // Replace everything in the DataFrame
+    APPEND = 2; // Add rows to the end (assumes structure is the same)
+    TEE = 3; // The client should 'listen' to the open stream with the given key
+    FINISH = 4; // Indicate that the stream will not get anymore data
+  }
+  Action action = 1;
+
+  // Arrow encoded DataFrame
+  bytes data = 2;
+
+  // UUID for the stream response - additional clients for the same data
+  // should
+  string key = 3;
+}
+
+
+//-----------------------------------------------
+// RESTish (proxy/ arbitrary path)
+//-----------------------------------------------
+
+message RESTishRequest {
+  // Plugin Configuration
+  PluginConfig config = 2;
+
+  // HTTP Style Info
+  string method = 4; // GET/POST/DELETE
+  string path = 1;   //
+  string body = 4;   // JSON?
+
+  // Grafana environment:
+  // enterprise license flags
+  map<string,string> env = 7;
+}
+
+message RESTishResponse {
+  int64 code = 1; // 200 is OK
+  string body = 3; // JSON
+}
+
+
+//-----------------------------------------------
+// General RPC Service
+//-----------------------------------------------
+
+service NativePlugin {
+  // Security???
+  //   /api/plugin/$pluginId/request
+  // Any logged in (or if anon allowed)
+  // With enterprise:
+  //  1. team access to datasource
+  //  2. pass along user info
+  //
+  // out-of-the-box expected endpoints:
+  // GET system/health > healthcheck
+  // GET system/metrics > return prometheus style metrics text
+  rpc Request(RESTishRequest) returns (RESTishResponse);
+
+  // Well typed query interface
+  rpc Query(QueryRequest) returns (QueryResponse);
+
+  // Grafana backend support via websockets
+  rpc Stream(StreamRequest) returns (stream StreamResponse);
+}
+
