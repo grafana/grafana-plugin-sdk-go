@@ -14,22 +14,36 @@ import (
 
 var update = flag.Bool("update", false, "update .golden.arrow files")
 
-func TestEncode(t *testing.T) {
-	df := dataframe.New("http_requests_total", dataframe.Labels{"service": "auth"},
+func goldenDF() *dataframe.Frame {
+	df := dataframe.New("many_types", dataframe.Labels{"haz": "da_types"},
 		dataframe.NewField("timestamp", []time.Time{
 			time.Unix(1568039445, 0),
 			time.Unix(1568039450, 0),
 			time.Unix(1568039455, 0),
 		}),
-		dataframe.NewField("value", []float64{
+		dataframe.NewField("nullable_timestamp", []*time.Time{
+			timePtr(time.Unix(1568039445, 0)),
+			nil,
+			timePtr(time.Unix(1568039455, 0)),
+		}),
+		dataframe.NewField("float_value", []float64{
 			0.0,
 			1.0,
 			2.0,
 		}),
+		dataframe.NewField("nullable_float_value", []*float64{
+			floatPtr(0.0),
+			nil,
+			floatPtr(2.0),
+		}),
 	)
 
 	df.RefID = "A"
+	return df
+}
 
+func TestEncode(t *testing.T) {
+	df := goldenDF()
 	b, err := dataframe.MarshalArrow(df)
 	if err != nil {
 		t.Fatal(err)
@@ -54,20 +68,6 @@ func TestEncode(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	df := dataframe.New("http_requests_total", dataframe.Labels{"service": "auth"},
-		dataframe.NewField("timestamp", []time.Time{
-			time.Unix(1568039445, 0),
-			time.Unix(1568039450, 0),
-			time.Unix(1568039455, 0),
-		}),
-		dataframe.NewField("value", []float64{
-			0.0,
-			1.0,
-			2.0,
-		}),
-	)
-
-	df.RefID = "A"
 	goldenFile := filepath.Join("testdata", "timeseries.golden.arrow")
 	b, err := ioutil.ReadFile(goldenFile)
 	if err != nil {
@@ -79,5 +79,6 @@ func TestDecode(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	df := goldenDF()
 	assert.Equal(t, df, newDf)
 }

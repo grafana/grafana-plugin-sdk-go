@@ -105,3 +105,7 @@ func TestTimeField(t *testing.T) {
 func timePtr(t time.Time) *time.Time {
 	return &t
 }
+
+func floatPtr(f float64) *float64 {
+	return &f
+}

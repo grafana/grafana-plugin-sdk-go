@@ -119,7 +119,6 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	return columns, nil
 }
 
-
 // buildArrowSchema builds an Arrow schema for a DataFrame.
 func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 	tableMetaMap := map[string]string{
@@ -188,27 +187,27 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 			return nil, err
 		}
 	}
-	for _, field := range schema.Fields() {
+	nullable := make([]bool, len(schema.Fields()))
+	for idx, field := range schema.Fields() {
 		sdkField := &Field{
 			Name: field.Name,
 		}
-		nullable := field.Nullable
+		nullable[idx] = field.Nullable
 		switch field.Type.ID() {
 		case arrow.FLOAT64:
-			if nullable {
+			if nullable[idx] {
 				sdkField.Vector = newNullableFloatVector(0)
 			} else {
-				return nil, fmt.Errorf("(todo) unsupported arrow vector type %T with nullable set to %v", arrow.FLOAT64, nullable)
+				sdkField.Vector = newFloatVector(0)
 			}
-
 		case arrow.TIMESTAMP:
-			if nullable {
+			if nullable[idx] {
 				sdkField.Vector = newNullableTimeVector(0)
 			} else {
-				return nil, fmt.Errorf("(todo) unsupported arrow vector type %T with nullable set to %v", arrow.FLOAT64, nullable)
+				sdkField.Vector = newTimeVector(0)
 			}
 		default:
-			return nil, fmt.Errorf("unsupported arrow type %s for conversion", field.Type)
+			return nil, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %s", field.Type)
 		}
 		frame.Fields = append(frame.Fields, sdkField)
 	}
@@ -227,15 +226,33 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 			switch col.DataType().ID() {
 			case arrow.FLOAT64:
 				v := array.NewFloat64Data(col.Data())
-				for _, f := range v.Float64Values() {
-					vF := f
-					frame.Fields[i].Vector.Append(&vF)
+				for vIdx, f := range v.Float64Values() {
+					if nullable[i] {
+						if v.IsNull(vIdx) {
+							var nf *float64
+							frame.Fields[i].Vector.Append(nf)
+							continue
+						}
+						vF := f
+						frame.Fields[i].Vector.Append(&vF)
+						continue
+					}
+					frame.Fields[i].Vector.Append(f)
 				}
 			case arrow.TIMESTAMP:
 				v := array.NewTimestampData(col.Data())
-				for _, ts := range v.TimestampValues() {
+				for vIdx, ts := range v.TimestampValues() {
 					t := time.Unix(0, int64(ts)) // nanosecond assumption
-					frame.Fields[i].Vector.Append(&t)
+					if nullable[i] {
+						if v.IsNull(vIdx) {
+							var nt *time.Time
+							frame.Fields[i].Vector.Append(nt)
+							continue
+						}
+						frame.Fields[i].Vector.Append(&t)
+						continue
+					}
+					frame.Fields[i].Vector.Append(t)
 				}
 			default:
 				return nil, fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())
