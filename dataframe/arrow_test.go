@@ -16,25 +16,45 @@ var update = flag.Bool("update", false, "update .golden.arrow files")
 
 func goldenDF() *dataframe.Frame {
 	df := dataframe.New("many_types", dataframe.Labels{"haz": "da_types"},
-		dataframe.NewField("timestamp", []time.Time{
-			time.Unix(1568039445, 0),
-			time.Unix(1568039450, 0),
-			time.Unix(1568039455, 0),
+		dataframe.NewField("string_values", []string{
+			"Grafana",
+			"❤️",
+			"Transforms",
 		}),
-		dataframe.NewField("nullable_timestamp", []*time.Time{
-			timePtr(time.Unix(1568039445, 0)),
+		dataframe.NewField("nullable_string_values", []*string{
+			stringPtr("🦥"),
 			nil,
-			timePtr(time.Unix(1568039455, 0)),
+			stringPtr("update your unicode/font if no sloth, is 2019."),
 		}),
-		dataframe.NewField("float_value", []float64{
+		dataframe.NewField("float_values", []float64{
 			0.0,
 			1.0,
 			2.0,
 		}),
-		dataframe.NewField("nullable_float_value", []*float64{
+		dataframe.NewField("nullable_float_values", []*float64{
 			floatPtr(0.0),
 			nil,
 			floatPtr(2.0),
+		}),
+		dataframe.NewField("bool_values", []bool{
+			true,
+			true,
+			false,
+		}),
+		dataframe.NewField("nullable_bool_values", []*bool{
+			boolPtr(true),
+			nil,
+			boolPtr(false),
+		}),
+		dataframe.NewField("timestamps", []time.Time{
+			time.Unix(1568039445, 0),
+			time.Unix(1568039450, 0),
+			time.Unix(1568039455, 0),
+		}),
+		dataframe.NewField("nullable_timestamps", []*time.Time{
+			timePtr(time.Unix(1568039445, 0)),
+			nil,
+			timePtr(time.Unix(1568039455, 0)),
 		}),
 	)
 

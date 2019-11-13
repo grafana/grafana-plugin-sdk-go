@@ -15,22 +15,22 @@ type Vector interface {
 
 func newVector(t interface{}, n int) (v Vector) {
 	switch t.(type) {
-	case []float64:
-		v = newFloatVector(n)
-	case []*float64:
-		v = newNullableFloatVector(n)
-	case []time.Time:
-		v = newTimeVector(n)
-	case []*time.Time:
-		v = newNullableTimeVector(n)
 	case []string:
 		v = newStringVector(n)
 	case []*string:
 		v = newNullableStringVector(n)
+	case []float64:
+		v = newFloatVector(n)
+	case []*float64:
+		v = newNullableFloatVector(n)
 	case []bool:
 		v = newBoolVector(n)
 	case []*bool:
 		v = newNullableBoolVector(n)
+	case []time.Time:
+		v = newTimeVector(n)
+	case []*time.Time:
+		v = newNullableTimeVector(n)
 	default:
 		panic(fmt.Sprintf("unsupported vector type of %T", t))
 	}

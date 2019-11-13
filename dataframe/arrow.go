@@ -102,10 +102,20 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	for fieldIdx, field := range f.Fields {
 		switch v := field.Vector.(type) {
 
+		case *stringVector:
+			columns[fieldIdx] = *buildStringColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableStringVector:
+			columns[fieldIdx] = *buildNullableStringColumn(pool, arrowFields[fieldIdx], v)
+
 		case *floatVector:
 			columns[fieldIdx] = *buildFloatColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableFloatVector:
 			columns[fieldIdx] = *buildNullableFloatColumn(pool, arrowFields[fieldIdx], v)
+
+		case *boolVector:
+			columns[fieldIdx] = *buildBoolColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableBoolVector:
+			columns[fieldIdx] = *buildNullableBoolColumn(pool, arrowFields[fieldIdx], v)
 
 		case *timeVector:
 			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], v)
@@ -150,6 +160,11 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableFloatVector:
 		return &arrow.Float64Type{}, true, nil
 
+	case *boolVector:
+		return &arrow.BooleanType{}, false, nil
+	case *nullableBoolVector:
+		return &arrow.BooleanType{}, true, nil
+
 	case *timeVector:
 		return &arrow.TimestampType{}, false, nil
 	case *nullableTimeVector:
@@ -161,6 +176,7 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 }
 
 // UnMarshalArrow converts a byte representation of an arrow table to a Frame
+// TODO: Break up this function.
 func UnMarshalArrow(b []byte) (*Frame, error) {
 	fB := filebuffer.New(b)
 	fR, err := ipc.NewFileReader(fB)
@@ -194,11 +210,23 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 		}
 		nullable[idx] = field.Nullable
 		switch field.Type.ID() {
+		case arrow.STRING:
+			if nullable[idx] {
+				sdkField.Vector = newNullableStringVector(0)
+			} else {
+				sdkField.Vector = newStringVector(0)
+			}
 		case arrow.FLOAT64:
 			if nullable[idx] {
 				sdkField.Vector = newNullableFloatVector(0)
 			} else {
 				sdkField.Vector = newFloatVector(0)
+			}
+		case arrow.BOOL:
+			if nullable[idx] {
+				sdkField.Vector = newNullableBoolVector(0)
+			} else {
+				sdkField.Vector = newBoolVector(0)
 			}
 		case arrow.TIMESTAMP:
 			if nullable[idx] {
@@ -207,7 +235,7 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 				sdkField.Vector = newTimeVector(0)
 			}
 		default:
-			return nil, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %s", field.Type)
+			return nil, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 		}
 		frame.Fields = append(frame.Fields, sdkField)
 	}
@@ -224,6 +252,21 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 		for i := 0; i < len(frame.Fields); i++ {
 			col := record.Column(i)
 			switch col.DataType().ID() {
+			case arrow.STRING:
+				v := array.NewStringData(col.Data())
+				for sIdx := 0; sIdx < col.Len(); sIdx++ {
+					if nullable[i] {
+						if v.IsNull(sIdx) {
+							var ns *string
+							frame.Fields[i].Vector.Append(ns)
+							continue
+						}
+						vS := v.Value(sIdx)
+						frame.Fields[i].Vector.Append(&vS)
+						continue
+					}
+					frame.Fields[i].Vector.Append(v.Value(sIdx))
+				}
 			case arrow.FLOAT64:
 				v := array.NewFloat64Data(col.Data())
 				for vIdx, f := range v.Float64Values() {
@@ -238,6 +281,21 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 						continue
 					}
 					frame.Fields[i].Vector.Append(f)
+				}
+			case arrow.BOOL:
+				v := array.NewBooleanData(col.Data())
+				for sIdx := 0; sIdx < col.Len(); sIdx++ {
+					if nullable[i] {
+						if v.IsNull(sIdx) {
+							var ns *bool
+							frame.Fields[i].Vector.Append(ns)
+							continue
+						}
+						vB := v.Value(sIdx)
+						frame.Fields[i].Vector.Append(&vB)
+						continue
+					}
+					frame.Fields[i].Vector.Append(v.Value(sIdx))
 				}
 			case arrow.TIMESTAMP:
 				v := array.NewTimestampData(col.Data())
