@@ -28,16 +28,14 @@ message TimeRange {
 //-----------------------------------------------
 
 message QueryRequest {
+  // Environment info
+  map<string,string> env = 3;
+
   // Plugin Configuration
-  PluginConfig config = 2;
+  PluginConfig config = 1;
 
   // List of queries
-  repeated DataQuery queries = 3;
-
-  // Environment: with enterprise license, also pass:
-  //  user info?
-  //  license info?
-  map<string,string> env = 7; // JWT, etc??
+  repeated DataQuery queries = 2;
 }
 
 message DataQuery {
@@ -45,7 +43,7 @@ message DataQuery {
   int64 maxDataPoints = 2;
   int64 intervalMs = 3;
   TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
-  string json = 4; // Arbitrary structure (model?  modelJson in v1)
+  string json = 5; // Arbitrary structure (model?  modelJson in v1)
 }
 
 message QueryResponse {
@@ -53,25 +51,24 @@ message QueryResponse {
   // Each frame encodes its own: Errors, meta, and refId
   repeated bytes data = 1;
 
-  // Include etag for caching?
-  // other cache headers?
-  map<string,string> headers = 2; // ??? or more specific?
+  // Additional response metadata
+  map<string,string> meta = 2;
 }
 
 
 //-----------------------------------------------
-// Streaming Query
+// Streaming Query (alpha API)
 //-----------------------------------------------
 
 message StreamRequest {
-  // Plugin Configuration Info
-  PluginConfig config = 2;
+  // Environment info
+  map<string,string> env = 3;
+
+  // Plugin Configuration
+  PluginConfig config = 1;
 
   // Single Query
   DataQuery query = 3;
-
-  // Environment (with enterprise license, this includes user info?)
-  map<string,string> env = 7; // JWT, etc??
 }
 
 message StreamResponse {
@@ -98,22 +95,22 @@ message StreamResponse {
 //-----------------------------------------------
 
 message RESTishRequest {
+  // Environment info
+  map<string,string> env = 1;
+
   // Plugin Configuration
   PluginConfig config = 2;
 
-  // HTTP Style Info
-  string method = 4; // GET/POST/DELETE
-  string path = 1;   //
-  string body = 4;   // JSON?
-
-  // Grafana environment:
-  // enterprise license flags
-  map<string,string> env = 7;
+  // HTTP Style parameters
+  string method = 3; // GET/POST/DELETE/etc
+  string path = 4;   // (with params?)
+  string body = 5;   // JSON?
 }
 
 message RESTishResponse {
-  int64 code = 1; // 200 is OK
-  string body = 3; // JSON
+  int64 code = 1;  // 200 is OK
+  bytes body = 2;
+  string contentType = 3; // JSON, text, image, etc
 }
 
 
@@ -121,7 +118,7 @@ message RESTishResponse {
 // General RPC Service
 //-----------------------------------------------
 
-service NativePlugin {
+service BackendPlugin {
   // Security???
   //   /api/plugin/$pluginId/request
   // Any logged in (or if anon allowed)
@@ -130,6 +127,7 @@ service NativePlugin {
   //  2. pass along user info
   //
   // out-of-the-box expected endpoints:
+  // GET system/api > OpenAPI documented endpoints
   // GET system/health > healthcheck
   // GET system/metrics > return prometheus style metrics text
   rpc Request(RESTishRequest) returns (RESTishResponse);
