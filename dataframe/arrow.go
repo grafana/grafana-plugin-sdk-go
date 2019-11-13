@@ -74,21 +74,20 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 	arrowFields := make([]arrow.Field, len(f.Fields))
 
 	for i, field := range f.Fields {
-		t, err := fieldToArrow(field.Type)
+		t, nullable, err := fieldToArrow(field)
 		if err != nil {
 			return nil, err
 		}
 
 		fieldMeta := map[string]string{
 			"name": field.Name,
-			"type": field.Type.String(),
 		}
 
 		arrowFields[i] = arrow.Field{
 			Name:     field.Name,
 			Type:     t,
 			Metadata: arrow.MetadataFrom(fieldMeta),
-			Nullable: true,
+			Nullable: nullable,
 		}
 	}
 
@@ -101,55 +100,25 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	columns := make([]array.Column, len(f.Fields))
 
 	for fieldIdx, field := range f.Fields {
-		switch field.Type {
-		case FieldTypeNumber:
-			columns[fieldIdx] = *buildFloatColumn(pool, arrowFields[fieldIdx], field.Vector.(*floatVector))
-		case FieldTypeTime:
-			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], field.Vector.(*timeVector))
+		switch v := field.Vector.(type) {
+
+		case *floatVector:
+			columns[fieldIdx] = *buildFloatColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableFloatVector:
+			columns[fieldIdx] = *buildNullableFloatColumn(pool, arrowFields[fieldIdx], v)
+
+		case *timeVector:
+			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableTimeVector:
+			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
+
 		default:
-			return nil, fmt.Errorf("unsupported field type: %s", field.Type)
+			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
 	}
 	return columns, nil
 }
 
-func buildFloatColumn(pool memory.Allocator, field arrow.Field, vec *floatVector) *array.Column {
-	builder := array.NewFloat64Builder(pool)
-	defer builder.Release()
-
-	for _, v := range *vec {
-		if v == nil {
-			builder.AppendNull()
-			continue
-		}
-		builder.Append(*v)
-	}
-
-	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
-	defer chunked.Release()
-
-	return array.NewColumn(field, chunked)
-}
-
-func buildTimeColumn(pool memory.Allocator, field arrow.Field, vec *timeVector) *array.Column {
-	builder := array.NewTimestampBuilder(pool, &arrow.TimestampType{
-		Unit: arrow.Nanosecond,
-	})
-	defer builder.Release()
-
-	for _, v := range *vec {
-		if v == nil {
-			builder.AppendNull()
-			continue
-		}
-		builder.Append(arrow.Timestamp((*v).UnixNano()))
-	}
-
-	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
-	defer chunked.Release()
-
-	return array.NewColumn(field, chunked)
-}
 
 // buildArrowSchema builds an Arrow schema for a DataFrame.
 func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
@@ -167,18 +136,28 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 	return arrow.NewSchema(fs, &tableMeta), nil
 }
 
-// fieldToArrow returns the corresponding Arrow primitive type to the fields'
+// fieldToArrow returns the corresponding Arrow primitive type and nullable property to the fields'
 // Vector primitives.
-func fieldToArrow(f FieldType) (arrow.DataType, error) {
-	switch f {
-	case FieldTypeString:
-		return &arrow.StringType{}, nil
-	case FieldTypeNumber:
-		return &arrow.Float64Type{}, nil
-	case FieldTypeTime:
-		return &arrow.TimestampType{}, nil
+func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
+	switch f.Vector.(type) {
+
+	case *stringVector:
+		return &arrow.StringType{}, false, nil
+	case *nullableStringVector:
+		return &arrow.StringType{}, true, nil
+
+	case *floatVector:
+		return &arrow.Float64Type{}, false, nil
+	case *nullableFloatVector:
+		return &arrow.Float64Type{}, true, nil
+
+	case *timeVector:
+		return &arrow.TimestampType{}, false, nil
+	case *nullableTimeVector:
+		return &arrow.TimestampType{}, true, nil
+
 	default:
-		return nil, fmt.Errorf("unsupported type: %s", f)
+		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.Vector)
 	}
 }
 
@@ -213,13 +192,21 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 		sdkField := &Field{
 			Name: field.Name,
 		}
+		nullable := field.Nullable
 		switch field.Type.ID() {
 		case arrow.FLOAT64:
-			sdkField.Type = FieldTypeNumber
-			sdkField.Vector = newVector(FieldTypeNumber, 0)
+			if nullable {
+				sdkField.Vector = newNullableFloatVector(0)
+			} else {
+				return nil, fmt.Errorf("(todo) unsupported arrow vector type %T with nullable set to %v", arrow.FLOAT64, nullable)
+			}
+
 		case arrow.TIMESTAMP:
-			sdkField.Type = FieldTypeTime
-			sdkField.Vector = newVector(FieldTypeTime, 0)
+			if nullable {
+				sdkField.Vector = newNullableTimeVector(0)
+			} else {
+				return nil, fmt.Errorf("(todo) unsupported arrow vector type %T with nullable set to %v", arrow.FLOAT64, nullable)
+			}
 		default:
 			return nil, fmt.Errorf("unsupported arrow type %s for conversion", field.Type)
 		}

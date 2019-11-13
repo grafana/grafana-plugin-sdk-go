@@ -16,12 +16,12 @@ var update = flag.Bool("update", false, "update .golden.arrow files")
 
 func TestEncode(t *testing.T) {
 	df := dataframe.New("http_requests_total", dataframe.Labels{"service": "auth"},
-		dataframe.NewField("timestamp", dataframe.FieldTypeTime, []time.Time{
+		dataframe.NewField("timestamp", []time.Time{
 			time.Unix(1568039445, 0),
 			time.Unix(1568039450, 0),
 			time.Unix(1568039455, 0),
 		}),
-		dataframe.NewField("value", dataframe.FieldTypeNumber, []float64{
+		dataframe.NewField("value", []float64{
 			0.0,
 			1.0,
 			2.0,
@@ -55,12 +55,12 @@ func TestEncode(t *testing.T) {
 
 func TestDecode(t *testing.T) {
 	df := dataframe.New("http_requests_total", dataframe.Labels{"service": "auth"},
-		dataframe.NewField("timestamp", dataframe.FieldTypeTime, []time.Time{
+		dataframe.NewField("timestamp", []time.Time{
 			time.Unix(1568039445, 0),
 			time.Unix(1568039450, 0),
 			time.Unix(1568039455, 0),
 		}),
-		dataframe.NewField("value", dataframe.FieldTypeNumber, []float64{
+		dataframe.NewField("value", []float64{
 			0.0,
 			1.0,
 			2.0,

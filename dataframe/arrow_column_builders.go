@@ -1,0 +1,75 @@
+package dataframe
+
+import (
+	"github.com/apache/arrow/go/arrow"
+	"github.com/apache/arrow/go/arrow/array"
+	"github.com/apache/arrow/go/arrow/memory"
+)
+
+func buildFloatColumn(pool memory.Allocator, field arrow.Field, vec *floatVector) *array.Column {
+	builder := array.NewFloat64Builder(pool)
+	defer builder.Release()
+
+	for _, v := range *vec {
+		builder.Append(v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildNullableFloatColumn(pool memory.Allocator, field arrow.Field, vec *nullableFloatVector) *array.Column {
+	builder := array.NewFloat64Builder(pool)
+	defer builder.Release()
+
+	for _, v := range *vec {
+		if v == nil {
+			builder.AppendNull()
+			continue
+		}
+		builder.Append(*v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildTimeColumn(pool memory.Allocator, field arrow.Field, vec *timeVector) *array.Column {
+	builder := array.NewTimestampBuilder(pool, &arrow.TimestampType{
+		Unit: arrow.Nanosecond,
+	})
+	defer builder.Release()
+
+	for _, v := range *vec {
+		builder.Append(arrow.Timestamp((v).UnixNano()))
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildNullableTimeColumn(pool memory.Allocator, field arrow.Field, vec *nullableTimeVector) *array.Column {
+	builder := array.NewTimestampBuilder(pool, &arrow.TimestampType{
+		Unit: arrow.Nanosecond,
+	})
+	defer builder.Release()
+
+	for _, v := range *vec {
+		if v == nil {
+			builder.AppendNull()
+			continue
+		}
+		builder.Append(arrow.Timestamp((*v).UnixNano()))
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
