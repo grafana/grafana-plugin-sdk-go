@@ -5,7 +5,7 @@ package pluginv2;
 // Base
 //-----------------------------------------------
 
-message PluginInfo {
+message PluginConfig {
   int64 id = 1;
   int64 orgId = 2;
   string name = 3;
@@ -28,11 +28,11 @@ message TimeRange {
 //-----------------------------------------------
 
 message QueryRequest {
-  // Environment info
-  map<string,string> env = 3;
-
   // Plugin Configuration
   PluginConfig config = 1;
+
+  // Environment info
+  map<string,string> headers = 3;
 
   // List of queries
   repeated DataQuery queries = 2;
@@ -52,65 +52,32 @@ message QueryResponse {
   repeated bytes data = 1;
 
   // Additional response metadata
-  map<string,string> meta = 2;
+  map<string,string> headers = 3;
 }
 
 
+
 //-----------------------------------------------
-// Streaming Query (alpha API)
+// HTTP style request
 //-----------------------------------------------
 
-message StreamRequest {
-  // Environment info
-  map<string,string> env = 3;
-
+message HandleRequest {
   // Plugin Configuration
   PluginConfig config = 1;
 
-  // Single Query
-  DataQuery query = 3;
-}
-
-message StreamResponse {
-  enum Action {
-    HEARTBEAT = 0; // Do not do anythign with the data -- just note we are alive
-    REPLACE = 1; // Replace everything in the DataFrame
-    APPEND = 2; // Add rows to the end (assumes structure is the same)
-    TEE = 3; // The client should 'listen' to the open stream with the given key
-    FINISH = 4; // Indicate that the stream will not get anymore data
-  }
-  Action action = 1;
-
-  // Arrow encoded DataFrame
-  bytes data = 2;
-
-  // UUID for the stream response - additional clients for the same data
-  // should
-  string key = 3;
-}
-
-
-//-----------------------------------------------
-// RESTish (proxy/ arbitrary path)
-//-----------------------------------------------
-
-message RESTishRequest {
   // Environment info
-  map<string,string> env = 1;
-
-  // Plugin Configuration
-  PluginConfig config = 2;
+  map<string,string> headers = 3;
 
   // HTTP Style parameters
   string method = 3; // GET/POST/DELETE/etc
   string path = 4;   // (with params?)
-  string body = 5;   // JSON?
+  bytes body = 5;    // assume string unless header says otherwise?
 }
 
-message RESTishResponse {
-  int64 code = 1;  // 200 is OK
+message HandleResponse {
+  int64 code = 1;  // Match HTTP status codes
   bytes body = 2;
-  string contentType = 3; // JSON, text, image, etc
+  map<string,string> headers = 3;
 }
 
 
@@ -130,12 +97,9 @@ service BackendPlugin {
   // GET system/api > OpenAPI documented endpoints
   // GET system/health > healthcheck
   // GET system/metrics > return prometheus style metrics text
-  rpc Request(RESTishRequest) returns (RESTishResponse);
+  rpc Request(HandleRequest) returns (HandleResponse);
 
   // Well typed query interface
   rpc Query(QueryRequest) returns (QueryResponse);
-
-  // Grafana backend support via websockets
-  rpc Stream(StreamRequest) returns (stream StreamResponse);
 }
 
