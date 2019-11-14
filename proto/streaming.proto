@@ -1,0 +1,34 @@
+
+//-----------------------------------------------
+// Streaming Query (alpha API)
+//-----------------------------------------------
+
+message StreamRequest {
+  // Environment info
+  map<string,string> env = 3;
+
+  // Plugin Configuration
+  PluginConfig config = 1;
+
+  // Single Query
+  DataQuery query = 3;
+}
+
+message StreamResponse {
+  enum Action {
+    HEARTBEAT = 0; // Do not do anythign with the data -- just note we are alive
+    REPLACE = 1; // Replace everything in the DataFrame
+    APPEND = 2; // Add rows to the end (assumes structure is the same)
+    TEE = 3; // The client should 'listen' to the open stream with the given key
+    FINISH = 4; // Indicate that the stream will not get anymore data
+  }
+  Action action = 1;
+
+  // Arrow encoded DataFrame
+  bytes data = 2;
+
+  // UUID for the stream response - additional clients for the same data
+  // should
+  string key = 3;
+}
+
