@@ -102,6 +102,16 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	for fieldIdx, field := range f.Fields {
 		switch v := field.Vector.(type) {
 
+		case *intVector:
+			columns[fieldIdx] = *buildIntColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableIntVector:
+			columns[fieldIdx] = *buildNullableIntColumn(pool, arrowFields[fieldIdx], v)
+
+		case *uintVector:
+			columns[fieldIdx] = *buildUIntColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableUintVector:
+			columns[fieldIdx] = *buildNullableUIntColumn(pool, arrowFields[fieldIdx], v)
+
 		case *stringVector:
 			columns[fieldIdx] = *buildStringColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableStringVector:
@@ -154,6 +164,16 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.StringType{}, false, nil
 	case *nullableStringVector:
 		return &arrow.StringType{}, true, nil
+
+	case *intVector:
+		return &arrow.Int64Type{}, false, nil
+	case *nullableIntVector:
+		return &arrow.Int64Type{}, true, nil
+
+	case *uintVector:
+		return &arrow.Uint64Type{}, false, nil
+	case *nullableUintVector:
+		return &arrow.Uint64Type{}, true, nil
 
 	case *floatVector:
 		return &arrow.Float64Type{}, false, nil
@@ -213,34 +233,45 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 		case arrow.STRING:
 			if nullable[idx] {
 				sdkField.Vector = newNullableStringVector(0)
-			} else {
-				sdkField.Vector = newStringVector(0)
+				break
 			}
+			sdkField.Vector = newStringVector(0)
+		case arrow.INT64:
+			if nullable[idx] {
+				sdkField.Vector = newNullableIntVector(0)
+				break
+			}
+			sdkField.Vector = newIntVector(0)
+		case arrow.UINT64:
+			if nullable[idx] {
+				sdkField.Vector = newNullableUintVector(0)
+				break
+			}
+			sdkField.Vector = newUintVector(0)
 		case arrow.FLOAT64:
 			if nullable[idx] {
 				sdkField.Vector = newNullableFloatVector(0)
-			} else {
-				sdkField.Vector = newFloatVector(0)
+				break
 			}
+			sdkField.Vector = newFloatVector(0)
 		case arrow.BOOL:
 			if nullable[idx] {
 				sdkField.Vector = newNullableBoolVector(0)
-			} else {
-				sdkField.Vector = newBoolVector(0)
+				break
 			}
+			sdkField.Vector = newBoolVector(0)
 		case arrow.TIMESTAMP:
 			if nullable[idx] {
 				sdkField.Vector = newNullableTimeVector(0)
-			} else {
-				sdkField.Vector = newTimeVector(0)
+				break
 			}
+			sdkField.Vector = newTimeVector(0)
 		default:
 			return nil, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 		}
 		frame.Fields = append(frame.Fields, sdkField)
 	}
 
-	rIdx := 0
 	for {
 		record, err := fR.Read()
 		if err == io.EOF {
@@ -254,18 +285,48 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 			switch col.DataType().ID() {
 			case arrow.STRING:
 				v := array.NewStringData(col.Data())
-				for sIdx := 0; sIdx < col.Len(); sIdx++ {
+				for rIdx := 0; rIdx < col.Len(); rIdx++ {
 					if nullable[i] {
-						if v.IsNull(sIdx) {
+						if v.IsNull(rIdx) {
 							var ns *string
 							frame.Fields[i].Vector.Append(ns)
 							continue
 						}
-						vS := v.Value(sIdx)
-						frame.Fields[i].Vector.Append(&vS)
+						rv := v.Value(rIdx)
+						frame.Fields[i].Vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(sIdx))
+					frame.Fields[i].Vector.Append(v.Value(rIdx))
+				}
+			case arrow.INT64:
+				v := array.NewInt64Data(col.Data())
+				for rIdx := 0; rIdx < col.Len(); rIdx++ {
+					if nullable[i] {
+						if v.IsNull(rIdx) {
+							var ns *int64
+							frame.Fields[i].Vector.Append(ns)
+							continue
+						}
+						rv := v.Value(rIdx)
+						frame.Fields[i].Vector.Append(&rv)
+						continue
+					}
+					frame.Fields[i].Vector.Append(v.Value(rIdx))
+				}
+			case arrow.UINT64:
+				v := array.NewUint64Data(col.Data())
+				for rIdx := 0; rIdx < col.Len(); rIdx++ {
+					if nullable[i] {
+						if v.IsNull(rIdx) {
+							var ns *uint64
+							frame.Fields[i].Vector.Append(ns)
+							continue
+						}
+						rv := v.Value(rIdx)
+						frame.Fields[i].Vector.Append(&rv)
+						continue
+					}
+					frame.Fields[i].Vector.Append(v.Value(rIdx))
 				}
 			case arrow.FLOAT64:
 				v := array.NewFloat64Data(col.Data())
@@ -316,7 +377,6 @@ func UnMarshalArrow(b []byte) (*Frame, error) {
 				return nil, fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())
 			}
 		}
-		rIdx++
 	}
 
 	return frame, nil

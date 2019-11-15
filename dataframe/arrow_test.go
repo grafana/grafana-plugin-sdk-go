@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"flag"
 	"io/ioutil"
+	"math"
 	"path/filepath"
 	"testing"
 	"time"
@@ -25,6 +26,26 @@ func goldenDF() *dataframe.Frame {
 			stringPtr("🦥"),
 			nil,
 			stringPtr("update your unicode/font if no sloth, is 2019."),
+		}),
+		dataframe.NewField("int_values", []int64{
+			math.MinInt64,
+			1,
+			math.MaxInt64,
+		}),
+		dataframe.NewField("nullable_int_values", []*int64{
+			intPtr(math.MinInt64),
+			nil,
+			intPtr(math.MaxInt64),
+		}),
+		dataframe.NewField("uint_values", []uint64{
+			0,
+			1,
+			math.MaxUint64,
+		}),
+		dataframe.NewField("nullable_uint_values", []*uint64{
+			uintPtr(0),
+			nil,
+			uintPtr(math.MaxUint64),
 		}),
 		dataframe.NewField("float_values", []float64{
 			0.0,
@@ -69,7 +90,7 @@ func TestEncode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	goldenFile := filepath.Join("testdata", "timeseries.golden.arrow")
+	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
 
 	if *update {
 		if err := ioutil.WriteFile(goldenFile, b, 0644); err != nil {
@@ -88,7 +109,7 @@ func TestEncode(t *testing.T) {
 }
 
 func TestDecode(t *testing.T) {
-	goldenFile := filepath.Join("testdata", "timeseries.golden.arrow")
+	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
 	b, err := ioutil.ReadFile(goldenFile)
 	if err != nil {
 		t.Fatal(err)

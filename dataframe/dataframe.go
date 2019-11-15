@@ -20,27 +20,22 @@ type Fields []*Field
 func NewField(name string, values interface{}) *Field {
 	var vec Vector
 	switch v := values.(type) {
-	case []*float64:
+	case []int64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
-	// case []*int64:
-	// 	vec = newVector(v, len(v))
-	// 	for i := 0; i < len(v); i++ {
-	// 		vec.Set(i, v[i])
-	// 	}
-	case []*time.Time:
+	case []*int64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
-	case []*string:
+	case []uint64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
-	case []*bool:
+	case []*uint64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
@@ -50,12 +45,7 @@ func NewField(name string, values interface{}) *Field {
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
-	// case []int64:
-	// 	vec = newVector(fieldType, len(v))
-	// 	for i := 0; i < len(v); i++ {
-	// 		vec.Set(i, &v[i])
-	// 	}
-	case []time.Time:
+	case []*float64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
@@ -65,13 +55,33 @@ func NewField(name string, values interface{}) *Field {
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
+	case []*string:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
 	case []bool:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
+	case []*bool:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []time.Time:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*time.Time:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
 	default:
-		panic(fmt.Errorf("(todo) unsupported field type %T", v))
+		panic(fmt.Errorf("unsupported field type %T", v))
 	}
 
 	return &Field{
