@@ -2,9 +2,6 @@ module github.com/grafana/grafana-plugin-sdk-go
 
 go 1.12
 
-// github.com/bombsimon/wsl/issues/60
-replace github.com/bombsimon/wsl => github.com/bombsimon/wsl v1.2.5
-
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20190716210558-5f564424c71c
 	github.com/fatih/structtag v1.1.0 // indirect
