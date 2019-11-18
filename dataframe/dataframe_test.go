@@ -10,10 +10,10 @@ import (
 
 func TestDataFrame(t *testing.T) {
 	df := dataframe.New("http_requests_total", dataframe.Labels{"service": "auth"},
-		dataframe.NewField("timestamp", dataframe.FieldTypeTime, []time.Time{time.Now(), time.Now(), time.Now()}),
-		dataframe.NewField("value", dataframe.FieldTypeNumber, []float64{1.0, 2.0, 3.0}),
-		dataframe.NewField("category", dataframe.FieldTypeString, []string{"foo", "bar", "test"}),
-		dataframe.NewField("valid", dataframe.FieldTypeBoolean, []bool{true, false, true}),
+		dataframe.NewField("timestamp", []time.Time{time.Now(), time.Now(), time.Now()}),
+		dataframe.NewField("value", []float64{1.0, 2.0, 3.0}),
+		dataframe.NewField("category", []string{"foo", "bar", "test"}),
+		dataframe.NewField("valid", []bool{true, false, true}),
 	)
 
 	if df.Rows() != 3 {
@@ -22,7 +22,7 @@ func TestDataFrame(t *testing.T) {
 }
 
 func TestField(t *testing.T) {
-	f := dataframe.NewField("value", dataframe.FieldTypeNumber, []float64{1.0, 2.0, 3.0})
+	f := dataframe.NewField("value", []float64{1.0, 2.0, 3.0})
 
 	if f.Len() != 3 {
 		t.Fatal("unexpected length")
@@ -30,7 +30,7 @@ func TestField(t *testing.T) {
 }
 
 func TestField_Float64(t *testing.T) {
-	f := dataframe.NewField("value", dataframe.FieldTypeNumber, make([]*float64, 3))
+	f := dataframe.NewField("value", make([]*float64, 3))
 
 	want := 2.0
 	f.Vector.Set(1, &want)
@@ -47,7 +47,7 @@ func TestField_Float64(t *testing.T) {
 }
 
 func TestField_String(t *testing.T) {
-	f := dataframe.NewField("value", dataframe.FieldTypeString, make([]*string, 3))
+	f := dataframe.NewField("value", make([]*string, 3))
 
 	want := "foo"
 	f.Vector.Set(1, &want)
@@ -65,30 +65,25 @@ func TestField_String(t *testing.T) {
 
 func TestTimeField(t *testing.T) {
 	tests := []struct {
-		Type   dataframe.FieldType
 		Values []*time.Time
 	}{
 		{
-			Type:   dataframe.FieldTypeTime,
 			Values: []*time.Time{timePtr(time.Unix(111, 0))},
 		},
 		{
-			Type:   dataframe.FieldTypeTime,
 			Values: []*time.Time{nil, timePtr(time.Unix(111, 0))},
 		},
 		{
-			Type:   dataframe.FieldTypeTime,
 			Values: []*time.Time{nil, timePtr(time.Unix(111, 0)), nil},
 		},
 		{
-			Type:   dataframe.FieldTypeTime,
 			Values: make([]*time.Time, 10),
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			f := dataframe.NewField(t.Name(), tt.Type, tt.Values)
+			f := dataframe.NewField(t.Name(), tt.Values)
 
 			if f.Len() != len(tt.Values) {
 				t.Error(f.Len())
@@ -107,16 +102,26 @@ func TestTimeField(t *testing.T) {
 	}
 }
 
-func TestField_WrongType(t *testing.T) {
-	defer func() {
-		if r := recover(); r == nil {
-			t.Errorf("expected test to panic, but it didn't")
-		}
-	}()
-
-	dataframe.NewField("foo", dataframe.FieldTypeNumber, []string{"bar"})
-}
-
 func timePtr(t time.Time) *time.Time {
 	return &t
+}
+
+func floatPtr(f float64) *float64 {
+	return &f
+}
+
+func intPtr(i int64) *int64 {
+	return &i
+}
+
+func uintPtr(ui uint64) *uint64 {
+	return &ui
+}
+
+func stringPtr(s string) *string {
+	return &s
+}
+
+func boolPtr(b bool) *bool {
+	return &b
 }
