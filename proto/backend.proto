@@ -32,10 +32,10 @@ message QueryRequest {
   PluginConfig config = 1;
 
   // Environment info
-  map<string,string> headers = 3;
+  map<string,string> headers = 2;
 
   // List of queries
-  repeated DataQuery queries = 2;
+  repeated DataQuery queries = 3;
 }
 
 message DataQuery {
@@ -52,7 +52,7 @@ message QueryResponse {
   repeated bytes data = 1;
 
   // Additional response metadata
-  map<string,string> headers = 3;
+  map<string,string> headers = 2;
 }
 
 
@@ -66,7 +66,7 @@ message HandleRequest {
   PluginConfig config = 1;
 
   // Environment info
-  map<string,string> headers = 3;
+  map<string,string> headers = 2;
 
   // HTTP Style parameters
   string method = 3; // GET/POST/DELETE/etc
