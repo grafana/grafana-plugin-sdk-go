@@ -1,11 +1,14 @@
 syntax = "proto3";
 package pluginv2;
 
-//-----------------------------------------------
-// Common
-//-----------------------------------------------
+message TimeRange {
+  string fromRaw = 1;
+  string toRaw = 2;
+  int64 fromEpochMs = 3;
+  int64 toEpochMs = 4;
+}
 
-message PluginConfig {
+message DatasourceInfo {
   int64 id = 1;
   int64 orgId = 2;
   string name = 3;
@@ -13,11 +16,4 @@ message PluginConfig {
   string url = 5;
   string jsonData = 6;
   map<string,string> decryptedSecureJsonData = 7;
-}
-
-message TimeRange {
-  string fromRaw = 1;
-  string toRaw = 2;
-  int64 fromEpochMs = 3;
-  int64 toEpochMs = 4;
 }
