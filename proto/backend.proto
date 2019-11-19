@@ -2,7 +2,7 @@ syntax = "proto3";
 package pluginv2;
 
 //-----------------------------------------------
-// Base
+// Common
 //-----------------------------------------------
 
 message PluginConfig {
@@ -61,7 +61,7 @@ message QueryResponse {
 // HTTP style request
 //-----------------------------------------------
 
-message HandleRequest {
+message PluginRequest {
   // Plugin Configuration
   PluginConfig config = 1;
 
@@ -74,7 +74,7 @@ message HandleRequest {
   bytes body = 5;    // assume string unless header says otherwise?
 }
 
-message HandleResponse {
+message PluginResponse {
   int64 code = 1;  // Match HTTP status codes
   bytes body = 2;
   map<string,string> headers = 3;
@@ -97,7 +97,7 @@ service BackendPlugin {
   // GET system/api > OpenAPI documented endpoints
   // GET system/health > healthcheck
   // GET system/metrics > return prometheus style metrics text
-  rpc Request(HandleRequest) returns (HandleResponse);
+  rpc Request(PluginRequest) returns (PluginResponse);
 
   // Well typed query interface
   rpc Query(QueryRequest) returns (QueryResponse);

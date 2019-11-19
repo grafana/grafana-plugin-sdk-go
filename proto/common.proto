@@ -21,11 +21,3 @@ message TimeRange {
   int64 fromEpochMs = 3;
   int64 toEpochMs = 4;
 }
-
-message DataQuery {
-  string refId = 1;
-  int64 maxDataPoints = 2;
-  int64 intervalMs = 3;
-  TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
-  string json = 5; // Arbitrary structure (model?  modelJson in v1)
-}
