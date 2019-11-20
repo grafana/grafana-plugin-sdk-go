@@ -115,7 +115,7 @@ func TestDecode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	newDf, err := dataframe.UnMarshalArrow(b)
+	newDf, err := dataframe.UnmarshalArrow(b)
 	if err != nil {
 		t.Fatal(err)
 	}
