@@ -56,7 +56,6 @@ message QueryResponse {
 }
 
 
-
 //-----------------------------------------------
 // HTTP style request
 //-----------------------------------------------
@@ -82,7 +81,7 @@ message PluginResponse {
 
 
 //-----------------------------------------------
-// General RPC Service
+// All Backend Plugins Implement
 //-----------------------------------------------
 
 service BackendPlugin {
@@ -101,5 +100,60 @@ service BackendPlugin {
 
   // Well typed query interface
   rpc Query(QueryRequest) returns (QueryResponse);
+}
+
+
+//-----------------------------------------------
+// Allow plugins to access other plugins
+// Only allow this for some plugins?  GEL only
+//
+// ???? How does the backend know the PluginConfig????
+//-----------------------------------------------
+
+service GrafanaPlatform {
+  rpc PlatformPluginRequest(PluginRequest) returns (PluginResponse);
+
+  rpc PlatformPluginQuery(QueryRequest) returns (QueryResponse);
+}
+
+
+//--------------------------------------------------
+// Simple Streaming support... kinda like STOMP
+// consider Apache Flight for more complex/standard
+//--------------------------------------------------
+
+message StreamingRequest {
+  int64 pluginId = 1; // match the id from connect request
+
+  // Environment info
+  map<string,string> headers = 1;
+
+  // The topic we are talking to
+  string topic = 2;
+  
+  // The message
+  string body = 3;  
+
+  // Flag if the user is already listening
+  boolean subscribed = 4;
+}
+
+message StreamingMessage {
+  int64 pluginId = 1;
+  string topic = 2; // will be broadcast to eveyone listening to this app|ds + topic
+  string message = 3; // JSON Blob
+}
+
+service StreamingPlugin {
+  // Called by grafana before the first request
+  // Grafana server will set up a websocket that will broadcast to all listeners
+  rpc Connect(PluginConfig) returns (stream StreamingMessage);
+  
+  // If the message is not empty, send that to the user
+  // throwing an error will make sure the user is not subscribed 
+  rpc Request(StreamingRequest) returns (StreamingMessage)
+
+  // Stop streaming to that instance, returns the number of open connections
+  rpc Disconnect(int64) returns (int64);
 }
 
