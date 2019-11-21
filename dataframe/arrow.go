@@ -366,7 +366,6 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 }
 
 // UnmarshalArrow converts a byte representation of an arrow table to a Frame
-// TODO: Break up this function.
 func UnmarshalArrow(b []byte) (*Frame, error) {
 	fB := filebuffer.New(b)
 	fR, err := ipc.NewFileReader(fB)
