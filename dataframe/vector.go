@@ -75,8 +75,8 @@ const (
 	// VectorPTypeNullableBool indicates the underlying primitive is a []*bool.
 	VectorPTypeNullableBool
 
-	// VectorPTypeTime indicates the underlying primitive is a []time.Time
+	// VectorPTypeTime indicates the underlying primitive is a []time.Time.
 	VectorPTypeTime
-	// VectorPTypeNullableTime indicates the underlying primitive is a []*time.Time
+	// VectorPTypeNullableTime indicates the underlying primitive is a []*time.Time.
 	VectorPTypeNullableTime
 )
