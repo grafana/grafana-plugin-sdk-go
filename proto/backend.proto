@@ -99,7 +99,7 @@ service BackendPlugin {
   rpc Request(PluginRequest) returns (PluginResponse);
 
   // Well typed query interface
-  rpc Query(QueryRequest) returns (QueryResponse);
+  rpc Query(QueryRequest) returns (QueryResponse); // TODO -- currently things die at response >4mb... need a better solution
 }
 
 
@@ -117,10 +117,10 @@ service GrafanaPlatform {
 }
 
 
-//--------------------------------------------------
-// Simple Streaming support... kinda like STOMP
+//-----------------------------------------------------------------
+// Streaming support aimed to support similar features to STOMP
 // consider Apache Flight for more complex/standard
-//--------------------------------------------------
+//-----------------------------------------------------------------
 
 message StreamingRequest {
   int64 pluginId = 1; // match the id from connect request
