@@ -80,7 +80,8 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 		}
 
 		fieldMeta := map[string]string{
-			"name": field.Name,
+			"name":   field.Name,
+			"labels": field.Labels.String(),
 		}
 
 		arrowFields[i] = arrow.Field{
@@ -146,10 +147,6 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 		"refId": f.RefID,
 	}
 
-	if f.Labels != nil {
-		tableMetaMap["labels"] = f.Labels.String()
-	}
-
 	tableMeta := arrow.MetadataFrom(tableMetaMap)
 
 	return arrow.NewSchema(fs, &tableMeta), nil
@@ -208,6 +205,13 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	for idx, field := range schema.Fields() {
 		sdkField := &Field{
 			Name: field.Name,
+		}
+		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
+			var err error
+			sdkField.Labels, err = LabelsFromString(labelsAsString)
+			if err != nil {
+				return nil, err
+			}
 		}
 		nullable[idx] = field.Nullable
 		switch field.Type.ID() {
@@ -379,12 +383,6 @@ func UnmarshalArrow(b []byte) (*Frame, error) {
 	frame := &Frame{}
 	frame.Name, _ = getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
 	frame.RefID, _ = getMDKey("refId", metaData)
-	if labelsAsString, ok := getMDKey("labels", metaData); ok {
-		frame.Labels, err = LabelsFromString(labelsAsString)
-		if err != nil {
-			return nil, err
-		}
-	}
 	nullable, err := initializeFrameFields(schema, frame)
 	if err != nil {
 		return nil, err

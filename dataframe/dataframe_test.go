@@ -9,11 +9,11 @@ import (
 )
 
 func TestDataFrame(t *testing.T) {
-	df := dataframe.New("http_requests_total", dataframe.Labels{"service": "auth"},
-		dataframe.NewField("timestamp", []time.Time{time.Now(), time.Now(), time.Now()}),
-		dataframe.NewField("value", []float64{1.0, 2.0, 3.0}),
-		dataframe.NewField("category", []string{"foo", "bar", "test"}),
-		dataframe.NewField("valid", []bool{true, false, true}),
+	df := dataframe.New("http_requests_total",
+		dataframe.NewField("timestamp", nil, []time.Time{time.Now(), time.Now(), time.Now()}),
+		dataframe.NewField("value", dataframe.Labels{"service": "auth"}, []float64{1.0, 2.0, 3.0}),
+		dataframe.NewField("category", dataframe.Labels{"service": "auth"}, []string{"foo", "bar", "test"}),
+		dataframe.NewField("valid", dataframe.Labels{"service": "auth"}, []bool{true, false, true}),
 	)
 
 	if df.Rows() != 3 {
@@ -22,7 +22,7 @@ func TestDataFrame(t *testing.T) {
 }
 
 func TestField(t *testing.T) {
-	f := dataframe.NewField("value", []float64{1.0, 2.0, 3.0})
+	f := dataframe.NewField("value", nil, []float64{1.0, 2.0, 3.0})
 
 	if f.Len() != 3 {
 		t.Fatal("unexpected length")
@@ -30,7 +30,7 @@ func TestField(t *testing.T) {
 }
 
 func TestField_Float64(t *testing.T) {
-	f := dataframe.NewField("value", make([]*float64, 3))
+	f := dataframe.NewField("value", nil, make([]*float64, 3))
 
 	want := 2.0
 	f.Vector.Set(1, &want)
@@ -47,7 +47,7 @@ func TestField_Float64(t *testing.T) {
 }
 
 func TestField_String(t *testing.T) {
-	f := dataframe.NewField("value", make([]*string, 3))
+	f := dataframe.NewField("value", nil, make([]*string, 3))
 
 	want := "foo"
 	f.Vector.Set(1, &want)
@@ -83,7 +83,7 @@ func TestTimeField(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			f := dataframe.NewField(t.Name(), tt.Values)
+			f := dataframe.NewField(t.Name(), nil, tt.Values)
 
 			if f.Len() != len(tt.Values) {
 				t.Error(f.Len())
