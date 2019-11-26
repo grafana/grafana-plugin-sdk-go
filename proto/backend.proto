@@ -1,5 +1,5 @@
 syntax = "proto3";
-package pluginv2;
+package grafana.plugin;
 
 //-----------------------------------------------
 // Common
@@ -74,7 +74,7 @@ message PluginRequest {
 }
 
 message PluginResponse {
-  int64 code = 1;  // Match HTTP status codes
+  int32 code = 1;  // Match HTTP status codes
   bytes body = 2;
   map<string,string> headers = 3;
 }
@@ -99,7 +99,10 @@ service BackendPlugin {
   rpc Request(PluginRequest) returns (PluginResponse);
 
   // Well typed query interface
-  rpc Query(QueryRequest) returns (QueryResponse); // TODO -- currently things die at response >4mb... need a better solution
+  rpc Query(QueryRequest) returns (QueryResponse);
+  // TODO -- currently things die at response >4mb... need a better solution...
+  // a) encode paging info in the DataFrame metadata?
+  // b) chunk the results and grafana backend would
 }
 
 
@@ -130,9 +133,9 @@ message StreamingRequest {
 
   // The topic we are talking to
   string topic = 2;
-  
+
   // The message
-  string body = 3;  
+  string body = 3;
 
   // Flag if the user is already listening
   boolean subscribed = 4;
@@ -148,12 +151,38 @@ service StreamingPlugin {
   // Called by grafana before the first request
   // Grafana server will set up a websocket that will broadcast to all listeners
   rpc Connect(PluginConfig) returns (stream StreamingMessage);
-  
+
   // If the message is not empty, send that to the user
-  // throwing an error will make sure the user is not subscribed 
+  // throwing an error will make sure the user is not subscribed
   rpc Request(StreamingRequest) returns (StreamingMessage)
 
   // Stop streaming to that instance, returns the number of open connections
   rpc Disconnect(int64) returns (int64);
 }
 
+
+//-----------------------------------------------------------------
+// Renderer (do we want this definition here?)
+// OR -- can we do this via Request(PluginRequest)???
+//-----------------------------------------------------------------
+
+message RenderRequest {
+  string url = 1;
+  int32 width = 2;
+  int32 height = 3;
+  int32 timeout = 4;
+  string timezone = 5;
+  string encoding = 6;
+  string filePath = 7;
+  string renderKey = 8;
+  string domain = 9;
+  bool debug = 10;
+}
+
+message RenderResponse {
+  string error = 1;
+}
+
+service Renderer {
+  rpc Render(RenderRequest) returns (RenderResponse);
+}
