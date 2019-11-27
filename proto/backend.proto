@@ -26,14 +26,15 @@ message PluginStatusRequest {
   // Environment info
   map<string,string> headers = 2;
 
+  enum FetchInfo {
+    STATUS = 0;  // nothing
+    API = 1;     // OpenAPI description
+    METRICS = 2; // Prometheus style metrics
+    DEBUG = 3;   // JSON Debug Info (admin+ view)
+  }
+
   // Get an OpenAPI description (viewer+)
-  bool fetchApi = 3;
-
-  // appended to the grafana /metrics endpoint
-  bool fetchMetrics = 4;
-
-  // Get debug info (admin+)
-  bool fetchDebug = 5;
+  FetchInfo fetch = 3;
 }
 
 message PluginStatusResponse {
@@ -44,9 +45,7 @@ message PluginStatusResponse {
   }
 
   PluginStatus status = 1;
-  string api = 2;
-  string metrics = 3;
-  string debug = 3;
+  string info = 2;
 }
 
 
