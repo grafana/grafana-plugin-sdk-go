@@ -1,9 +1,10 @@
 
-Repository Structure?
+# Repository Structure?
+
 *best:*
-everything in grafana repo
+ * everything in grafana repo
 *alternative:*
-if getting go to play nice with that structure is super hard, lets create two repos:
+ * if getting go to play nice with that structure is super hard, lets create two repos:
 
 
 ## grafana-backend-platform
@@ -14,9 +15,16 @@ in *both* plugins and in grafana core
  /scripts
  /genproto // created
  /testdata // saved arrow files and maybe some CSV/json?
- /go/dataframe/...  // Used in grafana core and plugins-sdk
+ /go/dataframe/...  // Apache arrow wrappers and helpers
  /README
 ```
+This should include any code we want to use in both core and plugins.
+
+proto defines some services:
+ * backend (every plugin)
+ * GrafanaPlatform: access to call other datasources
+ * StreamingPlugin: simple streaming interface
+ * Renderer -- the render API
 
 ## grafana-plugin-sdk
 This repo should hold a plugin-sdk for each of the languages we will support
@@ -32,7 +40,9 @@ grafana core will import from `grafana-backend-platform`
 
 
 ------
-------
+
+# Plugin.json / backend
+
 
 
 
