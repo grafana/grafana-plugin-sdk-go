@@ -15,6 +15,45 @@ message PluginConfig {
   map<string,string> decryptedSecureJsonData = 7;
 }
 
+//-----------------------------------------------
+// Plugin Status Check
+//-----------------------------------------------
+
+message PluginStatusRequest {
+  // Plugin Configuration
+  PluginConfig config = 1;
+
+  // Environment info
+  map<string,string> headers = 2;
+
+  // Get an OpenAPI description (viewer+)
+  bool fetchApi = 3;
+
+  // appended to the grafana /metrics endpoint
+  bool fetchMetrics = 4;
+
+  // Get debug info (admin+)
+  bool fetchDebug = 5;
+}
+
+message PluginStatusResponse {
+  enum PluginStatus {
+    UNKNOWN = 0; // starting etc
+    OK = 1;
+    ERROR = 2;
+  }
+
+  PluginStatus status = 1;
+  string api = 2;
+  string metrics = 3;
+  string debug = 3;
+}
+
+
+//-----------------------------------------------
+// QUERY
+//-----------------------------------------------
+
 message TimeRange {
   string fromRaw = 1;
   string toRaw = 2;
@@ -22,10 +61,13 @@ message TimeRange {
   int64 toEpochMs = 4;
 }
 
-
-//-----------------------------------------------
-// QUERY
-//-----------------------------------------------
+message DataQuery {
+  string refId = 1;
+  int64 maxDataPoints = 2;
+  int64 intervalMs = 3;
+  TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
+  string json = 5; // Arbitrary structure (model?  modelJson in v1)
+}
 
 message QueryRequest {
   // Plugin Configuration
@@ -36,14 +78,6 @@ message QueryRequest {
 
   // List of queries
   repeated DataQuery queries = 3;
-}
-
-message DataQuery {
-  string refId = 1;
-  int64 maxDataPoints = 2;
-  int64 intervalMs = 3;
-  TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
-  string json = 5; // Arbitrary structure (model?  modelJson in v1)
 }
 
 message QueryResponse {
@@ -80,27 +114,23 @@ message PluginResponse {
 }
 
 
+
 //-----------------------------------------------
 // All Backend Plugins Implement
 //-----------------------------------------------
 
 service BackendPlugin {
-  // Security???
-  //   /api/plugin/$pluginId/request
-  // Any logged in (or if anon allowed)
-  // With enterprise:
-  //  1. team access to datasource
-  //  2. pass along user info
-  //
-  // out-of-the-box expected endpoints:
-  // GET system/api > OpenAPI documented endpoints
-  // GET system/health > healthcheck
-  // GET system/metrics > return prometheus style metrics text
+  // Get the plugin status
+  rpc Check(PluginStatusRequest) returns (PluginStatusResponse);
+
+  // HTTP Style request
   rpc Request(PluginRequest) returns (PluginResponse);
 
   // Well typed query interface
   rpc Query(QueryRequest) returns (QueryResponse);
-  // TODO -- currently things die at response >4mb... need a better solution...
+
+  // TODO -- currently queries die when the response >4mb...
+  // We need a better solution...
   // a) encode paging info in the DataFrame metadata?
   // b) chunk the results and grafana backend would
 }
@@ -126,7 +156,7 @@ service GrafanaPlatform {
 //-----------------------------------------------------------------
 
 message StreamingRequest {
-  int64 pluginId = 1; // match the id from connect request
+  int64 pluginId = 1; // match the id from connect request (app or datasource)
 
   // Environment info
   map<string,string> headers = 1;
@@ -154,7 +184,7 @@ service StreamingPlugin {
 
   // If the message is not empty, send that to the user
   // throwing an error will make sure the user is not subscribed
-  rpc Request(StreamingRequest) returns (StreamingMessage)
+  rpc Process(StreamingRequest) returns (StreamingMessage)
 
   // Stop streaming to that instance, returns the number of open connections
   rpc Disconnect(int64) returns (int64);
