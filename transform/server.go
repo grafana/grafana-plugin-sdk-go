@@ -5,13 +5,15 @@ import (
 	plugin "github.com/hashicorp/go-plugin"
 )
 
-// Serve starts serving the datasource plugin over gRPC.
-//
-// The plugin ID should be in the format <org>-<name>-datasource.
-func Serve(pluginID string, handler TransformHandler) error {
+// PluginName the name of the plugin that can be dispensed
+// from the plugin server.
+const PluginName = "transform"
+
+// Serve starts serving the transform plugin over gRPC.
+func Serve(handler TransformHandler) error {
 	versionedPlugins := map[int]plugin.PluginSet{
 		common.ProtocolVersion: {
-			pluginID: &TransformPluginImpl{
+			PluginName: &TransformPluginImpl{
 				Impl: transformPluginWrapper{
 					handler: handler,
 				},

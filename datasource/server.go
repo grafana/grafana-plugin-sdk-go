@@ -5,13 +5,15 @@ import (
 	plugin "github.com/hashicorp/go-plugin"
 )
 
+// PluginName the name of the data source plugin that can be dispensed
+// from the plugin server.
+const PluginName = "datasource"
+
 // Serve starts serving the datasource plugin over gRPC.
-//
-// The plugin ID should be in the format <org>-<name>-datasource.
-func Serve(pluginID string, handler DataSourceHandler) error {
+func Serve(handler DataSourceHandler) error {
 	versionedPlugins := map[int]plugin.PluginSet{
 		common.ProtocolVersion: {
-			pluginID: &DatasourcePluginImpl{
+			PluginName: &DatasourcePluginImpl{
 				Impl: datasourcePluginWrapper{
 					handler: handler,
 				},
