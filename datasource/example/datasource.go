@@ -10,8 +10,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/datasource"
 )
 
-const pluginID = "myorg-custom-datasource"
-
 type MyDatasource struct {
 	logger *log.Logger
 }
@@ -46,7 +44,7 @@ func (d *MyDatasource) Query(ctx context.Context, tr datasource.TimeRange, ds da
 func main() {
 	logger := log.New(os.Stderr, "", 0)
 
-	if err := datasource.Serve(pluginID, &MyDatasource{logger: logger}); err != nil {
+	if err := datasource.Serve(&MyDatasource{logger: logger}); err != nil {
 		logger.Fatal(err)
 	}
 }
