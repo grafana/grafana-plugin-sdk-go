@@ -26,7 +26,7 @@ service BackendPlugin {
   rpc Check(PluginStatusRequest) returns (PluginStatusResponse);
 
   // HTTP Style request
-  rpc REST(RESTRequest) returns (RESTResponse);
+  rpc Resource(ResourceRequest) returns (ResourceResponse);
 
   // Well typed query interface
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
@@ -109,7 +109,7 @@ message DataQueryResponse {
 // HTTP style request
 //-----------------------------------------------
 
-message RESTRequest {
+message ResourceRequest {
   // Plugin Configuration
   PluginConfig config = 1;
 
@@ -121,7 +121,7 @@ message RESTRequest {
   bytes body = 5;    // assume string unless header says otherwise?
 }
 
-message RESTResponse {
+message ResourceResponse {
   int32 code = 1;  // Match HTTP status codes
   map<string,string> headers = 2; // Response Headers
 
@@ -137,7 +137,7 @@ message RESTResponse {
 //-----------------------------------------------
 
 service GrafanaPlatform {
-  rpc PlatformPluginRequest(RESTRequest) returns (RESTResponse);
+  rpc PlatformPluginRequest(ResourceRequest) returns (ResourceResponse);
 
   rpc PlatformPluginQuery(DataQueryRequest) returns (DataQueryResponse);
 }

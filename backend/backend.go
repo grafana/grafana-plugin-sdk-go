@@ -105,9 +105,9 @@ func (cr CheckResponse) toProtobuf() bproto.PluginStatusResponse {
 type backendPluginWrapper struct {
 	plugin.NetRPCUnsupportedPlugin
 
-	dataHandler  DataQueryHandler
-	checkHandler CheckHandler
-	restHandler  RESTHandler
+	dataHandler     DataQueryHandler
+	checkHandler    CheckHandler
+	resourceHandler ResourceHandler
 }
 
 // CheckHandler handles backend plugin checks.
