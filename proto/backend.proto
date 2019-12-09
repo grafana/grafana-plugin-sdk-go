@@ -71,10 +71,8 @@ message PluginStatusResponse {
 //-----------------------------------------------
 
 message TimeRange {
-  string fromRaw = 1;
-  string toRaw = 2;
-  int64 fromEpochMS = 3;
-  int64 toEpochMS = 4;
+  int64 fromEpochMS = 1;
+  int64 toEpochMS = 2;
 }
 
 message DataQuery {
