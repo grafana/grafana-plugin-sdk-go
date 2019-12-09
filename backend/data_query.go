@@ -43,15 +43,8 @@ func dataQueryFromProtobuf(q *bproto.DataQuery) *DataQuery {
 
 // DataQueryResponse holds the results for a given query.
 type DataQueryResponse struct {
-	Frames []*dataframe.Frame
-}
-
-// DatasourceQueryResult holds the results for a given query.
-type DatasourceQueryResult struct {
-	Error      string
-	RefID      string
-	MetaJSON   string
-	DataFrames []*dataframe.Frame
+	Frames   []*dataframe.Frame
+	Metadata map[string]string
 }
 
 // DataQueryHandler handles data source queries.
@@ -82,6 +75,7 @@ func (p *backendPluginWrapper) DataQuery(ctx context.Context, req *bproto.DataQu
 	}
 
 	return &bproto.DataQueryResponse{
-		Frames: encodedFrames,
+		Frames:   encodedFrames,
+		Metadata: resp.Metadata,
 	}, nil
 }
