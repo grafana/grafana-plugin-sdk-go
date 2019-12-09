@@ -54,7 +54,7 @@ func (fi FetchInfo) toProtobuf() bproto.PluginStatusRequest_FetchInfo {
 	panic("unsupported protobuf FetchInfo type in sdk")
 }
 
-func FetchInfoFromProtobuf(ptype bproto.PluginStatusRequest_FetchInfo) (FetchInfo, error) {
+func fetchInfoFromProtobuf(ptype bproto.PluginStatusRequest_FetchInfo) (FetchInfo, error) {
 	switch ptype {
 	case bproto.PluginStatusRequest_STATUS:
 		return FetchInfoStatus, nil
@@ -116,7 +116,7 @@ type CheckHandler interface {
 }
 
 func (p *backendPluginWrapper) Check(ctx context.Context, req *bproto.PluginStatusRequest) (*bproto.PluginStatusResponse, error) {
-	fetchType, err := FetchInfoFromProtobuf(req.Fetch)
+	fetchType, err := fetchInfoFromProtobuf(req.Fetch)
 	if err != nil {
 		return nil, err
 	}
