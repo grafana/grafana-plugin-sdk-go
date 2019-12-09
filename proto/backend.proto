@@ -73,14 +73,14 @@ message PluginStatusResponse {
 message TimeRange {
   string fromRaw = 1;
   string toRaw = 2;
-  int64 fromEpochMs = 3;
-  int64 toEpochMs = 4;
+  int64 fromEpochMS = 3;
+  int64 toEpochMS = 4;
 }
 
 message DataQuery {
   string refId = 1;
   int64 maxDataPoints = 2;
-  int64 intervalMs = 3;
+  int64 intervalMS = 3;
   TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
   bytes json = 5; // Arbitrary structure (model?  modelJson in v1)
 }

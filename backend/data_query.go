@@ -17,8 +17,8 @@ type TimeRange struct {
 
 func timeRangeFromProtobuf(tr *bproto.TimeRange) TimeRange {
 	return TimeRange{
-		From: time.Unix(0, tr.FromEpochMs*int64(time.Millisecond)),
-		To:   time.Unix(0, tr.ToEpochMs*int64(time.Millisecond)),
+		From: time.Unix(0, tr.FromEpochMS*int64(time.Millisecond)),
+		To:   time.Unix(0, tr.ToEpochMS*int64(time.Millisecond)),
 	}
 }
 
@@ -36,7 +36,7 @@ func dataQueryFromProtobuf(q *bproto.DataQuery) *DataQuery {
 		RefID:         q.RefId,
 		MaxDataPoints: q.MaxDataPoints,
 		TimeRange:     timeRangeFromProtobuf(q.TimeRange),
-		Interval:      time.Duration(q.IntervalMs) * time.Millisecond,
+		Interval:      time.Duration(q.IntervalMS) * time.Millisecond,
 		JSON:          []byte(q.Json),
 	}
 }
