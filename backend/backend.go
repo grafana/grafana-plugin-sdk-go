@@ -9,7 +9,7 @@ import (
 	plugin "github.com/hashicorp/go-plugin"
 )
 
-// PluginConfig holds configuration for the queried data source.
+// PluginConfig holds configuration for the queried plugin.
 type PluginConfig struct {
 	ID       int64
 	OrgID    int64
@@ -19,6 +19,8 @@ type PluginConfig struct {
 	JSONData json.RawMessage
 }
 
+// pluginConfigFromProto converts the generated protobuf PluginConfig to this
+// package's PluginConfig.
 func pluginConfigFromProto(pc *bproto.PluginConfig) PluginConfig {
 	return PluginConfig{
 		ID:       pc.Id,
@@ -30,30 +32,22 @@ func pluginConfigFromProto(pc *bproto.PluginConfig) PluginConfig {
 	}
 }
 
+// FetchInfo is type information requested from the Check endpoint.
 type FetchInfo int
 
 const (
+	// FetchInfoStatus is a request for plugin's status only (no info).
 	FetchInfoStatus FetchInfo = iota
+	// FetchInfoAPI is a request for an OpenAPI description of the plugin.
 	FetchInfoAPI
+	// FetchInfoMetrics is a request for Promotheus style metrics on the endpoint.
 	FetchInfoMetrics
+	// FetchInfoDebug is a request for JSON debug info (admin+ view).
 	FetchInfoDebug
 )
 
-func (fi FetchInfo) toProtobuf() bproto.PluginStatusRequest_FetchInfo {
-	switch fi {
-	case FetchInfoStatus:
-		return bproto.PluginStatusRequest_STATUS
-	case FetchInfoAPI:
-		return bproto.PluginStatusRequest_API
-	case FetchInfoMetrics:
-		return bproto.PluginStatusRequest_METRICS
-	case FetchInfoDebug:
-		return bproto.PluginStatusRequest_DEBUG
-
-	}
-	panic("unsupported protobuf FetchInfo type in sdk")
-}
-
+// fetchInfoFromProtobuf converts the generated protobuf PluginStatusRequest_FetchInfo to this
+// package's FetchInfo.
 func fetchInfoFromProtobuf(ptype bproto.PluginStatusRequest_FetchInfo) (FetchInfo, error) {
 	switch ptype {
 	case bproto.PluginStatusRequest_STATUS:
@@ -69,11 +63,16 @@ func fetchInfoFromProtobuf(ptype bproto.PluginStatusRequest_FetchInfo) (FetchInf
 	return FetchInfoStatus, fmt.Errorf("unsupported protobuf FetchInfo type in sdk: %v", ptype)
 }
 
+// PluginStatus is the status of the Plugin and should be returned
+// with any Check request.
 type PluginStatus int
 
 const (
+	// PluginStatusUnknown means the status of the plugin is unknown.
 	PluginStatusUnknown PluginStatus = iota
+	// PluginStatusOk means the status of the plugin is good.
 	PluginStatusOk
+	// PluginStatusError means the plugin is in an error state.
 	PluginStatusError
 )
 
@@ -89,6 +88,7 @@ func (ps PluginStatus) toProtobuf() bproto.PluginStatusResponse_PluginStatus {
 	panic("unsupported protobuf FetchInfo type in sdk")
 }
 
+// CheckResponse is the return type from a Check Request.
 type CheckResponse struct {
 	Status PluginStatus
 	Info   string

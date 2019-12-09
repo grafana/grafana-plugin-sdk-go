@@ -10,11 +10,12 @@ type GRPCClient struct {
 	client bproto.BackendPluginClient
 }
 
-// BackendPlugin is the Grafana Backend plugin interface.
+// Plugin is the Grafana Backend plugin interface.
 // It corresponds to: grafana.plugin protobuf: BackendPlugin Service | genproto/go/grafana_plugin: BackendPluginClient interface
-type BackendPlugin interface {
+type Plugin interface {
 	Check(ctx context.Context, req *bproto.PluginStatusRequest) (*bproto.PluginStatusResponse, error)
 	DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error)
+	REST(ctx context.Context, req *bproto.RESTRequest) (*bproto.RESTResponse, error)
 }
 
 type grpcServer struct {
