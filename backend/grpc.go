@@ -36,3 +36,11 @@ func (m *GRPCClient) Check(ctx context.Context, req *bproto.PluginStatusRequest)
 func (m *grpcServer) Check(ctx context.Context, req *bproto.PluginStatusRequest) (*bproto.PluginStatusResponse, error) {
 	return m.Impl.Check(ctx, req)
 }
+
+func (m *GRPCClient) REST(ctx context.Context, req *bproto.RESTRequest) (*bproto.RESTResponse, error) {
+	return m.client.REST(ctx, req)
+}
+
+func (m *grpcServer) REST(ctx context.Context, req *bproto.RESTRequest) (*bproto.RESTResponse, error) {
+	return m.Impl.REST(ctx, req)
+}

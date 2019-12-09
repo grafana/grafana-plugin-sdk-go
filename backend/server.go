@@ -8,13 +8,14 @@ import (
 // Serve starts serving the datasource plugin over gRPC.
 //
 // The plugin ID should be in the format <org>-<name>-datasource.
-func Serve(pluginID string, checkHandler CheckHandler, dataHandler DataQueryHandler) error {
+func Serve(pluginID string, checkHandler CheckHandler, dataHandler DataQueryHandler, restHander RESTHandler) error {
 	versionedPlugins := map[int]plugin.PluginSet{
 		common.ProtocolVersion: {
 			pluginID: &DatasourcePluginImpl{
 				Impl: backendPluginWrapper{
 					dataHandler:  dataHandler,
 					checkHandler: checkHandler,
+					restHandler:  restHander,
 				},
 			},
 		},

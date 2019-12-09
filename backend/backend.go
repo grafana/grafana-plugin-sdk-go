@@ -107,6 +107,7 @@ type backendPluginWrapper struct {
 
 	dataHandler  DataQueryHandler
 	checkHandler CheckHandler
+	restHandler  RESTHandler
 }
 
 // CheckHandler handles backend plugin checks.
