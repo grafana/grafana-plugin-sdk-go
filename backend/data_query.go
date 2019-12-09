@@ -15,6 +15,13 @@ type TimeRange struct {
 	To   time.Time
 }
 
+func timeRangeFromProtobuf(tr *bproto.TimeRange) TimeRange {
+	return TimeRange{
+		From: time.Unix(0, tr.FromEpochMs*int64(time.Millisecond)),
+		To:   time.Unix(0, tr.ToEpochMs*int64(time.Millisecond)),
+	}
+}
+
 // DataQuery represents the query as sent from the frontend.
 type DataQuery struct {
 	RefID         string
@@ -22,6 +29,16 @@ type DataQuery struct {
 	Interval      time.Duration
 	TimeRange     TimeRange
 	JSON          json.RawMessage
+}
+
+func dataQueryFromProtobuf(q *bproto.DataQuery) *DataQuery {
+	return &DataQuery{
+		RefID:         q.RefId,
+		MaxDataPoints: q.MaxDataPoints,
+		TimeRange:     timeRangeFromProtobuf(q.TimeRange),
+		Interval:      time.Duration(q.IntervalMs) * time.Millisecond,
+		JSON:          []byte(q.Json),
+	}
 }
 
 // DataQueryResponse holds the results for a given query.
@@ -46,19 +63,9 @@ func (p *backendPluginWrapper) DataQuery(ctx context.Context, req *bproto.DataQu
 
 	pc := pluginConfigFromProto(req.Config)
 
-	var queries []DataQuery
-	for _, q := range req.Queries {
-		tr := TimeRange{
-			From: time.Unix(0, q.TimeRange.FromEpochMs*int64(time.Millisecond)),
-			To:   time.Unix(0, q.TimeRange.ToEpochMs*int64(time.Millisecond)),
-		}
-		queries = append(queries, DataQuery{
-			RefID:         q.RefId,
-			MaxDataPoints: q.MaxDataPoints,
-			TimeRange:     tr,
-			Interval:      time.Duration(q.IntervalMs) * time.Millisecond,
-			JSON:          []byte(q.Json),
-		})
+	queries := make([]DataQuery, len(req.Queries))
+	for i, q := range req.Queries {
+		queries[i] = *dataQueryFromProtobuf(q)
 	}
 
 	resp, err := p.dataHandler.DataQuery(ctx, pc, req.Headers, queries)
