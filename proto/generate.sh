@@ -5,7 +5,7 @@
 
 set -eu
 
-DST_DIR=../genproto/pluginv2
+DST_DIR=../genproto/go/grafana_plugin
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done
@@ -13,6 +13,4 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 cd "$DIR"
 
-protoc -I ./ datasource.proto --go_out=plugins=grpc:${DST_DIR}
-protoc -I ./ transform.proto --go_out=plugins=grpc:${DST_DIR}
-protoc -I ./ common.proto --go_out=plugins=grpc:${DST_DIR}
+protoc -I ./ backend.proto --go_out=plugins=grpc:${DST_DIR}

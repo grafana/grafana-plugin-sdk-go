@@ -1,9 +1,9 @@
-package datasource
+package backend
 
 import (
 	"context"
 
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/grafana_plugin"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )
@@ -12,16 +12,16 @@ import (
 type DatasourcePluginImpl struct {
 	plugin.NetRPCUnsupportedPlugin
 
-	Impl datasourcePluginWrapper
+	Impl backendPluginWrapper
 }
 
 func (p *DatasourcePluginImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	pluginv2.RegisterDatasourcePluginServer(s, &grpcServer{
+	bproto.RegisterBackendPluginServer(s, &grpcServer{
 		Impl: p.Impl,
 	})
 	return nil
 }
 
 func (p *DatasourcePluginImpl) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &GRPCClient{client: pluginv2.NewDatasourcePluginClient(c)}, nil
+	return &GRPCClient{client: bproto.NewBackendPluginClient(c)}, nil
 }
