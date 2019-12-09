@@ -75,6 +75,6 @@ func (p *backendPluginWrapper) DataQuery(ctx context.Context, req *bproto.DataQu
 	}
 
 	return &bproto.DataQueryResponse{
-		Data: encodedFrames,
+		Frames: encodedFrames,
 	}, nil
 }

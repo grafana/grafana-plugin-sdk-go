@@ -99,7 +99,7 @@ message DataQueryRequest {
 message DataQueryResponse {
   // Arrow encoded DataFrames
   // Each frame encodes its own: Errors, meta, and refId
-  repeated bytes data = 1;
+  repeated bytes frames = 1;
 
   // Additional response metadata
   map<string,string> metadata = 2;
