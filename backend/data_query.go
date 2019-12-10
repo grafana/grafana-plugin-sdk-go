@@ -15,6 +15,8 @@ type TimeRange struct {
 	To   time.Time
 }
 
+// timeRangeFromProtobuf converts the generated protobuf TimeRange to this
+// package's FetchInfo.
 func timeRangeFromProtobuf(tr *bproto.TimeRange) TimeRange {
 	return TimeRange{
 		From: time.Unix(0, tr.FromEpochMS*int64(time.Millisecond)),

@@ -11,7 +11,7 @@ import (
 func Serve(pluginID string, checkHandler CheckHandler, dataHandler DataQueryHandler, resourceHandler ResourceHandler) error {
 	versionedPlugins := map[int]plugin.PluginSet{
 		common.ProtocolVersion: {
-			pluginID: &DatasourcePluginImpl{
+			pluginID: &PluginImpl{
 				Impl: backendPluginWrapper{
 					dataHandler:     dataHandler,
 					checkHandler:    checkHandler,

@@ -8,20 +8,20 @@ import (
 	"google.golang.org/grpc"
 )
 
-// DatasourcePluginImpl implements the plugin interface from github.com/hashicorp/go-plugin.
-type DatasourcePluginImpl struct {
+// PluginImpl implements the plugin interface from github.com/hashicorp/go-plugin.
+type PluginImpl struct {
 	plugin.NetRPCUnsupportedPlugin
 
 	Impl backendPluginWrapper
 }
 
-func (p *DatasourcePluginImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+func (p *PluginImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
 	bproto.RegisterBackendPluginServer(s, &grpcServer{
 		Impl: p.Impl,
 	})
 	return nil
 }
 
-func (p *DatasourcePluginImpl) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *PluginImpl) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &GRPCClient{client: bproto.NewBackendPluginClient(c)}, nil
 }
