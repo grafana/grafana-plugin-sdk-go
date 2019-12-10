@@ -12,12 +12,12 @@ import (
 type PluginImpl struct {
 	plugin.NetRPCUnsupportedPlugin
 
-	Impl backendPluginWrapper
+	Wrap backendPluginWrapper
 }
 
 func (p *PluginImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
 	bproto.RegisterBackendPluginServer(s, &grpcServer{
-		Impl: p.Impl,
+		Impl: p.Wrap,
 	})
 	return nil
 }

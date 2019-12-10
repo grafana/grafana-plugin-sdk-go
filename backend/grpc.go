@@ -7,7 +7,7 @@ import (
 )
 
 type GRPCClient struct {
-	client bproto.BackendPluginClient
+	client        bproto.BackendPluginClient
 }
 
 // Plugin is the Grafana Backend plugin interface.

@@ -2,35 +2,12 @@ package backend
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/common"
 	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/grafana_plugin"
 	plugin "github.com/hashicorp/go-plugin"
 )
-
-// PluginConfig holds configuration for the queried plugin.
-type PluginConfig struct {
-	ID       int64
-	OrgID    int64
-	Name     string
-	Type     string
-	URL      string
-	JSONData json.RawMessage
-}
-
-// pluginConfigFromProto converts the generated protobuf PluginConfig to this
-// package's PluginConfig.
-func pluginConfigFromProto(pc *bproto.PluginConfig) PluginConfig {
-	return PluginConfig{
-		ID:       pc.Id,
-		OrgID:    pc.OrgId,
-		Name:     pc.Name,
-		Type:     pc.Type,
-		URL:      pc.Url,
-		JSONData: json.RawMessage(pc.JsonData),
-	}
-}
 
 // FetchInfo is type information requested from the Check endpoint.
 type FetchInfo int
@@ -118,7 +95,7 @@ type PluginHandlers struct {
 
 // CheckHandler handles backend plugin checks.
 type CheckHandler interface {
-	Check(ctx context.Context, pc PluginConfig, headers map[string]string, fetch FetchInfo) (CheckResponse, error)
+	Check(ctx context.Context, pc common.PluginConfig, headers map[string]string, fetch FetchInfo) (CheckResponse, error)
 }
 
 func (p *backendPluginWrapper) Check(ctx context.Context, req *bproto.PluginStatusRequest) (*bproto.PluginStatusResponse, error) {
@@ -126,7 +103,7 @@ func (p *backendPluginWrapper) Check(ctx context.Context, req *bproto.PluginStat
 	if err != nil {
 		return nil, err
 	}
-	pc := pluginConfigFromProto(req.Config)
+	pc := common.PluginConfigFromProto(req.Config)
 	resp, err := p.handlers.Check(ctx, pc, req.Headers, fetchType)
 	if err != nil {
 		return nil, err
