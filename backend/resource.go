@@ -44,7 +44,7 @@ type ResourceHandler interface {
 func (p *backendPluginWrapper) Resource(ctx context.Context, req *bproto.ResourceRequest) (*bproto.ResourceResponse, error) {
 	pc := pluginConfigFromProto(req.Config)
 	resourceReq := resourceRequestFromProtobuf(req)
-	res, err := p.resourceHandler.Resource(ctx, pc, resourceReq)
+	res, err := p.handlers.Resource(ctx, pc, resourceReq)
 	if err != nil {
 		return nil, err
 	}

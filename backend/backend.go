@@ -105,9 +105,15 @@ func (cr CheckResponse) toProtobuf() bproto.PluginStatusResponse {
 type backendPluginWrapper struct {
 	plugin.NetRPCUnsupportedPlugin
 
-	dataHandler     DataQueryHandler
-	checkHandler    CheckHandler
-	resourceHandler ResourceHandler
+	handlers PluginHandlers
+}
+
+// PluginHandlers is the collection of handlers that corresponds to the
+// grpc "service BackendPlugin".
+type PluginHandlers struct {
+	DataQueryHandler
+	CheckHandler
+	ResourceHandler
 }
 
 // CheckHandler handles backend plugin checks.
@@ -121,7 +127,7 @@ func (p *backendPluginWrapper) Check(ctx context.Context, req *bproto.PluginStat
 		return nil, err
 	}
 	pc := pluginConfigFromProto(req.Config)
-	resp, err := p.checkHandler.Check(ctx, pc, req.Headers, fetchType)
+	resp, err := p.handlers.Check(ctx, pc, req.Headers, fetchType)
 	if err != nil {
 		return nil, err
 	}

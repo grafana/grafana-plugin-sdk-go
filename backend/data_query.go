@@ -63,7 +63,7 @@ func (p *backendPluginWrapper) DataQuery(ctx context.Context, req *bproto.DataQu
 		queries[i] = *dataQueryFromProtobuf(q)
 	}
 
-	resp, err := p.dataHandler.DataQuery(ctx, pc, req.Headers, queries)
+	resp, err := p.handlers.DataQuery(ctx, pc, req.Headers, queries)
 	if err != nil {
 		return nil, err
 	}

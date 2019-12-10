@@ -13,10 +13,11 @@ func Serve(pluginID string, checkHandler CheckHandler, dataHandler DataQueryHand
 		common.ProtocolVersion: {
 			pluginID: &PluginImpl{
 				Impl: backendPluginWrapper{
-					dataHandler:     dataHandler,
-					checkHandler:    checkHandler,
-					resourceHandler: resourceHandler,
-				},
+					handlers: PluginHandlers{
+						DataQueryHandler: dataHandler,
+						CheckHandler:     checkHandler,
+						ResourceHandler:  resourceHandler,
+					}},
 			},
 		},
 	}
