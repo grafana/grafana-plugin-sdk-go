@@ -11,7 +11,7 @@ import (
 
 // DataQueryHandler handles data source queries.
 type DataQueryHandler interface {
-	DataQuery(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery) (DataQueryResponse, error)
+	DataQuery(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery, api PlatformAPI) (DataQueryResponse, error)
 }
 
 // DataQuery represents the query as sent from the frontend.
@@ -54,7 +54,7 @@ func timeRangeFromProtobuf(tr *bproto.TimeRange) TimeRange {
 	}
 }
 
-func (p *coreWrapper) DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error) {
+func (p *coreWrapper) DataQuery(ctx context.Context, req *bproto.DataQueryRequest, api PlatformAPI) (*bproto.DataQueryResponse, error) {
 
 	pc := pluginConfigFromProto(req.Config)
 
@@ -63,7 +63,7 @@ func (p *coreWrapper) DataQuery(ctx context.Context, req *bproto.DataQueryReques
 		queries[i] = *dataQueryFromProtobuf(q)
 	}
 
-	resp, err := p.handlers.DataQuery(ctx, pc, req.Headers, queries)
+	resp, err := p.handlers.DataQuery(ctx, pc, req.Headers, queries, api)
 	if err != nil {
 		return nil, err
 	}

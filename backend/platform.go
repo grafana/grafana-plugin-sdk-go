@@ -17,12 +17,12 @@ type platformWrapper struct {
 	Handlers PlatformHandlers
 }
 
-func (p *platformWrapper) PlatformPluginQuery(ctx context.Context, req *bproto.DataQueryRequest, api PlatformAPI) (*bproto.DataQueryResponse, error) {
-	queries := make([]DataQuery, len(req.Queries))
-	wrappedAPI := &platformAPIWrapper{api: api}
-	_, _ = p.Handlers.PlatformDataQuery(ctx, queries, wrappedAPI)
-	return nil, nil
-}
+// func (p *platformWrapper) PlatformPluginQuery(ctx context.Context, req *bproto.DataQueryRequest, api PlatformAPI) (*bproto.DataQueryResponse, error) {
+// 	queries := make([]DataQuery, len(req.Queries))
+// 	wrappedAPI := &platformAPIWrapper{api: api}
+// 	_, _ = p.Handlers.PlatformDataQuery(ctx, queries, wrappedAPI)
+// 	return nil, nil
+// }
 
 type PlatformHandlers struct {
 	PlatformDataQueryHandler
@@ -43,5 +43,6 @@ type platformAPIWrapper struct {
 }
 
 type PlatformAPI interface {
-	PlatformDataQuery(ctx context.Context, queries []DataQuery)
+	DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error)
+	Resource(ctx context.Context, req *bproto.ResourceRequest) (*bproto.ResourceResponse, error)
 }

@@ -20,13 +20,13 @@ func Serve(pluginID string, backendHandlers *PluginHandlers, platformHandlers *P
 		}
 	}
 
-	if backendHandlers != nil {
-		pSet["platform"] = &PlatformImpl{
-			Wrap: platformWrapper{
-				Handlers: *platformHandlers,
-			},
-		}
-	}
+	// if backendHandlers != nil {
+	// 	pSet["platform"] = &PlatformImpl{
+	// 		Wrap: platformWrapper{
+	// 			Handlers: *platformHandlers,
+	// 		},
+	// 	}
+	// }
 
 	versionedPlugins[common.ProtocolVersion] = pSet
 
