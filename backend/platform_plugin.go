@@ -1,9 +1,9 @@
-package platform
+package backend
 
 import (
 	"context"
 
-	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/grafana_plugin"
+	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
 	"github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )
@@ -12,11 +12,11 @@ import (
 type PlatformImpl struct {
 	plugin.NetRPCUnsupportedPlugin
 
-	Wrap PlatformPluginWrapper
+	Wrap platformWrapper
 }
 
 func (p *PlatformImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	bproto.RegisterGrafanaPlatformServer(s, &GRPCServer{
+	bproto.RegisterGrafanaPlatformServer(s, &PlatformGRPCServer{
 		Impl:   p.Wrap,
 		broker: broker,
 	})
@@ -24,5 +24,5 @@ func (p *PlatformImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) err
 }
 
 func (p *PlatformImpl) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &GRPCClient{client: bproto.NewGrafanaPlatformClient(c)}, nil
+	return &PlatformGRPCClient{client: bproto.NewGrafanaPlatformClient(c)}, nil
 }

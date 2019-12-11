@@ -1,6 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
-package grafana.plugin;
+package backend.plugin;
 
 //-----------------------------------------------
 // Common
@@ -21,7 +21,7 @@ message PluginConfig {
 // All Backend Plugins Implement
 //-----------------------------------------------
 
-service BackendPlugin {
+service Core {
   // Get the plugin status
   rpc Check(PluginStatusRequest) returns (PluginStatusResponse);
 
@@ -135,9 +135,9 @@ message ResourceResponse {
 //-----------------------------------------------
 
 service GrafanaPlatform {
-  rpc PlatformPluginRequest(ResourceRequest) returns (ResourceResponse);
+  rpc Resource(ResourceRequest) returns (ResourceResponse);
 
-  rpc PlatformPluginQuery(DataQueryRequest) returns (DataQueryResponse);
+  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
 }
 
 //-----------------------------------------------------------------

@@ -5,7 +5,7 @@
 
 set -eu
 
-DST_DIR=../genproto/go/grafana_plugin
+DST_DIR=../genproto/go/backend_plugin
 
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ] ; do SOURCE="$(readlink "$SOURCE")"; done

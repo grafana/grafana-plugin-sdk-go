@@ -3,8 +3,7 @@ package backend
 import (
 	"context"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/common"
-	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/grafana_plugin"
+	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
 )
 
 type ResourceRequest struct {
@@ -39,11 +38,11 @@ func (rr *ResourceResponse) toProtobuf() *bproto.ResourceResponse {
 
 // ResourceHandler handles backend plugin checks.
 type ResourceHandler interface {
-	Resource(ctx context.Context, pc common.PluginConfig, req *ResourceRequest) (*ResourceResponse, error)
+	Resource(ctx context.Context, pc PluginConfig, req *ResourceRequest) (*ResourceResponse, error)
 }
 
-func (p *backendPluginWrapper) Resource(ctx context.Context, req *bproto.ResourceRequest) (*bproto.ResourceResponse, error) {
-	pc := common.PluginConfigFromProto(req.Config)
+func (p *coreWrapper) Resource(ctx context.Context, req *bproto.ResourceRequest) (*bproto.ResourceResponse, error) {
+	pc := pluginConfigFromProto(req.Config)
 	resourceReq := resourceRequestFromProtobuf(req)
 	res, err := p.handlers.Resource(ctx, pc, resourceReq)
 	if err != nil {
