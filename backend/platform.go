@@ -4,18 +4,17 @@ import (
 	"context"
 
 	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
-	plugin "github.com/hashicorp/go-plugin"
 )
 
-type PlatformAPIClient struct {
-	bproto.GrafanaPlatformClient
-}
+// type PlatformAPIClient struct {
+// 	bproto.GrafanaPlatformClient
+// }
 
-type platformWrapper struct {
-	plugin.NetRPCUnsupportedPlugin
+// type platformWrapper struct {
+// 	plugin.NetRPCUnsupportedPlugin
 
-	Handlers PlatformHandlers
-}
+// 	Handlers PlatformHandlers
+// }
 
 // func (p *platformWrapper) PlatformPluginQuery(ctx context.Context, req *bproto.DataQueryRequest, api PlatformAPI) (*bproto.DataQueryResponse, error) {
 // 	queries := make([]DataQuery, len(req.Queries))
@@ -24,19 +23,19 @@ type platformWrapper struct {
 // 	return nil, nil
 // }
 
-type PlatformHandlers struct {
-	PlatformDataQueryHandler
-}
+// type PlatformHandlers struct {
+// 	PlatformDataQueryHandler
+// }
 
-type PlatformResourceHandler interface {
-}
+// type PlatformResourceHandler interface {
+// }
 
-type PlatformDataQueryHandler interface {
-	PlatformDataQuery(ctx context.Context, queries []DataQuery, api PlatformHandler) (DataQueryResponse, error)
-}
+// type PlatformDataQueryHandler interface {
+// 	PlatformDataQuery(ctx context.Context, queries []DataQuery, api PlatformHandler) (DataQueryResponse, error)
+// }
 
-type PlatformHandler interface {
-}
+// type PlatformHandler interface {
+// }
 
 type platformAPIWrapper struct {
 	api PlatformAPI
