@@ -129,14 +129,27 @@ message ResourceResponse {
 
 //-----------------------------------------------
 // Allow plugins to access other plugins
-// Only allow this for some plugins?  GEL only
+// (TODO: Streaming Signature, or Grafana-Server will be the Server for this)
 //
-// ???? How does the backend know the PluginConfig????
+//
 //-----------------------------------------------
 
 service GrafanaPlatform {
   rpc Resource(ResourceRequest) returns (ResourceResponse);
 
+  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+}
+
+//-----------------------------------------------
+// Temp? for GEL Only.
+// Callback can maybe be replaced with Grafana Platform in future iteration.
+//-----------------------------------------------
+
+service Transform {
+  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+}
+
+service TransformCallBack {
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
 }
 
