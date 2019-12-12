@@ -4,11 +4,9 @@ import (
 	"context"
 
 	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
-	plugin "github.com/hashicorp/go-plugin"
 )
 
 type CoreGRPCClient struct {
-	broker *plugin.GRPCBroker
 	client bproto.CoreClient
 }
 
@@ -21,8 +19,7 @@ type Plugin interface {
 }
 
 type coreGRPCServer struct {
-	broker *plugin.GRPCBroker
-	Impl   coreWrapper
+	Impl coreWrapper
 }
 
 func (m *CoreGRPCClient) DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error) {
