@@ -49,6 +49,34 @@ type DataQueryResponse struct {
 	Metadata map[string]string
 }
 
+func (res *DataQueryResponse) toProtobuf() (*bproto.DataQueryResponse, error) {
+	encodedFrames := make([][]byte, len(res.Frames))
+	var err error
+	for i, frame := range res.Frames {
+		encodedFrames[i], err = dataframe.MarshalArrow(frame)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return &bproto.DataQueryResponse{
+		Frames:   encodedFrames,
+		Metadata: res.Metadata,
+	}, nil
+}
+
+func dataQueryResponseFromProtobuf(res *bproto.DataQueryResponse) (*DataQueryResponse, error) {
+	frames := make([]*dataframe.Frame, len(res.Frames))
+	var err error
+	for i, encodedFrame := range res.Frames {
+		frames[i], err = dataframe.UnmarshalArrow(encodedFrame)
+		if err != nil {
+			return nil, err
+		}
+	}
+	return &DataQueryResponse{Metadata: res.Metadata, Frames: frames}, nil
+}
+
 // TimeRange represents a time range for a query.
 type TimeRange struct {
 	From time.Time
@@ -85,16 +113,5 @@ func (p *coreWrapper) DataQuery(ctx context.Context, req *bproto.DataQueryReques
 		return nil, err
 	}
 
-	encodedFrames := make([][]byte, len(resp.Frames))
-	for i, frame := range resp.Frames {
-		encodedFrames[i], err = dataframe.MarshalArrow(frame)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &bproto.DataQueryResponse{
-		Frames:   encodedFrames,
-		Metadata: resp.Metadata,
-	}, nil
+	return resp.toProtobuf()
 }

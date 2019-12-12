@@ -76,16 +76,5 @@ func (tw *transformCallBackWrapper) DataQuery(ctx context.Context, pc PluginConf
 		return nil, err
 	}
 
-	frames := make([]*dataframe.Frame, len(protoRes.Frames))
-	for i, encodedFrame := range protoRes.Frames {
-		frames[i], err = dataframe.UnmarshalArrow(encodedFrame)
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return &DataQueryResponse{
-		//TODO: Metadata
-		Frames: frames,
-	}, nil
+	return dataQueryResponseFromProtobuf(protoRes)
 }
