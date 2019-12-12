@@ -23,7 +23,7 @@ func Serve(pluginID string, backendHandlers *PluginHandlers, transformHandlers *
 	if transformHandlers != nil {
 		pSet["transform"] = &TransformImpl{
 			Wrap: transformWrapper{
-				Handlers: *transformHandlers,
+				handlers: *transformHandlers,
 			},
 		}
 	}

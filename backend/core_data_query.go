@@ -23,6 +23,16 @@ type DataQuery struct {
 	JSON          json.RawMessage
 }
 
+func (q *DataQuery) toProtobuf() *bproto.DataQuery {
+	return &bproto.DataQuery{
+		RefId:         q.RefID,
+		MaxDataPoints: q.MaxDataPoints,
+		IntervalMS:    q.Interval.Microseconds(),
+		TimeRange:     q.TimeRange.toProtobuf(),
+		Json:          q.JSON,
+	}
+}
+
 func dataQueryFromProtobuf(q *bproto.DataQuery) *DataQuery {
 	return &DataQuery{
 		RefID:         q.RefId,
@@ -43,6 +53,13 @@ type DataQueryResponse struct {
 type TimeRange struct {
 	From time.Time
 	To   time.Time
+}
+
+func (tr *TimeRange) toProtobuf() *bproto.TimeRange {
+	return &bproto.TimeRange{
+		FromEpochMS: tr.From.UnixNano() / int64(time.Millisecond),
+		ToEpochMS:   tr.To.UnixNano() / int64(time.Millisecond),
+	}
 }
 
 // TimeRangeFromProtobuf converts the generated protobuf TimeRange to this
