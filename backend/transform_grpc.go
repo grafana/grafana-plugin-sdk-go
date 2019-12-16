@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strconv"
 
-	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/metadata"
@@ -16,7 +16,7 @@ type TransformGRPCServer struct {
 	Impl   transformWrapper
 }
 
-func (t *TransformGRPCServer) DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error) {
+func (t *TransformGRPCServer) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("transform request is missing metadata")
@@ -34,22 +34,22 @@ func (t *TransformGRPCServer) DataQuery(ctx context.Context, req *bproto.DataQue
 		return nil, err
 	}
 	defer conn.Close()
-	api := &TransformCallBackGrpcClient{bproto.NewTransformCallBackClient(conn)}
+	api := &TransformCallBackGrpcClient{pluginv2.NewTransformCallBackClient(conn)}
 	return t.Impl.DataQuery(ctx, req, api)
 }
 
 type TransformGRPCClient struct {
 	broker *plugin.GRPCBroker
-	client bproto.TransformClient
+	client pluginv2.TransformClient
 }
 
-func (t *TransformGRPCClient) DataQuery(ctx context.Context, req *bproto.DataQueryRequest, callBack TransformCallBack) (*bproto.DataQueryResponse, error) {
+func (t *TransformGRPCClient) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callBack TransformCallBack) (*pluginv2.DataQueryResponse, error) {
 	callBackServer := &TransformCallBackGrpcServer{Impl: callBack}
 
 	var s *grpc.Server
 	serverFunc := func(opts []grpc.ServerOption) *grpc.Server {
 		s = grpc.NewServer(opts...)
-		bproto.RegisterTransformCallBackServer(s, callBackServer)
+		pluginv2.RegisterTransformCallBackServer(s, callBackServer)
 
 		return s
 	}
@@ -64,10 +64,10 @@ func (t *TransformGRPCClient) DataQuery(ctx context.Context, req *bproto.DataQue
 // Callback
 
 type TransformCallBackGrpcClient struct {
-	client bproto.TransformCallBackClient
+	client pluginv2.TransformCallBackClient
 }
 
-func (t *TransformCallBackGrpcClient) DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error) {
+func (t *TransformCallBackGrpcClient) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
 	return t.client.DataQuery(ctx, req)
 }
 
@@ -75,6 +75,6 @@ type TransformCallBackGrpcServer struct {
 	Impl TransformCallBack
 }
 
-func (g *TransformCallBackGrpcServer) DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error) {
+func (g *TransformCallBackGrpcServer) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
 	return g.Impl.DataQuery(ctx, req)
 }

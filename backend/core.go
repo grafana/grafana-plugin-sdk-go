@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	plugin "github.com/hashicorp/go-plugin"
 )
 
@@ -21,7 +21,7 @@ type PluginConfig struct {
 
 // PluginConfigFromProto converts the generated protobuf PluginConfig to this
 // package's PluginConfig.
-func pluginConfigFromProto(pc *bproto.PluginConfig) PluginConfig {
+func pluginConfigFromProto(pc *pluginv2.PluginConfig) PluginConfig {
 	return PluginConfig{
 		ID:       pc.Id,
 		OrgID:    pc.OrgId,
@@ -48,15 +48,15 @@ const (
 
 // fetchInfoFromProtobuf converts the generated protobuf PluginStatusRequest_FetchInfo to this
 // package's FetchInfo.
-func fetchInfoFromProtobuf(ptype bproto.PluginStatusRequest_FetchInfo) (FetchInfo, error) {
+func fetchInfoFromProtobuf(ptype pluginv2.PluginStatusRequest_FetchInfo) (FetchInfo, error) {
 	switch ptype {
-	case bproto.PluginStatusRequest_STATUS:
+	case pluginv2.PluginStatusRequest_STATUS:
 		return FetchInfoStatus, nil
-	case bproto.PluginStatusRequest_API:
+	case pluginv2.PluginStatusRequest_API:
 		return FetchInfoAPI, nil
-	case bproto.PluginStatusRequest_METRICS:
+	case pluginv2.PluginStatusRequest_METRICS:
 		return FetchInfoMetrics, nil
-	case bproto.PluginStatusRequest_DEBUG:
+	case pluginv2.PluginStatusRequest_DEBUG:
 		return FetchInfoDebug, nil
 
 	}
@@ -76,14 +76,14 @@ const (
 	PluginStatusError
 )
 
-func (ps PluginStatus) toProtobuf() bproto.PluginStatusResponse_PluginStatus {
+func (ps PluginStatus) toProtobuf() pluginv2.PluginStatusResponse_PluginStatus {
 	switch ps {
 	case PluginStatusUnknown:
-		return bproto.PluginStatusResponse_UNKNOWN
+		return pluginv2.PluginStatusResponse_UNKNOWN
 	case PluginStatusOk:
-		return bproto.PluginStatusResponse_OK
+		return pluginv2.PluginStatusResponse_OK
 	case PluginStatusError:
-		return bproto.PluginStatusResponse_ERROR
+		return pluginv2.PluginStatusResponse_ERROR
 	}
 	panic("unsupported protobuf FetchInfo type in sdk")
 }
@@ -94,8 +94,8 @@ type CheckResponse struct {
 	Info   string
 }
 
-func (cr CheckResponse) toProtobuf() bproto.PluginStatusResponse {
-	return bproto.PluginStatusResponse{
+func (cr CheckResponse) toProtobuf() pluginv2.PluginStatusResponse {
+	return pluginv2.PluginStatusResponse{
 		Status: cr.Status.toProtobuf(),
 		Info:   cr.Info,
 	}
@@ -121,7 +121,7 @@ type CheckHandler interface {
 	Check(ctx context.Context, pc PluginConfig, headers map[string]string, fetch FetchInfo) (CheckResponse, error)
 }
 
-func (p *coreWrapper) Check(ctx context.Context, req *bproto.PluginStatusRequest) (*bproto.PluginStatusResponse, error) {
+func (p *coreWrapper) Check(ctx context.Context, req *pluginv2.PluginStatusRequest) (*pluginv2.PluginStatusResponse, error) {
 	fetchType, err := fetchInfoFromProtobuf(req.Fetch)
 	if err != nil {
 		return nil, err

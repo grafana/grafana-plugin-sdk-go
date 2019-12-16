@@ -3,7 +3,7 @@ package backend
 import (
 	"context"
 
-	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 type ResourceRequest struct {
@@ -13,7 +13,7 @@ type ResourceRequest struct {
 	Body    []byte
 }
 
-func resourceRequestFromProtobuf(req *bproto.ResourceRequest) *ResourceRequest {
+func resourceRequestFromProtobuf(req *pluginv2.ResourceRequest) *ResourceRequest {
 	return &ResourceRequest{
 		Headers: req.Headers,
 		Method:  req.Method,
@@ -28,8 +28,8 @@ type ResourceResponse struct {
 	Body    []byte
 }
 
-func (rr *ResourceResponse) toProtobuf() *bproto.ResourceResponse {
-	return &bproto.ResourceResponse{
+func (rr *ResourceResponse) toProtobuf() *pluginv2.ResourceResponse {
+	return &pluginv2.ResourceResponse{
 		Headers: rr.Headers,
 		Code:    rr.Code,
 		Body:    rr.Body,
@@ -41,7 +41,7 @@ type ResourceHandler interface {
 	Resource(ctx context.Context, pc PluginConfig, req *ResourceRequest) (*ResourceResponse, error)
 }
 
-func (p *coreWrapper) Resource(ctx context.Context, req *bproto.ResourceRequest) (*bproto.ResourceResponse, error) {
+func (p *coreWrapper) Resource(ctx context.Context, req *pluginv2.ResourceRequest) (*pluginv2.ResourceResponse, error) {
 	pc := pluginConfigFromProto(req.Config)
 	resourceReq := resourceRequestFromProtobuf(req)
 	res, err := p.handlers.Resource(ctx, pc, resourceReq)

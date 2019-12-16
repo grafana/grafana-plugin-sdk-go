@@ -3,13 +3,13 @@ package backend
 import (
 	"context"
 
-	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )
 
 type TransformPlugin interface {
-	DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error)
+	DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error)
 }
 
 // TransformImpl implements the plugin interface from github.com/hashicorp/go-plugin.
@@ -20,7 +20,7 @@ type TransformImpl struct {
 }
 
 func (t *TransformImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	bproto.RegisterTransformServer(s, &TransformGRPCServer{
+	pluginv2.RegisterTransformServer(s, &TransformGRPCServer{
 		Impl:   t.Wrap,
 		broker: broker,
 	})
@@ -28,11 +28,11 @@ func (t *TransformImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) er
 }
 
 func (t *TransformImpl) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &TransformGRPCClient{client: bproto.NewTransformClient(c), broker: broker}, nil
+	return &TransformGRPCClient{client: pluginv2.NewTransformClient(c), broker: broker}, nil
 }
 
 // Callback
 
 type TransformCallBack interface {
-	DataQuery(ctx context.Context, req *bproto.DataQueryRequest) (*bproto.DataQueryResponse, error)
+	DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error)
 }

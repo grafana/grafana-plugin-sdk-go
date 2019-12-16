@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
-	bproto "github.com/grafana/grafana-plugin-sdk-go/genproto/go/backend_plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	plugin "github.com/hashicorp/go-plugin"
 )
 
@@ -14,7 +14,7 @@ type transformWrapper struct {
 	handlers TransformHandlers
 }
 
-func (t *transformWrapper) DataQuery(ctx context.Context, req *bproto.DataQueryRequest, callBack TransformCallBack) (*bproto.DataQueryResponse, error) {
+func (t *transformWrapper) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callBack TransformCallBack) (*pluginv2.DataQueryResponse, error) {
 	pc := pluginConfigFromProto(req.Config)
 
 	queries := make([]DataQuery, len(req.Queries))
@@ -35,7 +35,7 @@ func (t *transformWrapper) DataQuery(ctx context.Context, req *bproto.DataQueryR
 		}
 	}
 
-	return &bproto.DataQueryResponse{
+	return &pluginv2.DataQueryResponse{
 		Frames:   encodedFrames,
 		Metadata: resp.Metadata,
 	}, nil
@@ -61,12 +61,12 @@ type transformCallBackWrapper struct {
 }
 
 func (tw *transformCallBackWrapper) DataQuery(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery) (*DataQueryResponse, error) {
-	protoQueries := make([]*bproto.DataQuery, len(queries))
+	protoQueries := make([]*pluginv2.DataQuery, len(queries))
 	for i, q := range queries {
 		protoQueries[i] = q.toProtobuf()
 	}
 
-	protoReq := &bproto.DataQueryRequest{
+	protoReq := &pluginv2.DataQueryRequest{
 		// TODO: Plugin Config?
 		Queries: protoQueries,
 	}

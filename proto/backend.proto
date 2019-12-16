@@ -1,6 +1,6 @@
 syntax = "proto3";
 import "google/protobuf/empty.proto";
-package backend.plugin;
+package pluginv2;
 
 //-----------------------------------------------
 // Common
@@ -111,7 +111,7 @@ message ResourceRequest {
   // Plugin Configuration
   PluginConfig config = 1;
 
-  
+
   // HTTP Style parameters
   map<string,string> headers = 2; // Request Headers
   string method = 3; // GET/POST/DELETE/etc
