@@ -9,7 +9,7 @@ import (
 )
 
 type TransformPlugin interface {
-	DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error)
+	DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callback TransformCallBack) (*pluginv2.DataQueryResponse, error)
 }
 
 // TransformImpl implements the plugin interface from github.com/hashicorp/go-plugin.
