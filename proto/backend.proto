@@ -136,7 +136,6 @@ message ResourceResponse {
 
 service GrafanaPlatform {
   rpc Resource(ResourceRequest) returns (ResourceResponse);
-
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
 }
 
