@@ -118,7 +118,7 @@ type PluginHandlers interface {
 
 // CheckHandler handles backend plugin checks.
 type CheckHandler interface {
-	Check(ctx context.Context, pc PluginConfig, headers map[string]string, fetch FetchInfo) (CheckResponse, error)
+	Check(ctx context.Context, pc PluginConfig, headers map[string]string, fetch FetchInfo) (*CheckResponse, error)
 }
 
 func (p *coreWrapper) Check(ctx context.Context, req *pluginv2.PluginStatusRequest) (*pluginv2.PluginStatusResponse, error) {
