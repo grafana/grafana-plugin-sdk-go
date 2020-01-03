@@ -28,7 +28,18 @@ func pluginConfigFromProto(pc *pluginv2.PluginConfig) PluginConfig {
 		Name:     pc.Name,
 		Type:     pc.Type,
 		URL:      pc.Url,
-		JSONData: json.RawMessage(pc.JsonData),
+		JSONData: json.RawMessage([]byte(pc.JsonData)),
+	}
+}
+
+func (pc PluginConfig) toProtobuf() *pluginv2.PluginConfig {
+	return &pluginv2.PluginConfig{
+		Id:       pc.ID,
+		OrgId:    pc.OrgID,
+		Name:     pc.Name,
+		Type:     pc.Type,
+		Url:      pc.URL,
+		JsonData: string(pc.JSONData),
 	}
 }
 
