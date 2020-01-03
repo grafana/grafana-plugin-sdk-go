@@ -1,6 +1,7 @@
 package dataframe
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -83,8 +84,8 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			"name":   field.Name,
 			"labels": field.Labels.String(),
 		}
-		if(field.Config != nil) {
-			fieldMeta["config"] = field.Config.ToJSONString()
+		if field.Config != nil {
+			fieldMeta["config"] = toJSONString(field.Config)
 		}
 
 		arrowFields[i] = arrow.Field{
@@ -149,7 +150,9 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 		"name":  f.Name,
 		"refId": f.RefID,
 	}
-
+	if f.Meta != nil {
+		tableMetaMap["meta"] = toJSONString(f.Meta)
+	}
 	tableMeta := arrow.MetadataFrom(tableMetaMap)
 
 	return arrow.NewSchema(fs, &tableMeta), nil
@@ -396,4 +399,13 @@ func UnmarshalArrow(b []byte) (*Frame, error) {
 		return nil, err
 	}
 	return frame, nil
+}
+
+// ToJSONString return the FieldConfig as a json string
+func toJSONString(val interface{}) string {
+	b, err := json.Marshal(val)
+	if err != nil {
+		return "{}"
+	}
+	return string(b)
 }
