@@ -13,12 +13,14 @@ type Frame struct {
 	Fields []*Field
 
 	RefID string
+	Meta  *QueryResultMeta
 }
 
 // Field represents a column of data with a specific type.
 type Field struct {
 	Name   string
-	Vector Vector
+	Config *FieldConfig
+	Vector Vector // TODO? in the frontend, the variable is called "Values"
 	Labels Labels
 }
 
