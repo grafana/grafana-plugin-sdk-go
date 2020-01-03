@@ -83,6 +83,9 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			"name":   field.Name,
 			"labels": field.Labels.String(),
 		}
+		if(field.Config != nil) {
+			fieldMeta["config"] = field.Config.ToJSONString()
+		}
 
 		arrowFields[i] = arrow.Field{
 			Name:     field.Name,
