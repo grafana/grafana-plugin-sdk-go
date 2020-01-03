@@ -6,31 +6,31 @@ type FieldConfig struct {
 	Filterable *bool  `json:"filterable,omitempty"`
 
 	// Numeric Options
-	unit     string `json:"title,omitempty"`
-	decimals *int16 `json:"title,omitempty"`
-	min      *int64 `json:"title,omitempty"`
-	max      *int64 `json:"title,omitempty"`
+	Unit     string `json:"unit,omitempty"`
+	Decimals *int16 `json:"decimals,omitempty"`
+	Min      *int64 `json:"min,omitempty"`
+	Max      *int64 `json:"max,omitempty"`
 
 	// Convert input values into a display string
-	mappings []*ValueMapping `json:"title,omitempty"`
+	Mappings []*ValueMapping `json:"mappings,omitempty"`
 
 	// Map numeric values to states
-	thresholds *ThresholdsConfig `json:"title,omitempty"`
+	Thresholds *ThresholdsConfig `json:"thresholds,omitempty"`
 
 	// Map values to a display color
-	color *FieldColor `json:"title,omitempty"`
+	Color *FieldColor `json:"color,omitempty"`
 
 	// Used when reducing field values
-	nullValueMode *NullValueMode `json:"title,omitempty"`
+	NullValueMode *NullValueMode `json:"nullValueMode,omitempty"`
 
 	// The behavior when clicking on a result
-	links []*DataLink `json:"title,omitempty"`
+	Links []*DataLink `json:"links,omitempty"`
 
 	// Alternative to empty string
-	noValue *string `json:"noValue,omitempty"`
+	NoValue string `json:"noValue,omitempty"`
 
 	// Panel Specific Values
-	custom *map[string]interface{} `json:"custom,omitempty"`
+	Custom *map[string]interface{} `json:"custom,omitempty"`
 }
 
 // NullValueMode say how the UI should show null values
