@@ -1,5 +1,7 @@
 package dataframe
 
+import "encoding/json"
+
 // FieldConfig represents the display properties for a field
 // This struct needs to match the frontend component defined in:
 // https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/dataFrame.ts#L23
@@ -34,6 +36,16 @@ type FieldConfig struct {
 
 	// Panel Specific Values
 	Custom map[string]interface{} `json:"custom,omitempty"`
+}
+
+// FieldConfigFromJSON create a FieldConfig from json string
+func FieldConfigFromJSON(jsonStr string) (*FieldConfig, error) {
+	var cfg FieldConfig
+	err := json.Unmarshal([]byte(jsonStr), &cfg)
+	if err == nil {
+		return nil, err
+	}
+	return &cfg, nil
 }
 
 // NullValueMode say how the UI should show null values

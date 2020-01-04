@@ -85,7 +85,10 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			"labels": field.Labels.String(),
 		}
 		if field.Config != nil {
-			fieldMeta["config"] = toJSONString(field.Config)
+			str, serr := toJSONString(field.Config)
+			if serr == nil {
+				fieldMeta["config"] = str
+			}
 		}
 
 		arrowFields[i] = arrow.Field{
@@ -151,7 +154,10 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 		"refId": f.RefID,
 	}
 	if f.Meta != nil {
-		tableMetaMap["meta"] = toJSONString(f.Meta)
+		str, serr := toJSONString(f.Meta)
+		if serr == nil {
+			tableMetaMap["meta"] = str
+		}
 	}
 	tableMeta := arrow.MetadataFrom(tableMetaMap)
 
@@ -215,6 +221,13 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
 			var err error
 			sdkField.Labels, err = LabelsFromString(labelsAsString)
+			if err != nil {
+				return nil, err
+			}
+		}
+		if configAsString, ok := getMDKey("config", field.Metadata); ok {
+			var err error
+			sdkField.Config, err = FieldConfigFromJSON(configAsString)
 			if err != nil {
 				return nil, err
 			}
@@ -389,6 +402,15 @@ func UnmarshalArrow(b []byte) (*Frame, error) {
 	frame := &Frame{}
 	frame.Name, _ = getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
 	frame.RefID, _ = getMDKey("refId", metaData)
+
+	if metaAsString, ok := getMDKey("meta", metaData); ok {
+		var err error
+		frame.Meta, err = QueryResultMetaFromJSON(metaAsString)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	nullable, err := initializeFrameFields(schema, frame)
 	if err != nil {
 		return nil, err
@@ -402,10 +424,10 @@ func UnmarshalArrow(b []byte) (*Frame, error) {
 }
 
 // ToJSONString return the FieldConfig as a json string
-func toJSONString(val interface{}) string {
+func toJSONString(val interface{}) (string, error) {
 	b, err := json.Marshal(val)
 	if err != nil {
-		return "{}"
+		return "", err
 	}
-	return string(b)
+	return string(b), nil
 }
