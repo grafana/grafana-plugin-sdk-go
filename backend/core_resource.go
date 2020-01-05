@@ -6,15 +6,15 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-type ResourceRequest struct {
+type CallResourceRequest struct {
 	Headers map[string]string
 	Method  string
 	Path    string
 	Body    []byte
 }
 
-func resourceRequestFromProtobuf(req *pluginv2.ResourceRequest) *ResourceRequest {
-	return &ResourceRequest{
+func resourceRequestFromProtobuf(req *pluginv2.CallResource_Request) *CallResourceRequest {
+	return &CallResourceRequest{
 		Headers: req.Headers,
 		Method:  req.Method,
 		Path:    req.Path,
@@ -22,14 +22,14 @@ func resourceRequestFromProtobuf(req *pluginv2.ResourceRequest) *ResourceRequest
 	}
 }
 
-type ResourceResponse struct {
+type CallResourceResponse struct {
 	Headers map[string]string
 	Code    int32
 	Body    []byte
 }
 
-func (rr *ResourceResponse) toProtobuf() *pluginv2.ResourceResponse {
-	return &pluginv2.ResourceResponse{
+func (rr *CallResourceResponse) toProtobuf() *pluginv2.CallResource_Response {
+	return &pluginv2.CallResource_Response{
 		Headers: rr.Headers,
 		Code:    rr.Code,
 		Body:    rr.Body,
@@ -38,16 +38,15 @@ func (rr *ResourceResponse) toProtobuf() *pluginv2.ResourceResponse {
 
 // ResourceHandler handles backend plugin checks.
 type ResourceHandler interface {
-	Resource(ctx context.Context, pc PluginConfig, req *ResourceRequest) (*ResourceResponse, error)
+	CallResource(ctx context.Context, pc PluginConfig, req *CallResourceRequest) (*CallResourceResponse, error)
 }
 
-func (p *coreWrapper) Resource(ctx context.Context, req *pluginv2.ResourceRequest) (*pluginv2.ResourceResponse, error) {
+func (p *coreWrapper) Resource(ctx context.Context, req *pluginv2.CallResource_Request) (*pluginv2.CallResource_Response, error) {
 	pc := pluginConfigFromProto(req.Config)
 	resourceReq := resourceRequestFromProtobuf(req)
-	res, err := p.handlers.Resource(ctx, pc, resourceReq)
+	res, err := p.handlers.CallResource(ctx, pc, resourceReq)
 	if err != nil {
 		return nil, err
 	}
 	return res.toProtobuf(), nil
-
 }

@@ -9,9 +9,9 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-// DataQueryHandler handles data source queries.
-type DataQueryHandler interface {
-	DataQuery(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery) (DataQueryResponse, error)
+// QueryDataHandler handles data queries.
+type QueryDataHandler interface {
+	QueryData(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery) (QueryDataResponse, error)
 }
 
 // DataQuery represents the query as sent from the frontend.
@@ -21,15 +21,17 @@ type DataQuery struct {
 	Interval      time.Duration
 	TimeRange     TimeRange
 	JSON          json.RawMessage
+	Debug         bool
 }
 
 func (q *DataQuery) toProtobuf() *pluginv2.DataQuery {
 	return &pluginv2.DataQuery{
 		RefId:         q.RefID,
 		MaxDataPoints: q.MaxDataPoints,
-		IntervalMS:    q.Interval.Microseconds(),
+		IntervalMS:    q.Interval.Milliseconds(),
 		TimeRange:     q.TimeRange.toProtobuf(),
 		Json:          q.JSON,
+		Debug:         q.Debug,
 	}
 }
 
@@ -40,16 +42,17 @@ func dataQueryFromProtobuf(q *pluginv2.DataQuery) *DataQuery {
 		TimeRange:     timeRangeFromProtobuf(q.TimeRange),
 		Interval:      time.Duration(q.IntervalMS) * time.Millisecond,
 		JSON:          []byte(q.Json),
+		Debug:         q.Debug,
 	}
 }
 
-// DataQueryResponse holds the results for a given query.
-type DataQueryResponse struct {
+// QueryDataResponse holds the results for a given query.
+type QueryDataResponse struct {
 	Frames   []*dataframe.Frame
 	Metadata map[string]string
 }
 
-func (res *DataQueryResponse) toProtobuf() (*pluginv2.DataQueryResponse, error) {
+func (res *QueryDataResponse) toProtobuf() (*pluginv2.QueryData_Response, error) {
 	encodedFrames := make([][]byte, len(res.Frames))
 	var err error
 	for i, frame := range res.Frames {
@@ -59,13 +62,13 @@ func (res *DataQueryResponse) toProtobuf() (*pluginv2.DataQueryResponse, error) 
 		}
 	}
 
-	return &pluginv2.DataQueryResponse{
+	return &pluginv2.QueryData_Response{
 		Frames:   encodedFrames,
 		Metadata: res.Metadata,
 	}, nil
 }
 
-func dataQueryResponseFromProtobuf(res *pluginv2.DataQueryResponse) (*DataQueryResponse, error) {
+func dataQueryResponseFromProtobuf(res *pluginv2.QueryData_Response) (*QueryDataResponse, error) {
 	frames := make([]*dataframe.Frame, len(res.Frames))
 	var err error
 	for i, encodedFrame := range res.Frames {
@@ -74,7 +77,7 @@ func dataQueryResponseFromProtobuf(res *pluginv2.DataQueryResponse) (*DataQueryR
 			return nil, err
 		}
 	}
-	return &DataQueryResponse{Metadata: res.Metadata, Frames: frames}, nil
+	return &QueryDataResponse{Metadata: res.Metadata, Frames: frames}, nil
 }
 
 // TimeRange represents a time range for a query.
@@ -99,7 +102,7 @@ func timeRangeFromProtobuf(tr *pluginv2.TimeRange) TimeRange {
 	}
 }
 
-func (p *coreWrapper) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
+func (p *coreWrapper) QueryData(ctx context.Context, req *pluginv2.QueryData_Request) (*pluginv2.QueryData_Response, error) {
 
 	pc := pluginConfigFromProto(req.Config)
 
@@ -108,7 +111,7 @@ func (p *coreWrapper) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequ
 		queries[i] = *dataQueryFromProtobuf(q)
 	}
 
-	resp, err := p.handlers.DataQuery(ctx, pc, req.Headers, queries)
+	resp, err := p.handlers.QueryData(ctx, pc, req.Headers, queries)
 	if err != nil {
 		return nil, err
 	}

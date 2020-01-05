@@ -14,7 +14,7 @@ type transformWrapper struct {
 	handlers TransformHandlers
 }
 
-func (t *transformWrapper) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callBack TransformCallBack) (*pluginv2.DataQueryResponse, error) {
+func (t *transformWrapper) QueryData(ctx context.Context, req *pluginv2.QueryData_Request, callBack TransformCallBack) (*pluginv2.QueryData_Response, error) {
 	pc := pluginConfigFromProto(req.Config)
 
 	queries := make([]DataQuery, len(req.Queries))
@@ -22,7 +22,7 @@ func (t *transformWrapper) DataQuery(ctx context.Context, req *pluginv2.DataQuer
 		queries[i] = *dataQueryFromProtobuf(q)
 	}
 
-	resp, err := t.handlers.DataQuery(ctx, pc, req.Headers, queries, &transformCallBackWrapper{callBack})
+	resp, err := t.handlers.QueryData(ctx, pc, req.Headers, queries, &transformCallBackWrapper{callBack})
 	if err != nil {
 		return nil, err
 	}
@@ -35,43 +35,43 @@ func (t *transformWrapper) DataQuery(ctx context.Context, req *pluginv2.DataQuer
 		}
 	}
 
-	return &pluginv2.DataQueryResponse{
+	return &pluginv2.QueryData_Response{
 		Frames:   encodedFrames,
 		Metadata: resp.Metadata,
 	}, nil
 }
 
 type TransformHandlers interface {
-	TransformDataQueryHandler
+	TransformQueryDataHandler
 }
 
-type TransformDataQueryHandler interface {
-	DataQuery(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery, callBack TransformCallBackHandler) (*DataQueryResponse, error)
+type TransformQueryDataHandler interface {
+	QueryData(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery, callBack TransformCallBackHandler) (*QueryDataResponse, error)
 }
 
 // Callback
 
 type TransformCallBackHandler interface {
 	// TODO: Forget if I actually need PluginConfig on the callback or not.
-	DataQuery(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery) (*DataQueryResponse, error)
+	QueryData(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery) (*QueryDataResponse, error)
 }
 
 type transformCallBackWrapper struct {
 	callBack TransformCallBack
 }
 
-func (tw *transformCallBackWrapper) DataQuery(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery) (*DataQueryResponse, error) {
+func (tw *transformCallBackWrapper) QueryData(ctx context.Context, pc PluginConfig, headers map[string]string, queries []DataQuery) (*QueryDataResponse, error) {
 	protoQueries := make([]*pluginv2.DataQuery, len(queries))
 	for i, q := range queries {
 		protoQueries[i] = q.toProtobuf()
 	}
 
-	protoReq := &pluginv2.DataQueryRequest{
+	protoReq := &pluginv2.QueryData_Request{
 		// TODO: Plugin Config?
 		Queries: protoQueries,
 	}
 
-	protoRes, err := tw.callBack.DataQuery(ctx, protoReq)
+	protoRes, err := tw.callBack.QueryData(ctx, protoReq)
 	if err != nil {
 		return nil, err
 	}

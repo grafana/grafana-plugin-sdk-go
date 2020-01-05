@@ -16,58 +16,151 @@ message PluginConfig {
   map<string,string> decryptedSecureJsonData = 7;
 }
 
-
 //-----------------------------------------------
 // All Backend Plugins Implement
 //-----------------------------------------------
 
-service Core {
-  // Get the plugin status
-  rpc Check(PluginStatusRequest) returns (PluginStatusResponse);
+service Backend {
+  // Information about what a backend plugin supports/expects
+  rpc GetSchema(GetSchema.Request) returns (GetSchema.Response);
 
-  // HTTP Style request
-  rpc Resource(ResourceRequest) returns (ResourceResponse);
+  // One-time initialization, called before other functions below
+  rpc Configure(Configure.Request) returns (Configure.Response);
 
-  // Well typed query interface
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+  // Diagnostics
+  rpc CollectMetrics(CollectMetrics.Request) returns (CollectMetrics.Response);
+  rpc CheckHealth(CheckHealth.Request) returns (CheckHealth.Response);
 
+  // Validation triggered when plugin configuration are being saved in Grafana
+  rpc ValidatePluginConfig(ValidatePluginConfig.Request) returns (ValidatePluginConfig.Response);
+
+  // Resource
+  rpc CallResource(CallResource.Request) returns (CallResource.Response);
+
+  // Data
+  rpc QueryData(QueryData.Request) returns (QueryData.Response);
 }
 
 //-----------------------------------------------
-// Plugin Status Check
+// Schema and resource configuration
 //-----------------------------------------------
 
-message PluginStatusRequest {
-  // Plugin Configuration
-  PluginConfig config = 1;
-
-  // Environment info
-  map<string,string> headers = 2;
-
-  enum FetchInfo {
-    STATUS = 0;  // nothing
-    API = 1;     // OpenAPI description
-    METRICS = 2; // Prometheus style metrics
-    DEBUG = 3;   // JSON Debug Info (admin+ view)
+message Schema {
+  message Block {
+    repeated Attribute attributes = 1;
   }
 
-  // Get an OpenAPI description (viewer+)
-  FetchInfo fetch = 3;
-}
+  message Attribute {
+    enum Type {
+      NUMERIC = 0;
+      TEXT = 1;
+      BOOLEAN = 2;
+    }
 
-message PluginStatusResponse {
-  enum PluginStatus {
-    UNKNOWN = 0; // starting etc
-    OK = 1;
-    ERROR = 2;
+    string name = 1;
+    Type type = 2;
+    string displayName = 3;
+    string description = 4;
+    bool required = 5;
+    bool sensitive = 6;
   }
 
-  PluginStatus status = 1;
-  string info = 2;
+  // The version of the schema.
+  // Schemas are versioned, so that plugins can upgrade a saved
+  // plugin config state when the schema is changed.
+  int64 schemaVersion = 1;
+
+  // Block is the top level configuration block for this schema.
+  Block block = 2;
+}
+
+message Resource {
+  enum Permission {
+    VIEWER = 0;
+    EDITOR = 1;
+    ADMIN = 2;
+  }
+
+  message Route {
+    enum Method {
+      ANY = 0;
+      GET = 1;
+      PUT = 2;
+      POST = 3;
+      DELETE = 4;
+      PATCH = 5;
+      HEAD = 6;
+    }
+
+    string path = 1;
+    Method method = 2;
+    Permission permission = 3;
+  }
+
+  Permission permission = 1;
+  map<string,Resource> childResources = 2;
+  repeated Route routes = 3;
+}
+
+message GetSchema {
+  message Request {
+  }
+
+  message Response {
+    Schema pluginSchema = 1; // global configuration schema, eg.g from Grafana config or env variables
+    Schema pluginConfigSchema = 2; // plugin configuration schema, e.g. datasource/app config stored in Grafana database
+    map<string,Resource> resources = 3; // resource configuration
+  }
+}
+
+message HostInfo {
+  string version = 1; // v6.5.2
+  string edition = 2; // oss or enterprise
+  bool validLicense = 3;
+  bool expiredLicense = 4;
+}
+
+message Configure {
+  message Request {
+    HostInfo grafanaHostInfo = 1; // information about the Grafana host instance
+    bytes config = 2; // extracted json config from Grafana config or env variables based on GetSchema
+  }
+
+  message Response {
+  }
+}
+
+message ValidatePluginConfig {
+  message Request {
+    PluginConfig config = 1;
+  }
+
+  message Response {
+  }
 }
 
 //-----------------------------------------------
-// Data Query
+// Resource
+//-----------------------------------------------
+
+message CallResource {
+  message Request {
+    PluginConfig config = 1;
+    map<string,string> headers = 2;
+    string method = 3;
+    string path = 4;
+    bytes body = 5;
+  }
+
+  message Response {
+    int32 code = 1;
+    map<string,string> headers = 2;
+    bytes body = 3;
+  }
+}
+
+//-----------------------------------------------
+// Data
 //-----------------------------------------------
 
 message TimeRange {
@@ -79,77 +172,72 @@ message DataQuery {
   string refId = 1;
   int64 maxDataPoints = 2;
   int64 intervalMS = 3;
-  TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
-  bytes json = 5; // Arbitrary structure (model?  modelJson in v1)
+  TimeRange timeRange = 4;
+  bytes json = 5;
+  bool debug = 6;
 }
 
-message DataQueryRequest {
-  // Plugin Configuration
-  PluginConfig config = 1;
+message QueryData {
+  message Request {
+    PluginConfig config = 1;
+    map<string,string> headers = 2;
+    repeated DataQuery queries = 3;
+  }
 
-  // Environment info
-  map<string,string> headers = 2;
+  message Response {
+    // Arrow encoded DataFrames
+    // Each frame encodes its own: Errors, meta, and refId
+    repeated bytes frames = 1;
 
-  // List of queries
-  repeated DataQuery queries = 3;
-}
-
-message DataQueryResponse {
-  // Arrow encoded DataFrames
-  // Each frame encodes its own: Errors, meta, and refId
-  repeated bytes frames = 1;
-
-  // Additional response metadata
-  map<string,string> metadata = 2;
-}
-
-//-----------------------------------------------
-// HTTP style request
-//-----------------------------------------------
-
-message ResourceRequest {
-  // Plugin Configuration
-  PluginConfig config = 1;
-
-
-  // HTTP Style parameters
-  map<string,string> headers = 2; // Request Headers
-  string method = 3; // GET/POST/DELETE/etc
-  string path = 4;   // (with params?)
-  bytes body = 5;    // assume string unless header says otherwise?
-}
-
-message ResourceResponse {
-  int32 code = 1;  // Match HTTP status codes
-  map<string,string> headers = 2; // Response Headers
-
-  bytes body = 3;
-}
-
-
-//-----------------------------------------------
-// Allow plugins to access other plugins
-// (TODO: Streaming Signature, or Grafana-Server will be the Server for this)
-//
-//
-//-----------------------------------------------
-
-service GrafanaPlatform {
-  rpc Resource(ResourceRequest) returns (ResourceResponse);
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+    // Additional response metadata
+    map<string,string> metadata = 2;
+  }
 }
 
 //-----------------------------------------------
-// Temp? for GEL Only.
-// Callback can maybe be replaced with Grafana Platform in future iteration.
+// Diagnostics
 //-----------------------------------------------
 
-service Transform {
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+service Diagnostics {
+  rpc CollectMetrics(CollectMetrics.Request) returns (CollectMetrics.Response);
+  rpc CheckHealth(CheckHealth.Request) returns (CheckHealth.Response);
 }
+
+message CollectMetrics {
+  message Request {
+  }
+
+  message Payload {
+    bytes prometheus = 1;
+  }
+
+  message Response {
+    Payload metrics = 1;
+  }
+}
+
+message CheckHealth {
+  message Request {
+  }
+
+  message Response {
+    enum HealthStatus {
+      UNKNOWN = 0; // starting etc
+      OK = 1;
+      ERROR = 2;
+    }
+
+    HealthStatus status = 1;
+    string info = 2;
+  }
+}
+
+//-----------------------------------------------
+// Transform
+//-----------------------------------------------
 
 service TransformCallBack {
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+  rpc QueryData(QueryData.Request) returns (QueryData.Response);
 }
 
 //-----------------------------------------------------------------
@@ -196,29 +284,41 @@ service StreamingPlugin {
   rpc Disconnect(google.protobuf.Empty) returns (StreamingClose);
 }
 
-
 //-----------------------------------------------------------------
-// Renderer (do we want this definition here?)
-// OR -- can we do this via Request(PluginRequest)???
+// Renderer
 //-----------------------------------------------------------------
-
-message RenderRequest {
-  string url = 1;
-  int32 width = 2;
-  int32 height = 3;
-  int32 timeout = 4;
-  string timezone = 5;
-  string encoding = 6;
-  string filePath = 7;
-  string renderKey = 8;
-  string domain = 9;
-  bool debug = 10;
-}
-
-message RenderResponse {
-  string error = 1;
-}
 
 service Renderer {
-  rpc Render(RenderRequest) returns (RenderResponse);
+  rpc Render(Render.Request) returns (Render.Response);
+}
+
+message Render {
+  message Request {
+    string url = 1;
+    int32 width = 2;
+    int32 height = 3;
+    int32 timeout = 4;
+    string timezone = 5;
+    string encoding = 6;
+    string filePath = 7;
+    string renderKey = 8;
+    string domain = 9;
+    bool debug = 10;
+  }
+
+  message Response {
+    string error = 1;
+  }
+}
+
+//-----------------------------------------------
+// Allow plugins to access other plugins
+// (TODO: Streaming Signature, or Grafana-Server will be the Server for this)
+//
+//
+//-----------------------------------------------
+
+service GrafanaPlatform {
+  rpc CallResource(CallResource.Request) returns (CallResource.Response);
+  rpc QueryData(QueryData.Request) returns (QueryData.Response);
 }

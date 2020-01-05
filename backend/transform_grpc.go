@@ -11,12 +11,29 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type TransformGRPCServer struct {
-	broker *plugin.GRPCBroker
-	Impl   transformWrapper
+type transformGRPCServer struct {
+	backend   backendWrapper
+	transform transformWrapper
+	broker    *plugin.GRPCBroker
 }
 
-func (t *TransformGRPCServer) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
+func (s *transformGRPCServer) GetSchema(ctx context.Context, req *pluginv2.GetSchema_Request) (*pluginv2.GetSchema_Response, error) {
+	return nil, nil
+}
+
+func (s *transformGRPCServer) ValidatePluginConfig(ctx context.Context, req *pluginv2.ValidatePluginConfig_Request) (*pluginv2.ValidatePluginConfig_Response, error) {
+	return nil, nil
+}
+
+func (s *transformGRPCServer) Configure(ctx context.Context, req *pluginv2.Configure_Request) (*pluginv2.Configure_Response, error) {
+	return nil, nil
+}
+
+func (s *transformGRPCServer) CallResource(ctx context.Context, req *pluginv2.CallResource_Request) (*pluginv2.CallResource_Response, error) {
+	return nil, nil
+}
+
+func (t *transformGRPCServer) QueryData(ctx context.Context, req *pluginv2.QueryData_Request) (*pluginv2.QueryData_Response, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("transform request is missing metadata")
@@ -35,15 +52,40 @@ func (t *TransformGRPCServer) DataQuery(ctx context.Context, req *pluginv2.DataQ
 	}
 	defer conn.Close()
 	api := &TransformCallBackGrpcClient{pluginv2.NewTransformCallBackClient(conn)}
-	return t.Impl.DataQuery(ctx, req, api)
+	return t.transform.QueryData(ctx, req, api)
 }
 
-type TransformGRPCClient struct {
+func (s *transformGRPCServer) CollectMetrics(ctx context.Context, req *pluginv2.CollectMetrics_Request) (*pluginv2.CollectMetrics_Response, error) {
+	return nil, nil
+}
+
+func (s *transformGRPCServer) CheckHealth(ctx context.Context, req *pluginv2.CheckHealth_Request) (*pluginv2.CheckHealth_Response, error) {
+	return nil, nil
+}
+
+type transformGRPCClient struct {
+	pluginv2.BackendServer
 	broker *plugin.GRPCBroker
-	client pluginv2.TransformClient
+	client pluginv2.BackendClient
 }
 
-func (t *TransformGRPCClient) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callBack TransformCallBack) (*pluginv2.DataQueryResponse, error) {
+func (c *transformGRPCClient) GetSchema(ctx context.Context, req *pluginv2.GetSchema_Request) (*pluginv2.GetSchema_Response, error) {
+	return c.client.GetSchema(ctx, req)
+}
+
+func (c *transformGRPCClient) ValidatePluginConfig(ctx context.Context, req *pluginv2.ValidatePluginConfig_Request) (*pluginv2.ValidatePluginConfig_Response, error) {
+	return c.client.ValidatePluginConfig(ctx, req)
+}
+
+func (c *transformGRPCClient) Configure(ctx context.Context, req *pluginv2.Configure_Request) (*pluginv2.Configure_Response, error) {
+	return c.client.Configure(ctx, req)
+}
+
+func (c *transformGRPCClient) CallResource(ctx context.Context, req *pluginv2.CallResource_Request) (*pluginv2.CallResource_Response, error) {
+	return c.client.CallResource(ctx, req)
+}
+
+func (c *transformGRPCClient) QueryData(ctx context.Context, req *pluginv2.QueryData_Request, callBack TransformCallBack) (*pluginv2.QueryData_Response, error) {
 	callBackServer := &TransformCallBackGrpcServer{Impl: callBack}
 
 	var s *grpc.Server
@@ -53,12 +95,20 @@ func (t *TransformGRPCClient) DataQuery(ctx context.Context, req *pluginv2.DataQ
 
 		return s
 	}
-	brokerID := t.broker.NextId()
-	go t.broker.AcceptAndServe(brokerID, serverFunc)
+	brokerID := c.broker.NextId()
+	go c.broker.AcceptAndServe(brokerID, serverFunc)
 	metadata.AppendToOutgoingContext(ctx, "broker_requestId", string(brokerID))
-	res, err := t.client.DataQuery(ctx, req)
+	res, err := c.client.QueryData(ctx, req)
 	s.Stop()
 	return res, err
+}
+
+func (c *transformGRPCClient) CollectMetrics(ctx context.Context, req *pluginv2.CollectMetrics_Request) (*pluginv2.CollectMetrics_Response, error) {
+	return c.client.CollectMetrics(ctx, req)
+}
+
+func (c *transformGRPCClient) CheckHealth(ctx context.Context, req *pluginv2.CheckHealth_Request) (*pluginv2.CheckHealth_Response, error) {
+	return c.client.CheckHealth(ctx, req)
 }
 
 // Callback
@@ -67,14 +117,14 @@ type TransformCallBackGrpcClient struct {
 	client pluginv2.TransformCallBackClient
 }
 
-func (t *TransformCallBackGrpcClient) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
-	return t.client.DataQuery(ctx, req)
+func (t *TransformCallBackGrpcClient) QueryData(ctx context.Context, req *pluginv2.QueryData_Request) (*pluginv2.QueryData_Response, error) {
+	return t.client.QueryData(ctx, req)
 }
 
 type TransformCallBackGrpcServer struct {
 	Impl TransformCallBack
 }
 
-func (g *TransformCallBackGrpcServer) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
-	return g.Impl.DataQuery(ctx, req)
+func (g *TransformCallBackGrpcServer) QueryData(ctx context.Context, req *pluginv2.QueryData_Request) (*pluginv2.QueryData_Response, error) {
+	return g.Impl.QueryData(ctx, req)
 }

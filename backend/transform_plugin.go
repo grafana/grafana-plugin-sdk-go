@@ -9,30 +9,32 @@ import (
 )
 
 type TransformPlugin interface {
-	DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callback TransformCallBack) (*pluginv2.DataQueryResponse, error)
+	CorePlugin
+	TransformQueryDataHandler
 }
 
 // TransformImpl implements the plugin interface from github.com/hashicorp/go-plugin.
 type TransformImpl struct {
 	plugin.NetRPCUnsupportedPlugin
-
-	Wrap transformWrapper
+	backend   backendWrapper
+	transform transformWrapper
 }
 
 func (t *TransformImpl) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
-	pluginv2.RegisterTransformServer(s, &TransformGRPCServer{
-		Impl:   t.Wrap,
-		broker: broker,
+	pluginv2.RegisterBackendServer(s, &transformGRPCServer{
+		backend:   t.backend,
+		transform: t.transform,
+		broker:    broker,
 	})
 	return nil
 }
 
 func (t *TransformImpl) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &TransformGRPCClient{client: pluginv2.NewTransformClient(c), broker: broker}, nil
+	return &transformGRPCClient{client: pluginv2.NewBackendClient(c), broker: broker}, nil
 }
 
 // Callback
 
 type TransformCallBack interface {
-	DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error)
+	QueryData(ctx context.Context, req *pluginv2.QueryData_Request) (*pluginv2.QueryData_Response, error)
 }
