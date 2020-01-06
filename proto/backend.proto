@@ -31,7 +31,6 @@ service Core {
 
   // Well typed query interface
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
-
 }
 
 //-----------------------------------------------
