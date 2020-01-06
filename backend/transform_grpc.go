@@ -11,12 +11,31 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type TransformGRPCServer struct {
-	broker *plugin.GRPCBroker
-	Impl   transformWrapper
+// TransformGRPCPlugin implements the GRPCPlugin interface from github.com/hashicorp/go-plugin.
+type TransformGRPCPlugin struct {
+	plugin.NetRPCUnsupportedPlugin
+	plugin.GRPCPlugin
+	adapter *sdkAdapter
 }
 
-func (t *TransformGRPCServer) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
+func (p *TransformGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+	pluginv2.RegisterTransformServer(s, &transformGRPCServer{
+		adapter: p.adapter,
+		broker:  broker,
+	})
+	return nil
+}
+
+func (p *TransformGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+	return &transformGRPCClient{client: pluginv2.NewTransformClient(c), broker: broker}, nil
+}
+
+type transformGRPCServer struct {
+	broker  *plugin.GRPCBroker
+	adapter *sdkAdapter
+}
+
+func (t *transformGRPCServer) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, fmt.Errorf("transform request is missing metadata")
@@ -35,15 +54,15 @@ func (t *TransformGRPCServer) DataQuery(ctx context.Context, req *pluginv2.DataQ
 	}
 	defer conn.Close()
 	api := &TransformCallBackGrpcClient{pluginv2.NewTransformCallBackClient(conn)}
-	return t.Impl.DataQuery(ctx, req, api)
+	return t.adapter.TransformData(ctx, req, api)
 }
 
-type TransformGRPCClient struct {
+type transformGRPCClient struct {
 	broker *plugin.GRPCBroker
 	client pluginv2.TransformClient
 }
 
-func (t *TransformGRPCClient) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callBack TransformCallBack) (*pluginv2.DataQueryResponse, error) {
+func (t *transformGRPCClient) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callBack TransformCallBack) (*pluginv2.DataQueryResponse, error) {
 	callBackServer := &TransformCallBackGrpcServer{Impl: callBack}
 
 	var s *grpc.Server

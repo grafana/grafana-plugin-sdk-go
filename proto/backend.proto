@@ -22,8 +22,9 @@ message PluginConfig {
 //-----------------------------------------------
 
 service Core {
-  // Get the plugin status
-  rpc Check(PluginStatusRequest) returns (PluginStatusResponse);
+  // Diagnostics
+  rpc CollectMetrics(CollectMetrics.Request) returns (CollectMetrics.Response);
+  rpc CheckHealth(CheckHealth.Request) returns (CheckHealth.Response);
 
   // HTTP Style request
   rpc Resource(ResourceRequest) returns (ResourceResponse);
@@ -34,36 +35,36 @@ service Core {
 }
 
 //-----------------------------------------------
-// Plugin Status Check
+// Diagnostics
 //-----------------------------------------------
 
-message PluginStatusRequest {
-  // Plugin Configuration
-  PluginConfig config = 1;
-
-  // Environment info
-  map<string,string> headers = 2;
-
-  enum FetchInfo {
-    STATUS = 0;  // nothing
-    API = 1;     // OpenAPI description
-    METRICS = 2; // Prometheus style metrics
-    DEBUG = 3;   // JSON Debug Info (admin+ view)
+message CollectMetrics {
+  message Request {
   }
 
-  // Get an OpenAPI description (viewer+)
-  FetchInfo fetch = 3;
+  message Payload {
+    bytes prometheus = 1;
+  }
+
+  message Response {
+    Payload metrics = 1;
+  }
 }
 
-message PluginStatusResponse {
-  enum PluginStatus {
-    UNKNOWN = 0; // starting etc
-    OK = 1;
-    ERROR = 2;
+message CheckHealth {
+  message Request {
   }
 
-  PluginStatus status = 1;
-  string info = 2;
+  message Response {
+    enum HealthStatus {
+      UNKNOWN = 0; // starting etc
+      OK = 1;
+      ERROR = 2;
+    }
+
+    HealthStatus status = 1;
+    string info = 2;
+  }
 }
 
 //-----------------------------------------------
