@@ -18,7 +18,7 @@ type QueryResultMeta struct {
 func QueryResultMetaFromJSON(jsonStr string) (*QueryResultMeta, error) {
 	var m QueryResultMeta
 	err := json.Unmarshal([]byte(jsonStr), &m)
-	if err == nil {
+	if err != nil {
 		return nil, err
 	}
 	return &m, nil

@@ -85,10 +85,11 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			"labels": field.Labels.String(),
 		}
 		if field.Config != nil {
-			str, serr := toJSONString(field.Config)
-			if serr == nil {
-				fieldMeta["config"] = str
+			str, err := toJSONString(field.Config)
+			if err != nil {
+				return nil, err
 			}
+			fieldMeta["config"] = str
 		}
 
 		arrowFields[i] = arrow.Field{
@@ -154,10 +155,11 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 		"refId": f.RefID,
 	}
 	if f.Meta != nil {
-		str, serr := toJSONString(f.Meta)
-		if serr == nil {
-			tableMetaMap["meta"] = str
+		str, err := toJSONString(f.Meta)
+		if err != nil {
+			return nil, err
 		}
+		tableMetaMap["meta"] = str
 	}
 	tableMeta := arrow.MetadataFrom(tableMetaMap)
 
