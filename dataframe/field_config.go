@@ -1,6 +1,8 @@
 package dataframe
 
-import "encoding/json"
+import (
+	"encoding/json"
+)
 
 // FieldConfig represents the display properties for a field
 // This struct needs to match the frontend component defined in:
@@ -42,7 +44,7 @@ type FieldConfig struct {
 func FieldConfigFromJSON(jsonStr string) (*FieldConfig, error) {
 	var cfg FieldConfig
 	err := json.Unmarshal([]byte(jsonStr), &cfg)
-	if err == nil {
+	if err != nil {
 		return nil, err
 	}
 	return &cfg, nil

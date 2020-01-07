@@ -16,63 +16,75 @@ import (
 var update = flag.Bool("update", false, "update .golden.arrow files")
 
 func goldenDF() *dataframe.Frame {
+	nullableStringValuesFieldConfig := &dataframe.FieldConfig{
+		Title: "Grafana ❤️ (Previous should be heart emoji) 🦥 (Previous should be sloth emoji)",
+		Links: []dataframe.DataLink{
+			dataframe.DataLink{
+				Title:       "Donate - The Sloth Conservation Foundation",
+				TargetBlank: true,
+				URL:         "https://slothconservation.com/how-to-help/donate/",
+			},
+		},
+		NoValue: "😤",
+	}
+
 	df := dataframe.New("many_types",
-		dataframe.NewField("string_values", dataframe.Labels{"aLabelKey": "aLabelValue"}, []string{
+		dataframe.NewField("string_values", dataframe.Labels{"aLabelKey": "aLabelValue"}, nil, []string{
 			"Grafana",
 			"❤️",
 			"Transforms",
 		}),
-		dataframe.NewField("nullable_string_values", dataframe.Labels{"aLabelKey": "aLabelValue", "bLabelKey": "bLabelValue"}, []*string{
+		dataframe.NewField("nullable_string_values", dataframe.Labels{"aLabelKey": "aLabelValue", "bLabelKey": "bLabelValue"}, nullableStringValuesFieldConfig, []*string{
 			stringPtr("🦥"),
 			nil,
 			stringPtr("update your unicode/font if no sloth, is 2019."),
 		}),
-		dataframe.NewField("int_values", nil, []int64{
+		dataframe.NewField("int_values", nil, nil, []int64{
 			math.MinInt64,
 			1,
 			math.MaxInt64,
 		}),
-		dataframe.NewField("nullable_int_values", nil, []*int64{
+		dataframe.NewField("nullable_int_values", nil, nil, []*int64{
 			intPtr(math.MinInt64),
 			nil,
 			intPtr(math.MaxInt64),
 		}),
-		dataframe.NewField("uint_values", nil, []uint64{
+		dataframe.NewField("uint_values", nil, nil, []uint64{
 			0,
 			1,
 			math.MaxUint64,
 		}),
-		dataframe.NewField("nullable_uint_values", nil, []*uint64{
+		dataframe.NewField("nullable_uint_values", nil, nil, []*uint64{
 			uintPtr(0),
 			nil,
 			uintPtr(math.MaxUint64),
 		}),
-		dataframe.NewField("float_values", nil, []float64{
+		dataframe.NewField("float_values", nil, nil, []float64{
 			0.0,
 			1.0,
 			2.0,
 		}),
-		dataframe.NewField("nullable_float_values", nil, []*float64{
+		dataframe.NewField("nullable_float_values", nil, nil, []*float64{
 			floatPtr(0.0),
 			nil,
 			floatPtr(2.0),
 		}),
-		dataframe.NewField("bool_values", nil, []bool{
+		dataframe.NewField("bool_values", nil, nil, []bool{
 			true,
 			true,
 			false,
 		}),
-		dataframe.NewField("nullable_bool_values", nil, []*bool{
+		dataframe.NewField("nullable_bool_values", nil, nil, []*bool{
 			boolPtr(true),
 			nil,
 			boolPtr(false),
 		}),
-		dataframe.NewField("timestamps", nil, []time.Time{
+		dataframe.NewField("timestamps", nil, nil, []time.Time{
 			time.Unix(1568039445, 0),
 			time.Unix(1568039450, 0),
 			time.Unix(1568039455, 0),
 		}),
-		dataframe.NewField("nullable_timestamps", nil, []*time.Time{
+		dataframe.NewField("nullable_timestamps", nil, nil, []*time.Time{
 			timePtr(time.Unix(1568039445, 0)),
 			nil,
 			timePtr(time.Unix(1568039455, 0)),

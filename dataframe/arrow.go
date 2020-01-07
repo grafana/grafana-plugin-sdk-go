@@ -273,6 +273,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		default:
 			return nullable, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 		}
+
 		frame.Fields = append(frame.Fields, sdkField)
 	}
 	return nullable, nil

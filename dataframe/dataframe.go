@@ -28,7 +28,7 @@ type Field struct {
 type Fields []*Field
 
 // NewField returns a new instance of Field.
-func NewField(name string, labels Labels, values interface{}) *Field {
+func NewField(name string, labels Labels, conf *FieldConfig, values interface{}) *Field {
 	var vec Vector
 	switch v := values.(type) {
 	case []int64:
@@ -99,6 +99,7 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		Name:   name,
 		Vector: vec,
 		Labels: labels,
+		Config: conf,
 	}
 }
 
