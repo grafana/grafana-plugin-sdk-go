@@ -13,6 +13,4 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 cd "$DIR"
 
-protoc -I ./ datasource.proto --go_out=plugins=grpc:${DST_DIR}
-protoc -I ./ transform.proto --go_out=plugins=grpc:${DST_DIR}
-protoc -I ./ common.proto --go_out=plugins=grpc:${DST_DIR}
+protoc -I ./ backend.proto --go_out=plugins=grpc:${DST_DIR}
