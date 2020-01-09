@@ -12,34 +12,35 @@ type Vector interface {
 	At(i int) interface{}
 	Len() int
 	PrimitiveType() VectorPType
+	//buildArrowColumn(pool memory.Allocator, field arrow.Field) *array.Column
 }
 
 func newVector(t interface{}, n int) (v Vector) {
 	switch t.(type) {
 	case []int64:
-		v = newIntVector(n)
+		v = newInt64Vector(n, VectorPTypeInt64)
 	case []*int64:
-		v = newNullableIntVector(n)
+		v = newNullableInt64Vector(n, VectorPTypeNullableInt64)
 	case []uint64:
-		v = newUintVector(n)
+		v = newUint64Vector(n, VectorPTypeUint64)
 	case []*uint64:
-		v = newNullableUintVector(n)
+		v = newNullableUint64Vector(n, VectorPTypeNullableUInt64)
 	case []float64:
-		v = newFloatVector(n)
+		v = newFloat64Vector(n, VectorPTypeFloat64)
 	case []*float64:
-		v = newNullableFloatVector(n)
+		v = newNullableFloat64Vector(n, VectorPTypeNullableFloat64)
 	case []string:
-		v = newStringVector(n)
+		v = newStringVector(n, VectorPTypeString)
 	case []*string:
-		v = newNullableStringVector(n)
+		v = newNullableStringVector(n, VectorPTypeNullableString)
 	case []bool:
-		v = newBoolVector(n)
+		v = newBoolVector(n, VectorPTypeBool)
 	case []*bool:
-		v = newNullableBoolVector(n)
+		v = newNullableBoolVector(n, VectorPTypeNullableBool)
 	case []time.Time:
-		v = newTimeVector(n)
+		v = newTimeTimeVector(n, VectorPTypeTime)
 	case []*time.Time:
-		v = newNullableTimeVector(n)
+		v = newNullableTimeTimeVector(n, VectorPTypeNullableTime)
 	default:
 		panic(fmt.Sprintf("unsupported vector type of %T", t))
 	}

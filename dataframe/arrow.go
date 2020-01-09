@@ -103,34 +103,34 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	for fieldIdx, field := range f.Fields {
 		switch v := field.Vector.(type) {
 
-		case *intVector:
+		case *Int64Vector:
 			columns[fieldIdx] = *buildIntColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableIntVector:
+		case *nullableInt64Vector:
 			columns[fieldIdx] = *buildNullableIntColumn(pool, arrowFields[fieldIdx], v)
 
-		case *uintVector:
+		case *Uint64Vector:
 			columns[fieldIdx] = *buildUIntColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableUintVector:
+		case *nullableUint64Vector:
 			columns[fieldIdx] = *buildNullableUIntColumn(pool, arrowFields[fieldIdx], v)
 
-		case *stringVector:
+		case *StringVector:
 			columns[fieldIdx] = *buildStringColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableStringVector:
 			columns[fieldIdx] = *buildNullableStringColumn(pool, arrowFields[fieldIdx], v)
 
-		case *floatVector:
+		case *Float64Vector:
 			columns[fieldIdx] = *buildFloatColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableFloatVector:
+		case *nullableFloat64Vector:
 			columns[fieldIdx] = *buildNullableFloatColumn(pool, arrowFields[fieldIdx], v)
 
-		case *boolVector:
+		case *BoolVector:
 			columns[fieldIdx] = *buildBoolColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableBoolVector:
 			columns[fieldIdx] = *buildNullableBoolColumn(pool, arrowFields[fieldIdx], v)
 
-		case *timeVector:
+		case *TimeTimeVector:
 			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableTimeVector:
+		case *nullableTimeTimeVector:
 			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
 
 		default:
@@ -157,34 +157,34 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	switch f.Vector.(type) {
 
-	case *stringVector:
+	case *StringVector:
 		return &arrow.StringType{}, false, nil
 	case *nullableStringVector:
 		return &arrow.StringType{}, true, nil
 
-	case *intVector:
+	case *Int64Vector:
 		return &arrow.Int64Type{}, false, nil
-	case *nullableIntVector:
+	case *nullableInt64Vector:
 		return &arrow.Int64Type{}, true, nil
 
-	case *uintVector:
+	case *Uint64Vector:
 		return &arrow.Uint64Type{}, false, nil
-	case *nullableUintVector:
+	case *nullableUint64Vector:
 		return &arrow.Uint64Type{}, true, nil
 
-	case *floatVector:
+	case *Float64Vector:
 		return &arrow.Float64Type{}, false, nil
-	case *nullableFloatVector:
+	case *nullableFloat64Vector:
 		return &arrow.Float64Type{}, true, nil
 
-	case *boolVector:
+	case *BoolVector:
 		return &arrow.BooleanType{}, false, nil
 	case *nullableBoolVector:
 		return &arrow.BooleanType{}, true, nil
 
-	case *timeVector:
+	case *TimeTimeVector:
 		return &arrow.TimestampType{}, false, nil
-	case *nullableTimeVector:
+	case *nullableTimeTimeVector:
 		return &arrow.TimestampType{}, true, nil
 
 	default:
@@ -217,40 +217,40 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		switch field.Type.ID() {
 		case arrow.STRING:
 			if nullable[idx] {
-				sdkField.Vector = newNullableStringVector(0)
+				sdkField.Vector = newNullableStringVector(0, VectorPTypeNullableString)
 				break
 			}
-			sdkField.Vector = newStringVector(0)
+			sdkField.Vector = newStringVector(0, VectorPTypeString)
 		case arrow.INT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableIntVector(0)
+				sdkField.Vector = newNullableInt64Vector(0, VectorPTypeNullableInt64)
 				break
 			}
-			sdkField.Vector = newIntVector(0)
+			sdkField.Vector = newInt64Vector(0, VectorPTypeInt64)
 		case arrow.UINT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUintVector(0)
+				sdkField.Vector = newNullableUint64Vector(0, VectorPTypeNullableUInt64)
 				break
 			}
-			sdkField.Vector = newUintVector(0)
+			sdkField.Vector = newUint64Vector(0, VectorPTypeUint64)
 		case arrow.FLOAT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableFloatVector(0)
+				sdkField.Vector = newNullableFloat64Vector(0, VectorPTypeNullableFloat64)
 				break
 			}
-			sdkField.Vector = newFloatVector(0)
+			sdkField.Vector = newFloat64Vector(0, VectorPTypeFloat64)
 		case arrow.BOOL:
 			if nullable[idx] {
-				sdkField.Vector = newNullableBoolVector(0)
+				sdkField.Vector = newNullableBoolVector(0, VectorPTypeNullableBool)
 				break
 			}
-			sdkField.Vector = newBoolVector(0)
+			sdkField.Vector = newBoolVector(0, VectorPTypeBool)
 		case arrow.TIMESTAMP:
 			if nullable[idx] {
-				sdkField.Vector = newNullableTimeVector(0)
+				sdkField.Vector = newNullableTimeTimeVector(0, VectorPTypeNullableTime)
 				break
 			}
-			sdkField.Vector = newTimeVector(0)
+			sdkField.Vector = newTimeTimeVector(0, VectorPTypeTime)
 		default:
 			return nullable, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 		}
