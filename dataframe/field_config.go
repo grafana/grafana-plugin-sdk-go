@@ -4,18 +4,21 @@ import (
 	"encoding/json"
 )
 
-// FieldConfig represents the display properties for a field
-// This struct needs to match the frontend component defined in:
-// https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/dataFrame.ts#L23
+// FieldConfig represents the display properties for a Field.
 type FieldConfig struct {
+
+	// This struct needs to match the frontend component defined in:
+	// https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/dataFrame.ts#L23
+	// All properties are optional should be omitted from JSON when empty or not set.
+
 	Title      string     `json:"title,omitempty"`
-	Filterable Filterable `json:"filterable,omitempty"`
+	Filterable Filterable `json:"filterable,omitempty"` // indicates if the Field's data can be filtered by additional calls.
 
 	// Numeric Options
-	Unit     string   `json:"unit,omitempty"`
-	Decimals *uint16  `json:"decimals,omitempty"`
-	Min      *float64 `json:"min,omitempty"`
-	Max      *float64 `json:"max,omitempty"`
+	Unit     string   `json:"unit,omitempty"`     // is the string to display to represent the Field's unit, such as "Requests/sec"
+	Decimals *uint16  `json:"decimals,omitempty"` // is the number of decimal places to display
+	Min      *float64 `json:"min,omitempty"`      // is the maximum value of fields in the column. When present the frontend can skip the calculation.
+	Max      *float64 `json:"max,omitempty"`      // see Min
 
 	// Convert input values into a display string
 	Mappings []ValueMapping `json:"mappings,omitempty"`
@@ -40,16 +43,15 @@ type FieldConfig struct {
 	Custom map[string]interface{} `json:"custom,omitempty"`
 }
 
-// Filterable is a tri-state bool (unset(nil)/false/true) used in FieldConfig to indicate
-// if the Field's data can be filtered by additional calls.
+// Filterable is a tri-state bool (unset(nil)/false/true)
 type Filterable *bool
 
-// FilterableTrue returns Filterable set to True
+// FilterableTrue returns s Filterable set to True
 func FilterableTrue() Filterable {
 	return Filterable(&([]bool{true}[0]))
 }
 
-// FilterableFalse returns Filterable set to False
+// FilterableFalse returns a Filterable set to False
 func FilterableFalse() Filterable {
 	return Filterable(&([]bool{false}[0]))
 }
@@ -62,6 +64,30 @@ func FieldConfigFromJSON(jsonStr string) (*FieldConfig, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+// SetDecimals modifies the FieldConfig's Decimals property to
+// be set to v and returns the FieldConfig. It is a convenance function
+// since the Decimals property is a pointer.
+func (fc *FieldConfig) SetDecimals(v uint16) *FieldConfig {
+	fc.Decimals = &v
+	return fc
+}
+
+// SetMin modifies the FieldConfig's Min property to
+// be set to v and returns the FieldConfig. It is a convenance function
+// since the Min property is a pointer.
+func (fc *FieldConfig) SetMin(v float64) *FieldConfig {
+	fc.Min = &v
+	return fc
+}
+
+// SetMax modifies the FieldConfig's Max property to
+// be set to v and returns the FieldConfig. It is a convenance function
+// since the Min property is a pointer.
+func (fc *FieldConfig) SetMax(v float64) *FieldConfig {
+	fc.Max = &v
+	return fc
 }
 
 // NullValueMode say how the UI should show null values
@@ -81,10 +107,10 @@ type MappingType int8
 
 const (
 	// ValueToText map a value to text
-	ValueToText MappingType = 1
+	ValueToText MappingType = iota + 1
 
 	// RangeToText map a range to text
-	RangeToText MappingType = 2
+	RangeToText
 )
 
 // ValueMapping convert input value to something else

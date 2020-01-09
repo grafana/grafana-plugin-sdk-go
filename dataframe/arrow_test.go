@@ -16,7 +16,7 @@ import (
 var update = flag.Bool("update", false, "update .golden.arrow files")
 
 func goldenDF() *dataframe.Frame {
-	nullableStringValuesFieldConfig := &dataframe.FieldConfig{
+	nullableStringValuesFieldConfig := (&dataframe.FieldConfig{
 		Title: "Grafana ❤️ (Previous should be heart emoji) 🦥 (Previous should be sloth emoji)",
 		Links: []dataframe.DataLink{
 			dataframe.DataLink{
@@ -25,9 +25,10 @@ func goldenDF() *dataframe.Frame {
 				URL:         "https://slothconservation.com/how-to-help/donate/",
 			},
 		},
-		NoValue: "😤",
-		Filterable: dataframe.FilterableTrue(),
-	}
+		NoValue:       "😤",
+		Filterable:    dataframe.FilterableTrue(),
+		NullValueMode: dataframe.NullValueModeNull,
+	}).SetDecimals(2).SetMin(0).SetMax(100)
 
 	df := dataframe.New("many_types",
 		dataframe.NewField("string_values", dataframe.Labels{"aLabelKey": "aLabelValue"}, []string{

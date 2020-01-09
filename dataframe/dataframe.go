@@ -108,7 +108,7 @@ func (f *Field) Len() int {
 }
 
 // SetConfig modifies the Field's Config property to
-// set to conf and returns the Field.
+// be set to conf and returns the Field.
 func (f *Field) SetConfig(conf *FieldConfig) *Field {
 	f.Config = conf
 	return f
