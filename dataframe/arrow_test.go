@@ -35,7 +35,7 @@ func goldenDF() *dataframe.Frame {
 			"Grafana",
 			"❤️",
 			"Transforms",
-		}),
+		}).SetConfig(&dataframe.FieldConfig{}),
 		dataframe.NewField("nullable_string_values", dataframe.Labels{"aLabelKey": "aLabelValue", "bLabelKey": "bLabelValue"}, []*string{
 			stringPtr("🦥"),
 			nil,
