@@ -28,7 +28,7 @@ type Field struct {
 type Fields []*Field
 
 // NewField returns a new instance of Field.
-func NewField(name string, labels Labels, conf *FieldConfig, values interface{}) *Field {
+func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec Vector
 	switch v := values.(type) {
 	case []int64:
@@ -99,13 +99,19 @@ func NewField(name string, labels Labels, conf *FieldConfig, values interface{})
 		Name:   name,
 		Vector: vec,
 		Labels: labels,
-		Config: conf,
 	}
 }
 
 // Len returns the number of elements in the field.
 func (f *Field) Len() int {
 	return f.Vector.Len()
+}
+
+// SetConfig modifies the Field's Config property to
+// set to conf and returns the Field.
+func (f *Field) SetConfig(conf *FieldConfig) *Field {
+	f.Config = conf
+	return f
 }
 
 // Labels are used to add metadata to an object.
