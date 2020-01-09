@@ -95,8 +95,9 @@ func goldenDF() *dataframe.Frame {
 
 	df.RefID = "A"
 	df.Meta = &dataframe.QueryResultMeta{
-		SearchWords: []string{"Grafana", "❤️", " 🦥 ", "test"},
-		Limit:       4242,
+		SearchWords:   []string{"Grafana", "❤️", " 🦥 ", "test"},
+		Limit:         4242,
+		Visualization: dataframe.VisTable,
 	}
 	return df
 }
