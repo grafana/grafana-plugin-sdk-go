@@ -26,6 +26,7 @@ func goldenDF() *dataframe.Frame {
 			},
 		},
 		NoValue: "😤",
+		Filterable: dataframe.FilterableTrue(),
 	}
 
 	df := dataframe.New("many_types",

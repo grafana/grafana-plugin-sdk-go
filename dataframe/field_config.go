@@ -8,14 +8,14 @@ import (
 // This struct needs to match the frontend component defined in:
 // https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/dataFrame.ts#L23
 type FieldConfig struct {
-	Title      string `json:"title,omitempty"`
-	Filterable *bool  `json:"filterable,omitempty"`
+	Title      string     `json:"title,omitempty"`
+	Filterable Filterable `json:"filterable,omitempty"`
 
 	// Numeric Options
-	Unit     string `json:"unit,omitempty"`
-	Decimals *int16 `json:"decimals,omitempty"`
-	Min      *int64 `json:"min,omitempty"`
-	Max      *int64 `json:"max,omitempty"`
+	Unit     string   `json:"unit,omitempty"`
+	Decimals *uint16  `json:"decimals,omitempty"`
+	Min      *float64 `json:"min,omitempty"`
+	Max      *float64 `json:"max,omitempty"`
 
 	// Convert input values into a display string
 	Mappings []ValueMapping `json:"mappings,omitempty"`
@@ -28,7 +28,7 @@ type FieldConfig struct {
 	Color map[string]interface{} `json:"color,omitempty"`
 
 	// Used when reducing field values
-	NullValueMode *NullValueMode `json:"nullValueMode,omitempty"`
+	NullValueMode NullValueMode `json:"nullValueMode,omitempty"`
 
 	// The behavior when clicking on a result
 	Links []DataLink `json:"links,omitempty"`
@@ -38,6 +38,20 @@ type FieldConfig struct {
 
 	// Panel Specific Values
 	Custom map[string]interface{} `json:"custom,omitempty"`
+}
+
+// Filterable is a tri-state bool (unset(nil)/false/true) used in FieldConfig to indicate
+// if the Field's data can be filtered by additional calls.
+type Filterable *bool
+
+// FilterableTrue returns Filterable set to True
+func FilterableTrue() Filterable {
+	return Filterable(&([]bool{true}[0]))
+}
+
+// FilterableFalse returns Filterable set to False
+func FilterableFalse() Filterable {
+	return Filterable(&([]bool{false}[0]))
 }
 
 // FieldConfigFromJSON create a FieldConfig from json string
@@ -54,12 +68,12 @@ func FieldConfigFromJSON(jsonStr string) (*FieldConfig, error) {
 type NullValueMode string
 
 const (
-	// Null show null values
-	Null NullValueMode = "null"
-	// Ignore null values
-	Ignore NullValueMode = "connected"
-	// AsZero show null as zero
-	AsZero NullValueMode = "null as zero"
+	// NullValueModeNull displays null values
+	NullValueModeNull NullValueMode = "null"
+	// NullValueModeIgnore sets the display to ignore null values
+	NullValueModeIgnore NullValueMode = "connected"
+	// NullValueModeAsZero set the display show null values as zero
+	NullValueModeAsZero NullValueMode = "null as zero"
 )
 
 // MappingType value or range
