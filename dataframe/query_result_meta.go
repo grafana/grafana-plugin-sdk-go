@@ -14,7 +14,7 @@ type QueryResultMeta struct {
 	Limit int64 `json:"limit,omitempty"`
 
 	// Visualization is so a Grafana visualization can be suggested with
-	// the response such as "Graph", "Singlestat", or Gauge
+	// the response such as a graph or table.
 	Visualization string `json:"visualization,omitempty"`
 }
 
