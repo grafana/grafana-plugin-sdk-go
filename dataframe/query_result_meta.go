@@ -12,13 +12,9 @@ type QueryResultMeta struct {
 
 	// Used in Explore to show limit applied to search result
 	Limit int64 `json:"limit,omitempty"`
-
-	// Visualization is so a Grafana visualization can be suggested with
-	// the response such as "Graph", "Singlestat", or Gauge
-	Visualization string `json:"visualization,omitempty"`
 }
 
-// QueryResultMetaFromJSON creates a QueryResultMeta from json string
+// QueryResultMetaFromJSON create a FieldConfig from json string
 func QueryResultMetaFromJSON(jsonStr string) (*QueryResultMeta, error) {
 	var m QueryResultMeta
 	err := json.Unmarshal([]byte(jsonStr), &m)
@@ -27,15 +23,3 @@ func QueryResultMetaFromJSON(jsonStr string) (*QueryResultMeta, error) {
 	}
 	return &m, nil
 }
-
-const (
-	VisGraph      = "grafana/graph"
-	VisTable      = "grafana/table"
-	VisSingleStat = "grafana/singlestat"
-	VisGauge      = "grafana/gauge"
-	VisBarGauge   = "grafana/bar_gauge"
-	VisText       = "grafana/text"
-	VisHeatMap    = "grafana/heatmap"
-	VisStat       = "grafana/stat"
-	VisLogs       = "grafana/logs"
-)
