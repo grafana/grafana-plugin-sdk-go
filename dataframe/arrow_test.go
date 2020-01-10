@@ -13,7 +13,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
 )
 
-var update = flag.Bool("update", true, "update .golden.arrow files")
+var update = flag.Bool("update", false, "update .golden.arrow files")
 
 func goldenDF() *dataframe.Frame {
 	nullableStringValuesFieldConfig := (&dataframe.FieldConfig{

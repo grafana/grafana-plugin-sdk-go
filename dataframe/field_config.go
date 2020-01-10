@@ -171,7 +171,7 @@ type ThresholdsConfig struct {
 
 // Threshold a single step on the threshold list
 type Threshold struct {
-	Value ConfFloat64 `json:"min,omitempty"` // First value is always -Infinity serialize to null
+	Value ConfFloat64 `json:"value,omitempty"` // First value is always -Infinity serialize to null
 	Color string      `json:"color,omitempty"`
 	State string      `json:"state,omitempty"`
 }
@@ -190,9 +190,9 @@ func NewThreshold(value float64, color, state string) Threshold {
 type ThresholdsMode string
 
 const (
-	// ThresholdModeAbsolute pick thresholds based on absolute value
-	ThresholdModeAbsolute ThresholdsMode = "absolute"
+	// ThresholdsModeAbsolute pick thresholds based on absolute value
+	ThresholdsModeAbsolute ThresholdsMode = "absolute"
 
-	// ThresholdModePercentage the threshold is relative to min/max
-	ThresholdModePercentage ThresholdsMode = "percentage"
+	// ThresholdsModePercentage the threshold is relative to min/max
+	ThresholdsModePercentage ThresholdsMode = "percentage"
 )
