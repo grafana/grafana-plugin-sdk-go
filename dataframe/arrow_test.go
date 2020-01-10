@@ -9,8 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
-	"github.com/stretchr/testify/assert"
 )
 
 var update = flag.Bool("update", false, "update .golden.arrow files")
@@ -27,7 +27,7 @@ func goldenDF() *dataframe.Frame {
 		},
 		NoValue:       "😤",
 		NullValueMode: dataframe.NullValueModeNull,
-	}).SetDecimals(2).SetMin(0).SetMax(100).SetFilterable(false)
+	}).SetDecimals(2).SetMin(math.NaN()).SetFilterable(false)
 
 	df := dataframe.New("many_types",
 		dataframe.NewField("string_values", dataframe.Labels{"aLabelKey": "aLabelValue"}, []string{
@@ -138,5 +138,12 @@ func TestDecode(t *testing.T) {
 	}
 
 	df := goldenDF()
-	assert.Equal(t, df, newDf)
+
+	opt := cmp.Comparer(func(x, y dataframe.ConfFloat64) bool {
+		return (math.IsNaN(float64(x)) && math.IsNaN(float64(y))) || x == y
+	})
+
+	if diff := cmp.Diff(df, newDf, opt); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
 }

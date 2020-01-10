@@ -2,6 +2,9 @@ package dataframe
 
 import (
 	"encoding/json"
+	"fmt"
+	"strconv"
+	"strings"
 )
 
 // FieldConfig represents the display properties for a Field.
@@ -15,10 +18,10 @@ type FieldConfig struct {
 	Filterable *bool  `json:"filterable,omitempty"` // indicates if the Field's data can be filtered by additional calls.
 
 	// Numeric Options
-	Unit     string   `json:"unit,omitempty"`     // is the string to display to represent the Field's unit, such as "Requests/sec"
-	Decimals *uint16  `json:"decimals,omitempty"` // is the number of decimal places to display
-	Min      *float64 `json:"min,omitempty"`      // is the maximum value of fields in the column. When present the frontend can skip the calculation.
-	Max      *float64 `json:"max,omitempty"`      // see Min
+	Unit     string       `json:"unit,omitempty"`     // is the string to display to represent the Field's unit, such as "Requests/sec"
+	Decimals *uint16      `json:"decimals,omitempty"` // is the number of decimal places to display
+	Min      *ConfFloat64 `json:"min,omitempty"`      // is the maximum value of fields in the column. When present the frontend can skip the calculation.
+	Max      *ConfFloat64 `json:"max,omitempty"`      // see Min
 
 	// Convert input values into a display string
 	Mappings []ValueMapping `json:"mappings,omitempty"`
@@ -43,6 +46,31 @@ type FieldConfig struct {
 	Custom map[string]interface{} `json:"custom,omitempty"`
 }
 
+// ConfFloat64 is a float64. It Marshals in JSON as a string
+// so NaN and InF values can be supported.
+type ConfFloat64 float64
+
+func (sf *ConfFloat64) MarshalJSON() ([]byte, error) {
+	if sf == nil {
+		return []byte("null"), nil
+	}
+	return []byte(fmt.Sprintf(`"%s"`, strconv.FormatFloat(float64(*sf), 'E', -1, 64))), nil
+}
+
+func (sf *ConfFloat64) UnmarshalJSON(data []byte) error {
+	s := string(data)
+	if s == "null" {
+		return nil
+	}
+	v, err := strconv.ParseFloat(strings.Trim(s, `"`), 64)
+	if err != nil {
+		return err
+	}
+	cf := ConfFloat64(v)
+	*sf = cf
+	return nil
+}
+
 // FieldConfigFromJSON create a FieldConfig from json string
 func FieldConfigFromJSON(jsonStr string) (*FieldConfig, error) {
 	var cfg FieldConfig
@@ -65,7 +93,8 @@ func (fc *FieldConfig) SetDecimals(v uint16) *FieldConfig {
 // be set to v and returns the FieldConfig. It is a convenance function
 // since the Min property is a pointer.
 func (fc *FieldConfig) SetMin(v float64) *FieldConfig {
-	fc.Min = &v
+	cf := ConfFloat64(v)
+	fc.Min = &cf
 	return fc
 }
 
@@ -73,7 +102,8 @@ func (fc *FieldConfig) SetMin(v float64) *FieldConfig {
 // be set to v and returns the FieldConfig. It is a convenance function
 // since the Min property is a pointer.
 func (fc *FieldConfig) SetMax(v float64) *FieldConfig {
-	fc.Max = &v
+	cf := ConfFloat64(v)
+	fc.Max = &cf
 	return fc
 }
 
@@ -140,9 +170,19 @@ type ThresholdsConfig struct {
 
 // Threshold a single step on the threshold list
 type Threshold struct {
-	Value *float64 `json:"min,omitempty"` // First value is always -Infinity serialize to null
-	Color string `json:"color,omitempty"`
-	State string `json:"state,omitempty"`
+	Value *ConfFloat64 `json:"min,omitempty"` // First value is always -Infinity serialize to null
+	Color string       `json:"color,omitempty"`
+	State string       `json:"state,omitempty"`
+}
+
+// NewThreshold Creates a new Threshold object
+func NewThreshold(value float64, color, state string) Threshold {
+	cf := ConfFloat64(value)
+	return Threshold{
+		Value: &cf,
+		Color: color,
+		State: state,
+	}
 }
 
 // ThresholdsMode absolute or percentage
