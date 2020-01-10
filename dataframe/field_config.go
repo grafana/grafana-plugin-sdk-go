@@ -3,8 +3,8 @@ package dataframe
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"strconv"
-	"strings"
 )
 
 // FieldConfig represents the display properties for a Field.
@@ -46,15 +46,16 @@ type FieldConfig struct {
 	Custom map[string]interface{} `json:"custom,omitempty"`
 }
 
-// ConfFloat64 is a float64. It Marshals in JSON as a string
-// so NaN and InF values can be supported.
+// ConfFloat64 is a float64. It Marshals float64 values of NaN of Inf
+// to null.
 type ConfFloat64 float64
 
 func (sf *ConfFloat64) MarshalJSON() ([]byte, error) {
-	if sf == nil {
+	if sf == nil || math.IsNaN(float64(*sf)) || math.IsInf(float64(*sf), -1) || math.IsInf(float64(*sf), 1) {
 		return []byte("null"), nil
 	}
-	return []byte(fmt.Sprintf(`"%s"`, strconv.FormatFloat(float64(*sf), 'E', -1, 64))), nil
+
+	return []byte(fmt.Sprintf(`%v`, float64(*sf))), nil
 }
 
 func (sf *ConfFloat64) UnmarshalJSON(data []byte) error {
@@ -62,7 +63,7 @@ func (sf *ConfFloat64) UnmarshalJSON(data []byte) error {
 	if s == "null" {
 		return nil
 	}
-	v, err := strconv.ParseFloat(strings.Trim(s, `"`), 64)
+	v, err := strconv.ParseFloat(s, 64)
 	if err != nil {
 		return err
 	}
@@ -170,16 +171,16 @@ type ThresholdsConfig struct {
 
 // Threshold a single step on the threshold list
 type Threshold struct {
-	Value *ConfFloat64 `json:"min,omitempty"` // First value is always -Infinity serialize to null
-	Color string       `json:"color,omitempty"`
-	State string       `json:"state,omitempty"`
+	Value ConfFloat64 `json:"min,omitempty"` // First value is always -Infinity serialize to null
+	Color string      `json:"color,omitempty"`
+	State string      `json:"state,omitempty"`
 }
 
 // NewThreshold Creates a new Threshold object
 func NewThreshold(value float64, color, state string) Threshold {
 	cf := ConfFloat64(value)
 	return Threshold{
-		Value: &cf,
+		Value: cf,
 		Color: color,
 		State: state,
 	}

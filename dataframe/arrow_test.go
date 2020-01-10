@@ -13,7 +13,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
 )
 
-var update = flag.Bool("update", false, "update .golden.arrow files")
+var update = flag.Bool("update", true, "update .golden.arrow files")
 
 func goldenDF() *dataframe.Frame {
 	nullableStringValuesFieldConfig := (&dataframe.FieldConfig{
@@ -27,7 +27,8 @@ func goldenDF() *dataframe.Frame {
 		},
 		NoValue:       "😤",
 		NullValueMode: dataframe.NullValueModeNull,
-	}).SetDecimals(2).SetMin(math.NaN()).SetFilterable(false)
+		// math.NaN() and math.Infs become null when encoded to json
+	}).SetDecimals(2).SetMax(math.Inf(1)).SetMin(math.NaN()).SetFilterable(false)
 
 	df := dataframe.New("many_types",
 		dataframe.NewField("string_values", dataframe.Labels{"aLabelKey": "aLabelValue"}, []string{
@@ -44,7 +45,7 @@ func goldenDF() *dataframe.Frame {
 			math.MinInt64,
 			1,
 			math.MaxInt64,
-		}),
+		}).SetConfig((&dataframe.FieldConfig{}).SetMin(0).SetMax(1)),
 		dataframe.NewField("nullable_int_values", nil, []*int64{
 			intPtr(math.MinInt64),
 			nil,
@@ -139,11 +140,37 @@ func TestDecode(t *testing.T) {
 
 	df := goldenDF()
 
-	opt := cmp.Comparer(func(x, y dataframe.ConfFloat64) bool {
-		return (math.IsNaN(float64(x)) && math.IsNaN(float64(y))) || x == y
+	opt := cmp.Comparer(func(x, y *dataframe.ConfFloat64) bool {
+		if x == nil && y == nil {
+			return true
+		}
+		if y == nil {
+			if math.IsNaN(float64(*x)) {
+				return true
+			}
+			if math.IsInf(float64(*x), 1) {
+				return true
+			}
+			if math.IsInf(float64(*x), -1) {
+				return true
+			}
+		}
+		if x == nil {
+			if math.IsNaN(float64(*y)) {
+				return true
+			}
+			if math.IsInf(float64(*y), 1) {
+				return true
+			}
+			if math.IsInf(float64(*y), -1) {
+				return true
+			}
+		}
+		return *x == *y
 	})
 
 	if diff := cmp.Diff(df, newDf, opt); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
+
 }
