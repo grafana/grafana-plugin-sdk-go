@@ -12,9 +12,12 @@ type QueryResultMeta struct {
 
 	// Used in Explore to show limit applied to search result
 	Limit int64 `json:"limit,omitempty"`
+
+	// DatsSource Specific Values
+	Custom map[string]interface{} `json:"custom,omitempty"`
 }
 
-// QueryResultMetaFromJSON create a FieldConfig from json string
+// QueryResultMetaFromJSON creates a QueryResultMeta from a json string
 func QueryResultMetaFromJSON(jsonStr string) (*QueryResultMeta, error) {
 	var m QueryResultMeta
 	err := json.Unmarshal([]byte(jsonStr), &m)
