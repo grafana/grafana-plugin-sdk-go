@@ -13,7 +13,7 @@ type QueryResultMeta struct {
 	// Used in Explore to show limit applied to search result
 	Limit int64 `json:"limit,omitempty"`
 
-	// DatsSource Specific Values
+	// Datasource specific values
 	Custom map[string]interface{} `json:"custom,omitempty"`
 }
 
