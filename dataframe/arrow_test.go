@@ -26,9 +26,8 @@ func goldenDF() *dataframe.Frame {
 			},
 		},
 		NoValue:       "😤",
-		Filterable:    dataframe.FilterableTrue(),
 		NullValueMode: dataframe.NullValueModeNull,
-	}).SetDecimals(2).SetMin(0).SetMax(100)
+	}).SetDecimals(2).SetMin(0).SetMax(100).SetFilterable(false)
 
 	df := dataframe.New("many_types",
 		dataframe.NewField("string_values", dataframe.Labels{"aLabelKey": "aLabelValue"}, []string{

@@ -11,8 +11,8 @@ type FieldConfig struct {
 	// https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/dataFrame.ts#L23
 	// All properties are optional should be omitted from JSON when empty or not set.
 
-	Title      string     `json:"title,omitempty"`
-	Filterable Filterable `json:"filterable,omitempty"` // indicates if the Field's data can be filtered by additional calls.
+	Title      string `json:"title,omitempty"`
+	Filterable *bool  `json:"filterable,omitempty"` // indicates if the Field's data can be filtered by additional calls.
 
 	// Numeric Options
 	Unit     string   `json:"unit,omitempty"`     // is the string to display to represent the Field's unit, such as "Requests/sec"
@@ -41,19 +41,6 @@ type FieldConfig struct {
 
 	// Panel Specific Values
 	Custom map[string]interface{} `json:"custom,omitempty"`
-}
-
-// Filterable is a tri-state bool (unset(nil)/false/true)
-type Filterable *bool
-
-// FilterableTrue returns s Filterable set to True
-func FilterableTrue() Filterable {
-	return Filterable(&([]bool{true}[0]))
-}
-
-// FilterableFalse returns a Filterable set to False
-func FilterableFalse() Filterable {
-	return Filterable(&([]bool{false}[0]))
 }
 
 // FieldConfigFromJSON create a FieldConfig from json string
@@ -87,6 +74,14 @@ func (fc *FieldConfig) SetMin(v float64) *FieldConfig {
 // since the Min property is a pointer.
 func (fc *FieldConfig) SetMax(v float64) *FieldConfig {
 	fc.Max = &v
+	return fc
+}
+
+// SetFilterable modifies the FieldConfig's Filterable property to
+// be set to b and returns the FieldConfig. It is a convenance function
+// since the Filterable property is a pointer.
+func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
+	fc.Filterable = &b
 	return fc
 }
 
