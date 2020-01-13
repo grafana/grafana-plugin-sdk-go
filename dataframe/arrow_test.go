@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var update = flag.Bool("update", false, "update .golden.arrow files")
+var update = flag.Bool("update", true, "update .golden.arrow files")
 
 func goldenDF() *dataframe.Frame {
 	df := dataframe.New("many_types",
@@ -27,15 +27,25 @@ func goldenDF() *dataframe.Frame {
 			nil,
 			stringPtr("update your unicode/font if no sloth, is 2019."),
 		}),
-		dataframe.NewField("int_values", nil, []int64{
+		dataframe.NewField("int8_values", nil, []int8{
+			math.MinInt8,
+			1,
+			math.MaxInt8,
+		}),
+		dataframe.NewField("nullable_int8_values", nil, []*int8{
+			int8Ptr(math.MinInt8),
+			nil,
+			int8Ptr(math.MaxInt8),
+		}),
+		dataframe.NewField("int64_values", nil, []int64{
 			math.MinInt64,
 			1,
 			math.MaxInt64,
 		}),
-		dataframe.NewField("nullable_int_values", nil, []*int64{
-			intPtr(math.MinInt64),
+		dataframe.NewField("nullable_int64_values", nil, []*int64{
+			int64Ptr(math.MinInt64),
 			nil,
-			intPtr(math.MaxInt64),
+			int64Ptr(math.MaxInt64),
 		}),
 		dataframe.NewField("uint_values", nil, []uint64{
 			0,
@@ -43,9 +53,9 @@ func goldenDF() *dataframe.Frame {
 			math.MaxUint64,
 		}),
 		dataframe.NewField("nullable_uint_values", nil, []*uint64{
-			uintPtr(0),
+			uint64Ptr(0),
 			nil,
-			uintPtr(math.MaxUint64),
+			uint64Ptr(math.MaxUint64),
 		}),
 		dataframe.NewField("float_values", nil, []float64{
 			0.0,
@@ -53,9 +63,9 @@ func goldenDF() *dataframe.Frame {
 			2.0,
 		}),
 		dataframe.NewField("nullable_float_values", nil, []*float64{
-			floatPtr(0.0),
+			float64Ptr(0.0),
 			nil,
-			floatPtr(2.0),
+			float64Ptr(2.0),
 		}),
 		dataframe.NewField("bool_values", nil, []bool{
 			true,

@@ -106,15 +106,27 @@ func timePtr(t time.Time) *time.Time {
 	return &t
 }
 
-func floatPtr(f float64) *float64 {
+func float64Ptr(f float64) *float64 {
 	return &f
 }
 
-func intPtr(i int64) *int64 {
+func int8Ptr(i int8) *int8 {
 	return &i
 }
 
-func uintPtr(ui uint64) *uint64 {
+func int16Ptr(i int16) *int16 {
+	return &i
+}
+
+func int32Ptr(i int32) *int32 {
+	return &i
+}
+
+func int64Ptr(i int64) *int64 {
+	return &i
+}
+
+func uint64Ptr(ui uint64) *uint64 {
 	return &ui
 }
 

@@ -6,32 +6,90 @@ package dataframe
 
 import "time"
 
-type nullableInt64Vector struct {
-	items []*int64
+type nullableUint8Vector struct {
+	items []*uint8
 	pType VectorPType
 }
 
-func newNullableInt64Vector(n int, pType VectorPType) *nullableInt64Vector {
-	return &nullableInt64Vector{items: make([]*int64, n), pType: pType}
+func newNullableUint8Vector(n int, pType VectorPType) *nullableUint8Vector {
+	return &nullableUint8Vector{items: make([]*uint8, n), pType: pType}
 }
 
-func (v *nullableInt64Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*int64)
+func (v *nullableUint8Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(*uint8)
 }
 
-func (v *nullableInt64Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*int64))
+func (v *nullableUint8Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(*uint8))
 }
 
-func (v *nullableInt64Vector) At(i int) interface{} {
+func (v *nullableUint8Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *nullableInt64Vector) Len() int {
+func (v *nullableUint8Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *nullableInt64Vector) PrimitiveType() VectorPType {
+func (v *nullableUint8Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type nullableUint16Vector struct {
+	items []*uint16
+	pType VectorPType
+}
+
+func newNullableUint16Vector(n int, pType VectorPType) *nullableUint16Vector {
+	return &nullableUint16Vector{items: make([]*uint16, n), pType: pType}
+}
+
+func (v *nullableUint16Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(*uint16)
+}
+
+func (v *nullableUint16Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(*uint16))
+}
+
+func (v *nullableUint16Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *nullableUint16Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *nullableUint16Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type nullableUint32Vector struct {
+	items []*uint32
+	pType VectorPType
+}
+
+func newNullableUint32Vector(n int, pType VectorPType) *nullableUint32Vector {
+	return &nullableUint32Vector{items: make([]*uint32, n), pType: pType}
+}
+
+func (v *nullableUint32Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(*uint32)
+}
+
+func (v *nullableUint32Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(*uint32))
+}
+
+func (v *nullableUint32Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *nullableUint32Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *nullableUint32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
@@ -61,6 +119,151 @@ func (v *nullableUint64Vector) Len() int {
 }
 
 func (v *nullableUint64Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type nullableInt8Vector struct {
+	items []*int8
+	pType VectorPType
+}
+
+func newNullableInt8Vector(n int, pType VectorPType) *nullableInt8Vector {
+	return &nullableInt8Vector{items: make([]*int8, n), pType: pType}
+}
+
+func (v *nullableInt8Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(*int8)
+}
+
+func (v *nullableInt8Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(*int8))
+}
+
+func (v *nullableInt8Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *nullableInt8Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *nullableInt8Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type nullableInt16Vector struct {
+	items []*int16
+	pType VectorPType
+}
+
+func newNullableInt16Vector(n int, pType VectorPType) *nullableInt16Vector {
+	return &nullableInt16Vector{items: make([]*int16, n), pType: pType}
+}
+
+func (v *nullableInt16Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(*int16)
+}
+
+func (v *nullableInt16Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(*int16))
+}
+
+func (v *nullableInt16Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *nullableInt16Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *nullableInt16Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type nullableInt32Vector struct {
+	items []*int32
+	pType VectorPType
+}
+
+func newNullableInt32Vector(n int, pType VectorPType) *nullableInt32Vector {
+	return &nullableInt32Vector{items: make([]*int32, n), pType: pType}
+}
+
+func (v *nullableInt32Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(*int32)
+}
+
+func (v *nullableInt32Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(*int32))
+}
+
+func (v *nullableInt32Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *nullableInt32Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *nullableInt32Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type nullableInt64Vector struct {
+	items []*int64
+	pType VectorPType
+}
+
+func newNullableInt64Vector(n int, pType VectorPType) *nullableInt64Vector {
+	return &nullableInt64Vector{items: make([]*int64, n), pType: pType}
+}
+
+func (v *nullableInt64Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(*int64)
+}
+
+func (v *nullableInt64Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(*int64))
+}
+
+func (v *nullableInt64Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *nullableInt64Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *nullableInt64Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type nullableFloat32Vector struct {
+	items []*float32
+	pType VectorPType
+}
+
+func newNullableFloat32Vector(n int, pType VectorPType) *nullableFloat32Vector {
+	return &nullableFloat32Vector{items: make([]*float32, n), pType: pType}
+}
+
+func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(*float32)
+}
+
+func (v *nullableFloat32Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(*float32))
+}
+
+func (v *nullableFloat32Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *nullableFloat32Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *nullableFloat32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 

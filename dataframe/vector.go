@@ -17,6 +17,18 @@ type Vector interface {
 
 func newVector(t interface{}, n int) (v Vector) {
 	switch t.(type) {
+	case []int8:
+		v = newInt8Vector(n, VectorPTypeInt8)
+	case []*int8:
+		v = newNullableInt8Vector(n, VectorPTypeNullableInt8)
+	case []int16:
+		v = newInt16Vector(n, VectorPTypeInt16)
+	case []*int16:
+		v = newNullableInt16Vector(n, VectorPTypeNullableInt16)
+	case []int32:
+		v = newInt32Vector(n, VectorPTypeInt32)
+	case []*int32:
+		v = newNullableInt32Vector(n, VectorPTypeNullableInt32)
 	case []int64:
 		v = newInt64Vector(n, VectorPTypeInt64)
 	case []*int64:
@@ -51,8 +63,23 @@ func newVector(t interface{}, n int) (v Vector) {
 type VectorPType int
 
 const (
+	// VectorPTypeInt8 indicates the underlying primitive is a []int8.
+	VectorPTypeInt8 VectorPType = iota
+	// VectorPTypeNullableInt8 indicates the underlying primitive is a []*int8.
+	VectorPTypeNullableInt8
+
+	// VectorPTypeInt16 indicates the underlying primitive is a []Int16.
+	VectorPTypeInt16
+	// VectorPTypeNullableInt16 indicates the underlying primitive is a []*Int16.
+	VectorPTypeNullableInt16
+
+	// VectorPTypeInt32 indicates the underlying primitive is a []int32.
+	VectorPTypeInt32
+	// VectorPTypeNullableInt32 indicates the underlying primitive is a []*int32.
+	VectorPTypeNullableInt32
+
 	// VectorPTypeInt64 indicates the underlying primitive is a []int64.
-	VectorPTypeInt64 VectorPType = iota
+	VectorPTypeInt64
 	// VectorPTypeNullableInt64 indicates the underlying primitive is a []*int64.
 	VectorPTypeNullableInt64
 

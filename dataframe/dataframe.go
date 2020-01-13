@@ -29,6 +29,16 @@ type Fields []*Field
 func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec Vector
 	switch v := values.(type) {
+	case []int8:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*int8:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
 	case []int64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {

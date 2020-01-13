@@ -103,15 +103,20 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	for fieldIdx, field := range f.Fields {
 		switch v := field.Vector.(type) {
 
+		case *Int8Vector:
+			columns[fieldIdx] = *buildInt8Column(pool, arrowFields[fieldIdx], v)
+		case *nullableInt8Vector:
+			columns[fieldIdx] = *buildNullableInt8Column(pool, arrowFields[fieldIdx], v)
+
 		case *Int64Vector:
-			columns[fieldIdx] = *buildIntColumn(pool, arrowFields[fieldIdx], v)
+			columns[fieldIdx] = *buildInt64Column(pool, arrowFields[fieldIdx], v)
 		case *nullableInt64Vector:
-			columns[fieldIdx] = *buildNullableIntColumn(pool, arrowFields[fieldIdx], v)
+			columns[fieldIdx] = *buildNullableInt64Column(pool, arrowFields[fieldIdx], v)
 
 		case *Uint64Vector:
-			columns[fieldIdx] = *buildUIntColumn(pool, arrowFields[fieldIdx], v)
+			columns[fieldIdx] = *buildUInt64Column(pool, arrowFields[fieldIdx], v)
 		case *nullableUint64Vector:
-			columns[fieldIdx] = *buildNullableUIntColumn(pool, arrowFields[fieldIdx], v)
+			columns[fieldIdx] = *buildNullableUInt64Column(pool, arrowFields[fieldIdx], v)
 
 		case *StringVector:
 			columns[fieldIdx] = *buildStringColumn(pool, arrowFields[fieldIdx], v)
@@ -119,9 +124,9 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 			columns[fieldIdx] = *buildNullableStringColumn(pool, arrowFields[fieldIdx], v)
 
 		case *Float64Vector:
-			columns[fieldIdx] = *buildFloatColumn(pool, arrowFields[fieldIdx], v)
+			columns[fieldIdx] = *buildFloat64Column(pool, arrowFields[fieldIdx], v)
 		case *nullableFloat64Vector:
-			columns[fieldIdx] = *buildNullableFloatColumn(pool, arrowFields[fieldIdx], v)
+			columns[fieldIdx] = *buildNullableFloat64Column(pool, arrowFields[fieldIdx], v)
 
 		case *BoolVector:
 			columns[fieldIdx] = *buildBoolColumn(pool, arrowFields[fieldIdx], v)
@@ -161,6 +166,11 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.StringType{}, false, nil
 	case *nullableStringVector:
 		return &arrow.StringType{}, true, nil
+
+	case *Int8Vector:
+		return &arrow.Int8Type{}, false, nil
+	case *nullableInt8Vector:
+		return &arrow.Int8Type{}, true, nil
 
 	case *Int64Vector:
 		return &arrow.Int64Type{}, false, nil
@@ -221,6 +231,12 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 				break
 			}
 			sdkField.Vector = newStringVector(0, VectorPTypeString)
+		case arrow.INT8:
+			if nullable[idx] {
+				sdkField.Vector = newNullableInt8Vector(0, VectorPTypeNullableInt8)
+				break
+			}
+			sdkField.Vector = newInt8Vector(0, VectorPTypeInt8)
 		case arrow.INT64:
 			if nullable[idx] {
 				sdkField.Vector = newNullableInt64Vector(0, VectorPTypeNullableInt64)
@@ -277,6 +293,21 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *string
+							frame.Fields[i].Vector.Append(ns)
+							continue
+						}
+						rv := v.Value(rIdx)
+						frame.Fields[i].Vector.Append(&rv)
+						continue
+					}
+					frame.Fields[i].Vector.Append(v.Value(rIdx))
+				}
+			case arrow.INT8:
+				v := array.NewInt8Data(col.Data())
+				for rIdx := 0; rIdx < col.Len(); rIdx++ {
+					if nullable[i] {
+						if v.IsNull(rIdx) {
+							var ns *int8
 							frame.Fields[i].Vector.Append(ns)
 							continue
 						}
