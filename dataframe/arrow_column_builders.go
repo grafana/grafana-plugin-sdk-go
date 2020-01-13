@@ -294,6 +294,38 @@ func buildNullableUInt64Column(pool memory.Allocator, field arrow.Field, vec *nu
 	return array.NewColumn(field, chunked)
 }
 
+func buildFloat32Column(pool memory.Allocator, field arrow.Field, vec *Float32Vector) *array.Column {
+	builder := array.NewFloat32Builder(pool)
+	defer builder.Release()
+
+	for _, v := range (*vec).items {
+		builder.Append(v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildNullableFloat32Column(pool memory.Allocator, field arrow.Field, vec *nullableFloat32Vector) *array.Column {
+	builder := array.NewFloat32Builder(pool)
+	defer builder.Release()
+
+	for _, v := range (*vec).items {
+		if v == nil {
+			builder.AppendNull()
+			continue
+		}
+		builder.Append(*v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
 func buildFloat64Column(pool memory.Allocator, field arrow.Field, vec *Float64Vector) *array.Column {
 	builder := array.NewFloat64Builder(pool)
 	defer builder.Release()

@@ -108,15 +108,25 @@ func goldenDF() *dataframe.Frame {
 			nil,
 			uint64Ptr(math.MaxUint64),
 		}),
-		dataframe.NewField("float_values", nil, []float64{
-			0.0,
+		dataframe.NewField("float32_values", nil, []float32{
+			math.SmallestNonzeroFloat32,
 			1.0,
-			2.0,
+			math.MaxFloat32,
 		}),
-		dataframe.NewField("nullable_float_values", nil, []*float64{
-			float64Ptr(0.0),
+		dataframe.NewField("nullable_float32_values", nil, []*float32{
+			float32Ptr(math.SmallestNonzeroFloat32),
 			nil,
-			float64Ptr(2.0),
+			float32Ptr(math.MaxFloat32),
+		}),
+		dataframe.NewField("float64_values", nil, []float64{
+			math.SmallestNonzeroFloat64,
+			1.0,
+			math.MaxFloat64,
+		}),
+		dataframe.NewField("nullable_float64_values", nil, []*float64{
+			float64Ptr(math.SmallestNonzeroFloat64),
+			nil,
+			float64Ptr(math.MaxFloat64),
 		}),
 		dataframe.NewField("bool_values", nil, []bool{
 			true,

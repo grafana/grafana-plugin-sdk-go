@@ -109,6 +109,16 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
+	case []float32:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*float32:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
 	case []float64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {

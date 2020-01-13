@@ -34,7 +34,7 @@ func newVector(t interface{}, n int) (v Vector) {
 		v = newInt64Vector(n, VectorPTypeInt64)
 	case []*int64:
 		v = newNullableInt64Vector(n, VectorPTypeNullableInt64)
-	
+
 	// uints
 	case []uint8:
 		v = newUint8Vector(n, VectorPTypeUint8)
@@ -53,10 +53,16 @@ func newVector(t interface{}, n int) (v Vector) {
 	case []*uint64:
 		v = newNullableUint64Vector(n, VectorPTypeNullableUInt64)
 
+	// floats
+	case []float32:
+		v = newFloat32Vector(n, VectorPTypeFloat32)
+	case []*float32:
+		v = newNullableFloat32Vector(n, VectorPTypeNullableFloat32)
 	case []float64:
 		v = newFloat64Vector(n, VectorPTypeFloat64)
 	case []*float64:
 		v = newNullableFloat64Vector(n, VectorPTypeNullableFloat64)
+
 	case []string:
 		v = newStringVector(n, VectorPTypeString)
 	case []*string:
@@ -118,6 +124,11 @@ const (
 	VectorPTypeUint64
 	// VectorPTypeNullableUInt64 indicates the underlying primitive is a []*uint64.
 	VectorPTypeNullableUInt64
+
+	// VectorPTypeFloat32 indicates the underlying primitive is a []float32.
+	VectorPTypeFloat32
+	// VectorPTypeNullableFloat32 indicates the underlying primitive is a []*float32.
+	VectorPTypeNullableFloat32
 
 	// VectorPTypeFloat64 indicates the underlying primitive is a []float64.
 	VectorPTypeFloat64

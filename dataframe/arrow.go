@@ -148,6 +148,11 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 		case *nullableStringVector:
 			columns[fieldIdx] = *buildNullableStringColumn(pool, arrowFields[fieldIdx], v)
 
+		case *Float32Vector:
+			columns[fieldIdx] = *buildFloat32Column(pool, arrowFields[fieldIdx], v)
+		case *nullableFloat32Vector:
+			columns[fieldIdx] = *buildNullableFloat32Column(pool, arrowFields[fieldIdx], v)
+
 		case *Float64Vector:
 			columns[fieldIdx] = *buildFloat64Column(pool, arrowFields[fieldIdx], v)
 		case *nullableFloat64Vector:
@@ -233,6 +238,11 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.Uint64Type{}, false, nil
 	case *nullableUint64Vector:
 		return &arrow.Uint64Type{}, true, nil
+
+	case *Float32Vector:
+		return &arrow.Float32Type{}, false, nil
+	case *nullableFloat32Vector:
+		return &arrow.Float32Type{}, true, nil
 
 	case *Float64Vector:
 		return &arrow.Float64Type{}, false, nil
@@ -331,6 +341,12 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 				break
 			}
 			sdkField.Vector = newUint64Vector(0, VectorPTypeUint64)
+		case arrow.FLOAT32:
+			if nullable[idx] {
+				sdkField.Vector = newNullableFloat32Vector(0, VectorPTypeNullableFloat32)
+				break
+			}
+			sdkField.Vector = newFloat32Vector(0, VectorPTypeFloat32)
 		case arrow.FLOAT64:
 			if nullable[idx] {
 				sdkField.Vector = newNullableFloat64Vector(0, VectorPTypeNullableFloat64)
@@ -503,6 +519,21 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 						continue
 					}
 					frame.Fields[i].Vector.Append(v.Value(rIdx))
+				}
+			case arrow.FLOAT32:
+				v := array.NewFloat32Data(col.Data())
+				for vIdx, f := range v.Float32Values() {
+					if nullable[i] {
+						if v.IsNull(vIdx) {
+							var nf *float32
+							frame.Fields[i].Vector.Append(nf)
+							continue
+						}
+						vF := f
+						frame.Fields[i].Vector.Append(&vF)
+						continue
+					}
+					frame.Fields[i].Vector.Append(f)
 				}
 			case arrow.FLOAT64:
 				v := array.NewFloat64Data(col.Data())

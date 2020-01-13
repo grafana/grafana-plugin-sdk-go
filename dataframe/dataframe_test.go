@@ -106,6 +106,10 @@ func timePtr(t time.Time) *time.Time {
 	return &t
 }
 
+func float32Ptr(f float32) *float32 {
+	return &f
+}
+
 func float64Ptr(f float64) *float64 {
 	return &f
 }
