@@ -13,7 +13,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-var update = flag.Bool("update", true, "update .golden.arrow files")
+var update = flag.Bool("update", false, "update .golden.arrow files")
 
 func goldenDF() *dataframe.Frame {
 	df := dataframe.New("many_types",
@@ -37,6 +37,26 @@ func goldenDF() *dataframe.Frame {
 			nil,
 			int8Ptr(math.MaxInt8),
 		}),
+		dataframe.NewField("int16_values", nil, []int16{
+			math.MinInt16,
+			1,
+			math.MaxInt16,
+		}),
+		dataframe.NewField("nullable_int16_values", nil, []*int16{
+			int16Ptr(math.MinInt16),
+			nil,
+			int16Ptr(math.MaxInt16),
+		}),
+		dataframe.NewField("int32_values", nil, []int32{
+			math.MinInt32,
+			1,
+			math.MaxInt32,
+		}),
+		dataframe.NewField("nullable_int32_values", nil, []*int32{
+			int32Ptr(math.MinInt32),
+			nil,
+			int32Ptr(math.MaxInt32),
+		}),
 		dataframe.NewField("int64_values", nil, []int64{
 			math.MinInt64,
 			1,
@@ -47,12 +67,43 @@ func goldenDF() *dataframe.Frame {
 			nil,
 			int64Ptr(math.MaxInt64),
 		}),
-		dataframe.NewField("uint_values", nil, []uint64{
+		dataframe.NewField("uint8_values", nil, []uint8{
+			0,
+			1,
+			math.MaxUint8,
+		}),
+		dataframe.NewField("nullable_uint8_values", nil, []*uint8{
+			uint8Ptr(0),
+			nil,
+			uint8Ptr(math.MaxUint8),
+		}),
+		dataframe.NewField("uint16_values", nil, []uint16{
+			0,
+			1,
+			math.MaxUint16,
+		}),
+		dataframe.NewField("nullable_uint16_values", nil, []*uint16{
+			uint16Ptr(0),
+			nil,
+			uint16Ptr(math.MaxUint16),
+		}),
+		dataframe.NewField("uint32_values", nil, []uint32{
+			0,
+			1,
+			math.MaxUint32,
+		}),
+		dataframe.NewField("nullable_uint32_values", nil, []*uint32{
+			uint32Ptr(0),
+			nil,
+			uint32Ptr(math.MaxUint32),
+		}),
+
+		dataframe.NewField("uint64_values", nil, []uint64{
 			0,
 			1,
 			math.MaxUint64,
 		}),
-		dataframe.NewField("nullable_uint_values", nil, []*uint64{
+		dataframe.NewField("nullable_uint64_values", nil, []*uint64{
 			uint64Ptr(0),
 			nil,
 			uint64Ptr(math.MaxUint64),

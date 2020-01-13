@@ -166,6 +166,102 @@ func buildNullableInt64Column(pool memory.Allocator, field arrow.Field, vec *nul
 	return array.NewColumn(field, chunked)
 }
 
+func buildUInt8Column(pool memory.Allocator, field arrow.Field, vec *Uint8Vector) *array.Column {
+	builder := array.NewUint8Builder(pool)
+	defer builder.Release()
+
+	for _, v := range (*vec).items {
+		builder.Append(v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildNullableUInt8Column(pool memory.Allocator, field arrow.Field, vec *nullableUint8Vector) *array.Column {
+	builder := array.NewUint8Builder(pool)
+	defer builder.Release()
+
+	for _, v := range (*vec).items {
+		if v == nil {
+			builder.AppendNull()
+			continue
+		}
+		builder.Append(*v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildUInt16Column(pool memory.Allocator, field arrow.Field, vec *Uint16Vector) *array.Column {
+	builder := array.NewUint16Builder(pool)
+	defer builder.Release()
+
+	for _, v := range (*vec).items {
+		builder.Append(v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildNullableUInt16Column(pool memory.Allocator, field arrow.Field, vec *nullableUint16Vector) *array.Column {
+	builder := array.NewUint16Builder(pool)
+	defer builder.Release()
+
+	for _, v := range (*vec).items {
+		if v == nil {
+			builder.AppendNull()
+			continue
+		}
+		builder.Append(*v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildUInt32Column(pool memory.Allocator, field arrow.Field, vec *Uint32Vector) *array.Column {
+	builder := array.NewUint32Builder(pool)
+	defer builder.Release()
+
+	for _, v := range (*vec).items {
+		builder.Append(v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildNullableUInt32Column(pool memory.Allocator, field arrow.Field, vec *nullableUint32Vector) *array.Column {
+	builder := array.NewUint32Builder(pool)
+	defer builder.Release()
+
+	for _, v := range (*vec).items {
+		if v == nil {
+			builder.AppendNull()
+			continue
+		}
+		builder.Append(*v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
 func buildUInt64Column(pool memory.Allocator, field arrow.Field, vec *Uint64Vector) *array.Column {
 	builder := array.NewUint64Builder(pool)
 	defer builder.Release()

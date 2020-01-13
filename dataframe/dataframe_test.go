@@ -126,6 +126,18 @@ func int64Ptr(i int64) *int64 {
 	return &i
 }
 
+func uint8Ptr(ui uint8) *uint8 {
+	return &ui
+}
+
+func uint16Ptr(ui uint16) *uint16 {
+	return &ui
+}
+
+func uint32Ptr(ui uint32) *uint32 {
+	return &ui
+}
+
 func uint64Ptr(ui uint64) *uint64 {
 	return &ui
 }

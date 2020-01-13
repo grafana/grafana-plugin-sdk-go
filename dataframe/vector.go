@@ -17,6 +17,7 @@ type Vector interface {
 
 func newVector(t interface{}, n int) (v Vector) {
 	switch t.(type) {
+	// ints
 	case []int8:
 		v = newInt8Vector(n, VectorPTypeInt8)
 	case []*int8:
@@ -33,10 +34,25 @@ func newVector(t interface{}, n int) (v Vector) {
 		v = newInt64Vector(n, VectorPTypeInt64)
 	case []*int64:
 		v = newNullableInt64Vector(n, VectorPTypeNullableInt64)
+	
+	// uints
+	case []uint8:
+		v = newUint8Vector(n, VectorPTypeUint8)
+	case []*uint8:
+		v = newNullableUint8Vector(n, VectorPTypeNullableUint8)
+	case []uint16:
+		v = newUint16Vector(n, VectorPTypeUint16)
+	case []*uint16:
+		v = newNullableUint16Vector(n, VectorPTypeNullableUint16)
+	case []uint32:
+		v = newUint32Vector(n, VectorPTypeUint32)
+	case []*uint32:
+		v = newNullableUint32Vector(n, VectorPTypeNullableUint32)
 	case []uint64:
 		v = newUint64Vector(n, VectorPTypeUint64)
 	case []*uint64:
 		v = newNullableUint64Vector(n, VectorPTypeNullableUInt64)
+
 	case []float64:
 		v = newFloat64Vector(n, VectorPTypeFloat64)
 	case []*float64:
@@ -82,6 +98,21 @@ const (
 	VectorPTypeInt64
 	// VectorPTypeNullableInt64 indicates the underlying primitive is a []*int64.
 	VectorPTypeNullableInt64
+
+	// VectorPTypeUint8 indicates the underlying primitive is a []int8.
+	VectorPTypeUint8
+	// VectorPTypeNullableUint8 indicates the underlying primitive is a []*int8.
+	VectorPTypeNullableUint8
+
+	// VectorPTypeUint16 indicates the underlying primitive is a []uint16.
+	VectorPTypeUint16
+	// VectorPTypeNullableUint16 indicates the underlying primitive is a []*uint16.
+	VectorPTypeNullableUint16
+
+	// VectorPTypeUint32 indicates the underlying primitive is a []uint32.
+	VectorPTypeUint32
+	// VectorPTypeNullableUint32 indicates the underlying primitive is a []*uint32.
+	VectorPTypeNullableUint32
 
 	// VectorPTypeUint64 indicates the underlying primitive is a []uint64.
 	VectorPTypeUint64
