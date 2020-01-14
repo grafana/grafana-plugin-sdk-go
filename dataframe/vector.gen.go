@@ -6,35 +6,99 @@ package dataframe
 
 import "time"
 
-type Int64Vector struct {
-	items []int64
+type Uint8Vector struct {
+	items []uint8
 	pType VectorPType
 }
 
-func newInt64Vector(n int, pType VectorPType) *Int64Vector {
-	return &Int64Vector{
-		items: make([]int64, n),
+func newUint8Vector(n int, pType VectorPType) *Uint8Vector {
+	return &Uint8Vector{
+		items: make([]uint8, n),
 		pType: pType,
 	}
 }
 
-func (v *Int64Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(int64)
+func (v *Uint8Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(uint8)
 }
 
-func (v *Int64Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(int64))
+func (v *Uint8Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(uint8))
 }
 
-func (v *Int64Vector) At(i int) interface{} {
+func (v *Uint8Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Int64Vector) Len() int {
+func (v *Uint8Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Int64Vector) PrimitiveType() VectorPType {
+func (v *Uint8Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type Uint16Vector struct {
+	items []uint16
+	pType VectorPType
+}
+
+func newUint16Vector(n int, pType VectorPType) *Uint16Vector {
+	return &Uint16Vector{
+		items: make([]uint16, n),
+		pType: pType,
+	}
+}
+
+func (v *Uint16Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(uint16)
+}
+
+func (v *Uint16Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(uint16))
+}
+
+func (v *Uint16Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *Uint16Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *Uint16Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type Uint32Vector struct {
+	items []uint32
+	pType VectorPType
+}
+
+func newUint32Vector(n int, pType VectorPType) *Uint32Vector {
+	return &Uint32Vector{
+		items: make([]uint32, n),
+		pType: pType,
+	}
+}
+
+func (v *Uint32Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(uint32)
+}
+
+func (v *Uint32Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(uint32))
+}
+
+func (v *Uint32Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *Uint32Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *Uint32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
@@ -67,6 +131,166 @@ func (v *Uint64Vector) Len() int {
 }
 
 func (v *Uint64Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type Int8Vector struct {
+	items []int8
+	pType VectorPType
+}
+
+func newInt8Vector(n int, pType VectorPType) *Int8Vector {
+	return &Int8Vector{
+		items: make([]int8, n),
+		pType: pType,
+	}
+}
+
+func (v *Int8Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(int8)
+}
+
+func (v *Int8Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(int8))
+}
+
+func (v *Int8Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *Int8Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *Int8Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type Int16Vector struct {
+	items []int16
+	pType VectorPType
+}
+
+func newInt16Vector(n int, pType VectorPType) *Int16Vector {
+	return &Int16Vector{
+		items: make([]int16, n),
+		pType: pType,
+	}
+}
+
+func (v *Int16Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(int16)
+}
+
+func (v *Int16Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(int16))
+}
+
+func (v *Int16Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *Int16Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *Int16Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type Int32Vector struct {
+	items []int32
+	pType VectorPType
+}
+
+func newInt32Vector(n int, pType VectorPType) *Int32Vector {
+	return &Int32Vector{
+		items: make([]int32, n),
+		pType: pType,
+	}
+}
+
+func (v *Int32Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(int32)
+}
+
+func (v *Int32Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(int32))
+}
+
+func (v *Int32Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *Int32Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *Int32Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type Int64Vector struct {
+	items []int64
+	pType VectorPType
+}
+
+func newInt64Vector(n int, pType VectorPType) *Int64Vector {
+	return &Int64Vector{
+		items: make([]int64, n),
+		pType: pType,
+	}
+}
+
+func (v *Int64Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(int64)
+}
+
+func (v *Int64Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(int64))
+}
+
+func (v *Int64Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *Int64Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *Int64Vector) PrimitiveType() VectorPType {
+	return (*v).pType
+}
+
+type Float32Vector struct {
+	items []float32
+	pType VectorPType
+}
+
+func newFloat32Vector(n int, pType VectorPType) *Float32Vector {
+	return &Float32Vector{
+		items: make([]float32, n),
+		pType: pType,
+	}
+}
+
+func (v *Float32Vector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(float32)
+}
+
+func (v *Float32Vector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(float32))
+}
+
+func (v *Float32Vector) At(i int) interface{} {
+	return (*v).items[i]
+}
+
+func (v *Float32Vector) Len() int {
+	return len((*v).items)
+}
+
+func (v *Float32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 

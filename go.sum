@@ -5,12 +5,8 @@ github.com/alecthomas/template v0.0.0-20160405071501-a0175ee3bccc/go.mod h1:LOuy
 github.com/alecthomas/template v0.0.0-20190718012654-fb15b899a751/go.mod h1:LOuyumcjzFXgccqObfd/Ljyb9UuFJ6TxHnclSeseNhc=
 github.com/alecthomas/units v0.0.0-20151022065526-2efee857e7cf/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
 github.com/alecthomas/units v0.0.0-20190717042225-c3de453c63f4/go.mod h1:ybxpYRFXyAe+OPACYpWeL0wqObRcbAqCMya13uyzqw0=
-github.com/apache/arrow v0.0.0-20200108184404-7f905a61dec9 h1:6hd9S0N3cyffNNT9mWPbhFWMTCmlCMercRmOtKAqyno=
-github.com/apache/arrow v0.0.0-20200109080252-7bd4e73513e1 h1:gCkFQQNZImqfdWZXZZmEWurNDkJLBZ3dv+FWVOwWEkw=
 github.com/apache/arrow/go/arrow v0.0.0-20190716210558-5f564424c71c h1:iHUHzx3S1TU5xt+D7vLb0PAk3e+RfayF9IhR6+hyO/k=
 github.com/apache/arrow/go/arrow v0.0.0-20190716210558-5f564424c71c/go.mod h1:VTxUBvSJ3s3eHAg65PNgrsn5BtqCRPdmyXh6rAfdxN0=
-github.com/apache/arrow/go/arrow v0.0.0-20200108184404-7f905a61dec9 h1:dky42zHlWKmgPKayT/Xi8RsKJzLL9KTk3u6AC3YRjM4=
-github.com/apache/arrow/go/arrow v0.0.0-20200109080252-7bd4e73513e1 h1:5duEKoUmDcaidl5AZRoYvCmgytW7O05U5JY3JDGkVSs=
 github.com/beorn7/perks v0.0.0-20180321164747-3a771d992973/go.mod h1:Dwedo/Wpr24TaqPxmxbtue+5NUziq4I4S80YR8gNf3Q=
 github.com/beorn7/perks v1.0.0/go.mod h1:KWe93zE9D1o94FZ5RNwFwVgaQK1VOXiVxmqh+CedLV8=
 github.com/beorn7/perks v1.0.1 h1:VlbKKnNfV8bJzeqoa4cOKqO6bYr3WgKZxO8Z16+hsOM=

@@ -4,7 +4,7 @@ import (
 	"github.com/cheekybits/genny/generic"
 )
 
-//go:generate genny -in=$GOFILE -out=vector.gen.go gen "Generic=int64,uint64,float64,string,bool,time.Time"
+//go:generate genny -in=$GOFILE -out=vector.gen.go gen "Generic=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type Generic generic.Type
 
