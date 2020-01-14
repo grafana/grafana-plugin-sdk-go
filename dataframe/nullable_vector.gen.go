@@ -6,6 +6,8 @@ package dataframe
 
 import "time"
 
+//Uint8o:Uint8enerate uint8enny -in=$GOFILE -out=nullable_vector.Uint8en.Uint8o uint8en "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinUint8,bool,time.Time"
+
 type nullableUint8Vector struct {
 	items []*uint8
 	pType VectorPType
@@ -34,6 +36,8 @@ func (v *nullableUint8Vector) Len() int {
 func (v *nullableUint8Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
+
+//Uint16o:Uint16enerate uint16enny -in=$GOFILE -out=nullable_vector.Uint16en.Uint16o uint16en "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinUint16,bool,time.Time"
 
 type nullableUint16Vector struct {
 	items []*uint16
@@ -64,6 +68,8 @@ func (v *nullableUint16Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
+//Uint32o:Uint32enerate uint32enny -in=$GOFILE -out=nullable_vector.Uint32en.Uint32o uint32en "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinUint32,bool,time.Time"
+
 type nullableUint32Vector struct {
 	items []*uint32
 	pType VectorPType
@@ -92,6 +98,8 @@ func (v *nullableUint32Vector) Len() int {
 func (v *nullableUint32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
+
+//Uint64o:Uint64enerate uint64enny -in=$GOFILE -out=nullable_vector.Uint64en.Uint64o uint64en "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinUint64,bool,time.Time"
 
 type nullableUint64Vector struct {
 	items []*uint64
@@ -122,6 +130,8 @@ func (v *nullableUint64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
+//Int8o:Int8enerate int8enny -in=$GOFILE -out=nullable_vector.Int8en.Int8o int8en "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinInt8,bool,time.Time"
+
 type nullableInt8Vector struct {
 	items []*int8
 	pType VectorPType
@@ -150,6 +160,8 @@ func (v *nullableInt8Vector) Len() int {
 func (v *nullableInt8Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
+
+//Int16o:Int16enerate int16enny -in=$GOFILE -out=nullable_vector.Int16en.Int16o int16en "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinInt16,bool,time.Time"
 
 type nullableInt16Vector struct {
 	items []*int16
@@ -180,6 +192,8 @@ func (v *nullableInt16Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
+//Int32o:Int32enerate int32enny -in=$GOFILE -out=nullable_vector.Int32en.Int32o int32en "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinInt32,bool,time.Time"
+
 type nullableInt32Vector struct {
 	items []*int32
 	pType VectorPType
@@ -208,6 +222,8 @@ func (v *nullableInt32Vector) Len() int {
 func (v *nullableInt32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
+
+//Int64o:Int64enerate int64enny -in=$GOFILE -out=nullable_vector.Int64en.Int64o int64en "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinInt64,bool,time.Time"
 
 type nullableInt64Vector struct {
 	items []*int64
@@ -238,6 +254,8 @@ func (v *nullableInt64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
+//Float32o:Float32enerate float32enny -in=$GOFILE -out=nullable_vector.Float32en.Float32o float32en "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinFloat32,bool,time.Time"
+
 type nullableFloat32Vector struct {
 	items []*float32
 	pType VectorPType
@@ -266,6 +284,8 @@ func (v *nullableFloat32Vector) Len() int {
 func (v *nullableFloat32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
+
+//Float64o:Float64enerate float64enny -in=$GOFILE -out=nullable_vector.Float64en.Float64o float64en "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinFloat64,bool,time.Time"
 
 type nullableFloat64Vector struct {
 	items []*float64
@@ -296,6 +316,8 @@ func (v *nullableFloat64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
+//Stringo:Stringenerate stringenny -in=$GOFILE -out=nullable_vector.Stringen.Stringo stringen "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinString,bool,time.Time"
+
 type nullableStringVector struct {
 	items []*string
 	pType VectorPType
@@ -325,6 +347,8 @@ func (v *nullableStringVector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
+//Boolo:Boolenerate boolenny -in=$GOFILE -out=nullable_vector.Boolen.Boolo boolen "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinBool,bool,time.Time"
+
 type nullableBoolVector struct {
 	items []*bool
 	pType VectorPType
@@ -353,6 +377,8 @@ func (v *nullableBoolVector) Len() int {
 func (v *nullableBoolVector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
+
+//TimeTimeo:TimeTimeenerate timeTimeenny -in=$GOFILE -out=nullable_vector.TimeTimeen.TimeTimeo timeTimeen "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinTimeTime,bool,time.Time"
 
 type nullableTimeTimeVector struct {
 	items []*time.Time
