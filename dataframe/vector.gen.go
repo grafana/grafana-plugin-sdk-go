@@ -6,418 +6,444 @@ package dataframe
 
 import "time"
 
-type Uint8Vector struct {
+//go:Uint8erate uint8ny -in=$GOFILE -out=vector.Uint8.go uint8 "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type uint8Vector struct {
 	items []uint8
 	pType VectorPType
 }
 
-func newUint8Vector(n int, pType VectorPType) *Uint8Vector {
-	return &Uint8Vector{
+func newUint8Vector(n int, pType VectorPType) *uint8Vector {
+	return &uint8Vector{
 		items: make([]uint8, n),
 		pType: pType,
 	}
 }
 
-func (v *Uint8Vector) Set(idx int, i interface{}) {
+func (v *uint8Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(uint8)
 }
 
-func (v *Uint8Vector) Append(i interface{}) {
+func (v *uint8Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(uint8))
 }
 
-func (v *Uint8Vector) At(i int) interface{} {
+func (v *uint8Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Uint8Vector) Len() int {
+func (v *uint8Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Uint8Vector) PrimitiveType() VectorPType {
+func (v *uint8Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Uint16Vector struct {
+//go:Uint16erate uint16ny -in=$GOFILE -out=vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type uint16Vector struct {
 	items []uint16
 	pType VectorPType
 }
 
-func newUint16Vector(n int, pType VectorPType) *Uint16Vector {
-	return &Uint16Vector{
+func newUint16Vector(n int, pType VectorPType) *uint16Vector {
+	return &uint16Vector{
 		items: make([]uint16, n),
 		pType: pType,
 	}
 }
 
-func (v *Uint16Vector) Set(idx int, i interface{}) {
+func (v *uint16Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(uint16)
 }
 
-func (v *Uint16Vector) Append(i interface{}) {
+func (v *uint16Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(uint16))
 }
 
-func (v *Uint16Vector) At(i int) interface{} {
+func (v *uint16Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Uint16Vector) Len() int {
+func (v *uint16Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Uint16Vector) PrimitiveType() VectorPType {
+func (v *uint16Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Uint32Vector struct {
+//go:Uint32erate uint32ny -in=$GOFILE -out=vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type uint32Vector struct {
 	items []uint32
 	pType VectorPType
 }
 
-func newUint32Vector(n int, pType VectorPType) *Uint32Vector {
-	return &Uint32Vector{
+func newUint32Vector(n int, pType VectorPType) *uint32Vector {
+	return &uint32Vector{
 		items: make([]uint32, n),
 		pType: pType,
 	}
 }
 
-func (v *Uint32Vector) Set(idx int, i interface{}) {
+func (v *uint32Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(uint32)
 }
 
-func (v *Uint32Vector) Append(i interface{}) {
+func (v *uint32Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(uint32))
 }
 
-func (v *Uint32Vector) At(i int) interface{} {
+func (v *uint32Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Uint32Vector) Len() int {
+func (v *uint32Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Uint32Vector) PrimitiveType() VectorPType {
+func (v *uint32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Uint64Vector struct {
+//go:Uint64erate uint64ny -in=$GOFILE -out=vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type uint64Vector struct {
 	items []uint64
 	pType VectorPType
 }
 
-func newUint64Vector(n int, pType VectorPType) *Uint64Vector {
-	return &Uint64Vector{
+func newUint64Vector(n int, pType VectorPType) *uint64Vector {
+	return &uint64Vector{
 		items: make([]uint64, n),
 		pType: pType,
 	}
 }
 
-func (v *Uint64Vector) Set(idx int, i interface{}) {
+func (v *uint64Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(uint64)
 }
 
-func (v *Uint64Vector) Append(i interface{}) {
+func (v *uint64Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(uint64))
 }
 
-func (v *Uint64Vector) At(i int) interface{} {
+func (v *uint64Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Uint64Vector) Len() int {
+func (v *uint64Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Uint64Vector) PrimitiveType() VectorPType {
+func (v *uint64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Int8Vector struct {
+//go:Int8erate int8ny -in=$GOFILE -out=vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type int8Vector struct {
 	items []int8
 	pType VectorPType
 }
 
-func newInt8Vector(n int, pType VectorPType) *Int8Vector {
-	return &Int8Vector{
+func newInt8Vector(n int, pType VectorPType) *int8Vector {
+	return &int8Vector{
 		items: make([]int8, n),
 		pType: pType,
 	}
 }
 
-func (v *Int8Vector) Set(idx int, i interface{}) {
+func (v *int8Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(int8)
 }
 
-func (v *Int8Vector) Append(i interface{}) {
+func (v *int8Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(int8))
 }
 
-func (v *Int8Vector) At(i int) interface{} {
+func (v *int8Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Int8Vector) Len() int {
+func (v *int8Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Int8Vector) PrimitiveType() VectorPType {
+func (v *int8Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Int16Vector struct {
+//go:Int16erate int16ny -in=$GOFILE -out=vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type int16Vector struct {
 	items []int16
 	pType VectorPType
 }
 
-func newInt16Vector(n int, pType VectorPType) *Int16Vector {
-	return &Int16Vector{
+func newInt16Vector(n int, pType VectorPType) *int16Vector {
+	return &int16Vector{
 		items: make([]int16, n),
 		pType: pType,
 	}
 }
 
-func (v *Int16Vector) Set(idx int, i interface{}) {
+func (v *int16Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(int16)
 }
 
-func (v *Int16Vector) Append(i interface{}) {
+func (v *int16Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(int16))
 }
 
-func (v *Int16Vector) At(i int) interface{} {
+func (v *int16Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Int16Vector) Len() int {
+func (v *int16Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Int16Vector) PrimitiveType() VectorPType {
+func (v *int16Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Int32Vector struct {
+//go:Int32erate int32ny -in=$GOFILE -out=vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type int32Vector struct {
 	items []int32
 	pType VectorPType
 }
 
-func newInt32Vector(n int, pType VectorPType) *Int32Vector {
-	return &Int32Vector{
+func newInt32Vector(n int, pType VectorPType) *int32Vector {
+	return &int32Vector{
 		items: make([]int32, n),
 		pType: pType,
 	}
 }
 
-func (v *Int32Vector) Set(idx int, i interface{}) {
+func (v *int32Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(int32)
 }
 
-func (v *Int32Vector) Append(i interface{}) {
+func (v *int32Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(int32))
 }
 
-func (v *Int32Vector) At(i int) interface{} {
+func (v *int32Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Int32Vector) Len() int {
+func (v *int32Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Int32Vector) PrimitiveType() VectorPType {
+func (v *int32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Int64Vector struct {
+//go:Int64erate int64ny -in=$GOFILE -out=vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type int64Vector struct {
 	items []int64
 	pType VectorPType
 }
 
-func newInt64Vector(n int, pType VectorPType) *Int64Vector {
-	return &Int64Vector{
+func newInt64Vector(n int, pType VectorPType) *int64Vector {
+	return &int64Vector{
 		items: make([]int64, n),
 		pType: pType,
 	}
 }
 
-func (v *Int64Vector) Set(idx int, i interface{}) {
+func (v *int64Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(int64)
 }
 
-func (v *Int64Vector) Append(i interface{}) {
+func (v *int64Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(int64))
 }
 
-func (v *Int64Vector) At(i int) interface{} {
+func (v *int64Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Int64Vector) Len() int {
+func (v *int64Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Int64Vector) PrimitiveType() VectorPType {
+func (v *int64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Float32Vector struct {
+//go:Float32erate float32ny -in=$GOFILE -out=vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type float32Vector struct {
 	items []float32
 	pType VectorPType
 }
 
-func newFloat32Vector(n int, pType VectorPType) *Float32Vector {
-	return &Float32Vector{
+func newFloat32Vector(n int, pType VectorPType) *float32Vector {
+	return &float32Vector{
 		items: make([]float32, n),
 		pType: pType,
 	}
 }
 
-func (v *Float32Vector) Set(idx int, i interface{}) {
+func (v *float32Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(float32)
 }
 
-func (v *Float32Vector) Append(i interface{}) {
+func (v *float32Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(float32))
 }
 
-func (v *Float32Vector) At(i int) interface{} {
+func (v *float32Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Float32Vector) Len() int {
+func (v *float32Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Float32Vector) PrimitiveType() VectorPType {
+func (v *float32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type Float64Vector struct {
+//go:Float64erate float64ny -in=$GOFILE -out=vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type float64Vector struct {
 	items []float64
 	pType VectorPType
 }
 
-func newFloat64Vector(n int, pType VectorPType) *Float64Vector {
-	return &Float64Vector{
+func newFloat64Vector(n int, pType VectorPType) *float64Vector {
+	return &float64Vector{
 		items: make([]float64, n),
 		pType: pType,
 	}
 }
 
-func (v *Float64Vector) Set(idx int, i interface{}) {
+func (v *float64Vector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(float64)
 }
 
-func (v *Float64Vector) Append(i interface{}) {
+func (v *float64Vector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(float64))
 }
 
-func (v *Float64Vector) At(i int) interface{} {
+func (v *float64Vector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *Float64Vector) Len() int {
+func (v *float64Vector) Len() int {
 	return len((*v).items)
 }
 
-func (v *Float64Vector) PrimitiveType() VectorPType {
+func (v *float64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type StringVector struct {
+//go:Stringerate stringny -in=$GOFILE -out=vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type stringVector struct {
 	items []string
 	pType VectorPType
 }
 
-func newStringVector(n int, pType VectorPType) *StringVector {
-	return &StringVector{
+func newStringVector(n int, pType VectorPType) *stringVector {
+	return &stringVector{
 		items: make([]string, n),
 		pType: pType,
 	}
 }
 
-func (v *StringVector) Set(idx int, i interface{}) {
+func (v *stringVector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(string)
 }
 
-func (v *StringVector) Append(i interface{}) {
+func (v *stringVector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(string))
 }
 
-func (v *StringVector) At(i int) interface{} {
+func (v *stringVector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *StringVector) Len() int {
+func (v *stringVector) Len() int {
 	return len((*v).items)
 }
 
-func (v *StringVector) PrimitiveType() VectorPType {
+func (v *stringVector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type BoolVector struct {
+//go:Boolerate boolny -in=$GOFILE -out=vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type boolVector struct {
 	items []bool
 	pType VectorPType
 }
 
-func newBoolVector(n int, pType VectorPType) *BoolVector {
-	return &BoolVector{
+func newBoolVector(n int, pType VectorPType) *boolVector {
+	return &boolVector{
 		items: make([]bool, n),
 		pType: pType,
 	}
 }
 
-func (v *BoolVector) Set(idx int, i interface{}) {
+func (v *boolVector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(bool)
 }
 
-func (v *BoolVector) Append(i interface{}) {
+func (v *boolVector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(bool))
 }
 
-func (v *BoolVector) At(i int) interface{} {
+func (v *boolVector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *BoolVector) Len() int {
+func (v *boolVector) Len() int {
 	return len((*v).items)
 }
 
-func (v *BoolVector) PrimitiveType() VectorPType {
+func (v *boolVector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-type TimeTimeVector struct {
+//go:TimeTimeerate timeTimeny -in=$GOFILE -out=vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+
+type timeTimeVector struct {
 	items []time.Time
 	pType VectorPType
 }
 
-func newTimeTimeVector(n int, pType VectorPType) *TimeTimeVector {
-	return &TimeTimeVector{
+func newTimeTimeVector(n int, pType VectorPType) *timeTimeVector {
+	return &timeTimeVector{
 		items: make([]time.Time, n),
 		pType: pType,
 	}
 }
 
-func (v *TimeTimeVector) Set(idx int, i interface{}) {
+func (v *timeTimeVector) Set(idx int, i interface{}) {
 	(*v).items[idx] = i.(time.Time)
 }
 
-func (v *TimeTimeVector) Append(i interface{}) {
+func (v *timeTimeVector) Append(i interface{}) {
 	(*v).items = append((*v).items, i.(time.Time))
 }
 
-func (v *TimeTimeVector) At(i int) interface{} {
+func (v *timeTimeVector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *TimeTimeVector) Len() int {
+func (v *timeTimeVector) Len() int {
 	return len((*v).items)
 }
 
-func (v *TimeTimeVector) PrimitiveType() VectorPType {
+func (v *timeTimeVector) PrimitiveType() VectorPType {
 	return (*v).pType
 }

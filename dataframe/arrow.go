@@ -103,67 +103,67 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	for fieldIdx, field := range f.Fields {
 		switch v := field.Vector.(type) {
 
-		case *Int8Vector:
+		case *int8Vector:
 			columns[fieldIdx] = *buildInt8Column(pool, arrowFields[fieldIdx], v)
 		case *nullableInt8Vector:
 			columns[fieldIdx] = *buildNullableInt8Column(pool, arrowFields[fieldIdx], v)
 
-		case *Int16Vector:
+		case *int16Vector:
 			columns[fieldIdx] = *buildInt16Column(pool, arrowFields[fieldIdx], v)
 		case *nullableInt16Vector:
 			columns[fieldIdx] = *buildNullableInt16Column(pool, arrowFields[fieldIdx], v)
 
-		case *Int32Vector:
+		case *int32Vector:
 			columns[fieldIdx] = *buildInt32Column(pool, arrowFields[fieldIdx], v)
 		case *nullableInt32Vector:
 			columns[fieldIdx] = *buildNullableInt32Column(pool, arrowFields[fieldIdx], v)
 
-		case *Int64Vector:
+		case *int64Vector:
 			columns[fieldIdx] = *buildInt64Column(pool, arrowFields[fieldIdx], v)
 		case *nullableInt64Vector:
 			columns[fieldIdx] = *buildNullableInt64Column(pool, arrowFields[fieldIdx], v)
 
-		case *Uint8Vector:
+		case *uint8Vector:
 			columns[fieldIdx] = *buildUInt8Column(pool, arrowFields[fieldIdx], v)
 		case *nullableUint8Vector:
 			columns[fieldIdx] = *buildNullableUInt8Column(pool, arrowFields[fieldIdx], v)
 
-		case *Uint16Vector:
+		case *uint16Vector:
 			columns[fieldIdx] = *buildUInt16Column(pool, arrowFields[fieldIdx], v)
 		case *nullableUint16Vector:
 			columns[fieldIdx] = *buildNullableUInt16Column(pool, arrowFields[fieldIdx], v)
 
-		case *Uint32Vector:
+		case *uint32Vector:
 			columns[fieldIdx] = *buildUInt32Column(pool, arrowFields[fieldIdx], v)
 		case *nullableUint32Vector:
 			columns[fieldIdx] = *buildNullableUInt32Column(pool, arrowFields[fieldIdx], v)
 
-		case *Uint64Vector:
+		case *uint64Vector:
 			columns[fieldIdx] = *buildUInt64Column(pool, arrowFields[fieldIdx], v)
 		case *nullableUint64Vector:
 			columns[fieldIdx] = *buildNullableUInt64Column(pool, arrowFields[fieldIdx], v)
 
-		case *StringVector:
+		case *stringVector:
 			columns[fieldIdx] = *buildStringColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableStringVector:
 			columns[fieldIdx] = *buildNullableStringColumn(pool, arrowFields[fieldIdx], v)
 
-		case *Float32Vector:
+		case *float32Vector:
 			columns[fieldIdx] = *buildFloat32Column(pool, arrowFields[fieldIdx], v)
 		case *nullableFloat32Vector:
 			columns[fieldIdx] = *buildNullableFloat32Column(pool, arrowFields[fieldIdx], v)
 
-		case *Float64Vector:
+		case *float64Vector:
 			columns[fieldIdx] = *buildFloat64Column(pool, arrowFields[fieldIdx], v)
 		case *nullableFloat64Vector:
 			columns[fieldIdx] = *buildNullableFloat64Column(pool, arrowFields[fieldIdx], v)
 
-		case *BoolVector:
+		case *boolVector:
 			columns[fieldIdx] = *buildBoolColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableBoolVector:
 			columns[fieldIdx] = *buildNullableBoolColumn(pool, arrowFields[fieldIdx], v)
 
-		case *TimeTimeVector:
+		case *timeTimeVector:
 			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableTimeTimeVector:
 			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
@@ -192,69 +192,69 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	switch f.Vector.(type) {
 
-	case *StringVector:
+	case *stringVector:
 		return &arrow.StringType{}, false, nil
 	case *nullableStringVector:
 		return &arrow.StringType{}, true, nil
 
 	// Ints
-	case *Int8Vector:
+	case *int8Vector:
 		return &arrow.Int8Type{}, false, nil
 	case *nullableInt8Vector:
 		return &arrow.Int8Type{}, true, nil
 
-	case *Int16Vector:
+	case *int16Vector:
 		return &arrow.Int16Type{}, false, nil
 	case *nullableInt16Vector:
 		return &arrow.Int16Type{}, true, nil
 
-	case *Int32Vector:
+	case *int32Vector:
 		return &arrow.Int32Type{}, false, nil
 	case *nullableInt32Vector:
 		return &arrow.Int32Type{}, true, nil
 
-	case *Int64Vector:
+	case *int64Vector:
 		return &arrow.Int64Type{}, false, nil
 	case *nullableInt64Vector:
 		return &arrow.Int64Type{}, true, nil
 
 	// Uints
-	case *Uint8Vector:
+	case *uint8Vector:
 		return &arrow.Uint8Type{}, false, nil
 	case *nullableUint8Vector:
 		return &arrow.Uint8Type{}, true, nil
 
-	case *Uint16Vector:
+	case *uint16Vector:
 		return &arrow.Uint16Type{}, false, nil
 	case *nullableUint16Vector:
 		return &arrow.Uint16Type{}, true, nil
 
-	case *Uint32Vector:
+	case *uint32Vector:
 		return &arrow.Uint32Type{}, false, nil
 	case *nullableUint32Vector:
 		return &arrow.Uint32Type{}, true, nil
 
-	case *Uint64Vector:
+	case *uint64Vector:
 		return &arrow.Uint64Type{}, false, nil
 	case *nullableUint64Vector:
 		return &arrow.Uint64Type{}, true, nil
 
-	case *Float32Vector:
+	case *float32Vector:
 		return &arrow.Float32Type{}, false, nil
 	case *nullableFloat32Vector:
 		return &arrow.Float32Type{}, true, nil
 
-	case *Float64Vector:
+	case *float64Vector:
 		return &arrow.Float64Type{}, false, nil
 	case *nullableFloat64Vector:
 		return &arrow.Float64Type{}, true, nil
 
-	case *BoolVector:
+	case *boolVector:
 		return &arrow.BooleanType{}, false, nil
 	case *nullableBoolVector:
 		return &arrow.BooleanType{}, true, nil
 
-	case *TimeTimeVector:
+	case *timeTimeVector:
 		return &arrow.TimestampType{}, false, nil
 	case *nullableTimeTimeVector:
 		return &arrow.TimestampType{}, true, nil
