@@ -6,7 +6,7 @@ package dataframe
 
 import "time"
 
-//Uint8o:Uint8enerate uint8enny -in=$GOFILE -out=vector.Uint8en.Uint8o uint8en "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinUint8,bool,time.Time"
+//go:Uint8erate uint8ny -in=$GOFILE -out=vector.Uint8.go uint8 "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type uint8Vector struct {
 	items []uint8
@@ -40,7 +40,7 @@ func (v *uint8Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Uint16o:Uint16enerate uint16enny -in=$GOFILE -out=vector.Uint16en.Uint16o uint16en "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinUint16,bool,time.Time"
+//go:Uint16erate uint16ny -in=$GOFILE -out=vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type uint16Vector struct {
 	items []uint16
@@ -74,7 +74,7 @@ func (v *uint16Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Uint32o:Uint32enerate uint32enny -in=$GOFILE -out=vector.Uint32en.Uint32o uint32en "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinUint32,bool,time.Time"
+//go:Uint32erate uint32ny -in=$GOFILE -out=vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type uint32Vector struct {
 	items []uint32
@@ -108,7 +108,7 @@ func (v *uint32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Uint64o:Uint64enerate uint64enny -in=$GOFILE -out=vector.Uint64en.Uint64o uint64en "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinUint64,bool,time.Time"
+//go:Uint64erate uint64ny -in=$GOFILE -out=vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type uint64Vector struct {
 	items []uint64
@@ -142,7 +142,7 @@ func (v *uint64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Int8o:Int8enerate int8enny -in=$GOFILE -out=vector.Int8en.Int8o int8en "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinInt8,bool,time.Time"
+//go:Int8erate int8ny -in=$GOFILE -out=vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type int8Vector struct {
 	items []int8
@@ -176,7 +176,7 @@ func (v *int8Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Int16o:Int16enerate int16enny -in=$GOFILE -out=vector.Int16en.Int16o int16en "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinInt16,bool,time.Time"
+//go:Int16erate int16ny -in=$GOFILE -out=vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type int16Vector struct {
 	items []int16
@@ -210,7 +210,7 @@ func (v *int16Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Int32o:Int32enerate int32enny -in=$GOFILE -out=vector.Int32en.Int32o int32en "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinInt32,bool,time.Time"
+//go:Int32erate int32ny -in=$GOFILE -out=vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type int32Vector struct {
 	items []int32
@@ -244,7 +244,7 @@ func (v *int32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Int64o:Int64enerate int64enny -in=$GOFILE -out=vector.Int64en.Int64o int64en "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinInt64,bool,time.Time"
+//go:Int64erate int64ny -in=$GOFILE -out=vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type int64Vector struct {
 	items []int64
@@ -278,7 +278,7 @@ func (v *int64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Float32o:Float32enerate float32enny -in=$GOFILE -out=vector.Float32en.Float32o float32en "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinFloat32,bool,time.Time"
+//go:Float32erate float32ny -in=$GOFILE -out=vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type float32Vector struct {
 	items []float32
@@ -312,7 +312,7 @@ func (v *float32Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Float64o:Float64enerate float64enny -in=$GOFILE -out=vector.Float64en.Float64o float64en "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinFloat64,bool,time.Time"
+//go:Float64erate float64ny -in=$GOFILE -out=vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type float64Vector struct {
 	items []float64
@@ -346,7 +346,7 @@ func (v *float64Vector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Stringo:Stringenerate stringenny -in=$GOFILE -out=vector.Stringen.Stringo stringen "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinString,bool,time.Time"
+//go:Stringerate stringny -in=$GOFILE -out=vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type stringVector struct {
 	items []string
@@ -380,7 +380,7 @@ func (v *stringVector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//Boolo:Boolenerate boolenny -in=$GOFILE -out=vector.Boolen.Boolo boolen "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinBool,bool,time.Time"
+//go:Boolerate boolny -in=$GOFILE -out=vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type boolVector struct {
 	items []bool
@@ -414,7 +414,7 @@ func (v *boolVector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
 
-//TimeTimeo:TimeTimeenerate timeTimeenny -in=$GOFILE -out=vector.TimeTimeen.TimeTimeo timeTimeen "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,strinTimeTime,bool,time.Time"
+//go:TimeTimeerate timeTimeny -in=$GOFILE -out=vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type timeTimeVector struct {
 	items []time.Time

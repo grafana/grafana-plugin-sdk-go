@@ -4,38 +4,38 @@ import (
 	"github.com/cheekybits/genny/generic"
 )
 
-//go:generate genny -in=$GOFILE -out=vector.gen.go gen "g=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:generate genny -in=$GOFILE -out=vector.gen.go gen "gen=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type g generic.Type
+type gen generic.Type
 
-type gVector struct {
-	items []g
+type genVector struct {
+	items []gen
 	pType VectorPType
 }
 
-func newgVector(n int, pType VectorPType) *gVector {
-	return &gVector{
-		items: make([]g, n),
+func newgenVector(n int, pType VectorPType) *genVector {
+	return &genVector{
+		items: make([]gen, n),
 		pType: pType,
 	}
 }
 
-func (v *gVector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(g)
+func (v *genVector) Set(idx int, i interface{}) {
+	(*v).items[idx] = i.(gen)
 }
 
-func (v *gVector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(g))
+func (v *genVector) Append(i interface{}) {
+	(*v).items = append((*v).items, i.(gen))
 }
 
-func (v *gVector) At(i int) interface{} {
+func (v *genVector) At(i int) interface{} {
 	return (*v).items[i]
 }
 
-func (v *gVector) Len() int {
+func (v *genVector) Len() int {
 	return len((*v).items)
 }
 
-func (v *gVector) PrimitiveType() VectorPType {
+func (v *genVector) PrimitiveType() VectorPType {
 	return (*v).pType
 }
