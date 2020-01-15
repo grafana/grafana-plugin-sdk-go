@@ -16,54 +16,16 @@ message PluginConfig {
   map<string,string> decryptedSecureJsonData = 7;
 }
 
-
 //-----------------------------------------------
 // All Backend Plugins Implement
 //-----------------------------------------------
 
 service Core {
-  // Diagnostics
-  rpc CollectMetrics(CollectMetrics.Request) returns (CollectMetrics.Response);
-  rpc CheckHealth(CheckHealth.Request) returns (CheckHealth.Response);
-
   // HTTP Style request
   rpc Resource(ResourceRequest) returns (ResourceResponse);
 
   // Well typed query interface
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
-}
-
-//-----------------------------------------------
-// Diagnostics
-//-----------------------------------------------
-
-message CollectMetrics {
-  message Request {
-  }
-
-  message Payload {
-    bytes prometheus = 1;
-  }
-
-  message Response {
-    Payload metrics = 1;
-  }
-}
-
-message CheckHealth {
-  message Request {
-  }
-
-  message Response {
-    enum HealthStatus {
-      UNKNOWN = 0; // starting etc
-      OK = 1;
-      ERROR = 2;
-    }
-
-    HealthStatus status = 1;
-    string info = 2;
-  }
 }
 
 //-----------------------------------------------
@@ -126,6 +88,43 @@ message ResourceResponse {
   bytes body = 3;
 }
 
+//-----------------------------------------------
+// Diagnostics
+//-----------------------------------------------
+
+service Diagnostics {
+  rpc CollectMetrics(CollectMetrics.Request) returns (CollectMetrics.Response);
+  rpc CheckHealth(CheckHealth.Request) returns (CheckHealth.Response);
+}
+
+message CollectMetrics {
+  message Request {
+  }
+
+  message Payload {
+    bytes prometheus = 1;
+  }
+
+  message Response {
+    Payload metrics = 1;
+  }
+}
+
+message CheckHealth {
+  message Request {
+  }
+
+  message Response {
+    enum HealthStatus {
+      UNKNOWN = 0; // starting etc
+      OK = 1;
+      ERROR = 2;
+    }
+
+    HealthStatus status = 1;
+    string info = 2;
+  }
+}
 
 //-----------------------------------------------
 // Allow plugins to access other plugins
@@ -196,7 +195,6 @@ service StreamingPlugin {
   rpc Disconnect(google.protobuf.Empty) returns (StreamingClose);
 }
 
-
 //-----------------------------------------------------------------
 // Renderer (do we want this definition here?)
 // OR -- can we do this via Request(PluginRequest)???
@@ -212,7 +210,6 @@ message RenderRequest {
   string filePath = 7;
   string renderKey = 8;
   string domain = 9;
-  bool debug = 10;
 }
 
 message RenderResponse {
