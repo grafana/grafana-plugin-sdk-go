@@ -31,6 +31,36 @@ type Fields []*Field
 func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec Vector
 	switch v := values.(type) {
+	case []int8:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*int8:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []int16:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*int16:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []int32:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*int32:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
 	case []int64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
@@ -41,12 +71,52 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
+	case []uint8:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*uint8:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []uint16:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*uint16:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []uint32:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*uint32:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
 	case []uint64:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*uint64:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []float32:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*float32:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])

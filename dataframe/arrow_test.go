@@ -41,35 +41,106 @@ func goldenDF() *dataframe.Frame {
 			nil,
 			stringPtr("update your unicode/font if no sloth, is 2019."),
 		}).SetConfig(nullableStringValuesFieldConfig),
-		dataframe.NewField("int_values", nil, []int64{
+		dataframe.NewField("int8_values", nil, []int8{
+			math.MinInt8,
+			1,
+			math.MaxInt8,
+		}).SetConfig((&dataframe.FieldConfig{}).SetMin(0).SetMax(1)),
+		dataframe.NewField("nullable_int8_values", nil, []*int8{
+			int8Ptr(math.MinInt8),
+			nil,
+			int8Ptr(math.MaxInt8),
+		}),
+		dataframe.NewField("int16_values", nil, []int16{
+			math.MinInt16,
+			1,
+			math.MaxInt16,
+		}),
+		dataframe.NewField("nullable_int16_values", nil, []*int16{
+			int16Ptr(math.MinInt16),
+			nil,
+			int16Ptr(math.MaxInt16),
+		}),
+		dataframe.NewField("int32_values", nil, []int32{
+			math.MinInt32,
+			1,
+			math.MaxInt32,
+		}),
+		dataframe.NewField("nullable_int32_values", nil, []*int32{
+			int32Ptr(math.MinInt32),
+			nil,
+			int32Ptr(math.MaxInt32),
+		}),
+		dataframe.NewField("int64_values", nil, []int64{
 			math.MinInt64,
 			1,
 			math.MaxInt64,
-		}).SetConfig((&dataframe.FieldConfig{}).SetMin(0).SetMax(1)),
-		dataframe.NewField("nullable_int_values", nil, []*int64{
-			intPtr(math.MinInt64),
-			nil,
-			intPtr(math.MaxInt64),
 		}),
-		dataframe.NewField("uint_values", nil, []uint64{
+		dataframe.NewField("nullable_int64_values", nil, []*int64{
+			int64Ptr(math.MinInt64),
+			nil,
+			int64Ptr(math.MaxInt64),
+		}),
+		dataframe.NewField("uint8_values", nil, []uint8{
+			0,
+			1,
+			math.MaxUint8,
+		}),
+		dataframe.NewField("nullable_uint8_values", nil, []*uint8{
+			uint8Ptr(0),
+			nil,
+			uint8Ptr(math.MaxUint8),
+		}),
+		dataframe.NewField("uint16_values", nil, []uint16{
+			0,
+			1,
+			math.MaxUint16,
+		}),
+		dataframe.NewField("nullable_uint16_values", nil, []*uint16{
+			uint16Ptr(0),
+			nil,
+			uint16Ptr(math.MaxUint16),
+		}),
+		dataframe.NewField("uint32_values", nil, []uint32{
+			0,
+			1,
+			math.MaxUint32,
+		}),
+		dataframe.NewField("nullable_uint32_values", nil, []*uint32{
+			uint32Ptr(0),
+			nil,
+			uint32Ptr(math.MaxUint32),
+		}),
+
+		dataframe.NewField("uint64_values", nil, []uint64{
 			0,
 			1,
 			math.MaxUint64,
 		}),
-		dataframe.NewField("nullable_uint_values", nil, []*uint64{
-			uintPtr(0),
+		dataframe.NewField("nullable_uint64_values", nil, []*uint64{
+			uint64Ptr(0),
 			nil,
-			uintPtr(math.MaxUint64),
+			uint64Ptr(math.MaxUint64),
 		}),
-		dataframe.NewField("float_values", nil, []float64{
-			0.0,
+		dataframe.NewField("float32_values", nil, []float32{
+			math.SmallestNonzeroFloat32,
 			1.0,
-			2.0,
+			math.MaxFloat32,
 		}),
-		dataframe.NewField("nullable_float_values", nil, []*float64{
-			floatPtr(0.0),
+		dataframe.NewField("nullable_float32_values", nil, []*float32{
+			float32Ptr(math.SmallestNonzeroFloat32),
 			nil,
-			floatPtr(2.0),
+			float32Ptr(math.MaxFloat32),
+		}),
+		dataframe.NewField("float64_values", nil, []float64{
+			math.SmallestNonzeroFloat64,
+			1.0,
+			math.MaxFloat64,
+		}),
+		dataframe.NewField("nullable_float64_values", nil, []*float64{
+			float64Ptr(math.SmallestNonzeroFloat64),
+			nil,
+			float64Ptr(math.MaxFloat64),
 		}),
 		dataframe.NewField("bool_values", nil, []bool{
 			true,
@@ -169,7 +240,25 @@ func TestDecode(t *testing.T) {
 		return *x == *y
 	})
 
-	if diff := cmp.Diff(df, newDf, opt); diff != "" {
+	itemsOpt := cmp.Comparer(func(x, y dataframe.Vector) bool {
+		if x.PrimitiveType() != y.PrimitiveType() {
+			return false
+		}
+		if x.Len() != y.Len() {
+			return false
+		}
+		if x.Len() == 0 && y.Len() == 0 {
+			return true
+		}
+		for i := 0; i < x.Len(); i++ {
+			if !cmp.Equal(x.At(i), y.At(i)) {
+				return false
+			}
+		}
+		return true
+	})
+
+	if diff := cmp.Diff(df, newDf, opt, itemsOpt); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 
