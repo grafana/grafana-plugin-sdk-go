@@ -179,6 +179,10 @@ func TestEncode(t *testing.T) {
 	}
 }
 
+// protip: `go get github.com/apache/arrow/go/arrow/ipc/cmd/arrow-cat` (in GOPATH to install cmd).
+// Then in shell: `arrow-cat dataframe/testdata/all_types.golden.arrow`
+// also: `go get github.com/apache/arrow/go/arrow/ipc/cmd/arrow-ls` to see metadata
+
 func TestDecode(t *testing.T) {
 	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
 	b, err := ioutil.ReadFile(goldenFile)
