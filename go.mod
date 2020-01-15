@@ -4,6 +4,7 @@ go 1.13
 
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20190716210558-5f564424c71c
+	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.3.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-plugin v1.0.1
