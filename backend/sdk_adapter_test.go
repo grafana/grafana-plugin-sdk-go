@@ -24,7 +24,7 @@ func TestCollectMetrcis(t *testing.T) {
 	mfs, err := parser.TextToMetricFamilies(reader)
 	require.NoError(t, err)
 	require.Contains(t, mfs, "go_gc_duration_seconds")
-	require.Contains(t, mfs, "process_virtual_memory_max_bytes")
+	require.Contains(t, mfs, "go_goroutines")
 }
 
 func TestCheckHealth(t *testing.T) {
