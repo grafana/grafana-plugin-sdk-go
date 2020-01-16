@@ -8,34 +8,29 @@ import (
 
 type gen generic.Type
 
-type genVector struct {
-	items []gen
-	pType VectorPType
-}
+type genVector []gen
 
-func newgenVector(n int, pType VectorPType) *genVector {
-	return &genVector{
-		items: make([]gen, n),
-		pType: pType,
-	}
+func newgenVector(n int) *genVector {
+	v := genVector(make([]gen, n))
+	return &v
 }
 
 func (v *genVector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(gen)
+	(*v)[idx] = i.(gen)
 }
 
 func (v *genVector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(gen))
+	(*v) = append((*v), i.(gen))
 }
 
 func (v *genVector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *genVector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *genVector) PrimitiveType() VectorPType {
-	return (*v).pType
+	return vectorPType(v)
 }

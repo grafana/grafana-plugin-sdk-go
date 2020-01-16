@@ -244,25 +244,7 @@ func TestDecode(t *testing.T) {
 		return *x == *y
 	})
 
-	itemsOpt := cmp.Comparer(func(x, y dataframe.Vector) bool {
-		if x.PrimitiveType() != y.PrimitiveType() {
-			return false
-		}
-		if x.Len() != y.Len() {
-			return false
-		}
-		if x.Len() == 0 && y.Len() == 0 {
-			return true
-		}
-		for i := 0; i < x.Len(); i++ {
-			if !cmp.Equal(x.At(i), y.At(i)) {
-				return false
-			}
-		}
-		return true
-	})
-
-	if diff := cmp.Diff(df, newDf, opt, itemsOpt); diff != "" {
+	if diff := cmp.Diff(df, newDf, opt); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 

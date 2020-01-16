@@ -19,67 +19,69 @@ func newVector(t interface{}, n int) (v Vector) {
 	switch t.(type) {
 	// ints
 	case []int8:
-		v = newInt8Vector(n, VectorPTypeInt8)
+		v = newInt8Vector(n)
 	case []*int8:
-		v = newNullableInt8Vector(n, VectorPTypeNullableInt8)
+		v = newNullableInt8Vector(n)
 	case []int16:
-		v = newInt16Vector(n, VectorPTypeInt16)
+		v = newInt16Vector(n)
 	case []*int16:
-		v = newNullableInt16Vector(n, VectorPTypeNullableInt16)
+		v = newNullableInt16Vector(n)
 	case []int32:
-		v = newInt32Vector(n, VectorPTypeInt32)
+		v = newInt32Vector(n)
 	case []*int32:
-		v = newNullableInt32Vector(n, VectorPTypeNullableInt32)
+		v = newNullableInt32Vector(n)
 	case []int64:
-		v = newInt64Vector(n, VectorPTypeInt64)
+		v = newInt64Vector(n)
 	case []*int64:
-		v = newNullableInt64Vector(n, VectorPTypeNullableInt64)
+		v = newNullableInt64Vector(n)
 
 	// uints
 	case []uint8:
-		v = newUint8Vector(n, VectorPTypeUint8)
+		v = newUint8Vector(n)
 	case []*uint8:
-		v = newNullableUint8Vector(n, VectorPTypeNullableUint8)
+		v = newNullableUint8Vector(n)
 	case []uint16:
-		v = newUint16Vector(n, VectorPTypeUint16)
+		v = newUint16Vector(n)
 	case []*uint16:
-		v = newNullableUint16Vector(n, VectorPTypeNullableUint16)
+		v = newNullableUint16Vector(n)
 	case []uint32:
-		v = newUint32Vector(n, VectorPTypeUint32)
+		v = newUint32Vector(n)
 	case []*uint32:
-		v = newNullableUint32Vector(n, VectorPTypeNullableUint32)
+		v = newNullableUint32Vector(n)
 	case []uint64:
-		v = newUint64Vector(n, VectorPTypeUint64)
+		v = newUint64Vector(n)
 	case []*uint64:
-		v = newNullableUint64Vector(n, VectorPTypeNullableUInt64)
+		v = newNullableUint64Vector(n)
 
 	// floats
 	case []float32:
-		v = newFloat32Vector(n, VectorPTypeFloat32)
+		v = newFloat32Vector(n)
 	case []*float32:
-		v = newNullableFloat32Vector(n, VectorPTypeNullableFloat32)
+		v = newNullableFloat32Vector(n)
 	case []float64:
-		v = newFloat64Vector(n, VectorPTypeFloat64)
+		v = newFloat64Vector(n)
 	case []*float64:
-		v = newNullableFloat64Vector(n, VectorPTypeNullableFloat64)
+		v = newNullableFloat64Vector(n)
 
 	case []string:
-		v = newStringVector(n, VectorPTypeString)
+		v = newStringVector(n)
 	case []*string:
-		v = newNullableStringVector(n, VectorPTypeNullableString)
+		v = newNullableStringVector(n)
 	case []bool:
-		v = newBoolVector(n, VectorPTypeBool)
+		v = newBoolVector(n)
 	case []*bool:
-		v = newNullableBoolVector(n, VectorPTypeNullableBool)
+		v = newNullableBoolVector(n)
 	case []time.Time:
-		v = newTimeTimeVector(n, VectorPTypeTime)
+		v = newTimeTimeVector(n)
 	case []*time.Time:
-		v = newNullableTimeTimeVector(n, VectorPTypeNullableTime)
+		v = newNullableTimeTimeVector(n)
 	default:
 		panic(fmt.Sprintf("unsupported vector type of %T", t))
 	}
 	return
 }
+
+type VectorPTypegen = VectorPType
 
 // VectorPType indicates the go type underlying the Vector.
 type VectorPType int
@@ -122,8 +124,8 @@ const (
 
 	// VectorPTypeUint64 indicates the underlying primitive is a []uint64.
 	VectorPTypeUint64
-	// VectorPTypeNullableUInt64 indicates the underlying primitive is a []*uint64.
-	VectorPTypeNullableUInt64
+	// VectorPTypeNullableUint64 indicates the underlying primitive is a []*uint64.
+	VectorPTypeNullableUint64
 
 	// VectorPTypeFloat32 indicates the underlying primitive is a []float32.
 	VectorPTypeFloat32
@@ -150,3 +152,74 @@ const (
 	// VectorPTypeNullableTime indicates the underlying primitive is a []*time.Time.
 	VectorPTypeNullableTime
 )
+
+func vectorPType(v Vector) VectorPType {
+	switch v.(type) {
+	case *int8Vector:
+		return VectorPTypeInt8
+	case *nullableInt8Vector:
+		return VectorPTypeNullableInt8
+
+	case *int16Vector:
+		return VectorPTypeInt16
+	case *nullableInt16Vector:
+		return VectorPTypeNullableInt16
+
+	case *int32Vector:
+		return VectorPTypeInt32
+	case *nullableInt32Vector:
+		return VectorPTypeNullableInt32
+
+	case *int64Vector:
+		return VectorPTypeInt64
+	case *nullableInt64Vector:
+		return VectorPTypeNullableInt64
+
+	case *uint8Vector:
+		return VectorPTypeUint8
+	case *nullableUint8Vector:
+		return VectorPTypeNullableUint8
+
+	case *uint16Vector:
+		return VectorPTypeUint16
+	case *nullableUint16Vector:
+		return VectorPTypeNullableUint16
+
+	case *uint32Vector:
+		return VectorPTypeUint32
+	case *nullableUint32Vector:
+		return VectorPTypeNullableUint32
+
+	case *uint64Vector:
+		return VectorPTypeUint64
+	case *nullableUint64Vector:
+		return VectorPTypeNullableUint64
+
+	case *float32Vector:
+		return VectorPTypeFloat32
+	case *nullableFloat32Vector:
+		return VectorPTypeNullableFloat32
+
+	case *float64Vector:
+		return VectorPTypeFloat64
+	case *nullableFloat64Vector:
+		return VectorPTypeNullableFloat64
+
+	case *stringVector:
+		return VectorPTypeString
+	case *nullableStringVector:
+		return VectorPTypeNullableString
+
+	case *boolVector:
+		return VectorPTypeBool
+	case *nullableBoolVector:
+		return VectorPTypeNullableBool
+
+	case *timeTimeVector:
+		return VectorPTypeTime
+	case *nullableTimeTimeVector:
+		return VectorPTypeNullableTime
+	}
+
+	return VectorPType(-1)
+}

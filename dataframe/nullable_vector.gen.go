@@ -2,409 +2,435 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/cheekybits/genny
 
+// -build !test
+
 package dataframe
 
 import "time"
 
 //go:Uint8erate uint8ny -in=$GOFILE -out=nullable_vector.Uint8.go uint8 "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableUint8Vector struct {
-	items []*uint8
-	pType VectorPType
-}
+type nullableUint8Vector []*uint8
 
-func newNullableUint8Vector(n int, pType VectorPType) *nullableUint8Vector {
-	return &nullableUint8Vector{items: make([]*uint8, n), pType: pType}
+func newNullableUint8Vector(n int) *nullableUint8Vector {
+	v := nullableUint8Vector(make([]*uint8, n))
+	return &v
 }
 
 func (v *nullableUint8Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*uint8)
+	(*v)[idx] = i.(*uint8)
 }
 
 func (v *nullableUint8Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*uint8))
+	(*v) = append((*v), i.(*uint8))
 }
 
 func (v *nullableUint8Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableUint8Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableUint8Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following uint8erates the right code but makes this invalid
+	//return VectorPTypeNullableUint8
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Uint16erate uint16ny -in=$GOFILE -out=nullable_vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableUint16Vector struct {
-	items []*uint16
-	pType VectorPType
-}
+type nullableUint16Vector []*uint16
 
-func newNullableUint16Vector(n int, pType VectorPType) *nullableUint16Vector {
-	return &nullableUint16Vector{items: make([]*uint16, n), pType: pType}
+func newNullableUint16Vector(n int) *nullableUint16Vector {
+	v := nullableUint16Vector(make([]*uint16, n))
+	return &v
 }
 
 func (v *nullableUint16Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*uint16)
+	(*v)[idx] = i.(*uint16)
 }
 
 func (v *nullableUint16Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*uint16))
+	(*v) = append((*v), i.(*uint16))
 }
 
 func (v *nullableUint16Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableUint16Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableUint16Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following uint16erates the right code but makes this invalid
+	//return VectorPTypeNullableUint16
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Uint32erate uint32ny -in=$GOFILE -out=nullable_vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableUint32Vector struct {
-	items []*uint32
-	pType VectorPType
-}
+type nullableUint32Vector []*uint32
 
-func newNullableUint32Vector(n int, pType VectorPType) *nullableUint32Vector {
-	return &nullableUint32Vector{items: make([]*uint32, n), pType: pType}
+func newNullableUint32Vector(n int) *nullableUint32Vector {
+	v := nullableUint32Vector(make([]*uint32, n))
+	return &v
 }
 
 func (v *nullableUint32Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*uint32)
+	(*v)[idx] = i.(*uint32)
 }
 
 func (v *nullableUint32Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*uint32))
+	(*v) = append((*v), i.(*uint32))
 }
 
 func (v *nullableUint32Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableUint32Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableUint32Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following uint32erates the right code but makes this invalid
+	//return VectorPTypeNullableUint32
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Uint64erate uint64ny -in=$GOFILE -out=nullable_vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableUint64Vector struct {
-	items []*uint64
-	pType VectorPType
-}
+type nullableUint64Vector []*uint64
 
-func newNullableUint64Vector(n int, pType VectorPType) *nullableUint64Vector {
-	return &nullableUint64Vector{items: make([]*uint64, n), pType: pType}
+func newNullableUint64Vector(n int) *nullableUint64Vector {
+	v := nullableUint64Vector(make([]*uint64, n))
+	return &v
 }
 
 func (v *nullableUint64Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*uint64)
+	(*v)[idx] = i.(*uint64)
 }
 
 func (v *nullableUint64Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*uint64))
+	(*v) = append((*v), i.(*uint64))
 }
 
 func (v *nullableUint64Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableUint64Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableUint64Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following uint64erates the right code but makes this invalid
+	//return VectorPTypeNullableUint64
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Int8erate int8ny -in=$GOFILE -out=nullable_vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableInt8Vector struct {
-	items []*int8
-	pType VectorPType
-}
+type nullableInt8Vector []*int8
 
-func newNullableInt8Vector(n int, pType VectorPType) *nullableInt8Vector {
-	return &nullableInt8Vector{items: make([]*int8, n), pType: pType}
+func newNullableInt8Vector(n int) *nullableInt8Vector {
+	v := nullableInt8Vector(make([]*int8, n))
+	return &v
 }
 
 func (v *nullableInt8Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*int8)
+	(*v)[idx] = i.(*int8)
 }
 
 func (v *nullableInt8Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*int8))
+	(*v) = append((*v), i.(*int8))
 }
 
 func (v *nullableInt8Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableInt8Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableInt8Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following int8erates the right code but makes this invalid
+	//return VectorPTypeNullableInt8
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Int16erate int16ny -in=$GOFILE -out=nullable_vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableInt16Vector struct {
-	items []*int16
-	pType VectorPType
-}
+type nullableInt16Vector []*int16
 
-func newNullableInt16Vector(n int, pType VectorPType) *nullableInt16Vector {
-	return &nullableInt16Vector{items: make([]*int16, n), pType: pType}
+func newNullableInt16Vector(n int) *nullableInt16Vector {
+	v := nullableInt16Vector(make([]*int16, n))
+	return &v
 }
 
 func (v *nullableInt16Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*int16)
+	(*v)[idx] = i.(*int16)
 }
 
 func (v *nullableInt16Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*int16))
+	(*v) = append((*v), i.(*int16))
 }
 
 func (v *nullableInt16Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableInt16Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableInt16Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following int16erates the right code but makes this invalid
+	//return VectorPTypeNullableInt16
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Int32erate int32ny -in=$GOFILE -out=nullable_vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableInt32Vector struct {
-	items []*int32
-	pType VectorPType
-}
+type nullableInt32Vector []*int32
 
-func newNullableInt32Vector(n int, pType VectorPType) *nullableInt32Vector {
-	return &nullableInt32Vector{items: make([]*int32, n), pType: pType}
+func newNullableInt32Vector(n int) *nullableInt32Vector {
+	v := nullableInt32Vector(make([]*int32, n))
+	return &v
 }
 
 func (v *nullableInt32Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*int32)
+	(*v)[idx] = i.(*int32)
 }
 
 func (v *nullableInt32Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*int32))
+	(*v) = append((*v), i.(*int32))
 }
 
 func (v *nullableInt32Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableInt32Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableInt32Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following int32erates the right code but makes this invalid
+	//return VectorPTypeNullableInt32
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Int64erate int64ny -in=$GOFILE -out=nullable_vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableInt64Vector struct {
-	items []*int64
-	pType VectorPType
-}
+type nullableInt64Vector []*int64
 
-func newNullableInt64Vector(n int, pType VectorPType) *nullableInt64Vector {
-	return &nullableInt64Vector{items: make([]*int64, n), pType: pType}
+func newNullableInt64Vector(n int) *nullableInt64Vector {
+	v := nullableInt64Vector(make([]*int64, n))
+	return &v
 }
 
 func (v *nullableInt64Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*int64)
+	(*v)[idx] = i.(*int64)
 }
 
 func (v *nullableInt64Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*int64))
+	(*v) = append((*v), i.(*int64))
 }
 
 func (v *nullableInt64Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableInt64Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableInt64Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following int64erates the right code but makes this invalid
+	//return VectorPTypeNullableInt64
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Float32erate float32ny -in=$GOFILE -out=nullable_vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableFloat32Vector struct {
-	items []*float32
-	pType VectorPType
-}
+type nullableFloat32Vector []*float32
 
-func newNullableFloat32Vector(n int, pType VectorPType) *nullableFloat32Vector {
-	return &nullableFloat32Vector{items: make([]*float32, n), pType: pType}
+func newNullableFloat32Vector(n int) *nullableFloat32Vector {
+	v := nullableFloat32Vector(make([]*float32, n))
+	return &v
 }
 
 func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*float32)
+	(*v)[idx] = i.(*float32)
 }
 
 func (v *nullableFloat32Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*float32))
+	(*v) = append((*v), i.(*float32))
 }
 
 func (v *nullableFloat32Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableFloat32Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableFloat32Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following float32erates the right code but makes this invalid
+	//return VectorPTypeNullableFloat32
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Float64erate float64ny -in=$GOFILE -out=nullable_vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableFloat64Vector struct {
-	items []*float64
-	pType VectorPType
-}
+type nullableFloat64Vector []*float64
 
-func newNullableFloat64Vector(n int, pType VectorPType) *nullableFloat64Vector {
-	return &nullableFloat64Vector{items: make([]*float64, n), pType: pType}
+func newNullableFloat64Vector(n int) *nullableFloat64Vector {
+	v := nullableFloat64Vector(make([]*float64, n))
+	return &v
 }
 
 func (v *nullableFloat64Vector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*float64)
+	(*v)[idx] = i.(*float64)
 }
 
 func (v *nullableFloat64Vector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*float64))
+	(*v) = append((*v), i.(*float64))
 }
 
 func (v *nullableFloat64Vector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableFloat64Vector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableFloat64Vector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following float64erates the right code but makes this invalid
+	//return VectorPTypeNullableFloat64
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Stringerate stringny -in=$GOFILE -out=nullable_vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableStringVector struct {
-	items []*string
-	pType VectorPType
-}
+type nullableStringVector []*string
 
-func newNullableStringVector(n int, pType VectorPType) *nullableStringVector {
-	return &nullableStringVector{items: make([]*string, n), pType: pType}
+func newNullableStringVector(n int) *nullableStringVector {
+	v := nullableStringVector(make([]*string, n))
+	return &v
 }
 
 func (v *nullableStringVector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*string)
+	(*v)[idx] = i.(*string)
 }
 
 func (v *nullableStringVector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*string))
+	(*v) = append((*v), i.(*string))
 }
 
 func (v *nullableStringVector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableStringVector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableStringVector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following stringerates the right code but makes this invalid
+	//return VectorPTypeNullableString
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:Boolerate boolny -in=$GOFILE -out=nullable_vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableBoolVector struct {
-	items []*bool
-	pType VectorPType
-}
+type nullableBoolVector []*bool
 
-func newNullableBoolVector(n int, pType VectorPType) *nullableBoolVector {
-	return &nullableBoolVector{items: make([]*bool, n), pType: pType}
+func newNullableBoolVector(n int) *nullableBoolVector {
+	v := nullableBoolVector(make([]*bool, n))
+	return &v
 }
 
 func (v *nullableBoolVector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*bool)
+	(*v)[idx] = i.(*bool)
 }
 
 func (v *nullableBoolVector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*bool))
+	(*v) = append((*v), i.(*bool))
 }
 
 func (v *nullableBoolVector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableBoolVector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableBoolVector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following boolerates the right code but makes this invalid
+	//return VectorPTypeNullableBool
+	return vectorPType(v)
 }
+
+// -build !test
 
 //go:TimeTimeerate timeTimeny -in=$GOFILE -out=nullable_vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullableTimeTimeVector struct {
-	items []*time.Time
-	pType VectorPType
-}
+type nullableTimeTimeVector []*time.Time
 
-func newNullableTimeTimeVector(n int, pType VectorPType) *nullableTimeTimeVector {
-	return &nullableTimeTimeVector{items: make([]*time.Time, n), pType: pType}
+func newNullableTimeTimeVector(n int) *nullableTimeTimeVector {
+	v := nullableTimeTimeVector(make([]*time.Time, n))
+	return &v
 }
 
 func (v *nullableTimeTimeVector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*time.Time)
+	(*v)[idx] = i.(*time.Time)
 }
 
 func (v *nullableTimeTimeVector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*time.Time))
+	(*v) = append((*v), i.(*time.Time))
 }
 
 func (v *nullableTimeTimeVector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullableTimeTimeVector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullableTimeTimeVector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following timeTimeerates the right code but makes this invalid
+	//return VectorPTypeNullableTimeTime
+	return vectorPType(v)
 }
