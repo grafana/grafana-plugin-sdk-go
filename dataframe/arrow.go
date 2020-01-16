@@ -1,6 +1,7 @@
 package dataframe
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"time"
@@ -82,6 +83,13 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 		fieldMeta := map[string]string{
 			"name":   field.Name,
 			"labels": field.Labels.String(),
+		}
+		if field.Config != nil {
+			str, err := toJSONString(field.Config)
+			if err != nil {
+				return nil, err
+			}
+			fieldMeta["config"] = str
 		}
 
 		arrowFields[i] = arrow.Field{
@@ -181,7 +189,13 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 		"name":  f.Name,
 		"refId": f.RefID,
 	}
-
+	if f.Meta != nil {
+		str, err := toJSONString(f.Meta)
+		if err != nil {
+			return nil, err
+		}
+		tableMetaMap["meta"] = str
+	}
 	tableMeta := arrow.MetadataFrom(tableMetaMap)
 
 	return arrow.NewSchema(fs, &tableMeta), nil
@@ -285,6 +299,13 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 				return nil, err
 			}
 		}
+		if configAsString, ok := getMDKey("config", field.Metadata); ok {
+			var err error
+			sdkField.Config, err = FieldConfigFromJSON(configAsString)
+			if err != nil {
+				return nil, err
+			}
+		}
 		nullable[idx] = field.Nullable
 		switch field.Type.ID() {
 		case arrow.STRING:
@@ -368,6 +389,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		default:
 			return nullable, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 		}
+
 		frame.Fields = append(frame.Fields, sdkField)
 	}
 	return nullable, nil
@@ -602,6 +624,15 @@ func UnmarshalArrow(b []byte) (*Frame, error) {
 	frame := &Frame{}
 	frame.Name, _ = getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
 	frame.RefID, _ = getMDKey("refId", metaData)
+
+	if metaAsString, ok := getMDKey("meta", metaData); ok {
+		var err error
+		frame.Meta, err = QueryResultMetaFromJSON(metaAsString)
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	nullable, err := initializeFrameFields(schema, frame)
 	if err != nil {
 		return nil, err
@@ -612,4 +643,13 @@ func UnmarshalArrow(b []byte) (*Frame, error) {
 		return nil, err
 	}
 	return frame, nil
+}
+
+// ToJSONString return the FieldConfig as a json string
+func toJSONString(val interface{}) (string, error) {
+	b, err := json.Marshal(val)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
 }

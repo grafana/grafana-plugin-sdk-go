@@ -10,7 +10,9 @@ import (
 
 func TestDataFrame(t *testing.T) {
 	df := dataframe.New("http_requests_total",
-		dataframe.NewField("timestamp", nil, []time.Time{time.Now(), time.Now(), time.Now()}),
+		dataframe.NewField("timestamp", nil, []time.Time{time.Now(), time.Now(), time.Now()}).SetConfig(&dataframe.FieldConfig{
+			Title: "A time Column.",
+		}),
 		dataframe.NewField("value", dataframe.Labels{"service": "auth"}, []float64{1.0, 2.0, 3.0}),
 		dataframe.NewField("category", dataframe.Labels{"service": "auth"}, []string{"foo", "bar", "test"}),
 		dataframe.NewField("valid", dataframe.Labels{"service": "auth"}, []bool{true, false, true}),
