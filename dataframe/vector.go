@@ -81,8 +81,6 @@ func newVector(t interface{}, n int) (v Vector) {
 	return
 }
 
-type VectorPTypegen = VectorPType
-
 // VectorPType indicates the go type underlying the Vector.
 type VectorPType int
 
