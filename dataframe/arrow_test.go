@@ -9,29 +9,43 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
-	"github.com/stretchr/testify/assert"
 )
 
 var update = flag.Bool("update", false, "update .golden.arrow files")
 
 func goldenDF() *dataframe.Frame {
+	nullableStringValuesFieldConfig := (&dataframe.FieldConfig{
+		Title: "Grafana ❤️ (Previous should be heart emoji) 🦥 (Previous should be sloth emoji)",
+		Links: []dataframe.DataLink{
+			dataframe.DataLink{
+				Title:       "Donate - The Sloth Conservation Foundation",
+				TargetBlank: true,
+				URL:         "https://slothconservation.com/how-to-help/donate/",
+			},
+		},
+		NoValue:       "😤",
+		NullValueMode: dataframe.NullValueModeNull,
+		// math.NaN() and math.Infs become null when encoded to json
+	}).SetDecimals(2).SetMax(math.Inf(1)).SetMin(math.NaN()).SetFilterable(false)
+
 	df := dataframe.New("many_types",
 		dataframe.NewField("string_values", dataframe.Labels{"aLabelKey": "aLabelValue"}, []string{
 			"Grafana",
 			"❤️",
 			"Transforms",
-		}),
+		}).SetConfig(&dataframe.FieldConfig{}),
 		dataframe.NewField("nullable_string_values", dataframe.Labels{"aLabelKey": "aLabelValue", "bLabelKey": "bLabelValue"}, []*string{
 			stringPtr("🦥"),
 			nil,
 			stringPtr("update your unicode/font if no sloth, is 2019."),
-		}),
+		}).SetConfig(nullableStringValuesFieldConfig),
 		dataframe.NewField("int8_values", nil, []int8{
 			math.MinInt8,
 			1,
 			math.MaxInt8,
-		}),
+		}).SetConfig((&dataframe.FieldConfig{}).SetMin(0).SetMax(1)),
 		dataframe.NewField("nullable_int8_values", nil, []*int8{
 			int8Ptr(math.MinInt8),
 			nil,
@@ -151,6 +165,10 @@ func goldenDF() *dataframe.Frame {
 	)
 
 	df.RefID = "A"
+	df.Meta = &dataframe.QueryResultMeta{
+		SearchWords: []string{"Grafana", "❤️", " 🦥 ", "test"},
+		Limit:       4242,
+	}
 	return df
 }
 
@@ -196,5 +214,56 @@ func TestDecode(t *testing.T) {
 	}
 
 	df := goldenDF()
-	assert.Equal(t, df, newDf)
+
+	opt := cmp.Comparer(func(x, y *dataframe.ConfFloat64) bool {
+		if x == nil && y == nil {
+			return true
+		}
+		if y == nil {
+			if math.IsNaN(float64(*x)) {
+				return true
+			}
+			if math.IsInf(float64(*x), 1) {
+				return true
+			}
+			if math.IsInf(float64(*x), -1) {
+				return true
+			}
+		}
+		if x == nil {
+			if math.IsNaN(float64(*y)) {
+				return true
+			}
+			if math.IsInf(float64(*y), 1) {
+				return true
+			}
+			if math.IsInf(float64(*y), -1) {
+				return true
+			}
+		}
+		return *x == *y
+	})
+
+	itemsOpt := cmp.Comparer(func(x, y dataframe.Vector) bool {
+		if x.PrimitiveType() != y.PrimitiveType() {
+			return false
+		}
+		if x.Len() != y.Len() {
+			return false
+		}
+		if x.Len() == 0 && y.Len() == 0 {
+			return true
+		}
+		for i := 0; i < x.Len(); i++ {
+			if !cmp.Equal(x.At(i), y.At(i)) {
+				return false
+			}
+		}
+		return true
+	})
+
+	if diff := cmp.Diff(df, newDf, opt, itemsOpt); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+
 }
