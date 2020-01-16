@@ -1,32 +1,34 @@
+// -build !test
+
 package dataframe
 
 //go:generate genny -in=$GOFILE -out=nullable_vector.gen.go gen "gen=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
-type nullablegenVector struct {
-	items []*gen
-	pType VectorPType
-}
+type nullablegenVector []*gen
 
-func newNullablegenVector(n int, pType VectorPType) *nullablegenVector {
-	return &nullablegenVector{items: make([]*gen, n), pType: pType}
+func newNullablegenVector(n int) *nullablegenVector {
+	v := nullablegenVector(make([]*gen, n))
+	return &v
 }
 
 func (v *nullablegenVector) Set(idx int, i interface{}) {
-	(*v).items[idx] = i.(*gen)
+	(*v)[idx] = i.(*gen)
 }
 
 func (v *nullablegenVector) Append(i interface{}) {
-	(*v).items = append((*v).items, i.(*gen))
+	(*v) = append((*v), i.(*gen))
 }
 
 func (v *nullablegenVector) At(i int) interface{} {
-	return (*v).items[i]
+	return (*v)[i]
 }
 
 func (v *nullablegenVector) Len() int {
-	return len((*v).items)
+	return len((*v))
 }
 
 func (v *nullablegenVector) PrimitiveType() VectorPType {
-	return (*v).pType
+	// following generates the right code but makes this invalid
+	//return VectorPTypeNullablegen
+	return vectorPType(v)
 }

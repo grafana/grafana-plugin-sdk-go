@@ -310,82 +310,82 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		switch field.Type.ID() {
 		case arrow.STRING:
 			if nullable[idx] {
-				sdkField.Vector = newNullableStringVector(0, VectorPTypeNullableString)
+				sdkField.Vector = newNullableStringVector(0)
 				break
 			}
-			sdkField.Vector = newStringVector(0, VectorPTypeString)
+			sdkField.Vector = newStringVector(0)
 		case arrow.INT8:
 			if nullable[idx] {
-				sdkField.Vector = newNullableInt8Vector(0, VectorPTypeNullableInt8)
+				sdkField.Vector = newNullableInt8Vector(0)
 				break
 			}
-			sdkField.Vector = newInt8Vector(0, VectorPTypeInt8)
+			sdkField.Vector = newInt8Vector(0)
 		case arrow.INT16:
 			if nullable[idx] {
-				sdkField.Vector = newNullableInt16Vector(0, VectorPTypeNullableInt16)
+				sdkField.Vector = newNullableInt16Vector(0)
 				break
 			}
-			sdkField.Vector = newInt16Vector(0, VectorPTypeInt16)
+			sdkField.Vector = newInt16Vector(0)
 		case arrow.INT32:
 			if nullable[idx] {
-				sdkField.Vector = newNullableInt32Vector(0, VectorPTypeNullableInt32)
+				sdkField.Vector = newNullableInt32Vector(0)
 				break
 			}
-			sdkField.Vector = newInt32Vector(0, VectorPTypeInt32)
+			sdkField.Vector = newInt32Vector(0)
 		case arrow.INT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableInt64Vector(0, VectorPTypeNullableInt64)
+				sdkField.Vector = newNullableInt64Vector(0)
 				break
 			}
-			sdkField.Vector = newInt64Vector(0, VectorPTypeInt64)
+			sdkField.Vector = newInt64Vector(0)
 		case arrow.UINT8:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUint8Vector(0, VectorPTypeNullableUint8)
+				sdkField.Vector = newNullableUint8Vector(0)
 				break
 			}
-			sdkField.Vector = newUint8Vector(0, VectorPTypeUint8)
+			sdkField.Vector = newUint8Vector(0)
 		case arrow.UINT16:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUint16Vector(0, VectorPTypeNullableUint16)
+				sdkField.Vector = newNullableUint16Vector(0)
 				break
 			}
-			sdkField.Vector = newUint16Vector(0, VectorPTypeUint16)
+			sdkField.Vector = newUint16Vector(0)
 		case arrow.UINT32:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUint32Vector(0, VectorPTypeNullableUint32)
+				sdkField.Vector = newNullableUint32Vector(0)
 				break
 			}
-			sdkField.Vector = newUint32Vector(0, VectorPTypeUint32)
+			sdkField.Vector = newUint32Vector(0)
 		case arrow.UINT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUint64Vector(0, VectorPTypeNullableUInt64)
+				sdkField.Vector = newNullableUint64Vector(0)
 				break
 			}
-			sdkField.Vector = newUint64Vector(0, VectorPTypeUint64)
+			sdkField.Vector = newUint64Vector(0)
 		case arrow.FLOAT32:
 			if nullable[idx] {
-				sdkField.Vector = newNullableFloat32Vector(0, VectorPTypeNullableFloat32)
+				sdkField.Vector = newNullableFloat32Vector(0)
 				break
 			}
-			sdkField.Vector = newFloat32Vector(0, VectorPTypeFloat32)
+			sdkField.Vector = newFloat32Vector(0)
 		case arrow.FLOAT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableFloat64Vector(0, VectorPTypeNullableFloat64)
+				sdkField.Vector = newNullableFloat64Vector(0)
 				break
 			}
-			sdkField.Vector = newFloat64Vector(0, VectorPTypeFloat64)
+			sdkField.Vector = newFloat64Vector(0)
 		case arrow.BOOL:
 			if nullable[idx] {
-				sdkField.Vector = newNullableBoolVector(0, VectorPTypeNullableBool)
+				sdkField.Vector = newNullableBoolVector(0)
 				break
 			}
-			sdkField.Vector = newBoolVector(0, VectorPTypeBool)
+			sdkField.Vector = newBoolVector(0)
 		case arrow.TIMESTAMP:
 			if nullable[idx] {
-				sdkField.Vector = newNullableTimeTimeVector(0, VectorPTypeNullableTime)
+				sdkField.Vector = newNullableTimeTimeVector(0)
 				break
 			}
-			sdkField.Vector = newTimeTimeVector(0, VectorPTypeTime)
+			sdkField.Vector = newTimeTimeVector(0)
 		default:
 			return nullable, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 		}
