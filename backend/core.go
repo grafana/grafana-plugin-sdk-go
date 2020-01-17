@@ -87,7 +87,7 @@ func (q *DataQuery) toProtobuf() *pluginv2.DataQuery {
 	return &pluginv2.DataQuery{
 		RefId:         q.RefID,
 		MaxDataPoints: q.MaxDataPoints,
-		IntervalMS:    q.Interval.Microseconds(),
+		IntervalMS:    q.Interval.Milliseconds(),
 		TimeRange:     q.TimeRange.toProtobuf(),
 		Json:          q.JSON,
 	}
