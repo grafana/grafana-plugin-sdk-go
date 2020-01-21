@@ -14,7 +14,10 @@ type ResourceHandlerFunc func(*ResourceRequestContext) http.Handler
 
 // Schema defines plugin schema.
 type Schema struct {
-	Resources ResourceMap
+	Resources            ResourceMap
+	HealthCheckHandler   CheckHealthHandler
+	DataQueryHandler     DataQueryHandler
+	TransformDataHandler TransformDataHandler
 }
 
 // RouteMethod route method.

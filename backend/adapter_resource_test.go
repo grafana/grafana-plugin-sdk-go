@@ -1,4 +1,4 @@
-package adapter
+package backend
 
 import (
 	"context"
@@ -7,7 +7,6 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -19,16 +18,16 @@ func TestCallResource(t *testing.T) {
 		postHandler := &TestResourceHandler{}
 		deleteHandler := &TestResourceHandler{}
 		patchHandler := &TestResourceHandler{}
-		adapter := &SDKAdapter{
-			schema: backend.Schema{
-				Resources: backend.ResourceMap{
-					"test": backend.NewResource("/").
-						AddRoute("/", backend.RouteMethodAny, anyHandler.handle).
-						AddRoute("/", backend.RouteMethodGet, getHandler.handle).
-						AddRoute("/", backend.RouteMethodPut, putHandler.handle).
-						AddRoute("/", backend.RouteMethodPost, postHandler.handle).
-						AddRoute("/", backend.RouteMethodDelete, deleteHandler.handle).
-						AddRoute("/", backend.RouteMethodPatch, patchHandler.handle),
+		adapter := &sdkAdapter{
+			schema: Schema{
+				Resources: ResourceMap{
+					"test": NewResource("/").
+						AddRoute("/", RouteMethodAny, anyHandler.handle).
+						AddRoute("/", RouteMethodGet, getHandler.handle).
+						AddRoute("/", RouteMethodPut, putHandler.handle).
+						AddRoute("/", RouteMethodPost, postHandler.handle).
+						AddRoute("/", RouteMethodDelete, deleteHandler.handle).
+						AddRoute("/", RouteMethodPatch, patchHandler.handle),
 				},
 			},
 		}
@@ -123,16 +122,16 @@ func TestCallResource(t *testing.T) {
 		postHandler := &TestResourceHandler{}
 		deleteHandler := &TestResourceHandler{}
 		patchHandler := &TestResourceHandler{}
-		adapter := &SDKAdapter{
-			schema: backend.Schema{
-				Resources: backend.ResourceMap{
-					"test": backend.NewResource("/test/:id").
-						AddRoute("/", backend.RouteMethodAny, anyHandler.handle).
-						AddRoute("/get", backend.RouteMethodGet, getHandler.handle).
-						AddRoute("/put", backend.RouteMethodPut, putHandler.handle).
-						AddRoute("/post", backend.RouteMethodPost, postHandler.handle).
-						AddRoute("/delete", backend.RouteMethodDelete, deleteHandler.handle).
-						AddRoute("/patch", backend.RouteMethodPatch, patchHandler.handle),
+		adapter := &sdkAdapter{
+			schema: Schema{
+				Resources: ResourceMap{
+					"test": NewResource("/test/:id").
+						AddRoute("/", RouteMethodAny, anyHandler.handle).
+						AddRoute("/get", RouteMethodGet, getHandler.handle).
+						AddRoute("/put", RouteMethodPut, putHandler.handle).
+						AddRoute("/post", RouteMethodPost, postHandler.handle).
+						AddRoute("/delete", RouteMethodDelete, deleteHandler.handle).
+						AddRoute("/patch", RouteMethodPatch, patchHandler.handle),
 				},
 			},
 		}
@@ -225,7 +224,7 @@ type TestResourceHandler struct {
 	callerCount int
 }
 
-func (h *TestResourceHandler) handle(resourceCtx *backend.ResourceRequestContext) http.Handler {
+func (h *TestResourceHandler) handle(resourceCtx *ResourceRequestContext) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		h.callerCount++
 		rw.WriteHeader(200)
