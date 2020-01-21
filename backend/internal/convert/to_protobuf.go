@@ -3,7 +3,7 @@ package convert
 import (
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/models"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
@@ -15,7 +15,7 @@ func ToProto() ToProtobuf {
 	return ToProtobuf{}
 }
 
-func (t ToProtobuf) PluginConfig(pc models.PluginConfig) *pluginv2.PluginConfig {
+func (t ToProtobuf) PluginConfig(pc backend.PluginConfig) *pluginv2.PluginConfig {
 	return &pluginv2.PluginConfig{
 		Id:       pc.ID,
 		OrgId:    pc.OrgID,
@@ -26,33 +26,33 @@ func (t ToProtobuf) PluginConfig(pc models.PluginConfig) *pluginv2.PluginConfig 
 	}
 }
 
-func (t ToProtobuf) TimeRange(tr models.TimeRange) *pluginv2.TimeRange {
+func (t ToProtobuf) TimeRange(tr backend.TimeRange) *pluginv2.TimeRange {
 	return &pluginv2.TimeRange{
 		FromEpochMS: tr.From.UnixNano() / int64(time.Millisecond),
 		ToEpochMS:   tr.To.UnixNano() / int64(time.Millisecond),
 	}
 }
 
-func (t ToProtobuf) HealthStatus(status models.HealthStatus) pluginv2.CheckHealth_Response_HealthStatus {
+func (t ToProtobuf) HealthStatus(status backend.HealthStatus) pluginv2.CheckHealth_Response_HealthStatus {
 	switch status {
-	case models.HealthStatusUnknown:
+	case backend.HealthStatusUnknown:
 		return pluginv2.CheckHealth_Response_UNKNOWN
-	case models.HealthStatusOk:
+	case backend.HealthStatusOk:
 		return pluginv2.CheckHealth_Response_OK
-	case models.HealthStatusError:
+	case backend.HealthStatusError:
 		return pluginv2.CheckHealth_Response_ERROR
 	}
 	panic("unsupported protobuf health status type in sdk")
 }
 
-func (t ToProtobuf) CheckHealthResponse(res *models.CheckHealthResult) *pluginv2.CheckHealth_Response {
+func (t ToProtobuf) CheckHealthResponse(res *backend.CheckHealthResult) *pluginv2.CheckHealth_Response {
 	return &pluginv2.CheckHealth_Response{
 		Status: t.HealthStatus(res.Status),
 		Info:   res.Info,
 	}
 }
 
-func (t ToProtobuf) DataQuery(q models.DataQuery) *pluginv2.DataQuery {
+func (t ToProtobuf) DataQuery(q backend.DataQuery) *pluginv2.DataQuery {
 	return &pluginv2.DataQuery{
 		RefId:         q.RefID,
 		MaxDataPoints: q.MaxDataPoints,
@@ -62,7 +62,7 @@ func (t ToProtobuf) DataQuery(q models.DataQuery) *pluginv2.DataQuery {
 	}
 }
 
-func (t ToProtobuf) DataQueryRequest(req *models.DataQueryRequest) *pluginv2.DataQueryRequest {
+func (t ToProtobuf) DataQueryRequest(req *backend.DataQueryRequest) *pluginv2.DataQueryRequest {
 	queries := make([]*pluginv2.DataQuery, len(req.Queries))
 	for i, q := range req.Queries {
 		queries[i] = t.DataQuery(q)
@@ -74,7 +74,7 @@ func (t ToProtobuf) DataQueryRequest(req *models.DataQueryRequest) *pluginv2.Dat
 	}
 }
 
-func (t ToProtobuf) DataQueryResponse(res *models.DataQueryResponse) (*pluginv2.DataQueryResponse, error) {
+func (t ToProtobuf) DataQueryResponse(res *backend.DataQueryResponse) (*pluginv2.DataQueryResponse, error) {
 	encodedFrames := make([][]byte, len(res.Frames))
 	var err error
 	for i, frame := range res.Frames {
@@ -90,32 +90,32 @@ func (t ToProtobuf) DataQueryResponse(res *models.DataQueryResponse) (*pluginv2.
 	}, nil
 }
 
-func (t ToProtobuf) RouteMethod(rm models.RouteMethod) pluginv2.Resource_Route_Method {
+func (t ToProtobuf) RouteMethod(rm backend.RouteMethod) pluginv2.Resource_Route_Method {
 	switch rm {
-	case models.RouteMethodAny:
+	case backend.RouteMethodAny:
 		return pluginv2.Resource_Route_ANY
-	case models.RouteMethodGet:
+	case backend.RouteMethodGet:
 		return pluginv2.Resource_Route_GET
-	case models.RouteMethodPut:
+	case backend.RouteMethodPut:
 		return pluginv2.Resource_Route_PUT
-	case models.RouteMethodPost:
+	case backend.RouteMethodPost:
 		return pluginv2.Resource_Route_POST
-	case models.RouteMethodDelete:
+	case backend.RouteMethodDelete:
 		return pluginv2.Resource_Route_DELETE
-	case models.RouteMethodPatch:
+	case backend.RouteMethodPatch:
 		return pluginv2.Resource_Route_PATCH
 	}
 	panic("unsupported protobuf resource route method type in sdk")
 }
 
-func (t ToProtobuf) Route(r *models.Route) *pluginv2.Resource_Route {
+func (t ToProtobuf) Route(r *backend.Route) *pluginv2.Resource_Route {
 	return &pluginv2.Resource_Route{
 		Path:   r.Path,
 		Method: t.RouteMethod(r.Method),
 	}
 }
 
-func (t ToProtobuf) Resource(r *models.Resource) *pluginv2.Resource {
+func (t ToProtobuf) Resource(r *backend.Resource) *pluginv2.Resource {
 	res := &pluginv2.Resource{
 		Path:   r.Path,
 		Routes: []*pluginv2.Resource_Route{},
@@ -128,7 +128,7 @@ func (t ToProtobuf) Resource(r *models.Resource) *pluginv2.Resource {
 	return res
 }
 
-func (t ToProtobuf) ResourceMap(rm models.ResourceMap) map[string]*pluginv2.Resource {
+func (t ToProtobuf) ResourceMap(rm backend.ResourceMap) map[string]*pluginv2.Resource {
 	res := map[string]*pluginv2.Resource{}
 	for name, resource := range rm {
 		res[name] = t.Resource(resource)

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/models"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/stretchr/testify/require"
 )
@@ -22,7 +22,7 @@ func TestCheckHealth(t *testing.T) {
 
 	t.Run("When check health handler set should call that", func(t *testing.T) {
 		tcs := []struct {
-			status         models.HealthStatus
+			status         backend.HealthStatus
 			info           string
 			err            error
 			expectedStatus pluginv2.CheckHealth_Response_HealthStatus
@@ -30,19 +30,19 @@ func TestCheckHealth(t *testing.T) {
 			expectedError  bool
 		}{
 			{
-				status:         models.HealthStatusUnknown,
+				status:         backend.HealthStatusUnknown,
 				info:           "unknown",
 				expectedStatus: pluginv2.CheckHealth_Response_UNKNOWN,
 				expectedInfo:   "unknown",
 			},
 			{
-				status:         models.HealthStatusOk,
+				status:         backend.HealthStatusOk,
 				info:           "all good",
 				expectedStatus: pluginv2.CheckHealth_Response_OK,
 				expectedInfo:   "all good",
 			},
 			{
-				status:         models.HealthStatusError,
+				status:         backend.HealthStatusError,
 				info:           "BOOM",
 				expectedStatus: pluginv2.CheckHealth_Response_ERROR,
 				expectedInfo:   "BOOM",
@@ -77,13 +77,13 @@ func TestCheckHealth(t *testing.T) {
 }
 
 type testCheckHealthHandler struct {
-	status models.HealthStatus
+	status backend.HealthStatus
 	info   string
 	err    error
 }
 
-func (h *testCheckHealthHandler) CheckHealth(ctx context.Context) (*models.CheckHealthResult, error) {
-	return &models.CheckHealthResult{
+func (h *testCheckHealthHandler) CheckHealth(ctx context.Context) (*backend.CheckHealthResult, error) {
+	return &backend.CheckHealthResult{
 		Status: h.status,
 		Info:   h.info,
 	}, h.err

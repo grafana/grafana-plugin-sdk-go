@@ -7,7 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/models"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -20,15 +20,15 @@ func TestCallResource(t *testing.T) {
 		deleteHandler := &TestResourceHandler{}
 		patchHandler := &TestResourceHandler{}
 		adapter := &SDKAdapter{
-			schema: models.Schema{
-				Resources: models.ResourceMap{
-					"test": models.NewResource("/").
-						AddRoute("/", models.RouteMethodAny, anyHandler.handle).
-						AddRoute("/", models.RouteMethodGet, getHandler.handle).
-						AddRoute("/", models.RouteMethodPut, putHandler.handle).
-						AddRoute("/", models.RouteMethodPost, postHandler.handle).
-						AddRoute("/", models.RouteMethodDelete, deleteHandler.handle).
-						AddRoute("/", models.RouteMethodPatch, patchHandler.handle),
+			schema: backend.Schema{
+				Resources: backend.ResourceMap{
+					"test": backend.NewResource("/").
+						AddRoute("/", backend.RouteMethodAny, anyHandler.handle).
+						AddRoute("/", backend.RouteMethodGet, getHandler.handle).
+						AddRoute("/", backend.RouteMethodPut, putHandler.handle).
+						AddRoute("/", backend.RouteMethodPost, postHandler.handle).
+						AddRoute("/", backend.RouteMethodDelete, deleteHandler.handle).
+						AddRoute("/", backend.RouteMethodPatch, patchHandler.handle),
 				},
 			},
 		}
@@ -39,7 +39,7 @@ func TestCallResource(t *testing.T) {
 				ResourceName: "non-existing",
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, int32(404), res.Code)
+			assert.Equal(t, http.StatusNotFound, int(res.Code))
 			assert.Equal(t, 0, anyHandler.callerCount)
 		})
 
@@ -51,7 +51,7 @@ func TestCallResource(t *testing.T) {
 				Method:       http.MethodTrace,
 			})
 			assert.NoError(t, err)
-			assert.Equal(t, int32(200), res.Code)
+			assert.Equal(t, http.StatusOK, int(res.Code))
 			assert.Equal(t, 1, anyHandler.callerCount)
 		})
 
@@ -124,15 +124,15 @@ func TestCallResource(t *testing.T) {
 		deleteHandler := &TestResourceHandler{}
 		patchHandler := &TestResourceHandler{}
 		adapter := &SDKAdapter{
-			schema: models.Schema{
-				Resources: models.ResourceMap{
-					"test": models.NewResource("/test/:id").
-						AddRoute("/", models.RouteMethodAny, anyHandler.handle).
-						AddRoute("/get", models.RouteMethodGet, getHandler.handle).
-						AddRoute("/put", models.RouteMethodPut, putHandler.handle).
-						AddRoute("/post", models.RouteMethodPost, postHandler.handle).
-						AddRoute("/delete", models.RouteMethodDelete, deleteHandler.handle).
-						AddRoute("/patch", models.RouteMethodPatch, patchHandler.handle),
+			schema: backend.Schema{
+				Resources: backend.ResourceMap{
+					"test": backend.NewResource("/test/:id").
+						AddRoute("/", backend.RouteMethodAny, anyHandler.handle).
+						AddRoute("/get", backend.RouteMethodGet, getHandler.handle).
+						AddRoute("/put", backend.RouteMethodPut, putHandler.handle).
+						AddRoute("/post", backend.RouteMethodPost, postHandler.handle).
+						AddRoute("/delete", backend.RouteMethodDelete, deleteHandler.handle).
+						AddRoute("/patch", backend.RouteMethodPatch, patchHandler.handle),
 				},
 			},
 		}
@@ -225,7 +225,7 @@ type TestResourceHandler struct {
 	callerCount int
 }
 
-func (h *TestResourceHandler) handle(resourceCtx *models.ResourceRequestContext) http.Handler {
+func (h *TestResourceHandler) handle(resourceCtx *backend.ResourceRequestContext) http.Handler {
 	return http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		h.callerCount++
 		rw.WriteHeader(200)

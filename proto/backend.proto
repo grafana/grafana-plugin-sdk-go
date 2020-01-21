@@ -60,7 +60,6 @@ message Resource {
   string path = 1;
   repeated Route routes = 2;
   // Permission permission = 3;
-  // map<string,Resource> childResources = 4;
 }
 
 message GetSchema {

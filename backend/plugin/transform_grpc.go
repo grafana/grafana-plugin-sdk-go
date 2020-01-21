@@ -1,11 +1,12 @@
-package backend
+package plugin
 
 import (
 	"context"
 	"fmt"
 	"strconv"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/models"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/shared"
+
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
@@ -16,7 +17,7 @@ import (
 type TransformGRPCPlugin struct {
 	plugin.NetRPCUnsupportedPlugin
 	plugin.GRPCPlugin
-	TransformServer models.TransformServer
+	TransformServer shared.TransformServer
 }
 
 func (p *TransformGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
@@ -33,7 +34,7 @@ func (p *TransformGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRP
 
 type transformGRPCServer struct {
 	broker *plugin.GRPCBroker
-	server models.TransformServer
+	server shared.TransformServer
 }
 
 func (t *transformGRPCServer) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
@@ -63,7 +64,7 @@ type transformGRPCClient struct {
 	client pluginv2.TransformClient
 }
 
-func (t *transformGRPCClient) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callBack models.TransformCallBack) (*pluginv2.DataQueryResponse, error) {
+func (t *transformGRPCClient) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest, callBack shared.TransformCallBack) (*pluginv2.DataQueryResponse, error) {
 	callBackServer := &TransformCallBackGrpcServer{Impl: callBack}
 
 	var s *grpc.Server
@@ -93,7 +94,7 @@ func (t *TransformCallBackGrpcClient) DataQuery(ctx context.Context, req *plugin
 }
 
 type TransformCallBackGrpcServer struct {
-	Impl models.TransformCallBack
+	Impl shared.TransformCallBack
 }
 
 func (g *TransformCallBackGrpcServer) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {

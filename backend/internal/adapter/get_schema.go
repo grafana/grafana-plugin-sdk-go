@@ -3,13 +3,13 @@ package adapter
 import (
 	"context"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/internal/convert"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/models"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 func (a *SDKAdapter) GetSchema(ctx context.Context, req *pluginv2.GetSchema_Request) (*pluginv2.GetSchema_Response, error) {
-	a.schema = models.Schema{}
+	a.schema = backend.Schema{}
 	protoRes := &pluginv2.GetSchema_Response{
 		Resources: map[string]*pluginv2.Resource{},
 	}

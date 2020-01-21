@@ -4,8 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/models"
-
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/stretchr/testify/require"
 )
@@ -21,10 +20,10 @@ func TestGetSchema(t *testing.T) {
 
 	t.Run("GetSchema with a schema provider should return schema", func(t *testing.T) {
 		adapter := &SDKAdapter{
-			SchemaProvider: func() models.Schema {
-				return models.Schema{
-					Resources: models.ResourceMap{
-						"test": models.NewResource("/"),
+			SchemaProvider: func() backend.Schema {
+				return backend.Schema{
+					Resources: backend.ResourceMap{
+						"test": backend.NewResource("/"),
 					},
 				}
 			},
