@@ -21,11 +21,55 @@ message PluginConfig {
 //-----------------------------------------------
 
 service Core {
+  // Information about what a backend plugin supports/expects
+  rpc GetSchema(GetSchema.Request) returns (GetSchema.Response);
+
   // HTTP Style request
-  rpc Resource(ResourceRequest) returns (ResourceResponse);
+  rpc CallResource(CallResource.Request) returns (CallResource.Response);
 
   // Well typed query interface
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+}
+
+//-----------------------------------------------
+// Schema and resource configuration
+//-----------------------------------------------
+
+message Resource {
+  // enum Permission {
+  //   VIEWER = 0;
+  //   EDITOR = 1;
+  //   ADMIN = 2;
+  // }
+
+  message Route {
+    enum Method {
+      ANY = 0;
+      GET = 1;
+      PUT = 2;
+      POST = 3;
+      DELETE = 4;
+      PATCH = 5;
+    }
+
+    string path = 1;
+    Method method = 2;
+    // Permission permission = 3;
+  }
+
+  string path = 1;
+  repeated Route routes = 2;
+  // Permission permission = 3;
+  // map<string,Resource> childResources = 4;
+}
+
+message GetSchema {
+  message Request {
+  }
+
+  message Response {
+    map<string,Resource> resources = 1;
+  }
 }
 
 //-----------------------------------------------
@@ -69,23 +113,27 @@ message DataQueryResponse {
 // HTTP style request
 //-----------------------------------------------
 
-message ResourceRequest {
-  // Plugin Configuration
-  PluginConfig config = 1;
+message CallResource {
+  message StringList {
+    repeated string values = 1;
+ }
 
+  message Request {
+    PluginConfig config = 1;
+    string resourceName = 2;
+    string resourcePath = 3;
+    string method = 4;
+    string url = 5;
+    map<string,StringList> headers = 6;
+    map<string, string> params = 7;
+    bytes body = 8;
+  }
 
-  // HTTP Style parameters
-  map<string,string> headers = 2; // Request Headers
-  string method = 3; // GET/POST/DELETE/etc
-  string path = 4;   // (with params?)
-  bytes body = 5;    // assume string unless header says otherwise?
-}
-
-message ResourceResponse {
-  int32 code = 1;  // Match HTTP status codes
-  map<string,string> headers = 2; // Response Headers
-
-  bytes body = 3;
+  message Response {
+    int32 code = 1;
+    map<string,StringList> headers = 2;
+    bytes body = 3;
+  }
 }
 
 //-----------------------------------------------
@@ -134,7 +182,7 @@ message CheckHealth {
 //-----------------------------------------------
 
 service GrafanaPlatform {
-  rpc Resource(ResourceRequest) returns (ResourceResponse);
+  rpc Resource(CallResource.Request) returns (CallResource.Response);
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
 }
 

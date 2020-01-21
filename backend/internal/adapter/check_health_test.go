@@ -1,35 +1,18 @@
-package backend
+package adapter
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/models"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
-	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/require"
 )
 
-func TestCollectMetrcis(t *testing.T) {
-	adapter := &sdkAdapter{}
-	res, err := adapter.CollectMetrics(context.Background(), &pluginv2.CollectMetrics_Request{})
-	require.NoError(t, err)
-	require.NotNil(t, res)
-	require.NotNil(t, res.Metrics)
-	require.NotNil(t, res.Metrics.Prometheus)
-
-	reader := bytes.NewReader(res.Metrics.Prometheus)
-	var parser expfmt.TextParser
-	mfs, err := parser.TextToMetricFamilies(reader)
-	require.NoError(t, err)
-	require.Contains(t, mfs, "go_gc_duration_seconds")
-	require.Contains(t, mfs, "go_goroutines")
-}
-
 func TestCheckHealth(t *testing.T) {
 	t.Run("When check health handler not set should use default implementation", func(t *testing.T) {
-		adapter := &sdkAdapter{}
+		adapter := &SDKAdapter{}
 		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealth_Request{})
 		require.NoError(t, err)
 		require.NotNil(t, res)
@@ -39,7 +22,7 @@ func TestCheckHealth(t *testing.T) {
 
 	t.Run("When check health handler set should call that", func(t *testing.T) {
 		tcs := []struct {
-			status         HealthStatus
+			status         models.HealthStatus
 			info           string
 			err            error
 			expectedStatus pluginv2.CheckHealth_Response_HealthStatus
@@ -47,19 +30,19 @@ func TestCheckHealth(t *testing.T) {
 			expectedError  bool
 		}{
 			{
-				status:         HealthStatusUnknown,
+				status:         models.HealthStatusUnknown,
 				info:           "unknown",
 				expectedStatus: pluginv2.CheckHealth_Response_UNKNOWN,
 				expectedInfo:   "unknown",
 			},
 			{
-				status:         HealthStatusOk,
+				status:         models.HealthStatusOk,
 				info:           "all good",
 				expectedStatus: pluginv2.CheckHealth_Response_OK,
 				expectedInfo:   "all good",
 			},
 			{
-				status:         HealthStatusError,
+				status:         models.HealthStatusError,
 				info:           "BOOM",
 				expectedStatus: pluginv2.CheckHealth_Response_ERROR,
 				expectedInfo:   "BOOM",
@@ -71,8 +54,8 @@ func TestCheckHealth(t *testing.T) {
 		}
 
 		for _, tc := range tcs {
-			adapter := &sdkAdapter{
-				checkHealthHandler: &testCheckHealthHandler{
+			adapter := &SDKAdapter{
+				CheckHealthHandler: &testCheckHealthHandler{
 					status: tc.status,
 					info:   tc.info,
 					err:    tc.err,
@@ -94,13 +77,13 @@ func TestCheckHealth(t *testing.T) {
 }
 
 type testCheckHealthHandler struct {
-	status HealthStatus
+	status models.HealthStatus
 	info   string
 	err    error
 }
 
-func (h *testCheckHealthHandler) CheckHealth(ctx context.Context) (*CheckHealthResult, error) {
-	return &CheckHealthResult{
+func (h *testCheckHealthHandler) CheckHealth(ctx context.Context) (*models.CheckHealthResult, error) {
+	return &models.CheckHealthResult{
 		Status: h.status,
 		Info:   h.info,
 	}, h.err
