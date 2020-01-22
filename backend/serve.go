@@ -15,6 +15,7 @@ type ServeOpts struct {
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
 	sdkAdapter := &sdkAdapter{
+		SchemaProvider:       opts.SchemaProvider,
 		CheckHealthHandler:   opts.CheckHealthHandler,
 		DataQueryHandler:     opts.DataQueryHandler,
 		TransformDataHandler: opts.TransformDataHandler,
