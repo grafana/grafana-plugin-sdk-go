@@ -122,6 +122,33 @@ func TestAppendRowSafe(t *testing.T) {
 			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []int64{1})),
 		},
 		{
+			name:        "untyped nil append",
+			frame:       dataframe.New("test", dataframe.NewField("test", nil, []*int64{})),
+			rowToAppend: append(make([]interface{}, 0), nil),
+			shouldErr:   require.NoError,
+			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []*int64{nil})),
+		},
+		{
+			name:          "untyped nil append to non-nullable should error",
+			frame:         dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
+			rowToAppend:   append(make([]interface{}, 0), nil),
+			shouldErr:     require.Error,
+			errorContains: []string{"non-nullable", "underlying type []int64"},
+		},
+		{
+			name:        "typed nil append",
+			frame:       dataframe.New("test", dataframe.NewField("test", nil, []*int64{})),
+			rowToAppend: append(make([]interface{}, 0), []*int64{nil}[0]),
+			shouldErr:   require.NoError,
+			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []*int64{nil})),
+		},
+		{
+			name:        "wrong typed nil append should error",
+			frame:       dataframe.New("test", dataframe.NewField("test", nil, []*int64{})),
+			rowToAppend: append(make([]interface{}, 0), []*string{nil}[0]),
+			shouldErr:   require.Error,
+		},
+		{
 			name:          "append of wrong type should error",
 			frame:         dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
 			rowToAppend:   append(make([]interface{}, 0), "1"),

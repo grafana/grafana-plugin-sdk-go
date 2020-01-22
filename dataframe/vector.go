@@ -292,6 +292,14 @@ func pTypeFromVal(v interface{}) VectorPType {
 	return VectorPType(-1)
 }
 
+func (p VectorPType) String() string {
+	if p < 0 {
+		return "invalid/unsupported"
+	}
+	return fmt.Sprintf("[]%v", p.ItemTypeString())
+
+}
+
 // ItemTypeString returns the string representation of the type of element within in the vector
 func (p VectorPType) ItemTypeString() string {
 	switch p {
@@ -361,4 +369,28 @@ func (p VectorPType) ItemTypeString() string {
 		return "*time.Time"
 	}
 	return "invalid/unsupported type"
+}
+
+// Nullable returns if type is a nullable type
+func (p VectorPType) Nullable() bool {
+	switch p {
+	case VectorPTypeNullableInt8, VectorPTypeNullableInt16, VectorPTypeNullableInt32, VectorPTypeNullableInt64:
+		return true
+
+	case VectorPTypeNullableUint8, VectorPTypeNullableUint16, VectorPTypeNullableUint32, VectorPTypeNullableUint64:
+		return true
+
+	case VectorPTypeNullableFloat32, VectorPTypeNullableFloat64:
+		return true
+
+	case VectorPTypeNullableString:
+		return true
+
+	case VectorPTypeNullableBool:
+		return true
+
+	case VectorPTypeNullableTime:
+		return true
+	}
+	return false
 }

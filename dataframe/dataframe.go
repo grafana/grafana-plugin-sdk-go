@@ -55,8 +55,16 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 		if f.Fields[i].Vector == nil {
 			return fmt.Errorf("can not append to uninitalized Field Vector at field index %v", i)
 		}
-		if pTypeFromVal(v) != f.Fields[i].Vector.PrimitiveType() {
-			return fmt.Errorf("invalid type appending row at index %v, got %T want %v", i, v, f.Fields[i].Vector.PrimitiveType().ItemTypeString())
+		dfPType := f.Fields[i].Vector.PrimitiveType()
+		if v == nil {
+			if dfPType.Nullable() {
+				continue
+			}
+			return fmt.Errorf("can not append nil to non-nullable vector with underlying type %s at field index %v", dfPType, i)
+		}
+
+		if pTypeFromVal(v) != dfPType {
+			return fmt.Errorf("invalid type appending row at index %v, got %T want %v", i, v, dfPType.ItemTypeString())
 		}
 	}
 	// second loop that modifies

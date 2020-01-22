@@ -14,6 +14,10 @@ func (v *nullablegenVector) Set(idx int, i interface{}) {
 }
 
 func (v *nullablegenVector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*gen))
 }
 

@@ -20,6 +20,10 @@ func (v *nullableUint8Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableUint8Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*uint8))
 }
 
@@ -49,6 +53,10 @@ func (v *nullableUint16Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableUint16Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*uint16))
 }
 
@@ -78,6 +86,10 @@ func (v *nullableUint32Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableUint32Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*uint32))
 }
 
@@ -107,6 +119,10 @@ func (v *nullableUint64Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableUint64Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*uint64))
 }
 
@@ -136,6 +152,10 @@ func (v *nullableInt8Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableInt8Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*int8))
 }
 
@@ -165,6 +185,10 @@ func (v *nullableInt16Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableInt16Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*int16))
 }
 
@@ -194,6 +218,10 @@ func (v *nullableInt32Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableInt32Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*int32))
 }
 
@@ -223,6 +251,10 @@ func (v *nullableInt64Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableInt64Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*int64))
 }
 
@@ -252,6 +284,10 @@ func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableFloat32Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*float32))
 }
 
@@ -281,6 +317,10 @@ func (v *nullableFloat64Vector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableFloat64Vector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*float64))
 }
 
@@ -310,6 +350,10 @@ func (v *nullableStringVector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableStringVector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*string))
 }
 
@@ -339,6 +383,10 @@ func (v *nullableBoolVector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableBoolVector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*bool))
 }
 
@@ -368,6 +416,10 @@ func (v *nullableTimeTimeVector) Set(idx int, i interface{}) {
 }
 
 func (v *nullableTimeTimeVector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
 	(*v) = append((*v), i.(*time.Time))
 }
 
