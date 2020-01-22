@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	"github.com/stretchr/testify/require"
 )
 
 func TestDataFrame(t *testing.T) {
@@ -102,6 +103,72 @@ func TestTimeField(t *testing.T) {
 
 		})
 	}
+}
+
+func TestAppendRowSafe(t *testing.T) {
+	tests := []struct {
+		name          string
+		frame         *dataframe.Frame
+		rowToAppend   []interface{}
+		shouldErr     require.ErrorAssertionFunc
+		errorContains []string
+		newFrame      *dataframe.Frame
+	}{
+		{
+			name:        "simple safe append",
+			frame:       dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
+			rowToAppend: append(make([]interface{}, 0), int64(1)),
+			shouldErr:   require.NoError,
+			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []int64{1})),
+		},
+		{
+			name:          "append of wrong type should error",
+			frame:         dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
+			rowToAppend:   append(make([]interface{}, 0), "1"),
+			shouldErr:     require.Error,
+			errorContains: []string{"string", "int64"},
+		},
+		{
+			name:        "unsupported type should error",
+			frame:       dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
+			rowToAppend: append(make([]interface{}, 0), dataframe.Frame{}),
+			shouldErr:   require.Error,
+		},
+		{
+			name:          "frame with no fields should error when appending a value",
+			frame:         &dataframe.Frame{Name: "test"},
+			rowToAppend:   append(make([]interface{}, 0), 1),
+			shouldErr:     require.Error,
+			errorContains: []string{"0 fields"},
+		},
+		{
+			name:          "frame with uninitalized Field should error",
+			frame:         &dataframe.Frame{Name: "test", Fields: []*dataframe.Field{nil}},
+			rowToAppend:   append(make([]interface{}, 0), 1),
+			shouldErr:     require.Error,
+			errorContains: []string{"uninitalized Field at"},
+		},
+		{
+			name:          "frame with uninitalized Field Vector should error",
+			frame:         &dataframe.Frame{Name: "test", Fields: []*dataframe.Field{&dataframe.Field{}}},
+			rowToAppend:   append(make([]interface{}, 0), 1),
+			shouldErr:     require.Error,
+			errorContains: []string{"uninitalized Field Vector at"},
+		},
+	}
+	for _, tt := range tests {
+		t.Run("", func(t *testing.T) {
+			err := tt.frame.AppendRowSafe(tt.rowToAppend...)
+			tt.shouldErr(t, err)
+			for _, v := range tt.errorContains {
+				require.Contains(t, err.Error(), v)
+			}
+			if err == nil {
+				require.Equal(t, tt.frame, tt.newFrame)
+			}
+		})
+	}
+
 }
 
 func timePtr(t time.Time) *time.Time {

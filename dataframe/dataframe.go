@@ -27,6 +27,51 @@ type Field struct {
 // Fields is a slice of Field pointers.
 type Fields []*Field
 
+// AppendRow adds a new row to the Frame by appending to each value to
+// the corresponding Field in the dataframe.
+// The dataframe's Fields and the Fields' Vectors must be initalized or AppendRow will panic.
+// The number of arguments must match the number of Fields in the Frame and each type must coorespond
+// to the Field type or AppendRow will panic.
+func (f *Frame) AppendRow(vals ...interface{}) {
+	for i, v := range vals {
+		f.Fields[i].Vector.Append(v)
+	}
+}
+
+// AppendRowSafe adds a new row to the Frame by appending to each value to
+// the corresponding Field in the dataframe.
+// The dataframe's Fields and the Fields' Vectors must be initalized or AppendRow will error.
+// The number of arguments must match the number of Fields in the Frame and each type must coorespond
+// to the Field type or AppendRow will error.
+func (f *Frame) AppendRowSafe(vals ...interface{}) error {
+	if len(vals) != len(f.Fields) {
+		return fmt.Errorf("failed to append vals to Frame. Frame has %v fields but was given %v to append", len(f.Fields), len(vals))
+	}
+	// check validity before any modification
+	for i, v := range vals {
+		if f.Fields[i] == nil {
+			return fmt.Errorf("can not append to uninitalized Field at field index %v", i)
+		}
+		if f.Fields[i].Vector == nil {
+			return fmt.Errorf("can not append to uninitalized Field Vector at field index %v", i)
+		}
+		if pTypeFromVal(v) != f.Fields[i].Vector.PrimitiveType() {
+			return fmt.Errorf("invalid type appending row at index %v, got %T want %v", i, v, f.Fields[i].Vector.PrimitiveType().ItemTypeString())
+		}
+	}
+	// second loop that modifies
+	f.AppendRow(vals...)
+	return nil
+}
+
+func (f *Frame) AppendRows(rows ...[]interface{}) {
+	// WIP
+	for _, row := range rows {
+		// Should probably increase capacity by len(rows) and then .Set?
+		f.AppendRow(row...)
+	}
+}
+
 // NewField returns a new instance of Field.
 func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec Vector
