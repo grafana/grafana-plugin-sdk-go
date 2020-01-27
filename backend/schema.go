@@ -55,6 +55,10 @@ func NewRoute(path string, method RouteMethod, handler ResourceHandlerFunc) *Rou
 }
 
 func (r *Route) Matches(method string) bool {
+	if r.Method == RouteMethodAny {
+		return true
+	}
+
 	switch method {
 	case http.MethodGet:
 		return r.Method == RouteMethodGet
@@ -68,7 +72,7 @@ func (r *Route) Matches(method string) bool {
 		return r.Method == RouteMethodPatch
 	}
 
-	return r.Method == RouteMethodAny
+	return false
 }
 
 // Resource defines a resource that can be called.
@@ -99,7 +103,7 @@ func (r *Resource) AddRoutes(route ...*Route) *Resource {
 
 func (r *Resource) GetMatchingRoute(path, method string) *Route {
 	path = NormalizePath(path)
-	if !strings.HasPrefix(path, r.Path) {
+	if !strings.HasPrefix(path, NormalizePath(r.Path)) {
 		return nil
 	}
 
@@ -109,7 +113,7 @@ func (r *Resource) GetMatchingRoute(path, method string) *Route {
 
 	for _, route := range r.Routes {
 		combinedPath := CombinePaths(r.Path, route.Path)
-		if strings.HasPrefix(path, combinedPath) {
+		if path == combinedPath {
 			if route.Matches(method) {
 				return route
 			}
@@ -148,16 +152,8 @@ func (ctx *ResourceRequestContext) Params(name string) string {
 
 // NormalizePath normalizes a path.
 func NormalizePath(path string) string {
-	if path == "" {
-		path = "/"
-	}
-
+	path = strings.TrimPrefix(path, "/")
 	path = strings.TrimSuffix(path, "/")
-
-	if !strings.HasPrefix(path, "/") {
-		path = "/" + path
-	}
-
 	return path
 }
 
@@ -166,8 +162,8 @@ func CombinePaths(paths ...string) string {
 	path := ""
 	for _, p := range paths {
 		p = NormalizePath(p)
-		if p == "/" {
-			p = ""
+		if p != "" {
+			p += "/"
 		}
 		path += p
 	}
