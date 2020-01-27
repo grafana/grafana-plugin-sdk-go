@@ -9,9 +9,11 @@ import (
 type Vector interface {
 	Set(idx int, i interface{})
 	Append(i interface{})
+	Extend(i int)
 	At(i int) interface{}
 	Len() int
 	PrimitiveType() VectorPType
+	PointerAt(i int) interface{}
 	//buildArrowColumn(pool memory.Allocator, field arrow.Field) *array.Column
 }
 

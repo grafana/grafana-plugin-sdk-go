@@ -1,7 +1,9 @@
 package dataframe
 
 import (
+	"database/sql"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"time"
@@ -78,6 +80,18 @@ func (f *Frame) AppendRows(rows ...[]interface{}) {
 		// Should probably increase capacity by len(rows) and then .Set?
 		f.AppendRow(row...)
 	}
+}
+
+// ScannableRow adds a row to the dataframe, and returns a slice of references
+// that can be passed to rows.Scan() in the in sql package.
+func (f *Frame) ScannableRow() []interface{} {
+	row := make([]interface{}, len(f.Fields))
+	for i, field := range f.Fields {
+		vec := field.Vector
+		vec.Extend(1)
+		row[i] = vec.PointerAt(vec.Len() - 1)
+	}
+	return row
 }
 
 // NewField returns a new instance of Field.
@@ -324,4 +338,35 @@ func (f *Frame) Rows() int {
 		return f.Fields[0].Len()
 	}
 	return 0
+}
+
+// NewForSQLRows creates a new Frame approriate for scanning SQL rows with
+// the the new Frame's ScannableRow() method.
+func NewForSQLRows(rows *sql.Rows) (*Frame, error) {
+	colTypes, err := rows.ColumnTypes()
+	if err != nil {
+		return nil, err
+	}
+	colNames, err := rows.Columns()
+	if err != nil {
+		return nil, err
+	}
+	frame := &Frame{}
+	for i, colType := range colTypes {
+		colName := colNames[i]
+		nullable, ok := colType.Nullable()
+		if !ok {
+			return nil, fmt.Errorf("sql driver won't tell me if this is nullable....?")
+		}
+		scanType := colType.ScanType()
+		if !nullable {
+			vec := reflect.MakeSlice(reflect.SliceOf(scanType), 0, 0).Interface()
+			frame.Fields = append(frame.Fields, NewField(colName, nil, vec))
+			continue
+		}
+		ptrType := reflect.TypeOf(reflect.New(scanType).Interface())
+		vec := reflect.MakeSlice(reflect.SliceOf(ptrType), 0, 0).Interface()
+		frame.Fields = append(frame.Fields, NewField(colName, nil, vec))
+	}
+	return frame, nil
 }

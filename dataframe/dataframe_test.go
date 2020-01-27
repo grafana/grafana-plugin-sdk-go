@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
 	"github.com/stretchr/testify/require"
 )
@@ -30,6 +31,14 @@ func TestField(t *testing.T) {
 	if f.Len() != 3 {
 		t.Fatal("unexpected length")
 	}
+}
+
+func TestScannableRow(t *testing.T) {
+	frame := dataframe.New("test", dataframe.NewField("value", nil, make([]int64, 0)),
+		dataframe.NewField("", nil, make([]*int64, 0)))
+	row := frame.ScannableRow()
+	spew.Dump(row)
+	// TODO legit test against correct types
 }
 
 func TestField_Float64(t *testing.T) {

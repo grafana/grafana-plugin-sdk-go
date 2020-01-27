@@ -25,10 +25,18 @@ func (v *nullablegenVector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullablegenVector) PointerAt(i int) interface{} {
+	return &(*v)[i]
+}
+
 func (v *nullablegenVector) Len() int {
 	return len((*v))
 }
 
 func (v *nullablegenVector) PrimitiveType() VectorPType {
 	return vectorPType(v)
+}
+
+func (v *nullablegenVector) Extend(i int) {
+	(*v) = append((*v), make([]*gen, i)...)
 }
