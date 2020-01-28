@@ -128,12 +128,16 @@ type ResourceMap map[string]*Resource
 
 type ResourceRequestContext struct {
 	PluginConfig PluginConfig
+	ResourceName string
+	ResourcePath string
 	params       map[string]string
 }
 
-func NewResourceRequestContext(config PluginConfig, params map[string]string) *ResourceRequestContext {
+func NewResourceRequestContext(resourceName, resourcePath string, config PluginConfig, params map[string]string) *ResourceRequestContext {
 	return &ResourceRequestContext{
 		PluginConfig: config,
+		ResourceName: resourceName,
+		ResourcePath: resourcePath,
 		params:       params,
 	}
 }

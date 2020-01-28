@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"context"
+	"io"
 	"net/http"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -98,7 +99,10 @@ func (a *sdkAdapter) CallResource(ctx context.Context, protoReq *pluginv2.CallRe
 	}
 
 	httpHandler := route.Handler(fromProto().CallResourceRequest(protoReq))
-	reqBodyReader := bytes.NewReader(protoReq.Body)
+	var reqBodyReader io.Reader
+	if len(protoReq.Body) > 0 {
+		reqBodyReader = bytes.NewReader(protoReq.Body)
+	}
 	httpReq, err := http.NewRequestWithContext(ctx, protoReq.Method, protoReq.Url, reqBodyReader)
 	if err != nil {
 		return nil, err

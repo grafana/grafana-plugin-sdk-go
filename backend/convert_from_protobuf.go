@@ -68,5 +68,5 @@ func (f convertFromProtobuf) DataQueryResponse(protoRes *pluginv2.DataQueryRespo
 }
 
 func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource_Request) *ResourceRequestContext {
-	return NewResourceRequestContext(f.PluginConfig(protoReq.Config), protoReq.Params)
+	return NewResourceRequestContext(protoReq.ResourceName, protoReq.ResourcePath, f.PluginConfig(protoReq.Config), protoReq.Params)
 }
