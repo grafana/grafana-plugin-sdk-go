@@ -82,18 +82,6 @@ func (f *Frame) AppendRows(rows ...[]interface{}) {
 	}
 }
 
-// ScannableRow adds a row to the dataframe, and returns a slice of references
-// that can be passed to rows.Scan() in the in sql package.
-func (f *Frame) ScannableRow() []interface{} {
-	row := make([]interface{}, len(f.Fields))
-	for i, field := range f.Fields {
-		vec := field.Vector
-		vec.Extend(1)
-		row[i] = vec.PointerAt(vec.Len() - 1)
-	}
-	return row
-}
-
 // NewField returns a new instance of Field.
 func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec Vector
@@ -342,23 +330,30 @@ func (f *Frame) Rows() int {
 
 // NewForSQLRows creates a new Frame approriate for scanning SQL rows with
 // the the new Frame's ScannableRow() method.
-func NewForSQLRows(rows *sql.Rows) (*Frame, error) {
+func NewForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, map[int]SQLStringConverter, error) {
+	mapping := make(map[int]SQLStringConverter)
 	colTypes, err := rows.ColumnTypes()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	colNames, err := rows.Columns()
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	frame := &Frame{}
 	for i, colType := range colTypes {
 		colName := colNames[i]
 		nullable, ok := colType.Nullable()
 		if !ok {
-			return nil, fmt.Errorf("sql driver won't tell me if this is nullable....?")
+			return nil, nil, fmt.Errorf("sql driver won't tell me if this is nullable....?")
 		}
 		scanType := colType.ScanType()
+		for _, converter := range converters {
+			if converter.InputScanType == scanType && converter.InputTypeName == colType.DatabaseTypeName() {
+				scanType = reflect.TypeOf("")
+				mapping[i] = converter
+			}
+		}
 		if !nullable {
 			vec := reflect.MakeSlice(reflect.SliceOf(scanType), 0, 0).Interface()
 			frame.Fields = append(frame.Fields, NewField(colName, nil, vec))
@@ -368,5 +363,24 @@ func NewForSQLRows(rows *sql.Rows) (*Frame, error) {
 		vec := reflect.MakeSlice(reflect.SliceOf(ptrType), 0, 0).Interface()
 		frame.Fields = append(frame.Fields, NewField(colName, nil, vec))
 	}
-	return frame, nil
+	return frame, mapping, nil
+}
+
+// ScannableRow adds a row to the dataframe, and returns a slice of references
+// that can be passed to rows.Scan() in the in sql package.
+func (f *Frame) ScannableRow() []interface{} {
+	row := make([]interface{}, len(f.Fields))
+	for i, field := range f.Fields {
+		vec := field.Vector
+		vec.Extend(1)
+		vecItemPointer := vec.PointerAt(vec.Len() - 1)
+		row[i] = vecItemPointer
+	}
+	return row
+}
+
+type SQLStringConverter struct {
+	InputScanType  reflect.Type
+	InputTypeName  string
+	ConversionFunc func(in string) (string, error)
 }

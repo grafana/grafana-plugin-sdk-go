@@ -36,7 +36,7 @@ func TestField(t *testing.T) {
 func TestScannableRow(t *testing.T) {
 	frame := dataframe.New("test", dataframe.NewField("value", nil, make([]int64, 0)),
 		dataframe.NewField("", nil, make([]*int64, 0)))
-	row := frame.ScannableRow()
+	row := frame.ScannableRow(nil)
 	spew.Dump(row)
 	// TODO legit test against correct types
 }
