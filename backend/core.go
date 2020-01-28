@@ -45,6 +45,26 @@ type TimeRange struct {
 	To   time.Time
 }
 
+type CallResourceRequest struct {
+	PluginConfig PluginConfig
+	Path         string
+	Method       string
+	URL          string
+	Headers      map[string][]string
+	Body         []byte
+}
+
+type CallResourceResponse struct {
+	Status  int
+	Headers map[string][]string
+	Body    []byte
+}
+
+// CallResourceHandler handles resource calls.
+type CallResourceHandler interface {
+	CallResource(ctx context.Context, req *CallResourceRequest) (*CallResourceResponse, error)
+}
+
 // DataQueryHandler handles data source queries.
 type DataQueryHandler interface {
 	DataQuery(ctx context.Context, req *DataQueryRequest) (*DataQueryResponse, error)

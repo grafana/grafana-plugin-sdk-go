@@ -89,49 +89,16 @@ func (t convertToProtobuf) DataQueryResponse(res *DataQueryResponse) (*pluginv2.
 	}, nil
 }
 
-func (t convertToProtobuf) RouteMethod(rm RouteMethod) pluginv2.Resource_Route_Method {
-	switch rm {
-	case RouteMethodAny:
-		return pluginv2.Resource_Route_ANY
-	case RouteMethodGet:
-		return pluginv2.Resource_Route_GET
-	case RouteMethodPut:
-		return pluginv2.Resource_Route_PUT
-	case RouteMethodPost:
-		return pluginv2.Resource_Route_POST
-	case RouteMethodDelete:
-		return pluginv2.Resource_Route_DELETE
-	case RouteMethodPatch:
-		return pluginv2.Resource_Route_PATCH
-	}
-	panic("unsupported protobuf resource route method type in sdk")
-}
+func (t convertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *pluginv2.CallResource_Response {
+	headers := map[string]*pluginv2.CallResource_StringList{}
 
-func (t convertToProtobuf) Route(r *Route) *pluginv2.Resource_Route {
-	return &pluginv2.Resource_Route{
-		Path:   r.Path,
-		Method: t.RouteMethod(r.Method),
-	}
-}
-
-func (t convertToProtobuf) Resource(r *Resource) *pluginv2.Resource {
-	res := &pluginv2.Resource{
-		Path:   r.Path,
-		Routes: []*pluginv2.Resource_Route{},
+	for key, values := range resp.Headers {
+		headers[key] = &pluginv2.CallResource_StringList{Values: values}
 	}
 
-	for _, route := range r.Routes {
-		res.Routes = append(res.Routes, t.Route(route))
+	return &pluginv2.CallResource_Response{
+		Headers: headers,
+		Code:    int32(resp.Status),
+		Body:    resp.Body,
 	}
-
-	return res
-}
-
-func (t convertToProtobuf) ResourceMap(rm ResourceMap) map[string]*pluginv2.Resource {
-	res := map[string]*pluginv2.Resource{}
-	for name, resource := range rm {
-		res[name] = t.Resource(resource)
-	}
-
-	return res
 }

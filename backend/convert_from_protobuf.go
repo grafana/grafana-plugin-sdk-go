@@ -67,6 +67,18 @@ func (f convertFromProtobuf) DataQueryResponse(protoRes *pluginv2.DataQueryRespo
 	return &DataQueryResponse{Metadata: protoRes.Metadata, Frames: frames}, nil
 }
 
-func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource_Request) *ResourceRequestContext {
-	return NewResourceRequestContext(protoReq.ResourceName, protoReq.ResourcePath, f.PluginConfig(protoReq.Config), protoReq.Params)
+func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource_Request) *CallResourceRequest {
+	headers := map[string][]string{}
+	for k, values := range protoReq.Headers {
+		headers[k] = values.Values
+	}
+
+	return &CallResourceRequest{
+		PluginConfig: f.PluginConfig(protoReq.Config),
+		Path:         protoReq.Path,
+		Method:       protoReq.Method,
+		URL:          protoReq.Url,
+		Headers:      headers,
+		Body:         protoReq.Body,
+	}
 }

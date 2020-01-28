@@ -6,8 +6,8 @@ import (
 
 //ServeOpts options for serving plugins.
 type ServeOpts struct {
-	SchemaProvider       SchemaProviderFunc
 	CheckHealthHandler   CheckHealthHandler
+	CallResourceHandler  CallResourceHandler
 	DataQueryHandler     DataQueryHandler
 	TransformDataHandler TransformDataHandler
 }
@@ -15,8 +15,8 @@ type ServeOpts struct {
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
 	sdkAdapter := &sdkAdapter{
-		SchemaProvider:       opts.SchemaProvider,
 		CheckHealthHandler:   opts.CheckHealthHandler,
+		CallResourceHandler:  opts.CallResourceHandler,
 		DataQueryHandler:     opts.DataQueryHandler,
 		TransformDataHandler: opts.TransformDataHandler,
 	}
