@@ -74,14 +74,6 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 	return nil
 }
 
-func (f *Frame) AppendRows(rows ...[]interface{}) {
-	// WIP
-	for _, row := range rows {
-		// Should probably increase capacity by len(rows) and then .Set?
-		f.AppendRow(row...)
-	}
-}
-
 // NewField returns a new instance of Field.
 func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec Vector
@@ -389,11 +381,13 @@ func newForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, ma
 		colName := colNames[i]
 		nullable, ok := colType.Nullable()
 		if !ok {
-			return nil, nil, fmt.Errorf("sql driver won't tell me if this is nullable....?")
+			//return nil, nil, fmt.Errorf("sql driver won't tell me if this is nullable....?")
+			// If we don't know if it is nullable, assume it is
+			nullable = true
 		}
 		scanType := colType.ScanType()
 		for _, converter := range converters {
-			if converter.InputScanType == scanType && converter.InputTypeName == colType.DatabaseTypeName() {
+			if converter.InputScanKind == scanType.Kind() && converter.InputTypeName == colType.DatabaseTypeName() {
 				scanType = reflect.TypeOf("")
 				mapping[i] = converter
 			}
@@ -429,9 +423,10 @@ func (f *Frame) scannableRow() []interface{} {
 // conversion func will be run on the row.
 type SQLStringConverter struct {
 	// Name is an optional property that can be used to identify a converter
-	Name           string
-	InputScanType  reflect.Type
-	InputTypeName  string
+	Name          string
+	InputScanKind reflect.Kind
+	InputTypeName string
+
 	// Conversion func may be nil to do no additional operations on the string conversion.
 	ConversionFunc func(in string) (string, error)
 }
