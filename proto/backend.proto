@@ -22,7 +22,7 @@ message PluginConfig {
 
 service Core {
   // HTTP Style request
-  rpc Resource(ResourceRequest) returns (ResourceResponse);
+  rpc CallResource(CallResource.Request) returns (CallResource.Response);
 
   // Well typed query interface
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
@@ -69,23 +69,25 @@ message DataQueryResponse {
 // HTTP style request
 //-----------------------------------------------
 
-message ResourceRequest {
-  // Plugin Configuration
-  PluginConfig config = 1;
+message CallResource {
+  message StringList {
+    repeated string values = 1;
+ }
 
+  message Request {
+    PluginConfig config = 1;
+    string path = 2;
+    string method = 3;
+    string url = 4;
+    map<string,StringList> headers = 5;
+    bytes body = 6;
+  }
 
-  // HTTP Style parameters
-  map<string,string> headers = 2; // Request Headers
-  string method = 3; // GET/POST/DELETE/etc
-  string path = 4;   // (with params?)
-  bytes body = 5;    // assume string unless header says otherwise?
-}
-
-message ResourceResponse {
-  int32 code = 1;  // Match HTTP status codes
-  map<string,string> headers = 2; // Response Headers
-
-  bytes body = 3;
+  message Response {
+    int32 code = 1;
+    map<string,StringList> headers = 2;
+    bytes body = 3;
+  }
 }
 
 //-----------------------------------------------
@@ -134,7 +136,7 @@ message CheckHealth {
 //-----------------------------------------------
 
 service GrafanaPlatform {
-  rpc Resource(ResourceRequest) returns (ResourceResponse);
+  rpc Resource(CallResource.Request) returns (CallResource.Response);
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
 }
 
