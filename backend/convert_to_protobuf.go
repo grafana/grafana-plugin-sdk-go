@@ -25,6 +25,10 @@ func (t convertToProtobuf) PluginConfig(config PluginConfig) *pluginv2.PluginCon
 		protoConfig.InstanceSettings = t.AppInstanceSettings(config.AppSettings)
 	}
 
+	if config.DataSourceSettings != nil {
+		protoConfig.InstanceSettings = t.DataSourceInstanceSettings(config.DataSourceSettings)
+	}
+
 	return protoConfig
 }
 
