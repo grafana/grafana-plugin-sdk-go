@@ -11,34 +11,42 @@ package main
 
 import (
 	"context"
-	"log"
-	"os"
-
-	gf "github.com/grafana/grafana-plugin-sdk-go"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-const pluginID = "myorg-custom-datasource"
 
-type MyDataSource struct {
-	logger *log.Logger
+//
+// This is just an example - a real project would encapsulate this into its own file
+//
+type MyCallHandler struct {
 }
 
-func (d *MyDataSource) Query(ctx context.Context, tr gf.TimeRange, ds gf.DataSourceInfo, queries []gf.Query) ([]gf.QueryResult, error) {
-	return []gf.QueryResult{}, nil
+func (h *MyCallHandler) CheckHealth(ctx context.Context) (*backend.CheckHealthResult, error) {
+	return nil, nil
+}
+
+func (h *MyCallHandler) CallResource(ctx context.Context, req *backend.CallResourceRequest) (*backend.CallResourceResponse, error) {
+	return nil, nil
+}
+
+func (h *MyCallHandler) DataQuery(ctx context.Context, req *backend.DataQueryRequest) (*backend.DataQueryResponse, error) {
+	return nil, nil
+}
+
+func (h *MyCallHandler) TransformData(ctx context.Context, req *backend.DataQueryRequest, callBack backend.TransformCallBackHandler) (*backend.DataQueryResponse, error) {
+	return nil, nil
 }
 
 func main() {
-	logger := log.New(os.Stderr, "", 0)
+	var handler *MyCallHandler
+	handler = new(MyCallHandler)
 
-	srv := gf.NewServer()
-
-	srv.HandleDataSource(pluginID, &MyDataSource{
-		logger: logger,
+	backend.Serve(backend.ServeOpts{
+		CallResourceHandler:  handler,
+		CheckHealthHandler:   handler,
+		DataQueryHandler:     handler,
+		TransformDataHandler: handler,
 	})
-
-	if err := srv.Serve(); err != nil {
-		logger.Fatal(err)
-	}
 }
 ```
 
