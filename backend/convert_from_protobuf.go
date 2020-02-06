@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
@@ -17,12 +16,46 @@ func fromProto() convertFromProtobuf {
 
 func (f convertFromProtobuf) PluginConfig(proto *pluginv2.PluginConfig) PluginConfig {
 	return PluginConfig{
-		ID:       proto.Id,
-		OrgID:    proto.OrgId,
-		Name:     proto.Name,
-		Type:     proto.Type,
-		URL:      proto.Url,
-		JSONData: json.RawMessage([]byte(proto.JsonData)),
+		OrgID:              proto.OrgId,
+		PluginID:           proto.PluginId,
+		PluginType:         proto.PluginType,
+		AppSettings:        f.AppInstanceSettings(proto.GetApp()),
+		DataSourceSettings: f.DataSourceInstanceSettings(proto.GetDataSource()),
+	}
+}
+
+func (f convertFromProtobuf) AppInstanceSettings(proto *pluginv2.PluginConfig_AppInstanceSettings) *AppInstanceSettings {
+	if proto == nil {
+		return nil
+	}
+
+	return &AppInstanceSettings{
+		InstanceSettings: &InstanceSettings{
+			JSONData:                proto.JsonData,
+			DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
+			Updated:                 time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
+		},
+	}
+}
+
+func (f convertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.PluginConfig_DataSourceInstanceSettings) *DataSourceInstanceSettings {
+	if proto == nil {
+		return nil
+	}
+
+	return &DataSourceInstanceSettings{
+		InstanceSettings: &InstanceSettings{
+			JSONData:                proto.JsonData,
+			DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
+			Updated:                 time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
+		},
+		ID:               proto.Id,
+		Name:             proto.Name,
+		URL:              proto.Url,
+		User:             proto.User,
+		Database:         proto.Database,
+		BasicAuthEnabled: proto.BasicAuthEnabled,
+		BasicAuthUser:    proto.BasicAuthUser,
 	}
 }
 

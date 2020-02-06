@@ -40,11 +40,9 @@ func TestCallResource(t *testing.T) {
 		}
 		res, err := adapter.CallResource(context.Background(), &pluginv2.CallResource_Request{
 			Config: &pluginv2.PluginConfig{
-				Id:    1,
-				OrgId: 2,
-				Name:  "my-name",
-				Type:  "my-type",
-				Url:   "my-url",
+				OrgId:      2,
+				PluginId:   "my-plugin",
+				PluginType: "my-type",
 			},
 			Path:   "some/path",
 			Method: http.MethodGet,
@@ -70,6 +68,9 @@ func TestCallResource(t *testing.T) {
 		err = json.Unmarshal(res.Body, &actualRequestData)
 		require.NoError(t, err)
 		require.Equal(t, data, actualRequestData)
+		require.Equal(t, int64(2), handler.actualReq.PluginConfig.OrgID)
+		require.Equal(t, "my-plugin", handler.actualReq.PluginConfig.PluginID)
+		require.Equal(t, "my-type", handler.actualReq.PluginConfig.PluginType)
 
 		// response
 		require.NotNil(t, res)

@@ -7,13 +7,32 @@ package pluginv2;
 //-----------------------------------------------
 
 message PluginConfig {
-  int64 id = 1;
-  int64 orgId = 2;
-  string name = 3;
-  string type = 4;
-  string url = 5;
-  string jsonData = 6;
-  map<string,string> decryptedSecureJsonData = 7;
+  message AppInstanceSettings {
+    bytes jsonData = 1;
+    map<string,string> decryptedSecureJsonData = 2;
+    int64 updatedMS = 3;
+  }
+
+  message DataSourceInstanceSettings {
+    int64 id = 1;
+    string name = 2;
+    string url = 3;
+    string user = 4;
+	  string database = 5;
+	  bool basicAuthEnabled = 6;
+	  string basicAuthUser = 7;
+    bytes jsonData = 8;
+    map<string,string> decryptedSecureJsonData = 9;
+    int64 updatedMS = 10;
+  }
+
+  int64 orgId = 1;
+  string pluginId = 2;
+  string pluginType = 3;
+  oneof instanceSettings {
+    AppInstanceSettings app = 4;
+    DataSourceInstanceSettings dataSource = 5;
+  }
 }
 
 //-----------------------------------------------
