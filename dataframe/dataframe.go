@@ -326,6 +326,7 @@ func (f *Frame) Rows() int {
 // for columns that have types that do not match. The SQLStringConverter's ConversionFunc will
 // be applied to matching rows if it is not nil. A map of Field/Column index to the corresponding SQLStringConverter is used so once can
 // do additional frame modifications.
+// If the database driver does not indicate if the columns are nullable, all columns are assumed to be nullable.
 func NewFromSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, map[int]SQLStringConverter, error) {
 	frame, mappers, err := newForSQLRows(rows, converters...)
 	if err != nil {
@@ -346,7 +347,7 @@ func NewFromSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, m
 		}
 		vec := frame.Fields[fieldIdx]
 		for i := 0; i < vec.Len(); i++ {
-			v, err := mapper.ConversionFunc(vec.Vector.At(i).(string))
+			v, err := mapper.ConversionFunc(vec.Vector.At(i).(*string))
 			if err != nil {
 				return nil, nil, err
 			}
@@ -381,13 +382,12 @@ func newForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, ma
 		colName := colNames[i]
 		nullable, ok := colType.Nullable()
 		if !ok {
-			//return nil, nil, fmt.Errorf("sql driver won't tell me if this is nullable....?")
-			// If we don't know if it is nullable, assume it is
-			nullable = true
+			nullable = true // If we don't know if it is nullable, assume it is
 		}
 		scanType := colType.ScanType()
 		for _, converter := range converters {
 			if converter.InputScanKind == scanType.Kind() && converter.InputTypeName == colType.DatabaseTypeName() {
+				nullable = true
 				scanType = reflect.TypeOf("")
 				mapping[i] = converter
 			}
@@ -418,8 +418,8 @@ func (f *Frame) scannableRow() []interface{} {
 }
 
 // SQLStringConverter can be used to store types not supported by
-// a dataframe into a string. When scanning, if a SQL's row's InputScanType
-// and InputTypeName match that returned by the sql response, then the
+// a dataframe into a string. When scanning, if a SQL's row's InputScanType's Kind
+// and InputScanKind match that returned by the sql response, then the
 // conversion func will be run on the row.
 type SQLStringConverter struct {
 	// Name is an optional property that can be used to identify a converter
@@ -428,5 +428,5 @@ type SQLStringConverter struct {
 	InputTypeName string
 
 	// Conversion func may be nil to do no additional operations on the string conversion.
-	ConversionFunc func(in string) (string, error)
+	ConversionFunc func(in *string) (*string, error)
 }
