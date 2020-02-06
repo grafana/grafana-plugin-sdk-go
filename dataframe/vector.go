@@ -83,6 +83,73 @@ func newVector(t interface{}, n int) (v Vector) {
 	return
 }
 
+
+// ValidVectorType returns if a primitive slice is a valid / supported Vector type
+func ValidVectorType(t interface{}) bool {
+	switch t.(type) {
+	// ints
+	case []int8:
+		return true
+	case []*int8:
+		return true
+	case []int16:
+		return true
+	case []*int16:
+		return true
+	case []int32:
+		return true
+	case []*int32:
+		return true
+	case []int64:
+		return true
+	case []*int64:
+		return true
+
+	// uints
+	case []uint8:
+		return true
+	case []*uint8:
+		return true
+	case []uint16:
+		return true
+	case []*uint16:
+		return true
+	case []uint32:
+		return true
+	case []*uint32:
+		return true
+	case []uint64:
+		return true
+	case []*uint64:
+		return true
+
+	// floats
+	case []float32:
+		return true
+	case []*float32:
+		return true
+	case []float64:
+		return true
+	case []*float64:
+		return true
+
+	case []string:
+		return true
+	case []*string:
+		return true
+	case []bool:
+		return true
+	case []*bool:
+		return true
+	case []time.Time:
+		return true
+	case []*time.Time:
+		return true
+	default:
+		return false
+	}
+}
+
 // VectorPType indicates the go type underlying the Vector.
 type VectorPType int
 
