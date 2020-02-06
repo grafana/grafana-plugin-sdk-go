@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -37,6 +38,10 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 	resourceURL := req.Path
 	if reqURL.RawQuery != "" {
 		resourceURL += "?" + reqURL.RawQuery
+	}
+
+	if !strings.HasPrefix(resourceURL, "/") {
+		resourceURL = "/" + resourceURL
 	}
 
 	httpReq, err := http.NewRequestWithContext(ctx, req.Method, resourceURL, reqBodyReader)

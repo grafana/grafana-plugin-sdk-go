@@ -54,7 +54,7 @@ func TestHttpResourceHandler(t *testing.T) {
 
 		t.Run("Should provide expected request to http handler", func(t *testing.T) {
 			require.NotNil(t, httpHandler.req)
-			require.Equal(t, "path?query=1", httpHandler.req.URL.String())
+			require.Equal(t, "/path?query=1", httpHandler.req.URL.String())
 			require.Equal(t, req.Method, httpHandler.req.Method)
 			require.Contains(t, httpHandler.req.Header, "X-Header-In-1")
 			require.Equal(t, []string{"D", "E"}, httpHandler.req.Header["X-Header-In-1"])
@@ -97,6 +97,33 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Equal(t, req.PluginConfig.Type, pluginCfg.Type)
 			require.Equal(t, req.PluginConfig.URL, pluginCfg.URL)
 		})
+	})
+}
+
+func TestServeMuxHandler(t *testing.T) {
+	t.Run("Given http resource ServeMux handler and calling CallResource", func(t *testing.T) {
+		mux := http.NewServeMux()
+		handlerWasCalled := false
+		mux.HandleFunc("/test", func(rw http.ResponseWriter, req *http.Request) {
+			handlerWasCalled = true
+		})
+		resourceHandler := New(mux)
+
+		req := &backend.CallResourceRequest{
+			PluginConfig: backend.PluginConfig{
+				ID:    2,
+				OrgID: 3,
+				Name:  "my-name",
+				Type:  "my-type",
+				URL:   "http://",
+			},
+			Method: http.MethodGet,
+			Path:   "test",
+			URL:    "/test?query=1",
+		}
+		_, err := resourceHandler.CallResource(context.Background(), req)
+		require.NoError(t, err)
+		require.True(t, handlerWasCalled)
 	})
 }
 
