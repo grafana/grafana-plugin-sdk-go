@@ -55,6 +55,20 @@ message DataQuery {
   bytes json = 5; // Arbitrary structure (model?  modelJson in v1)
 }
 
+// based on https://github.com/grafana/grafana/blob/master/pkg/models/user.go#L170
+message User {
+  int64 userId = 1;
+  int64 orgId = 2;
+  string orgName = 3;
+  string orgRole = 4;
+  string login = 5;
+  string name = 6;
+  string email = 7;
+  bool isAnonymous = 8;
+  bool isGrafanaAdmin = 9;
+  //repeated string teams = ;
+}
+
 message DataQueryRequest {
   // Plugin Configuration
   PluginConfig config = 1;
@@ -64,6 +78,9 @@ message DataQueryRequest {
 
   // List of queries
   repeated DataQuery queries = 3;
+
+  //Info about the user who calls the plugin.
+  User user = 4;
 }
 
 message DataQueryResponse {
@@ -91,6 +108,7 @@ message CallResource {
     string url = 4;
     map<string,StringList> headers = 5;
     bytes body = 6;
+    User user = 7;
   }
 
   message Response {
