@@ -16,46 +16,19 @@ func fromProto() convertFromProtobuf {
 
 func (f convertFromProtobuf) PluginConfig(proto *pluginv2.PluginConfig) PluginConfig {
 	return PluginConfig{
-		OrgID:              proto.OrgId,
-		PluginID:           proto.PluginId,
-		PluginType:         proto.PluginType,
-		AppSettings:        f.AppInstanceSettings(proto.GetApp()),
-		DataSourceSettings: f.DataSourceInstanceSettings(proto.GetDataSource()),
-	}
-}
-
-func (f convertFromProtobuf) AppInstanceSettings(proto *pluginv2.PluginConfig_AppInstanceSettings) *AppInstanceSettings {
-	if proto == nil {
-		return nil
-	}
-
-	return &AppInstanceSettings{
-		InstanceSettings: &InstanceSettings{
-			JSONData:                proto.JsonData,
-			DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
-			Updated:                 time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
-		},
-	}
-}
-
-func (f convertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.PluginConfig_DataSourceInstanceSettings) *DataSourceInstanceSettings {
-	if proto == nil {
-		return nil
-	}
-
-	return &DataSourceInstanceSettings{
-		InstanceSettings: &InstanceSettings{
-			JSONData:                proto.JsonData,
-			DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
-			Updated:                 time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
-		},
-		ID:               proto.Id,
-		Name:             proto.Name,
-		URL:              proto.Url,
-		User:             proto.User,
-		Database:         proto.Database,
-		BasicAuthEnabled: proto.BasicAuthEnabled,
-		BasicAuthUser:    proto.BasicAuthUser,
+		OrgID:                      proto.OrgId,
+		PluginID:                   proto.PluginId,
+		PluginType:                 proto.PluginType,
+		DataSourceID:               proto.DatasourceId,
+		DataSourceName:             proto.DatasourceName,
+		DataSourceURL:              proto.DatasourceUrl,
+		DataSourceUser:             proto.DatasourceUser,
+		DataSourceDatabase:         proto.DatasourceDatabase,
+		DataSourceBasicAuthEnabled: proto.DatasourceBasicAuthEnabled,
+		DataSourceBasicAuthUser:    proto.DatasourceBasicAuthUser,
+		JSONData:                   proto.JsonData,
+		DecryptedSecureJSONData:    proto.DecryptedSecureJsonData,
+		Updated:                    time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
 	}
 }
 

@@ -15,55 +15,20 @@ func toProto() convertToProtobuf {
 }
 
 func (t convertToProtobuf) PluginConfig(config PluginConfig) *pluginv2.PluginConfig {
-	protoConfig := &pluginv2.PluginConfig{
-		OrgId:      config.OrgID,
-		PluginId:   config.PluginID,
-		PluginType: config.PluginType,
-	}
-
-	if config.AppSettings != nil {
-		protoConfig.InstanceSettings = t.AppInstanceSettings(config.AppSettings)
-	}
-
-	if config.DataSourceSettings != nil {
-		protoConfig.InstanceSettings = t.DataSourceInstanceSettings(config.DataSourceSettings)
-	}
-
-	return protoConfig
-}
-
-func (t convertToProtobuf) AppInstanceSettings(settings *AppInstanceSettings) *pluginv2.PluginConfig_App {
-	if settings == nil {
-		return nil
-	}
-
-	return &pluginv2.PluginConfig_App{
-		App: &pluginv2.PluginConfig_AppInstanceSettings{
-			JsonData:                settings.JSONData,
-			DecryptedSecureJsonData: settings.DecryptedSecureJSONData,
-			UpdatedMS:               settings.Updated.UnixNano() / int64(time.Millisecond),
-		},
-	}
-}
-
-func (t convertToProtobuf) DataSourceInstanceSettings(settings *DataSourceInstanceSettings) *pluginv2.PluginConfig_DataSource {
-	if settings == nil {
-		return nil
-	}
-
-	return &pluginv2.PluginConfig_DataSource{
-		DataSource: &pluginv2.PluginConfig_DataSourceInstanceSettings{
-			Id:                      settings.ID,
-			Name:                    settings.Name,
-			Url:                     settings.URL,
-			User:                    settings.User,
-			Database:                settings.Database,
-			BasicAuthEnabled:        settings.BasicAuthEnabled,
-			BasicAuthUser:           settings.BasicAuthUser,
-			JsonData:                settings.JSONData,
-			DecryptedSecureJsonData: settings.DecryptedSecureJSONData,
-			UpdatedMS:               settings.Updated.UnixNano() / int64(time.Millisecond),
-		},
+	return &pluginv2.PluginConfig{
+		OrgId:                      config.OrgID,
+		PluginId:                   config.PluginID,
+		PluginType:                 config.PluginType,
+		DatasourceId:               config.DataSourceID,
+		DatasourceName:             config.DataSourceName,
+		DatasourceUrl:              config.DataSourceURL,
+		DatasourceUser:             config.DataSourceUser,
+		DatasourceDatabase:         config.DataSourceDatabase,
+		DatasourceBasicAuthEnabled: config.DataSourceBasicAuthEnabled,
+		DatasourceBasicAuthUser:    config.DataSourceBasicAuthUser,
+		JsonData:                   config.JSONData,
+		DecryptedSecureJsonData:    config.DecryptedSecureJSONData,
+		UpdatedMS:                  config.Updated.UnixNano() / int64(time.Millisecond),
 	}
 }
 
