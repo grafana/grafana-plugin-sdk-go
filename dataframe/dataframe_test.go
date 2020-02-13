@@ -1,7 +1,9 @@
 package dataframe_test
 
 import (
+	"database/sql"
 	"reflect"
+	"strconv"
 	"testing"
 	"time"
 
@@ -248,4 +250,63 @@ func stringPtr(s string) *string {
 
 func boolPtr(b bool) *bool {
 	return &b
+}
+
+func ExampleSQLStringConverter() {
+	_ = dataframe.SQLStringConverter{
+		Name:          "BIGINT to *int64",
+		InputScanKind: reflect.Struct,
+		InputTypeName: "BIGINT",
+		Replacer: &dataframe.StringFieldReplacer{
+			VectorType: []*int64{},
+			ReplaceFunc: func(in *string) (interface{}, error) {
+				if in == nil {
+					return nil, nil
+				}
+				v, err := strconv.ParseInt(*in, 10, 64)
+				if err != nil {
+					return nil, err
+				}
+				return &v, nil
+			},
+		},
+	}
+}
+
+func ExampleStringFieldReplacer() {
+	_ = &dataframe.StringFieldReplacer{
+		VectorType: []*int64{},
+		ReplaceFunc: func(in *string) (interface{}, error) {
+			if in == nil {
+				return nil, nil
+			}
+			v, err := strconv.ParseInt(*in, 10, 64)
+			if err != nil {
+				return nil, err
+			}
+			return &v, nil
+		},
+	}
+}
+
+func ExampleNewFromSQLRows() {
+	aQuery := "SELECT * FROM GoodData"
+	db, err := sql.Open("fancySql", "fancysql://user:pass@localhost:1433")
+	if err != nil {
+		// return nil
+	}
+
+	defer db.Close()
+
+	rows, err := db.Query(aQuery)
+	if err != nil {
+		// return nil
+	}
+	defer rows.Close()
+
+	frame, mappings, err := dataframe.NewFromSQLRows(rows)
+	if err != nil {
+		// return nil
+	}
+	_, _ = frame, mappings
 }

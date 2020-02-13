@@ -27,7 +27,7 @@ type Field struct {
 // Fields is a slice of Field pointers.
 type Fields []*Field
 
-// AppendRow adds a new row to the Frame by appending to each value to
+// AppendRow adds a new row to the Frame by appending to each element of vals to
 // the corresponding Field in the dataframe.
 // The dataframe's Fields and the Fields' Vectors must be initalized or AppendRow will panic.
 // The number of arguments must match the number of Fields in the Frame and each type must coorespond
@@ -38,11 +38,9 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 	}
 }
 
-// AppendRowSafe adds a new row to the Frame by appending to each value to
-// the corresponding Field in the dataframe.
-// The dataframe's Fields and the Fields' Vectors must be initalized or AppendRow will error.
-// The number of arguments must match the number of Fields in the Frame and each type must coorespond
-// to the Field type or AppendRow will error.
+// AppendRowSafe adds a new row to the Frame by appending to each each element of vals to
+// the corresponding Field in the dataframe. It has the some constraints as AppendRow but will
+// return an error under those conditions instead of panicing.
 func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 	if len(vals) != len(f.Fields) {
 		return fmt.Errorf("failed to append vals to Frame. Frame has %v fields but was given %v to append", len(f.Fields), len(vals))

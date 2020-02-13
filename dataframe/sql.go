@@ -6,13 +6,19 @@ import (
 	"reflect"
 )
 
-// NewFromSQLRows returns a new dataframe populated with the data from the rows.
-// Fields will be named to match name of the SQL columns. The SQL column names must be
-// unique. All the types must be supported by in dataframe or there must be a SQLStringConverter
-// for columns that have types that do not match. The SQLStringConverter's ConversionFunc will
-// be applied to matching rows if it is not nil. A map of Field/Column index to the corresponding SQLStringConverter is used so once can
-// do additional frame modifications.
-// If the database driver does not indicate if the columns are nullable, all columns are assumed to be nullable.
+// NewFromSQLRows returns a new dataframe populated with the data from rows. The Vector types
+// will be []*T if nullable or will be []*T if it is unknown if the column is nullable.
+//
+// Fields will be named to match name of the SQL columns.
+// The SQL column names must be unique.
+//
+// All the types must be supported by the dataframe or a SQLStringConverter will be created and
+// the resulting Field Vector type will be of type []*string.
+//
+// The SQLStringConverter's ConversionFunc will be applied to matching rows if it is not nil.
+// Additionally, if the SQLStringConverter's Replacer is not nil, the replacement will be performed.
+// A map of Field/Column index to the corresponding SQLStringConverter is returned so what conversions were
+// done can be inspected.
 func NewFromSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, map[int]SQLStringConverter, error) {
 	frame, mappers, err := newForSQLRows(rows, converters...)
 	if err != nil {
@@ -62,6 +68,8 @@ func newForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, ma
 	if err != nil {
 		return nil, nil, err
 	}
+	// In the future we can probably remove this restriction. But right now we map names to Arrow Field Names.
+	// Arrow Field names must be unique.
 	seen := map[string]struct{}{}
 	for _, name := range colNames {
 		if _, ok := seen[name]; ok {
@@ -114,6 +122,7 @@ func (f *Frame) scannableRow() []interface{} {
 	for i, field := range f.Fields {
 		vec := field.Vector
 		vec.Extend(1)
+		// non-nullable fields will be *T, and nullable fields will be **T
 		vecItemPointer := vec.PointerAt(vec.Len() - 1)
 		row[i] = vecItemPointer
 	}
@@ -121,13 +130,13 @@ func (f *Frame) scannableRow() []interface{} {
 }
 
 // SQLStringConverter can be used to store types not supported by
-// a dataframe into a string. When scanning, if a SQL's row's InputScanType's Kind
+// a dataframe into a *string. When scanning, if a SQL's row's InputScanType's Kind
 // and InputScanKind match that returned by the sql response, then the
 // conversion func will be run on the row.
 type SQLStringConverter struct {
 	// Name is an optional property that can be used to identify a converter
 	Name          string
-	InputScanKind reflect.Kind
+	InputScanKind reflect.Kind // reflect.Type might better or worse option?
 	InputTypeName string
 
 	// Conversion func may be nil to do no additional operations on the string conversion.
@@ -137,8 +146,12 @@ type SQLStringConverter struct {
 	Replacer *StringFieldReplacer
 }
 
+// Note: SQLStringConverter is perhaps better understood as []byte. However, currently
+// the Vector type ([][]byte) is not supported. https://github.com/grafana/grafana-plugin-sdk-go/issues/57
+
 // StringFieldReplacer is used to replace a *string Field in a dataframe. The type
-// returned by the ReplaceFunc must match the elements of VectorType.
+// returned by the ReplaceFunc must match the type of elements of VectorType.
+// Both properties must be non-nil.
 type StringFieldReplacer struct {
 	VectorType  interface{}
 	ReplaceFunc func(in *string) (interface{}, error)
@@ -160,7 +173,7 @@ func Replace(frame *Frame, fieldIdx int, replacer *StringFieldReplacer) error {
 	}
 	newVector := newVector(replacer.VectorType, field.Vector.Len())
 	for i := 0; i < newVector.Len(); i++ {
-		oldVal := field.Vector.At(i).(*string)
+		oldVal := field.Vector.At(i).(*string) // Vector type is checked earlier above
 		newVal, err := replacer.ReplaceFunc(oldVal)
 		if err != nil {
 			return err
