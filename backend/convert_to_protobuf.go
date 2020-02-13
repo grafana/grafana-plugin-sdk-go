@@ -14,21 +14,31 @@ func toProto() convertToProtobuf {
 	return convertToProtobuf{}
 }
 
+func (t convertToProtobuf) DataSourceConfig(config *DataSourceConfig) *pluginv2.DataSourceConfig {
+	if config == nil {
+		return nil
+	}
+
+	return &pluginv2.DataSourceConfig{
+		Id:               config.ID,
+		Name:             config.Name,
+		Url:              config.URL,
+		User:             config.User,
+		Database:         config.Database,
+		BasicAuthEnabled: config.BasicAuthEnabled,
+		BasicAuthUser:    config.BasicAuthUser,
+	}
+}
+
 func (t convertToProtobuf) PluginConfig(config PluginConfig) *pluginv2.PluginConfig {
 	return &pluginv2.PluginConfig{
-		OrgId:                      config.OrgID,
-		PluginId:                   config.PluginID,
-		PluginType:                 config.PluginType,
-		DatasourceId:               config.DataSourceID,
-		DatasourceName:             config.DataSourceName,
-		DatasourceUrl:              config.DataSourceURL,
-		DatasourceUser:             config.DataSourceUser,
-		DatasourceDatabase:         config.DataSourceDatabase,
-		DatasourceBasicAuthEnabled: config.DataSourceBasicAuthEnabled,
-		DatasourceBasicAuthUser:    config.DataSourceBasicAuthUser,
-		JsonData:                   config.JSONData,
-		DecryptedSecureJsonData:    config.DecryptedSecureJSONData,
-		UpdatedMS:                  config.Updated.UnixNano() / int64(time.Millisecond),
+		OrgId:                   config.OrgID,
+		PluginId:                config.PluginID,
+		PluginType:              config.PluginType,
+		JsonData:                config.JSONData,
+		DecryptedSecureJsonData: config.DecryptedSecureJSONData,
+		UpdatedMS:               config.Updated.UnixNano() / int64(time.Millisecond),
+		DatasourceConfig:        t.DataSourceConfig(config.DataSourceConfig),
 	}
 }
 

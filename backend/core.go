@@ -8,21 +8,26 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
 )
 
+// DataSourceConfig configuration for a datasource plugin.
+type DataSourceConfig struct {
+	ID               int64
+	Name             string
+	URL              string
+	User             string
+	Database         string
+	BasicAuthEnabled bool
+	BasicAuthUser    string
+}
+
 // PluginConfig configuration for a plugin.
 type PluginConfig struct {
-	OrgID                      int64
-	PluginID                   string
-	PluginType                 string
-	DataSourceID               int64
-	DataSourceName             string
-	DataSourceURL              string
-	DataSourceUser             string
-	DataSourceDatabase         string
-	DataSourceBasicAuthEnabled bool
-	DataSourceBasicAuthUser    string
-	JSONData                   json.RawMessage
-	DecryptedSecureJSONData    map[string]string
-	Updated                    time.Time
+	OrgID                   int64
+	PluginID                string
+	PluginType              string
+	JSONData                json.RawMessage
+	DecryptedSecureJSONData map[string]string
+	Updated                 time.Time
+	DataSourceConfig        *DataSourceConfig
 }
 
 type DataQueryRequest struct {

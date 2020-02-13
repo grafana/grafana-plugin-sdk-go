@@ -14,21 +14,30 @@ func fromProto() convertFromProtobuf {
 	return convertFromProtobuf{}
 }
 
+func (f convertFromProtobuf) DataSourceConfig(proto *pluginv2.DataSourceConfig) *DataSourceConfig {
+	if proto == nil {
+		return nil
+	}
+
+	return &DataSourceConfig{
+		ID:               proto.Id,
+		Name:             proto.Name,
+		URL:              proto.Url,
+		User:             proto.User,
+		Database:         proto.Database,
+		BasicAuthEnabled: proto.BasicAuthEnabled,
+		BasicAuthUser:    proto.BasicAuthUser,
+	}
+}
+
 func (f convertFromProtobuf) PluginConfig(proto *pluginv2.PluginConfig) PluginConfig {
 	return PluginConfig{
-		OrgID:                      proto.OrgId,
-		PluginID:                   proto.PluginId,
-		PluginType:                 proto.PluginType,
-		DataSourceID:               proto.DatasourceId,
-		DataSourceName:             proto.DatasourceName,
-		DataSourceURL:              proto.DatasourceUrl,
-		DataSourceUser:             proto.DatasourceUser,
-		DataSourceDatabase:         proto.DatasourceDatabase,
-		DataSourceBasicAuthEnabled: proto.DatasourceBasicAuthEnabled,
-		DataSourceBasicAuthUser:    proto.DatasourceBasicAuthUser,
-		JSONData:                   proto.JsonData,
-		DecryptedSecureJSONData:    proto.DecryptedSecureJsonData,
-		Updated:                    time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
+		OrgID:                   proto.OrgId,
+		PluginID:                proto.PluginId,
+		PluginType:              proto.PluginType,
+		JSONData:                proto.JsonData,
+		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
+		Updated:                 time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
 	}
 }
 
