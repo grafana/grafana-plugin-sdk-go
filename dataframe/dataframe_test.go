@@ -293,20 +293,20 @@ func ExampleNewFromSQLRows() {
 	aQuery := "SELECT * FROM GoodData"
 	db, err := sql.Open("fancySql", "fancysql://user:pass@localhost:1433")
 	if err != nil {
-		// return nil
+		// return err
 	}
 
 	defer db.Close()
 
 	rows, err := db.Query(aQuery)
 	if err != nil {
-		// return nil
+		// return err
 	}
 	defer rows.Close()
 
 	frame, mappings, err := dataframe.NewFromSQLRows(rows)
 	if err != nil {
-		// return nil
+		// return err
 	}
 	_, _ = frame, mappings
 }
