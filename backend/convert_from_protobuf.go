@@ -38,6 +38,7 @@ func (f convertFromProtobuf) PluginConfig(proto *pluginv2.PluginConfig) PluginCo
 		JSONData:                proto.JsonData,
 		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
 		Updated:                 time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
+		DataSourceConfig:        f.DataSourceConfig(proto.DatasourceConfig),
 	}
 }
 
