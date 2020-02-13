@@ -39,6 +39,12 @@ func NewFromSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, m
 			}
 			vec.Vector.Set(i, v)
 		}
+		if mapper.Replacer == nil {
+			continue
+		}
+		if err := Replace(frame, fieldIdx, mapper.Replacer); err != nil {
+			return nil, nil, err
+		}
 	}
 
 	return frame, mappers, nil
@@ -126,4 +132,41 @@ type SQLStringConverter struct {
 
 	// Conversion func may be nil to do no additional operations on the string conversion.
 	ConversionFunc func(in *string) (*string, error)
+
+	// If the Replacer is not nil, the replacement will be performed.
+	Replacer *StringFieldReplacer
+}
+
+// StringFieldReplacer is used to replace a *string Field in a dataframe. The type
+// returned by the ReplaceFunc must match the elements of VectorType.
+type StringFieldReplacer struct {
+	VectorType  interface{}
+	ReplaceFunc func(in *string) (interface{}, error)
+}
+
+// Replace will replace a *string Vector of the specified Field's index
+// using the StringFieldReplacer.
+func Replace(frame *Frame, fieldIdx int, replacer *StringFieldReplacer) error {
+	if fieldIdx > len(frame.Fields) {
+		return fmt.Errorf("fieldIdx is out of bounds, field len: %v", len(frame.Fields))
+	}
+	field := frame.Fields[fieldIdx]
+	if field.Vector.PrimitiveType() != VectorPTypeNullableString {
+		return fmt.Errorf("can only replace []*string vectors, vector is of type %s", field.Vector.PrimitiveType())
+	}
+
+	if !ValidVectorType(replacer.VectorType) {
+		return fmt.Errorf("can not replace column with unsupported type %T", replacer.VectorType)
+	}
+	newVector := newVector(replacer.VectorType, field.Vector.Len())
+	for i := 0; i < newVector.Len(); i++ {
+		oldVal := field.Vector.At(i).(*string)
+		newVal, err := replacer.ReplaceFunc(oldVal)
+		if err != nil {
+			return err
+		}
+		newVector.Set(i, newVal)
+	}
+	field.Vector = newVector
+	return nil
 }
