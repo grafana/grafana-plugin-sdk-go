@@ -70,12 +70,12 @@ func newForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, ma
 	}
 	// In the future we can probably remove this restriction. But right now we map names to Arrow Field Names.
 	// Arrow Field names must be unique: https://github.com/grafana/grafana-plugin-sdk-go/issues/59
-	seen := map[string]struct{}{}
-	for _, name := range colNames {
-		if _, ok := seen[name]; ok {
-			return nil, nil, fmt.Errorf(`duplicate column names no allowed, found identical name: "%v"`, name)
+	seen := map[string]int{}
+	for i, name := range colNames {
+		if j, ok := seen[name]; ok {
+			return nil, nil, fmt.Errorf(`duplicate column names are not allowed, found identical name "%v" at column indices %v and %v`, name, j, i)
 		}
-		seen[name] = struct{}{}
+		seen[name] = i
 	}
 	frame := &Frame{}
 	for i, colType := range colTypes {
