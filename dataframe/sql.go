@@ -6,11 +6,11 @@ import (
 	"reflect"
 )
 
-// NewFromSQLRows returns a new dataframe populated with the data from rows. The Vector types
-// will be []*T if nullable or will be []*T if it is unknown if the column is nullable.
+// NewFromSQLRows returns a new dataframe populated with the data from rows. The Field Vector types
+// will be Vectors of pointer types, []*T, if the SQL column is nullable or if the nullable property is unknown.
+// Otherwise, they will be []T types.
 //
-// Fields will be named to match name of the SQL columns.
-// The SQL column names must be unique.
+// Fields will be named to match name of the SQL columns and the SQL column names must be unique (https://github.com/grafana/grafana-plugin-sdk-go/issues/59).
 //
 // All the types must be supported by the dataframe or a SQLStringConverter will be created and
 // the resulting Field Vector type will be of type []*string.
@@ -69,7 +69,7 @@ func newForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, ma
 		return nil, nil, err
 	}
 	// In the future we can probably remove this restriction. But right now we map names to Arrow Field Names.
-	// Arrow Field names must be unique.
+	// Arrow Field names must be unique: https://github.com/grafana/grafana-plugin-sdk-go/issues/59
 	seen := map[string]struct{}{}
 	for _, name := range colNames {
 		if _, ok := seen[name]; ok {
