@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/require"
@@ -31,13 +32,34 @@ func TestHttpResourceHandler(t *testing.T) {
 		reqBody, err := json.Marshal(&jsonMap)
 		require.NoError(t, err)
 
+		jsonData := map[string]interface{}{
+			"prop": "value",
+		}
+		jsonDataBytes, err := json.Marshal(&jsonData)
+		require.NoError(t, err)
+
+		updated, err := time.Parse(time.RFC3339, "2020-02-14T00:00:00+00:00")
+		require.NoError(t, err)
+
 		req := &backend.CallResourceRequest{
 			PluginConfig: backend.PluginConfig{
-				ID:    2,
-				OrgID: 3,
-				Name:  "my-name",
-				Type:  "my-type",
-				URL:   "http://",
+				OrgID:      3,
+				PluginID:   "my-plugin",
+				PluginType: "my-type",
+				JSONData:   jsonDataBytes,
+				DecryptedSecureJSONData: map[string]string{
+					"secureProp": "secure value",
+				},
+				Updated: updated,
+				DataSourceConfig: &backend.DataSourceConfig{
+					ID:               2,
+					Name:             "my-ds",
+					URL:              "http://",
+					Database:         "db123",
+					User:             "usr",
+					BasicAuthEnabled: true,
+					BasicAuthUser:    "busr",
+				},
 			},
 			Method: http.MethodPost,
 			Path:   "path",
@@ -91,11 +113,20 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.NotNil(t, httpHandler.req)
 			pluginCfg := PluginConfigFromContext(httpHandler.req.Context())
 			require.NotNil(t, pluginCfg)
-			require.Equal(t, req.PluginConfig.ID, pluginCfg.ID)
 			require.Equal(t, req.PluginConfig.OrgID, pluginCfg.OrgID)
-			require.Equal(t, req.PluginConfig.Name, pluginCfg.Name)
-			require.Equal(t, req.PluginConfig.Type, pluginCfg.Type)
-			require.Equal(t, req.PluginConfig.URL, pluginCfg.URL)
+			require.Equal(t, req.PluginConfig.PluginID, pluginCfg.PluginID)
+			require.Equal(t, req.PluginConfig.PluginType, pluginCfg.PluginType)
+			require.Equal(t, req.PluginConfig.JSONData, pluginCfg.JSONData)
+			require.Equal(t, req.PluginConfig.DecryptedSecureJSONData, pluginCfg.DecryptedSecureJSONData)
+			require.Equal(t, req.PluginConfig.Updated, pluginCfg.Updated)
+			require.NotNil(t, pluginCfg.DataSourceConfig)
+			require.Equal(t, req.PluginConfig.DataSourceConfig.ID, pluginCfg.DataSourceConfig.ID)
+			require.Equal(t, req.PluginConfig.DataSourceConfig.Name, pluginCfg.DataSourceConfig.Name)
+			require.Equal(t, req.PluginConfig.DataSourceConfig.URL, pluginCfg.DataSourceConfig.URL)
+			require.Equal(t, req.PluginConfig.DataSourceConfig.User, pluginCfg.DataSourceConfig.User)
+			require.Equal(t, req.PluginConfig.DataSourceConfig.Database, pluginCfg.DataSourceConfig.Database)
+			require.Equal(t, req.PluginConfig.DataSourceConfig.BasicAuthEnabled, pluginCfg.DataSourceConfig.BasicAuthEnabled)
+			require.Equal(t, req.PluginConfig.DataSourceConfig.BasicAuthUser, pluginCfg.DataSourceConfig.BasicAuthUser)
 		})
 	})
 }
@@ -111,11 +142,9 @@ func TestServeMuxHandler(t *testing.T) {
 
 		req := &backend.CallResourceRequest{
 			PluginConfig: backend.PluginConfig{
-				ID:    2,
-				OrgID: 3,
-				Name:  "my-name",
-				Type:  "my-type",
-				URL:   "http://",
+				OrgID:      3,
+				PluginID:   "my-plugin",
+				PluginType: "my-type",
 			},
 			Method: http.MethodGet,
 			Path:   "test",
