@@ -26,7 +26,7 @@ func NewFromSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, m
 	}
 
 	for rows.Next() {
-		sRow := frame.scannableRow()
+		sRow := frame.newScannableRow()
 		err := rows.Scan(sRow...)
 		if err != nil {
 			return nil, nil, err
@@ -115,9 +115,10 @@ func newForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, ma
 	return frame, mapping, nil
 }
 
-// scannableRow adds a row to the dataframe, and returns a slice of references
-// that can be passed to rows.Scan() in the in sql package.
-func (f *Frame) scannableRow() []interface{} {
+// newScannableRow adds a row to the dataframe by extending each Field's Vector. It returns
+// a slice of references that can be passed to the database/sql rows.Scan() to scan directly into
+// the extended Vectors of the dataframe.
+func (f *Frame) newScannableRow() []interface{} {
 	row := make([]interface{}, len(f.Fields))
 	for i, field := range f.Fields {
 		vec := field.Vector
