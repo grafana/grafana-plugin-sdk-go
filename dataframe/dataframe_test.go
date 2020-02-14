@@ -184,6 +184,20 @@ func TestAppendRowSafe(t *testing.T) {
 			shouldErr:     require.Error,
 			errorContains: []string{"uninitalized Field Vector at"},
 		},
+		{
+			name:          "invalid vals type mixture",
+			frame:         dataframe.New("test", dataframe.NewField("test", nil, []int64{}), dataframe.NewField("test-string", nil, []int64{})),
+			rowToAppend:   append(append(make([]interface{}, 0), int64(1)), "foo"),
+			shouldErr:     require.Error,
+			errorContains: []string{"invalid type appending row at index 1, got string want int64"},
+		},
+		{
+			name:        "valid vals type mixture",
+			frame:       dataframe.New("test", dataframe.NewField("test", nil, []int64{}), dataframe.NewField("test-string", nil, []string{})),
+			rowToAppend: append(append(make([]interface{}, 0), int64(1)), "foo"),
+			shouldErr:   require.NoError,
+			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []int64{1}), dataframe.NewField("test-string", nil, []string{"foo"})),
+		},
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
