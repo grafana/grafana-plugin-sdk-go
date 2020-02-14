@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
@@ -15,14 +14,31 @@ func fromProto() convertFromProtobuf {
 	return convertFromProtobuf{}
 }
 
+func (f convertFromProtobuf) DataSourceConfig(proto *pluginv2.DataSourceConfig) *DataSourceConfig {
+	if proto == nil {
+		return nil
+	}
+
+	return &DataSourceConfig{
+		ID:               proto.Id,
+		Name:             proto.Name,
+		URL:              proto.Url,
+		User:             proto.User,
+		Database:         proto.Database,
+		BasicAuthEnabled: proto.BasicAuthEnabled,
+		BasicAuthUser:    proto.BasicAuthUser,
+	}
+}
+
 func (f convertFromProtobuf) PluginConfig(proto *pluginv2.PluginConfig) PluginConfig {
 	return PluginConfig{
-		ID:       proto.Id,
-		OrgID:    proto.OrgId,
-		Name:     proto.Name,
-		Type:     proto.Type,
-		URL:      proto.Url,
-		JSONData: json.RawMessage([]byte(proto.JsonData)),
+		OrgID:                   proto.OrgId,
+		PluginID:                proto.PluginId,
+		PluginType:              proto.PluginType,
+		JSONData:                proto.JsonData,
+		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
+		Updated:                 time.Unix(0, proto.UpdatedMS*int64(time.Millisecond)),
+		DataSourceConfig:        f.DataSourceConfig(proto.DatasourceConfig),
 	}
 }
 

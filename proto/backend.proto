@@ -6,14 +6,24 @@ package pluginv2;
 // Common
 //-----------------------------------------------
 
+message DataSourceConfig {
+  int64 id = 4;
+  string name = 5;
+  string url = 6;
+  string user = 7;
+  string database = 8;
+  bool basicAuthEnabled = 9;
+  string basicAuthUser = 10;
+}
+
 message PluginConfig {
-  int64 id = 1;
-  int64 orgId = 2;
-  string name = 3;
-  string type = 4;
-  string url = 5;
-  string jsonData = 6;
-  map<string,string> decryptedSecureJsonData = 7;
+  int64 orgId = 1;
+  string pluginId = 2;
+  string pluginType = 3;
+  bytes jsonData = 4;
+  map<string,string> decryptedSecureJsonData = 5;
+  int64 updatedMS = 6;
+  DataSourceConfig datasourceConfig = 7;
 }
 
 //-----------------------------------------------
