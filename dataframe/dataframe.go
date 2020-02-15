@@ -14,6 +14,7 @@ type Frame struct {
 
 	RefID string
 	Meta  *QueryResultMeta
+	Error *DataQueryError
 }
 
 // Field represents a column of data with a specific type.
