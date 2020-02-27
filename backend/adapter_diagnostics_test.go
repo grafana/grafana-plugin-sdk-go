@@ -72,7 +72,7 @@ func TestCheckHealth(t *testing.T) {
 
 		for _, tc := range tcs {
 			adapter := &sdkAdapter{
-				checkHealthHandler: &testCheckHealthHandler{
+				CheckHealthHandler: &testCheckHealthHandler{
 					status: tc.status,
 					info:   tc.info,
 					err:    tc.err,
