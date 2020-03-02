@@ -17,7 +17,7 @@ func New() Logger {
 	return &hclogWrapper{
 		logger: hclog.New(&hclog.LoggerOptions{
 			// Use debug as level since anything less severe is supressed.
-			Level: hclog.LevelFromString("DEBUG"),
+			Level: hclog.Debug,
 			// Use JSON format to make the output in Grafana format and work
 			// when using multiple arguments such as Debug("message", "key", "value").
 			JSONFormat: true,
