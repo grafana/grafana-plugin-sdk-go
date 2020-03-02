@@ -149,7 +149,7 @@ func TestTimeSeriesType(t *testing.T) {
 			tsType: dataframe.TimeSeriesTypeWide,
 		},
 		{
-			name: "multi-value and multi-facet wide long series",
+			name: "multi-value and multi-facet long series",
 			frame: dataframe.New("test", dataframe.NewField("floatValues", nil, []float64{1.0}),
 				dataframe.NewField("timeValues", nil, []time.Time{time.Time{}}),
 				dataframe.NewField("int64 Values", nil, []int64{1}),
