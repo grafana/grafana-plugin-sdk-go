@@ -83,7 +83,6 @@ func newVector(t interface{}, n int) (v Vector) {
 	return
 }
 
-
 // ValidVectorType returns if a primitive slice is a valid / supported Vector type
 func ValidVectorType(t interface{}) bool {
 	switch t.(type) {
@@ -462,4 +461,20 @@ func (p VectorPType) Nullable() bool {
 		return true
 	}
 	return false
+}
+
+// numericVectorPTypes is an array of VectorPTypes that are numeric.
+var numericVectorPTypes = [...]VectorPType{
+	VectorPTypeInt8, VectorPTypeInt16, VectorPTypeInt32, VectorPTypeInt64,
+	VectorPTypeNullableInt8, VectorPTypeNullableInt16, VectorPTypeNullableInt32, VectorPTypeNullableInt64,
+
+	VectorPTypeUint8, VectorPTypeUint16, VectorPTypeUint32, VectorPTypeUint64,
+	VectorPTypeNullableUint8, VectorPTypeNullableUint16, VectorPTypeNullableUint32, VectorPTypeNullableUint64,
+
+	VectorPTypeFloat32, VectorPTypeFloat64,
+	VectorPTypeNullableFloat32, VectorPTypeNullableFloat64}
+
+// NumericVectorPTypes returns a slice of VectorPTypes that are numeric.
+func NumericVectorPTypes() []VectorPType {
+	return numericVectorPTypes[:]
 }

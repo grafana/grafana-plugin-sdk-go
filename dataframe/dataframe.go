@@ -73,16 +73,33 @@ func (f *Frame) TimeSeriesType() TimeSeriesType {
 	if f.Fields == nil || len(f.Fields) == 0 {
 		return TimeSeriesTypeNot
 	}
-	tIdx := f.TypeIndices(VectorPTypeTime, VectorPTypeNullableTime)
-	if len(tIdx) == 0 {
+
+	timeIndices := f.TypeIndices(VectorPTypeTime, VectorPTypeNullableTime)
+	if len(timeIndices) != 1 {
 		return TimeSeriesTypeNot
 	}
 
-	return TimeSeriesTypeNot
+	valueIndices := f.TypeIndices(NumericVectorPTypes()...)
+	if len(valueIndices) == 0 {
+		return TimeSeriesTypeNot
+	}
+
+	factorIndices := f.TypeIndices(VectorPTypeString, VectorPTypeNullableString)
+
+	// Extra Columns not Allowed
+	if len(timeIndices)+len(valueIndices)+len(factorIndices) != len(f.Fields) {
+		return TimeSeriesTypeNot
+	}
+
+	if len(factorIndices) == 0 {
+		return TimeSeriesTypeWide
+	}
+	return TimeSeriesTypeLong
 }
 
 // TypeIndices returns a slice of index positions for the given pTypes.
-func (f *Frame) TypeIndices(pTypes ...VectorPType) (indices []int) {
+func (f *Frame) TypeIndices(pTypes ...VectorPType) []int {
+	indices := []int{}
 	if f.Fields == nil {
 		return indices
 	}
@@ -91,11 +108,11 @@ func (f *Frame) TypeIndices(pTypes ...VectorPType) (indices []int) {
 		for _, pType := range pTypes {
 			if pType == vecType {
 				indices = append(indices, fieldIdx)
-				continue
+				break
 			}
 		}
 	}
-	return
+	return indices
 }
 
 // TimeSeriesType represents the type of time series the schema can be treated as (if any).
