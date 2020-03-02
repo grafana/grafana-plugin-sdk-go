@@ -107,6 +107,31 @@ func TestTimeField(t *testing.T) {
 	}
 }
 
+func TestTimeSeriesType(t *testing.T) {
+	tests := []struct {
+		name   string
+		frame  *dataframe.Frame
+		tsType dataframe.TimeSeriesType
+	}{
+		{
+			name:   "not series",
+			frame:  &dataframe.Frame{},
+			tsType: dataframe.TimeSeriesTypeNot,
+		},
+		{
+			name:   "simple wide",
+			frame:  dataframe.New("test", dataframe.NewField("time", nil, []float64{1.0})),
+			tsType: dataframe.TimeSeriesTypeWide,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			tsType := tt.frame.TimeSeriesType()
+			require.Equal(t, tt.tsType.String(), tsType.String())
+		})
+	}
+}
+
 func TestAppendRowSafe(t *testing.T) {
 	tests := []struct {
 		name          string
