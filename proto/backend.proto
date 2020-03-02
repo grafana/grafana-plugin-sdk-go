@@ -57,16 +57,10 @@ message DataQuery {
 
 // based on https://github.com/grafana/grafana/blob/master/pkg/models/user.go#L170
 message User {
-  int64 userId = 1;
-  int64 orgId = 2;
-  string orgName = 3;
-  string orgRole = 4;
-  string login = 5;
-  string name = 6;
-  string email = 7;
-  bool isAnonymous = 8;
-  bool isGrafanaAdmin = 9;
-  //repeated string teams = ;
+  string login = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
 }
 
 message DataQueryRequest {
