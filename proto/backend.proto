@@ -55,7 +55,6 @@ message DataQuery {
   bytes json = 5; // Arbitrary structure (model?  modelJson in v1)
 }
 
-// based on https://github.com/grafana/grafana/blob/master/pkg/models/user.go#L170
 message User {
   string login = 1;
   string name = 2;
