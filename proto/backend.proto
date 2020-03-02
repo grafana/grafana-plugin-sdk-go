@@ -135,6 +135,8 @@ message CollectMetrics {
 
 message CheckHealth {
   message Request {
+    PluginConfig config = 1;
+    User user = 2;
   }
 
   message Response {
@@ -145,7 +147,8 @@ message CheckHealth {
     }
 
     HealthStatus status = 1;
-    string info = 2;
+    string message = 2;
+    string details = 3;
   }
 }
 
