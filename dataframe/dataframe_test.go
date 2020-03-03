@@ -26,6 +26,16 @@ func TestDataFrame(t *testing.T) {
 	}
 }
 
+func TestDataFrameWarnings(t *testing.T) {
+	df := dataframe.New("warning_test")
+	df.AppendWarning(&dataframe.Warning{Details: "details1", Message: "message1"})
+	df.AppendWarning(&dataframe.Warning{Details: "details2", Message: "message2"})
+
+	if len(df.Warnings) != 2 {
+		t.Fatal("expected two warnings to be appended")
+	}
+}
+
 func TestField(t *testing.T) {
 	f := dataframe.NewField("value", nil, []float64{1.0, 2.0, 3.0})
 

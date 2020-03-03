@@ -2,8 +2,11 @@ package dataframe
 
 import "encoding/json"
 
-// DataQueryError
-type DataQueryError struct {
+// Warnings is an slice of Warning.
+type Warnings []Warning
+
+// Warning contains information about problems in a dataframe.
+type Warning struct {
 	// Short message (typically shown in the header)
 	Message string `json:"message,omitempty"`
 
@@ -11,12 +14,12 @@ type DataQueryError struct {
 	Details string `json:"details,omitempty"`
 }
 
-// DataQueryErrorFromJSON creates aDataQueryError from a json string
-func DataQueryErrorFromJSON(jsonStr string) (*DataQueryError, error) {
-	var m DataQueryError
+// WarningsFromJSON creates a *Warning from a json string.
+func WarningsFromJSON(jsonStr string) ([]*Warning, error) {
+	var m []*Warning
 	err := json.Unmarshal([]byte(jsonStr), &m)
 	if err != nil {
 		return nil, err
 	}
-	return &m, nil
+	return m, nil
 }

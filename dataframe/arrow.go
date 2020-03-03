@@ -200,12 +200,12 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 		}
 		tableMetaMap["meta"] = str
 	}
-	if f.Error != nil {
-		str, err := toJSONString(f.Error)
+	if f.Warnings != nil {
+		str, err := toJSONString(f.Warnings)
 		if err != nil {
 			return nil, err
 		}
-		tableMetaMap["error"] = str
+		tableMetaMap["warnings"] = str
 	}
 	tableMeta := arrow.MetadataFrom(tableMetaMap)
 
@@ -640,9 +640,9 @@ func UnmarshalArrow(b []byte) (*Frame, error) {
 		}
 	}
 
-	if errorAsString, ok := getMDKey("error", metaData); ok {
+	if errorAsString, ok := getMDKey("warnings", metaData); ok {
 		var err error
-		frame.Error, err = DataQueryErrorFromJSON(errorAsString)
+		frame.Warnings, err = WarningsFromJSON(errorAsString)
 		if err != nil {
 			return nil, err
 		}
