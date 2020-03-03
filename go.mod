@@ -5,6 +5,7 @@ go 1.13
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20191025121910-b789226ccb21
 	github.com/cheekybits/genny v1.0.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.3.2
 	github.com/google/go-cmp v0.3.1
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0 // indirect

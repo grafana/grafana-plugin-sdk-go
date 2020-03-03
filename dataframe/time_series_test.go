@@ -4,11 +4,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
 	"github.com/stretchr/testify/require"
 )
 
-func TestTimeSeriesType(t *testing.T) {
+func TestTimeSeriesSchema(t *testing.T) {
 	tests := []struct {
 		name   string
 		frame  *dataframe.Frame
@@ -61,8 +62,65 @@ func TestTimeSeriesType(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			tsType := tt.frame.TimeSeriesType()
-			require.Equal(t, tt.tsType.String(), tsType.String())
+			tsSchema := tt.frame.TimeSeriesSchema()
+			require.Equal(t, tt.tsType.String(), tsSchema.Type.String())
+		})
+	}
+}
+
+func TestLongToWide(t *testing.T) {
+	tests := []struct {
+		name      string
+		longFrame *dataframe.Frame
+		wideFrame *dataframe.Frame
+		Err       require.ErrorAssertionFunc
+	}{
+		{
+			name: "one value, one factor",
+			longFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				dataframe.NewField("Values Floats", nil, []float64{
+					1.0,
+					2.0,
+					3.0,
+					4.0,
+				}),
+				dataframe.NewField("Animal Factor", nil, []string{
+					"cat",
+					"sloth",
+					"cat",
+					"sloth",
+				})),
+
+			wideFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				dataframe.NewField(`Values Floats["Animal Factor","cat"]`, nil, []float64{
+					1.0,
+					3.0,
+				}),
+				dataframe.NewField(`Values Floats["Animal Factor","sloth"]`, nil, []float64{
+					2.0,
+					4.0,
+				})),
+			Err: require.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			frame, err := dataframe.LongToWide(tt.longFrame)
+			tt.Err(t, err)
+			if diff := cmp.Diff(tt.wideFrame, frame); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+			//spew.Dump(frame)
 		})
 	}
 }

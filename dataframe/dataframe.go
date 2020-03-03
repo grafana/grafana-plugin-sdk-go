@@ -330,3 +330,15 @@ func (f *Frame) Rows() int {
 	}
 	return 0
 }
+
+// At returns the value of the specified fieldIdx and rowIdx.
+// It will panic if either the fieldIdx or rowIdx are out of range.
+func (f *Frame) At(fieldIdx int, rowIdx int) interface{} {
+	return f.Fields[fieldIdx].Vector.At(rowIdx)
+}
+
+// Set set the val to the specified fieldIdx and rowIdx.
+// It will panic if either the fieldIdx or rowIdx are out of range.
+func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
+	f.Fields[fieldIdx].Vector.Set(rowIdx, val)
+}

@@ -368,6 +368,83 @@ func (p VectorPType) String() string {
 
 }
 
+// NewVectorFromPType creates a new Vector of the given pType of length n.
+func NewVectorFromPType(p VectorPType, n int) (v Vector) {
+	switch p {
+	// ints
+	case VectorPTypeInt8:
+		v = newInt8Vector(n)
+	case VectorPTypeNullableInt8:
+		v = newNullableInt8Vector(n)
+
+	case VectorPTypeInt16:
+		v = newInt16Vector(n)
+	case VectorPTypeNullableInt16:
+		v = newNullableInt16Vector(n)
+
+	case VectorPTypeInt32:
+		v = newInt32Vector(n)
+	case VectorPTypeNullableInt32:
+		v = newNullableInt32Vector(n)
+
+	case VectorPTypeInt64:
+		v = newInt64Vector(n)
+	case VectorPTypeNullableInt64:
+		v = newNullableInt64Vector(n)
+
+	// uints
+	case VectorPTypeUint8:
+		v = newUint8Vector(n)
+	case VectorPTypeNullableUint8:
+		v = newNullableUint8Vector(n)
+
+	case VectorPTypeUint16:
+		v = newUint16Vector(n)
+	case VectorPTypeNullableUint16:
+		v = newNullableUint16Vector(n)
+
+	case VectorPTypeUint32:
+		v = newUint32Vector(n)
+	case VectorPTypeNullableUint32:
+		v = newNullableUint32Vector(n)
+
+	case VectorPTypeUint64:
+		v = newUint64Vector(n)
+	case VectorPTypeNullableUint64:
+		v = newNullableUint64Vector(n)
+
+	// floats
+	case VectorPTypeFloat32:
+		v = newFloat32Vector(n)
+	case VectorPTypeNullableFloat32:
+		v = newNullableFloat32Vector(n)
+
+	case VectorPTypeFloat64:
+		v = newFloat64Vector(n)
+	case VectorPTypeNullableFloat64:
+		v = newNullableFloat64Vector(n)
+
+	// other
+	case VectorPTypeString:
+		v = newStringVector(n)
+	case VectorPTypeNullableString:
+		v = newNullableStringVector(n)
+
+	case VectorPTypeBool:
+		v = newBoolVector(n)
+	case VectorPTypeNullableBool:
+		v = newNullableBoolVector(n)
+
+	case VectorPTypeTime:
+		v = newTimeTimeVector(n)
+	case VectorPTypeNullableTime:
+		v = newNullableTimeTimeVector(n)
+	default:
+		panic(fmt.Sprint("unsupported vector ptype"))
+	}
+	return v
+}
+
 // ItemTypeString returns the string representation of the type of element within in the vector
 func (p VectorPType) ItemTypeString() string {
 	switch p {
