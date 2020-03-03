@@ -640,9 +640,9 @@ func UnmarshalArrow(b []byte) (*Frame, error) {
 		}
 	}
 
-	if errorAsString, ok := getMDKey("warnings", metaData); ok {
+	if warningsAsString, ok := getMDKey("warnings", metaData); ok {
 		var err error
-		frame.Warnings, err = WarningsFromJSON(errorAsString)
+		frame.Warnings, err = WarningsFromJSON(warningsAsString)
 		if err != nil {
 			return nil, err
 		}
