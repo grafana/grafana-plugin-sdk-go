@@ -34,7 +34,7 @@ message PluginConfig {
 
 service Core {
   // HTTP Style request
-  rpc CallResource(CallResource.Request) returns (CallResource.Response);
+  rpc CallResource(CallResource.Request) returns (stream CallResource.Response);
 
   // Well typed query interface
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
@@ -99,7 +99,6 @@ message CallResource {
     int32 code = 1;
     map<string,StringList> headers = 2;
     bytes body = 3;
-    bool done = 4;
   }
 }
 
