@@ -2,9 +2,6 @@ package dataframe
 
 import "encoding/json"
 
-// Warnings is an slice of Warning.
-type Warnings []Warning
-
 // Warning contains information about problems in a dataframe.
 type Warning struct {
 	// Short message (typically shown in the header)
