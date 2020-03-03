@@ -97,6 +97,7 @@ message CallResource {
     int32 code = 1;
     map<string,StringList> headers = 2;
     bytes body = 3;
+    bool done = 4;
   }
 }
 
@@ -146,7 +147,7 @@ message CheckHealth {
 //-----------------------------------------------
 
 service GrafanaPlatform {
-  rpc Resource(CallResource.Request) returns (CallResource.Response);
+  rpc Resource(CallResource.Request) returns (stream CallResource.Response);
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
 }
 
