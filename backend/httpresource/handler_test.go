@@ -14,6 +14,7 @@ import (
 
 func TestHttpResourceHandler(t *testing.T) {
 	t.Run("Given http resource handler and calling CallResource", func(t *testing.T) {
+		testSender := newTestCallResourceResponseSender()
 		httpHandler := &testHTTPHandler{
 			responseHeaders: map[string][]string{
 				"X-Header-Out-1": []string{"A", "B"},
@@ -70,7 +71,7 @@ func TestHttpResourceHandler(t *testing.T) {
 			},
 			Body: reqBody,
 		}
-		resp, err := resourceHandler.CallResource(context.Background(), req)
+		err = resourceHandler.CallResource(context.Background(), req, testSender)
 		require.NoError(t, err)
 		require.Equal(t, 1, httpHandler.callerCount)
 
@@ -94,6 +95,8 @@ func TestHttpResourceHandler(t *testing.T) {
 		})
 
 		t.Run("Should return expected response from http handler", func(t *testing.T) {
+			require.Len(t, testSender.respMessages, 1)
+			resp := testSender.respMessages[0]
 			require.NotNil(t, resp)
 			require.NoError(t, httpHandler.writeErr)
 			require.NotNil(t, resp)
@@ -133,6 +136,7 @@ func TestHttpResourceHandler(t *testing.T) {
 
 func TestServeMuxHandler(t *testing.T) {
 	t.Run("Given http resource ServeMux handler and calling CallResource", func(t *testing.T) {
+		testSender := newTestCallResourceResponseSender()
 		mux := http.NewServeMux()
 		handlerWasCalled := false
 		mux.HandleFunc("/test", func(rw http.ResponseWriter, req *http.Request) {
@@ -150,7 +154,7 @@ func TestServeMuxHandler(t *testing.T) {
 			Path:   "test",
 			URL:    "/test?query=1",
 		}
-		_, err := resourceHandler.CallResource(context.Background(), req)
+		err := resourceHandler.CallResource(context.Background(), req, testSender)
 		require.NoError(t, err)
 		require.True(t, handlerWasCalled)
 	})
@@ -187,4 +191,19 @@ func (h *testHTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 		body, _ := json.Marshal(&h.responseData)
 		_, h.writeErr = rw.Write(body)
 	}
+}
+
+type testCallResourceResponseSender struct {
+	respMessages []*backend.CallResourceResponse
+}
+
+func newTestCallResourceResponseSender() *testCallResourceResponseSender {
+	return &testCallResourceResponseSender{
+		respMessages: []*backend.CallResourceResponse{},
+	}
+}
+
+func (s *testCallResourceResponseSender) Send(resp *backend.CallResourceResponse) error {
+	s.respMessages = append(s.respMessages, resp)
+	return nil
 }
