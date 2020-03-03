@@ -345,7 +345,6 @@ func (m *DataQuery) GetJson() []byte {
 	return nil
 }
 
-// based on https://github.com/grafana/grafana/blob/master/pkg/models/user.go#L170
 type User struct {
 	Login                string   `protobuf:"bytes,1,opt,name=login,proto3" json:"login,omitempty"`
 	Name                 string   `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
