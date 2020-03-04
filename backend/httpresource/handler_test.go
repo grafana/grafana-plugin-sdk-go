@@ -69,6 +69,7 @@ func TestHttpResourceHandler(t *testing.T) {
 				"X-Header-In-2": []string{"F"},
 			},
 			Body: reqBody,
+			User: &backend.User{Name: "foobar", Email: "foo@bar.com", Login: "foo@bar.com"},
 		}
 		resp, err := resourceHandler.CallResource(context.Background(), req)
 		require.NoError(t, err)
@@ -127,6 +128,9 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Equal(t, req.PluginConfig.DataSourceConfig.Database, pluginCfg.DataSourceConfig.Database)
 			require.Equal(t, req.PluginConfig.DataSourceConfig.BasicAuthEnabled, pluginCfg.DataSourceConfig.BasicAuthEnabled)
 			require.Equal(t, req.PluginConfig.DataSourceConfig.BasicAuthUser, pluginCfg.DataSourceConfig.BasicAuthUser)
+
+			user := UserFromContext(httpHandler.req.Context())
+			require.NotNil(t, user)
 		})
 	})
 }
