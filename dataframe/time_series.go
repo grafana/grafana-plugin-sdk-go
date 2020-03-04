@@ -73,16 +73,18 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 		return nil, fmt.Errorf("can not convert to wide series, expected long format series input but got %s series", tsSchema.Type)
 	}
 
-	if inLen, err := inFrame.RowLen(); err != nil {
+	inLen, err := inFrame.RowLen()
+	if err != nil {
 		return nil, err
-	} else if inLen == 0 {
+	}
+	if inLen == 0 {
 		return nil, fmt.Errorf("can not convert to wide series, input fields have no rows")
 	}
 
 	newFrame := New(inFrame.Name, NewField(inFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
 	newFrameRowCounter := 0
 
-	timeAt := func(idx int) (time.Time, error) { // Get time.Time regardless if pointer
+	timeAt := func(idx int) (time.Time, error) { // get time.Time regardless if pointer
 		if tsSchema.TimeIsNullable {
 			timePtr := inFrame.At(tsSchema.TimeIndex, idx).(*time.Time)
 			if timePtr == nil {
@@ -94,28 +96,29 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 	}
 
 	lastTime, err := timeAt(0)
-	newFrame.Fields[0].Vector.Append(lastTime) // Set initial time value
+	newFrame.Fields[0].Vector.Append(lastTime) // set initial time value
 	if err != nil {
 		return nil, err
 	}
 
-	seenFactors := map[string]struct{}{} // Seen factor combinations
-	valueIdxFactorKeyToFieldIdx := make(map[int]map[string]int)
-	for _, i := range tsSchema.ValueIndices {
+	seenFactors := map[string]struct{}{}                        // seen factor combinations
+	valueIdxFactorKeyToFieldIdx := make(map[int]map[string]int) // value key and factors -> fieldIdx of newFrame
+	for _, i := range tsSchema.ValueIndices {                   // initialize nested maps
 		valueIdxFactorKeyToFieldIdx[i] = make(map[string]int)
 	}
 
-	for rowIdx := 0; rowIdx < inFrame.Fields[0].Len(); rowIdx++ {
+	for rowIdx := 0; rowIdx < inLen; rowIdx++ { // loop over each Row of inFrame
 		currentTime, err := timeAt(rowIdx)
 		if err != nil {
 			return nil, err
 		}
 
-		if currentTime.After(lastTime) {
+		if currentTime.After(lastTime) { // time advance means new row in newFrame
 			newFrameRowCounter++
 			lastTime = currentTime
 			for _, field := range newFrame.Fields {
-				field.Vector.Extend(1) // New Row - extend all Field Vectors
+				// extend all Field Vectors for new row. If no value found will have zero value
+				field.Vector.Extend(1)
 			}
 			newFrame.Set(0, newFrameRowCounter, currentTime)
 		}
@@ -124,10 +127,10 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 		}
 
 		sliceKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns idx:value tuples
-		namedKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns name:value tuples
+		namedKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns name:value tuples (Used for Labels)
 		for i, factorIdx := range tsSchema.FactorIndices {
 			rawVal := inFrame.At(factorIdx, rowIdx)
-			var val string
+			var val string // null and empty factor values are both treated identically - as an empty string
 			switch s := rawVal.(type) {
 			case string:
 				val = s
