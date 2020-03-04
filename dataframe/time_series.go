@@ -178,6 +178,8 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 	return newFrame, nil
 }
 
+// TimeSeriesSchema is information about a Dataframe's schema.  It is populated from
+// the Frame's TimeSeriesSchema() method.
 type TimeSeriesSchema struct {
 	Type           TimeSeriesType
 	TimeIndex      int
