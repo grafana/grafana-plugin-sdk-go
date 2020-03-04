@@ -131,21 +131,25 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 		sliceKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns idx:value tuples
 		namedKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns name:value tuples
 		for i, factorIdx := range tsSchema.FactorIndices {
-			val := inFrame.At(factorIdx, rowIdx)
+			rawVal := inFrame.At(factorIdx, rowIdx)
+			var val string
+			switch s := rawVal.(type) {
+			case string:
+				val = s
+			case *string:
+				if s != nil {
+					val = *s
+				}
+			}
 			// TODO: handle null keys - can make empty string.
-			sliceKey[i] = [2]string{strconv.FormatInt(int64(factorIdx), 10), fmt.Sprintf("%s", val)}
-			namedKey[i] = [2]string{inFrame.Fields[factorIdx].Name, fmt.Sprintf("%s", val)}
+			sliceKey[i] = [2]string{strconv.FormatInt(int64(factorIdx), 10), val}
+			namedKey[i] = [2]string{inFrame.Fields[factorIdx].Name, val}
 		}
 		factorKeyRaw, err := json.Marshal(sliceKey)
 		if err != nil {
 			return nil, err
 		}
 		factorKey := string(factorKeyRaw)
-		namedFactorKeyRaw, err := json.Marshal(namedKey)
-		if err != nil {
-			return nil, err
-		}
-		namedFactorKey := string(namedFactorKeyRaw)
 
 		// Make New Fields as new Factor combinations are found
 		if _, ok := seenFactors[factorKey]; !ok {
@@ -164,7 +168,7 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 				newField := &Field{
 					// Currently sticking labels in name due to arrow Name uniqueness issue.
 					// This will not totally avoid the issue if there are duplicate factor names
-					Name:   name + namedFactorKey,
+					Name:   name,
 					Labels: labels,
 					Vector: newVector,
 				}

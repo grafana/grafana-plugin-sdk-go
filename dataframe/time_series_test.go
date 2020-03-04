@@ -102,14 +102,59 @@ func TestLongToWide(t *testing.T) {
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
 				}),
-				dataframe.NewField(`Values Floats[["Animal Factor","cat"]]`, dataframe.Labels{"Animal Factor": "cat"}, []float64{
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "cat"}, []float64{
 					1.0,
 					3.0,
 				}),
-				dataframe.NewField(`Values Floats[["Animal Factor","sloth"]]`, dataframe.Labels{"Animal Factor": "sloth"}, []float64{
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "sloth"}, []float64{
 					2.0,
 					4.0,
 				})),
+			Err: require.NoError,
+		},
+		{
+			name: "one value, two factors",
+			longFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				dataframe.NewField("Values Floats", nil, []float64{
+					1.0,
+					2.0,
+					3.0,
+					4.0,
+				}),
+				dataframe.NewField("Animal Factor", nil, []string{
+					"cat",
+					"sloth",
+					"cat",
+					"sloth",
+				}),
+				dataframe.NewField("Location", nil, []string{
+					"Florida",
+					"Central & South America",
+					"Florida",
+					"Central & South America",
+				})),
+
+			wideFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				dataframe.NewField(`Values Floats`,
+					dataframe.Labels{"Animal Factor": "cat", "Location": "Florida"}, []float64{
+						1.0,
+						3.0,
+					}),
+				dataframe.NewField(`Values Floats`,
+					dataframe.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []float64{
+						2.0,
+						4.0,
+					})),
 			Err: require.NoError,
 		},
 	}
@@ -120,7 +165,6 @@ func TestLongToWide(t *testing.T) {
 			if diff := cmp.Diff(tt.wideFrame, frame); diff != "" {
 				t.Errorf("Result mismatch (-want +got):\n%s", diff)
 			}
-			//spew.Dump(frame)
 		})
 	}
 }
