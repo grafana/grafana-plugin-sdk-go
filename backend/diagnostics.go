@@ -4,6 +4,8 @@ import (
 	"context"
 )
 
+// CheckHealthHandler enables users to send health check
+// requests to a backend plugin
 type CheckHealthHandler interface {
 	CheckHealth(ctx context.Context) (*CheckHealthResult, error)
 }
@@ -20,7 +22,9 @@ const (
 	HealthStatusError
 )
 
+// CheckHealthResult contains the healthcheck response
 type CheckHealthResult struct {
-	Status HealthStatus
-	Info   string
+	Status      HealthStatus
+	Message     string
+	JSONDetails string
 }
