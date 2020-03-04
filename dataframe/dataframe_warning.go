@@ -12,8 +12,8 @@ type Warning struct {
 }
 
 // WarningsFromJSON creates a *Warning from a json string.
-func WarningsFromJSON(jsonStr string) ([]*Warning, error) {
-	var m []*Warning
+func WarningsFromJSON(jsonStr string) ([]Warning, error) {
+	var m []Warning
 	err := json.Unmarshal([]byte(jsonStr), &m)
 	if err != nil {
 		return nil, err

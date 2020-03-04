@@ -200,7 +200,7 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 		}
 		tableMetaMap["meta"] = str
 	}
-	if f.Warnings != nil {
+	if len(f.Warnings) > 0 {
 		str, err := toJSONString(f.Warnings)
 		if err != nil {
 			return nil, err
