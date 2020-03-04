@@ -147,7 +147,7 @@ message CheckHealth {
 
     HealthStatus status = 1;
     string message = 2;
-    string details = 3;
+    string jsonDetails = 3;
   }
 }
 
