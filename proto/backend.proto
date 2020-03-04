@@ -55,6 +55,13 @@ message DataQuery {
   bytes json = 5; // Arbitrary structure (model?  modelJson in v1)
 }
 
+message User {
+  string login = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+}
+
 message DataQueryRequest {
   // Plugin Configuration
   PluginConfig config = 1;
@@ -64,6 +71,9 @@ message DataQueryRequest {
 
   // List of queries
   repeated DataQuery queries = 3;
+
+  //Info about the user who calls the plugin.
+  User user = 4;
 }
 
 message DataQueryResponse {
@@ -91,6 +101,7 @@ message CallResource {
     string url = 4;
     map<string,StringList> headers = 5;
     bytes body = 6;
+    User user = 7;
   }
 
   message Response {

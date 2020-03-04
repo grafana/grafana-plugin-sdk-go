@@ -11,7 +11,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// New creates a new backend.CallResourceHandler adaoter that provides
+// New creates a new backend.CallResourceHandler adapter that provides
 // support for handling resource calls using an http.Handler.
 func New(handler http.Handler) backend.CallResourceHandler {
 	return &httpResourceHandler{
@@ -30,6 +30,7 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 	}
 
 	ctx = withPluginConfig(ctx, req.PluginConfig)
+	ctx = withUser(ctx, req.User)
 	reqURL, err := url.Parse(req.URL)
 	if err != nil {
 		return nil, err
@@ -71,5 +72,22 @@ func PluginConfigFromContext(ctx context.Context) backend.PluginConfig {
 	if v == nil {
 		return backend.PluginConfig{}
 	}
+
 	return v.(backend.PluginConfig)
+}
+
+type userKey struct{}
+
+func withUser(ctx context.Context, cfg *backend.User) context.Context {
+	return context.WithValue(ctx, userKey{}, cfg)
+}
+
+// UserFromContext returns user from context.
+func UserFromContext(ctx context.Context) *backend.User {
+	v := ctx.Value(userKey{})
+	if v == nil {
+		return nil
+	}
+
+	return v.(*backend.User)
 }
