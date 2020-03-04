@@ -66,14 +66,6 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 }
 
 // LongToWide converts a Long formated time series Frame to a Wide format.
-// Notes:
-//  - The width of the Wide frame is not known until all factor Field's Values are scanned.
-//  - Name needing to be unique is a wrench here: https://github.com/grafana/grafana-plugin-sdk-go/issues/59
-//
-//  - Group By Time. Time will be the first Field in the result. Each row will have unique timestamp. Assumption
-// is that input is already time sorted
-//  - Each additional column is the group by of Value Fields Idx + Factors (Factor FieldIdx+Factor Field Values)
-//  - So width (Field Len) is TimeColumn + Value_Column_Count*Unique_Factor Combinations ... i think.
 func LongToWide(inFrame *Frame) (*Frame, error) {
 	tsSchema := inFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeLong {
@@ -141,7 +133,6 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 					val = *s
 				}
 			}
-			// TODO: handle null keys - can make empty string.
 			sliceKey[i] = [2]string{strconv.FormatInt(int64(factorIdx), 10), val}
 			namedKey[i] = [2]string{inFrame.Fields[factorIdx].Name, val}
 		}
@@ -166,8 +157,7 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 					return nil, err
 				}
 				newField := &Field{
-					// Currently sticking labels in name due to arrow Name uniqueness issue.
-					// This will not totally avoid the issue if there are duplicate factor names
+					// Note: currently duplicate names won't marshal to Arrow (https://github.com/grafana/grafana-plugin-sdk-go/issues/59)
 					Name:   name,
 					Labels: labels,
 					Vector: newVector,

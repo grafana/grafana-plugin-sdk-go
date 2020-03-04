@@ -302,6 +302,132 @@ func TestLongToWide(t *testing.T) {
 				})),
 			Err: require.NoError,
 		},
+		{
+			name: "sparse: one value, two factor",
+			longFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), // single time sample
+					time.Date(2020, 1, 2, 3, 5, 30, 0, time.UTC),
+				}),
+				dataframe.NewField("Values Floats", nil, []float64{
+					1.0,
+					2.0,
+					3.0,
+					4.0,
+					55.0,
+					6.0,
+				}),
+
+				dataframe.NewField("Animal Factor", nil, []string{
+					"cat",
+					"sloth",
+					"cat",
+					"sloth",
+					"pangolin", // single factor sample
+					"sloth",
+				}),
+				dataframe.NewField("Location", nil, []string{
+					"Florida",
+					"Central & South America",
+					"Florida",
+					"Central & South America",
+					"", // single factor sample
+					"Central & South America",
+				})),
+			wideFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 30, 0, time.UTC),
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "cat", "Location": "Florida"}, []float64{
+					1.0,
+					3.0,
+					0.0,
+					0.0,
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []float64{
+					2.0,
+					4.0,
+					0.0,
+					6.0,
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "pangolin", "Location": ""}, []float64{
+					0.0,
+					0.0,
+					55.0,
+					0.0,
+				})),
+			Err: require.NoError,
+		},
+		{
+			name: "sparse & pointer: one value, two factor",
+			longFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), // single time sample
+					time.Date(2020, 1, 2, 3, 5, 30, 0, time.UTC),
+				}),
+				dataframe.NewField("Values Floats", nil, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(2.0),
+					float64Ptr(3.0),
+					float64Ptr(4.0),
+					float64Ptr(55.0),
+					float64Ptr(6.0),
+				}),
+
+				dataframe.NewField("Animal Factor", nil, []string{
+					"cat",
+					"sloth",
+					"cat",
+					"sloth",
+					"pangolin", // single factor sample
+					"sloth",
+				}),
+				dataframe.NewField("Location", nil, []*string{
+					stringPtr("Florida"),
+					stringPtr("Central & South America"),
+					stringPtr("Florida"),
+					stringPtr("Central & South America"),
+					nil, // single factor sample
+					stringPtr("Central & South America"),
+				})),
+			wideFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 30, 0, time.UTC),
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					nil,
+					nil,
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*float64{
+					float64Ptr(2.0),
+					float64Ptr(4.0),
+					nil,
+					float64Ptr(6.0),
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
+					nil,
+					nil,
+					float64Ptr(55.0),
+					nil,
+				})),
+			Err: require.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
