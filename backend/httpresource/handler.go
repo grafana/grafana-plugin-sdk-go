@@ -86,7 +86,7 @@ func withUser(ctx context.Context, cfg *backend.User) context.Context {
 func UserFromContext(ctx context.Context) *backend.User {
 	v := ctx.Value(userKey{})
 	if v == nil {
-		return &backend.User{}
+		return nil
 	}
 
 	return v.(*backend.User)

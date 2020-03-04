@@ -131,6 +131,9 @@ func TestHttpResourceHandler(t *testing.T) {
 
 			user := UserFromContext(httpHandler.req.Context())
 			require.NotNil(t, user)
+			require.Equal(t, req.User.Name, "foobar")
+			require.Equal(t, req.User.Login, "foo@bar.com")
+			require.Equal(t, req.User.Email, "foo@bar.com")
 		})
 	})
 }
