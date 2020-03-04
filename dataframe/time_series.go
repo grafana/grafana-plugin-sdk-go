@@ -97,13 +97,14 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 		}
 		return inFrame.At(tsSchema.TimeIndex, idx).(time.Time), nil
 	}
+
 	lastTime, err := timeAt(0)
-	newFrame.Fields[0].Vector.Append(lastTime)
+	newFrame.Fields[0].Vector.Append(lastTime) // Set initial time value
 	if err != nil {
 		return nil, err
 	}
 
-	factorMap := map[string]struct{}{}
+	seenFactors := map[string]struct{}{} // Seen Factor combinations
 	valueIdxFactorKeyToFieldIdx := make(map[int]map[string]int)
 	for _, i := range tsSchema.ValueIndices {
 		valueIdxFactorKeyToFieldIdx[i] = make(map[string]int)
@@ -124,33 +125,47 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 			newFrame.Set(0, newFrameRowCounter, currentTime)
 		}
 		if currentTime.Before(lastTime) {
-			return nil, fmt.Errorf("long series must be sorted ascending by time to be convereted")
+			return nil, fmt.Errorf("long series must be sorted ascending by time to be converted")
 		}
-		sliceKey := make([][2]string, len(tsSchema.FactorIndices))
+
+		sliceKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns idx:value tuples
+		namedKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns name:value tuples
 		for i, factorIdx := range tsSchema.FactorIndices {
 			val := inFrame.At(factorIdx, rowIdx)
 			// TODO: handle null keys - can make empty string.
 			sliceKey[i] = [2]string{strconv.FormatInt(int64(factorIdx), 10), fmt.Sprintf("%s", val)}
+			namedKey[i] = [2]string{inFrame.Fields[factorIdx].Name, fmt.Sprintf("%s", val)}
 		}
 		factorKeyRaw, err := json.Marshal(sliceKey)
 		if err != nil {
 			return nil, err
 		}
 		factorKey := string(factorKeyRaw)
+		namedFactorKeyRaw, err := json.Marshal(namedKey)
+		if err != nil {
+			return nil, err
+		}
+		namedFactorKey := string(namedFactorKeyRaw)
 
 		// Make New Fields as new Factor combinations are found
-		if _, ok := factorMap[factorKey]; !ok {
-			// First index for the set of factors. Offset number of Value Fields
+		if _, ok := seenFactors[factorKey]; !ok {
+			// First index for the set of factors.
 			currentFieldLen := len(newFrame.Fields)
 			// New Field created for each Value Field from inFrame
-			factorMap[factorKey] = struct{}{}
+			seenFactors[factorKey] = struct{}{}
 			for i, vIdx := range tsSchema.ValueIndices {
 				name := inFrame.Fields[tsSchema.ValueIndices[i]].Name
 				pType := inFrame.Fields[tsSchema.ValueIndices[i]].Vector.PrimitiveType()
 				newVector := NewVectorFromPType(pType, newFrameRowCounter+1)
-				// TODO: Labels
+				labels, err := labelsFromTupleSlice(namedKey)
+				if err != nil {
+					return nil, err
+				}
 				newField := &Field{
-					Name:   name + factorKey,
+					// Currently sticking labels in name due to arrow Name uniqueness issue.
+					// This will not totally avoid the issue if there are duplicate factor names
+					Name:   name + namedFactorKey,
+					Labels: labels,
 					Vector: newVector,
 				}
 				newFrame.Fields = append(newFrame.Fields, newField)
@@ -175,4 +190,15 @@ type TimeSeriesSchema struct {
 	TimeIsNullable bool
 	ValueIndices   []int
 	FactorIndices  []int
+}
+
+func labelsFromTupleSlice(tuples [][2]string) (Labels, error) {
+	labels := make(map[string]string)
+	for _, tuple := range tuples {
+		if key, ok := labels[tuple[0]]; ok {
+			return nil, fmt.Errorf("duplicate key '%v' in lables: %v", key, tuples)
+		}
+		labels[tuple[0]] = tuple[1]
+	}
+	return labels, nil
 }

@@ -102,11 +102,11 @@ func TestLongToWide(t *testing.T) {
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
 				}),
-				dataframe.NewField(`Values Floats["Animal Factor","cat"]`, nil, []float64{
+				dataframe.NewField(`Values Floats[["Animal Factor","cat"]]`, dataframe.Labels{"Animal Factor": "cat"}, []float64{
 					1.0,
 					3.0,
 				}),
-				dataframe.NewField(`Values Floats["Animal Factor","sloth"]`, nil, []float64{
+				dataframe.NewField(`Values Floats[["Animal Factor","sloth"]]`, dataframe.Labels{"Animal Factor": "sloth"}, []float64{
 					2.0,
 					4.0,
 				})),
