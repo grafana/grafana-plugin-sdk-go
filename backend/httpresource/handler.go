@@ -54,10 +54,11 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 		httpReq.Header[key] = values
 	}
 
-	writer := newResponseWriter()
+	writer := newResponseWriter(sender)
 	h.handler.ServeHTTP(writer, httpReq)
+	writer.close()
 
-	return sender.Send(writer.Result())
+	return nil
 }
 
 type pluginConfigKey struct{}

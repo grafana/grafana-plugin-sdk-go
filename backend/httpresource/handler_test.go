@@ -139,6 +139,62 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Equal(t, req.User.Email, "foo@bar.com")
 		})
 	})
+
+	t.Run("Given streaming http resource handler and calling CallResource", func(t *testing.T) {
+		testSender := newTestCallResourceResponseSender()
+		httpHandler := &testStreamingHTTPHandler{
+			responseHeaders: map[string][]string{
+				"X-Header-Out-1": []string{"A", "B"},
+				"X-Header-Out-2": []string{"C"},
+			},
+			responseData: [][]byte{
+				[]byte("hello"),
+				[]byte("world"),
+				[]byte("bye bye"),
+			},
+			responseStatus: http.StatusOK,
+		}
+		resourceHandler := New(httpHandler)
+		req := &backend.CallResourceRequest{
+			PluginConfig: backend.PluginConfig{
+				OrgID:      3,
+				PluginID:   "my-plugin",
+				PluginType: "my-type",
+			},
+			Method: http.MethodPost,
+			Path:   "path",
+			URL:    "/api/plugins/plugin-abc/resources/path?query=1",
+			Headers: map[string][]string{
+				"X-Header-In-1": []string{"D", "E"},
+				"X-Header-In-2": []string{"F"},
+			},
+		}
+		err := resourceHandler.CallResource(context.Background(), req, testSender)
+		require.NoError(t, err)
+		require.Equal(t, 1, httpHandler.callerCount)
+
+		t.Run("Should return expected response from http handler", func(t *testing.T) {
+			require.Len(t, testSender.respMessages, 3)
+			resp1 := testSender.respMessages[0]
+			require.NotNil(t, resp1)
+			require.NoError(t, httpHandler.writeErr)
+			require.NotNil(t, resp1)
+			require.Equal(t, http.StatusOK, resp1.Status)
+			require.Contains(t, resp1.Headers, "X-Header-Out-1")
+			require.Equal(t, []string{"A", "B"}, resp1.Headers["X-Header-Out-1"])
+			require.Contains(t, resp1.Headers, "X-Header-Out-2")
+			require.Equal(t, []string{"C"}, resp1.Headers["X-Header-Out-2"])
+			require.Equal(t, "hello", string(resp1.Body))
+
+			resp2 := testSender.respMessages[1]
+			require.NotNil(t, resp2)
+			require.Equal(t, "world", string(resp2.Body))
+
+			resp3 := testSender.respMessages[2]
+			require.NotNil(t, resp3)
+			require.Equal(t, "bye bye", string(resp3.Body))
+		})
+	})
 }
 
 func TestServeMuxHandler(t *testing.T) {
@@ -197,6 +253,39 @@ func (h *testHTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
 	if h.responseData != nil {
 		body, _ := json.Marshal(&h.responseData)
 		_, h.writeErr = rw.Write(body)
+	}
+}
+
+type testStreamingHTTPHandler struct {
+	responseStatus  int
+	responseHeaders map[string][]string
+	responseData    [][]byte
+	callerCount     int
+	req             *http.Request
+	writeErr        error
+}
+
+func (h *testStreamingHTTPHandler) ServeHTTP(rw http.ResponseWriter, req *http.Request) {
+	h.callerCount++
+	h.req = req
+
+	if h.responseHeaders != nil {
+		for k, values := range h.responseHeaders {
+			for _, v := range values {
+				rw.Header().Add(k, v)
+			}
+		}
+	}
+
+	if h.responseStatus != 0 {
+		rw.WriteHeader(h.responseStatus)
+	} else {
+		rw.WriteHeader(200)
+	}
+
+	for _, bytes := range h.responseData {
+		_, h.writeErr = rw.Write(bytes)
+		rw.(http.Flusher).Flush()
 	}
 }
 
