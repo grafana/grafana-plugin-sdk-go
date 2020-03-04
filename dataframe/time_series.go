@@ -66,13 +66,16 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 }
 
 // LongToWide converts a Long formated time series Frame to a Wide format.
+// The input series must be sorted ascending by time.
 func LongToWide(inFrame *Frame) (*Frame, error) {
 	tsSchema := inFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeLong {
 		return nil, fmt.Errorf("can not convert to wide series, expected long format series input but got %s series", tsSchema.Type)
 	}
 
-	if inFrame.Fields[0].Vector.Len() == 0 {
+	if inLen, err := inFrame.RowLen(); err != nil {
+		return nil, err
+	} else if inLen == 0 {
 		return nil, fmt.Errorf("can not convert to wide series, input fields have no rows")
 	}
 
@@ -96,7 +99,7 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 		return nil, err
 	}
 
-	seenFactors := map[string]struct{}{} // Seen Factor combinations
+	seenFactors := map[string]struct{}{} // Seen factor combinations
 	valueIdxFactorKeyToFieldIdx := make(map[int]map[string]int)
 	for _, i := range tsSchema.ValueIndices {
 		valueIdxFactorKeyToFieldIdx[i] = make(map[string]int)
@@ -112,7 +115,7 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 			newFrameRowCounter++
 			lastTime = currentTime
 			for _, field := range newFrame.Fields {
-				field.Vector.Extend(1)
+				field.Vector.Extend(1) // New Row - extend all Field Vectors
 			}
 			newFrame.Set(0, newFrameRowCounter, currentTime)
 		}
@@ -167,12 +170,9 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 			}
 		}
 		for _, fieldIdx := range tsSchema.ValueIndices {
-			val := inFrame.At(fieldIdx, rowIdx)
 			newFieldIdx := valueIdxFactorKeyToFieldIdx[fieldIdx][factorKey]
-			// TODO: Copy pointer values
-			newFrame.Set(newFieldIdx, newFrameRowCounter, val)
+			newFrame.Set(newFieldIdx, newFrameRowCounter, inFrame.CopyAt(fieldIdx, rowIdx))
 		}
-		_ = rowIdx
 	}
 
 	return newFrame, nil

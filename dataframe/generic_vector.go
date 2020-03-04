@@ -35,6 +35,12 @@ func (v *genVector) Len() int {
 	return len((*v))
 }
 
+func (v *genVector) CopyAt(i int) interface{} {
+	var g gen
+	g = (*v)[i]
+	return g
+}
+
 func (v *genVector) PrimitiveType() VectorPType {
 	return vectorPType(v)
 }

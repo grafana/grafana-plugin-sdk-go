@@ -14,6 +14,7 @@ type Vector interface {
 	Len() int
 	PrimitiveType() VectorPType
 	PointerAt(i int) interface{}
+	CopyAt(i int) interface{}
 	//buildArrowColumn(pool memory.Allocator, field arrow.Field) *array.Column
 }
 
@@ -149,7 +150,7 @@ func ValidVectorType(t interface{}) bool {
 	}
 }
 
-// VectorPType indicates the go type underlying the Vector.
+// VectorPType (Primitive Type) indicates the Go type underlying the Vector.
 type VectorPType int
 
 const (

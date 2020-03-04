@@ -337,8 +337,39 @@ func (f *Frame) At(fieldIdx int, rowIdx int) interface{} {
 	return f.Fields[fieldIdx].Vector.At(rowIdx)
 }
 
+// CopyAt returns a copy of the value of the specified fieldIdx and rowIdx.
+// It will panic if either the fieldIdx or rowIdx are out of range.
+func (f *Frame) CopyAt(fieldIdx int, rowIdx int) interface{} {
+	return f.Fields[fieldIdx].Vector.CopyAt(rowIdx)
+}
+
 // Set set the val to the specified fieldIdx and rowIdx.
 // It will panic if either the fieldIdx or rowIdx are out of range.
 func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].Vector.Set(rowIdx, val)
+}
+
+// RowLen returns the the length of the Frame Fields' Vectors.
+// If the Length of all the Vectors is not the same then error is returned.
+// If the Frame's Fields or Vectors are nil an error is returned.
+func (f *Frame) RowLen() (int, error) {
+	if f.Fields == nil || len(f.Fields) == 0 {
+		return 0, fmt.Errorf("frame's fields are nil or of zero length")
+	}
+
+	var l int
+	for i := 0; i < len(f.Fields); i++ {
+		if f.Fields[i].Vector == nil {
+			return 0, fmt.Errorf("frame's field at index %v is nil", i)
+		}
+		if i == 0 {
+			l = f.Fields[i].Vector.Len()
+			continue
+		}
+		if l != f.Fields[i].Vector.Len() {
+			return 0, fmt.Errorf("frame has different field vector lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].Vector.Len())
+		}
+
+	}
+	return l, nil
 }

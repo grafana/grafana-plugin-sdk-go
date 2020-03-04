@@ -31,6 +31,16 @@ func (v *nullableUint8Vector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullableUint8Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *uint8
+		return g
+	}
+	var g uint8
+	g = *(*v)[i]
+	return &g
+}
+
 func (v *nullableUint8Vector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
@@ -70,6 +80,16 @@ func (v *nullableUint16Vector) Append(i interface{}) {
 
 func (v *nullableUint16Vector) At(i int) interface{} {
 	return (*v)[i]
+}
+
+func (v *nullableUint16Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *uint16
+		return g
+	}
+	var g uint16
+	g = *(*v)[i]
+	return &g
 }
 
 func (v *nullableUint16Vector) PointerAt(i int) interface{} {
@@ -113,6 +133,16 @@ func (v *nullableUint32Vector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullableUint32Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *uint32
+		return g
+	}
+	var g uint32
+	g = *(*v)[i]
+	return &g
+}
+
 func (v *nullableUint32Vector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
@@ -152,6 +182,16 @@ func (v *nullableUint64Vector) Append(i interface{}) {
 
 func (v *nullableUint64Vector) At(i int) interface{} {
 	return (*v)[i]
+}
+
+func (v *nullableUint64Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *uint64
+		return g
+	}
+	var g uint64
+	g = *(*v)[i]
+	return &g
 }
 
 func (v *nullableUint64Vector) PointerAt(i int) interface{} {
@@ -195,6 +235,16 @@ func (v *nullableInt8Vector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullableInt8Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *int8
+		return g
+	}
+	var g int8
+	g = *(*v)[i]
+	return &g
+}
+
 func (v *nullableInt8Vector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
@@ -234,6 +284,16 @@ func (v *nullableInt16Vector) Append(i interface{}) {
 
 func (v *nullableInt16Vector) At(i int) interface{} {
 	return (*v)[i]
+}
+
+func (v *nullableInt16Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *int16
+		return g
+	}
+	var g int16
+	g = *(*v)[i]
+	return &g
 }
 
 func (v *nullableInt16Vector) PointerAt(i int) interface{} {
@@ -277,6 +337,16 @@ func (v *nullableInt32Vector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullableInt32Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *int32
+		return g
+	}
+	var g int32
+	g = *(*v)[i]
+	return &g
+}
+
 func (v *nullableInt32Vector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
@@ -316,6 +386,16 @@ func (v *nullableInt64Vector) Append(i interface{}) {
 
 func (v *nullableInt64Vector) At(i int) interface{} {
 	return (*v)[i]
+}
+
+func (v *nullableInt64Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *int64
+		return g
+	}
+	var g int64
+	g = *(*v)[i]
+	return &g
 }
 
 func (v *nullableInt64Vector) PointerAt(i int) interface{} {
@@ -359,6 +439,16 @@ func (v *nullableFloat32Vector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullableFloat32Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *float32
+		return g
+	}
+	var g float32
+	g = *(*v)[i]
+	return &g
+}
+
 func (v *nullableFloat32Vector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
@@ -398,6 +488,16 @@ func (v *nullableFloat64Vector) Append(i interface{}) {
 
 func (v *nullableFloat64Vector) At(i int) interface{} {
 	return (*v)[i]
+}
+
+func (v *nullableFloat64Vector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *float64
+		return g
+	}
+	var g float64
+	g = *(*v)[i]
+	return &g
 }
 
 func (v *nullableFloat64Vector) PointerAt(i int) interface{} {
@@ -441,6 +541,16 @@ func (v *nullableStringVector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullableStringVector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *string
+		return g
+	}
+	var g string
+	g = *(*v)[i]
+	return &g
+}
+
 func (v *nullableStringVector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
@@ -482,6 +592,16 @@ func (v *nullableBoolVector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullableBoolVector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *bool
+		return g
+	}
+	var g bool
+	g = *(*v)[i]
+	return &g
+}
+
 func (v *nullableBoolVector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
@@ -521,6 +641,16 @@ func (v *nullableTimeTimeVector) Append(i interface{}) {
 
 func (v *nullableTimeTimeVector) At(i int) interface{} {
 	return (*v)[i]
+}
+
+func (v *nullableTimeTimeVector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *time.Time
+		return g
+	}
+	var g time.Time
+	g = *(*v)[i]
+	return &g
 }
 
 func (v *nullableTimeTimeVector) PointerAt(i int) interface{} {

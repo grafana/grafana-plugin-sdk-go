@@ -25,6 +25,16 @@ func (v *nullablegenVector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *nullablegenVector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *gen
+		return g
+	}
+	var g gen
+	g = *(*v)[i]
+	return &g
+}
+
 func (v *nullablegenVector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
