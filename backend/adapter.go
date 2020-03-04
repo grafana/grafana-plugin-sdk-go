@@ -72,10 +72,9 @@ func (fn callResourceResponseSenderFunc) Send(resp *CallResourceResponse) error 
 
 func (a *sdkAdapter) CallResource(protoReq *pluginv2.CallResource_Request, protoSrv pluginv2.Core_CallResourceServer) error {
 	if a.CallResourceHandler == nil {
-		err := protoSrv.Send(&pluginv2.CallResource_Response{
+		return protoSrv.Send(&pluginv2.CallResource_Response{
 			Code: http.StatusNotImplemented,
 		})
-		return err
 	}
 
 	fn := callResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
