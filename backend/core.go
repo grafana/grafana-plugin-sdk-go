@@ -82,9 +82,14 @@ type CallResourceResponse struct {
 	Body    []byte
 }
 
+// CallResourceResponseSender used for sending resource call responses.
+type CallResourceResponseSender interface {
+	Send(*CallResourceResponse) error
+}
+
 // CallResourceHandler handles resource calls.
 type CallResourceHandler interface {
-	CallResource(ctx context.Context, req *CallResourceRequest) (*CallResourceResponse, error)
+	CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
 }
 
 // DataQueryHandler handles data source queries.
