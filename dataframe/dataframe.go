@@ -349,6 +349,13 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].Vector.Set(rowIdx, val)
 }
 
+// Extend extends all the Fields Vectors length by i.
+func (f *Frame) Extend(i int) {
+	for _, f := range f.Fields {
+		f.Vector.Extend(i)
+	}
+}
+
 // ConcreteAt returns the concrete value at the specified fieldIdx and rowIdx.
 // A non-pointer type is returned regardless if the underlying vector is a pointer
 // type or not. If the value is a pointer type, and is nil, then the zero value
@@ -371,10 +378,10 @@ func (f *Frame) RowLen() (int, error) {
 			return 0, fmt.Errorf("frame's field at index %v is nil", i)
 		}
 		if i == 0 {
-			l = f.Fields[i].Vector.Len()
+			l = f.Fields[i].Len()
 			continue
 		}
-		if l != f.Fields[i].Vector.Len() {
+		if l != f.Fields[i].Len() {
 			return 0, fmt.Errorf("frame has different field vector lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].Vector.Len())
 		}
 

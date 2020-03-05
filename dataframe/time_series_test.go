@@ -446,12 +446,50 @@ func TestWideToLong(t *testing.T) {
 		wideFrame *dataframe.Frame
 		longFrame *dataframe.Frame
 		Err       require.ErrorAssertionFunc
-	}{}
+	}{
+		{
+			name: "one value, one factor",
+			wideFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "cat"}, []float64{
+					1.0,
+					3.0,
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "sloth"}, []float64{
+					2.0,
+					4.0,
+				})),
+
+			longFrame: dataframe.New("long_to_wide_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				dataframe.NewField("Values Floats", nil, []float64{
+					1.0,
+					2.0,
+					3.0,
+					4.0,
+				}),
+				dataframe.NewField("Animal Factor", nil, []string{
+					"cat",
+					"sloth",
+					"cat",
+					"sloth",
+				})),
+			Err: require.NoError,
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			frame, err := dataframe.WideToLong(tt.longFrame)
+			frame, err := dataframe.WideToLong(tt.wideFrame)
 			tt.Err(t, err)
-			if diff := cmp.Diff(tt.wideFrame, frame); diff != "" {
+			if diff := cmp.Diff(tt.longFrame, frame); diff != "" {
 				t.Errorf("Result mismatch (-want +got):\n%s", diff)
 			}
 		})

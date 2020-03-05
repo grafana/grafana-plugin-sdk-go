@@ -3,6 +3,7 @@ package dataframe
 import (
 	"encoding/json"
 	"fmt"
+	"sort"
 	"strconv"
 	"time"
 )
@@ -67,111 +68,175 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 
 // LongToWide converts a Long formated time series Frame to a Wide format.
 // The input series must be sorted ascending by time.
-func LongToWide(inFrame *Frame) (*Frame, error) {
-	tsSchema := inFrame.TimeSeriesSchema()
+func LongToWide(longFrame *Frame) (*Frame, error) {
+	tsSchema := longFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeLong {
 		return nil, fmt.Errorf("can not convert to wide series, expected long format series input but got %s series", tsSchema.Type)
 	}
 
-	inLen, err := inFrame.RowLen()
+	longLen, err := longFrame.RowLen()
 	if err != nil {
 		return nil, err
-	} else if inLen == 0 {
+	} else if longLen == 0 {
 		return nil, fmt.Errorf("can not convert to wide series, input fields have no rows")
 	}
 
-	newFrame := New(inFrame.Name, NewField(inFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
-	newFrameRowCounter := 0
+	wideFrame := New(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
+	wideFrameRowCounter := 0
+
+	seenFactors := map[string]struct{}{}                  // seen factor combinations
+	valueFactorToFieldIdx := make(map[int]map[string]int) // value field idx and factors key -> fieldIdx of longFrame (for insertion)
+	for _, i := range tsSchema.ValueIndices {             // initialize nested maps
+		valueFactorToFieldIdx[i] = make(map[string]int)
+	}
 
 	timeAt := func(idx int) (time.Time, error) { // get time.Time regardless if pointer
-		val, ok := inFrame.ConcreteAt(tsSchema.TimeIndex, idx)
+		val, ok := longFrame.ConcreteAt(tsSchema.TimeIndex, idx)
 		if !ok {
 			return time.Time{}, fmt.Errorf("can not convert to wide series, input has null time values")
 		}
 		return val.(time.Time), nil
 	}
-
-	// Initialize things for upcoming loop
-	seenFactors := map[string]struct{}{}                        // seen factor combinations
-	valueIdxFactorKeyToFieldIdx := make(map[int]map[string]int) // value key and factors -> fieldIdx of newFrame
-	for _, i := range tsSchema.ValueIndices {                   // initialize nested maps
-		valueIdxFactorKeyToFieldIdx[i] = make(map[string]int)
-	}
 	lastTime, err := timeAt(0) // set initial time value
 	if err != nil {
 		return nil, err
 	}
-	newFrame.Fields[0].Vector.Append(lastTime)
+	wideFrame.Fields[0].Vector.Append(lastTime)
 
-	for rowIdx := 0; rowIdx < inLen; rowIdx++ { // loop over each Row of inFrame
+	for rowIdx := 0; rowIdx < longLen; rowIdx++ { // loop over each row of longFrame
 		currentTime, err := timeAt(rowIdx)
 		if err != nil {
 			return nil, err
 		}
 
-		if currentTime.After(lastTime) { // time advance means new row in newFrame
-			newFrameRowCounter++
+		if currentTime.After(lastTime) { // time advance means new row in wideFrame
+			wideFrameRowCounter++
 			lastTime = currentTime
-			for _, field := range newFrame.Fields {
-				// extend all Field Vectors for new row. If no value found will have zero value
+			for _, field := range wideFrame.Fields {
+				// extend all wideFrame Field Vectors for new row. If no value found, it will have zero value
 				field.Vector.Extend(1)
 			}
-			newFrame.Set(0, newFrameRowCounter, currentTime)
+			wideFrame.Set(0, wideFrameRowCounter, currentTime)
 		}
 
 		if currentTime.Before(lastTime) {
 			return nil, fmt.Errorf("long series must be sorted ascending by time to be converted")
 		}
 
-		sliceKey := make([][2]string, len(tsSchema.FactorIndices)) // factor columns idx:value tuples
-		namedKey := make([][2]string, len(tsSchema.FactorIndices)) // factor columns name:value tuples (used for labels)
+		sliceKey := make(tupleLabels, len(tsSchema.FactorIndices)) // factor columns idx:value tuples (used for lookup)
+		namedKey := make(tupleLabels, len(tsSchema.FactorIndices)) // factor columns name:value tuples (used for labels)
 
 		// build labels
 		for i, factorIdx := range tsSchema.FactorIndices {
-			val, _ := inFrame.ConcreteAt(factorIdx, rowIdx)
-			sliceKey[i] = [2]string{strconv.FormatInt(int64(factorIdx), 10), val.(string)}
-			namedKey[i] = [2]string{inFrame.Fields[factorIdx].Name, val.(string)}
+			val, _ := longFrame.ConcreteAt(factorIdx, rowIdx)
+			sliceKey[i] = tupleLabel{strconv.FormatInt(int64(factorIdx), 10), val.(string)}
+			namedKey[i] = tupleLabel{longFrame.Fields[factorIdx].Name, val.(string)}
 		}
-		factorKeyRaw, err := json.Marshal(sliceKey)
+		factorKey, err := sliceKey.MapKey()
 		if err != nil {
 			return nil, err
 		}
-		factorKey := string(factorKeyRaw)
 
 		// make new Fields as new factor combinations are found
 		if _, ok := seenFactors[factorKey]; !ok {
-			currentFieldLen := len(newFrame.Fields) // first index for the set of factors.
+			currentFieldLen := len(wideFrame.Fields) // first index for the set of factors.
 			seenFactors[factorKey] = struct{}{}
 			for i, vIdx := range tsSchema.ValueIndices {
 				// a new Field is created for each value Field from inFrame
-				labels, err := labelsFromTupleSlice(namedKey)
+				labels, err := tupleLablesToLabels(namedKey)
 				if err != nil {
 					return nil, err
 				}
-				inField := inFrame.Fields[tsSchema.ValueIndices[i]]
-				newField := &Field{
-					// Note: currently duplicate names won't marshal to Arrow (https://github.com/grafana/grafana-plugin-sdk-go/issues/59)
-					Name:   inField.Name,
+				longField := longFrame.Fields[tsSchema.ValueIndices[i]]
+				newWideField := &Field{
+					Name:   longField.Name, // Note: currently duplicate names won't marshal to Arrow (https://github.com/grafana/grafana-plugin-sdk-go/issues/59)
 					Labels: labels,
-					Vector: NewVectorFromPType(inField.Vector.PrimitiveType(), newFrameRowCounter+1),
+					Vector: NewVectorFromPType(longField.Vector.PrimitiveType(), wideFrameRowCounter+1),
 				}
-				newFrame.Fields = append(newFrame.Fields, newField)
-				valueIdxFactorKeyToFieldIdx[vIdx][factorKey] = currentFieldLen + i
+				wideFrame.Fields = append(wideFrame.Fields, newWideField)
+				valueFactorToFieldIdx[vIdx][factorKey] = currentFieldLen + i
 			}
 		}
 		for _, fieldIdx := range tsSchema.ValueIndices {
-			newFieldIdx := valueIdxFactorKeyToFieldIdx[fieldIdx][factorKey]
-			newFrame.Set(newFieldIdx, newFrameRowCounter, inFrame.CopyAt(fieldIdx, rowIdx))
+			newFieldIdx := valueFactorToFieldIdx[fieldIdx][factorKey]
+			wideFrame.Set(newFieldIdx, wideFrameRowCounter, longFrame.CopyAt(fieldIdx, rowIdx))
 		}
 	}
 
-	return newFrame, nil
+	return wideFrame, nil
 }
 
 // WideToLong converts a Wide formated Frame to a Long formated Frame.
-func WideToLong(inFrame *Frame) (*Frame, error) {
-	// TODO
-	return nil, nil
+func WideToLong(wideFrame *Frame) (*Frame, error) {
+	tsSchema := wideFrame.TimeSeriesSchema()
+	if tsSchema.Type != TimeSeriesTypeWide {
+		return nil, fmt.Errorf("can not convert to long series, expected wide format series input but got %s series", tsSchema.Type)
+	}
+
+	wideLen, err := wideFrame.RowLen()
+	if err != nil {
+		return nil, err
+	} else if wideLen == 0 {
+		return nil, fmt.Errorf("can not convert to long series, input fields have no rows")
+	}
+
+	uniqueValueNamesToType := make(map[string]VectorPType)
+	uniqueFactorKeys := make(map[string]struct{})
+	for _, vIdx := range tsSchema.ValueIndices {
+		wideField := wideFrame.Fields[vIdx]
+		if pType, ok := uniqueValueNamesToType[wideField.Name]; ok {
+			if wideField.Vector.PrimitiveType() != pType {
+				return nil, fmt.Errorf("two fields in input frame may not have the same name but different types, field name %s has type %s but also type %s and field idx %v", wideField.Name, pType, wideField.Vector.PrimitiveType(), vIdx)
+			}
+		}
+		uniqueValueNamesToType[wideField.Name] = wideField.Vector.PrimitiveType()
+
+		if wideField.Labels != nil {
+			for k := range wideField.Labels {
+				uniqueFactorKeys[k] = struct{}{}
+			}
+		}
+	}
+	longFrame := New(wideFrame.Name, NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
+
+	i := 1
+	valueNameToFieldIdx := map[string]int{}
+	for name, pType := range uniqueValueNamesToType {
+		longFrame.Fields = append(longFrame.Fields, &Field{
+			Name:   name,
+			Vector: NewVectorFromPType(pType, 0),
+		})
+		valueNameToFieldIdx[name] = i
+		i++
+	}
+
+	factorNameToFieldIdx := map[string]int{}
+	for name := range uniqueFactorKeys {
+		longFrame.Fields = append(longFrame.Fields, NewField(name, nil, []string{}))
+		factorNameToFieldIdx[name] = i
+		i++
+	}
+
+	longFrameCounter := 0
+	for rowIdx := 0; rowIdx < wideLen; rowIdx++ { // loop over each row of wideFrame
+		time, ok := wideFrame.ConcreteAt(tsSchema.TimeIndex, rowIdx)
+		if !ok {
+			return nil, fmt.Errorf("time may not have nil values")
+		}
+		for _, fieldIdx := range tsSchema.ValueIndices {
+			longFrame.Extend(1)
+			longFrame.Set(0, longFrameCounter, time)
+			wideField := wideFrame.Fields[fieldIdx]
+			valueFieldIdx := valueNameToFieldIdx[wideField.Name]
+			longFrame.Set(valueFieldIdx, longFrameCounter, wideFrame.At(fieldIdx, rowIdx))
+			for k, v := range wideField.Labels { // Todo: move to schema loop (above)
+				longFrame.Set(factorNameToFieldIdx[k], longFrameCounter, v)
+			}
+			longFrameCounter++
+		}
+	}
+
+	return longFrame, nil
 }
 
 // TimeSeriesSchema is information about a Dataframe's schema.  It is populated from
@@ -184,7 +249,11 @@ type TimeSeriesSchema struct {
 	FactorIndices  []int
 }
 
-func labelsFromTupleSlice(tuples [][2]string) (Labels, error) {
+type tupleLabels []tupleLabel
+
+type tupleLabel [2]string
+
+func tupleLablesToLabels(tuples tupleLabels) (Labels, error) {
 	labels := make(map[string]string)
 	for _, tuple := range tuples {
 		if key, ok := labels[tuple[0]]; ok {
@@ -193,4 +262,22 @@ func labelsFromTupleSlice(tuples [][2]string) (Labels, error) {
 		labels[tuple[0]] = tuple[1]
 	}
 	return labels, nil
+}
+
+func (t *tupleLabels) MapKey() (string, error) {
+	t.SortBtKey()
+	b, err := json.Marshal(t)
+	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+
+func (t *tupleLabels) SortBtKey() {
+	if t == nil {
+		return
+	}
+	sort.Slice((*t)[:], func(i, j int) bool {
+		return (*t)[i][0] < (*t)[j][1]
+	})
 }
