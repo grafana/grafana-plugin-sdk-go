@@ -204,6 +204,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
 
 	i := 1
+	// TODO: These need to be sorted. Since they come from maps (otherwise result order unpredictable).
 	valueNameToFieldIdx := map[string]int{} // valueName -> field index of longFrame
 	for name, pType := range uniqueValueNamesToType {
 		longFrame.Fields = append(longFrame.Fields, &Field{ // create value (number) vectors
