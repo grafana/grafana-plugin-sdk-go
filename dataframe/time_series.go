@@ -180,9 +180,11 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		return nil, fmt.Errorf("can not convert to long series, input fields have no rows")
 	}
 
-	uniqueValueNamesToType := make(map[string]VectorPType)
+	uniqueValueNamesToType := make(map[string]VectorPType) // identify unique value columns by their name
+	// labels become string Fields, where the label keys are Field Names
 	uniqueFactorKeys := make(map[string]struct{})
-	for _, vIdx := range tsSchema.ValueIndices {
+
+	for _, vIdx := range tsSchema.ValueIndices { // all columns should be value columns except time
 		wideField := wideFrame.Fields[vIdx]
 		if pType, ok := uniqueValueNamesToType[wideField.Name]; ok {
 			if wideField.Vector.PrimitiveType() != pType {
@@ -197,12 +199,14 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			}
 		}
 	}
-	longFrame := New(wideFrame.Name, NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
+
+	longFrame := New(wideFrame.Name, // time , value fields (numbers)..., factor fields (strings)...
+		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
 
 	i := 1
-	valueNameToFieldIdx := map[string]int{}
+	valueNameToFieldIdx := map[string]int{} // valueName -> field index of longFrame
 	for name, pType := range uniqueValueNamesToType {
-		longFrame.Fields = append(longFrame.Fields, &Field{
+		longFrame.Fields = append(longFrame.Fields, &Field{ // create value (number) vectors
 			Name:   name,
 			Vector: NewVectorFromPType(pType, 0),
 		})
@@ -210,9 +214,9 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		i++
 	}
 
-	factorNameToFieldIdx := map[string]int{}
+	factorNameToFieldIdx := map[string]int{} // label Key -> field index for label value of longFrame
 	for name := range uniqueFactorKeys {
-		longFrame.Fields = append(longFrame.Fields, NewField(name, nil, []string{}))
+		longFrame.Fields = append(longFrame.Fields, NewField(name, nil, []string{})) // create factor fields
 		factorNameToFieldIdx[name] = i
 		i++
 	}
@@ -224,12 +228,13 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			return nil, fmt.Errorf("time may not have nil values")
 		}
 		for _, fieldIdx := range tsSchema.ValueIndices {
-			longFrame.Extend(1)
+			longFrame.Extend(1) // grow each Fields's vector by 1
 			longFrame.Set(0, longFrameCounter, time)
+
 			wideField := wideFrame.Fields[fieldIdx]
 			valueFieldIdx := valueNameToFieldIdx[wideField.Name]
-			longFrame.Set(valueFieldIdx, longFrameCounter, wideFrame.At(fieldIdx, rowIdx))
-			for k, v := range wideField.Labels { // Todo: move to schema loop (above)
+			longFrame.Set(valueFieldIdx, longFrameCounter, wideFrame.CopyAt(fieldIdx, rowIdx))
+			for k, v := range wideField.Labels {
 				longFrame.Set(factorNameToFieldIdx[k], longFrameCounter, v)
 			}
 			longFrameCounter++
