@@ -41,6 +41,10 @@ func (v *genVector) CopyAt(i int) interface{} {
 	return g
 }
 
+func (v *genVector) ConcreteAt(i int) (interface{}, bool) {
+	return v.At(i), true
+}
+
 func (v *genVector) PrimitiveType() VectorPType {
 	return vectorPType(v)
 }

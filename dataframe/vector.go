@@ -15,6 +15,7 @@ type Vector interface {
 	PrimitiveType() VectorPType
 	PointerAt(i int) interface{}
 	CopyAt(i int) interface{}
+	ConcreteAt(i int) (val interface{}, ok bool)
 	//buildArrowColumn(pool memory.Allocator, field arrow.Field) *array.Column
 }
 

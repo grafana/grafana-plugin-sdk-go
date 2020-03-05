@@ -84,14 +84,11 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 	newFrameRowCounter := 0
 
 	timeAt := func(idx int) (time.Time, error) { // get time.Time regardless if pointer
-		if tsSchema.TimeIsNullable {
-			timePtr := inFrame.At(tsSchema.TimeIndex, idx).(*time.Time)
-			if timePtr == nil {
-				return time.Time{}, fmt.Errorf("can not convert to wide series, input has null time values")
-			}
-			return *timePtr, nil
+		val, ok := inFrame.ConcreteAt(tsSchema.TimeIndex, idx)
+		if !ok {
+			return time.Time{}, fmt.Errorf("can not convert to wide series, input has null time values")
 		}
-		return inFrame.At(tsSchema.TimeIndex, idx).(time.Time), nil
+		return val.(time.Time), nil
 	}
 
 	// Initialize things for upcoming loop
@@ -131,18 +128,9 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 
 		// build labels
 		for i, factorIdx := range tsSchema.FactorIndices {
-			rawVal := inFrame.At(factorIdx, rowIdx)
-			var val string // null and empty factor values are both treated identically - as an empty string
-			switch s := rawVal.(type) {
-			case string:
-				val = s
-			case *string:
-				if s != nil {
-					val = *s
-				}
-			}
-			sliceKey[i] = [2]string{strconv.FormatInt(int64(factorIdx), 10), val}
-			namedKey[i] = [2]string{inFrame.Fields[factorIdx].Name, val}
+			val, _ := inFrame.ConcreteAt(factorIdx, rowIdx)
+			sliceKey[i] = [2]string{strconv.FormatInt(int64(factorIdx), 10), val.(string)}
+			namedKey[i] = [2]string{inFrame.Fields[factorIdx].Name, val.(string)}
 		}
 		factorKeyRaw, err := json.Marshal(sliceKey)
 		if err != nil {
@@ -178,6 +166,12 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 	}
 
 	return newFrame, nil
+}
+
+// WideToLong converts a Wide formated Frame to a Long formated Frame.
+func WideToLong(inFrame *Frame) (*Frame, error) {
+	// TODO
+	return nil, nil
 }
 
 // TimeSeriesSchema is information about a Dataframe's schema.  It is populated from

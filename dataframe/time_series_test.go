@@ -439,3 +439,21 @@ func TestLongToWide(t *testing.T) {
 		})
 	}
 }
+
+func TestWideToLong(t *testing.T) {
+	tests := []struct {
+		name      string
+		wideFrame *dataframe.Frame
+		longFrame *dataframe.Frame
+		Err       require.ErrorAssertionFunc
+	}{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			frame, err := dataframe.WideToLong(tt.longFrame)
+			tt.Err(t, err)
+			if diff := cmp.Diff(tt.wideFrame, frame); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}

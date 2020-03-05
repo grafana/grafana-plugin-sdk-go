@@ -349,6 +349,14 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].Vector.Set(rowIdx, val)
 }
 
+// ConcreteAt returns the concrete value at the specified fieldIdx and rowIdx.
+// A non-pointer type is returned regardless if the underlying vector is a pointer
+// type or not. If the value is a pointer type, and is nil, then the zero value
+// is returned and ok will be false.
+func (f *Frame) ConcreteAt(fieldIdx int, rowIdx int) (val interface{}, ok bool) {
+	return f.Fields[fieldIdx].Vector.ConcreteAt(rowIdx)
+}
+
 // RowLen returns the the length of the Frame Fields' Vectors.
 // If the Length of all the Vectors is not the same then error is returned.
 // If the Frame's Fields or Vectors are nil an error is returned.
