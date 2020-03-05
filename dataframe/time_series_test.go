@@ -449,7 +449,7 @@ func TestWideToLong(t *testing.T) {
 	}{
 		{
 			name: "one value, one factor",
-			wideFrame: dataframe.New("long_to_wide_test",
+			wideFrame: dataframe.New("wide_to_long_test",
 				dataframe.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -463,7 +463,7 @@ func TestWideToLong(t *testing.T) {
 					4.0,
 				})),
 
-			longFrame: dataframe.New("long_to_wide_test",
+			longFrame: dataframe.New("wide_to_long_test",
 				dataframe.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
