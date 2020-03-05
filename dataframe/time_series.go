@@ -44,7 +44,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 		return
 	}
 	tsSchema.TimeIndex = timeIndices[0]
-	tsSchema.TimeIsNullable = f.Fields[tsSchema.TimeIndex].Vector.PrimitiveType().Nullable()
+	tsSchema.TimeIsNullable = f.Fields[tsSchema.TimeIndex].Nullable()
 
 	tsSchema.ValueIndices = f.TypeIndices(NumericVectorPTypes()...)
 	if len(tsSchema.ValueIndices) == 0 {
@@ -101,7 +101,7 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 	if err != nil {
 		return nil, err
 	}
-	wideFrame.Fields[0].Vector.Append(lastTime)
+	wideFrame.Fields[0].Append(lastTime)
 
 	for rowIdx := 0; rowIdx < longLen; rowIdx++ { // loop over each row of longFrame
 		currentTime, err := timeAt(rowIdx)
@@ -114,7 +114,7 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 			lastTime = currentTime
 			for _, field := range wideFrame.Fields {
 				// extend all wideFrame Field Vectors for new row. If no value found, it will have zero value
-				field.Vector.Extend(1)
+				field.Extend(1)
 			}
 			wideFrame.Set(0, wideFrameRowCounter, currentTime)
 		}
@@ -151,7 +151,7 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 				newWideField := &Field{
 					Name:   longField.Name, // Note: currently duplicate names won't marshal to Arrow (https://github.com/grafana/grafana-plugin-sdk-go/issues/59)
 					Labels: labels,
-					Vector: NewVectorFromPType(longField.Vector.PrimitiveType(), wideFrameRowCounter+1),
+					Vector: NewVectorFromPType(longField.PrimitiveType(), wideFrameRowCounter+1),
 				}
 				wideFrame.Fields = append(wideFrame.Fields, newWideField)
 				valueFactorToFieldIdx[vIdx][factorKey] = currentFieldLen + i
@@ -187,11 +187,11 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	for _, vIdx := range tsSchema.ValueIndices { // all columns should be value columns except time
 		wideField := wideFrame.Fields[vIdx]
 		if pType, ok := uniqueValueNamesToType[wideField.Name]; ok {
-			if wideField.Vector.PrimitiveType() != pType {
-				return nil, fmt.Errorf("two fields in input frame may not have the same name but different types, field name %s has type %s but also type %s and field idx %v", wideField.Name, pType, wideField.Vector.PrimitiveType(), vIdx)
+			if wideField.PrimitiveType() != pType {
+				return nil, fmt.Errorf("two fields in input frame may not have the same name but different types, field name %s has type %s but also type %s and field idx %v", wideField.Name, pType, wideField.PrimitiveType(), vIdx)
 			}
 		}
-		uniqueValueNamesToType[wideField.Name] = wideField.Vector.PrimitiveType()
+		uniqueValueNamesToType[wideField.Name] = wideField.PrimitiveType()
 
 		if wideField.Labels != nil {
 			for k := range wideField.Labels {

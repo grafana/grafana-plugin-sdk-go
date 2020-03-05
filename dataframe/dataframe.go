@@ -241,6 +241,26 @@ func (f *Field) Len() int {
 	return f.Vector.Len()
 }
 
+// Append appends element i to the field.
+func (f *Field) Append(i interface{}) {
+	f.Vector.Append(i)
+}
+
+// Extend extends the field by i.
+func (f *Field) Extend(i int) {
+	f.Vector.Extend(i)
+}
+
+// PrimitiveType indicates the underlying primitive type of the field.
+func (f *Field) PrimitiveType() VectorPType {
+	return f.Vector.PrimitiveType()
+}
+
+// Nullable returns if the the field's elements are nullable.
+func (f *Field) Nullable() bool {
+	return f.Vector.PrimitiveType().Nullable()
+}
+
 // SetConfig modifies the Field's Config property to
 // be set to conf and returns the Field.
 func (f *Field) SetConfig(conf *FieldConfig) *Field {
