@@ -34,35 +34,44 @@ func TestCheckHealth(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, res)
 		require.Equal(t, pluginv2.CheckHealth_Response_OK, res.Status)
-		require.Empty(t, res.Info)
+		require.Empty(t, res.Message)
+		require.Empty(t, res.JsonDetails)
 	})
 
 	t.Run("When check health handler set should call that", func(t *testing.T) {
 		tcs := []struct {
-			status         HealthStatus
-			info           string
-			err            error
-			expectedStatus pluginv2.CheckHealth_Response_HealthStatus
-			expectedInfo   string
-			expectedError  bool
+			status              HealthStatus
+			message             string
+			jsonDetails         string
+			err                 error
+			expectedStatus      pluginv2.CheckHealth_Response_HealthStatus
+			expectedMessage     string
+			expectedJSONDetails string
+			expectedError       bool
 		}{
 			{
-				status:         HealthStatusUnknown,
-				info:           "unknown",
-				expectedStatus: pluginv2.CheckHealth_Response_UNKNOWN,
-				expectedInfo:   "unknown",
+				status:              HealthStatusUnknown,
+				message:             "unknown",
+				jsonDetails:         "{}",
+				expectedStatus:      pluginv2.CheckHealth_Response_UNKNOWN,
+				expectedMessage:     "unknown",
+				expectedJSONDetails: "{}",
 			},
 			{
-				status:         HealthStatusOk,
-				info:           "all good",
-				expectedStatus: pluginv2.CheckHealth_Response_OK,
-				expectedInfo:   "all good",
+				status:              HealthStatusOk,
+				message:             "all good",
+				jsonDetails:         "{}",
+				expectedStatus:      pluginv2.CheckHealth_Response_OK,
+				expectedMessage:     "all good",
+				expectedJSONDetails: "{}",
 			},
 			{
-				status:         HealthStatusError,
-				info:           "BOOM",
-				expectedStatus: pluginv2.CheckHealth_Response_ERROR,
-				expectedInfo:   "BOOM",
+				status:              HealthStatusError,
+				message:             "BOOM",
+				jsonDetails:         `{"error": "boom"}`,
+				expectedStatus:      pluginv2.CheckHealth_Response_ERROR,
+				expectedMessage:     "BOOM",
+				expectedJSONDetails: `{"error": "boom"}`,
 			},
 			{
 				err:           errors.New("BOOM"),
@@ -73,13 +82,17 @@ func TestCheckHealth(t *testing.T) {
 		for _, tc := range tcs {
 			adapter := &sdkAdapter{
 				CheckHealthHandler: &testCheckHealthHandler{
-					status: tc.status,
-					info:   tc.info,
-					err:    tc.err,
+					status:      tc.status,
+					message:     tc.message,
+					jsonDetails: tc.jsonDetails,
+					err:         tc.err,
 				},
 			}
 
-			res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealth_Request{})
+			req := &pluginv2.CheckHealth_Request{
+				Config: &pluginv2.PluginConfig{},
+			}
+			res, err := adapter.CheckHealth(context.Background(), req)
 			if tc.expectedError {
 				require.Error(t, err)
 				require.Nil(t, res)
@@ -87,21 +100,24 @@ func TestCheckHealth(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, res)
 				require.Equal(t, tc.expectedStatus, res.Status)
-				require.Equal(t, tc.expectedInfo, res.Info)
+				require.Equal(t, tc.expectedMessage, res.Message)
+				require.Equal(t, tc.expectedJSONDetails, res.JsonDetails)
 			}
 		}
 	})
 }
 
 type testCheckHealthHandler struct {
-	status HealthStatus
-	info   string
-	err    error
+	status      HealthStatus
+	message     string
+	jsonDetails string
+	err         error
 }
 
-func (h *testCheckHealthHandler) CheckHealth(ctx context.Context) (*CheckHealthResult, error) {
+func (h *testCheckHealthHandler) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
 	return &CheckHealthResult{
-		Status: h.status,
-		Info:   h.info,
+		Status:      h.status,
+		Message:     h.message,
+		JSONDetails: h.jsonDetails,
 	}, h.err
 }
