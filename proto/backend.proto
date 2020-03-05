@@ -51,8 +51,9 @@ message DataQuery {
   string refId = 1;
   int64 maxDataPoints = 2;
   int64 intervalMS = 3;
-  TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
-  bytes json = 5; // Arbitrary structure (model?  modelJson in v1)
+  TimeRange timeRange = 4;
+  bytes json = 5;
+  string path = 6;
 }
 
 message User {

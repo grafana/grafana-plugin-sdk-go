@@ -51,6 +51,7 @@ type DataQuery struct {
 	MaxDataPoints int64
 	Interval      time.Duration
 	TimeRange     TimeRange
+	Path          string
 	JSON          json.RawMessage
 }
 

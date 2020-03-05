@@ -89,6 +89,7 @@ func (t convertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
 		MaxDataPoints: q.MaxDataPoints,
 		IntervalMS:    q.Interval.Milliseconds(),
 		TimeRange:     t.TimeRange(q.TimeRange),
+		Path:          q.Path,
 		Json:          q.JSON,
 	}
 }
