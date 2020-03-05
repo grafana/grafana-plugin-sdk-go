@@ -14,6 +14,20 @@ func toProto() convertToProtobuf {
 	return convertToProtobuf{}
 }
 
+// User converts SDK version of user to proto version
+func (t convertToProtobuf) User(user *User) *pluginv2.User {
+	if user == nil {
+		return nil
+	}
+
+	return &pluginv2.User{
+		Login: user.Login,
+		Name:  user.Name,
+		Email: user.Email,
+		Role:  user.Role,
+	}
+}
+
 func (t convertToProtobuf) DataSourceConfig(config *DataSourceConfig) *pluginv2.DataSourceConfig {
 	if config == nil {
 		return nil
@@ -63,8 +77,9 @@ func (t convertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 
 func (t convertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealth_Response {
 	return &pluginv2.CheckHealth_Response{
-		Status: t.HealthStatus(res.Status),
-		Info:   res.Info,
+		Status:      t.HealthStatus(res.Status),
+		Message:     res.Message,
+		JsonDetails: res.JSONDetails,
 	}
 }
 
