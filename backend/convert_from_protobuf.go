@@ -116,3 +116,10 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 		User:         f.User(protoReq.User),
 	}
 }
+
+// HealthCheckRequest converts proto version to SDK version.
+func (f convertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealth_Request) *CheckHealthRequest {
+	return &CheckHealthRequest{
+		PluginConfig: f.PluginConfig(protoReq.Config),
+	}
+}

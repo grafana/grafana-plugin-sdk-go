@@ -77,8 +77,9 @@ func (t convertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 
 func (t convertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealth_Response {
 	return &pluginv2.CheckHealth_Response{
-		Status: t.HealthStatus(res.Status),
-		Info:   res.Info,
+		Status:      t.HealthStatus(res.Status),
+		Message:     res.Message,
+		JsonDetails: res.JSONDetails,
 	}
 }
 
