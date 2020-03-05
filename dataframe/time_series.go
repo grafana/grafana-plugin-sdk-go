@@ -76,8 +76,7 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 	inLen, err := inFrame.RowLen()
 	if err != nil {
 		return nil, err
-	}
-	if inLen == 0 {
+	} else if inLen == 0 {
 		return nil, fmt.Errorf("can not convert to wide series, input fields have no rows")
 	}
 
@@ -95,17 +94,17 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 		return inFrame.At(tsSchema.TimeIndex, idx).(time.Time), nil
 	}
 
-	lastTime, err := timeAt(0)
-	newFrame.Fields[0].Vector.Append(lastTime) // set initial time value
-	if err != nil {
-		return nil, err
-	}
-
+	// Initialize things for upcoming loop
 	seenFactors := map[string]struct{}{}                        // seen factor combinations
 	valueIdxFactorKeyToFieldIdx := make(map[int]map[string]int) // value key and factors -> fieldIdx of newFrame
 	for _, i := range tsSchema.ValueIndices {                   // initialize nested maps
 		valueIdxFactorKeyToFieldIdx[i] = make(map[string]int)
 	}
+	lastTime, err := timeAt(0) // set initial time value
+	if err != nil {
+		return nil, err
+	}
+	newFrame.Fields[0].Vector.Append(lastTime)
 
 	for rowIdx := 0; rowIdx < inLen; rowIdx++ { // loop over each Row of inFrame
 		currentTime, err := timeAt(rowIdx)
@@ -122,12 +121,15 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 			}
 			newFrame.Set(0, newFrameRowCounter, currentTime)
 		}
+
 		if currentTime.Before(lastTime) {
 			return nil, fmt.Errorf("long series must be sorted ascending by time to be converted")
 		}
 
-		sliceKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns idx:value tuples
-		namedKey := make([][2]string, len(tsSchema.FactorIndices)) // Factor Columns name:value tuples (Used for Labels)
+		sliceKey := make([][2]string, len(tsSchema.FactorIndices)) // factor columns idx:value tuples
+		namedKey := make([][2]string, len(tsSchema.FactorIndices)) // factor columns name:value tuples (used for labels)
+
+		// build labels
 		for i, factorIdx := range tsSchema.FactorIndices {
 			rawVal := inFrame.At(factorIdx, rowIdx)
 			var val string // null and empty factor values are both treated identically - as an empty string
@@ -148,25 +150,22 @@ func LongToWide(inFrame *Frame) (*Frame, error) {
 		}
 		factorKey := string(factorKeyRaw)
 
-		// Make New Fields as new Factor combinations are found
+		// make new Fields as new factor combinations are found
 		if _, ok := seenFactors[factorKey]; !ok {
-			// First index for the set of factors.
-			currentFieldLen := len(newFrame.Fields)
-			// New Field created for each Value Field from inFrame
+			currentFieldLen := len(newFrame.Fields) // first index for the set of factors.
 			seenFactors[factorKey] = struct{}{}
 			for i, vIdx := range tsSchema.ValueIndices {
-				name := inFrame.Fields[tsSchema.ValueIndices[i]].Name
-				pType := inFrame.Fields[tsSchema.ValueIndices[i]].Vector.PrimitiveType()
-				newVector := NewVectorFromPType(pType, newFrameRowCounter+1)
+				// a new Field is created for each value Field from inFrame
 				labels, err := labelsFromTupleSlice(namedKey)
 				if err != nil {
 					return nil, err
 				}
+				inField := inFrame.Fields[tsSchema.ValueIndices[i]]
 				newField := &Field{
 					// Note: currently duplicate names won't marshal to Arrow (https://github.com/grafana/grafana-plugin-sdk-go/issues/59)
-					Name:   name,
+					Name:   inField.Name,
 					Labels: labels,
-					Vector: newVector,
+					Vector: NewVectorFromPType(inField.Vector.PrimitiveType(), newFrameRowCounter+1),
 				}
 				newFrame.Fields = append(newFrame.Fields, newField)
 				valueIdxFactorKeyToFieldIdx[vIdx][factorKey] = currentFieldLen + i
