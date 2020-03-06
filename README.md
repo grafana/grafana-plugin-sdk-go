@@ -47,7 +47,7 @@ func main() {
 ### Generate Go code for Protobuf definitions
 
 ```
-make build-proto
+make protobuf
 ```
 
 ### Changing `generic_*.go` files in the `dataframe` package

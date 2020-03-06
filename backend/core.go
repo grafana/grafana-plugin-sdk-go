@@ -8,6 +8,14 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
 )
 
+// User represents the Grafana user.
+type User struct {
+	Login string
+	Name  string
+	Email string
+	Role  string
+}
+
 // DataSourceConfig configuration for a datasource plugin.
 type DataSourceConfig struct {
 	ID               int64
@@ -34,6 +42,7 @@ type DataQueryRequest struct {
 	PluginConfig PluginConfig
 	Headers      map[string]string
 	Queries      []DataQuery
+	User         *User
 }
 
 // DataQuery represents the query as sent from the frontend.
@@ -64,6 +73,7 @@ type CallResourceRequest struct {
 	URL          string
 	Headers      map[string][]string
 	Body         []byte
+	User         *User
 }
 
 type CallResourceResponse struct {
@@ -72,9 +82,14 @@ type CallResourceResponse struct {
 	Body    []byte
 }
 
+// CallResourceResponseSender used for sending resource call responses.
+type CallResourceResponseSender interface {
+	Send(*CallResourceResponse) error
+}
+
 // CallResourceHandler handles resource calls.
 type CallResourceHandler interface {
-	CallResource(ctx context.Context, req *CallResourceRequest) (*CallResourceResponse, error)
+	CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
 }
 
 // DataQueryHandler handles data source queries.

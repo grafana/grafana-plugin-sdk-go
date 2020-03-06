@@ -43,7 +43,7 @@ func (a *sdkAdapter) CollectMetrics(ctx context.Context, protoReq *pluginv2.Coll
 
 func (a *sdkAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealth_Request) (*pluginv2.CheckHealth_Response, error) {
 	if a.CheckHealthHandler != nil {
-		res, err := a.CheckHealthHandler.CheckHealth(ctx)
+		res, err := a.CheckHealthHandler.CheckHealth(ctx, fromProto().HealthCheckRequest(protoReq))
 		if err != nil {
 			return nil, err
 		}
@@ -64,19 +64,24 @@ func (a *sdkAdapter) DataQuery(ctx context.Context, req *pluginv2.DataQueryReque
 	return toProto().DataQueryResponse(resp)
 }
 
-func (a *sdkAdapter) CallResource(ctx context.Context, protoReq *pluginv2.CallResource_Request) (*pluginv2.CallResource_Response, error) {
+type callResourceResponseSenderFunc func(resp *CallResourceResponse) error
+
+func (fn callResourceResponseSenderFunc) Send(resp *CallResourceResponse) error {
+	return fn(resp)
+}
+
+func (a *sdkAdapter) CallResource(protoReq *pluginv2.CallResource_Request, protoSrv pluginv2.Core_CallResourceServer) error {
 	if a.CallResourceHandler == nil {
-		return &pluginv2.CallResource_Response{
+		return protoSrv.Send(&pluginv2.CallResource_Response{
 			Code: http.StatusNotImplemented,
-		}, nil
+		})
 	}
 
-	resp, err := a.CallResourceHandler.CallResource(ctx, fromProto().CallResourceRequest(protoReq))
-	if err != nil {
-		return nil, err
-	}
+	fn := callResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
+		return protoSrv.Send(toProto().CallResourceResponse(resp))
+	})
 
-	return toProto().CallResourceResponse(resp), nil
+	return a.CallResourceHandler.CallResource(protoSrv.Context(), fromProto().CallResourceRequest(protoReq), fn)
 }
 
 func (a *sdkAdapter) TransformData(ctx context.Context, req *pluginv2.DataQueryRequest, callBack plugin.TransformCallBack) (*pluginv2.DataQueryResponse, error) {

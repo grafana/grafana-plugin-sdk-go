@@ -14,6 +14,20 @@ func fromProto() convertFromProtobuf {
 	return convertFromProtobuf{}
 }
 
+// User converts proto version of user to SDK version
+func (f convertFromProtobuf) User(user *pluginv2.User) *User {
+	if user == nil {
+		return nil
+	}
+
+	return &User{
+		Login: user.Login,
+		Name:  user.Name,
+		Email: user.Email,
+		Role:  user.Role,
+	}
+}
+
 func (f convertFromProtobuf) DataSourceConfig(proto *pluginv2.DataSourceConfig) *DataSourceConfig {
 	if proto == nil {
 		return nil
@@ -59,15 +73,18 @@ func (f convertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	}
 }
 
+// DataQueryRequest converts proto version of DataQuery to SDK version
 func (f convertFromProtobuf) DataQueryRequest(protoReq *pluginv2.DataQueryRequest) *DataQueryRequest {
 	queries := make([]DataQuery, len(protoReq.Queries))
 	for i, q := range protoReq.Queries {
 		queries[i] = *f.DataQuery(q)
 	}
+
 	return &DataQueryRequest{
 		PluginConfig: f.PluginConfig(protoReq.Config),
 		Headers:      protoReq.Headers,
 		Queries:      queries,
+		User:         f.User(protoReq.User),
 	}
 }
 
@@ -96,5 +113,13 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 		URL:          protoReq.Url,
 		Headers:      headers,
 		Body:         protoReq.Body,
+		User:         f.User(protoReq.User),
+	}
+}
+
+// HealthCheckRequest converts proto version to SDK version.
+func (f convertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealth_Request) *CheckHealthRequest {
+	return &CheckHealthRequest{
+		PluginConfig: f.PluginConfig(protoReq.Config),
 	}
 }
