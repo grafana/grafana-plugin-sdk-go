@@ -119,7 +119,8 @@ message CallResource {
 
 service Diagnostics {
   rpc CollectMetrics(CollectMetrics.Request) returns (CollectMetrics.Response);
-  rpc CheckHealth(CheckHealth.Request) returns (CheckHealth.Response);
+  rpc CheckPluginHealth(CheckHealth.PluginRequest) returns (CheckHealth.Response);
+  rpc CheckDatasourceHealth(CheckHealth.DatasourceRequest) returns (CheckHealth.Response);
 }
 
 message CollectMetrics {
@@ -136,8 +137,12 @@ message CollectMetrics {
 }
 
 message CheckHealth {
-  message Request {
+  message PluginRequest {
     PluginConfig config = 1;
+  }
+
+  message DatasourceRequest {
+    DataSourceConfig config = 1;
   }
 
   message Response {
