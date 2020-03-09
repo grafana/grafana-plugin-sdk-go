@@ -9,13 +9,13 @@ option go_package = ".;pluginv2";
 //-----------------------------------------------
 
 message DataSourceConfig {
-  int64 id = 4;
-  string name = 5;
-  string url = 6;
-  string user = 7;
-  string database = 8;
-  bool basicAuthEnabled = 9;
-  string basicAuthUser = 10;
+  int64 id = 1;
+  string name = 2;
+  string url = 3;
+  string user = 4;
+  string database = 5;
+  bool basicAuthEnabled = 6;
+  string basicAuthUser = 7;
 }
 
 message PluginConfig {
@@ -26,6 +26,13 @@ message PluginConfig {
   map<string,string> decryptedSecureJsonData = 5;
   int64 updatedMS = 6;
   DataSourceConfig datasourceConfig = 7;
+}
+
+message User {
+  string login = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
 }
 
 //-----------------------------------------------
@@ -55,13 +62,6 @@ message DataQuery {
   int64 intervalMS = 3;
   TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
   bytes json = 5; // Arbitrary structure (model?  modelJson in v1)
-}
-
-message User {
-  string login = 1;
-  string name = 2;
-  string email = 3;
-  string role = 4;
 }
 
 message DataQueryRequest {
