@@ -60,7 +60,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 
 	tsSchema.FactorIndices = f.TypeIndices(VectorPTypeString, VectorPTypeNullableString)
 
-	// Extra Columns not Allowed
+	// Extra Columns not Allowed (including time)
 	if 1+len(tsSchema.ValueIndices)+len(tsSchema.FactorIndices) != len(f.Fields) {
 		return
 	}
@@ -106,10 +106,10 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 	wideFrame := New(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
 	wideFrameRowCounter := 0
 
-	seenFactors := map[string]struct{}{}                  // seen factor combinations
-	valueFactorToFieldIdx := make(map[int]map[string]int) // value field idx and factors key -> fieldIdx of longFrame (for insertion)
-	for _, i := range tsSchema.ValueIndices {             // initialize nested maps
-		valueFactorToFieldIdx[i] = make(map[string]int)
+	seenFactors := map[string]struct{}{}                      // seen factor combinations
+	valueFactorToWideFieldIdx := make(map[int]map[string]int) // value field idx and factors key -> fieldIdx of longFrame (for insertion)
+	for _, i := range tsSchema.ValueIndices {                 // initialize nested maps
+		valueFactorToWideFieldIdx[i] = make(map[string]int)
 	}
 
 	timeAt := func(idx int) (time.Time, error) { // get time.Time regardless if pointer
@@ -125,8 +125,8 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 	}
 	wideFrame.Fields[0].Append(lastTime)
 
-	for rowIdx := 0; rowIdx < longLen; rowIdx++ { // loop over each row of longFrame
-		currentTime, err := timeAt(rowIdx)
+	for longRowIdx := 0; longRowIdx < longLen; longRowIdx++ { // loop over each row of longFrame
+		currentTime, err := timeAt(longRowIdx)
 		if err != nil {
 			return nil, err
 		}
@@ -149,10 +149,10 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 		namedKey := make(tupleLabels, len(tsSchema.FactorIndices)) // factor columns name:value tuples (used for labels)
 
 		// build labels
-		for i, factorIdx := range tsSchema.FactorIndices {
-			val, _ := longFrame.ConcreteAt(factorIdx, rowIdx)
-			sliceKey[i] = tupleLabel{strconv.FormatInt(int64(factorIdx), 10), val.(string)}
-			namedKey[i] = tupleLabel{longFrame.Fields[factorIdx].Name, val.(string)}
+		for i, factorLongFieldIdx := range tsSchema.FactorIndices {
+			val, _ := longFrame.ConcreteAt(factorLongFieldIdx, longRowIdx)
+			sliceKey[i] = tupleLabel{strconv.FormatInt(int64(factorLongFieldIdx), 10), val.(string)}
+			namedKey[i] = tupleLabel{longFrame.Fields[factorLongFieldIdx].Name, val.(string)}
 		}
 		factorKey, err := sliceKey.MapKey()
 		if err != nil {
@@ -163,25 +163,25 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 		if _, ok := seenFactors[factorKey]; !ok {
 			currentFieldLen := len(wideFrame.Fields) // first index for the set of factors.
 			seenFactors[factorKey] = struct{}{}
-			for i, vIdx := range tsSchema.ValueIndices {
+			for offset, longFieldIdx := range tsSchema.ValueIndices {
 				// a new Field is created for each value Field from inFrame
 				labels, err := tupleLablesToLabels(namedKey)
 				if err != nil {
 					return nil, err
 				}
-				longField := longFrame.Fields[tsSchema.ValueIndices[i]]
+				longField := longFrame.Fields[tsSchema.ValueIndices[offset]]
 				newWideField := &Field{
 					Name:   longField.Name, // Note: currently duplicate names won't marshal to Arrow (https://github.com/grafana/grafana-plugin-sdk-go/issues/59)
 					Labels: labels,
 					Vector: NewVectorFromPType(longField.PrimitiveType(), wideFrameRowCounter+1),
 				}
 				wideFrame.Fields = append(wideFrame.Fields, newWideField)
-				valueFactorToFieldIdx[vIdx][factorKey] = currentFieldLen + i
+				valueFactorToWideFieldIdx[longFieldIdx][factorKey] = currentFieldLen + offset
 			}
 		}
-		for _, fieldIdx := range tsSchema.ValueIndices {
-			newFieldIdx := valueFactorToFieldIdx[fieldIdx][factorKey]
-			wideFrame.Set(newFieldIdx, wideFrameRowCounter, longFrame.CopyAt(fieldIdx, rowIdx))
+		for _, longFieldIdx := range tsSchema.ValueIndices {
+			wideFieldIdx := valueFactorToWideFieldIdx[longFieldIdx][factorKey]
+			wideFrame.Set(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
 		}
 	}
 
@@ -218,14 +218,13 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		return nil, fmt.Errorf("can not convert to long series, input fields have no rows")
 	}
 
-	uniqueValueNames := []string{}
-	uniqueValueNamesToType := make(map[string]VectorPType) // identify unique value columns by their name
-	// labels become string Fields, where the label keys are Field Names
-	uniqueFactorKeys := make(map[string]struct{})
-	labelKeyToWideIndices := make(map[string][]int)
-	sortedUniqueLabelKeys := []string{}
+	uniqueValueNames := []string{}                         // unique names of Fields that are number types
+	uniqueValueNamesToType := make(map[string]VectorPType) // unique number Field names to Field type
+	uniqueLabelKeys := make(map[string]struct{})           // unique Label keys, used to build schema
+	labelKeyToWideIndices := make(map[string][]int)        // unique label sets to corresponding Field indices of wideFrame
 
-	for _, vIdx := range tsSchema.ValueIndices { // all columns should be value columns except time
+	// Gather schema information from wideFrame required to build longFrame
+	for _, vIdx := range tsSchema.ValueIndices {
 		wideField := wideFrame.Fields[vIdx]
 		if pType, ok := uniqueValueNamesToType[wideField.Name]; ok {
 			if wideField.PrimitiveType() != pType {
@@ -236,55 +235,56 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			uniqueValueNames = append(uniqueValueNames, wideField.Name)
 		}
 
-		tKey, err := labelsTupleKey(wideField.Labels)
+		tKey, err := labelsTupleKey(wideField.Labels) // labels to a string, so it can be a map key
 		if err != nil {
 			return nil, err
 		}
 		labelKeyToWideIndices[tKey] = append(labelKeyToWideIndices[tKey], vIdx)
 
-		if wideField.Labels != nil {
-			for k := range wideField.Labels {
-				uniqueFactorKeys[k] = struct{}{}
-			}
+		for k := range wideField.Labels {
+			uniqueLabelKeys[k] = struct{}{}
 		}
 	}
 
+	// Sort things for more deterministic output
+	sort.Strings(uniqueValueNames)
+	sortedUniqueLabelKeys := []string{}
 	for k := range labelKeyToWideIndices {
 		sortedUniqueLabelKeys = append(sortedUniqueLabelKeys, k)
 	}
 	sort.Strings(sortedUniqueLabelKeys)
-
-	sort.Strings(uniqueValueNames)
-	uniqueFactorNames := make([]string, 0, len(uniqueFactorKeys))
-	for k := range uniqueFactorKeys {
+	uniqueFactorNames := make([]string, 0, len(uniqueLabelKeys))
+	for k := range uniqueLabelKeys {
 		uniqueFactorNames = append(uniqueFactorNames, k)
 	}
 	sort.Strings(uniqueFactorNames)
 
+	// build new Frame with new schema
 	longFrame := New(wideFrame.Name, // time , value fields (numbers)..., factor fields (strings)...
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
 
 	i := 1
-	valueNameToFieldIdx := map[string]int{} // valueName -> field index of longFrame
+	valueNameToLongFieldIdx := map[string]int{} // valueName -> field index of longFrame
 	for _, name := range uniqueValueNames {
 		longFrame.Fields = append(longFrame.Fields, &Field{ // create value (number) vectors
 			Name:   name,
 			Vector: NewVectorFromPType(uniqueValueNamesToType[name], 0),
 		})
-		valueNameToFieldIdx[name] = i
+		valueNameToLongFieldIdx[name] = i
 		i++
 	}
 
-	factorNameToFieldIdx := map[string]int{} // label Key -> field index for label value of longFrame
+	factorNameToLongFieldIdx := map[string]int{} // label Key -> field index for label value of longFrame
 	for _, name := range uniqueFactorNames {
 		longFrame.Fields = append(longFrame.Fields, NewField(name, nil, []string{})) // create factor fields
-		factorNameToFieldIdx[name] = i
+		factorNameToLongFieldIdx[name] = i
 		i++
 	}
-	longFrameCounter := 0
 
-	for rowIdx := 0; rowIdx < wideLen; rowIdx++ { // loop over each row of wideFrame
-		time, ok := wideFrame.ConcreteAt(tsSchema.TimeIndex, rowIdx)
+	// Populate data of longFrame from wideframe
+	longFrameCounter := 0
+	for wideRowIdx := 0; wideRowIdx < wideLen; wideRowIdx++ { // loop over each row of wideFrame
+		time, ok := wideFrame.ConcreteAt(tsSchema.TimeIndex, wideRowIdx)
 		if !ok {
 			return nil, fmt.Errorf("time may not have nil values")
 		}
@@ -292,15 +292,15 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			longFrame.Extend(1) // grow each Fields's vector by 1
 			longFrame.Set(0, longFrameCounter, time)
 
-			for i, fieldIdx := range labelKeyToWideIndices[labelKey] {
-				wideField := wideFrame.Fields[fieldIdx]
+			for i, wideFieldIdx := range labelKeyToWideIndices[labelKey] {
+				wideField := wideFrame.Fields[wideFieldIdx]
 				if i == 0 {
 					for k, v := range wideField.Labels {
-						longFrame.Set(factorNameToFieldIdx[k], longFrameCounter, v)
+						longFrame.Set(factorNameToLongFieldIdx[k], longFrameCounter, v)
 					}
 				}
-				valueFieldIdx := valueNameToFieldIdx[wideField.Name]
-				longFrame.Set(valueFieldIdx, longFrameCounter, wideFrame.CopyAt(fieldIdx, rowIdx))
+				longValueFieldIdx := valueNameToLongFieldIdx[wideField.Name]
+				longFrame.Set(longValueFieldIdx, longFrameCounter, wideFrame.CopyAt(wideFieldIdx, wideRowIdx))
 
 			}
 
