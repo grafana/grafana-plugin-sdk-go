@@ -154,18 +154,6 @@ message CheckHealth {
 }
 
 //-----------------------------------------------
-// Allow plugins to access other plugins
-// (TODO: Streaming Signature, or Grafana-Server will be the Server for this)
-//
-//
-//-----------------------------------------------
-
-service GrafanaPlatform {
-  rpc Resource(CallResource.Request) returns (stream CallResource.Response);
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
-}
-
-//-----------------------------------------------
 // Temp? for GEL Only.
 // Callback can maybe be replaced with Grafana Platform in future iteration.
 //-----------------------------------------------
@@ -176,73 +164,4 @@ service Transform {
 
 service TransformCallBack {
   rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
-}
-
-//-----------------------------------------------------------------
-// Streaming support aimed to support similar features to STOMP
-// consider Apache Flight for more complex/standard
-//-----------------------------------------------------------------
-
-message StreamingRequest {
-  int64 pluginId = 1; // match the id from connect request (app or datasource)
-
-  // Environment info
-  map<string,string> headers = 2;
-
-  // The topic we are talking to
-  string topic = 3;
-
-  // The message
-  string body = 4;
-
-  // Flag if the user is already listening
-  bool subscribed = 5;
-}
-
-message StreamingMessage {
-  int64 pluginId = 1;
-  string topic = 2; // will be broadcast to eveyone listening to this app|ds + topic
-  string message = 3; // JSON Blob
-}
-
-message StreamingClose {
-  int64 count = 1;
-}
-
-service StreamingPlugin {
-  // Called by grafana before the first request
-  // Grafana server will set up a websocket that will broadcast to all listeners
-  rpc Connect(PluginConfig) returns (stream StreamingMessage);
-
-  // If the message is not empty, send that to the user
-  // throwing an error will make sure the user is not subscribed
-  rpc Process(StreamingRequest) returns (StreamingMessage);
-
-  // Stop streaming to that instance, returns the number of open connections
-  rpc Disconnect(google.protobuf.Empty) returns (StreamingClose);
-}
-
-//-----------------------------------------------------------------
-// Renderer (do we want this definition here?)
-// OR -- can we do this via Request(PluginRequest)???
-//-----------------------------------------------------------------
-
-message RenderRequest {
-  string url = 1;
-  int32 width = 2;
-  int32 height = 3;
-  int32 timeout = 4;
-  string timezone = 5;
-  string encoding = 6;
-  string filePath = 7;
-  string renderKey = 8;
-  string domain = 9;
-}
-
-message RenderResponse {
-  string error = 1;
-}
-
-service Renderer {
-  rpc Render(RenderRequest) returns (RenderResponse);
 }
