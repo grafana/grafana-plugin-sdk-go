@@ -63,20 +63,20 @@ func (t convertToProtobuf) TimeRange(tr TimeRange) *pluginv2.TimeRange {
 	}
 }
 
-func (t convertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealth_Response_HealthStatus {
+func (t convertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealthResponse_HealthStatus {
 	switch status {
 	case HealthStatusUnknown:
-		return pluginv2.CheckHealth_Response_UNKNOWN
+		return pluginv2.CheckHealthResponse_UNKNOWN
 	case HealthStatusOk:
-		return pluginv2.CheckHealth_Response_OK
+		return pluginv2.CheckHealthResponse_OK
 	case HealthStatusError:
-		return pluginv2.CheckHealth_Response_ERROR
+		return pluginv2.CheckHealthResponse_ERROR
 	}
 	panic("unsupported protobuf health status type in sdk")
 }
 
-func (t convertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealth_Response {
-	return &pluginv2.CheckHealth_Response{
+func (t convertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealthResponse {
+	return &pluginv2.CheckHealthResponse{
 		Status:      t.HealthStatus(res.Status),
 		Message:     res.Message,
 		JsonDetails: res.JSONDetails,
@@ -93,19 +93,19 @@ func (t convertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
 	}
 }
 
-func (t convertToProtobuf) DataQueryRequest(req *DataQueryRequest) *pluginv2.DataQueryRequest {
+func (t convertToProtobuf) DataQueryRequest(req *DataQueryRequest) *pluginv2.QueryDataRequest {
 	queries := make([]*pluginv2.DataQuery, len(req.Queries))
 	for i, q := range req.Queries {
 		queries[i] = t.DataQuery(q)
 	}
-	return &pluginv2.DataQueryRequest{
+	return &pluginv2.QueryDataRequest{
 		Config:  t.PluginConfig(req.PluginConfig),
 		Headers: req.Headers,
 		Queries: queries,
 	}
 }
 
-func (t convertToProtobuf) DataQueryResponse(res *DataQueryResponse) (*pluginv2.DataQueryResponse, error) {
+func (t convertToProtobuf) DataQueryResponse(res *DataQueryResponse) (*pluginv2.QueryDataResponse, error) {
 	encodedFrames := make([][]byte, len(res.Frames))
 	var err error
 	for i, frame := range res.Frames {
@@ -115,20 +115,20 @@ func (t convertToProtobuf) DataQueryResponse(res *DataQueryResponse) (*pluginv2.
 		}
 	}
 
-	return &pluginv2.DataQueryResponse{
+	return &pluginv2.QueryDataResponse{
 		Frames:   encodedFrames,
 		Metadata: res.Metadata,
 	}, nil
 }
 
-func (t convertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *pluginv2.CallResource_Response {
-	headers := map[string]*pluginv2.CallResource_StringList{}
+func (t convertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *pluginv2.CallResourceResponse {
+	headers := map[string]*pluginv2.StringList{}
 
 	for key, values := range resp.Headers {
-		headers[key] = &pluginv2.CallResource_StringList{Values: values}
+		headers[key] = &pluginv2.StringList{Values: values}
 	}
 
-	return &pluginv2.CallResource_Response{
+	return &pluginv2.CallResourceResponse{
 		Headers: headers,
 		Code:    int32(resp.Status),
 		Body:    resp.Body,

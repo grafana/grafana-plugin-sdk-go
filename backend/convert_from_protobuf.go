@@ -73,8 +73,8 @@ func (f convertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	}
 }
 
-// DataQueryRequest converts proto version of DataQuery to SDK version
-func (f convertFromProtobuf) DataQueryRequest(protoReq *pluginv2.DataQueryRequest) *DataQueryRequest {
+// DataQueryRequest converts proto version of query data request to SDK version
+func (f convertFromProtobuf) DataQueryRequest(protoReq *pluginv2.QueryDataRequest) *DataQueryRequest {
 	queries := make([]DataQuery, len(protoReq.Queries))
 	for i, q := range protoReq.Queries {
 		queries[i] = *f.DataQuery(q)
@@ -88,7 +88,7 @@ func (f convertFromProtobuf) DataQueryRequest(protoReq *pluginv2.DataQueryReques
 	}
 }
 
-func (f convertFromProtobuf) DataQueryResponse(protoRes *pluginv2.DataQueryResponse) (*DataQueryResponse, error) {
+func (f convertFromProtobuf) DataQueryResponse(protoRes *pluginv2.QueryDataResponse) (*DataQueryResponse, error) {
 	frames := make([]*dataframe.Frame, len(protoRes.Frames))
 	var err error
 	for i, encodedFrame := range protoRes.Frames {
@@ -100,7 +100,7 @@ func (f convertFromProtobuf) DataQueryResponse(protoRes *pluginv2.DataQueryRespo
 	return &DataQueryResponse{Metadata: protoRes.Metadata, Frames: frames}, nil
 }
 
-func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource_Request) *CallResourceRequest {
+func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResourceRequest) *CallResourceRequest {
 	headers := map[string][]string{}
 	for k, values := range protoReq.Headers {
 		headers[k] = values.Values
@@ -118,7 +118,7 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 }
 
 // HealthCheckRequest converts proto version to SDK version.
-func (f convertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealth_Request) *CheckHealthRequest {
+func (f convertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
 	return &CheckHealthRequest{
 		PluginConfig: f.PluginConfig(protoReq.Config),
 	}

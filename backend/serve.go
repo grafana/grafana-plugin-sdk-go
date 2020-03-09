@@ -25,8 +25,12 @@ func Serve(opts ServeOpts) error {
 		DiagnosticsServer: sdkAdapter,
 	}
 
+	if opts.CallResourceHandler != nil {
+		pluginOpts.ResourceServer = sdkAdapter
+	}
+
 	if opts.DataQueryHandler != nil {
-		pluginOpts.CoreServer = sdkAdapter
+		pluginOpts.DataServer = sdkAdapter
 	}
 
 	if opts.TransformDataHandler != nil {
