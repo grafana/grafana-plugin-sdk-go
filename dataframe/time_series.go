@@ -83,9 +83,10 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 // Additionally, if the time index is a *time.Time field, it will become time.Time Field. If a *string Field has nil values, they are equivalent to "" when converted into labels.
 //
 // An error is returned if any of the following are true:
+// The input frame is not a long formated time series frame.
+// The input frame's Fields are of length 0.
 // The time index is not sorted ascending by time.
 // The time index has null values.
-// The input frame is not considered a long formated time series frame.
 //
 // With a conversion of Long to Wide, and then back to Long via WideToLong(), the outputted Long Frame
 // may not match the original inputted Long frame.
@@ -187,7 +188,23 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 	return wideFrame, nil
 }
 
-// WideToLong converts a Wide formated time series Frame to a Long formated time series Frame.
+// WideToLong converts a Wide formated time series Frame to a Long formated time series Frame (see TimeSeriesType for descriptions). The first Field of type time.Time or *time.Time in wideFrame will be the time index for the series, and will be the first field of the outputted wideFrame.
+//
+// During conversion: All the unique keys in all of the Labels across the Fields of wideFrame become string
+// Fields with the corresponding name in longFrame. The corresponding Labels values become values in those Fields of longFrame.
+// For each unique number type Field across the Fields of wideFrame, a Field of the same type is created in longFrame.
+// For each unique set of Labels across the Fields of wideFrame, a row is added to longFrame, and then
+// for each unique number type Field, the corresponding number Field of longFrame is set.
+//
+// An error is returned if any of the following are true:
+// The input frame is not a wide formated time series frame.
+// The input row has no rows.
+// The time index not sorted ascending by time.
+// The time index has null values.
+// Two numeric Fields have the same name but different types.
+//
+// With a conversion of Wide to Long, and then back to Wide via LongToWide(), the outputted Wide Frame
+// may not match the original inputted Wide frame.
 func WideToLong(wideFrame *Frame) (*Frame, error) {
 	tsSchema := wideFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeWide {
