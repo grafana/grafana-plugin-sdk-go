@@ -93,7 +93,7 @@ func (t convertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
 	}
 }
 
-func (t convertToProtobuf) QueryDataRequest(req *DataQueryRequest) *pluginv2.QueryDataRequest {
+func (t convertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.QueryDataRequest {
 	queries := make([]*pluginv2.DataQuery, len(req.Queries))
 	for i, q := range req.Queries {
 		queries[i] = t.DataQuery(q)
@@ -105,7 +105,7 @@ func (t convertToProtobuf) QueryDataRequest(req *DataQueryRequest) *pluginv2.Que
 	}
 }
 
-func (t convertToProtobuf) QueryDataResponse(res *DataQueryResponse) (*pluginv2.QueryDataResponse, error) {
+func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
 	encodedFrames := make([][]byte, len(res.Frames))
 	var err error
 	for i, frame := range res.Frames {

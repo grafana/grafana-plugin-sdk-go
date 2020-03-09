@@ -9,12 +9,12 @@ type TransformHandlers interface {
 }
 
 type TransformDataHandler interface {
-	TransformData(ctx context.Context, req *DataQueryRequest, callBack TransformDataCallBackHandler) (*DataQueryResponse, error)
+	TransformData(ctx context.Context, req *QueryDataRequest, callBack TransformDataCallBackHandler) (*QueryDataResponse, error)
 }
 
 // Callback
 
 type TransformDataCallBackHandler interface {
 	// TODO: Forget if I actually need PluginConfig on the callback or not.
-	QueryData(ctx context.Context, req *DataQueryRequest) (*DataQueryResponse, error)
+	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }

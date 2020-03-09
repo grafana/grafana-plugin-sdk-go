@@ -8,7 +8,7 @@ import (
 type ServeOpts struct {
 	CheckHealthHandler   CheckHealthHandler
 	CallResourceHandler  CallResourceHandler
-	DataQueryHandler     DataQueryHandler
+	QueryDataHandler     QueryDataHandler
 	TransformDataHandler TransformDataHandler
 }
 
@@ -17,7 +17,7 @@ func Serve(opts ServeOpts) error {
 	sdkAdapter := &sdkAdapter{
 		CheckHealthHandler:   opts.CheckHealthHandler,
 		CallResourceHandler:  opts.CallResourceHandler,
-		DataQueryHandler:     opts.DataQueryHandler,
+		QueryDataHandler:     opts.QueryDataHandler,
 		TransformDataHandler: opts.TransformDataHandler,
 	}
 
@@ -29,7 +29,7 @@ func Serve(opts ServeOpts) error {
 		pluginOpts.ResourceServer = sdkAdapter
 	}
 
-	if opts.DataQueryHandler != nil {
+	if opts.QueryDataHandler != nil {
 		pluginOpts.DataServer = sdkAdapter
 	}
 

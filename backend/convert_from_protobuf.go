@@ -73,13 +73,13 @@ func (f convertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	}
 }
 
-func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataRequest) *DataQueryRequest {
+func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataRequest) *QueryDataRequest {
 	queries := make([]DataQuery, len(protoReq.Queries))
 	for i, q := range protoReq.Queries {
 		queries[i] = *f.DataQuery(q)
 	}
 
-	return &DataQueryRequest{
+	return &QueryDataRequest{
 		PluginConfig: f.PluginConfig(protoReq.Config),
 		Headers:      protoReq.Headers,
 		Queries:      queries,
@@ -87,7 +87,7 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 	}
 }
 
-func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*DataQueryResponse, error) {
+func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
 	frames := make([]*dataframe.Frame, len(protoRes.Frames))
 	var err error
 	for i, encodedFrame := range protoRes.Frames {
@@ -96,7 +96,7 @@ func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 			return nil, err
 		}
 	}
-	return &DataQueryResponse{Metadata: protoRes.Metadata, Frames: frames}, nil
+	return &QueryDataResponse{Metadata: protoRes.Metadata, Frames: frames}, nil
 }
 
 func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResourceRequest) *CallResourceRequest {

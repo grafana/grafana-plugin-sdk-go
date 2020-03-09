@@ -15,7 +15,7 @@ import (
 // sdkAdapter adapter between low level plugin protocol and SDK interfaces.
 type sdkAdapter struct {
 	CheckHealthHandler   CheckHealthHandler
-	DataQueryHandler     DataQueryHandler
+	QueryDataHandler     QueryDataHandler
 	CallResourceHandler  CallResourceHandler
 	TransformDataHandler TransformDataHandler
 }
@@ -56,7 +56,7 @@ func (a *sdkAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHe
 }
 
 func (a *sdkAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	resp, err := a.DataQueryHandler.DataQuery(ctx, fromProto().QueryDataRequest(req))
+	resp, err := a.QueryDataHandler.QueryData(ctx, fromProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +97,7 @@ type transformDataCallBackWrapper struct {
 	callBack plugin.TransformDataCallBack
 }
 
-func (tw *transformDataCallBackWrapper) QueryData(ctx context.Context, req *DataQueryRequest) (*DataQueryResponse, error) {
+func (tw *transformDataCallBackWrapper) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
 	protoRes, err := tw.callBack.QueryData(ctx, toProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err

@@ -38,7 +38,7 @@ type PluginConfig struct {
 	DataSourceConfig        *DataSourceConfig
 }
 
-type DataQueryRequest struct {
+type QueryDataRequest struct {
 	PluginConfig PluginConfig
 	Headers      map[string]string
 	Queries      []DataQuery
@@ -54,8 +54,8 @@ type DataQuery struct {
 	JSON          json.RawMessage
 }
 
-// DataQueryResponse holds the results for a given query.
-type DataQueryResponse struct {
+// QueryDataResponse holds the results for a given query.
+type QueryDataResponse struct {
 	Frames   []*dataframe.Frame
 	Metadata map[string]string
 }
@@ -92,13 +92,7 @@ type CallResourceHandler interface {
 	CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
 }
 
-// DataQueryHandler handles data source queries.
-type DataQueryHandler interface {
-	DataQuery(ctx context.Context, req *DataQueryRequest) (*DataQueryResponse, error)
-}
-
-// PluginHandlers is the collection of handlers that corresponds to the
-// grpc "service BackendPlugin".
-type PluginHandlers interface {
-	DataQueryHandler
+// QueryDataHandler handles data queries.
+type QueryDataHandler interface {
+	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }
