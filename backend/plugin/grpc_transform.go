@@ -15,7 +15,7 @@ type TransformServer interface {
 	TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callback TransformDataCallBack) (*pluginv2.QueryDataResponse, error)
 }
 
-type transformClient interface {
+type TransformClient interface {
 	TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callback TransformDataCallBack) (*pluginv2.QueryDataResponse, error)
 }
 
@@ -65,7 +65,7 @@ func (t *transformGRPCServer) TransformData(ctx context.Context, req *pluginv2.Q
 		return nil, err
 	}
 	defer conn.Close()
-	api := &transformCallBackGrpcClient{pluginv2.NewTransformDataCallBackClient(conn)}
+	api := &transformDataCallBackGrpcClient{pluginv2.NewTransformDataCallBackClient(conn)}
 	return t.server.TransformData(ctx, req, api)
 }
 
@@ -75,7 +75,7 @@ type transformGRPCClient struct {
 }
 
 func (t *transformGRPCClient) TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callBack TransformDataCallBack) (*pluginv2.QueryDataResponse, error) {
-	callBackServer := &transformCallBackGrpcServer{Impl: callBack}
+	callBackServer := &transformDataCallBackGrpcServer{Impl: callBack}
 
 	var s *grpc.Server
 	serverFunc := func(opts []grpc.ServerOption) *grpc.Server {
@@ -95,23 +95,23 @@ func (t *transformGRPCClient) TransformData(ctx context.Context, req *pluginv2.Q
 
 // Callback
 
-type transformCallBackGrpcServer struct {
+type transformDataCallBackGrpcServer struct {
 	Impl TransformDataCallBack
 }
 
-func (g *transformCallBackGrpcServer) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
+func (g *transformDataCallBackGrpcServer) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	return g.Impl.QueryData(ctx, req)
 }
 
-type transformCallBackGrpcClient struct {
+type transformDataCallBackGrpcClient struct {
 	client pluginv2.TransformDataCallBackClient
 }
 
-func (t *transformCallBackGrpcClient) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
+func (t *transformDataCallBackGrpcClient) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	return t.client.QueryData(ctx, req)
 }
 
 var _ pluginv2.TransformServer = &transformGRPCServer{}
-var _ transformClient = &transformGRPCClient{}
-var _ TransformDataCallBack = &transformCallBackGrpcServer{}
-var _ TransformDataCallBack = &transformCallBackGrpcClient{}
+var _ TransformClient = &transformGRPCClient{}
+var _ TransformDataCallBack = &transformDataCallBackGrpcServer{}
+var _ TransformDataCallBack = &transformDataCallBackGrpcClient{}
