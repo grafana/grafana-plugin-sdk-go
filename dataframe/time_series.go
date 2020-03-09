@@ -13,11 +13,18 @@ type TimeSeriesType int
 
 // TODO: Create and link to Grafana documentation on Long vs Wide
 const (
-	// TimeSeriesTypeNot means this dataframe is not a valid time series.
+	// TimeSeriesTypeNot means this dataframe is not a valid time series. This means it lacks at least
+	// one of a time Field and a number Field.
 	TimeSeriesTypeNot TimeSeriesType = iota
-	// TimeSeriesTypeLong means this dataframe can be treated as a "Long" time series. TODO link (see above).
+	// TimeSeriesTypeLong means this dataframe can be treated as a "Long" time series.
+	//
+	// A Long series has one or more string Fields, disregards Labels on Fields, and generally
+	// repeated time values in the time index.
 	TimeSeriesTypeLong
-	// TimeSeriesTypeLong means this dataframe can be treated as a "Wide" time series. TODO link (see above).
+	// TimeSeriesTypeLong means this dataframe can be treated as a "Wide" time series.
+	//
+	// A Wide series has no string fields, should not have repeated time values, and generally
+	// uses labels.
 	TimeSeriesTypeWide
 )
 
@@ -66,8 +73,22 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	return
 }
 
-// LongToWide converts a Long formated time series Frame to a Wide format.
-// The input series must be sorted ascending by time.
+// LongToWide converts a Long formated time series Frame to a Wide format (see TimeSeriesType for descriptions).
+// The first Field of type time.Time or *time.Time will be the time index for the series,
+// and will be the first field of the outputted longFrame.
+//
+// During conversion: String Fields in the longFrame become Labels on the Fields of wideFrame. The name of each string Field becomes a label key, and the values of that Field become label values.
+// Each unique combination of value Fields and set of Label key/values become a Field of longFrame.
+//
+// Additionally, if the time index is a *time.Time field, it will become time.Time Field. If a *string Field has nil values, they are equivalent to "" when converted into labels.
+//
+// An error is returned if any of the following are true:
+// The time index is not sorted ascending by time.
+// The time index has null values.
+// The input frame is not considered a long formated time series frame.
+//
+// With a conversion of Long to Wide, and then back to Long via WideToLong(), the outputted Long Frame
+// may not match the original inputted Long frame.
 func LongToWide(longFrame *Frame) (*Frame, error) {
 	tsSchema := longFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeLong {
@@ -227,7 +248,6 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
 
 	i := 1
-	// TODO: These need to be sorted. Since they come from maps (otherwise result order unpredictable).
 	valueNameToFieldIdx := map[string]int{} // valueName -> field index of longFrame
 	for _, name := range uniqueValueNames {
 		longFrame.Fields = append(longFrame.Fields, &Field{ // create value (number) vectors
@@ -277,11 +297,11 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 // TimeSeriesSchema is information about a Dataframe's schema.  It is populated from
 // the Frame's TimeSeriesSchema() method.
 type TimeSeriesSchema struct {
-	Type           TimeSeriesType
-	TimeIndex      int
-	TimeIsNullable bool
-	ValueIndices   []int
-	FactorIndices  []int
+	Type           TimeSeriesType // the type of series, as determinted by frame.TimeSeriesSchema()
+	TimeIndex      int            // Field index of the time series index
+	TimeIsNullable bool           // true if the time index is nullable (of *time.Time)
+	ValueIndices   []int          // Field indices of Number type columns, as determinted by NumericVectorPTypes
+	FactorIndices  []int          // Field indices of string or *string Fields
 }
 
 type tupleLabels []tupleLabel
