@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/apache/arrow/go/arrow"
@@ -70,6 +72,16 @@ func MarshalArrow(f *Frame) ([]byte, error) {
 	return fb.Buff.Bytes(), nil
 }
 
+const fieldNamePrefix = "%v: %v"
+
+func prefixFieldName(fieldIdx int, name string) string {
+	return fmt.Sprintf("%s: %s", strconv.Itoa(fieldIdx), name)
+}
+
+func prefixFieldNameStrip(name string) string {
+	return strings.SplitN(name, ":", 1)[0]
+}
+
 // buildArrowFields builds Arrow field definitions from a DataFrame.
 func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 	arrowFields := make([]arrow.Field, len(f.Fields))
@@ -80,7 +92,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			return nil, err
 		}
 
-		fieldMeta := map[string]string{"name": field.Name}
+		fieldMeta := map[string]string{"name": prefixFieldName(i, field.Name)}
 
 		if field.Labels != nil {
 			if fieldMeta["labels"], err = toJSONString(field.Labels); err != nil {
@@ -301,7 +313,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	nullable := make([]bool, len(schema.Fields()))
 	for idx, field := range schema.Fields() {
 		sdkField := &Field{
-			Name: field.Name,
+			Name: prefixFieldNameStrip(field.Name),
 		}
 		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
 			if err := json.Unmarshal([]byte(labelsAsString), &sdkField.Labels); err != nil {
