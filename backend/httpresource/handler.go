@@ -23,7 +23,7 @@ type httpResourceHandler struct {
 	handler http.Handler
 }
 
-func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.CallResourceRequest) (*backend.CallResourceResponse, error) {
+func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	var reqBodyReader io.Reader
 	if len(req.Body) > 0 {
 		reqBodyReader = bytes.NewReader(req.Body)
@@ -33,7 +33,7 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 	ctx = withUser(ctx, req.User)
 	reqURL, err := url.Parse(req.URL)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	resourceURL := req.Path
@@ -47,17 +47,18 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 
 	httpReq, err := http.NewRequestWithContext(ctx, req.Method, resourceURL, reqBodyReader)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for key, values := range req.Headers {
 		httpReq.Header[key] = values
 	}
 
-	writer := newResponseWriter()
+	writer := newResponseWriter(sender)
 	h.handler.ServeHTTP(writer, httpReq)
+	writer.close()
 
-	return writer.Result(), nil
+	return nil
 }
 
 type pluginConfigKey struct{}
