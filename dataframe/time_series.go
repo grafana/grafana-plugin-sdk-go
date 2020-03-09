@@ -245,6 +245,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		i++
 	}
 	longFrameCounter := 0
+
 	for rowIdx := 0; rowIdx < wideLen; rowIdx++ { // loop over each row of wideFrame
 		time, ok := wideFrame.ConcreteAt(tsSchema.TimeIndex, rowIdx)
 		if !ok {
@@ -312,7 +313,7 @@ func (t *tupleLabels) SortBtKey() {
 		return
 	}
 	sort.Slice((*t)[:], func(i, j int) bool {
-		return (*t)[i][0] < (*t)[j][1]
+		return (*t)[i][0] < (*t)[j][0]
 	})
 }
 
