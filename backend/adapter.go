@@ -56,12 +56,12 @@ func (a *sdkAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHe
 }
 
 func (a *sdkAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	resp, err := a.DataQueryHandler.DataQuery(ctx, fromProto().DataQueryRequest(req))
+	resp, err := a.DataQueryHandler.DataQuery(ctx, fromProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err
 	}
 
-	return toProto().DataQueryResponse(resp)
+	return toProto().QueryDataResponse(resp)
 }
 
 type callResourceResponseSenderFunc func(resp *CallResourceResponse) error
@@ -85,12 +85,12 @@ func (a *sdkAdapter) CallResource(protoReq *pluginv2.CallResourceRequest, protoS
 }
 
 func (a *sdkAdapter) TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callBack plugin.TransformDataCallBack) (*pluginv2.QueryDataResponse, error) {
-	resp, err := a.TransformDataHandler.TransformData(ctx, fromProto().DataQueryRequest(req), &transformDataCallBackWrapper{callBack})
+	resp, err := a.TransformDataHandler.TransformData(ctx, fromProto().QueryDataRequest(req), &transformDataCallBackWrapper{callBack})
 	if err != nil {
 		return nil, err
 	}
 
-	return toProto().DataQueryResponse(resp)
+	return toProto().QueryDataResponse(resp)
 }
 
 type transformDataCallBackWrapper struct {
@@ -98,10 +98,10 @@ type transformDataCallBackWrapper struct {
 }
 
 func (tw *transformDataCallBackWrapper) QueryData(ctx context.Context, req *DataQueryRequest) (*DataQueryResponse, error) {
-	protoRes, err := tw.callBack.QueryData(ctx, toProto().DataQueryRequest(req))
+	protoRes, err := tw.callBack.QueryData(ctx, toProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err
 	}
 
-	return fromProto().DataQueryResponse(protoRes)
+	return fromProto().QueryDataResponse(protoRes)
 }

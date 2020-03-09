@@ -73,8 +73,7 @@ func (f convertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	}
 }
 
-// DataQueryRequest converts proto version of query data request to SDK version
-func (f convertFromProtobuf) DataQueryRequest(protoReq *pluginv2.QueryDataRequest) *DataQueryRequest {
+func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataRequest) *DataQueryRequest {
 	queries := make([]DataQuery, len(protoReq.Queries))
 	for i, q := range protoReq.Queries {
 		queries[i] = *f.DataQuery(q)
@@ -88,7 +87,7 @@ func (f convertFromProtobuf) DataQueryRequest(protoReq *pluginv2.QueryDataReques
 	}
 }
 
-func (f convertFromProtobuf) DataQueryResponse(protoRes *pluginv2.QueryDataResponse) (*DataQueryResponse, error) {
+func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*DataQueryResponse, error) {
 	frames := make([]*dataframe.Frame, len(protoRes.Frames))
 	var err error
 	for i, encodedFrame := range protoRes.Frames {
