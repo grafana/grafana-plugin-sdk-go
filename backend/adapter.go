@@ -41,9 +41,23 @@ func (a *sdkAdapter) CollectMetrics(ctx context.Context, protoReq *pluginv2.Coll
 	}, nil
 }
 
-func (a *sdkAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealth_Request) (*pluginv2.CheckHealth_Response, error) {
+func (a *sdkAdapter) CheckPluginHealth(ctx context.Context, protoReq *pluginv2.CheckHealth_PluginRequest) (*pluginv2.CheckHealth_Response, error) {
 	if a.CheckHealthHandler != nil {
-		res, err := a.CheckHealthHandler.CheckHealth(ctx, fromProto().HealthCheckRequest(protoReq))
+		res, err := a.CheckHealthHandler.CheckPluginHealth(ctx, fromProto().HealthCheckRequest(protoReq))
+		if err != nil {
+			return nil, err
+		}
+		return toProto().CheckHealthResponse(res), nil
+	}
+
+	return &pluginv2.CheckHealth_Response{
+		Status: pluginv2.CheckHealth_Response_OK,
+	}, nil
+}
+
+func (a *sdkAdapter) CheckDatasourceHealth(ctx context.Context, protoReq *pluginv2.CheckHealth_DatasourceRequest) (*pluginv2.CheckHealth_Response, error) {
+	if a.CheckHealthHandler != nil {
+		res, err := a.CheckHealthHandler.CheckDatasourceHealth(ctx, fromProto().HealthCheckRequest(protoReq))
 		if err != nil {
 			return nil, err
 		}

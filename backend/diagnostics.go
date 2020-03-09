@@ -7,7 +7,8 @@ import (
 // CheckHealthHandler enables users to send health check
 // requests to a backend plugin
 type CheckHealthHandler interface {
-	CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error)
+	CheckPluginHealth(ctx context.Context, req *CheckPluginHealthRequest) (*CheckHealthResult, error)
+	CheckDatasourceHealth(ctx context.Context, req *CheckDatasourceHealthRequest) (*CheckHealthResult, error)
 }
 
 // HealthStatus is the status of the plugin.
@@ -22,9 +23,14 @@ const (
 	HealthStatusError
 )
 
-// CheckHealthRequest contains the healthcheck request
-type CheckHealthRequest struct {
+// CheckPluginHealthRequest contains the healthcheck request.
+type CheckPluginHealthRequest struct {
 	PluginConfig PluginConfig
+}
+
+// CheckDatasourceHealth requests contains the healthcheck for an datasource.
+type CheckDatasourceHealthRequest struct {
+	DataSourceConfig DataSourceConfig
 }
 
 // CheckHealthResult contains the healthcheck response
