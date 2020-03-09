@@ -30,7 +30,7 @@ func TestCollectMetrcis(t *testing.T) {
 func TestCheckHealth(t *testing.T) {
 	t.Run("When check health handler not set should use default implementation", func(t *testing.T) {
 		adapter := &sdkAdapter{}
-		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealth_Request{})
+		res, err := adapter.CheckPluginHealth(context.Background(), &pluginv2.CheckHealth_PluginRequest{})
 		require.NoError(t, err)
 		require.NotNil(t, res)
 		require.Equal(t, pluginv2.CheckHealth_Response_OK, res.Status)
@@ -89,10 +89,10 @@ func TestCheckHealth(t *testing.T) {
 				},
 			}
 
-			req := &pluginv2.CheckHealth_Request{
+			req := &pluginv2.CheckHealth_PluginRequest{
 				Config: &pluginv2.PluginConfig{},
 			}
-			res, err := adapter.CheckHealth(context.Background(), req)
+			res, err := adapter.CheckPluginHealth(context.Background(), req)
 			if tc.expectedError {
 				require.Error(t, err)
 				require.Nil(t, res)
@@ -114,7 +114,15 @@ type testCheckHealthHandler struct {
 	err         error
 }
 
-func (h *testCheckHealthHandler) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+func (h *testCheckHealthHandler) CheckPluginHealth(ctx context.Context, req *CheckPluginHealthRequest) (*CheckHealthResult, error) {
+	return &CheckHealthResult{
+		Status:      h.status,
+		Message:     h.message,
+		JSONDetails: h.jsonDetails,
+	}, h.err
+}
+
+func (h *testCheckHealthHandler) CheckDatasourceHealth(ctx context.Context, req *CheckDatasourceHealthRequest) (*CheckHealthResult, error) {
 	return &CheckHealthResult{
 		Status:      h.status,
 		Message:     h.message,

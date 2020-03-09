@@ -38,8 +38,12 @@ func (s *diagnosticsGRPCServer) CollectMetrics(ctx context.Context, req *pluginv
 	return s.server.CollectMetrics(ctx, req)
 }
 
-func (s *diagnosticsGRPCServer) CheckHealth(ctx context.Context, req *pluginv2.CheckHealth_Request) (*pluginv2.CheckHealth_Response, error) {
-	return s.server.CheckHealth(ctx, req)
+func (s *diagnosticsGRPCServer) CheckPluginHealth(ctx context.Context, req *pluginv2.CheckHealth_PluginRequest) (*pluginv2.CheckHealth_Response, error) {
+	return s.server.CheckPluginHealth(ctx, req)
+}
+
+func (s *diagnosticsGRPCServer) CheckDatasourceHealth(ctx context.Context, req *pluginv2.CheckHealth_DatasourceRequest) (*pluginv2.CheckHealth_Response, error) {
+	return s.server.CheckDatasourceHealth(ctx, req)
 }
 
 type diagnosticsGRPCClient struct {
@@ -50,8 +54,12 @@ func (s *diagnosticsGRPCClient) CollectMetrics(ctx context.Context, req *pluginv
 	return s.client.CollectMetrics(ctx, req)
 }
 
-func (s *diagnosticsGRPCClient) CheckHealth(ctx context.Context, req *pluginv2.CheckHealth_Request) (*pluginv2.CheckHealth_Response, error) {
-	return s.client.CheckHealth(ctx, req)
+func (s *diagnosticsGRPCClient) CheckPluginHealth(ctx context.Context, req *pluginv2.CheckHealth_PluginRequest) (*pluginv2.CheckHealth_Response, error) {
+	return s.client.CheckPluginHealth(ctx, req)
+}
+
+func (s *diagnosticsGRPCClient) CheckDatasourceHealth(ctx context.Context, req *pluginv2.CheckHealth_DatasourceRequest) (*pluginv2.CheckHealth_Response, error) {
+	return s.client.CheckDatasourceHealth(ctx, req)
 }
 
 var _ DiagnosticsServer = &diagnosticsGRPCServer{}
