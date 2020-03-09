@@ -15,12 +15,12 @@ import (
 // sdkAdapter adapter between low level plugin protocol and SDK interfaces.
 type sdkAdapter struct {
 	CheckHealthHandler   CheckHealthHandler
-	DataQueryHandler     DataQueryHandler
+	QueryDataHandler     QueryDataHandler
 	CallResourceHandler  CallResourceHandler
 	TransformDataHandler TransformDataHandler
 }
 
-func (a *sdkAdapter) CollectMetrics(ctx context.Context, protoReq *pluginv2.CollectMetrics_Request) (*pluginv2.CollectMetrics_Response, error) {
+func (a *sdkAdapter) CollectMetrics(ctx context.Context, protoReq *pluginv2.CollectMetricsRequest) (*pluginv2.CollectMetricsResponse, error) {
 	mfs, err := prometheus.DefaultGatherer.Gather()
 	if err != nil {
 		return nil, err
@@ -34,14 +34,14 @@ func (a *sdkAdapter) CollectMetrics(ctx context.Context, protoReq *pluginv2.Coll
 		}
 	}
 
-	return &pluginv2.CollectMetrics_Response{
-		Metrics: &pluginv2.CollectMetrics_Payload{
+	return &pluginv2.CollectMetricsResponse{
+		Metrics: &pluginv2.CollectMetricsResponse_Payload{
 			Prometheus: buf.Bytes(),
 		},
 	}, nil
 }
 
-func (a *sdkAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealth_Request) (*pluginv2.CheckHealth_Response, error) {
+func (a *sdkAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.CheckHealthHandler != nil {
 		res, err := a.CheckHealthHandler.CheckHealth(ctx, fromProto().HealthCheckRequest(protoReq))
 		if err != nil {
@@ -50,18 +50,18 @@ func (a *sdkAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHe
 		return toProto().CheckHealthResponse(res), nil
 	}
 
-	return &pluginv2.CheckHealth_Response{
-		Status: pluginv2.CheckHealth_Response_OK,
+	return &pluginv2.CheckHealthResponse{
+		Status: pluginv2.CheckHealthResponse_OK,
 	}, nil
 }
 
-func (a *sdkAdapter) DataQuery(ctx context.Context, req *pluginv2.DataQueryRequest) (*pluginv2.DataQueryResponse, error) {
-	resp, err := a.DataQueryHandler.DataQuery(ctx, fromProto().DataQueryRequest(req))
+func (a *sdkAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
+	resp, err := a.QueryDataHandler.QueryData(ctx, fromProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err
 	}
 
-	return toProto().DataQueryResponse(resp)
+	return toProto().QueryDataResponse(resp)
 }
 
 type callResourceResponseSenderFunc func(resp *CallResourceResponse) error
@@ -70,9 +70,9 @@ func (fn callResourceResponseSenderFunc) Send(resp *CallResourceResponse) error 
 	return fn(resp)
 }
 
-func (a *sdkAdapter) CallResource(protoReq *pluginv2.CallResource_Request, protoSrv pluginv2.Core_CallResourceServer) error {
+func (a *sdkAdapter) CallResource(protoReq *pluginv2.CallResourceRequest, protoSrv pluginv2.Resource_CallResourceServer) error {
 	if a.CallResourceHandler == nil {
-		return protoSrv.Send(&pluginv2.CallResource_Response{
+		return protoSrv.Send(&pluginv2.CallResourceResponse{
 			Code: http.StatusNotImplemented,
 		})
 	}
@@ -84,24 +84,24 @@ func (a *sdkAdapter) CallResource(protoReq *pluginv2.CallResource_Request, proto
 	return a.CallResourceHandler.CallResource(protoSrv.Context(), fromProto().CallResourceRequest(protoReq), fn)
 }
 
-func (a *sdkAdapter) TransformData(ctx context.Context, req *pluginv2.DataQueryRequest, callBack plugin.TransformCallBack) (*pluginv2.DataQueryResponse, error) {
-	resp, err := a.TransformDataHandler.TransformData(ctx, fromProto().DataQueryRequest(req), &transformCallBackWrapper{callBack})
+func (a *sdkAdapter) TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callBack plugin.TransformDataCallBack) (*pluginv2.QueryDataResponse, error) {
+	resp, err := a.TransformDataHandler.TransformData(ctx, fromProto().QueryDataRequest(req), &transformDataCallBackWrapper{callBack})
 	if err != nil {
 		return nil, err
 	}
 
-	return toProto().DataQueryResponse(resp)
+	return toProto().QueryDataResponse(resp)
 }
 
-type transformCallBackWrapper struct {
-	callBack plugin.TransformCallBack
+type transformDataCallBackWrapper struct {
+	callBack plugin.TransformDataCallBack
 }
 
-func (tw *transformCallBackWrapper) DataQuery(ctx context.Context, req *DataQueryRequest) (*DataQueryResponse, error) {
-	protoRes, err := tw.callBack.DataQuery(ctx, toProto().DataQueryRequest(req))
+func (tw *transformDataCallBackWrapper) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+	protoRes, err := tw.callBack.QueryData(ctx, toProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err
 	}
 
-	return fromProto().DataQueryResponse(protoRes)
+	return fromProto().QueryDataResponse(protoRes)
 }
