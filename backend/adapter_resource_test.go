@@ -15,7 +15,7 @@ func TestCallResource(t *testing.T) {
 	t.Run("When call resource handler not set should return http status not implemented", func(t *testing.T) {
 		testSender := newTestCallResourceServer()
 		adapter := &sdkAdapter{}
-		err := adapter.CallResource(&pluginv2.CallResource_Request{}, testSender)
+		err := adapter.CallResource(&pluginv2.CallResourceRequest{}, testSender)
 		require.NoError(t, err)
 		require.Len(t, testSender.respMessages, 1)
 		resp := testSender.respMessages[0]
@@ -43,7 +43,7 @@ func TestCallResource(t *testing.T) {
 		adapter := &sdkAdapter{
 			CallResourceHandler: handler,
 		}
-		req := &pluginv2.CallResource_Request{
+		req := &pluginv2.CallResourceRequest{
 			Config: &pluginv2.PluginConfig{
 				OrgId:      2,
 				PluginId:   "my-plugin",
@@ -52,9 +52,9 @@ func TestCallResource(t *testing.T) {
 			Path:   "some/path",
 			Method: http.MethodGet,
 			Url:    "plugins/test-plugin/resources/some/path?test=1",
-			Headers: map[string]*pluginv2.CallResource_StringList{
-				"X-Header-In-1": &pluginv2.CallResource_StringList{Values: []string{"A", "B"}},
-				"X-Header-In-2": &pluginv2.CallResource_StringList{Values: []string{"C"}},
+			Headers: map[string]*pluginv2.StringList{
+				"X-Header-In-1": &pluginv2.StringList{Values: []string{"A", "B"}},
+				"X-Header-In-2": &pluginv2.StringList{Values: []string{"C"}},
 			},
 			Body: body,
 		}
@@ -110,7 +110,7 @@ func TestCallResource(t *testing.T) {
 		adapter := &sdkAdapter{
 			CallResourceHandler: handler,
 		}
-		req := &pluginv2.CallResource_Request{
+		req := &pluginv2.CallResourceRequest{
 			Config: &pluginv2.PluginConfig{
 				OrgId:      2,
 				PluginId:   "my-plugin",
@@ -119,7 +119,7 @@ func TestCallResource(t *testing.T) {
 			Path:    "some/path",
 			Method:  http.MethodGet,
 			Url:     "plugins/test-plugin/resources/some/path?test=1",
-			Headers: map[string]*pluginv2.CallResource_StringList{},
+			Headers: map[string]*pluginv2.StringList{},
 		}
 		err := adapter.CallResource(req, testSender)
 
@@ -199,17 +199,17 @@ func (h *testCallResourceStreamHandler) CallResource(ctx context.Context, req *C
 
 type testCallResourceServer struct {
 	ctx          context.Context
-	respMessages []*pluginv2.CallResource_Response
+	respMessages []*pluginv2.CallResourceResponse
 }
 
 func newTestCallResourceServer() *testCallResourceServer {
 	return &testCallResourceServer{
 		ctx:          context.Background(),
-		respMessages: []*pluginv2.CallResource_Response{},
+		respMessages: []*pluginv2.CallResourceResponse{},
 	}
 }
 
-func (srv *testCallResourceServer) Send(resp *pluginv2.CallResource_Response) error {
+func (srv *testCallResourceServer) Send(resp *pluginv2.CallResourceResponse) error {
 	srv.respMessages = append(srv.respMessages, resp)
 	return nil
 }
