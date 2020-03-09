@@ -12,6 +12,10 @@ type DiagnosticsServer interface {
 	pluginv2.DiagnosticsServer
 }
 
+type DiagnosticsClient interface {
+	pluginv2.DiagnosticsClient
+}
+
 // DiagnosticsGRPCPlugin implements the GRPCPlugin interface from github.com/hashicorp/go-plugin.
 type DiagnosticsGRPCPlugin struct {
 	plugin.NetRPCUnsupportedPlugin
@@ -34,15 +38,15 @@ type diagnosticsGRPCServer struct {
 	server DiagnosticsServer
 }
 
-func (s *diagnosticsGRPCServer) CollectMetrics(ctx context.Context, req *pluginv2.CollectMetrics_Request) (*pluginv2.CollectMetrics_Response, error) {
+func (s *diagnosticsGRPCServer) CollectMetrics(ctx context.Context, req *pluginv2.CollectMetricsRequest) (*pluginv2.CollectMetricsResponse, error) {
 	return s.server.CollectMetrics(ctx, req)
 }
 
-func (s *diagnosticsGRPCServer) CheckPluginHealth(ctx context.Context, req *pluginv2.CheckHealth_PluginRequest) (*pluginv2.CheckHealth_Response, error) {
+func (s *diagnosticsGRPCServer) CheckPluginHealth(ctx context.Context, req *pluginv2.CheckPluginHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	return s.server.CheckPluginHealth(ctx, req)
 }
 
-func (s *diagnosticsGRPCServer) CheckDatasourceHealth(ctx context.Context, req *pluginv2.CheckHealth_DatasourceRequest) (*pluginv2.CheckHealth_Response, error) {
+func (s *diagnosticsGRPCServer) CheckDatasourceHealth(ctx context.Context, req *pluginv2.CheckDatasourceHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	return s.server.CheckDatasourceHealth(ctx, req)
 }
 
@@ -50,17 +54,17 @@ type diagnosticsGRPCClient struct {
 	client pluginv2.DiagnosticsClient
 }
 
-func (s *diagnosticsGRPCClient) CollectMetrics(ctx context.Context, req *pluginv2.CollectMetrics_Request) (*pluginv2.CollectMetrics_Response, error) {
-	return s.client.CollectMetrics(ctx, req)
+func (s *diagnosticsGRPCClient) CollectMetrics(ctx context.Context, req *pluginv2.CollectMetricsRequest, opts ...grpc.CallOption) (*pluginv2.CollectMetricsResponse, error) {
+	return s.client.CollectMetrics(ctx, req, opts...)
 }
 
-func (s *diagnosticsGRPCClient) CheckPluginHealth(ctx context.Context, req *pluginv2.CheckHealth_PluginRequest) (*pluginv2.CheckHealth_Response, error) {
+func (s *diagnosticsGRPCClient) CheckPluginHealth(ctx context.Context, req *pluginv2.CheckPluginHealthRequest, options ...grpc.CallOption) (*pluginv2.CheckHealthResponse, error) {
 	return s.client.CheckPluginHealth(ctx, req)
 }
 
-func (s *diagnosticsGRPCClient) CheckDatasourceHealth(ctx context.Context, req *pluginv2.CheckHealth_DatasourceRequest) (*pluginv2.CheckHealth_Response, error) {
+func (s *diagnosticsGRPCClient) CheckDatasourceHealth(ctx context.Context, req *pluginv2.CheckDatasourceHealthRequest, options ...grpc.CallOption) (*pluginv2.CheckHealthResponse, error) {
 	return s.client.CheckDatasourceHealth(ctx, req)
 }
 
 var _ DiagnosticsServer = &diagnosticsGRPCServer{}
-var _ DiagnosticsServer = &diagnosticsGRPCClient{}
+var _ DiagnosticsClient = &diagnosticsGRPCClient{}

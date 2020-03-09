@@ -1,5 +1,4 @@
 syntax = "proto3";
-import "google/protobuf/empty.proto";
 package pluginv2;
 
 option go_package = ".;pluginv2";
@@ -9,13 +8,13 @@ option go_package = ".;pluginv2";
 //-----------------------------------------------
 
 message DataSourceConfig {
-  int64 id = 4;
-  string name = 5;
-  string url = 6;
-  string user = 7;
-  string database = 8;
-  bool basicAuthEnabled = 9;
-  string basicAuthUser = 10;
+  int64 id = 1;
+  string name = 2;
+  string url = 3;
+  string user = 4;
+  string database = 5;
+  bool basicAuthEnabled = 6;
+  string basicAuthUser = 7;
 }
 
 message PluginConfig {
@@ -28,21 +27,48 @@ message PluginConfig {
   DataSourceConfig datasourceConfig = 7;
 }
 
-//-----------------------------------------------
-// All Backend Plugins Implement
-//-----------------------------------------------
+message User {
+  string login = 1;
+  string name = 2;
+  string email = 3;
+  string role = 4;
+}
 
-service Core {
-  // HTTP Style request
-  rpc CallResource(CallResource.Request) returns (stream CallResource.Response);
+//---------------------------------------------------------
+// Resource service enables HTTP-style requests over gRPC.
+//---------------------------------------------------------
 
-  // Well typed query interface
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+service Resource {
+  rpc CallResource(CallResourceRequest) returns (stream CallResourceResponse);
+}
+
+message StringList {
+  repeated string values = 1;
+}
+
+message CallResourceRequest {
+  PluginConfig config = 1;
+  User user = 2;
+  string path = 3;
+  string method = 4;
+  string url = 5;
+  map<string,StringList> headers = 6;
+  bytes body = 7;
+}
+
+message CallResourceResponse {
+  int32 code = 1;
+  map<string,StringList> headers = 2;
+  bytes body = 3;
 }
 
 //-----------------------------------------------
-// Data Query
+// Data
 //-----------------------------------------------
+
+service Data {
+  rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
+}
 
 message TimeRange {
   int64 fromEpochMS = 1;
@@ -53,32 +79,26 @@ message DataQuery {
   string refId = 1;
   int64 maxDataPoints = 2;
   int64 intervalMS = 3;
-  TimeRange timeRange = 4; // NOTE: this moved from QueryRequest in v1
-  bytes json = 5; // Arbitrary structure (model?  modelJson in v1)
+  TimeRange timeRange = 4;
+  bytes json = 5;
 }
 
-message User {
-  string login = 1;
-  string name = 2;
-  string email = 3;
-  string role = 4;
-}
-
-message DataQueryRequest {
+// QueryDataRequest
+message QueryDataRequest {
   // Plugin Configuration
   PluginConfig config = 1;
 
-  // Environment info
-  map<string,string> headers = 2;
-
-  // List of queries
-  repeated DataQuery queries = 3;
-
   //Info about the user who calls the plugin.
-  User user = 4;
+  User user = 2;
+
+  // Environment info
+  map<string,string> headers = 3;
+
+  // List of data queries
+  repeated DataQuery queries = 4;
 }
 
-message DataQueryResponse {
+message QueryDataResponse {
   // Arrow encoded DataFrames
   // Each frame encodes its own: Errors, meta, and refId
   repeated bytes frames = 1;
@@ -88,166 +108,54 @@ message DataQueryResponse {
 }
 
 //-----------------------------------------------
-// HTTP style request
-//-----------------------------------------------
-
-message CallResource {
-  message StringList {
-    repeated string values = 1;
- }
-
-  message Request {
-    PluginConfig config = 1;
-    string path = 2;
-    string method = 3;
-    string url = 4;
-    map<string,StringList> headers = 5;
-    bytes body = 6;
-    User user = 7;
-  }
-
-  message Response {
-    int32 code = 1;
-    map<string,StringList> headers = 2;
-    bytes body = 3;
-  }
-}
-
-//-----------------------------------------------
 // Diagnostics
 //-----------------------------------------------
 
 service Diagnostics {
-  rpc CollectMetrics(CollectMetrics.Request) returns (CollectMetrics.Response);
-  rpc CheckPluginHealth(CheckHealth.PluginRequest) returns (CheckHealth.Response);
-  rpc CheckDatasourceHealth(CheckHealth.DatasourceRequest) returns (CheckHealth.Response);
+  rpc CollectMetrics(CollectMetricsRequest) returns (CollectMetricsResponse);
+  rpc CheckPluginHealth(CheckPluginHealthRequest) returns (CheckHealthResponse);
+  rpc CheckDatasourceHealth(CheckDatasourceHealthRequest) returns (CheckHealthResponse);
 }
 
-message CollectMetrics {
-  message Request {
-  }
+message CollectMetricsRequest {
+}
 
+message CollectMetricsResponse {
   message Payload {
     bytes prometheus = 1;
   }
 
-  message Response {
-    Payload metrics = 1;
-  }
+  Payload metrics = 1;
 }
 
-message CheckHealth {
-  message PluginRequest {
-    PluginConfig config = 1;
+message CheckPluginHealthRequest {
+  PluginConfig config = 1;
+}
+
+message CheckDatasourceHealthRequest {
+  DataSourceConfig config = 1;
+}
+
+message CheckHealthResponse {
+  enum HealthStatus {
+    UNKNOWN = 0;
+    OK = 1;
+    ERROR = 2;
   }
 
-  message DatasourceRequest {
-    DataSourceConfig config = 1;
-  }
-
-  message Response {
-    enum HealthStatus {
-      UNKNOWN = 0; // starting etc
-      OK = 1;
-      ERROR = 2;
-    }
-
-    HealthStatus status = 1;
-    string message = 2;
-    string jsonDetails = 3;
-  }
+  HealthStatus status = 1;
+  string message = 2;
+  string jsonDetails = 3;
 }
 
 //-----------------------------------------------
-// Allow plugins to access other plugins
-// (TODO: Streaming Signature, or Grafana-Server will be the Server for this)
-//
-//
-//-----------------------------------------------
-
-service GrafanaPlatform {
-  rpc Resource(CallResource.Request) returns (stream CallResource.Response);
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
-}
-
-//-----------------------------------------------
-// Temp? for GEL Only.
-// Callback can maybe be replaced with Grafana Platform in future iteration.
+// Transform - Very experimental
 //-----------------------------------------------
 
 service Transform {
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
+  rpc TransformData(QueryDataRequest) returns (QueryDataResponse);
 }
 
-service TransformCallBack {
-  rpc DataQuery(DataQueryRequest) returns (DataQueryResponse);
-}
-
-//-----------------------------------------------------------------
-// Streaming support aimed to support similar features to STOMP
-// consider Apache Flight for more complex/standard
-//-----------------------------------------------------------------
-
-message StreamingRequest {
-  int64 pluginId = 1; // match the id from connect request (app or datasource)
-
-  // Environment info
-  map<string,string> headers = 2;
-
-  // The topic we are talking to
-  string topic = 3;
-
-  // The message
-  string body = 4;
-
-  // Flag if the user is already listening
-  bool subscribed = 5;
-}
-
-message StreamingMessage {
-  int64 pluginId = 1;
-  string topic = 2; // will be broadcast to eveyone listening to this app|ds + topic
-  string message = 3; // JSON Blob
-}
-
-message StreamingClose {
-  int64 count = 1;
-}
-
-service StreamingPlugin {
-  // Called by grafana before the first request
-  // Grafana server will set up a websocket that will broadcast to all listeners
-  rpc Connect(PluginConfig) returns (stream StreamingMessage);
-
-  // If the message is not empty, send that to the user
-  // throwing an error will make sure the user is not subscribed
-  rpc Process(StreamingRequest) returns (StreamingMessage);
-
-  // Stop streaming to that instance, returns the number of open connections
-  rpc Disconnect(google.protobuf.Empty) returns (StreamingClose);
-}
-
-//-----------------------------------------------------------------
-// Renderer (do we want this definition here?)
-// OR -- can we do this via Request(PluginRequest)???
-//-----------------------------------------------------------------
-
-message RenderRequest {
-  string url = 1;
-  int32 width = 2;
-  int32 height = 3;
-  int32 timeout = 4;
-  string timezone = 5;
-  string encoding = 6;
-  string filePath = 7;
-  string renderKey = 8;
-  string domain = 9;
-}
-
-message RenderResponse {
-  string error = 1;
-}
-
-service Renderer {
-  rpc Render(RenderRequest) returns (RenderResponse);
+service TransformDataCallBack {
+  rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
 }

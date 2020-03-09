@@ -13,7 +13,7 @@ import (
 
 func TestCollectMetrcis(t *testing.T) {
 	adapter := &sdkAdapter{}
-	res, err := adapter.CollectMetrics(context.Background(), &pluginv2.CollectMetrics_Request{})
+	res, err := adapter.CollectMetrics(context.Background(), &pluginv2.CollectMetricsRequest{})
 	require.NoError(t, err)
 	require.NotNil(t, res)
 	require.NotNil(t, res.Metrics)
@@ -30,10 +30,10 @@ func TestCollectMetrcis(t *testing.T) {
 func TestCheckHealth(t *testing.T) {
 	t.Run("When check health handler not set should use default implementation", func(t *testing.T) {
 		adapter := &sdkAdapter{}
-		res, err := adapter.CheckPluginHealth(context.Background(), &pluginv2.CheckHealth_PluginRequest{})
+		res, err := adapter.CheckPluginHealth(context.Background(), &pluginv2.CheckPluginHealthRequest{})
 		require.NoError(t, err)
 		require.NotNil(t, res)
-		require.Equal(t, pluginv2.CheckHealth_Response_OK, res.Status)
+		require.Equal(t, pluginv2.CheckHealthResponse_OK, res.Status)
 		require.Empty(t, res.Message)
 		require.Empty(t, res.JsonDetails)
 	})
@@ -44,7 +44,7 @@ func TestCheckHealth(t *testing.T) {
 			message             string
 			jsonDetails         string
 			err                 error
-			expectedStatus      pluginv2.CheckHealth_Response_HealthStatus
+			expectedStatus      pluginv2.CheckHealthResponse_HealthStatus
 			expectedMessage     string
 			expectedJSONDetails string
 			expectedError       bool
@@ -53,7 +53,7 @@ func TestCheckHealth(t *testing.T) {
 				status:              HealthStatusUnknown,
 				message:             "unknown",
 				jsonDetails:         "{}",
-				expectedStatus:      pluginv2.CheckHealth_Response_UNKNOWN,
+				expectedStatus:      pluginv2.CheckHealthResponse_UNKNOWN,
 				expectedMessage:     "unknown",
 				expectedJSONDetails: "{}",
 			},
@@ -61,7 +61,7 @@ func TestCheckHealth(t *testing.T) {
 				status:              HealthStatusOk,
 				message:             "all good",
 				jsonDetails:         "{}",
-				expectedStatus:      pluginv2.CheckHealth_Response_OK,
+				expectedStatus:      pluginv2.CheckHealthResponse_OK,
 				expectedMessage:     "all good",
 				expectedJSONDetails: "{}",
 			},
@@ -69,7 +69,7 @@ func TestCheckHealth(t *testing.T) {
 				status:              HealthStatusError,
 				message:             "BOOM",
 				jsonDetails:         `{"error": "boom"}`,
-				expectedStatus:      pluginv2.CheckHealth_Response_ERROR,
+				expectedStatus:      pluginv2.CheckHealthResponse_ERROR,
 				expectedMessage:     "BOOM",
 				expectedJSONDetails: `{"error": "boom"}`,
 			},
@@ -89,7 +89,7 @@ func TestCheckHealth(t *testing.T) {
 				},
 			}
 
-			req := &pluginv2.CheckHealth_PluginRequest{
+			req := &pluginv2.CheckPluginHealthRequest{
 				Config: &pluginv2.PluginConfig{},
 			}
 			res, err := adapter.CheckPluginHealth(context.Background(), req)

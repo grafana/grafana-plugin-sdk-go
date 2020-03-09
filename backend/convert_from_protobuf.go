@@ -73,14 +73,13 @@ func (f convertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	}
 }
 
-// DataQueryRequest converts proto version of DataQuery to SDK version
-func (f convertFromProtobuf) DataQueryRequest(protoReq *pluginv2.DataQueryRequest) *DataQueryRequest {
+func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataRequest) *QueryDataRequest {
 	queries := make([]DataQuery, len(protoReq.Queries))
 	for i, q := range protoReq.Queries {
 		queries[i] = *f.DataQuery(q)
 	}
 
-	return &DataQueryRequest{
+	return &QueryDataRequest{
 		PluginConfig: f.PluginConfig(protoReq.Config),
 		Headers:      protoReq.Headers,
 		Queries:      queries,
@@ -88,7 +87,7 @@ func (f convertFromProtobuf) DataQueryRequest(protoReq *pluginv2.DataQueryReques
 	}
 }
 
-func (f convertFromProtobuf) DataQueryResponse(protoRes *pluginv2.DataQueryResponse) (*DataQueryResponse, error) {
+func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
 	frames := make([]*dataframe.Frame, len(protoRes.Frames))
 	var err error
 	for i, encodedFrame := range protoRes.Frames {
@@ -97,10 +96,10 @@ func (f convertFromProtobuf) DataQueryResponse(protoRes *pluginv2.DataQueryRespo
 			return nil, err
 		}
 	}
-	return &DataQueryResponse{Metadata: protoRes.Metadata, Frames: frames}, nil
+	return &QueryDataResponse{Metadata: protoRes.Metadata, Frames: frames}, nil
 }
 
-func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource_Request) *CallResourceRequest {
+func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResourceRequest) *CallResourceRequest {
 	headers := map[string][]string{}
 	for k, values := range protoReq.Headers {
 		headers[k] = values.Values
@@ -118,13 +117,13 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 }
 
 // HealthCheckRequest converts proto version to SDK version.
-func (f convertFromProtobuf) PluginHealthCheckRequest(protoReq *pluginv2.CheckHealth_PluginRequest) *CheckPluginHealthRequest {
+func (f convertFromProtobuf) PluginHealthCheckRequest(protoReq *pluginv2.CheckPluginHealthRequest) *CheckPluginHealthRequest {
 	return &CheckPluginHealthRequest{
 		PluginConfig: f.PluginConfig(protoReq.Config),
 	}
 }
 
-func (f convertFromProtobuf) DatasourceHealthCheckRequest(protoReq *pluginv2.CheckHealth_DatasourceRequest) *CheckDatasourceHealthRequest {
+func (f convertFromProtobuf) DatasourceHealthCheckRequest(protoReq *pluginv2.CheckDatasourceHealthRequest) *CheckDatasourceHealthRequest {
 	return &CheckDatasourceHealthRequest{
 		DataSourceConfig: *f.DataSourceConfig(protoReq.Config),
 	}
