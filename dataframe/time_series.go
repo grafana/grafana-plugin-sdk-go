@@ -166,7 +166,7 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 	return wideFrame, nil
 }
 
-// WideToLong converts a Wide formated Frame to a Long formated Frame.
+// WideToLong converts a Wide formated time series Frame to a Long formated time series Frame.
 func WideToLong(wideFrame *Frame) (*Frame, error) {
 	tsSchema := wideFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeWide {
@@ -180,9 +180,12 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		return nil, fmt.Errorf("can not convert to long series, input fields have no rows")
 	}
 
+	uniqueValueNames := []string{}
 	uniqueValueNamesToType := make(map[string]VectorPType) // identify unique value columns by their name
 	// labels become string Fields, where the label keys are Field Names
 	uniqueFactorKeys := make(map[string]struct{})
+	labelKeyToWideIndices := make(map[string][]int)
+	sortedUniqueLabelKeys := []string{}
 
 	for _, vIdx := range tsSchema.ValueIndices { // all columns should be value columns except time
 		wideField := wideFrame.Fields[vIdx]
@@ -190,8 +193,16 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			if wideField.PrimitiveType() != pType {
 				return nil, fmt.Errorf("two fields in input frame may not have the same name but different types, field name %s has type %s but also type %s and field idx %v", wideField.Name, pType, wideField.PrimitiveType(), vIdx)
 			}
+		} else {
+			uniqueValueNamesToType[wideField.Name] = wideField.PrimitiveType()
+			uniqueValueNames = append(uniqueValueNames, wideField.Name)
 		}
-		uniqueValueNamesToType[wideField.Name] = wideField.PrimitiveType()
+
+		tKey, err := labelsTupleKey(wideField.Labels)
+		if err != nil {
+			return nil, err
+		}
+		labelKeyToWideIndices[tKey] = append(labelKeyToWideIndices[tKey], vIdx)
 
 		if wideField.Labels != nil {
 			for k := range wideField.Labels {
@@ -200,44 +211,61 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		}
 	}
 
+	for k := range labelKeyToWideIndices {
+		sortedUniqueLabelKeys = append(sortedUniqueLabelKeys, k)
+	}
+	sort.Strings(sortedUniqueLabelKeys)
+
+	sort.Strings(uniqueValueNames)
+	uniqueFactorNames := make([]string, 0, len(uniqueFactorKeys))
+	for k := range uniqueFactorKeys {
+		uniqueFactorNames = append(uniqueFactorNames, k)
+	}
+	sort.Strings(uniqueFactorNames)
+
 	longFrame := New(wideFrame.Name, // time , value fields (numbers)..., factor fields (strings)...
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
 
 	i := 1
 	// TODO: These need to be sorted. Since they come from maps (otherwise result order unpredictable).
 	valueNameToFieldIdx := map[string]int{} // valueName -> field index of longFrame
-	for name, pType := range uniqueValueNamesToType {
+	for _, name := range uniqueValueNames {
 		longFrame.Fields = append(longFrame.Fields, &Field{ // create value (number) vectors
 			Name:   name,
-			Vector: NewVectorFromPType(pType, 0),
+			Vector: NewVectorFromPType(uniqueValueNamesToType[name], 0),
 		})
 		valueNameToFieldIdx[name] = i
 		i++
 	}
 
 	factorNameToFieldIdx := map[string]int{} // label Key -> field index for label value of longFrame
-	for name := range uniqueFactorKeys {
+	for _, name := range uniqueFactorNames {
 		longFrame.Fields = append(longFrame.Fields, NewField(name, nil, []string{})) // create factor fields
 		factorNameToFieldIdx[name] = i
 		i++
 	}
-
 	longFrameCounter := 0
 	for rowIdx := 0; rowIdx < wideLen; rowIdx++ { // loop over each row of wideFrame
 		time, ok := wideFrame.ConcreteAt(tsSchema.TimeIndex, rowIdx)
 		if !ok {
 			return nil, fmt.Errorf("time may not have nil values")
 		}
-		for _, fieldIdx := range tsSchema.ValueIndices {
+		for _, labelKey := range sortedUniqueLabelKeys {
 			longFrame.Extend(1) // grow each Fields's vector by 1
 			longFrame.Set(0, longFrameCounter, time)
 
-			wideField := wideFrame.Fields[fieldIdx]
-			valueFieldIdx := valueNameToFieldIdx[wideField.Name]
-			longFrame.Set(valueFieldIdx, longFrameCounter, wideFrame.CopyAt(fieldIdx, rowIdx))
-			for k, v := range wideField.Labels {
-				longFrame.Set(factorNameToFieldIdx[k], longFrameCounter, v)
+			for i, fieldIdx := range labelKeyToWideIndices[labelKey] {
+				wideField := wideFrame.Fields[fieldIdx]
+				if i == 0 {
+					for k, v := range wideField.Labels {
+						longFrame.Set(factorNameToFieldIdx[k], longFrameCounter, v)
+					}
+				}
+				valueFieldIdx := valueNameToFieldIdx[wideField.Name]
+				longFrame.Set(valueFieldIdx, longFrameCounter, wideFrame.CopyAt(fieldIdx, rowIdx))
+
 			}
+
 			longFrameCounter++
 		}
 	}
@@ -286,4 +314,18 @@ func (t *tupleLabels) SortBtKey() {
 	sort.Slice((*t)[:], func(i, j int) bool {
 		return (*t)[i][0] < (*t)[j][1]
 	})
+}
+
+func labelsToTupleLabels(l Labels) tupleLabels {
+	t := make(tupleLabels, 0, len(l))
+	for k, v := range l {
+		t = append(t, tupleLabel{k, v})
+	}
+	t.SortBtKey()
+	return t
+}
+
+func labelsTupleKey(l Labels) (string, error) {
+	t := labelsToTupleLabels(l)
+	return t.MapKey()
 }
