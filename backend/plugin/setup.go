@@ -17,7 +17,7 @@ func SetupPluginEnvironment(pluginID string) hclog.Logger {
 		// TODO: How to make level configurable?
 		Level:      hclog.LevelFromString("DEBUG"),
 		JSONFormat: true,
-		Color:      hclog.ColorOff,
+		// Color:      hclog.ColorOff, (when we use 0.12)
 	})
 
 	// Enable profiler
