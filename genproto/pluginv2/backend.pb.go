@@ -1386,9 +1386,7 @@ func init() {
 	proto.RegisterType((*RenderResponse)(nil), "pluginv2.RenderResponse")
 }
 
-func init() {
-	proto.RegisterFile("backend.proto", fileDescriptor_5ab9ba5b8d8b2ba5)
-}
+func init() { proto.RegisterFile("backend.proto", fileDescriptor_5ab9ba5b8d8b2ba5) }
 
 var fileDescriptor_5ab9ba5b8d8b2ba5 = []byte{
 	// 1507 bytes of a gzipped FileDescriptorProto
@@ -1491,11 +1489,11 @@ var fileDescriptor_5ab9ba5b8d8b2ba5 = []byte{
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ context.Context
-var _ grpc.ClientConnInterface
+var _ grpc.ClientConn
 
 // This is a compile-time assertion to ensure that this generated file
 // is compatible with the grpc package it is being compiled against.
-const _ = grpc.SupportPackageIsVersion6
+const _ = grpc.SupportPackageIsVersion4
 
 // CoreClient is the client API for Core service.
 //
@@ -1508,10 +1506,10 @@ type CoreClient interface {
 }
 
 type coreClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewCoreClient(cc grpc.ClientConnInterface) CoreClient {
+func NewCoreClient(cc *grpc.ClientConn) CoreClient {
 	return &coreClient{cc}
 }
 
@@ -1647,10 +1645,10 @@ type DiagnosticsClient interface {
 }
 
 type diagnosticsClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewDiagnosticsClient(cc grpc.ClientConnInterface) DiagnosticsClient {
+func NewDiagnosticsClient(cc *grpc.ClientConn) DiagnosticsClient {
 	return &diagnosticsClient{cc}
 }
 
@@ -1790,10 +1788,10 @@ type GrafanaPlatformClient interface {
 }
 
 type grafanaPlatformClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewGrafanaPlatformClient(cc grpc.ClientConnInterface) GrafanaPlatformClient {
+func NewGrafanaPlatformClient(cc *grpc.ClientConn) GrafanaPlatformClient {
 	return &grafanaPlatformClient{cc}
 }
 
@@ -1925,10 +1923,10 @@ type TransformClient interface {
 }
 
 type transformClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewTransformClient(cc grpc.ClientConnInterface) TransformClient {
+func NewTransformClient(cc *grpc.ClientConn) TransformClient {
 	return &transformClient{cc}
 }
 
@@ -1997,10 +1995,10 @@ type TransformCallBackClient interface {
 }
 
 type transformCallBackClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewTransformCallBackClient(cc grpc.ClientConnInterface) TransformCallBackClient {
+func NewTransformCallBackClient(cc *grpc.ClientConn) TransformCallBackClient {
 	return &transformCallBackClient{cc}
 }
 
@@ -2076,10 +2074,10 @@ type StreamingPluginClient interface {
 }
 
 type streamingPluginClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewStreamingPluginClient(cc grpc.ClientConnInterface) StreamingPluginClient {
+func NewStreamingPluginClient(cc *grpc.ClientConn) StreamingPluginClient {
 	return &streamingPluginClient{cc}
 }
 
@@ -2251,10 +2249,10 @@ type RendererClient interface {
 }
 
 type rendererClient struct {
-	cc grpc.ClientConnInterface
+	cc *grpc.ClientConn
 }
 
-func NewRendererClient(cc grpc.ClientConnInterface) RendererClient {
+func NewRendererClient(cc *grpc.ClientConn) RendererClient {
 	return &rendererClient{cc}
 }
 
