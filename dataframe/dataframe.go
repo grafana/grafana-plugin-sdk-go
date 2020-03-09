@@ -73,7 +73,7 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 	return nil
 }
 
-// TypeIndices returns a slice of index positions for the given pTypes.
+// TypeIndices returns a slice of Field index positions for the given pTypes.
 func (f *Frame) TypeIndices(pTypes ...VectorPType) []int {
 	indices := []int{}
 	if f.Fields == nil {
@@ -236,27 +236,27 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 	}
 }
 
-// Len returns the number of elements in the field.
+// Len returns the number of elements in the Field.
 func (f *Field) Len() int {
 	return f.Vector.Len()
 }
 
-// Append appends element i to the field.
+// Append appends element i to the Field.
 func (f *Field) Append(i interface{}) {
 	f.Vector.Append(i)
 }
 
-// Extend extends the field by i.
+// Extend extends the Field by i.
 func (f *Field) Extend(i int) {
 	f.Vector.Extend(i)
 }
 
-// PrimitiveType indicates the underlying primitive type of the field.
+// PrimitiveType indicates the underlying primitive type of the Field.
 func (f *Field) PrimitiveType() VectorPType {
 	return f.Vector.PrimitiveType()
 }
 
-// Nullable returns if the the field's elements are nullable.
+// Nullable returns if the the Field's elements are nullable.
 func (f *Field) Nullable() bool {
 	return f.Vector.PrimitiveType().Nullable()
 }
