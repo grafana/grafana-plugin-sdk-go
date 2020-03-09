@@ -638,6 +638,132 @@ func TestWideToLong(t *testing.T) {
 				})),
 			Err: require.NoError,
 		},
+		{
+			name: "pointers: one value, one factor. Time becomes non-pointer since null time not supported",
+			wideFrame: dataframe.New("wide_to_long_test",
+				dataframe.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC)),
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "cat"}, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "sloth"}, []*float64{
+					float64Ptr(2.0),
+					float64Ptr(4.0),
+				})),
+			Err: require.NoError,
+
+			longFrame: dataframe.New("wide_to_long_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				dataframe.NewField("Values Floats", nil, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(2.0),
+					float64Ptr(3.0),
+					float64Ptr(4.0),
+				}),
+				dataframe.NewField("Animal Factor", nil, []string{
+					"cat",
+					"sloth",
+					"cat",
+					"sloth",
+				})),
+		},
+		{
+			name: "sparse: one value, two factor",
+			wideFrame: dataframe.New("wide_to_long_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 30, 0, time.UTC),
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "cat", "Location": "Florida"}, []float64{
+					1.0,
+					3.0,
+					0.0,
+					0.0,
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []float64{
+					2.0,
+					4.0,
+					0.0,
+					6.0,
+				}),
+				dataframe.NewField(`Values Floats`, dataframe.Labels{"Animal Factor": "pangolin", "Location": ""}, []float64{
+					0.0,
+					0.0,
+					55.0,
+					0.0,
+				})),
+
+			longFrame: dataframe.New("wide_to_long_test",
+				dataframe.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), // single time sample
+					time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), // single time sample
+					time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), // single time sample
+					time.Date(2020, 1, 2, 3, 5, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 5, 30, 0, time.UTC),
+				}),
+				dataframe.NewField("Values Floats", nil, []float64{
+					1.0,
+					0.0,
+					2.0,
+					3.0,
+					0.0,
+					4.0,
+					0.0,
+					55.0,
+					0.0,
+					0.0,
+					0.0,
+					6.0,
+				}),
+
+				dataframe.NewField("Animal Factor", nil, []string{
+					"cat",
+					"pangolin",
+					"sloth",
+					"cat",
+					"pangolin",
+					"sloth",
+					"cat",
+					"pangolin",
+					"sloth",
+					"cat",
+					"pangolin",
+					"sloth",
+				}),
+				dataframe.NewField("Location", nil, []string{
+					"Florida",
+					"",
+					"Central & South America",
+					"Florida",
+					"",
+					"Central & South America",
+					"Florida",
+					"",
+					"Central & South America",
+					"Florida",
+					"",
+					"Central & South America",
+				})),
+
+			Err: require.NoError,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
