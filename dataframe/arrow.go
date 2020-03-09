@@ -72,14 +72,18 @@ func MarshalArrow(f *Frame) ([]byte, error) {
 	return fb.Buff.Bytes(), nil
 }
 
-const fieldNamePrefix = "%v: %v"
+const fieldNamePrefix = "%s: %s"
 
 func prefixFieldName(fieldIdx int, name string) string {
-	return fmt.Sprintf("%s: %s", strconv.Itoa(fieldIdx), name)
+	return fmt.Sprintf(fieldNamePrefix, strconv.Itoa(fieldIdx), name)
 }
 
-func prefixFieldNameStrip(name string) string {
-	return strings.SplitN(name, ":", 1)[0]
+func prefixFieldNameStrip(name string) (string, error) {
+	sp := strings.SplitN(name, ": ", 2)
+	if len(sp) != 2 {
+		return "", fmt.Errorf("field name '%s' missing prefix", name)
+	}
+	return sp[1], nil
 }
 
 // buildArrowFields builds Arrow field definitions from a DataFrame.
@@ -109,7 +113,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 		}
 
 		arrowFields[i] = arrow.Field{
-			Name:     field.Name,
+			Name:     prefixFieldName(i, field.Name),
 			Type:     t,
 			Metadata: arrow.MetadataFrom(fieldMeta),
 			Nullable: nullable,
@@ -312,8 +316,12 @@ func getMDKey(key string, metaData arrow.Metadata) (string, bool) {
 func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	nullable := make([]bool, len(schema.Fields()))
 	for idx, field := range schema.Fields() {
+		nameNoPrefix, err := prefixFieldNameStrip(field.Name)
+		if err != nil {
+			return nullable, err
+		}
 		sdkField := &Field{
-			Name: prefixFieldNameStrip(field.Name),
+			Name: nameNoPrefix,
 		}
 		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
 			if err := json.Unmarshal([]byte(labelsAsString), &sdkField.Labels); err != nil {
