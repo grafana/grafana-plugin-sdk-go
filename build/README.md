@@ -9,7 +9,7 @@ This can get added to a project using:
 ```
 import (
     // mage:import
-    "github.com/grafana/grafana-plugin-sdk-go/build"
+    _ "github.com/grafana/grafana-plugin-sdk-go/build"
 )
 ```
 https://magefile.org/importing/
