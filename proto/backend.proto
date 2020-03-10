@@ -15,16 +15,27 @@ message DataSourceConfig {
   string database = 5;
   bool basicAuthEnabled = 6;
   string basicAuthUser = 7;
+
+  // from [data_source.json_data] field in the database
+  bytes jsonData = 8;
+  
+  // from [data_source.secure_json_data] field in the database
+  map<string,string> decryptedSecureJsonData = 9;
+  int64 lastUpdatedMS = 10;
 }
 
 message PluginConfig {
   int64 orgId = 1;
   string pluginId = 2;
-  string pluginType = 3;
-  bytes jsonData = 4;
-  map<string,string> decryptedSecureJsonData = 5;
-  int64 updatedMS = 6;
-  DataSourceConfig datasourceConfig = 7;
+  
+  // from [plugin_setting.json_data] field in the database
+  bytes jsonData = 3;
+  
+  // from [plugin_setting.secure_json_data] field in the database
+  map<string,string> decryptedSecureJsonData = 4;
+  int64 lastUpdatedMS = 5;
+
+  DataSourceConfig datasourceConfig = 6;
 }
 
 message User {
@@ -112,8 +123,8 @@ message QueryDataResponse {
 //-----------------------------------------------
 
 service Diagnostics {
-  rpc CollectMetrics(CollectMetricsRequest) returns (CollectMetricsResponse);
   rpc CheckHealth(CheckHealthRequest) returns (CheckHealthResponse);
+  rpc CollectMetrics(CollectMetricsRequest) returns (CollectMetricsResponse);
 }
 
 message CollectMetricsRequest {

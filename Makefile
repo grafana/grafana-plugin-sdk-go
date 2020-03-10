@@ -1,6 +1,8 @@
 GOPATH=$(shell go env GOPATH)
 GO = GO111MODULE=on go
 
+LINT_SKIP = --skip-files=data/generic_nullable_vector.go --skip-files=data/nullable_vector.gen.go --skip-files=data/generic_vector.go --skip-files=data/vector.gen.go
+
 all: build
 
 protobuf:
@@ -24,7 +26,7 @@ test:
 
 lint: $(GOPATH)/bin/golangci-lint $(GOPATH)/bin/revive $(GOPATH)/bin/gosec
 	$(GO) vet ./...
-	$(GOPATH)/bin/golangci-lint --skip-files=dataframe/generic_nullable_vector.go --skip-files=dataframe/generic_vector.go run ./...
+	$(GOPATH)/bin/golangci-lint $(LINT_SKIP) run ./...
 	$(GOPATH)/bin/revive -exclude ./vendor/... -formatter stylish -config scripts/configs/revive.toml ./...
 	$(GOPATH)/bin/gosec -quiet -exclude=G104,G107,G108,G201,G202,G204,G301,G304,G401,G402,G501 -conf=scripts/configs/gosec.json ./...
 

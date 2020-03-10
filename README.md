@@ -50,6 +50,6 @@ func main() {
 make protobuf
 ```
 
-### Changing `generic_*.go` files in the `dataframe` package
+### Changing `generic_*.go` files in the `data` package
 
-Currently [genny](https://github.com/cheekybits/genny) is used for generating some go code. If you make changes to generic template files then `genny` needs to be installed, and then `go generate` needs to be run from with the `dataframe` directory. Changed generated files should be committed with the change in the template files.
+Currently [genny](https://github.com/cheekybits/genny) is used for generating some go code. If you make changes to generic template files then `genny` needs to be installed, and then `go generate` needs to be run from with the `data` directory. Changed generated files should be committed with the change in the template files.

@@ -1,4 +1,4 @@
-package dataframe
+package data
 
 import (
 	"encoding/json"
@@ -123,13 +123,13 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 	return arrowFields, nil
 }
 
-// buildArrowColumns builds Arrow columns from a DataFrame.
+// buildArrowColumns builds Arrow columns from a Frame.
 func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, error) {
 	pool := memory.NewGoAllocator()
 	columns := make([]array.Column, len(f.Fields))
 
 	for fieldIdx, field := range f.Fields {
-		switch v := field.Vector.(type) {
+		switch v := field.vector.(type) {
 
 		case *int8Vector:
 			columns[fieldIdx] = *buildInt8Column(pool, arrowFields[fieldIdx], v)
@@ -203,7 +203,7 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	return columns, nil
 }
 
-// buildArrowSchema builds an Arrow schema for a DataFrame.
+// buildArrowSchema builds an Arrow schema for a Frame.
 func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 	tableMetaMap := map[string]string{
 		"name":  f.Name,
@@ -231,7 +231,7 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 // fieldToArrow returns the corresponding Arrow primitive type and nullable property to the fields'
 // Vector primitives.
 func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
-	switch f.Vector.(type) {
+	switch f.vector.(type) {
 
 	case *stringVector:
 		return &arrow.StringType{}, false, nil
@@ -301,7 +301,7 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.TimestampType{}, true, nil
 
 	default:
-		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.Vector)
+		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.vector)
 	}
 }
 
@@ -333,82 +333,82 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		switch field.Type.ID() {
 		case arrow.STRING:
 			if nullable[idx] {
-				sdkField.Vector = newNullableStringVector(0)
+				sdkField.vector = newNullableStringVector(0)
 				break
 			}
-			sdkField.Vector = newStringVector(0)
+			sdkField.vector = newStringVector(0)
 		case arrow.INT8:
 			if nullable[idx] {
-				sdkField.Vector = newNullableInt8Vector(0)
+				sdkField.vector = newNullableInt8Vector(0)
 				break
 			}
-			sdkField.Vector = newInt8Vector(0)
+			sdkField.vector = newInt8Vector(0)
 		case arrow.INT16:
 			if nullable[idx] {
-				sdkField.Vector = newNullableInt16Vector(0)
+				sdkField.vector = newNullableInt16Vector(0)
 				break
 			}
-			sdkField.Vector = newInt16Vector(0)
+			sdkField.vector = newInt16Vector(0)
 		case arrow.INT32:
 			if nullable[idx] {
-				sdkField.Vector = newNullableInt32Vector(0)
+				sdkField.vector = newNullableInt32Vector(0)
 				break
 			}
-			sdkField.Vector = newInt32Vector(0)
+			sdkField.vector = newInt32Vector(0)
 		case arrow.INT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableInt64Vector(0)
+				sdkField.vector = newNullableInt64Vector(0)
 				break
 			}
-			sdkField.Vector = newInt64Vector(0)
+			sdkField.vector = newInt64Vector(0)
 		case arrow.UINT8:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUint8Vector(0)
+				sdkField.vector = newNullableUint8Vector(0)
 				break
 			}
-			sdkField.Vector = newUint8Vector(0)
+			sdkField.vector = newUint8Vector(0)
 		case arrow.UINT16:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUint16Vector(0)
+				sdkField.vector = newNullableUint16Vector(0)
 				break
 			}
-			sdkField.Vector = newUint16Vector(0)
+			sdkField.vector = newUint16Vector(0)
 		case arrow.UINT32:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUint32Vector(0)
+				sdkField.vector = newNullableUint32Vector(0)
 				break
 			}
-			sdkField.Vector = newUint32Vector(0)
+			sdkField.vector = newUint32Vector(0)
 		case arrow.UINT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableUint64Vector(0)
+				sdkField.vector = newNullableUint64Vector(0)
 				break
 			}
-			sdkField.Vector = newUint64Vector(0)
+			sdkField.vector = newUint64Vector(0)
 		case arrow.FLOAT32:
 			if nullable[idx] {
-				sdkField.Vector = newNullableFloat32Vector(0)
+				sdkField.vector = newNullableFloat32Vector(0)
 				break
 			}
-			sdkField.Vector = newFloat32Vector(0)
+			sdkField.vector = newFloat32Vector(0)
 		case arrow.FLOAT64:
 			if nullable[idx] {
-				sdkField.Vector = newNullableFloat64Vector(0)
+				sdkField.vector = newNullableFloat64Vector(0)
 				break
 			}
-			sdkField.Vector = newFloat64Vector(0)
+			sdkField.vector = newFloat64Vector(0)
 		case arrow.BOOL:
 			if nullable[idx] {
-				sdkField.Vector = newNullableBoolVector(0)
+				sdkField.vector = newNullableBoolVector(0)
 				break
 			}
-			sdkField.Vector = newBoolVector(0)
+			sdkField.vector = newBoolVector(0)
 		case arrow.TIMESTAMP:
 			if nullable[idx] {
-				sdkField.Vector = newNullableTimeTimeVector(0)
+				sdkField.vector = newNullableTimeTimeVector(0)
 				break
 			}
-			sdkField.Vector = newTimeTimeVector(0)
+			sdkField.vector = newTimeTimeVector(0)
 		default:
 			return nullable, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 		}
@@ -436,14 +436,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *string
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.INT8:
 				v := array.NewInt8Data(col.Data())
@@ -451,14 +451,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *int8
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.INT16:
 				v := array.NewInt16Data(col.Data())
@@ -466,14 +466,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *int16
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.INT32:
 				v := array.NewInt32Data(col.Data())
@@ -481,14 +481,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *int32
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.INT64:
 				v := array.NewInt64Data(col.Data())
@@ -496,14 +496,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *int64
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.UINT8:
 				v := array.NewUint8Data(col.Data())
@@ -511,14 +511,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *uint8
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.UINT32:
 				v := array.NewUint32Data(col.Data())
@@ -526,14 +526,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *uint32
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.UINT64:
 				v := array.NewUint64Data(col.Data())
@@ -541,14 +541,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *uint64
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.UINT16:
 				v := array.NewUint16Data(col.Data())
@@ -556,14 +556,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(rIdx) {
 							var ns *uint16
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						rv := v.Value(rIdx)
-						frame.Fields[i].Vector.Append(&rv)
+						frame.Fields[i].vector.Append(&rv)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(rIdx))
+					frame.Fields[i].vector.Append(v.Value(rIdx))
 				}
 			case arrow.FLOAT32:
 				v := array.NewFloat32Data(col.Data())
@@ -571,14 +571,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(vIdx) {
 							var nf *float32
-							frame.Fields[i].Vector.Append(nf)
+							frame.Fields[i].vector.Append(nf)
 							continue
 						}
 						vF := f
-						frame.Fields[i].Vector.Append(&vF)
+						frame.Fields[i].vector.Append(&vF)
 						continue
 					}
-					frame.Fields[i].Vector.Append(f)
+					frame.Fields[i].vector.Append(f)
 				}
 			case arrow.FLOAT64:
 				v := array.NewFloat64Data(col.Data())
@@ -586,14 +586,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(vIdx) {
 							var nf *float64
-							frame.Fields[i].Vector.Append(nf)
+							frame.Fields[i].vector.Append(nf)
 							continue
 						}
 						vF := f
-						frame.Fields[i].Vector.Append(&vF)
+						frame.Fields[i].vector.Append(&vF)
 						continue
 					}
-					frame.Fields[i].Vector.Append(f)
+					frame.Fields[i].vector.Append(f)
 				}
 			case arrow.BOOL:
 				v := array.NewBooleanData(col.Data())
@@ -601,14 +601,14 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(sIdx) {
 							var ns *bool
-							frame.Fields[i].Vector.Append(ns)
+							frame.Fields[i].vector.Append(ns)
 							continue
 						}
 						vB := v.Value(sIdx)
-						frame.Fields[i].Vector.Append(&vB)
+						frame.Fields[i].vector.Append(&vB)
 						continue
 					}
-					frame.Fields[i].Vector.Append(v.Value(sIdx))
+					frame.Fields[i].vector.Append(v.Value(sIdx))
 				}
 			case arrow.TIMESTAMP:
 				v := array.NewTimestampData(col.Data())
@@ -617,13 +617,13 @@ func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) erro
 					if nullable[i] {
 						if v.IsNull(vIdx) {
 							var nt *time.Time
-							frame.Fields[i].Vector.Append(nt)
+							frame.Fields[i].vector.Append(nt)
 							continue
 						}
-						frame.Fields[i].Vector.Append(&t)
+						frame.Fields[i].vector.Append(&t)
 						continue
 					}
-					frame.Fields[i].Vector.Append(t)
+					frame.Fields[i].vector.Append(t)
 				}
 			default:
 				return fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())
