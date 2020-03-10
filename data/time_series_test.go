@@ -22,37 +22,37 @@ func TestTimeSeriesSchema(t *testing.T) {
 		},
 		{
 			name:   "time field only is not a time series",
-			frame:  data.New("test", data.NewField("timeValues", nil, []time.Time{time.Time{}})),
+			frame:  data.NewFrame("test", data.NewField("timeValues", nil, []time.Time{time.Time{}})),
 			tsType: data.TimeSeriesTypeNot,
 		},
 		{
 			name: "two time values is a wide series",
-			frame: data.New("test", data.NewField("timeValues", nil, []time.Time{time.Time{}}),
+			frame: data.NewFrame("test", data.NewField("timeValues", nil, []time.Time{time.Time{}}),
 				data.NewField("moreTimeValues", nil, []time.Time{time.Time{}})),
 			tsType: data.TimeSeriesTypeWide,
 		},
 		{
 			name:   "simple wide time series",
-			frame:  data.New("test", data.NewField("timeValues", nil, []time.Time{time.Time{}}), data.NewField("floatValues", nil, []float64{1.0})),
+			frame:  data.NewFrame("test", data.NewField("timeValues", nil, []time.Time{time.Time{}}), data.NewField("floatValues", nil, []float64{1.0})),
 			tsType: data.TimeSeriesTypeWide,
 		},
 		{
 			name: "simple long time series with one facet",
-			frame: data.New("test", data.NewField("timeValues", nil, []time.Time{time.Time{}}),
+			frame: data.NewFrame("test", data.NewField("timeValues", nil, []time.Time{time.Time{}}),
 				data.NewField("floatValues", nil, []float64{1.0}),
 				data.NewField("user", nil, []string{"Lord Slothius"})),
 			tsType: data.TimeSeriesTypeLong,
 		},
 		{
 			name: "multi-value wide time series",
-			frame: data.New("test", data.NewField("floatValues", nil, []float64{1.0}),
+			frame: data.NewFrame("test", data.NewField("floatValues", nil, []float64{1.0}),
 				data.NewField("timeValues", nil, []time.Time{time.Time{}}),
 				data.NewField("int64 Values", nil, []int64{1})),
 			tsType: data.TimeSeriesTypeWide,
 		},
 		{
 			name: "multi-value and multi-facet long series",
-			frame: data.New("test", data.NewField("floatValues", nil, []float64{1.0}),
+			frame: data.NewFrame("test", data.NewField("floatValues", nil, []float64{1.0}),
 				data.NewField("timeValues", nil, []time.Time{time.Time{}}),
 				data.NewField("int64 Values", nil, []int64{1}),
 				data.NewField("user", nil, []string{"Lord Slothius"}),
@@ -77,7 +77,7 @@ func TestLongToWide(t *testing.T) {
 	}{
 		{
 			name: "one value, one factor",
-			longFrame: data.New("long_to_wide_test",
+			longFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -97,7 +97,7 @@ func TestLongToWide(t *testing.T) {
 					"sloth",
 				})),
 
-			wideFrame: data.New("long_to_wide_test",
+			wideFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -114,7 +114,7 @@ func TestLongToWide(t *testing.T) {
 		},
 		{
 			name: "one value, two factors",
-			longFrame: data.New("long_to_wide_test",
+			longFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -140,7 +140,7 @@ func TestLongToWide(t *testing.T) {
 					"Central & South America",
 				})),
 
-			wideFrame: data.New("long_to_wide_test",
+			wideFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -159,7 +159,7 @@ func TestLongToWide(t *testing.T) {
 		},
 		{
 			name: "two values, one factor",
-			longFrame: data.New("long_to_wide_test",
+			longFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -185,7 +185,7 @@ func TestLongToWide(t *testing.T) {
 					"sloth",
 				})),
 
-			wideFrame: data.New("long_to_wide_test",
+			wideFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -210,7 +210,7 @@ func TestLongToWide(t *testing.T) {
 		},
 		{
 			name: "two values, two factor",
-			longFrame: data.New("long_to_wide_test",
+			longFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -242,7 +242,7 @@ func TestLongToWide(t *testing.T) {
 					"Central & South America",
 				})),
 
-			wideFrame: data.New("long_to_wide_test",
+			wideFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -267,7 +267,7 @@ func TestLongToWide(t *testing.T) {
 		},
 		{
 			name: "pointers: one value, one factor. Time becomes non-pointer since null time not supported",
-			longFrame: data.New("long_to_wide_test",
+			longFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []*time.Time{
 					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
 					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
@@ -287,7 +287,7 @@ func TestLongToWide(t *testing.T) {
 					stringPtr("sloth"),
 				})),
 
-			wideFrame: data.New("long_to_wide_test",
+			wideFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -304,7 +304,7 @@ func TestLongToWide(t *testing.T) {
 		},
 		{
 			name: "sparse: one value, two factor",
-			longFrame: data.New("long_to_wide_test",
+			longFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -338,7 +338,7 @@ func TestLongToWide(t *testing.T) {
 					"", // single factor sample
 					"Central & South America",
 				})),
-			wideFrame: data.New("long_to_wide_test",
+			wideFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -367,7 +367,7 @@ func TestLongToWide(t *testing.T) {
 		},
 		{
 			name: "sparse & pointer: one value, two factor",
-			longFrame: data.New("long_to_wide_test",
+			longFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -401,7 +401,7 @@ func TestLongToWide(t *testing.T) {
 					nil, // single factor sample
 					stringPtr("Central & South America"),
 				})),
-			wideFrame: data.New("long_to_wide_test",
+			wideFrame: data.NewFrame("long_to_wide_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -449,7 +449,7 @@ func TestWideToLong(t *testing.T) {
 	}{
 		{
 			name: "one value, one factor",
-			wideFrame: data.New("wide_to_long_test",
+			wideFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -463,7 +463,7 @@ func TestWideToLong(t *testing.T) {
 					4.0,
 				})),
 
-			longFrame: data.New("wide_to_long_test",
+			longFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -487,7 +487,7 @@ func TestWideToLong(t *testing.T) {
 
 		{
 			name: "one value, two factors",
-			wideFrame: data.New("wide_to_long_test",
+			wideFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -504,7 +504,7 @@ func TestWideToLong(t *testing.T) {
 					})),
 			Err: require.NoError,
 
-			longFrame: data.New("wide_to_long_test",
+			longFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -532,7 +532,7 @@ func TestWideToLong(t *testing.T) {
 		},
 		{
 			name: "two values, one factor",
-			wideFrame: data.New("wide_to_long_test",
+			wideFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -554,7 +554,7 @@ func TestWideToLong(t *testing.T) {
 					4,
 				})),
 
-			longFrame: data.New("wide_to_long_test",
+			longFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -583,7 +583,7 @@ func TestWideToLong(t *testing.T) {
 		},
 		{
 			name: "two values, two factor",
-			wideFrame: data.New("wide_to_long_test",
+			wideFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -605,7 +605,7 @@ func TestWideToLong(t *testing.T) {
 					4,
 				})),
 
-			longFrame: data.New("wide_to_long_test",
+			longFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -640,7 +640,7 @@ func TestWideToLong(t *testing.T) {
 		},
 		{
 			name: "pointers: one value, one factor. Time becomes non-pointer since null time not supported",
-			wideFrame: data.New("wide_to_long_test",
+			wideFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []*time.Time{
 					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
 					timePtr(time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC)),
@@ -655,7 +655,7 @@ func TestWideToLong(t *testing.T) {
 				})),
 			Err: require.NoError,
 
-			longFrame: data.New("wide_to_long_test",
+			longFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
@@ -677,7 +677,7 @@ func TestWideToLong(t *testing.T) {
 		},
 		{
 			name: "sparse: one value, two factor",
-			wideFrame: data.New("wide_to_long_test",
+			wideFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
@@ -703,7 +703,7 @@ func TestWideToLong(t *testing.T) {
 					0.0,
 				})),
 
-			longFrame: data.New("wide_to_long_test",
+			longFrame: data.NewFrame("wide_to_long_test",
 				data.NewField("Time", nil, []time.Time{
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
 					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),

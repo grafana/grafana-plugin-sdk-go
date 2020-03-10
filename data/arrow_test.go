@@ -33,7 +33,7 @@ func goldenDF() *data.Frame {
 		// math.NaN() and math.Infs become null when encoded to json
 	}).SetDecimals(2).SetMax(math.Inf(1)).SetMin(math.NaN()).SetFilterable(false)
 
-	df := data.New("many_types",
+	df := data.NewFrame("many_types",
 		data.NewField("string_values", data.Labels{"aLabelKey": "aLabelValue"}, []string{
 			"Go Min",
 			"JS Min (for >= 64)",

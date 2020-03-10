@@ -8,10 +8,10 @@ import (
 )
 
 func TestCopyAtDoesNotMutatePointerVector(t *testing.T) {
-	frameA := data.New("test", data.NewField("test", nil, []*float64{float64Ptr(1.0)}))
+	frameA := data.NewFrame("test", data.NewField("test", nil, []*float64{float64Ptr(1.0)}))
 	rowLength, err := frameA.RowLen()
 	require.NoError(t, err)
-	frameB := data.New("test", data.NewField("test", nil, []*float64{nil}))
+	frameB := data.NewFrame("test", data.NewField("test", nil, []*float64{nil}))
 	for i := 0; i < rowLength; i++ {
 		frameB.Set(0, i, frameA.Fields[0].Vector.CopyAt(i))
 	}
@@ -20,10 +20,10 @@ func TestCopyAtDoesNotMutatePointerVector(t *testing.T) {
 }
 
 func TestCopyAtDoesNotMutateVector(t *testing.T) {
-	frameA := data.New("test", data.NewField("test", nil, []float64{1.0}))
+	frameA := data.NewFrame("test", data.NewField("test", nil, []float64{1.0}))
 	rowLength, err := frameA.RowLen()
 	require.NoError(t, err)
-	frameB := data.New("test", data.NewField("test", nil, []float64{0.0}))
+	frameB := data.NewFrame("test", data.NewField("test", nil, []float64{0.0}))
 	for i := 0; i < rowLength; i++ {
 		frameB.Set(0, i, frameA.Fields[0].Vector.CopyAt(i))
 	}

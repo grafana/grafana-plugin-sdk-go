@@ -112,7 +112,7 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 		return nil, fmt.Errorf("can not convert to wide series, input fields have no rows")
 	}
 
-	wideFrame := New(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
+	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
 	wideFrameRowCounter := 0
 
 	seenFactors := map[string]struct{}{}                      // seen factor combinations
@@ -269,7 +269,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	sort.Strings(uniqueFactorNames)
 
 	// build new Frame with new schema
-	longFrame := New(wideFrame.Name, // time, value fields..., factor fields (strings)...
+	longFrame := NewFrame(wideFrame.Name, // time, value fields..., factor fields (strings)...
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
 
 	i := 1

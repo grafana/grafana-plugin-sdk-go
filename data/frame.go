@@ -341,8 +341,8 @@ func LabelsFromString(s string) (Labels, error) {
 	return labels, nil
 }
 
-// New returns a new instance of a Frame.
-func New(name string, fields ...*Field) *Frame {
+// NewFrame returns a new instance of a Frame.
+func NewFrame(name string, fields ...*Field) *Frame {
 	return &Frame{
 		Name:   name,
 		Fields: fields,

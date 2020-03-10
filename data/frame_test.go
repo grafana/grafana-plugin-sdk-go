@@ -12,7 +12,7 @@ import (
 )
 
 func TestFrame(t *testing.T) {
-	df := data.New("http_requests_total",
+	df := data.NewFrame("http_requests_total",
 		data.NewField("timestamp", nil, []time.Time{time.Now(), time.Now(), time.Now()}).SetConfig(&data.FieldConfig{
 			Title: "A time Column.",
 		}),
@@ -27,7 +27,7 @@ func TestFrame(t *testing.T) {
 }
 
 func TestFrameWarnings(t *testing.T) {
-	df := data.New("warning_test")
+	df := data.NewFrame("warning_test")
 	df.AppendWarning("details1", "message1")
 	df.AppendWarning("details2", "message2")
 
@@ -128,48 +128,48 @@ func TestAppendRowSafe(t *testing.T) {
 	}{
 		{
 			name:        "simple safe append",
-			frame:       data.New("test", data.NewField("test", nil, []int64{})),
+			frame:       data.NewFrame("test", data.NewField("test", nil, []int64{})),
 			rowToAppend: append(make([]interface{}, 0), int64(1)),
 			shouldErr:   require.NoError,
-			newFrame:    data.New("test", data.NewField("test", nil, []int64{1})),
+			newFrame:    data.NewFrame("test", data.NewField("test", nil, []int64{1})),
 		},
 		{
 			name:        "untyped nil append",
-			frame:       data.New("test", data.NewField("test", nil, []*int64{})),
+			frame:       data.NewFrame("test", data.NewField("test", nil, []*int64{})),
 			rowToAppend: append(make([]interface{}, 0), nil),
 			shouldErr:   require.NoError,
-			newFrame:    data.New("test", data.NewField("test", nil, []*int64{nil})),
+			newFrame:    data.NewFrame("test", data.NewField("test", nil, []*int64{nil})),
 		},
 		{
 			name:          "untyped nil append to non-nullable should error",
-			frame:         data.New("test", data.NewField("test", nil, []int64{})),
+			frame:         data.NewFrame("test", data.NewField("test", nil, []int64{})),
 			rowToAppend:   append(make([]interface{}, 0), nil),
 			shouldErr:     require.Error,
 			errorContains: []string{"non-nullable", "underlying type []int64"},
 		},
 		{
 			name:        "typed nil append",
-			frame:       data.New("test", data.NewField("test", nil, []*int64{})),
+			frame:       data.NewFrame("test", data.NewField("test", nil, []*int64{})),
 			rowToAppend: append(make([]interface{}, 0), []*int64{nil}[0]),
 			shouldErr:   require.NoError,
-			newFrame:    data.New("test", data.NewField("test", nil, []*int64{nil})),
+			newFrame:    data.NewFrame("test", data.NewField("test", nil, []*int64{nil})),
 		},
 		{
 			name:        "wrong typed nil append should error",
-			frame:       data.New("test", data.NewField("test", nil, []*int64{})),
+			frame:       data.NewFrame("test", data.NewField("test", nil, []*int64{})),
 			rowToAppend: append(make([]interface{}, 0), []*string{nil}[0]),
 			shouldErr:   require.Error,
 		},
 		{
 			name:          "append of wrong type should error",
-			frame:         data.New("test", data.NewField("test", nil, []int64{})),
+			frame:         data.NewFrame("test", data.NewField("test", nil, []int64{})),
 			rowToAppend:   append(make([]interface{}, 0), "1"),
 			shouldErr:     require.Error,
 			errorContains: []string{"string", "int64"},
 		},
 		{
 			name:        "unsupported type should error",
-			frame:       data.New("test", data.NewField("test", nil, []int64{})),
+			frame:       data.NewFrame("test", data.NewField("test", nil, []int64{})),
 			rowToAppend: append(make([]interface{}, 0), data.Frame{}),
 			shouldErr:   require.Error,
 		},
@@ -196,17 +196,17 @@ func TestAppendRowSafe(t *testing.T) {
 		},
 		{
 			name:          "invalid vals type mixture",
-			frame:         data.New("test", data.NewField("test", nil, []int64{}), data.NewField("test-string", nil, []int64{})),
+			frame:         data.NewFrame("test", data.NewField("test", nil, []int64{}), data.NewField("test-string", nil, []int64{})),
 			rowToAppend:   append(append(make([]interface{}, 0), int64(1)), "foo"),
 			shouldErr:     require.Error,
 			errorContains: []string{"invalid type appending row at index 1, got string want int64"},
 		},
 		{
 			name:        "valid vals type mixture",
-			frame:       data.New("test", data.NewField("test", nil, []int64{}), data.NewField("test-string", nil, []string{})),
+			frame:       data.NewFrame("test", data.NewField("test", nil, []int64{}), data.NewField("test-string", nil, []string{})),
 			rowToAppend: append(append(make([]interface{}, 0), int64(1)), "foo"),
 			shouldErr:   require.NoError,
-			newFrame:    data.New("test", data.NewField("test", nil, []int64{1}), data.NewField("test-string", nil, []string{"foo"})),
+			newFrame:    data.NewFrame("test", data.NewField("test", nil, []int64{1}), data.NewField("test-string", nil, []string{"foo"})),
 		},
 	}
 	for _, tt := range tests {
