@@ -1,4 +1,4 @@
-package httpresource
+package resource
 
 import (
 	"context"
