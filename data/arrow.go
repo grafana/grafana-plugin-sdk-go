@@ -1,4 +1,4 @@
-package dataframe
+package data
 
 import (
 	"encoding/json"
@@ -70,7 +70,7 @@ func MarshalArrow(f *Frame) ([]byte, error) {
 	return fb.Buff.Bytes(), nil
 }
 
-// buildArrowFields builds Arrow field definitions from a DataFrame.
+// buildArrowFields builds Arrow field definitions from a Frame.
 func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 	arrowFields := make([]arrow.Field, len(f.Fields))
 
@@ -107,7 +107,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 	return arrowFields, nil
 }
 
-// buildArrowColumns builds Arrow columns from a DataFrame.
+// buildArrowColumns builds Arrow columns from a Frame.
 func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, error) {
 	pool := memory.NewGoAllocator()
 	columns := make([]array.Column, len(f.Fields))
@@ -187,7 +187,7 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	return columns, nil
 }
 
-// buildArrowSchema builds an Arrow schema for a DataFrame.
+// buildArrowSchema builds an Arrow schema for a Frame.
 func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 	tableMetaMap := map[string]string{
 		"name":  f.Name,

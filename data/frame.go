@@ -1,4 +1,4 @@
-package dataframe
+package data
 
 import (
 	"fmt"
@@ -29,8 +29,8 @@ type Field struct {
 type Fields []*Field
 
 // AppendRow adds a new row to the Frame by appending to each element of vals to
-// the corresponding Field in the dataframe.
-// The dataframe's Fields and the Fields' Vectors must be initalized or AppendRow will panic.
+// the corresponding Field in the data.
+// The Frame's Fields and the Fields' Vectors must be initalized or AppendRow will panic.
 // The number of arguments must match the number of Fields in the Frame and each type must coorespond
 // to the Field type or AppendRow will panic.
 func (f *Frame) AppendRow(vals ...interface{}) {
@@ -45,7 +45,7 @@ func (f *Frame) AppendWarning(message string, details string) {
 }
 
 // AppendRowSafe adds a new row to the Frame by appending to each each element of vals to
-// the corresponding Field in the dataframe. It has the some constraints as AppendRow but will
+// the corresponding Field in the data. It has the some constraints as AppendRow but will
 // return an error under those conditions instead of panicing.
 func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 	if len(vals) != len(f.Fields) {

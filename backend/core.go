@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // User represents the Grafana user.
@@ -58,7 +58,7 @@ type DataQuery struct {
 
 // QueryDataResponse holds the results for a given query.
 type QueryDataResponse struct {
-	Frames   []*dataframe.Frame
+	Frames   []*data.Frame
 	Metadata map[string]string
 }
 

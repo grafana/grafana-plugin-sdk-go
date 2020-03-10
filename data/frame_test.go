@@ -1,4 +1,4 @@
-package dataframe_test
+package data_test
 
 import (
 	"database/sql"
@@ -7,18 +7,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
 )
 
-func TestDataFrame(t *testing.T) {
-	df := dataframe.New("http_requests_total",
-		dataframe.NewField("timestamp", nil, []time.Time{time.Now(), time.Now(), time.Now()}).SetConfig(&dataframe.FieldConfig{
+func TestFrame(t *testing.T) {
+	df := data.New("http_requests_total",
+		data.NewField("timestamp", nil, []time.Time{time.Now(), time.Now(), time.Now()}).SetConfig(&data.FieldConfig{
 			Title: "A time Column.",
 		}),
-		dataframe.NewField("value", dataframe.Labels{"service": "auth"}, []float64{1.0, 2.0, 3.0}),
-		dataframe.NewField("category", dataframe.Labels{"service": "auth"}, []string{"foo", "bar", "test"}),
-		dataframe.NewField("valid", dataframe.Labels{"service": "auth"}, []bool{true, false, true}),
+		data.NewField("value", data.Labels{"service": "auth"}, []float64{1.0, 2.0, 3.0}),
+		data.NewField("category", data.Labels{"service": "auth"}, []string{"foo", "bar", "test"}),
+		data.NewField("valid", data.Labels{"service": "auth"}, []bool{true, false, true}),
 	)
 
 	if df.Rows() != 3 {
@@ -26,8 +26,8 @@ func TestDataFrame(t *testing.T) {
 	}
 }
 
-func TestDataFrameWarnings(t *testing.T) {
-	df := dataframe.New("warning_test")
+func TestFrameWarnings(t *testing.T) {
+	df := data.New("warning_test")
 	df.AppendWarning("details1", "message1")
 	df.AppendWarning("details2", "message2")
 
@@ -37,7 +37,7 @@ func TestDataFrameWarnings(t *testing.T) {
 }
 
 func TestField(t *testing.T) {
-	f := dataframe.NewField("value", nil, []float64{1.0, 2.0, 3.0})
+	f := data.NewField("value", nil, []float64{1.0, 2.0, 3.0})
 
 	if f.Len() != 3 {
 		t.Fatal("unexpected length")
@@ -45,7 +45,7 @@ func TestField(t *testing.T) {
 }
 
 func TestField_Float64(t *testing.T) {
-	f := dataframe.NewField("value", nil, make([]*float64, 3))
+	f := data.NewField("value", nil, make([]*float64, 3))
 
 	want := 2.0
 	f.Vector.Set(1, &want)
@@ -62,7 +62,7 @@ func TestField_Float64(t *testing.T) {
 }
 
 func TestField_String(t *testing.T) {
-	f := dataframe.NewField("value", nil, make([]*string, 3))
+	f := data.NewField("value", nil, make([]*string, 3))
 
 	want := "foo"
 	f.Vector.Set(1, &want)
@@ -98,7 +98,7 @@ func TestTimeField(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			f := dataframe.NewField(t.Name(), nil, tt.Values)
+			f := data.NewField(t.Name(), nil, tt.Values)
 
 			if f.Len() != len(tt.Values) {
 				t.Error(f.Len())
@@ -120,93 +120,93 @@ func TestTimeField(t *testing.T) {
 func TestAppendRowSafe(t *testing.T) {
 	tests := []struct {
 		name          string
-		frame         *dataframe.Frame
+		frame         *data.Frame
 		rowToAppend   []interface{}
 		shouldErr     require.ErrorAssertionFunc
 		errorContains []string
-		newFrame      *dataframe.Frame
+		newFrame      *data.Frame
 	}{
 		{
 			name:        "simple safe append",
-			frame:       dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
+			frame:       data.New("test", data.NewField("test", nil, []int64{})),
 			rowToAppend: append(make([]interface{}, 0), int64(1)),
 			shouldErr:   require.NoError,
-			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []int64{1})),
+			newFrame:    data.New("test", data.NewField("test", nil, []int64{1})),
 		},
 		{
 			name:        "untyped nil append",
-			frame:       dataframe.New("test", dataframe.NewField("test", nil, []*int64{})),
+			frame:       data.New("test", data.NewField("test", nil, []*int64{})),
 			rowToAppend: append(make([]interface{}, 0), nil),
 			shouldErr:   require.NoError,
-			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []*int64{nil})),
+			newFrame:    data.New("test", data.NewField("test", nil, []*int64{nil})),
 		},
 		{
 			name:          "untyped nil append to non-nullable should error",
-			frame:         dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
+			frame:         data.New("test", data.NewField("test", nil, []int64{})),
 			rowToAppend:   append(make([]interface{}, 0), nil),
 			shouldErr:     require.Error,
 			errorContains: []string{"non-nullable", "underlying type []int64"},
 		},
 		{
 			name:        "typed nil append",
-			frame:       dataframe.New("test", dataframe.NewField("test", nil, []*int64{})),
+			frame:       data.New("test", data.NewField("test", nil, []*int64{})),
 			rowToAppend: append(make([]interface{}, 0), []*int64{nil}[0]),
 			shouldErr:   require.NoError,
-			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []*int64{nil})),
+			newFrame:    data.New("test", data.NewField("test", nil, []*int64{nil})),
 		},
 		{
 			name:        "wrong typed nil append should error",
-			frame:       dataframe.New("test", dataframe.NewField("test", nil, []*int64{})),
+			frame:       data.New("test", data.NewField("test", nil, []*int64{})),
 			rowToAppend: append(make([]interface{}, 0), []*string{nil}[0]),
 			shouldErr:   require.Error,
 		},
 		{
 			name:          "append of wrong type should error",
-			frame:         dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
+			frame:         data.New("test", data.NewField("test", nil, []int64{})),
 			rowToAppend:   append(make([]interface{}, 0), "1"),
 			shouldErr:     require.Error,
 			errorContains: []string{"string", "int64"},
 		},
 		{
 			name:        "unsupported type should error",
-			frame:       dataframe.New("test", dataframe.NewField("test", nil, []int64{})),
-			rowToAppend: append(make([]interface{}, 0), dataframe.Frame{}),
+			frame:       data.New("test", data.NewField("test", nil, []int64{})),
+			rowToAppend: append(make([]interface{}, 0), data.Frame{}),
 			shouldErr:   require.Error,
 		},
 		{
 			name:          "frame with no fields should error when appending a value",
-			frame:         &dataframe.Frame{Name: "test"},
+			frame:         &data.Frame{Name: "test"},
 			rowToAppend:   append(make([]interface{}, 0), 1),
 			shouldErr:     require.Error,
 			errorContains: []string{"0 fields"},
 		},
 		{
 			name:          "frame with uninitalized Field should error",
-			frame:         &dataframe.Frame{Name: "test", Fields: []*dataframe.Field{nil}},
+			frame:         &data.Frame{Name: "test", Fields: []*data.Field{nil}},
 			rowToAppend:   append(make([]interface{}, 0), 1),
 			shouldErr:     require.Error,
 			errorContains: []string{"uninitalized Field at"},
 		},
 		{
 			name:          "frame with uninitalized Field Vector should error",
-			frame:         &dataframe.Frame{Name: "test", Fields: []*dataframe.Field{&dataframe.Field{}}},
+			frame:         &data.Frame{Name: "test", Fields: []*data.Field{&data.Field{}}},
 			rowToAppend:   append(make([]interface{}, 0), 1),
 			shouldErr:     require.Error,
 			errorContains: []string{"uninitalized Field Vector at"},
 		},
 		{
 			name:          "invalid vals type mixture",
-			frame:         dataframe.New("test", dataframe.NewField("test", nil, []int64{}), dataframe.NewField("test-string", nil, []int64{})),
+			frame:         data.New("test", data.NewField("test", nil, []int64{}), data.NewField("test-string", nil, []int64{})),
 			rowToAppend:   append(append(make([]interface{}, 0), int64(1)), "foo"),
 			shouldErr:     require.Error,
 			errorContains: []string{"invalid type appending row at index 1, got string want int64"},
 		},
 		{
 			name:        "valid vals type mixture",
-			frame:       dataframe.New("test", dataframe.NewField("test", nil, []int64{}), dataframe.NewField("test-string", nil, []string{})),
+			frame:       data.New("test", data.NewField("test", nil, []int64{}), data.NewField("test-string", nil, []string{})),
 			rowToAppend: append(append(make([]interface{}, 0), int64(1)), "foo"),
 			shouldErr:   require.NoError,
-			newFrame:    dataframe.New("test", dataframe.NewField("test", nil, []int64{1}), dataframe.NewField("test-string", nil, []string{"foo"})),
+			newFrame:    data.New("test", data.NewField("test", nil, []int64{1}), data.NewField("test-string", nil, []string{"foo"})),
 		},
 	}
 	for _, tt := range tests {
@@ -277,11 +277,11 @@ func boolPtr(b bool) *bool {
 }
 
 func ExampleSQLStringConverter() {
-	_ = dataframe.SQLStringConverter{
+	_ = data.SQLStringConverter{
 		Name:          "BIGINT to *int64",
 		InputScanKind: reflect.Struct,
 		InputTypeName: "BIGINT",
-		Replacer: &dataframe.StringFieldReplacer{
+		Replacer: &data.StringFieldReplacer{
 			VectorType: []*int64{},
 			ReplaceFunc: func(in *string) (interface{}, error) {
 				if in == nil {
@@ -298,7 +298,7 @@ func ExampleSQLStringConverter() {
 }
 
 func ExampleStringFieldReplacer() {
-	_ = &dataframe.StringFieldReplacer{
+	_ = &data.StringFieldReplacer{
 		VectorType: []*int64{},
 		ReplaceFunc: func(in *string) (interface{}, error) {
 			if in == nil {
@@ -328,7 +328,7 @@ func ExampleNewFromSQLRows() {
 	}
 	defer rows.Close()
 
-	frame, mappings, err := dataframe.NewFromSQLRows(rows)
+	frame, mappings, err := data.NewFromSQLRows(rows)
 	if err != nil {
 		// return err
 	}

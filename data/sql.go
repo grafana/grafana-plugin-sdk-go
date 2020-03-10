@@ -1,4 +1,4 @@
-package dataframe
+package data
 
 import (
 	"database/sql"
@@ -6,13 +6,13 @@ import (
 	"reflect"
 )
 
-// NewFromSQLRows returns a new dataframe populated with the data from rows. The Field Vector types
+// NewFromSQLRows returns a new Frame populated with the data from rows. The Field Vector types
 // will be Vectors of pointer types, []*T, if the SQL column is nullable or if the nullable property is unknown.
 // Otherwise, they will be []T types.
 //
 // Fields will be named to match name of the SQL columns and the SQL column names must be unique (https://github.com/grafana/grafana-plugin-sdk-go/issues/59).
 //
-// All the types must be supported by the dataframe or a SQLStringConverter will be created and
+// All the types must be supported by the Frame or a SQLStringConverter will be created and
 // the resulting Field Vector type will be of type []*string.
 //
 // The SQLStringConverter's ConversionFunc will be applied to matching rows if it is not nil.
@@ -115,9 +115,9 @@ func newForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, ma
 	return frame, mapping, nil
 }
 
-// newScannableRow adds a row to the dataframe by extending each Field's Vector. It returns
+// newScannableRow adds a row to the Frame by extending each Field's Vector. It returns
 // a slice of references that can be passed to the database/sql rows.Scan() to scan directly into
-// the extended Vectors of the dataframe.
+// the extended Vectors of the data.
 func (f *Frame) newScannableRow() []interface{} {
 	row := make([]interface{}, len(f.Fields))
 	for i, field := range f.Fields {
@@ -131,7 +131,7 @@ func (f *Frame) newScannableRow() []interface{} {
 }
 
 // SQLStringConverter can be used to store types not supported by
-// a dataframe into a *string. When scanning, if a SQL's row's InputScanType's Kind
+// a Frame into a *string. When scanning, if a SQL's row's InputScanType's Kind
 // and InputScanKind match that returned by the sql response, then the
 // conversion func will be run on the row.
 type SQLStringConverter struct {
@@ -150,7 +150,7 @@ type SQLStringConverter struct {
 // Note: SQLStringConverter is perhaps better understood as []byte. However, currently
 // the Vector type ([][]byte) is not supported. https://github.com/grafana/grafana-plugin-sdk-go/issues/57
 
-// StringFieldReplacer is used to replace a *string Field in a dataframe. The type
+// StringFieldReplacer is used to replace a *string Field in a data. The type
 // returned by the ReplaceFunc must match the type of elements of VectorType.
 // Both properties must be non-nil.
 type StringFieldReplacer struct {

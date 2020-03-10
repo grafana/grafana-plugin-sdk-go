@@ -1,4 +1,4 @@
-package dataframe
+package data
 
 import (
 	"encoding/json"
@@ -13,17 +13,17 @@ type TimeSeriesType int
 
 // TODO: Create and link to Grafana documentation on Long vs Wide
 const (
-	// TimeSeriesTypeNot means this dataframe is not a valid time series. This means it lacks at least
+	// TimeSeriesTypeNot means this Frame is not a valid time series. This means it lacks at least
 	// one of a time Field and another (value) Field.
 	TimeSeriesTypeNot TimeSeriesType = iota
 
-	// TimeSeriesTypeLong means this dataframe can be treated as a "Long" time series.
+	// TimeSeriesTypeLong means this Frame can be treated as a "Long" time series.
 	//
 	// A Long series has one or more string Fields, disregards Labels on Fields, and generally
 	// repeated time values in the time index.
 	TimeSeriesTypeLong
 
-	// TimeSeriesTypeWide means this dataframe can be treated as a "Wide" time series.
+	// TimeSeriesTypeWide means this Frame can be treated as a "Wide" time series.
 	//
 	// A Wide series has no string fields, should not have repeated time values, and generally
 	// uses labels.
@@ -320,7 +320,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	return longFrame, nil
 }
 
-// TimeSeriesSchema is information about a Dataframe's schema. It is populated from
+// TimeSeriesSchema is information about a Frame's schema. It is populated from
 // the Frame's TimeSeriesSchema() method.
 type TimeSeriesSchema struct {
 	Type           TimeSeriesType // the type of series, as determinted by frame.TimeSeriesSchema()
