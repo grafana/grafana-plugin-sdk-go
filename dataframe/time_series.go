@@ -14,13 +14,15 @@ type TimeSeriesType int
 // TODO: Create and link to Grafana documentation on Long vs Wide
 const (
 	// TimeSeriesTypeNot means this dataframe is not a valid time series. This means it lacks at least
-	// one of a time Field and a number Field.
+	// one of a time Field and another (value) Field.
 	TimeSeriesTypeNot TimeSeriesType = iota
+
 	// TimeSeriesTypeLong means this dataframe can be treated as a "Long" time series.
 	//
 	// A Long series has one or more string Fields, disregards Labels on Fields, and generally
 	// repeated time values in the time index.
 	TimeSeriesTypeLong
+
 	// TimeSeriesTypeWide means this dataframe can be treated as a "Wide" time series.
 	//
 	// A Wide series has no string fields, should not have repeated time values, and generally
@@ -225,8 +227,8 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		return nil, fmt.Errorf("can not convert to long series, input fields have no rows")
 	}
 
-	uniqueValueNames := []string{}                         // unique names of Fields that are number types
-	uniqueValueNamesToType := make(map[string]VectorPType) // unique number Field names to Field type
+	uniqueValueNames := []string{}                         // unique names of Fields that are value types
+	uniqueValueNamesToType := make(map[string]VectorPType) // unique value Field names to Field type
 	uniqueLabelKeys := make(map[string]struct{})           // unique Label keys, used to build schema
 	labelKeyToWideIndices := make(map[string][]int)        // unique label sets to corresponding Field indices of wideFrame
 
@@ -267,13 +269,13 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	sort.Strings(uniqueFactorNames)
 
 	// build new Frame with new schema
-	longFrame := New(wideFrame.Name, // time , value fields (numbers)..., factor fields (strings)...
+	longFrame := New(wideFrame.Name, // time, value fields..., factor fields (strings)...
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
 
 	i := 1
 	valueNameToLongFieldIdx := map[string]int{} // valueName -> field index of longFrame
 	for _, name := range uniqueValueNames {
-		longFrame.Fields = append(longFrame.Fields, &Field{ // create value (number) vectors
+		longFrame.Fields = append(longFrame.Fields, &Field{ // create value vectors
 			Name:   name,
 			Vector: NewVectorFromPType(uniqueValueNamesToType[name], 0),
 		})
@@ -318,13 +320,13 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	return longFrame, nil
 }
 
-// TimeSeriesSchema is information about a Dataframe's schema.  It is populated from
+// TimeSeriesSchema is information about a Dataframe's schema. It is populated from
 // the Frame's TimeSeriesSchema() method.
 type TimeSeriesSchema struct {
 	Type           TimeSeriesType // the type of series, as determinted by frame.TimeSeriesSchema()
 	TimeIndex      int            // Field index of the time series index
 	TimeIsNullable bool           // true if the time index is nullable (of *time.Time)
-	ValueIndices   []int          // Field indices of Number type columns, as determinted by NumericVectorPTypes
+	ValueIndices   []int          // Field indices of value columns (All fields excluding string fields and the time index)
 	FactorIndices  []int          // Field indices of string or *string Fields
 }
 
