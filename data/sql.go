@@ -39,11 +39,11 @@ func NewFromSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, m
 		}
 		vec := frame.Fields[fieldIdx]
 		for i := 0; i < vec.Len(); i++ {
-			v, err := mapper.ConversionFunc(vec.Vector.At(i).(*string))
+			v, err := mapper.ConversionFunc(vec.vector.At(i).(*string))
 			if err != nil {
 				return nil, nil, err
 			}
-			vec.Vector.Set(i, v)
+			vec.vector.Set(i, v)
 		}
 		if mapper.Replacer == nil {
 			continue
@@ -121,7 +121,7 @@ func newForSQLRows(rows *sql.Rows, converters ...SQLStringConverter) (*Frame, ma
 func (f *Frame) newScannableRow() []interface{} {
 	row := make([]interface{}, len(f.Fields))
 	for i, field := range f.Fields {
-		vec := field.Vector
+		vec := field.vector
 		vec.Extend(1)
 		// non-nullable fields will be *T, and nullable fields will be **T
 		vecItemPointer := vec.PointerAt(vec.Len() - 1)
@@ -165,22 +165,22 @@ func Replace(frame *Frame, fieldIdx int, replacer *StringFieldReplacer) error {
 		return fmt.Errorf("fieldIdx is out of bounds, field len: %v", len(frame.Fields))
 	}
 	field := frame.Fields[fieldIdx]
-	if field.Vector.PrimitiveType() != VectorPTypeNullableString {
-		return fmt.Errorf("can only replace []*string vectors, vector is of type %s", field.Vector.PrimitiveType())
+	if field.vector.PrimitiveType() != VectorPTypeNullableString {
+		return fmt.Errorf("can only replace []*string vectors, vector is of type %s", field.vector.PrimitiveType())
 	}
 
 	if !ValidVectorType(replacer.VectorType) {
 		return fmt.Errorf("can not replace column with unsupported type %T", replacer.VectorType)
 	}
-	newVector := newVector(replacer.VectorType, field.Vector.Len())
+	newVector := newVector(replacer.VectorType, field.vector.Len())
 	for i := 0; i < newVector.Len(); i++ {
-		oldVal := field.Vector.At(i).(*string) // Vector type is checked earlier above
+		oldVal := field.vector.At(i).(*string) // Vector type is checked earlier above
 		newVal, err := replacer.ReplaceFunc(oldVal)
 		if err != nil {
 			return err
 		}
 		newVector.Set(i, newVal)
 	}
-	field.Vector = newVector
+	field.vector = newVector
 	return nil
 }

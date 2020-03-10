@@ -21,7 +21,7 @@ type Frame struct {
 type Field struct {
 	Name   string
 	Config *FieldConfig
-	Vector Vector // TODO? in the frontend, the variable is called "Values"
+	vector vector // TODO? in the frontend, the variable is called "Values"
 	Labels Labels
 }
 
@@ -35,7 +35,7 @@ type Fields []*Field
 // to the Field type or AppendRow will panic.
 func (f *Frame) AppendRow(vals ...interface{}) {
 	for i, v := range vals {
-		f.Fields[i].Vector.Append(v)
+		f.Fields[i].vector.Append(v)
 	}
 }
 
@@ -56,10 +56,10 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 		if f.Fields[i] == nil {
 			return fmt.Errorf("can not append to uninitalized Field at field index %v", i)
 		}
-		if f.Fields[i].Vector == nil {
+		if f.Fields[i].vector == nil {
 			return fmt.Errorf("can not append to uninitalized Field Vector at field index %v", i)
 		}
-		dfPType := f.Fields[i].Vector.PrimitiveType()
+		dfPType := f.Fields[i].vector.PrimitiveType()
 		if v == nil {
 			if !dfPType.Nullable() {
 				return fmt.Errorf("can not append nil to non-nullable vector with underlying type %s at field index %v", dfPType, i)
@@ -68,7 +68,7 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 		if v != nil && pTypeFromVal(v) != dfPType {
 			return fmt.Errorf("invalid type appending row at index %v, got %T want %v", i, v, dfPType.ItemTypeString())
 		}
-		f.Fields[i].Vector.Append(v)
+		f.Fields[i].vector.Append(v)
 	}
 	return nil
 }
@@ -80,7 +80,7 @@ func (f *Frame) TypeIndices(pTypes ...VectorPType) []int {
 		return indices
 	}
 	for fieldIdx, f := range f.Fields {
-		vecType := f.Vector.PrimitiveType()
+		vecType := f.vector.PrimitiveType()
 		for _, pType := range pTypes {
 			if pType == vecType {
 				indices = append(indices, fieldIdx)
@@ -93,7 +93,7 @@ func (f *Frame) TypeIndices(pTypes ...VectorPType) []int {
 
 // NewField returns a new instance of Field.
 func NewField(name string, labels Labels, values interface{}) *Field {
-	var vec Vector
+	var vec vector
 	switch v := values.(type) {
 	case []int8:
 		vec = newVector(v, len(v))
@@ -231,34 +231,66 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 
 	return &Field{
 		Name:   name,
-		Vector: vec,
+		vector: vec,
 		Labels: labels,
 	}
 }
 
-// Len returns the number of elements in the Field.
-func (f *Field) Len() int {
-	return f.Vector.Len()
+// Set sets the Field's value at index idx to val.
+// It will panic if idx is out of range.
+func (f *Field) Set(idx int, val interface{}) {
+	f.vector.Set(idx, val)
 }
 
 // Append appends element i to the Field.
 func (f *Field) Append(i interface{}) {
-	f.Vector.Append(i)
+	f.vector.Append(i)
 }
 
-// Extend extends the Field by i.
+// Extend extends the Field length by i.
 func (f *Field) Extend(i int) {
-	f.Vector.Extend(i)
+	f.vector.Extend(i)
+}
+
+// At returns the the element at index idx of the Field.
+// It will panic if idx is out of range.
+func (f *Field) At(idx int) interface{} {
+	return f.vector.At(idx)
+}
+
+// Len returns the number of elements in the Field.
+func (f *Field) Len() int {
+	return f.vector.Len()
 }
 
 // PrimitiveType indicates the underlying primitive type of the Field.
 func (f *Field) PrimitiveType() VectorPType {
-	return f.Vector.PrimitiveType()
+	return f.vector.PrimitiveType()
+}
+
+// PointerAt returns a pointer to the value at idx of the Field.
+// It will panic if idx is out of range.
+func (f *Field) PointerAt(idx int) interface{} {
+	return f.vector.PointerAt(idx)
+}
+
+// CopyAt returns a copy of the value of the specified index idx.
+// It will panic if idx is out of range.
+func (f *Field) CopyAt(idx int) interface{} {
+	return f.vector.CopyAt(idx)
+}
+
+// ConcreteAt returns the concrete value at the specified index idx.
+// A non-pointer type is returned regardless if the underlying vector is a pointer
+// type or not. If the value is a pointer type, and is nil, then the zero value
+// is returned and ok will be false.
+func (f *Field) ConcreteAt(idx int) (val interface{}, ok bool) {
+	return f.vector.ConcreteAt(idx)
 }
 
 // Nullable returns if the the Field's elements are nullable.
 func (f *Field) Nullable() bool {
-	return f.Vector.PrimitiveType().Nullable()
+	return f.vector.PrimitiveType().Nullable()
 }
 
 // SetConfig modifies the Field's Config property to
@@ -360,25 +392,25 @@ func (f *Frame) Rows() int {
 // At returns the value of the specified fieldIdx and rowIdx.
 // It will panic if either the fieldIdx or rowIdx are out of range.
 func (f *Frame) At(fieldIdx int, rowIdx int) interface{} {
-	return f.Fields[fieldIdx].Vector.At(rowIdx)
+	return f.Fields[fieldIdx].vector.At(rowIdx)
 }
 
 // CopyAt returns a copy of the value of the specified fieldIdx and rowIdx.
 // It will panic if either the fieldIdx or rowIdx are out of range.
 func (f *Frame) CopyAt(fieldIdx int, rowIdx int) interface{} {
-	return f.Fields[fieldIdx].Vector.CopyAt(rowIdx)
+	return f.Fields[fieldIdx].vector.CopyAt(rowIdx)
 }
 
 // Set set the val to the specified fieldIdx and rowIdx.
 // It will panic if either the fieldIdx or rowIdx are out of range.
 func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
-	f.Fields[fieldIdx].Vector.Set(rowIdx, val)
+	f.Fields[fieldIdx].vector.Set(rowIdx, val)
 }
 
 // Extend extends all the Fields Vectors length by i.
 func (f *Frame) Extend(i int) {
 	for _, f := range f.Fields {
-		f.Vector.Extend(i)
+		f.vector.Extend(i)
 	}
 }
 
@@ -387,7 +419,7 @@ func (f *Frame) Extend(i int) {
 // type or not. If the value is a pointer type, and is nil, then the zero value
 // is returned and ok will be false.
 func (f *Frame) ConcreteAt(fieldIdx int, rowIdx int) (val interface{}, ok bool) {
-	return f.Fields[fieldIdx].Vector.ConcreteAt(rowIdx)
+	return f.Fields[fieldIdx].vector.ConcreteAt(rowIdx)
 }
 
 // RowLen returns the the length of the Frame Fields' Vectors.
@@ -400,7 +432,7 @@ func (f *Frame) RowLen() (int, error) {
 
 	var l int
 	for i := 0; i < len(f.Fields); i++ {
-		if f.Fields[i].Vector == nil {
+		if f.Fields[i].vector == nil {
 			return 0, fmt.Errorf("frame's field at index %v is nil", i)
 		}
 		if i == 0 {
@@ -408,7 +440,7 @@ func (f *Frame) RowLen() (int, error) {
 			continue
 		}
 		if l != f.Fields[i].Len() {
-			return 0, fmt.Errorf("frame has different field vector lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].Vector.Len())
+			return 0, fmt.Errorf("frame has different field vector lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].vector.Len())
 		}
 
 	}

@@ -45,16 +45,16 @@ func TestField(t *testing.T) {
 }
 
 func TestField_Float64(t *testing.T) {
-	f := data.NewField("value", nil, make([]*float64, 3))
+	field := data.NewField("value", nil, make([]*float64, 3))
 
 	want := 2.0
-	f.Vector.Set(1, &want)
+	field.Set(1, &want)
 
-	if f.Len() != 3 {
+	if field.Len() != 3 {
 		t.Fatal("unexpected length")
 	}
 
-	got := f.Vector.At(1).(*float64)
+	got := field.At(1).(*float64)
 
 	if *got != want {
 		t.Errorf("%+v", *got)
@@ -62,16 +62,16 @@ func TestField_Float64(t *testing.T) {
 }
 
 func TestField_String(t *testing.T) {
-	f := data.NewField("value", nil, make([]*string, 3))
+	field := data.NewField("value", nil, make([]*string, 3))
 
 	want := "foo"
-	f.Vector.Set(1, &want)
+	field.Set(1, &want)
 
-	if f.Len() != 3 {
+	if field.Len() != 3 {
 		t.Fatal("unexpected length")
 	}
 
-	got := f.Vector.At(1).(*string)
+	got := field.At(1).(*string)
 
 	if *got != want {
 		t.Errorf("%+v", *got)
@@ -105,7 +105,7 @@ func TestTimeField(t *testing.T) {
 			}
 
 			for i := 0; i < f.Len(); i++ {
-				got := reflect.ValueOf(f.Vector.At(i))
+				got := reflect.ValueOf(f.At(i))
 				want := reflect.ValueOf(tt.Values[i])
 
 				if got != want {

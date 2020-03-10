@@ -5,8 +5,8 @@ import (
 	"time"
 )
 
-// Vector represents a collection of Elements.
-type Vector interface {
+// vector represents a Field's collection of Elements.
+type vector interface {
 	Set(idx int, i interface{})
 	Append(i interface{})
 	Extend(i int)
@@ -16,10 +16,9 @@ type Vector interface {
 	PointerAt(i int) interface{}
 	CopyAt(i int) interface{}
 	ConcreteAt(i int) (val interface{}, ok bool)
-	//buildArrowColumn(pool memory.Allocator, field arrow.Field) *array.Column
 }
 
-func newVector(t interface{}, n int) (v Vector) {
+func newVector(t interface{}, n int) (v vector) {
 	switch t.(type) {
 	// ints
 	case []int8:
@@ -221,7 +220,7 @@ const (
 	VectorPTypeNullableTime
 )
 
-func vectorPType(v Vector) VectorPType {
+func vectorPType(v vector) VectorPType {
 	switch v.(type) {
 	case *int8Vector:
 		return VectorPTypeInt8
@@ -371,7 +370,7 @@ func (p VectorPType) String() string {
 }
 
 // NewVectorFromPType creates a new Vector of the given pType of length n.
-func NewVectorFromPType(p VectorPType, n int) (v Vector) {
+func NewVectorFromPType(p VectorPType, n int) (v vector) {
 	switch p {
 	// ints
 	case VectorPTypeInt8:

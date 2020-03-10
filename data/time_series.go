@@ -182,7 +182,7 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 				newWideField := &Field{
 					Name:   longField.Name, // Note: currently duplicate names won't marshal to Arrow (https://github.com/grafana/grafana-plugin-sdk-go/issues/59)
 					Labels: labels,
-					Vector: NewVectorFromPType(longField.PrimitiveType(), wideFrameRowCounter+1),
+					vector: NewVectorFromPType(longField.PrimitiveType(), wideFrameRowCounter+1),
 				}
 				wideFrame.Fields = append(wideFrame.Fields, newWideField)
 				valueFactorToWideFieldIdx[longFieldIdx][factorKey] = currentFieldLen + offset
@@ -277,7 +277,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	for _, name := range uniqueValueNames {
 		longFrame.Fields = append(longFrame.Fields, &Field{ // create value vectors
 			Name:   name,
-			Vector: NewVectorFromPType(uniqueValueNamesToType[name], 0),
+			vector: NewVectorFromPType(uniqueValueNamesToType[name], 0),
 		})
 		valueNameToLongFieldIdx[name] = i
 		i++
