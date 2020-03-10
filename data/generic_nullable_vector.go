@@ -53,7 +53,7 @@ func (v *nullablegenVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullablegenVector) PrimitiveType() FieldType {
+func (v *nullablegenVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 

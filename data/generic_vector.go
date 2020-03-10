@@ -45,7 +45,7 @@ func (v *genVector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *genVector) PrimitiveType() FieldType {
+func (v *genVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 

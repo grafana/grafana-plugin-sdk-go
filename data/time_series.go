@@ -180,7 +180,7 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 				}
 				longField := longFrame.Fields[tsSchema.ValueIndices[offset]]
 
-				newWideField := NewFieldFromFieldType(longField.PrimitiveType(), wideFrameRowCounter+1)
+				newWideField := NewFieldFromFieldType(longField.Type(), wideFrameRowCounter+1)
 				newWideField.Name, newWideField.Labels = longField.Name, labels
 				wideFrame.Fields = append(wideFrame.Fields, newWideField)
 
@@ -235,11 +235,11 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	for _, vIdx := range tsSchema.ValueIndices {
 		wideField := wideFrame.Fields[vIdx]
 		if pType, ok := uniqueValueNamesToType[wideField.Name]; ok {
-			if wideField.PrimitiveType() != pType {
-				return nil, fmt.Errorf("two fields in input frame may not have the same name but different types, field name %s has type %s but also type %s and field idx %v", wideField.Name, pType, wideField.PrimitiveType(), vIdx)
+			if wideField.Type() != pType {
+				return nil, fmt.Errorf("two fields in input frame may not have the same name but different types, field name %s has type %s but also type %s and field idx %v", wideField.Name, pType, wideField.Type(), vIdx)
 			}
 		} else {
-			uniqueValueNamesToType[wideField.Name] = wideField.PrimitiveType()
+			uniqueValueNamesToType[wideField.Name] = wideField.Type()
 			uniqueValueNames = append(uniqueValueNames, wideField.Name)
 		}
 

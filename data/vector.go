@@ -12,7 +12,7 @@ type vector interface {
 	Extend(i int)
 	At(i int) interface{}
 	Len() int
-	PrimitiveType() FieldType
+	Type() FieldType
 	PointerAt(i int) interface{}
 	CopyAt(i int) interface{}
 	ConcreteAt(i int) (val interface{}, ok bool)

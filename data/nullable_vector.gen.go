@@ -59,7 +59,7 @@ func (v *nullableUint8Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableUint8Vector) PrimitiveType() FieldType {
+func (v *nullableUint8Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -120,7 +120,7 @@ func (v *nullableUint16Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableUint16Vector) PrimitiveType() FieldType {
+func (v *nullableUint16Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -181,7 +181,7 @@ func (v *nullableUint32Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableUint32Vector) PrimitiveType() FieldType {
+func (v *nullableUint32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -242,7 +242,7 @@ func (v *nullableUint64Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableUint64Vector) PrimitiveType() FieldType {
+func (v *nullableUint64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -303,7 +303,7 @@ func (v *nullableInt8Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableInt8Vector) PrimitiveType() FieldType {
+func (v *nullableInt8Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -364,7 +364,7 @@ func (v *nullableInt16Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableInt16Vector) PrimitiveType() FieldType {
+func (v *nullableInt16Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -425,7 +425,7 @@ func (v *nullableInt32Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableInt32Vector) PrimitiveType() FieldType {
+func (v *nullableInt32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -486,7 +486,7 @@ func (v *nullableInt64Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableInt64Vector) PrimitiveType() FieldType {
+func (v *nullableInt64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -547,7 +547,7 @@ func (v *nullableFloat32Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableFloat32Vector) PrimitiveType() FieldType {
+func (v *nullableFloat32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -608,7 +608,7 @@ func (v *nullableFloat64Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableFloat64Vector) PrimitiveType() FieldType {
+func (v *nullableFloat64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -669,7 +669,7 @@ func (v *nullableStringVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableStringVector) PrimitiveType() FieldType {
+func (v *nullableStringVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -730,7 +730,7 @@ func (v *nullableBoolVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableBoolVector) PrimitiveType() FieldType {
+func (v *nullableBoolVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -791,7 +791,7 @@ func (v *nullableTimeTimeVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableTimeTimeVector) PrimitiveType() FieldType {
+func (v *nullableTimeTimeVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 

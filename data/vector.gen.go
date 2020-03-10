@@ -45,7 +45,7 @@ func (v *uint8Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *uint8Vector) PrimitiveType() FieldType {
+func (v *uint8Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -92,7 +92,7 @@ func (v *uint16Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *uint16Vector) PrimitiveType() FieldType {
+func (v *uint16Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -139,7 +139,7 @@ func (v *uint32Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *uint32Vector) PrimitiveType() FieldType {
+func (v *uint32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -186,7 +186,7 @@ func (v *uint64Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *uint64Vector) PrimitiveType() FieldType {
+func (v *uint64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -233,7 +233,7 @@ func (v *int8Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *int8Vector) PrimitiveType() FieldType {
+func (v *int8Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -280,7 +280,7 @@ func (v *int16Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *int16Vector) PrimitiveType() FieldType {
+func (v *int16Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -327,7 +327,7 @@ func (v *int32Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *int32Vector) PrimitiveType() FieldType {
+func (v *int32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -374,7 +374,7 @@ func (v *int64Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *int64Vector) PrimitiveType() FieldType {
+func (v *int64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -421,7 +421,7 @@ func (v *float32Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *float32Vector) PrimitiveType() FieldType {
+func (v *float32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -468,7 +468,7 @@ func (v *float64Vector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *float64Vector) PrimitiveType() FieldType {
+func (v *float64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -515,7 +515,7 @@ func (v *stringVector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *stringVector) PrimitiveType() FieldType {
+func (v *stringVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -562,7 +562,7 @@ func (v *boolVector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *boolVector) PrimitiveType() FieldType {
+func (v *boolVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
@@ -609,7 +609,7 @@ func (v *timeTimeVector) ConcreteAt(i int) (interface{}, bool) {
 	return v.At(i), true
 }
 
-func (v *timeTimeVector) PrimitiveType() FieldType {
+func (v *timeTimeVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 

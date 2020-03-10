@@ -165,8 +165,8 @@ func Replace(frame *Frame, fieldIdx int, replacer *StringFieldReplacer) error {
 		return fmt.Errorf("fieldIdx is out of bounds, field len: %v", len(frame.Fields))
 	}
 	field := frame.Fields[fieldIdx]
-	if field.vector.PrimitiveType() != FieldTypeNullableString {
-		return fmt.Errorf("can only replace []*string vectors, vector is of type %s", field.vector.PrimitiveType())
+	if field.Type() != FieldTypeNullableString {
+		return fmt.Errorf("can only replace []*string vectors, vector is of type %s", field.Type())
 	}
 
 	if !ValidFieldType(replacer.VectorType) {

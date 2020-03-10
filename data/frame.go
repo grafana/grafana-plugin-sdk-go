@@ -59,7 +59,7 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 		if f.Fields[i] == nil || f.Fields[i].vector == nil {
 			return fmt.Errorf("can not append to uninitalized Field at field index %v", i)
 		}
-		dfPType := f.Fields[i].vector.PrimitiveType()
+		dfPType := f.Fields[i].Type()
 		if v == nil {
 			if !dfPType.Nullable() {
 				return fmt.Errorf("can not append nil to non-nullable vector with underlying type %s at field index %v", dfPType, i)
@@ -80,7 +80,7 @@ func (f *Frame) TypeIndices(pTypes ...FieldType) []int {
 		return indices
 	}
 	for fieldIdx, f := range f.Fields {
-		vecType := f.vector.PrimitiveType()
+		vecType := f.Type()
 		for _, pType := range pTypes {
 			if pType == vecType {
 				indices = append(indices, fieldIdx)
@@ -263,9 +263,9 @@ func (f *Field) Len() int {
 	return f.vector.Len()
 }
 
-// PrimitiveType indicates the underlying primitive type of the Field.
-func (f *Field) PrimitiveType() FieldType {
-	return f.vector.PrimitiveType()
+// Type returns the underlying primitive type of the Field.
+func (f *Field) Type() FieldType {
+	return f.vector.Type()
 }
 
 // PointerAt returns a pointer to the value at idx of the Field.
@@ -290,7 +290,7 @@ func (f *Field) ConcreteAt(idx int) (val interface{}, ok bool) {
 
 // Nullable returns if the the Field's elements are nullable.
 func (f *Field) Nullable() bool {
-	return f.vector.PrimitiveType().Nullable()
+	return f.Type().Nullable()
 }
 
 // SetConfig modifies the Field's Config property to
