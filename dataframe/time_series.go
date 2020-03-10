@@ -21,7 +21,7 @@ const (
 	// A Long series has one or more string Fields, disregards Labels on Fields, and generally
 	// repeated time values in the time index.
 	TimeSeriesTypeLong
-	// TimeSeriesTypeLong means this dataframe can be treated as a "Wide" time series.
+	// TimeSeriesTypeWide means this dataframe can be treated as a "Wide" time series.
 	//
 	// A Wide series has no string fields, should not have repeated time values, and generally
 	// uses labels.
