@@ -72,9 +72,12 @@ func MarshalArrow(f *Frame) ([]byte, error) {
 	return fb.Buff.Bytes(), nil
 }
 
+// fieldNamePrefixSep is the delimiter used with fieldNamePrefix.
+const fieldNamePrefixSep = "🦥: "
+
 // fieldNamePrefix is the fmt string for Field Names. We prefix the name with fieldIdx number, sloth, :, space
 // to ensure names are unique. The prefix is removed upon reading.
-const fieldNamePrefix = "%s🦥: %s"
+const fieldNamePrefix = "%s" + fieldNamePrefixSep + "%s"
 
 // prefixFieldName adds our special fieldNamePrefix to the fieldNames so they are unique when writing to arrow.
 func prefixFieldName(fieldIdx int, name string) string {
@@ -83,7 +86,7 @@ func prefixFieldName(fieldIdx int, name string) string {
 
 // prefixFieldNameStrip adds our special fieldNamePrefix from Field Names when reading from arrow.
 func prefixFieldNameStrip(name string) string {
-	sp := strings.SplitN(name, "🦥: ", 2)
+	sp := strings.SplitN(name, fieldNamePrefixSep, 2)
 	if len(sp) == 2 {
 		return sp[1]
 	}
