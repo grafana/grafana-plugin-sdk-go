@@ -1,3 +1,6 @@
+// Package data provides data structures that Grafana recognizes. The Frame
+// object represents a Grafana Dataframe which can represent data such as tables
+// and time series.
 package data
 
 import (
