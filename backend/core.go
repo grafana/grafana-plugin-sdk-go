@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // User represents the Grafana user.
@@ -18,20 +18,22 @@ type User struct {
 
 // DataSourceConfig configuration for a datasource plugin.
 type DataSourceConfig struct {
-	ID               int64
-	Name             string
-	URL              string
-	User             string
-	Database         string
-	BasicAuthEnabled bool
-	BasicAuthUser    string
+	ID                      int64
+	Name                    string
+	URL                     string
+	User                    string
+	Database                string
+	BasicAuthEnabled        bool
+	BasicAuthUser           string
+	JSONData                json.RawMessage
+	DecryptedSecureJSONData map[string]string
+	Updated                 time.Time
 }
 
 // PluginConfig configuration for a plugin.
 type PluginConfig struct {
 	OrgID                   int64
 	PluginID                string
-	PluginType              string
 	JSONData                json.RawMessage
 	DecryptedSecureJSONData map[string]string
 	Updated                 time.Time
@@ -56,7 +58,7 @@ type DataQuery struct {
 
 // QueryDataResponse holds the results for a given query.
 type QueryDataResponse struct {
-	Frames   []*dataframe.Frame
+	Frames   []*data.Frame
 	Metadata map[string]string
 }
 

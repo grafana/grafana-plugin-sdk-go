@@ -44,10 +44,9 @@ func TestHttpResourceHandler(t *testing.T) {
 
 		req := &backend.CallResourceRequest{
 			PluginConfig: backend.PluginConfig{
-				OrgID:      3,
-				PluginID:   "my-plugin",
-				PluginType: "my-type",
-				JSONData:   jsonDataBytes,
+				OrgID:    3,
+				PluginID: "my-plugin",
+				JSONData: jsonDataBytes,
 				DecryptedSecureJSONData: map[string]string{
 					"secureProp": "secure value",
 				},
@@ -119,7 +118,6 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.NotNil(t, pluginCfg)
 			require.Equal(t, req.PluginConfig.OrgID, pluginCfg.OrgID)
 			require.Equal(t, req.PluginConfig.PluginID, pluginCfg.PluginID)
-			require.Equal(t, req.PluginConfig.PluginType, pluginCfg.PluginType)
 			require.Equal(t, req.PluginConfig.JSONData, pluginCfg.JSONData)
 			require.Equal(t, req.PluginConfig.DecryptedSecureJSONData, pluginCfg.DecryptedSecureJSONData)
 			require.Equal(t, req.PluginConfig.Updated, pluginCfg.Updated)
@@ -157,9 +155,8 @@ func TestHttpResourceHandler(t *testing.T) {
 		resourceHandler := New(httpHandler)
 		req := &backend.CallResourceRequest{
 			PluginConfig: backend.PluginConfig{
-				OrgID:      3,
-				PluginID:   "my-plugin",
-				PluginType: "my-type",
+				OrgID:    3,
+				PluginID: "my-plugin",
 			},
 			Method: http.MethodPost,
 			Path:   "path",
@@ -209,9 +206,8 @@ func TestServeMuxHandler(t *testing.T) {
 
 		req := &backend.CallResourceRequest{
 			PluginConfig: backend.PluginConfig{
-				OrgID:      3,
-				PluginID:   "my-plugin",
-				PluginType: "my-type",
+				OrgID:    3,
+				PluginID: "my-plugin",
 			},
 			Method: http.MethodGet,
 			Path:   "test",

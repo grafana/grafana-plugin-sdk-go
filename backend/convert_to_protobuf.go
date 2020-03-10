@@ -3,7 +3,7 @@ package backend
 import (
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -48,10 +48,9 @@ func (t convertToProtobuf) PluginConfig(config PluginConfig) *pluginv2.PluginCon
 	return &pluginv2.PluginConfig{
 		OrgId:                   config.OrgID,
 		PluginId:                config.PluginID,
-		PluginType:              config.PluginType,
 		JsonData:                config.JSONData,
 		DecryptedSecureJsonData: config.DecryptedSecureJSONData,
-		UpdatedMS:               config.Updated.UnixNano() / int64(time.Millisecond),
+		LastUpdatedMS:           config.Updated.UnixNano() / int64(time.Millisecond),
 		DatasourceConfig:        t.DataSourceConfig(config.DataSourceConfig),
 	}
 }
@@ -109,7 +108,7 @@ func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 	encodedFrames := make([][]byte, len(res.Frames))
 	var err error
 	for i, frame := range res.Frames {
-		encodedFrames[i], err = dataframe.MarshalArrow(frame)
+		encodedFrames[i], err = data.MarshalArrow(frame)
 		if err != nil {
 			return nil, err
 		}
