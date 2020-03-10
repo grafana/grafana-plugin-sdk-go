@@ -72,12 +72,16 @@ func MarshalArrow(f *Frame) ([]byte, error) {
 	return fb.Buff.Bytes(), nil
 }
 
+// fieldNamePrefix is the fmt string for Field Names. We prefix the name with fieldIdx number, sloth, :, space
+// to ensure names are unique. The prefix is removed upon reading.
 const fieldNamePrefix = "%s🦥: %s"
 
+// prefixFieldName adds our special fieldNamePrefix to the fieldNames so they are unique when writing to arrow.
 func prefixFieldName(fieldIdx int, name string) string {
 	return fmt.Sprintf(fieldNamePrefix, strconv.Itoa(fieldIdx), name)
 }
 
+// prefixFieldNameStrip adds our special fieldNamePrefix from Field Names when reading from arrow.
 func prefixFieldNameStrip(name string) string {
 	sp := strings.SplitN(name, "🦥: ", 2)
 	if len(sp) == 2 {
