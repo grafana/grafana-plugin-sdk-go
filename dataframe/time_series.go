@@ -46,22 +46,29 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 		return
 	}
 
+	nonValueIndices := make(map[int]struct{})
 	timeIndices := f.TypeIndices(VectorPTypeTime, VectorPTypeNullableTime)
-	if len(timeIndices) != 1 {
+	if len(timeIndices) == 0 {
 		return
 	}
 	tsSchema.TimeIndex = timeIndices[0]
+	nonValueIndices[tsSchema.TimeIndex] = struct{}{}
+
 	tsSchema.TimeIsNullable = f.Fields[tsSchema.TimeIndex].Nullable()
 
-	tsSchema.ValueIndices = f.TypeIndices(NumericVectorPTypes()...)
-	if len(tsSchema.ValueIndices) == 0 {
-		return
+	tsSchema.FactorIndices = f.TypeIndices(VectorPTypeString, VectorPTypeNullableString)
+	for _, factorIdx := range tsSchema.FactorIndices {
+		nonValueIndices[factorIdx] = struct{}{}
 	}
 
-	tsSchema.FactorIndices = f.TypeIndices(VectorPTypeString, VectorPTypeNullableString)
+	for i := range f.Fields {
+		if _, ok := nonValueIndices[i]; ok {
+			continue
+		}
+		tsSchema.ValueIndices = append(tsSchema.ValueIndices, i)
+	}
 
-	// Extra Columns not Allowed (including time)
-	if 1+len(tsSchema.ValueIndices)+len(tsSchema.FactorIndices) != len(f.Fields) {
+	if len(tsSchema.ValueIndices) == 0 {
 		return
 	}
 
@@ -192,9 +199,9 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 //
 // During conversion: All the unique keys in all of the Labels across the Fields of wideFrame become string
 // Fields with the corresponding name in longFrame. The corresponding Labels values become values in those Fields of longFrame.
-// For each unique number type Field across the Fields of wideFrame, a Field of the same type is created in longFrame.
+// For each unique non-timeIndex Field across the Fields of wideFrame (value fields), a Field of the same type is created in longFrame.
 // For each unique set of Labels across the Fields of wideFrame, a row is added to longFrame, and then
-// for each unique number type Field, the corresponding number Field of longFrame is set.
+// for each unique value Field, the corresponding value Field of longFrame is set.
 //
 // An error is returned if any of the following are true:
 // The input frame is not a wide formated time series frame.

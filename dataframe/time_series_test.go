@@ -26,10 +26,10 @@ func TestTimeSeriesSchema(t *testing.T) {
 			tsType: dataframe.TimeSeriesTypeNot,
 		},
 		{
-			name: "more than one time field is not a time series",
+			name: "two time values is a wide series",
 			frame: dataframe.New("test", dataframe.NewField("timeValues", nil, []time.Time{time.Time{}}),
 				dataframe.NewField("moreTimeValues", nil, []time.Time{time.Time{}})),
-			tsType: dataframe.TimeSeriesTypeNot,
+			tsType: dataframe.TimeSeriesTypeWide,
 		},
 		{
 			name:   "simple wide time series",
