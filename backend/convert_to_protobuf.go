@@ -48,10 +48,9 @@ func (t convertToProtobuf) PluginConfig(config PluginConfig) *pluginv2.PluginCon
 	return &pluginv2.PluginConfig{
 		OrgId:                   config.OrgID,
 		PluginId:                config.PluginID,
-		PluginType:              config.PluginType,
 		JsonData:                config.JSONData,
 		DecryptedSecureJsonData: config.DecryptedSecureJSONData,
-		UpdatedMS:               config.Updated.UnixNano() / int64(time.Millisecond),
+		LastUpdatedMS:           config.Updated.UnixNano() / int64(time.Millisecond),
 		DatasourceConfig:        t.DataSourceConfig(config.DataSourceConfig),
 	}
 }
