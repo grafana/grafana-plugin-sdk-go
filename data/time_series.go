@@ -49,7 +49,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	}
 
 	nonValueIndices := make(map[int]struct{})
-	timeIndices := f.TypeIndices(VectorPTypeTime, VectorPTypeNullableTime)
+	timeIndices := f.TypeIndices(FieldTypeTime, FieldTypeNullableTime)
 	if len(timeIndices) == 0 {
 		return
 	}
@@ -58,7 +58,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 
 	tsSchema.TimeIsNullable = f.Fields[tsSchema.TimeIndex].Nullable()
 
-	tsSchema.FactorIndices = f.TypeIndices(VectorPTypeString, VectorPTypeNullableString)
+	tsSchema.FactorIndices = f.TypeIndices(FieldTypeString, FieldTypeNullableString)
 	for _, factorIdx := range tsSchema.FactorIndices {
 		nonValueIndices[factorIdx] = struct{}{}
 	}
@@ -179,12 +179,11 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 					return nil, err
 				}
 				longField := longFrame.Fields[tsSchema.ValueIndices[offset]]
-				newWideField := &Field{
-					Name:   longField.Name, // Note: currently duplicate names won't marshal to Arrow (https://github.com/grafana/grafana-plugin-sdk-go/issues/59)
-					Labels: labels,
-					vector: NewVectorFromPType(longField.PrimitiveType(), wideFrameRowCounter+1),
-				}
+
+				newWideField := NewFieldFromFieldType(longField.PrimitiveType(), wideFrameRowCounter+1)
+				newWideField.Name, newWideField.Labels = longField.Name, labels
 				wideFrame.Fields = append(wideFrame.Fields, newWideField)
+
 				valueFactorToWideFieldIdx[longFieldIdx][factorKey] = currentFieldLen + offset
 			}
 		}
@@ -227,10 +226,10 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 		return nil, fmt.Errorf("can not convert to long series, input fields have no rows")
 	}
 
-	uniqueValueNames := []string{}                         // unique names of Fields that are value types
-	uniqueValueNamesToType := make(map[string]VectorPType) // unique value Field names to Field type
-	uniqueLabelKeys := make(map[string]struct{})           // unique Label keys, used to build schema
-	labelKeyToWideIndices := make(map[string][]int)        // unique label sets to corresponding Field indices of wideFrame
+	uniqueValueNames := []string{}                       // unique names of Fields that are value types
+	uniqueValueNamesToType := make(map[string]FieldType) // unique value Field names to Field type
+	uniqueLabelKeys := make(map[string]struct{})         // unique Label keys, used to build schema
+	labelKeyToWideIndices := make(map[string][]int)      // unique label sets to corresponding Field indices of wideFrame
 
 	// Gather schema information from wideFrame required to build longFrame
 	for _, vIdx := range tsSchema.ValueIndices {
@@ -275,10 +274,9 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	i := 1
 	valueNameToLongFieldIdx := map[string]int{} // valueName -> field index of longFrame
 	for _, name := range uniqueValueNames {
-		longFrame.Fields = append(longFrame.Fields, &Field{ // create value vectors
-			Name:   name,
-			vector: NewVectorFromPType(uniqueValueNamesToType[name], 0),
-		})
+		newWideField := NewFieldFromFieldType(uniqueValueNamesToType[name], 0) // create value Fields
+		newWideField.Name = name
+		longFrame.Fields = append(longFrame.Fields, newWideField)
 		valueNameToLongFieldIdx[name] = i
 		i++
 	}

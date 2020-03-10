@@ -433,7 +433,7 @@ func TestLongToWide(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			frame, err := data.LongToWide(tt.longFrame)
 			tt.Err(t, err)
-			if diff := cmp.Diff(tt.wideFrame, frame); diff != "" {
+			if diff := cmp.Diff(tt.wideFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("Result mismatch (-want +got):\n%s", diff)
 			}
 		})
@@ -769,7 +769,7 @@ func TestWideToLong(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			frame, err := data.WideToLong(tt.wideFrame)
 			tt.Err(t, err)
-			if diff := cmp.Diff(tt.longFrame, frame); diff != "" {
+			if diff := cmp.Diff(tt.longFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("Result mismatch (-want +got):\n%s", diff)
 			}
 		})

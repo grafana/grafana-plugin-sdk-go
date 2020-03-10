@@ -270,36 +270,7 @@ func TestDecode(t *testing.T) {
 
 	df := goldenDF()
 
-	opt := cmp.Comparer(func(x, y *data.ConfFloat64) bool {
-		if x == nil && y == nil {
-			return true
-		}
-		if y == nil {
-			if math.IsNaN(float64(*x)) {
-				return true
-			}
-			if math.IsInf(float64(*x), 1) {
-				return true
-			}
-			if math.IsInf(float64(*x), -1) {
-				return true
-			}
-		}
-		if x == nil {
-			if math.IsNaN(float64(*y)) {
-				return true
-			}
-			if math.IsInf(float64(*y), 1) {
-				return true
-			}
-			if math.IsInf(float64(*y), -1) {
-				return true
-			}
-		}
-		return *x == *y
-	})
-
-	if diff := cmp.Diff(df, newDf, opt); diff != "" {
+	if diff := cmp.Diff(df, newDf, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 

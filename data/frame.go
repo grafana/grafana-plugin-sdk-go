@@ -2,9 +2,12 @@ package data
 
 import (
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
+
+	"github.com/google/go-cmp/cmp"
 )
 
 // Frame represents a columnar storage with optional labels.
@@ -30,7 +33,7 @@ type Fields []*Field
 
 // AppendRow adds a new row to the Frame by appending to each element of vals to
 // the corresponding Field in the data.
-// The Frame's Fields and the Fields' Vectors must be initalized or AppendRow will panic.
+// The Frame's Fields must be initalized or AppendRow will panic.
 // The number of arguments must match the number of Fields in the Frame and each type must coorespond
 // to the Field type or AppendRow will panic.
 func (f *Frame) AppendRow(vals ...interface{}) {
@@ -53,11 +56,8 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 	}
 	// check validity before any modification
 	for i, v := range vals {
-		if f.Fields[i] == nil {
+		if f.Fields[i] == nil || f.Fields[i].vector == nil {
 			return fmt.Errorf("can not append to uninitalized Field at field index %v", i)
-		}
-		if f.Fields[i].vector == nil {
-			return fmt.Errorf("can not append to uninitalized Field Vector at field index %v", i)
 		}
 		dfPType := f.Fields[i].vector.PrimitiveType()
 		if v == nil {
@@ -65,7 +65,7 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 				return fmt.Errorf("can not append nil to non-nullable vector with underlying type %s at field index %v", dfPType, i)
 			}
 		}
-		if v != nil && pTypeFromVal(v) != dfPType {
+		if v != nil && fieldTypeFromVal(v) != dfPType {
 			return fmt.Errorf("invalid type appending row at index %v, got %T want %v", i, v, dfPType.ItemTypeString())
 		}
 		f.Fields[i].vector.Append(v)
@@ -74,7 +74,7 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 }
 
 // TypeIndices returns a slice of Field index positions for the given pTypes.
-func (f *Frame) TypeIndices(pTypes ...VectorPType) []int {
+func (f *Frame) TypeIndices(pTypes ...FieldType) []int {
 	indices := []int{}
 	if f.Fields == nil {
 		return indices
@@ -264,7 +264,7 @@ func (f *Field) Len() int {
 }
 
 // PrimitiveType indicates the underlying primitive type of the Field.
-func (f *Field) PrimitiveType() VectorPType {
+func (f *Field) PrimitiveType() FieldType {
 	return f.vector.PrimitiveType()
 }
 
@@ -407,7 +407,7 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.Set(rowIdx, val)
 }
 
-// Extend extends all the Fields Vectors length by i.
+// Extend extends all the Fields by length by i.
 func (f *Frame) Extend(i int) {
 	for _, f := range f.Fields {
 		f.vector.Extend(i)
@@ -415,16 +415,16 @@ func (f *Frame) Extend(i int) {
 }
 
 // ConcreteAt returns the concrete value at the specified fieldIdx and rowIdx.
-// A non-pointer type is returned regardless if the underlying vector is a pointer
+// A non-pointer type is returned regardless if the underlying type is a pointer
 // type or not. If the value is a pointer type, and is nil, then the zero value
 // is returned and ok will be false.
 func (f *Frame) ConcreteAt(fieldIdx int, rowIdx int) (val interface{}, ok bool) {
 	return f.Fields[fieldIdx].vector.ConcreteAt(rowIdx)
 }
 
-// RowLen returns the the length of the Frame Fields' Vectors.
-// If the Length of all the Vectors is not the same then error is returned.
-// If the Frame's Fields or Vectors are nil an error is returned.
+// RowLen returns the the length of the Frame Fields.
+// If the Length of all the Fields is not the same then error is returned.
+// If the Frame's Fields are nil an error is returned.
 func (f *Frame) RowLen() (int, error) {
 	if f.Fields == nil || len(f.Fields) == 0 {
 		return 0, fmt.Errorf("frame's fields are nil or of zero length")
@@ -440,9 +440,45 @@ func (f *Frame) RowLen() (int, error) {
 			continue
 		}
 		if l != f.Fields[i].Len() {
-			return 0, fmt.Errorf("frame has different field vector lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].vector.Len())
+			return 0, fmt.Errorf("frame has different field lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].vector.Len())
 		}
 
 	}
 	return l, nil
+}
+
+// FrameTestCompareOptions returns go-cmp testing options to allow testing of Frame equivelnce.
+// The intent is to only use this for testing.
+func FrameTestCompareOptions() []cmp.Option {
+	confFloats := cmp.Comparer(func(x, y *ConfFloat64) bool {
+		if x == nil && y == nil {
+			return true
+		}
+		if y == nil {
+			if math.IsNaN(float64(*x)) {
+				return true
+			}
+			if math.IsInf(float64(*x), 1) {
+				return true
+			}
+			if math.IsInf(float64(*x), -1) {
+				return true
+			}
+		}
+		if x == nil {
+			if math.IsNaN(float64(*y)) {
+				return true
+			}
+			if math.IsInf(float64(*y), 1) {
+				return true
+			}
+			if math.IsInf(float64(*y), -1) {
+				return true
+			}
+		}
+		return *x == *y
+	})
+
+	unexportedField := cmp.AllowUnexported(Field{})
+	return []cmp.Option{confFloats, unexportedField}
 }

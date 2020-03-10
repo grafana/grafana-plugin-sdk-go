@@ -192,7 +192,7 @@ func TestAppendRowSafe(t *testing.T) {
 			frame:         &data.Frame{Name: "test", Fields: []*data.Field{&data.Field{}}},
 			rowToAppend:   append(make([]interface{}, 0), 1),
 			shouldErr:     require.Error,
-			errorContains: []string{"uninitalized Field Vector at"},
+			errorContains: []string{"uninitalized Field at"},
 		},
 		{
 			name:          "invalid vals type mixture",

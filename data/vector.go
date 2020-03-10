@@ -12,7 +12,7 @@ type vector interface {
 	Extend(i int)
 	At(i int) interface{}
 	Len() int
-	PrimitiveType() VectorPType
+	PrimitiveType() FieldType
 	PointerAt(i int) interface{}
 	CopyAt(i int) interface{}
 	ConcreteAt(i int) (val interface{}, ok bool)
@@ -84,8 +84,8 @@ func newVector(t interface{}, n int) (v vector) {
 	return
 }
 
-// ValidVectorType returns if a primitive slice is a valid / supported Vector type
-func ValidVectorType(t interface{}) bool {
+// ValidFieldType returns if a primitive slice is a valid supported Field type.
+func ValidFieldType(t interface{}) bool {
 	switch t.(type) {
 	// ints
 	case []int8:
@@ -150,218 +150,218 @@ func ValidVectorType(t interface{}) bool {
 	}
 }
 
-// VectorPType (Primitive Type) indicates the Go type underlying the Vector.
-type VectorPType int
+// FieldType indicates the Go type underlying the Field.
+type FieldType int
 
 const (
-	// VectorPTypeInt8 indicates the underlying primitive is a []int8.
-	VectorPTypeInt8 VectorPType = iota
-	// VectorPTypeNullableInt8 indicates the underlying primitive is a []*int8.
-	VectorPTypeNullableInt8
+	// FieldTypeInt8 indicates the underlying primitive is a []int8.
+	FieldTypeInt8 FieldType = iota
+	// FieldTypeNullableInt8 indicates the underlying primitive is a []*int8.
+	FieldTypeNullableInt8
 
-	// VectorPTypeInt16 indicates the underlying primitive is a []Int16.
-	VectorPTypeInt16
-	// VectorPTypeNullableInt16 indicates the underlying primitive is a []*Int16.
-	VectorPTypeNullableInt16
+	// FieldTypeInt16 indicates the underlying primitive is a []Int16.
+	FieldTypeInt16
+	// FieldTypeNullableInt16 indicates the underlying primitive is a []*Int16.
+	FieldTypeNullableInt16
 
-	// VectorPTypeInt32 indicates the underlying primitive is a []int32.
-	VectorPTypeInt32
-	// VectorPTypeNullableInt32 indicates the underlying primitive is a []*int32.
-	VectorPTypeNullableInt32
+	// FieldTypeInt32 indicates the underlying primitive is a []int32.
+	FieldTypeInt32
+	// FieldTypeNullableInt32 indicates the underlying primitive is a []*int32.
+	FieldTypeNullableInt32
 
-	// VectorPTypeInt64 indicates the underlying primitive is a []int64.
-	VectorPTypeInt64
-	// VectorPTypeNullableInt64 indicates the underlying primitive is a []*int64.
-	VectorPTypeNullableInt64
+	// FieldTypeInt64 indicates the underlying primitive is a []int64.
+	FieldTypeInt64
+	// FieldTypeNullableInt64 indicates the underlying primitive is a []*int64.
+	FieldTypeNullableInt64
 
-	// VectorPTypeUint8 indicates the underlying primitive is a []int8.
-	VectorPTypeUint8
-	// VectorPTypeNullableUint8 indicates the underlying primitive is a []*int8.
-	VectorPTypeNullableUint8
+	// FieldTypeUint8 indicates the underlying primitive is a []int8.
+	FieldTypeUint8
+	// FieldTypeNullableUint8 indicates the underlying primitive is a []*int8.
+	FieldTypeNullableUint8
 
-	// VectorPTypeUint16 indicates the underlying primitive is a []uint16.
-	VectorPTypeUint16
-	// VectorPTypeNullableUint16 indicates the underlying primitive is a []*uint16.
-	VectorPTypeNullableUint16
+	// FieldTypeUint16 indicates the underlying primitive is a []uint16.
+	FieldTypeUint16
+	// FieldTypeNullableUint16 indicates the underlying primitive is a []*uint16.
+	FieldTypeNullableUint16
 
-	// VectorPTypeUint32 indicates the underlying primitive is a []uint32.
-	VectorPTypeUint32
-	// VectorPTypeNullableUint32 indicates the underlying primitive is a []*uint32.
-	VectorPTypeNullableUint32
+	// FieldTypeUint32 indicates the underlying primitive is a []uint32.
+	FieldTypeUint32
+	// FieldTypeNullableUint32 indicates the underlying primitive is a []*uint32.
+	FieldTypeNullableUint32
 
-	// VectorPTypeUint64 indicates the underlying primitive is a []uint64.
-	VectorPTypeUint64
-	// VectorPTypeNullableUint64 indicates the underlying primitive is a []*uint64.
-	VectorPTypeNullableUint64
+	// FieldTypeUint64 indicates the underlying primitive is a []uint64.
+	FieldTypeUint64
+	// FieldTypeNullableUint64 indicates the underlying primitive is a []*uint64.
+	FieldTypeNullableUint64
 
-	// VectorPTypeFloat32 indicates the underlying primitive is a []float32.
-	VectorPTypeFloat32
-	// VectorPTypeNullableFloat32 indicates the underlying primitive is a []*float32.
-	VectorPTypeNullableFloat32
+	// FieldTypeFloat32 indicates the underlying primitive is a []float32.
+	FieldTypeFloat32
+	// FieldTypeNullableFloat32 indicates the underlying primitive is a []*float32.
+	FieldTypeNullableFloat32
 
-	// VectorPTypeFloat64 indicates the underlying primitive is a []float64.
-	VectorPTypeFloat64
-	// VectorPTypeNullableFloat64 indicates the underlying primitive is a []*float64.
-	VectorPTypeNullableFloat64
+	// FieldTypeFloat64 indicates the underlying primitive is a []float64.
+	FieldTypeFloat64
+	// FieldTypeNullableFloat64 indicates the underlying primitive is a []*float64.
+	FieldTypeNullableFloat64
 
-	// VectorPTypeString indicates the underlying primitive is a []string.
-	VectorPTypeString
-	// VectorPTypeNullableString indicates the underlying primitive is a []*string.
-	VectorPTypeNullableString
+	// FieldTypeString indicates the underlying primitive is a []string.
+	FieldTypeString
+	// FieldTypeNullableString indicates the underlying primitive is a []*string.
+	FieldTypeNullableString
 
-	// VectorPTypeBool indicates the underlying primitive is a []bool.
-	VectorPTypeBool
-	// VectorPTypeNullableBool indicates the underlying primitive is a []*bool.
-	VectorPTypeNullableBool
+	// FieldTypeBool indicates the underlying primitive is a []bool.
+	FieldTypeBool
+	// FieldTypeNullableBool indicates the underlying primitive is a []*bool.
+	FieldTypeNullableBool
 
-	// VectorPTypeTime indicates the underlying primitive is a []time.Time.
-	VectorPTypeTime
-	// VectorPTypeNullableTime indicates the underlying primitive is a []*time.Time.
-	VectorPTypeNullableTime
+	// FieldTypeTime indicates the underlying primitive is a []time.Time.
+	FieldTypeTime
+	// FieldTypeNullableTime indicates the underlying primitive is a []*time.Time.
+	FieldTypeNullableTime
 )
 
-func vectorPType(v vector) VectorPType {
+func vectorFieldType(v vector) FieldType {
 	switch v.(type) {
 	case *int8Vector:
-		return VectorPTypeInt8
+		return FieldTypeInt8
 	case *nullableInt8Vector:
-		return VectorPTypeNullableInt8
+		return FieldTypeNullableInt8
 
 	case *int16Vector:
-		return VectorPTypeInt16
+		return FieldTypeInt16
 	case *nullableInt16Vector:
-		return VectorPTypeNullableInt16
+		return FieldTypeNullableInt16
 
 	case *int32Vector:
-		return VectorPTypeInt32
+		return FieldTypeInt32
 	case *nullableInt32Vector:
-		return VectorPTypeNullableInt32
+		return FieldTypeNullableInt32
 
 	case *int64Vector:
-		return VectorPTypeInt64
+		return FieldTypeInt64
 	case *nullableInt64Vector:
-		return VectorPTypeNullableInt64
+		return FieldTypeNullableInt64
 
 	case *uint8Vector:
-		return VectorPTypeUint8
+		return FieldTypeUint8
 	case *nullableUint8Vector:
-		return VectorPTypeNullableUint8
+		return FieldTypeNullableUint8
 
 	case *uint16Vector:
-		return VectorPTypeUint16
+		return FieldTypeUint16
 	case *nullableUint16Vector:
-		return VectorPTypeNullableUint16
+		return FieldTypeNullableUint16
 
 	case *uint32Vector:
-		return VectorPTypeUint32
+		return FieldTypeUint32
 	case *nullableUint32Vector:
-		return VectorPTypeNullableUint32
+		return FieldTypeNullableUint32
 
 	case *uint64Vector:
-		return VectorPTypeUint64
+		return FieldTypeUint64
 	case *nullableUint64Vector:
-		return VectorPTypeNullableUint64
+		return FieldTypeNullableUint64
 
 	case *float32Vector:
-		return VectorPTypeFloat32
+		return FieldTypeFloat32
 	case *nullableFloat32Vector:
-		return VectorPTypeNullableFloat32
+		return FieldTypeNullableFloat32
 
 	case *float64Vector:
-		return VectorPTypeFloat64
+		return FieldTypeFloat64
 	case *nullableFloat64Vector:
-		return VectorPTypeNullableFloat64
+		return FieldTypeNullableFloat64
 
 	case *stringVector:
-		return VectorPTypeString
+		return FieldTypeString
 	case *nullableStringVector:
-		return VectorPTypeNullableString
+		return FieldTypeNullableString
 
 	case *boolVector:
-		return VectorPTypeBool
+		return FieldTypeBool
 	case *nullableBoolVector:
-		return VectorPTypeNullableBool
+		return FieldTypeNullableBool
 
 	case *timeTimeVector:
-		return VectorPTypeTime
+		return FieldTypeTime
 	case *nullableTimeTimeVector:
-		return VectorPTypeNullableTime
+		return FieldTypeNullableTime
 	}
 
-	return VectorPType(-1)
+	return FieldType(-1)
 }
 
-func pTypeFromVal(v interface{}) VectorPType {
+func fieldTypeFromVal(v interface{}) FieldType {
 	switch v.(type) {
 	case int8:
-		return VectorPTypeInt8
+		return FieldTypeInt8
 	case *int8:
-		return VectorPTypeNullableInt8
+		return FieldTypeNullableInt8
 
 	case int16:
-		return VectorPTypeInt16
+		return FieldTypeInt16
 	case *int16:
-		return VectorPTypeNullableInt16
+		return FieldTypeNullableInt16
 
 	case int32:
-		return VectorPTypeInt32
+		return FieldTypeInt32
 	case *int32:
-		return VectorPTypeNullableInt32
+		return FieldTypeNullableInt32
 
 	case int64:
-		return VectorPTypeInt64
+		return FieldTypeInt64
 	case *int64:
-		return VectorPTypeNullableInt64
+		return FieldTypeNullableInt64
 
 	case uint8:
-		return VectorPTypeUint8
+		return FieldTypeUint8
 	case *uint8:
-		return VectorPTypeNullableUint8
+		return FieldTypeNullableUint8
 
 	case uint16:
-		return VectorPTypeUint16
+		return FieldTypeUint16
 	case *uint16:
-		return VectorPTypeNullableUint16
+		return FieldTypeNullableUint16
 
 	case uint32:
-		return VectorPTypeUint32
+		return FieldTypeUint32
 	case *uint32:
-		return VectorPTypeNullableUint32
+		return FieldTypeNullableUint32
 
 	case uint64:
-		return VectorPTypeUint64
+		return FieldTypeUint64
 	case *uint64:
-		return VectorPTypeNullableUint64
+		return FieldTypeNullableUint64
 
 	case float32:
-		return VectorPTypeFloat32
+		return FieldTypeFloat32
 	case *float32:
-		return VectorPTypeNullableFloat32
+		return FieldTypeNullableFloat32
 
 	case float64:
-		return VectorPTypeFloat64
+		return FieldTypeFloat64
 	case *float64:
-		return VectorPTypeNullableFloat64
+		return FieldTypeNullableFloat64
 
 	case string:
-		return VectorPTypeString
+		return FieldTypeString
 	case *string:
-		return VectorPTypeNullableString
+		return FieldTypeNullableString
 
 	case bool:
-		return VectorPTypeBool
+		return FieldTypeBool
 	case *bool:
-		return VectorPTypeNullableBool
+		return FieldTypeNullableBool
 
 	case time.Time:
-		return VectorPTypeTime
+		return FieldTypeTime
 	case *time.Time:
-		return VectorPTypeNullableTime
+		return FieldTypeNullableTime
 	}
-	return VectorPType(-1)
+	return FieldType(-1)
 }
 
-func (p VectorPType) String() string {
+func (p FieldType) String() string {
 	if p < 0 {
 		return "invalid/unsupported"
 	}
@@ -369,190 +369,191 @@ func (p VectorPType) String() string {
 
 }
 
-// NewVectorFromPType creates a new Vector of the given pType of length n.
-func NewVectorFromPType(p VectorPType, n int) (v vector) {
+// NewFieldFromFieldType creates a new Field of the given pType of length n.
+func NewFieldFromFieldType(p FieldType, n int) *Field {
+	f := &Field{}
 	switch p {
 	// ints
-	case VectorPTypeInt8:
-		v = newInt8Vector(n)
-	case VectorPTypeNullableInt8:
-		v = newNullableInt8Vector(n)
+	case FieldTypeInt8:
+		f.vector = newInt8Vector(n)
+	case FieldTypeNullableInt8:
+		f.vector = newNullableInt8Vector(n)
 
-	case VectorPTypeInt16:
-		v = newInt16Vector(n)
-	case VectorPTypeNullableInt16:
-		v = newNullableInt16Vector(n)
+	case FieldTypeInt16:
+		f.vector = newInt16Vector(n)
+	case FieldTypeNullableInt16:
+		f.vector = newNullableInt16Vector(n)
 
-	case VectorPTypeInt32:
-		v = newInt32Vector(n)
-	case VectorPTypeNullableInt32:
-		v = newNullableInt32Vector(n)
+	case FieldTypeInt32:
+		f.vector = newInt32Vector(n)
+	case FieldTypeNullableInt32:
+		f.vector = newNullableInt32Vector(n)
 
-	case VectorPTypeInt64:
-		v = newInt64Vector(n)
-	case VectorPTypeNullableInt64:
-		v = newNullableInt64Vector(n)
+	case FieldTypeInt64:
+		f.vector = newInt64Vector(n)
+	case FieldTypeNullableInt64:
+		f.vector = newNullableInt64Vector(n)
 
 	// uints
-	case VectorPTypeUint8:
-		v = newUint8Vector(n)
-	case VectorPTypeNullableUint8:
-		v = newNullableUint8Vector(n)
+	case FieldTypeUint8:
+		f.vector = newUint8Vector(n)
+	case FieldTypeNullableUint8:
+		f.vector = newNullableUint8Vector(n)
 
-	case VectorPTypeUint16:
-		v = newUint16Vector(n)
-	case VectorPTypeNullableUint16:
-		v = newNullableUint16Vector(n)
+	case FieldTypeUint16:
+		f.vector = newUint16Vector(n)
+	case FieldTypeNullableUint16:
+		f.vector = newNullableUint16Vector(n)
 
-	case VectorPTypeUint32:
-		v = newUint32Vector(n)
-	case VectorPTypeNullableUint32:
-		v = newNullableUint32Vector(n)
+	case FieldTypeUint32:
+		f.vector = newUint32Vector(n)
+	case FieldTypeNullableUint32:
+		f.vector = newNullableUint32Vector(n)
 
-	case VectorPTypeUint64:
-		v = newUint64Vector(n)
-	case VectorPTypeNullableUint64:
-		v = newNullableUint64Vector(n)
+	case FieldTypeUint64:
+		f.vector = newUint64Vector(n)
+	case FieldTypeNullableUint64:
+		f.vector = newNullableUint64Vector(n)
 
 	// floats
-	case VectorPTypeFloat32:
-		v = newFloat32Vector(n)
-	case VectorPTypeNullableFloat32:
-		v = newNullableFloat32Vector(n)
+	case FieldTypeFloat32:
+		f.vector = newFloat32Vector(n)
+	case FieldTypeNullableFloat32:
+		f.vector = newNullableFloat32Vector(n)
 
-	case VectorPTypeFloat64:
-		v = newFloat64Vector(n)
-	case VectorPTypeNullableFloat64:
-		v = newNullableFloat64Vector(n)
+	case FieldTypeFloat64:
+		f.vector = newFloat64Vector(n)
+	case FieldTypeNullableFloat64:
+		f.vector = newNullableFloat64Vector(n)
 
 	// other
-	case VectorPTypeString:
-		v = newStringVector(n)
-	case VectorPTypeNullableString:
-		v = newNullableStringVector(n)
+	case FieldTypeString:
+		f.vector = newStringVector(n)
+	case FieldTypeNullableString:
+		f.vector = newNullableStringVector(n)
 
-	case VectorPTypeBool:
-		v = newBoolVector(n)
-	case VectorPTypeNullableBool:
-		v = newNullableBoolVector(n)
+	case FieldTypeBool:
+		f.vector = newBoolVector(n)
+	case FieldTypeNullableBool:
+		f.vector = newNullableBoolVector(n)
 
-	case VectorPTypeTime:
-		v = newTimeTimeVector(n)
-	case VectorPTypeNullableTime:
-		v = newNullableTimeTimeVector(n)
+	case FieldTypeTime:
+		f.vector = newTimeTimeVector(n)
+	case FieldTypeNullableTime:
+		f.vector = newNullableTimeTimeVector(n)
 	default:
 		panic(fmt.Sprint("unsupported vector ptype"))
 	}
-	return v
+	return f
 }
 
 // ItemTypeString returns the string representation of the type of element within in the vector
-func (p VectorPType) ItemTypeString() string {
+func (p FieldType) ItemTypeString() string {
 	switch p {
-	case VectorPTypeInt8:
+	case FieldTypeInt8:
 		return "int8"
-	case VectorPTypeNullableInt8:
+	case FieldTypeNullableInt8:
 		return "*int8"
 
-	case VectorPTypeInt16:
+	case FieldTypeInt16:
 		return "int16"
-	case VectorPTypeNullableInt16:
+	case FieldTypeNullableInt16:
 		return "*int16"
 
-	case VectorPTypeInt32:
+	case FieldTypeInt32:
 		return "int32"
-	case VectorPTypeNullableInt32:
+	case FieldTypeNullableInt32:
 		return "*int32"
 
-	case VectorPTypeInt64:
+	case FieldTypeInt64:
 		return "int64"
-	case VectorPTypeNullableInt64:
+	case FieldTypeNullableInt64:
 		return "*int64"
 
-	case VectorPTypeUint8:
+	case FieldTypeUint8:
 		return "unit8"
-	case VectorPTypeNullableUint8:
+	case FieldTypeNullableUint8:
 		return "*uint8"
 
-	case VectorPTypeUint16:
+	case FieldTypeUint16:
 		return "uint16"
-	case VectorPTypeNullableUint16:
+	case FieldTypeNullableUint16:
 		return "*uint16"
 
-	case VectorPTypeUint32:
+	case FieldTypeUint32:
 		return "uint32"
-	case VectorPTypeNullableUint32:
+	case FieldTypeNullableUint32:
 		return "*uint32"
 
-	case VectorPTypeUint64:
+	case FieldTypeUint64:
 		return "uint64"
-	case VectorPTypeNullableUint64:
+	case FieldTypeNullableUint64:
 		return "*uint64"
 
-	case VectorPTypeFloat32:
+	case FieldTypeFloat32:
 		return "float32"
-	case VectorPTypeNullableFloat32:
+	case FieldTypeNullableFloat32:
 		return "*float32"
 
-	case VectorPTypeFloat64:
+	case FieldTypeFloat64:
 		return "float64"
-	case VectorPTypeNullableFloat64:
+	case FieldTypeNullableFloat64:
 		return "*float64"
 
-	case VectorPTypeString:
+	case FieldTypeString:
 		return "string"
-	case VectorPTypeNullableString:
+	case FieldTypeNullableString:
 		return "*string"
 
-	case VectorPTypeBool:
+	case FieldTypeBool:
 		return "bool"
-	case VectorPTypeNullableBool:
+	case FieldTypeNullableBool:
 		return "*bool"
 
-	case VectorPTypeTime:
+	case FieldTypeTime:
 		return "time.Time"
-	case VectorPTypeNullableTime:
+	case FieldTypeNullableTime:
 		return "*time.Time"
 	}
 	return "invalid/unsupported type"
 }
 
-// Nullable returns if type is a nullable type
-func (p VectorPType) Nullable() bool {
+// Nullable returns if Field type is a nullable type
+func (p FieldType) Nullable() bool {
 	switch p {
-	case VectorPTypeNullableInt8, VectorPTypeNullableInt16, VectorPTypeNullableInt32, VectorPTypeNullableInt64:
+	case FieldTypeNullableInt8, FieldTypeNullableInt16, FieldTypeNullableInt32, FieldTypeNullableInt64:
 		return true
 
-	case VectorPTypeNullableUint8, VectorPTypeNullableUint16, VectorPTypeNullableUint32, VectorPTypeNullableUint64:
+	case FieldTypeNullableUint8, FieldTypeNullableUint16, FieldTypeNullableUint32, FieldTypeNullableUint64:
 		return true
 
-	case VectorPTypeNullableFloat32, VectorPTypeNullableFloat64:
+	case FieldTypeNullableFloat32, FieldTypeNullableFloat64:
 		return true
 
-	case VectorPTypeNullableString:
+	case FieldTypeNullableString:
 		return true
 
-	case VectorPTypeNullableBool:
+	case FieldTypeNullableBool:
 		return true
 
-	case VectorPTypeNullableTime:
+	case FieldTypeNullableTime:
 		return true
 	}
 	return false
 }
 
-// numericVectorPTypes is an array of VectorPTypes that are numeric.
-var numericVectorPTypes = [...]VectorPType{
-	VectorPTypeInt8, VectorPTypeInt16, VectorPTypeInt32, VectorPTypeInt64,
-	VectorPTypeNullableInt8, VectorPTypeNullableInt16, VectorPTypeNullableInt32, VectorPTypeNullableInt64,
+// numericFieldTypes is an array of FieldTypes that are numeric.
+var numericFieldTypes = [...]FieldType{
+	FieldTypeInt8, FieldTypeInt16, FieldTypeInt32, FieldTypeInt64,
+	FieldTypeNullableInt8, FieldTypeNullableInt16, FieldTypeNullableInt32, FieldTypeNullableInt64,
 
-	VectorPTypeUint8, VectorPTypeUint16, VectorPTypeUint32, VectorPTypeUint64,
-	VectorPTypeNullableUint8, VectorPTypeNullableUint16, VectorPTypeNullableUint32, VectorPTypeNullableUint64,
+	FieldTypeUint8, FieldTypeUint16, FieldTypeUint32, FieldTypeUint64,
+	FieldTypeNullableUint8, FieldTypeNullableUint16, FieldTypeNullableUint32, FieldTypeNullableUint64,
 
-	VectorPTypeFloat32, VectorPTypeFloat64,
-	VectorPTypeNullableFloat32, VectorPTypeNullableFloat64}
+	FieldTypeFloat32, FieldTypeFloat64,
+	FieldTypeNullableFloat32, FieldTypeNullableFloat64}
 
-// NumericVectorPTypes returns a slice of VectorPTypes that are numeric.
-func NumericVectorPTypes() []VectorPType {
-	return numericVectorPTypes[:]
+// NumericFieldTypes returns a slice of FieldTypes that are numeric.
+func NumericFieldTypes() []FieldType {
+	return numericFieldTypes[:]
 }

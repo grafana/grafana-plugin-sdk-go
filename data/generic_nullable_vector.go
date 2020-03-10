@@ -53,8 +53,8 @@ func (v *nullablegenVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullablegenVector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullablegenVector) PrimitiveType() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullablegenVector) Extend(i int) {
