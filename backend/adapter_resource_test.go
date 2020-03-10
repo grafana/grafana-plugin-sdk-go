@@ -45,9 +45,8 @@ func TestCallResource(t *testing.T) {
 		}
 		req := &pluginv2.CallResourceRequest{
 			Config: &pluginv2.PluginConfig{
-				OrgId:      2,
-				PluginId:   "my-plugin",
-				PluginType: "my-type",
+				OrgId:    2,
+				PluginId: "my-plugin",
 			},
 			Path:   "some/path",
 			Method: http.MethodGet,
@@ -76,7 +75,6 @@ func TestCallResource(t *testing.T) {
 		require.Equal(t, data, actualRequestData)
 		require.Equal(t, int64(2), handler.actualReq.PluginConfig.OrgID)
 		require.Equal(t, "my-plugin", handler.actualReq.PluginConfig.PluginID)
-		require.Equal(t, "my-type", handler.actualReq.PluginConfig.PluginType)
 
 		// response
 		require.Len(t, testSender.respMessages, 1)
@@ -112,9 +110,8 @@ func TestCallResource(t *testing.T) {
 		}
 		req := &pluginv2.CallResourceRequest{
 			Config: &pluginv2.PluginConfig{
-				OrgId:      2,
-				PluginId:   "my-plugin",
-				PluginType: "my-type",
+				OrgId:    2,
+				PluginId: "my-plugin",
 			},
 			Path:    "some/path",
 			Method:  http.MethodGet,
