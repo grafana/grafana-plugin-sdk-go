@@ -328,10 +328,15 @@ type TimeSeriesSchema struct {
 	FactorIndices  []int          // Field indices of string or *string Fields
 }
 
+// tupleLables is an alternative representation of Labels (map[string]string) that can be sorted
+// and then marshalled into a consistent string that can be used a map key. All tupleLabel objects
+// in tupleLabels should have unique first elements (keys).
 type tupleLabels []tupleLabel
 
+// tupleLabel is an element of tupleLabels and should be in the form of [2]{"key", "value"}.
 type tupleLabel [2]string
 
+// tupleLabelsToLabels converts tupleLabels to Labels (map[string]string), erroring if there are duplicate keys.
 func tupleLablesToLabels(tuples tupleLabels) (Labels, error) {
 	labels := make(map[string]string)
 	for _, tuple := range tuples {
@@ -343,6 +348,7 @@ func tupleLablesToLabels(tuples tupleLabels) (Labels, error) {
 	return labels, nil
 }
 
+// MapKey gets a string key that can be used as a map key.
 func (t *tupleLabels) MapKey() (string, error) {
 	t.SortBtKey()
 	b, err := json.Marshal(t)
@@ -352,6 +358,7 @@ func (t *tupleLabels) MapKey() (string, error) {
 	return string(b), nil
 }
 
+// Sort tupleLabels by each elements first property (key).
 func (t *tupleLabels) SortBtKey() {
 	if t == nil {
 		return
@@ -361,6 +368,7 @@ func (t *tupleLabels) SortBtKey() {
 	})
 }
 
+// labelsToTupleLabels converts Labels (map[string]string) to tupleLabels.
 func labelsToTupleLabels(l Labels) tupleLabels {
 	t := make(tupleLabels, 0, len(l))
 	for k, v := range l {
@@ -370,7 +378,9 @@ func labelsToTupleLabels(l Labels) tupleLabels {
 	return t
 }
 
+// labelsTupleKey gets a string key from Labels.
 func labelsTupleKey(l Labels) (string, error) {
+	// sorts twice, meh.
 	t := labelsToTupleLabels(l)
 	return t.MapKey()
 }
