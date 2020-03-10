@@ -14,6 +14,8 @@ type Vector interface {
 	Len() int
 	PrimitiveType() VectorPType
 	PointerAt(i int) interface{}
+	CopyAt(i int) interface{}
+	ConcreteAt(i int) (val interface{}, ok bool)
 	//buildArrowColumn(pool memory.Allocator, field arrow.Field) *array.Column
 }
 
@@ -83,7 +85,6 @@ func newVector(t interface{}, n int) (v Vector) {
 	return
 }
 
-
 // ValidVectorType returns if a primitive slice is a valid / supported Vector type
 func ValidVectorType(t interface{}) bool {
 	switch t.(type) {
@@ -150,7 +151,7 @@ func ValidVectorType(t interface{}) bool {
 	}
 }
 
-// VectorPType indicates the go type underlying the Vector.
+// VectorPType (Primitive Type) indicates the Go type underlying the Vector.
 type VectorPType int
 
 const (
@@ -369,6 +370,83 @@ func (p VectorPType) String() string {
 
 }
 
+// NewVectorFromPType creates a new Vector of the given pType of length n.
+func NewVectorFromPType(p VectorPType, n int) (v Vector) {
+	switch p {
+	// ints
+	case VectorPTypeInt8:
+		v = newInt8Vector(n)
+	case VectorPTypeNullableInt8:
+		v = newNullableInt8Vector(n)
+
+	case VectorPTypeInt16:
+		v = newInt16Vector(n)
+	case VectorPTypeNullableInt16:
+		v = newNullableInt16Vector(n)
+
+	case VectorPTypeInt32:
+		v = newInt32Vector(n)
+	case VectorPTypeNullableInt32:
+		v = newNullableInt32Vector(n)
+
+	case VectorPTypeInt64:
+		v = newInt64Vector(n)
+	case VectorPTypeNullableInt64:
+		v = newNullableInt64Vector(n)
+
+	// uints
+	case VectorPTypeUint8:
+		v = newUint8Vector(n)
+	case VectorPTypeNullableUint8:
+		v = newNullableUint8Vector(n)
+
+	case VectorPTypeUint16:
+		v = newUint16Vector(n)
+	case VectorPTypeNullableUint16:
+		v = newNullableUint16Vector(n)
+
+	case VectorPTypeUint32:
+		v = newUint32Vector(n)
+	case VectorPTypeNullableUint32:
+		v = newNullableUint32Vector(n)
+
+	case VectorPTypeUint64:
+		v = newUint64Vector(n)
+	case VectorPTypeNullableUint64:
+		v = newNullableUint64Vector(n)
+
+	// floats
+	case VectorPTypeFloat32:
+		v = newFloat32Vector(n)
+	case VectorPTypeNullableFloat32:
+		v = newNullableFloat32Vector(n)
+
+	case VectorPTypeFloat64:
+		v = newFloat64Vector(n)
+	case VectorPTypeNullableFloat64:
+		v = newNullableFloat64Vector(n)
+
+	// other
+	case VectorPTypeString:
+		v = newStringVector(n)
+	case VectorPTypeNullableString:
+		v = newNullableStringVector(n)
+
+	case VectorPTypeBool:
+		v = newBoolVector(n)
+	case VectorPTypeNullableBool:
+		v = newNullableBoolVector(n)
+
+	case VectorPTypeTime:
+		v = newTimeTimeVector(n)
+	case VectorPTypeNullableTime:
+		v = newNullableTimeTimeVector(n)
+	default:
+		panic(fmt.Sprint("unsupported vector ptype"))
+	}
+	return v
+}
+
 // ItemTypeString returns the string representation of the type of element within in the vector
 func (p VectorPType) ItemTypeString() string {
 	switch p {
@@ -462,4 +540,20 @@ func (p VectorPType) Nullable() bool {
 		return true
 	}
 	return false
+}
+
+// numericVectorPTypes is an array of VectorPTypes that are numeric.
+var numericVectorPTypes = [...]VectorPType{
+	VectorPTypeInt8, VectorPTypeInt16, VectorPTypeInt32, VectorPTypeInt64,
+	VectorPTypeNullableInt8, VectorPTypeNullableInt16, VectorPTypeNullableInt32, VectorPTypeNullableInt64,
+
+	VectorPTypeUint8, VectorPTypeUint16, VectorPTypeUint32, VectorPTypeUint64,
+	VectorPTypeNullableUint8, VectorPTypeNullableUint16, VectorPTypeNullableUint32, VectorPTypeNullableUint64,
+
+	VectorPTypeFloat32, VectorPTypeFloat64,
+	VectorPTypeNullableFloat32, VectorPTypeNullableFloat64}
+
+// NumericVectorPTypes returns a slice of VectorPTypes that are numeric.
+func NumericVectorPTypes() []VectorPType {
+	return numericVectorPTypes[:]
 }
