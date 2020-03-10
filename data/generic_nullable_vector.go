@@ -1,4 +1,4 @@
-package dataframe
+package data
 
 //go:generate genny -in=$GOFILE -out=nullable_vector.gen.go gen "gen=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
@@ -53,8 +53,8 @@ func (v *nullablegenVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullablegenVector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullablegenVector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullablegenVector) Extend(i int) {

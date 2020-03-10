@@ -1,7 +1,7 @@
 GOPATH=$(shell go env GOPATH)
 GO = GO111MODULE=on go
 
-LINT_SKIP = --skip-files=dataframe/generic_nullable_vector.go --skip-files=dataframe/nullable_vector.gen.go --skip-files=dataframe/generic_vector.go --skip-files=dataframe/vector.gen.go
+LINT_SKIP = --skip-files=data/generic_nullable_vector.go --skip-files=data/nullable_vector.gen.go --skip-files=data/generic_vector.go --skip-files=data/vector.gen.go
 
 all: build
 

@@ -3,7 +3,7 @@ package backend
 import (
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/dataframe"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -87,10 +87,10 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 }
 
 func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
-	frames := make([]*dataframe.Frame, len(protoRes.Frames))
+	frames := make([]*data.Frame, len(protoRes.Frames))
 	var err error
 	for i, encodedFrame := range protoRes.Frames {
-		frames[i], err = dataframe.UnmarshalArrow(encodedFrame)
+		frames[i], err = data.UnmarshalArrow(encodedFrame)
 		if err != nil {
 			return nil, err
 		}

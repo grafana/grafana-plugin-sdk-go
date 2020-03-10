@@ -2,7 +2,7 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/cheekybits/genny
 
-package dataframe
+package data
 
 import "time"
 
@@ -59,8 +59,8 @@ func (v *nullableUint8Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableUint8Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableUint8Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableUint8Vector) Extend(i int) {
@@ -120,8 +120,8 @@ func (v *nullableUint16Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableUint16Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableUint16Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableUint16Vector) Extend(i int) {
@@ -181,8 +181,8 @@ func (v *nullableUint32Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableUint32Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableUint32Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableUint32Vector) Extend(i int) {
@@ -242,8 +242,8 @@ func (v *nullableUint64Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableUint64Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableUint64Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableUint64Vector) Extend(i int) {
@@ -303,8 +303,8 @@ func (v *nullableInt8Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableInt8Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableInt8Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableInt8Vector) Extend(i int) {
@@ -364,8 +364,8 @@ func (v *nullableInt16Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableInt16Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableInt16Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableInt16Vector) Extend(i int) {
@@ -425,8 +425,8 @@ func (v *nullableInt32Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableInt32Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableInt32Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableInt32Vector) Extend(i int) {
@@ -486,8 +486,8 @@ func (v *nullableInt64Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableInt64Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableInt64Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableInt64Vector) Extend(i int) {
@@ -547,8 +547,8 @@ func (v *nullableFloat32Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableFloat32Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableFloat32Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableFloat32Vector) Extend(i int) {
@@ -608,8 +608,8 @@ func (v *nullableFloat64Vector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableFloat64Vector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableFloat64Vector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableFloat64Vector) Extend(i int) {
@@ -669,8 +669,8 @@ func (v *nullableStringVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableStringVector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableStringVector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableStringVector) Extend(i int) {
@@ -730,8 +730,8 @@ func (v *nullableBoolVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableBoolVector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableBoolVector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableBoolVector) Extend(i int) {
@@ -791,8 +791,8 @@ func (v *nullableTimeTimeVector) Len() int {
 	return len((*v))
 }
 
-func (v *nullableTimeTimeVector) PrimitiveType() VectorPType {
-	return vectorPType(v)
+func (v *nullableTimeTimeVector) Type() FieldType {
+	return vectorFieldType(v)
 }
 
 func (v *nullableTimeTimeVector) Extend(i int) {
