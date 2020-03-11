@@ -2,11 +2,13 @@ package data_test
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 	"strconv"
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
 )
@@ -222,6 +224,58 @@ func TestAppendRowSafe(t *testing.T) {
 		})
 	}
 
+}
+
+func TestDataFrameFilterRowsByField(t *testing.T) {
+	tests := []struct {
+		name          string
+		frame         *data.Frame
+		filteredFrame *data.Frame
+		fieldIdx      int
+		filterFunc    func(i interface{}) (bool, error)
+		shouldErr     require.ErrorAssertionFunc
+	}{
+		{
+			name: "time filter test",
+			frame: data.NewFrame("time_filter_test", data.NewField("time", nil, []time.Time{
+				time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+				time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC),
+				time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				time.Date(2020, 1, 2, 3, 4, 45, 0, time.UTC),
+			}),
+				data.NewField("floats", nil, []float64{
+					1.0, 2.0, 3.0, 4.0,
+				})),
+			filteredFrame: data.NewFrame("time_filter_test", data.NewField("time", nil, []time.Time{
+				time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC),
+				time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+			}),
+				data.NewField("floats", nil, []float64{
+					2.0, 3.0,
+				})),
+			fieldIdx: 0,
+			filterFunc: func(i interface{}) (bool, error) {
+				val, ok := i.(time.Time)
+				if !ok {
+					return false, fmt.Errorf("wrong type dumbface. Oh ya, stupid error even-dumber-face.")
+				}
+				if val.After(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)) && val.Before(time.Date(2020, 1, 2, 3, 4, 45, 0, time.UTC)) {
+					return true, nil
+				}
+				return false, nil
+			},
+			shouldErr: require.NoError,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			filteredFrame, err := tt.frame.FilterRowsByField(tt.fieldIdx, tt.filterFunc)
+			tt.shouldErr(t, err)
+			if diff := cmp.Diff(tt.filteredFrame, filteredFrame, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
 }
 
 func timePtr(t time.Time) *time.Time {
