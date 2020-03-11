@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
 )
@@ -270,7 +271,9 @@ func TestDataFrameFilterRows(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			filteredFrame, err := tt.frame.FilterRows(tt.fieldIdx, tt.filterFunc)
 			tt.shouldErr(t, err)
-			require.Equal(t, tt.filteredFrame, filteredFrame)
+			if diff := cmp.Diff(tt.filteredFrame, filteredFrame, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
 		})
 	}
 }

@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 )
 
 // Frame represents a columnar storage with optional labels.
@@ -539,5 +540,5 @@ func FrameTestCompareOptions() []cmp.Option {
 	})
 
 	unexportedField := cmp.AllowUnexported(Field{})
-	return []cmp.Option{confFloats, unexportedField}
+	return []cmp.Option{confFloats, unexportedField, cmpopts.EquateEmpty()}
 }
