@@ -84,7 +84,7 @@ func buildBackend(os string, arch string, enableDebug bool) error {
 	if enableDebug {
 		args = append(args, "-gcflags=all=-N -l")
 	} else {
-		args = append(args, []string{"-ldflags", "-w"}...)
+		args = append(args, "-ldflags", "-w")
 	}
 	args = append(args, "./pkg")
 
