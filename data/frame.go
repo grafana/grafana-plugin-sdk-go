@@ -115,11 +115,10 @@ func (f *Frame) EmptyCopy() *Frame {
 	}
 
 	for _, field := range f.Fields {
-		newFrame.Fields = append(newFrame.Fields, &Field{
-			Name:   field.Name,
-			Labels: field.Labels.Copy(),
-			vector: newVector(field.Type(), 0),
-		})
+		copy := NewFieldFromFieldType(field.Type(), 0)
+		copy.Name = field.Name
+		copy.Labels = field.Labels.Copy()
+		newFrame.Fields = append(newFrame.Fields, copy)
 	}
 	return newFrame
 }
