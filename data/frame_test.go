@@ -226,7 +226,7 @@ func TestAppendRowSafe(t *testing.T) {
 
 }
 
-func TestDataFrameFilterRows(t *testing.T) {
+func TestDataFrameFilterRowsByField(t *testing.T) {
 	tests := []struct {
 		name          string
 		frame         *data.Frame
@@ -269,7 +269,7 @@ func TestDataFrameFilterRows(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			filteredFrame, err := tt.frame.FilterRows(tt.fieldIdx, tt.filterFunc)
+			filteredFrame, err := tt.frame.FilterRowsByField(tt.fieldIdx, tt.filterFunc)
 			tt.shouldErr(t, err)
 			if diff := cmp.Diff(tt.filteredFrame, filteredFrame, data.FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("Result mismatch (-want +got):\n%s", diff)
