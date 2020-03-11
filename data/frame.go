@@ -87,7 +87,7 @@ func (f *Frame) AppendRowSafe(vals ...interface{}) error {
 }
 
 // FilterRowsByField returns a copy of frame f (as per EmptyCopy()) that includes rows
-// where the filter returns returns true and no error. If filter returns an error, then an error is returned.
+// where the filter returns true and no error. If filter returns an error, then an error is returned.
 func (f *Frame) FilterRowsByField(fieldIdx int, filter func(i interface{}) (bool, error)) (*Frame, error) {
 	filteredFrame := f.EmptyCopy()
 	rowLen, err := f.RowLen()
