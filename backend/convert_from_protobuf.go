@@ -34,13 +34,16 @@ func (f convertFromProtobuf) DataSourceConfig(proto *pluginv2.DataSourceConfig) 
 	}
 
 	return &DataSourceConfig{
-		ID:               proto.Id,
-		Name:             proto.Name,
-		URL:              proto.Url,
-		User:             proto.User,
-		Database:         proto.Database,
-		BasicAuthEnabled: proto.BasicAuthEnabled,
-		BasicAuthUser:    proto.BasicAuthUser,
+		ID:                      proto.Id,
+		Name:                    proto.Name,
+		URL:                     proto.Url,
+		User:                    proto.User,
+		Database:                proto.Database,
+		BasicAuthEnabled:        proto.BasicAuthEnabled,
+		BasicAuthUser:           proto.BasicAuthUser,
+		JSONData:                proto.JsonData,
+		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
+		Updated:                 time.Unix(0, proto.LastUpdatedMS*int64(time.Millisecond)),
 	}
 }
 
