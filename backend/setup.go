@@ -6,19 +6,13 @@ import (
 	"net/http/pprof"
 	"os"
 
-	hclog "github.com/hashicorp/go-hclog"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 // SetupPluginEnvironment will read the environment variables and apply the
 // standard environment behavior.  As the SDK evolves, this will likely change!
-func SetupPluginEnvironment(pluginID string) hclog.Logger {
-	pluginLogger := hclog.New(&hclog.LoggerOptions{
-		Name: pluginID,
-		// TODO: How to make level configurable?
-		Level:      hclog.LevelFromString("DEBUG"),
-		JSONFormat: true,
-		// Color:      hclog.ColorOff, (when we use 0.12)
-	})
+func SetupPluginEnvironment(pluginID string) log.Logger {
+	pluginLogger := log.NewLoggerWithName(pluginID)
 
 	// Enable profiler
 	profilerEnabled := false
