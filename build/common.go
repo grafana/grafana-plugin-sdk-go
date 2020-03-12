@@ -3,6 +3,7 @@
 package build
 
 import (
+	"bufio"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -16,7 +17,6 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/google/gops/goprocess"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -40,15 +40,7 @@ func getExecutableName(os string, arch string) string {
 }
 
 func getExecutableFromPluginJSON() (string, error) {
-	jsonFile, err := os.Open("src/plugin.json")
-	if err != nil {
-		return "", err
-	}
-	defer func() {
-		_ = jsonFile.Close()
-	}()
-
-	byteValue, err := ioutil.ReadAll(jsonFile)
+	byteValue, err := readFileBytes(path.Join("src", "plugin.json"))
 	if err != nil {
 		return "", err
 	}
@@ -61,18 +53,45 @@ func getExecutableFromPluginJSON() (string, error) {
 	return result["executable"].(string), nil
 }
 
-func findRunningProcess(exe string) *goprocess.P {
-	for _, process := range goprocess.FindAll() {
-		if strings.HasSuffix(process.Path, exe) {
-			return &process
+func readFileBytes(file string) ([]byte, error) {
+	jsonFile, err := os.Open(file)
+	if err != nil {
+		return nil, err
+	}
+	defer func() {
+		_ = jsonFile.Close()
+	}()
+
+	return ioutil.ReadAll(jsonFile)
+}
+
+func findRunningPIDs(exe string) []int {
+	pids := []int{}
+	out, err := sh.Output("pgrep", exe[:15]) // full name does not match, only the prefix (on linux anyway)
+
+	if err != nil || out == "" {
+		return pids
+	}
+	for _, txt := range strings.Fields(out) {
+		pid, err := strconv.Atoi(txt)
+		if err == nil {
+			pids = append(pids, pid)
+		} else {
+			fmt.Printf("Unable to format %s (%s)", txt, err)
+		}
+	}
+	return pids
+}
+
+func killAllPIDs(pids []int) error {
+	for _, pid := range pids {
+		fmt.Printf("Killing process: %d\n", pid)
+		err := syscall.Kill(pid, 9)
+		if err != nil {
+			return err
 		}
 	}
 	return nil
-}
-
-func killProcess(process *goprocess.P) error {
-	log.Printf("Killing: %s (%d)", process.Path, process.PID)
-	return syscall.Kill(process.PID, 9)
 }
 
 func buildBackend(os string, arch string, enableDebug bool) error {
@@ -189,55 +208,72 @@ func Clean() error {
 	return nil
 }
 
-// Debugger makes a new debug build and attaches dlv (go-delve).
-func Debugger() error {
-	// 1. kill any running instance
-	exeName := getExecutableName(runtime.GOOS, runtime.GOARCH)
+func checkLinuxPtraceScope() {
+	ptracePath := "/proc/sys/kernel/yama/ptrace_scope"
+	byteValue, err := readFileBytes(ptracePath)
+	if err != nil {
+		fmt.Printf("Unable to read ptrace_scope\n")
+	}
+	val := strings.TrimSpace(string(byteValue[:]))
+	if "0" != val {
+		fmt.Printf("WARNING: \n")
+		fmt.Printf("ptrace_scope set to value other than 0 (currenlty:%s), this might prevent debugger from connecting\n", val)
+		fmt.Printf("try writing \"0\" to %s\n", ptracePath)
+		fmt.Printf("Set ptrace_scope to 0? y/N (default N)\n")
 
-	// Kill any running processs
-	process := findRunningProcess(exeName)
-	if process != nil {
-		err := killProcess(process)
-		if err != nil {
-			return err
+		scanner := bufio.NewScanner(os.Stdin)
+		if scanner.Scan() {
+			if scanner.Text() == "y" || scanner.Text() == "Y" {
+				// if err := sh.RunV("echo", "0", "|", "sudo", "tee", ptracePath); err != nil {
+				// 	return // Error?
+				// }
+				fmt.Printf("TODO, run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope\n")
+			} else {
+				fmt.Printf("Did not write\n")
+			}
 		}
 	}
+}
 
+// Debugger makes a new debug build and attaches dlv (go-delve).
+func Debugger() error {
 	// Debug build
 	b := Build{}
 	mg.Deps(b.Debug)
 
+	// 1. kill any running instance
+	exeName := getExecutableName(runtime.GOOS, runtime.GOARCH)
+
+	// Kill any running processs
+	_ = killAllPIDs(findRunningPIDs(exeName))
+	_ = sh.RunV("pkill", "dlv")
+
 	if runtime.GOOS == "linux" {
-		log.Printf("On linux we should check ptrace_scope")
-		// 	ptrace_scope=`cat /proc/sys/kernel/yama/ptrace_scope`
-		// 	if [ "$ptrace_scope" != 0 ]; then
-		// 	  echo "WARNING: ptrace_scope set to value other than 0, this might prevent debugger from connecting, try writing \"0\" to /proc/sys/kernel/yama/ptrace_scope.
-		//   Read more at https://www.kernel.org/doc/Documentation/security/Yama.txt"
-		// 	  read -p "Set ptrace_scope to 0? y/N (default N)" set_ptrace_input
-		// 	  if [ "$set_ptrace_input" == "y" ] || [ "$set_ptrace_input" == "Y" ]; then
-		// 		echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-		// 	  fi
-		// 	fi
+		checkLinuxPtraceScope()
 	}
 
 	// Wait for grafana to start plugin
 	for i := 0; i < 20; i++ {
-		process := findRunningProcess(exeName)
-		if process != nil {
-			log.Printf("Running PID: %d", process.PID)
+		pids := findRunningPIDs(exeName)
+		if len(pids) > 1 {
+			return fmt.Errorf("multiple instances already running")
+		}
+		if len(pids) > 0 {
+			pid := strconv.Itoa(pids[0])
+			log.Printf("Running PID: %s", pid)
 
 			// dlv attach ${PLUGIN_PID} --headless --listen=:${PORT} --api-version 2 --log
 			if err := sh.RunV("dlv",
 				"attach",
-				strconv.Itoa(process.PID),
+				pid,
 				"--headless",
 				"--listen=:3222",
 				"--api-version", "2",
 				"--log"); err != nil {
 				return err
 			}
-			// And then kill dvl
-			return sh.RunV("pkill", "dlv")
+			fmt.Printf("dlv finished running (%s)\n", pid)
+			return nil
 		}
 
 		log.Printf("waiting for grafana to start: %s...", exeName)
