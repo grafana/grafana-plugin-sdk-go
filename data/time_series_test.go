@@ -787,7 +787,7 @@ func TestToGrafanaSeries(t *testing.T) {
 	}{}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			seriesSlice, err := wideToTimeSeries(tt.frame)
+			seriesSlice, err := toGTimeSeries(tt.frame)
 			tt.Err(t, err)
 			require.Equal(t, tt.seriesSlice, seriesSlice)
 		})
@@ -798,7 +798,7 @@ type nullFloat struct {
 	sql.NullFloat64
 }
 
-type timePoint [2]nullFloat
+type timePoint [2]nullFloat // value,time because it was opposite day. Time is epoch in milliseconds.
 type timeSeriesPoints []timePoint
 type timeSeriesSlice []*timeSeries
 
@@ -808,7 +808,7 @@ type timeSeries struct {
 	Tags   map[string]string `json:"tags,omitempty"`
 }
 
-func wideToTimeSeries(frame *data.Frame) (*timeSeries, error) {
+func toGTimeSeries(frame *data.Frame) (timeSeriesSlice, error) {
 	tsSchema := frame.TimeSeriesSchema()
 	if tsSchema.Type == data.TimeSeriesTypeNot {
 		return nil, fmt.Errorf("input frame is not recognized as a time series")
@@ -822,9 +822,8 @@ func wideToTimeSeries(frame *data.Frame) (*timeSeries, error) {
 		}
 		tsSchema = frame.TimeSeriesSchema()
 	}
+	//seriesCount := len(tsSchema.ValueIndices)
 
 	return nil, nil
-	// seriesCount
-	// tSlice := make([]*timeSeries, 0, len(f.)
 
 }
