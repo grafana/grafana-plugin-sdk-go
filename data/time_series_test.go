@@ -1,6 +1,8 @@
 package data_test
 
 import (
+	"database/sql"
+	"fmt"
 	"testing"
 	"time"
 
@@ -774,4 +776,55 @@ func TestWideToLong(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestToGrafanaSeries(t *testing.T) {
+	tests := []struct {
+		name        string
+		frame       *data.Frame
+		seriesSlice timeSeriesSlice
+		Err         require.ErrorAssertionFunc
+	}{}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			seriesSlice, err := wideToTimeSeries(tt.frame)
+			tt.Err(t, err)
+			require.Equal(t, tt.seriesSlice, seriesSlice)
+		})
+	}
+}
+
+type nullFloat struct {
+	sql.NullFloat64
+}
+
+type timePoint [2]nullFloat
+type timeSeriesPoints []timePoint
+type timeSeriesSlice []*timeSeries
+
+type timeSeries struct {
+	Name   string            `json:"name"`
+	Points timeSeriesPoints  `json:"points"`
+	Tags   map[string]string `json:"tags,omitempty"`
+}
+
+func wideToTimeSeries(frame *data.Frame) (*timeSeries, error) {
+	tsSchema := frame.TimeSeriesSchema()
+	if tsSchema.Type == data.TimeSeriesTypeNot {
+		return nil, fmt.Errorf("input frame is not recognized as a time series")
+	}
+	// If Long, make wide
+	if tsSchema.Type == data.TimeSeriesTypeWide {
+		var err error
+		frame, err = data.LongToWide(frame)
+		if err != nil {
+			return nil, err // TODO: Kyle needs to figure out error wrapping and get with times.
+		}
+		tsSchema = frame.TimeSeriesSchema()
+	}
+
+	return nil, nil
+	// seriesCount
+	// tSlice := make([]*timeSeries, 0, len(f.)
+
 }
