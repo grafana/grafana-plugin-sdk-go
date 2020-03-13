@@ -12,11 +12,10 @@ type Logger interface {
 	Error(msg string, args ...interface{})
 }
 
-// NewLoggerWithName creates a named logger
-func NewLoggerWithName(name string) Logger {
+// New creates a new logger.
+func New() Logger {
 	return &hclogWrapper{
 		logger: hclog.New(&hclog.LoggerOptions{
-			Name: name,
 			// Use debug as level since anything less severe is supressed.
 			Level: hclog.Debug,
 			// Use JSON format to make the output in Grafana format and work
@@ -24,11 +23,6 @@ func NewLoggerWithName(name string) Logger {
 			JSONFormat: true,
 		}),
 	}
-}
-
-// New creates a logger without a name
-func New() Logger {
-	return NewLoggerWithName("")
 }
 
 type hclogWrapper struct {

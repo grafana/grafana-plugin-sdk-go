@@ -12,7 +12,7 @@ import (
 // SetupPluginEnvironment will read the environment variables and apply the
 // standard environment behavior.  As the SDK evolves, this will likely change!
 func SetupPluginEnvironment(pluginID string) log.Logger {
-	pluginLogger := log.NewLoggerWithName(pluginID)
+	pluginLogger := log.New()
 
 	// Enable profiler
 	profilerEnabled := false
