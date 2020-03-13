@@ -3,6 +3,7 @@ package data_test
 import (
 	"database/sql"
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -778,6 +779,28 @@ func TestWideToLong(t *testing.T) {
 	}
 }
 
+func TestFloatAt(t *testing.T) {
+	mixedFrame := data.NewFrame("",
+		data.NewField("", nil, []*int64{nil, int64Ptr(-5), int64Ptr(5)}))
+	expectedFloatFrame := data.NewFrame("",
+		data.NewField("", nil, []float64{math.NaN(), -5, 5}))
+
+	floatFrame := data.NewFrame("")
+	floatFrame.Fields = make([]*data.Field, len(mixedFrame.Fields))
+	for fieldIdx, field := range mixedFrame.Fields {
+		floatFrame.Fields[fieldIdx] = data.NewFieldFromFieldType(data.FieldTypeFloat64, field.Len())
+		for i := 0; i < field.Len(); i++ {
+			fv, err := field.FloatAt(i)
+			require.NoError(t, err)
+			floatFrame.Set(fieldIdx, i, fv)
+		}
+	}
+
+	if diff := cmp.Diff(expectedFloatFrame, floatFrame, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+}
+
 func TestToGrafanaSeries(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -823,7 +846,8 @@ func toGTimeSeries(frame *data.Frame) (timeSeriesSlice, error) {
 		tsSchema = frame.TimeSeriesSchema()
 	}
 	//seriesCount := len(tsSchema.ValueIndices)
-
+	//seriesSlice := make(timeSeriesSlice, 0, len(seriesCount))
+	//for _,
 	return nil, nil
 
 }
