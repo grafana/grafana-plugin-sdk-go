@@ -347,14 +347,13 @@ func (f *Field) Nullable() bool {
 
 // FloatAt returns a float64 at the specified index idx.
 // It will panic if idx is out of range.
-// If the Field type is numeric and the value at idx is nil, NaN is returned.
+// If the Field type is numeric and the value at idx is nil, NaN is returned. Precision may be lost on large numbers.
 // If the Field type is a bool then 0 is return if false or nil, and 1 if true.
 // If the Field type is time.Time, then the millisecond epoch representation of the time
 // is returned, or NaN is the value is nil.
 // If the Field type is a string, then strconv.ParseFloat is called on it and will return
 // an error if ParseFloat errors. If the value is nil, NaN is returned.
 func (f *Field) FloatAt(idx int) (float64, error) {
-	// TODO: third param for loss of precision? Maybe something in math/big can help with this.
 	switch f.Type() {
 	case FieldTypeInt8:
 		return float64(f.At(idx).(int8)), nil
@@ -419,6 +418,8 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		}
 		return float64(*uiv), nil
 
+	// TODO: third param for loss of precision?
+	// Maybe something in math/big can help with this (also see https://github.com/golang/go/issues/29463).
 	case FieldTypeUint64:
 		return float64(f.At(idx).(uint64)), nil
 	case FieldTypeNullableUint64:
@@ -484,7 +485,7 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		if t == nil {
 			return math.NaN(), nil
 		}
-		return float64(f.At(idx).(time.Time).UnixNano() / int64(time.Millisecond)), nil
+		return float64(f.At(idx).(*time.Time).UnixNano() / int64(time.Millisecond)), nil
 	}
 	return 0, fmt.Errorf("unsupported field type %T", f.Type())
 }
