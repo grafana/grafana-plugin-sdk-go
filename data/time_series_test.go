@@ -822,7 +822,44 @@ func TestToGrafanaSeries(t *testing.T) {
 		frame       *data.Frame
 		seriesSlice timeSeriesSlice
 		Err         require.ErrorAssertionFunc
-	}{}
+	}{
+		{
+			name: "a wide series",
+			frame: data.NewFrame("",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []float64{
+					1.0,
+					3.0,
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []float64{
+					2.0,
+					4.0,
+				})),
+
+			seriesSlice: timeSeriesSlice{
+				&timeSeries{
+					Name: "Values Floats",
+					Tags: map[string]string{"Animal Factor": "cat"},
+					Points: timeSeriesPoints{
+						timePoint{nullFloat{sql.NullFloat64{Float64: 1, Valid: true}}, nullFloat{sql.NullFloat64{Float64: 1577934240000, Valid: true}}},
+						timePoint{nullFloat{sql.NullFloat64{Float64: 3, Valid: true}}, nullFloat{sql.NullFloat64{Float64: 1577934270000, Valid: true}}},
+					},
+				},
+				&timeSeries{
+					Name: "Values Floats",
+					Tags: map[string]string{"Animal Factor": "sloth"},
+					Points: timeSeriesPoints{
+						timePoint{nullFloat{sql.NullFloat64{Float64: 2, Valid: true}}, nullFloat{sql.NullFloat64{Float64: 1577934240000, Valid: true}}},
+						timePoint{nullFloat{sql.NullFloat64{Float64: 4, Valid: true}}, nullFloat{sql.NullFloat64{Float64: 1577934270000, Valid: true}}},
+					},
+				},
+			},
+			Err: require.NoError,
+		},
+	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			seriesSlice, err := toGTimeSeries(tt.frame)
@@ -852,7 +889,7 @@ func toGTimeSeries(frame *data.Frame) (timeSeriesSlice, error) {
 		return nil, fmt.Errorf("input frame is not recognized as a time series")
 	}
 	// If Long, make wide
-	if tsSchema.Type == data.TimeSeriesTypeWide {
+	if tsSchema.Type == data.TimeSeriesTypeLong {
 		var err error
 		frame, err = data.LongToWide(frame)
 		if err != nil {
@@ -860,9 +897,37 @@ func toGTimeSeries(frame *data.Frame) (timeSeriesSlice, error) {
 		}
 		tsSchema = frame.TimeSeriesSchema()
 	}
-	//seriesCount := len(tsSchema.ValueIndices)
-	//seriesSlice := make(timeSeriesSlice, 0, len(seriesCount))
-	//for _,
-	return nil, nil
+	seriesCount := len(tsSchema.ValueIndices)
+	seriesSlice := make(timeSeriesSlice, 0, seriesCount)
+	timeField := frame.Fields[tsSchema.TimeIndex]
+	timeNullFloatSlice := make([]nullFloat, timeField.Len())
+	for i := 0; i < timeField.Len(); i++ {
+		tStamp, err := timeField.FloatAt(i) // could just do this once
+		if err != nil {
+			return nil, err
+		}
+		timeNullFloatSlice[i] = nullFloat{sql.NullFloat64{Float64: tStamp, Valid: true}}
+	}
+	for _, fieldIdx := range tsSchema.ValueIndices {
+		field := frame.Fields[fieldIdx]
+		ts := &timeSeries{
+			Name:   field.Name,
+			Tags:   field.Labels.Copy(),
+			Points: make(timeSeriesPoints, field.Len()),
+		}
+		for rowIdx := 0; rowIdx < field.Len(); rowIdx++ {
+			val, err := field.FloatAt(rowIdx)
+			if err != nil {
+				return nil, err // again wrap...
+			}
+			ts.Points[rowIdx] = timePoint{
+				nullFloat{sql.NullFloat64{Float64: val, Valid: true}},
+				timeNullFloatSlice[rowIdx],
+			}
+		}
+		seriesSlice = append(seriesSlice, ts)
+	}
+
+	return seriesSlice, nil
 
 }
