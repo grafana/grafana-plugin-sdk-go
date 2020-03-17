@@ -14,6 +14,7 @@ import (
 
 // sdkAdapter adapter between low level plugin protocol and SDK interfaces.
 type sdkAdapter struct {
+	metricGatherer       prometheus.Gatherer
 	CheckHealthHandler   CheckHealthHandler
 	QueryDataHandler     QueryDataHandler
 	CallResourceHandler  CallResourceHandler
@@ -21,7 +22,7 @@ type sdkAdapter struct {
 }
 
 func (a *sdkAdapter) CollectMetrics(ctx context.Context, protoReq *pluginv2.CollectMetricsRequest) (*pluginv2.CollectMetricsResponse, error) {
-	mfs, err := prometheus.DefaultGatherer.Gather()
+	mfs, err := a.metricGatherer.Gather()
 	if err != nil {
 		return nil, err
 	}

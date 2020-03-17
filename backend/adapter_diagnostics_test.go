@@ -6,13 +6,17 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/prometheus/client_golang/prometheus"
+
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCollectMetrcis(t *testing.T) {
-	adapter := &sdkAdapter{}
+	adapter := &sdkAdapter{
+		metricGatherer: prometheus.DefaultGatherer,
+	}
 	res, err := adapter.CollectMetrics(context.Background(), &pluginv2.CollectMetricsRequest{})
 	require.NoError(t, err)
 	require.NotNil(t, res)

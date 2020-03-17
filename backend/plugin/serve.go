@@ -18,7 +18,7 @@ type ServeOpts struct {
 }
 
 // Serve starts serving the plugin over gRPC.
-func Serve(opts ServeOpts) error {
+func Serve(opts ServeOpts) {
 	versionedPlugins := make(map[int]plugin.PluginSet)
 	pSet := make(plugin.PluginSet)
 
@@ -57,6 +57,4 @@ func Serve(opts ServeOpts) error {
 		VersionedPlugins: versionedPlugins,
 		GRPCServer:       opts.GRPCServer,
 	})
-
-	return nil
 }
