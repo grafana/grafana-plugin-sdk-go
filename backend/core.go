@@ -97,4 +97,5 @@ type CallResourceHandler interface {
 // QueryDataHandler handles data queries.
 type QueryDataHandler interface {
 	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
+	HealthCheckDatasource(ctx context.Context, req *DataSourceConfig) (*CheckHealthResult, error)
 }
