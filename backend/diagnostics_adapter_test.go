@@ -7,12 +7,15 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCollectMetrcis(t *testing.T) {
-	adapter := &sdkAdapter{}
+	adapter := &diagnosticsSDKAdapter{
+		metricGatherer: prometheus.DefaultGatherer,
+	}
 	res, err := adapter.CollectMetrics(context.Background(), &pluginv2.CollectMetricsRequest{})
 	require.NoError(t, err)
 	require.NotNil(t, res)
@@ -29,7 +32,7 @@ func TestCollectMetrcis(t *testing.T) {
 
 func TestCheckHealth(t *testing.T) {
 	t.Run("When check health handler not set should use default implementation", func(t *testing.T) {
-		adapter := &sdkAdapter{}
+		adapter := &diagnosticsSDKAdapter{}
 		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{})
 		require.NoError(t, err)
 		require.NotNil(t, res)
@@ -80,14 +83,12 @@ func TestCheckHealth(t *testing.T) {
 		}
 
 		for _, tc := range tcs {
-			adapter := &sdkAdapter{
-				CheckHealthHandler: &testCheckHealthHandler{
-					status:      tc.status,
-					message:     tc.message,
-					jsonDetails: tc.jsonDetails,
-					err:         tc.err,
-				},
-			}
+			adapter := newDiagnosticsSDKAdapter(nil, &testCheckHealthHandler{
+				status:      tc.status,
+				message:     tc.message,
+				jsonDetails: tc.jsonDetails,
+				err:         tc.err,
+			})
 
 			req := &pluginv2.CheckHealthRequest{
 				Config: &pluginv2.PluginConfig{},
