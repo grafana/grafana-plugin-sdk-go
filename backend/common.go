@@ -25,6 +25,7 @@ type DataSourceConfig struct {
 	JSONData                json.RawMessage
 	DecryptedSecureJSONData map[string]string
 	Updated                 time.Time
+	Model                   interface{}
 }
 
 // PluginConfig configuration for a plugin.
@@ -35,4 +36,5 @@ type PluginConfig struct {
 	DecryptedSecureJSONData map[string]string
 	Updated                 time.Time
 	DataSourceConfig        *DataSourceConfig
+	Model                   interface{}
 }

@@ -22,6 +22,7 @@ type DataQuery struct {
 	Interval      time.Duration
 	TimeRange     TimeRange
 	JSON          json.RawMessage
+	Model         interface{} // The parsed model (same data as in JSON)
 }
 
 // QueryDataResponse holds the results for a given query.
@@ -38,5 +39,7 @@ type TimeRange struct {
 
 // QueryDataHandler handles data queries.
 type QueryDataHandler interface {
+	ParseDataSourceConfigModel(jsonBytes json.RawMessage, secureJSONData map[string]string) (interface{}, error)
+	ParseQueryModel(jsonBytes json.RawMessage) (interface{}, error)
 	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }
