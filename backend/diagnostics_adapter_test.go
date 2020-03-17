@@ -7,12 +7,15 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCollectMetrcis(t *testing.T) {
-	adapter := &sdkAdapter{}
+	adapter := &diagnosticsSDKAdapter{
+		metricGatherer: prometheus.DefaultGatherer,
+	}
 	res, err := adapter.CollectMetrics(context.Background(), &pluginv2.CollectMetricsRequest{})
 	require.NoError(t, err)
 	require.NotNil(t, res)
@@ -29,7 +32,7 @@ func TestCollectMetrcis(t *testing.T) {
 
 func TestCheckHealth(t *testing.T) {
 	t.Run("When check health handler not set should use default implementation", func(t *testing.T) {
-		adapter := &sdkAdapter{}
+		adapter := &diagnosticsSDKAdapter{}
 		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{})
 		require.NoError(t, err)
 		require.NotNil(t, res)
@@ -42,36 +45,36 @@ func TestCheckHealth(t *testing.T) {
 		tcs := []struct {
 			status              HealthStatus
 			message             string
-			jsonDetails         string
+			jsonDetails         []byte
 			err                 error
 			expectedStatus      pluginv2.CheckHealthResponse_HealthStatus
 			expectedMessage     string
-			expectedJSONDetails string
+			expectedJSONDetails []byte
 			expectedError       bool
 		}{
 			{
 				status:              HealthStatusUnknown,
 				message:             "unknown",
-				jsonDetails:         "{}",
+				jsonDetails:         []byte("{}"),
 				expectedStatus:      pluginv2.CheckHealthResponse_UNKNOWN,
 				expectedMessage:     "unknown",
-				expectedJSONDetails: "{}",
+				expectedJSONDetails: []byte("{}"),
 			},
 			{
 				status:              HealthStatusOk,
 				message:             "all good",
-				jsonDetails:         "{}",
+				jsonDetails:         []byte("{}"),
 				expectedStatus:      pluginv2.CheckHealthResponse_OK,
 				expectedMessage:     "all good",
-				expectedJSONDetails: "{}",
+				expectedJSONDetails: []byte("{}"),
 			},
 			{
 				status:              HealthStatusError,
 				message:             "BOOM",
-				jsonDetails:         `{"error": "boom"}`,
+				jsonDetails:         []byte(`{"error": "boom"}`),
 				expectedStatus:      pluginv2.CheckHealthResponse_ERROR,
 				expectedMessage:     "BOOM",
-				expectedJSONDetails: `{"error": "boom"}`,
+				expectedJSONDetails: []byte(`{"error": "boom"}`),
 			},
 			{
 				err:           errors.New("BOOM"),
@@ -80,14 +83,12 @@ func TestCheckHealth(t *testing.T) {
 		}
 
 		for _, tc := range tcs {
-			adapter := &sdkAdapter{
-				CheckHealthHandler: &testCheckHealthHandler{
-					status:      tc.status,
-					message:     tc.message,
-					jsonDetails: tc.jsonDetails,
-					err:         tc.err,
-				},
-			}
+			adapter := newDiagnosticsSDKAdapter(nil, &testCheckHealthHandler{
+				status:      tc.status,
+				message:     tc.message,
+				jsonDetails: tc.jsonDetails,
+				err:         tc.err,
+			})
 
 			req := &pluginv2.CheckHealthRequest{
 				Config: &pluginv2.PluginConfig{},
@@ -110,7 +111,7 @@ func TestCheckHealth(t *testing.T) {
 type testCheckHealthHandler struct {
 	status      HealthStatus
 	message     string
-	jsonDetails string
+	jsonDetails []byte
 	err         error
 }
 
