@@ -42,36 +42,36 @@ func TestCheckHealth(t *testing.T) {
 		tcs := []struct {
 			status              HealthStatus
 			message             string
-			jsonDetails         string
+			jsonDetails         []byte
 			err                 error
 			expectedStatus      pluginv2.CheckHealthResponse_HealthStatus
 			expectedMessage     string
-			expectedJSONDetails string
+			expectedJSONDetails []byte
 			expectedError       bool
 		}{
 			{
 				status:              HealthStatusUnknown,
 				message:             "unknown",
-				jsonDetails:         "{}",
+				jsonDetails:         []byte("{}"),
 				expectedStatus:      pluginv2.CheckHealthResponse_UNKNOWN,
 				expectedMessage:     "unknown",
-				expectedJSONDetails: "{}",
+				expectedJSONDetails: []byte("{}"),
 			},
 			{
 				status:              HealthStatusOk,
 				message:             "all good",
-				jsonDetails:         "{}",
+				jsonDetails:         []byte("{}"),
 				expectedStatus:      pluginv2.CheckHealthResponse_OK,
 				expectedMessage:     "all good",
-				expectedJSONDetails: "{}",
+				expectedJSONDetails: []byte("{}"),
 			},
 			{
 				status:              HealthStatusError,
 				message:             "BOOM",
-				jsonDetails:         `{"error": "boom"}`,
+				jsonDetails:         []byte(`{"error": "boom"}`),
 				expectedStatus:      pluginv2.CheckHealthResponse_ERROR,
 				expectedMessage:     "BOOM",
-				expectedJSONDetails: `{"error": "boom"}`,
+				expectedJSONDetails: []byte(`{"error": "boom"}`),
 			},
 			{
 				err:           errors.New("BOOM"),
@@ -110,7 +110,7 @@ func TestCheckHealth(t *testing.T) {
 type testCheckHealthHandler struct {
 	status      HealthStatus
 	message     string
-	jsonDetails string
+	jsonDetails []byte
 	err         error
 }
 
