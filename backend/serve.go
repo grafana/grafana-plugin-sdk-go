@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"github.com/grafana/grafana-plugin-sdk-go/backend/plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 )
 
 //ServeOpts options for serving plugins.
@@ -21,7 +21,7 @@ func Serve(opts ServeOpts) error {
 		TransformDataHandler: opts.TransformDataHandler,
 	}
 
-	pluginOpts := plugin.ServeOpts{
+	pluginOpts := grpcplugin.ServeOpts{
 		DiagnosticsServer: sdkAdapter,
 	}
 
@@ -37,5 +37,5 @@ func Serve(opts ServeOpts) error {
 		pluginOpts.TransformServer = sdkAdapter
 	}
 
-	return plugin.Serve(pluginOpts)
+	return grpcplugin.Serve(pluginOpts)
 }
