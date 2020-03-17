@@ -28,28 +28,20 @@ func Serve(fn ServePluginFunc) {
 	}
 	opts := fn(logger, c)
 
-	sdkAdapter := &sdkAdapter{
-		metricGatherer:       prometheus.DefaultGatherer,
-		CheckHealthHandler:   opts.CheckHealthHandler,
-		CallResourceHandler:  opts.CallResourceHandler,
-		QueryDataHandler:     opts.QueryDataHandler,
-		TransformDataHandler: opts.TransformDataHandler,
-	}
-
 	pluginOpts := plugin.ServeOpts{
-		DiagnosticsServer: sdkAdapter,
+		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
 	}
 
 	if opts.CallResourceHandler != nil {
-		pluginOpts.ResourceServer = sdkAdapter
+		pluginOpts.ResourceServer = newResourceSDKAdapter(opts.CallResourceHandler)
 	}
 
 	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = sdkAdapter
+		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
 	}
 
 	if opts.TransformDataHandler != nil {
-		pluginOpts.TransformServer = sdkAdapter
+		pluginOpts.TransformServer = newTransformSDKAdapter(opts.TransformDataHandler)
 	}
 
 	plugin.Serve(pluginOpts)
@@ -86,42 +78,29 @@ func servePluginExample(opts ServePluginOpts) {
 		Metrics: prometheus.DefaultRegisterer,
 	}
 
-	sdkAdapter := &sdkAdapter{
-		metricGatherer: prometheus.DefaultGatherer,
-	}
-
 	if opts.PluginProvider != nil {
 		p := opts.PluginProvider(logger, c)
-		sdkAdapter.CheckHealthHandler = p
-		sdkAdapter.CallResourceHandler = p
-
 		plugin.Serve(plugin.ServeOpts{
-			DiagnosticsServer: sdkAdapter,
-			ResourceServer:    sdkAdapter,
+			DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, p),
+			ResourceServer:    newResourceSDKAdapter(p),
 		})
 		return
 	}
 
 	if opts.DataSourcePluginProvider != nil {
 		p := opts.DataSourcePluginProvider(logger, c)
-		sdkAdapter.CheckHealthHandler = p
-		sdkAdapter.CallResourceHandler = p
-		sdkAdapter.QueryDataHandler = p
-
 		plugin.Serve(plugin.ServeOpts{
-			DiagnosticsServer: sdkAdapter,
-			ResourceServer:    sdkAdapter,
-			DataServer:        sdkAdapter,
+			DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, p),
+			ResourceServer:    newResourceSDKAdapter(p),
+			DataServer:        newDataSDKAdapter(p),
 		})
 		return
 	}
 
 	if opts.TransformPluginProvider != nil {
 		p := opts.TransformPluginProvider(logger, c)
-		sdkAdapter.TransformDataHandler = p
-
 		plugin.Serve(plugin.ServeOpts{
-			TransformServer: sdkAdapter,
+			TransformServer: newTransformSDKAdapter(p),
 		})
 		return
 	}

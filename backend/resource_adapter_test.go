@@ -14,7 +14,7 @@ import (
 func TestCallResource(t *testing.T) {
 	t.Run("When call resource handler not set should return http status not implemented", func(t *testing.T) {
 		testSender := newTestCallResourceServer()
-		adapter := &sdkAdapter{}
+		adapter := &resourceSDKAdapter{}
 		err := adapter.CallResource(&pluginv2.CallResourceRequest{}, testSender)
 		require.NoError(t, err)
 		require.Len(t, testSender.respMessages, 1)
@@ -40,9 +40,7 @@ func TestCallResource(t *testing.T) {
 			responseBody: body,
 		}
 		testSender := newTestCallResourceServer()
-		adapter := &sdkAdapter{
-			CallResourceHandler: handler,
-		}
+		adapter := newResourceSDKAdapter(handler)
 		req := &pluginv2.CallResourceRequest{
 			Config: &pluginv2.PluginConfig{
 				OrgId:    2,
@@ -105,9 +103,7 @@ func TestCallResource(t *testing.T) {
 			},
 		}
 		testSender := newTestCallResourceServer()
-		adapter := &sdkAdapter{
-			CallResourceHandler: handler,
-		}
+		adapter := newResourceSDKAdapter(handler)
 		req := &pluginv2.CallResourceRequest{
 			Config: &pluginv2.PluginConfig{
 				OrgId:    2,

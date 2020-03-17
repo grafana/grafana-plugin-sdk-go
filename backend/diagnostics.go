@@ -31,5 +31,5 @@ type CheckHealthRequest struct {
 type CheckHealthResult struct {
 	Status      HealthStatus
 	Message     string
-	JSONDetails string
+	JSONDetails []byte
 }
