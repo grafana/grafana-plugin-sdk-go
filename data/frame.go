@@ -12,11 +12,13 @@ package data
 import (
 	"fmt"
 	"math"
+	"reflect"
 	"sort"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/olekukonko/tablewriter"
 )
 
 // Frame represents a columnar storage with optional labels.
@@ -411,4 +413,38 @@ func FrameTestCompareOptions() []cmp.Option {
 
 	unexportedField := cmp.AllowUnexported(Field{})
 	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, unexportedField, cmpopts.EquateEmpty()}
+}
+
+func (f *Frame) String() string {
+	rowLen, err := f.RowLen()
+	if err != nil {
+		return err.Error()
+	}
+	sb := &strings.Builder{}
+	sb.WriteString(fmt.Sprintf("Name: %v\n", f.Name))
+	table := tablewriter.NewWriter(sb)
+	table.SetAutoFormatHeaders(false)
+	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
+	table.SetAutoWrapText(false)
+	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	headers := make([]string, len(f.Fields))
+	for i, field := range f.Fields {
+		headers[i] = fmt.Sprintf("Name: %v\nLabels: %s\nType: %s", field.Name, field.Labels, field.Type())
+	}
+	table.SetHeader(headers)
+	for rowIdx := 0; rowIdx < rowLen; rowIdx++ {
+		iRow := f.RowCopy(rowIdx)
+		sRow := make([]string, len(iRow))
+		for i, v := range iRow {
+			val := reflect.Indirect(reflect.ValueOf(v))
+			if val.IsValid() {
+				sRow[i] = fmt.Sprintf("%v", val)
+			} else {
+				sRow[i] = "null"
+			}
+		}
+		table.Append(sRow)
+	}
+	table.Render()
+	return sb.String()
 }

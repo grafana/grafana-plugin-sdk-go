@@ -25,6 +25,16 @@ func TestFrame(t *testing.T) {
 	}
 }
 
+// func ExampleNewFrame() {
+// 	frame := data.NewFrame("Frame Name",
+// 		data.NewField("Time", nil, []time.Time{time.Now()}),
+// 	)
+// }
+
+func TestTableString(t *testing.T) {
+	fmt.Println(goldenDF().String())
+}
+
 func TestFrameWarnings(t *testing.T) {
 	df := data.NewFrame("warning_test")
 	df.AppendWarning("details1", "message1")
