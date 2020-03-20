@@ -45,10 +45,32 @@ func ExampleNewFrame() {
 	// | 2020-01-02 03:04:05 +0000 UTC | 1                     | 12                    |
 	// | 2020-01-02 03:05:05 +0000 UTC | NaN                   | null                  |
 	// +-------------------------------+-----------------------+-----------------------+
+	// Rowcount: 2
 }
 
 func TestTableString(t *testing.T) {
-	fmt.Println(goldenDF().String())
+	frame := data.NewFrame("sTest", data.NewField("", nil, make([]bool, 20)))
+	s := frame.String()
+	output := `Name: sTest
++--------------+
+| Name:        |
+| Labels:      |
+| Type: []bool |
++--------------+
+| false        |
+| false        |
+| false        |
+| false        |
+| false        |
+| false        |
+| false        |
+| false        |
+| false        |
+| ...          |
++--------------+
+Rowcount: 20
+`
+	require.Equal(t, s, output)
 }
 
 func TestFrameWarnings(t *testing.T) {

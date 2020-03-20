@@ -416,6 +416,7 @@ func FrameTestCompareOptions() []cmp.Option {
 }
 
 func (f *Frame) String() string {
+	maxRows := 10
 	rowLen, err := f.RowLen()
 	if err != nil {
 		return err.Error()
@@ -427,6 +428,7 @@ func (f *Frame) String() string {
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
 	table.SetAutoWrapText(false)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table.SetCaption(true, fmt.Sprintf("Rowcount: %v", rowLen))
 	headers := make([]string, len(f.Fields))
 	for i, field := range f.Fields {
 		headers[i] = fmt.Sprintf("Name: %v\nLabels: %s\nType: %s", field.Name, field.Labels, field.Type())
@@ -435,6 +437,15 @@ func (f *Frame) String() string {
 	for rowIdx := 0; rowIdx < rowLen; rowIdx++ {
 		iRow := f.RowCopy(rowIdx)
 		sRow := make([]string, len(iRow))
+
+		if rowIdx == maxRows-1 {
+			for i := range iRow {
+				sRow[i] = "..."
+			}
+			table.Append(sRow)
+			break
+		}
+
 		for i, v := range iRow {
 			val := reflect.Indirect(reflect.ValueOf(v))
 			if val.IsValid() {
