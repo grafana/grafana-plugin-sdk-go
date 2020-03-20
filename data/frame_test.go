@@ -2,6 +2,7 @@ package data_test
 
 import (
 	"fmt"
+	"math"
 	"testing"
 	"time"
 
@@ -25,11 +26,26 @@ func TestFrame(t *testing.T) {
 	}
 }
 
-// func ExampleNewFrame() {
-// 	frame := data.NewFrame("Frame Name",
-// 		data.NewField("Time", nil, []time.Time{time.Now()}),
-// 	)
-// }
+func ExampleNewFrame() {
+	aTime := time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
+	var anInt64 int64 = 12
+	frame := data.NewFrame("Frame Name",
+		data.NewField("Time", nil, []time.Time{aTime, aTime.Add(time.Minute)}),
+		data.NewField("Temp", data.Labels{"place": "Ecuador"}, []float64{1, math.NaN()}),
+		data.NewField("Count", data.Labels{"place": "Ecuador"}, []*int64{&anInt64, nil}),
+	)
+	fmt.Println(frame.String())
+	// Output:
+	// Name: Frame Name
+	// +-------------------------------+-----------------------+-----------------------+
+	// | Name: Time                    | Name: Temp            | Name: Count           |
+	// | Labels:                       | Labels: place=Ecuador | Labels: place=Ecuador |
+	// | Type: []time.Time             | Type: []float64       | Type: []*int64        |
+	// +-------------------------------+-----------------------+-----------------------+
+	// | 2020-01-02 03:04:05 +0000 UTC | 1                     | 12                    |
+	// | 2020-01-02 03:05:05 +0000 UTC | NaN                   | null                  |
+	// +-------------------------------+-----------------------+-----------------------+
+}
 
 func TestTableString(t *testing.T) {
 	fmt.Println(goldenDF().String())
