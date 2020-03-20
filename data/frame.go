@@ -1,6 +1,12 @@
-// Package data provides data structures that Grafana recognizes. The Frame
-// object represents a Grafana Dataframe which can represent data such as tables
+// Package data provides data structures that Grafana recognizes.
+//
+// The Frame object represents a Grafana Dataframe which can represent data such as tables
 // and time series.
+//
+// Frames can be encoded using Apache Arrow (https://arrow.apache.org/) for transmission.
+//
+// The corresponding Grafana frontend package the @grafana/data package
+// (https://github.com/grafana/grafana/tree/master/packages/grafana-data).
 package data
 
 import (
@@ -302,6 +308,8 @@ func (f *Frame) FloatAt(fieldIdx int, rowIdx int) (float64, error) {
 }
 
 // FrameTestCompareOptions returns go-cmp testing options to allow testing of Frame equivelnce.
+// Since the data within a Frame's Fields is not exported, this function allows the unexported
+// values to be tested.
 // The intent is to only use this for testing.
 func FrameTestCompareOptions() []cmp.Option {
 	confFloats := cmp.Comparer(func(x, y *ConfFloat64) bool {
