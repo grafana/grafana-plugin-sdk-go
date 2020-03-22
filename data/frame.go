@@ -416,46 +416,91 @@ func FrameTestCompareOptions() []cmp.Option {
 }
 
 func (f *Frame) String() string {
-	maxRows := 10
-	rowLen, err := f.RowLen()
+	s, err := f.StringTable(10, 10)
 	if err != nil {
 		return err.Error()
 	}
+	return s
+}
+
+// StringTable human prints a table with up to maxFields and and maxRows rows of Frame.
+// If the width or length exceeds maxWidth then last column and/or row displays "..." as the contents.
+func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
+	if maxFields < 2 {
+		return "", fmt.Errorf("maxWidth than 2")
+	}
+	rowLen, err := f.RowLen()
+	if err != nil {
+		return "", err
+	}
+
+	// calculate output column with (Field Count or maxWidth)
+	width := len(f.Fields)
+	exceedsWidth := width > maxFields
+	if exceedsWidth {
+		width = maxFields
+	}
+
+	// Calculate output column with (Field Count or maxWidth)
+	length := rowLen
+	exceedsLength := rowLen > maxRows
+	if exceedsLength {
+		length = maxRows + 1
+	}
+
 	sb := &strings.Builder{}
 	sb.WriteString(fmt.Sprintf("Name: %v\n", f.Name))
 	table := tablewriter.NewWriter(sb)
+
+	// table options
 	table.SetAutoFormatHeaders(false)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
 	table.SetAutoWrapText(false)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
-	table.SetCaption(true, fmt.Sprintf("Rowcount: %v", rowLen))
-	headers := make([]string, len(f.Fields))
-	for i, field := range f.Fields {
-		headers[i] = fmt.Sprintf("Name: %v\nLabels: %s\nType: %s", field.Name, field.Labels, field.Type())
+	table.SetCaption(true, fmt.Sprintf("Field Count: %v\nRow Count: %v", len(f.Fields), rowLen))
+
+	// set table headers
+	headers := make([]string, width)
+	for colIdx, field := range f.Fields {
+		if exceedsWidth && colIdx == maxFields-1 {
+			headers[colIdx] = fmt.Sprintf("...+%v field...", len(f.Fields)-colIdx)
+			break
+		}
+		headers[colIdx] = fmt.Sprintf("Name: %v\nLabels: %s\nType: %s", field.Name, field.Labels, field.Type())
 	}
 	table.SetHeader(headers)
-	for rowIdx := 0; rowIdx < rowLen; rowIdx++ {
-		iRow := f.RowCopy(rowIdx)
-		sRow := make([]string, len(iRow))
 
-		if rowIdx == maxRows-1 {
-			for i := range iRow {
+	if maxRows == 0 {
+		table.Render()
+		return sb.String(), nil
+	}
+
+	for rowIdx := 0; rowIdx < length; rowIdx++ {
+		iRow := f.RowCopy(rowIdx)     // interface row (source)
+		sRow := make([]string, width) // string row (destination)
+
+		if exceedsLength && rowIdx == maxRows-1 {
+			for i := range sRow {
 				sRow[i] = "..."
 			}
 			table.Append(sRow)
 			break
 		}
 
-		for i, v := range iRow {
+		for colIdx, v := range iRow {
+			if exceedsWidth && colIdx == maxFields-1 {
+				sRow[colIdx] = "..."
+				break
+			}
 			val := reflect.Indirect(reflect.ValueOf(v))
 			if val.IsValid() {
-				sRow[i] = fmt.Sprintf("%v", val)
+				sRow[colIdx] = fmt.Sprintf("%v", val)
 			} else {
-				sRow[i] = "null"
+				sRow[colIdx] = "null"
 			}
 		}
 		table.Append(sRow)
 	}
 	table.Render()
-	return sb.String()
+	return sb.String(), nil
 }

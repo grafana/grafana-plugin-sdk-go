@@ -45,32 +45,78 @@ func ExampleNewFrame() {
 	// | 2020-01-02 03:04:05 +0000 UTC | 1                     | 12                    |
 	// | 2020-01-02 03:05:05 +0000 UTC | NaN                   | null                  |
 	// +-------------------------------+-----------------------+-----------------------+
-	// Rowcount: 2
+	// Field Count: 3 Row Count: 2
 }
 
-func TestTableString(t *testing.T) {
-	frame := data.NewFrame("sTest", data.NewField("", nil, make([]bool, 20)))
-	s := frame.String()
-	output := `Name: sTest
-+--------------+
-| Name:        |
-| Labels:      |
-| Type: []bool |
-+--------------+
-| false        |
-| false        |
-| false        |
-| false        |
-| false        |
-| false        |
-| false        |
-| false        |
-| false        |
-| ...          |
-+--------------+
-Rowcount: 20
-`
-	require.Equal(t, s, output)
+func TestStringTable(t *testing.T) {
+	frame := data.NewFrame("sTest",
+		data.NewField("", nil, make([]bool, 3)),
+		data.NewField("", nil, make([]bool, 3)),
+		data.NewField("", nil, make([]bool, 3)),
+	)
+	tests := []struct {
+		name      string
+		maxWidth  int
+		maxLength int
+		output    string
+	}{
+		{
+			name:      "at max width and length",
+			maxWidth:  3,
+			maxLength: 3,
+			output: `Name: sTest
++--------------+--------------+--------------+
+| Name:        | Name:        | Name:        |
+| Labels:      | Labels:      | Labels:      |
+| Type: []bool | Type: []bool | Type: []bool |
++--------------+--------------+--------------+
+| false        | false        | false        |
+| false        | false        | false        |
+| false        | false        | false        |
++--------------+--------------+--------------+
+Field Count: 3 Row Count: 3
+`,
+		},
+		{
+			name:      "above max width and length",
+			maxWidth:  2,
+			maxLength: 2,
+			output: `Name: sTest
++--------------+----------------+
+| Name:        | ...+2 field... |
+| Labels:      |                |
+| Type: []bool |                |
++--------------+----------------+
+| false        | ...            |
+| ...          | ...            |
++--------------+----------------+
+Field Count: 3 Row Count: 3
+`,
+		},
+		{
+			name:      "no length",
+			maxWidth:  10,
+			maxLength: 0,
+			output: `Name: sTest
++--------------+--------------+--------------+
+| Name:        | Name:        | Name:        |
+| Labels:      | Labels:      | Labels:      |
+| Type: []bool | Type: []bool | Type: []bool |
++--------------+--------------+--------------+
++--------------+--------------+--------------+
+Field Count: 3 Row Count: 3
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s, err := frame.StringTable(tt.maxWidth, tt.maxLength)
+			require.NoError(t, err)
+			require.Equal(t, tt.output, s)
+
+		})
+	}
+
 }
 
 func TestFrameWarnings(t *testing.T) {
