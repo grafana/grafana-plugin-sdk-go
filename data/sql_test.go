@@ -38,8 +38,10 @@ func ExampleReplace() {
 		return &s
 	}
 
-	frame := data.NewFrame("String Field Replacer Example",
-		data.NewField("string", nil, []*string{getString(), getString(), getString()}))
+	frame := data.NewFrame("Before",
+		data.NewField("string", nil, []*string{getString(), getString()}))
+
+	fmt.Println(frame.String()) // Before
 
 	intReplacer := &data.StringFieldReplacer{
 		VectorType: []*int64{},
@@ -60,9 +62,22 @@ func ExampleReplace() {
 		// return err
 	}
 
-	fmt.Println(frame.String())
+	frame.Name = "After"
+	fmt.Println(frame.String()) // After
 	// Output:
-	// Name: String Field Replacer Example
+	// Name: Before
+	// +-----------------+
+	// | Name: string    |
+	// | Labels:         |
+	// | Type: []*string |
+	// +-----------------+
+	// | 1               |
+	// | 2               |
+	// +-----------------+
+	// Field Count: 1 Row
+	// Count: 2
+	//
+	// Name: After
 	// +----------------+
 	// | Name: string   |
 	// | Labels:        |
@@ -70,10 +85,9 @@ func ExampleReplace() {
 	// +----------------+
 	// | 1              |
 	// | 2              |
-	// | 3              |
 	// +----------------+
 	// Field Count: 1 Row
-	// Count: 3
+	// Count: 2
 }
 
 func ExampleNewFromSQLRows() {
