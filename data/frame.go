@@ -423,25 +423,27 @@ func (f *Frame) String() string {
 	return s
 }
 
-// StringTable human prints a table with up to maxFields and and maxRows rows of Frame.
-// If the width or length exceeds maxWidth then last column and/or row displays "..." as the contents.
+// StringTable prints a human readable table of the Frame.
+// The table's width is limited to maxFields and the length is limited to maxRows.
+// If the width or length is excceded then last column or row displays "..." as the contents.
 func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 	if maxFields < 2 {
 		return "", fmt.Errorf("maxWidth than 2")
 	}
+
 	rowLen, err := f.RowLen()
 	if err != nil {
 		return "", err
 	}
 
-	// calculate output column with (Field Count or maxWidth)
+	// calculate output column width (fields)
 	width := len(f.Fields)
 	exceedsWidth := width > maxFields
 	if exceedsWidth {
 		width = maxFields
 	}
 
-	// Calculate output column with (Field Count or maxWidth)
+	// calculate output length (rows)
 	length := rowLen
 	exceedsLength := rowLen > maxRows
 	if exceedsLength {
@@ -452,17 +454,19 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 	sb.WriteString(fmt.Sprintf("Name: %v\n", f.Name))
 	table := tablewriter.NewWriter(sb)
 
-	// table options
+	// table formatting options
 	table.SetAutoFormatHeaders(false)
 	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
 	table.SetAutoWrapText(false)
 	table.SetAlignment(tablewriter.ALIGN_LEFT)
+
+	// (caption is below the table)
 	table.SetCaption(true, fmt.Sprintf("Field Count: %v\nRow Count: %v", len(f.Fields), rowLen))
 
 	// set table headers
 	headers := make([]string, width)
 	for colIdx, field := range f.Fields {
-		if exceedsWidth && colIdx == maxFields-1 {
+		if exceedsWidth && colIdx == maxFields-1 { // if Frame has more Fields than output table width and last Field
 			headers[colIdx] = fmt.Sprintf("...+%v field...", len(f.Fields)-colIdx)
 			break
 		}
@@ -479,7 +483,7 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 		iRow := f.RowCopy(rowIdx)     // interface row (source)
 		sRow := make([]string, width) // string row (destination)
 
-		if exceedsLength && rowIdx == maxRows-1 {
+		if exceedsLength && rowIdx == maxRows-1 { // if Frame has more rows than output table and last row
 			for i := range sRow {
 				sRow[i] = "..."
 			}
@@ -488,10 +492,11 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 		}
 
 		for colIdx, v := range iRow {
-			if exceedsWidth && colIdx == maxFields-1 {
+			if exceedsWidth && colIdx == maxFields-1 { // if Frame has more Fields than output table width and last Field
 				sRow[colIdx] = "..."
 				break
 			}
+
 			val := reflect.Indirect(reflect.ValueOf(v))
 			if val.IsValid() {
 				sRow[colIdx] = fmt.Sprintf("%v", val)
@@ -501,6 +506,7 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 		}
 		table.Append(sRow)
 	}
+
 	table.Render()
 	return sb.String(), nil
 }
