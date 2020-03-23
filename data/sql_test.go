@@ -2,6 +2,7 @@ package data_test
 
 import (
 	"database/sql"
+	"fmt"
 	"reflect"
 	"strconv"
 
@@ -29,8 +30,18 @@ func ExampleSQLStringConverter() {
 	}
 }
 
-func ExampleStringFieldReplacer() {
-	_ = &data.StringFieldReplacer{
+func ExampleReplace() {
+	i := 0
+	getString := func() *string {
+		i++
+		s := strconv.Itoa(i)
+		return &s
+	}
+
+	frame := data.NewFrame("String Field Replacer Example",
+		data.NewField("string", nil, []*string{getString(), getString(), getString()}))
+
+	intReplacer := &data.StringFieldReplacer{
 		VectorType: []*int64{},
 		ReplaceFunc: func(in *string) (interface{}, error) {
 			if in == nil {
@@ -43,6 +54,26 @@ func ExampleStringFieldReplacer() {
 			return &v, nil
 		},
 	}
+
+	err := data.Replace(frame, 0, intReplacer)
+	if err != nil {
+		// return err
+	}
+
+	fmt.Println(frame.String())
+	// Output:
+	// Name: String Field Replacer Example
+	// +----------------+
+	// | Name: string   |
+	// | Labels:        |
+	// | Type: []*int64 |
+	// +----------------+
+	// | 1              |
+	// | 2              |
+	// | 3              |
+	// +----------------+
+	// Field Count: 1 Row
+	// Count: 3
 }
 
 func ExampleNewFromSQLRows() {
