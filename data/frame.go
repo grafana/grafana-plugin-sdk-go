@@ -121,16 +121,16 @@ func (f *Frame) EmptyCopy() *Frame {
 	return newFrame
 }
 
-// TypeIndices returns a slice of Field index positions for the given pTypes.
-func (f *Frame) TypeIndices(pTypes ...FieldType) []int {
+// TypeIndices returns a slice of Field index positions for the given fTypes.
+func (f *Frame) TypeIndices(fTypes ...FieldType) []int {
 	indices := []int{}
 	if f.Fields == nil {
 		return indices
 	}
 	for fieldIdx, f := range f.Fields {
 		vecType := f.Type()
-		for _, pType := range pTypes {
-			if pType == vecType {
+		for _, fType := range fTypes {
+			if fType == vecType {
 				indices = append(indices, fieldIdx)
 				break
 			}
