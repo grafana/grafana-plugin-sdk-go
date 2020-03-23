@@ -1,6 +1,7 @@
 package data_test
 
 import (
+	"math"
 	"testing"
 	"time"
 
@@ -773,5 +774,42 @@ func TestWideToLong(t *testing.T) {
 				t.Errorf("Result mismatch (-want +got):\n%s", diff)
 			}
 		})
+	}
+}
+
+func TestFloatAt(t *testing.T) {
+	mixedFrame := data.NewFrame("",
+		data.NewField("", nil, []*int64{nil, int64Ptr(-5), int64Ptr(5)}),
+		data.NewField("", nil, []*string{nil, stringPtr("-5"), stringPtr("5")}),
+		data.NewField("", nil, []*bool{nil, boolPtr(true), boolPtr(false)}),
+		data.NewField("", nil, []*time.Time{
+			nil,
+			timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+			timePtr(time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC)),
+		}),
+		data.NewField("", nil, []uint64{0, 12, math.MaxUint64}),
+	)
+
+	expectedFloatFrame := data.NewFrame("",
+		data.NewField("", nil, []float64{math.NaN(), -5, 5}),
+		data.NewField("", nil, []float64{math.NaN(), -5, 5}),
+		data.NewField("", nil, []float64{0, 1, 0}),
+		data.NewField("", nil, []float64{math.NaN(), 1577934240000, 1577934270000}),
+		data.NewField("", nil, []float64{0, 12, 1.8446744073709552e+19}), // Note: loss of precision.
+	)
+
+	floatFrame := data.NewFrame("")
+	floatFrame.Fields = make([]*data.Field, len(mixedFrame.Fields))
+	for fieldIdx, field := range mixedFrame.Fields {
+		floatFrame.Fields[fieldIdx] = data.NewFieldFromFieldType(data.FieldTypeFloat64, field.Len())
+		for i := 0; i < field.Len(); i++ {
+			fv, err := field.FloatAt(i)
+			require.NoError(t, err)
+			floatFrame.Set(fieldIdx, i, fv)
+		}
+	}
+
+	if diff := cmp.Diff(expectedFloatFrame, floatFrame, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 }

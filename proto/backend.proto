@@ -151,7 +151,7 @@ message CheckHealthResponse {
 
   HealthStatus status = 1;
   string message = 2;
-  string jsonDetails = 3;
+  bytes jsonDetails = 3;
 }
 
 //-----------------------------------------------
