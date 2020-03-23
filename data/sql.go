@@ -149,7 +149,7 @@ type SQLStringConverter struct {
 // Note: SQLStringConverter is perhaps better understood as []byte. However, currently
 // the Vector type ([][]byte) is not supported. https://github.com/grafana/grafana-plugin-sdk-go/issues/57
 
-// StringFieldReplacer is used to replace a *string Field in a data. The type
+// StringFieldReplacer is used to replace a *string Field in a Frame. The type
 // returned by the ReplaceFunc must match the type of elements of VectorType.
 // Both properties must be non-nil.
 type StringFieldReplacer struct {
