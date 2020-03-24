@@ -37,6 +37,7 @@ func ExampleNewFrame() {
 	fmt.Println(frame.String())
 	// Output:
 	// Name: Frame Name
+	// Dimensions: 3 Fields by 2 Rows
 	// +-------------------------------+-----------------------+-----------------------+
 	// | Name: Time                    | Name: Temp            | Name: Count           |
 	// | Labels:                       | Labels: place=Ecuador | Labels: place=Ecuador |
@@ -45,7 +46,6 @@ func ExampleNewFrame() {
 	// | 2020-01-02 03:04:05 +0000 UTC | 1                     | 12                    |
 	// | 2020-01-02 03:05:05 +0000 UTC | NaN                   | null                  |
 	// +-------------------------------+-----------------------+-----------------------+
-	// Field Count: 3 Row Count: 2
 }
 
 func TestStringTable(t *testing.T) {
@@ -65,6 +65,7 @@ func TestStringTable(t *testing.T) {
 			maxWidth:  3,
 			maxLength: 3,
 			output: `Name: sTest
+Dimensions: 3 Fields by 3 Rows
 +--------------+--------------+--------------+
 | Name:        | Name:        | Name:        |
 | Labels:      | Labels:      | Labels:      |
@@ -74,7 +75,6 @@ func TestStringTable(t *testing.T) {
 | false        | false        | false        |
 | false        | false        | false        |
 +--------------+--------------+--------------+
-Field Count: 3 Row Count: 3
 `,
 		},
 		{
@@ -82,6 +82,7 @@ Field Count: 3 Row Count: 3
 			maxWidth:  2,
 			maxLength: 2,
 			output: `Name: sTest
+Dimensions: 3 Fields by 3 Rows
 +--------------+----------------+
 | Name:        | ...+2 field... |
 | Labels:      |                |
@@ -90,7 +91,6 @@ Field Count: 3 Row Count: 3
 | false        | ...            |
 | ...          | ...            |
 +--------------+----------------+
-Field Count: 3 Row Count: 3
 `,
 		},
 		{
@@ -98,13 +98,13 @@ Field Count: 3 Row Count: 3
 			maxWidth:  10,
 			maxLength: 0,
 			output: `Name: sTest
+Dimensions: 3 Fields by 3 Rows
 +--------------+--------------+--------------+
 | Name:        | Name:        | Name:        |
 | Labels:      | Labels:      | Labels:      |
 | Type: []bool | Type: []bool | Type: []bool |
 +--------------+--------------+--------------+
 +--------------+--------------+--------------+
-Field Count: 3 Row Count: 3
 `,
 		},
 	}

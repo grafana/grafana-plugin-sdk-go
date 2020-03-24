@@ -66,6 +66,7 @@ func ExampleReplace() {
 	fmt.Println(frame.String()) // After
 	// Output:
 	// Name: Before
+	// Dimensions: 1 Fields by 2 Rows
 	// +-----------------+
 	// | Name: string    |
 	// | Labels:         |
@@ -74,10 +75,9 @@ func ExampleReplace() {
 	// | 1               |
 	// | 2               |
 	// +-----------------+
-	// Field Count: 1 Row
-	// Count: 2
 	//
 	// Name: After
+	// Dimensions: 1 Fields by 2 Rows
 	// +----------------+
 	// | Name: string   |
 	// | Labels:        |
@@ -86,8 +86,6 @@ func ExampleReplace() {
 	// | 1              |
 	// | 2              |
 	// +----------------+
-	// Field Count: 1 Row
-	// Count: 2
 }
 
 func ExampleNewFromSQLRows() {
