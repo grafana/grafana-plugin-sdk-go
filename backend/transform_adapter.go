@@ -3,7 +3,7 @@ package backend
 import (
 	"context"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -18,7 +18,7 @@ func newTransformSDKAdapter(handler TransformDataHandler) *transformSDKAdapter {
 	}
 }
 
-func (a *transformSDKAdapter) TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callBack plugin.TransformDataCallBack) (*pluginv2.QueryDataResponse, error) {
+func (a *transformSDKAdapter) TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callBack grpcplugin.TransformDataCallBack) (*pluginv2.QueryDataResponse, error) {
 	resp, err := a.transformDataHandler.TransformData(ctx, fromProto().QueryDataRequest(req), &transformDataCallBackWrapper{callBack})
 	if err != nil {
 		return nil, err
@@ -28,7 +28,7 @@ func (a *transformSDKAdapter) TransformData(ctx context.Context, req *pluginv2.Q
 }
 
 type transformDataCallBackWrapper struct {
-	callBack plugin.TransformDataCallBack
+	callBack grpcplugin.TransformDataCallBack
 }
 
 func (tw *transformDataCallBackWrapper) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
