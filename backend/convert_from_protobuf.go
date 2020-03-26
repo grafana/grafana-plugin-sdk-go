@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -90,15 +91,29 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 }
 
 func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
-	frames := make([]*data.Frame, len(protoRes.Frames))
-	var err error
-	for i, encodedFrame := range protoRes.Frames {
-		frames[i], err = data.UnmarshalArrow(encodedFrame)
+	qdr := QueryDataResponse{
+		Responses: make([]DataResponse, len(protoRes.Responses)),
+		Metadata:  protoRes.Metadata,
+	}
+	for rIdx, res := range protoRes.Responses {
+		frames, err := data.BytesSliceToFrames(res.Frames)
 		if err != nil {
 			return nil, err
 		}
+		qdr.Responses[rIdx] = DataResponse{
+			RefID:  res.RefId,
+			Error:  res.Error,
+			Frames: frames,
+		}
+		var v interface{}
+		err = json.Unmarshal(res.QueryMeta.Custom, v)
+		if err != nil {
+			Logger.Error("failed to marshal custom meta data", err.Error())
+			continue
+		}
+		qdr.Responses[rIdx].Meta.Custom = v
 	}
-	return &QueryDataResponse{Metadata: protoRes.Metadata, Frames: frames}, nil
+	return &qdr, nil
 }
 
 func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResourceRequest) *CallResourceRequest {

@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -108,19 +109,30 @@ func (t convertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 }
 
 func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
-	encodedFrames := make([][]byte, len(res.Frames))
-	var err error
-	for i, frame := range res.Frames {
-		encodedFrames[i], err = data.MarshalArrow(frame)
+	pQDR := &pluginv2.QueryDataResponse{
+		Responses: make([]*pluginv2.DataResponse, len(res.Responses)),
+		Metadata:  res.Metadata,
+	}
+	for rIdx, dr := range res.Responses {
+		encodedFrames, err := data.FramesToBytesSlice(dr.Frames)
 		if err != nil {
 			return nil, err
 		}
+		pQDR.Responses[rIdx] = &pluginv2.DataResponse{
+			RefId:  dr.RefID,
+			Frames: encodedFrames,
+		}
+
+		b, err := json.Marshal(dr.Meta.Custom)
+		if err != nil {
+			Logger.Error("failed to marshal custom meta data", err.Error())
+			continue
+		}
+
+		pQDR.Responses[rIdx].QueryMeta = &pluginv2.QueryResultMeta{Custom: b}
 	}
 
-	return &pluginv2.QueryDataResponse{
-		Frames:   encodedFrames,
-		Metadata: res.Metadata,
-	}, nil
+	return pQDR, nil
 }
 
 func (t convertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *pluginv2.CallResourceResponse {

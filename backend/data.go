@@ -26,8 +26,15 @@ type DataQuery struct {
 
 // QueryDataResponse holds the results for a given query.
 type QueryDataResponse struct {
-	Frames   []*data.Frame
-	Metadata map[string]string
+	Responses []DataResponse
+	Metadata  map[string]string
+}
+
+type DataResponse struct {
+	RefID  string
+	Frames []*data.Frame
+	Meta   QueryResultMeta
+	Error  string
 }
 
 // TimeRange represents a time range for a query.
@@ -40,3 +47,31 @@ type TimeRange struct {
 type QueryDataHandler interface {
 	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }
+
+type QueryResultMeta struct {
+	Custom interface{}
+}
+
+// type QueryResultMetaNotice struct {
+// 	Severity NoticeSeverity
+// 	Text     string
+// 	URL      string
+// 	Inspect  InspectType
+// }
+
+// type NoticeSeverity int
+
+// const (
+// 	NoticeSeverityInfo NoticeSeverity = iota
+// 	NoticeSeverityWarning
+// 	NoticeSeverityError
+// )
+
+// type InspectType int
+
+// const (
+// 	InspectTypeMeta InspectType = iota
+// 	InspectTypeError
+// 	InspectTypeData
+// 	InspectTypeStats
+// )

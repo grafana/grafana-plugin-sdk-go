@@ -110,12 +110,24 @@ message QueryDataRequest {
 }
 
 message QueryDataResponse {
-  // Arrow encoded DataFrames
-  // Each frame encodes its own: Errors, meta, and refId
-  repeated bytes frames = 1;
+  // List of data query responses
+  repeated DataResponse responses = 1;
 
   // Additional response metadata
   map<string,string> metadata = 2;
+}
+
+message DataResponse {
+  string refId = 1;
+  // Arrow encoded DataFrames
+  // Frame has its own meta, warnings, and repeats refId
+  repeated bytes frames = 2;
+  string error = 3;
+  QueryResultMeta queryMeta = 4;
+}
+
+message QueryResultMeta {
+  bytes custom = 1;
 }
 
 //-----------------------------------------------
