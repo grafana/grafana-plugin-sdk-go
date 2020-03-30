@@ -34,13 +34,16 @@ func (t convertToProtobuf) DataSourceConfig(config *DataSourceConfig) *pluginv2.
 	}
 
 	return &pluginv2.DataSourceConfig{
-		Id:               config.ID,
-		Name:             config.Name,
-		Url:              config.URL,
-		User:             config.User,
-		Database:         config.Database,
-		BasicAuthEnabled: config.BasicAuthEnabled,
-		BasicAuthUser:    config.BasicAuthUser,
+		Id:                      config.ID,
+		Name:                    config.Name,
+		Url:                     config.URL,
+		User:                    config.User,
+		Database:                config.Database,
+		BasicAuthEnabled:        config.BasicAuthEnabled,
+		BasicAuthUser:           config.BasicAuthUser,
+		JsonData:                config.JSONData,
+		DecryptedSecureJsonData: config.DecryptedSecureJSONData,
+		LastUpdatedMS:           config.Updated.UnixNano() / int64(time.Millisecond),
 	}
 }
 

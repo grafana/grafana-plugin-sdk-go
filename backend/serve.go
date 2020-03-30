@@ -1,7 +1,8 @@
 package backend
 
 import (
-	"github.com/grafana/grafana-plugin-sdk-go/backend/plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
+	"github.com/prometheus/client_golang/prometheus"
 )
 
 //ServeOpts options for serving plugins.
@@ -14,28 +15,21 @@ type ServeOpts struct {
 
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
-	sdkAdapter := &sdkAdapter{
-		CheckHealthHandler:   opts.CheckHealthHandler,
-		CallResourceHandler:  opts.CallResourceHandler,
-		QueryDataHandler:     opts.QueryDataHandler,
-		TransformDataHandler: opts.TransformDataHandler,
-	}
-
-	pluginOpts := plugin.ServeOpts{
-		DiagnosticsServer: sdkAdapter,
+	pluginOpts := grpcplugin.ServeOpts{
+		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
 	}
 
 	if opts.CallResourceHandler != nil {
-		pluginOpts.ResourceServer = sdkAdapter
+		pluginOpts.ResourceServer = newResourceSDKAdapter(opts.CallResourceHandler)
 	}
 
 	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = sdkAdapter
+		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
 	}
 
 	if opts.TransformDataHandler != nil {
-		pluginOpts.TransformServer = sdkAdapter
+		pluginOpts.TransformServer = newTransformSDKAdapter(opts.TransformDataHandler)
 	}
 
-	return plugin.Serve(pluginOpts)
+	return grpcplugin.Serve(pluginOpts)
 }
