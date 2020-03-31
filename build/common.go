@@ -210,7 +210,7 @@ func checkLinuxPtraceScope() {
 	ptracePath := "/proc/sys/kernel/yama/ptrace_scope"
 	byteValue, err := readFileBytes(ptracePath)
 	if err != nil {
-		fmt.Printf("Unable to read ptrace_scope\n")
+		return fmt.Errorf("unable to read ptrace_scope: %w", err)
 	}
 	val := strings.TrimSpace(string(byteValue[:]))
 	if "0" != val {
