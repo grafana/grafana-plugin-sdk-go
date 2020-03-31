@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -92,7 +92,7 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 
 func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
 	qdr := QueryDataResponse{
-		Responses: make([]DataResponse, len(protoRes.Responses)),
+		Responses: make(map[string]*DataResponse, len(protoRes.Responses)),
 		Metadata:  protoRes.Metadata,
 	}
 	for rIdx, res := range protoRes.Responses {
@@ -100,18 +100,14 @@ func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		if err != nil {
 			return nil, err
 		}
-		qdr.Responses[rIdx] = DataResponse{
-			RefID:  res.RefId,
-			Error:  res.Error,
+		dr := DataResponse{
 			Frames: frames,
+			Meta:   res.QueryMeta,
 		}
-		var v interface{}
-		err = json.Unmarshal(res.QueryMeta.Custom, v)
-		if err != nil {
-			Logger.Error("failed to marshal custom meta data", err.Error())
-			continue
+		if res.Error != "" {
+			dr.Error = errors.New(res.Error)
 		}
-		qdr.Responses[rIdx].Meta.Custom = v
+		qdr.Responses[rIdx] = &dr
 	}
 	return &qdr, nil
 }

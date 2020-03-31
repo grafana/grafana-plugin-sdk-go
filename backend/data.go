@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+// QueryDataRequest contains a single request which contains multiple queries.
 type QueryDataRequest struct {
 	PluginConfig PluginConfig
 	Headers      map[string]string
@@ -15,7 +16,7 @@ type QueryDataRequest struct {
 	User         *User
 }
 
-// DataQuery represents the query as sent from the frontend.
+// DataQuery represents a single query as sent from the frontend.
 type DataQuery struct {
 	RefID         string
 	MaxDataPoints int64
@@ -24,17 +25,17 @@ type DataQuery struct {
 	JSON          json.RawMessage
 }
 
-// QueryDataResponse holds the results for a given query.
+// QueryDataResponse contains the results from a QueryDataRequest.
 type QueryDataResponse struct {
-	Responses []DataResponse
+	Responses map[string]*DataResponse
 	Metadata  map[string]string
 }
 
+// DataResponse contains the results frim a DataQuery.
 type DataResponse struct {
-	RefID  string
 	Frames []*data.Frame
-	Meta   QueryResultMeta
-	Error  string
+	Meta   json.RawMessage
+	Error  error
 }
 
 // TimeRange represents a time range for a query.
@@ -46,10 +47,6 @@ type TimeRange struct {
 // QueryDataHandler handles data queries.
 type QueryDataHandler interface {
 	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
-}
-
-type QueryResultMeta struct {
-	Custom interface{}
 }
 
 // type QueryResultMetaNotice struct {
