@@ -3,7 +3,7 @@
 This package includes standard mage targets useful in the build.
 
 
-See: https://magefile.org/magefiles/
+See: https://magefile.org/magefiles/.
 
 This can get added to a project using:
 ```
