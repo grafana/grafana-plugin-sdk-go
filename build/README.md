@@ -1,6 +1,6 @@
 # Reusable Mage build tools
 
-This package includes standard mage targets useful in the build
+This package includes standard mage targets useful in the build.
 
 
 See: https://magefile.org/magefiles/
