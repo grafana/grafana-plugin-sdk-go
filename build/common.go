@@ -152,7 +152,7 @@ func BuildAll() {
 // Test runs backend tests.
 func Test() error {
 	if err := sh.RunV("go", "test", "./pkg/..."); err != nil {
-		return nil
+		return err
 	}
 	return nil
 }
