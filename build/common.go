@@ -281,6 +281,3 @@ func Debugger() error {
 	}
 	return fmt.Errorf("could not find process: %s, perhaps grafana is not running?", exeName)
 }
-
-// Default configures the default target.
-var Default = BuildAll
