@@ -167,7 +167,7 @@ func Coverage() error {
 	}
 
 	if err := sh.RunV("go", "tool", "cover", "-html=coverage/backend.out", "-o", "coverage/backend.html"); err != nil {
-		return nil
+		return err
 	}
 
 	return nil
