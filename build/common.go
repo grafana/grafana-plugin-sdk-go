@@ -163,7 +163,7 @@ func Coverage() error {
 	_ = os.MkdirAll(filepath.Join(".", "coverage"), os.ModePerm)
 
 	if err := sh.RunV("go", "test", "./pkg/...", "-v", "-cover", "-coverprofile=coverage/backend.out"); err != nil {
-		return nil
+		return err
 	}
 
 	if err := sh.RunV("go", "tool", "cover", "-html=coverage/backend.out", "-o", "coverage/backend.html"); err != nil {
