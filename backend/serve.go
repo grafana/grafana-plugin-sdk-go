@@ -72,7 +72,7 @@ type ServePluginOpts struct {
 	TransformPluginProvider  TransformPluginFactoryFunc
 }
 
-func servePluginExample(opts ServePluginOpts) {
+func ServePluginExample(opts ServePluginOpts) {
 	logger := log.New()
 	c := ConfigurePlugin{
 		Metrics: prometheus.DefaultRegisterer,
@@ -114,7 +114,7 @@ func ServePlugin(factory PluginFactoryFunc) {
 		panic("factory func cannot be nil")
 	}
 
-	servePluginExample(ServePluginOpts{
+	ServePluginExample(ServePluginOpts{
 		PluginProvider: factory,
 	})
 }
@@ -125,7 +125,7 @@ func ServeDataSourcePlugin(factory DataSourcePluginFactoryFunc) {
 		panic("factory func cannot be nil")
 	}
 
-	servePluginExample(ServePluginOpts{
+	ServePluginExample(ServePluginOpts{
 		DataSourcePluginProvider: factory,
 	})
 }
@@ -136,7 +136,7 @@ func ServeTransformPlugin(factory TransformPluginFactoryFunc) {
 		panic("factory func cannot be nil")
 	}
 
-	servePluginExample(ServePluginOpts{
+	ServePluginExample(ServePluginOpts{
 		TransformPluginProvider: factory,
 	})
 }
