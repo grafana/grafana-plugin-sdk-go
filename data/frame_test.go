@@ -1,10 +1,8 @@
 package data_test
 
 import (
-	"database/sql"
 	"fmt"
-	"reflect"
-	"strconv"
+	"math"
 	"testing"
 	"time"
 
@@ -28,6 +26,99 @@ func TestFrame(t *testing.T) {
 	}
 }
 
+func ExampleNewFrame() {
+	aTime := time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
+	var anInt64 int64 = 12
+	frame := data.NewFrame("Frame Name",
+		data.NewField("Time", nil, []time.Time{aTime, aTime.Add(time.Minute)}),
+		data.NewField("Temp", data.Labels{"place": "Ecuador"}, []float64{1, math.NaN()}),
+		data.NewField("Count", data.Labels{"place": "Ecuador"}, []*int64{&anInt64, nil}),
+	)
+	fmt.Println(frame.String())
+	// Output:
+	// Name: Frame Name
+	// Dimensions: 3 Fields by 2 Rows
+	// +-------------------------------+-----------------------+-----------------------+
+	// | Name: Time                    | Name: Temp            | Name: Count           |
+	// | Labels:                       | Labels: place=Ecuador | Labels: place=Ecuador |
+	// | Type: []time.Time             | Type: []float64       | Type: []*int64        |
+	// +-------------------------------+-----------------------+-----------------------+
+	// | 2020-01-02 03:04:05 +0000 UTC | 1                     | 12                    |
+	// | 2020-01-02 03:05:05 +0000 UTC | NaN                   | null                  |
+	// +-------------------------------+-----------------------+-----------------------+
+}
+
+func TestStringTable(t *testing.T) {
+	frame := data.NewFrame("sTest",
+		data.NewField("", nil, make([]bool, 3)),
+		data.NewField("", nil, make([]bool, 3)),
+		data.NewField("", nil, make([]bool, 3)),
+	)
+	tests := []struct {
+		name      string
+		maxWidth  int
+		maxLength int
+		output    string
+	}{
+		{
+			name:      "at max width and length",
+			maxWidth:  3,
+			maxLength: 3,
+			output: `Name: sTest
+Dimensions: 3 Fields by 3 Rows
++--------------+--------------+--------------+
+| Name:        | Name:        | Name:        |
+| Labels:      | Labels:      | Labels:      |
+| Type: []bool | Type: []bool | Type: []bool |
++--------------+--------------+--------------+
+| false        | false        | false        |
+| false        | false        | false        |
+| false        | false        | false        |
++--------------+--------------+--------------+
+`,
+		},
+		{
+			name:      "above max width and length",
+			maxWidth:  2,
+			maxLength: 2,
+			output: `Name: sTest
+Dimensions: 3 Fields by 3 Rows
++--------------+----------------+
+| Name:        | ...+2 field... |
+| Labels:      |                |
+| Type: []bool |                |
++--------------+----------------+
+| false        | ...            |
+| ...          | ...            |
++--------------+----------------+
+`,
+		},
+		{
+			name:      "no length",
+			maxWidth:  10,
+			maxLength: 0,
+			output: `Name: sTest
+Dimensions: 3 Fields by 3 Rows
++--------------+--------------+--------------+
+| Name:        | Name:        | Name:        |
+| Labels:      | Labels:      | Labels:      |
+| Type: []bool | Type: []bool | Type: []bool |
++--------------+--------------+--------------+
++--------------+--------------+--------------+
+`,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			s, err := frame.StringTable(tt.maxWidth, tt.maxLength)
+			require.NoError(t, err)
+			require.Equal(t, tt.output, s)
+
+		})
+	}
+
+}
+
 func TestFrameWarnings(t *testing.T) {
 	df := data.NewFrame("warning_test")
 	df.AppendWarning("details1", "message1")
@@ -35,87 +126,6 @@ func TestFrameWarnings(t *testing.T) {
 
 	if len(df.Warnings) != 2 {
 		t.Fatal("expected two warnings to be appended")
-	}
-}
-
-func TestField(t *testing.T) {
-	f := data.NewField("value", nil, []float64{1.0, 2.0, 3.0})
-
-	if f.Len() != 3 {
-		t.Fatal("unexpected length")
-	}
-}
-
-func TestField_Float64(t *testing.T) {
-	field := data.NewField("value", nil, make([]*float64, 3))
-
-	want := 2.0
-	field.Set(1, &want)
-
-	if field.Len() != 3 {
-		t.Fatal("unexpected length")
-	}
-
-	got := field.At(1).(*float64)
-
-	if *got != want {
-		t.Errorf("%+v", *got)
-	}
-}
-
-func TestField_String(t *testing.T) {
-	field := data.NewField("value", nil, make([]*string, 3))
-
-	want := "foo"
-	field.Set(1, &want)
-
-	if field.Len() != 3 {
-		t.Fatal("unexpected length")
-	}
-
-	got := field.At(1).(*string)
-
-	if *got != want {
-		t.Errorf("%+v", *got)
-	}
-}
-
-func TestTimeField(t *testing.T) {
-	tests := []struct {
-		Values []*time.Time
-	}{
-		{
-			Values: []*time.Time{timePtr(time.Unix(111, 0))},
-		},
-		{
-			Values: []*time.Time{nil, timePtr(time.Unix(111, 0))},
-		},
-		{
-			Values: []*time.Time{nil, timePtr(time.Unix(111, 0)), nil},
-		},
-		{
-			Values: make([]*time.Time, 10),
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run("", func(t *testing.T) {
-			f := data.NewField(t.Name(), nil, tt.Values)
-
-			if f.Len() != len(tt.Values) {
-				t.Error(f.Len())
-			}
-
-			for i := 0; i < f.Len(); i++ {
-				got := reflect.ValueOf(f.At(i))
-				want := reflect.ValueOf(tt.Values[i])
-
-				if got != want {
-					t.Error(got, want)
-				}
-			}
-
-		})
 	}
 }
 
@@ -328,63 +338,4 @@ func stringPtr(s string) *string {
 
 func boolPtr(b bool) *bool {
 	return &b
-}
-
-func ExampleSQLStringConverter() {
-	_ = data.SQLStringConverter{
-		Name:          "BIGINT to *int64",
-		InputScanKind: reflect.Struct,
-		InputTypeName: "BIGINT",
-		Replacer: &data.StringFieldReplacer{
-			VectorType: []*int64{},
-			ReplaceFunc: func(in *string) (interface{}, error) {
-				if in == nil {
-					return nil, nil
-				}
-				v, err := strconv.ParseInt(*in, 10, 64)
-				if err != nil {
-					return nil, err
-				}
-				return &v, nil
-			},
-		},
-	}
-}
-
-func ExampleStringFieldReplacer() {
-	_ = &data.StringFieldReplacer{
-		VectorType: []*int64{},
-		ReplaceFunc: func(in *string) (interface{}, error) {
-			if in == nil {
-				return nil, nil
-			}
-			v, err := strconv.ParseInt(*in, 10, 64)
-			if err != nil {
-				return nil, err
-			}
-			return &v, nil
-		},
-	}
-}
-
-func ExampleNewFromSQLRows() {
-	aQuery := "SELECT * FROM GoodData"
-	db, err := sql.Open("fancySql", "fancysql://user:pass@localhost:1433")
-	if err != nil {
-		// return err
-	}
-
-	defer db.Close()
-
-	rows, err := db.Query(aQuery)
-	if err != nil {
-		// return err
-	}
-	defer rows.Close()
-
-	frame, mappings, err := data.NewFromSQLRows(rows)
-	if err != nil {
-		// return err
-	}
-	_, _ = frame, mappings
 }

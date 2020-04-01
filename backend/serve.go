@@ -1,8 +1,8 @@
 package backend
 
 import (
+	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/plugin"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -28,7 +28,7 @@ func Serve(fn ServePluginFunc) {
 	}
 	opts := fn(logger, c)
 
-	pluginOpts := plugin.ServeOpts{
+	pluginOpts := grpcplugin.ServeOpts{
 		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
 	}
 
@@ -44,7 +44,7 @@ func Serve(fn ServePluginFunc) {
 		pluginOpts.TransformServer = newTransformSDKAdapter(opts.TransformDataHandler)
 	}
 
-	plugin.Serve(pluginOpts)
+	grpcplugin.Serve(pluginOpts)
 }
 
 type Plugin interface {
@@ -80,7 +80,7 @@ func ServePluginExample(opts ServePluginOpts) {
 
 	if opts.PluginProvider != nil {
 		p := opts.PluginProvider(logger, c)
-		plugin.Serve(plugin.ServeOpts{
+		grpcplugin.Serve(grpcplugin.ServeOpts{
 			DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, p),
 			ResourceServer:    newResourceSDKAdapter(p),
 		})
@@ -89,7 +89,7 @@ func ServePluginExample(opts ServePluginOpts) {
 
 	if opts.DataSourcePluginProvider != nil {
 		p := opts.DataSourcePluginProvider(logger, c)
-		plugin.Serve(plugin.ServeOpts{
+		grpcplugin.Serve(grpcplugin.ServeOpts{
 			DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, p),
 			ResourceServer:    newResourceSDKAdapter(p),
 			DataServer:        newDataSDKAdapter(p),
@@ -99,7 +99,7 @@ func ServePluginExample(opts ServePluginOpts) {
 
 	if opts.TransformPluginProvider != nil {
 		p := opts.TransformPluginProvider(logger, c)
-		plugin.Serve(plugin.ServeOpts{
+		grpcplugin.Serve(grpcplugin.ServeOpts{
 			TransformServer: newTransformSDKAdapter(p),
 		})
 		return
