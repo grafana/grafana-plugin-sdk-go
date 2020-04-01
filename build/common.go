@@ -206,7 +206,7 @@ func Clean() error {
 	return nil
 }
 
-func checkLinuxPtraceScope() {
+func checkLinuxPtraceScope() error {
 	ptracePath := "/proc/sys/kernel/yama/ptrace_scope"
 	byteValue, err := readFileBytes(ptracePath)
 	if err != nil {
@@ -231,6 +231,8 @@ func checkLinuxPtraceScope() {
 			}
 		}
 	}
+
+	return nil
 }
 
 // Debugger makes a new debug build and attaches dlv (go-delve).
@@ -247,7 +249,9 @@ func Debugger() error {
 	_ = sh.RunV("pkill", "dlv")
 
 	if runtime.GOOS == "linux" {
-		checkLinuxPtraceScope()
+		if err := checkLinuxPtraceScope(); err != nil {
+			return err
+		}
 	}
 
 	// Wait for grafana to start plugin
