@@ -31,7 +31,7 @@ type QueryDataResponse struct {
 	Metadata  map[string]string
 }
 
-// DataResponse contains the results frim a DataQuery.
+// DataResponse contains the results from a DataQuery.
 type DataResponse struct {
 	Frames []*data.Frame
 	Meta   json.RawMessage
