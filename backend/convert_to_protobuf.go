@@ -110,7 +110,7 @@ func (t convertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
 	pQDR := &pluginv2.QueryDataResponse{
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
-		Metadata:  res.Metadata,
+		JsonMeta:  res.Meta,
 	}
 	for refID, dr := range res.Responses {
 		encodedFrames, err := data.FramesToBytesSlice(dr.Frames)

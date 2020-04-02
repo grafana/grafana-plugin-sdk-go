@@ -38,7 +38,7 @@ type DataQuery struct {
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
 	Responses map[string]*DataResponse // Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
-	Metadata  map[string]string
+	Meta      json.RawMessage          // Warning: QueryDataResponse Meta is currently ignored by the frontend. Would be for Query Result Metadata.
 }
 
 // DataResponse contains the results from a DataQuery.
