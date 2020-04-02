@@ -21,7 +21,7 @@ type QueryDataRequest struct {
 	PluginConfig PluginConfig
 	Headers      map[string]string
 	Queries      []DataQuery
-	User         *User
+	User         *User // User is information about the grafana-server user that made the request.
 }
 
 // DataQuery represents a single query as sent from the frontend.
