@@ -112,9 +112,6 @@ message QueryDataRequest {
 message QueryDataResponse {
   // Map of refId to response
   map<string,DataResponse> responses = 1;
-
-  // Additional response metadata (Warning, Current Ignored by front end)
-  bytes jsonMeta = 2;
 }
 
 message DataResponse {
@@ -122,7 +119,7 @@ message DataResponse {
   // Frame has its own meta, warnings, and repeats refId
   repeated bytes frames = 1;
   string error = 2;
-  bytes jsonMeta = 3;
+  bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
 }
 
 //-----------------------------------------------

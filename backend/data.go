@@ -38,7 +38,6 @@ type DataQuery struct {
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
 	Responses map[string]*DataResponse // Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
-	Meta      json.RawMessage          // Warning: QueryDataResponse Meta is currently ignored by the frontend. Would be for Query Result Metadata.
 }
 
 // DataResponse contains the results from a DataQuery.
@@ -46,7 +45,7 @@ type QueryDataResponse struct {
 // The Error property is used to allow for partial success responses from the containing QueryDataResponse.
 type DataResponse struct {
 	Frames []*data.Frame   // The data returned from the Query. Each Frame repeats the RefID.
-	Meta   json.RawMessage // Meta contains a custom JSON object for custom response metadata that is passed to the frontend.
+	Meta   json.RawMessage // Meta contains a custom JSON object for custom response metadata about the query. WARNING: Currently ignored by front end of Grafana.
 	Error  error           // Error is a property to be set if the the corresponding DataQuery has an error.
 }
 
