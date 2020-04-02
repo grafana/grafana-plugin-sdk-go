@@ -52,8 +52,8 @@ type DataResponse struct {
 
 // TimeRange represents a time range for a query and is a property of DataQuery.
 type TimeRange struct {
-	From time.Time
-	To   time.Time
+	From time.Time // From is the start time of the query.
+	To   time.Time // To is the end time of the query.
 }
 
 // Duration returns a time.Duration representing the ammount of time between From and To.
