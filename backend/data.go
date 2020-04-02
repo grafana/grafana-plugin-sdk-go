@@ -55,3 +55,8 @@ type TimeRange struct {
 	From time.Time
 	To   time.Time
 }
+
+// Duration returns a time.Duration representing the ammount of time between From and To.
+func (tr TimeRange) Duration() time.Duration {
+	return tr.To.Sub(tr.From)
+}
