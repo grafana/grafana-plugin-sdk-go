@@ -8,9 +8,11 @@ option go_package = ".;pluginv2";
 //-----------------------------------------------
 
 message PluginConfig {
-  string pluginId = 1;
-  bytes jsonData = 2;
-  int64 lastUpdatedMS = 3;
+  int64 orgId = 1;
+  string pluginId = 2;
+  string pluginInstanceId = 3;
+  bytes jsonData = 4;
+  int64 lastUpdatedMS = 5;
 }
 
 message User {
