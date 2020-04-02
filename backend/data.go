@@ -48,27 +48,3 @@ type TimeRange struct {
 type QueryDataHandler interface {
 	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }
-
-// type QueryResultMetaNotice struct {
-// 	Severity NoticeSeverity
-// 	Text     string
-// 	URL      string
-// 	Inspect  InspectType
-// }
-
-// type NoticeSeverity int
-
-// const (
-// 	NoticeSeverityInfo NoticeSeverity = iota
-// 	NoticeSeverityWarning
-// 	NoticeSeverityError
-// )
-
-// type InspectType int
-
-// const (
-// 	InspectTypeMeta InspectType = iota
-// 	InspectTypeError
-// 	InspectTypeData
-// 	InspectTypeStats
-// )
