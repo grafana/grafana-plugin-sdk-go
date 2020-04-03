@@ -38,7 +38,7 @@ func getExecutableName(os string, arch string) string {
 }
 
 func getExecutableFromPluginJSON() (string, error) {
-	byteValue, err := readFileBytes(path.Join("src", "plugin.json"))
+	byteValue, err := ioutil.ReadFile(path.Join("src", "plugin.json"))
 	if err != nil {
 		return "", err
 	}
@@ -49,18 +49,6 @@ func getExecutableFromPluginJSON() (string, error) {
 		return "", err
 	}
 	return result["executable"].(string), nil
-}
-
-func readFileBytes(file string) ([]byte, error) {
-	jsonFile, err := os.Open(file)
-	if err != nil {
-		return nil, err
-	}
-	defer func() {
-		_ = jsonFile.Close()
-	}()
-
-	return ioutil.ReadAll(jsonFile)
 }
 
 func findRunningPIDs(exe string) []int {
@@ -208,7 +196,7 @@ func Clean() error {
 
 func checkLinuxPtraceScope() error {
 	ptracePath := "/proc/sys/kernel/yama/ptrace_scope"
-	byteValue, err := readFileBytes(ptracePath)
+	byteValue, err := ioutil.ReadFile(ptracePath)
 	if err != nil {
 		return fmt.Errorf("unable to read ptrace_scope: %w", err)
 	}
