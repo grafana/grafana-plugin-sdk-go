@@ -274,7 +274,7 @@ func Debugger() error {
 				"--log"); err != nil {
 				return err
 			}
-			fmt.Printf("dlv finished running (%s)\n", pid)
+			log.Printf("dlv finished running (%s)", pid)
 			return nil
 		}
 
