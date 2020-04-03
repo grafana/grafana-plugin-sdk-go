@@ -225,7 +225,7 @@ func checkLinuxPtraceScope() error {
 				// if err := sh.RunV("echo", "0", "|", "sudo", "tee", ptracePath); err != nil {
 				// 	return // Error?
 				// }
-				fmt.Printf("TODO, run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope\n")
+				log.Printf("TODO, run: echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope")
 			} else {
 				fmt.Printf("Did not write\n")
 			}
