@@ -54,7 +54,6 @@ func getExecutableFromPluginJSON() (string, error) {
 func findRunningPIDs(exe string) []int {
 	pids := []int{}
 	out, err := sh.Output("pgrep", exe[:15]) // full name does not match, only the prefix (on linux anyway)
-
 	if err != nil || out == "" {
 		return pids
 	}
