@@ -92,7 +92,10 @@ func ExampleNewFrameInputConverter() {
 
 	for rowIdx, row := range inputData.Rows {
 		for fieldIdx, cell := range row {
-			convBuilder.Set(fieldIdx, rowIdx, cell)
+			err = convBuilder.Set(fieldIdx, rowIdx, cell)
+			if err != nil {
+				log.Fatal(err)
+			}
 		}
 	}
 	convBuilder.Frame.Name = "Converted"

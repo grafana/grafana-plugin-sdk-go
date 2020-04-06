@@ -2,7 +2,6 @@ package data
 
 import "fmt"
 
-
 type FrameInputConverter struct {
 	Frame           *Frame
 	fieldConverters []FieldConverter
