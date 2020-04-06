@@ -239,6 +239,22 @@ func (f *Frame) FloatAt(fieldIdx int, rowIdx int) (float64, error) {
 	return f.Fields[fieldIdx].FloatAt(rowIdx)
 }
 
+// SetFieldNames sets each Field Name in the frame to the corresponding frame.
+// If the number of provided names does not match the number of Fields in the frame an error is returned.
+func (f *Frame) SetFieldNames(names ...string) error {
+	fieldLen := 0
+	if f.Fields != nil {
+		fieldLen = len(f.Fields)
+	}
+	if fieldLen != len(names) {
+		return fmt.Errorf("can not set field names, number of names %v does not match frame field length %v", len(names), fieldLen)
+	}
+	for i, name := range names {
+		f.Fields[i].Name = name
+	}
+	return nil
+}
+
 // FrameTestCompareOptions returns go-cmp testing options to allow testing of Frame equivelnce.
 // Since the data within a Frame's Fields is not exported, this function allows the unexported
 // values to be tested.

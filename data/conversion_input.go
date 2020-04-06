@@ -2,28 +2,46 @@ package data
 
 import "fmt"
 
-type FrameConvertBuilder struct {
-	*Frame
-	converters []Converter
+
+type FrameInputConverter struct {
+	Frame           *Frame
+	fieldConverters []FieldConverter
 }
 
 type Converter func(v interface{}) (interface{}, error)
 
-func NewFrameConvertBuilder(f *Frame, converters []Converter) (*FrameConvertBuilder, error) {
-	if len(f.Fields) != len(converters) {
-		return nil, fmt.Errorf("converters length must match frame Field Length")
+var AsStringConverter Converter = func(v interface{}) (interface{}, error) {
+	return fmt.Sprintf("%v", v), nil
+}
+
+func NewFrameInputConverter(fieldConvs []FieldConverter, rowLen int) (*FrameInputConverter, error) {
+	fTypes := make([]FieldType, len(fieldConvs))
+	for i, fc := range fieldConvs {
+		fTypes[i] = fc.OutputFieldType
 	}
-	return &FrameConvertBuilder{
-		Frame:      f,
-		converters: converters,
+
+	f := NewFrameOfFieldTypes("", rowLen, fTypes...)
+	return &FrameInputConverter{
+		Frame:           f,
+		fieldConverters: fieldConvs,
 	}, nil
 }
 
-func (fcb *FrameConvertBuilder) Set(fieldIdx, rowIdx int, val interface{}) error {
-	convertedVal, err := fcb.converters[fieldIdx](val)
+func (fcb *FrameInputConverter) Set(fieldIdx, rowIdx int, val interface{}) error {
+	convertedVal, err := fcb.fieldConverters[fieldIdx].Converter(val)
 	if err != nil {
 		return err
 	}
-	fcb.Set(fieldIdx, rowIdx, convertedVal)
+	fcb.Frame.Set(fieldIdx, rowIdx, convertedVal)
 	return nil
+}
+
+type FieldConverter struct {
+	OutputFieldType FieldType
+	Converter       Converter
+}
+
+var AsStringFieldConverter = FieldConverter{
+	OutputFieldType: FieldTypeString,
+	Converter:       AsStringConverter,
 }
