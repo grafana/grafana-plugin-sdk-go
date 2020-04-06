@@ -70,7 +70,7 @@ func findRunningPIDs(exe string) []int {
 
 func killAllPIDs(pids []int) error {
 	for _, pid := range pids {
-		fmt.Printf("Killing process: %d\n", pid)
+		log.Printf("Killing process: %d", pid)
 		err := syscall.Kill(pid, 9)
 		if err != nil {
 			return err
