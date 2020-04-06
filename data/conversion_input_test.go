@@ -10,7 +10,7 @@ import (
 )
 
 func ExampleNewFrameInputConverter() {
-	inputData := struct {
+	inputData := struct { // inputData is a pretend table-like structure response from an API.
 		ColumnTypes []string
 		ColumnNames []string
 		Rows        [][]string
@@ -32,14 +32,12 @@ func ExampleNewFrameInputConverter() {
 		},
 	}
 
+	// Build field converters appropriate for converting out pretend data structure.
 	stringzFieldConverter := data.FieldConverter{
 		OutputFieldType: data.FieldTypeString,
-		Converter: func(v interface{}) (interface{}, error) {
-			return v, nil
-		},
+		// No Converter, string = string
 	}
-
-	floatzFieldConverter := data.FieldConverter{
+	floatzFieldConverter := data.FieldConverter{ // a converter appropraite for our pretend API's Floatz type.
 		OutputFieldType: data.FieldTypeFloat64,
 		Converter: func(v interface{}) (interface{}, error) {
 			val, ok := v.(string)
@@ -49,8 +47,7 @@ func ExampleNewFrameInputConverter() {
 			return strconv.ParseFloat(val, 64)
 		},
 	}
-
-	timezFieldConverter := data.FieldConverter{
+	timezFieldConverter := data.FieldConverter{ // a converter appropraite for our pretend API's Timez type.
 		OutputFieldType: data.FieldTypeTime,
 		Converter: func(v interface{}) (interface{}, error) {
 			val, ok := v.(string)
@@ -65,31 +62,39 @@ func ExampleNewFrameInputConverter() {
 		},
 	}
 
+	// a map of pretend API's types to converters
 	converterMap := map[string]data.FieldConverter{
 		"Stringz": stringzFieldConverter,
 		"Floatz":  floatzFieldConverter,
 		"Timez":   timezFieldConverter,
 	}
 
+	// build a slice of converters for Pretend API known types in the approprate Field/Column order
+	// for this specific response.
 	converters := make([]data.FieldConverter, len(inputData.ColumnTypes))
-	for i, ct := range inputData.ColumnTypes {
-		fc, ok := converterMap[ct]
+	for i, cType := range inputData.ColumnTypes {
+		fc, ok := converterMap[cType]
 		if !ok {
 			fc = data.AsStringFieldConverter
 		}
 		converters[i] = fc
 	}
 
+	// Get a new FrameInputConverter, which includes a Frame with appropraite Field types and length
+	// for out input data.
 	convBuilder, err := data.NewFrameInputConverter(converters, len(inputData.Rows))
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Set field names
 	err = convBuilder.Frame.SetFieldNames(inputData.ColumnNames...)
 	if err != nil {
 		log.Fatal(err)
 	}
 
+	// Insert data into the frame, passing data through the Converters before
+	// writing to the frame.
 	for rowIdx, row := range inputData.Rows {
 		for fieldIdx, cell := range row {
 			err = convBuilder.Set(fieldIdx, rowIdx, cell)

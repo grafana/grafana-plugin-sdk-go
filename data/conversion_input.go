@@ -47,9 +47,9 @@ func NewFrameInputConverter(fieldConvs []FieldConverter, rowLen int) (*FrameInpu
 // If an error is returned from the Converter function this function returns that error.
 // Like Frame.Set and Field.Set, it will panic if fieldIdx or rowIdx are out of range.
 func (fcb *FrameInputConverter) Set(fieldIdx, rowIdx int, val interface{}) error {
-	if fcb.fieldConverters[fieldIdx] == nil {
+	if fcb.fieldConverters[fieldIdx].Converter == nil {
 		fcb.Frame.Set(fieldIdx, rowIdx, val)
-		return
+		return nil
 	}
 	convertedVal, err := fcb.fieldConverters[fieldIdx].Converter(val)
 	if err != nil {
