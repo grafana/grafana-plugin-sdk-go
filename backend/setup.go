@@ -10,6 +10,7 @@ import (
 const (
 	// PluginProfilerEnv is a constant for the GF_PLUGINS_PROFILER environment variable used to enable pprof.
 	PluginProfilerEnv = "GF_PLUGINS_PROFILER"
+
 	// PluginProfilerPortEnv is a constant for the GF_PLUGINS_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
 	PluginProfilerPortEnv = "GF_PLUGINS_PROFILER_PORT"
 )
