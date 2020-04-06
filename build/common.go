@@ -147,7 +147,9 @@ func Test() error {
 // Coverage runs backend tests and makes a coverage report.
 func Coverage() error {
 	// Create a coverage file if it does not already exist
-	_ = os.MkdirAll(filepath.Join(".", "coverage"), os.ModePerm)
+	if err := os.MkdirAll(filepath.Join(".", "coverage"), os.ModePerm); err != nil {
+	        return err
+	}
 
 	if err := sh.RunV("go", "test", "./pkg/...", "-v", "-cover", "-coverprofile=coverage/backend.out"); err != nil {
 		return err
