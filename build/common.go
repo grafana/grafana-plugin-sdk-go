@@ -21,20 +21,21 @@ import (
 
 var exname string = ""
 
-func getExecutableName(os string, arch string) string {
+func getExecutableName(os string, arch string) (string, error) {
 	if exname == "" {
-		var err error
-		exname, err = getExecutableFromPluginJSON()
+		exename, err := getExecutableFromPluginJSON()
 		if err != nil {
-			exname = "set_exe_name_in_plugin_json" // warning in the final name?
+			return "", err
 		}
+
+		exname = exename
 	}
 
 	exeName := fmt.Sprintf("%s_%s_%s", exname, os, arch)
 	if "windows" == os {
 		exeName = fmt.Sprintf("%s.exe", exeName)
 	}
-	return exeName
+	return exeName, nil
 }
 
 func getExecutableFromPluginJSON() (string, error) {
@@ -80,7 +81,10 @@ func killAllPIDs(pids []int) error {
 }
 
 func buildBackend(os string, arch string, enableDebug bool) error {
-	exeName := getExecutableName(os, arch)
+	exeName, err := getExecutableName(os, arch)
+	if err != nil {
+		return err
+	}
 
 	args := []string{
 		"build", "-o", path.Join("dist", exeName), "-tags", "netgo",
@@ -148,7 +152,7 @@ func Test() error {
 func Coverage() error {
 	// Create a coverage file if it does not already exist
 	if err := os.MkdirAll(filepath.Join(".", "coverage"), os.ModePerm); err != nil {
-	        return err
+		return err
 	}
 
 	if err := sh.RunV("go", "test", "./pkg/...", "-v", "-cover", "-coverprofile=coverage/backend.out"); err != nil {
@@ -231,7 +235,10 @@ func Debugger() error {
 	mg.Deps(b.Debug)
 
 	// 1. kill any running instance
-	exeName := getExecutableName(runtime.GOOS, runtime.GOARCH)
+	exeName, err := getExecutableName(runtime.GOOS, runtime.GOARCH)
+	if err != nil {
+		return err
+	}
 
 	// Kill any running processs
 	_ = killAllPIDs(findRunningPIDs(exeName))
