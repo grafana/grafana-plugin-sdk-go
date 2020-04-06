@@ -9,7 +9,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-func ExampleNewFrameConverterBuilder() {
+func ExampleNewFrameInputConverter() {
 	inputData := struct {
 		ColumnTypes []string
 		ColumnNames []string
