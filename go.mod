@@ -7,6 +7,7 @@ require (
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.3.2
 	github.com/google/go-cmp v0.3.1
+	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
 	github.com/hashicorp/go-plugin v1.0.1
