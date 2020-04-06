@@ -2,7 +2,9 @@ package backend
 
 import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
+	grpcprometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
+	"google.golang.org/grpc"
 )
 
 //ServeOpts options for serving plugins.
@@ -29,6 +31,12 @@ func Serve(opts ServeOpts) error {
 
 	if opts.TransformDataHandler != nil {
 		pluginOpts.TransformServer = newTransformSDKAdapter(opts.TransformDataHandler)
+	}
+
+	pluginOpts.GRPCServer = func(opts []grpc.ServerOption) *grpc.Server {
+		opts = append(opts, grpc.StreamInterceptor(grpcprometheus.StreamServerInterceptor))
+		opts = append(opts, grpc.UnaryInterceptor(grpcprometheus.UnaryServerInterceptor))
+		return grpc.NewServer(opts...)
 	}
 
 	return grpcplugin.Serve(pluginOpts)
