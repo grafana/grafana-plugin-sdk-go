@@ -62,7 +62,7 @@ func findRunningPIDs(exe string) []int {
 		if err == nil {
 			pids = append(pids, pid)
 		} else {
-			fmt.Printf("Unable to format %s (%s)", txt, err)
+			log.Printf("Unable to format %s (%s)", txt, err)
 		}
 	}
 	return pids
