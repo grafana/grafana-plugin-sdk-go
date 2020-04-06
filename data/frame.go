@@ -121,6 +121,19 @@ func (f *Frame) EmptyCopy() *Frame {
 	return newFrame
 }
 
+// NewFrameOfFieldTypes returns a Frame where the Fields are initalized to the
+// corresponding field type in fTypes. Each Field will be of length FieldLen.
+func NewFrameOfFieldTypes(name string, fieldLen int, fTypes ...FieldType) *Frame {
+	f := &Frame{
+		Name:   name,
+		Fields: make(Fields, len(fTypes)),
+	}
+	for i, fT := range fTypes {
+		f.Fields[i] = NewFieldFromFieldType(fT, fieldLen)
+	}
+	return f
+}
+
 // TypeIndices returns a slice of Field index positions for the given fTypes.
 func (f *Frame) TypeIndices(fTypes ...FieldType) []int {
 	indices := []int{}
