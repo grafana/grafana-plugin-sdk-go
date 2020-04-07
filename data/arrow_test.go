@@ -220,9 +220,8 @@ func goldenDF() *data.Frame {
 	)
 
 	df.RefID = "A"
-	df.Meta = &data.QueryResultMeta{
-		SearchWords: []string{"Grafana", "❤️", " 🦥 ", "test"},
-		Limit:       4242,
+	df.Meta = &data.FrameMeta{
+		Custom: map[string]interface{}{"Hi": "there"},
 	}
 	return df
 }
