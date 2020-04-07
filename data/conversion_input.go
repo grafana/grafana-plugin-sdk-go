@@ -16,7 +16,7 @@ type FieldConverter struct {
 	OutputFieldType FieldType
 
 	// Converter is a conversion function that is called when setting Field values with a FrameInputConverter.
-	// Care must be taken that the type returned by the conversion function matches them member type of the FieldType,
+	// Care must be taken that the type returned by the conversion function matches the member type of the FieldType,
 	// and that the input type matches the expected input type for the Converter function, or panics can occur.
 	// If the Converter is nil, no conversion is performed when calling methods to set values.
 	Converter Converter
@@ -27,7 +27,7 @@ type FieldConverter struct {
 type Converter func(v interface{}) (interface{}, error)
 
 // NewFrameInputConverter returns a FrameInputConverter which is used to create a Frame from data
-// that needs value conversions. The FrameInputerConverter will create a new Frame with fields
+// that needs value conversions. The FrameInputConverter will create a new Frame with fields
 // based on the FieldConverters' OutputFieldTypes of length rowLen.
 func NewFrameInputConverter(fieldConvs []FieldConverter, rowLen int) (*FrameInputConverter, error) {
 	fTypes := make([]FieldType, len(fieldConvs))
@@ -63,7 +63,7 @@ var asStringConverter Converter = func(v interface{}) (interface{}, error) {
 	return fmt.Sprintf("%v", v), nil
 }
 
-// AsStringFieldConverter will always return a string a reglardless of the input.
+// AsStringFieldConverter will always return a string a regardless of the input.
 // This is done with fmt.Sprintf which uses reflection.
 var AsStringFieldConverter = FieldConverter{
 	OutputFieldType: FieldTypeString,

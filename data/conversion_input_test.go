@@ -37,7 +37,7 @@ func ExampleNewFrameInputConverter() {
 		OutputFieldType: data.FieldTypeString,
 		// No Converter, string = string
 	}
-	floatzFieldConverter := data.FieldConverter{ // a converter appropraite for our pretend API's Floatz type.
+	floatzFieldConverter := data.FieldConverter{ // a converter appropriate for our pretend API's Floatz type.
 		OutputFieldType: data.FieldTypeFloat64,
 		Converter: func(v interface{}) (interface{}, error) {
 			val, ok := v.(string)
@@ -47,7 +47,7 @@ func ExampleNewFrameInputConverter() {
 			return strconv.ParseFloat(val, 64)
 		},
 	}
-	timezFieldConverter := data.FieldConverter{ // a converter appropraite for our pretend API's Timez type.
+	timezFieldConverter := data.FieldConverter{ // a converter appropriate for our pretend API's Timez type.
 		OutputFieldType: data.FieldTypeTime,
 		Converter: func(v interface{}) (interface{}, error) {
 			val, ok := v.(string)
@@ -69,7 +69,7 @@ func ExampleNewFrameInputConverter() {
 		"Timez":   timezFieldConverter,
 	}
 
-	// build a slice of converters for Pretend API known types in the approprate Field/Column order
+	// build a slice of converters for Pretend API known types in the appropriate Field/Column order
 	// for this specific response.
 	converters := make([]data.FieldConverter, len(inputData.ColumnTypes))
 	for i, cType := range inputData.ColumnTypes {
@@ -80,7 +80,7 @@ func ExampleNewFrameInputConverter() {
 		converters[i] = fc
 	}
 
-	// Get a new FrameInputConverter, which includes a Frame with appropraite Field types and length
+	// Get a new FrameInputConverter, which includes a Frame with appropriate Field types and length
 	// for out input data.
 	convBuilder, err := data.NewFrameInputConverter(converters, len(inputData.Rows))
 	if err != nil {
