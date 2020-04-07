@@ -1,4 +1,4 @@
-package data_test
+package dsql_test
 
 import (
 	"database/sql"
@@ -7,15 +7,16 @@ import (
 	"strconv"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/data/dsql"
 )
 
 func ExampleSQLStringConverter() {
-	_ = data.SQLStringConverter{
+	_ = dsql.SQLStringConverter{
 		Name:          "BIGINT to *int64",
 		InputScanKind: reflect.Struct,
 		InputTypeName: "BIGINT",
-		Replacer: &data.StringFieldReplacer{
-			VectorType: []*int64{},
+		Replacer: &dsql.StringFieldReplacer{
+			OutputFieldType: data.FieldTypeNullableInt64,
 			ReplaceFunc: func(in *string) (interface{}, error) {
 				if in == nil {
 					return nil, nil
@@ -43,8 +44,8 @@ func ExampleReplace() {
 
 	fmt.Println(frame.String()) // Before
 
-	intReplacer := &data.StringFieldReplacer{
-		VectorType: []*int64{},
+	intReplacer := &dsql.StringFieldReplacer{
+		OutputFieldType: data.FieldTypeNullableInt64,
 		ReplaceFunc: func(in *string) (interface{}, error) {
 			if in == nil {
 				return nil, nil
@@ -57,7 +58,7 @@ func ExampleReplace() {
 		},
 	}
 
-	err := data.Replace(frame, 0, intReplacer)
+	err := dsql.Replace(frame, 0, intReplacer)
 	if err != nil {
 		// return err
 	}
@@ -103,7 +104,7 @@ func ExampleNewFromSQLRows() {
 	}
 	defer rows.Close()
 
-	frame, mappings, err := data.NewFromSQLRows(rows)
+	frame, mappings, err := dsql.NewFromSQLRows(rows)
 	if err != nil {
 		// return err
 	}
