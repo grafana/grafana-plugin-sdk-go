@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
-go 1.13
+go 1.14
 
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20191025121910-b789226ccb21
@@ -11,6 +11,7 @@ require (
 	github.com/hashicorp/go-plugin v1.0.1
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/kr/pretty v0.1.0 // indirect
+	github.com/magefile/mage v1.9.0
 	github.com/mattetti/filebuffer v1.0.0
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/prometheus/client_golang v1.3.0
