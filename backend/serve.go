@@ -10,7 +10,6 @@ import (
 )
 
 const (
-	maxMsgSize              = 1024 * 1024 * 4
 	maxServerReceiveMsgSize = 1024 * 1024 * 4
 	maxServerSendMsgSize    = 1024 * 1024 * 4
 )
@@ -48,7 +47,6 @@ func Serve(opts ServeOpts) error {
 		mergedOpts := []grpc.ServerOption{}
 		mergedOpts = append(mergedOpts, opts...)
 		sopts := []grpc.ServerOption{
-			grpc.MaxMsgSize(maxMsgSize),
 			grpc.MaxRecvMsgSize(maxServerReceiveMsgSize),
 			grpc.MaxSendMsgSize(maxServerSendMsgSize),
 			grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
