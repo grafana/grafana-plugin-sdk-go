@@ -2,7 +2,7 @@ module github.com/grafana/grafana-plugin-sdk-go
 
 go 1.14
 
-replace github.com/hashicorp/go-plugin => github.com/marefr/go-plugin v1.2.1-0.20200407112253-6c0fa91eeff5
+replace github.com/hashicorp/go-plugin => github.com/marefr/go-plugin v1.2.1-0.20200407112917-2dbdaa0e881f
 
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20191025121910-b789226ccb21
