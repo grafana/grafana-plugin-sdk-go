@@ -209,7 +209,7 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 
 }
 
-func ExampleFrame_TableLikeLongTimeSeries() {
+func ExampleFrame_tableLikeLongTimeSeries() {
 	// a common SQL or CSV like pattern is to have repeated times, multiple numbered value
 	// columns, and string columns to identify a factor. This is a "Long" time series.
 
