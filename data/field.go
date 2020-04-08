@@ -33,12 +33,16 @@ type Field struct {
 // Fields is a slice of Field pointers.
 type Fields []*Field
 
-// NewField returns a instance of *Field.
+// NewField returns a instance of *Field. Supported types for values are:
 //
-// Supported types for values are: []int8, []*int8, []int16, []*int16, []int32, []*int32, []int64, []*int64,
-// []uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64,
-// []float32, []*float32, []float64, []*float64,
-// []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+// Integers:
+//  []int8, []*int8, []int16, []*int16, []int32, []*int32, []int64, []*int64
+// Unsigned Integers:
+//  []uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
+// Floats:
+//  []float32, []*float32, []float64, []*float64
+// String, Bool, and Time:
+//  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
 //
 // If an unsupported values type is passed, NewField will panic.
 func NewField(name string, labels Labels, values interface{}) *Field {
@@ -246,12 +250,17 @@ func (f *Field) Nullable() bool {
 	return f.Type().Nullable()
 }
 
-// FloatAt returns a float64 at the specified index idx.
+// FloatAt returns a float64 at the specified index idx for all supported Field types.
 // It will panic if idx is out of range.
-// If the Field type is numeric and the value at idx is nil, NaN is returned. Precision may be lost on large numbers.
+//
+// If the Field type is numeric and the value at idx is nil, NaN is returned.
+// Precision may be lost on large numbers.
+//
 // If the Field type is a bool then 0 is return if false or nil, and 1 if true.
+//
 // If the Field type is time.Time, then the millisecond epoch representation of the time
 // is returned, or NaN is the value is nil.
+//
 // If the Field type is a string, then strconv.ParseFloat is called on it and will return
 // an error if ParseFloat errors. If the value is nil, NaN is returned.
 func (f *Field) FloatAt(idx int) (float64, error) {
