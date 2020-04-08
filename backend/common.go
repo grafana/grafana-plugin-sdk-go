@@ -46,12 +46,30 @@ type DataSourceConfig struct {
 	Updated time.Time
 }
 
-// PluginConfig configuration for a plugin.
+// PluginConfig holds the configuration for a plugin instance.
+//
+// Grafana supports multiple organizations and only one plugin instance per Grafana organization. A plugin instance can have multiple data source instances.
+//
+// PluginConfig is attached to incoming requests to uniquely identify the Plugin instance the request belongs to.
+// If the request is a data source request, it also contains the configuration of the data source instance.
 type PluginConfig struct {
-	OrgID                   int64
-	PluginID                string
-	JSONData                json.RawMessage
+	// OrgID is the Grafana identifier of the Grafana organization this plugin instance belongs too.
+	OrgID int64
+
+	// PluginID is the unique identifer name of the plugin instance.
+	PluginID string
+
+	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any custom properties associated with the plugin config instance.
+	JSONData json.RawMessage
+
+	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration plugin instance in Grafana server have been decrypted before passing them to the plugin.
 	DecryptedSecureJSONData map[string]string
-	Updated                 time.Time
-	DataSourceConfig        *DataSourceConfig
+
+	// Updated is the last time this plugin instance's configuration was updated.
+	Updated time.Time
+
+	// DataSourceConfig is the configuration of a data source instance for this plugin.
+	// If the request is a data source request, this will be set to the specific datasource instance
+	// the request is for.
+	DataSourceConfig *DataSourceConfig
 }
