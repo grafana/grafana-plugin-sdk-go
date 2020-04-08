@@ -224,9 +224,7 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 
 	iSlice := func(is ...interface{}) []interface{} {
 		s := make([]interface{}, len(is))
-		for i, v := range is {
-			s[i] = v
-		}
+		copy(s, is)
 		return s
 	}
 
