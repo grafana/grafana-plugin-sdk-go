@@ -23,17 +23,24 @@ import (
 // Frame is a columnar data structure where each column is a Field.
 //
 // Each Field is well typed by its FieldType and supports optional Labels.
-// All Fields must be of the same the length when marshalling the Frame for transmission.
 //
 // A Frame is a general data container for Grafana. A Frame can be table data
 // or time series data depending on its content and field types.
 type Frame struct {
-	Name   string
+	// Name is used in some Grafana visualizations.
+	Name string
+
+	// Fields are the columns of a frame.
+	// All Fields must be of the same the length when marshalling the Frame for transmission.
 	Fields []*Field
 
-	RefID    string
-	Meta     *FrameMeta
-	Warnings []Warning
+	// RefID is a property that can be set to match a Frame to its orginating query
+	RefID string
+
+	// Meta is metadata about the Frame, and includes space for custom metadata.
+	Meta *FrameMeta
+
+	Warnings []Warning // TODO: Remove, will be replaced with FrameMeta.Notices.
 }
 
 // AppendRow adds a new row to the Frame by appending to each element of vals to
