@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -90,15 +91,24 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 }
 
 func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
-	frames := make([]*data.Frame, len(protoRes.Frames))
-	var err error
-	for i, encodedFrame := range protoRes.Frames {
-		frames[i], err = data.UnmarshalArrow(encodedFrame)
+	qdr := QueryDataResponse{
+		Responses: make(map[string]*DataResponse, len(protoRes.Responses)),
+	}
+	for rIdx, res := range protoRes.Responses {
+		frames, err := data.BytesSliceToFrames(res.Frames)
 		if err != nil {
 			return nil, err
 		}
+		dr := DataResponse{
+			Frames: frames,
+			Meta:   res.JsonMeta,
+		}
+		if res.Error != "" {
+			dr.Error = errors.New(res.Error)
+		}
+		qdr.Responses[rIdx] = &dr
 	}
-	return &QueryDataResponse{Metadata: protoRes.Metadata, Frames: frames}, nil
+	return &qdr, nil
 }
 
 func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResourceRequest) *CallResourceRequest {
