@@ -209,6 +209,76 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 
 }
 
+func ExampleFrame_TableLikeLongTimeSeries() {
+	// a common SQL or CSV like pattern is to have repeated times, multiple numbered value
+	// columns, and string columns to identify a factor. This is a "Long" time series.
+
+	// Presently the backend supports converting Long formatted series to "Wide" format
+	// which the frontend understands. Goal is frontend support eventually
+	// (https://github.com/grafana/grafana/issues/22219).
+
+	type aTable struct {
+		Headers []string
+		Rows    [][]interface{}
+	}
+
+	iSlice := func(is ...interface{}) []interface{} {
+		s := make([]interface{}, len(is))
+		for i, v := range is {
+			s[i] = v
+		}
+		return s
+	}
+
+	myLongTable := aTable{
+		Headers: []string{"time", "aMetric", "bMetric", "SomeFactor"},
+	}
+	myLongTable.Rows = append(myLongTable.Rows,
+		iSlice(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC), 2.0, 10.0, "foo"),
+		iSlice(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC), 5.0, 15.0, "bar"),
+
+		iSlice(time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), 3.0, 11.0, "foo"),
+		iSlice(time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), 6.0, 16.0, "bar"),
+	)
+
+	frame := data.NewFrameOfFieldTypes("Long", 0,
+		data.FieldTypeTime,
+		data.FieldTypeFloat64, data.FieldTypeFloat64,
+		data.FieldTypeString,
+	)
+	_ = frame.SetFieldNames(myLongTable.Headers...)
+	for _, row := range myLongTable.Rows {
+		frame.AppendRow(row...)
+	}
+	fmt.Println(frame.String())
+	w, _ := data.LongToWide(frame)
+	fmt.Println(w.String())
+	// Output:
+	// Name: Long
+	// Dimensions: 4 Fields by 4 Rows
+	// +-------------------------------+-----------------+-----------------+------------------+
+	// | Name: time                    | Name: aMetric   | Name: bMetric   | Name: SomeFactor |
+	// | Labels:                       | Labels:         | Labels:         | Labels:          |
+	// | Type: []time.Time             | Type: []float64 | Type: []float64 | Type: []string   |
+	// +-------------------------------+-----------------+-----------------+------------------+
+	// | 2020-01-02 03:04:00 +0000 UTC | 2               | 10              | foo              |
+	// | 2020-01-02 03:04:00 +0000 UTC | 5               | 15              | bar              |
+	// | 2020-01-02 03:05:00 +0000 UTC | 3               | 11              | foo              |
+	// | 2020-01-02 03:05:00 +0000 UTC | 6               | 16              | bar              |
+	// +-------------------------------+-----------------+-----------------+------------------+
+	//
+	// Name: Long
+	// Dimensions: 5 Fields by 2 Rows
+	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
+	// | Name: time                    | Name: aMetric          | Name: bMetric          | Name: aMetric          | Name: bMetric          |
+	// | Labels:                       | Labels: SomeFactor=foo | Labels: SomeFactor=foo | Labels: SomeFactor=bar | Labels: SomeFactor=bar |
+	// | Type: []time.Time             | Type: []float64        | Type: []float64        | Type: []float64        | Type: []float64        |
+	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
+	// | 2020-01-02 03:04:00 +0000 UTC | 2                      | 10                     | 5                      | 15                     |
+	// | 2020-01-02 03:05:00 +0000 UTC | 3                      | 11                     | 6                      | 16                     |
+	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
+}
+
 func TestStringTable(t *testing.T) {
 	frame := data.NewFrame("sTest",
 		data.NewField("", nil, make([]bool, 3)),
