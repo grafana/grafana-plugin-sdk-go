@@ -199,7 +199,8 @@ func (f *Frame) CopyAt(fieldIdx int, rowIdx int) interface{} {
 }
 
 // Set set the val to the specified fieldIdx and rowIdx.
-// It will panic if either the fieldIdx or rowIdx are out of range.
+// It will panic if either the fieldIdx or rowIdx are out of range or
+// if the underlying type of val does not match the element type of the Field.
 func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.Set(rowIdx, val)
 }

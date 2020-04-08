@@ -186,14 +186,16 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 }
 
 // Set sets the Field's value at index idx to val.
-// It will panic if idx is out of range.
+// It will panic if idx is out of range or if
+// the underlying type of val does not match the element type of the Field.
 func (f *Field) Set(idx int, val interface{}) {
 	f.vector.Set(idx, val)
 }
 
-// Append appends element i to the Field.
-func (f *Field) Append(i interface{}) {
-	f.vector.Append(i)
+// Append appends element e to the Field.
+// it will panic if the underlying type of e does not match the element type of the Field.
+func (f *Field) Append(e interface{}) {
+	f.vector.Append(e)
 }
 
 // Extend extends the Field length by i.
