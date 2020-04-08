@@ -56,7 +56,7 @@ type PluginConfig struct {
 	// OrgID is the Grafana identifier of the Grafana organization this plugin instance belongs too.
 	OrgID int64
 
-	// PluginID is the unique identifer name of the plugin instance.
+	// PluginID is the unique identifer from the plugin.json id property.
 	PluginID string
 
 	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any custom properties associated with the plugin config instance.
