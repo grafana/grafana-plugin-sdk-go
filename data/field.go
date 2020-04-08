@@ -26,7 +26,7 @@ type Field struct {
 	Config *FieldConfig
 
 	// vector is the unexported values. it is unexported so we can change the underlying structure without
-	// major breaking changes/
+	// major breaking changes.
 	vector vector
 }
 
@@ -199,6 +199,8 @@ func (f *Field) Append(e interface{}) {
 }
 
 // Extend extends the Field length by i.
+// Consider using Frame.Extend() when possible since all Fields within
+// a Frame need to be of the same length before marshalling and transmission.
 func (f *Field) Extend(i int) {
 	f.vector.Extend(i)
 }
@@ -214,7 +216,7 @@ func (f *Field) Len() int {
 	return f.vector.Len()
 }
 
-// Type returns the underlying primitive type of the Field.
+// Type returns the FieldType of the Field, which indicates what type of slice it is.
 func (f *Field) Type() FieldType {
 	return f.vector.Type()
 }
