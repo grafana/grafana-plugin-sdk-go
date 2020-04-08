@@ -20,9 +20,13 @@ import (
 	"github.com/olekukonko/tablewriter"
 )
 
-// Frame represents a columnar storage with optional labels.
-// Each Field in Fields represents a column, all Fields
-// must be of the same the length.
+// Frame is a columnar data structure where each column is a Field.
+//
+// Each Field is well typed by its FieldType and supports optional Labels.
+// All Fields must be of the same the length when marshalling the Frame for transmission.
+//
+// A Frame is a general data container for Grafana. A Frame can be table data
+// or time series data depending on its content and field types.
 type Frame struct {
 	Name   string
 	Fields []*Field

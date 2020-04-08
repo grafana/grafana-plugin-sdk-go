@@ -48,6 +48,101 @@ func ExampleNewFrame() {
 	// +-------------------------------+-----------------------+-----------------------+
 }
 
+func ExampleFrame_tSDBLikeTimeSeries() {
+	// A common tsdb response pattern is to return a collection
+	// of time series where each time series is uniquely identified
+	// by a Name and a set of key value pairs (Labels (a.k.a Tags)).
+
+	// In the case where the responses don't share identical time values and length (a single time index),
+	// then the proper representation is a []*Frame. Where each Frame has a Time type field and one or more
+	// Number fields.
+
+	// Each Frame should have its value sorted by time in ascending order.
+
+	type mockPoint struct {
+		Time  time.Time
+		Value float64
+	}
+
+	type mockSeries struct {
+		Name   string
+		Labels map[string]string
+		Points []mockPoint
+	}
+
+	type mockResponse struct {
+		Series []mockSeries
+	}
+
+	res := mockResponse{
+		[]mockSeries{
+			mockSeries{
+				Name:   "cpu",
+				Labels: map[string]string{"host": "a"},
+				Points: []mockPoint{
+					{
+						time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC), 3,
+					},
+					{
+						time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), 6,
+					},
+				},
+			},
+			mockSeries{
+				Name:   "cpu",
+				Labels: map[string]string{"host": "b"},
+				Points: []mockPoint{
+					{
+						time.Date(2020, 1, 2, 3, 4, 1, 0, time.UTC), 4,
+					},
+					{
+						time.Date(2020, 1, 2, 3, 5, 1, 0, time.UTC), 7,
+					},
+				},
+			},
+		},
+	}
+
+	frames := make([]*data.Frame, len(res.Series))
+	for i, series := range res.Series {
+		frames[i] = data.NewFrame(series.Name,
+			data.NewField("time", nil, make([]time.Time, len(series.Points))),
+			data.NewField(series.Name, series.Labels, make([]float64, len(series.Points))),
+		)
+		for pIdx, point := range series.Points {
+			frames[i].Set(0, pIdx, point.Time)
+			frames[i].Set(1, pIdx, point.Value)
+		}
+	}
+
+	for _, frame := range frames {
+		fmt.Println(frame.String())
+	}
+	// Output:
+	// Name: cpu
+	// Dimensions: 2 Fields by 2 Rows
+	// +-------------------------------+-----------------+
+	// | Name: time                    | Name: cpu       |
+	// | Labels:                       | Labels: host=a  |
+	// | Type: []time.Time             | Type: []float64 |
+	// +-------------------------------+-----------------+
+	// | 2020-01-02 03:04:00 +0000 UTC | 3               |
+	// | 2020-01-02 03:05:00 +0000 UTC | 6               |
+	// +-------------------------------+-----------------+
+
+	// Name: cpu
+	// Dimensions: 2 Fields by 2 Rows
+	// +-------------------------------+-----------------+
+	// | Name: time                    | Name: cpu       |
+	// | Labels:                       | Labels: host=b  |
+	// | Type: []time.Time             | Type: []float64 |
+	// +-------------------------------+-----------------+
+	// | 2020-01-02 03:04:01 +0000 UTC | 4               |
+	// | 2020-01-02 03:05:01 +0000 UTC | 7               |
+	// +-------------------------------+-----------------+
+
+}
+
 func TestStringTable(t *testing.T) {
 	frame := data.NewFrame("sTest",
 		data.NewField("", nil, make([]bool, 3)),
