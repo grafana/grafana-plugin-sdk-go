@@ -1,4 +1,4 @@
-package dsql_test
+package sqlutil_test
 
 import (
 	"database/sql"
@@ -7,15 +7,15 @@ import (
 	"strconv"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/data/dsql"
+	"github.com/grafana/grafana-plugin-sdk-go/data/sqlutil"
 )
 
-func ExampleSQLStringConverter() {
-	_ = dsql.SQLStringConverter{
+func ExampleStringConverter() {
+	_ = sqlutil.StringConverter{
 		Name:          "BIGINT to *int64",
 		InputScanKind: reflect.Struct,
 		InputTypeName: "BIGINT",
-		Replacer: &dsql.StringFieldReplacer{
+		Replacer: &sqlutil.StringFieldReplacer{
 			OutputFieldType: data.FieldTypeNullableInt64,
 			ReplaceFunc: func(in *string) (interface{}, error) {
 				if in == nil {
@@ -44,7 +44,7 @@ func ExampleReplace() {
 
 	fmt.Println(frame.String()) // Before
 
-	intReplacer := &dsql.StringFieldReplacer{
+	intReplacer := &sqlutil.StringFieldReplacer{
 		OutputFieldType: data.FieldTypeNullableInt64,
 		ReplaceFunc: func(in *string) (interface{}, error) {
 			if in == nil {
@@ -58,7 +58,7 @@ func ExampleReplace() {
 		},
 	}
 
-	err := dsql.Replace(frame, 0, intReplacer)
+	err := sqlutil.Replace(frame, 0, intReplacer)
 	if err != nil {
 		// return err
 	}
@@ -89,7 +89,7 @@ func ExampleReplace() {
 	// +----------------+
 }
 
-func ExampleNewFromSQLRows() {
+func ExampleFrameFromRows() {
 	aQuery := "SELECT * FROM GoodData"
 	db, err := sql.Open("fancySql", "fancysql://user:pass@localhost:1433")
 	if err != nil {
@@ -104,7 +104,7 @@ func ExampleNewFromSQLRows() {
 	}
 	defer rows.Close()
 
-	frame, mappings, err := dsql.NewFromSQLRows(rows)
+	frame, mappings, err := sqlutil.FrameFromRows(rows)
 	if err != nil {
 		// return err
 	}
