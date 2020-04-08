@@ -1,5 +1,4 @@
-// Package sqlutil provides helpers for scanning database/sql responses into
-// a data.Frame.
+// Package sqlutil provides helpers for scanning database/sql responses into a data.Frame.
 package sqlutil
 
 import (
