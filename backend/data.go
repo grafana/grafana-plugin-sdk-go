@@ -10,7 +10,7 @@ import (
 
 // QueryDataHandler handles data queries.
 type QueryDataHandler interface {
-	// QueryData handles mutliple queries and returns multiple responses.
+	// QueryData handles multiple queries and returns multiple responses.
 	// req contains the queries []DataQuery (where each query contains RefID as a unique identifer).
 	// The QueryDataResponse contains a map of RefID to the response for each query, and each response
 	// contains frames ([]*Frame).
@@ -77,7 +77,7 @@ type TimeRange struct {
 	To time.Time
 }
 
-// Duration returns a time.Duration representing the ammount of time between From and To.
+// Duration returns a time.Duration representing the amount of time between From and To.
 func (tr TimeRange) Duration() time.Duration {
 	return tr.To.Sub(tr.From)
 }
