@@ -211,7 +211,7 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 
 func ExampleFrame_tableLikeLongTimeSeries() {
 	// a common SQL or CSV like pattern is to have repeated times, multiple numbered value
-	// columns, and string columns to identify a factor. This is a "Long" time series.
+	// columns, and string columns to identify a factors. This is a "Long" time series.
 
 	// Presently the backend supports converting Long formatted series to "Wide" format
 	// which the frontend understands. Goal is frontend support eventually
