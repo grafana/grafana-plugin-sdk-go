@@ -53,7 +53,7 @@ func ExampleFrame_tSDBLikeTimeSeries() {
 	// of time series where each time series is uniquely identified
 	// by a Name and a set of key value pairs (Labels (a.k.a Tags)).
 
-	// In the case where the responses don't share identical time values and length (a single time index),
+	// In the case where the responses does not share identical time values and length (a single time index),
 	// then the proper representation is a []*Frame. Where each Frame has a Time type field and one or more
 	// Number fields.
 

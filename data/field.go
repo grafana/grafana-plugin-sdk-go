@@ -8,12 +8,26 @@ import (
 )
 
 // Field represents a typed column of data within a Frame.
-// The data in the Field is a not exported, so methods on the Field are used to to manipulate its data.
+//
+// A Field is essentially a slice of various types with extra properties and methods.
+// See NewField() for supported types.
+//
+// The slice data in the Field is a not exported, so methods on the Field are used to to manipulate its data.
 type Field struct {
-	Name   string
-	Config *FieldConfig
-	vector vector
+	// Name is default identifer of the field. The name does not have to be unique, but the combination
+	// of name and Labels should be unique for proper behavior in all situations.
+	Name string
+
+	// Labels is an optional set of key=value pairs that in addition to the name, should uniquely
+	// identify a Field within a Frame.
 	Labels Labels
+
+	// Config is optional display configuration information for Grafana
+	Config *FieldConfig
+
+	// vector is the unexported values. it is unexported so we can change the underlying structure without
+	// major breaking changes/
+	vector vector
 }
 
 // Fields is a slice of Field pointers.
