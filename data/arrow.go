@@ -709,10 +709,10 @@ func UnmarshalArrowFrames(bFrames [][]byte) (Frames, error) {
 	return frames, nil
 }
 
-// UnmarshalArrow encodes Frames into a slice of []byte using *Frame's MarshalArrow method on each Frame.
+// MarshalArrow encodes Frames into a slice of []byte using *Frame's MarshalArrow method on each Frame.
 // If an error occurs [][]byte will be nil.
 // See BytesSliceToFrames for the inverse operation.
-func (frames Frames) UnmarshalArrow() ([][]byte, error) {
+func (frames Frames) MarshalArrow() ([][]byte, error) {
 	bs := make([][]byte, len(frames))
 	var err error
 	for i, frame := range frames {
