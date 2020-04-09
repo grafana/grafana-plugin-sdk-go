@@ -250,6 +250,7 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 	}
 	fmt.Println(frame.String())
 	w, _ := data.LongToWide(frame)
+	w.Name = "Wide"
 	fmt.Println(w.String())
 	// Output:
 	// Name: Long
@@ -265,7 +266,7 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 	// | 2020-01-02 03:05:00 +0000 UTC | 6               | 16              | bar              |
 	// +-------------------------------+-----------------+-----------------+------------------+
 	//
-	// Name: Long
+	// Name: Wide
 	// Dimensions: 5 Fields by 2 Rows
 	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
 	// | Name: time                    | Name: aMetric          | Name: bMetric          | Name: aMetric          | Name: bMetric          |
