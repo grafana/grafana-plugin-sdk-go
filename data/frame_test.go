@@ -129,7 +129,7 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 	// | 2020-01-02 03:04:00 +0000 UTC | 3               |
 	// | 2020-01-02 03:05:00 +0000 UTC | 6               |
 	// +-------------------------------+-----------------+
-
+	//
 	// Name: cpu
 	// Dimensions: 2 Fields by 2 Rows
 	// +-------------------------------+-----------------+
