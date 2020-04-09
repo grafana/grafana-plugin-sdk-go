@@ -7,6 +7,11 @@ option go_package = ".;pluginv2";
 // Common
 //-----------------------------------------------
 
+message PluginConfig {
+  bytes jsonData = 1;
+  int64 lastUpdatedMS = 3;
+}
+
 message DataSourceConfig {
   int64 id = 1;
   string name = 2;
@@ -15,27 +20,15 @@ message DataSourceConfig {
   string database = 5;
   bool basicAuthEnabled = 6;
   string basicAuthUser = 7;
-
-  // from [data_source.json_data] field in the database
   bytes jsonData = 8;
-  
-  // from [data_source.secure_json_data] field in the database
-  map<string,string> decryptedSecureJsonData = 9;
   int64 lastUpdatedMS = 10;
 }
 
-message PluginConfig {
-  int64 orgId = 1;
-  string pluginId = 2;
-  
-  // from [plugin_setting.json_data] field in the database
+message NotifierConfig {
+  int64 id = 1;
+  string name = 2;
   bytes jsonData = 3;
-  
-  // from [plugin_setting.secure_json_data] field in the database
-  map<string,string> decryptedSecureJsonData = 4;
-  int64 lastUpdatedMS = 5;
-
-  DataSourceConfig datasourceConfig = 6;
+  int64 lastUpdatedMS = 4;
 }
 
 message User {
@@ -45,26 +38,43 @@ message User {
   string role = 4;
 }
 
+message PluginContext {
+  // The Grafana organization id request originating from.
+  int64 orgId = 1;
+  string pluginId = 2;
+
+  // The Grafana user request originating from.
+  // Will not be provided if Grafana backend initiated the request.
+  User user = 3;
+
+  // Plugin config.
+  PluginConfig config = 4;
+
+  // Data source plugin config is the configured data source instance config.
+  // Will not be provided if request not targeting a data source instance.
+  DataSourceConfig dataSourceConfig = 5;
+
+  // Notifier plugin config is the configured notifier instance config.
+  // Will not be provided if request not targeting a notifier instance.
+  NotifierConfig notifierConfig = 6;
+}
+
 //---------------------------------------------------------
 // Resource service enables HTTP-style requests over gRPC.
 //---------------------------------------------------------
-
-service Resource {
-  rpc CallResource(CallResourceRequest) returns (stream CallResourceResponse);
-}
 
 message StringList {
   repeated string values = 1;
 }
 
 message CallResourceRequest {
-  PluginConfig config = 1;
-  User user = 2;
-  string path = 3;
-  string method = 4;
-  string url = 5;
-  map<string,StringList> headers = 6;
-  bytes body = 7;
+  // Contextuual plugin request information.
+  PluginContext ctx = 1;
+  string path = 2;
+  string method = 3;
+  string url = 4;
+  map<string,StringList> headers = 5;
+  bytes body = 6;
 }
 
 message CallResourceResponse {
@@ -76,10 +86,6 @@ message CallResourceResponse {
 //-----------------------------------------------
 // Data
 //-----------------------------------------------
-
-service Data {
-  rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
-}
 
 message TimeRange {
   int64 fromEpochMS = 1;
@@ -96,8 +102,8 @@ message DataQuery {
 
 // QueryDataRequest
 message QueryDataRequest {
-  // Plugin Configuration
-  PluginConfig config = 1;
+  // Contextuual plugin request information.
+  PluginContext ctx = 1;
 
   //Info about the user who calls the plugin.
   User user = 2;
@@ -143,7 +149,8 @@ message CollectMetricsResponse {
 }
 
 message CheckHealthRequest {
-  PluginConfig config = 1;
+  // Contextuual plugin request information.
+  PluginContext ctx = 1;
 }
 
 message CheckHealthResponse {
@@ -159,13 +166,54 @@ message CheckHealthResponse {
 }
 
 //-----------------------------------------------
-// Transform - Very experimental
+// Plugin - generic plugin support
+// Currently only applicable for app plugins.
 //-----------------------------------------------
 
-service Transform {
+service Plugin {
+  rpc CheckPluginHealth(CheckHealthRequest) returns (CheckHealthResponse);
+  rpc CallPluginResource(CallResourceRequest) returns (stream CallResourceResponse);
+}
+
+//-----------------------------------------------
+// Data source plugin
+// Currently maps to a data source plugin in Grafana.
+//-----------------------------------------------
+
+service DataSourcePlugin {
+  rpc CheckDataSourceHealth(CheckHealthRequest) returns (CheckHealthResponse);
+  rpc CallDataSourceResource(CallResourceRequest) returns (stream CallResourceResponse);
+  rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
+}
+
+//-----------------------------------------------
+// Transform plugin - Very experimental
+//-----------------------------------------------
+
+service TransformPlugin {
   rpc TransformData(QueryDataRequest) returns (QueryDataResponse);
 }
 
 service TransformDataCallBack {
   rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
+}
+
+//-----------------------------------------------
+// Notifier plugin example for brewity
+//-----------------------------------------------
+
+service NotifierPlugin {
+  rpc CheckNotifierHealth(CheckHealthRequest) returns (CheckHealthResponse);
+  rpc CallNotifierResource(CallResourceRequest) returns (stream CallResourceResponse);
+  rpc SendNotification(SendNotificationRequest) returns (SendNotificationResponse);
+}
+
+//-----------------------------------------------
+// Renderer plugin example for brewity
+//-----------------------------------------------
+
+service RendererPlugin {
+  rpc CheckRendererHealth(CheckHealthRequest) returns (CheckHealthResponse);
+  rpc CallRendererResource(CallResourceRequest) returns (stream CallResourceResponse);
+  rpc RenderImage(RenderImageRequest) returns (RenderImageResponse);
 }
