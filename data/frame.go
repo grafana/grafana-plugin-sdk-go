@@ -43,6 +43,10 @@ type Frame struct {
 	Warnings []Warning // TODO: Remove, will be replaced with FrameMeta.Notices.
 }
 
+// Frames is a a collection of Frames as a slice of Frame pointers.
+// It is the main data container within a backend.DataResponse.
+type Frames []*Frame
+
 // AppendRow adds a new row to the Frame by appending to each element of vals to
 // the corresponding Field in the data.
 // The Frame's Fields must be initalized or AppendRow will panic.

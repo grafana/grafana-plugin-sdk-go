@@ -13,7 +13,7 @@ type QueryDataHandler interface {
 	// QueryData handles multiple queries and returns multiple responses.
 	// req contains the queries []DataQuery (where each query contains RefID as a unique identifer).
 	// The QueryDataResponse contains a map of RefID to the response for each query, and each response
-	// contains frames ([]*Frame).
+	// contains Frames ([]*Frame).
 	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }
 
@@ -59,7 +59,7 @@ type QueryDataResponse struct {
 // The Error property is used to allow for partial success responses from the containing QueryDataResponse.
 type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.
-	Frames []*data.Frame
+	Frames data.Frames
 
 	// Meta contains a custom JSON object for custom response metadata about the query. WARNING: Currently ignored by front end of Grafana.
 	Meta json.RawMessage
