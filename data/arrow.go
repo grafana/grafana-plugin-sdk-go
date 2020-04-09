@@ -693,7 +693,10 @@ func toJSONString(val interface{}) (string, error) {
 	return string(b), nil
 }
 
-// BytesSliceToFrames decodes a slice of encoded Arrow frames to a slice of *Frame using the UnMarshalArrow function.
+// BytesSliceToFrames decodes a slice of Arrow encoded frames to Frames ([]*Frame) by calling
+// the UnMarshalArrow function on each encoded frame.
+// If an error occurs Frames will be nil.
+// See Frames.ToBytesSlice() for the inverse operation.
 func BytesSliceToFrames(bFrames [][]byte) (Frames, error) {
 	frames := make(Frames, len(bFrames))
 	var err error
@@ -707,6 +710,7 @@ func BytesSliceToFrames(bFrames [][]byte) (Frames, error) {
 }
 
 // ToBytesSlice encodes Frames into a slice of []byte using *Frame's MarshalArrow method on each Frame.
+// If an error occurs [][]byte will be nil.
 // See BytesSliceToFrames for the inverse operation.
 func (frames Frames) ToBytesSlice() ([][]byte, error) {
 	bs := make([][]byte, len(frames))
