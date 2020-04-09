@@ -69,7 +69,7 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 	// by a Name and a set of key value pairs (Labels (a.k.a Tags)).
 
 	// In the case where the responses does not share identical time values and length (a single time index),
-	// then the proper representation is a []*Frame. Where each Frame has a Time type field and one or more
+	// then the proper representation is Frames ([]*Frame). Where each Frame has a Time type field and one or more
 	// Number fields.
 
 	// Each Frame should have its value sorted by time in ascending order.
@@ -129,7 +129,7 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 	// | 2020-01-02 03:04:00 +0000 UTC | 3               |
 	// | 2020-01-02 03:05:00 +0000 UTC | 6               |
 	// +-------------------------------+-----------------+
-
+	//
 	// Name: cpu
 	// Dimensions: 2 Fields by 2 Rows
 	// +-------------------------------+-----------------+
@@ -250,6 +250,7 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 	}
 	fmt.Println(frame.String())
 	w, _ := data.LongToWide(frame)
+	w.Name = "Wide"
 	fmt.Println(w.String())
 	// Output:
 	// Name: Long
@@ -265,7 +266,7 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 	// | 2020-01-02 03:05:00 +0000 UTC | 6               | 16              | bar              |
 	// +-------------------------------+-----------------+-----------------+------------------+
 	//
-	// Name: Long
+	// Name: Wide
 	// Dimensions: 5 Fields by 2 Rows
 	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
 	// | Name: time                    | Name: aMetric          | Name: bMetric          | Name: aMetric          | Name: bMetric          |

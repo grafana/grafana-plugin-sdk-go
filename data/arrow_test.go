@@ -228,7 +228,7 @@ func goldenDF() *data.Frame {
 
 func TestEncode(t *testing.T) {
 	df := goldenDF()
-	b, err := data.MarshalArrow(df)
+	b, err := df.MarshalArrow()
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -262,7 +262,7 @@ func TestDecode(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	newDf, err := data.UnmarshalArrow(b)
+	newDf, err := data.UnmarshalArrowFrame(b)
 	if err != nil {
 		t.Fatal(err)
 	}
