@@ -9,17 +9,30 @@ import (
 	"google.golang.org/grpc"
 )
 
-const (
-	maxServerReceiveMsgSize = 1024 * 1024 * 4
-	maxServerSendMsgSize    = 1024 * 1024 * 4
-)
-
 //ServeOpts options for serving plugins.
 type ServeOpts struct {
-	CheckHealthHandler   CheckHealthHandler
-	CallResourceHandler  CallResourceHandler
-	QueryDataHandler     QueryDataHandler
+	// CheckHealthHandler handler for health checks.
+	CheckHealthHandler CheckHealthHandler
+
+	// CallResourceHandler handler for resource calls.
+	// Optional to implement.
+	CallResourceHandler CallResourceHandler
+
+	// QueryDataHandler handler for data queries.
+	// Required to implement if data source.
+	QueryDataHandler QueryDataHandler
+
+	// TransformDataHandler handler for data transformations.
+	// Very experimental and shouldn't be implemented in most cases.
 	TransformDataHandler TransformDataHandler
+
+	// MaxGRPCReceiveMsgSize the max gRPC message size in bytes the plugin can receive.
+	// If this is <= 0, gRPC uses the default 4MB.
+	MaxGRPCReceiveMsgSize int
+
+	// MaxGRPCSendMsgSize the max gRPC message size in bytes the plugin can send.
+	// If this is <= 0, gRPC uses the default `math.MaxInt32`.
+	MaxGRPCSendMsgSize int
 }
 
 // Serve starts serving the plugin over gRPC.
@@ -42,24 +55,28 @@ func Serve(opts ServeOpts) error {
 
 	grpc_prometheus.EnableHandlingTimeHistogram()
 	recoveryOption := grpc_recovery.WithRecoveryHandlerContext(recoveryHandler)
+	grpcMiddlewares := []grpc.ServerOption{
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_prometheus.StreamServerInterceptor,
+			grpc_recovery.StreamServerInterceptor(recoveryOption),
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_prometheus.UnaryServerInterceptor,
+			grpc_recovery.UnaryServerInterceptor(recoveryOption),
+		)),
+	}
+
+	if opts.MaxGRPCReceiveMsgSize > 0 {
+		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxRecvMsgSize(opts.MaxGRPCReceiveMsgSize)}, grpcMiddlewares...)
+	}
+
+	if opts.MaxGRPCSendMsgSize > 0 {
+		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxSendMsgSize(opts.MaxGRPCSendMsgSize)}, grpcMiddlewares...)
+	}
 
 	pluginOpts.GRPCServer = func(opts []grpc.ServerOption) *grpc.Server {
-		mergedOpts := []grpc.ServerOption{}
-		mergedOpts = append(mergedOpts, opts...)
-		sopts := []grpc.ServerOption{
-			grpc.MaxRecvMsgSize(maxServerReceiveMsgSize),
-			grpc.MaxSendMsgSize(maxServerSendMsgSize),
-			grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-				grpc_prometheus.StreamServerInterceptor,
-				grpc_recovery.StreamServerInterceptor(recoveryOption),
-			)),
-			grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-				grpc_prometheus.UnaryServerInterceptor,
-				grpc_recovery.UnaryServerInterceptor(recoveryOption),
-			)),
-		}
-		mergedOpts = append(mergedOpts, sopts...)
-		return grpc.NewServer(mergedOpts...)
+		opts = append(opts, grpcMiddlewares...)
+		return grpc.NewServer(opts...)
 	}
 
 	return grpcplugin.Serve(pluginOpts)
