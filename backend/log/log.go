@@ -1,3 +1,4 @@
+// Package log provides a logging interface to send logs from plugins to Grafana server.
 package log
 
 import (

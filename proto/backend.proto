@@ -110,12 +110,16 @@ message QueryDataRequest {
 }
 
 message QueryDataResponse {
-  // Arrow encoded DataFrames
-  // Each frame encodes its own: Errors, meta, and refId
-  repeated bytes frames = 1;
+  // Map of refId to response
+  map<string,DataResponse> responses = 1;
+}
 
-  // Additional response metadata
-  map<string,string> metadata = 2;
+message DataResponse {
+  // Arrow encoded DataFrames
+  // Frame has its own meta, warnings, and repeats refId
+  repeated bytes frames = 1;
+  string error = 2;
+  bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
 }
 
 //-----------------------------------------------

@@ -228,6 +228,35 @@ func checkLinuxPtraceScope() error {
 	return nil
 }
 
+// ReloadPlugin - kills any running instances and waits for grafana to reload the plugin
+func ReloadPlugin() error {
+	exeName, err := getExecutableName(runtime.GOOS, runtime.GOARCH)
+	if err != nil {
+		return err
+	}
+
+	_ = killAllPIDs(findRunningPIDs(exeName))
+	_ = sh.RunV("pkill", "dlv")
+
+	// Wait for grafana to start plugin
+	for i := 0; i < 20; i++ {
+		time.Sleep(250 * time.Millisecond)
+		pids := findRunningPIDs(exeName)
+		if len(pids) > 1 {
+			log.Printf("multiple instances already running")
+			break
+		}
+		if len(pids) > 0 {
+			pid := strconv.Itoa(pids[0])
+			log.Printf("Running PID: %s", pid)
+			break
+		}
+
+		log.Printf("waiting for grafana to start: %s...", exeName)
+	}
+	return nil
+}
+
 // Debugger makes a new debug build and attaches dlv (go-delve).
 func Debugger() error {
 	// Debug build
