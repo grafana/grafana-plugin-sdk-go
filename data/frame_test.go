@@ -48,6 +48,235 @@ func ExampleNewFrame() {
 	// +-------------------------------+-----------------------+-----------------------+
 }
 
+type mockPoint struct {
+	Time  time.Time
+	Value float64
+}
+
+type mockSeries struct {
+	Name   string
+	Labels map[string]string
+	Points []mockPoint
+}
+
+type mockResponse struct {
+	Series []mockSeries
+}
+
+func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
+	// A common tsdb response pattern is to return a collection
+	// of time series where each time series is uniquely identified
+	// by a Name and a set of key value pairs (Labels (a.k.a Tags)).
+
+	// In the case where the responses does not share identical time values and length (a single time index),
+	// then the proper representation is a []*Frame. Where each Frame has a Time type field and one or more
+	// Number fields.
+
+	// Each Frame should have its value sorted by time in ascending order.
+
+	res := mockResponse{
+		[]mockSeries{
+			mockSeries{
+				Name:   "cpu",
+				Labels: map[string]string{"host": "a"},
+				Points: []mockPoint{
+					{
+						time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC), 3,
+					},
+					{
+						time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), 6,
+					},
+				},
+			},
+			mockSeries{
+				Name:   "cpu",
+				Labels: map[string]string{"host": "b"},
+				Points: []mockPoint{
+					{
+						time.Date(2020, 1, 2, 3, 4, 1, 0, time.UTC), 4,
+					},
+					{
+						time.Date(2020, 1, 2, 3, 5, 1, 0, time.UTC), 7,
+					},
+				},
+			},
+		},
+	}
+
+	frames := make([]*data.Frame, len(res.Series))
+	for i, series := range res.Series {
+		frames[i] = data.NewFrame(series.Name,
+			data.NewField("time", nil, make([]time.Time, len(series.Points))),
+			data.NewField(series.Name, series.Labels, make([]float64, len(series.Points))),
+		)
+		for pIdx, point := range series.Points {
+			frames[i].Set(0, pIdx, point.Time)
+			frames[i].Set(1, pIdx, point.Value)
+		}
+	}
+
+	for _, frame := range frames {
+		fmt.Println(frame.String())
+	}
+	// Output:
+	// Name: cpu
+	// Dimensions: 2 Fields by 2 Rows
+	// +-------------------------------+-----------------+
+	// | Name: time                    | Name: cpu       |
+	// | Labels:                       | Labels: host=a  |
+	// | Type: []time.Time             | Type: []float64 |
+	// +-------------------------------+-----------------+
+	// | 2020-01-02 03:04:00 +0000 UTC | 3               |
+	// | 2020-01-02 03:05:00 +0000 UTC | 6               |
+	// +-------------------------------+-----------------+
+
+	// Name: cpu
+	// Dimensions: 2 Fields by 2 Rows
+	// +-------------------------------+-----------------+
+	// | Name: time                    | Name: cpu       |
+	// | Labels:                       | Labels: host=b  |
+	// | Type: []time.Time             | Type: []float64 |
+	// +-------------------------------+-----------------+
+	// | 2020-01-02 03:04:01 +0000 UTC | 4               |
+	// | 2020-01-02 03:05:01 +0000 UTC | 7               |
+	// +-------------------------------+-----------------+
+}
+
+func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
+	// In the case where you do know all the response will share the same time index, then
+	// a "wide" dataframe can be created that holds all the responses. So your response is
+	// all in a Single Frame.
+
+	singleTimeIndexRes := mockResponse{
+		[]mockSeries{
+			mockSeries{
+				Name:   "cpu",
+				Labels: map[string]string{"host": "a"},
+				Points: []mockPoint{
+					{
+						time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC), 3,
+					},
+					{
+						time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), 6,
+					},
+				},
+			},
+			mockSeries{
+				Name:   "cpu",
+				Labels: map[string]string{"host": "b"},
+				Points: []mockPoint{
+					{
+						time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC), 4,
+					},
+					{
+						time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), 7,
+					},
+				},
+			},
+		},
+	}
+
+	frame := &data.Frame{Name: "Wide"}
+	for i, series := range singleTimeIndexRes.Series {
+		if i == 0 {
+			frame.Fields = append(frame.Fields,
+				data.NewField("time", nil, make([]time.Time, len(series.Points))),
+			)
+		}
+		frame.Fields = append(frame.Fields,
+			data.NewField(series.Name, series.Labels, make([]float64, len(series.Points))),
+		)
+		for pIdx, point := range series.Points {
+			if i == 0 {
+				frame.Set(i, pIdx, point.Time)
+			}
+			frame.Set(i+1, pIdx, point.Value)
+		}
+	}
+
+	fmt.Println(frame.String())
+	// Output:
+	// Name: Wide
+	// Dimensions: 3 Fields by 2 Rows
+	// +-------------------------------+-----------------+-----------------+
+	// | Name: time                    | Name: cpu       | Name: cpu       |
+	// | Labels:                       | Labels: host=a  | Labels: host=b  |
+	// | Type: []time.Time             | Type: []float64 | Type: []float64 |
+	// +-------------------------------+-----------------+-----------------+
+	// | 2020-01-02 03:04:00 +0000 UTC | 3               | 4               |
+	// | 2020-01-02 03:05:00 +0000 UTC | 6               | 7               |
+	// +-------------------------------+-----------------+-----------------+
+
+}
+
+func ExampleFrame_tableLikeLongTimeSeries() {
+	// a common SQL or CSV like pattern is to have repeated times, multiple numbered value
+	// columns, and string columns to identify a factors. This is a "Long" time series.
+
+	// Presently the backend supports converting Long formatted series to "Wide" format
+	// which the frontend understands. Goal is frontend support eventually
+	// (https://github.com/grafana/grafana/issues/22219).
+
+	type aTable struct {
+		Headers []string
+		Rows    [][]interface{}
+	}
+
+	iSlice := func(is ...interface{}) []interface{} {
+		s := make([]interface{}, len(is))
+		copy(s, is)
+		return s
+	}
+
+	myLongTable := aTable{
+		Headers: []string{"time", "aMetric", "bMetric", "SomeFactor"},
+	}
+	myLongTable.Rows = append(myLongTable.Rows,
+		iSlice(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC), 2.0, 10.0, "foo"),
+		iSlice(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC), 5.0, 15.0, "bar"),
+
+		iSlice(time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), 3.0, 11.0, "foo"),
+		iSlice(time.Date(2020, 1, 2, 3, 5, 0, 0, time.UTC), 6.0, 16.0, "bar"),
+	)
+
+	frame := data.NewFrameOfFieldTypes("Long", 0,
+		data.FieldTypeTime,
+		data.FieldTypeFloat64, data.FieldTypeFloat64,
+		data.FieldTypeString,
+	)
+	_ = frame.SetFieldNames(myLongTable.Headers...)
+	for _, row := range myLongTable.Rows {
+		frame.AppendRow(row...)
+	}
+	fmt.Println(frame.String())
+	w, _ := data.LongToWide(frame)
+	fmt.Println(w.String())
+	// Output:
+	// Name: Long
+	// Dimensions: 4 Fields by 4 Rows
+	// +-------------------------------+-----------------+-----------------+------------------+
+	// | Name: time                    | Name: aMetric   | Name: bMetric   | Name: SomeFactor |
+	// | Labels:                       | Labels:         | Labels:         | Labels:          |
+	// | Type: []time.Time             | Type: []float64 | Type: []float64 | Type: []string   |
+	// +-------------------------------+-----------------+-----------------+------------------+
+	// | 2020-01-02 03:04:00 +0000 UTC | 2               | 10              | foo              |
+	// | 2020-01-02 03:04:00 +0000 UTC | 5               | 15              | bar              |
+	// | 2020-01-02 03:05:00 +0000 UTC | 3               | 11              | foo              |
+	// | 2020-01-02 03:05:00 +0000 UTC | 6               | 16              | bar              |
+	// +-------------------------------+-----------------+-----------------+------------------+
+	//
+	// Name: Long
+	// Dimensions: 5 Fields by 2 Rows
+	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
+	// | Name: time                    | Name: aMetric          | Name: bMetric          | Name: aMetric          | Name: bMetric          |
+	// | Labels:                       | Labels: SomeFactor=foo | Labels: SomeFactor=foo | Labels: SomeFactor=bar | Labels: SomeFactor=bar |
+	// | Type: []time.Time             | Type: []float64        | Type: []float64        | Type: []float64        | Type: []float64        |
+	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
+	// | 2020-01-02 03:04:00 +0000 UTC | 2                      | 10                     | 5                      | 15                     |
+	// | 2020-01-02 03:05:00 +0000 UTC | 3                      | 11                     | 6                      | 16                     |
+	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
+}
+
 func TestStringTable(t *testing.T) {
 	frame := data.NewFrame("sTest",
 		data.NewField("", nil, make([]bool, 3)),
