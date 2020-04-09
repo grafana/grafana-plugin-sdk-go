@@ -91,9 +91,7 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 }
 
 func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
-	qdr := QueryDataResponse{
-		Responses: make(map[string]*DataResponse, len(protoRes.Responses)),
-	}
+	qdr := NewQueryDataResponse(len(protoRes.Responses))
 	for rIdx, res := range protoRes.Responses {
 		frames, err := data.BytesSliceToFrames(res.Frames)
 		if err != nil {

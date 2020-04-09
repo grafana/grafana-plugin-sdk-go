@@ -51,8 +51,19 @@ type DataQuery struct {
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
-	Responses map[string]*DataResponse
+	Responses Responses
 }
+
+// NewQueryDataResponse returns a QueryDataResponse with the Responses property
+// initialized to size.
+func NewQueryDataResponse(size int) QueryDataResponse {
+	return QueryDataResponse{
+		Responses: make(Responses, size),
+	}
+}
+
+// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
+type Responses map[string]*DataResponse
 
 // DataResponse contains the results from a DataQuery.
 // A map of RefIDs (unique query identifers) to this type makes up the Responses property of a QueryDataResponse.
