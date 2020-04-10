@@ -6,8 +6,6 @@ import (
 	"sort"
 	"strconv"
 	"time"
-
-	"github.com/grafana/grafana/pkg/components/null"
 )
 
 // TimeSeriesType represents the type of time series the schema can be treated as (if any).
@@ -32,19 +30,19 @@ const (
 	TimeSeriesTypeWide
 )
 
-type FillMode string
+type FillMode int
 
 const (
-	FILL_MODE_PREVIOUS FillMode = "previous"
-	FILL_MODE_NULL     FillMode = "null"
-	FILL_MODE_VALUE    FillMode = "value"
+	FillModePrevious FillMode = iota
+	FillModeNull
+	FillModeValue
 )
 
 type FillMissing struct {
 	Enabled  bool
 	Interval time.Duration
 	Mode     FillMode
-	Value    null.Float
+	Value    float64
 }
 
 func (t TimeSeriesType) String() string {
@@ -144,18 +142,17 @@ func (f *Frame) FillMissing(fillMissing FillMissing) error {
 			continue
 		}
 
-		var startInterval time.Time
-		var endInterval time.Time
-		if timeField.Nullable() {
-			t := timeField.At(i + bookmark).(*time.Time)
-			startInterval = *t
-			t = timeField.At(i + bookmark + 1).(*time.Time)
-			endInterval = *t
-
-		} else {
-			startInterval = timeField.At(i + bookmark).(time.Time)
-			endInterval = timeField.At(i + bookmark + 1).(time.Time)
+		t, ok := timeField.ConcreteAt(i + bookmark)
+		if !ok {
+			return fmt.Errorf("Could not get concrete value for field: %v at: %v", timeField.Name, i+bookmark)
 		}
+		startInterval := t.(time.Time)
+
+		t, ok = timeField.ConcreteAt(i + bookmark + 1)
+		if !ok {
+			return fmt.Errorf("Could not get concrete value for field: %v at: %v", timeField.Name, i+bookmark+1)
+		}
+		endInterval := t.(time.Time)
 
 		missingT := make([]interface{}, 0)
 		for t := startInterval.Add(fillMissing.Interval); t.Before(endInterval); t = t.Add(fillMissing.Interval) {
@@ -173,25 +170,27 @@ func (f *Frame) FillMissing(fillMissing FillMissing) error {
 				var newVal interface{}
 				if fieldIdx == tsSchema.TimeIndex {
 					newVal = missingT[missingTimestampIdx]
-				} else {
-					for _, idx := range tsSchema.ValueIndices {
-						if fieldIdx == idx {
-							isValueField = true
-						}
-					}
+					vals = append(vals, newVal)
+					continue
+				}
 
-					if isValueField {
-						switch fillMissing.Mode {
-						case FILL_MODE_NULL:
-							//newVal = nil
-						case FILL_MODE_PREVIOUS:
-							newVal = f.At(fieldIdx, i+bookmark) // the previous value
-						case FILL_MODE_VALUE:
-							newVal = valueToType(fillMissing.Value.Float64, f.Fields[fieldIdx].Type())
-						}
-					} else {
-						newVal = f.At(fieldIdx, i+bookmark) // the previous value
+				for _, idx := range tsSchema.ValueIndices {
+					if fieldIdx == idx {
+						isValueField = true
 					}
+				}
+
+				if isValueField {
+					switch fillMissing.Mode {
+					case FillModeNull:
+						//newVal = nil
+					case FillModePrevious:
+						newVal = f.At(fieldIdx, i+bookmark) // the previous value
+					case FillModeValue:
+						newVal = valueToType(fillMissing.Value, f.Fields[fieldIdx].Type())
+					}
+				} else {
+					newVal = f.At(fieldIdx, i+bookmark) // the previous value
 				}
 				vals = append(vals, newVal)
 			}

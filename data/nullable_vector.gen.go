@@ -82,10 +82,7 @@ func (v *nullableUint8Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -166,10 +163,7 @@ func (v *nullableUint16Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -250,10 +244,7 @@ func (v *nullableUint32Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -334,10 +325,7 @@ func (v *nullableUint64Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -418,10 +406,7 @@ func (v *nullableInt8Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -502,10 +487,7 @@ func (v *nullableInt16Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -586,10 +568,7 @@ func (v *nullableInt32Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -670,10 +649,7 @@ func (v *nullableInt64Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -754,10 +730,7 @@ func (v *nullableFloat32Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -838,10 +811,7 @@ func (v *nullableFloat64Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -922,10 +892,7 @@ func (v *nullableStringVector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -1006,10 +973,7 @@ func (v *nullableBoolVector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -1090,10 +1054,7 @@ func (v *nullableTimeTimeVector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }

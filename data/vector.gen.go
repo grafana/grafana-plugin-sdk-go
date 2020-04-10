@@ -58,10 +58,7 @@ func (v *uint8Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -118,10 +115,7 @@ func (v *uint16Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -178,10 +172,7 @@ func (v *uint32Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -238,10 +229,7 @@ func (v *uint64Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -298,10 +286,7 @@ func (v *int8Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -358,10 +343,7 @@ func (v *int16Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -418,10 +400,7 @@ func (v *int32Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -478,10 +457,7 @@ func (v *int64Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -538,10 +514,7 @@ func (v *float32Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -598,10 +571,7 @@ func (v *float64Vector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -658,10 +628,7 @@ func (v *stringVector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -718,10 +685,7 @@ func (v *boolVector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
@@ -778,10 +742,7 @@ func (v *timeTimeVector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }

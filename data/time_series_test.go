@@ -7,7 +7,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana/pkg/components/null"
 	"github.com/stretchr/testify/require"
 )
 
@@ -827,7 +826,7 @@ func TestFillMissing(t *testing.T) {
 			name: "Long frame; fill previous",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_PREVIOUS,
+				Mode:     data.FillModePrevious,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("long_test",
@@ -894,8 +893,8 @@ func TestFillMissing(t *testing.T) {
 			name: "Long frame; fill value",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_VALUE,
-				Value:    null.NewFloat(-1, true),
+				Mode:     data.FillModeValue,
+				Value:    -1,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("long_test",
@@ -961,7 +960,7 @@ func TestFillMissing(t *testing.T) {
 			name: "Wide frame; fill previous",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_PREVIOUS,
+				Mode:     data.FillModePrevious,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("wide_test",
@@ -1041,8 +1040,8 @@ func TestFillMissing(t *testing.T) {
 			name: "Wide frame; fill value",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_VALUE,
-				Value:    null.NewFloat(-1, true),
+				Mode:     data.FillModeValue,
+				Value:    -1,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("wide_test",
@@ -1131,6 +1130,7 @@ func TestFillMissing(t *testing.T) {
 		})
 	}
 }
+
 func TestFillMissingNullable(t *testing.T) {
 	tests := []struct {
 		name        string
@@ -1143,7 +1143,7 @@ func TestFillMissingNullable(t *testing.T) {
 			name: "Long frame; fill null",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_NULL,
+				Mode:     data.FillModeNull,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("long_test",
@@ -1210,7 +1210,7 @@ func TestFillMissingNullable(t *testing.T) {
 			name: "Long frame; fill previous",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_PREVIOUS,
+				Mode:     data.FillModePrevious,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("long_test",
@@ -1276,8 +1276,8 @@ func TestFillMissingNullable(t *testing.T) {
 			name: "Long frame; fill value",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_VALUE,
-				Value:    null.NewFloat(-1, true),
+				Mode:     data.FillModeValue,
+				Value:    -1,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("long_test",
@@ -1343,7 +1343,7 @@ func TestFillMissingNullable(t *testing.T) {
 			name: "Wide frame; fill null",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_NULL,
+				Mode:     data.FillModeNull,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("wide_test",
@@ -1423,7 +1423,7 @@ func TestFillMissingNullable(t *testing.T) {
 			name: "Wide frame; fill previous",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_PREVIOUS,
+				Mode:     data.FillModePrevious,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("wide_test",
@@ -1503,8 +1503,8 @@ func TestFillMissingNullable(t *testing.T) {
 			name: "Wide frame; fill value",
 			fillMissing: data.FillMissing{
 				Enabled:  true,
-				Mode:     data.FILL_MODE_VALUE,
-				Value:    null.NewFloat(-1, true),
+				Mode:     data.FillModeValue,
+				Value:    -1,
 				Interval: 5 * time.Second,
 			},
 			frame: data.NewFrame("wide_test",

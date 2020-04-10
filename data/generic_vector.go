@@ -58,10 +58,7 @@ func (v *genVector) InsertAt(i int, val interface{}) {
 		v.Append(val)
 	} else {
 		v.Extend(1)
-		for j := v.Len() - 1; j > i; j-- {
-			previousVal, _ := v.ConcreteAt(j - 1)
-			v.Set(j, previousVal)
-		}
+		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
 	}
 }
