@@ -52,3 +52,16 @@ func (v *genVector) Type() FieldType {
 func (v *genVector) Extend(i int) {
 	(*v) = append((*v), make([]gen, i)...)
 }
+
+func (v *genVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}

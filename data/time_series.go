@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/grafana/grafana/pkg/components/null"
 )
 
 // TimeSeriesType represents the type of time series the schema can be treated as (if any).
@@ -29,6 +31,21 @@ const (
 	// uses labels.
 	TimeSeriesTypeWide
 )
+
+type FillMode string
+
+const (
+	FILL_MODE_PREVIOUS FillMode = "previous"
+	FILL_MODE_NULL     FillMode = "null"
+	FILL_MODE_VALUE    FillMode = "value"
+)
+
+type FillMissing struct {
+	Enabled  bool
+	Interval time.Duration
+	Mode     FillMode
+	Value    null.Float
+}
 
 func (t TimeSeriesType) String() string {
 	switch t {
@@ -80,6 +97,109 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	}
 	tsSchema.Type = TimeSeriesTypeLong
 	return
+}
+
+func valueToType(val float64, ftype FieldType) interface{} {
+	switch ftype {
+	case FieldTypeInt8, FieldTypeNullableInt8:
+		return int8(val)
+	case FieldTypeInt16, FieldTypeNullableInt16:
+		return int16(val)
+	case FieldTypeInt32, FieldTypeNullableInt32:
+		return int32(val)
+	case FieldTypeInt64, FieldTypeNullableInt64:
+		return int64(val)
+	case FieldTypeUint8, FieldTypeNullableUint8:
+		return uint8(val)
+	case FieldTypeUint16, FieldTypeNullableUint16:
+		return uint16(val)
+	case FieldTypeUint32, FieldTypeNullableUint32:
+		return uint32(val)
+	case FieldTypeUint64, FieldTypeNullableUint64:
+		return uint64(val)
+	case FieldTypeFloat32, FieldTypeNullableFloat32:
+		return float32(val)
+	case FieldTypeFloat64, FieldTypeNullableFloat64:
+		return val
+	}
+	// FieldTypeString, FieldTypeNullableString, FieldTypeBool, FieldTypeNullableBool, FieldTypeTime, FieldTypeNullableTime
+	// return an error instead?
+	return val
+}
+
+func (f *Frame) FillMissing(fillMissing FillMissing) error {
+	if !fillMissing.Enabled {
+		return nil
+	}
+
+	tsSchema := f.TimeSeriesSchema()
+	if tsSchema.Type == TimeSeriesTypeNot {
+		return fmt.Errorf("can not fill missing, not timeseries frame")
+	}
+
+	timeField := f.Fields[tsSchema.TimeIndex]
+	bookmark := 0
+	for i := 0; i+bookmark < timeField.Len(); i++ {
+		if i+bookmark+1 == timeField.Len() {
+			continue
+		}
+
+		var startInterval time.Time
+		var endInterval time.Time
+		if timeField.Nullable() {
+			t := timeField.At(i + bookmark).(*time.Time)
+			startInterval = *t
+			t = timeField.At(i + bookmark + 1).(*time.Time)
+			endInterval = *t
+
+		} else {
+			startInterval = timeField.At(i + bookmark).(time.Time)
+			endInterval = timeField.At(i + bookmark + 1).(time.Time)
+		}
+
+		missingT := make([]interface{}, 0)
+		for t := startInterval.Add(fillMissing.Interval); t.Before(endInterval); t = t.Add(fillMissing.Interval) {
+			missingT = append(missingT, t)
+		}
+
+		if len(missingT) == 0 {
+			continue
+		}
+
+		for missingTimestampIdx := 0; missingTimestampIdx < len(missingT); missingTimestampIdx++ {
+			vals := make([]interface{}, 0)
+			for fieldIdx := 0; fieldIdx < len(f.Fields); fieldIdx++ {
+				isValueField := false
+				var newVal interface{}
+				if fieldIdx == tsSchema.TimeIndex {
+					newVal = missingT[missingTimestampIdx]
+				} else {
+					for _, idx := range tsSchema.ValueIndices {
+						if fieldIdx == idx {
+							isValueField = true
+						}
+					}
+
+					if isValueField {
+						switch fillMissing.Mode {
+						case FILL_MODE_NULL:
+							//newVal = nil
+						case FILL_MODE_PREVIOUS:
+							newVal = f.At(fieldIdx, i+bookmark) // the previous value
+						case FILL_MODE_VALUE:
+							newVal = valueToType(fillMissing.Value.Float64, f.Fields[fieldIdx].Type())
+						}
+					} else {
+						newVal = f.At(fieldIdx, i+bookmark) // the previous value
+					}
+				}
+				vals = append(vals, newVal)
+			}
+			f.InsertRowAt(i+bookmark+missingTimestampIdx+1, vals)
+		}
+		bookmark = len(missingT)
+	}
+	return nil
 }
 
 // LongToWide converts a Long formated time series Frame to a Wide format (see TimeSeriesType for descriptions).

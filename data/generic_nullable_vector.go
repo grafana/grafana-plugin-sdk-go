@@ -10,7 +10,17 @@ func newNullablegenVector(n int) *nullablegenVector {
 }
 
 func (v *nullablegenVector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*gen)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case gen:
+		val := i.(gen)
+		(*v)[idx] = &val
+	case *gen:
+		(*v)[idx] = i.(*gen)
+	}
 }
 
 func (v *nullablegenVector) Append(i interface{}) {
@@ -59,4 +69,17 @@ func (v *nullablegenVector) Type() FieldType {
 
 func (v *nullablegenVector) Extend(i int) {
 	(*v) = append((*v), make([]*gen, i)...)
+}
+
+func (v *nullablegenVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
 }

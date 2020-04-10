@@ -43,6 +43,13 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 	}
 }
 
+// InsertAt adds values in the field vector (identyfied by fieldIdx) at the index specified by vectorIdx
+func (f *Frame) InsertRowAt(vectorIdx int, vals []interface{}) {
+	for i, v := range vals {
+		f.Fields[i].vector.InsertAt(vectorIdx, v)
+	}
+}
+
 // RowCopy returns an interface slice that contains the values of each Field for the given rowIdx.
 func (f *Frame) RowCopy(rowIdx int) []interface{} {
 	vals := make([]interface{}, len(f.Fields))

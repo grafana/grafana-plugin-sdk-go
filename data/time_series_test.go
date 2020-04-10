@@ -7,6 +7,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana/pkg/components/null"
 	"github.com/stretchr/testify/require"
 )
 
@@ -811,5 +812,784 @@ func TestFloatAt(t *testing.T) {
 
 	if diff := cmp.Diff(expectedFloatFrame, floatFrame, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestFillMissing(t *testing.T) {
+	tests := []struct {
+		name        string
+		fillMissing data.FillMissing
+		frame       *data.Frame
+		expected    *data.Frame
+		Err         require.ErrorAssertionFunc
+	}{
+		{
+			name: "Long frame; fill previous",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_PREVIOUS,
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("long_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC),
+				}),
+				data.NewField("Values Floats", nil, []float64{
+					1.0,
+					3.0,
+					2.0,
+				}),
+				data.NewField("Values Int64", nil, []int64{
+					1,
+					3,
+					4,
+				}),
+				data.NewField("Animal Factor", nil, []string{
+					"cat",
+					"sloth",
+					"cat",
+				})),
+			expected: data.NewFrame("long_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC),
+				}),
+				data.NewField("Values Floats", nil, []float64{
+					1.0,
+					1.0,
+					1.0,
+					1.0,
+					3.0,
+					3.0,
+					2.0,
+				}),
+				data.NewField("Values Int64", nil, []int64{
+					1,
+					1,
+					1,
+					1,
+					3,
+					3,
+					4,
+				}),
+				data.NewField("Animal Factor", nil, []string{
+					"cat",
+					"cat",
+					"cat",
+					"cat",
+					"sloth",
+					"sloth",
+					"cat",
+				})),
+			Err: require.NoError,
+		},
+		{
+			name: "Long frame; fill value",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_VALUE,
+				Value:    null.NewFloat(-1, true),
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("long_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC),
+				}),
+				data.NewField("Values Floats", nil, []float64{
+					1.0,
+					3.0,
+					2.0,
+				}),
+				data.NewField("Values Int64", nil, []int64{
+					1,
+					3,
+					4,
+				}),
+				data.NewField("Animal Factor", nil, []string{
+					"cat",
+					"sloth",
+					"cat",
+				})),
+			expected: data.NewFrame("long_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC),
+				}),
+				data.NewField("Values Floats", nil, []float64{
+					1.0,
+					-1.0,
+					-1.0,
+					-1.0,
+					3.0,
+					-1.0,
+					2.0,
+				}),
+				data.NewField("Values Int64", nil, []int64{
+					1,
+					-1,
+					-1,
+					-1,
+					3,
+					-1,
+					4,
+				}),
+				data.NewField("Animal Factor", nil, []string{
+					"cat",
+					"cat",
+					"cat",
+					"cat",
+					"sloth",
+					"sloth",
+					"cat",
+				})),
+			Err: require.NoError,
+		}, {
+			name: "Wide frame; fill previous",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_PREVIOUS,
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []float64{
+					1.0,
+					3.0,
+					2.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []int64{
+					1,
+					3,
+					4,
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []float64{
+					2.0,
+					4.0,
+					5.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []int64{
+					2,
+					4,
+					3,
+				})),
+			expected: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []float64{
+					1.0,
+					1.0,
+					1.0,
+					1.0,
+					3.0,
+					3.0,
+					2.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []int64{
+					1,
+					1,
+					1,
+					1,
+					3,
+					3,
+					4,
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []float64{
+					2.0,
+					2.0,
+					2.0,
+					2.0,
+					4.0,
+					4.0,
+					5.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []int64{
+					2,
+					2,
+					2,
+					2,
+					4,
+					4,
+					3,
+				})),
+			Err: require.NoError,
+		}, {
+			name: "Wide frame; fill value",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_VALUE,
+				Value:    null.NewFloat(-1, true),
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []float64{
+					1.0,
+					3.0,
+					2.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []int64{
+					1,
+					3,
+					4,
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []float64{
+					2.0,
+					4.0,
+					5.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []int64{
+					2,
+					4,
+					3,
+				})),
+			expected: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []float64{
+					1.0,
+					-1.0,
+					-1.0,
+					-1.0,
+					3.0,
+					-1.0,
+					2.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []int64{
+					1,
+					-1,
+					-1,
+					-1,
+					3,
+					-1,
+					4,
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []float64{
+					2.0,
+					-1.0,
+					-1.0,
+					-1.0,
+					4.0,
+					-1.0,
+					5.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []int64{
+					2,
+					-1,
+					-1,
+					-1,
+					4,
+					-1,
+					3,
+				})),
+			Err: require.NoError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.frame.FillMissing(tt.fillMissing)
+			tt.Err(t, err)
+			if diff := cmp.Diff(tt.frame, tt.expected, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+func TestFillMissingNullable(t *testing.T) {
+	tests := []struct {
+		name        string
+		fillMissing data.FillMissing
+		frame       *data.Frame
+		result      *data.Frame
+		Err         require.ErrorAssertionFunc
+	}{
+		{
+			name: "Long frame; fill null",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_NULL,
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("long_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField("Values Floats", nil, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField("Values Int64", nil, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(4),
+				}),
+				data.NewField("Animal Factor", nil, []*string{
+					stringPtr("cat"),
+					stringPtr("sloth"),
+					stringPtr("cat"),
+				})),
+			result: data.NewFrame("long_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField("Values Floats", nil, []*float64{
+					float64Ptr(1.0),
+					nil,
+					nil,
+					nil,
+					float64Ptr(3.0),
+					nil,
+					float64Ptr(2.0),
+				}),
+				data.NewField("Values Int64", nil, []*int64{
+					int64Ptr(1),
+					nil,
+					nil,
+					nil,
+					int64Ptr(3),
+					nil,
+					int64Ptr(4),
+				}),
+				data.NewField("Animal Factor", nil, []*string{
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("sloth"),
+					stringPtr("sloth"),
+					stringPtr("cat"),
+				})),
+			Err: require.NoError,
+		},
+		{
+			name: "Long frame; fill previous",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_PREVIOUS,
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("long_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField("Values Floats", nil, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField("Values Int64", nil, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(4),
+				}),
+				data.NewField("Animal Factor", nil, []*string{
+					stringPtr("cat"),
+					stringPtr("sloth"),
+					stringPtr("cat"),
+				})),
+			result: data.NewFrame("long_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField("Values Floats", nil, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(1.0),
+					float64Ptr(1.0),
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					float64Ptr(3.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField("Values Int64", nil, []*int64{
+					int64Ptr(1),
+					int64Ptr(1),
+					int64Ptr(1),
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(3),
+					int64Ptr(4),
+				}),
+				data.NewField("Animal Factor", nil, []*string{
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("sloth"),
+					stringPtr("sloth"),
+					stringPtr("cat"),
+				})),
+			Err: require.NoError,
+		}, {
+			name: "Long frame; fill value",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_VALUE,
+				Value:    null.NewFloat(-1, true),
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("long_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField("Values Floats", nil, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField("Values Int64", nil, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(4),
+				}),
+				data.NewField("Animal Factor", nil, []*string{
+					stringPtr("cat"),
+					stringPtr("sloth"),
+					stringPtr("cat"),
+				})),
+			result: data.NewFrame("long_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField("Values Floats", nil, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(-1.0),
+					float64Ptr(-1.0),
+					float64Ptr(-1.0),
+					float64Ptr(3.0),
+					float64Ptr(-1.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField("Values Int64", nil, []*int64{
+					int64Ptr(1),
+					int64Ptr(-1),
+					int64Ptr(-1),
+					int64Ptr(-1),
+					int64Ptr(3),
+					int64Ptr(-1),
+					int64Ptr(4),
+				}),
+				data.NewField("Animal Factor", nil, []*string{
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("cat"),
+					stringPtr("sloth"),
+					stringPtr("sloth"),
+					stringPtr("cat"),
+				})),
+			Err: require.NoError,
+		}, {
+			name: "Wide frame; fill null",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_NULL,
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(4),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []*float64{
+					float64Ptr(2.0),
+					float64Ptr(4.0),
+					float64Ptr(5.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(4),
+					int64Ptr(3),
+				})),
+			result: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []*float64{
+					float64Ptr(1.0),
+					nil,
+					nil,
+					nil,
+					float64Ptr(3.0),
+					nil,
+					float64Ptr(2.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []*int64{
+					int64Ptr(1),
+					nil,
+					nil,
+					nil,
+					int64Ptr(3),
+					nil,
+					int64Ptr(4),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []*float64{
+					float64Ptr(2.0),
+					nil,
+					nil,
+					nil,
+					float64Ptr(4.0),
+					nil,
+					float64Ptr(5.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []*int64{
+					int64Ptr(2),
+					nil,
+					nil,
+					nil,
+					int64Ptr(4),
+					nil,
+					int64Ptr(3),
+				})),
+			Err: require.NoError,
+		}, {
+			name: "Wide frame; fill previous",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_PREVIOUS,
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(4),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []*float64{
+					float64Ptr(2.0),
+					float64Ptr(4.0),
+					float64Ptr(5.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(4),
+					int64Ptr(3),
+				})),
+			result: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(1.0),
+					float64Ptr(1.0),
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					float64Ptr(3.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(1),
+					int64Ptr(1),
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(3),
+					int64Ptr(4),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []*float64{
+					float64Ptr(2.0),
+					float64Ptr(2.0),
+					float64Ptr(2.0),
+					float64Ptr(2.0),
+					float64Ptr(4.0),
+					float64Ptr(4.0),
+					float64Ptr(5.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(2),
+					int64Ptr(2),
+					int64Ptr(2),
+					int64Ptr(4),
+					int64Ptr(4),
+					int64Ptr(3),
+				})),
+			Err: require.NoError,
+		}, {
+			name: "Wide frame; fill value",
+			fillMissing: data.FillMissing{
+				Enabled:  true,
+				Mode:     data.FILL_MODE_VALUE,
+				Value:    null.NewFloat(-1, true),
+				Interval: 5 * time.Second,
+			},
+			frame: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(3.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(4),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []*float64{
+					float64Ptr(2.0),
+					float64Ptr(4.0),
+					float64Ptr(5.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(4),
+					int64Ptr(3),
+				})),
+			result: data.NewFrame("wide_test",
+				data.NewField("Time", nil, []*time.Time{
+					timePtr(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 10, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 15, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 25, 0, time.UTC)),
+					timePtr(time.Date(2020, 1, 2, 3, 4, 29, 0, time.UTC)),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "cat"}, []*float64{
+					float64Ptr(1.0),
+					float64Ptr(-1.0),
+					float64Ptr(-1.0),
+					float64Ptr(-1.0),
+					float64Ptr(3.0),
+					float64Ptr(-1.0),
+					float64Ptr(2.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(-1),
+					int64Ptr(-1),
+					int64Ptr(-1),
+					int64Ptr(3),
+					int64Ptr(-1),
+					int64Ptr(4),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []*float64{
+					float64Ptr(2.0),
+					float64Ptr(-1.0),
+					float64Ptr(-1.0),
+					float64Ptr(-1.0),
+					float64Ptr(4.0),
+					float64Ptr(-1.0),
+					float64Ptr(5.0),
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(-1),
+					int64Ptr(-1),
+					int64Ptr(-1),
+					int64Ptr(4),
+					int64Ptr(-1),
+					int64Ptr(3),
+				})),
+			Err: require.NoError,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.frame.FillMissing(tt.fillMissing)
+			tt.Err(t, err)
+			if diff := cmp.Diff(tt.frame, tt.result, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+		})
 	}
 }

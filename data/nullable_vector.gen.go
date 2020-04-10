@@ -16,7 +16,17 @@ func newNullableUint8Vector(n int) *nullableUint8Vector {
 }
 
 func (v *nullableUint8Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*uint8)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case uint8:
+		val := i.(uint8)
+		(*v)[idx] = &val
+	case *uint8:
+		(*v)[idx] = i.(*uint8)
+	}
 }
 
 func (v *nullableUint8Vector) Append(i interface{}) {
@@ -67,6 +77,19 @@ func (v *nullableUint8Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint8, i)...)
 }
 
+func (v *nullableUint8Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Uint16erate uint16ny -in=$GOFILE -out=nullable_vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableUint16Vector []*uint16
@@ -77,7 +100,17 @@ func newNullableUint16Vector(n int) *nullableUint16Vector {
 }
 
 func (v *nullableUint16Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*uint16)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case uint16:
+		val := i.(uint16)
+		(*v)[idx] = &val
+	case *uint16:
+		(*v)[idx] = i.(*uint16)
+	}
 }
 
 func (v *nullableUint16Vector) Append(i interface{}) {
@@ -128,6 +161,19 @@ func (v *nullableUint16Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint16, i)...)
 }
 
+func (v *nullableUint16Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Uint32erate uint32ny -in=$GOFILE -out=nullable_vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableUint32Vector []*uint32
@@ -138,7 +184,17 @@ func newNullableUint32Vector(n int) *nullableUint32Vector {
 }
 
 func (v *nullableUint32Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*uint32)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case uint32:
+		val := i.(uint32)
+		(*v)[idx] = &val
+	case *uint32:
+		(*v)[idx] = i.(*uint32)
+	}
 }
 
 func (v *nullableUint32Vector) Append(i interface{}) {
@@ -189,6 +245,19 @@ func (v *nullableUint32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint32, i)...)
 }
 
+func (v *nullableUint32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Uint64erate uint64ny -in=$GOFILE -out=nullable_vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableUint64Vector []*uint64
@@ -199,7 +268,17 @@ func newNullableUint64Vector(n int) *nullableUint64Vector {
 }
 
 func (v *nullableUint64Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*uint64)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case uint64:
+		val := i.(uint64)
+		(*v)[idx] = &val
+	case *uint64:
+		(*v)[idx] = i.(*uint64)
+	}
 }
 
 func (v *nullableUint64Vector) Append(i interface{}) {
@@ -250,6 +329,19 @@ func (v *nullableUint64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint64, i)...)
 }
 
+func (v *nullableUint64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Int8erate int8ny -in=$GOFILE -out=nullable_vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableInt8Vector []*int8
@@ -260,7 +352,17 @@ func newNullableInt8Vector(n int) *nullableInt8Vector {
 }
 
 func (v *nullableInt8Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*int8)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case int8:
+		val := i.(int8)
+		(*v)[idx] = &val
+	case *int8:
+		(*v)[idx] = i.(*int8)
+	}
 }
 
 func (v *nullableInt8Vector) Append(i interface{}) {
@@ -311,6 +413,19 @@ func (v *nullableInt8Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int8, i)...)
 }
 
+func (v *nullableInt8Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Int16erate int16ny -in=$GOFILE -out=nullable_vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableInt16Vector []*int16
@@ -321,7 +436,17 @@ func newNullableInt16Vector(n int) *nullableInt16Vector {
 }
 
 func (v *nullableInt16Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*int16)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case int16:
+		val := i.(int16)
+		(*v)[idx] = &val
+	case *int16:
+		(*v)[idx] = i.(*int16)
+	}
 }
 
 func (v *nullableInt16Vector) Append(i interface{}) {
@@ -372,6 +497,19 @@ func (v *nullableInt16Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int16, i)...)
 }
 
+func (v *nullableInt16Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Int32erate int32ny -in=$GOFILE -out=nullable_vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableInt32Vector []*int32
@@ -382,7 +520,17 @@ func newNullableInt32Vector(n int) *nullableInt32Vector {
 }
 
 func (v *nullableInt32Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*int32)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case int32:
+		val := i.(int32)
+		(*v)[idx] = &val
+	case *int32:
+		(*v)[idx] = i.(*int32)
+	}
 }
 
 func (v *nullableInt32Vector) Append(i interface{}) {
@@ -433,6 +581,19 @@ func (v *nullableInt32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int32, i)...)
 }
 
+func (v *nullableInt32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Int64erate int64ny -in=$GOFILE -out=nullable_vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableInt64Vector []*int64
@@ -443,7 +604,17 @@ func newNullableInt64Vector(n int) *nullableInt64Vector {
 }
 
 func (v *nullableInt64Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*int64)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case int64:
+		val := i.(int64)
+		(*v)[idx] = &val
+	case *int64:
+		(*v)[idx] = i.(*int64)
+	}
 }
 
 func (v *nullableInt64Vector) Append(i interface{}) {
@@ -494,6 +665,19 @@ func (v *nullableInt64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int64, i)...)
 }
 
+func (v *nullableInt64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Float32erate float32ny -in=$GOFILE -out=nullable_vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableFloat32Vector []*float32
@@ -504,7 +688,17 @@ func newNullableFloat32Vector(n int) *nullableFloat32Vector {
 }
 
 func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*float32)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case float32:
+		val := i.(float32)
+		(*v)[idx] = &val
+	case *float32:
+		(*v)[idx] = i.(*float32)
+	}
 }
 
 func (v *nullableFloat32Vector) Append(i interface{}) {
@@ -555,6 +749,19 @@ func (v *nullableFloat32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*float32, i)...)
 }
 
+func (v *nullableFloat32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Float64erate float64ny -in=$GOFILE -out=nullable_vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableFloat64Vector []*float64
@@ -565,7 +772,17 @@ func newNullableFloat64Vector(n int) *nullableFloat64Vector {
 }
 
 func (v *nullableFloat64Vector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*float64)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case float64:
+		val := i.(float64)
+		(*v)[idx] = &val
+	case *float64:
+		(*v)[idx] = i.(*float64)
+	}
 }
 
 func (v *nullableFloat64Vector) Append(i interface{}) {
@@ -616,6 +833,19 @@ func (v *nullableFloat64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*float64, i)...)
 }
 
+func (v *nullableFloat64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Stringerate stringny -in=$GOFILE -out=nullable_vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableStringVector []*string
@@ -626,7 +856,17 @@ func newNullableStringVector(n int) *nullableStringVector {
 }
 
 func (v *nullableStringVector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*string)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case string:
+		val := i.(string)
+		(*v)[idx] = &val
+	case *string:
+		(*v)[idx] = i.(*string)
+	}
 }
 
 func (v *nullableStringVector) Append(i interface{}) {
@@ -677,6 +917,19 @@ func (v *nullableStringVector) Extend(i int) {
 	(*v) = append((*v), make([]*string, i)...)
 }
 
+func (v *nullableStringVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Boolerate boolny -in=$GOFILE -out=nullable_vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableBoolVector []*bool
@@ -687,7 +940,17 @@ func newNullableBoolVector(n int) *nullableBoolVector {
 }
 
 func (v *nullableBoolVector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*bool)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case bool:
+		val := i.(bool)
+		(*v)[idx] = &val
+	case *bool:
+		(*v)[idx] = i.(*bool)
+	}
 }
 
 func (v *nullableBoolVector) Append(i interface{}) {
@@ -738,6 +1001,19 @@ func (v *nullableBoolVector) Extend(i int) {
 	(*v) = append((*v), make([]*bool, i)...)
 }
 
+func (v *nullableBoolVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:TimeTimeerate timeTimeny -in=$GOFILE -out=nullable_vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableTimeTimeVector []*time.Time
@@ -748,7 +1024,17 @@ func newNullableTimeTimeVector(n int) *nullableTimeTimeVector {
 }
 
 func (v *nullableTimeTimeVector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*time.Time)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case time.Time:
+		val := i.(time.Time)
+		(*v)[idx] = &val
+	case *time.Time:
+		(*v)[idx] = i.(*time.Time)
+	}
 }
 
 func (v *nullableTimeTimeVector) Append(i interface{}) {
@@ -797,4 +1083,17 @@ func (v *nullableTimeTimeVector) Type() FieldType {
 
 func (v *nullableTimeTimeVector) Extend(i int) {
 	(*v) = append((*v), make([]*time.Time, i)...)
+}
+
+func (v *nullableTimeTimeVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
 }

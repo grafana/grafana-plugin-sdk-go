@@ -53,6 +53,19 @@ func (v *uint8Vector) Extend(i int) {
 	(*v) = append((*v), make([]uint8, i)...)
 }
 
+func (v *uint8Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Uint16erate uint16ny -in=$GOFILE -out=vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type uint16Vector []uint16
@@ -98,6 +111,19 @@ func (v *uint16Vector) Type() FieldType {
 
 func (v *uint16Vector) Extend(i int) {
 	(*v) = append((*v), make([]uint16, i)...)
+}
+
+func (v *uint16Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
 }
 
 //go:Uint32erate uint32ny -in=$GOFILE -out=vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -147,6 +173,19 @@ func (v *uint32Vector) Extend(i int) {
 	(*v) = append((*v), make([]uint32, i)...)
 }
 
+func (v *uint32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Uint64erate uint64ny -in=$GOFILE -out=vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type uint64Vector []uint64
@@ -192,6 +231,19 @@ func (v *uint64Vector) Type() FieldType {
 
 func (v *uint64Vector) Extend(i int) {
 	(*v) = append((*v), make([]uint64, i)...)
+}
+
+func (v *uint64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
 }
 
 //go:Int8erate int8ny -in=$GOFILE -out=vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -241,6 +293,19 @@ func (v *int8Vector) Extend(i int) {
 	(*v) = append((*v), make([]int8, i)...)
 }
 
+func (v *int8Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Int16erate int16ny -in=$GOFILE -out=vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type int16Vector []int16
@@ -286,6 +351,19 @@ func (v *int16Vector) Type() FieldType {
 
 func (v *int16Vector) Extend(i int) {
 	(*v) = append((*v), make([]int16, i)...)
+}
+
+func (v *int16Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
 }
 
 //go:Int32erate int32ny -in=$GOFILE -out=vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -335,6 +413,19 @@ func (v *int32Vector) Extend(i int) {
 	(*v) = append((*v), make([]int32, i)...)
 }
 
+func (v *int32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Int64erate int64ny -in=$GOFILE -out=vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type int64Vector []int64
@@ -380,6 +471,19 @@ func (v *int64Vector) Type() FieldType {
 
 func (v *int64Vector) Extend(i int) {
 	(*v) = append((*v), make([]int64, i)...)
+}
+
+func (v *int64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
 }
 
 //go:Float32erate float32ny -in=$GOFILE -out=vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -429,6 +533,19 @@ func (v *float32Vector) Extend(i int) {
 	(*v) = append((*v), make([]float32, i)...)
 }
 
+func (v *float32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Float64erate float64ny -in=$GOFILE -out=vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type float64Vector []float64
@@ -474,6 +591,19 @@ func (v *float64Vector) Type() FieldType {
 
 func (v *float64Vector) Extend(i int) {
 	(*v) = append((*v), make([]float64, i)...)
+}
+
+func (v *float64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
 }
 
 //go:Stringerate stringny -in=$GOFILE -out=vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -523,6 +653,19 @@ func (v *stringVector) Extend(i int) {
 	(*v) = append((*v), make([]string, i)...)
 }
 
+func (v *stringVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:Boolerate boolny -in=$GOFILE -out=vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type boolVector []bool
@@ -570,6 +713,19 @@ func (v *boolVector) Extend(i int) {
 	(*v) = append((*v), make([]bool, i)...)
 }
 
+func (v *boolVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
+}
+
 //go:TimeTimeerate timeTimeny -in=$GOFILE -out=vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type timeTimeVector []time.Time
@@ -615,4 +771,17 @@ func (v *timeTimeVector) Type() FieldType {
 
 func (v *timeTimeVector) Extend(i int) {
 	(*v) = append((*v), make([]time.Time, i)...)
+}
+
+func (v *timeTimeVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		for j := v.Len() - 1; j > i; j-- {
+			previousVal, _ := v.ConcreteAt(j - 1)
+			v.Set(j, previousVal)
+		}
+		v.Set(i, val)
+	}
 }
