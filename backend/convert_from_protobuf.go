@@ -97,14 +97,14 @@ func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		if err != nil {
 			return nil, err
 		}
-		dr := DataResponse{
+		qr := QueryResponse{
 			Frames: frames,
 			Meta:   res.JsonMeta,
 		}
 		if res.Error != "" {
-			dr.Error = errors.New(res.Error)
+			qr.Error = errors.New(res.Error)
 		}
-		qdr.Responses[rIdx] = &dr
+		qdr.Responses[rIdx] = &qr
 	}
 	return &qdr, nil
 }
