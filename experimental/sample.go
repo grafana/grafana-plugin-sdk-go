@@ -13,8 +13,8 @@ import (
 // MyHost singelton host service
 type MyHost struct{}
 
-// CheckPluginHealth check if the plugin host is running
-func (ds *MyDataSourceInstance) CheckPluginHealth(config backend.PluginConfig) backend.CheckHealthResult {
+// CheckHostHealth check if the plugin host is running
+func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) backend.CheckHealthResult {
 	return backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
 		Message: "Plugin is running",
@@ -22,15 +22,15 @@ func (ds *MyDataSourceInstance) CheckPluginHealth(config backend.PluginConfig) b
 }
 
 // NewDataSourceInstance Create a new datasource instance
-func (ds *MyDataSourceInstance) NewDataSourceInstance(config backend.PluginConfig) (*DataSourceInstance, error) {
-	settings := myDataSourceConfig{
+func (ds *MyHost) NewDataSourceInstance(config backend.PluginConfig) (*DataSourceInstance, error) {
+	settings := myDataSourceSettings{
 		url: config.DataSourceConfig.URL,
 	}
 
 	return &MyDataSourceInstance{
-		config: settings,
-		cache:  "TODO",
-		client: "TODO",
+		settings: settings,
+		cache:    "TODO",
+		client:   "TODO",
 	}, nil
 }
 
@@ -38,16 +38,16 @@ func (ds *MyDataSourceInstance) NewDataSourceInstance(config backend.PluginConfi
 // DATA SOURCE
 //----------------------------------------------------------------------------------
 
-type myDataSourceConfig struct {
+type myDataSourceSettings struct {
 	url  string
 	port int32
 }
 
 // MyDataSourceInstance implements backend.DataSourceInstance
 type MyDataSourceInstance struct {
-	config myDataSourceConfig
-	cache  interface{} // for example
-	client interface{} // for example
+	settings myDataSourceSettings
+	cache    interface{} // for example
+	client   interface{} // for example
 }
 
 // CheckHealth will check the currently configured settings
@@ -71,14 +71,16 @@ func (ds *MyDataSourceInstance) QueryData(req *backend.QueryDataRequest) (*backe
 
 // CallResource HTTP style reqource
 func (ds *MyDataSourceInstance) CallResource(req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	sender.Send(&backend.CallResourceResponse{
-		Status: 200,
-		Headers: map[string][]string{
-			"content-type": {"text/plain"},
-		},
-		Body: []byte("hello world"),
-	})
-	return nil
+
+	if req.Path == "hello" {
+		return SendJSON(sender, map[string]interface{}{"hello": "world"})
+	}
+
+	if req.Path == "text" {
+		return SendPlainText(sender, "hello world")
+	}
+
+	return fmt.Errorf("unknown resource")
 }
 
 // Destroy destroy an instance (if necessary)

@@ -6,8 +6,8 @@ import (
 
 // PluginSingleton is a singleton instance
 type PluginSingleton interface {
-	// CheckHealth for the plugin executable
-	CheckPluginHealth(config backend.PluginConfig) backend.CheckHealthResult
+	// CheckHostHealth for the plugin executable
+	CheckHostHealth(config backend.PluginConfig) backend.CheckHealthResult
 
 	// request for a new datasource
 	NewDataSourceInstance(config backend.PluginConfig) (*DataSourceInstance, error)
@@ -24,5 +24,5 @@ type DataSourceInstance interface {
 	CallResource(req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error
 
 	// Destroy lets you clean up any instance variables when the settings change
-	Destroy() bool
+	Destroy()
 }
