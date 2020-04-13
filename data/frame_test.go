@@ -349,16 +349,6 @@ Dimensions: 3 Fields by 3 Rows
 
 }
 
-func TestFrameWarnings(t *testing.T) {
-	df := data.NewFrame("warning_test")
-	df.AppendWarning("details1", "message1")
-	df.AppendWarning("details2", "message2")
-
-	if len(df.Warnings) != 2 {
-		t.Fatal("expected two warnings to be appended")
-	}
-}
-
 func TestAppendRowSafe(t *testing.T) {
 	tests := []struct {
 		name          string
