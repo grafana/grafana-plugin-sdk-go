@@ -28,9 +28,18 @@ func FrameMetaFromJSON(jsonStr string) (*FrameMeta, error) {
 	return &m, nil
 }
 
+// AddNotices adds notices to Frame f's metadata (Frame.Meta.Notices).
+// If f has no metadata, this method will initialize it before adding notices.
+func (f *Frame) AddNotices(notices ...Notice) {
+	if f.Meta == nil {
+		f.Meta = &FrameMeta{}
+	}
+	f.Meta.Notices = append(f.Meta.Notices, notices...)
+}
+
 // Notice provides a structure for presenting notifications in Grafana's user interface.
 type Notice struct {
-	// Severity is the severity level of the notice: Info, Warning, Error.
+	// Severity is the severity level of the notice: info, warning, or error.
 	Severity NoticeSeverity `json:"severity,omitempty"`
 
 	// Text is freeform descriptive text for the notice.
@@ -41,7 +50,7 @@ type Notice struct {
 	Link string `json:"link,omitempty"`
 
 	// Inspect is an optional suggestion for which tab to display in the panel inspector
-	// in Grafana's User interface (meta/error/data/stats).
+	// in Grafana's User interface. Can be meta, error, data, or stats.
 	Inspect InspectType `json:"inspect,omitempty"`
 }
 
