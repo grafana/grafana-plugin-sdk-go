@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"sync"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -23,15 +24,18 @@ type instanceInfo struct {
 	config backend.PluginConfig
 
 	// the Specific instance
-	instance *DataSourceInstance
+	instance DataSourceInstance
+
+	// The last time it was used
+	last time.Time
 }
 
-func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (*DataSourceInstance, error) {
+func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
 	if config.DataSourceConfig == nil {
 		return nil, nil
 	}
 	updated := config.Updated.UnixNano() + config.DataSourceConfig.Updated.UnixNano()
-	key := fmt.Sprintf("%s/%d", config.OrgID, config.DataSourceConfig.ID)
+	key := fmt.Sprintf("%d/%d", config.OrgID, config.DataSourceConfig.ID)
 
 	p.RLock()
 	defer p.RUnlock()
@@ -41,7 +45,7 @@ func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (*Data
 	// Check if we need to create a new instance
 	if !ok || updated != info.updated {
 		if ok {
-			&info.instance.Destroy()
+			info.instance.Destroy()
 		}
 
 		// Create a new one
@@ -59,6 +63,7 @@ func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (*Data
 		// Set the instance for the key
 		p.instances[key] = info
 	}
+	info.last = time.Now()
 	return info.instance, nil
 }
 
@@ -78,7 +83,7 @@ func (p *PluginHelper) CheckHealth(ctx context.Context, req *backend.CheckHealth
 	}
 
 	// finally, try the plugin host itself
-	return host.CheckPluginHealth(req.PluginConfig)
+	return p.host.CheckHostHealth(req.PluginConfig), nil
 }
 
 // QueryData queries for data.

@@ -14,15 +14,15 @@ import (
 type MyHost struct{}
 
 // CheckHostHealth check if the plugin host is running
-func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) backend.CheckHealthResult {
-	return backend.CheckHealthResult{
+func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) *backend.CheckHealthResult {
+	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
 		Message: "Plugin is running",
 	}
 }
 
 // NewDataSourceInstance Create a new datasource instance
-func (ds *MyHost) NewDataSourceInstance(config backend.PluginConfig) (*DataSourceInstance, error) {
+func (ds *MyHost) NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
 	settings := myDataSourceSettings{
 		url: config.DataSourceConfig.URL,
 	}
@@ -51,14 +51,14 @@ type MyDataSourceInstance struct {
 }
 
 // CheckHealth will check the currently configured settings
-func (ds *MyDataSourceInstance) CheckHealth() backend.CheckHealthResult {
-	if len(ds.config.url) < 2 {
-		return backend.CheckHealthResult{
+func (ds *MyDataSourceInstance) CheckHealth() *backend.CheckHealthResult {
+	if len(ds.settings.url) < 2 {
+		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
 			Message: "invalid URL",
 		}
 	}
-	return backend.CheckHealthResult{
+	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
 		Message: "Datasource is setup properly",
 	}
@@ -84,7 +84,6 @@ func (ds *MyDataSourceInstance) CallResource(req *backend.CallResourceRequest, s
 }
 
 // Destroy destroy an instance (if necessary)
-func (ds *MyDataSourceInstance) Destroy() bool {
+func (ds *MyDataSourceInstance) Destroy() {
 	// TODO... can destroy
-	return true
 }

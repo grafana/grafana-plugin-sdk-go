@@ -7,15 +7,15 @@ import (
 // PluginSingleton is a singleton instance
 type PluginSingleton interface {
 	// CheckHostHealth for the plugin executable
-	CheckHostHealth(config backend.PluginConfig) backend.CheckHealthResult
+	CheckHostHealth(config backend.PluginConfig) *backend.CheckHealthResult
 
 	// request for a new datasource
-	NewDataSourceInstance(config backend.PluginConfig) (*DataSourceInstance, error)
+	NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error)
 }
 
 // DataSourceInstance will get created for each org/id and then regenerated when the lastModified times change
 type DataSourceInstance interface {
-	CheckHealth() backend.CheckHealthResult
+	CheckHealth() *backend.CheckHealthResult
 
 	// If the request does not need access to the headers or user, use this request
 	QueryData(req *backend.QueryDataRequest) (*backend.QueryDataResponse, error)
