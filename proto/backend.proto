@@ -60,6 +60,10 @@ message StringList {
 
 message CallResourceRequest {
   AppConfig config = 1;
+  ResourceRequest resource = 2;
+}
+
+message ResourceRequest {
   User user = 2;
   string path = 3;
   string method = 4;
@@ -97,7 +101,10 @@ message DataQuery {
   bytes json = 5;
 }
 
-message CallDatasourceResourceRequest {}
+message CallDatasourceResourceRequest {
+  DatasourceConfig config = 1;
+  ResourceRequest resource = 2;
+}
 
 message CheckDatasourceHealthRequest {
   DataSourceConfig config = 1;
@@ -141,7 +148,10 @@ service AlertNotifier {
   rpc CallResource(CallAlertNotifierResourceRequest) returns (stream CallResourceResponse);
 }
 
-message CallAlertNotifierResourceRequest {}
+message CallAlertNotifierResourceRequest {
+  AlertNotifierConfig config = 1;
+  ResourceRequest resource = 2;
+}
 
 message AlertNotifierConfig {}
 
@@ -165,7 +175,10 @@ service AnnotationStorage {
   rpc CallResource(CallAnnotationResourceRequest) returns (stream CallResourceResponse);
 }
 
-message CallAnnotationResourceRequest {}
+message CallAnnotationResourceRequest {
+  AnnotationConfig config = 1;
+  ResourceRequest resource = 2;
+}
 
 message AnnotationConfig {}
 
