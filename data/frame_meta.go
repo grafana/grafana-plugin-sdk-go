@@ -28,9 +28,9 @@ func FrameMetaFromJSON(jsonStr string) (*FrameMeta, error) {
 	return &m, nil
 }
 
-// AddNotices adds notices to Frame f's metadata (Frame.Meta.Notices).
+// AppendNotices adds notices to Frame f's metadata (Frame.Meta.Notices).
 // If f has no metadata, this method will initialize it before adding notices.
-func (f *Frame) AddNotices(notices ...Notice) {
+func (f *Frame) AppendNotices(notices ...Notice) {
 	if f.Meta == nil {
 		f.Meta = &FrameMeta{}
 	}
