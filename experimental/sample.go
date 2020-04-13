@@ -2,6 +2,7 @@ package experimental
 
 import (
 	"fmt"
+	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -35,7 +36,7 @@ func (ds *MyHost) NewDataSourceInstance(config backend.PluginConfig) (DataSource
 }
 
 //----------------------------------------------------------------------------------
-// DATA SOURCE
+// DATA SOURCE instance
 //----------------------------------------------------------------------------------
 
 type myDataSourceSettings struct {
@@ -85,5 +86,23 @@ func (ds *MyDataSourceInstance) CallResource(req *backend.CallResourceRequest, s
 
 // Destroy destroy an instance (if necessary)
 func (ds *MyDataSourceInstance) Destroy() {
-	// TODO... can destroy
+	// If necessary, destroy the object (typically not required)
+}
+
+//----------------------------------------------------------------------------------
+// SAMPLE MAIN
+//----------------------------------------------------------------------------------
+
+func mainXYZ() {
+	// Setup the plugin environment
+	backend.SetupPluginEnvironment("newrelic-datasource")
+
+	backend.Logger.Debug("Running NewRelic backend datasource")
+
+	host := NewPluginHelper(&MyHost{})
+	err := host.RunGRPCServer()
+	if err != nil {
+		backend.Logger.Error(err.Error())
+		os.Exit(1)
+	}
 }
