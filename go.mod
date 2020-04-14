@@ -13,9 +13,11 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/magefile/mage v1.9.0
 	github.com/mattetti/filebuffer v1.0.0
+	github.com/mgechev/revive v0.0.0-20191017201419-88015ccf8e97 // indirect
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/prometheus/client_golang v1.3.0
 	github.com/prometheus/common v0.7.0
+	github.com/securego/gosec v0.0.0-20191104154532-b4c76d4234af // indirect
 	github.com/stretchr/testify v1.4.0
 	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
 	golang.org/x/text v0.3.2 // indirect

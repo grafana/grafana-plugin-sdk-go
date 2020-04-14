@@ -25,7 +25,8 @@ func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) *backend.CheckHea
 // NewDataSourceInstance Create a new datasource instance
 func (ds *MyHost) NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
 	settings := myDataSourceSettings{
-		url: config.DataSourceConfig.URL,
+		url:  config.DataSourceConfig.URL,
+		port: 1234,
 	}
 
 	return &MyDataSourceInstance{
@@ -93,7 +94,7 @@ func (ds *MyDataSourceInstance) Destroy() {
 // SAMPLE MAIN
 //----------------------------------------------------------------------------------
 
-func mainXYZ() {
+func MainXYZ() {
 	// Setup the plugin environment
 	backend.SetupPluginEnvironment("newrelic-datasource")
 

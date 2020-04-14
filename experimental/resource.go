@@ -8,7 +8,7 @@ import (
 
 // SendPlainText returns a plain text snippit
 func SendPlainText(sender backend.CallResourceResponseSender, text string) error {
-	SendResourceResponse(
+	return SendResourceResponse(
 		sender,
 		200,
 		map[string][]string{
@@ -16,7 +16,6 @@ func SendPlainText(sender backend.CallResourceResponseSender, text string) error
 		},
 		[]byte(text),
 	)
-	return nil
 }
 
 // SendJSON returns a json object
@@ -25,8 +24,7 @@ func SendJSON(sender backend.CallResourceResponseSender, obj interface{}) error 
 	if err != nil {
 		return err
 	}
-
-	SendResourceResponse(
+	return SendResourceResponse(
 		sender,
 		200,
 		map[string][]string{
@@ -34,7 +32,6 @@ func SendJSON(sender backend.CallResourceResponseSender, obj interface{}) error 
 		},
 		body,
 	)
-	return nil
 }
 
 // SendResourceResponse returns a json object
@@ -44,10 +41,9 @@ func SendResourceResponse(
 	headers map[string][]string,
 	body []byte,
 ) error {
-	sender.Send(&backend.CallResourceResponse{
+	return sender.Send(&backend.CallResourceResponse{
 		Status:  status,
 		Headers: headers,
 		Body:    body,
 	})
-	return nil
 }
