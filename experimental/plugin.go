@@ -15,7 +15,7 @@ type PluginHost interface {
 
 // DataSourceInstance implements each of the supported requests.  Alternatively this could be a set
 // of interfaces that work for DataSource|AlertNotifier|etc|etc... with the support interrogated and
-// maintaind by the helper on startup
+// maintained by the helper on startup.
 type DataSourceInstance interface {
 	CheckHealth() *backend.CheckHealthResult
 
