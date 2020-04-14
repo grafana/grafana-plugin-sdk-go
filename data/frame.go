@@ -244,7 +244,7 @@ func (f *Frame) SafeFrame() (*SafeFrame, error) {
 	return (*SafeFrame)(f), nil
 }
 
-// FrameTestCompareOptions returns go-cmp testing options to allow testing of Frame equivelnce.
+// FrameTestCompareOptions returns go-cmp testing options to allow testing of Frame equivalence.
 // Since the data within a Frame's Fields is not exported, this function allows the unexported
 // values to be tested.
 // The intent is to only use this for testing.
