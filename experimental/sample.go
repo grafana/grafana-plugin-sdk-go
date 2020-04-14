@@ -14,8 +14,8 @@ import (
 // MyHost singelton host service
 type MyHost struct{}
 
-// CheckExeHealth returns a backend.CheckHealthResult.
-func (ds *MyHost) CheckExeHealth(config backend.PluginConfig) *backend.CheckHealthResult {
+// CheckHostHealth returns a backend.CheckHealthResult.
+func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) *backend.CheckHealthResult {
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
 		Message: "Plugin is running",
@@ -96,9 +96,9 @@ func (ds *MyDataSourceInstance) Destroy() {
 
 func MainXYZ() {
 	// Setup the plugin environment
-	backend.SetupPluginEnvironment("newrelic-datasource")
+	backend.SetupPluginEnvironment("my-datasource")
 
-	backend.Logger.Debug("Running NewRelic backend datasource")
+	backend.Logger.Debug("Running my backend datasource")
 
 	host := NewPluginHelper(&MyHost{})
 	err := host.RunGRPCServer()

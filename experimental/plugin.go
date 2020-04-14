@@ -4,10 +4,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// PluginExe is the singleton container for your plugin.
-type PluginExe interface {
+// PluginHost is the singleton container for your plugin.
+type PluginHost interface {
 	// CheckExeHealth corresponds to CheckHostHealth for the plugin executable.
-	CheckExeHealth(config backend.PluginConfig) *backend.CheckHealthResult
+	CheckHostHealth(config backend.PluginConfig) *backend.CheckHealthResult
 
 	// request for a new datasource
 	NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error)

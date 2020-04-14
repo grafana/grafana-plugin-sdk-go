@@ -14,13 +14,13 @@ type PluginHelper struct {
 	sync.RWMutex
 
 	instances map[string]instanceInfo
-	exe       PluginExe
+	host      PluginHost
 }
 
 // NewPluginHelper creates the datasource and sets up all the routes
-func NewPluginHelper(host PluginExe) *PluginHelper {
+func NewPluginHelper(host PluginHost) *PluginHelper {
 	return &PluginHelper{
-		exe:       host,
+		host:      host,
 		instances: make(map[string]instanceInfo),
 	}
 }
@@ -68,7 +68,7 @@ func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (DataS
 		}
 
 		// Create a new one
-		instance, err := p.exe.NewDataSourceInstance(config)
+		instance, err := p.host.NewDataSourceInstance(config)
 		if err != nil {
 			return nil, err
 		}
@@ -102,7 +102,7 @@ func (p *PluginHelper) CheckHealth(ctx context.Context, req *backend.CheckHealth
 	}
 
 	// Otherwise the host application
-	return p.exe.CheckExeHealth(req.PluginConfig), nil
+	return p.host.CheckHostHealth(req.PluginConfig), nil
 }
 
 // QueryData queries for data.
