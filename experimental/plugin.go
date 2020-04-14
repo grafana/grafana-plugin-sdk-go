@@ -13,7 +13,7 @@ type PluginHost interface {
 	NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error)
 }
 
-// DataSourceInstance implements each of the supported requests.  Alternativly this could be a set
+// DataSourceInstance implements each of the supported requests.  Alternatively this could be a set
 // of interfaces that work for DataSource|AlertNotifier|etc|etc... with the support interrogated and
 // maintaind by the helper on startup
 type DataSourceInstance interface {
