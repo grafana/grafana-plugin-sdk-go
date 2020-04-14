@@ -6,7 +6,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// SendPlainText returns a plain text snippit
+// SendPlainText sends a plain text snippet.
 func SendPlainText(sender backend.CallResourceResponseSender, text string) error {
 	return SendResourceResponse(
 		sender,
