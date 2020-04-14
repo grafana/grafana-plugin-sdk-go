@@ -6,7 +6,7 @@ import (
 
 // PluginExe is the singleton container for your plugin.
 type PluginExe interface {
-	// CheckHostHealth for the plugin executable
+	// CheckExeHealth corresponds to CheckHostHealth for the plugin executable.
 	CheckExeHealth(config backend.PluginConfig) *backend.CheckHealthResult
 
 	// request for a new datasource
