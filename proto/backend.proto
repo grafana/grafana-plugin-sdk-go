@@ -9,7 +9,7 @@ option go_package = ".;pluginv2";
 
 message DataSourceConfig {
   int64 id = 1;
-  int64 orgId;
+  int64 orgId = 1;
   string name = 2;
   string url = 3;
   string user = 4;
@@ -84,7 +84,7 @@ message CallResourceResponse {
 
 service Data {
   rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
-  rpc CheckDatasourceHealth(CheckDatasourceHealthRequest) returns (CheckHealthResponse);
+  rpc CheckHealth(CheckDatasourceHealthRequest) returns (CheckHealthResponse);
   rpc CallResource(CallDatasourceResourceRequest) returns (stream CallResourceResponse);
 }
 
@@ -104,6 +104,7 @@ message DataQuery {
 message CallDatasourceResourceRequest {
   DatasourceConfig config = 1;
   ResourceRequest resource = 2;
+  User user = 3;
 }
 
 message CheckDatasourceHealthRequest {
@@ -171,19 +172,21 @@ Message TestAlertNotifierResponse {}
 
 service AnnotationStorage {
   rpc SaveAnnotation(SaveAnnotationRequest) return (SaveAnnotationResponse);
-  rpc CheckAnnotationHealth(CheckAnnotationHealthRequest) return (CheckAnnotationHealthResponse);
+  rpc CheckHealth(CheckAnnotationHealthRequest) return (CheckAnnotationHealthResponse);
   rpc CallResource(CallAnnotationResourceRequest) returns (stream CallResourceResponse);
 }
 
 message CallAnnotationResourceRequest {
   AnnotationConfig config = 1;
   ResourceRequest resource = 2;
+  User user = 3;
 }
 
 message AnnotationConfig {}
 
 message SaveAnnotationRequest {
   AnnotationConfig config = 1;
+  User user = 2;
 }
 
 message SaveAnnotationResponse {}
