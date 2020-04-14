@@ -18,7 +18,7 @@ func SendPlainText(sender backend.CallResourceResponseSender, text string) error
 	)
 }
 
-// SendJSON returns a json object
+// SendJSON sends a JSON object.
 func SendJSON(sender backend.CallResourceResponseSender, obj interface{}) error {
 	body, err := json.Marshal(obj)
 	if err != nil {
