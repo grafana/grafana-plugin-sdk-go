@@ -34,7 +34,7 @@ func SendJSON(sender backend.CallResourceResponseSender, obj interface{}) error 
 	)
 }
 
-// SendResourceResponse returns a json object
+// SendResourceResponse sends a JSON object.
 func SendResourceResponse(
 	sender backend.CallResourceResponseSender,
 	status int,
