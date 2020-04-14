@@ -9,24 +9,24 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// PluginHelper singleton host service
-type PluginHelper struct {
+// InstanceManager is a singleton that holds all datasource instances
+type InstanceManager struct {
 	sync.RWMutex
 
 	instances map[string]instanceInfo
 	host      PluginHost
 }
 
-// NewPluginHelper creates the datasource and sets up all the routes
-func NewPluginHelper(host PluginHost) *PluginHelper {
-	return &PluginHelper{
+// NewInstanceManager create a new instance manager
+func NewInstanceManager(host PluginHost) *InstanceManager {
+	return &InstanceManager{
 		host:      host,
 		instances: make(map[string]instanceInfo),
 	}
 }
 
 // RunGRPCServer starts the GRPC server
-func (p *PluginHelper) RunGRPCServer() error {
+func (p *InstanceManager) RunGRPCServer() error {
 	return backend.Serve(backend.ServeOpts{
 		CallResourceHandler: p,
 		QueryDataHandler:    p,
@@ -49,7 +49,7 @@ type instanceInfo struct {
 	last time.Time
 }
 
-func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
+func (p *InstanceManager) getDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
 	if config.DataSourceConfig == nil {
 		return nil, fmt.Errorf("no datasource in PluginConfig")
 	}
@@ -87,7 +87,7 @@ func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (DataS
 }
 
 // CheckHealth checks if the plugin is running properly
-func (p *PluginHelper) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (p *InstanceManager) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	// 1. Check the datasource config
 	if req.PluginConfig.DataSourceConfig != nil {
 		ds, err := p.getDataSourceInstance(req.PluginConfig)
@@ -106,7 +106,7 @@ func (p *PluginHelper) CheckHealth(ctx context.Context, req *backend.CheckHealth
 }
 
 // QueryData queries for data.
-func (p *PluginHelper) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (p *InstanceManager) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	if req.PluginConfig.DataSourceConfig != nil {
 		ds, err := p.getDataSourceInstance(req.PluginConfig)
 		if err != nil {
@@ -118,7 +118,7 @@ func (p *PluginHelper) QueryData(ctx context.Context, req *backend.QueryDataRequ
 }
 
 // CallResource returns HTTP style results
-func (p *PluginHelper) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+func (p *InstanceManager) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	if req.PluginConfig.DataSourceConfig != nil {
 		ds, err := p.getDataSourceInstance(req.PluginConfig)
 		if err != nil {

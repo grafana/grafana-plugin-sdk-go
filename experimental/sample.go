@@ -100,7 +100,7 @@ func MainXYZ() {
 
 	backend.Logger.Debug("Running my backend datasource")
 
-	host := NewPluginHelper(&MyHost{})
+	host := NewInstanceManager(&MyHost{})
 	err := host.RunGRPCServer()
 	if err != nil {
 		backend.Logger.Error(err.Error())
