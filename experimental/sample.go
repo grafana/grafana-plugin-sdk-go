@@ -22,7 +22,7 @@ func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) *backend.CheckHea
 	}
 }
 
-// NewDataSourceInstance sreate a new datasource instance.
+// NewDataSourceInstance creates a new datasource instance.
 func (ds *MyHost) NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
 	settings := myDataSourceSettings{
 		url:  config.DataSourceConfig.URL,
