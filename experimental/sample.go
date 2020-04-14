@@ -11,7 +11,7 @@ import (
 // PLUGIN HOST
 //----------------------------------------------------------------------------------
 
-// MyHost singelton host service
+// MyHost is a singleton host service.
 type MyHost struct{}
 
 // CheckHostHealth returns a backend.CheckHealthResult.
