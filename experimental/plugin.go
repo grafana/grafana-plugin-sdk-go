@@ -13,7 +13,9 @@ type PluginExe interface {
 	NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error)
 }
 
-// DataSourceInstance will get created for each org/id and then regenerated when the lastModified times change
+// DataSourceInstance implements each of the supported requests.  Alternativly this could be a set
+// of interfaces that work for DataSource|AlertNotifier|etc|etc... with the support interrogated and
+// maintaind by the helper on startup
 type DataSourceInstance interface {
 	CheckHealth() *backend.CheckHealthResult
 

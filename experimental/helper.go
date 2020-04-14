@@ -35,6 +35,8 @@ func (p *PluginHelper) RunGRPCServer() error {
 }
 
 type instanceInfo struct {
+	// the exe updated time + the datasource updated time
+	// used as a flag to check if anything changed
 	updated int64
 
 	// The raw GRPC values that create the instance
@@ -43,7 +45,7 @@ type instanceInfo struct {
 	// the Specific instance
 	instance DataSourceInstance
 
-	// The last time it was used
+	// The last time it was used (so we can expire old things)
 	last time.Time
 }
 
@@ -77,7 +79,7 @@ func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (DataS
 			instance: instance,
 		}
 
-		// Set the instance for the key
+		// Set the instance for the key (will replace the old value if exists)
 		p.instances[key] = info
 	}
 	info.last = time.Now()
