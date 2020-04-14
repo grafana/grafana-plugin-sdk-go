@@ -120,7 +120,7 @@ func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 			JsonMeta: dr.Meta,
 		}
 		if dr.Error != nil {
-			pDR.Error = err.Error()
+			pDR.Error = dr.Error.Error()
 		}
 		pQDR.Responses[refID] = &pDR
 	}
