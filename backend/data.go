@@ -56,8 +56,8 @@ type QueryDataResponse struct {
 
 // NewQueryDataResponse returns a QueryDataResponse with the Responses property
 // initialized to size.
-func NewQueryDataResponse(size int) QueryDataResponse {
-	return QueryDataResponse{
+func NewQueryDataResponse(size int) *QueryDataResponse {
+	return &QueryDataResponse{
 		Responses: make(Responses, size),
 	}
 }
