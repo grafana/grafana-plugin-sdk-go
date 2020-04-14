@@ -191,10 +191,10 @@ message SaveAnnotationResponse {}
 message CheckAnnotationHealthRequest {}
 
 //-----------------------------------------------
-// Diagnostics
+// CorePlugin
 //-----------------------------------------------
 
-service Diagnostics {
+service CorePlugin {
   rpc CheckHealth(CheckHealthRequest) returns (CheckHealthResponse);
   rpc CollectMetrics(CollectMetricsRequest) returns (CollectMetricsResponse);
 }
