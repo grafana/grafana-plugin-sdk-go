@@ -9,7 +9,7 @@ type PluginHost interface {
 	// CheckExeHealth corresponds to CheckHostHealth for the plugin executable.
 	CheckHostHealth(config backend.PluginConfig) *backend.CheckHealthResult
 
-	// request for a new datasource
+	// NewDataSourceInstance makes a request for a new datasource.
 	NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error)
 }
 
