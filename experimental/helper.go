@@ -117,7 +117,7 @@ func (p *InstanceManager) QueryData(ctx context.Context, req *backend.QueryDataR
 	return nil, fmt.Errorf("only datasource supports QueryData (for now)")
 }
 
-// CallResource returns HTTP style results
+// CallResource calls a resource.
 func (p *InstanceManager) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	if req.PluginConfig.DataSourceConfig != nil {
 		ds, err := p.getDataSourceInstance(req.PluginConfig)
