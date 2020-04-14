@@ -10,7 +10,17 @@ func newNullablegenVector(n int) *nullablegenVector {
 }
 
 func (v *nullablegenVector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(*gen)
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	switch i.(type) {
+	case gen:
+		val := i.(gen)
+		(*v)[idx] = &val
+	case *gen:
+		(*v)[idx] = i.(*gen)
+	}
 }
 
 func (v *nullablegenVector) Append(i interface{}) {

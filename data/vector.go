@@ -447,6 +447,58 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 	return f
 }
 
+// NewFieldFromFieldType creates a new Field of the given pType of length n.
+func NewNullableFieldFromFieldType(p FieldType, n int) *Field {
+	f := &Field{}
+	switch p {
+	// ints
+	case FieldTypeInt8, FieldTypeNullableInt8:
+		f.vector = newNullableInt8Vector(n)
+
+	case FieldTypeInt16, FieldTypeNullableInt16:
+		f.vector = newNullableInt16Vector(n)
+
+	case FieldTypeInt32, FieldTypeNullableInt32:
+		f.vector = newNullableInt32Vector(n)
+
+	case FieldTypeInt64, FieldTypeNullableInt64:
+		f.vector = newNullableInt64Vector(n)
+
+	// uints
+	case FieldTypeUint8, FieldTypeNullableUint8:
+		f.vector = newNullableUint8Vector(n)
+
+	case FieldTypeUint16, FieldTypeNullableUint16:
+		f.vector = newNullableUint16Vector(n)
+
+	case FieldTypeUint32, FieldTypeNullableUint32:
+		f.vector = newNullableUint32Vector(n)
+
+	case FieldTypeUint64, FieldTypeNullableUint64:
+		f.vector = newNullableUint64Vector(n)
+
+	// floats
+	case FieldTypeFloat32, FieldTypeNullableFloat32:
+		f.vector = newNullableFloat32Vector(n)
+
+	case FieldTypeFloat64, FieldTypeNullableFloat64:
+		f.vector = newNullableFloat64Vector(n)
+
+	// other
+	case FieldTypeString, FieldTypeNullableString:
+		f.vector = newNullableStringVector(n)
+
+	case FieldTypeBool, FieldTypeNullableBool:
+		f.vector = newNullableBoolVector(n)
+
+	case FieldTypeTime, FieldTypeNullableTime:
+		f.vector = newNullableTimeTimeVector(n)
+	default:
+		panic(fmt.Sprint("unsupported vector ptype"))
+	}
+	return f
+}
+
 // ItemTypeString returns the string representation of the type of element within in the vector
 func (p FieldType) ItemTypeString() string {
 	switch p {

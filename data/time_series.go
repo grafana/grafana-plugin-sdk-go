@@ -30,6 +30,19 @@ const (
 	TimeSeriesTypeWide
 )
 
+type FillMode int
+
+const (
+	FillModePrevious FillMode = iota
+	FillModeNull
+	FillModeValue
+)
+
+type LongToWideFillMissing struct {
+	Mode  FillMode
+	Value float64
+}
+
 func (t TimeSeriesType) String() string {
 	switch t {
 	case TimeSeriesTypeLong:
@@ -82,6 +95,58 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	return
 }
 
+// valueToType gets a float64 value and converts it to the specific field type
+// this is useful is fill missing is enabled and fill missing mode is FillMissingValue
+// for converrting the fill missing value (float64) to the field type
+func valueToType(val float64, ftype FieldType) interface{} {
+	switch ftype {
+	case FieldTypeInt8, FieldTypeNullableInt8:
+		return int8(val)
+	case FieldTypeInt16, FieldTypeNullableInt16:
+		return int16(val)
+	case FieldTypeInt32, FieldTypeNullableInt32:
+		return int32(val)
+	case FieldTypeInt64, FieldTypeNullableInt64:
+		return int64(val)
+	case FieldTypeUint8, FieldTypeNullableUint8:
+		return uint8(val)
+	case FieldTypeUint16, FieldTypeNullableUint16:
+		return uint16(val)
+	case FieldTypeUint32, FieldTypeNullableUint32:
+		return uint32(val)
+	case FieldTypeUint64, FieldTypeNullableUint64:
+		return uint64(val)
+	case FieldTypeFloat32, FieldTypeNullableFloat32:
+		return float32(val)
+	case FieldTypeFloat64, FieldTypeNullableFloat64:
+		return val
+	}
+	// if field type is FieldTypeString, FieldTypeNullableString, FieldTypeBool, FieldTypeNullableBool, FieldTypeTime, FieldTypeNullableTime
+	// returns the value unconverted
+	// should return an error instead?
+	return val
+}
+
+func getMissing(fillMissing *LongToWideFillMissing, field *Field, idx int) (interface{}, error) {
+	if fillMissing == nil {
+		return nil, fmt.Errorf("Fill missing is disabled")
+	}
+	var fillVal interface{}
+	switch fillMissing.Mode {
+	case FillModeNull:
+	//	fillVal = nil
+	case FillModeValue:
+		fillVal = valueToType(fillMissing.Value, field.Type())
+	case FillModePrevious:
+		// if there is no previous value
+		// the value will be null
+		if idx >= 1 {
+			fillVal = field.At(idx - 1)
+		}
+	}
+	return fillVal, nil
+}
+
 // LongToWide converts a Long formated time series Frame to a Wide format (see TimeSeriesType for descriptions).
 // The first Field of type time.Time or *time.Time will be the time index for the series,
 // and will be the first field of the outputted longFrame.
@@ -99,7 +164,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 //
 // With a conversion of Long to Wide, and then back to Long via WideToLong(), the outputted Long Frame
 // may not match the original inputted Long frame.
-func LongToWide(longFrame *Frame) (*Frame, error) {
+func LongToWide(longFrame *Frame, fillMissing *LongToWideFillMissing) (*Frame, error) {
 	tsSchema := longFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeLong {
 		return nil, fmt.Errorf("can not convert to wide series, expected long format series input but got %s series", tsSchema.Type)
@@ -143,11 +208,18 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 		if currentTime.After(lastTime) { // time advance means new row in wideFrame
 			wideFrameRowCounter++
 			lastTime = currentTime
-			for _, field := range wideFrame.Fields {
+			for wideFrameIdx, field := range wideFrame.Fields {
 				// extend all wideFrame Field Vectors for new row. If no value found, it will have zero value
 				field.Extend(1)
+				if wideFrameIdx == 0 {
+					wideFrame.Set(wideFrameIdx, wideFrameRowCounter, currentTime)
+					continue
+				}
+				fillVal, err := getMissing(fillMissing, field, wideFrameRowCounter)
+				if err == nil {
+					wideFrame.Set(wideFrameIdx, wideFrameRowCounter, fillVal)
+				}
 			}
-			wideFrame.Set(0, wideFrameRowCounter, currentTime)
 		}
 
 		if currentTime.Before(lastTime) {
@@ -181,8 +253,21 @@ func LongToWide(longFrame *Frame) (*Frame, error) {
 				longField := longFrame.Fields[tsSchema.ValueIndices[offset]]
 
 				newWideField := NewFieldFromFieldType(longField.Type(), wideFrameRowCounter+1)
+				if fillMissing != nil && fillMissing.Mode != FillModeValue {
+					// if fillMissing mode is null or previous
+					// the new wide field should be nullable
+					// because some cells can be null
+					newWideField = NewNullableFieldFromFieldType(longField.Type(), wideFrameRowCounter+1)
+				}
 				newWideField.Name, newWideField.Labels = longField.Name, labels
 				wideFrame.Fields = append(wideFrame.Fields, newWideField)
+
+				fillVal, err := getMissing(fillMissing, newWideField, wideFrameRowCounter)
+				if err == nil {
+					for i := 0; i < wideFrameRowCounter; i++ {
+						wideFrame.Set(currentFieldLen+offset, i, fillVal)
+					}
+				}
 
 				valueFactorToWideFieldIdx[longFieldIdx][factorKey] = currentFieldLen + offset
 			}
