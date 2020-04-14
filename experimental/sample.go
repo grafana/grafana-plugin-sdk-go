@@ -71,7 +71,7 @@ func (ds *MyDataSourceInstance) QueryData(req *backend.QueryDataRequest) (*backe
 	return nil, fmt.Errorf("not implemented")
 }
 
-// CallResource HTTP style reqource
+// CallResource HTTP style resource
 func (ds *MyDataSourceInstance) CallResource(req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 
 	if req.Path == "hello" {
