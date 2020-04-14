@@ -22,7 +22,7 @@ type DataSourceInstance interface {
 	// If the request does not need access to the headers or user, use this request
 	QueryData(req *backend.QueryDataRequest) (*backend.QueryDataResponse, error)
 
-	// Get resource
+	// CallResource calls a resource.
 	CallResource(req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error
 
 	// Destroy lets you clean up any instance variables when the settings change
