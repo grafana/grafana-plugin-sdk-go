@@ -447,7 +447,7 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 	return f
 }
 
-// NewFieldFromFieldType creates a new Field of the given pType of length n.
+// NewNullableFieldFromFieldType creates a new nullable Field of the given pType of length n.
 func NewNullableFieldFromFieldType(p FieldType, n int) *Field {
 	f := &Field{}
 	switch p {
