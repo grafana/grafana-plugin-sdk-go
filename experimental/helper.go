@@ -14,13 +14,13 @@ type PluginHelper struct {
 	sync.RWMutex
 
 	instances map[string]instanceInfo
-	host      PluginHost
+	exe       PluginExe
 }
 
-// Init creates the datasource and sets up all the routes
-func NewPluginHelper(host PluginHost) *PluginHelper {
+// NewPluginHelper creates the datasource and sets up all the routes
+func NewPluginHelper(host PluginExe) *PluginHelper {
 	return &PluginHelper{
-		host:      host,
+		exe:       host,
 		instances: make(map[string]instanceInfo),
 	}
 }
@@ -49,7 +49,7 @@ type instanceInfo struct {
 
 func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
 	if config.DataSourceConfig == nil {
-		return nil, nil
+		return nil, fmt.Errorf("no datasource in PluginConfig")
 	}
 	updated := config.Updated.UnixNano() + config.DataSourceConfig.Updated.UnixNano()
 	key := fmt.Sprintf("%d/%d", config.OrgID, config.DataSourceConfig.ID)
@@ -66,7 +66,7 @@ func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (DataS
 		}
 
 		// Create a new one
-		instance, err := p.host.NewDataSourceInstance(config)
+		instance, err := p.exe.NewDataSourceInstance(config)
 		if err != nil {
 			return nil, err
 		}
@@ -86,47 +86,44 @@ func (p *PluginHelper) getDataSourceInstance(config backend.PluginConfig) (DataS
 
 // CheckHealth checks if the plugin is running properly
 func (p *PluginHelper) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	// 1.  Check datasource requests
-	ds, err := p.getDataSourceInstance(req.PluginConfig)
-	if err != nil {
-		// Error reading datasource config
-		return &backend.CheckHealthResult{
-			Status:  backend.HealthStatusError,
-			Message: err.Error(),
-		}, nil
-	}
-	if ds != nil {
+	// 1. Check the datasource config
+	if req.PluginConfig.DataSourceConfig != nil {
+		ds, err := p.getDataSourceInstance(req.PluginConfig)
+		if err != nil {
+			// Error reading datasource config
+			return &backend.CheckHealthResult{
+				Status:  backend.HealthStatusError,
+				Message: err.Error(),
+			}, nil
+		}
 		return ds.CheckHealth(), nil
 	}
 
-	// finally, try the plugin host itself
-	return p.host.CheckHostHealth(req.PluginConfig), nil
+	// Otherwise the host application
+	return p.exe.CheckExeHealth(req.PluginConfig), nil
 }
 
 // QueryData queries for data.
 func (p *PluginHelper) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	// 1.  Check datasource requests
-	ds, err := p.getDataSourceInstance(req.PluginConfig)
-	if err != nil {
-		return nil, err
-	}
-	if ds != nil {
+	if req.PluginConfig.DataSourceConfig != nil {
+		ds, err := p.getDataSourceInstance(req.PluginConfig)
+		if err != nil {
+			return nil, err
+		}
 		return ds.QueryData(req)
 	}
-
-	return nil, fmt.Errorf("host does not support query data")
+	return nil, fmt.Errorf("only datasource supports QueryData (for now)")
 }
 
 // CallResource returns HTTP style results
 func (p *PluginHelper) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	// 1.  Check datasource requests
-	ds, err := p.getDataSourceInstance(req.PluginConfig)
-	if err != nil {
-		return err
-	}
-	if ds != nil {
+	if req.PluginConfig.DataSourceConfig != nil {
+		ds, err := p.getDataSourceInstance(req.PluginConfig)
+		if err != nil {
+			return err
+		}
 		return ds.CallResource(req, sender)
 	}
 
-	return fmt.Errorf("host does not (yet!) support query data")
+	return fmt.Errorf("only datasource supports Resources (for now)")
 }

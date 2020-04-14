@@ -14,8 +14,8 @@ import (
 // MyHost singelton host service
 type MyHost struct{}
 
-// CheckHostHealth check if the plugin host is running
-func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) *backend.CheckHealthResult {
+// CheckExeHealth check if the plugin host is running
+func (ds *MyHost) CheckExeHealth(config backend.PluginConfig) *backend.CheckHealthResult {
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
 		Message: "Plugin is running",
