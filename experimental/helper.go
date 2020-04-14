@@ -9,7 +9,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// PluginHelper singelton host service
+// PluginHelper singleton host service
 type PluginHelper struct {
 	sync.RWMutex
 
