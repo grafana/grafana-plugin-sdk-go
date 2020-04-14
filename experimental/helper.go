@@ -42,7 +42,7 @@ type instanceInfo struct {
 	// The raw GRPC values that create the instance
 	config backend.PluginConfig
 
-	// the Specific instance
+	// The specific instance
 	instance DataSourceInstance
 
 	// The last time it was used (so we can expire old things)
