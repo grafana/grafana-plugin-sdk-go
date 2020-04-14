@@ -17,7 +17,7 @@ type InstanceManager struct {
 	host      PluginHost
 }
 
-// NewInstanceManager create a new instance manager
+// NewInstanceManager creates a new instance manager.
 func NewInstanceManager(host PluginHost) *InstanceManager {
 	return &InstanceManager{
 		host:      host,
