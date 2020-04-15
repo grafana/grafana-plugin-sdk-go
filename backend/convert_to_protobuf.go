@@ -3,7 +3,6 @@ package backend
 import (
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -112,7 +111,7 @@ func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
 	}
 	for refID, dr := range res.Responses {
-		encodedFrames, err := data.FramesToBytesSlice(dr.Frames)
+		encodedFrames, err := dr.Frames.MarshalArrow()
 		if err != nil {
 			return nil, err
 		}
@@ -121,7 +120,7 @@ func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 			JsonMeta: dr.Meta,
 		}
 		if dr.Error != nil {
-			pDR.Error = err.Error()
+			pDR.Error = dr.Error.Error()
 		}
 		pQDR.Responses[refID] = &pDR
 	}

@@ -49,7 +49,12 @@ func getExecutableFromPluginJSON() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return result["executable"].(string), nil
+	executable := result["executable"]
+	name, ok := executable.(string)
+	if !ok || name == "" {
+		return "", fmt.Errorf("plugin.json is missing an executable name")
+	}
+	return name, nil
 }
 
 func findRunningPIDs(exe string) []int {
