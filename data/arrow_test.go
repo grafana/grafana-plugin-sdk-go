@@ -274,3 +274,22 @@ func TestDecode(t *testing.T) {
 	}
 
 }
+
+func TestEncodeAndDecodeDuplicateFieldNames(t *testing.T) {
+	frame := data.NewFrame("frame_dup_field_names",
+		data.NewField("Duplicate", nil, []bool{}),
+		data.NewField("Duplicate", nil, []bool{}),
+	)
+
+	encoded, err := frame.MarshalArrow()
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := data.UnmarshalArrowFrame(encoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(frame, decoded, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+}
