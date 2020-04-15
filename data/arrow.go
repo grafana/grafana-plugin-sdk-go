@@ -4,8 +4,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
-	"strconv"
-	"strings"
 	"time"
 
 	"github.com/apache/arrow/go/arrow"
@@ -72,28 +70,7 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	return fb.Buff.Bytes(), nil
 }
 
-// fieldNamePrefixSep is the delimiter used with fieldNamePrefix.
-const fieldNamePrefixSep = "🦥: "
-
-// fieldNamePrefix is the fmt string for Field Names. We prefix the name with fieldIdx number, sloth, :, space
-// to ensure names are unique. The prefix is removed upon reading.
-const fieldNamePrefix = "%s" + fieldNamePrefixSep + "%s"
-
-// prefixFieldName adds our special fieldNamePrefix to the fieldNames so they are unique when writing to arrow.
-func prefixFieldName(fieldIdx int, name string) string {
-	return fmt.Sprintf(fieldNamePrefix, strconv.Itoa(fieldIdx), name)
-}
-
-// prefixFieldNameStrip adds our special fieldNamePrefix from Field Names when reading from arrow.
-func prefixFieldNameStrip(name string) string {
-	sp := strings.SplitN(name, fieldNamePrefixSep, 2)
-	if len(sp) == 2 {
-		return sp[1]
-	}
-	return name
-}
-
-// buildArrowFields builds Arrow field definitions from a DataFrame.
+// buildArrowFields builds Arrow field definitions from a Frame.
 func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 	arrowFields := make([]arrow.Field, len(f.Fields))
 
@@ -103,7 +80,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			return nil, err
 		}
 
-		fieldMeta := map[string]string{"name": prefixFieldName(i, field.Name)}
+		fieldMeta := map[string]string{"name": field.Name}
 
 		if field.Labels != nil {
 			if fieldMeta["labels"], err = toJSONString(field.Labels); err != nil {
@@ -120,7 +97,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 		}
 
 		arrowFields[i] = arrow.Field{
-			Name:     prefixFieldName(i, field.Name),
+			Name:     field.Name,
 			Type:     t,
 			Metadata: arrow.MetadataFrom(fieldMeta),
 			Nullable: nullable,
@@ -317,7 +294,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	nullable := make([]bool, len(schema.Fields()))
 	for idx, field := range schema.Fields() {
 		sdkField := &Field{
-			Name: prefixFieldNameStrip(field.Name),
+			Name: field.Name,
 		}
 		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
 			if err := json.Unmarshal([]byte(labelsAsString), &sdkField.Labels); err != nil {
