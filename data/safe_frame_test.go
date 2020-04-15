@@ -101,8 +101,8 @@ func TestSafeFrameAppendRow(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run("", func(t *testing.T) {
-			// TODO: FIX kludge assertion, use Safe instead
-			err := (*data.SafeFrame)(tt.frame).AppendRow(tt.rowToAppend...)
+			safeFrame := tt.frame.SafeFrame()
+			err := safeFrame.AppendRow(tt.rowToAppend...)
 			tt.shouldErr(t, err)
 			for _, v := range tt.errorContains {
 				require.Contains(t, err.Error(), v)

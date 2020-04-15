@@ -239,9 +239,8 @@ func (f *Frame) SetFieldNames(names ...string) error {
 }
 
 // SafeFrame returns the Frame as a SafeFrame.
-func (f *Frame) SafeFrame() (*SafeFrame, error) {
-	// TODO: Validate
-	return (*SafeFrame)(f), nil
+func (f *Frame) SafeFrame() *SafeFrame {
+	return (*SafeFrame)(f)
 }
 
 // FrameTestCompareOptions returns go-cmp testing options to allow testing of Frame equivalence.
