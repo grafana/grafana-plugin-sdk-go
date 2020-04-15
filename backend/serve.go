@@ -3,7 +3,6 @@ package backend
 import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_recovery "github.com/grpc-ecosystem/go-grpc-middleware/recovery"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
@@ -24,6 +23,7 @@ type ServeOpts struct {
 
 	// TransformDataHandler handler for data transformations.
 	// Very experimental and shouldn't be implemented in most cases.
+	// Optional to implement.
 	TransformDataHandler TransformDataHandler
 
 	// MaxGRPCReceiveMsgSize the max gRPC message size in bytes the plugin can receive.
@@ -54,15 +54,12 @@ func Serve(opts ServeOpts) error {
 	}
 
 	grpc_prometheus.EnableHandlingTimeHistogram()
-	recoveryOption := grpc_recovery.WithRecoveryHandlerContext(recoveryHandler)
 	grpcMiddlewares := []grpc.ServerOption{
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
 			grpc_prometheus.StreamServerInterceptor,
-			grpc_recovery.StreamServerInterceptor(recoveryOption),
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
 			grpc_prometheus.UnaryServerInterceptor,
-			grpc_recovery.UnaryServerInterceptor(recoveryOption),
 		)),
 	}
 
