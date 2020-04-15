@@ -277,8 +277,8 @@ func TestDecode(t *testing.T) {
 
 func TestEncodeAndDecodeDuplicateFieldNames(t *testing.T) {
 	frame := data.NewFrame("frame_dup_field_names",
-		data.NewField("Duplicate", nil, []bool{}),
-		data.NewField("Duplicate", nil, []bool{}),
+		data.NewField("Duplicate", nil, []bool{true, false}),
+		data.NewField("Duplicate", nil, []bool{false, true}),
 	)
 
 	encoded, err := frame.MarshalArrow()
