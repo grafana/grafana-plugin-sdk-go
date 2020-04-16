@@ -156,14 +156,12 @@ func float64ToType(val float64, ftype FieldType) (interface{}, error) {
 		return &val, nil
 	}
 	// if field type is FieldTypeString, FieldTypeNullableString, FieldTypeBool, FieldTypeNullableBool, FieldTypeTime, FieldTypeNullableTime
-	// returns the value unconverted
-	// should return an error instead?
 	return val, fmt.Errorf("No numeric value")
 }
 
 func getMissing(fillMissing *FillMissing, field *Field, idx int) (interface{}, error) {
 	if fillMissing == nil {
-		return nil, fmt.Errorf("Fill missing is disabled")
+		return nil, fmt.Errorf("fill missing is disabled")
 	}
 	var fillVal interface{}
 	switch fillMissing.Mode {

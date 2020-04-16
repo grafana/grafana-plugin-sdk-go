@@ -213,7 +213,7 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 // val must be a non-pointer type or a panic will occur.
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable, then this method behaves the same as the Set method.
-// It will panic if the undelying type of val does not match the element concrete type of the Field
+// It will panic if the underlying type of val does not match the element concrete type of the Field.
 func (f *Frame) SetConcreteAt(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.SetConcreteAt(rowIdx, val)
 }
