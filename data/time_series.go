@@ -100,7 +100,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	return
 }
 
-// valueToType converts a float64 value to the specifed field type.
+// float64ToType converts a float64 value to the specified field type.
 // This is useful if fill missing is enabled and fill missing mode is FillMissingValue,
 // for converting the fill missing value (float64) to the field type.
 func float64ToType(val float64, ftype FieldType) (interface{}, error) {
