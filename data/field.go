@@ -202,7 +202,7 @@ func (f *Field) Set(idx int, val interface{}) {
 // is not nullable, then this method behaves the same as the Set method.
 // It will panic if the undelying type of val does not match the element concrete type of the Field
 func (f *Field) SetConcreteAt(idx int, val interface{}) {
-	f.vector.Set(idx, val)
+	f.vector.SetConcreteAt(idx, val)
 }
 
 // Append appends element e to the Field.
