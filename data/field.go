@@ -196,7 +196,7 @@ func (f *Field) Set(idx int, val interface{}) {
 	f.vector.Set(idx, val)
 }
 
-// SetConcreteAt sets the Field's value at index idx to val for of val.
+// SetConcreteAt sets the Field's value at index idx to val.
 // val must be a non-pointer type or a panic will occur.
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable, then this method behaves the same as the Set method.
