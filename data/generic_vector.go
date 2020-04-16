@@ -19,7 +19,7 @@ func (v *genVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(gen)
 }
 
-func (v *genVector) SetConcreateAt(idx int, i interface{}) {
+func (v *genVector) SetConcreteAt(idx int, i interface{}) {
 	v.Set(idx, i)
 }
 

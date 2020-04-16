@@ -30,7 +30,7 @@ const (
 	TimeSeriesTypeWide
 )
 
-// FillMode an integer type denoting how missing values should be filled
+// FillMode is an integer type denoting how missing values should be filled
 type FillMode int
 
 const (
@@ -103,62 +103,62 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 // valueToType converts a float64 value to the specifed field type.
 // This is useful if fill missing is enabled and fill missing mode is FillMissingValue,
 // for converting the fill missing value (float64) to the field type.
-func valueToType(val float64, ftype FieldType) interface{} {
+func float64ToType(val float64, ftype FieldType) (interface{}, error) {
 	switch ftype {
 	case FieldTypeInt8:
-		return int8(val)
+		return int8(val), nil
 	case FieldTypeNullableInt8:
 		c := int8(val)
-		return &c
+		return &c, nil
 	case FieldTypeInt16:
-		return int16(val)
+		return int16(val), nil
 	case FieldTypeNullableInt16:
 		c := int16(val)
-		return &c
+		return &c, nil
 	case FieldTypeInt32:
-		return int32(val)
+		return int32(val), nil
 	case FieldTypeNullableInt32:
 		c := int32(val)
-		return &c
+		return &c, nil
 	case FieldTypeInt64:
-		return int64(val)
+		return int64(val), nil
 	case FieldTypeNullableInt64:
 		c := int64(val)
-		return &c
+		return &c, nil
 	case FieldTypeUint8:
-		return uint8(val)
+		return uint8(val), nil
 	case FieldTypeNullableUint8:
 		c := uint8(val)
-		return &c
+		return &c, nil
 	case FieldTypeUint16:
-		return uint16(val)
+		return uint16(val), nil
 	case FieldTypeNullableUint16:
 		c := uint16(val)
-		return &c
+		return &c, nil
 	case FieldTypeUint32:
-		return uint32(val)
+		return uint32(val), nil
 	case FieldTypeNullableUint32:
 		c := uint32(val)
-		return &c
+		return &c, nil
 	case FieldTypeUint64:
-		return uint64(val)
+		return uint64(val), nil
 	case FieldTypeNullableUint64:
 		c := uint64(val)
-		return &c
+		return &c, nil
 	case FieldTypeFloat32:
-		return float32(val)
+		return float32(val), nil
 	case FieldTypeNullableFloat32:
 		c := float32(val)
-		return &c
+		return &c, nil
 	case FieldTypeFloat64:
-		return val
+		return val, nil
 	case FieldTypeNullableFloat64:
-		return &val
+		return &val, nil
 	}
 	// if field type is FieldTypeString, FieldTypeNullableString, FieldTypeBool, FieldTypeNullableBool, FieldTypeTime, FieldTypeNullableTime
 	// returns the value unconverted
 	// should return an error instead?
-	return val
+	return val, fmt.Errorf("No numeric value")
 }
 
 func getMissing(fillMissing *FillMissing, field *Field, idx int) (interface{}, error) {
@@ -170,7 +170,11 @@ func getMissing(fillMissing *FillMissing, field *Field, idx int) (interface{}, e
 	case FillModeNull:
 	//	fillVal = nil
 	case FillModeValue:
-		fillVal = valueToType(fillMissing.Value, field.Type())
+		convertedVal, err := float64ToType(fillMissing.Value, field.Type())
+		if err != nil {
+			return nil, err
+		}
+		fillVal = convertedVal
 	case FillModePrevious:
 		// if there is no previous value
 		// the value will be null
@@ -309,7 +313,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		for _, longFieldIdx := range tsSchema.ValueIndices {
 			wideFieldIdx := valueFactorToWideFieldIdx[longFieldIdx][factorKey]
 			if wideFrame.Fields[wideFieldIdx].Nullable() && !longFrame.Fields[longFieldIdx].Nullable() {
-				wideFrame.SetConcreateAt(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
+				wideFrame.SetConcreteAt(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
 				continue
 			}
 			wideFrame.Set(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))

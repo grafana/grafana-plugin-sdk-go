@@ -17,7 +17,7 @@ func (v *nullablegenVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*gen)
 }
 
-func (v *nullablegenVector) SetConcreateAt(idx int, i interface{}) {
+func (v *nullablegenVector) SetConcreteAt(idx int, i interface{}) {
 	val := i.(gen)
 	(*v)[idx] = &val
 }
