@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"context"
 	"encoding/json"
 	"time"
 
@@ -14,18 +13,14 @@ type QueryDataHandler interface {
 	// req contains the queries []DataQuery (where each query contains RefID as a unique identifer).
 	// The QueryDataResponse contains a map of RefID to the response for each query, and each response
 	// contains Frames ([]*Frame).
-	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
+	QueryData(pCtx PluginContext, req *QueryDataRequest) (*QueryDataResponse, error)
 }
 
 // QueryDataRequest contains a single request which contains multiple queries.
 // It is the input type for a QueryData call.
 type QueryDataRequest struct {
-	PluginConfig PluginConfig
-	Headers      map[string]string
-	Queries      []DataQuery
-
-	// User is information about the grafana-server user that made the request.
-	User *User
+	Headers map[string]string
+	Queries []DataQuery
 }
 
 // DataQuery represents a single query as sent from the frontend.

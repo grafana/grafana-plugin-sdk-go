@@ -6,7 +6,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"testing"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/require"
@@ -33,34 +32,22 @@ func TestHttpResourceHandler(t *testing.T) {
 		reqBody, err := json.Marshal(&jsonMap)
 		require.NoError(t, err)
 
-		jsonData := map[string]interface{}{
-			"prop": "value",
-		}
-		jsonDataBytes, err := json.Marshal(&jsonData)
-		require.NoError(t, err)
-
-		updated, err := time.Parse(time.RFC3339, "2020-02-14T00:00:00+00:00")
-		require.NoError(t, err)
-
-		req := &backend.CallResourceRequest{
-			PluginConfig: backend.PluginConfig{
-				OrgID:    3,
-				PluginID: "my-plugin",
-				JSONData: jsonDataBytes,
-				DecryptedSecureJSONData: map[string]string{
-					"secureProp": "secure value",
-				},
-				Updated: updated,
-				DataSourceConfig: &backend.DataSourceConfig{
-					ID:               2,
-					Name:             "my-ds",
-					URL:              "http://",
-					Database:         "db123",
-					User:             "usr",
-					BasicAuthEnabled: true,
-					BasicAuthUser:    "busr",
-				},
+		pCtx := backend.PluginContext{
+			RequestContext: context.Background(),
+			OrgID:          3,
+			PluginID:       "my-plugin",
+			User:           &backend.User{Name: "foobar", Email: "foo@bar.com", Login: "foo@bar.com"},
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+				ID:               2,
+				Name:             "my-ds",
+				URL:              "http://",
+				Database:         "db123",
+				User:             "usr",
+				BasicAuthEnabled: true,
+				BasicAuthUser:    "busr",
 			},
+		}
+		req := &backend.CallResourceRequest{
 			Method: http.MethodPost,
 			Path:   "path",
 			URL:    "/api/plugins/plugin-abc/resources/path?query=1",
@@ -69,9 +56,8 @@ func TestHttpResourceHandler(t *testing.T) {
 				"X-Header-In-2": []string{"F"},
 			},
 			Body: reqBody,
-			User: &backend.User{Name: "foobar", Email: "foo@bar.com", Login: "foo@bar.com"},
 		}
-		err = resourceHandler.CallResource(context.Background(), req, testSender)
+		err = resourceHandler.CallResource(pCtx, req, testSender)
 		require.NoError(t, err)
 		require.Equal(t, 1, httpHandler.callerCount)
 
@@ -114,27 +100,24 @@ func TestHttpResourceHandler(t *testing.T) {
 
 		t.Run("Should be able to get plugin config from request context", func(t *testing.T) {
 			require.NotNil(t, httpHandler.req)
-			pluginCfg := PluginConfigFromContext(httpHandler.req.Context())
-			require.NotNil(t, pluginCfg)
-			require.Equal(t, req.PluginConfig.OrgID, pluginCfg.OrgID)
-			require.Equal(t, req.PluginConfig.PluginID, pluginCfg.PluginID)
-			require.Equal(t, req.PluginConfig.JSONData, pluginCfg.JSONData)
-			require.Equal(t, req.PluginConfig.DecryptedSecureJSONData, pluginCfg.DecryptedSecureJSONData)
-			require.Equal(t, req.PluginConfig.Updated, pluginCfg.Updated)
-			require.NotNil(t, pluginCfg.DataSourceConfig)
-			require.Equal(t, req.PluginConfig.DataSourceConfig.ID, pluginCfg.DataSourceConfig.ID)
-			require.Equal(t, req.PluginConfig.DataSourceConfig.Name, pluginCfg.DataSourceConfig.Name)
-			require.Equal(t, req.PluginConfig.DataSourceConfig.URL, pluginCfg.DataSourceConfig.URL)
-			require.Equal(t, req.PluginConfig.DataSourceConfig.User, pluginCfg.DataSourceConfig.User)
-			require.Equal(t, req.PluginConfig.DataSourceConfig.Database, pluginCfg.DataSourceConfig.Database)
-			require.Equal(t, req.PluginConfig.DataSourceConfig.BasicAuthEnabled, pluginCfg.DataSourceConfig.BasicAuthEnabled)
-			require.Equal(t, req.PluginConfig.DataSourceConfig.BasicAuthUser, pluginCfg.DataSourceConfig.BasicAuthUser)
+			actualPluginCtx := PluginConfigFromContext(httpHandler.req.Context())
+			require.NotNil(t, actualPluginCtx)
+			require.Equal(t, pCtx.OrgID, actualPluginCtx.OrgID)
+			require.Equal(t, pCtx.PluginID, actualPluginCtx.PluginID)
+			require.NotNil(t, actualPluginCtx.DataSourceInstanceSettings)
+			require.Equal(t, actualPluginCtx.DataSourceInstanceSettings.ID, actualPluginCtx.DataSourceInstanceSettings.ID)
+			require.Equal(t, actualPluginCtx.DataSourceInstanceSettings.Name, actualPluginCtx.DataSourceInstanceSettings.Name)
+			require.Equal(t, actualPluginCtx.DataSourceInstanceSettings.URL, actualPluginCtx.DataSourceInstanceSettings.URL)
+			require.Equal(t, actualPluginCtx.DataSourceInstanceSettings.User, actualPluginCtx.DataSourceInstanceSettings.User)
+			require.Equal(t, actualPluginCtx.DataSourceInstanceSettings.Database, actualPluginCtx.DataSourceInstanceSettings.Database)
+			require.Equal(t, actualPluginCtx.DataSourceInstanceSettings.BasicAuthEnabled, actualPluginCtx.DataSourceInstanceSettings.BasicAuthEnabled)
+			require.Equal(t, actualPluginCtx.DataSourceInstanceSettings.BasicAuthUser, actualPluginCtx.DataSourceInstanceSettings.BasicAuthUser)
 
 			user := UserFromContext(httpHandler.req.Context())
 			require.NotNil(t, user)
-			require.Equal(t, req.User.Name, "foobar")
-			require.Equal(t, req.User.Login, "foo@bar.com")
-			require.Equal(t, req.User.Email, "foo@bar.com")
+			require.Equal(t, pCtx.User.Name, "foobar")
+			require.Equal(t, pCtx.User.Login, "foo@bar.com")
+			require.Equal(t, pCtx.User.Email, "foo@bar.com")
 		})
 	})
 
@@ -153,11 +136,12 @@ func TestHttpResourceHandler(t *testing.T) {
 			responseStatus: http.StatusOK,
 		}
 		resourceHandler := New(httpHandler)
+		pCtx := backend.PluginContext{
+			RequestContext: context.Background(),
+			OrgID:          3,
+			PluginID:       "my-plugin",
+		}
 		req := &backend.CallResourceRequest{
-			PluginConfig: backend.PluginConfig{
-				OrgID:    3,
-				PluginID: "my-plugin",
-			},
 			Method: http.MethodPost,
 			Path:   "path",
 			URL:    "/api/plugins/plugin-abc/resources/path?query=1",
@@ -166,7 +150,7 @@ func TestHttpResourceHandler(t *testing.T) {
 				"X-Header-In-2": []string{"F"},
 			},
 		}
-		err := resourceHandler.CallResource(context.Background(), req, testSender)
+		err := resourceHandler.CallResource(pCtx, req, testSender)
 		require.NoError(t, err)
 		require.Equal(t, 1, httpHandler.callerCount)
 
@@ -204,16 +188,17 @@ func TestServeMuxHandler(t *testing.T) {
 		})
 		resourceHandler := New(mux)
 
+		pCtx := backend.PluginContext{
+			RequestContext: context.Background(),
+			OrgID:          3,
+			PluginID:       "my-plugin",
+		}
 		req := &backend.CallResourceRequest{
-			PluginConfig: backend.PluginConfig{
-				OrgID:    3,
-				PluginID: "my-plugin",
-			},
 			Method: http.MethodGet,
 			Path:   "test",
 			URL:    "/test?query=1",
 		}
-		err := resourceHandler.CallResource(context.Background(), req, testSender)
+		err := resourceHandler.CallResource(pCtx, req, testSender)
 		require.NoError(t, err)
 		require.True(t, handlerWasCalled)
 	})

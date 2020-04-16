@@ -42,7 +42,7 @@ func TestCallResource(t *testing.T) {
 		testSender := newTestCallResourceServer()
 		adapter := newResourceSDKAdapter(handler)
 		req := &pluginv2.CallResourceRequest{
-			Config: &pluginv2.PluginConfig{
+			Context: &pluginv2.PluginContext{
 				OrgId:    2,
 				PluginId: "my-plugin",
 			},
@@ -58,7 +58,11 @@ func TestCallResource(t *testing.T) {
 		err = adapter.CallResource(req, testSender)
 
 		require.NoError(t, err)
-		// request
+
+		require.NotNil(t, handler.actualPluginCtx)
+		require.Equal(t, int64(2), handler.actualPluginCtx.OrgID)
+		require.Equal(t, "my-plugin", handler.actualPluginCtx.PluginID)
+
 		require.NotNil(t, handler.actualReq)
 		require.Equal(t, "some/path", handler.actualReq.Path)
 		require.Equal(t, http.MethodGet, handler.actualReq.Method)
@@ -71,8 +75,6 @@ func TestCallResource(t *testing.T) {
 		err = json.Unmarshal(req.Body, &actualRequestData)
 		require.NoError(t, err)
 		require.Equal(t, data, actualRequestData)
-		require.Equal(t, int64(2), handler.actualReq.PluginConfig.OrgID)
-		require.Equal(t, "my-plugin", handler.actualReq.PluginConfig.PluginID)
 
 		// response
 		require.Len(t, testSender.respMessages, 1)
@@ -105,7 +107,7 @@ func TestCallResource(t *testing.T) {
 		testSender := newTestCallResourceServer()
 		adapter := newResourceSDKAdapter(handler)
 		req := &pluginv2.CallResourceRequest{
-			Config: &pluginv2.PluginConfig{
+			Context: &pluginv2.PluginContext{
 				OrgId:    2,
 				PluginId: "my-plugin",
 			},
@@ -144,10 +146,12 @@ type testCallResourceHandler struct {
 	responseHeaders map[string][]string
 	responseBody    []byte
 	responseErr     error
+	actualPluginCtx PluginContext
 	actualReq       *CallResourceRequest
 }
 
-func (h *testCallResourceHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+func (h *testCallResourceHandler) CallResource(pCtx PluginContext, req *CallResourceRequest, sender CallResourceResponseSender) error {
+	h.actualPluginCtx = pCtx
 	h.actualReq = req
 	err := sender.Send(&CallResourceResponse{
 		Status:  h.responseStatus,
@@ -168,7 +172,7 @@ type testCallResourceStreamHandler struct {
 	responseErr      error
 }
 
-func (h *testCallResourceStreamHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+func (h *testCallResourceStreamHandler) CallResource(pCtx PluginContext, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	err := sender.Send(&CallResourceResponse{
 		Status:  h.responseStatus,
 		Headers: h.responseHeaders,

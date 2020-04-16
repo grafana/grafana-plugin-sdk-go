@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -29,12 +30,24 @@ func (f convertFromProtobuf) User(user *pluginv2.User) *User {
 	}
 }
 
-func (f convertFromProtobuf) DataSourceConfig(proto *pluginv2.DataSourceConfig) *DataSourceConfig {
+func (f convertFromProtobuf) AppInstanceSettings(proto *pluginv2.AppInstanceSettings) *AppInstanceSettings {
 	if proto == nil {
 		return nil
 	}
 
-	return &DataSourceConfig{
+	return &AppInstanceSettings{
+		JSONData:                proto.JsonData,
+		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
+		Updated:                 time.Unix(0, proto.LastUpdatedMS*int64(time.Millisecond)),
+	}
+}
+
+func (f convertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSourceInstanceSettings) *DataSourceInstanceSettings {
+	if proto == nil {
+		return nil
+	}
+
+	return &DataSourceInstanceSettings{
 		ID:                      proto.Id,
 		Name:                    proto.Name,
 		URL:                     proto.Url,
@@ -48,14 +61,14 @@ func (f convertFromProtobuf) DataSourceConfig(proto *pluginv2.DataSourceConfig) 
 	}
 }
 
-func (f convertFromProtobuf) PluginConfig(proto *pluginv2.PluginConfig) PluginConfig {
-	return PluginConfig{
-		OrgID:                   proto.OrgId,
-		PluginID:                proto.PluginId,
-		JSONData:                proto.JsonData,
-		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
-		Updated:                 time.Unix(0, proto.LastUpdatedMS*int64(time.Millisecond)),
-		DataSourceConfig:        f.DataSourceConfig(proto.DatasourceConfig),
+func (f convertFromProtobuf) PluginContext(ctx context.Context, proto *pluginv2.PluginContext) PluginContext {
+	return PluginContext{
+		RequestContext:             ctx,
+		OrgID:                      proto.OrgId,
+		PluginID:                   proto.PluginId,
+		User:                       f.User(proto.User),
+		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
+		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings),
 	}
 }
 
@@ -83,10 +96,8 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 	}
 
 	return &QueryDataRequest{
-		PluginConfig: f.PluginConfig(protoReq.Config),
-		Headers:      protoReq.Headers,
-		Queries:      queries,
-		User:         f.User(protoReq.User),
+		Headers: protoReq.Headers,
+		Queries: queries,
 	}
 }
 
@@ -116,19 +127,15 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 	}
 
 	return &CallResourceRequest{
-		PluginConfig: f.PluginConfig(protoReq.Config),
-		Path:         protoReq.Path,
-		Method:       protoReq.Method,
-		URL:          protoReq.Url,
-		Headers:      headers,
-		Body:         protoReq.Body,
-		User:         f.User(protoReq.User),
+		Path:    protoReq.Path,
+		Method:  protoReq.Method,
+		URL:     protoReq.Url,
+		Headers: headers,
+		Body:    protoReq.Body,
 	}
 }
 
 // HealthCheckRequest converts proto version to SDK version.
 func (f convertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
-	return &CheckHealthRequest{
-		PluginConfig: f.PluginConfig(protoReq.Config),
-	}
+	return &CheckHealthRequest{}
 }

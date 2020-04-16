@@ -45,7 +45,8 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(ctx context.Context, protoReq *pl
 
 func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.checkHealthHandler != nil {
-		res, err := a.checkHealthHandler.CheckHealth(ctx, fromProto().HealthCheckRequest(protoReq))
+		pCtx := fromProto().PluginContext(ctx, protoReq.Context)
+		res, err := a.checkHealthHandler.CheckHealth(pCtx, fromProto().HealthCheckRequest(protoReq))
 		if err != nil {
 			return nil, err
 		}

@@ -1,15 +1,11 @@
 package backend
 
-import "context"
-
 type CallResourceRequest struct {
-	PluginConfig PluginConfig
-	Path         string
-	Method       string
-	URL          string
-	Headers      map[string][]string
-	Body         []byte
-	User         *User
+	Path    string
+	Method  string
+	URL     string
+	Headers map[string][]string
+	Body    []byte
 }
 
 type CallResourceResponse struct {
@@ -25,5 +21,5 @@ type CallResourceResponseSender interface {
 
 // CallResourceHandler handles resource calls.
 type CallResourceHandler interface {
-	CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
+	CallResource(pCtx PluginContext, req *CallResourceRequest, sender CallResourceResponseSender) error
 }

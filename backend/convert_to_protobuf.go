@@ -27,33 +27,44 @@ func (t convertToProtobuf) User(user *User) *pluginv2.User {
 	}
 }
 
-func (t convertToProtobuf) DataSourceConfig(config *DataSourceConfig) *pluginv2.DataSourceConfig {
-	if config == nil {
+func (t convertToProtobuf) AppInstanceSettings(s *AppInstanceSettings) *pluginv2.AppInstanceSettings {
+	if s == nil {
 		return nil
 	}
 
-	return &pluginv2.DataSourceConfig{
-		Id:                      config.ID,
-		Name:                    config.Name,
-		Url:                     config.URL,
-		User:                    config.User,
-		Database:                config.Database,
-		BasicAuthEnabled:        config.BasicAuthEnabled,
-		BasicAuthUser:           config.BasicAuthUser,
-		JsonData:                config.JSONData,
-		DecryptedSecureJsonData: config.DecryptedSecureJSONData,
-		LastUpdatedMS:           config.Updated.UnixNano() / int64(time.Millisecond),
+	return &pluginv2.AppInstanceSettings{
+		JsonData:                s.JSONData,
+		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
+		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
 	}
 }
 
-func (t convertToProtobuf) PluginConfig(config PluginConfig) *pluginv2.PluginConfig {
-	return &pluginv2.PluginConfig{
-		OrgId:                   config.OrgID,
-		PluginId:                config.PluginID,
-		JsonData:                config.JSONData,
-		DecryptedSecureJsonData: config.DecryptedSecureJSONData,
-		LastUpdatedMS:           config.Updated.UnixNano() / int64(time.Millisecond),
-		DatasourceConfig:        t.DataSourceConfig(config.DataSourceConfig),
+func (t convertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSettings) *pluginv2.DataSourceInstanceSettings {
+	if s == nil {
+		return nil
+	}
+
+	return &pluginv2.DataSourceInstanceSettings{
+		Id:                      s.ID,
+		Name:                    s.Name,
+		Url:                     s.URL,
+		User:                    s.User,
+		Database:                s.Database,
+		BasicAuthEnabled:        s.BasicAuthEnabled,
+		BasicAuthUser:           s.BasicAuthUser,
+		JsonData:                s.JSONData,
+		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
+		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
+	}
+}
+
+func (t convertToProtobuf) PluginContext(pCtx PluginContext) *pluginv2.PluginContext {
+	return &pluginv2.PluginContext{
+		OrgId:                      pCtx.OrgID,
+		PluginId:                   pCtx.PluginID,
+		User:                       t.User(pCtx.User),
+		AppInstanceSettings:        t.AppInstanceSettings(pCtx.AppInstanceSettings),
+		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pCtx.DataSourceInstanceSettings),
 	}
 }
 
@@ -94,13 +105,13 @@ func (t convertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
 	}
 }
 
-func (t convertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.QueryDataRequest {
+func (t convertToProtobuf) QueryDataRequest(pCtx PluginContext, req *QueryDataRequest) *pluginv2.QueryDataRequest {
 	queries := make([]*pluginv2.DataQuery, len(req.Queries))
 	for i, q := range req.Queries {
 		queries[i] = t.DataQuery(q)
 	}
 	return &pluginv2.QueryDataRequest{
-		Config:  t.PluginConfig(req.PluginConfig),
+		Context: t.PluginContext(pCtx),
 		Headers: req.Headers,
 		Queries: queries,
 	}

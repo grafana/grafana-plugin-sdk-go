@@ -1,11 +1,12 @@
 package backend
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 )
 
-// User represents the Grafana user.
+// User represents a Grafana user.
 type User struct {
 	Login string
 	Name  string
@@ -13,8 +14,26 @@ type User struct {
 	Role  string
 }
 
-// DataSourceConfig holds configuration for a data source instance.
-type DataSourceConfig struct {
+// AppInstanceSettings represents settings for an app instance.
+//
+// In Grafana an app instance is an app plugin of certain
+// type that have been configured and enabled in a Grafana organization.
+type AppInstanceSettings struct {
+	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any custom properties associated with the plugin config instance.
+	JSONData json.RawMessage
+
+	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration plugin instance in Grafana server have been decrypted before passing them to the plugin.
+	DecryptedSecureJSONData map[string]string
+
+	// Updated is the last time this plugin instance's configuration was updated.
+	Updated time.Time
+}
+
+// DataSourceInstanceSettings represents settings for a data source instance.
+//
+// In Grafana a data source instance is a data source plugin of certain
+// type that have been configured and created in a Grafana organization.
+type DataSourceInstanceSettings struct {
 	// ID is the Grafana assigned numeric identifier of the the data source instance.
 	ID int64
 
@@ -46,30 +65,39 @@ type DataSourceConfig struct {
 	Updated time.Time
 }
 
-// PluginConfig holds the configuration for a plugin instance.
-//
-// Grafana supports multiple organizations and only one plugin instance per Grafana organization. A plugin instance can have multiple data source instances.
-//
-// PluginConfig is attached to incoming requests to uniquely identify the Plugin instance the request belongs to.
-// If the request is a data source request, it also contains the configuration of the data source instance.
-type PluginConfig struct {
-	// OrgID is the Grafana identifier of the Grafana organization this plugin instance belongs too.
+// PluginContext holds contextual information about a plugin request, such as
+// Grafana organization, user and plugin instance settings.
+type PluginContext struct {
+	// RequestContext is the context that can carry a deadline, a cancellation signal, and
+	// other values acrossa a plugin request.
+	RequestContext context.Context
+
+	// OrgID is The Grafana organization identifier the request originating from.
 	OrgID int64
 
-	// PluginID is the unique identifer from the plugin.json id property.
+	// PluginID is the unique identifier of the plugin the request  originating from.
 	PluginID string
 
-	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any custom properties associated with the plugin config instance.
-	JSONData json.RawMessage
+	// User is the Grafana user the request originating from.
+	//
+	// Will not be provided if Grafana backend initiated the request,
+	// for example when request is coming from Grafana Alerting.
+	User *User
 
-	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration plugin instance in Grafana server have been decrypted before passing them to the plugin.
-	DecryptedSecureJSONData map[string]string
+	// AppInstanceSettings is the configured app instance settings.
+	//
+	// In Grafana an app instance is an app plugin of certain
+	// type that have been configured and enabled in a Grafana organization.
+	//
+	// Will only be set if request targeting an app instance.
+	AppInstanceSettings *AppInstanceSettings
 
-	// Updated is the last time this plugin instance's configuration was updated.
-	Updated time.Time
-
-	// DataSourceConfig is the configuration of a data source instance for this plugin.
-	// If the request is a data source request, this will be set to the specific datasource instance
-	// the request is for.
-	DataSourceConfig *DataSourceConfig
+	// DataSourceConfig is the configured data source instance
+	// settings.
+	//
+	// In Grafana a data source instance is a data source plugin of certain
+	// type that have been configured and created in a Grafana organization.
+	//
+	// Will only be set if request targeting a data source instance.
+	DataSourceInstanceSettings *DataSourceInstanceSettings
 }

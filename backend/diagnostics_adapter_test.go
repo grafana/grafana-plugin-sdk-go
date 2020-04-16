@@ -91,7 +91,7 @@ func TestCheckHealth(t *testing.T) {
 			})
 
 			req := &pluginv2.CheckHealthRequest{
-				Config: &pluginv2.PluginConfig{},
+				Context: &pluginv2.PluginContext{},
 			}
 			res, err := adapter.CheckHealth(context.Background(), req)
 			if tc.expectedError {
@@ -115,7 +115,7 @@ type testCheckHealthHandler struct {
 	err         error
 }
 
-func (h *testCheckHealthHandler) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+func (h *testCheckHealthHandler) CheckHealth(pCtx PluginContext, req *CheckHealthRequest) (*CheckHealthResult, error) {
 	return &CheckHealthResult{
 		Status:      h.status,
 		Message:     h.message,

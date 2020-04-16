@@ -23,14 +23,14 @@ type httpResourceHandler struct {
 	handler http.Handler
 }
 
-func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+func (h *httpResourceHandler) CallResource(pCtx backend.PluginContext, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	var reqBodyReader io.Reader
 	if len(req.Body) > 0 {
 		reqBodyReader = bytes.NewReader(req.Body)
 	}
 
-	ctx = withPluginConfig(ctx, req.PluginConfig)
-	ctx = withUser(ctx, req.User)
+	ctx := withPluginContext(pCtx.RequestContext, pCtx)
+	ctx = withUser(ctx, pCtx.User)
 	reqURL, err := url.Parse(req.URL)
 	if err != nil {
 		return err
@@ -63,18 +63,18 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 
 type pluginConfigKey struct{}
 
-func withPluginConfig(ctx context.Context, cfg backend.PluginConfig) context.Context {
-	return context.WithValue(ctx, pluginConfigKey{}, cfg)
+func withPluginContext(ctx context.Context, pCtx backend.PluginContext) context.Context {
+	return context.WithValue(ctx, pluginConfigKey{}, pCtx)
 }
 
 // PluginConfigFromContext returns backend.PluginConfig from context.
-func PluginConfigFromContext(ctx context.Context) backend.PluginConfig {
+func PluginConfigFromContext(ctx context.Context) backend.PluginContext {
 	v := ctx.Value(pluginConfigKey{})
 	if v == nil {
-		return backend.PluginConfig{}
+		return backend.PluginContext{}
 	}
 
-	return v.(backend.PluginConfig)
+	return v.(backend.PluginContext)
 }
 
 type userKey struct{}
