@@ -9,31 +9,43 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// FrameFromRows returns a new Frame populated with the data from rows. The Field Vector types
-// will be Vectors of pointer types, []*T, if the SQL column is nullable or if the nullable property is unknown.
-// Otherwise, they will be []T types.
+// FrameFromRows returns a new Frame populated with the data from rows. The field types
+// will be nullable ([]*T) if the SQL column is nullable or if the nullable property is unknown.
+// Otherwise, the field types will be non-nullable ([]T) types.
 //
-// Fields will be named to match name of the SQL columns and the SQL column names must be unique (https://github.com/grafana/grafana-plugin-sdk-go/issues/59).
+// The number of rows scanned is limited to rowLimit. If maxRows is reached, then a data.Notice with a warning severity
+// will be attached to the frame. If rowLimit is less than 0, there is no limit.
+//
+// Fields will be named to match name of the SQL columns.
 //
 // All the types must be supported by the Frame or a StringConverter will be created and
-// the resulting Field Vector type will be of type []*string.
+// the resulting FieldType type will be FieldTypeNullableString ([]*string).
 //
 // The StringConverter's ConversionFunc will be applied to matching rows if it is not nil.
 // Additionally, if the StringConverter's Replacer is not nil, the replacement will be performed.
 // A map of Field/Column index to the corresponding StringConverter is returned so what conversions were
 // done can be inspected.
-func FrameFromRows(rows *sql.Rows, converters ...StringConverter) (*data.Frame, map[int]StringConverter, error) {
+func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...StringConverter) (*data.Frame, map[int]StringConverter, error) {
 	frame, mappers, err := newForSQLRows(rows, converters...)
 	if err != nil {
 		return nil, nil, err
 	}
 
+	var i int64
 	for rows.Next() {
 		sRow := newScannableRow(frame)
 		err := rows.Scan(sRow...)
 		if err != nil {
 			return nil, nil, err
 		}
+		if i == rowLimit {
+			frame.AppendNotices(data.Notice{
+				Severity: data.NoticeSeverityWarning,
+				Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
+			})
+			break
+		}
+		i++
 	}
 
 	for fieldIdx, mapper := range mappers {
