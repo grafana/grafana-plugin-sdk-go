@@ -30,7 +30,7 @@ const (
 	TimeSeriesTypeWide
 )
 
-// FillMode is an integer type denoting how missing values should be filled
+// FillMode is an integer type denoting how missing values should be filled.
 type FillMode int
 
 const (
