@@ -9,11 +9,11 @@ These targets can be used in your plugin project by creating `Magefile.go` in th
 ```go
 //+build mage
 
-package
+package main
 
 import (
-    // mage:import
-    _ "github.com/grafana/grafana-plugin-sdk-go/build"
+	// mage:import
+	build "github.com/grafana/grafana-plugin-sdk-go/build"
 )
 
 // Default configures the default target.
