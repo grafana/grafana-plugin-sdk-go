@@ -34,7 +34,7 @@ const (
 type FillMode int
 
 const (
-	// FillModePrevious fills with the last seen value unless that does exists so it fills with null
+	// FillModePrevious fills with the last seen value unless that does not exist so it fills with null
 	FillModePrevious FillMode = iota
 	// FillModeNull fills with null
 	FillModeNull
