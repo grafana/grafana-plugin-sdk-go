@@ -34,7 +34,7 @@ const (
 type FillMode int
 
 const (
-	// FillModePrevious fills with the last seen value unless that does not exist so it fills with null
+	// FillModePrevious fills with the last seen value unless that does not exist, in which case it fills with null.
 	FillModePrevious FillMode = iota
 	// FillModeNull fills with null
 	FillModeNull
@@ -100,7 +100,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	return
 }
 
-// valueToType gets a float64 value and converts it to the specific field type.
+// valueToType converts a float64 value to the specifed field type.
 // This is useful if fill missing is enabled and fill missing mode is FillMissingValue,
 // for converting the fill missing value (float64) to the field type.
 func valueToType(val float64, ftype FieldType) interface{} {
