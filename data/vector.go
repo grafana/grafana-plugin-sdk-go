@@ -16,6 +16,7 @@ type vector interface {
 	PointerAt(i int) interface{}
 	CopyAt(i int) interface{}
 	ConcreteAt(i int) (val interface{}, ok bool)
+	SetConcreateAt(i int, val interface{})
 }
 
 func newVector(t interface{}, n int) (v vector) {
@@ -369,7 +370,7 @@ func (p FieldType) String() string {
 
 }
 
-// NewFieldFromFieldType creates a new Field of the given pType of length n.
+// NewFieldFromFieldType creates a new Field of the given FieldType of length n.
 func NewFieldFromFieldType(p FieldType, n int) *Field {
 	f := &Field{}
 	switch p {
@@ -447,56 +448,54 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 	return f
 }
 
-// NewFieldFromFieldType creates a new Field of the given pType of length n.
-func NewNullableFieldFromFieldType(p FieldType, n int) *Field {
-	f := &Field{}
+// NullableType returns the FieldType's nullable type
+func (p FieldType) NullableType() FieldType {
 	switch p {
 	// ints
 	case FieldTypeInt8, FieldTypeNullableInt8:
-		f.vector = newNullableInt8Vector(n)
+		return FieldTypeNullableInt8
 
 	case FieldTypeInt16, FieldTypeNullableInt16:
-		f.vector = newNullableInt16Vector(n)
+		return FieldTypeNullableInt16
 
 	case FieldTypeInt32, FieldTypeNullableInt32:
-		f.vector = newNullableInt32Vector(n)
+		return FieldTypeNullableInt32
 
 	case FieldTypeInt64, FieldTypeNullableInt64:
-		f.vector = newNullableInt64Vector(n)
+		return FieldTypeNullableInt64
 
 	// uints
 	case FieldTypeUint8, FieldTypeNullableUint8:
-		f.vector = newNullableUint8Vector(n)
+		return FieldTypeNullableUint8
 
 	case FieldTypeUint16, FieldTypeNullableUint16:
-		f.vector = newNullableUint16Vector(n)
+		return FieldTypeNullableUint16
 
 	case FieldTypeUint32, FieldTypeNullableUint32:
-		f.vector = newNullableUint32Vector(n)
+		return FieldTypeNullableUint32
 
 	case FieldTypeUint64, FieldTypeNullableUint64:
-		f.vector = newNullableUint64Vector(n)
+		return FieldTypeNullableUint64
 
 	// floats
 	case FieldTypeFloat32, FieldTypeNullableFloat32:
-		f.vector = newNullableFloat32Vector(n)
+		return FieldTypeNullableFloat32
 
 	case FieldTypeFloat64, FieldTypeNullableFloat64:
-		f.vector = newNullableFloat64Vector(n)
+		return FieldTypeNullableFloat64
 
 	// other
 	case FieldTypeString, FieldTypeNullableString:
-		f.vector = newNullableStringVector(n)
+		return FieldTypeNullableString
 
 	case FieldTypeBool, FieldTypeNullableBool:
-		f.vector = newNullableBoolVector(n)
+		return FieldTypeNullableBool
 
 	case FieldTypeTime, FieldTypeNullableTime:
-		f.vector = newNullableTimeTimeVector(n)
+		return FieldTypeNullableTime
 	default:
-		panic(fmt.Sprint("unsupported vector ptype"))
+		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
-	return f
 }
 
 // ItemTypeString returns the string representation of the type of element within in the vector

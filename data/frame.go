@@ -202,11 +202,19 @@ func (f *Frame) CopyAt(fieldIdx int, rowIdx int) interface{} {
 	return f.Fields[fieldIdx].vector.CopyAt(rowIdx)
 }
 
-// Set set the val to the specified fieldIdx and rowIdx.
+// Set sets the val to the specified fieldIdx and rowIdx.
 // It will panic if either the fieldIdx or rowIdx are out of range or
 // if the underlying type of val does not match the element type of the Field.
 func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.Set(rowIdx, val)
+}
+
+// SetConcreateAt sets the val to the specified fieldIdx and rowIdx.
+// if the Field is not nullable or to the pointer to val if it is nullable
+// It will panic if either the fieldIdx or rowIdx are out of range or
+// if the underlying type of val does not match the element concrete type of the Field.
+func (f *Frame) SetConcreateAt(fieldIdx int, rowIdx int, val interface{}) {
+	f.Fields[fieldIdx].vector.SetConcreateAt(rowIdx, val)
 }
 
 // Extend extends all the Fields by length by i.

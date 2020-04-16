@@ -30,15 +30,20 @@ const (
 	TimeSeriesTypeWide
 )
 
+// FillMode an integer type denoting how missing values should be filled
 type FillMode int
 
 const (
+	// FillModePrevious fills with the last seen value unless that does exists so it fills with null
 	FillModePrevious FillMode = iota
+	// FillModeNull fills with null
 	FillModeNull
+	// FillModeValue fills with a specific value
 	FillModeValue
 )
 
-type LongToWideFillMissing struct {
+// FillMissing is a struct containing the fill mode and the fill value if fill mode is FillModeValue
+type FillMissing struct {
 	Mode  FillMode
 	Value float64
 }
@@ -95,31 +100,60 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	return
 }
 
-// valueToType gets a float64 value and converts it to the specific field type
-// this is useful is fill missing is enabled and fill missing mode is FillMissingValue
-// for converrting the fill missing value (float64) to the field type
+// valueToType gets a float64 value and converts it to the specific field type.
+// This is useful if fill missing is enabled and fill missing mode is FillMissingValue,
+// for converting the fill missing value (float64) to the field type.
 func valueToType(val float64, ftype FieldType) interface{} {
 	switch ftype {
-	case FieldTypeInt8, FieldTypeNullableInt8:
+	case FieldTypeInt8:
 		return int8(val)
-	case FieldTypeInt16, FieldTypeNullableInt16:
+	case FieldTypeNullableInt8:
+		c := int8(val)
+		return &c
+	case FieldTypeInt16:
 		return int16(val)
-	case FieldTypeInt32, FieldTypeNullableInt32:
+	case FieldTypeNullableInt16:
+		c := int16(val)
+		return &c
+	case FieldTypeInt32:
 		return int32(val)
-	case FieldTypeInt64, FieldTypeNullableInt64:
+	case FieldTypeNullableInt32:
+		c := int32(val)
+		return &c
+	case FieldTypeInt64:
 		return int64(val)
-	case FieldTypeUint8, FieldTypeNullableUint8:
+	case FieldTypeNullableInt64:
+		c := int64(val)
+		return &c
+	case FieldTypeUint8:
 		return uint8(val)
-	case FieldTypeUint16, FieldTypeNullableUint16:
+	case FieldTypeNullableUint8:
+		c := uint8(val)
+		return &c
+	case FieldTypeUint16:
 		return uint16(val)
-	case FieldTypeUint32, FieldTypeNullableUint32:
+	case FieldTypeNullableUint16:
+		c := uint16(val)
+		return &c
+	case FieldTypeUint32:
 		return uint32(val)
-	case FieldTypeUint64, FieldTypeNullableUint64:
+	case FieldTypeNullableUint32:
+		c := uint32(val)
+		return &c
+	case FieldTypeUint64:
 		return uint64(val)
-	case FieldTypeFloat32, FieldTypeNullableFloat32:
+	case FieldTypeNullableUint64:
+		c := uint64(val)
+		return &c
+	case FieldTypeFloat32:
 		return float32(val)
-	case FieldTypeFloat64, FieldTypeNullableFloat64:
+	case FieldTypeNullableFloat32:
+		c := float32(val)
+		return &c
+	case FieldTypeFloat64:
 		return val
+	case FieldTypeNullableFloat64:
+		return &val
 	}
 	// if field type is FieldTypeString, FieldTypeNullableString, FieldTypeBool, FieldTypeNullableBool, FieldTypeTime, FieldTypeNullableTime
 	// returns the value unconverted
@@ -127,7 +161,7 @@ func valueToType(val float64, ftype FieldType) interface{} {
 	return val
 }
 
-func getMissing(fillMissing *LongToWideFillMissing, field *Field, idx int) (interface{}, error) {
+func getMissing(fillMissing *FillMissing, field *Field, idx int) (interface{}, error) {
 	if fillMissing == nil {
 		return nil, fmt.Errorf("Fill missing is disabled")
 	}
@@ -164,7 +198,7 @@ func getMissing(fillMissing *LongToWideFillMissing, field *Field, idx int) (inte
 //
 // With a conversion of Long to Wide, and then back to Long via WideToLong(), the outputted Long Frame
 // may not match the original inputted Long frame.
-func LongToWide(longFrame *Frame, fillMissing *LongToWideFillMissing) (*Frame, error) {
+func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 	tsSchema := longFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeLong {
 		return nil, fmt.Errorf("can not convert to wide series, expected long format series input but got %s series", tsSchema.Type)
@@ -257,7 +291,7 @@ func LongToWide(longFrame *Frame, fillMissing *LongToWideFillMissing) (*Frame, e
 					// if fillMissing mode is null or previous
 					// the new wide field should be nullable
 					// because some cells can be null
-					newWideField = NewNullableFieldFromFieldType(longField.Type(), wideFrameRowCounter+1)
+					newWideField = NewFieldFromFieldType(longField.Type().NullableType(), wideFrameRowCounter+1)
 				}
 				newWideField.Name, newWideField.Labels = longField.Name, labels
 				wideFrame.Fields = append(wideFrame.Fields, newWideField)
@@ -274,6 +308,10 @@ func LongToWide(longFrame *Frame, fillMissing *LongToWideFillMissing) (*Frame, e
 		}
 		for _, longFieldIdx := range tsSchema.ValueIndices {
 			wideFieldIdx := valueFactorToWideFieldIdx[longFieldIdx][factorKey]
+			if wideFrame.Fields[wideFieldIdx].Nullable() && !longFrame.Fields[longFieldIdx].Nullable() {
+				wideFrame.SetConcreateAt(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
+				continue
+			}
 			wideFrame.Set(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
 		}
 	}

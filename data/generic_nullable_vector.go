@@ -14,13 +14,12 @@ func (v *nullablegenVector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case gen:
-		val := i.(gen)
-		(*v)[idx] = &val
-	case *gen:
-		(*v)[idx] = i.(*gen)
-	}
+	(*v)[idx] = i.(*gen)
+}
+
+func (v *nullablegenVector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(gen)
+	(*v)[idx] = &val
 }
 
 func (v *nullablegenVector) Append(i interface{}) {

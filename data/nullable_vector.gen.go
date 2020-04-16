@@ -20,13 +20,12 @@ func (v *nullableUint8Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case uint8:
-		val := i.(uint8)
-		(*v)[idx] = &val
-	case *uint8:
-		(*v)[idx] = i.(*uint8)
-	}
+	(*v)[idx] = i.(*uint8)
+}
+
+func (v *nullableUint8Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(uint8)
+	(*v)[idx] = &val
 }
 
 func (v *nullableUint8Vector) Append(i interface{}) {
@@ -91,13 +90,12 @@ func (v *nullableUint16Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case uint16:
-		val := i.(uint16)
-		(*v)[idx] = &val
-	case *uint16:
-		(*v)[idx] = i.(*uint16)
-	}
+	(*v)[idx] = i.(*uint16)
+}
+
+func (v *nullableUint16Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(uint16)
+	(*v)[idx] = &val
 }
 
 func (v *nullableUint16Vector) Append(i interface{}) {
@@ -162,13 +160,12 @@ func (v *nullableUint32Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case uint32:
-		val := i.(uint32)
-		(*v)[idx] = &val
-	case *uint32:
-		(*v)[idx] = i.(*uint32)
-	}
+	(*v)[idx] = i.(*uint32)
+}
+
+func (v *nullableUint32Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(uint32)
+	(*v)[idx] = &val
 }
 
 func (v *nullableUint32Vector) Append(i interface{}) {
@@ -233,13 +230,12 @@ func (v *nullableUint64Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case uint64:
-		val := i.(uint64)
-		(*v)[idx] = &val
-	case *uint64:
-		(*v)[idx] = i.(*uint64)
-	}
+	(*v)[idx] = i.(*uint64)
+}
+
+func (v *nullableUint64Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(uint64)
+	(*v)[idx] = &val
 }
 
 func (v *nullableUint64Vector) Append(i interface{}) {
@@ -304,13 +300,12 @@ func (v *nullableInt8Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case int8:
-		val := i.(int8)
-		(*v)[idx] = &val
-	case *int8:
-		(*v)[idx] = i.(*int8)
-	}
+	(*v)[idx] = i.(*int8)
+}
+
+func (v *nullableInt8Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(int8)
+	(*v)[idx] = &val
 }
 
 func (v *nullableInt8Vector) Append(i interface{}) {
@@ -375,13 +370,12 @@ func (v *nullableInt16Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case int16:
-		val := i.(int16)
-		(*v)[idx] = &val
-	case *int16:
-		(*v)[idx] = i.(*int16)
-	}
+	(*v)[idx] = i.(*int16)
+}
+
+func (v *nullableInt16Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(int16)
+	(*v)[idx] = &val
 }
 
 func (v *nullableInt16Vector) Append(i interface{}) {
@@ -446,13 +440,12 @@ func (v *nullableInt32Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case int32:
-		val := i.(int32)
-		(*v)[idx] = &val
-	case *int32:
-		(*v)[idx] = i.(*int32)
-	}
+	(*v)[idx] = i.(*int32)
+}
+
+func (v *nullableInt32Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(int32)
+	(*v)[idx] = &val
 }
 
 func (v *nullableInt32Vector) Append(i interface{}) {
@@ -517,13 +510,12 @@ func (v *nullableInt64Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case int64:
-		val := i.(int64)
-		(*v)[idx] = &val
-	case *int64:
-		(*v)[idx] = i.(*int64)
-	}
+	(*v)[idx] = i.(*int64)
+}
+
+func (v *nullableInt64Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(int64)
+	(*v)[idx] = &val
 }
 
 func (v *nullableInt64Vector) Append(i interface{}) {
@@ -588,13 +580,12 @@ func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case float32:
-		val := i.(float32)
-		(*v)[idx] = &val
-	case *float32:
-		(*v)[idx] = i.(*float32)
-	}
+	(*v)[idx] = i.(*float32)
+}
+
+func (v *nullableFloat32Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(float32)
+	(*v)[idx] = &val
 }
 
 func (v *nullableFloat32Vector) Append(i interface{}) {
@@ -659,13 +650,12 @@ func (v *nullableFloat64Vector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case float64:
-		val := i.(float64)
-		(*v)[idx] = &val
-	case *float64:
-		(*v)[idx] = i.(*float64)
-	}
+	(*v)[idx] = i.(*float64)
+}
+
+func (v *nullableFloat64Vector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(float64)
+	(*v)[idx] = &val
 }
 
 func (v *nullableFloat64Vector) Append(i interface{}) {
@@ -730,13 +720,12 @@ func (v *nullableStringVector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case string:
-		val := i.(string)
-		(*v)[idx] = &val
-	case *string:
-		(*v)[idx] = i.(*string)
-	}
+	(*v)[idx] = i.(*string)
+}
+
+func (v *nullableStringVector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(string)
+	(*v)[idx] = &val
 }
 
 func (v *nullableStringVector) Append(i interface{}) {
@@ -801,13 +790,12 @@ func (v *nullableBoolVector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case bool:
-		val := i.(bool)
-		(*v)[idx] = &val
-	case *bool:
-		(*v)[idx] = i.(*bool)
-	}
+	(*v)[idx] = i.(*bool)
+}
+
+func (v *nullableBoolVector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(bool)
+	(*v)[idx] = &val
 }
 
 func (v *nullableBoolVector) Append(i interface{}) {
@@ -872,13 +860,12 @@ func (v *nullableTimeTimeVector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	switch i.(type) {
-	case time.Time:
-		val := i.(time.Time)
-		(*v)[idx] = &val
-	case *time.Time:
-		(*v)[idx] = i.(*time.Time)
-	}
+	(*v)[idx] = i.(*time.Time)
+}
+
+func (v *nullableTimeTimeVector) SetConcreateAt(idx int, i interface{}) {
+	val := i.(time.Time)
+	(*v)[idx] = &val
 }
 
 func (v *nullableTimeTimeVector) Append(i interface{}) {

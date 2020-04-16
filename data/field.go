@@ -196,6 +196,13 @@ func (f *Field) Set(idx int, val interface{}) {
 	f.vector.Set(idx, val)
 }
 
+// SetConcreateAt sets the Fields's value to index idx to the val
+// if the Field is not nullable or to the pointer to val if it is nullable
+// It will panic if the undelying type of val does not match the element concrete type of the Field
+func (f *Field) SetConcreateAt(idx int, val interface{}) {
+	f.vector.Set(idx, val)
+}
+
 // Append appends element e to the Field.
 // it will panic if the underlying type of e does not match the element type of the Field.
 func (f *Field) Append(e interface{}) {

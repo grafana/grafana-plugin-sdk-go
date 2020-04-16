@@ -74,7 +74,7 @@ func TestLongToWide(t *testing.T) {
 		name          string
 		longFrame     *data.Frame
 		wideFrame     *data.Frame
-		tsFillMissing *data.LongToWideFillMissing
+		tsFillMissing *data.FillMissing
 		Err           require.ErrorAssertionFunc
 	}{
 		{
@@ -476,7 +476,7 @@ func TestLongToWide(t *testing.T) {
 					"", // single factor sample
 					"Central & South America",
 				})),
-			tsFillMissing: &data.LongToWideFillMissing{
+			tsFillMissing: &data.FillMissing{
 				Mode:  data.FillModeValue,
 				Value: -1,
 			},
@@ -570,7 +570,7 @@ func TestLongToWide(t *testing.T) {
 					"", // single factor sample
 					"Central & South America",
 				})),
-			tsFillMissing: &data.LongToWideFillMissing{
+			tsFillMissing: &data.FillMissing{
 				Mode:  data.FillModePrevious,
 				Value: -1,
 			},
@@ -664,7 +664,7 @@ func TestLongToWide(t *testing.T) {
 					"", // single factor sample
 					"Central & South America",
 				})),
-			tsFillMissing: &data.LongToWideFillMissing{
+			tsFillMissing: &data.FillMissing{
 				Mode:  data.FillModeNull,
 				Value: -1,
 			},
@@ -758,7 +758,7 @@ func TestLongToWide(t *testing.T) {
 					nil, // single factor sample
 					stringPtr("Central & South America"),
 				})),
-			tsFillMissing: &data.LongToWideFillMissing{
+			tsFillMissing: &data.FillMissing{
 				Mode:  data.FillModeValue,
 				Value: -1,
 			},
@@ -852,7 +852,7 @@ func TestLongToWide(t *testing.T) {
 					nil, // single factor sample
 					stringPtr("Central & South America"),
 				})),
-			tsFillMissing: &data.LongToWideFillMissing{
+			tsFillMissing: &data.FillMissing{
 				Mode: data.FillModePrevious,
 			},
 			wideFrame: data.NewFrame("long_to_wide_test",
@@ -945,7 +945,7 @@ func TestLongToWide(t *testing.T) {
 					nil, // single factor sample
 					stringPtr("Central & South America"),
 				})),
-			tsFillMissing: &data.LongToWideFillMissing{
+			tsFillMissing: &data.FillMissing{
 				Mode: data.FillModeNull,
 			},
 			wideFrame: data.NewFrame("long_to_wide_test",
