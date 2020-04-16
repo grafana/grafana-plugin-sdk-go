@@ -448,7 +448,7 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 	return f
 }
 
-// NullableType returns the FieldType's nullable type
+// NullableType converts the FieldType to the corresponding nullable type.
 func (p FieldType) NullableType() FieldType {
 	switch p {
 	// ints
