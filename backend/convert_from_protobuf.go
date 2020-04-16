@@ -94,7 +94,7 @@ func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 	qdr := &QueryDataResponse{
 		Responses: make(Responses, len(protoRes.Responses)),
 	}
-	for rIdx, res := range protoRes.Responses {
+	for refID, res := range protoRes.Responses {
 		frames, err := data.UnmarshalArrowFrames(res.Frames)
 		if err != nil {
 			return nil, err
@@ -106,7 +106,7 @@ func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
 		}
-		qdr.Responses[rIdx] = &dr
+		qdr.Responses[refID] = dr
 	}
 	return qdr, nil
 }
