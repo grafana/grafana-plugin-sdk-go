@@ -3,11 +3,14 @@ jobs:
   build:
     docker:
       - image: cimg/go:1.14
-    working_directory: ~/build
     steps:
       - checkout
       - run:
           name: Build
           command: |
-            mage -v lint
-            mage -v test
+            go vet ./...
+            golangci-lint run ./...
+            revive -formatter stylish -config scripts/configs/revive.toml ./...
+            gosec -quiet -exclude=G104,G107,G108,G201,G202,G204,G301,G304,G401,G402,G501 -conf=scripts/configs/gosec.json
+
+            go test ./...
