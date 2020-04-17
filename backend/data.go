@@ -61,7 +61,7 @@ func NewQueryDataResponse() *QueryDataResponse {
 	}
 }
 
-// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
+// Responses is a map of RefIDs (Unique Query ID) to DataResponses.
 type Responses map[string]DataResponse
 
 // DataResponse contains the results from a DataQuery.
