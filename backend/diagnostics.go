@@ -1,9 +1,13 @@
 package backend
 
+import (
+	"context"
+)
+
 // CheckHealthHandler enables users to send health check
 // requests to a backend plugin
 type CheckHealthHandler interface {
-	CheckHealth(pCtx PluginContext, req *CheckHealthRequest) (*CheckHealthResult, error)
+	CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error)
 }
 
 // HealthStatus is the status of the plugin.
@@ -22,6 +26,7 @@ const (
 
 // CheckHealthRequest contains the healthcheck request
 type CheckHealthRequest struct {
+	PluginContext PluginContext
 }
 
 // CheckHealthResult contains the healthcheck response

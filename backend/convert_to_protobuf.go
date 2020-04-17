@@ -105,13 +105,13 @@ func (t convertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
 	}
 }
 
-func (t convertToProtobuf) QueryDataRequest(pCtx PluginContext, req *QueryDataRequest) *pluginv2.QueryDataRequest {
+func (t convertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.QueryDataRequest {
 	queries := make([]*pluginv2.DataQuery, len(req.Queries))
 	for i, q := range req.Queries {
 		queries[i] = t.DataQuery(q)
 	}
 	return &pluginv2.QueryDataRequest{
-		Context: t.PluginContext(pCtx),
+		Context: t.PluginContext(req.PluginContext),
 		Headers: req.Headers,
 		Queries: queries,
 	}

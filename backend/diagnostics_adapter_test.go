@@ -115,7 +115,7 @@ type testCheckHealthHandler struct {
 	err         error
 }
 
-func (h *testCheckHealthHandler) CheckHealth(pCtx PluginContext, req *CheckHealthRequest) (*CheckHealthResult, error) {
+func (h *testCheckHealthHandler) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
 	return &CheckHealthResult{
 		Status:      h.status,
 		Message:     h.message,

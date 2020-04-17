@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"context"
 	"encoding/json"
 	"time"
 )
@@ -68,10 +67,6 @@ type DataSourceInstanceSettings struct {
 // PluginContext holds contextual information about a plugin request, such as
 // Grafana organization, user and plugin instance settings.
 type PluginContext struct {
-	// RequestContext is the context that can carry a deadline, a cancellation signal, and
-	// other values acrossa a plugin request.
-	RequestContext context.Context
-
 	// OrgID is The Grafana organization identifier the request originating from.
 	OrgID int64
 

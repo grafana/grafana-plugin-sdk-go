@@ -59,11 +59,9 @@ func TestCallResource(t *testing.T) {
 
 		require.NoError(t, err)
 
-		require.NotNil(t, handler.actualPluginCtx)
-		require.Equal(t, int64(2), handler.actualPluginCtx.OrgID)
-		require.Equal(t, "my-plugin", handler.actualPluginCtx.PluginID)
-
 		require.NotNil(t, handler.actualReq)
+		require.Equal(t, int64(2), handler.actualReq.PluginContext.OrgID)
+		require.Equal(t, "my-plugin", handler.actualReq.PluginContext.PluginID)
 		require.Equal(t, "some/path", handler.actualReq.Path)
 		require.Equal(t, http.MethodGet, handler.actualReq.Method)
 		require.Equal(t, "plugins/test-plugin/resources/some/path?test=1", handler.actualReq.URL)
@@ -146,12 +144,10 @@ type testCallResourceHandler struct {
 	responseHeaders map[string][]string
 	responseBody    []byte
 	responseErr     error
-	actualPluginCtx PluginContext
 	actualReq       *CallResourceRequest
 }
 
-func (h *testCallResourceHandler) CallResource(pCtx PluginContext, req *CallResourceRequest, sender CallResourceResponseSender) error {
-	h.actualPluginCtx = pCtx
+func (h *testCallResourceHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	h.actualReq = req
 	err := sender.Send(&CallResourceResponse{
 		Status:  h.responseStatus,
@@ -172,7 +168,7 @@ type testCallResourceStreamHandler struct {
 	responseErr      error
 }
 
-func (h *testCallResourceStreamHandler) CallResource(pCtx PluginContext, req *CallResourceRequest, sender CallResourceResponseSender) error {
+func (h *testCallResourceStreamHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	err := sender.Send(&CallResourceResponse{
 		Status:  h.responseStatus,
 		Headers: h.responseHeaders,
@@ -201,7 +197,6 @@ type testCallResourceServer struct {
 
 func newTestCallResourceServer() *testCallResourceServer {
 	return &testCallResourceServer{
-		ctx:          context.Background(),
 		respMessages: []*pluginv2.CallResourceResponse{},
 	}
 }

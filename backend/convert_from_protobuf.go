@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"context"
 	"errors"
 	"time"
 
@@ -61,9 +60,8 @@ func (f convertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 	}
 }
 
-func (f convertFromProtobuf) PluginContext(ctx context.Context, proto *pluginv2.PluginContext) PluginContext {
+func (f convertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) PluginContext {
 	return PluginContext{
-		RequestContext:             ctx,
 		OrgID:                      proto.OrgId,
 		PluginID:                   proto.PluginId,
 		User:                       f.User(proto.User),
@@ -96,8 +94,9 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 	}
 
 	return &QueryDataRequest{
-		Headers: protoReq.Headers,
-		Queries: queries,
+		PluginContext: f.PluginContext(protoReq.Context),
+		Headers:       protoReq.Headers,
+		Queries:       queries,
 	}
 }
 
@@ -127,15 +126,18 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 	}
 
 	return &CallResourceRequest{
-		Path:    protoReq.Path,
-		Method:  protoReq.Method,
-		URL:     protoReq.Url,
-		Headers: headers,
-		Body:    protoReq.Body,
+		PluginContext: f.PluginContext(protoReq.Context),
+		Path:          protoReq.Path,
+		Method:        protoReq.Method,
+		URL:           protoReq.Url,
+		Headers:       headers,
+		Body:          protoReq.Body,
 	}
 }
 
 // HealthCheckRequest converts proto version to SDK version.
 func (f convertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
-	return &CheckHealthRequest{}
+	return &CheckHealthRequest{
+		PluginContext: f.PluginContext(protoReq.Context),
+	}
 }

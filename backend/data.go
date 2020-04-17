@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -13,14 +14,15 @@ type QueryDataHandler interface {
 	// req contains the queries []DataQuery (where each query contains RefID as a unique identifer).
 	// The QueryDataResponse contains a map of RefID to the response for each query, and each response
 	// contains Frames ([]*Frame).
-	QueryData(pCtx PluginContext, req *QueryDataRequest) (*QueryDataResponse, error)
+	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }
 
 // QueryDataRequest contains a single request which contains multiple queries.
 // It is the input type for a QueryData call.
 type QueryDataRequest struct {
-	Headers map[string]string
-	Queries []DataQuery
+	PluginContext PluginContext
+	Headers       map[string]string
+	Queries       []DataQuery
 }
 
 // DataQuery represents a single query as sent from the frontend.

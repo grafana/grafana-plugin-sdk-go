@@ -23,14 +23,14 @@ type httpResourceHandler struct {
 	handler http.Handler
 }
 
-func (h *httpResourceHandler) CallResource(pCtx backend.PluginContext, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	var reqBodyReader io.Reader
 	if len(req.Body) > 0 {
 		reqBodyReader = bytes.NewReader(req.Body)
 	}
 
-	ctx := withPluginContext(pCtx.RequestContext, pCtx)
-	ctx = withUser(ctx, pCtx.User)
+	ctx = withPluginContext(ctx, req.PluginContext)
+	ctx = withUser(ctx, req.PluginContext.User)
 	reqURL, err := url.Parse(req.URL)
 	if err != nil {
 		return err
