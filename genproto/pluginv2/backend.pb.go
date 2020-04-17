@@ -1002,9 +1002,7 @@ func init() {
 	proto.RegisterType((*CheckHealthResponse)(nil), "pluginv2.CheckHealthResponse")
 }
 
-func init() {
-	proto.RegisterFile("backend.proto", fileDescriptor_5ab9ba5b8d8b2ba5)
-}
+func init() { proto.RegisterFile("backend.proto", fileDescriptor_5ab9ba5b8d8b2ba5) }
 
 var fileDescriptor_5ab9ba5b8d8b2ba5 = []byte{
 	// 1144 bytes of a gzipped FileDescriptorProto
