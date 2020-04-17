@@ -442,7 +442,7 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 	case FieldTypeNullableTime:
 		f.vector = newNullableTimeTimeVector(n)
 	default:
-		panic(fmt.Sprint("unsupported vector ptype"))
+		panic("unsupported vector ptype")
 	}
 	return f
 }

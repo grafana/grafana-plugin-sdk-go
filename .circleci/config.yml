@@ -9,5 +9,5 @@ jobs:
       - run:
           name: Build
           command: |
-            make lint
-            make test
+            mage -v lint
+            mage -v test
