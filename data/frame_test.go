@@ -249,7 +249,7 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 		frame.AppendRow(row...)
 	}
 	fmt.Println(frame.String())
-	w, _ := data.LongToWide(frame)
+	w, _ := data.LongToWide(frame, nil)
 	w.Name = "Wide"
 	fmt.Println(w.String())
 	// Output:
