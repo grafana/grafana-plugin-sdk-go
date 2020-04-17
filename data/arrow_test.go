@@ -210,6 +210,14 @@ func goldenDF() *data.Frame {
 			time.Unix(0, MAX_ECMA6_INT),
 			time.Unix(0, math.MaxInt64),
 		}),
+		// Note: This is intentionally repeated to create a duplicate field.
+		data.NewField("timestamps", nil, []time.Time{
+			time.Unix(0, 0),
+			time.Unix(1568039445, 0),
+			time.Unix(1568039450, 0),
+			time.Unix(0, MAX_ECMA6_INT),
+			time.Unix(0, math.MaxInt64),
+		}),
 		data.NewField("nullable_timestamps", nil, []*time.Time{
 			timePtr(time.Unix(0, 0)),
 			timePtr(time.Unix(1568039445, 0)),
@@ -273,4 +281,23 @@ func TestDecode(t *testing.T) {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 
+}
+
+func TestEncodeAndDecodeDuplicateFieldNames(t *testing.T) {
+	frame := data.NewFrame("frame_dup_field_names",
+		data.NewField("Duplicate", nil, []bool{true, false}),
+		data.NewField("Duplicate", nil, []bool{false, true}),
+	)
+
+	encoded, err := frame.MarshalArrow()
+	if err != nil {
+		t.Fatal(err)
+	}
+	decoded, err := data.UnmarshalArrowFrame(encoded)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if diff := cmp.Diff(frame, decoded, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
 }

@@ -39,8 +39,6 @@ type Frame struct {
 
 	// Meta is metadata about the Frame, and includes space for custom metadata.
 	Meta *FrameMeta
-
-	Warnings []Warning // TODO: Remove, will be replaced with FrameMeta.Notices.
 }
 
 // Frames is a slice of Frame pointers.
@@ -65,11 +63,6 @@ func (f *Frame) RowCopy(rowIdx int) []interface{} {
 		vals[i] = f.CopyAt(i, rowIdx)
 	}
 	return vals
-}
-
-// AppendWarning adds warnings to the data frame.
-func (f *Frame) AppendWarning(message string, details string) {
-	f.Warnings = append(f.Warnings, Warning{Message: message, Details: details})
 }
 
 // AppendRowSafe adds a new row to the Frame by appending to each each element of vals to

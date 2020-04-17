@@ -106,7 +106,7 @@ func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		qdr.Responses[rIdx] = &dr
 	}
-	return &qdr, nil
+	return qdr, nil
 }
 
 func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResourceRequest) *CallResourceRequest {
