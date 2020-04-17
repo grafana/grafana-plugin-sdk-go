@@ -2,7 +2,7 @@ version: 2
 jobs:
   build:
     docker:
-      - image: cimg/go:1.14
+      - image: srclosson/grafana-plugin-ci-alpine:latest
     steps:
       - checkout
       - run:
