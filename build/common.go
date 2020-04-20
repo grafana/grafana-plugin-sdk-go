@@ -262,7 +262,7 @@ func ReloadPlugin() error {
 	return nil
 }
 
-// Debugger makes a new debug build and attaches dlv (go-delve).
+// Debugger makesssss a new debug build and attaches dlv (go-delve). Hei hu.
 func Debugger() error {
 	// Debug build
 	b := Build{}
