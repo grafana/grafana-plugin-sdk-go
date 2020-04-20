@@ -1,0 +1,2 @@
+[run]
+skip-files = ["data/.*\\.gen\\.go", "data/generic_nullable_vector\\.go", "data/generic_vector\\.go"]
