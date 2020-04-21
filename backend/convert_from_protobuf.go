@@ -101,7 +101,6 @@ func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		dr := DataResponse{
 			Frames: frames,
-			//	Meta:   res.JsonMeta,
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
