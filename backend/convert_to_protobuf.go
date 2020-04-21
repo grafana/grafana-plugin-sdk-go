@@ -116,8 +116,7 @@ func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 			return nil, err
 		}
 		pDR := pluginv2.DataResponse{
-			Frames:   encodedFrames,
-			JsonMeta: dr.Meta,
+			Frames: encodedFrames,
 		}
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
