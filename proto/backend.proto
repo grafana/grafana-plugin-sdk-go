@@ -73,7 +73,7 @@ message StringList {
 }
 
 message CallResourceRequest {
-  PluginContext context = 1;
+  PluginContext pluginContext = 1;
   string path = 2;
   string method = 3;
   string url = 4;
@@ -154,7 +154,7 @@ message CollectMetricsResponse {
 }
 
 message CheckHealthRequest {
-  PluginContext context = 1;
+  PluginContext pluginContext = 1;
 }
 
 message CheckHealthResponse {

@@ -63,7 +63,7 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 
 type pluginConfigKey struct{}
 
-func withPluginContext(ctx context.Context, pCtx backend.PluginContext) context.Context {
+func withPluginContext(ctx context.Context, pluginCtx backend.PluginContext) context.Context {
 	return context.WithValue(ctx, pluginConfigKey{}, pCtx)
 }
 

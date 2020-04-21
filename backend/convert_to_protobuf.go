@@ -58,7 +58,7 @@ func (t convertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 	}
 }
 
-func (t convertToProtobuf) PluginContext(pCtx PluginContext) *pluginv2.PluginContext {
+func (t convertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.PluginContext {
 	return &pluginv2.PluginContext{
 		OrgId:                      pCtx.OrgID,
 		PluginId:                   pCtx.PluginID,
