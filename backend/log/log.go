@@ -45,3 +45,5 @@ func (l *hclogWrapper) Warn(msg string, args ...interface{}) {
 func (l *hclogWrapper) Error(msg string, args ...interface{}) {
 	l.logger.Error(msg, args...)
 }
+
+var DefaultLogger Logger = New()
