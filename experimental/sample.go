@@ -15,7 +15,7 @@ import (
 type MyHost struct{}
 
 // CheckHostHealth returns a backend.CheckHealthResult.
-func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) *backend.CheckHealthResult {
+func (ds *MyHost) CheckHostHealth(ctx backend.PluginContext) *backend.CheckHealthResult {
 	return &backend.CheckHealthResult{
 		Status:  backend.HealthStatusOk,
 		Message: "Plugin is running",
@@ -23,9 +23,9 @@ func (ds *MyHost) CheckHostHealth(config backend.PluginConfig) *backend.CheckHea
 }
 
 // NewDataSourceInstance creates a new datasource instance.
-func (ds *MyHost) NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
+func (ds *MyHost) NewDataSourceInstance(ctx backend.PluginContext) (DataSourceInstance, error) {
 	settings := myDataSourceSettings{
-		url:  config.DataSourceConfig.URL,
+		url:  ctx.DataSourceInstanceSettings.URL,
 		port: 1234,
 	}
 
