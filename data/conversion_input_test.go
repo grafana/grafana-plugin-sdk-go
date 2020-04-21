@@ -42,7 +42,7 @@ func ExampleNewFrameInputConverter() {
 		Converter: func(v interface{}) (interface{}, error) {
 			val, ok := v.(string)
 			if !ok { // or return some default value instead of erroring
-				return nil, fmt.Errorf("expected string input but got type %T", val)
+				return nil, fmt.Errorf("expected string input but got type %T", v)
 			}
 			return strconv.ParseFloat(val, 64)
 		},
@@ -52,7 +52,7 @@ func ExampleNewFrameInputConverter() {
 		Converter: func(v interface{}) (interface{}, error) {
 			val, ok := v.(string)
 			if !ok { // or return some default value instead of erroring
-				return nil, fmt.Errorf("expected string input but got type %T", val)
+				return nil, fmt.Errorf("expected string input but got type %T", v)
 			}
 			iV, err := strconv.ParseInt(val, 10, 64)
 			if err != nil {
