@@ -71,8 +71,8 @@ type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.
 	Frames data.Frames
 
-	// Meta contains a custom JSON object for custom response metadata about the query. WARNING: Currently ignored by front end of Grafana.
-	Meta json.RawMessage
+	// // Meta contains a custom JSON object for custom response metadata about the query. WARNING: Currently ignored by front end of Grafana.
+	// Meta json.RawMessage
 
 	// Error is a property to be set if the the corresponding DataQuery has an error.
 	Error error
