@@ -45,7 +45,7 @@ func getExecutableFromPluginJSON() (string, error) {
 	}
 
 	var result map[string]interface{}
-	err = json.Unmarshal([]byte(byteValue), &result)
+	err = json.Unmarshal(byteValue, &result)
 	if err != nil {
 		return "", err
 	}
@@ -59,7 +59,7 @@ func getExecutableFromPluginJSON() (string, error) {
 
 func findRunningPIDs(exe string) []int {
 	pids := []int{}
-	out, err := sh.Output("pgrep", exe[:15]) // full name does not match, only the prefix (on linux anyway)
+	out, err := sh.Output("pgrep", "-f", exe)
 	if err != nil || out == "" {
 		return pids
 	}
@@ -204,13 +204,14 @@ func Clean() error {
 	return nil
 }
 
+// checkLinuxPtraceScope verifies that ptrace is configured as required.
 func checkLinuxPtraceScope() error {
 	ptracePath := "/proc/sys/kernel/yama/ptrace_scope"
 	byteValue, err := ioutil.ReadFile(ptracePath)
 	if err != nil {
 		return fmt.Errorf("unable to read ptrace_scope: %w", err)
 	}
-	val := strings.TrimSpace(string(byteValue[:]))
+	val := strings.TrimSpace(string(byteValue))
 	if "0" != val {
 		log.Printf("WARNING:")
 		fmt.Printf("ptrace_scope set to value other than 0 (currently: %s), this might prevent debugger from connecting\n", val)
@@ -262,7 +263,11 @@ func ReloadPlugin() error {
 	return nil
 }
 
-// Debugger makes a new debug build and attaches dlv (go-delve).
+// Debugger makes a new debug build, re-launches the plugin and attaches the Delve debugger, in headless mode
+// listening on port 3222.
+//
+// The plugin process is killed after re-building, in order to make Grafana launch the new version. Once the new
+// version is up, we attach to it with Delve.
 func Debugger() error {
 	// Debug build
 	b := Build{}
@@ -273,11 +278,8 @@ func Debugger() error {
 	if err != nil {
 		return err
 	}
-
-	// Kill any running processs
 	_ = killAllPIDs(findRunningPIDs(exeName))
 	_ = sh.RunV("pkill", "dlv")
-
 	if runtime.GOOS == "linux" {
 		if err := checkLinuxPtraceScope(); err != nil {
 			return err
@@ -285,31 +287,37 @@ func Debugger() error {
 	}
 
 	// Wait for grafana to start plugin
+	pid := -1
 	for i := 0; i < 20; i++ {
 		pids := findRunningPIDs(exeName)
 		if len(pids) > 1 {
 			return fmt.Errorf("multiple instances already running")
 		}
 		if len(pids) > 0 {
-			pid := strconv.Itoa(pids[0])
-			log.Printf("Running PID: %s", pid)
-
-			// dlv attach ${PLUGIN_PID} --headless --listen=:${PORT} --api-version 2 --log
-			if err := sh.RunV("dlv",
-				"attach",
-				pid,
-				"--headless",
-				"--listen=:3222",
-				"--api-version", "2",
-				"--log"); err != nil {
-				return err
-			}
-			log.Printf("dlv finished running (%s)", pid)
-			return nil
+			pid = pids[0]
+			log.Printf("Found plugin PID: %d", pid)
+			break
 		}
 
-		log.Printf("waiting for grafana to start: %s...", exeName)
+		log.Printf("Waiting for Grafana to start plugin: %q...", exeName)
 		time.Sleep(250 * time.Millisecond)
 	}
-	return fmt.Errorf("could not find process: %s, perhaps grafana is not running?", exeName)
+	if pid == -1 {
+		return fmt.Errorf("could not find plugin process %q, perhaps Grafana is not running?", exeName)
+	}
+
+	pidStr := strconv.Itoa(pid)
+	log.Printf("Attaching Delve to plugin process %d", pid)
+	if err := sh.RunV("dlv",
+		"attach",
+		pidStr,
+		"--headless",
+		"--listen=:3222",
+		"--api-version", "2",
+		"--log"); err != nil {
+		return err
+	}
+	log.Printf("Delve finished successfully")
+
+	return nil
 }
