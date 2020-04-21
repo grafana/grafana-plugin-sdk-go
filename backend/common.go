@@ -70,10 +70,10 @@ type PluginContext struct {
 	// OrgID is The Grafana organization identifier the request originating from.
 	OrgID int64
 
-	// PluginID is the unique identifier of the plugin the request  originating from.
+	// PluginID is the unique identifier of the plugin that the request is for.
 	PluginID string
 
-	// User is the Grafana user the request originating from.
+	// User is the Grafana user making the request.
 	//
 	// Will not be provided if Grafana backend initiated the request,
 	// for example when request is coming from Grafana Alerting.
