@@ -94,7 +94,7 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 	}
 
 	return &QueryDataRequest{
-		PluginContext: f.PluginContext(protoReq.Context),
+		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Headers:       protoReq.Headers,
 		Queries:       queries,
 	}
@@ -128,7 +128,7 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 	}
 
 	return &CallResourceRequest{
-		PluginContext: f.PluginContext(protoReq.Context),
+		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.Path,
 		Method:        protoReq.Method,
 		URL:           protoReq.Url,
@@ -140,6 +140,6 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 // HealthCheckRequest converts proto version to SDK version.
 func (f convertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
 	return &CheckHealthRequest{
-		PluginContext: f.PluginContext(protoReq.Context),
+		PluginContext: f.PluginContext(protoReq.PluginContext),
 	}
 }

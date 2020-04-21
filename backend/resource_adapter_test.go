@@ -42,7 +42,7 @@ func TestCallResource(t *testing.T) {
 		testSender := newTestCallResourceServer()
 		adapter := newResourceSDKAdapter(handler)
 		req := &pluginv2.CallResourceRequest{
-			Context: &pluginv2.PluginContext{
+			PluginContext: &pluginv2.PluginContext{
 				OrgId:    2,
 				PluginId: "my-plugin",
 			},
@@ -105,7 +105,7 @@ func TestCallResource(t *testing.T) {
 		testSender := newTestCallResourceServer()
 		adapter := newResourceSDKAdapter(handler)
 		req := &pluginv2.CallResourceRequest{
-			Context: &pluginv2.PluginContext{
+			PluginContext: &pluginv2.PluginContext{
 				OrgId:    2,
 				PluginId: "my-plugin",
 			},

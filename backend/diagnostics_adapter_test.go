@@ -91,7 +91,7 @@ func TestCheckHealth(t *testing.T) {
 			})
 
 			req := &pluginv2.CheckHealthRequest{
-				Context: &pluginv2.PluginContext{},
+				PluginContext: &pluginv2.PluginContext{},
 			}
 			res, err := adapter.CheckHealth(context.Background(), req)
 			if tc.expectedError {

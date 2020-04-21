@@ -60,11 +60,11 @@ func (t convertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 
 func (t convertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.PluginContext {
 	return &pluginv2.PluginContext{
-		OrgId:                      pCtx.OrgID,
-		PluginId:                   pCtx.PluginID,
-		User:                       t.User(pCtx.User),
-		AppInstanceSettings:        t.AppInstanceSettings(pCtx.AppInstanceSettings),
-		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pCtx.DataSourceInstanceSettings),
+		OrgId:                      pluginCtx.OrgID,
+		PluginId:                   pluginCtx.PluginID,
+		User:                       t.User(pluginCtx.User),
+		AppInstanceSettings:        t.AppInstanceSettings(pluginCtx.AppInstanceSettings),
+		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pluginCtx.DataSourceInstanceSettings),
 	}
 }
 
@@ -111,9 +111,9 @@ func (t convertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 		queries[i] = t.DataQuery(q)
 	}
 	return &pluginv2.QueryDataRequest{
-		Context: t.PluginContext(req.PluginContext),
-		Headers: req.Headers,
-		Queries: queries,
+		PluginContext: t.PluginContext(req.PluginContext),
+		Headers:       req.Headers,
+		Queries:       queries,
 	}
 }
 

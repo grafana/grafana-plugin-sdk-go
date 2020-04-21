@@ -110,7 +110,7 @@ message DataQuery {
 
 // QueryDataRequest
 message QueryDataRequest {
-  PluginContext context = 1;
+  PluginContext pluginContext = 1;
 
   // Environment info
   map<string,string> headers = 2;
@@ -142,7 +142,7 @@ service Diagnostics {
 }
 
 message CollectMetricsRequest {
-  PluginContext context = 1;
+  PluginContext pluginContext = 1;
 }
 
 message CollectMetricsResponse {
