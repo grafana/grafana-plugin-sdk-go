@@ -6,15 +6,15 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-type convertToProtobuf struct {
+type ConvertToProtobuf struct {
 }
 
-func toProto() convertToProtobuf {
-	return convertToProtobuf{}
+func ToProto() ConvertToProtobuf {
+	return ConvertToProtobuf{}
 }
 
 // User converts SDK version of user to proto version
-func (t convertToProtobuf) User(user *User) *pluginv2.User {
+func (t ConvertToProtobuf) User(user *User) *pluginv2.User {
 	if user == nil {
 		return nil
 	}
@@ -27,7 +27,7 @@ func (t convertToProtobuf) User(user *User) *pluginv2.User {
 	}
 }
 
-func (t convertToProtobuf) AppInstanceSettings(s *AppInstanceSettings) *pluginv2.AppInstanceSettings {
+func (t ConvertToProtobuf) AppInstanceSettings(s *AppInstanceSettings) *pluginv2.AppInstanceSettings {
 	if s == nil {
 		return nil
 	}
@@ -39,7 +39,7 @@ func (t convertToProtobuf) AppInstanceSettings(s *AppInstanceSettings) *pluginv2
 	}
 }
 
-func (t convertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSettings) *pluginv2.DataSourceInstanceSettings {
+func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSettings) *pluginv2.DataSourceInstanceSettings {
 	if s == nil {
 		return nil
 	}
@@ -58,7 +58,7 @@ func (t convertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 	}
 }
 
-func (t convertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.PluginContext {
+func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.PluginContext {
 	return &pluginv2.PluginContext{
 		OrgId:                      pluginCtx.OrgID,
 		PluginId:                   pluginCtx.PluginID,
@@ -68,14 +68,14 @@ func (t convertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.Plug
 	}
 }
 
-func (t convertToProtobuf) TimeRange(tr TimeRange) *pluginv2.TimeRange {
+func (t ConvertToProtobuf) TimeRange(tr TimeRange) *pluginv2.TimeRange {
 	return &pluginv2.TimeRange{
 		FromEpochMS: tr.From.UnixNano() / int64(time.Millisecond),
 		ToEpochMS:   tr.To.UnixNano() / int64(time.Millisecond),
 	}
 }
 
-func (t convertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealthResponse_HealthStatus {
+func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealthResponse_HealthStatus {
 	switch status {
 	case HealthStatusUnknown:
 		return pluginv2.CheckHealthResponse_UNKNOWN
@@ -87,7 +87,7 @@ func (t convertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 	panic("unsupported protobuf health status type in sdk")
 }
 
-func (t convertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealthResponse {
+func (t ConvertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealthResponse {
 	return &pluginv2.CheckHealthResponse{
 		Status:      t.HealthStatus(res.Status),
 		Message:     res.Message,
@@ -95,7 +95,7 @@ func (t convertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2
 	}
 }
 
-func (t convertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
+func (t ConvertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
 	return &pluginv2.DataQuery{
 		RefId:         q.RefID,
 		MaxDataPoints: q.MaxDataPoints,
@@ -105,7 +105,7 @@ func (t convertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
 	}
 }
 
-func (t convertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.QueryDataRequest {
+func (t ConvertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.QueryDataRequest {
 	queries := make([]*pluginv2.DataQuery, len(req.Queries))
 	for i, q := range req.Queries {
 		queries[i] = t.DataQuery(q)
@@ -117,7 +117,7 @@ func (t convertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 	}
 }
 
-func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
+func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
 	pQDR := &pluginv2.QueryDataResponse{
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
 	}
@@ -139,7 +139,7 @@ func (t convertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 	return pQDR, nil
 }
 
-func (t convertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *pluginv2.CallResourceResponse {
+func (t ConvertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *pluginv2.CallResourceResponse {
 	headers := map[string]*pluginv2.StringList{}
 
 	for key, values := range resp.Headers {
@@ -151,4 +151,18 @@ func (t convertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *plu
 		Code:    int32(resp.Status),
 		Body:    resp.Body,
 	}
+}
+
+func (t ConvertToProtobuf) CallResourceRequest(req *CallResourceRequest) *pluginv2.CallResourceRequest {
+	protoReq := &pluginv2.CallResourceRequest{
+		PluginContext: t.PluginContext(req.PluginContext),
+		Path:          req.Path,
+		Method:        req.Method,
+		Url:           req.URL,
+		Body:          req.Body,
+	}
+	for k, values := range req.Headers {
+		protoReq.Headers[k] = &pluginv2.StringList{Values: values}
+	}
+	return protoReq
 }

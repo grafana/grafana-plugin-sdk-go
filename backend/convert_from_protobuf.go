@@ -8,15 +8,15 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-type convertFromProtobuf struct {
+type ConvertFromProtobuf struct {
 }
 
-func fromProto() convertFromProtobuf {
-	return convertFromProtobuf{}
+func FromProto() ConvertFromProtobuf {
+	return ConvertFromProtobuf{}
 }
 
 // User converts proto version of user to SDK version
-func (f convertFromProtobuf) User(user *pluginv2.User) *User {
+func (f ConvertFromProtobuf) User(user *pluginv2.User) *User {
 	if user == nil {
 		return nil
 	}
@@ -29,7 +29,7 @@ func (f convertFromProtobuf) User(user *pluginv2.User) *User {
 	}
 }
 
-func (f convertFromProtobuf) AppInstanceSettings(proto *pluginv2.AppInstanceSettings) *AppInstanceSettings {
+func (f ConvertFromProtobuf) AppInstanceSettings(proto *pluginv2.AppInstanceSettings) *AppInstanceSettings {
 	if proto == nil {
 		return nil
 	}
@@ -41,7 +41,7 @@ func (f convertFromProtobuf) AppInstanceSettings(proto *pluginv2.AppInstanceSett
 	}
 }
 
-func (f convertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSourceInstanceSettings) *DataSourceInstanceSettings {
+func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSourceInstanceSettings) *DataSourceInstanceSettings {
 	if proto == nil {
 		return nil
 	}
@@ -60,7 +60,7 @@ func (f convertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 	}
 }
 
-func (f convertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) PluginContext {
+func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) PluginContext {
 	return PluginContext{
 		OrgID:                      proto.OrgId,
 		PluginID:                   proto.PluginId,
@@ -70,14 +70,14 @@ func (f convertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 	}
 }
 
-func (f convertFromProtobuf) TimeRange(proto *pluginv2.TimeRange) TimeRange {
+func (f ConvertFromProtobuf) TimeRange(proto *pluginv2.TimeRange) TimeRange {
 	return TimeRange{
 		From: time.Unix(0, proto.FromEpochMS*int64(time.Millisecond)),
 		To:   time.Unix(0, proto.ToEpochMS*int64(time.Millisecond)),
 	}
 }
 
-func (f convertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
+func (f ConvertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	return &DataQuery{
 		RefID:         proto.RefId,
 		MaxDataPoints: proto.MaxDataPoints,
@@ -87,7 +87,7 @@ func (f convertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	}
 }
 
-func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataRequest) *QueryDataRequest {
+func (f ConvertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataRequest) *QueryDataRequest {
 	queries := make([]DataQuery, len(protoReq.Queries))
 	for i, q := range protoReq.Queries {
 		queries[i] = *f.DataQuery(q)
@@ -100,7 +100,7 @@ func (f convertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 	}
 }
 
-func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
+func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
 	qdr := &QueryDataResponse{
 		Responses: make(Responses, len(protoRes.Responses)),
 	}
@@ -121,7 +121,7 @@ func (f convertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 	return qdr, nil
 }
 
-func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResourceRequest) *CallResourceRequest {
+func (f ConvertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResourceRequest) *CallResourceRequest {
 	headers := map[string][]string{}
 	for k, values := range protoReq.Headers {
 		headers[k] = values.Values
@@ -138,7 +138,7 @@ func (f convertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 }
 
 // HealthCheckRequest converts proto version to SDK version.
-func (f convertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
+func (f ConvertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
 	return &CheckHealthRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 	}
