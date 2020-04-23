@@ -19,12 +19,12 @@ func newTransformSDKAdapter(handler TransformDataHandler) *transformSDKAdapter {
 }
 
 func (a *transformSDKAdapter) TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callBack grpcplugin.TransformDataCallBack) (*pluginv2.QueryDataResponse, error) {
-	resp, err := a.transformDataHandler.TransformData(ctx, fromProto().QueryDataRequest(req), &transformDataCallBackWrapper{callBack})
+	resp, err := a.transformDataHandler.TransformData(ctx, FromProto().QueryDataRequest(req), &transformDataCallBackWrapper{callBack})
 	if err != nil {
 		return nil, err
 	}
 
-	return toProto().QueryDataResponse(resp)
+	return ToProto().QueryDataResponse(resp)
 }
 
 type transformDataCallBackWrapper struct {
@@ -32,10 +32,10 @@ type transformDataCallBackWrapper struct {
 }
 
 func (tw *transformDataCallBackWrapper) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
-	protoRes, err := tw.callBack.QueryData(ctx, toProto().QueryDataRequest(req))
+	protoRes, err := tw.callBack.QueryData(ctx, ToProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err
 	}
 
-	return fromProto().QueryDataResponse(protoRes)
+	return FromProto().QueryDataResponse(protoRes)
 }

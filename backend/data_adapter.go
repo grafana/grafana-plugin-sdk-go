@@ -18,10 +18,10 @@ func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 }
 
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	resp, err := a.queryDataHandler.QueryData(ctx, fromProto().QueryDataRequest(req))
+	resp, err := a.queryDataHandler.QueryData(ctx, FromProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err
 	}
 
-	return toProto().QueryDataResponse(resp)
+	return ToProto().QueryDataResponse(resp)
 }
