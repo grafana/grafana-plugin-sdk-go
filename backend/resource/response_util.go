@@ -1,16 +1,17 @@
-package experimental
+package resource
 
 import (
 	"encoding/json"
+	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// SendPlainText sends a plain text snippet.
+// SendPlainText sends a plain text response.
 func SendPlainText(sender backend.CallResourceResponseSender, text string) error {
-	return SendResourceResponse(
+	return sendResourceResponse(
 		sender,
-		200,
+		http.StatusOK,
 		map[string][]string{
 			"content-type": {"text/plain"},
 		},
@@ -18,15 +19,15 @@ func SendPlainText(sender backend.CallResourceResponseSender, text string) error
 	)
 }
 
-// SendJSON sends a JSON object.
+// SendJSON sends a JSON response.
 func SendJSON(sender backend.CallResourceResponseSender, obj interface{}) error {
 	body, err := json.Marshal(obj)
 	if err != nil {
 		return err
 	}
-	return SendResourceResponse(
+	return sendResourceResponse(
 		sender,
-		200,
+		http.StatusOK,
 		map[string][]string{
 			"content-type": {"application/json"},
 		},
@@ -34,8 +35,7 @@ func SendJSON(sender backend.CallResourceResponseSender, obj interface{}) error 
 	)
 }
 
-// SendResourceResponse sends a JSON object.
-func SendResourceResponse(
+func sendResourceResponse(
 	sender backend.CallResourceResponseSender,
 	status int,
 	headers map[string][]string,

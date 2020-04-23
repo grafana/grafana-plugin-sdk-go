@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource"
 )
 
 //----------------------------------------------------------------------------------
@@ -75,11 +76,11 @@ func (ds *MyDataSourceInstance) QueryData(req *backend.QueryDataRequest) (*backe
 func (ds *MyDataSourceInstance) CallResource(req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 
 	if req.Path == "hello" {
-		return SendJSON(sender, map[string]interface{}{"hello": "world"})
+		return resource.SendJSON(sender, map[string]interface{}{"hello": "world"})
 	}
 
 	if req.Path == "text" {
-		return SendPlainText(sender, "hello world")
+		return resource.SendPlainText(sender, "hello world")
 	}
 
 	return fmt.Errorf("unknown resource")
