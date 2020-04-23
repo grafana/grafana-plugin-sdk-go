@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"os"
 	"sync"
 )
 
@@ -234,3 +235,49 @@ func (im *instanceManager) getDataSourceInstance(config PluginConfig) (DataSourc
 // 	im.appInstanceCache[cacheKey] = info
 // 	return info.instance, nil
 // }
+
+type myAppInstance struct {
+}
+
+func newAppInstance(config PluginConfig) (AppInstance, error) {
+	return &myAppInstance{}, nil
+}
+
+func (app *myAppInstance) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+	return nil, nil
+}
+
+func (app *myAppInstance) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+	return nil
+}
+
+type myDataSourceInstance struct {
+}
+
+func newDataSourceInstance(config DataSourceConfig) (DataSourceInstance, error) {
+	return &myDataSourceInstance{}, nil
+}
+
+func (ds *myDataSourceInstance) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+	return nil, nil
+}
+
+func (ds *myDataSourceInstance) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+	return nil
+}
+
+func (ds *myDataSourceInstance) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+	return nil, nil
+}
+
+func MainInstanceExample() {
+	im := NewInstanceManager(InstanceProviders{
+		AppInstanceProvider:        newAppInstance,
+		DataSourceInstanceProvider: newDataSourceInstance,
+	})
+	err := im.Serve()
+	if err != nil {
+		Logger.Error(err.Error())
+		os.Exit(1)
+	}
+}
