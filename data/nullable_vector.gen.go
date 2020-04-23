@@ -76,6 +76,16 @@ func (v *nullableUint8Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint8, i)...)
 }
 
+func (v *nullableUint8Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
+}
+
 //go:Uint16erate uint16ny -in=$GOFILE -out=nullable_vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableUint16Vector []*uint16
@@ -144,6 +154,16 @@ func (v *nullableUint16Vector) Type() FieldType {
 
 func (v *nullableUint16Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint16, i)...)
+}
+
+func (v *nullableUint16Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
 }
 
 //go:Uint32erate uint32ny -in=$GOFILE -out=nullable_vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -216,6 +236,16 @@ func (v *nullableUint32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint32, i)...)
 }
 
+func (v *nullableUint32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
+}
+
 //go:Uint64erate uint64ny -in=$GOFILE -out=nullable_vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableUint64Vector []*uint64
@@ -284,6 +314,16 @@ func (v *nullableUint64Vector) Type() FieldType {
 
 func (v *nullableUint64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint64, i)...)
+}
+
+func (v *nullableUint64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
 }
 
 //go:Int8erate int8ny -in=$GOFILE -out=nullable_vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -356,6 +396,16 @@ func (v *nullableInt8Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int8, i)...)
 }
 
+func (v *nullableInt8Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
+}
+
 //go:Int16erate int16ny -in=$GOFILE -out=nullable_vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableInt16Vector []*int16
@@ -424,6 +474,16 @@ func (v *nullableInt16Vector) Type() FieldType {
 
 func (v *nullableInt16Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int16, i)...)
+}
+
+func (v *nullableInt16Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
 }
 
 //go:Int32erate int32ny -in=$GOFILE -out=nullable_vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -496,6 +556,16 @@ func (v *nullableInt32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int32, i)...)
 }
 
+func (v *nullableInt32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
+}
+
 //go:Int64erate int64ny -in=$GOFILE -out=nullable_vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableInt64Vector []*int64
@@ -564,6 +634,16 @@ func (v *nullableInt64Vector) Type() FieldType {
 
 func (v *nullableInt64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int64, i)...)
+}
+
+func (v *nullableInt64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
 }
 
 //go:Float32erate float32ny -in=$GOFILE -out=nullable_vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -636,6 +716,16 @@ func (v *nullableFloat32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*float32, i)...)
 }
 
+func (v *nullableFloat32Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
+}
+
 //go:Float64erate float64ny -in=$GOFILE -out=nullable_vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableFloat64Vector []*float64
@@ -704,6 +794,16 @@ func (v *nullableFloat64Vector) Type() FieldType {
 
 func (v *nullableFloat64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*float64, i)...)
+}
+
+func (v *nullableFloat64Vector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
 }
 
 //go:Stringerate stringny -in=$GOFILE -out=nullable_vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
@@ -776,6 +876,16 @@ func (v *nullableStringVector) Extend(i int) {
 	(*v) = append((*v), make([]*string, i)...)
 }
 
+func (v *nullableStringVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
+}
+
 //go:Boolerate boolny -in=$GOFILE -out=nullable_vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableBoolVector []*bool
@@ -846,6 +956,16 @@ func (v *nullableBoolVector) Extend(i int) {
 	(*v) = append((*v), make([]*bool, i)...)
 }
 
+func (v *nullableBoolVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
+}
+
 //go:TimeTimeerate timeTimeny -in=$GOFILE -out=nullable_vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type nullableTimeTimeVector []*time.Time
@@ -914,4 +1034,14 @@ func (v *nullableTimeTimeVector) Type() FieldType {
 
 func (v *nullableTimeTimeVector) Extend(i int) {
 	(*v) = append((*v), make([]*time.Time, i)...)
+}
+
+func (v *nullableTimeTimeVector) InsertAt(i int, val interface{}) {
+	if v.Len() < i {
+		v.Append(val)
+	} else {
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	}
 }

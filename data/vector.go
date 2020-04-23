@@ -17,6 +17,7 @@ type vector interface {
 	CopyAt(i int) interface{}
 	ConcreteAt(i int) (val interface{}, ok bool)
 	SetConcreteAt(i int, val interface{})
+	InsertAt(i int, val interface{})
 }
 
 func newVector(t interface{}, n int) (v vector) {

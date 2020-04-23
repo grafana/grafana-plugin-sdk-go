@@ -159,7 +159,8 @@ func float64ToType(val float64, ftype FieldType) (interface{}, error) {
 	return val, fmt.Errorf("no numeric value")
 }
 
-func getMissing(fillMissing *FillMissing, field *Field, idx int) (interface{}, error) {
+// GetMissing returns the value to be filled for a missing row field
+func GetMissing(fillMissing *FillMissing, field *Field, previousRowIdx int) (interface{}, error) {
 	if fillMissing == nil {
 		return nil, fmt.Errorf("fill missing is disabled")
 	}
@@ -176,8 +177,8 @@ func getMissing(fillMissing *FillMissing, field *Field, idx int) (interface{}, e
 	case FillModePrevious:
 		// if there is no previous value
 		// the value will be null
-		if idx >= 1 {
-			fillVal = field.At(idx - 1)
+		if previousRowIdx >= 0 {
+			fillVal = field.At(previousRowIdx)
 		}
 	}
 	return fillVal, nil
@@ -214,6 +215,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 	}
 
 	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
+	wideFrame.Meta = longFrame.Meta
 	wideFrameRowCounter := 0
 
 	seenFactors := map[string]struct{}{}                      // seen factor combinations
@@ -251,7 +253,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 					wideFrame.Set(wideFrameIdx, wideFrameRowCounter, currentTime)
 					continue
 				}
-				fillVal, err := getMissing(fillMissing, field, wideFrameRowCounter)
+				fillVal, err := GetMissing(fillMissing, field, wideFrameRowCounter-1)
 				if err == nil {
 					wideFrame.Set(wideFrameIdx, wideFrameRowCounter, fillVal)
 				}
@@ -298,7 +300,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 				newWideField.Name, newWideField.Labels = longField.Name, labels
 				wideFrame.Fields = append(wideFrame.Fields, newWideField)
 
-				fillVal, err := getMissing(fillMissing, newWideField, wideFrameRowCounter)
+				fillVal, err := GetMissing(fillMissing, newWideField, wideFrameRowCounter-1)
 				if err == nil {
 					for i := 0; i < wideFrameRowCounter; i++ {
 						wideFrame.Set(currentFieldLen+offset, i, fillVal)
@@ -395,6 +397,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	// build new Frame with new schema
 	longFrame := NewFrame(wideFrame.Name, // time, value fields..., factor fields (strings)...
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
+	longFrame.Meta = wideFrame.Meta
 
 	i := 1
 	valueNameToLongFieldIdx := map[string]int{} // valueName -> field index of longFrame
