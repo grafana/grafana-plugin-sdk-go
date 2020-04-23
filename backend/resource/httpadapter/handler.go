@@ -29,8 +29,8 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 		reqBodyReader = bytes.NewReader(req.Body)
 	}
 
-	ctx = withPluginConfig(ctx, req.PluginConfig)
-	ctx = withUser(ctx, req.User)
+	ctx = withPluginContext(ctx, req.PluginContext)
+	ctx = withUser(ctx, req.PluginContext.User)
 	reqURL, err := url.Parse(req.URL)
 	if err != nil {
 		return err
@@ -63,18 +63,18 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 
 type pluginConfigKey struct{}
 
-func withPluginConfig(ctx context.Context, cfg backend.PluginConfig) context.Context {
-	return context.WithValue(ctx, pluginConfigKey{}, cfg)
+func withPluginContext(ctx context.Context, pluginCtx backend.PluginContext) context.Context {
+	return context.WithValue(ctx, pluginConfigKey{}, pluginCtx)
 }
 
 // PluginConfigFromContext returns backend.PluginConfig from context.
-func PluginConfigFromContext(ctx context.Context) backend.PluginConfig {
+func PluginConfigFromContext(ctx context.Context) backend.PluginContext {
 	v := ctx.Value(pluginConfigKey{})
 	if v == nil {
-		return backend.PluginConfig{}
+		return backend.PluginContext{}
 	}
 
-	return v.(backend.PluginConfig)
+	return v.(backend.PluginContext)
 }
 
 type userKey struct{}

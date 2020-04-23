@@ -7,10 +7,10 @@ import (
 // PluginHost is the singleton container for your plugin.
 type PluginHost interface {
 	// CheckExeHealth corresponds to CheckHostHealth for the plugin executable.
-	CheckHostHealth(config backend.PluginConfig) *backend.CheckHealthResult
+	CheckHostHealth(ctx backend.PluginContext) *backend.CheckHealthResult
 
 	// NewDataSourceInstance makes a request for a new datasource.
-	NewDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error)
+	NewDataSourceInstance(ctx backend.PluginContext) (DataSourceInstance, error)
 }
 
 // DataSourceInstance implements each of the supported requests.  Alternatively this could be a set

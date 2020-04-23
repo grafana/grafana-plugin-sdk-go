@@ -1,15 +1,16 @@
 package backend
 
-import "context"
+import (
+	"context"
+)
 
 type CallResourceRequest struct {
-	PluginConfig PluginConfig
-	Path         string
-	Method       string
-	URL          string
-	Headers      map[string][]string
-	Body         []byte
-	User         *User
+	PluginContext PluginContext
+	Path          string
+	Method        string
+	URL           string
+	Headers       map[string][]string
+	Body          []byte
 }
 
 type CallResourceResponse struct {

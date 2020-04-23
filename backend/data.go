@@ -20,12 +20,9 @@ type QueryDataHandler interface {
 // QueryDataRequest contains a single request which contains multiple queries.
 // It is the input type for a QueryData call.
 type QueryDataRequest struct {
-	PluginConfig PluginConfig
-	Headers      map[string]string
-	Queries      []DataQuery
-
-	// User is information about the grafana-server user that made the request.
-	User *User
+	PluginContext PluginContext
+	Headers       map[string]string
+	Queries       []DataQuery
 }
 
 // DataQuery represents a single query as sent from the frontend.
