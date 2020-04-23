@@ -31,8 +31,8 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	}
 
 	fn := callResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
-		return protoSrv.Send(toProto().CallResourceResponse(resp))
+		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
-	return a.callResourceHandler.CallResource(protoSrv.Context(), fromProto().CallResourceRequest(protoReq), fn)
+	return a.callResourceHandler.CallResource(protoSrv.Context(), FromProto().CallResourceRequest(protoReq), fn)
 }

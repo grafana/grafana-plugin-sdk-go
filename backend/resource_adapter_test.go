@@ -42,7 +42,7 @@ func TestCallResource(t *testing.T) {
 		testSender := newTestCallResourceServer()
 		adapter := newResourceSDKAdapter(handler)
 		req := &pluginv2.CallResourceRequest{
-			Config: &pluginv2.PluginConfig{
+			PluginContext: &pluginv2.PluginContext{
 				OrgId:    2,
 				PluginId: "my-plugin",
 			},
@@ -58,8 +58,10 @@ func TestCallResource(t *testing.T) {
 		err = adapter.CallResource(req, testSender)
 
 		require.NoError(t, err)
-		// request
+
 		require.NotNil(t, handler.actualReq)
+		require.Equal(t, int64(2), handler.actualReq.PluginContext.OrgID)
+		require.Equal(t, "my-plugin", handler.actualReq.PluginContext.PluginID)
 		require.Equal(t, "some/path", handler.actualReq.Path)
 		require.Equal(t, http.MethodGet, handler.actualReq.Method)
 		require.Equal(t, "plugins/test-plugin/resources/some/path?test=1", handler.actualReq.URL)
@@ -71,8 +73,6 @@ func TestCallResource(t *testing.T) {
 		err = json.Unmarshal(req.Body, &actualRequestData)
 		require.NoError(t, err)
 		require.Equal(t, data, actualRequestData)
-		require.Equal(t, int64(2), handler.actualReq.PluginConfig.OrgID)
-		require.Equal(t, "my-plugin", handler.actualReq.PluginConfig.PluginID)
 
 		// response
 		require.Len(t, testSender.respMessages, 1)
@@ -105,7 +105,7 @@ func TestCallResource(t *testing.T) {
 		testSender := newTestCallResourceServer()
 		adapter := newResourceSDKAdapter(handler)
 		req := &pluginv2.CallResourceRequest{
-			Config: &pluginv2.PluginConfig{
+			PluginContext: &pluginv2.PluginContext{
 				OrgId:    2,
 				PluginId: "my-plugin",
 			},
@@ -197,7 +197,6 @@ type testCallResourceServer struct {
 
 func newTestCallResourceServer() *testCallResourceServer {
 	return &testCallResourceServer{
-		ctx:          context.Background(),
 		respMessages: []*pluginv2.CallResourceResponse{},
 	}
 }

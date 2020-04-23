@@ -26,7 +26,7 @@ const (
 
 // CheckHealthRequest contains the healthcheck request
 type CheckHealthRequest struct {
-	PluginConfig PluginConfig
+	PluginContext PluginContext
 }
 
 // CheckHealthResult contains the healthcheck response

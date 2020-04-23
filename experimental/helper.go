@@ -40,7 +40,7 @@ type instanceInfo struct {
 	updated int64
 
 	// The raw GRPC values that create the instance
-	config backend.PluginConfig
+	ctx backend.PluginContext
 
 	// The specific instance
 	instance DataSourceInstance
@@ -49,12 +49,13 @@ type instanceInfo struct {
 	last time.Time
 }
 
-func (p *InstanceManager) getDataSourceInstance(config backend.PluginConfig) (DataSourceInstance, error) {
-	if config.DataSourceConfig == nil {
-		return nil, fmt.Errorf("no datasource in PluginConfig")
+func (p *InstanceManager) getDataSourceInstance(ctx backend.PluginContext) (DataSourceInstance, error) {
+	if ctx.DataSourceInstanceSettings == nil {
+		return nil, fmt.Errorf("no datasource instance settings provided")
 	}
-	updated := config.Updated.UnixNano() + config.DataSourceConfig.Updated.UnixNano()
-	key := fmt.Sprintf("%d/%d", config.OrgID, config.DataSourceConfig.ID)
+	settings := ctx.DataSourceInstanceSettings
+	updated := settings.Updated.UnixNano()
+	key := fmt.Sprintf("%d/%d", ctx.OrgID, settings.ID)
 
 	p.RLock()
 	defer p.RUnlock()
@@ -68,14 +69,14 @@ func (p *InstanceManager) getDataSourceInstance(config backend.PluginConfig) (Da
 		}
 
 		// Create a new one
-		instance, err := p.host.NewDataSourceInstance(config)
+		instance, err := p.host.NewDataSourceInstance(ctx)
 		if err != nil {
 			return nil, err
 		}
 
 		info = instanceInfo{
 			updated:  updated,
-			config:   config,
+			ctx:      ctx,
 			instance: instance,
 		}
 
@@ -89,8 +90,8 @@ func (p *InstanceManager) getDataSourceInstance(config backend.PluginConfig) (Da
 // CheckHealth checks if the plugin is running properly
 func (p *InstanceManager) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	// 1. Check the datasource config
-	if req.PluginConfig.DataSourceConfig != nil {
-		ds, err := p.getDataSourceInstance(req.PluginConfig)
+	if req.PluginContext.DataSourceInstanceSettings != nil {
+		ds, err := p.getDataSourceInstance(req.PluginContext)
 		if err != nil {
 			// Error reading datasource config
 			return &backend.CheckHealthResult{
@@ -102,13 +103,13 @@ func (p *InstanceManager) CheckHealth(ctx context.Context, req *backend.CheckHea
 	}
 
 	// Otherwise the host application
-	return p.host.CheckHostHealth(req.PluginConfig), nil
+	return p.host.CheckHostHealth(req.PluginContext), nil
 }
 
 // QueryData queries for data.
 func (p *InstanceManager) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	if req.PluginConfig.DataSourceConfig != nil {
-		ds, err := p.getDataSourceInstance(req.PluginConfig)
+	if req.PluginContext.DataSourceInstanceSettings != nil {
+		ds, err := p.getDataSourceInstance(req.PluginContext)
 		if err != nil {
 			return nil, err
 		}
@@ -119,8 +120,8 @@ func (p *InstanceManager) QueryData(ctx context.Context, req *backend.QueryDataR
 
 // CallResource calls a resource.
 func (p *InstanceManager) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	if req.PluginConfig.DataSourceConfig != nil {
-		ds, err := p.getDataSourceInstance(req.PluginConfig)
+	if req.PluginContext.DataSourceInstanceSettings != nil {
+		ds, err := p.getDataSourceInstance(req.PluginContext)
 		if err != nil {
 			return err
 		}
