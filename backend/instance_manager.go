@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
 )
@@ -72,6 +73,9 @@ type instanceManager struct {
 
 // NewInstanceManager creates a new instance manager.
 func NewInstanceManager(providers InstanceProviders) InstanceManager {
+	if providers.AppInstanceProvider == nil {
+		providers.AppInstanceProvider = newFallbackAppInstance
+	}
 	return &instanceManager{providers: providers}
 }
 
@@ -90,19 +94,14 @@ func (im *instanceManager) CheckHealth(ctx context.Context, req *CheckHealthRequ
 			return nil, err
 		}
 		return dsInstance.CheckHealth(ctx, req)
-	} else {
-		appInstance, err := im.getAppInstance(req.PluginContext)
-		if err != nil {
-			return nil, err
-		}
-
-		return appInstance.CheckHealth(ctx, req)
 	}
 
-	return &CheckHealthResult{
-		Status:  HealthStatusOk,
-		Message: "Plugin is running",
-	}, nil
+	appInstance, err := im.getAppInstance(req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+
+	return appInstance.CheckHealth(ctx, req)
 }
 
 func (im *instanceManager) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
@@ -137,10 +136,6 @@ func (im *instanceManager) QueryData(ctx context.Context, req *QueryDataRequest)
 }
 
 func (im *instanceManager) getAppInstance(pluginContext PluginContext) (AppInstance, error) {
-	if im.providers.AppInstanceProvider == nil {
-		return nil, fmt.Errorf("no app instance provider")
-	}
-
 	if pluginContext.AppInstanceSettings == nil {
 		return nil, fmt.Errorf("app instance settings required")
 	}
@@ -234,6 +229,26 @@ func (im *instanceManager) getDataSourceInstance(pluginContext PluginContext) (D
 	// Set the instance for the key (will replace the old value if exists)
 	im.dsInstanceCache[cacheKey] = info
 	return info.instance, nil
+}
+
+type fallbackAppInstance struct {
+}
+
+func newFallbackAppInstance(settings AppInstanceSettings) (AppInstance, error) {
+	return &fallbackAppInstance{}, nil
+}
+
+func (app *fallbackAppInstance) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+	return &CheckHealthResult{
+		Status:  HealthStatusOk,
+		Message: "Plugin is running",
+	}, nil
+}
+
+func (app *fallbackAppInstance) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+	return sender.Send(&CallResourceResponse{
+		Status: http.StatusNotImplemented,
+	})
 }
 
 type myAppInstance struct {
