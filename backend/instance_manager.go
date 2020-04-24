@@ -20,7 +20,7 @@ type AppInstance interface {
 }
 
 // AppInstanceProviderFunc is the factory method for creating a new application plugin instance.
-type AppInstanceProviderFunc func(config PluginConfig) (AppInstance, error)
+type AppInstanceProviderFunc func(settings AppInstanceSettings) (AppInstance, error)
 
 // DataSourceInstance defines the interface for data source plugin instances.
 type DataSourceInstance interface {
@@ -30,7 +30,7 @@ type DataSourceInstance interface {
 }
 
 // DataSourceInstanceProviderFunc is the factory method for creating a new data source plugin instance.
-type DataSourceInstanceProviderFunc func(config DataSourceConfig) (DataSourceInstance, error)
+type DataSourceInstanceProviderFunc func(settings DataSourceInstanceSettings) (DataSourceInstance, error)
 
 // InstanceProviders providers for creating plugin instances.
 type InstanceProviders struct {
@@ -49,7 +49,7 @@ type InstanceManager interface {
 
 type appInstanceInfo struct {
 	// The raw GRPC values that create the instance
-	config PluginConfig
+	settings AppInstanceSettings
 
 	// The specific instance
 	instance AppInstance
@@ -57,7 +57,7 @@ type appInstanceInfo struct {
 
 type dataSourceInstanceInfo struct {
 	// The raw GRPC values that create the instance
-	config PluginConfig
+	settings DataSourceInstanceSettings
 
 	// The specific instance
 	instance DataSourceInstance
@@ -84,8 +84,8 @@ func (im *instanceManager) Serve() error {
 }
 
 func (im *instanceManager) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
-	if req.PluginConfig.DataSourceConfig != nil {
-		dsInstance, err := im.getDataSourceInstance(req.PluginConfig)
+	if req.PluginContext.DataSourceInstanceSettings != nil {
+		dsInstance, err := im.getDataSourceInstance(req.PluginContext)
 		if err != nil {
 			return nil, err
 		}
@@ -106,8 +106,8 @@ func (im *instanceManager) CheckHealth(ctx context.Context, req *CheckHealthRequ
 }
 
 func (im *instanceManager) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
-	if req.PluginConfig.DataSourceConfig != nil {
-		dsInstance, err := im.getDataSourceInstance(req.PluginConfig)
+	if req.PluginContext.DataSourceInstanceSettings != nil {
+		dsInstance, err := im.getDataSourceInstance(req.PluginContext)
 		if err != nil {
 			return err
 		}
@@ -126,8 +126,8 @@ func (im *instanceManager) CallResource(ctx context.Context, req *CallResourceRe
 }
 
 func (im *instanceManager) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
-	if req.PluginConfig.DataSourceConfig != nil {
-		dsInstance, err := im.getDataSourceInstance(req.PluginConfig)
+	if req.PluginContext.DataSourceInstanceSettings != nil {
+		dsInstance, err := im.getDataSourceInstance(req.PluginContext)
 		if err != nil {
 			return nil, err
 		}
@@ -138,16 +138,17 @@ func (im *instanceManager) QueryData(ctx context.Context, req *QueryDataRequest)
 	return nil, fmt.Errorf("only data source supports QueryData")
 }
 
-func (im *instanceManager) getDataSourceInstance(config PluginConfig) (DataSourceInstance, error) {
+func (im *instanceManager) getDataSourceInstance(pluginContext PluginContext) (DataSourceInstance, error) {
 	if im.providers.DataSourceInstanceProvider == nil {
 		return nil, fmt.Errorf("no data source instance provider")
 	}
 
-	if config.DataSourceConfig == nil {
-		return nil, fmt.Errorf("no data source instance setting in PluginConfig")
+	if pluginContext.DataSourceInstanceSettings == nil {
+		return nil, fmt.Errorf("data source instance settings required")
 	}
 
-	cacheKey := config.DataSourceConfig.ID
+	settings := *pluginContext.DataSourceInstanceSettings
+	cacheKey := settings.ID
 
 	// Aquire read lock
 	im.rwMutex.RLock()
@@ -156,7 +157,7 @@ func (im *instanceManager) getDataSourceInstance(config PluginConfig) (DataSourc
 	im.rwMutex.RUnlock()
 
 	// return fast if cached instance havent't been updated
-	if hasCachedInstance && config.DataSourceConfig.Updated.Equal(info.config.Updated) {
+	if hasCachedInstance && settings.Updated.Equal(info.settings.Updated) {
 		return info.instance, nil
 	}
 
@@ -172,13 +173,13 @@ func (im *instanceManager) getDataSourceInstance(config PluginConfig) (DataSourc
 	}
 
 	// Create a new instance
-	instance, err := im.providers.DataSourceInstanceProvider(*config.DataSourceConfig)
+	instance, err := im.providers.DataSourceInstanceProvider(settings)
 	if err != nil {
 		return nil, err
 	}
 
 	info = dataSourceInstanceInfo{
-		config:   config,
+		settings: settings,
 		instance: instance,
 	}
 
@@ -239,7 +240,7 @@ func (im *instanceManager) getDataSourceInstance(config PluginConfig) (DataSourc
 type myAppInstance struct {
 }
 
-func newAppInstance(config PluginConfig) (AppInstance, error) {
+func newAppInstance(settings AppInstanceSettings) (AppInstance, error) {
 	return &myAppInstance{}, nil
 }
 
@@ -254,7 +255,7 @@ func (app *myAppInstance) CallResource(ctx context.Context, req *CallResourceReq
 type myDataSourceInstance struct {
 }
 
-func newDataSourceInstance(config DataSourceConfig) (DataSourceInstance, error) {
+func newDataSourceInstance(settings DataSourceInstanceSettings) (DataSourceInstance, error) {
 	return &myDataSourceInstance{}, nil
 }
 
