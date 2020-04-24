@@ -42,7 +42,8 @@ func ExampleReplace() {
 	frame := data.NewFrame("Before",
 		data.NewField("string", nil, []*string{getString(), getString()}))
 
-	fmt.Println(frame.String()) // Before
+	st, _ := frame.StringTable(-1, -1)
+	fmt.Println(st)
 
 	intReplacer := &sqlutil.StringFieldReplacer{
 		OutputFieldType: data.FieldTypeNullableInt64,
@@ -64,7 +65,8 @@ func ExampleReplace() {
 	}
 
 	frame.Name = "After"
-	fmt.Println(frame.String()) // After
+	st, _ = frame.StringTable(-1, -1)
+	fmt.Println(st) // After
 	// Output:
 	// Name: Before
 	// Dimensions: 1 Fields by 2 Rows
