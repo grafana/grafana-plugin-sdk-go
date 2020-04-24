@@ -90,14 +90,14 @@ func (im *instanceManager) CheckHealth(ctx context.Context, req *CheckHealthRequ
 			return nil, err
 		}
 		return dsInstance.CheckHealth(ctx, req)
-	} // else {
-	// appInstance, err := im.getAppInstance(req.PluginConfig)
-	// if err != nil {
-	// 	return err
-	// }
+	} else {
+		appInstance, err := im.getAppInstance(req.PluginContext)
+		if err != nil {
+			return nil, err
+		}
 
-	// return appInstance.CheckHealth(ctx, req)
-	//}
+		return appInstance.CheckHealth(ctx, req)
+	}
 
 	return &CheckHealthResult{
 		Status:  HealthStatusOk,
@@ -113,16 +113,14 @@ func (im *instanceManager) CallResource(ctx context.Context, req *CallResourceRe
 		}
 
 		return dsInstance.CallResource(ctx, req, sender)
-	} //else {
-	// appInstance, err := im.getAppInstance(req.PluginConfig)
-	// if err != nil {
-	// 	return err
-	// }
+	}
 
-	// return appInstance.CallResource(ctx, req, sender)
-	//}
+	appInstance, err := im.getAppInstance(req.PluginContext)
+	if err != nil {
+		return err
+	}
 
-	return nil
+	return appInstance.CallResource(ctx, req, sender)
 }
 
 func (im *instanceManager) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
@@ -136,6 +134,56 @@ func (im *instanceManager) QueryData(ctx context.Context, req *QueryDataRequest)
 	}
 
 	return nil, fmt.Errorf("only data source supports QueryData")
+}
+
+func (im *instanceManager) getAppInstance(pluginContext PluginContext) (AppInstance, error) {
+	if im.providers.AppInstanceProvider == nil {
+		return nil, fmt.Errorf("no app instance provider")
+	}
+
+	if pluginContext.AppInstanceSettings == nil {
+		return nil, fmt.Errorf("app instance settings required")
+	}
+
+	settings := *pluginContext.AppInstanceSettings
+	cacheKey := pluginContext.OrgID
+
+	// Aquire read lock
+	im.rwMutex.RLock()
+	info, hasCachedInstance := im.appInstanceCache[cacheKey]
+	// Release read lock
+	im.rwMutex.RUnlock()
+
+	// return fast if cached instance havent't been updated
+	if hasCachedInstance && settings.Updated.Equal(info.settings.Updated) {
+		return info.instance, nil
+	}
+
+	// Aquire write lock
+	im.rwMutex.Lock()
+	defer im.rwMutex.Unlock()
+
+	if hasCachedInstance {
+		// disposed instance implementing the InstanceDisposer interface
+		if disposer, isDisposer := info.instance.(InstanceDisposer); isDisposer {
+			disposer.Dispose()
+		}
+	}
+
+	// Create a new instance
+	instance, err := im.providers.AppInstanceProvider(settings)
+	if err != nil {
+		return nil, err
+	}
+
+	info = appInstanceInfo{
+		settings: settings,
+		instance: instance,
+	}
+
+	// Set the instance for the key (will replace the old value if exists)
+	im.appInstanceCache[cacheKey] = info
+	return info.instance, nil
 }
 
 func (im *instanceManager) getDataSourceInstance(pluginContext PluginContext) (DataSourceInstance, error) {
@@ -187,55 +235,6 @@ func (im *instanceManager) getDataSourceInstance(pluginContext PluginContext) (D
 	im.dsInstanceCache[cacheKey] = info
 	return info.instance, nil
 }
-
-// func (im *instanceManager) getAppInstance(config PluginConfig) (AppInstance, error) {
-// 	if im.providers.AppInstanceProvider == nil {
-// 		return nil, fmt.Errorf("no app instance provider")
-// 	}
-
-// 	if config.AppInstanceSettings == nil {
-// 		return nil, fmt.Errorf("no app instance setting in PluginConfig")
-// 	}
-
-// 	cacheKey := config.OrgID
-
-// 	// Aquire read lock
-// 	im.rwMutex.RLock()
-// 	info, hasCachedInstance := im.appInstanceCache[cacheKey]
-// 	// Release read lock
-// 	im.rwMutex.RUnlock()
-
-// 	// return fast if cached instance havent't been updated
-// 	if hasCachedInstance && config.AppInstanceSettings.Updated.Equal(info.config.Updated) {
-// 		return info.instance, nil
-// 	}
-
-// 	// Aquire write lock
-// 	im.rwMutex.Lock()
-// 	defer im.rwMutex.Unlock()
-
-// 	if hasCachedInstance {
-// 		// disposed instance implementing the InstanceDisposer interface
-// 		if disposer, isDisposer := info.instance.(InstanceDisposer); isDisposer {
-// 			disposer.Dispose()
-// 		}
-// 	}
-
-// 	// Create a new instance
-// 	instance, err := im.providers.AppInstanceProvider(config.AppInstanceSettings)
-// 	if err != nil {
-// 		return nil, err
-// 	}
-
-// 	info = appInstanceInfo{
-// 		config:   config,
-// 		instance: instance,
-// 	}
-
-// 	// Set the instance for the key (will replace the old value if exists)
-// 	im.appInstanceCache[cacheKey] = info
-// 	return info.instance, nil
-// }
 
 type myAppInstance struct {
 }
