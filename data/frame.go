@@ -347,20 +347,12 @@ func FrameTestCompareOptions() []cmp.Option {
 	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, unexportedField, cmpopts.EquateEmpty()}
 }
 
-func (f *Frame) String() string {
-	s, err := f.StringTable(10, 10)
-	if err != nil {
-		return err.Error()
-	}
-	return s
-}
-
 // StringTable prints a human readable table of the Frame.
-// The table's width is limited to maxFields and the length is limited to maxRows.
+// The table's width is limited to maxFields and the length is limited to maxRows (a value of -1 is unlimited).
 // If the width or length is excceded then last column or row displays "..." as the contents.
 func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
-	if maxFields < 2 {
-		return "", fmt.Errorf("maxWidth than 2")
+	if maxFields > 0 && maxFields < 2 {
+		return "", fmt.Errorf("maxFields must be less than 0 (unlimited) or greather than 2, got %v", maxFields)
 	}
 
 	rowLen, err := f.RowLen()
@@ -370,14 +362,14 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 	// calculate output column width (fields)
 	width := len(f.Fields)
-	exceedsWidth := width > maxFields
+	exceedsWidth := maxFields > 0 && width > maxFields
 	if exceedsWidth {
 		width = maxFields
 	}
 
 	// calculate output length (rows)
 	length := rowLen
-	exceedsLength := rowLen > maxRows
+	exceedsLength := maxRows >= 0 && rowLen > maxRows
 	if exceedsLength {
 		length = maxRows + 1
 	}

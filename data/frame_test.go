@@ -34,7 +34,8 @@ func ExampleNewFrame() {
 		data.NewField("Temp", data.Labels{"place": "Ecuador"}, []float64{1, math.NaN()}),
 		data.NewField("Count", data.Labels{"place": "Ecuador"}, []*int64{&anInt64, nil}),
 	)
-	fmt.Println(frame.String())
+	st, _ := frame.StringTable(-1, -1)
+	fmt.Println(st)
 	// Output:
 	// Name: Frame Name
 	// Dimensions: 3 Fields by 2 Rows
@@ -116,7 +117,8 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 	}
 
 	for _, frame := range frames {
-		fmt.Println(frame.String())
+		st, _ := frame.StringTable(-1, -1)
+		fmt.Println(st)
 	}
 	// Output:
 	// Name: cpu
@@ -194,7 +196,8 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 		}
 	}
 
-	fmt.Println(frame.String())
+	st, _ := frame.StringTable(-1, -1)
+	fmt.Println(st)
 	// Output:
 	// Name: Wide
 	// Dimensions: 3 Fields by 2 Rows
@@ -248,10 +251,12 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 	for _, row := range myLongTable.Rows {
 		frame.AppendRow(row...)
 	}
-	fmt.Println(frame.String())
+	st, _ := frame.StringTable(-1, -1)
+	fmt.Println(st)
 	w, _ := data.LongToWide(frame, nil)
 	w.Name = "Wide"
-	fmt.Println(w.String())
+	st, _ = w.StringTable(-1, -1)
+	fmt.Println(st)
 	// Output:
 	// Name: Long
 	// Dimensions: 4 Fields by 4 Rows
