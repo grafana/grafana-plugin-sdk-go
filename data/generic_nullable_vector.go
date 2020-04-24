@@ -71,11 +71,14 @@ func (v *nullablegenVector) Extend(i int) {
 }
 
 func (v *nullablegenVector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }

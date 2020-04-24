@@ -215,6 +215,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 	}
 
 	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
+	// copy reference to longFrame.Meta
 	wideFrame.Meta = longFrame.Meta
 	wideFrameRowCounter := 0
 
@@ -397,6 +398,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	// build new Frame with new schema
 	longFrame := NewFrame(wideFrame.Name, // time, value fields..., factor fields (strings)...
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
+	// copy reference to wideFrame.Meta
 	longFrame.Meta = wideFrame.Meta
 
 	i := 1

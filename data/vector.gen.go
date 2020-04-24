@@ -58,12 +58,15 @@ func (v *uint8Vector) Extend(i int) {
 }
 
 func (v *uint8Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -119,12 +122,15 @@ func (v *uint16Vector) Extend(i int) {
 }
 
 func (v *uint16Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -180,12 +186,15 @@ func (v *uint32Vector) Extend(i int) {
 }
 
 func (v *uint32Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -241,12 +250,15 @@ func (v *uint64Vector) Extend(i int) {
 }
 
 func (v *uint64Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -302,12 +314,15 @@ func (v *int8Vector) Extend(i int) {
 }
 
 func (v *int8Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -363,12 +378,15 @@ func (v *int16Vector) Extend(i int) {
 }
 
 func (v *int16Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -424,12 +442,15 @@ func (v *int32Vector) Extend(i int) {
 }
 
 func (v *int32Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -485,12 +506,15 @@ func (v *int64Vector) Extend(i int) {
 }
 
 func (v *int64Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -546,12 +570,15 @@ func (v *float32Vector) Extend(i int) {
 }
 
 func (v *float32Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -607,12 +634,15 @@ func (v *float64Vector) Extend(i int) {
 }
 
 func (v *float64Vector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -668,12 +698,15 @@ func (v *stringVector) Extend(i int) {
 }
 
 func (v *stringVector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -729,12 +762,15 @@ func (v *boolVector) Extend(i int) {
 }
 
 func (v *boolVector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
 
@@ -790,11 +826,14 @@ func (v *timeTimeVector) Extend(i int) {
 }
 
 func (v *timeTimeVector) InsertAt(i int, val interface{}) {
-	if v.Len() < i {
-		v.Append(val)
-	} else {
+	switch {
+	case i < v.Len():
 		v.Extend(1)
 		copy((*v)[i+1:], (*v)[i:])
 		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
