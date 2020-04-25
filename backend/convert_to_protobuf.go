@@ -111,6 +111,7 @@ func (t ConvertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2
 func (t ConvertToProtobuf) DataQuery(q DataQuery) *pluginv2.DataQuery {
 	return &pluginv2.DataQuery{
 		RefId:         q.RefID,
+		QueryType:     q.QueryType,
 		MaxDataPoints: q.MaxDataPoints,
 		IntervalMS:    q.Interval.Milliseconds(),
 		TimeRange:     t.TimeRange(q.TimeRange),

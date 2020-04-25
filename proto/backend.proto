@@ -106,6 +106,7 @@ message DataQuery {
   int64 intervalMS = 3;
   TimeRange timeRange = 4;
   bytes json = 5;
+  string queryType = 6;
 }
 
 // QueryDataRequest
