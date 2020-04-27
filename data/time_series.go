@@ -315,7 +315,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		for _, longFieldIdx := range tsSchema.ValueIndices {
 			wideFieldIdx := valueFactorToWideFieldIdx[longFieldIdx][factorKey]
 			if wideFrame.Fields[wideFieldIdx].Nullable() && !longFrame.Fields[longFieldIdx].Nullable() {
-				wideFrame.SetConcreteAt(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
+				wideFrame.SetConcrete(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
 				continue
 			}
 			wideFrame.Set(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))

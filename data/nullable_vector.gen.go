@@ -23,7 +23,7 @@ func (v *nullableUint8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint8)
 }
 
-func (v *nullableUint8Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableUint8Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(uint8)
 	(*v)[idx] = &val
 }
@@ -106,7 +106,7 @@ func (v *nullableUint16Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint16)
 }
 
-func (v *nullableUint16Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableUint16Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(uint16)
 	(*v)[idx] = &val
 }
@@ -189,7 +189,7 @@ func (v *nullableUint32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint32)
 }
 
-func (v *nullableUint32Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableUint32Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(uint32)
 	(*v)[idx] = &val
 }
@@ -272,7 +272,7 @@ func (v *nullableUint64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint64)
 }
 
-func (v *nullableUint64Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableUint64Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(uint64)
 	(*v)[idx] = &val
 }
@@ -355,7 +355,7 @@ func (v *nullableInt8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int8)
 }
 
-func (v *nullableInt8Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableInt8Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(int8)
 	(*v)[idx] = &val
 }
@@ -438,7 +438,7 @@ func (v *nullableInt16Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int16)
 }
 
-func (v *nullableInt16Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableInt16Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(int16)
 	(*v)[idx] = &val
 }
@@ -521,7 +521,7 @@ func (v *nullableInt32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int32)
 }
 
-func (v *nullableInt32Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableInt32Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(int32)
 	(*v)[idx] = &val
 }
@@ -604,7 +604,7 @@ func (v *nullableInt64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int64)
 }
 
-func (v *nullableInt64Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableInt64Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(int64)
 	(*v)[idx] = &val
 }
@@ -687,7 +687,7 @@ func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*float32)
 }
 
-func (v *nullableFloat32Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableFloat32Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(float32)
 	(*v)[idx] = &val
 }
@@ -770,7 +770,7 @@ func (v *nullableFloat64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*float64)
 }
 
-func (v *nullableFloat64Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableFloat64Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(float64)
 	(*v)[idx] = &val
 }
@@ -853,7 +853,7 @@ func (v *nullableStringVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*string)
 }
 
-func (v *nullableStringVector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableStringVector) SetConcrete(idx int, i interface{}) {
 	val := i.(string)
 	(*v)[idx] = &val
 }
@@ -936,7 +936,7 @@ func (v *nullableBoolVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*bool)
 }
 
-func (v *nullableBoolVector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableBoolVector) SetConcrete(idx int, i interface{}) {
 	val := i.(bool)
 	(*v)[idx] = &val
 }
@@ -1019,7 +1019,7 @@ func (v *nullableTimeTimeVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*time.Time)
 }
 
-func (v *nullableTimeTimeVector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableTimeTimeVector) SetConcrete(idx int, i interface{}) {
 	val := i.(time.Time)
 	(*v)[idx] = &val
 }
@@ -1102,7 +1102,7 @@ func (v *nullableTimeDurationVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*time.Duration)
 }
 
-func (v *nullableTimeDurationVector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableTimeDurationVector) SetConcrete(idx int, i interface{}) {
 	val := i.(time.Duration)
 	(*v)[idx] = &val
 }
