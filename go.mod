@@ -15,6 +15,7 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/magefile/mage v1.9.0
 	github.com/mattetti/filebuffer v1.0.0
+	github.com/mitchellh/reflectwalk v1.0.1
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/prometheus/client_golang v1.3.0
 	github.com/prometheus/common v0.7.0
