@@ -193,6 +193,8 @@ func GetMissing(fillMissing *FillMissing, field *Field, previousRowIdx int) (int
 //
 // Additionally, if the time index is a *time.Time field, it will become time.Time Field. If a *string Field has nil values, they are equivalent to "" when converted into labels.
 //
+// Finally, the Meta field of the result Wide Frame is pointing to the reference of the Meta field of the input Long Frame.
+//
 // An error is returned if any of the following are true:
 // The input frame is not a long formated time series frame.
 // The input frame's Fields are of length 0.
@@ -215,7 +217,6 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 	}
 
 	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
-	// copy reference to longFrame.Meta
 	wideFrame.Meta = longFrame.Meta
 	wideFrameRowCounter := 0
 
@@ -332,6 +333,8 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 // For each unique set of Labels across the Fields of wideFrame, a row is added to longFrame, and then
 // for each unique value Field, the corresponding value Field of longFrame is set.
 //
+// Finally, the Meta field of the result Long Frame is pointing to the reference of the Meta field of the input Wide Frame.
+//
 // An error is returned if any of the following are true:
 // The input frame is not a wide formated time series frame.
 // The input row has no rows.
@@ -398,7 +401,6 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	// build new Frame with new schema
 	longFrame := NewFrame(wideFrame.Name, // time, value fields..., factor fields (strings)...
 		NewField(wideFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})) // time field is first field
-	// copy reference to wideFrame.Meta
 	longFrame.Meta = wideFrame.Meta
 
 	i := 1
