@@ -11,6 +11,11 @@ func Build() error {
 	return sh.RunV("go", "build", "./...")
 }
 
+// DataGenerate runs go generate (code generation) on the data package.
+func DataGenerate() error {
+	return sh.Run("go", "generate", "./data")
+}
+
 // Protobuf generates protobuf files.
 func Protobuf() error {
 	if err := sh.RunV("./scripts/protobuf-check.sh"); err != nil {
