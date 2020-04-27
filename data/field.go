@@ -208,13 +208,13 @@ func (f *Field) Set(idx int, val interface{}) {
 	f.vector.Set(idx, val)
 }
 
-// SetConcreteAt sets the Field's value at index idx to val.
+// SetConcrete sets the Field's value at index idx to val.
 // val must be a non-pointer type or a panic will occur.
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable, then this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
-func (f *Field) SetConcreteAt(idx int, val interface{}) {
-	f.vector.SetConcreteAt(idx, val)
+func (f *Field) SetConcrete(idx int, val interface{}) {
+	f.vector.SetConcrete(idx, val)
 }
 
 // Append appends element e to the Field.
@@ -250,6 +250,15 @@ func (f *Field) Type() FieldType {
 // It will panic if idx is out of range.
 func (f *Field) PointerAt(idx int) interface{} {
 	return f.vector.PointerAt(idx)
+}
+
+// Insert extends the Field length by 1,
+// shifts any existing field values at indices equal or greater to idx by one place
+// and inserts val at index idx of the Field.
+// If idx is equal to the Field length, then val will be appended.
+// It idx exceeds the Field length, this method will panic.
+func (f *Field) Insert(idx int, val interface{}) {
+	f.vector.Insert(idx, val)
 }
 
 // CopyAt returns a copy of the value of the specified index idx.
