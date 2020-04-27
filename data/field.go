@@ -280,7 +280,10 @@ func (f *Field) Nullable() bool {
 // If the Field type is a bool then 0 is return if false or nil, and 1 if true.
 //
 // If the Field type is time.Time, then the millisecond epoch representation of the time
-// is returned, or NaN is the value is nil.
+// is returned, or NaN if the value is nil.
+//
+// If the Field type is time.Duration, then a nanosecond representation of the duration
+// is returned, or NaN if the value is nil.
 //
 // If the Field type is a string, then strconv.ParseFloat is called on it and will return
 // an error if ParseFloat errors. If the value is nil, NaN is returned.
@@ -416,7 +419,16 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		if t == nil {
 			return math.NaN(), nil
 		}
-		return float64(f.At(idx).(*time.Time).UnixNano() / int64(time.Millisecond)), nil
+		return float64(t.UnixNano() / int64(time.Millisecond)), nil
+
+	case FieldTypeDuration:
+		return float64(f.At(idx).(time.Duration)), nil
+	case FieldTypeNullableDuration:
+		d := f.At(idx).(*time.Duration)
+		if d == nil {
+			return math.NaN(), nil
+		}
+		return float64(*d), nil
 	}
 	return 0, fmt.Errorf("unsupported field type %T", f.Type())
 }
