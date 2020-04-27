@@ -57,7 +57,7 @@ func (v *uint8Vector) Extend(i int) {
 	(*v) = append((*v), make([]uint8, i)...)
 }
 
-func (v *uint8Vector) InsertAt(i int, val interface{}) {
+func (v *uint8Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -121,7 +121,7 @@ func (v *uint16Vector) Extend(i int) {
 	(*v) = append((*v), make([]uint16, i)...)
 }
 
-func (v *uint16Vector) InsertAt(i int, val interface{}) {
+func (v *uint16Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -185,7 +185,7 @@ func (v *uint32Vector) Extend(i int) {
 	(*v) = append((*v), make([]uint32, i)...)
 }
 
-func (v *uint32Vector) InsertAt(i int, val interface{}) {
+func (v *uint32Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -249,7 +249,7 @@ func (v *uint64Vector) Extend(i int) {
 	(*v) = append((*v), make([]uint64, i)...)
 }
 
-func (v *uint64Vector) InsertAt(i int, val interface{}) {
+func (v *uint64Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -313,7 +313,7 @@ func (v *int8Vector) Extend(i int) {
 	(*v) = append((*v), make([]int8, i)...)
 }
 
-func (v *int8Vector) InsertAt(i int, val interface{}) {
+func (v *int8Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -377,7 +377,7 @@ func (v *int16Vector) Extend(i int) {
 	(*v) = append((*v), make([]int16, i)...)
 }
 
-func (v *int16Vector) InsertAt(i int, val interface{}) {
+func (v *int16Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -441,7 +441,7 @@ func (v *int32Vector) Extend(i int) {
 	(*v) = append((*v), make([]int32, i)...)
 }
 
-func (v *int32Vector) InsertAt(i int, val interface{}) {
+func (v *int32Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -505,7 +505,7 @@ func (v *int64Vector) Extend(i int) {
 	(*v) = append((*v), make([]int64, i)...)
 }
 
-func (v *int64Vector) InsertAt(i int, val interface{}) {
+func (v *int64Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -569,7 +569,7 @@ func (v *float32Vector) Extend(i int) {
 	(*v) = append((*v), make([]float32, i)...)
 }
 
-func (v *float32Vector) InsertAt(i int, val interface{}) {
+func (v *float32Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -633,7 +633,7 @@ func (v *float64Vector) Extend(i int) {
 	(*v) = append((*v), make([]float64, i)...)
 }
 
-func (v *float64Vector) InsertAt(i int, val interface{}) {
+func (v *float64Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -697,7 +697,7 @@ func (v *stringVector) Extend(i int) {
 	(*v) = append((*v), make([]string, i)...)
 }
 
-func (v *stringVector) InsertAt(i int, val interface{}) {
+func (v *stringVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -761,7 +761,7 @@ func (v *boolVector) Extend(i int) {
 	(*v) = append((*v), make([]bool, i)...)
 }
 
-func (v *boolVector) InsertAt(i int, val interface{}) {
+func (v *boolVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -825,7 +825,7 @@ func (v *timeTimeVector) Extend(i int) {
 	(*v) = append((*v), make([]time.Time, i)...)
 }
 
-func (v *timeTimeVector) InsertAt(i int, val interface{}) {
+func (v *timeTimeVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -889,7 +889,7 @@ func (v *timeDurationVector) Extend(i int) {
 	(*v) = append((*v), make([]time.Duration, i)...)
 }
 
-func (v *timeDurationVector) InsertAt(i int, val interface{}) {
+func (v *timeDurationVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

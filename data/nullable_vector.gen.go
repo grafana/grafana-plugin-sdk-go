@@ -76,7 +76,7 @@ func (v *nullableUint8Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint8, i)...)
 }
 
-func (v *nullableUint8Vector) InsertAt(i int, val interface{}) {
+func (v *nullableUint8Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -159,7 +159,7 @@ func (v *nullableUint16Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint16, i)...)
 }
 
-func (v *nullableUint16Vector) InsertAt(i int, val interface{}) {
+func (v *nullableUint16Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -242,7 +242,7 @@ func (v *nullableUint32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint32, i)...)
 }
 
-func (v *nullableUint32Vector) InsertAt(i int, val interface{}) {
+func (v *nullableUint32Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -325,7 +325,7 @@ func (v *nullableUint64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint64, i)...)
 }
 
-func (v *nullableUint64Vector) InsertAt(i int, val interface{}) {
+func (v *nullableUint64Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -408,7 +408,7 @@ func (v *nullableInt8Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int8, i)...)
 }
 
-func (v *nullableInt8Vector) InsertAt(i int, val interface{}) {
+func (v *nullableInt8Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -491,7 +491,7 @@ func (v *nullableInt16Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int16, i)...)
 }
 
-func (v *nullableInt16Vector) InsertAt(i int, val interface{}) {
+func (v *nullableInt16Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -574,7 +574,7 @@ func (v *nullableInt32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int32, i)...)
 }
 
-func (v *nullableInt32Vector) InsertAt(i int, val interface{}) {
+func (v *nullableInt32Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -657,7 +657,7 @@ func (v *nullableInt64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int64, i)...)
 }
 
-func (v *nullableInt64Vector) InsertAt(i int, val interface{}) {
+func (v *nullableInt64Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -740,7 +740,7 @@ func (v *nullableFloat32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*float32, i)...)
 }
 
-func (v *nullableFloat32Vector) InsertAt(i int, val interface{}) {
+func (v *nullableFloat32Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -823,7 +823,7 @@ func (v *nullableFloat64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*float64, i)...)
 }
 
-func (v *nullableFloat64Vector) InsertAt(i int, val interface{}) {
+func (v *nullableFloat64Vector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -906,7 +906,7 @@ func (v *nullableStringVector) Extend(i int) {
 	(*v) = append((*v), make([]*string, i)...)
 }
 
-func (v *nullableStringVector) InsertAt(i int, val interface{}) {
+func (v *nullableStringVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -989,7 +989,7 @@ func (v *nullableBoolVector) Extend(i int) {
 	(*v) = append((*v), make([]*bool, i)...)
 }
 
-func (v *nullableBoolVector) InsertAt(i int, val interface{}) {
+func (v *nullableBoolVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1072,7 +1072,7 @@ func (v *nullableTimeTimeVector) Extend(i int) {
 	(*v) = append((*v), make([]*time.Time, i)...)
 }
 
-func (v *nullableTimeTimeVector) InsertAt(i int, val interface{}) {
+func (v *nullableTimeTimeVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1155,7 +1155,7 @@ func (v *nullableTimeDurationVector) Extend(i int) {
 	(*v) = append((*v), make([]*time.Duration, i)...)
 }
 
-func (v *nullableTimeDurationVector) InsertAt(i int, val interface{}) {
+func (v *nullableTimeDurationVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

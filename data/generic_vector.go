@@ -57,7 +57,7 @@ func (v *genVector) Extend(i int) {
 	(*v) = append((*v), make([]gen, i)...)
 }
 
-func (v *genVector) InsertAt(i int, val interface{}) {
+func (v *genVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

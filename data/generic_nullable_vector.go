@@ -70,7 +70,7 @@ func (v *nullablegenVector) Extend(i int) {
 	(*v) = append((*v), make([]*gen, i)...)
 }
 
-func (v *nullablegenVector) InsertAt(i int, val interface{}) {
+func (v *nullablegenVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

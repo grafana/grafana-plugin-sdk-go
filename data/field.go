@@ -240,13 +240,13 @@ func (f *Field) PointerAt(idx int) interface{} {
 	return f.vector.PointerAt(idx)
 }
 
-// InsertAt extends the Field length by 1,
+// Insert extends the Field length by 1,
 // shifts any existing field values at indices equal or greater to idx by one place
 // and inserts val at index idx of the Field.
 // If idx is equal to the Field length, then val will be appended.
 // It idx exceeds the Field length, this method will panic.
-func (f *Field) InsertAt(idx int, val interface{}) {
-	f.vector.InsertAt(idx, val)
+func (f *Field) Insert(idx int, val interface{}) {
+	f.vector.Insert(idx, val)
 }
 
 // CopyAt returns a copy of the value of the specified index idx.

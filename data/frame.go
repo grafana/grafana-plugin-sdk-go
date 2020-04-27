@@ -64,7 +64,7 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 // It rowIdx exceeds the Field length, this method will panic.
 func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
-		f.Fields[i].vector.InsertAt(rowIdx, v)
+		f.Fields[i].vector.Insert(rowIdx, v)
 	}
 }
 
