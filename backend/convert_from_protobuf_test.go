@@ -2,7 +2,6 @@ package backend
 
 import (
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 	"testing"
@@ -32,7 +31,6 @@ func (w *walker) StructField(f reflect.StructField, v reflect.Value) error {
 	}
 	w.FieldCount++
 	if v.IsZero() {
-		fmt.Println(f)
 		w.ZeroValueFieldCount++
 	}
 	return nil
@@ -121,6 +119,54 @@ func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoAppInstanceSettings.JsonData), sdkAppInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkAppInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1000*1000000), sdkAppInstanceSettings.Updated)
+
+	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
+
+}
+
+func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
+	protoDSIS := &pluginv2.DataSourceInstanceSettings{
+		Id:                      2,
+		Name:                    "bestData",
+		Url:                     "http://grafana.com",
+		User:                    "aUser",
+		Database:                "grafana",
+		BasicAuthEnabled:        true,
+		BasicAuthUser:           "anotherUser",
+		JsonData:                []byte(`{ "foo": "gpp"`),
+		DecryptedSecureJsonData: map[string]string{"secret": "quiet"},
+		LastUpdatedMS:           86400 * 2 * 1000,
+	}
+	protoWalker := &walker{}
+	reflectwalk.Walk(protoDSIS, protoWalker)
+
+	if protoWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt, "proto", "DataSourceInstanceSettings", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
+	}
+
+	sdkDSIS := f.DataSourceInstanceSettings(protoDSIS)
+
+	sdkWalker := &walker{}
+	reflectwalk.Walk(sdkDSIS, sdkWalker)
+
+	if sdkWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
+	}
+
+	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
+
+	requireCounter := &requireCounter{}
+
+	requireCounter.Equal(t, protoDSIS.Id, sdkDSIS.ID)
+	requireCounter.Equal(t, protoDSIS.Name, sdkDSIS.Name)
+	requireCounter.Equal(t, protoDSIS.Url, sdkDSIS.URL)
+	requireCounter.Equal(t, protoDSIS.User, sdkDSIS.User)
+	requireCounter.Equal(t, protoDSIS.Database, sdkDSIS.Database)
+	requireCounter.Equal(t, protoDSIS.BasicAuthEnabled, sdkDSIS.BasicAuthEnabled)
+	requireCounter.Equal(t, protoDSIS.BasicAuthUser, sdkDSIS.BasicAuthUser)
+	requireCounter.Equal(t, json.RawMessage(protoDSIS.JsonData), sdkDSIS.JSONData)
+	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkDSIS.DecryptedSecureJSONData)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1000*1000000), sdkDSIS.Updated)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 
