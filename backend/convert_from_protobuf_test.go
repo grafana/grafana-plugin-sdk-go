@@ -71,7 +71,8 @@ func TestConvertFromProtobufUser(t *testing.T) {
 	sdkUser := f.User(protoUser)
 
 	sdkWalker := &walker{}
-	reflectwalk.Walk(sdkUser, sdkWalker)
+	err := reflectwalk.Walk(sdkUser, sdkWalker)
+	require.NoError(t, err)
 
 	if sdkWalker.HasZeroFields() {
 		t.Fatalf(unsetErrFmt, "sdk", "User", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
@@ -106,7 +107,8 @@ func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
 	sdkAppInstanceSettings := f.AppInstanceSettings(protoAppInstanceSettings)
 
 	sdkWalker := &walker{}
-	reflectwalk.Walk(sdkAppInstanceSettings, sdkWalker)
+	err := reflectwalk.Walk(sdkAppInstanceSettings, sdkWalker)
+	require.NoError(t, err)
 
 	if sdkWalker.HasZeroFields() {
 		t.Fatalf(unsetErrFmt, "sdk", "AppInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
@@ -147,7 +149,8 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 	sdkDSIS := f.DataSourceInstanceSettings(protoDSIS)
 
 	sdkWalker := &walker{}
-	reflectwalk.Walk(sdkDSIS, sdkWalker)
+	err := reflectwalk.Walk(sdkDSIS, sdkWalker)
+	require.NoError(t, err)
 
 	if sdkWalker.HasZeroFields() {
 		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
