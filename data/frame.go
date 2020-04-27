@@ -68,6 +68,14 @@ func (f *Frame) InsertRowAt(rowIdx int, vals ...interface{}) {
 	}
 }
 
+// SetRowAt sets vals at the index rowIdx of the Frame.
+// SetRowAt calls each field's Set which sets the Field's value at index idx to val.
+func (f *Frame) SetRowAt(rowIdx int, vals ...interface{}) {
+	for i, v := range vals {
+		f.Fields[i].vector.Set(rowIdx, v)
+	}
+}
+
 // RowCopy returns an interface slice that contains the values of each Field for the given rowIdx.
 func (f *Frame) RowCopy(rowIdx int) []interface{} {
 	vals := make([]interface{}, len(f.Fields))
