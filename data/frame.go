@@ -68,9 +68,9 @@ func (f *Frame) InsertRowAt(rowIdx int, vals ...interface{}) {
 	}
 }
 
-// SetRowAt sets vals at the index rowIdx of the Frame.
-// SetRowAt calls each field's Set which sets the Field's value at index idx to val.
-func (f *Frame) SetRowAt(rowIdx int, vals ...interface{}) {
+// SetRow sets vals at the index rowIdx of the Frame.
+// SetRow calls each field's Set which sets the Field's value at index idx to val.
+func (f *Frame) SetRow(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
 		f.Fields[i].vector.Set(rowIdx, v)
 	}
