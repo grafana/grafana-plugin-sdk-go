@@ -77,7 +77,7 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 
 	res := mockResponse{
 		[]mockSeries{
-			mockSeries{
+			{
 				Name:   "cpu",
 				Labels: map[string]string{"host": "a"},
 				Points: []mockPoint{
@@ -89,7 +89,7 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 					},
 				},
 			},
-			mockSeries{
+			{
 				Name:   "cpu",
 				Labels: map[string]string{"host": "b"},
 				Points: []mockPoint{
@@ -151,7 +151,7 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 
 	singleTimeIndexRes := mockResponse{
 		[]mockSeries{
-			mockSeries{
+			{
 				Name:   "cpu",
 				Labels: map[string]string{"host": "a"},
 				Points: []mockPoint{
@@ -163,7 +163,7 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 					},
 				},
 			},
-			mockSeries{
+			{
 				Name:   "cpu",
 				Labels: map[string]string{"host": "b"},
 				Points: []mockPoint{
