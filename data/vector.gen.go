@@ -6,7 +6,7 @@ package data
 
 import "time"
 
-//go:Uint8erate uint8ny -in=$GOFILE -out=vector.Uint8.go uint8 "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Uint8erate uint8ny -in=$GOFILE -out=vector.Uint8.go uint8 "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type uint8Vector []uint8
 
@@ -70,7 +70,7 @@ func (v *uint8Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Uint16erate uint16ny -in=$GOFILE -out=vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Uint16erate uint16ny -in=$GOFILE -out=vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type uint16Vector []uint16
 
@@ -134,7 +134,7 @@ func (v *uint16Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Uint32erate uint32ny -in=$GOFILE -out=vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Uint32erate uint32ny -in=$GOFILE -out=vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type uint32Vector []uint32
 
@@ -198,7 +198,7 @@ func (v *uint32Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Uint64erate uint64ny -in=$GOFILE -out=vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Uint64erate uint64ny -in=$GOFILE -out=vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type uint64Vector []uint64
 
@@ -262,7 +262,7 @@ func (v *uint64Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Int8erate int8ny -in=$GOFILE -out=vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Int8erate int8ny -in=$GOFILE -out=vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type int8Vector []int8
 
@@ -326,7 +326,7 @@ func (v *int8Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Int16erate int16ny -in=$GOFILE -out=vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Int16erate int16ny -in=$GOFILE -out=vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type int16Vector []int16
 
@@ -390,7 +390,7 @@ func (v *int16Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Int32erate int32ny -in=$GOFILE -out=vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Int32erate int32ny -in=$GOFILE -out=vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type int32Vector []int32
 
@@ -454,7 +454,7 @@ func (v *int32Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Int64erate int64ny -in=$GOFILE -out=vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Int64erate int64ny -in=$GOFILE -out=vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type int64Vector []int64
 
@@ -518,7 +518,7 @@ func (v *int64Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Float32erate float32ny -in=$GOFILE -out=vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Float32erate float32ny -in=$GOFILE -out=vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type float32Vector []float32
 
@@ -582,7 +582,7 @@ func (v *float32Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Float64erate float64ny -in=$GOFILE -out=vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Float64erate float64ny -in=$GOFILE -out=vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type float64Vector []float64
 
@@ -646,7 +646,7 @@ func (v *float64Vector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Stringerate stringny -in=$GOFILE -out=vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Stringerate stringny -in=$GOFILE -out=vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type stringVector []string
 
@@ -710,7 +710,7 @@ func (v *stringVector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:Boolerate boolny -in=$GOFILE -out=vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Boolerate boolny -in=$GOFILE -out=vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type boolVector []bool
 
@@ -774,7 +774,7 @@ func (v *boolVector) InsertAt(i int, val interface{}) {
 	}
 }
 
-//go:TimeTimeerate timeTimeny -in=$GOFILE -out=vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:TimeTimeerate timeTimeny -in=$GOFILE -out=vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type timeTimeVector []time.Time
 
@@ -826,6 +826,70 @@ func (v *timeTimeVector) Extend(i int) {
 }
 
 func (v *timeTimeVector) InsertAt(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:TimeDurationerate timeDurationny -in=$GOFILE -out=vector.TimeDuration.go time.Duration "TimeDuration=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
+
+type timeDurationVector []time.Duration
+
+func newTimeDurationVector(n int) *timeDurationVector {
+	v := timeDurationVector(make([]time.Duration, n))
+	return &v
+}
+
+func (v *timeDurationVector) Set(idx int, i interface{}) {
+	(*v)[idx] = i.(time.Duration)
+}
+
+func (v *timeDurationVector) SetConcreteAt(idx int, i interface{}) {
+	v.Set(idx, i)
+}
+
+func (v *timeDurationVector) Append(i interface{}) {
+	(*v) = append((*v), i.(time.Duration))
+}
+
+func (v *timeDurationVector) At(i int) interface{} {
+	return (*v)[i]
+}
+
+func (v *timeDurationVector) PointerAt(i int) interface{} {
+	return &(*v)[i]
+}
+
+func (v *timeDurationVector) Len() int {
+	return len((*v))
+}
+
+func (v *timeDurationVector) CopyAt(i int) interface{} {
+	var g time.Duration
+	g = (*v)[i]
+	return g
+}
+
+func (v *timeDurationVector) ConcreteAt(i int) (interface{}, bool) {
+	return v.At(i), true
+}
+
+func (v *timeDurationVector) Type() FieldType {
+	return vectorFieldType(v)
+}
+
+func (v *timeDurationVector) Extend(i int) {
+	(*v) = append((*v), make([]time.Duration, i)...)
+}
+
+func (v *timeDurationVector) InsertAt(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
