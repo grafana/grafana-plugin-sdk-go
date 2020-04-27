@@ -22,7 +22,7 @@ func goldenDF() *data.Frame {
 	nullableStringValuesFieldConfig := (&data.FieldConfig{
 		Title: "Grafana ❤️ (Previous should be heart emoji) 🦥 (Previous should be sloth emoji)",
 		Links: []data.DataLink{
-			data.DataLink{
+			{
 				Title:       "Donate - The Sloth Conservation Foundation",
 				TargetBlank: true,
 				URL:         "https://slothconservation.com/how-to-help/donate/",
