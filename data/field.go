@@ -240,8 +240,11 @@ func (f *Field) PointerAt(idx int) interface{} {
 	return f.vector.PointerAt(idx)
 }
 
-// InsertAt inserts val at the idx of the Field
-// It will panic if the idx is greater than the Field vector length
+// InsertAt extends the Field length by 1,
+// shifts any existing field values at indices equal or greater to idx by one place
+// and inserts val at index idx of the Field.
+// If idx is equal to the Field length, then val will be appended.
+// It idx exceeds the Field length, this method will panic.
 func (f *Field) InsertAt(idx int, val interface{}) {
 	f.vector.InsertAt(idx, val)
 }

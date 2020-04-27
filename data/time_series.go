@@ -159,7 +159,7 @@ func float64ToType(val float64, ftype FieldType) (interface{}, error) {
 	return val, fmt.Errorf("no numeric value")
 }
 
-// GetMissing returns the value to be filled for a missing row field
+// GetMissing returns the value to be filled for a missing row field.
 func GetMissing(fillMissing *FillMissing, field *Field, previousRowIdx int) (interface{}, error) {
 	if fillMissing == nil {
 		return nil, fmt.Errorf("fill missing is disabled")

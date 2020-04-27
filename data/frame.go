@@ -56,10 +56,15 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 	}
 }
 
-// InsertRowAt adds values in the field vector (identyfied by fieldIdx) at the index specified by vectorIdx
-func (f *Frame) InsertRowAt(fieldIdx int, vals ...interface{}) {
+// InsertRowAt adds a row at index rowIdx of the Frame.
+// InsertRowAt calls each field's InsertAt which extends the Field length by 1,
+// shifts any existing field values at indices equal or greater to rowIdx by one place
+// and inserts the corresponding val at index rowIdx of the Field.
+// If rowIdx is equal to the Frame RowLen, then val will be appended.
+// It rowIdx exceeds the Field length, this method will panic.
+func (f *Frame) InsertRowAt(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
-		f.Fields[i].vector.InsertAt(fieldIdx, v)
+		f.Fields[i].vector.InsertAt(rowIdx, v)
 	}
 }
 
