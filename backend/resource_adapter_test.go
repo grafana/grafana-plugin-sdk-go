@@ -34,8 +34,8 @@ func TestCallResource(t *testing.T) {
 		handler := &testCallResourceHandler{
 			responseStatus: http.StatusOK,
 			responseHeaders: map[string][]string{
-				"X-Header-Out-1": []string{"D", "E"},
-				"X-Header-Out-2": []string{"F"},
+				"X-Header-Out-1": {"D", "E"},
+				"X-Header-Out-2": {"F"},
 			},
 			responseBody: body,
 		}
@@ -50,8 +50,8 @@ func TestCallResource(t *testing.T) {
 			Method: http.MethodGet,
 			Url:    "plugins/test-plugin/resources/some/path?test=1",
 			Headers: map[string]*pluginv2.StringList{
-				"X-Header-In-1": &pluginv2.StringList{Values: []string{"A", "B"}},
-				"X-Header-In-2": &pluginv2.StringList{Values: []string{"C"}},
+				"X-Header-In-1": {Values: []string{"A", "B"}},
+				"X-Header-In-2": {Values: []string{"C"}},
 			},
 			Body: body,
 		}
@@ -93,8 +93,8 @@ func TestCallResource(t *testing.T) {
 		handler := &testCallResourceStreamHandler{
 			responseStatus: http.StatusOK,
 			responseHeaders: map[string][]string{
-				"X-Header-Out-1": []string{"D", "E"},
-				"X-Header-Out-2": []string{"F"},
+				"X-Header-Out-1": {"D", "E"},
+				"X-Header-Out-2": {"F"},
 			},
 			responseMessages: [][]byte{
 				[]byte("hello"),

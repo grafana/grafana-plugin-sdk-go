@@ -85,32 +85,6 @@ func (f *Frame) RowCopy(rowIdx int) []interface{} {
 	return vals
 }
 
-// AppendRowSafe adds a new row to the Frame by appending to each each element of vals to
-// the corresponding Field in the data. It has the some constraints as AppendRow but will
-// return an error under those conditions instead of panicing.
-func (f *Frame) AppendRowSafe(vals ...interface{}) error {
-	if len(vals) != len(f.Fields) {
-		return fmt.Errorf("failed to append vals to Frame. Frame has %v fields but was given %v to append", len(f.Fields), len(vals))
-	}
-	// check validity before any modification
-	for i, v := range vals {
-		if f.Fields[i] == nil || f.Fields[i].vector == nil {
-			return fmt.Errorf("can not append to uninitalized Field at field index %v", i)
-		}
-		dfPType := f.Fields[i].Type()
-		if v == nil {
-			if !dfPType.Nullable() {
-				return fmt.Errorf("can not append nil to non-nullable vector with underlying type %s at field index %v", dfPType, i)
-			}
-		}
-		if v != nil && fieldTypeFromVal(v) != dfPType {
-			return fmt.Errorf("invalid type appending row at index %v, got %T want %v", i, v, dfPType.ItemTypeString())
-		}
-		f.Fields[i].vector.Append(v)
-	}
-	return nil
-}
-
 // FilterRowsByField returns a copy of frame f (as per EmptyCopy()) that includes rows
 // where the filter returns true and no error. If filter returns an error, then an error is returned.
 func (f *Frame) FilterRowsByField(fieldIdx int, filter func(i interface{}) (bool, error)) (*Frame, error) {
@@ -367,20 +341,12 @@ func FrameTestCompareOptions() []cmp.Option {
 	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, unexportedField, cmpopts.EquateEmpty()}
 }
 
-func (f *Frame) String() string {
-	s, err := f.StringTable(10, 10)
-	if err != nil {
-		return err.Error()
-	}
-	return s
-}
-
 // StringTable prints a human readable table of the Frame.
-// The table's width is limited to maxFields and the length is limited to maxRows.
+// The table's width is limited to maxFields and the length is limited to maxRows (a value of -1 is unlimited).
 // If the width or length is excceded then last column or row displays "..." as the contents.
 func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
-	if maxFields < 2 {
-		return "", fmt.Errorf("maxWidth than 2")
+	if maxFields > 0 && maxFields < 2 {
+		return "", fmt.Errorf("maxFields must be less than 0 (unlimited) or greather than 2, got %v", maxFields)
 	}
 
 	rowLen, err := f.RowLen()
@@ -390,14 +356,14 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 	// calculate output column width (fields)
 	width := len(f.Fields)
-	exceedsWidth := width > maxFields
+	exceedsWidth := maxFields > 0 && width > maxFields
 	if exceedsWidth {
 		width = maxFields
 	}
 
 	// calculate output length (rows)
 	length := rowLen
-	exceedsLength := rowLen > maxRows
+	exceedsLength := maxRows >= 0 && rowLen > maxRows
 	if exceedsLength {
 		length = maxRows + 1
 	}

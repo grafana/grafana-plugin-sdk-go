@@ -26,9 +26,9 @@ func ExampleNewFrameInputConverter() {
 			"Time",
 		},
 		[][]string{
-			[]string{"sloth", "3.5", "1586014367"},
-			[]string{"sloth", "5.5", "1586100767"},
-			[]string{"sloth", "7", "1586187167"},
+			{"sloth", "3.5", "1586014367"},
+			{"sloth", "5.5", "1586100767"},
+			{"sloth", "7", "1586187167"},
 		},
 	}
 
@@ -105,7 +105,9 @@ func ExampleNewFrameInputConverter() {
 	}
 	convBuilder.Frame.Name = "Converted"
 
-	fmt.Println(convBuilder.Frame.String())
+	st, _ := convBuilder.Frame.StringTable(-1, -1)
+	fmt.Println(st)
+
 	// Output:
 	// Name: Converted
 	// Dimensions: 3 Fields by 3 Rows
