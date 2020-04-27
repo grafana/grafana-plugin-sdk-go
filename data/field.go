@@ -41,8 +41,10 @@ type Fields []*Field
 //  []uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
 // Floats:
 //  []float32, []*float32, []float64, []*float64
-// String, Bool, and Time:
-//  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+// String, Bool:
+//  []string, []*string, []bool, []*bool
+// Time:
+//  []time.Time, []*time.Time, []time.Duration, []*time.Duration
 //
 // If an unsupported values type is passed, NewField will panic.
 func NewField(name string, labels Labels, values interface{}) *Field {
@@ -174,6 +176,16 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 			vec.Set(i, v[i])
 		}
 	case []*time.Time:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []time.Duration:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*time.Duration:
 		vec = newVector(v, len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])

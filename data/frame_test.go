@@ -517,6 +517,10 @@ func timePtr(t time.Time) *time.Time {
 	return &t
 }
 
+func durPtr(d time.Duration) *time.Duration {
+	return &d
+}
+
 func float32Ptr(f float32) *float32 {
 	return &f
 }
