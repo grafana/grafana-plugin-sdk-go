@@ -123,7 +123,7 @@ func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
 
 	requireCounter.Equal(t, json.RawMessage(protoAIS.JsonData), sdkAIS.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkAIS.DecryptedSecureJSONData)
-	requireCounter.Equal(t, time.Unix(0, 86400*2*1000000000), sdkAIS.Updated)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkAIS.Updated)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 
@@ -173,7 +173,7 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 	requireCounter.Equal(t, protoDSIS.BasicAuthUser, sdkDSIS.BasicAuthUser)
 	requireCounter.Equal(t, json.RawMessage(protoDSIS.JsonData), sdkDSIS.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkDSIS.DecryptedSecureJSONData)
-	requireCounter.Equal(t, time.Unix(0, 86400*2*1000000000), sdkDSIS.Updated)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkDSIS.Updated)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 
@@ -241,7 +241,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	// App Instance Settings
 	requireCounter.Equal(t, json.RawMessage(protoCtx.AppInstanceSettings.JsonData), sdkCtx.AppInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.AppInstanceSettings.DecryptedSecureJSONData)
-	requireCounter.Equal(t, time.Unix(0, 86400*2*1000000000), sdkCtx.AppInstanceSettings.Updated)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.AppInstanceSettings.Updated)
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Name, sdkCtx.DataSourceInstanceSettings.Name)
@@ -253,7 +253,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.BasicAuthUser, sdkCtx.DataSourceInstanceSettings.BasicAuthUser)
 	requireCounter.Equal(t, json.RawMessage(protoCtx.DataSourceInstanceSettings.JsonData), sdkCtx.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.DataSourceInstanceSettings.DecryptedSecureJSONData)
-	requireCounter.Equal(t, time.Unix(0, 86400*2*1000000000), sdkCtx.DataSourceInstanceSettings.Updated)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-3, "untested fields in conversion") // -3 Struct Fields
 
@@ -271,7 +271,7 @@ func TestConvertFromProtobufTimeRange(t *testing.T) {
 
 	if protoWalker.HasZeroFields() {
 		t.Fatalf(unsetErrFmt,
-			"proto", "User", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
+			"proto", "TimeRange", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
 	}
 
 	sdkTR := f.TimeRange(protoTR)
@@ -281,16 +281,62 @@ func TestConvertFromProtobufTimeRange(t *testing.T) {
 	require.NoError(t, err)
 
 	if sdkWalker.HasZeroFields() {
-		t.Fatalf(unsetErrFmt, "sdk", "User", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
+		t.Fatalf(unsetErrFmt, "sdk", "TimeRange", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
 	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
-	requireCounter.Equal(t, time.Unix(0, 86400*2*1000000000), sdkTR.From)
-	requireCounter.Equal(t, time.Unix(0, (86400*2+3600)*1000000000+123000000), sdkTR.To)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkTR.From)
+	requireCounter.Equal(t, time.Unix(0, (86400*2+3600)*1e9+1.23*1e8), sdkTR.To)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
+
+}
+
+func TestConvertFromProtobufDataQuery(t *testing.T) {
+	protoDQ := &pluginv2.DataQuery{
+		RefId:         "Z",
+		MaxDataPoints: 1e6,
+		TimeRange: &pluginv2.TimeRange{
+			FromEpochMS: 86400 * 2 * 1000,
+			ToEpochMS:   (86400*2+3600)*1000 + 123,
+		},
+		IntervalMS: 60 * 1000,
+		Json:       []byte(`{ "query": "SELECT * from FUN"`),
+	}
+
+	protoWalker := &walker{}
+	err := reflectwalk.Walk(protoDQ, protoWalker)
+	require.NoError(t, err)
+
+	if protoWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt,
+			"proto", "DataQuery", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
+	}
+
+	sdkDQ := f.DataQuery(protoDQ)
+
+	sdkWalker := &walker{}
+	err = reflectwalk.Walk(sdkDQ, sdkWalker)
+	require.NoError(t, err)
+
+	if sdkWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt, "sdk", "DataQuery", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
+	}
+
+	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
+
+	requireCounter := &requireCounter{}
+
+	requireCounter.Equal(t, protoDQ.RefId, sdkDQ.RefID)
+	requireCounter.Equal(t, protoDQ.MaxDataPoints, sdkDQ.MaxDataPoints)
+	requireCounter.Equal(t, time.Duration(time.Minute), sdkDQ.Interval)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkDQ.TimeRange.From)
+	requireCounter.Equal(t, time.Unix(0, (86400*2+3600)*1e9+1.23*1e8), sdkDQ.TimeRange.To)
+	requireCounter.Equal(t, json.RawMessage(protoDQ.Json), sdkDQ.JSON)
+
+	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-1, "untested fields in conversion") // -1 Struct Fields
 
 }
