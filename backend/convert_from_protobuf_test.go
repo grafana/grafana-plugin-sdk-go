@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
@@ -29,6 +30,7 @@ func (w *walker) StructField(f reflect.StructField, v reflect.Value) error {
 	if f.PkgPath != "" {
 		return nil
 	}
+	spew.Dump(f)
 	w.FieldCount++
 	if v.IsZero() {
 		w.ZeroValueFieldCount++
@@ -186,19 +188,21 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 
 }
 
+var protoPluginContext = &pluginv2.PluginContext{
+	OrgId:    3,
+	PluginId: "the-best-plugin",
+	User: &pluginv2.User{
+		Login: "bestUser",
+		Name:  "Best User",
+		Email: "example@justAstring",
+		Role:  "Lord",
+	},
+	AppInstanceSettings:        protoAppInstanceSettings,
+	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
+}
+
 func TestConvertFromProtobufPluginContext(t *testing.T) {
-	protoCtx := &pluginv2.PluginContext{
-		OrgId:    3,
-		PluginId: "the-best-plugin",
-		User: &pluginv2.User{
-			Login: "bestUser",
-			Name:  "Best User",
-			Email: "example@justAstring",
-			Role:  "Lord",
-		},
-		AppInstanceSettings:        protoAppInstanceSettings,
-		DataSourceInstanceSettings: protoDataSourceInstanceSettings,
-	}
+	protoCtx := protoPluginContext
 	protoWalker := &walker{}
 	err := reflectwalk.Walk(protoCtx, protoWalker)
 	require.NoError(t, err)
@@ -294,14 +298,16 @@ func TestConvertFromProtobufTimeRange(t *testing.T) {
 
 }
 
+var protoDataQuery = &pluginv2.DataQuery{
+	RefId:         "Z",
+	MaxDataPoints: 1e6,
+	TimeRange:     protoTimeRange,
+	IntervalMS:    60 * 1000,
+	Json:          []byte(`{ "query": "SELECT * from FUN"`),
+}
+
 func TestConvertFromProtobufDataQuery(t *testing.T) {
-	protoDQ := &pluginv2.DataQuery{
-		RefId:         "Z",
-		MaxDataPoints: 1e6,
-		TimeRange:     protoTimeRange,
-		IntervalMS:    60 * 1000,
-		Json:          []byte(`{ "query": "SELECT * from FUN"`),
-	}
+	protoDQ := protoDataQuery
 
 	protoWalker := &walker{}
 	err := reflectwalk.Walk(protoDQ, protoWalker)
@@ -334,5 +340,82 @@ func TestConvertFromProtobufDataQuery(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoDQ.Json), sdkDQ.JSON)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-1, "untested fields in conversion") // -1 Struct Fields
+
+}
+
+func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
+	protoQDR := &pluginv2.QueryDataRequest{
+		PluginContext: protoPluginContext,
+		Headers:       map[string]string{"SET-WIN": "GOAL!"},
+		Queries: []*pluginv2.DataQuery{
+			protoDataQuery,
+		},
+	}
+
+	protoWalker := &walker{}
+	err := reflectwalk.Walk(protoQDR, protoWalker)
+	require.NoError(t, err)
+
+	if protoWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt,
+			"proto", "QueryDataRequest", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
+	}
+
+	sdkQDR := f.QueryDataRequest(protoQDR)
+
+	sdkWalker := &walker{}
+	err = reflectwalk.Walk(sdkQDR, sdkWalker)
+	require.NoError(t, err)
+
+	if sdkWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt, "sdk", "QueryDataRequest", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
+	}
+
+	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
+
+	requireCounter := &requireCounter{}
+
+	requireCounter.Equal(t, protoQDR.Headers, sdkQDR.Headers)
+
+	// PluginContext
+	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
+	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.PluginID)
+	//// User
+	requireCounter.Equal(t, protoQDR.PluginContext.User.Login, sdkQDR.PluginContext.User.Login)
+	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)
+	requireCounter.Equal(t, protoQDR.PluginContext.User.Email, sdkQDR.PluginContext.User.Email)
+	requireCounter.Equal(t, protoQDR.PluginContext.User.Role, sdkQDR.PluginContext.User.Role)
+
+	//// App Instance Settings
+	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.AppInstanceSettings.JsonData), sdkQDR.PluginContext.AppInstanceSettings.JSONData)
+	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkQDR.PluginContext.AppInstanceSettings.DecryptedSecureJSONData)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkQDR.PluginContext.AppInstanceSettings.Updated)
+
+	//// Datasource Instance Settings
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Name, sdkQDR.PluginContext.DataSourceInstanceSettings.Name)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Url, sdkQDR.PluginContext.DataSourceInstanceSettings.URL)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.User, sdkQDR.PluginContext.DataSourceInstanceSettings.User)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Database, sdkQDR.PluginContext.DataSourceInstanceSettings.Database)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled, sdkQDR.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.BasicAuthUser, sdkQDR.PluginContext.DataSourceInstanceSettings.BasicAuthUser)
+	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.DataSourceInstanceSettings.JsonData), sdkQDR.PluginContext.DataSourceInstanceSettings.JSONData)
+	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkQDR.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkQDR.PluginContext.DataSourceInstanceSettings.Updated)
+
+	// Queries
+	requireCounter.Equal(t, protoQDR.Queries[0].RefId, sdkQDR.Queries[0].RefID)
+	requireCounter.Equal(t, protoQDR.Queries[0].MaxDataPoints, sdkQDR.Queries[0].MaxDataPoints)
+	requireCounter.Equal(t, time.Duration(time.Minute), sdkQDR.Queries[0].Interval)
+	requireCounter.Equal(t, sdkTimeRange.From, sdkQDR.Queries[0].TimeRange.From)
+	requireCounter.Equal(t, sdkTimeRange.To, sdkQDR.Queries[0].TimeRange.To)
+	requireCounter.Equal(t, json.RawMessage(protoQDR.Queries[0].Json), sdkQDR.Queries[0].JSON)
+
+	// -6 is:
+	// PluginContext, .User, .AppInstanceSettings, .DataSourceInstanceSettings
+	// DataQuery, .TimeRange
+	//
+	//
+	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-6, "untested fields in conversion") // -6 Struct Fields
 
 }
