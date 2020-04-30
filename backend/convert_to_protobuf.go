@@ -132,6 +132,8 @@ func (t ConvertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 }
 
 // QueryDataResponse converts the SDK version of a QueryDataResponse to the protobuf version.
+// It will set the RefID on the frames to the RefID key in Responses if a Frame's
+// RefId property is an empty string.
 func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
 	pQDR := &pluginv2.QueryDataResponse{
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
