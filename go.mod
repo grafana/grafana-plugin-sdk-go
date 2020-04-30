@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20200403134915-89ce1cadb678
 	github.com/cheekybits/genny v1.0.0
+	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.3.4
 	github.com/google/go-cmp v0.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
@@ -15,6 +16,7 @@ require (
 	github.com/kr/pretty v0.1.0 // indirect
 	github.com/magefile/mage v1.9.0
 	github.com/mattetti/filebuffer v1.0.0
+	github.com/mitchellh/reflectwalk v1.0.1
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/prometheus/client_golang v1.3.0
 	github.com/prometheus/common v0.7.0

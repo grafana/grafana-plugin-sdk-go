@@ -41,8 +41,10 @@ type Fields []*Field
 //  []uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
 // Floats:
 //  []float32, []*float32, []float64, []*float64
-// String, Bool, and Time:
-//  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+// String, Bool:
+//  []string, []*string, []bool, []*bool
+// Time:
+//  []time.Time, []*time.Time, []time.Duration, []*time.Duration
 //
 // If an unsupported values type is passed, NewField will panic.
 func NewField(name string, labels Labels, values interface{}) *Field {
@@ -178,6 +180,16 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
+	case []time.Duration:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*time.Duration:
+		vec = newVector(v, len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
 	default:
 		panic(fmt.Errorf("unsupported field type %T", v))
 	}
@@ -196,13 +208,13 @@ func (f *Field) Set(idx int, val interface{}) {
 	f.vector.Set(idx, val)
 }
 
-// SetConcreteAt sets the Field's value at index idx to val.
+// SetConcrete sets the Field's value at index idx to val.
 // val must be a non-pointer type or a panic will occur.
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable, then this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
-func (f *Field) SetConcreteAt(idx int, val interface{}) {
-	f.vector.SetConcreteAt(idx, val)
+func (f *Field) SetConcrete(idx int, val interface{}) {
+	f.vector.SetConcrete(idx, val)
 }
 
 // Append appends element e to the Field.
@@ -240,6 +252,15 @@ func (f *Field) PointerAt(idx int) interface{} {
 	return f.vector.PointerAt(idx)
 }
 
+// Insert extends the Field length by 1,
+// shifts any existing field values at indices equal or greater to idx by one place
+// and inserts val at index idx of the Field.
+// If idx is equal to the Field length, then val will be appended.
+// It idx exceeds the Field length, this method will panic.
+func (f *Field) Insert(idx int, val interface{}) {
+	f.vector.Insert(idx, val)
+}
+
 // CopyAt returns a copy of the value of the specified index idx.
 // It will panic if idx is out of range.
 func (f *Field) CopyAt(idx int) interface{} {
@@ -268,7 +289,10 @@ func (f *Field) Nullable() bool {
 // If the Field type is a bool then 0 is return if false or nil, and 1 if true.
 //
 // If the Field type is time.Time, then the millisecond epoch representation of the time
-// is returned, or NaN is the value is nil.
+// is returned, or NaN if the value is nil.
+//
+// If the Field type is time.Duration, then a nanosecond representation of the duration
+// is returned, or NaN if the value is nil.
 //
 // If the Field type is a string, then strconv.ParseFloat is called on it and will return
 // an error if ParseFloat errors. If the value is nil, NaN is returned.
@@ -404,7 +428,16 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		if t == nil {
 			return math.NaN(), nil
 		}
-		return float64(f.At(idx).(*time.Time).UnixNano() / int64(time.Millisecond)), nil
+		return float64(t.UnixNano() / int64(time.Millisecond)), nil
+
+	case FieldTypeDuration:
+		return float64(f.At(idx).(time.Duration)), nil
+	case FieldTypeNullableDuration:
+		d := f.At(idx).(*time.Duration)
+		if d == nil {
+			return math.NaN(), nil
+		}
+		return float64(*d), nil
 	}
 	return 0, fmt.Errorf("unsupported field type %T", f.Type())
 }

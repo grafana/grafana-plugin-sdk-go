@@ -1,6 +1,6 @@
 package data
 
-//go:generate genny -in=$GOFILE -out=nullable_vector.gen.go gen "gen=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:generate genny -in=$GOFILE -out=nullable_vector.gen.go gen "gen=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullablegenVector []*gen
 
@@ -17,7 +17,7 @@ func (v *nullablegenVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*gen)
 }
 
-func (v *nullablegenVector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullablegenVector) SetConcrete(idx int, i interface{}) {
 	val := i.(gen)
 	(*v)[idx] = &val
 }
@@ -68,4 +68,17 @@ func (v *nullablegenVector) Type() FieldType {
 
 func (v *nullablegenVector) Extend(i int) {
 	(*v) = append((*v), make([]*gen, i)...)
+}
+
+func (v *nullablegenVector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
 }
