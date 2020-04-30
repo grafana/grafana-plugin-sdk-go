@@ -22,7 +22,7 @@ func goldenDF() *data.Frame {
 	nullableStringValuesFieldConfig := (&data.FieldConfig{
 		Title: "Grafana ❤️ (Previous should be heart emoji) 🦥 (Previous should be sloth emoji)",
 		Links: []data.DataLink{
-			data.DataLink{
+			{
 				Title:       "Donate - The Sloth Conservation Foundation",
 				TargetBlank: true,
 				URL:         "https://slothconservation.com/how-to-help/donate/",
@@ -224,6 +224,20 @@ func goldenDF() *data.Frame {
 			nil,
 			timePtr(time.Unix(0, MAX_ECMA6_INT)),
 			timePtr(time.Unix(0, math.MaxInt64)),
+		}),
+		data.NewField("duration", nil, []time.Duration{
+			time.Duration(0),
+			time.Duration(time.Nanosecond * 5),
+			time.Duration(time.Hour * 10),
+			time.Duration(MAX_ECMA6_INT),
+			time.Duration(math.MaxInt64),
+		}),
+		data.NewField("duration", nil, []*time.Duration{
+			durPtr(0),
+			durPtr(time.Nanosecond * 5),
+			nil,
+			durPtr(time.Duration(MAX_ECMA6_INT)),
+			durPtr(math.MaxInt64),
 		}),
 	)
 

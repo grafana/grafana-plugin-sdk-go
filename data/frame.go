@@ -56,6 +56,26 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 	}
 }
 
+// InsertRow adds a row at index rowIdx of the Frame.
+// InsertRow calls each field's InsertAt which extends the Field length by 1,
+// shifts any existing field values at indices equal or greater to rowIdx by one place
+// and inserts the corresponding val at index rowIdx of the Field.
+// If rowIdx is equal to the Frame RowLen, then val will be appended.
+// It rowIdx exceeds the Field length, this method will panic.
+func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
+	for i, v := range vals {
+		f.Fields[i].vector.Insert(rowIdx, v)
+	}
+}
+
+// SetRow sets vals at the index rowIdx of the Frame.
+// SetRow calls each field's Set which sets the Field's value at index idx to val.
+func (f *Frame) SetRow(rowIdx int, vals ...interface{}) {
+	for i, v := range vals {
+		f.Fields[i].vector.Set(rowIdx, v)
+	}
+}
+
 // RowCopy returns an interface slice that contains the values of each Field for the given rowIdx.
 func (f *Frame) RowCopy(rowIdx int) []interface{} {
 	vals := make([]interface{}, len(f.Fields))
@@ -63,32 +83,6 @@ func (f *Frame) RowCopy(rowIdx int) []interface{} {
 		vals[i] = f.CopyAt(i, rowIdx)
 	}
 	return vals
-}
-
-// AppendRowSafe adds a new row to the Frame by appending to each each element of vals to
-// the corresponding Field in the data. It has the some constraints as AppendRow but will
-// return an error under those conditions instead of panicing.
-func (f *Frame) AppendRowSafe(vals ...interface{}) error {
-	if len(vals) != len(f.Fields) {
-		return fmt.Errorf("failed to append vals to Frame. Frame has %v fields but was given %v to append", len(f.Fields), len(vals))
-	}
-	// check validity before any modification
-	for i, v := range vals {
-		if f.Fields[i] == nil || f.Fields[i].vector == nil {
-			return fmt.Errorf("can not append to uninitalized Field at field index %v", i)
-		}
-		dfPType := f.Fields[i].Type()
-		if v == nil {
-			if !dfPType.Nullable() {
-				return fmt.Errorf("can not append nil to non-nullable vector with underlying type %s at field index %v", dfPType, i)
-			}
-		}
-		if v != nil && fieldTypeFromVal(v) != dfPType {
-			return fmt.Errorf("invalid type appending row at index %v, got %T want %v", i, v, dfPType.ItemTypeString())
-		}
-		f.Fields[i].vector.Append(v)
-	}
-	return nil
 }
 
 // FilterRowsByField returns a copy of frame f (as per EmptyCopy()) that includes rows
@@ -202,13 +196,13 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.Set(rowIdx, val)
 }
 
-// SetConcreteAt sets the val at the specified fieldIdx and rowIdx.
+// SetConcrete sets the val at the specified fieldIdx and rowIdx.
 // val must be a non-pointer type or a panic will occur.
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable, then this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
-func (f *Frame) SetConcreteAt(fieldIdx int, rowIdx int, val interface{}) {
-	f.Fields[fieldIdx].vector.SetConcreteAt(rowIdx, val)
+func (f *Frame) SetConcrete(fieldIdx int, rowIdx int, val interface{}) {
+	f.Fields[fieldIdx].vector.SetConcrete(rowIdx, val)
 }
 
 // Extend extends all the Fields by length by i.

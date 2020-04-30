@@ -6,7 +6,7 @@ package data
 
 import "time"
 
-//go:Uint8erate uint8ny -in=$GOFILE -out=nullable_vector.Uint8.go uint8 "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+//go:Uint8erate uint8ny -in=$GOFILE -out=nullable_vector.Uint8.go uint8 "Uint8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableUint8Vector []*uint8
 
@@ -23,7 +23,7 @@ func (v *nullableUint8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint8)
 }
 
-func (v *nullableUint8Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableUint8Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(uint8)
 	(*v)[idx] = &val
 }
@@ -76,7 +76,20 @@ func (v *nullableUint8Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint8, i)...)
 }
 
-//go:Uint16erate uint16ny -in=$GOFILE -out=nullable_vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableUint8Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Uint16erate uint16ny -in=$GOFILE -out=nullable_vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableUint16Vector []*uint16
 
@@ -93,7 +106,7 @@ func (v *nullableUint16Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint16)
 }
 
-func (v *nullableUint16Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableUint16Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(uint16)
 	(*v)[idx] = &val
 }
@@ -146,7 +159,20 @@ func (v *nullableUint16Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint16, i)...)
 }
 
-//go:Uint32erate uint32ny -in=$GOFILE -out=nullable_vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableUint16Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Uint32erate uint32ny -in=$GOFILE -out=nullable_vector.Uint32.go uint32 "Uint32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableUint32Vector []*uint32
 
@@ -163,7 +189,7 @@ func (v *nullableUint32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint32)
 }
 
-func (v *nullableUint32Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableUint32Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(uint32)
 	(*v)[idx] = &val
 }
@@ -216,7 +242,20 @@ func (v *nullableUint32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint32, i)...)
 }
 
-//go:Uint64erate uint64ny -in=$GOFILE -out=nullable_vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableUint32Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Uint64erate uint64ny -in=$GOFILE -out=nullable_vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableUint64Vector []*uint64
 
@@ -233,7 +272,7 @@ func (v *nullableUint64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint64)
 }
 
-func (v *nullableUint64Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableUint64Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(uint64)
 	(*v)[idx] = &val
 }
@@ -286,7 +325,20 @@ func (v *nullableUint64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*uint64, i)...)
 }
 
-//go:Int8erate int8ny -in=$GOFILE -out=nullable_vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableUint64Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Int8erate int8ny -in=$GOFILE -out=nullable_vector.Int8.go int8 "Int8=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableInt8Vector []*int8
 
@@ -303,7 +355,7 @@ func (v *nullableInt8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int8)
 }
 
-func (v *nullableInt8Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableInt8Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(int8)
 	(*v)[idx] = &val
 }
@@ -356,7 +408,20 @@ func (v *nullableInt8Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int8, i)...)
 }
 
-//go:Int16erate int16ny -in=$GOFILE -out=nullable_vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableInt8Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Int16erate int16ny -in=$GOFILE -out=nullable_vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableInt16Vector []*int16
 
@@ -373,7 +438,7 @@ func (v *nullableInt16Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int16)
 }
 
-func (v *nullableInt16Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableInt16Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(int16)
 	(*v)[idx] = &val
 }
@@ -426,7 +491,20 @@ func (v *nullableInt16Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int16, i)...)
 }
 
-//go:Int32erate int32ny -in=$GOFILE -out=nullable_vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableInt16Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Int32erate int32ny -in=$GOFILE -out=nullable_vector.Int32.go int32 "Int32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableInt32Vector []*int32
 
@@ -443,7 +521,7 @@ func (v *nullableInt32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int32)
 }
 
-func (v *nullableInt32Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableInt32Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(int32)
 	(*v)[idx] = &val
 }
@@ -496,7 +574,20 @@ func (v *nullableInt32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int32, i)...)
 }
 
-//go:Int64erate int64ny -in=$GOFILE -out=nullable_vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableInt32Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Int64erate int64ny -in=$GOFILE -out=nullable_vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableInt64Vector []*int64
 
@@ -513,7 +604,7 @@ func (v *nullableInt64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int64)
 }
 
-func (v *nullableInt64Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableInt64Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(int64)
 	(*v)[idx] = &val
 }
@@ -566,7 +657,20 @@ func (v *nullableInt64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*int64, i)...)
 }
 
-//go:Float32erate float32ny -in=$GOFILE -out=nullable_vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableInt64Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Float32erate float32ny -in=$GOFILE -out=nullable_vector.Float32.go float32 "Float32=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableFloat32Vector []*float32
 
@@ -583,7 +687,7 @@ func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*float32)
 }
 
-func (v *nullableFloat32Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableFloat32Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(float32)
 	(*v)[idx] = &val
 }
@@ -636,7 +740,20 @@ func (v *nullableFloat32Vector) Extend(i int) {
 	(*v) = append((*v), make([]*float32, i)...)
 }
 
-//go:Float64erate float64ny -in=$GOFILE -out=nullable_vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableFloat32Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Float64erate float64ny -in=$GOFILE -out=nullable_vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableFloat64Vector []*float64
 
@@ -653,7 +770,7 @@ func (v *nullableFloat64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*float64)
 }
 
-func (v *nullableFloat64Vector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableFloat64Vector) SetConcrete(idx int, i interface{}) {
 	val := i.(float64)
 	(*v)[idx] = &val
 }
@@ -706,7 +823,20 @@ func (v *nullableFloat64Vector) Extend(i int) {
 	(*v) = append((*v), make([]*float64, i)...)
 }
 
-//go:Stringerate stringny -in=$GOFILE -out=nullable_vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableFloat64Vector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Stringerate stringny -in=$GOFILE -out=nullable_vector.String.go string "String=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableStringVector []*string
 
@@ -723,7 +853,7 @@ func (v *nullableStringVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*string)
 }
 
-func (v *nullableStringVector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableStringVector) SetConcrete(idx int, i interface{}) {
 	val := i.(string)
 	(*v)[idx] = &val
 }
@@ -776,7 +906,20 @@ func (v *nullableStringVector) Extend(i int) {
 	(*v) = append((*v), make([]*string, i)...)
 }
 
-//go:Boolerate boolny -in=$GOFILE -out=nullable_vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableStringVector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:Boolerate boolny -in=$GOFILE -out=nullable_vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableBoolVector []*bool
 
@@ -793,7 +936,7 @@ func (v *nullableBoolVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*bool)
 }
 
-func (v *nullableBoolVector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableBoolVector) SetConcrete(idx int, i interface{}) {
 	val := i.(bool)
 	(*v)[idx] = &val
 }
@@ -846,7 +989,20 @@ func (v *nullableBoolVector) Extend(i int) {
 	(*v) = append((*v), make([]*bool, i)...)
 }
 
-//go:TimeTimeerate timeTimeny -in=$GOFILE -out=nullable_vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
+func (v *nullableBoolVector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:TimeTimeerate timeTimeny -in=$GOFILE -out=nullable_vector.TimeTime.go time.Time "TimeTime=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableTimeTimeVector []*time.Time
 
@@ -863,7 +1019,7 @@ func (v *nullableTimeTimeVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*time.Time)
 }
 
-func (v *nullableTimeTimeVector) SetConcreteAt(idx int, i interface{}) {
+func (v *nullableTimeTimeVector) SetConcrete(idx int, i interface{}) {
 	val := i.(time.Time)
 	(*v)[idx] = &val
 }
@@ -914,4 +1070,100 @@ func (v *nullableTimeTimeVector) Type() FieldType {
 
 func (v *nullableTimeTimeVector) Extend(i int) {
 	(*v) = append((*v), make([]*time.Time, i)...)
+}
+
+func (v *nullableTimeTimeVector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+//go:TimeDurationerate timeDurationny -in=$GOFILE -out=nullable_vector.TimeDuration.go time.Duration "TimeDuration=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
+
+type nullableTimeDurationVector []*time.Duration
+
+func newNullableTimeDurationVector(n int) *nullableTimeDurationVector {
+	v := nullableTimeDurationVector(make([]*time.Duration, n))
+	return &v
+}
+
+func (v *nullableTimeDurationVector) Set(idx int, i interface{}) {
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	(*v)[idx] = i.(*time.Duration)
+}
+
+func (v *nullableTimeDurationVector) SetConcrete(idx int, i interface{}) {
+	val := i.(time.Duration)
+	(*v)[idx] = &val
+}
+
+func (v *nullableTimeDurationVector) Append(i interface{}) {
+	if i == nil {
+		(*v) = append((*v), nil)
+		return
+	}
+	(*v) = append((*v), i.(*time.Duration))
+}
+
+func (v *nullableTimeDurationVector) At(i int) interface{} {
+	return (*v)[i]
+}
+
+func (v *nullableTimeDurationVector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *time.Duration
+		return g
+	}
+	var g time.Duration
+	g = *(*v)[i]
+	return &g
+}
+
+func (v *nullableTimeDurationVector) ConcreteAt(i int) (interface{}, bool) {
+	var g time.Duration
+	val := (*v)[i]
+	if val == nil {
+		return g, false
+	}
+	g = *val
+	return g, true
+}
+
+func (v *nullableTimeDurationVector) PointerAt(i int) interface{} {
+	return &(*v)[i]
+}
+
+func (v *nullableTimeDurationVector) Len() int {
+	return len((*v))
+}
+
+func (v *nullableTimeDurationVector) Type() FieldType {
+	return vectorFieldType(v)
+}
+
+func (v *nullableTimeDurationVector) Extend(i int) {
+	(*v) = append((*v), make([]*time.Duration, i)...)
+}
+
+func (v *nullableTimeDurationVector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
 }

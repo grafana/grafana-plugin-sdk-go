@@ -26,9 +26,9 @@ func ExampleNewFrameInputConverter() {
 			"Time",
 		},
 		[][]string{
-			[]string{"sloth", "3.5", "1586014367"},
-			[]string{"sloth", "5.5", "1586100767"},
-			[]string{"sloth", "7", "1586187167"},
+			{"sloth", "3.5", "1586014367"},
+			{"sloth", "5.5", "1586100767"},
+			{"sloth", "7", "1586187167"},
 		},
 	}
 
