@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
@@ -30,7 +29,6 @@ func (w *walker) StructField(f reflect.StructField, v reflect.Value) error {
 	if f.PkgPath != "" {
 		return nil
 	}
-	spew.Dump(f)
 	w.FieldCount++
 	if v.IsZero() {
 		w.ZeroValueFieldCount++
@@ -335,6 +333,8 @@ func TestConvertFromProtobufDataQuery(t *testing.T) {
 
 	requireCounter.Equal(t, protoDQ.RefId, sdkDQ.RefID)
 	requireCounter.Equal(t, protoDQ.MaxDataPoints, sdkDQ.MaxDataPoints)
+	requireCounter.Equal(t, protoDQ.QueryType, sdkDQ.QueryType)
+
 	requireCounter.Equal(t, time.Duration(time.Minute), sdkDQ.Interval)
 	requireCounter.Equal(t, sdkTimeRange.From, sdkDQ.TimeRange.From)
 	requireCounter.Equal(t, sdkTimeRange.To, sdkDQ.TimeRange.To)
