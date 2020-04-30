@@ -304,6 +304,7 @@ var protoDataQuery = &pluginv2.DataQuery{
 	TimeRange:     protoTimeRange,
 	IntervalMS:    60 * 1000,
 	Json:          []byte(`{ "query": "SELECT * from FUN"`),
+	QueryType:     "qt",
 }
 
 func TestConvertFromProtobufDataQuery(t *testing.T) {
@@ -406,6 +407,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	// Queries
 	requireCounter.Equal(t, protoQDR.Queries[0].RefId, sdkQDR.Queries[0].RefID)
 	requireCounter.Equal(t, protoQDR.Queries[0].MaxDataPoints, sdkQDR.Queries[0].MaxDataPoints)
+	requireCounter.Equal(t, protoQDR.Queries[0].QueryType, sdkQDR.Queries[0].QueryType)
 	requireCounter.Equal(t, time.Duration(time.Minute), sdkQDR.Queries[0].Interval)
 	requireCounter.Equal(t, sdkTimeRange.From, sdkQDR.Queries[0].TimeRange.From)
 	requireCounter.Equal(t, sdkTimeRange.To, sdkQDR.Queries[0].TimeRange.To)
