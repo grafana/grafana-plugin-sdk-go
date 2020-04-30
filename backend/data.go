@@ -14,6 +14,10 @@ type QueryDataHandler interface {
 	// req contains the queries []DataQuery (where each query contains RefID as a unique identifer).
 	// The QueryDataResponse contains a map of RefID to the response for each query, and each response
 	// contains Frames ([]*Frame).
+	//
+	// The Frames' RefID property, when it is an empty string, will be automatically set to
+	// the RefID in QueryDataResponse.Responses map. This is done before the QueryDataResponse is
+	// sent to Grafana. Therefore one does not need to be set that property on frames when using this method.
 	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }
 
@@ -59,6 +63,8 @@ func NewQueryDataResponse() *QueryDataResponse {
 }
 
 // Responses is a map of RefIDs (Unique Query ID) to DataResponses.
+// The QueryData method the QueryDataHandler method will set the RefId
+// property on the DataRespones' frames based on these RefIDs.
 type Responses map[string]DataResponse
 
 // DataResponse contains the results from a DataQuery.

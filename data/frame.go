@@ -34,7 +34,7 @@ type Frame struct {
 	// All Fields must be of the same the length when marshalling the Frame for transmission.
 	Fields []*Field
 
-	// RefID is a property that can be set to match a Frame to its orginating query
+	// RefID is a property that can be set to match a Frame to its orginating query.
 	RefID string
 
 	// Meta is metadata about the Frame, and includes space for custom metadata.
