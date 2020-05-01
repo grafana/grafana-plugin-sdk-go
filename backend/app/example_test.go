@@ -1,4 +1,4 @@
-package app
+package app_test
 
 import (
 	"context"
@@ -6,53 +6,53 @@ import (
 	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/app"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
-type myAppInstanceSettings struct {
+type testAppInstanceSettings struct {
 	httpClient *http.Client
 }
 
-func newInstanceSettings(setting backend.AppInstanceSettings) (instancemgmt.Instance, error) {
-	return &myAppInstanceSettings{
+func newAppInstance(setting backend.AppInstanceSettings) (instancemgmt.Instance, error) {
+	return &testAppInstanceSettings{
 		httpClient: &http.Client{},
 	}, nil
 }
 
-func (s *myAppInstanceSettings) Dispose() {
+func (s *testAppInstanceSettings) Dispose() {
 	// Cleanup
 }
 
-type myApp struct {
+type testApp struct {
 	im instancemgmt.InstanceManager
 }
 
-func newApp() backend.ServeOpts {
-	ip := NewInstanceProvider(newInstanceSettings)
-	a := &myApp{
-		im: instancemgmt.New(ip),
+func newApp(im instancemgmt.InstanceManager) app.ServeOpts {
+	a := &testApp{
+		im: im,
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/test", a.handleTest)
 
-	return backend.ServeOpts{
+	return app.ServeOpts{
 		CheckHealthHandler:  a,
 		CallResourceHandler: httpadapter.New(mux),
 	}
 }
 
-func (a *myApp) getSettings(pluginContext backend.PluginContext) (*myAppInstanceSettings, error) {
+func (a *testApp) getSettings(pluginContext backend.PluginContext) (*testAppInstanceSettings, error) {
 	iface, err := a.im.Get(pluginContext)
 	if err != nil {
 		return nil, err
 	}
 
-	return iface.(*myAppInstanceSettings), nil
+	return iface.(*testAppInstanceSettings), nil
 }
 
-func (a *myApp) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (a *testApp) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	settings, err := a.getSettings(req.PluginContext)
 	if err != nil {
 		return nil, err
@@ -63,7 +63,7 @@ func (a *myApp) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest
 	return nil, nil
 }
 
-func (a *myApp) handleTest(rw http.ResponseWriter, req *http.Request) {
+func (a *testApp) handleTest(rw http.ResponseWriter, req *http.Request) {
 	pluginContext := httpadapter.PluginConfigFromContext(req.Context())
 	settings, err := a.getSettings(pluginContext)
 	if err != nil {
@@ -75,8 +75,9 @@ func (a *myApp) handleTest(rw http.ResponseWriter, req *http.Request) {
 	_, _ = settings.httpClient.Get("http://")
 }
 
-func MainSample() {
-	err := backend.Serve(newApp())
+func Example() {
+	p := app.New(newAppInstance, newApp)
+	err := p.Serve()
 	if err != nil {
 		backend.Logger.Error(err.Error())
 		os.Exit(1)
