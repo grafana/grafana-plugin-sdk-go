@@ -7,14 +7,18 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// InstanceDisposer is implemented by any instance that has a Dispose method,
+// Instance is a marker interface for an instance.
+type Instance interface{}
+
+// InstanceDisposer is implemented by an Instance that has a Dispose method,
 // which defines that the instance is disposable.
+//
+// InstanceManager will call the Dispose method before an Instance is replaced
+// with a new Instance. This allows an Instance to clean up resources in use,
+// if any.
 type InstanceDisposer interface {
 	Dispose()
 }
-
-// Instance is a marker interface for an instance.
-type Instance interface{}
 
 // InstanceCallbackFunc defines the callback function of the InstanceManager.Do method.
 // The argument provided will of type Instance.
@@ -22,11 +26,20 @@ type InstanceCallbackFunc interface{}
 
 // InstanceManager manages the lifecycle of instances.
 type InstanceManager interface {
+	// Get returns an Instance.
+	//
+	// If Instance is cached and not updated it's returned. If Instance is not cached or
+	// updated, a new Instance is created and cached before returned.
 	Get(pluginContext backend.PluginContext) (Instance, error)
+
+	// Do provides an Instance as argument to fn.
+	//
+	// If Instance is cached and not updated provides as argument to fn. If Instance is not cached or
+	// updated, a new Instance is created and cached before provided as argument to fn.
 	Do(pluginContext backend.PluginContext, fn InstanceCallbackFunc) error
 }
 
-// CachedInstance a cached instance.
+// CachedInstance a cached Instance.
 type CachedInstance struct {
 	PluginContext backend.PluginContext
 	instance      Instance
@@ -34,8 +47,13 @@ type CachedInstance struct {
 
 // InstanceProvider defines an instance provider, providing instances.
 type InstanceProvider interface {
+	// GetKey returns a cache key to be used for caching an Instance.
 	GetKey(pluginContext backend.PluginContext) (interface{}, error)
+
+	// NeedsUpdate returns whether a cached Instance have been updated.
 	NeedsUpdate(pluginContext backend.PluginContext, cachedInstance CachedInstance) bool
+
+	// NewInstance creates a new Instance.
 	NewInstance(pluginContext backend.PluginContext) (Instance, error)
 }
 
