@@ -1,4 +1,4 @@
-package datasource
+package datasource_test
 
 import (
 	"context"
@@ -6,54 +6,54 @@ import (
 	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
-type myDataSourceInstanceSettings struct {
+type testDataSourceInstanceSettings struct {
 	httpClient *http.Client
 }
 
-func newInstanceSettings(setting backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	return &myDataSourceInstanceSettings{
+func newDataSourceInstance(setting backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	return &testDataSourceInstanceSettings{
 		httpClient: &http.Client{},
 	}, nil
 }
 
-func (s *myDataSourceInstanceSettings) Dispose() {
+func (s *testDataSourceInstanceSettings) Dispose() {
 	// Cleanup
 }
 
-type myDataSource struct {
+type testDataSource struct {
 	im instancemgmt.InstanceManager
 }
 
-func newDataSource() backend.ServeOpts {
-	ip := NewInstanceProvider(newInstanceSettings)
-	ds := &myDataSource{
-		im: instancemgmt.New(ip),
+func newDataSource(im instancemgmt.InstanceManager) datasource.ServeOpts {
+	ds := &testDataSource{
+		im: im,
 	}
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("/test", ds.handleTest)
 
-	return backend.ServeOpts{
+	return datasource.ServeOpts{
 		CheckHealthHandler:  ds,
 		CallResourceHandler: httpadapter.New(mux),
 		QueryDataHandler:    ds,
 	}
 }
 
-func (ds *myDataSource) getSettings(pluginContext backend.PluginContext) (*myDataSourceInstanceSettings, error) {
+func (ds *testDataSource) getSettings(pluginContext backend.PluginContext) (*testDataSourceInstanceSettings, error) {
 	iface, err := ds.im.Get(pluginContext)
 	if err != nil {
 		return nil, err
 	}
 
-	return iface.(*myDataSourceInstanceSettings), nil
+	return iface.(*testDataSourceInstanceSettings), nil
 }
 
-func (ds *myDataSource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (ds *testDataSource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	settings, err := ds.getSettings(req.PluginContext)
 	if err != nil {
 		return nil, err
@@ -64,9 +64,9 @@ func (ds *myDataSource) CheckHealth(ctx context.Context, req *backend.CheckHealt
 	return nil, nil
 }
 
-func (ds *myDataSource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (ds *testDataSource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	var resp *backend.QueryDataResponse
-	err := ds.im.Do(req.PluginContext, func(settings *myDataSourceInstanceSettings) error {
+	err := ds.im.Do(req.PluginContext, func(settings *testDataSourceInstanceSettings) error {
 		// Handle request
 		_, _ = settings.httpClient.Get("http://")
 		return nil
@@ -75,7 +75,7 @@ func (ds *myDataSource) QueryData(ctx context.Context, req *backend.QueryDataReq
 	return resp, err
 }
 
-func (ds *myDataSource) handleTest(rw http.ResponseWriter, req *http.Request) {
+func (ds *testDataSource) handleTest(rw http.ResponseWriter, req *http.Request) {
 	pluginContext := httpadapter.PluginConfigFromContext(req.Context())
 	settings, err := ds.getSettings(pluginContext)
 	if err != nil {
@@ -87,8 +87,9 @@ func (ds *myDataSource) handleTest(rw http.ResponseWriter, req *http.Request) {
 	_, _ = settings.httpClient.Get("http://")
 }
 
-func MainSample() {
-	err := backend.Serve(newDataSource())
+func Example() {
+	p := datasource.New(newDataSourceInstance, newDataSource)
+	err := p.Serve()
 	if err != nil {
 		backend.Logger.Error(err.Error())
 		os.Exit(1)

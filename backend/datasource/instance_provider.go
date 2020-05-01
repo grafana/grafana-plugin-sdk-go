@@ -11,6 +11,11 @@ import (
 type InstanceFactoryFunc func(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error)
 
 // NewInstanceProvider create a new data source instance provuder,
+//
+// The instance provider is responsible for providing cache keys for data source instances,
+// creating new instances when needed and invalidating cached instances when they have been
+// updated in Grafana.
+// Cache key is based on the numerical data source identifier.
 func NewInstanceProvider(fn InstanceFactoryFunc) instancemgmt.InstanceProvider {
 	if fn == nil {
 		panic("fn cannot be nil")
