@@ -9,7 +9,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// The QueryTypeHandlerFunc type is an adapter to allow the use of
+// QueryTypeHandlerFunc is an adapter to allow the use of
 // ordinary functions as backend.QueryDataHandler. If f is a function
 // with the appropriate signature, QueryTypeHandlerFunc(f) is a
 // Handler that calls f.

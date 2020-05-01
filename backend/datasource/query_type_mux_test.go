@@ -80,7 +80,7 @@ func TestQueryTypeMux(t *testing.T) {
 		})
 
 		require.Nil(t, res)
-		require.NotNil(t, err)
+		require.Error(t, err)
 		require.Equal(t, errBoom, err)
 	})
 }
