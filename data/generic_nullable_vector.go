@@ -82,3 +82,12 @@ func (v *nullablegenVector) Insert(i int, val interface{}) {
 		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
+
+func (v *nullablegenVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}

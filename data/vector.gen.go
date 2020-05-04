@@ -70,6 +70,15 @@ func (v *uint8Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *uint8Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Uint16erate uint16ny -in=$GOFILE -out=vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type uint16Vector []uint16
@@ -131,6 +140,15 @@ func (v *uint16Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *uint16Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -198,6 +216,15 @@ func (v *uint32Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *uint32Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Uint64erate uint64ny -in=$GOFILE -out=vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type uint64Vector []uint64
@@ -259,6 +286,15 @@ func (v *uint64Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *uint64Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -326,6 +362,15 @@ func (v *int8Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *int8Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Int16erate int16ny -in=$GOFILE -out=vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type int16Vector []int16
@@ -387,6 +432,15 @@ func (v *int16Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *int16Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -454,6 +508,15 @@ func (v *int32Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *int32Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Int64erate int64ny -in=$GOFILE -out=vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type int64Vector []int64
@@ -515,6 +578,15 @@ func (v *int64Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *int64Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -582,6 +654,15 @@ func (v *float32Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *float32Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Float64erate float64ny -in=$GOFILE -out=vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type float64Vector []float64
@@ -643,6 +724,15 @@ func (v *float64Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *float64Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -710,6 +800,15 @@ func (v *stringVector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *stringVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Boolerate boolny -in=$GOFILE -out=vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type boolVector []bool
@@ -771,6 +870,15 @@ func (v *boolVector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *boolVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -838,6 +946,15 @@ func (v *timeTimeVector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *timeTimeVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:TimeDurationerate timeDurationny -in=$GOFILE -out=vector.TimeDuration.go time.Duration "TimeDuration=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type timeDurationVector []time.Duration
@@ -899,5 +1016,14 @@ func (v *timeDurationVector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *timeDurationVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }

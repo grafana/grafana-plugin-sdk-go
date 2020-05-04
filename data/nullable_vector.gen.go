@@ -89,6 +89,15 @@ func (v *nullableUint8Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *nullableUint8Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Uint16erate uint16ny -in=$GOFILE -out=nullable_vector.Uint16.go uint16 "Uint16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableUint16Vector []*uint16
@@ -169,6 +178,15 @@ func (v *nullableUint16Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableUint16Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -255,6 +273,15 @@ func (v *nullableUint32Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *nullableUint32Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Uint64erate uint64ny -in=$GOFILE -out=nullable_vector.Uint64.go uint64 "Uint64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableUint64Vector []*uint64
@@ -335,6 +362,15 @@ func (v *nullableUint64Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableUint64Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -421,6 +457,15 @@ func (v *nullableInt8Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *nullableInt8Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Int16erate int16ny -in=$GOFILE -out=nullable_vector.Int16.go int16 "Int16=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableInt16Vector []*int16
@@ -501,6 +546,15 @@ func (v *nullableInt16Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableInt16Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -587,6 +641,15 @@ func (v *nullableInt32Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *nullableInt32Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Int64erate int64ny -in=$GOFILE -out=nullable_vector.Int64.go int64 "Int64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableInt64Vector []*int64
@@ -667,6 +730,15 @@ func (v *nullableInt64Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableInt64Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -753,6 +825,15 @@ func (v *nullableFloat32Vector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *nullableFloat32Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Float64erate float64ny -in=$GOFILE -out=nullable_vector.Float64.go float64 "Float64=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableFloat64Vector []*float64
@@ -833,6 +914,15 @@ func (v *nullableFloat64Vector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableFloat64Vector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -919,6 +1009,15 @@ func (v *nullableStringVector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *nullableStringVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:Boolerate boolny -in=$GOFILE -out=nullable_vector.Bool.go bool "Bool=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableBoolVector []*bool
@@ -999,6 +1098,15 @@ func (v *nullableBoolVector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableBoolVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
 
@@ -1085,6 +1193,15 @@ func (v *nullableTimeTimeVector) Insert(i int, val interface{}) {
 	}
 }
 
+func (v *nullableTimeTimeVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
+	}
+}
+
 //go:TimeDurationerate timeDurationny -in=$GOFILE -out=nullable_vector.TimeDuration.go time.Duration "TimeDuration=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
 
 type nullableTimeDurationVector []*time.Duration
@@ -1165,5 +1282,14 @@ func (v *nullableTimeDurationVector) Insert(i int, val interface{}) {
 		v.Append(val)
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableTimeDurationVector) Delete(i int) {
+	switch {
+	case i < v.Len():
+		(*v) = append((*v)[:i], (*v)[i+1:]...)
+	case i == v.Len():
+		(*v) = (*v)[:i]
 	}
 }
