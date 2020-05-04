@@ -29,7 +29,8 @@ type testApp struct {
 	im instancemgmt.InstanceManager
 }
 
-func newApp(im instancemgmt.InstanceManager) app.ServeOpts {
+func newApp() app.ServeOpts {
+	im := app.NewInstanceManager(newAppInstance)
 	a := &testApp{
 		im: im,
 	}
@@ -76,8 +77,7 @@ func (a *testApp) handleTest(rw http.ResponseWriter, req *http.Request) {
 }
 
 func Example() {
-	p := app.New(newAppInstance, newApp)
-	err := p.Serve()
+	err := app.Serve(newApp())
 	if err != nil {
 		backend.Logger.Error(err.Error())
 		os.Exit(1)

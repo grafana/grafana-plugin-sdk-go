@@ -29,7 +29,8 @@ type testDataSource struct {
 	im instancemgmt.InstanceManager
 }
 
-func newDataSource(im instancemgmt.InstanceManager) datasource.ServeOpts {
+func newDataSource() datasource.ServeOpts {
+	im := datasource.NewInstanceManager(newDataSourceInstance)
 	ds := &testDataSource{
 		im: im,
 	}
@@ -88,8 +89,7 @@ func (ds *testDataSource) handleTest(rw http.ResponseWriter, req *http.Request) 
 }
 
 func Example() {
-	p := datasource.New(newDataSourceInstance, newDataSource)
-	err := p.Serve()
+	err := datasource.Serve(newDataSource())
 	if err != nil {
 		backend.Logger.Error(err.Error())
 		os.Exit(1)
