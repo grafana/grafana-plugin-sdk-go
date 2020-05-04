@@ -7,7 +7,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
@@ -30,7 +29,6 @@ func (w *walker) StructField(f reflect.StructField, v reflect.Value) error {
 	if f.PkgPath != "" {
 		return nil
 	}
-	spew.Dump(f)
 	w.FieldCount++
 	if v.IsZero() {
 		w.ZeroValueFieldCount++
@@ -304,6 +302,7 @@ var protoDataQuery = &pluginv2.DataQuery{
 	TimeRange:     protoTimeRange,
 	IntervalMS:    60 * 1000,
 	Json:          []byte(`{ "query": "SELECT * from FUN"`),
+	QueryType:     "qt",
 }
 
 func TestConvertFromProtobufDataQuery(t *testing.T) {
@@ -334,6 +333,8 @@ func TestConvertFromProtobufDataQuery(t *testing.T) {
 
 	requireCounter.Equal(t, protoDQ.RefId, sdkDQ.RefID)
 	requireCounter.Equal(t, protoDQ.MaxDataPoints, sdkDQ.MaxDataPoints)
+	requireCounter.Equal(t, protoDQ.QueryType, sdkDQ.QueryType)
+
 	requireCounter.Equal(t, time.Duration(time.Minute), sdkDQ.Interval)
 	requireCounter.Equal(t, sdkTimeRange.From, sdkDQ.TimeRange.From)
 	requireCounter.Equal(t, sdkTimeRange.To, sdkDQ.TimeRange.To)
@@ -406,6 +407,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	// Queries
 	requireCounter.Equal(t, protoQDR.Queries[0].RefId, sdkQDR.Queries[0].RefID)
 	requireCounter.Equal(t, protoQDR.Queries[0].MaxDataPoints, sdkQDR.Queries[0].MaxDataPoints)
+	requireCounter.Equal(t, protoQDR.Queries[0].QueryType, sdkQDR.Queries[0].QueryType)
 	requireCounter.Equal(t, time.Duration(time.Minute), sdkQDR.Queries[0].Interval)
 	requireCounter.Equal(t, sdkTimeRange.From, sdkQDR.Queries[0].TimeRange.From)
 	requireCounter.Equal(t, sdkTimeRange.To, sdkQDR.Queries[0].TimeRange.To)

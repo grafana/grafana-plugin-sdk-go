@@ -35,6 +35,10 @@ type DataQuery struct {
 	// RefID is the unique identifer of the query, set by the frontend call.
 	RefID string
 
+	// QueryType is an optional identifier for the type of query.
+	// It can be used to distinguish different types of queries.
+	QueryType string
+
 	// MaxDataPoints is the maximum number of datapoints that should be returned from a time series query.
 	MaxDataPoints int64
 
