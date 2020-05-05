@@ -71,10 +71,5 @@ func (v *genVector) Insert(i int, val interface{}) {
 }
 
 func (v *genVector) Delete(i int) {
-	switch {
-	case i < v.Len():
-		(*v) = append((*v)[:i], (*v)[i+1:]...)
-	case i == v.Len():
-		(*v) = (*v)[:i]
-	}
+	(*v) = append((*v)[:i], (*v)[i+1:]...)
 }
