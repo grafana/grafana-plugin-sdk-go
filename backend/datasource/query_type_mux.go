@@ -4,21 +4,9 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
-
-// QueryTypeHandlerFunc is an adapter to allow the use of
-// ordinary functions as backend.QueryDataHandler. If f is a function
-// with the appropriate signature, QueryTypeHandlerFunc(f) is a
-// Handler that calls f.
-type QueryTypeHandlerFunc func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error)
-
-// QueryData calls f(ctx, req).
-func (fn QueryTypeHandlerFunc) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	return fn(ctx, req)
-}
 
 // QueryTypeMux is a query type multiplexer.
 type QueryTypeMux struct {
@@ -44,7 +32,7 @@ func (mux *QueryTypeMux) Handle(queryType string, handler backend.QueryDataHandl
 
 	if mux.m == nil {
 		mux.m = map[string]backend.QueryDataHandler{}
-		mux.fallbackHandler = QueryTypeHandlerFunc(fallbackHandler)
+		mux.fallbackHandler = backend.QueryDataHandlerFunc(fallbackHandler)
 	}
 
 	if _, exist := mux.m[queryType]; exist {
@@ -68,7 +56,7 @@ func (mux *QueryTypeMux) Handle(queryType string, handler backend.QueryDataHandl
 // If handler is nil, Handle panics.
 // If a handler already exists for queryType, Handle panics.
 func (mux *QueryTypeMux) HandleFunc(queryType string, handler func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error)) {
-	mux.Handle(queryType, QueryTypeHandlerFunc(handler))
+	mux.Handle(queryType, backend.QueryDataHandlerFunc(handler))
 }
 
 // QueryData dispatches the request to the handler(s) whose
