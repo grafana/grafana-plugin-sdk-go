@@ -4,6 +4,7 @@ import (
 	"context"
 )
 
+// CallResourceRequest represents a request for a resource call.
 type CallResourceRequest struct {
 	PluginContext PluginContext
 	Path          string
@@ -13,13 +14,14 @@ type CallResourceRequest struct {
 	Body          []byte
 }
 
+// CallResourceResponse represents a response from a resource call.
 type CallResourceResponse struct {
 	Status  int
 	Headers map[string][]string
 	Body    []byte
 }
 
-// CallResourceResponseSender used for sending resource call responses.
+// CallResourceResponseSender is used for sending resource call responses.
 type CallResourceResponseSender interface {
 	Send(*CallResourceResponse) error
 }

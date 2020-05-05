@@ -5,7 +5,7 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-// Logger the main Logger interface.
+// Logger is the main Logger interface.
 type Logger interface {
 	Debug(msg string, args ...interface{})
 	Info(msg string, args ...interface{})
@@ -46,4 +46,5 @@ func (l *hclogWrapper) Error(msg string, args ...interface{}) {
 	l.logger.Error(msg, args...)
 }
 
+// DefaultLogger is the default logger.
 var DefaultLogger Logger = New()
