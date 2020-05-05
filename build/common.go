@@ -19,7 +19,7 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-var exname string = ""
+var exname string
 
 func getExecutableName(os string, arch string) (string, error) {
 	if exname == "" {
