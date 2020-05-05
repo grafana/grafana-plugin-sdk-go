@@ -146,7 +146,7 @@ type ValueMapping struct {
 }
 
 // DataLink define what
-type DataLink struct {
+type DataLink struct { //golint:ignore since renaming would be a breaking change.
 	Title       string `json:"title,omitempty"`
 	TargetBlank bool   `json:"targetBlank,omitempty"`
 	URL         string `json:"url,omitempty"`
