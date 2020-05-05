@@ -1,6 +1,9 @@
 package data
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"fmt"
+)
 
 // FrameMeta matches:
 // https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L11
@@ -78,6 +81,31 @@ func (n NoticeSeverity) String() string {
 		return "error"
 	}
 	return ""
+}
+
+// MarshalJSON implements the json.Marshaler interface.
+func (n NoticeSeverity) MarshalJSON() ([]byte, error) {
+	return json.Marshal(n.String())
+}
+
+// UnmarshalJSON implements the json.Unmarshaler interface.
+func (n *NoticeSeverity) UnmarshalJSON(b []byte) error {
+	var s string
+	err := json.Unmarshal(b, &s)
+	if err != nil {
+		return err
+	}
+	switch s {
+	case "info":
+		*n = NoticeSeverityInfo
+	case "warning":
+		*n = NoticeSeverityWarning
+	case "error":
+		*n = NoticeSeverityError
+	default:
+		return fmt.Errorf("unrecognized notice severity %v", s)
+	}
+	return nil
 }
 
 // InspectType is a type for the Inspect property of a Notice.

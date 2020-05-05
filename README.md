@@ -1,55 +1,23 @@
 # Grafana Plugin SDK for Go
 
-Develop Grafana backend plugins with this Go SDK.
+This SDK enables building [Grafana](https://github.com/grafana/grafana) backend plugins using Go.
 
-**Warning**: This SDK is currently in alpha and will likely have major breaking changes during early development. Please do not consider this SDK published until this warning has been removed.
+[![License](https://img.shields.io/github/license/grafana/grafana-plugin-sdk-go)](LICENSE)
+[![GoDoc](https://godoc.org/github.com/grafana/grafana-plugin-sdk-go?status.svg)](https://godoc.org/github.com/grafana/grafana-plugin-sdk-go)
+[![Go Report Card](https://goreportcard.com/badge/github.com/grafana/grafana-plugin-sdk-go)](https://goreportcard.com/report/github.com/grafana/grafana-plugin-sdk-go)
+[![Circle CI](https://img.shields.io/circleci/build/gh/grafana/grafana-plugin-sdk-go/master)](https://circleci.com/gh/grafana/grafana-plugin-sdk-go?branch=master)
 
-## Usage
+## Current state
 
-```go
-package main
+This SDK is still in development. The protocol between the Grafana server and the plugin SDK is considered stable, but we might introduce breaking changes in the SDK. This means that plugins using the older SDK should work with Grafana, but might lose out on new features and capabilities that we introduce in the SDK.
 
-import (
-	"context"
-	"log"
-	"os"
+## Contributing
 
-	gf "github.com/grafana/grafana-plugin-sdk-go"
-)
+If you're interested in contributing to this project:
 
-const pluginID = "myorg-custom-datasource"
+- Start by reading the [Contributing guide](/CONTRIBUTING.md).
+- Learn how to set up your local environment, in our [Developer guide](/contribute/developer-guide.md).
 
-type MyDataSource struct {
-	logger *log.Logger
-}
+## License
 
-func (d *MyDataSource) Query(ctx context.Context, tr gf.TimeRange, ds gf.DataSourceInfo, queries []gf.Query) ([]gf.QueryResult, error) {
-	return []gf.QueryResult{}, nil
-}
-
-func main() {
-	logger := log.New(os.Stderr, "", 0)
-
-	srv := gf.NewServer()
-
-	srv.HandleDataSource(pluginID, &MyDataSource{
-		logger: logger,
-	})
-
-	if err := srv.Serve(); err != nil {
-		logger.Fatal(err)
-	}
-}
-```
-
-## Developing
-
-### Generate Go code for Protobuf definitions
-
-```
-make protobuf
-```
-
-### Changing `generic_*.go` files in the `data` package
-
-Currently [genny](https://github.com/cheekybits/genny) is used for generating some go code. If you make changes to generic template files then `genny` needs to be installed, and then `mage dataGenerate`. Changed generated files should be committed with the change in the template files.
+[Apache 2.0 License](https://github.com/grafana/grafana-plugin-sdk-go/blob/master/LICENSE)

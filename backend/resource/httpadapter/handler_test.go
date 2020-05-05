@@ -16,8 +16,8 @@ func TestHttpResourceHandler(t *testing.T) {
 		testSender := newTestCallResourceResponseSender()
 		httpHandler := &testHTTPHandler{
 			responseHeaders: map[string][]string{
-				"X-Header-Out-1": []string{"A", "B"},
-				"X-Header-Out-2": []string{"C"},
+				"X-Header-Out-1": {"A", "B"},
+				"X-Header-Out-2": {"C"},
 			},
 			responseData: map[string]interface{}{
 				"message": "hello client",
@@ -51,8 +51,8 @@ func TestHttpResourceHandler(t *testing.T) {
 			Path:   "path",
 			URL:    "/api/plugins/plugin-abc/resources/path?query=1",
 			Headers: map[string][]string{
-				"X-Header-In-1": []string{"D", "E"},
-				"X-Header-In-2": []string{"F"},
+				"X-Header-In-1": {"D", "E"},
+				"X-Header-In-2": {"F"},
 			},
 			Body: reqBody,
 		}
@@ -124,8 +124,8 @@ func TestHttpResourceHandler(t *testing.T) {
 		testSender := newTestCallResourceResponseSender()
 		httpHandler := &testStreamingHTTPHandler{
 			responseHeaders: map[string][]string{
-				"X-Header-Out-1": []string{"A", "B"},
-				"X-Header-Out-2": []string{"C"},
+				"X-Header-Out-1": {"A", "B"},
+				"X-Header-Out-2": {"C"},
 			},
 			responseData: [][]byte{
 				[]byte("hello"),
@@ -144,8 +144,8 @@ func TestHttpResourceHandler(t *testing.T) {
 			Path:   "path",
 			URL:    "/api/plugins/plugin-abc/resources/path?query=1",
 			Headers: map[string][]string{
-				"X-Header-In-1": []string{"D", "E"},
-				"X-Header-In-2": []string{"F"},
+				"X-Header-In-1": {"D", "E"},
+				"X-Header-In-2": {"F"},
 			},
 		}
 		err := resourceHandler.CallResource(context.Background(), req, testSender)
