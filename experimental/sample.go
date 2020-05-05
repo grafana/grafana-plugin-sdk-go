@@ -94,6 +94,7 @@ func (ds *MyDataSourceInstance) Destroy() {
 // SAMPLE MAIN
 //----------------------------------------------------------------------------------
 
+// MainXYZ is a sample main function.
 func MainXYZ() {
 	// Setup the plugin environment
 	backend.SetupPluginEnvironment("my-datasource")
