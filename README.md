@@ -9,7 +9,7 @@ This SDK enables building [Grafana](https://github.com/grafana/grafana) backend 
 
 ## Current state
 
-**Warning:** This SDK is currently in alpha and will likely have major breaking changes during early development. Please do not consider this SDK stable until this warning has been removed.
+This SDK is still in development. The protocol between the Grafana server and the plugin SDK is considered stable but we might introduce breaking changes in the SDK. This means that plugins using the older SDK should work with Grafana but it might lose out on new features and capabilities that we introduce in the SDK.
 
 ## Contributing
 
