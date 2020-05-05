@@ -61,7 +61,7 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 // shifts any existing field values at indices equal or greater to rowIdx by one place
 // and inserts the corresponding val at index rowIdx of the Field.
 // If rowIdx is equal to the Frame RowLen, then val will be appended.
-// It rowIdx exceeds the Field length, this method will panic.
+// If rowIdx exceeds the Field length, this method will panic.
 func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
 		f.Fields[i].vector.Insert(rowIdx, v)
@@ -70,6 +70,7 @@ func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
 
 // DeleteRow deletes row at index rowIdx of the Frame.
 // DeleteRow calls each field's Delete
+// If idx is out of range, this method will panic.
 func (f *Frame) DeleteRow(rowIdx int) {
 	for _, field := range f.Fields {
 		field.vector.Delete(rowIdx)
