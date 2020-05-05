@@ -34,19 +34,19 @@ func TestQueryTypeMux(t *testing.T) {
 
 	res, err := mux.QueryData(context.Background(), &backend.QueryDataRequest{
 		Queries: []backend.DataQuery{
-			backend.DataQuery{
+			{
 				RefID:     "A",
 				QueryType: "a",
 			},
-			backend.DataQuery{
+			{
 				RefID:     "B",
 				QueryType: "b",
 			},
-			backend.DataQuery{
+			{
 				RefID:     "C",
 				QueryType: "a",
 			},
-			backend.DataQuery{
+			{
 				RefID:     "D",
 				QueryType: "d",
 			},
@@ -72,7 +72,7 @@ func TestQueryTypeMux(t *testing.T) {
 		})
 		res, err = mux.QueryData(context.Background(), &backend.QueryDataRequest{
 			Queries: []backend.DataQuery{
-				backend.DataQuery{
+				{
 					RefID:     "A",
 					QueryType: "unhandled",
 				},
