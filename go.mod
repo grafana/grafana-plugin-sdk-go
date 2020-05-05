@@ -5,7 +5,6 @@ go 1.14
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20200403134915-89ce1cadb678
 	github.com/cheekybits/genny v1.0.0
-	github.com/davecgh/go-spew v1.1.1
 	github.com/golang/protobuf v1.3.4
 	github.com/google/go-cmp v0.3.1
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
@@ -20,7 +19,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/prometheus/client_golang v1.3.0
 	github.com/prometheus/common v0.7.0
-	github.com/stretchr/testify v1.4.0
+	github.com/stretchr/testify v1.5.1
 	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/grpc v1.27.1

@@ -91,6 +91,7 @@ func (f ConvertFromProtobuf) TimeRange(proto *pluginv2.TimeRange) TimeRange {
 func (f ConvertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	return &DataQuery{
 		RefID:         proto.RefId,
+		QueryType:     proto.QueryType,
 		MaxDataPoints: proto.MaxDataPoints,
 		TimeRange:     f.TimeRange(proto.TimeRange),
 		Interval:      time.Duration(proto.IntervalMS) * time.Millisecond,

@@ -21,6 +21,17 @@ type QueryDataHandler interface {
 	QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 }
 
+// QueryDataHandlerFunc is an adapter to allow the use of
+// ordinary functions as backend.QueryDataHandler. If f is a function
+// with the appropriate signature, QueryDataHandlerFunc(f) is a
+// Handler that calls f.
+type QueryDataHandlerFunc func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
+
+// QueryData calls fn(ctx, req).
+func (fn QueryDataHandlerFunc) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+	return fn(ctx, req)
+}
+
 // QueryDataRequest contains a single request which contains multiple queries.
 // It is the input type for a QueryData call.
 type QueryDataRequest struct {
@@ -34,6 +45,10 @@ type QueryDataRequest struct {
 type DataQuery struct {
 	// RefID is the unique identifer of the query, set by the frontend call.
 	RefID string
+
+	// QueryType is an optional identifier for the type of query.
+	// It can be used to distinguish different types of queries.
+	QueryType string
 
 	// MaxDataPoints is the maximum number of datapoints that should be returned from a time series query.
 	MaxDataPoints int64

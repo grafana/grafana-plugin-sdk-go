@@ -47,7 +47,7 @@ type Frames []*Frame
 
 // AppendRow adds a new row to the Frame by appending to each element of vals to
 // the corresponding Field in the data.
-// The Frame's Fields must be initalized or AppendRow will panic.
+// The Frame's Fields must be initialized or AppendRow will panic.
 // The number of arguments must match the number of Fields in the Frame and each type must coorespond
 // to the Field type or AppendRow will panic.
 func (f *Frame) AppendRow(vals ...interface{}) {
@@ -131,7 +131,7 @@ func (f *Frame) EmptyCopy() *Frame {
 	return newFrame
 }
 
-// NewFrameOfFieldTypes returns a Frame where the Fields are initalized to the
+// NewFrameOfFieldTypes returns a Frame where the Fields are initialized to the
 // corresponding field type in fTypes. Each Field will be of length FieldLen.
 func NewFrameOfFieldTypes(name string, fieldLen int, fTypes ...FieldType) *Frame {
 	f := &Frame{

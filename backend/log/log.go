@@ -5,7 +5,7 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-// Logger the main Logger interface.
+// Logger is the main Logger interface.
 type Logger interface {
 	Debug(msg string, args ...interface{})
 	Info(msg string, args ...interface{})
@@ -17,7 +17,7 @@ type Logger interface {
 func New() Logger {
 	return &hclogWrapper{
 		logger: hclog.New(&hclog.LoggerOptions{
-			// Use debug as level since anything less severe is supressed.
+			// Use debug as level since anything less severe is suppressed.
 			Level: hclog.Debug,
 			// Use JSON format to make the output in Grafana format and work
 			// when using multiple arguments such as Debug("message", "key", "value").
@@ -46,4 +46,5 @@ func (l *hclogWrapper) Error(msg string, args ...interface{}) {
 	l.logger.Error(msg, args...)
 }
 
+// DefaultLogger is the default logger.
 var DefaultLogger Logger = New()
