@@ -29,8 +29,3 @@ jobs:
           key: go-modules-v1-{{ checksum "go.sum" }}
           paths:
             - "/go/pkg/mod"
-
-workflows:
-  ci:
-    jobs:
-      - build
