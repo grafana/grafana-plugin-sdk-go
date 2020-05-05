@@ -140,7 +140,7 @@ func (Build) Backend() {
 }
 
 // BuildAll builds production back-end components.
-func BuildAll() { //golint:ignore since renaming would be a breaking change.
+func BuildAll() { //revive:disable-line
 	b := Build{}
 	mg.Deps(b.Backend)
 }
