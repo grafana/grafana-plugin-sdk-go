@@ -69,3 +69,7 @@ func (v *genVector) Insert(i int, val interface{}) {
 		panic("Invalid index; vector length should be greater or equal to that index")
 	}
 }
+
+func (v *genVector) Delete(i int) {
+	(*v) = append((*v)[:i], (*v)[i+1:]...)
+}

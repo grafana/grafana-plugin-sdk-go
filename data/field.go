@@ -249,6 +249,11 @@ func (f *Field) Insert(idx int, val interface{}) {
 	f.vector.Insert(idx, val)
 }
 
+// Delete delete element at index idx of the Field.
+func (f *Field) Delete(idx int) {
+	f.vector.Delete(idx)
+}
+
 // CopyAt returns a copy of the value of the specified index idx.
 // It will panic if idx is out of range.
 func (f *Field) CopyAt(idx int) interface{} {
