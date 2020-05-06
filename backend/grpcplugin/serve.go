@@ -19,7 +19,6 @@ type ServeOpts struct {
 }
 
 const (
-	maxMsgSize              = 1024 * 1024 * 16
 	maxServerReceiveMsgSize = 1024 * 1024 * 16
 	maxServerSendMsgSize    = 1024 * 1024 * 16
 )
@@ -28,7 +27,6 @@ const (
 // increased from 4MB to 16MB
 func pluginGRPCServer(opts []grpc.ServerOption) *grpc.Server {
 	sopts := []grpc.ServerOption{
-		grpc.MaxMsgSize(maxMsgSize),
 		grpc.MaxRecvMsgSize(maxServerReceiveMsgSize),
 		grpc.MaxSendMsgSize(maxServerSendMsgSize),
 	}
