@@ -18,10 +18,12 @@ type User struct {
 // In Grafana an app instance is an app plugin of certain
 // type that have been configured and enabled in a Grafana organization.
 type AppInstanceSettings struct {
-	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any custom properties associated with the plugin config instance.
+	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any
+	//custom properties associated with the plugin config instance.
 	JSONData json.RawMessage
 
-	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration plugin instance in Grafana server have been decrypted before passing them to the plugin.
+	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration plugin instance in Grafana
+	//server have been decrypted before passing them to the plugin.
 	DecryptedSecureJSONData map[string]string
 
 	// Updated is the last time this plugin instance's configuration was updated.
@@ -51,13 +53,16 @@ type DataSourceInstanceSettings struct {
 	// BasicAuthEnabled indicates if this data source instance should use basic authentication.
 	BasicAuthEnabled bool
 
-	// BasicAuthUser is the configured user for basic authentication. (e.g. when a data source uses basic authentication to connect to whatever API it fetches data from).
+	// BasicAuthUser is the configured user for basic authentication. (e.g. when a data source uses basic
+	// authentication to connect to whatever API it fetches data from).
 	BasicAuthUser string
 
-	// JSONData contains the raw DataSourceConfig as JSON as stored by Grafana server. It repeats the properties in this object and includes custom properties.
+	// JSONData contains the raw DataSourceConfig as JSON as stored by Grafana server. It repeats the properties in
+	// this object and includes custom properties.
 	JSONData json.RawMessage
 
-	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration in Grafana server have been decrypted before passing them to the plugin.
+	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration in Grafana server have been
+	// decrypted before passing them to the plugin.
 	DecryptedSecureJSONData map[string]string
 
 	// Updated is the last time the configuration for the data source instance was updated.

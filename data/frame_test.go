@@ -135,7 +135,8 @@ func TestDeleteRow(t *testing.T) {
 			wantPanic: true,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			if tt.wantPanic {
 				assertPanic(t, func() { tt.input.DeleteRow(tt.idx) })
@@ -332,7 +333,6 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 	// | 2020-01-02 03:04:00 +0000 UTC | 3               | 4               |
 	// | 2020-01-02 03:05:00 +0000 UTC | 6               | 7               |
 	// +-------------------------------+-----------------+-----------------+
-
 }
 
 func ExampleFrame_tableLikeLongTimeSeries() {
@@ -466,15 +466,14 @@ Dimensions: 3 Fields by 3 Rows
 `,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			s, err := frame.StringTable(tt.maxWidth, tt.maxLength)
 			require.NoError(t, err)
 			require.Equal(t, tt.output, s)
-
 		})
 	}
-
 }
 
 func TestDataFrameFilterRowsByField(t *testing.T) {
@@ -508,7 +507,7 @@ func TestDataFrameFilterRowsByField(t *testing.T) {
 			filterFunc: func(i interface{}) (bool, error) {
 				val, ok := i.(time.Time)
 				if !ok {
-					return false, fmt.Errorf("wrong type dumbface. Oh ya, stupid error even-dumber-face.")
+					return false, fmt.Errorf("wrong type dumbface. Oh ya, stupid error even-dumber-face")
 				}
 				if val.After(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)) && val.Before(time.Date(2020, 1, 2, 3, 4, 45, 0, time.UTC)) {
 					return true, nil
@@ -518,7 +517,8 @@ func TestDataFrameFilterRowsByField(t *testing.T) {
 			shouldErr: require.NoError,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			filteredFrame, err := tt.frame.FilterRowsByField(tt.fieldIdx, tt.filterFunc)
 			tt.shouldErr(t, err)

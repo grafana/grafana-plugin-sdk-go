@@ -417,7 +417,7 @@ func buildNullableTimeColumn(pool memory.Allocator, field arrow.Field, vec *null
 			builder.AppendNull()
 			continue
 		}
-		builder.Append(arrow.Timestamp((*v).UnixNano()))
+		builder.Append(arrow.Timestamp(v.UnixNano()))
 	}
 
 	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})

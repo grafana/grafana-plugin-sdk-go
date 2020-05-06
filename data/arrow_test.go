@@ -15,8 +15,8 @@ import (
 
 var update = flag.Bool("update", false, "update .golden.arrow files")
 
-var MAX_ECMA6_INT = int64(1<<53 - 1)
-var MIN_ECMA6_INT = int64(-MAX_ECMA6_INT)
+const maxEcma6Int = 1<<53 - 1
+const minEcma6Int = -maxEcma6Int
 
 func goldenDF() *data.Frame {
 	nullableStringValuesFieldConfig := (&data.FieldConfig{
@@ -92,16 +92,16 @@ func goldenDF() *data.Frame {
 		}),
 		data.NewField("int64_values", nil, []int64{
 			math.MinInt64,
-			MIN_ECMA6_INT,
+			minEcma6Int,
 			1,
-			MAX_ECMA6_INT,
+			maxEcma6Int,
 			math.MaxInt64,
 		}),
 		data.NewField("nullable_int64_values", nil, []*int64{
 			int64Ptr(math.MinInt64),
-			int64Ptr(MIN_ECMA6_INT),
+			int64Ptr(minEcma6Int),
 			nil,
-			int64Ptr(MAX_ECMA6_INT),
+			int64Ptr(maxEcma6Int),
 			int64Ptr(math.MaxInt64),
 		}),
 		data.NewField("uint8_values", nil, []uint8{
@@ -151,14 +151,14 @@ func goldenDF() *data.Frame {
 			0,
 			0,
 			1,
-			uint64(MAX_ECMA6_INT),
+			uint64(maxEcma6Int),
 			math.MaxUint64,
 		}),
 		data.NewField("nullable_uint64_values", nil, []*uint64{
 			uint64Ptr(0),
 			uint64Ptr(0),
 			nil,
-			uint64Ptr(uint64(MAX_ECMA6_INT)),
+			uint64Ptr(uint64(maxEcma6Int)),
 			uint64Ptr(math.MaxUint64),
 		}),
 		data.NewField("float32_values", nil, []float32{
@@ -177,17 +177,17 @@ func goldenDF() *data.Frame {
 		}),
 		data.NewField("float64_values", nil, []float64{
 			math.SmallestNonzeroFloat64,
-			float64(MIN_ECMA6_INT),
+			float64(minEcma6Int),
 			1.0,
-			float64(MAX_ECMA6_INT),
+			float64(maxEcma6Int),
 			math.MaxFloat64,
 		}),
 		data.NewField("nullable_float64_values", nil, []*float64{
 			float64Ptr(math.SmallestNonzeroFloat64),
-			float64Ptr(float64(MIN_ECMA6_INT)),
+			float64Ptr(float64(minEcma6Int)),
 			nil,
 			float64Ptr(math.MaxFloat64),
-			float64Ptr(float64(MAX_ECMA6_INT)),
+			float64Ptr(float64(maxEcma6Int)),
 		}),
 		data.NewField("bool_values", nil, []bool{
 			true,
@@ -207,7 +207,7 @@ func goldenDF() *data.Frame {
 			time.Unix(0, 0),
 			time.Unix(1568039445, 0),
 			time.Unix(1568039450, 0),
-			time.Unix(0, MAX_ECMA6_INT),
+			time.Unix(0, maxEcma6Int),
 			time.Unix(0, math.MaxInt64),
 		}),
 		// Note: This is intentionally repeated to create a duplicate field.
@@ -215,14 +215,14 @@ func goldenDF() *data.Frame {
 			time.Unix(0, 0),
 			time.Unix(1568039445, 0),
 			time.Unix(1568039450, 0),
-			time.Unix(0, MAX_ECMA6_INT),
+			time.Unix(0, maxEcma6Int),
 			time.Unix(0, math.MaxInt64),
 		}),
 		data.NewField("nullable_timestamps", nil, []*time.Time{
 			timePtr(time.Unix(0, 0)),
 			timePtr(time.Unix(1568039445, 0)),
 			nil,
-			timePtr(time.Unix(0, MAX_ECMA6_INT)),
+			timePtr(time.Unix(0, maxEcma6Int)),
 			timePtr(time.Unix(0, math.MaxInt64)),
 		}),
 	)
@@ -244,7 +244,7 @@ func TestEncode(t *testing.T) {
 	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
 
 	if *update {
-		if err := ioutil.WriteFile(goldenFile, b, 0644); err != nil {
+		if err := ioutil.WriteFile(goldenFile, b, 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -280,7 +280,6 @@ func TestDecode(t *testing.T) {
 	if diff := cmp.Diff(df, newDf, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
-
 }
 
 func TestEncodeAndDecodeDuplicateFieldNames(t *testing.T) {

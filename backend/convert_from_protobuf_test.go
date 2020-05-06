@@ -90,7 +90,6 @@ func TestConvertFromProtobufUser(t *testing.T) {
 	requireCounter.Equal(t, protoUser.Role, sdkUser.Role)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
-
 }
 
 var lastUpdatedMS int64 = 86400 * 2 * 1000
@@ -131,7 +130,6 @@ func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
 	requireCounter.Equal(t, lastUpdatedTime, sdkAIS.Updated)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
-
 }
 
 var protoDataSourceInstanceSettings = &pluginv2.DataSourceInstanceSettings{
@@ -183,7 +181,6 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 	requireCounter.Equal(t, lastUpdatedTime, sdkDSIS.Updated)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
-
 }
 
 var protoPluginContext = &pluginv2.PluginContext{
@@ -250,7 +247,6 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-3, "untested fields in conversion") // -3 Struct Fields
-
 }
 
 var protoTimeRange = &pluginv2.TimeRange{
@@ -293,7 +289,6 @@ func TestConvertFromProtobufTimeRange(t *testing.T) {
 	requireCounter.Equal(t, sdkTimeRange.To, sdkTR.To)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
-
 }
 
 var protoDataQuery = &pluginv2.DataQuery{
@@ -335,13 +330,12 @@ func TestConvertFromProtobufDataQuery(t *testing.T) {
 	requireCounter.Equal(t, protoDQ.MaxDataPoints, sdkDQ.MaxDataPoints)
 	requireCounter.Equal(t, protoDQ.QueryType, sdkDQ.QueryType)
 
-	requireCounter.Equal(t, time.Duration(time.Minute), sdkDQ.Interval)
+	requireCounter.Equal(t, time.Minute, sdkDQ.Interval)
 	requireCounter.Equal(t, sdkTimeRange.From, sdkDQ.TimeRange.From)
 	requireCounter.Equal(t, sdkTimeRange.To, sdkDQ.TimeRange.To)
 	requireCounter.Equal(t, json.RawMessage(protoDQ.Json), sdkDQ.JSON)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-1, "untested fields in conversion") // -1 Struct Fields
-
 }
 
 func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
@@ -408,7 +402,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.Queries[0].RefId, sdkQDR.Queries[0].RefID)
 	requireCounter.Equal(t, protoQDR.Queries[0].MaxDataPoints, sdkQDR.Queries[0].MaxDataPoints)
 	requireCounter.Equal(t, protoQDR.Queries[0].QueryType, sdkQDR.Queries[0].QueryType)
-	requireCounter.Equal(t, time.Duration(time.Minute), sdkQDR.Queries[0].Interval)
+	requireCounter.Equal(t, time.Minute, sdkQDR.Queries[0].Interval)
 	requireCounter.Equal(t, sdkTimeRange.From, sdkQDR.Queries[0].TimeRange.From)
 	requireCounter.Equal(t, sdkTimeRange.To, sdkQDR.Queries[0].TimeRange.To)
 	requireCounter.Equal(t, json.RawMessage(protoQDR.Queries[0].Json), sdkQDR.Queries[0].JSON)
@@ -419,5 +413,4 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	//
 	//
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-6, "untested fields in conversion") // -6 Struct Fields
-
 }

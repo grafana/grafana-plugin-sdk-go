@@ -32,7 +32,7 @@ func getExecutableName(os string, arch string) (string, error) {
 	}
 
 	exeName := fmt.Sprintf("%s_%s_%s", exname, os, arch)
-	if "windows" == os {
+	if os == "windows" {
 		exeName = fmt.Sprintf("%s.exe", exeName)
 	}
 	return exeName, nil
@@ -212,7 +212,7 @@ func checkLinuxPtraceScope() error {
 		return fmt.Errorf("unable to read ptrace_scope: %w", err)
 	}
 	val := strings.TrimSpace(string(byteValue))
-	if "0" != val {
+	if val != "0" {
 		log.Printf("WARNING:")
 		fmt.Printf("ptrace_scope set to value other than 0 (currently: %s), this might prevent debugger from connecting\n", val)
 		fmt.Printf("try writing \"0\" to %s\n", ptracePath)
