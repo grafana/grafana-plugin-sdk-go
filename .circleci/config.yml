@@ -14,9 +14,6 @@ jobs:
             - go-modules-v1-{{ checksum "go.sum" }}
             - go-modules-v1
       - run:
-          name: Download dependencies
-          command: go mod download
-      - run:
           name: Build
           command: mage -v build
       - run:
