@@ -18,6 +18,23 @@ type ServeOpts struct {
 	GRPCServer func(options []grpc.ServerOption) *grpc.Server
 }
 
+const (
+	maxMsgSize              = 1024 * 1024 * 16
+	maxServerReceiveMsgSize = 1024 * 1024 * 16
+	maxServerSendMsgSize    = 1024 * 1024 * 16
+)
+
+// pluginGRPCServer provides a default GRPC server with message sizes
+// increased from 4MB to 16MB
+func pluginGRPCServer(opts []grpc.ServerOption) *grpc.Server {
+	sopts := []grpc.ServerOption{
+		grpc.MaxMsgSize(maxMsgSize),
+		grpc.MaxRecvMsgSize(maxServerReceiveMsgSize),
+		grpc.MaxSendMsgSize(maxServerSendMsgSize),
+	}
+	return grpc.NewServer(sopts...)
+}
+
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
 	versionedPlugins := make(map[int]plugin.PluginSet)
@@ -50,7 +67,7 @@ func Serve(opts ServeOpts) error {
 	versionedPlugins[ProtocolVersion] = pSet
 
 	if opts.GRPCServer == nil {
-		opts.GRPCServer = plugin.DefaultGRPCServer
+		opts.GRPCServer = pluginGRPCServer
 	}
 
 	plugKeys := []string{}
