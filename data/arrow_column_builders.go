@@ -425,39 +425,3 @@ func buildNullableTimeColumn(pool memory.Allocator, field arrow.Field, vec *null
 
 	return array.NewColumn(field, chunked)
 }
-
-func buildDurationColumn(pool memory.Allocator, field arrow.Field, vec *timeDurationVector) *array.Column {
-	builder := array.NewDurationBuilder(pool, &arrow.DurationType{
-		Unit: arrow.Nanosecond,
-	})
-	defer builder.Release()
-
-	for _, v := range *vec {
-		builder.Append(arrow.Duration(v))
-	}
-
-	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
-	defer chunked.Release()
-
-	return array.NewColumn(field, chunked)
-}
-
-func buildNullableDurationColumn(pool memory.Allocator, field arrow.Field, vec *nullableTimeDurationVector) *array.Column {
-	builder := array.NewDurationBuilder(pool, &arrow.DurationType{
-		Unit: arrow.Nanosecond,
-	})
-	defer builder.Release()
-
-	for _, v := range *vec {
-		if v == nil {
-			builder.AppendNull()
-			continue
-		}
-		builder.Append(arrow.Duration(*v))
-	}
-
-	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
-	defer chunked.Release()
-
-	return array.NewColumn(field, chunked)
-}

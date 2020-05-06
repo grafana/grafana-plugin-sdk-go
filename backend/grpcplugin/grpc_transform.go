@@ -11,15 +11,20 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+// TransformServer represents a server type capable of transforming data.
 type TransformServer interface {
+	// TransformData makes a request to transform data.
 	TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callback TransformDataCallBack) (*pluginv2.QueryDataResponse, error)
 }
 
+// TransformClient represents a client type capable of transforming data.
 type TransformClient interface {
 	TransformData(ctx context.Context, req *pluginv2.QueryDataRequest, callback TransformDataCallBack) (*pluginv2.QueryDataResponse, error)
 }
 
+// TransformDataCallBack represents a type capable of receiving data transformation callbacks.
 type TransformDataCallBack interface {
+	// QueryData makes a request to query for data.
 	QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error)
 }
 
@@ -30,6 +35,7 @@ type TransformGRPCPlugin struct {
 	TransformServer TransformServer
 }
 
+// GRPCServer registers p as a transform gRPC server.
 func (p *TransformGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
 	pluginv2.RegisterTransformServer(s, &transformGRPCServer{
 		server: p.TransformServer,
@@ -38,6 +44,7 @@ func (p *TransformGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Serv
 	return nil
 }
 
+// GRPCClient returns c as a transform gRPC client.
 func (p *TransformGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &transformGRPCClient{client: pluginv2.NewTransformClient(c), broker: broker}, nil
 }
@@ -47,6 +54,7 @@ type transformGRPCServer struct {
 	server TransformServer
 }
 
+// TransformData makes a request to transform data.
 func (t *transformGRPCServer) TransformData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
@@ -99,6 +107,7 @@ type transformDataCallBackGrpcServer struct {
 	Impl TransformDataCallBack
 }
 
+// QueryData makes a request to query for data.
 func (g *transformDataCallBackGrpcServer) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	return g.Impl.QueryData(ctx, req)
 }
@@ -107,6 +116,7 @@ type transformDataCallBackGrpcClient struct {
 	client pluginv2.TransformDataCallBackClient
 }
 
+// QueryData makes a request to query for data.
 func (t *transformDataCallBackGrpcClient) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	return t.client.QueryData(ctx, req)
 }

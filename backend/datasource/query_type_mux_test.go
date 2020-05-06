@@ -9,22 +9,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func ExampleQueryTypeMux() {
-	mux := NewQueryTypeMux()
-	mux.HandleFunc("queryTypeA", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		// handle queryTypeA
-		return nil, nil
-	})
-	mux.HandleFunc("queryTypeB", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		// handle queryTypeB
-		return nil, nil
-	})
-
-	_ = backend.ServeOpts{
-		QueryDataHandler: mux,
-	}
-}
-
 func TestQueryTypeMux(t *testing.T) {
 	mux := NewQueryTypeMux()
 	aHandler := &testHandler{}

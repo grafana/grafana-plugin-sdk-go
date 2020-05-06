@@ -41,10 +41,8 @@ type Fields []*Field
 //  []uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
 // Floats:
 //  []float32, []*float32, []float64, []*float64
-// String, Bool:
-//  []string, []*string, []bool, []*bool
-// Time:
-//  []time.Time, []*time.Time, []time.Duration, []*time.Duration
+// String, Bool, and Time:
+//  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
 //
 // If an unsupported values type is passed, NewField will panic.
 func NewField(name string, labels Labels, values interface{}) *Field {
@@ -180,16 +178,6 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
-	case []time.Duration:
-		vec = newVector(v, len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
-	case []*time.Duration:
-		vec = newVector(v, len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
 	default:
 		panic(fmt.Errorf("unsupported field type %T", v))
 	}
@@ -261,6 +249,11 @@ func (f *Field) Insert(idx int, val interface{}) {
 	f.vector.Insert(idx, val)
 }
 
+// Delete delete element at index idx of the Field.
+func (f *Field) Delete(idx int) {
+	f.vector.Delete(idx)
+}
+
 // CopyAt returns a copy of the value of the specified index idx.
 // It will panic if idx is out of range.
 func (f *Field) CopyAt(idx int) interface{} {
@@ -289,10 +282,7 @@ func (f *Field) Nullable() bool {
 // If the Field type is a bool then 0 is return if false or nil, and 1 if true.
 //
 // If the Field type is time.Time, then the millisecond epoch representation of the time
-// is returned, or NaN if the value is nil.
-//
-// If the Field type is time.Duration, then a nanosecond representation of the duration
-// is returned, or NaN if the value is nil.
+// is returned, or NaN is the value is nil.
 //
 // If the Field type is a string, then strconv.ParseFloat is called on it and will return
 // an error if ParseFloat errors. If the value is nil, NaN is returned.
@@ -428,16 +418,7 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		if t == nil {
 			return math.NaN(), nil
 		}
-		return float64(t.UnixNano() / int64(time.Millisecond)), nil
-
-	case FieldTypeDuration:
-		return float64(f.At(idx).(time.Duration)), nil
-	case FieldTypeNullableDuration:
-		d := f.At(idx).(*time.Duration)
-		if d == nil {
-			return math.NaN(), nil
-		}
-		return float64(*d), nil
+		return float64(f.At(idx).(*time.Time).UnixNano() / int64(time.Millisecond)), nil
 	}
 	return 0, fmt.Errorf("unsupported field type %T", f.Type())
 }

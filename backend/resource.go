@@ -30,3 +30,14 @@ type CallResourceResponseSender interface {
 type CallResourceHandler interface {
 	CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
 }
+
+// CallResourceHandlerFunc is an adapter to allow the use of
+// ordinary functions as backend.CallResourceHandler. If f is a function
+// with the appropriate signature, QueryDataHandlerFunc(f) is a
+// Handler that calls f.
+type CallResourceHandlerFunc func(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
+
+// CallResource calls fn(ctx, req, sender).
+func (fn CallResourceHandlerFunc) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+	return fn(ctx, req, sender)
+}

@@ -1,16 +1,28 @@
-version: 2
+version: 2.1
+
+defaults: &defaults
+  docker:
+    - image: srclosson/grafana-plugin-ci-alpine:latest
+
 jobs:
   build:
-    docker:
-      - image: srclosson/grafana-plugin-ci-alpine:latest
+    <<: *defaults
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - go-modules-v1-{{ checksum "go.mod" }}
+            - go-modules-v1
       - run:
           name: Build
-          command: |
-            go vet ./...
-            golangci-lint run ./...
-            revive -formatter stylish -config scripts/configs/revive.toml ./...
-            gosec -quiet -exclude=G104,G107,G108,G201,G202,G204,G301,G304,G401,G402,G501 -conf=scripts/configs/gosec.json ./...
-
-            go test ./...
+          command: mage -v build
+      - run:
+          name: Lint
+          command: mage -v lint
+      - run:
+          name: Test
+          command: mage -v test
+      - save_cache:
+          key: go-modules-v1-{{ checksum "go.mod" }}
+          paths:
+            - "/go/pkg/mod"

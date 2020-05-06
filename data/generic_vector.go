@@ -4,7 +4,7 @@ import (
 	"github.com/cheekybits/genny/generic"
 )
 
-//go:generate genny -in=$GOFILE -out=vector.gen.go gen "gen=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time,time.Duration"
+//go:generate genny -in=$GOFILE -out=vector.gen.go gen "gen=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
 
 type gen generic.Type
 
@@ -68,4 +68,8 @@ func (v *genVector) Insert(i int, val interface{}) {
 	case i > v.Len():
 		panic("Invalid index; vector length should be greater or equal to that index")
 	}
+}
+
+func (v *genVector) Delete(i int) {
+	(*v) = append((*v)[:i], (*v)[i+1:]...)
 }
