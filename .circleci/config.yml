@@ -11,7 +11,7 @@ jobs:
       - checkout
       - restore_cache:
           keys:
-            - go-modules-v1-{{ checksum "go.sum" }}
+            - go-modules-v1-{{ checksum "go.mod" }}
             - go-modules-v1
       - run:
           name: Build
@@ -23,6 +23,6 @@ jobs:
           name: Test
           command: mage -v test
       - save_cache:
-          key: go-modules-v1-{{ checksum "go.sum" }}
+          key: go-modules-v1-{{ checksum "go.mod" }}
           paths:
             - "/go/pkg/mod"
