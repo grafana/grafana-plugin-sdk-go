@@ -8,22 +8,6 @@ min-confidence = 1
 min-len = 2
 min-occurrences = 2
 
-#[linters-settings.gocritic]
-#enabled-tags = [
-  #"diagnostic",
-  #"experimental",
-  #"opinionated",
-  #"performance",
-  #"style",
-#]
-#disabled-checks = [
-  #"dupImport", # https://github.com/go-critic/go-critic/issues/845
-  #"ifElseChain",
-  #"octalLiteral",
-  #"whyNoLint",
-  #"wrapperFunc",
-#]
-
 [linters]
 disable-all = true
 enable = [
@@ -33,9 +17,7 @@ enable = [
   "dogsled",
   "errcheck",
   "gochecknoinits",
-  #"goconst",
   "gocritic",
-  #"gocyclo",
   "goimports",
   "golint",
   "goprintffuncname",
@@ -52,8 +34,12 @@ enable = [
   "stylecheck",
   "typecheck",
   "unconvert",
-  #"unparam",
   "unused",
   "varcheck",
   "whitespace",
 ]
+
+# Disabled linters (might want them later)
+# "goconst"
+# "gocyclo",
+# "unparam"
