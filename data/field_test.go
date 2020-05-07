@@ -68,7 +68,8 @@ func TestTimeField(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run("", func(t *testing.T) {
 			f := data.NewField(t.Name(), nil, tt.Values)
 
@@ -84,7 +85,6 @@ func TestTimeField(t *testing.T) {
 					t.Error(got, want)
 				}
 			}
-
 		})
 	}
 }

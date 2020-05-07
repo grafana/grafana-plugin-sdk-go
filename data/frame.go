@@ -249,7 +249,6 @@ func (f *Frame) RowLen() (int, error) {
 		if l != f.Fields[i].Len() {
 			return 0, fmt.Errorf("frame has different field lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].vector.Len())
 		}
-
 	}
 	return l, nil
 }
@@ -316,9 +315,9 @@ func FrameTestCompareOptions() []cmp.Option {
 		if y == nil && x != nil || y != nil && x == nil {
 			return false
 		}
-		return (math.IsNaN(float64(*x)) && math.IsNaN(float64(*y))) ||
-			(math.IsInf(float64(*x), 1) && math.IsInf(float64(*y), 1)) ||
-			(math.IsInf(float64(*x), -1) && math.IsInf(float64(*y), -1)) ||
+		return (math.IsNaN(*x) && math.IsNaN(*y)) ||
+			(math.IsInf(*x, 1) && math.IsInf(*y, 1)) ||
+			(math.IsInf(*x, -1) && math.IsInf(*y, -1)) ||
 			*x == *y
 	})
 	f64s := cmp.Comparer(func(x, y float64) bool {

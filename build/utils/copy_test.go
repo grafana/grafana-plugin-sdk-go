@@ -1,13 +1,14 @@
 package utils
 
 import (
-	"github.com/stretchr/testify/require"
 	"io/ioutil"
 	"os"
 	"path"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestCopyFile(t *testing.T) {
@@ -42,7 +43,7 @@ func TestCopyRecursive_NonExistentDest(t *testing.T) {
 
 	err = os.MkdirAll(path.Join(src, "data"), 0755)
 	require.NoError(t, err)
-	err = ioutil.WriteFile(path.Join(src, "data", "file.txt"), []byte("Test"), 0644)
+	err = ioutil.WriteFile(path.Join(src, "data", "file.txt"), []byte("Test"), 0600)
 	require.NoError(t, err)
 
 	dstParent, err := ioutil.TempDir("", "")
@@ -64,7 +65,7 @@ func TestCopyRecursive_ExistentDest(t *testing.T) {
 
 	err = os.MkdirAll(path.Join(src, "data"), 0755)
 	require.NoError(t, err)
-	err = ioutil.WriteFile(path.Join(src, "data", "file.txt"), []byte("Test"), 0644)
+	err = ioutil.WriteFile(path.Join(src, "data", "file.txt"), []byte("Test"), 0600)
 	require.NoError(t, err)
 
 	dst, err := ioutil.TempDir("", "")
