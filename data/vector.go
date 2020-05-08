@@ -18,6 +18,7 @@ type vector interface {
 	ConcreteAt(i int) (val interface{}, ok bool)
 	SetConcrete(i int, val interface{})
 	Insert(i int, val interface{})
+	Delete(i int)
 }
 
 func newVector(t interface{}, n int) (v vector) {
@@ -83,7 +84,7 @@ func newVector(t interface{}, n int) (v vector) {
 	default:
 		panic(fmt.Sprintf("unsupported vector type of %T", t))
 	}
-	return
+	return v
 }
 
 // ValidFieldType returns if a primitive slice is a valid supported Field type.
@@ -298,7 +299,6 @@ func (p FieldType) String() string {
 		return "invalid/unsupported"
 	}
 	return fmt.Sprintf("[]%v", p.ItemTypeString())
-
 }
 
 // NewFieldFromFieldType creates a new Field of the given FieldType of length n.

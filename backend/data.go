@@ -11,7 +11,7 @@ import (
 // QueryDataHandler handles data queries.
 type QueryDataHandler interface {
 	// QueryData handles multiple queries and returns multiple responses.
-	// req contains the queries []DataQuery (where each query contains RefID as a unique identifer).
+	// req contains the queries []DataQuery (where each query contains RefID as a unique identifier).
 	// The QueryDataResponse contains a map of RefID to the response for each query, and each response
 	// contains Frames ([]*Frame).
 	//
@@ -43,7 +43,7 @@ type QueryDataRequest struct {
 // DataQuery represents a single query as sent from the frontend.
 // A slice of DataQuery makes up the Queries property of a QueryDataRequest.
 type DataQuery struct {
-	// RefID is the unique identifer of the query, set by the frontend call.
+	// RefID is the unique identifier of the query, set by the frontend call.
 	RefID string
 
 	// QueryType is an optional identifier for the type of query.

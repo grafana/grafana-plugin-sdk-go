@@ -61,7 +61,11 @@ func (ds *testDataSource) CheckHealth(ctx context.Context, req *backend.CheckHea
 	}
 
 	// Handle request
-	_, _ = settings.httpClient.Get("http://")
+	resp, err := settings.httpClient.Get("http://")
+	if err != nil {
+		return nil, err
+	}
+	resp.Body.Close()
 	return nil, nil
 }
 
@@ -69,7 +73,11 @@ func (ds *testDataSource) QueryData(ctx context.Context, req *backend.QueryDataR
 	var resp *backend.QueryDataResponse
 	err := ds.im.Do(req.PluginContext, func(settings *testDataSourceInstanceSettings) error {
 		// Handle request
-		_, _ = settings.httpClient.Get("http://")
+		resp, err := settings.httpClient.Get("http://")
+		if err != nil {
+			return err
+		}
+		resp.Body.Close()
 		return nil
 	})
 
@@ -85,7 +93,12 @@ func (ds *testDataSource) handleTest(rw http.ResponseWriter, req *http.Request) 
 	}
 
 	// Handle request
-	_, _ = settings.httpClient.Get("http://")
+	resp, err := settings.httpClient.Get("http://")
+	if err != nil {
+		rw.WriteHeader(500)
+		return
+	}
+	resp.Body.Close()
 }
 
 func Example() {

@@ -8,6 +8,7 @@ import (
 
 	"github.com/apache/arrow/go/arrow"
 	"github.com/apache/arrow/go/arrow/array"
+	"github.com/apache/arrow/go/arrow/arrio"
 	"github.com/apache/arrow/go/arrow/ipc"
 	"github.com/apache/arrow/go/arrow/memory"
 	"github.com/mattetti/filebuffer"
@@ -114,7 +115,6 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 
 	for fieldIdx, field := range f.Fields {
 		switch v := field.vector.(type) {
-
 		case *int8Vector:
 			columns[fieldIdx] = *buildInt8Column(pool, arrowFields[fieldIdx], v)
 		case *nullableInt8Vector:
@@ -209,7 +209,6 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 // Vector primitives.
 func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	switch f.vector.(type) {
-
 	case *stringVector:
 		return &arrow.StringType{}, false, nil
 	case *nullableStringVector:
@@ -395,7 +394,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	return nullable, nil
 }
 
-func populateFrameFields(fR *ipc.FileReader, nullable []bool, frame *Frame) error {
+func populateFrameFields(fR arrio.Reader, nullable []bool, frame *Frame) error {
 	for {
 		record, err := fR.Read()
 		if err == io.EOF {

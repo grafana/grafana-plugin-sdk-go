@@ -97,7 +97,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 		return
 	}
 	tsSchema.Type = TimeSeriesTypeLong
-	return
+	return tsSchema
 }
 
 // float64ToType converts a float64 value to the specified field type.
@@ -440,7 +440,6 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 				}
 				longValueFieldIdx := valueNameToLongFieldIdx[wideField.Name]
 				longFrame.Set(longValueFieldIdx, longFrameCounter, wideFrame.CopyAt(wideFieldIdx, wideRowIdx))
-
 			}
 
 			longFrameCounter++

@@ -26,6 +26,130 @@ func TestFrame(t *testing.T) {
 	}
 }
 
+func assertPanic(t *testing.T, f func()) {
+	defer func() {
+		if r := recover(); r == nil {
+			t.Errorf("The code did not panic")
+		}
+	}()
+	f()
+}
+
+func TestDeleteRow(t *testing.T) {
+	tests := []struct {
+		name      string
+		idx       int
+		input     *data.Frame
+		output    *data.Frame
+		wantPanic bool
+	}{
+		{
+			name: "idx is less than the row length",
+			input: data.NewFrame("http_requests_total",
+				data.NewField("timestamp", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 18, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 19, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+				}),
+				data.NewField("value", data.Labels{"service": "auth"}, []float64{
+					1.0,
+					2.0,
+					3.0,
+				}),
+				data.NewField("category", data.Labels{"service": "auth"}, []string{
+					"foo",
+					"bar",
+					"test",
+				}),
+				data.NewField("valid", data.Labels{"service": "auth"}, []bool{true, false, true}),
+			),
+			idx: 1,
+			output: data.NewFrame("http_requests_total",
+				data.NewField("timestamp", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 18, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+				}),
+				data.NewField("value", data.Labels{"service": "auth"}, []float64{
+					1.0,
+					3.0,
+				}),
+				data.NewField("category", data.Labels{"service": "auth"}, []string{
+					"foo",
+					"test",
+				}),
+				data.NewField("valid", data.Labels{"service": "auth"}, []bool{true, true}),
+			),
+		},
+		{
+			name: "idx equals the row length",
+			input: data.NewFrame("http_requests_total",
+				data.NewField("timestamp", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 18, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 19, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+				}),
+				data.NewField("value", data.Labels{"service": "auth"}, []float64{
+					1.0,
+					2.0,
+					3.0,
+				}),
+				data.NewField("category", data.Labels{"service": "auth"}, []string{
+					"foo",
+					"bar",
+					"test",
+				}),
+				data.NewField("valid", data.Labels{"service": "auth"}, []bool{
+					true,
+					false,
+					true,
+				}),
+			),
+			idx:       3,
+			wantPanic: true,
+		},
+		{
+			name: "idx is negative",
+			input: data.NewFrame("http_requests_total",
+				data.NewField("timestamp", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 18, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 19, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 20, 0, time.UTC),
+				}),
+				data.NewField("value", data.Labels{"service": "auth"}, []float64{
+					1.0,
+					2.0,
+					3.0,
+				}),
+				data.NewField("category", data.Labels{"service": "auth"}, []string{
+					"foo",
+					"bar",
+					"test",
+				}),
+				data.NewField("valid", data.Labels{"service": "auth"}, []bool{
+					true,
+					false,
+					true,
+				}),
+			),
+			idx:       -1,
+			wantPanic: true,
+		},
+	}
+	for i := range tests {
+		tt := tests[i]
+		t.Run(tt.name, func(t *testing.T) {
+			if tt.wantPanic {
+				assertPanic(t, func() { tt.input.DeleteRow(tt.idx) })
+			} else {
+				tt.input.DeleteRow(tt.idx)
+				if diff := cmp.Diff(tt.output, tt.input, data.FrameTestCompareOptions()...); diff != "" {
+					t.Errorf("Result mismatch (-want +got):\n%s", diff)
+				}
+			}
+		})
+	}
+}
+
 func ExampleNewFrame() {
 	aTime := time.Date(2020, 1, 2, 3, 4, 5, 0, time.UTC)
 	var anInt64 int64 = 12
@@ -209,7 +333,6 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 	// | 2020-01-02 03:04:00 +0000 UTC | 3               | 4               |
 	// | 2020-01-02 03:05:00 +0000 UTC | 6               | 7               |
 	// +-------------------------------+-----------------+-----------------+
-
 }
 
 func ExampleFrame_tableLikeLongTimeSeries() {
@@ -343,15 +466,14 @@ Dimensions: 3 Fields by 3 Rows
 `,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			s, err := frame.StringTable(tt.maxWidth, tt.maxLength)
 			require.NoError(t, err)
 			require.Equal(t, tt.output, s)
-
 		})
 	}
-
 }
 
 func TestDataFrameFilterRowsByField(t *testing.T) {
@@ -385,7 +507,7 @@ func TestDataFrameFilterRowsByField(t *testing.T) {
 			filterFunc: func(i interface{}) (bool, error) {
 				val, ok := i.(time.Time)
 				if !ok {
-					return false, fmt.Errorf("wrong type dumbface. Oh ya, stupid error even-dumber-face.")
+					return false, fmt.Errorf("wrong type dumbface. Oh ya, stupid error even-dumber-face")
 				}
 				if val.After(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)) && val.Before(time.Date(2020, 1, 2, 3, 4, 45, 0, time.UTC)) {
 					return true, nil
@@ -395,7 +517,8 @@ func TestDataFrameFilterRowsByField(t *testing.T) {
 			shouldErr: require.NoError,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			filteredFrame, err := tt.frame.FilterRowsByField(tt.fieldIdx, tt.filterFunc)
 			tt.shouldErr(t, err)

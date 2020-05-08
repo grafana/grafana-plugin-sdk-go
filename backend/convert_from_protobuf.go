@@ -95,7 +95,7 @@ func (f ConvertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 		MaxDataPoints: proto.MaxDataPoints,
 		TimeRange:     f.TimeRange(proto.TimeRange),
 		Interval:      time.Duration(proto.IntervalMS) * time.Millisecond,
-		JSON:          []byte(proto.Json),
+		JSON:          proto.Json,
 	}
 }
 

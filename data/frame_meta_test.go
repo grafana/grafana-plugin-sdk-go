@@ -22,7 +22,8 @@ func TestJSONNotice(t *testing.T) {
 			json: `{"severity":"error","text":"Some text"}`,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			b, err := json.Marshal(tt.notice)
 			require.NoError(t, err)

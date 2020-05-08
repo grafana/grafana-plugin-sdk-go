@@ -57,14 +57,23 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 }
 
 // InsertRow adds a row at index rowIdx of the Frame.
-// InsertRow calls each field's InsertAt which extends the Field length by 1,
+// InsertRow calls each field's Insert which extends the Field length by 1,
 // shifts any existing field values at indices equal or greater to rowIdx by one place
 // and inserts the corresponding val at index rowIdx of the Field.
 // If rowIdx is equal to the Frame RowLen, then val will be appended.
-// It rowIdx exceeds the Field length, this method will panic.
+// If rowIdx exceeds the Field length, this method will panic.
 func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
 		f.Fields[i].vector.Insert(rowIdx, v)
+	}
+}
+
+// DeleteRow deletes row at index rowIdx of the Frame.
+// DeleteRow calls each field's Delete
+// If idx is out of range, this method will panic.
+func (f *Frame) DeleteRow(rowIdx int) {
+	for _, field := range f.Fields {
+		field.vector.Delete(rowIdx)
 	}
 }
 
@@ -240,7 +249,6 @@ func (f *Frame) RowLen() (int, error) {
 		if l != f.Fields[i].Len() {
 			return 0, fmt.Errorf("frame has different field lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].vector.Len())
 		}
-
 	}
 	return l, nil
 }
@@ -307,9 +315,9 @@ func FrameTestCompareOptions() []cmp.Option {
 		if y == nil && x != nil || y != nil && x == nil {
 			return false
 		}
-		return (math.IsNaN(float64(*x)) && math.IsNaN(float64(*y))) ||
-			(math.IsInf(float64(*x), 1) && math.IsInf(float64(*y), 1)) ||
-			(math.IsInf(float64(*x), -1) && math.IsInf(float64(*y), -1)) ||
+		return (math.IsNaN(*x) && math.IsNaN(*y)) ||
+			(math.IsInf(*x, 1) && math.IsInf(*y, 1)) ||
+			(math.IsInf(*x, -1) && math.IsInf(*y, -1)) ||
 			*x == *y
 	})
 	f64s := cmp.Comparer(func(x, y float64) bool {
@@ -340,6 +348,8 @@ func FrameTestCompareOptions() []cmp.Option {
 	unexportedField := cmp.AllowUnexported(Field{})
 	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, unexportedField, cmpopts.EquateEmpty()}
 }
+
+const maxLengthExceededStr = "..."
 
 // StringTable prints a human readable table of the Frame.
 // The table's width is limited to maxFields and the length is limited to maxRows (a value of -1 is unlimited).
@@ -402,7 +412,7 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 		if exceedsLength && rowIdx == maxRows-1 { // if Frame has more rows than output table and last row
 			for i := range sRow {
-				sRow[i] = "..."
+				sRow[i] = maxLengthExceededStr
 			}
 			table.Append(sRow)
 			break
@@ -410,7 +420,7 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 		for colIdx, v := range iRow {
 			if exceedsWidth && colIdx == maxFields-1 { // if Frame has more Fields than output table width and last Field
-				sRow[colIdx] = "..."
+				sRow[colIdx] = maxLengthExceededStr
 				break
 			}
 

@@ -61,7 +61,8 @@ func TestTimeSeriesSchema(t *testing.T) {
 			tsType: data.TimeSeriesTypeLong,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			tsSchema := tt.frame.TimeSeriesSchema()
 			require.Equal(t, tt.tsType.String(), tsSchema.Type.String())
@@ -995,7 +996,8 @@ func TestLongToWide(t *testing.T) {
 			Err: require.NoError,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			frame, err := data.LongToWide(tt.longFrame, tt.tsFillMissing)
 			tt.Err(t, err)
@@ -1331,7 +1333,8 @@ func TestWideToLong(t *testing.T) {
 			Err: require.NoError,
 		},
 	}
-	for _, tt := range tests {
+	for i := range tests {
+		tt := tests[i]
 		t.Run(tt.name, func(t *testing.T) {
 			frame, err := data.WideToLong(tt.wideFrame)
 			tt.Err(t, err)

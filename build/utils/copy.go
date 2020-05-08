@@ -57,7 +57,7 @@ func CopyFile(src, dst string) (err error) {
 
 	err = copyFileContents(src, dst)
 
-	return
+	return err
 }
 
 // copyFileContents copies the contents of the file named src to the file named

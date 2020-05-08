@@ -104,6 +104,9 @@ func ExampleFrameFromRows() {
 	if err != nil {
 		// return err
 	}
+	if rows.Err() != nil {
+		// return err
+	}
 	defer rows.Close()
 
 	frame, mappings, err := sqlutil.FrameFromRows(rows, 1000)
