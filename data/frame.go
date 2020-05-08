@@ -349,6 +349,8 @@ func FrameTestCompareOptions() []cmp.Option {
 	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, unexportedField, cmpopts.EquateEmpty()}
 }
 
+const maxLengthExceededStr = "..."
+
 // StringTable prints a human readable table of the Frame.
 // The table's width is limited to maxFields and the length is limited to maxRows (a value of -1 is unlimited).
 // If the width or length is excceded then last column or row displays "..." as the contents.
@@ -410,7 +412,7 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 		if exceedsLength && rowIdx == maxRows-1 { // if Frame has more rows than output table and last row
 			for i := range sRow {
-				sRow[i] = "..."
+				sRow[i] = maxLengthExceededStr
 			}
 			table.Append(sRow)
 			break
@@ -418,7 +420,7 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 		for colIdx, v := range iRow {
 			if exceedsWidth && colIdx == maxFields-1 { // if Frame has more Fields than output table width and last Field
-				sRow[colIdx] = "..."
+				sRow[colIdx] = maxLengthExceededStr
 				break
 			}
 

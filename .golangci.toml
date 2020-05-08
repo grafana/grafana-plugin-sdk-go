@@ -17,6 +17,7 @@ enable = [
   "dogsled",
   "errcheck",
   "gochecknoinits",
+  "goconst",
   "gocritic",
   "goimports",
   "golint",
@@ -41,6 +42,5 @@ enable = [
 ]
 
 # Disabled linters (might want them later)
-# "goconst"
 # "gocyclo",
 # "unparam"

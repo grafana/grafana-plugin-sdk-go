@@ -47,4 +47,4 @@ func (l *hclogWrapper) Error(msg string, args ...interface{}) {
 }
 
 // DefaultLogger is the default logger.
-var DefaultLogger Logger = New()
+var DefaultLogger = New()

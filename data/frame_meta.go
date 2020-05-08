@@ -57,6 +57,12 @@ type Notice struct {
 	Inspect InspectType `json:"inspect,omitempty"`
 }
 
+const (
+	noticeSeverityInfoString    = "info"
+	noticeSeverityWarningString = "warning"
+	noticeSeverityErrorString   = "error"
+)
+
 // NoticeSeverity is a type for the Severity property of a Notice.
 type NoticeSeverity int
 
@@ -74,11 +80,11 @@ const (
 func (n NoticeSeverity) String() string {
 	switch n {
 	case NoticeSeverityInfo:
-		return "info"
+		return noticeSeverityInfoString
 	case NoticeSeverityWarning:
-		return "warning"
+		return noticeSeverityWarningString
 	case NoticeSeverityError:
-		return "error"
+		return noticeSeverityErrorString
 	}
 	return ""
 }
@@ -96,11 +102,11 @@ func (n *NoticeSeverity) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	switch s {
-	case "info":
+	case noticeSeverityInfoString:
 		*n = NoticeSeverityInfo
-	case "warning":
+	case noticeSeverityWarningString:
 		*n = NoticeSeverityWarning
-	case "error":
+	case noticeSeverityErrorString:
 		*n = NoticeSeverityError
 	default:
 		return fmt.Errorf("unrecognized notice severity %v", s)
