@@ -52,7 +52,7 @@ type ConfFloat64 float64
 // MarshalJSON fullfills the json.Marshaler interface.
 func (sf *ConfFloat64) MarshalJSON() ([]byte, error) {
 	if sf == nil || math.IsNaN(float64(*sf)) || math.IsInf(float64(*sf), -1) || math.IsInf(float64(*sf), 1) {
-		return []byte("null"), nil
+		return []byte(string(NullValueModeNull)), nil
 	}
 
 	return []byte(fmt.Sprintf(`%v`, float64(*sf))), nil
@@ -61,7 +61,7 @@ func (sf *ConfFloat64) MarshalJSON() ([]byte, error) {
 // UnmarshalJSON fullfills the json.Unmarshaler interface.
 func (sf *ConfFloat64) UnmarshalJSON(data []byte) error {
 	s := string(data)
-	if s == "null" {
+	if s == string(NullValueModeNull) {
 		return nil
 	}
 	v, err := strconv.ParseFloat(s, 64)
