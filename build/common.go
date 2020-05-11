@@ -19,6 +19,12 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
+// BeforeBuildCallback is called before each build.  If your environemt requires aditional environemt variables,
+// this is a reasonable place to put them
+var BeforeBuildCallback = func(cfg BuildConfig) (BuildConfig, error) {
+	return cfg, nil
+}
+
 var exname string
 
 func getExecutableName(os string, arch string) (string, error) {
@@ -85,8 +91,13 @@ func killAllPIDs(pids []int) error {
 	return nil
 }
 
-func buildBackend(os string, arch string, enableDebug bool) error {
-	exeName, err := getExecutableName(os, arch)
+func buildBackend(cfg BuildConfig) error {
+	cfg, err := BeforeBuildCallback(cfg)
+	if err != nil {
+		return err
+	}
+
+	exeName, err := getExecutableName(cfg.OS, cfg.ARCH)
 	if err != nil {
 		return err
 	}
@@ -94,20 +105,27 @@ func buildBackend(os string, arch string, enableDebug bool) error {
 	args := []string{
 		"build", "-o", path.Join("dist", exeName), "-tags", "netgo",
 	}
-	if enableDebug {
+	if cfg.enableDebug {
 		args = append(args, "-gcflags=all=-N -l")
 	} else {
 		args = append(args, "-ldflags", "-w")
 	}
 	args = append(args, "./pkg")
 
-	env := map[string]string{
-		"GOARCH": arch,
-		"GOOS":   os,
-	}
+	cfg.env["GOARCH"] = cfg.ARCH
+	cfg.env["GOOS"] = cfg.OS
 
 	// TODO: Change to sh.RunWithV once available.
-	return sh.RunWith(env, "go", args...)
+	return sh.RunWith(cfg.env, "go", args...)
+}
+
+func newBuildConfig(os string, arch string) BuildConfig {
+	return BuildConfig{
+		OS:          os,
+		ARCH:        arch,
+		enableDebug: false,
+		env:         map[string]string{},
+	}
 }
 
 // Build is a namespace.
@@ -115,22 +133,24 @@ type Build mg.Namespace
 
 // Linux builds the back-end plugin for Linux.
 func (Build) Linux() error {
-	return buildBackend("linux", "amd64", false)
+	return buildBackend(newBuildConfig("linux", "amd64"))
 }
 
 // Windows builds the back-end plugin for Windows.
 func (Build) Windows() error {
-	return buildBackend("windows", "amd64", false)
+	return buildBackend(newBuildConfig("windows", "amd64"))
 }
 
 // Darwin builds the back-end plugin for OSX.
 func (Build) Darwin() error {
-	return buildBackend("darwin", "amd64", false)
+	return buildBackend(newBuildConfig("darwin", "amd64"))
 }
 
 // Debug builds the debug version for the current platform
 func (Build) Debug() error {
-	return buildBackend(runtime.GOOS, runtime.GOARCH, true)
+	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
+	cfg.enableDebug = true
+	return buildBackend(cfg)
 }
 
 // Backend build a production build for all platforms
