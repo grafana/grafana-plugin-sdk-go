@@ -21,7 +21,7 @@ import (
 
 // BeforeBuildCallback is called before each build.  If your environment requires additional environment variables,
 // this is a reasonable place to put them.
-var BeforeBuildCallback = func(cfg BuildConfig) (BuildConfig, error) {
+var BeforeBuildCallback = func(cfg Config) (Config, error) {
 	return cfg, nil
 }
 
@@ -91,7 +91,7 @@ func killAllPIDs(pids []int) error {
 	return nil
 }
 
-func buildBackend(cfg BuildConfig) error {
+func buildBackend(cfg Config) error {
 	cfg, err := BeforeBuildCallback(cfg)
 	if err != nil {
 		return err
@@ -119,8 +119,8 @@ func buildBackend(cfg BuildConfig) error {
 	return sh.RunWith(cfg.Env, "go", args...)
 }
 
-func newBuildConfig(os string, arch string) BuildConfig {
-	return BuildConfig{
+func newBuildConfig(os string, arch string) Config {
+	return Config{
 		OS:          os,
 		Arch:        arch,
 		EnableDebug: false,
