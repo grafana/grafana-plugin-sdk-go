@@ -105,26 +105,26 @@ func buildBackend(cfg BuildConfig) error {
 	args := []string{
 		"build", "-o", path.Join("dist", exeName), "-tags", "netgo",
 	}
-	if cfg.enableDebug {
+	if cfg.EnableDebug {
 		args = append(args, "-gcflags=all=-N -l")
 	} else {
 		args = append(args, "-ldflags", "-w")
 	}
 	args = append(args, "./pkg")
 
-	cfg.env["GOARCH"] = cfg.ARCH
-	cfg.env["GOOS"] = cfg.OS
+	cfg.Env["GOARCH"] = cfg.ARCH
+	cfg.Env["GOOS"] = cfg.OS
 
 	// TODO: Change to sh.RunWithV once available.
-	return sh.RunWith(cfg.env, "go", args...)
+	return sh.RunWith(cfg.Env, "go", args...)
 }
 
 func newBuildConfig(os string, arch string) BuildConfig {
 	return BuildConfig{
 		OS:          os,
 		ARCH:        arch,
-		enableDebug: false,
-		env:         map[string]string{},
+		EnableDebug: false,
+		Env:         map[string]string{},
 	}
 }
 
@@ -149,7 +149,7 @@ func (Build) Darwin() error {
 // Debug builds the debug version for the current platform
 func (Build) Debug() error {
 	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
-	cfg.enableDebug = true
+	cfg.EnableDebug = true
 	return buildBackend(cfg)
 }
 

@@ -4,6 +4,6 @@ package build
 type BuildConfig struct {
 	OS          string // GOOS
 	ARCH        string // GOOS
-	enableDebug bool
-	env         map[string]string
+	EnableDebug bool
+	Env         map[string]string
 }
