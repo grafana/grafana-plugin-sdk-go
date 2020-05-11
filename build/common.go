@@ -97,7 +97,7 @@ func buildBackend(cfg BuildConfig) error {
 		return err
 	}
 
-	exeName, err := getExecutableName(cfg.OS, cfg.ARCH)
+	exeName, err := getExecutableName(cfg.OS, cfg.Arch)
 	if err != nil {
 		return err
 	}
@@ -112,7 +112,7 @@ func buildBackend(cfg BuildConfig) error {
 	}
 	args = append(args, "./pkg")
 
-	cfg.Env["GOARCH"] = cfg.ARCH
+	cfg.Env["GOARCH"] = cfg.Arch
 	cfg.Env["GOOS"] = cfg.OS
 
 	// TODO: Change to sh.RunWithV once available.
@@ -122,7 +122,7 @@ func buildBackend(cfg BuildConfig) error {
 func newBuildConfig(os string, arch string) BuildConfig {
 	return BuildConfig{
 		OS:          os,
-		ARCH:        arch,
+		Arch:        arch,
 		EnableDebug: false,
 		Env:         map[string]string{},
 	}
