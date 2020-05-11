@@ -19,10 +19,12 @@ import (
 	"github.com/magefile/mage/sh"
 )
 
-// BeforeBuildCallback is called before each build.  If your environment requires additional environment variables,
-// this is a reasonable place to put them.
-var BeforeBuildCallback = func(cfg Config) (Config, error) {
-	return cfg, nil
+// Callbacks give you a way to run custom behavior when things happen
+var Callbacks = GlobalCallbacks{
+	// If your environment requires additional environment variables, this is a reasonable place to put them.
+	BeforeBuild: func(cfg Config) (Config, error) {
+		return cfg, nil
+	},
 }
 
 var exname string

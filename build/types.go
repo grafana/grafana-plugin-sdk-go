@@ -7,3 +7,8 @@ type Config struct {
 	EnableDebug bool
 	Env         map[string]string
 }
+
+// GlobalCallbacks hooks into the build process
+type GlobalCallbacks struct {
+	BeforeBuild func(cfg Config) (Config, error)
+}
