@@ -8,7 +8,5 @@ type Config struct {
 	Env         map[string]string
 }
 
-// GlobalCallbacks hooks into the build process
-type GlobalCallbacks struct {
-	BeforeBuild func(cfg Config) (Config, error)
-}
+// BeforeBuildCallback hooks into the build process
+type BeforeBuildCallback func(cfg Config) (Config, error)

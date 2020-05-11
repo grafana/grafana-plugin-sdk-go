@@ -20,11 +20,14 @@ import (
 )
 
 // Callbacks give you a way to run custom behavior when things happen
-var Callbacks = GlobalCallbacks{
-	// If your environment requires additional environment variables, this is a reasonable place to put them.
-	BeforeBuild: func(cfg Config) (Config, error) {
-		return cfg, nil
-	},
+var beforeBuild = func(cfg Config) (Config, error) {
+	return cfg, nil
+}
+
+// SetBeforeBuildCallback configures a custom callback
+func SetBeforeBuildCallback(cb BeforeBuildCallback) error {
+	beforeBuild = cb
+	return nil
 }
 
 var exname string
@@ -94,7 +97,7 @@ func killAllPIDs(pids []int) error {
 }
 
 func buildBackend(cfg Config) error {
-	cfg, err := BeforeBuildCallback(cfg)
+	cfg, err := beforeBuild(cfg)
 	if err != nil {
 		return err
 	}
