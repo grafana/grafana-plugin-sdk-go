@@ -8,10 +8,12 @@ import (
 	"google.golang.org/grpc"
 )
 
+const defaultServerMaxReceiveMessageSize = 1024 * 1024 * 16
+
 // GRPCSettings settings for gRPC.
 type GRPCSettings struct {
 	// MaxReceiveMsgSize the max gRPC message size in bytes the plugin can receive.
-	// If this is <= 0, gRPC uses the default 4MB.
+	// If this is <= 0, gRPC uses the default 16MB.
 	MaxReceiveMsgSize int
 
 	// MaxSendMsgSize the max gRPC message size in bytes the plugin can send.
@@ -69,9 +71,11 @@ func Serve(opts ServeOpts) error {
 		)),
 	}
 
-	if opts.GRPCSettings.MaxReceiveMsgSize > 0 {
-		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize)}, grpcMiddlewares...)
+	if opts.GRPCSettings.MaxReceiveMsgSize <= 0 {
+		opts.GRPCSettings.MaxReceiveMsgSize = defaultServerMaxReceiveMessageSize
 	}
+
+	grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize)}, grpcMiddlewares...)
 
 	if opts.GRPCSettings.MaxSendMsgSize > 0 {
 		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxSendMsgSize(opts.GRPCSettings.MaxSendMsgSize)}, grpcMiddlewares...)
