@@ -13,8 +13,8 @@ type FieldConfig struct {
 	// https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/dataFrame.ts#L23
 	// All properties are optional should be omitted from JSON when empty or not set.
 
-	Title      string `json:"title,omitempty"`
-	Filterable *bool  `json:"filterable,omitempty"` // indicates if the Field's data can be filtered by additional calls.
+	DisplayName string `json:"displayName,omitempty"`
+	Filterable  *bool  `json:"filterable,omitempty"` // indicates if the Field's data can be filtered by additional calls.
 
 	// Numeric Options
 	Unit     string       `json:"unit,omitempty"`     // is the string to display to represent the Field's unit, such as "Requests/sec"

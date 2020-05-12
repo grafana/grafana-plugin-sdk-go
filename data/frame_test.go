@@ -14,7 +14,7 @@ import (
 func TestFrame(t *testing.T) {
 	df := data.NewFrame("http_requests_total",
 		data.NewField("timestamp", nil, []time.Time{time.Now(), time.Now(), time.Now()}).SetConfig(&data.FieldConfig{
-			Title: "A time Column.",
+			DisplayName: "A time Column.",
 		}),
 		data.NewField("value", data.Labels{"service": "auth"}, []float64{1.0, 2.0, 3.0}),
 		data.NewField("category", data.Labels{"service": "auth"}, []string{"foo", "bar", "test"}),
