@@ -74,7 +74,7 @@ func (sf *ConfFloat64) UnmarshalJSON(data []byte) error {
 }
 
 // SetDecimals modifies the FieldConfig's Decimals property to
-// be set to v and returns the FieldConfig. It is a convenance function
+// be set to v and returns the FieldConfig. It is a convenience function
 // since the Decimals property is a pointer.
 func (fc *FieldConfig) SetDecimals(v uint16) *FieldConfig {
 	fc.Decimals = &v
@@ -82,7 +82,7 @@ func (fc *FieldConfig) SetDecimals(v uint16) *FieldConfig {
 }
 
 // SetMin modifies the FieldConfig's Min property to
-// be set to v and returns the FieldConfig. It is a convenance function
+// be set to v and returns the FieldConfig. It is a convenience function
 // since the Min property is a pointer.
 func (fc *FieldConfig) SetMin(v float64) *FieldConfig {
 	cf := ConfFloat64(v)
@@ -91,7 +91,7 @@ func (fc *FieldConfig) SetMin(v float64) *FieldConfig {
 }
 
 // SetMax modifies the FieldConfig's Max property to
-// be set to v and returns the FieldConfig. It is a convenance function
+// be set to v and returns the FieldConfig. It is a convenience function
 // since the Min property is a pointer.
 func (fc *FieldConfig) SetMax(v float64) *FieldConfig {
 	cf := ConfFloat64(v)
@@ -100,7 +100,7 @@ func (fc *FieldConfig) SetMax(v float64) *FieldConfig {
 }
 
 // SetFilterable modifies the FieldConfig's Filterable property to
-// be set to b and returns the FieldConfig. It is a convenance function
+// be set to b and returns the FieldConfig. It is a convenience function
 // since the Filterable property is a pointer.
 func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
 	fc.Filterable = &b
