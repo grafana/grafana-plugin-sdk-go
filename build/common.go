@@ -12,11 +12,11 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"syscall"
 	"time"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
+	"golang.org/x/sys/unix"
 )
 
 // Callbacks give you a way to run custom behavior when things happen
@@ -85,10 +85,13 @@ func findRunningPIDs(exe string) []int {
 	return pids
 }
 
-func killAllPIDs(pids []int) error {
+func killAllPIDs(exeName string) error {
+	// TODO: For Windows, use e.g. tasklist /fi "Imagename eq <exe>", and windows.OpenProcess/windows.TerminateProcess
+	// to kill found processes
+	pids := findRunningPIDs(exeName)
 	for _, pid := range pids {
 		log.Printf("Killing process: %d", pid)
-		err := syscall.Kill(pid, 9)
+		err := unix.Kill(pid, 9)
 		if err != nil {
 			return err
 		}
@@ -266,7 +269,7 @@ func ReloadPlugin() error {
 		return err
 	}
 
-	_ = killAllPIDs(findRunningPIDs(exeName))
+	_ = killAllPIDs(exeName)
 	_ = sh.RunV("pkill", "dlv")
 
 	// Wait for grafana to start plugin
@@ -303,7 +306,7 @@ func Debugger() error {
 	if err != nil {
 		return err
 	}
-	_ = killAllPIDs(findRunningPIDs(exeName))
+	_ = killAllPIDs(exeName)
 	_ = sh.RunV("pkill", "dlv")
 	if runtime.GOOS == "linux" {
 		if err := checkLinuxPtraceScope(); err != nil {
