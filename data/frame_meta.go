@@ -11,7 +11,7 @@ import (
 // this interface only exposes the values we want to be exposed
 type FrameMeta struct {
 	// Datasource specific values
-	Custom interface{} `json:"custom,omitempty"`
+	Custom map[string]interface{} `json:"custom,omitempty"`
 
 	// Stats is TODO
 	Stats interface{} `json:"stats,omitempty"`
