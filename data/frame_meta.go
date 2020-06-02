@@ -16,6 +16,10 @@ type FrameMeta struct {
 	// Stats is TODO
 	Stats interface{} `json:"stats,omitempty"`
 
+	// This is the raw query sent to the underlying system.  All macros and templating
+	// as been applied.  When metadata contains this value, it will be shown in the query inspector
+	ExecutedQueryString string `json:"executedQueryString,omitempty"`
+
 	// Notices provide additional information about the data in the Frame that
 	// Grafana can display to the user in the user interface.
 	Notices []Notice `json:"notices,omitempty"`
