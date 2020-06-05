@@ -351,7 +351,8 @@ func FrameTestCompareOptions() []cmp.Option {
 
 const maxLengthExceededStr = "..."
 
-// StringTable prints a human readable table of the Frame.
+// StringTable prints a human readable table of the Frame. The output should not be used for programtic consumption
+// or testing.
 // The table's width is limited to maxFields and the length is limited to maxRows (a value of -1 is unlimited).
 // If the width or length is excceded then last column or row displays "..." as the contents.
 func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
