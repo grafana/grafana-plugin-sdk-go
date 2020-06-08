@@ -151,9 +151,39 @@ func (f ConvertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 	}
 }
 
-// HealthCheckRequest converts protobuf version of a HealthCheckRequest to the SDK version.
-func (f ConvertFromProtobuf) HealthCheckRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
+// CheckHealthRequest converts protobuf version of a CheckHealthRequest to the SDK version.
+func (f ConvertFromProtobuf) CheckHealthRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
 	return &CheckHealthRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
+	}
+}
+
+// CheckHealthResponse converts protobuf version of a HealthCheckResponse to the SDK version.
+func (f ConvertFromProtobuf) CheckHealthResponse(protoResp *pluginv2.CheckHealthResponse) *CheckHealthResult {
+	status := HealthStatusUnknown
+	switch protoResp.Status {
+	case pluginv2.CheckHealthResponse_ERROR:
+		status = HealthStatusError
+	case pluginv2.CheckHealthResponse_OK:
+		status = HealthStatusOk
+	}
+
+	return &CheckHealthResult{
+		Status:      status,
+		Message:     protoResp.Message,
+		JSONDetails: protoResp.JsonDetails,
+	}
+}
+
+// CollectMetricsResponse converts protobuf version of a CollectMetricsResponse to the SDK version.
+func (f ConvertFromProtobuf) CollectMetricsResponse(protoResp *pluginv2.CollectMetricsResponse) *CollectMetricsResult {
+	var prometheusMetrics []byte
+
+	if protoResp.Metrics != nil {
+		prometheusMetrics = protoResp.Metrics.Prometheus
+	}
+
+	return &CollectMetricsResult{
+		PrometheusMetrics: prometheusMetrics,
 	}
 }
