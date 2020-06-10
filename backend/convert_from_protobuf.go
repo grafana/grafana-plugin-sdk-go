@@ -151,6 +151,20 @@ func (f ConvertFromProtobuf) CallResourceRequest(protoReq *pluginv2.CallResource
 	}
 }
 
+// CallResourceResponse converts protobuf version of a CallResourceResponse to the SDK version.
+func (f ConvertFromProtobuf) CallResourceResponse(protoResp *pluginv2.CallResourceResponse) *CallResourceResponse {
+	headers := map[string][]string{}
+	for k, values := range protoResp.Headers {
+		headers[k] = values.Values
+	}
+
+	return &CallResourceResponse{
+		Status:  int(protoResp.Code),
+		Body:    protoResp.Body,
+		Headers: headers,
+	}
+}
+
 // CheckHealthRequest converts protobuf version of a CheckHealthRequest to the SDK version.
 func (f ConvertFromProtobuf) CheckHealthRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
 	return &CheckHealthRequest{
