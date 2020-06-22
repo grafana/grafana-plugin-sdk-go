@@ -11,10 +11,14 @@ import (
 // this interface only exposes the values we want to be exposed
 type FrameMeta struct {
 	// Datasource specific values
-	Custom map[string]interface{} `json:"custom,omitempty"`
+	Custom interface{} `json:"custom,omitempty"`
 
 	// Stats is TODO
 	Stats interface{} `json:"stats,omitempty"`
+
+	// This is the raw query sent to the underlying system.  All macros and templating
+	// as been applied.  When metadata contains this value, it will be shown in the query inspector
+	ExecutedQueryString string `json:"executedQueryString,omitempty"`
 
 	// Notices provide additional information about the data in the Frame that
 	// Grafana can display to the user in the user interface.
