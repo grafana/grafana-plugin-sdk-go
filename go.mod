@@ -3,7 +3,7 @@ module github.com/grafana/grafana-plugin-sdk-go
 go 1.14
 
 require (
-	github.com/apache/arrow/go/arrow v0.0.0-20200403134915-89ce1cadb678
+	github.com/apache/arrow/go/arrow v0.0.0-20200629181129-68b1273cbbf7
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.3.4
 	github.com/google/go-cmp v0.3.1
