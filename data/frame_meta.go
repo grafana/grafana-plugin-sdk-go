@@ -13,21 +13,21 @@ type FrameMeta struct {
 	// Datasource specific values
 	Custom interface{} `json:"custom,omitempty"`
 
-	// Query Stats
+	// Stats is an array of query result statistics.
 	Stats []QueryResultMetaStat `json:"stats,omitempty"`
 
 	// Notices provide additional information about the data in the Frame that
 	// Grafana can display to the user in the user interface.
 	Notices []Notice `json:"notices,omitempty"`
 
-	// Used to track transformation IDs that were part of the processing
+	// Transformations is used to track transformation IDs that were part of the processing.
 	Transformations []string `json:"transformations,omitempty"`
 
-	// Currently used to show results in Explore only in preferred visualisation option
+	// PreferredVisualisationType is currently used to show results in Explore only in preferred visualisation option.
 	PreferredVisualisationType string `json:"preferredVisualisationType,omitempty"`
 
-	// This is the raw query sent to the underlying system.  All macros and templating
-	// as been applied.  When metadata contains this value, it will be shown in the query inspector
+	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
+	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
 }
 
