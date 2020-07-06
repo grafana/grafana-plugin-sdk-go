@@ -24,12 +24,26 @@ type FrameMeta struct {
 	Transformations []string `json:"transformations,omitempty"`
 
 	// PreferredVisualisationType is currently used to show results in Explore only in preferred visualisation option.
-	PreferredVisualisationType string `json:"preferredVisualisationType,omitempty"`
+	PreferredVisualization VisualizationType `json:"preferredVisualisationType,omitempty"`
 
 	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
 }
+
+const (
+	// Graph indicates the response should be visualized using a graph
+	Graph VisualizationType = "graph"
+
+	// Table indicates the response should be visualized using a table
+	Table = "table"
+
+	// Logs indicates the response should be visualized using a logs visualization
+	Logs = "logs"
+)
+
+// VisualizationType is used to indicate how the data should be visualized in explore
+type VisualizationType string
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string
 func FrameMetaFromJSON(jsonStr string) (*FrameMeta, error) {
@@ -50,13 +64,14 @@ func (f *Frame) AppendNotices(notices ...Notice) {
 	f.Meta.Notices = append(f.Meta.Notices, notices...)
 }
 
-// QueryResultMetaStat matches https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L53
+// QueryResultMetaStat is used for storing arbitrary statistics metadata related to a query and its result
+// e.g. total request time, data processing time. Matches https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L53
 type QueryResultMetaStat struct {
 	FieldConfig
 
 	DisplayName string `json:"displayName"`
 
-	Value float32 `json:"value"`
+	Value float64 `json:"value"`
 }
 
 // Notice provides a structure for presenting notifications in Grafana's user interface.
