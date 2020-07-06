@@ -13,16 +13,22 @@ type FrameMeta struct {
 	// Datasource specific values
 	Custom interface{} `json:"custom,omitempty"`
 
-	// Stats is TODO
-	Stats interface{} `json:"stats,omitempty"`
-
-	// This is the raw query sent to the underlying system.  All macros and templating
-	// as been applied.  When metadata contains this value, it will be shown in the query inspector
-	ExecutedQueryString string `json:"executedQueryString,omitempty"`
+	// Query Stats
+	Stats []QueryResultMetaStat `json:"stats,omitempty"`
 
 	// Notices provide additional information about the data in the Frame that
 	// Grafana can display to the user in the user interface.
 	Notices []Notice `json:"notices,omitempty"`
+
+	// Used to track transformation IDs that were part of the processing
+	Transformations []string `json:"transformations,omitempty"`
+
+	// Currently used to show results in Explore only in preferred visualisation option
+	PreferredVisualisationType string `json:"preferredVisualisationType,omitempty"`
+
+	// This is the raw query sent to the underlying system.  All macros and templating
+	// as been applied.  When metadata contains this value, it will be shown in the query inspector
+	ExecutedQueryString string `json:"executedQueryString,omitempty"`
 }
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string
@@ -42,6 +48,15 @@ func (f *Frame) AppendNotices(notices ...Notice) {
 		f.Meta = &FrameMeta{}
 	}
 	f.Meta.Notices = append(f.Meta.Notices, notices...)
+}
+
+// QueryResultMetaStat matches https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L53
+type QueryResultMetaStat struct {
+	FieldConfig
+
+	DisplayName string `json:"displayName"`
+
+	Value float32 `json:"value"`
 }
 
 // Notice provides a structure for presenting notifications in Grafana's user interface.
