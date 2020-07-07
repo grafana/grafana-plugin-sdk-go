@@ -80,7 +80,7 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 	for _, line := range lines {
 		idx = strings.Index(line, "=")
 		if idx < 2 {
-			continue // skip lines wiht out XXX=YYY
+			continue // skip lines without KEY=VALUE
 		}
 		key := line[:idx]
 		val := line[idx+1:]
@@ -124,7 +124,7 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 				metaString = string(meta)
 			}
 
-			str += fmt.Sprintf("Frame[%d] %s\n", idx, string(metaString))
+			str += fmt.Sprintf("Frame[%d] %s\n", idx, metaString)
 
 			table, _ := frame.StringTable(100, 10)
 			str += table
@@ -144,5 +144,5 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 		str += "FRAME=" + encoded + "\n"
 	}
 
-	return ioutil.WriteFile(path, []byte(str), 0644)
+	return ioutil.WriteFile(path, []byte(str), 0600)
 }
