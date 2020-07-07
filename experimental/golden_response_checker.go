@@ -39,12 +39,12 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, t *testing.T
 		t.Errorf("error reading golden file:  %s / %s", path, err.Error())
 		needsUpdate = true
 	} else {
-		diff := cmp.Diff(saved.Error, dr.Error)
-		if diff != "" {
+		if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
 			t.Errorf("errors mismatch %s (-want +got):\n%s", path, diff)
 			needsUpdate = true
-		} else if len(saved.Frames) != len(dr.Frames) {
-			t.Errorf("the number of frames returned is different:\n%s", path)
+		}
+		if diff := cmp.Diff(len(saved.Frames), len(dr.Frames)); diff != "" {
+			t.Errorf("Frame count mismatch (-want +got):\n%s", diff)
 			needsUpdate = true
 		} else {
 			// Check each frame
