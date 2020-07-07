@@ -20,9 +20,6 @@ type FrameMeta struct {
 	// Grafana can display to the user in the user interface.
 	Notices []Notice `json:"notices,omitempty"`
 
-	// Transformations is used to track transformation IDs that were part of the processing.
-	Transformations []string `json:"transformations,omitempty"`
-
 	// PreferredVisualisationType is currently used to show results in Explore only in preferred visualisation option.
 	PreferredVisualization VisualizationType `json:"preferredVisualisationType,omitempty"`
 
