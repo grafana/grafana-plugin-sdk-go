@@ -5,9 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
-	"os"
+	"log"
 	"strings"
-	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -16,52 +15,32 @@ import (
 
 // CheckGoldenDataResponse will verify that the stored file matches the given data.DataResponse
 // when the updateFile flag is set, this will both add errors to the response and update the saved file
-func CheckGoldenDataResponse(path string, dr *backend.DataResponse, t *testing.T, updateFile bool) {
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		if updateFile {
-			err = writeGoldenFile(path, dr)
-			if err == nil {
-				t.Errorf("golden file did not exist.  creating: %s", path)
-			} else {
-				t.Errorf("error creating golden file:  %s / %s", path, err.Error())
-			}
-		} else {
-			t.Errorf("missing golden file: %s", path)
-		}
-		return
-	}
-
-	needsUpdate := false
-
+func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile bool) error {
 	saved, err := readGoldenFile(path)
 	if err != nil {
-		t.Errorf("error reading golden file:  %s / %s", path, err.Error())
-		needsUpdate = true
+		err = fmt.Errorf("error reading golden file:  %s\n%s", path, err.Error())
 	} else {
 		if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
-			t.Errorf("errors mismatch %s (-want +got):\n%s", path, diff)
-			needsUpdate = true
+			err = fmt.Errorf("errors mismatch %s (-want +got):\n%s", path, diff)
 		}
 		if diff := cmp.Diff(len(saved.Frames), len(dr.Frames)); diff != "" {
-			t.Errorf("Frame count mismatch (-want +got):\n%s", diff)
-			needsUpdate = true
+			err = fmt.Errorf("Frame count mismatch (-want +got):\n%s", diff)
 		} else {
 			// Check each frame
 			for idx, frame := range dr.Frames {
 				expectedFrame := saved.Frames[idx]
 				if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
-					t.Errorf("Frame[%d] mismatch (-want +got):\n%s", idx, diff)
-					needsUpdate = true
+					err = fmt.Errorf("Frame[%d] mismatch (-want +got):\n%s", idx, diff)
 				}
 			}
 		}
 	}
 
-	if needsUpdate && updateFile {
+	if err != nil && updateFile {
 		_ = writeGoldenFile(path, dr)
-		t.Errorf("golden file updated: %s", path)
+		log.Printf("golden file updated: %s\n", path)
 	}
+	return err
 }
 
 const binaryDataSection = "\n====== TEST DATA RESPONSE (arrow base64) ======\n"
@@ -106,7 +85,8 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 	return dr, nil
 }
 
-// When writing the golden file, we add
+// The golden file has a text description at the top and a binary response at the bottom
+// The text part is not used for testing, but aims to give a legible response format
 func writeGoldenFile(path string, dr *backend.DataResponse) error {
 	str := ""
 	if dr.Error != nil {
