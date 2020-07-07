@@ -30,7 +30,7 @@ enable = [
   "misspell",
   "nakedret",
   "rowserrcheck",
-  "scopelint",
+  "exportloopref",
   "staticcheck",
   "structcheck",
   "stylecheck",
