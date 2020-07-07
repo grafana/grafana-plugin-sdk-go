@@ -14,7 +14,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// CheckGoldenDataResponse checks if the response matches a stored value
+// CheckGoldenDataResponse will verify that the stored file matches the given data.DataResponse
+// when the updateFile flag is set, this will both add errors to the response and update the saved file
 func CheckGoldenDataResponse(path string, dr *backend.DataResponse, t *testing.T, updateFile bool) {
 	_, err := os.Stat(path)
 	if os.IsNotExist(err) {
@@ -31,22 +32,20 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, t *testing.T
 		return
 	}
 
+	needsUpdate := false
+
 	saved, err := readGoldenFile(path)
 	if err != nil {
 		t.Errorf("error reading golden file:  %s / %s", path, err.Error())
-		return
-	}
-
-	needsUpdate := false
-
-	// Check error matches
-	if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
+		needsUpdate = true
+	} else if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
 		t.Errorf("errors mismatch %s (-want +got):\n%s", path, diff)
 		needsUpdate = true
 	} else if len(saved.Frames) != len(dr.Frames) {
 		t.Errorf("the number of frames returned is different:\n%s", path)
 		needsUpdate = true
 	} else {
+		// Check each frame
 		for idx, frame := range dr.Frames {
 			expectedFrame := saved.Frames[idx]
 			if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
@@ -62,7 +61,7 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, t *testing.T
 	}
 }
 
-const binaryDataSection = "\n=== ENCODED DATA RESPONSE (arrow base64) ===\n\n"
+const binaryDataSection = "\n====== TEST DATA RESPONSE (arrow base64) ======\n"
 
 func readGoldenFile(path string) (*backend.DataResponse, error) {
 	bytes, err := ioutil.ReadFile(path)
@@ -104,6 +103,7 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 	return dr, nil
 }
 
+// When writing the golden file, we add
 func writeGoldenFile(path string, dr *backend.DataResponse) error {
 	str := ""
 	if dr.Error != nil {
