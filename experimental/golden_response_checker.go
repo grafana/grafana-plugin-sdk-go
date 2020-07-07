@@ -38,19 +38,21 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, t *testing.T
 	if err != nil {
 		t.Errorf("error reading golden file:  %s / %s", path, err.Error())
 		needsUpdate = true
-	} else if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
-		t.Errorf("errors mismatch %s (-want +got):\n%s", path, diff)
-		needsUpdate = true
-	} else if len(saved.Frames) != len(dr.Frames) {
-		t.Errorf("the number of frames returned is different:\n%s", path)
-		needsUpdate = true
 	} else {
-		// Check each frame
-		for idx, frame := range dr.Frames {
-			expectedFrame := saved.Frames[idx]
-			if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
-				t.Errorf("Frame[%d] mismatch (-want +got):\n%s", idx, diff)
-				needsUpdate = true
+		if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
+			t.Errorf("errors mismatch %s (-want +got):\n%s", path, diff)
+			needsUpdate = true
+		} else if len(saved.Frames) != len(dr.Frames) {
+			t.Errorf("the number of frames returned is different:\n%s", path)
+			needsUpdate = true
+		} else {
+			// Check each frame
+			for idx, frame := range dr.Frames {
+				expectedFrame := saved.Frames[idx]
+				if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
+					t.Errorf("Frame[%d] mismatch (-want +got):\n%s", idx, diff)
+					needsUpdate = true
+				}
 			}
 		}
 	}
@@ -111,7 +113,6 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 	}
 
 	if dr.Frames != nil {
-
 		for idx, frame := range dr.Frames {
 			metaString := ""
 			if frame.Meta != nil {
