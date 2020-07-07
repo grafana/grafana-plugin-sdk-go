@@ -3,11 +3,27 @@ package backend
 import (
 	"bytes"
 	"context"
+	"errors"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 )
+
+// UnhealthyError should be returned by CheckHealth implementations when they are simply unhealthy, as opposed
+// to a general internal error.
+type UnhealthyError struct {
+	message string
+}
+
+func (e UnhealthyError) Error() string {
+	return e.message
+}
+
+func (e UnhealthyError) Is(err error) bool {
+	_, ok := err.(UnhealthyError)
+	return ok
+}
 
 // diagnosticsSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type diagnosticsSDKAdapter struct {
@@ -47,8 +63,16 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 	if a.checkHealthHandler != nil {
 		res, err := a.checkHealthHandler.CheckHealth(ctx, FromProto().CheckHealthRequest(protoReq))
 		if err != nil {
-			return nil, err
+			if errors.Is(err, UnhealthyError{}) {
+				res = &CheckHealthResult{
+					Status:  HealthStatusError,
+					Message: err.Error(),
+				}
+			} else {
+				return nil, err
+			}
 		}
+
 		return ToProto().CheckHealthResponse(res), nil
 	}
 
