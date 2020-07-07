@@ -22,10 +22,16 @@ func TestGoldenResponseChecker(t *testing.T) {
 			}).SetConfig(&data.FieldConfig{Unit: "Percent"}),
 		),
 		data.NewFrame("Frame Two",
-			data.NewField("single string", nil, []string{
+			data.NewField("single string", data.Labels{"a": "b"}, []string{
 				"a", "b", "c",
 			}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
 		),
+	}
+	dr.Frames[0].Meta = &data.FrameMeta{
+		ExecutedQueryString: "SELECT * FROM X",
+		Notices: []data.Notice{
+			{Severity: data.NoticeSeverityInfo, Text: "hello"},
+		},
 	}
 
 	goldenFile := filepath.Join("testdata", "sample.golden.txt")

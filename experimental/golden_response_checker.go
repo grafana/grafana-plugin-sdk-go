@@ -115,22 +115,14 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 
 	if dr.Frames != nil {
 		for idx, frame := range dr.Frames {
-			metaString := ""
+			str += fmt.Sprintf("Frame[%d] ", idx)
 			if frame.Meta != nil {
-				frame.Meta.Custom = nil
-				if frame.Meta.Stats != nil {
-					frame.Meta.Stats = make([]string, 0) // avoid timing changes
-				}
-
 				meta, _ := json.MarshalIndent(frame.Meta, "", "    ")
-				metaString = string(meta)
+				str += string(meta)
 			}
 
-			str += fmt.Sprintf("Frame[%d] %s\n", idx, metaString)
-
 			table, _ := frame.StringTable(100, 10)
-			str += table
-			str += "\n\n\n"
+			str += "\n" + table + "\n\n"
 		}
 	}
 
