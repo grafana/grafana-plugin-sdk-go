@@ -20,6 +20,7 @@ func (e UnhealthyError) Error() string {
 	return e.message
 }
 
+// Is this equivalent to a given error?
 func (e UnhealthyError) Is(err error) bool {
 	_, ok := err.(UnhealthyError)
 	return ok
