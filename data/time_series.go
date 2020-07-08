@@ -528,33 +528,31 @@ func SortWideFrameFields(frame *Frame) error {
 	if tsSchema.Type != TimeSeriesTypeWide {
 		return fmt.Errorf("field sorting for a wide time series frame called on a series that is not a wide frame")
 	}
-	sortWideFrameFields(&frame.Fields, tsSchema)
-	return nil
-}
 
-func sortWideFrameFields(fields *[]*Field, tsSchema TimeSeriesSchema) {
 	// capture and remove the time index
-	timeIndexField := (*fields)[tsSchema.TimeIndex]
-	(*fields)[len(*fields)-1], (*fields)[tsSchema.TimeIndex] = (*fields)[tsSchema.TimeIndex], (*fields)[len(*fields)-1]
-	*fields = (*fields)[:len(*fields)-1]
+	timeIndexField := frame.Fields[tsSchema.TimeIndex]
+	frame.Fields[len(frame.Fields)-1], frame.Fields[tsSchema.TimeIndex] = frame.Fields[tsSchema.TimeIndex], (frame.Fields)[len(frame.Fields)-1]
+	frame.Fields = frame.Fields[:len(frame.Fields)-1]
 
-	// sort
-	sort.SliceStable(*fields, func(i, j int) bool {
-		if (*fields)[i].Name < (*fields)[j].Name {
+	sort.SliceStable(frame.Fields, func(i, j int) bool {
+		iField := frame.Fields[i]
+		jField := frame.Fields[j]
+		if iField.Name < jField.Name {
 			return true
 		}
-		if (*fields)[i].Name > (*fields)[j].Name {
+		if iField.Name > jField.Name {
 			return false
 		}
-		if (*fields)[i].Labels == nil && (*fields)[j].Labels != nil {
+		if iField.Labels == nil && jField.Labels != nil {
 			return true
 		}
-		if (*fields)[i].Labels != nil && (*fields)[j].Labels == nil {
+		if iField.Labels != nil && jField.Labels == nil {
 			return false
 		}
-		return (*fields)[i].Labels.String() < (*fields)[j].Labels.String()
+		return iField.Labels.String() < jField.Labels.String()
 	})
 
-	// restore the time index as first element
-	*fields = append([]*Field{timeIndexField}, *fields...)
+	frame.Fields = append(Fields{timeIndexField}, frame.Fields...)
+
+	return nil
 }
