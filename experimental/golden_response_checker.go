@@ -19,26 +19,39 @@ import (
 // when the updateFile flag is set, this will both add errors to the response and update the saved file
 func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile bool) error {
 	saved, err := readGoldenFile(path)
+
 	if err != nil {
-		err = fmt.Errorf("error reading golden file:  %s\n%s", path, err.Error())
-	} else {
-		if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
-			err = fmt.Errorf("errors mismatch %s (-want +got):\n%s", path, diff)
-		}
-		if diff := cmp.Diff(len(saved.Frames), len(dr.Frames)); diff != "" {
-			err = fmt.Errorf("Frame count mismatch (-want +got):\n%s", diff)
-		} else {
-			// Check each frame
-			for idx, frame := range dr.Frames {
-				expectedFrame := saved.Frames[idx]
-				if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
-					err = fmt.Errorf("Frame[%d] mismatch (-want +got):\n%s", idx, diff)
-				}
-			}
+		return errorAfterUpdate(fmt.Errorf("error reading golden file:  %s\n%s", path, err.Error()), path, dr, updateFile)
+	}
+
+	if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
+		return errorAfterUpdate(fmt.Errorf("errors mismatch %s (-want +got):\n%s", path, diff), path, dr, updateFile)
+	}
+
+	// When the frame count is different, you can check manually
+	if diff := cmp.Diff(len(saved.Frames), len(dr.Frames)); diff != "" {
+		return errorAfterUpdate(fmt.Errorf("Frame count mismatch (-want +got):\n%s", diff), path, dr, updateFile)
+	}
+
+	errorString := ""
+
+	// Check each frame
+	for idx, frame := range dr.Frames {
+		expectedFrame := saved.Frames[idx]
+		if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
+			errorString += fmt.Sprintf("Frame[%d] mismatch (-want +got):\n%s\n", idx, diff)
 		}
 	}
 
-	if err != nil && updateFile {
+	if len(errorString) > 0 {
+		return errorAfterUpdate(fmt.Errorf(errorString), path, dr, updateFile)
+	}
+
+	return nil // OK
+}
+
+func errorAfterUpdate(err error, path string, dr *backend.DataResponse, updateFile bool) error {
+	if updateFile {
 		_ = writeGoldenFile(path, dr)
 		log.Printf("golden file updated: %s\n", path)
 	}
