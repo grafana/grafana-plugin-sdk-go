@@ -321,7 +321,10 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 			wideFrame.Set(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
 		}
 	}
-
+	err = SortWideFrameFields(wideFrame)
+	if err != nil {
+		return nil, err
+	}
 	return wideFrame, nil
 }
 
@@ -445,7 +448,6 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			longFrameCounter++
 		}
 	}
-
 	return longFrame, nil
 }
 

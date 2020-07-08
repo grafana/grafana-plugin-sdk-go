@@ -397,12 +397,12 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 	// Name: Wide
 	// Dimensions: 5 Fields by 2 Rows
 	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
-	// | Name: time                    | Name: aMetric          | Name: bMetric          | Name: aMetric          | Name: bMetric          |
-	// | Labels:                       | Labels: SomeFactor=foo | Labels: SomeFactor=foo | Labels: SomeFactor=bar | Labels: SomeFactor=bar |
+	// | Name: time                    | Name: aMetric          | Name: aMetric          | Name: bMetric          | Name: bMetric          |
+	// | Labels:                       | Labels: SomeFactor=bar | Labels: SomeFactor=foo | Labels: SomeFactor=bar | Labels: SomeFactor=foo |
 	// | Type: []time.Time             | Type: []float64        | Type: []float64        | Type: []float64        | Type: []float64        |
 	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
-	// | 2020-01-02 03:04:00 +0000 UTC | 2                      | 10                     | 5                      | 15                     |
-	// | 2020-01-02 03:05:00 +0000 UTC | 3                      | 11                     | 6                      | 16                     |
+	// | 2020-01-02 03:04:00 +0000 UTC | 5                      | 2                      | 15                     | 10                     |
+	// | 2020-01-02 03:05:00 +0000 UTC | 6                      | 3                      | 16                     | 11                     |
 	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
 }
 
