@@ -13,17 +13,34 @@ type FrameMeta struct {
 	// Datasource specific values
 	Custom interface{} `json:"custom,omitempty"`
 
-	// Stats is TODO
-	Stats interface{} `json:"stats,omitempty"`
-
-	// This is the raw query sent to the underlying system.  All macros and templating
-	// as been applied.  When metadata contains this value, it will be shown in the query inspector
-	ExecutedQueryString string `json:"executedQueryString,omitempty"`
+	// Stats is an array of query result statistics.
+	Stats []QueryStat `json:"stats,omitempty"`
 
 	// Notices provide additional information about the data in the Frame that
 	// Grafana can display to the user in the user interface.
 	Notices []Notice `json:"notices,omitempty"`
+
+	// PreferredVisualisationType is currently used to show results in Explore only in preferred visualisation option.
+	PreferredVisualization VisType `json:"preferredVisualisationType,omitempty"`
+
+	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
+	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
+	ExecutedQueryString string `json:"executedQueryString,omitempty"`
 }
+
+const (
+	// VisTypeGraph indicates the response should be visualized using a graph.
+	VisTypeGraph VisType = "graph"
+
+	// VisTypeTable indicates the response should be visualized using a table.
+	VisTypeTable = "table"
+
+	// VisTypeLogs indicates the response should be visualized using a logs visualization.
+	VisTypeLogs = "logs"
+)
+
+// VisType is used to indicate how the data should be visualized in explore.
+type VisType string
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string
 func FrameMetaFromJSON(jsonStr string) (*FrameMeta, error) {
@@ -42,6 +59,15 @@ func (f *Frame) AppendNotices(notices ...Notice) {
 		f.Meta = &FrameMeta{}
 	}
 	f.Meta.Notices = append(f.Meta.Notices, notices...)
+}
+
+// QueryStat is used for storing arbitrary statistics metadata related to a query and its result, e.g. total request time, data processing time.
+// The embedded FieldConfig's display name must be set.
+// It corresponds to the QueryResultMetaStat on the frontend (https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L53).
+type QueryStat struct {
+	FieldConfig
+
+	Value float64 `json:"value"`
 }
 
 // Notice provides a structure for presenting notifications in Grafana's user interface.
