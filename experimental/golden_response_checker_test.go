@@ -9,7 +9,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-var update = flag.Bool("update", false, "update.golden.data files")
+var update = flag.Bool("update", true, "update.golden.data files")
 
 func TestGoldenResponseChecker(t *testing.T) {
 	dr := &backend.DataResponse{}

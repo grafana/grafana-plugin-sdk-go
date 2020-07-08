@@ -1,11 +1,13 @@
 package experimental
 
 import (
+	"bufio"
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -43,45 +45,58 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile b
 	return err
 }
 
-const binaryDataSection = "\n====== TEST DATA RESPONSE (arrow base64) ======\n"
+const binaryDataSection = "====== TEST DATA RESPONSE (arrow base64) ======"
 
 func readGoldenFile(path string) (*backend.DataResponse, error) {
-	bytes, err := ioutil.ReadFile(path)
+	file, err := os.Open(path)
 	if err != nil {
 		return nil, err
 	}
-	text := string(bytes)
-	idx := strings.LastIndex(text, binaryDataSection)
-	if idx < 0 {
-		return nil, fmt.Errorf("missing saved binary response")
-	}
-	lines := strings.Split(text[idx+len(binaryDataSection):], "\n")
+	defer file.Close()
 
 	dr := &backend.DataResponse{}
 
-	for _, line := range lines {
-		idx = strings.Index(line, "=")
-		if idx < 2 {
-			continue // skip lines without KEY=VALUE
-		}
-		key := line[:idx]
-		val := line[idx+1:]
+	foundDataSection := false
 
-		if key == "ERROR" {
-			return nil, fmt.Errorf("error matching not yet supported: %s", line)
-		}
-		if key == "FRAME" {
-			bytes, err = base64.StdEncoding.DecodeString(val)
-			if err != nil {
-				return nil, err
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := scanner.Text()
+		if foundDataSection {
+			idx := strings.Index(line, "=")
+			if idx < 2 {
+				continue // skip lines without KEY=VALUE
 			}
-			frame, err := data.UnmarshalArrowFrame(bytes)
-			if err != nil {
-				return nil, err
+
+			key := line[:idx]
+			val := line[idx+1:]
+
+			if key == "ERROR" {
+				return nil, fmt.Errorf("error matching not yet supported: %s", line)
 			}
-			dr.Frames = append(dr.Frames, frame)
+			if key == "FRAME" {
+				bytes, err := base64.StdEncoding.DecodeString(val)
+				if err != nil {
+					return nil, err
+				}
+				frame, err := data.UnmarshalArrowFrame(bytes)
+				if err != nil {
+					return nil, err
+				}
+				dr.Frames = append(dr.Frames, frame)
+			}
+		} else if strings.HasPrefix(line, binaryDataSection) {
+			foundDataSection = true
 		}
 	}
+
+	if err := scanner.Err(); err != nil {
+		return nil, err // error reading file
+	}
+
+	if !foundDataSection {
+		return nil, fmt.Errorf("No response found in: %s", path)
+	}
+
 	return dr, nil
 }
 
@@ -110,13 +125,14 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 	str += binaryDataSection
 
 	if dr.Error != nil {
-		str += "ERROR=" + dr.Error.Error() + "\n"
+		str += "\nERROR=" + dr.Error.Error()
 	}
 	for _, frame := range dr.Frames {
 		bytes, _ := frame.MarshalArrow()
 		encoded := base64.StdEncoding.EncodeToString(bytes)
-		str += "FRAME=" + encoded + "\n"
+		str += "\nFRAME=" + encoded
 	}
+	str += "\n"
 
 	return ioutil.WriteFile(path, []byte(str), 0600)
 }
