@@ -92,5 +92,4 @@ func TestSortWideFrameFields(t *testing.T) {
 			}
 		})
 	}
-
 }
