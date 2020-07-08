@@ -552,6 +552,7 @@ func SortWideFrameFields(frame *Frame) error {
 		return iField.Labels.String() < jField.Labels.String()
 	})
 
+	// restore the time index back as the first field
 	frame.Fields = append(Fields{timeIndexField}, frame.Fields...)
 
 	return nil
