@@ -516,11 +516,43 @@ func labelsTupleKey(l Labels) (string, error) {
 	return t.MapKey()
 }
 
-// sortWideFrameFields (WIP)
-// Sort the order of a Frame Fields when that is of a wide time series schema.
-// Keep the Datetime Column First
-// Then sort Fields by string representation of their Name + Labels
-// Needs to be stable sort
-func sortWideFrameFields(frame *Frame) error {
+// SortWideFrameFields sorts the order of a wide time series Frame's Fields.
+// It the frame is not a WideFrame, than an error is returned.
+//
+// The Time that is the time index (the first time field of the original frame) is sorted first.
+// Then Fields are sorted by their name followed by the string representation of their labels.
+func SortWideFrameFields(frame *Frame) error {
+	tsSchema := frame.TimeSeriesSchema()
+	if tsSchema.Type != TimeSeriesTypeWide {
+		return fmt.Errorf("field sorting for a wide time series frame called on a series that is not a wide frame")
+	}
+	sortWideFrameFields(&frame.Fields, tsSchema)
 	return nil
+}
+
+func sortWideFrameFields(fields *[]*Field, tsSchema TimeSeriesSchema) {
+	// capture and remove the time index
+	timeIndexField := (*fields)[tsSchema.TimeIndex]
+	(*fields)[len(*fields)-1], (*fields)[tsSchema.TimeIndex] = (*fields)[tsSchema.TimeIndex], (*fields)[len(*fields)-1]
+	*fields = (*fields)[:len(*fields)-1]
+
+	// sort
+	sort.SliceStable(*fields, func(i, j int) bool {
+		if (*fields)[i].Name < (*fields)[j].Name {
+			return true
+		}
+		if (*fields)[i].Name > (*fields)[j].Name {
+			return false
+		}
+		if (*fields)[i].Labels == nil && (*fields)[j].Labels != nil {
+			return true
+		}
+		if (*fields)[i].Labels != nil && (*fields)[j].Labels == nil {
+			return false
+		}
+		return (*fields)[i].Labels.String() < (*fields)[j].Labels.String()
+	})
+
+	// restore the time index as first element
+	*fields = append([]*Field{timeIndexField}, *fields...)
 }
