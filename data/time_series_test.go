@@ -1381,3 +1381,4 @@ func TestFloatAt(t *testing.T) {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 }
+

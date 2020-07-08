@@ -515,3 +515,12 @@ func labelsTupleKey(l Labels) (string, error) {
 	t := labelsToTupleLabels(l)
 	return t.MapKey()
 }
+
+// sortWideFrameFields (WIP)
+// Sort the order of a Frame Fields when that is of a wide time series schema.
+// Keep the Datetime Column First
+// Then sort Fields by string representation of their Name + Labels
+// Needs to be stable sort
+func sortWideFrameFields(frame *Frame) error {
+	return nil
+}
