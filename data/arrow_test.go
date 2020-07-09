@@ -225,12 +225,11 @@ func goldenDF() *data.Frame {
 			timePtr(time.Unix(0, maxEcma6Int)),
 			timePtr(time.Unix(0, math.MaxInt64)),
 		}),
-	)
+	).SetMeta(&data.FrameMeta{
+		Custom: map[string]interface{}{"Hi": "there"},
+	})
 
 	df.RefID = "A"
-	df.Meta = &data.FrameMeta{
-		Custom: map[string]interface{}{"Hi": "there"},
-	}
 	return df
 }
 
