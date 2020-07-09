@@ -524,7 +524,7 @@ func (p FieldType) Nullable() bool {
 	return false
 }
 
-// Numeric returns if Field type is a nullable type
+// Numeric returns if Field type is a nullable type.
 func (p FieldType) Numeric() bool {
 	switch p {
 	case FieldTypeInt8, FieldTypeInt16, FieldTypeInt32, FieldTypeInt64:
@@ -543,6 +543,11 @@ func (p FieldType) Numeric() bool {
 		return true
 	}
 	return false
+}
+
+// Time returns if Field type is a time type (FieldTypeTime or FieldTypeNullableTime).
+func (p FieldType) Time() bool {
+	return p == FieldTypeTime || p == FieldTypeNullableTime
 }
 
 // numericFieldTypes is an array of FieldTypes that are numeric.
