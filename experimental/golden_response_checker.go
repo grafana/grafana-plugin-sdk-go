@@ -118,14 +118,14 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 // The golden file has a text description at the top and a binary response at the bottom
 // The text part is not used for testing, but aims to give a legible response format
 func writeGoldenFile(path string, dr *backend.DataResponse) error {
-	str := ""
+	str := "🌟 This was machine generated.  Do not edit. 🌟\n"
 	if dr.Error != nil {
-		str = fmt.Sprintf("%+v", dr.Error)
+		str = fmt.Sprintf("\nERROR: %+v", dr.Error)
 	}
 
 	if dr.Frames != nil {
 		for idx, frame := range dr.Frames {
-			str += fmt.Sprintf("Frame[%d] ", idx)
+			str += fmt.Sprintf("\nFrame[%d] ", idx)
 			if frame.Meta != nil {
 				meta, _ := json.MarshalIndent(frame.Meta, "", "    ")
 				str += string(meta)
