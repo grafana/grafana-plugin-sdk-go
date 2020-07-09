@@ -178,6 +178,12 @@ func NewFrame(name string, fields ...*Field) *Frame {
 	}
 }
 
+// SetMeta modifies the Frame's Meta Property to be set to m and returns the Frame.
+func (f *Frame) SetMeta(m *FrameMeta) *Frame {
+	f.Meta = m
+	return f
+}
+
 // Rows returns the number of rows in the frame.
 func (f *Frame) Rows() int {
 	if len(f.Fields) > 0 {
