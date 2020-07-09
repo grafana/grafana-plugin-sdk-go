@@ -30,7 +30,7 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile b
 
 	// When the frame count is different, you can check manually
 	if diff := cmp.Diff(len(saved.Frames), len(dr.Frames)); diff != "" {
-		return errorAfterUpdate(fmt.Errorf("Frame count mismatch (-want +got):\n%s", diff), path, dr, updateFile)
+		return errorAfterUpdate(fmt.Errorf("frame count mismatch (-want +got):\n%s", diff), path, dr, updateFile)
 	}
 
 	errorString := ""
@@ -39,7 +39,7 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile b
 	for idx, frame := range dr.Frames {
 		expectedFrame := saved.Frames[idx]
 		if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
-			errorString += fmt.Sprintf("Frame[%d] mismatch (-want +got):\n%s\n", idx, diff)
+			errorString += fmt.Sprintf("frame[%d] mismatch (-want +got):\n%s\n", idx, diff)
 		}
 	}
 
@@ -107,7 +107,7 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 	}
 
 	if !foundDataSection {
-		return nil, fmt.Errorf("No response found in: %s", path)
+		return nil, fmt.Errorf("no saved result found in: %s", path)
 	}
 
 	return dr, nil
