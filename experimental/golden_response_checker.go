@@ -75,18 +75,18 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 	for scanner.Scan() {
 		line := scanner.Text()
 		if foundDataSection {
-			idx := strings.Index(line, "=")
-			if idx < 2 {
+			parts := strings.SplitN(line, "=", 2)
+			if len(parts) != 2 {
 				continue // skip lines without KEY=VALUE
 			}
 
-			key := line[:idx]
-			val := line[idx+1:]
+			key := parts[0]
+			val := parts[1]
 
-			if key == "ERROR" {
+			switch key {
+			case "ERROR":
 				return nil, fmt.Errorf("error matching not yet supported: %s", line)
-			}
-			if key == "FRAME" {
+			case "FRAME":
 				bytes, err := base64.StdEncoding.DecodeString(val)
 				if err != nil {
 					return nil, err
@@ -96,6 +96,8 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 					return nil, err
 				}
 				dr.Frames = append(dr.Frames, frame)
+			default:
+				return nil, fmt.Errorf("unknown saved key: %s", key)
 			}
 		} else if strings.HasPrefix(line, binaryDataSection) {
 			foundDataSection = true
