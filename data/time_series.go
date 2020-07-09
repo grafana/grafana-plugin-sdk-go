@@ -321,7 +321,10 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 			wideFrame.Set(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
 		}
 	}
-
+	err = SortWideFrameFields(wideFrame)
+	if err != nil {
+		return nil, err
+	}
 	return wideFrame, nil
 }
 
@@ -445,7 +448,6 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			longFrameCounter++
 		}
 	}
-
 	return longFrame, nil
 }
 
@@ -514,4 +516,44 @@ func labelsTupleKey(l Labels) (string, error) {
 	// sorts twice, meh.
 	t := labelsToTupleLabels(l)
 	return t.MapKey()
+}
+
+// SortWideFrameFields sorts the order of a wide time series Frame's Fields.
+// It the frame is not a WideFrame, than an error is returned.
+//
+// The Time that is the time index (the first time field of the original frame) is sorted first.
+// Then Fields are sorted by their name followed by the string representation of their labels.
+func SortWideFrameFields(frame *Frame) error {
+	tsSchema := frame.TimeSeriesSchema()
+	if tsSchema.Type != TimeSeriesTypeWide {
+		return fmt.Errorf("field sorting for a wide time series frame called on a series that is not a wide frame")
+	}
+
+	// capture and remove the time index
+	timeIndexField := frame.Fields[tsSchema.TimeIndex]
+	frame.Fields[len(frame.Fields)-1], frame.Fields[tsSchema.TimeIndex] = frame.Fields[tsSchema.TimeIndex], (frame.Fields)[len(frame.Fields)-1]
+	frame.Fields = frame.Fields[:len(frame.Fields)-1]
+
+	sort.SliceStable(frame.Fields, func(i, j int) bool {
+		iField := frame.Fields[i]
+		jField := frame.Fields[j]
+		if iField.Name < jField.Name {
+			return true
+		}
+		if iField.Name > jField.Name {
+			return false
+		}
+		if iField.Labels == nil && jField.Labels != nil {
+			return true
+		}
+		if iField.Labels != nil && jField.Labels == nil {
+			return false
+		}
+		return iField.Labels.String() < jField.Labels.String()
+	})
+
+	// restore the time index back as the first field
+	frame.Fields = append(Fields{timeIndexField}, frame.Fields...)
+
+	return nil
 }

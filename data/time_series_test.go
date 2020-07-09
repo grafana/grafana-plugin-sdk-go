@@ -197,13 +197,13 @@ func TestLongToWide(t *testing.T) {
 					1.0,
 					3.0,
 				}),
-				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []int64{
-					1,
-					3,
-				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []float64{
 					2.0,
 					4.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat"}, []int64{
+					1,
+					3,
 				}),
 				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []int64{
 					2,
@@ -254,13 +254,13 @@ func TestLongToWide(t *testing.T) {
 					1.0,
 					3.0,
 				}),
-				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []int64{
-					1,
-					3,
-				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []float64{
 					2.0,
 					4.0,
+				}),
+				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []int64{
+					1,
+					3,
 				}),
 				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []int64{
 					2,
@@ -355,18 +355,19 @@ func TestLongToWide(t *testing.T) {
 					0.0,
 					0.0,
 				}),
-				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []float64{
-					2.0,
-					4.0,
-					0.0,
-					6.0,
-				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []float64{
 					0.0,
 					0.0,
 					55.0,
 					0.0,
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []float64{
+					2.0,
+					4.0,
+					0.0,
+					6.0,
 				})),
+
 			Err: require.NoError,
 		},
 		{
@@ -419,17 +420,17 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					nil,
 				}),
-				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*float64{
-					float64Ptr(2.0),
-					float64Ptr(4.0),
-					nil,
-					float64Ptr(6.0),
-				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
 					nil,
 					nil,
 					float64Ptr(55.0),
 					nil,
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*float64{
+					float64Ptr(2.0),
+					float64Ptr(4.0),
+					nil,
+					float64Ptr(6.0),
 				})),
 			Err: require.NoError,
 		},
@@ -494,11 +495,11 @@ func TestLongToWide(t *testing.T) {
 					-1.0,
 					-1.0,
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []int64{
-					1,
-					3,
-					-1,
-					-1,
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []float64{
+					-1.0,
+					-1.0,
+					55.0,
+					-1.0,
 				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []float64{
 					2.0,
@@ -506,23 +507,23 @@ func TestLongToWide(t *testing.T) {
 					-1.0,
 					6.0,
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []int64{
-					2,
-					4,
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []int64{
+					1,
+					3,
 					-1,
-					6,
-				}),
-				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []float64{
-					-1.0,
-					-1.0,
-					55.0,
-					-1.0,
+					-1,
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []int64{
 					-1,
 					-1,
 					55,
 					-1,
+				}),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []int64{
+					2,
+					4,
+					-1,
+					6,
 				}),
 			),
 			Err: require.NoError,
@@ -588,11 +589,11 @@ func TestLongToWide(t *testing.T) {
 					float64Ptr(3.0),
 					float64Ptr(3.0),
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
-					int64Ptr(3),
-					int64Ptr(3),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
+					nil,
+					nil,
+					float64Ptr(55.0),
+					float64Ptr(55.0),
 				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*float64{
 					float64Ptr(2.0),
@@ -600,23 +601,23 @@ func TestLongToWide(t *testing.T) {
 					float64Ptr(4.0),
 					float64Ptr(6.0),
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2),
-					int64Ptr(4),
-					int64Ptr(4),
-					int64Ptr(6),
-				}),
-				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
-					nil,
-					nil,
-					float64Ptr(55.0),
-					float64Ptr(55.0),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(3),
+					int64Ptr(3),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
 					nil,
 					nil,
 					int64Ptr(55),
 					int64Ptr(55),
+				}),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(4),
+					int64Ptr(4),
+					int64Ptr(6),
 				}),
 			),
 			Err: require.NoError,
@@ -682,10 +683,10 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					nil,
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
 					nil,
+					nil,
+					float64Ptr(55.0),
 					nil,
 				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*float64{
@@ -694,16 +695,10 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					float64Ptr(6.0),
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2),
-					int64Ptr(4),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
 					nil,
-					int64Ptr(6),
-				}),
-				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
-					nil,
-					nil,
-					float64Ptr(55.0),
 					nil,
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
@@ -711,6 +706,12 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					int64Ptr(55),
 					nil,
+				}),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(4),
+					nil,
+					int64Ptr(6),
 				}),
 			),
 			Err: require.NoError,
@@ -776,11 +777,11 @@ func TestLongToWide(t *testing.T) {
 					float64Ptr(-1.0),
 					float64Ptr(-1.0),
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
-					int64Ptr(-1),
-					int64Ptr(-1),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
+					float64Ptr(-1.0),
+					float64Ptr(-1.0),
+					float64Ptr(55.0),
+					float64Ptr(-1.0),
 				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*float64{
 					float64Ptr(2.0),
@@ -788,23 +789,23 @@ func TestLongToWide(t *testing.T) {
 					float64Ptr(-1.0),
 					float64Ptr(6.0),
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2),
-					int64Ptr(4),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
 					int64Ptr(-1),
-					int64Ptr(6),
-				}),
-				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
-					float64Ptr(-1.0),
-					float64Ptr(-1.0),
-					float64Ptr(55.0),
-					float64Ptr(-1.0),
+					int64Ptr(-1),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
 					int64Ptr(-1),
 					int64Ptr(-1),
 					int64Ptr(55),
 					int64Ptr(-1),
+				}),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(4),
+					int64Ptr(-1),
+					int64Ptr(6),
 				}),
 			),
 			Err: require.NoError,
@@ -869,11 +870,11 @@ func TestLongToWide(t *testing.T) {
 					float64Ptr(3.0),
 					float64Ptr(3.0),
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
-					int64Ptr(3),
-					int64Ptr(3),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
+					nil,
+					nil,
+					float64Ptr(55.0),
+					float64Ptr(55.0),
 				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*float64{
 					float64Ptr(2.0),
@@ -881,23 +882,23 @@ func TestLongToWide(t *testing.T) {
 					float64Ptr(4.0),
 					float64Ptr(6.0),
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2),
-					int64Ptr(4),
-					int64Ptr(4),
-					int64Ptr(6),
-				}),
-				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
-					nil,
-					nil,
-					float64Ptr(55.0),
-					float64Ptr(55.0),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
+					int64Ptr(3),
+					int64Ptr(3),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
 					nil,
 					nil,
 					int64Ptr(55),
 					int64Ptr(55),
+				}),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
+					int64Ptr(2),
+					int64Ptr(4),
+					int64Ptr(4),
+					int64Ptr(6),
 				}),
 			),
 			Err: require.NoError,
@@ -962,10 +963,10 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					nil,
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
+				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
 					nil,
+					nil,
+					float64Ptr(55.0),
 					nil,
 				}),
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*float64{
@@ -974,16 +975,10 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					float64Ptr(6.0),
 				}),
-				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2.0),
-					int64Ptr(4.0),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
+					int64Ptr(1),
+					int64Ptr(3),
 					nil,
-					int64Ptr(6.0),
-				}),
-				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*float64{
-					nil,
-					nil,
-					float64Ptr(55.0),
 					nil,
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
@@ -991,6 +986,12 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					int64Ptr(55),
 					nil,
+				}),
+				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
+					int64Ptr(2.0),
+					int64Ptr(4.0),
+					nil,
+					int64Ptr(6.0),
 				}),
 			),
 			Err: require.NoError,
