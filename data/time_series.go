@@ -522,14 +522,15 @@ func labelsTupleKey(l Labels) (string, error) {
 // It the frame is not a WideFrame, than an error is returned.
 //
 // The Time that is the time index (the first time field of the original frame) is sorted first.
-// Then Fields are sorted by their name followed by the string representation of their labels.
-func SortWideFrameFields(frame *Frame) error {
+// Then Fields are sorted by their name followed by the order of the label keys provided.
+// If no keys are provided, they are sorted by the string representation of their labels.
+func SortWideFrameFields(frame *Frame, keys ...string) error {
 	tsSchema := frame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeWide {
 		return fmt.Errorf("field sorting for a wide time series frame called on a series that is not a wide frame")
 	}
 
-	// capture and remove the time index
+	// Capture and remove the time index, will be preprended again after sort
 	timeIndexField := frame.Fields[tsSchema.TimeIndex]
 	frame.Fields[len(frame.Fields)-1], frame.Fields[tsSchema.TimeIndex] = frame.Fields[tsSchema.TimeIndex], (frame.Fields)[len(frame.Fields)-1]
 	frame.Fields = frame.Fields[:len(frame.Fields)-1]
@@ -537,11 +538,18 @@ func SortWideFrameFields(frame *Frame) error {
 	sort.SliceStable(frame.Fields, func(i, j int) bool {
 		iField := frame.Fields[i]
 		jField := frame.Fields[j]
+
 		if iField.Name < jField.Name {
 			return true
 		}
 		if iField.Name > jField.Name {
 			return false
+		}
+
+		// If here Names are equal, next sort based on if there are labels.
+
+		if iField.Labels == nil && jField.Labels == nil {
+			return true // no labels first
 		}
 		if iField.Labels == nil && jField.Labels != nil {
 			return true
@@ -549,7 +557,28 @@ func SortWideFrameFields(frame *Frame) error {
 		if iField.Labels != nil && jField.Labels == nil {
 			return false
 		}
-		return iField.Labels.String() < jField.Labels.String()
+
+		// String based sort of Fields if no keys specified (suboptimal).
+		if len(keys) == 0 {
+			return iField.Labels.String() < jField.Labels.String()
+		}
+
+		// Sort on specified
+		for _, k := range keys {
+			// If the specified key is missing, we sort as if it is was there with the default value of "".
+			iV, _ := iField.Labels[k]
+			jV, _ := jField.Labels[k]
+
+			if iV < jV {
+				return true
+			}
+			if iV > jV {
+				return false
+			}
+		}
+
+		return false
+
 	})
 
 	// restore the time index back as the first field
