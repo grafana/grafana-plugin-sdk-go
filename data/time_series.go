@@ -573,8 +573,8 @@ func SortWideFrameFields(frame *Frame, keys ...string) error {
 		// Sort on specified
 		for _, k := range keys {
 			// If the specified key is missing, we sort as if it is was there with the default value of "".
-			iV, _ := iField.Labels[k]
-			jV, _ := jField.Labels[k]
+			iV := iField.Labels[k]
+			jV := jField.Labels[k]
 
 			if iV < jV {
 				return true
@@ -585,7 +585,6 @@ func SortWideFrameFields(frame *Frame, keys ...string) error {
 		}
 
 		return false
-
 	})
 
 	// restore the time index back as the first field
