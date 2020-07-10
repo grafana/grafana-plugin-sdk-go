@@ -226,6 +226,11 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		valueFactorToWideFieldIdx[i] = make(map[string]int)
 	}
 
+	sortKeys := make([]string, len(tsSchema.FactorIndices))
+	for i, v := range tsSchema.FactorIndices { // set dimension key order for final sort
+		sortKeys[i] = longFrame.Fields[v].Name
+	}
+
 	timeAt := func(idx int) (time.Time, error) { // get time.Time regardless if pointer
 		val, ok := longFrame.ConcreteAt(tsSchema.TimeIndex, idx)
 		if !ok {
@@ -321,10 +326,12 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 			wideFrame.Set(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
 		}
 	}
-	err = SortWideFrameFields(wideFrame)
+
+	err = SortWideFrameFields(wideFrame, sortKeys...)
 	if err != nil {
 		return nil, err
 	}
+
 	return wideFrame, nil
 }
 
