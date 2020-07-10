@@ -537,7 +537,7 @@ func SortWideFrameFields(frame *Frame, keys ...string) error {
 		return fmt.Errorf("field sorting for a wide time series frame called on a series that is not a wide frame")
 	}
 
-	// Capture and remove the time index, will be preprended again after sort
+	// Capture and remove the time index, will be prepended again after sort
 	timeIndexField := frame.Fields[tsSchema.TimeIndex]
 	frame.Fields[len(frame.Fields)-1], frame.Fields[tsSchema.TimeIndex] = frame.Fields[tsSchema.TimeIndex], (frame.Fields)[len(frame.Fields)-1]
 	frame.Fields = frame.Fields[:len(frame.Fields)-1]
