@@ -301,11 +301,17 @@ func TestEncodeAndDecodeDuplicateFieldNames(t *testing.T) {
 	}
 }
 
-func TestMarshalArrowRowLenError(t *testing.T) {
+func TestFrameMarshalArrowRowLenError(t *testing.T) {
 	f := data.NewFrame("unequal length fields",
 		data.NewField("1", nil, []string{}),
 		data.NewField("1", nil, []string{"a"}),
 	)
 	_, err := f.MarshalArrow()
 	require.Error(t, err)
+}
+
+func TestFrameMarshalArrowNoFields(t *testing.T) {
+	f := data.NewFrame("no fields")
+	_, err := f.MarshalArrow()
+	require.NoError(t, err)
 }
