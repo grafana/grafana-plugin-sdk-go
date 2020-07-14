@@ -11,6 +11,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/stretchr/testify/require"
 )
 
 var update = flag.Bool("update", false, "update .golden.arrow files")
@@ -298,4 +299,13 @@ func TestEncodeAndDecodeDuplicateFieldNames(t *testing.T) {
 	if diff := cmp.Diff(frame, decoded, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func TestMarshalArrowRowLenError(t *testing.T) {
+	f := data.NewFrame("unequal length fields",
+		data.NewField("1", nil, []string{}),
+		data.NewField("1", nil, []string{"a"}),
+	)
+	_, err := f.MarshalArrow()
+	require.Error(t, err)
 }

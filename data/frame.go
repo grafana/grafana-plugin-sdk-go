@@ -237,15 +237,13 @@ func (f *Frame) ConcreteAt(fieldIdx int, rowIdx int) (val interface{}, ok bool) 
 
 // RowLen returns the the length of the Frame Fields.
 // If the Length of all the Fields is not the same then error is returned.
-// If the Frame's Fields are nil an error is returned.
 func (f *Frame) RowLen() (int, error) {
-	if f.Fields == nil || len(f.Fields) == 0 {
-		return 0, fmt.Errorf("frame's fields are nil or of zero length")
+	if len(f.Fields) == 0 {
+		return 0, nil
 	}
-
 	var l int
 	for i := 0; i < len(f.Fields); i++ {
-		if f.Fields[i].vector == nil {
+		if f.Fields[i] == nil || f.Fields[i].vector == nil {
 			return 0, fmt.Errorf("frame's field at index %v is nil", i)
 		}
 		if i == 0 {

@@ -16,7 +16,12 @@ import (
 
 // MarshalArrow converts the Frame to an arrow table and returns a byte
 // representation of that table.
+// All fields of a Frame must be of the same length or an error is returned.
 func (f *Frame) MarshalArrow() ([]byte, error) {
+	if _, err := f.RowLen(); err != nil {
+		return nil, err
+	}
+
 	arrowFields, err := buildArrowFields(f)
 	if err != nil {
 		return nil, err
