@@ -86,9 +86,9 @@ func buildBackend(cfg Config) error {
 		// Add linker flags to drop debug information
 		prefix := ""
 		if ldFlags != "" {
-				prefix = " "
+			prefix = " "
 		}
-		ldFlags = fmt.Sprintf("-w -s%s%s",  prefix, ldFlags)
+		ldFlags = fmt.Sprintf("-w -s%s%s", prefix, ldFlags)
 	}
 
 	args := []string{
