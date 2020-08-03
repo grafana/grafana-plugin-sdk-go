@@ -77,14 +77,18 @@ func buildBackend(cfg Config) error {
 	}
 
 	ldFlags := ""
-	if !cfg.EnableCGO {
+	if !cfg.EnableCGo {
 		// Link statically
 		ldFlags = `-extldflags "-static"`
 	}
 
 	if !cfg.EnableDebug {
 		// Add linker flags to drop debug information
-		ldFlags = "-w -s " + ldFlags
+		prefix := ""
+		if ldFlags != "" {
+				prefix = " "
+		}
+		ldFlags = fmt.Sprintf("-w -s%s%s",  prefix, ldFlags)
 	}
 
 	args := []string{
@@ -101,7 +105,7 @@ func buildBackend(cfg Config) error {
 
 	cfg.Env["GOARCH"] = cfg.Arch
 	cfg.Env["GOOS"] = cfg.OS
-	if !cfg.EnableCGO {
+	if !cfg.EnableCGo {
 		cfg.Env["CGO_ENABLED"] = "0"
 	}
 
