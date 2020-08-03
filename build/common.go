@@ -119,7 +119,6 @@ func newBuildConfig(os string, arch string) Config {
 		Arch:        arch,
 		EnableDebug: false,
 		Env:         map[string]string{},
-		EnableCGO:   true,
 	}
 }
 
