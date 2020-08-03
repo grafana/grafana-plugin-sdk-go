@@ -92,7 +92,7 @@ func buildBackend(cfg Config) error {
 	}
 
 	args := []string{
-		"build", "-o", path.Join("dist", exeName),
+		"build", "-o", filepath.Join("dist", exeName),
 	}
 	if ldFlags != "" {
 		args = append(args, "-ldflags", ldFlags)
