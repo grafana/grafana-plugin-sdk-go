@@ -76,24 +76,35 @@ func buildBackend(cfg Config) error {
 		return err
 	}
 
-	// Link statically
-	ldFlags := `-extldflags "-static"`
-	if !cfg.EnableDebug {
-		// Add linker flags to drop debug information
-		ldFlags = "-w -s " + ldFlags
+	args := []string{
+		"build", "-o", path.Join("dist", exeName),
+	}
+	if !cfg.EnableDynamicLinking {
+		// Link statically
+		ldFlags := `-extldflags "-static"`
+		if !cfg.EnableDebug {
+			// Add linker flags to drop debug information
+			ldFlags = "-w -s " + ldFlags
+		}
+		args = append(args, "-ldflags", ldFlags)
+	} else {
+		args = append(args, "-tags", "netgo")
+		if !cfg.EnableDebug {
+			args = append(args, "-ldflags", "-w")
+		}
 	}
 
-	args := []string{
-		"build", "-o", path.Join("dist", exeName), "-ldflags", ldFlags,
-	}
 	if cfg.EnableDebug {
 		args = append(args, "-gcflags=all=-N -l")
 	}
+
 	args = append(args, "./pkg")
 
 	cfg.Env["GOARCH"] = cfg.Arch
 	cfg.Env["GOOS"] = cfg.OS
-	cfg.Env["CGO_ENABLED"] = "0"
+	if !cfg.EnableDynamicLinking {
+		cfg.Env["CGO_ENABLED"] = "0"
+	}
 
 	// TODO: Change to sh.RunWithV once available.
 	return sh.RunWith(cfg.Env, "go", args...)

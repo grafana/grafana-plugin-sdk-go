@@ -2,10 +2,11 @@ package build
 
 // Config holds the setup variables required for a build
 type Config struct {
-	OS          string // GOOS
-	Arch        string // GOOS
-	EnableDebug bool
-	Env         map[string]string
+	OS                   string // GOOS
+	Arch                 string // GOOS
+	EnableDebug          bool
+	Env                  map[string]string
+	EnableDynamicLinking bool
 }
 
 // BeforeBuildCallback hooks into the build process
