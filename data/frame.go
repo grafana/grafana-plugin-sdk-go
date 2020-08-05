@@ -1,3 +1,4 @@
+
 // Package data provides data structures that Grafana recognizes.
 //
 // The Frame object represents a Grafana Dataframe which can represent data such as tables
@@ -170,7 +171,7 @@ func (f *Field) SetConfig(conf *FieldConfig) *Field {
 	return f
 }
 
-// NewFrame returns a new Frame instance.
+// NewFrame returns a new Frame.
 func NewFrame(name string, fields ...*Field) *Frame {
 	return &Frame{
 		Name:   name,
