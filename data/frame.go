@@ -170,7 +170,7 @@ func (f *Field) SetConfig(conf *FieldConfig) *Field {
 	return f
 }
 
-// NewFrame returns a new instance of a Frame.
+// NewFrame returns a new Frame.
 func NewFrame(name string, fields ...*Field) *Frame {
 	return &Frame{
 		Name:   name,
@@ -178,7 +178,7 @@ func NewFrame(name string, fields ...*Field) *Frame {
 	}
 }
 
-// SetMeta modifies the Frame's Meta Property to be set to m and returns the Frame.
+// SetMeta sets the Frame's Meta attribute to m and returns the Frame.
 func (f *Frame) SetMeta(m *FrameMeta) *Frame {
 	f.Meta = m
 	return f
@@ -193,19 +193,19 @@ func (f *Frame) Rows() int {
 }
 
 // At returns the value of the specified fieldIdx and rowIdx.
-// It will panic if either the fieldIdx or rowIdx are out of range.
+// It will panic if either fieldIdx or rowIdx are out of range.
 func (f *Frame) At(fieldIdx int, rowIdx int) interface{} {
 	return f.Fields[fieldIdx].vector.At(rowIdx)
 }
 
 // CopyAt returns a copy of the value of the specified fieldIdx and rowIdx.
-// It will panic if either the fieldIdx or rowIdx are out of range.
+// It will panic if either fieldIdx or rowIdx are out of range.
 func (f *Frame) CopyAt(fieldIdx int, rowIdx int) interface{} {
 	return f.Fields[fieldIdx].vector.CopyAt(rowIdx)
 }
 
 // Set sets the val at the specified fieldIdx and rowIdx.
-// It will panic if either the fieldIdx or rowIdx are out of range or
+// It will panic if either fieldIdx or rowIdx are out of range or
 // if the underlying type of val does not match the element type of the Field.
 func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.Set(rowIdx, val)
@@ -214,7 +214,7 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 // SetConcrete sets the val at the specified fieldIdx and rowIdx.
 // val must be a non-pointer type or a panic will occur.
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
-// is not nullable, then this method behaves the same as the Set method.
+// is not nullable this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
 func (f *Frame) SetConcrete(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.SetConcrete(rowIdx, val)
@@ -229,14 +229,14 @@ func (f *Frame) Extend(i int) {
 
 // ConcreteAt returns the concrete value at the specified fieldIdx and rowIdx.
 // A non-pointer type is returned regardless if the underlying type is a pointer
-// type or not. If the value is a pointer type, and is nil, then the zero value
+// type or not. If the value is a nil pointer, the the zero value
 // is returned and ok will be false.
 func (f *Frame) ConcreteAt(fieldIdx int, rowIdx int) (val interface{}, ok bool) {
 	return f.Fields[fieldIdx].vector.ConcreteAt(rowIdx)
 }
 
 // RowLen returns the the length of the Frame Fields.
-// If the Length of all the Fields is not the same then error is returned.
+// If the lengths of all the Fields are not the same an error is returned.
 func (f *Frame) RowLen() (int, error) {
 	if len(f.Fields) == 0 {
 		return 0, nil
@@ -251,13 +251,14 @@ func (f *Frame) RowLen() (int, error) {
 			continue
 		}
 		if l != f.Fields[i].Len() {
-			return 0, fmt.Errorf("frame has different field lengths, field 0 is len %v but field %v is len %v", l, i, f.Fields[i].vector.Len())
+			return 0, fmt.Errorf("frame has different field lengths, field 0 is len %v but field %v is len %v", l, i,
+				f.Fields[i].vector.Len())
 		}
 	}
 	return l, nil
 }
 
-// FloatAt returns a float64 representation of value of the specified fieldIdx and rowIdx as per Field.FloatAt().
+// FloatAt returns a float64 representation of the value at the specified fieldIdx and rowIdx, as per Field.FloatAt().
 // It will panic if either the fieldIdx or rowIdx are out of range.
 func (f *Frame) FloatAt(fieldIdx int, rowIdx int) (float64, error) {
 	return f.Fields[fieldIdx].FloatAt(rowIdx)
@@ -355,10 +356,10 @@ func FrameTestCompareOptions() []cmp.Option {
 
 const maxLengthExceededStr = "..."
 
-// StringTable prints a human readable table of the Frame. The output should not be used for programtic consumption
+// StringTable prints a human readable table of the Frame. The output should not be used for programmatic consumption
 // or testing.
 // The table's width is limited to maxFields and the length is limited to maxRows (a value of -1 is unlimited).
-// If the width or length is excceded then last column or row displays "..." as the contents.
+// If the width or length is exceeded, the last column or row displays "..." as the contents.
 func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 	if maxFields > 0 && maxFields < 2 {
 		return "", fmt.Errorf("maxFields must be less than 0 (unlimited) or greather than 2, got %v", maxFields)
