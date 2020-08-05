@@ -6,6 +6,7 @@ type Config struct {
 	Arch        string // GOOS
 	EnableDebug bool
 	Env         map[string]string
+	EnableCGo   bool
 }
 
 // BeforeBuildCallback hooks into the build process
