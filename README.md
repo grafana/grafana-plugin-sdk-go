@@ -18,6 +18,10 @@ If you're interested in contributing to this project:
 - Start by reading the [Contributing guide](/CONTRIBUTING.md).
 - Learn how to set up your local environment, in our [Developer guide](/contribute/developer-guide.md).
 
+## Docs
+
+The SDK godocs can be found [Here](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go?tab=doc)
+
 ## License
 
 [Apache 2.0 License](https://github.com/grafana/grafana-plugin-sdk-go/blob/master/LICENSE)
