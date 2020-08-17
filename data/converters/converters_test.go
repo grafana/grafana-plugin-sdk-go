@@ -10,7 +10,7 @@ import (
 func TestStringConversions(t *testing.T) {
 	val, err := converters.AnyToOptionalString.Converter(12.3)
 	require.Nil(t, err)
-	require.Equal(t, "12.3", val)
+	require.Equal(t, "12.3", *(val.(*string)))
 
 	val, err = converters.AnyToOptionalString.Converter(nil)
 	require.Nil(t, err)
@@ -20,5 +20,5 @@ func TestStringConversions(t *testing.T) {
 func TestNumericConversions(t *testing.T) {
 	val, err := converters.Float64ToOptionalFloat64.Converter(12.34)
 	require.Nil(t, err)
-	require.Equal(t, 12.34, val)
+	require.Equal(t, 12.34, *(val.(*float64)))
 }
