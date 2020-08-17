@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func CheckStringConversions(t *testing.T) {
+func TestStringConversions(t *testing.T) {
 	val, err := converters.AnyToOptionalString.Converter(12.3)
 	require.Nil(t, err)
 	require.Equal(t, "12.3", val)
@@ -17,7 +17,7 @@ func CheckStringConversions(t *testing.T) {
 	require.Nil(t, val)
 }
 
-func CheckNumericConversions(t *testing.T) {
+func TestNumericConversions(t *testing.T) {
 	val, err := converters.Float64ToOptionalFloat64.Converter(12.34)
 	require.Nil(t, err)
 	require.Equal(t, 12.34, val)
