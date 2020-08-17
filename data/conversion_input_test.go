@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	conv "github.com/grafana/grafana-plugin-sdk-go/data/converters"
 )
 
 func ExampleNewFrameInputConverter() {
@@ -75,7 +76,7 @@ func ExampleNewFrameInputConverter() {
 	for i, cType := range inputData.ColumnTypes {
 		fc, ok := converterMap[cType]
 		if !ok {
-			fc = data.AsStringFieldConverter
+			fc = conv.AnyToString
 		}
 		converters[i] = fc
 	}
