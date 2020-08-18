@@ -19,6 +19,6 @@ func TestStringConversions(t *testing.T) {
 
 func TestNumericConversions(t *testing.T) {
 	val, err := converters.Float64ToNullableFloat64.Converter(12.34)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, 12.34, *(val.(*float64)))
 }
