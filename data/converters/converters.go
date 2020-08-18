@@ -96,7 +96,7 @@ var UInt64ToOptionalUInt64 = data.FieldConverter{
 	},
 }
 
-// BoolToOptionalBool optional int value
+// BoolToOptionalBool optional bool value
 var BoolToOptionalBool = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableBool,
 	Converter: func(v interface{}) (interface{}, error) {
