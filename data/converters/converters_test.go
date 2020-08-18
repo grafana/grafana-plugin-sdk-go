@@ -8,17 +8,17 @@ import (
 )
 
 func TestStringConversions(t *testing.T) {
-	val, err := converters.AnyToOptionalString.Converter(12.3)
+	val, err := converters.AnyToNullableString.Converter(12.3)
 	require.NoError(t, err)
 	require.Equal(t, "12.3", *(val.(*string)))
 
-	val, err = converters.AnyToOptionalString.Converter(nil)
+	val, err = converters.AnyToNullableString.Converter(nil)
 	require.NoError(t, err)
 	require.Nil(t, val)
 }
 
 func TestNumericConversions(t *testing.T) {
-	val, err := converters.Float64ToOptionalFloat64.Converter(12.34)
+	val, err := converters.Float64ToNullableFloat64.Converter(12.34)
 	require.Nil(t, err)
 	require.Equal(t, 12.34, *(val.(*float64)))
 }

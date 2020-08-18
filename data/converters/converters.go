@@ -8,28 +8,28 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// Int64NOOP .....
+// Int64NOOP Assume the value is already an int64.
 var Int64NOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeInt64,
 }
 
-// BoolNOOP .....
+// BoolNOOP Assume the value is already a bool.
 var BoolNOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeBool,
 }
 
-// Float64NOOP .....
+// Float64NOOP Assume the value is already an int64.
 var Float64NOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeFloat64,
 }
 
-// StringNOOP value is already in the proper format
+// StringNOOP Assume the value is already a string
 var StringNOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeString,
 }
 
-// AnyToOptionalString any value as a string
-var AnyToOptionalString = data.FieldConverter{
+// AnyToNullableString any value as a string
+var AnyToNullableString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableString,
 	Converter: func(v interface{}) (interface{}, error) {
 		if v == nil {
@@ -51,82 +51,82 @@ var AnyToString = data.FieldConverter{
 	},
 }
 
-// Float64ToOptionalFloat64 optional float value
-var Float64ToOptionalFloat64 = data.FieldConverter{
+// Float64ToNullableFloat64 optional float value
+var Float64ToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
 		if v == nil {
 			return nil, nil
 		}
 		val, ok := v.(float64)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[float] expected float64 input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected float64 input but got type %T", v)
 		}
 		return &val, nil
 	},
 }
 
-// Int64ToOptionalInt64 optional int value
-var Int64ToOptionalInt64 = data.FieldConverter{
+// Int64ToNullableInt64 optional int value
+var Int64ToNullableInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableInt64,
 	Converter: func(v interface{}) (interface{}, error) {
 		if v == nil {
 			return nil, nil
 		}
 		val, ok := v.(int64)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[int] expected int64 input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected int64 input but got type %T", v)
 		}
 		return &val, nil
 	},
 }
 
-// UInt64ToOptionalUInt64 optional int value
-var UInt64ToOptionalUInt64 = data.FieldConverter{
+// UInt64ToNullableUInt64 optional int value
+var UInt64ToNullableUInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableUint64,
 	Converter: func(v interface{}) (interface{}, error) {
 		if v == nil {
 			return nil, nil
 		}
 		val, ok := v.(uint64)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[uint] expected uint64 input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected uint64 input but got type %T", v)
 		}
 		return &val, nil
 	},
 }
 
-// BoolToOptionalBool optional bool value
-var BoolToOptionalBool = data.FieldConverter{
+// BoolToNullableBool optional bool value
+var BoolToNullableBool = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableBool,
 	Converter: func(v interface{}) (interface{}, error) {
 		if v == nil {
 			return nil, nil
 		}
 		val, ok := v.(bool)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[bool] expected bool input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected bool input but got type %T", v)
 		}
 		return &val, nil
 	},
 }
 
-// TimeToOptionalTime optional time value
-var TimeToOptionalTime = data.FieldConverter{
+// TimeToNullableTime optional time value
+var TimeToNullableTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableTime,
 	Converter: func(v interface{}) (interface{}, error) {
 		if v == nil {
 			return nil, nil
 		}
 		val, ok := v.(time.Time)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[time] expected time input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected time input but got type %T", v)
 		}
 		return &val, nil
 	},
 }
 
-// RFC3339StringToNullableTime .....
+// RFC3339StringToNullableTime convert a string with RFC3339 to a time object.
 func RFC3339StringToNullableTime(s string) (*time.Time, error) {
 	if s == "" {
 		return nil, nil
@@ -141,16 +141,16 @@ func RFC3339StringToNullableTime(s string) (*time.Time, error) {
 	return &u, nil
 }
 
-// StringToOptionalFloat64 string to float
-var StringToOptionalFloat64 = data.FieldConverter{
+// StringToNullableFloat64 string to float
+var StringToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
 		if v == nil {
 			return nil, nil
 		}
 		val, ok := v.(string)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[floatz] expected string input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected string input but got type %T", v)
 		}
 		fV, err := strconv.ParseFloat(val, 64)
 		return &fV, err
@@ -162,20 +162,20 @@ var Float64EpochSecondsToTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeTime,
 	Converter: func(v interface{}) (interface{}, error) {
 		fV, ok := v.(float64)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[seconds] expected float64 input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected float64 input but got type %T", v)
 		}
 		return time.Unix(int64(fV), 0).UTC(), nil
 	},
 }
 
-// Float64EpochMillisToTime convert to time
+// Float64EpochMillisToTime convert numeric milliseconds to time
 var Float64EpochMillisToTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeTime,
 	Converter: func(v interface{}) (interface{}, error) {
 		fV, ok := v.(float64)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[ms] expected float64 input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected float64 input but got type %T", v)
 		}
 		return time.Unix(0, int64(fV)*int64(time.Millisecond)).UTC(), nil
 	},
@@ -186,8 +186,8 @@ var Boolean = data.FieldConverter{
 	OutputFieldType: data.FieldTypeBool,
 	Converter: func(v interface{}) (interface{}, error) {
 		fV, ok := v.(bool)
-		if !ok { // or return some default value instead of erroring
-			return nil, fmt.Errorf("[ms] expected bool input but got type %T", v)
+		if !ok {
+			return nil, fmt.Errorf("expected bool input but got type %T", v)
 		}
 		return fV, nil
 	},
