@@ -9,7 +9,7 @@ import (
 
 func TestStringConversions(t *testing.T) {
 	val, err := converters.AnyToOptionalString.Converter(12.3)
-	require.Nil(t, err)
+	require.NoError(t, err)
 	require.Equal(t, "12.3", *(val.(*string)))
 
 	val, err = converters.AnyToOptionalString.Converter(nil)
