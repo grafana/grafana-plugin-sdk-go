@@ -27,35 +27,32 @@ var Float64NOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeFloat64,
 }
 
-// StringNOOP The input and output values are both string
+// StringNOOP The input and output values are both string.
 var StringNOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeString,
 }
 
-// AnyToNullableString any value as a string
+// AnyToNullableString Converts any non-null value into a string.
 var AnyToNullableString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableString,
 	Converter: func(v interface{}) (interface{}, error) {
 		if v == nil {
 			return nil, nil
 		}
-		str := fmt.Sprintf("%+v", v) // the +v adds field names
+		str := fmt.Sprintf("%v", v)
 		return &str, nil
 	},
 }
 
-// AnyToString any value as a string
+// AnyToString Converts any value into a string.
 var AnyToString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeString,
 	Converter: func(v interface{}) (interface{}, error) {
-		if v == nil {
-			return nil, nil
-		}
-		return fmt.Sprintf("%+v", v), nil // the +v adds field names
+		return fmt.Sprintf("%v", v), nil
 	},
 }
 
-// Float64ToNullableFloat64 optional float value
+// Float64ToNullableFloat64 returns an error if the input is not a float64.
 var Float64ToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -70,7 +67,7 @@ var Float64ToNullableFloat64 = data.FieldConverter{
 	},
 }
 
-// Int64ToNullableInt64 optional int value
+// Int64ToNullableInt64 returns an error if the input is not an int64.
 var Int64ToNullableInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableInt64,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -85,7 +82,7 @@ var Int64ToNullableInt64 = data.FieldConverter{
 	},
 }
 
-// Uint64ToNullableUInt64 optional int value
+// Uint64ToNullableUInt64 returns an error if the input is not a uint64.
 var Uint64ToNullableUInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableUint64,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -100,7 +97,7 @@ var Uint64ToNullableUInt64 = data.FieldConverter{
 	},
 }
 
-// BoolToNullableBool optional bool value
+// BoolToNullableBool returns an error if the input is not a bool.
 var BoolToNullableBool = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableBool,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -115,7 +112,7 @@ var BoolToNullableBool = data.FieldConverter{
 	},
 }
 
-// TimeToNullableTime optional time value
+// TimeToNullableTime returns an error if the input is not a time.Time.
 var TimeToNullableTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableTime,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -145,7 +142,7 @@ func RFC3339StringToNullableTime(s string) (*time.Time, error) {
 	return &u, nil
 }
 
-// StringToNullableFloat64 string to float
+// StringToNullableFloat64 parses a float64 value from a string.
 var StringToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -161,7 +158,7 @@ var StringToNullableFloat64 = data.FieldConverter{
 	},
 }
 
-// Float64EpochSecondsToTime  numeric seconds to time
+// Float64EpochSecondsToTime converts a numberic seconds to time.Time.
 var Float64EpochSecondsToTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeTime,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -173,7 +170,7 @@ var Float64EpochSecondsToTime = data.FieldConverter{
 	},
 }
 
-// Float64EpochMillisToTime convert numeric milliseconds to time
+// Float64EpochMillisToTime convert numeric milliseconds to time.Time
 var Float64EpochMillisToTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeTime,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -185,7 +182,7 @@ var Float64EpochMillisToTime = data.FieldConverter{
 	},
 }
 
-// Boolean ...
+// Boolean returns an error if the input is not a bool.
 var Boolean = data.FieldConverter{
 	OutputFieldType: data.FieldTypeBool,
 	Converter: func(v interface{}) (interface{}, error) {
