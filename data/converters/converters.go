@@ -111,7 +111,7 @@ var BoolToOptionalBool = data.FieldConverter{
 	},
 }
 
-// TimeToOptionalTime optional int value
+// TimeToOptionalTime optional time value
 var TimeToOptionalTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableTime,
 	Converter: func(v interface{}) (interface{}, error) {
