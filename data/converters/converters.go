@@ -48,11 +48,12 @@ var StringNOOP = data.FieldConverter{
 var AnyToNullableString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableString,
 	Converter: func(v interface{}) (interface{}, error) {
-		if v == nil {
-			return nil, nil
+		var str *string
+		if v != nil {
+			s := fmt.Sprintf("%v", v)
+			str = &s
 		}
-		str := fmt.Sprintf("%v", v)
-		return &str, nil
+		return str, nil
 	},
 }
 
