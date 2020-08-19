@@ -21,7 +21,6 @@ func TestStringConversions(t *testing.T) {
 	val, err = converters.AnyToNullableString.Converter(nil)
 	require.NoError(t, err)
 	require.Nil(t, val)
-
 }
 
 func TestNumericConversions(t *testing.T) {
