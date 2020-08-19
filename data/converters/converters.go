@@ -158,7 +158,7 @@ var StringToNullableFloat64 = data.FieldConverter{
 	},
 }
 
-// Float64EpochSecondsToTime converts a numberic seconds to time.Time.
+// Float64EpochSecondsToTime converts a numeric seconds to time.Time.
 var Float64EpochSecondsToTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeTime,
 	Converter: func(v interface{}) (interface{}, error) {
