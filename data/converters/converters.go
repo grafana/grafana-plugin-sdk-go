@@ -9,7 +9,7 @@ import (
 )
 
 func toConversionError(expected string, v interface{}) error {
-	return fmt.Errorf("expected %s input but got type %T for value \"%v\"", expected, v, v)
+	return fmt.Errorf(`expected %s input but got type %T for value "%v"`, expected, v, v)
 }
 
 // Int64NOOP The input and output values are both int64.
