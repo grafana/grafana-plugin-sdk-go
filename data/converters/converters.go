@@ -12,22 +12,34 @@ func toConversionError(expected string, v interface{}) error {
 	return fmt.Errorf(`expected %s input but got type %T for value "%v"`, expected, v, v)
 }
 
-// Int64NOOP The input and output values are both int64.
+// Int64NOOP is a data.FieldConverter that performs no conversion.
+// It should be used when the input type is an int64 and the Field's type
+// is also an int64. The conversion will panic if the the input type does
+// not match the Field type.
 var Int64NOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeInt64,
 }
 
-// BoolNOOP The input and output values are both bool.
+// BoolNOOP is a data.FieldConverter that performs no conversion.
+// It should be used when the input type is an bool and the Field's type
+// is also an bool. The conversion will panic if the the input type does
+// not match the Field type.
 var BoolNOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeBool,
 }
 
-// Float64NOOP The input and output values are both int64.
+// Float64NOOP is a data.FieldConverter that performs no conversion.
+// It should be used when the input type is an float64 and the Field's type
+// is also an float64. The conversion will panic if the the input type does
+// not match the Field type.
 var Float64NOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeFloat64,
 }
 
-// StringNOOP The input and output values are both string.
+// StringNOOP is a data.FieldConverter that performs no conversion.
+// It should be used when the input type is an int64 and the Field's type
+// is also an string. The conversion will panic if the the input type does
+// not match the Field type.
 var StringNOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeString,
 }
