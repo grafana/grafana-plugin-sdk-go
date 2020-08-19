@@ -44,7 +44,8 @@ var StringNOOP = data.FieldConverter{
 	OutputFieldType: data.FieldTypeString,
 }
 
-// AnyToNullableString Converts any non-null value into a string.
+// AnyToNullableString converts any non-nil value into a *string.
+// If the the input value is nil the output value is *string typed nil.
 var AnyToNullableString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableString,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -57,7 +58,7 @@ var AnyToNullableString = data.FieldConverter{
 	},
 }
 
-// AnyToString Converts any value into a string.
+// AnyToString converts any value into a string.
 var AnyToString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeString,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -125,22 +126,7 @@ var BoolToNullableBool = data.FieldConverter{
 	},
 }
 
-// TimeToNullableTime returns an error if the input is not a time.Time.
-var TimeToNullableTime = data.FieldConverter{
-	OutputFieldType: data.FieldTypeNullableTime,
-	Converter: func(v interface{}) (interface{}, error) {
-		if v == nil {
-			return nil, nil
-		}
-		val, ok := v.(time.Time)
-		if !ok {
-			return nil, toConversionError("time.Time", v)
-		}
-		return &val, nil
-	},
-}
-
-// RFC3339StringToNullableTime convert a string with RFC3339 to a time object.
+// RFC3339StringToNullableTime convert a string with RFC3339 to a *time.Time object.
 func RFC3339StringToNullableTime(s string) (*time.Time, error) {
 	if s == "" {
 		return nil, nil
