@@ -24,7 +24,7 @@ type restClient struct {
 	client  *http.Client
 }
 
-// NewRestClient ...
+// NewRestClient creates a Client.
 func NewRestClient(url string, headers map[string]string) Client {
 	return &restClient{
 		url:     url,
