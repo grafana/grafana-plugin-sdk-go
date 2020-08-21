@@ -155,7 +155,7 @@ func (Build) Debug() error {
 // Backend build a production build for all platforms
 func (Build) Backend() {
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.LinuxArm64)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.LinuxARM64)
 }
 
 // BuildAll builds production back-end components.
