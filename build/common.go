@@ -130,8 +130,8 @@ func (Build) Linux() error {
 	return buildBackend(newBuildConfig("linux", "amd64"))
 }
 
-// LinuxArm64 builds the back-end plugin for Linux on arm64.
-func (Build) LinuxArm64() error {
+// LinuxARM64 builds the back-end plugin for Linux on ARM64.
+func (Build) LinuxARM64() error {
 	return buildBackend(newBuildConfig("linux", "arm64"))
 }
 
