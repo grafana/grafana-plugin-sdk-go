@@ -12,9 +12,14 @@ import (
 	"time"
 )
 
-// Client interface
+// Client implements a REST client that can be easily mocked in tests and manages
+// connection setup and teardown behavior internally
 type Client interface {
+	// Fetch performs an HTTP GET and returns the body as []byte to prep for marshalling.
 	Fetch(ctx context.Context, uriPath, uriQuery string) ([]byte, error)
+
+	// Get performs an HTTP GET and returns the response.
+	// This can be used directly from resource calls that don't need to marshal the data
 	Get(ctx context.Context, uriPath, uriQuery string) (*http.Response, error)
 }
 
