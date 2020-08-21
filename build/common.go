@@ -130,6 +130,11 @@ func (Build) Linux() error {
 	return buildBackend(newBuildConfig("linux", "amd64"))
 }
 
+// Linux builds the back-end plugin for Linux on arm64.
+func (Build) LinuxArm64() error {
+	return buildBackend(newBuildConfig("linux", "arm64"))
+}
+
 // Windows builds the back-end plugin for Windows.
 func (Build) Windows() error {
 	return buildBackend(newBuildConfig("windows", "amd64"))
@@ -150,7 +155,7 @@ func (Build) Debug() error {
 // Backend build a production build for all platforms
 func (Build) Backend() {
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.LinuxArm64)
 }
 
 // BuildAll builds production back-end components.
