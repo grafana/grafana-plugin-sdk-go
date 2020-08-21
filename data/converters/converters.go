@@ -1,3 +1,4 @@
+// Package converters provides data.FieldConverters commonly used by plugins.
 package converters
 
 import (
@@ -70,14 +71,16 @@ var AnyToString = data.FieldConverter{
 var Float64ToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *float64
 		if v == nil {
-			return nil, nil
+			return ptr, nil
 		}
 		val, ok := v.(float64)
 		if !ok {
-			return nil, toConversionError("float64", v)
+			return ptr, toConversionError("float64", v)
 		}
-		return &val, nil
+		ptr = &val
+		return ptr, nil
 	},
 }
 
@@ -85,14 +88,16 @@ var Float64ToNullableFloat64 = data.FieldConverter{
 var Int64ToNullableInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableInt64,
 	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *int64
 		if v == nil {
-			return nil, nil
+			return ptr, nil
 		}
 		val, ok := v.(int64)
 		if !ok {
-			return nil, toConversionError("int64", v)
+			return ptr, toConversionError("int64", v)
 		}
-		return &val, nil
+		ptr = &val
+		return ptr, nil
 	},
 }
 
@@ -100,14 +105,16 @@ var Int64ToNullableInt64 = data.FieldConverter{
 var Uint64ToNullableUInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableUint64,
 	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *uint64
 		if v == nil {
-			return nil, nil
+			return ptr, nil
 		}
 		val, ok := v.(uint64)
 		if !ok {
-			return nil, toConversionError("uint64", v)
+			return ptr, toConversionError("uint64", v)
 		}
-		return &val, nil
+		ptr = &val
+		return ptr, nil
 	},
 }
 
@@ -115,14 +122,16 @@ var Uint64ToNullableUInt64 = data.FieldConverter{
 var BoolToNullableBool = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableBool,
 	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *bool
 		if v == nil {
-			return nil, nil
+			return ptr, nil
 		}
 		val, ok := v.(bool)
 		if !ok {
-			return nil, toConversionError("bool", v)
+			return ptr, toConversionError("bool", v)
 		}
-		return &val, nil
+		ptr = &val
+		return ptr, nil
 	},
 }
 
@@ -145,15 +154,17 @@ func RFC3339StringToNullableTime(s string) (*time.Time, error) {
 var StringToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *float64
 		if v == nil {
-			return nil, nil
+			return ptr, nil
 		}
 		val, ok := v.(string)
 		if !ok {
-			return nil, toConversionError("string", v)
+			return ptr, toConversionError("string", v)
 		}
 		fV, err := strconv.ParseFloat(val, 64)
-		return &fV, err
+		ptr = &fV
+		return ptr, err
 	},
 }
 
