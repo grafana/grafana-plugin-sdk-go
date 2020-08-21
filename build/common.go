@@ -152,16 +152,16 @@ func (Build) Debug() error {
 	return buildBackend(cfg)
 }
 
-// Backend build a production build for all platforms
-func (Build) Backend() {
-	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.LinuxARM64)
+// Backend build a production build for the current platform
+func (Build) Backend() error {
+	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
+	return buildBackend(cfg)
 }
 
-// BuildAll builds production back-end components.
+// BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Backend)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.LinuxARM64)
 }
 
 // Test runs backend tests.
