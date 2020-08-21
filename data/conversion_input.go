@@ -1,7 +1,5 @@
 package data
 
-import "fmt"
-
 // FrameInputConverter is a type to support building a Frame while also
 // doing conversion as data is added to the Frame.
 type FrameInputConverter struct {
@@ -57,15 +55,4 @@ func (fic *FrameInputConverter) Set(fieldIdx, rowIdx int, val interface{}) error
 	}
 	fic.Frame.Set(fieldIdx, rowIdx, convertedVal)
 	return nil
-}
-
-var asStringConverter Converter = func(v interface{}) (interface{}, error) {
-	return fmt.Sprintf("%v", v), nil
-}
-
-// AsStringFieldConverter will always return a string a regardless of the input.
-// This is done with fmt.Sprintf which uses reflection.
-var AsStringFieldConverter = FieldConverter{
-	OutputFieldType: FieldTypeString,
-	Converter:       asStringConverter,
 }
