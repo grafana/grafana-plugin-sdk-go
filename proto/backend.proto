@@ -133,6 +133,103 @@ message DataResponse {
   bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
 }
 
+
+//-----------------------------------------------
+// Blob Store -- read files under
+//-----------------------------------------------
+
+message BlobLocator {
+  // The scope or root folder
+  string container = 1;
+
+  // location within the core folder
+  string path = 2;
+
+  // Content hash to help know if content has changed and needs updating
+  string etag = 3;
+}
+
+service BlobStore {
+  rpc GetBlob(GetBlobRequest) returns (stream GetBlobResponse);
+  rpc PutBlob(PutBlobRequest) returns (PutBlobResponse);
+  rpc DeleteBlob(DeleteBlobRequest) returns (DeleteBlobResponse);
+  rpc ListBlobs(ListBlobsRequest) returns (ListBlobsResponse);
+}
+
+message GetBlobRequest {
+  PluginContext pluginContext = 1;
+
+  // Item location
+  BlobLocator location = 3;
+}
+
+message GetBlobResponse {
+  // Match standard HTTP status codes
+  int32 code = 1;
+
+  // Location information
+  BlobLocator location = 2;
+
+  // response HTTP headers
+  map<string,string> headers = 3;
+
+  // The raw bytes, non 200 may include an error.  For large files, it may take
+  // multiple body respones to return the file
+  bytes body = 4;
+}
+
+message PutBlobRequest {
+  PluginContext pluginContext = 1;
+
+  // Location information
+  BlobLocator location = 2;
+
+  // all headers are stored with the value
+  map<string,string> headers = 3;
+
+  // The raw bytes
+  bytes body = 4;
+}
+
+message PutBlobResponse {
+  // Match standard HTTP status codes
+  int32 code = 1;
+
+  // Location information (includes etag)
+  BlobLocator location = 2;
+}
+
+message DeleteBlobRequest {
+  PluginContext pluginContext = 1;
+
+  // Location information
+  BlobLocator location = 2;
+}
+
+message DeleteBlobResponse {
+  // Match standard HTTP status codes
+  int32 code = 1;
+}
+
+message ListBlobsRequest {
+  PluginContext pluginContext = 1;
+
+  // The scope or root.  If blank, response will list the containers
+  string container = 2;
+
+  // Path prefix
+  string prefix = 3;
+
+  // When multiple pages are requested... this will get the next page 
+  string continueToken = 4;
+}
+
+message ListBlobsResponse {
+  // DataFrame -- with set of known fields?  "path", "key", "id"
+  bytes frame = 1;
+}
+
+
 //-----------------------------------------------
 // Diagnostics
 //-----------------------------------------------
