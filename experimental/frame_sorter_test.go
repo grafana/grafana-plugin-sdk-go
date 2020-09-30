@@ -7,8 +7,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+// TestFrameSorter ...
 func TestFrameSorter(t *testing.T) {
-
 	field := data.NewField("Single float64", nil, []float64{
 		8.6, 8.7, 14.82, 10.07, 8.52,
 	}).SetConfig(&data.FieldConfig{Unit: "Percent"})
