@@ -23,15 +23,16 @@ func (fs FrameSorter) Swap(i, j int) {
 	}
 }
 func (fs FrameSorter) Less(i, j int) bool {
-	if fs.sortField.Type() == data.FieldTypeString {
+	switch kind := fs.sortField.Type(); kind {
+	case data.FieldTypeString:
 		valA := fs.sortField.At(i).(string)
 		valB := fs.sortField.At(j).(string)
 		return valA < valB
-	} else if fs.sortField.Type() == data.FieldTypeNullableString {
+	case data.FieldTypeNullableString:
 		valA := fs.sortField.At(i).(*string)
 		valB := fs.sortField.At(j).(*string)
 		return *valA < *valB
-	} else {
+	default:
 		valA, err := fs.sortField.FloatAt(i)
 		if err != nil {
 			return false
