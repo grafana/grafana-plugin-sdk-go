@@ -130,6 +130,11 @@ func (Build) Linux() error {
 	return buildBackend(newBuildConfig("linux", "amd64"))
 }
 
+// LinuxARM builds the back-end plugin for Linux on ARM.
+func (Build) LinuxARM() error {
+	return buildBackend(newBuildConfig("linux", "arm"))
+}
+
 // LinuxARM64 builds the back-end plugin for Linux on ARM64.
 func (Build) LinuxARM64() error {
 	return buildBackend(newBuildConfig("linux", "arm64"))
@@ -161,7 +166,7 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.LinuxARM64)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.LinuxARM64, b.LinuxARM)
 }
 
 // Test runs backend tests.
