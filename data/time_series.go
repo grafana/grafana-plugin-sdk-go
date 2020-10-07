@@ -526,7 +526,7 @@ func labelsTupleKey(l Labels) (string, error) {
 }
 
 // SortWideFrameFields sorts the order of a wide time series Frame's Fields.
-// It the frame is not a WideFrame, then an error is returned.
+// If the frame is not a WideFrame, then an error is returned.
 //
 // The Time that is the time index (the first time field of the original frame) is sorted first.
 // Then Fields are sorted by their name followed by the order of the label keys provided.
