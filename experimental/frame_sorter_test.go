@@ -24,8 +24,8 @@ func TestFrameSorter(t *testing.T) {
 
 	val, err := frame.Fields[0].FloatAt(0)
 	require.NoError(t, err)
-	want := float64(8.52)
 
+	want := float64(8.52)
 	assert.Equal(t, want, val)
 }
 
@@ -50,7 +50,7 @@ func TestFrameSorterLastNil(t *testing.T) {
 }
 
 func TestFrameSorterFirstNil(t *testing.T) {
-	value := "foo"
+	value := "test"
 	field := data.NewField("Foo", nil, []*string{
 		nil, &value,
 	})
