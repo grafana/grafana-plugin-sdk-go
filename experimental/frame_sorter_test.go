@@ -31,7 +31,7 @@ func TestFrameSorter(t *testing.T) {
 	assert.Equal(t, want, val)
 }
 
-func TestFrameSorterNil(t *testing.T) {
+func TestFrameSorterLastNil(t *testing.T) {
 	foo := "foo"
 	field := data.NewField("Foo", nil, []*string{
 		&foo, nil,
@@ -51,13 +51,13 @@ func TestFrameSorterNil(t *testing.T) {
 		t.Error("nil")
 	}
 
-	assert.Equal(t, "foo", val)
+	assert.Equal(t, foo, val)
 }
 
 func TestFrameSorterFirstNil(t *testing.T) {
-	foo := "foo"
+	value := "foo"
 	field := data.NewField("Foo", nil, []*string{
-		nil, &foo,
+		nil, &value,
 	})
 
 	frame := data.NewFrame("Frame One",
@@ -74,5 +74,5 @@ func TestFrameSorterFirstNil(t *testing.T) {
 		t.Error("nil")
 	}
 
-	assert.Equal(t, "foo", val)
+	assert.Equal(t, value, val)
 }
