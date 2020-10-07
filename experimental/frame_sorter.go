@@ -31,6 +31,12 @@ func (fs FrameSorter) Less(i, j int) bool {
 	case data.FieldTypeNullableString:
 		valA := fs.sortField.At(i).(*string)
 		valB := fs.sortField.At(j).(*string)
+		if valA == nil {
+			return false
+		}
+		if valB == nil {
+			return true
+		}
 		return *valA < *valB
 	default:
 		valA, err := fs.sortField.FloatAt(i)

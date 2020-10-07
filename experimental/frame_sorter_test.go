@@ -5,9 +5,9 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/stretchr/testify/assert"
 )
 
-// TestFrameSorter ...
 func TestFrameSorter(t *testing.T) {
 	field := data.NewField("Single float64", nil, []float64{
 		8.6, 8.7, 14.82, 10.07, 8.52,
@@ -27,7 +27,52 @@ func TestFrameSorter(t *testing.T) {
 		t.Error(err)
 	}
 	want := float64(8.52)
-	if val != want {
-		t.Errorf("Want %f Got %f", want, val)
+
+	assert.Equal(t, want, val)
+}
+
+func TestFrameSorterNil(t *testing.T) {
+	foo := "foo"
+	field := data.NewField("Foo", nil, []*string{
+		&foo, nil,
+	})
+
+	frame := data.NewFrame("Frame One",
+		field,
+	)
+
+	sorter := NewFrameSorter(frame, field)
+
+	sort.Sort(sorter)
+
+	val, ok := frame.Fields[0].ConcreteAt(0)
+
+	if !ok {
+		t.Error("nil")
 	}
+
+	assert.Equal(t, "foo", val)
+}
+
+func TestFrameSorterFirstNil(t *testing.T) {
+	foo := "foo"
+	field := data.NewField("Foo", nil, []*string{
+		nil, &foo,
+	})
+
+	frame := data.NewFrame("Frame One",
+		field,
+	)
+
+	sorter := NewFrameSorter(frame, field)
+
+	sort.Sort(sorter)
+
+	val, ok := frame.Fields[0].ConcreteAt(0)
+
+	if !ok {
+		t.Error("nil")
+	}
+
+	assert.Equal(t, "foo", val)
 }
