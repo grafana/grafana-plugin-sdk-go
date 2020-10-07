@@ -6,6 +6,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFrameSorter(t *testing.T) {
@@ -44,10 +45,7 @@ func TestFrameSorterLastNil(t *testing.T) {
 
 	val, ok := frame.Fields[0].ConcreteAt(0)
 
-	if !ok {
-		t.Error("nil")
-	}
-
+	assert.True(t, ok)
 	assert.Equal(t, foo, val)
 }
 
@@ -67,9 +65,6 @@ func TestFrameSorterFirstNil(t *testing.T) {
 
 	val, ok := frame.Fields[0].ConcreteAt(0)
 
-	if !ok {
-		t.Error("nil")
-	}
-
+	assert.True(t, ok)
 	assert.Equal(t, value, val)
 }
