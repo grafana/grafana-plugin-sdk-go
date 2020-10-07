@@ -22,10 +22,7 @@ func TestFrameSorter(t *testing.T) {
 	sort.Sort(sorter)
 
 	val, err := frame.Fields[0].FloatAt(0)
-
-	if err != nil {
-		t.Error(err)
-	}
+	require.NoError(t, err)
 	want := float64(8.52)
 
 	assert.Equal(t, want, val)
