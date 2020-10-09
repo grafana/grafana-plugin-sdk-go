@@ -45,6 +45,13 @@ func TestTimeSeriesSchema(t *testing.T) {
 			tsType: data.TimeSeriesTypeLong,
 		},
 		{
+			name: "simple long time series with bool facet",
+			frame: data.NewFrame("test", data.NewField("timeValues", nil, []time.Time{{}}),
+				data.NewField("floatValues", nil, []float64{1.0}),
+				data.NewField("enabled", nil, []bool{true})),
+			tsType: data.TimeSeriesTypeLong,
+		},
+		{
 			name: "multi-value wide time series",
 			frame: data.NewFrame("test", data.NewField("floatValues", nil, []float64{1.0}),
 				data.NewField("timeValues", nil, []time.Time{{}}),
@@ -994,6 +1001,64 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(6.0),
 				}),
 			),
+			Err: require.NoError,
+		},
+	}
+	for i := range tests {
+		tt := tests[i]
+		t.Run(tt.name, func(t *testing.T) {
+			frame, err := data.LongToWide(tt.longFrame, tt.tsFillMissing)
+			tt.Err(t, err)
+			if diff := cmp.Diff(tt.wideFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+func TestLongToWideBool(t *testing.T) {
+	tests := []struct {
+		name          string
+		longFrame     *data.Frame
+		wideFrame     *data.Frame
+		tsFillMissing *data.FillMissing
+		Err           require.ErrorAssertionFunc
+	}{
+		{
+			name: "one value, one bool factor",
+			longFrame: data.NewFrame("long_to_wide_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				data.NewField("Values Floats", nil, []float64{
+					1.0,
+					2.0,
+					3.0,
+					4.0,
+				}),
+				data.NewField("Enabled Factor", nil, []bool{
+					true,
+					false,
+					true,
+					false,
+				})),
+			tsFillMissing: nil,
+			wideFrame: data.NewFrame("long_to_wide_test",
+				data.NewField("Time", nil, []time.Time{
+					time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+					time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Enabled Factor": "false"}, []float64{
+					2.0,
+					4.0,
+				}),
+				data.NewField(`Values Floats`, data.Labels{"Enabled Factor": "true"}, []float64{
+					1.0,
+					3.0,
+				})),
 			Err: require.NoError,
 		},
 	}
