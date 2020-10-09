@@ -76,7 +76,7 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 
 	tsSchema.TimeIsNullable = f.Fields[tsSchema.TimeIndex].Nullable()
 
-	tsSchema.FactorIndices = f.TypeIndices(FieldTypeString, FieldTypeNullableString)
+	tsSchema.FactorIndices = f.TypeIndices(FieldTypeString, FieldTypeNullableString, FieldTypeBool, FieldTypeNullableBool)
 	for _, factorIdx := range tsSchema.FactorIndices {
 		nonValueIndices[factorIdx] = struct{}{}
 	}
@@ -188,7 +188,7 @@ func GetMissing(fillMissing *FillMissing, field *Field, previousRowIdx int) (int
 // The first Field of type time.Time or *time.Time will be the time index for the series,
 // and will be the first field of the outputted longFrame.
 //
-// During conversion: String Fields in the longFrame become Labels on the Fields of wideFrame. The name of each string Field becomes a label key, and the values of that Field become label values.
+// During conversion: String and bool Fields in the longFrame become Labels on the Fields of wideFrame. The name of each string or bool Field becomes a label key, and the values of that Field become label values.
 // Each unique combination of value Fields and set of Label key/values become a Field of longFrame.
 //
 // Additionally, if the time index is a *time.Time field, it will become time.Time Field. If a *string Field has nil values, they are equivalent to "" when converted into labels.
@@ -277,8 +277,21 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		// build labels
 		for i, factorLongFieldIdx := range tsSchema.FactorIndices {
 			val, _ := longFrame.ConcreteAt(factorLongFieldIdx, longRowIdx)
-			sliceKey[i] = tupleLabel{strconv.FormatInt(int64(factorLongFieldIdx), 10), val.(string)}
-			namedKey[i] = tupleLabel{longFrame.Fields[factorLongFieldIdx].Name, val.(string)}
+			var strVal string
+			switch v := val.(type) {
+			case string:
+				strVal = v
+			case bool:
+				if v {
+					strVal = "true"
+				} else {
+					strVal = "false"
+				}
+			default:
+				return nil, fmt.Errorf("unexpected type, want a string or bool but got type %T for '%v'", val, val)
+			}
+			sliceKey[i] = tupleLabel{strconv.FormatInt(int64(factorLongFieldIdx), 10), strVal}
+			namedKey[i] = tupleLabel{longFrame.Fields[factorLongFieldIdx].Name, strVal}
 		}
 		factorKey, err := sliceKey.MapKey()
 		if err != nil {
@@ -465,7 +478,7 @@ type TimeSeriesSchema struct {
 	TimeIndex      int            // Field index of the time series index
 	TimeIsNullable bool           // true if the time index is nullable (of *time.Time)
 	ValueIndices   []int          // Field indices of value columns (All fields excluding string fields and the time index)
-	FactorIndices  []int          // Field indices of string or *string Fields
+	FactorIndices  []int          // Field indices of string, *string, bool, or *bool Fields
 }
 
 // tupleLables is an alternative representation of Labels (map[string]string) that can be sorted
