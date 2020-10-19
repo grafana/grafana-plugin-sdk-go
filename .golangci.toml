@@ -41,6 +41,9 @@ enable = [
   "whitespace",
 ]
 
+[issues]
+exclude-use-default = false
+
 # Disabled linters (might want them later)
 # "gocyclo",
 # "unparam"
