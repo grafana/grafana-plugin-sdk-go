@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"regexp"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -123,12 +124,20 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 		str = fmt.Sprintf("\nERROR: %+v", dr.Error)
 	}
 
+	lastStructure := ""
+
 	if dr.Frames != nil {
 		for idx, frame := range dr.Frames {
 			str += fmt.Sprintf("\nFrame[%d] ", idx)
 			if frame.Meta != nil {
 				meta, _ := json.MarshalIndent(frame.Meta, "", "    ")
-				str += string(meta)
+				str += string(meta) + "\n\n"
+			}
+
+			ts := frameToTypescript(frame.Fields)
+			if ts != lastStructure {
+				str += ts + "\n\n"
+				lastStructure = ts
 			}
 
 			table, _ := frame.StringTable(100, 10)
@@ -150,4 +159,31 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 	str += "\n"
 
 	return ioutil.WriteFile(path, []byte(str), 0600)
+}
+
+func frameToTypescript(fields []*data.Field) string {
+	reg, _ := regexp.Compile("^[a-zA-Z0-9_]*$")
+
+	txt := "export interface YourFrameView {\n"
+	for _, field := range fields {
+		if reg.MatchString(field.Name) {
+			txt += "  " + field.Name
+		} else {
+			txt += "  \"" + field.Name + "\"" // quote non simple fields
+		}
+		t := field.Type()
+		if t.Nullable() {
+			txt += "?"
+		}
+		txt += ": "
+
+		if t.Time() || t.Numeric() {
+			txt += "number"
+		} else {
+			txt += "string" // ???
+		}
+
+		txt += "; // " + t.ItemTypeString() + "\n"
+	}
+	return txt + "}\n"
 }
