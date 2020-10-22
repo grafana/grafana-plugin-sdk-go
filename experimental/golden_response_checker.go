@@ -162,7 +162,7 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 }
 
 func frameToTypescript(fields []*data.Field) string {
-	reg, _ := regexp.Compile("^[a-zA-Z0-9_]*$")
+	reg := regexp.MustCompile("^[a-zA-Z0-9_]*$")
 
 	txt := "export interface YourFrameView {\n"
 	for _, field := range fields {
