@@ -44,23 +44,23 @@ type QueryDataRequest struct {
 // A slice of DataQuery makes up the Queries property of a QueryDataRequest.
 type DataQuery struct {
 	// RefID is the unique identifier of the query, set by the frontend call.
-	RefID string
+	RefID string `json:"refId"`
 
 	// QueryType is an optional identifier for the type of query.
 	// It can be used to distinguish different types of queries.
-	QueryType string
+	QueryType string `json:"queryType"`
 
 	// MaxDataPoints is the maximum number of datapoints that should be returned from a time series query.
-	MaxDataPoints int64
+	MaxDataPoints int64 `json:"maxDataPoints"`
 
 	// Interval is the suggested duration between time points in a time series query.
-	Interval time.Duration
+	Interval time.Duration `json:"intervalMs"`
 
 	// TimeRange is the Start and End of the query as sent by the frontend.
-	TimeRange TimeRange
+	TimeRange TimeRange `json:"timeRange"`
 
 	// JSON is the raw JSON query and includes the above properties as well as custom properties.
-	JSON json.RawMessage
+	JSON json.RawMessage `json:"json"`
 }
 
 // QueryDataResponse contains the results from a QueryDataRequest.
@@ -96,10 +96,10 @@ type DataResponse struct {
 // TimeRange represents a time range for a query and is a property of DataQuery.
 type TimeRange struct {
 	// From is the start time of the query.
-	From time.Time
+	From time.Time `json:"from"`
 
 	// To is the end time of the query.
-	To time.Time
+	To time.Time `json:"to"`
 }
 
 // Duration returns a time.Duration representing the amount of time between From and To.
