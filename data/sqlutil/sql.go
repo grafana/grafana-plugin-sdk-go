@@ -182,7 +182,6 @@ func Replace(frame *data.Frame, fieldIdx int, replacer *StringFieldReplacer) err
 	if field.Type() != data.FieldTypeNullableString {
 		return fmt.Errorf("can only replace []*string vectors, vector is of type %s", field.Type())
 	}
-	// newVector := newVector(replacer.VectorType, field.vector.Len())
 	newField := data.NewFieldFromFieldType(replacer.OutputFieldType, field.Len())
 	newField.Name = field.Name
 	newField.Config = field.Config
