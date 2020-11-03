@@ -284,6 +284,7 @@ func (f *Frame) SetFieldNames(names ...string) error {
 // Since the data within a Frame's Fields is not exported, this function allows the unexported
 // values to be tested.
 // The intent is to only use this for testing.
+// nolint:gocyclo
 func FrameTestCompareOptions() []cmp.Option {
 	confFloats := cmp.Comparer(func(x, y *ConfFloat64) bool {
 		if x == nil && y == nil {

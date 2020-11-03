@@ -45,6 +45,7 @@ type Fields []*Field
 //  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
 //
 // If an unsupported values type is passed, NewField will panic.
+// nolint:gocyclo
 func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec vector
 	switch v := values.(type) {
@@ -286,6 +287,7 @@ func (f *Field) Nullable() bool {
 //
 // If the Field type is a string, then strconv.ParseFloat is called on it and will return
 // an error if ParseFloat errors. If the value is nil, NaN is returned.
+// nolint:gocyclo
 func (f *Field) FloatAt(idx int) (float64, error) {
 	switch f.Type() {
 	case FieldTypeInt8:

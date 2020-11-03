@@ -39,8 +39,8 @@ enable = [
   "unused",
   "varcheck",
   "whitespace",
+  "gocyclo",
+  "unparam",
 ]
 
 # Disabled linters (might want them later)
-# "gocyclo",
-# "unparam"
