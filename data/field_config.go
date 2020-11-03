@@ -17,8 +17,8 @@ type FieldConfig struct {
 	DisplayName string `json:"displayName,omitempty"`
 	// Use this to control series / field naming from the data datasource
 	DisplayNameFromDS string `json:"displayNameFromDS,omitempty"`
-
-	Filterable *bool `json:"filterable,omitempty"` // indicates if the Field's data can be filtered by additional calls.
+	// indicates if the Field's data can be filtered by additional calls.
+	Filterable *bool `json:"filterable,omitempty"`
 
 	// Numeric Options
 	Unit     string       `json:"unit,omitempty"`     // is the string to display to represent the Field's unit, such as "Requests/sec"
