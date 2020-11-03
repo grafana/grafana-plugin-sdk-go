@@ -43,6 +43,7 @@ func TestCheckHealth(t *testing.T) {
 
 	t.Run("When check health handler set should call that", func(t *testing.T) {
 		tcs := []struct {
+			description         string
 			status              HealthStatus
 			message             string
 			jsonDetails         []byte
@@ -53,6 +54,7 @@ func TestCheckHealth(t *testing.T) {
 			expectedError       bool
 		}{
 			{
+				description:         "Health status unknown",
 				status:              HealthStatusUnknown,
 				message:             "unknown",
 				jsonDetails:         []byte("{}"),
@@ -61,6 +63,7 @@ func TestCheckHealth(t *testing.T) {
 				expectedJSONDetails: []byte("{}"),
 			},
 			{
+				description:         "Health status OK",
 				status:              HealthStatusOk,
 				message:             "all good",
 				jsonDetails:         []byte("{}"),
@@ -69,6 +72,7 @@ func TestCheckHealth(t *testing.T) {
 				expectedJSONDetails: []byte("{}"),
 			},
 			{
+				description:         "Health status error",
 				status:              HealthStatusError,
 				message:             "BOOM",
 				jsonDetails:         []byte(`{"error": "boom"}`),
@@ -77,33 +81,44 @@ func TestCheckHealth(t *testing.T) {
 				expectedJSONDetails: []byte(`{"error": "boom"}`),
 			},
 			{
+				description:   "General error returned",
 				err:           errors.New("BOOM"),
 				expectedError: true,
+			},
+			{
+				description:     "UnhealthyError returned",
+				status:          HealthStatusError,
+				message:         "unhealthy",
+				expectedStatus:  pluginv2.CheckHealthResponse_ERROR,
+				expectedMessage: "unhealthy",
+				err:             UnhealthyError{message: "unhealthy"},
 			},
 		}
 
 		for _, tc := range tcs {
-			adapter := newDiagnosticsSDKAdapter(nil, &testCheckHealthHandler{
-				status:      tc.status,
-				message:     tc.message,
-				jsonDetails: tc.jsonDetails,
-				err:         tc.err,
-			})
+			t.Run(tc.description, func(t *testing.T) {
+				adapter := newDiagnosticsSDKAdapter(nil, &testCheckHealthHandler{
+					status:      tc.status,
+					message:     tc.message,
+					jsonDetails: tc.jsonDetails,
+					err:         tc.err,
+				})
 
-			req := &pluginv2.CheckHealthRequest{
-				PluginContext: &pluginv2.PluginContext{},
-			}
-			res, err := adapter.CheckHealth(context.Background(), req)
-			if tc.expectedError {
-				require.Error(t, err)
-				require.Nil(t, res)
-			} else {
-				require.NoError(t, err)
-				require.NotNil(t, res)
-				require.Equal(t, tc.expectedStatus, res.Status)
-				require.Equal(t, tc.expectedMessage, res.Message)
-				require.Equal(t, tc.expectedJSONDetails, res.JsonDetails)
-			}
+				req := &pluginv2.CheckHealthRequest{
+					PluginContext: &pluginv2.PluginContext{},
+				}
+				res, err := adapter.CheckHealth(context.Background(), req)
+				if tc.expectedError {
+					require.Error(t, err)
+					require.Nil(t, res)
+				} else {
+					require.NoError(t, err)
+					require.NotNil(t, res)
+					require.Equal(t, tc.expectedStatus, res.Status)
+					require.Equal(t, tc.expectedMessage, res.Message)
+					require.Equal(t, tc.expectedJSONDetails, res.JsonDetails)
+				}
+			})
 		}
 	})
 }
