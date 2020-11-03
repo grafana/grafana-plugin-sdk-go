@@ -37,6 +37,7 @@ func NewRestClient(url string, headers map[string]string) Client {
 		client: &http.Client{
 			Transport: &http.Transport{
 				TLSClientConfig: &tls.Config{
+					MinVersion:    tls.VersionTLS12,
 					Renegotiation: tls.RenegotiateFreelyAsClient,
 				},
 				Proxy: http.ProxyFromEnvironment,

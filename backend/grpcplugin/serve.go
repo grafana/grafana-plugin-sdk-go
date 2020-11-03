@@ -6,7 +6,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-//ServeOpts options for serving plugins.
+// ServeOpts contains options for serving plugins.
 type ServeOpts struct {
 	DiagnosticsServer DiagnosticsServer
 	ResourceServer    ResourceServer

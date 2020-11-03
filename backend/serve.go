@@ -21,7 +21,7 @@ type GRPCSettings struct {
 	MaxSendMsgSize int
 }
 
-//ServeOpts options for serving plugins.
+// ServeOpts options for serving plugins.
 type ServeOpts struct {
 	// CheckHealthHandler handler for health checks.
 	CheckHealthHandler CheckHealthHandler
