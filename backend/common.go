@@ -19,11 +19,11 @@ type User struct {
 // type that have been configured and enabled in a Grafana organization.
 type AppInstanceSettings struct {
 	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any
-	//custom properties associated with the plugin config instance.
+	// custom properties associated with the plugin config instance.
 	JSONData json.RawMessage
 
 	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration plugin instance in Grafana
-	//server have been decrypted before passing them to the plugin.
+	// server have been decrypted before passing them to the plugin.
 	DecryptedSecureJSONData map[string]string
 
 	// Updated is the last time this plugin instance's configuration was updated.
