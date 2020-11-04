@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -69,7 +70,10 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Contains(t, httpHandler.req.Header, "X-Header-In-2")
 			require.Equal(t, []string{"F"}, httpHandler.req.Header["X-Header-In-2"])
 			require.NotNil(t, httpHandler.req.Body)
-			defer httpHandler.req.Body.Close()
+			t.Cleanup(func() {
+				err := httpHandler.req.Body.Close()
+				assert.NoError(t, err)
+			})
 			actualBodyBytes, err := ioutil.ReadAll(httpHandler.req.Body)
 			require.NoError(t, err)
 			var actualJSONMap map[string]interface{}

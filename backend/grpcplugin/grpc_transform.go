@@ -72,7 +72,9 @@ func (t *transformGRPCServer) TransformData(ctx context.Context, req *pluginv2.Q
 	if err != nil {
 		return nil, err
 	}
-	defer conn.Close()
+	defer func() {
+		_ = conn.Close()
+	}()
 	api := &transformDataCallBackGrpcClient{pluginv2.NewTransformDataCallBackClient(conn)}
 	return t.server.TransformData(ctx, req, api)
 }

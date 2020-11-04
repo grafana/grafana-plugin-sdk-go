@@ -8,19 +8,26 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 func TestCopyFile(t *testing.T) {
 	src, err := ioutil.TempFile("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(src.Name())
+	t.Cleanup(func() {
+		err := os.RemoveAll(src.Name())
+		assert.NoError(t, err)
+	})
 	err = ioutil.WriteFile(src.Name(), []byte("Contents"), 0600)
 	require.NoError(t, err)
 
 	dst, err := ioutil.TempFile("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(dst.Name())
+	t.Cleanup(func() {
+		err := os.RemoveAll(dst.Name())
+		assert.NoError(t, err)
+	})
 
 	err = CopyFile(src.Name(), dst.Name())
 	require.NoError(t, err)
@@ -30,7 +37,10 @@ func TestCopyFile(t *testing.T) {
 func TestCopyFile_NonExistentDestDir(t *testing.T) {
 	src, err := ioutil.TempFile("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(src.Name())
+	t.Cleanup(func() {
+		err := os.RemoveAll(src.Name())
+		assert.NoError(t, err)
+	})
 
 	err = CopyFile(src.Name(), "non-existent/dest")
 	require.EqualError(t, err, "destination directory doesn't exist: \"non-existent\"")
@@ -39,7 +49,10 @@ func TestCopyFile_NonExistentDestDir(t *testing.T) {
 func TestCopyRecursive_NonExistentDest(t *testing.T) {
 	src, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(src)
+	t.Cleanup(func() {
+		err := os.RemoveAll(src)
+		assert.NoError(t, err)
+	})
 
 	err = os.MkdirAll(path.Join(src, "data"), 0755)
 	require.NoError(t, err)
@@ -48,7 +61,10 @@ func TestCopyRecursive_NonExistentDest(t *testing.T) {
 
 	dstParent, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(dstParent)
+	t.Cleanup(func() {
+		err := os.RemoveAll(dstParent)
+		assert.NoError(t, err)
+	})
 
 	dst := path.Join(dstParent, "dest")
 
@@ -61,7 +77,10 @@ func TestCopyRecursive_NonExistentDest(t *testing.T) {
 func TestCopyRecursive_ExistentDest(t *testing.T) {
 	src, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(src)
+	t.Cleanup(func() {
+		err := os.RemoveAll(src)
+		assert.NoError(t, err)
+	})
 
 	err = os.MkdirAll(path.Join(src, "data"), 0755)
 	require.NoError(t, err)
@@ -70,7 +89,10 @@ func TestCopyRecursive_ExistentDest(t *testing.T) {
 
 	dst, err := ioutil.TempDir("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(dst)
+	t.Cleanup(func() {
+		err := os.RemoveAll(dst)
+		assert.NoError(t, err)
+	})
 
 	err = CopyRecursive(src, dst)
 	require.NoError(t, err)

@@ -65,7 +65,9 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() {
+		_ = file.Close()
+	}()
 
 	dr := &backend.DataResponse{}
 

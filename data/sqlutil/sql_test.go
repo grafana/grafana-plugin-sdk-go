@@ -95,23 +95,29 @@ func ExampleFrameFromRows() {
 	aQuery := "SELECT * FROM GoodData"
 	db, err := sql.Open("fancySql", "fancysql://user:pass@localhost:1433")
 	if err != nil {
-		// return err
+		return
 	}
 
-	defer db.Close()
+	defer func() {
+		_ = db.Close()
+	}()
 
+	// For some reason the rowserrcheck linter doesn't catch that rows.Err is checked
+	// nolint: rowserrcheck
 	rows, err := db.Query(aQuery)
 	if err != nil {
-		// return err
+		return
 	}
 	if rows.Err() != nil {
-		// return err
+		return
 	}
-	defer rows.Close()
+	defer func() {
+		_ = rows.Close()
+	}()
 
 	frame, mappings, err := sqlutil.FrameFromRows(rows, 1000)
 	if err != nil {
-		// return err
+		return
 	}
 	_, _ = frame, mappings
 }

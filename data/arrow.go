@@ -621,7 +621,9 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer fR.Close()
+	defer func() {
+		_ = fR.Close()
+	}()
 
 	schema := fR.Schema()
 	metaData := schema.Metadata()
