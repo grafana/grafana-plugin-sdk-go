@@ -65,7 +65,10 @@ func (ds *testDataSource) CheckHealth(ctx context.Context, req *backend.CheckHea
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		return nil, err
+	}
+
 	return nil, nil
 }
 
@@ -77,7 +80,10 @@ func (ds *testDataSource) QueryData(ctx context.Context, req *backend.QueryDataR
 		if err != nil {
 			return err
 		}
-		resp.Body.Close()
+		if err := resp.Body.Close(); err != nil {
+			return err
+		}
+
 		return nil
 	})
 
@@ -98,7 +104,10 @@ func (ds *testDataSource) handleTest(rw http.ResponseWriter, req *http.Request) 
 		rw.WriteHeader(500)
 		return
 	}
-	resp.Body.Close()
+	if err := resp.Body.Close(); err != nil {
+		rw.WriteHeader(500)
+		return
+	}
 }
 
 func Example() {
