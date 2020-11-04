@@ -50,4 +50,8 @@ exclude-use-default = false
 
 [[issues.exclude-rules]]
 linters = ["gosec"]
+text = "G301"
+
+[[issues.exclude-rules]]
+linters = ["gosec"]
 text = "G304"

@@ -1,3 +1,4 @@
+// Package build contains build logic.
 package build
 
 import (
