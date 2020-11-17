@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -410,7 +411,7 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 func populateFrameFields(fR arrio.Reader, nullable []bool, frame *Frame) error {
 	for {
 		record, err := fR.Read()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {

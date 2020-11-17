@@ -41,4 +41,12 @@ enable = [
   "whitespace",
   "gocyclo",
   "unparam",
+  "dogsled",
+  "asciicheck",
+  "errorlint",
+  "sqlclosecheck",
 ]
+# Don't require that errors are included through wrapping, since might not always want to wrap an error
+[[issues.exclude-rules]]
+linters = ["errorlint"]
+text = "non-wrapping format verb for fmt.Errorf"
