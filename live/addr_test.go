@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,29 +28,42 @@ func TestParseChannelAddress_Invalid(t *testing.T) {
 	require.False(t, addr.IsValid())
 }
 
-func TestConnectionConversions(t *testing.T) {
-	// Simple localhost
-	conn := ConnectionInfo{
-		URL: "http://localhost:3000",
+func TestToWebSocketURL(t *testing.T) {
+	testCases := []struct {
+		desc   string
+		url    string
+		exp    string
+		expErr string
+	}{
+		{
+			desc: "Simple localhost",
+			url:  "http://localhost:3000",
+			exp:  "ws://localhost:3000/live/ws?format=protobuf",
+		},
+		{
+			desc: "With subpath",
+			url:  "http://host/with/subpath",
+			exp:  "ws://host/with/subpathlive/ws?format=protobuf",
+		},
+		{
+			desc:   "Invalid URL",
+			url:    "xyz://asgasg:abc/with/subpath",
+			expErr: `parse "xyz://asgasg:abc/with/subpath": invalid port ":abc" after host`,
+		},
 	}
-	ws, _ := conn.ToWebSocketURL()
-	expect := "ws://localhost:3000/live/ws?format=protobuf"
-	if diff := cmp.Diff(expect, ws); diff != "" {
-		t.Fatalf("mismatch (-want +got):\n%s", diff)
-	}
-
-	// Now with subpath
-	conn.URL = "http://host/with/subpath"
-	ws, _ = conn.ToWebSocketURL()
-	expect = "ws://host/with/subpathlive/ws?format=protobuf"
-	if diff := cmp.Diff(expect, ws); diff != "" {
-		t.Fatalf("mismatch (-want +got):\n%s", diff)
-	}
-
-	// Error parsing URL
-	conn.URL = "xyz://asgasg:abc/with/subpath"
-	_, err := conn.ToWebSocketURL()
-	if err == nil {
-		t.Fatalf("expected error parsing url")
+	for _, tc := range testCases {
+		t.Run(tc.desc, func(t *testing.T) {
+			conn := ConnectionInfo{
+				URL: tc.url,
+			}
+			t.Log("Testing conn.ToWebSocketURL", "url", tc.url, "exp", tc.exp, "expErr", tc.expErr)
+			ws, err := conn.ToWebSocketURL()
+			if tc.expErr == "" {
+				require.NoError(t, err)
+				assert.Equal(t, tc.exp, ws, tc.desc)
+			} else {
+				assert.EqualError(t, err, tc.expErr, tc.desc)
+			}
+		})
 	}
 }
