@@ -212,131 +212,41 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 	longLen, err := longFrame.RowLen()
 	if err != nil {
 		return nil, err
-	} else if longLen == 0 {
+	}
+	if longLen == 0 {
 		return nil, fmt.Errorf("can not convert to wide series, input fields have no rows")
 	}
 
 	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
 	wideFrame.Meta = longFrame.Meta
-	wideFrameRowCounter := 0
-
-	seenFactors := map[string]struct{}{}                      // seen factor combinations
-	valueFactorToWideFieldIdx := make(map[int]map[string]int) // value field idx and factors key -> fieldIdx of longFrame (for insertion)
-	for _, i := range tsSchema.ValueIndices {                 // initialize nested maps
-		valueFactorToWideFieldIdx[i] = make(map[string]int)
-	}
 
 	sortKeys := make([]string, len(tsSchema.FactorIndices))
 	for i, v := range tsSchema.FactorIndices { // set dimension key order for final sort
 		sortKeys[i] = longFrame.Fields[v].Name
 	}
 
-	timeAt := func(idx int) (time.Time, error) { // get time.Time regardless if pointer
-		val, ok := longFrame.ConcreteAt(tsSchema.TimeIndex, idx)
-		if !ok {
-			return time.Time{}, fmt.Errorf("can not convert to wide series, input has null time values")
-		}
-		return val.(time.Time), nil
-	}
-	lastTime, err := timeAt(0) // set initial time value
+	lastTime, err := timeAt(0, longFrame, tsSchema) // set initial time value
 	if err != nil {
 		return nil, err
 	}
 	wideFrame.Fields[0].Append(lastTime)
 
+	valueFactorToWideFieldIdx := make(map[int]map[string]int) // value field idx and factors key -> fieldIdx of longFrame (for insertion)
+	for _, i := range tsSchema.ValueIndices {                 // initialize nested maps
+		valueFactorToWideFieldIdx[i] = make(map[string]int)
+	}
+	proc := longRowProcessor{
+		lastTime:                  lastTime,
+		wideFrame:                 wideFrame,
+		longFrame:                 longFrame,
+		tsSchema:                  tsSchema,
+		fillMissing:               fillMissing,
+		seenFactors:               map[string]struct{}{},
+		valueFactorToWideFieldIdx: valueFactorToWideFieldIdx,
+	}
 	for longRowIdx := 0; longRowIdx < longLen; longRowIdx++ { // loop over each row of longFrame
-		currentTime, err := timeAt(longRowIdx)
-		if err != nil {
+		if err := proc.process(longRowIdx); err != nil {
 			return nil, err
-		}
-
-		if currentTime.After(lastTime) { // time advance means new row in wideFrame
-			wideFrameRowCounter++
-			lastTime = currentTime
-			for wideFrameIdx, field := range wideFrame.Fields {
-				// extend all wideFrame Field Vectors for new row. If no value found, it will have zero value
-				field.Extend(1)
-				if wideFrameIdx == 0 {
-					wideFrame.Set(wideFrameIdx, wideFrameRowCounter, currentTime)
-					continue
-				}
-				fillVal, err := GetMissing(fillMissing, field, wideFrameRowCounter-1)
-				if err == nil {
-					wideFrame.Set(wideFrameIdx, wideFrameRowCounter, fillVal)
-				}
-			}
-		}
-
-		if currentTime.Before(lastTime) {
-			return nil, fmt.Errorf("long series must be sorted ascending by time to be converted")
-		}
-
-		sliceKey := make(tupleLabels, len(tsSchema.FactorIndices)) // factor columns idx:value tuples (used for lookup)
-		namedKey := make(tupleLabels, len(tsSchema.FactorIndices)) // factor columns name:value tuples (used for labels)
-
-		// build labels
-		for i, factorLongFieldIdx := range tsSchema.FactorIndices {
-			val, _ := longFrame.ConcreteAt(factorLongFieldIdx, longRowIdx)
-			var strVal string
-			switch v := val.(type) {
-			case string:
-				strVal = v
-			case bool:
-				if v {
-					strVal = "true"
-				} else {
-					strVal = "false"
-				}
-			default:
-				return nil, fmt.Errorf("unexpected type, want a string or bool but got type %T for '%v'", val, val)
-			}
-			sliceKey[i] = tupleLabel{strconv.FormatInt(int64(factorLongFieldIdx), 10), strVal}
-			namedKey[i] = tupleLabel{longFrame.Fields[factorLongFieldIdx].Name, strVal}
-		}
-		factorKey, err := sliceKey.MapKey()
-		if err != nil {
-			return nil, err
-		}
-
-		// make new Fields as new factor combinations are found
-		if _, ok := seenFactors[factorKey]; !ok {
-			currentFieldLen := len(wideFrame.Fields) // first index for the set of factors.
-			seenFactors[factorKey] = struct{}{}
-			for offset, longFieldIdx := range tsSchema.ValueIndices {
-				// a new Field is created for each value Field from inFrame
-				labels, err := tupleLablesToLabels(namedKey)
-				if err != nil {
-					return nil, err
-				}
-				longField := longFrame.Fields[tsSchema.ValueIndices[offset]]
-
-				newWideField := NewFieldFromFieldType(longField.Type(), wideFrameRowCounter+1)
-				if fillMissing != nil && fillMissing.Mode != FillModeValue {
-					// if fillMissing mode is null or previous
-					// the new wide field should be nullable
-					// because some cells can be null
-					newWideField = NewFieldFromFieldType(longField.Type().NullableType(), wideFrameRowCounter+1)
-				}
-				newWideField.Name, newWideField.Labels = longField.Name, labels
-				wideFrame.Fields = append(wideFrame.Fields, newWideField)
-
-				fillVal, err := GetMissing(fillMissing, newWideField, wideFrameRowCounter-1)
-				if err == nil {
-					for i := 0; i < wideFrameRowCounter; i++ {
-						wideFrame.Set(currentFieldLen+offset, i, fillVal)
-					}
-				}
-
-				valueFactorToWideFieldIdx[longFieldIdx][factorKey] = currentFieldLen + offset
-			}
-		}
-		for _, longFieldIdx := range tsSchema.ValueIndices {
-			wideFieldIdx := valueFactorToWideFieldIdx[longFieldIdx][factorKey]
-			if wideFrame.Fields[wideFieldIdx].Nullable() && !longFrame.Fields[longFieldIdx].Nullable() {
-				wideFrame.SetConcrete(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
-				continue
-			}
-			wideFrame.Set(wideFieldIdx, wideFrameRowCounter, longFrame.CopyAt(longFieldIdx, longRowIdx))
 		}
 	}
 
@@ -346,6 +256,126 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 	}
 
 	return wideFrame, nil
+}
+
+type longRowProcessor struct {
+	lastTime            time.Time
+	wideFrameRowCounter int
+	wideFrame           *Frame
+	longFrame           *Frame
+	tsSchema            TimeSeriesSchema
+	fillMissing         *FillMissing
+	// seen factor combinations
+	seenFactors map[string]struct{}
+	// value field idx and factors key -> fieldIdx of longFrame (for insertion)
+	valueFactorToWideFieldIdx map[int]map[string]int
+}
+
+func (p *longRowProcessor) process(longRowIdx int) error {
+	currentTime, err := timeAt(longRowIdx, p.longFrame, p.tsSchema)
+	if err != nil {
+		return err
+	}
+
+	if currentTime.After(p.lastTime) { // time advance means new row in wideFrame
+		p.wideFrameRowCounter++
+		p.lastTime = currentTime
+		for wideFrameIdx, field := range p.wideFrame.Fields {
+			// extend all wideFrame Field Vectors for new row. If no value found, it will have zero value
+			field.Extend(1)
+			if wideFrameIdx == 0 {
+				p.wideFrame.Set(wideFrameIdx, p.wideFrameRowCounter, currentTime)
+				continue
+			}
+			fillVal, err := GetMissing(p.fillMissing, field, p.wideFrameRowCounter-1)
+			if err == nil {
+				p.wideFrame.Set(wideFrameIdx, p.wideFrameRowCounter, fillVal)
+			}
+		}
+	}
+
+	if currentTime.Before(p.lastTime) {
+		return fmt.Errorf("long series must be sorted ascending by time to be converted")
+	}
+
+	sliceKey := make(tupleLabels, len(p.tsSchema.FactorIndices)) // factor columns idx:value tuples (used for lookup)
+	namedKey := make(tupleLabels, len(p.tsSchema.FactorIndices)) // factor columns name:value tuples (used for labels)
+
+	// build labels
+	for i, factorLongFieldIdx := range p.tsSchema.FactorIndices {
+		val, _ := p.longFrame.ConcreteAt(factorLongFieldIdx, longRowIdx)
+		var strVal string
+		switch v := val.(type) {
+		case string:
+			strVal = v
+		case bool:
+			if v {
+				strVal = "true"
+			} else {
+				strVal = "false"
+			}
+		default:
+			return fmt.Errorf(
+				"unexpected type, want a string or bool but got type %T for '%v'", val, val)
+		}
+		sliceKey[i] = tupleLabel{strconv.FormatInt(int64(factorLongFieldIdx), 10), strVal}
+		namedKey[i] = tupleLabel{p.longFrame.Fields[factorLongFieldIdx].Name, strVal}
+	}
+	factorKey, err := sliceKey.MapKey()
+	if err != nil {
+		return err
+	}
+
+	// make new Fields as new factor combinations are found
+	if _, ok := p.seenFactors[factorKey]; !ok {
+		currentFieldLen := len(p.wideFrame.Fields) // first index for the set of factors.
+		p.seenFactors[factorKey] = struct{}{}
+		for offset, longFieldIdx := range p.tsSchema.ValueIndices {
+			// a new Field is created for each value Field from inFrame
+			labels, err := tupleLablesToLabels(namedKey)
+			if err != nil {
+				return err
+			}
+			longField := p.longFrame.Fields[p.tsSchema.ValueIndices[offset]]
+
+			newWideField := NewFieldFromFieldType(longField.Type(), p.wideFrameRowCounter+1)
+			if p.fillMissing != nil && p.fillMissing.Mode != FillModeValue {
+				// if fillMissing mode is null or previous
+				// the new wide field should be nullable
+				// because some cells can be null
+				newWideField = NewFieldFromFieldType(longField.Type().NullableType(), p.wideFrameRowCounter+1)
+			}
+			newWideField.Name, newWideField.Labels = longField.Name, labels
+			p.wideFrame.Fields = append(p.wideFrame.Fields, newWideField)
+
+			fillVal, err := GetMissing(p.fillMissing, newWideField, p.wideFrameRowCounter-1)
+			if err == nil {
+				for i := 0; i < p.wideFrameRowCounter; i++ {
+					p.wideFrame.Set(currentFieldLen+offset, i, fillVal)
+				}
+			}
+
+			p.valueFactorToWideFieldIdx[longFieldIdx][factorKey] = currentFieldLen + offset
+		}
+	}
+	for _, longFieldIdx := range p.tsSchema.ValueIndices {
+		wideFieldIdx := p.valueFactorToWideFieldIdx[longFieldIdx][factorKey]
+		if p.wideFrame.Fields[wideFieldIdx].Nullable() && !p.longFrame.Fields[longFieldIdx].Nullable() {
+			p.wideFrame.SetConcrete(wideFieldIdx, p.wideFrameRowCounter, p.longFrame.CopyAt(longFieldIdx, longRowIdx))
+			continue
+		}
+		p.wideFrame.Set(wideFieldIdx, p.wideFrameRowCounter, p.longFrame.CopyAt(longFieldIdx, longRowIdx))
+	}
+
+	return nil
+}
+
+func timeAt(idx int, longFrame *Frame, tsSchema TimeSeriesSchema) (time.Time, error) { // get time.Time regardless if pointer
+	val, ok := longFrame.ConcreteAt(tsSchema.TimeIndex, idx)
+	if !ok {
+		return time.Time{}, fmt.Errorf("can not convert to wide series, input has null time values")
+	}
+	return val.(time.Time), nil
 }
 
 // WideToLong converts a Wide formated time series Frame to a Long formated time series Frame (see TimeSeriesType for descriptions). The first Field of type time.Time or *time.Time in wideFrame will be the time index for the series, and will be the first field of the outputted wideFrame.
