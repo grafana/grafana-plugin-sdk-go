@@ -11,11 +11,11 @@ type ConnectionInfo struct {
 	// URL is the root Grafana HTTP URL.
 	URL string `json:"host,omitempty"`
 
-	// API key
+	// Key is the API key.
 	Key string `json:"key,omitempty"`
 }
 
-// ToWebSocketURL converts the standard HTTP URL to the expected WS url
+// ToWebSocketURL converts the standard HTTP URL to the expected WS URL.
 func (c *ConnectionInfo) ToWebSocketURL() (string, error) {
 	u, err := url.Parse(c.URL)
 	if err != nil {
