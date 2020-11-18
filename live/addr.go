@@ -2,6 +2,7 @@ package live
 
 import (
 	"net/url"
+	"path"
 	"strings"
 )
 
@@ -26,7 +27,7 @@ func (c *ConnectionInfo) ToWebSocketURL() (string, error) {
 	} else {
 		u.Scheme = "ws"
 	}
-	u.Path += "/live/ws"
+	u.Path = path.Join(u.Path, "live", "ws")
 	u.RawQuery = "format=protobuf"
 	return u.String(), nil
 }
