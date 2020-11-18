@@ -26,7 +26,7 @@ func (c *ConnectionInfo) ToWebSocketURL() (string, error) {
 	} else {
 		u.Scheme = "ws"
 	}
-	u.Path += "live/ws"
+	u.Path += "/live/ws"
 	u.RawQuery = "format=protobuf"
 	return u.String(), nil
 }

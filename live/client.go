@@ -2,10 +2,11 @@ package live
 
 import (
 	"fmt"
-	"log"
 	"time"
 
 	"github.com/centrifugal/centrifuge-go"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 // GrafanaLiveClient connects to the GrafanaLive server
@@ -14,6 +15,7 @@ type GrafanaLiveClient struct {
 	client    *centrifuge.Client
 	lastWarn  time.Time
 	channels  map[string]*GrafanaLiveChannel
+	Log       log.Logger
 }
 
 // GrafanaLiveChannel allows access to a channel within the server
@@ -58,13 +60,13 @@ func (c *GrafanaLiveChannel) Publish(data []byte) {
 	if !c.client.connected {
 		if time.Since(c.client.lastWarn) > time.Second*5 {
 			c.client.lastWarn = time.Now()
-			log.Printf("Grafana live channel not connected: %s\n", c.id)
+			c.client.Log.Info("Grafana live channel not connected", "id", c.id)
 		}
 		return
 	}
 	_, err := c.sub.Publish(data)
 	if err != nil {
-		log.Printf("error publishing: %v", err)
+		c.client.Log.Info("error publishing", "error", err)
 	}
 }
 
@@ -77,16 +79,16 @@ type liveClientHandler struct {
 }
 
 func (h *liveClientHandler) OnConnect(c *centrifuge.Client, e centrifuge.ConnectEvent) {
-	log.Printf("Connected to Grafana live with ID %s", e.ClientID)
+	h.client.Log.Info("Connected to Grafana live", "clientId", e.ClientID)
 	h.client.connected = true
 }
 
 func (h *liveClientHandler) OnError(c *centrifuge.Client, e centrifuge.ErrorEvent) {
-	log.Printf("Error: %s", e.Message)
+	h.client.Log.Warn("Grafana live error", "error", e.Message)
 }
 
 func (h *liveClientHandler) OnDisconnect(c *centrifuge.Client, e centrifuge.DisconnectEvent) {
-	log.Printf("Disconnected from Grafana live: %s", e.Reason)
+	h.client.Log.Info("Disconnected to Grafana live", "reason", e.Reason)
 	h.client.connected = false
 }
 
@@ -97,19 +99,19 @@ func (h *liveClientHandler) OnDisconnect(c *centrifuge.Client, e centrifuge.Disc
 // OnSubscribeSuccess is called when the channel is subscribed
 func (c *GrafanaLiveChannel) OnSubscribeSuccess(sub *centrifuge.Subscription, e centrifuge.SubscribeSuccessEvent) {
 	c.subscribed = true
-	log.Printf("Subscribed on channel %s, resubscribed: %v, recovered: %v", sub.Channel(), e.Resubscribed, e.Recovered)
+	c.client.Log.Info("Subscribed", "channel", sub.Channel())
 }
 
 // OnSubscribeError is called when the channel has an error
 func (c *GrafanaLiveChannel) OnSubscribeError(sub *centrifuge.Subscription, e centrifuge.SubscribeErrorEvent) {
 	c.subscribed = false
-	log.Printf("Subscription on channel %s failed, error: %s", sub.Channel(), e.Error)
+	c.client.Log.Warn("Subscription failed", "channel", sub.Channel(), "error", e.Error)
 }
 
 // OnUnsubscribe is called when the channel is unsubscribed
 func (c *GrafanaLiveChannel) OnUnsubscribe(sub *centrifuge.Subscription, e centrifuge.UnsubscribeEvent) {
 	c.subscribed = false
-	log.Printf("Unsubscribed from channel %s", sub.Channel())
+	c.client.Log.Info("Unsubscribed", "channel", sub.Channel())
 }
 
 // InitGrafanaLiveClient starts a chat server
@@ -118,13 +120,12 @@ func InitGrafanaLiveClient(conn ConnectionInfo) (*GrafanaLiveClient, error) {
 	if err != nil {
 		return nil, err
 	}
-	log.Printf("Connecting to %s\n", url)
-
 	c := centrifuge.New(url, centrifuge.DefaultConfig())
 
 	glc := &GrafanaLiveClient{
 		client:   c,
 		channels: make(map[string]*GrafanaLiveChannel),
+		Log:      backend.Logger,
 	}
 	handler := &liveClientHandler{
 		client: glc,

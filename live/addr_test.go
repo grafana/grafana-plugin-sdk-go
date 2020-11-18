@@ -43,7 +43,7 @@ func TestToWebSocketURL(t *testing.T) {
 		{
 			desc: "With subpath",
 			url:  "http://host/with/subpath",
-			exp:  "ws://host/with/subpathlive/ws?format=protobuf",
+			exp:  "ws://host/with/subpath/live/ws?format=protobuf",
 		},
 		{
 			desc:   "Invalid URL",
