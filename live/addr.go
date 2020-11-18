@@ -11,8 +11,7 @@ type ConnectionInfo struct {
 	// URL is the root Grafana HTTP URL.
 	URL string `json:"host,omitempty"`
 
-	// Key is the API key.
-	Key string `json:"key,omitempty"`
+	// TODO: API KEY
 }
 
 // ToWebSocketURL converts the standard HTTP URL to the expected WS URL.
