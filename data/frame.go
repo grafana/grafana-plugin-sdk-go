@@ -64,7 +64,7 @@ func (f *Frame) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// UnmarshalJSON uses the `MarshalArrow` function to marshal this type from JSON
+// MarshalJSON uses the `MarshalArrow` function to marshal this type from JSON
 func (f *Frame) MarshalJSON() ([]byte, error) {
 	arrow, err := f.MarshalArrow()
 	if err != nil {
