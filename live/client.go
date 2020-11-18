@@ -60,7 +60,7 @@ func (c *GrafanaLiveChannel) Publish(data []byte) {
 	if !c.client.connected {
 		if time.Since(c.client.lastWarn) > time.Second*5 {
 			c.client.lastWarn = time.Now()
-			c.client.Log.Info("Grafana live channel not connected", "id", c.id)
+			c.client.Log.Warn("Grafana live channel not connected", "id", c.id)
 		}
 		return
 	}
