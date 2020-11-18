@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -311,87 +312,8 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 			}
 		}
 		nullable[idx] = field.Nullable
-		switch field.Type.ID() {
-		case arrow.STRING:
-			if nullable[idx] {
-				sdkField.vector = newNullableStringVector(0)
-				break
-			}
-			sdkField.vector = newStringVector(0)
-		case arrow.INT8:
-			if nullable[idx] {
-				sdkField.vector = newNullableInt8Vector(0)
-				break
-			}
-			sdkField.vector = newInt8Vector(0)
-		case arrow.INT16:
-			if nullable[idx] {
-				sdkField.vector = newNullableInt16Vector(0)
-				break
-			}
-			sdkField.vector = newInt16Vector(0)
-		case arrow.INT32:
-			if nullable[idx] {
-				sdkField.vector = newNullableInt32Vector(0)
-				break
-			}
-			sdkField.vector = newInt32Vector(0)
-		case arrow.INT64:
-			if nullable[idx] {
-				sdkField.vector = newNullableInt64Vector(0)
-				break
-			}
-			sdkField.vector = newInt64Vector(0)
-		case arrow.UINT8:
-			if nullable[idx] {
-				sdkField.vector = newNullableUint8Vector(0)
-				break
-			}
-			sdkField.vector = newUint8Vector(0)
-		case arrow.UINT16:
-			if nullable[idx] {
-				sdkField.vector = newNullableUint16Vector(0)
-				break
-			}
-			sdkField.vector = newUint16Vector(0)
-		case arrow.UINT32:
-			if nullable[idx] {
-				sdkField.vector = newNullableUint32Vector(0)
-				break
-			}
-			sdkField.vector = newUint32Vector(0)
-		case arrow.UINT64:
-			if nullable[idx] {
-				sdkField.vector = newNullableUint64Vector(0)
-				break
-			}
-			sdkField.vector = newUint64Vector(0)
-		case arrow.FLOAT32:
-			if nullable[idx] {
-				sdkField.vector = newNullableFloat32Vector(0)
-				break
-			}
-			sdkField.vector = newFloat32Vector(0)
-		case arrow.FLOAT64:
-			if nullable[idx] {
-				sdkField.vector = newNullableFloat64Vector(0)
-				break
-			}
-			sdkField.vector = newFloat64Vector(0)
-		case arrow.BOOL:
-			if nullable[idx] {
-				sdkField.vector = newNullableBoolVector(0)
-				break
-			}
-			sdkField.vector = newBoolVector(0)
-		case arrow.TIMESTAMP:
-			if nullable[idx] {
-				sdkField.vector = newNullableTimeTimeVector(0)
-				break
-			}
-			sdkField.vector = newTimeTimeVector(0)
-		default:
-			return nullable, fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
+		if err := initializeFrameField(field, idx, nullable, sdkField); err != nil {
+			return nil, err
 		}
 
 		frame.Fields = append(frame.Fields, sdkField)
@@ -399,218 +321,315 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	return nullable, nil
 }
 
+func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField *Field) error {
+	switch field.Type.ID() {
+	case arrow.STRING:
+		if nullable[idx] {
+			sdkField.vector = newNullableStringVector(0)
+			break
+		}
+		sdkField.vector = newStringVector(0)
+	case arrow.INT8:
+		if nullable[idx] {
+			sdkField.vector = newNullableInt8Vector(0)
+			break
+		}
+		sdkField.vector = newInt8Vector(0)
+	case arrow.INT16:
+		if nullable[idx] {
+			sdkField.vector = newNullableInt16Vector(0)
+			break
+		}
+		sdkField.vector = newInt16Vector(0)
+	case arrow.INT32:
+		if nullable[idx] {
+			sdkField.vector = newNullableInt32Vector(0)
+			break
+		}
+		sdkField.vector = newInt32Vector(0)
+	case arrow.INT64:
+		if nullable[idx] {
+			sdkField.vector = newNullableInt64Vector(0)
+			break
+		}
+		sdkField.vector = newInt64Vector(0)
+	case arrow.UINT8:
+		if nullable[idx] {
+			sdkField.vector = newNullableUint8Vector(0)
+			break
+		}
+		sdkField.vector = newUint8Vector(0)
+	case arrow.UINT16:
+		if nullable[idx] {
+			sdkField.vector = newNullableUint16Vector(0)
+			break
+		}
+		sdkField.vector = newUint16Vector(0)
+	case arrow.UINT32:
+		if nullable[idx] {
+			sdkField.vector = newNullableUint32Vector(0)
+			break
+		}
+		sdkField.vector = newUint32Vector(0)
+	case arrow.UINT64:
+		if nullable[idx] {
+			sdkField.vector = newNullableUint64Vector(0)
+			break
+		}
+		sdkField.vector = newUint64Vector(0)
+	case arrow.FLOAT32:
+		if nullable[idx] {
+			sdkField.vector = newNullableFloat32Vector(0)
+			break
+		}
+		sdkField.vector = newFloat32Vector(0)
+	case arrow.FLOAT64:
+		if nullable[idx] {
+			sdkField.vector = newNullableFloat64Vector(0)
+			break
+		}
+		sdkField.vector = newFloat64Vector(0)
+	case arrow.BOOL:
+		if nullable[idx] {
+			sdkField.vector = newNullableBoolVector(0)
+			break
+		}
+		sdkField.vector = newBoolVector(0)
+	case arrow.TIMESTAMP:
+		if nullable[idx] {
+			sdkField.vector = newNullableTimeTimeVector(0)
+			break
+		}
+		sdkField.vector = newTimeTimeVector(0)
+	default:
+		return fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
+	}
+
+	return nil
+}
+
 func populateFrameFields(fR arrio.Reader, nullable []bool, frame *Frame) error {
 	for {
 		record, err := fR.Read()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
 			return err
 		}
+
 		for i := 0; i < len(frame.Fields); i++ {
 			col := record.Column(i)
-			switch col.DataType().ID() {
-			case arrow.STRING:
-				v := array.NewStringData(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *string
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.INT8:
-				v := array.NewInt8Data(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *int8
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.INT16:
-				v := array.NewInt16Data(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *int16
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.INT32:
-				v := array.NewInt32Data(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *int32
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.INT64:
-				v := array.NewInt64Data(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *int64
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.UINT8:
-				v := array.NewUint8Data(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *uint8
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.UINT32:
-				v := array.NewUint32Data(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *uint32
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.UINT64:
-				v := array.NewUint64Data(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *uint64
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.UINT16:
-				v := array.NewUint16Data(col.Data())
-				for rIdx := 0; rIdx < col.Len(); rIdx++ {
-					if nullable[i] {
-						if v.IsNull(rIdx) {
-							var ns *uint16
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						rv := v.Value(rIdx)
-						frame.Fields[i].vector.Append(&rv)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(rIdx))
-				}
-			case arrow.FLOAT32:
-				v := array.NewFloat32Data(col.Data())
-				for vIdx, f := range v.Float32Values() {
-					if nullable[i] {
-						if v.IsNull(vIdx) {
-							var nf *float32
-							frame.Fields[i].vector.Append(nf)
-							continue
-						}
-						vF := f
-						frame.Fields[i].vector.Append(&vF)
-						continue
-					}
-					frame.Fields[i].vector.Append(f)
-				}
-			case arrow.FLOAT64:
-				v := array.NewFloat64Data(col.Data())
-				for vIdx, f := range v.Float64Values() {
-					if nullable[i] {
-						if v.IsNull(vIdx) {
-							var nf *float64
-							frame.Fields[i].vector.Append(nf)
-							continue
-						}
-						vF := f
-						frame.Fields[i].vector.Append(&vF)
-						continue
-					}
-					frame.Fields[i].vector.Append(f)
-				}
-			case arrow.BOOL:
-				v := array.NewBooleanData(col.Data())
-				for sIdx := 0; sIdx < col.Len(); sIdx++ {
-					if nullable[i] {
-						if v.IsNull(sIdx) {
-							var ns *bool
-							frame.Fields[i].vector.Append(ns)
-							continue
-						}
-						vB := v.Value(sIdx)
-						frame.Fields[i].vector.Append(&vB)
-						continue
-					}
-					frame.Fields[i].vector.Append(v.Value(sIdx))
-				}
-			case arrow.TIMESTAMP:
-				v := array.NewTimestampData(col.Data())
-				for vIdx, ts := range v.TimestampValues() {
-					t := time.Unix(0, int64(ts)) // nanosecond assumption
-					if nullable[i] {
-						if v.IsNull(vIdx) {
-							var nt *time.Time
-							frame.Fields[i].vector.Append(nt)
-							continue
-						}
-						frame.Fields[i].vector.Append(&t)
-						continue
-					}
-					frame.Fields[i].vector.Append(t)
-				}
-			default:
-				return fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())
+			if err := parseColumn(col, i, nullable, frame); err != nil {
+				return err
 			}
 		}
 	}
+	return nil
+}
+
+// nolint:gocyclo
+func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) error {
+	switch col.DataType().ID() {
+	case arrow.STRING:
+		v := array.NewStringData(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *string
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.INT8:
+		v := array.NewInt8Data(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *int8
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.INT16:
+		v := array.NewInt16Data(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *int16
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.INT32:
+		v := array.NewInt32Data(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *int32
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.INT64:
+		v := array.NewInt64Data(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *int64
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.UINT8:
+		v := array.NewUint8Data(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *uint8
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.UINT32:
+		v := array.NewUint32Data(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *uint32
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.UINT64:
+		v := array.NewUint64Data(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *uint64
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.UINT16:
+		v := array.NewUint16Data(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *uint16
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.FLOAT32:
+		v := array.NewFloat32Data(col.Data())
+		for vIdx, f := range v.Float32Values() {
+			if nullable[i] {
+				if v.IsNull(vIdx) {
+					var nf *float32
+					frame.Fields[i].vector.Append(nf)
+					continue
+				}
+				vF := f
+				frame.Fields[i].vector.Append(&vF)
+				continue
+			}
+			frame.Fields[i].vector.Append(f)
+		}
+	case arrow.FLOAT64:
+		v := array.NewFloat64Data(col.Data())
+		for vIdx, f := range v.Float64Values() {
+			if nullable[i] {
+				if v.IsNull(vIdx) {
+					var nf *float64
+					frame.Fields[i].vector.Append(nf)
+					continue
+				}
+				vF := f
+				frame.Fields[i].vector.Append(&vF)
+				continue
+			}
+			frame.Fields[i].vector.Append(f)
+		}
+	case arrow.BOOL:
+		v := array.NewBooleanData(col.Data())
+		for sIdx := 0; sIdx < col.Len(); sIdx++ {
+			if nullable[i] {
+				if v.IsNull(sIdx) {
+					var ns *bool
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				vB := v.Value(sIdx)
+				frame.Fields[i].vector.Append(&vB)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(sIdx))
+		}
+	case arrow.TIMESTAMP:
+		v := array.NewTimestampData(col.Data())
+		for vIdx, ts := range v.TimestampValues() {
+			t := time.Unix(0, int64(ts)) // nanosecond assumption
+			if nullable[i] {
+				if v.IsNull(vIdx) {
+					var nt *time.Time
+					frame.Fields[i].vector.Append(nt)
+					continue
+				}
+				frame.Fields[i].vector.Append(&t)
+				continue
+			}
+			frame.Fields[i].vector.Append(t)
+		}
+	default:
+		return fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())
+	}
+
 	return nil
 }
 
