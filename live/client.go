@@ -88,7 +88,7 @@ func (h *liveClientHandler) OnError(c *centrifuge.Client, e centrifuge.ErrorEven
 }
 
 func (h *liveClientHandler) OnDisconnect(c *centrifuge.Client, e centrifuge.DisconnectEvent) {
-	h.client.Log.Info("Disconnected to Grafana live", "reason", e.Reason)
+	h.client.Log.Info("Disconnected from Grafana live", "reason", e.Reason)
 	h.client.connected = false
 }
 
