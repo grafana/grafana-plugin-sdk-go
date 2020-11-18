@@ -1,6 +1,7 @@
 package data_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"testing"
@@ -527,6 +528,52 @@ func TestDataFrameFilterRowsByField(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestJSON(t *testing.T) {
+	frames := data.Frames{
+		data.NewFrame("http_requests_total",
+			data.NewField("timestamp", nil, []time.Time{time.Now(), time.Now(), time.Now()}).SetConfig(&data.FieldConfig{
+				DisplayName: "A time Column.",
+			}),
+			data.NewField("valid", data.Labels{"service": "auth"}, []bool{true, false, true}),
+		),
+		data.NewFrame("other",
+			data.NewField("value", data.Labels{"service": "auth"}, []float64{1.0, 2.0, 3.0}),
+			data.NewField("category", data.Labels{"service": "auth"}, []string{"foo", "bar", "test"}),
+		),
+	}
+
+	t.Run("json.Unmarshal and json.Marshal", func(t *testing.T) {
+		t.Run("Should run without error", func(t *testing.T) {
+			b, err := json.Marshal(frames)
+			if err != nil {
+				t.Fatal(err)
+			}
+			f := data.Frames{}
+			if err := json.Unmarshal(b, &f); err != nil {
+				t.Fatal(err)
+			}
+		})
+		t.Run("Should create equal data", func(t *testing.T) {
+			b, err := json.Marshal(frames)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			f := data.Frames{}
+
+			if err := json.Unmarshal(b, &f); err != nil {
+				t.Fatal(err)
+			}
+
+			for i, v := range f {
+				if diff := cmp.Diff(frames[i], v, data.FrameTestCompareOptions()...); diff != "" {
+					t.Fatal(diff)
+				}
+			}
+		})
+	})
 }
 
 func timePtr(t time.Time) *time.Time {

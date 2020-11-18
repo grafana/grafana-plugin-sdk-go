@@ -10,6 +10,7 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
@@ -39,6 +40,40 @@ type Frame struct {
 
 	// Meta is metadata about the Frame, and includes space for custom metadata.
 	Meta *FrameMeta
+}
+
+type frameJSONFormat struct {
+	Frame []byte `json:"frame"`
+}
+
+// UnmarshalJSON uses the `UnmasrhalArrow` function to unmarshal this type to JSON
+func (f *Frame) UnmarshalJSON(b []byte) error {
+	format := &frameJSONFormat{}
+
+	if err := json.Unmarshal(b, format); err != nil {
+		return err
+	}
+
+	frame, err := UnmarshalArrowFrame(format.Frame)
+	if err != nil {
+		return err
+	}
+
+	*f = *frame
+
+	return nil
+}
+
+// UnmarshalJSON uses the `MarshalArrow` function to marshal this type from JSON
+func (f *Frame) MarshalJSON() ([]byte, error) {
+	arrow, err := f.MarshalArrow()
+	if err != nil {
+		return nil, err
+	}
+
+	return json.Marshal(&frameJSONFormat{
+		Frame: arrow,
+	})
 }
 
 // Frames is a slice of Frame pointers.
