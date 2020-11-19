@@ -34,11 +34,6 @@ type ServeOpts struct {
 	// Required to implement if data source.
 	QueryDataHandler QueryDataHandler
 
-	// TransformDataHandler handler for data transformations.
-	// Very experimental and shouldn't be implemented in most cases.
-	// Optional to implement.
-	TransformDataHandler TransformDataHandler
-
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }
@@ -55,10 +50,6 @@ func Serve(opts ServeOpts) error {
 
 	if opts.QueryDataHandler != nil {
 		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
-	}
-
-	if opts.TransformDataHandler != nil {
-		pluginOpts.TransformServer = newTransformSDKAdapter(opts.TransformDataHandler)
 	}
 
 	grpc_prometheus.EnableHandlingTimeHistogram()
