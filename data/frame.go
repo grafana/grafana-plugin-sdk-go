@@ -175,7 +175,6 @@ func NewFrame(name string, fields ...*Field) *Frame {
 	return &Frame{
 		Name:   name,
 		Fields: fields,
-		RefID:  "",
 	}
 }
 
