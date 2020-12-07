@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -140,10 +141,10 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
 	}
 	for refID, dr := range res.Responses {
-		for _, f := range dr.Frames {
+		for i, f := range dr.Frames {
 			// Don't process nil frames
 			if f == nil {
-				continue
+				return nil, fmt.Errorf("Frame [%d] is nil", i)
 			}
 			if f.RefID == "" {
 				f.RefID = refID
