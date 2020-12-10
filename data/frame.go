@@ -42,19 +42,15 @@ type Frame struct {
 	Meta *FrameMeta
 }
 
-type frameJSONFormat struct {
-	Frame []byte `json:"frame"`
-}
-
 // UnmarshalJSON uses the `UnmasrhalArrow` function to unmarshal this type to JSON
 func (f *Frame) UnmarshalJSON(b []byte) error {
-	format := &frameJSONFormat{}
+	arrow := []byte{}
 
-	if err := json.Unmarshal(b, format); err != nil {
+	if err := json.Unmarshal(b, &arrow); err != nil {
 		return err
 	}
 
-	frame, err := UnmarshalArrowFrame(format.Frame)
+	frame, err := UnmarshalArrowFrame(arrow)
 	if err != nil {
 		return err
 	}
@@ -71,9 +67,7 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 		return nil, err
 	}
 
-	return json.Marshal(&frameJSONFormat{
-		Frame: arrow,
-	})
+	return json.Marshal(arrow)
 }
 
 // Frames is a slice of Frame pointers.
