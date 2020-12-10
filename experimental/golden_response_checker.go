@@ -15,6 +15,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+// CheckGoldenFramer calls CheckGoldenDataResponse using a data.Framer instead of a backend.DataResponse.
+func CheckGoldenFramer(path string, f data.Framer, updateFile bool) error {
+	return CheckGoldenDataResponse(path, backend.FrameResponse(f), updateFile)
+}
+
 // CheckGoldenDataResponse will verify that the stored file matches the given data.DataResponse
 // when the updateFile flag is set, this will both add errors to the response and update the saved file
 func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile bool) error {
