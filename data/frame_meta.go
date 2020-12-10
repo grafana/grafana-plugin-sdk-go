@@ -11,10 +11,10 @@ import (
 // this interface only exposes the values we want to be exposed
 type FrameMeta struct {
 	// Path is a browsable path on the datasource
-	Path interface{} `json:"path,omitempty"`
+	Path string `json:"path,omitempty"`
 
 	// PathSeparator defines the separator pattern to decode a heiarchy.  The default separator is '/'
-	PathSeparator interface{} `json:"pathSeparator,omitempty"`
+	PathSeparator string `json:"pathSeparator,omitempty"`
 
 	// Datasource specific values
 	Custom interface{} `json:"custom,omitempty"`
