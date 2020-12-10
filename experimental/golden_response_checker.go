@@ -17,9 +17,7 @@ import (
 
 // CheckGoldenFramer calls CheckGoldenDataResponse using a data.Framer instead of a backend.DataResponse
 func CheckGoldenFramer(path string, f data.Framer, updateFile bool) error {
-	return CheckGoldenDataResponse(path, &backend.DataResponse{
-		Frames: f.Frames(),
-	}, updateFile)
+	return CheckGoldenDataResponse(path, backend.FrameResponse(f), updateFile)
 }
 
 // CheckGoldenDataResponse will verify that the stored file matches the given data.DataResponse

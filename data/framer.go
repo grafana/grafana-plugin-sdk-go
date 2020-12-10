@@ -4,5 +4,5 @@ package data
 // This interface allows us to interact with types that represent data source objects
 // Without having to convert them to data frames first
 type Framer interface {
-	Frames() Frames
+	Frames() (Frames, error)
 }

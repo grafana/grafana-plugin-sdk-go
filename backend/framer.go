@@ -4,8 +4,10 @@ import "github.com/grafana/grafana-plugin-sdk-go/data"
 
 // FrameResponse creates a DataResponse that contains the Framer's data.Frames
 func FrameResponse(f data.Framer) *DataResponse {
+	frames, err := f.Frames()
 	return &DataResponse{
-		Frames: f.Frames(),
+		Frames: frames,
+		Error:  err,
 	}
 }
 
