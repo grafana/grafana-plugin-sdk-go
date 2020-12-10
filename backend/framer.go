@@ -11,7 +11,7 @@ func FrameResponse(f data.Framer) *DataResponse {
 	}
 }
 
-// FrameResponseWithError creates a DataResponse with the error's contents (if not nil), and the Framer's data.Frames
+// FrameResponseWithError creates a DataResponse with the error's contents (if not nil), and the Framer's data.Frames.
 // This function is particularly useful if you have a function that returns `(StructX, error)`, where StructX implements Framer, which is a very common pattern
 func FrameResponseWithError(f data.Framer, err error) *DataResponse {
 	if err != nil {
