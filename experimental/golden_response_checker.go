@@ -15,7 +15,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// CheckGoldenFramer calls CheckGoldenDataResponse using a data.Framer instead of a backend.DataResponse
+// CheckGoldenFramer calls CheckGoldenDataResponse using a data.Framer instead of a backend.DataResponse.
 func CheckGoldenFramer(path string, f data.Framer, updateFile bool) error {
 	return CheckGoldenDataResponse(path, backend.FrameResponse(f), updateFile)
 }
