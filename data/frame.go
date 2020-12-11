@@ -42,7 +42,7 @@ type Frame struct {
 	Meta *FrameMeta
 }
 
-// UnmarshalJSON uses the `UnmasrhalArrow` function to unmarshal this type to JSON
+// UnmarshalJSON uses the `UnmarshalArrowFrame` function to unmarshal this type from JSON.
 func (f *Frame) UnmarshalJSON(b []byte) error {
 	arrow := []byte{}
 
@@ -60,7 +60,7 @@ func (f *Frame) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// MarshalJSON uses the `MarshalArrow` function to marshal this type from JSON
+// MarshalJSON uses the `MarshalArrow` function to marshal this type to JSON.
 func (f *Frame) MarshalJSON() ([]byte, error) {
 	arrow, err := f.MarshalArrow()
 	if err != nil {
