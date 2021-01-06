@@ -45,6 +45,7 @@ type requireCounter struct {
 }
 
 func (rec *requireCounter) Equal(t *testing.T, expected, actual interface{}, msgAngArgs ...interface{}) {
+	t.Helper()
 	require.Equal(t, expected, actual, msgAngArgs...)
 	rec.Count++
 }
