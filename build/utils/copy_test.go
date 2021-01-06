@@ -79,6 +79,8 @@ func TestCopyRecursive_ExistentDest(t *testing.T) {
 }
 
 func compareDirs(t *testing.T, src, dst string) {
+	t.Helper()
+
 	sfi, err := os.Stat(src)
 	require.NoError(t, err)
 	dfi, err := os.Stat(dst)
