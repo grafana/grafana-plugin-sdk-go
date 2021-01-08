@@ -161,11 +161,18 @@ type ValueMapping struct {
 	To   string `json:"to,omitempty"`
 }
 
+// InternalDataLink describes the structure for internal datalinks
+type InternalDataLink struct {
+	Query         interface{} `json:"query,omitempty"`
+	DatasourceUID string      `json:"datasourceUid,omitempty"`
+}
+
 // DataLink define what
 type DataLink struct { //revive:disable-line
-	Title       string `json:"title,omitempty"`
-	TargetBlank bool   `json:"targetBlank,omitempty"`
-	URL         string `json:"url,omitempty"`
+	Title       string           `json:"title,omitempty"`
+	TargetBlank bool             `json:"targetBlank,omitempty"`
+	URL         string           `json:"url,omitempty"`
+	Internal    InternalDataLink `json:"internal,omitempty"`
 }
 
 // ThresholdsConfig setup thresholds
