@@ -169,15 +169,3 @@ message CheckHealthResponse {
   string message = 2;
   bytes jsonDetails = 3;
 }
-
-//-----------------------------------------------
-// Transform - Very experimental
-//-----------------------------------------------
-
-service Transform {
-  rpc TransformData(QueryDataRequest) returns (QueryDataResponse);
-}
-
-service TransformDataCallBack {
-  rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
-}
