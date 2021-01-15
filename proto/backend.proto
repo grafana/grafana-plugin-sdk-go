@@ -24,6 +24,7 @@ message DataSourceInstanceSettings {
   bytes jsonData = 8;
   map<string,string> decryptedSecureJsonData = 9;
   int64 lastUpdatedMS = 10;
+  string uid = 11;
 }
 
 message User {
