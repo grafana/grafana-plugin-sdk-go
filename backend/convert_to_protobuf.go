@@ -54,6 +54,7 @@ func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 
 	return &pluginv2.DataSourceInstanceSettings{
 		Id:                      s.ID,
+		Uid:                     s.UID,
 		Name:                    s.Name,
 		Url:                     s.URL,
 		User:                    s.User,
