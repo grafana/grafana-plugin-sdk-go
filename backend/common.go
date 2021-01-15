@@ -38,7 +38,7 @@ type DataSourceInstanceSettings struct {
 	// ID is the Grafana assigned numeric identifier of the the data source instance.
 	ID int64
 
-	// ID is the Grafana assigned string identifier of the the data source instance.
+	// UID is the Grafana assigned string identifier of the the data source instance.
 	UID string
 
 	// Name is the configured name of the data source instance.
