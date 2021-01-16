@@ -65,14 +65,15 @@ func New(provider InstanceProvider) InstanceManager {
 
 	return &instanceManager{
 		provider: provider,
-		cache:    map[interface{}]CachedInstance{},
+		cache:    sync.Map{},
+		locker:   newLocker(),
 	}
 }
 
 type instanceManager struct {
-	rwMutex  sync.RWMutex
+	locker   *locker
 	provider InstanceProvider
-	cache    map[interface{}]CachedInstance
+	cache    sync.Map
 }
 
 func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, error) {
@@ -80,33 +81,45 @@ func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, e
 	if err != nil {
 		return nil, err
 	}
-	im.rwMutex.RLock()
-	ci, ok := im.cache[cacheKey]
-	im.rwMutex.RUnlock()
+	// Double-checked locking for update/create criteria
+	im.locker.RLock(cacheKey)
+	ci, ok := im.cache.Load(cacheKey)
+	im.locker.RUnlock(cacheKey)
 
 	if ok {
-		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci)
+		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci.(CachedInstance))
 
 		if !needsUpdate {
-			return ci.instance, nil
-		}
-
-		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			disposer.Dispose()
+			return ci.(CachedInstance).instance, nil
 		}
 	}
 
-	im.rwMutex.Lock()
-	defer im.rwMutex.Unlock()
+	im.locker.Lock(cacheKey)
+
+	defer im.locker.Unlock(cacheKey)
+
+	ci, ok = im.cache.Load(cacheKey)
+
+	if ok {
+		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci.(CachedInstance))
+
+		if !needsUpdate {
+			return ci.(CachedInstance).instance, nil
+		}
+
+		if disposer, valid := ci.(CachedInstance).instance.(InstanceDisposer); valid {
+			disposer.Dispose()
+		}
+	}
 
 	instance, err := im.provider.NewInstance(pluginContext)
 	if err != nil {
 		return nil, err
 	}
-	im.cache[cacheKey] = CachedInstance{
+	im.cache.Store(cacheKey, CachedInstance{
 		PluginContext: pluginContext,
 		instance:      instance,
-	}
+	})
 
 	return instance, nil
 }
