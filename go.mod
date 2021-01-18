@@ -14,7 +14,7 @@ require (
 	github.com/hashicorp/go-plugin v1.2.2
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/magefile/mage v1.10.0
+	github.com/magefile/mage v1.11.0
 	github.com/mattetti/filebuffer v1.0.1
 	github.com/mitchellh/reflectwalk v1.0.1
 	github.com/olekukonko/tablewriter v0.0.4
