@@ -20,7 +20,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/prometheus/client_golang v1.3.0
 	github.com/prometheus/common v0.7.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
 	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f
 	golang.org/x/text v0.3.2 // indirect
