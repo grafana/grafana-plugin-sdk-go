@@ -5,6 +5,8 @@ import (
 	"sync"
 )
 
+// locker is a named reader/writer mutual exclusion lock.
+// The lock for each particular key can be held by an arbitrary number of readers or a single writer.
 type locker struct {
 	locks   map[interface{}]*sync.RWMutex
 	locksRW *sync.RWMutex
@@ -17,6 +19,9 @@ func newLocker() *locker {
 	}
 }
 
+// Lock locks named rw mutex with specified key for writing.
+// If the lock with the same key is already locked for reading or writing,
+// Lock blocks until the lock is available.
 func (lkr *locker) Lock(key interface{}) {
 	lk, ok := lkr.getLock(key)
 	if !ok {
@@ -25,6 +30,8 @@ func (lkr *locker) Lock(key interface{}) {
 	lk.Lock()
 }
 
+// Unlock unlocks named rw mutex with specified key for writing. It is a run-time error if rw is
+// not locked for writing on entry to Unlock.
 func (lkr *locker) Unlock(key interface{}) {
 	lk, ok := lkr.getLock(key)
 	if !ok {
@@ -33,6 +40,11 @@ func (lkr *locker) Unlock(key interface{}) {
 	lk.Unlock()
 }
 
+// RLock locks named rw mutex with specified key for reading.
+//
+// It should not be used for recursive read locking for the same key; a blocked Lock
+// call excludes new readers from acquiring the lock. See the
+// documentation on the golang RWMutex type.
 func (lkr *locker) RLock(key interface{}) {
 	lk, ok := lkr.getLock(key)
 	if !ok {
@@ -41,6 +53,9 @@ func (lkr *locker) RLock(key interface{}) {
 	lk.RLock()
 }
 
+// RUnlock undoes a single RLock call for specified key;
+// it does not affect other simultaneous readers of locker for specified key.
+// It is a run-time error if locker for specified key is not locked for reading
 func (lkr *locker) RUnlock(key interface{}) {
 	lk, ok := lkr.getLock(key)
 	if !ok {
