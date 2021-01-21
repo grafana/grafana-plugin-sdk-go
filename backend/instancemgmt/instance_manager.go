@@ -95,7 +95,6 @@ func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, e
 	}
 
 	im.locker.Lock(cacheKey)
-
 	defer im.locker.Unlock(cacheKey)
 
 	if ci, ok := im.cache.Load(cacheKey); ok {
