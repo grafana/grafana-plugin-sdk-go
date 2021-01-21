@@ -83,28 +83,30 @@ func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, e
 	}
 	// Double-checked locking for update/create criteria
 	im.locker.RLock(cacheKey)
-	ci, ok := im.cache.Load(cacheKey)
+	item, ok := im.cache.Load(cacheKey)
 	im.locker.RUnlock(cacheKey)
 
 	if ok {
-		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci.(CachedInstance))
+		ci := item.(CachedInstance)
+		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci)
 
 		if !needsUpdate {
-			return ci.(CachedInstance).instance, nil
+			return ci.instance, nil
 		}
 	}
 
 	im.locker.Lock(cacheKey)
 	defer im.locker.Unlock(cacheKey)
 
-	if ci, ok := im.cache.Load(cacheKey); ok {
-		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci.(CachedInstance))
+	if item, ok := im.cache.Load(cacheKey); ok {
+		ci := item.(CachedInstance)
+		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci)
 
 		if !needsUpdate {
-			return ci.(CachedInstance).instance, nil
+			return ci.instance, nil
 		}
 
-		if disposer, valid := ci.(CachedInstance).instance.(InstanceDisposer); valid {
+		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			disposer.Dispose()
 		}
 	}
