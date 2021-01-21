@@ -98,9 +98,7 @@ func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, e
 
 	defer im.locker.Unlock(cacheKey)
 
-	ci, ok = im.cache.Load(cacheKey)
-
-	if ok {
+	if ci, ok := im.cache.Load(cacheKey); ok {
 		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci.(CachedInstance))
 
 		if !needsUpdate {
