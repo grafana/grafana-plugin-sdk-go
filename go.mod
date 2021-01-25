@@ -6,7 +6,7 @@ require (
 	github.com/apache/arrow/go/arrow v0.0.0-20200629181129-68b1273cbbf7
 	github.com/centrifugal/centrifuge-go v0.6.4
 	github.com/cheekybits/genny v1.0.0
-	github.com/golang/protobuf v1.3.4
+	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.3
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
