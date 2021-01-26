@@ -10,7 +10,6 @@ import (
 )
 
 func TestReadMappings(t *testing.T) {
-
 	jsonText := `{
 		"description": "turn on/off system. write 1 to turn on the system and write 0 to turn off the system",
 		"writeable": true,
