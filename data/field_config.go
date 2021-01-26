@@ -148,10 +148,9 @@ const (
 
 // ValueMapping convert input value to something else
 type ValueMapping struct {
-	ID       int16       `json:"id"`
-	Operator string      `json:"operator"`
-	Text     string      `json:"title"`
-	Type     MappingType `json:"type"`
+	ID   int16       `json:"id,omitempty"`
+	Text string      `json:"text,omitempty"`
+	Type MappingType `json:"type,omitempty"`
 
 	// Only valid for MappingType == ValueMap
 	Value string `json:"value,omitempty"`
