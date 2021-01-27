@@ -39,7 +39,7 @@ func TestReadMappings(t *testing.T) {
 	assert.Len(t, cfg.Mappings, 3)
 
 	out, err := json.MarshalIndent(cfg, "\t", "\t")
-	assert.NoError(t, err, "error parsing json")
+	require.NoError(t, err, "error parsing json")
 	str := string(out)
 
 	fmt.Printf("%s", str)
