@@ -34,7 +34,7 @@ func TestReadMappings(t *testing.T) {
 
 	cfg := &data.FieldConfig{}
 	err := json.Unmarshal([]byte(jsonText), &cfg)
-	assert.NoError(t, err, "error parsing json")
+	require.NoError(t, err, "error parsing json")
 
 	assert.Len(t, cfg.Mappings, 3)
 
