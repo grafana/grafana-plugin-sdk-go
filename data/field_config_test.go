@@ -36,7 +36,7 @@ func TestReadMappings(t *testing.T) {
 	err := json.Unmarshal([]byte(jsonText), &cfg)
 	assert.NoError(t, err, "error parsing json")
 
-	assert.Equal(t, 3, len(cfg.Mappings))
+	assert.Len(t, cfg.Mappings, 3)
 
 	out, err := json.MarshalIndent(cfg, "\t", "\t")
 	assert.NoError(t, err, "error parsing json")
