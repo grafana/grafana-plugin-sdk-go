@@ -1,6 +1,7 @@
 package instancemgmt
 
 import (
+	"sync"
 	"testing"
 	"time"
 
@@ -18,10 +19,19 @@ func TestLocker(t *testing.T) {
 		updated := notUpdated
 		locker := newLocker()
 		locker.Lock(1)
-		defer locker.Unlock(1)
+		var wg sync.WaitGroup
+		wg.Add(1)
+		defer func() {
+			locker.Unlock(1)
+			wg.Wait()
+		}()
+
 		go func() {
 			locker.RLock(1)
-			defer locker.RUnlock(1)
+			defer func() {
+				locker.RUnlock(1)
+				wg.Done()
+			}()
 			require.Equal(t, atThread1, updated, "Value should be updated in different thread")
 			updated = atThread2
 		}()
@@ -35,13 +45,18 @@ func TestLocker(t *testing.T) {
 		locker := newLocker()
 		locker.Lock(1)
 		defer locker.Unlock(1)
+		var wg sync.WaitGroup
+		wg.Add(1)
 		go func() {
 			locker.RLock(2)
-			defer locker.RUnlock(2)
+			defer func() {
+				locker.RUnlock(2)
+				wg.Done()
+			}()
 			require.Equal(t, notUpdated, updated, "Value should not be updated in different thread")
 			updated = atThread2
 		}()
-		time.Sleep(time.Millisecond * 10)
+		wg.Wait()
 		require.Equal(t, atThread2, updated, "Value should be updated in different thread")
 		updated = atThread1
 	})
