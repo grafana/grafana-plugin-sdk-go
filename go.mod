@@ -4,7 +4,7 @@ go 1.14
 
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20200629181129-68b1273cbbf7
-	github.com/centrifugal/centrifuge-go v0.6.4
+	github.com/centrifugal/centrifuge-go v0.6.5
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.3
@@ -14,13 +14,13 @@ require (
 	github.com/hashicorp/go-plugin v1.2.2
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/kr/pretty v0.1.0 // indirect
-	github.com/magefile/mage v1.10.0
+	github.com/magefile/mage v1.11.0
 	github.com/mattetti/filebuffer v1.0.1
 	github.com/mitchellh/reflectwalk v1.0.1
 	github.com/olekukonko/tablewriter v0.0.4
 	github.com/prometheus/client_golang v1.3.0
 	github.com/prometheus/common v0.7.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
 	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f
 	golang.org/x/text v0.3.2 // indirect
