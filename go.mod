@@ -8,7 +8,7 @@ require (
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.4.3
 	github.com/google/go-cmp v0.5.3
-	github.com/grpc-ecosystem/go-grpc-middleware v1.2.0
+	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
 	github.com/hashicorp/go-plugin v1.2.2
@@ -21,9 +21,7 @@ require (
 	github.com/prometheus/client_golang v1.3.0
 	github.com/prometheus/common v0.7.0
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/net v0.0.0-20190923162816-aa69164e4478 // indirect
-	golang.org/x/sys v0.0.0-20191220142924-d4481acd189f
-	golang.org/x/text v0.3.2 // indirect
+	golang.org/x/sys v0.0.0-20200420163511-1957bb5e6d1f
 	google.golang.org/grpc v1.35.0
 	google.golang.org/protobuf v1.25.0
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
