@@ -270,18 +270,16 @@ func ArrowBufferToJSON(b []byte) ([]byte, error) {
 	}
 	defer fR.Close()
 
-	for {
-		record, err := fR.Read()
-		if errors.Is(err, io.EOF) {
-			break
-		}
-		if err != nil {
-			return nil, err
-		}
-
-		return ArrowToJSON(record, true, true)
+	record, err := fR.Read()
+	if errors.Is(err, io.EOF) {
+		return nil, fmt.Errorf("No records found")
 	}
-	return nil, fmt.Errorf("no records found???")
+	if err != nil {
+		return nil, err
+	}
+	// TODO?? multiple records in one file?
+
+	return ArrowToJSON(record, true, true)
 }
 
 // ArrowToJSON writes a frame to JSON
@@ -404,7 +402,8 @@ func writeArrowFrame(stream *jsoniter.Stream, record array.Record, includeSchema
 
 			switch col.DataType().ID() {
 			case arrow.TIMESTAMP:
-				ent = writeArrowDataTIMESTAMP(stream, col)
+				writeArrowDataTIMESTAMP(stream, col)
+
 			case arrow.UINT8:
 				ent = writeArrowDataUint8(stream, col)
 			case arrow.UINT16:
@@ -455,7 +454,7 @@ func writeArrowFrame(stream *jsoniter.Stream, record array.Record, includeSchema
 }
 
 // Custom timestamp extraction... assumes nanoseconds for everything now
-func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
 	count := col.Len()
 
 	v := array.NewTimestampData(col.Data())
@@ -478,5 +477,4 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) *fiel
 		}
 	}
 	stream.WriteArrayEnd()
-	return nil
 }
