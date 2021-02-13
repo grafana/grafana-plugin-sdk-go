@@ -36,7 +36,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 
 	goldenFile := filepath.Join("testdata", "all_types.golden.json")
 	if _, err := os.Stat(goldenFile); os.IsNotExist(err) {
-		ioutil.WriteFile(goldenFile, b, 0600)
+		_ = ioutil.WriteFile(goldenFile, b, 0600)
 		assert.FailNow(t, "wrote golden file")
 	}
 
@@ -46,7 +46,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 	strG := string(b)
 	assert.JSONEq(t, strF, strG, "saved json must match produced json")
 
-	//assert.Equal(t, 1, 2)
+	// assert.Equal(t, 1, 2)
 }
 
 func TestGENERATE(t *testing.T) {
@@ -89,7 +89,6 @@ func writeArrowData{{TYPE}}(stream *jsoniter.Stream, col array.Interface) *field
 	// switch col.DataType().ID() {
 	// 	// case arrow.STRING:
 	// 	// 	ent := writeArrowSTRING(stream, col)
-
 	for _, tstr := range types {
 		tname := strings.Title(tstr)
 		tuppr := strings.ToUpper(tstr)
@@ -98,7 +97,6 @@ func writeArrowData{{TYPE}}(stream *jsoniter.Stream, col array.Interface) *field
 	}
 
 	for _, tstr := range types {
-
 		ttt := strings.Title(tstr)
 		str := strings.ReplaceAll(code, "{{TYPE}}", ttt)
 		if tstr == "bool" {

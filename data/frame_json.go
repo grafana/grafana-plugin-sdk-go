@@ -13,13 +13,21 @@ import (
 	"github.com/mattetti/filebuffer"
 )
 
+const simpleTypeString = "string"
+const simpleTypeNumber = "number"
+const simpleTypeBool = "bool"
+const simpleTypeTime = "time"
+
 // FrameToJSON writes a frame to JSON
 func FrameToJSON(frame *Frame, includeSchema bool, includeData bool) ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	writeDataFrame(frame, stream, includeSchema, includeData)
+	err := writeDataFrame(frame, stream, includeSchema, includeData)
+	if err != nil {
+		return nil, err
+	}
 
 	if stream.Error != nil {
 		fmt.Println("error:", stream.Error)
@@ -30,16 +38,16 @@ func FrameToJSON(frame *Frame, includeSchema bool, includeData bool) ([]byte, er
 
 func getSimpleTypeString(t FieldType) (string, bool) {
 	if t.Time() {
-		return "time", true
+		return simpleTypeTime, true
 	}
 	if t.Numeric() {
-		return "number", true
+		return simpleTypeNumber, true
 	}
 	if t == FieldTypeBool || t == FieldTypeNullableBool {
-		return "bool", true
+		return simpleTypeBool, true
 	}
 	if t == FieldTypeString || t == FieldTypeNullableString {
-		return "string", true
+		return simpleTypeString, true
 	}
 
 	return "", false
@@ -48,7 +56,7 @@ func getSimpleTypeString(t FieldType) (string, bool) {
 func getSimpleTypeStringForArrow(t arrow.DataType) string {
 	switch t.ID() {
 	case arrow.TIMESTAMP:
-		return "time"
+		return simpleTypeTime
 	case arrow.UINT8:
 		fallthrough
 	case arrow.UINT16:
@@ -68,11 +76,11 @@ func getSimpleTypeStringForArrow(t arrow.DataType) string {
 	case arrow.FLOAT32:
 		fallthrough
 	case arrow.FLOAT64:
-		return "number"
+		return simpleTypeNumber
 	case arrow.STRING:
-		return "string"
+		return simpleTypeString
 	case arrow.BOOL:
-		return "bool"
+		return simpleTypeBool
 	default:
 		return ""
 	}
@@ -80,7 +88,7 @@ func getSimpleTypeStringForArrow(t arrow.DataType) string {
 
 // export interface FieldValueEntityLookup {
 // 	NaN?: number[];
-// 	Undef?: number[]; // Missing because of absense or join
+// 	Undef?: number[]; // Missing because of absence or join
 // 	Inf?: number[];
 // 	NegInf?: number[];
 //   }
