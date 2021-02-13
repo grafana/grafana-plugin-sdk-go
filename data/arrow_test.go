@@ -183,6 +183,13 @@ func goldenDF() *data.Frame {
 			float64(maxEcma6Int),
 			math.MaxFloat64,
 		}),
+		data.NewField("float64_nans", nil, []float64{
+			math.Inf(-1),
+			math.NaN(),
+			0,
+			math.NaN(),
+			math.Inf(1),
+		}),
 		data.NewField("nullable_float64_values", nil, []*float64{
 			float64Ptr(math.SmallestNonzeroFloat64),
 			float64Ptr(float64(minEcma6Int)),
@@ -204,8 +211,11 @@ func goldenDF() *data.Frame {
 			boolPtr(true),
 			boolPtr(false),
 		}),
+
+		//        [0, 1568039445000, 1568039450000, 9007199254, 9223372036854],
 		data.NewField("timestamps", nil, []time.Time{
 			time.Unix(0, 0),
+			//        1568039445000
 			time.Unix(1568039445, 0),
 			time.Unix(1568039450, 0),
 			time.Unix(0, maxEcma6Int),

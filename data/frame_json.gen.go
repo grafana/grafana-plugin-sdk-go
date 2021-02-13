@@ -11,8 +11,8 @@ import (
 // This file is generated from frame_json_test.go
 //------------------------------------------------
 
-func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewUint8Data(col.Data())
@@ -27,14 +27,11 @@ func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) []*fieldE
 		}
 		stream.WriteUint8(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -43,8 +40,8 @@ func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) []*fieldE
 	return entities
 }
 
-func writeArrowDataUint16(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataUint16(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewUint16Data(col.Data())
@@ -59,14 +56,11 @@ func writeArrowDataUint16(stream *jsoniter.Stream, col array.Interface) []*field
 		}
 		stream.WriteUint16(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -75,8 +69,8 @@ func writeArrowDataUint16(stream *jsoniter.Stream, col array.Interface) []*field
 	return entities
 }
 
-func writeArrowDataUint32(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataUint32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewUint32Data(col.Data())
@@ -91,14 +85,11 @@ func writeArrowDataUint32(stream *jsoniter.Stream, col array.Interface) []*field
 		}
 		stream.WriteUint32(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -107,8 +98,8 @@ func writeArrowDataUint32(stream *jsoniter.Stream, col array.Interface) []*field
 	return entities
 }
 
-func writeArrowDataUint64(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataUint64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewUint64Data(col.Data())
@@ -123,14 +114,11 @@ func writeArrowDataUint64(stream *jsoniter.Stream, col array.Interface) []*field
 		}
 		stream.WriteUint64(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -139,8 +127,8 @@ func writeArrowDataUint64(stream *jsoniter.Stream, col array.Interface) []*field
 	return entities
 }
 
-func writeArrowDataInt8(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataInt8(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewInt8Data(col.Data())
@@ -155,14 +143,11 @@ func writeArrowDataInt8(stream *jsoniter.Stream, col array.Interface) []*fieldEn
 		}
 		stream.WriteInt8(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -171,8 +156,8 @@ func writeArrowDataInt8(stream *jsoniter.Stream, col array.Interface) []*fieldEn
 	return entities
 }
 
-func writeArrowDataInt16(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataInt16(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewInt16Data(col.Data())
@@ -187,14 +172,11 @@ func writeArrowDataInt16(stream *jsoniter.Stream, col array.Interface) []*fieldE
 		}
 		stream.WriteInt16(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -203,8 +185,8 @@ func writeArrowDataInt16(stream *jsoniter.Stream, col array.Interface) []*fieldE
 	return entities
 }
 
-func writeArrowDataInt32(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataInt32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewInt32Data(col.Data())
@@ -219,14 +201,11 @@ func writeArrowDataInt32(stream *jsoniter.Stream, col array.Interface) []*fieldE
 		}
 		stream.WriteInt32(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -235,8 +214,8 @@ func writeArrowDataInt32(stream *jsoniter.Stream, col array.Interface) []*fieldE
 	return entities
 }
 
-func writeArrowDataInt64(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataInt64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewInt64Data(col.Data())
@@ -251,14 +230,11 @@ func writeArrowDataInt64(stream *jsoniter.Stream, col array.Interface) []*fieldE
 		}
 		stream.WriteInt64(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -267,8 +243,8 @@ func writeArrowDataInt64(stream *jsoniter.Stream, col array.Interface) []*fieldE
 	return entities
 }
 
-func writeArrowDataFloat32(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataFloat32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewFloat32Data(col.Data())
@@ -283,14 +259,11 @@ func writeArrowDataFloat32(stream *jsoniter.Stream, col array.Interface) []*fiel
 		}
 		stream.WriteFloat32(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -299,8 +272,8 @@ func writeArrowDataFloat32(stream *jsoniter.Stream, col array.Interface) []*fiel
 	return entities
 }
 
-func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewFloat64Data(col.Data())
@@ -315,14 +288,11 @@ func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) []*fiel
 		}
 		stream.WriteFloat64(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -331,8 +301,8 @@ func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) []*fiel
 	return entities
 }
 
-func writeArrowDataString(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataString(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewStringData(col.Data())
@@ -347,14 +317,11 @@ func writeArrowDataString(stream *jsoniter.Stream, col array.Interface) []*field
 		}
 		stream.WriteString(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}
@@ -363,8 +330,8 @@ func writeArrowDataString(stream *jsoniter.Stream, col array.Interface) []*field
 	return entities
 }
 
-func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.NewBooleanData(col.Data())
@@ -379,14 +346,11 @@ func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) []*fieldEn
 		}
 		stream.WriteBool(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}

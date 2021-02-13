@@ -18,17 +18,20 @@ func TestFrameJSON(t *testing.T) {
 
 	b, err := data.FrameToJSON(f, true, true) // json.Marshal(f2)
 	require.NoError(t, err)
-
-	str := string(b)
-	fmt.Printf(">>> %s\n", str)
+	strF := string(b)
 
 	b, err = data.ArrowBufferToJSON(a)
 	require.NoError(t, err)
+	strA := string(b)
 
-	str2 := string(b)
-	fmt.Printf(">>> %s\n", str2)
+	fmt.Println(`{ "arrow": `)
+	fmt.Println(strA)
+	fmt.Println(`, "slice": `)
+	fmt.Println(strF)
+	fmt.Println(`}`)
 
-	assert.JSONEq(t, str, str2)
+	assert.JSONEq(t, strF, strA)
+	//assert.Equal(t, 1, 2)
 }
 
 func TestGENERATE(t *testing.T) {
@@ -39,8 +42,8 @@ func TestGENERATE(t *testing.T) {
 	}
 
 	code := `
-func writeArrowData{{TYPE}}(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
-	var entities []*fieldEntityLookup
+func writeArrowData{{TYPE}}(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
 	count := col.Len()
 
 	v := array.New{{TYPEX}}Data(col.Data())
@@ -55,14 +58,11 @@ func writeArrowData{{TYPE}}(stream *jsoniter.Stream, col array.Interface) []*fie
 		}
 		stream.Write{{TYPE}}(v.Value(i))
 		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v)
+			txt := fmt.Sprintf("%v", v.Value(i))
 			if entities == nil {
-				entities = make([]*fieldEntityLookup, count)
+				entities = &fieldEntityLookup{}
 			}
-			if entities[i] == nil {
-				entities[i] = &fieldEntityLookup{}
-			}
-			entities[i].add(txt, i)
+			entities.add(txt, i)
 			stream.Error = nil
 			stream.WriteNil()
 		}

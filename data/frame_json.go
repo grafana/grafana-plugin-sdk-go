@@ -392,7 +392,7 @@ func writeArrowFrame(stream *jsoniter.Stream, record array.Record, includeSchema
 				stream.WriteMore()
 			}
 			col := record.Column(fidx)
-			var ent []*fieldEntityLookup
+			var ent *fieldEntityLookup
 
 			switch col.DataType().ID() {
 			case arrow.TIMESTAMP:
@@ -426,7 +426,8 @@ func writeArrowFrame(stream *jsoniter.Stream, record array.Record, includeSchema
 			}
 
 			if ent != nil {
-				entities = append(entities, ent...)
+				entities[fidx] = ent
+				entityCount++
 			}
 		}
 		stream.WriteArrayEnd()
@@ -446,10 +447,10 @@ func writeArrowFrame(stream *jsoniter.Stream, record array.Record, includeSchema
 }
 
 // Custom timestamp extraction... assumes nanoseconds for everything now
-func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
+func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
 	count := col.Len()
 
-	v := array.NewUint8Data(col.Data())
+	v := array.NewTimestampData(col.Data())
 	stream.WriteArrayStart()
 	for i := 0; i < count; i++ {
 		if i > 0 {
@@ -460,10 +461,10 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) []*fi
 			continue
 		}
 		ns := v.Value(i)
-		ms := uint64(ns) / uint64(time.Millisecond)
+		ms := int64(ns) / int64(time.Millisecond) // nanosecond assumption
+		stream.WriteInt64(ms)
 
-		stream.WriteUint64(ms)
-		if stream.Error != nil { // NaN +Inf/-Inf
+		if stream.Error != nil { // ???
 			stream.Error = nil
 			stream.WriteNil()
 		}
