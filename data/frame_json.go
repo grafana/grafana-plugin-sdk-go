@@ -1,10 +1,16 @@
 package data
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"time"
 
+	"github.com/apache/arrow/go/arrow"
+	"github.com/apache/arrow/go/arrow/array"
+	"github.com/apache/arrow/go/arrow/ipc"
 	jsoniter "github.com/json-iterator/go"
+	"github.com/mattetti/filebuffer"
 )
 
 // FrameToJSON writes a frame to JSON
@@ -37,6 +43,39 @@ func getSimpleTypeString(t FieldType) (string, bool) {
 	}
 
 	return "", false
+}
+
+func getSimpleTypeStringForArrow(t arrow.DataType) string {
+	switch t.ID() {
+	case arrow.TIMESTAMP:
+		return "time"
+	case arrow.UINT8:
+		fallthrough
+	case arrow.UINT16:
+		fallthrough
+	case arrow.UINT32:
+		fallthrough
+	case arrow.UINT64:
+		fallthrough
+	case arrow.INT8:
+		fallthrough
+	case arrow.INT16:
+		fallthrough
+	case arrow.INT32:
+		fallthrough
+	case arrow.INT64:
+		fallthrough
+	case arrow.FLOAT32:
+		fallthrough
+	case arrow.FLOAT64:
+		return "number"
+	case arrow.STRING:
+		return "string"
+	case arrow.BOOL:
+		return "bool"
+	default:
+		return ""
+	}
 }
 
 // export interface FieldValueEntityLookup {
@@ -121,6 +160,15 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 				started = true
 			}
 
+			if f.Labels != nil {
+				if started {
+					stream.WriteMore()
+				}
+				stream.WriteObjectField("labels")
+				stream.WriteVal(f.Labels)
+				started = true
+			}
+
 			if f.Config != nil {
 				if started {
 					stream.WriteMore()
@@ -202,5 +250,224 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 		stream.WriteObjectEnd()
 	}
 	stream.WriteObjectEnd()
+	return nil
+}
+
+// ArrowToJSON writes a frame to JSON
+func ArrowBufferToJSON(b []byte) ([]byte, error) {
+	fB := filebuffer.New(b)
+	fR, err := ipc.NewFileReader(fB)
+	if err != nil {
+		return nil, err
+	}
+	defer fR.Close()
+
+	for {
+		record, err := fR.Read()
+		if errors.Is(err, io.EOF) {
+			break
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		return ArrowToJSON(record, true, true)
+	}
+	return nil, fmt.Errorf("no records found???")
+}
+
+// ArrowToJSON writes a frame to JSON
+func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	err := writeArrowFrame(stream, record, includeSchema, includeData)
+	if err != nil {
+		return nil, err
+	}
+
+	if stream.Error != nil {
+		fmt.Println("error:", stream.Error)
+		return nil, stream.Error
+	}
+	return stream.Buffer(), nil
+}
+
+func writeArrowFrame(stream *jsoniter.Stream, record array.Record, includeSchema bool, includeData bool) error {
+	started := false
+	stream.WriteObjectStart()
+	if includeSchema {
+		metaData := record.Schema().Metadata()
+
+		stream.WriteObjectField("schema")
+		stream.WriteObjectStart()
+
+		name, _ := getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
+		refID, _ := getMDKey("refId", metaData)
+
+		if len(name) > 0 {
+			stream.WriteObjectField("name")
+			stream.WriteString(name)
+			started = true
+		}
+
+		if len(refID) > 0 {
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("refId")
+			stream.WriteString(refID)
+			started = true
+		}
+
+		if metaAsString, ok := getMDKey("meta", metaData); ok {
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("meta")
+			stream.WriteRaw(metaAsString)
+			started = true
+		}
+
+		if started {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("fields")
+		stream.WriteArrayStart()
+		for i, f := range record.Schema().Fields() {
+			if i > 0 {
+				stream.WriteMore()
+			}
+			started = false
+			stream.WriteObjectStart()
+			if len(f.Name) > 0 {
+				stream.WriteObjectField("name")
+				stream.WriteString(f.Name)
+				started = true
+			}
+
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("type")
+			stream.WriteString(getSimpleTypeStringForArrow(f.Type))
+
+			if labelsAsString, ok := getMDKey("labels", f.Metadata); ok {
+				stream.WriteMore()
+				stream.WriteObjectField("labels")
+				stream.WriteRaw(labelsAsString)
+			}
+			if labelsAsString, ok := getMDKey("config", f.Metadata); ok {
+				stream.WriteMore()
+				stream.WriteObjectField("config")
+				stream.WriteRaw(labelsAsString)
+			}
+
+			stream.WriteObjectEnd()
+		}
+		stream.WriteArrayEnd()
+
+		stream.WriteObjectEnd()
+	}
+
+	if includeData {
+		if includeSchema {
+			stream.WriteMore()
+		}
+		fieldCount := len(record.Schema().Fields())
+
+		stream.WriteObjectField("data")
+		stream.WriteObjectStart()
+
+		entities := make([]*fieldEntityLookup, fieldCount)
+		entityCount := 0
+
+		//	rowCount := int(record.NumRows())
+
+		stream.WriteObjectField("fields")
+		stream.WriteArrayStart()
+		for fidx := 0; fidx < fieldCount; fidx++ {
+			if fidx > 0 {
+				stream.WriteMore()
+			}
+			col := record.Column(fidx)
+			var ent []*fieldEntityLookup
+
+			switch col.DataType().ID() {
+			case arrow.TIMESTAMP:
+				ent = writeArrowDataTIMESTAMP(stream, col)
+			case arrow.UINT8:
+				ent = writeArrowDataUint8(stream, col)
+			case arrow.UINT16:
+				ent = writeArrowDataUint16(stream, col)
+			case arrow.UINT32:
+				ent = writeArrowDataUint32(stream, col)
+			case arrow.UINT64:
+				ent = writeArrowDataUint64(stream, col)
+			case arrow.INT8:
+				ent = writeArrowDataInt8(stream, col)
+			case arrow.INT16:
+				ent = writeArrowDataInt16(stream, col)
+			case arrow.INT32:
+				ent = writeArrowDataInt32(stream, col)
+			case arrow.INT64:
+				ent = writeArrowDataInt64(stream, col)
+			case arrow.FLOAT32:
+				ent = writeArrowDataFloat32(stream, col)
+			case arrow.FLOAT64:
+				ent = writeArrowDataFloat64(stream, col)
+			case arrow.STRING:
+				ent = writeArrowDataString(stream, col)
+			case arrow.BOOL:
+				ent = writeArrowDataBool(stream, col)
+			default:
+				return fmt.Errorf("unsupported arrow type %s for JSON", col.DataType().ID())
+			}
+
+			if ent != nil {
+				entities = append(entities, ent...)
+			}
+		}
+		stream.WriteArrayEnd()
+
+		if entityCount > 0 {
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("entities")
+			stream.WriteVal(entities)
+		}
+
+		stream.WriteObjectEnd()
+	}
+	stream.WriteObjectEnd()
+	return nil
+}
+
+// Custom timestamp extraction... assumes nanoseconds for everything now
+func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) []*fieldEntityLookup {
+	count := col.Len()
+
+	v := array.NewUint8Data(col.Data())
+	stream.WriteArrayStart()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if col.IsNull(i) {
+			stream.WriteNil()
+			continue
+		}
+		ns := v.Value(i)
+		ms := uint64(ns) / uint64(time.Millisecond)
+
+		stream.WriteUint64(ms)
+		if stream.Error != nil { // NaN +Inf/-Inf
+			stream.Error = nil
+			stream.WriteNil()
+		}
+	}
+	stream.WriteArrayEnd()
 	return nil
 }
