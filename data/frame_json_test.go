@@ -2,6 +2,9 @@ package data_test
 
 import (
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
 	"strings"
 	"testing"
 
@@ -10,8 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestFrameJSON(t *testing.T) {
-
+func TestGoldenFrameJSON(t *testing.T) {
 	f := goldenDF()
 	a, err := f.MarshalArrow()
 	require.NoError(t, err)
@@ -30,7 +32,20 @@ func TestFrameJSON(t *testing.T) {
 	fmt.Println(strF)
 	fmt.Println(`}`)
 
-	assert.JSONEq(t, strF, strA)
+	assert.JSONEq(t, strF, strA, "arrow and frames should produce the same json")
+
+	goldenFile := filepath.Join("testdata", "all_types.golden.json")
+	if _, err := os.Stat(goldenFile); os.IsNotExist(err) {
+		ioutil.WriteFile(goldenFile, b, 0600)
+		assert.FailNow(t, "wrote golden file")
+	}
+
+	b, err = ioutil.ReadFile(goldenFile)
+	require.NoError(t, err)
+
+	strG := string(b)
+	assert.JSONEq(t, strF, strG, "saved json must match produced json")
+
 	//assert.Equal(t, 1, 2)
 }
 
