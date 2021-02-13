@@ -212,10 +212,8 @@ func goldenDF() *data.Frame {
 			boolPtr(false),
 		}),
 
-		//        [0, 1568039445000, 1568039450000, 9007199254, 9223372036854],
 		data.NewField("timestamps", nil, []time.Time{
 			time.Unix(0, 0),
-			//        1568039445000
 			time.Unix(1568039445, 0),
 			time.Unix(1568039450, 0),
 			time.Unix(0, maxEcma6Int),
