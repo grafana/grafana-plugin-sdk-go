@@ -63,6 +63,7 @@ We use Go modules for managing Go dependencies. After you've updated/modified mo
 If you want to tag a new version of the SDK for release, follow these steps:
 
 - Checkout the commit you want to tag (`git checkout <COMMIT_SHA>`)
-- Run `git tag <VERSION>` (NOTE: We're using Lightweight Tags, so no options are required)
+- Run `git tag <VERSION>` (For example **v0.123.0**)
+   - NOTE: We're using Lightweight Tags, so no other options are required
 - Run `git push origin <VERSION>`
 - Verify that the tag was create successfully [here](https://github.com/grafana/grafana-plugin-sdk-go/releases)
