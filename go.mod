@@ -7,7 +7,7 @@ require (
 	github.com/centrifugal/centrifuge-go v0.6.5
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.4.3
-	github.com/google/go-cmp v0.5.3
+	github.com/google/go-cmp v0.5.4
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
