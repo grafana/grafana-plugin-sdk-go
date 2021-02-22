@@ -57,3 +57,13 @@ Currently [genny](https://github.com/cheekybits/genny) is used for generating so
 ### Dependency management
 
 We use Go modules for managing Go dependencies. After you've updated/modified modules dependencies, please run `go mod tidy` to cleanup dependencies.
+
+## Releasing
+
+If you want to tag a new version of the SDK for release, follow these steps:
+
+- Checkout the commit you want to tag (`git checkout <COMMIT_SHA>`)
+- Run `git tag <VERSION>` (For example **v0.123.0**)
+   - NOTE: We're using Lightweight Tags, so no other options are required
+- Run `git push origin <VERSION>`
+- Verify that the tag was create successfully [here](https://github.com/grafana/grafana-plugin-sdk-go/releases)

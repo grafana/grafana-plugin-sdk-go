@@ -77,44 +77,6 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	return fb.Buff.Bytes(), nil
 }
 
-// ToArrowRecord expose the frame as a record.  NOTE the record must be released when done
-func (f *Frame) ToArrowRecord() (array.Record, error) {
-	nrows, err := f.RowLen()
-	if err != nil {
-		return nil, err
-	}
-
-	arrowFields, err := buildArrowFields(f)
-	if err != nil {
-		return nil, err
-	}
-
-	schema, err := buildArrowSchema(f, arrowFields)
-	if err != nil {
-		return nil, err
-	}
-
-	columns, err := buildArrowColumns(f, arrowFields)
-	if err != nil {
-		return nil, err
-	}
-	defer func(cols []array.Column) {
-		for _, col := range cols {
-			col.Release()
-		}
-	}(columns)
-
-	// HACK -- the colums above all have a single chunk!
-	cols := make([]array.Interface, len(columns))
-	for idx, c := range columns {
-		cols[idx] = c.Data().Chunk(0)
-	}
-
-	// Create a record from the schema and columns.
-	record := array.NewRecord(schema, cols, int64(nrows))
-	return record, nil
-}
-
 // buildArrowFields builds Arrow field definitions from a Frame.
 func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 	arrowFields := make([]arrow.Field, len(f.Fields))

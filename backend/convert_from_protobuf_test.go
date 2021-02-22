@@ -22,6 +22,10 @@ func (w *walker) Struct(v reflect.Value) error {
 }
 
 func (w *walker) StructField(f reflect.StructField, v reflect.Value) error {
+	if f.Anonymous {
+		return nil
+	}
+
 	if strings.HasPrefix(f.Name, "XXX") {
 		return nil
 	}
