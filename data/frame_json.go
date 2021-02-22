@@ -300,6 +300,7 @@ func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]b
 	return stream.Buffer(), nil
 }
 
+//gocyclo:ignore
 func writeArrowFrame(stream *jsoniter.Stream, record array.Record, includeSchema bool, includeData bool) error {
 	started := false
 	stream.WriteObjectStart()
