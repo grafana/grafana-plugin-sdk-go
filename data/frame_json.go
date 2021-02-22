@@ -261,8 +261,8 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 	return nil
 }
 
-// ArrowToJSON writes a frame to JSON
-func ArrowBufferToJSON(b []byte) ([]byte, error) {
+// ArrowBufferToJSON writes a frame to JSON
+func ArrowBufferToJSON(b []byte, includeSchema bool, includeData bool) ([]byte, error) {
 	fB := filebuffer.New(b)
 	fR, err := ipc.NewFileReader(fB)
 	if err != nil {
@@ -279,7 +279,7 @@ func ArrowBufferToJSON(b []byte) ([]byte, error) {
 	}
 	// TODO?? multiple records in one file?
 
-	return ArrowToJSON(record, true, true)
+	return ArrowToJSON(record, includeSchema, includeData)
 }
 
 // ArrowToJSON writes a frame to JSON
