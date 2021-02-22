@@ -18,7 +18,8 @@ const simpleTypeNumber = "number"
 const simpleTypeBool = "bool"
 const simpleTypeTime = "time"
 
-// FrameToJSON writes a frame to JSON
+// FrameToJSON writes a frame to JSON.
+// NOTE: the format should be considered experimental until grafana 8 is released.
 func FrameToJSON(frame *Frame, includeSchema bool, includeData bool) ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
@@ -262,6 +263,7 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 }
 
 // ArrowBufferToJSON writes a frame to JSON
+// NOTE: the format should be considered experimental until grafana 8 is released.
 func ArrowBufferToJSON(b []byte, includeSchema bool, includeData bool) ([]byte, error) {
 	fB := filebuffer.New(b)
 	fR, err := ipc.NewFileReader(fB)
@@ -283,6 +285,7 @@ func ArrowBufferToJSON(b []byte, includeSchema bool, includeData bool) ([]byte, 
 }
 
 // ArrowToJSON writes a frame to JSON
+// NOTE: the format should be considered experimental until grafana 8 is released.
 func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
