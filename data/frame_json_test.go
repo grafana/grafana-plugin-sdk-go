@@ -22,7 +22,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 	require.NoError(t, err)
 	strF := string(b)
 
-	b, err = data.ArrowBufferToJSON(a)
+	b, err = data.ArrowBufferToJSON(a, true, true)
 	require.NoError(t, err)
 	strA := string(b)
 
