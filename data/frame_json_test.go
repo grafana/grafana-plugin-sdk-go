@@ -13,6 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+// TestGoldenFrameJSON makes sure that the JSON produced from arrow and dataframes match
 func TestGoldenFrameJSON(t *testing.T) {
 	f := goldenDF()
 	a, err := f.MarshalArrow()
@@ -45,11 +46,11 @@ func TestGoldenFrameJSON(t *testing.T) {
 
 	strG := string(b)
 	assert.JSONEq(t, strF, strG, "saved json must match produced json")
-
-	// assert.Equal(t, 1, 2)
 }
 
-func TestGENERATE(t *testing.T) {
+// This function will write code to the console that should be copy/pasted into frame_json.gen.go
+// when changes are required.  Typically this function will always be skipped
+func TestGenerateGenericArrowCode(t *testing.T) {
 	t.Skip()
 
 	types := []string{

@@ -7,9 +7,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-//------------------------------------------------
-// This file is generated from frame_json_test.go
-//------------------------------------------------
+//-------------------------------------------------------------
+// The rest of this file is generated from frame_json_test.go
+//-------------------------------------------------------------
 
 func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
 	var entities *fieldEntityLookup
