@@ -288,10 +288,26 @@ func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]b
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	err := writeArrowFrame(stream, record, includeSchema, includeData)
-	if err != nil {
-		return nil, err
+	stream.WriteObjectStart()
+	if includeSchema {
+		stream.WriteObjectField("schema")
+		err := writeArrowSchema(stream, record)
+		if err != nil {
+			return nil, err
+		}
 	}
+	if includeData {
+		if includeSchema {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("data")
+		err := writeArrowData(stream, record)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	stream.WriteObjectEnd()
 
 	if stream.Error != nil {
 		fmt.Println("error:", stream.Error)
@@ -300,156 +316,145 @@ func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]b
 	return stream.Buffer(), nil
 }
 
-//gocyclo:ignore
-func writeArrowFrame(stream *jsoniter.Stream, record array.Record, includeSchema bool, includeData bool) error {
+func writeArrowSchema(stream *jsoniter.Stream, record array.Record) error {
 	started := false
+	metaData := record.Schema().Metadata()
+
 	stream.WriteObjectStart()
-	if includeSchema {
-		metaData := record.Schema().Metadata()
 
-		stream.WriteObjectField("schema")
+	name, _ := getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
+	refID, _ := getMDKey("refId", metaData)
+
+	if len(name) > 0 {
+		stream.WriteObjectField("name")
+		stream.WriteString(name)
+		started = true
+	}
+
+	if len(refID) > 0 {
+		if started {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("refId")
+		stream.WriteString(refID)
+		started = true
+	}
+
+	if metaAsString, ok := getMDKey("meta", metaData); ok {
+		if started {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("meta")
+		stream.WriteRaw(metaAsString)
+		started = true
+	}
+
+	if started {
+		stream.WriteMore()
+	}
+	stream.WriteObjectField("fields")
+	stream.WriteArrayStart()
+	for i, f := range record.Schema().Fields() {
+		if i > 0 {
+			stream.WriteMore()
+		}
+		started = false
 		stream.WriteObjectStart()
-
-		name, _ := getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
-		refID, _ := getMDKey("refId", metaData)
-
-		if len(name) > 0 {
+		if len(f.Name) > 0 {
 			stream.WriteObjectField("name")
-			stream.WriteString(name)
-			started = true
-		}
-
-		if len(refID) > 0 {
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField("refId")
-			stream.WriteString(refID)
-			started = true
-		}
-
-		if metaAsString, ok := getMDKey("meta", metaData); ok {
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField("meta")
-			stream.WriteRaw(metaAsString)
+			stream.WriteString(f.Name)
 			started = true
 		}
 
 		if started {
 			stream.WriteMore()
 		}
-		stream.WriteObjectField("fields")
-		stream.WriteArrayStart()
-		for i, f := range record.Schema().Fields() {
-			if i > 0 {
-				stream.WriteMore()
-			}
-			started = false
-			stream.WriteObjectStart()
-			if len(f.Name) > 0 {
-				stream.WriteObjectField("name")
-				stream.WriteString(f.Name)
-				started = true
-			}
+		stream.WriteObjectField("type")
+		stream.WriteString(getSimpleTypeStringForArrow(f.Type))
 
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField("type")
-			stream.WriteString(getSimpleTypeStringForArrow(f.Type))
-
-			if labelsAsString, ok := getMDKey("labels", f.Metadata); ok {
-				stream.WriteMore()
-				stream.WriteObjectField("labels")
-				stream.WriteRaw(labelsAsString)
-			}
-			if labelsAsString, ok := getMDKey("config", f.Metadata); ok {
-				stream.WriteMore()
-				stream.WriteObjectField("config")
-				stream.WriteRaw(labelsAsString)
-			}
-
-			stream.WriteObjectEnd()
+		if labelsAsString, ok := getMDKey("labels", f.Metadata); ok {
+			stream.WriteMore()
+			stream.WriteObjectField("labels")
+			stream.WriteRaw(labelsAsString)
 		}
-		stream.WriteArrayEnd()
+		if labelsAsString, ok := getMDKey("config", f.Metadata); ok {
+			stream.WriteMore()
+			stream.WriteObjectField("config")
+			stream.WriteRaw(labelsAsString)
+		}
 
 		stream.WriteObjectEnd()
 	}
+	stream.WriteArrayEnd()
 
-	if includeData {
-		if includeSchema {
+	stream.WriteObjectEnd()
+	return nil
+}
+
+func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
+	fieldCount := len(record.Schema().Fields())
+
+	stream.WriteObjectStart()
+
+	entities := make([]*fieldEntityLookup, fieldCount)
+	entityCount := 0
+
+	//	rowCount := int(record.NumRows())
+
+	stream.WriteObjectField("fields")
+	stream.WriteArrayStart()
+	for fidx := 0; fidx < fieldCount; fidx++ {
+		if fidx > 0 {
 			stream.WriteMore()
 		}
-		fieldCount := len(record.Schema().Fields())
+		col := record.Column(fidx)
+		var ent *fieldEntityLookup
 
-		stream.WriteObjectField("data")
-		stream.WriteObjectStart()
+		switch col.DataType().ID() {
+		case arrow.TIMESTAMP:
+			writeArrowDataTIMESTAMP(stream, col)
 
-		entities := make([]*fieldEntityLookup, fieldCount)
-		entityCount := 0
-
-		//	rowCount := int(record.NumRows())
-
-		stream.WriteObjectField("fields")
-		stream.WriteArrayStart()
-		for fidx := 0; fidx < fieldCount; fidx++ {
-			if fidx > 0 {
-				stream.WriteMore()
-			}
-			col := record.Column(fidx)
-			var ent *fieldEntityLookup
-
-			switch col.DataType().ID() {
-			case arrow.TIMESTAMP:
-				writeArrowDataTIMESTAMP(stream, col)
-
-			case arrow.UINT8:
-				ent = writeArrowDataUint8(stream, col)
-			case arrow.UINT16:
-				ent = writeArrowDataUint16(stream, col)
-			case arrow.UINT32:
-				ent = writeArrowDataUint32(stream, col)
-			case arrow.UINT64:
-				ent = writeArrowDataUint64(stream, col)
-			case arrow.INT8:
-				ent = writeArrowDataInt8(stream, col)
-			case arrow.INT16:
-				ent = writeArrowDataInt16(stream, col)
-			case arrow.INT32:
-				ent = writeArrowDataInt32(stream, col)
-			case arrow.INT64:
-				ent = writeArrowDataInt64(stream, col)
-			case arrow.FLOAT32:
-				ent = writeArrowDataFloat32(stream, col)
-			case arrow.FLOAT64:
-				ent = writeArrowDataFloat64(stream, col)
-			case arrow.STRING:
-				ent = writeArrowDataString(stream, col)
-			case arrow.BOOL:
-				ent = writeArrowDataBool(stream, col)
-			default:
-				return fmt.Errorf("unsupported arrow type %s for JSON", col.DataType().ID())
-			}
-
-			if ent != nil {
-				entities[fidx] = ent
-				entityCount++
-			}
-		}
-		stream.WriteArrayEnd()
-
-		if entityCount > 0 {
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField("entities")
-			stream.WriteVal(entities)
+		case arrow.UINT8:
+			ent = writeArrowDataUint8(stream, col)
+		case arrow.UINT16:
+			ent = writeArrowDataUint16(stream, col)
+		case arrow.UINT32:
+			ent = writeArrowDataUint32(stream, col)
+		case arrow.UINT64:
+			ent = writeArrowDataUint64(stream, col)
+		case arrow.INT8:
+			ent = writeArrowDataInt8(stream, col)
+		case arrow.INT16:
+			ent = writeArrowDataInt16(stream, col)
+		case arrow.INT32:
+			ent = writeArrowDataInt32(stream, col)
+		case arrow.INT64:
+			ent = writeArrowDataInt64(stream, col)
+		case arrow.FLOAT32:
+			ent = writeArrowDataFloat32(stream, col)
+		case arrow.FLOAT64:
+			ent = writeArrowDataFloat64(stream, col)
+		case arrow.STRING:
+			ent = writeArrowDataString(stream, col)
+		case arrow.BOOL:
+			ent = writeArrowDataBool(stream, col)
+		default:
+			return fmt.Errorf("unsupported arrow type %s for JSON", col.DataType().ID())
 		}
 
-		stream.WriteObjectEnd()
+		if ent != nil {
+			entities[fidx] = ent
+			entityCount++
+		}
 	}
+	stream.WriteArrayEnd()
+
+	if entityCount > 0 {
+		stream.WriteMore()
+		stream.WriteObjectField("entities")
+		stream.WriteVal(entities)
+	}
+
 	stream.WriteObjectEnd()
 	return nil
 }
