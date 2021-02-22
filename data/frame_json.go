@@ -272,7 +272,7 @@ func ArrowBufferToJSON(b []byte) ([]byte, error) {
 
 	record, err := fR.Read()
 	if errors.Is(err, io.EOF) {
-		return nil, fmt.Errorf("No records found")
+		return nil, fmt.Errorf("no records found")
 	}
 	if err != nil {
 		return nil, err
