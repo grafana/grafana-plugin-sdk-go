@@ -291,10 +291,7 @@ func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]b
 	stream.WriteObjectStart()
 	if includeSchema {
 		stream.WriteObjectField("schema")
-		err := writeArrowSchema(stream, record)
-		if err != nil {
-			return nil, err
-		}
+		writeArrowSchema(stream, record)
 	}
 	if includeData {
 		if includeSchema {
@@ -316,7 +313,7 @@ func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]b
 	return stream.Buffer(), nil
 }
 
-func writeArrowSchema(stream *jsoniter.Stream, record array.Record) error {
+func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 	started := false
 	metaData := record.Schema().Metadata()
 
@@ -388,7 +385,6 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) error {
 	stream.WriteArrayEnd()
 
 	stream.WriteObjectEnd()
-	return nil
 }
 
 func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
