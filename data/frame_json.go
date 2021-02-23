@@ -210,7 +210,7 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 		entities := make([]*fieldEntityLookup, len(frame.Fields))
 		entityCount := 0
 
-		stream.WriteObjectField("fields")
+		stream.WriteObjectField("values")
 		stream.WriteArrayStart()
 		for fidx, f := range frame.Fields {
 			if fidx > 0 {
@@ -398,9 +398,7 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 	entities := make([]*fieldEntityLookup, fieldCount)
 	entityCount := 0
 
-	//	rowCount := int(record.NumRows())
-
-	stream.WriteObjectField("fields")
+	stream.WriteObjectField("values")
 	stream.WriteArrayStart()
 	for fidx := 0; fidx < fieldCount; fidx++ {
 		if fidx > 0 {
