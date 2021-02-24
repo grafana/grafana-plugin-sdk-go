@@ -1,6 +1,8 @@
 package data
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"time"
 )
@@ -223,6 +225,30 @@ const (
 	FieldTypeNullableTime
 )
 
+// MarshalJSON marshals the enum as a quoted json string
+func (p *FieldType) MarshalJSON() ([]byte, error) {
+	buffer := bytes.NewBufferString(`"`)
+	buffer.WriteString(p.ItemTypeString())
+	buffer.WriteString(`"`)
+	return buffer.Bytes(), nil
+}
+
+// UnmarshalJSON unmarshals a quoted json string to the enum value
+func (p *FieldType) UnmarshalJSON(b []byte) error {
+	var j string
+	err := json.Unmarshal(b, &j)
+	if err != nil {
+		return err
+	}
+
+	f, ok := FieldTypeFromItemTypeString(j)
+	if !ok {
+		return fmt.Errorf("unknown field type")
+	}
+	*p = f
+	return nil
+}
+
 func vectorFieldType(v vector) FieldType {
 	switch v.(type) {
 	case *int8Vector:
@@ -427,6 +453,86 @@ func (p FieldType) NullableType() FieldType {
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
+}
+
+// FieldTypeFromItemTypeString returns a field type from the current string
+//nolint:goconst,gocyclo
+func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
+	switch s {
+	case "int8":
+		return FieldTypeInt8, true
+	case "*int8":
+		return FieldTypeNullableInt8, true
+
+	case "int16":
+		return FieldTypeInt16, true
+	case "*int16":
+		return FieldTypeNullableInt16, true
+
+	case "int32":
+		return FieldTypeInt32, true
+	case "*int32":
+		return FieldTypeNullableInt32, true
+
+	case "int":
+		fallthrough
+	case "int64":
+		return FieldTypeInt64, true
+	case "*int64":
+		return FieldTypeNullableInt64, true
+
+	case "unit8":
+		return FieldTypeUint8, true
+	case "*uint8":
+		return FieldTypeNullableUint8, true
+
+	case "uint16":
+		return FieldTypeUint16, true
+	case "*uint16":
+		return FieldTypeNullableUint16, true
+
+	case "uint32":
+		return FieldTypeUint32, true
+	case "*uint32":
+		return FieldTypeNullableUint32, true
+
+	case "uint64":
+		return FieldTypeUint64, true
+	case "*uint64":
+		return FieldTypeNullableUint64, true
+
+	case "float32":
+		return FieldTypeFloat32, true
+	case "*float32":
+		return FieldTypeNullableFloat32, true
+
+	case "double":
+		fallthrough
+	case "float":
+		fallthrough
+	case "float64":
+		return FieldTypeFloat64, true
+	case "*float64":
+		return FieldTypeNullableFloat64, true
+
+	case "string":
+		return FieldTypeString, true
+	case "*string":
+		return FieldTypeNullableString, true
+
+	case "bool":
+		return FieldTypeBool, true
+	case "*bool":
+		return FieldTypeNullableBool, true
+
+	case "time":
+		fallthrough
+	case "time.Time":
+		return FieldTypeTime, true
+	case "*time.Time":
+		return FieldTypeNullableTime, true
+	}
+	return FieldTypeNullableString, false
 }
 
 // ItemTypeString returns the string representation of the type of element within in the vector
