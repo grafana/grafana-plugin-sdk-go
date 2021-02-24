@@ -241,7 +241,7 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 		return err
 	}
 
-	f, ok := FieldTypeFromString(j)
+	f, ok := FieldTypeFromItemTypeString(j)
 	if !ok {
 		return fmt.Errorf("unknown field type")
 	}
@@ -455,79 +455,9 @@ func (p FieldType) NullableType() FieldType {
 	}
 }
 
-// ItemTypeString returns the string representation of the type of element within in the vector
-func (p FieldType) ItemTypeString() string {
-	switch p {
-	case FieldTypeInt8:
-		return "int8"
-	case FieldTypeNullableInt8:
-		return "*int8"
-
-	case FieldTypeInt16:
-		return "int16"
-	case FieldTypeNullableInt16:
-		return "*int16"
-
-	case FieldTypeInt32:
-		return "int32"
-	case FieldTypeNullableInt32:
-		return "*int32"
-
-	case FieldTypeInt64:
-		return "int64"
-	case FieldTypeNullableInt64:
-		return "*int64"
-
-	case FieldTypeUint8:
-		return "unit8"
-	case FieldTypeNullableUint8:
-		return "*uint8"
-
-	case FieldTypeUint16:
-		return "uint16"
-	case FieldTypeNullableUint16:
-		return "*uint16"
-
-	case FieldTypeUint32:
-		return "uint32"
-	case FieldTypeNullableUint32:
-		return "*uint32"
-
-	case FieldTypeUint64:
-		return "uint64"
-	case FieldTypeNullableUint64:
-		return "*uint64"
-
-	case FieldTypeFloat32:
-		return "float32"
-	case FieldTypeNullableFloat32:
-		return "*float32"
-
-	case FieldTypeFloat64:
-		return "float64"
-	case FieldTypeNullableFloat64:
-		return "*float64"
-
-	case FieldTypeString:
-		return "string"
-	case FieldTypeNullableString:
-		return "*string"
-
-	case FieldTypeBool:
-		return "bool"
-	case FieldTypeNullableBool:
-		return "*bool"
-
-	case FieldTypeTime:
-		return "time.Time"
-	case FieldTypeNullableTime:
-		return "*time.Time"
-	}
-	return "invalid/unsupported type"
-}
-
-// FieldTypeFromString returns a field type from the current string
-func FieldTypeFromString(s string) (FieldType, bool) {
+// FieldTypeFromItemTypeString returns a field type from the current string
+//nolint:goconst,gocyclo
+func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	switch s {
 	case "int8":
 		return FieldTypeInt8, true
@@ -603,6 +533,77 @@ func FieldTypeFromString(s string) (FieldType, bool) {
 		return FieldTypeNullableTime, true
 	}
 	return FieldTypeNullableString, false
+}
+
+// ItemTypeString returns the string representation of the type of element within in the vector
+func (p FieldType) ItemTypeString() string {
+	switch p {
+	case FieldTypeInt8:
+		return "int8"
+	case FieldTypeNullableInt8:
+		return "*int8"
+
+	case FieldTypeInt16:
+		return "int16"
+	case FieldTypeNullableInt16:
+		return "*int16"
+
+	case FieldTypeInt32:
+		return "int32"
+	case FieldTypeNullableInt32:
+		return "*int32"
+
+	case FieldTypeInt64:
+		return "int64"
+	case FieldTypeNullableInt64:
+		return "*int64"
+
+	case FieldTypeUint8:
+		return "unit8"
+	case FieldTypeNullableUint8:
+		return "*uint8"
+
+	case FieldTypeUint16:
+		return "uint16"
+	case FieldTypeNullableUint16:
+		return "*uint16"
+
+	case FieldTypeUint32:
+		return "uint32"
+	case FieldTypeNullableUint32:
+		return "*uint32"
+
+	case FieldTypeUint64:
+		return "uint64"
+	case FieldTypeNullableUint64:
+		return "*uint64"
+
+	case FieldTypeFloat32:
+		return "float32"
+	case FieldTypeNullableFloat32:
+		return "*float32"
+
+	case FieldTypeFloat64:
+		return "float64"
+	case FieldTypeNullableFloat64:
+		return "*float64"
+
+	case FieldTypeString:
+		return "string"
+	case FieldTypeNullableString:
+		return "*string"
+
+	case FieldTypeBool:
+		return "bool"
+	case FieldTypeNullableBool:
+		return "*bool"
+
+	case FieldTypeTime:
+		return "time.Time"
+	case FieldTypeNullableTime:
+		return "*time.Time"
+	}
+	return "invalid/unsupported type"
 }
 
 // Nullable returns if Field type is a nullable type

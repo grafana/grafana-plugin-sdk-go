@@ -44,14 +44,14 @@ func TestFieldTypeConversion(t *testing.T) {
 	f := data.FieldTypeBool
 	s := f.ItemTypeString()
 	assert.Equal(t, "bool", s)
-	c, ok := data.FieldTypeFromString(s)
+	c, ok := data.FieldTypeFromItemTypeString(s)
 	require.Equal(t, true, ok, "must parse ok")
 	assert.Equal(t, f, c)
 
-	c, ok = data.FieldTypeFromString("????")
+	_, ok = data.FieldTypeFromItemTypeString("????")
 	require.Equal(t, false, ok, "unknown type")
 
-	c, ok = data.FieldTypeFromString("float")
+	c, ok = data.FieldTypeFromItemTypeString("float")
 	require.Equal(t, true, ok, "must parse ok")
 	assert.Equal(t, data.FieldTypeFloat64, c)
 
