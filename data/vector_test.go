@@ -61,7 +61,6 @@ func TestFieldTypeConversion(t *testing.T) {
 	}
 	body, err := json.Marshal(obj)
 	require.NoError(t, err)
-	fmt.Printf("JSON: %s\n", string(body))
 
 	copy := &simpleFieldInfo{}
 	err = json.Unmarshal(body, &copy)
