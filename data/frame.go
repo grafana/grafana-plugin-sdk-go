@@ -433,7 +433,14 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 			headers[colIdx] = fmt.Sprintf("...+%v field...", len(f.Fields)-colIdx)
 			break
 		}
-		headers[colIdx] = fmt.Sprintf("Name: %v\nLabels: %s\nType: %s", field.Name, field.Labels, field.Type())
+		txt := fmt.Sprintf("Name: %v\nLabels: %s\nType: %s", field.Name, field.Labels, field.Type())
+		if field.Config != nil {
+			bytes, err := json.MarshalIndent(field.Config, "", " ")
+			if err != nil {
+				txt += "\n" + string(bytes)
+			}
+		}
+		headers[colIdx] = txt
 	}
 	table.SetHeader(headers)
 
