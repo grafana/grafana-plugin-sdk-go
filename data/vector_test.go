@@ -49,7 +49,7 @@ func TestFieldTypeConversion(t *testing.T) {
 	assert.Equal(t, f, c)
 
 	_, ok = data.FieldTypeFromItemTypeString("????")
-	require.Equal(t, false, ok, "unknown type")
+	require.False(t, ok, "unknown type")
 
 	c, ok = data.FieldTypeFromItemTypeString("float")
 	require.Equal(t, true, ok, "must parse ok")
