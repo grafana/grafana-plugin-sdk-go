@@ -233,7 +233,7 @@ func (p *FieldType) MarshalJSON() ([]byte, error) {
 	return buffer.Bytes(), nil
 }
 
-// UnmarshalJSON unmashals a quoted json string to the enum value
+// UnmarshalJSON unmarshals a quoted json string to the enum value
 func (p *FieldType) UnmarshalJSON(b []byte) error {
 	var j string
 	err := json.Unmarshal(b, &j)
