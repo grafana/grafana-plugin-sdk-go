@@ -45,7 +45,7 @@ func TestFieldTypeConversion(t *testing.T) {
 	s := f.ItemTypeString()
 	assert.Equal(t, "bool", s)
 	c, ok := data.FieldTypeFromItemTypeString(s)
-	require.Equal(t, true, ok, "must parse ok")
+	require.True(t, ok, "must parse ok")
 	assert.Equal(t, f, c)
 
 	_, ok = data.FieldTypeFromItemTypeString("????")
