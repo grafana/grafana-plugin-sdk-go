@@ -150,6 +150,11 @@ func (Build) Darwin() error {
 	return buildBackend(newBuildConfig("darwin", "amd64"))
 }
 
+// DarwinARM64 builds the back-end plugin for OSX on ARM (M1).
+func (Build) DarwinARM64() error {
+	return buildBackend(newBuildConfig("darwin", "arm64"))
+}
+
 // Debug builds the debug version for the current platform
 func (Build) Debug() error {
 	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
@@ -166,7 +171,7 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.LinuxARM64, b.LinuxARM)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
 }
 
 // Test runs backend tests.
