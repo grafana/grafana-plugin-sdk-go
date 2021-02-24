@@ -52,7 +52,7 @@ func TestFieldTypeConversion(t *testing.T) {
 	require.False(t, ok, "unknown type")
 
 	c, ok = data.FieldTypeFromItemTypeString("float")
-	require.Equal(t, true, ok, "must parse ok")
+	require.True(t, ok, "must parse ok")
 	assert.Equal(t, data.FieldTypeFloat64, c)
 
 	obj := &simpleFieldInfo{
