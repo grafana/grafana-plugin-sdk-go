@@ -48,8 +48,20 @@ func TestGoldenFrameJSON(t *testing.T) {
 	assert.JSONEq(t, strF, strG, "saved json must match produced json")
 }
 
+func BenchmarkFrameToJSON(b *testing.B) {
+	f := goldenDF()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := data.FrameToJSON(f, true, true)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 // This function will write code to the console that should be copy/pasted into frame_json.gen.go
-// when changes are required.  Typically this function will always be skipped
+// when changes are required. Typically this function will always be skipped.
 func TestGenerateGenericArrowCode(t *testing.T) {
 	t.Skip()
 

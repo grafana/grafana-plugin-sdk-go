@@ -197,6 +197,13 @@ func goldenDF() *data.Frame {
 			float64Ptr(math.MaxFloat64),
 			float64Ptr(float64(maxEcma6Int)),
 		}),
+		data.NewField("nullable_float64_values_nans", nil, []*float64{
+			float64Ptr(math.Inf(-1)),
+			float64Ptr(0),
+			nil,
+			float64Ptr(math.NaN()),
+			float64Ptr(math.Inf(1)),
+		}),
 		data.NewField("bool_values", nil, []bool{
 			true,
 			false,
