@@ -140,6 +140,9 @@ message DataResponse {
 //-----------------------------------------------------------------
 
 service Stream {
+  // Called when grafana starts and will return a list of streams that maybe should start
+  rpc InitChannels(StreamRequest) returns (stream StreamCapabilities);
+
   // Describe the capibilites for a given stream or an error if invalid
   rpc GetStreamCapabilities(StreamRequest) returns (stream StreamCapabilities);
 
@@ -161,7 +164,10 @@ message StreamRequest {
 }
 
 message StreamPacket {
-  repeated bytes payload = 1;
+  bytes payload = 1; // does the server need to parse this payload?
+
+  // ??? perhaps when schema changes set a flag ????
+  bytes schema = 2;
 }
 
 message SubscribeResponse {
@@ -172,23 +178,26 @@ message SubscribeResponse {
 message StreamPostRequest {
   PluginContext pluginContext = 1;
   string path = 2;
-  repeated bytes payload = 3;
+  bytes payload = 3;
 }
 
 message StreamPostResponse {
   bool ok = 1;
   string message = 2;
+  bytes payload = 3;
 }
 
 message StreamCapabilities {
   enum StreamType {
-    MSG = 0;
-    DATA = 1;
+    JSON = 0; // arbitry json blobs 
+    DATA = 1; // managed DataFrameJSON blobs (schema+data)
+    // BINARY = 3; // arbitrary binary data
   }
   StreamType type = 1;
   int32 history = 2;
   bool presense = 3;
   bool publish = 4;
+  int64 keepalive = 5; // stay alive
 }
 
 
