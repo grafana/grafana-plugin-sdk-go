@@ -69,6 +69,7 @@ func (mux *QueryTypeMux) QueryData(ctx context.Context, req *backend.QueryDataRe
 
 	requests := map[string]requestHandler{}
 	for _, q := range req.Queries {
+		log.DefaultLogger.Info("Querying data for querytype", q.QueryType)
 		qt, handler := mux.getHandler(q.QueryType)
 		if _, exists := requests[qt]; !exists {
 			requests[qt] = requestHandler{

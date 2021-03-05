@@ -1,7 +1,10 @@
 package grpcplugin
 
 import (
+	"net"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
 )
@@ -20,49 +23,40 @@ type ServeOpts struct {
 
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
-	versionedPlugins := make(map[int]plugin.PluginSet)
-	pSet := make(plugin.PluginSet)
-
-	if opts.DiagnosticsServer != nil {
-		pSet["diagnostics"] = &DiagnosticsGRPCPlugin{
-			DiagnosticsServer: opts.DiagnosticsServer,
-		}
-	}
-
-	if opts.ResourceServer != nil {
-		pSet["resource"] = &ResourceGRPCPlugin{
-			ResourceServer: opts.ResourceServer,
-		}
-	}
-
-	if opts.DataServer != nil {
-		pSet["data"] = &DataGRPCPlugin{
-			DataServer: opts.DataServer,
-		}
-	}
-
-	if opts.TransformServer != nil {
-		pSet["transform"] = &TransformGRPCPlugin{
-			TransformServer: opts.TransformServer,
-		}
-	}
-
-	versionedPlugins[ProtocolVersion] = pSet
-
 	if opts.GRPCServer == nil {
 		opts.GRPCServer = plugin.DefaultGRPCServer
 	}
 
+	server := opts.GRPCServer(nil)
+
 	plugKeys := []string{}
-	for k := range pSet {
-		plugKeys = append(plugKeys, k)
+	if opts.DiagnosticsServer != nil {
+		pluginv2.RegisterDiagnosticsServer(server, opts.DiagnosticsServer)
+		plugKeys = append(plugKeys, "diagnostics")
 	}
+
+	if opts.ResourceServer != nil {
+		pluginv2.RegisterResourceServer(server, opts.ResourceServer)
+		plugKeys = append(plugKeys, "resources")
+	}
+
+	if opts.DataServer != nil {
+		pluginv2.RegisterDataServer(server, opts.DataServer)
+		plugKeys = append(plugKeys, "data")
+	}
+
+	if opts.TransformServer != nil {
+		// pluginv2.RegisterTransformServer(server, opts.TransformServer)
+	}
+
 	log.DefaultLogger.Debug("Serving plugin", "plugins", plugKeys)
-	plugin.Serve(&plugin.ServeConfig{
-		HandshakeConfig:  handshake,
-		VersionedPlugins: versionedPlugins,
-		GRPCServer:       opts.GRPCServer,
-	})
+
+	listener, err := net.Listen("tcp", ":3021")
+	if err != nil {
+		return err
+	}
+
+	server.Serve(listener)
 	log.DefaultLogger.Debug("Plugin server exited")
 
 	return nil
