@@ -134,6 +134,38 @@ message DataResponse {
   bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
 }
 
+
+//-----------------------------------------------------------------
+// Stream -- EXPERIMENTAL and is subject to change until 8.0
+//-----------------------------------------------------------------
+
+service Stream {
+  // Called when a user 
+  rpc CanSubscribe(StreamRequest) returns (stream SubscribeResponse);
+
+  // This will get called when someone starts listening on a stream and will 
+  // disconnect when there are no more subscribers
+  rpc RunStream(StreamRequest) returns (stream StreamPacket);
+}
+
+// StreamRequest
+message StreamRequest {
+  PluginContext pluginContext = 1;
+
+  // Environment info
+  string path = 2;
+}
+
+message StreamPacket {
+  repeated bytes payload = 1;
+}
+
+message SubscribeResponse {
+  bool ok = 1;
+  string message = 2;
+}
+
+
 //-----------------------------------------------
 // Diagnostics
 //-----------------------------------------------
