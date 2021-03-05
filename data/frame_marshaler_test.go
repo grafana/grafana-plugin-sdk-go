@@ -93,6 +93,11 @@ func TestMarshalTable(t *testing.T) {
 	tc := tcase{
 		description: "should convert a basic timeseries example with embedded data",
 		name:        "frame",
+		fields: []MarshalField{
+			{Name: "field1"},
+			{Name: "field2"},
+			{Name: "field3"},
+		},
 		value: []table{
 			{
 				Field1: "1",
@@ -182,6 +187,24 @@ func TestMarshalAllTypes(t *testing.T) {
 	testMarshalCase(t, tc)
 }
 
+func TestMarshalWithLabels(t *testing.T) {
+	type typeTable struct {
+		Int8     int8   `frame:"int_8"`
+		Int8Ptr  *int8  `frame:"int_8_ptr"`
+		Int16    int16  `frame:"int_16"`
+		Int16Ptr int16  `frame:"int_16"`
+		Label    string `frame:"label,label"`
+	}
+
+	tc := tcase{
+		description: "should convert a basic timeseries example with embedded data",
+		name:        "frame",
+		value:       []typeTable{},
+	}
+
+	testMarshalCase(t, tc)
+}
+
 func testMarshalCase(t *testing.T, tc tcase) {
 	t.Run(tc.description, func(t *testing.T) {
 		frame, err := Marshal(tc.name, tc.fields, tc.value)
@@ -202,6 +225,19 @@ func testMarshalCase(t *testing.T, tc tcase) {
 
 		if diff := cmp.Diff(Frames{frame}, Frames{tc.frame}, FrameTestCompareOptions()...); diff != "" {
 			t.Errorf("Result mismatch (-want +got):\n%s", diff)
+		}
+	})
+}
+
+func TestMarshal(t *testing.T) {
+	t.Run("should return an error if a slice element is not a struct or a map", func(t *testing.T) {
+		d := []string{"not a struct or map"}
+		_, err := Marshal("test", nil, d)
+		if err == nil {
+			t.Fatal("no error returned")
+		}
+		if !errors.Is(err, ErrorNotCollection) {
+			t.Fatalf("error '%s' is not an ErrorNotCollection", err)
 		}
 	})
 }
