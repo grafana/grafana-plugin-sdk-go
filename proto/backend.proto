@@ -188,6 +188,7 @@ message StreamCapabilities {
   StreamType type = 1;
   int32 history = 2;
   bool presense = 3;
+  bool publish = 4;
 }
 
 
