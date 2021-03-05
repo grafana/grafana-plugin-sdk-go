@@ -118,17 +118,19 @@ func (f *fieldEntityLookup) add(str string, idx int) {
 }
 
 func isSpecialEntity(v float64) (string, bool) {
-	if math.IsNaN(v) {
+	switch {
+	case math.IsNaN(v):
 		return entityNaN, true
-	} else if math.IsInf(v, 1) {
+	case math.IsInf(v, 1):
 		return entityPositiveInf, true
-	} else if math.IsInf(v, -1) {
+	case math.IsInf(v, -1):
 		return entityNegativeInf, true
+	default:
+		return "", false
 	}
-	return "", false
 }
 
-func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) error {
+func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) error { //nolint:gocyclo
 	started := false
 	stream.WriteObjectStart()
 	if includeSchema {
@@ -242,12 +244,12 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 				if i > 0 {
 					stream.WriteRaw(",")
 				}
-				v, ok := f.ConcreteAt(i)
-				if ok {
-					if isTime {
+				if v, ok := f.ConcreteAt(i); ok {
+					switch {
+					case isTime:
 						vTyped := v.(time.Time).UnixNano() / int64(time.Millisecond) // Milliseconds precision.
 						stream.WriteVal(vTyped)
-					} else if isFloat64 || isNullableFloat64 {
+					case isFloat64 || isNullableFloat64:
 						// For float64 and nullable float64 we check whether a value is a special
 						// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
 						// information to a separate field to restore on a consumer side (setting
@@ -263,7 +265,7 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 						} else {
 							stream.WriteVal(v)
 						}
-					} else {
+					default:
 						stream.WriteVal(v)
 					}
 				} else {
