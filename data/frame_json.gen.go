@@ -1,8 +1,6 @@
 package data
 
 import (
-	"fmt"
-
 	"github.com/apache/arrow/go/arrow/array"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -26,15 +24,6 @@ func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) *fieldEnt
 			continue
 		}
 		stream.WriteUint8(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -55,15 +44,6 @@ func writeArrowDataUint16(stream *jsoniter.Stream, col array.Interface) *fieldEn
 			continue
 		}
 		stream.WriteUint16(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -84,15 +64,6 @@ func writeArrowDataUint32(stream *jsoniter.Stream, col array.Interface) *fieldEn
 			continue
 		}
 		stream.WriteUint32(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -113,15 +84,6 @@ func writeArrowDataUint64(stream *jsoniter.Stream, col array.Interface) *fieldEn
 			continue
 		}
 		stream.WriteUint64(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -142,15 +104,6 @@ func writeArrowDataInt8(stream *jsoniter.Stream, col array.Interface) *fieldEnti
 			continue
 		}
 		stream.WriteInt8(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -171,15 +124,6 @@ func writeArrowDataInt16(stream *jsoniter.Stream, col array.Interface) *fieldEnt
 			continue
 		}
 		stream.WriteInt16(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -200,15 +144,6 @@ func writeArrowDataInt32(stream *jsoniter.Stream, col array.Interface) *fieldEnt
 			continue
 		}
 		stream.WriteInt32(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -229,15 +164,6 @@ func writeArrowDataInt64(stream *jsoniter.Stream, col array.Interface) *fieldEnt
 			continue
 		}
 		stream.WriteInt64(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -257,16 +183,18 @@ func writeArrowDataFloat32(stream *jsoniter.Stream, col array.Interface) *fieldE
 			stream.WriteNil()
 			continue
 		}
-		stream.WriteFloat32(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
+		val := v.Value(i)
+		f64 := float64(val)
+		if entityType, found := isSpecialEntity(f64); found {
 			if entities == nil {
 				entities = &fieldEntityLookup{}
 			}
-			entities.add(txt, i)
-			stream.Error = nil
+			entities.add(entityType, i)
 			stream.WriteNil()
+		} else {
+			stream.WriteFloat32(val)
 		}
+
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -286,16 +214,18 @@ func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) *fieldE
 			stream.WriteNil()
 			continue
 		}
-		stream.WriteFloat64(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
+		val := v.Value(i)
+		f64 := float64(val)
+		if entityType, found := isSpecialEntity(f64); found {
 			if entities == nil {
 				entities = &fieldEntityLookup{}
 			}
-			entities.add(txt, i)
-			stream.Error = nil
+			entities.add(entityType, i)
 			stream.WriteNil()
+		} else {
+			stream.WriteFloat64(val)
 		}
+
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -316,15 +246,6 @@ func writeArrowDataString(stream *jsoniter.Stream, col array.Interface) *fieldEn
 			continue
 		}
 		stream.WriteString(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -345,15 +266,6 @@ func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) *fieldEnti
 			continue
 		}
 		stream.WriteBool(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(txt, i)
-			stream.Error = nil
-			stream.WriteNil()
-		}
 	}
 	stream.WriteArrayEnd()
 	return entities

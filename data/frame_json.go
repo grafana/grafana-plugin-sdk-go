@@ -236,8 +236,8 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 				stream.WriteMore()
 			}
 			isTime := f.Type().Time()
-			isFloat64 := f.Type() == FieldTypeFloat64
-			isNullableFloat64 := f.Type() == FieldTypeNullableFloat64
+			isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
+				f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
 
 			stream.WriteArrayStart()
 			for i := 0; i < rowCount; i++ {
@@ -249,13 +249,23 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 					case isTime:
 						vTyped := v.(time.Time).UnixNano() / int64(time.Millisecond) // Milliseconds precision.
 						stream.WriteVal(vTyped)
-					case isFloat64 || isNullableFloat64:
-						// For float64 and nullable float64 we check whether a value is a special
+					case isFloat:
+						// For float and nullable float we check whether a value is a special
 						// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
-						// information to a separate field to restore on a consumer side (setting
+						// information into a separate field to restore on a consumer side (setting
 						// null to the entity position in data). Since we are using f.ConcreteAt
-						// above the value is always float64 type, and never a *float64.
-						if entityType, found := isSpecialEntity(v.(float64)); found {
+						// above the value is always float64 or float32 types, and never a *float64
+						// or *float32.
+						var f64 float64
+						switch vt := v.(type) {
+						case float64:
+							f64 = vt
+						case float32:
+							f64 = float64(vt)
+						default:
+							return fmt.Errorf("unsupported float type: %T", v)
+						}
+						if entityType, found := isSpecialEntity(f64); found {
 							if entities[fidx] == nil {
 								entities[fidx] = &fieldEntityLookup{}
 							}
