@@ -159,8 +159,11 @@ func ValidFieldType(t interface{}) bool {
 type FieldType int
 
 const (
+	// FieldTypeUnknown indicates that we do not know the field type
+	FieldTypeUnknown FieldType = iota
+
 	// FieldTypeInt8 indicates the underlying primitive is a []int8.
-	FieldTypeInt8 FieldType = iota
+	FieldTypeInt8
 	// FieldTypeNullableInt8 indicates the underlying primitive is a []*int8.
 	FieldTypeNullableInt8
 
@@ -226,7 +229,7 @@ const (
 )
 
 // MarshalJSON marshals the enum as a quoted json string
-func (p *FieldType) MarshalJSON() ([]byte, error) {
+func (p FieldType) MarshalJSON() ([]byte, error) {
 	buffer := bytes.NewBufferString(`"`)
 	buffer.WriteString(p.ItemTypeString())
 	buffer.WriteString(`"`)
@@ -317,11 +320,11 @@ func vectorFieldType(v vector) FieldType {
 		return FieldTypeNullableTime
 	}
 
-	return FieldType(-1)
+	return FieldTypeUnknown
 }
 
 func (p FieldType) String() string {
-	if p < 0 {
+	if p <= 0 {
 		return "invalid/unsupported"
 	}
 	return fmt.Sprintf("[]%v", p.ItemTypeString())
