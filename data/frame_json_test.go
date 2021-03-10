@@ -1,6 +1,7 @@
 package data_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -47,6 +48,39 @@ func TestGoldenFrameJSON(t *testing.T) {
 
 	strG := string(b)
 	assert.JSONEq(t, strF, strG, "saved json must match produced json")
+}
+
+type simpleTestObj struct {
+	Name   string          `json:"name,omitempty"`
+	FType  data.FieldType  `json:"type,omitempty"`
+	FType2 *data.FieldType `json:"typePtr,omitempty"`
+}
+
+// TestFieldTypeToJSON makes sure field type will read/write to json
+func TestFieldTypeToJSON(t *testing.T) {
+	v := simpleTestObj{
+		Name: "hello",
+	}
+
+	b, err := json.Marshal(v)
+	require.NoError(t, err)
+	assert.Equal(t, data.FieldTypeUnknown, v.FType)
+
+	assert.Equal(t, `{"name":"hello"}`, string(b))
+
+	ft := data.FieldTypeInt8
+
+	v.FType = data.FieldTypeFloat64
+	v.FType2 = &ft
+	v.Name = ""
+	b, err = json.Marshal(v)
+	require.NoError(t, err)
+	assert.Equal(t, `{"type":"float64","typePtr":"int8"}`, string(b))
+
+	err = json.Unmarshal([]byte(`{"type":"int8","typePtr":"time"}`), &v)
+	require.NoError(t, err)
+	assert.Equal(t, data.FieldTypeInt8, v.FType)
+	assert.Equal(t, data.FieldTypeTime, *v.FType2)
 }
 
 func BenchmarkFrameToJSON(b *testing.B) {
