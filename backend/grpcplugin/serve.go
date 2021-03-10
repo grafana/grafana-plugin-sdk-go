@@ -11,6 +11,7 @@ type ServeOpts struct {
 	DiagnosticsServer DiagnosticsServer
 	ResourceServer    ResourceServer
 	DataServer        DataServer
+	StreamServer      StreamServer
 
 	// GRPCServer factory method for creating GRPC server.
 	// If nil, the default one will be used.

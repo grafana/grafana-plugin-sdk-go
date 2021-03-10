@@ -195,3 +195,37 @@ func (t ConvertToProtobuf) CallResourceRequest(req *CallResourceRequest) *plugin
 	}
 	return protoReq
 }
+
+// RunStreamRequest ...
+func (t ConvertToProtobuf) RunStreamRequest(req *RunStreamRequest) *pluginv2.RunStreamRequest {
+	protoReq := &pluginv2.RunStreamRequest{
+		PluginContext: t.PluginContext(req.PluginContext),
+		Path:          req.Path,
+	}
+	return protoReq
+}
+
+// StreamPacket ...
+func (t ConvertToProtobuf) StreamPacket(p *StreamPacket) *pluginv2.StreamPacket {
+	protoReq := &pluginv2.StreamPacket{
+		Payload: p.Payload,
+		Schema:  p.Schema,
+	}
+	return protoReq
+}
+
+// SubscribeToStreamRequest ...
+func (t ConvertToProtobuf) SubscribeToStreamRequest(req *SubscribeToStreamRequest) *pluginv2.SubscribeToStreamRequest {
+	return &pluginv2.SubscribeToStreamRequest{
+		PluginContext: t.PluginContext(req.PluginContext),
+		Path:          req.Path,
+	}
+}
+
+// SubscribeToStreamResponse ...
+func (t ConvertToProtobuf) SubscribeToStreamResponse(req *SubscribeToStreamResponse) *pluginv2.SubscribeToStreamResponse {
+	return &pluginv2.SubscribeToStreamResponse{
+		Ok:      req.OK,
+		Message: req.Message,
+	}
+}
