@@ -76,6 +76,11 @@ func TestFieldTypeToJSON(t *testing.T) {
 	b, err = json.Marshal(v)
 	require.NoError(t, err)
 	assert.Equal(t, `{"type":"float64","typePtr":"int8"}`, string(b))
+
+	err = json.Unmarshal([]byte(`{"type":"int8","typePtr":"time"}`), &v)
+	require.NoError(t, err)
+	assert.Equal(t, data.FieldTypeInt8, v.FType)
+	assert.Equal(t, data.FieldTypeTime, *v.FType2)
 }
 
 func BenchmarkFrameToJSON(b *testing.B) {
