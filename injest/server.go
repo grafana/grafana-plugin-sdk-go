@@ -7,12 +7,11 @@ import (
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/influxdata/telegraf/plugins/parsers/influx"
 )
 
 func RunServer() {
 	http.HandleFunc("/", handler)
-	fmt.Println("Dummy injest backend Listening on port: 7777")
+	fmt.Println("Dummy injester listening on port: 7777")
 	if err := http.ListenAndServe(":7777", nil); err != nil {
 		panic(err)
 	}
@@ -36,8 +35,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 
 	count++
 
-	handler := influx.NewMetricHandler()
-	parser := influx.NewParser(handler)
+	parser := NewInfluxParser()
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
