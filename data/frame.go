@@ -161,6 +161,14 @@ func (f *Frame) EmptyCopy() *Frame {
 	return newFrame
 }
 
+// ClearRows returns a copy of Frame f but with Fields of zero length, and no copy of the FieldConfigs, Metadata, or Warnings.
+func (f *Frame) ClearRows() {
+	for _, field := range f.Fields {
+		v := NewFieldFromFieldType(field.Type(), 0)
+		field.vector = v.vector
+	}
+}
+
 // NewFrameOfFieldTypes returns a Frame where the Fields are initialized to the
 // corresponding field type in fTypes. Each Field will be of length FieldLen.
 func NewFrameOfFieldTypes(name string, fieldLen int, fTypes ...FieldType) *Frame {

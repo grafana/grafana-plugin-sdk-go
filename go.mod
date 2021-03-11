@@ -13,6 +13,7 @@ require (
 	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
 	github.com/hashicorp/go-plugin v1.2.2
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
+	github.com/influxdata/telegraf v1.17.3
 	github.com/json-iterator/go v1.1.10
 	github.com/magefile/mage v1.11.0
 	github.com/mattetti/filebuffer v1.0.1
@@ -24,5 +25,4 @@ require (
 	golang.org/x/sys v0.0.0-20201214210602-f9fddec55a1e
 	google.golang.org/grpc v1.35.0
 	google.golang.org/protobuf v1.25.0
-	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )

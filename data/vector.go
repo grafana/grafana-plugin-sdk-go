@@ -252,6 +252,41 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+// FieldTypeFor returns a concrete type for a given interface or unknown if not known
+func FieldTypeFor(t interface{}) FieldType {
+	switch t.(type) {
+	case int8:
+		return FieldTypeInt8
+	case int16:
+		return FieldTypeInt16
+	case int32:
+		return FieldTypeInt32
+	case int64:
+		return FieldTypeInt64
+
+	case uint8:
+		return FieldTypeUint8
+	case uint16:
+		return FieldTypeUint16
+	case uint32:
+		return FieldTypeUint32
+	case uint64:
+		return FieldTypeUint64
+
+	case float32:
+		return FieldTypeFloat32
+	case float64:
+		return FieldTypeFloat64
+	case bool:
+		return FieldTypeBool
+	case string:
+		return FieldTypeString
+	case time.Time:
+		return FieldTypeTime
+	}
+	return FieldTypeUnknown
+}
+
 func vectorFieldType(v vector) FieldType {
 	switch v.(type) {
 	case *int8Vector:
