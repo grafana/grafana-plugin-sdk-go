@@ -1,12 +1,14 @@
 package data_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+	"text/template"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
@@ -48,21 +50,68 @@ func TestGoldenFrameJSON(t *testing.T) {
 	assert.JSONEq(t, strF, strG, "saved json must match produced json")
 }
 
+type simpleTestObj struct {
+	Name   string          `json:"name,omitempty"`
+	FType  data.FieldType  `json:"type,omitempty"`
+	FType2 *data.FieldType `json:"typePtr,omitempty"`
+}
+
+// TestFieldTypeToJSON makes sure field type will read/write to json
+func TestFieldTypeToJSON(t *testing.T) {
+	v := simpleTestObj{
+		Name: "hello",
+	}
+
+	b, err := json.Marshal(v)
+	require.NoError(t, err)
+	assert.Equal(t, data.FieldTypeUnknown, v.FType)
+
+	assert.Equal(t, `{"name":"hello"}`, string(b))
+
+	ft := data.FieldTypeInt8
+
+	v.FType = data.FieldTypeFloat64
+	v.FType2 = &ft
+	v.Name = ""
+	b, err = json.Marshal(v)
+	require.NoError(t, err)
+	assert.Equal(t, `{"type":"float64","typePtr":"int8"}`, string(b))
+
+	err = json.Unmarshal([]byte(`{"type":"int8","typePtr":"time"}`), &v)
+	require.NoError(t, err)
+	assert.Equal(t, data.FieldTypeInt8, v.FType)
+	assert.Equal(t, data.FieldTypeTime, *v.FType2)
+}
+
+func BenchmarkFrameToJSON(b *testing.B) {
+	f := goldenDF()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := data.FrameToJSON(f, true, true)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
 // This function will write code to the console that should be copy/pasted into frame_json.gen.go
-// when changes are required.  Typically this function will always be skipped
+// when changes are required. Typically this function will always be skipped.
 func TestGenerateGenericArrowCode(t *testing.T) {
 	t.Skip()
 
 	types := []string{
-		"uint8", "uint16", "uint32", "uint64", "int8", "int16", "int32", "int64", "float32", "float64", "string", "bool",
+		"uint8", "uint16", "uint32", "uint64",
+		"int8", "int16", "int32", "int64",
+		"float32", "float64", "string", "bool",
 	}
 
 	code := `
-func writeArrowData{{TYPE}}(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
-	v := array.New{{TYPEX}}Data(col.Data())
+	v := array.New{{.Typex}}Data(col.Data())
 	stream.WriteArrayStart()
 	for i := 0; i < count; i++ {
 		if i > 0 {
@@ -72,16 +121,20 @@ func writeArrowData{{TYPE}}(stream *jsoniter.Stream, col array.Interface) *field
 			stream.WriteNil()
 			continue
 		}
-		stream.Write{{TYPE}}(v.Value(i))
-		if stream.Error != nil { // NaN +Inf/-Inf
-			txt := fmt.Sprintf("%v", v.Value(i))
+{{- if .HasSpecialEntities }}
+		val := v.Value(i)
+		f64 := float64(val)
+		if entityType, found := isSpecialEntity(f64); found {
 			if entities == nil {
 				entities = &fieldEntityLookup{}
 			}
-			entities.add(txt, i)
-			stream.Error = nil
+			entities.add(entityType, i)
 			stream.WriteNil()
+		} else {
+			stream.Write{{.Type}}(val)
 		}
+{{ else }}
+		stream.Write{{.Type}}(v.Value(i)){{ end }}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -98,14 +151,25 @@ func writeArrowData{{TYPE}}(stream *jsoniter.Stream, col array.Interface) *field
 	}
 
 	for _, tstr := range types {
-		ttt := strings.Title(tstr)
-		str := strings.ReplaceAll(code, "{{TYPE}}", ttt)
+		typex := tstr
 		if tstr == "bool" {
-			ttt = "Boolean"
+			typex = "Boolean"
 		}
-		str = strings.ReplaceAll(str, "{{TYPEX}}", ttt)
-
-		fmt.Printf("%s\n\n\n", str)
+		hasSpecialEntities := tstr == "float32" || tstr == "float64"
+		tmplData := struct {
+			Type               string
+			Typex              string
+			HasSpecialEntities bool
+		}{
+			Type:               strings.Title(tstr),
+			Typex:              strings.Title(typex),
+			HasSpecialEntities: hasSpecialEntities,
+		}
+		tmpl, err := template.New("").Parse(code)
+		require.NoError(t, err)
+		err = tmpl.Execute(os.Stdout, tmplData)
+		require.NoError(t, err)
+		fmt.Printf("\n")
 	}
 
 	assert.Equal(t, 1, 2)

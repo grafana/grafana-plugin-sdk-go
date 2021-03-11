@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"math"
 	"time"
 
 	"github.com/apache/arrow/go/arrow"
@@ -31,7 +32,6 @@ func FrameToJSON(frame *Frame, includeSchema bool, includeData bool) ([]byte, er
 	}
 
 	if stream.Error != nil {
-		fmt.Println("error:", stream.Error)
 		return nil, stream.Error
 	}
 	return stream.Buffer(), nil
@@ -100,18 +100,37 @@ type fieldEntityLookup struct {
 	NegInf []int `json:"NegInf,omitempty"`
 }
 
+const (
+	entityNaN         = "NaN"
+	entityPositiveInf = "+Inf"
+	entityNegativeInf = "-Inf"
+)
+
 func (f *fieldEntityLookup) add(str string, idx int) {
 	switch str {
-	case "+Inf":
+	case entityPositiveInf:
 		f.Inf = append(f.Inf, idx)
-	case "-Inf":
+	case entityNegativeInf:
 		f.NegInf = append(f.NegInf, idx)
-	case "NaN":
+	case entityNaN:
 		f.NaN = append(f.NaN, idx)
 	}
 }
 
-func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) error {
+func isSpecialEntity(v float64) (string, bool) {
+	switch {
+	case math.IsNaN(v):
+		return entityNaN, true
+	case math.IsInf(v, 1):
+		return entityPositiveInf, true
+	case math.IsInf(v, -1):
+		return entityNegativeInf, true
+	default:
+		return "", false
+	}
+}
+
+func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) error { //nolint:gocyclo
 	started := false
 	stream.WriteObjectStart()
 	if includeSchema {
@@ -217,28 +236,47 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 				stream.WriteMore()
 			}
 			isTime := f.Type().Time()
+			isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
+				f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
 
 			stream.WriteArrayStart()
 			for i := 0; i < rowCount; i++ {
 				if i > 0 {
 					stream.WriteRaw(",")
 				}
-				v, ok := f.ConcreteAt(i)
-				if ok {
-					if isTime {
-						v = v.(time.Time).UnixNano() / int64(time.Millisecond) // Millisconds precision
-					}
-
-					stream.WriteVal(v)
-					if stream.Error != nil { // NaN +Inf/-Inf
-						txt := fmt.Sprintf("%v", v)
-						if entities[fidx] == nil {
-							entities[fidx] = &fieldEntityLookup{}
+				if v, ok := f.ConcreteAt(i); ok {
+					switch {
+					case isTime:
+						vTyped := v.(time.Time).UnixNano() / int64(time.Millisecond) // Milliseconds precision.
+						stream.WriteVal(vTyped)
+					case isFloat:
+						// For float and nullable float we check whether a value is a special
+						// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
+						// information into a separate field to restore on a consumer side (setting
+						// null to the entity position in data). Since we are using f.ConcreteAt
+						// above the value is always float64 or float32 types, and never a *float64
+						// or *float32.
+						var f64 float64
+						switch vt := v.(type) {
+						case float64:
+							f64 = vt
+						case float32:
+							f64 = float64(vt)
+						default:
+							return fmt.Errorf("unsupported float type: %T", v)
 						}
-						entities[fidx].add(txt, i)
-						entityCount++
-						stream.Error = nil
-						stream.WriteNil()
+						if entityType, found := isSpecialEntity(f64); found {
+							if entities[fidx] == nil {
+								entities[fidx] = &fieldEntityLookup{}
+							}
+							entities[fidx].add(entityType, i)
+							entityCount++
+							stream.WriteNil()
+						} else {
+							stream.WriteVal(v)
+						}
+					default:
+						stream.WriteVal(v)
 					}
 				} else {
 					stream.WriteNil()
@@ -270,7 +308,7 @@ func ArrowBufferToJSON(b []byte, includeSchema bool, includeData bool) ([]byte, 
 	if err != nil {
 		return nil, err
 	}
-	defer fR.Close()
+	defer func() { _ = fR.Close() }()
 
 	record, err := fR.Read()
 	if errors.Is(err, io.EOF) {
@@ -310,7 +348,6 @@ func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]b
 	stream.WriteObjectEnd()
 
 	if stream.Error != nil {
-		fmt.Println("error:", stream.Error)
 		return nil, stream.Error
 	}
 	return stream.Buffer(), nil
