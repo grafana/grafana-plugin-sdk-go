@@ -41,13 +41,19 @@ func Serve(opts ServeOpts) error {
 		}
 	}
 
+	if opts.StreamServer != nil {
+		pSet["stream"] = &StreamGRPCPlugin{
+			StreamServer: opts.StreamServer,
+		}
+	}
+
 	versionedPlugins[ProtocolVersion] = pSet
 
 	if opts.GRPCServer == nil {
 		opts.GRPCServer = plugin.DefaultGRPCServer
 	}
 
-	plugKeys := []string{}
+	plugKeys := make([]string, 0, len(pSet))
 	for k := range pSet {
 		plugKeys = append(plugKeys, k)
 	}

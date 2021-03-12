@@ -18,6 +18,9 @@ type ServeOpts struct {
 	// Required to implement.
 	backend.QueryDataHandler
 
+	// StreamHandler ...
+	backend.StreamHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
 }
@@ -28,6 +31,7 @@ func Serve(opts ServeOpts) error {
 		CheckHealthHandler:  opts.CheckHealthHandler,
 		CallResourceHandler: opts.CallResourceHandler,
 		QueryDataHandler:    opts.QueryDataHandler,
+		StreamHandler:       opts.StreamHandler,
 		GRPCSettings:        opts.GRPCSettings,
 	})
 }
