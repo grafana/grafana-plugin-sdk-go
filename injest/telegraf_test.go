@@ -23,7 +23,7 @@ var DefaultTime = func() time.Time {
 }
 
 func TestInjest(t *testing.T) {
-	// RunServer()
+	RunServer()
 
 	handler := influx.NewMetricHandler()
 	parser := influx.NewParser(handler)

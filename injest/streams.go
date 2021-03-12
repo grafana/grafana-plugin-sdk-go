@@ -9,7 +9,14 @@ import (
 	"github.com/influxdata/telegraf"
 )
 
+type FrameEvent struct {
+	Key    string
+	Append bool
+	Frame  *data.Frame
+}
+
 type MetricFrameStream struct {
+	Key    string
 	id     uint64
 	fields []fieldInfo
 	Frame  *data.Frame
@@ -76,6 +83,11 @@ func NewMetricFrameStream(m telegraf.Metric) (MetricFrameStream, error) {
 		fields = append(fields, field)
 	}
 
+	key := m.Name()
+	if len(fields[1].Labels) > 0 {
+		key += "{" + fields[1].Labels.String() + "}"
+	}
+	s.Key = key
 	s.Frame = data.NewFrame(m.Name(), fields...)
 	return s, nil
 }

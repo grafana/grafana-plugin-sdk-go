@@ -9,9 +9,34 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+var events = make(chan FrameEvent)
+
 func RunServer() {
+	live, err := Connect("http://localhost:3000")
+	if err != nil {
+		panic("error starting live")
+	}
+
 	http.HandleFunc("/", handler)
 	fmt.Println("Dummy injester listening on port: 7777")
+
+	// Async
+	go func() {
+
+		for evt := range events {
+			ch := live.getChannel(evt.Key)
+
+			js, _ := data.FrameToJSON(evt.Frame, !evt.Append, true)
+			ch.Publish(js)
+
+			fmt.Printf("wrote: grafana/broadcast/telegraf/%s [%d]\n", evt.Key, evt.Frame.Rows())
+
+			//			log.Printf("%s [%d rows] %s\n", evt.Key, evt.Frame.Rows(), string(js))
+
+			// log.Printf("%s [append=%v]\n", evt.Key, evt.Append)
+		}
+	}()
+
 	if err := http.ListenAndServe(":7777", nil); err != nil {
 		panic(err)
 	}
@@ -51,6 +76,7 @@ func handler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	created := make(map[uint64]bool, 5)
 	batch := make(map[uint64]MetricFrameStream, 5)
 
 	for _, m := range metrics {
@@ -71,16 +97,18 @@ func handler(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 				allstreams[id] = stream
-
-				s, _ := data.FrameToJSON(stream.Frame, true, false)
-				log.Printf("[ADDING] %s\n", string(s))
+				created[id] = true // flag for append vs new schema
 			}
 			batch[id] = stream
 		}
 	}
 
 	for _, v := range batch {
-		s, _ := data.FrameToJSON(v.Frame, false, true)
-		log.Printf("[%d] %s [%d rows] %s\n", count, v.Frame.Name, v.Frame.Rows(), string(s))
+		isNew := created[v.id]
+		events <- FrameEvent{
+			Key:    v.Key,
+			Frame:  v.Frame,
+			Append: !isNew,
+		}
 	}
 }
