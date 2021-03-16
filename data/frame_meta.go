@@ -45,10 +45,10 @@ const (
 	// VisTypeLogs indicates the response should be visualized using a logs visualization.
 	VisTypeLogs = "logs"
 
-	// VisTypeLogs indicates the response should be visualized using a trace view visualization.
+	// VisTypeTrace indicates the response should be visualized using a trace view visualization.
 	VisTypeTrace = "trace"
 
-	// VisTypeLogs indicates the response should be visualized using a node graph visualization.
+	// VisTypeNodeGraph indicates the response should be visualized using a node graph visualization.
 	VisTypeNodeGraph = "nodeGraph"
 )
 
