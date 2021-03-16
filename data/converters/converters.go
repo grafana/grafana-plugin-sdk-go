@@ -52,7 +52,10 @@ var AnyToNullableString = data.FieldConverter{
 	Converter: func(v interface{}) (interface{}, error) {
 		var str *string
 		if v != nil {
-			s := fmt.Sprintf("%v", v)
+			s, ok := v.(string)
+			if !ok {
+				s = fmt.Sprintf("%v", v)
+			}
 			str = &s
 		}
 		return str, nil
@@ -63,6 +66,10 @@ var AnyToNullableString = data.FieldConverter{
 var AnyToString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeString,
 	Converter: func(v interface{}) (interface{}, error) {
+		s, ok := v.(string)
+		if ok {
+			return s, nil
+		}
 		return fmt.Sprintf("%v", v), nil
 	},
 }
@@ -201,5 +208,79 @@ var Boolean = data.FieldConverter{
 			return nil, toConversionError("bool", v)
 		}
 		return fV, nil
+	},
+}
+
+var JSONValueToFloat64 = data.FieldConverter{
+	OutputFieldType: data.FieldTypeFloat64,
+	Converter: func(v interface{}) (interface{}, error) {
+		fV, ok := v.(float64)
+		if ok {
+			return fV, nil
+		}
+		iV, ok := v.(int64)
+		if ok {
+			fV = float64(iV)
+			return fV, nil
+		}
+		iiV, ok := v.(int)
+		if ok {
+			fV = float64(iiV)
+			return fV, nil
+		}
+		sV, ok := v.(string)
+		if ok {
+			return strconv.ParseFloat(sV, 64)
+		}
+
+		return nil, toConversionError("float64", v)
+	},
+}
+
+var JSONValueToInt64 = data.FieldConverter{
+	OutputFieldType: data.FieldTypeInt64,
+	Converter: func(v interface{}) (interface{}, error) {
+		iV, ok := v.(int64)
+		if ok {
+			return iV, nil
+		}
+		sV, ok := v.(string)
+		if ok {
+			return strconv.ParseInt(sV, 0, 64)
+		}
+
+		return nil, toConversionError("float64", v)
+	},
+}
+
+var JSONValueToNullableFloat64 = data.FieldConverter{
+	OutputFieldType: data.FieldTypeNullableFloat64,
+	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *float64
+		var err error
+		if v != nil {
+			fV, err := JSONValueToFloat64.Converter(v)
+			if err == nil {
+				vv := fV.(float64)
+				ptr = &vv
+			}
+		}
+		return ptr, err
+	},
+}
+
+var JSONValueToNullableInt64 = data.FieldConverter{
+	OutputFieldType: data.FieldTypeNullableInt64,
+	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *int64
+		var err error
+		if v != nil {
+			fV, err := JSONValueToInt64.Converter(v)
+			if err == nil {
+				vv := fV.(int64)
+				ptr = &vv
+			}
+		}
+		return ptr, err
 	},
 }
