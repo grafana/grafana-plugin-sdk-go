@@ -180,7 +180,7 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 			vec.Set(i, v[i])
 		}
 	default:
-		panic(fmt.Errorf("unsupported field type %T", v))
+		panic(fmt.Errorf("field '%s' specified with unsupported type %T", name, v))
 	}
 
 	return &Field{
