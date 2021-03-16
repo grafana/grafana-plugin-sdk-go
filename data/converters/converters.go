@@ -211,6 +211,7 @@ var Boolean = data.FieldConverter{
 	},
 }
 
+// JSONValueToFloat64 converts the values you will see in json to float64 (float64,int64,string)
 var JSONValueToFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -237,6 +238,7 @@ var JSONValueToFloat64 = data.FieldConverter{
 	},
 }
 
+// JSONValueToInt64 converts the values you will see in json to int64 (float64,int64,string)
 var JSONValueToInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeInt64,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -248,11 +250,15 @@ var JSONValueToInt64 = data.FieldConverter{
 		if ok {
 			return strconv.ParseInt(sV, 0, 64)
 		}
-
+		fV, ok := v.(float64)
+		if ok {
+			return int64(fV), nil
+		}
 		return nil, toConversionError("float64", v)
 	},
 }
 
+// JSONValueToNullableFloat64 converts input to *float64
 var JSONValueToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -269,6 +275,7 @@ var JSONValueToNullableFloat64 = data.FieldConverter{
 	},
 }
 
+// JSONValueToNullableInt64 converts input to *int64
 var JSONValueToNullableInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableInt64,
 	Converter: func(v interface{}) (interface{}, error) {
