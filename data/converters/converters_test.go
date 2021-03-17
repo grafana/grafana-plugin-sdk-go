@@ -28,3 +28,21 @@ func TestNumericConversions(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, 12.34, *(val.(*float64)))
 }
+
+func TestJSONConversions(t *testing.T) {
+	val, err := converters.JSONValueToFloat64.Converter(12.34)
+	require.NoError(t, err)
+	require.Equal(t, 12.34, val)
+
+	val, err = converters.JSONValueToFloat64.Converter(12)
+	require.NoError(t, err)
+	require.Equal(t, float64(12), val)
+
+	val, err = converters.JSONValueToFloat64.Converter(int64(12))
+	require.NoError(t, err)
+	require.Equal(t, float64(12), val)
+
+	val, err = converters.JSONValueToFloat64.Converter("12.34")
+	require.NoError(t, err)
+	require.Equal(t, 12.34, val)
+}
