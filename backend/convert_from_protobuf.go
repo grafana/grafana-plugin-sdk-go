@@ -230,7 +230,8 @@ func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamReques
 // StreamPacket ...
 func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *StreamPacket {
 	return &StreamPacket{
+		Type:    StreamPacketType(protoReq.Type),
+		Header:  protoReq.GetHeader(),
 		Payload: protoReq.GetPayload(),
-		Schema:  protoReq.GetSchema(),
 	}
 }

@@ -208,8 +208,9 @@ func (t ConvertToProtobuf) RunStreamRequest(req *RunStreamRequest) *pluginv2.Run
 // StreamPacket ...
 func (t ConvertToProtobuf) StreamPacket(p *StreamPacket) *pluginv2.StreamPacket {
 	protoReq := &pluginv2.StreamPacket{
+		Type:    pluginv2.StreamPacket_StreamPacketType(p.Type),
+		Header:  p.Header,
 		Payload: p.Payload,
-		Schema:  p.Schema,
 	}
 	return protoReq
 }

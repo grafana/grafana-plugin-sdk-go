@@ -31,9 +31,12 @@ type RunStreamRequest struct {
 	Path          string
 }
 
+type StreamPacketType int32
+
 type StreamPacket struct {
+	Type    StreamPacketType
+	Header  []byte
 	Payload []byte
-	Schema  []byte
 }
 
 type StreamPacketSender interface {
