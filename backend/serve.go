@@ -34,8 +34,8 @@ type ServeOpts struct {
 	// Required to implement if data source.
 	QueryDataHandler QueryDataHandler
 
-	// StreamHandler ...
-	StreamHandler StreamHandler
+	//// StreamHandler handler for streaming queries.
+	//StreamHandler StreamHandler
 
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
@@ -55,9 +55,9 @@ func Serve(opts ServeOpts) error {
 		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
 	}
 
-	if opts.StreamHandler != nil {
-		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
-	}
+	//if opts.StreamHandler != nil {
+	//	pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
+	//}
 
 	grpc_prometheus.EnableHandlingTimeHistogram()
 	grpcMiddlewares := []grpc.ServerOption{

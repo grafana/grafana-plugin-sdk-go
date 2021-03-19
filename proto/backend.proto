@@ -134,97 +134,6 @@ message DataResponse {
   bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
 }
 
-
-//-----------------------------------------------------------------
-// Stream -- EXPERIMENTAL and is subject to change until 8.0
-//-----------------------------------------------------------------
-
-service Stream {
-//  // Called when grafana starts and should return a list of streams that should
-//  // be consumed. Note, that streams with non-zero keepalive will only be started
-//  // by Grafana server as soon as there are active subscribers.
-//  rpc InitStreams(StreamInitRequest) returns (stream StreamCapabilities);
-//
-//  // Describe the capabilities for a given stream or an NOT_FOUND error if invalid.
-//  rpc GetStreamCapabilities(StreamCapabilitiesRequest) returns (StreamCapabilities);
-
-  // Called when a user tries to connect to a plugin/datasource managed channel.
-  rpc CanSubscribeToStream(SubscribeToStreamRequest) returns (SubscribeToStreamResponse);
-
-  // RunStream will be initiated by Grafana to consume a stream from a plugin.
-  // For streams with keepalive set this will only be called once the first client
-  // successfully subscribed to a stream channel. And when there are no longer any
-  // subscribers, the call will be terminated by Grafana.
-  rpc RunStream(RunStreamRequest) returns (stream StreamPacket);
-//
-//  // Called when a client tries to publish into a stream.
-//  rpc PublishToStream(StreamPublishRequest) returns (StreamPublishResponse);
-}
-//
-//message StreamInitRequest {
-//  PluginContext pluginContext = 1;
-//}
-//
-//message StreamCapabilities {
-//  string path = 1;
-//
-//  enum StreamType {
-//    JSON = 0; // arbitrary json blobs
-//    DATA = 1; // managed DataFrameJSON blobs (schema+data)
-//    // BINARY = 3; // arbitrary binary data
-//  }
-//
-//  StreamType type = 2;
-//  int32 history_size = 3;
-//  int32 history_ttl = 4;
-//  bool presence = 5;
-//  bool publish = 6;
-//  int64 keepalive = 7; // 0 means keep from start and forever. Any value > 0 means keepalive seconds after last subscriber left.
-//}
-//
-//message StreamCapabilitiesRequest {
-//  PluginContext pluginContext = 1;
-//
-//  string path = 2;
-//}
-
-message SubscribeToStreamRequest {
-  PluginContext pluginContext = 1;
-
-  string path = 2;
-}
-
-message SubscribeToStreamResponse {
-  bool ok = 1;
-  string message = 2;
-}
-
-message RunStreamRequest {
-  PluginContext pluginContext = 1;
-
-  string path = 2;
-}
-
-message StreamPacket {
-  bytes payload = 1; // does the server need to parse this payload?
-
-  // ??? perhaps when schema changes set a flag ????
-  bytes schema = 2;
-}
-//
-//message StreamPublishRequest {
-//  PluginContext pluginContext = 1;
-//
-//  string path = 2;
-//  bytes payload = 3;
-//}
-//
-//message StreamPublishResponse {
-//  bool ok = 1;
-//  string message = 2;
-//  bytes payload = 3;
-//}
-
 //-----------------------------------------------
 // Diagnostics
 //-----------------------------------------------
@@ -260,4 +169,45 @@ message CheckHealthResponse {
   HealthStatus status = 1;
   string message = 2;
   bytes jsonDetails = 3;
+}
+
+//-----------------------------------------------------------------
+// Stream -- EXPERIMENTAL and is subject to change until 8.0
+//-----------------------------------------------------------------
+
+service Stream {
+  // Called when a user tries to connect to a plugin/datasource managed channel.
+  rpc CanSubscribeToStream(SubscribeToStreamRequest) returns (SubscribeToStreamResponse);
+
+  // RunStream will be initiated by Grafana to consume a stream from a plugin.
+  // For streams with keepalive set this will only be called once the first client
+  // successfully subscribed to a stream channel. And when there are no longer any
+  // subscribers, the call will be terminated by Grafana.
+  rpc RunStream(RunStreamRequest) returns (stream StreamPacket);
+}
+
+message SubscribeToStreamRequest {
+  PluginContext pluginContext = 1;
+
+  string path = 2;
+}
+
+message SubscribeToStreamResponse {
+  bool ok = 1;
+  string message = 2;
+}
+
+message RunStreamRequest {
+  PluginContext pluginContext = 1;
+
+  string path = 2;
+}
+
+message StreamPacket {
+  enum StreamPacketType {
+    DATA_FRAME = 0;
+  }
+  StreamPacketType type = 1;
+  bytes header = 2;
+  bytes payload = 3;
 }

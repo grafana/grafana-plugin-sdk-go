@@ -209,6 +209,126 @@ var Data_ServiceDesc = grpc.ServiceDesc{
 	Metadata: "backend.proto",
 }
 
+// DiagnosticsClient is the client API for Diagnostics service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type DiagnosticsClient interface {
+	CheckHealth(ctx context.Context, in *CheckHealthRequest, opts ...grpc.CallOption) (*CheckHealthResponse, error)
+	CollectMetrics(ctx context.Context, in *CollectMetricsRequest, opts ...grpc.CallOption) (*CollectMetricsResponse, error)
+}
+
+type diagnosticsClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewDiagnosticsClient(cc grpc.ClientConnInterface) DiagnosticsClient {
+	return &diagnosticsClient{cc}
+}
+
+func (c *diagnosticsClient) CheckHealth(ctx context.Context, in *CheckHealthRequest, opts ...grpc.CallOption) (*CheckHealthResponse, error) {
+	out := new(CheckHealthResponse)
+	err := c.cc.Invoke(ctx, "/pluginv2.Diagnostics/CheckHealth", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *diagnosticsClient) CollectMetrics(ctx context.Context, in *CollectMetricsRequest, opts ...grpc.CallOption) (*CollectMetricsResponse, error) {
+	out := new(CollectMetricsResponse)
+	err := c.cc.Invoke(ctx, "/pluginv2.Diagnostics/CollectMetrics", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// DiagnosticsServer is the server API for Diagnostics service.
+// All implementations should embed UnimplementedDiagnosticsServer
+// for forward compatibility
+type DiagnosticsServer interface {
+	CheckHealth(context.Context, *CheckHealthRequest) (*CheckHealthResponse, error)
+	CollectMetrics(context.Context, *CollectMetricsRequest) (*CollectMetricsResponse, error)
+}
+
+// UnimplementedDiagnosticsServer should be embedded to have forward compatible implementations.
+type UnimplementedDiagnosticsServer struct {
+}
+
+func (UnimplementedDiagnosticsServer) CheckHealth(context.Context, *CheckHealthRequest) (*CheckHealthResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CheckHealth not implemented")
+}
+func (UnimplementedDiagnosticsServer) CollectMetrics(context.Context, *CollectMetricsRequest) (*CollectMetricsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CollectMetrics not implemented")
+}
+
+// UnsafeDiagnosticsServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to DiagnosticsServer will
+// result in compilation errors.
+type UnsafeDiagnosticsServer interface {
+	mustEmbedUnimplementedDiagnosticsServer()
+}
+
+func RegisterDiagnosticsServer(s grpc.ServiceRegistrar, srv DiagnosticsServer) {
+	s.RegisterService(&Diagnostics_ServiceDesc, srv)
+}
+
+func _Diagnostics_CheckHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CheckHealthRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DiagnosticsServer).CheckHealth(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pluginv2.Diagnostics/CheckHealth",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiagnosticsServer).CheckHealth(ctx, req.(*CheckHealthRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Diagnostics_CollectMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CollectMetricsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(DiagnosticsServer).CollectMetrics(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pluginv2.Diagnostics/CollectMetrics",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(DiagnosticsServer).CollectMetrics(ctx, req.(*CollectMetricsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Diagnostics_ServiceDesc is the grpc.ServiceDesc for Diagnostics service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Diagnostics_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.Diagnostics",
+	HandlerType: (*DiagnosticsServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "CheckHealth",
+			Handler:    _Diagnostics_CheckHealth_Handler,
+		},
+		{
+			MethodName: "CollectMetrics",
+			Handler:    _Diagnostics_CollectMetrics_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "backend.proto",
+}
+
 // StreamClient is the client API for Stream service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
@@ -364,125 +484,5 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "backend.proto",
-}
-
-// DiagnosticsClient is the client API for Diagnostics service.
-//
-// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type DiagnosticsClient interface {
-	CheckHealth(ctx context.Context, in *CheckHealthRequest, opts ...grpc.CallOption) (*CheckHealthResponse, error)
-	CollectMetrics(ctx context.Context, in *CollectMetricsRequest, opts ...grpc.CallOption) (*CollectMetricsResponse, error)
-}
-
-type diagnosticsClient struct {
-	cc grpc.ClientConnInterface
-}
-
-func NewDiagnosticsClient(cc grpc.ClientConnInterface) DiagnosticsClient {
-	return &diagnosticsClient{cc}
-}
-
-func (c *diagnosticsClient) CheckHealth(ctx context.Context, in *CheckHealthRequest, opts ...grpc.CallOption) (*CheckHealthResponse, error) {
-	out := new(CheckHealthResponse)
-	err := c.cc.Invoke(ctx, "/pluginv2.Diagnostics/CheckHealth", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *diagnosticsClient) CollectMetrics(ctx context.Context, in *CollectMetricsRequest, opts ...grpc.CallOption) (*CollectMetricsResponse, error) {
-	out := new(CollectMetricsResponse)
-	err := c.cc.Invoke(ctx, "/pluginv2.Diagnostics/CollectMetrics", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// DiagnosticsServer is the server API for Diagnostics service.
-// All implementations should embed UnimplementedDiagnosticsServer
-// for forward compatibility
-type DiagnosticsServer interface {
-	CheckHealth(context.Context, *CheckHealthRequest) (*CheckHealthResponse, error)
-	CollectMetrics(context.Context, *CollectMetricsRequest) (*CollectMetricsResponse, error)
-}
-
-// UnimplementedDiagnosticsServer should be embedded to have forward compatible implementations.
-type UnimplementedDiagnosticsServer struct {
-}
-
-func (UnimplementedDiagnosticsServer) CheckHealth(context.Context, *CheckHealthRequest) (*CheckHealthResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CheckHealth not implemented")
-}
-func (UnimplementedDiagnosticsServer) CollectMetrics(context.Context, *CollectMetricsRequest) (*CollectMetricsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CollectMetrics not implemented")
-}
-
-// UnsafeDiagnosticsServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to DiagnosticsServer will
-// result in compilation errors.
-type UnsafeDiagnosticsServer interface {
-	mustEmbedUnimplementedDiagnosticsServer()
-}
-
-func RegisterDiagnosticsServer(s grpc.ServiceRegistrar, srv DiagnosticsServer) {
-	s.RegisterService(&Diagnostics_ServiceDesc, srv)
-}
-
-func _Diagnostics_CheckHealth_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CheckHealthRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DiagnosticsServer).CheckHealth(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pluginv2.Diagnostics/CheckHealth",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticsServer).CheckHealth(ctx, req.(*CheckHealthRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Diagnostics_CollectMetrics_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CollectMetricsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(DiagnosticsServer).CollectMetrics(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pluginv2.Diagnostics/CollectMetrics",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(DiagnosticsServer).CollectMetrics(ctx, req.(*CollectMetricsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-// Diagnostics_ServiceDesc is the grpc.ServiceDesc for Diagnostics service.
-// It's only intended for direct use with grpc.RegisterService,
-// and not to be introspected or modified (even as a copy)
-var Diagnostics_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pluginv2.Diagnostics",
-	HandlerType: (*DiagnosticsServer)(nil),
-	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "CheckHealth",
-			Handler:    _Diagnostics_CheckHealth_Handler,
-		},
-		{
-			MethodName: "CollectMetrics",
-			Handler:    _Diagnostics_CollectMetrics_Handler,
-		},
-	},
-	Streams:  []grpc.StreamDesc{},
 	Metadata: "backend.proto",
 }
