@@ -34,6 +34,7 @@ type FrameMeta struct {
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
 }
 
+// Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType
 const (
 	// VisTypeGraph indicates the response should be visualized using a graph.
 	VisTypeGraph VisType = "graph"
@@ -43,6 +44,12 @@ const (
 
 	// VisTypeLogs indicates the response should be visualized using a logs visualization.
 	VisTypeLogs = "logs"
+
+	// VisTypeTrace indicates the response should be visualized using a trace view visualization.
+	VisTypeTrace = "trace"
+
+	// VisTypeNodeGraph indicates the response should be visualized using a node graph visualization.
+	VisTypeNodeGraph = "nodeGraph"
 )
 
 // VisType is used to indicate how the data should be visualized in explore.
