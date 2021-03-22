@@ -6,7 +6,7 @@ require (
 	github.com/apache/arrow/go/arrow v0.0.0-20210223225224-5bea62493d91
 	github.com/centrifugal/centrifuge-go v0.7.0
 	github.com/cheekybits/genny v1.0.0
-	github.com/golang/protobuf v1.4.3
+	github.com/golang/protobuf v1.5.0
 	github.com/google/go-cmp v0.5.5
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
@@ -23,6 +23,6 @@ require (
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2
 	google.golang.org/grpc v1.36.0
-	google.golang.org/protobuf v1.25.0
+	google.golang.org/protobuf v1.26.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
