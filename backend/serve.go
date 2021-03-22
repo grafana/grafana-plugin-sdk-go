@@ -35,6 +35,7 @@ type ServeOpts struct {
 	QueryDataHandler QueryDataHandler
 
 	// StreamHandler handler for streaming queries.
+	// This is EXPERIMENTAL at the moment and is a subject to change till Grafana 8.
 	StreamHandler StreamHandler
 
 	// GRPCSettings settings for gPRC.
