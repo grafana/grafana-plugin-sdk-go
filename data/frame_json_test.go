@@ -10,6 +10,7 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -48,6 +49,14 @@ func TestGoldenFrameJSON(t *testing.T) {
 
 	strG := string(b)
 	assert.JSONEq(t, strF, strG, "saved json must match produced json")
+
+	// Read the frame from json
+	out, err := data.ReadDataFrameJSON(b)
+	require.NoError(t, err)
+
+	if diff := cmp.Diff(f, out, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
 }
 
 type simpleTestObj struct {
@@ -138,7 +147,57 @@ func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fiel
 	}
 	stream.WriteArrayEnd()
 	return entities
-}`
+}
+
+func read{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*{{.Typen}}Vector, error) {
+	arr := new{{.Type}}Vector(size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("read{{.Type}}VectorJSON", "expected array")
+			return nil, iter.Error
+		}
+
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := iter.Read{{.Type}}()
+			arr.Set(i, v)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("read", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+
+func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullable{{.Type}}Vector, error) {
+	arr := newNullable{{.Type}}Vector(size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readNullable{{.Type}}VectorJSON", "expected array")
+			return nil, iter.Error
+		}
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := iter.Read{{.Type}}()
+			arr.Set(i, &v)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("readNullable{{.Type}}VectorJSON", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+`
 
 	// switch col.DataType().ID() {
 	// 	// case arrow.STRING:
@@ -159,10 +218,12 @@ func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fiel
 		tmplData := struct {
 			Type               string
 			Typex              string
+			Typen              string
 			HasSpecialEntities bool
 		}{
 			Type:               strings.Title(tstr),
 			Typex:              strings.Title(typex),
+			Typen:              tstr,
 			HasSpecialEntities: hasSpecialEntities,
 		}
 		tmpl, err := template.New("").Parse(code)
@@ -170,6 +231,12 @@ func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fiel
 		err = tmpl.Execute(os.Stdout, tmplData)
 		require.NoError(t, err)
 		fmt.Printf("\n")
+	}
+
+	for _, tstr := range types {
+		tname := strings.Title(tstr)
+		fmt.Printf("    case FieldType" + tname + ": return read" + tname + "VectorJSON(iter, size)\n")
+		fmt.Printf("    case FieldTypeNullable" + tname + ": return readNullable" + tname + "VectorJSON(iter, size)\n")
 	}
 
 	assert.Equal(t, 1, 2)
