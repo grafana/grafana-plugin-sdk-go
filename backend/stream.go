@@ -5,6 +5,7 @@ import (
 )
 
 // StreamHandler handles streams.
+// This is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamHandler interface {
 	// Called when a user tries to connect to a plugin/datasource managed channel.
 	CanSubscribeToStream(context.Context, *SubscribeToStreamRequest) (*SubscribeToStreamResponse, error)
@@ -15,30 +16,35 @@ type StreamHandler interface {
 	RunStream(context.Context, *RunStreamRequest, StreamPacketSender) error
 }
 
-// SubscribeToStreamRequest ...
+// SubscribeToStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
 type SubscribeToStreamRequest struct {
 	PluginContext PluginContext
 	Path          string
 }
 
+// SubscribeToStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
 type SubscribeToStreamResponse struct {
 	OK      bool
 	Message string
 }
 
+// RunStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
 type RunStreamRequest struct {
 	PluginContext PluginContext
 	Path          string
 }
 
+// StreamPacketType is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamPacketType int32
 
+// StreamPacket is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamPacket struct {
 	Type    StreamPacketType
 	Header  []byte
 	Payload []byte
 }
 
+// StreamPacketSender is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamPacketSender interface {
 	Send(*StreamPacket) error
 }
