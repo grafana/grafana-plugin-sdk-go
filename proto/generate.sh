@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # To compile all protobuf files in this repository, run
-# "make protobuf" at the top-level.
+# "mage protobuf" at the top-level.
 
 set -eu
 

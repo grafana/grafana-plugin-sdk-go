@@ -69,6 +69,49 @@ func (CheckHealthResponse_HealthStatus) EnumDescriptor() ([]byte, []int) {
 	return file_backend_proto_rawDescGZIP(), []int{15, 0}
 }
 
+type StreamPacket_StreamPacketType int32
+
+const (
+	StreamPacket_DATA_FRAME StreamPacket_StreamPacketType = 0
+)
+
+// Enum value maps for StreamPacket_StreamPacketType.
+var (
+	StreamPacket_StreamPacketType_name = map[int32]string{
+		0: "DATA_FRAME",
+	}
+	StreamPacket_StreamPacketType_value = map[string]int32{
+		"DATA_FRAME": 0,
+	}
+)
+
+func (x StreamPacket_StreamPacketType) Enum() *StreamPacket_StreamPacketType {
+	p := new(StreamPacket_StreamPacketType)
+	*p = x
+	return p
+}
+
+func (x StreamPacket_StreamPacketType) String() string {
+	return protoimpl.X.EnumStringOf(x.Descriptor(), protoreflect.EnumNumber(x))
+}
+
+func (StreamPacket_StreamPacketType) Descriptor() protoreflect.EnumDescriptor {
+	return file_backend_proto_enumTypes[1].Descriptor()
+}
+
+func (StreamPacket_StreamPacketType) Type() protoreflect.EnumType {
+	return &file_backend_proto_enumTypes[1]
+}
+
+func (x StreamPacket_StreamPacketType) Number() protoreflect.EnumNumber {
+	return protoreflect.EnumNumber(x)
+}
+
+// Deprecated: Use StreamPacket_StreamPacketType.Descriptor instead.
+func (StreamPacket_StreamPacketType) EnumDescriptor() ([]byte, []int) {
+	return file_backend_proto_rawDescGZIP(), []int{19, 0}
+}
+
 type AppInstanceSettings struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1146,6 +1189,234 @@ func (x *CheckHealthResponse) GetJsonDetails() []byte {
 	return nil
 }
 
+type SubscribeToStreamRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	PluginContext *PluginContext `protobuf:"bytes,1,opt,name=pluginContext,proto3" json:"pluginContext,omitempty"`
+	Path          string         `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+}
+
+func (x *SubscribeToStreamRequest) Reset() {
+	*x = SubscribeToStreamRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_backend_proto_msgTypes[16]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SubscribeToStreamRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscribeToStreamRequest) ProtoMessage() {}
+
+func (x *SubscribeToStreamRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_backend_proto_msgTypes[16]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscribeToStreamRequest.ProtoReflect.Descriptor instead.
+func (*SubscribeToStreamRequest) Descriptor() ([]byte, []int) {
+	return file_backend_proto_rawDescGZIP(), []int{16}
+}
+
+func (x *SubscribeToStreamRequest) GetPluginContext() *PluginContext {
+	if x != nil {
+		return x.PluginContext
+	}
+	return nil
+}
+
+func (x *SubscribeToStreamRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type SubscribeToStreamResponse struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Ok      bool   `protobuf:"varint,1,opt,name=ok,proto3" json:"ok,omitempty"`
+	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
+}
+
+func (x *SubscribeToStreamResponse) Reset() {
+	*x = SubscribeToStreamResponse{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_backend_proto_msgTypes[17]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *SubscribeToStreamResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*SubscribeToStreamResponse) ProtoMessage() {}
+
+func (x *SubscribeToStreamResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_backend_proto_msgTypes[17]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use SubscribeToStreamResponse.ProtoReflect.Descriptor instead.
+func (*SubscribeToStreamResponse) Descriptor() ([]byte, []int) {
+	return file_backend_proto_rawDescGZIP(), []int{17}
+}
+
+func (x *SubscribeToStreamResponse) GetOk() bool {
+	if x != nil {
+		return x.Ok
+	}
+	return false
+}
+
+func (x *SubscribeToStreamResponse) GetMessage() string {
+	if x != nil {
+		return x.Message
+	}
+	return ""
+}
+
+type RunStreamRequest struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	PluginContext *PluginContext `protobuf:"bytes,1,opt,name=pluginContext,proto3" json:"pluginContext,omitempty"`
+	Path          string         `protobuf:"bytes,2,opt,name=path,proto3" json:"path,omitempty"`
+}
+
+func (x *RunStreamRequest) Reset() {
+	*x = RunStreamRequest{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_backend_proto_msgTypes[18]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *RunStreamRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RunStreamRequest) ProtoMessage() {}
+
+func (x *RunStreamRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_backend_proto_msgTypes[18]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RunStreamRequest.ProtoReflect.Descriptor instead.
+func (*RunStreamRequest) Descriptor() ([]byte, []int) {
+	return file_backend_proto_rawDescGZIP(), []int{18}
+}
+
+func (x *RunStreamRequest) GetPluginContext() *PluginContext {
+	if x != nil {
+		return x.PluginContext
+	}
+	return nil
+}
+
+func (x *RunStreamRequest) GetPath() string {
+	if x != nil {
+		return x.Path
+	}
+	return ""
+}
+
+type StreamPacket struct {
+	state         protoimpl.MessageState
+	sizeCache     protoimpl.SizeCache
+	unknownFields protoimpl.UnknownFields
+
+	Type    StreamPacket_StreamPacketType `protobuf:"varint,1,opt,name=type,proto3,enum=pluginv2.StreamPacket_StreamPacketType" json:"type,omitempty"`
+	Header  []byte                        `protobuf:"bytes,2,opt,name=header,proto3" json:"header,omitempty"`
+	Payload []byte                        `protobuf:"bytes,3,opt,name=payload,proto3" json:"payload,omitempty"`
+}
+
+func (x *StreamPacket) Reset() {
+	*x = StreamPacket{}
+	if protoimpl.UnsafeEnabled {
+		mi := &file_backend_proto_msgTypes[19]
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		ms.StoreMessageInfo(mi)
+	}
+}
+
+func (x *StreamPacket) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*StreamPacket) ProtoMessage() {}
+
+func (x *StreamPacket) ProtoReflect() protoreflect.Message {
+	mi := &file_backend_proto_msgTypes[19]
+	if protoimpl.UnsafeEnabled && x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use StreamPacket.ProtoReflect.Descriptor instead.
+func (*StreamPacket) Descriptor() ([]byte, []int) {
+	return file_backend_proto_rawDescGZIP(), []int{19}
+}
+
+func (x *StreamPacket) GetType() StreamPacket_StreamPacketType {
+	if x != nil {
+		return x.Type
+	}
+	return StreamPacket_DATA_FRAME
+}
+
+func (x *StreamPacket) GetHeader() []byte {
+	if x != nil {
+		return x.Header
+	}
+	return nil
+}
+
+func (x *StreamPacket) GetPayload() []byte {
+	if x != nil {
+		return x.Payload
+	}
+	return nil
+}
+
 type CollectMetricsResponse_Payload struct {
 	state         protoimpl.MessageState
 	sizeCache     protoimpl.SizeCache
@@ -1157,7 +1428,7 @@ type CollectMetricsResponse_Payload struct {
 func (x *CollectMetricsResponse_Payload) Reset() {
 	*x = CollectMetricsResponse_Payload{}
 	if protoimpl.UnsafeEnabled {
-		mi := &file_backend_proto_msgTypes[22]
+		mi := &file_backend_proto_msgTypes[26]
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		ms.StoreMessageInfo(mi)
 	}
@@ -1170,7 +1441,7 @@ func (x *CollectMetricsResponse_Payload) String() string {
 func (*CollectMetricsResponse_Payload) ProtoMessage() {}
 
 func (x *CollectMetricsResponse_Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[22]
+	mi := &file_backend_proto_msgTypes[26]
 	if protoimpl.UnsafeEnabled && x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1389,28 +1660,67 @@ var file_backend_proto_rawDesc = []byte{
 	0x6c, 0x73, 0x22, 0x2e, 0x0a, 0x0c, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x53, 0x74, 0x61, 0x74,
 	0x75, 0x73, 0x12, 0x0b, 0x0a, 0x07, 0x55, 0x4e, 0x4b, 0x4e, 0x4f, 0x57, 0x4e, 0x10, 0x00, 0x12,
 	0x06, 0x0a, 0x02, 0x4f, 0x4b, 0x10, 0x01, 0x12, 0x09, 0x0a, 0x05, 0x45, 0x52, 0x52, 0x4f, 0x52,
-	0x10, 0x02, 0x32, 0x5b, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x4f,
-	0x0a, 0x0c, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12, 0x1d,
+	0x10, 0x02, 0x22, 0x6d, 0x0a, 0x18, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x54,
+	0x6f, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3d,
+	0x0a, 0x0d, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18,
+	0x01, 0x20, 0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32,
+	0x2e, 0x50, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0d,
+	0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x12, 0x0a,
+	0x04, 0x70, 0x61, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74,
+	0x68, 0x22, 0x45, 0x0a, 0x19, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x54, 0x6f,
+	0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x0e,
+	0x0a, 0x02, 0x6f, 0x6b, 0x18, 0x01, 0x20, 0x01, 0x28, 0x08, 0x52, 0x02, 0x6f, 0x6b, 0x12, 0x18,
+	0x0a, 0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52,
+	0x07, 0x6d, 0x65, 0x73, 0x73, 0x61, 0x67, 0x65, 0x22, 0x65, 0x0a, 0x10, 0x52, 0x75, 0x6e, 0x53,
+	0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x12, 0x3d, 0x0a, 0x0d,
+	0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x18, 0x01, 0x20,
+	0x01, 0x28, 0x0b, 0x32, 0x17, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x50,
+	0x6c, 0x75, 0x67, 0x69, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x52, 0x0d, 0x70, 0x6c,
+	0x75, 0x67, 0x69, 0x6e, 0x43, 0x6f, 0x6e, 0x74, 0x65, 0x78, 0x74, 0x12, 0x12, 0x0a, 0x04, 0x70,
+	0x61, 0x74, 0x68, 0x18, 0x02, 0x20, 0x01, 0x28, 0x09, 0x52, 0x04, 0x70, 0x61, 0x74, 0x68, 0x22,
+	0xa1, 0x01, 0x0a, 0x0c, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74,
+	0x12, 0x3b, 0x0a, 0x04, 0x74, 0x79, 0x70, 0x65, 0x18, 0x01, 0x20, 0x01, 0x28, 0x0e, 0x32, 0x27,
+	0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d,
+	0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x2e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x50, 0x61, 0x63,
+	0x6b, 0x65, 0x74, 0x54, 0x79, 0x70, 0x65, 0x52, 0x04, 0x74, 0x79, 0x70, 0x65, 0x12, 0x16, 0x0a,
+	0x06, 0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x18, 0x02, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x06, 0x68,
+	0x65, 0x61, 0x64, 0x65, 0x72, 0x12, 0x18, 0x0a, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64,
+	0x18, 0x03, 0x20, 0x01, 0x28, 0x0c, 0x52, 0x07, 0x70, 0x61, 0x79, 0x6c, 0x6f, 0x61, 0x64, 0x22,
+	0x22, 0x0a, 0x10, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x54,
+	0x79, 0x70, 0x65, 0x12, 0x0e, 0x0a, 0x0a, 0x44, 0x41, 0x54, 0x41, 0x5f, 0x46, 0x52, 0x41, 0x4d,
+	0x45, 0x10, 0x00, 0x32, 0x5b, 0x0a, 0x08, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12,
+	0x4f, 0x0a, 0x0c, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x12,
+	0x1d, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x61, 0x6c, 0x6c, 0x52,
+	0x65, 0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e,
 	0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65,
-	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1e, 0x2e,
-	0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x61, 0x6c, 0x6c, 0x52, 0x65, 0x73,
-	0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x30, 0x01, 0x32,
-	0x4c, 0x0a, 0x04, 0x44, 0x61, 0x74, 0x61, 0x12, 0x44, 0x0a, 0x09, 0x51, 0x75, 0x65, 0x72, 0x79,
-	0x44, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e,
-	0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74,
-	0x1a, 0x1b, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x51, 0x75, 0x65, 0x72,
-	0x79, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xae, 0x01,
-	0x0a, 0x0b, 0x44, 0x69, 0x61, 0x67, 0x6e, 0x6f, 0x73, 0x74, 0x69, 0x63, 0x73, 0x12, 0x4a, 0x0a,
-	0x0b, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x12, 0x1c, 0x2e, 0x70,
-	0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x48, 0x65, 0x61,
-	0x6c, 0x74, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x70, 0x6c, 0x75,
-	0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x6c, 0x74,
-	0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a, 0x0e, 0x43, 0x6f, 0x6c,
-	0x6c, 0x65, 0x63, 0x74, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x12, 0x1f, 0x2e, 0x70, 0x6c,
-	0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x4d, 0x65,
-	0x74, 0x72, 0x69, 0x63, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e, 0x70,
+	0x73, 0x6f, 0x75, 0x72, 0x63, 0x65, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x30, 0x01,
+	0x32, 0x4c, 0x0a, 0x04, 0x44, 0x61, 0x74, 0x61, 0x12, 0x44, 0x0a, 0x09, 0x51, 0x75, 0x65, 0x72,
+	0x79, 0x44, 0x61, 0x74, 0x61, 0x12, 0x1a, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32,
+	0x2e, 0x51, 0x75, 0x65, 0x72, 0x79, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73,
+	0x74, 0x1a, 0x1b, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x51, 0x75, 0x65,
+	0x72, 0x79, 0x44, 0x61, 0x74, 0x61, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32, 0xae,
+	0x01, 0x0a, 0x0b, 0x44, 0x69, 0x61, 0x67, 0x6e, 0x6f, 0x73, 0x74, 0x69, 0x63, 0x73, 0x12, 0x4a,
+	0x0a, 0x0b, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x6c, 0x74, 0x68, 0x12, 0x1c, 0x2e,
+	0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x48, 0x65,
+	0x61, 0x6c, 0x74, 0x68, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x1d, 0x2e, 0x70, 0x6c,
+	0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x68, 0x65, 0x63, 0x6b, 0x48, 0x65, 0x61, 0x6c,
+	0x74, 0x68, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x53, 0x0a, 0x0e, 0x43, 0x6f,
+	0x6c, 0x6c, 0x65, 0x63, 0x74, 0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x12, 0x1f, 0x2e, 0x70,
 	0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74, 0x4d,
-	0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x42, 0x0d,
+	0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x52, 0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x20, 0x2e,
+	0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x43, 0x6f, 0x6c, 0x6c, 0x65, 0x63, 0x74,
+	0x4d, 0x65, 0x74, 0x72, 0x69, 0x63, 0x73, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x32,
+	0xac, 0x01, 0x0a, 0x06, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x5f, 0x0a, 0x14, 0x43, 0x61,
+	0x6e, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x54, 0x6f, 0x53, 0x74, 0x72, 0x65,
+	0x61, 0x6d, 0x12, 0x22, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e, 0x53, 0x75,
+	0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x54, 0x6f, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52,
+	0x65, 0x71, 0x75, 0x65, 0x73, 0x74, 0x1a, 0x23, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76,
+	0x32, 0x2e, 0x53, 0x75, 0x62, 0x73, 0x63, 0x72, 0x69, 0x62, 0x65, 0x54, 0x6f, 0x53, 0x74, 0x72,
+	0x65, 0x61, 0x6d, 0x52, 0x65, 0x73, 0x70, 0x6f, 0x6e, 0x73, 0x65, 0x12, 0x41, 0x0a, 0x09, 0x52,
+	0x75, 0x6e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x12, 0x1a, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69,
+	0x6e, 0x76, 0x32, 0x2e, 0x52, 0x75, 0x6e, 0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x52, 0x65, 0x71,
+	0x75, 0x65, 0x73, 0x74, 0x1a, 0x16, 0x2e, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x2e,
+	0x53, 0x74, 0x72, 0x65, 0x61, 0x6d, 0x50, 0x61, 0x63, 0x6b, 0x65, 0x74, 0x30, 0x01, 0x42, 0x0d,
 	0x5a, 0x0b, 0x2e, 0x2f, 0x3b, 0x70, 0x6c, 0x75, 0x67, 0x69, 0x6e, 0x76, 0x32, 0x62, 0x06, 0x70,
 	0x72, 0x6f, 0x74, 0x6f, 0x33,
 }
@@ -1427,68 +1737,80 @@ func file_backend_proto_rawDescGZIP() []byte {
 	return file_backend_proto_rawDescData
 }
 
-var file_backend_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_backend_proto_msgTypes = make([]protoimpl.MessageInfo, 23)
+var file_backend_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
+var file_backend_proto_msgTypes = make([]protoimpl.MessageInfo, 27)
 var file_backend_proto_goTypes = []interface{}{
 	(CheckHealthResponse_HealthStatus)(0),  // 0: pluginv2.CheckHealthResponse.HealthStatus
-	(*AppInstanceSettings)(nil),            // 1: pluginv2.AppInstanceSettings
-	(*DataSourceInstanceSettings)(nil),     // 2: pluginv2.DataSourceInstanceSettings
-	(*User)(nil),                           // 3: pluginv2.User
-	(*PluginContext)(nil),                  // 4: pluginv2.PluginContext
-	(*StringList)(nil),                     // 5: pluginv2.StringList
-	(*CallResourceRequest)(nil),            // 6: pluginv2.CallResourceRequest
-	(*CallResourceResponse)(nil),           // 7: pluginv2.CallResourceResponse
-	(*TimeRange)(nil),                      // 8: pluginv2.TimeRange
-	(*DataQuery)(nil),                      // 9: pluginv2.DataQuery
-	(*QueryDataRequest)(nil),               // 10: pluginv2.QueryDataRequest
-	(*QueryDataResponse)(nil),              // 11: pluginv2.QueryDataResponse
-	(*DataResponse)(nil),                   // 12: pluginv2.DataResponse
-	(*CollectMetricsRequest)(nil),          // 13: pluginv2.CollectMetricsRequest
-	(*CollectMetricsResponse)(nil),         // 14: pluginv2.CollectMetricsResponse
-	(*CheckHealthRequest)(nil),             // 15: pluginv2.CheckHealthRequest
-	(*CheckHealthResponse)(nil),            // 16: pluginv2.CheckHealthResponse
-	nil,                                    // 17: pluginv2.AppInstanceSettings.DecryptedSecureJsonDataEntry
-	nil,                                    // 18: pluginv2.DataSourceInstanceSettings.DecryptedSecureJsonDataEntry
-	nil,                                    // 19: pluginv2.CallResourceRequest.HeadersEntry
-	nil,                                    // 20: pluginv2.CallResourceResponse.HeadersEntry
-	nil,                                    // 21: pluginv2.QueryDataRequest.HeadersEntry
-	nil,                                    // 22: pluginv2.QueryDataResponse.ResponsesEntry
-	(*CollectMetricsResponse_Payload)(nil), // 23: pluginv2.CollectMetricsResponse.Payload
+	(StreamPacket_StreamPacketType)(0),     // 1: pluginv2.StreamPacket.StreamPacketType
+	(*AppInstanceSettings)(nil),            // 2: pluginv2.AppInstanceSettings
+	(*DataSourceInstanceSettings)(nil),     // 3: pluginv2.DataSourceInstanceSettings
+	(*User)(nil),                           // 4: pluginv2.User
+	(*PluginContext)(nil),                  // 5: pluginv2.PluginContext
+	(*StringList)(nil),                     // 6: pluginv2.StringList
+	(*CallResourceRequest)(nil),            // 7: pluginv2.CallResourceRequest
+	(*CallResourceResponse)(nil),           // 8: pluginv2.CallResourceResponse
+	(*TimeRange)(nil),                      // 9: pluginv2.TimeRange
+	(*DataQuery)(nil),                      // 10: pluginv2.DataQuery
+	(*QueryDataRequest)(nil),               // 11: pluginv2.QueryDataRequest
+	(*QueryDataResponse)(nil),              // 12: pluginv2.QueryDataResponse
+	(*DataResponse)(nil),                   // 13: pluginv2.DataResponse
+	(*CollectMetricsRequest)(nil),          // 14: pluginv2.CollectMetricsRequest
+	(*CollectMetricsResponse)(nil),         // 15: pluginv2.CollectMetricsResponse
+	(*CheckHealthRequest)(nil),             // 16: pluginv2.CheckHealthRequest
+	(*CheckHealthResponse)(nil),            // 17: pluginv2.CheckHealthResponse
+	(*SubscribeToStreamRequest)(nil),       // 18: pluginv2.SubscribeToStreamRequest
+	(*SubscribeToStreamResponse)(nil),      // 19: pluginv2.SubscribeToStreamResponse
+	(*RunStreamRequest)(nil),               // 20: pluginv2.RunStreamRequest
+	(*StreamPacket)(nil),                   // 21: pluginv2.StreamPacket
+	nil,                                    // 22: pluginv2.AppInstanceSettings.DecryptedSecureJsonDataEntry
+	nil,                                    // 23: pluginv2.DataSourceInstanceSettings.DecryptedSecureJsonDataEntry
+	nil,                                    // 24: pluginv2.CallResourceRequest.HeadersEntry
+	nil,                                    // 25: pluginv2.CallResourceResponse.HeadersEntry
+	nil,                                    // 26: pluginv2.QueryDataRequest.HeadersEntry
+	nil,                                    // 27: pluginv2.QueryDataResponse.ResponsesEntry
+	(*CollectMetricsResponse_Payload)(nil), // 28: pluginv2.CollectMetricsResponse.Payload
 }
 var file_backend_proto_depIdxs = []int32{
-	17, // 0: pluginv2.AppInstanceSettings.decryptedSecureJsonData:type_name -> pluginv2.AppInstanceSettings.DecryptedSecureJsonDataEntry
-	18, // 1: pluginv2.DataSourceInstanceSettings.decryptedSecureJsonData:type_name -> pluginv2.DataSourceInstanceSettings.DecryptedSecureJsonDataEntry
-	3,  // 2: pluginv2.PluginContext.user:type_name -> pluginv2.User
-	1,  // 3: pluginv2.PluginContext.appInstanceSettings:type_name -> pluginv2.AppInstanceSettings
-	2,  // 4: pluginv2.PluginContext.dataSourceInstanceSettings:type_name -> pluginv2.DataSourceInstanceSettings
-	4,  // 5: pluginv2.CallResourceRequest.pluginContext:type_name -> pluginv2.PluginContext
-	19, // 6: pluginv2.CallResourceRequest.headers:type_name -> pluginv2.CallResourceRequest.HeadersEntry
-	20, // 7: pluginv2.CallResourceResponse.headers:type_name -> pluginv2.CallResourceResponse.HeadersEntry
-	8,  // 8: pluginv2.DataQuery.timeRange:type_name -> pluginv2.TimeRange
-	4,  // 9: pluginv2.QueryDataRequest.pluginContext:type_name -> pluginv2.PluginContext
-	21, // 10: pluginv2.QueryDataRequest.headers:type_name -> pluginv2.QueryDataRequest.HeadersEntry
-	9,  // 11: pluginv2.QueryDataRequest.queries:type_name -> pluginv2.DataQuery
-	22, // 12: pluginv2.QueryDataResponse.responses:type_name -> pluginv2.QueryDataResponse.ResponsesEntry
-	4,  // 13: pluginv2.CollectMetricsRequest.pluginContext:type_name -> pluginv2.PluginContext
-	23, // 14: pluginv2.CollectMetricsResponse.metrics:type_name -> pluginv2.CollectMetricsResponse.Payload
-	4,  // 15: pluginv2.CheckHealthRequest.pluginContext:type_name -> pluginv2.PluginContext
+	22, // 0: pluginv2.AppInstanceSettings.decryptedSecureJsonData:type_name -> pluginv2.AppInstanceSettings.DecryptedSecureJsonDataEntry
+	23, // 1: pluginv2.DataSourceInstanceSettings.decryptedSecureJsonData:type_name -> pluginv2.DataSourceInstanceSettings.DecryptedSecureJsonDataEntry
+	4,  // 2: pluginv2.PluginContext.user:type_name -> pluginv2.User
+	2,  // 3: pluginv2.PluginContext.appInstanceSettings:type_name -> pluginv2.AppInstanceSettings
+	3,  // 4: pluginv2.PluginContext.dataSourceInstanceSettings:type_name -> pluginv2.DataSourceInstanceSettings
+	5,  // 5: pluginv2.CallResourceRequest.pluginContext:type_name -> pluginv2.PluginContext
+	24, // 6: pluginv2.CallResourceRequest.headers:type_name -> pluginv2.CallResourceRequest.HeadersEntry
+	25, // 7: pluginv2.CallResourceResponse.headers:type_name -> pluginv2.CallResourceResponse.HeadersEntry
+	9,  // 8: pluginv2.DataQuery.timeRange:type_name -> pluginv2.TimeRange
+	5,  // 9: pluginv2.QueryDataRequest.pluginContext:type_name -> pluginv2.PluginContext
+	26, // 10: pluginv2.QueryDataRequest.headers:type_name -> pluginv2.QueryDataRequest.HeadersEntry
+	10, // 11: pluginv2.QueryDataRequest.queries:type_name -> pluginv2.DataQuery
+	27, // 12: pluginv2.QueryDataResponse.responses:type_name -> pluginv2.QueryDataResponse.ResponsesEntry
+	5,  // 13: pluginv2.CollectMetricsRequest.pluginContext:type_name -> pluginv2.PluginContext
+	28, // 14: pluginv2.CollectMetricsResponse.metrics:type_name -> pluginv2.CollectMetricsResponse.Payload
+	5,  // 15: pluginv2.CheckHealthRequest.pluginContext:type_name -> pluginv2.PluginContext
 	0,  // 16: pluginv2.CheckHealthResponse.status:type_name -> pluginv2.CheckHealthResponse.HealthStatus
-	5,  // 17: pluginv2.CallResourceRequest.HeadersEntry.value:type_name -> pluginv2.StringList
-	5,  // 18: pluginv2.CallResourceResponse.HeadersEntry.value:type_name -> pluginv2.StringList
-	12, // 19: pluginv2.QueryDataResponse.ResponsesEntry.value:type_name -> pluginv2.DataResponse
-	6,  // 20: pluginv2.Resource.CallResource:input_type -> pluginv2.CallResourceRequest
-	10, // 21: pluginv2.Data.QueryData:input_type -> pluginv2.QueryDataRequest
-	15, // 22: pluginv2.Diagnostics.CheckHealth:input_type -> pluginv2.CheckHealthRequest
-	13, // 23: pluginv2.Diagnostics.CollectMetrics:input_type -> pluginv2.CollectMetricsRequest
-	7,  // 24: pluginv2.Resource.CallResource:output_type -> pluginv2.CallResourceResponse
-	11, // 25: pluginv2.Data.QueryData:output_type -> pluginv2.QueryDataResponse
-	16, // 26: pluginv2.Diagnostics.CheckHealth:output_type -> pluginv2.CheckHealthResponse
-	14, // 27: pluginv2.Diagnostics.CollectMetrics:output_type -> pluginv2.CollectMetricsResponse
-	24, // [24:28] is the sub-list for method output_type
-	20, // [20:24] is the sub-list for method input_type
-	20, // [20:20] is the sub-list for extension type_name
-	20, // [20:20] is the sub-list for extension extendee
-	0,  // [0:20] is the sub-list for field type_name
+	5,  // 17: pluginv2.SubscribeToStreamRequest.pluginContext:type_name -> pluginv2.PluginContext
+	5,  // 18: pluginv2.RunStreamRequest.pluginContext:type_name -> pluginv2.PluginContext
+	1,  // 19: pluginv2.StreamPacket.type:type_name -> pluginv2.StreamPacket.StreamPacketType
+	6,  // 20: pluginv2.CallResourceRequest.HeadersEntry.value:type_name -> pluginv2.StringList
+	6,  // 21: pluginv2.CallResourceResponse.HeadersEntry.value:type_name -> pluginv2.StringList
+	13, // 22: pluginv2.QueryDataResponse.ResponsesEntry.value:type_name -> pluginv2.DataResponse
+	7,  // 23: pluginv2.Resource.CallResource:input_type -> pluginv2.CallResourceRequest
+	11, // 24: pluginv2.Data.QueryData:input_type -> pluginv2.QueryDataRequest
+	16, // 25: pluginv2.Diagnostics.CheckHealth:input_type -> pluginv2.CheckHealthRequest
+	14, // 26: pluginv2.Diagnostics.CollectMetrics:input_type -> pluginv2.CollectMetricsRequest
+	18, // 27: pluginv2.Stream.CanSubscribeToStream:input_type -> pluginv2.SubscribeToStreamRequest
+	20, // 28: pluginv2.Stream.RunStream:input_type -> pluginv2.RunStreamRequest
+	8,  // 29: pluginv2.Resource.CallResource:output_type -> pluginv2.CallResourceResponse
+	12, // 30: pluginv2.Data.QueryData:output_type -> pluginv2.QueryDataResponse
+	17, // 31: pluginv2.Diagnostics.CheckHealth:output_type -> pluginv2.CheckHealthResponse
+	15, // 32: pluginv2.Diagnostics.CollectMetrics:output_type -> pluginv2.CollectMetricsResponse
+	19, // 33: pluginv2.Stream.CanSubscribeToStream:output_type -> pluginv2.SubscribeToStreamResponse
+	21, // 34: pluginv2.Stream.RunStream:output_type -> pluginv2.StreamPacket
+	29, // [29:35] is the sub-list for method output_type
+	23, // [23:29] is the sub-list for method input_type
+	23, // [23:23] is the sub-list for extension type_name
+	23, // [23:23] is the sub-list for extension extendee
+	0,  // [0:23] is the sub-list for field type_name
 }
 
 func init() { file_backend_proto_init() }
@@ -1689,7 +2011,55 @@ func file_backend_proto_init() {
 				return nil
 			}
 		}
-		file_backend_proto_msgTypes[22].Exporter = func(v interface{}, i int) interface{} {
+		file_backend_proto_msgTypes[16].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SubscribeToStreamRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_backend_proto_msgTypes[17].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*SubscribeToStreamResponse); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_backend_proto_msgTypes[18].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*RunStreamRequest); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_backend_proto_msgTypes[19].Exporter = func(v interface{}, i int) interface{} {
+			switch v := v.(*StreamPacket); i {
+			case 0:
+				return &v.state
+			case 1:
+				return &v.sizeCache
+			case 2:
+				return &v.unknownFields
+			default:
+				return nil
+			}
+		}
+		file_backend_proto_msgTypes[26].Exporter = func(v interface{}, i int) interface{} {
 			switch v := v.(*CollectMetricsResponse_Payload); i {
 			case 0:
 				return &v.state
@@ -1707,10 +2077,10 @@ func file_backend_proto_init() {
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: file_backend_proto_rawDesc,
-			NumEnums:      1,
-			NumMessages:   23,
+			NumEnums:      2,
+			NumMessages:   27,
 			NumExtensions: 0,
-			NumServices:   3,
+			NumServices:   4,
 		},
 		GoTypes:           file_backend_proto_goTypes,
 		DependencyIndexes: file_backend_proto_depIdxs,
