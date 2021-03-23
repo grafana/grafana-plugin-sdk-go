@@ -14,6 +14,6 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 cd "$DIR"
 
 protoc -I ./ \
-  backend.proto \
   --go_out=${DST_DIR} \
-  --go-grpc_out=${DST_DIR} --go-grpc_opt=require_unimplemented_servers=false
+  --go-grpc_out=${DST_DIR} --go-grpc_opt=require_unimplemented_servers=false \
+  backend.proto
