@@ -19,14 +19,22 @@ const simpleTypeNumber = "number"
 const simpleTypeBool = "bool"
 const simpleTypeTime = "time"
 
+type FrameJSONStyle int
+
+const (
+	WithSchmaAndData FrameJSONStyle = iota
+	WithOnlySchema
+	WithOnlyData
+)
+
 // FrameToJSON writes a frame to JSON.
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func FrameToJSON(frame *Frame, includeSchema bool, includeData bool) ([]byte, error) {
+func FrameToJSON(frame *Frame, style FrameJSONStyle) ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	err := writeDataFrame(frame, stream, includeSchema, includeData)
+	err := WriteDataFrameJSON(frame, stream, style)
 	if err != nil {
 		return nil, err
 	}
@@ -130,10 +138,11 @@ func isSpecialEntity(v float64) (string, bool) {
 	}
 }
 
-func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) error { //nolint:gocyclo
+// WriteDataFrameJSON writes the frame to the stream
+func WriteDataFrameJSON(frame *Frame, stream *jsoniter.Stream, style FrameJSONStyle) error { //nolint:gocyclo
 	started := false
 	stream.WriteObjectStart()
-	if includeSchema {
+	if style == WithSchmaAndData || style == WithOnlySchema {
 		stream.WriteObjectField("schema")
 		stream.WriteObjectStart()
 
@@ -211,10 +220,11 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 		stream.WriteArrayEnd()
 
 		stream.WriteObjectEnd()
+		started = true
 	}
 
-	if includeData {
-		if includeSchema {
+	if style == WithSchmaAndData || style == WithOnlyData {
+		if started {
 			stream.WriteMore()
 		}
 

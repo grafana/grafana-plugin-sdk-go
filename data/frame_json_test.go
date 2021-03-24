@@ -21,7 +21,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 	a, err := f.MarshalArrow()
 	require.NoError(t, err)
 
-	b, err := data.FrameToJSON(f, true, true) // json.Marshal(f2)
+	b, err := data.FrameToJSON(f, data.WithSchmaAndData) // json.Marshal(f2)
 	require.NoError(t, err)
 	strF := string(b)
 
@@ -88,7 +88,7 @@ func BenchmarkFrameToJSON(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := data.FrameToJSON(f, true, true)
+		_, err := data.FrameToJSON(f, data.WithSchmaAndData)
 		if err != nil {
 			b.Fatal(err)
 		}
