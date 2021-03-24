@@ -59,9 +59,8 @@ type schemaField struct {
 	TypeInfo fieldTypeInfo `json:"typeInfo,omitempty"`
 }
 
-func ReadDataFrameJSON(body []byte) (*Frame, error) {
+func readDataFrameJSON(frame *Frame, body []byte) error {
 	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, body)
-	frame := &Frame{}
 
 	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
 		switch l1Field {
@@ -89,7 +88,7 @@ func ReadDataFrameJSON(body []byte) (*Frame, error) {
 		case jsonKeyData:
 			err := readFrameData(iter, frame)
 			if err != nil {
-				return nil, err
+				return err
 			}
 
 		default:
@@ -97,7 +96,7 @@ func ReadDataFrameJSON(body []byte) (*Frame, error) {
 		}
 	}
 
-	return frame, iter.Error
+	return iter.Error
 }
 
 func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
@@ -323,9 +322,9 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 	switch ft {
 	// Manual
 	case FieldTypeTime:
-		return readTimeVectorJSON(iter, size)
+		return readTimeVectorJSON(iter, false, size)
 	case FieldTypeNullableTime:
-		return readTimeVectorJSON(iter, size)
+		return readTimeVectorJSON(iter, true, size)
 
 	// Generated
 	case FieldTypeUint8:
@@ -898,8 +897,14 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
 	stream.WriteArrayEnd()
 }
 
-func readTimeVectorJSON(iter *jsoniter.Iterator, size int) (*timeTimeVector, error) {
-	arr := newTimeTimeVector(size)
+func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
+	var arr vector
+	if nullable {
+		arr = newNullableTimeTimeVector(size)
+	} else {
+		arr = newTimeTimeVector(size)
+	}
+
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint8VectorJSON", "expected array")
@@ -911,7 +916,8 @@ func readTimeVectorJSON(iter *jsoniter.Iterator, size int) (*timeTimeVector, err
 			iter.ReadNil()
 		} else {
 			ms := iter.ReadInt64()
-			tv := time.Unix(0, ms*int64(time.Millisecond)).UTC()
+
+			tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6))
 			arr.SetConcrete(i, tv)
 		}
 	}

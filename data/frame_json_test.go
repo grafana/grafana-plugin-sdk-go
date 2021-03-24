@@ -51,7 +51,8 @@ func TestGoldenFrameJSON(t *testing.T) {
 	assert.JSONEq(t, strF, strG, "saved json must match produced json")
 
 	// Read the frame from json
-	out, err := data.ReadDataFrameJSON(b)
+	out := &data.Frame{}
+	err = json.Unmarshal(b, out)
 	require.NoError(t, err)
 
 	if diff := cmp.Diff(f, out, data.FrameTestCompareOptions()...); diff != "" {
