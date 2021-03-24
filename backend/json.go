@@ -21,12 +21,16 @@ func initEncoders() struct{} {
 type dataResponseCodec struct{}
 
 func (codec *dataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
-	dr := *((*DataResponse)(ptr))
+	dr := (*DataResponse)(ptr)
 	return dr.Error == nil && dr.Frames == nil
 }
 
 func (codec *dataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
-	dr := *((*DataResponse)(ptr))
+	dr := (*DataResponse)(ptr)
+	writeDataResponseJSON(dr, stream)
+}
+
+func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	stream.WriteObjectStart()
 	started := false
 	if dr.Error != nil {
@@ -67,7 +71,12 @@ func (codec *queryDataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
 }
 
 func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
-	qdr := *((*QueryDataResponse)(ptr))
+	qdr := (*QueryDataResponse)(ptr)
+	writeQueryDataResponseJSON(qdr, stream)
+}
+
+func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *jsoniter.Stream) {
+	stream.WriteObjectStart()
 	stream.WriteObjectStart()
 	if qdr.Responses != nil {
 		stream.WriteObjectField("responses")

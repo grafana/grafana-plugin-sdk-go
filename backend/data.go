@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // QueryDataHandler handles data queries.
@@ -68,6 +69,16 @@ type DataQuery struct {
 type QueryDataResponse struct {
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
 	Responses Responses
+}
+
+// MarshalJSON writes the results as json
+func (r *QueryDataResponse) MarshalJSON() ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeQueryDataResponseJSON(r, stream)
+	return stream.Buffer(), stream.Error
 }
 
 // NewQueryDataResponse returns a QueryDataResponse with the Responses property initialized.

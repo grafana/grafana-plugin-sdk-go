@@ -10,7 +10,6 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
@@ -18,6 +17,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -42,32 +42,17 @@ type Frame struct {
 	Meta *FrameMeta
 }
 
-// UnmarshalJSON uses the `UnmarshalArrowFrame` function to unmarshal this type from JSON.
-func (f *Frame) UnmarshalJSON(b []byte) error {
-	arrow := []byte{}
-
-	if err := json.Unmarshal(b, &arrow); err != nil {
-		return err
-	}
-
-	frame, err := UnmarshalArrowFrame(arrow)
-	if err != nil {
-		return err
-	}
-
-	*f = *frame
-
-	return nil
-}
-
 // MarshalJSON uses the `MarshalArrow` function to marshal this type to JSON.
 func (f *Frame) MarshalJSON() ([]byte, error) {
-	arrow, err := f.MarshalArrow()
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	err := WriteDataFrameJSON(f, stream, WithSchmaAndData)
 	if err != nil {
 		return nil, err
 	}
-
-	return json.Marshal(arrow)
+	return stream.Buffer(), stream.Error
 }
 
 // Frames is a slice of Frame pointers.
