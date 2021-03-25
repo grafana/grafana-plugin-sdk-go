@@ -784,7 +784,6 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 				stream.WriteBool(true)
 			}
 			stream.WriteObjectEnd()
-			started = true
 		}
 
 		if labelsAsString, ok := getMDKey("labels", f.Metadata); ok {
