@@ -258,9 +258,7 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*int32":
 		return FieldTypeNullableInt32, true
 
-	case "int":
-		fallthrough
-	case "int64":
+	case "int", "int64":
 		return FieldTypeInt64, true
 	case "*int64":
 		return FieldTypeNullableInt64, true
@@ -290,11 +288,7 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*float32":
 		return FieldTypeNullableFloat32, true
 
-	case "double":
-		fallthrough
-	case "float":
-		fallthrough
-	case "float64":
+	case "double", "float", "float64":
 		return FieldTypeFloat64, true
 	case "*float64":
 		return FieldTypeNullableFloat64, true
@@ -309,9 +303,7 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*bool":
 		return FieldTypeNullableBool, true
 
-	case "time":
-		fallthrough
-	case "time.Time":
+	case "time", "time.Time":
 		return FieldTypeTime, true
 	case "*time.Time":
 		return FieldTypeNullableTime, true

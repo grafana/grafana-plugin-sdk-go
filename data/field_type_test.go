@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,17 +17,17 @@ type simpleFieldInfo struct {
 func TestFieldTypeConversion(t *testing.T) {
 	f := data.FieldTypeBool
 	s := f.ItemTypeString()
-	assert.Equal(t, "bool", s)
+	require.Equal(t, "bool", s)
 	c, ok := data.FieldTypeFromItemTypeString(s)
 	require.True(t, ok, "must parse ok")
-	assert.Equal(t, f, c)
+	require.Equal(t, f, c)
 
 	_, ok = data.FieldTypeFromItemTypeString("????")
 	require.False(t, ok, "unknown type")
 
 	c, ok = data.FieldTypeFromItemTypeString("float")
 	require.True(t, ok, "must parse ok")
-	assert.Equal(t, data.FieldTypeFloat64, c)
+	require.Equal(t, data.FieldTypeFloat64, c)
 
 	obj := &simpleFieldInfo{
 		Name:      "hello",
@@ -41,5 +40,5 @@ func TestFieldTypeConversion(t *testing.T) {
 	err = json.Unmarshal(body, &copy)
 	require.NoError(t, err)
 
-	assert.Equal(t, obj.FieldType, copy.FieldType)
+	require.Equal(t, obj.FieldType, copy.FieldType)
 }
