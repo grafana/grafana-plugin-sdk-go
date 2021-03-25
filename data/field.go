@@ -27,7 +27,7 @@ type Field struct {
 
 	// vector is the unexported values. it is unexported so we can change the underlying structure without
 	// major breaking changes.
-	vector vector `json:"-"`
+	vector vector
 }
 
 // Fields is a slice of Field pointers.
