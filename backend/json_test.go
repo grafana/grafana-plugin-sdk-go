@@ -36,7 +36,7 @@ func TestResponseEncoder(t *testing.T) {
 
 	b2, err := json.Marshal(&dr)
 	require.NoError(t, err)
-	require.Equal(t, str, string(b2), "same resutls from pointer or object")
+	require.Equal(t, str, string(b2), "same result from pointer or object")
 
 	// Now the same thing in query data
 	qdr := NewQueryDataResponse()
