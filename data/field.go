@@ -16,18 +16,18 @@ import (
 type Field struct {
 	// Name is default identifier of the field. The name does not have to be unique, but the combination
 	// of name and Labels should be unique for proper behavior in all situations.
-	Name string
+	Name string `json:"name,omitempty"`
 
 	// Labels is an optional set of key=value pairs that in addition to the name, should uniquely
 	// identify a Field within a Frame.
-	Labels Labels
+	Labels Labels `json:"labels,omitempty"`
 
 	// Config is optional display configuration information for Grafana
-	Config *FieldConfig
+	Config *FieldConfig `json:"config,omitempty"`
 
 	// vector is the unexported values. it is unexported so we can change the underlying structure without
 	// major breaking changes.
-	vector vector
+	vector vector `json:"-"`
 }
 
 // Fields is a slice of Field pointers.

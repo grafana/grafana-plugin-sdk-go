@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	jsoniter "github.com/json-iterator/go"
 )
 
 // QueryDataHandler handles data queries.
@@ -70,6 +71,16 @@ type QueryDataResponse struct {
 	Responses Responses
 }
 
+// MarshalJSON writes the results as json
+func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeQueryDataResponseJSON(&r, stream)
+	return stream.Buffer(), stream.Error
+}
+
 // NewQueryDataResponse returns a QueryDataResponse with the Responses property initialized.
 func NewQueryDataResponse() *QueryDataResponse {
 	return &QueryDataResponse{
@@ -91,6 +102,16 @@ type DataResponse struct {
 
 	// Error is a property to be set if the the corresponding DataQuery has an error.
 	Error error
+}
+
+// MarshalJSON writes the results as json
+func (r DataResponse) MarshalJSON() ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeDataResponseJSON(&r, stream)
+	return stream.Buffer(), stream.Error
 }
 
 // TimeRange represents a time range for a query and is a property of DataQuery.

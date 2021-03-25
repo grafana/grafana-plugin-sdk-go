@@ -189,6 +189,56 @@ func (p FieldType) NullableType() FieldType {
 	}
 }
 
+// NonNullableType converts the FieldType to the corresponding not-nullable type.
+func (p FieldType) NonNullableType() FieldType {
+	switch p {
+	// ints
+	case FieldTypeInt8, FieldTypeNullableInt8:
+		return FieldTypeInt8
+
+	case FieldTypeInt16, FieldTypeNullableInt16:
+		return FieldTypeInt16
+
+	case FieldTypeInt32, FieldTypeNullableInt32:
+		return FieldTypeInt32
+
+	case FieldTypeInt64, FieldTypeNullableInt64:
+		return FieldTypeInt64
+
+	// uints
+	case FieldTypeUint8, FieldTypeNullableUint8:
+		return FieldTypeUint8
+
+	case FieldTypeUint16, FieldTypeNullableUint16:
+		return FieldTypeUint16
+
+	case FieldTypeUint32, FieldTypeNullableUint32:
+		return FieldTypeUint32
+
+	case FieldTypeUint64, FieldTypeNullableUint64:
+		return FieldTypeUint64
+
+	// floats
+	case FieldTypeFloat32, FieldTypeNullableFloat32:
+		return FieldTypeFloat32
+
+	case FieldTypeFloat64, FieldTypeNullableFloat64:
+		return FieldTypeFloat64
+
+	// other
+	case FieldTypeString, FieldTypeNullableString:
+		return FieldTypeString
+
+	case FieldTypeBool, FieldTypeNullableBool:
+		return FieldTypeBool
+
+	case FieldTypeTime, FieldTypeNullableTime:
+		return FieldTypeTime
+	default:
+		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
+	}
+}
+
 // FieldTypeFromItemTypeString returns a field type from the current string
 //nolint:goconst,gocyclo
 func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
