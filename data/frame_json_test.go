@@ -10,6 +10,8 @@ import (
 	"testing"
 	"text/template"
 
+	jsoniter "github.com/json-iterator/go"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
@@ -99,6 +101,30 @@ func BenchmarkFrameToJSON(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := data.FrameToJSON(f, true, true)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkFrameMarshalJSONStd(b *testing.B) {
+	f := goldenDF()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := json.Marshal(f)
+		if err != nil {
+			b.Fatal(err)
+		}
+	}
+}
+
+func BenchmarkFrameMarshalJSONIter(b *testing.B) {
+	f := goldenDF()
+	b.ReportAllocs()
+	b.ResetTimer()
+	for i := 0; i < b.N; i++ {
+		_, err := jsoniter.Marshal(f)
 		if err != nil {
 			b.Fatal(err)
 		}

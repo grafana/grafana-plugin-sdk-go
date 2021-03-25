@@ -98,7 +98,7 @@ func TestConvertFromProtobufUser(t *testing.T) {
 }
 
 var lastUpdatedMS int64 = 86400 * 2 * 1000
-var lastUpdatedTime time.Time = time.Unix(0, 86400*2*1e9)
+var lastUpdatedTime = time.Unix(0, 86400*2*1e9)
 
 var protoAppInstanceSettings = &pluginv2.AppInstanceSettings{
 	JsonData:                []byte(`{ "foo": "gpp"`),
