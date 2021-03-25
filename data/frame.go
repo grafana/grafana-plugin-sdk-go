@@ -43,12 +43,12 @@ type Frame struct {
 	Meta *FrameMeta
 }
 
-// UnmarshalJSON uses the `UnmarshalArrowFrame` function to unmarshal this type from JSON.
+// UnmarshalJSON allows unmarshalling Frame from JSON.
 func (f *Frame) UnmarshalJSON(b []byte) error {
 	return readDataFrameJSON(f, b)
 }
 
-// MarshalJSON uses the `MarshalArrow` function to marshal this type to JSON.
+// MarshalJSON marshals Frame to JSON.
 func (f *Frame) MarshalJSON() ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
@@ -148,10 +148,10 @@ func (f *Frame) EmptyCopy() *Frame {
 	}
 
 	for _, field := range f.Fields {
-		copy := NewFieldFromFieldType(field.Type(), 0)
-		copy.Name = field.Name
-		copy.Labels = field.Labels.Copy()
-		newFrame.Fields = append(newFrame.Fields, copy)
+		fieldCopy := NewFieldFromFieldType(field.Type(), 0)
+		fieldCopy.Name = field.Name
+		fieldCopy.Labels = field.Labels.Copy()
+		newFrame.Fields = append(newFrame.Fields, fieldCopy)
 	}
 	return newFrame
 }
@@ -171,7 +171,7 @@ func NewFrameOfFieldTypes(name string, fieldLen int, fTypes ...FieldType) *Frame
 
 // TypeIndices returns a slice of Field index positions for the given fTypes.
 func (f *Frame) TypeIndices(fTypes ...FieldType) []int {
-	indices := []int{}
+	var indices []int
 	if f.Fields == nil {
 		return indices
 	}
