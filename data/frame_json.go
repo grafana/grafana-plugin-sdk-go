@@ -7,6 +7,7 @@ import (
 	"math"
 	"strconv"
 	"time"
+	"unsafe"
 
 	"github.com/apache/arrow/go/arrow"
 	"github.com/apache/arrow/go/arrow/array"
@@ -22,6 +23,25 @@ const simpleTypeTime = "time"
 
 const jsonKeySchema = "schema"
 const jsonKeyData = "data"
+
+func init() { //nolint:gochecknoinits
+	jsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
+}
+
+type dataFrameCodec struct{}
+
+func (codec *dataFrameCodec) IsEmpty(ptr unsafe.Pointer) bool {
+	f := (*Frame)(ptr)
+	return f.Fields == nil && f.RefID == "" && f.Meta == nil
+}
+
+func (codec *dataFrameCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	f := (*Frame)(ptr)
+	err := writeDataFrame(f, stream, true, true)
+	if stream.Error == nil && err != nil {
+		stream.Error = err
+	}
+}
 
 // FrameToJSON writes a frame to JSON.
 // NOTE: the format should be considered experimental until grafana 8 is released.
@@ -580,6 +600,7 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 
 		rowCount, err := frame.RowLen()
 		if err != nil {
+			stream.Error = err
 			return err
 		}
 

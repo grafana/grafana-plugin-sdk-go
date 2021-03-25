@@ -1,43 +1,39 @@
 package backend
 
 import (
+	"unsafe"
+
 	jsoniter "github.com/json-iterator/go"
 )
 
-// // This will make sure jsoniter uses a fast JSON serialization strategy
-// var (
-// 	_ = initEncoders()
-// )
+func init() { //nolint:gochecknoinits
+	jsoniter.RegisterTypeEncoder("backend.DataResponse", &dataResponseCodec{})
+	jsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
+}
 
-// func initEncoders() struct{} {
-// 	jsoniter.RegisterTypeEncoder("backend.DataResponse", &dataResponseCodec{})
-// 	jsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
-// 	return struct{}{} // 0 bytes
-// }
+type dataResponseCodec struct{}
 
-// type dataResponseCodec struct{}
+func (codec *dataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
+	dr := (*DataResponse)(ptr)
+	return dr.Error == nil && dr.Frames == nil
+}
 
-// func (codec *dataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
-// 	dr := (*DataResponse)(ptr)
-// 	return dr.Error == nil && dr.Frames == nil
-// }
+func (codec *dataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	dr := (*DataResponse)(ptr)
+	writeDataResponseJSON(dr, stream)
+}
 
-// func (codec *dataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
-// 	dr := (*DataResponse)(ptr)
-// 	writeDataResponseJSON(dr, stream)
-// }
+type queryDataResponseCodec struct{}
 
-// type queryDataResponseCodec struct{}
+func (codec *queryDataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
+	qdr := *((*QueryDataResponse)(ptr))
+	return qdr.Responses == nil
+}
 
-// func (codec *queryDataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
-// 	qdr := *((*QueryDataResponse)(ptr))
-// 	return qdr.Responses == nil
-// }
-
-// func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
-// 	qdr := (*QueryDataResponse)(ptr)
-// 	writeQueryDataResponseJSON(qdr, stream)
-// }
+func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	qdr := (*QueryDataResponse)(ptr)
+	writeQueryDataResponseJSON(qdr, stream)
+}
 
 //-----------------------------------------------------------------
 // Private stream readers
