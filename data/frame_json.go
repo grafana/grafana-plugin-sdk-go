@@ -5,7 +5,9 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"strconv"
 	"time"
+	"unsafe"
 
 	"github.com/apache/arrow/go/arrow"
 	"github.com/apache/arrow/go/arrow/array"
@@ -18,6 +20,28 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "bool"
 const simpleTypeTime = "time"
+
+const jsonKeySchema = "schema"
+const jsonKeyData = "data"
+
+func init() { //nolint:gochecknoinits
+	jsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
+}
+
+type dataFrameCodec struct{}
+
+func (codec *dataFrameCodec) IsEmpty(ptr unsafe.Pointer) bool {
+	f := (*Frame)(ptr)
+	return f.Fields == nil && f.RefID == "" && f.Meta == nil
+}
+
+func (codec *dataFrameCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	f := (*Frame)(ptr)
+	err := writeDataFrame(f, stream, true, true)
+	if stream.Error == nil && err != nil {
+		stream.Error = err
+	}
+}
 
 // FrameToJSON writes a frame to JSON.
 // NOTE: the format should be considered experimental until grafana 8 is released.
@@ -37,6 +61,344 @@ func FrameToJSON(frame *Frame, includeSchema bool, includeData bool) ([]byte, er
 	return stream.Buffer(), nil
 }
 
+type frameSchema struct {
+	Name   string         `json:"name,omitempty"`
+	Fields []*schemaField `json:"fields,omitempty"`
+	RefID  string         `json:"refId,omitempty"`
+	Meta   *FrameMeta     `json:"meta,omitempty"`
+}
+
+type fieldTypeInfo struct {
+	Frame    FieldType `json:"frame,omitempty"`
+	Nullable bool      `json:"nullable,omitempty"`
+}
+
+// has vector... but without length
+type schemaField struct {
+	Field
+	TypeInfo fieldTypeInfo `json:"typeInfo,omitempty"`
+}
+
+func readDataFrameJSON(frame *Frame, body []byte) error {
+	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, body)
+
+	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+		switch l1Field {
+		case jsonKeySchema:
+			schema := frameSchema{}
+			iter.ReadVal(&schema)
+			frame.Name = schema.Name
+			frame.RefID = schema.RefID
+			frame.Meta = schema.Meta
+
+			// Create a new field for each object
+			for _, f := range schema.Fields {
+				ft := f.TypeInfo.Frame
+				if f.TypeInfo.Nullable {
+					ft = ft.NullableType()
+				}
+				tmp := NewFieldFromFieldType(ft, 0)
+				tmp.Name = f.Name
+				tmp.Labels = f.Labels
+				tmp.Config = f.Config
+				frame.Fields = append(frame.Fields, tmp)
+				fmt.Printf("[FIELD] %#v\n", f.Field)
+			}
+
+		case jsonKeyData:
+			err := readFrameData(iter, frame)
+			if err != nil {
+				return err
+			}
+
+		default:
+			iter.ReportError("bind l1", "unexpected field: "+l1Field)
+		}
+	}
+
+	return iter.Error
+}
+
+func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
+	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+		switch l2Field {
+		case "values":
+			if !iter.ReadArray() {
+				continue // empty fields
+			}
+
+			// Load the first field with a generic interface.
+			// The length of the first will be assumed for the other fields
+			// and can have a specialized parser
+			field := frame.Fields[0]
+			first := make([]interface{}, 0)
+			iter.ReadVal(&first)
+			vec, err := jsonValuesToVector(field.Type(), first)
+			if err != nil {
+				return err
+			}
+			field.vector = vec
+			size := len(first)
+
+			fieldIndex := 1
+			for iter.ReadArray() {
+				field = frame.Fields[fieldIndex]
+				vec, err = readVector(iter, field.Type(), size)
+				if err != nil {
+					return err
+				}
+				field.vector = vec
+				fieldIndex++
+			}
+
+		case "entities":
+			fieldIndex := 0
+			for iter.ReadArray() {
+				t := iter.WhatIsNext()
+				if t == jsoniter.ObjectValue {
+					for l3Field := iter.ReadObject(); l3Field != ""; l3Field = iter.ReadObject() {
+						field := frame.Fields[fieldIndex]
+						replace := getReplacemetValue(l3Field, field.Type())
+						for iter.ReadArray() {
+							idx := iter.ReadInt()
+							field.vector.SetConcrete(idx, replace)
+						}
+					}
+				} else {
+					iter.ReadAny() // skip nills
+				}
+				fieldIndex++
+			}
+
+		default:
+			iter.ReportError("bind l2", "unexpected field: "+l2Field)
+		}
+	}
+	return nil
+}
+
+func getReplacemetValue(key string, ft FieldType) interface{} {
+	v := math.NaN()
+	if key == "Inf" {
+		v = math.Inf(1)
+	} else if key == "NegInf" {
+		v = math.Inf(-1)
+	}
+	if ft == FieldTypeFloat32 || ft == FieldTypeNullableFloat32 {
+		return float32(v)
+	}
+	return v
+}
+
+func float64FromJSON(v interface{}) (float64, error) {
+	fV, ok := v.(float64)
+	if ok {
+		return fV, nil
+	}
+	iV, ok := v.(int64)
+	if ok {
+		fV = float64(iV)
+		return fV, nil
+	}
+	iiV, ok := v.(int)
+	if ok {
+		fV = float64(iiV)
+		return fV, nil
+	}
+	sV, ok := v.(string)
+	if ok {
+		return strconv.ParseFloat(sV, 64)
+	}
+
+	return 0, fmt.Errorf("unable to conver")
+}
+
+func int64FromJSON(v interface{}) (int64, error) {
+	iV, ok := v.(int64)
+	if ok {
+		return iV, nil
+	}
+	sV, ok := v.(string)
+	if ok {
+		return strconv.ParseInt(sV, 0, 64)
+	}
+	fV, ok := v.(float64)
+	if ok {
+		return int64(fV), nil
+	}
+
+	return 0, fmt.Errorf("unable to conver")
+}
+
+func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
+	convert := func(v interface{}) (interface{}, error) {
+		return v, nil
+	}
+
+	switch ft.NonNullableType() {
+	case FieldTypeTime:
+		convert = func(v interface{}) (interface{}, error) {
+			fV, ok := v.(float64)
+			if !ok {
+				return nil, fmt.Errorf("error reading time")
+			}
+			return time.Unix(0, int64(fV)*int64(time.Millisecond)).UTC(), nil
+		}
+
+	case FieldTypeUint8:
+		convert = func(v interface{}) (interface{}, error) {
+			iV, err := int64FromJSON(v)
+			return uint8(iV), err
+		}
+
+	case FieldTypeUint16:
+		convert = func(v interface{}) (interface{}, error) {
+			iV, err := int64FromJSON(v)
+			return uint16(iV), err
+		}
+
+	case FieldTypeUint32:
+		convert = func(v interface{}) (interface{}, error) {
+			iV, err := int64FromJSON(v)
+			return uint32(iV), err
+		}
+
+	case FieldTypeUint64:
+		convert = func(v interface{}) (interface{}, error) {
+			iV, err := int64FromJSON(v)
+			return uint64(iV), err
+		}
+
+	case FieldTypeInt8:
+		convert = func(v interface{}) (interface{}, error) {
+			iV, err := int64FromJSON(v)
+			return int8(iV), err
+		}
+
+	case FieldTypeInt16:
+		convert = func(v interface{}) (interface{}, error) {
+			iV, err := int64FromJSON(v)
+			return int16(iV), err
+		}
+
+	case FieldTypeInt32:
+		convert = func(v interface{}) (interface{}, error) {
+			iV, err := int64FromJSON(v)
+			return int32(iV), err
+		}
+
+	case FieldTypeInt64:
+		convert = func(v interface{}) (interface{}, error) {
+			return int64FromJSON(v)
+		}
+
+	case FieldTypeFloat32:
+		convert = func(v interface{}) (interface{}, error) {
+			fV, err := float64FromJSON(v)
+			return float32(fV), err
+		}
+
+	case FieldTypeFloat64:
+		convert = func(v interface{}) (interface{}, error) {
+			return float64FromJSON(v)
+		}
+
+	case FieldTypeString:
+		convert = func(v interface{}) (interface{}, error) {
+			str, ok := v.(string)
+			if ok {
+				return str, nil
+			}
+			return fmt.Sprintf("%v", v), nil
+		}
+
+	case FieldTypeBool:
+		convert = func(v interface{}) (interface{}, error) {
+			val := v.(bool)
+			return val, nil
+		}
+	}
+
+	f := NewFieldFromFieldType(ft, len(arr))
+	for i, v := range arr {
+		if v != nil {
+			norm, err := convert(v)
+			if err != nil {
+				return nil, err
+			}
+			f.vector.SetConcrete(i, norm) // will be pointer for nullable types
+		}
+	}
+	return f.vector, nil
+}
+
+func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error) {
+	if false {
+		first := make([]interface{}, 0)
+		iter.ReadVal(&first)
+		return jsonValuesToVector(ft, first)
+	}
+
+	switch ft {
+	// Manual
+	case FieldTypeTime:
+		return readTimeVectorJSON(iter, false, size)
+	case FieldTypeNullableTime:
+		return readTimeVectorJSON(iter, true, size)
+
+	// Generated
+	case FieldTypeUint8:
+		return readUint8VectorJSON(iter, size)
+	case FieldTypeNullableUint8:
+		return readNullableUint8VectorJSON(iter, size)
+	case FieldTypeUint16:
+		return readUint16VectorJSON(iter, size)
+	case FieldTypeNullableUint16:
+		return readNullableUint16VectorJSON(iter, size)
+	case FieldTypeUint32:
+		return readUint32VectorJSON(iter, size)
+	case FieldTypeNullableUint32:
+		return readNullableUint32VectorJSON(iter, size)
+	case FieldTypeUint64:
+		return readUint64VectorJSON(iter, size)
+	case FieldTypeNullableUint64:
+		return readNullableUint64VectorJSON(iter, size)
+	case FieldTypeInt8:
+		return readInt8VectorJSON(iter, size)
+	case FieldTypeNullableInt8:
+		return readNullableInt8VectorJSON(iter, size)
+	case FieldTypeInt16:
+		return readInt16VectorJSON(iter, size)
+	case FieldTypeNullableInt16:
+		return readNullableInt16VectorJSON(iter, size)
+	case FieldTypeInt32:
+		return readInt32VectorJSON(iter, size)
+	case FieldTypeNullableInt32:
+		return readNullableInt32VectorJSON(iter, size)
+	case FieldTypeInt64:
+		return readInt64VectorJSON(iter, size)
+	case FieldTypeNullableInt64:
+		return readNullableInt64VectorJSON(iter, size)
+	case FieldTypeFloat32:
+		return readFloat32VectorJSON(iter, size)
+	case FieldTypeNullableFloat32:
+		return readNullableFloat32VectorJSON(iter, size)
+	case FieldTypeFloat64:
+		return readFloat64VectorJSON(iter, size)
+	case FieldTypeNullableFloat64:
+		return readNullableFloat64VectorJSON(iter, size)
+	case FieldTypeString:
+		return readStringVectorJSON(iter, size)
+	case FieldTypeNullableString:
+		return readNullableStringVectorJSON(iter, size)
+	case FieldTypeBool:
+		return readBoolVectorJSON(iter, size)
+	case FieldTypeNullableBool:
+		return readNullableBoolVectorJSON(iter, size)
+	}
+	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
+}
+
 func getSimpleTypeString(t FieldType) (string, bool) {
 	if t.Time() {
 		return simpleTypeTime, true
@@ -54,37 +416,36 @@ func getSimpleTypeString(t FieldType) (string, bool) {
 	return "", false
 }
 
-func getSimpleTypeStringForArrow(t arrow.DataType) string {
+func getFieldTypeForArrow(t arrow.DataType) FieldType {
 	switch t.ID() {
 	case arrow.TIMESTAMP:
-		return simpleTypeTime
+		return FieldTypeTime
 	case arrow.UINT8:
-		fallthrough
+		return FieldTypeUint8
 	case arrow.UINT16:
-		fallthrough
+		return FieldTypeUint16
 	case arrow.UINT32:
-		fallthrough
+		return FieldTypeUint32
 	case arrow.UINT64:
-		fallthrough
+		return FieldTypeUint64
 	case arrow.INT8:
-		fallthrough
+		return FieldTypeInt8
 	case arrow.INT16:
-		fallthrough
+		return FieldTypeInt16
 	case arrow.INT32:
-		fallthrough
+		return FieldTypeInt32
 	case arrow.INT64:
-		fallthrough
+		return FieldTypeInt64
 	case arrow.FLOAT32:
-		fallthrough
+		return FieldTypeFloat32
 	case arrow.FLOAT64:
-		return simpleTypeNumber
+		return FieldTypeFloat64
 	case arrow.STRING:
-		return simpleTypeString
+		return FieldTypeString
 	case arrow.BOOL:
-		return simpleTypeBool
-	default:
-		return ""
+		return FieldTypeBool
 	}
+	return FieldTypeUnknown
 }
 
 // export interface FieldValueEntityLookup {
@@ -134,7 +495,7 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 	started := false
 	stream.WriteObjectStart()
 	if includeSchema {
-		stream.WriteObjectField("schema")
+		stream.WriteObjectField(jsonKeySchema)
 		stream.WriteObjectStart()
 
 		if len(frame.Name) > 0 {
@@ -188,6 +549,25 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 				started = true
 			}
 
+			if true {
+				ft := f.Type()
+				nnt := ft.NonNullableType()
+				if started {
+					stream.WriteMore()
+				}
+				stream.WriteObjectField("typeInfo")
+				stream.WriteObjectStart()
+				stream.WriteObjectField("frame")
+				stream.WriteString(nnt.ItemTypeString())
+				if ft.Nullable() {
+					stream.WriteMore()
+					stream.WriteObjectField("nullable")
+					stream.WriteBool(true)
+				}
+				stream.WriteObjectEnd()
+				started = true
+			}
+
 			if f.Labels != nil {
 				if started {
 					stream.WriteMore()
@@ -220,10 +600,11 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 
 		rowCount, err := frame.RowLen()
 		if err != nil {
+			stream.Error = err
 			return err
 		}
 
-		stream.WriteObjectField("data")
+		stream.WriteObjectField(jsonKeyData)
 		stream.WriteObjectStart()
 
 		entities := make([]*fieldEntityLookup, len(frame.Fields))
@@ -403,11 +784,28 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 			started = true
 		}
 
-		if started {
+		ft := getFieldTypeForArrow(f.Type)
+		t, ok := getSimpleTypeString(ft)
+		if ok {
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("type")
+			stream.WriteString(t)
+
+			nnt := ft.NonNullableType()
 			stream.WriteMore()
+			stream.WriteObjectField("typeInfo")
+			stream.WriteObjectStart()
+			stream.WriteObjectField("frame")
+			stream.WriteString(nnt.ItemTypeString())
+			if f.Nullable {
+				stream.WriteMore()
+				stream.WriteObjectField("nullable")
+				stream.WriteBool(true)
+			}
+			stream.WriteObjectEnd()
 		}
-		stream.WriteObjectField("type")
-		stream.WriteString(getSimpleTypeStringForArrow(f.Type))
 
 		if labelsAsString, ok := getMDKey("labels", f.Metadata); ok {
 			stream.WriteMore()
@@ -517,4 +915,36 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
 		}
 	}
 	stream.WriteArrayEnd()
+}
+
+func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
+	var arr vector
+	if nullable {
+		arr = newNullableTimeTimeVector(size)
+	} else {
+		arr = newTimeTimeVector(size)
+	}
+
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readUint8VectorJSON", "expected array")
+			return nil, iter.Error
+		}
+
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			ms := iter.ReadInt64()
+
+			tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6))
+			arr.SetConcrete(i, tv)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("read", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
 }

@@ -10,14 +10,15 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -44,30 +45,24 @@ type Frame struct {
 
 // UnmarshalJSON uses the `UnmarshalArrowFrame` function to unmarshal this type from JSON.
 func (f *Frame) UnmarshalJSON(b []byte) error {
-	arrow := []byte{}
-
-	if err := json.Unmarshal(b, &arrow); err != nil {
-		return err
-	}
-
-	frame, err := UnmarshalArrowFrame(arrow)
-	if err != nil {
-		return err
-	}
-
-	*f = *frame
-
-	return nil
+	return readDataFrameJSON(f, b)
 }
 
 // MarshalJSON uses the `MarshalArrow` function to marshal this type to JSON.
 func (f *Frame) MarshalJSON() ([]byte, error) {
-	arrow, err := f.MarshalArrow()
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	err := writeDataFrame(f, stream, true, true)
 	if err != nil {
 		return nil, err
 	}
 
-	return json.Marshal(arrow)
+	if stream.Error != nil {
+		return nil, stream.Error
+	}
+	return stream.Buffer(), nil
 }
 
 // Frames is a slice of Frame pointers.
@@ -380,8 +375,21 @@ func FrameTestCompareOptions() []cmp.Option {
 			x == y
 	})
 
+	times := cmp.Comparer(func(x, y time.Time) bool {
+		if !x.Equal(y) {
+			// Check that the milliscond precision is the same.
+			// Avoids problems like:
+			// - s"1970-04-14 21:59:59.254740991 -0800 PST",
+			// + s"1970-04-14 21:59:59.254 -0800 PST",
+			xMS := x.UnixNano() / int64(time.Millisecond)
+			yMS := y.UnixNano() / int64(time.Millisecond)
+			return xMS == yMS
+		}
+		return true
+	})
+
 	unexportedField := cmp.AllowUnexported(Field{})
-	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, unexportedField, cmpopts.EquateEmpty()}
+	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, times, unexportedField, cmpopts.EquateEmpty()}
 }
 
 const maxLengthExceededStr = "..."
