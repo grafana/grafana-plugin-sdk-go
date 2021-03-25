@@ -34,6 +34,10 @@ type ServeOpts struct {
 	// Required to implement if data source.
 	QueryDataHandler QueryDataHandler
 
+	// StreamHandler handler for streaming queries.
+	// This is EXPERIMENTAL and is a subject to change till Grafana 8.
+	StreamHandler StreamHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }
@@ -50,6 +54,10 @@ func Serve(opts ServeOpts) error {
 
 	if opts.QueryDataHandler != nil {
 		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+	}
+
+	if opts.StreamHandler != nil {
+		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
 	}
 
 	grpc_prometheus.EnableHandlingTimeHistogram()

@@ -202,3 +202,36 @@ func (f ConvertFromProtobuf) CollectMetricsResponse(protoResp *pluginv2.CollectM
 		PrometheusMetrics: prometheusMetrics,
 	}
 }
+
+// SubscribeToStreamRequest ...
+func (f ConvertFromProtobuf) SubscribeToStreamRequest(protoReq *pluginv2.SubscribeToStreamRequest) *SubscribeToStreamRequest {
+	return &SubscribeToStreamRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Path:          protoReq.GetPath(),
+	}
+}
+
+// SubscribeToStreamResponse ...
+func (f ConvertFromProtobuf) SubscribeToStreamResponse(protoReq *pluginv2.SubscribeToStreamResponse) *SubscribeToStreamResponse {
+	return &SubscribeToStreamResponse{
+		OK:      protoReq.GetOk(),
+		Message: protoReq.GetMessage(),
+	}
+}
+
+// RunStreamRequest ...
+func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamRequest) *RunStreamRequest {
+	return &RunStreamRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Path:          protoReq.GetPath(),
+	}
+}
+
+// StreamPacket ...
+func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *StreamPacket {
+	return &StreamPacket{
+		Type:    StreamPacketType(protoReq.Type),
+		Header:  protoReq.GetHeader(),
+		Payload: protoReq.GetPayload(),
+	}
+}

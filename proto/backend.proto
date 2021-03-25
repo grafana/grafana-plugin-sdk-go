@@ -1,7 +1,7 @@
 syntax = "proto3";
 package pluginv2;
 
-option go_package = ".;pluginv2";
+option go_package = "./;pluginv2";
 
 //-----------------------------------------------
 // Common
@@ -169,4 +169,45 @@ message CheckHealthResponse {
   HealthStatus status = 1;
   string message = 2;
   bytes jsonDetails = 3;
+}
+
+//-----------------------------------------------------------------
+// Stream -- EXPERIMENTAL and is subject to change until 8.0
+//-----------------------------------------------------------------
+
+service Stream {
+  // Called when a user tries to connect to a plugin/datasource managed channel.
+  rpc CanSubscribeToStream(SubscribeToStreamRequest) returns (SubscribeToStreamResponse);
+
+  // RunStream will be initiated by Grafana to consume a stream from a plugin.
+  // For streams with keepalive set this will only be called once the first client
+  // successfully subscribed to a stream channel. And when there are no longer any
+  // subscribers, the call will be terminated by Grafana.
+  rpc RunStream(RunStreamRequest) returns (stream StreamPacket);
+}
+
+message SubscribeToStreamRequest {
+  PluginContext pluginContext = 1;
+
+  string path = 2;
+}
+
+message SubscribeToStreamResponse {
+  bool ok = 1;
+  string message = 2;
+}
+
+message RunStreamRequest {
+  PluginContext pluginContext = 1;
+
+  string path = 2;
+}
+
+message StreamPacket {
+  enum StreamPacketType {
+    DATA_FRAME = 0;
+  }
+  StreamPacketType type = 1;
+  bytes header = 2;
+  bytes payload = 3;
 }
