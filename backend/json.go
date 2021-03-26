@@ -1,8 +1,10 @@
 package backend
 
 import (
+	"fmt"
 	"unsafe"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -42,6 +44,14 @@ func (codec *dataQueryResultsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.
 	writeQueryDataResultsJSON(qdr, stream)
 }
 
+func (codec *dataQueryResultsCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+	qdr := QueryDataResults{}
+	readQueryDataResultsJSON(&qdr, iter)
+	*((*QueryDataResults)(ptr)) = qdr
+}
+
+// readQueryDataResultsJSON
+
 type dataResponseCodec struct{}
 
 func (codec *dataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
@@ -67,6 +77,14 @@ func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter
 		Results: qdr.Responses,
 	}
 	writeQueryDataResultsJSON(r, stream)
+}
+
+func (codec *queryDataResponseCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+	qdr := QueryDataResults{}
+	readQueryDataResultsJSON(&qdr, iter)
+	*((*QueryDataResponse)(ptr)) = QueryDataResponse{
+		Responses: qdr.Results,
+	}
 }
 
 //-----------------------------------------------------------------
@@ -143,4 +161,62 @@ func writeQueryDataResultsJSON(qdr *QueryDataResults, stream *jsoniter.Stream) {
 		stream.WriteArrayEnd()
 	}
 	stream.WriteObjectEnd()
+}
+
+//-----------------------------------------------------------------
+// Private stream readers
+//-----------------------------------------------------------------
+
+func readQueryDataResultsJSON(qdr *QueryDataResults, iter *jsoniter.Iterator) {
+	found := false
+
+	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+		switch l1Field {
+		case "results":
+			if found {
+				iter.ReportError("read results", "already found results")
+				return
+			}
+			found = true
+
+			qdr.Order = make([]string, 0)
+			qdr.Results = make(Responses)
+
+			for iter.ReadArray() {
+				refID := ""
+				res := DataResponse{}
+
+				for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+					switch l2Field {
+					case "refId":
+						refID = iter.ReadString()
+						qdr.Order = append(qdr.Order, refID)
+
+					case "error":
+						res.Error = fmt.Errorf(iter.ReadString())
+
+					case "frames":
+						for iter.ReadArray() {
+							frame := &data.Frame{}
+							iter.ReadVal(frame)
+							if iter.Error != nil {
+								return
+							}
+							res.Frames = append(res.Frames, frame)
+						}
+
+					default:
+						iter.ReportError("bind l2", "unexpected field: "+l1Field)
+						return
+					}
+				}
+
+				qdr.Results[refID] = res
+			}
+
+		default:
+			iter.ReportError("bind l1", "unexpected field: "+l1Field)
+			return
+		}
+	}
 }

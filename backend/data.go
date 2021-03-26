@@ -84,6 +84,17 @@ func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
 	return stream.Buffer(), stream.Error
 }
 
+// UnmarshalJSON will read JSON into a QueryDataResponse
+func (r *QueryDataResponse) UnmarshalJSON(b []byte) error {
+	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	qdr := QueryDataResults{}
+	readQueryDataResultsJSON(&qdr, iter)
+	if iter.Error == nil {
+		r.Responses = qdr.Results
+	}
+	return iter.Error
+}
+
 // NewQueryDataResponse returns a QueryDataResponse with the Responses property initialized.
 func NewQueryDataResponse() *QueryDataResponse {
 	return &QueryDataResponse{

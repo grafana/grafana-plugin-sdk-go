@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
 )
@@ -51,6 +52,27 @@ func TestResponseEncoder(t *testing.T) {
 
 	str = string(b)
 	require.Equal(t, `{"results":[{"refId":"A","frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"bool","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}]}`, str)
+
+	// Read the parsed result and make sure it is the same
+	copy := &QueryDataResponse{}
+	err = json.Unmarshal(b, copy)
+	require.NoError(t, err)
+	require.Equal(t, len(qdr.Responses), len(copy.Responses))
+
+	// Check the final result
+	for k, val := range qdr.Responses {
+		other := copy.Responses[k]
+		require.Equal(t, len(val.Frames), len(other.Frames))
+
+		for idx := range val.Frames {
+			a := val.Frames[idx]
+			b := other.Frames[idx]
+
+			if diff := cmp.Diff(a, b, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+		}
+	}
 }
 
 func TestDataResponseMarshalJSONConcurrent(t *testing.T) {
