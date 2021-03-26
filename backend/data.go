@@ -77,7 +77,10 @@ func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	writeQueryDataResponseJSON(&r, stream)
+	s := &QueryDataResults{
+		Results: r.Responses,
+	}
+	writeQueryDataResultsJSON(s, stream)
 	return stream.Buffer(), stream.Error
 }
 
@@ -110,7 +113,7 @@ func (r DataResponse) MarshalJSON() ([]byte, error) {
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	writeDataResponseJSON(&r, stream)
+	writeDataResponseJSON(&r, "", stream)
 	return stream.Buffer(), stream.Error
 }
 
