@@ -12,7 +12,9 @@ func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
 }
 
-// QueryDataResults is a flavor of
+// QueryDataResults adds key order as an input so that results can match query refId order
+// This struct is not part of the gRPC API, rather a utility structure to help produce
+// better looking JSON output
 type QueryDataResults struct {
 	Order   []string
 	Results Responses
