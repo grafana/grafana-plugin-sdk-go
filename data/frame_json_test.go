@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"text/template"
 
@@ -129,6 +130,25 @@ func BenchmarkFrameMarshalJSONIter(b *testing.B) {
 			b.Fatal(err)
 		}
 	}
+}
+
+func TestFrameMarshalJSONConcurrent(t *testing.T) {
+	f := goldenDF()
+	d, err := json.Marshal(f)
+	require.NoError(t, err)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				b, err := json.Marshal(f)
+				require.NoError(t, err)
+				require.JSONEq(t, string(d), string(b))
+			}
+		}()
+	}
+	wg.Wait()
 }
 
 // This function will write code to the console that should be copy/pasted into frame_json.gen.go
