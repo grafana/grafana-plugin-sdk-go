@@ -134,7 +134,7 @@ func BenchmarkFrameMarshalJSONIter(b *testing.B) {
 
 func TestFrameMarshalJSONConcurrent(t *testing.T) {
 	f := goldenDF()
-	d, err := json.Marshal(f)
+	initialJSON, err := json.Marshal(f)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
 	for i := 0; i < 2; i++ {
@@ -142,9 +142,9 @@ func TestFrameMarshalJSONConcurrent(t *testing.T) {
 		go func() {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
-				b, err := json.Marshal(f)
+				jsonData, err := json.Marshal(f)
 				require.NoError(t, err)
-				require.JSONEq(t, string(d), string(b))
+				require.JSONEq(t, string(initialJSON), string(jsonData))
 			}
 		}()
 	}
