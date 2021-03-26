@@ -18,7 +18,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -50,19 +49,7 @@ func (f *Frame) UnmarshalJSON(b []byte) error {
 
 // MarshalJSON marshals Frame to JSON.
 func (f *Frame) MarshalJSON() ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
-	stream := cfg.BorrowStream(nil)
-	defer cfg.ReturnStream(stream)
-
-	err := writeDataFrame(f, stream, true, true)
-	if err != nil {
-		return nil, err
-	}
-
-	if stream.Error != nil {
-		return nil, stream.Error
-	}
-	return stream.Buffer(), nil
+	return FrameToJSON(f, true, true)
 }
 
 // Frames is a slice of Frame pointers.

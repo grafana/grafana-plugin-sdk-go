@@ -58,7 +58,8 @@ func FrameToJSON(frame *Frame, includeSchema bool, includeData bool) ([]byte, er
 	if stream.Error != nil {
 		return nil, stream.Error
 	}
-	return stream.Buffer(), nil
+
+	return append([]byte(nil), stream.Buffer()...), nil
 }
 
 type frameSchema struct {
@@ -731,7 +732,7 @@ func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]b
 	if stream.Error != nil {
 		return nil, stream.Error
 	}
-	return stream.Buffer(), nil
+	return append([]byte(nil), stream.Buffer()...), nil
 }
 
 func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {

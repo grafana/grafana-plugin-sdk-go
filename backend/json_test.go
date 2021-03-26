@@ -2,6 +2,7 @@ package backend
 
 import (
 	"encoding/json"
+	"sync"
 	"testing"
 	"time"
 
@@ -9,8 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestResponseEncoder makes sure that the JSON produced from arrow and dataframes match
-func TestResponseEncoder(t *testing.T) {
+func testDataResponse() DataResponse {
 	frames := data.Frames{
 		data.NewFrame("simple",
 			data.NewField("time", nil, []time.Time{
@@ -23,10 +23,14 @@ func TestResponseEncoder(t *testing.T) {
 			data.NewField("value", nil, []float64{1.0}),
 		),
 	}
-
-	dr := DataResponse{
+	return DataResponse{
 		Frames: frames,
 	}
+}
+
+// TestResponseEncoder makes sure that the JSON produced from arrow and dataframes match
+func TestResponseEncoder(t *testing.T) {
+	dr := testDataResponse()
 
 	b, err := json.Marshal(dr)
 	require.NoError(t, err)
@@ -47,4 +51,43 @@ func TestResponseEncoder(t *testing.T) {
 
 	str = string(b)
 	require.Equal(t, `{"responses":{"A":{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"bool","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
+}
+
+func TestDataResponseMarshalJSONConcurrent(t *testing.T) {
+	dr := testDataResponse()
+	initialJSON, err := json.Marshal(dr)
+	require.NoError(t, err)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				jsonData, err := json.Marshal(dr)
+				require.NoError(t, err)
+				require.JSONEq(t, string(initialJSON), string(jsonData))
+			}
+		}()
+	}
+	wg.Wait()
+}
+
+func TestQueryDataResponseMarshalJSONConcurrent(t *testing.T) {
+	qdr := NewQueryDataResponse()
+	qdr.Responses["A"] = testDataResponse()
+	initialJSON, err := json.Marshal(qdr)
+	require.NoError(t, err)
+	var wg sync.WaitGroup
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for j := 0; j < 100; j++ {
+				jsonData, err := json.Marshal(qdr)
+				require.NoError(t, err)
+				require.JSONEq(t, string(initialJSON), string(jsonData))
+			}
+		}()
+	}
+	wg.Wait()
 }
