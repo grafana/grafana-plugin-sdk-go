@@ -122,7 +122,7 @@ var Resource_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "backend.proto",
+	Metadata: "plugin.proto",
 }
 
 // DataClient is the client API for Data service.
@@ -206,7 +206,7 @@ var Data_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "backend.proto",
+	Metadata: "plugin.proto",
 }
 
 // DiagnosticsClient is the client API for Diagnostics service.
@@ -326,7 +326,7 @@ var Diagnostics_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "backend.proto",
+	Metadata: "plugin.proto",
 }
 
 // StreamClient is the client API for Stream service.
@@ -484,5 +484,5 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "backend.proto",
+	Metadata: "plugin.proto",
 }
