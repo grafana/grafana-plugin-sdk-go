@@ -77,6 +77,8 @@ func TestResponseEncoder(t *testing.T) {
 }
 
 func checkResultOrder(t *testing.T, qdr *backend.QueryDataResults, expectedOrder ...string) {
+	t.Helper()
+
 	raw, err := json.Marshal(qdr)
 	require.NoError(t, err)
 
