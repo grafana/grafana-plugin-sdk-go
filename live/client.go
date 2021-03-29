@@ -13,11 +13,19 @@ import (
 // Client allows communicating with Live API.
 type Client struct {
 	grafanaURL string
+	apiKey     string
 	httpClient *http.Client
 }
 
 // ClientOption modifies Client behaviour.
 type ClientOption func(*Client)
+
+// WithAPIKey allows setting API key to use.
+func WithAPIKey(apiKey string) ClientOption {
+	return func(h *Client) {
+		h.apiKey = apiKey
+	}
+}
 
 // WithHTTPClient allows setting custom http.Client to use.
 func WithHTTPClient(client *http.Client) ClientOption {
@@ -72,6 +80,7 @@ func (c *Client) Publish(ctx context.Context, channel string, data json.RawMessa
 	if err != nil {
 		return PublishResult{}, err
 	}
+	req.Header.Set("Authorization", "Bearer "+c.apiKey)
 	resp, err := c.httpClient.Do(req)
 	if err != nil {
 		return PublishResult{}, err
