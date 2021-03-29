@@ -134,29 +134,43 @@ func writeDataResponseJSON(dr *DataResponse, refID string, stream *jsoniter.Stre
 func writeQueryDataResultsJSON(qdr *QueryDataResults, stream *jsoniter.Stream) {
 	stream.WriteObjectStart()
 	if qdr.Results != nil {
+		wrote := make(map[string]struct{}, len(qdr.Results))
 		stream.WriteObjectField("results")
 		stream.WriteArrayStart()
 		started := false
 		if len(qdr.Order) > 0 {
 			for _, id := range qdr.Order {
+				_, ok := wrote[id]
+				if ok {
+					continue // already wrote that key
+				}
+
 				if started {
 					stream.WriteMore()
 				}
 				res, ok := qdr.Results[id]
 				if ok {
 					writeDataResponseJSON(&res, id, stream)
+					wrote[id] = struct{}{}
 					started = true
 				}
 			}
-		} else {
-			for id, res := range qdr.Results {
-				if started {
-					stream.WriteMore()
-				}
-				obj := res // avoid implicit memory
-				writeDataResponseJSON(&obj, id, stream)
-				started = true
+		}
+
+		// Make sure all keys in the result are written
+		for id, res := range qdr.Results {
+			_, ok := wrote[id]
+			if ok {
+				continue // already wrote that key
 			}
+
+			if started {
+				stream.WriteMore()
+			}
+			obj := res // avoid implicit memory
+			writeDataResponseJSON(&obj, id, stream)
+			wrote[id] = struct{}{}
+			started = true
 		}
 		stream.WriteArrayEnd()
 	}
