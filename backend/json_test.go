@@ -52,7 +52,7 @@ func TestResponseEncoder(t *testing.T) {
 	require.NoError(t, err)
 
 	str = string(b)
-	require.Equal(t, `{"results":[{"refId":"A","frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"bool","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}]}`, str)
+	require.Equal(t, `{"results":{"A":{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"bool","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
 
 	// Read the parsed result and make sure it is the same
 	copy := &backend.QueryDataResponse{}
@@ -74,61 +74,6 @@ func TestResponseEncoder(t *testing.T) {
 			}
 		}
 	}
-}
-
-func checkResultOrder(t *testing.T, qdr *backend.QueryDataResults, expectedOrder ...string) {
-	t.Helper()
-
-	raw, err := json.Marshal(qdr)
-	require.NoError(t, err)
-
-	dummy := make(map[string]interface{})
-	err = json.Unmarshal(raw, &dummy)
-	require.NoError(t, err)
-
-	arr, ok := dummy["results"].([]interface{})
-	require.True(t, ok)
-
-	require.Equal(t, len(expectedOrder), len(arr))
-
-	found := make([]string, 0)
-	for idx := range arr {
-		res, ok := arr[idx].(map[string]interface{})
-		require.True(t, ok)
-
-		key, ok := res["refId"].(string)
-		require.True(t, ok)
-
-		found = append(found, key)
-	}
-
-	require.EqualValues(t, expectedOrder, found)
-}
-
-// TestResponseEncoder makes sure that the JSON produced from arrow and dataframes match
-func TestResponseEncoderForOrder(t *testing.T) {
-	rsp := backend.NewQueryDataResponse()
-	rsp.Responses["A"] = backend.DataResponse{}
-	rsp.Responses["B"] = backend.DataResponse{}
-
-	qdr := &backend.QueryDataResults{
-		Results: rsp.Responses,
-	}
-	checkResultOrder(t, qdr, "A", "B")
-
-	qdr = &backend.QueryDataResults{
-		Order:   []string{"B", "A"},
-		Results: rsp.Responses,
-	}
-	checkResultOrder(t, qdr, "B", "A")
-
-	// Add a value but not in the order
-	rsp.Responses["C"] = backend.DataResponse{}
-	qdr = &backend.QueryDataResults{
-		Order:   []string{"C"},
-		Results: rsp.Responses,
-	}
-	checkResultOrder(t, qdr, "C", "A", "B")
 }
 
 func TestDataResponseMarshalJSONConcurrent(t *testing.T) {

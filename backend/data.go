@@ -77,21 +77,14 @@ func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	s := &QueryDataResults{
-		Results: r.Responses,
-	}
-	writeQueryDataResultsJSON(s, stream)
+	writeQueryDataResponseJSON(&r, stream)
 	return stream.Buffer(), stream.Error
 }
 
 // UnmarshalJSON will read JSON into a QueryDataResponse
 func (r *QueryDataResponse) UnmarshalJSON(b []byte) error {
 	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
-	qdr := QueryDataResults{}
-	readQueryDataResultsJSON(&qdr, iter)
-	if iter.Error == nil {
-		r.Responses = qdr.Results
-	}
+	readQueryDataResultsJSON(r, iter)
 	return iter.Error
 }
 
@@ -124,7 +117,7 @@ func (r DataResponse) MarshalJSON() ([]byte, error) {
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	writeDataResponseJSON(&r, "", stream)
+	writeDataResponseJSON(&r, stream)
 	return stream.Buffer(), stream.Error
 }
 
