@@ -26,6 +26,7 @@ const jsonKeyData = "data"
 
 func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
+	jsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
 }
 
 type dataFrameCodec struct{}
@@ -41,6 +42,19 @@ func (codec *dataFrameCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream)
 	if stream.Error == nil && err != nil {
 		stream.Error = err
 	}
+}
+
+func (codec *dataFrameCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+	frame := Frame{}
+	err := readDataFrameJSON(&frame, iter)
+	if err != nil {
+		// keep existing iter error if it exists
+		if iter.Error == nil {
+			iter.Error = err
+		}
+		return
+	}
+	*((*Frame)(ptr)) = frame
 }
 
 // FrameToJSON writes a frame to JSON.
@@ -80,9 +94,7 @@ type schemaField struct {
 	TypeInfo fieldTypeInfo `json:"typeInfo,omitempty"`
 }
 
-func readDataFrameJSON(frame *Frame, body []byte) error {
-	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, body)
-
+func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
 		switch l1Field {
 		case jsonKeySchema:

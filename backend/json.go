@@ -1,8 +1,10 @@
 package backend
 
 import (
+	"fmt"
 	"unsafe"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -35,6 +37,12 @@ func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter
 	writeQueryDataResponseJSON(qdr, stream)
 }
 
+func (codec *queryDataResponseCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+	qdr := QueryDataResponse{}
+	readQueryDataResultsJSON(&qdr, iter)
+	*((*QueryDataResponse)(ptr)) = qdr
+}
+
 //-----------------------------------------------------------------
 // Private stream readers
 //-----------------------------------------------------------------
@@ -42,7 +50,11 @@ func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter
 func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	stream.WriteObjectStart()
 	started := false
+
 	if dr.Error != nil {
+		if started {
+			stream.WriteMore()
+		}
 		stream.WriteObjectField("error")
 		stream.WriteString(dr.Error.Error())
 		started = true
@@ -71,19 +83,75 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 
 func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *jsoniter.Stream) {
 	stream.WriteObjectStart()
-	if qdr.Responses != nil {
-		stream.WriteObjectField("responses")
-		stream.WriteObjectStart()
-		started := false
-		for id, res := range qdr.Responses {
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField(id)
-			stream.WriteVal(res)
-			started = true
+	stream.WriteObjectField("results")
+	stream.WriteObjectStart()
+	started := false
+
+	// Make sure all keys in the result are written
+	for id, res := range qdr.Responses {
+		if started {
+			stream.WriteMore()
 		}
-		stream.WriteObjectEnd()
+		stream.WriteObjectField(id)
+		obj := res // avoid implicit memory
+		writeDataResponseJSON(&obj, stream)
+		started = true
 	}
 	stream.WriteObjectEnd()
+
+	stream.WriteObjectEnd()
+}
+
+//-----------------------------------------------------------------
+// Private stream readers
+//-----------------------------------------------------------------
+
+func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
+	found := false
+
+	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+		switch l1Field {
+		case "results":
+			if found {
+				iter.ReportError("read results", "already found results")
+				return
+			}
+			found = true
+
+			qdr.Responses = make(Responses)
+
+			for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+				dr := DataResponse{}
+				readDataResponseJSON(&dr, iter)
+				qdr.Responses[l2Field] = dr
+			}
+
+		default:
+			iter.ReportError("bind l1", "unexpected field: "+l1Field)
+			return
+		}
+	}
+}
+
+func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
+	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+		switch l2Field {
+		case "error":
+			rsp.Error = fmt.Errorf(iter.ReadString())
+
+		case "frames":
+			for iter.ReadArray() {
+				frame := &data.Frame{}
+				iter.ReadVal(frame)
+				if iter.Error != nil {
+					return
+				}
+				rsp.Frames = append(rsp.Frames, frame)
+			}
+
+		default:
+			iter.ReportError("bind l2", "unexpected field: "+l2Field)
+			return
+		}
+	}
 }
