@@ -333,12 +333,18 @@ var Diagnostics_ServiceDesc = grpc.ServiceDesc{
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StreamClient interface {
-	// Called when a user tries to connect to a plugin/datasource managed channel.
-	CanSubscribeToStream(ctx context.Context, in *SubscribeToStreamRequest, opts ...grpc.CallOption) (*SubscribeToStreamResponse, error)
-	// RunStream will be initiated by Grafana to consume a stream from a plugin.
-	// For streams with keepalive set this will only be called once the first client
-	// successfully subscribed to a stream channel. And when there are no longer any
-	// subscribers, the call will be terminated by Grafana.
+	// SubscribeStream called when a user tries to subscribe to a plugin/datasource
+	// managed channel path.
+	SubscribeStream(ctx context.Context, in *SubscribeStreamRequest, opts ...grpc.CallOption) (*SubscribeStreamResponse, error)
+	// PublishStream called when a user tries to publish to a plugin/datasource
+	// managed channel path.
+	PublishStream(ctx context.Context, in *PublishStreamRequest, opts ...grpc.CallOption) (*PublishStreamResponse, error)
+	// RunStream will be initiated by Grafana to consume a stream where keepalive
+	// option set to true. In this case RunStream will only be called once for the
+	// first client successfully subscribed to a channel path. When Grafana detects
+	// that there are no longer any subscribers inside a channel, the call will be
+	// terminated until next active subscriber appears. Call termination can happen
+	// with a delay.
 	RunStream(ctx context.Context, in *RunStreamRequest, opts ...grpc.CallOption) (Stream_RunStreamClient, error)
 }
 
@@ -350,9 +356,18 @@ func NewStreamClient(cc grpc.ClientConnInterface) StreamClient {
 	return &streamClient{cc}
 }
 
-func (c *streamClient) CanSubscribeToStream(ctx context.Context, in *SubscribeToStreamRequest, opts ...grpc.CallOption) (*SubscribeToStreamResponse, error) {
-	out := new(SubscribeToStreamResponse)
-	err := c.cc.Invoke(ctx, "/pluginv2.Stream/CanSubscribeToStream", in, out, opts...)
+func (c *streamClient) SubscribeStream(ctx context.Context, in *SubscribeStreamRequest, opts ...grpc.CallOption) (*SubscribeStreamResponse, error) {
+	out := new(SubscribeStreamResponse)
+	err := c.cc.Invoke(ctx, "/pluginv2.Stream/SubscribeStream", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *streamClient) PublishStream(ctx context.Context, in *PublishStreamRequest, opts ...grpc.CallOption) (*PublishStreamResponse, error) {
+	out := new(PublishStreamResponse)
+	err := c.cc.Invoke(ctx, "/pluginv2.Stream/PublishStream", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -395,12 +410,18 @@ func (x *streamRunStreamClient) Recv() (*StreamPacket, error) {
 // All implementations should embed UnimplementedStreamServer
 // for forward compatibility
 type StreamServer interface {
-	// Called when a user tries to connect to a plugin/datasource managed channel.
-	CanSubscribeToStream(context.Context, *SubscribeToStreamRequest) (*SubscribeToStreamResponse, error)
-	// RunStream will be initiated by Grafana to consume a stream from a plugin.
-	// For streams with keepalive set this will only be called once the first client
-	// successfully subscribed to a stream channel. And when there are no longer any
-	// subscribers, the call will be terminated by Grafana.
+	// SubscribeStream called when a user tries to subscribe to a plugin/datasource
+	// managed channel path.
+	SubscribeStream(context.Context, *SubscribeStreamRequest) (*SubscribeStreamResponse, error)
+	// PublishStream called when a user tries to publish to a plugin/datasource
+	// managed channel path.
+	PublishStream(context.Context, *PublishStreamRequest) (*PublishStreamResponse, error)
+	// RunStream will be initiated by Grafana to consume a stream where keepalive
+	// option set to true. In this case RunStream will only be called once for the
+	// first client successfully subscribed to a channel path. When Grafana detects
+	// that there are no longer any subscribers inside a channel, the call will be
+	// terminated until next active subscriber appears. Call termination can happen
+	// with a delay.
 	RunStream(*RunStreamRequest, Stream_RunStreamServer) error
 }
 
@@ -408,8 +429,11 @@ type StreamServer interface {
 type UnimplementedStreamServer struct {
 }
 
-func (UnimplementedStreamServer) CanSubscribeToStream(context.Context, *SubscribeToStreamRequest) (*SubscribeToStreamResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CanSubscribeToStream not implemented")
+func (UnimplementedStreamServer) SubscribeStream(context.Context, *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method SubscribeStream not implemented")
+}
+func (UnimplementedStreamServer) PublishStream(context.Context, *PublishStreamRequest) (*PublishStreamResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method PublishStream not implemented")
 }
 func (UnimplementedStreamServer) RunStream(*RunStreamRequest, Stream_RunStreamServer) error {
 	return status.Errorf(codes.Unimplemented, "method RunStream not implemented")
@@ -426,20 +450,38 @@ func RegisterStreamServer(s grpc.ServiceRegistrar, srv StreamServer) {
 	s.RegisterService(&Stream_ServiceDesc, srv)
 }
 
-func _Stream_CanSubscribeToStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SubscribeToStreamRequest)
+func _Stream_SubscribeStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(SubscribeStreamRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StreamServer).CanSubscribeToStream(ctx, in)
+		return srv.(StreamServer).SubscribeStream(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pluginv2.Stream/CanSubscribeToStream",
+		FullMethod: "/pluginv2.Stream/SubscribeStream",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StreamServer).CanSubscribeToStream(ctx, req.(*SubscribeToStreamRequest))
+		return srv.(StreamServer).SubscribeStream(ctx, req.(*SubscribeStreamRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Stream_PublishStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(PublishStreamRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StreamServer).PublishStream(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pluginv2.Stream/PublishStream",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StreamServer).PublishStream(ctx, req.(*PublishStreamRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -473,8 +515,12 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*StreamServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CanSubscribeToStream",
-			Handler:    _Stream_CanSubscribeToStream_Handler,
+			MethodName: "SubscribeStream",
+			Handler:    _Stream_SubscribeStream_Handler,
+		},
+		{
+			MethodName: "PublishStream",
+			Handler:    _Stream_PublishStream_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

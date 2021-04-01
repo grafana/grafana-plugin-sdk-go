@@ -20,15 +20,26 @@ func newStreamSDKAdapter(handler StreamHandler) *streamSDKAdapter {
 	}
 }
 
-func (a *streamSDKAdapter) CanSubscribeToStream(ctx context.Context, protoReq *pluginv2.SubscribeToStreamRequest) (*pluginv2.SubscribeToStreamResponse, error) {
+func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *pluginv2.SubscribeStreamRequest) (*pluginv2.SubscribeStreamResponse, error) {
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
-	resp, err := a.streamHandler.CanSubscribeToStream(ctx, FromProto().SubscribeToStreamRequest(protoReq))
+	resp, err := a.streamHandler.SubscribeStream(ctx, FromProto().SubscribeStreamRequest(protoReq))
 	if err != nil {
 		return nil, err
 	}
-	return ToProto().SubscribeToStreamResponse(resp), nil
+	return ToProto().SubscribeStreamResponse(resp), nil
+}
+
+func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2.PublishStreamRequest) (*pluginv2.PublishStreamResponse, error) {
+	if a.streamHandler == nil {
+		return nil, status.Error(codes.Unimplemented, "not implemented")
+	}
+	resp, err := a.streamHandler.PublishStream(ctx, FromProto().PublishStreamRequest(protoReq))
+	if err != nil {
+		return nil, err
+	}
+	return ToProto().PublishStreamResponse(resp), nil
 }
 
 type streamPacketSenderFunc func(resp *StreamPacket) error

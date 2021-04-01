@@ -176,30 +176,68 @@ message CheckHealthResponse {
 //-----------------------------------------------------------------
 
 service Stream {
-  // Called when a user tries to connect to a plugin/datasource managed channel.
-  rpc CanSubscribeToStream(SubscribeToStreamRequest) returns (SubscribeToStreamResponse);
+  // SubscribeStream called when a user tries to subscribe to a plugin/datasource
+  // managed channel path.
+  rpc SubscribeStream(SubscribeStreamRequest) returns (SubscribeStreamResponse);
 
-  // RunStream will be initiated by Grafana to consume a stream from a plugin.
-  // For streams with keepalive set this will only be called once the first client
-  // successfully subscribed to a stream channel. And when there are no longer any
-  // subscribers, the call will be terminated by Grafana.
+  // PublishStream called when a user tries to publish to a plugin/datasource
+  // managed channel path.
+  rpc PublishStream(PublishStreamRequest) returns (PublishStreamResponse);
+
+  // RunStream will be initiated by Grafana to consume a stream where keepalive
+  // option set to true. In this case RunStream will only be called once for the
+  // first client successfully subscribed to a channel path. When Grafana detects
+  // that there are no longer any subscribers inside a channel, the call will be
+  // terminated until next active subscriber appears. Call termination can happen
+  // with a delay.
   rpc RunStream(RunStreamRequest) returns (stream StreamPacket);
 }
 
-message SubscribeToStreamRequest {
+message SubscribeStreamRequest {
   PluginContext pluginContext = 1;
 
+  // path part of channel.
   string path = 2;
 }
 
-message SubscribeToStreamResponse {
+message SubscribeStreamResponse {
+  // ok should be true if subscribe is permitted, false otherwise.
   bool ok = 1;
-  string message = 2;
+  // human-friendly error message if ok is false.
+  string error_message = 2;
+  // schema for a channel path.
+  bytes schema = 3;
+  // keepalive tells Grafana to use RunStream call to consume
+  // streaming packets from a plugin.
+  bool keepalive = 4;
+}
+
+message PublishStreamRequest {
+  PluginContext pluginContext = 1;
+
+  // path part of a channel.
+  string path = 2;
+  // data that user wants to publish into a stream
+  // (only JSON-encoded at the moment).
+  bytes data = 3;
+}
+
+message PublishStreamResponse {
+  // ok should be true if publish is permitted, false otherwise.
+  bool ok = 1;
+  // human-friendly error message if ok is false.
+  string error_message = 2;
+  // by default, it's a plugin responsibility to publish data
+  // into a stream upon PublishStreamRequest but setting fallthrough
+  // to true will make Grafana publish data itself (i.e. plugin just
+  // works as permission proxy in this case).
+  bool fallthrough = 3;
 }
 
 message RunStreamRequest {
   PluginContext pluginContext = 1;
 
+  // path part of a channel.
   string path = 2;
 }
 
@@ -207,7 +245,9 @@ message StreamPacket {
   enum StreamPacketType {
     DATA_FRAME = 0;
   }
+  // type of payload, at the moment we only support JSON-encoded
+  // data frames.
   StreamPacketType type = 1;
-  bytes header = 2;
-  bytes payload = 3;
+  // payload to publish into a channel.
+  bytes payload = 2;
 }
