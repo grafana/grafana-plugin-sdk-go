@@ -203,19 +203,36 @@ func (f ConvertFromProtobuf) CollectMetricsResponse(protoResp *pluginv2.CollectM
 	}
 }
 
-// SubscribeToStreamRequest ...
-func (f ConvertFromProtobuf) SubscribeToStreamRequest(protoReq *pluginv2.SubscribeToStreamRequest) *SubscribeToStreamRequest {
-	return &SubscribeToStreamRequest{
+// SubscribeStreamRequest ...
+func (f ConvertFromProtobuf) SubscribeStreamRequest(protoReq *pluginv2.SubscribeStreamRequest) *SubscribeStreamRequest {
+	return &SubscribeStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
 	}
 }
 
-// SubscribeToStreamResponse ...
-func (f ConvertFromProtobuf) SubscribeToStreamResponse(protoReq *pluginv2.SubscribeToStreamResponse) *SubscribeToStreamResponse {
-	return &SubscribeToStreamResponse{
-		OK:      protoReq.GetOk(),
-		Message: protoReq.GetMessage(),
+// SubscribeStreamResponse ...
+func (f ConvertFromProtobuf) SubscribeStreamResponse(protoReq *pluginv2.SubscribeStreamResponse) *SubscribeStreamResponse {
+	return &SubscribeStreamResponse{
+		Status:       SubscribeStreamStatus(protoReq.GetStatus()),
+		Data:         protoReq.GetData(),
+		UseRunStream: protoReq.GetUseRunStream(),
+	}
+}
+
+// PublishStreamRequest ...
+func (f ConvertFromProtobuf) PublishStreamRequest(protoReq *pluginv2.PublishStreamRequest) *PublishStreamRequest {
+	return &PublishStreamRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Path:          protoReq.GetPath(),
+	}
+}
+
+// PublishStreamResponse ...
+func (f ConvertFromProtobuf) PublishStreamResponse(protoReq *pluginv2.PublishStreamResponse) *PublishStreamResponse {
+	return &PublishStreamResponse{
+		Status: PublishStreamStatus(protoReq.GetStatus()),
+		Data:   protoReq.GetData(),
 	}
 }
 
@@ -230,8 +247,6 @@ func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamReques
 // StreamPacket ...
 func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *StreamPacket {
 	return &StreamPacket{
-		Type:    StreamPacketType(protoReq.Type),
-		Header:  protoReq.GetHeader(),
-		Payload: protoReq.GetPayload(),
+		Data: protoReq.GetData(),
 	}
 }

@@ -42,8 +42,12 @@ type streamGRPCServer struct {
 	server StreamServer
 }
 
-func (s streamGRPCServer) CanSubscribeToStream(ctx context.Context, request *pluginv2.SubscribeToStreamRequest) (*pluginv2.SubscribeToStreamResponse, error) {
-	return s.server.CanSubscribeToStream(ctx, request)
+func (s streamGRPCServer) SubscribeStream(ctx context.Context, request *pluginv2.SubscribeStreamRequest) (*pluginv2.SubscribeStreamResponse, error) {
+	return s.server.SubscribeStream(ctx, request)
+}
+
+func (s streamGRPCServer) PublishStream(ctx context.Context, request *pluginv2.PublishStreamRequest) (*pluginv2.PublishStreamResponse, error) {
+	return s.server.PublishStream(ctx, request)
 }
 
 func (s streamGRPCServer) RunStream(request *pluginv2.RunStreamRequest, server pluginv2.Stream_RunStreamServer) error {
@@ -54,8 +58,12 @@ type streamGRPCClient struct {
 	client StreamClient
 }
 
-func (s streamGRPCClient) CanSubscribeToStream(ctx context.Context, in *pluginv2.SubscribeToStreamRequest, opts ...grpc.CallOption) (*pluginv2.SubscribeToStreamResponse, error) {
-	return s.client.CanSubscribeToStream(ctx, in, opts...)
+func (s streamGRPCClient) SubscribeStream(ctx context.Context, in *pluginv2.SubscribeStreamRequest, opts ...grpc.CallOption) (*pluginv2.SubscribeStreamResponse, error) {
+	return s.client.SubscribeStream(ctx, in, opts...)
+}
+
+func (s streamGRPCClient) PublishStream(ctx context.Context, in *pluginv2.PublishStreamRequest, opts ...grpc.CallOption) (*pluginv2.PublishStreamResponse, error) {
+	return s.client.PublishStream(ctx, in, opts...)
 }
 
 func (s streamGRPCClient) RunStream(ctx context.Context, in *pluginv2.RunStreamRequest, opts ...grpc.CallOption) (pluginv2.Stream_RunStreamClient, error) {
