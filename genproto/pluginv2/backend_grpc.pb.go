@@ -334,12 +334,14 @@ var Diagnostics_ServiceDesc = grpc.ServiceDesc{
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StreamClient interface {
 	// SubscribeStream called when a user tries to subscribe to a plugin/datasource
-	// managed channel path.
+	// managed channel path – thus plugin can check subscribe permissions and communicate
+	// options with Grafana Core.
 	SubscribeStream(ctx context.Context, in *SubscribeStreamRequest, opts ...grpc.CallOption) (*SubscribeStreamResponse, error)
 	// PublishStream called when a user tries to publish to a plugin/datasource
-	// managed channel path.
+	// managed channel path. Here plugin can check publish permissions and
+	// modify publication data if required.
 	PublishStream(ctx context.Context, in *PublishStreamRequest, opts ...grpc.CallOption) (*PublishStreamResponse, error)
-	// RunStream will be initiated by Grafana to consume a stream where keepalive
+	// RunStream will be initiated by Grafana to consume a stream where use_run_stream
 	// option set to true. In this case RunStream will only be called once for the
 	// first client successfully subscribed to a channel path. When Grafana detects
 	// that there are no longer any subscribers inside a channel, the call will be
@@ -411,12 +413,14 @@ func (x *streamRunStreamClient) Recv() (*StreamPacket, error) {
 // for forward compatibility
 type StreamServer interface {
 	// SubscribeStream called when a user tries to subscribe to a plugin/datasource
-	// managed channel path.
+	// managed channel path – thus plugin can check subscribe permissions and communicate
+	// options with Grafana Core.
 	SubscribeStream(context.Context, *SubscribeStreamRequest) (*SubscribeStreamResponse, error)
 	// PublishStream called when a user tries to publish to a plugin/datasource
-	// managed channel path.
+	// managed channel path. Here plugin can check publish permissions and
+	// modify publication data if required.
 	PublishStream(context.Context, *PublishStreamRequest) (*PublishStreamResponse, error)
-	// RunStream will be initiated by Grafana to consume a stream where keepalive
+	// RunStream will be initiated by Grafana to consume a stream where use_run_stream
 	// option set to true. In this case RunStream will only be called once for the
 	// first client successfully subscribed to a channel path. When Grafana detects
 	// that there are no longer any subscribers inside a channel, the call will be

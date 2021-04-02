@@ -208,8 +208,7 @@ func (t ConvertToProtobuf) RunStreamRequest(req *RunStreamRequest) *pluginv2.Run
 // StreamPacket ...
 func (t ConvertToProtobuf) StreamPacket(p *StreamPacket) *pluginv2.StreamPacket {
 	protoReq := &pluginv2.StreamPacket{
-		Type:    pluginv2.StreamPacket_StreamPacketType(p.Type),
-		Payload: p.Payload,
+		Data: p.Data,
 	}
 	return protoReq
 }
@@ -225,10 +224,9 @@ func (t ConvertToProtobuf) SubscribeStreamRequest(req *SubscribeStreamRequest) *
 // SubscribeStreamResponse ...
 func (t ConvertToProtobuf) SubscribeStreamResponse(req *SubscribeStreamResponse) *pluginv2.SubscribeStreamResponse {
 	return &pluginv2.SubscribeStreamResponse{
-		Ok:           req.OK,
-		ErrorMessage: req.ErrorMessage,
-		Schema:       req.Schema,
-		Keepalive:    req.Keepalive,
+		Status:       pluginv2.SubscribeStreamResponse_Status(req.Status),
+		Data:         req.Data,
+		UseRunStream: req.UseRunStream,
 	}
 }
 
@@ -244,8 +242,7 @@ func (t ConvertToProtobuf) PublishStreamRequest(req *PublishStreamRequest) *plug
 // PublishStreamResponse ...
 func (t ConvertToProtobuf) PublishStreamResponse(req *PublishStreamResponse) *pluginv2.PublishStreamResponse {
 	return &pluginv2.PublishStreamResponse{
-		Ok:           req.OK,
-		ErrorMessage: req.ErrorMessage,
-		Fallthrough:  req.Fallthrough,
+		Status: pluginv2.PublishStreamResponse_Status(req.Status),
+		Data:   req.Data,
 	}
 }

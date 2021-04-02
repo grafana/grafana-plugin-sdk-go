@@ -214,10 +214,9 @@ func (f ConvertFromProtobuf) SubscribeStreamRequest(protoReq *pluginv2.Subscribe
 // SubscribeStreamResponse ...
 func (f ConvertFromProtobuf) SubscribeStreamResponse(protoReq *pluginv2.SubscribeStreamResponse) *SubscribeStreamResponse {
 	return &SubscribeStreamResponse{
-		OK:           protoReq.GetOk(),
-		ErrorMessage: protoReq.GetErrorMessage(),
-		Schema:       protoReq.GetSchema(),
-		Keepalive:    protoReq.GetKeepalive(),
+		Status:       SubscribeStreamStatus(protoReq.GetStatus()),
+		Data:         protoReq.GetData(),
+		UseRunStream: protoReq.GetUseRunStream(),
 	}
 }
 
@@ -232,9 +231,8 @@ func (f ConvertFromProtobuf) PublishStreamRequest(protoReq *pluginv2.PublishStre
 // PublishStreamResponse ...
 func (f ConvertFromProtobuf) PublishStreamResponse(protoReq *pluginv2.PublishStreamResponse) *PublishStreamResponse {
 	return &PublishStreamResponse{
-		OK:           protoReq.GetOk(),
-		ErrorMessage: protoReq.GetErrorMessage(),
-		Fallthrough:  protoReq.GetFallthrough(),
+		Status: PublishStreamStatus(protoReq.GetStatus()),
+		Data:   protoReq.GetData(),
 	}
 }
 
@@ -249,7 +247,6 @@ func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamReques
 // StreamPacket ...
 func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *StreamPacket {
 	return &StreamPacket{
-		Type:    StreamPacketType(protoReq.Type),
-		Payload: protoReq.GetPayload(),
+		Data: protoReq.GetData(),
 	}
 }

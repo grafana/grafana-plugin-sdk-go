@@ -177,14 +177,16 @@ message CheckHealthResponse {
 
 service Stream {
   // SubscribeStream called when a user tries to subscribe to a plugin/datasource
-  // managed channel path.
+  // managed channel path – thus plugin can check subscribe permissions and communicate
+  // options with Grafana Core.
   rpc SubscribeStream(SubscribeStreamRequest) returns (SubscribeStreamResponse);
 
   // PublishStream called when a user tries to publish to a plugin/datasource
-  // managed channel path.
+  // managed channel path. Here plugin can check publish permissions and
+  // modify publication data if required.
   rpc PublishStream(PublishStreamRequest) returns (PublishStreamResponse);
 
-  // RunStream will be initiated by Grafana to consume a stream where keepalive
+  // RunStream will be initiated by Grafana to consume a stream where use_run_stream
   // option set to true. In this case RunStream will only be called once for the
   // first client successfully subscribed to a channel path. When Grafana detects
   // that there are no longer any subscribers inside a channel, the call will be
@@ -201,15 +203,22 @@ message SubscribeStreamRequest {
 }
 
 message SubscribeStreamResponse {
-  // ok should be true if subscribe is permitted, false otherwise.
-  bool ok = 1;
-  // human-friendly error message if ok is false.
-  string error_message = 2;
-  // schema for a channel path.
-  bytes schema = 3;
-  // keepalive tells Grafana to use RunStream call to consume
-  // streaming packets from a plugin.
-  bool keepalive = 4;
+  enum Status {
+    OK = 0;
+    NOT_FOUND = 1;
+    PERMISSION_DENIED = 2;
+  }
+  // status of subscribe response.
+  Status status = 1;
+
+  // JSON-encoded data to return to a client in a successful
+  // subscription result.
+  // For data frame streams this can be a JSON-encoded frame schema.
+  bytes data = 2;
+
+  // use_run_stream tells Grafana to use RunStream call to consume streaming
+  // packets from a plugin. See comments for RunStream for details.
+  bool use_run_stream = 3;
 }
 
 message PublishStreamRequest {
@@ -223,15 +232,20 @@ message PublishStreamRequest {
 }
 
 message PublishStreamResponse {
-  // ok should be true if publish is permitted, false otherwise.
-  bool ok = 1;
-  // human-friendly error message if ok is false.
-  string error_message = 2;
-  // by default, it's a plugin responsibility to publish data
-  // into a stream upon PublishStreamRequest but setting fallthrough
-  // to true will make Grafana publish data itself (i.e. plugin just
-  // works as permission proxy in this case).
-  bool fallthrough = 3;
+  enum Status {
+    OK = 0;
+    NOT_FOUND = 1;
+    PERMISSION_DENIED = 2;
+  }
+  // status of publish response.
+  Status status = 1;
+
+  // JSON-encoded data to publish into a channel. This can be
+  // unmodified data from a PublishRequest or any modified data.
+  // If empty data returned here then Grafana won't publish data
+  // to a channel itself but will return a successful result to a
+  // client (supposing plugin published data to a channel itself).
+  bytes data = 2;
 }
 
 message RunStreamRequest {
@@ -242,12 +256,6 @@ message RunStreamRequest {
 }
 
 message StreamPacket {
-  enum StreamPacketType {
-    DATA_FRAME = 0;
-  }
-  // type of payload, at the moment we only support JSON-encoded
-  // data frames.
-  StreamPacketType type = 1;
-  // payload to publish into a channel.
-  bytes payload = 2;
+  // JSON-encoded data to publish into a channel.
+  bytes data = 1;
 }

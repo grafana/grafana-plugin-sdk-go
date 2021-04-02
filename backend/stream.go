@@ -29,12 +29,19 @@ type SubscribeStreamRequest struct {
 	Path          string
 }
 
+type SubscribeStreamStatus int32
+
+const (
+	SubscribeStreamOK               SubscribeStreamStatus = 0
+	SubscribeStreamNotFound                               = 1
+	SubscribeStreamPermissionDenied                       = 2
+)
+
 // SubscribeStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
 type SubscribeStreamResponse struct {
-	OK           bool
-	ErrorMessage string
-	Schema       json.RawMessage
-	Keepalive    bool
+	Status       SubscribeStreamStatus
+	Data         json.RawMessage
+	UseRunStream bool
 }
 
 // PublishStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -44,11 +51,18 @@ type PublishStreamRequest struct {
 	Data          json.RawMessage
 }
 
+type PublishStreamStatus int32
+
+const (
+	PublishStreamOK               PublishStreamStatus = 0
+	PublishStreamNotFound                             = 1
+	PublishStreamPermissionDenied                     = 2
+)
+
 // PublishStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
 type PublishStreamResponse struct {
-	OK           bool
-	ErrorMessage string
-	Fallthrough  bool
+	Status PublishStreamStatus
+	Data   json.RawMessage
 }
 
 // RunStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -62,9 +76,7 @@ type StreamPacketType int32
 
 // StreamPacket is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamPacket struct {
-	Type    StreamPacketType
-	Header  []byte
-	Payload []byte
+	Data json.RawMessage
 }
 
 // StreamPacketSender is EXPERIMENTAL and is a subject to change till Grafana 8.
