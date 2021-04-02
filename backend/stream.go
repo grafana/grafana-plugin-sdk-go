@@ -9,12 +9,14 @@ import (
 // This is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamHandler interface {
 	// SubscribeStream called when a user tries to subscribe to a plugin/datasource
-	// managed channel path.
+	// managed channel path – thus plugin can check subscribe permissions and communicate
+	// options with Grafana Core.
 	SubscribeStream(context.Context, *SubscribeStreamRequest) (*SubscribeStreamResponse, error)
 	// PublishStream called when a user tries to publish to a plugin/datasource
-	// managed channel path.
+	// managed channel path. Here plugin can check publish permissions and
+	// modify publication data if required.
 	PublishStream(context.Context, *PublishStreamRequest) (*PublishStreamResponse, error)
-	// RunStream will be initiated by Grafana to consume a stream where keepalive
+	// RunStream will be initiated by Grafana to consume a stream where use_run_stream
 	// option set to true. In this case RunStream will only be called once for the
 	// first client successfully subscribed to a channel path. When Grafana detects
 	// that there are no longer any subscribers inside a channel, the call will be
@@ -29,12 +31,16 @@ type SubscribeStreamRequest struct {
 	Path          string
 }
 
+// SubscribeStreamStatus is a status of subscription response.
 type SubscribeStreamStatus int32
 
 const (
-	SubscribeStreamOK               SubscribeStreamStatus = 0
-	SubscribeStreamNotFound                               = 1
-	SubscribeStreamPermissionDenied                       = 2
+	// SubscribeStreamOK means subscription is allowed.
+	SubscribeStreamOK SubscribeStreamStatus = 0
+	// SubscribeStreamNotFound means stream does not exist at all.
+	SubscribeStreamNotFound = 1
+	// SubscribeStreamPermissionDenied means that user is not allowed to subscribe.
+	SubscribeStreamPermissionDenied = 2
 )
 
 // SubscribeStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -51,12 +57,16 @@ type PublishStreamRequest struct {
 	Data          json.RawMessage
 }
 
+// PublishStreamStatus is a status of publication response.
 type PublishStreamStatus int32
 
 const (
-	PublishStreamOK               PublishStreamStatus = 0
-	PublishStreamNotFound                             = 1
-	PublishStreamPermissionDenied                     = 2
+	// PublishStreamOK means publication is allowed.
+	PublishStreamOK PublishStreamStatus = 0
+	// PublishStreamNotFound means stream does not exist at all.
+	PublishStreamNotFound = 1
+	// PublishStreamPermissionDenied means that user is not allowed to publish.
+	PublishStreamPermissionDenied = 2
 )
 
 // PublishStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
