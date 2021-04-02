@@ -1,143 +1,66 @@
 package live
 
 import (
-	"fmt"
-	"time"
+	"context"
+	"encoding/json"
+	"log"
 
-	"github.com/centrifugal/centrifuge-go"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/server"
+
+	"google.golang.org/grpc"
 )
 
-// GrafanaLiveClient connects to the GrafanaLive server
-type GrafanaLiveClient struct {
-	connected bool
-	client    *centrifuge.Client
-	lastWarn  time.Time
-	channels  map[string]*GrafanaLiveChannel
-	Log       log.Logger
+// Client allows communicating with Live API.
+type Client struct {
+	grafanaURL string
+	apiKey     string
+	conn       *grpc.ClientConn
+	client     server.GrafanaClient
 }
 
-// GrafanaLiveChannel allows access to a channel within the server
-type GrafanaLiveChannel struct {
-	id         string
-	subscribed bool
-	client     *GrafanaLiveClient
-	sub        *centrifuge.Subscription
-}
+// ClientOption modifies Client behaviour.
+type ClientOption func(*Client)
 
-// Subscribe will subscribe to a channel within the server
-func (c *GrafanaLiveClient) Subscribe(addr ChannelAddress) (*GrafanaLiveChannel, error) {
-	id := addr.ToChannelID()
-	if !addr.IsValid() {
-		return nil, fmt.Errorf("invalid channel: %s", id)
+// WithAPIKey allows setting API key to use.
+func WithAPIKey(apiKey string) ClientOption {
+	return func(h *Client) {
+		h.apiKey = apiKey
 	}
+}
 
-	sub, err := c.client.NewSubscription(id)
+// NewClient initializes Client.
+func NewClient(opts ...ClientOption) (*Client, error) {
+	var grpcOpts []grpc.DialOption
+	grpcOpts = append(grpcOpts, grpc.WithInsecure())
+	conn, err := grpc.Dial("localhost:10000", grpcOpts...)
 	if err != nil {
-		return nil, err
+		log.Fatalf("fail to dial: %v", err)
 	}
-
-	ch := &GrafanaLiveChannel{
-		id:     id,
-		client: c,
-		sub:    sub,
+	client := server.NewGrafanaClient(conn)
+	c := &Client{
+		conn:   conn,
+		client: client,
 	}
-
-	sub.OnSubscribeSuccess(ch)
-	sub.OnSubscribeError(ch)
-	sub.OnUnsubscribe(ch)
-
-	err = sub.Subscribe()
-	if err != nil {
-		return nil, err
+	for _, opt := range opts {
+		opt(c)
 	}
-	return ch, nil
+	return c, nil
 }
 
-// Publish sends the data to the channel
-func (c *GrafanaLiveChannel) Publish(data []byte) {
-	if !c.client.connected {
-		if time.Since(c.client.lastWarn) > time.Second*5 {
-			c.client.lastWarn = time.Now()
-			c.client.Log.Warn("Grafana live channel not connected", "id", c.id)
-		}
-		return
+func (c *Client) Close() error {
+	return c.conn.Close()
+}
+
+// PublishResult returned from Live server. This is empty at the moment,
+// but can be extended with fields later.
+type PublishResult struct{}
+
+// Publish data to a Live channel.
+func (c *Client) PublishStream(ctx context.Context, channel string, data json.RawMessage) (PublishResult, error) {
+	cmd := &server.PublishStreamRequest{
+		Channel: channel,
+		Data:    data,
 	}
-	_, err := c.sub.Publish(data)
-	if err != nil {
-		c.client.Log.Info("error publishing", "error", err)
-	}
-}
-
-//--------------------------------------------------------------------------------------
-// CLIENT
-//--------------------------------------------------------------------------------------
-
-type liveClientHandler struct {
-	client *GrafanaLiveClient
-}
-
-func (h *liveClientHandler) OnConnect(c *centrifuge.Client, e centrifuge.ConnectEvent) {
-	h.client.Log.Info("Connected to Grafana live", "clientId", e.ClientID)
-	h.client.connected = true
-}
-
-func (h *liveClientHandler) OnError(c *centrifuge.Client, e centrifuge.ErrorEvent) {
-	h.client.Log.Warn("Grafana live error", "error", e.Message)
-}
-
-func (h *liveClientHandler) OnDisconnect(c *centrifuge.Client, e centrifuge.DisconnectEvent) {
-	h.client.Log.Info("Disconnected from Grafana live", "reason", e.Reason)
-	h.client.connected = false
-}
-
-//--------------------------------------------------------------------------------------
-// Channel
-//--------------------------------------------------------------------------------------
-
-// OnSubscribeSuccess is called when the channel is subscribed
-func (c *GrafanaLiveChannel) OnSubscribeSuccess(sub *centrifuge.Subscription, e centrifuge.SubscribeSuccessEvent) {
-	c.subscribed = true
-	c.client.Log.Info("Subscribed", "channel", sub.Channel())
-}
-
-// OnSubscribeError is called when the channel has an error
-func (c *GrafanaLiveChannel) OnSubscribeError(sub *centrifuge.Subscription, e centrifuge.SubscribeErrorEvent) {
-	c.subscribed = false
-	c.client.Log.Warn("Subscription failed", "channel", sub.Channel(), "error", e.Error)
-}
-
-// OnUnsubscribe is called when the channel is unsubscribed
-func (c *GrafanaLiveChannel) OnUnsubscribe(sub *centrifuge.Subscription, e centrifuge.UnsubscribeEvent) {
-	c.subscribed = false
-	c.client.Log.Info("Unsubscribed", "channel", sub.Channel())
-}
-
-// InitGrafanaLiveClient starts a chat server
-func InitGrafanaLiveClient(conn ConnectionInfo) (*GrafanaLiveClient, error) {
-	url, err := conn.ToWebSocketURL()
-	if err != nil {
-		return nil, err
-	}
-	c := centrifuge.New(url, centrifuge.DefaultConfig())
-
-	glc := &GrafanaLiveClient{
-		client:   c,
-		channels: make(map[string]*GrafanaLiveChannel),
-		Log:      backend.Logger,
-	}
-	handler := &liveClientHandler{
-		client: glc,
-	}
-	c.OnConnect(handler)
-	c.OnError(handler)
-	c.OnDisconnect(handler)
-
-	err = c.Connect()
-	if err != nil {
-		return nil, err
-	}
-
-	return glc, nil
+	_, err := c.client.PublishStream(ctx, cmd)
+	return PublishResult{}, err
 }

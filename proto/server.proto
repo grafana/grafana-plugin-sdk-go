@@ -1,0 +1,15 @@
+syntax = "proto3";
+package server;
+
+option go_package = "./;server";
+
+message PublishStreamRequest {
+  string channel = 1;
+  bytes data = 2;
+}
+
+message PublishStreamResponse {}
+
+service Grafana {
+  rpc PublishStream(PublishStreamRequest) returns (PublishStreamResponse);
+}

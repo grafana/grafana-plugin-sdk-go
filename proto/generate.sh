@@ -18,6 +18,6 @@ protoc -I ./ \
   plugin.proto
 
 protoc -I ./ \
-  --go_out=../genproto/pluginapi \
-  --go-grpc_out=../genproto/pluginapi --go-grpc_opt=require_unimplemented_servers=false \
-  pluginapi.proto
+  --go_out=../genproto/server \
+  --go-grpc_out=../genproto/server --go-grpc_opt=require_unimplemented_servers=false \
+  server.proto
