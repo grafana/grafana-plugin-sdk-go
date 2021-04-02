@@ -35,12 +35,12 @@ type SubscribeStreamRequest struct {
 type SubscribeStreamStatus int32
 
 const (
-	// SubscribeStreamOK means subscription is allowed.
-	SubscribeStreamOK SubscribeStreamStatus = 0
-	// SubscribeStreamNotFound means stream does not exist at all.
-	SubscribeStreamNotFound = 1
-	// SubscribeStreamPermissionDenied means that user is not allowed to subscribe.
-	SubscribeStreamPermissionDenied = 2
+	// SubscribeStreamStatusOK means subscription is allowed.
+	SubscribeStreamStatusOK SubscribeStreamStatus = 0
+	// SubscribeStreamStatusNotFound means stream does not exist at all.
+	SubscribeStreamStatusNotFound = 1
+	// SubscribeStreamStatusPermissionDenied means that user is not allowed to subscribe.
+	SubscribeStreamStatusPermissionDenied = 2
 )
 
 // SubscribeStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -61,12 +61,12 @@ type PublishStreamRequest struct {
 type PublishStreamStatus int32
 
 const (
-	// PublishStreamOK means publication is allowed.
-	PublishStreamOK PublishStreamStatus = 0
-	// PublishStreamNotFound means stream does not exist at all.
-	PublishStreamNotFound = 1
-	// PublishStreamPermissionDenied means that user is not allowed to publish.
-	PublishStreamPermissionDenied = 2
+	// PublishStreamStatusOK means publication is allowed.
+	PublishStreamStatusOK PublishStreamStatus = 0
+	// PublishStreamStatusNotFound means stream does not exist at all.
+	PublishStreamStatusNotFound = 1
+	// PublishStreamStatusPermissionDenied means that user is not allowed to publish.
+	PublishStreamStatusPermissionDenied = 2
 )
 
 // PublishStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -80,9 +80,6 @@ type RunStreamRequest struct {
 	PluginContext PluginContext
 	Path          string
 }
-
-// StreamPacketType is EXPERIMENTAL and is a subject to change till Grafana 8.
-type StreamPacketType int32
 
 // StreamPacket is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamPacket struct {
