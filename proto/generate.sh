@@ -15,7 +15,7 @@ cd "$DIR"
 protoc -I ./ \
   --go_out=../genproto/pluginv2 \
   --go-grpc_out=../genproto/pluginv2 --go-grpc_opt=require_unimplemented_servers=false \
-  plugin.proto
+  backend.proto
 
 protoc -I ./ \
   --go_out=../genproto/server \
