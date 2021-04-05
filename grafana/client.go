@@ -66,11 +66,12 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	return c, nil
 }
 
+// Close underlying GRPC connection.
 func (c *Client) Close() error {
 	return c.conn.Close()
 }
 
-// Publish data to a Live channel.
+// PublishStream allows publishing data to a Live channel.
 func (c *Client) PublishStream(ctx context.Context, channel string, data json.RawMessage) (PublishResult, error) {
 	cmd := &server.PublishStreamRequest{
 		Channel: channel,
