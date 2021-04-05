@@ -1,4 +1,4 @@
-package backend
+package backend_test
 
 import (
 	"encoding/json"
@@ -6,11 +6,13 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
 )
 
-func testDataResponse() DataResponse {
+func testDataResponse() backend.DataResponse {
 	frames := data.Frames{
 		data.NewFrame("simple",
 			data.NewField("time", nil, []time.Time{
@@ -23,7 +25,7 @@ func testDataResponse() DataResponse {
 			data.NewField("value", nil, []float64{1.0}),
 		),
 	}
-	return DataResponse{
+	return backend.DataResponse{
 		Frames: frames,
 	}
 }
@@ -43,14 +45,35 @@ func TestResponseEncoder(t *testing.T) {
 	require.Equal(t, str, string(b2), "same result from pointer or object")
 
 	// Now the same thing in query data
-	qdr := NewQueryDataResponse()
+	qdr := backend.NewQueryDataResponse()
 	qdr.Responses["A"] = dr
 
 	b, err = json.Marshal(qdr)
 	require.NoError(t, err)
 
 	str = string(b)
-	require.Equal(t, `{"responses":{"A":{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"bool","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
+	require.Equal(t, `{"results":{"A":{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"bool","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
+
+	// Read the parsed result and make sure it is the same
+	copy := &backend.QueryDataResponse{}
+	err = json.Unmarshal(b, copy)
+	require.NoError(t, err)
+	require.Equal(t, len(qdr.Responses), len(copy.Responses))
+
+	// Check the final result
+	for k, val := range qdr.Responses {
+		other := copy.Responses[k]
+		require.Equal(t, len(val.Frames), len(other.Frames))
+
+		for idx := range val.Frames {
+			a := val.Frames[idx]
+			b := other.Frames[idx]
+
+			if diff := cmp.Diff(a, b, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+		}
+	}
 }
 
 func TestDataResponseMarshalJSONConcurrent(t *testing.T) {
@@ -73,7 +96,7 @@ func TestDataResponseMarshalJSONConcurrent(t *testing.T) {
 }
 
 func TestQueryDataResponseMarshalJSONConcurrent(t *testing.T) {
-	qdr := NewQueryDataResponse()
+	qdr := backend.NewQueryDataResponse()
 	qdr.Responses["A"] = testDataResponse()
 	initialJSON, err := json.Marshal(qdr)
 	require.NoError(t, err)

@@ -29,8 +29,7 @@ func goldenDF() *data.Frame {
 				URL:         "https://slothconservation.com/how-to-help/donate/",
 			},
 		},
-		NoValue:       "😤",
-		NullValueMode: data.NullValueModeNull,
+		NoValue: "😤",
 		// math.NaN() and math.Infs become null when encoded to json
 	}).SetDecimals(2).SetMax(math.Inf(1)).SetMin(math.NaN()).SetFilterable(false)
 

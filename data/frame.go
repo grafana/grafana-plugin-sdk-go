@@ -18,6 +18,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/olekukonko/tablewriter"
 )
 
@@ -44,7 +45,8 @@ type Frame struct {
 
 // UnmarshalJSON allows unmarshalling Frame from JSON.
 func (f *Frame) UnmarshalJSON(b []byte) error {
-	return readDataFrameJSON(f, b)
+	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	return readDataFrameJSON(f, iter)
 }
 
 // MarshalJSON marshals Frame to JSON.
