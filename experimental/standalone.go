@@ -77,7 +77,7 @@ func getStandaloneInfo(id string) (standaloneArgs, error) {
 	// Check the local file for address
 	addrBytes, err := ioutil.ReadFile(filePath)
 	if address == "" {
-		if err != nil && len(addrBytes) > 0 {
+		if err == nil && len(addrBytes) > 0 {
 			address = string(addrBytes)
 		}
 	}
@@ -96,20 +96,8 @@ func getStandaloneInfo(id string) (standaloneArgs, error) {
 func runDummyPluginLocator(address string) {
 	fmt.Printf("1|2|tcp|%s|grpc\n", address)
 	t := time.NewTicker(time.Second * 10)
-	count := 0
 
-	for range t.C {
-		fmt.Printf("[%d] using address: %s\n", count, address)
-		count++
+	for ts := range t.C {
+		fmt.Printf("[%s] using address: %s\n", ts.Format("2006-01-02 15:04:05"), address)
 	}
-
-	// The hashicorp format is:
-	// // Output the address and service name to stdout so that the client can bring it up.
-	// fmt.Printf("%d|%d|%s|%s|%s|%s\n",
-	// 	CoreProtocolVersion,
-	// 	protoVersion,
-	// 	listener.Addr().Network(),
-	// 	listener.Addr().String(),
-	// 	protoType,
-	// 	serverCert)
 }
