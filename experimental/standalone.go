@@ -4,16 +4,13 @@ import (
 	"flag"
 	"fmt"
 	"io/ioutil"
-	"net"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
-	plugin "github.com/hashicorp/go-plugin"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 )
 
 type standaloneArgs struct {
@@ -21,20 +18,29 @@ type standaloneArgs struct {
 	standalone bool
 }
 
-func RunGRPC(id string, opts grpcplugin.ServeOpts) error {
+func DoGRPC(id string, opts datasource.ServeOpts) error {
+	// Enable profiler
+	backend.SetupPluginEnvironment(id)
+
 	info, err := getStandaloneInfo(id)
 	if err != nil {
 		return err
 	}
 	if info.standalone {
-		return runStandaloneServer(opts, info.address)
+		return backend.StandaloneServe(backend.ServeOpts{
+			CheckHealthHandler:  opts.CheckHealthHandler,
+			CallResourceHandler: opts.CallResourceHandler,
+			QueryDataHandler:    opts.QueryDataHandler,
+			StreamHandler:       opts.StreamHandler,
+			GRPCSettings:        opts.GRPCSettings,
+		}, info.address)
 	} else if info.address != "" {
 		runDummyPluginLocator(info.address)
 		return nil
 	}
 
 	// The default/normal hashicorp path
-	return grpcplugin.Serve(opts)
+	return datasource.Serve(opts)
 }
 
 func getStandaloneInfo(id string) (standaloneArgs, error) {
@@ -65,9 +71,10 @@ func getStandaloneInfo(id string) (standaloneArgs, error) {
 	addrBytes, err := ioutil.ReadFile(filePath)
 	if address == "" {
 		if err != nil && len(addrBytes) > 0 {
-			info.address = string(addrBytes)
+			address = string(addrBytes)
 		}
 	}
+	info.address = address
 
 	// Write the address to the local file
 	if standalone {
@@ -98,49 +105,4 @@ func runDummyPluginLocator(address string) {
 	// 	listener.Addr().String(),
 	// 	protoType,
 	// 	serverCert)
-}
-
-// runStandaloneServer starts a gRPC server that is not managed by hashicorp
-func runStandaloneServer(opts grpcplugin.ServeOpts, address string) error {
-	if opts.GRPCServer == nil {
-		opts.GRPCServer = plugin.DefaultGRPCServer
-	}
-
-	server := opts.GRPCServer(nil)
-
-	plugKeys := []string{}
-	if opts.DiagnosticsServer != nil {
-		pluginv2.RegisterDiagnosticsServer(server, opts.DiagnosticsServer)
-		plugKeys = append(plugKeys, "diagnostics")
-	}
-
-	if opts.ResourceServer != nil {
-		pluginv2.RegisterResourceServer(server, opts.ResourceServer)
-		plugKeys = append(plugKeys, "resources")
-	}
-
-	if opts.DataServer != nil {
-		pluginv2.RegisterDataServer(server, opts.DataServer)
-		plugKeys = append(plugKeys, "data")
-	}
-
-	if opts.StreamServer != nil {
-		pluginv2.RegisterStreamServer(server, opts.StreamServer)
-		plugKeys = append(plugKeys, "stream")
-	}
-
-	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
-
-	listener, err := net.Listen("tcp", address)
-	if err != nil {
-		return err
-	}
-
-	err = server.Serve(listener)
-	if err != nil {
-		return err
-	}
-	log.DefaultLogger.Debug("Plugin server exited")
-
-	return nil
 }

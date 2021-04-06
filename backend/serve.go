@@ -1,9 +1,14 @@
 package backend
 
 import (
+	"net"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/hashicorp/go-plugin"
 	"github.com/prometheus/client_golang/prometheus"
 	"google.golang.org/grpc"
 )
@@ -42,8 +47,7 @@ type ServeOpts struct {
 	GRPCSettings GRPCSettings
 }
 
-// Serve starts serving the plugin over gRPC.
-func Serve(opts ServeOpts) error {
+func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	pluginOpts := grpcplugin.ServeOpts{
 		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
 	}
@@ -59,7 +63,11 @@ func Serve(opts ServeOpts) error {
 	if opts.StreamHandler != nil {
 		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
 	}
+	return pluginOpts
+}
 
+// Serve starts serving the plugin over gRPC.
+func Serve(opts ServeOpts) error {
 	grpc_prometheus.EnableHandlingTimeHistogram()
 	grpcMiddlewares := []grpc.ServerOption{
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
@@ -80,10 +88,58 @@ func Serve(opts ServeOpts) error {
 		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxSendMsgSize(opts.GRPCSettings.MaxSendMsgSize)}, grpcMiddlewares...)
 	}
 
+	pluginOpts := asGRPCServeOpts(opts)
 	pluginOpts.GRPCServer = func(opts []grpc.ServerOption) *grpc.Server {
 		opts = append(opts, grpcMiddlewares...)
 		return grpc.NewServer(opts...)
 	}
 
 	return grpcplugin.Serve(pluginOpts)
+}
+
+// StandaloneServe starts a gRPC server that is not managed by hashicorp
+func StandaloneServe(dsopts ServeOpts, address string) error {
+	opts := asGRPCServeOpts(dsopts)
+
+	if opts.GRPCServer == nil {
+		opts.GRPCServer = plugin.DefaultGRPCServer
+	}
+
+	server := opts.GRPCServer(nil)
+
+	plugKeys := []string{}
+	if opts.DiagnosticsServer != nil {
+		pluginv2.RegisterDiagnosticsServer(server, opts.DiagnosticsServer)
+		plugKeys = append(plugKeys, "diagnostics")
+	}
+
+	if opts.ResourceServer != nil {
+		pluginv2.RegisterResourceServer(server, opts.ResourceServer)
+		plugKeys = append(plugKeys, "resources")
+	}
+
+	if opts.DataServer != nil {
+		pluginv2.RegisterDataServer(server, opts.DataServer)
+		plugKeys = append(plugKeys, "data")
+	}
+
+	if opts.StreamServer != nil {
+		pluginv2.RegisterStreamServer(server, opts.StreamServer)
+		plugKeys = append(plugKeys, "stream")
+	}
+
+	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
+
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		return err
+	}
+
+	err = server.Serve(listener)
+	if err != nil {
+		return err
+	}
+	log.DefaultLogger.Debug("Plugin server exited")
+
+	return nil
 }
