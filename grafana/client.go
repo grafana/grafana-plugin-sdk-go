@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/server"
 
@@ -12,6 +13,7 @@ import (
 )
 
 // Client allows communicating with Grafana GRPC API.
+// This is EXPERIMENTAL and is a subject to change till Grafana 8.
 type Client struct {
 	address  string
 	token    string
@@ -39,12 +41,19 @@ func WithAddress(address string) ClientOption {
 	}
 }
 
+// WithInsecure allows setting insecure option when dialing to GRPC server.
+func WithInsecure(insecure bool) ClientOption {
+	return func(h *Client) {
+		h.insecure = insecure
+	}
+}
+
 // NewClient initializes Client.
 func NewClient(opts ...ClientOption) (*Client, error) {
 	c := &Client{
 		address:  os.Getenv("GF_GRPC_API_ADDRESS"),
 		token:    os.Getenv("GF_GRPC_API_TOKEN"),
-		insecure: true,
+		insecure: os.Getenv("GF_GRPC_API_INSECURE") != "",
 	}
 	for _, opt := range opts {
 		opt(c)
@@ -56,7 +65,9 @@ func NewClient(opts ...ClientOption) (*Client, error) {
 	grpcOpts = append(grpcOpts, grpc.WithPerRPCCredentials(tokenAuth{
 		token: c.token,
 	}))
-	conn, err := grpc.Dial(c.address, grpcOpts...)
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, c.address, grpcOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("fail to dial: %w", err)
 	}
