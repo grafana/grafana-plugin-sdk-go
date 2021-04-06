@@ -18,6 +18,8 @@ type standaloneArgs struct {
 	standalone bool
 }
 
+// DoGRPC looks at the environment properties and decides if this should run as a normal hashicorp plugin or
+// as a standalone gRPC server
 func DoGRPC(id string, opts datasource.ServeOpts) error {
 	// Enable profiler
 	backend.SetupPluginEnvironment(id)
@@ -58,6 +60,11 @@ func getStandaloneInfo(id string) (standaloneArgs, error) {
 	ex, err := os.Executable()
 	if err != nil {
 		return info, err
+	}
+
+	// When debugging in vscode, write the file in `dist`
+	if strings.HasSuffix(ex, "/pkg/__debug_bin") {
+		ex = filepath.Join(filepath.Dir(ex), "..", "dist", "exe")
 	}
 	filePath := filepath.Join(filepath.Dir(ex), "standalone.txt")
 
