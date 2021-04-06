@@ -28,6 +28,7 @@ func DoGRPC(id string, opts datasource.ServeOpts) error {
 	if err != nil {
 		return err
 	}
+
 	if info.standalone {
 		return backend.StandaloneServe(backend.ServeOpts{
 			CheckHealthHandler:  opts.CheckHealthHandler,
@@ -88,9 +89,11 @@ func getStandaloneInfo(id string) (standaloneArgs, error) {
 		if info.address == "" {
 			return info, fmt.Errorf("standalone address must be specified")
 		}
-		err = ioutil.WriteFile(filePath, []byte(info.address), 0600)
+		_ = ioutil.WriteFile(filePath, []byte(info.address), 0600)
+		// sadly vs-code can not listen to shutdown events
+		// https://github.com/golang/vscode-go/issues/120
 	}
-	return info, err
+	return info, nil
 }
 
 func runDummyPluginLocator(address string) {
