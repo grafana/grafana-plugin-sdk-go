@@ -259,3 +259,38 @@ message StreamPacket {
   // JSON-encoded data to publish into a channel.
   bytes data = 1;
 }
+
+
+
+//-----------------------------------------------------------------
+// Dashboard -- EXPERIMENTAL for 8.0 and beyond
+//-----------------------------------------------------------------
+
+service Dashboard {
+  // Called when any dashboard is saved in the UI
+  rpc DashboardSaved(DashboardSavedRequest) returns (DashboardSavedResponse);
+}
+
+message DashboardSavedRequest {
+  /// The user is who saved the request
+  PluginContext pluginContext = 1;
+
+  string uid = 2; // dashboard UID
+  string folder = 3; // dashboard UID
+  string message = 4; // the user commit message
+  bytes jsonBody = 5; // dashboard json body
+  bytes prevBody = 6; // the previous body
+}
+
+message DashboardSavedResponse {
+  enum Status {
+    NO_ACTION = 0; // this plugin did not do anything
+    OK = 1;
+    PERMISSION_DENIED = 2;
+  }
+  Status status = 1;
+
+  string message = 2;
+  string details = 3;
+  string url = 4;
+}
