@@ -2,7 +2,12 @@
   "schema": {
     "name": "many_types",
     "refId": "A",
-    "meta": { "custom": { "Hi": "there" } },
+    "meta": {
+      "custom": { "Hi": "there" },
+      "stats": [{ "displayName": "sample", "value": 1.234 }],
+      "channel": "sample/channel/name",
+      "executedQueryString": "SELECT * FROM table"
+    },
     "fields": [
       {
         "name": "string_values",
