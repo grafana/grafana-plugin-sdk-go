@@ -26,6 +26,12 @@ type GrafanaLiveChannel struct {
 	sub        *centrifuge.Subscription
 }
 
+// Publish to channel.
+func (c *GrafanaLiveClient) Publish(channel string, data []byte) error {
+	_, err := c.client.Publish(channel, data)
+	return err
+}
+
 // Subscribe will subscribe to a channel within the server
 func (c *GrafanaLiveClient) Subscribe(addr ChannelAddress) (*GrafanaLiveChannel, error) {
 	id := addr.ToChannelID()
