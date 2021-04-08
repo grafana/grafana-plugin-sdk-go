@@ -26,6 +26,9 @@ type FrameMeta struct {
 	// Grafana can display to the user in the user interface.
 	Notices []Notice `json:"notices,omitempty"`
 
+	// Subscribe is the channel path in Grafana live that will contain streaming updates for this frame
+	Subscribe string `json:"subscribe,omitempty"`
+
 	// PreferredVisualisationType is currently used to show results in Explore only in preferred visualisation option.
 	PreferredVisualization VisType `json:"preferredVisualisationType,omitempty"`
 
