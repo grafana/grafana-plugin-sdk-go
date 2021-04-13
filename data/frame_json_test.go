@@ -159,7 +159,7 @@ func TestGenerateGenericArrowCode(t *testing.T) {
 	types := []string{
 		"uint8", "uint16", "uint32", "uint64",
 		"int8", "int16", "int32", "int64",
-		"float32", "float64", "string", "bool",
+		"float32", "float64", "string", "boolean",
 	}
 
 	code := `
@@ -258,7 +258,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 
 	for _, tstr := range types {
 		typex := tstr
-		if tstr == "bool" {
+		if tstr == "boolean" {
 			typex = "Boolean"
 		}
 		hasSpecialEntities := tstr == "float32" || tstr == "float64"

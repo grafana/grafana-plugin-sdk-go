@@ -17,7 +17,7 @@ type simpleFieldInfo struct {
 func TestFieldTypeConversion(t *testing.T) {
 	f := data.FieldTypeBool
 	s := f.ItemTypeString()
-	require.Equal(t, "bool", s)
+	require.Equal(t, "boolean", s)
 	c, ok := data.FieldTypeFromItemTypeString(s)
 	require.True(t, ok, "must parse ok")
 	require.Equal(t, f, c)

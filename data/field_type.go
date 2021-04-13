@@ -298,9 +298,9 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*string":
 		return FieldTypeNullableString, true
 
-	case "bool":
+	case "boolean":
 		return FieldTypeBool, true
-	case "*bool":
+	case "*boolean":
 		return FieldTypeNullableBool, true
 
 	case "time", "time.Time":
@@ -370,9 +370,9 @@ func (p FieldType) ItemTypeString() string {
 		return "*string"
 
 	case FieldTypeBool:
-		return "bool"
+		return "boolean"
 	case FieldTypeNullableBool:
-		return "*bool"
+		return "*boolean"
 
 	case FieldTypeTime:
 		return "time.Time"

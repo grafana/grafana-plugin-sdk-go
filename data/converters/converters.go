@@ -135,7 +135,7 @@ var BoolToNullableBool = data.FieldConverter{
 		}
 		val, ok := v.(bool)
 		if !ok {
-			return ptr, toConversionError("bool", v)
+			return ptr, toConversionError("boolean", v)
 		}
 		ptr = &val
 		return ptr, nil
@@ -205,7 +205,7 @@ var Boolean = data.FieldConverter{
 	Converter: func(v interface{}) (interface{}, error) {
 		fV, ok := v.(bool)
 		if !ok {
-			return nil, toConversionError("bool", v)
+			return nil, toConversionError("boolean", v)
 		}
 		return fV, nil
 	},

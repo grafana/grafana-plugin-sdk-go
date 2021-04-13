@@ -427,15 +427,15 @@ func TestStringTable(t *testing.T) {
 			maxLength: 3,
 			output: `Name: sTest
 Dimensions: 3 Fields by 3 Rows
-+--------------+--------------+--------------+
-| Name:        | Name:        | Name:        |
-| Labels:      | Labels:      | Labels:      |
-| Type: []bool | Type: []bool | Type: []bool |
-+--------------+--------------+--------------+
-| false        | false        | false        |
-| false        | false        | false        |
-| false        | false        | false        |
-+--------------+--------------+--------------+
++-----------------+-----------------+-----------------+
+| Name:           | Name:           | Name:           |
+| Labels:         | Labels:         | Labels:         |
+| Type: []boolean | Type: []boolean | Type: []boolean |
++-----------------+-----------------+-----------------+
+| false           | false           | false           |
+| false           | false           | false           |
+| false           | false           | false           |
++-----------------+-----------------+-----------------+
 `,
 		},
 		{
@@ -444,14 +444,14 @@ Dimensions: 3 Fields by 3 Rows
 			maxLength: 2,
 			output: `Name: sTest
 Dimensions: 3 Fields by 3 Rows
-+--------------+----------------+
-| Name:        | ...+2 field... |
-| Labels:      |                |
-| Type: []bool |                |
-+--------------+----------------+
-| false        | ...            |
-| ...          | ...            |
-+--------------+----------------+
++-----------------+----------------+
+| Name:           | ...+2 field... |
+| Labels:         |                |
+| Type: []boolean |                |
++-----------------+----------------+
+| false           | ...            |
+| ...             | ...            |
++-----------------+----------------+
 `,
 		},
 		{
@@ -460,12 +460,12 @@ Dimensions: 3 Fields by 3 Rows
 			maxLength: 0,
 			output: `Name: sTest
 Dimensions: 3 Fields by 3 Rows
-+--------------+--------------+--------------+
-| Name:        | Name:        | Name:        |
-| Labels:      | Labels:      | Labels:      |
-| Type: []bool | Type: []bool | Type: []bool |
-+--------------+--------------+--------------+
-+--------------+--------------+--------------+
++-----------------+-----------------+-----------------+
+| Name:           | Name:           | Name:           |
+| Labels:         | Labels:         | Labels:         |
+| Type: []boolean | Type: []boolean | Type: []boolean |
++-----------------+-----------------+-----------------+
++-----------------+-----------------+-----------------+
 `,
 		},
 	}
