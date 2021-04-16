@@ -50,132 +50,132 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec vector
 	switch v := values.(type) {
 	case []int8:
-		vec = newVector(v, len(v))
+		vec = newInt8Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*int8:
-		vec = newVector(v, len(v))
+		vec = newNullableInt8Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []int16:
-		vec = newVector(v, len(v))
+		vec = newInt16Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*int16:
-		vec = newVector(v, len(v))
+		vec = newNullableInt16Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []int32:
-		vec = newVector(v, len(v))
+		vec = newInt32Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*int32:
-		vec = newVector(v, len(v))
+		vec = newNullableInt32Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []int64:
-		vec = newVector(v, len(v))
+		vec = newInt64Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*int64:
-		vec = newVector(v, len(v))
+		vec = newNullableInt64Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []uint8:
-		vec = newVector(v, len(v))
+		vec = newUint8Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*uint8:
-		vec = newVector(v, len(v))
+		vec = newNullableUint8Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []uint16:
-		vec = newVector(v, len(v))
+		vec = newUint16Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*uint16:
-		vec = newVector(v, len(v))
+		vec = newNullableUint16Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []uint32:
-		vec = newVector(v, len(v))
+		vec = newUint32Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*uint32:
-		vec = newVector(v, len(v))
+		vec = newNullableUint32Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []uint64:
-		vec = newVector(v, len(v))
+		vec = newUint64Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*uint64:
-		vec = newVector(v, len(v))
+		vec = newNullableUint64Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []float32:
-		vec = newVector(v, len(v))
+		vec = newFloat32Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*float32:
-		vec = newVector(v, len(v))
+		vec = newNullableFloat32Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []float64:
-		vec = newVector(v, len(v))
+		vec = newFloat64Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*float64:
-		vec = newVector(v, len(v))
+		vec = newNullableFloat64Vector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []string:
-		vec = newVector(v, len(v))
+		vec = newStringVector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*string:
-		vec = newVector(v, len(v))
+		vec = newNullableStringVector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []bool:
-		vec = newVector(v, len(v))
+		vec = newBoolVector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*bool:
-		vec = newVector(v, len(v))
+		vec = newNullableBoolVector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []time.Time:
-		vec = newVector(v, len(v))
+		vec = newTimeTimeVector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
 	case []*time.Time:
-		vec = newVector(v, len(v))
+		vec = newNullableTimeTimeVector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}

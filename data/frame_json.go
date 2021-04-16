@@ -115,7 +115,6 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 				tmp.Labels = f.Labels
 				tmp.Config = f.Config
 				frame.Fields = append(frame.Fields, tmp)
-				fmt.Printf("[FIELD] %#v\n", f.Field)
 			}
 
 		case jsonKeyData:
