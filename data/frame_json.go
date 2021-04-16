@@ -599,7 +599,6 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 				}
 				stream.WriteObjectField("config")
 				stream.WriteVal(f.Config)
-				started = true
 			}
 
 			stream.WriteObjectEnd()
