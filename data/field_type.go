@@ -34,9 +34,9 @@ const (
 	// FieldTypeNullableInt64 indicates the underlying primitive is a []*int64.
 	FieldTypeNullableInt64
 
-	// FieldTypeUint8 indicates the underlying primitive is a []int8.
+	// FieldTypeUint8 indicates the underlying primitive is a []uint8.
 	FieldTypeUint8
-	// FieldTypeNullableUint8 indicates the underlying primitive is a []*int8.
+	// FieldTypeNullableUint8 indicates the underlying primitive is a []*uint8.
 	FieldTypeNullableUint8
 
 	// FieldTypeUint16 indicates the underlying primitive is a []uint16.
