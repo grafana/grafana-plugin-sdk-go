@@ -98,7 +98,7 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 
 	f, ok := FieldTypeFromItemTypeString(j)
 	if !ok {
-		return fmt.Errorf("unknown field type")
+		return fmt.Errorf("unknown field type: %s", j)
 	}
 	*p = f
 	return nil
@@ -263,7 +263,7 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*int64":
 		return FieldTypeNullableInt64, true
 
-	case "unit8":
+	case "uint8":
 		return FieldTypeUint8, true
 	case "*uint8":
 		return FieldTypeNullableUint8, true
