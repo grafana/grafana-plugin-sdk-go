@@ -335,7 +335,7 @@ func (p FieldType) ItemTypeString() string {
 		return "*int64"
 
 	case FieldTypeUint8:
-		return "unit8"
+		return "uint8"
 	case FieldTypeNullableUint8:
 		return "*uint8"
 
