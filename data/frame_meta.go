@@ -10,13 +10,13 @@ import (
 // NOTE -- in javascript this can accept any `[key: string]: any;` however
 // this interface only exposes the values we want to be exposed
 type FrameMeta struct {
-	// Path is a browsable path on the datasource
+	// Path is a browsable path on the datasource.
 	Path string `json:"path,omitempty"`
 
-	// PathSeparator defines the separator pattern to decode a hiearchy. The default separator is '/'
+	// PathSeparator defines the separator pattern to decode a hiearchy. The default separator is '/'.
 	PathSeparator string `json:"pathSeparator,omitempty"`
 
-	// Datasource specific values
+	// Custom datasource specific values.
 	Custom interface{} `json:"custom,omitempty"`
 
 	// Stats is an array of query result statistics.
@@ -26,10 +26,10 @@ type FrameMeta struct {
 	// Grafana can display to the user in the user interface.
 	Notices []Notice `json:"notices,omitempty"`
 
-	// Channel is the path to a stream in grafana live that has real-time updates for this data
+	// Channel is the path to a stream in grafana live that has real-time updates for this data.
 	Channel string `json:"channel,omitempty"`
 
-	// PreferredVisualisationType is currently used to show results in Explore only in preferred visualisation option.
+	// PreferredVisualization is currently used to show results in Explore only in preferred visualisation option.
 	PreferredVisualization VisType `json:"preferredVisualisationType,omitempty"`
 
 	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
@@ -131,8 +131,9 @@ func (n NoticeSeverity) String() string {
 		return noticeSeverityWarningString
 	case NoticeSeverityError:
 		return noticeSeverityErrorString
+	default:
+		return ""
 	}
-	return ""
 }
 
 // MarshalJSON implements the json.Marshaler interface.
