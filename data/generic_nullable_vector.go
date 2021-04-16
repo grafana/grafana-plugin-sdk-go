@@ -24,10 +24,10 @@ func (v *nullablegenVector) SetConcrete(idx int, i interface{}) {
 
 func (v *nullablegenVector) Append(i interface{}) {
 	if i == nil {
-		(*v) = append((*v), nil)
+		*v = append(*v, nil)
 		return
 	}
-	(*v) = append((*v), i.(*gen))
+	*v = append(*v, i.(*gen))
 }
 
 func (v *nullablegenVector) At(i int) interface{} {
@@ -59,7 +59,7 @@ func (v *nullablegenVector) PointerAt(i int) interface{} {
 }
 
 func (v *nullablegenVector) Len() int {
-	return len((*v))
+	return len(*v)
 }
 
 func (v *nullablegenVector) Type() FieldType {
@@ -67,7 +67,7 @@ func (v *nullablegenVector) Type() FieldType {
 }
 
 func (v *nullablegenVector) Extend(i int) {
-	(*v) = append((*v), make([]*gen, i)...)
+	*v = append(*v, make([]*gen, i)...)
 }
 
 func (v *nullablegenVector) Insert(i int, val interface{}) {
@@ -84,5 +84,5 @@ func (v *nullablegenVector) Insert(i int, val interface{}) {
 }
 
 func (v *nullablegenVector) Delete(i int) {
-	(*v) = append((*v)[:i], (*v)[i+1:]...)
+	*v = append((*v)[:i], (*v)[i+1:]...)
 }
