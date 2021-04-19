@@ -18,7 +18,7 @@ import (
 
 const simpleTypeString = "string"
 const simpleTypeNumber = "number"
-const simpleTypeBool = "bool"
+const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
 
 const jsonKeySchema = "schema"

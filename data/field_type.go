@@ -298,7 +298,7 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*string":
 		return FieldTypeNullableString, true
 
-	case "bool":
+	case "bool", "boolean":
 		return FieldTypeBool, true
 	case "*bool":
 		return FieldTypeNullableBool, true
