@@ -94,6 +94,17 @@ func buildBackend(cfg Config) error {
 	args := []string{
 		"build", "-o", filepath.Join("dist", exeName),
 	}
+	var customVars []string
+	if len(cfg.CustomVars) > 0 {
+		for k, v := range cfg.CustomVars {
+			customVars = append(customVars, fmt.Sprintf("-X '%s=%s'", k, v))
+		}
+		prefix := ""
+		if ldFlags != "" {
+			prefix = " "
+		}
+		ldFlags = fmt.Sprintf("%s%s%s", strings.Join(customVars, " "), prefix, ldFlags)
+	}
 	if ldFlags != "" {
 		args = append(args, "-ldflags", ldFlags)
 	}
