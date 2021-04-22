@@ -176,10 +176,7 @@ func BuildAll() { //revive:disable-line
 
 // Test runs backend tests.
 func Test() error {
-	if err := sh.RunV("go", "test", "./pkg/..."); err != nil {
-		return err
-	}
-	return nil
+	return sh.RunV("go", "test", "./pkg/...")
 }
 
 // Coverage runs backend tests and makes a coverage report.
@@ -193,11 +190,7 @@ func Coverage() error {
 		return err
 	}
 
-	if err := sh.RunV("go", "tool", "cover", "-html=coverage/backend.out", "-o", "coverage/backend.html"); err != nil {
-		return err
-	}
-
-	return nil
+	return sh.RunV("go", "tool", "cover", "-html=coverage/backend.out", "-o", "coverage/backend.html")
 }
 
 // Lint audits the source style
@@ -207,11 +200,7 @@ func Lint() error {
 
 // Format formats the sources.
 func Format() error {
-	if err := sh.RunV("gofmt", "-w", "."); err != nil {
-		return err
-	}
-
-	return nil
+	return sh.RunV("gofmt", "-w", ".")
 }
 
 // Clean cleans build artifacts, by deleting the dist directory.

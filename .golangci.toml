@@ -8,6 +8,9 @@ min-confidence = 1
 min-len = 2
 min-occurrences = 2
 
+[linters-settings.revive]
+ignore-generated-header = false
+
 [linters]
 disable-all = true
 enable = [
@@ -26,7 +29,6 @@ enable = [
   "gosimple",
   "govet",
   "ineffassign",
-  "interfacer",
   "misspell",
   "nakedret",
   "rowserrcheck",
@@ -46,6 +48,7 @@ enable = [
   "errorlint",
   "sqlclosecheck",
   "thelper",
+  "revive"
 ]
 # Don't require that errors are included through wrapping, since might not always want to wrap an error
 [[issues.exclude-rules]]
