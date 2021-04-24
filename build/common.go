@@ -99,14 +99,20 @@ func buildBackend(cfg Config) error {
 		"build", "-o", filepath.Join("dist", exeName),
 	}
 
-	flags := make(map[string]string, 10)
-	GetBuildInfoFromEnvironment().appendFlags(flags, "main.")
+	info := getBuildInfoFromEnvironment()
 	version, err := getValueFromJSON("package.json", "version")
 	if err == nil && len(version) > 0 {
-		flags["main.version"] = version
+		info.Version = version
 	}
 
-	// TODO merge custom flags?
+	flags := make(map[string]string, 10)
+	info.appendFlags(flags)
+
+	if cfg.CustomVars != nil {
+		for k, v := range cfg.CustomVars {
+			flags[k] = v
+		}
+	}
 
 	for k, v := range flags {
 		ldFlags = fmt.Sprintf("%s -X '%s=%s'", ldFlags, k, v)

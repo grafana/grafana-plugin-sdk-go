@@ -1,6 +1,7 @@
 package build
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"os/exec"
@@ -9,34 +10,39 @@ import (
 	"time"
 )
 
+// set from -X
+var buildInfoJSON string
+
 // exposed for testing.
 var now = time.Now
 
 // Info See also PluginBuildInfo in https://github.com/grafana/grafana/blob/master/pkg/plugins/models.go
 type Info struct {
-	Time   int64  `json:"time,omitempty"`
-	Repo   string `json:"repo,omitempty"`
-	Branch string `json:"branch,omitempty"`
-	Hash   string `json:"hash,omitempty"`
-	Build  int64  `json:"build,omitempty"`
-	PR     int64  `json:"pr,omitempty"`
+	Time    int64  `json:"time,omitempty"`
+	Version string `json:"version,omitempty"`
+	Repo    string `json:"repo,omitempty"`
+	Branch  string `json:"branch,omitempty"`
+	Hash    string `json:"hash,omitempty"`
+	Build   int64  `json:"build,omitempty"`
+	PR      int64  `json:"pr,omitempty"`
 }
 
-func (v Info) appendFlags(flags map[string]string, prefix string) {
-	if v.Repo != "" {
-		flags[prefix+"repo"] = v.Repo
+// this will append build flags -- the keys are picked to match existing
+// grafana build flags from bra
+func (v Info) appendFlags(flags map[string]string) {
+	if v.Version != "" {
+		flags["main.version"] = v.Version
 	}
 	if v.Branch != "" {
-		flags[prefix+"branch"] = v.Branch
+		flags["main.branch"] = v.Branch
 	}
 	if v.Hash != "" {
-		flags[prefix+"hash"] = v.Hash
+		flags["main.commit"] = v.Hash
 	}
-	if v.Build > 0 {
-		flags[prefix+"build"] = fmt.Sprintf("%d", v.Build)
-	}
-	if v.PR > 0 {
-		flags[prefix+"PR"] = fmt.Sprintf("%d", v.PR)
+
+	out, err := json.Marshal(v)
+	if err == nil {
+		flags["github.com/grafana/grafana-plugin-sdk-go/build.buildInfoJSON"] = string(out)
 	}
 }
 
@@ -64,8 +70,8 @@ func getEnvironment(check ...string) string {
 	return ""
 }
 
-// GetBuildInfoFromEnvironment reads the
-func GetBuildInfoFromEnvironment() Info {
+// getBuildInfoFromEnvironment reads the
+func getBuildInfoFromEnvironment() Info {
 	v := Info{
 		Time: now().UnixNano() / int64(time.Millisecond),
 	}
@@ -82,4 +88,15 @@ func GetBuildInfoFromEnvironment() Info {
 		v.PR = val
 	}
 	return v
+}
+
+// GetBuildInfo returns the build information that was compiled into the binary using:
+// -X `github.com/grafana/grafana-plugin-sdk-go/build.buildInfoJSON={...}`
+func GetBuildInfo() (Info, error) {
+	v := Info{}
+	if buildInfoJSON == "" {
+		return v, fmt.Errorf("build info was now set when this was compiled")
+	}
+	err := json.Unmarshal([]byte(buildInfoJSON), &v)
+	return v, err
 }
