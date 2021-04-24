@@ -1,11 +1,13 @@
 package build
 
 import (
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestFillBuildInfo(t *testing.T) {
@@ -30,6 +32,7 @@ func TestFillBuildInfo(t *testing.T) {
 		})
 
 		info := GetBuildInfoFromEnvironment()
+		require.NotNil(t, info)
 		assert.Equal(t, "main", info.Branch)
 		assert.Equal(t, "bcdd4bf0245c82c060407b3b24b9b87301d15ac1", info.Hash)
 		assert.Equal(t, int64(22), info.Build)
@@ -51,9 +54,17 @@ func TestFillBuildInfo(t *testing.T) {
 		})
 
 		info := GetBuildInfoFromEnvironment()
+		require.NotNil(t, info)
 		assert.Equal(t, "main", info.Branch)
 		assert.Equal(t, "bcdd4bf0245c82c060407b3b24b9b87301d15ac1", info.Hash)
 		assert.Equal(t, int64(22), info.Build)
 		assert.Equal(t, int64(33), info.PR)
+	})
+
+	// really testable since it delegates to functions, but helful in local dev
+	t.Run("git commands", func(t *testing.T) {
+		info := GetBuildInfoFromEnvironment()
+		fmt.Printf("BUILD: %#v\n", info)
+		require.NotNil(t, info)
 	})
 }
