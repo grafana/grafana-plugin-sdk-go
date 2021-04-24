@@ -35,14 +35,14 @@ func GetBuildInfoFromEnvironment() Info {
 		Time: now().UnixNano() / int64(time.Millisecond),
 	}
 
-	v.Repo = getEnvironment("DRONE_REPO_LINK")
-	v.Branch = getEnvironment("DRONE_BRANCH")
-	v.Hash = getEnvironment("DRONE_COMMIT_SHA")
-	val, err := strconv.ParseInt(getEnvironment("DRONE_BUILD_NUMBER"), 10, 64)
+	v.Repo = getEnvironment("DRONE_REPO_LINK", "CIRCLE_PROJECT_REPONAME")
+	v.Branch = getEnvironment("DRONE_BRANCH", "CIRCLE_BRANCH")
+	v.Hash = getEnvironment("DRONE_COMMIT_SHA", "CIRCLE_SHA1")
+	val, err := strconv.ParseInt(getEnvironment("DRONE_BUILD_NUMBER", "CIRCLE_BUILD_NUM"), 10, 64)
 	if err == nil {
 		v.Build = val
 	}
-	val, err = strconv.ParseInt(getEnvironment("DRONE_PULL_REQUEST"), 10, 64)
+	val, err = strconv.ParseInt(getEnvironment("DRONE_PULL_REQUEST", "CI_PULL_REQUEST"), 10, 64)
 	if err == nil {
 		v.PR = val
 	}
