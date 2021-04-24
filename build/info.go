@@ -9,8 +9,8 @@ import (
 // exposed for testing.
 var now = time.Now
 
-// BuildInfo See also PluginBuildInfo in https://github.com/grafana/grafana/blob/master/pkg/plugins/models.go
-type BuildInfo struct {
+// Info See also PluginBuildInfo in https://github.com/grafana/grafana/blob/master/pkg/plugins/models.go
+type Info struct {
 	Time   int64  `json:"time,omitempty"`
 	Repo   string `json:"repo,omitempty"`
 	Branch string `json:"branch,omitempty"`
@@ -30,8 +30,8 @@ func getEnvironment(check ...string) string {
 }
 
 // GetBuildInfoFromEnvironment reads the
-func GetBuildInfoFromEnvironment() BuildInfo {
-	v := BuildInfo{
+func GetBuildInfoFromEnvironment() Info {
+	v := Info{
 		Time: now().UnixNano() / int64(time.Millisecond),
 	}
 
