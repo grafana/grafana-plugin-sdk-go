@@ -5,10 +5,13 @@ go 1.14
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20210223225224-5bea62493d91
 	github.com/cheekybits/genny v1.0.0
+	github.com/gogo/protobuf v1.3.2
 	github.com/golang/protobuf v1.5.1 // indirect
+	github.com/golang/snappy v0.0.3
 	github.com/google/go-cmp v0.5.5
 	github.com/grpc-ecosystem/go-grpc-middleware v1.2.2
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
+	github.com/grpc-ecosystem/grpc-gateway v1.16.0 // indirect
 	github.com/hashicorp/go-hclog v0.0.0-20180709165350-ff2cf002a8dd
 	github.com/hashicorp/go-plugin v1.2.2
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
@@ -19,6 +22,7 @@ require (
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.20.0
+	github.com/prometheus/prometheus v2.5.0+incompatible
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2
 	google.golang.org/grpc v1.37.0
