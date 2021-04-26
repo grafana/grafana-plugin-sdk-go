@@ -76,14 +76,31 @@ func getBuildInfoFromEnvironment() Info {
 		Time: now().UnixNano() / int64(time.Millisecond),
 	}
 
-	v.Repo = getEnvironment("DRONE_REPO_LINK", "CIRCLE_PROJECT_REPONAME", "> git remote get-url origin")
-	v.Branch = getEnvironment("DRONE_BRANCH", "CIRCLE_BRANCH", "> git branch --show-current")
-	v.Hash = getEnvironment("DRONE_COMMIT_SHA", "CIRCLE_SHA1", "> git rev-parse HEAD")
-	val, err := strconv.ParseInt(getEnvironment("DRONE_BUILD_NUMBER", "CIRCLE_BUILD_NUM"), 10, 64)
+	v.Repo = getEnvironment(
+		"DRONE_REPO_LINK",
+		"CIRCLE_PROJECT_REPONAME",
+		"CI_REPONAME",
+		"> git remote get-url origin")
+	v.Branch = getEnvironment(
+		"DRONE_BRANCH",
+		"CIRCLE_BRANCH",
+		"CI_BRANCH",
+		"> git branch --show-current")
+	v.Hash = getEnvironment(
+		"DRONE_COMMIT_SHA",
+		"CIRCLE_SHA1",
+		"CI_COMMIT_SHA",
+		"> git rev-parse HEAD")
+	val, err := strconv.ParseInt(getEnvironment(
+		"DRONE_BUILD_NUMBER",
+		"CIRCLE_BUILD_NUM",
+		"CI_BUILD_NUM"), 10, 64)
 	if err == nil {
 		v.Build = val
 	}
-	val, err = strconv.ParseInt(getEnvironment("DRONE_PULL_REQUEST", "CI_PULL_REQUEST"), 10, 64)
+	val, err = strconv.ParseInt(getEnvironment(
+		"DRONE_PULL_REQUEST",
+		"CI_PULL_REQUEST"), 10, 64)
 	if err == nil {
 		v.PR = val
 	}
