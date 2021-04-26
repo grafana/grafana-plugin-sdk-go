@@ -3,6 +3,8 @@ package backend
 import (
 	"encoding/json"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
 // User represents a Grafana user.
@@ -28,6 +30,16 @@ type AppInstanceSettings struct {
 
 	// Updated is the last time this plugin instance's configuration was updated.
 	Updated time.Time
+}
+
+// HTTPClientOptions creates httpclient.Options based on settings.
+func (s *AppInstanceSettings) HTTPClientOptions() (*httpclient.Options, error) {
+	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
+	if err != nil {
+		return nil, err
+	}
+
+	return httpSettings.HTTPClientOptions(), nil
 }
 
 // DataSourceInstanceSettings represents settings for a data source instance.
@@ -70,6 +82,16 @@ type DataSourceInstanceSettings struct {
 
 	// Updated is the last time the configuration for the data source instance was updated.
 	Updated time.Time
+}
+
+// HTTPClientOptions creates httpclient.Options based on settings.
+func (s *DataSourceInstanceSettings) HTTPClientOptions() (*httpclient.Options, error) {
+	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
+	if err != nil {
+		return nil, err
+	}
+
+	return httpSettings.HTTPClientOptions(), nil
 }
 
 // PluginContext holds contextual information about a plugin request, such as
