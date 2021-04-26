@@ -2,7 +2,7 @@ version: 2.1
 
 defaults: &defaults
   docker:
-    - image: grafana/grafana-plugin-ci:1.1.1-alpine
+    - image: grafana/grafana-plugin-ci:1.2.1-alpine
 
 jobs:
   build:
