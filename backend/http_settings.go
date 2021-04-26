@@ -43,6 +43,7 @@ type HTTPSettings struct {
 	SigV4SecretKey     string `json:"secure.sigV4SecretKey"`
 }
 
+// HTTPClientOptions creates and returns httpclient.Options.
 func (s *HTTPSettings) HTTPClientOptions() *httpclient.Options {
 	opts := httpclient.Options{
 		Headers: s.Headers,

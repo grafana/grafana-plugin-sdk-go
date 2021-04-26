@@ -185,7 +185,7 @@ type namedMiddleware struct {
 	Middleware Middleware
 }
 
-// The NamedMiddlewareFunc type is an adapter to allow the use of ordinary
+// NamedMiddlewareFunc type is an adapter to allow the use of ordinary
 // functions as Middleware. If f is a function with the appropriate
 // signature, NamedMiddlewareFunc(f) is a Middleware that calls f.
 func NamedMiddlewareFunc(name string, fn MiddlewareFunc) Middleware {

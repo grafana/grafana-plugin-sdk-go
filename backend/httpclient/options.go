@@ -4,15 +4,19 @@ import (
 	"time"
 )
 
+// Options defines options for creating HTTP clients.
 type Options struct {
-	// Timeouts
+	// Timeouts timeout/connection related options.
 	Timeouts *TimeoutOptions
 
+	// BasicAuth basic authentication related options.
 	BasicAuth *BasicAuthOptions
-	TLS       *TLSOptions
-	SigV4     *SigV4Config
 
-	// Custom headers
+	// TLS TLS related options.
+	TLS   *TLSOptions
+	SigV4 *SigV4Config
+
+	// Headers custom headers.
 	Headers map[string]string
 
 	// CustomOptions allows custom options to be provided.
@@ -29,11 +33,13 @@ type Options struct {
 	ConfigureMiddleware ConfigureMiddlewareFunc
 }
 
+// BasicAuthOptions basic authentication options.
 type BasicAuthOptions struct {
 	User     string
 	Password string
 }
 
+// TimeoutOptions timeout/connection options.
 type TimeoutOptions struct {
 	Timeout               time.Duration
 	KeepAlive             time.Duration
@@ -43,6 +49,7 @@ type TimeoutOptions struct {
 	IdleConnTimeout       time.Duration
 }
 
+// DefaultTimeoutOptions default timeout/connection options.
 var DefaultTimeoutOptions = TimeoutOptions{
 	Timeout:               30 * time.Second,
 	KeepAlive:             30 * time.Second,
@@ -52,6 +59,7 @@ var DefaultTimeoutOptions = TimeoutOptions{
 	IdleConnTimeout:       90 * time.Second,
 }
 
+// TLSOptions TLS options.
 type TLSOptions struct {
 	CACertificate      string
 	ClientCertificate  string
@@ -66,6 +74,7 @@ type TLSOptions struct {
 	MaxVersion uint16
 }
 
+// SigV4Config AWS SigV4 options.
 type SigV4Config struct {
 	AuthType      string
 	Profile       string

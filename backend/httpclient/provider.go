@@ -22,7 +22,7 @@ type DefaultProvider struct {
 	Middlewares []Middleware
 }
 
-// New creates a new HTTP client provider.
+// NewProvider creates a new HTTP client provider.
 // Optionally provide a list of middlewares that will be executed for each request.
 // If no middlewares are provided the default middlewares will be used,
 // BasicAuthenticationMiddleware and CustomHeadersMiddleware. If you provide
@@ -42,7 +42,6 @@ func NewProvider(middlewares ...Middleware) *DefaultProvider {
 // New creates a new http.Client given provided options.
 // If opts is nil the http.DefaultClient will be returned and no
 // outgoing request middleware applied.
-//
 func (p *DefaultProvider) New(opts *Options) (*http.Client, error) {
 	if opts == nil {
 		return http.DefaultClient, nil
