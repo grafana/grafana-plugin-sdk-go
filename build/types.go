@@ -5,6 +5,7 @@ type Config struct {
 	OS          string // GOOS
 	Arch        string // GOOS
 	EnableDebug bool
+	CustomVars  map[string]string
 	Env         map[string]string
 	EnableCGo   bool
 }

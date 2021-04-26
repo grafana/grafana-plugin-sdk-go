@@ -46,8 +46,8 @@ func getExecutableName(os string, arch string) (string, error) {
 	return exeName, nil
 }
 
-func getExecutableFromPluginJSON() (string, error) {
-	byteValue, err := ioutil.ReadFile(path.Join("src", "plugin.json"))
+func getValueFromJSON(fpath string, key string) (string, error) {
+	byteValue, err := ioutil.ReadFile(fpath)
 	if err != nil {
 		return "", err
 	}
@@ -57,12 +57,16 @@ func getExecutableFromPluginJSON() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	executable := result["executable"]
+	executable := result[key]
 	name, ok := executable.(string)
 	if !ok || name == "" {
-		return "", fmt.Errorf("plugin.json is missing an executable name")
+		return "", fmt.Errorf("plugin.json is missing: %s", key)
 	}
 	return name, nil
+}
+
+func getExecutableFromPluginJSON() (string, error) {
+	return getValueFromJSON(path.Join("src", "plugin.json"), "executable")
 }
 
 func buildBackend(cfg Config) error {
@@ -94,9 +98,26 @@ func buildBackend(cfg Config) error {
 	args := []string{
 		"build", "-o", filepath.Join("dist", exeName),
 	}
-	if ldFlags != "" {
-		args = append(args, "-ldflags", ldFlags)
+
+	info := getBuildInfoFromEnvironment()
+	version, err := getValueFromJSON("package.json", "version")
+	if err == nil && len(version) > 0 {
+		info.Version = version
 	}
+
+	flags := make(map[string]string, 10)
+	info.appendFlags(flags)
+
+	if cfg.CustomVars != nil {
+		for k, v := range cfg.CustomVars {
+			flags[k] = v
+		}
+	}
+
+	for k, v := range flags {
+		ldFlags = fmt.Sprintf("%s -X '%s=%s'", ldFlags, k, v)
+	}
+	args = append(args, "-ldflags", ldFlags)
 
 	if cfg.EnableDebug {
 		args = append(args, "-gcflags=all=-N -l")
