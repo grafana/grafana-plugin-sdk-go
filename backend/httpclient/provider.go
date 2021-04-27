@@ -24,14 +24,13 @@ type DefaultProvider struct {
 
 // NewProvider creates a new HTTP client provider.
 // Optionally provide a list of middlewares that will be executed for each request.
-// If no middlewares are provided the default middlewares will be used,
-// BasicAuthenticationMiddleware and CustomHeadersMiddleware. If you provide
-// middlewares no default middlewares will be used per default.
+// If no middlewares are provided the DefaultMiddlewares() will be used. If you
+// provide middlewares you have to manually add the DefaultMiddlewares() for it to be
+// enabled.
 // Note: Middlewares will be executed in the same order as provided.
 func NewProvider(middlewares ...Middleware) *DefaultProvider {
 	if middlewares == nil {
-		middlewares = append(middlewares, BasicAuthenticationMiddleware())
-		middlewares = append(middlewares, CustomHeadersMiddleware())
+		middlewares = DefaultMiddlewares()
 	}
 
 	return &DefaultProvider{
@@ -79,3 +78,5 @@ func (p *DefaultProvider) checkOpts(opts *Options) {
 	opts.Middlewares = make([]Middleware, len(middlewares))
 	copy(opts.Middlewares, middlewares)
 }
+
+var _ Provider = &DefaultProvider{}

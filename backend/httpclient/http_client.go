@@ -35,8 +35,8 @@ func New(opts *Options) (*http.Client, error) {
 
 // GetTransport creates a new http.RoundTripper given provided options.
 // If opts is nil the http.DefaultTransport will be returned.
-// If no middlewares are provided the DefaultMiddlewares will be used. If you
-// provide middlewares you have to manually add the DefaultMiddlewares for it to be
+// If no middlewares are provided the DefaultMiddlewares() will be used. If you
+// provide middlewares you have to manually add the DefaultMiddlewares() for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
 func GetTransport(opts *Options) (http.RoundTripper, error) {
@@ -113,7 +113,7 @@ func GetTLSConfig(opts *TLSOptions) (*tls.Config, error) {
 
 func checkOpts(opts *Options) {
 	if opts.Middlewares == nil {
-		opts.Middlewares = DefaultMiddlewares
+		opts.Middlewares = DefaultMiddlewares()
 	}
 
 	if opts.Timeouts == nil {
@@ -161,9 +161,11 @@ type ConfigureMiddlewareFunc func(existingMiddleware []Middleware) []Middleware
 // new HTTP clients and no middleware is provided.
 // BasicAuthenticationMiddleware and CustomHeadersMiddleware are
 // the default middlewares.
-var DefaultMiddlewares = []Middleware{
-	BasicAuthenticationMiddleware(),
-	CustomHeadersMiddleware(),
+func DefaultMiddlewares() []Middleware {
+	return []Middleware{
+		BasicAuthenticationMiddleware(),
+		CustomHeadersMiddleware(),
+	}
 }
 
 func roundTripperFromMiddlewares(opts *Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) http.RoundTripper {
