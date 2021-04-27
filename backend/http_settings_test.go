@@ -28,6 +28,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			"httpTLSHandshakeTimeout": 12,
 			"httpExpectContinueTimeout": 13,
 			"httpMaxIdleConns": 14,
+			"httpMaxIdleConnsPerHost": 16,
 			"httpIdleConnTimeout": 15,
 			"tlsAuth": true,
 			"tlsAuthWithCACert": true,
@@ -70,6 +71,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			TLSHandshakeTimeout:   12 * time.Second,
 			ExpectContinueTimeout: 13 * time.Second,
 			MaxIdleConns:          14,
+			MaxIdleConnsPerHost:   16,
 			IdleConnTimeout:       15 * time.Second,
 			TLSClientAuth:         true,
 			TLSAuthWithCACert:     true,
@@ -106,6 +108,7 @@ func TestParseHTTPSettings(t *testing.T) {
 					TLSHandshakeTimeout:   12 * time.Second,
 					ExpectContinueTimeout: 13 * time.Second,
 					MaxIdleConns:          14,
+					MaxIdleConnsPerHost:   16,
 					IdleConnTimeout:       15 * time.Second,
 				},
 				TLS: &httpclient.TLSOptions{
