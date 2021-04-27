@@ -13,7 +13,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		basicAuth := BasicAuthenticationMiddleware()
-		rt := basicAuth.CreateMiddleware(&Options{}, finalRoundTripper)
+		rt := basicAuth.CreateMiddleware(Options{}, finalRoundTripper)
 		require.NotNil(t, rt)
 		middlewareName, ok := basicAuth.(MiddlewareName)
 		require.True(t, ok)
@@ -35,7 +35,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		basicAuth := BasicAuthenticationMiddleware()
-		rt := basicAuth.CreateMiddleware(&Options{BasicAuth: &BasicAuthOptions{User: "user1", Password: "pwd"}}, finalRoundTripper)
+		rt := basicAuth.CreateMiddleware(Options{BasicAuth: &BasicAuthOptions{User: "user1", Password: "pwd"}}, finalRoundTripper)
 		require.NotNil(t, rt)
 		middlewareName, ok := basicAuth.(MiddlewareName)
 		require.True(t, ok)
@@ -65,7 +65,7 @@ func TestBasicAuthMiddleware(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		basicAuth := BasicAuthenticationMiddleware()
-		rt := basicAuth.CreateMiddleware(&Options{BasicAuth: &BasicAuthOptions{User: "user1", Password: "pwd"}}, finalRoundTripper)
+		rt := basicAuth.CreateMiddleware(Options{BasicAuth: &BasicAuthOptions{User: "user1", Password: "pwd"}}, finalRoundTripper)
 		require.NotNil(t, rt)
 		middlewareName, ok := basicAuth.(MiddlewareName)
 		require.True(t, ok)

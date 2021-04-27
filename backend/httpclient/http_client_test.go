@@ -11,13 +11,13 @@ import (
 
 func TestNewClient(t *testing.T) {
 	t.Run("New() without any opts should return http.DefaultClient", func(t *testing.T) {
-		client, err := New(nil)
+		client, err := New()
 		require.NoError(t, err)
 		require.Same(t, http.DefaultClient, client)
 	})
 
 	t.Run("New() with opts and no middleware should return expected http client and transport", func(t *testing.T) {
-		client, err := New(&Options{
+		client, err := New(Options{
 			Timeouts: &TimeoutOptions{
 				Timeout:               time.Second,
 				KeepAlive:             2 * time.Second,
@@ -45,7 +45,7 @@ func TestNewClient(t *testing.T) {
 
 	t.Run("New() with non-empty opts should use default middleware", func(t *testing.T) {
 		usedMiddlewares := []Middleware{}
-		client, err := New(&Options{ConfigureMiddleware: func(existingMiddleware []Middleware) []Middleware {
+		client, err := New(Options{ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
 			usedMiddlewares = existingMiddleware
 			return existingMiddleware
 		}})
@@ -60,9 +60,9 @@ func TestNewClient(t *testing.T) {
 	t.Run("New() with opts middleware should return expected http.Client", func(t *testing.T) {
 		ctx := &testContext{}
 		usedMiddlewares := []Middleware{}
-		client, err := New(&Options{
+		client, err := New(Options{
 			Middlewares: []Middleware{ctx.createMiddleware("mw1"), ctx.createMiddleware("mw2"), ctx.createMiddleware("mw3")},
-			ConfigureMiddleware: func(existingMiddleware []Middleware) []Middleware {
+			ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
 				middlewares := existingMiddleware
 				for i, j := 0, len(existingMiddleware)-1; i < j; i, j = i+1, j-1 {
 					middlewares[i], middlewares[j] = middlewares[j], middlewares[i]
@@ -101,7 +101,7 @@ func TestRoundTripperFromMiddlewares(t *testing.T) {
 	t.Run("Without any middleware should call final roundTripper", func(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
-		rt := roundTripperFromMiddlewares(&Options{}, nil, finalRoundTripper)
+		rt := roundTripperFromMiddlewares(Options{}, nil, finalRoundTripper)
 		req, err := http.NewRequest(http.MethodGet, "http://", nil)
 		require.NoError(t, err)
 		res, err := rt.RoundTrip(req)
@@ -118,7 +118,7 @@ func TestRoundTripperFromMiddlewares(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		middlewares := []Middleware{ctx.createMiddleware("mw1"), ctx.createMiddleware("mw2"), ctx.createMiddleware("mw3")}
-		rt := roundTripperFromMiddlewares(&Options{}, middlewares, finalRoundTripper)
+		rt := roundTripperFromMiddlewares(Options{}, middlewares, finalRoundTripper)
 		req, err := http.NewRequest(http.MethodGet, "http://", nil)
 		require.NoError(t, err)
 		res, err := rt.RoundTrip(req)
@@ -144,7 +144,7 @@ func (c *testContext) createRoundTripper(name string) http.RoundTripper {
 }
 
 func (c *testContext) createMiddleware(name string) Middleware {
-	return NamedMiddlewareFunc(name, func(opts *Options, next http.RoundTripper) http.RoundTripper {
+	return NamedMiddlewareFunc(name, func(opts Options, next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			c.callChain = append(c.callChain, fmt.Sprintf("before %s", name))
 			res, err := next.RoundTrip(req)

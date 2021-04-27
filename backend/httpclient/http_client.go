@@ -14,23 +14,27 @@ import (
 // provide middlewares you have to manually add the DefaultMiddlewares for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
-func New(opts *Options) (*http.Client, error) {
+func New(opts ...Options) (*http.Client, error) {
 	if opts == nil {
 		return http.DefaultClient, nil
 	}
 
-	checkOpts(opts)
-	transport, err := GetTransport(opts)
+	clientOpts := createOptions(opts...)
+	transport, err := GetTransport(clientOpts)
 	if err != nil {
 		return nil, err
 	}
 
-	c := http.Client{
+	c := &http.Client{
 		Transport: transport,
-		Timeout:   opts.Timeouts.Timeout,
+		Timeout:   clientOpts.Timeouts.Timeout,
 	}
 
-	return &c, nil
+	if clientOpts.ConfigureClient != nil {
+		clientOpts.ConfigureClient(clientOpts, c)
+	}
+
+	return c, nil
 }
 
 // GetTransport creates a new http.RoundTripper given provided options.
@@ -39,87 +43,108 @@ func New(opts *Options) (*http.Client, error) {
 // provide middlewares you have to manually add the DefaultMiddlewares() for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
-func GetTransport(opts *Options) (http.RoundTripper, error) {
+func GetTransport(opts ...Options) (http.RoundTripper, error) {
 	if opts == nil {
 		return http.DefaultTransport, nil
 	}
 
-	checkOpts(opts)
-	tlsConfig, err := GetTLSConfig(opts.TLS)
+	clientOpts := createOptions(opts...)
+	tlsConfig, err := GetTLSConfig(clientOpts)
 	if err != nil {
 		return nil, err
+	}
+
+	if clientOpts.ConfigureTLSConfig != nil {
+		clientOpts.ConfigureTLSConfig(clientOpts, tlsConfig)
 	}
 
 	transport := &http.Transport{
 		TLSClientConfig: tlsConfig,
 		Proxy:           http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
-			Timeout:   opts.Timeouts.Timeout,
-			KeepAlive: opts.Timeouts.KeepAlive,
+			Timeout:   clientOpts.Timeouts.Timeout,
+			KeepAlive: clientOpts.Timeouts.KeepAlive,
 		}).DialContext,
-		TLSHandshakeTimeout:   opts.Timeouts.TLSHandshakeTimeout,
-		ExpectContinueTimeout: opts.Timeouts.ExpectContinueTimeout,
-		MaxIdleConns:          opts.Timeouts.MaxIdleConns,
-		MaxIdleConnsPerHost:   opts.Timeouts.MaxIdleConnsPerHost,
-		IdleConnTimeout:       opts.Timeouts.IdleConnTimeout,
+		TLSHandshakeTimeout:   clientOpts.Timeouts.TLSHandshakeTimeout,
+		ExpectContinueTimeout: clientOpts.Timeouts.ExpectContinueTimeout,
+		MaxIdleConns:          clientOpts.Timeouts.MaxIdleConns,
+		MaxIdleConnsPerHost:   clientOpts.Timeouts.MaxIdleConnsPerHost,
+		IdleConnTimeout:       clientOpts.Timeouts.IdleConnTimeout,
 	}
 
-	if opts.ConfigureMiddleware != nil {
-		opts.Middlewares = opts.ConfigureMiddleware(opts.Middlewares)
+	if clientOpts.ConfigureTransport != nil {
+		clientOpts.ConfigureTransport(clientOpts, transport)
 	}
 
-	return roundTripperFromMiddlewares(opts, opts.Middlewares, transport), nil
+	if clientOpts.ConfigureMiddleware != nil {
+		clientOpts.Middlewares = clientOpts.ConfigureMiddleware(clientOpts, clientOpts.Middlewares)
+	}
+
+	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport), nil
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
-func GetTLSConfig(opts *TLSOptions) (*tls.Config, error) {
-	if opts == nil {
+func GetTLSConfig(opts ...Options) (*tls.Config, error) {
+	clientOpts := createOptions(opts...)
+	if clientOpts.TLS == nil {
 		// #nosec
 		return &tls.Config{}, nil
 	}
 
+	tlsOpts := clientOpts.TLS
+
 	// #nosec
-	config := tls.Config{
-		InsecureSkipVerify: opts.InsecureSkipVerify,
-		ServerName:         opts.ServerName,
+	config := &tls.Config{
+		InsecureSkipVerify: tlsOpts.InsecureSkipVerify,
+		ServerName:         tlsOpts.ServerName,
 	}
 
-	if len(opts.CACertificate) > 0 {
+	if len(tlsOpts.CACertificate) > 0 {
 		caPool := x509.NewCertPool()
-		ok := caPool.AppendCertsFromPEM([]byte(opts.CACertificate))
+		ok := caPool.AppendCertsFromPEM([]byte(tlsOpts.CACertificate))
 		if !ok {
 			return nil, errors.New("failed to parse TLS CA PEM certificate")
 		}
 		config.RootCAs = caPool
 	}
 
-	if len(opts.ClientCertificate) > 0 && len(opts.ClientKey) > 0 {
-		cert, err := tls.X509KeyPair([]byte(opts.ClientCertificate), []byte(opts.ClientKey))
+	if len(tlsOpts.ClientCertificate) > 0 && len(tlsOpts.ClientKey) > 0 {
+		cert, err := tls.X509KeyPair([]byte(tlsOpts.ClientCertificate), []byte(tlsOpts.ClientKey))
 		if err != nil {
 			return nil, err
 		}
 		config.Certificates = []tls.Certificate{cert}
 	}
 
-	if opts.MinVersion > 0 {
-		config.MinVersion = opts.MinVersion
+	if tlsOpts.MinVersion > 0 {
+		config.MinVersion = tlsOpts.MinVersion
 	}
 
-	if opts.MaxVersion > 0 {
-		config.MaxVersion = opts.MaxVersion
+	if tlsOpts.MaxVersion > 0 {
+		config.MaxVersion = tlsOpts.MaxVersion
 	}
 
-	return &config, nil
+	return config, nil
 }
 
-func checkOpts(opts *Options) {
-	if opts.Middlewares == nil {
-		opts.Middlewares = DefaultMiddlewares()
+func createOptions(providedOpts ...Options) Options {
+	var opts Options
+
+	if len(providedOpts) == 0 {
+		opts = Options{}
+	} else {
+		opts = providedOpts[0]
 	}
 
 	if opts.Timeouts == nil {
 		opts.Timeouts = &DefaultTimeoutOptions
 	}
+
+	if opts.Middlewares == nil {
+		opts.Middlewares = DefaultMiddlewares()
+	}
+
+	return opts
 }
 
 // The RoundTripperFunc type is an adapter to allow the use of ordinary
@@ -136,16 +161,16 @@ func (rt RoundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
 // that implements the http.RoundTripper interface.
 type Middleware interface {
 	// CreateMiddleware creates a new middleware.
-	CreateMiddleware(opts *Options, next http.RoundTripper) http.RoundTripper
+	CreateMiddleware(opts Options, next http.RoundTripper) http.RoundTripper
 }
 
 // The MiddlewareFunc type is an adapter to allow the use of ordinary
 // functions as Middlewares. If f is a function with the appropriate
 // signature, MiddlewareFunc(f) is a Middleware that calls f.
-type MiddlewareFunc func(opts *Options, next http.RoundTripper) http.RoundTripper
+type MiddlewareFunc func(opts Options, next http.RoundTripper) http.RoundTripper
 
 // CreateMiddleware implements the Middleware interface.
-func (fn MiddlewareFunc) CreateMiddleware(opts *Options, next http.RoundTripper) http.RoundTripper {
+func (fn MiddlewareFunc) CreateMiddleware(opts Options, next http.RoundTripper) http.RoundTripper {
 	return fn(opts, next)
 }
 
@@ -156,7 +181,7 @@ type MiddlewareName interface {
 }
 
 // ConfigureMiddlewareFunc function signature for configuring middleware chain.
-type ConfigureMiddlewareFunc func(existingMiddleware []Middleware) []Middleware
+type ConfigureMiddlewareFunc func(opts Options, existingMiddleware []Middleware) []Middleware
 
 // DefaultMiddlewares default middleware applied when creating
 // new HTTP clients and no middleware is provided.
@@ -169,7 +194,7 @@ func DefaultMiddlewares() []Middleware {
 	}
 }
 
-func roundTripperFromMiddlewares(opts *Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) http.RoundTripper {
+func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) http.RoundTripper {
 	for i, j := 0, len(middlewares)-1; i < j; i, j = i+1, j-1 {
 		middlewares[i], middlewares[j] = middlewares[j], middlewares[i]
 	}
@@ -198,7 +223,7 @@ func NamedMiddlewareFunc(name string, fn MiddlewareFunc) Middleware {
 	}
 }
 
-func (nm *namedMiddleware) CreateMiddleware(opts *Options, next http.RoundTripper) http.RoundTripper {
+func (nm *namedMiddleware) CreateMiddleware(opts Options, next http.RoundTripper) http.RoundTripper {
 	return nm.Middleware.CreateMiddleware(opts, next)
 }
 

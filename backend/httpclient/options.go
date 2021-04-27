@@ -1,8 +1,22 @@
 package httpclient
 
 import (
+	"crypto/tls"
+	"net/http"
 	"time"
 )
+
+// ConfigureClientFunc function signature for configuring http.Client.
+// Called after http.Client creation.
+type ConfigureClientFunc func(opts Options, client *http.Client)
+
+// ConfigureTransportFunc function signature for configuring http.Transport.
+// Called after http.Transport creation.
+type ConfigureTransportFunc func(opts Options, transport *http.Transport)
+
+// ConfigureTLSConfigFunc function signature for configuring tls.Config.
+// Called after tls.Config creation.
+type ConfigureTLSConfigFunc func(opts Options, tlsConfig *tls.Config)
 
 // Options defines options for creating HTTP clients.
 type Options struct {
@@ -31,6 +45,18 @@ type Options struct {
 	// ConfigureMiddleware optionally provide a ConfigureMiddlewareFunc
 	// to modify the middlewares chain.
 	ConfigureMiddleware ConfigureMiddlewareFunc
+
+	// ConfigureClient optionally provide a ConfigureClientFunc
+	// to modify the created http.Client.
+	ConfigureClient ConfigureClientFunc
+
+	// ConfigureTransport optionally provide a ConfigureTransportFunc
+	// to modify the created http.Client.
+	ConfigureTransport ConfigureTransportFunc
+
+	// ConfigureTLSConfig optionally provide a ConfigureTLSConfigFunc
+	// to modify the created http.Client.
+	ConfigureTLSConfig ConfigureTLSConfigFunc
 }
 
 // BasicAuthOptions basic authentication options.

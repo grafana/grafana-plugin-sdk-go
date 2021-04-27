@@ -45,7 +45,7 @@ type HTTPSettings struct {
 }
 
 // HTTPClientOptions creates and returns httpclient.Options.
-func (s *HTTPSettings) HTTPClientOptions() *httpclient.Options {
+func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 	opts := httpclient.Options{
 		Headers: s.Headers,
 	}
@@ -89,7 +89,7 @@ func (s *HTTPSettings) HTTPClientOptions() *httpclient.Options {
 		}
 	}
 
-	return &opts
+	return opts
 }
 
 //gocyclo:ignore

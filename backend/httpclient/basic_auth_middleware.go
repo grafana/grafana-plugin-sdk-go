@@ -12,8 +12,8 @@ const BasicAuthenticationMiddlewareName = "BasicAuth"
 // If Authorization header already set, it will not be overridden by this middleware.
 // If opts.BasicAuth is nil, next will be returned.
 func BasicAuthenticationMiddleware() Middleware {
-	return NamedMiddlewareFunc(BasicAuthenticationMiddlewareName, func(opts *Options, next http.RoundTripper) http.RoundTripper {
-		if opts == nil || opts.BasicAuth == nil {
+	return NamedMiddlewareFunc(BasicAuthenticationMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
+		if opts.BasicAuth == nil {
 			return next
 		}
 

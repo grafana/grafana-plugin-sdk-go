@@ -12,7 +12,7 @@ func TestCustomHeadersMiddleware(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("finalrt")
 		customHeaders := CustomHeadersMiddleware()
-		rt := customHeaders.CreateMiddleware(&Options{}, finalRoundTripper)
+		rt := customHeaders.CreateMiddleware(Options{}, finalRoundTripper)
 		require.NotNil(t, rt)
 		middlewareName, ok := customHeaders.(MiddlewareName)
 		require.True(t, ok)
@@ -34,7 +34,7 @@ func TestCustomHeadersMiddleware(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		customHeaders := CustomHeadersMiddleware()
-		rt := customHeaders.CreateMiddleware(&Options{Headers: map[string]string{
+		rt := customHeaders.CreateMiddleware(Options{Headers: map[string]string{
 			"X-HeaderOne":   "ValueOne",
 			"X-HeaderTwo":   "ValueTwo",
 			"X-HeaderThree": "ValueThree",

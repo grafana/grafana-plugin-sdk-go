@@ -11,8 +11,8 @@ const CustomHeadersMiddlewareName = "CustomHeaders"
 //
 // If opts.Headers is empty, next will be returned.
 func CustomHeadersMiddleware() Middleware {
-	return NamedMiddlewareFunc(CustomHeadersMiddlewareName, func(opts *Options, next http.RoundTripper) http.RoundTripper {
-		if opts == nil || opts.Headers == nil || len(opts.Headers) == 0 {
+	return NamedMiddlewareFunc(CustomHeadersMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
+		if len(opts.Headers) == 0 {
 			return next
 		}
 

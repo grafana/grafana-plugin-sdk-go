@@ -93,7 +93,7 @@ func TestParseHTTPSettings(t *testing.T) {
 		t.Run("HTTPClientOptions() should convert to expected httpclient.Options", func(t *testing.T) {
 			opts := s.HTTPClientOptions()
 			require.NotNil(t, opts)
-			require.Equal(t, &httpclient.Options{
+			require.Equal(t, httpclient.Options{
 				BasicAuth: &httpclient.BasicAuthOptions{
 					User:     "user",
 					Password: "pwd",

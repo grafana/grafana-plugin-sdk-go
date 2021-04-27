@@ -9,12 +9,12 @@ import (
 )
 
 func ExampleNew() {
-	client, err := httpclient.New(&httpclient.Options{
+	client, err := httpclient.New(httpclient.Options{
 		Timeouts: &httpclient.TimeoutOptions{
 			Timeout: 5 * time.Second,
 		},
 		Middlewares: []httpclient.Middleware{
-			httpclient.MiddlewareFunc(func(opts *httpclient.Options, next http.RoundTripper) http.RoundTripper {
+			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
 				return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 					log.Println("Before outgoing request")
 					res, err := next.RoundTrip(req)
@@ -40,12 +40,12 @@ func ExampleNew() {
 }
 
 func ExampleGetTransport() {
-	transport, err := httpclient.GetTransport(&httpclient.Options{
+	transport, err := httpclient.GetTransport(httpclient.Options{
 		Timeouts: &httpclient.TimeoutOptions{
 			Timeout: 5 * time.Second,
 		},
 		Middlewares: []httpclient.Middleware{
-			httpclient.MiddlewareFunc(func(opts *httpclient.Options, next http.RoundTripper) http.RoundTripper {
+			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
 				return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 					log.Println("Before outgoing request")
 					res, err := next.RoundTrip(req)
@@ -75,9 +75,10 @@ func ExampleGetTransport() {
 }
 
 func ExampleGetTLSConfig() {
-	tlsConfig, err := httpclient.GetTLSConfig(&httpclient.TLSOptions{
-		InsecureSkipVerify: true,
-	})
+	tlsConfig, err := httpclient.GetTLSConfig(httpclient.Options{
+		TLS: &httpclient.TLSOptions{
+			InsecureSkipVerify: true,
+		}})
 	if err != nil {
 		log.Fatalf("failed to get TLS config. error: %s", err)
 	}
