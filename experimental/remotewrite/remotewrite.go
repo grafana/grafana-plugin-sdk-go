@@ -14,11 +14,11 @@ import (
 type metricKey uint64
 
 func Serialize(frames ...*data.Frame) ([]byte, error) {
-	ts := tsFromFrames(frames...)
+	ts := TsFromFrames(frames...)
 	return tsToBytes(ts)
 }
 
-func tsFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
+func TsFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
 	var entries = make(map[metricKey]prompb.TimeSeries)
 	var keys []metricKey // sorted keys.
 

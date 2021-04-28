@@ -15,7 +15,7 @@ func TestTsFromFrames(t *testing.T) {
 		data.NewField("time", map[string]string{"test": "yes"}, []time.Time{t1, t2}),
 		data.NewField("value", map[string]string{"test": "yes"}, []float64{1.0, 2.0}),
 	)
-	ts := tsFromFrames(frame)
+	ts := TsFromFrames(frame)
 	require.Len(t, ts, 1)
 	require.Len(t, ts[0].Samples, 2)
 	require.Equal(t, toSampleTime(t1), ts[0].Samples[0].Timestamp)
@@ -33,7 +33,7 @@ func TestTsFromFramesMultipleSeries(t *testing.T) {
 		data.NewField("value2", nil, []bool{true, false}),
 		data.NewField("value3", nil, []float64{3.0, 4.0}),
 	)
-	ts := tsFromFrames(frame)
+	ts := TsFromFrames(frame)
 	require.Len(t, ts, 2)
 	require.Len(t, ts[0].Samples, 2)
 	require.Equal(t, toSampleTime(t1), ts[0].Samples[0].Timestamp)
@@ -60,7 +60,7 @@ func TestTsFromFramesMultipleFrames(t *testing.T) {
 		data.NewField("time", nil, []time.Time{t3, t4}),
 		data.NewField("value3", nil, []float64{3.0, 4.0}),
 	)
-	ts := tsFromFrames(frame1, frame2)
+	ts := TsFromFrames(frame1, frame2)
 	require.Len(t, ts, 2)
 	require.Len(t, ts[0].Samples, 2)
 	require.Equal(t, toSampleTime(t1), ts[0].Samples[0].Timestamp)
