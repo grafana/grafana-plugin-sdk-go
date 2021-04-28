@@ -5,18 +5,6 @@ import (
 	"net/http"
 )
 
-// Provider provides abilities to create http.Client, http.RoundTripper and tls.Config.
-type Provider interface {
-	// New creates a new http.Client given provided options.
-	New(opts ...Options) (*http.Client, error)
-
-	// GetTransport creates a new http.RoundTripper given provided options.
-	GetTransport(opts ...Options) (http.RoundTripper, error)
-
-	// GetTLSConfig creates a new tls.Config given provided options.
-	GetTLSConfig(opts ...Options) (*tls.Config, error)
-}
-
 // ProviderOptions options that will be used as default if not specified
 // in Options provided to DefaultProvider.New, DefaultProvider.GetTransport and
 // DefaultProvider.GetTLSConfig.
@@ -170,8 +158,6 @@ func (p *DefaultProvider) createClientOptions(providedOpts ...Options) Options {
 
 	return clientOpts
 }
-
-var _ Provider = &DefaultProvider{}
 
 func configureMiddlewareChain(first, second ConfigureMiddlewareFunc) ConfigureMiddlewareFunc {
 	if first != nil && second != nil {
