@@ -13,7 +13,7 @@ func ExampleNewProvider() {
 	log.Printf("Middleware length: %d", len(provider.Opts.Middlewares))
 }
 
-func ExampleDefaultProvider_New() {
+func ExampleProvider_New() {
 	provider := httpclient.NewProvider(httpclient.ProviderOptions{Middlewares: []httpclient.Middleware{httpclient.CustomHeadersMiddleware()}})
 
 	client, err := provider.New(httpclient.Options{
@@ -46,7 +46,7 @@ func ExampleDefaultProvider_New() {
 	log.Printf("Got response: %v", rsp.StatusCode)
 }
 
-func ExampleDefaultProvider_GetTransport() {
+func ExampleProvider_GetTransport() {
 	provider := httpclient.NewProvider(httpclient.ProviderOptions{Middlewares: []httpclient.Middleware{httpclient.CustomHeadersMiddleware()}})
 
 	transport, err := provider.GetTransport(httpclient.Options{
@@ -83,7 +83,7 @@ func ExampleDefaultProvider_GetTransport() {
 	log.Printf("Got response: %v", rsp.StatusCode)
 }
 
-func ExampleDefaultProvider_GetTLSConfig() {
+func ExampleProvider_GetTLSConfig() {
 	provider := httpclient.NewProvider(httpclient.ProviderOptions{Middlewares: []httpclient.Middleware{httpclient.CustomHeadersMiddleware()}})
 	tlsConfig, err := provider.GetTLSConfig(httpclient.Options{
 		TLS: &httpclient.TLSOptions{

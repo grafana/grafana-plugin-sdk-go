@@ -168,7 +168,7 @@ type providerTestContext struct {
 	client                   *http.Client
 	transport                *http.Transport
 	tlsConfig                *tls.Config
-	provider                 *DefaultProvider
+	provider                 *Provider
 }
 
 func newProviderTestContext(t *testing.T, opts ...ProviderOptions) *providerTestContext {

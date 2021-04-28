@@ -6,8 +6,8 @@ import (
 )
 
 // ProviderOptions options that will be used as default if not specified
-// in Options provided to DefaultProvider.New, DefaultProvider.GetTransport and
-// DefaultProvider.GetTLSConfig.
+// in Options provided to Provider.New, Provider.GetTransport and
+// Provider.GetTLSConfig.
 type ProviderOptions struct {
 	// Timeouts timeout/connection related options.
 	Timeout *TimeoutOptions
@@ -34,20 +34,20 @@ type ProviderOptions struct {
 	ConfigureTLSConfig ConfigureTLSConfigFunc
 }
 
-// DefaultProvider the default HTTP client provider implementation.
-type DefaultProvider struct {
+// Provider the default HTTP client provider implementation.
+type Provider struct {
 	Opts ProviderOptions
 }
 
 // NewProvider creates a new HTTP client provider.
 // Optionally provide ProviderOptions options that will be used as default if
-// not specified in Options argument to DefaultProvider.New, DefaultProvider.GetTransport and
-// DefaultProvider.GetTLSConfig.
+// not specified in Options argument to Provider.New, Provider.GetTransport and
+// Provider.GetTLSConfig.
 // If no middlewares are provided in opts the DefaultMiddlewares() will be used. If you
 // provide middlewares you have to manually add the DefaultMiddlewares() for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
-func NewProvider(opts ...ProviderOptions) *DefaultProvider {
+func NewProvider(opts ...ProviderOptions) *Provider {
 	var providerOpts ProviderOptions
 	if len(opts) == 0 {
 		providerOpts = ProviderOptions{
@@ -61,13 +61,13 @@ func NewProvider(opts ...ProviderOptions) *DefaultProvider {
 		providerOpts.Middlewares = DefaultMiddlewares()
 	}
 
-	return &DefaultProvider{
+	return &Provider{
 		Opts: providerOpts,
 	}
 }
 
 // New creates a new http.Client given provided options.
-func (p *DefaultProvider) New(opts ...Options) (*http.Client, error) {
+func (p *Provider) New(opts ...Options) (*http.Client, error) {
 	clientOpts := p.createClientOptions(opts...)
 
 	var configuredTransport *http.Transport
@@ -99,7 +99,7 @@ func (p *DefaultProvider) New(opts ...Options) (*http.Client, error) {
 // GetTransport creates a new http.RoundTripper given provided options.
 // If opts is nil the http.DefaultTransport will be returned and no
 // outgoing request middleware applied.
-func (p *DefaultProvider) GetTransport(opts ...Options) (http.RoundTripper, error) {
+func (p *Provider) GetTransport(opts ...Options) (http.RoundTripper, error) {
 	clientOpts := p.createClientOptions(opts...)
 
 	var configuredTransport *http.Transport
@@ -126,7 +126,7 @@ func (p *DefaultProvider) GetTransport(opts ...Options) (http.RoundTripper, erro
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
-func (p *DefaultProvider) GetTLSConfig(opts ...Options) (*tls.Config, error) {
+func (p *Provider) GetTLSConfig(opts ...Options) (*tls.Config, error) {
 	clientOpts := p.createClientOptions(opts...)
 
 	config, err := GetTLSConfig(clientOpts)
@@ -141,7 +141,7 @@ func (p *DefaultProvider) GetTLSConfig(opts ...Options) (*tls.Config, error) {
 	return config, nil
 }
 
-func (p *DefaultProvider) createClientOptions(providedOpts ...Options) Options {
+func (p *Provider) createClientOptions(providedOpts ...Options) Options {
 	var clientOpts Options
 
 	if len(providedOpts) == 0 {
