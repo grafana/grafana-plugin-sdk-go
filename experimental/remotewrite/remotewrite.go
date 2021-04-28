@@ -19,15 +19,20 @@ func Serialize(frames ...*data.Frame) ([]byte, error) {
 }
 
 func tsFromFrames(frames ...*data.Frame) []*prompb.TimeSeries {
-	var entries = make(map[metricKey]prompb.TimeSeries)
+	var entries = make(map[metricKey]*prompb.TimeSeries)
+	var keys []metricKey // sorted keys.
 
 	for _, frame := range frames {
-		var promTimeSeries prompb.TimeSeries
+		timeFieldIndex, ok := timeFieldIndex(frame)
+		if !ok {
+			// Skipping frames without time field.
+			continue
+		}
 		for _, field := range frame.Fields {
 			if !field.Type().Numeric() {
 				continue
 			}
-			metricName := frame.Name + "_" + field.Name
+			metricName := makeMetricName(frame, field)
 			metricName, ok := sanitizeMetricName(metricName)
 			if !ok {
 				continue
@@ -47,11 +52,10 @@ func tsFromFrames(frames ...*data.Frame) []*prompb.TimeSeries {
 				if !ok {
 					continue
 				}
-				tm, ok := frame.Fields[0].ConcreteAt(i)
+				tm, ok := frame.Fields[timeFieldIndex].ConcreteAt(i)
 				if !ok {
 					continue
 				}
-
 				sample := prompb.Sample{
 					// Timestamp is int milliseconds for remote write.
 					Timestamp: toSampleTime(tm.(time.Time)),
@@ -59,20 +63,33 @@ func tsFromFrames(frames ...*data.Frame) []*prompb.TimeSeries {
 				}
 				samples = append(samples, sample)
 			}
-
-			promTimeSeries = prompb.TimeSeries{Labels: labels, Samples: samples}
-			entries[key] = promTimeSeries
+			promTimeSeries := prompb.TimeSeries{Labels: labels, Samples: samples}
+			entries[key] = &promTimeSeries
+			keys = append(keys, key)
 		}
 	}
 
-	var promTS = make([]*prompb.TimeSeries, len(entries))
-	var i int
-	for _, promTs := range entries {
-		promTS[i] = &promTs
-		i++
+	var promTimeSeriesBatch = make([]*prompb.TimeSeries, 0, len(entries))
+	for _, key := range keys {
+		promTimeSeriesBatch = append(promTimeSeriesBatch, entries[key])
 	}
 
-	return promTS
+	return promTimeSeriesBatch
+}
+
+func timeFieldIndex(frame *data.Frame) (int, bool) {
+	timeFieldIndex := -1
+	for i, field := range frame.Fields {
+		if field.Type().Time() {
+			timeFieldIndex = i
+			break
+		}
+	}
+	return timeFieldIndex, timeFieldIndex > -1
+}
+
+func makeMetricName(frame *data.Frame, field *data.Field) string {
+	return frame.Name + "_" + field.Name
 }
 
 func toSampleTime(tm time.Time) int64 {
