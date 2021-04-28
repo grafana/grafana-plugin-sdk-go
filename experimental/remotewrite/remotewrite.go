@@ -18,8 +18,8 @@ func Serialize(frames ...*data.Frame) ([]byte, error) {
 	return tsToBytes(ts)
 }
 
-func tsFromFrames(frames ...*data.Frame) []*prompb.TimeSeries {
-	var entries = make(map[metricKey]*prompb.TimeSeries)
+func tsFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
+	var entries = make(map[metricKey]prompb.TimeSeries)
 	var keys []metricKey // sorted keys.
 
 	for _, frame := range frames {
@@ -64,12 +64,12 @@ func tsFromFrames(frames ...*data.Frame) []*prompb.TimeSeries {
 				samples = append(samples, sample)
 			}
 			promTimeSeries := prompb.TimeSeries{Labels: labels, Samples: samples}
-			entries[key] = &promTimeSeries
+			entries[key] = promTimeSeries
 			keys = append(keys, key)
 		}
 	}
 
-	var promTimeSeriesBatch = make([]*prompb.TimeSeries, 0, len(entries))
+	var promTimeSeriesBatch = make([]prompb.TimeSeries, 0, len(entries))
 	for _, key := range keys {
 		promTimeSeriesBatch = append(promTimeSeriesBatch, entries[key])
 	}
@@ -96,7 +96,7 @@ func toSampleTime(tm time.Time) int64 {
 	return tm.UnixNano() / int64(time.Millisecond)
 }
 
-func tsToBytes(ts []*prompb.TimeSeries) ([]byte, error) {
+func tsToBytes(ts []prompb.TimeSeries) ([]byte, error) {
 	writeRequestData, err := proto.Marshal(&prompb.WriteRequest{Timeseries: ts})
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal protobuf: %v", err)
@@ -104,7 +104,7 @@ func tsToBytes(ts []*prompb.TimeSeries) ([]byte, error) {
 	return snappy.Encode(nil, writeRequestData), nil
 }
 
-func makeMetricKey(name string, labels []*prompb.Label) metricKey {
+func makeMetricKey(name string, labels []prompb.Label) metricKey {
 	h := fnv.New64a()
 	_, _ = h.Write([]byte(name))
 	for _, label := range labels {
@@ -116,14 +116,14 @@ func makeMetricKey(name string, labels []*prompb.Label) metricKey {
 	return metricKey(h.Sum64())
 }
 
-func createLabels(fieldLabels map[string]string) []*prompb.Label {
-	labels := make([]*prompb.Label, 0, len(fieldLabels))
+func createLabels(fieldLabels map[string]string) []prompb.Label {
+	labels := make([]prompb.Label, 0, len(fieldLabels))
 	for k, v := range fieldLabels {
 		sanitizedName, ok := sanitizeLabelName(k)
 		if !ok {
 			continue
 		}
-		labels = append(labels, &prompb.Label{Name: sanitizedName, Value: v})
+		labels = append(labels, prompb.Label{Name: sanitizedName, Value: v})
 	}
 	return labels
 }
