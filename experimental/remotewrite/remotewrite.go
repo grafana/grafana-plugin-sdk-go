@@ -14,11 +14,10 @@ import (
 type metricKey uint64
 
 func Serialize(frames ...*data.Frame) ([]byte, error) {
-	ts := TsFromFrames(frames...)
-	return tsToBytes(ts)
+	return TimeSeriesToBytes(TimeSeriesFromFrames(frames...))
 }
 
-func TsFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
+func TimeSeriesFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
 	var entries = make(map[metricKey]prompb.TimeSeries)
 	var keys []metricKey // sorted keys.
 
@@ -63,6 +62,14 @@ func TsFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
 				}
 				samples = append(samples, sample)
 			}
+
+			labelsCopy := make([]prompb.Label, len(labels), len(labels)+1)
+			copy(labelsCopy, labels)
+			labels = append(labelsCopy, prompb.Label{
+				Name:  "__name__",
+				Value: metricName,
+			})
+
 			promTimeSeries := prompb.TimeSeries{Labels: labels, Samples: samples}
 			entries[key] = promTimeSeries
 			keys = append(keys, key)
@@ -96,7 +103,7 @@ func toSampleTime(tm time.Time) int64 {
 	return tm.UnixNano() / int64(time.Millisecond)
 }
 
-func tsToBytes(ts []prompb.TimeSeries) ([]byte, error) {
+func TimeSeriesToBytes(ts []prompb.TimeSeries) ([]byte, error) {
 	writeRequestData, err := proto.Marshal(&prompb.WriteRequest{Timeseries: ts})
 	if err != nil {
 		return nil, fmt.Errorf("unable to marshal protobuf: %v", err)
