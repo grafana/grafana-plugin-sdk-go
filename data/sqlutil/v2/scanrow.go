@@ -37,7 +37,8 @@ func (s *ScanRow) NewScannableRow() []interface{} {
 
 	for i, v := range s.Types {
 		if v.Kind() == reflect.Ptr {
-			values[i] = reflect.New(v)
+			n := reflect.New(v.Elem())
+			values[i] = n.Interface()
 		} else {
 			values[i] = reflect.New(v).Interface()
 		}
@@ -46,11 +47,12 @@ func (s *ScanRow) NewScannableRow() []interface{} {
 	return values
 }
 
-func NewFrame(converters ...Converter) *data.Frame {
+func NewFrame(columns []string, converters ...Converter) *data.Frame {
 	fields := make(data.Fields, len(converters))
 
 	for i, v := range converters {
 		fields[i] = data.NewFieldFromFieldType(v.FrameConverter.FieldType, 0)
+		fields[i].Name = columns[i]
 	}
 
 	return data.NewFrame("results", fields...)

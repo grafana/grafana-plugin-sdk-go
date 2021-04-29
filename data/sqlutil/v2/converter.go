@@ -1,7 +1,9 @@
 package sqlutil
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -38,10 +40,21 @@ func DefaultConverterFunc(in interface{}) (interface{}, error) {
 	return in, nil
 }
 
-func NewDefaultFrameConverter(t reflect.Type) (FrameConverter, error) {
+func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 	slice := reflect.MakeSlice(reflect.SliceOf(t), 0, 0).Interface()
 	if !data.ValidFieldType(slice) {
-		return FrameConverter{}, ErrorUnrecognizedType
+		// return Converter{}, ErrorUnrecognizedType
+		return Converter{
+			Name:          fmt.Sprintf("[%s] String converter", t),
+			InputScanType: reflect.TypeOf(""),
+			FrameConverter: FrameConverter{
+				FieldType: data.FieldTypeNullableString,
+				ConverterFunc: func(in interface{}) (interface{}, error) {
+					v := in.(*string)
+					return v, nil
+				},
+			},
+		}
 	}
 
 	v := reflect.New(t)
@@ -54,8 +67,64 @@ func NewDefaultFrameConverter(t reflect.Type) (FrameConverter, error) {
 		fieldType = data.FieldTypeFor(v.Interface())
 	}
 
-	return FrameConverter{
-		FieldType:     fieldType,
-		ConverterFunc: DefaultConverterFunc,
-	}, nil
+	if nullable {
+		if converter, ok := NullConverters[t.String()]; ok {
+			return converter
+		}
+	}
+
+	return Converter{
+		Name:          fmt.Sprintf("Default converter for %s", name),
+		InputScanType: t,
+		InputTypeName: name,
+		FrameConverter: FrameConverter{
+			FieldType:     fieldType,
+			ConverterFunc: DefaultConverterFunc,
+		},
+	}
+}
+
+var (
+	NullStringConverter = Converter{
+		Name:          "nullable string converter",
+		InputScanType: reflect.TypeOf(sql.NullString{}),
+		InputTypeName: "STRING",
+		FrameConverter: FrameConverter{
+			FieldType: data.FieldTypeNullableString,
+			ConverterFunc: func(n interface{}) (interface{}, error) {
+				v := n.(*sql.NullFloat64)
+
+				if !v.Valid {
+					return (*float64)(nil), nil
+				}
+
+				f := v.Float64
+				return &f, nil
+			},
+		},
+	}
+
+	NullDecimalConverter = Converter{
+		Name:          "NULLABLE decimal converter",
+		InputScanType: reflect.TypeOf(sql.NullFloat64{}),
+		InputTypeName: "DOUBLE",
+		FrameConverter: FrameConverter{
+			FieldType: data.FieldTypeNullableFloat64,
+			ConverterFunc: func(n interface{}) (interface{}, error) {
+				v := n.(*sql.NullFloat64)
+
+				if !v.Valid {
+					return (*float64)(nil), nil
+				}
+
+				f := v.Float64
+				return &f, nil
+			},
+		},
+	}
+)
+
+var NullConverters = map[string]Converter{
+	"float64": NullDecimalConverter,
+	"string":  NullStringConverter,
 }

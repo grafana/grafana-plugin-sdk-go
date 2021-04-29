@@ -3,7 +3,6 @@ package sqlutil
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"reflect"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -25,9 +24,7 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		return nil, err
 	}
 
-	log.Println(types, names)
-
-	frame := NewFrame(converters...)
+	frame := NewFrame(names, converters...)
 
 	for rows.Next() {
 		r := scanner.NewScannableRow()
@@ -81,29 +78,12 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 		}
 
 		if converter == nil {
-			v, err := NewDefaultFrameConverter(scanType)
-			// TODO: get this error into the frame meta
-			// TODO: handle the case that this may be the only row to scan
-			if err != nil {
-				log.Println("Skipping column", colName, "with type", scanType)
-				continue
-			}
-			converter = &Converter{
-				Name:           fmt.Sprintf("Default converter for %s", colName),
-				InputScanType:  scanType,
-				InputTypeName:  colName,
-				FrameConverter: v,
-			}
+			v := NewDefaultConverter(colName, nullable, scanType)
+			converter = &v
+			scanType = v.InputScanType
 		}
 
-		var val interface{}
-		if !nullable {
-			val = reflect.New(scanType).Interface()
-		} else {
-			ptrType := reflect.TypeOf(reflect.New(scanType).Interface())
-			// Nullabe types get passed to scan as a pointer to a pointer
-			val = reflect.New(ptrType).Interface()
-		}
+		val := reflect.New(scanType).Interface()
 
 		// if !data.ValidFieldType(vec) {
 		// 	ptrType := reflect.TypeOf(reflect.New(reflect.TypeOf("")).Interface())
