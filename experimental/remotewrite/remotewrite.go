@@ -13,10 +13,12 @@ import (
 
 type metricKey uint64
 
+// Serialize frames to Prometheus remote write format.
 func Serialize(frames ...*data.Frame) ([]byte, error) {
 	return TimeSeriesToBytes(TimeSeriesFromFrames(frames...))
 }
 
+// TimeSeriesFromFrames converts frames to slice of Prometheus TimeSeries.
 func TimeSeriesFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
 	var entries = make(map[metricKey]prompb.TimeSeries)
 	var keys []metricKey // sorted keys.
@@ -65,12 +67,11 @@ func TimeSeriesFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
 
 			labelsCopy := make([]prompb.Label, len(labels), len(labels)+1)
 			copy(labelsCopy, labels)
-			labels = append(labelsCopy, prompb.Label{
+			labelsCopy = append(labelsCopy, prompb.Label{
 				Name:  "__name__",
 				Value: metricName,
 			})
-
-			promTimeSeries := prompb.TimeSeries{Labels: labels, Samples: samples}
+			promTimeSeries := prompb.TimeSeries{Labels: labelsCopy, Samples: samples}
 			entries[key] = promTimeSeries
 			keys = append(keys, key)
 		}
@@ -103,6 +104,7 @@ func toSampleTime(tm time.Time) int64 {
 	return tm.UnixNano() / int64(time.Millisecond)
 }
 
+// TimeSeriesToBytes converts Prometheus TimeSeries to snappy compressed byte slice.
 func TimeSeriesToBytes(ts []prompb.TimeSeries) ([]byte, error) {
 	writeRequestData, err := proto.Marshal(&prompb.WriteRequest{Timeseries: ts})
 	if err != nil {

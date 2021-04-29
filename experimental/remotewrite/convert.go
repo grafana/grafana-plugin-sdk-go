@@ -31,7 +31,7 @@ var metricNameTable = table{
 	},
 }
 
-var LabelNameTable = table{
+var labelNameTable = table{
 	First: &unicode.RangeTable{
 		R16: []unicode.Range16{
 			{0x0041, 0x005A, 1}, // A-Z
@@ -116,7 +116,7 @@ func sanitizeMetricName(name string) (string, bool) {
 // not, it attempts to replaces invalid runes with an underscore to create a
 // valid name.
 func sanitizeLabelName(name string) (string, bool) {
-	return sanitize(name, LabelNameTable)
+	return sanitize(name, labelNameTable)
 }
 
 // sampleValue converts a field value into a value suitable for a simple sample value.
