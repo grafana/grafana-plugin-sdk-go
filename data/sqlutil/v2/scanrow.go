@@ -1,6 +1,7 @@
 package sqlutil
 
 import (
+	"log"
 	"reflect"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -61,6 +62,8 @@ func NewFrame(columns []string, converters ...Converter) *data.Frame {
 func Append(frame *data.Frame, row []interface{}, converters ...Converter) error {
 	d := make([]interface{}, len(row))
 	for i, v := range row {
+		log.Println(i, "Using converter", converters[i].Name, "Scan Type:", converters[i].InputScanType, "Frame type:", converters[i].FrameConverter.FieldType)
+
 		value, err := converters[i].FrameConverter.ConverterFunc(v)
 		if err != nil {
 			return err

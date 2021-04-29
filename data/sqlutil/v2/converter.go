@@ -47,6 +47,7 @@ func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 		return Converter{
 			Name:          fmt.Sprintf("[%s] String converter", t),
 			InputScanType: reflect.TypeOf(""),
+			InputTypeName: name,
 			FrameConverter: FrameConverter{
 				FieldType: data.FieldTypeNullableString,
 				ConverterFunc: func(in interface{}) (interface{}, error) {
