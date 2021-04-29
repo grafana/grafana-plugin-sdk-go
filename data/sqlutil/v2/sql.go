@@ -68,11 +68,11 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 
 		var converter *Converter
 		scanType := colType.ScanType()
-		for _, v := range converters {
+		for i, v := range converters {
 			// If there's an applicable converter for this column, scan using the InputScanType.
 			if v.InputTypeName == colType.DatabaseTypeName() {
 				scanType = v.InputScanType
-				converter = &v
+				converter = &converters[i]
 				break
 			}
 		}
