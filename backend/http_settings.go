@@ -11,37 +11,37 @@ import (
 // HTTPSettings convenient struct for holding decoded HTTP settings from
 // jsonData and secureJSONData.
 type HTTPSettings struct {
-	Access            string `json:"access"`
-	URL               string `json:"url"`
-	BasicAuthEnabled  bool   `json:"basicAuth"`
-	BasicAuthUser     string `json:"basicAuthUser"`
-	BasicAuthPassword string `json:"secure.basicAuthPassword"`
+	Access            string
+	URL               string
+	BasicAuthEnabled  bool
+	BasicAuthUser     string
+	BasicAuthPassword string
 	Headers           map[string]string
 
-	Timeout               time.Duration `json:"timeout"`
-	KeepAlive             time.Duration `json:"httpKeepAlive"`
-	TLSHandshakeTimeout   time.Duration `json:"httpTLSHandshakeTimeout"`
-	ExpectContinueTimeout time.Duration `json:"httpExpectContinueTimeout"`
-	MaxIdleConns          int           `json:"httpMaxIdleConns"`
-	MaxIdleConnsPerHost   int           `json:"httpMaxIdleConnsPerHost"`
-	IdleConnTimeout       time.Duration `json:"httpIdleConnTimeout"`
+	Timeout               time.Duration
+	KeepAlive             time.Duration
+	TLSHandshakeTimeout   time.Duration
+	ExpectContinueTimeout time.Duration
+	MaxIdleConns          int
+	MaxIdleConnsPerHost   int
+	IdleConnTimeout       time.Duration
 
-	TLSClientAuth     bool   `json:"tlsAuth"`
-	TLSAuthWithCACert bool   `json:"tlsAuthWithCACert"`
-	TLSSkipVerify     bool   `json:"tlsSkipVerify"`
-	TLSServerName     string `json:"serverName"`
-	TLSCACert         string `json:"secure.tlsCACert"`
-	TLSClientCert     string `json:"secure.tlsClientCert"`
-	TLSClientKey      string `json:"secure.tlsClientKey"`
+	TLSClientAuth     bool
+	TLSAuthWithCACert bool
+	TLSSkipVerify     bool
+	TLSServerName     string
+	TLSCACert         string
+	TLSClientCert     string
+	TLSClientKey      string
 
-	SigV4Auth          bool   `json:"sigV4Auth"`
-	SigV4Region        string `json:"sigV4Region"`
-	SigV4AssumeRoleARN string `json:"sigV4AssumeRoleArn"`
-	SigV4AuthType      string `json:"sigV4AuthType"`
-	SigV4ExternalID    string `json:"sigV4ExternalId"`
-	SigV4Profile       string `json:"sigV4Profile"`
-	SigV4AccessKey     string `json:"secure.sigV4AccessKey"`
-	SigV4SecretKey     string `json:"secure.sigV4SecretKey"`
+	SigV4Auth          bool
+	SigV4Region        string
+	SigV4AssumeRoleARN string
+	SigV4AuthType      string
+	SigV4ExternalID    string
+	SigV4Profile       string
+	SigV4AccessKey     string
+	SigV4SecretKey     string
 }
 
 // HTTPClientOptions creates and returns httpclient.Options.
