@@ -254,7 +254,17 @@ func goldenDF() *data.Frame {
 			timePtr(time.Unix(0, math.MaxInt64)),
 		}),
 	).SetMeta(&data.FrameMeta{
-		Custom: map[string]interface{}{"Hi": "there"},
+		Custom:              map[string]interface{}{"Hi": "there"},
+		ExecutedQueryString: "SELECT * FROM table",
+		Channel:             "sample/channel/name",
+		Stats: []data.QueryStat{
+			{
+				FieldConfig: data.FieldConfig{
+					DisplayName: "sample",
+				},
+				Value: 1.234,
+			},
+		},
 	})
 
 	df.RefID = "A"

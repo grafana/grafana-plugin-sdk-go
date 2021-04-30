@@ -19,9 +19,9 @@ const (
 	// FieldTypeNullableInt8 indicates the underlying primitive is a []*int8.
 	FieldTypeNullableInt8
 
-	// FieldTypeInt16 indicates the underlying primitive is a []Int16.
+	// FieldTypeInt16 indicates the underlying primitive is a []int16.
 	FieldTypeInt16
-	// FieldTypeNullableInt16 indicates the underlying primitive is a []*Int16.
+	// FieldTypeNullableInt16 indicates the underlying primitive is a []*int16.
 	FieldTypeNullableInt16
 
 	// FieldTypeInt32 indicates the underlying primitive is a []int32.
@@ -34,9 +34,9 @@ const (
 	// FieldTypeNullableInt64 indicates the underlying primitive is a []*int64.
 	FieldTypeNullableInt64
 
-	// FieldTypeUint8 indicates the underlying primitive is a []int8.
+	// FieldTypeUint8 indicates the underlying primitive is a []uint8.
 	FieldTypeUint8
-	// FieldTypeNullableUint8 indicates the underlying primitive is a []*int8.
+	// FieldTypeNullableUint8 indicates the underlying primitive is a []*uint8.
 	FieldTypeNullableUint8
 
 	// FieldTypeUint16 indicates the underlying primitive is a []uint16.
@@ -98,7 +98,7 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 
 	f, ok := FieldTypeFromItemTypeString(j)
 	if !ok {
-		return fmt.Errorf("unknown field type")
+		return fmt.Errorf("unknown field type: %s", j)
 	}
 	*p = f
 	return nil
@@ -263,7 +263,7 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*int64":
 		return FieldTypeNullableInt64, true
 
-	case "unit8":
+	case "uint8":
 		return FieldTypeUint8, true
 	case "*uint8":
 		return FieldTypeNullableUint8, true
@@ -298,7 +298,7 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*string":
 		return FieldTypeNullableString, true
 
-	case "bool":
+	case "bool", "boolean":
 		return FieldTypeBool, true
 	case "*bool":
 		return FieldTypeNullableBool, true
@@ -335,7 +335,7 @@ func (p FieldType) ItemTypeString() string {
 		return "*int64"
 
 	case FieldTypeUint8:
-		return "unit8"
+		return "uint8"
 	case FieldTypeNullableUint8:
 		return "*uint8"
 

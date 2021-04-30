@@ -2,7 +2,6 @@ package data
 
 import (
 	"fmt"
-	"time"
 )
 
 // vector represents a Field's collection of Elements.
@@ -19,72 +18,6 @@ type vector interface {
 	SetConcrete(i int, val interface{})
 	Insert(i int, val interface{})
 	Delete(i int)
-}
-
-func newVector(t interface{}, n int) (v vector) {
-	switch t.(type) {
-	// ints
-	case []int8:
-		v = newInt8Vector(n)
-	case []*int8:
-		v = newNullableInt8Vector(n)
-	case []int16:
-		v = newInt16Vector(n)
-	case []*int16:
-		v = newNullableInt16Vector(n)
-	case []int32:
-		v = newInt32Vector(n)
-	case []*int32:
-		v = newNullableInt32Vector(n)
-	case []int64:
-		v = newInt64Vector(n)
-	case []*int64:
-		v = newNullableInt64Vector(n)
-
-	// uints
-	case []uint8:
-		v = newUint8Vector(n)
-	case []*uint8:
-		v = newNullableUint8Vector(n)
-	case []uint16:
-		v = newUint16Vector(n)
-	case []*uint16:
-		v = newNullableUint16Vector(n)
-	case []uint32:
-		v = newUint32Vector(n)
-	case []*uint32:
-		v = newNullableUint32Vector(n)
-	case []uint64:
-		v = newUint64Vector(n)
-	case []*uint64:
-		v = newNullableUint64Vector(n)
-
-	// floats
-	case []float32:
-		v = newFloat32Vector(n)
-	case []*float32:
-		v = newNullableFloat32Vector(n)
-	case []float64:
-		v = newFloat64Vector(n)
-	case []*float64:
-		v = newNullableFloat64Vector(n)
-
-	case []string:
-		v = newStringVector(n)
-	case []*string:
-		v = newNullableStringVector(n)
-	case []bool:
-		v = newBoolVector(n)
-	case []*bool:
-		v = newNullableBoolVector(n)
-	case []time.Time:
-		v = newTimeTimeVector(n)
-	case []*time.Time:
-		v = newNullableTimeTimeVector(n)
-	default:
-		panic(fmt.Sprintf("unsupported vector type of %T", t))
-	}
-	return v
 }
 
 func vectorFieldType(v vector) FieldType {

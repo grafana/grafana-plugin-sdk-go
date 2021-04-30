@@ -151,6 +151,50 @@ func TestFrameMarshalJSONConcurrent(t *testing.T) {
 	wg.Wait()
 }
 
+type testWrapper struct {
+	Data json.RawMessage
+}
+
+func TestFrame_UnmarshalJSON_SchemaOnly(t *testing.T) {
+	f := data.NewFrame("test", data.NewField("test", nil, []int64{1}))
+	d, err := data.FrameToJSON(f, true, false)
+	require.NoError(t, err)
+	_, err = json.Marshal(testWrapper{Data: d})
+	require.NoError(t, err)
+	var newFrame data.Frame
+	err = json.Unmarshal(d, &newFrame)
+	require.NoError(t, err)
+	require.Equal(t, 0, newFrame.Fields[0].Len())
+}
+
+func TestFrameMarshalJSON_DataOnly(t *testing.T) {
+	f := goldenDF()
+	d, err := data.FrameToJSON(f, false, true)
+	require.NoError(t, err)
+	_, err = json.Marshal(testWrapper{Data: d})
+	require.NoError(t, err)
+	var newFrame data.Frame
+	err = json.Unmarshal(d, &newFrame)
+	require.Error(t, err)
+}
+
+func TestFrame_UnmarshalJSON_SchemaAndData_WrongOrder(t *testing.T) {
+	// At this moment we can only unmarshal frames with "schema" key first.
+	d := []byte(`{"data":{"values":[[]]}, "schema":{"name":"test","fields":[{"name":"test","type":"number","typeInfo":{"frame":"int64"}}]}}`)
+	var newFrame data.Frame
+	err := json.Unmarshal(d, &newFrame)
+	require.Error(t, err)
+}
+
+func TestFrame_UnmarshalJSON_DataOnly(t *testing.T) {
+	f := data.NewFrame("test", data.NewField("test", nil, []int64{}))
+	d, err := data.FrameToJSON(f, false, true)
+	require.NoError(t, err)
+	var newFrame data.Frame
+	err = json.Unmarshal(d, &newFrame)
+	require.Error(t, err)
+}
+
 // This function will write code to the console that should be copy/pasted into frame_json.gen.go
 // when changes are required. Typically this function will always be skipped.
 func TestGenerateGenericArrowCode(t *testing.T) {
