@@ -14,6 +14,7 @@ import (
 // provide middlewares you have to manually add the DefaultMiddlewares for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
+// Note: If more than one Options is provided a panic is raised.
 func New(opts ...Options) (*http.Client, error) {
 	if opts == nil {
 		return http.DefaultClient, nil
@@ -43,6 +44,7 @@ func New(opts ...Options) (*http.Client, error) {
 // provide middlewares you have to manually add the DefaultMiddlewares() for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
+// Note: If more than one Options is provided a panic is raised.
 func GetTransport(opts ...Options) (http.RoundTripper, error) {
 	if opts == nil {
 		return http.DefaultTransport, nil
@@ -84,6 +86,7 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
+// Note: If more than one Options is provided a panic is raised.
 func GetTLSConfig(opts ...Options) (*tls.Config, error) {
 	clientOpts := createOptions(opts...)
 	if clientOpts.TLS == nil {
@@ -130,10 +133,13 @@ func GetTLSConfig(opts ...Options) (*tls.Config, error) {
 func createOptions(providedOpts ...Options) Options {
 	var opts Options
 
-	if len(providedOpts) == 0 {
+	switch len(providedOpts) {
+	case 0:
 		opts = Options{}
-	} else {
+	case 1:
 		opts = providedOpts[0]
+	default:
+		panic("only an empty or one Options is valid as argument")
 	}
 
 	if opts.Timeouts == nil {

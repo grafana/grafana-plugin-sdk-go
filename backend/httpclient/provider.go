@@ -46,14 +46,18 @@ type Provider struct {
 // provide middlewares you have to manually add the DefaultMiddlewares() for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
+// Note: If more than one ProviderOption is provided a panic is raised.
 func NewProvider(opts ...ProviderOptions) *Provider {
 	var providerOpts ProviderOptions
-	if len(opts) == 0 {
+	switch len(opts) {
+	case 0:
 		providerOpts = ProviderOptions{
 			Timeout: &DefaultTimeoutOptions,
 		}
-	} else {
+	case 1:
 		providerOpts = opts[0]
+	default:
+		panic("only an empty or one ProviderOptions is valid as argument")
 	}
 
 	if providerOpts.Middlewares == nil {
@@ -66,6 +70,7 @@ func NewProvider(opts ...ProviderOptions) *Provider {
 }
 
 // New creates a new http.Client given provided options.
+// Note: If more than one Options is provided a panic is raised.
 func (p *Provider) New(opts ...Options) (*http.Client, error) {
 	clientOpts := p.createClientOptions(opts...)
 
@@ -98,6 +103,7 @@ func (p *Provider) New(opts ...Options) (*http.Client, error) {
 // GetTransport creates a new http.RoundTripper given provided options.
 // If opts is nil the http.DefaultTransport will be returned and no
 // outgoing request middleware applied.
+// Note: If more than one Options is provided a panic is raised.
 func (p *Provider) GetTransport(opts ...Options) (http.RoundTripper, error) {
 	clientOpts := p.createClientOptions(opts...)
 
@@ -125,6 +131,7 @@ func (p *Provider) GetTransport(opts ...Options) (http.RoundTripper, error) {
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
+// Note: If more than one Options is provided a panic is raised.
 func (p *Provider) GetTLSConfig(opts ...Options) (*tls.Config, error) {
 	clientOpts := p.createClientOptions(opts...)
 
@@ -143,14 +150,17 @@ func (p *Provider) GetTLSConfig(opts ...Options) (*tls.Config, error) {
 func (p *Provider) createClientOptions(providedOpts ...Options) Options {
 	var clientOpts Options
 
-	if len(providedOpts) == 0 {
+	switch len(providedOpts) {
+	case 0:
 		clientOpts = Options{
 			Timeouts:    p.Opts.Timeout,
 			TLS:         p.Opts.TLS,
 			Middlewares: p.Opts.Middlewares,
 		}
-	} else {
+	case 1:
 		clientOpts = providedOpts[0]
+	default:
+		panic("only an empty or one Options is valid as argument")
 	}
 
 	clientOpts.ConfigureMiddleware = configureMiddlewareChain(clientOpts.ConfigureMiddleware, p.Opts.ConfigureMiddleware)
