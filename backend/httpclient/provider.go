@@ -40,9 +40,8 @@ type Provider struct {
 }
 
 // NewProvider creates a new HTTP client provider.
-// Optionally provide ProviderOptions options that will be used as default if
-// not specified in Options argument to Provider.New, Provider.GetTransport and
-// Provider.GetTLSConfig.
+// Optionally provide ProviderOptions which will be used as a fallback if no Options 
+// are provided to Provider.New, Provider.GetTransport or Provider.GetTLSConfig.
 // If no middlewares are provided in opts the DefaultMiddlewares() will be used. If you
 // provide middlewares you have to manually add the DefaultMiddlewares() for it to be
 // enabled.
