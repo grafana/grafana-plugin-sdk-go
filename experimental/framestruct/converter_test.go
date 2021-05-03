@@ -77,7 +77,7 @@ func TestStructs(t *testing.T) {
 		require.Equal(t, "foo", frame.Fields[0].At(0))
 	})
 
-	t.Run("it propertly handles pointers", func(t *testing.T) {
+	t.Run("it properly handles pointers", func(t *testing.T) {
 		foo := "foo"
 		strct := pointerStruct{&foo}
 
@@ -577,7 +577,7 @@ func TestToDataFrames(t *testing.T) {
 
 		require.True(t, strct.called)
 		require.Len(t, frames, 1)
-		require.Equal(t, "New Frame", frames[0].Name) //Prefer the defined name
+		require.Equal(t, "New Frame", frames[0].Name) // Prefer the defined name
 	})
 
 	t.Run("it wraps the converted data frame in the Frames type", func(t *testing.T) {
@@ -622,7 +622,10 @@ func convertStruct(start, end chan struct{}) {
 		case <-end:
 			return
 		default:
-			framestruct.ToDataFrame("frame", strct)
+			_, err := framestruct.ToDataFrame("frame", strct)
+			if err != nil {
+				panic(err)
+			}
 		}
 	}
 }

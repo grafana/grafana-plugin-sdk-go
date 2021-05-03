@@ -14,6 +14,7 @@ import (
 var benchmarkResult *data.Frame
 
 func benchMarshal(b *testing.B, v interface{}) {
+	b.Helper()
 	b.Run("marshal", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			benchmarkResult, _ = framestruct.ToDataFrame("frame", v)
@@ -22,6 +23,7 @@ func benchMarshal(b *testing.B, v interface{}) {
 }
 
 func benchmarkTable(b *testing.B, count int64) {
+	b.Helper()
 	type table struct {
 		Field1 string `frame:"field1"`
 		Field2 string `frame:"field2"`
@@ -41,6 +43,7 @@ func benchmarkTable(b *testing.B, count int64) {
 }
 
 func benchmarkEmbedded(b *testing.B, count int) {
+	b.Helper()
 	type embeddedDimension struct {
 		Descriptor string
 		Value      float64 `frame:"val"`

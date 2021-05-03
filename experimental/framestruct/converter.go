@@ -164,7 +164,7 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 
 func (c *converter) upsertField(v reflect.Value, fieldName string) error {
 	if _, exists := c.fields[fieldName]; !exists {
-		//keep track of unique fields in the order they appear
+		// keep track of unique fields in the order they appear
 		c.fieldNames = append(c.fieldNames, fieldName)
 		v, err := sliceFor(v.Interface())
 		if err != nil {
