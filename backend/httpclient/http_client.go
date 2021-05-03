@@ -183,7 +183,7 @@ type MiddlewareName interface {
 // ConfigureMiddlewareFunc function signature for configuring middleware chain.
 type ConfigureMiddlewareFunc func(opts Options, existingMiddleware []Middleware) []Middleware
 
-// DefaultMiddlewares default middleware applied when creating
+// DefaultMiddlewares is the default middleware applied when creating
 // new HTTP clients and no middleware is provided.
 // BasicAuthenticationMiddleware and CustomHeadersMiddleware are
 // the default middlewares.

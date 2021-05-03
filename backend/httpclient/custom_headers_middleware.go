@@ -4,7 +4,7 @@ import (
 	"net/http"
 )
 
-// CustomHeadersMiddlewareName the middleware name used by CustomHeadersMiddleware.
+// CustomHeadersMiddlewareName is the middleware name used by CustomHeadersMiddleware.
 const CustomHeadersMiddlewareName = "CustomHeaders"
 
 // CustomHeadersMiddleware applies custom HTTP headers to the outgoing request.

@@ -5,7 +5,7 @@ import (
 	"net/http"
 )
 
-// ProviderOptions options that will be used as default if not specified
+// ProviderOptions are the options that will be used as default if not specified
 // in Options provided to Provider.New, Provider.GetTransport and
 // Provider.GetTLSConfig.
 type ProviderOptions struct {
@@ -14,7 +14,7 @@ type ProviderOptions struct {
 
 	TLS *TLSOptions
 
-	// Middlewares optionally provide additional middlewares.
+	// Middlewares optionally provides additional middlewares.
 	Middlewares []Middleware
 
 	// ConfigureMiddleware optionally provide a ConfigureMiddlewareFunc
@@ -34,7 +34,7 @@ type ProviderOptions struct {
 	ConfigureTLSConfig ConfigureTLSConfigFunc
 }
 
-// Provider the default HTTP client provider implementation.
+// Provider is the default HTTP client provider implementation.
 type Provider struct {
 	Opts ProviderOptions
 }

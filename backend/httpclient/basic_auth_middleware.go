@@ -4,12 +4,12 @@ import (
 	"net/http"
 )
 
-// BasicAuthenticationMiddlewareName the middleware name used by BasicAuthenticationMiddleware.
+// BasicAuthenticationMiddlewareName is the middleware name used by BasicAuthenticationMiddleware.
 const BasicAuthenticationMiddlewareName = "BasicAuth"
 
 // BasicAuthenticationMiddleware applies basic authentication to the HTTP header "Authorization"
 // in the outgoing request.
-// If Authorization header already set, it will not be overridden by this middleware.
+// If Authorization header is already set, it will not be overridden by this middleware.
 // If opts.BasicAuth is nil, next will be returned.
 func BasicAuthenticationMiddleware() Middleware {
 	return NamedMiddlewareFunc(BasicAuthenticationMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {

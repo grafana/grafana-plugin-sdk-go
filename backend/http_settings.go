@@ -8,7 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
-// HTTPSettings convenient struct for holding decoded HTTP settings from
+// HTTPSettings is a convenient struct for holding decoded HTTP settings from
 // jsonData and secureJSONData.
 type HTTPSettings struct {
 	Access            string
