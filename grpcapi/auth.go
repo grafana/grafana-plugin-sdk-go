@@ -1,4 +1,4 @@
-package grafana
+package grpcapi
 
 import "context"
 
