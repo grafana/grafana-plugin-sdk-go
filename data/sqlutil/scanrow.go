@@ -4,40 +4,48 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
-
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, error) {
-	types, err := rows.ColumnTypes()
-	if err != nil {
-		return nil, err
+// A ScanRow is a container for SQL metadata for a single row.
+// The row metadata is used to generate dataframe fields and a slice that can be used with sql.Scan
+type ScanRow struct {
+	Columns []string
+	Types   []reflect.Type
+}
+
+// NewScanRow creates a new ScanRow with a length of `length`. Use the `Set` function to manually set elements at specific indices.
+func NewScanRow(length int) *ScanRow {
+	return &ScanRow{
+		Columns: make([]string, length),
+		Types:   make([]reflect.Type, length),
 	}
+}
 
-	names, err := rows.Columns()
-	if err != nil {
-		return nil, err
-	}
+// Append adds data to the end of the list of types and columns
+func (s *ScanRow) Append(name string, colType reflect.Type) {
+	s.Columns = append(s.Columns, name)
+	s.Types = append(s.Types, colType)
+}
 
-	scanner, converters, err := MakeScanRow(types, names, converters...)
-	if err != nil {
-		return nil, err
-	}
+func (s *ScanRow) Set(i int, name string, colType reflect.Type) {
+	s.Columns[i] = name
+	s.Types[i] = colType
+}
 
-	frame := NewFrame(names, converters...)
+// NewScannableRow creates a slice where each element is usable in a call to `(database/sql.Rows).Scan`
+func (s *ScanRow) NewScannableRow() []interface{} {
+	values := make([]interface{}, len(s.Types))
 
-	for rows.Next() {
-		r := scanner.NewScannableRow()
-		if err := rows.Scan(r...); err != nil {
-			return nil, err
+	for i, v := range s.Types {
+		if v.Kind() == reflect.Ptr {
+			n := reflect.New(v.Elem())
+			values[i] = n.Interface()
+		} else {
+			values[i] = reflect.New(v).Interface()
 		}
-
-		if err := Append(frame, r, converters...); err != nil {
-			return nil, err
-		}
 	}
 
-	return frame, nil
+	return values
 }
 
 // MakeScanRow creates a new scan row given the column types and names.
@@ -83,14 +91,7 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 			scanType = v.InputScanType
 		}
 
-		val := reflect.New(scanType).Interface()
-
-		// if !data.ValidFieldType(vec) {
-		// 	ptrType := reflect.TypeOf(reflect.New(reflect.TypeOf("")).Interface())
-		// 	vec = reflect.MakeSlice(reflect.SliceOf(ptrType), 0, 0).Interface()
-		// }
-
-		r.Append(val, colName, scanType)
+		r.Append(colName, scanType)
 		c = append(c, *converter)
 	}
 
