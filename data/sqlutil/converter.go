@@ -51,6 +51,7 @@ type StringFieldReplacer struct {
 	ReplaceFunc     func(in *string) (interface{}, error)
 }
 
+// ToConverter turns this StringConverter into a Converter, using the ScanType of string
 func (s StringConverter) ToConverter() Converter {
 	return Converter{
 		Name:           s.Name,
