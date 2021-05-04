@@ -2,20 +2,20 @@ package sqlutil
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"reflect"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-var (
-	ErrorUnrecognizedType = errors.New("unrecognized type")
-)
-
 // FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe (OutputFieldType)
 type FrameConverter struct {
-	FieldType     data.FieldType
+	// FieldType is the type that is created for the dataframe field.
+	// The returned value from `ConverterFunc` should match this type, otherwise the data package will panic.
+	FieldType data.FieldType
+	// ConverterFunc defines how to convert the scanned `InputScanType` to the supplied `FieldType`.
+	// `in` is always supplied as a pointer, as it is scanned as a pointer, even if `InputScanType` is not a pointer.
+	// For example, if `InputScanType` is `string`, then `in` is `*string`
 	ConverterFunc func(in interface{}) (interface{}, error)
 }
 
@@ -35,15 +35,15 @@ type Converter struct {
 	FrameConverter FrameConverter
 }
 
-// The DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
+// DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
 func DefaultConverterFunc(in interface{}) (interface{}, error) {
 	return in, nil
 }
 
+// NewDefaultConverterFunc creates a Converter that assumes that the value is scannable into a String, and placed into the dataframe as a nullable string.
 func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 	slice := reflect.MakeSlice(reflect.SliceOf(t), 0, 0).Interface()
 	if !data.ValidFieldType(slice) {
-		// return Converter{}, ErrorUnrecognizedType
 		return Converter{
 			Name:          fmt.Sprintf("[%s] String converter", t),
 			InputScanType: reflect.TypeOf(""),
@@ -86,6 +86,7 @@ func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 }
 
 var (
+	// NullStringConverter creates a *string using the scan type of `sql.NullString`
 	NullStringConverter = Converter{
 		Name:          "nullable string converter",
 		InputScanType: reflect.TypeOf(sql.NullString{}),
@@ -105,6 +106,7 @@ var (
 		},
 	}
 
+	// NullDecimalConverter creates a *float64 using the scan type of `sql.NullFloat64`
 	NullDecimalConverter = Converter{
 		Name:          "NULLABLE decimal converter",
 		InputScanType: reflect.TypeOf(sql.NullFloat64{}),
@@ -125,6 +127,8 @@ var (
 	}
 )
 
+// NullConverters is a map of data type names (from reflect.TypeOf(...).String()) to converters
+// Converters supplied here are used as defaults for fields that do not have a supplied Converter
 var NullConverters = map[string]Converter{
 	"float64": NullDecimalConverter,
 	"string":  NullStringConverter,

@@ -27,6 +27,7 @@ func (s *ScanRow) Append(name string, colType reflect.Type) {
 	s.Types = append(s.Types, colType)
 }
 
+// Set sets the internal data at i
 func (s *ScanRow) Set(i int, name string, colType reflect.Type) {
 	s.Columns[i] = name
 	s.Types[i] = colType
