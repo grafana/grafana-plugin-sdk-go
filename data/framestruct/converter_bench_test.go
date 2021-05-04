@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/framestruct"
+	"github.com/grafana/grafana-plugin-sdk-go/data/framestruct"
 )
 
 // This is here to avoid compiler optimizations that
