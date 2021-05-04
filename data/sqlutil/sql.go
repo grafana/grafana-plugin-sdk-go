@@ -17,6 +17,7 @@ import (
 //
 // A converter must be supplied in order to support data types that are scanned from sql.Rows, but not supported in data.Frame.
 // The converter defines what type to use for scanning, what type to place in the data frame, and a function for converting from one to the other.
+// If you find yourself here after upgrading, you can continue to your StringConverters here by using the `ToConverters` function.
 func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, error) {
 	types, err := rows.ColumnTypes()
 	if err != nil {
