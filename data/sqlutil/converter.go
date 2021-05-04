@@ -40,7 +40,7 @@ func DefaultConverterFunc(in interface{}) (interface{}, error) {
 	return in, nil
 }
 
-// NewDefaultConverterFunc creates a Converter that assumes that the value is scannable into a String, and placed into the dataframe as a nullable string.
+// NewDefaultConverter creates a Converter that assumes that the value is scannable into a String, and placed into the dataframe as a nullable string.
 func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 	slice := reflect.MakeSlice(reflect.SliceOf(t), 0, 0).Interface()
 	if !data.ValidFieldType(slice) {
