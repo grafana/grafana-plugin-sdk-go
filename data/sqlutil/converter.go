@@ -275,7 +275,7 @@ var (
 		},
 	}
 
-	// NullDecimalConverter creates a *float64 using the scan type of `sql.NullFloat64`
+	// NullTimeConverter creates a *time.time using the scan type of `sql.NullTime`
 	NullTimeConverter = Converter{
 		Name:          "NULLABLE time.Time converter",
 		InputScanType: reflect.TypeOf(sql.NullTime{}),
