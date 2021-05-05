@@ -2,6 +2,8 @@ package sqlutil
 
 import (
 	"errors"
+	"log"
+	"reflect"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
@@ -26,6 +28,7 @@ func Append(frame *data.Frame, row []interface{}, converters ...Converter) error
 
 	d := make([]interface{}, len(row))
 	for i, v := range row {
+		log.Println("converting", i, v, reflect.TypeOf(v))
 		value, err := converters[i].FrameConverter.ConverterFunc(v)
 		if err != nil {
 			return err

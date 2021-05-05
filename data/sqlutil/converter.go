@@ -3,7 +3,9 @@ package sqlutil
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"reflect"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
@@ -55,7 +57,7 @@ type StringFieldReplacer struct {
 func (s StringConverter) ToConverter() Converter {
 	return Converter{
 		Name:           s.Name,
-		InputScanType:  reflect.TypeOf(""),
+		InputScanType:  reflect.TypeOf(sql.NullString{}),
 		InputTypeName:  s.InputTypeName,
 		FrameConverter: StringFrameConverter(s),
 	}
@@ -72,7 +74,12 @@ func StringFrameConverter(s StringConverter) FrameConverter {
 	return FrameConverter{
 		FieldType: f,
 		ConverterFunc: func(in interface{}) (interface{}, error) {
-			v := in.(*string)
+			ns := in.(*sql.NullString)
+			if !ns.Valid {
+				return nil, nil
+			}
+
+			v := &ns.String
 			if s.ConversionFunc != nil {
 				converted, err := s.ConversionFunc(v)
 				if err != nil {
@@ -117,8 +124,20 @@ type Converter struct {
 }
 
 // DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
-func DefaultConverterFunc(in interface{}) (interface{}, error) {
-	return in, nil
+func DefaultConverterFunc(t reflect.Type) func(in interface{}) (interface{}, error) {
+	return func(in interface{}) (interface{}, error) {
+		inType := reflect.TypeOf(in)
+		if inType == reflect.PtrTo(t) {
+			log.Println(t, "inType == reflect.PtrTo(t)")
+			n := reflect.ValueOf(in)
+
+			log.Println(t, n.Type(), n.CanAddr())
+			log.Println(t, "elem", n.Elem().Type(), n.Elem().CanAddr(), reflect.TypeOf(n.Elem().Interface()))
+			return n.Elem().Interface(), nil
+		}
+
+		return in, nil
+	}
 }
 
 // NewDefaultConverter creates a Converter that assumes that the value is scannable into a String, and placed into the dataframe as a nullable string.
@@ -127,30 +146,39 @@ func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 	if !data.ValidFieldType(slice) {
 		return Converter{
 			Name:          fmt.Sprintf("[%s] String converter", t),
-			InputScanType: reflect.TypeOf(""),
+			InputScanType: reflect.TypeOf(sql.NullString{}),
 			InputTypeName: name,
 			FrameConverter: FrameConverter{
 				FieldType: data.FieldTypeNullableString,
 				ConverterFunc: func(in interface{}) (interface{}, error) {
-					v := in.(*string)
-					return v, nil
+					v := in.(*sql.NullString)
+
+					if !v.Valid {
+						return (*string)(nil), nil
+					}
+
+					f := v.String
+					return &f, nil
 				},
 			},
 		}
 	}
 
 	v := reflect.New(t)
-
+	log.Println("Checking reflect.New", v, "from type", t, "kind:", v.Kind(), "new type:", v.Type())
 	var fieldType data.FieldType
-	if v.Kind() == reflect.Ptr {
+	if v.Type() == reflect.PtrTo(t) {
+		log.Println("v is a pointer to T. t", t, "kind:", v.Kind(), "new type:", v.Type())
 		v = v.Elem()
-		fieldType = data.FieldTypeFor(v.Interface()).NullableType()
-	} else {
 		fieldType = data.FieldTypeFor(v.Interface())
+	} else {
+		fieldType = data.FieldTypeFor(v.Interface()).NullableType()
 	}
 
+	log.Println(name, "got field type", fieldType)
+
 	if nullable {
-		if converter, ok := NullConverters[t.String()]; ok {
+		if converter, ok := NullConverters[t]; ok {
 			return converter
 		}
 	}
@@ -161,7 +189,7 @@ func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 		InputTypeName: name,
 		FrameConverter: FrameConverter{
 			FieldType:     fieldType,
-			ConverterFunc: DefaultConverterFunc,
+			ConverterFunc: DefaultConverterFunc(t),
 		},
 	}
 }
@@ -206,11 +234,74 @@ var (
 			},
 		},
 	}
+
+	// NullInt64Converter creates a *int64 using the scan type of `sql.NullInt64`
+	NullInt64Converter = Converter{
+		Name:          "NULLABLE int64 converter",
+		InputScanType: reflect.TypeOf(sql.NullInt64{}),
+		InputTypeName: "INTEGER",
+		FrameConverter: FrameConverter{
+			FieldType: data.FieldTypeNullableInt64,
+			ConverterFunc: func(n interface{}) (interface{}, error) {
+				v := n.(*sql.NullInt64)
+
+				if !v.Valid {
+					return (*int64)(nil), nil
+				}
+
+				f := v.Int64
+				return &f, nil
+			},
+		},
+	}
+
+	// NullInt32Converter creates a *int32 using the scan type of `sql.NullInt32`
+	NullInt32Converter = Converter{
+		Name:          "NULLABLE int32 converter",
+		InputScanType: reflect.TypeOf(sql.NullInt32{}),
+		InputTypeName: "INTEGER",
+		FrameConverter: FrameConverter{
+			FieldType: data.FieldTypeNullableInt32,
+			ConverterFunc: func(n interface{}) (interface{}, error) {
+				v := n.(*sql.NullInt32)
+
+				if !v.Valid {
+					return (*int32)(nil), nil
+				}
+
+				f := v.Int32
+				return &f, nil
+			},
+		},
+	}
+
+	// NullDecimalConverter creates a *float64 using the scan type of `sql.NullFloat64`
+	NullTimeConverter = Converter{
+		Name:          "NULLABLE time.Time converter",
+		InputScanType: reflect.TypeOf(sql.NullTime{}),
+		InputTypeName: "TIMESTAMP",
+		FrameConverter: FrameConverter{
+			FieldType: data.FieldTypeNullableTime,
+			ConverterFunc: func(n interface{}) (interface{}, error) {
+				v := n.(*sql.NullTime)
+
+				if !v.Valid {
+					return (*time.Time)(nil), nil
+				}
+
+				f := v.Time
+				return &f, nil
+			},
+		},
+	}
 )
 
 // NullConverters is a map of data type names (from reflect.TypeOf(...).String()) to converters
 // Converters supplied here are used as defaults for fields that do not have a supplied Converter
-var NullConverters = map[string]Converter{
-	"float64": NullDecimalConverter,
-	"string":  NullStringConverter,
+var NullConverters = map[reflect.Type]Converter{
+	reflect.TypeOf(float64(0)):  NullDecimalConverter,
+	reflect.TypeOf(int64(0)):    NullInt64Converter,
+	reflect.TypeOf(int32(0)):    NullInt32Converter,
+	reflect.TypeOf(""):          NullStringConverter,
+	reflect.TypeOf(time.Time{}): NullTimeConverter,
 }

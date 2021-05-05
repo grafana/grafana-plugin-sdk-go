@@ -3,6 +3,7 @@ package sqlutil
 import (
 	"database/sql"
 	"fmt"
+	"log"
 	"reflect"
 )
 
@@ -34,6 +35,7 @@ func (s *ScanRow) Set(i int, name string, colType reflect.Type) {
 }
 
 // NewScannableRow creates a slice where each element is usable in a call to `(database/sql.Rows).Scan`
+// aka a pointer
 func (s *ScanRow) NewScannableRow() []interface{} {
 	values := make([]interface{}, len(s.Types))
 
@@ -94,6 +96,7 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 
 		r.Append(colName, scanType)
 		c = append(c, *converter)
+		log.Println(colName, "got scannable column", colType.Name(), nullable, "with converter", converter.Name)
 	}
 
 	return r, c, nil
