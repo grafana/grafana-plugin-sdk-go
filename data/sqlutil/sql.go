@@ -2,6 +2,7 @@ package sqlutil
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
@@ -36,7 +37,16 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 
 	frame := NewFrame(names, converters...)
 
+	var i int64
 	for rows.Next() {
+		if i == rowLimit {
+			frame.AppendNotices(data.Notice{
+				Severity: data.NoticeSeverityWarning,
+				Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
+			})
+			break
+		}
+
 		r := scanner.NewScannableRow()
 		if err := rows.Scan(r...); err != nil {
 			return nil, err
@@ -45,6 +55,8 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		if err := Append(frame, r, converters...); err != nil {
 			return nil, err
 		}
+
+		i++
 	}
 
 	return frame, nil
