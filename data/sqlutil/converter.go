@@ -175,7 +175,7 @@ var (
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableString,
 			ConverterFunc: func(n interface{}) (interface{}, error) {
-				v := n.(*sql.NullFloat64)
+				v := n.(*sql.NullString)
 
 				if !v.Valid {
 					return (*float64)(nil), nil
