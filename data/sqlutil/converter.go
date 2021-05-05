@@ -178,10 +178,10 @@ var (
 				v := n.(*sql.NullString)
 
 				if !v.Valid {
-					return (*float64)(nil), nil
+					return (*string)(nil), nil
 				}
 
-				f := v.Float64
+				f := v.String
 				return &f, nil
 			},
 		},
