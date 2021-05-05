@@ -36,9 +36,9 @@ func TestFieldTypeConversion(t *testing.T) {
 	body, err := json.Marshal(obj)
 	require.NoError(t, err)
 
-	copy := &simpleFieldInfo{}
-	err = json.Unmarshal(body, &copy)
+	objCopy := &simpleFieldInfo{}
+	err = json.Unmarshal(body, &objCopy)
 	require.NoError(t, err)
 
-	require.Equal(t, obj.FieldType, copy.FieldType)
+	require.Equal(t, obj.FieldType, objCopy.FieldType)
 }

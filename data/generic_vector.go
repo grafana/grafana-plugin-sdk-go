@@ -4,8 +4,6 @@ import (
 	"github.com/cheekybits/genny/generic"
 )
 
-//go:generate genny -in=$GOFILE -out=vector.gen.go gen "gen=uint8,uint16,uint32,uint64,int8,int16,int32,int64,float32,float64,string,bool,time.Time"
-
 type gen generic.Type
 
 type genVector []gen
@@ -24,7 +22,7 @@ func (v *genVector) SetConcrete(idx int, i interface{}) {
 }
 
 func (v *genVector) Append(i interface{}) {
-	(*v) = append((*v), i.(gen))
+	*v = append(*v, i.(gen))
 }
 
 func (v *genVector) At(i int) interface{} {
@@ -36,7 +34,7 @@ func (v *genVector) PointerAt(i int) interface{} {
 }
 
 func (v *genVector) Len() int {
-	return len((*v))
+	return len(*v)
 }
 
 func (v *genVector) CopyAt(i int) interface{} {
@@ -54,7 +52,7 @@ func (v *genVector) Type() FieldType {
 }
 
 func (v *genVector) Extend(i int) {
-	(*v) = append((*v), make([]gen, i)...)
+	*v = append(*v, make([]gen, i)...)
 }
 
 func (v *genVector) Insert(i int, val interface{}) {
@@ -71,5 +69,5 @@ func (v *genVector) Insert(i int, val interface{}) {
 }
 
 func (v *genVector) Delete(i int) {
-	(*v) = append((*v)[:i], (*v)[i+1:]...)
+	*v = append((*v)[:i], (*v)[i+1:]...)
 }

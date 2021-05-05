@@ -2,7 +2,12 @@
   "schema": {
     "name": "many_types",
     "refId": "A",
-    "meta": { "custom": { "Hi": "there" } },
+    "meta": {
+      "custom": { "Hi": "there" },
+      "stats": [{ "displayName": "sample", "value": 1.234 }],
+      "channel": "sample/channel/name",
+      "executedQueryString": "SELECT * FROM table"
+    },
     "fields": [
       {
         "name": "string_values",
@@ -40,8 +45,8 @@
       { "name": "nullable_int32_values", "type": "number", "typeInfo": { "frame": "int32", "nullable": true } },
       { "name": "int64_values", "type": "number", "typeInfo": { "frame": "int64" } },
       { "name": "nullable_int64_values", "type": "number", "typeInfo": { "frame": "int64", "nullable": true } },
-      { "name": "uint8_values", "type": "number", "typeInfo": { "frame": "unit8" } },
-      { "name": "nullable_uint8_values", "type": "number", "typeInfo": { "frame": "unit8", "nullable": true } },
+      { "name": "uint8_values", "type": "number", "typeInfo": { "frame": "uint8" } },
+      { "name": "nullable_uint8_values", "type": "number", "typeInfo": { "frame": "uint8", "nullable": true } },
       { "name": "uint16_values", "type": "number", "typeInfo": { "frame": "uint16" } },
       { "name": "nullable_uint16_values", "type": "number", "typeInfo": { "frame": "uint16", "nullable": true } },
       { "name": "uint32_values", "type": "number", "typeInfo": { "frame": "uint32" } },
@@ -64,8 +69,8 @@
         "type": "number",
         "typeInfo": { "frame": "float64", "nullable": true }
       },
-      { "name": "bool_values", "type": "bool", "typeInfo": { "frame": "bool" } },
-      { "name": "nullable_bool_values", "type": "bool", "typeInfo": { "frame": "bool", "nullable": true } },
+      { "name": "bool_values", "type": "boolean", "typeInfo": { "frame": "bool" } },
+      { "name": "nullable_bool_values", "type": "boolean", "typeInfo": { "frame": "bool", "nullable": true } },
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
       { "name": "nullable_timestamps", "type": "time", "typeInfo": { "frame": "time.Time", "nullable": true } }

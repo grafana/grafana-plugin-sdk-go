@@ -18,7 +18,7 @@ import (
 
 const simpleTypeString = "string"
 const simpleTypeNumber = "number"
-const simpleTypeBool = "bool"
+const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
 
 const jsonKeySchema = "schema"
@@ -115,7 +115,6 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 				tmp.Labels = f.Labels
 				tmp.Config = f.Config
 				frame.Fields = append(frame.Fields, tmp)
-				fmt.Printf("[FIELD] %#v\n", f.Field)
 			}
 
 		case jsonKeyData:
@@ -143,6 +142,9 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			// Load the first field with a generic interface.
 			// The length of the first will be assumed for the other fields
 			// and can have a specialized parser
+			if frame.Fields == nil {
+				return errors.New("fields is nil, malformed key order or frame without schema")
+			}
 			field := frame.Fields[0]
 			first := make([]interface{}, 0)
 			iter.ReadVal(&first)
@@ -171,7 +173,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 				if t == jsoniter.ObjectValue {
 					for l3Field := iter.ReadObject(); l3Field != ""; l3Field = iter.ReadObject() {
 						field := frame.Fields[fieldIndex]
-						replace := getReplacemetValue(l3Field, field.Type())
+						replace := getReplacementValue(l3Field, field.Type())
 						for iter.ReadArray() {
 							idx := iter.ReadInt()
 							field.vector.SetConcrete(idx, replace)
@@ -190,7 +192,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 	return nil
 }
 
-func getReplacemetValue(key string, ft FieldType) interface{} {
+func getReplacementValue(key string, ft FieldType) interface{} {
 	v := math.NaN()
 	if key == "Inf" {
 		v = math.Inf(1)
@@ -596,7 +598,6 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 				}
 				stream.WriteObjectField("config")
 				stream.WriteVal(f.Config)
-				started = true
 			}
 
 			stream.WriteObjectEnd()
@@ -681,9 +682,7 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 		stream.WriteArrayEnd()
 
 		if entityCount > 0 {
-			if started {
-				stream.WriteMore()
-			}
+			stream.WriteMore()
 			stream.WriteObjectField("entities")
 			stream.WriteVal(entities)
 		}
