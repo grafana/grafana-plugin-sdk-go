@@ -9,15 +9,11 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type AutoInstanceManager struct {
+type instanceManager struct {
 	instancemgmt.InstanceManager
 }
 
-func NewAutoInstanceManager(factoryFunc InstanceFactoryFunc) *AutoInstanceManager {
-	return &AutoInstanceManager{InstanceManager: NewInstanceManager(factoryFunc)}
-}
-
-func (m *AutoInstanceManager) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (m *instanceManager) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	h, err := m.Get(req.PluginContext)
 	if err != nil {
 		return nil, err
@@ -28,7 +24,7 @@ func (m *AutoInstanceManager) QueryData(ctx context.Context, req *backend.QueryD
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
-func (m *AutoInstanceManager) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (m *instanceManager) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	h, err := m.Get(req.PluginContext)
 	if err != nil {
 		return nil, err
@@ -39,7 +35,7 @@ func (m *AutoInstanceManager) CheckHealth(ctx context.Context, req *backend.Chec
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
-func (m *AutoInstanceManager) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+func (m *instanceManager) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	h, err := m.Get(req.PluginContext)
 	if err != nil {
 		return err
@@ -50,7 +46,7 @@ func (m *AutoInstanceManager) CallResource(ctx context.Context, req *backend.Cal
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
 
-func (m *AutoInstanceManager) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
+func (m *instanceManager) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
 	h, err := m.Get(req.PluginContext)
 	if err != nil {
 		return nil, err
@@ -61,7 +57,7 @@ func (m *AutoInstanceManager) SubscribeStream(ctx context.Context, req *backend.
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
-func (m *AutoInstanceManager) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+func (m *instanceManager) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
 	h, err := m.Get(req.PluginContext)
 	if err != nil {
 		return nil, err
@@ -72,7 +68,7 @@ func (m *AutoInstanceManager) PublishStream(ctx context.Context, req *backend.Pu
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
-func (m *AutoInstanceManager) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
+func (m *instanceManager) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
 	h, err := m.Get(req.PluginContext)
 	if err != nil {
 		return err
@@ -81,4 +77,26 @@ func (m *AutoInstanceManager) RunStream(ctx context.Context, req *backend.RunStr
 		return ds.RunStream(ctx, req, sender)
 	}
 	return status.Error(codes.Unimplemented, "unimplemented")
+}
+
+// ManageOpts can modify Manage behaviour.
+type ManageOpts struct {
+	// GRPCSettings settings for gPRC.
+	GRPCSettings backend.GRPCSettings
+}
+
+// Manage starts serving the data source over gPRC with automatic instance management.
+func Manage(factory InstanceFactoryFunc, opts ManageOpts) error {
+	handler := &instanceManager{
+		InstanceManager: NewInstanceManager(factory),
+	}
+	// TODO: do we need to ask user for explicit plugin capabilities here
+	// as we don't have instance till first call?
+	return backend.Serve(backend.ServeOpts{
+		QueryDataHandler:    handler,
+		CheckHealthHandler:  handler,
+		CallResourceHandler: handler,
+		StreamHandler:       handler,
+		GRPCSettings:        opts.GRPCSettings,
+	})
 }
