@@ -52,6 +52,33 @@ func DoGRPC(id string, opts datasource.ServeOpts) error {
 	return datasource.Serve(opts)
 }
 
+// ManageGRPC ...
+func ManageGRPC(id string, factoryFunc datasource.InstanceFactoryFunc, opts datasource.ManageOpts) error {
+	backend.SetupPluginEnvironment(id) // Enable profiler
+
+	info, err := getStandaloneInfo(id)
+	if err != nil {
+		return err
+	}
+
+	if info.standalone {
+		autoManager := datasource.NewAutoInstanceManager(datasource.NewInstanceManager(factoryFunc))
+		return backend.StandaloneServe(backend.ServeOpts{
+			CheckHealthHandler:  autoManager,
+			CallResourceHandler: autoManager,
+			QueryDataHandler:    autoManager,
+			StreamHandler:       autoManager,
+			GRPCSettings:        opts.GRPCSettings,
+		}, info.address)
+	} else if info.address != "" {
+		runDummyPluginLocator(info.address)
+		return nil
+	}
+
+	// The default/normal hashicorp path
+	return datasource.Manage(factoryFunc, opts)
+}
+
 func getStandaloneInfo(id string) (standaloneArgs, error) {
 	info := standaloneArgs{}
 
