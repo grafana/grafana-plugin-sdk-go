@@ -3,7 +3,6 @@ package sqlutil
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"reflect"
 	"time"
 
@@ -128,11 +127,8 @@ func DefaultConverterFunc(t reflect.Type) func(in interface{}) (interface{}, err
 	return func(in interface{}) (interface{}, error) {
 		inType := reflect.TypeOf(in)
 		if inType == reflect.PtrTo(t) {
-			log.Println(t, "inType == reflect.PtrTo(t)")
 			n := reflect.ValueOf(in)
 
-			log.Println(t, n.Type(), n.CanAddr())
-			log.Println(t, "elem", n.Elem().Type(), n.Elem().CanAddr(), reflect.TypeOf(n.Elem().Interface()))
 			return n.Elem().Interface(), nil
 		}
 
@@ -165,17 +161,13 @@ func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 	}
 
 	v := reflect.New(t)
-	log.Println("Checking reflect.New", v, "from type", t, "kind:", v.Kind(), "new type:", v.Type())
 	var fieldType data.FieldType
 	if v.Type() == reflect.PtrTo(t) {
-		log.Println("v is a pointer to T. t", t, "kind:", v.Kind(), "new type:", v.Type())
 		v = v.Elem()
 		fieldType = data.FieldTypeFor(v.Interface())
 	} else {
 		fieldType = data.FieldTypeFor(v.Interface()).NullableType()
 	}
-
-	log.Println(name, "got field type", fieldType)
 
 	if nullable {
 		if converter, ok := NullConverters[t]; ok {

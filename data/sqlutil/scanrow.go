@@ -3,7 +3,6 @@ package sqlutil
 import (
 	"database/sql"
 	"fmt"
-	"log"
 	"reflect"
 )
 
@@ -96,7 +95,6 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 
 		r.Append(colName, scanType)
 		c = append(c, *converter)
-		log.Println(colName, "got scannable column", colType.Name(), nullable, "with converter", converter.Name)
 	}
 
 	return r, c, nil
