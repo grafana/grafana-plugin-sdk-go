@@ -2,8 +2,6 @@ package sqlutil
 
 import (
 	"errors"
-	"log"
-	"reflect"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
