@@ -16,6 +16,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 )
 
 type standaloneArgs struct {
@@ -52,8 +53,8 @@ func DoGRPC(id string, opts datasource.ServeOpts) error {
 	return datasource.Serve(opts)
 }
 
-// ManageGRPC ...
-func ManageGRPC(id string, factoryFunc datasource.InstanceFactoryFunc, opts datasource.ManageOpts) error {
+// ManageGRPC is like DoGRPC but with automatic datasource instance management.
+func ManageGRPC(id string, instanceFactory datasource.InstanceFactoryFunc, opts datasource.ManageOpts) error {
 	backend.SetupPluginEnvironment(id) // Enable profiler
 
 	info, err := getStandaloneInfo(id)
@@ -62,7 +63,7 @@ func ManageGRPC(id string, factoryFunc datasource.InstanceFactoryFunc, opts data
 	}
 
 	if info.standalone {
-		autoManager := datasource.NewAutoInstanceManager(datasource.NewInstanceManager(factoryFunc))
+		autoManager := automanagement.NewManager(datasource.NewInstanceManager(instanceFactory))
 		return backend.StandaloneServe(backend.ServeOpts{
 			CheckHealthHandler:  autoManager,
 			CallResourceHandler: autoManager,
@@ -76,7 +77,7 @@ func ManageGRPC(id string, factoryFunc datasource.InstanceFactoryFunc, opts data
 	}
 
 	// The default/normal hashicorp path
-	return datasource.Manage(factoryFunc, opts)
+	return datasource.Manage(instanceFactory, opts)
 }
 
 func getStandaloneInfo(id string) (standaloneArgs, error) {
