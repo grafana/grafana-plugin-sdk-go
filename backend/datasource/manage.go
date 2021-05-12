@@ -13,10 +13,11 @@ type ManageOpts struct {
 }
 
 // Manage starts serving the data source over gPRC with automatic instance management.
-func Manage(id string, factory InstanceFactoryFunc, opts ManageOpts) error {
-	backend.SetupPluginEnvironment(id) // Enable profiler
+// pluginID should match the one from plugin.json.
+func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpts) error {
+	backend.SetupPluginEnvironment(pluginID) // Enable profiler.
 
-	handler := automanagement.NewManager(NewInstanceManager(factory))
+	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 
 	serveOpts := backend.ServeOpts{
 		CheckHealthHandler:  handler,
@@ -26,7 +27,7 @@ func Manage(id string, factory InstanceFactoryFunc, opts ManageOpts) error {
 		GRPCSettings:        opts.GRPCSettings,
 	}
 
-	info, err := standalone.GetInfo(id)
+	info, err := standalone.GetInfo(pluginID)
 	if err != nil {
 		return err
 	}
