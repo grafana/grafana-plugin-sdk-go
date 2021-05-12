@@ -122,7 +122,11 @@ func buildBackend(cfg Config) error {
 	if cfg.EnableDebug {
 		args = append(args, "-gcflags=all=-N -l")
 	}
-	args = append(args, "./pkg")
+	rootPackage := "./pkg"
+	if cfg.RootPackagePath != "" {
+		rootPackage = cfg.RootPackagePath
+	}
+	args = append(args, rootPackage)
 
 	cfg.Env["GOARCH"] = cfg.Arch
 	cfg.Env["GOOS"] = cfg.OS
