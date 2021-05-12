@@ -335,18 +335,18 @@ var Diagnostics_ServiceDesc = grpc.ServiceDesc{
 type StreamClient interface {
 	// SubscribeStream called when a user tries to subscribe to a plugin/datasource
 	// managed channel path – thus plugin can check subscribe permissions and communicate
-	// options with Grafana Core.
+	// options with Grafana Core. As soon as first subscriber joins channel RunStream
+	// will be called.
 	SubscribeStream(ctx context.Context, in *SubscribeStreamRequest, opts ...grpc.CallOption) (*SubscribeStreamResponse, error)
 	// PublishStream called when a user tries to publish to a plugin/datasource
 	// managed channel path. Here plugin can check publish permissions and
 	// modify publication data if required.
 	PublishStream(ctx context.Context, in *PublishStreamRequest, opts ...grpc.CallOption) (*PublishStreamResponse, error)
-	// RunStream will be initiated by Grafana to consume a stream where use_run_stream
-	// option set to true. In this case RunStream will only be called once for the
-	// first client successfully subscribed to a channel path. When Grafana detects
-	// that there are no longer any subscribers inside a channel, the call will be
-	// terminated until next active subscriber appears. Call termination can happen
-	// with a delay.
+	// RunStream will be initiated by Grafana to consume a stream. RunStream will be
+	// called once for the first client successfully subscribed to a channel path.
+	// When Grafana detects that there are no longer any subscribers inside a channel,
+	// the call will be terminated until next active subscriber appears. Call termination
+	// can happen with a delay.
 	RunStream(ctx context.Context, in *RunStreamRequest, opts ...grpc.CallOption) (Stream_RunStreamClient, error)
 }
 
@@ -414,18 +414,18 @@ func (x *streamRunStreamClient) Recv() (*StreamPacket, error) {
 type StreamServer interface {
 	// SubscribeStream called when a user tries to subscribe to a plugin/datasource
 	// managed channel path – thus plugin can check subscribe permissions and communicate
-	// options with Grafana Core.
+	// options with Grafana Core. As soon as first subscriber joins channel RunStream
+	// will be called.
 	SubscribeStream(context.Context, *SubscribeStreamRequest) (*SubscribeStreamResponse, error)
 	// PublishStream called when a user tries to publish to a plugin/datasource
 	// managed channel path. Here plugin can check publish permissions and
 	// modify publication data if required.
 	PublishStream(context.Context, *PublishStreamRequest) (*PublishStreamResponse, error)
-	// RunStream will be initiated by Grafana to consume a stream where use_run_stream
-	// option set to true. In this case RunStream will only be called once for the
-	// first client successfully subscribed to a channel path. When Grafana detects
-	// that there are no longer any subscribers inside a channel, the call will be
-	// terminated until next active subscriber appears. Call termination can happen
-	// with a delay.
+	// RunStream will be initiated by Grafana to consume a stream. RunStream will be
+	// called once for the first client successfully subscribed to a channel path.
+	// When Grafana detects that there are no longer any subscribers inside a channel,
+	// the call will be terminated until next active subscriber appears. Call termination
+	// can happen with a delay.
 	RunStream(*RunStreamRequest, Stream_RunStreamServer) error
 }
 

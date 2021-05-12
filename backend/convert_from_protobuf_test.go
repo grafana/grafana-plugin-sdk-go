@@ -17,7 +17,7 @@ type walker struct {
 	ZeroValueFieldCount int64
 }
 
-func (w *walker) Struct(v reflect.Value) error {
+func (w *walker) Struct(_ reflect.Value) error {
 	return nil
 }
 

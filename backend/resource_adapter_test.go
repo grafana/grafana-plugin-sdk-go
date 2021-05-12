@@ -147,7 +147,7 @@ type testCallResourceHandler struct {
 	actualReq       *CallResourceRequest
 }
 
-func (h *testCallResourceHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+func (h *testCallResourceHandler) CallResource(_ context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	h.actualReq = req
 	err := sender.Send(&CallResourceResponse{
 		Status:  h.responseStatus,
@@ -168,7 +168,7 @@ type testCallResourceStreamHandler struct {
 	responseErr      error
 }
 
-func (h *testCallResourceStreamHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+func (h *testCallResourceStreamHandler) CallResource(_ context.Context, _ *CallResourceRequest, sender CallResourceResponseSender) error {
 	err := sender.Send(&CallResourceResponse{
 		Status:  h.responseStatus,
 		Headers: h.responseHeaders,
@@ -222,10 +222,10 @@ func (srv *testCallResourceServer) Context() context.Context {
 	return srv.ctx
 }
 
-func (srv *testCallResourceServer) SendMsg(m interface{}) error {
+func (srv *testCallResourceServer) SendMsg(_ interface{}) error {
 	return nil
 }
 
-func (srv *testCallResourceServer) RecvMsg(m interface{}) error {
+func (srv *testCallResourceServer) RecvMsg(_ interface{}) error {
 	return nil
 }
