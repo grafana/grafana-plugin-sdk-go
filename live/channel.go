@@ -17,7 +17,7 @@ type Channel struct {
 	// * when ScopeStream, namespace is the stream ID.
 	Namespace string `json:"namespace,omitempty"`
 
-	// Within each namespace, the handler can process the path as needed.
+	// Within each scope and namespace, the handler can process the path as needed.
 	Path string `json:"path,omitempty"`
 }
 
@@ -52,9 +52,5 @@ func (c Channel) String() string {
 
 // IsValid checks if all parts of the address are valid.
 func (c *Channel) IsValid() bool {
-	if c.Scope == ScopePush {
-		// Push scope channels supposed to be like push/{$stream_id}.
-		return c.Namespace != "" && c.Path == ""
-	}
 	return c.Scope != "" && c.Namespace != "" && c.Path != ""
 }

@@ -1,2 +1,2 @@
-// Package live provides access to the GrafanaLive server [ALPHA]
+// Package live provides types for the Grafana Live server.
 package live
