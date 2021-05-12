@@ -32,6 +32,9 @@ type FieldConfig struct {
 	// Filterable indicates if the Field's data can be filtered by additional calls.
 	Filterable *bool `json:"filterable,omitempty"`
 
+	// Writeable indicates that the datasource knows how to update this value
+	Writeable *bool `json:"writeable,omitempty"`
+
 	// Numeric Options
 	Unit     string       `json:"unit,omitempty"`     // is the string to display to represent the Field's unit, such as "Requests/sec"
 	Decimals *uint16      `json:"decimals,omitempty"` // is the number of decimal places to display
