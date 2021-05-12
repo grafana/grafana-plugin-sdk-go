@@ -178,14 +178,9 @@ message CheckHealthResponse {
 service Stream {
   // SubscribeStream called when a user tries to subscribe to a plugin/datasource
   // managed channel path – thus plugin can check subscribe permissions and communicate
-  // options with Grafana Core. As soon as first subscriber joins channel RunStream
-  // will be called.
+  // options with Grafana Core. When the first subscriber joins a channel, RunStream
+  // will be called. 
   rpc SubscribeStream(SubscribeStreamRequest) returns (SubscribeStreamResponse);
-
-  // PublishStream called when a user tries to publish to a plugin/datasource
-  // managed channel path. Here plugin can check publish permissions and
-  // modify publication data if required.
-  rpc PublishStream(PublishStreamRequest) returns (PublishStreamResponse);
 
   // RunStream will be initiated by Grafana to consume a stream. RunStream will be
   // called once for the first client successfully subscribed to a channel path.
@@ -193,6 +188,11 @@ service Stream {
   // the call will be terminated until next active subscriber appears. Call termination
   // can happen with a delay.
   rpc RunStream(RunStreamRequest) returns (stream StreamPacket);
+
+  // PublishStream called when a user tries to publish to a plugin/datasource
+  // managed channel path. Here plugin can check publish permissions and
+  // modify publication data if required.
+  rpc PublishStream(PublishStreamRequest) returns (PublishStreamResponse);
 }
 
 message SubscribeStreamRequest {
