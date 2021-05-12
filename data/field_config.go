@@ -42,7 +42,7 @@ type FieldConfig struct {
 	Max      *ConfFloat64 `json:"max,omitempty"`      // see Min
 
 	// Convert input values into a display string
-	Mappings []ValueMapping `json:"mappings,omitempty"`
+	Mappings ValueMappings `json:"mappings,omitempty"`
 
 	// Map numeric values to states
 	Thresholds *ThresholdsConfig `json:"thresholds,omitempty"`

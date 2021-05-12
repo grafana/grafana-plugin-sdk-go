@@ -20,8 +20,7 @@ func TestReadMappings(t *testing.T) {
 			  "options": {
 				"0": {
 				  "text": "OFF",
-				  "color": "rgba(56, 56, 56, 1)",
-				  "index": 0
+				  "color": "rgba(56, 56, 56, 1)"
 				},
 				"1": {
 				  "text": "ON",
