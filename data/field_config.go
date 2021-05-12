@@ -123,31 +123,6 @@ func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
 	return fc
 }
 
-// MappingType value or range
-type MappingType int8
-
-const (
-	// ValueToText map a value to text
-	ValueToText MappingType = iota + 1
-
-	// RangeToText map a range to text
-	RangeToText
-)
-
-// ValueMapping convert input value to something else
-type ValueMapping struct {
-	ID   int16       `json:"id,omitempty"`
-	Text string      `json:"text,omitempty"`
-	Type MappingType `json:"type,omitempty"`
-
-	// Only valid for MappingType == ValueMap
-	Value string `json:"value,omitempty"`
-
-	// Only valid for MappingType == RangeMap
-	From string `json:"from,omitempty"`
-	To   string `json:"to,omitempty"`
-}
-
 // DataLink define what
 type DataLink struct { //revive:disable-line
 	Title       string `json:"title,omitempty"`
