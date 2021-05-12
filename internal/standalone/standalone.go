@@ -1,4 +1,4 @@
-package experimental
+package standalone
 
 import (
 	"encoding/json"
@@ -13,82 +13,24 @@ import (
 	"strconv"
 	"strings"
 	"time"
-
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
-	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 )
 
-type standaloneArgs struct {
-	address    string
-	standalone bool
+type Args struct {
+	Address    string
+	Standalone bool
 	debugger   bool
 	dir        string
 }
 
-// DoGRPC looks at the environment properties and decides if this should run as a normal hashicorp plugin or
-// as a standalone gRPC server
-func DoGRPC(id string, opts datasource.ServeOpts) error {
-	backend.SetupPluginEnvironment(id) // Enable profiler
-
-	info, err := getStandaloneInfo(id)
-	if err != nil {
-		return err
-	}
-
-	if info.standalone {
-		return backend.StandaloneServe(backend.ServeOpts{
-			CheckHealthHandler:  opts.CheckHealthHandler,
-			CallResourceHandler: opts.CallResourceHandler,
-			QueryDataHandler:    opts.QueryDataHandler,
-			StreamHandler:       opts.StreamHandler,
-			GRPCSettings:        opts.GRPCSettings,
-		}, info.address)
-	} else if info.address != "" {
-		runDummyPluginLocator(info.address)
-		return nil
-	}
-
-	// The default/normal hashicorp path
-	return datasource.Serve(opts)
-}
-
-// ManageGRPC is like DoGRPC but with automatic datasource instance management.
-func ManageGRPC(id string, instanceFactory datasource.InstanceFactoryFunc, opts datasource.ManageOpts) error {
-	backend.SetupPluginEnvironment(id) // Enable profiler
-
-	info, err := getStandaloneInfo(id)
-	if err != nil {
-		return err
-	}
-
-	if info.standalone {
-		autoManager := automanagement.NewManager(datasource.NewInstanceManager(instanceFactory))
-		return backend.StandaloneServe(backend.ServeOpts{
-			CheckHealthHandler:  autoManager,
-			CallResourceHandler: autoManager,
-			QueryDataHandler:    autoManager,
-			StreamHandler:       autoManager,
-			GRPCSettings:        opts.GRPCSettings,
-		}, info.address)
-	} else if info.address != "" {
-		runDummyPluginLocator(info.address)
-		return nil
-	}
-
-	// The default/normal hashicorp path
-	return datasource.Manage(instanceFactory, opts)
-}
-
-func getStandaloneInfo(id string) (standaloneArgs, error) {
-	info := standaloneArgs{}
+func GetInfo(id string) (Args, error) {
+	info := Args{}
 
 	var standalone bool
 	var address string
 	flag.BoolVar(&standalone, "standalone", false, "should this run standalone")
 	flag.Parse()
 
-	info.standalone = standalone
+	info.Standalone = standalone
 
 	// standalone path
 	ex, err := os.Executable()
@@ -121,14 +63,14 @@ func getStandaloneInfo(id string) (standaloneArgs, error) {
 			address = string(addrBytes)
 		}
 	}
-	info.address = address
+	info.Address = address
 
 	// Write the address to the local file
 	if standalone {
-		if info.address == "" {
+		if info.Address == "" {
 			return info, fmt.Errorf("standalone address must be specified")
 		}
-		_ = ioutil.WriteFile(filePath, []byte(info.address), 0600)
+		_ = ioutil.WriteFile(filePath, []byte(info.Address), 0600)
 		// sadly vs-code can not listen to shutdown events
 		// https://github.com/golang/vscode-go/issues/120
 
@@ -140,7 +82,7 @@ func getStandaloneInfo(id string) (standaloneArgs, error) {
 	return info, nil
 }
 
-func runDummyPluginLocator(address string) {
+func RunDummyPluginLocator(address string) {
 	fmt.Printf("1|2|tcp|%s|grpc\n", address)
 	t := time.NewTicker(time.Second * 10)
 
@@ -159,7 +101,7 @@ func getFreePort() (int, error) {
 	if err != nil {
 		return 0, err
 	}
-	defer l.Close()
+	defer func() { _ = l.Close() }()
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
