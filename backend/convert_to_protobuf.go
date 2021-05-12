@@ -224,9 +224,8 @@ func (t ConvertToProtobuf) SubscribeStreamRequest(req *SubscribeStreamRequest) *
 // SubscribeStreamResponse ...
 func (t ConvertToProtobuf) SubscribeStreamResponse(req *SubscribeStreamResponse) *pluginv2.SubscribeStreamResponse {
 	return &pluginv2.SubscribeStreamResponse{
-		Status:       pluginv2.SubscribeStreamResponse_Status(req.Status),
-		Data:         req.Data,
-		UseRunStream: req.UseRunStream,
+		Status: pluginv2.SubscribeStreamResponse_Status(req.Status),
+		Data:   req.Data,
 	}
 }
 

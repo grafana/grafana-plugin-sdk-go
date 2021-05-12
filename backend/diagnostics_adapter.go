@@ -22,7 +22,7 @@ func newDiagnosticsSDKAdapter(metricGatherer prometheus.Gatherer, checkHealthHan
 	}
 }
 
-func (a *diagnosticsSDKAdapter) CollectMetrics(ctx context.Context, protoReq *pluginv2.CollectMetricsRequest) (*pluginv2.CollectMetricsResponse, error) {
+func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.CollectMetricsRequest) (*pluginv2.CollectMetricsResponse, error) {
 	mfs, err := a.metricGatherer.Gather()
 	if err != nil {
 		return nil, err

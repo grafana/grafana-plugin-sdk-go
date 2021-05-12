@@ -52,9 +52,6 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	started := false
 
 	if dr.Error != nil {
-		if started {
-			stream.WriteMore()
-		}
 		stream.WriteObjectField("error")
 		stream.WriteString(dr.Error.Error())
 		started = true
