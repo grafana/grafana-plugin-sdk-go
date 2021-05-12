@@ -15,7 +15,7 @@ require (
 	github.com/json-iterator/go v1.1.11
 	github.com/magefile/mage v1.11.0
 	github.com/mattetti/filebuffer v1.0.1
-	github.com/mitchellh/reflectwalk v1.0.1
+	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/prometheus/client_golang v1.10.0
 	github.com/prometheus/common v0.23.0
