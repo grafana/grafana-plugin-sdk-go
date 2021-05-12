@@ -1,7 +1,7 @@
 package live
 
 const (
-	// ScopeGrafana contains builtin features of Grafana Core.
+	// ScopeGrafana contains builtin real-time features of Grafana Core.
 	ScopeGrafana = "grafana"
 	// ScopePlugin passes control to a plugin.
 	ScopePlugin = "plugin"
@@ -9,6 +9,4 @@ const (
 	ScopeDatasource = "ds"
 	// ScopeStream is a managed data frame stream.
 	ScopeStream = "stream"
-	// ScopePush allows sending data into managed streams. It does not support subscriptions.
-	ScopePush = "push"
 )
