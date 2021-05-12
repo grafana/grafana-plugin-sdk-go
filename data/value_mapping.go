@@ -32,7 +32,7 @@ type ValueMapping struct {
 	Type MappingType `json:"type"`
 
 	// Only valid for MappingType == ValueMap
-	Options interface{} `json:"options,omitempty"`
+	Options interface{} `json:"options,omitempty"` // ValueMapOptions, RangeMapOptions, or SpecialValueMappingOptions
 }
 
 type SpecialValueMappingOptions struct {

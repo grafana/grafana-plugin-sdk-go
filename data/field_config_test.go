@@ -15,22 +15,34 @@ func TestReadMappings(t *testing.T) {
 		"description": "turn on/off system. write 1 to turn on the system and write 0 to turn off the system",
 		"writeable": true,
 		"mappings": [
-		  {
-			"text": "OFF",
-			"value": "0"
-		  },
-		  {
-			"type": 1,
-			"text": "ON",
-			"value": "1"
-		  },
-		  {
-			"type": 2,
-			"text": "0-100",
-			"from": "0",
-			"to": "100"
-		  }
-		]
+			{
+			  "type": "value",
+			  "options": {
+				"0": {
+				  "text": "OFF",
+				  "color": "rgba(56, 56, 56, 1)",
+				  "index": 0
+				},
+				"1": {
+				  "text": "ON",
+				  "color": "dark-green",
+				  "index": 1
+				}
+			  }
+			},
+			{
+			  "type": "range",
+			  "options": {
+				"from": 0,
+				"to": 100,
+				"result": {
+				  "text": "0-100",
+				  "color": "yellow",
+				  "index": 2
+				}
+			  }
+			}
+		  ]
 	}`
 
 	cfg := &data.FieldConfig{}
@@ -49,20 +61,32 @@ func TestReadMappings(t *testing.T) {
 		"description": "turn on/off system. write 1 to turn on the system and write 0 to turn off the system",
 		"mappings": [
 			{
-				"text": "OFF",
-				"value": "0"
+			  "type": "value",
+			  "options": {
+				"0": {
+				  "text": "OFF",
+				  "color": "rgba(56, 56, 56, 1)",
+				  "index": 0
+				},
+				"1": {
+				  "text": "ON",
+				  "color": "dark-green",
+				  "index": 1
+				}
+			  }
 			},
 			{
-				"text": "ON",
-				"type": 1,
-				"value": "1"
-			},
-			{
-				"text": "0-100",
-				"type": 2,
-				"from": "0",
-				"to": "100"
+			  "type": "range",
+			  "options": {
+				"from": 0,
+				"to": 100,
+				"result": {
+				  "text": "0-100",
+				  "color": "yellow",
+				  "index": 2
+				}
+			  }
 			}
-		]
+		  ]
 	}`, str)
 }
