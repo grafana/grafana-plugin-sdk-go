@@ -2,7 +2,6 @@ package grpcapi
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os"
 	"time"
@@ -48,6 +47,20 @@ func WithInsecure(insecure bool) ClientOption {
 	}
 }
 
+func ClientForOrgID(ctx context.Context, orgID int64) (*Client, error) {
+	client, err := NewClient()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.GetOrgToken(ctx, GetOrgTokenRequest{
+		OrgID: orgID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return NewClient(WithToken(resp.Token))
+}
+
 // NewClient initializes Client.
 func NewClient(opts ...ClientOption) (*Client, error) {
 	c := &Client{
@@ -83,11 +96,28 @@ func (c *Client) Close() error {
 }
 
 // PublishStream allows publishing data to a Live channel.
-func (c *Client) PublishStream(ctx context.Context, channel string, data json.RawMessage) (PublishResult, error) {
+func (c *Client) PublishStream(ctx context.Context, req PublishRequest) (*PublishResponse, error) {
 	cmd := &server.PublishStreamRequest{
-		Channel: channel,
-		Data:    data,
+		Channel: req.Channel,
+		Data:    req.Data,
 	}
 	_, err := c.client.PublishStream(ctx, cmd)
-	return PublishResult{}, err
+	if err != nil {
+		return nil, err
+	}
+	return &PublishResponse{}, nil
+}
+
+// GetOrgToken allows getting token for specific organization.
+func (c *Client) GetOrgToken(ctx context.Context, req GetOrgTokenRequest) (*GetOrgTokenResponse, error) {
+	cmd := &server.GetOrgTokenRequest{
+		OrgId: req.OrgID,
+	}
+	resp, err := c.client.GetOrgToken(ctx, cmd)
+	if err != nil {
+		return nil, err
+	}
+	return &GetOrgTokenResponse{
+		Token: resp.Token,
+	}, nil
 }

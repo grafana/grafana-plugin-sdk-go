@@ -3,6 +3,14 @@ package server;
 
 option go_package = "./;server";
 
+message GetOrgTokenRequest {
+  int64 org_id = 1;
+}
+
+message GetOrgTokenResponse {
+  string token = 1;
+}
+
 message PublishStreamRequest {
   string channel = 1;
   bytes data = 2;
@@ -11,5 +19,6 @@ message PublishStreamRequest {
 message PublishStreamResponse {}
 
 service Grafana {
+  rpc GetOrgToken(GetOrgTokenRequest) returns (GetOrgTokenResponse);
   rpc PublishStream(PublishStreamRequest) returns (PublishStreamResponse);
 }

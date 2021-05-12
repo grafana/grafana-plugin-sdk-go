@@ -18,6 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type GrafanaClient interface {
+	GetOrgToken(ctx context.Context, in *GetOrgTokenRequest, opts ...grpc.CallOption) (*GetOrgTokenResponse, error)
 	PublishStream(ctx context.Context, in *PublishStreamRequest, opts ...grpc.CallOption) (*PublishStreamResponse, error)
 }
 
@@ -27,6 +28,15 @@ type grafanaClient struct {
 
 func NewGrafanaClient(cc grpc.ClientConnInterface) GrafanaClient {
 	return &grafanaClient{cc}
+}
+
+func (c *grafanaClient) GetOrgToken(ctx context.Context, in *GetOrgTokenRequest, opts ...grpc.CallOption) (*GetOrgTokenResponse, error) {
+	out := new(GetOrgTokenResponse)
+	err := c.cc.Invoke(ctx, "/server.Grafana/GetOrgToken", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *grafanaClient) PublishStream(ctx context.Context, in *PublishStreamRequest, opts ...grpc.CallOption) (*PublishStreamResponse, error) {
@@ -42,6 +52,7 @@ func (c *grafanaClient) PublishStream(ctx context.Context, in *PublishStreamRequ
 // All implementations should embed UnimplementedGrafanaServer
 // for forward compatibility
 type GrafanaServer interface {
+	GetOrgToken(context.Context, *GetOrgTokenRequest) (*GetOrgTokenResponse, error)
 	PublishStream(context.Context, *PublishStreamRequest) (*PublishStreamResponse, error)
 }
 
@@ -49,6 +60,9 @@ type GrafanaServer interface {
 type UnimplementedGrafanaServer struct {
 }
 
+func (UnimplementedGrafanaServer) GetOrgToken(context.Context, *GetOrgTokenRequest) (*GetOrgTokenResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetOrgToken not implemented")
+}
 func (UnimplementedGrafanaServer) PublishStream(context.Context, *PublishStreamRequest) (*PublishStreamResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method PublishStream not implemented")
 }
@@ -62,6 +76,24 @@ type UnsafeGrafanaServer interface {
 
 func RegisterGrafanaServer(s grpc.ServiceRegistrar, srv GrafanaServer) {
 	s.RegisterService(&Grafana_ServiceDesc, srv)
+}
+
+func _Grafana_GetOrgToken_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetOrgTokenRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(GrafanaServer).GetOrgToken(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/server.Grafana/GetOrgToken",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(GrafanaServer).GetOrgToken(ctx, req.(*GetOrgTokenRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _Grafana_PublishStream_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -89,6 +121,10 @@ var Grafana_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "server.Grafana",
 	HandlerType: (*GrafanaServer)(nil),
 	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetOrgToken",
+			Handler:    _Grafana_GetOrgToken_Handler,
+		},
 		{
 			MethodName: "PublishStream",
 			Handler:    _Grafana_PublishStream_Handler,
