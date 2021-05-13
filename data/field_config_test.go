@@ -42,13 +42,24 @@ func TestReadMappings(t *testing.T) {
 			  }
 			},
 			{
+			  "type": "range",
+			  "options": {
+				"from": 25,
+				"result": {
+				  "text": "25-Inf",
+				  "color": "yellow",
+				  "index": 3
+				}
+			  }
+			},
+			{
 			  "type": "special",
 			  "options": {
 				"match": "nan",
 				"result": {
 				  "text": "Batman!",
 				  "color": "dark-red",
-				  "index": 3
+				  "index": 4
 				}
 			  }
 			}
@@ -60,7 +71,7 @@ func TestReadMappings(t *testing.T) {
 	require.NoError(t, err, "error parsing json")
 
 	require.True(t, *cfg.Writeable)
-	require.Len(t, cfg.Mappings, 3)
+	require.Len(t, cfg.Mappings, 4)
 
 	out, err := json.MarshalIndent(cfg, "\t", "\t")
 	require.NoError(t, err, "error parsing json")

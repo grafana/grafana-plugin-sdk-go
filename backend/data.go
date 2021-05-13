@@ -118,7 +118,7 @@ func (r DataResponse) MarshalJSON() ([]byte, error) {
 	defer cfg.ReturnStream(stream)
 
 	writeDataResponseJSON(&r, stream)
-	return stream.Buffer(), stream.Error
+	return stream.Buffer(), stream.Error // Copy this with care, for concurency, you may need to copy the buffer
 }
 
 // TimeRange represents a time range for a query and is a property of DataQuery.

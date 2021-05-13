@@ -65,7 +65,7 @@ func (m ValueMappings) MarshalJSON() ([]byte, error) {
 	}
 
 	stream.WriteArrayEnd()
-	return stream.Buffer(), stream.Error
+	return append([]byte(nil), stream.Buffer()...), stream.Error
 }
 
 // UnmarshalJSON will read JSON into the appropriate go types
@@ -126,8 +126,8 @@ func (m SpecialValueMapper) getType() mappingType {
 }
 
 type RangeValueMapper struct {
-	From   ConfFloat64        `json:"from"`
-	To     ConfFloat64        `json:"to"`
+	From   *ConfFloat64       `json:"from,omitempty"`
+	To     *ConfFloat64       `json:"to,omitempty"`
 	Result ValueMappingResult `json:"result"`
 }
 
