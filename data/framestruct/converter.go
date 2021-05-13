@@ -18,6 +18,7 @@ type converter struct {
 	tags       []string
 	anyMap     bool
 	col0       string
+	maxLen     int
 }
 
 // ToDataFrame flattens an arbitrary struct or slice of structs into a *data.Frame
@@ -174,20 +175,34 @@ func (c *converter) upsertField(v reflect.Value, fieldName string) error {
 		c.fields[fieldName] = data.NewField(fieldName, nil, v)
 	}
 
-	ptr, err := toPointer(v.Interface())
-	if err != nil {
-		return err
-	}
-	c.fields[fieldName].Append(ptr)
+	c.padField(c.fields[fieldName], c.maxLen-1)
+	c.appendToField(fieldName, toPointer(v.Interface()))
 	return nil
 }
 
+func (c *converter) appendToField(name string, value interface{}) {
+	c.fields[name].Append(value)
+	if c.fields[name].Len() > c.maxLen {
+		c.maxLen++
+	}
+}
+
 func (c *converter) createFrame(name string) *data.Frame {
+	for _, f := range c.fields {
+		c.padField(f, c.maxLen)
+	}
+
 	frame := data.NewFrame(name)
 	for _, f := range c.getFieldnames() {
 		frame.Fields = append(frame.Fields, c.fields[f])
 	}
 	return frame
+}
+
+func (c *converter) padField(f *data.Field, maxLen int) {
+	for f.Len() < maxLen {
+		f.Append(nil)
+	}
 }
 
 func (c *converter) getFieldnames() []string {

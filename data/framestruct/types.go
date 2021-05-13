@@ -65,75 +65,62 @@ func sliceFor(value interface{}) (interface{}, error) {
 	}
 }
 
-func toPointer(value interface{}) (interface{}, error) {
-	switch t := value.(type) {
+func toPointer(value interface{}) interface{} {
+	switch v := value.(type) {
 	case int8:
-		v := value.(int8)
-		return &v, nil
+		return &v
 	case *int8:
-		return value, nil
+		return value
 	case int16:
-		v := value.(int16)
-		return &v, nil
+		return &v
 	case *int16:
-		return value, nil
+		return value
 	case int32:
-		v := value.(int32)
-		return &v, nil
+		return &v
 	case *int32:
-		return value, nil
+		return value
 	case int64:
-		v := value.(int64)
-		return &v, nil
+		return &v
 	case *int64:
-		return value, nil
+		return value
 	case uint8:
-		v := value.(uint8)
-		return &v, nil
+		return &v
 	case *uint8:
-		return value, nil
+		return value
 	case uint16:
-		v := value.(uint16)
-		return &v, nil
+		return &v
 	case *uint16:
-		return value, nil
+		return value
 	case uint32:
-		v := value.(uint32)
-		return &v, nil
+		return &v
 	case *uint32:
-		return value, nil
+		return value
 	case uint64:
-		v := value.(uint64)
-		return &v, nil
+		return &v
 	case *uint64:
-		return value, nil
+		return value
 	case float32:
-		v := value.(float32)
-		return &v, nil
+		return &v
 	case *float32:
-		return value, nil
+		return value
 	case float64:
-		v := value.(float64)
-		return &v, nil
+		return &v
 	case *float64:
-		return value, nil
+		return value
 	case string:
-		v := value.(string)
-		return &v, nil
+		return &v
 	case *string:
-		return value, nil
+		return value
 	case bool:
-		v := value.(bool)
-		return &v, nil
+		return &v
 	case *bool:
-		return value, nil
+		return value
 	case time.Time:
-		v := value.(time.Time)
-		return &v, nil
+		return &v
 	case *time.Time:
-		return value, nil
+		return value
 	default:
-		return nil, fmt.Errorf("unsupported type %T", t)
+		return nil
 	}
 }
 

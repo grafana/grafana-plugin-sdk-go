@@ -273,6 +273,42 @@ func TestSlices(t *testing.T) {
 		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
 		require.Equal(t, "baz1", fromPointer(frame.Fields[2].At(1)))
 	})
+
+	t.Run("it flattens a slice of maps that are different sizes", func(t *testing.T) {
+		maps := []map[string]interface{}{
+			{
+				"Thing1": "foo",
+				"Thing2": int32(36),
+			},
+			{
+				"Thing1": "foo1",
+				"Thing3": "baz1",
+			},
+		}
+
+		// result
+		// | Thing1 | Thing2 | Thing3 |
+		// |--------+--------+--------|
+		// | foo    | 36     | nil    |
+		// | foo1   | nil    | baz1   |
+
+		frame, err := framestruct.ToDataFrame("results", maps)
+		require.Nil(t, err)
+
+		require.Len(t, frame.Fields, 3)
+		require.Equal(t, 2, frame.Fields[0].Len())
+		require.Equal(t, 2, frame.Fields[1].Len())
+		require.Equal(t, 2, frame.Fields[2].Len())
+
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, "foo1", fromPointer(frame.Fields[0].At(1)))
+
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
+		require.Nil(t, frame.Fields[1].At(1))
+
+		require.Nil(t, frame.Fields[2].At(0))
+		require.Equal(t, "baz1", fromPointer(frame.Fields[2].At(1)))
+	})
 }
 
 func TestMaps(t *testing.T) {
