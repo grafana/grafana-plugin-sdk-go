@@ -12,9 +12,9 @@ import (
 type mappingType string
 
 const (
-	ValueToText  mappingType = "value"
-	RangeToText  mappingType = "range"
-	SpecialValue mappingType = "special"
+	valueToText  mappingType = "value"
+	rangeToText  mappingType = "range"
+	specialValue mappingType = "special"
 )
 
 type SpecialValueMatch string
@@ -79,21 +79,21 @@ func (m *ValueMappings) UnmarshalJSON(b []byte) error {
 		mt := mappingType(strings.Trim(string(objMap["type"]), `"`))
 
 		switch mt {
-		case ValueToText:
+		case valueToText:
 			var mapper ValueMapper
 			err := json.Unmarshal(objMap["options"], &mapper)
 			if err != nil {
 				return err
 			}
 			mappings = append(mappings, mapper)
-		case RangeToText:
+		case rangeToText:
 			var mapper RangeValueMapper
 			err := json.Unmarshal(objMap["options"], &mapper)
 			if err != nil {
 				return err
 			}
 			mappings = append(mappings, mapper)
-		case SpecialValue:
+		case specialValue:
 			var mapper SpecialValueMapper
 			err := json.Unmarshal(objMap["options"], &mapper)
 			if err != nil {
@@ -113,7 +113,7 @@ func (m *ValueMappings) UnmarshalJSON(b []byte) error {
 type ValueMapper map[string]ValueMappingResult
 
 func (m ValueMapper) getType() mappingType {
-	return ValueToText
+	return valueToText
 }
 
 type SpecialValueMapper struct {
@@ -122,7 +122,7 @@ type SpecialValueMapper struct {
 }
 
 func (m SpecialValueMapper) getType() mappingType {
-	return SpecialValue
+	return specialValue
 }
 
 type RangeValueMapper struct {
@@ -132,7 +132,7 @@ type RangeValueMapper struct {
 }
 
 func (m RangeValueMapper) getType() mappingType {
-	return RangeToText
+	return rangeToText
 }
 
 // Make sure each type implements all required interfaces
