@@ -173,7 +173,12 @@ func (c *converter) upsertField(v reflect.Value, fieldName string) error {
 
 		c.fields[fieldName] = data.NewField(fieldName, nil, v)
 	}
-	c.fields[fieldName].Append(v.Interface())
+
+	ptr, err := toPointer(v.Interface())
+	if err != nil {
+		return err
+	}
+	c.fields[fieldName].Append(ptr)
 	return nil
 }
 

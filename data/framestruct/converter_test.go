@@ -19,9 +19,9 @@ func TestStructs(t *testing.T) {
 		require.Equal(t, "Results", frame.Name)
 		require.Len(t, frame.Fields, 3)
 
-		require.Equal(t, "foo", frame.Fields[0].At(0))
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
-		require.Equal(t, "baz", frame.Fields[2].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
 	})
 
 	t.Run("it treats times as a value", func(t *testing.T) {
@@ -33,7 +33,7 @@ func TestStructs(t *testing.T) {
 
 		require.Equal(t, "Results", frame.Name)
 		require.Len(t, frame.Fields, 1)
-		require.Equal(t, tme, frame.Fields[0].At(0))
+		require.Equal(t, tme, fromPointer(frame.Fields[0].At(0)))
 	})
 
 	t.Run("it treats time pointers as a value", func(t *testing.T) {
@@ -57,9 +57,9 @@ func TestStructs(t *testing.T) {
 		require.Equal(t, "Results", frame.Name)
 		require.Len(t, frame.Fields, 3)
 
-		require.Equal(t, "foo", frame.Fields[0].At(0))
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
-		require.Equal(t, "baz", frame.Fields[2].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
 	})
 
 	t.Run("it flattens structs with maps", func(t *testing.T) {
@@ -74,7 +74,7 @@ func TestStructs(t *testing.T) {
 
 		require.Len(t, frame.Fields, 1)
 		require.Equal(t, "Foo.Thing1", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 	})
 
 	t.Run("it properly handles pointers", func(t *testing.T) {
@@ -86,8 +86,7 @@ func TestStructs(t *testing.T) {
 
 		require.Len(t, frame.Fields, 1)
 
-		val := frame.Fields[0].At(0).(*string)
-		require.Equal(t, "foo", *val)
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 	})
 
 	t.Run("it ignores unexported fields", func(t *testing.T) {
@@ -120,24 +119,24 @@ func TestStructs(t *testing.T) {
 		require.Equal(t, 2, frame.Fields[4].Len())
 
 		require.Equal(t, "Thing1", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
-		require.Equal(t, "foo1", frame.Fields[0].At(1))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, "foo1", fromPointer(frame.Fields[0].At(1)))
 
 		require.Equal(t, "Thing2", frame.Fields[1].Name)
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
-		require.Equal(t, int32(37), frame.Fields[1].At(1))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, int32(37), fromPointer(frame.Fields[1].At(1)))
 
 		require.Equal(t, "Thing3", frame.Fields[2].Name)
-		require.Equal(t, "baz", frame.Fields[2].At(0))
-		require.Equal(t, "baz1", frame.Fields[2].At(1))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
+		require.Equal(t, "baz1", fromPointer(frame.Fields[2].At(1)))
 
 		require.Equal(t, "Thing4.Thing7", frame.Fields[3].Name)
-		require.Equal(t, true, frame.Fields[3].At(0))
-		require.Equal(t, false, frame.Fields[3].At(1))
+		require.Equal(t, true, fromPointer(frame.Fields[3].At(0)))
+		require.Equal(t, false, fromPointer(frame.Fields[3].At(1)))
 
 		require.Equal(t, "Thing4.Thing8", frame.Fields[4].Name)
-		require.Equal(t, int64(100), frame.Fields[4].At(0))
-		require.Equal(t, int64(101), frame.Fields[4].At(1))
+		require.Equal(t, int64(100), fromPointer(frame.Fields[4].At(0)))
+		require.Equal(t, int64(101), fromPointer(frame.Fields[4].At(1)))
 	})
 
 	t.Run("it returns an error when the struct contains an unsupported type", func(t *testing.T) {
@@ -209,14 +208,14 @@ func TestSlices(t *testing.T) {
 		require.Equal(t, 2, frame.Fields[1].Len())
 		require.Equal(t, 2, frame.Fields[2].Len())
 
-		require.Equal(t, "foo", frame.Fields[0].At(0))
-		require.Equal(t, "foo1", frame.Fields[0].At(1))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, "foo1", fromPointer(frame.Fields[0].At(1)))
 
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
-		require.Equal(t, int32(37), frame.Fields[1].At(1))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, int32(37), fromPointer(frame.Fields[1].At(1)))
 
-		require.Equal(t, "baz", frame.Fields[2].At(0))
-		require.Equal(t, "baz1", frame.Fields[2].At(1))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
+		require.Equal(t, "baz1", fromPointer(frame.Fields[2].At(1)))
 	})
 
 	t.Run("it flattens a pointer to a slice of structs", func(t *testing.T) {
@@ -233,14 +232,14 @@ func TestSlices(t *testing.T) {
 		require.Equal(t, 2, frame.Fields[1].Len())
 		require.Equal(t, 2, frame.Fields[2].Len())
 
-		require.Equal(t, "foo", frame.Fields[0].At(0))
-		require.Equal(t, "foo1", frame.Fields[0].At(1))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, "foo1", fromPointer(frame.Fields[0].At(1)))
 
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
-		require.Equal(t, int32(37), frame.Fields[1].At(1))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, int32(37), fromPointer(frame.Fields[1].At(1)))
 
-		require.Equal(t, "baz", frame.Fields[2].At(0))
-		require.Equal(t, "baz1", frame.Fields[2].At(1))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
+		require.Equal(t, "baz1", fromPointer(frame.Fields[2].At(1)))
 	})
 
 	t.Run("it flattens a slice of maps", func(t *testing.T) {
@@ -265,14 +264,14 @@ func TestSlices(t *testing.T) {
 		require.Equal(t, 2, frame.Fields[1].Len())
 		require.Equal(t, 2, frame.Fields[2].Len())
 
-		require.Equal(t, "foo", frame.Fields[0].At(0))
-		require.Equal(t, "foo1", frame.Fields[0].At(1))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, "foo1", fromPointer(frame.Fields[0].At(1)))
 
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
-		require.Equal(t, int32(37), frame.Fields[1].At(1))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, int32(37), fromPointer(frame.Fields[1].At(1)))
 
-		require.Equal(t, "baz", frame.Fields[2].At(0))
-		require.Equal(t, "baz1", frame.Fields[2].At(1))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
+		require.Equal(t, "baz1", fromPointer(frame.Fields[2].At(1)))
 	})
 }
 
@@ -288,9 +287,9 @@ func TestMaps(t *testing.T) {
 		require.Nil(t, err)
 
 		require.Len(t, frame.Fields, 3)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
-		require.Equal(t, "baz", frame.Fields[2].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
 	})
 
 	t.Run("it flattens nested maps with dot-names", func(t *testing.T) {
@@ -308,16 +307,16 @@ func TestMaps(t *testing.T) {
 
 		require.Len(t, frame.Fields, 4)
 		require.Equal(t, "Thing1", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 
 		require.Equal(t, "Thing2", frame.Fields[1].Name)
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
 
 		require.Equal(t, "Thing3.Thing4", frame.Fields[2].Name)
-		require.Equal(t, true, frame.Fields[2].At(0))
+		require.Equal(t, true, fromPointer(frame.Fields[2].At(0)))
 
 		require.Equal(t, "Thing3.Thing5", frame.Fields[3].Name)
-		require.Equal(t, int32(100), frame.Fields[3].At(0))
+		require.Equal(t, int32(100), fromPointer(frame.Fields[3].At(0)))
 	})
 
 	t.Run("it flattens maps with structs", func(t *testing.T) {
@@ -335,16 +334,16 @@ func TestMaps(t *testing.T) {
 
 		require.Len(t, frame.Fields, 4)
 		require.Equal(t, "Thing1", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 
 		require.Equal(t, "Thing2", frame.Fields[1].Name)
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
 
 		require.Equal(t, "Thing3.Thing7", frame.Fields[2].Name)
-		require.Equal(t, false, frame.Fields[2].At(0))
+		require.Equal(t, false, fromPointer(frame.Fields[2].At(0)))
 
 		require.Equal(t, "Thing3.Thing8", frame.Fields[3].Name)
-		require.Equal(t, int64(100), frame.Fields[3].At(0))
+		require.Equal(t, int64(100), fromPointer(frame.Fields[3].At(0)))
 	})
 
 	t.Run("it flattens maps with slices of structs", func(t *testing.T) {
@@ -362,16 +361,16 @@ func TestMaps(t *testing.T) {
 
 		require.Len(t, frame.Fields, 4)
 		require.Equal(t, "Thing1", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 
 		require.Equal(t, "Thing2", frame.Fields[1].Name)
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
 
 		require.Equal(t, "Thing3.Thing7", frame.Fields[2].Name)
-		require.Equal(t, false, frame.Fields[2].At(0))
+		require.Equal(t, false, fromPointer(frame.Fields[2].At(0)))
 
 		require.Equal(t, "Thing3.Thing8", frame.Fields[3].Name)
-		require.Equal(t, int64(100), frame.Fields[3].At(0))
+		require.Equal(t, int64(100), fromPointer(frame.Fields[3].At(0)))
 	})
 
 	t.Run("it returns an error when any map contains an unsupported type", func(t *testing.T) {
@@ -429,10 +428,10 @@ func TestStructTags(t *testing.T) {
 
 		require.Len(t, frame.Fields, 2)
 		require.Equal(t, "first-thing", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 
 		require.Equal(t, "third-thing", frame.Fields[1].Name)
-		require.Equal(t, "baz", frame.Fields[1].At(0))
+		require.Equal(t, "baz", fromPointer(frame.Fields[1].At(0)))
 	})
 
 	t.Run("it uses struct tags if they're present", func(t *testing.T) {
@@ -450,16 +449,16 @@ func TestStructTags(t *testing.T) {
 
 		require.Len(t, frame.Fields, 4)
 		require.Equal(t, "first-thing", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 
 		require.Equal(t, "second-thing", frame.Fields[1].Name)
-		require.Equal(t, "bar", frame.Fields[1].At(0))
+		require.Equal(t, "bar", fromPointer(frame.Fields[1].At(0)))
 
 		require.Equal(t, "third-thing.Thing7", frame.Fields[2].Name)
-		require.Equal(t, true, frame.Fields[2].At(0))
+		require.Equal(t, true, fromPointer(frame.Fields[2].At(0)))
 
 		require.Equal(t, "third-thing.Thing8", frame.Fields[3].Name)
-		require.Equal(t, int64(100), frame.Fields[3].At(0))
+		require.Equal(t, int64(100), fromPointer(frame.Fields[3].At(0)))
 	})
 
 	t.Run("omits the parent struct name if omitparent is present", func(t *testing.T) {
@@ -481,22 +480,22 @@ func TestStructTags(t *testing.T) {
 
 		require.Len(t, frame.Fields, 6)
 		require.Equal(t, "first-thing", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 
 		require.Equal(t, "second-thing", frame.Fields[1].Name)
-		require.Equal(t, "bar", frame.Fields[1].At(0))
+		require.Equal(t, "bar", fromPointer(frame.Fields[1].At(0)))
 
 		require.Equal(t, "Thing5", frame.Fields[2].Name)
-		require.Equal(t, true, frame.Fields[2].At(0))
+		require.Equal(t, true, fromPointer(frame.Fields[2].At(0)))
 
 		require.Equal(t, "Thing6", frame.Fields[3].Name)
-		require.Equal(t, int64(100), frame.Fields[3].At(0))
+		require.Equal(t, int64(100), fromPointer(frame.Fields[3].At(0)))
 
 		require.Equal(t, "omitparent.Thing7", frame.Fields[4].Name)
-		require.Equal(t, false, frame.Fields[4].At(0))
+		require.Equal(t, false, fromPointer(frame.Fields[4].At(0)))
 
 		require.Equal(t, "omitparent.Thing8", frame.Fields[5].Name)
-		require.Equal(t, int64(200), frame.Fields[5].At(0))
+		require.Equal(t, int64(200), fromPointer(frame.Fields[5].At(0)))
 	})
 
 	t.Run("sets the column with col0 to be the 0th column", func(t *testing.T) {
@@ -578,16 +577,16 @@ func TestStructTags(t *testing.T) {
 
 		require.Len(t, frame.Fields, 4)
 		require.Equal(t, "Thing1", frame.Fields[0].Name)
-		require.Equal(t, "foo", frame.Fields[0].At(0))
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
 
 		require.Equal(t, "Thing2", frame.Fields[1].Name)
-		require.Equal(t, int32(36), frame.Fields[1].At(0))
+		require.Equal(t, int32(36), fromPointer(frame.Fields[1].At(0)))
 
 		require.Equal(t, "Thing5", frame.Fields[2].Name)
-		require.Equal(t, false, frame.Fields[2].At(0))
+		require.Equal(t, false, fromPointer(frame.Fields[2].At(0)))
 
 		require.Equal(t, "Thing6", frame.Fields[3].Name)
-		require.Equal(t, int64(100), frame.Fields[3].At(0))
+		require.Equal(t, int64(100), fromPointer(frame.Fields[3].At(0)))
 	})
 }
 func TestToDataframe(t *testing.T) {
@@ -790,4 +789,37 @@ func (f *mockFramer) Frames() (data.Frames, error) {
 	f.called = true
 	frame := data.NewFrame("New Frame")
 	return []*data.Frame{frame}, nil
+}
+
+func fromPointer(value interface{}) interface{} {
+	switch v := value.(type) {
+	case *int8:
+		return *v
+	case *int16:
+		return *v
+	case *int32:
+		return *v
+	case *int64:
+		return *v
+	case *uint8:
+		return *v
+	case *uint16:
+		return *v
+	case *uint32:
+		return *v
+	case *uint64:
+		return *v
+	case *float32:
+		return *v
+	case *float64:
+		return *v
+	case *string:
+		return *v
+	case *bool:
+		return *v
+	case *time.Time:
+		return *v
+	default:
+		return nil
+	}
 }
