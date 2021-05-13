@@ -9,12 +9,12 @@ import (
 )
 
 // MappingType see https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/types/valueMapping.ts
-type MappingType string
+type mappingType string
 
 const (
-	ValueToText  MappingType = "value"
-	RangeToText  MappingType = "range"
-	SpecialValue MappingType = "special"
+	ValueToText  mappingType = "value"
+	RangeToText  mappingType = "range"
+	SpecialValue mappingType = "special"
 )
 
 type SpecialValueMatch string
@@ -37,7 +37,7 @@ type ValueMappingResult struct {
 
 // ValueMapping allows mapping input values to text and color
 type ValueMapping interface {
-	GetType() MappingType
+	getType() mappingType
 }
 
 type ValueMappings []ValueMapping
@@ -56,7 +56,7 @@ func (m ValueMappings) MarshalJSON() ([]byte, error) {
 
 		stream.WriteObjectStart()
 		stream.WriteObjectField("type")
-		stream.WriteString(string(v.GetType()))
+		stream.WriteString(string(v.getType()))
 
 		stream.WriteMore()
 		stream.WriteObjectField("options")
@@ -76,7 +76,7 @@ func (m *ValueMappings) UnmarshalJSON(b []byte) error {
 	for iter.ReadArray() {
 		var objMap map[string]json.RawMessage
 		iter.ReadVal(&objMap)
-		mt := MappingType(strings.Trim(string(objMap["type"]), `"`))
+		mt := mappingType(strings.Trim(string(objMap["type"]), `"`))
 
 		switch mt {
 		case ValueToText:
@@ -112,7 +112,7 @@ func (m *ValueMappings) UnmarshalJSON(b []byte) error {
 // ValueMapper converts one set of strings to another
 type ValueMapper map[string]ValueMappingResult
 
-func (m ValueMapper) GetType() MappingType {
+func (m ValueMapper) getType() mappingType {
 	return ValueToText
 }
 
@@ -121,7 +121,7 @@ type SpecialValueMapper struct {
 	Result ValueMappingResult `json:"result"`
 }
 
-func (m SpecialValueMapper) GetType() MappingType {
+func (m SpecialValueMapper) getType() mappingType {
 	return SpecialValue
 }
 
@@ -131,7 +131,7 @@ type RangeValueMapper struct {
 	Result ValueMappingResult `json:"result"`
 }
 
-func (m RangeValueMapper) GetType() MappingType {
+func (m RangeValueMapper) getType() mappingType {
 	return RangeToText
 }
 
