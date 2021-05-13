@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 // callResourceResponseWriter is an implementation of http.ResponseWriter that
@@ -121,7 +122,7 @@ func (rw *callResourceResponseWriter) Flush() {
 	resp := rw.getResponse()
 	if resp != nil {
 		if err := rw.stream.Send(resp); err != nil {
-			backend.Logger.Error("Failed to send resource response", "error", err)
+			log.DefaultLogger.Error("Failed to send resource response", "error", err)
 		}
 	}
 
