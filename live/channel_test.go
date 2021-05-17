@@ -9,7 +9,7 @@ import (
 )
 
 func TestParseChannel(t *testing.T) {
-	addr, err := ParseChannel("aaa/bbb/ccc")
+	channel, err := ParseChannel("aaa/bbb/ccc")
 	require.NoError(t, err)
 
 	ex := Channel{
@@ -18,7 +18,7 @@ func TestParseChannel(t *testing.T) {
 		Path:      "ccc",
 	}
 
-	if diff := cmp.Diff(addr, ex); diff != "" {
+	if diff := cmp.Diff(channel, ex); diff != "" {
 		t.Fatalf("Result mismatch (-want +got):\n%s", diff)
 	}
 }
