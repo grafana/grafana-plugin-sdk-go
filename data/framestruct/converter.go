@@ -152,7 +152,14 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 		return errors.New("map must be map[string]interface{}")
 	}
 
-	for name, value := range m {
+	var names []string
+	for name := range m {
+		names = append(names, name)
+	}
+	sort.Strings(names)
+
+	for _, name := range names {
+		value := m[name]
 		fieldName := c.fieldName(name, tags, prefix)
 		v := c.ensureValue(reflect.ValueOf(value))
 		if err := c.handleValue(v, "", fieldName); err != nil {
