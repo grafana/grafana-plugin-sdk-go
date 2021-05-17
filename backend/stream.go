@@ -38,9 +38,9 @@ const (
 	// SubscribeStreamStatusOK means subscription is allowed.
 	SubscribeStreamStatusOK SubscribeStreamStatus = 0
 	// SubscribeStreamStatusNotFound means stream does not exist at all.
-	SubscribeStreamStatusNotFound = 1
+	SubscribeStreamStatusNotFound SubscribeStreamStatus = 1
 	// SubscribeStreamStatusPermissionDenied means that user is not allowed to subscribe.
-	SubscribeStreamStatusPermissionDenied = 2
+	SubscribeStreamStatusPermissionDenied SubscribeStreamStatus = 2
 )
 
 // SubscribeStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -63,9 +63,9 @@ const (
 	// PublishStreamStatusOK means publication is allowed.
 	PublishStreamStatusOK PublishStreamStatus = 0
 	// PublishStreamStatusNotFound means stream does not exist at all.
-	PublishStreamStatusNotFound = 1
+	PublishStreamStatusNotFound PublishStreamStatus = 1
 	// PublishStreamStatusPermissionDenied means that user is not allowed to publish.
-	PublishStreamStatusPermissionDenied = 2
+	PublishStreamStatusPermissionDenied PublishStreamStatus = 2
 )
 
 // PublishStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
