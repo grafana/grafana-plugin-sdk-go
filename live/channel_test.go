@@ -1,6 +1,7 @@
 package live
 
 import (
+	"errors"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -8,13 +9,13 @@ import (
 )
 
 func TestParseChannel(t *testing.T) {
-	addr := ParseChannel("aaa/bbb/ccc/ddd")
-	require.True(t, addr.IsValid())
+	addr, err := ParseChannel("aaa/bbb/ccc")
+	require.NoError(t, err)
 
 	ex := Channel{
 		Scope:     "aaa",
 		Namespace: "bbb",
-		Path:      "ccc/ddd",
+		Path:      "ccc",
 	}
 
 	if diff := cmp.Diff(addr, ex); diff != "" {
@@ -35,8 +36,28 @@ func TestParseChannel_IsValid(t *testing.T) {
 		},
 		{
 			name:    "valid_long_path",
-			id:      "stream/cpu/test/other",
+			id:      "stream/cpu/test",
 			isValid: true,
+		},
+		{
+			name:    "invalid_reserved_symbol",
+			id:      "stream/cpu/test/boom",
+			isValid: false,
+		},
+		{
+			name:    "invalid_empty",
+			id:      "",
+			isValid: false,
+		},
+		{
+			name:    "invalid_has_space",
+			id:      "stream/cpu/ test",
+			isValid: false,
+		},
+		{
+			name:    "invalid_non_ascii",
+			id:      "stream/cpu/ѓ",
+			isValid: false,
 		},
 		{
 			name:    "invalid_no_path",
@@ -51,7 +72,8 @@ func TestParseChannel_IsValid(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := ParseChannel(tt.id); got.IsValid() != tt.isValid {
+			_, err := ParseChannel(tt.id)
+			if !tt.isValid && !errors.Is(err, ErrInvalidChannelID) {
 				t.Errorf("unexpected isValid result for %s", tt.id)
 			}
 		})
