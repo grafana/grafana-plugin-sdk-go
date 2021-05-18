@@ -95,8 +95,12 @@ func buildBackend(cfg Config) error {
 		ldFlags = fmt.Sprintf("-w -s%s%s", prefix, ldFlags)
 	}
 
+	outputPath := cfg.OutputBinaryPath
+	if outputPath == "" {
+		outputPath = "dist"
+	}
 	args := []string{
-		"build", "-o", filepath.Join("dist", exeName),
+		"build", "-o", filepath.Join(outputPath, exeName),
 	}
 
 	info := getBuildInfoFromEnvironment()
