@@ -1,4 +1,4 @@
-package testing
+package plugintest
 
 import (
 	"context"
