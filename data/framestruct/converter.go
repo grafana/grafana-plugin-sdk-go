@@ -152,7 +152,8 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 		return errors.New("map must be map[string]interface{}")
 	}
 
-	for name, value := range m {
+	for _, name := range sortedKeys(m) {
+		value := m[name]
 		fieldName := c.fieldName(name, tags, prefix)
 		v := c.ensureValue(reflect.ValueOf(value))
 		if err := c.handleValue(v, "", fieldName); err != nil {
@@ -161,6 +162,19 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 	}
 
 	return nil
+}
+
+func sortedKeys(m map[string]interface{}) []string {
+	keys := make([]string, len(m))
+
+	var idx int
+	for key := range m {
+		keys[idx] = key
+		idx++
+	}
+	sort.Strings(keys)
+
+	return keys
 }
 
 func (c *converter) upsertField(v reflect.Value, fieldName string) error {
