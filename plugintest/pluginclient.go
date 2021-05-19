@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
@@ -16,6 +17,26 @@ type PluginClient struct {
 	dataClient        pluginv2.DataClient
 	diagnosticsClient pluginv2.DiagnosticsClient
 	resourceClient    pluginv2.ResourceClient
+}
+
+// NewPluginClient takes the address of a plugin, attempts to connect to it,
+// and returns a PluginClient to that plugin. NewPluginClient blocks while
+// establishing connection to the plugin.
+func NewPluginClient(addr string) (*PluginClient, ShutdownFunc, error) {
+	conn, err := grpc.Dial(addr, grpc.WithInsecure(), grpc.WithBlock())
+	if err != nil {
+		return nil, func() {}, err
+	}
+
+	plugin := &PluginClient{
+		diagnosticsClient: pluginv2.NewDiagnosticsClient(conn),
+		dataClient:        pluginv2.NewDataClient(conn),
+		resourceClient:    pluginv2.NewResourceClient(conn),
+	}
+
+	return plugin, func() {
+		conn.Close()
+	}, nil
 }
 
 // CheckHealth makes a CheckHealth request to the connected plugin
