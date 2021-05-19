@@ -31,7 +31,7 @@ func TestParseChannel_IsValid(t *testing.T) {
 	}{
 		{
 			name:    "valid",
-			id:      "stream/cpu/test",
+			id:      "Stream/cpu/test",
 			isValid: true,
 		},
 		{
@@ -40,13 +40,18 @@ func TestParseChannel_IsValid(t *testing.T) {
 			isValid: true,
 		},
 		{
-			name:    "invalid_reserved_symbol",
-			id:      "stream/cpu/test/boom",
+			name:    "invalid_empty",
+			id:      "",
 			isValid: false,
 		},
 		{
-			name:    "invalid_empty",
-			id:      "",
+			name:    "invalid_path_empty",
+			id:      "stream/test",
+			isValid: false,
+		},
+		{
+			name:    "invalid_reserved_symbol",
+			id:      "stream/test/%",
 			isValid: false,
 		},
 		{
@@ -55,7 +60,7 @@ func TestParseChannel_IsValid(t *testing.T) {
 			isValid: false,
 		},
 		{
-			name:    "invalid_non_ascii",
+			name:    "invalid_has_unicode",
 			id:      "stream/cpu/ѓ",
 			isValid: false,
 		},
@@ -69,11 +74,23 @@ func TestParseChannel_IsValid(t *testing.T) {
 			id:      "grafana",
 			isValid: false,
 		},
+		{
+			name:    "path_with_additional_symbols",
+			id:      "grafana/test/path/dash-and-equal=1.1.1.1",
+			isValid: true,
+		},
+		{
+			name:    "scope_namespace_with_additional_symbols",
+			id:      "grafana=/test=/path/dash-and-equal",
+			isValid: false,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			_, err := ParseChannel(tt.id)
-			if !tt.isValid && !errors.Is(err, ErrInvalidChannelID) {
+			if tt.isValid && err != nil {
+				t.Errorf("unexpected isValid result for %s", tt.id)
+			} else if !tt.isValid && !errors.Is(err, ErrInvalidChannelID) {
 				t.Errorf("unexpected isValid result for %s", tt.id)
 			}
 		})

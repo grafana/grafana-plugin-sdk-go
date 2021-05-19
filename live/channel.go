@@ -8,8 +8,8 @@ import (
 
 // ErrInvalidChannelID returned when channel ID does not have valid
 // format. Valid channel IDs have 3 parts (scope, namespace, path)
-// delimited by "/". Each part can only have alphanumeric symbols,
-// underscore and dash.
+// delimited by "/". Scope and namespace parts can only have alphanumeric
+// ascii symbols, underscore and dash. Path can additionally have "/", "=" and ".".
 var ErrInvalidChannelID = errors.New("invalid channel ID")
 
 // Channel is the channel ID split by parts.
@@ -61,7 +61,10 @@ func (c Channel) String() string {
 	return ch
 }
 
-var channelPattern = regexp.MustCompile("^[A-Za-z0-9_-]*$")
+var (
+	scopeNamespacePattern = regexp.MustCompile(`^[A-z0-9_\-]*$`)
+	pathPattern           = regexp.MustCompile(`^[A-z0-9_\-/=.]*$`)
+)
 
 // IsValid checks if all parts of the Channel are valid.
 func (c *Channel) IsValid() bool {
@@ -69,13 +72,13 @@ func (c *Channel) IsValid() bool {
 	if !allPartsExist {
 		return false
 	}
-	ok := channelPattern.MatchString(c.Scope)
+	ok := scopeNamespacePattern.MatchString(c.Scope)
 	if !ok {
 		return false
 	}
-	ok = channelPattern.MatchString(c.Namespace)
+	ok = scopeNamespacePattern.MatchString(c.Namespace)
 	if !ok {
 		return false
 	}
-	return channelPattern.MatchString(c.Path)
+	return pathPattern.MatchString(c.Path)
 }
