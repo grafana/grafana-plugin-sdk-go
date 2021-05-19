@@ -159,6 +159,7 @@ func (p *Provider) createClientOptions(providedOpts ...Options) Options {
 		}
 	case 1:
 		clientOpts = providedOpts[0]
+		clientOpts.Middlewares = append(clientOpts.Middlewares, p.Opts.Middlewares...)
 	default:
 		panic("only an empty or one Options is valid as argument")
 	}
