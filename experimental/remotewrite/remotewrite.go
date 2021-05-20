@@ -3,6 +3,7 @@ package remotewrite
 import (
 	"fmt"
 	"hash/fnv"
+	"strings"
 	"time"
 
 	"github.com/gogo/protobuf/proto"
@@ -16,6 +17,11 @@ type metricKey uint64
 // Serialize frames to Prometheus remote write format.
 func Serialize(frames ...*data.Frame) ([]byte, error) {
 	return TimeSeriesToBytes(TimeSeriesFromFrames(frames...))
+}
+
+// SerializeLabelsColumn frames to Prometheus remote write format.
+func SerializeLabelsColumn(frames ...*data.Frame) ([]byte, error) {
+	return TimeSeriesToBytes(TimeSeriesFromFramesLabelsColumn(frames...))
 }
 
 // TimeSeriesFromFrames converts frames to slice of Prometheus TimeSeries.
@@ -74,6 +80,95 @@ func TimeSeriesFromFrames(frames ...*data.Frame) []prompb.TimeSeries {
 			promTimeSeries := prompb.TimeSeries{Labels: labelsCopy, Samples: samples}
 			entries[key] = promTimeSeries
 			keys = append(keys, key)
+		}
+	}
+
+	var promTimeSeriesBatch = make([]prompb.TimeSeries, 0, len(entries))
+	for _, key := range keys {
+		promTimeSeriesBatch = append(promTimeSeriesBatch, entries[key])
+	}
+
+	return promTimeSeriesBatch
+}
+
+// TimeSeriesFromFramesLabelsColumn converts frames to slice of Prometheus TimeSeries.
+func TimeSeriesFromFramesLabelsColumn(frames ...*data.Frame) []prompb.TimeSeries {
+	var entries = make(map[metricKey]prompb.TimeSeries)
+	var keys []metricKey // sorted keys.
+
+	for _, frame := range frames {
+		timeFieldIndex, ok := timeFieldIndex(frame)
+		if !ok {
+			// Skipping frames without time field.
+			continue
+		}
+
+		labelsField := frame.Fields[0]
+		if labelsField.Type() != data.FieldTypeString {
+			continue
+		}
+
+		labels := make([][]prompb.Label, labelsField.Len())
+		for i := 0; i < labelsField.Len(); i++ {
+			val, ok := labelsField.ConcreteAt(i)
+			if !ok {
+				continue
+			}
+			parts := strings.Split(val.(string), ", ")
+			promLabels := make([]prompb.Label, 0)
+			for _, part := range parts {
+				labelParts := strings.SplitN(part, "=", 2)
+				if len(labelParts) != 2 {
+					continue
+				}
+				promLabels = append(promLabels, prompb.Label{Name: labelParts[0], Value: labelParts[1]})
+			}
+			labels[i] = promLabels
+		}
+
+		for _, field := range frame.Fields {
+			if !field.Type().Numeric() {
+				continue
+			}
+			metricName := makeMetricName(frame, field)
+			metricName, ok := sanitizeMetricName(metricName)
+			if !ok {
+				continue
+			}
+
+			for i := 0; i < field.Len(); i++ {
+				labelsCopy := make([]prompb.Label, len(labels[i]), len(labels[i])+1)
+				copy(labelsCopy, labels[i])
+
+				val, ok := field.ConcreteAt(i)
+				if !ok {
+					continue
+				}
+				value, ok := sampleValue(val)
+				if !ok {
+					continue
+				}
+				tm, ok := frame.Fields[timeFieldIndex].ConcreteAt(i)
+				if !ok {
+					continue
+				}
+				sample := prompb.Sample{
+					// Timestamp is int milliseconds for remote write.
+					Timestamp: toSampleTime(tm.(time.Time)),
+					Value:     value,
+				}
+
+				labelsCopy = append(labelsCopy, prompb.Label{
+					Name:  "__name__",
+					Value: metricName,
+				})
+
+				key := makeMetricKey(metricName, labelsCopy)
+
+				promTimeSeries := prompb.TimeSeries{Labels: labelsCopy, Samples: []prompb.Sample{sample}}
+				entries[key] = promTimeSeries
+				keys = append(keys, key)
+			}
 		}
 	}
 
