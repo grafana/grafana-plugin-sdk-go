@@ -34,9 +34,6 @@ func Lint() error {
 	if err := sh.RunV("golangci-lint", "run", "./..."); err != nil {
 		return err
 	}
-	if err := sh.RunV("revive", "-formatter", "stylish", "-config", "scripts/configs/revive.toml", "./..."); err != nil {
-		return err
-	}
 
 	return nil
 }

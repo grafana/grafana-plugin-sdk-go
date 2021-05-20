@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 // QueryTypeMux is a query type multiplexer.
@@ -40,12 +39,10 @@ func (mux *QueryTypeMux) Handle(queryType string, handler backend.QueryDataHandl
 	}
 
 	if queryType == "" {
-		log.DefaultLogger.Debug("datasource: registering query type fallback handler")
 		mux.fallbackHandler = handler
 		return
 	}
 
-	log.DefaultLogger.Debug("datasource: registering query type handler", "queryType", queryType)
 	mux.m[queryType] = handler
 }
 

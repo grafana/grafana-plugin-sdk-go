@@ -1,8 +1,16 @@
 package live
 
 import (
+	"errors"
+	"regexp"
 	"strings"
 )
+
+// ErrInvalidChannelID returned when channel ID does not have valid
+// format. Valid channel IDs have 3 parts (scope, namespace, path)
+// delimited by "/". Scope and namespace parts can only have alphanumeric
+// ascii symbols, underscore and dash. Path can additionally have "/", "=" and ".".
+var ErrInvalidChannelID = errors.New("invalid channel ID")
 
 // Channel is the channel ID split by parts.
 type Channel struct {
@@ -17,28 +25,31 @@ type Channel struct {
 	// * when ScopeStream, namespace is the stream ID.
 	Namespace string `json:"namespace,omitempty"`
 
-	// Within each namespace, the handler can process the path as needed.
+	// Within each scope and namespace, the handler can process the path as needed.
 	Path string `json:"path,omitempty"`
 }
 
 // ParseChannel parses the parts from a channel ID:
 //   ${scope} / ${namespace} / ${path}.
-func ParseChannel(chID string) Channel {
-	addr := Channel{}
+// Channel parts allowed to have alphanumeric symbols, underscore and dash.
+// For invalid channel IDs function returns ErrInvalidChannelID.
+func ParseChannel(chID string) (Channel, error) {
 	parts := strings.SplitN(chID, "/", 3)
-	length := len(parts)
-	if length > 0 {
-		addr.Scope = parts[0]
+	if len(parts) != 3 {
+		return Channel{}, ErrInvalidChannelID
 	}
-	if length > 1 {
-		addr.Namespace = parts[1]
+	ch := Channel{
+		Scope:     parts[0],
+		Namespace: parts[1],
+		Path:      parts[2],
 	}
-	if length > 2 {
-		addr.Path = parts[2]
+	if !ch.IsValid() {
+		return ch, ErrInvalidChannelID
 	}
-	return addr
+	return ch, nil
 }
 
+// String converts Channel to a string representation (channel ID).
 func (c Channel) String() string {
 	ch := c.Scope
 	if c.Namespace != "" {
@@ -50,11 +61,24 @@ func (c Channel) String() string {
 	return ch
 }
 
-// IsValid checks if all parts of the address are valid.
+var (
+	scopeNamespacePattern = regexp.MustCompile(`^[A-z0-9_\-]*$`)
+	pathPattern           = regexp.MustCompile(`^[A-z0-9_\-/=.]*$`)
+)
+
+// IsValid checks if all parts of the Channel are valid.
 func (c *Channel) IsValid() bool {
-	if c.Scope == ScopePush {
-		// Push scope channels supposed to be like push/{$stream_id}.
-		return c.Namespace != "" && c.Path == ""
+	allPartsExist := c.Scope != "" && c.Namespace != "" && c.Path != ""
+	if !allPartsExist {
+		return false
 	}
-	return c.Scope != "" && c.Namespace != "" && c.Path != ""
+	ok := scopeNamespacePattern.MatchString(c.Scope)
+	if !ok {
+		return false
+	}
+	ok = scopeNamespacePattern.MatchString(c.Namespace)
+	if !ok {
+		return false
+	}
+	return pathPattern.MatchString(c.Path)
 }

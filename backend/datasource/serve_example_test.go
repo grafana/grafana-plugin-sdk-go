@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
@@ -16,8 +17,18 @@ type testDataSourceInstanceSettings struct {
 }
 
 func newDataSourceInstance(setting backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	opts, err := setting.HTTPClientOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	client, err := httpclient.New(opts)
+	if err != nil {
+		return nil, err
+	}
+
 	return &testDataSourceInstanceSettings{
-		httpClient: &http.Client{},
+		httpClient: client,
 	}, nil
 }
 

@@ -32,6 +32,9 @@ type FieldConfig struct {
 	// Filterable indicates if the Field's data can be filtered by additional calls.
 	Filterable *bool `json:"filterable,omitempty"`
 
+	// Writeable indicates that the datasource knows how to update this value
+	Writeable *bool `json:"writeable,omitempty"`
+
 	// Numeric Options
 	Unit     string       `json:"unit,omitempty"`     // is the string to display to represent the Field's unit, such as "Requests/sec"
 	Decimals *uint16      `json:"decimals,omitempty"` // is the number of decimal places to display
@@ -39,7 +42,7 @@ type FieldConfig struct {
 	Max      *ConfFloat64 `json:"max,omitempty"`      // see Min
 
 	// Convert input values into a display string
-	Mappings []ValueMapping `json:"mappings,omitempty"`
+	Mappings ValueMappings `json:"mappings,omitempty"`
 
 	// Map numeric values to states
 	Thresholds *ThresholdsConfig `json:"thresholds,omitempty"`
@@ -121,31 +124,6 @@ func (fc *FieldConfig) SetMax(v float64) *FieldConfig {
 func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
 	fc.Filterable = &b
 	return fc
-}
-
-// MappingType value or range
-type MappingType int8
-
-const (
-	// ValueToText map a value to text
-	ValueToText MappingType = iota + 1
-
-	// RangeToText map a range to text
-	RangeToText
-)
-
-// ValueMapping convert input value to something else
-type ValueMapping struct {
-	ID   int16       `json:"id,omitempty"`
-	Text string      `json:"text,omitempty"`
-	Type MappingType `json:"type,omitempty"`
-
-	// Only valid for MappingType == ValueMap
-	Value string `json:"value,omitempty"`
-
-	// Only valid for MappingType == RangeMap
-	From string `json:"from,omitempty"`
-	To   string `json:"to,omitempty"`
 }
 
 // DataLink define what

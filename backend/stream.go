@@ -10,18 +10,18 @@ import (
 type StreamHandler interface {
 	// SubscribeStream called when a user tries to subscribe to a plugin/datasource
 	// managed channel path – thus plugin can check subscribe permissions and communicate
-	// options with Grafana Core.
+	// options with Grafana Core. As soon as first subscriber joins channel RunStream
+	// will be called.
 	SubscribeStream(context.Context, *SubscribeStreamRequest) (*SubscribeStreamResponse, error)
 	// PublishStream called when a user tries to publish to a plugin/datasource
 	// managed channel path. Here plugin can check publish permissions and
 	// modify publication data if required.
 	PublishStream(context.Context, *PublishStreamRequest) (*PublishStreamResponse, error)
-	// RunStream will be initiated by Grafana to consume a stream where use_run_stream
-	// option set to true. In this case RunStream will only be called once for the
-	// first client successfully subscribed to a channel path. When Grafana detects
-	// that there are no longer any subscribers inside a channel, the call will be
-	// terminated until next active subscriber appears. Call termination can happen
-	// with a delay.
+	// RunStream will be initiated by Grafana to consume a stream. RunStream will be
+	// called once for the first client successfully subscribed to a channel path.
+	// When Grafana detects that there are no longer any subscribers inside a channel,
+	// the call will be terminated until next active subscriber appears. Call termination
+	// can happen with a delay.
 	RunStream(context.Context, *RunStreamRequest, StreamPacketSender) error
 }
 
@@ -38,16 +38,15 @@ const (
 	// SubscribeStreamStatusOK means subscription is allowed.
 	SubscribeStreamStatusOK SubscribeStreamStatus = 0
 	// SubscribeStreamStatusNotFound means stream does not exist at all.
-	SubscribeStreamStatusNotFound = 1
+	SubscribeStreamStatusNotFound SubscribeStreamStatus = 1
 	// SubscribeStreamStatusPermissionDenied means that user is not allowed to subscribe.
-	SubscribeStreamStatusPermissionDenied = 2
+	SubscribeStreamStatusPermissionDenied SubscribeStreamStatus = 2
 )
 
 // SubscribeStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
 type SubscribeStreamResponse struct {
-	Status       SubscribeStreamStatus
-	Data         json.RawMessage
-	UseRunStream bool
+	Status SubscribeStreamStatus
+	Data   json.RawMessage
 }
 
 // PublishStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -64,9 +63,9 @@ const (
 	// PublishStreamStatusOK means publication is allowed.
 	PublishStreamStatusOK PublishStreamStatus = 0
 	// PublishStreamStatusNotFound means stream does not exist at all.
-	PublishStreamStatusNotFound = 1
+	PublishStreamStatusNotFound PublishStreamStatus = 1
 	// PublishStreamStatusPermissionDenied means that user is not allowed to publish.
-	PublishStreamStatusPermissionDenied = 2
+	PublishStreamStatusPermissionDenied PublishStreamStatus = 2
 )
 
 // PublishStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
