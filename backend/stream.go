@@ -27,7 +27,7 @@ type StreamHandler interface {
 	// When Grafana detects that there are no longer any subscribers inside a channel,
 	// the call will be terminated until next active subscriber appears. Call termination
 	// can happen with a delay.
-	RunStream(context.Context, *RunStreamRequest, StreamSender) error
+	RunStream(context.Context, *RunStreamRequest, *StreamSender) error
 }
 
 // SubscribeStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -113,24 +113,27 @@ type RunStreamRequest struct {
 	Path          string
 }
 
+// StreamPacket is EXPERIMENTAL and is a subject to change till Grafana 8.
+type StreamPacket struct {
+	Data json.RawMessage
+}
+
+// StreamPacketSender is EXPERIMENTAL and is a subject to change till Grafana 8.
+type StreamPacketSender interface {
+	Send(*StreamPacket) error
+}
+
 // StreamSender allows sending data to a stream.
 // StreamSender is EXPERIMENTAL and is a subject to change till Grafana 8.
-type StreamSender interface {
-	// SendFrame allows sending the entire data frame to a stream.
-	SendFrame(*data.Frame) error
-	// SendFrameSchema allows sending the schema part of data frame to a stream (without data).
-	SendFrameSchema(*data.Frame) error
-	// SendFrameData allows sending the data part of data frame to a stream (without schema).
-	SendFrameData(*data.Frame) error
-	// SendJSON allows sending arbitrary JSON payload to a stream.
-	SendJSON([]byte) error
+type StreamSender struct {
+	packetSender StreamPacketSender
 }
 
-type streamSender struct {
-	srv pluginv2.Stream_RunStreamServer
+func NewStreamSender(packetSender StreamPacketSender) *StreamSender {
+	return &StreamSender{packetSender: packetSender}
 }
 
-func (s *streamSender) SendFrame(frame *data.Frame) error {
+func (s *StreamSender) SendFrame(frame *data.Frame) error {
 	frameJSON, err := json.Marshal(frame)
 	if err != nil {
 		return err
@@ -138,10 +141,10 @@ func (s *streamSender) SendFrame(frame *data.Frame) error {
 	packet := &pluginv2.StreamPacket{
 		Data: frameJSON,
 	}
-	return s.srv.Send(packet)
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }
 
-func (s *streamSender) SendFrameSchema(frame *data.Frame) error {
+func (s *StreamSender) SendFrameSchema(frame *data.Frame) error {
 	frameJSON, err := data.FrameToJSON(frame, true, false)
 	if err != nil {
 		return err
@@ -149,10 +152,10 @@ func (s *streamSender) SendFrameSchema(frame *data.Frame) error {
 	packet := &pluginv2.StreamPacket{
 		Data: frameJSON,
 	}
-	return s.srv.Send(packet)
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }
 
-func (s *streamSender) SendFrameData(frame *data.Frame) error {
+func (s *StreamSender) SendFrameData(frame *data.Frame) error {
 	frameJSON, err := data.FrameToJSON(frame, false, true)
 	if err != nil {
 		return err
@@ -160,15 +163,15 @@ func (s *streamSender) SendFrameData(frame *data.Frame) error {
 	packet := &pluginv2.StreamPacket{
 		Data: frameJSON,
 	}
-	return s.srv.Send(packet)
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }
 
-func (s *streamSender) SendJSON(data []byte) error {
+func (s *StreamSender) SendJSON(data []byte) error {
 	if !json.Valid(data) {
 		return fmt.Errorf("invalid JSON data")
 	}
 	packet := &pluginv2.StreamPacket{
 		Data: data,
 	}
-	return s.srv.Send(packet)
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }

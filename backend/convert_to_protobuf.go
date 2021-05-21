@@ -240,3 +240,11 @@ func (t ConvertToProtobuf) PublishStreamResponse(req *PublishStreamResponse) *pl
 		Data:   req.Data,
 	}
 }
+
+// StreamPacket ...
+func (t ConvertToProtobuf) StreamPacket(p *StreamPacket) *pluginv2.StreamPacket {
+	protoReq := &pluginv2.StreamPacket{
+		Data: p.Data,
+	}
+	return protoReq
+}
