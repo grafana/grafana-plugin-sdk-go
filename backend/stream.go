@@ -113,14 +113,19 @@ type RunStreamRequest struct {
 	Path          string
 }
 
+// StreamSender allows sending data to a stream.
+// StreamSender is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamSender interface {
-	SendFrame(frame *data.Frame) error
-	SendFrameSchema(frame *data.Frame) error
-	SendFrameData(frame *data.Frame) error
-	SendJSON(data []byte) error
+	// SendFrame allows sending the entire data frame to a stream.
+	SendFrame(*data.Frame) error
+	// SendFrameSchema allows sending the schema part of data frame to a stream (without data).
+	SendFrameSchema(*data.Frame) error
+	// SendFrameData allows sending the data part of data frame to a stream (without schema).
+	SendFrameData(*data.Frame) error
+	// SendJSON allows sending arbitrary JSON payload to a stream.
+	SendJSON([]byte) error
 }
 
-// StreamSender is EXPERIMENTAL and is a subject to change till Grafana 8.
 type streamSender struct {
 	srv pluginv2.Stream_RunStreamServer
 }
