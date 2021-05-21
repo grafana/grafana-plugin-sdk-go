@@ -242,10 +242,3 @@ func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamReques
 		Path:          protoReq.GetPath(),
 	}
 }
-
-// StreamPacket ...
-func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *StreamPacket {
-	return &StreamPacket{
-		Data: protoReq.GetData(),
-	}
-}

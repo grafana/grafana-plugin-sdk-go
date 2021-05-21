@@ -42,20 +42,14 @@ func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2
 	return ToProto().PublishStreamResponse(resp), nil
 }
 
-type streamPacketSenderFunc func(resp *StreamPacket) error
-
-func (fn streamPacketSenderFunc) Send(resp *StreamPacket) error {
-	return fn(resp)
-}
-
 func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoSrv pluginv2.Stream_RunStreamServer) error {
 	if a.streamHandler == nil {
 		return status.Error(codes.Unimplemented, "not implemented")
 	}
 
-	fn := streamPacketSenderFunc(func(p *StreamPacket) error {
-		return protoSrv.Send(ToProto().StreamPacket(p))
-	})
+	sender := &StreamSender{
+		srv: protoSrv,
+	}
 
-	return a.streamHandler.RunStream(protoSrv.Context(), FromProto().RunStreamRequest(protoReq), fn)
+	return a.streamHandler.RunStream(protoSrv.Context(), FromProto().RunStreamRequest(protoReq), sender)
 }

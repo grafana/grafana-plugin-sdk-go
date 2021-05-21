@@ -3,6 +3,10 @@ package backend
 import (
 	"context"
 	"encoding/json"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // StreamHandler handles streams.
@@ -22,7 +26,7 @@ type StreamHandler interface {
 	// When Grafana detects that there are no longer any subscribers inside a channel,
 	// the call will be terminated until next active subscriber appears. Call termination
 	// can happen with a delay.
-	RunStream(context.Context, *RunStreamRequest, StreamPacketSender) error
+	RunStream(context.Context, *RunStreamRequest, *StreamSender) error
 }
 
 // SubscribeStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -80,12 +84,18 @@ type RunStreamRequest struct {
 	Path          string
 }
 
-// StreamPacket is EXPERIMENTAL and is a subject to change till Grafana 8.
-type StreamPacket struct {
-	Data json.RawMessage
+// StreamSender is EXPERIMENTAL and is a subject to change till Grafana 8.
+type StreamSender struct {
+	srv pluginv2.Stream_RunStreamServer
 }
 
-// StreamPacketSender is EXPERIMENTAL and is a subject to change till Grafana 8.
-type StreamPacketSender interface {
-	Send(*StreamPacket) error
+func (s *StreamSender) SendFrame(frame *data.Frame) error {
+	frameJSON, err := json.Marshal(frame)
+	if err != nil {
+		return err
+	}
+	packet := &pluginv2.StreamPacket{
+		Data: frameJSON,
+	}
+	return s.srv.Send(packet)
 }

@@ -205,14 +205,6 @@ func (t ConvertToProtobuf) RunStreamRequest(req *RunStreamRequest) *pluginv2.Run
 	return protoReq
 }
 
-// StreamPacket ...
-func (t ConvertToProtobuf) StreamPacket(p *StreamPacket) *pluginv2.StreamPacket {
-	protoReq := &pluginv2.StreamPacket{
-		Data: p.Data,
-	}
-	return protoReq
-}
-
 // SubscribeStreamRequest ...
 func (t ConvertToProtobuf) SubscribeStreamRequest(req *SubscribeStreamRequest) *pluginv2.SubscribeStreamRequest {
 	return &pluginv2.SubscribeStreamRequest{
