@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 
@@ -26,7 +27,7 @@ type StreamHandler interface {
 	// When Grafana detects that there are no longer any subscribers inside a channel,
 	// the call will be terminated until next active subscriber appears. Call termination
 	// can happen with a delay.
-	RunStream(context.Context, *RunStreamRequest, *StreamSender) error
+	RunStream(context.Context, *RunStreamRequest, StreamSender) error
 }
 
 // SubscribeStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -112,18 +113,57 @@ type RunStreamRequest struct {
 	Path          string
 }
 
+type StreamSender interface {
+	SendFrame(frame *data.Frame) error
+	SendFrameSchema(frame *data.Frame) error
+	SendFrameData(frame *data.Frame) error
+	SendJSON(data []byte) error
+}
+
 // StreamSender is EXPERIMENTAL and is a subject to change till Grafana 8.
-type StreamSender struct {
+type streamSender struct {
 	srv pluginv2.Stream_RunStreamServer
 }
 
-func (s *StreamSender) SendFrame(frame *data.Frame) error {
+func (s *streamSender) SendFrame(frame *data.Frame) error {
 	frameJSON, err := json.Marshal(frame)
 	if err != nil {
 		return err
 	}
 	packet := &pluginv2.StreamPacket{
 		Data: frameJSON,
+	}
+	return s.srv.Send(packet)
+}
+
+func (s *streamSender) SendFrameSchema(frame *data.Frame) error {
+	frameJSON, err := data.FrameToJSON(frame, true, false)
+	if err != nil {
+		return err
+	}
+	packet := &pluginv2.StreamPacket{
+		Data: frameJSON,
+	}
+	return s.srv.Send(packet)
+}
+
+func (s *streamSender) SendFrameData(frame *data.Frame) error {
+	frameJSON, err := data.FrameToJSON(frame, false, true)
+	if err != nil {
+		return err
+	}
+	packet := &pluginv2.StreamPacket{
+		Data: frameJSON,
+	}
+	return s.srv.Send(packet)
+}
+
+func (s *streamSender) SendJSON(data []byte) error {
+	if !json.Valid(data) {
+		return fmt.Errorf("invalid JSON data")
+	}
+	packet := &pluginv2.StreamPacket{
+		Data: data,
 	}
 	return s.srv.Send(packet)
 }

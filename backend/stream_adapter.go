@@ -47,7 +47,7 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 		return status.Error(codes.Unimplemented, "not implemented")
 	}
 
-	sender := &StreamSender{
+	sender := &streamSender{
 		srv: protoSrv,
 	}
 
