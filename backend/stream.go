@@ -49,8 +49,36 @@ const (
 
 // SubscribeStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
 type SubscribeStreamResponse struct {
-	Status SubscribeStreamStatus
-	Data   json.RawMessage
+	Status      SubscribeStreamStatus
+	InitialData *InitialData
+}
+
+type InitialData struct {
+	data []byte
+}
+
+func (d *InitialData) Data() []byte {
+	return d.data
+}
+
+func FrameInitialData(frame *data.Frame) (*InitialData, error) {
+	frameJSON, err := json.Marshal(frame)
+	if err != nil {
+		return nil, err
+	}
+	return &InitialData{
+		data: frameJSON,
+	}, nil
+}
+
+func FrameSchemaInitialData(frame *data.Frame) (*InitialData, error) {
+	jsonData, err := data.FrameToJSON(frame, true, false)
+	if err != nil {
+		return nil, err
+	}
+	return &InitialData{
+		data: jsonData,
+	}, nil
 }
 
 // PublishStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
