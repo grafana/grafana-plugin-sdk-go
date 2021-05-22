@@ -61,9 +61,9 @@ type FrameJSONArg int
 
 // Declare related constants for each weekday starting with index 1
 const (
-	WithSchemaAndData FrameJSONArg = iota // EnumIndex = 0
-	WithData                              // EnumIndex = 1
-	WithSchema                            // EnumIndex = 2
+	WithSchemaAndData FrameJSONArg = iota + 1 // EnumIndex = 1
+	WithData                                  // EnumIndex = 2
+	WithSchema                                // EnumIndex = 3
 )
 
 // FrameJSON holds a byte representation of the schema separate from the data
