@@ -51,7 +51,16 @@ func (f *Frame) UnmarshalJSON(b []byte) error {
 
 // MarshalJSON marshals Frame to JSON.
 func (f *Frame) MarshalJSON() ([]byte, error) {
-	return FrameToJSON(f, true, true)
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeDataFrame(f, stream, true, true)
+	if stream.Error != nil {
+		return nil, stream.Error
+	}
+
+	return append([]byte(nil), stream.Buffer()...), nil
 }
 
 // Frames is a slice of Frame pointers.
