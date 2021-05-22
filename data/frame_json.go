@@ -75,10 +75,10 @@ type FrameJSON struct {
 // Body returns the bytes to both schema and data (if they exist)
 func (f *FrameJSON) Bytes(args FrameJSONArg) []byte {
 	if f.schema != nil && (args == WithSchemaAndData || args == WithSchema) {
-		out := append([]byte(`{"`+jsonKeySchema+`": `), f.schema...)
+		out := append([]byte(`{"`+jsonKeySchema+`":`), f.schema...)
 
 		if f.data != nil && (args == WithSchemaAndData || args == WithData) {
-			out = append(out, (`, "` + jsonKeyData + `": `)...)
+			out = append(out, (`,"` + jsonKeyData + `":`)...)
 			out = append(out, f.data...)
 		}
 		return append(out, "}"...)
@@ -86,7 +86,7 @@ func (f *FrameJSON) Bytes(args FrameJSONArg) []byte {
 
 	// only data
 	if f.data != nil && (args == WithSchemaAndData || args == WithData) {
-		out := []byte(`{"` + jsonKeyData + `": `)
+		out := []byte(`{"` + jsonKeyData + `":`)
 		out = append(out, f.data...)
 		return append(out, []byte("}")...)
 	}
