@@ -27,7 +27,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 
 	fjs, err := data.FrameToJSON(f, data.WithSchemaAndData) // json.Marshal(f2)
 	require.NoError(t, err)
-	b := fjs.Body()
+	b := fjs.Bytes(data.WithSchemaAndData)
 	strF := string(b)
 
 	b, err = data.ArrowBufferToJSON(a, true, true)
@@ -163,7 +163,7 @@ func TestFrame_UnmarshalJSON_SchemaOnly(t *testing.T) {
 	_, err = json.Marshal(testWrapper{Data: d})
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Body(), &newFrame)
+	err = json.Unmarshal(d.Bytes(data.WithSchemaAndData), &newFrame)
 	require.NoError(t, err)
 	require.Equal(t, 0, newFrame.Fields[0].Len())
 }
@@ -175,7 +175,7 @@ func TestFrameMarshalJSON_DataOnly(t *testing.T) {
 	_, err = json.Marshal(testWrapper{Data: d})
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Body(), &newFrame)
+	err = json.Unmarshal(d.Bytes(data.WithSchemaAndData), &newFrame)
 	require.Error(t, err)
 }
 
@@ -193,7 +193,7 @@ func TestFrame_UnmarshalJSON_DataOnly(t *testing.T) {
 
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Body(), &newFrame)
+	err = json.Unmarshal(d.Bytes(data.WithSchemaAndData), &newFrame)
 	require.Error(t, err)
 }
 

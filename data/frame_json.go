@@ -73,11 +73,11 @@ type FrameJSON struct {
 }
 
 // Body returns the bytes to both schema and data (if they exist)
-func (f *FrameJSON) Body() []byte {
-	if f.schema != nil {
+func (f *FrameJSON) Bytes(args FrameJSONArg) []byte {
+	if f.schema != nil && (args == WithSchemaAndData || args == WithSchema) {
 		out := append([]byte(`{"`+jsonKeySchema+`": `), f.schema...)
 
-		if f.data != nil {
+		if f.data != nil && (args == WithSchemaAndData || args == WithData) {
 			out = append(out, (`, "` + jsonKeyData + `": `)...)
 			out = append(out, f.data...)
 		}
@@ -85,33 +85,13 @@ func (f *FrameJSON) Body() []byte {
 	}
 
 	// only data
-	if f.data != nil {
+	if f.data != nil && (args == WithSchemaAndData || args == WithData) {
 		out := []byte(`{"` + jsonKeyData + `": `)
 		out = append(out, f.data...)
 		return append(out, []byte("}")...)
 	}
 
 	return []byte("{}")
-}
-
-// Schema returns the bytes to the schema or nil if not definedd
-func (f *FrameJSON) Schema() []byte {
-	if f.schema != nil {
-		out := []byte(`{"` + jsonKeySchema + `": `)
-		out = append(out, f.schema...)
-		return append(out, []byte("}")...)
-	}
-	return nil
-}
-
-// Schema returns the bytes to the data or nil if not definedd
-func (f *FrameJSON) Data() []byte {
-	if f.data != nil {
-		out := []byte(`{"` + jsonKeyData + `": `)
-		out = append(out, f.data...)
-		return append(out, []byte("}")...)
-	}
-	return nil
 }
 
 // SameSchema checks if both structures have the same schema
@@ -160,7 +140,7 @@ func (f *FrameJSON) SetSchema(frame *Frame) error {
 
 // MarshalJSON marshals Frame to JSON.
 func (f *FrameJSON) MarshalJSON() ([]byte, error) {
-	return f.Body(), nil
+	return f.Bytes(WithSchemaAndData), nil
 }
 
 // FrameToJSON writes a frame to JSON.
