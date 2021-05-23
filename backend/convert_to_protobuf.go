@@ -205,14 +205,6 @@ func (t ConvertToProtobuf) RunStreamRequest(req *RunStreamRequest) *pluginv2.Run
 	return protoReq
 }
 
-// StreamPacket ...
-func (t ConvertToProtobuf) StreamPacket(p *StreamPacket) *pluginv2.StreamPacket {
-	protoReq := &pluginv2.StreamPacket{
-		Data: p.Data,
-	}
-	return protoReq
-}
-
 // SubscribeStreamRequest ...
 func (t ConvertToProtobuf) SubscribeStreamRequest(req *SubscribeStreamRequest) *pluginv2.SubscribeStreamRequest {
 	return &pluginv2.SubscribeStreamRequest{
@@ -223,10 +215,13 @@ func (t ConvertToProtobuf) SubscribeStreamRequest(req *SubscribeStreamRequest) *
 
 // SubscribeStreamResponse ...
 func (t ConvertToProtobuf) SubscribeStreamResponse(req *SubscribeStreamResponse) *pluginv2.SubscribeStreamResponse {
-	return &pluginv2.SubscribeStreamResponse{
+	resp := &pluginv2.SubscribeStreamResponse{
 		Status: pluginv2.SubscribeStreamResponse_Status(req.Status),
-		Data:   req.Data,
 	}
+	if req.InitialData != nil {
+		resp.Data = req.InitialData.data
+	}
+	return resp
 }
 
 // PublishStreamRequest ...
@@ -244,4 +239,12 @@ func (t ConvertToProtobuf) PublishStreamResponse(req *PublishStreamResponse) *pl
 		Status: pluginv2.PublishStreamResponse_Status(req.Status),
 		Data:   req.Data,
 	}
+}
+
+// StreamPacket ...
+func (t ConvertToProtobuf) StreamPacket(p *StreamPacket) *pluginv2.StreamPacket {
+	protoReq := &pluginv2.StreamPacket{
+		Data: p.Data,
+	}
+	return protoReq
 }

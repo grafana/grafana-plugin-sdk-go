@@ -3,6 +3,11 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // StreamHandler handles streams.
@@ -22,7 +27,7 @@ type StreamHandler interface {
 	// When Grafana detects that there are no longer any subscribers inside a channel,
 	// the call will be terminated until next active subscriber appears. Call termination
 	// can happen with a delay.
-	RunStream(context.Context, *RunStreamRequest, StreamPacketSender) error
+	RunStream(context.Context, *RunStreamRequest, *StreamSender) error
 }
 
 // SubscribeStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -45,8 +50,55 @@ const (
 
 // SubscribeStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
 type SubscribeStreamResponse struct {
-	Status SubscribeStreamStatus
-	Data   json.RawMessage
+	Status      SubscribeStreamStatus
+	InitialData *InitialData
+}
+
+// InitialData to send to a client upon a successful subscription to a channel.
+type InitialData struct {
+	data []byte
+}
+
+func (d *InitialData) Data() []byte {
+	return d.data
+}
+
+// InitialFrameOptions can modify frame initial data construction.
+type InitialFrameOptions struct {
+	schemaOnly bool
+	dataOnly   bool
+}
+
+// InitialFrameOption modifies creation of frame initial data.
+type InitialFrameOption func(options *InitialFrameOptions)
+
+// InitialFrameSchemaOnly ...
+func InitialFrameSchemaOnly(enabled bool) InitialFrameOption {
+	return func(h *InitialFrameOptions) {
+		h.schemaOnly = enabled
+	}
+}
+
+// InitialFrameDataOnly ...
+func InitialFrameDataOnly(enabled bool) InitialFrameOption {
+	return func(h *InitialFrameOptions) {
+		h.dataOnly = enabled
+	}
+}
+
+// NewInitialFrame allows creating frame as subscription InitialData.
+func NewInitialFrame(frame *data.Frame, opts ...InitialFrameOption) (*InitialData, error) {
+	initialDataOpts := &InitialFrameOptions{}
+	for _, opt := range opts {
+		opt(initialDataOpts)
+	}
+	frameJSON, err := data.FrameToJSON(frame, !initialDataOpts.dataOnly, !initialDataOpts.schemaOnly)
+	if err != nil {
+		return nil, err
+	}
+	return &InitialData{
+		data: frameJSON,
+	}, nil
 }
 
 // PublishStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -88,4 +140,65 @@ type StreamPacket struct {
 // StreamPacketSender is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamPacketSender interface {
 	Send(*StreamPacket) error
+}
+
+// StreamSender allows sending data to a stream.
+// StreamSender is EXPERIMENTAL and is a subject to change till Grafana 8.
+type StreamSender struct {
+	packetSender StreamPacketSender
+}
+
+func NewStreamSender(packetSender StreamPacketSender) *StreamSender {
+	return &StreamSender{packetSender: packetSender}
+}
+
+// SendFrameOptions can modify SendFrame behaviour.
+type SendFrameOptions struct {
+	schemaOnly bool
+	dataOnly   bool
+}
+
+// SendFrameOption ...
+type SendFrameOption func(*SendFrameOptions)
+
+// SendFrameDataOnly excludes data from frame when serializing it.
+func SendFrameDataOnly(enabled bool) SendFrameOption {
+	return func(h *SendFrameOptions) {
+		h.dataOnly = enabled
+	}
+}
+
+// SendFrameSchemaOnly excludes schema from frame when serializing it.
+func SendFrameSchemaOnly(enabled bool) SendFrameOption {
+	return func(h *SendFrameOptions) {
+		h.schemaOnly = enabled
+	}
+}
+
+// SendFrame allows sending data.Frame to a stream.
+func (s *StreamSender) SendFrame(frame *data.Frame, opts ...SendFrameOption) error {
+	sendOptions := &SendFrameOptions{}
+	for _, opt := range opts {
+		opt(sendOptions)
+	}
+	frameJSON, err := data.FrameToJSON(frame, !sendOptions.dataOnly, !sendOptions.schemaOnly)
+	if err != nil {
+		return err
+	}
+	packet := &pluginv2.StreamPacket{
+		Data: frameJSON,
+	}
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
+}
+
+// SendJSON allow sending arbitrary JSON to a stream. When sending data.Frame
+// prefer using SendFrame method.
+func (s *StreamSender) SendJSON(data []byte) error {
+	if !json.Valid(data) {
+		return fmt.Errorf("invalid JSON data")
+	}
+	packet := &pluginv2.StreamPacket{
+		Data: data,
+	}
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }
