@@ -63,41 +63,14 @@ func (d *InitialData) Data() []byte {
 	return d.data
 }
 
-// InitialFrameOptions can modify frame initial data construction.
-type InitialFrameOptions struct {
-	schemaOnly bool
-	dataOnly   bool
-}
-
-// InitialFrameOption modifies creation of frame initial data.
-type InitialFrameOption func(options *InitialFrameOptions)
-
-// InitialFrameSchemaOnly ...
-func InitialFrameSchemaOnly(enabled bool) InitialFrameOption {
-	return func(h *InitialFrameOptions) {
-		h.schemaOnly = enabled
-	}
-}
-
-// InitialFrameDataOnly ...
-func InitialFrameDataOnly(enabled bool) InitialFrameOption {
-	return func(h *InitialFrameOptions) {
-		h.dataOnly = enabled
-	}
-}
-
 // NewInitialFrame allows creating frame as subscription InitialData.
-func NewInitialFrame(frame *data.Frame, opts ...InitialFrameOption) (*InitialData, error) {
-	initialDataOpts := &InitialFrameOptions{}
-	for _, opt := range opts {
-		opt(initialDataOpts)
-	}
-	frameJSON, err := data.FrameToJSON(frame, !initialDataOpts.dataOnly, !initialDataOpts.schemaOnly)
+func NewInitialFrame(frame *data.Frame, include data.FrameJSONInclude) (*InitialData, error) {
+	frameJSON, err := data.FrameToJSON(frame, include)
 	if err != nil {
 		return nil, err
 	}
 	return &InitialData{
-		data: frameJSON,
+		data: frameJSON.Body(),
 	}, nil
 }
 
@@ -152,41 +125,14 @@ func NewStreamSender(packetSender StreamPacketSender) *StreamSender {
 	return &StreamSender{packetSender: packetSender}
 }
 
-// SendFrameOptions can modify SendFrame behaviour.
-type SendFrameOptions struct {
-	schemaOnly bool
-	dataOnly   bool
-}
-
-// SendFrameOption ...
-type SendFrameOption func(*SendFrameOptions)
-
-// SendFrameDataOnly excludes data from frame when serializing it.
-func SendFrameDataOnly(enabled bool) SendFrameOption {
-	return func(h *SendFrameOptions) {
-		h.dataOnly = enabled
-	}
-}
-
-// SendFrameSchemaOnly excludes schema from frame when serializing it.
-func SendFrameSchemaOnly(enabled bool) SendFrameOption {
-	return func(h *SendFrameOptions) {
-		h.schemaOnly = enabled
-	}
-}
-
 // SendFrame allows sending data.Frame to a stream.
-func (s *StreamSender) SendFrame(frame *data.Frame, opts ...SendFrameOption) error {
-	sendOptions := &SendFrameOptions{}
-	for _, opt := range opts {
-		opt(sendOptions)
-	}
-	frameJSON, err := data.FrameToJSON(frame, !sendOptions.dataOnly, !sendOptions.schemaOnly)
+func (s *StreamSender) SendFrame(frame *data.Frame, include data.FrameJSONInclude) error {
+	frameJSON, err := data.FrameToJSON(frame, include)
 	if err != nil {
 		return err
 	}
 	packet := &pluginv2.StreamPacket{
-		Data: frameJSON,
+		Data: frameJSON.Body(),
 	}
 	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }

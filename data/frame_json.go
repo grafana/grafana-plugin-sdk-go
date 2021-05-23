@@ -72,7 +72,12 @@ type FrameJSON struct {
 	data   json.RawMessage
 }
 
-// Body returns the bytes to both schema and data (if they exist)
+// Body returns everything saved in the json
+func (f *FrameJSON) Body() []byte {
+	return f.Bytes(SchemaAndData)
+}
+
+// Bytes returns a json message with the specified objcet (if it exists)
 func (f *FrameJSON) Bytes(args FrameJSONInclude) []byte {
 	if f.schema != nil && (args == SchemaAndData || args == OnlySchema) {
 		out := append([]byte(`{"`+jsonKeySchema+`":`), f.schema...)
