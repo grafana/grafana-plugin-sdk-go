@@ -65,24 +65,24 @@ func (d *InitialData) Data() []byte {
 
 // InitialFrameOptions can modify frame initial data construction.
 type InitialFrameOptions struct {
-	excludeSchema bool
-	excludeData   bool
+	schemaOnly bool
+	dataOnly   bool
 }
 
 // InitialFrameOption modifies creation of frame initial data.
 type InitialFrameOption func(options *InitialFrameOptions)
 
-// InitialFrameExcludeData ...
-func InitialFrameExcludeData(enabled bool) InitialFrameOption {
+// InitialFrameSchemaOnly ...
+func InitialFrameSchemaOnly(enabled bool) InitialFrameOption {
 	return func(h *InitialFrameOptions) {
-		h.excludeData = enabled
+		h.schemaOnly = enabled
 	}
 }
 
-// InitialFrameExcludeSchema ...
-func InitialFrameExcludeSchema(enabled bool) InitialFrameOption {
+// InitialFrameDataOnly ...
+func InitialFrameDataOnly(enabled bool) InitialFrameOption {
 	return func(h *InitialFrameOptions) {
-		h.excludeSchema = enabled
+		h.dataOnly = enabled
 	}
 }
 
@@ -92,7 +92,7 @@ func NewInitialFrame(frame *data.Frame, opts ...InitialFrameOption) (*InitialDat
 	for _, opt := range opts {
 		opt(initialDataOpts)
 	}
-	frameJSON, err := data.FrameToJSON(frame, !initialDataOpts.excludeSchema, !initialDataOpts.excludeData)
+	frameJSON, err := data.FrameToJSON(frame, !initialDataOpts.dataOnly, !initialDataOpts.schemaOnly)
 	if err != nil {
 		return nil, err
 	}
@@ -154,24 +154,24 @@ func NewStreamSender(packetSender StreamPacketSender) *StreamSender {
 
 // SendFrameOptions can modify SendFrame behaviour.
 type SendFrameOptions struct {
-	excludeSchema bool
-	excludeData   bool
+	schemaOnly bool
+	dataOnly   bool
 }
 
 // SendFrameOption ...
 type SendFrameOption func(*SendFrameOptions)
 
-// SendFrameExcludeData excludes data from frame when serializing it.
-func SendFrameExcludeData(enabled bool) SendFrameOption {
+// SendFrameDataOnly excludes data from frame when serializing it.
+func SendFrameDataOnly(enabled bool) SendFrameOption {
 	return func(h *SendFrameOptions) {
-		h.excludeData = !enabled
+		h.dataOnly = enabled
 	}
 }
 
-// SendFrameExcludeSchema excludes schema from frame when serializing it.
-func SendFrameExcludeSchema(enabled bool) SendFrameOption {
+// SendFrameSchemaOnly excludes schema from frame when serializing it.
+func SendFrameSchemaOnly(enabled bool) SendFrameOption {
 	return func(h *SendFrameOptions) {
-		h.excludeSchema = enabled
+		h.schemaOnly = enabled
 	}
 }
 
@@ -181,7 +181,7 @@ func (s *StreamSender) SendFrame(frame *data.Frame, opts ...SendFrameOption) err
 	for _, opt := range opts {
 		opt(sendOptions)
 	}
-	frameJSON, err := data.FrameToJSON(frame, !sendOptions.excludeSchema, !sendOptions.excludeData)
+	frameJSON, err := data.FrameToJSON(frame, !sendOptions.dataOnly, !sendOptions.schemaOnly)
 	if err != nil {
 		return err
 	}
