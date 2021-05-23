@@ -54,6 +54,7 @@ type SubscribeStreamResponse struct {
 	InitialData *InitialData
 }
 
+// InitialData to send to a client upon a successful subscription to a channel.
 type InitialData struct {
 	data []byte
 }
@@ -62,23 +63,41 @@ func (d *InitialData) Data() []byte {
 	return d.data
 }
 
-func FrameInitialData(frame *data.Frame) (*InitialData, error) {
-	frameJSON, err := json.Marshal(frame)
+// InitialFrameOptions can modify frame initial data construction.
+type InitialFrameOptions struct {
+	excludeSchema bool
+	excludeData   bool
+}
+
+// InitialFrameOption modifies creation of frame initial data.
+type InitialFrameOption func(options *InitialFrameOptions)
+
+// InitialFrameExcludeData ...
+func InitialFrameExcludeData(enabled bool) InitialFrameOption {
+	return func(h *InitialFrameOptions) {
+		h.excludeData = enabled
+	}
+}
+
+// InitialFrameExcludeSchema ...
+func InitialFrameExcludeSchema(enabled bool) InitialFrameOption {
+	return func(h *InitialFrameOptions) {
+		h.excludeSchema = enabled
+	}
+}
+
+// NewInitialFrame allows creating frame as subscription InitialData.
+func NewInitialFrame(frame *data.Frame, opts ...InitialFrameOption) (*InitialData, error) {
+	initialDataOpts := &InitialFrameOptions{}
+	for _, opt := range opts {
+		opt(initialDataOpts)
+	}
+	frameJSON, err := data.FrameToJSON(frame, !initialDataOpts.excludeSchema, !initialDataOpts.excludeData)
 	if err != nil {
 		return nil, err
 	}
 	return &InitialData{
 		data: frameJSON,
-	}, nil
-}
-
-func FrameSchemaInitialData(frame *data.Frame) (*InitialData, error) {
-	jsonData, err := data.FrameToJSON(frame, true, false)
-	if err != nil {
-		return nil, err
-	}
-	return &InitialData{
-		data: jsonData,
 	}, nil
 }
 
@@ -133,8 +152,36 @@ func NewStreamSender(packetSender StreamPacketSender) *StreamSender {
 	return &StreamSender{packetSender: packetSender}
 }
 
-func (s *StreamSender) SendFrame(frame *data.Frame) error {
-	frameJSON, err := json.Marshal(frame)
+// SendFrameOptions can modify SendFrame behaviour.
+type SendFrameOptions struct {
+	excludeSchema bool
+	excludeData   bool
+}
+
+// SendFrameOption ...
+type SendFrameOption func(*SendFrameOptions)
+
+// SendFrameExcludeData excludes data from frame when serializing it.
+func SendFrameExcludeData(enabled bool) SendFrameOption {
+	return func(h *SendFrameOptions) {
+		h.excludeData = !enabled
+	}
+}
+
+// SendFrameExcludeSchema excludes schema from frame when serializing it.
+func SendFrameExcludeSchema(enabled bool) SendFrameOption {
+	return func(h *SendFrameOptions) {
+		h.excludeSchema = enabled
+	}
+}
+
+// SendFrame allows sending data.Frame to a stream.
+func (s *StreamSender) SendFrame(frame *data.Frame, opts ...SendFrameOption) error {
+	sendOptions := &SendFrameOptions{}
+	for _, opt := range opts {
+		opt(sendOptions)
+	}
+	frameJSON, err := data.FrameToJSON(frame, !sendOptions.excludeSchema, !sendOptions.excludeData)
 	if err != nil {
 		return err
 	}
@@ -144,28 +191,8 @@ func (s *StreamSender) SendFrame(frame *data.Frame) error {
 	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }
 
-func (s *StreamSender) SendFrameSchema(frame *data.Frame) error {
-	frameJSON, err := data.FrameToJSON(frame, true, false)
-	if err != nil {
-		return err
-	}
-	packet := &pluginv2.StreamPacket{
-		Data: frameJSON,
-	}
-	return s.packetSender.Send(FromProto().StreamPacket(packet))
-}
-
-func (s *StreamSender) SendFrameData(frame *data.Frame) error {
-	frameJSON, err := data.FrameToJSON(frame, false, true)
-	if err != nil {
-		return err
-	}
-	packet := &pluginv2.StreamPacket{
-		Data: frameJSON,
-	}
-	return s.packetSender.Send(FromProto().StreamPacket(packet))
-}
-
+// SendJSON allow sending arbitrary JSON to a stream. When sending data.Frame
+// prefer using SendFrame method.
 func (s *StreamSender) SendJSON(data []byte) error {
 	if !json.Valid(data) {
 		return fmt.Errorf("invalid JSON data")
