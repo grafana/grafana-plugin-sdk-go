@@ -25,12 +25,12 @@ func TestGoldenFrameJSON(t *testing.T) {
 	a, err := f.MarshalArrow()
 	require.NoError(t, err)
 
-	fjs, err := data.FrameToJSON(f, data.WithSchemaAndData) // json.Marshal(f2)
+	fjs, err := data.FrameToJSON(f, data.SchemaAndData) // json.Marshal(f2)
 	require.NoError(t, err)
-	b := fjs.Bytes(data.WithSchemaAndData)
+	b := fjs.Bytes(data.SchemaAndData)
 	strF := string(b)
 
-	b, err = data.ArrowBufferToJSON(a, true, true)
+	b, err = data.ArrowBufferToJSON(a, data.SchemaAndData)
 	require.NoError(t, err)
 	strA := string(b)
 
@@ -102,7 +102,7 @@ func BenchmarkFrameToJSON(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := data.FrameToJSON(f, data.WithSchemaAndData)
+		_, err := data.FrameToJSON(f, data.SchemaAndData)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -158,24 +158,24 @@ type testWrapper struct {
 
 func TestFrame_UnmarshalJSON_SchemaOnly(t *testing.T) {
 	f := data.NewFrame("test", data.NewField("test", nil, []int64{1}))
-	d, err := data.FrameToJSON(f, data.WithSchema)
+	d, err := data.FrameToJSON(f, data.OnlySchema)
 	require.NoError(t, err)
 	_, err = json.Marshal(testWrapper{Data: d})
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Bytes(data.WithSchemaAndData), &newFrame)
+	err = json.Unmarshal(d.Bytes(data.SchemaAndData), &newFrame)
 	require.NoError(t, err)
 	require.Equal(t, 0, newFrame.Fields[0].Len())
 }
 
 func TestFrameMarshalJSON_DataOnly(t *testing.T) {
 	f := goldenDF()
-	d, err := data.FrameToJSON(f, data.WithData)
+	d, err := data.FrameToJSON(f, data.OnlyData)
 	require.NoError(t, err)
 	_, err = json.Marshal(testWrapper{Data: d})
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Bytes(data.WithSchemaAndData), &newFrame)
+	err = json.Unmarshal(d.Bytes(data.SchemaAndData), &newFrame)
 	require.Error(t, err)
 }
 
@@ -189,11 +189,11 @@ func TestFrame_UnmarshalJSON_SchemaAndData_WrongOrder(t *testing.T) {
 
 func TestFrame_UnmarshalJSON_DataOnly(t *testing.T) {
 	f := data.NewFrame("test", data.NewField("test", nil, []int64{}))
-	d, err := data.FrameToJSON(f, data.WithData)
+	d, err := data.FrameToJSON(f, data.OnlyData)
 
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Bytes(data.WithSchemaAndData), &newFrame)
+	err = json.Unmarshal(d.Bytes(data.SchemaAndData), &newFrame)
 	require.Error(t, err)
 }
 
