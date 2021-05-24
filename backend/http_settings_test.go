@@ -24,6 +24,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			"basicAuth": true,
 			"basicAuthUser": "user",
 			"timeout": 10,
+			"dialTimeout": 10,
 			"httpKeepAlive": 11,
 			"httpTLSHandshakeTimeout": 12,
 			"httpExpectContinueTimeout": 13,
@@ -67,6 +68,7 @@ func TestParseHTTPSettings(t *testing.T) {
 				"X-HeaderTwo": "SecretTwo",
 			},
 			Timeout:               10 * time.Second,
+			DialTimeout:           10 * time.Second,
 			KeepAlive:             11 * time.Second,
 			TLSHandshakeTimeout:   12 * time.Second,
 			ExpectContinueTimeout: 13 * time.Second,
@@ -104,6 +106,7 @@ func TestParseHTTPSettings(t *testing.T) {
 				},
 				Timeouts: &httpclient.TimeoutOptions{
 					Timeout:               10 * time.Second,
+					DialTimeout:           10 * time.Second,
 					KeepAlive:             11 * time.Second,
 					TLSHandshakeTimeout:   12 * time.Second,
 					ExpectContinueTimeout: 13 * time.Second,
