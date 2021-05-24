@@ -64,9 +64,10 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		TLSClientConfig: tlsConfig,
 		Proxy:           http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
-			Timeout:   clientOpts.Timeouts.Timeout,
+			Timeout:   clientOpts.Timeouts.DialTimeout,
 			KeepAlive: clientOpts.Timeouts.KeepAlive,
 		}).DialContext,
+		ResponseHeaderTimeout: clientOpts.Timeouts.Timeout,
 		TLSHandshakeTimeout:   clientOpts.Timeouts.TLSHandshakeTimeout,
 		ExpectContinueTimeout: clientOpts.Timeouts.ExpectContinueTimeout,
 		MaxIdleConns:          clientOpts.Timeouts.MaxIdleConns,

@@ -19,6 +19,7 @@ type HTTPSettings struct {
 	Headers           map[string]string
 
 	Timeout               time.Duration
+	DialTimeout           time.Duration
 	KeepAlive             time.Duration
 	TLSHandshakeTimeout   time.Duration
 	ExpectContinueTimeout time.Duration
@@ -52,6 +53,7 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 
 	opts.Timeouts = &httpclient.TimeoutOptions{
 		Timeout:               s.Timeout,
+		DialTimeout:           s.DialTimeout,
 		KeepAlive:             s.KeepAlive,
 		TLSHandshakeTimeout:   s.TLSHandshakeTimeout,
 		ExpectContinueTimeout: s.ExpectContinueTimeout,
@@ -133,6 +135,14 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		}
 	} else {
 		s.Timeout = httpclient.DefaultTimeoutOptions.Timeout
+	}
+
+	if v, exists := dat["dialTimeout"]; exists {
+		if iv, ok := v.(float64); ok {
+			s.DialTimeout = time.Duration(iv) * time.Second
+		}
+	} else {
+		s.DialTimeout = httpclient.DefaultTimeoutOptions.DialTimeout
 	}
 
 	if v, exists := dat["httpKeepAlive"]; exists {

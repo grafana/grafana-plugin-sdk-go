@@ -104,6 +104,7 @@ func TestProvider(t *testing.T) {
 		opts := ProviderOptions{
 			Timeout: &TimeoutOptions{
 				Timeout:               time.Second,
+				DialTimeout:           time.Second,
 				KeepAlive:             2 * time.Second,
 				TLSHandshakeTimeout:   3 * time.Second,
 				ExpectContinueTimeout: 4 * time.Second,
