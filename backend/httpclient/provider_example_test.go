@@ -18,7 +18,7 @@ func ExampleProvider_New() {
 
 	client, err := provider.New(httpclient.Options{
 		Timeouts: &httpclient.TimeoutOptions{
-			DialTimeout: 5 * time.Second,
+			Timeout: 5 * time.Second,
 		},
 		Middlewares: []httpclient.Middleware{
 			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
@@ -51,7 +51,7 @@ func ExampleProvider_GetTransport() {
 
 	transport, err := provider.GetTransport(httpclient.Options{
 		Timeouts: &httpclient.TimeoutOptions{
-			DialTimeout: 5 * time.Second,
+			Timeout: 5 * time.Second,
 		},
 		Middlewares: []httpclient.Middleware{
 			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {

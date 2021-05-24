@@ -20,7 +20,7 @@ func TestNewClient(t *testing.T) {
 		client, err := New(Options{
 			Timeouts: &TimeoutOptions{
 				Timeout:               time.Second,
-				DialTimeout:           time.Second,
+				DialTimeout:           7 * time.Second,
 				KeepAlive:             2 * time.Second,
 				TLSHandshakeTimeout:   3 * time.Second,
 				ExpectContinueTimeout: 4 * time.Second,

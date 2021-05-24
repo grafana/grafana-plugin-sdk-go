@@ -11,7 +11,7 @@ import (
 func ExampleNew() {
 	client, err := httpclient.New(httpclient.Options{
 		Timeouts: &httpclient.TimeoutOptions{
-			DialTimeout: 5 * time.Second,
+			Timeout: 5 * time.Second,
 		},
 		Middlewares: []httpclient.Middleware{
 			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
@@ -42,7 +42,7 @@ func ExampleNew() {
 func ExampleGetTransport() {
 	transport, err := httpclient.GetTransport(httpclient.Options{
 		Timeouts: &httpclient.TimeoutOptions{
-			DialTimeout: 5 * time.Second,
+			Timeout: 5 * time.Second,
 		},
 		Middlewares: []httpclient.Middleware{
 			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
