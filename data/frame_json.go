@@ -56,14 +56,14 @@ func (codec *dataFrameCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator)
 	*((*Frame)(ptr)) = frame
 }
 
-// FrameJSONInclude - Custom type to hold value for weekday ranging from 1-7
-type FrameJSONInclude int
+// FrameInclude - custom type to hold Frame serialization options.
+type FrameInclude int
 
-// Declare related constants for each weekday starting with index 1
+// Known FrameInclude constants.
 const (
-	SchemaAndData FrameJSONInclude = iota + 1 // EnumIndex = 1
-	OnlyData                                  // EnumIndex = 2
-	OnlySchema                                // EnumIndex = 3
+	FrameIncludeSchemaAndData FrameInclude = iota + 1 // EnumIndex = 1
+	FrameIncludeDataOnly                              // EnumIndex = 2
+	FrameIncludeSchemaOnly                            // EnumIndex = 3
 )
 
 // FrameJSON holds a byte representation of the schema separate from the data
@@ -73,19 +73,19 @@ type FrameJSON struct {
 }
 
 // Body returns the bytes to both schema and data (if they exist)
-func (f *FrameJSON) Bytes(args FrameJSONInclude) []byte {
-	if f.schema != nil && (args == SchemaAndData || args == OnlySchema) {
+func (f *FrameJSON) Bytes(args FrameInclude) []byte {
+	if f.schema != nil && (args == FrameIncludeSchemaAndData || args == FrameIncludeSchemaOnly) {
 		out := append([]byte(`{"`+jsonKeySchema+`":`), f.schema...)
 
-		if f.data != nil && (args == SchemaAndData || args == OnlyData) {
-			out = append(out, (`,"` + jsonKeyData + `":`)...)
+		if f.data != nil && (args == FrameIncludeSchemaAndData || args == FrameIncludeDataOnly) {
+			out = append(out, `,"`+jsonKeyData+`":`...)
 			out = append(out, f.data...)
 		}
 		return append(out, "}"...)
 	}
 
 	// only data
-	if f.data != nil && (args == SchemaAndData || args == OnlyData) {
+	if f.data != nil && (args == FrameIncludeSchemaAndData || args == FrameIncludeDataOnly) {
 		out := []byte(`{"` + jsonKeyData + `":`)
 		out = append(out, f.data...)
 		return append(out, []byte("}")...)
@@ -140,22 +140,22 @@ func (f *FrameJSON) SetSchema(frame *Frame) error {
 
 // MarshalJSON marshals Frame to JSON.
 func (f *FrameJSON) MarshalJSON() ([]byte, error) {
-	return f.Bytes(SchemaAndData), nil
+	return f.Bytes(FrameIncludeSchemaAndData), nil
 }
 
 // FrameToJSON writes a frame to JSON.
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func FrameToJSON(frame *Frame, include FrameJSONInclude) (FrameJSON, error) {
+func FrameToJSON(frame *Frame, include FrameInclude) (FrameJSON, error) {
 	wrap := FrameJSON{}
 
-	if include == SchemaAndData || include == OnlySchema {
+	if include == FrameIncludeSchemaAndData || include == FrameIncludeSchemaOnly {
 		err := wrap.SetSchema(frame)
 		if err != nil {
 			return wrap, err
 		}
 	}
 
-	if include == SchemaAndData || include == OnlyData {
+	if include == FrameIncludeSchemaAndData || include == FrameIncludeDataOnly {
 		err := wrap.SetData(frame)
 		if err != nil {
 			return wrap, err
@@ -792,7 +792,7 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 
 // ArrowBufferToJSON writes a frame to JSON
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func ArrowBufferToJSON(b []byte, include FrameJSONInclude) ([]byte, error) {
+func ArrowBufferToJSON(b []byte, include FrameInclude) ([]byte, error) {
 	fB := filebuffer.New(b)
 	fR, err := ipc.NewFileReader(fB)
 	if err != nil {
@@ -814,19 +814,19 @@ func ArrowBufferToJSON(b []byte, include FrameJSONInclude) ([]byte, error) {
 
 // ArrowToJSON writes a frame to JSON
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func ArrowToJSON(record array.Record, include FrameJSONInclude) ([]byte, error) {
+func ArrowToJSON(record array.Record, include FrameInclude) ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
 	started := false
 	stream.WriteObjectStart()
-	if include == SchemaAndData || include == OnlySchema {
+	if include == FrameIncludeSchemaAndData || include == FrameIncludeSchemaOnly {
 		stream.WriteObjectField("schema")
 		writeArrowSchema(stream, record)
 		started = true
 	}
-	if include == SchemaAndData || include == OnlyData {
+	if include == FrameIncludeSchemaAndData || include == FrameIncludeDataOnly {
 		if started {
 			stream.WriteMore()
 		}
