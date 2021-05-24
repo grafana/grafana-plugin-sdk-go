@@ -154,6 +154,7 @@ func (f *FrameJSON) MarshalJSON() ([]byte, error) {
 
 // FrameToJSON creates an object that holds schema and data independently.  This is
 // useful for explicit control between the data and schema.
+// For simple json serialization use `json.Marshal(frame)`
 //
 // NOTE: the format should be considered experimental until grafana 8 is released.
 func FrameToJSON(frame *Frame, include FrameInclude) (FrameJSON, error) {
