@@ -61,9 +61,12 @@ type FrameInclude int
 
 // Known FrameInclude constants.
 const (
-	FrameIncludeSchemaAndData FrameInclude = iota + 1 // EnumIndex = 1
-	FrameIncludeDataOnly                              // EnumIndex = 2
-	FrameIncludeSchemaOnly                            // EnumIndex = 3
+	// IncludeAll serializes the entire Frame with both Schema and Data.
+	IncludeAll FrameInclude = iota + 1
+	// IncludeDataOnly only serializes data part of a frame.
+	IncludeDataOnly
+	// IncludeSchemaOnly only serializes schema part of a frame.
+	IncludeSchemaOnly
 )
 
 // FrameJSON holds a byte representation of the schema separate from the data
@@ -74,10 +77,10 @@ type FrameJSON struct {
 
 // Body returns the bytes to both schema and data (if they exist)
 func (f *FrameJSON) Bytes(args FrameInclude) []byte {
-	if f.schema != nil && (args == FrameIncludeSchemaAndData || args == FrameIncludeSchemaOnly) {
+	if f.schema != nil && (args == IncludeAll || args == IncludeSchemaOnly) {
 		out := append([]byte(`{"`+jsonKeySchema+`":`), f.schema...)
 
-		if f.data != nil && (args == FrameIncludeSchemaAndData || args == FrameIncludeDataOnly) {
+		if f.data != nil && (args == IncludeAll || args == IncludeDataOnly) {
 			out = append(out, `,"`+jsonKeyData+`":`...)
 			out = append(out, f.data...)
 		}
@@ -85,7 +88,7 @@ func (f *FrameJSON) Bytes(args FrameInclude) []byte {
 	}
 
 	// only data
-	if f.data != nil && (args == FrameIncludeSchemaAndData || args == FrameIncludeDataOnly) {
+	if f.data != nil && (args == IncludeAll || args == IncludeDataOnly) {
 		out := []byte(`{"` + jsonKeyData + `":`)
 		out = append(out, f.data...)
 		return append(out, []byte("}")...)
@@ -140,7 +143,7 @@ func (f *FrameJSON) SetSchema(frame *Frame) error {
 
 // MarshalJSON marshals Frame to JSON.
 func (f *FrameJSON) MarshalJSON() ([]byte, error) {
-	return f.Bytes(FrameIncludeSchemaAndData), nil
+	return f.Bytes(IncludeAll), nil
 }
 
 // FrameToJSON writes a frame to JSON.
@@ -148,14 +151,14 @@ func (f *FrameJSON) MarshalJSON() ([]byte, error) {
 func FrameToJSON(frame *Frame, include FrameInclude) (FrameJSON, error) {
 	wrap := FrameJSON{}
 
-	if include == FrameIncludeSchemaAndData || include == FrameIncludeSchemaOnly {
+	if include == IncludeAll || include == IncludeSchemaOnly {
 		err := wrap.SetSchema(frame)
 		if err != nil {
 			return wrap, err
 		}
 	}
 
-	if include == FrameIncludeSchemaAndData || include == FrameIncludeDataOnly {
+	if include == IncludeAll || include == IncludeDataOnly {
 		err := wrap.SetData(frame)
 		if err != nil {
 			return wrap, err
@@ -821,12 +824,12 @@ func ArrowToJSON(record array.Record, include FrameInclude) ([]byte, error) {
 
 	started := false
 	stream.WriteObjectStart()
-	if include == FrameIncludeSchemaAndData || include == FrameIncludeSchemaOnly {
+	if include == IncludeAll || include == IncludeSchemaOnly {
 		stream.WriteObjectField("schema")
 		writeArrowSchema(stream, record)
 		started = true
 	}
-	if include == FrameIncludeSchemaAndData || include == FrameIncludeDataOnly {
+	if include == IncludeAll || include == IncludeDataOnly {
 		if started {
 			stream.WriteMore()
 		}
