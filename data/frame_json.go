@@ -75,7 +75,13 @@ type FrameJSON struct {
 	data   json.RawMessage
 }
 
-// Body returns the bytes to both schema and data (if they exist)
+// Body will return everything saved in the json cache
+func (f *FrameJSON) Body() []byte {
+	return f.Bytes(IncludeAll)
+}
+
+// Bytes can return a subset of the cached frame json.  Note that requesting a section
+// that was not serialized on creation will return an empty value
 func (f *FrameJSON) Bytes(args FrameInclude) []byte {
 	if f.schema != nil && (args == IncludeAll || args == IncludeSchemaOnly) {
 		out := append([]byte(`{"`+jsonKeySchema+`":`), f.schema...)
@@ -146,7 +152,9 @@ func (f *FrameJSON) MarshalJSON() ([]byte, error) {
 	return f.Bytes(IncludeAll), nil
 }
 
-// FrameToJSON writes a frame to JSON.
+// FrameToJSON creates an object that holds schema and data independently.  This is
+// useful for explicit control between the data and schema.
+//
 // NOTE: the format should be considered experimental until grafana 8 is released.
 func FrameToJSON(frame *Frame, include FrameInclude) (FrameJSON, error) {
 	wrap := FrameJSON{}
