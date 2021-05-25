@@ -64,11 +64,6 @@ func (d *InitialData) Data() []byte {
 	return d.data
 }
 
-// InitialFrameOptions can modify frame initial data construction.
-type InitialFrameOptions struct {
-	include data.FrameInclude
-}
-
 // NewInitialFrame allows creating frame as subscription InitialData.
 func NewInitialFrame(frame *data.Frame, include data.FrameInclude) (*InitialData, error) {
 	frameJSON, err := data.FrameToJSON(frame)
