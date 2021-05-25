@@ -3,6 +3,11 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // StreamHandler handles streams.
@@ -22,7 +27,7 @@ type StreamHandler interface {
 	// When Grafana detects that there are no longer any subscribers inside a channel,
 	// the call will be terminated until next active subscriber appears. Call termination
 	// can happen with a delay.
-	RunStream(context.Context, *RunStreamRequest, StreamPacketSender) error
+	RunStream(context.Context, *RunStreamRequest, *StreamSender) error
 }
 
 // SubscribeStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -45,8 +50,29 @@ const (
 
 // SubscribeStreamResponse is EXPERIMENTAL and is a subject to change till Grafana 8.
 type SubscribeStreamResponse struct {
-	Status SubscribeStreamStatus
-	Data   json.RawMessage
+	Status      SubscribeStreamStatus
+	InitialData *InitialData
+}
+
+// InitialData to send to a client upon a successful subscription to a channel.
+type InitialData struct {
+	data []byte
+}
+
+// Data allows to get prepared bytes of initial data.
+func (d *InitialData) Data() []byte {
+	return d.data
+}
+
+// NewInitialFrame allows creating frame as subscription InitialData.
+func NewInitialFrame(frame *data.Frame, include data.FrameInclude) (*InitialData, error) {
+	frameJSON, err := data.FrameToJSON(frame)
+	if err != nil {
+		return nil, err
+	}
+	return &InitialData{
+		data: frameJSON.Bytes(include),
+	}, nil
 }
 
 // PublishStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
@@ -88,4 +114,38 @@ type StreamPacket struct {
 // StreamPacketSender is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamPacketSender interface {
 	Send(*StreamPacket) error
+}
+
+// StreamSender allows sending data to a stream.
+// StreamSender is EXPERIMENTAL and is a subject to change till Grafana 8.
+type StreamSender struct {
+	packetSender StreamPacketSender
+}
+
+func NewStreamSender(packetSender StreamPacketSender) *StreamSender {
+	return &StreamSender{packetSender: packetSender}
+}
+
+// SendFrame allows sending data.Frame to a stream.
+func (s *StreamSender) SendFrame(frame *data.Frame, include data.FrameInclude) error {
+	frameJSON, err := data.FrameToJSON(frame)
+	if err != nil {
+		return err
+	}
+	packet := &pluginv2.StreamPacket{
+		Data: frameJSON.Bytes(include),
+	}
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
+}
+
+// SendJSON allow sending arbitrary JSON to a stream. When sending data.Frame
+// prefer using SendFrame method.
+func (s *StreamSender) SendJSON(data []byte) error {
+	if !json.Valid(data) {
+		return fmt.Errorf("invalid JSON data")
+	}
+	packet := &pluginv2.StreamPacket{
+		Data: data,
+	}
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }
