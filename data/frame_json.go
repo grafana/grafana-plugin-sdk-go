@@ -69,7 +69,8 @@ const (
 	IncludeSchemaOnly
 )
 
-// FrameJSON holds a byte representation of the schema separate from the data
+// FrameJSON holds a byte representation of the schema separate from the data.
+// Methods of FrameJSON are not goroutine-safe.
 type FrameJSON struct {
 	schema json.RawMessage
 	data   json.RawMessage
