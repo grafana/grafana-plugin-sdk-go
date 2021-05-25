@@ -79,7 +79,7 @@ func (m *Manager) PublishStream(ctx context.Context, req *backend.PublishStreamR
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
-func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender backend.StreamPacketSender) error {
+func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
 	h, err := m.Get(req.PluginContext)
 	if err != nil {
 		return err
