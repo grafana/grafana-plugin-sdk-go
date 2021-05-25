@@ -1,6 +1,8 @@
 package data
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -38,10 +40,7 @@ func (codec *dataFrameCodec) IsEmpty(ptr unsafe.Pointer) bool {
 
 func (codec *dataFrameCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 	f := (*Frame)(ptr)
-	err := writeDataFrame(f, stream, true, true)
-	if stream.Error == nil && err != nil {
-		stream.Error = err
-	}
+	writeDataFrame(f, stream, true, true)
 }
 
 func (codec *dataFrameCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
@@ -57,23 +56,121 @@ func (codec *dataFrameCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator)
 	*((*Frame)(ptr)) = frame
 }
 
-// FrameToJSON writes a frame to JSON.
-// NOTE: the format should be considered experimental until grafana 8 is released.
-func FrameToJSON(frame *Frame, includeSchema bool, includeData bool) ([]byte, error) {
+// FrameInclude - custom type to hold Frame serialization options.
+type FrameInclude int
+
+// Known FrameInclude constants.
+const (
+	// IncludeAll serializes the entire Frame with both Schema and Data.
+	IncludeAll FrameInclude = iota + 1
+	// IncludeDataOnly only serializes data part of a frame.
+	IncludeDataOnly
+	// IncludeSchemaOnly only serializes schema part of a frame.
+	IncludeSchemaOnly
+)
+
+// FrameJSON holds a byte representation of the schema separate from the data
+type FrameJSON struct {
+	schema json.RawMessage
+	data   json.RawMessage
+}
+
+// Body will return everything saved in the json cache
+func (f *FrameJSON) Body() []byte {
+	return f.Bytes(IncludeAll)
+}
+
+// Bytes can return a subset of the cached frame json.  Note that requesting a section
+// that was not serialized on creation will return an empty value
+func (f *FrameJSON) Bytes(args FrameInclude) []byte {
+	if f.schema != nil && (args == IncludeAll || args == IncludeSchemaOnly) {
+		out := append([]byte(`{"`+jsonKeySchema+`":`), f.schema...)
+
+		if f.data != nil && (args == IncludeAll || args == IncludeDataOnly) {
+			out = append(out, `,"`+jsonKeyData+`":`...)
+			out = append(out, f.data...)
+		}
+		return append(out, "}"...)
+	}
+
+	// only data
+	if f.data != nil && (args == IncludeAll || args == IncludeDataOnly) {
+		out := []byte(`{"` + jsonKeyData + `":`)
+		out = append(out, f.data...)
+		return append(out, []byte("}")...)
+	}
+
+	return []byte("{}")
+}
+
+// SameSchema checks if both structures have the same schema
+func (f *FrameJSON) SameSchema(dst *FrameJSON) bool {
+	if f == nil || dst == nil {
+		return false
+	}
+	return bytes.Equal(f.schema, dst.schema)
+}
+
+// SetData updates the data bytes with new values
+func (f *FrameJSON) SetData(frame *Frame) error {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	err := writeDataFrame(frame, stream, includeSchema, includeData)
-	if err != nil {
-		return nil, err
-	}
-
+	writeDataFrameData(frame, stream)
 	if stream.Error != nil {
-		return nil, stream.Error
+		return stream.Error
 	}
 
-	return append([]byte(nil), stream.Buffer()...), nil
+	buf := stream.Buffer()
+	data := make([]byte, len(buf))
+	copy(data, buf) // don't hold the internal jsoniter buffer
+	f.data = data
+	return nil
+}
+
+// SetSchema updates the schema bytes with new values
+func (f *FrameJSON) SetSchema(frame *Frame) error {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeDataFrameSchema(frame, stream)
+	if stream.Error != nil {
+		return stream.Error
+	}
+
+	buf := stream.Buffer()
+	data := make([]byte, len(buf))
+	copy(data, buf) // don't hold the internal jsoniter buffer
+	f.schema = data
+	return nil
+}
+
+// MarshalJSON marshals Frame to JSON.
+func (f *FrameJSON) MarshalJSON() ([]byte, error) {
+	return f.Bytes(IncludeAll), nil
+}
+
+// FrameToJSON creates an object that holds schema and data independently.  This is
+// useful for explicit control between the data and schema.
+// For standard json serialization use `json.Marshal(frame)`
+//
+// NOTE: the format should be considered experimental until grafana 8 is released.
+func FrameToJSON(frame *Frame) (FrameJSON, error) {
+	wrap := FrameJSON{}
+
+	err := wrap.SetSchema(frame)
+	if err != nil {
+		return wrap, err
+	}
+
+	err = wrap.SetData(frame)
+	if err != nil {
+		return wrap, err
+	}
+
+	return wrap, nil
 }
 
 type frameSchema struct {
@@ -506,105 +603,11 @@ func isSpecialEntity(v float64) (string, bool) {
 	}
 }
 
-func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) error { //nolint:gocyclo
-	started := false
+func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) {
 	stream.WriteObjectStart()
 	if includeSchema {
 		stream.WriteObjectField(jsonKeySchema)
-		stream.WriteObjectStart()
-
-		if len(frame.Name) > 0 {
-			stream.WriteObjectField("name")
-			stream.WriteString(frame.Name)
-			started = true
-		}
-
-		if len(frame.RefID) > 0 {
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField("refId")
-			stream.WriteString(frame.RefID)
-			started = true
-		}
-
-		if frame.Meta != nil {
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField("meta")
-			stream.WriteVal(frame.Meta)
-			started = true
-		}
-
-		if started {
-			stream.WriteMore()
-		}
-		stream.WriteObjectField("fields")
-		stream.WriteArrayStart()
-		for i, f := range frame.Fields {
-			if i > 0 {
-				stream.WriteMore()
-			}
-			started = false
-			stream.WriteObjectStart()
-			if len(f.Name) > 0 {
-				stream.WriteObjectField("name")
-				stream.WriteString(f.Name)
-				started = true
-			}
-
-			t, ok := getSimpleTypeString(f.Type())
-			if ok {
-				if started {
-					stream.WriteMore()
-				}
-				stream.WriteObjectField("type")
-				stream.WriteString(t)
-				started = true
-			}
-
-			if true {
-				ft := f.Type()
-				nnt := ft.NonNullableType()
-				if started {
-					stream.WriteMore()
-				}
-				stream.WriteObjectField("typeInfo")
-				stream.WriteObjectStart()
-				stream.WriteObjectField("frame")
-				stream.WriteString(nnt.ItemTypeString())
-				if ft.Nullable() {
-					stream.WriteMore()
-					stream.WriteObjectField("nullable")
-					stream.WriteBool(true)
-				}
-				stream.WriteObjectEnd()
-				started = true
-			}
-
-			if f.Labels != nil {
-				if started {
-					stream.WriteMore()
-				}
-				stream.WriteObjectField("labels")
-				stream.WriteVal(f.Labels)
-				started = true
-			}
-
-			if f.Config != nil {
-				if started {
-					stream.WriteMore()
-				}
-				stream.WriteObjectField("config")
-				stream.WriteVal(f.Config)
-			}
-
-			stream.WriteObjectEnd()
-		}
-		stream.WriteArrayEnd()
-
-		stream.WriteObjectEnd()
+		writeDataFrameSchema(frame, stream)
 	}
 
 	if includeData {
@@ -612,90 +615,192 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 			stream.WriteMore()
 		}
 
-		rowCount, err := frame.RowLen()
-		if err != nil {
-			stream.Error = err
-			return err
+		stream.WriteObjectField(jsonKeyData)
+		writeDataFrameData(frame, stream)
+	}
+	stream.WriteObjectEnd()
+}
+
+func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
+	started := false
+	stream.WriteObjectStart()
+
+	if len(frame.Name) > 0 {
+		stream.WriteObjectField("name")
+		stream.WriteString(frame.Name)
+		started = true
+	}
+
+	if len(frame.RefID) > 0 {
+		if started {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("refId")
+		stream.WriteString(frame.RefID)
+		started = true
+	}
+
+	if frame.Meta != nil {
+		if started {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("meta")
+		stream.WriteVal(frame.Meta)
+		started = true
+	}
+
+	if started {
+		stream.WriteMore()
+	}
+	stream.WriteObjectField("fields")
+	stream.WriteArrayStart()
+	for i, f := range frame.Fields {
+		if i > 0 {
+			stream.WriteMore()
+		}
+		started = false
+		stream.WriteObjectStart()
+		if len(f.Name) > 0 {
+			stream.WriteObjectField("name")
+			stream.WriteString(f.Name)
+			started = true
 		}
 
-		stream.WriteObjectField(jsonKeyData)
-		stream.WriteObjectStart()
-
-		entities := make([]*fieldEntityLookup, len(frame.Fields))
-		entityCount := 0
-
-		stream.WriteObjectField("values")
-		stream.WriteArrayStart()
-		for fidx, f := range frame.Fields {
-			if fidx > 0 {
+		t, ok := getSimpleTypeString(f.Type())
+		if ok {
+			if started {
 				stream.WriteMore()
 			}
-			isTime := f.Type().Time()
-			isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
-				f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
-
-			stream.WriteArrayStart()
-			for i := 0; i < rowCount; i++ {
-				if i > 0 {
-					stream.WriteRaw(",")
-				}
-				if v, ok := f.ConcreteAt(i); ok {
-					switch {
-					case isTime:
-						vTyped := v.(time.Time).UnixNano() / int64(time.Millisecond) // Milliseconds precision.
-						stream.WriteVal(vTyped)
-					case isFloat:
-						// For float and nullable float we check whether a value is a special
-						// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
-						// information into a separate field to restore on a consumer side (setting
-						// null to the entity position in data). Since we are using f.ConcreteAt
-						// above the value is always float64 or float32 types, and never a *float64
-						// or *float32.
-						var f64 float64
-						switch vt := v.(type) {
-						case float64:
-							f64 = vt
-						case float32:
-							f64 = float64(vt)
-						default:
-							return fmt.Errorf("unsupported float type: %T", v)
-						}
-						if entityType, found := isSpecialEntity(f64); found {
-							if entities[fidx] == nil {
-								entities[fidx] = &fieldEntityLookup{}
-							}
-							entities[fidx].add(entityType, i)
-							entityCount++
-							stream.WriteNil()
-						} else {
-							stream.WriteVal(v)
-						}
-					default:
-						stream.WriteVal(v)
-					}
-				} else {
-					stream.WriteNil()
-				}
-			}
-			stream.WriteArrayEnd()
+			stream.WriteObjectField("type")
+			stream.WriteString(t)
+			started = true
 		}
-		stream.WriteArrayEnd()
 
-		if entityCount > 0 {
-			stream.WriteMore()
-			stream.WriteObjectField("entities")
-			stream.WriteVal(entities)
+		if true {
+			ft := f.Type()
+			nnt := ft.NonNullableType()
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("typeInfo")
+			stream.WriteObjectStart()
+			stream.WriteObjectField("frame")
+			stream.WriteString(nnt.ItemTypeString())
+			if ft.Nullable() {
+				stream.WriteMore()
+				stream.WriteObjectField("nullable")
+				stream.WriteBool(true)
+			}
+			stream.WriteObjectEnd()
+			started = true
+		}
+
+		if f.Labels != nil {
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("labels")
+			stream.WriteVal(f.Labels)
+			started = true
+		}
+
+		if f.Config != nil {
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("config")
+			stream.WriteVal(f.Config)
 		}
 
 		stream.WriteObjectEnd()
 	}
+	stream.WriteArrayEnd()
+
 	stream.WriteObjectEnd()
-	return nil
+}
+
+func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
+	rowCount, err := frame.RowLen()
+	if err != nil {
+		stream.Error = err
+		return
+	}
+
+	stream.WriteObjectStart()
+
+	entities := make([]*fieldEntityLookup, len(frame.Fields))
+	entityCount := 0
+
+	stream.WriteObjectField("values")
+	stream.WriteArrayStart()
+	for fidx, f := range frame.Fields {
+		if fidx > 0 {
+			stream.WriteMore()
+		}
+		isTime := f.Type().Time()
+		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
+			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
+
+		stream.WriteArrayStart()
+		for i := 0; i < rowCount; i++ {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			if v, ok := f.ConcreteAt(i); ok {
+				switch {
+				case isTime:
+					vTyped := v.(time.Time).UnixNano() / int64(time.Millisecond) // Milliseconds precision.
+					stream.WriteVal(vTyped)
+				case isFloat:
+					// For float and nullable float we check whether a value is a special
+					// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
+					// information into a separate field to restore on a consumer side (setting
+					// null to the entity position in data). Since we are using f.ConcreteAt
+					// above the value is always float64 or float32 types, and never a *float64
+					// or *float32.
+					var f64 float64
+					switch vt := v.(type) {
+					case float64:
+						f64 = vt
+					case float32:
+						f64 = float64(vt)
+					default:
+						stream.Error = fmt.Errorf("unsupported float type: %T", v)
+						return
+					}
+					if entityType, found := isSpecialEntity(f64); found {
+						if entities[fidx] == nil {
+							entities[fidx] = &fieldEntityLookup{}
+						}
+						entities[fidx].add(entityType, i)
+						entityCount++
+						stream.WriteNil()
+					} else {
+						stream.WriteVal(v)
+					}
+				default:
+					stream.WriteVal(v)
+				}
+			} else {
+				stream.WriteNil()
+			}
+		}
+		stream.WriteArrayEnd()
+	}
+	stream.WriteArrayEnd()
+
+	if entityCount > 0 {
+		stream.WriteMore()
+		stream.WriteObjectField("entities")
+		stream.WriteVal(entities)
+	}
+
+	stream.WriteObjectEnd()
 }
 
 // ArrowBufferToJSON writes a frame to JSON
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func ArrowBufferToJSON(b []byte, includeSchema bool, includeData bool) ([]byte, error) {
+func ArrowBufferToJSON(b []byte, include FrameInclude) ([]byte, error) {
 	fB := filebuffer.New(b)
 	fR, err := ipc.NewFileReader(fB)
 	if err != nil {
@@ -712,23 +817,25 @@ func ArrowBufferToJSON(b []byte, includeSchema bool, includeData bool) ([]byte, 
 	}
 	// TODO?? multiple records in one file?
 
-	return ArrowToJSON(record, includeSchema, includeData)
+	return ArrowToJSON(record, include)
 }
 
 // ArrowToJSON writes a frame to JSON
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func ArrowToJSON(record array.Record, includeSchema bool, includeData bool) ([]byte, error) {
+func ArrowToJSON(record array.Record, include FrameInclude) ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
+	started := false
 	stream.WriteObjectStart()
-	if includeSchema {
+	if include == IncludeAll || include == IncludeSchemaOnly {
 		stream.WriteObjectField("schema")
 		writeArrowSchema(stream, record)
+		started = true
 	}
-	if includeData {
-		if includeSchema {
+	if include == IncludeAll || include == IncludeDataOnly {
+		if started {
 			stream.WriteMore()
 		}
 		stream.WriteObjectField("data")
