@@ -2,6 +2,7 @@ package live
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
@@ -21,6 +22,17 @@ func TestParseChannel(t *testing.T) {
 	if diff := cmp.Diff(channel, ex); diff != "" {
 		t.Fatalf("Result mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func TestParseChannel_ChannelTooLong(t *testing.T) {
+	prefix := "grafana/dashboard/"
+	b := make([]byte, 0, maxChannelLength+1)
+	for i := 0; i < maxChannelLength+1-len(prefix); i++ {
+		b = append(b, 'a')
+	}
+	chID := fmt.Sprintf("grafana/dashboard/%s", string(b))
+	_, err := ParseChannel(chID)
+	require.ErrorIs(t, err, ErrInvalidChannelID)
 }
 
 func TestParseChannel_IsValid(t *testing.T) {
