@@ -66,12 +66,12 @@ func (d *InitialData) Data() []byte {
 
 // NewInitialFrame allows creating frame as subscription InitialData.
 func NewInitialFrame(frame *data.Frame, include data.FrameInclude) (*InitialData, error) {
-	frameJSON, err := data.FrameToJSON(frame)
+	frameJSON, err := data.FrameToJSON(frame, include)
 	if err != nil {
 		return nil, err
 	}
 	return &InitialData{
-		data: frameJSON.Bytes(include),
+		data: frameJSON,
 	}, nil
 }
 
@@ -128,12 +128,12 @@ func NewStreamSender(packetSender StreamPacketSender) *StreamSender {
 
 // SendFrame allows sending data.Frame to a stream.
 func (s *StreamSender) SendFrame(frame *data.Frame, include data.FrameInclude) error {
-	frameJSON, err := data.FrameToJSON(frame)
+	frameJSON, err := data.FrameToJSON(frame, include)
 	if err != nil {
 		return err
 	}
 	packet := &pluginv2.StreamPacket{
-		Data: frameJSON.Bytes(include),
+		Data: frameJSON,
 	}
 	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }

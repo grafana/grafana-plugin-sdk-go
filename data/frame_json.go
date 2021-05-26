@@ -71,19 +71,14 @@ const (
 
 // FrameJSON holds a byte representation of the schema separate from the data.
 // Methods of FrameJSON are not goroutine-safe.
-type FrameJSON struct {
+type FrameJSONCache struct {
 	schema json.RawMessage
 	data   json.RawMessage
 }
 
-// Body will return everything saved in the json cache
-func (f *FrameJSON) Body() []byte {
-	return f.Bytes(IncludeAll)
-}
-
 // Bytes can return a subset of the cached frame json.  Note that requesting a section
 // that was not serialized on creation will return an empty value
-func (f *FrameJSON) Bytes(args FrameInclude) []byte {
+func (f *FrameJSONCache) Bytes(args FrameInclude) []byte {
 	if f.schema != nil && (args == IncludeAll || args == IncludeSchemaOnly) {
 		out := append([]byte(`{"`+jsonKeySchema+`":`), f.schema...)
 
@@ -105,7 +100,7 @@ func (f *FrameJSON) Bytes(args FrameInclude) []byte {
 }
 
 // SameSchema checks if both structures have the same schema
-func (f *FrameJSON) SameSchema(dst *FrameJSON) bool {
+func (f *FrameJSONCache) SameSchema(dst *FrameJSONCache) bool {
 	if f == nil || dst == nil {
 		return false
 	}
@@ -113,7 +108,7 @@ func (f *FrameJSON) SameSchema(dst *FrameJSON) bool {
 }
 
 // SetData updates the data bytes with new values
-func (f *FrameJSON) SetData(frame *Frame) error {
+func (f *FrameJSONCache) setData(frame *Frame) error {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
@@ -131,7 +126,7 @@ func (f *FrameJSON) SetData(frame *Frame) error {
 }
 
 // SetSchema updates the schema bytes with new values
-func (f *FrameJSON) SetSchema(frame *Frame) error {
+func (f *FrameJSONCache) setSchema(frame *Frame) error {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
@@ -149,7 +144,7 @@ func (f *FrameJSON) SetSchema(frame *Frame) error {
 }
 
 // MarshalJSON marshals Frame to JSON.
-func (f *FrameJSON) MarshalJSON() ([]byte, error) {
+func (f *FrameJSONCache) MarshalJSON() ([]byte, error) {
 	return f.Bytes(IncludeAll), nil
 }
 
@@ -158,15 +153,36 @@ func (f *FrameJSON) MarshalJSON() ([]byte, error) {
 // For standard json serialization use `json.Marshal(frame)`
 //
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func FrameToJSON(frame *Frame) (FrameJSON, error) {
-	wrap := FrameJSON{}
+func FrameToJSON(frame *Frame, include FrameInclude) ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
 
-	err := wrap.SetSchema(frame)
+	includeSchema := (include == IncludeAll || include == IncludeSchemaOnly)
+	includeData := (include == IncludeAll || include == IncludeDataOnly)
+
+	writeDataFrame(frame, stream, includeSchema, includeData)
+	if stream.Error != nil {
+		return nil, stream.Error
+	}
+
+	return append([]byte(nil), stream.Buffer()...), nil
+}
+
+// FrameToJSON creates an object that holds schema and data independently.  This is
+// useful for explicit control between the data and schema.
+// For standard json serialization use `json.Marshal(frame)`
+//
+// NOTE: the format should be considered experimental until grafana 8 is released.
+func FrameToJSONCache(frame *Frame) (FrameJSONCache, error) {
+	wrap := FrameJSONCache{}
+
+	err := wrap.setSchema(frame)
 	if err != nil {
 		return wrap, err
 	}
 
-	err = wrap.SetData(frame)
+	err = wrap.setData(frame)
 	if err != nil {
 		return wrap, err
 	}

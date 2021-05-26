@@ -25,9 +25,8 @@ func TestGoldenFrameJSON(t *testing.T) {
 	a, err := f.MarshalArrow()
 	require.NoError(t, err)
 
-	fjs, err := data.FrameToJSON(f) // json.Marshal(f2)
+	b, err := data.FrameToJSON(f, data.IncludeAll) // json.Marshal(f2)
 	require.NoError(t, err)
-	b := fjs.Bytes(data.IncludeAll)
 	strF := string(b)
 
 	b, err = data.ArrowBufferToJSON(a, data.IncludeAll)
@@ -102,7 +101,7 @@ func BenchmarkFrameToJSON(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := data.FrameToJSON(f)
+		_, err := data.FrameToJSONCache(f)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -158,24 +157,24 @@ type testWrapper struct {
 
 func TestFrame_UnmarshalJSON_SchemaOnly(t *testing.T) {
 	f := data.NewFrame("test", data.NewField("test", nil, []int64{1}))
-	d, err := data.FrameToJSON(f)
+	d, err := data.FrameToJSON(f, data.IncludeSchemaOnly)
 	require.NoError(t, err)
-	_, err = json.Marshal(testWrapper{Data: d.Bytes(data.IncludeSchemaOnly)})
+	_, err = json.Marshal(testWrapper{Data: d})
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Bytes(data.IncludeSchemaOnly), &newFrame)
+	err = json.Unmarshal(d, &newFrame)
 	require.NoError(t, err)
 	require.Equal(t, 0, newFrame.Fields[0].Len())
 }
 
 func TestFrameMarshalJSON_DataOnly(t *testing.T) {
 	f := goldenDF()
-	d, err := data.FrameToJSON(f)
+	d, err := data.FrameToJSON(f, data.IncludeDataOnly)
 	require.NoError(t, err)
-	_, err = json.Marshal(testWrapper{Data: d.Bytes(data.IncludeDataOnly)})
+	_, err = json.Marshal(testWrapper{Data: d})
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Bytes(data.IncludeDataOnly), &newFrame)
+	err = json.Unmarshal(d, &newFrame)
 	require.Error(t, err)
 }
 
@@ -189,11 +188,11 @@ func TestFrame_UnmarshalJSON_SchemaAndData_WrongOrder(t *testing.T) {
 
 func TestFrame_UnmarshalJSON_DataOnly(t *testing.T) {
 	f := data.NewFrame("test", data.NewField("test", nil, []int64{}))
-	d, err := data.FrameToJSON(f)
+	d, err := data.FrameToJSON(f, data.IncludeDataOnly)
 
 	require.NoError(t, err)
 	var newFrame data.Frame
-	err = json.Unmarshal(d.Bytes(data.IncludeDataOnly), &newFrame)
+	err = json.Unmarshal(d, &newFrame)
 	require.Error(t, err)
 }
 
