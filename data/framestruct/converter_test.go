@@ -1,6 +1,8 @@
 package framestruct_test
 
 import (
+	"errors"
+	"strconv"
 	"testing"
 	"time"
 
@@ -692,6 +694,93 @@ func TestToDataFrames(t *testing.T) {
 		require.Equal(t, "aaa", frame.Fields[1].Name)
 		require.Equal(t, "bbb", frame.Fields[2].Name)
 		require.Equal(t, "ccc", frame.Fields[3].Name)
+	})
+}
+
+func TestOptions(t *testing.T) {
+	t.Run("it can designate the 0th column", func(t *testing.T) {
+		m := map[string]interface{}{
+			"aaa": "foo",
+			"bbb": "foo",
+			"ccc": "foo",
+			"zzz": "foo",
+		}
+
+		frame, err := framestruct.ToDataFrame(
+			"results",
+			m,
+			framestruct.WithColumn0("zzz"),
+		)
+		require.Nil(t, err)
+
+		require.Len(t, frame.Fields, 4)
+		require.Equal(t, "zzz", frame.Fields[0].Name)
+		require.Equal(t, "aaa", frame.Fields[1].Name)
+		require.Equal(t, "bbb", frame.Fields[2].Name)
+		require.Equal(t, "ccc", frame.Fields[3].Name)
+	})
+
+	t.Run("it can accept converters to convert values", func(t *testing.T) {
+		m := map[string]interface{}{
+			"Thing1": "1",
+		}
+
+		stringToInt := func(i interface{}) (interface{}, error) {
+			s, _ := i.(string)
+			num, _ := strconv.Atoi(s)
+			return int64(num), nil
+		}
+
+		frame, err := framestruct.ToDataFrame(
+			"results",
+			m,
+			framestruct.WithConverterFor("Thing1", stringToInt),
+		)
+		require.Nil(t, err)
+
+		require.Len(t, frame.Fields, 1)
+		require.Equal(t, "Thing1", frame.Fields[0].Name)
+		require.Equal(t, int64(1), fromPointer(frame.Fields[0].At(0)))
+	})
+
+	t.Run("it returns an error when the converter returns an error", func(t *testing.T) {
+		m := map[string]interface{}{
+			"Thing1": "1",
+		}
+
+		toError := func(i interface{}) (interface{}, error) {
+			return nil, errors.New("something bad")
+		}
+
+		_, err := framestruct.ToDataFrame(
+			"results",
+			m,
+			framestruct.WithConverterFor("Thing1", toError),
+		)
+		require.EqualError(t, err, "field conversion error Thing1: something bad")
+	})
+
+	t.Run("it works with ToDataFrames", func(t *testing.T) {
+		m := map[string]interface{}{
+			"Thing1": "1",
+		}
+
+		stringToInt := func(i interface{}) (interface{}, error) {
+			s, _ := i.(string)
+			num, _ := strconv.Atoi(s)
+			return int64(num), nil
+		}
+
+		frames, err := framestruct.ToDataFrames(
+			"results",
+			m,
+			framestruct.WithConverterFor("Thing1", stringToInt),
+		)
+		require.Nil(t, err)
+
+		require.Len(t, frames[0].Fields, 1)
+		require.Equal(t, "Thing1", frames[0].Fields[0].Name)
+		require.Equal(t, int64(1), fromPointer(frames[0].Fields[0].At(0)))
 	})
 }
 
