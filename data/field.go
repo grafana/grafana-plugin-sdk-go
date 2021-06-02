@@ -427,7 +427,7 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 
 // NullableFloatAt it is similar to FloatAt but returns a *float64 at the specified index idx for all supported Field types.
 // It will panic if idx is out of range.
-//
+// nolint:gocyclo
 func (f *Field) NullableFloatAt(idx int) (*float64, error) {
 	if !f.Nullable() {
 		fv, err := f.FloatAt(idx)
