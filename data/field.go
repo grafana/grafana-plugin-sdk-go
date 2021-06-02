@@ -420,7 +420,132 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		if t == nil {
 			return math.NaN(), nil
 		}
-		return float64(f.At(idx).(*time.Time).UnixNano() / int64(time.Millisecond)), nil
+		return float64(t.UnixNano() / int64(time.Millisecond)), nil
 	}
 	return 0, fmt.Errorf("unsupported field type %T", f.Type())
+}
+
+// NullableFloatAt it is similar to FloatAt but returns a *float64 at the specified index idx for all supported Field types.
+// It will panic if idx is out of range.
+//
+func (f *Field) NullableFloatAt(idx int) (*float64, error) {
+	if !f.Nullable() {
+		fv, err := f.FloatAt(idx)
+		if err != nil {
+			return nil, err
+		}
+		return &fv, nil
+	}
+
+	switch f.Type() {
+	case FieldTypeNullableInt8:
+		iv := f.At(idx).(*int8)
+		if iv == nil {
+			return nil, nil
+		}
+		f := float64(*iv)
+		return &f, nil
+
+	case FieldTypeNullableInt16:
+		iv := f.At(idx).(*int16)
+		if iv == nil {
+			return nil, nil
+		}
+		f := float64(*iv)
+		return &f, nil
+
+	case FieldTypeNullableInt32:
+		iv := f.At(idx).(*int32)
+		if iv == nil {
+			return nil, nil
+		}
+		f := float64(*iv)
+		return &f, nil
+
+	case FieldTypeNullableInt64:
+		iv := f.At(idx).(*int64)
+		if iv == nil {
+			return nil, nil
+		}
+		f := float64(*iv)
+		return &f, nil
+
+	case FieldTypeNullableUint8:
+		uiv := f.At(idx).(*uint8)
+		if uiv == nil {
+			return nil, nil
+		}
+		f := float64(*uiv)
+		return &f, nil
+
+	case FieldTypeNullableUint16:
+		uiv := f.At(idx).(*uint16)
+		if uiv == nil {
+			return nil, nil
+		}
+		f := float64(*uiv)
+		return &f, nil
+
+	case FieldTypeNullableUint32:
+		uiv := f.At(idx).(*uint32)
+		if uiv == nil {
+			return nil, nil
+		}
+		f := float64(*uiv)
+		return &f, nil
+
+	case FieldTypeNullableUint64:
+		uiv := f.At(idx).(*uint64)
+		if uiv == nil {
+			return nil, nil
+		}
+		f := float64(*uiv)
+		return &f, nil
+
+	case FieldTypeNullableFloat32:
+		fv := f.At(idx).(*float32)
+		if fv == nil {
+			return nil, nil
+		}
+		f := float64(*fv)
+		return &f, nil
+
+	case FieldTypeNullableFloat64:
+		fv := f.At(idx).(*float64)
+		if fv == nil {
+			return nil, nil
+		}
+		return fv, nil
+
+	case FieldTypeNullableString:
+		s := f.At(idx).(*string)
+		if s == nil {
+			return nil, nil
+		}
+		ft, err := strconv.ParseFloat(*s, 64)
+		if err != nil {
+			return nil, err
+		}
+		return &ft, nil
+
+	case FieldTypeNullableBool:
+		b := f.At(idx).(*bool)
+		if b == nil {
+			return nil, nil
+		}
+		f := 0.0
+		if *b {
+			f = 1.0
+		}
+		return &f, nil
+
+	case FieldTypeNullableTime:
+		t := f.At(idx).(*time.Time)
+		if t == nil {
+			return nil, nil
+		}
+		f := float64(t.UnixNano() / int64(time.Millisecond))
+		return &f, nil
+	}
+	return nil, fmt.Errorf("unsupported field type %T", f.Type())
 }
