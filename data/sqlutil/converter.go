@@ -247,27 +247,6 @@ var (
 		},
 	}
 
-
-	// NullInt64Converter creates a *int64 using the scan type of `sql.NullInt64`
-	NullInt642Converter = Converter{
-		Name:          "NULLABLE int64 converter",
-		InputScanType: reflect.TypeOf(sql.NullBool{}),
-		InputTypeName: "INTEGER",
-		FrameConverter: FrameConverter{
-			FieldType: data.FieldTypeNullableInt64,
-			ConverterFunc: func(n interface{}) (interface{}, error) {
-				v := n.(*sql.NullInt64)
-
-				if !v.Valid {
-					return (*int64)(nil), nil
-				}
-
-				f := v.Int64
-				return &f, nil
-			},
-		},
-	}
-
 	// NullInt32Converter creates a *int32 using the scan type of `sql.NullInt32`
 	NullInt32Converter = Converter{
 		Name:          "NULLABLE int32 converter",
