@@ -24,6 +24,7 @@ func TestNewClient(t *testing.T) {
 				KeepAlive:             2 * time.Second,
 				TLSHandshakeTimeout:   3 * time.Second,
 				ExpectContinueTimeout: 4 * time.Second,
+				MaxConnsPerHost:       10,
 				MaxIdleConns:          5,
 				MaxIdleConnsPerHost:   7,
 				IdleConnTimeout:       6 * time.Second,
@@ -39,6 +40,7 @@ func TestNewClient(t *testing.T) {
 		require.NotNil(t, transport)
 		require.Equal(t, 3*time.Second, transport.TLSHandshakeTimeout)
 		require.Equal(t, 4*time.Second, transport.ExpectContinueTimeout)
+		require.Equal(t, 10, transport.MaxConnsPerHost)
 		require.Equal(t, 5, transport.MaxIdleConns)
 		require.Equal(t, 7, transport.MaxIdleConnsPerHost)
 		require.Equal(t, 6*time.Second, transport.IdleConnTimeout)

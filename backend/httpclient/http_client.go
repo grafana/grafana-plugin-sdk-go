@@ -70,6 +70,7 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		ResponseHeaderTimeout: clientOpts.Timeouts.Timeout,
 		TLSHandshakeTimeout:   clientOpts.Timeouts.TLSHandshakeTimeout,
 		ExpectContinueTimeout: clientOpts.Timeouts.ExpectContinueTimeout,
+		MaxConnsPerHost:       clientOpts.Timeouts.MaxConnsPerHost,
 		MaxIdleConns:          clientOpts.Timeouts.MaxIdleConns,
 		MaxIdleConnsPerHost:   clientOpts.Timeouts.MaxIdleConnsPerHost,
 		IdleConnTimeout:       clientOpts.Timeouts.IdleConnTimeout,

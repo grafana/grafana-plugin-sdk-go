@@ -23,6 +23,7 @@ type HTTPSettings struct {
 	KeepAlive             time.Duration
 	TLSHandshakeTimeout   time.Duration
 	ExpectContinueTimeout time.Duration
+	MaxConnsPerHost       int
 	MaxIdleConns          int
 	MaxIdleConnsPerHost   int
 	IdleConnTimeout       time.Duration
@@ -57,6 +58,7 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 		KeepAlive:             s.KeepAlive,
 		TLSHandshakeTimeout:   s.TLSHandshakeTimeout,
 		ExpectContinueTimeout: s.ExpectContinueTimeout,
+		MaxConnsPerHost:       s.MaxConnsPerHost,
 		MaxIdleConns:          s.MaxIdleConns,
 		MaxIdleConnsPerHost:   s.MaxIdleConnsPerHost,
 		IdleConnTimeout:       s.IdleConnTimeout,
@@ -167,6 +169,14 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		}
 	} else {
 		s.ExpectContinueTimeout = httpclient.DefaultTimeoutOptions.ExpectContinueTimeout
+	}
+
+	if v, exists := dat["httpMaxConnsPerHost"]; exists {
+		if iv, ok := v.(float64); ok {
+			s.MaxConnsPerHost = int(iv)
+		}
+	} else {
+		s.MaxConnsPerHost = httpclient.DefaultTimeoutOptions.MaxConnsPerHost
 	}
 
 	if v, exists := dat["httpMaxIdleConns"]; exists {

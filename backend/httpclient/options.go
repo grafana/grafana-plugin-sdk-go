@@ -72,6 +72,7 @@ type TimeoutOptions struct {
 	KeepAlive             time.Duration
 	TLSHandshakeTimeout   time.Duration
 	ExpectContinueTimeout time.Duration
+	MaxConnsPerHost       int
 	MaxIdleConns          int
 	MaxIdleConnsPerHost   int
 	IdleConnTimeout       time.Duration
@@ -84,6 +85,7 @@ var DefaultTimeoutOptions = TimeoutOptions{
 	KeepAlive:             30 * time.Second,
 	TLSHandshakeTimeout:   10 * time.Second,
 	ExpectContinueTimeout: 1 * time.Second,
+	MaxConnsPerHost:       0,
 	MaxIdleConns:          100,
 	MaxIdleConnsPerHost:   100,
 	IdleConnTimeout:       90 * time.Second,
