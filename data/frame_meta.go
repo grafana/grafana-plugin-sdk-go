@@ -35,6 +35,9 @@ type FrameMeta struct {
 	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
+
+	// TimeSeriesType is the type of time series used in the data frame.
+	TimeSeriesType TimeSeriesType `json:"timeSeriesType,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType

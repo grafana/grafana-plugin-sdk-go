@@ -206,6 +206,17 @@ func (f *Frame) SetMeta(m *FrameMeta) *Frame {
 	return f
 }
 
+// SetTimeSeriesType sets the Frame's Meta's TimeSeriesType attribute to t and returns the Frame.
+// It will create Meta if it is missing.
+func (f *Frame) SetTimeSeriesType(t TimeSeriesType) *Frame {
+	if f.Meta != nil {
+		f.Meta.TimeSeriesType = t
+	} else {
+		f.Meta = &FrameMeta{TimeSeriesType: t}
+	}
+	return f
+}
+
 // Rows returns the number of rows in the frame.
 func (f *Frame) Rows() int {
 	if len(f.Fields) > 0 {
