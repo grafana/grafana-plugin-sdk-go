@@ -36,8 +36,8 @@ type FrameMeta struct {
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
 
-	// TimeSeriesType is the type of time series used in the data frame.
-	TimeSeriesType TimeSeriesType `json:"timeSeriesType,omitempty"`
+	// IsWideTimeSeries is true when the the when the Frame is a wide data frame.
+	IsWideTimeSeries bool `json:"isWideTimeSeries,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType

@@ -206,13 +206,13 @@ func (f *Frame) SetMeta(m *FrameMeta) *Frame {
 	return f
 }
 
-// SetTimeSeriesType sets the Frame's Meta's TimeSeriesType attribute to t and returns the Frame.
+// SetIsWideTimeSeries sets the Frame's Meta's IsWideTimeSeries attribute to b and returns the Frame.
 // It will create Meta if it is missing.
-func (f *Frame) SetTimeSeriesType(t TimeSeriesType) *Frame {
+func (f *Frame) SetIsWideTimeSeries(b bool) *Frame {
 	if f.Meta != nil {
-		f.Meta.TimeSeriesType = t
+		f.Meta.IsWideTimeSeries = b
 	} else {
-		f.Meta = &FrameMeta{TimeSeriesType: t}
+		f.Meta = &FrameMeta{IsWideTimeSeries: b}
 	}
 	return f
 }
