@@ -36,7 +36,7 @@ type FrameMeta struct {
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
 
-	// IsWideTimeSeries is true when the the when the Frame is a wide data frame.
+	// IsWideTimeSeries is true when the Frame is a wide data frame.
 	IsWideTimeSeries bool `json:"isWideTimeSeries,omitempty"`
 }
 
