@@ -206,6 +206,17 @@ func (f *Frame) SetMeta(m *FrameMeta) *Frame {
 	return f
 }
 
+// SetIsWideTimeSeries sets the Frame's Meta's IsWideTimeSeries attribute to b and returns the Frame.
+// It will create Meta if it is missing.
+func (f *Frame) SetIsWideTimeSeries(b bool) *Frame {
+	if f.Meta != nil {
+		f.Meta.IsWideTimeSeries = b
+	} else {
+		f.Meta = &FrameMeta{IsWideTimeSeries: b}
+	}
+	return f
+}
+
 // Rows returns the number of rows in the frame.
 func (f *Frame) Rows() int {
 	if len(f.Fields) > 0 {
