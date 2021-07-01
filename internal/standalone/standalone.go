@@ -1,7 +1,6 @@
 package standalone
 
 import (
-	"encoding/json"
 	"flag"
 	"fmt"
 	"io/ioutil"
@@ -13,6 +12,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/internal"
 )
 
 type Args struct {
@@ -114,25 +115,15 @@ func findAndKillCurrentPlugin(dir string) {
 		}
 	}()
 
-	var pluginJSON map[string]interface{}
-	pjson, err := ioutil.ReadFile(filepath.Join(dir, "plugin.json"))
+	exeprefix, err := internal.GetExecutableFromPluginJSON(dir)
 	if err != nil {
-		return
-	}
-	err = json.Unmarshal(pjson, &pluginJSON)
-	if err != nil {
-		return
-	}
-	exeprefix, ok := pluginJSON["executable"]
-	if !ok {
-		fmt.Printf("missing executable form plugin.json")
+		fmt.Printf("missing executable in plugin.json (standalone)")
 		return
 	}
 
-	arg1 := exeprefix.(string)
-	out, err := exec.Command("pgrep", arg1).Output()
+	out, err := exec.Command("pgrep", exeprefix).Output()
 	if err != nil {
-		fmt.Printf("error running pgrep")
+		fmt.Printf("error running pgrep: %s (%s)", err.Error(), exeprefix)
 		return
 	}
 	for _, txt := range strings.Fields(string(out)) {
