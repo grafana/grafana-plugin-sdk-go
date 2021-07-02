@@ -75,6 +75,13 @@ func NewInitialFrame(frame *data.Frame, include data.FrameInclude) (*InitialData
 	}, nil
 }
 
+// NewInitialData allows sending bytes on subscription
+func NewInitialData(data []byte) (*InitialData, error) {
+	return &InitialData{
+		data: data,
+	}, nil
+}
+
 // PublishStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
 type PublishStreamRequest struct {
 	PluginContext PluginContext
