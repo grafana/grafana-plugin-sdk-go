@@ -2,16 +2,15 @@ package build
 
 import (
 	"bufio"
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"os"
-	"path"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/internal"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -31,7 +30,7 @@ var exname string
 
 func getExecutableName(os string, arch string) (string, error) {
 	if exname == "" {
-		exename, err := getExecutableFromPluginJSON()
+		exename, err := internal.GetExecutableFromPluginJSON("src")
 		if err != nil {
 			return "", err
 		}
@@ -44,29 +43,6 @@ func getExecutableName(os string, arch string) (string, error) {
 		exeName = fmt.Sprintf("%s.exe", exeName)
 	}
 	return exeName, nil
-}
-
-func getValueFromJSON(fpath string, key string) (string, error) {
-	byteValue, err := ioutil.ReadFile(fpath)
-	if err != nil {
-		return "", err
-	}
-
-	var result map[string]interface{}
-	err = json.Unmarshal(byteValue, &result)
-	if err != nil {
-		return "", err
-	}
-	executable := result[key]
-	name, ok := executable.(string)
-	if !ok || name == "" {
-		return "", fmt.Errorf("plugin.json is missing: %s", key)
-	}
-	return name, nil
-}
-
-func getExecutableFromPluginJSON() (string, error) {
-	return getValueFromJSON(path.Join("src", "plugin.json"), "executable")
 }
 
 func buildBackend(cfg Config) error {
@@ -104,7 +80,7 @@ func buildBackend(cfg Config) error {
 	}
 
 	info := getBuildInfoFromEnvironment()
-	version, err := getValueFromJSON("package.json", "version")
+	version, err := internal.GetStringValueFromJSON("package.json", "version")
 	if err == nil && len(version) > 0 {
 		info.Version = version
 	}

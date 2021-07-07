@@ -25,11 +25,11 @@ func TestGoldenFrameJSON(t *testing.T) {
 	a, err := f.MarshalArrow()
 	require.NoError(t, err)
 
-	b, err := data.FrameToJSON(f, true, true) // json.Marshal(f2)
+	b, err := data.FrameToJSON(f, data.IncludeAll) // json.Marshal(f2)
 	require.NoError(t, err)
 	strF := string(b)
 
-	b, err = data.ArrowBufferToJSON(a, true, true)
+	b, err = data.ArrowBufferToJSON(a, data.IncludeAll)
 	require.NoError(t, err)
 	strA := string(b)
 
@@ -101,7 +101,7 @@ func BenchmarkFrameToJSON(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := data.FrameToJSON(f, true, true)
+		_, err := data.FrameToJSONCache(f)
 		if err != nil {
 			b.Fatal(err)
 		}
@@ -152,12 +152,12 @@ func TestFrameMarshalJSONConcurrent(t *testing.T) {
 }
 
 type testWrapper struct {
-	Data json.RawMessage
+	Data []byte
 }
 
 func TestFrame_UnmarshalJSON_SchemaOnly(t *testing.T) {
 	f := data.NewFrame("test", data.NewField("test", nil, []int64{1}))
-	d, err := data.FrameToJSON(f, true, false)
+	d, err := data.FrameToJSON(f, data.IncludeSchemaOnly)
 	require.NoError(t, err)
 	_, err = json.Marshal(testWrapper{Data: d})
 	require.NoError(t, err)
@@ -169,7 +169,7 @@ func TestFrame_UnmarshalJSON_SchemaOnly(t *testing.T) {
 
 func TestFrameMarshalJSON_DataOnly(t *testing.T) {
 	f := goldenDF()
-	d, err := data.FrameToJSON(f, false, true)
+	d, err := data.FrameToJSON(f, data.IncludeDataOnly)
 	require.NoError(t, err)
 	_, err = json.Marshal(testWrapper{Data: d})
 	require.NoError(t, err)
@@ -188,7 +188,8 @@ func TestFrame_UnmarshalJSON_SchemaAndData_WrongOrder(t *testing.T) {
 
 func TestFrame_UnmarshalJSON_DataOnly(t *testing.T) {
 	f := data.NewFrame("test", data.NewField("test", nil, []int64{}))
-	d, err := data.FrameToJSON(f, false, true)
+	d, err := data.FrameToJSON(f, data.IncludeDataOnly)
+
 	require.NoError(t, err)
 	var newFrame data.Frame
 	err = json.Unmarshal(d, &newFrame)

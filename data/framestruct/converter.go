@@ -2,6 +2,7 @@ package framestruct
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -19,13 +20,19 @@ type converter struct {
 	anyMap     bool
 	col0       string
 	maxLen     int
+	converters map[string]FieldConverter
 }
 
 // ToDataFrame flattens an arbitrary struct or slice of structs into a *data.Frame
-func ToDataFrame(name string, toConvert interface{}) (*data.Frame, error) {
+func ToDataFrame(name string, toConvert interface{}, opts ...FramestructOption) (*data.Frame, error) {
 	cr := &converter{
-		fields: make(map[string]*data.Field),
-		tags:   make([]string, 3),
+		fields:     make(map[string]*data.Field),
+		tags:       make([]string, 3),
+		converters: make(map[string]FieldConverter),
+	}
+
+	for _, o := range opts {
+		o(cr)
 	}
 
 	return cr.toDataframe(name, toConvert)
@@ -37,18 +44,43 @@ func ToDataFrame(name string, toConvert interface{}) (*data.Frame, error) {
 // for the type conversion. If this function delegates to a data.Framer, it
 // will use the data.Frame name defined by the type rather than passed to this
 // function
-func ToDataFrames(name string, toConvert interface{}) (data.Frames, error) {
+func ToDataFrames(name string, toConvert interface{}, opts ...FramestructOption) (data.Frames, error) {
 	framer, ok := toConvert.(data.Framer)
 	if ok {
 		return framer.Frames()
 	}
 
-	frame, err := ToDataFrame(name, toConvert)
+	frame, err := ToDataFrame(name, toConvert, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return []*data.Frame{frame}, nil
+}
+
+// FieldConverter is a function that takes the value of a field, converts it,
+// and returns the new value as an interface
+type FieldConverter func(interface{}) (interface{}, error)
+
+// FramestructOption takes a converter and applies some configuration to it
+type FramestructOption func(cr *converter)
+
+// WithConverterFor configures a FieldConverter for a field with the name
+// fieldname. This converter will be applied to fields _after_ the name structag
+// is applied.
+func WithConverterFor(fieldname string, c FieldConverter) FramestructOption {
+	return func(cr *converter) {
+		cr.converters[fieldname] = c
+	}
+}
+
+// WithColumn0 specifies the 0th column of the returned Data Frame. Using this
+// option will override any `col0` framestruct tags that have been set. This is
+// most useful when marshalling maps
+func WithColumn0(fieldname string) FramestructOption {
+	return func(cr *converter) {
+		cr.col0 = fieldname
+	}
 }
 
 func (c *converter) toDataframe(name string, toConvert interface{}) (*data.Frame, error) {
@@ -178,10 +210,15 @@ func sortedKeys(m map[string]interface{}) []string {
 }
 
 func (c *converter) upsertField(v reflect.Value, fieldName string) error {
+	valueOf, err := c.convertField(v, fieldName)
+	if err != nil {
+		return err
+	}
+
 	if _, exists := c.fields[fieldName]; !exists {
 		// keep track of unique fields in the order they appear
 		c.fieldNames = append(c.fieldNames, fieldName)
-		v, err := sliceFor(v.Interface())
+		v, err := sliceFor(valueOf)
 		if err != nil {
 			return err
 		}
@@ -190,8 +227,19 @@ func (c *converter) upsertField(v reflect.Value, fieldName string) error {
 	}
 
 	c.padField(c.fields[fieldName], c.maxLen-1)
-	c.appendToField(fieldName, toPointer(v.Interface()))
+	c.appendToField(fieldName, toPointer(valueOf))
 	return nil
+}
+
+func (c *converter) convertField(v reflect.Value, fieldName string) (interface{}, error) {
+	if converter, exists := c.converters[fieldName]; exists {
+		valueOf, err := converter(v.Interface())
+		if err != nil {
+			return nil, fmt.Errorf("field conversion error %s: %s", fieldName, err)
+		}
+		return valueOf, nil
+	}
+	return v.Interface(), nil
 }
 
 func (c *converter) appendToField(name string, value interface{}) {

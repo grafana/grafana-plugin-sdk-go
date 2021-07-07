@@ -6,10 +6,7 @@ import (
 	"strings"
 )
 
-// ErrInvalidChannelID returned when channel ID does not have valid
-// format. Valid channel IDs have 3 parts (scope, namespace, path)
-// delimited by "/". Scope and namespace parts can only have alphanumeric
-// ascii symbols, underscore and dash. Path can additionally have "/", "=" and ".".
+// ErrInvalidChannelID returned when channel ID does not have valid format.
 var ErrInvalidChannelID = errors.New("invalid channel ID")
 
 // Channel is the channel ID split by parts.
@@ -29,11 +26,21 @@ type Channel struct {
 	Path string `json:"path,omitempty"`
 }
 
-// ParseChannel parses the parts from a channel ID:
-//   ${scope} / ${namespace} / ${path}.
-// Channel parts allowed to have alphanumeric symbols, underscore and dash.
+const (
+	maxChannelLength = 160
+)
+
+// ParseChannel parses the parts from a channel ID.
+// Valid channel IDs have length <= 160 characters and consist
+// of 3 parts (scope, namespace, path) delimited by "/": like
+// "${scope}/${namespace}/${path}".
+// Scope and namespace parts can only have alphanumeric ascii symbols,
+// underscore and dash. Path can additionally have "/", "=" and ".".
 // For invalid channel IDs function returns ErrInvalidChannelID.
 func ParseChannel(chID string) (Channel, error) {
+	if chID == "" || len(chID) > maxChannelLength {
+		return Channel{}, ErrInvalidChannelID
+	}
 	parts := strings.SplitN(chID, "/", 3)
 	if len(parts) != 3 {
 		return Channel{}, ErrInvalidChannelID

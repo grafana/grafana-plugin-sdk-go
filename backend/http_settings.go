@@ -19,9 +19,11 @@ type HTTPSettings struct {
 	Headers           map[string]string
 
 	Timeout               time.Duration
+	DialTimeout           time.Duration
 	KeepAlive             time.Duration
 	TLSHandshakeTimeout   time.Duration
 	ExpectContinueTimeout time.Duration
+	MaxConnsPerHost       int
 	MaxIdleConns          int
 	MaxIdleConnsPerHost   int
 	IdleConnTimeout       time.Duration
@@ -52,9 +54,11 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 
 	opts.Timeouts = &httpclient.TimeoutOptions{
 		Timeout:               s.Timeout,
+		DialTimeout:           s.DialTimeout,
 		KeepAlive:             s.KeepAlive,
 		TLSHandshakeTimeout:   s.TLSHandshakeTimeout,
 		ExpectContinueTimeout: s.ExpectContinueTimeout,
+		MaxConnsPerHost:       s.MaxConnsPerHost,
 		MaxIdleConns:          s.MaxIdleConns,
 		MaxIdleConnsPerHost:   s.MaxIdleConnsPerHost,
 		IdleConnTimeout:       s.IdleConnTimeout,
@@ -135,6 +139,14 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.Timeout = httpclient.DefaultTimeoutOptions.Timeout
 	}
 
+	if v, exists := dat["dialTimeout"]; exists {
+		if iv, ok := v.(float64); ok {
+			s.DialTimeout = time.Duration(iv) * time.Second
+		}
+	} else {
+		s.DialTimeout = httpclient.DefaultTimeoutOptions.DialTimeout
+	}
+
 	if v, exists := dat["httpKeepAlive"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.KeepAlive = time.Duration(iv) * time.Second
@@ -157,6 +169,14 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		}
 	} else {
 		s.ExpectContinueTimeout = httpclient.DefaultTimeoutOptions.ExpectContinueTimeout
+	}
+
+	if v, exists := dat["httpMaxConnsPerHost"]; exists {
+		if iv, ok := v.(float64); ok {
+			s.MaxConnsPerHost = int(iv)
+		}
+	} else {
+		s.MaxConnsPerHost = httpclient.DefaultTimeoutOptions.MaxConnsPerHost
 	}
 
 	if v, exists := dat["httpMaxIdleConns"]; exists {

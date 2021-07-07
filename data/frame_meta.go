@@ -35,6 +35,9 @@ type FrameMeta struct {
 	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
+
+	// IsWideTimeSeries is true when the Frame is a wide data frame.
+	IsWideTimeSeries bool `json:"isWideTimeSeries,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType
