@@ -87,6 +87,17 @@ func TestDefaultConverter(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name:     "nullable bool",
+			Type:     reflect.TypeOf(false),
+			Nullable: true,
+			Expected: sqlutil.Converter{
+				InputScanType: reflect.TypeOf(sql.NullBool{}),
+				FrameConverter: sqlutil.FrameConverter{
+					FieldType: data.FieldTypeBool.NullableType(),
+				},
+			},
+		},
 	}
 
 	for i, v := range suite {
