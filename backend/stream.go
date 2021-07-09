@@ -76,7 +76,7 @@ func NewInitialFrame(frame *data.Frame, include data.FrameInclude) (*InitialData
 }
 
 // NewInitialData allows sending JSON on subscription
-func NewInitialData(data []byte) (*InitialData, error) {
+func NewInitialData(data json.RawMessage) (*InitialData, error) {
 	if !json.Valid(data) {
 		return nil, fmt.Errorf("invalid JSON data")
 	}
