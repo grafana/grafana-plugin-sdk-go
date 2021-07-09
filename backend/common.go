@@ -39,7 +39,10 @@ func (s *AppInstanceSettings) HTTPClientOptions() (httpclient.Options, error) {
 		return httpclient.Options{}, err
 	}
 
-	return httpSettings.HTTPClientOptions(), nil
+	opts := httpSettings.HTTPClientOptions()
+	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
+
+	return opts, nil
 }
 
 // DataSourceInstanceSettings represents settings for a data source instance.
@@ -101,7 +104,13 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 		httpSettings.BasicAuthPassword = s.DecryptedSecureJSONData["password"]
 	}
 
-	return httpSettings.HTTPClientOptions(), nil
+	opts := httpSettings.HTTPClientOptions()
+	opts.Labels["datasource_name"] = s.Name
+	opts.Labels["datasource_uid"] = s.UID
+
+	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
+
+	return opts, nil
 }
 
 // PluginContext holds contextual information about a plugin request, such as
@@ -135,4 +144,57 @@ type PluginContext struct {
 	//
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
+}
+
+const dataCustomOptionsKey = "grafanaData"
+const secureDataCustomOptionsKey = "grafanaSecureData"
+
+func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
+	opts.CustomOptions = map[string]interface{}{}
+
+	if httpSettings.JSONData != nil {
+		opts.CustomOptions[dataCustomOptionsKey] = httpSettings.JSONData
+	}
+
+	if httpSettings.SecureJSONData != nil {
+		opts.CustomOptions[secureDataCustomOptionsKey] = httpSettings.SecureJSONData
+	}
+}
+
+// JSONDataFromHTTPClientOptions extracts JSON data from CustomOptions of httpclient.Options.
+func JSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[string]interface{}) {
+	if opts.CustomOptions == nil {
+		return
+	}
+
+	val, exists := opts.CustomOptions[dataCustomOptionsKey]
+	if !exists {
+		return
+	}
+
+	jsonData, ok := val.(map[string]interface{})
+	if !ok {
+		return
+	}
+
+	return jsonData
+}
+
+// SecureJSONDataFromHTTPClientOptions extracts secure JSON data from CustomOptions of httpclient.Options.
+func SecureJSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[string]string) {
+	if opts.CustomOptions == nil {
+		return
+	}
+
+	val, exists := opts.CustomOptions[secureDataCustomOptionsKey]
+	if !exists {
+		return
+	}
+
+	secureJSONData, ok := val.(map[string]string)
+	if !ok {
+		return
+	}
+
+	return secureJSONData
 }
