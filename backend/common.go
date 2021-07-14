@@ -7,6 +7,9 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
+const dataCustomOptionsKey = "grafanaData"
+const secureDataCustomOptionsKey = "grafanaSecureData"
+
 // User represents a Grafana user.
 type User struct {
 	Login string
@@ -145,9 +148,6 @@ type PluginContext struct {
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
 }
-
-const dataCustomOptionsKey = "grafanaData"
-const secureDataCustomOptionsKey = "grafanaSecureData"
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
 	opts.CustomOptions = map[string]interface{}{}

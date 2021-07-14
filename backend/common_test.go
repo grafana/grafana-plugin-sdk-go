@@ -193,21 +193,43 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 }
 
 func TestCustomOptions(t *testing.T) {
-	opts := &httpclient.Options{}
-	expectedJSONData := map[string]interface{}{
-		"key": "value",
-	}
-	expectedSecureJSONData := map[string]string{
-		"sKey": "sValue",
-	}
-	setCustomOptionsFromHTTPSettings(opts, &HTTPSettings{
-		JSONData:       expectedJSONData,
-		SecureJSONData: expectedSecureJSONData,
+	t.Run("Should be able to extract JSONData and SecureJSONData from custom options", func(t *testing.T) {
+		opts := &httpclient.Options{}
+		expectedJSONData := map[string]interface{}{
+			"key": "value",
+		}
+		expectedSecureJSONData := map[string]string{
+			"sKey": "sValue",
+		}
+		setCustomOptionsFromHTTPSettings(opts, &HTTPSettings{
+			JSONData:       expectedJSONData,
+			SecureJSONData: expectedSecureJSONData,
+		})
+
+		jsonData := JSONDataFromHTTPClientOptions(*opts)
+		secureJSONData := SecureJSONDataFromHTTPClientOptions(*opts)
+
+		require.Equal(t, expectedJSONData, jsonData)
+		require.Equal(t, expectedSecureJSONData, secureJSONData)
 	})
 
-	jsonData := JSONDataFromHTTPClientOptions(*opts)
-	secureJSONData := SecureJSONDataFromHTTPClientOptions(*opts)
+	t.Run("Should be able to extract JSONData and SecureJSONData from custom options", func(t *testing.T) {
+		opts := &httpclient.Options{
+			CustomOptions: map[string]interface{}{},
+		}
+		incorrectJSONData := map[string]string{
+			"key": "value",
+		}
+		incorrectSecureJSONData := map[string]interface{}{
+			"sKey": "sValue",
+		}
+		opts.CustomOptions[dataCustomOptionsKey] = incorrectJSONData
+		opts.CustomOptions[secureDataCustomOptionsKey] = incorrectSecureJSONData
 
-	require.Equal(t, expectedJSONData, jsonData)
-	require.Equal(t, expectedSecureJSONData, secureJSONData)
+		jsonData := JSONDataFromHTTPClientOptions(*opts)
+		secureJSONData := SecureJSONDataFromHTTPClientOptions(*opts)
+
+		require.Empty(t, jsonData)
+		require.Empty(t, secureJSONData)
+	})
 }
