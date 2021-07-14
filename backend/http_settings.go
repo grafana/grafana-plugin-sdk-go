@@ -103,8 +103,10 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 	}
 
 	var dat map[string]interface{}
-	if err := json.Unmarshal(jsonData, &dat); err != nil {
-		return nil, err
+	if jsonData != nil {
+		if err := json.Unmarshal(jsonData, &dat); err != nil {
+			return nil, err
+		}
 	}
 
 	if v, exists := dat["access"]; exists {

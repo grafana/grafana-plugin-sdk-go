@@ -91,6 +91,16 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 		return httpclient.Options{}, err
 	}
 
+	if s.BasicAuthEnabled {
+		httpSettings.BasicAuthEnabled = s.BasicAuthEnabled
+		httpSettings.BasicAuthUser = s.BasicAuthUser
+		httpSettings.BasicAuthPassword = s.DecryptedSecureJSONData["basicAuthPassword"]
+	} else if s.User != "" {
+		httpSettings.BasicAuthEnabled = true
+		httpSettings.BasicAuthUser = s.User
+		httpSettings.BasicAuthPassword = s.DecryptedSecureJSONData["password"]
+	}
+
 	return httpSettings.HTTPClientOptions(), nil
 }
 
