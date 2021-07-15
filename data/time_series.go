@@ -219,7 +219,6 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 
 	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
 	wideFrame.Meta = longFrame.Meta
-	wideFrame.SetIsWideTimeSeries(true)
 
 	sortKeys := make([]string, len(tsSchema.FactorIndices))
 	for i, v := range tsSchema.FactorIndices { // set dimension key order for final sort
