@@ -1006,7 +1006,6 @@ func TestLongToWide(t *testing.T) {
 	}
 	for i := range tests {
 		tt := tests[i]
-		tt.wideFrame.Meta = &data.FrameMeta{IsWideTimeSeries: true}
 		t.Run(tt.name, func(t *testing.T) {
 			frame, err := data.LongToWide(tt.longFrame, tt.tsFillMissing)
 			tt.Err(t, err)
@@ -1065,7 +1064,6 @@ func TestLongToWideBool(t *testing.T) {
 	}
 	for i := range tests {
 		tt := tests[i]
-		tt.wideFrame.Meta = &data.FrameMeta{IsWideTimeSeries: true}
 		t.Run(tt.name, func(t *testing.T) {
 			frame, err := data.LongToWide(tt.longFrame, tt.tsFillMissing)
 			tt.Err(t, err)
