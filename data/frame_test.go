@@ -161,6 +161,13 @@ func ExampleNewFrame() {
 		data.NewField("Temp", data.Labels{"place": "Ecuador"}, []float64{1, math.NaN()}),
 		data.NewField("Count", data.Labels{"place": "Ecuador"}, []*int64{&anInt64, nil}),
 	)
+	frame.Fields[1].Config = &data.FieldConfig{
+		Unit:        "f",
+		DisplayName: "disp",
+	}
+	frame.Fields[2].Config = &data.FieldConfig{
+		Unit: "fixed",
+	}
 	st, _ := frame.StringTable(-1, -1)
 	fmt.Println(st)
 	// Output:
