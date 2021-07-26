@@ -8,6 +8,21 @@ platform:
   arch: amd64
 
 steps:
+- name: restore-cache
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    restore: true
+    debug: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - 'vendor'
+  volumes:
+  - name: cache
+    path: /tmp/cache
+
 - name: build
   image: grafana/grafana-plugin-ci:1.2.1-alpine
   commands:
@@ -22,3 +37,23 @@ steps:
   image: grafana/grafana-plugin-ci:1.2.1-alpine
   commands:
   - mage -v test
+
+- name: rebuild-cache-with-filesystem
+  image: meltwater/drone-cache:dev
+  pull: true
+  settings:
+    backend: "filesystem"
+    rebuild: true
+    debug: true
+    cache_key: "volume"
+    archive_format: "gzip"
+    mount:
+      - 'vendor'
+  volumes:
+  - name: cache
+    path: /tmp/cache
+
+volumes:
+  - name: cache
+    host:
+      path: /var/lib/cache
