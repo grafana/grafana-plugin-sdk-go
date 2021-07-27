@@ -1,0 +1,26 @@
+---
+kind: pipeline
+type: docker
+name: 
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  image: grafana/grafana-plugin-ci:1.2.1-alpine
+  commands:
+  - mage -v build
+
+- name: lint
+  image: grafana/grafana-plugin-ci:1.2.1-alpine
+  commands:
+  - mage -v lint
+
+- name: test
+  image: grafana/grafana-plugin-ci:1.2.1-alpine
+  commands:
+  - mage -v test
+
+...
