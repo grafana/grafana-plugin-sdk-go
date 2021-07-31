@@ -1,0 +1,9 @@
+{
+    "hello": 3,
+    "string": "a",
+    "values": [true, false, true],
+    "mixed": ["a", true, 3],
+    "sub": {
+        "value": 2.34
+    }
+}
