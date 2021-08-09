@@ -255,3 +255,33 @@ message StreamPacket {
   // JSON-encoded data to publish into a channel.
   bytes data = 1;
 }
+
+message MigrationsRequest {
+  enum SchemaType {
+    DATASOURCE_QUERY = 0;
+  }
+
+  // The type of data we are migrating
+  SchemaType schemaType = 1;
+
+  // SemVer compatible version string
+  string schemaVersion = 2;
+  
+  // JSON-encoded data to migrate
+  bytes data = 3;
+}
+
+message MigrationsResponse {
+  enum Status {
+    OK = 0;
+    ERROR = 1;
+  }
+  Status status = 1;
+  
+  // JSON-encoded migrated data
+  bytes data = 2;
+}
+
+service Migration {
+    rpc Migrate(MigrationsRequest) returns (MigrationsResponse);
+}
