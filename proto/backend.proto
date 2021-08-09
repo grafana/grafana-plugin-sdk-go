@@ -272,12 +272,6 @@ message MigrationsRequest {
 }
 
 message MigrationsResponse {
-  enum Status {
-    OK = 0;
-    ERROR = 1;
-  }
-  Status status = 1;
-  
   // JSON-encoded migrated data
   bytes data = 2;
 }
