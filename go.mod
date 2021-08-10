@@ -3,6 +3,7 @@ module github.com/grafana/grafana-plugin-sdk-go
 go 1.14
 
 require (
+	github.com/Masterminds/semver/v3 v3.1.1
 	github.com/apache/arrow/go/arrow v0.0.0-20210223225224-5bea62493d91
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.5.1 // indirect
