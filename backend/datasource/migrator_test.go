@@ -14,14 +14,13 @@ func TestMigrator_Up(t *testing.T) {
 	t.Run("it should migrate up", func(t *testing.T) {
 		got, err := migrator.Up(datasource.DataSourceQuery, "0.1.0", "2.0.0", genData([]string{"0.1.0"}))
 		assert.Nil(t, err)
-		assert.Equal(t, []string{"0.1.0", "0.2.0", "1.0.0", "1.2.0", "2.0.0"}, got)
+		assert.Equal(t, genData([]string{"0.1.0", "0.2.0", "1.0.0", "1.2.0", "2.0.0"}), got)
 	})
 
 	t.Run("it should not re-migrate up", func(t *testing.T) {
 		got, err := migrator.Up(datasource.DataSourceQuery, "0.2.0", "2.0.0", genData([]string{"0.2.0"}))
 		assert.Nil(t, err)
-		assert.Equal(t, genData(versions), got)
-		assert.Equal(t, []string{"0.2.0", "1.0.0", "1.2.0", "2.0.0"}, got)
+		assert.Equal(t, genData([]string{"0.2.0", "1.0.0", "1.2.0", "2.0.0"}), got)
 	})
 
 	t.Run("it should not migrate beyond next version", func(t *testing.T) {
@@ -33,7 +32,6 @@ func TestMigrator_Up(t *testing.T) {
 	t.Run("it should handle a next version outside the range", func(t *testing.T) {
 		got, err := migrator.Up(datasource.DataSourceQuery, "2.0.0", "3.0.0", genData([]string{"2.0.0"}))
 		assert.Nil(t, err)
-		assert.Equal(t, genData(versions), got)
 		assert.Equal(t, genData([]string{"2.0.0"}), got)
 	})
 }

@@ -265,10 +265,13 @@ message MigrationsRequest {
   SchemaType schemaType = 1;
 
   // SemVer compatible version string
-  string schemaVersion = 2;
+  string currentVersion= 2;
+
+  // SemVer compatible version string
+  string nextVersion = 3;
   
   // JSON-encoded data to migrate
-  bytes data = 3;
+  bytes data = 4;
 }
 
 message MigrationsResponse {
