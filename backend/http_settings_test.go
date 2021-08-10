@@ -144,5 +144,21 @@ func TestParseHTTPSettings(t *testing.T) {
 			}
 			require.Equal(t, expectedOpts, opts)
 		})
+
+		t.Run("should fill the basic authentication when password in jsondata instead of secureData", func(t *testing.T) {
+			secureData["basicAuthPassword"] = ""
+			jsonStr := `{
+				"basicAuth": true,
+				"basicAuthUser": "user",
+				"basicAuthPassword": "pwd2"
+			}`
+			s, err := parseHTTPSettings([]byte(jsonStr), secureData)
+			require.NoError(t, err)
+			require.NotNil(t, s)
+
+			opts := s.HTTPClientOptions()
+			require.NotNil(t, opts)
+			require.Equal(t, "pwd2", opts.BasicAuth.Password)
+		})
 	})
 }

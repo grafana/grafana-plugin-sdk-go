@@ -132,8 +132,10 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		if v, exists := dat["basicAuthUser"]; exists {
 			s.BasicAuthUser = v.(string)
 		}
-		if v, exists := secureJSONData["basicAuthPassword"]; exists {
+		if v, exists := secureJSONData["basicAuthPassword"]; exists && v != "" {
 			s.BasicAuthPassword = v
+		} else if v, exists := dat["basicAuthPassword"]; exists {
+			s.BasicAuthPassword = v.(string)
 		}
 	}
 
