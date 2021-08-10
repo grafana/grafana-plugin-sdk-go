@@ -10,6 +10,7 @@ import (
 type MigrationType int
 
 const (
+	// DataSourceQuery is used to migrate the query JSON in dashboard panels.
 	DataSourceQuery MigrationType = iota
 )
 
@@ -19,7 +20,6 @@ func (mt MigrationType) String() string {
 		return "DataSourceQuery"
 	default:
 		panic("datasource: unknown migration type")
-
 	}
 }
 
@@ -37,7 +37,7 @@ type Migrator struct {
 	migrations MigrationsMap
 }
 
-// Migrator allocates and returns a new Migrator
+// NewMigrator allocates and returns a new Migrator
 func NewMigrator() *Migrator {
 	return &Migrator{
 		migrations: make(MigrationsMap),
@@ -96,7 +96,6 @@ func (m *Migrator) Up(mt MigrationType, current, next string, data json.RawMessa
 		if err != nil {
 			return nil, err
 		}
-
 	}
 
 	return migrated, nil
@@ -105,8 +104,8 @@ func (m *Migrator) Up(mt MigrationType, current, next string, data json.RawMessa
 // Down runs the down migrations on the provided data until it reaches the expected version.
 func (m *Migrator) Down(mt MigrationType, current, next string, data json.RawMessage) (json.RawMessage, error) {
 	var (
-		versions                 = m.getVersions()
-		migrated json.RawMessage = data
+		versions = m.getVersions()
+		migrated = data
 		err      error
 	)
 
@@ -144,7 +143,6 @@ func (m *Migrator) Down(mt MigrationType, current, next string, data json.RawMes
 		if err != nil {
 			return nil, err
 		}
-
 	}
 
 	return migrated, nil
