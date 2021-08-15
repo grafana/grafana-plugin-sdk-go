@@ -16,17 +16,13 @@ const (
 	// FrameTypeTimeSeriesMany ...
 	FrameTypeTimeSeriesMany = "timeseries-many"
 
-	// // FrameTypeOHLC ... (known fields for open/high/low/close/ volume)
-	// FrameTypeOHLC = "timeseries-wide-ohlc"
-
-	// // FrameTypeHistogram ...
-	// FrameTypeHistogram = "histogram"
-
-	// // FrameTypeDirectoryListing ...
-	// FrameTypeDirectoryListing = "directory-listing"
-
-	// // Trace ...
-	// Trace = "trace"
+	// Soon?
+	// "timeseries-wide-ohlc" -- known fields for open/high/low/close
+	// "histogram" -- BucketMin, BucketMax, values...
+	// "directory-listing" -- known fields for name, size, mime-type, modified, etc
+	// "trace" -- ??
+	// "node-graph-nodes"
+	// "node-graph-edges"
 )
 
 // IsKnownType checks if the value is a known structure
