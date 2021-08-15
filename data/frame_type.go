@@ -14,18 +14,21 @@ const (
 	// field[1..n]:
 	//  * distinct labels may be attached to each field
 	//  * numeric & boolean fields can be drawn as lines on a graph
+	// See https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#wide-format
 	FrameTypeTimeSeriesWide = "timeseries-wide"
 
-	// FrameTypeTimeSeriesLong has at least two fields:
+	// FrameTypeTimeSeriesLong uses string fields to define dimensions.  I has at least two fields:
 	// field[0]:
 	//  * type time
 	//  * ascending values
-	//  * duplicate times used for different dimensions
+	//  * duplicate times exist for multiple dimensions
 	// field[1..n]:
-	//  * string fields convert to labels
+	//  * string fields define series dimensions
+	//  * non-string fields define the series progression
+	// See https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#long-format
 	FrameTypeTimeSeriesLong = "timeseries-long"
 
-	// FrameTypeTimeSeriesMany has exacty two fields
+	// FrameTypeTimeSeriesMany is the same as "Wide" with exactly one numeric value field
 	// field[0]:
 	//  * type time
 	//  * ascending values
