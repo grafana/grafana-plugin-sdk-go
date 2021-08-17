@@ -255,6 +255,10 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		return nil, err
 	}
 
+	if wideFrame.Meta == nil {
+		wideFrame.Meta = &FrameMeta{}
+	}
+	wideFrame.Meta.Type = FrameTypeTimeSeriesWide
 	return wideFrame, nil
 }
 
@@ -498,6 +502,11 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			longFrameCounter++
 		}
 	}
+
+	if longFrame.Meta == nil {
+		longFrame.SetMeta(&FrameMeta{})
+	}
+	longFrame.Meta.Type = FrameTypeTimeSeriesLong
 	return longFrame, nil
 }
 
