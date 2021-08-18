@@ -1,6 +1,8 @@
 package data
 
-// FrameType, when set, asserts that the frame has a structure that is valid to for corresponding FrameType. This property is currently optional, so FrameType may be FrameTypeUnknown even if the properties of the Frame correspond to a defined FrameType.
+// FrameType, when set, asserts that the frame has a structure that is valid to for corresponding FrameType.
+// This property is currently optional, so FrameType may be FrameTypeUnknown even if the properties of
+// the Frame correspond to a defined FrameType.
 type FrameType string
 
 const (
@@ -66,4 +68,16 @@ func FrameTypes() []FrameType {
 		FrameTypeTimeSeriesLong,
 		FrameTypeTimeSeriesMany,
 	}
+}
+
+// IsTimeSeries checks if the type represents a timeseries
+func (p FrameType) IsTimeSeries() bool {
+	switch p {
+	case
+		FrameTypeTimeSeriesWide,
+		FrameTypeTimeSeriesLong,
+		FrameTypeTimeSeriesMany:
+		return true
+	}
+	return false
 }
