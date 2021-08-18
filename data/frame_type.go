@@ -1,6 +1,6 @@
 package data
 
-// FrameType indicates the frame structure
+// FrameType, when set, asserts that the frame has a structure that is valid to for corresponding FrameType. This property is currently optional, so FrameType may be FrameTypeUnknown even if the properties of the Frame correspond to a defined FrameType.
 type FrameType string
 
 const (
