@@ -10,7 +10,7 @@ import (
 // NOTE -- in javascript this can accept any `[key: string]: any;` however
 // this interface only exposes the values we want to be exposed
 type FrameMeta struct {
-	// Type asserts that he frame matches a known type structure
+	// Type asserts that the frame matches a known type structure
 	Type FrameType `json:"type,omitempty"`
 
 	// Path is a browsable path on the datasource.
