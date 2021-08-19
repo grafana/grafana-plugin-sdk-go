@@ -1,6 +1,7 @@
 package data
 
-// FrameType, when set, asserts that the frame has a structure that is valid to for corresponding FrameType.
+// A FrameType string, when present in a frame's metadata, asserts that the
+// frame's structure conforms to the FrameType's specification.
 // This property is currently optional, so FrameType may be FrameTypeUnknown even if the properties of
 // the Frame correspond to a defined FrameType.
 type FrameType string
