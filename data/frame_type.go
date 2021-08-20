@@ -48,6 +48,15 @@ const (
 	// "trace" -- ??
 	// "node-graph-nodes"
 	// "node-graph-edges"
+
+	// FrameTypeDirectoryListing represents the items in a directory
+	// field[0]:
+	//  * name
+	//  * new paths can be constructed from the parent path + separator + name
+	// field[1]:
+	//  * media-type
+	//  * when "directory" it can be nested
+	FrameTypeDirectoryListing = "directory-listing"
 )
 
 // IsKnownType checks if the value is a known structure
