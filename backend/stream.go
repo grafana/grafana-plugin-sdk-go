@@ -161,7 +161,7 @@ func (s *StreamSender) SendJSON(data []byte) error {
 }
 
 // SendBytes allow sending arbitrary Bytes to a stream. When sending data.Frame
-// prefer using SendFrame method.
+// prefer using SendFrame method. When sending an arbitrary raw JSON prefer using SendJSON method.
 func (s *StreamSender) SendBytes(data []byte) error {
 	packet := &pluginv2.StreamPacket{
 		Data: data,
