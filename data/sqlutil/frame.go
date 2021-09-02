@@ -15,7 +15,7 @@ func NewFrame(columns []string, converters ...Converter) *data.Frame {
 		fields[i].Name = columns[i]
 	}
 
-	return data.NewFrame("results", fields...)
+	return data.NewFrame("", fields...)
 }
 
 // Append appends the row to the dataframe, using the converters to convert the scanned value into a value that can be put into a data.Frame
