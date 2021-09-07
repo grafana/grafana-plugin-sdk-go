@@ -44,7 +44,6 @@ const (
 	// Soon?
 	// "timeseries-wide-ohlc" -- known fields for open/high/low/close
 	// "histogram" -- BucketMin, BucketMax, values...
-	// "directory-listing" -- known fields for name, size, mime-type, modified, etc
 	// "trace" -- ??
 	// "node-graph-nodes"
 	// "node-graph-edges"
@@ -57,6 +56,14 @@ const (
 	//  * media-type
 	//  * when "directory" it can be nested
 	FrameTypeDirectoryListing = "directory-listing"
+
+	// FrameTypeTable represents an arbitrary table structure with no constraints
+	FrameTypeTable = "table"
+
+	// FrameTypeTableFooter may exist next to FrameTypeTable and represent data that
+	// should show up in the footer section.  It must have the same width, but not
+	// necessarily same field types as the sibling table data
+	FrameTypeTableFooter = "table-footer"
 )
 
 // IsKnownType checks if the value is a known structure
