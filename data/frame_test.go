@@ -630,28 +630,28 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
-func TestFieldIndexByName(t *testing.T) {
+func TestFrameFieldIndexByName(t *testing.T) {
 	frame := data.NewFrame("Frame Name",
 		data.NewField("Time", nil, []time.Time{}),
 		data.NewField("Temp", nil, []float64{}),
 		data.NewField("Count", nil, []*int64{}),
 	)
-	require.Equal(t, 0, data.FieldIndexByName(frame, "Time"))
-	require.Equal(t, -1, data.FieldIndexByName(frame, "time"))
-	require.Equal(t, -1, data.FieldIndexByName(frame, "non-existent"))
+	require.Equal(t, 0, frame.FieldIndexByName("Time"))
+	require.Equal(t, -1, frame.FieldIndexByName("time"))
+	require.Equal(t, -1, frame.FieldIndexByName("non-existent"))
 }
 
-func TestFieldByName(t *testing.T) {
+func TestFrameFieldByName(t *testing.T) {
 	frame := data.NewFrame("Frame Name",
 		data.NewField("Time", nil, []time.Time{}),
 		data.NewField("Temp", nil, []float64{}),
 		data.NewField("Count", nil, []*int64{}),
 	)
-	f, ok := data.FieldByName(frame, "Time")
+	f, ok := frame.FieldByName("Time")
 	require.True(t, ok)
 	require.Equal(t, "Time", f.Name)
-	_, ok = data.FieldByName(frame, "time")
+	_, ok = frame.FieldByName("time")
 	require.False(t, ok)
-	_, ok = data.FieldByName(frame, "non-existent")
+	_, ok = frame.FieldByName("non-existent")
 	require.False(t, ok)
 }

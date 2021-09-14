@@ -481,9 +481,9 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 }
 
 // FieldIndexByName returns field index in frame by field name (first occurrence), or -1 if not found.
-func FieldIndexByName(frame *Frame, fieldName string) int {
-	for i, f := range frame.Fields {
-		if f.Name == fieldName {
+func (f *Frame) FieldIndexByName(fieldName string) int {
+	for i, field := range f.Fields {
+		if field.Name == fieldName {
 			return i
 		}
 	}
@@ -491,10 +491,10 @@ func FieldIndexByName(frame *Frame, fieldName string) int {
 }
 
 // FieldByName returns Field by its name. If not found then bool return value will be false.
-func FieldByName(frame *Frame, fieldName string) (*Field, bool) {
-	index := FieldIndexByName(frame, fieldName)
+func (f *Frame) FieldByName(fieldName string) (*Field, bool) {
+	index := f.FieldIndexByName(fieldName)
 	if index >= 0 {
-		return frame.Fields[index], true
+		return f.Fields[index], true
 	}
 	return nil, false
 }
