@@ -652,6 +652,6 @@ func TestFieldByName(t *testing.T) {
 	require.Equal(t, "Time", f.Name)
 	_, ok = data.FieldByName(frame, "time")
 	require.False(t, ok)
-	f, ok = data.FieldByName(frame, "non-existent")
+	_, ok = data.FieldByName(frame, "non-existent")
 	require.False(t, ok)
 }
