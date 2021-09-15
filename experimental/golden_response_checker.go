@@ -20,6 +20,13 @@ func CheckGoldenFramer(path string, f data.Framer, updateFile bool) error {
 	return CheckGoldenDataResponse(path, backend.FrameResponse(f), updateFile)
 }
 
+// CheckGoldenFrame calls CheckGoldenDataResponse using a single frame
+func CheckGoldenFrame(path string, f *data.Frame, updateFile bool) error {
+	dr := backend.DataResponse{}
+	dr.Frames = data.Frames{f}
+	return CheckGoldenDataResponse(path, &dr, updateFile)
+}
+
 // CheckGoldenDataResponse will verify that the stored file matches the given data.DataResponse
 // when the updateFile flag is set, this will both add errors to the response and update the saved file
 func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile bool) error {

@@ -2,6 +2,7 @@ package framestruct
 
 import (
 	"errors"
+	"fmt"
 	"reflect"
 	"sort"
 	"strings"
@@ -18,13 +19,20 @@ type converter struct {
 	tags       []string
 	anyMap     bool
 	col0       string
+	maxLen     int
+	converters map[string]FieldConverter
 }
 
 // ToDataFrame flattens an arbitrary struct or slice of structs into a *data.Frame
-func ToDataFrame(name string, toConvert interface{}) (*data.Frame, error) {
+func ToDataFrame(name string, toConvert interface{}, opts ...FramestructOption) (*data.Frame, error) {
 	cr := &converter{
-		fields: make(map[string]*data.Field),
-		tags:   make([]string, 3),
+		fields:     make(map[string]*data.Field),
+		tags:       make([]string, 3),
+		converters: make(map[string]FieldConverter),
+	}
+
+	for _, o := range opts {
+		o(cr)
 	}
 
 	return cr.toDataframe(name, toConvert)
@@ -36,18 +44,43 @@ func ToDataFrame(name string, toConvert interface{}) (*data.Frame, error) {
 // for the type conversion. If this function delegates to a data.Framer, it
 // will use the data.Frame name defined by the type rather than passed to this
 // function
-func ToDataFrames(name string, toConvert interface{}) (data.Frames, error) {
+func ToDataFrames(name string, toConvert interface{}, opts ...FramestructOption) (data.Frames, error) {
 	framer, ok := toConvert.(data.Framer)
 	if ok {
 		return framer.Frames()
 	}
 
-	frame, err := ToDataFrame(name, toConvert)
+	frame, err := ToDataFrame(name, toConvert, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return []*data.Frame{frame}, nil
+}
+
+// FieldConverter is a function that takes the value of a field, converts it,
+// and returns the new value as an interface
+type FieldConverter func(interface{}) (interface{}, error)
+
+// FramestructOption takes a converter and applies some configuration to it
+type FramestructOption func(cr *converter)
+
+// WithConverterFor configures a FieldConverter for a field with the name
+// fieldname. This converter will be applied to fields _after_ the name structag
+// is applied.
+func WithConverterFor(fieldname string, c FieldConverter) FramestructOption {
+	return func(cr *converter) {
+		cr.converters[fieldname] = c
+	}
+}
+
+// WithColumn0 specifies the 0th column of the returned Data Frame. Using this
+// option will override any `col0` framestruct tags that have been set. This is
+// most useful when marshalling maps
+func WithColumn0(fieldname string) FramestructOption {
+	return func(cr *converter) {
+		cr.col0 = fieldname
+	}
 }
 
 func (c *converter) toDataframe(name string, toConvert interface{}) (*data.Frame, error) {
@@ -151,7 +184,8 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 		return errors.New("map must be map[string]interface{}")
 	}
 
-	for name, value := range m {
+	for _, name := range sortedKeys(m) {
+		value := m[name]
 		fieldName := c.fieldName(name, tags, prefix)
 		v := c.ensureValue(reflect.ValueOf(value))
 		if err := c.handleValue(v, "", fieldName); err != nil {
@@ -162,27 +196,75 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 	return nil
 }
 
+func sortedKeys(m map[string]interface{}) []string {
+	keys := make([]string, len(m))
+
+	var idx int
+	for key := range m {
+		keys[idx] = key
+		idx++
+	}
+	sort.Strings(keys)
+
+	return keys
+}
+
 func (c *converter) upsertField(v reflect.Value, fieldName string) error {
+	valueOf, err := c.convertField(v, fieldName)
+	if err != nil {
+		return err
+	}
+
 	if _, exists := c.fields[fieldName]; !exists {
 		// keep track of unique fields in the order they appear
 		c.fieldNames = append(c.fieldNames, fieldName)
-		v, err := sliceFor(v.Interface())
+		v, err := sliceFor(valueOf)
 		if err != nil {
 			return err
 		}
 
 		c.fields[fieldName] = data.NewField(fieldName, nil, v)
 	}
-	c.fields[fieldName].Append(v.Interface())
+
+	c.padField(c.fields[fieldName], c.maxLen-1)
+	c.appendToField(fieldName, toPointer(valueOf))
 	return nil
 }
 
+func (c *converter) convertField(v reflect.Value, fieldName string) (interface{}, error) {
+	if converter, exists := c.converters[fieldName]; exists {
+		valueOf, err := converter(v.Interface())
+		if err != nil {
+			return nil, fmt.Errorf("field conversion error %s: %s", fieldName, err)
+		}
+		return valueOf, nil
+	}
+	return v.Interface(), nil
+}
+
+func (c *converter) appendToField(name string, value interface{}) {
+	c.fields[name].Append(value)
+	if c.fields[name].Len() > c.maxLen {
+		c.maxLen++
+	}
+}
+
 func (c *converter) createFrame(name string) *data.Frame {
+	for _, f := range c.fields {
+		c.padField(f, c.maxLen)
+	}
+
 	frame := data.NewFrame(name)
 	for _, f := range c.getFieldnames() {
 		frame.Fields = append(frame.Fields, c.fields[f])
 	}
 	return frame
+}
+
+func (c *converter) padField(f *data.Field, maxLen int) {
+	for f.Len() < maxLen {
+		f.Append(nil)
+	}
 }
 
 func (c *converter) getFieldnames() []string {

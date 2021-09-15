@@ -68,9 +68,11 @@ type BasicAuthOptions struct {
 // TimeoutOptions timeout/connection options.
 type TimeoutOptions struct {
 	Timeout               time.Duration
+	DialTimeout           time.Duration
 	KeepAlive             time.Duration
 	TLSHandshakeTimeout   time.Duration
 	ExpectContinueTimeout time.Duration
+	MaxConnsPerHost       int
 	MaxIdleConns          int
 	MaxIdleConnsPerHost   int
 	IdleConnTimeout       time.Duration
@@ -79,9 +81,11 @@ type TimeoutOptions struct {
 // DefaultTimeoutOptions default timeout/connection options.
 var DefaultTimeoutOptions = TimeoutOptions{
 	Timeout:               30 * time.Second,
+	DialTimeout:           10 * time.Second,
 	KeepAlive:             30 * time.Second,
 	TLSHandshakeTimeout:   10 * time.Second,
 	ExpectContinueTimeout: 1 * time.Second,
+	MaxConnsPerHost:       0,
 	MaxIdleConns:          100,
 	MaxIdleConnsPerHost:   100,
 	IdleConnTimeout:       90 * time.Second,

@@ -286,6 +286,25 @@ var (
 			},
 		},
 	}
+
+	// NullBoolConverter creates a *bool using the scan type of `sql.NullBool`
+	NullBoolConverter = Converter{
+		Name:          "nullable bool converter",
+		InputScanType: reflect.TypeOf(sql.NullBool{}),
+		InputTypeName: "BOOLEAN",
+		FrameConverter: FrameConverter{
+			FieldType: data.FieldTypeNullableBool,
+			ConverterFunc: func(n interface{}) (interface{}, error) {
+				v := n.(*sql.NullBool)
+
+				if !v.Valid {
+					return (*bool)(nil), nil
+				}
+
+				return &v.Bool, nil
+			},
+		},
+	}
 )
 
 // NullConverters is a map of data type names (from reflect.TypeOf(...).String()) to converters
@@ -296,4 +315,5 @@ var NullConverters = map[reflect.Type]Converter{
 	reflect.TypeOf(int32(0)):    NullInt32Converter,
 	reflect.TypeOf(""):          NullStringConverter,
 	reflect.TypeOf(time.Time{}): NullTimeConverter,
+	reflect.TypeOf(false):       NullBoolConverter,
 }

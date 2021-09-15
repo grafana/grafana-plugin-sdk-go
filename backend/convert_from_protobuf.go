@@ -215,7 +215,9 @@ func (f ConvertFromProtobuf) SubscribeStreamRequest(protoReq *pluginv2.Subscribe
 func (f ConvertFromProtobuf) SubscribeStreamResponse(protoReq *pluginv2.SubscribeStreamResponse) *SubscribeStreamResponse {
 	return &SubscribeStreamResponse{
 		Status: SubscribeStreamStatus(protoReq.GetStatus()),
-		Data:   protoReq.GetData(),
+		InitialData: &InitialData{
+			data: protoReq.Data,
+		},
 	}
 }
 

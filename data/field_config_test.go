@@ -15,29 +15,63 @@ func TestReadMappings(t *testing.T) {
 		"description": "turn on/off system. write 1 to turn on the system and write 0 to turn off the system",
 		"writeable": true,
 		"mappings": [
-		  {
-			"text": "OFF",
-			"value": "0"
-		  },
-		  {
-			"type": 1,
-			"text": "ON",
-			"value": "1"
-		  },
-		  {
-			"type": 2,
-			"text": "0-100",
-			"from": "0",
-			"to": "100"
-		  }
-		]
+			{
+			  "type": "value",
+			  "options": {
+				"0": {
+				  "text": "OFF",
+				  "color": "rgba(56, 56, 56, 1)"
+				},
+				"1": {
+				  "text": "ON",
+				  "color": "dark-green",
+				  "index": 1
+				}
+			  }
+			},
+			{
+			  "type": "range",
+			  "options": {
+				"from": 0,
+				"to": 100,
+				"result": {
+				  "text": "0-100",
+				  "color": "yellow",
+				  "index": 2
+				}
+			  }
+			},
+			{
+			  "type": "range",
+			  "options": {
+				"from": 25,
+				"result": {
+				  "text": "25-Inf",
+				  "color": "yellow",
+				  "index": 3
+				}
+			  }
+			},
+			{
+			  "type": "special",
+			  "options": {
+				"match": "nan",
+				"result": {
+				  "text": "Batman!",
+				  "color": "dark-red",
+				  "index": 4
+				}
+			  }
+			}
+		  ]
 	}`
 
 	cfg := &data.FieldConfig{}
 	err := json.Unmarshal([]byte(jsonText), &cfg)
 	require.NoError(t, err, "error parsing json")
 
-	assert.Len(t, cfg.Mappings, 3)
+	require.True(t, *cfg.Writeable)
+	require.Len(t, cfg.Mappings, 4)
 
 	out, err := json.MarshalIndent(cfg, "\t", "\t")
 	require.NoError(t, err, "error parsing json")
@@ -45,24 +79,6 @@ func TestReadMappings(t *testing.T) {
 
 	fmt.Printf("%s", str)
 
-	assert.JSONEq(t, `{
-		"description": "turn on/off system. write 1 to turn on the system and write 0 to turn off the system",
-		"mappings": [
-			{
-				"text": "OFF",
-				"value": "0"
-			},
-			{
-				"text": "ON",
-				"type": 1,
-				"value": "1"
-			},
-			{
-				"text": "0-100",
-				"type": 2,
-				"from": "0",
-				"to": "100"
-			}
-		]
-	}`, str)
+	// Same text after export
+	assert.JSONEq(t, jsonText, str)
 }

@@ -1,8 +1,13 @@
 package live
 
 import (
+	"errors"
+	"regexp"
 	"strings"
 )
+
+// ErrInvalidChannelID returned when channel ID does not have valid format.
+var ErrInvalidChannelID = errors.New("invalid channel ID")
 
 // Channel is the channel ID split by parts.
 type Channel struct {
@@ -21,24 +26,37 @@ type Channel struct {
 	Path string `json:"path,omitempty"`
 }
 
-// ParseChannel parses the parts from a channel ID:
-//   ${scope} / ${namespace} / ${path}.
-func ParseChannel(chID string) Channel {
-	addr := Channel{}
+const (
+	maxChannelLength = 160
+)
+
+// ParseChannel parses the parts from a channel ID.
+// Valid channel IDs have length <= 160 characters and consist
+// of 3 parts (scope, namespace, path) delimited by "/": like
+// "${scope}/${namespace}/${path}".
+// Scope and namespace parts can only have alphanumeric ascii symbols,
+// underscore and dash. Path can additionally have "/", "=" and ".".
+// For invalid channel IDs function returns ErrInvalidChannelID.
+func ParseChannel(chID string) (Channel, error) {
+	if chID == "" || len(chID) > maxChannelLength {
+		return Channel{}, ErrInvalidChannelID
+	}
 	parts := strings.SplitN(chID, "/", 3)
-	length := len(parts)
-	if length > 0 {
-		addr.Scope = parts[0]
+	if len(parts) != 3 {
+		return Channel{}, ErrInvalidChannelID
 	}
-	if length > 1 {
-		addr.Namespace = parts[1]
+	ch := Channel{
+		Scope:     parts[0],
+		Namespace: parts[1],
+		Path:      parts[2],
 	}
-	if length > 2 {
-		addr.Path = parts[2]
+	if !ch.IsValid() {
+		return ch, ErrInvalidChannelID
 	}
-	return addr
+	return ch, nil
 }
 
+// String converts Channel to a string representation (channel ID).
 func (c Channel) String() string {
 	ch := c.Scope
 	if c.Namespace != "" {
@@ -50,7 +68,24 @@ func (c Channel) String() string {
 	return ch
 }
 
-// IsValid checks if all parts of the address are valid.
+var (
+	scopeNamespacePattern = regexp.MustCompile(`^[A-z0-9_\-]*$`)
+	pathPattern           = regexp.MustCompile(`^[A-z0-9_\-/=.]*$`)
+)
+
+// IsValid checks if all parts of the Channel are valid.
 func (c *Channel) IsValid() bool {
-	return c.Scope != "" && c.Namespace != "" && c.Path != ""
+	allPartsExist := c.Scope != "" && c.Namespace != "" && c.Path != ""
+	if !allPartsExist {
+		return false
+	}
+	ok := scopeNamespacePattern.MatchString(c.Scope)
+	if !ok {
+		return false
+	}
+	ok = scopeNamespacePattern.MatchString(c.Namespace)
+	if !ok {
+		return false
+	}
+	return pathPattern.MatchString(c.Path)
 }

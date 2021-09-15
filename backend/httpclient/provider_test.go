@@ -11,50 +11,42 @@ import (
 
 func TestProvider(t *testing.T) {
 	t.Run("NewProvider() without any options", func(t *testing.T) {
-		provider := NewProvider()
-		require.NotNil(t, provider)
-		require.Equal(t, BasicAuthenticationMiddlewareName, provider.Opts.Middlewares[0].(MiddlewareName).MiddlewareName())
-		require.Equal(t, CustomHeadersMiddlewareName, provider.Opts.Middlewares[1].(MiddlewareName).MiddlewareName())
+		t.Run("Should set default middlewares", func(t *testing.T) {
+			provider := NewProvider()
+			require.NotNil(t, provider)
+			require.Equal(t, BasicAuthenticationMiddlewareName, provider.Opts.Middlewares[0].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, provider.Opts.Middlewares[1].(MiddlewareName).MiddlewareName())
+		})
 
 		t.Run("New client should use default middlewares", func(t *testing.T) {
-			usedMiddlewares := []Middleware{}
-			client, err := provider.New(Options{
-				ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
-					usedMiddlewares = make([]Middleware, len(existingMiddleware))
-					copy(usedMiddlewares, existingMiddleware)
-					return existingMiddleware
-				},
-			})
+			ctx := newProviderTestContext(t)
+			client, err := ctx.provider.New()
 			require.NoError(t, err)
 			require.NotNil(t, client)
-			require.Len(t, usedMiddlewares, 2)
-			require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-			require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+			require.Len(t, ctx.usedMiddlewares, 2)
+			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("Transport should use default middlewares", func(t *testing.T) {
-			usedMiddlewares := []Middleware{}
-			transport, err := provider.GetTransport(Options{
-				ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
-					usedMiddlewares = make([]Middleware, len(existingMiddleware))
-					copy(usedMiddlewares, existingMiddleware)
-					return existingMiddleware
-				},
-			})
+			ctx := newProviderTestContext(t)
+			transport, err := ctx.provider.GetTransport()
 			require.NoError(t, err)
 			require.NotNil(t, transport)
-			require.Len(t, usedMiddlewares, 2)
-			require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-			require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+			require.Len(t, ctx.usedMiddlewares, 2)
+			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("New() with options and no middleware should return expected http client and transport", func(t *testing.T) {
-			client, err := provider.New(Options{
+			ctx := newProviderTestContext(t)
+			client, err := ctx.provider.New(Options{
 				Timeouts: &TimeoutOptions{
 					Timeout:               time.Second,
 					KeepAlive:             2 * time.Second,
 					TLSHandshakeTimeout:   3 * time.Second,
 					ExpectContinueTimeout: 4 * time.Second,
+					MaxConnsPerHost:       10,
 					MaxIdleConns:          5,
 					MaxIdleConnsPerHost:   7,
 					IdleConnTimeout:       6 * time.Second,
@@ -77,27 +69,21 @@ func TestProvider(t *testing.T) {
 
 		t.Run("New() with options middleware should return expected http.Client", func(t *testing.T) {
 			ctx := &testContext{}
-			usedMiddlewares := []Middleware{}
-			client, err := provider.New(Options{
+			pCtx := newProviderTestContext(t)
+			client, err := pCtx.provider.New(Options{
 				Middlewares: []Middleware{ctx.createMiddleware("mw1"), ctx.createMiddleware("mw2"), ctx.createMiddleware("mw3")},
-				ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
-					middlewares := existingMiddleware
-					for i, j := 0, len(existingMiddleware)-1; i < j; i, j = i+1, j-1 {
-						middlewares[i], middlewares[j] = middlewares[j], middlewares[i]
-					}
-					usedMiddlewares = middlewares
-					return middlewares
-				},
 			})
 			require.NoError(t, err)
 			require.NotNil(t, client)
 			require.Equal(t, DefaultTimeoutOptions.Timeout, client.Timeout)
 
 			t.Run("Should use configured middlewares and implement MiddlewareName", func(t *testing.T) {
-				require.Len(t, usedMiddlewares, 3)
-				require.Equal(t, "mw1", usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-				require.Equal(t, "mw2", usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-				require.Equal(t, "mw3", usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+				require.Len(t, pCtx.usedMiddlewares, 5)
+				require.Equal(t, "mw1", pCtx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+				require.Equal(t, "mw2", pCtx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+				require.Equal(t, "mw3", pCtx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+				require.Equal(t, BasicAuthenticationMiddlewareName, pCtx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
+				require.Equal(t, CustomHeadersMiddlewareName, pCtx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
 			})
 
 			t.Run("When roundtrip should call expected middlewares", func(t *testing.T) {
@@ -119,13 +105,16 @@ func TestProvider(t *testing.T) {
 		opts := ProviderOptions{
 			Timeout: &TimeoutOptions{
 				Timeout:               time.Second,
+				DialTimeout:           time.Second,
 				KeepAlive:             2 * time.Second,
 				TLSHandshakeTimeout:   3 * time.Second,
 				ExpectContinueTimeout: 4 * time.Second,
+				MaxConnsPerHost:       10,
 				MaxIdleConns:          5,
 				MaxIdleConnsPerHost:   7,
 				IdleConnTimeout:       6 * time.Second,
 			},
+			Middlewares: []Middleware{CustomHeadersMiddleware()},
 		}
 
 		t.Run("Should use provider options when calling New() without options", func(t *testing.T) {
@@ -139,6 +128,24 @@ func TestProvider(t *testing.T) {
 			require.Equal(t, 1, ctx.configureClientCount)
 			require.Equal(t, 1, ctx.configureTransportCount)
 			require.Equal(t, 1, ctx.configureTLSConfigCount)
+
+			require.Len(t, ctx.usedMiddlewares, 1)
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+		})
+
+		t.Run("Should use provider options when calling New() with options", func(t *testing.T) {
+			ctx := newProviderTestContext(t, opts)
+			client, err := ctx.provider.New(Options{})
+			require.NoError(t, err)
+			require.NotNil(t, client)
+
+			require.Equal(t, 1, ctx.configureMiddlewareCount)
+			require.Equal(t, 1, ctx.configureClientCount)
+			require.Equal(t, 1, ctx.configureTransportCount)
+			require.Equal(t, 1, ctx.configureTLSConfigCount)
+
+			require.Len(t, ctx.usedMiddlewares, 1)
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("Should use provider options when calling GetTransport() without options", func(t *testing.T) {
@@ -148,6 +155,7 @@ func TestProvider(t *testing.T) {
 			require.NotNil(t, transport)
 			require.Equal(t, 3*time.Second, ctx.transport.TLSHandshakeTimeout)
 			require.Equal(t, 4*time.Second, ctx.transport.ExpectContinueTimeout)
+			require.Equal(t, 10, ctx.transport.MaxConnsPerHost)
 			require.Equal(t, 5, ctx.transport.MaxIdleConns)
 			require.Equal(t, 7, ctx.transport.MaxIdleConnsPerHost)
 			require.Equal(t, 6*time.Second, ctx.transport.IdleConnTimeout)
@@ -156,6 +164,24 @@ func TestProvider(t *testing.T) {
 			require.Equal(t, 0, ctx.configureClientCount)
 			require.Equal(t, 1, ctx.configureTransportCount)
 			require.Equal(t, 1, ctx.configureTLSConfigCount)
+
+			require.Len(t, ctx.usedMiddlewares, 1)
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+		})
+
+		t.Run("Should use provider options when calling GetTransport() with options", func(t *testing.T) {
+			ctx := newProviderTestContext(t, opts)
+			transport, err := ctx.provider.GetTransport(Options{})
+			require.NoError(t, err)
+			require.NotNil(t, transport)
+
+			require.Equal(t, 1, ctx.configureMiddlewareCount)
+			require.Equal(t, 0, ctx.configureClientCount)
+			require.Equal(t, 1, ctx.configureTransportCount)
+			require.Equal(t, 1, ctx.configureTLSConfigCount)
+
+			require.Len(t, ctx.usedMiddlewares, 1)
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 		})
 	})
 }
@@ -165,6 +191,7 @@ type providerTestContext struct {
 	configureClientCount     int
 	configureTransportCount  int
 	configureTLSConfigCount  int
+	usedMiddlewares          []Middleware
 	client                   *http.Client
 	transport                *http.Transport
 	tlsConfig                *tls.Config
@@ -184,6 +211,8 @@ func newProviderTestContext(t *testing.T, opts ...ProviderOptions) *providerTest
 
 	providerOpts.ConfigureMiddleware = func(opts Options, existingMiddleware []Middleware) []Middleware {
 		ctx.configureMiddlewareCount++
+		ctx.usedMiddlewares = make([]Middleware, len(existingMiddleware))
+		copy(ctx.usedMiddlewares, existingMiddleware)
 		return existingMiddleware
 	}
 	providerOpts.ConfigureClient = func(opts Options, client *http.Client) {
