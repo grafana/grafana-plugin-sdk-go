@@ -95,7 +95,7 @@ func calculateDays5y() int {
 		t1 := time.Date(currentYear+i, 1, 1, 0, 0, 0, 0, time.UTC)
 		t2 := time.Date(currentYear+i+1, 1, 1, 0, 0, 0, 0, time.UTC)
 
-		daysInYear = daysInYear + int(t2.Sub(t1).Hours()/24)
+		daysInYear += int(t2.Sub(t1).Hours() / 24)
 	}
 
 	return daysInYear
