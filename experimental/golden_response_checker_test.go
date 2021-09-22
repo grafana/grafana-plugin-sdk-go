@@ -20,20 +20,20 @@ var update = flag.Bool("update", false, "update.golden.data files")
 func TestGoldenResponseChecker(t *testing.T) {
 	dr := &backend.DataResponse{}
 
-	t.Run("create data frames with no meta", func(t *testing.T) {
-		dr.Frames = data.Frames{
-			data.NewFrame("Frame One",
-				data.NewField("Single float64", nil, []float64{
-					8.26, 8.7, 14.82, 10.07, 8.52,
-				}).SetConfig(&data.FieldConfig{Unit: "Percent"}),
-			),
-			data.NewFrame("Frame Two",
-				data.NewField("single string", data.Labels{"a": "b"}, []string{
-					"a", "b", "c",
-				}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
-			),
-		}
+	dr.Frames = data.Frames{
+		data.NewFrame("Frame One",
+			data.NewField("Single float64", nil, []float64{
+				8.26, 8.7, 14.82, 10.07, 8.52,
+			}).SetConfig(&data.FieldConfig{Unit: "Percent"}),
+		),
+		data.NewFrame("Frame Two",
+			data.NewField("single string", data.Labels{"a": "b"}, []string{
+				"a", "b", "c",
+			}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
+		),
+	}
 
+	t.Run("create data frames with no meta", func(t *testing.T) {
 		goldenFile := filepath.Join("testdata", "frame-no-meta.golden.txt")
 		err := CheckGoldenDataResponse(goldenFile, dr, *update)
 
@@ -41,19 +41,6 @@ func TestGoldenResponseChecker(t *testing.T) {
 	})
 
 	t.Run("create data frames with some non-custom meta", func(t *testing.T) {
-		dr.Frames = data.Frames{
-			data.NewFrame("Frame One",
-				data.NewField("Single float64", nil, []float64{
-					8.26, 8.7, 14.82, 10.07, 8.52,
-				}).SetConfig(&data.FieldConfig{Unit: "Percent"}),
-			),
-			data.NewFrame("Frame Two",
-				data.NewField("single string", data.Labels{"a": "b"}, []string{
-					"a", "b", "c",
-				}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
-			),
-		}
-
 		dr.Frames[0].Meta = &data.FrameMeta{
 			ExecutedQueryString: "SELECT * FROM X",
 			Notices: []data.Notice{
@@ -68,19 +55,6 @@ func TestGoldenResponseChecker(t *testing.T) {
 	})
 
 	t.Run("create data frames with some empty custom meta", func(t *testing.T) {
-		dr.Frames = data.Frames{
-			data.NewFrame("Frame One",
-				data.NewField("Single float64", nil, []float64{
-					8.26, 8.7, 14.82, 10.07, 8.52,
-				}).SetConfig(&data.FieldConfig{Unit: "Percent"}),
-			),
-			data.NewFrame("Frame Two",
-				data.NewField("single string", data.Labels{"a": "b"}, []string{
-					"a", "b", "c",
-				}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
-			),
-		}
-
 		dr.Frames[0].Meta = &data.FrameMeta{
 			Custom: SomeCustomMeta{},
 		}
@@ -92,19 +66,6 @@ func TestGoldenResponseChecker(t *testing.T) {
 	})
 
 	t.Run("create data frames with some custom meta", func(t *testing.T) {
-		dr.Frames = data.Frames{
-			data.NewFrame("Frame One",
-				data.NewField("Single float64", nil, []float64{
-					8.26, 8.7, 14.82, 10.07, 8.52,
-				}).SetConfig(&data.FieldConfig{Unit: "Percent"}),
-			),
-			data.NewFrame("Frame Two",
-				data.NewField("single string", data.Labels{"a": "b"}, []string{
-					"a", "b", "c",
-				}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
-			),
-		}
-
 		dr.Frames[0].Meta = &data.FrameMeta{
 			Custom: SomeCustomMeta{
 				SomeValue: "value",
