@@ -10,6 +10,8 @@
 package data
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
 	"math"
 	"reflect"
@@ -386,8 +388,15 @@ func FrameTestCompareOptions() []cmp.Option {
 		return true
 	})
 
+	metas := cmp.Comparer(func(x, y *FrameMeta) bool {
+		xJSON, _ := json.Marshal(x)
+		yJSON, _ := json.Marshal(y)
+
+		return bytes.Equal(xJSON, yJSON)
+	})
+
 	unexportedField := cmp.AllowUnexported(Field{})
-	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, times, unexportedField, cmpopts.EquateEmpty()}
+	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, times, metas, unexportedField, cmpopts.EquateEmpty()}
 }
 
 const maxLengthExceededStr = "..."
