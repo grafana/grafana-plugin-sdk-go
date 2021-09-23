@@ -389,6 +389,12 @@ func FrameTestCompareOptions() []cmp.Option {
 	})
 
 	metas := cmp.Comparer(func(x, y *FrameMeta) bool {
+		// This checks that the meta attached to the frame and
+		// in the Golden file are the same. A conversion to JSON
+		// representation is needed for the Custom field within
+		// the meta where a custom struct{} cannot be directly
+		// compared for equality to a map[string]interface{}{}
+		// but a JSON byte representation of those is equivalent
 		xJSON, _ := json.Marshal(x)
 		yJSON, _ := json.Marshal(y)
 
