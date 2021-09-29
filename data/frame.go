@@ -38,7 +38,7 @@ type Frame struct {
 	// All Fields must be of the same the length when marshalling the Frame for transmission.
 	Fields []*Field
 
-	// RefID is a property that can be set to match a Frame to its orginating query.
+	// RefID is a property that can be set to match a Frame to its originating query.
 	RefID string
 
 	// Meta is metadata about the Frame, and includes space for custom metadata.
@@ -72,7 +72,7 @@ type Frames []*Frame
 // AppendRow adds a new row to the Frame by appending to each element of vals to
 // the corresponding Field in the data.
 // The Frame's Fields must be initialized or AppendRow will panic.
-// The number of arguments must match the number of Fields in the Frame and each type must coorespond
+// The number of arguments must match the number of Fields in the Frame and each type must correspond
 // to the Field type or AppendRow will panic.
 func (f *Frame) AppendRow(vals ...interface{}) {
 	for i, v := range vals {
@@ -377,7 +377,7 @@ func FrameTestCompareOptions() []cmp.Option {
 
 	times := cmp.Comparer(func(x, y time.Time) bool {
 		if !x.Equal(y) {
-			// Check that the milliscond precision is the same.
+			// Check that the millisecond precision is the same.
 			// Avoids problems like:
 			// - s"1970-04-14 21:59:59.254740991 -0800 PST",
 			// + s"1970-04-14 21:59:59.254 -0800 PST",
@@ -493,4 +493,15 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 	table.Render()
 	return sb.String(), nil
+}
+
+// FieldByName returns Field by its name and its index in Frame.Fields.
+// If not found then *Field will be nil and index will be -1.
+func (f *Frame) FieldByName(fieldName string) (*Field, int) {
+	for i, field := range f.Fields {
+		if field.Name == fieldName {
+			return field, i
+		}
+	}
+	return nil, -1
 }

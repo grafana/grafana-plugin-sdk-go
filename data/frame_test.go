@@ -629,3 +629,20 @@ func stringPtr(s string) *string {
 func boolPtr(b bool) *bool {
 	return &b
 }
+
+func TestFrameFieldIndexByName(t *testing.T) {
+	frame := data.NewFrame("Frame Name",
+		data.NewField("Time", nil, []time.Time{}),
+		data.NewField("Temp", nil, []float64{}),
+		data.NewField("Count", nil, []*int64{}),
+	)
+	f, i := frame.FieldByName("Time")
+	require.NotNil(t, f)
+	require.Equal(t, 0, i)
+	f, i = frame.FieldByName("time")
+	require.Nil(t, f)
+	require.Equal(t, -1, i)
+	f, i = frame.FieldByName("no-such-field")
+	require.Nil(t, f)
+	require.Equal(t, -1, i)
+}
