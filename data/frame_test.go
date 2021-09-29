@@ -636,22 +636,13 @@ func TestFrameFieldIndexByName(t *testing.T) {
 		data.NewField("Temp", nil, []float64{}),
 		data.NewField("Count", nil, []*int64{}),
 	)
-	require.Equal(t, 0, frame.FieldIndexByName("Time"))
-	require.Equal(t, -1, frame.FieldIndexByName("time"))
-	require.Equal(t, -1, frame.FieldIndexByName("non-existent"))
-}
-
-func TestFrameFieldByName(t *testing.T) {
-	frame := data.NewFrame("Frame Name",
-		data.NewField("Time", nil, []time.Time{}),
-		data.NewField("Temp", nil, []float64{}),
-		data.NewField("Count", nil, []*int64{}),
-	)
-	f, ok := frame.FieldByName("Time")
-	require.True(t, ok)
-	require.Equal(t, "Time", f.Name)
-	_, ok = frame.FieldByName("time")
-	require.False(t, ok)
-	_, ok = frame.FieldByName("non-existent")
-	require.False(t, ok)
+	f, i := frame.FieldByName("Time")
+	require.NotNil(t, f)
+	require.Equal(t, 0, i)
+	f, i = frame.FieldByName("time")
+	require.Nil(t, f)
+	require.Equal(t, -1, i)
+	f, i = frame.FieldByName("no-such-field")
+	require.Nil(t, f)
+	require.Equal(t, -1, i)
 }
