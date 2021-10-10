@@ -666,8 +666,7 @@ func FromArrowRecord(record array.Record) (*Frame, error) {
 		return nil, err
 	}
 
-	err = populateFrameFieldsFromRecord(record, nullable, frame)
-	if err != nil {
+	if err = populateFrameFieldsFromRecord(record, nullable, frame); err != nil {
 		return nil, err
 	}
 	return frame, nil
@@ -693,10 +692,10 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 		return nil, err
 	}
 
-	err = populateFrameFields(fR, nullable, frame)
-	if err != nil {
+	if err = populateFrameFields(fR, nullable, frame); err != nil {
 		return nil, err
 	}
+
 	return frame, nil
 }
 
