@@ -330,6 +330,22 @@ func TestMaps(t *testing.T) {
 		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
 	})
 
+	t.Run("it flattens a map[string]string", func(t *testing.T) {
+		m := map[string]string{
+			"Thing1": "foo",
+			"Thing2": "bar",
+			"Thing3": "baz",
+		}
+
+		frame, err := framestruct.ToDataFrame("results", m)
+		require.Nil(t, err)
+
+		require.Len(t, frame.Fields, 3)
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, "bar", fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
+	})
+
 	t.Run("it flattens nested maps with dot-names", func(t *testing.T) {
 		m := map[string]interface{}{
 			"Thing1": "foo",
@@ -632,9 +648,9 @@ func TestToDataframe(t *testing.T) {
 		_, err := framestruct.ToDataFrame("???", []string{"1", "2"})
 		require.Error(t, err)
 
-		m := make(map[string]string)
+		/*m := make(map[string]string)
 		_, err = framestruct.ToDataFrame("???", m)
-		require.Error(t, err)
+		require.Error(t, err)*/
 
 		_, err = framestruct.ToDataFrame("???", "can't do a string either")
 		require.Error(t, err)

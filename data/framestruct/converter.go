@@ -86,7 +86,7 @@ func WithColumn0(fieldname string) FramestructOption {
 func (c *converter) toDataframe(name string, toConvert interface{}) (*data.Frame, error) {
 	v := c.ensureValue(reflect.ValueOf(toConvert))
 	if !supportedToplevelType(v) {
-		return nil, errors.New("unsupported type: can only convert structs, slices, and maps")
+		return nil, errors.New(fmt.Sprintf("unsupported type %#v: can only convert structs, slices, and maps", v))
 	}
 
 	if err := c.handleValue(v, "", ""); err != nil {
@@ -179,9 +179,18 @@ func exported(v reflect.Value) bool {
 
 func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error {
 	c.anyMap = true
-	m, ok := toConvert.(map[string]interface{})
-	if !ok {
-		return errors.New("map must be map[string]interface{}")
+	mss, ok := toConvert.(map[string]string)
+	var m map[string]interface{}
+	if ok {
+		m = make(map[string]interface{}, len(mss))
+		for k, v := range mss {
+			m[k] = v
+		}
+	} else {
+		m, ok = toConvert.(map[string]interface{})
+		if !ok {
+			return errors.New("map must be map[string]interface{} or map[string]string")
+		}
 	}
 
 	for _, name := range sortedKeys(m) {
