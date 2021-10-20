@@ -648,10 +648,6 @@ func TestToDataframe(t *testing.T) {
 		_, err := framestruct.ToDataFrame("???", []string{"1", "2"})
 		require.Error(t, err)
 
-		/*m := make(map[string]string)
-		_, err = framestruct.ToDataFrame("???", m)
-		require.Error(t, err)*/
-
 		_, err = framestruct.ToDataFrame("???", "can't do a string either")
 		require.Error(t, err)
 
