@@ -86,7 +86,7 @@ func WithColumn0(fieldname string) FramestructOption {
 func (c *converter) toDataframe(name string, toConvert interface{}) (*data.Frame, error) {
 	v := c.ensureValue(reflect.ValueOf(toConvert))
 	if !supportedToplevelType(v) {
-		return nil, errors.New(fmt.Sprintf("unsupported type %#v: can only convert structs, slices, and maps", v))
+		return nil, errors.New("unsupported type: can only convert structs, slices, and maps")
 	}
 
 	if err := c.handleValue(v, "", ""); err != nil {
