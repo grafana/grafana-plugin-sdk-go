@@ -179,17 +179,16 @@ func exported(v reflect.Value) bool {
 
 func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error {
 	c.anyMap = true
-	mss, ok := toConvert.(map[string]string)
-	var m map[string]interface{}
-	if ok {
-		m = make(map[string]interface{}, len(mss))
-		for k, v := range mss {
-			m[k] = v
-		}
-	} else {
-		m, ok = toConvert.(map[string]interface{})
-		if !ok {
-			return errors.New("map must be map[string]interface{} or map[string]string")
+	m, ok := toConvert.(map[string]interface{})
+	if !ok {
+		m = make(map[string]interface{})
+		vals := reflect.ValueOf(toConvert).MapRange()
+		for vals.Next() {
+			k := vals.Key()
+			if _, ok := k.Interface().(string); !ok {
+				return errors.New("maps must have string keys")
+			}
+			m[k.String()] = vals.Value().Interface()
 		}
 	}
 
