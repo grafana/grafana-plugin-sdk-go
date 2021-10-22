@@ -360,8 +360,6 @@ func TestMaps(t *testing.T) {
 		require.Equal(t, 3.0, fromPointer(frame.Fields[2].At(0)))
 	})
 
-
-
 	t.Run("it flattens nested maps with dot-names", func(t *testing.T) {
 		m := map[string]interface{}{
 			"Thing1": "foo",
