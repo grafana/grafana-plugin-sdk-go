@@ -15,12 +15,13 @@ require (
 	github.com/json-iterator/go v1.1.11
 	github.com/magefile/mage v1.11.0
 	github.com/mattetti/filebuffer v1.0.1
+	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/prometheus/client_golang v1.10.0
-	github.com/prometheus/common v0.23.0
+	github.com/prometheus/client_golang v1.11.0
+	github.com/prometheus/common v0.32.1
 	github.com/stretchr/testify v1.7.0
-	golang.org/x/sys v0.0.0-20210309074719-68d13333faf2
+	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40
 	google.golang.org/grpc v1.37.1
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect

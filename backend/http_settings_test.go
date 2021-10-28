@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -28,6 +29,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			"httpKeepAlive": 11,
 			"httpTLSHandshakeTimeout": 12,
 			"httpExpectContinueTimeout": 13,
+			"httpMaxConnsPerHost": 20,
 			"httpMaxIdleConns": 14,
 			"httpMaxIdleConnsPerHost": 16,
 			"httpIdleConnTimeout": 15,
@@ -54,6 +56,9 @@ func TestParseHTTPSettings(t *testing.T) {
 			"httpHeaderValue1":  "SecretOne",
 			"httpHeaderValue2":  "SecretTwo",
 		}
+		var jsonMap map[string]interface{}
+		err := json.Unmarshal([]byte(jsonStr), &jsonMap)
+		require.NoError(t, err)
 		s, err := parseHTTPSettings([]byte(jsonStr), secureData)
 		require.NoError(t, err)
 		require.NotNil(t, s)
@@ -72,6 +77,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			KeepAlive:             11 * time.Second,
 			TLSHandshakeTimeout:   12 * time.Second,
 			ExpectContinueTimeout: 13 * time.Second,
+			MaxConnsPerHost:       20,
 			MaxIdleConns:          14,
 			MaxIdleConnsPerHost:   16,
 			IdleConnTimeout:       15 * time.Second,
@@ -90,12 +96,14 @@ func TestParseHTTPSettings(t *testing.T) {
 			SigV4Profile:          "ghi",
 			SigV4AccessKey:        "sigV4AccessKey4",
 			SigV4SecretKey:        "sigV4SecretKey5",
+			JSONData:              jsonMap,
+			SecureJSONData:        secureData,
 		}, s)
 
 		t.Run("HTTPClientOptions() should convert to expected httpclient.Options", func(t *testing.T) {
 			opts := s.HTTPClientOptions()
 			require.NotNil(t, opts)
-			require.Equal(t, httpclient.Options{
+			expectedOpts := httpclient.Options{
 				BasicAuth: &httpclient.BasicAuthOptions{
 					User:     "user",
 					Password: "pwd",
@@ -110,6 +118,7 @@ func TestParseHTTPSettings(t *testing.T) {
 					KeepAlive:             11 * time.Second,
 					TLSHandshakeTimeout:   12 * time.Second,
 					ExpectContinueTimeout: 13 * time.Second,
+					MaxConnsPerHost:       20,
 					MaxIdleConns:          14,
 					MaxIdleConnsPerHost:   16,
 					IdleConnTimeout:       15 * time.Second,
@@ -130,7 +139,10 @@ func TestParseHTTPSettings(t *testing.T) {
 					AccessKey:     "sigV4AccessKey4",
 					SecretKey:     "sigV4SecretKey5",
 				},
-			}, opts)
+				Labels:        map[string]string{},
+				CustomOptions: map[string]interface{}{},
+			}
+			require.Equal(t, expectedOpts, opts)
 		})
 	})
 }

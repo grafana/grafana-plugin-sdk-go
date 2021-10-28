@@ -75,6 +75,16 @@ func NewInitialFrame(frame *data.Frame, include data.FrameInclude) (*InitialData
 	}, nil
 }
 
+// NewInitialData allows sending JSON on subscription
+func NewInitialData(data json.RawMessage) (*InitialData, error) {
+	if !json.Valid(data) {
+		return nil, fmt.Errorf("invalid JSON data")
+	}
+	return &InitialData{
+		data: data,
+	}, nil
+}
+
 // PublishStreamRequest is EXPERIMENTAL and is a subject to change till Grafana 8.
 type PublishStreamRequest struct {
 	PluginContext PluginContext
@@ -144,6 +154,16 @@ func (s *StreamSender) SendJSON(data []byte) error {
 	if !json.Valid(data) {
 		return fmt.Errorf("invalid JSON data")
 	}
+	packet := &pluginv2.StreamPacket{
+		Data: data,
+	}
+	return s.packetSender.Send(FromProto().StreamPacket(packet))
+}
+
+// SendBytes allow sending arbitrary Bytes to a stream. When sending data.Frame
+// prefer using SendFrame method. When sending an arbitrary raw JSON prefer
+// using SendJSON method.
+func (s *StreamSender) SendBytes(data []byte) error {
 	packet := &pluginv2.StreamPacket{
 		Data: data,
 	}

@@ -7,14 +7,19 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/stretchr/testify/require"
 )
+
+// some sample custom meta
+type SomeCustomMeta struct {
+	SomeValue string `json:"someValue,omitempty"`
+}
 
 var update = flag.Bool("update", false, "update.golden.data files")
 
 func TestGoldenResponseChecker(t *testing.T) {
 	dr := &backend.DataResponse{}
 
-	//	frame := data.GoldenDF() ????
 	dr.Frames = data.Frames{
 		data.NewFrame("Frame One",
 			data.NewField("Single float64", nil, []float64{
@@ -27,17 +32,49 @@ func TestGoldenResponseChecker(t *testing.T) {
 			}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
 		),
 	}
-	dr.Frames[0].Meta = &data.FrameMeta{
-		ExecutedQueryString: "SELECT * FROM X",
-		Notices: []data.Notice{
-			{Severity: data.NoticeSeverityInfo, Text: "hello"},
-		},
-	}
 
-	goldenFile := filepath.Join("testdata", "sample.golden.txt")
+	t.Run("create data frames with no meta", func(t *testing.T) {
+		goldenFile := filepath.Join("testdata", "frame-no-meta.golden.txt")
+		err := CheckGoldenDataResponse(goldenFile, dr, *update)
 
-	err := CheckGoldenDataResponse(goldenFile, dr, *update)
-	if err != nil {
-		t.Error(err)
-	}
+		require.NoError(t, err)
+	})
+
+	t.Run("create data frames with some non-custom meta", func(t *testing.T) {
+		dr.Frames[0].Meta = &data.FrameMeta{
+			ExecutedQueryString: "SELECT * FROM X",
+			Notices: []data.Notice{
+				{Severity: data.NoticeSeverityInfo, Text: "hello"},
+			},
+		}
+
+		goldenFile := filepath.Join("testdata", "frame-non-custom-meta.golden.txt")
+		err := CheckGoldenDataResponse(goldenFile, dr, *update)
+
+		require.NoError(t, err)
+	})
+
+	t.Run("create data frames with some empty custom meta", func(t *testing.T) {
+		dr.Frames[0].Meta = &data.FrameMeta{
+			Custom: SomeCustomMeta{},
+		}
+
+		goldenFile := filepath.Join("testdata", "frame-empty-custom-meta.golden.txt")
+		err := CheckGoldenDataResponse(goldenFile, dr, true)
+
+		require.NoError(t, err)
+	})
+
+	t.Run("create data frames with some custom meta", func(t *testing.T) {
+		dr.Frames[0].Meta = &data.FrameMeta{
+			Custom: SomeCustomMeta{
+				SomeValue: "value",
+			},
+		}
+
+		goldenFile := filepath.Join("testdata", "frame-custom-meta.golden.txt")
+		err := CheckGoldenDataResponse(goldenFile, dr, true)
+
+		require.NoError(t, err)
+	})
 }

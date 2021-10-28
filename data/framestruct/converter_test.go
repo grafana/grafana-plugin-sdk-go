@@ -330,6 +330,36 @@ func TestMaps(t *testing.T) {
 		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
 	})
 
+	t.Run("it flattens other than map[string]interface", func(t *testing.T) {
+		stringMap := map[string]string{
+			"Thing1": "foo",
+			"Thing2": "bar",
+			"Thing3": "baz",
+		}
+
+		frame, err := framestruct.ToDataFrame("results", stringMap)
+		require.Nil(t, err)
+
+		require.Len(t, frame.Fields, 3)
+		require.Equal(t, "foo", fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, "bar", fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, "baz", fromPointer(frame.Fields[2].At(0)))
+
+		floatMap := map[string]float64{
+			"Thing1": 1.0,
+			"Thing2": 2.0,
+			"Thing3": 3.0,
+		}
+
+		frame, err = framestruct.ToDataFrame("results", floatMap)
+		require.Nil(t, err)
+
+		require.Len(t, frame.Fields, 3)
+		require.Equal(t, 1.0, fromPointer(frame.Fields[0].At(0)))
+		require.Equal(t, 2.0, fromPointer(frame.Fields[1].At(0)))
+		require.Equal(t, 3.0, fromPointer(frame.Fields[2].At(0)))
+	})
+
 	t.Run("it flattens nested maps with dot-names", func(t *testing.T) {
 		m := map[string]interface{}{
 			"Thing1": "foo",
@@ -428,6 +458,16 @@ func TestMaps(t *testing.T) {
 		_, err = framestruct.ToDataFrame("results", []map[string]interface{}{m})
 		require.Error(t, err)
 		require.Equal(t, "unsupported type int", err.Error())
+	})
+
+	t.Run("it returns an error when a map key is not a string", func(t *testing.T) {
+		m := map[float64]interface{}{
+			1.0: "foo",
+		}
+
+		_, err := framestruct.ToDataFrame("results", m)
+		require.Error(t, err)
+		require.Equal(t, "maps must have string keys", err.Error())
 	})
 
 	t.Run("it returns an error when any map contains a struct with an unsupported type", func(t *testing.T) {
@@ -630,10 +670,6 @@ func TestStructTags(t *testing.T) {
 func TestToDataframe(t *testing.T) {
 	t.Run("it returns an error when invalid types are passed in", func(t *testing.T) {
 		_, err := framestruct.ToDataFrame("???", []string{"1", "2"})
-		require.Error(t, err)
-
-		m := make(map[string]string)
-		_, err = framestruct.ToDataFrame("???", m)
 		require.Error(t, err)
 
 		_, err = framestruct.ToDataFrame("???", "can't do a string either")
