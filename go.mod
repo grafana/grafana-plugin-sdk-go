@@ -22,7 +22,7 @@ require (
 	github.com/prometheus/common v0.32.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20210603081109-ebe580a85c40
-	google.golang.org/grpc v1.37.1
+	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.26.0
 	gopkg.in/yaml.v3 v3.0.0-20200615113413-eeeca48fe776 // indirect
 )
