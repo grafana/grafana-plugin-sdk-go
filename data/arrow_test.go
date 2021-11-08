@@ -5,10 +5,12 @@ import (
 	"flag"
 	"io/ioutil"
 	"math"
+	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
+	"github.com/apache/arrow/go/arrow/ipc"
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
@@ -351,4 +353,35 @@ func TestFrameMarshalArrowNoFields(t *testing.T) {
 	f := data.NewFrame("no fields")
 	_, err := f.MarshalArrow()
 	require.NoError(t, err)
+}
+
+func TestFromRecord(t *testing.T) {
+	df := goldenDF()
+	b, err := df.MarshalArrow()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	// Write golden data frame to file so we can read it back in via Record reader
+	fd, err := ioutil.TempFile("", "data-test-from-record")
+	require.NoError(t, err)
+	name := fd.Name()
+	defer os.Remove(name)
+	n, err := fd.Write(b)
+	require.NoError(t, err)
+	require.Equal(t, len(b), n)
+
+	// Read serialised data frame back into Arrow Record.
+	r, err := ipc.NewFileReader(fd)
+	require.NoError(t, err)
+	record, err := r.Read()
+	require.NoError(t, err)
+
+	// Convert Arrow record to data frame.
+	got, err := data.FromArrowRecord(record)
+	require.NoError(t, err)
+
+	if diff := cmp.Diff(df, got, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
 }
