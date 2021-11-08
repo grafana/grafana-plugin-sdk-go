@@ -60,7 +60,7 @@ We use Go modules for managing Go dependencies. After you've updated/modified mo
 
 ## Releasing
 
-If you want create a new version of the SDK for release, follow these steps:
+If you want to create a new version of the SDK for release, follow these steps:
 
 - Checkout the commit you want to tag (`git checkout <COMMIT_SHA>`)
 - Run [`gorelease`](https://pkg.go.dev/golang.org/x/exp/cmd/gorelease) to compare with the previous release. For example, when preparing to release v0.123.0:
