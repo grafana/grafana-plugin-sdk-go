@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"sort"
 	"unsafe"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -84,12 +85,20 @@ func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *jsoniter.Stream)
 	stream.WriteObjectStart()
 	started := false
 
+	refIDs := []string{}
+	for refID := range qdr.Responses {
+		refIDs = append(refIDs, refID)
+	}
+	sort.Strings(refIDs)
+
 	// Make sure all keys in the result are written
-	for id, res := range qdr.Responses {
+	for _, refID := range refIDs {
+		res := qdr.Responses[refID]
+
 		if started {
 			stream.WriteMore()
 		}
-		stream.WriteObjectField(id)
+		stream.WriteObjectField(refID)
 		obj := res // avoid implicit memory
 		writeDataResponseJSON(&obj, stream)
 		started = true
