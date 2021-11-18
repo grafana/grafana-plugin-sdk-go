@@ -1,4 +1,5 @@
-//+build mage
+//go:build mage
+// +build mage
 
 package main
 
@@ -28,6 +29,11 @@ func Protobuf() error {
 // Test runs the test suite.
 func Test() error {
 	return sh.RunV("go", "test", "./...")
+}
+
+// TestRace runs the test suite with the data race detector enabled.
+func TestRace() error {
+	return sh.RunV("go", "test", "-race", "./...")
 }
 
 func Lint() error {
