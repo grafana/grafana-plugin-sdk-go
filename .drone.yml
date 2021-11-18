@@ -3,11 +3,44 @@
 
 kind: pipeline
 type: docker
-name: 
+name: main
 
 platform:
   os: linux
   arch: amd64
+
+trigger:
+  branch: main
+  event:
+  - push
+
+steps:
+- name: build
+  image: grafana/grafana-plugin-ci:1.2.1-alpine
+  commands:
+  - mage -v build
+
+- name: lint
+  image: grafana/grafana-plugin-ci:1.2.1-alpine
+  commands:
+  - mage -v lint
+
+- name: test
+  image: grafana/grafana-plugin-ci:1.2.1-alpine
+  commands:
+  - mage -v test
+---
+kind: pipeline
+type: docker
+name: pr
+
+platform:
+  os: linux
+  arch: amd64
+
+trigger:
+  event:
+  - pull_request
 
 steps:
 - name: build
@@ -27,6 +60,6 @@ steps:
 
 ---
 kind: signature
-hmac: 09c5181a0c498054dd5f151035d5f9db34661b2e98898768b63367b1ef103a7c
+hmac: 1e5f0fa823644b18b2fffc3c454f263996010fde0b2b907293dc6657b53470e0
 
 ...
