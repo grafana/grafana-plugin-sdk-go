@@ -19,27 +19,27 @@ import (
 // A converter must be supplied in order to support data types that are scanned from sql.Rows, but not supported in data.Frame.
 // The converter defines what type to use for scanning, what type to place in the data frame, and a function for converting from one to the other.
 // If you find yourself here after upgrading, you can continue to your StringConverters here by using the `ToConverters` function.
-func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, int64, error) {
+func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, error) {
 	types, err := rows.ColumnTypes()
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	names, err := rows.Columns()
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	scanner, converters, err := MakeScanRow(types, names, converters...)
 	if err != nil {
-		return nil, 0, err
+		return nil, err
 	}
 
 	frame := NewFrame(names, converters...)
 
-	var count int64
+	var i int64
 	for rows.Next() {
-		if count == rowLimit {
+		if i == rowLimit {
 			frame.AppendNotices(data.Notice{
 				Severity: data.NoticeSeverityWarning,
 				Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
@@ -49,15 +49,15 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 
 		r := scanner.NewScannableRow()
 		if err := rows.Scan(r...); err != nil {
-			return nil, count, err
+			return nil, err
 		}
 
 		if err := Append(frame, r, converters...); err != nil {
-			return nil, count, err
+			return nil, err
 		}
 
-		count++
+		i++
 	}
 
-	return frame, count, nil
+	return frame, nil
 }
