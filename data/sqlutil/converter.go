@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"regexp"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -117,6 +118,9 @@ type Converter struct {
 
 	// InputTypeName is the case-sensitive name that must match the type that this converter matches
 	InputTypeName string
+
+	// InputTypeRegex will be used if not nil instead of InputTypeName
+	InputTypeRegex *regexp.Regexp
 
 	// FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe
 	FrameConverter FrameConverter
