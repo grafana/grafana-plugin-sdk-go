@@ -28,7 +28,7 @@ steps:
 - name: test
   image: grafana/grafana-plugin-ci:1.2.1-alpine
   commands:
-  - mage -v test
+  - mage -v testRace
 ---
 kind: pipeline
 type: docker
@@ -56,10 +56,10 @@ steps:
 - name: test
   image: grafana/grafana-plugin-ci:1.2.1-alpine
   commands:
-  - mage -v test
+  - mage -v testRace
 
 ---
 kind: signature
-hmac: 1e5f0fa823644b18b2fffc3c454f263996010fde0b2b907293dc6657b53470e0
+hmac: 6bc4908a836313924b1b3e8bdc0758a2c1bb65dc3843c7c55ff7f020695dbc57
 
 ...
