@@ -100,6 +100,7 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 			converter = &v
 			scanType = v.InputScanType
 		}
+		converter.colType = *colType
 
 		r.Append(colName, scanType)
 		c = append(c, *converter)
