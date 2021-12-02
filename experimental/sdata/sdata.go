@@ -21,10 +21,6 @@ type time interface {
 
 type times[T time] []T
 
-func DoSomething[T time, N number](t []T, n []N) {
-	fmt.Println("")
-}
-
 type TimeSeriesMany data.Frames
 
 // "methods cannot have type parameters" :-(
