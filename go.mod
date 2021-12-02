@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
-go 1.17
+go 1.18
 
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20210223225224-5bea62493d91
