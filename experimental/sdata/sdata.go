@@ -24,6 +24,7 @@ type times[T time] []T
 type TimeSeriesMany data.Frames
 
 // "methods cannot have type parameters" :-(
+// For above, TODO: Look at https://stackoverflow.com/questions/64189810/function-type-cannot-have-type-parameters
 func AddSeriesToTimeSeriesMany[T time, N number](tsm *TimeSeriesMany, metricName string, labels data.Labels, t []T, n []N) error {
 	if len(t) != len(n) {
 		return fmt.Errorf("time and values must be of the same length")
