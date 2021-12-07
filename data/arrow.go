@@ -15,10 +15,7 @@ import (
 	"github.com/mattetti/filebuffer"
 )
 
-// MarshalArrow converts the Frame to an arrow table and returns a byte
-// representation of that table.
-// All fields of a Frame must be of the same length or an error is returned.
-func (f *Frame) MarshalArrow() ([]byte, error) {
+func (f *Frame) MarshalArrowTable() (array.Table, error) {
 	if _, err := f.RowLen(); err != nil {
 		return nil, err
 	}
@@ -37,15 +34,18 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func(cols []array.Column) {
-		for _, col := range cols {
-			col.Release()
-		}
-	}(columns)
-
 	// Create a table from the schema and columns.
-	table := array.NewTable(schema, columns, -1)
-	defer table.Release()
+	return array.NewTable(schema, columns, -1), nil
+}
+
+// MarshalArrow converts the Frame to an arrow table and returns a byte
+// representation of that table.
+// All fields of a Frame must be of the same length or an error is returned.
+func (f *Frame) MarshalArrow() ([]byte, error) {
+	table, err := f.MarshalArrowTable()
+	if err != nil {
+		return nil, err
+	}
 
 	tableReader := array.NewTableReader(table, -1)
 	defer tableReader.Release()
