@@ -90,6 +90,9 @@ func (f ConvertFromProtobuf) TimeRange(proto *pluginv2.TimeRange) TimeRange {
 
 // DataQuery converts protobuf version of a DataQuery to the SDK version.
 func (f ConvertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
+	if proto == nil {
+		return nil
+	}
 	return &DataQuery{
 		RefID:         proto.RefId,
 		QueryType:     proto.QueryType,
@@ -208,6 +211,7 @@ func (f ConvertFromProtobuf) SubscribeStreamRequest(protoReq *pluginv2.Subscribe
 	return &SubscribeStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
+		Query:         FromProto().DataQuery(protoReq.GetQuery()),
 	}
 }
 
@@ -242,6 +246,7 @@ func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamReques
 	return &RunStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
+		Query:         FromProto().DataQuery(protoReq.GetQuery()),
 	}
 }
 
