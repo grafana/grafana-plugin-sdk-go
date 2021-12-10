@@ -5,12 +5,15 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
+type Level hclog.Level
+
 // Logger is the main Logger interface.
 type Logger interface {
 	Debug(msg string, args ...interface{})
 	Info(msg string, args ...interface{})
 	Warn(msg string, args ...interface{})
 	Error(msg string, args ...interface{})
+	Level() Level
 }
 
 // New creates a new logger.
@@ -44,6 +47,25 @@ func (l *hclogWrapper) Warn(msg string, args ...interface{}) {
 
 func (l *hclogWrapper) Error(msg string, args ...interface{}) {
 	l.logger.Error(msg, args...)
+}
+
+func (l *hclogWrapper) Level() Level {
+	if l.logger.IsDebug() {
+		return Level(hclog.Debug)
+	}
+	if l.logger.IsError() {
+		return Level(hclog.Error)
+	}
+	if l.logger.IsInfo() {
+		return Level(hclog.Info)
+	}
+	if l.logger.IsTrace() {
+		return Level(hclog.Trace)
+	}
+	if l.logger.IsWarn() {
+		return Level(hclog.Warn)
+	}
+	return Level(hclog.NoLevel)
 }
 
 // DefaultLogger is the default logger.
