@@ -30,6 +30,7 @@ func New() Logger {
 	return NewLogger(Debug)
 }
 
+// NewLogger creates a new logger at the Level defined.
 func NewLogger(level Level) Logger {
 	return &hclogWrapper{
 		logger: hclog.New(&hclog.LoggerOptions{
