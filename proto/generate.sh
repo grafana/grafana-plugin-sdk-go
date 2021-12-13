@@ -13,7 +13,7 @@ DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 cd "$DIR"
 
-~/Downloads/protoc-3.19.1/bin/protoc -I ./ \
+protoc -I ./ \
   --go_out=${DST_DIR} \
   --go-grpc_out=${DST_DIR} --go-grpc_opt=require_unimplemented_servers=false \
   backend.proto
