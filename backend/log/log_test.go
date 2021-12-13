@@ -12,3 +12,9 @@ func TestLogLevel(t *testing.T) {
 	level := logger.Level()
 	assert.Equal(t, level, log.Debug)
 }
+
+func TestLogLevelWarn(t *testing.T) {
+	logger := log.NewLogger(log.Warn)
+	level := logger.Level()
+	assert.Equal(t, level, log.Warn)
+}

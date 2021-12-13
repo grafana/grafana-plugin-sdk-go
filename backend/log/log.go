@@ -67,17 +67,17 @@ func (l *hclogWrapper) Level() Level {
 	if l.logger.IsDebug() {
 		return Debug
 	}
-	if l.logger.IsError() {
-		return Error
+	if l.logger.IsTrace() {
+		return Trace
 	}
 	if l.logger.IsInfo() {
 		return Info
 	}
-	if l.logger.IsTrace() {
-		return Trace
-	}
 	if l.logger.IsWarn() {
 		return Warn
+	}
+	if l.logger.IsError() {
+		return Error
 	}
 	return NoLevel
 }
