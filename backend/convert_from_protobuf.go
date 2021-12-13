@@ -211,7 +211,7 @@ func (f ConvertFromProtobuf) SubscribeStreamRequest(protoReq *pluginv2.Subscribe
 	return &SubscribeStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
-		Query:         protoReq.GetQuery(),
+		Data:          protoReq.GetData(),
 	}
 }
 
@@ -246,7 +246,7 @@ func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamReques
 	return &RunStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
-		Query:         protoReq.GetQuery(),
+		Data:          protoReq.GetData(),
 	}
 }
 
