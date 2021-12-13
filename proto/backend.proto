@@ -200,8 +200,9 @@ message SubscribeStreamRequest {
 
   // path part of channel.
   string path = 2;
-  // optional raw data query.
-  bytes query = 3;
+  // optional raw data. May be used as an extra payload supplied upon subscription.
+  // For example, can contain JSON query object.
+  bytes data = 3;
 }
 
 message SubscribeStreamResponse {
@@ -251,8 +252,9 @@ message RunStreamRequest {
 
   // path part of a channel.
   string path = 2;
-  // optional raw data query.
-  bytes query = 3;
+  // optional raw data. May be used as an extra payload supplied upon subscription.
+  // For example, can contain JSON query object.
+  bytes data = 3;
 }
 
 message StreamPacket {

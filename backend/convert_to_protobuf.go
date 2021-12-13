@@ -201,7 +201,7 @@ func (t ConvertToProtobuf) RunStreamRequest(req *RunStreamRequest) *pluginv2.Run
 	protoReq := &pluginv2.RunStreamRequest{
 		PluginContext: t.PluginContext(req.PluginContext),
 		Path:          req.Path,
-		Query:         req.Query,
+		Data:          req.Data,
 	}
 	return protoReq
 }
@@ -211,7 +211,7 @@ func (t ConvertToProtobuf) SubscribeStreamRequest(req *SubscribeStreamRequest) *
 	return &pluginv2.SubscribeStreamRequest{
 		PluginContext: t.PluginContext(req.PluginContext),
 		Path:          req.Path,
-		Query:         req.Query,
+		Data:          req.Data,
 	}
 }
 
