@@ -60,21 +60,21 @@ func (l *hclogWrapper) Error(msg string, args ...interface{}) {
 
 func (l *hclogWrapper) Level() Level {
 	if l.logger.IsDebug() {
-		return Level(hclog.Debug)
+		return Debug
 	}
 	if l.logger.IsError() {
-		return Level(hclog.Error)
+		return Error
 	}
 	if l.logger.IsInfo() {
-		return Level(hclog.Info)
+		return Info
 	}
 	if l.logger.IsTrace() {
-		return Level(hclog.Trace)
+		return Trace
 	}
 	if l.logger.IsWarn() {
-		return Level(hclog.Warn)
+		return Warn
 	}
-	return Level(hclog.NoLevel)
+	return NoLevel
 }
 
 // DefaultLogger is the default logger.
