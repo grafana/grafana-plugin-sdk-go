@@ -10,5 +10,5 @@ import (
 func TestLogLevel(t *testing.T) {
 	logger := log.New()
 	level := logger.Level()
-	assert.Equal(t, level, log.Level(log.Debug))
+	assert.Equal(t, level, log.Debug)
 }
