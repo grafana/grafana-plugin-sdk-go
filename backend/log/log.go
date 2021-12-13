@@ -5,7 +5,16 @@ import (
 	hclog "github.com/hashicorp/go-hclog"
 )
 
-type Level hclog.Level
+type Level int32
+
+const (
+	NoLevel Level = iota
+	Trace
+	Debug
+	Info
+	Warn
+	Error
+)
 
 // Logger is the main Logger interface.
 type Logger interface {
