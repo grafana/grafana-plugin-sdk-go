@@ -78,7 +78,7 @@ func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
 	defer cfg.ReturnStream(stream)
 
 	writeQueryDataResponseJSON(&r, stream)
-	return stream.Buffer(), stream.Error
+	return append([]byte(nil), stream.Buffer()...), stream.Error
 }
 
 // UnmarshalJSON will read JSON into a QueryDataResponse
@@ -118,7 +118,7 @@ func (r DataResponse) MarshalJSON() ([]byte, error) {
 	defer cfg.ReturnStream(stream)
 
 	writeDataResponseJSON(&r, stream)
-	return stream.Buffer(), stream.Error // Copy this with care, for concurency, you may need to copy the buffer
+	return append([]byte(nil), stream.Buffer()...), stream.Error
 }
 
 // TimeRange represents a time range for a query and is a property of DataQuery.

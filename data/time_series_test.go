@@ -119,7 +119,9 @@ func TestLongToWide(t *testing.T) {
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []float64{
 					2.0,
 					4.0,
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -164,7 +166,9 @@ func TestLongToWide(t *testing.T) {
 					data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []float64{
 						2.0,
 						4.0,
-					})),
+					})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -215,7 +219,9 @@ func TestLongToWide(t *testing.T) {
 				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth"}, []int64{
 					2,
 					4,
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -272,7 +278,9 @@ func TestLongToWide(t *testing.T) {
 				data.NewField(`Values Int64`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []int64{
 					2,
 					4,
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -309,7 +317,9 @@ func TestLongToWide(t *testing.T) {
 				data.NewField(`Values Floats`, data.Labels{"Animal Factor": "sloth"}, []*float64{
 					float64Ptr(2.0),
 					float64Ptr(4.0),
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -373,7 +383,9 @@ func TestLongToWide(t *testing.T) {
 					4.0,
 					0.0,
 					6.0,
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 
 			Err: require.NoError,
 		},
@@ -438,7 +450,9 @@ func TestLongToWide(t *testing.T) {
 					float64Ptr(4.0),
 					nil,
 					float64Ptr(6.0),
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -532,7 +546,9 @@ func TestLongToWide(t *testing.T) {
 					-1,
 					6,
 				}),
-			),
+			).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -626,7 +642,9 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(4),
 					int64Ptr(6),
 				}),
-			),
+			).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -720,7 +738,9 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					int64Ptr(6),
 				}),
-			),
+			).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -814,7 +834,9 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(-1),
 					int64Ptr(6),
 				}),
-			),
+			).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -907,7 +929,9 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(4),
 					int64Ptr(6),
 				}),
-			),
+			).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -1000,7 +1024,9 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					int64Ptr(6.0),
 				}),
-			),
+			).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 	}
@@ -1058,7 +1084,9 @@ func TestLongToWideBool(t *testing.T) {
 				data.NewField(`Values Floats`, data.Labels{"Enabled Factor": "true"}, []float64{
 					1.0,
 					3.0,
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesWide,
+			}),
 			Err: require.NoError,
 		},
 	}
@@ -1115,7 +1143,9 @@ func TestWideToLong(t *testing.T) {
 					"sloth",
 					"cat",
 					"sloth",
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesLong,
+			}),
 			Err: require.NoError,
 		},
 
@@ -1162,7 +1192,9 @@ func TestWideToLong(t *testing.T) {
 					"Central & South America",
 					"Florida",
 					"Central & South America",
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesLong,
+			}),
 		},
 		{
 			name: "two values, one factor",
@@ -1212,7 +1244,9 @@ func TestWideToLong(t *testing.T) {
 					"sloth",
 					"cat",
 					"sloth",
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesLong,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -1269,7 +1303,9 @@ func TestWideToLong(t *testing.T) {
 					"Central & South America",
 					"Florida",
 					"Central & South America",
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesLong,
+			}),
 			Err: require.NoError,
 		},
 		{
@@ -1307,7 +1343,9 @@ func TestWideToLong(t *testing.T) {
 					"sloth",
 					"cat",
 					"sloth",
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesLong,
+			}),
 		},
 		{
 			name: "sparse: one value, two factor",
@@ -1394,7 +1432,9 @@ func TestWideToLong(t *testing.T) {
 					"Florida",
 					"",
 					"Central & South America",
-				})),
+				})).SetMeta(&data.FrameMeta{
+				Type: data.FrameTypeTimeSeriesLong,
+			}),
 
 			Err: require.NoError,
 		},

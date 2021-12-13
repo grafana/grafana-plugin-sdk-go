@@ -9,6 +9,8 @@ import (
 )
 
 // TimeSeriesType represents the type of time series the schema can be treated as (if any).
+//
+// Deprecated: this type will be replaced with FrameType and FrameType#IsTimeSeries()
 type TimeSeriesType int
 
 // TODO: Create and link to Grafana documentation on Long vs Wide
@@ -60,6 +62,7 @@ func (t TimeSeriesType) String() string {
 
 // TimeSeriesSchema returns the TimeSeriesSchema of the frame. The TimeSeriesSchema's Type
 // value will be TimeSeriesNot if it is not a time series.
+// Deprecated
 func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	tsSchema.Type = TimeSeriesTypeNot
 	if f.Fields == nil || len(f.Fields) == 0 {
@@ -255,6 +258,10 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		return nil, err
 	}
 
+	if wideFrame.Meta == nil {
+		wideFrame.Meta = &FrameMeta{}
+	}
+	wideFrame.Meta.Type = FrameTypeTimeSeriesWide
 	return wideFrame, nil
 }
 
@@ -498,6 +505,11 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 			longFrameCounter++
 		}
 	}
+
+	if longFrame.Meta == nil {
+		longFrame.SetMeta(&FrameMeta{})
+	}
+	longFrame.Meta.Type = FrameTypeTimeSeriesLong
 	return longFrame, nil
 }
 

@@ -76,7 +76,7 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 		}
 	}
 
-	if s.TLSClientAuth || s.TLSAuthWithCACert {
+	if s.TLSClientAuth || s.TLSAuthWithCACert || s.TLSSkipVerify {
 		opts.TLS = &httpclient.TLSOptions{
 			CACertificate:      s.TLSCACert,
 			ClientCertificate:  s.TLSClientCert,
@@ -217,11 +217,11 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 	if v, exists := dat["tlsAuthWithCACert"]; exists {
 		s.TLSAuthWithCACert = v.(bool)
 	}
+	if v, exists := dat["tlsSkipVerify"]; exists {
+		s.TLSSkipVerify = v.(bool)
+	}
 
 	if s.TLSClientAuth || s.TLSAuthWithCACert {
-		if v, exists := dat["tlsSkipVerify"]; exists {
-			s.TLSSkipVerify = v.(bool)
-		}
 		if v, exists := dat["serverName"]; exists {
 			s.TLSServerName = v.(string)
 		}

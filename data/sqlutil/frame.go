@@ -15,7 +15,7 @@ func NewFrame(columns []string, converters ...Converter) *data.Frame {
 		fields[i].Name = columns[i]
 	}
 
-	return data.NewFrame("results", fields...)
+	return data.NewFrame("", fields...)
 }
 
 // Append appends the row to the dataframe, using the converters to convert the scanned value into a value that can be put into a data.Frame
@@ -26,6 +26,14 @@ func Append(frame *data.Frame, row []interface{}, converters ...Converter) error
 
 	d := make([]interface{}, len(row))
 	for i, v := range row {
+		if converters[i].FrameConverter.ConvertWithColumn != nil {
+			value, err := converters[i].FrameConverter.ConvertWithColumn(v, converters[i].colType)
+			if err != nil {
+				return err
+			}
+			d[i] = value
+			continue
+		}
 		value, err := converters[i].FrameConverter.ConverterFunc(v)
 		if err != nil {
 			return err

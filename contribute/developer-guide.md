@@ -20,7 +20,7 @@ List available Mage targets that are available:
 mage -l
 ```
 
-You can use the `build` target to verify all code compiles. It  doesn't output any binary though.
+You can use the `build` target to verify all code compiles. It doesn't output any binary though.
 
 ```bash
 mage -v build
@@ -60,10 +60,46 @@ We use Go modules for managing Go dependencies. After you've updated/modified mo
 
 ## Releasing
 
-If you want to tag a new version of the SDK for release, follow these steps:
+If you want to create a new version of the SDK for release, follow these steps:
 
 - Checkout the commit you want to tag (`git checkout <COMMIT_SHA>`)
+- Run [`gorelease`](https://pkg.go.dev/golang.org/x/exp/cmd/gorelease) to compare with the previous release. For example, when preparing to release v0.123.0:
+
+```
+gorelease -base v0.122.0 -version v0.123.0
+github.com/grafana/grafana-plugin-sdk-go/backend/gtime
+------------------------------------------------------
+Compatible changes:
+- package added
+
+v0.123.0 is a valid semantic version for this release.
+```
 - Run `git tag <VERSION>` (For example **v0.123.0**)
-   - NOTE: We're using Lightweight Tags, so no other options are required
+  - NOTE: We're using Lightweight Tags, so no other options are required
 - Run `git push origin <VERSION>`
-- Verify that the tag was create successfully [here](https://github.com/grafana/grafana-plugin-sdk-go/releases)
+- Verify that the tag was create successfully [here](https://github.com/grafana/grafana-plugin-sdk-go/tags)
+- Edit the tag on GitHub and create a release from it.
+  - Use the tag name as title.
+  - Click on the _Auto-generate release notes_ button.
+  - Add a compatibility section and add the output of the command above.
+
+**Release notes example:**
+
+- Title: v0.123.0
+- Content:
+
+````md
+<!-- Auto generated release notes -->
+
+## Compatibility
+```
+gorelease -base v0.122.0 -version v0.123.0
+github.com/grafana/grafana-plugin-sdk-go/backend/gtime
+------------------------------------------------------
+Compatible changes:
+- package added
+
+v0.123.0 is a valid semantic version for this release.
+```
+
+````
