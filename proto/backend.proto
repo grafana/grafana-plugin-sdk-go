@@ -179,7 +179,7 @@ service Stream {
   // SubscribeStream called when a user tries to subscribe to a plugin/datasource
   // managed channel path – thus plugin can check subscribe permissions and communicate
   // options with Grafana Core. When the first subscriber joins a channel, RunStream
-  // will be called. 
+  // will be called.
   rpc SubscribeStream(SubscribeStreamRequest) returns (SubscribeStreamResponse);
 
   // RunStream will be initiated by Grafana to consume a stream. RunStream will be
@@ -200,6 +200,9 @@ message SubscribeStreamRequest {
 
   // path part of channel.
   string path = 2;
+  // optional raw data. May be used as an extra payload supplied upon subscription.
+  // For example, can contain JSON query object.
+  bytes data = 3;
 }
 
 message SubscribeStreamResponse {
@@ -249,6 +252,9 @@ message RunStreamRequest {
 
   // path part of a channel.
   string path = 2;
+  // optional raw data. May be used as an extra payload supplied upon subscription.
+  // For example, can contain JSON query object.
+  bytes data = 3;
 }
 
 message StreamPacket {
