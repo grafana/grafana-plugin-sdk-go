@@ -2,6 +2,7 @@ package backend_test
 
 import (
 	"encoding/json"
+	"fmt"
 	"sync"
 	"testing"
 	"time"
@@ -83,14 +84,14 @@ func TestDataResponseMarshalJSONConcurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	for i := 0; i < 2; i++ {
 		wg.Add(1)
-		go func() {
+		go func(dr backend.DataResponse) {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
 				jsonData, err := json.Marshal(dr)
 				require.NoError(t, err)
 				require.JSONEq(t, string(initialJSON), string(jsonData))
 			}
-		}()
+		}(dr)
 	}
 	wg.Wait()
 }
@@ -103,14 +104,27 @@ func TestQueryDataResponseMarshalJSONConcurrent(t *testing.T) {
 	var wg sync.WaitGroup
 	for i := 0; i < 2; i++ {
 		wg.Add(1)
-		go func() {
+		go func(qdr *backend.QueryDataResponse) {
 			defer wg.Done()
 			for j := 0; j < 100; j++ {
 				jsonData, err := json.Marshal(qdr)
 				require.NoError(t, err)
 				require.JSONEq(t, string(initialJSON), string(jsonData))
 			}
-		}()
+		}(qdr)
 	}
 	wg.Wait()
+}
+
+func TestQueryDataResponseOrdering(t *testing.T) {
+	qdr := backend.NewQueryDataResponse()
+	qdr.Responses["C"] = testDataResponse()
+	qdr.Responses["A"] = testDataResponse()
+	qdr.Responses["B"] = testDataResponse()
+	b, err := json.Marshal(qdr)
+	require.NoError(t, err)
+
+	expectedDataResponse := `{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`
+	expected := fmt.Sprintf(`{"results":{"A":%s,"B":%s,"C":%s}}`, expectedDataResponse, expectedDataResponse, expectedDataResponse)
+	require.Equal(t, expected, string(b))
 }

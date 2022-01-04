@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"regexp"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -18,6 +19,9 @@ type FrameConverter struct {
 	// `in` is always supplied as a pointer, as it is scanned as a pointer, even if `InputScanType` is not a pointer.
 	// For example, if `InputScanType` is `string`, then `in` is `*string`
 	ConverterFunc func(in interface{}) (interface{}, error)
+	// ConvertWithColumn is the same as ConverterFunc, but allows passing the column type
+	// useful when column attributes are needed during conversion
+	ConvertWithColumn func(in interface{}, col sql.ColumnType) (interface{}, error)
 }
 
 // StringConverter can be used to store types not supported by
@@ -118,8 +122,14 @@ type Converter struct {
 	// InputTypeName is the case-sensitive name that must match the type that this converter matches
 	InputTypeName string
 
+	// InputTypeRegex will be used if not nil instead of InputTypeName
+	InputTypeRegex *regexp.Regexp
+
 	// FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe
 	FrameConverter FrameConverter
+
+	// colType is the underlying sql column type, set during scan
+	colType sql.ColumnType
 }
 
 // DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
