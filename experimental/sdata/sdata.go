@@ -21,6 +21,10 @@ type TimeSeriesCollection interface {
 	AsMultiFrameSeries() *MultiFrameSeries
 }
 
+func ValidValueFields() []data.FieldType {
+	return append(data.NumericFieldTypes(), []data.FieldType{data.FieldTypeBool, data.FieldTypeNullableBool}...)
+}
+
 // or perhaps a container struct with non-exported fields (for indicies and such) and the Frames exported.
 type MultiFrameSeries []*data.Frame
 
@@ -114,23 +118,12 @@ func (mfs *MultiFrameSeries) Validate() (isEmpty bool, errors []error) {
 				}
 			}
 
-			// numeric or bool can be a "value"
-			numericFields := frame.TypeIndices(data.NumericFieldTypes()...)
-			boolFields := frame.TypeIndices(data.FieldTypeBool, data.FieldTypeNullableBool)
+			valueFields := frame.TypeIndices(ValidValueFields()...)
 
-			valueFieldCount := len(numericFields) + len(boolFields)
-			if valueFieldCount != 1 {
-				errors = append(errors, fmt.Errorf("frame %v must have exactly 1 value field but has %v", fIdx, valueFieldCount))
+			if len(valueFields) != 1 {
+				errors = append(errors, fmt.Errorf("frame %v must have exactly 1 value field but has %v", fIdx, len(valueFields)))
 			} else {
-				vFieldIdx := 0
-
-				if len(numericFields) == 1 {
-					vFieldIdx = numericFields[0]
-				} else {
-					vFieldIdx = boolFields[0]
-				}
-
-				vField := frame.Fields[vFieldIdx]
+				vField := frame.Fields[valueFields[0]]
 
 				metricKey := [2]string{vField.Name, vField.Labels.String()}
 				if _, ok := metricIndex[metricKey]; ok {
@@ -143,6 +136,50 @@ func (mfs *MultiFrameSeries) Validate() (isEmpty bool, errors []error) {
 	}
 
 	return false, errors
+}
+
+// I am not sure about this but want to get the idea down
+type TimeSeriesMetricRef struct {
+	ValueField *data.Field
+	TimeField  *data.Field
+}
+
+func (m TimeSeriesMetricRef) GetName() string {
+	if m.ValueField != nil {
+		return m.ValueField.Name
+	}
+	return ""
+}
+
+func (m TimeSeriesMetricRef) GetLabels() data.Labels {
+	if m.ValueField != nil {
+		return m.ValueField.Labels
+	}
+	return nil
+}
+
+func (mfs *MultiFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
+	refs := []TimeSeriesMetricRef{}
+	if mfs == nil || len(*mfs) == 0 {
+		return refs
+	}
+	for _, frame := range *mfs {
+		m := TimeSeriesMetricRef{}
+		if len(frame.Fields) == 0 {
+			refs = append(refs, m)
+		}
+		timeFields := frame.TypeIndices(data.FieldTypeTime)
+		if len(timeFields) == 1 {
+			m.TimeField = frame.Fields[timeFields[0]]
+		}
+
+		valueFields := frame.TypeIndices(ValidValueFields()...)
+		if len(timeFields) == 1 {
+			m.ValueField = frame.Fields[valueFields[0]]
+		}
+		refs = append(refs, m)
+	}
+	return refs
 }
 
 // to fullfill interface, returns itself
