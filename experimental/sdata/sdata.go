@@ -16,7 +16,7 @@ type TimeSeriesCollection interface {
 	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
 	AppendMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error
 	InsertMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error
-	Validate() (bool, []error)
+	Validate() (isEmpty bool, errors []error)
 	AsWideFrameSeries() *WideFrameSeries
 	AsMultiFrameSeries() *MultiFrameSeries
 }
@@ -24,9 +24,13 @@ type TimeSeriesCollection interface {
 // or perhaps a container struct with non-exported fields (for indicies and such) and the Frames exported.
 type MultiFrameSeries []*data.Frame
 
-// values must be a numeric slice such as []int64, []float64, []*float64, etc or []bool / []*bool, else this will panic.
+// values must be a numeric slice such as []int64, []float64, []*float64, etc or []bool / []*bool.
 func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
 	var err error
+
+	if !data.ValidFieldType(values) {
+		return fmt.Errorf("type %T is not a valid data frame field type", values)
+	}
 
 	valueField := data.NewField(metricName, l, values) // note
 	timeField := data.NewField("time", nil, t)
@@ -66,8 +70,32 @@ func (mfs *MultiFrameSeries) InsertMetricValue(metricName string, l data.Labels,
 }
 
 // Validates data conforms to schema, don't think it will be called normally in the course of running a plugin, but needs to exist
-func (mfs *MultiFrameSeries) Validate() (bool, []error) {
-	return false, nil
+func (mfs *MultiFrameSeries) Validate() (isEmpty bool, errors []error) {
+	if mfs == nil || len(*mfs) == 0 {
+		// Unless we create a container (and expose it in our responses) that can hold the type(s) for the frames it contains,
+		// anything empty probably needs be considered "valid" for the type. Else we have a requirement to create at least one frame (eww).
+		return true, nil
+	}
+
+	for fIdx, frame := range *mfs {
+		if frame.Meta == nil || frame.Meta.Type != data.FrameTypeTimeSeriesMany {
+			errors = append(errors, fmt.Errorf("frame %v is missing type indicator in frame metadata", fIdx))
+		}
+
+		if len(frame.Fields) > 0 { // an individual frame with no fields is an empty series is valid.
+			// Must have []time.Time field (no nullable time)
+			if len(frame.TypeIndices(data.FieldTypeTime)) == 0 {
+				errors = append(errors, fmt.Errorf("frame %v is missing a Time field", fIdx))
+			}
+			valueFieldCount := len(frame.TypeIndices(data.NumericFieldTypes()...))
+			valueFieldCount += len(frame.TypeIndices(data.FieldTypeBool, data.FieldTypeNullableBool))
+			if valueFieldCount != 1 {
+				errors = append(errors, fmt.Errorf("frame %v has %v value fields, must have exactly 1", fIdx, valueFieldCount))
+			}
+		}
+	}
+
+	return false, errors
 }
 
 // to fullfill interface, returns itself
@@ -99,7 +127,7 @@ func (wf *WideFrameSeries) InsertMetricValue(metricName string, l data.Labels, t
 	return nil
 }
 
-func (wf *WideFrameSeries) Validate() (bool, []error) {
+func (wf *WideFrameSeries) Validate() (isEmpty bool, err []error) {
 	return false, nil
 }
 
