@@ -1,6 +1,7 @@
 package sdata
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -11,7 +12,7 @@ import (
 // without breaking changes - if we even want an interface like this
 // But for now helps illustrate at least
 type TimeSeriesCollection interface {
-	AddMetric(metricName string, l data.Labels, t []time.Time, values interface{})
+	AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error
 	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
 	AppendMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error
 	InsertMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error
@@ -21,10 +22,32 @@ type TimeSeriesCollection interface {
 }
 
 // or perhaps a container struct with non-exported fields (for indicies and such) and the Frames exported.
-type MultiFrameSeries data.Frames
+type MultiFrameSeries []*data.Frame
 
-// values must be a numeric slice such as []int64, []float64, []*float64, etc
-func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) {
+// values must be a numeric slice such as []int64, []float64, []*float64, etc or []bool / []*bool, else this will panic.
+func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
+	var err error
+
+	valueField := data.NewField(metricName, l, values) // note
+	timeField := data.NewField("time", nil, t)
+
+	if valueField.Len() != timeField.Len() {
+		// return error since creating the frame will eventually fail to marshal due to the
+		// arrow constraint that fields must be of the same length.
+		// Alternatively we could pad, but this seems like it would be a programing error more than
+		// a data error to me.
+		return fmt.Errorf("invalid series, time and value must be of the same length")
+	}
+
+	valueFieldType := valueField.Type()
+	if !valueFieldType.Numeric() && valueFieldType != data.FieldTypeBool && valueFieldType != data.FieldTypeNullableBool {
+		err = fmt.Errorf("value type %s is not valid time series value type", valueFieldType)
+	}
+
+	frame := data.NewFrame("", timeField, valueField)
+	frame.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesMany}) // I think "Multi" is better than "Many"
+	*mfs = append(*mfs, frame)
+	return err
 }
 
 func (mfs *MultiFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
@@ -60,8 +83,8 @@ func (mfs *MultiFrameSeries) AsWideFrameSeries() *WideFrameSeries {
 // need to think about pointers here and elsewhere
 type WideFrameSeries data.Frame
 
-func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) {
-
+func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
+	return nil
 }
 
 func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
