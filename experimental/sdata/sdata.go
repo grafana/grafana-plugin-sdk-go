@@ -39,8 +39,67 @@ func AddSeriesToTimeSeriesMany[T time, N number](tsm *TimeSeriesMany, metricName
 	return nil
 }
 
+func TSMAddSeries[T time, N number](tsm *TimeSeriesMany, s Series[T, N]) error {
+	if len(s.T) != len(s.N) {
+		return fmt.Errorf("time and values must be of the same length")
+	}
+	frame := data.NewFrame("",
+		data.NewField("time", nil, s.T), // time is just for convience, not a requirement of the schema.
+		data.NewField(s.Name, s.Labels, s.N),
+	)
+
+	*tsm = append(*tsm, frame)
+
+	return nil
+}
+
+// func AddSeriesToTimeSeriesMany[T time, N number, S Series[T, N]](tsm *TimeSeriesMany, s S) error {
+// 	return nil
+// }
+
+type Series[T time, N number] struct {
+	Name string
+	Labels data.Labels
+	
+	T []T
+	N []N
+}
+
+// type Series[T time, N number] interface {
+// 	SetSeries(metricName string, labels data.Labels, t []T, n []N) error
+// 	GetSeries() Series[T, N]
+// }
+
+// type Series[T time, N number] interface {
+// 	[]T
+// 	[]N
+// 	SetValues([]T, []N)
+// 	// GetName() string
+// 	// SetName(string)
+	
+// 	// GetLabels(data.Labels)
+// 	// SetLabels(data.Labels)
+	
+// }
+
+//type SeriesSet[T time, N number] []Series[T, N] // This would imply all series in the set have the same type of number
+// while maybe often the case not a restriction that I think we want.
+
+// func CreateSeries[T time, N number](metricName string, labels data.Labels, t []T, n []N) (Series[T, N], error) {
+// 	return nil, nil
+// }
+
 func main() {
+	s := Series[tpkg.Time, float64]{
+		Name: "cpu",
+		Labels: data.Labels{"host": "web1"},
+		T: []tpkg.Time{tpkg.Now()},
+		N: []float64{3.2},
+	}
+
 	tsm := &TimeSeriesMany{}
-	AddSeriesToTimeSeriesMany(tsm, "cpu", data.Labels{"host": "a"}, []tpkg.Time{tpkg.Now()}, []float64{1.1})
+	TSMAddSeries(tsm, s)
+	// AddSeriesToTimeSeriesMany(tsm, "cpu", data.Labels{"host": "a"}, []tpkg.Time{tpkg.Now()}, []float64{1.1})
 	spew.Dump(tsm)
 }
+
