@@ -40,13 +40,17 @@ func GetInfo(id string) (Args, error) {
 	}
 
 	// When debugging in vscode, write the file in `dist`
-	if standalone && strings.HasSuffix(ex, "/pkg/__debug_bin") {
+	if standalone && strings.HasPrefix(filepath.Base(ex), "__debug_bin") {
 		info.debugger = true
 		port, err := getFreePort()
 		if err == nil {
 			address = fmt.Sprintf(":%d", port)
 		}
-		ex = filepath.Join(filepath.Dir(ex), "..", "dist", "exe")
+		js, err := findPluginJSON(ex)
+		if err != nil {
+			return info, err
+		}
+		ex = js
 	}
 	info.dir = filepath.Dir(ex)
 	filePath := filepath.Join(info.dir, "standalone.txt")
@@ -81,6 +85,29 @@ func GetInfo(id string) (Args, error) {
 		}
 	}
 	return info, nil
+}
+
+// will check a few options to find the dist plugin json file
+func findPluginJSON(exe string) (string, error) {
+	cwd, _ := os.Getwd()
+	if filepath.Base(cwd) == "pkg" {
+		cwd = filepath.Join(cwd, "..")
+	}
+
+	check := []string{
+		filepath.Join(filepath.Dir(exe), "plugin.json"),
+		filepath.Join(filepath.Dir(exe), "..", "dist", "plugin.json"),
+		filepath.Join(cwd, "dist", "plugin.json"),
+		filepath.Join(cwd, "plugin.json"),
+	}
+
+	for _, path := range check {
+		if _, err := os.Stat(path); err == nil {
+			return path, nil
+		}
+	}
+
+	return exe, fmt.Errorf("can not find plugin.json in: %v", check)
 }
 
 func RunDummyPluginLocator(address string) {
