@@ -59,11 +59,6 @@ const (
 
 	// FrameTypeTable represents an arbitrary table structure with no constraints
 	FrameTypeTable = "table"
-
-	// FrameTypeTableFooter may exist next to FrameTypeTable and represent data that
-	// should show up in the footer section.  It must have the same width, but not
-	// necessarily same field types as the sibling table data
-	FrameTypeTableFooter = "table-footer"
 )
 
 // IsKnownType checks if the value is a known structure
