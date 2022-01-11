@@ -63,6 +63,27 @@ type CheckHealthResult struct {
 	JSONDetails []byte
 }
 
+// CollectUsageStatsHandler handles usage stats collection.
+type CollectUsageStatsHandler interface {
+	CollectUsageStats(ctx context.Context, req *CollectUsageStatsRequest) (*CollectUsageStatsResponse, error)
+}
+
+// CollectUsageStatsHandlerFunc is an adapter to allow the use of
+// ordinary functions as backend.CollectUsageStatsHandler. If f is a function
+// with the appropriate signature, CollectUsageStatsHandlerFunc(f) is a
+// Handler that calls f.
+type CollectUsageStatsHandlerFunc func(ctx context.Context, req *CollectUsageStatsRequest) (*CollectUsageStatsResponse, error)
+
+// CollectUsageStatsRequest contains the usage stats request.
+type CollectUsageStatsRequest struct {
+	PluginContext PluginContext
+}
+
+// CollectUsageStatsResponse collect usage stats result.
+type CollectUsageStatsResponse struct {
+	Stats map[string]int64
+}
+
 // CollectMetricsHandler handles metric collection.
 type CollectMetricsHandler interface {
 	CollectMetrics(ctx context.Context) (*CollectMetricsResult, error)

@@ -193,6 +193,26 @@ func (f ConvertFromProtobuf) CheckHealthResponse(protoResp *pluginv2.CheckHealth
 	}
 }
 
+// CollectUsageStatsRequest converts protobuf version of a CollectUsageStatsRequest to the SDK version.
+func (f ConvertFromProtobuf) CollectUsageStatsRequest(protoReq *pluginv2.CollectUsageStatsRequest) *CollectUsageStatsRequest {
+	return &CollectUsageStatsRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+	}
+}
+
+// CollectUsageStatsResponse converts protobuf version of a CollectUsageStatsResponse to the SDK version.
+func (f ConvertFromProtobuf) CollectUsageStatsResponse(protoResp *pluginv2.CollectUsageStatsResponse) *CollectUsageStatsResponse {
+	var stats map[string]int64
+
+	if protoResp.Stats != nil {
+		stats = protoResp.Stats
+	}
+
+	return &CollectUsageStatsResponse{
+		Stats: stats,
+	}
+}
+
 // CollectMetricsResponse converts protobuf version of a CollectMetricsResponse to the SDK version.
 func (f ConvertFromProtobuf) CollectMetricsResponse(protoResp *pluginv2.CollectMetricsResponse) *CollectMetricsResult {
 	var prometheusMetrics []byte

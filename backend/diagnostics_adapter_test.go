@@ -12,6 +12,26 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestCollectUsageStats(t *testing.T) {
+	t.Run("Usage stats handler not set", func(t *testing.T) {
+		adapter := &diagnosticsSDKAdapter{}
+		res, err := adapter.CollectUsageStats(context.Background(), &pluginv2.CollectUsageStatsRequest{})
+		require.NoError(t, err)
+		require.NotNil(t, res)
+		require.Equal(t, int64(0), res.Stats["stats.ds.example.feature.count"])
+	})
+
+	t.Run("Usage stats handler set", func(t *testing.T) {
+		adapter := &diagnosticsSDKAdapter{
+			usageStatsHandler: &testCollectUsageStats{stats: map[string]int64{"stats.ds.example.feature.count": 1}},
+		}
+		res, err := adapter.CollectUsageStats(context.Background(), &pluginv2.CollectUsageStatsRequest{PluginContext: &pluginv2.PluginContext{}})
+		require.NoError(t, err)
+		require.NotNil(t, res)
+		require.Equal(t, int64(1), res.Stats["stats.ds.example.feature.count"])
+	})
+}
+
 func TestCollectMetrcis(t *testing.T) {
 	adapter := &diagnosticsSDKAdapter{
 		metricGatherer: prometheus.DefaultGatherer,
@@ -88,7 +108,7 @@ func TestCheckHealth(t *testing.T) {
 				message:     tc.message,
 				jsonDetails: tc.jsonDetails,
 				err:         tc.err,
-			})
+			}, nil)
 
 			req := &pluginv2.CheckHealthRequest{
 				PluginContext: &pluginv2.PluginContext{},
@@ -120,5 +140,16 @@ func (h *testCheckHealthHandler) CheckHealth(_ context.Context, _ *CheckHealthRe
 		Status:      h.status,
 		Message:     h.message,
 		JSONDetails: h.jsonDetails,
+	}, h.err
+}
+
+type testCollectUsageStats struct {
+	stats map[string]int64
+	err   error
+}
+
+func (h *testCollectUsageStats) CollectUsageStats(_ context.Context, _ *CollectUsageStatsRequest) (*CollectUsageStatsResponse, error) {
+	return &CollectUsageStatsResponse{
+		Stats: h.stats,
 	}, h.err
 }

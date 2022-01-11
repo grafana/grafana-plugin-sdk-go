@@ -141,6 +141,15 @@ message DataResponse {
 service Diagnostics {
   rpc CheckHealth(CheckHealthRequest) returns (CheckHealthResponse);
   rpc CollectMetrics(CollectMetricsRequest) returns (CollectMetricsResponse);
+  rpc CollectUsageStats(CollectUsageStatsRequest) returns (CollectUsageStatsResponse);
+}
+
+message CollectUsageStatsRequest {
+  PluginContext pluginContext = 1;
+}
+
+message CollectUsageStatsResponse {
+  map<string,int64> stats = 1;
 }
 
 message CollectMetricsRequest {

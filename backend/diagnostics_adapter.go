@@ -11,12 +11,14 @@ import (
 
 // diagnosticsSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type diagnosticsSDKAdapter struct {
+	usageStatsHandler  CollectUsageStatsHandler
 	metricGatherer     prometheus.Gatherer
 	checkHealthHandler CheckHealthHandler
 }
 
-func newDiagnosticsSDKAdapter(metricGatherer prometheus.Gatherer, checkHealthHandler CheckHealthHandler) *diagnosticsSDKAdapter {
+func newDiagnosticsSDKAdapter(metricGatherer prometheus.Gatherer, checkHealthHandler CheckHealthHandler, usageStatsHandler CollectUsageStatsHandler) *diagnosticsSDKAdapter {
 	return &diagnosticsSDKAdapter{
+		usageStatsHandler:  usageStatsHandler,
 		metricGatherer:     metricGatherer,
 		checkHealthHandler: checkHealthHandler,
 	}
@@ -40,6 +42,20 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.Co
 		Metrics: &pluginv2.CollectMetricsResponse_Payload{
 			Prometheus: buf.Bytes(),
 		},
+	}, nil
+}
+
+func (a *diagnosticsSDKAdapter) CollectUsageStats(ctx context.Context, protoReq *pluginv2.CollectUsageStatsRequest) (*pluginv2.CollectUsageStatsResponse, error) {
+	if a.usageStatsHandler != nil {
+		res, err := a.usageStatsHandler.CollectUsageStats(ctx, FromProto().CollectUsageStatsRequest(protoReq))
+		if err != nil {
+			return nil, err
+		}
+		return ToProto().CollectUsageStatsResponse(res), nil
+	}
+
+	return &pluginv2.CollectUsageStatsResponse{
+		Stats: make(map[string]int64),
 	}, nil
 }
 

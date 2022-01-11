@@ -99,6 +99,13 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 	panic("unsupported protobuf health status type in sdk")
 }
 
+// CollectUsageStatsResponse converts the SDK version of a CollectUsageStatsResponse to the protobuf version.
+func (t ConvertToProtobuf) CollectUsageStatsResponse(res *CollectUsageStatsResponse) *pluginv2.CollectUsageStatsResponse {
+	return &pluginv2.CollectUsageStatsResponse{
+		Stats: res.Stats,
+	}
+}
+
 // CheckHealthResponse converts the SDK version of a CheckHealthResponse to the protobuf version.
 func (t ConvertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealthResponse {
 	return &pluginv2.CheckHealthResponse{

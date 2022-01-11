@@ -28,6 +28,9 @@ type GRPCSettings struct {
 
 // ServeOpts options for serving plugins.
 type ServeOpts struct {
+	// CollectUsageStatsHandler handler for usage stats.
+	CollectUsageStatsHandler CollectUsageStatsHandler
+
 	// CheckHealthHandler handler for health checks.
 	CheckHealthHandler CheckHealthHandler
 
@@ -49,7 +52,7 @@ type ServeOpts struct {
 
 func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	pluginOpts := grpcplugin.ServeOpts{
-		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
+		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler, opts.CollectUsageStatsHandler),
 	}
 
 	if opts.CallResourceHandler != nil {

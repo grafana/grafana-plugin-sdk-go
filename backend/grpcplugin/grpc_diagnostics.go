@@ -42,6 +42,11 @@ type diagnosticsGRPCServer struct {
 	server DiagnosticsServer
 }
 
+// CollectUsageStats collects usage stats.
+func (s *diagnosticsGRPCServer) CollectUsageStats(ctx context.Context, req *pluginv2.CollectUsageStatsRequest) (*pluginv2.CollectUsageStatsResponse, error) {
+	return s.server.CollectUsageStats(ctx, req)
+}
+
 // CollectMetrics collects metrics.
 func (s *diagnosticsGRPCServer) CollectMetrics(ctx context.Context, req *pluginv2.CollectMetricsRequest) (*pluginv2.CollectMetricsResponse, error) {
 	return s.server.CollectMetrics(ctx, req)
@@ -54,6 +59,11 @@ func (s *diagnosticsGRPCServer) CheckHealth(ctx context.Context, req *pluginv2.C
 
 type diagnosticsGRPCClient struct {
 	client pluginv2.DiagnosticsClient
+}
+
+// CollectUsageStats collects usage stats.
+func (s *diagnosticsGRPCClient) CollectUsageStats(ctx context.Context, req *pluginv2.CollectUsageStatsRequest, opts ...grpc.CallOption) (*pluginv2.CollectUsageStatsResponse, error) {
+	return s.client.CollectUsageStats(ctx, req, opts...)
 }
 
 // CollectMetrics collects metrics.
