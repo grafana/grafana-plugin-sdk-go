@@ -50,10 +50,7 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec vector
 	switch v := values.(type) {
 	case []int8:
-		vec = newInt8Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newInt8VectorWithValues(v)
 	case []*int8:
 		vec = newNullableInt8Vector(len(v))
 		for i := 0; i < len(v); i++ {
