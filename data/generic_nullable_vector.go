@@ -7,8 +7,8 @@ func newNullablegenVector(n int) *nullablegenVector {
 	return &v
 }
 
-func newNullablegenVectorWithValues(s []gen) *genVector {
-	v := genVector(s)
+func newNullablegenVectorWithValues(s []*gen) *nullablegenVector {
+	v := nullablegenVector(s)
 	return &v
 }
 

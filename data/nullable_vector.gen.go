@@ -13,8 +13,8 @@ func newNullableUint8Vector(n int) *nullableUint8Vector {
 	return &v
 }
 
-func newNullableUint8VectorWithValues(s []uint8) *uint8Vector {
-	v := uint8Vector(s)
+func newNullableUint8VectorWithValues(s []*uint8) *nullableUint8Vector {
+	v := nullableUint8Vector(s)
 	return &v
 }
 
@@ -103,8 +103,8 @@ func newNullableUint16Vector(n int) *nullableUint16Vector {
 	return &v
 }
 
-func newNullableUint16VectorWithValues(s []uint16) *uint16Vector {
-	v := uint16Vector(s)
+func newNullableUint16VectorWithValues(s []*uint16) *nullableUint16Vector {
+	v := nullableUint16Vector(s)
 	return &v
 }
 
@@ -193,8 +193,8 @@ func newNullableUint32Vector(n int) *nullableUint32Vector {
 	return &v
 }
 
-func newNullableUint32VectorWithValues(s []uint32) *uint32Vector {
-	v := uint32Vector(s)
+func newNullableUint32VectorWithValues(s []*uint32) *nullableUint32Vector {
+	v := nullableUint32Vector(s)
 	return &v
 }
 
@@ -283,8 +283,8 @@ func newNullableUint64Vector(n int) *nullableUint64Vector {
 	return &v
 }
 
-func newNullableUint64VectorWithValues(s []uint64) *uint64Vector {
-	v := uint64Vector(s)
+func newNullableUint64VectorWithValues(s []*uint64) *nullableUint64Vector {
+	v := nullableUint64Vector(s)
 	return &v
 }
 
@@ -373,8 +373,8 @@ func newNullableInt8Vector(n int) *nullableInt8Vector {
 	return &v
 }
 
-func newNullableInt8VectorWithValues(s []int8) *int8Vector {
-	v := int8Vector(s)
+func newNullableInt8VectorWithValues(s []*int8) *nullableInt8Vector {
+	v := nullableInt8Vector(s)
 	return &v
 }
 
@@ -463,8 +463,8 @@ func newNullableInt16Vector(n int) *nullableInt16Vector {
 	return &v
 }
 
-func newNullableInt16VectorWithValues(s []int16) *int16Vector {
-	v := int16Vector(s)
+func newNullableInt16VectorWithValues(s []*int16) *nullableInt16Vector {
+	v := nullableInt16Vector(s)
 	return &v
 }
 
@@ -553,8 +553,8 @@ func newNullableInt32Vector(n int) *nullableInt32Vector {
 	return &v
 }
 
-func newNullableInt32VectorWithValues(s []int32) *int32Vector {
-	v := int32Vector(s)
+func newNullableInt32VectorWithValues(s []*int32) *nullableInt32Vector {
+	v := nullableInt32Vector(s)
 	return &v
 }
 
@@ -643,8 +643,8 @@ func newNullableInt64Vector(n int) *nullableInt64Vector {
 	return &v
 }
 
-func newNullableInt64VectorWithValues(s []int64) *int64Vector {
-	v := int64Vector(s)
+func newNullableInt64VectorWithValues(s []*int64) *nullableInt64Vector {
+	v := nullableInt64Vector(s)
 	return &v
 }
 
@@ -733,8 +733,8 @@ func newNullableFloat32Vector(n int) *nullableFloat32Vector {
 	return &v
 }
 
-func newNullableFloat32VectorWithValues(s []float32) *float32Vector {
-	v := float32Vector(s)
+func newNullableFloat32VectorWithValues(s []*float32) *nullableFloat32Vector {
+	v := nullableFloat32Vector(s)
 	return &v
 }
 
@@ -823,8 +823,8 @@ func newNullableFloat64Vector(n int) *nullableFloat64Vector {
 	return &v
 }
 
-func newNullableFloat64VectorWithValues(s []float64) *float64Vector {
-	v := float64Vector(s)
+func newNullableFloat64VectorWithValues(s []*float64) *nullableFloat64Vector {
+	v := nullableFloat64Vector(s)
 	return &v
 }
 
@@ -913,8 +913,8 @@ func newNullableStringVector(n int) *nullableStringVector {
 	return &v
 }
 
-func newNullableStringVectorWithValues(s []string) *stringVector {
-	v := stringVector(s)
+func newNullableStringVectorWithValues(s []*string) *nullableStringVector {
+	v := nullableStringVector(s)
 	return &v
 }
 
@@ -1003,8 +1003,8 @@ func newNullableBoolVector(n int) *nullableBoolVector {
 	return &v
 }
 
-func newNullableBoolVectorWithValues(s []bool) *boolVector {
-	v := boolVector(s)
+func newNullableBoolVectorWithValues(s []*bool) *nullableBoolVector {
+	v := nullableBoolVector(s)
 	return &v
 }
 
@@ -1093,8 +1093,8 @@ func newNullableTimeTimeVector(n int) *nullableTimeTimeVector {
 	return &v
 }
 
-func newNullableTimeTimeVectorWithValues(s []time.Time) *timeTimeVector {
-	v := timeTimeVector(s)
+func newNullableTimeTimeVectorWithValues(s []*time.Time) *nullableTimeTimeVector {
+	v := nullableTimeTimeVector(s)
 	return &v
 }
 

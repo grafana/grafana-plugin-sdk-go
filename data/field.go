@@ -52,130 +52,55 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 	case []int8:
 		vec = newInt8VectorWithValues(v)
 	case []*int8:
-		vec = newNullableInt8Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableInt8VectorWithValues(v)
 	case []int16:
-		vec = newInt16Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newInt16VectorWithValues(v)
 	case []*int16:
-		vec = newNullableInt16Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableInt16VectorWithValues(v)
 	case []int32:
-		vec = newInt32Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newInt32VectorWithValues(v)
 	case []*int32:
-		vec = newNullableInt32Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableInt32VectorWithValues(v)
 	case []int64:
-		vec = newInt64Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newInt64VectorWithValues(v)
 	case []*int64:
-		vec = newNullableInt64Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableInt64VectorWithValues(v)
 	case []uint8:
-		vec = newUint8Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newUint8VectorWithValues(v)
 	case []*uint8:
-		vec = newNullableUint8Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableUint8VectorWithValues(v)
 	case []uint16:
-		vec = newUint16Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newUint16VectorWithValues(v)
 	case []*uint16:
-		vec = newNullableUint16Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableUint16VectorWithValues(v)
 	case []uint32:
-		vec = newUint32Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newUint32VectorWithValues(v)
 	case []*uint32:
-		vec = newNullableUint32Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableUint32VectorWithValues(v)
 	case []uint64:
-		vec = newUint64Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newUint64VectorWithValues(v)
 	case []*uint64:
-		vec = newNullableUint64Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableUint64VectorWithValues(v)
 	case []float32:
-		vec = newFloat32Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newFloat32VectorWithValues(v)
 	case []*float32:
-		vec = newNullableFloat32Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableFloat32VectorWithValues(v)
 	case []float64:
-		vec = newFloat64Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newFloat64VectorWithValues(v)
 	case []*float64:
-		vec = newNullableFloat64Vector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableFloat64VectorWithValues(v)
 	case []string:
-		vec = newStringVector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newStringVectorWithValues(v)
 	case []*string:
-		vec = newNullableStringVector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableStringVectorWithValues(v)
 	case []bool:
-		vec = newBoolVector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newBoolVectorWithValues(v)
 	case []*bool:
-		vec = newNullableBoolVector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableBoolVectorWithValues(v)
 	case []time.Time:
-		vec = newTimeTimeVector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newTimeTimeVectorWithValues(v)
 	case []*time.Time:
-		vec = newNullableTimeTimeVector(len(v))
-		for i := 0; i < len(v); i++ {
-			vec.Set(i, v[i])
-		}
+		vec = newNullableTimeTimeVectorWithValues(v)
 	default:
 		panic(fmt.Errorf("field '%s' specified with unsupported type %T", name, v))
 	}
