@@ -588,12 +588,19 @@ type fieldEntityLookup struct {
 	NaN    []int `json:"NaN,omitempty"`
 	Inf    []int `json:"Inf,omitempty"`
 	NegInf []int `json:"NegInf,omitempty"`
+	Undef  []int `json:"Undef,omitempty"`
 }
 
 const (
 	entityNaN         = "NaN"
 	entityPositiveInf = "+Inf"
 	entityNegativeInf = "-Inf"
+	entityUndefined   = "Undef"
+)
+
+const (
+	nilFloat64       = 0x7FFFFFFFFFFFFFFF
+	undefinedFloat64 = 0x7FFFFFFFFFFFFFFE
 )
 
 func (f *fieldEntityLookup) add(str string, idx int) {
@@ -604,11 +611,15 @@ func (f *fieldEntityLookup) add(str string, idx int) {
 		f.NegInf = append(f.NegInf, idx)
 	case entityNaN:
 		f.NaN = append(f.NaN, idx)
+	case entityUndefined:
+		f.Undef = append(f.Undef, idx)
 	}
 }
 
 func isSpecialEntity(v float64) (string, bool) {
 	switch {
+	case IsUndefinedFloat64(v):
+		return entityUndefined, true
 	case math.IsNaN(v):
 		return entityNaN, true
 	case math.IsInf(v, 1):
@@ -619,6 +630,18 @@ func isSpecialEntity(v float64) (string, bool) {
 		return "", false
 	}
 }
+
+// NilFloat64 returns a magic NaN value that represents nil in []float64.
+func NilFloat64() float64 { return math.Float64frombits(nilFloat64) }
+
+// IsNilFloat64 checks if a float is equal to NilFloat64().
+func IsNilFloat64(v float64) bool { return math.Float64bits(v) == nilFloat64 }
+
+// UndefinedFloat64 returns a magic NaN value that represents an undefined value in []float64.
+func UndefinedFloat64() float64 { return math.Float64frombits(undefinedFloat64) }
+
+// IsUndefinedFloat64 checks if a float is equal to UndefinedFloat64().
+func IsUndefinedFloat64(v float64) bool { return math.Float64bits(v) == undefinedFloat64 }
 
 func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) {
 	stream.WriteObjectStart()
@@ -785,6 +808,13 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 						stream.Error = fmt.Errorf("unsupported float type: %T", v)
 						return
 					}
+
+					// NilFloat64 is a special entity, but it can be encoded as null in JSON
+					if IsNilFloat64(f64) {
+						stream.WriteNil()
+						break
+					}
+
 					if entityType, found := isSpecialEntity(f64); found {
 						if entities[fidx] == nil {
 							entities[fidx] = &fieldEntityLookup{}
