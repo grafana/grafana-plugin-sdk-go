@@ -38,9 +38,7 @@ func (v *genVector) Len() int {
 }
 
 func (v *genVector) CopyAt(i int) interface{} {
-	var g gen
-	g = (*v)[i]
-	return g
+	return (*v)[i]
 }
 
 func (v *genVector) ConcreteAt(i int) (interface{}, bool) {

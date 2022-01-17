@@ -37,8 +37,7 @@ func (v *nullablegenVector) CopyAt(i int) interface{} {
 		var g *gen
 		return g
 	}
-	var g gen
-	g = *(*v)[i]
+	g := *(*v)[i]
 	return &g
 }
 
