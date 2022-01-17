@@ -86,6 +86,11 @@ func vectorFieldType(v vector) FieldType {
 		return FieldTypeTime
 	case *nullableTimeTimeVector:
 		return FieldTypeNullableTime
+
+	case *timeDurationVector:
+		return FieldTypeDuration
+	case *nullableTimeDurationVector:
+		return FieldTypeNullableDuration
 	}
 
 	return FieldTypeUnknown
@@ -170,6 +175,10 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 		f.vector = newTimeTimeVector(n)
 	case FieldTypeNullableTime:
 		f.vector = newNullableTimeTimeVector(n)
+	case FieldTypeDuration:
+		f.vector = newTimeDurationVector(n)
+	case FieldTypeNullableDuration:
+		f.vector = newNullableTimeDurationVector(n)
 	default:
 		panic("unsupported FieldType")
 	}

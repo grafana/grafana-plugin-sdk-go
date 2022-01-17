@@ -41,8 +41,8 @@ type Fields []*Field
 //  []uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
 // Floats:
 //  []float32, []*float32, []float64, []*float64
-// String, Bool, and Time:
-//  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+// String, Bool, Time and Duration:
+//  []string, []*string, []bool, []*bool, []time.Time, []*time.Time and []*time.Duration.
 //
 // If an unsupported values type is passed, NewField will panic.
 // nolint:gocyclo
@@ -176,6 +176,16 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		}
 	case []*time.Time:
 		vec = newNullableTimeTimeVector(len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []time.Duration:
+		vec = newTimeDurationVector(len(v))
+		for i := 0; i < len(v); i++ {
+			vec.Set(i, v[i])
+		}
+	case []*time.Duration:
+		vec = newNullableTimeDurationVector(len(v))
 		for i := 0; i < len(v); i++ {
 			vec.Set(i, v[i])
 		}
@@ -421,6 +431,14 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 			return math.NaN(), nil
 		}
 		return float64(t.UnixNano() / int64(time.Millisecond)), nil
+	case FieldTypeDuration:
+		return float64(f.At(idx).(time.Duration)), nil
+	case FieldTypeNullableDuration:
+		d := f.At(idx).(*time.Duration)
+		if d == nil {
+			return math.NaN(), nil
+		}
+		return float64(*d), nil
 	}
 	return 0, fmt.Errorf("unsupported field type %T", f.Type())
 }
@@ -545,6 +563,14 @@ func (f *Field) NullableFloatAt(idx int) (*float64, error) {
 			return nil, nil
 		}
 		f := float64(t.UnixNano() / int64(time.Millisecond))
+		return &f, nil
+
+	case FieldTypeNullableDuration:
+		d := f.At(idx).(*time.Duration)
+		if d == nil {
+			return nil, nil
+		}
+		f := float64(*d)
 		return &f, nil
 	}
 	return nil, fmt.Errorf("unsupported field type %T", f.Type())

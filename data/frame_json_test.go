@@ -11,9 +11,9 @@ import (
 	"testing"
 	"text/template"
 
+	"github.com/google/go-cmp/cmp"
 	jsoniter "github.com/json-iterator/go"
 
-	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"

@@ -22,6 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
+const simpleTypeDuration = "duration"
 
 const jsonKeySchema = "schema"
 const jsonKeyData = "data"
@@ -356,7 +357,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 		return int64(fV), nil
 	}
 
-	return 0, fmt.Errorf("unable to conver")
+	return 0, fmt.Errorf("unable to convert")
 }
 
 func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
@@ -365,6 +366,15 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 	}
 
 	switch ft.NonNullableType() {
+	case FieldTypeDuration:
+		convert = func(v interface{}) (interface{}, error) {
+			dV, ok := v.(int64)
+			if !ok {
+				return nil, fmt.Errorf("error reading duration")
+			}
+			return time.Duration(dV), nil
+		}
+
 	case FieldTypeTime:
 		convert = func(v interface{}) (interface{}, error) {
 			fV, ok := v.(float64)
@@ -474,6 +484,10 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readTimeVectorJSON(iter, false, size)
 	case FieldTypeNullableTime:
 		return readTimeVectorJSON(iter, true, size)
+	case FieldTypeDuration:
+		return readDurationVectorJSON(iter, false, size)
+	case FieldTypeNullableDuration:
+		return readDurationVectorJSON(iter, true, size)
 
 	// Generated
 	case FieldTypeUint8:
@@ -525,12 +539,15 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 	case FieldTypeNullableBool:
 		return readNullableBoolVectorJSON(iter, size)
 	}
-	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
+	return nil, fmt.Errorf("unsupported type: %s", ft.ItemTypeString())
 }
 
 func getSimpleTypeString(t FieldType) (string, bool) {
 	if t.Time() {
 		return simpleTypeTime, true
+	}
+	if t.Duration() {
+		return simpleTypeDuration, true
 	}
 	if t.Numeric() {
 		return simpleTypeNumber, true
@@ -549,6 +566,8 @@ func getFieldTypeForArrow(t arrow.DataType) FieldType {
 	switch t.ID() {
 	case arrow.TIMESTAMP:
 		return FieldTypeTime
+	case arrow.DURATION:
+		return FieldTypeDuration
 	case arrow.UINT8:
 		return FieldTypeUint8
 	case arrow.UINT16:
@@ -754,6 +773,7 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 		if fidx > 0 {
 			stream.WriteMore()
 		}
+		isDuration := f.Type().Duration()
 		isTime := f.Type().Time()
 		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
 			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
@@ -767,6 +787,9 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 				switch {
 				case isTime:
 					vTyped := v.(time.Time).UnixNano() / int64(time.Millisecond) // Milliseconds precision.
+					stream.WriteVal(vTyped)
+				case isDuration:
+					vTyped := v.(time.Duration)
 					stream.WriteVal(vTyped)
 				case isFloat:
 					// For float and nullable float we check whether a value is a special
@@ -981,6 +1004,8 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 		switch col.DataType().ID() {
 		case arrow.TIMESTAMP:
 			writeArrowDataTIMESTAMP(stream, col)
+		case arrow.DURATION:
+			writeArrowDataDURATION(stream, col)
 
 		case arrow.UINT8:
 			ent = writeArrowDataUint8(stream, col)
@@ -1053,6 +1078,31 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
 	stream.WriteArrayEnd()
 }
 
+// Custom duration extraction... assumes nanoseconds for everything now
+func writeArrowDataDURATION(stream *jsoniter.Stream, col array.Interface) {
+	count := col.Len()
+
+	v := array.NewDurationData(col.Data())
+	stream.WriteArrayStart()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if col.IsNull(i) {
+			stream.WriteNil()
+			continue
+		}
+
+		stream.WriteInt64(int64(v.Value(i)))
+
+		if stream.Error != nil { // ???
+			stream.Error = nil
+			stream.WriteNil()
+		}
+	}
+	stream.WriteArrayEnd()
+}
+
 func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
 	var arr vector
 	if nullable {
@@ -1063,7 +1113,7 @@ func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
-			iter.ReportError("readUint8VectorJSON", "expected array")
+			iter.ReportError("readTimeVectorJSON", "expected array")
 			return nil, iter.Error
 		}
 
@@ -1075,6 +1125,35 @@ func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 
 			tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6))
 			arr.SetConcrete(i, tv)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("read", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func readDurationVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
+	var arr vector
+	if nullable {
+		arr = newNullableTimeDurationVector(size)
+	} else {
+		arr = newTimeDurationVector(size)
+	}
+
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readDurationVectorJSON", "expected array")
+			return nil, iter.Error
+		}
+
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			arr.SetConcrete(i, time.Duration(iter.ReadInt64()))
 		}
 	}
 

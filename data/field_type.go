@@ -526,6 +526,11 @@ func (p FieldType) Time() bool {
 	return p == FieldTypeTime || p == FieldTypeNullableTime
 }
 
+// Duration returns if Field type is a time type (FieldTypeDuration or FieldTypeNullableDuration).
+func (p FieldType) Duration() bool {
+	return p == FieldTypeDuration || p == FieldTypeNullableDuration
+}
+
 // numericFieldTypes is an array of FieldTypes that are numeric.
 var numericFieldTypes = [...]FieldType{
 	FieldTypeInt8, FieldTypeInt16, FieldTypeInt32, FieldTypeInt64,

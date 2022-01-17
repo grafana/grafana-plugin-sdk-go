@@ -255,6 +255,21 @@ func goldenDF() *data.Frame {
 			timePtr(time.Unix(0, maxEcma6Int)),
 			timePtr(time.Unix(0, math.MaxInt64)),
 		}),
+		// Note: This is intentionally repeated to create a duplicate field.
+		data.NewField("durations", nil, []time.Duration{
+			time.Duration(0),
+			time.Duration(1568039445),
+			time.Duration(1568039450),
+			time.Duration(maxEcma6Int),
+			time.Duration(math.MaxInt64),
+		}),
+		data.NewField("nullable_durations", nil, []*time.Duration{
+			durationPtr(time.Duration(0)),
+			durationPtr(time.Duration(1568039445)),
+			nil,
+			durationPtr(time.Duration(maxEcma6Int)),
+			durationPtr(time.Duration(math.MaxInt64)),
+		}),
 	).SetMeta(&data.FrameMeta{
 		Custom:              map[string]interface{}{"Hi": "there"},
 		ExecutedQueryString: "SELECT * FROM table",

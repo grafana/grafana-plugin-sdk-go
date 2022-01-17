@@ -185,6 +185,10 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableTimeTimeVector:
 			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
+		case *timeDurationVector:
+			columns[fieldIdx] = *buildDurationColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableTimeDurationVector:
+			columns[fieldIdx] = *buildNullableDurationColumn(pool, arrowFields[fieldIdx], v)
 
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
@@ -281,6 +285,11 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.TimestampType{}, false, nil
 	case *nullableTimeTimeVector:
 		return &arrow.TimestampType{}, true, nil
+
+	case *timeDurationVector:
+		return &arrow.DurationType{}, false, nil
+	case *nullableTimeDurationVector:
+		return &arrow.DurationType{}, true, nil
 
 	default:
 		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.vector)
@@ -401,6 +410,12 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 			break
 		}
 		sdkField.vector = newTimeTimeVector(0)
+	case arrow.DURATION:
+		if nullable[idx] {
+			sdkField.vector = newNullableTimeDurationVector(0)
+			break
+		}
+		sdkField.vector = newTimeDurationVector(0)
 	default:
 		return fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 	}
@@ -632,6 +647,21 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) erro
 				continue
 			}
 			frame.Fields[i].vector.Append(t)
+		}
+	case arrow.DURATION:
+		v := array.NewDurationData(col.Data())
+		for vIdx, dns := range v.DurationValues() {
+			d := time.Duration(int64(dns)) // nanosecond assumption
+			if nullable[i] {
+				if v.IsNull(vIdx) {
+					var null *time.Duration
+					frame.Fields[i].vector.Append(null)
+					continue
+				}
+				frame.Fields[i].vector.Append(&d)
+				continue
+			}
+			frame.Fields[i].vector.Append(d)
 		}
 	default:
 		return fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())
