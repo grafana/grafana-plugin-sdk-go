@@ -78,6 +78,11 @@ const (
 	FieldTypeTime
 	// FieldTypeNullableTime indicates the underlying primitive is a []*time.Time.
 	FieldTypeNullableTime
+
+	// FieldTypeDuration indicates the underlying primitive is a []time.Duration.
+	FieldTypeDuration
+	// FieldTypeNullableDuration indicates the underlying primitive is a []*time.Duration.
+	FieldTypeNullableDuration
 )
 
 // MarshalJSON marshals the enum as a quoted json string
@@ -135,6 +140,8 @@ func FieldTypeFor(t interface{}) FieldType {
 		return FieldTypeString
 	case time.Time:
 		return FieldTypeTime
+	case time.Duration:
+		return FieldTypeDuration
 	}
 	return FieldTypeUnknown
 }
@@ -184,6 +191,9 @@ func (p FieldType) NullableType() FieldType {
 
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeNullableTime
+	case FieldTypeDuration, FieldTypeNullableDuration:
+		return FieldTypeNullableDuration
+
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
@@ -234,6 +244,8 @@ func (p FieldType) NonNullableType() FieldType {
 
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeTime
+	case FieldTypeDuration, FieldTypeNullableDuration:
+		return FieldTypeDuration
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
@@ -307,6 +319,11 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 		return FieldTypeTime, true
 	case "*time.Time":
 		return FieldTypeNullableTime, true
+
+	case "duration", "time.Duration":
+		return FieldTypeDuration, true
+	case "*time.Duration":
+		return FieldTypeNullableDuration, true
 	}
 	return FieldTypeNullableString, false
 }
@@ -378,6 +395,10 @@ func (p FieldType) ItemTypeString() string {
 		return "time.Time"
 	case FieldTypeNullableTime:
 		return "*time.Time"
+	case FieldTypeDuration:
+		return "time.Duration"
+	case FieldTypeNullableDuration:
+		return "*time.Duration"
 	}
 	return "invalid/unsupported type"
 }
@@ -443,6 +464,10 @@ func ValidFieldType(t interface{}) bool {
 		return true
 	case []*time.Time:
 		return true
+	case []time.Duration:
+		return true
+	case []*time.Duration:
+		return true
 	default:
 		return false
 	}
@@ -467,6 +492,9 @@ func (p FieldType) Nullable() bool {
 		return true
 
 	case FieldTypeNullableTime:
+		return true
+
+	case FieldTypeNullableDuration:
 		return true
 	}
 	return false
