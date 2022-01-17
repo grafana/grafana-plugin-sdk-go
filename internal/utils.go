@@ -34,7 +34,7 @@ func GetExecutableFromPluginJSON(dir string) (string, error) {
 		exe, err2 := GetStringValueFromJSON(path.Join(dir, "datasource", "plugin.json"), "executable")
 		if err2 == nil {
 			if !strings.HasPrefix(exe, "../") {
-				return "", fmt.Errorf("datasouce should reference executable in root folder")
+				return "", fmt.Errorf("datasource should reference executable in root folder")
 			}
 			return exe[3:], nil
 		}

@@ -34,6 +34,7 @@ type StreamHandler interface {
 type SubscribeStreamRequest struct {
 	PluginContext PluginContext
 	Path          string
+	Data          json.RawMessage
 }
 
 // SubscribeStreamStatus is a status of subscription response.
@@ -114,6 +115,7 @@ type PublishStreamResponse struct {
 type RunStreamRequest struct {
 	PluginContext PluginContext
 	Path          string
+	Data          json.RawMessage
 }
 
 // StreamPacket is EXPERIMENTAL and is a subject to change till Grafana 8.
