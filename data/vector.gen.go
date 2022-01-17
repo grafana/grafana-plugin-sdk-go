@@ -863,3 +863,69 @@ func (v *timeTimeVector) Insert(i int, val interface{}) {
 func (v *timeTimeVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+type timeDurationVector []time.Duration
+
+func newTimeDurationVector(n int) *timeDurationVector {
+	v := timeDurationVector(make([]time.Duration, n))
+	return &v
+}
+
+func (v *timeDurationVector) Set(idx int, i interface{}) {
+	(*v)[idx] = i.(time.Duration)
+}
+
+func (v *timeDurationVector) SetConcrete(idx int, i interface{}) {
+	v.Set(idx, i)
+}
+
+func (v *timeDurationVector) Append(i interface{}) {
+	*v = append(*v, i.(time.Duration))
+}
+
+func (v *timeDurationVector) At(i int) interface{} {
+	return (*v)[i]
+}
+
+func (v *timeDurationVector) PointerAt(i int) interface{} {
+	return &(*v)[i]
+}
+
+func (v *timeDurationVector) Len() int {
+	return len(*v)
+}
+
+func (v *timeDurationVector) CopyAt(i int) interface{} {
+	var g time.Duration
+	g = (*v)[i]
+	return g
+}
+
+func (v *timeDurationVector) ConcreteAt(i int) (interface{}, bool) {
+	return v.At(i), true
+}
+
+func (v *timeDurationVector) Type() FieldType {
+	return vectorFieldType(v)
+}
+
+func (v *timeDurationVector) Extend(i int) {
+	*v = append(*v, make([]time.Duration, i)...)
+}
+
+func (v *timeDurationVector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *timeDurationVector) Delete(i int) {
+	*v = append((*v)[:i], (*v)[i+1:]...)
+}
