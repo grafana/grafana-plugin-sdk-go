@@ -214,7 +214,7 @@ func goldenDF() *data.Frame {
 		data.NewField("nullable_float64_values_nans", nil, []*float64{
 			float64Ptr(math.Inf(-1)),
 			float64Ptr(data.UndefinedFloat64()),
-			float64Ptr(data.NilFloat64()),
+			nil,
 			float64Ptr(math.NaN()),
 			float64Ptr(math.Inf(1)),
 		}),

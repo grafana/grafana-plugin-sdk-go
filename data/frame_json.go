@@ -315,8 +315,6 @@ func getReplacementValue(key string, ft FieldType) interface{} {
 		v = math.Inf(-1)
 	case "Undef":
 		v = UndefinedFloat64()
-	case "Nil":
-		v = NilFloat64()
 	}
 	if ft == FieldTypeFloat32 || ft == FieldTypeNullableFloat32 {
 		return float32(v)
@@ -325,6 +323,9 @@ func getReplacementValue(key string, ft FieldType) interface{} {
 }
 
 func float64FromJSON(v interface{}) (float64, error) {
+	if v == nil {
+		return NilFloat64(), nil
+	}
 	fV, ok := v.(float64)
 	if ok {
 		return fV, nil
@@ -594,7 +595,6 @@ type fieldEntityLookup struct {
 	Inf    []int `json:"Inf,omitempty"`
 	NegInf []int `json:"NegInf,omitempty"`
 	Undef  []int `json:"Undef,omitempty"`
-	Nil    []int `json:"Nil,omitempty"`
 }
 
 const (
@@ -602,7 +602,6 @@ const (
 	entityPositiveInf = "+Inf"
 	entityNegativeInf = "-Inf"
 	entityUndefined   = "Undef"
-	entityNil         = "Nil"
 )
 
 const (
@@ -620,15 +619,11 @@ func (f *fieldEntityLookup) add(str string, idx int) {
 		f.NaN = append(f.NaN, idx)
 	case entityUndefined:
 		f.Undef = append(f.Undef, idx)
-	case entityNil:
-		f.Nil = append(f.Nil, idx)
 	}
 }
 
 func isSpecialEntity(v float64) (string, bool) {
 	switch {
-	case IsNilFloat64(v):
-		return entityNil, true
 	case IsUndefinedFloat64(v):
 		return entityUndefined, true
 	case math.IsNaN(v):
@@ -818,6 +813,11 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 					default:
 						stream.Error = fmt.Errorf("unsupported float type: %T", v)
 						return
+					}
+
+					if IsNilFloat64(f64) {
+						stream.WriteNil()
+						break
 					}
 
 					if entityType, found := isSpecialEntity(f64); found {

@@ -639,6 +639,10 @@ func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) *fieldE
 		}
 		val := v.Value(i)
 		f64 := float64(val)
+		if IsNilFloat64(f64) {
+			stream.WriteNil()
+			continue
+		}
 		if entityType, found := isSpecialEntity(f64); found {
 			if entities == nil {
 				entities = &fieldEntityLookup{}
@@ -665,6 +669,8 @@ func readFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*float64Vector, e
 		t := iter.WhatIsNext()
 		if t == jsoniter.NilValue {
 			iter.ReadNil()
+			v := NilFloat64()
+			arr.Set(i, v)
 		} else {
 			v := iter.ReadFloat64()
 			arr.Set(i, v)
