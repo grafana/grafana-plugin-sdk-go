@@ -13,6 +13,11 @@ func newNullableUint8Vector(n int) *nullableUint8Vector {
 	return &v
 }
 
+func newNullableUint8VectorWithValues(s []*uint8) *nullableUint8Vector {
+	v := nullableUint8Vector(s)
+	return &v
+}
+
 func (v *nullableUint8Vector) Set(idx int, i interface{}) {
 	if i == nil {
 		(*v)[idx] = nil
@@ -95,6 +100,11 @@ type nullableUint16Vector []*uint16
 
 func newNullableUint16Vector(n int) *nullableUint16Vector {
 	v := nullableUint16Vector(make([]*uint16, n))
+	return &v
+}
+
+func newNullableUint16VectorWithValues(s []*uint16) *nullableUint16Vector {
+	v := nullableUint16Vector(s)
 	return &v
 }
 
@@ -183,6 +193,11 @@ func newNullableUint32Vector(n int) *nullableUint32Vector {
 	return &v
 }
 
+func newNullableUint32VectorWithValues(s []*uint32) *nullableUint32Vector {
+	v := nullableUint32Vector(s)
+	return &v
+}
+
 func (v *nullableUint32Vector) Set(idx int, i interface{}) {
 	if i == nil {
 		(*v)[idx] = nil
@@ -265,6 +280,11 @@ type nullableUint64Vector []*uint64
 
 func newNullableUint64Vector(n int) *nullableUint64Vector {
 	v := nullableUint64Vector(make([]*uint64, n))
+	return &v
+}
+
+func newNullableUint64VectorWithValues(s []*uint64) *nullableUint64Vector {
+	v := nullableUint64Vector(s)
 	return &v
 }
 
@@ -353,6 +373,11 @@ func newNullableInt8Vector(n int) *nullableInt8Vector {
 	return &v
 }
 
+func newNullableInt8VectorWithValues(s []*int8) *nullableInt8Vector {
+	v := nullableInt8Vector(s)
+	return &v
+}
+
 func (v *nullableInt8Vector) Set(idx int, i interface{}) {
 	if i == nil {
 		(*v)[idx] = nil
@@ -435,6 +460,11 @@ type nullableInt16Vector []*int16
 
 func newNullableInt16Vector(n int) *nullableInt16Vector {
 	v := nullableInt16Vector(make([]*int16, n))
+	return &v
+}
+
+func newNullableInt16VectorWithValues(s []*int16) *nullableInt16Vector {
+	v := nullableInt16Vector(s)
 	return &v
 }
 
@@ -523,6 +553,11 @@ func newNullableInt32Vector(n int) *nullableInt32Vector {
 	return &v
 }
 
+func newNullableInt32VectorWithValues(s []*int32) *nullableInt32Vector {
+	v := nullableInt32Vector(s)
+	return &v
+}
+
 func (v *nullableInt32Vector) Set(idx int, i interface{}) {
 	if i == nil {
 		(*v)[idx] = nil
@@ -605,6 +640,11 @@ type nullableInt64Vector []*int64
 
 func newNullableInt64Vector(n int) *nullableInt64Vector {
 	v := nullableInt64Vector(make([]*int64, n))
+	return &v
+}
+
+func newNullableInt64VectorWithValues(s []*int64) *nullableInt64Vector {
+	v := nullableInt64Vector(s)
 	return &v
 }
 
@@ -693,6 +733,11 @@ func newNullableFloat32Vector(n int) *nullableFloat32Vector {
 	return &v
 }
 
+func newNullableFloat32VectorWithValues(s []*float32) *nullableFloat32Vector {
+	v := nullableFloat32Vector(s)
+	return &v
+}
+
 func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
 	if i == nil {
 		(*v)[idx] = nil
@@ -775,6 +820,11 @@ type nullableFloat64Vector []*float64
 
 func newNullableFloat64Vector(n int) *nullableFloat64Vector {
 	v := nullableFloat64Vector(make([]*float64, n))
+	return &v
+}
+
+func newNullableFloat64VectorWithValues(s []*float64) *nullableFloat64Vector {
+	v := nullableFloat64Vector(s)
 	return &v
 }
 
@@ -863,6 +913,11 @@ func newNullableStringVector(n int) *nullableStringVector {
 	return &v
 }
 
+func newNullableStringVectorWithValues(s []*string) *nullableStringVector {
+	v := nullableStringVector(s)
+	return &v
+}
+
 func (v *nullableStringVector) Set(idx int, i interface{}) {
 	if i == nil {
 		(*v)[idx] = nil
@@ -948,6 +1003,11 @@ func newNullableBoolVector(n int) *nullableBoolVector {
 	return &v
 }
 
+func newNullableBoolVectorWithValues(s []*bool) *nullableBoolVector {
+	v := nullableBoolVector(s)
+	return &v
+}
+
 func (v *nullableBoolVector) Set(idx int, i interface{}) {
 	if i == nil {
 		(*v)[idx] = nil
@@ -1030,6 +1090,11 @@ type nullableTimeTimeVector []*time.Time
 
 func newNullableTimeTimeVector(n int) *nullableTimeTimeVector {
 	v := nullableTimeTimeVector(make([]*time.Time, n))
+	return &v
+}
+
+func newNullableTimeTimeVectorWithValues(s []*time.Time) *nullableTimeTimeVector {
+	v := nullableTimeTimeVector(s)
 	return &v
 }
 

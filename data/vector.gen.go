@@ -13,6 +13,11 @@ func newUint8Vector(n int) *uint8Vector {
 	return &v
 }
 
+func newUint8VectorWithValues(s []uint8) *uint8Vector {
+	v := uint8Vector(s)
+	return &v
+}
+
 func (v *uint8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(uint8)
 }
@@ -76,6 +81,11 @@ type uint16Vector []uint16
 
 func newUint16Vector(n int) *uint16Vector {
 	v := uint16Vector(make([]uint16, n))
+	return &v
+}
+
+func newUint16VectorWithValues(s []uint16) *uint16Vector {
+	v := uint16Vector(s)
 	return &v
 }
 
@@ -145,6 +155,11 @@ func newUint32Vector(n int) *uint32Vector {
 	return &v
 }
 
+func newUint32VectorWithValues(s []uint32) *uint32Vector {
+	v := uint32Vector(s)
+	return &v
+}
+
 func (v *uint32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(uint32)
 }
@@ -208,6 +223,11 @@ type uint64Vector []uint64
 
 func newUint64Vector(n int) *uint64Vector {
 	v := uint64Vector(make([]uint64, n))
+	return &v
+}
+
+func newUint64VectorWithValues(s []uint64) *uint64Vector {
+	v := uint64Vector(s)
 	return &v
 }
 
@@ -277,6 +297,11 @@ func newInt8Vector(n int) *int8Vector {
 	return &v
 }
 
+func newInt8VectorWithValues(s []int8) *int8Vector {
+	v := int8Vector(s)
+	return &v
+}
+
 func (v *int8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(int8)
 }
@@ -340,6 +365,11 @@ type int16Vector []int16
 
 func newInt16Vector(n int) *int16Vector {
 	v := int16Vector(make([]int16, n))
+	return &v
+}
+
+func newInt16VectorWithValues(s []int16) *int16Vector {
+	v := int16Vector(s)
 	return &v
 }
 
@@ -409,6 +439,11 @@ func newInt32Vector(n int) *int32Vector {
 	return &v
 }
 
+func newInt32VectorWithValues(s []int32) *int32Vector {
+	v := int32Vector(s)
+	return &v
+}
+
 func (v *int32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(int32)
 }
@@ -472,6 +507,11 @@ type int64Vector []int64
 
 func newInt64Vector(n int) *int64Vector {
 	v := int64Vector(make([]int64, n))
+	return &v
+}
+
+func newInt64VectorWithValues(s []int64) *int64Vector {
+	v := int64Vector(s)
 	return &v
 }
 
@@ -541,6 +581,11 @@ func newFloat32Vector(n int) *float32Vector {
 	return &v
 }
 
+func newFloat32VectorWithValues(s []float32) *float32Vector {
+	v := float32Vector(s)
+	return &v
+}
+
 func (v *float32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(float32)
 }
@@ -604,6 +649,11 @@ type float64Vector []float64
 
 func newFloat64Vector(n int) *float64Vector {
 	v := float64Vector(make([]float64, n))
+	return &v
+}
+
+func newFloat64VectorWithValues(s []float64) *float64Vector {
+	v := float64Vector(s)
 	return &v
 }
 
@@ -673,6 +723,11 @@ func newStringVector(n int) *stringVector {
 	return &v
 }
 
+func newStringVectorWithValues(s []string) *stringVector {
+	v := stringVector(s)
+	return &v
+}
+
 func (v *stringVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(string)
 }
@@ -739,6 +794,11 @@ func newBoolVector(n int) *boolVector {
 	return &v
 }
 
+func newBoolVectorWithValues(s []bool) *boolVector {
+	v := boolVector(s)
+	return &v
+}
+
 func (v *boolVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(bool)
 }
@@ -802,6 +862,11 @@ type timeTimeVector []time.Time
 
 func newTimeTimeVector(n int) *timeTimeVector {
 	v := timeTimeVector(make([]time.Time, n))
+	return &v
+}
+
+func newTimeTimeVectorWithValues(s []time.Time) *timeTimeVector {
+	v := timeTimeVector(s)
 	return &v
 }
 

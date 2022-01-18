@@ -7,6 +7,11 @@ func newNullablegenVector(n int) *nullablegenVector {
 	return &v
 }
 
+func newNullablegenVectorWithValues(s []*gen) *nullablegenVector {
+	v := nullablegenVector(s)
+	return &v
+}
+
 func (v *nullablegenVector) Set(idx int, i interface{}) {
 	if i == nil {
 		(*v)[idx] = nil
