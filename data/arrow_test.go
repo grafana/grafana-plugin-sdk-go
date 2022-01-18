@@ -293,8 +293,19 @@ func TestEncode(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	// Check for the same exact file after encode
 	if !bytes.Equal(b, want) {
-		t.Fatalf("data frame doesn't match golden file")
+		// check if the file still represents the same frame or not
+		newDf, err := data.UnmarshalArrowFrame(want)
+		if err != nil {
+			t.Fatal("unable to create frame from encoded arrow file")
+		}
+
+		if diff := cmp.Diff(df, newDf, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("Arrow frame result mismatch (-want +got):\n%s", diff)
+		}
+
+		t.Fatalf("arrow file doesn't match golden file (new version?)")
 	}
 }
 
