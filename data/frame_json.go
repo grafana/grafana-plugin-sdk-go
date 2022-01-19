@@ -644,6 +644,9 @@ func NilFloat64() float64 { return math.Float64frombits(nilFloat64) }
 func IsNilFloat64(v float64) bool { return math.Float64bits(v) == nilFloat64 }
 
 // UndefinedFloat64 returns a magic NaN value that represents an undefined value in []float64.
+// The frontend code will use "undefined" values to indicate that the values does not exist because
+// there is no good reason for it to be there.  For example the non-matching values in a joined timeseres
+// are undefined, rather than null
 func UndefinedFloat64() float64 { return math.Float64frombits(undefinedFloat64) }
 
 // IsUndefinedFloat64 checks if a float is equal to UndefinedFloat64().
