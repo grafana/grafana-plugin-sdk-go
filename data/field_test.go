@@ -6,14 +6,28 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/stretchr/testify/require"
 )
 
 func TestField(t *testing.T) {
-	f := data.NewField("value", nil, []float64{1.0, 2.0, 3.0})
+	t.Run("should create new field with expected values", func(t *testing.T) {
+		f := data.NewField("value", nil, []float64{1.0, 2.0, 3.0})
 
-	if f.Len() != 3 {
-		t.Fatal("unexpected length")
-	}
+		if f.Len() != 3 {
+			t.Fatal("unexpected length")
+		}
+
+		require.Equal(t, 1.0, f.At(0))
+		require.Equal(t, 2.0, f.At(1))
+		require.Equal(t, 3.0, f.At(2))
+	})
+
+	t.Run("field values should not change if source slice is modified", func(t *testing.T) {
+		values := []float64{1.0, 2.0, 3.0}
+		f := data.NewField("value", nil, values)
+		values[1] = 3.0
+		require.Equal(t, 2.0, f.At(1))
+	})
 }
 
 func TestField_Float64(t *testing.T) {
