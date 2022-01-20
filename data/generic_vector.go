@@ -14,8 +14,9 @@ func newgenVector(n int) *genVector {
 }
 
 func newgenVectorWithValues(s []gen) *genVector {
-	v := genVector(s)
-	return &v
+	v := make([]gen, len(s))
+	copy(v, s)
+	return (*genVector)(&v)
 }
 
 func (v *genVector) Set(idx int, i interface{}) {
