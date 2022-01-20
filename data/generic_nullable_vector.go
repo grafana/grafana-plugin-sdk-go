@@ -8,8 +8,9 @@ func newNullablegenVector(n int) *nullablegenVector {
 }
 
 func newNullablegenVectorWithValues(s []*gen) *nullablegenVector {
-	v := nullablegenVector(s)
-	return &v
+	v := make([]*gen, len(s))
+	copy(v, s)
+	return (*nullablegenVector)(&v)
 }
 
 func (v *nullablegenVector) Set(idx int, i interface{}) {
