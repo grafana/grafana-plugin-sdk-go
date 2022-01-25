@@ -14,7 +14,7 @@ func TestLogLevel(t *testing.T) {
 }
 
 func TestLogLevelWarn(t *testing.T) {
-	logger := log.NewLogger(log.Warn)
+	logger := log.NewWithLevel(log.Warn)
 	level := logger.Level()
 	assert.Equal(t, level, log.Warn)
 }
