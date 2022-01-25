@@ -27,11 +27,11 @@ type Logger interface {
 
 // New creates a new logger.
 func New() Logger {
-	return NewLogger(Debug)
+	return NewWithLevel(Debug)
 }
 
-// NewLogger creates a new logger at the Level defined.
-func NewLogger(level Level) Logger {
+// NewWithLevel creates a new logger at the Level defined.
+func NewWithLevel(level Level) Logger {
 	return &hclogWrapper{
 		logger: hclog.New(&hclog.LoggerOptions{
 			// Use debug as level since anything less severe is suppressed.
