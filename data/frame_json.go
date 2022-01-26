@@ -228,6 +228,7 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 				tmp.Name = f.Name
 				tmp.Labels = f.Labels
 				tmp.Config = f.Config
+				tmp.Meta = f.Meta
 				frame.Fields = append(frame.Fields, tmp)
 			}
 
@@ -729,6 +730,14 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 			stream.WriteVal(f.Config)
 		}
 
+		if f.Meta != nil {
+			if started {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("meta")
+			stream.WriteVal(f.Meta)
+		}
+
 		stream.WriteObjectEnd()
 	}
 	stream.WriteArrayEnd()
@@ -952,6 +961,11 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 			stream.WriteMore()
 			stream.WriteObjectField("config")
 			stream.WriteRaw(labelsAsString)
+		}
+		if metaAsString, ok := getMDKey("meta", f.Metadata); ok {
+			stream.WriteMore()
+			stream.WriteObjectField("meta")
+			stream.WriteRaw(metaAsString)
 		}
 
 		stream.WriteObjectEnd()

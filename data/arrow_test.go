@@ -254,6 +254,9 @@ func goldenDF() *data.Frame {
 			nil,
 			timePtr(time.Unix(0, maxEcma6Int)),
 			timePtr(time.Unix(0, math.MaxInt64)),
+		}).SetMeta(&data.FieldMeta{
+			StepSize:   10,
+			MetricType: "counter",
 		}),
 	).SetMeta(&data.FrameMeta{
 		Custom:              map[string]interface{}{"Hi": "there"},

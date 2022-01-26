@@ -103,6 +103,14 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			fieldMeta["config"] = str
 		}
 
+		if field.Meta != nil {
+			str, err := toJSONString(field.Meta)
+			if err != nil {
+				return nil, err
+			}
+			fieldMeta["meta"] = str
+		}
+
 		arrowFields[i] = arrow.Field{
 			Name:     field.Name,
 			Type:     t,
@@ -308,6 +316,11 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		}
 		if configAsString, ok := getMDKey("config", field.Metadata); ok {
 			if err := json.Unmarshal([]byte(configAsString), &sdkField.Config); err != nil {
+				return nil, err
+			}
+		}
+		if metaAsString, ok := getMDKey("meta", field.Metadata); ok {
+			if err := json.Unmarshal([]byte(metaAsString), &sdkField.Meta); err != nil {
 				return nil, err
 			}
 		}

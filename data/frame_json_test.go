@@ -156,7 +156,12 @@ type testWrapper struct {
 }
 
 func TestFrame_UnmarshalJSON_SchemaOnly(t *testing.T) {
-	f := data.NewFrame("test", data.NewField("test", nil, []int64{1}))
+	f := data.NewFrame("test",
+		data.NewField("test", nil, []int64{1}).SetMeta(&data.FieldMeta{
+			StepSize:    10.0,
+			Aggregation: "before",
+		}),
+	)
 	d, err := data.FrameToJSON(f, data.IncludeSchemaOnly)
 	require.NoError(t, err)
 	_, err = json.Marshal(testWrapper{Data: d})
@@ -165,6 +170,7 @@ func TestFrame_UnmarshalJSON_SchemaOnly(t *testing.T) {
 	err = json.Unmarshal(d, &newFrame)
 	require.NoError(t, err)
 	require.Equal(t, 0, newFrame.Fields[0].Len())
+	require.Equal(t, 10.0, newFrame.Fields[0].Meta.StepSize)
 }
 
 func TestFrameMarshalJSON_DataOnly(t *testing.T) {

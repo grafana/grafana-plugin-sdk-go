@@ -25,6 +25,9 @@ type Field struct {
 	// Config is optional display configuration information for Grafana
 	Config *FieldConfig `json:"config,omitempty"`
 
+	// Meta defines how to interpret the raw values
+	Meta *FieldMeta `json:"meta,omitempty"`
+
 	// vector is the unexported values. it is unexported so we can change the underlying structure without
 	// major breaking changes.
 	vector vector
@@ -110,6 +113,12 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		vector: vec,
 		Labels: labels,
 	}
+}
+
+// SetMeta sets the Fields's Meta attribute to m and returns the field.
+func (f *Field) SetMeta(m *FieldMeta) *Field {
+	f.Meta = m
+	return f
 }
 
 // Set sets the Field's value at index idx to val.
