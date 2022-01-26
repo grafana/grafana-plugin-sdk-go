@@ -1,9 +1,5 @@
 package data
 
-import (
-	"encoding/json"
-)
-
 // FieldMeta attaches structural metadata to each frame
 type FieldMeta struct {
 	// StepSize is the interval between each value.
@@ -34,13 +30,3 @@ const (
 	MetricTypeGauge   = "gauge"
 	MetricTypeSummary = "summary"
 )
-
-// FrameMetaFromJSON creates a QueryResultMeta from a json string
-func FieldMetaFromJSON(jsonStr string) (*FieldMeta, error) {
-	var m FieldMeta
-	err := json.Unmarshal([]byte(jsonStr), &m)
-	if err != nil {
-		return nil, err
-	}
-	return &m, nil
-}
