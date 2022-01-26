@@ -73,7 +73,12 @@
       { "name": "nullable_bool_values", "type": "boolean", "typeInfo": { "frame": "bool", "nullable": true } },
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
-      { "name": "nullable_timestamps", "type": "time", "typeInfo": { "frame": "time.Time", "nullable": true } }
+      {
+        "name": "nullable_timestamps",
+        "type": "time",
+        "typeInfo": { "frame": "time.Time", "nullable": true },
+        "meta": { "stepSize": 10, "metricType": "counter" }
+      }
     ]
   },
   "data": {
