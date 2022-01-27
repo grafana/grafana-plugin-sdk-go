@@ -68,7 +68,7 @@ func readPrometheusData(iter *jsoniter.Iterator) *backend.DataResponse {
 				rsp = readMatrixOrVector(iter)
 			case "vector":
 				rsp = readMatrixOrVector(iter)
-			case "stream":
+			case "streams":
 				rsp = readStream(iter)
 			default:
 				iter.Skip()
@@ -166,5 +166,45 @@ func readTimeValuePair(iter *jsoniter.Iterator) (time.Time, float64, error) {
 }
 
 func readStream(iter *jsoniter.Iterator) *backend.DataResponse {
-	panic("TODO stream")
+	rsp := &backend.DataResponse{}
+
+	for iter.ReadArray() {
+		timeField := data.NewFieldFromFieldType(data.FieldTypeTime, 0) // for now!
+		timeField.Name = "Time"
+		lineField := data.NewFieldFromFieldType(data.FieldTypeString, 0)
+		lineField.Name = "Line"
+		lineField.Labels = data.Labels{}
+
+		// Nanoseconds time field
+		tsField := data.NewFieldFromFieldType(data.FieldTypeString, 0)
+		tsField.Name = "TS"
+
+		for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+			switch l1Field {
+			case "stream":
+				iter.ReadVal(&lineField.Labels)
+
+			case "values":
+				for iter.ReadArray() {
+					iter.ReadArray()
+					ts := iter.ReadString()
+					iter.ReadArray()
+					line := iter.ReadString()
+					iter.ReadArray()
+
+					t := time.Unix(0, 0) // HELP!!!
+
+					timeField.Append(t)
+					lineField.Append(line)
+					tsField.Append(ts)
+				}
+			}
+		}
+
+		frame := data.NewFrame("", timeField, lineField, tsField)
+		frame.Meta = &data.FrameMeta{}
+		rsp.Frames = append(rsp.Frames, frame)
+	}
+
+	return rsp
 }

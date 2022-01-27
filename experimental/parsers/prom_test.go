@@ -17,6 +17,7 @@ func TestReadPromFrames(t *testing.T) {
 		"simple-labels",
 		"simple-matrix",
 		"simple-vector",
+		"simple-streams",
 	}
 
 	for _, name := range files {
