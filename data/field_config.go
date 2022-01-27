@@ -42,9 +42,9 @@ type FieldConfig struct {
 	Max      *ConfFloat64 `json:"max,omitempty"`      // see Min
 
 	// Interval indicates the expected regular step between values in the series.
-	// When an interval exists, consumers can identify "missing" values when the expected value is not present
-	// The grafana timeseries visualization will render disconnected values when missing values are found it the time field
-	// The interval uses the same units as the values.  For time.Time, this is defined in milliseconds
+	// When an interval exists, consumers can identify "missing" values when the expected value is not present.
+	// The grafana timeseries visualization will render disconnected values when missing values are found it the time field.
+	// The interval uses the same units as the values.  For time.Time, this is defined in milliseconds.
 	Interval float64 `json:"interval,omitempty"`
 
 	// Convert input values into a display string
