@@ -6,6 +6,7 @@ import (
 	"path"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/experimental"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -14,6 +15,8 @@ import (
 func TestReadPromFrames(t *testing.T) {
 	files := []string{
 		"simple-labels",
+		"simple-matrix",
+		"simple-vector",
 	}
 
 	for _, name := range files {
@@ -28,7 +31,7 @@ func TestReadPromFrames(t *testing.T) {
 			require.NoError(t, err)
 
 			save := false
-			fpath := path.Join("testdata", name+".out.json")
+			fpath := path.Join("testdata", name+"-frame.json")
 			current, err := ioutil.ReadFile(fpath)
 			if err == nil {
 				same := assert.JSONEq(t, string(out), string(current))
@@ -36,7 +39,7 @@ func TestReadPromFrames(t *testing.T) {
 					save = true
 				}
 			} else {
-				assert.Fail(t, "missing file: %s", fpath)
+				assert.Fail(t, "missing file: "+fpath)
 				save = true
 			}
 
@@ -44,6 +47,12 @@ func TestReadPromFrames(t *testing.T) {
 				err = os.WriteFile(fpath, out, 0600)
 				require.NoError(t, err)
 			}
+
+			fpath = path.Join("testdata", name+"-golden.txt")
+			err = experimental.CheckGoldenDataResponse(fpath, rsp, true)
+			assert.NoError(t, err)
 		})
 	}
+
+	t.Fail()
 }

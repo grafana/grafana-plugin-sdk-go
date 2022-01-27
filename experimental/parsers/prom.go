@@ -2,6 +2,8 @@ package parsers
 
 import (
 	"fmt"
+	"strconv"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -63,9 +65,9 @@ func readPrometheusData(iter *jsoniter.Iterator) *backend.DataResponse {
 		case "result":
 			switch resultType {
 			case "matrix":
-				rsp = readMatrix(iter)
+				rsp = readMatrixOrVector(iter)
 			case "vector":
-				rsp = readVector(iter)
+				rsp = readMatrixOrVector(iter)
 			case "stream":
 				rsp = readStream(iter)
 			default:
@@ -92,6 +94,7 @@ func readPrometheusData(iter *jsoniter.Iterator) *backend.DataResponse {
 // will always return strings for now
 func readArrayAsFrame(iter *jsoniter.Iterator) *data.Frame {
 	field := data.NewFieldFromFieldType(data.FieldTypeString, 0)
+	field.Name = "Value"
 	for iter.ReadArray() {
 		v := ""
 		t := iter.WhatIsNext()
@@ -103,15 +106,63 @@ func readArrayAsFrame(iter *jsoniter.Iterator) *data.Frame {
 		}
 		field.Append(v)
 	}
-	return data.NewFrame("value", field)
+	return data.NewFrame("", field)
 }
 
-func readMatrix(iter *jsoniter.Iterator) *backend.DataResponse {
-	panic("TODO matrix")
+func readMatrixOrVector(iter *jsoniter.Iterator) *backend.DataResponse {
+	rsp := &backend.DataResponse{}
+
+	for iter.ReadArray() {
+		timeField := data.NewFieldFromFieldType(data.FieldTypeTime, 0) // for now!
+		valueField := data.NewFieldFromFieldType(data.FieldTypeFloat64, 0)
+		valueField.Labels = data.Labels{}
+
+		for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+			switch l1Field {
+			case "metric":
+				iter.ReadVal(&valueField.Labels)
+
+			case "value":
+				t, v, err := readTimeValuePair(iter)
+				if err == nil {
+					timeField.Append(t)
+					valueField.Append(v)
+				}
+
+			case "values":
+				for iter.ReadArray() {
+					t, v, err := readTimeValuePair(iter)
+					if err == nil {
+						timeField.Append(t)
+						valueField.Append(v)
+					}
+				}
+			}
+		}
+
+		valueField.Name = valueField.Labels["__name__"]
+		delete(valueField.Labels, "__name__")
+
+		frame := data.NewFrame("", timeField, valueField)
+		frame.Meta = &data.FrameMeta{
+			Type: data.FrameTypeTimeSeriesMany,
+		}
+		rsp.Frames = append(rsp.Frames, frame)
+	}
+
+	return rsp
 }
 
-func readVector(iter *jsoniter.Iterator) *backend.DataResponse {
-	panic("TODO vector")
+func readTimeValuePair(iter *jsoniter.Iterator) (time.Time, float64, error) {
+	iter.ReadArray()
+	t := iter.ReadFloat64()
+	iter.ReadArray()
+	v := iter.ReadString()
+	iter.ReadArray()
+
+	tt := time.Unix(int64(t), 0) // HELP! only second precision!!!
+	fv, err := strconv.ParseFloat(v, 64)
+	return tt, fv, err
 }
 
 func readStream(iter *jsoniter.Iterator) *backend.DataResponse {

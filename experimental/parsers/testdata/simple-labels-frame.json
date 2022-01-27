@@ -2,9 +2,9 @@
   "frames": [
     {
       "schema": {
-        "name": "value",
         "fields": [
           {
+            "name": "Value",
             "type": "string",
             "typeInfo": {
               "frame": "string"
