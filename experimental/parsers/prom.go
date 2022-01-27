@@ -42,10 +42,7 @@ func ReadPrometheusResult(iter *jsoniter.Iterator) *backend.DataResponse {
 func readPrometheusData(iter *jsoniter.Iterator) *backend.DataResponse {
 	t := iter.WhatIsNext()
 	if t == jsoniter.ArrayValue {
-		f := readArrayAsFrame(iter)
-		return &backend.DataResponse{
-			Frames: data.Frames{f},
-		}
+		return readArrayData(iter)
 	}
 
 	if t != jsoniter.ObjectValue {
@@ -92,21 +89,137 @@ func readPrometheusData(iter *jsoniter.Iterator) *backend.DataResponse {
 }
 
 // will always return strings for now
-func readArrayAsFrame(iter *jsoniter.Iterator) *data.Frame {
-	field := data.NewFieldFromFieldType(data.FieldTypeString, 0)
-	field.Name = "Value"
+func readArrayData(iter *jsoniter.Iterator) *backend.DataResponse {
+	lookup := make(map[string]*data.Field)
+
+	rsp := &backend.DataResponse{}
+	stringField := data.NewFieldFromFieldType(data.FieldTypeString, 0)
+	stringField.Name = "Value"
 	for iter.ReadArray() {
-		v := ""
-		t := iter.WhatIsNext()
-		if t == jsoniter.StringValue {
-			v = iter.ReadString()
-		} else {
-			ext := iter.ReadAny() // skip nills
-			v = fmt.Sprintf("%v", ext)
+		switch iter.WhatIsNext() {
+		case jsoniter.StringValue:
+			stringField.Append(iter.ReadString())
+
+		// Either label or exemplars
+		case jsoniter.ObjectValue:
+			f, pairs := readLabelsOrExemplars(iter)
+			if f != nil {
+				rsp.Frames = append(rsp.Frames, f)
+			} else if pairs != nil {
+				max := 0
+				for _, pair := range pairs {
+					k := pair[0]
+					v := pair[1]
+					f, ok := lookup[k]
+					if !ok {
+						f = data.NewFieldFromFieldType(data.FieldTypeString, 0)
+						f.Name = k
+						lookup[k] = f
+
+						if len(rsp.Frames) == 0 {
+							rsp.Frames = append(rsp.Frames, data.NewFrame(""))
+						}
+						rsp.Frames[0].Fields = append(rsp.Frames[0].Fields, f)
+					}
+					f.Append(fmt.Sprintf("%v", v))
+					if f.Len() > max {
+						max = f.Len()
+					}
+				}
+
+				for _, f := range lookup {
+					if f.Len() != max {
+						f.Append("") // no matching label
+					}
+				}
+			}
+
+		default:
+			{
+				ext := iter.ReadAny()
+				v := fmt.Sprintf("%v", ext)
+				stringField.Append(v)
+			}
 		}
-		field.Append(v)
 	}
-	return data.NewFrame("", field)
+
+	if rsp.Frames == nil {
+		rsp.Frames = data.Frames{data.NewFrame("", stringField)}
+	}
+
+	return rsp
+}
+
+// For consistent ordering read values to an aray not a map
+func readLabelsAsPairs(iter *jsoniter.Iterator) [][2]string {
+	pairs := make([][2]string, 0, 10)
+	for k := iter.ReadObject(); k != ""; k = iter.ReadObject() {
+		pairs = append(pairs, [2]string{k, iter.ReadString()})
+	}
+	return pairs
+}
+
+func readLabelsOrExemplars(iter *jsoniter.Iterator) (*data.Frame, [][2]string) {
+	pairs := make([][2]string, 0, 10)
+	labels := data.Labels{}
+	var frame *data.Frame
+
+	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+		switch l1Field {
+		case "seriesLabels":
+			iter.ReadVal(&labels)
+		case "exemplars":
+			lookup := make(map[string]*data.Field)
+			timeField := data.NewFieldFromFieldType(data.FieldTypeTime, 0)
+			valueField := data.NewFieldFromFieldType(data.FieldTypeFloat64, 0)
+			valueField.Name = labels["__name__"]
+			delete(labels, "__name__")
+			valueField.Labels = labels
+			frame = data.NewFrame("", timeField, valueField)
+			for iter.ReadArray() {
+				for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+					switch l2Field {
+					case "value":
+						v, _ := strconv.ParseFloat(iter.ReadString(), 64)
+						valueField.Append(v)
+
+					case "timestamp":
+						tv := iter.ReadFloat64()
+						ts := time.Unix(int64(tv), 0)
+						timeField.Append(ts)
+
+					case "labels":
+						max := 0
+						for _, pair := range readLabelsAsPairs(iter) {
+							k := pair[0]
+							v := pair[1]
+							f, ok := lookup[k]
+							if !ok {
+								f = data.NewFieldFromFieldType(data.FieldTypeString, 0)
+								f.Name = k
+								lookup[k] = f
+								frame.Fields = append(frame.Fields, f)
+							}
+							f.Append(v)
+							if f.Len() > max {
+								max = f.Len()
+							}
+						}
+						for _, f := range lookup {
+							if f.Len() != max {
+								f.Append("") // no matching label
+							}
+						}
+					}
+				}
+			}
+		default:
+			v := fmt.Sprintf("%v", iter.Read())
+			pairs = append(pairs, [2]string{l1Field, v})
+		}
+	}
+
+	return frame, pairs
 }
 
 func readMatrixOrVector(iter *jsoniter.Iterator) *backend.DataResponse {

@@ -9,6 +9,11 @@ import (
 // Labels are used to add metadata to an object.
 type Labels map[string]string
 
+// Set will set a key value pair
+func (l Labels) Set(key string, val string) {
+	l[key] = val
+}
+
 // Equals returns true if the argument has the same k=v pairs as the receiver.
 func (l Labels) Equals(arg Labels) bool {
 	if len(l) != len(arg) {
