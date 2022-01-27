@@ -179,6 +179,7 @@ func readLabelsOrExemplars(iter *jsoniter.Iterator) (*data.Frame, [][2]string) {
 			for iter.ReadArray() {
 				for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 					switch l2Field {
+					// nolint:goconst
 					case "value":
 						v, _ := strconv.ParseFloat(iter.ReadString(), 64)
 						valueField.Append(v)
@@ -242,6 +243,7 @@ func readMatrixOrVector(iter *jsoniter.Iterator) *backend.DataResponse {
 					valueField.Append(v)
 				}
 
+			// nolint:goconst
 			case "values":
 				for iter.ReadArray() {
 					t, v, err := readTimeValuePair(iter)
