@@ -239,6 +239,8 @@ func goldenDF() *data.Frame {
 			time.Unix(1568039450, 0),
 			time.Unix(0, maxEcma6Int),
 			time.Unix(0, math.MaxInt64),
+		}).SetConfig(&data.FieldConfig{
+			Interval: 1000,
 		}),
 		// Note: This is intentionally repeated to create a duplicate field.
 		data.NewField("timestamps", nil, []time.Time{
