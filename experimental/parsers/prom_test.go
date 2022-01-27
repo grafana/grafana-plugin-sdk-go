@@ -16,6 +16,7 @@ func TestReadPromFrames(t *testing.T) {
 	files := []string{
 		"simple-labels",
 		"simple-matrix",
+		"simple-matrix-with-nans",
 		"simple-vector",
 		"simple-streams",
 		"simple-series",
@@ -56,6 +57,4 @@ func TestReadPromFrames(t *testing.T) {
 			assert.NoError(t, err)
 		})
 	}
-
-	t.Fail()
 }
