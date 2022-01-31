@@ -11,11 +11,17 @@ import (
 // Also, probably would need to make a type with methods that wrap the interface so methods can be added
 // without breaking changes - if we even want an interface like this
 // But for now helps illustrate at least
-type TimeSeriesCollection interface {
+type TimeSeriesCollectionWriter interface {
 	AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error
 	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
-	AppendMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error
-	InsertMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error
+}
+
+type TimeSeriesCollection interface {
+	TimeSeriesCollectionReader
+	TimeSeriesCollectionWriter
+}
+
+type TimeSeriesCollectionReader interface {
 	Validate() (isEmpty bool, errors []error)
 	AsWideFrameSeries() *WideFrameSeries
 	AsMultiFrameSeries() *MultiFrameSeries
@@ -59,18 +65,6 @@ func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []tim
 }
 
 func (mfs *MultiFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
-}
-
-// Appends to metric
-// Error is if value is not same number type
-// Error if t is before previous value since time must be sorted
-func (mfs *MultiFrameSeries) AppendMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error {
-	return nil
-}
-
-// Like append but inserts in sorted time order
-func (mfs *MultiFrameSeries) InsertMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error {
-	return nil
 }
 
 // Validates data conforms to schema, don't think it will be called normally in the course of running a plugin, but needs to exist.
@@ -246,14 +240,6 @@ func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, t []time.
 
 func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 
-}
-
-func (wf *WideFrameSeries) AppendMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error {
-	return nil
-}
-
-func (wf *WideFrameSeries) InsertMetricValue(metricName string, l data.Labels, t time.Time, value interface{}) error {
-	return nil
 }
 
 func (wf *WideFrameSeries) Validate() (isEmpty bool, err []error) {
