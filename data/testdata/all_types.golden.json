@@ -71,7 +71,7 @@
       },
       { "name": "bool_values", "type": "boolean", "typeInfo": { "frame": "bool" } },
       { "name": "nullable_bool_values", "type": "boolean", "typeInfo": { "frame": "bool", "nullable": true } },
-      { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
+      { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" }, "config": { "interval": 1000 } },
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
       { "name": "nullable_timestamps", "type": "time", "typeInfo": { "frame": "time.Time", "nullable": true } }
     ]

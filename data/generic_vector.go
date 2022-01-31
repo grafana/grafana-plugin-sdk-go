@@ -13,6 +13,12 @@ func newgenVector(n int) *genVector {
 	return &v
 }
 
+func newgenVectorWithValues(s []gen) *genVector {
+	v := make([]gen, len(s))
+	copy(v, s)
+	return (*genVector)(&v)
+}
+
 func (v *genVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(gen)
 }

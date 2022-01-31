@@ -13,6 +13,12 @@ func newUint8Vector(n int) *uint8Vector {
 	return &v
 }
 
+func newUint8VectorWithValues(s []uint8) *uint8Vector {
+	v := make([]uint8, len(s))
+	copy(v, s)
+	return (*uint8Vector)(&v)
+}
+
 func (v *uint8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(uint8)
 }
@@ -77,6 +83,12 @@ type uint16Vector []uint16
 func newUint16Vector(n int) *uint16Vector {
 	v := uint16Vector(make([]uint16, n))
 	return &v
+}
+
+func newUint16VectorWithValues(s []uint16) *uint16Vector {
+	v := make([]uint16, len(s))
+	copy(v, s)
+	return (*uint16Vector)(&v)
 }
 
 func (v *uint16Vector) Set(idx int, i interface{}) {
@@ -145,6 +157,12 @@ func newUint32Vector(n int) *uint32Vector {
 	return &v
 }
 
+func newUint32VectorWithValues(s []uint32) *uint32Vector {
+	v := make([]uint32, len(s))
+	copy(v, s)
+	return (*uint32Vector)(&v)
+}
+
 func (v *uint32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(uint32)
 }
@@ -209,6 +227,12 @@ type uint64Vector []uint64
 func newUint64Vector(n int) *uint64Vector {
 	v := uint64Vector(make([]uint64, n))
 	return &v
+}
+
+func newUint64VectorWithValues(s []uint64) *uint64Vector {
+	v := make([]uint64, len(s))
+	copy(v, s)
+	return (*uint64Vector)(&v)
 }
 
 func (v *uint64Vector) Set(idx int, i interface{}) {
@@ -277,6 +301,12 @@ func newInt8Vector(n int) *int8Vector {
 	return &v
 }
 
+func newInt8VectorWithValues(s []int8) *int8Vector {
+	v := make([]int8, len(s))
+	copy(v, s)
+	return (*int8Vector)(&v)
+}
+
 func (v *int8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(int8)
 }
@@ -341,6 +371,12 @@ type int16Vector []int16
 func newInt16Vector(n int) *int16Vector {
 	v := int16Vector(make([]int16, n))
 	return &v
+}
+
+func newInt16VectorWithValues(s []int16) *int16Vector {
+	v := make([]int16, len(s))
+	copy(v, s)
+	return (*int16Vector)(&v)
 }
 
 func (v *int16Vector) Set(idx int, i interface{}) {
@@ -409,6 +445,12 @@ func newInt32Vector(n int) *int32Vector {
 	return &v
 }
 
+func newInt32VectorWithValues(s []int32) *int32Vector {
+	v := make([]int32, len(s))
+	copy(v, s)
+	return (*int32Vector)(&v)
+}
+
 func (v *int32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(int32)
 }
@@ -473,6 +515,12 @@ type int64Vector []int64
 func newInt64Vector(n int) *int64Vector {
 	v := int64Vector(make([]int64, n))
 	return &v
+}
+
+func newInt64VectorWithValues(s []int64) *int64Vector {
+	v := make([]int64, len(s))
+	copy(v, s)
+	return (*int64Vector)(&v)
 }
 
 func (v *int64Vector) Set(idx int, i interface{}) {
@@ -541,6 +589,12 @@ func newFloat32Vector(n int) *float32Vector {
 	return &v
 }
 
+func newFloat32VectorWithValues(s []float32) *float32Vector {
+	v := make([]float32, len(s))
+	copy(v, s)
+	return (*float32Vector)(&v)
+}
+
 func (v *float32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(float32)
 }
@@ -605,6 +659,12 @@ type float64Vector []float64
 func newFloat64Vector(n int) *float64Vector {
 	v := float64Vector(make([]float64, n))
 	return &v
+}
+
+func newFloat64VectorWithValues(s []float64) *float64Vector {
+	v := make([]float64, len(s))
+	copy(v, s)
+	return (*float64Vector)(&v)
 }
 
 func (v *float64Vector) Set(idx int, i interface{}) {
@@ -673,6 +733,12 @@ func newStringVector(n int) *stringVector {
 	return &v
 }
 
+func newStringVectorWithValues(s []string) *stringVector {
+	v := make([]string, len(s))
+	copy(v, s)
+	return (*stringVector)(&v)
+}
+
 func (v *stringVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(string)
 }
@@ -739,6 +805,12 @@ func newBoolVector(n int) *boolVector {
 	return &v
 }
 
+func newBoolVectorWithValues(s []bool) *boolVector {
+	v := make([]bool, len(s))
+	copy(v, s)
+	return (*boolVector)(&v)
+}
+
 func (v *boolVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(bool)
 }
@@ -803,6 +875,12 @@ type timeTimeVector []time.Time
 func newTimeTimeVector(n int) *timeTimeVector {
 	v := timeTimeVector(make([]time.Time, n))
 	return &v
+}
+
+func newTimeTimeVectorWithValues(s []time.Time) *timeTimeVector {
+	v := make([]time.Time, len(s))
+	copy(v, s)
+	return (*timeTimeVector)(&v)
 }
 
 func (v *timeTimeVector) Set(idx int, i interface{}) {
