@@ -25,6 +25,7 @@ type TimeSeriesCollectionReader interface {
 	Validate() (isEmpty bool, errors []error)
 	AsWideFrameSeries() *WideFrameSeries
 	AsMultiFrameSeries() *MultiFrameSeries
+	GetMetricRefs() []TimeSeriesMetricRef
 }
 
 func ValidValueFields() []data.FieldType {
@@ -236,6 +237,27 @@ func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, t []time.
 	}
 
 	return nil
+}
+
+func (wf *WideFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
+	refs := []TimeSeriesMetricRef{}
+	if wf == nil || wf.Frame == nil {
+		return refs
+	}
+	timeFields := wf.TypeIndices(data.FieldTypeTime)
+	var timeField *data.Field
+	if len(timeFields) == 1 {
+		timeField = wf.Fields[timeFields[0]]
+	}
+
+	valueFieldIndicies := wf.TypeIndices(ValidValueFields()...)
+	for _, fieldIdx := range valueFieldIndicies {
+		refs = append(refs, TimeSeriesMetricRef{
+			TimeField:  timeField,
+			ValueField: wf.Fields[fieldIdx],
+		})
+	}
+	return refs
 }
 
 func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
