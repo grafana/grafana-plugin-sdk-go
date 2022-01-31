@@ -18,7 +18,7 @@ require (
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
-	github.com/prometheus/client_golang v1.12.0
+	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
 	github.com/stretchr/testify v1.7.0
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
