@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 	"github.com/stretchr/testify/require"
@@ -154,4 +155,26 @@ func TestMultiFrameSeriesValidiate_WithFrames_ValidCases(t *testing.T) {
 			require.Equal(t, tt.empty, empty, "expected valid to be %v", tt.empty)
 		})
 	}
+}
+
+func TestWideFrameAddMetric_ValidCases(t *testing.T) {
+	t.Run("add two metrics", func(t *testing.T) {
+		wf := sdata.WideFrameSeries{}
+
+		err := wf.AddMetric("one", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}, []float64{1, 2})
+		require.NoError(t, err)
+
+		err = wf.AddMetric("two", nil, nil, []float64{3, 4})
+		require.NoError(t, err)
+
+		expectedFrame := data.NewFrame("",
+			data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}),
+			data.NewField("one", nil, []float64{1, 2}),
+			data.NewField("two", nil, []float64{3, 4}),
+		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
+
+		if diff := cmp.Diff(expectedFrame, wf.Frame, data.FrameTestCompareOptions()...); diff != "" {
+			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
+		}
+	})
 }

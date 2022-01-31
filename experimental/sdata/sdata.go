@@ -184,7 +184,7 @@ func (mfs *MultiFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
 
 // to fullfill interface, returns itself
 func (mfs *MultiFrameSeries) AsMultiFrameSeries() *MultiFrameSeries {
-	return nil
+	return mfs
 }
 
 // Converts to wide frame, will manipulate data. Generally not to be used with data sources.
@@ -193,9 +193,54 @@ func (mfs *MultiFrameSeries) AsWideFrameSeries() *WideFrameSeries {
 }
 
 // need to think about pointers here and elsewhere
-type WideFrameSeries data.Frame
+type WideFrameSeries struct {
+	*data.Frame
+}
 
 func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
+	if !data.ValidFieldType(values) {
+		return fmt.Errorf("type %T is not a valid data frame field type", values)
+	}
+
+	tFieldIndex := -1
+	var timeIndicies []int
+
+	if wf.Frame != nil {
+		timeIndicies = wf.Frame.TypeIndices(data.FieldTypeTime)
+	}
+
+	if len(timeIndicies) != 0 {
+		tFieldIndex = timeIndicies[0]
+	}
+
+	if t == nil && tFieldIndex == -1 {
+		return fmt.Errorf("must provide time field when adding first metric")
+	}
+
+	if t != nil && tFieldIndex > -1 {
+		return fmt.Errorf("time field must only be provided once")
+	}
+
+	valueField := data.NewField(metricName, l, values)
+	var timeField *data.Field
+	if t != nil {
+		timeField = data.NewField("time", nil, t)
+	} else {
+		timeField = wf.Frame.Fields[tFieldIndex]
+	}
+
+	if valueField.Len() != timeField.Len() {
+		return fmt.Errorf("value field length must match time field length, but gots length %v for time and %v for values",
+			timeField.Len(), valueField.Len())
+	}
+
+	if t != nil {
+		wf.Frame = data.NewFrame("", timeField, valueField)
+		wf.Frame.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
+	} else {
+		wf.Fields = append(wf.Fields, valueField)
+	}
+
 	return nil
 }
 
