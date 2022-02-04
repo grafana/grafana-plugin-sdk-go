@@ -8,11 +8,14 @@ import (
 )
 
 var (
-	// PluginProfilerEnvs is a list of valid environment variables used to enable pprof.
-	PluginProfilerEnvs = []string{"GF_PLUGINS_PROFILER", "GF_PLUGIN_PROFILER"}
-
-	// PluginProfilerPortEnvs is a list of valid environment variable used to specify a pprof port (default 6060).
-	PluginProfilerPortEnvs = []string{"GF_PLUGINS_PROFILER_PORT", "GF_PLUGIN_PROFILER_PORT"}
+	// PluginProfilerEnvDeprecated is a deprecated constant for the GF_PLUGINS_PROFILER environment variable used to enable pprof.
+	PluginProfilerEnvDeprecated = "GF_PLUGINS_PROFILER"
+	// PluginProfilerEnv is a constant for the GF_PLUGIN_PROFILER environment variable used to enable pprof.
+	PluginProfilerEnv = "GF_PLUGIN_PROFILER"
+	// PluginProfilerPortEnvDeprecated is a constant for the GF_PLUGINS_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
+	PluginProfilerPortEnvDeprecated = "GF_PLUGINS_PROFILER_PORT"
+	// PluginProfilerPortEnv is a constant for the GF_PLUGIN_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
+	PluginProfilerPortEnv = "GF_PLUGIN_PROFILER_PORT"
 )
 
 // SetupPluginEnvironment will read the environment variables and apply the
@@ -24,19 +27,21 @@ var (
 func SetupPluginEnvironment(pluginID string) {
 	// Enable profiler
 	profilerEnabled := false
-	for _, env := range PluginProfilerEnvs {
-		if value, ok := os.LookupEnv(env); ok {
-			// compare value to plugin name
-			if value == pluginID {
-				profilerEnabled = true
-			}
-			break
+	if value, ok := os.LookupEnv(PluginProfilerEnvDeprecated); ok {
+		// compare value to plugin name
+		if value == pluginID {
+			profilerEnabled = true
+		}
+	} else if value, ok = os.LookupEnv(PluginProfilerEnv); ok {
+		if value == "true" {
+			profilerEnabled = true
 		}
 	}
+
 	Logger.Info("Profiler", "enabled", profilerEnabled)
 	if profilerEnabled {
 		profilerPort := "6060"
-		for _, env := range PluginProfilerPortEnvs {
+		for _, env := range []string{PluginProfilerPortEnvDeprecated, PluginProfilerPortEnv} {
 			if value, ok := os.LookupEnv(env); ok {
 				profilerPort = value
 				break
