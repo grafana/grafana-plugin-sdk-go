@@ -7,12 +7,12 @@ import (
 	"os"
 )
 
-const (
-	// PluginProfilerEnv is a constant for the GF_PLUGINS_PROFILER environment variable used to enable pprof.
-	PluginProfilerEnv = "GF_PLUGINS_PROFILER"
+var (
+	// PluginProfilerEnvs is a list of valid environment variables used to enable pprof.
+	PluginProfilerEnvs = []string{"GF_PLUGINS_PROFILER", "GF_PLUGIN_PROFILER"}
 
-	// PluginProfilerPortEnv is a constant for the GF_PLUGINS_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
-	PluginProfilerPortEnv = "GF_PLUGINS_PROFILER_PORT"
+	// PluginProfilerPortEnvs is a list of valid environment variable used to specify a pprof port (default 6060).
+	PluginProfilerPortEnvs = []string{"GF_PLUGINS_PROFILER_PORT", "GF_PLUGIN_PROFILER_PORT"}
 )
 
 // SetupPluginEnvironment will read the environment variables and apply the
@@ -24,17 +24,23 @@ const (
 func SetupPluginEnvironment(pluginID string) {
 	// Enable profiler
 	profilerEnabled := false
-	if value, ok := os.LookupEnv(PluginProfilerEnv); ok {
-		// compare value to plugin name
-		if value == pluginID {
-			profilerEnabled = true
+	for _, env := range PluginProfilerEnvs {
+		if value, ok := os.LookupEnv(env); ok {
+			// compare value to plugin name
+			if value == pluginID {
+				profilerEnabled = true
+			}
+			break
 		}
 	}
 	Logger.Info("Profiler", "enabled", profilerEnabled)
 	if profilerEnabled {
 		profilerPort := "6060"
-		if value, ok := os.LookupEnv(PluginProfilerPortEnv); ok {
-			profilerPort = value
+		for _, env := range PluginProfilerPortEnvs {
+			if value, ok := os.LookupEnv(env); ok {
+				profilerPort = value
+				break
+			}
 		}
 
 		Logger.Info("Profiler", "port", profilerPort)
