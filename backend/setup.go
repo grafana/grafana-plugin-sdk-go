@@ -12,6 +12,7 @@ var (
 	PluginProfilerEnvDeprecated = "GF_PLUGINS_PROFILER"
 	// PluginProfilerEnv is a constant for the GF_PLUGIN_PROFILER environment variable used to enable pprof.
 	PluginProfilerEnv = "GF_PLUGIN_PROFILER"
+
 	// PluginProfilerPortEnvDeprecated is a constant for the GF_PLUGINS_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
 	PluginProfilerPortEnvDeprecated = "GF_PLUGINS_PROFILER_PORT"
 	// PluginProfilerPortEnv is a constant for the GF_PLUGIN_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
@@ -47,7 +48,6 @@ func SetupPluginEnvironment(pluginID string) {
 				break
 			}
 		}
-
 		Logger.Info("Profiler", "port", profilerPort)
 		portConfig := fmt.Sprintf(":%s", profilerPort)
 
