@@ -59,5 +59,9 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		i++
 	}
 
+	if err := rows.Err(); err != nil {
+		return frame, err
+	}
+
 	return frame, nil
 }
