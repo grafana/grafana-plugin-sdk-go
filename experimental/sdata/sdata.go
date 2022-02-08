@@ -2,6 +2,7 @@ package sdata
 
 import (
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -283,4 +284,115 @@ func (wf *WideFrameSeries) AsMultiFrameSeries() *MultiFrameSeries {
 // to fullfill interface, returns itself
 func (wf *WideFrameSeries) AsWideFrameSeries() *WideFrameSeries {
 	return wf
+}
+
+// LongSeries is only a TimeSeriesCollectionReader (not a Writer) .. for now.
+// for now because, maybe we do want methods for creation, but they would hold
+// the orginal table format, so really it would be validation and adding the meta
+// property
+type LongSeries struct {
+	*data.Frame
+	BoolAsMetric bool
+}
+
+func (ls *LongSeries) Validate() (isEmpty bool, errors []error) {
+	panic("not implemented")
+}
+
+func (ls *LongSeries) AsWideFrameSeries() *WideFrameSeries {
+	panic("not implemented")
+}
+
+func (ls *LongSeries) AsMultiFrameSeries() *MultiFrameSeries {
+	panic("not implemented")
+}
+
+func (ls *LongSeries) GetMetricRefs() []TimeSeriesMetricRef {
+	if ls == nil || ls.Frame == nil || ls.Fields == nil {
+		return []TimeSeriesMetricRef{}
+	}
+	// metricName/labels -> SeriesRef
+	mm := make(map[string]map[string]TimeSeriesMetricRef)
+
+	refs := []TimeSeriesMetricRef{}
+	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) {
+		if mm[metricName] == nil {
+			mm[metricName] = make(map[string]TimeSeriesMetricRef)
+		}
+
+		lbStr := l.String()
+		if ref, ok := mm[metricName][lbStr]; !ok {
+			// TODO could carry time field name
+			ref.TimeField = data.NewField("time", nil, []time.Time{t})
+
+			vt := data.FieldTypeFor(value)
+			ref.ValueField = data.NewFieldFromFieldType(vt, 1)
+			ref.ValueField.Set(0, value)
+			ref.ValueField.Name = metricName
+			ref.ValueField.Labels = l
+
+			mm[metricName][lbStr] = ref
+			refs = append(refs, ref)
+		} else {
+			ref.TimeField.Append(t)
+			ref.ValueField.Append(value)
+		}
+	}
+
+	timeFields := ls.TypeIndices(data.FieldTypeTime)
+	var timeField *data.Field
+	if len(timeFields) > 0 {
+		timeField = ls.Fields[timeFields[0]]
+	} else {
+		return []TimeSeriesMetricRef{}
+	}
+
+	valueFieldIndicies := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
+	if len(valueFieldIndicies) == 0 {
+		return []TimeSeriesMetricRef{}
+	}
+
+	factorFieldIndicies := ls.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
+
+	for rowIdx := 0; rowIdx < ls.Rows(); rowIdx++ {
+		l := data.Labels{}
+		for _, strFieldIdx := range factorFieldIndicies {
+			cv, _ := ls.ConcreteAt(strFieldIdx, rowIdx)
+			l[ls.Fields[strFieldIdx].Name] = cv.(string)
+		}
+		for _, vFieldIdx := range valueFieldIndicies {
+			valueField := ls.Fields[vFieldIdx]
+			appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx))
+		}
+	}
+	sortRefs(refs)
+	return refs
+}
+
+func sortRefs(refs []TimeSeriesMetricRef) {
+	sort.SliceStable(refs, func(i, j int) bool {
+		iRef := refs[i]
+		jRef := refs[j]
+
+		if iRef.GetName() < jRef.GetName() {
+			return true
+		}
+		if iRef.GetName() > jRef.GetName() {
+			return false
+		}
+
+		// If here Names are equal, next sort based on if there are labels.
+
+		if iRef.GetLabels() == nil && jRef.GetLabels() == nil {
+			return true // no labels first
+		}
+		if iRef.GetLabels() == nil && jRef.GetLabels() != nil {
+			return true
+		}
+		if iRef.GetLabels() != nil && jRef.GetLabels() == nil {
+			return false
+		}
+
+		return iRef.GetLabels().String() < jRef.GetLabels().String()
+	})
 }
