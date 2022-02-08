@@ -20,11 +20,12 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 
 	serveOpts := backend.ServeOpts{
-		CheckHealthHandler:  handler,
-		CallResourceHandler: handler,
-		QueryDataHandler:    handler,
-		StreamHandler:       handler,
-		GRPCSettings:        opts.GRPCSettings,
+		CheckHealthHandler:    handler,
+		CallResourceHandler:   handler,
+		QueryDataHandler:      handler,
+		StreamHandler:         handler,
+		CollectMetricsHandler: handler,
+		GRPCSettings:          opts.GRPCSettings,
 	}
 
 	info, err := standalone.GetInfo(pluginID)
