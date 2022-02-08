@@ -161,19 +161,45 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 	t.Run("add two metrics", func(t *testing.T) {
 		wf := sdata.WideFrameSeries{}
 
-		err := wf.AddMetric("one", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}, []float64{1, 2})
+		err := wf.AddMetric("one", data.Labels{"host": "a"}, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}, []float64{1, 2})
 		require.NoError(t, err)
 
-		err = wf.AddMetric("two", nil, nil, []float64{3, 4})
+		err = wf.AddMetric("one", data.Labels{"host": "b"}, nil, []float64{3, 4})
 		require.NoError(t, err)
 
 		expectedFrame := data.NewFrame("",
 			data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}),
-			data.NewField("one", nil, []float64{1, 2}),
-			data.NewField("two", nil, []float64{3, 4}),
+			data.NewField("one", data.Labels{"host": "a"}, []float64{1, 2}),
+			data.NewField("one", data.Labels{"host": "b"}, []float64{3, 4}),
 		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
 
 		if diff := cmp.Diff(expectedFrame, wf.Frame, data.FrameTestCompareOptions()...); diff != "" {
+			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
+		}
+	})
+}
+
+func TestWideFrameSeriesAsMultiFrameSeries(t *testing.T) {
+	t.Run("two metrics from wide to multi", func(t *testing.T) {
+		wf := sdata.WideFrameSeries{}
+
+		err := wf.AddMetric("one", data.Labels{"host": "a"}, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}, []float64{1, 2})
+		require.NoError(t, err)
+
+		err = wf.AddMetric("one", data.Labels{"host": "b"}, nil, []float64{3, 4})
+		require.NoError(t, err)
+		mfs := wf.AsMultiFrameSeries()
+
+		_, errs := mfs.Validate()
+		require.Len(t, errs, 0)
+
+		expectedMFS := &sdata.MultiFrameSeries{}
+		err = expectedMFS.AddMetric("one", data.Labels{"host": "a"}, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}, []float64{1, 2})
+		require.NoError(t, err)
+		err = expectedMFS.AddMetric("one", data.Labels{"host": "b"}, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}, []float64{3, 4})
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(expectedMFS, mfs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
 		}
 	})

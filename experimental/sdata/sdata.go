@@ -270,10 +270,17 @@ func (wf *WideFrameSeries) Validate() (isEmpty bool, err []error) {
 
 // Converts to multi-frame, generally not to be used by data sources.
 func (wf *WideFrameSeries) AsMultiFrameSeries() *MultiFrameSeries {
-	return nil
+	refs := wf.GetMetricRefs()
+	mfs := make(MultiFrameSeries, 0, len(refs))
+	for _, ref := range refs {
+		frame := data.NewFrame("", ref.TimeField, ref.ValueField)
+		frame.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesMany})
+		mfs = append(mfs, frame)
+	}
+	return &mfs
 }
 
 // to fullfill interface, returns itself
 func (wf *WideFrameSeries) AsWideFrameSeries() *WideFrameSeries {
-	return nil
+	return wf
 }
