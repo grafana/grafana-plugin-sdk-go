@@ -24,8 +24,6 @@ type TimeSeriesCollection interface {
 
 type TimeSeriesCollectionReader interface {
 	Validate() (isEmpty bool, errors []error)
-	AsWideFrameSeries() *WideFrameSeries
-	AsMultiFrameSeries() *MultiFrameSeries
 	GetMetricRefs() []TimeSeriesMetricRef
 }
 
@@ -178,16 +176,6 @@ func (mfs *MultiFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
 	return refs
 }
 
-// to fullfill interface, returns itself
-func (mfs *MultiFrameSeries) AsMultiFrameSeries() *MultiFrameSeries {
-	return mfs
-}
-
-// Converts to wide frame, will manipulate data. Generally not to be used with data sources.
-func (mfs *MultiFrameSeries) AsWideFrameSeries() *WideFrameSeries {
-	return nil
-}
-
 // need to think about pointers here and elsewhere
 type WideFrameSeries struct {
 	*data.Frame
@@ -262,28 +250,11 @@ func (wf *WideFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
 }
 
 func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
-
+	panic("not implemented")
 }
 
 func (wf *WideFrameSeries) Validate() (isEmpty bool, err []error) {
 	return false, nil
-}
-
-// Converts to multi-frame, generally not to be used by data sources.
-func (wf *WideFrameSeries) AsMultiFrameSeries() *MultiFrameSeries {
-	refs := wf.GetMetricRefs()
-	mfs := make(MultiFrameSeries, 0, len(refs))
-	for _, ref := range refs {
-		frame := data.NewFrame("", ref.TimeField, ref.ValueField)
-		frame.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesMany})
-		mfs = append(mfs, frame)
-	}
-	return &mfs
-}
-
-// to fullfill interface, returns itself
-func (wf *WideFrameSeries) AsWideFrameSeries() *WideFrameSeries {
-	return wf
 }
 
 // LongSeries is only a TimeSeriesCollectionReader (not a Writer) .. for now.
@@ -296,14 +267,6 @@ type LongSeries struct {
 }
 
 func (ls *LongSeries) Validate() (isEmpty bool, errors []error) {
-	panic("not implemented")
-}
-
-func (ls *LongSeries) AsWideFrameSeries() *WideFrameSeries {
-	panic("not implemented")
-}
-
-func (ls *LongSeries) AsMultiFrameSeries() *MultiFrameSeries {
 	panic("not implemented")
 }
 

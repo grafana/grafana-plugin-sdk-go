@@ -179,7 +179,7 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 	})
 }
 
-func TestWideFrameSeriesAsMultiFrameSeries(t *testing.T) {
+func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 	t.Run("two metrics from wide to multi", func(t *testing.T) {
 		wf := sdata.WideFrameSeries{}
 
@@ -188,18 +188,20 @@ func TestWideFrameSeriesAsMultiFrameSeries(t *testing.T) {
 
 		err = wf.AddMetric("one", data.Labels{"host": "b"}, nil, []float64{3, 4})
 		require.NoError(t, err)
-		mfs := wf.AsMultiFrameSeries()
+		refs := wf.GetMetricRefs()
 
-		_, errs := mfs.Validate()
-		require.Len(t, errs, 0)
+		expectedRefs := []sdata.TimeSeriesMetricRef{
+			{
+				ValueField: data.NewField("one", data.Labels{"host": "a"}, []float64{1, 2}),
+				TimeField:  data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}),
+			},
+			{
+				ValueField: data.NewField("one", data.Labels{"host": "b"}, []float64{3, 4}),
+				TimeField:  data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}),
+			},
+		}
 
-		expectedMFS := &sdata.MultiFrameSeries{}
-		err = expectedMFS.AddMetric("one", data.Labels{"host": "a"}, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}, []float64{1, 2})
-		require.NoError(t, err)
-		err = expectedMFS.AddMetric("one", data.Labels{"host": "b"}, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}, []float64{3, 4})
-		require.NoError(t, err)
-
-		if diff := cmp.Diff(expectedMFS, mfs, data.FrameTestCompareOptions()...); diff != "" {
+		if diff := cmp.Diff(expectedRefs, refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
 		}
 	})
