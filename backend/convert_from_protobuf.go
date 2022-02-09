@@ -193,6 +193,13 @@ func (f ConvertFromProtobuf) CheckHealthResponse(protoResp *pluginv2.CheckHealth
 	}
 }
 
+// CollectMetricsRequest converts protobuf version of a CollectMetricsRequest to the SDK version.
+func (f ConvertFromProtobuf) CollectMetricsRequest(protoReq *pluginv2.CollectMetricsRequest) *CollectMetricsRequest {
+	return &CollectMetricsRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+	}
+}
+
 // CollectMetricsResponse converts protobuf version of a CollectMetricsResponse to the SDK version.
 func (f ConvertFromProtobuf) CollectMetricsResponse(protoResp *pluginv2.CollectMetricsResponse) *CollectMetricsResult {
 	var prometheusMetrics []byte
