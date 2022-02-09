@@ -98,7 +98,7 @@ func (m *Manager) CollectMetrics(ctx context.Context, req *backend.CollectMetric
 	if err != nil {
 		return nil, err
 	}
-	if ds, ok := h.(backend.CollectMetricsHandlerV2); ok {
+	if ds, ok := h.(backend.CollectMetricsHandler); ok {
 		return ds.CollectMetrics(ctx, req)
 	}
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
