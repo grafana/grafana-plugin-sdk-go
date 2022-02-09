@@ -43,9 +43,6 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 8.
 	StreamHandler StreamHandler
 
-	// CollectMetricsHandler handler for metrics.
-	CollectMetricsHandler CollectMetricsHandlerV2
-
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }

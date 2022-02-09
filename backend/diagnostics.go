@@ -65,33 +65,17 @@ type CheckHealthResult struct {
 
 // CollectMetricsHandler handles metric collection.
 type CollectMetricsHandler interface {
-	CollectMetrics(ctx context.Context) (*CollectMetricsResult, error)
+	CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error)
 }
 
 // CollectMetricsHandlerFunc is an adapter to allow the use of
 // ordinary functions as backend.CollectMetricsHandler. If f is a function
 // with the appropriate signature, CollectMetricsHandlerFunc(f) is a
 // Handler that calls f.
-type CollectMetricsHandlerFunc func(ctx context.Context) (*CollectMetricsResult, error)
+type CollectMetricsHandlerFunc func(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error)
 
 // CollectMetrics calls fn(ctx, req).
-func (fn CollectMetricsHandlerFunc) CollectMetrics(ctx context.Context) (*CollectMetricsResult, error) {
-	return fn(ctx)
-}
-
-// CollectMetricsHandlerV2 handles metric collection.
-type CollectMetricsHandlerV2 interface {
-	CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error)
-}
-
-// CollectMetricsHandlerFuncV2 is an adapter to allow the use of
-// ordinary functions as backend.CollectMetricsHandlerV2. If f is a function
-// with the appropriate signature, CollectMetricsHandlerFuncV2(f) is a
-// Handler that calls f.
-type CollectMetricsHandlerFuncV2 func(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error)
-
-// CollectMetrics calls fn(ctx, req).
-func (fn CollectMetricsHandlerFuncV2) CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error) {
+func (fn CollectMetricsHandlerFunc) CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error) {
 	return fn(ctx, req)
 }
 
