@@ -92,14 +92,3 @@ func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, 
 	}
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
-
-func (m *Manager) CollectMetrics(ctx context.Context, req *backend.CollectMetricsRequest) (*backend.CollectMetricsResult, error) {
-	h, err := m.Get(req.PluginContext)
-	if err != nil {
-		return nil, err
-	}
-	if ds, ok := h.(backend.CollectMetricsHandler); ok {
-		return ds.CollectMetrics(ctx, req)
-	}
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
-}
