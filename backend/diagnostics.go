@@ -65,18 +65,23 @@ type CheckHealthResult struct {
 
 // CollectMetricsHandler handles metric collection.
 type CollectMetricsHandler interface {
-	CollectMetrics(ctx context.Context) (*CollectMetricsResult, error)
+	CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error)
 }
 
 // CollectMetricsHandlerFunc is an adapter to allow the use of
 // ordinary functions as backend.CollectMetricsHandler. If f is a function
 // with the appropriate signature, CollectMetricsHandlerFunc(f) is a
 // Handler that calls f.
-type CollectMetricsHandlerFunc func(ctx context.Context) (*CollectMetricsResult, error)
+type CollectMetricsHandlerFunc func(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error)
 
 // CollectMetrics calls fn(ctx, req).
-func (fn CollectMetricsHandlerFunc) CollectMetrics(ctx context.Context) (*CollectMetricsResult, error) {
-	return fn(ctx)
+func (fn CollectMetricsHandlerFunc) CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error) {
+	return fn(ctx, req)
+}
+
+// CollectMetricsRequest contains the metrics request
+type CollectMetricsRequest struct {
+	PluginContext PluginContext
 }
 
 // CollectMetricsResult collect metrics result.

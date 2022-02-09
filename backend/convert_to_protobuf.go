@@ -250,3 +250,19 @@ func (t ConvertToProtobuf) StreamPacket(p *StreamPacket) *pluginv2.StreamPacket 
 	}
 	return protoReq
 }
+
+// CollectMetricsRequest converts the SDK version of a CollectMetricsRequest to the protobuf version.
+func (t ConvertToProtobuf) CollectMetricsRequest(req *CollectMetricsRequest) *pluginv2.CollectMetricsRequest {
+	return &pluginv2.CollectMetricsRequest{
+		PluginContext: t.PluginContext(req.PluginContext),
+	}
+}
+
+// CollectMetricsResult converts the SDK version of a CollectMetricsResult to the protobuf version.
+func (t ConvertToProtobuf) CollectMetricsResult(res *CollectMetricsResult) *pluginv2.CollectMetricsResponse {
+	return &pluginv2.CollectMetricsResponse{
+		Metrics: &pluginv2.CollectMetricsResponse_Payload{
+			Prometheus: res.PrometheusMetrics,
+		},
+	}
+}
