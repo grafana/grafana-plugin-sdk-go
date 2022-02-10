@@ -15,6 +15,7 @@ import (
 type TimeSeriesCollectionWriter interface {
 	AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error
 	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
+	// AddField Possible TODO - If we accept certain extra information to be valid but outside the series
 }
 
 type TimeSeriesCollection interface {
