@@ -153,10 +153,10 @@ func (lfn *LongFrameNumeric) GetMetricRefs() []NumericMetricRef {
 			l[key] = val.(string)
 		}
 
-		for _, fieldIdx := range numericFieldIdxs {
+		for i, fieldIdx := range numericFieldIdxs {
 			fType := lfn.Fields[fieldIdx].Type()
 			field := data.NewFieldFromFieldType(fType, 1)
-			field.Name = lfn.Fields[fieldIdx].Name
+			field.Name = numericFieldNames[i]
 			field.Labels = l
 			field.Set(0, lfn.Fields[fieldIdx].At(rowIdx))
 			refs = append(refs, NumericMetricRef{

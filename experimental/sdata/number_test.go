@@ -9,7 +9,6 @@ import (
 )
 
 func TestSimpleNumeric(t *testing.T) {
-
 	addMetrics := func(c sdata.NumericCollection) {
 		err := c.AddMetric("os.cpu", data.Labels{"host": "a"}, 1.0)
 		require.NoError(t, err)
@@ -18,16 +17,26 @@ func TestSimpleNumeric(t *testing.T) {
 
 	}
 
+	expectedRefs := []sdata.NumericMetricRef{
+		{
+			data.NewField("os.cpu", data.Labels{"host": "a"}, []float64{1}),
+		},
+		{
+			data.NewField("os.cpu", data.Labels{"host": "b"}, []float64{2}),
+		},
+	}
+
 	var mFrameNC sdata.NumericCollection = &sdata.MultiFrameNumeric{}
 	addMetrics(mFrameNC)
+
 	mFrameRefs := mFrameNC.GetMetricRefs()
-	require.Len(t, mFrameRefs, 2)
-	require.Equal(t, data.Labels{"host": "b"}, mFrameRefs[1].GetLabels())
+	require.Equal(t, expectedRefs, mFrameRefs)
 
 	var wFrameNC sdata.NumericCollection = &sdata.WideFrameNumeric{}
 	addMetrics(wFrameNC)
+
 	wFrameRefs := wFrameNC.GetMetricRefs()
-	require.Equal(t, mFrameRefs, wFrameRefs, "both are dynamic output expected to be equal")
+	require.Equal(t, expectedRefs, wFrameRefs)
 
 	lfn := &sdata.LongFrameNumeric{
 		Frame: data.NewFrame("",
@@ -36,9 +45,8 @@ func TestSimpleNumeric(t *testing.T) {
 		),
 	}
 	var lFrameNCR sdata.NumericCollectionReader = lfn
-	lFrameRefs := lFrameNCR.GetMetricRefs()
 
-	require.Len(t, lFrameRefs, 2)
-	require.Equal(t, mFrameRefs, lFrameRefs, "both are dynamic output expected to be equal")
+	lFrameRefs := lFrameNCR.GetMetricRefs()
+	require.Equal(t, expectedRefs, lFrameRefs, "both are dynamic output expected to be equal")
 
 }
