@@ -139,12 +139,14 @@ type TimeSeriesMetricRef struct {
 	TimeField  *data.Field
 }
 
-func (m TimeSeriesMetricRef) GetName() string {
+func (m TimeSeriesMetricRef) GetMetricName() string {
 	if m.ValueField != nil {
 		return m.ValueField.Name
 	}
 	return ""
 }
+
+// TODO GetFQMetric (or something, Names + Labels)
 
 func (m TimeSeriesMetricRef) GetLabels() data.Labels {
 	if m.ValueField != nil {
@@ -169,11 +171,12 @@ func (mfs *MultiFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
 		}
 
 		valueFields := frame.TypeIndices(ValidValueFields()...)
-		if len(timeFields) == 1 {
+		if len(valueFields) == 1 {
 			m.ValueField = frame.Fields[valueFields[0]]
 		}
 		refs = append(refs, m)
 	}
+	sortTimeSeriesMetricRef(refs)
 	return refs
 }
 
@@ -247,6 +250,7 @@ func (wf *WideFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
 			ValueField: wf.Fields[fieldIdx],
 		})
 	}
+	sortTimeSeriesMetricRef(refs)
 	return refs
 }
 
@@ -329,19 +333,19 @@ func (ls *LongSeries) GetMetricRefs() []TimeSeriesMetricRef {
 			appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx))
 		}
 	}
-	sortRefs(refs)
+	sortTimeSeriesMetricRef(refs)
 	return refs
 }
 
-func sortRefs(refs []TimeSeriesMetricRef) {
+func sortTimeSeriesMetricRef(refs []TimeSeriesMetricRef) {
 	sort.SliceStable(refs, func(i, j int) bool {
 		iRef := refs[i]
 		jRef := refs[j]
 
-		if iRef.GetName() < jRef.GetName() {
+		if iRef.GetMetricName() < jRef.GetMetricName() {
 			return true
 		}
-		if iRef.GetName() > jRef.GetName() {
+		if iRef.GetMetricName() > jRef.GetMetricName() {
 			return false
 		}
 
