@@ -82,8 +82,14 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 	dr := &backend.DataResponse{}
 
 	foundDataSection := false
-
 	scanner := bufio.NewScanner(file)
+	fi, err := file.Stat()
+	if err != nil {
+		return nil, err
+	}
+	fsize := fi.Size()
+	buf := make([]byte, 0, bufio.MaxScanTokenSize)
+	scanner.Buffer(buf, int(fsize))
 	for scanner.Scan() {
 		line := scanner.Text()
 		if foundDataSection {
