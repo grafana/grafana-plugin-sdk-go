@@ -81,7 +81,7 @@ func TestGoldenResponseChecker(t *testing.T) {
 
 func TestReadGoldenFile(t *testing.T) {
 	t.Run("read a long golden file", func(t *testing.T) {
-		goldenFile := filepath.Join("testdata", "long.golden.txt")
+		goldenFile := filepath.Join("testdata", "large.golden.txt")
 		dr, err := readGoldenFile(goldenFile)
 		require.NotEmpty(t, dr)
 		require.NoError(t, err)
