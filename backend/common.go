@@ -12,10 +12,11 @@ const secureDataCustomOptionsKey = "grafanaSecureData"
 
 // User represents a Grafana user.
 type User struct {
-	Login string
-	Name  string
-	Email string
-	Role  string
+	UserID int64
+	Login  string
+	Name   string
+	Email  string
+	Role   string
 }
 
 // AppInstanceSettings represents settings for an app instance.
