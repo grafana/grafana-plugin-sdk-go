@@ -28,29 +28,32 @@ func TestSimpleNumeric(t *testing.T) {
 		},
 	}
 
-	// multiframe
-	var mFrameNC sdata.NumericCollection = &sdata.MultiFrameNumeric{}
-	addMetrics(mFrameNC)
+	t.Run("multi frame", func(t *testing.T) {
+		var mFrameNC sdata.NumericCollection = &sdata.MultiFrameNumeric{}
+		addMetrics(mFrameNC)
 
-	mFrameRefs := mFrameNC.GetMetricRefs()
-	require.Equal(t, expectedRefs, mFrameRefs)
+		mFrameRefs := mFrameNC.GetMetricRefs()
+		require.Equal(t, expectedRefs, mFrameRefs)
+	})
 
-	// wideframe
-	var wFrameNC sdata.NumericCollection = &sdata.WideFrameNumeric{}
-	addMetrics(wFrameNC)
+	t.Run("wide frame", func(t *testing.T) {
+		var wFrameNC sdata.NumericCollection = &sdata.WideFrameNumeric{}
+		addMetrics(wFrameNC)
 
-	wFrameRefs := wFrameNC.GetMetricRefs()
-	require.Equal(t, expectedRefs, wFrameRefs)
+		wFrameRefs := wFrameNC.GetMetricRefs()
+		require.Equal(t, expectedRefs, wFrameRefs)
+	})
 
-	// longframe
-	lfn := &sdata.LongFrameNumeric{
-		Frame: data.NewFrame("",
-			data.NewField("os.cpu", nil, []float64{1, 2}),
-			data.NewField("host", nil, []string{"a", "b"}),
-		),
-	}
-	var lFrameNCR sdata.NumericCollectionReader = lfn
+	t.Run("long frame", func(t *testing.T) {
+		lfn := &sdata.LongFrameNumeric{
+			Frame: data.NewFrame("",
+				data.NewField("os.cpu", nil, []float64{1, 2}),
+				data.NewField("host", nil, []string{"a", "b"}),
+			),
+		}
+		var lFrameNCR sdata.NumericCollectionReader = lfn
 
-	lFrameRefs := lFrameNCR.GetMetricRefs()
-	require.Equal(t, expectedRefs, lFrameRefs)
+		lFrameRefs := lFrameNCR.GetMetricRefs()
+		require.Equal(t, expectedRefs, lFrameRefs)
+	})
 }
