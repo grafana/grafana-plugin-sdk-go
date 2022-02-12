@@ -29,14 +29,13 @@ require (
 
 require (
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
-	gopkg.in/elazarl/goproxy.v1 v1.0.0-20180725130230-947c36da3153
+	github.com/elazarl/goproxy v0.0.0-20220115173737-adb46da277ac
 )
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
-	github.com/elazarl/goproxy v0.0.0-20220115173737-adb46da277ac // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20220115173737-adb46da277ac // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/golang/snappy v0.0.3 // indirect

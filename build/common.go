@@ -10,6 +10,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2eproxy"
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
@@ -225,6 +226,17 @@ func Clean() error {
 		return err
 	}
 	return nil
+}
+
+// E2EProxy starts the fixture proxy in append mode.
+func E2EProxy() error {
+	return StartProxy(e2eproxy.ProxyModeAppend)
+}
+
+func StartProxy(mode e2eproxy.ProxyMode) error {
+	store := e2eproxy.NewHARStorage("cypress/fixtures/e2e.har")
+	fixture := e2eproxy.NewFixture(store)
+	return e2eproxy.StartProxy(mode, fixture, "127.0.0.1:9999")
 }
 
 // checkLinuxPtraceScope verifies that ptrace is configured as required.

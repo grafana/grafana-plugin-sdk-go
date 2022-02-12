@@ -3,6 +3,7 @@ package e2eproxy
 import (
 	"bytes"
 	"io"
+	"io/ioutil"
 	"net/http"
 )
 
@@ -25,6 +26,23 @@ func NewFixture(store Storage) *Fixture {
 		match:           DefaultMatcher,
 		store:           store,
 	}
+}
+
+// Add processes the http.Request and http.Response with the Fixture's RequestProcessor and ResponseProcessor and adds them to the Fixure's Storage.
+func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) {
+	req := f.processRequest(originalReq)
+	res := f.processResponse(originalRes)
+	f.store.Add(req, res)
+}
+
+// Entries returns the entries from the Fixture's Storage.
+func (f *Fixture) Entries() []*Entry {
+	return f.store.Entries()
+}
+
+// Save saves the current state of the Fixture's Storage.
+func (f *Fixture) Save() error {
+	return f.store.Save()
 }
 
 // WithRequestProcessor sets the RequestProcessor for the Fixture.
@@ -68,27 +86,40 @@ func DefaultMatcher(a *http.Request, b *http.Request) bool {
 		}
 	}
 
+	if a.Body == nil && b.Body == nil {
+		return true
+	}
+
 	aBody, err := io.ReadAll(a.Body)
 	if err != nil {
 		return false
 	}
+	a.Body = ioutil.NopCloser(bytes.NewBuffer(aBody))
 
 	bBody, err := io.ReadAll(b.Body)
 	if err != nil {
 		return false
 	}
+	b.Body = ioutil.NopCloser(bytes.NewBuffer(bBody))
 
-	if !bytes.Equal(aBody, bBody) {
-		return false
-	}
-
-	return true
+	return bytes.Equal(aBody, bBody)
 }
 
 // DefaultProcessRequest is a default implementation of ProcessRequest.
 // It returns the original unmodified request.
 func DefaultProcessRequest(req *http.Request) *http.Request {
-	return req
+	processedReq := req.Clone(req.Context())
+	processedReq.Header.Del("Date")
+	processedReq.Header.Del("Coookie")
+	processedReq.Header.Del("Authorization")
+	processedReq.Header.Del("User-Agent")
+	b, err := io.ReadAll(processedReq.Body)
+	if err != nil {
+		return processedReq
+	}
+	req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+	processedReq.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+	return processedReq
 }
 
 // DefaultProcessResponse is a default implementation of ProcessResponse.

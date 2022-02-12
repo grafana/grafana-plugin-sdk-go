@@ -1,10 +1,15 @@
 package e2eproxy
 
 import (
+	"bytes"
+	"context"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"os"
+	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/chromedp/cdproto/har"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -23,6 +28,7 @@ type Storage interface {
 }
 
 type HARStorage struct {
+	lock sync.Mutex
 	path string
 	har  *har.HAR
 }
@@ -56,12 +62,12 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	)
 
 	reqHeaders := make([]*har.NameValuePair, 0)
-	for name, value := range req.Header {
+	for name, value := range req.Header.Clone() {
 		reqHeaders = append(reqHeaders, &har.NameValuePair{Name: name, Value: value[0]})
 	}
 
 	resHeaders := make([]*har.NameValuePair, 0)
-	for name, value := range res.Header {
+	for name, value := range res.Header.Clone() {
 		resHeaders = append(resHeaders, &har.NameValuePair{Name: name, Value: value[0]})
 	}
 
@@ -72,25 +78,32 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 
 	if req.Body != nil {
 		reqBody, err = io.ReadAll(req.Body)
-		defer req.Body.Close()
 		if err != nil {
 			backend.Logger.Error("Failed to read request body", "err", err)
 		}
+		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 	}
 
 	if res.Body != nil {
 		resBody, err = io.ReadAll(res.Body)
-		defer res.Body.Close()
 		if err != nil {
 			backend.Logger.Error("Failed to read response body", "err", err)
 		}
+		res.Body = ioutil.NopCloser(bytes.NewReader(resBody))
 	}
 
-	cookies := make([]*har.Cookie, 0)
+	reqCookies := make([]*har.Cookie, 0)
+	for _, cookie := range req.Cookies() {
+		reqCookies = append(reqCookies, &har.Cookie{Name: cookie.Name, Value: cookie.Value})
+	}
+
+	resCookies := make([]*har.Cookie, 0)
 	for _, cookie := range res.Cookies() {
-		cookies = append(cookies, &har.Cookie{Name: cookie.Name, Value: cookie.Value})
+		resCookies = append(resCookies, &har.Cookie{Name: cookie.Name, Value: cookie.Value})
 	}
 
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.har.Log.Entries = append(s.har.Log.Entries, &har.Entry{
 		Request: &har.Request{
 			Method:      req.Method,
@@ -98,6 +111,8 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 			URL:         req.URL.String(),
 			Headers:     reqHeaders,
 			QueryString: queryString,
+			Cookies:     reqCookies,
+			BodySize:    int64(len(reqBody)),
 			PostData: &har.PostData{
 				MimeType: req.Header.Get("Content-Type"),
 				Text:     string(reqBody),
@@ -109,11 +124,11 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 			HTTPVersion: res.Proto,
 			Headers:     resHeaders,
 			HeadersSize: -1,
-			BodySize:    res.ContentLength,
-			Cookies:     cookies,
+			BodySize:    int64(len(resBody)),
+			Cookies:     resCookies,
 			RedirectURL: res.Header.Get("Location"),
 			Content: &har.Content{
-				Size:     res.ContentLength,
+				Size:     int64(len(resBody)),
 				MimeType: res.Header.Get("Content-Type"),
 				Text:     string(resBody),
 			},
@@ -124,29 +139,36 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 // Add converts the http.Request and http.Response to a har.Entry and adds it to the Fixture.
 func (s *HARStorage) Entries() []*Entry {
 	entries := make([]*Entry, len(s.har.Log.Entries))
+	s.lock.Lock()
+	defer s.lock.Unlock()
 
 	for i, e := range s.har.Log.Entries {
 		postData := ""
-		if (e.Request.PostData != nil) && (e.Request.PostData.Text != "") {
+		if e.Request.PostData != nil {
 			postData = e.Request.PostData.Text
 		}
-		req, err := http.NewRequest(e.Request.Method, e.Request.URL, ioutil.NopCloser(strings.NewReader(postData)))
+		req, err := http.NewRequest(e.Request.Method, e.Request.URL, nil)
 		if err != nil {
+			backend.Logger.Error("Failed to create request", "err", err)
 			continue
 		}
-
+		req.Body = ioutil.NopCloser(strings.NewReader(postData))
+		req.ContentLength = e.Request.BodySize
 		req.Header = make(http.Header)
 		for _, header := range e.Request.Headers {
 			req.Header.Add(header.Name, header.Value)
 		}
 
+		bodyReq := req.Clone(context.Background())
+		bodyReq.Body = ioutil.NopCloser(strings.NewReader(postData))
 		res := &http.Response{
 			StatusCode:    int(e.Response.Status),
 			Status:        e.Response.StatusText,
 			Proto:         e.Response.HTTPVersion,
 			Header:        make(http.Header),
 			Body:          ioutil.NopCloser(strings.NewReader(e.Response.Content.Text)),
-			ContentLength: e.Response.Content.Size,
+			ContentLength: int64(len(e.Response.Content.Text)),
+			Request:       bodyReq,
 		}
 
 		for _, header := range e.Response.Headers {
@@ -163,6 +185,12 @@ func (s *HARStorage) Entries() []*Entry {
 }
 
 func (s *HARStorage) Save() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+	err := os.MkdirAll(filepath.Dir(s.path), os.ModePerm)
+	if err != nil {
+		return err
+	}
 	raw, err := s.har.MarshalJSON()
 	if err != nil {
 		return err
@@ -171,6 +199,8 @@ func (s *HARStorage) Save() error {
 }
 
 func (s *HARStorage) Load() error {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	raw, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return err
