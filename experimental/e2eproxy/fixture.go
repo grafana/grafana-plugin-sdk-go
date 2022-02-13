@@ -32,6 +32,7 @@ func NewFixture(store Storage) *Fixture {
 func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) {
 	req := f.processRequest(originalReq)
 	res := f.processResponse(originalRes)
+	defer res.Body.Close()
 	f.store.Add(req, res)
 }
 
@@ -106,7 +107,7 @@ func DefaultMatcher(a *http.Request, b *http.Request) bool {
 }
 
 // DefaultProcessRequest is a default implementation of ProcessRequest.
-// It returns the original unmodified request.
+// It removes the Date, Cookie, Authorization, and User-Agent headers.
 func DefaultProcessRequest(req *http.Request) *http.Request {
 	processedReq := req.Clone(req.Context())
 	processedReq.Header.Del("Date")

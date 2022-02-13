@@ -25,6 +25,8 @@ func StartProxy(mode ProxyMode, fixture *Fixture, addr string) error {
 	proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
 
 	if mode == ProxyModePlayback || mode == ProxyModeAppend {
+		// ignoring the G402 error here because this proxy is only used for testing
+		// nolint:gosec
 		tr := transport.Transport{Proxy: transport.ProxyFromEnvironment, TLSClientConfig: &tls.Config{InsecureSkipVerify: true}}
 		proxy.OnRequest().DoFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 			ctx.RoundTripper = goproxy.RoundTripperFunc(func(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {

@@ -228,15 +228,11 @@ func Clean() error {
 	return nil
 }
 
-// E2EProxy starts the fixture proxy in append mode.
+// E2EProxy starts the fixture proxy in append mode on port 9999.
 func E2EProxy() error {
-	return StartProxy(e2eproxy.ProxyModeAppend)
-}
-
-func StartProxy(mode e2eproxy.ProxyMode) error {
 	store := e2eproxy.NewHARStorage("cypress/fixtures/e2e.har")
 	fixture := e2eproxy.NewFixture(store)
-	return e2eproxy.StartProxy(mode, fixture, "127.0.0.1:9999")
+	return e2eproxy.StartProxy(e2eproxy.ProxyModeAppend, fixture, "127.0.0.1:9999")
 }
 
 // checkLinuxPtraceScope verifies that ptrace is configured as required.
