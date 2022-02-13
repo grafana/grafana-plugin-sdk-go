@@ -66,6 +66,7 @@ func TestHARStorage(t *testing.T) {
 			require.NoError(t, err)
 			destData, err := os.ReadFile(f.Name())
 			require.NoError(t, err)
+			// we can't compare the two HAR files directly because header maps are not ordered
 			require.Equal(t, len(sourceData), len(destData))
 			err = os.Remove(f.Name())
 			require.NoError(t, err)

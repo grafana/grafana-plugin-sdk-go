@@ -61,6 +61,7 @@ func (f *Fixture) WithMatcher(matcher Matcher) {
 	f.match = matcher
 }
 
+// Match compares incoming request to entries from the Fixture's Storage.
 func (f *Fixture) Match(orignalReq *http.Request) *http.Response {
 	req := f.processRequest(orignalReq)
 	for _, entry := range f.store.Entries() {

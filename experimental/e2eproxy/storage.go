@@ -3,6 +3,7 @@ package e2eproxy
 import (
 	"bytes"
 	"context"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -12,14 +13,15 @@ import (
 	"sync"
 
 	"github.com/chromedp/cdproto/har"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
+// Entry represents a http.Request and http.Response pair.
 type Entry struct {
 	Request  *http.Request
 	Response *http.Response
 }
 
+// Storage is an interface for storing Entry objects.
 type Storage interface {
 	Add(*http.Request, *http.Response)
 	Load() error
@@ -27,6 +29,7 @@ type Storage interface {
 	Entries() []*Entry
 }
 
+// HARStorage is a Storage implementation that stores requests and responses in HAR format on disk.
 type HARStorage struct {
 	lock sync.Mutex
 	path string
@@ -40,7 +43,7 @@ func NewHARStorage(path string) *HARStorage {
 		har:  &har.HAR{},
 	}
 	if err := storage.Load(); err != nil {
-		backend.Logger.Debug("Unable to load HAR", "path", path)
+		fmt.Println("Unable to load HAR", "path", path)
 		storage.har.Log = &har.Log{
 			Version: "1.2",
 			Creator: &har.Creator{
@@ -79,7 +82,7 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	if req.Body != nil {
 		reqBody, err = io.ReadAll(req.Body)
 		if err != nil {
-			backend.Logger.Error("Failed to read request body", "err", err)
+			fmt.Println("Failed to read request body", "err", err)
 		}
 		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 	}
@@ -87,7 +90,7 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	if res.Body != nil {
 		resBody, err = io.ReadAll(res.Body)
 		if err != nil {
-			backend.Logger.Error("Failed to read response body", "err", err)
+			fmt.Println("Failed to read response body", "err", err)
 		}
 		res.Body = ioutil.NopCloser(bytes.NewReader(resBody))
 	}
@@ -136,7 +139,7 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	})
 }
 
-// Add converts the http.Request and http.Response to a har.Entry and adds it to the Fixture.
+// Entries converts HAR entries to a slice of Entry (http.Request and http.Response pairs).
 func (s *HARStorage) Entries() []*Entry {
 	entries := make([]*Entry, len(s.har.Log.Entries))
 	s.lock.Lock()
@@ -149,7 +152,7 @@ func (s *HARStorage) Entries() []*Entry {
 		}
 		req, err := http.NewRequest(e.Request.Method, e.Request.URL, nil)
 		if err != nil {
-			backend.Logger.Error("Failed to create request", "err", err)
+			fmt.Println("Failed to create request", "err", err)
 			continue
 		}
 		req.Body = ioutil.NopCloser(strings.NewReader(postData))
@@ -184,6 +187,7 @@ func (s *HARStorage) Entries() []*Entry {
 	return entries
 }
 
+// Save writes the HAR to disk.
 func (s *HARStorage) Save() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
@@ -198,6 +202,7 @@ func (s *HARStorage) Save() error {
 	return ioutil.WriteFile(s.path, raw, 0600)
 }
 
+// Load reads the HAR from disk.
 func (s *HARStorage) Load() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
