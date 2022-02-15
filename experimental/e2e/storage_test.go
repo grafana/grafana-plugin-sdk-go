@@ -1,4 +1,4 @@
-package e2eproxy_test
+package e2e_test
 
 import (
 	"io/ioutil"
@@ -7,14 +7,14 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2eproxy"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
 	"github.com/stretchr/testify/require"
 )
 
 func TestHARStorage(t *testing.T) {
 	t.Run("Add", func(t *testing.T) {
 		t.Run("should add a new entry to the storage", func(t *testing.T) {
-			s := e2eproxy.NewHARStorage("testdata/example_add.har")
+			s := e2e.NewHARStorage("testdata/example_add.har")
 			req, err := http.NewRequest("GET", "http://example.com/", nil)
 			require.NoError(t, err)
 			res := &http.Response{
@@ -30,7 +30,7 @@ func TestHARStorage(t *testing.T) {
 
 	t.Run("Load", func(t *testing.T) {
 		t.Run("should load the HAR from disk", func(t *testing.T) {
-			s := e2eproxy.NewHARStorage("testdata/example.har")
+			s := e2e.NewHARStorage("testdata/example.har")
 			req := s.Entries()[0].Request
 			res := s.Entries()[0].Response
 			require.Equal(t, "https://grafana.com/api/plugins", req.URL.String())
@@ -51,12 +51,22 @@ func TestHARStorage(t *testing.T) {
 		})
 	})
 
+	t.Run("Delete", func(t *testing.T) {
+		t.Run("should delete second entry", func(t *testing.T) {
+			s := e2e.NewHARStorage("testdata/example.har")
+			require.Equal(t, 2, len(s.Entries()))
+			s.Delete(s.Entries()[1].ID)
+			require.Equal(t, 1, len(s.Entries()))
+			require.Equal(t, "https://grafana.com/api/plugins", s.Entries()[0].Request.URL.String())
+		})
+	})
+
 	t.Run("Save", func(t *testing.T) {
 		t.Run("should save", func(t *testing.T) {
-			source := e2eproxy.NewHARStorage("testdata/example.har")
+			source := e2e.NewHARStorage("testdata/example.har")
 			f, err := os.CreateTemp("", "example_*.har")
 			require.NoError(t, err)
-			dest := e2eproxy.NewHARStorage(f.Name())
+			dest := e2e.NewHARStorage(f.Name())
 			for _, entry := range source.Entries() {
 				dest.Add(entry.Request, entry.Response)
 			}

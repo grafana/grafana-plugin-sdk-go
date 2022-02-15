@@ -1,4 +1,4 @@
-package e2eproxy
+package e2e
 
 import (
 	"bytes"
@@ -13,10 +13,12 @@ import (
 	"sync"
 
 	"github.com/chromedp/cdproto/har"
+	"github.com/google/uuid"
 )
 
 // Entry represents a http.Request and http.Response pair.
 type Entry struct {
+	ID       string
 	Request  *http.Request
 	Response *http.Response
 }
@@ -24,6 +26,7 @@ type Entry struct {
 // Storage is an interface for storing Entry objects.
 type Storage interface {
 	Add(*http.Request, *http.Response)
+	Delete(string) bool
 	Load() error
 	Save() error
 	Entries() []*Entry
@@ -52,7 +55,9 @@ func NewHARStorage(path string) *HARStorage {
 			},
 			Entries: make([]*har.Entry, 0),
 		}
+		return storage
 	}
+	fmt.Println("Loaded HAR", "path", path)
 	return storage
 }
 
@@ -108,6 +113,7 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.har.Log.Entries = append(s.har.Log.Entries, &har.Entry{
+		Comment: uuid.New().String(),
 		Request: &har.Request{
 			Method:      req.Method,
 			HTTPVersion: req.Proto,
@@ -178,13 +184,32 @@ func (s *HARStorage) Entries() []*Entry {
 			res.Header.Add(header.Name, header.Value)
 		}
 
+		// use the HAR entry's comment field to store the ID of the entry
+		id := e.Comment
+		if id == "" {
+			id = uuid.New().String()
+			e.Comment = id
+		}
+
 		entries[i] = &Entry{
+			ID:       id,
 			Request:  req,
 			Response: res,
 		}
 	}
 
 	return entries
+}
+
+// Delete removes the HAR entry with the given ID.
+func (s *HARStorage) Delete(id string) bool {
+	for i, e := range s.har.Log.Entries {
+		if e.Comment == id {
+			s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
+			return true
+		}
+	}
+	return false
 }
 
 // Save writes the HAR to disk.

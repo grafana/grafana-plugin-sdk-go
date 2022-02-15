@@ -10,7 +10,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2eproxy"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
@@ -228,11 +228,34 @@ func Clean() error {
 	return nil
 }
 
-// E2EProxy starts the E2E proxy in append mode on port 9999.
-func E2EProxy() error {
-	store := e2eproxy.NewHARStorage("cypress/fixtures/e2e.har")
-	fixture := e2eproxy.NewFixture(store)
-	proxy := e2eproxy.NewProxy(e2eproxy.ProxyModeAppend, fixture, "127.0.0.1:9999")
+// E2E is a namespace.
+type E2E mg.Namespace
+
+// Append starts the E2E proxy in append mode.
+func (E2E) Append(addr, path string) error {
+	return e2eProxy(e2e.ProxyModeAppend, addr, path)
+}
+
+// Overwrite starts the E2E proxy in overwrite mode.
+func (E2E) Overwrite(addr, path string) error {
+	return e2eProxy(e2e.ProxyModeOverwrite, addr, path)
+}
+
+// Replay starts the E2E proxy in replay mode.
+func (E2E) Replay(addr, path string) error {
+	return e2eProxy(e2e.ProxyModeReplay, addr, path)
+}
+
+func e2eProxy(mode e2e.ProxyMode, addr, path string) error {
+	if path == "" {
+		path = "cypress/fixtures/e2e.har"
+	}
+	if addr == "" {
+		addr = "127.0.0.1:9999"
+	}
+	store := e2e.NewHARStorage(path)
+	fixture := e2e.NewFixture(store)
+	proxy := e2e.NewProxy(mode, fixture, addr)
 	return proxy.Start()
 }
 

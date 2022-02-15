@@ -1,4 +1,4 @@
-package e2eproxy
+package e2e
 
 import (
 	"bytes"
@@ -36,6 +36,11 @@ func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) {
 	f.store.Add(req, res)
 }
 
+// Delete deletes the entry with the given ID from the Fixture's Storage.
+func (f *Fixture) Delete(id string) bool {
+	return f.store.Delete(id)
+}
+
 // Entries returns the entries from the Fixture's Storage.
 func (f *Fixture) Entries() []*Entry {
 	return f.store.Entries()
@@ -62,14 +67,14 @@ func (f *Fixture) WithMatcher(matcher Matcher) {
 }
 
 // Match compares incoming request to entries from the Fixture's Storage.
-func (f *Fixture) Match(orignalReq *http.Request) *http.Response {
+func (f *Fixture) Match(orignalReq *http.Request) (string, *http.Response) {
 	req := f.processRequest(orignalReq)
 	for _, entry := range f.store.Entries() {
 		if f.match(entry.Request, req) {
-			return f.processResponse(entry.Response)
+			return entry.ID, f.processResponse(entry.Response)
 		}
 	}
-	return nil
+	return "", nil
 }
 
 // DefaultMatcher is a default implementation of Matcher.
