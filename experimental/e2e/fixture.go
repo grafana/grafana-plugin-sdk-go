@@ -120,6 +120,9 @@ func DefaultProcessRequest(req *http.Request) *http.Request {
 	processedReq.Header.Del("Coookie")
 	processedReq.Header.Del("Authorization")
 	processedReq.Header.Del("User-Agent")
+	if processedReq.Body == nil {
+		return processedReq
+	}
 	b, err := io.ReadAll(processedReq.Body)
 	if err != nil {
 		return processedReq
