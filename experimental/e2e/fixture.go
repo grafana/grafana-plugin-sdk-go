@@ -97,12 +97,18 @@ func DefaultMatcher(a *http.Request, b *http.Request) bool {
 		return true
 	}
 
+	if a.Body == nil {
+		return false
+	}
 	aBody, err := io.ReadAll(a.Body)
 	if err != nil {
 		return false
 	}
 	a.Body = ioutil.NopCloser(bytes.NewBuffer(aBody))
 
+	if b.Body == nil {
+		return false
+	}
 	bBody, err := io.ReadAll(b.Body)
 	if err != nil {
 		return false

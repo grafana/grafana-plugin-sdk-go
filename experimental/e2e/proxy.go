@@ -27,43 +27,44 @@ const (
 // Proxy is a proxy server used for recording and replaying E2E test fixtures.
 type Proxy struct {
 	mode    ProxyMode
-	fixture *Fixture
+	Fixture *Fixture
 	addr    string
-	proxy   *goproxy.ProxyHttpServer
+	Server  *goproxy.ProxyHttpServer
 }
 
 // NewProxy creates a new Proxy.
 func NewProxy(mode ProxyMode, fixture *Fixture, addr string) *Proxy {
-	return &Proxy{
+	p := &Proxy{
 		mode:    mode,
-		fixture: fixture,
+		Fixture: fixture,
 		addr:    addr,
-		proxy:   goproxy.NewProxyHttpServer(),
+		Server:  goproxy.NewProxyHttpServer(),
 	}
+	p.Server.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+
+	// Replay mode
+	if p.mode == ProxyModeReplay {
+		p.Server.OnRequest().DoFunc(p.replay)
+		return p
+	}
+
+	// Append mode
+	if p.mode == ProxyModeAppend {
+		p.Server.OnRequest().DoFunc(p.replay)
+		p.Server.OnResponse().DoFunc(p.append)
+		return p
+	}
+
+	// Overwrite mode
+	p.Server.OnRequest().DoFunc(p.request)
+	p.Server.OnResponse().DoFunc(p.overwrite)
+	return p
 }
 
 // Start starts the proxy server.
 func (p *Proxy) Start() error {
 	fmt.Println("Starting proxy", "mode", p.mode, "addr", p.addr)
-	p.proxy.OnRequest().HandleConnect(goproxy.AlwaysMitm)
-
-	// Replay mode
-	if p.mode == ProxyModeReplay {
-		p.proxy.OnRequest().DoFunc(p.replay)
-		return http.ListenAndServe(p.addr, p.proxy)
-	}
-
-	// Append mode
-	if p.mode == ProxyModeAppend {
-		p.proxy.OnRequest().DoFunc(p.replay)
-		p.proxy.OnResponse().DoFunc(p.append)
-		return http.ListenAndServe(p.addr, p.proxy)
-	}
-
-	// Overwrite mode
-	p.proxy.OnRequest().DoFunc(p.request)
-	p.proxy.OnResponse().DoFunc(p.overwrite)
-	return http.ListenAndServe(p.addr, p.proxy)
+	return http.ListenAndServe(p.addr, p.Server)
 }
 
 // request sends a request to the destination server.
@@ -75,7 +76,7 @@ func (p *Proxy) request(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request
 // replay returns a saved response for any matching request, and falls back to sending a request to the destination server.
 func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	ctx.RoundTripper = goproxy.RoundTripperFunc(roundTripper)
-	if _, res := p.fixture.Match(req); res != nil {
+	if _, res := p.Fixture.Match(req); res != nil {
 		return req, res
 	}
 	return req, nil
@@ -83,12 +84,12 @@ func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request,
 
 // append appends a response to the fixture store if there currently is not a match for the request.
 func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
-	if _, cached := p.fixture.Match(res.Request); cached != nil {
+	if _, cached := p.Fixture.Match(res.Request); cached != nil {
 		fmt.Println("Match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 		return res
 	}
-	p.fixture.Add(res.Request, res)
-	err := p.fixture.Save()
+	p.Fixture.Add(res.Request, res)
+	err := p.Fixture.Save()
 	if err != nil {
 		panic(err)
 	}
@@ -98,12 +99,12 @@ func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response
 
 // overwrite replaces a response in the fixture store if there currently is a match for the request.
 func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
-	if id, cached := p.fixture.Match(res.Request); cached != nil {
+	if id, cached := p.Fixture.Match(res.Request); cached != nil {
 		fmt.Println("Removed existing match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
-		p.fixture.Delete(id)
+		p.Fixture.Delete(id)
 	}
-	p.fixture.Add(res.Request, res)
-	err := p.fixture.Save()
+	p.Fixture.Add(res.Request, res)
+	err := p.Fixture.Save()
 	if err != nil {
 		panic(err)
 	}

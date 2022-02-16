@@ -2,6 +2,7 @@ package e2e_test
 
 import (
 	"bytes"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"strings"
@@ -14,7 +15,7 @@ import (
 
 func TestFixtureAdd(t *testing.T) {
 	t.Run("should add request and response to fixture store", func(t *testing.T) {
-		req, res := setup()
+		req, res := setupFixture()
 		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
@@ -27,7 +28,7 @@ func TestFixtureAdd(t *testing.T) {
 	})
 
 	t.Run("should apply request processor", func(t *testing.T) {
-		req, res := setup()
+		req, res := setupFixture()
 		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
@@ -43,7 +44,7 @@ func TestFixtureAdd(t *testing.T) {
 	})
 
 	t.Run("should apply response processor", func(t *testing.T) {
-		req, res := setup()
+		req, res := setupFixture()
 		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
@@ -59,7 +60,7 @@ func TestFixtureAdd(t *testing.T) {
 	})
 
 	t.Run("should apply response processor", func(t *testing.T) {
-		req, res := setup()
+		req, res := setupFixture()
 		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
@@ -106,7 +107,7 @@ func TestFixtureMatch(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
 			f := e2e.NewFixture(store)
-			req, resp := setup()
+			req, resp := setupFixture()
 			defer resp.Body.Close()
 			_, res := f.Match(req)
 			defer res.Body.Close()
@@ -117,7 +118,7 @@ func TestFixtureMatch(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
 			f := e2e.NewFixture(store)
-			req, resp := setup()
+			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Method = "PUT"
 			_, res := f.Match(req) //nolint:bodyclose
@@ -128,7 +129,7 @@ func TestFixtureMatch(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
 			f := e2e.NewFixture(store)
-			req, resp := setup()
+			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.URL.Path = "/foo"
 			_, res := f.Match(req) //nolint:bodyclose
@@ -139,7 +140,7 @@ func TestFixtureMatch(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
 			f := e2e.NewFixture(store)
-			req, resp := setup()
+			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Header.Set("Content-Type", "plain/text")
 			_, res := f.Match(req) //nolint:bodyclose
@@ -150,7 +151,7 @@ func TestFixtureMatch(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
 			f := e2e.NewFixture(store)
-			req, resp := setup()
+			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Body = ioutil.NopCloser(bytes.NewBufferString("foo"))
 			_, res := f.Match(req) // nolint:bodyclose
@@ -161,7 +162,7 @@ func TestFixtureMatch(t *testing.T) {
 
 func TestDefaultProcessRequest(t *testing.T) {
 	t.Run("should remove headers as expected", func(t *testing.T) {
-		req, resp := setup()
+		req, resp := setupFixture()
 		defer resp.Body.Close()
 		req.Header.Add("Date", "foo")
 		req.Header.Add("Coookie", "bar")
@@ -186,7 +187,7 @@ func TestFixtureDelete(t *testing.T) {
 	})
 }
 
-func setup() (*http.Request, *http.Response) {
+func setupFixture() (*http.Request, *http.Response) {
 	req, err := http.NewRequest("POST", "http://example.com", ioutil.NopCloser(strings.NewReader("test")))
 	if err != nil {
 		panic(err)
@@ -213,10 +214,17 @@ func newFakeStorage() *fakeStorage {
 }
 
 func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+	res.Body = io.NopCloser(bytes.NewBuffer(resBody))
+	resCopy := *res
+	resCopy.Body = ioutil.NopCloser(bytes.NewBuffer(resBody))
 	s.entries = append(s.entries, &e2e.Entry{
 		ID:       uuid.New().String(),
 		Request:  req,
-		Response: res,
+		Response: &resCopy,
 	})
 }
 
@@ -232,7 +240,7 @@ func (s *fakeStorage) Delete(id string) bool {
 
 func (s *fakeStorage) Load() error {
 	s.entries = make([]*e2e.Entry, 0)
-	req, res := setup()
+	req, res := setupFixture()
 	defer res.Body.Close()
 	s.entries = append(s.entries, &e2e.Entry{
 		ID:       uuid.New().String(),
