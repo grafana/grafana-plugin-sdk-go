@@ -117,11 +117,7 @@ func (pathEcho) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	}
 }
 
-var srv = httptest.NewServer(nil)
-
-func init() {
-	http.DefaultServeMux.Handle("/", pathEcho{})
-}
+var srv = httptest.NewServer(pathEcho{})
 
 func setupProxy(mode e2e.ProxyMode) (proxy *e2e.Proxy, client *http.Client, server *httptest.Server) {
 	store := newFakeStorage()
