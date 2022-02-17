@@ -3,7 +3,6 @@ package e2e_test
 import (
 	"bytes"
 	"crypto/tls"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -110,7 +109,6 @@ var acceptAllCerts = &tls.Config{InsecureSkipVerify: true}
 type pathEcho struct{}
 
 func (pathEcho) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	fmt.Println(req.URL.Path)
 	_, err := io.WriteString(w, req.URL.Path)
 	if err != nil {
 		panic(err)
