@@ -67,8 +67,8 @@ func (f *Fixture) WithMatcher(matcher Matcher) {
 }
 
 // Match compares incoming request to entries from the Fixture's Storage.
-func (f *Fixture) Match(orignalReq *http.Request) (string, *http.Response) {
-	req := f.processRequest(orignalReq)
+func (f *Fixture) Match(originalReq *http.Request) (string, *http.Response) {
+	req := f.processRequest(originalReq)
 	for _, entry := range f.store.Entries() {
 		if f.match(entry.Request, req) {
 			return entry.ID, f.processResponse(entry.Response)
@@ -97,23 +97,15 @@ func DefaultMatcher(a *http.Request, b *http.Request) bool {
 		return true
 	}
 
-	if a.Body == nil {
-		return false
-	}
-	aBody, err := io.ReadAll(a.Body)
+	aBody, err := readRequestBody(a)
 	if err != nil {
 		return false
 	}
-	a.Body = ioutil.NopCloser(bytes.NewBuffer(aBody))
 
-	if b.Body == nil {
-		return false
-	}
-	bBody, err := io.ReadAll(b.Body)
+	bBody, err := readRequestBody(b)
 	if err != nil {
 		return false
 	}
-	b.Body = ioutil.NopCloser(bytes.NewBuffer(bBody))
 
 	return bytes.Equal(aBody, bBody)
 }
@@ -139,7 +131,8 @@ func DefaultProcessRequest(req *http.Request) *http.Request {
 }
 
 // DefaultProcessResponse is a default implementation of ProcessResponse.
-// It returns the original unmodified response.
+// It removes the Set-Cookie header from the response.
 func DefaultProcessResponse(res *http.Response) *http.Response {
+	res.Header.Del("Set-Cookie")
 	return res
 }

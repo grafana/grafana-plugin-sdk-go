@@ -11,6 +11,7 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/chromedp/cdproto/har"
 	"github.com/google/uuid"
@@ -46,7 +47,6 @@ func NewHARStorage(path string) *HARStorage {
 		har:  &har.HAR{},
 	}
 	if err := storage.Load(); err != nil {
-		fmt.Println("Unable to load HAR", "path", path)
 		storage.har.Log = &har.Log{
 			Version: "1.2",
 			Creator: &har.Creator{
@@ -54,6 +54,12 @@ func NewHARStorage(path string) *HARStorage {
 				Version: "experimental",
 			},
 			Entries: make([]*har.Entry, 0),
+			Pages: []*har.Page{{
+				StartedDateTime: time.Now().Format(time.RFC3339),
+				Title:           "Grafana E2E",
+				ID:              uuid.New().String(),
+				PageTimings:     &har.PageTimings{},
+			}},
 		}
 		return storage
 	}
@@ -113,7 +119,17 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.har.Log.Entries = append(s.har.Log.Entries, &har.Entry{
-		Comment: uuid.New().String(),
+		StartedDateTime: time.Now().Format(time.RFC3339),
+		Time:            0.0,
+		Comment:         uuid.New().String(),
+		Cache: &har.Cache{
+			Comment: "Not cached",
+		},
+		Timings: &har.Timings{
+			Send:    0.0,
+			Wait:    0.0,
+			Receive: 0.0,
+		},
 		Request: &har.Request{
 			Method:      req.Method,
 			HTTPVersion: req.Proto,

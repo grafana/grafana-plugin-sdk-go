@@ -3,6 +3,8 @@ package e2e
 import (
 	"bytes"
 	"crypto/tls"
+	"crypto/x509"
+	_ "embed" // used for embedding the CA certificate and key
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,6 +17,19 @@ import (
 // ProxyMode is the record or playback mode of the Proxy.
 type ProxyMode int
 
+func (m ProxyMode) String() string {
+	switch m {
+	case ProxyModeReplay:
+		return "replay"
+	case ProxyModeAppend:
+		return "append"
+	case ProxyModeOverwrite:
+		return "overwrite"
+	default:
+		return "unknown"
+	}
+}
+
 const (
 	// ProxyModeAppend records new requests and responses, and replays existing responses if they match.
 	ProxyModeAppend ProxyMode = iota
@@ -26,14 +41,20 @@ const (
 
 // Proxy is a proxy server used for recording and replaying E2E test fixtures.
 type Proxy struct {
-	mode    ProxyMode
+	mode ProxyMode
+	addr string
+
 	Fixture *Fixture
-	addr    string
 	Server  *goproxy.ProxyHttpServer
 }
 
 // NewProxy creates a new Proxy.
 func NewProxy(mode ProxyMode, fixture *Fixture, addr string) *Proxy {
+	err := setupCA()
+	if err != nil {
+		panic(err)
+	}
+
 	p := &Proxy{
 		mode:    mode,
 		Fixture: fixture,
@@ -63,19 +84,19 @@ func NewProxy(mode ProxyMode, fixture *Fixture, addr string) *Proxy {
 
 // Start starts the proxy server.
 func (p *Proxy) Start() error {
-	fmt.Println("Starting proxy", "mode", p.mode, "addr", p.addr)
+	fmt.Println("Starting proxy", "mode", p.mode.String(), "addr", p.addr)
 	return http.ListenAndServe(p.addr, p.Server)
 }
 
 // request sends a request to the destination server.
 func (p *Proxy) request(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	ctx.RoundTripper = goproxy.RoundTripperFunc(roundTripper)
+	ctx.RoundTripper = goproxy.RoundTripperFunc(p.roundTripper)
 	return req, nil
 }
 
 // replay returns a saved response for any matching request, and falls back to sending a request to the destination server.
 func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	ctx.RoundTripper = goproxy.RoundTripperFunc(roundTripper)
+	ctx.RoundTripper = goproxy.RoundTripperFunc(p.roundTripper)
 	if _, res := p.Fixture.Match(req); res != nil {
 		return req, res
 	}
@@ -112,14 +133,12 @@ func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Respo
 	return res
 }
 
-func roundTripper(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
+func (p *Proxy) roundTripper(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
 	// ignoring the G402 error here because this proxy is only used for testing
 	// nolint:gosec
 	tr := transport.Transport{
-		Proxy: transport.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{
-			InsecureSkipVerify: true,
-		},
+		Proxy:           transport.ProxyFromEnvironment,
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
 	}
 	buf := &bytes.Buffer{}
 	tee := io.TeeReader(req.Body, buf)
@@ -129,4 +148,26 @@ func roundTripper(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response
 		resp.Request.Body = io.NopCloser(buf)
 	}
 	return resp, err
+}
+
+//go:embed cert/grafana-e2e-ca.pem
+var caCert []byte
+
+//go:embed cert/grafana-e2e-ca.key.pem
+var caKey []byte
+
+func setupCA() error {
+	goproxyCa, err := tls.X509KeyPair(caCert, caKey)
+	if err != nil {
+		return err
+	}
+	if goproxyCa.Leaf, err = x509.ParseCertificate(goproxyCa.Certificate[0]); err != nil {
+		return err
+	}
+	goproxy.GoproxyCa = goproxyCa
+	goproxy.OkConnect = &goproxy.ConnectAction{Action: goproxy.ConnectAccept, TLSConfig: goproxy.TLSConfigFromCA(&goproxyCa)}
+	goproxy.MitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectMitm, TLSConfig: goproxy.TLSConfigFromCA(&goproxyCa)}
+	goproxy.HTTPMitmConnect = &goproxy.ConnectAction{Action: goproxy.ConnectHTTPMitm, TLSConfig: goproxy.TLSConfigFromCA(&goproxyCa)}
+	goproxy.RejectConnect = &goproxy.ConnectAction{Action: goproxy.ConnectReject, TLSConfig: goproxy.TLSConfigFromCA(&goproxyCa)}
+	return nil
 }
