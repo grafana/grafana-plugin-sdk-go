@@ -2,8 +2,6 @@
 
 The goal of the proxy is to provide a way to record and replay HTTP interactions between a data source backend and the target API. The use of recorded fixtures makes testing infrastructure simpler, and the stability of response data makes it easier to achieve deterministic tests.
 
-The default storage for recorded interactions are [HAR](https://en.wikipedia.org/wiki/HAR_(file_format)) files. Using the HAR format allows recorded interactions to be easily reviewed in tools like Postman or in browser dev tools. It's also possible to use browser generated HARs as the source of the fixture data. In this scenario the proxy would only be used for playback.
-
 - [Quick Setup](#quick-setup)
 - [CA Certificate Setup](#ca-certificate-setup)
 	- [Debian & Ubuntu](#debian--ubuntu)
@@ -17,7 +15,8 @@ The default storage for recorded interactions are [HAR](https://en.wikipedia.org
 	- [Overwrite mode](#overwrite-mode)
 	- [Replay mode](#replay-mode)
 	- [CA Certificate](#ca-certificate)
-- [Modifying default behavior](#modifying-default-behavior)
+- [Reviewing Recorded Traffic](#reviewing-recorded-traffic)
+- [Modifying Default Behavior](#modifying-default-behavior)
 
 ## Quick Setup
 
@@ -159,7 +158,15 @@ This command prints the CA certificate to stdout so that it can be added to the 
 mage e2e:certificate
 ```
 
-## Modifying default behavior
+## Reviewing Recorded Traffic
+
+The default storage for recorded interactions are [HAR](https://en.wikipedia.org/wiki/HAR_(file_format)) files. Using the HAR format allows recorded interactions to be easily reviewed in tools like Postman or in browser dev tools.
+
+To review the saved requests and responses, drag the HAR file into the network panel of your favorite browser.
+
+![HAR](har.gif)
+
+## Modifying Default Behavior
 
 You can modify the default request processor, response processor, and matching behavior in your plugin project by modifying the `Magefile.go` in the root of your project:
 
