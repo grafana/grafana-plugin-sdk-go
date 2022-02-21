@@ -64,6 +64,7 @@ func (f *Fixture) WithResponseProcessor(processResponse ResponseProcessor) {
 }
 
 // WithMatcher sets the Matcher for the Fixture.
+// Note: Overriding the fixture's matcher will not affect the host matching behavior that can be configured in proxy.json.
 func (f *Fixture) WithMatcher(matcher Matcher) {
 	f.match = matcher
 }

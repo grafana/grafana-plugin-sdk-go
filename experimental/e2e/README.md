@@ -1,10 +1,25 @@
-# E2E HTTP Fixture Proxy
+# E2E HTTP Fixture Proxy  <!-- omit in toc -->
 
 The goal of the proxy is to provide a way to record and replay HTTP interactions between a data source backend and the target API. The use of recorded fixtures makes testing infrastructure simpler, and the stability of response data makes it easier to achieve deterministic tests.
 
 The default storage for recorded interactions are [HAR](https://en.wikipedia.org/wiki/HAR_(file_format)) files. Using the HAR format allows recorded interactions to be easily reviewed in tools like Postman or in browser dev tools. It's also possible to use browser generated HARs as the source of the fixture data. In this scenario the proxy would only be used for playback.
 
-## Setup & Usage
+- [Quick Setup](#quick-setup)
+- [CA Certificate Setup](#ca-certificate-setup)
+	- [Debian & Ubuntu](#debian--ubuntu)
+	- [MacOS](#macos)
+- [Config File](#config-file)
+	- [address](#address)
+	- [hosts](#hosts)
+	- [storage](#storage)
+- [Mage Commands](#mage-commands)
+	- [Append mode](#append-mode)
+	- [Overwrite mode](#overwrite-mode)
+	- [Replay mode](#replay-mode)
+	- [CA Certificate](#ca-certificate)
+- [Modifying default behavior](#modifying-default-behavior)
+
+## Quick Setup
 
 1. Create a `proxy.json` config file in the root of your plugin repo and replace `example.com` with the `host` or `host:port` of the API you wish to capture:
 
@@ -19,24 +34,72 @@ The default storage for recorded interactions are [HAR](https://en.wikipedia.org
 }
 ```
 
-2. Start proxy using one of the commands listed below. For example:
+2. Add the proxy's CA certificate to your environment ([instructions](#ca-certificate-setup)).
+
+3. Start proxy using one of the [commands listed below](#mage-commands). For example:
 
 ```
 mage e2e:append
 ```
 
-3. Point Grafana at the proxy by exporting the `HTTP_PROXY` and `HTTPS_PROXY` environment variables:
+4. Point Grafana at the proxy by exporting the `HTTP_PROXY` and `HTTPS_PROXY` environment variables:
 
 ```
 export HTTP_PROXY=127.0.0.1:9999
 export HTTPS_PROXY=127.0.0.1:9999
 ```
 
-4. Start Grafana
+5. Start Grafana
 
 **Note:** Only queries with **absolute time ranges** should be used with the proxy. Relative time ranges are not supported in the default matcher.
 
-## Config
+## CA Certificate Setup
+
+This step is needed so that the proxy can intercept HTTPS traffic.
+
+### Debian & Ubuntu
+
+1. Add CA certificate:
+
+```
+mage e2e:certificate && sudo tee /usr/share/ca-certificates/extra/ca.crt
+```
+
+2. Update the CA store:
+
+```
+sudo update-ca-certificates --fresh
+```
+
+### MacOS
+
+1. Create a temporary copy of the CA certificate:
+
+```
+mage e2e:certificate > /tmp/grafana-e2e.crt
+```
+
+2. Add CA certificate:
+
+```
+sudo security add-trusted-cert -d -p ssl -p basic -k /Library/Keychains/System.keychain /tmp/grafana-e2e.crt
+```
+
+## Config File
+
+The E2E proxy can be configured by adding a `proxy.json` file to the root of your plugin's repo.
+
+Default configuration:
+```json
+{
+	"storage": {
+		"type": "har",
+		"path": "fixtures/e2e.har"
+	},
+	"address": "127.0.0.1:9999",
+	"hosts": []
+}
+```
 
 ### address
 
@@ -88,9 +151,9 @@ Replay mode should be used in CI or locally if only playback of recorded data is
 mage e2e:replay
 ```
 
-### Certificate
+### CA Certificate
 
-This command prints the CA certificate to stdout so that it can be added to the local test environment.
+This command prints the CA certificate to stdout so that it can be added to the local test environment. For more information, see the [CA Setup](#ca-certificate-setup) section above.
 
 ```
 mage e2e:certificate
@@ -151,4 +214,3 @@ func CustomE2E() error {
 	return proxy.Start()
 }
 ```
-
