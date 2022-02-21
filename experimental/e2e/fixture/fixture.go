@@ -1,10 +1,13 @@
-package e2e
+package fixture
 
 import (
 	"bytes"
 	"io"
 	"io/ioutil"
 	"net/http"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
 )
 
 type RequestProcessor func(req *http.Request) *http.Request
@@ -15,11 +18,11 @@ type Fixture struct {
 	processRequest  RequestProcessor
 	processResponse ResponseProcessor
 	match           Matcher
-	store           Storage
+	store           storage.Storage
 }
 
 // NewFixture creates a new Fixture.
-func NewFixture(store Storage) *Fixture {
+func NewFixture(store storage.Storage) *Fixture {
 	return &Fixture{
 		processRequest:  DefaultProcessRequest,
 		processResponse: DefaultProcessResponse,
@@ -28,7 +31,7 @@ func NewFixture(store Storage) *Fixture {
 	}
 }
 
-// Add processes the http.Request and http.Response with the Fixture's RequestProcessor and ResponseProcessor and adds them to the Fixure's Storage.
+// Add processes the http.Request and http.Response with the Fixture's RequestProcessor and ResponseProcessor and adds them to the Fixure's storage.Storage.
 func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) {
 	req := f.processRequest(originalReq)
 	res := f.processResponse(originalRes)
@@ -42,7 +45,7 @@ func (f *Fixture) Delete(id string) bool {
 }
 
 // Entries returns the entries from the Fixture's Storage.
-func (f *Fixture) Entries() []*Entry {
+func (f *Fixture) Entries() []*storage.Entry {
 	return f.store.Entries()
 }
 
@@ -97,12 +100,12 @@ func DefaultMatcher(a *http.Request, b *http.Request) bool {
 		return true
 	}
 
-	aBody, err := readRequestBody(a)
+	aBody, err := utils.ReadRequestBody(a)
 	if err != nil {
 		return false
 	}
 
-	bBody, err := readRequestBody(b)
+	bBody, err := utils.ReadRequestBody(b)
 	if err != nil {
 		return false
 	}

@@ -1,4 +1,4 @@
-package e2e
+package storage
 
 import (
 	"bytes"
@@ -16,22 +16,6 @@ import (
 	"github.com/chromedp/cdproto/har"
 	"github.com/google/uuid"
 )
-
-// Entry represents a http.Request and http.Response pair.
-type Entry struct {
-	ID       string
-	Request  *http.Request
-	Response *http.Response
-}
-
-// Storage is an interface for storing Entry objects.
-type Storage interface {
-	Add(*http.Request, *http.Response)
-	Delete(string) bool
-	Load() error
-	Save() error
-	Entries() []*Entry
-}
 
 // HARStorage is a Storage implementation that stores requests and responses in HAR format on disk.
 type HARStorage struct {

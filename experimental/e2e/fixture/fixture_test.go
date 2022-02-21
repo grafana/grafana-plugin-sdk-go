@@ -1,4 +1,4 @@
-package e2e_test
+package fixture_test
 
 import (
 	"bytes"
@@ -9,7 +9,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 	"github.com/stretchr/testify/require"
 )
 
@@ -19,7 +20,7 @@ func TestFixtureAdd(t *testing.T) {
 		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
-		f := e2e.NewFixture(store)
+		f := fixture.NewFixture(store)
 		require.Equal(t, 0, len(f.Entries()))
 		f.Add(req, res)
 		require.Equal(t, 1, len(f.Entries()))
@@ -32,7 +33,7 @@ func TestFixtureAdd(t *testing.T) {
 		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
-		f := e2e.NewFixture(store)
+		f := fixture.NewFixture(store)
 		f.WithRequestProcessor(func(req *http.Request) *http.Request {
 			req.URL.Path = "/example"
 			return req
@@ -48,7 +49,7 @@ func TestFixtureAdd(t *testing.T) {
 		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
-		f := e2e.NewFixture(store)
+		f := fixture.NewFixture(store)
 		f.WithResponseProcessor(func(res *http.Response) *http.Response {
 			res.StatusCode = 201
 			return res
@@ -64,7 +65,7 @@ func TestFixtureAdd(t *testing.T) {
 		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
-		f := e2e.NewFixture(store)
+		f := fixture.NewFixture(store)
 		f.WithResponseProcessor(func(res *http.Response) *http.Response {
 			res.StatusCode = 201
 			return res
@@ -80,7 +81,7 @@ func TestFixtureMatch(t *testing.T) {
 	t.Run("should match request and return request ID and response", func(t *testing.T) {
 		store := newFakeStorage()
 		_ = store.Load()
-		f := e2e.NewFixture(store)
+		f := fixture.NewFixture(store)
 		f.WithMatcher(func(a, b *http.Request) bool {
 			return true
 		})
@@ -93,7 +94,7 @@ func TestFixtureMatch(t *testing.T) {
 	t.Run("should not match", func(t *testing.T) {
 		store := newFakeStorage()
 		_ = store.Load()
-		f := e2e.NewFixture(store)
+		f := fixture.NewFixture(store)
 		f.WithMatcher(func(a, b *http.Request) bool {
 			return false
 		})
@@ -106,7 +107,7 @@ func TestFixtureMatch(t *testing.T) {
 		t.Run("should match", func(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
-			f := e2e.NewFixture(store)
+			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			_, res := f.Match(req)
@@ -117,7 +118,7 @@ func TestFixtureMatch(t *testing.T) {
 		t.Run("should not return response if req method does not match", func(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
-			f := e2e.NewFixture(store)
+			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Method = "PUT"
@@ -128,7 +129,7 @@ func TestFixtureMatch(t *testing.T) {
 		t.Run("should not return response if URL does not match", func(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
-			f := e2e.NewFixture(store)
+			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.URL.Path = "/foo"
@@ -139,7 +140,7 @@ func TestFixtureMatch(t *testing.T) {
 		t.Run("should not return response if headers do not match", func(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
-			f := e2e.NewFixture(store)
+			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Header.Set("Content-Type", "plain/text")
@@ -150,7 +151,7 @@ func TestFixtureMatch(t *testing.T) {
 		t.Run("should not return response if request body does not match", func(t *testing.T) {
 			store := newFakeStorage()
 			_ = store.Load()
-			f := e2e.NewFixture(store)
+			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Body = ioutil.NopCloser(bytes.NewBufferString("foo"))
@@ -170,7 +171,7 @@ func TestDefaultProcessRequest(t *testing.T) {
 		req.Header.Add("User-Agent", "qux")
 		req.Header.Add("Content-Type", "application/json")
 		require.Equal(t, 5, len(req.Header))
-		proccessedReq := e2e.DefaultProcessRequest(req)
+		proccessedReq := fixture.DefaultProcessRequest(req)
 		require.Equal(t, 1, len(proccessedReq.Header))
 		require.Equal(t, "application/json", proccessedReq.Header.Get("Content-Type"))
 	})
@@ -180,7 +181,7 @@ func TestFixtureDelete(t *testing.T) {
 	t.Run("should delete fixture from storage", func(t *testing.T) {
 		store := newFakeStorage()
 		_ = store.Load()
-		f := e2e.NewFixture(store)
+		f := fixture.NewFixture(store)
 		require.Equal(t, 1, len(f.Entries()))
 		f.Delete(f.Entries()[0].ID)
 		require.Equal(t, 0, len(f.Entries()))
@@ -202,13 +203,13 @@ func setupFixture() (*http.Request, *http.Response) {
 }
 
 type fakeStorage struct {
-	entries []*e2e.Entry
+	entries []*storage.Entry
 	err     error
 }
 
 func newFakeStorage() *fakeStorage {
 	return &fakeStorage{
-		entries: make([]*e2e.Entry, 0),
+		entries: make([]*storage.Entry, 0),
 		err:     nil,
 	}
 }
@@ -221,7 +222,7 @@ func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
 	res.Body = io.NopCloser(bytes.NewBuffer(resBody))
 	resCopy := *res
 	resCopy.Body = ioutil.NopCloser(bytes.NewBuffer(resBody))
-	s.entries = append(s.entries, &e2e.Entry{
+	s.entries = append(s.entries, &storage.Entry{
 		ID:       uuid.New().String(),
 		Request:  req,
 		Response: &resCopy,
@@ -239,10 +240,10 @@ func (s *fakeStorage) Delete(id string) bool {
 }
 
 func (s *fakeStorage) Load() error {
-	s.entries = make([]*e2e.Entry, 0)
+	s.entries = make([]*storage.Entry, 0)
 	req, res := setupFixture()
 	defer res.Body.Close()
-	s.entries = append(s.entries, &e2e.Entry{
+	s.entries = append(s.entries, &storage.Entry{
 		ID:       uuid.New().String(),
 		Request:  req,
 		Response: res,
@@ -254,6 +255,6 @@ func (s *fakeStorage) Save() error {
 	return s.err
 }
 
-func (s *fakeStorage) Entries() []*e2e.Entry {
+func (s *fakeStorage) Entries() []*storage.Entry {
 	return s.entries
 }

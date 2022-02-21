@@ -8,9 +8,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 
+	"github.com/google/uuid"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 	"github.com/stretchr/testify/require"
 )
 
@@ -119,8 +124,12 @@ var srv = httptest.NewServer(pathEcho{})
 
 func setupProxy(mode e2e.ProxyMode) (proxy *e2e.Proxy, client *http.Client, server *httptest.Server) {
 	store := newFakeStorage()
-	fixture := e2e.NewFixture(store)
-	proxy = e2e.NewProxy(mode, fixture, ":9999")
+	fixture := fixture.NewFixture(store)
+	config, err := config.LoadConfig("proxy.json")
+	if err != nil {
+		panic(err)
+	}
+	proxy = e2e.NewProxy(mode, fixture, config)
 	server = httptest.NewServer(proxy.Server)
 	proxyURL, err := url.Parse(server.URL)
 	if err != nil {
@@ -129,4 +138,75 @@ func setupProxy(mode e2e.ProxyMode) (proxy *e2e.Proxy, client *http.Client, serv
 	tr := &http.Transport{TLSClientConfig: acceptAllCerts, Proxy: http.ProxyURL(proxyURL)}
 	client = &http.Client{Transport: tr}
 	return
+}
+
+func setupFixture() (*http.Request, *http.Response) {
+	req, err := http.NewRequest("POST", "http://example.com", ioutil.NopCloser(strings.NewReader("test")))
+	if err != nil {
+		panic(err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+	res := &http.Response{
+		StatusCode: 200,
+		Header:     make(http.Header),
+		Body:       ioutil.NopCloser(strings.NewReader("{\"foo\":\"bar\"}")),
+	}
+	return req, res
+}
+
+type fakeStorage struct {
+	entries []*storage.Entry
+	err     error
+}
+
+func newFakeStorage() *fakeStorage {
+	return &fakeStorage{
+		entries: make([]*storage.Entry, 0),
+		err:     nil,
+	}
+}
+
+func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
+	resBody, err := ioutil.ReadAll(res.Body)
+	if err != nil {
+		panic(err)
+	}
+	res.Body = io.NopCloser(bytes.NewBuffer(resBody))
+	resCopy := *res
+	resCopy.Body = ioutil.NopCloser(bytes.NewBuffer(resBody))
+	s.entries = append(s.entries, &storage.Entry{
+		ID:       uuid.New().String(),
+		Request:  req,
+		Response: &resCopy,
+	})
+}
+
+func (s *fakeStorage) Delete(id string) bool {
+	for i, entry := range s.entries {
+		if entry.ID == id {
+			s.entries = append(s.entries[:i], s.entries[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+func (s *fakeStorage) Load() error {
+	s.entries = make([]*storage.Entry, 0)
+	req, res := setupFixture()
+	defer res.Body.Close()
+	s.entries = append(s.entries, &storage.Entry{
+		ID:       uuid.New().String(),
+		Request:  req,
+		Response: res,
+	})
+	return s.err
+}
+
+func (s *fakeStorage) Save() error {
+	return s.err
+}
+
+func (s *fakeStorage) Entries() []*storage.Entry {
+	return s.entries
 }

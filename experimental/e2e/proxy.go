@@ -1,17 +1,16 @@
 package e2e
 
 import (
-	"bytes"
 	"crypto/tls"
 	"crypto/x509"
 	_ "embed" // used for embedding the CA certificate and key
 	"fmt"
-	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/elazarl/goproxy"
-	"github.com/elazarl/goproxy/transport"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
 )
 
 // ProxyMode is the record or playback mode of the Proxy.
@@ -41,62 +40,71 @@ const (
 
 // Proxy is a proxy server used for recording and replaying E2E test fixtures.
 type Proxy struct {
-	mode ProxyMode
-	addr string
-
-	Fixture *Fixture
+	Mode    ProxyMode
+	Fixture *fixture.Fixture
 	Server  *goproxy.ProxyHttpServer
+	Config  *config.Config
 }
 
 // NewProxy creates a new Proxy.
-func NewProxy(mode ProxyMode, fixture *Fixture, addr string) *Proxy {
+func NewProxy(mode ProxyMode, fixture *fixture.Fixture, config *config.Config) *Proxy {
 	err := setupCA()
 	if err != nil {
 		panic(err)
 	}
 
 	p := &Proxy{
-		mode:    mode,
+		Mode:    mode,
 		Fixture: fixture,
-		addr:    addr,
 		Server:  goproxy.NewProxyHttpServer(),
+		Config:  config,
 	}
-	p.Server.OnRequest().HandleConnect(goproxy.AlwaysMitm)
+
+	reqConditions := []goproxy.ReqCondition{}
+	respConditions := []goproxy.RespCondition{}
+	for _, h := range config.Hosts {
+		reqConditions = append(reqConditions, goproxy.DstHostIs(h))
+		respConditions = append(respConditions, goproxy.RespConditionFunc(func(resp *http.Response, ctx *goproxy.ProxyCtx) bool {
+			return resp.Request.URL.Host == h
+		}))
+	}
+
+	p.Server.OnRequest(reqConditions...).HandleConnect(goproxy.AlwaysMitm)
 
 	// Replay mode
-	if p.mode == ProxyModeReplay {
-		p.Server.OnRequest().DoFunc(p.replay)
+	if p.Mode == ProxyModeReplay {
+		p.Server.OnRequest(reqConditions...).DoFunc(p.replay)
 		return p
 	}
 
 	// Append mode
-	if p.mode == ProxyModeAppend {
-		p.Server.OnRequest().DoFunc(p.replay)
-		p.Server.OnResponse().DoFunc(p.append)
+	if p.Mode == ProxyModeAppend {
+		p.Server.OnRequest(reqConditions...).DoFunc(p.replay)
+		p.Server.OnResponse(respConditions...).DoFunc(p.append)
 		return p
 	}
 
 	// Overwrite mode
-	p.Server.OnRequest().DoFunc(p.request)
-	p.Server.OnResponse().DoFunc(p.overwrite)
+	p.Server.OnRequest(reqConditions...).DoFunc(p.request)
+	p.Server.OnResponse(respConditions...).DoFunc(p.overwrite)
 	return p
 }
 
 // Start starts the proxy server.
 func (p *Proxy) Start() error {
-	fmt.Println("Starting proxy", "mode", p.mode.String(), "addr", p.addr)
-	return http.ListenAndServe(p.addr, p.Server)
+	fmt.Println("Starting proxy", "mode", p.Mode.String(), "addr", p.Config.Address)
+	return http.ListenAndServe(p.Config.Address, p.Server)
 }
 
 // request sends a request to the destination server.
 func (p *Proxy) request(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	ctx.RoundTripper = goproxy.RoundTripperFunc(p.roundTripper)
+	ctx.RoundTripper = goproxy.RoundTripperFunc(utils.RoundTripper)
 	return req, nil
 }
 
 // replay returns a saved response for any matching request, and falls back to sending a request to the destination server.
 func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
-	ctx.RoundTripper = goproxy.RoundTripperFunc(p.roundTripper)
+	ctx.RoundTripper = goproxy.RoundTripperFunc(utils.RoundTripper)
 	if _, res := p.Fixture.Match(req); res != nil {
 		return req, res
 	}
@@ -131,23 +139,6 @@ func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Respo
 	}
 	fmt.Println("Overwrite", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 	return res
-}
-
-func (p *Proxy) roundTripper(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
-	// ignoring the G402 error here because this proxy is only used for testing
-	// nolint:gosec
-	tr := transport.Transport{
-		Proxy:           transport.ProxyFromEnvironment,
-		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	}
-	buf := &bytes.Buffer{}
-	tee := io.TeeReader(req.Body, buf)
-	req.Body = ioutil.NopCloser(tee)
-	_, resp, err = tr.DetailedRoundTrip(req)
-	if resp != nil {
-		resp.Request.Body = io.NopCloser(buf)
-	}
-	return resp, err
 }
 
 //go:embed cert/grafana-e2e-ca.pem
