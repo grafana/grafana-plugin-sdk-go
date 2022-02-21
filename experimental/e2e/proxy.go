@@ -142,13 +142,15 @@ func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Respo
 }
 
 //go:embed cert/grafana-e2e-ca.pem
-var caCert []byte
+// CACertificate Certificate Authority certificate used by the proxy.
+var CACertificate []byte
 
 //go:embed cert/grafana-e2e-ca.key.pem
-var caKey []byte
+// CAKey Certificate Authority private key used by the proxy.
+var CAKey []byte
 
 func setupCA() error {
-	goproxyCa, err := tls.X509KeyPair(caCert, caKey)
+	goproxyCa, err := tls.X509KeyPair(CACertificate, CAKey)
 	if err != nil {
 		return err
 	}

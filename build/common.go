@@ -249,6 +249,11 @@ func (E2E) Replay() error {
 	return e2eProxy(e2e.ProxyModeReplay)
 }
 
+// Certificate prints the CA certificate to stdout.
+func (E2E) Certificate() {
+	fmt.Print(string(e2e.CACertificate))
+}
+
 func e2eProxy(mode e2e.ProxyMode) error {
 	cfg, err := config.LoadConfig("proxy.json")
 	if err != nil {

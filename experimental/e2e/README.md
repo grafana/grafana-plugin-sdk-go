@@ -88,6 +88,14 @@ Replay mode should be used in CI or locally if only playback of recorded data is
 mage e2e:replay
 ```
 
+### Certificate
+
+This command prints the CA certificate to stdout so that it can be added to the local test environment.
+
+```
+mage e2e:certificate
+```
+
 ## Modifying default behavior
 
 You can modify the default request processor, response processor, and matching behavior in your plugin project by modifying the `Magefile.go` in the root of your project:

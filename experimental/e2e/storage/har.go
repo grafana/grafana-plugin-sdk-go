@@ -24,6 +24,7 @@ type HARStorage struct {
 	path        string
 	har         *har.HAR
 	currentTime func() time.Time
+	newUUID     func() string
 }
 
 // NewHARStorage creates a new HARStorage.
@@ -32,31 +33,38 @@ func NewHARStorage(path string) *HARStorage {
 		path:        path,
 		har:         &har.HAR{},
 		currentTime: time.Now,
+		newUUID:     newUUID,
 	}
-	if err := storage.Load(); err != nil {
-		storage.har.Log = &har.Log{
-			Version: "1.2",
-			Creator: &har.Creator{
-				Name:    "grafana-plugin-sdk-go",
-				Version: "experimental",
-			},
-			Entries: make([]*har.Entry, 0),
-			Pages: []*har.Page{{
-				StartedDateTime: storage.currentTime().Format(time.RFC3339),
-				Title:           "Grafana E2E",
-				ID:              uuid.New().String(),
-				PageTimings:     &har.PageTimings{},
-			}},
-		}
-		return storage
-	}
-	fmt.Println("Loaded HAR", "path", path)
 	return storage
 }
 
-// WithCurrentTime replaces the default s.currentTime() with the given function.
+// WithCurrentTimeOverride replaces the default s.currentTime() with the given function.
 func (s *HARStorage) WithCurrentTimeOverride(fn func() time.Time) {
 	s.currentTime = fn
+	s.Init()
+}
+
+// WithUUIDOverride replaces the default s.newUUID() with the given function.
+func (s *HARStorage) WithUUIDOverride(fn func() string) {
+	s.newUUID = fn
+	s.Init()
+}
+
+func (s *HARStorage) Init() {
+	s.har.Log = &har.Log{
+		Version: "1.2",
+		Creator: &har.Creator{
+			Name:    "grafana-plugin-sdk-go",
+			Version: "experimental",
+		},
+		Entries: make([]*har.Entry, 0),
+		Pages: []*har.Page{{
+			StartedDateTime: s.currentTime().Format(time.RFC3339),
+			Title:           "Grafana E2E",
+			ID:              s.newUUID(),
+			PageTimings:     &har.PageTimings{},
+		}},
+	}
 }
 
 // Add converts the http.Request and http.Response to a har.Entry and adds it to the Fixture.
@@ -112,7 +120,7 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	s.har.Log.Entries = append(s.har.Log.Entries, &har.Entry{
 		StartedDateTime: s.currentTime().Format(time.RFC3339),
 		Time:            0.0,
-		Comment:         uuid.New().String(),
+		Comment:         s.newUUID(),
 		Cache: &har.Cache{
 			Comment: "Not cached",
 		},
@@ -194,7 +202,7 @@ func (s *HARStorage) Entries() []*Entry {
 		// use the HAR entry's comment field to store the ID of the entry
 		id := e.Comment
 		if id == "" {
-			id = uuid.New().String()
+			id = s.newUUID()
 			e.Comment = id
 		}
 
@@ -243,4 +251,8 @@ func (s *HARStorage) Load() error {
 		return err
 	}
 	return s.har.UnmarshalJSON(raw)
+}
+
+func newUUID() string {
+	return uuid.New().String()
 }

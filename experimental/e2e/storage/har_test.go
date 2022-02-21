@@ -17,9 +17,7 @@ func TestHARStorage(t *testing.T) {
 	t.Run("Add", func(t *testing.T) {
 		t.Run("should add a new entry to the storage", func(t *testing.T) {
 			s := storage.NewHARStorage("testdata/example_add.har")
-			s.WithCurrentTimeOverride(func() time.Time {
-				return time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-			})
+			s.Init()
 			req, err := http.NewRequest("GET", "http://example.com/", nil)
 			require.NoError(t, err)
 			res := &http.Response{
@@ -36,9 +34,8 @@ func TestHARStorage(t *testing.T) {
 	t.Run("Load", func(t *testing.T) {
 		t.Run("should load the HAR from disk", func(t *testing.T) {
 			s := storage.NewHARStorage("testdata/example.har")
-			s.WithCurrentTimeOverride(func() time.Time {
-				return time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-			})
+			err := s.Load()
+			require.NoError(t, err)
 			req := s.Entries()[0].Request
 			res := s.Entries()[0].Response
 			require.Equal(t, "https://grafana.com/api/plugins", req.URL.String())
@@ -62,9 +59,8 @@ func TestHARStorage(t *testing.T) {
 	t.Run("Delete", func(t *testing.T) {
 		t.Run("should delete second entry", func(t *testing.T) {
 			s := storage.NewHARStorage("testdata/example.har")
-			s.WithCurrentTimeOverride(func() time.Time {
-				return time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-			})
+			err := s.Load()
+			require.NoError(t, err)
 			require.Equal(t, 2, len(s.Entries()))
 			s.Delete(s.Entries()[1].ID)
 			require.Equal(t, 1, len(s.Entries()))
@@ -75,15 +71,20 @@ func TestHARStorage(t *testing.T) {
 	t.Run("Save", func(t *testing.T) {
 		t.Run("should save", func(t *testing.T) {
 			source := storage.NewHARStorage("testdata/example.har")
-			source.WithCurrentTimeOverride(func() time.Time {
-				return time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
-			})
+			err := source.Load()
+			require.NoError(t, err)
 			f, err := os.CreateTemp("", "example_*.har")
 			require.NoError(t, err)
 			dest := storage.NewHARStorage(f.Name())
 			dest.WithCurrentTimeOverride(func() time.Time {
 				return time.Date(2020, time.January, 1, 0, 0, 0, 0, time.UTC)
 			})
+			counter := 0
+			dest.WithUUIDOverride(func() string {
+				counter++
+				return fmt.Sprintf("%d", counter)
+			})
+			dest.Init()
 			for _, entry := range source.Entries() {
 				dest.Add(entry.Request, entry.Response)
 			}
