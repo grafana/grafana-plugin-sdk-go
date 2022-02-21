@@ -164,13 +164,18 @@ mage e2e:certificate
 You can modify the default request processor, response processor, and matching behavior in your plugin project by modifying the `Magefile.go` in the root of your project:
 
 ```go
-//+build mage
+//go:build mage
+// +build mage
 
 package main
 
 import (
 	// mage:import
 	build "github.com/grafana/grafana-plugin-sdk-go/build"
+
+	"bytes"
+	"io/ioutil"
+	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
@@ -186,31 +191,65 @@ func CustomE2E() error {
 	if err != nil {
 		return err
 	}
+
 	var store storage.Storage
 	if cfg.Storage == nil || cfg.Storage.Type == config.StorageTypeHAR {
-		store = storage.NewHARStorage(cfg.Storage.Path)
+		har := storage.NewHARStorage(cfg.Storage.Path)
+		if err := har.Load(); err != nil {
+			har.Init()
+		}
+		store = har
 	}
-
 	fixture := fixture.NewFixture(store)
 
 	// modify incoming requests
 	fixture.WithRequestProcessor(func(req *http.Request) *http.Request {
-		req.URL.Path = "/example"
+		req.URL.Host = "example.com"
+		req.URL.Path = "/hello/world"
 		return req
 	})
 
 	// modify incoming responses
 	fixture.WithResponseProcessor(func(res *http.Response) *http.Response {
-		res.StatusCode = 201
+		res.StatusCode = http.StatusNotFound
+		res.Header = http.Header{}
+		res.Body = ioutil.NopCloser(bytes.NewBufferString("Not found"))
 		return res
 	})
 
 	// modify matching behavior
 	fixture.WithMatcher(func(a, b *http.Request) bool {
-			return true
+		return true
 	})
 
 	proxy := e2e.NewProxy(e2e.ProxyModeAppend, fixture, cfg)
 	return proxy.Start()
 }
 ```
+
+Start the proxy using the new `CustomE2E` mage target:
+
+```
+mage CustomE2E
+```
+
+In a separate terminal, use `curl` to test the new mage target:
+
+```
+curl --proxy 127.0.0.1:9999 -i http://example.com
+HTTP/1.1 404 Not Found
+Date: Mon, 21 Feb 2022 20:27:52 GMT
+Content-Length: 9
+Content-Type: text/plain; charset=utf-8
+
+Not found
+```
+
+You should now see the following output in the proxy window:
+
+```
+mage CustomE2E
+Starting proxy mode append addr 127.0.0.1:9999
+Match url: http://example.com/hello/world status: 404
+```
+

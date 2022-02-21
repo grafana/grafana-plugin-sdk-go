@@ -114,8 +114,8 @@ func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request,
 // append appends a response to the fixture store if there currently is not a match for the request.
 func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 	if _, cached := p.Fixture.Match(res.Request); cached != nil {
-		fmt.Println("Match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
-		return res
+		fmt.Println("Match", "url:", cached.Request.URL.String(), "status:", cached.StatusCode)
+		return cached
 	}
 	p.Fixture.Add(res.Request, res)
 	err := p.Fixture.Save()
@@ -129,7 +129,7 @@ func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response
 // overwrite replaces a response in the fixture store if there currently is a match for the request.
 func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 	if id, cached := p.Fixture.Match(res.Request); cached != nil {
-		fmt.Println("Removed existing match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
+		fmt.Println("Removed existing match", "url:", cached.Request.URL.String(), "status:", cached.StatusCode)
 		p.Fixture.Delete(id)
 	}
 	p.Fixture.Add(res.Request, res)
