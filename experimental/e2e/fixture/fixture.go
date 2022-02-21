@@ -2,7 +2,6 @@ package fixture
 
 import (
 	"bytes"
-	"io"
 	"io/ioutil"
 	"net/http"
 
@@ -31,7 +30,7 @@ func NewFixture(store storage.Storage) *Fixture {
 	}
 }
 
-// Add processes the http.Request and http.Response with the Fixture's RequestProcessor and ResponseProcessor and adds them to the Fixure's storage.Storage.
+// Add processes the http.Request and http.Response with the Fixture's RequestProcessor and ResponseProcessor and adds them to the Fixure's Storage.
 func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) {
 	req := f.processRequest(originalReq)
 	res := f.processResponse(originalRes)
@@ -81,36 +80,37 @@ func (f *Fixture) Match(originalReq *http.Request) (string, *http.Response) {
 }
 
 // DefaultMatcher is a default implementation of Matcher.
-func DefaultMatcher(a *http.Request, b *http.Request) bool {
-	if a.Method != b.Method {
+// It compares the request method, url, headers, and body to the stored request.
+func DefaultMatcher(stored *http.Request, incoming *http.Request) bool {
+	if stored.Method != incoming.Method {
 		return false
 	}
 
-	if a.URL.String() != b.URL.String() {
+	if stored.URL.String() != incoming.URL.String() {
 		return false
 	}
 
-	for name := range a.Header {
-		if a.Header.Get(name) != b.Header.Get(name) {
+	for name := range stored.Header {
+		if stored.Header.Get(name) != incoming.Header.Get(name) {
 			return false
 		}
 	}
 
-	if a.Body == nil && b.Body == nil {
+	if stored.Body == nil && incoming.Body == nil {
 		return true
 	}
 
-	aBody, err := utils.ReadRequestBody(a)
+	storedBody, err := utils.ReadRequestBody(stored)
 	if err != nil {
 		return false
 	}
 
-	bBody, err := utils.ReadRequestBody(b)
+	incomingBody, err := utils.ReadRequestBody(incoming)
 	if err != nil {
 		return false
 	}
 
-	return bytes.Equal(aBody, bBody)
+	return bytes.Equal(storedBody, incomingBody)
 }
 
 // DefaultProcessRequest is a default implementation of ProcessRequest.
@@ -124,12 +124,11 @@ func DefaultProcessRequest(req *http.Request) *http.Request {
 	if processedReq.Body == nil {
 		return processedReq
 	}
-	b, err := io.ReadAll(processedReq.Body)
+	b, err := utils.ReadRequestBody(processedReq)
 	if err != nil {
 		return processedReq
 	}
 	req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
-	processedReq.Body = ioutil.NopCloser(bytes.NewBuffer(b))
 	return processedReq
 }
 

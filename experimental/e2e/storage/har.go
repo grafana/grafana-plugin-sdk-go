@@ -15,20 +15,23 @@ import (
 
 	"github.com/chromedp/cdproto/har"
 	"github.com/google/uuid"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
 )
 
 // HARStorage is a Storage implementation that stores requests and responses in HAR format on disk.
 type HARStorage struct {
-	lock sync.Mutex
-	path string
-	har  *har.HAR
+	lock        sync.Mutex
+	path        string
+	har         *har.HAR
+	currentTime func() time.Time
 }
 
 // NewHARStorage creates a new HARStorage.
 func NewHARStorage(path string) *HARStorage {
 	storage := &HARStorage{
-		path: path,
-		har:  &har.HAR{},
+		path:        path,
+		har:         &har.HAR{},
+		currentTime: time.Now,
 	}
 	if err := storage.Load(); err != nil {
 		storage.har.Log = &har.Log{
@@ -39,7 +42,7 @@ func NewHARStorage(path string) *HARStorage {
 			},
 			Entries: make([]*har.Entry, 0),
 			Pages: []*har.Page{{
-				StartedDateTime: time.Now().Format(time.RFC3339),
+				StartedDateTime: storage.currentTime().Format(time.RFC3339),
 				Title:           "Grafana E2E",
 				ID:              uuid.New().String(),
 				PageTimings:     &har.PageTimings{},
@@ -49,6 +52,11 @@ func NewHARStorage(path string) *HARStorage {
 	}
 	fmt.Println("Loaded HAR", "path", path)
 	return storage
+}
+
+// WithCurrentTime replaces the default s.currentTime() with the given function.
+func (s *HARStorage) WithCurrentTimeOverride(fn func() time.Time) {
+	s.currentTime = fn
 }
 
 // Add converts the http.Request and http.Response to a har.Entry and adds it to the Fixture.
@@ -75,11 +83,10 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	}
 
 	if req.Body != nil {
-		reqBody, err = io.ReadAll(req.Body)
+		reqBody, err = utils.ReadRequestBody(req)
 		if err != nil {
 			fmt.Println("Failed to read request body", "err", err)
 		}
-		req.Body = ioutil.NopCloser(bytes.NewReader(reqBody))
 	}
 
 	if res.Body != nil {
@@ -103,7 +110,7 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.har.Log.Entries = append(s.har.Log.Entries, &har.Entry{
-		StartedDateTime: time.Now().Format(time.RFC3339),
+		StartedDateTime: s.currentTime().Format(time.RFC3339),
 		Time:            0.0,
 		Comment:         uuid.New().String(),
 		Cache: &har.Cache{
