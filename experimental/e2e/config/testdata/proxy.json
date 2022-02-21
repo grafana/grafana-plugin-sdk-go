@@ -1,5 +1,0 @@
-{
-	"path": "fixtures/e2e.har",
-	"address": "127.0.0.1:9999",
-	"hosts": ["example.com", "example.org"]
-}

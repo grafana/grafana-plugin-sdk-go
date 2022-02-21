@@ -250,13 +250,16 @@ func (E2E) Replay() error {
 }
 
 func e2eProxy(mode e2e.ProxyMode) error {
-	config, err := config.LoadConfig("proxy.json")
+	cfg, err := config.LoadConfig("proxy.json")
 	if err != nil {
 		return err
 	}
-	store := storage.NewHARStorage(config.Path)
+	var store storage.Storage
+	if cfg.Storage == nil || cfg.Storage.Type == config.StorageTypeHAR {
+		store = storage.NewHARStorage(cfg.Storage.Path)
+	}
 	fixture := fixture.NewFixture(store)
-	proxy := e2e.NewProxy(mode, fixture, config)
+	proxy := e2e.NewProxy(mode, fixture, cfg)
 	return proxy.Start()
 }
 

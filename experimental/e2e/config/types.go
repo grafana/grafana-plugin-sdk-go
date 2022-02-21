@@ -6,10 +6,21 @@ import (
 )
 
 type Config struct {
-	Address string   `json:"address"`
-	Path    string   `json:"path"`
-	Hosts   []string `json:"hosts"`
+	Storage *StorageConfig `json:"storage"`
+	Address string         `json:"address"`
+	Hosts   []string       `json:"hosts"`
 }
+
+type StorageConfig struct {
+	Type StorageType `json:"type"`
+	Path string      `json:"path"`
+}
+
+type StorageType string
+
+const (
+	StorageTypeHAR StorageType = "har"
+)
 
 func LoadConfig(path string) (*Config, error) {
 	if path == "" {
@@ -18,8 +29,11 @@ func LoadConfig(path string) (*Config, error) {
 	raw, err := ioutil.ReadFile(path)
 	if err != nil {
 		return &Config{
-			Address: ":9999",
-			Path:    "fixtures/e2e.har",
+			Storage: &StorageConfig{
+				Type: StorageTypeHAR,
+				Path: "fixtures/e2e.har",
+			},
+			Address: "127.0.0.1:9999",
 			Hosts:   make([]string, 0),
 		}, nil
 	}
