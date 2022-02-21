@@ -51,6 +51,8 @@ func (s *HARStorage) WithUUIDOverride(fn func() string) {
 }
 
 func (s *HARStorage) Init() {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	s.har.Log = &har.Log{
 		Version: "1.2",
 		Creator: &har.Creator{

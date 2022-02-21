@@ -261,7 +261,11 @@ func e2eProxy(mode e2e.ProxyMode) error {
 	}
 	var store storage.Storage
 	if cfg.Storage == nil || cfg.Storage.Type == config.StorageTypeHAR {
-		store = storage.NewHARStorage(cfg.Storage.Path)
+		har := storage.NewHARStorage(cfg.Storage.Path)
+		if err := har.Load(); err != nil {
+			har.Init()
+		}
+		store = har
 	}
 	fixture := fixture.NewFixture(store)
 	proxy := e2e.NewProxy(mode, fixture, cfg)
