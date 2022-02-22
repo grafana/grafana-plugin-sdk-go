@@ -65,6 +65,7 @@ func NewProxy(mode ProxyMode, fixture *fixture.Fixture, config *config.Config) *
 	for _, h := range config.Hosts {
 		reqConditions = append(reqConditions, goproxy.DstHostIs(h))
 		respConditions = append(respConditions, goproxy.RespConditionFunc(func(resp *http.Response, ctx *goproxy.ProxyCtx) bool {
+			fmt.Println("Response matcher", "host", resp.Request.URL.Host, "h", h)
 			return resp.Request.URL.Host == h
 		}))
 	}
@@ -106,15 +107,16 @@ func (p *Proxy) request(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request
 func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	ctx.RoundTripper = goproxy.RoundTripperFunc(utils.RoundTripper)
 	if _, res := p.Fixture.Match(req); res != nil {
+		fmt.Println("Match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 		return req, res
 	}
+	fmt.Println("Miss", "url:", req.URL.String())
 	return req, nil
 }
 
 // append appends a response to the fixture store if there currently is not a match for the request.
 func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
 	if _, cached := p.Fixture.Match(res.Request); cached != nil {
-		fmt.Println("Match", "url:", cached.Request.URL.String(), "status:", cached.StatusCode)
 		return cached
 	}
 	p.Fixture.Add(res.Request, res)
