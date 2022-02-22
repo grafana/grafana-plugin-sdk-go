@@ -6,6 +6,7 @@ import (
 	_ "embed" // used for embedding the CA certificate and key
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/elazarl/goproxy"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
@@ -60,34 +61,24 @@ func NewProxy(mode ProxyMode, fixture *fixture.Fixture, config *config.Config) *
 		Config:  config,
 	}
 
-	reqConditions := []goproxy.ReqCondition{}
-	respConditions := []goproxy.RespCondition{}
-	for _, h := range config.Hosts {
-		reqConditions = append(reqConditions, goproxy.DstHostIs(h))
-		respConditions = append(respConditions, goproxy.RespConditionFunc(func(resp *http.Response, ctx *goproxy.ProxyCtx) bool {
-			fmt.Println("Response matcher", "host", resp.Request.URL.Host, "h", h)
-			return resp.Request.URL.Host == h
-		}))
-	}
-
-	p.Server.OnRequest(reqConditions...).HandleConnect(goproxy.AlwaysMitm)
+	p.Server.OnRequest().HandleConnect(goproxy.AlwaysMitm)
 
 	// Replay mode
 	if p.Mode == ProxyModeReplay {
-		p.Server.OnRequest(reqConditions...).DoFunc(p.replay)
+		p.Server.OnRequest().DoFunc(p.replay)
 		return p
 	}
 
 	// Append mode
 	if p.Mode == ProxyModeAppend {
-		p.Server.OnRequest(reqConditions...).DoFunc(p.replay)
-		p.Server.OnResponse(respConditions...).DoFunc(p.append)
+		p.Server.OnRequest().DoFunc(p.replay)
+		p.Server.OnResponse().DoFunc(p.append)
 		return p
 	}
 
 	// Overwrite mode
-	p.Server.OnRequest(reqConditions...).DoFunc(p.request)
-	p.Server.OnResponse(respConditions...).DoFunc(p.overwrite)
+	p.Server.OnRequest().DoFunc(p.request)
+	p.Server.OnResponse().DoFunc(p.overwrite)
 	return p
 }
 
@@ -106,6 +97,9 @@ func (p *Proxy) request(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request
 // replay returns a saved response for any matching request, and falls back to sending a request to the destination server.
 func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request, *http.Response) {
 	ctx.RoundTripper = goproxy.RoundTripperFunc(utils.RoundTripper)
+	if !p.matchesHosts(req.URL.Host) {
+		return req, nil
+	}
 	if _, res := p.Fixture.Match(req); res != nil {
 		fmt.Println("Match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 		return req, res
@@ -116,6 +110,9 @@ func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request,
 
 // append appends a response to the fixture store if there currently is not a match for the request.
 func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
+	if !p.matchesHosts(res.Request.URL.Host) {
+		return res
+	}
 	if _, cached := p.Fixture.Match(res.Request); cached != nil {
 		return cached
 	}
@@ -130,6 +127,9 @@ func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response
 
 // overwrite replaces a response in the fixture store if there currently is a match for the request.
 func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
+	if !p.matchesHosts(res.Request.URL.Host) {
+		return res
+	}
 	if id, cached := p.Fixture.Match(res.Request); cached != nil {
 		fmt.Println("Removed existing match", "url:", cached.Request.URL.String(), "status:", cached.StatusCode)
 		p.Fixture.Delete(id)
@@ -141,6 +141,19 @@ func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Respo
 	}
 	fmt.Println("Overwrite", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 	return res
+}
+
+func (p *Proxy) matchesHosts(h string) bool {
+	// Match all hosts if no hosts are configured.
+	if len(p.Config.Hosts) == 0 {
+		return true
+	}
+	for _, host := range p.Config.Hosts {
+		if strings.Contains(host, h) {
+			return true
+		}
+	}
+	return false
 }
 
 //go:embed cert/grafana-e2e-ca.pem
