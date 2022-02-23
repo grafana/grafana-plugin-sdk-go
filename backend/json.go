@@ -108,6 +108,35 @@ func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *jsoniter.Stream)
 	stream.WriteObjectEnd()
 }
 
+func writeProxyResponseJSON(pr *proxyResponse, stream *jsoniter.Stream) {
+	stream.WriteObjectStart()
+	stream.WriteObjectField("results")
+	stream.WriteObjectStart()
+	started := false
+
+	refIDs := []string{}
+	for refID := range pr.Responses {
+		refIDs = append(refIDs, refID)
+	}
+	sort.Strings(refIDs)
+
+	// Make sure all keys in the result are written
+	for _, refID := range refIDs {
+		res := pr.Responses[refID]
+
+		if started {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField(refID)
+		obj := res // avoid implicit memory
+		writeDataResponseJSON(&obj, stream)
+		started = true
+	}
+	stream.WriteObjectEnd()
+
+	stream.WriteObjectEnd()
+}
+
 //-----------------------------------------------------------------
 // Private stream readers
 //-----------------------------------------------------------------

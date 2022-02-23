@@ -1,10 +1,8 @@
 package backend
 
 import (
-	"errors"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -119,23 +117,15 @@ func (f ConvertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 
 // QueryDataResponse converts protobuf version of a QueryDataResponse to the SDK version.
 func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
-	qdr := &QueryDataResponse{
-		Responses: make(Responses, len(protoRes.Responses)),
+	if protoRes.DataType == pluginv2.QueryDataResponse_JSON {
+		return &QueryDataResponse{
+			proxy: newJSONResponseProxy(nil, protoRes),
+		}, nil
 	}
-	for refID, res := range protoRes.Responses {
-		frames, err := data.UnmarshalArrowFrames(res.Frames)
-		if err != nil {
-			return nil, err
-		}
-		dr := DataResponse{
-			Frames: frames,
-		}
-		if res.Error != "" {
-			dr.Error = errors.New(res.Error)
-		}
-		qdr.Responses[refID] = dr
-	}
-	return qdr, nil
+
+	return &QueryDataResponse{
+		proxy: newArrowResponseProxy(nil, protoRes),
+	}, nil
 }
 
 // CallResourceRequest converts protobuf version of a CallResourceRequest to the SDK version.

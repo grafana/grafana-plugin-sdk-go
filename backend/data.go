@@ -3,9 +3,11 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -69,10 +71,23 @@ type DataQuery struct {
 type QueryDataResponse struct {
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
 	Responses Responses
+	proxy     ResponseProxy
+}
+
+// ResponseProxy returns a response proxy which is optimized for
+// reading responses by postponing when encoding/decoding
+// bytes/Responses.
+// Note: For Grafana internal use.
+func (r *QueryDataResponse) ResponseProxy() ResponseProxy {
+	return r.proxy
 }
 
 // MarshalJSON writes the results as json
 func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
+	if r.proxy != nil {
+		return r.proxy.MarshalJSON()
+	}
+
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
@@ -85,7 +100,16 @@ func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
 func (r *QueryDataResponse) UnmarshalJSON(b []byte) error {
 	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
 	readQueryDataResultsJSON(r, iter)
-	return iter.Error
+	if iter.Error != nil {
+		return iter.Error
+	}
+
+	r.proxy = newJSONResponseProxy(r.Responses, &pluginv2.QueryDataResponse{
+		DataType: pluginv2.QueryDataResponse_JSON,
+		Data:     b,
+	})
+
+	return nil
 }
 
 // NewQueryDataResponse returns a QueryDataResponse with the Responses property initialized.
@@ -133,4 +157,127 @@ type TimeRange struct {
 // Duration returns a time.Duration representing the amount of time between From and To.
 func (tr TimeRange) Duration() time.Duration {
 	return tr.To.Sub(tr.From)
+}
+
+type DataResponseType string
+
+const (
+	DataResponseTypeArrow DataResponseType = "ARROW"
+	DataResponseTypeJSON  DataResponseType = "JSON"
+)
+
+type ResponseProxy interface {
+	json.Marshaler
+	Responses() (Responses, error)
+}
+
+type proxyResponse struct {
+	Responses Responses
+}
+
+func (pr *proxyResponse) MarshalJSON() ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeProxyResponseJSON(pr, stream)
+	return append([]byte(nil), stream.Buffer()...), stream.Error
+}
+
+type jsonResponseProxy struct {
+	responses Responses
+	raw       *struct {
+		data []byte
+	}
+}
+
+func newJSONResponseProxy(responses Responses, protoRes *pluginv2.QueryDataResponse) ResponseProxy {
+	return &jsonResponseProxy{
+		responses: responses,
+		raw:       &struct{ data []byte }{protoRes.Data},
+	}
+}
+
+func (p jsonResponseProxy) MarshalJSON() ([]byte, error) {
+	if p.raw == nil {
+		pr := &proxyResponse{
+			Responses: p.responses,
+		}
+		bytes, err := json.Marshal(pr)
+		if err != nil {
+			return nil, err
+		}
+		p.raw = &struct{ data []byte }{
+			data: bytes,
+		}
+	}
+
+	return p.raw.data, nil
+}
+
+func (p jsonResponseProxy) Responses() (Responses, error) {
+	if p.responses == nil {
+		var responses Responses
+		err := json.Unmarshal(p.raw.data, &responses)
+		if err != nil {
+			return nil, err
+		}
+
+		p.responses = responses
+	}
+
+	return p.responses, nil
+}
+
+type arrowResponseProxy struct {
+	responses Responses
+	raw       *struct {
+		responses map[string]*pluginv2.DataResponse
+	}
+}
+
+func newArrowResponseProxy(responses Responses, proto *pluginv2.QueryDataResponse) ResponseProxy {
+	return &arrowResponseProxy{
+		responses: responses,
+		raw: &struct {
+			responses map[string]*pluginv2.DataResponse
+		}{proto.Responses},
+	}
+}
+
+func (p arrowResponseProxy) MarshalJSON() ([]byte, error) {
+	resp, err := p.Responses()
+	if err != nil {
+		return nil, err
+	}
+
+	pr := &proxyResponse{
+		Responses: resp,
+	}
+	return json.Marshal(pr)
+}
+
+func (p arrowResponseProxy) Responses() (Responses, error) {
+	if p.responses == nil {
+		responses := make(Responses, len(p.raw.responses))
+
+		for refID, res := range p.raw.responses {
+			frames, err := data.UnmarshalArrowFrames(res.Frames)
+			if err != nil {
+				return nil, err
+			}
+			dr := DataResponse{
+				Frames: frames,
+			}
+			if res.Error != "" {
+				dr.Error = errors.New(res.Error)
+			}
+
+			responses[refID] = dr
+		}
+
+		p.responses = responses
+	}
+
+	return p.responses, nil
 }

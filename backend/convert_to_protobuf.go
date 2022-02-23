@@ -136,10 +136,31 @@ func (t ConvertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 // QueryDataResponse converts the SDK version of a QueryDataResponse to the protobuf version.
 // It will set the RefID on the frames to the RefID key in Responses if a Frame's
 // RefId property is an empty string.
-func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
+func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse, accept string) (*pluginv2.QueryDataResponse, error) {
+	if accept == string(DataResponseTypeJSON) {
+		return t.jsonQueryDataResponse(res)
+	}
+
+	return t.arrowQueryDataResponse(res)
+}
+
+func (t ConvertToProtobuf) arrowQueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
+	if res.proxy != nil {
+		if proxy, ok := res.proxy.(*arrowResponseProxy); ok {
+			if proxy.raw != nil {
+				return &pluginv2.QueryDataResponse{
+					Responses: proxy.raw.responses,
+					DataType:  pluginv2.QueryDataResponse_ARROW,
+				}, nil
+			}
+		}
+	}
+
 	pQDR := &pluginv2.QueryDataResponse{
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
+		DataType:  pluginv2.QueryDataResponse_ARROW,
 	}
+
 	for refID, dr := range res.Responses {
 		for _, f := range dr.Frames {
 			if f.RefID == "" {
@@ -157,6 +178,20 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 			pDR.Error = dr.Error.Error()
 		}
 		pQDR.Responses[refID] = &pDR
+	}
+
+	return pQDR, nil
+}
+
+func (t ConvertToProtobuf) jsonQueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
+	bytes, err := res.MarshalJSON()
+	if err != nil {
+		return nil, err
+	}
+
+	pQDR := &pluginv2.QueryDataResponse{
+		DataType: pluginv2.QueryDataResponse_JSON,
+		Data:     bytes,
 	}
 
 	return pQDR, nil

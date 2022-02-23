@@ -23,5 +23,13 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		return nil, err
 	}
 
-	return ToProto().QueryDataResponse(resp)
+	accept := ""
+
+	if req.Headers != nil {
+		if val, exists := req.Headers["accept"]; exists {
+			accept = val
+		}
+	}
+
+	return ToProto().QueryDataResponse(resp, accept)
 }

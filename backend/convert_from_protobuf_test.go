@@ -423,3 +423,83 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	//
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-6, "untested fields in conversion") // -6 Struct Fields
 }
+
+func TestConvertFromProtobufQueryDataRespone(t *testing.T) {
+	t.Run("No data type specified should initialize response proxy with Arrow response proxy", func(t *testing.T) {
+		dr := testDataResponse(t)
+		frames, err := dr.Frames.MarshalArrow()
+		require.NoError(t, err)
+
+		protoRes := &pluginv2.QueryDataResponse{
+			Responses: map[string]*pluginv2.DataResponse{
+				"A": {
+					Frames: frames,
+				},
+			},
+		}
+
+		qdr, err := FromProto().QueryDataResponse(protoRes)
+		require.NoError(t, err)
+		require.NotNil(t, qdr)
+		require.NotNil(t, qdr.ResponseProxy())
+
+		arrowProxy, ok := qdr.proxy.(*arrowResponseProxy)
+		require.True(t, ok)
+		require.NotNil(t, arrowProxy)
+		require.Equal(t, frames, arrowProxy.raw.responses["A"].Frames)
+	})
+
+	t.Run("Arrow data type set should initialize response proxy with Arrow response proxy", func(t *testing.T) {
+		dr := testDataResponse(t)
+		frames, err := dr.Frames.MarshalArrow()
+		require.NoError(t, err)
+
+		protoRes := &pluginv2.QueryDataResponse{
+			Responses: map[string]*pluginv2.DataResponse{
+				"A": {
+					Frames: frames,
+				},
+			},
+			DataType: pluginv2.QueryDataResponse_ARROW,
+		}
+
+		qdr, err := FromProto().QueryDataResponse(protoRes)
+		require.NoError(t, err)
+		require.NotNil(t, qdr)
+		require.NotNil(t, qdr.ResponseProxy())
+
+		arrowProxy, ok := qdr.proxy.(*arrowResponseProxy)
+		require.True(t, ok)
+		require.NotNil(t, arrowProxy)
+		require.Equal(t, frames, arrowProxy.raw.responses["A"].Frames)
+	})
+
+	t.Run("JSON data type set should initialize response proxy with JSON response proxy", func(t *testing.T) {
+		dr := testDataResponse(t)
+		qdrJSON := NewQueryDataResponse()
+		qdrJSON.Responses["A"] = dr
+
+		require.Nil(t, qdrJSON.ResponseProxy())
+
+		b, err := json.Marshal(qdrJSON)
+		require.NoError(t, err)
+
+		str := string(b)
+		require.Equal(t, `{"results":{"A":{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
+
+		protoRes := &pluginv2.QueryDataResponse{
+			DataType: pluginv2.QueryDataResponse_JSON,
+			Data:     b,
+		}
+
+		qdr, err := FromProto().QueryDataResponse(protoRes)
+		require.NoError(t, err)
+		require.NotNil(t, qdr)
+		require.NotNil(t, qdr.ResponseProxy())
+
+		jsonProxy, ok := qdr.proxy.(*jsonResponseProxy)
+		require.True(t, ok)
+		require.NotNil(t, jsonProxy)
+		require.Equal(t, b, jsonProxy.raw.data)
+	})
+}
