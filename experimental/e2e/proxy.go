@@ -1,7 +1,6 @@
 package e2e
 
 import (
-	"crypto/tls"
 	"crypto/x509"
 	_ "embed" // used for embedding the CA certificate and key
 	"fmt"
@@ -9,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/elazarl/goproxy"
+	ca "github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/certificate_authority"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
@@ -49,7 +49,7 @@ type Proxy struct {
 
 // NewProxy creates a new Proxy.
 func NewProxy(mode ProxyMode, fixture *fixture.Fixture, config *config.Config) *Proxy {
-	err := setupCA()
+	err := setupCA(config)
 	if err != nil {
 		panic(err)
 	}
@@ -156,16 +156,8 @@ func (p *Proxy) matchesHosts(h string) bool {
 	return false
 }
 
-//go:embed cert/grafana-e2e-ca.pem
-// CACertificate Certificate Authority certificate used by the proxy.
-var CACertificate []byte
-
-//go:embed cert/grafana-e2e-ca.key.pem
-// CAKey Certificate Authority private key used by the proxy.
-var CAKey []byte
-
-func setupCA() error {
-	goproxyCa, err := tls.X509KeyPair(CACertificate, CAKey)
+func setupCA(cfg *config.Config) error {
+	goproxyCa, err := ca.GetCertificate(cfg.CAConfig.Cert, cfg.CAConfig.PrivateKey)
 	if err != nil {
 		return err
 	}

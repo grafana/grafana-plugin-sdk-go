@@ -12,6 +12,7 @@ The goal of the proxy is to provide a way to record and replay HTTP interactions
 	- [address](#address)
 	- [hosts](#hosts)
 	- [storage](#storage)
+- [ca_keypair](#ca_keypair)
 - [Mage Commands](#mage-commands)
 	- [Append mode](#append-mode)
 	- [Overwrite mode](#overwrite-mode)
@@ -98,7 +99,11 @@ Default configuration:
 		"path": "fixtures/e2e.har"
 	},
 	"address": "127.0.0.1:9999",
-	"hosts": []
+	"hosts": [],
+	"ca_keypair": {
+		"cert": null,
+		"private_key": null
+	}
 }
 ```
 
@@ -123,6 +128,26 @@ Default:
 {
 	"type": "har",
 	"path": "fixtures/e2e.har"
+}
+```
+
+## ca_keypair
+
+An object used define paths to a custom CA certificate and private key in PEM format. By default, the bundled [certificate](certificate_authority/grafana-e2e-ca.pem) and [private key](certificate_authority/grafana-e2e-ca.key.pem) are used. For more information about generating a custom self-signed CA certificate, see the [Certificate Authority Key Pair Generation](certificate_authority/README.md) documentation.
+
+Default:
+```json
+{
+	"cert": null,
+	"private_key": null
+}
+```
+
+Example configuration:
+```json
+{
+	"cert": "./cert.pem",
+	"private_key": "./key.pem"
 }
 ```
 
@@ -159,6 +184,9 @@ This command prints the CA certificate to stdout so that it can be added to the 
 ```
 mage e2e:certificate
 ```
+
+If you wish to provide a custom CA certificate and private key, see the [ca_keypair](#ca_keypair) section above. If configured,
+this command will print the custom CA certificate to stdout.
 
 ## Reviewing Recorded Traffic
 

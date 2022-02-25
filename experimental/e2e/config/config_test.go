@@ -24,5 +24,18 @@ func TestLoadConfig(t *testing.T) {
 		require.Equal(t, config.StorageTypeHAR, cfg.Storage.Type)
 		require.Equal(t, "fixtures/test.har", cfg.Storage.Path)
 		require.Equal(t, []string{"example.com", "example.org"}, cfg.Hosts)
+		require.Equal(t, "", cfg.CAConfig.Cert)
+		require.Equal(t, "", cfg.CAConfig.PrivateKey)
+	})
+
+	t.Run("should load CA config", func(t *testing.T) {
+		cfg, err := config.LoadConfig("testdata/with_ca.json")
+		require.NoError(t, err)
+		require.Equal(t, "127.0.0.1:8888", cfg.Address)
+		require.Equal(t, config.StorageTypeHAR, cfg.Storage.Type)
+		require.Equal(t, "fixtures/test.har", cfg.Storage.Path)
+		require.Equal(t, []string{"example.com", "example.org"}, cfg.Hosts)
+		require.Equal(t, "./cert.pem", cfg.CAConfig.Cert)
+		require.Equal(t, "./key.pem", cfg.CAConfig.PrivateKey)
 	})
 }

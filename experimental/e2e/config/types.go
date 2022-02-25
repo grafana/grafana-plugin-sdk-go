@@ -5,23 +5,35 @@ import (
 	"io/ioutil"
 )
 
+// Config is the configuration for the proxy.
 type Config struct {
-	Storage *StorageConfig `json:"storage"`
-	Address string         `json:"address"`
-	Hosts   []string       `json:"hosts"`
+	Storage  *StorageConfig `json:"storage"`
+	Address  string         `json:"address"`
+	Hosts    []string       `json:"hosts"`
+	CAConfig CAConfig       `json:"ca_keypair"`
 }
 
+// StorageConfig defines the storage configuration for the proxy.
 type StorageConfig struct {
 	Type StorageType `json:"type"`
 	Path string      `json:"path"`
 }
 
+// CAConfig contains the keypair for the CA.
+type CAConfig struct {
+	Cert       string `json:"cert"`
+	PrivateKey string `json:"private_key"`
+}
+
+// StorageType defines the type of storage used by the proxy.
 type StorageType string
 
 const (
+	// StorageTypeHAR is the HAR file storage type.
 	StorageTypeHAR StorageType = "har"
 )
 
+// LoadConfig loads the configuration from a JSON file path.
 func LoadConfig(path string) (*Config, error) {
 	if path == "" {
 		path = "proxy.json"
