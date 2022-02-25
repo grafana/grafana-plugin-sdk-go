@@ -1,5 +1,7 @@
 # E2E HTTP Fixture Proxy  <!-- omit in toc -->
 
+![Proxy](proxy.png)
+
 The goal of the proxy is to provide a way to record and replay HTTP interactions between a data source backend and the target API. The use of recorded fixtures makes testing infrastructure simpler, and the stability of response data makes it easier to achieve deterministic tests.
 
 - [Quick Setup](#quick-setup)
