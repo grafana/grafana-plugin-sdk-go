@@ -12,7 +12,7 @@ The goal of the proxy is to provide a way to record and replay HTTP interactions
 	- [address](#address)
 	- [hosts](#hosts)
 	- [storage](#storage)
-- [ca_keypair](#ca_keypair)
+	- [ca_keypair](#ca_keypair)
 - [Mage Commands](#mage-commands)
 	- [Append mode](#append-mode)
 	- [Overwrite mode](#overwrite-mode)
@@ -57,7 +57,7 @@ export HTTPS_PROXY=127.0.0.1:9999
 
 ## CA Certificate Setup
 
-This step is needed so that the proxy can intercept HTTPS traffic.
+This step is needed so that the proxy can intercept HTTPS traffic. By default, the bundled [certificate](certificate_authority/grafana-e2e-ca.pem) and [private key](certificate_authority/grafana-e2e-ca.key.pem) are used. For more information about using a custom CA key pair, see the [ca_keypair](#ca_keypair) config section.
 
 ### Debian & Ubuntu
 
@@ -131,7 +131,7 @@ Default:
 }
 ```
 
-## ca_keypair
+### ca_keypair
 
 An object used define paths to a custom CA certificate and private key in PEM format. By default, the bundled [certificate](certificate_authority/grafana-e2e-ca.pem) and [private key](certificate_authority/grafana-e2e-ca.key.pem) are used. For more information about generating a custom self-signed CA certificate, see the [Certificate Authority Key Pair Generation](certificate_authority/README.md) documentation.
 
@@ -289,4 +289,3 @@ mage CustomE2E
 Starting proxy mode append addr 127.0.0.1:9999
 Match url: http://example.com/hello/world status: 404
 ```
-
