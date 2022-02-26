@@ -27,10 +27,10 @@ The goal of the proxy is to provide a way to record and replay HTTP interactions
 
 ```json
 {
-	"storage": {
+	"storage": [{
 		"type": "har",
 		"path": "fixtures/e2e.har"
-	},
+	}],
 	"address": "127.0.0.1:9999",
 	"hosts": ["example.com"]
 }
@@ -94,10 +94,10 @@ The E2E proxy can be configured by adding a `proxy.json` file to the root of you
 Default configuration:
 ```json
 {
-	"storage": {
+	"storage": [{
 		"type": "har",
 		"path": "fixtures/e2e.har"
-	},
+	}],
 	"address": "127.0.0.1:9999",
 	"hosts": [],
 	"ca_keypair": {
@@ -121,15 +121,32 @@ Default: `[]` (traffic for all hosts will be captured)
 
 ### storage
 
-An object used to define a type and configuration options for the fixture's storage.
+An array of storage configurations.
 
 Default: 
 ```json
-{
+[{
 	"type": "har",
 	"path": "fixtures/e2e.har"
-}
+}]
 ```
+
+In certain situations it can be useful to replay responses from multiple data sources. This is supported by adding
+multiple storage configurations.
+```json
+[
+	{
+		"type": "har",
+		"path": "fixtures/ds_one.har"
+	},
+	{
+		"type": "har",
+		"path": "fixtures/ds_two.har"
+	},
+]
+```
+
+It's not recommended to use [append mode](#append-mode) or [overwrite mode](#overwrite-mode) with multiple storage configurations.
 
 ### ca_keypair
 
@@ -230,24 +247,24 @@ func CustomE2E() error {
 	}
 
 	var store storage.Storage
-	if cfg.Storage == nil || cfg.Storage.Type == config.StorageTypeHAR {
-		har := storage.NewHARStorage(cfg.Storage.Path)
+	if cfg.Storage[0] == nil || cfg.Storage[0].Type == config.StorageTypeHAR {
+		har := storage.NewHARStorage(cfg.Storage[0].Path)
 		if err := har.Load(); err != nil {
 			har.Init()
 		}
 		store = har
 	}
-	fixture := fixture.NewFixture(store)
+	f := fixture.NewFixture(store)
 
 	// modify incoming requests
-	fixture.WithRequestProcessor(func(req *http.Request) *http.Request {
+	f.WithRequestProcessor(func(req *http.Request) *http.Request {
 		req.URL.Host = "example.com"
 		req.URL.Path = "/hello/world"
 		return req
 	})
 
 	// modify incoming responses
-	fixture.WithResponseProcessor(func(res *http.Response) *http.Response {
+	f.WithResponseProcessor(func(res *http.Response) *http.Response {
 		res.StatusCode = http.StatusNotFound
 		res.Header = http.Header{}
 		res.Body = ioutil.NopCloser(bytes.NewBufferString("Not found"))
@@ -255,11 +272,11 @@ func CustomE2E() error {
 	})
 
 	// modify matching behavior
-	fixture.WithMatcher(func(a, b *http.Request) bool {
+	f.WithMatcher(func(a, b *http.Request) bool {
 		return true
 	})
 
-	proxy := e2e.NewProxy(e2e.ProxyModeAppend, fixture, cfg)
+	proxy := e2e.NewProxy(e2e.ProxyModeAppend, []*fixture.Fixture{f}, cfg)
 	return proxy.Start()
 }
 ```

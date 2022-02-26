@@ -29,8 +29,10 @@ func TestProxy(t *testing.T) {
 			res, err := client.Do(req)
 			require.NoError(t, err)
 			defer res.Body.Close()
-			require.Equal(t, "/foo", proxy.Fixture.Entries()[0].Request.URL.Path)
-			require.Equal(t, 200, proxy.Fixture.Entries()[0].Response.StatusCode)
+			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
+			require.Equal(t, 200, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
+			require.Equal(t, "/foo", proxy.Fixtures[1].Entries()[0].Request.URL.Path)
+			require.Equal(t, 200, proxy.Fixtures[1].Entries()[0].Response.StatusCode)
 			require.Equal(t, 200, res.StatusCode)
 			resBody, err := ioutil.ReadAll(res.Body)
 			require.NoError(t, err)
@@ -51,12 +53,15 @@ func TestProxy(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewBufferString("bar")),
 				Request:    req,
 			}
-			proxy.Fixture.Add(req, res)
+			require.Equal(t, 0, len(proxy.Fixtures[1].Entries()))
+			proxy.Fixtures[0].Add(req, res)
 			resp, err := client.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
-			require.Equal(t, "/foo", proxy.Fixture.Entries()[0].Request.URL.Path)
-			require.Equal(t, 200, proxy.Fixture.Entries()[0].Response.StatusCode)
+			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
+			require.Equal(t, 200, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
+			require.Equal(t, "/foo", proxy.Fixtures[1].Entries()[0].Request.URL.Path)
+			require.Equal(t, 200, proxy.Fixtures[1].Entries()[0].Response.StatusCode)
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, "bar", string(body))
@@ -72,8 +77,10 @@ func TestProxy(t *testing.T) {
 			res, err := client.Do(req)
 			require.NoError(t, err)
 			defer res.Body.Close()
-			require.Equal(t, "/foo", proxy.Fixture.Entries()[0].Request.URL.Path)
-			require.Equal(t, 200, proxy.Fixture.Entries()[0].Response.StatusCode)
+			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
+			require.Equal(t, 200, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
+			require.Equal(t, "/foo", proxy.Fixtures[1].Entries()[0].Request.URL.Path)
+			require.Equal(t, 200, proxy.Fixtures[1].Entries()[0].Response.StatusCode)
 			require.Equal(t, 200, res.StatusCode)
 			resBody, err := ioutil.ReadAll(res.Body)
 			require.NoError(t, err)
@@ -94,12 +101,12 @@ func TestProxy(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewBufferString("bar")),
 				Request:    req,
 			}
-			proxy.Fixture.Add(req, res)
+			proxy.Fixtures[0].Add(req, res)
 			resp, err := client.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
-			require.Equal(t, "/foo", proxy.Fixture.Entries()[0].Request.URL.Path)
-			require.Equal(t, 200, proxy.Fixture.Entries()[0].Response.StatusCode)
+			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
+			require.Equal(t, 200, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, "/foo", string(body))
@@ -123,13 +130,15 @@ func (pathEcho) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 var srv = httptest.NewServer(pathEcho{})
 
 func setupProxy(mode e2e.ProxyMode) (proxy *e2e.Proxy, client *http.Client, server *httptest.Server) {
-	store := newFakeStorage()
-	fixture := fixture.NewFixture(store)
+	fixtures := []*fixture.Fixture{
+		fixture.NewFixture(newFakeStorage()),
+		fixture.NewFixture(newFakeStorage()),
+	}
 	config, err := config.LoadConfig("proxy.json")
 	if err != nil {
 		panic(err)
 	}
-	proxy = e2e.NewProxy(mode, fixture, config)
+	proxy = e2e.NewProxy(mode, fixtures, config)
 	server = httptest.NewServer(proxy.Server)
 	proxyURL, err := url.Parse(server.URL)
 	if err != nil {

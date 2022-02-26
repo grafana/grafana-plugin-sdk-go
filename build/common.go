@@ -271,16 +271,19 @@ func e2eProxy(mode e2e.ProxyMode) error {
 	if err != nil {
 		return err
 	}
-	var store storage.Storage
-	if cfg.Storage == nil || cfg.Storage.Type == config.StorageTypeHAR {
-		har := storage.NewHARStorage(cfg.Storage.Path)
-		if err := har.Load(); err != nil {
-			har.Init()
+	fixtures := make([]*fixture.Fixture, 0)
+	for _, s := range cfg.Storage {
+		var store storage.Storage
+		if cfg.Storage == nil || s.Type == config.StorageTypeHAR {
+			har := storage.NewHARStorage(s.Path)
+			if err := har.Load(); err != nil {
+				har.Init()
+			}
+			store = har
 		}
-		store = har
+		fixtures = append(fixtures, fixture.NewFixture(store))
 	}
-	fixture := fixture.NewFixture(store)
-	proxy := e2e.NewProxy(mode, fixture, cfg)
+	proxy := e2e.NewProxy(mode, fixtures, cfg)
 	return proxy.Start()
 }
 
