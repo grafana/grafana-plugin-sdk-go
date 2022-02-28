@@ -69,6 +69,10 @@ func NewProxy(mode ProxyMode, fixture []*fixture.Fixture, config *config.Config)
 		return p
 	}
 
+	if len(p.Fixtures) > 1 {
+		panic("Multiple storage configurations are not supported in append or overwrite mode")
+	}
+
 	// Append mode
 	if p.Mode == ProxyModeAppend {
 		p.Server.OnRequest().DoFunc(p.replay)
@@ -116,15 +120,14 @@ func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response
 	if !p.matchesHosts(res.Request.URL.Host) {
 		return res
 	}
-	for _, f := range p.Fixtures {
-		if _, cached := f.Match(res.Request); cached != nil {
-			return cached
-		}
-		f.Add(res.Request, res)
-		err := f.Save()
-		if err != nil {
-			panic(err)
-		}
+	f := p.Fixtures[0]
+	if _, cached := f.Match(res.Request); cached != nil {
+		return cached
+	}
+	f.Add(res.Request, res)
+	err := f.Save()
+	if err != nil {
+		panic(err)
 	}
 	fmt.Println("Append", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 	return res
@@ -135,16 +138,15 @@ func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Respo
 	if !p.matchesHosts(res.Request.URL.Host) {
 		return res
 	}
-	for _, f := range p.Fixtures {
-		if id, cached := f.Match(res.Request); cached != nil {
-			fmt.Println("Removed existing match", "url:", cached.Request.URL.String(), "status:", cached.StatusCode)
-			f.Delete(id)
-		}
-		f.Add(res.Request, res)
-		err := f.Save()
-		if err != nil {
-			panic(err)
-		}
+	f := p.Fixtures[0]
+	if id, cached := f.Match(res.Request); cached != nil {
+		fmt.Println("Removed existing match", "url:", cached.Request.URL.String(), "status:", cached.StatusCode)
+		f.Delete(id)
+	}
+	f.Add(res.Request, res)
+	err := f.Save()
+	if err != nil {
+		panic(err)
 	}
 	fmt.Println("Overwrite", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 	return res
@@ -156,7 +158,7 @@ func (p *Proxy) matchesHosts(h string) bool {
 		return true
 	}
 	for _, host := range p.Config.Hosts {
-		if strings.Contains(host, h) {
+		if strings.Contains(h, host) {
 			return true
 		}
 	}

@@ -131,8 +131,7 @@ Default:
 }]
 ```
 
-In certain situations it can be useful to replay responses from multiple data sources. This is supported by adding
-multiple storage configurations.
+In certain situations it can be useful to replay responses from multiple data sources.
 ```json
 [
 	{
@@ -146,8 +145,7 @@ multiple storage configurations.
 ]
 ```
 
-It's not recommended to use [append mode](#append-mode) or [overwrite mode](#overwrite-mode) with multiple storage configurations.
-
+**Note:** Multiple storage configurations are only supported in replay mode.
 ### ca_keypair
 
 An object used define paths to a custom CA certificate and private key in PEM format. By default, the bundled [certificate](certificate_authority/grafana-e2e-ca.pem) and [private key](certificate_authority/grafana-e2e-ca.key.pem) are used. For more information about generating a custom self-signed CA certificate, see the [Certificate Authority Key Pair Generation](certificate_authority/README.md) documentation.

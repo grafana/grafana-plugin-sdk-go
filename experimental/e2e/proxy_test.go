@@ -21,6 +21,21 @@ import (
 
 func TestProxy(t *testing.T) {
 	t.Run("Append", func(t *testing.T) {
+		t.Run("should panic if more than one fixture is provided", func(t *testing.T) {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("Expected panic, but got none")
+				}
+			}()
+			fixtures := []*fixture.Fixture{
+				fixture.NewFixture(newFakeStorage()),
+				fixture.NewFixture(newFakeStorage()),
+			}
+			config, err := config.LoadConfig("proxy.json")
+			require.NoError(t, err)
+			_ = e2e.NewProxy(e2e.ProxyModeAppend, fixtures, config)
+		})
+
 		t.Run("should add new request to store", func(t *testing.T) {
 			proxy, client, s := setupProxy(e2e.ProxyModeAppend)
 			defer s.Close()
@@ -31,8 +46,6 @@ func TestProxy(t *testing.T) {
 			defer res.Body.Close()
 			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, 200, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
-			require.Equal(t, "/foo", proxy.Fixtures[1].Entries()[0].Request.URL.Path)
-			require.Equal(t, 200, proxy.Fixtures[1].Entries()[0].Response.StatusCode)
 			require.Equal(t, 200, res.StatusCode)
 			resBody, err := ioutil.ReadAll(res.Body)
 			require.NoError(t, err)
@@ -53,15 +66,12 @@ func TestProxy(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewBufferString("bar")),
 				Request:    req,
 			}
-			require.Equal(t, 0, len(proxy.Fixtures[1].Entries()))
 			proxy.Fixtures[0].Add(req, res)
 			resp, err := client.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, 200, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
-			require.Equal(t, "/foo", proxy.Fixtures[1].Entries()[0].Request.URL.Path)
-			require.Equal(t, 200, proxy.Fixtures[1].Entries()[0].Response.StatusCode)
 			body, err := ioutil.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, "bar", string(body))
@@ -69,6 +79,21 @@ func TestProxy(t *testing.T) {
 	})
 
 	t.Run("Overwrite", func(t *testing.T) {
+		t.Run("should panic if more than one fixture is provided", func(t *testing.T) {
+			defer func() {
+				if r := recover(); r == nil {
+					t.Errorf("Expected panic, but got none")
+				}
+			}()
+			fixtures := []*fixture.Fixture{
+				fixture.NewFixture(newFakeStorage()),
+				fixture.NewFixture(newFakeStorage()),
+			}
+			config, err := config.LoadConfig("proxy.json")
+			require.NoError(t, err)
+			_ = e2e.NewProxy(e2e.ProxyModeOverwrite, fixtures, config)
+		})
+
 		t.Run("should add new request to store", func(t *testing.T) {
 			proxy, client, s := setupProxy(e2e.ProxyModeOverwrite)
 			defer s.Close()
@@ -79,8 +104,6 @@ func TestProxy(t *testing.T) {
 			defer res.Body.Close()
 			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, 200, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
-			require.Equal(t, "/foo", proxy.Fixtures[1].Entries()[0].Request.URL.Path)
-			require.Equal(t, 200, proxy.Fixtures[1].Entries()[0].Response.StatusCode)
 			require.Equal(t, 200, res.StatusCode)
 			resBody, err := ioutil.ReadAll(res.Body)
 			require.NoError(t, err)
@@ -112,6 +135,18 @@ func TestProxy(t *testing.T) {
 			require.Equal(t, "/foo", string(body))
 		})
 	})
+
+	t.Run("Replay", func(t *testing.T) {
+		t.Run("should not panic if more than one fixture is provided", func(t *testing.T) {
+			fixtures := []*fixture.Fixture{
+				fixture.NewFixture(newFakeStorage()),
+				fixture.NewFixture(newFakeStorage()),
+			}
+			config, err := config.LoadConfig("proxy.json")
+			require.NoError(t, err)
+			_ = e2e.NewProxy(e2e.ProxyModeReplay, fixtures, config)
+		})
+	})
 }
 
 // ignoring the G402 error here because this proxy is only used for testing
@@ -131,7 +166,6 @@ var srv = httptest.NewServer(pathEcho{})
 
 func setupProxy(mode e2e.ProxyMode) (proxy *e2e.Proxy, client *http.Client, server *httptest.Server) {
 	fixtures := []*fixture.Fixture{
-		fixture.NewFixture(newFakeStorage()),
 		fixture.NewFixture(newFakeStorage()),
 	}
 	config, err := config.LoadConfig("proxy.json")
