@@ -28,13 +28,22 @@ require (
 )
 
 require (
+	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
+	github.com/elazarl/goproxy v0.0.0-20220115173737-adb46da277ac
+	github.com/google/uuid v1.3.0
+)
+
+require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/elazarl/goproxy/ext v0.0.0-20220115173737-adb46da277ac // indirect
 	github.com/fatih/color v1.7.0 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
 	github.com/google/flatbuffers v2.0.0+incompatible // indirect
+	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.13.1 // indirect
+	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mattn/go-runewidth v0.0.9 // indirect

@@ -10,6 +10,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
+	ca "github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/certificate_authority"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
@@ -225,6 +230,61 @@ func Clean() error {
 		return err
 	}
 	return nil
+}
+
+// E2E is a namespace.
+type E2E mg.Namespace
+
+// Append starts the E2E proxy in append mode.
+func (E2E) Append() error {
+	return e2eProxy(e2e.ProxyModeAppend)
+}
+
+// Overwrite starts the E2E proxy in overwrite mode.
+func (E2E) Overwrite() error {
+	return e2eProxy(e2e.ProxyModeOverwrite)
+}
+
+// Replay starts the E2E proxy in replay mode.
+func (E2E) Replay() error {
+	return e2eProxy(e2e.ProxyModeReplay)
+}
+
+// Certificate prints the CA certificate to stdout.
+func (E2E) Certificate() error {
+	cfg, err := config.LoadConfig("proxy.json")
+	if err != nil {
+		return err
+	}
+
+	if cert, _, err := ca.LoadKeyPair(cfg.CAConfig.Cert, cfg.CAConfig.PrivateKey); err == nil {
+		fmt.Print(string(cert))
+		return nil
+	}
+
+	fmt.Print(string(ca.CACertificate))
+	return nil
+}
+
+func e2eProxy(mode e2e.ProxyMode) error {
+	cfg, err := config.LoadConfig("proxy.json")
+	if err != nil {
+		return err
+	}
+	fixtures := make([]*fixture.Fixture, 0)
+	for _, s := range cfg.Storage {
+		var store storage.Storage
+		if cfg.Storage == nil || s.Type == config.StorageTypeHAR {
+			har := storage.NewHARStorage(s.Path)
+			if err := har.Load(); err != nil {
+				har.Init()
+			}
+			store = har
+		}
+		fixtures = append(fixtures, fixture.NewFixture(store))
+	}
+	proxy := e2e.NewProxy(mode, fixtures, cfg)
+	return proxy.Start()
 }
 
 // checkLinuxPtraceScope verifies that ptrace is configured as required.
