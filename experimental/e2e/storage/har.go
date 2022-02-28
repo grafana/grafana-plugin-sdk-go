@@ -20,7 +20,7 @@ import (
 
 // HARStorage is a Storage implementation that stores requests and responses in HAR format on disk.
 type HARStorage struct {
-	lock        sync.Mutex
+	lock        sync.RWMutex
 	path        string
 	har         *har.HAR
 	currentTime func() time.Time
@@ -165,8 +165,8 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 // Entries converts HAR entries to a slice of Entry (http.Request and http.Response pairs).
 func (s *HARStorage) Entries() []*Entry {
 	entries := make([]*Entry, len(s.har.Log.Entries))
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	s.lock.RLock()
+	defer s.lock.RUnlock()
 
 	for i, e := range s.har.Log.Entries {
 		postData := ""
@@ -220,6 +220,8 @@ func (s *HARStorage) Entries() []*Entry {
 
 // Delete removes the HAR entry with the given ID.
 func (s *HARStorage) Delete(id string) bool {
+	s.lock.Lock()
+	defer s.lock.Unlock()
 	for i, e := range s.har.Log.Entries {
 		if e.Comment == id {
 			s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)

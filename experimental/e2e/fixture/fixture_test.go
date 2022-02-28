@@ -17,7 +17,6 @@ import (
 func TestFixtureAdd(t *testing.T) {
 	t.Run("should add request and response to fixture store", func(t *testing.T) {
 		req, res := setupFixture()
-		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
 		f := fixture.NewFixture(store)
@@ -30,7 +29,6 @@ func TestFixtureAdd(t *testing.T) {
 
 	t.Run("should apply request processor", func(t *testing.T) {
 		req, res := setupFixture()
-		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
 		f := fixture.NewFixture(store)
@@ -46,7 +44,6 @@ func TestFixtureAdd(t *testing.T) {
 
 	t.Run("should apply response processor", func(t *testing.T) {
 		req, res := setupFixture()
-		defer req.Body.Close()
 		defer res.Body.Close()
 		store := newFakeStorage()
 		f := fixture.NewFixture(store)
