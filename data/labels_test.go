@@ -54,4 +54,9 @@ func TestLabelsFromString(t *testing.T) {
 	result, err = data.LabelsFromString(`group=canary, job=prometheus`)
 	require.NoError(t, err)
 	require.Equal(t, target, result)
+
+	// raw string
+	result, err = data.LabelsFromString(`{method="GET"}`)
+	require.NoError(t, err)
+	require.Equal(t, result, data.Labels{"method": "GET"})
 }
