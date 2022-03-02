@@ -1,7 +1,6 @@
 package data_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -34,21 +33,25 @@ func TestContains(t *testing.T) {
 	require.Equal(t, result, true)
 }
 
-func TestString( t *testing.T) {
-	a := data.Labels{"job":"prometheus","group":"canary"}
+func TestString(t *testing.T) {
+	a := data.Labels{"job": "prometheus", "group": "canary"}
 	result := a.String()
 	require.Equal(t, result, "group=canary, job=prometheus")
-	b := data.Labels{"region":"xyz","location":"us-midwest"}
+	b := data.Labels{"region": "xyz", "location": "us-midwest"}
 	result1 := b.String()
 	require.Equal(t, result1, "location=us-midwest, region=xyz")
 }
 
 func TestLabelsFromString(t *testing.T) {
-	a := data.Labels{"location":"us-midwest","region":"xyz"}
-	b := a.String()
-	result, err := data.LabelsFromString(b)
-	if (err != nil) {
-		fmt.Println(err)
-	}
-	require.Equal(t, result, data.Labels{"location":"us-midwest","region":"xyz"})
+	target := data.Labels{"group": "canary", "job": "prometheus"}
+
+	// Support prometheus style input
+	result, err := data.LabelsFromString(`{group="canary", job="prometheus"}`)
+	require.NoError(t, err)
+	require.Equal(t, target, result)
+
+	// and influx style input
+	result, err = data.LabelsFromString(`group=canary, job=prometheus`)
+	require.NoError(t, err)
+	require.Equal(t, target, result)
 }
