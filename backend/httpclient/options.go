@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/azcredentials"
 )
 
 // ConfigureClientFunc function signature for configuring http.Client.
@@ -29,6 +31,9 @@ type Options struct {
 	// TLS TLS related options.
 	TLS   *TLSOptions
 	SigV4 *SigV4Config
+
+	// Azure authentication options.
+	Azure *AzureOptions
 
 	// Headers custom headers.
 	Headers map[string]string
@@ -116,4 +121,10 @@ type SigV4Config struct {
 	AssumeRoleARN string
 	ExternalID    string
 	Region        string
+}
+
+// AzureOptions Azure authentication options.
+type AzureOptions struct {
+	Credentials azcredentials.AzureCredentials
+	Scopes      []string
 }
