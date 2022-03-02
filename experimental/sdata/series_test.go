@@ -114,7 +114,7 @@ func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
 	}
 }
 
-func TestMultiFrameSeriesValidiate_WithFrames_ValidCases(t *testing.T) {
+func TestMultiFrameSeriesValidate_WithFrames_ValidCases(t *testing.T) {
 	tests := []struct {
 		name                string
 		mfs                 *sdata.MultiFrameSeries

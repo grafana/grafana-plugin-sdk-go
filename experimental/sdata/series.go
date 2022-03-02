@@ -69,8 +69,8 @@ func (mfs *MultiFrameSeries) SetMetricMD(metricName string, l data.Labels, fc da
 }
 
 type FrameFieldIndex struct {
-	FrameIdx int
-	FieldIdx int
+	FrameIdx int // -1 means nil Frame
+	FieldIdx int // -1 means no fields
 }
 
 type FrameFieldIndices []FrameFieldIndex
@@ -198,29 +198,87 @@ func (m TimeSeriesMetricRef) GetLabels() data.Labels {
 	return nil
 }
 
-func (mfs *MultiFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
-	refs := []TimeSeriesMetricRef{}
+func frameHasMetaType(f *data.Frame, t data.FrameType) bool {
+	return f != nil && f.Meta != nil && f.Meta.Type == t
+}
+
+func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
+	// if no Frames we return nil (non-empty input but no series will be zero length)
 	if mfs == nil || len(*mfs) == 0 {
-		return refs
+		return nil, nil
 	}
-	for _, frame := range *mfs {
-		m := TimeSeriesMetricRef{}
-		if len(frame.Fields) == 0 {
-			refs = append(refs, m)
+
+	var ignoredFields []FrameFieldIndex
+	refs := []TimeSeriesMetricRef{}
+
+	for frameIdx, frame := range *mfs {
+		if frame == nil { // nil frames not valid
+			ignoredFields = append(ignoredFields, FrameFieldIndex{-1, -1})
+			continue
 		}
-		timeFields := frame.TypeIndices(data.FieldTypeTime)
-		if len(timeFields) == 1 {
-			m.TimeField = frame.Fields[timeFields[0]]
+
+		ignoreAllFields := func() {
+			for fieldIdx := range frame.Fields {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+			}
+		}
+
+		if !frameHasMetaType(frame, data.FrameTypeTimeSeriesMany) { // must have type indicator
+			ignoreAllFields()
+			continue
+		}
+
+		m := TimeSeriesMetricRef{}
+
+		if len(frame.Fields) == 0 {
+			if frameIdx == 0 && len(*mfs) == 1 {
+				// If Type indicator is there (checked earlier) then it is an empty typed response (no metrics in response)
+				// There should only be one
+				return refs, nil
+			} else {
+				ignoreAllFields()
+				continue
+			}
 		}
 
 		valueFields := frame.TypeIndices(ValidValueFields()...)
+		timeFields := frame.TypeIndices(data.FieldTypeTime)
+
+		if len(valueFields) == 0 || len(timeFields) == 0 {
+			ignoreAllFields()
+			continue
+		}
+
+		// Time Field
+		if len(timeFields) == 1 {
+			m.TimeField = frame.Fields[timeFields[0]]
+		} else {
+			m.TimeField = frame.Fields[timeFields[0]]
+			for _, fieldIdx := range timeFields[1:] {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+			}
+		}
+		// Value Field
 		if len(valueFields) == 1 {
 			m.ValueField = frame.Fields[valueFields[0]]
+		} else {
+			m.ValueField = frame.Fields[valueFields[0]]
+			for _, fieldIdx := range timeFields[1:] {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+			}
 		}
+
+		// TODO this is fragile if new types are added
+		otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
+		for _, fieldIdx := range otherFields {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+		}
+
 		refs = append(refs, m)
 	}
+
 	sortTimeSeriesMetricRef(refs)
-	return refs
+	return refs, ignoredFields
 }
 
 // need to think about pointers here and elsewhere
