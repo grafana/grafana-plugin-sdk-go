@@ -25,7 +25,7 @@ type TimeSeriesCollection interface {
 
 type TimeSeriesCollectionReader interface {
 	Validate() (isEmpty bool, ignoredFieldIndices []FrameFieldIndex, errors []error)
-	GetMetricRefs() []TimeSeriesMetricRef
+	GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex)
 }
 
 func ValidValueFields() []data.FieldType {
@@ -333,18 +333,36 @@ func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, t []time.
 	return nil
 }
 
-func (wf *WideFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
+func (wf *WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
 	refs := []TimeSeriesMetricRef{}
+	var ignoredFields []FrameFieldIndex
+
 	if wf == nil || wf.Frame == nil {
-		return refs
-	}
-	timeFields := wf.TypeIndices(data.FieldTypeTime)
-	var timeField *data.Field
-	if len(timeFields) == 1 {
-		timeField = wf.Fields[timeFields[0]]
+		return nil, nil
 	}
 
+	ignoreAllFields := func() {
+		for fieldIdx := range wf.Fields {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+		}
+	}
+
+	timeFields := wf.TypeIndices(data.FieldTypeTime)
 	valueFieldIndicies := wf.TypeIndices(ValidValueFields()...)
+
+	if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
+		ignoreAllFields()
+		return refs, ignoredFields
+	}
+
+	timeField := wf.Fields[timeFields[0]]
+
+	if len(timeFields) > 1 {
+		for _, fieldIdx := range timeFields[1:] {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+		}
+	}
+
 	for _, fieldIdx := range valueFieldIndicies {
 		refs = append(refs, TimeSeriesMetricRef{
 			TimeField:  timeField,
@@ -352,7 +370,7 @@ func (wf *WideFrameSeries) GetMetricRefs() []TimeSeriesMetricRef {
 		})
 	}
 	sortTimeSeriesMetricRef(refs)
-	return refs
+	return refs, ignoredFields
 }
 
 func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
@@ -378,12 +396,20 @@ func (ls *LongSeries) Validate() (isEmpty bool, errors []error) {
 	panic("not implemented")
 }
 
-func (ls *LongSeries) GetMetricRefs() []TimeSeriesMetricRef {
+func (ls *LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
 	if ls == nil || ls.Frame == nil || ls.Fields == nil {
-		return []TimeSeriesMetricRef{}
+		return []TimeSeriesMetricRef{}, nil // TODO I think I added some meaning for nil vs empty in another... func
 	}
 	// metricName/labels -> SeriesRef
 	mm := make(map[string]map[string]TimeSeriesMetricRef)
+
+	var ignoredFields []FrameFieldIndex
+
+	ignoreAllFields := func() {
+		for fieldIdx := range ls.Fields {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+		}
+	}
 
 	refs := []TimeSeriesMetricRef{}
 	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) {
@@ -411,16 +437,19 @@ func (ls *LongSeries) GetMetricRefs() []TimeSeriesMetricRef {
 	}
 
 	timeFields := ls.TypeIndices(data.FieldTypeTime)
-	var timeField *data.Field
-	if len(timeFields) > 0 {
-		timeField = ls.Fields[timeFields[0]]
-	} else {
-		return []TimeSeriesMetricRef{}
+	valueFieldIndicies := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
+
+	if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
+		ignoreAllFields()
+		return []TimeSeriesMetricRef{}, ignoredFields
 	}
 
-	valueFieldIndicies := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
-	if len(valueFieldIndicies) == 0 {
-		return []TimeSeriesMetricRef{}
+	timeField := ls.Fields[timeFields[0]]
+
+	if len(timeFields) > 1 {
+		for _, fieldIdx := range timeFields[1:] {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+		}
 	}
 
 	factorFieldIndicies := ls.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
@@ -437,7 +466,7 @@ func (ls *LongSeries) GetMetricRefs() []TimeSeriesMetricRef {
 		}
 	}
 	sortTimeSeriesMetricRef(refs)
-	return refs
+	return refs, ignoredFields
 }
 
 func sortTimeSeriesMetricRef(refs []TimeSeriesMetricRef) {

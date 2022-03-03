@@ -196,7 +196,7 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 
 		err = wf.AddMetric("one", data.Labels{"host": "b"}, nil, []float64{3, 4})
 		require.NoError(t, err)
-		refs := wf.GetMetricRefs()
+		refs, ignoredFields := wf.GetMetricRefs()
 
 		expectedRefs := []sdata.TimeSeriesMetricRef{
 			{
@@ -208,6 +208,8 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 				TimeField:  data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}),
 			},
 		}
+
+		require.Empty(t, ignoredFields) // TODO more specific []x{} vs nil
 
 		if diff := cmp.Diff(expectedRefs, refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
@@ -227,7 +229,7 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 			),
 		}
 
-		refs := ls.GetMetricRefs()
+		refs, ignoredFields := ls.GetMetricRefs()
 
 		expectedRefs := []sdata.TimeSeriesMetricRef{
 			{
@@ -247,6 +249,8 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 				TimeField:  data.NewField("time", nil, []time.Time{time.UnixMilli(1)}),
 			},
 		}
+
+		require.Empty(t, ignoredFields) // TODO more specific []x{} vs nil
 
 		if diff := cmp.Diff(expectedRefs, refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n", diff)
