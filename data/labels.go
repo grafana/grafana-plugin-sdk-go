@@ -2,7 +2,6 @@ package data
 
 import (
 	"fmt"
-	"regexp"
 	"sort"
 	"strings"
 )
@@ -83,15 +82,19 @@ func LabelsFromString(s string) (Labels, error) {
 		if len(kV) != 2 {
 			return nil, fmt.Errorf(`invalid label key=value pair "%v"`, rawKV)
 		}
-		// exclude special characters from labels
-		// but what if key or value has special chars in it?
-		re, err := regexp.Compile(`[^\w]`)
-		if err != nil {
-			return nil, err
+
+		key := strings.TrimSpace(kV[0])
+		// delete leading {
+		key = strings.Replace(kV[0], "{", "", 1)
+		value := strings.TrimSpace(kV[1])
+		// clean quotation marks e.g `{group="canary"}`
+		value = strings.ReplaceAll(value, "\"", "")
+		// delete trailing }
+		i := strings.LastIndex(value, "}")
+		if i > -1 {
+			value = value[:i] + strings.Replace(value[i:], "}", "", 1)
 		}
-		// delete special characters
-		key := re.ReplaceAllString(kV[0], "")
-		value := re.ReplaceAllString(kV[1], "")
+
 		labels[key] = value
 	}
 

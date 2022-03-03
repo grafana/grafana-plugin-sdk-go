@@ -37,9 +37,11 @@ func TestString(t *testing.T) {
 	a := data.Labels{"job": "prometheus", "group": "canary"}
 	result := a.String()
 	require.Equal(t, result, "group=canary, job=prometheus")
-	b := data.Labels{"region": "xyz", "location": "us-midwest"}
-	result1 := b.String()
-	require.Equal(t, result1, "location=us-midwest, region=xyz")
+	b := `{group="canary", job=prometheus}`
+	res, err := data.LabelsFromString(b)
+	require.NoError(t, err)
+	result1 := res.String()
+	require.Equal(t, result1, "group=canary, job=prometheus")
 }
 
 func TestLabelsFromString(t *testing.T) {
