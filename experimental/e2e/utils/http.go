@@ -3,7 +3,6 @@ package utils
 import (
 	"bytes"
 	"crypto/tls"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -15,7 +14,7 @@ import (
 // ReadRequestBody reads the request body without closing the req.Body.
 func ReadRequestBody(r *http.Request) ([]byte, error) {
 	if r.Body == nil {
-		return nil, errors.New("response body is nil")
+		return []byte{}, nil
 	}
 	body, err := io.ReadAll(r.Body)
 	if err != nil {
