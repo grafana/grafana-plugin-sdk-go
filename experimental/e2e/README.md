@@ -244,37 +244,39 @@ func CustomE2E() error {
 		return err
 	}
 
-	var store storage.Storage
-	if cfg.Storage[0] == nil || cfg.Storage[0].Type == config.StorageTypeHAR {
-		har := storage.NewHARStorage(cfg.Storage[0].Path)
-		if err := har.Load(); err != nil {
-			har.Init()
+	fixtures := make([]*fixture.Fixture, 0)
+	for _, s := range cfg.Storage {
+		if s.Type == config.StorageTypeHAR {
+			continue
 		}
-		store = har
+
+		store := storage.NewHARStorage(s.Path)
+		f := fixture.NewFixture(store)
+
+		// modify incoming requests
+		f.WithRequestProcessor(func(req *http.Request) *http.Request {
+			req.URL.Host = "example.com"
+			req.URL.Path = "/hello/world"
+			return req
+		})
+
+		// modify incoming responses
+		f.WithResponseProcessor(func(res *http.Response) *http.Response {
+			res.StatusCode = http.StatusNotFound
+			res.Header = http.Header{}
+			res.Body = ioutil.NopCloser(bytes.NewBufferString("Not found"))
+			return res
+		})
+
+		// modify matching behavior
+		f.WithMatcher(func(a, b *http.Request) bool {
+			return true
+		})
+
+		fixtures = append(fixtures, fixture.NewFixture(store))
 	}
-	f := fixture.NewFixture(store)
 
-	// modify incoming requests
-	f.WithRequestProcessor(func(req *http.Request) *http.Request {
-		req.URL.Host = "example.com"
-		req.URL.Path = "/hello/world"
-		return req
-	})
-
-	// modify incoming responses
-	f.WithResponseProcessor(func(res *http.Response) *http.Response {
-		res.StatusCode = http.StatusNotFound
-		res.Header = http.Header{}
-		res.Body = ioutil.NopCloser(bytes.NewBufferString("Not found"))
-		return res
-	})
-
-	// modify matching behavior
-	f.WithMatcher(func(a, b *http.Request) bool {
-		return true
-	})
-
-	proxy := e2e.NewProxy(e2e.ProxyModeAppend, []*fixture.Fixture{f}, cfg)
+	proxy := e2e.NewProxy(e2e.ProxyModeAppend, fixtures, cfg)
 	return proxy.Start()
 }
 ```

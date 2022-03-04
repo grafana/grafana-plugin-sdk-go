@@ -1,4 +1,4 @@
-package http_logger
+package httplogger
 
 import (
 	"bytes"
@@ -8,7 +8,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
@@ -21,44 +20,42 @@ const (
 	PluginHARLogPathEnv = "GF_PLUGIN_HAR_LOG_PATH"
 )
 
-type HttpLogger struct {
-	enabled bool
-	proxied http.RoundTripper
-	fixture *fixture.Fixture
+// HTTPLogger is a http.RoundTripper that logs requests and responses in HAR format.
+type HTTPLogger struct {
+	pluginID string
+	enabled  func() bool
+	proxied  http.RoundTripper
+	fixture  *fixture.Fixture
 }
 
-func NewHTTPLogger(pluginID string, proxied http.RoundTripper) *HttpLogger {
-	if pluginID == "" {
-		panic("pluginID cannot be empty")
-	}
-
-	path, ok := os.LookupEnv(PluginHARLogPathEnv)
-	if !ok {
-		path = createTemp(pluginID)
-	}
-
-	enabled := false
-	if v, ok := os.LookupEnv(PluginHARLogEnabledEnv); ok && v == "true" {
-		backend.Logger.Info("HTTP HAR Logging enabled", "pluginID", pluginID, "path", path)
-		enabled = true
-	}
-
+// NewHTTPLogger creates a new HTTPLogger.
+func NewHTTPLogger(pluginID string, proxied http.RoundTripper) *HTTPLogger {
+	path := defaultPath(pluginID)
 	s := storage.NewHARStorage(path)
-	if err := s.Load(); err != nil {
-		s.Init()
-	}
-
 	f := fixture.NewFixture(s)
 
-	return &HttpLogger{
-		proxied: proxied,
-		fixture: f,
-		enabled: enabled,
+	return &HTTPLogger{
+		pluginID: pluginID,
+		proxied:  proxied,
+		fixture:  f,
+		enabled:  defaultEnabledCheck,
 	}
 }
 
-func (hl *HttpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
-	if !hl.enabled {
+// WithPath sets the path to store HAR file.
+func (hl *HTTPLogger) WithPath(path string) {
+	s := storage.NewHARStorage(path)
+	hl.fixture = fixture.NewFixture(s)
+}
+
+// WithEnabledCheck sets the function used to check if HTTP logging is enabled.
+func (hl *HTTPLogger) WithEnabledCheck(fn func() bool) {
+	hl.enabled = fn
+}
+
+// RoundTrip implements the http.RoundTripper interface.
+func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
+	if !hl.enabled() {
 		return hl.proxied.RoundTrip(req)
 	}
 
@@ -89,6 +86,20 @@ func (hl *HttpLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 	err = hl.fixture.Save()
 
 	return res, err
+}
+
+func defaultPath(pluginID string) string {
+	if path, ok := os.LookupEnv(PluginHARLogPathEnv); ok {
+		return path
+	}
+	return createTemp(pluginID)
+}
+
+func defaultEnabledCheck() bool {
+	if v, ok := os.LookupEnv(PluginHARLogEnabledEnv); ok && v == "true" {
+		return true
+	}
+	return true
 }
 
 func createTemp(pluginID string) string {

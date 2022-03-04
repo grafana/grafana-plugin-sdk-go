@@ -35,6 +35,7 @@ func NewHARStorage(path string) *HARStorage {
 		currentTime: time.Now,
 		newUUID:     newUUID,
 	}
+	storage.Init()
 	return storage
 }
 
@@ -51,6 +52,9 @@ func (s *HARStorage) WithUUIDOverride(fn func() string) {
 }
 
 func (s *HARStorage) Init() {
+	if err := s.Load(); err == nil {
+		return
+	}
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	s.har.Log = &har.Log{
