@@ -12,9 +12,8 @@ HTTP logger, the workflow would look like this:
 1. The user shares the HAR file with the data source developer, along with a dashboard JSON that contains the queries used to reproduce the bug.
 1. The data source developer uses the E2E proxy in replay mode to replay the HTTP traffic recorded by the HTTP logger.
 
-![User's envrionment](user.png)
-
-![Developer debugging](local.png)
+| ![User's envrionment](user.png)  |  ![Developer debugging](local.png) |
+|---|---|
 
 ## Enabling the HTTP Logger
 
