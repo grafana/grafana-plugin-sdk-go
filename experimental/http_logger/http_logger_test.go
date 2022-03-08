@@ -56,10 +56,15 @@ func setup(enabled bool) (*http.Client, *os.File) {
 	if err != nil {
 		panic(err)
 	}
-	h := httplogger.
-		NewHTTPLogger("example-plugin-id", &fakeRoundTripper{}).
-		WithPath(f.Name()).
-		WithEnabledCheck(func() bool { return enabled })
+
+	if enabled {
+		os.Setenv(httplogger.PluginHARLogEnabledEnv, "true")
+		os.Setenv(httplogger.PluginHARLogPathEnv, f.Name())
+	} else {
+		os.Setenv(httplogger.PluginHARLogEnabledEnv, "false")
+	}
+
+	h := httplogger.NewHTTPLogger("example-plugin-id", &fakeRoundTripper{})
 
 	return &http.Client{
 		Transport: h,
