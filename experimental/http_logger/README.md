@@ -101,7 +101,7 @@ Since HAR files are actually JSON files, the user can edit the responses in a te
 
 ## Local Debugging
 
-Follow the E2E proxy's [Quick Setup](../README.md#quick-setup) instructions to configure the proxy to replay the recorded traffic.
+Follow the E2E proxy's [Quick Setup](../e2e/README.md#quick-setup) instructions to configure the proxy to replay the recorded traffic.
 
 Make sure specify the path to the HAR file that the user shared in the `proxy.json` file:
 
