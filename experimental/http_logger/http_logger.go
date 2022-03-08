@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
@@ -94,7 +95,7 @@ func defaultPath(pluginID string) string {
 	if path, ok := os.LookupEnv(PluginHARLogPathEnv); ok {
 		return path
 	}
-	return createTemp(pluginID)
+	return getTempFilePath(pluginID)
 }
 
 func defaultEnabledCheck() bool {
@@ -104,10 +105,7 @@ func defaultEnabledCheck() bool {
 	return false
 }
 
-func createTemp(pluginID string) string {
-	f, err := os.CreateTemp("", fmt.Sprintf("%s_%d_*.har", pluginID, time.Now().Unix()))
-	if err != nil {
-		panic("failed to create temporary file for HAR logging")
-	}
-	return f.Name()
+func getTempFilePath(pluginID string) string {
+	filename := fmt.Sprintf("%s_%d.har", pluginID, time.Now().UnixMilli())
+	return path.Join(os.TempDir(), filename)
 }
