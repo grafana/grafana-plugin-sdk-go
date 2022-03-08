@@ -1,0 +1,75 @@
+package httplogger_test
+
+import (
+	"bytes"
+	"errors"
+	"io/ioutil"
+	"net/http"
+	"os"
+	"testing"
+	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
+	httplogger "github.com/grafana/grafana-plugin-sdk-go/experimental/http_logger"
+	"github.com/stretchr/testify/require"
+)
+
+func TestHTTPLogger(t *testing.T) {
+	t.Run("saved file should match example", func(t *testing.T) {
+		c, f := setup(true)
+		res, err := c.Get("http://example.com")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, res.StatusCode)
+		b, err := ioutil.ReadAll(res.Body)
+		require.NoError(t, err)
+		require.Equal(t, "OK", string(b))
+		expected := storage.NewHARStorage("testdata/example.har")
+		actual := storage.NewHARStorage(f.Name())
+		require.Equal(t, 1, len(actual.Entries()))
+		require.Equal(t, expected.Entries()[0].Request, actual.Entries()[0].Request)
+		require.Equal(t, expected.Entries()[0].Response, actual.Entries()[0].Response)
+		har, err := ioutil.ReadFile(f.Name())
+		require.NoError(t, err)
+		require.Greater(t, len(har), 0)
+	})
+
+	t.Run("file should not be created by storage if http logging is disabled", func(t *testing.T) {
+		c, f := setup(false)
+		res, err := c.Get("http://example.com")
+		require.NoError(t, err)
+		require.Equal(t, http.StatusOK, res.StatusCode)
+		b, err := ioutil.ReadAll(res.Body)
+		require.NoError(t, err)
+		require.Equal(t, "OK", string(b))
+		actual := storage.NewHARStorage(f.Name())
+		require.Equal(t, 0, len(actual.Entries()))
+		_, err = os.Stat(f.Name())
+		require.Equal(t, true, errors.Is(err, os.ErrNotExist))
+	})
+}
+
+func setup(enabled bool) (*http.Client, *os.File) {
+	f, err := os.CreateTemp("", "example_*.har")
+	defer os.Remove(f.Name())
+	if err != nil {
+		panic(err)
+	}
+	h := httplogger.
+		NewHTTPLogger("example-plugin-id", &fakeRoundTripper{}).
+		WithPath(f.Name()).
+		WithEnabledCheck(func() bool { return enabled })
+
+	return &http.Client{
+		Transport: h,
+		Timeout:   time.Second * 30,
+	}, f
+}
+
+type fakeRoundTripper struct{}
+
+func (hl *fakeRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Body:       ioutil.NopCloser(bytes.NewBufferString("OK")),
+	}, nil
+}

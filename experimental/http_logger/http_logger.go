@@ -43,14 +43,16 @@ func NewHTTPLogger(pluginID string, proxied http.RoundTripper) *HTTPLogger {
 }
 
 // WithPath sets the path to store HAR file.
-func (hl *HTTPLogger) WithPath(path string) {
+func (hl *HTTPLogger) WithPath(path string) *HTTPLogger {
 	s := storage.NewHARStorage(path)
 	hl.fixture = fixture.NewFixture(s)
+	return hl
 }
 
 // WithEnabledCheck sets the function used to check if HTTP logging is enabled.
-func (hl *HTTPLogger) WithEnabledCheck(fn func() bool) {
+func (hl *HTTPLogger) WithEnabledCheck(fn func() bool) *HTTPLogger {
 	hl.enabled = fn
+	return hl
 }
 
 // RoundTrip implements the http.RoundTripper interface.
@@ -99,7 +101,7 @@ func defaultEnabledCheck() bool {
 	if v, ok := os.LookupEnv(PluginHARLogEnabledEnv); ok && v == "true" {
 		return true
 	}
-	return true
+	return false
 }
 
 func createTemp(pluginID string) string {
