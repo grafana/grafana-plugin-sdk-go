@@ -17,7 +17,7 @@ type LongSeries struct {
 	// or: we get rid of property, and the ds must turn the bool into a number, otherwise it is a dimension
 }
 
-func (ls *LongSeries) Validate() (isEmpty bool, errors []error) {
+func (ls *LongSeries) Validate() (isEmpty bool, ignoredFields []FrameFieldIndex, errors []error) {
 	panic("not implemented")
 }
 

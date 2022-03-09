@@ -2,27 +2,9 @@ package sdata
 
 import (
 	"sort"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
-
-// Less sure about this interface.
-// Also, probably would need to make a type with methods that wrap the interface so methods can be added
-// without breaking changes - if we even want an interface like this
-// But for now helps illustrate at least
-type TimeSeriesCollectionWriter interface {
-	// TODO: This should _not_ be an interface since the behavior of Wide vs Long
-	// in terms of usage is different even though the signature is the same.
-	AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error
-	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
-	// AddField Possible TODO - If we accept certain extra information to be valid but outside the series
-}
-
-type TimeSeriesCollection interface {
-	TimeSeriesCollectionReader
-	TimeSeriesCollectionWriter
-}
 
 type TimeSeriesCollectionReader interface {
 	Validate() (isEmpty bool, ignoredFieldIndices []FrameFieldIndex, errors []error)

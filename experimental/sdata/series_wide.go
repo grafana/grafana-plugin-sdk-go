@@ -12,58 +12,43 @@ type WideFrameSeries struct {
 	*data.Frame
 }
 
-func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
+func NewWideFrameSeries(timeName string, t []time.Time) WideFrameSeries {
+	tF := data.NewField(timeName, nil, t)
+	f := data.NewFrame("", tF)
+	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
+	return WideFrameSeries{f}
+}
+
+func (wf WideFrameSeries) AddMetric(metricName string, l data.Labels, values interface{}) error {
 	if !data.ValidFieldType(values) {
 		return fmt.Errorf("type %T is not a valid data frame field type", values)
 	}
 
-	tFieldIndex := -1
-	var timeIndicies []int
-
-	if wf.Frame != nil {
-		timeIndicies = wf.Frame.TypeIndices(data.FieldTypeTime)
+	if wf.Frame == nil {
+		return fmt.Errorf("missing frame, NewWideFrameSeries must be called first")
 	}
 
-	if len(timeIndicies) != 0 {
-		tFieldIndex = timeIndicies[0]
-	}
-
-	if t == nil && tFieldIndex == -1 {
-		return fmt.Errorf("must provide time field when adding first metric")
-	}
-
-	if t != nil && tFieldIndex > -1 {
-		return fmt.Errorf("time field must only be provided once")
+	if len(wf.Frame.Fields) == 0 || wf.Frame.Fields[0].Type() != data.FieldTypeTime {
+		return fmt.Errorf("frame is missing time field or time field is not first, NewWideFrameSeries must be called first")
 	}
 
 	valueField := data.NewField(metricName, l, values)
-	var timeField *data.Field
-	if t != nil {
-		timeField = data.NewField("time", nil, t)
-	} else {
-		timeField = wf.Frame.Fields[tFieldIndex]
+
+	if valueField.Len() != wf.Frame.Fields[0].Len() {
+		return fmt.Errorf("value field length must match time field length, but got length %v for time and %v for values",
+			wf.Frame.Fields[0].Len(), valueField.Len())
 	}
 
-	if valueField.Len() != timeField.Len() {
-		return fmt.Errorf("value field length must match time field length, but gots length %v for time and %v for values",
-			timeField.Len(), valueField.Len())
-	}
-
-	if t != nil {
-		wf.Frame = data.NewFrame("", timeField, valueField)
-		wf.Frame.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
-	} else {
-		wf.Fields = append(wf.Fields, valueField)
-	}
+	wf.Fields = append(wf.Fields, valueField)
 
 	return nil
 }
 
-func (wf *WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
+func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
 	refs := []TimeSeriesMetricRef{}
 	var ignoredFields []FrameFieldIndex
 
-	if wf == nil || wf.Frame == nil {
+	if wf.Frame == nil {
 		return nil, nil
 	}
 

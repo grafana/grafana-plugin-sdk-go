@@ -9,9 +9,74 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestPlayGround(t *testing.T) {
-	var mfs sdata.MultiFrameSeries
-	mfs.AddMetric("os.cpu", data.Labels{"host": "a"}, []time.Time{time.Unix(1234567890, 0)}, []float64{3})
+func TestSeriesCollectionReaderInterface(t *testing.T) {
+	timeSlice := []time.Time{time.Unix(1234567890, 0), time.Unix(1234567891, 0)}
+
+	metricName := "os.cpu"
+	valuesA := []float64{1, 2}
+	valuesB := []float64{3, 4}
+
+	// refs should be same across the formats
+	expectedRefs := []sdata.TimeSeriesMetricRef{
+		{
+			data.NewField("time", nil, timeSlice),
+			data.NewField(metricName, data.Labels{"host": "a"}, valuesA),
+		},
+		{
+			data.NewField("time", nil, timeSlice),
+			data.NewField(metricName, data.Labels{"host": "b"}, valuesB),
+		},
+	}
+
+	t.Run("multi frame", func(t *testing.T) {
+		sc := sdata.MultiFrameSeries{}
+
+		err := sc.AddMetric(metricName, data.Labels{"host": "a"}, timeSlice, valuesA)
+		require.NoError(t, err)
+
+		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, timeSlice, valuesB)
+		require.NoError(t, err)
+
+		var r sdata.TimeSeriesCollectionReader = &sc
+
+		mFrameRefs, extraFields := r.GetMetricRefs()
+		require.Nil(t, extraFields)
+		require.Equal(t, expectedRefs, mFrameRefs)
+	})
+
+	t.Run("wide frame", func(t *testing.T) {
+		sc := sdata.NewWideFrameSeries("time", timeSlice)
+		err := sc.AddMetric(metricName, data.Labels{"host": "a"}, valuesA)
+		require.NoError(t, err)
+
+		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, valuesB)
+		require.NoError(t, err)
+
+		var r sdata.TimeSeriesCollectionReader = &sc
+
+		mFrameRefs, extraFields := r.GetMetricRefs()
+		require.Nil(t, extraFields)
+		require.Equal(t, expectedRefs, mFrameRefs)
+	})
+
+	t.Run("long frame", func(t *testing.T) {
+		ls := &sdata.LongSeries{
+			Frame: data.NewFrame("",
+				data.NewField("time", nil, []time.Time{timeSlice[0], timeSlice[0],
+					timeSlice[1], timeSlice[1]}),
+				data.NewField("os.cpu", nil, []float64{valuesA[0], valuesB[0],
+					valuesA[1], valuesB[1]}),
+				data.NewField("host", nil, []string{"a", "b", "a", "b"}),
+			).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
+		}
+
+		var r sdata.TimeSeriesCollectionReader = ls
+
+		mFrameRefs, extraFields := r.GetMetricRefs()
+
+		require.Nil(t, extraFields)
+		require.Equal(t, expectedRefs, mFrameRefs)
+	})
 }
 
 func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
@@ -21,41 +86,4 @@ func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
 func addFields(frame *data.Frame, fields ...*data.Field) *data.Frame {
 	frame.Fields = append(frame.Fields, fields...)
 	return frame
-}
-
-func TestReaderWriterInterface_SharedTime(t *testing.T) {
-	timeSlice := []time.Time{time.Unix(1234567890, 0), time.Unix(1234567891, 0)}
-
-	addMetrics := func(c sdata.TimeSeriesCollectionWriter, rErr require.ErrorAssertionFunc) {
-		err := c.AddMetric("os.cpu", data.Labels{"host": "a"}, timeSlice, []float64{1, 2})
-		require.NoError(t, err)
-		err = c.AddMetric("os.cpu", data.Labels{"host": "b"}, timeSlice, []float64{3, 4})
-		rErr(t, err)
-	}
-
-	// refs should be same across the formats
-	expectedRefs := []sdata.TimeSeriesMetricRef{
-		{
-			data.NewField("time", nil, timeSlice),
-			data.NewField("os.cpu", data.Labels{"host": "a"}, []float64{1, 2}),
-		},
-		{
-			data.NewField("time", nil, timeSlice),
-			data.NewField("os.cpu", data.Labels{"host": "b"}, []float64{3, 4}),
-		},
-	}
-
-	t.Run("multi frame", func(t *testing.T) {
-		var mFrameTSC sdata.TimeSeriesCollection = &sdata.MultiFrameSeries{}
-		addMetrics(mFrameTSC, require.NoError)
-
-		mFrameRefs, extraFields := mFrameTSC.GetMetricRefs()
-		require.Nil(t, extraFields)
-		require.Equal(t, expectedRefs, mFrameRefs)
-	})
-
-	t.Run("wide frame", func(t *testing.T) {
-		var mFrameTSC sdata.TimeSeriesCollection = &sdata.WideFrameSeries{}
-		addMetrics(mFrameTSC, require.Error)
-	})
 }
