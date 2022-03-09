@@ -226,7 +226,7 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 				data.NewField("iface", nil, []string{"eth0", "eth0"}),
 				data.NewField("in_bytes", nil, []float64{1, 2}),
 				data.NewField("out_bytes", nil, []int64{3, 4}),
-			),
+			).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
 		}
 
 		refs, ignoredFields := ls.GetMetricRefs()

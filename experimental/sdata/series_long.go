@@ -8,7 +8,7 @@ import (
 
 // LongSeries is only a TimeSeriesCollectionReader (not a Writer) .. for now.
 // for now because, maybe we do want methods for creation, but they would hold
-// the orginal table format, so really it would be validation and adding the meta
+// the original table format, so really it would be validation and adding the meta
 // property
 type LongSeries struct {
 	*data.Frame
@@ -23,18 +23,41 @@ func (ls *LongSeries) Validate() (isEmpty bool, errors []error) {
 
 func (ls *LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
 	if ls == nil || ls.Frame == nil || ls.Fields == nil {
-		return []TimeSeriesMetricRef{}, nil // TODO I think I added some meaning for nil vs empty in another... func
+		return nil, nil // TODO I think I added some meaning for nil vs empty in another... func
 	}
-	// metricName/labels -> SeriesRef
-	mm := make(map[string]map[string]TimeSeriesMetricRef)
 
 	var ignoredFields []FrameFieldIndex
-
 	ignoreAllFields := func() {
 		for fieldIdx := range ls.Fields {
 			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
 		}
 	}
+
+	if ls.Frame.Meta == nil || ls.Frame.Meta.Type != data.FrameTypeTimeSeriesLong {
+		ignoreAllFields()
+		return nil, ignoredFields
+	}
+
+	// metricName/labels -> SeriesRef
+	mm := make(map[string]map[string]TimeSeriesMetricRef)
+
+	timeFields := ls.TypeIndices(data.FieldTypeTime)
+	valueFieldIndicies := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
+
+	if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
+		ignoreAllFields()
+		return []TimeSeriesMetricRef{}, ignoredFields
+	}
+
+	timeField := ls.Fields[timeFields[0]]
+
+	if len(timeFields) > 1 {
+		for _, fieldIdx := range timeFields[1:] {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+		}
+	}
+
+	factorFieldIndicies := ls.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
 
 	refs := []TimeSeriesMetricRef{}
 	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) {
@@ -60,24 +83,6 @@ func (ls *LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex)
 			ref.ValueField.Append(value)
 		}
 	}
-
-	timeFields := ls.TypeIndices(data.FieldTypeTime)
-	valueFieldIndicies := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
-
-	if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
-		ignoreAllFields()
-		return []TimeSeriesMetricRef{}, ignoredFields
-	}
-
-	timeField := ls.Fields[timeFields[0]]
-
-	if len(timeFields) > 1 {
-		for _, fieldIdx := range timeFields[1:] {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
-		}
-	}
-
-	factorFieldIndicies := ls.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
 
 	for rowIdx := 0; rowIdx < ls.Rows(); rowIdx++ {
 		l := data.Labels{}
