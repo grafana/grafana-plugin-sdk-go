@@ -12,6 +12,8 @@ import (
 // without breaking changes - if we even want an interface like this
 // But for now helps illustrate at least
 type TimeSeriesCollectionWriter interface {
+	// TODO: This should _not_ be an interface since the behavior of Wide vs Long
+	// in terms of usage is different even though the signature is the same.
 	AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error
 	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
 	// AddField Possible TODO - If we accept certain extra information to be valid but outside the series
@@ -33,8 +35,8 @@ func ValidValueFields() []data.FieldType {
 
 // I am not sure about this but want to get the idea down
 type TimeSeriesMetricRef struct {
-	ValueField *data.Field
 	TimeField  *data.Field
+	ValueField *data.Field
 }
 
 func (m TimeSeriesMetricRef) GetMetricName() string {
