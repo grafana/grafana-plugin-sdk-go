@@ -88,6 +88,6 @@ func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data
 	panic("not implemented")
 }
 
-func (wf *WideFrameSeries) Validate() (isEmpty bool, ignoredFields []FrameFieldIndex, err []error) {
+func (wf *WideFrameSeries) Validate() (ignoredFields []FrameFieldIndex, err error) {
 	panic("not implemented")
 }

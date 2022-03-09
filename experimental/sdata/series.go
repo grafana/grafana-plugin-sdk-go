@@ -16,7 +16,7 @@ import (
 //   - Make sure that information is kept over wire
 
 type TimeSeriesCollectionReader interface {
-	Validate() (isEmpty bool, ignoredFieldIndices []FrameFieldIndex, errors []error)
+	Validate() (ignoredFieldIndices []FrameFieldIndex, err error)
 	GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex)
 }
 

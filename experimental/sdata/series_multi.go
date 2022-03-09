@@ -11,15 +11,25 @@ import (
 // or perhaps a container struct with non-exported fields (for indicies and such) and the Frames exported.
 type MultiFrameSeries []*data.Frame
 
+func NewMultiFrameSeries() *MultiFrameSeries {
+	return &MultiFrameSeries{
+		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
+	}
+}
+
 // values must be a numeric slice such as []int64, []float64, []*float64, etc or []bool / []*bool.
 func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
 	var err error
+
+	if mfs == nil || len(*mfs) == 0 {
+		return fmt.Errorf("zero frames when calling AddMetric must call NewMultiFrameSeries first") // panic? maybe?
+	}
 
 	if !data.ValidFieldType(values) {
 		return fmt.Errorf("type %T is not a valid data frame field type", values)
 	}
 
-	valueField := data.NewField(metricName, l, values) // note
+	valueField := data.NewField(metricName, l, values)
 	timeField := data.NewField("time", nil, t)
 
 	if valueField.Len() != timeField.Len() {
@@ -35,9 +45,13 @@ func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []tim
 		err = fmt.Errorf("value type %s is not valid time series value type", valueFieldType)
 	}
 
-	frame := data.NewFrame("", timeField, valueField)
-	frame.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesMany}) // I think "Multi" is better than "Many"
-	*mfs = append(*mfs, frame)
+	if len(*mfs) == 1 {
+		(*mfs)[0].Fields = append((*mfs)[0].Fields, timeField, valueField)
+	} else {
+		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany)
+		frame.Fields = append(frame.Fields, timeField, valueField)
+		*mfs = append(*mfs, frame)
+	}
 	return err
 }
 
@@ -127,18 +141,16 @@ func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFiel
 // Validates data conforms to schema, don't think it will be called normally in the course of running a plugin, but needs to exist.
 // Currently this is strict in the sense that consumers must support all valid instances. Consumers may support invalid instances
 // depending on the circumstances.
-func (mfs *MultiFrameSeries) Validate() (isEmpty bool, ignoredFieldIndices []FrameFieldIndex, errors []error) {
+func (mfs *MultiFrameSeries) Validate() (ignoredFieldIndices []FrameFieldIndex, err error) {
 	if mfs == nil || len(*mfs) == 0 {
-		// Unless we create a container (and expose it in our responses) that can hold the type(s) for the frames it contains,
-		// anything empty probably needs be considered "valid" for the type. Else we have a requirement to create at least one frame (eww).
-		return true, nil, nil
+		return nil, fmt.Errorf("must have at least one frame to be valid")
 	}
 
 	metricIndex := make(map[[2]string]struct{})
 
 	for frameIdx, frame := range *mfs {
 		if frame.Meta == nil || frame.Meta.Type != data.FrameTypeTimeSeriesMany {
-			errors = append(errors, fmt.Errorf("frame %v is missing type indicator in frame metadata", frameIdx))
+			return nil, fmt.Errorf("frame %v is missing type indicator in frame metadata", frameIdx)
 		}
 
 		if len(frame.Fields) == 0 {
@@ -147,65 +159,61 @@ func (mfs *MultiFrameSeries) Validate() (isEmpty bool, ignoredFieldIndices []Fra
 		}
 
 		if _, err := frame.RowLen(); err != nil {
-			errors = append(errors, fmt.Errorf("frame %v has mismatched field lengths: %w", frameIdx, err))
+			return nil, fmt.Errorf("frame %v has mismatched field lengths: %w", frameIdx, err)
 		}
 
 		timeFields := frame.TypeIndices(data.FieldTypeTime)
 
 		// Must have []time.Time field (no nullable time)
 		if len(timeFields) == 0 {
-			errors = append(errors, fmt.Errorf("frame %v must have at least one time field but has %v", frameIdx, len(timeFields)))
-		} else {
-			if len(timeFields) > 1 {
-				for _, fieldIdx := range timeFields[1:] {
-					ignoredFieldIndices = append(ignoredFieldIndices, FrameFieldIndex{frameIdx, fieldIdx})
-				}
-			}
+			return nil, fmt.Errorf("frame %v must have at least one time field but has %v", frameIdx, len(timeFields))
+		}
 
-			// Validate time Field is sorted in ascending (oldest to newest) order
-			timeField := frame.Fields[timeFields[0]]
-			if timeField.Len() > 1 {
-				for tIdx := 1; tIdx < timeField.Len(); tIdx++ {
-					prevTime := timeField.At(tIdx - 1).(time.Time)
-					curTime := timeField.At(tIdx).(time.Time)
-					if curTime.Before(prevTime) {
-						errors = append(errors, fmt.Errorf("frame %v has an unsorted time field", frameIdx))
-						break
-					}
-				}
-			}
-
-			valueFields := frame.TypeIndices(ValidValueFields()...)
-
-			if len(valueFields) == 0 {
-				errors = append(errors, fmt.Errorf("frame %v must have at least one value field but has %v", frameIdx, len(valueFields)))
-			} else {
-				if len(valueFields) > 1 {
-					for _, fieldIdx := range valueFields[1:] {
-						ignoredFieldIndices = append(ignoredFieldIndices, FrameFieldIndex{frameIdx, fieldIdx})
-					}
-				}
-				vField := frame.Fields[valueFields[0]]
-				metricKey := [2]string{vField.Name, vField.Labels.String()}
-				if _, ok := metricIndex[metricKey]; ok {
-					errors = append(errors, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels))
-				} else {
-					metricIndex[metricKey] = struct{}{}
-				}
-			}
-			// TODO this is fragile if new types are added
-			otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
-			for _, fieldIdx := range otherFields {
+		if len(timeFields) > 1 {
+			for _, fieldIdx := range timeFields[1:] {
 				ignoredFieldIndices = append(ignoredFieldIndices, FrameFieldIndex{frameIdx, fieldIdx})
 			}
 		}
-	}
 
-	if errors != nil {
-		ignoredFieldIndices = nil
+		// Validate time Field is sorted in ascending (oldest to newest) order
+		timeField := frame.Fields[timeFields[0]]
+		if timeField.Len() > 1 {
+			for tIdx := 1; tIdx < timeField.Len(); tIdx++ {
+				prevTime := timeField.At(tIdx - 1).(time.Time)
+				curTime := timeField.At(tIdx).(time.Time)
+				if curTime.Before(prevTime) {
+					return nil, fmt.Errorf("frame %v has an unsorted time field", frameIdx)
+				}
+			}
+		}
+
+		valueFields := frame.TypeIndices(ValidValueFields()...)
+
+		if len(valueFields) == 0 {
+			return nil, fmt.Errorf("frame %v must have at least one value field but has %v", frameIdx, len(valueFields))
+		} else {
+			if len(valueFields) > 1 {
+				for _, fieldIdx := range valueFields[1:] {
+					ignoredFieldIndices = append(ignoredFieldIndices, FrameFieldIndex{frameIdx, fieldIdx})
+				}
+			}
+			vField := frame.Fields[valueFields[0]]
+			metricKey := [2]string{vField.Name, vField.Labels.String()}
+
+			if _, ok := metricIndex[metricKey]; ok {
+				return nil, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
+			} else {
+				metricIndex[metricKey] = struct{}{}
+			}
+		}
+		// TODO this is fragile if new types are added
+		otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
+		for _, fieldIdx := range otherFields {
+			ignoredFieldIndices = append(ignoredFieldIndices, FrameFieldIndex{frameIdx, fieldIdx})
+		}
 	}
 
 	sort.Sort(FrameFieldIndices(ignoredFieldIndices))
 
-	return false, ignoredFieldIndices, errors
+	return ignoredFieldIndices, nil
 }

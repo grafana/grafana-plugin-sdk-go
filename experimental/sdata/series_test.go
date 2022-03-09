@@ -79,10 +79,6 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	})
 }
 
-func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
-	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t})
-}
-
 func addFields(frame *data.Frame, fields ...*data.Field) *data.Frame {
 	frame.Fields = append(frame.Fields, fields...)
 	return frame

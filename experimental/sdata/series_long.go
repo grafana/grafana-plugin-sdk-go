@@ -6,10 +6,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// LongSeries is only a TimeSeriesCollectionReader (not a Writer) .. for now.
-// for now because, maybe we do want methods for creation, but they would hold
-// the original table format, so really it would be validation and adding the meta
-// property
 type LongSeries struct {
 	*data.Frame
 	BoolAsMetric bool
@@ -17,7 +13,11 @@ type LongSeries struct {
 	// or: we get rid of property, and the ds must turn the bool into a number, otherwise it is a dimension
 }
 
-func (ls LongSeries) Validate() (isEmpty bool, ignoredFields []FrameFieldIndex, errors []error) {
+func NewLongSeries() LongSeries { // possible TODO: argument BoolAsMetric
+	return LongSeries{Frame: emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong)}
+}
+
+func (ls LongSeries) Validate() (ignoredFields []FrameFieldIndex, err error) {
 	panic("not implemented")
 }
 
