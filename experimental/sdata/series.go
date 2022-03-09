@@ -6,6 +6,15 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+// Notes on Defining Empty Responses and Empty Metrics
+//   - Typed "No Metrics" (Empty Response) == At least one Frame with type indicator with no fields
+//   - Typed "Empty Metric" == Fields Present of proper types, Zero Length fields
+// Need to think of how these map in Go Code -> Data frames (passing over the wire), and JS
+// For this Go code:
+//   - Make sure GetMetricRefs can capture "No Metrics" correctly and
+//       that is the default (e.g. add NewX funcs)
+//   - Make sure that information is kept over wire
+
 type TimeSeriesCollectionReader interface {
 	Validate() (isEmpty bool, ignoredFieldIndices []FrameFieldIndex, errors []error)
 	GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex)
