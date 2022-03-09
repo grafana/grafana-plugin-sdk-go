@@ -8,7 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// or perhaps a container struct with non-exported fields (for indicies and such) and the Frames exported.
+// or perhaps a container struct with non-exported fields (for indices and such) and the Frames exported.
 type MultiFrameSeries []*data.Frame
 
 func NewMultiFrameSeries() *MultiFrameSeries {
@@ -45,7 +45,7 @@ func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []tim
 		err = fmt.Errorf("value type %s is not valid time series value type", valueFieldType)
 	}
 
-	if len(*mfs) == 1 {
+	if len(*mfs) == 1 && len((*mfs)[0].Fields) == 0 { // update empty response placeholder frame
 		(*mfs)[0].Fields = append((*mfs)[0].Fields, timeField, valueField)
 	} else {
 		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany)
@@ -60,13 +60,19 @@ func (mfs *MultiFrameSeries) SetMetricMD(metricName string, l data.Labels, fc da
 }
 
 func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
-	// if no Frames we return nil (non-empty input but no series will be zero length)
 	if mfs == nil || len(*mfs) == 0 {
-		return nil, nil
+		return nil, nil // nil / nil == invalid
 	}
 
 	var ignoredFields []FrameFieldIndex
 	refs := []TimeSeriesMetricRef{}
+
+	if len(*mfs) == 1 {
+		f := (*mfs)[0]
+		if frameHasMetaType(f, data.FrameTypeTimeSeriesMany) && len(f.Fields) == 0 {
+			return refs, nil // non-nil empty slice / nil == valid "empty response"
+		}
+	}
 
 	for frameIdx, frame := range *mfs {
 		if frame == nil { // nil frames not valid
@@ -146,6 +152,13 @@ func (mfs *MultiFrameSeries) Validate() (ignoredFieldIndices []FrameFieldIndex, 
 		return nil, fmt.Errorf("must have at least one frame to be valid")
 	}
 
+	if len(*mfs) == 1 {
+		f := (*mfs)[0]
+		if frameHasMetaType(f, data.FrameTypeTimeSeriesMany) && len(f.Fields) == 0 {
+			return nil, nil
+		}
+	}
+
 	metricIndex := make(map[[2]string]struct{})
 
 	for frameIdx, frame := range *mfs {
@@ -154,7 +167,7 @@ func (mfs *MultiFrameSeries) Validate() (ignoredFieldIndices []FrameFieldIndex, 
 		}
 
 		if len(frame.Fields) == 0 {
-			// an individual frame with no fields is an empty series is valid.
+			ignoredFieldIndices = append(ignoredFieldIndices, FrameFieldIndex{frameIdx, -1})
 			continue
 		}
 
@@ -197,6 +210,7 @@ func (mfs *MultiFrameSeries) Validate() (ignoredFieldIndices []FrameFieldIndex, 
 					ignoredFieldIndices = append(ignoredFieldIndices, FrameFieldIndex{frameIdx, fieldIdx})
 				}
 			}
+
 			vField := frame.Fields[valueFields[0]]
 			metricKey := [2]string{vField.Name, vField.Labels.String()}
 

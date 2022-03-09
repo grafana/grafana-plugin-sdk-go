@@ -29,7 +29,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	}
 
 	t.Run("multi frame", func(t *testing.T) {
-		sc := sdata.MultiFrameSeries{}
+		sc := sdata.NewMultiFrameSeries()
 
 		err := sc.AddMetric(metricName, data.Labels{"host": "a"}, timeSlice, valuesA)
 		require.NoError(t, err)
@@ -37,7 +37,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, timeSlice, valuesB)
 		require.NoError(t, err)
 
-		var r sdata.TimeSeriesCollectionReader = &sc
+		var r sdata.TimeSeriesCollectionReader = sc
 
 		mFrameRefs, extraFields := r.GetMetricRefs()
 		require.Nil(t, extraFields)

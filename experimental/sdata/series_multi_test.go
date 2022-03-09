@@ -93,7 +93,7 @@ func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
 			errContains: "unsorted time",
 		},
 		{
-			name: "duplicate metrics as identified by name + labes are invalid",
+			name: "duplicate metrics as identified by name + labels are invalid",
 			mfs: &sdata.MultiFrameSeries{
 				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
 					data.NewField("os.cpu", data.Labels{"host": "a", "iface": "eth0"}, []float64{1, 2}),
