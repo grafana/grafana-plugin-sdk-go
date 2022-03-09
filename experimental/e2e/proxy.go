@@ -106,7 +106,7 @@ func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request,
 	}
 
 	for _, f := range p.Fixtures {
-		if _, res := f.Match(req); res != nil {
+		if res := f.Match(req); res != nil {
 			fmt.Println("Match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 			return req, res
 		}
@@ -121,7 +121,7 @@ func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response
 		return res
 	}
 	f := p.Fixtures[0]
-	if _, cached := f.Match(res.Request); cached != nil {
+	if cached := f.Match(res.Request); cached != nil {
 		return cached
 	}
 	f.Add(res.Request, res)
@@ -139,9 +139,8 @@ func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Respo
 		return res
 	}
 	f := p.Fixtures[0]
-	if id, cached := f.Match(res.Request); cached != nil {
-		fmt.Println("Removed existing match", "url:", cached.Request.URL.String(), "status:", cached.StatusCode)
-		f.Delete(id)
+	if f.Delete(res.Request) {
+		fmt.Println("Removed existing match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 	}
 	f.Add(res.Request, res)
 	err := f.Save()

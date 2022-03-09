@@ -11,8 +11,7 @@ import (
 
 type RequestProcessor func(req *http.Request) *http.Request
 type ResponseProcessor func(res *http.Response) *http.Response
-type Matcher func(a *http.Request, b *http.Request) bool
-
+type Matcher func(b *http.Request) *http.Response
 type Fixture struct {
 	processRequest  RequestProcessor
 	processResponse ResponseProcessor
@@ -25,7 +24,7 @@ func NewFixture(store storage.Storage) *Fixture {
 	return &Fixture{
 		processRequest:  DefaultProcessRequest,
 		processResponse: DefaultProcessResponse,
-		match:           DefaultMatcher,
+		match:           store.Match,
 		store:           store,
 	}
 }
@@ -39,8 +38,8 @@ func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) {
 }
 
 // Delete deletes the entry with the given ID from the Fixture's Storage.
-func (f *Fixture) Delete(id string) bool {
-	return f.store.Delete(id)
+func (f *Fixture) Delete(req *http.Request) bool {
+	return f.store.Delete(req)
 }
 
 // Entries returns the entries from the Fixture's Storage.
@@ -70,48 +69,12 @@ func (f *Fixture) WithMatcher(matcher Matcher) {
 }
 
 // Match compares incoming request to entries from the Fixture's Storage.
-func (f *Fixture) Match(originalReq *http.Request) (string, *http.Response) {
+func (f *Fixture) Match(originalReq *http.Request) *http.Response {
 	req := f.processRequest(originalReq)
-	for _, entry := range f.store.Entries() {
-		if f.match(entry.Request, req) {
-			return entry.ID, f.processResponse(entry.Response)
-		}
+	if res := f.match(req); res != nil {
+		return f.processResponse(res)
 	}
-	return "", nil
-}
-
-// DefaultMatcher is a default implementation of Matcher.
-// It compares the request method, url, headers, and body to the stored request.
-func DefaultMatcher(stored *http.Request, incoming *http.Request) bool {
-	if stored.Method != incoming.Method {
-		return false
-	}
-
-	if stored.URL.String() != incoming.URL.String() {
-		return false
-	}
-
-	for name := range stored.Header {
-		if stored.Header.Get(name) != incoming.Header.Get(name) {
-			return false
-		}
-	}
-
-	if stored.Body == nil && incoming.Body == nil {
-		return true
-	}
-
-	storedBody, err := utils.ReadRequestBody(stored)
-	if err != nil {
-		return false
-	}
-
-	incomingBody, err := utils.ReadRequestBody(incoming)
-	if err != nil {
-		return false
-	}
-
-	return bytes.Equal(storedBody, incomingBody)
+	return nil
 }
 
 // DefaultProcessRequest is a default implementation of ProcessRequest.

@@ -68,7 +68,7 @@ func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 	}
 
 	// skip saving if there's an existing entry for this request
-	if _, exists := hl.fixture.Match(req); exists != nil {
+	if exists := hl.fixture.Match(req); exists != nil {
 		return res, err
 	}
 

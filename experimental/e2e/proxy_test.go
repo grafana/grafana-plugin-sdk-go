@@ -11,7 +11,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
@@ -218,15 +217,15 @@ func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
 	resCopy := *res
 	resCopy.Body = ioutil.NopCloser(bytes.NewBuffer(resBody))
 	s.entries = append(s.entries, &storage.Entry{
-		ID:       uuid.New().String(),
 		Request:  req,
 		Response: &resCopy,
 	})
 }
 
-func (s *fakeStorage) Delete(id string) bool {
+func (s *fakeStorage) Delete(req *http.Request) bool {
 	for i, entry := range s.entries {
-		if entry.ID == id {
+		if res := entry.Match(req); res != nil {
+			res.Body.Close()
 			s.entries = append(s.entries[:i], s.entries[i+1:]...)
 			return true
 		}
@@ -239,7 +238,6 @@ func (s *fakeStorage) Load() error {
 	req, res := setupFixture()
 	defer res.Body.Close()
 	s.entries = append(s.entries, &storage.Entry{
-		ID:       uuid.New().String(),
 		Request:  req,
 		Response: res,
 	})
@@ -252,4 +250,13 @@ func (s *fakeStorage) Save() error {
 
 func (s *fakeStorage) Entries() []*storage.Entry {
 	return s.entries
+}
+
+func (s *fakeStorage) Match(req *http.Request) *http.Response {
+	for _, entry := range s.entries {
+		if res := entry.Match(req); res != nil {
+			return res
+		}
+	}
+	return nil
 }
