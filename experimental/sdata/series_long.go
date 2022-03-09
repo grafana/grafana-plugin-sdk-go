@@ -17,12 +17,12 @@ type LongSeries struct {
 	// or: we get rid of property, and the ds must turn the bool into a number, otherwise it is a dimension
 }
 
-func (ls *LongSeries) Validate() (isEmpty bool, ignoredFields []FrameFieldIndex, errors []error) {
+func (ls LongSeries) Validate() (isEmpty bool, ignoredFields []FrameFieldIndex, errors []error) {
 	panic("not implemented")
 }
 
-func (ls *LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
-	if ls == nil || ls.Frame == nil || ls.Fields == nil {
+func (ls LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
+	if ls.Frame == nil || ls.Fields == nil {
 		return nil, nil // TODO I think I added some meaning for nil vs empty in another... func
 	}
 
