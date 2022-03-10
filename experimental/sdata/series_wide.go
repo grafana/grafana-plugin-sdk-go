@@ -53,6 +53,9 @@ func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIn
 	}
 
 	ignoreAllFields := func() {
+		if len(wf.Fields) == 0 {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1})
+		}
 		for fieldIdx := range wf.Fields {
 			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
 		}

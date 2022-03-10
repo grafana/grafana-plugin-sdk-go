@@ -47,8 +47,8 @@ func (m TimeSeriesMetricRef) GetLabels() data.Labels {
 }
 
 type FrameFieldIndex struct {
-	FrameIdx int // -1 means nil Frame
-	FieldIdx int // -1 means no fields
+	FrameIdx int
+	FieldIdx int // -1 means no fields (Frame is nil or Fields are nil)
 }
 
 type FrameFieldIndices []FrameFieldIndex

@@ -65,22 +65,25 @@ func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFiel
 	}
 
 	var ignoredFields []FrameFieldIndex
-	refs := []TimeSeriesMetricRef{}
+	var refs []TimeSeriesMetricRef
 
 	if len(*mfs) == 1 {
 		f := (*mfs)[0]
 		if frameHasMetaType(f, data.FrameTypeTimeSeriesMany) && len(f.Fields) == 0 {
-			return refs, nil // non-nil empty slice / nil == valid "empty response"
+			return []TimeSeriesMetricRef{}, nil // non-nil empty slice / nil == valid "empty response"
 		}
 	}
 
 	for frameIdx, frame := range *mfs {
 		if frame == nil { // nil frames not valid
-			ignoredFields = append(ignoredFields, FrameFieldIndex{-1, -1})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, -1})
 			continue
 		}
 
 		ignoreAllFields := func() {
+			if len(frame.Fields) == 0 {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1})
+			}
 			for fieldIdx := range frame.Fields {
 				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
 			}
@@ -94,14 +97,8 @@ func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFiel
 		m := TimeSeriesMetricRef{}
 
 		if len(frame.Fields) == 0 {
-			if frameIdx == 0 && len(*mfs) == 1 {
-				// If Type indicator is there (checked earlier) then it is an empty typed response (no metrics in response)
-				// There should only be one
-				return refs, nil
-			} else {
-				ignoreAllFields()
-				continue
-			}
+			ignoreAllFields()
+			continue
 		}
 
 		valueFields := frame.TypeIndices(ValidValueFields()...)

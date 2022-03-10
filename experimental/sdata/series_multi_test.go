@@ -118,3 +118,66 @@ func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
 func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
 	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t})
 }
+
+func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
+	t.Run("empty response reads as zero length metric refs and nil ignoredFields", func(t *testing.T) {
+		s := sdata.NewMultiFrameSeries()
+
+		refs, ignoredFieldIndices := s.GetMetricRefs()
+
+		require.Nil(t, ignoredFieldIndices)
+		require.NotNil(t, refs)
+		require.Len(t, refs, 0)
+	})
+
+	t.Run("empty response frame with an additional valid frame is valid and the first frame is ignored (but please do not do it this way)", func(t *testing.T) {
+		s := sdata.NewMultiFrameSeries()
+
+		// (s.AddMetric) would alter the first frame which would be the "right thing" to do.
+		*s = append(*s, emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany))
+		(*s)[1].Fields = append((*s)[1].Fields,
+			data.NewField("time", nil, []time.Time{}),
+			data.NewField("cpu", nil, []float64{}),
+		)
+
+		refs, ignoredFieldIndices := s.GetMetricRefs()
+
+		require.Len(t, refs, 1)
+
+		require.Equal(t, []sdata.FrameFieldIndex{{0, -1}}, ignoredFieldIndices)
+		require.NotNil(t, refs)
+		require.Len(t, refs, 1)
+	})
+
+	t.Run("uninitalized frames returns nil refs and nil ignored", func(t *testing.T) {
+		s := sdata.MultiFrameSeries{}
+
+		refs, ignoredFieldIndices := s.GetMetricRefs()
+
+		require.Nil(t, ignoredFieldIndices)
+		require.Nil(t, refs)
+	})
+
+	t.Run("a nil frame (a nil entry in slice of frames (very odd)), is ignored and is not a valid empty response", func(t *testing.T) {
+		s := sdata.NewMultiFrameSeries()
+		*s = append(*s, nil)
+
+		refs, ignoredFieldIndices := s.GetMetricRefs()
+
+		require.Nil(t, refs)
+		require.Equal(t, []sdata.FrameFieldIndex{{0, -1}, {1, -1}}, ignoredFieldIndices)
+	})
+
+	t.Run("no type metadata means frame is ignored", func(t *testing.T) {
+		s := sdata.MultiFrameSeries{
+			data.NewFrame("",
+				data.NewField("", nil, []time.Time{}),
+				data.NewField("foo", nil, []float64{}),
+			)}
+
+		refs, ignoredFieldIndices := s.GetMetricRefs()
+
+		require.Nil(t, refs)
+		require.Equal(t, []sdata.FrameFieldIndex{{0, 0}, {0, 1}}, ignoredFieldIndices)
+	})
+}
