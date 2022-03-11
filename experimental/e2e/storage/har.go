@@ -276,7 +276,7 @@ func (s *HAR) findEntry(req *http.Request) (int, *Entry) {
 			return i, entry
 		}
 	}
-	return 0, nil
+	return -1, nil
 }
 
 func newUUID() string {
