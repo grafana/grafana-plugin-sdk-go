@@ -7,21 +7,29 @@ import (
 
 // Config is the configuration for the proxy.
 type Config struct {
-	Storage  []*StorageConfig `json:"storage"`
-	Address  string           `json:"address"`
-	Hosts    []string         `json:"hosts"`
-	CAConfig CAConfig         `json:"ca_keypair"`
+	// Storage is the storage configuration(s).
+	Storage []*StorageConfig `json:"storage"`
+	// Address is the address for the proxy server to listen on.
+	Address string `json:"address"`
+	// Hosts is a list of hosts that are allowed to be recorded and played back.
+	Hosts []string `json:"hosts"`
+	// CAConfig is the paths to the Certificate Authority key pair.
+	CAConfig CAConfig `json:"ca_keypair"`
 }
 
 // StorageConfig defines the storage configuration for the proxy.
 type StorageConfig struct {
+	// Type is the type of storage.
 	Type StorageType `json:"type"`
-	Path string      `json:"path"`
+	// Path is the path to the storage file (valid for HAR and OpenAPI).
+	Path string `json:"path"`
 }
 
-// CAConfig contains the keypair for the CA.
+// CAConfig is the paths to the Certificate Authority key pair.
 type CAConfig struct {
-	Cert       string `json:"cert"`
+	// Cert is the PEM encoded certificate.
+	Cert string `json:"cert"`
+	// PrivateKey is the PEM encoded private key.
 	PrivateKey string `json:"private_key"`
 }
 
@@ -31,6 +39,8 @@ type StorageType string
 const (
 	// StorageTypeHAR is the HAR file storage type.
 	StorageTypeHAR StorageType = "har"
+	// StorageTypeOpenAPI is the OpenAPI file storage type (JSON or YAML).
+	StorageTypeOpenAPI StorageType = "openapi"
 )
 
 // LoadConfig loads the configuration from a JSON file path.

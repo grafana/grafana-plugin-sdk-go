@@ -1,15 +1,16 @@
 package storage
 
 import (
+	"bytes"
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/getkin/kin-openapi/openapi3"
-	"github.com/getkin/kin-openapi/openapi3filter"
 	"github.com/getkin/kin-openapi/routers"
-
 	"github.com/getkin/kin-openapi/routers/gorillamux"
 )
 
@@ -20,11 +21,22 @@ type OpenAPI struct {
 	router routers.Router
 }
 
+// NewOpenAPIStorage creates a new OpenAPI storage.
+func NewOpenAPIStorage(path string) *OpenAPI {
+	o := &OpenAPI{
+		path: path,
+	}
+	if err := o.Load(); err != nil {
+		panic(err)
+	}
+	return o
+}
+
 // Add is a no-op for OpenAPI storage.
 func (o *OpenAPI) Add(*http.Request, *http.Response) {}
 
 // Delete is a no-op for OpenAPI storage.
-func (o *OpenAPI) Delete(string) bool {
+func (o *OpenAPI) Delete(*http.Request) bool {
 	return true
 }
 
@@ -35,6 +47,7 @@ func (o *OpenAPI) Load() error {
 	if err != nil {
 		return err
 	}
+	spec.Servers = openapi3.Servers{{URL: "/"}}
 	router, err := gorillamux.NewRouter(spec)
 	if err != nil {
 		return err
@@ -72,7 +85,9 @@ func (o *OpenAPI) Match(req *http.Request) *http.Response {
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Header:     make(http.Header),
+		Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
 	}
+	res.Request = req
 
 	for _, v := range response.Headers {
 		header := v.Value
@@ -84,25 +99,31 @@ func (o *OpenAPI) Match(req *http.Request) *http.Response {
 	}
 
 	content := response.Content.Get(strings.Split(res.Header.Get("Accept"), ",")[0])
-	if content == nil {
-		return res
+	if content == nil || content.Schema == nil {
+		for _, c := range response.Content {
+			content = c
+			break
+		}
+	}
+
+	example := content.Example
+	if example == nil {
+		for _, c := range content.Examples {
+			example = c.Value
+			break
+		}
+	}
+
+	if body, err := json.Marshal(example); err == nil {
+		res.Body = ioutil.NopCloser(bytes.NewReader(body))
 	}
 
 	return res
 }
 
 func (o *OpenAPI) getRoute(req *http.Request) *openapi3.Operation {
-	route, pathParams, err := o.router.FindRoute(req)
+	route, _, err := o.router.FindRoute(req)
 	if err != nil {
-		return nil
-	}
-
-	requestValidationInput := &openapi3filter.RequestValidationInput{
-		Request:    req,
-		PathParams: pathParams,
-		Route:      route,
-	}
-	if err := openapi3filter.ValidateRequest(req.Context(), requestValidationInput); err != nil {
 		return nil
 	}
 
@@ -111,7 +132,7 @@ func (o *OpenAPI) getRoute(req *http.Request) *openapi3.Operation {
 
 func (o *OpenAPI) getResponse(op *openapi3.Operation) (int, *openapi3.Response) {
 	defaultRef := op.Responses.Default()
-	fallbackStatus := http.StatusOK
+	fallbackStatus := http.StatusNotFound
 	fallbackRef := defaultRef
 
 	for k, r := range op.Responses {
@@ -124,10 +145,9 @@ func (o *OpenAPI) getResponse(op *openapi3.Operation) (int, *openapi3.Response) 
 			return s, r.Value
 		}
 
-		if fallbackRef == nil && s < 300 {
+		if fallbackStatus > s && s < 300 {
 			fallbackRef = r
 			fallbackStatus = s
-			break
 		}
 	}
 

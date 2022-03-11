@@ -273,8 +273,12 @@ func e2eProxy(mode e2e.ProxyMode) error {
 	}
 	fixtures := make([]*fixture.Fixture, 0)
 	for _, s := range cfg.Storage {
-		if s.Type == config.StorageTypeHAR {
+		switch s.Type {
+		case config.StorageTypeHAR:
 			store := storage.NewHARStorage(s.Path)
+			fixtures = append(fixtures, fixture.NewFixture(store))
+		case config.StorageTypeOpenAPI:
+			store := storage.NewOpenAPIStorage(s.Path)
 			fixtures = append(fixtures, fixture.NewFixture(store))
 		}
 	}
