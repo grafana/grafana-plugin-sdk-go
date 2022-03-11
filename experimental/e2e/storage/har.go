@@ -221,14 +221,11 @@ func (s *HAR) Entries() []*Entry {
 
 // Delete removes the HAR entry matching the given Request.
 func (s *HAR) Delete(req *http.Request) bool {
-	for i, e := range s.Entries() {
-		if res := e.Match(req); res != nil {
-			defer res.Body.Close()
-			s.lock.Lock()
-			defer s.lock.Unlock()
-			s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
-			return true
-		}
+	if i, entry := s.findEntry(req); entry != nil {
+		s.lock.Lock()
+		s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
+		s.lock.Unlock()
+		return true
 	}
 	return false
 }
@@ -260,15 +257,26 @@ func (s *HAR) Load() error {
 }
 
 // Match returns the stored http.Response for the given request.
-func (s *HAR) Match(incoming *http.Request) *http.Response {
+func (s *HAR) Match(req *http.Request) *http.Response {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
-	for _, e := range s.Entries() {
-		if res := e.Match(incoming); res != nil {
-			return res
-		}
+	if _, entry := s.findEntry(req); entry != nil {
+		return entry.Response
 	}
 	return nil
+}
+
+// findEntry returns them matching entry index and entry for the given request.
+func (s *HAR) findEntry(req *http.Request) (int, *Entry) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	for i, entry := range s.Entries() {
+		if res := entry.Match(req); res != nil {
+			res.Body.Close()
+			return i, entry
+		}
+	}
+	return 0, nil
 }
 
 func newUUID() string {

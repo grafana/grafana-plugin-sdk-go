@@ -100,6 +100,7 @@ func (o *OpenAPI) Match(req *http.Request) *http.Response {
 
 	content := response.Content.Get(strings.Split(res.Header.Get("Accept"), ",")[0])
 	if content == nil || content.Schema == nil {
+		// get the first content in the map
 		for _, c := range response.Content {
 			content = c
 			break
@@ -108,6 +109,7 @@ func (o *OpenAPI) Match(req *http.Request) *http.Response {
 
 	example := content.Example
 	if example == nil {
+		// get the first example in the map
 		for _, c := range content.Examples {
 			example = c.Value
 			break

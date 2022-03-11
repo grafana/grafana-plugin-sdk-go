@@ -121,8 +121,8 @@ func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response
 		return res
 	}
 	f := p.Fixtures[0]
-	if cached := f.Match(res.Request); cached != nil {
-		return cached
+	if matched := f.Match(res.Request); matched != nil {
+		return matched
 	}
 	f.Add(res.Request, res)
 	err := f.Save()
