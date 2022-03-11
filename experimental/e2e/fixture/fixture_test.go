@@ -8,7 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/google/uuid"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 	"github.com/stretchr/testify/require"
@@ -75,16 +74,12 @@ func TestFixtureAdd(t *testing.T) {
 }
 
 func TestFixtureMatch(t *testing.T) {
-	t.Run("should match request and return request ID and response", func(t *testing.T) {
+	t.Run("should match request and return response", func(t *testing.T) {
 		store := newFakeStorage()
 		_ = store.Load()
 		f := fixture.NewFixture(store)
-		f.WithMatcher(func(a, b *http.Request) bool {
-			return true
-		})
-		id, res := f.Match(store.entries[0].Request)
+		res := f.Match(store.entries[0].Request)
 		defer res.Body.Close()
-		require.Equal(t, store.entries[0].ID, id)
 		require.Equal(t, 200, res.StatusCode)
 	})
 
@@ -92,11 +87,10 @@ func TestFixtureMatch(t *testing.T) {
 		store := newFakeStorage()
 		_ = store.Load()
 		f := fixture.NewFixture(store)
-		f.WithMatcher(func(a, b *http.Request) bool {
-			return false
+		f.WithMatcher(func(res *http.Request) *http.Response {
+			return nil
 		})
-		id, res := f.Match(store.entries[0].Request) // nolint:bodyclose
-		require.Equal(t, "", id)
+		res := f.Match(store.entries[0].Request) // nolint:bodyclose
 		require.Nil(t, res)
 	})
 
@@ -107,7 +101,7 @@ func TestFixtureMatch(t *testing.T) {
 			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
 			defer resp.Body.Close()
-			_, res := f.Match(req)
+			res := f.Match(req)
 			defer res.Body.Close()
 			require.NotNil(t, res)
 		})
@@ -119,7 +113,7 @@ func TestFixtureMatch(t *testing.T) {
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Method = "PUT"
-			_, res := f.Match(req) //nolint:bodyclose
+			res := f.Match(req) //nolint:bodyclose
 			require.Nil(t, res)
 		})
 
@@ -130,7 +124,7 @@ func TestFixtureMatch(t *testing.T) {
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.URL.Path = "/foo"
-			_, res := f.Match(req) //nolint:bodyclose
+			res := f.Match(req) //nolint:bodyclose
 			require.Nil(t, res)
 		})
 
@@ -141,7 +135,7 @@ func TestFixtureMatch(t *testing.T) {
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Header.Set("Content-Type", "plain/text")
-			_, res := f.Match(req) //nolint:bodyclose
+			res := f.Match(req) //nolint:bodyclose
 			require.Nil(t, res)
 		})
 
@@ -152,7 +146,7 @@ func TestFixtureMatch(t *testing.T) {
 			req, resp := setupFixture()
 			defer resp.Body.Close()
 			req.Body = ioutil.NopCloser(bytes.NewBufferString("foo"))
-			_, res := f.Match(req) // nolint:bodyclose
+			res := f.Match(req) // nolint:bodyclose
 			require.Nil(t, res)
 		})
 	})
@@ -180,7 +174,7 @@ func TestFixtureDelete(t *testing.T) {
 		_ = store.Load()
 		f := fixture.NewFixture(store)
 		require.Equal(t, 1, len(f.Entries()))
-		f.Delete(f.Entries()[0].ID)
+		f.Delete(f.Entries()[0].Request)
 		require.Equal(t, 0, len(f.Entries()))
 	})
 }
@@ -220,15 +214,15 @@ func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
 	resCopy := *res
 	resCopy.Body = ioutil.NopCloser(bytes.NewBuffer(resBody))
 	s.entries = append(s.entries, &storage.Entry{
-		ID:       uuid.New().String(),
 		Request:  req,
 		Response: &resCopy,
 	})
 }
 
-func (s *fakeStorage) Delete(id string) bool {
-	for i, entry := range s.entries {
-		if entry.ID == id {
+func (s *fakeStorage) Delete(req *http.Request) bool {
+	for i, entry := range s.Entries() {
+		if res := entry.Match(req); res != nil {
+			res.Body.Close()
 			s.entries = append(s.entries[:i], s.entries[i+1:]...)
 			return true
 		}
@@ -241,7 +235,6 @@ func (s *fakeStorage) Load() error {
 	req, res := setupFixture()
 	defer res.Body.Close()
 	s.entries = append(s.entries, &storage.Entry{
-		ID:       uuid.New().String(),
 		Request:  req,
 		Response: res,
 	})
@@ -254,4 +247,13 @@ func (s *fakeStorage) Save() error {
 
 func (s *fakeStorage) Entries() []*storage.Entry {
 	return s.entries
+}
+
+func (s *fakeStorage) Match(req *http.Request) *http.Response {
+	for _, entry := range s.entries {
+		if res := entry.Match(req); res != nil {
+			return res
+		}
+	}
+	return nil
 }

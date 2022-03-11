@@ -131,6 +131,19 @@ Default:
 }]
 ```
 
+OpenAPI documentation is also supported as a storage type:
+
+```json
+[{
+	"type": "openapi",
+	"path": "fixtures/openapi.yml"
+}]
+```
+
+Limitations:
+* The documentation must include examples for each supported endpoint
+* [Replay mode](#replay-mode) is the only supported mode for OpenAPI documentation
+
 In certain situations it can be useful to replay responses from multiple data sources.
 ```json
 [
@@ -146,6 +159,7 @@ In certain situations it can be useful to replay responses from multiple data so
 ```
 
 **Note:** Multiple storage configurations are only supported in replay mode.
+
 ### ca_keypair
 
 An object used define paths to a custom CA certificate and private key in PEM format. By default, the bundled [certificate](certificate_authority/grafana-e2e-ca.pem) and [private key](certificate_authority/grafana-e2e-ca.key.pem) are used. For more information about generating a custom self-signed CA certificate, see the [Certificate Authority Key Pair Generation](certificate_authority/README.md) documentation.
@@ -200,8 +214,7 @@ This command prints the CA certificate to stdout so that it can be added to the 
 mage e2e:certificate
 ```
 
-If you wish to provide a custom CA certificate and private key, see the [ca_keypair](#ca_keypair) section above. If configured,
-this command will print the custom CA certificate to stdout.
+If you wish to provide a custom CA certificate and private key, see the [ca_keypair](#ca_keypair) section above. If configured, this command will print the custom CA certificate to stdout.
 
 ## Reviewing Recorded Traffic
 
@@ -260,17 +273,22 @@ func CustomE2E() error {
 			return req
 		})
 
-		// modify incoming responses
+		// modify outgoing responses
 		f.WithResponseProcessor(func(res *http.Response) *http.Response {
-			res.StatusCode = http.StatusNotFound
-			res.Header = http.Header{}
-			res.Body = ioutil.NopCloser(bytes.NewBufferString("Not found"))
+			res.Header.Set("X-Custom-Header", "custom-value")
 			return res
 		})
 
 		// modify matching behavior
-		f.WithMatcher(func(a, b *http.Request) bool {
-			return true
+		f.WithMatcher(func(req *http.Request) *http.Response {
+			if req.URL.Path == "/hello/world" {
+				return &http.Response{
+					StatusCode: http.StatusNotFound,
+					Header:     http.Header{},
+					Body:       ioutil.NopCloser(bytes.NewBufferString("Not found")),
+				}
+			}
+			return nil
 		})
 
 		fixtures = append(fixtures, fixture.NewFixture(store))
@@ -295,6 +313,7 @@ HTTP/1.1 404 Not Found
 Date: Mon, 21 Feb 2022 20:27:52 GMT
 Content-Length: 9
 Content-Type: text/plain; charset=utf-8
+X-Custom-Header: custom-value
 
 Not found
 ```

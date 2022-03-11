@@ -18,8 +18,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
 )
 
-// HARStorage is a Storage implementation that stores requests and responses in HAR format on disk.
-type HARStorage struct {
+// HAR is a Storage implementation that stores requests and responses in HAR format on disk.
+type HAR struct {
 	lock        sync.RWMutex
 	path        string
 	har         *har.HAR
@@ -28,8 +28,8 @@ type HARStorage struct {
 }
 
 // NewHARStorage creates a new HARStorage.
-func NewHARStorage(path string) *HARStorage {
-	storage := &HARStorage{
+func NewHARStorage(path string) *HAR {
+	storage := &HAR{
 		path:        path,
 		har:         &har.HAR{},
 		currentTime: time.Now,
@@ -40,18 +40,18 @@ func NewHARStorage(path string) *HARStorage {
 }
 
 // WithCurrentTimeOverride replaces the default s.currentTime() with the given function.
-func (s *HARStorage) WithCurrentTimeOverride(fn func() time.Time) {
+func (s *HAR) WithCurrentTimeOverride(fn func() time.Time) {
 	s.currentTime = fn
 	s.Init()
 }
 
 // WithUUIDOverride replaces the default s.newUUID() with the given function.
-func (s *HARStorage) WithUUIDOverride(fn func() string) {
+func (s *HAR) WithUUIDOverride(fn func() string) {
 	s.newUUID = fn
 	s.Init()
 }
 
-func (s *HARStorage) Init() {
+func (s *HAR) Init() {
 	if err := s.Load(); err == nil {
 		return
 	}
@@ -74,7 +74,7 @@ func (s *HARStorage) Init() {
 }
 
 // Add converts the http.Request and http.Response to a har.Entry and adds it to the Fixture.
-func (s *HARStorage) Add(req *http.Request, res *http.Response) {
+func (s *HAR) Add(req *http.Request, res *http.Response) {
 	var (
 		err     error
 		reqBody []byte
@@ -167,11 +167,11 @@ func (s *HARStorage) Add(req *http.Request, res *http.Response) {
 }
 
 // Entries converts HAR entries to a slice of Entry (http.Request and http.Response pairs).
-func (s *HARStorage) Entries() []*Entry {
-	entries := make([]*Entry, len(s.har.Log.Entries))
+func (s *HAR) Entries() []*Entry {
 	s.lock.RLock()
 	defer s.lock.RUnlock()
 
+	entries := make([]*Entry, len(s.har.Log.Entries))
 	for i, e := range s.har.Log.Entries {
 		postData := ""
 		if e.Request.PostData != nil {
@@ -206,14 +206,11 @@ func (s *HARStorage) Entries() []*Entry {
 		}
 
 		// use the HAR entry's comment field to store the ID of the entry
-		id := e.Comment
-		if id == "" {
-			id = s.newUUID()
-			e.Comment = id
+		if e.Comment == "" {
+			e.Comment = newUUID()
 		}
 
 		entries[i] = &Entry{
-			ID:       id,
 			Request:  req,
 			Response: res,
 		}
@@ -222,21 +219,19 @@ func (s *HARStorage) Entries() []*Entry {
 	return entries
 }
 
-// Delete removes the HAR entry with the given ID.
-func (s *HARStorage) Delete(id string) bool {
-	s.lock.Lock()
-	defer s.lock.Unlock()
-	for i, e := range s.har.Log.Entries {
-		if e.Comment == id {
-			s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
-			return true
-		}
+// Delete removes the HAR entry matching the given Request.
+func (s *HAR) Delete(req *http.Request) bool {
+	if i, entry := s.findEntry(req); entry != nil {
+		s.lock.Lock()
+		s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
+		s.lock.Unlock()
+		return true
 	}
 	return false
 }
 
 // Save writes the HAR to disk.
-func (s *HARStorage) Save() error {
+func (s *HAR) Save() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	err := os.MkdirAll(filepath.Dir(s.path), os.ModePerm)
@@ -251,7 +246,7 @@ func (s *HARStorage) Save() error {
 }
 
 // Load reads the HAR from disk.
-func (s *HARStorage) Load() error {
+func (s *HAR) Load() error {
 	s.lock.Lock()
 	defer s.lock.Unlock()
 	raw, err := ioutil.ReadFile(s.path)
@@ -259,6 +254,29 @@ func (s *HARStorage) Load() error {
 		return err
 	}
 	return s.har.UnmarshalJSON(raw)
+}
+
+// Match returns the stored http.Response for the given request.
+func (s *HAR) Match(req *http.Request) *http.Response {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	if _, entry := s.findEntry(req); entry != nil {
+		return entry.Response
+	}
+	return nil
+}
+
+// findEntry returns them matching entry index and entry for the given request.
+func (s *HAR) findEntry(req *http.Request) (int, *Entry) {
+	s.lock.RLock()
+	defer s.lock.RUnlock()
+	for i, entry := range s.Entries() {
+		if res := entry.Match(req); res != nil {
+			res.Body.Close()
+			return i, entry
+		}
+	}
+	return -1, nil
 }
 
 func newUUID() string {
