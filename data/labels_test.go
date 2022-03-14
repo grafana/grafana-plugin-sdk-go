@@ -7,8 +7,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-type Labels map[string]string
-
 // Equals returns true if the argument has the same k=v pairs as the receiver.
 func TestEquals(t *testing.T) {
 	a := data.Labels{"aLabelKey": "aLabelValue"}
