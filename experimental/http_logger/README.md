@@ -33,57 +33,43 @@ In the example above, `grafana-github-datasource` is the plugin ID, which can be
 the data source plugin's HTTP client. For example, if the plugin's current HTTP client looks like this:
 
 ```go
-client := &http.Client{
-		Transport: &http.Transport{
-			TLSClientConfig: &tls.Config{
-				Renegotiation:      tls.RenegotiateFreelyAsClient,
-				InsecureSkipVerify: settings.TLSSkipVerify,
-			},
-			Proxy: http.ProxyFromEnvironment,
-			Dial: (&net.Dialer{
-				Timeout:   30 * time.Second,
-				KeepAlive: 30 * time.Second,
-				DualStack: true,
-			}).Dial,
-			TLSHandshakeTimeout:   10 * time.Second,
-			ExpectContinueTimeout: 1 * time.Second,
-			MaxIdleConns:          100,
-			IdleConnTimeout:       90 * time.Second,
-		},
-		Timeout: time.Second * 30,
-		Transport: hl,
-		Timeout:   time.Second * 30,
-	},
+package client
+
+import (
+	"net/http"
+
+ 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+)
+
+func getClient() (*http.Client, error) {
+  return httpclient.New()
 }
 ```
 
-Then, the `HTTPLogger` can be added by wrapping the existing `http.Transport` like this:
+Then, the `HTTPLogger` can be added by wrapping the existing `client.Transport`:
 
 ```go
-transport := &http.Transport{
-	TLSClientConfig: &tls.Config{
-		Renegotiation:      tls.RenegotiateFreelyAsClient,
-		InsecureSkipVerify: settings.TLSSkipVerify,
-	},
-	Proxy: http.ProxyFromEnvironment,
-	Dial: (&net.Dialer{
-		Timeout:   30 * time.Second,
-		KeepAlive: 30 * time.Second,
-		DualStack: true,
-	}).Dial,
-	TLSHandshakeTimeout:   10 * time.Second,
-	ExpectContinueTimeout: 1 * time.Second,
-	MaxIdleConns:          100,
-	IdleConnTimeout:       90 * time.Second,
-}
-h := http_logger.NewHTTPLogger("grafana-github-datasource", transport)
-client := &http.Client{
-	Transport: h,
-	Timeout:   time.Second * 30,
+package client
+
+import (
+	"net/http"
+
+ 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	httplogger "github.com/grafana/grafana-plugin-sdk-go/experimental/http_logger"
+)
+
+func getClient() (*http.Client, error) {
+	client, err := httpclient.New()
+	if err != nil {
+		return nil, err
+	}
+	h := http_logger.NewHTTPLogger("grafana-example-datasource", client.Transport)
+	client.Transport = h
+	return client, nil
 }
 ```
 
-In the example above, `grafana-github-datasource` is the plugin ID, which should match the `id` property in the `src/plugin.json` file.
+In the example above, `grafana-example-datasource` is the plugin ID, which should match the `id` property in the `src/plugin.json` file.
 
 ## Redacting Sensitive Information
 
