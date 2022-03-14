@@ -78,22 +78,15 @@ func LabelsFromString(s string) (Labels, error) {
 	labels := make(map[string]string)
 
 	for _, rawKV := range strings.Split(s, ", ") {
-		kV := strings.SplitN(rawKV, "=", 2)
+		f := func(c rune) bool {
+			return c == '=' || c == '}' || c == '"' || c == '{'
+		}
+		kV := strings.FieldsFunc(rawKV, f)
 		if len(kV) != 2 {
 			return nil, fmt.Errorf(`invalid label key=value pair "%v"`, rawKV)
 		}
-
-		key := strings.TrimSpace(kV[0])
-		// delete leading {
-		key = strings.Replace(kV[0], "{", "", 1)
-		value := strings.TrimSpace(kV[1])
-		// clean quotation marks e.g `{group="canary"}`
-		value = strings.ReplaceAll(value, "\"", "")
-		// delete trailing }
-		i := strings.LastIndex(value, "}")
-		if i > -1 {
-			value = value[:i] + strings.Replace(value[i:], "}", "", 1)
-		}
+		key := kV[0]
+		value := kV[1]
 
 		labels[key] = value
 	}
