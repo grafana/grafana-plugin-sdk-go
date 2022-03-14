@@ -30,7 +30,7 @@ require (
 require (
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
 	github.com/elazarl/goproxy v0.0.0-20220115173737-adb46da277ac
-	github.com/getkin/kin-openapi v0.91.0
+	github.com/getkin/kin-openapi v0.92.0
 	github.com/google/uuid v1.3.0
 )
 
