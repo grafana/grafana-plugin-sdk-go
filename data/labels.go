@@ -71,16 +71,18 @@ func (l Labels) String() string {
 
 // LabelsFromString parses the output of Labels.String() into
 // a Labels object. It probably has some flaws.
+// This should accommodate different styles of input like prometheus, influx
 func LabelsFromString(s string) (Labels, error) {
 	if s == "" {
 		return nil, nil
 	}
 	labels := make(map[string]string)
-
+	f := func(c rune) bool {
+		return c == '=' || c == '}' || c == '"' || c == '{'
+	}
 	for _, rawKV := range strings.Split(s, ", ") {
-		f := func(c rune) bool {
-			return c == '=' || c == '}' || c == '"' || c == '{'
-		}
+		// split kv string by = and delete {} and ""
+		// e.g {group="canary"} => ["group" "canary"]
 		kV := strings.FieldsFunc(rawKV, f)
 		if len(kV) != 2 {
 			return nil, fmt.Errorf(`invalid label key=value pair "%v"`, rawKV)
