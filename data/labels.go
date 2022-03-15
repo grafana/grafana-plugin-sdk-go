@@ -44,8 +44,9 @@ func (l Labels) Contains(arg Labels) bool {
 	return true
 }
 
+// String() turns labels into string, and will sort the kv pairs by keys
+// e.g. Labels{"b":"valueB", "a": "valueA"} -> {"a=valueA, b=valueB"}
 func (l Labels) String() string {
-	// Better structure, should be sorted, copy prom probably
 	keys := make([]string, len(l))
 	i := 0
 	for k := range l {
@@ -69,9 +70,9 @@ func (l Labels) String() string {
 	return sb.String()
 }
 
-// LabelsFromString parses the output of Labels.String() into
-// a Labels object. It probably has some flaws.
-// This should accommodate different styles of input like prometheus, influx
+// LabelsFromString() parses string into a Label object.
+// Input string needs to follow the k=v convention,
+// e.g. `{service="users-directory"}` or "method=GET"
 func LabelsFromString(s string) (Labels, error) {
 	if s == "" {
 		return nil, nil
@@ -82,7 +83,7 @@ func LabelsFromString(s string) (Labels, error) {
 	}
 	for _, rawKV := range strings.Split(s, ", ") {
 		// split kv string by = and delete {} and ""
-		// e.g {group="canary"} => ["group" "canary"]
+		// e.g {group="canary"} -> ["group" "canary"]
 		kV := strings.FieldsFunc(rawKV, f)
 		if len(kV) != 2 {
 			return nil, fmt.Errorf(`invalid label key=value pair "%v"`, rawKV)
