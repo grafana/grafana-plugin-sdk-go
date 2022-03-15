@@ -52,12 +52,12 @@ func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIn
 		return nil, nil
 	}
 
-	ignoreAllFields := func() {
+	ignoreAllFields := func(reason string) {
 		if len(wf.Fields) == 0 {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1, reason})
 		}
 		for fieldIdx := range wf.Fields {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, reason})
 		}
 	}
 
@@ -65,7 +65,7 @@ func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIn
 	valueFieldIndicies := wf.TypeIndices(ValidValueFields()...)
 
 	if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
-		ignoreAllFields()
+		ignoreAllFields("TODO")
 		return refs, ignoredFields
 	}
 
@@ -73,7 +73,7 @@ func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIn
 
 	if len(timeFields) > 1 {
 		for _, fieldIdx := range timeFields[1:] {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, "TODO"})
 		}
 	}
 

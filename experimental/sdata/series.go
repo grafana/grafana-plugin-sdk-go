@@ -16,6 +16,11 @@ import (
 //   - Make sure that information is kept over wire
 
 type TimeSeriesCollectionReader interface {
+	// TODO: Split Validate into ValidateSchema and ValidateData (or something like this).
+	// The difference being if reads the contents of fields for validity. Which is mainly
+	// "is time sorted?". Although perhaps duplicate labels as well (they exist on field header),
+	// but are data and not metadata.
+	// ValidateSchema will check
 	Validate() (ignoredFieldIndices []FrameFieldIndex, err error)
 	GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex)
 }
@@ -48,7 +53,8 @@ func (m TimeSeriesMetricRef) GetLabels() data.Labels {
 
 type FrameFieldIndex struct {
 	FrameIdx int
-	FieldIdx int // -1 means no fields (Frame is nil or Fields are nil)
+	FieldIdx int    // -1 means no fields (Frame is nil or Fields are nil)
+	Reason   string // only meant for human consumption
 }
 
 type FrameFieldIndices []FrameFieldIndex
