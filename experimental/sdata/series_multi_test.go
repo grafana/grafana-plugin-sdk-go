@@ -1,6 +1,7 @@
 package sdata_test
 
 import (
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -28,17 +29,18 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 			mfs: func() *sdata.MultiFrameSeries {
 				s := sdata.NewMultiFrameSeries()
 				s.AddMetric("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
+
 				(*s)[0].Fields = append((*s)[0].Fields, data.NewField("a", nil, []float64{2, 3}))
 				(*s)[0].Fields = append((*s)[0].Fields, data.NewField("a", nil, []string{"4", "cats"}))
 				return s
 			},
-			ignoredFieldIndices: []sdata.FrameFieldIndex{{0, 2}, {0, 3}},
+			ignoredFieldIndices: []sdata.FrameFieldIndex{{0, 2, "additional numeric value field"}, {0, 3, "unsupported field type []string"}},
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ignoredFieldIndices, err := tt.mfs().Validate()
+			ignoredFieldIndices, err := tt.mfs().Validate(true)
 			require.Nil(t, err)
 			require.Equal(t, tt.ignoredFieldIndices, ignoredFieldIndices)
 		})
@@ -56,7 +58,7 @@ func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
 			mfs: &sdata.MultiFrameSeries{
 				data.NewFrame(""),
 			},
-			errContains: "missing type indicator",
+			errContains: "missing a type indicator",
 		},
 		{
 			name: "frame with only value field is not valid, missing time field",
@@ -108,8 +110,8 @@ func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ignoredFieldIndices, err := tt.mfs.Validate()
-			require.True(t, strings.Contains(err.Error(), tt.errContains))
+			ignoredFieldIndices, err := tt.mfs.Validate(true)
+			require.True(t, strings.Contains(err.Error(), tt.errContains), fmt.Sprintf("error '%v' does not contain '%v'", err.Error(), tt.errContains))
 			require.Nil(t, ignoredFieldIndices)
 		})
 	}
@@ -144,7 +146,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 
 		require.Len(t, refs, 1)
 
-		require.Equal(t, []sdata.FrameFieldIndex{{0, -1}}, ignoredFieldIndices)
+		require.Equal(t, []sdata.FrameFieldIndex{{0, -1, ""}}, ignoredFieldIndices)
 		require.NotNil(t, refs)
 		require.Len(t, refs, 1)
 	})
@@ -165,7 +167,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 		refs, ignoredFieldIndices := s.GetMetricRefs()
 
 		require.Nil(t, refs)
-		require.Equal(t, []sdata.FrameFieldIndex{{0, -1}, {1, -1}}, ignoredFieldIndices)
+		require.Equal(t, []sdata.FrameFieldIndex{{0, -1, ""}, {1, -1, ""}}, ignoredFieldIndices)
 	})
 
 	t.Run("no type metadata means frame is ignored", func(t *testing.T) {
@@ -178,6 +180,6 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 		refs, ignoredFieldIndices := s.GetMetricRefs()
 
 		require.Nil(t, refs)
-		require.Equal(t, []sdata.FrameFieldIndex{{0, 0}, {0, 1}}, ignoredFieldIndices)
+		require.Equal(t, []sdata.FrameFieldIndex{{0, 0, ""}, {0, 1, ""}}, ignoredFieldIndices)
 	})
 }

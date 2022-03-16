@@ -21,7 +21,7 @@ type TimeSeriesCollectionReader interface {
 	// "is time sorted?". Although perhaps duplicate labels as well (they exist on field header),
 	// but are data and not metadata.
 	// ValidateSchema will check
-	Validate() (ignoredFieldIndices []FrameFieldIndex, err error)
+	Validate(validateData bool) (ignoredFieldIndices []FrameFieldIndex, err error)
 	GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex)
 }
 
@@ -33,6 +33,8 @@ func ValidValueFields() []data.FieldType {
 type TimeSeriesMetricRef struct {
 	TimeField  *data.Field
 	ValueField *data.Field
+	// TODO: RefID string
+	// TODO: Pointer to frame meta?
 }
 
 func (m TimeSeriesMetricRef) GetMetricName() string {

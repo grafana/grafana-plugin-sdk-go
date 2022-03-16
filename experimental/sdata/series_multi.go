@@ -76,28 +76,28 @@ func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFiel
 
 	for frameIdx, frame := range *mfs {
 		if frame == nil { // nil frames not valid
-			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, -1})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, -1, "TODO"})
 			continue
 		}
 
-		ignoreAllFields := func() {
+		ignoreAllFields := func(reason string) {
 			if len(frame.Fields) == 0 {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1})
+				ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1, reason})
 			}
 			for fieldIdx := range frame.Fields {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, reason})
 			}
 		}
 
 		if !frameHasMetaType(frame, data.FrameTypeTimeSeriesMany) { // must have type indicator
-			ignoreAllFields()
+			ignoreAllFields("TODO")
 			continue
 		}
 
 		m := TimeSeriesMetricRef{}
 
 		if len(frame.Fields) == 0 {
-			ignoreAllFields()
+			ignoreAllFields("TODO")
 			continue
 		}
 
@@ -105,7 +105,7 @@ func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFiel
 		timeFields := frame.TypeIndices(data.FieldTypeTime)
 
 		if len(valueFields) == 0 || len(timeFields) == 0 {
-			ignoreAllFields()
+			ignoreAllFields("TODO")
 			continue
 		}
 
@@ -115,7 +115,7 @@ func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFiel
 		} else {
 			m.TimeField = frame.Fields[timeFields[0]]
 			for _, fieldIdx := range timeFields[1:] {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "TODO"})
 			}
 		}
 		// Value Field
@@ -124,14 +124,14 @@ func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFiel
 		} else {
 			m.ValueField = frame.Fields[valueFields[0]]
 			for _, fieldIdx := range timeFields[1:] {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "TODO"})
 			}
 		}
 
 		// TODO this is fragile if new types are added
 		otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
 		for _, fieldIdx := range otherFields {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "TODO"})
 		}
 
 		refs = append(refs, m)
@@ -172,12 +172,13 @@ func (mfs *MultiFrameSeries) Validate(validateData bool) (ignoredFields []FrameF
 	if len(*mfs) == 1 { // empty typed response (single frame, with type indicator, and no fields)
 		f := (*mfs)[0]
 		if f == nil {
-			return nil, fmt.Errorf("frame %v is nil which is not valid")
+			return nil, fmt.Errorf("frame 0 is nil which is not valid")
 		}
-		if frameHasMetaType(f, data.FrameTypeTimeSeriesMany) && len(f.Fields) == 0 {
-			return nil, nil
-		} else {
+		if !frameHasMetaType(f, data.FrameTypeTimeSeriesMany) {
 			return nil, fmt.Errorf("single frame response is missing a type indicator")
+		}
+		if len(f.Fields) == 0 {
+			return nil, nil
 		}
 	}
 
@@ -185,7 +186,7 @@ func (mfs *MultiFrameSeries) Validate(validateData bool) (ignoredFields []FrameF
 
 	for frameIdx, frame := range *mfs {
 		if frame == nil {
-			return nil, fmt.Errorf("frame %v is nil which is not valid")
+			return nil, fmt.Errorf("frame %v is nil which is not valid", frameIdx)
 		}
 
 		ignoreAllFields := func(reason string) {
@@ -196,7 +197,7 @@ func (mfs *MultiFrameSeries) Validate(validateData bool) (ignoredFields []FrameF
 
 		if frame.Meta == nil || frame.Meta.Type != data.FrameTypeTimeSeriesMany {
 			if frameIdx == 0 {
-				return nil, fmt.Errorf("first frame must have the many/multi type indicator in frame metadata", frameIdx)
+				return nil, fmt.Errorf("first frame must have the many/multi type indicator in frame metadata")
 			}
 			ignoreAllFields("no type indicator in frame or metadata is not type many/multi")
 			continue
@@ -204,7 +205,7 @@ func (mfs *MultiFrameSeries) Validate(validateData bool) (ignoredFields []FrameF
 
 		if len(frame.Fields) == 0 { // note: single frame with no fields is acceptable, but is returned before this
 			if frameIdx == 0 {
-				return nil, fmt.Errorf("first frame must have non-zero fields if not the only frame", frameIdx)
+				return nil, fmt.Errorf("first frame must have non-zero fields if not the only frame")
 			}
 			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, -1, "frame has no fields and is not the only frame"})
 			continue
@@ -250,24 +251,27 @@ func (mfs *MultiFrameSeries) Validate(validateData bool) (ignoredFields []FrameF
 		} else {
 			if len(valueFields) > 1 {
 				for _, fieldIdx := range valueFields[1:] {
-					ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+					ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "additional numeric value field"})
 				}
 			}
 
 			vField := frame.Fields[valueFields[0]]
 			metricKey := [2]string{vField.Name, vField.Labels.String()}
 
-			if _, ok := metricIndex[metricKey]; ok {
+			if _, ok := metricIndex[metricKey]; ok && validateData {
 				return nil, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
-			} else {
-				metricIndex[metricKey] = struct{}{}
 			}
+			metricIndex[metricKey] = struct{}{}
 		}
 		// TODO this is fragile if new types are added
 		otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
 		for _, fieldIdx := range otherFields {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())})
 		}
+	}
+
+	if len(metricIndex) == 0 {
+		return nil, fmt.Errorf("no metrics in response and not an empty response")
 	}
 
 	sort.Sort(FrameFieldIndices(ignoredFields))

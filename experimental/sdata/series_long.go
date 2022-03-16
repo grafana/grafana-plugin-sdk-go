@@ -17,7 +17,7 @@ func NewLongSeries() LongSeries { // possible TODO: argument BoolAsMetric
 	return LongSeries{Frame: emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong)}
 }
 
-func (ls LongSeries) Validate() (ignoredFields []FrameFieldIndex, err error) {
+func (ls LongSeries) Validate(validateData bool) (ignoredFields []FrameFieldIndex, err error) {
 	panic("not implemented")
 }
 
@@ -27,14 +27,14 @@ func (ls LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) 
 	}
 
 	var ignoredFields []FrameFieldIndex
-	ignoreAllFields := func() {
+	ignoreAllFields := func(reason string) {
 		for fieldIdx := range ls.Fields {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, reason})
 		}
 	}
 
 	if ls.Frame.Meta == nil || ls.Frame.Meta.Type != data.FrameTypeTimeSeriesLong {
-		ignoreAllFields()
+		ignoreAllFields("TODO")
 		return nil, ignoredFields
 	}
 
@@ -45,7 +45,7 @@ func (ls LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) 
 	valueFieldIndicies := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
 
 	if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
-		ignoreAllFields()
+		ignoreAllFields("TODO")
 		return []TimeSeriesMetricRef{}, ignoredFields
 	}
 
@@ -53,7 +53,7 @@ func (ls LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) 
 
 	if len(timeFields) > 1 {
 		for _, fieldIdx := range timeFields[1:] {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx})
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, "TODO"})
 		}
 	}
 
