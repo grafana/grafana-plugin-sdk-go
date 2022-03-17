@@ -45,55 +45,93 @@ func (wf WideFrameSeries) AddMetric(metricName string, l data.Labels, values int
 }
 
 func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
-	panic("needs updating to collapse in with validate like multi")
-	/*
-		refs := []TimeSeriesMetricRef{}
-		var ignoredFields []FrameFieldIndex
-
-		if wf.Frame == nil {
-			return nil, nil
-		}
-
-		ignoreAllFields := func(reason string) {
-			if len(wf.Fields) == 0 {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1, reason})
-			}
-			for fieldIdx := range wf.Fields {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, reason})
-			}
-		}
-
-		timeFields := wf.TypeIndices(data.FieldTypeTime)
-		valueFieldIndicies := wf.TypeIndices(ValidValueFields()...)
-
-		if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
-			ignoreAllFields("TODO")
-			return refs, ignoredFields
-		}
-
-		timeField := wf.Fields[timeFields[0]]
-
-		if len(timeFields) > 1 {
-			for _, fieldIdx := range timeFields[1:] {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, "TODO"})
-			}
-		}
-
-		for _, fieldIdx := range valueFieldIndicies {
-			refs = append(refs, TimeSeriesMetricRef{
-				TimeField:  timeField,
-				ValueField: wf.Fields[fieldIdx],
-			})
-		}
-		sortTimeSeriesMetricRef(refs)
-		return refs, ignoredFields
-	*/
+	return validateAndGetRefsWide(wf, false, true)
 }
 
 func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 	panic("not implemented")
 }
 
-func (wf *WideFrameSeries) Validate(validateData bool) (ignoredFields []FrameFieldIndex, err error) {
-	panic("not implemented")
+func (wf WideFrameSeries) Validate(validateData bool) (ignoredFields []FrameFieldIndex, err error) {
+	_, ignoredFields, err = validateAndGetRefsWide(wf, validateData, false)
+	return ignoredFields, err
+}
+
+func validateAndGetRefsWide(wf WideFrameSeries, validateData, getRefs bool) ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
+	var refs []TimeSeriesMetricRef
+	var ignoredFields []FrameFieldIndex
+	metricIndex := make(map[[2]string]struct{})
+
+	if wf.Frame == nil {
+		return nil, nil, fmt.Errorf("frame is nil which is invalid")
+	}
+
+	if len(wf.Fields) == 0 { // TODO: Error differently if nil and not zero length?
+		return refs, nil, nil // empty response
+	}
+
+	if _, err := wf.RowLen(); err != nil {
+		return nil, nil, fmt.Errorf("frame has mismatched field lengths: %w", err)
+	}
+
+	for fieldIdx, field := range wf.Fields { // TODO: frame.TypeIndices should do this
+		if field == nil {
+			return nil, nil, fmt.Errorf("frame has a nil field at %v", fieldIdx)
+		}
+	}
+
+	timeFields := wf.TypeIndices(data.FieldTypeTime)
+	valueFieldIndicies := wf.TypeIndices(ValidValueFields()...)
+
+	if len(timeFields) == 0 {
+		return nil, nil, fmt.Errorf("frame is missing a []time.Time field")
+	}
+
+	if len(valueFieldIndicies) == 0 {
+		return nil, nil, fmt.Errorf("frame is missing a numeric value field")
+	}
+
+	timeField := wf.Fields[timeFields[0]]
+	// Validate time Field is sorted in ascending (oldest to newest) order
+	if validateData {
+		sorted, err := timeIsSorted(timeField)
+		if err != nil {
+			return nil, nil, fmt.Errorf("frame has an malformed time field")
+		}
+		if !sorted {
+			return nil, nil, fmt.Errorf("frame has an unsorted time field")
+		}
+	}
+
+	if len(timeFields) > 1 {
+		for _, fieldIdx := range timeFields[1:] {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, "additional time field"})
+		}
+	}
+
+	// TODO this is fragile if new types are added
+	otherFields := wf.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
+	for _, fieldIdx := range otherFields {
+		ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, fmt.Sprintf("unsupported field type %v", wf.Fields[fieldIdx].Type())})
+	}
+
+	for _, vFieldIdx := range valueFieldIndicies {
+		vField := wf.Fields[vFieldIdx]
+		if validateData {
+			metricKey := [2]string{vField.Name, vField.Labels.String()}
+			if _, ok := metricIndex[metricKey]; ok && validateData {
+				return nil, nil, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
+			}
+			metricIndex[metricKey] = struct{}{}
+		}
+		if getRefs {
+			refs = append(refs, TimeSeriesMetricRef{
+				TimeField:  timeField,
+				ValueField: vField,
+			})
+		}
+	}
+
+	sortTimeSeriesMetricRef(refs)
+	return refs, ignoredFields, nil
 }

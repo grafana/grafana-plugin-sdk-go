@@ -60,7 +60,7 @@ func (mfs *MultiFrameSeries) SetMetricMD(metricName string, l data.Labels, fc da
 }
 
 func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
-	return validateAndGetRefs(mfs, false, true)
+	return validateAndGetRefsMulti(mfs, false, true)
 }
 
 /*
@@ -90,13 +90,13 @@ When things get ignored
 
 */
 func (mfs *MultiFrameSeries) Validate(validateData bool) (ignoredFields []FrameFieldIndex, err error) {
-	_, ignoredFields, err = validateAndGetRefs(mfs, validateData, false)
+	_, ignoredFields, err = validateAndGetRefsMulti(mfs, validateData, false)
 	return ignoredFields, err
 }
 
 // wrap validation and metric ref fetching together for consistency in validation
 // not sure if "getRefs" should be there or not, or if should just always be built and ignored.
-func validateAndGetRefs(mfs *MultiFrameSeries, validateData, getRefs bool) (refs []TimeSeriesMetricRef, ignoredFields []FrameFieldIndex, err error) {
+func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) (refs []TimeSeriesMetricRef, ignoredFields []FrameFieldIndex, err error) {
 	if mfs == nil || len(*mfs) == 0 {
 		return nil, nil, fmt.Errorf("must have at least one frame to be valid")
 	}
@@ -104,7 +104,7 @@ func validateAndGetRefs(mfs *MultiFrameSeries, validateData, getRefs bool) (refs
 	if len(*mfs) == 1 { // empty typed response (single frame, with type indicator, and no fields)
 		f := (*mfs)[0]
 		if f == nil {
-			return nil, nil, fmt.Errorf("frame 0 is nil which is not valid")
+			return nil, nil, fmt.Errorf("frame 0 is nil which is invalid")
 		}
 		if !frameHasMetaType(f, data.FrameTypeTimeSeriesMany) {
 			return nil, nil, fmt.Errorf("single frame response is missing a type indicator")
@@ -152,7 +152,7 @@ func validateAndGetRefs(mfs *MultiFrameSeries, validateData, getRefs bool) (refs
 
 		// Must have []time.Time field (no nullable time)
 		if len(timeFields) == 0 {
-			return nil, nil, fmt.Errorf("frame %v must have at least one time field but has 0", frameIdx)
+			return nil, nil, fmt.Errorf("frame %v is missing a []time.Time field", frameIdx)
 		}
 
 		if len(timeFields) > 1 {
