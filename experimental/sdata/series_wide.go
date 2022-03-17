@@ -70,43 +70,21 @@ func validateAndGetRefsWide(wf WideFrameSeries, validateData, getRefs bool) ([]T
 		return refs, nil, nil // empty response
 	}
 
-	if _, err := wf.RowLen(); err != nil {
-		return nil, nil, fmt.Errorf("frame has mismatched field lengths: %w", err)
+	if err := malformedFrameCheck(0, wf.Frame); err != nil {
+		return nil, nil, err
 	}
 
-	for fieldIdx, field := range wf.Fields { // TODO: frame.TypeIndices should do this
-		if field == nil {
-			return nil, nil, fmt.Errorf("frame has a nil field at %v", fieldIdx)
-		}
+	timeField, ignoredTimedFields, err := seriesCheckSelectTime(0, wf.Frame)
+	if err != nil {
+		return nil, nil, err
+	}
+	if ignoredTimedFields != nil {
+		ignoredFields = append(ignoredFields, ignoredTimedFields...)
 	}
 
-	timeFields := wf.TypeIndices(data.FieldTypeTime)
-	valueFieldIndicies := wf.TypeIndices(ValidValueFields()...)
-
-	if len(timeFields) == 0 {
-		return nil, nil, fmt.Errorf("frame is missing a []time.Time field")
-	}
-
-	if len(valueFieldIndicies) == 0 {
+	valueFieldIndices := wf.TypeIndices(ValidValueFields()...)
+	if len(valueFieldIndices) == 0 {
 		return nil, nil, fmt.Errorf("frame is missing a numeric value field")
-	}
-
-	timeField := wf.Fields[timeFields[0]]
-	// Validate time Field is sorted in ascending (oldest to newest) order
-	if validateData {
-		sorted, err := timeIsSorted(timeField)
-		if err != nil {
-			return nil, nil, fmt.Errorf("frame has an malformed time field")
-		}
-		if !sorted {
-			return nil, nil, fmt.Errorf("frame has an unsorted time field")
-		}
-	}
-
-	if len(timeFields) > 1 {
-		for _, fieldIdx := range timeFields[1:] {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, "additional time field"})
-		}
 	}
 
 	// TODO this is fragile if new types are added
@@ -115,7 +93,7 @@ func validateAndGetRefsWide(wf WideFrameSeries, validateData, getRefs bool) ([]T
 		ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, fmt.Sprintf("unsupported field type %v", wf.Fields[fieldIdx].Type())})
 	}
 
-	for _, vFieldIdx := range valueFieldIndicies {
+	for _, vFieldIdx := range valueFieldIndices {
 		vField := wf.Fields[vFieldIdx]
 		if validateData {
 			metricKey := [2]string{vField.Name, vField.Labels.String()}
@@ -129,6 +107,17 @@ func validateAndGetRefsWide(wf WideFrameSeries, validateData, getRefs bool) ([]T
 				TimeField:  timeField,
 				ValueField: vField,
 			})
+		}
+	}
+
+	// Validate time Field is sorted in ascending (oldest to newest) order
+	if validateData {
+		sorted, err := timeIsSorted(timeField)
+		if err != nil {
+			return nil, nil, fmt.Errorf("frame has an malformed time field")
+		}
+		if !sorted {
+			return nil, nil, fmt.Errorf("frame has an unsorted time field")
 		}
 	}
 

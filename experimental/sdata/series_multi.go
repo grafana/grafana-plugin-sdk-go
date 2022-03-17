@@ -106,7 +106,7 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 		if f == nil {
 			return nil, nil, fmt.Errorf("frame 0 is nil which is invalid")
 		}
-		if !frameHasMetaType(f, data.FrameTypeTimeSeriesMany) {
+		if !frameHasType(f, data.FrameTypeTimeSeriesMany) {
 			return nil, nil, fmt.Errorf("single frame response is missing a type indicator")
 		}
 		if len(f.Fields) == 0 {
@@ -127,7 +127,7 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 			}
 		}
 
-		if frame.Meta == nil || frame.Meta.Type != data.FrameTypeTimeSeriesMany {
+		if frameHasType(frame, data.FrameTypeTimeSeriesMany) {
 			if frameIdx == 0 {
 				return nil, nil, fmt.Errorf("first frame must have the many/multi type indicator in frame metadata")
 			}
@@ -139,38 +139,16 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 			return nil, nil, fmt.Errorf("frame %v has zero or null fields which is invalid when more than one frame", frameIdx)
 		}
 
-		if _, err := frame.RowLen(); err != nil {
-			return nil, nil, fmt.Errorf("frame %v has mismatched field lengths: %w", frameIdx, err)
+		if err := malformedFrameCheck(frameIdx, frame); err != nil {
+			return nil, nil, err
 		}
 
-		for fieldIdx, field := range frame.Fields { // TODO: frame.TypeIndices should do this
-			if field == nil {
-				return nil, nil, fmt.Errorf("frame %v has a nil field at %v", frameIdx, fieldIdx)
-			}
+		timeField, ignoredTimedFields, err := seriesCheckSelectTime(frameIdx, frame)
+		if err != nil {
+			return nil, nil, err
 		}
-		timeFields := frame.TypeIndices(data.FieldTypeTime)
-
-		// Must have []time.Time field (no nullable time)
-		if len(timeFields) == 0 {
-			return nil, nil, fmt.Errorf("frame %v is missing a []time.Time field", frameIdx)
-		}
-
-		if len(timeFields) > 1 {
-			for _, fieldIdx := range timeFields[1:] {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "additional time field"})
-			}
-		}
-
-		// Validate time Field is sorted in ascending (oldest to newest) order
-		timeField := frame.Fields[timeFields[0]]
-		if validateData {
-			sorted, err := timeIsSorted(timeField)
-			if err != nil {
-				return nil, nil, fmt.Errorf("frame %v has an malformed time field", frameIdx)
-			}
-			if !sorted {
-				return nil, nil, fmt.Errorf("frame %v has an unsorted time field", frameIdx)
-			}
+		if ignoredTimedFields != nil {
+			ignoredFields = append(ignoredFields, ignoredTimedFields...)
 		}
 
 		valueFields := frame.TypeIndices(ValidValueFields()...)
@@ -190,6 +168,16 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 				return nil, nil, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
 			}
 			metricIndex[metricKey] = struct{}{}
+		}
+
+		if validateData {
+			sorted, err := timeIsSorted(timeField)
+			if err != nil {
+				return nil, nil, fmt.Errorf("frame %v has an malformed time field", 0)
+			}
+			if !sorted {
+				return nil, nil, fmt.Errorf("frame %v has an unsorted time field", 0)
+			}
 		}
 
 		if getRefs {

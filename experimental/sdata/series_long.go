@@ -99,3 +99,86 @@ func (ls LongSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex, 
 		return refs, ignoredFields
 	*/
 }
+
+/*
+func validateAndGetRefsLong(ls LongSeries, validateData, getRefs bool) ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
+	if ls.Frame == nil {
+		return nil, nil, fmt.Errorf("frame must not be nil")
+	}
+
+	if !frameHasMetaType(ls.Frame, data.FrameTypeTimeSeriesMany) {
+		return nil, nil, fmt.Errorf("frame is missing a type indicator")
+	}
+
+	if len(ls.Fields) == 0 { // empty response
+		return []TimeSeriesMetricRef{}, nil, nil
+	}
+
+	var ignoredFields []FrameFieldIndex
+
+	ignoreAllFields := func(reason string) {
+		for fieldIdx := range ls.Fields {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, reason})
+		}
+	}
+
+	// metricName/labels -> SeriesRef
+	mm := make(map[string]map[string]TimeSeriesMetricRef)
+
+	timeFields := ls.TypeIndices(data.FieldTypeTime)
+	valueFieldIndicies := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
+
+	timeField, ignoredTimedFields, err := seriesCheckSelectTime(frameIdx, frame)
+	if err != nil {
+		return nil, nil, err
+	}
+	if ignoredTimedFields != nil {
+		ignoredFields = append(ignoredFields, ignoredTimedFields...)
+	}
+
+	if len(valueFieldIndicies) == 0 {
+		return nil, nil, fmt.Errorf("TODO")
+	}
+
+	factorFieldIndicies := ls.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
+
+	refs := []TimeSeriesMetricRef{}
+	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) {
+		if mm[metricName] == nil {
+			mm[metricName] = make(map[string]TimeSeriesMetricRef)
+		}
+
+		lbStr := l.String()
+		if ref, ok := mm[metricName][lbStr]; !ok {
+			// TODO could carry time field name
+			ref.TimeField = data.NewField("time", nil, []time.Time{t})
+
+			vt := data.FieldTypeFor(value)
+			ref.ValueField = data.NewFieldFromFieldType(vt, 1)
+			ref.ValueField.Set(0, value)
+			ref.ValueField.Name = metricName
+			ref.ValueField.Labels = l
+
+			mm[metricName][lbStr] = ref
+			refs = append(refs, ref)
+		} else {
+			ref.TimeField.Append(t)
+			ref.ValueField.Append(value)
+		}
+	}
+
+	for rowIdx := 0; rowIdx < ls.Rows(); rowIdx++ {
+		l := data.Labels{}
+		for _, strFieldIdx := range factorFieldIndicies {
+			cv, _ := ls.ConcreteAt(strFieldIdx, rowIdx)
+			l[ls.Fields[strFieldIdx].Name] = cv.(string)
+		}
+		for _, vFieldIdx := range valueFieldIndicies {
+			valueField := ls.Fields[vFieldIdx]
+			appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx))
+		}
+	}
+	sortTimeSeriesMetricRef(refs)
+	return refs, ignoredFields
+}
+*/

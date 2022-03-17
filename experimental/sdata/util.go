@@ -11,7 +11,7 @@ func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
 	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t})
 }
 
-func frameHasMetaType(f *data.Frame, t data.FrameType) bool {
+func frameHasType(f *data.Frame, t data.FrameType) bool {
 	return f != nil && f.Meta != nil && f.Meta.Type == t
 }
 
@@ -33,4 +33,45 @@ func timeIsSorted(field *data.Field) (bool, error) {
 		}
 	}
 	return true, nil
+}
+
+// seriesTimeCheck checks that there is []time.Time field.
+// returns additional []time.Time fields.
+func seriesCheckSelectTime(
+	frameIdx int,
+	frame *data.Frame,
+) (*data.Field, []FrameFieldIndex, error) {
+	var ignoredFields []FrameFieldIndex
+
+	timeFields := frame.TypeIndices(data.FieldTypeTime)
+
+	// Must have []time.Time field (no nullable time)
+	if len(timeFields) == 0 {
+		return nil, nil, fmt.Errorf("frame %v is missing a []time.Time field", frameIdx)
+	}
+
+	if len(timeFields) > 1 {
+		for _, fieldIdx := range timeFields[1:] {
+			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "additional time field"})
+		}
+	}
+
+	// Validate time Field is sorted in ascending (oldest to newest) order
+	timeField := frame.Fields[timeFields[0]]
+
+	return timeField, ignoredFields, nil
+}
+
+// malformedFrameCheck checks if there is a nil field in the slice frames or
+// if the fields are of unequal length
+func malformedFrameCheck(frameIdx int, frame *data.Frame) error {
+	for fieldIdx, field := range frame.Fields { // TODO: frame.TypeIndices should do this
+		if field == nil {
+			return fmt.Errorf("frame %v has a nil field at %v", frameIdx, fieldIdx)
+		}
+	}
+	if _, err := frame.RowLen(); err != nil {
+		return fmt.Errorf("frame %v has mismatched field lengths: %w", frameIdx, err)
+	}
+	return nil
 }
