@@ -7,12 +7,16 @@ import (
 	"os"
 )
 
-const (
-	// PluginProfilerEnv is a constant for the GF_PLUGINS_PROFILER environment variable used to enable pprof.
-	PluginProfilerEnv = "GF_PLUGINS_PROFILER"
+var (
+	// PluginProfilerEnvDeprecated is a deprecated constant for the GF_PLUGINS_PROFILER environment variable used to enable pprof.
+	PluginProfilerEnvDeprecated = "GF_PLUGINS_PROFILER"
+	// PluginProfilingEnabledEnv is a constant for the GF_PLUGIN_PROFILING_ENABLED environment variable used to enable pprof.
+	PluginProfilingEnabledEnv = "GF_PLUGIN_PROFILING_ENABLED"
 
-	// PluginProfilerPortEnv is a constant for the GF_PLUGINS_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
-	PluginProfilerPortEnv = "GF_PLUGINS_PROFILER_PORT"
+	// PluginProfilerPortEnvDeprecated is a constant for the GF_PLUGINS_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
+	PluginProfilerPortEnvDeprecated = "GF_PLUGINS_PROFILER_PORT"
+	// PluginProfilingPortEnv is a constant for the GF_PLUGIN_PROFILING_PORT environment variable use to specify a pprof port (default 6060).
+	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT"
 )
 
 // SetupPluginEnvironment will read the environment variables and apply the
@@ -24,19 +28,26 @@ const (
 func SetupPluginEnvironment(pluginID string) {
 	// Enable profiler
 	profilerEnabled := false
-	if value, ok := os.LookupEnv(PluginProfilerEnv); ok {
+	if value, ok := os.LookupEnv(PluginProfilerEnvDeprecated); ok {
 		// compare value to plugin name
 		if value == pluginID {
 			profilerEnabled = true
 		}
+	} else if value, ok = os.LookupEnv(PluginProfilingEnabledEnv); ok {
+		if value == "true" {
+			profilerEnabled = true
+		}
 	}
+
 	Logger.Info("Profiler", "enabled", profilerEnabled)
 	if profilerEnabled {
 		profilerPort := "6060"
-		if value, ok := os.LookupEnv(PluginProfilerPortEnv); ok {
-			profilerPort = value
+		for _, env := range []string{PluginProfilerPortEnvDeprecated, PluginProfilingPortEnv} {
+			if value, ok := os.LookupEnv(env); ok {
+				profilerPort = value
+				break
+			}
 		}
-
 		Logger.Info("Profiler", "port", profilerPort)
 		portConfig := fmt.Sprintf(":%s", profilerPort)
 
