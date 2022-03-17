@@ -42,7 +42,8 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 		err = wf.AddMetric("one", data.Labels{"host": "b"}, []float64{3, 4})
 		require.NoError(t, err)
 
-		refs, ignoredFields := wf.GetMetricRefs()
+		refs, ignoredFields, err := wf.GetMetricRefs()
+		require.NoError(t, err)
 
 		expectedRefs := []sdata.TimeSeriesMetricRef{
 			{

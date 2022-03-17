@@ -39,7 +39,8 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 
 		var r sdata.TimeSeriesCollectionReader = sc
 
-		mFrameRefs, extraFields := r.GetMetricRefs()
+		mFrameRefs, extraFields, err := r.GetMetricRefs()
+		require.Nil(t, err)
 		require.Nil(t, extraFields)
 		require.Equal(t, expectedRefs, mFrameRefs)
 	})
@@ -54,7 +55,9 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 
 		var r sdata.TimeSeriesCollectionReader = &sc
 
-		mFrameRefs, extraFields := r.GetMetricRefs()
+		mFrameRefs, extraFields, err := r.GetMetricRefs()
+		require.Nil(t, err)
+
 		require.Nil(t, extraFields)
 		require.Equal(t, expectedRefs, mFrameRefs)
 	})
@@ -72,7 +75,8 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 
 		var r sdata.TimeSeriesCollectionReader = ls
 
-		mFrameRefs, extraFields := r.GetMetricRefs()
+		mFrameRefs, extraFields, err := r.GetMetricRefs()
+		require.Nil(t, err)
 
 		require.Nil(t, extraFields)
 		require.Equal(t, expectedRefs, mFrameRefs)

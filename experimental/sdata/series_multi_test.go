@@ -47,11 +47,12 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 	}
 }
 
-func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
+func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 	tests := []struct {
 		name        string
 		mfs         *sdata.MultiFrameSeries
 		errContains string
+		dataOnly    bool
 	}{
 		{
 			name: "frame must have type indicator",
@@ -93,6 +94,7 @@ func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
 					data.NewField("", nil, []time.Time{time.UnixMilli(2), time.UnixMilli(1)})),
 			},
 			errContains: "unsorted time",
+			dataOnly:    true,
 		},
 		{
 			name: "duplicate metrics as identified by name + labels are invalid",
@@ -105,6 +107,7 @@ func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
 					data.NewField("", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)})),
 			},
 			errContains: "duplicate metrics found",
+			dataOnly:    true,
 		},
 	}
 
@@ -113,6 +116,22 @@ func TestMultiFrameSeriesValidiate_WithFrames_InvalidCases(t *testing.T) {
 			ignoredFieldIndices, err := tt.mfs.Validate(true)
 			require.True(t, strings.Contains(err.Error(), tt.errContains), fmt.Sprintf("error '%v' does not contain '%v'", err.Error(), tt.errContains))
 			require.Nil(t, ignoredFieldIndices)
+
+			// If the test does not have dataOnly, make sure it is the same with Validate(false)
+			if !tt.dataOnly {
+				ignoredFieldIndices, err := tt.mfs.Validate(false)
+				require.True(t, strings.Contains(err.Error(), tt.errContains), fmt.Sprintf("error '%v' does not contain '%v'", err.Error(), tt.errContains))
+				require.Nil(t, ignoredFieldIndices)
+			}
+
+			// Also check that GetMetricRefs returns matching errors when not checking data
+			refs, ignoredFieldIndices, err := tt.mfs.GetMetricRefs()
+			if !tt.dataOnly {
+				require.Error(t, err)
+				require.True(t, strings.Contains(err.Error(), tt.errContains), fmt.Sprintf("error '%v' does not contain '%v'", err.Error(), tt.errContains))
+				require.Nil(t, ignoredFieldIndices)
+				require.Nil(t, refs)
+			}
 		})
 	}
 }
@@ -125,7 +144,8 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	t.Run("empty response reads as zero length metric refs and nil ignoredFields", func(t *testing.T) {
 		s := sdata.NewMultiFrameSeries()
 
-		refs, ignoredFieldIndices := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs()
+		require.Nil(t, err)
 
 		require.Nil(t, ignoredFieldIndices)
 		require.NotNil(t, refs)
@@ -142,7 +162,8 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 			data.NewField("cpu", nil, []float64{}),
 		)
 
-		refs, ignoredFieldIndices := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs()
+		require.Nil(t, err)
 
 		require.Len(t, refs, 1)
 
@@ -154,32 +175,34 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	t.Run("uninitalized frames returns nil refs and nil ignored", func(t *testing.T) {
 		s := sdata.MultiFrameSeries{}
 
-		refs, ignoredFieldIndices := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs()
+		require.Error(t, err)
 
 		require.Nil(t, ignoredFieldIndices)
 		require.Nil(t, refs)
 	})
 
-	t.Run("a nil frame (a nil entry in slice of frames (very odd)), is ignored and is not a valid empty response", func(t *testing.T) {
+	t.Run("a nil frame (a nil entry in slice of frames (very odd)), is not a valid in a response", func(t *testing.T) {
 		s := sdata.NewMultiFrameSeries()
 		*s = append(*s, nil)
 
-		refs, ignoredFieldIndices := s.GetMetricRefs()
-
+		refs, ignoredFieldIndices, err := s.GetMetricRefs()
 		require.Nil(t, refs)
-		require.Equal(t, []sdata.FrameFieldIndex{{0, -1, ""}, {1, -1, ""}}, ignoredFieldIndices)
+		require.Nil(t, ignoredFieldIndices)
+		require.Error(t, err)
 	})
 
-	t.Run("no type metadata means frame is ignored", func(t *testing.T) {
+	t.Run("no type metadata means error if first", func(t *testing.T) {
 		s := sdata.MultiFrameSeries{
 			data.NewFrame("",
 				data.NewField("", nil, []time.Time{}),
 				data.NewField("foo", nil, []float64{}),
 			)}
 
-		refs, ignoredFieldIndices := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs()
 
 		require.Nil(t, refs)
-		require.Equal(t, []sdata.FrameFieldIndex{{0, 0, ""}, {0, 1, ""}}, ignoredFieldIndices)
+		require.Nil(t, ignoredFieldIndices)
+		require.Error(t, err)
 	})
 }

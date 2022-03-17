@@ -22,7 +22,7 @@ type TimeSeriesCollectionReader interface {
 	// but are data and not metadata.
 	// ValidateSchema will check
 	Validate(validateData bool) (ignoredFieldIndices []FrameFieldIndex, err error)
-	GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex)
+	GetMetricRefs() (refs []TimeSeriesMetricRef, ignoredFieldIndices []FrameFieldIndex, err error)
 }
 
 func ValidValueFields() []data.FieldType {

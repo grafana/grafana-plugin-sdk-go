@@ -44,47 +44,50 @@ func (wf WideFrameSeries) AddMetric(metricName string, l data.Labels, values int
 	return nil
 }
 
-func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex) {
-	refs := []TimeSeriesMetricRef{}
-	var ignoredFields []FrameFieldIndex
+func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
+	panic("needs updating to collapse in with validate like multi")
+	/*
+		refs := []TimeSeriesMetricRef{}
+		var ignoredFields []FrameFieldIndex
 
-	if wf.Frame == nil {
-		return nil, nil
-	}
-
-	ignoreAllFields := func(reason string) {
-		if len(wf.Fields) == 0 {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1, reason})
+		if wf.Frame == nil {
+			return nil, nil
 		}
-		for fieldIdx := range wf.Fields {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, reason})
+
+		ignoreAllFields := func(reason string) {
+			if len(wf.Fields) == 0 {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{0, -1, reason})
+			}
+			for fieldIdx := range wf.Fields {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, reason})
+			}
 		}
-	}
 
-	timeFields := wf.TypeIndices(data.FieldTypeTime)
-	valueFieldIndicies := wf.TypeIndices(ValidValueFields()...)
+		timeFields := wf.TypeIndices(data.FieldTypeTime)
+		valueFieldIndicies := wf.TypeIndices(ValidValueFields()...)
 
-	if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
-		ignoreAllFields("TODO")
+		if len(timeFields) == 0 || len(valueFieldIndicies) == 0 {
+			ignoreAllFields("TODO")
+			return refs, ignoredFields
+		}
+
+		timeField := wf.Fields[timeFields[0]]
+
+		if len(timeFields) > 1 {
+			for _, fieldIdx := range timeFields[1:] {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, "TODO"})
+			}
+		}
+
+		for _, fieldIdx := range valueFieldIndicies {
+			refs = append(refs, TimeSeriesMetricRef{
+				TimeField:  timeField,
+				ValueField: wf.Fields[fieldIdx],
+			})
+		}
+		sortTimeSeriesMetricRef(refs)
 		return refs, ignoredFields
-	}
-
-	timeField := wf.Fields[timeFields[0]]
-
-	if len(timeFields) > 1 {
-		for _, fieldIdx := range timeFields[1:] {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, "TODO"})
-		}
-	}
-
-	for _, fieldIdx := range valueFieldIndicies {
-		refs = append(refs, TimeSeriesMetricRef{
-			TimeField:  timeField,
-			ValueField: wf.Fields[fieldIdx],
-		})
-	}
-	sortTimeSeriesMetricRef(refs)
-	return refs, ignoredFields
+	*/
 }
 
 func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
