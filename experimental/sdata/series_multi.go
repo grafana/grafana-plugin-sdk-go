@@ -127,7 +127,7 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 			}
 		}
 
-		if frameHasType(frame, data.FrameTypeTimeSeriesMany) {
+		if !frameHasType(frame, data.FrameTypeTimeSeriesMany) {
 			if frameIdx == 0 {
 				return nil, nil, fmt.Errorf("first frame must have the many/multi type indicator in frame metadata")
 			}
