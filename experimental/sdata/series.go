@@ -9,18 +9,8 @@ import (
 // Notes on Defining Empty Responses and Empty Metrics
 //   - Typed "No Metrics" (Empty Response) == At least one Frame with type indicator with no fields
 //   - Typed "Empty Metric" == Fields Present of proper types, Zero Length fields
-// Need to think of how these map in Go Code -> Data frames (passing over the wire), and JS
-// For this Go code:
-//   - Make sure GetMetricRefs can capture "No Metrics" correctly and
-//       that is the default (e.g. add NewX funcs)
-//   - Make sure that information is kept over wire
 
 type TimeSeriesCollectionReader interface {
-	// TODO: Split Validate into ValidateSchema and ValidateData (or something like this).
-	// The difference being if reads the contents of fields for validity. Which is mainly
-	// "is time sorted?". Although perhaps duplicate labels as well (they exist on field header),
-	// but are data and not metadata.
-	// ValidateSchema will check
 	Validate(validateData bool) (ignoredFieldIndices []FrameFieldIndex, err error)
 	GetMetricRefs() (refs []TimeSeriesMetricRef, ignoredFieldIndices []FrameFieldIndex, err error)
 }

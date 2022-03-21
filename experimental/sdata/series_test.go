@@ -86,3 +86,26 @@ func addFields(frame *data.Frame, fields ...*data.Field) *data.Frame {
 	frame.Fields = append(frame.Fields, fields...)
 	return frame
 }
+
+func TestEmptyFromNew(t *testing.T) {
+	var multi, wide, long sdata.TimeSeriesCollectionReader
+
+	multi = sdata.NewMultiFrameSeries()
+	// TODO: redo wide not to take time on new so it follow empty pattern.
+	_ = wide
+	//wide = sdata.NewWideFrameSeries()
+	long = sdata.NewLongSeries()
+
+	multiRefs, ignored, err := multi.GetMetricRefs()
+	require.NoError(t, err)
+	require.Nil(t, ignored)
+	require.NotNil(t, multiRefs)
+	require.Len(t, multiRefs, 0)
+
+	longRefs, ignored, err := long.GetMetricRefs()
+	require.NoError(t, err)
+	require.Nil(t, ignored)
+	require.NotNil(t, longRefs)
+	require.Len(t, longRefs, 0)
+
+}

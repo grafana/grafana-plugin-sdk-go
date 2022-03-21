@@ -60,14 +60,14 @@ func validateAndGetRefsLong(ls LongSeries, validateData, getRefs bool) ([]TimeSe
 		ignoredFields = append(ignoredFields, ignoredTimedFields...)
 	}
 
-	valueFieldIndicies := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
-	if len(valueFieldIndicies) == 0 {
+	valueFieldIndices := ls.TypeIndices(ValidValueFields()...) // TODO switch on bool type option
+	if len(valueFieldIndices) == 0 {
 		return nil, nil, fmt.Errorf("frame is missing a numeric value field")
 	}
 
 	factorFieldIndices := ls.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
 
-	refs := []TimeSeriesMetricRef{}
+	var refs []TimeSeriesMetricRef
 	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) {
 		if mm[metricName] == nil {
 			mm[metricName] = make(map[string]TimeSeriesMetricRef)
@@ -75,8 +75,7 @@ func validateAndGetRefsLong(ls LongSeries, validateData, getRefs bool) ([]TimeSe
 
 		lbStr := l.String()
 		if ref, ok := mm[metricName][lbStr]; !ok {
-			// TODO could carry time field name
-			ref.TimeField = data.NewField("time", nil, []time.Time{t})
+			ref.TimeField = data.NewField(timeField.Name, nil, []time.Time{t})
 
 			vt := data.FieldTypeFor(value)
 			ref.ValueField = data.NewFieldFromFieldType(vt, 1)
@@ -99,14 +98,14 @@ func validateAndGetRefsLong(ls LongSeries, validateData, getRefs bool) ([]TimeSe
 				cv, _ := ls.ConcreteAt(strFieldIdx, rowIdx)
 				l[ls.Fields[strFieldIdx].Name] = cv.(string)
 			}
-			for _, vFieldIdx := range valueFieldIndicies {
+			for _, vFieldIdx := range valueFieldIndices {
 				valueField := ls.Fields[vFieldIdx]
 				appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx))
 			}
 		}
+		sortTimeSeriesMetricRef(refs)
 	}
 
-	sortTimeSeriesMetricRef(refs)
 	// TODO this is fragile if new types are added
 	otherFields := ls.Frame.TypeIndices(data.FieldTypeNullableTime)
 	for _, fieldIdx := range otherFields {
