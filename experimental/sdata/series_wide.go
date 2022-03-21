@@ -12,11 +12,24 @@ type WideFrameSeries struct {
 	*data.Frame
 }
 
-func NewWideFrameSeries(timeName string, t []time.Time) WideFrameSeries {
-	tF := data.NewField(timeName, nil, t)
-	f := data.NewFrame("", tF)
+func NewWideFrameSeries() WideFrameSeries {
+	f := data.NewFrame("")
 	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
 	return WideFrameSeries{f}
+}
+
+func (wf WideFrameSeries) SetTime(timeName string, t []time.Time) error {
+	switch {
+	case t == nil:
+		return fmt.Errorf("t may not be nil")
+	case wf.Fields != nil:
+		return fmt.Errorf("expected fields property to be nil (metrics added before calling SetTime?)")
+	case wf.Frame == nil:
+		return fmt.Errorf("missing frame, NewWideFrameSeries must be called first")
+	}
+
+	wf.Fields = append(wf.Fields, data.NewField(timeName, nil, t))
+	return nil
 }
 
 func (wf WideFrameSeries) AddMetric(metricName string, l data.Labels, values interface{}) error {
@@ -28,8 +41,9 @@ func (wf WideFrameSeries) AddMetric(metricName string, l data.Labels, values int
 		return fmt.Errorf("missing frame, NewWideFrameSeries must be called first")
 	}
 
+	// Note: Readers are not required to make the Time field first, but using New/SetTime/AddMetric does.
 	if len(wf.Frame.Fields) == 0 || wf.Frame.Fields[0].Type() != data.FieldTypeTime {
-		return fmt.Errorf("frame is missing time field or time field is not first, NewWideFrameSeries must be called first")
+		return fmt.Errorf("frame is missing time field or time field is not first, SetTime must be called first")
 	}
 
 	valueField := data.NewField(metricName, l, values)
@@ -67,7 +81,7 @@ func validateAndGetRefsWide(wf WideFrameSeries, validateData, getRefs bool) ([]T
 	}
 
 	if len(wf.Fields) == 0 { // TODO: Error differently if nil and not zero length?
-		return refs, nil, nil // empty response
+		return []TimeSeriesMetricRef{}, nil, nil // empty response
 	}
 
 	if err := malformedFrameCheck(0, wf.Frame); err != nil {

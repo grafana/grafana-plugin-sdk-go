@@ -12,9 +12,12 @@ import (
 
 func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 	t.Run("add two metrics", func(t *testing.T) {
-		wf := sdata.NewWideFrameSeries("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
+		wf := sdata.NewWideFrameSeries()
 
-		err := wf.AddMetric("one", data.Labels{"host": "a"}, []float64{1, 2})
+		err := wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
+		require.NoError(t, err)
+
+		err = wf.AddMetric("one", data.Labels{"host": "a"}, []float64{1, 2})
 		require.NoError(t, err)
 
 		err = wf.AddMetric("one", data.Labels{"host": "b"}, []float64{3, 4})
@@ -34,9 +37,12 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 
 func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 	t.Run("two metrics from wide to multi", func(t *testing.T) {
-		wf := sdata.NewWideFrameSeries("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
+		wf := sdata.NewWideFrameSeries()
 
-		err := wf.AddMetric("one", data.Labels{"host": "a"}, []float64{1, 2})
+		err := wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
+		require.NoError(t, err)
+
+		err = wf.AddMetric("one", data.Labels{"host": "a"}, []float64{1, 2})
 		require.NoError(t, err)
 
 		err = wf.AddMetric("one", data.Labels{"host": "b"}, []float64{3, 4})

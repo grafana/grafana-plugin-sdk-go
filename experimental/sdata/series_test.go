@@ -46,8 +46,12 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	})
 
 	t.Run("wide frame", func(t *testing.T) {
-		sc := sdata.NewWideFrameSeries("time", timeSlice)
-		err := sc.AddMetric(metricName, data.Labels{"host": "a"}, valuesA)
+		sc := sdata.NewWideFrameSeries()
+
+		err := sc.SetTime("time", timeSlice)
+		require.NoError(t, err)
+
+		err = sc.AddMetric(metricName, data.Labels{"host": "a"}, valuesA)
 		require.NoError(t, err)
 
 		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, valuesB)
@@ -91,9 +95,7 @@ func TestEmptyFromNew(t *testing.T) {
 	var multi, wide, long sdata.TimeSeriesCollectionReader
 
 	multi = sdata.NewMultiFrameSeries()
-	// TODO: redo wide not to take time on new so it follow empty pattern.
-	_ = wide
-	//wide = sdata.NewWideFrameSeries()
+	wide = sdata.NewWideFrameSeries()
 	long = sdata.NewLongSeries()
 
 	multiRefs, ignored, err := multi.GetMetricRefs()
@@ -101,6 +103,12 @@ func TestEmptyFromNew(t *testing.T) {
 	require.Nil(t, ignored)
 	require.NotNil(t, multiRefs)
 	require.Len(t, multiRefs, 0)
+
+	wideRefs, ignored, err := wide.GetMetricRefs()
+	require.NoError(t, err)
+	require.Nil(t, ignored)
+	require.NotNil(t, wideRefs)
+	require.Len(t, wideRefs, 0)
 
 	longRefs, ignored, err := long.GetMetricRefs()
 	require.NoError(t, err)
