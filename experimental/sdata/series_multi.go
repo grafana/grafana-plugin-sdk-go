@@ -8,7 +8,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// or perhaps a container struct with non-exported fields (for indices and such) and the Frames exported.
 type MultiFrameSeries []*data.Frame
 
 func NewMultiFrameSeries() *MultiFrameSeries {
