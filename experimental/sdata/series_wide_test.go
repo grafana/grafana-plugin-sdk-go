@@ -29,7 +29,7 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 			data.NewField("one", data.Labels{"host": "b"}, []float64{3, 4}),
 		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
 
-		if diff := cmp.Diff(expectedFrame, wf.Frame, data.FrameTestCompareOptions()...); diff != "" {
+		if diff := cmp.Diff(expectedFrame, (*wf)[0], data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
 		}
 	})

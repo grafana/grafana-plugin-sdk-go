@@ -66,7 +66,8 @@ func TimeSeriesReaderFromFrames(frames []*data.Frame) (TimeSeriesCollectionReade
 	case mt == data.FrameTypeTimeSeriesLong:
 		tcr = LongSeries{Frame: firstFrame} // TODO change to Frames for extra/ignored data?
 	case mt == data.FrameTypeTimeSeriesWide:
-		tcr = WideFrameSeries{Frame: firstFrame} // TODO change to Frames for extra/ignored data?
+		wfs := WideFrameSeries(frames)
+		tcr = &wfs
 	default:
 		return nil, fmt.Errorf("unsupported time series type %q", mt)
 	}

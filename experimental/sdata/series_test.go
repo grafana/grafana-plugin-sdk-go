@@ -57,7 +57,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, valuesB)
 		require.NoError(t, err)
 
-		var r sdata.TimeSeriesCollectionReader = &sc
+		var r sdata.TimeSeriesCollectionReader = sc
 
 		mFrameRefs, extraFields, err := r.GetMetricRefs()
 		require.Nil(t, err)

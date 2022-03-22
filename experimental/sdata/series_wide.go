@@ -7,58 +7,77 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// need to think about pointers here and elsewhere
-type WideFrameSeries struct {
-	*data.Frame
-}
+type WideFrameSeries []*data.Frame
 
-func NewWideFrameSeries() WideFrameSeries {
+func NewWideFrameSeries() *WideFrameSeries {
 	f := data.NewFrame("")
 	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
-	return WideFrameSeries{f}
+	return &WideFrameSeries{f}
 }
 
-func (wf WideFrameSeries) SetTime(timeName string, t []time.Time) error {
+func (wf *WideFrameSeries) SetTime(timeName string, t []time.Time) error {
+	switch {
+	case wf == nil:
+		return fmt.Errorf("wf is nil, NewWideFrameSeries must be called first")
+	case len(*wf) == 0:
+		return fmt.Errorf("missing frame, NewWideFrameSeries must be called first")
+	case len(*wf) > 1:
+		return fmt.Errorf("may not set time after adding extra frames")
+	}
+
+	frame := (*wf)[0]
+
 	switch {
 	case t == nil:
 		return fmt.Errorf("t may not be nil")
-	case wf.Fields != nil:
+	case frame.Fields != nil:
 		return fmt.Errorf("expected fields property to be nil (metrics added before calling SetTime?)")
-	case wf.Frame == nil:
-		return fmt.Errorf("missing frame, NewWideFrameSeries must be called first")
+	case frame == nil:
+		return fmt.Errorf("missing is nil, NewWideFrameSeries must be called first")
 	}
 
-	wf.Fields = append(wf.Fields, data.NewField(timeName, nil, t))
+	frame.Fields = append(frame.Fields, data.NewField(timeName, nil, t))
 	return nil
 }
 
-func (wf WideFrameSeries) AddMetric(metricName string, l data.Labels, values interface{}) error {
+func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, values interface{}) error {
 	if !data.ValidFieldType(values) {
 		return fmt.Errorf("type %T is not a valid data frame field type", values)
 	}
 
-	if wf.Frame == nil {
+	switch {
+	case wf == nil:
+		return fmt.Errorf("wf is nil, NewWideFrameSeries must be called first")
+	case len(*wf) == 0:
 		return fmt.Errorf("missing frame, NewWideFrameSeries must be called first")
+	case len(*wf) > 1:
+		return fmt.Errorf("may not add metrics after adding extra frames")
+	}
+
+	frame := (*wf)[0]
+
+	if frame == nil {
+		return fmt.Errorf("missing is nil, NewWideFrameSeries must be called first")
 	}
 
 	// Note: Readers are not required to make the Time field first, but using New/SetTime/AddMetric does.
-	if len(wf.Frame.Fields) == 0 || wf.Frame.Fields[0].Type() != data.FieldTypeTime {
+	if len(frame.Fields) == 0 || frame.Fields[0].Type() != data.FieldTypeTime {
 		return fmt.Errorf("frame is missing time field or time field is not first, SetTime must be called first")
 	}
 
 	valueField := data.NewField(metricName, l, values)
 
-	if valueField.Len() != wf.Frame.Fields[0].Len() {
+	if valueField.Len() != frame.Fields[0].Len() {
 		return fmt.Errorf("value field length must match time field length, but got length %v for time and %v for values",
-			wf.Frame.Fields[0].Len(), valueField.Len())
+			frame.Fields[0].Len(), valueField.Len())
 	}
 
-	wf.Fields = append(wf.Fields, valueField)
+	frame.Fields = append(frame.Fields, valueField)
 
 	return nil
 }
 
-func (wf WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
+func (wf *WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
 	return validateAndGetRefsWide(wf, false, true)
 }
 
@@ -66,29 +85,38 @@ func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data
 	panic("not implemented")
 }
 
-func (wf WideFrameSeries) Validate(validateData bool) (ignoredFields []FrameFieldIndex, err error) {
+func (wf *WideFrameSeries) Validate(validateData bool) (ignoredFields []FrameFieldIndex, err error) {
 	_, ignoredFields, err = validateAndGetRefsWide(wf, validateData, false)
 	return ignoredFields, err
 }
 
-func validateAndGetRefsWide(wf WideFrameSeries, validateData, getRefs bool) ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
+func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
 	var refs []TimeSeriesMetricRef
 	var ignoredFields []FrameFieldIndex
 	metricIndex := make(map[[2]string]struct{})
 
-	if wf.Frame == nil {
+	switch {
+	case wf == nil:
+		return nil, nil, fmt.Errorf("frames may not be nil")
+	case len(*wf) == 0:
+		return nil, nil, fmt.Errorf("missing frame, must be at least one frame")
+	}
+
+	frame := (*wf)[0]
+
+	if frame == nil {
 		return nil, nil, fmt.Errorf("frame is nil which is invalid")
 	}
 
-	if len(wf.Fields) == 0 { // TODO: Error differently if nil and not zero length?
+	if len(frame.Fields) == 0 { // TODO: Error differently if nil and not zero length?
 		return []TimeSeriesMetricRef{}, nil, nil // empty response
 	}
 
-	if err := malformedFrameCheck(0, wf.Frame); err != nil {
+	if err := malformedFrameCheck(0, frame); err != nil {
 		return nil, nil, err
 	}
 
-	timeField, ignoredTimedFields, err := seriesCheckSelectTime(0, wf.Frame)
+	timeField, ignoredTimedFields, err := seriesCheckSelectTime(0, frame)
 	if err != nil {
 		return nil, nil, err
 	}
@@ -96,19 +124,19 @@ func validateAndGetRefsWide(wf WideFrameSeries, validateData, getRefs bool) ([]T
 		ignoredFields = append(ignoredFields, ignoredTimedFields...)
 	}
 
-	valueFieldIndices := wf.TypeIndices(ValidValueFields()...)
+	valueFieldIndices := frame.TypeIndices(ValidValueFields()...)
 	if len(valueFieldIndices) == 0 {
 		return nil, nil, fmt.Errorf("frame is missing a numeric value field")
 	}
 
 	// TODO this is fragile if new types are added
-	otherFields := wf.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
+	otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
 	for _, fieldIdx := range otherFields {
-		ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, fmt.Sprintf("unsupported field type %v", wf.Fields[fieldIdx].Type())})
+		ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())})
 	}
 
 	for _, vFieldIdx := range valueFieldIndices {
-		vField := wf.Fields[vFieldIdx]
+		vField := frame.Fields[vFieldIdx]
 		if validateData {
 			metricKey := [2]string{vField.Name, vField.Labels.String()}
 			if _, ok := metricIndex[metricKey]; ok && validateData {
@@ -132,6 +160,20 @@ func validateAndGetRefsWide(wf WideFrameSeries, validateData, getRefs bool) ([]T
 		}
 		if !sorted {
 			return nil, nil, fmt.Errorf("frame has an unsorted time field")
+		}
+	}
+
+	if len(*wf) > 1 {
+		for frameIdx, f := range *wf {
+			if f == nil {
+				return nil, nil, fmt.Errorf("nil frame at %v which is invalid", frameIdx)
+			}
+			if len(f.Fields) == 0 {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, -1, "extra frame"})
+			}
+			for fieldIdx := range *wf {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "extra frame"})
+			}
 		}
 	}
 
