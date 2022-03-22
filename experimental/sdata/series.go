@@ -1,6 +1,7 @@
 package sdata
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -15,17 +16,18 @@ type TimeSeriesCollectionReader interface {
 
 	// GetMetricRefs runs validate without validateData. If the data is valid, then
 	// []TimeSeriesMetricRef is returned from reading as well as any ignored data. If invalid,
-	// then an error is returned, and not refs or ignoredFieldIndices are returned.
+	// then an error is returned, and no refs or ignoredFieldIndices are returned.
 	GetMetricRefs() (refs []TimeSeriesMetricRef, ignoredFieldIndices []FrameFieldIndex, err error)
 }
 
 func ValidValueFields() []data.FieldType {
+	// TODO: not sure about bool (factor or value)
 	return append(data.NumericFieldTypes(), []data.FieldType{data.FieldTypeBool, data.FieldTypeNullableBool}...)
 }
 
 // TimeSeriesMetricRef is for reading and contains the data for an individual
 // time series. In the cases of the Multi and Wide formats, the Fields are pointers
-// to the data in the original frame. In the case of Long, new fields are constructed.
+// to the data in the original frame. In the case of Long new fields are constructed.
 type TimeSeriesMetricRef struct {
 	TimeField  *data.Field
 	ValueField *data.Field
@@ -41,6 +43,35 @@ type FrameFieldIndex struct {
 	Reason   string // only meant for human consumption
 }
 
+func TimeSeriesReaderFromFrames(frames []*data.Frame) (TimeSeriesCollectionReader, error) {
+	if len(frames) == 0 {
+		return nil, fmt.Errorf("must be at least one frame")
+	}
+
+	firstFrame := frames[0]
+	if firstFrame == nil {
+		return nil, fmt.Errorf("nil frames are invalid")
+	}
+	if firstFrame.Meta == nil {
+		return nil, fmt.Errorf("metadata missing from first frame, can not determine type")
+	}
+
+	mt := firstFrame.Meta.Type
+	var tcr TimeSeriesCollectionReader
+
+	switch {
+	case mt == data.FrameTypeTimeSeriesMany: // aka multi
+		mfs := MultiFrameSeries(frames)
+		tcr = &mfs
+	case mt == data.FrameTypeTimeSeriesLong:
+		tcr = LongSeries{Frame: firstFrame} // TODO change to Frames for extra/ignored data?
+	case mt == data.FrameTypeTimeSeriesWide:
+		tcr = WideFrameSeries{Frame: firstFrame} // TODO change to Frames for extra/ignored data?
+	default:
+		return nil, fmt.Errorf("unsupported time series type %q", mt)
+	}
+	return tcr, nil
+}
 
 func (m TimeSeriesMetricRef) GetMetricName() string {
 	if m.ValueField != nil {
