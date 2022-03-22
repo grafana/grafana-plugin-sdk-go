@@ -66,14 +66,13 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		require.Equal(t, expectedRefs, mFrameRefs)
 	})
 	t.Run("long frame", func(t *testing.T) {
-		ls := &sdata.LongSeries{
-			Frame: data.NewFrame("",
-				data.NewField("time", nil, []time.Time{timeSlice[0], timeSlice[0],
-					timeSlice[1], timeSlice[1]}),
-				data.NewField("os.cpu", nil, []float64{valuesA[0], valuesB[0],
-					valuesA[1], valuesB[1]}),
-				data.NewField("host", nil, []string{"a", "b", "a", "b"}),
-			).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
+		ls := &sdata.LongSeries{data.NewFrame("",
+			data.NewField("time", nil, []time.Time{timeSlice[0], timeSlice[0],
+				timeSlice[1], timeSlice[1]}),
+			data.NewField("os.cpu", nil, []float64{valuesA[0], valuesB[0],
+				valuesA[1], valuesB[1]}),
+			data.NewField("host", nil, []string{"a", "b", "a", "b"}),
+		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
 		}
 
 		var r sdata.TimeSeriesCollectionReader = ls

@@ -39,7 +39,7 @@ type TimeSeriesMetricRef struct {
 // when the data is valid. Reason states why the field was not part of the metric data.
 type FrameFieldIndex struct {
 	FrameIdx int
-	FieldIdx int
+	FieldIdx int    // -1 means no fields
 	Reason   string // only meant for human consumption
 }
 
@@ -64,7 +64,8 @@ func TimeSeriesReaderFromFrames(frames []*data.Frame) (TimeSeriesCollectionReade
 		mfs := MultiFrameSeries(frames)
 		tcr = &mfs
 	case mt == data.FrameTypeTimeSeriesLong:
-		tcr = LongSeries{Frame: firstFrame} // TODO change to Frames for extra/ignored data?
+		ls := LongSeries(frames)
+		tcr = &ls // TODO change to Frames for extra/ignored data?
 	case mt == data.FrameTypeTimeSeriesWide:
 		wfs := WideFrameSeries(frames)
 		tcr = &wfs

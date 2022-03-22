@@ -13,7 +13,7 @@ import (
 func TestLongSeriesGetMetricRefs(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		ls := sdata.LongSeries{
-			Frame: data.NewFrame("",
+			data.NewFrame("",
 				data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(1)}),
 				data.NewField("host", nil, []string{"a", "b"}),
 				data.NewField("iface", nil, []string{"eth0", "eth0"}),
