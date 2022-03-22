@@ -109,6 +109,9 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 	}
 
 	if len(frame.Fields) == 0 { // TODO: Error differently if nil and not zero length?
+		if err := ignoreAdditionalFrames("additional frame on empty response", *wf, &ignoredFields); err != nil {
+			return nil, nil, err
+		}
 		return []TimeSeriesMetricRef{}, nil, nil // empty response
 	}
 
@@ -163,19 +166,7 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 		}
 	}
 
-	if len(*wf) > 1 {
-		for frameIdx, f := range *wf {
-			if f == nil {
-				return nil, nil, fmt.Errorf("nil frame at %v which is invalid", frameIdx)
-			}
-			if len(f.Fields) == 0 {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, -1, "extra frame"})
-			}
-			for fieldIdx := range *wf {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "extra frame"})
-			}
-		}
-	}
+	ignoreAdditionalFrames("additional frame", *wf, &ignoredFields)
 
 	sortTimeSeriesMetricRef(refs)
 	return refs, ignoredFields, nil

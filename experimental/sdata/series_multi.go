@@ -100,17 +100,23 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 		return nil, nil, fmt.Errorf("must have at least one frame to be valid")
 	}
 
-	if len(*mfs) == 1 { // empty typed response (single frame, with type indicator, and no fields)
-		f := (*mfs)[0]
-		if f == nil {
-			return nil, nil, fmt.Errorf("frame 0 is nil which is invalid")
+	firstFrame := (*mfs)[0]
+
+	switch {
+	case firstFrame == nil:
+		return nil, nil, fmt.Errorf("frame 0 is nil which is invalid")
+	case firstFrame.Meta == nil:
+		return nil, nil, fmt.Errorf("frame 0 is missing a type indicator")
+	case !frameHasType(firstFrame, data.FrameTypeTimeSeriesMany):
+		return nil, nil, fmt.Errorf("frame 0 has wrong type, expected many/multi but got %q", firstFrame.Meta.Type)
+	case len(firstFrame.Fields) == 0:
+		if len(*mfs) > 1 {
+			if err := ignoreAdditionalFrames("extra frame on empty response", *mfs, &ignoredFields); err != nil {
+				return nil, nil, err
+			}
+
 		}
-		if !frameHasType(f, data.FrameTypeTimeSeriesMany) {
-			return nil, nil, fmt.Errorf("single frame response is missing a type indicator")
-		}
-		if len(f.Fields) == 0 {
-			return []TimeSeriesMetricRef{}, nil, nil
-		}
+		return []TimeSeriesMetricRef{}, ignoredFields, nil
 	}
 
 	metricIndex := make(map[[2]string]struct{})

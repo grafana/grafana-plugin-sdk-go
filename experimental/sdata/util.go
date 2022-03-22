@@ -75,3 +75,27 @@ func malformedFrameCheck(frameIdx int, frame *data.Frame) error {
 	}
 	return nil
 }
+
+func ignoreAdditionalFrames(reason string, frames []*data.Frame, ignored *[]FrameFieldIndex) (err error) {
+	if len(frames) < 1 {
+		return nil
+	}
+	for frameIdx, f := range (frames)[1:] {
+		if f == nil {
+			return fmt.Errorf("nil frame at %v which is invalid", frameIdx)
+		}
+		if len(f.Fields) == 0 {
+			if ignored == nil {
+				ignored = &([]FrameFieldIndex{})
+			}
+			*ignored = append(*ignored, FrameFieldIndex{frameIdx + 1, -1, reason})
+		}
+		for fieldIdx := range frames {
+			if ignored == nil {
+				ignored = &([]FrameFieldIndex{})
+			}
+			*ignored = append(*ignored, FrameFieldIndex{frameIdx + 1, fieldIdx, reason})
+		}
+	}
+	return nil
+}

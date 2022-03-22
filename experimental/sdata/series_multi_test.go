@@ -152,7 +152,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 		require.Len(t, refs, 0)
 	})
 
-	t.Run("empty response frame with an additional valid frame is invvalid", func(t *testing.T) {
+	t.Run("empty response frame with an additional frames cause additional frames to be ignored", func(t *testing.T) {
 		s := sdata.NewMultiFrameSeries()
 
 		// (s.AddMetric) would alter the first frame which would be the "right thing" to do.
@@ -163,12 +163,12 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 		)
 
 		refs, ignoredFieldIndices, err := s.GetMetricRefs()
-		require.Nil(t, refs)
-		require.Nil(t, ignoredFieldIndices)
-		require.Error(t, err)
-		errContains := "null fields which is invalid when more than one frame"
-		require.True(t, strings.Contains(err.Error(), errContains), fmt.Sprintf("error '%v' does not contain '%v'", err.Error(), errContains))
-
+		require.NoError(t, err)
+		require.Len(t, refs, 0)
+		require.Equal(t, []sdata.FrameFieldIndex{
+			{1, 0, "extra frame on empty response"},
+			{1, 1, "extra frame on empty response"},
+		}, ignoredFieldIndices)
 	})
 
 	t.Run("uninitalized frames returns nil refs and nil ignored", func(t *testing.T) {

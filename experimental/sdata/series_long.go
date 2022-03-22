@@ -36,22 +36,24 @@ func validateAndGetRefsLong(ls *LongSeries, validateData, getRefs bool) ([]TimeS
 	frame := (*ls)[0]
 
 	if frame == nil {
-		return nil, nil, fmt.Errorf("frame must not be nil")
+		return nil, nil, fmt.Errorf("frame 0 must not be nil")
 	}
 
 	if !frameHasType(frame, data.FrameTypeTimeSeriesLong) {
-		return nil, nil, fmt.Errorf("frame is missing long type indicator")
+		return nil, nil, fmt.Errorf("frame 0 is missing long type indicator")
 	}
 
+	var ignoredFields []FrameFieldIndex
 	if len(frame.Fields) == 0 { // empty response
-		return []TimeSeriesMetricRef{}, nil, nil
+		if err := ignoreAdditionalFrames("additional frame on empty response", *ls, &ignoredFields); err != nil {
+			return nil, nil, err
+		}
+		return []TimeSeriesMetricRef{}, ignoredFields, nil
 	}
 
 	if err := malformedFrameCheck(0, frame); err != nil {
 		return nil, nil, err
 	}
-
-	var ignoredFields []FrameFieldIndex
 
 	// metricName/labels -> SeriesRef
 	mm := make(map[string]map[string]TimeSeriesMetricRef)
@@ -129,6 +131,8 @@ func validateAndGetRefsLong(ls *LongSeries, validateData, getRefs bool) ([]TimeS
 			}
 		}
 	}
+
+	ignoreAdditionalFrames("additional frame", *ls, &ignoredFields)
 
 	return refs, ignoredFields, nil
 }
