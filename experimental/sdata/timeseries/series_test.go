@@ -1,4 +1,4 @@
-package sdata_test
+package timeseries_test
 
 import (
 	"testing"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/timeseries"
 	"github.com/stretchr/testify/require"
 )
 
@@ -17,7 +18,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	valuesB := []float64{3, 4}
 
 	// refs should be same across the formats
-	expectedRefs := []sdata.TimeSeriesMetricRef{
+	expectedRefs := []timeseries.MetricRef{
 		{
 			data.NewField("time", nil, timeSlice),
 			data.NewField(metricName, data.Labels{"host": "a"}, valuesA),
@@ -29,7 +30,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	}
 
 	t.Run("multi frame", func(t *testing.T) {
-		sc := sdata.NewMultiFrameSeries()
+		sc := timeseries.NewMultiFrame()
 
 		err := sc.AddMetric(metricName, data.Labels{"host": "a"}, timeSlice, valuesA)
 		require.NoError(t, err)
@@ -37,7 +38,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, timeSlice, valuesB)
 		require.NoError(t, err)
 
-		var r sdata.TimeSeriesCollectionReader = sc
+		var r timeseries.CollectionReader = sc
 
 		mFrameRefs, extraFields, err := r.GetMetricRefs()
 		require.Nil(t, err)
@@ -46,7 +47,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	})
 
 	t.Run("wide frame", func(t *testing.T) {
-		sc := sdata.NewWideFrameSeries()
+		sc := timeseries.NewWideFrame()
 
 		err := sc.SetTime("time", timeSlice)
 		require.NoError(t, err)
@@ -57,7 +58,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, valuesB)
 		require.NoError(t, err)
 
-		var r sdata.TimeSeriesCollectionReader = sc
+		var r timeseries.CollectionReader = sc
 
 		mFrameRefs, extraFields, err := r.GetMetricRefs()
 		require.Nil(t, err)
@@ -66,7 +67,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		require.Equal(t, expectedRefs, mFrameRefs)
 	})
 	t.Run("long frame", func(t *testing.T) {
-		ls := &sdata.LongSeries{data.NewFrame("",
+		ls := &timeseries.LongFrame{data.NewFrame("",
 			data.NewField("time", nil, []time.Time{timeSlice[0], timeSlice[0],
 				timeSlice[1], timeSlice[1]}),
 			data.NewField("os.cpu", nil, []float64{valuesA[0], valuesB[0],
@@ -75,7 +76,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
 		}
 
-		var r sdata.TimeSeriesCollectionReader = ls
+		var r timeseries.CollectionReader = ls
 
 		mFrameRefs, extraFields, err := r.GetMetricRefs()
 		require.Nil(t, err)
@@ -91,23 +92,23 @@ func addFields(frame *data.Frame, fields ...*data.Field) *data.Frame {
 }
 
 func TestEmptyFromNew(t *testing.T) {
-	var multi, wide, long sdata.TimeSeriesCollectionReader
+	var multi, wide, long timeseries.CollectionReader
 
-	multi = sdata.NewMultiFrameSeries()
-	wide = sdata.NewWideFrameSeries()
-	long = sdata.NewLongSeries()
+	multi = timeseries.NewMultiFrame()
+	wide = timeseries.NewWideFrame()
+	long = timeseries.NewLongFrame()
 
-	emptyReqs := func(refs []sdata.TimeSeriesMetricRef, ignored []sdata.FrameFieldIndex, err error) {
+	emptyReqs := func(refs []timeseries.MetricRef, ignored []sdata.FrameFieldIndex, err error) {
 		require.NoError(t, err)
 		require.Nil(t, ignored)
 		require.NotNil(t, refs)
 		require.Len(t, refs, 0)
 	}
 
-	viaFrames := func(r sdata.TimeSeriesCollectionReader) {
+	viaFrames := func(r timeseries.CollectionReader) {
 		t.Run("should work when losing go type via Frames()", func(t *testing.T) {
 			frames := r.Frames()
-			r, err := sdata.TimeSeriesReaderFromFrames(frames)
+			r, err := timeseries.CollectionReaderFromFrames(frames)
 			require.NoError(t, err)
 
 			refs, ignored, err := r.GetMetricRefs()

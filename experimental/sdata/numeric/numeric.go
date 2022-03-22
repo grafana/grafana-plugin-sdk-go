@@ -1,48 +1,49 @@
-package sdata
+package numeric
 
 import (
 	"fmt"
 	"sort"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-type NumericCollectionWriter interface {
+type CollectionWriter interface {
 	AddMetric(metricName string, l data.Labels, value interface{}) error
 	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
 }
 
-type NumericCollection interface {
-	NumericCollectionWriter
-	NumericCollectionReader
+type Collection interface {
+	CollectionWriter
+	CollectionReader
 }
 
-type NumericCollectionReader interface {
+type CollectionReader interface {
 	Validate() (isEmpty bool, errors []error)
-	GetMetricRefs() []NumericMetricRef
+	GetMetricRefs() []MetricRef
 }
 
-type NumericMetricRef struct {
+type MetricRef struct {
 	ValueField *data.Field
 }
 
-func (n NumericMetricRef) GetMetricName() string {
+func (n MetricRef) GetMetricName() string {
 	if n.ValueField != nil {
 		return n.ValueField.Name
 	}
 	return ""
 }
 
-func (n NumericMetricRef) GetLabels() data.Labels {
+func (n MetricRef) GetLabels() data.Labels {
 	if n.ValueField != nil {
 		return n.ValueField.Labels
 	}
 	return nil
 }
 
-type MultiFrameNumeric []*data.Frame
+type MultiFrame []*data.Frame
 
-func (mfn *MultiFrameNumeric) AddMetric(metricName string, l data.Labels, value interface{}) error {
+func (mfn *MultiFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
 	fType := data.FieldTypeFor(value)
 	if !fType.Numeric() {
 		return fmt.Errorf("unsupported value type %T, must be numeric", value)
@@ -57,32 +58,32 @@ func (mfn *MultiFrameNumeric) AddMetric(metricName string, l data.Labels, value 
 	return nil
 }
 
-func (mfn *MultiFrameNumeric) GetMetricRefs() []NumericMetricRef {
-	refs := []NumericMetricRef{}
+func (mfn *MultiFrame) GetMetricRefs() []MetricRef {
+	refs := []MetricRef{}
 	for _, frame := range *mfn {
-		valueFields := frame.TypeIndices(ValidValueFields()...)
+		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)
 		if len(valueFields) == 0 {
 			continue
 		}
-		refs = append(refs, NumericMetricRef{frame.Fields[valueFields[0]]})
+		refs = append(refs, MetricRef{frame.Fields[valueFields[0]]})
 	}
 	sortNumericMetricRef(refs)
 	return refs
 }
 
-func (mfn *MultiFrameNumeric) Validate() (isEmpty bool, errors []error) {
+func (mfn *MultiFrame) Validate() (isEmpty bool, errors []error) {
 	panic("not implemented")
 }
 
-func (mfn *MultiFrameNumeric) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
+func (mfn *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 	panic("not implemented")
 }
 
-type WideFrameNumeric struct {
+type WideFrame struct {
 	*data.Frame
 }
 
-func (mfn *WideFrameNumeric) AddMetric(metricName string, l data.Labels, value interface{}) error {
+func (mfn *WideFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
 	fType := data.FieldTypeFor(value)
 	if !fType.Numeric() {
 		return fmt.Errorf("unsupported value type %T, must be numeric", value)
@@ -100,38 +101,38 @@ func (mfn *WideFrameNumeric) AddMetric(metricName string, l data.Labels, value i
 	return nil
 }
 
-func (mfn *WideFrameNumeric) GetMetricRefs() []NumericMetricRef {
-	refs := []NumericMetricRef{}
+func (mfn *WideFrame) GetMetricRefs() []MetricRef {
+	refs := []MetricRef{}
 	for _, field := range mfn.Fields {
 		if !field.Type().Numeric() {
 			continue
 		}
-		refs = append(refs, NumericMetricRef{field})
+		refs = append(refs, MetricRef{field})
 	}
 	sortNumericMetricRef(refs)
 	return refs
 }
 
-func (mfn *WideFrameNumeric) Validate() (isEmpty bool, errors []error) {
+func (mfn *WideFrame) Validate() (isEmpty bool, errors []error) {
 	panic("not implemented")
 }
 
-func (mfn *WideFrameNumeric) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
+func (mfn *WideFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 	panic("not implemented")
 }
 
-type LongFrameNumeric struct {
+type LongFrame struct {
 	*data.Frame
 }
 
-func (lfn *LongFrameNumeric) GetMetricRefs() []NumericMetricRef {
+func (lfn *LongFrame) GetMetricRefs() []MetricRef {
 	if lfn == nil || lfn.Frame == nil {
-		return []NumericMetricRef{}
+		return []MetricRef{}
 	}
 	stringFieldIdxs, numericFieldIdxs := []int{}, []int{}
 	stringFieldNames, numericFieldNames := []string{}, []string{}
 
-	refs := []NumericMetricRef{}
+	refs := []MetricRef{}
 
 	for i, field := range lfn.Fields {
 		fType := field.Type()
@@ -159,7 +160,7 @@ func (lfn *LongFrameNumeric) GetMetricRefs() []NumericMetricRef {
 			field.Name = numericFieldNames[i]
 			field.Labels = l
 			field.Set(0, lfn.Fields[fieldIdx].At(rowIdx))
-			refs = append(refs, NumericMetricRef{
+			refs = append(refs, MetricRef{
 				ValueField: field,
 			})
 		}
@@ -168,11 +169,11 @@ func (lfn *LongFrameNumeric) GetMetricRefs() []NumericMetricRef {
 	return refs
 }
 
-func (lfn *LongFrameNumeric) Validate() (isEmpty bool, errors []error) {
+func (lfn *LongFrame) Validate() (isEmpty bool, errors []error) {
 	panic("not implemented")
 }
 
-func sortNumericMetricRef(refs []NumericMetricRef) {
+func sortNumericMetricRef(refs []MetricRef) {
 	sort.SliceStable(refs, func(i, j int) bool {
 		iRef := refs[i]
 		jRef := refs[j]

@@ -1,10 +1,11 @@
-package sdata
+package timeseries
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
 func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
@@ -40,8 +41,8 @@ func timeIsSorted(field *data.Field) (bool, error) {
 func seriesCheckSelectTime(
 	frameIdx int,
 	frame *data.Frame,
-) (*data.Field, []FrameFieldIndex, error) {
-	var ignoredFields []FrameFieldIndex
+) (*data.Field, []sdata.FrameFieldIndex, error) {
+	var ignoredFields []sdata.FrameFieldIndex
 
 	timeFields := frame.TypeIndices(data.FieldTypeTime)
 
@@ -52,7 +53,9 @@ func seriesCheckSelectTime(
 
 	if len(timeFields) > 1 {
 		for _, fieldIdx := range timeFields[1:] {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "additional time field"})
+			ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+				FrameIdx: frameIdx, FieldIdx: fieldIdx,
+				Reason: "additional time field"})
 		}
 	}
 
@@ -76,7 +79,7 @@ func malformedFrameCheck(frameIdx int, frame *data.Frame) error {
 	return nil
 }
 
-func ignoreAdditionalFrames(reason string, frames []*data.Frame, ignored *[]FrameFieldIndex) (err error) {
+func ignoreAdditionalFrames(reason string, frames []*data.Frame, ignored *[]sdata.FrameFieldIndex) (err error) {
 	if len(frames) < 1 {
 		return nil
 	}
@@ -86,15 +89,19 @@ func ignoreAdditionalFrames(reason string, frames []*data.Frame, ignored *[]Fram
 		}
 		if len(f.Fields) == 0 {
 			if ignored == nil {
-				ignored = &([]FrameFieldIndex{})
+				ignored = &([]sdata.FrameFieldIndex{})
 			}
-			*ignored = append(*ignored, FrameFieldIndex{frameIdx + 1, -1, reason})
+			*ignored = append(*ignored, sdata.FrameFieldIndex{
+				FrameIdx: frameIdx + 1, FieldIdx: -1, Reason: reason},
+			)
 		}
 		for fieldIdx := range frames {
 			if ignored == nil {
-				ignored = &([]FrameFieldIndex{})
+				ignored = &([]sdata.FrameFieldIndex{})
 			}
-			*ignored = append(*ignored, FrameFieldIndex{frameIdx + 1, fieldIdx, reason})
+			*ignored = append(*ignored, sdata.FrameFieldIndex{
+				FrameIdx: frameIdx + 1, FieldIdx: fieldIdx, Reason: reason},
+			)
 		}
 	}
 	return nil

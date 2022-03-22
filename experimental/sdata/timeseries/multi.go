@@ -1,4 +1,4 @@
-package sdata
+package timeseries
 
 import (
 	"fmt"
@@ -6,22 +6,23 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-type MultiFrameSeries []*data.Frame
+type MultiFrame []*data.Frame
 
-func NewMultiFrameSeries() *MultiFrameSeries {
-	return &MultiFrameSeries{
+func NewMultiFrame() *MultiFrame {
+	return &MultiFrame{
 		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
 	}
 }
 
 // values must be a numeric slice such as []int64, []float64, []*float64, etc or []bool / []*bool.
-func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
+func (mfs *MultiFrame) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
 	var err error
 
 	if mfs == nil || len(*mfs) == 0 {
-		return fmt.Errorf("zero frames when calling AddMetric must call NewMultiFrameSeries first") // panic? maybe?
+		return fmt.Errorf("zero frames when calling AddMetric must call NewMultiFrame first") // panic? maybe?
 	}
 
 	if !data.ValidFieldType(values) {
@@ -54,11 +55,11 @@ func (mfs *MultiFrameSeries) AddMetric(metricName string, l data.Labels, t []tim
 	return err
 }
 
-func (mfs *MultiFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
+func (mfs *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 	panic("not implemented")
 }
 
-func (mfs *MultiFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
+func (mfs *MultiFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
 	return validateAndGetRefsMulti(mfs, false, true)
 }
 
@@ -88,14 +89,14 @@ When things get ignored
   - String, Additional Time Fields, Additional Value fields
 
 */
-func (mfs *MultiFrameSeries) Validate(validateData bool) (ignoredFields []FrameFieldIndex, err error) {
+func (mfs *MultiFrame) Validate(validateData bool) (ignoredFields []sdata.FrameFieldIndex, err error) {
 	_, ignoredFields, err = validateAndGetRefsMulti(mfs, validateData, false)
 	return ignoredFields, err
 }
 
 // wrap validation and metric ref fetching together for consistency in validation
 // not sure if "getRefs" should be there or not, or if should just always be built and ignored.
-func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) (refs []TimeSeriesMetricRef, ignoredFields []FrameFieldIndex, err error) {
+func validateAndGetRefsMulti(mfs *MultiFrame, validateData, getRefs bool) (refs []MetricRef, ignoredFields []sdata.FrameFieldIndex, err error) {
 	if mfs == nil || len(*mfs) == 0 {
 		return nil, nil, fmt.Errorf("must have at least one frame to be valid")
 	}
@@ -115,7 +116,7 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 				return nil, nil, err
 			}
 		}
-		return []TimeSeriesMetricRef{}, ignoredFields, nil
+		return []MetricRef{}, ignoredFields, nil
 	}
 
 	metricIndex := make(map[[2]string]struct{})
@@ -127,7 +128,9 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 
 		ignoreAllFields := func(reason string) {
 			for fieldIdx := range frame.Fields {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, reason})
+				ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+					FrameIdx: frameIdx, FieldIdx: fieldIdx, Reason: reason},
+				)
 			}
 		}
 
@@ -155,13 +158,16 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 			ignoredFields = append(ignoredFields, ignoredTimedFields...)
 		}
 
-		valueFields := frame.TypeIndices(ValidValueFields()...)
+		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)
 		if len(valueFields) == 0 {
 			return nil, nil, fmt.Errorf("frame %v must have at least one value field but has %v", frameIdx, len(valueFields))
 		}
 		if len(valueFields) > 1 {
 			for _, fieldIdx := range valueFields[1:] {
-				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "additional numeric value field"})
+				ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+					FrameIdx: frameIdx, FieldIdx: fieldIdx,
+					Reason: "additional numeric value field"},
+				)
 			}
 		}
 
@@ -184,7 +190,7 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 		}
 
 		if getRefs {
-			refs = append(refs, TimeSeriesMetricRef{
+			refs = append(refs, MetricRef{
 				TimeField:  timeField,
 				ValueField: frame.Fields[valueFields[0]],
 			})
@@ -193,7 +199,10 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 		// TODO this is fragile if new types are added
 		otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
 		for _, fieldIdx := range otherFields {
-			ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())})
+			ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+				FrameIdx: frameIdx, FieldIdx: fieldIdx,
+				Reason: fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())},
+			)
 		}
 	}
 
@@ -201,12 +210,12 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 		return nil, nil, fmt.Errorf("no metrics in response and not an empty response")
 	}
 
-	sort.Sort(FrameFieldIndices(ignoredFields))
+	sort.Sort(sdata.FrameFieldIndices(ignoredFields))
 
 	return refs, ignoredFields, nil
 }
 
-func (mfs *MultiFrameSeries) Frames() []*data.Frame {
+func (mfs *MultiFrame) Frames() []*data.Frame {
 	if mfs == nil {
 		return nil
 	}

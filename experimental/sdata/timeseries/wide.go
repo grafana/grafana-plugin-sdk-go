@@ -1,26 +1,27 @@
-package sdata
+package timeseries
 
 import (
 	"fmt"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-type WideFrameSeries []*data.Frame
+type WideFrame []*data.Frame
 
-func NewWideFrameSeries() *WideFrameSeries {
+func NewWideFrame() *WideFrame {
 	f := data.NewFrame("")
 	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
-	return &WideFrameSeries{f}
+	return &WideFrame{f}
 }
 
-func (wf *WideFrameSeries) SetTime(timeName string, t []time.Time) error {
+func (wf *WideFrame) SetTime(timeName string, t []time.Time) error {
 	switch {
 	case wf == nil:
-		return fmt.Errorf("wf is nil, NewWideFrameSeries must be called first")
+		return fmt.Errorf("wf is nil, NewWideFrame must be called first")
 	case len(*wf) == 0:
-		return fmt.Errorf("missing frame, NewWideFrameSeries must be called first")
+		return fmt.Errorf("missing frame, NewWideFrame must be called first")
 	case len(*wf) > 1:
 		return fmt.Errorf("may not set time after adding extra frames")
 	}
@@ -33,23 +34,23 @@ func (wf *WideFrameSeries) SetTime(timeName string, t []time.Time) error {
 	case frame.Fields != nil:
 		return fmt.Errorf("expected fields property to be nil (metrics added before calling SetTime?)")
 	case frame == nil:
-		return fmt.Errorf("missing is nil, NewWideFrameSeries must be called first")
+		return fmt.Errorf("missing is nil, NewWideFrame must be called first")
 	}
 
 	frame.Fields = append(frame.Fields, data.NewField(timeName, nil, t))
 	return nil
 }
 
-func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, values interface{}) error {
+func (wf *WideFrame) AddMetric(metricName string, l data.Labels, values interface{}) error {
 	if !data.ValidFieldType(values) {
 		return fmt.Errorf("type %T is not a valid data frame field type", values)
 	}
 
 	switch {
 	case wf == nil:
-		return fmt.Errorf("wf is nil, NewWideFrameSeries must be called first")
+		return fmt.Errorf("wf is nil, NewWideFrame must be called first")
 	case len(*wf) == 0:
-		return fmt.Errorf("missing frame, NewWideFrameSeries must be called first")
+		return fmt.Errorf("missing frame, NewWideFrame must be called first")
 	case len(*wf) > 1:
 		return fmt.Errorf("may not add metrics after adding extra frames")
 	}
@@ -57,7 +58,7 @@ func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, values in
 	frame := (*wf)[0]
 
 	if frame == nil {
-		return fmt.Errorf("missing is nil, NewWideFrameSeries must be called first")
+		return fmt.Errorf("missing is nil, NewWideFrame must be called first")
 	}
 
 	// Note: Readers are not required to make the Time field first, but using New/SetTime/AddMetric does.
@@ -77,22 +78,22 @@ func (wf *WideFrameSeries) AddMetric(metricName string, l data.Labels, values in
 	return nil
 }
 
-func (wf *WideFrameSeries) GetMetricRefs() ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
+func (wf *WideFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
 	return validateAndGetRefsWide(wf, false, true)
 }
 
-func (wf *WideFrameSeries) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
+func (wf *WideFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 	panic("not implemented")
 }
 
-func (wf *WideFrameSeries) Validate(validateData bool) (ignoredFields []FrameFieldIndex, err error) {
+func (wf *WideFrame) Validate(validateData bool) (ignoredFields []sdata.FrameFieldIndex, err error) {
 	_, ignoredFields, err = validateAndGetRefsWide(wf, validateData, false)
 	return ignoredFields, err
 }
 
-func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]TimeSeriesMetricRef, []FrameFieldIndex, error) {
-	var refs []TimeSeriesMetricRef
-	var ignoredFields []FrameFieldIndex
+func validateAndGetRefsWide(wf *WideFrame, validateData, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	var refs []MetricRef
+	var ignoredFields []sdata.FrameFieldIndex
 	metricIndex := make(map[[2]string]struct{})
 
 	switch {
@@ -112,7 +113,7 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 		if err := ignoreAdditionalFrames("additional frame on empty response", *wf, &ignoredFields); err != nil {
 			return nil, nil, err
 		}
-		return []TimeSeriesMetricRef{}, nil, nil // empty response
+		return []MetricRef{}, nil, nil // empty response
 	}
 
 	if err := malformedFrameCheck(0, frame); err != nil {
@@ -127,7 +128,7 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 		ignoredFields = append(ignoredFields, ignoredTimedFields...)
 	}
 
-	valueFieldIndices := frame.TypeIndices(ValidValueFields()...)
+	valueFieldIndices := frame.TypeIndices(sdata.ValidValueFields()...)
 	if len(valueFieldIndices) == 0 {
 		return nil, nil, fmt.Errorf("frame is missing a numeric value field")
 	}
@@ -135,7 +136,9 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 	// TODO this is fragile if new types are added
 	otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
 	for _, fieldIdx := range otherFields {
-		ignoredFields = append(ignoredFields, FrameFieldIndex{0, fieldIdx, fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())})
+		ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+			FrameIdx: 0, FieldIdx: fieldIdx,
+			Reason: fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())})
 	}
 
 	for _, vFieldIdx := range valueFieldIndices {
@@ -148,7 +151,7 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 			metricIndex[metricKey] = struct{}{}
 		}
 		if getRefs {
-			refs = append(refs, TimeSeriesMetricRef{
+			refs = append(refs, MetricRef{
 				TimeField:  timeField,
 				ValueField: vField,
 			})
@@ -174,7 +177,7 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 	return refs, ignoredFields, nil
 }
 
-func (wf *WideFrameSeries) Frames() []*data.Frame {
+func (wf *WideFrame) Frames() []*data.Frame {
 	if wf == nil {
 		return nil
 	}

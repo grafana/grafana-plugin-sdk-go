@@ -1,4 +1,4 @@
-package sdata_test
+package timeseries_test
 
 import (
 	"testing"
@@ -6,13 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/timeseries"
 	"github.com/stretchr/testify/require"
 )
 
 func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 	t.Run("add two metrics", func(t *testing.T) {
-		wf := sdata.NewWideFrameSeries()
+		wf := timeseries.NewWideFrame()
 
 		err := wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
 		require.NoError(t, err)
@@ -37,7 +37,7 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 
 func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 	t.Run("two metrics from wide to multi", func(t *testing.T) {
-		wf := sdata.NewWideFrameSeries()
+		wf := timeseries.NewWideFrame()
 
 		err := wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
 		require.NoError(t, err)
@@ -51,7 +51,7 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 		refs, ignoredFields, err := wf.GetMetricRefs()
 		require.NoError(t, err)
 
-		expectedRefs := []sdata.TimeSeriesMetricRef{
+		expectedRefs := []timeseries.MetricRef{
 			{
 				ValueField: data.NewField("one", data.Labels{"host": "a"}, []float64{1, 2}),
 				TimeField:  data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}),

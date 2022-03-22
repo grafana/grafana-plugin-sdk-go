@@ -1,4 +1,4 @@
-package sdata_test
+package timeseries_test
 
 import (
 	"fmt"
@@ -8,33 +8,36 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/timeseries"
 	"github.com/stretchr/testify/require"
 )
 
 func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 	tests := []struct {
 		name                string
-		mfs                 func() *sdata.MultiFrameSeries
+		mfs                 func() *timeseries.MultiFrame
 		ignoredFieldIndices []sdata.FrameFieldIndex
 	}{
 		{
 			name: "frame with no fields is valid (empty response)",
-			mfs: func() *sdata.MultiFrameSeries {
-				s := sdata.NewMultiFrameSeries()
+			mfs: func() *timeseries.MultiFrame {
+				s := timeseries.NewMultiFrame()
 				return s
 			},
 		},
 		{
 			name: "there can be extraneous fields (but they have no specific platform-wide meaning)",
-			mfs: func() *sdata.MultiFrameSeries {
-				s := sdata.NewMultiFrameSeries()
+			mfs: func() *timeseries.MultiFrame {
+				s := timeseries.NewMultiFrame()
 				err := s.AddMetric("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
 				require.NoError(t, err)
 				(*s)[0].Fields = append((*s)[0].Fields, data.NewField("a", nil, []float64{2, 3}))
 				(*s)[0].Fields = append((*s)[0].Fields, data.NewField("a", nil, []string{"4", "cats"}))
 				return s
 			},
-			ignoredFieldIndices: []sdata.FrameFieldIndex{{0, 2, "additional numeric value field"}, {0, 3, "unsupported field type []string"}},
+			ignoredFieldIndices: []sdata.FrameFieldIndex{
+				{FrameIdx: 0, FieldIdx: 2, Reason: "additional numeric value field"},
+				{FrameIdx: 0, FieldIdx: 3, Reason: "unsupported field type []string"}},
 		},
 	}
 
@@ -50,20 +53,20 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 	tests := []struct {
 		name        string
-		mfs         *sdata.MultiFrameSeries
+		mfs         *timeseries.MultiFrame
 		errContains string
 		dataOnly    bool
 	}{
 		{
 			name: "frame must have type indicator",
-			mfs: &sdata.MultiFrameSeries{
+			mfs: &timeseries.MultiFrame{
 				data.NewFrame(""),
 			},
 			errContains: "missing a type indicator",
 		},
 		{
 			name: "frame with only value field is not valid, missing time field",
-			mfs: &sdata.MultiFrameSeries{
+			mfs: &timeseries.MultiFrame{
 				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
 					data.NewField("", nil, []float64{})),
 			},
@@ -71,7 +74,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		},
 		{
 			name: "frame with only a time field and no value is not valid",
-			mfs: &sdata.MultiFrameSeries{
+			mfs: &timeseries.MultiFrame{
 				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
 					data.NewField("", nil, []time.Time{})),
 			},
@@ -79,7 +82,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		},
 		{
 			name: "fields must be of the same length",
-			mfs: &sdata.MultiFrameSeries{
+			mfs: &timeseries.MultiFrame{
 				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
 					data.NewField("", nil, []float64{1, 2}),
 					data.NewField("", nil, []time.Time{time.UnixMilli(1)})),
@@ -88,7 +91,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		},
 		{
 			name: "frame with unsorted time is not valid",
-			mfs: &sdata.MultiFrameSeries{
+			mfs: &timeseries.MultiFrame{
 				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
 					data.NewField("", nil, []float64{1, 2}),
 					data.NewField("", nil, []time.Time{time.UnixMilli(2), time.UnixMilli(1)})),
@@ -98,7 +101,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		},
 		{
 			name: "duplicate metrics as identified by name + labels are invalid",
-			mfs: &sdata.MultiFrameSeries{
+			mfs: &timeseries.MultiFrame{
 				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
 					data.NewField("os.cpu", data.Labels{"host": "a", "iface": "eth0"}, []float64{1, 2}),
 					data.NewField("", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)})),
@@ -144,7 +147,7 @@ var _ = emptyFrameWithTypeMD(data.FrameTypeUnknown) // linter
 
 func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	t.Run("empty response reads as zero length metric refs and nil ignoredFields", func(t *testing.T) {
-		s := sdata.NewMultiFrameSeries()
+		s := timeseries.NewMultiFrame()
 
 		refs, ignoredFieldIndices, err := s.GetMetricRefs()
 		require.Nil(t, err)
@@ -155,7 +158,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	})
 
 	t.Run("empty response frame with an additional frames cause additional frames to be ignored", func(t *testing.T) {
-		s := sdata.NewMultiFrameSeries()
+		s := timeseries.NewMultiFrame()
 
 		// (s.AddMetric) would alter the first frame which would be the "right thing" to do.
 		*s = append(*s, emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany))
@@ -168,13 +171,13 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 		require.NoError(t, err)
 		require.Len(t, refs, 0)
 		require.Equal(t, []sdata.FrameFieldIndex{
-			{1, 0, "extra frame on empty response"},
-			{1, 1, "extra frame on empty response"},
+			{FrameIdx: 1, FieldIdx: 0, Reason: "extra frame on empty response"},
+			{FrameIdx: 1, FieldIdx: 1, Reason: "extra frame on empty response"},
 		}, ignoredFieldIndices)
 	})
 
 	t.Run("uninitialized frames returns nil refs and nil ignored", func(t *testing.T) {
-		s := sdata.MultiFrameSeries{}
+		s := timeseries.MultiFrame{}
 
 		refs, ignoredFieldIndices, err := s.GetMetricRefs()
 		require.Error(t, err)
@@ -184,7 +187,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	})
 
 	t.Run("a nil frame (a nil entry in slice of frames (very odd)), is not a valid in a response", func(t *testing.T) {
-		s := sdata.NewMultiFrameSeries()
+		s := timeseries.NewMultiFrame()
 		*s = append(*s, nil)
 
 		refs, ignoredFieldIndices, err := s.GetMetricRefs()
@@ -194,7 +197,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	})
 
 	t.Run("no type metadata means error if first", func(t *testing.T) {
-		s := sdata.MultiFrameSeries{
+		s := timeseries.MultiFrame{
 			data.NewFrame("",
 				data.NewField("", nil, []time.Time{}),
 				data.NewField("foo", nil, []float64{}),

@@ -1,51 +1,39 @@
-package sdata
+package timeseries
 
 import (
 	"fmt"
 	"sort"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-type TimeSeriesCollectionReader interface {
+type CollectionReader interface {
 	// Validate will error if the data is invalid according to its type rules.
 	// validateData will check for duplicate metrics and sorting and costs more resources.
 	// If the data is valid, then any data that was not part of the time series data
 	// is also returned as ignoredFieldIndices.
-	Validate(validateData bool) (ignoredFieldIndices []FrameFieldIndex, err error)
+	Validate(validateData bool) (ignoredFieldIndices []sdata.FrameFieldIndex, err error)
 
 	// GetMetricRefs runs validate without validateData. If the data is valid, then
 	// []TimeSeriesMetricRef is returned from reading as well as any ignored data. If invalid,
 	// then an error is returned, and no refs or ignoredFieldIndices are returned.
-	GetMetricRefs() (refs []TimeSeriesMetricRef, ignoredFieldIndices []FrameFieldIndex, err error)
+	GetMetricRefs() (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
 
 	Frames() []*data.Frame // returns underlying frames
 }
 
-func ValidValueFields() []data.FieldType {
-	// TODO: not sure about bool (factor or value)
-	return append(data.NumericFieldTypes(), []data.FieldType{data.FieldTypeBool, data.FieldTypeNullableBool}...)
-}
-
-// TimeSeriesMetricRef is for reading and contains the data for an individual
+// MetricRef is for reading and contains the data for an individual
 // time series. In the cases of the Multi and Wide formats, the Fields are pointers
 // to the data in the original frame. In the case of Long new fields are constructed.
-type TimeSeriesMetricRef struct {
+type MetricRef struct {
 	TimeField  *data.Field
 	ValueField *data.Field
 	// TODO: RefID string
 	// TODO: Pointer to frame meta?
 }
 
-// FrameFieldIndex is for referencing data that is not considered part of the metric data
-// when the data is valid. Reason states why the field was not part of the metric data.
-type FrameFieldIndex struct {
-	FrameIdx int
-	FieldIdx int    // -1 means no fields
-	Reason   string // only meant for human consumption
-}
-
-func TimeSeriesReaderFromFrames(frames []*data.Frame) (TimeSeriesCollectionReader, error) {
+func CollectionReaderFromFrames(frames []*data.Frame) (CollectionReader, error) {
 	if len(frames) == 0 {
 		return nil, fmt.Errorf("must be at least one frame")
 	}
@@ -59,17 +47,17 @@ func TimeSeriesReaderFromFrames(frames []*data.Frame) (TimeSeriesCollectionReade
 	}
 
 	mt := firstFrame.Meta.Type
-	var tcr TimeSeriesCollectionReader
+	var tcr CollectionReader
 
 	switch {
 	case mt == data.FrameTypeTimeSeriesMany: // aka multi
-		mfs := MultiFrameSeries(frames)
+		mfs := MultiFrame(frames)
 		tcr = &mfs
 	case mt == data.FrameTypeTimeSeriesLong:
-		ls := LongSeries(frames)
+		ls := LongFrame(frames)
 		tcr = &ls // TODO change to Frames for extra/ignored data?
 	case mt == data.FrameTypeTimeSeriesWide:
-		wfs := WideFrameSeries(frames)
+		wfs := WideFrame(frames)
 		tcr = &wfs
 	default:
 		return nil, fmt.Errorf("unsupported time series type %q", mt)
@@ -77,7 +65,7 @@ func TimeSeriesReaderFromFrames(frames []*data.Frame) (TimeSeriesCollectionReade
 	return tcr, nil
 }
 
-func (m TimeSeriesMetricRef) GetMetricName() string {
+func (m MetricRef) GetMetricName() string {
 	if m.ValueField != nil {
 		return m.ValueField.Name
 	}
@@ -86,31 +74,14 @@ func (m TimeSeriesMetricRef) GetMetricName() string {
 
 // TODO GetFQMetric (or something, Names + Labels)
 
-func (m TimeSeriesMetricRef) GetLabels() data.Labels {
+func (m MetricRef) GetLabels() data.Labels {
 	if m.ValueField != nil {
 		return m.ValueField.Labels
 	}
 	return nil
 }
 
-type FrameFieldIndices []FrameFieldIndex
-
-func (f FrameFieldIndices) Len() int {
-	return len(f)
-}
-
-func (f FrameFieldIndices) Less(i, j int) bool {
-	if f[i].FrameIdx == f[j].FrameIdx {
-		return f[i].FieldIdx < f[j].FieldIdx
-	}
-	return f[i].FrameIdx < f[j].FrameIdx
-}
-
-func (f FrameFieldIndices) Swap(i, j int) {
-	f[i], f[j] = f[j], f[i]
-}
-
-func sortTimeSeriesMetricRef(refs []TimeSeriesMetricRef) {
+func sortTimeSeriesMetricRef(refs []MetricRef) {
 	sort.SliceStable(refs, func(i, j int) bool {
 		iRef := refs[i]
 		jRef := refs[j]

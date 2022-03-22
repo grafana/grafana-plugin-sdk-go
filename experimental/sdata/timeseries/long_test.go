@@ -1,4 +1,4 @@
-package sdata_test
+package timeseries_test
 
 import (
 	"testing"
@@ -6,13 +6,13 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/timeseries"
 	"github.com/stretchr/testify/require"
 )
 
 func TestLongSeriesGetMetricRefs(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
-		ls := sdata.LongSeries{
+		ls := timeseries.LongFrame{
 			data.NewFrame("",
 				data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(1)}),
 				data.NewField("host", nil, []string{"a", "b"}),
@@ -25,7 +25,7 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 		refs, ignoredFields, err := ls.GetMetricRefs()
 		require.NoError(t, err)
 
-		expectedRefs := []sdata.TimeSeriesMetricRef{
+		expectedRefs := []timeseries.MetricRef{
 			{
 				ValueField: data.NewField("in_bytes", data.Labels{"host": "a", "iface": "eth0"}, []float64{1}),
 				TimeField:  data.NewField("time", nil, []time.Time{time.UnixMilli(1)}),
