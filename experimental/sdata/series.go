@@ -6,12 +6,16 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// Notes on Defining Empty Responses and Empty Metrics
-//   - Typed "No Metrics" (Empty Response) == At least one Frame with type indicator with no fields
-//   - Typed "Empty Metric" == Fields Present of proper types, Zero Length fields
-
 type TimeSeriesCollectionReader interface {
+	// Validate will error if the data is invalid according to its type rules.
+	// validateData will check for duplicate metrics and sorting and costs more resources.
+	// If the data is valid, then any data that was not part of the time series data
+	// is also returned as ignoredFieldIndices.
 	Validate(validateData bool) (ignoredFieldIndices []FrameFieldIndex, err error)
+
+	// GetMetricRefs runs validate without validateData. If the data is valid, then
+	// []TimeSeriesMetricRef is returned from reading as well as any ignored data. If invalid,
+	// then an error is returned, and not refs or ignoredFieldIndices are returned.
 	GetMetricRefs() (refs []TimeSeriesMetricRef, ignoredFieldIndices []FrameFieldIndex, err error)
 }
 
@@ -19,13 +23,24 @@ func ValidValueFields() []data.FieldType {
 	return append(data.NumericFieldTypes(), []data.FieldType{data.FieldTypeBool, data.FieldTypeNullableBool}...)
 }
 
-// I am not sure about this but want to get the idea down
+// TimeSeriesMetricRef is for reading and contains the data for an individual
+// time series. In the cases of the Multi and Wide formats, the Fields are pointers
+// to the data in the original frame. In the case of Long, new fields are constructed.
 type TimeSeriesMetricRef struct {
 	TimeField  *data.Field
 	ValueField *data.Field
 	// TODO: RefID string
 	// TODO: Pointer to frame meta?
 }
+
+// FrameFieldIndex is for referencing data that is not considered part of the metric data
+// when the data is valid. Reason states why the field was not part of the metric data.
+type FrameFieldIndex struct {
+	FrameIdx int
+	FieldIdx int
+	Reason   string // only meant for human consumption
+}
+
 
 func (m TimeSeriesMetricRef) GetMetricName() string {
 	if m.ValueField != nil {
@@ -41,12 +56,6 @@ func (m TimeSeriesMetricRef) GetLabels() data.Labels {
 		return m.ValueField.Labels
 	}
 	return nil
-}
-
-type FrameFieldIndex struct {
-	FrameIdx int
-	FieldIdx int    // -1 means no fields (Frame is nil or Fields are nil)
-	Reason   string // only meant for human consumption
 }
 
 type FrameFieldIndices []FrameFieldIndex
