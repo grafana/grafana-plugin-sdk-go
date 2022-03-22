@@ -140,6 +140,8 @@ func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
 	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t})
 }
 
+var _ = emptyFrameWithTypeMD(data.FrameTypeUnknown) // linter
+
 func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	t.Run("empty response reads as zero length metric refs and nil ignoredFields", func(t *testing.T) {
 		s := sdata.NewMultiFrameSeries()

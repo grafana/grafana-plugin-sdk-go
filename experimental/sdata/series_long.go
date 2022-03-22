@@ -74,7 +74,7 @@ func validateAndGetRefsLong(ls *LongSeries, validateData, getRefs bool) ([]TimeS
 	factorFieldIndices := frame.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
 
 	var refs []TimeSeriesMetricRef
-	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) {
+	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) error {
 		if mm[metricName] == nil {
 			mm[metricName] = make(map[string]TimeSeriesMetricRef)
 		}
@@ -92,9 +92,19 @@ func validateAndGetRefsLong(ls *LongSeries, validateData, getRefs bool) ([]TimeS
 			mm[metricName][lbStr] = ref
 			refs = append(refs, ref)
 		} else {
+			if validateData && ref.TimeField.Len() > 1 {
+				prevTime := ref.TimeField.At(ref.TimeField.Len() - 1).(time.Time)
+				if prevTime.After(t) {
+					return fmt.Errorf("unsorted time field")
+				}
+				if prevTime.Equal(t) {
+					return fmt.Errorf("duplicate data points in metric %v %v", metricName, lbStr)
+				}
+			}
 			ref.TimeField.Append(t)
 			ref.ValueField.Append(value)
 		}
+		return nil
 	}
 
 	if getRefs {
@@ -106,7 +116,9 @@ func validateAndGetRefsLong(ls *LongSeries, validateData, getRefs bool) ([]TimeS
 			}
 			for _, vFieldIdx := range valueFieldIndices {
 				valueField := frame.Fields[vFieldIdx]
-				appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx))
+				if err := appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx)); err != nil {
+					return nil, nil, err
+				}
 			}
 		}
 		sortTimeSeriesMetricRef(refs)
