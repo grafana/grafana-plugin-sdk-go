@@ -180,3 +180,10 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 	sortTimeSeriesMetricRef(refs)
 	return refs, ignoredFields, nil
 }
+
+func (wf *WideFrameSeries) Frames() []*data.Frame {
+	if wf == nil {
+		return nil
+	}
+	return []*data.Frame(*wf)
+}

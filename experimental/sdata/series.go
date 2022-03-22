@@ -18,6 +18,8 @@ type TimeSeriesCollectionReader interface {
 	// []TimeSeriesMetricRef is returned from reading as well as any ignored data. If invalid,
 	// then an error is returned, and no refs or ignoredFieldIndices are returned.
 	GetMetricRefs() (refs []TimeSeriesMetricRef, ignoredFieldIndices []FrameFieldIndex, err error)
+
+	Frames() []*data.Frame // returns underlying frames
 }
 
 func ValidValueFields() []data.FieldType {

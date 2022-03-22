@@ -97,22 +97,39 @@ func TestEmptyFromNew(t *testing.T) {
 	wide = sdata.NewWideFrameSeries()
 	long = sdata.NewLongSeries()
 
-	multiRefs, ignored, err := multi.GetMetricRefs()
-	require.NoError(t, err)
-	require.Nil(t, ignored)
-	require.NotNil(t, multiRefs)
-	require.Len(t, multiRefs, 0)
+	emptyReqs := func(refs []sdata.TimeSeriesMetricRef, ignored []sdata.FrameFieldIndex, err error) {
+		require.NoError(t, err)
+		require.Nil(t, ignored)
+		require.NotNil(t, refs)
+		require.Len(t, refs, 0)
+	}
 
-	wideRefs, ignored, err := wide.GetMetricRefs()
-	require.NoError(t, err)
-	require.Nil(t, ignored)
-	require.NotNil(t, wideRefs)
-	require.Len(t, wideRefs, 0)
+	viaFrames := func(r sdata.TimeSeriesCollectionReader) {
+		t.Run("should work when losing go type via Frames()", func(t *testing.T) {
+			frames := r.Frames()
+			r, err := sdata.TimeSeriesReaderFromFrames(frames)
+			require.NoError(t, err)
 
-	longRefs, ignored, err := long.GetMetricRefs()
-	require.NoError(t, err)
-	require.Nil(t, ignored)
-	require.NotNil(t, longRefs)
-	require.Len(t, longRefs, 0)
+			refs, ignored, err := r.GetMetricRefs()
+			emptyReqs(refs, ignored, err)
+		})
+	}
 
+	t.Run("multi", func(t *testing.T) {
+		refs, ignored, err := multi.GetMetricRefs()
+		emptyReqs(refs, ignored, err)
+		viaFrames(multi)
+	})
+
+	t.Run("wide", func(t *testing.T) {
+		refs, ignored, err := wide.GetMetricRefs()
+		emptyReqs(refs, ignored, err)
+		viaFrames(wide)
+	})
+
+	t.Run("long", func(t *testing.T) {
+		refs, ignored, err := long.GetMetricRefs()
+		emptyReqs(refs, ignored, err)
+		viaFrames(long)
+	})
 }

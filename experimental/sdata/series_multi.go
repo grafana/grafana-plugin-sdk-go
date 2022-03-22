@@ -201,3 +201,10 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 
 	return refs, ignoredFields, nil
 }
+
+func (mfs *MultiFrameSeries) Frames() []*data.Frame {
+	if mfs == nil {
+		return nil
+	}
+	return []*data.Frame(*mfs)
+}

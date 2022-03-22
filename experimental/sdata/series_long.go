@@ -132,3 +132,10 @@ func validateAndGetRefsLong(ls *LongSeries, validateData, getRefs bool) ([]TimeS
 
 	return refs, ignoredFields, nil
 }
+
+func (ls *LongSeries) Frames() []*data.Frame {
+	if ls == nil {
+		return nil
+	}
+	return []*data.Frame(*ls)
+}
