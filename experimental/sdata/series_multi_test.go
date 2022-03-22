@@ -28,8 +28,8 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 			name: "there can be extraneous fields (but they have no specific platform-wide meaning)",
 			mfs: func() *sdata.MultiFrameSeries {
 				s := sdata.NewMultiFrameSeries()
-				s.AddMetric("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
-
+				err := s.AddMetric("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
+				require.NoError(t, err)
 				(*s)[0].Fields = append((*s)[0].Fields, data.NewField("a", nil, []float64{2, 3}))
 				(*s)[0].Fields = append((*s)[0].Fields, data.NewField("a", nil, []string{"4", "cats"}))
 				return s
@@ -171,7 +171,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 		}, ignoredFieldIndices)
 	})
 
-	t.Run("uninitalized frames returns nil refs and nil ignored", func(t *testing.T) {
+	t.Run("uninitialized frames returns nil refs and nil ignored", func(t *testing.T) {
 		s := sdata.MultiFrameSeries{}
 
 		refs, ignoredFieldIndices, err := s.GetMetricRefs()

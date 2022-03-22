@@ -166,7 +166,9 @@ func validateAndGetRefsWide(wf *WideFrameSeries, validateData, getRefs bool) ([]
 		}
 	}
 
-	ignoreAdditionalFrames("additional frame", *wf, &ignoredFields)
+	if err := ignoreAdditionalFrames("additional frame", *wf, &ignoredFields); err != nil {
+		return nil, nil, err
+	}
 
 	sortTimeSeriesMetricRef(refs)
 	return refs, ignoredFields, nil

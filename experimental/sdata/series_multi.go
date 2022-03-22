@@ -114,7 +114,6 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 			if err := ignoreAdditionalFrames("extra frame on empty response", *mfs, &ignoredFields); err != nil {
 				return nil, nil, err
 			}
-
 		}
 		return []TimeSeriesMetricRef{}, ignoredFields, nil
 	}
@@ -159,21 +158,20 @@ func validateAndGetRefsMulti(mfs *MultiFrameSeries, validateData, getRefs bool) 
 		valueFields := frame.TypeIndices(ValidValueFields()...)
 		if len(valueFields) == 0 {
 			return nil, nil, fmt.Errorf("frame %v must have at least one value field but has %v", frameIdx, len(valueFields))
-		} else {
-			if len(valueFields) > 1 {
-				for _, fieldIdx := range valueFields[1:] {
-					ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "additional numeric value field"})
-				}
-			}
-
-			vField := frame.Fields[valueFields[0]]
-			metricKey := [2]string{vField.Name, vField.Labels.String()}
-
-			if _, ok := metricIndex[metricKey]; ok && validateData {
-				return nil, nil, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
-			}
-			metricIndex[metricKey] = struct{}{}
 		}
+		if len(valueFields) > 1 {
+			for _, fieldIdx := range valueFields[1:] {
+				ignoredFields = append(ignoredFields, FrameFieldIndex{frameIdx, fieldIdx, "additional numeric value field"})
+			}
+		}
+
+		vField := frame.Fields[valueFields[0]]
+		metricKey := [2]string{vField.Name, vField.Labels.String()}
+
+		if _, ok := metricIndex[metricKey]; ok && validateData {
+			return nil, nil, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
+		}
+		metricIndex[metricKey] = struct{}{}
 
 		if validateData {
 			sorted, err := timeIsSorted(timeField)

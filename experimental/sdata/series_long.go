@@ -132,7 +132,9 @@ func validateAndGetRefsLong(ls *LongSeries, validateData, getRefs bool) ([]TimeS
 		}
 	}
 
-	ignoreAdditionalFrames("additional frame", *ls, &ignoredFields)
+	if err := ignoreAdditionalFrames("additional frame", *ls, &ignoredFields); err != nil {
+		return nil, nil, err
+	}
 
 	return refs, ignoredFields, nil
 }

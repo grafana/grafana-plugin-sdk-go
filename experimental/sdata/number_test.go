@@ -15,7 +15,6 @@ func TestSimpleNumeric(t *testing.T) {
 		require.NoError(t, err)
 		err = c.AddMetric("os.cpu", data.Labels{"host": "b"}, 2.0)
 		require.NoError(t, err)
-
 	}
 
 	// refs should be same across the formats
