@@ -21,7 +21,7 @@ message GetRequest {
 message GetResponse {
   int32 code = 1;
   string grn = 2;
-  string kind = 3;  // the schema we should use for the body
+  string kind = 3;  // dashboard | alert | datasource | panel (library) | ...  
   string name = 4;
   string description = 5;
   string schemaVersion = 6; // [scumata version?]
@@ -35,7 +35,8 @@ message GetResponse {
   repeated string author = 11; // everyone who touched it?
 
   // The raw values
-  bytes body = 12;
+  string contentType = 12; // json | csv | image/png | ...
+  bytes body = 13;
 }
 
 //-----------------------------------------------
@@ -108,3 +109,6 @@ service Store {
   rpc DeleteEntity(DeleteRequest) returns (DeleteResponse); 
   rpc WatchStore(WatchRequest) returns (stream WatchResponse); 
 }
+
+// NOTE: list and search will be handled by another service!
+// This is JUST for getting the images once you know where they are
