@@ -27,6 +27,9 @@ message GetResponse {
   string schemaVersion = 6; // [scumata version?]
   repeated string tags = 7;
 
+  // ??? linked essential entities?
+  // what about variable datasources?
+  // library panels?
   repeated EntityReference references = 8;
 
   // lineage
@@ -45,9 +48,7 @@ message GetResponse {
 
 message WriteRequest {
   PluginContext pluginContext = 1;
-
-  string grn = 2;
-  string kind = 3;  // the schema we should use for the body
+  EntityReference ref = 2;
   string name = 4;
   string description = 5;
   string schemaVersion = 7; // [scumata version?]
@@ -67,9 +68,7 @@ message WriteResponse {
 
 message DeleteRequest {
   PluginContext pluginContext = 1;
-
-  string kind = 2;
-  string grn = 3; // includes folder pattern
+  EntityReference ref = 2;
 }
 
 message DeleteResponse {
@@ -90,13 +89,12 @@ message WatchRequest {
 }
 
 message WatchResponse {
-  int64 timestamp = 5;
-  string kind = 2;
-  string grn = 3; // includes folder pattern
-  string action = 4; // CREATE + UPDATE + DELETE
+  int64 timestamp = 1;
+  EntityReference ref = 2;
+  string action = 3; // CREATE + UPDATE + DELETE
 
   // when details = true, send the whole response
-  GetResponse details = 5;
+  GetResponse details = 4;
 }
 
 //-----------------------------------------------
