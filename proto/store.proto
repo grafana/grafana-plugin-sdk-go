@@ -1,0 +1,96 @@
+syntax = "proto3";
+package pluginv2;
+
+option go_package = "./;pluginv2";
+
+//-----------------------------------------------
+// GET
+//-----------------------------------------------
+
+message GetRequest {
+  PluginContext pluginContext = 1;
+
+  string kind = 2;
+  string grn = 3; // includes folder pattern
+}
+
+message GetResponse {
+  int32 code = 1;
+  string grn = 2;
+  string kind = 3;  // the schema we should use for the body
+  string name = 4;
+  string description = 5;
+  string schemaVersion = 7; // [scumata version?]
+  repeated string tags = 6;
+
+  // lineage
+  int64 created = 5;
+  int64 updated = 5;
+  repeated string author = 6; // everyone who touched it?
+
+  // The raw values
+  bytes body = 9;
+}
+
+//-----------------------------------------------
+// SET
+//-----------------------------------------------
+
+message SetRequest {
+  PluginContext pluginContext = 1;
+
+  string kind = 2;
+  string grn = 3; // includes folder pattern
+}
+
+message GetResponse {
+  int32 code = 1;
+}
+
+//-----------------------------------------------
+// DELETE
+//-----------------------------------------------
+
+message DeleteRequest {
+  PluginContext pluginContext = 1;
+
+  string kind = 2;
+  string grn = 3; // includes folder pattern
+}
+
+message DeleteResponse {
+  int32 code = 1;
+}
+
+//-----------------------------------------------
+// WATCH
+//-----------------------------------------------
+
+message WatchRequest {
+  PluginContext pluginContext = 1;
+
+  string kind = 2; // 
+  string grn = 3; // can be the folder path
+  bool details = 4;
+}
+
+message WatchResponse {
+  int64 timestamp = 5;
+  string kind = 2;
+  string grn = 3; // includes folder pattern
+  string action = 4; // CREATE + UPDATE + DELETE
+
+  // when details = true, send the whole response
+  GetResponse details = 5;
+}
+
+//-----------------------------------------------
+// Service
+//-----------------------------------------------
+
+service Store {
+  rpc GetEntity(GetRequest) returns (GetResponse); // stream?  for large response?
+  rpc SetEntity(SetRequest) returns (SetResponse); 
+  rpc DeleteEntity(DeleteRequest) returns (DeleteResponse); 
+  rpc WatchStore(WatchRequest) returns (DeleteResponse); 
+}
