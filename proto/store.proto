@@ -3,6 +3,11 @@ package pluginv2;
 
 option go_package = "./;pluginv2";
 
+message EntityReference {
+  string kind = 1;
+  string grn = 2; // includes folder pattern -- may include git branch info
+}
+
 //-----------------------------------------------
 // GET
 //-----------------------------------------------
@@ -10,8 +15,7 @@ option go_package = "./;pluginv2";
 message GetRequest {
   PluginContext pluginContext = 1;
 
-  string kind = 2;
-  string grn = 3; // includes folder pattern
+  EntityReference ref = 2;
 }
 
 message GetResponse {
@@ -20,30 +24,39 @@ message GetResponse {
   string kind = 3;  // the schema we should use for the body
   string name = 4;
   string description = 5;
-  string schemaVersion = 7; // [scumata version?]
-  repeated string tags = 6;
+  string schemaVersion = 6; // [scumata version?]
+  repeated string tags = 7;
+
+  repeated EntityReference references = 8;
 
   // lineage
-  int64 created = 5;
-  int64 updated = 5;
-  repeated string author = 6; // everyone who touched it?
+  int64 created = 9;
+  int64 updated = 10;
+  repeated string author = 11; // everyone who touched it?
+
+  // The raw values
+  bytes body = 12;
+}
+
+//-----------------------------------------------
+// Write
+//-----------------------------------------------
+
+message WriteRequest {
+  PluginContext pluginContext = 1;
+
+  string grn = 2;
+  string kind = 3;  // the schema we should use for the body
+  string name = 4;
+  string description = 5;
+  string schemaVersion = 7; // [scumata version?]
+  repeated string tags = 6;
 
   // The raw values
   bytes body = 9;
 }
 
-//-----------------------------------------------
-// SET
-//-----------------------------------------------
-
-message SetRequest {
-  PluginContext pluginContext = 1;
-
-  string kind = 2;
-  string grn = 3; // includes folder pattern
-}
-
-message GetResponse {
+message WriteResponse {
   int32 code = 1;
 }
 
@@ -69,9 +82,10 @@ message DeleteResponse {
 message WatchRequest {
   PluginContext pluginContext = 1;
 
-  string kind = 2; // 
-  string grn = 3; // can be the folder path
-  bool details = 4;
+  string kind = 2; // filter to a specific kind of eneity (ie, only dashboards)
+  string grn = 3; // the entity ID or folder prefix
+  bool recursive = 4; // when true, all changes to this + any substrings will be sent to the caller
+  bool details = 5;
 }
 
 message WatchResponse {
@@ -89,8 +103,8 @@ message WatchResponse {
 //-----------------------------------------------
 
 service Store {
-  rpc GetEntity(GetRequest) returns (GetResponse); // stream?  for large response?
-  rpc SetEntity(SetRequest) returns (SetResponse); 
+  rpc GetEntity(GetRequest) returns (GetResponse);
+  rpc WriteEntity(WriteRequest) returns (WriteResponse); 
   rpc DeleteEntity(DeleteRequest) returns (DeleteResponse); 
-  rpc WatchStore(WatchRequest) returns (DeleteResponse); 
+  rpc WatchStore(WatchRequest) returns (stream WatchResponse); 
 }
