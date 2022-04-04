@@ -37,6 +37,9 @@ message GetResponse {
   int64 updated = 10;
   repeated string author = 11; // everyone who touched it?
 
+  // ????? current secureJSON???
+  map<string,string> decryptedSecureProps = 9;
+
   // The raw values
   string contentType = 12; // json | csv | image/png | ...
   bytes body = 13;
