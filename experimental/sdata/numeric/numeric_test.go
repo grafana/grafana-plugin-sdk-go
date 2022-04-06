@@ -1,13 +1,6 @@
 package numeric_test
 
-import (
-	"testing"
-
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/numeric"
-	"github.com/stretchr/testify/require"
-)
-
+/*
 func TestSimpleNumeric(t *testing.T) {
 	// addMetrics uses the writer interface to add sample metrics
 	addMetrics := func(c numeric.CollectionWriter) {
@@ -56,3 +49,4 @@ func TestSimpleNumeric(t *testing.T) {
 		require.Equal(t, expectedRefs, lFrameRefs)
 	})
 }
+*/

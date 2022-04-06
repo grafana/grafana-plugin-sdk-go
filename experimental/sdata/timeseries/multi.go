@@ -71,7 +71,7 @@ However, there are still degrees of freedom: - extra frames without the indicato
 Rules
 - Whenever an error is returned, there are no ignored fields returned
 - Must have at least one frame
-- The first frame may have no fields, but then it must be the only frame (empty response case)
+- The first frame may have no fields, if so it is considered the empty response case
 - The first frame must be valid or will error, additional invalid frames with the type indicator will error,
     frames without type indicator are ignored
 - A valid individual Frame (in the non empty case) has:
