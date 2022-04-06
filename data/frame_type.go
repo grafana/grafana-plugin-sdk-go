@@ -41,6 +41,16 @@ const (
 	// This structure is typically part of a list of frames with the same structure
 	FrameTypeTimeSeriesMany = "timeseries-many"
 
+	// FrameTypeTimeSeriesLabeled has at least two fields:
+	// field[0]:
+	//  * type time
+	//  * ascending values
+	// field[1]:
+	//  * string field
+	//  * labels represented as string-serialized data.Labels structures
+	FrameTypeTimeSeriesLabeled = "timeseries-labeled"
+
+
 	// Soon?
 	// "timeseries-wide-ohlc" -- known fields for open/high/low/close
 	// "histogram" -- BucketMin, BucketMax, values...
@@ -67,7 +77,8 @@ func (p FrameType) IsKnownType() bool {
 	case
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
-		FrameTypeTimeSeriesMany:
+		FrameTypeTimeSeriesMany,
+		FrameTypeTimeSeriesLabeled:
 		return true
 	}
 	return false
@@ -79,6 +90,7 @@ func FrameTypes() []FrameType {
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
 		FrameTypeTimeSeriesMany,
+		FrameTypeTimeSeriesLabeled,
 	}
 }
 
@@ -88,7 +100,8 @@ func (p FrameType) IsTimeSeries() bool {
 	case
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
-		FrameTypeTimeSeriesMany:
+		FrameTypeTimeSeriesMany,
+		FrameTypeTimeSeriesLabeled:
 		return true
 	}
 	return false
