@@ -57,10 +57,10 @@ func TestHTTPLogger(t *testing.T) {
 		f, err := os.CreateTemp("", "test_*.har")
 		defer os.Remove(f.Name())
 		require.NoError(t, err)
-		h := httplogger.
-			NewHTTPLogger("example-plugin-id", &fakeRoundTripper{}).
-			WithPath(f.Name()).
-			WithEnabledCheck(func() bool { return true })
+		h := httplogger.NewHTTPLogger("example-plugin-id", &fakeRoundTripper{}, httplogger.Options{
+			Path:      f.Name(),
+			EnabledFn: func() bool { return true },
+		})
 		c := &http.Client{
 			Transport: h,
 			Timeout:   time.Second * 30,
