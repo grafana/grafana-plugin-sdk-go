@@ -1,11 +1,14 @@
 package timeseries_test
 
 import (
+	"path"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/timeseries"
 	"github.com/stretchr/testify/require"
 )
@@ -49,5 +52,26 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 		if diff := cmp.Diff(expectedRefs, refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n", diff)
 		}
+	})
+
+	t.Run("golden response", func(t *testing.T) {
+		update := true
+		ls := timeseries.LongFrame{
+			data.NewFrame("",
+				data.NewField("time", nil, []time.Time{time.UnixMilli(1).UTC(), time.UnixMilli(1).UTC()}),
+				data.NewField("host", nil, []string{"a", "b"}),
+				data.NewField("iface", nil, []string{"eth0", "eth0"}),
+				data.NewField("in_bytes", nil, []float64{1, 2}),
+				data.NewField("out_bytes", nil, []int64{3, 4}),
+			).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
+		}
+		_, err := ls.Validate(true)
+		require.NoError(t, err)
+		fpath := path.Join("testdata", "long.json")
+		err = experimental.CheckGoldenJSON(fpath, &backend.DataResponse{Frames: ls.Frames()}, update)
+		require.NoError(t, err)
+		fpath = path.Join("testdata", "long.txt")
+		err = experimental.CheckGoldenDataResponse(fpath, &backend.DataResponse{Frames: ls.Frames()}, update)
+		require.NoError(t, err)
 	})
 }

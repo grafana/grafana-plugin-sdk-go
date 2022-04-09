@@ -1,0 +1,56 @@
+{
+    "frames": [
+        {
+            "schema": {
+                "meta": {
+                    "type": "timeseries-wide"
+                },
+                "fields": [
+                    {
+                        "name": "time",
+                        "type": "time",
+                        "typeInfo": {
+                            "frame": "time.Time"
+                        }
+                    },
+                    {
+                        "name": "one",
+                        "type": "number",
+                        "typeInfo": {
+                            "frame": "float64"
+                        },
+                        "labels": {
+                            "host": "a"
+                        }
+                    },
+                    {
+                        "name": "one",
+                        "type": "number",
+                        "typeInfo": {
+                            "frame": "float64"
+                        },
+                        "labels": {
+                            "host": "b"
+                        }
+                    }
+                ]
+            },
+            "data": {
+                "values": [
+                    [
+                        1,
+                        2
+                    ],
+                    [
+                        1,
+                        2
+                    ],
+                    [
+                        3,
+                        4
+                    ]
+                ]
+            }
+        }
+    ]
+}

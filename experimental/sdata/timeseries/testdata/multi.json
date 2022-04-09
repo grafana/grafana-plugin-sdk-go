@@ -1,0 +1,74 @@
+{
+    "frames": [
+        {
+            "schema": {
+                "meta": {
+                    "type": "timeseries-many"
+                },
+                "fields": [
+                    {
+                        "name": "time",
+                        "type": "time",
+                        "typeInfo": {
+                            "frame": "time.Time"
+                        }
+                    },
+                    {
+                        "name": "one",
+                        "type": "number",
+                        "typeInfo": {
+                            "frame": "float64"
+                        }
+                    }
+                ]
+            },
+            "data": {
+                "values": [
+                    [
+                        1,
+                        2
+                    ],
+                    [
+                        0,
+                        1
+                    ]
+                ]
+            }
+        },
+        {
+            "schema": {
+                "meta": {
+                    "type": "timeseries-many"
+                },
+                "fields": [
+                    {
+                        "name": "time",
+                        "type": "time",
+                        "typeInfo": {
+                            "frame": "time.Time"
+                        }
+                    },
+                    {
+                        "name": "two",
+                        "type": "number",
+                        "typeInfo": {
+                            "frame": "float64"
+                        }
+                    }
+                ]
+            },
+            "data": {
+                "values": [
+                    [
+                        2,
+                        3
+                    ],
+                    [
+                        0,
+                        1
+                    ]
+                ]
+            }
+        }
+    ]
+}

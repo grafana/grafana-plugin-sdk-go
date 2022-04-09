@@ -1,0 +1,72 @@
+{
+    "frames": [
+        {
+            "schema": {
+                "meta": {
+                    "type": "timeseries-long"
+                },
+                "fields": [
+                    {
+                        "name": "time",
+                        "type": "time",
+                        "typeInfo": {
+                            "frame": "time.Time"
+                        }
+                    },
+                    {
+                        "name": "host",
+                        "type": "string",
+                        "typeInfo": {
+                            "frame": "string"
+                        }
+                    },
+                    {
+                        "name": "iface",
+                        "type": "string",
+                        "typeInfo": {
+                            "frame": "string"
+                        }
+                    },
+                    {
+                        "name": "in_bytes",
+                        "type": "number",
+                        "typeInfo": {
+                            "frame": "float64"
+                        }
+                    },
+                    {
+                        "name": "out_bytes",
+                        "type": "number",
+                        "typeInfo": {
+                            "frame": "int64"
+                        }
+                    }
+                ]
+            },
+            "data": {
+                "values": [
+                    [
+                        1,
+                        1
+                    ],
+                    [
+                        "a",
+                        "b"
+                    ],
+                    [
+                        "eth0",
+                        "eth0"
+                    ],
+                    [
+                        1,
+                        2
+                    ],
+                    [
+                        3,
+                        4
+                    ]
+                ]
+            }
+        }
+    ]
+}

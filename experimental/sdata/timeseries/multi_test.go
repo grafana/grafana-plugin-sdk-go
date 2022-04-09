@@ -2,11 +2,14 @@ package timeseries_test
 
 import (
 	"fmt"
+	"path"
 	"strings"
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/timeseries"
 	"github.com/stretchr/testify/require"
@@ -29,12 +32,13 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 			name: "basic example",
 			mfs: func() *timeseries.MultiFrame {
 				s := timeseries.NewMultiFrame()
-				
+
 				err := s.AddMetric("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
 				require.NoError(t, err)
 
-				err = s.AddMetric("two", nil, []time.Time{{}, time.Now().Add(time.Second*2)}, []float64{0, 1})
+				err = s.AddMetric("two", nil, []time.Time{{}, time.Now().Add(time.Second * 2)}, []float64{0, 1})
 				require.NoError(t, err)
+
 				return s
 			},
 		},
@@ -61,6 +65,27 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 			require.Equal(t, tt.ignoredFieldIndices, ignoredFieldIndices)
 		})
 	}
+
+	t.Run("golden response", func(t *testing.T) {
+		update := true
+		s := timeseries.NewMultiFrame()
+
+		err := s.AddMetric("one", nil, []time.Time{time.UnixMilli(1).UTC(), time.UnixMilli(2).UTC()}, []float64{0, 1})
+		require.NoError(t, err)
+
+		err = s.AddMetric("two", nil, []time.Time{time.UnixMilli(2).UTC(), time.UnixMilli(3).UTC()}, []float64{0, 1})
+		require.NoError(t, err)
+
+		_, err = s.Validate(true)
+
+		require.NoError(t, err)
+		fpath := path.Join("testdata", "multi.json")
+		err = experimental.CheckGoldenJSON(fpath, &backend.DataResponse{Frames: s.Frames()}, update)
+		require.NoError(t, err)
+		fpath = path.Join("testdata", "multi.txt")
+		err = experimental.CheckGoldenDataResponse(fpath, &backend.DataResponse{Frames: s.Frames()}, update)
+		require.NoError(t, err)
+	})
 }
 
 func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
