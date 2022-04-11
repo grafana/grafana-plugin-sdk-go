@@ -1,29 +1,29 @@
-package wide 
+package timeseries 
 
-import timeseries "github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/timeseries"
+import sdata "github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 
-#TimeField: timeseries.#FieldSchema & {
+#TimeField: sdata.#FieldSchema & {
 	type: "time",
 	typeInfo: {
 		frame: "time.Time"
 	}
 }
 
-#NumberField: timeseries.#FieldSchema & {
+#NumberField: sdata.#FieldSchema & {
 	type: "number",
 	typeInfo: {
 		frame: "int64" | "float64"
 	}
 }
 
-#WideFrame: timeseries.#Frame & {
-	schema: timeseries.#FrameSchema & {
+#WideFrame: sdata.#Frame & {
+	schema: sdata.#FrameSchema & {
 		meta: {
 			type: "timeseries-wide"
 		}
 		fields: [#TimeField, ...#NumberField]
 	}
-	data: timeseries.#FrameData & {
+	data: sdata.#FrameData & {
 		values: [[number, ...], ...]
 	}
 }

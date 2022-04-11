@@ -1,4 +1,4 @@
-package timeseries
+package sdata
 
 import "list"
 
@@ -35,16 +35,20 @@ import "list"
 }
 #FrameData: {
 	values: [#FieldValues, ...]
-	#expectedLength: [ for v in values { v & list.MinItems(len(values[0])) & list.MaxItems(len(values[0])) } ]
+	#expectedLength: [ 
+		for v in values { 
+			v & list.MinItems(len(values[0])) & list.MaxItems(len(values[0])) 
+		}
+	]
 }
 #Frame: {
 	schema: #FrameSchema
 	data: #FrameData
-	#matchingTypes: [ for i, fv in data.values { 
-		let typeInfo = schema.fields[i].typeInfo.frame
-		let type = #FieldTypeInfoMap[typeInfo]
-		[type, ...] & fv
-	}]
+	#matchingTypes: [
+		for i, fv in data.values { 
+			let typeInfo = schema.fields[i].typeInfo.frame
+			let type = #FieldTypeInfoMap[typeInfo]
+			[type, ...] & fv
+		}
+	]
 }
-
-frames: [#Frame, ...]
