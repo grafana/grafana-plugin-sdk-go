@@ -1,25 +1,38 @@
 package numeric
 
 import (
+	"fmt"
 	"sort"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
+
+const FrameTypeNumericLong = "numeric_long"
 
 type LongFrame struct {
 	*data.Frame
 }
 
-func (lfn *LongFrame) GetMetricRefs() []MetricRef {
-	if lfn == nil || lfn.Frame == nil {
-		return []MetricRef{}
+func NewLongFrame() *LongFrame {
+	return &LongFrame{emptyFrameWithTypeMD(FrameTypeNumericLong)}
+}
+
+func (lf *LongFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsLong(lf, true)
+}
+
+// TODO: Update with current rules to match(ish) time series
+func validateAndGetRefsLong(lf *LongFrame, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	if lf == nil || lf.Frame == nil {
+		return nil, nil, fmt.Errorf("zero frames when calling AddMetric must call NewLongFrame first")
 	}
 	stringFieldIdxs, numericFieldIdxs := []int{}, []int{}
 	stringFieldNames, numericFieldNames := []string{}, []string{}
 
 	refs := []MetricRef{}
 
-	for i, field := range lfn.Fields {
+	for i, field := range lf.Fields {
 		fType := field.Type()
 		switch {
 		case fType.Numeric():
@@ -31,30 +44,30 @@ func (lfn *LongFrame) GetMetricRefs() []MetricRef {
 		}
 	}
 
-	for rowIdx := 0; rowIdx < lfn.Rows(); rowIdx++ {
+	for rowIdx := 0; rowIdx < lf.Rows(); rowIdx++ {
 		l := data.Labels{}
 		for i := range stringFieldIdxs {
 			key := stringFieldNames[i]
-			val, _ := lfn.ConcreteAt(stringFieldIdxs[i], rowIdx)
+			val, _ := lf.ConcreteAt(stringFieldIdxs[i], rowIdx)
 			l[key] = val.(string)
 		}
 
 		for i, fieldIdx := range numericFieldIdxs {
-			fType := lfn.Fields[fieldIdx].Type()
+			fType := lf.Fields[fieldIdx].Type()
 			field := data.NewFieldFromFieldType(fType, 1)
 			field.Name = numericFieldNames[i]
 			field.Labels = l
-			field.Set(0, lfn.Fields[fieldIdx].At(rowIdx))
+			field.Set(0, lf.Fields[fieldIdx].At(rowIdx))
 			refs = append(refs, MetricRef{
 				ValueField: field,
 			})
 		}
 	}
 	sortNumericMetricRef(refs)
-	return refs
+	return refs, nil, nil
 }
 
-func (lfn *LongFrame) Validate() (isEmpty bool, errors []error) {
+func (lf *LongFrame) Validate() (isEmpty bool, errors []error) {
 	panic("not implemented")
 }
 

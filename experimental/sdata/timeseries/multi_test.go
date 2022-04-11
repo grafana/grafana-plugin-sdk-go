@@ -29,11 +29,11 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 			name: "basic example",
 			mfs: func() *timeseries.MultiFrame {
 				s := timeseries.NewMultiFrame()
-				
+
 				err := s.AddMetric("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
 				require.NoError(t, err)
 
-				err = s.AddMetric("two", nil, []time.Time{{}, time.Now().Add(time.Second*2)}, []float64{0, 1})
+				err = s.AddMetric("two", nil, []time.Time{{}, time.Now().Add(time.Second * 2)}, []float64{0, 1})
 				require.NoError(t, err)
 				return s
 			},

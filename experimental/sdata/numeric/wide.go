@@ -4,46 +4,67 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
+
+const FrameTypeNumericWide = "numeric_wide"
 
 type WideFrame struct {
 	*data.Frame
 }
 
-func (mfn *WideFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
+func NewWideFrame() *WideFrame {
+	return &WideFrame{emptyFrameWithTypeMD(FrameTypeNumericWide)}
+}
+
+func (wf *WideFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
 	fType := data.FieldTypeFor(value)
 	if !fType.Numeric() {
 		return fmt.Errorf("unsupported value type %T, must be numeric", value)
 	}
-	if mfn.Frame == nil {
-		mfn.Frame = data.NewFrame("").SetMeta(&data.FrameMeta{
-			Type: data.FrameType("numeric_wide"), // TODO: make type
+
+	if wf == nil || wf.Frame == nil {
+		return fmt.Errorf("zero frames when calling AddMetric must call NewWideFrame first")
+	}
+
+	if wf.Frame == nil {
+		wf.Frame = data.NewFrame("").SetMeta(&data.FrameMeta{
+			Type: data.FrameType(FrameTypeNumericWide), // TODO: make type
 		})
 	}
 	field := data.NewFieldFromFieldType(fType, 1)
 	field.Name = metricName
 	field.Labels = l
 	field.Set(0, value)
-	mfn.Fields = append(mfn.Fields, field)
+	if len(wf.Fields) == 0 {
+		wf.Fields = append(wf.Fields, field)
+		return nil
+	}
+	wf.Fields = append(wf.Fields, field)
 	return nil
 }
 
-func (mfn *WideFrame) GetMetricRefs() []MetricRef {
+func (wf *WideFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsWide(wf, true)
+}
+
+// TODO: Update with current rules to match(ish) time series
+func validateAndGetRefsWide(wf *WideFrame, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
 	refs := []MetricRef{}
-	for _, field := range mfn.Fields {
+	for _, field := range wf.Fields {
 		if !field.Type().Numeric() {
 			continue
 		}
 		refs = append(refs, MetricRef{field})
 	}
 	sortNumericMetricRef(refs)
-	return refs
+	return refs, nil, nil
 }
 
-func (mfn *WideFrame) Validate() (isEmpty bool, errors []error) {
+func (wf *WideFrame) Validate() (isEmpty bool, errors []error) {
 	panic("not implemented")
 }
 
-func (mfn *WideFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
+func (wf *WideFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 	panic("not implemented")
 }

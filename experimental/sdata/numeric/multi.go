@@ -17,12 +17,12 @@ func NewMultiFrame() *MultiFrame {
 	}
 }
 
-func (mfn *MultiFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
+func (mf *MultiFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
 	fType := data.FieldTypeFor(value)
 	if !fType.Numeric() {
 		return fmt.Errorf("unsupported values type %T, must be numeric", value)
 	}
-	if mfn == nil || len(*mfn) == 0 {
+	if mf == nil || len(*mf) == 0 {
 		return fmt.Errorf("zero frames when calling AddMetric must call NewMultiFrame first")
 	}
 
@@ -31,27 +31,27 @@ func (mfn *MultiFrame) AddMetric(metricName string, l data.Labels, value interfa
 	field.Labels = l
 	field.Set(0, value)
 
-	if len(*mfn) == 1 && len((*mfn)[0].Fields) == 0 {
-		(*mfn)[0].Fields = append((*mfn)[0].Fields, field)
+	if len(*mf) == 1 && len((*mf)[0].Fields) == 0 {
+		(*mf)[0].Fields = append((*mf)[0].Fields, field)
 		return nil
 	}
 
-	*mfn = append(*mfn, data.NewFrame("", field).SetMeta(&data.FrameMeta{
+	*mf = append(*mf, data.NewFrame("", field).SetMeta(&data.FrameMeta{
 		Type: data.FrameType(FrameTypeNumericMulti), // TODO: make type
 	}))
 
 	return nil
 }
 
-func (mfn *MultiFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
-	return validateAndGetRefsMulti(mfn, true)
+func (mf *MultiFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsMulti(mf, true)
 }
 
-func (mfn *MultiFrame) Validate() (isEmpty bool, errors []error) {
+func (mf *MultiFrame) Validate() (isEmpty bool, errors []error) {
 	panic("not implemented")
 }
 
-func (mfn *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
+func (mf *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 	panic("not implemented")
 }
 
@@ -69,9 +69,9 @@ Rules:
 
 TODO: Change this to follow the above
 */
-func validateAndGetRefsMulti(mfn *MultiFrame, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsMulti(mf *MultiFrame, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
 	refs := []MetricRef{}
-	for _, frame := range *mfn {
+	for _, frame := range *mf {
 		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)
 		if len(valueFields) == 0 {
 			continue
