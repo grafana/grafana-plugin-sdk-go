@@ -298,7 +298,7 @@ func getMDKey(key string, metaData arrow.Metadata) (string, bool) {
 func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	nullable := make([]bool, len(schema.Fields()))
 	for idx, field := range schema.Fields() {
-		sdkField := &Field{
+		sdkField := Field{
 			Name: field.Name,
 		}
 		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
@@ -312,11 +312,11 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 			}
 		}
 		nullable[idx] = field.Nullable
-		if err := initializeFrameField(field, idx, nullable, sdkField); err != nil {
+		if err := initializeFrameField(field, idx, nullable, &sdkField); err != nil {
 			return nil, err
 		}
 
-		frame.Fields = append(frame.Fields, sdkField)
+		frame.Fields = append(frame.Fields, &sdkField)
 	}
 	return nullable, nil
 }
