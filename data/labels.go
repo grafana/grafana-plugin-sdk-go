@@ -25,22 +25,27 @@ func (codec *dataLabelsCodec) IsEmpty(ptr unsafe.Pointer) bool {
 
 func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
 	v := (*Labels)(ptr)
+	if v == nil {
+		stream.WriteNil()
+		return
+	}
+
+	l := *v
+	keys := make([]string, len(l))
+	i := 0
+	for k := range l {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+
 	stream.WriteObjectStart()
-	if v != nil {
-		l := *v
-
-		keys := make([]string, len(l))
-		i := 0
-		for k := range l {
-			keys[i] = k
-			i++
+	for i, k := range keys {
+		if i > 0 {
+			stream.WriteMore()
 		}
-		sort.Strings(keys)
-
-		for _, k := range keys {
-			stream.WriteObjectField(k)
-			stream.WriteString(l[k])
-		}
+		stream.WriteObjectField(k)
+		stream.WriteString(l[k])
 	}
 	stream.WriteObjectEnd()
 }

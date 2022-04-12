@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/require"
 )
 
@@ -36,8 +37,8 @@ func TestJSONReadWrite(t *testing.T) {
 	a0 := data.Labels{"a": "AAA", "b": "BBB"}
 	a1 := data.Labels{"b": "BBB", "a": "AAA"}
 
-	b0, _ := json.Marshal(a0)
-	b1, _ := json.Marshal(a1)
+	b0, _ := jsoniter.Marshal(a0)
+	b1, _ := jsoniter.Marshal(a1)
 
 	require.Equal(t, b0, b1)
 	require.Equal(t, `{"a":"AAA","b":"BBB"}`, string(b0))
