@@ -82,7 +82,9 @@ func (p FrameType) IsKnownType() bool {
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
 		FrameTypeTimeSeriesMany,
-		FrameTypeTimeSeriesLabeled:
+		FrameTypeTimeSeriesLabeled,
+		FrameTypeDirectoryListing,
+		FrameTypeTable:
 		return true
 	}
 	return false
@@ -95,6 +97,8 @@ func FrameTypes() []FrameType {
 		FrameTypeTimeSeriesLong,
 		FrameTypeTimeSeriesMany,
 		FrameTypeTimeSeriesLabeled,
+		FrameTypeDirectoryListing,
+		FrameTypeTable,
 	}
 }
 
