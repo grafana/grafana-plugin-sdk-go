@@ -43,12 +43,12 @@ const (
 
 	// FrameTypeTimeSeriesLabeled has at least two fields:
 	// field[0]:
-	//  * type: time
-	//  * ascending values within each label set
-	// field[1]:
 	//  * type: string field
 	//  * name: "labels"
 	//  * value: string-serialized data.Labels structures
+	// field[1]:
+	//  * type: time
+	//  * ascending values within each label set
 	// field[2..n]:
 	//  * type: any
 	// NOTE: no field [0..n] should have a populated "labels" attrtibute
