@@ -43,13 +43,17 @@ const (
 
 	// FrameTypeTimeSeriesLabeled has at least two fields:
 	// field[0]:
-	//  * type time
-	//  * ascending values
+	//  * type: time
+	//  * ascending values within each label set
 	// field[1]:
-	//  * string field
-	//  * labels represented as string-serialized data.Labels structures
+	//  * type: string field
+	//  * name: "labels"
+	//  * value: string-serialized data.Labels structures
+	// field[2..n]:
+	//  * type: any
+	// NOTE: no field [0..n] should have a populated "labels" attrtibute
+	// NOTE: this format is similar to influx line protocol, except that the field set is consistent
 	FrameTypeTimeSeriesLabeled = "timeseries-labeled"
-
 
 	// Soon?
 	// "timeseries-wide-ohlc" -- known fields for open/high/low/close
