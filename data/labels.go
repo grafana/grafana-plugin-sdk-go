@@ -1,6 +1,7 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
@@ -113,12 +114,19 @@ func (l Labels) String() string {
 
 // LabelsFromString() parses string into a Label object.
 // Input string needs to follow the k=v convention,
-// e.g. `{service="users-directory"}` or "method=GET"
+// e.g. `{service="users-directory"}`, "method=GET", or real JSON
 func LabelsFromString(s string) (Labels, error) {
 	if s == "" {
 		return nil, nil
 	}
 	labels := make(map[string]string)
+	if strings.HasPrefix(s, `{"`) {
+		err := json.Unmarshal([]byte(s), &labels)
+		if err == nil {
+			return labels, nil
+		}
+	}
+
 	f := func(c rune) bool {
 		return c == '=' || c == '}' || c == '"' || c == '{'
 	}

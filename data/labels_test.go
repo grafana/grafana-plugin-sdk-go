@@ -44,10 +44,14 @@ func TestJSONReadWrite(t *testing.T) {
 	require.Equal(t, `{"a":"AAA","b":"BBB"}`, string(b0))
 
 	// Check that unmarshal works as expected
-	out := &data.Labels{}
-	err := json.Unmarshal(b1, out)
+	out := data.Labels{}
+	err := json.Unmarshal(b1, &out)
 	require.NoError(t, err)
-	require.Equal(t, a0, *out)
+	require.Equal(t, a0, out)
+
+	out, err = data.LabelsFromString(string(b0))
+	require.NoError(t, err)
+	require.Equal(t, a0, out)
 }
 
 func TestString(t *testing.T) {
