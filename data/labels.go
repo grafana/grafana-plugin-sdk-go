@@ -10,45 +10,11 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
-// Labels are used to add metadata to an object.
+// Labels are used to add metadata to an object.  The JSON will always be sorted keys
 type Labels map[string]string
 
 func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("data.Labels", &dataLabelsCodec{})
-}
-
-type dataLabelsCodec struct{}
-
-func (codec *dataLabelsCodec) IsEmpty(ptr unsafe.Pointer) bool {
-	f := (*Frame)(ptr)
-	return f.Fields == nil && f.RefID == "" && f.Meta == nil
-}
-
-func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
-	v := (*Labels)(ptr)
-	if v == nil {
-		stream.WriteNil()
-		return
-	}
-
-	l := *v
-	keys := make([]string, len(l))
-	i := 0
-	for k := range l {
-		keys[i] = k
-		i++
-	}
-	sort.Strings(keys)
-
-	stream.WriteObjectStart()
-	for i, k := range keys {
-		if i > 0 {
-			stream.WriteMore()
-		}
-		stream.WriteObjectField(k)
-		stream.WriteString(l[k])
-	}
-	stream.WriteObjectEnd()
 }
 
 // Equals returns true if the argument has the same k=v pairs as the receiver.
@@ -144,4 +110,54 @@ func LabelsFromString(s string) (Labels, error) {
 	}
 
 	return labels, nil
+}
+
+// MarshalJSON marshals Labels to JSON.
+func (l Labels) MarshalJSON() ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeLabelsJSON(l, stream)
+	if stream.Error != nil {
+		return nil, stream.Error
+	}
+
+	return append([]byte(nil), stream.Buffer()...), nil
+}
+
+func writeLabelsJSON(l Labels, stream *jsoniter.Stream) {
+	keys := make([]string, len(l))
+	i := 0
+	for k := range l {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+
+	stream.WriteObjectStart()
+	for i, k := range keys {
+		if i > 0 {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField(k)
+		stream.WriteString(l[k])
+	}
+	stream.WriteObjectEnd()
+}
+
+type dataLabelsCodec struct{}
+
+func (codec *dataLabelsCodec) IsEmpty(ptr unsafe.Pointer) bool {
+	f := (*Frame)(ptr)
+	return f.Fields == nil && f.RefID == "" && f.Meta == nil
+}
+
+func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	v := (*Labels)(ptr)
+	if v == nil {
+		stream.WriteNil()
+		return
+	}
+	writeLabelsJSON(*v, stream)
 }
