@@ -4,10 +4,46 @@ import (
 	"fmt"
 	"sort"
 	"strings"
+	"unsafe"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 // Labels are used to add metadata to an object.
 type Labels map[string]string
+
+func init() { //nolint:gochecknoinits
+	jsoniter.RegisterTypeEncoder("data.Labels", &dataLabelsCodec{})
+}
+
+type dataLabelsCodec struct{}
+
+func (codec *dataLabelsCodec) IsEmpty(ptr unsafe.Pointer) bool {
+	f := (*Frame)(ptr)
+	return f.Fields == nil && f.RefID == "" && f.Meta == nil
+}
+
+func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	v := (*Labels)(ptr)
+	stream.WriteObjectStart()
+	if v != nil {
+		l := *v
+
+		keys := make([]string, len(l))
+		i := 0
+		for k := range l {
+			keys[i] = k
+			i++
+		}
+		sort.Strings(keys)
+
+		for _, k := range keys {
+			stream.WriteObjectField(k)
+			stream.WriteString(l[k])
+		}
+	}
+	stream.WriteObjectEnd()
+}
 
 // Equals returns true if the argument has the same k=v pairs as the receiver.
 func (l Labels) Equals(arg Labels) bool {

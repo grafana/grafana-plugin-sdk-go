@@ -1,6 +1,7 @@
 package data_test
 
 import (
+	"encoding/json"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -29,6 +30,23 @@ func TestContains(t *testing.T) {
 	a := data.Labels{"containsLabelKey": "containsLabelValue", "cat": "notADog"}
 	result := a.Contains(data.Labels{"cat": "notADog"})
 	require.Equal(t, result, true)
+}
+
+func TestJSONReadWrite(t *testing.T) {
+	a0 := data.Labels{"a": "AAA", "b": "BBB"}
+	a1 := data.Labels{"b": "BBB", "a": "AAA"}
+
+	b0, _ := json.Marshal(a0)
+	b1, _ := json.Marshal(a1)
+
+	require.Equal(t, b0, b1)
+	require.Equal(t, `{"a":"AAA","b":"BBB"}`, string(b0))
+
+	// Check that unmarshal works as expected
+	out := &data.Labels{}
+	err := json.Unmarshal(b1, out)
+	require.NoError(t, err)
+	require.Equal(t, a0, *out)
 }
 
 func TestString(t *testing.T) {
