@@ -307,6 +307,10 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 			}
 		}
 		if configAsString, ok := getMDKey("config", field.Metadata); ok {
+			// make sure that Config is not nil, otherwise create a new one
+			if sdkField.Config == nil {
+				sdkField.Config = &FieldConfig{}
+			}
 			if err := json.Unmarshal([]byte(configAsString), sdkField.Config); err != nil {
 				return nil, err
 			}
