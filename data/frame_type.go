@@ -51,7 +51,7 @@ const (
 	//  *  😬  ascending or decending values within each label set
 	// field[2..n]:
 	//  * type: any
-	// NOTE: no field [0..n] should have a populated "labels" attrtibute
+	// NOTE: no field [0..n] should have a populated "labels" attribute
 	// NOTE: this format is similar to influx line protocol, except that the field set is consistent
 	FrameTypeTimeSeriesLabeled = "timeseries-labeled"
 
