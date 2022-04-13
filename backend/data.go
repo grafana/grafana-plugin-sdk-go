@@ -107,8 +107,11 @@ type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.
 	Frames data.Frames
 
-	// Error is a property to be set if the the corresponding DataQuery has an error.
+	// Error is a property to be set if the corresponding DataQuery has an error.
 	Error error
+
+	// Status is a property to be set if the corresponding DataQuery has an error.
+	ErrorStatus ErrorStatus
 }
 
 // MarshalJSON writes the results as json
