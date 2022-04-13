@@ -1,6 +1,6 @@
 package backend
 
-type ErrorStatus int64
+type ErrorStatus int32
 
 const (
 	Undefined ErrorStatus = iota
