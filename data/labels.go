@@ -1,13 +1,21 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
 	"sort"
 	"strings"
+	"unsafe"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
-// Labels are used to add metadata to an object.
+// Labels are used to add metadata to an object.  The JSON will always be sorted keys
 type Labels map[string]string
+
+func init() { //nolint:gochecknoinits
+	jsoniter.RegisterTypeEncoder("data.Labels", &dataLabelsCodec{})
+}
 
 // Equals returns true if the argument has the same k=v pairs as the receiver.
 func (l Labels) Equals(arg Labels) bool {
@@ -44,8 +52,9 @@ func (l Labels) Contains(arg Labels) bool {
 	return true
 }
 
+// String() turns labels into string, and will sort the kv pairs by keys
+// e.g. Labels{"b":"valueB", "a": "valueA"} -> {"a=valueA, b=valueB"}
 func (l Labels) String() string {
-	// Better structure, should be sorted, copy prom probably
 	keys := make([]string, len(l))
 	i := 0
 	for k := range l {
@@ -69,21 +78,86 @@ func (l Labels) String() string {
 	return sb.String()
 }
 
-// LabelsFromString parses the output of Labels.String() into
-// a Labels object. It probably has some flaws.
+// LabelsFromString() parses string into a Label object.
+// Input string needs to follow the k=v convention,
+// e.g. `{service="users-directory"}`, "method=GET", or real JSON
 func LabelsFromString(s string) (Labels, error) {
 	if s == "" {
 		return nil, nil
 	}
 	labels := make(map[string]string)
+	if strings.HasPrefix(s, `{"`) {
+		err := json.Unmarshal([]byte(s), &labels)
+		if err == nil {
+			return labels, nil
+		}
+	}
 
+	f := func(c rune) bool {
+		return c == '=' || c == '}' || c == '"' || c == '{'
+	}
 	for _, rawKV := range strings.Split(s, ", ") {
-		kV := strings.SplitN(rawKV, "=", 2)
+		// split kv string by = and delete {} and ""
+		// e.g {group="canary"} -> ["group" "canary"]
+		kV := strings.FieldsFunc(rawKV, f)
 		if len(kV) != 2 {
 			return nil, fmt.Errorf(`invalid label key=value pair "%v"`, rawKV)
 		}
-		labels[kV[0]] = kV[1]
+		key := kV[0]
+		value := kV[1]
+
+		labels[key] = value
 	}
 
 	return labels, nil
+}
+
+// MarshalJSON marshals Labels to JSON.
+func (l Labels) MarshalJSON() ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeLabelsJSON(l, stream)
+	if stream.Error != nil {
+		return nil, stream.Error
+	}
+
+	return append([]byte(nil), stream.Buffer()...), nil
+}
+
+func writeLabelsJSON(l Labels, stream *jsoniter.Stream) {
+	keys := make([]string, len(l))
+	i := 0
+	for k := range l {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+
+	stream.WriteObjectStart()
+	for i, k := range keys {
+		if i > 0 {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField(k)
+		stream.WriteString(l[k])
+	}
+	stream.WriteObjectEnd()
+}
+
+type dataLabelsCodec struct{}
+
+func (codec *dataLabelsCodec) IsEmpty(ptr unsafe.Pointer) bool {
+	f := (*Frame)(ptr)
+	return f.Fields == nil && f.RefID == "" && f.Meta == nil
+}
+
+func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+	v := (*Labels)(ptr)
+	if v == nil {
+		stream.WriteNil()
+		return
+	}
+	writeLabelsJSON(*v, stream)
 }
