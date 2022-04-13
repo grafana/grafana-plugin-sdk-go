@@ -45,7 +45,7 @@ const (
 	// field[0]:
 	//  * type: string field
 	//  * name: "labels"
-	//  * value: string-serialized data.Labels structures
+	//  * value: JSON serialized data.Labels structures
 	// field[1]:
 	//  * type: time
 	//  * ascending values within each label set
