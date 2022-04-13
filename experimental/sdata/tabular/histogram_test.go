@@ -26,7 +26,11 @@ func TestNewHistogramFrame(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tabular.NewHistogramFrame(tt.minValue, tt.maxValue, tt.bucketSize)
+			got, err := tabular.NewHistogramFrame(tabular.HistogramOptions{
+				MinValue:   tt.minValue,
+				MaxValue:   tt.maxValue,
+				BucketSize: tt.bucketSize,
+			})
 			if tt.wantErr != nil {
 				require.Equal(t, tt.wantErr, err)
 				return
@@ -59,7 +63,13 @@ func TestNewHistogramFrameWithValues(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := tabular.NewHistogramFrameWithValues(tt.minValue, tt.maxValue, tt.bucketSize, tt.metricName, tt.values)
+			got, err := tabular.NewHistogramFrameWithValues(
+				tabular.HistogramOptions{
+					MinValue:   tt.minValue,
+					MaxValue:   tt.maxValue,
+					BucketSize: tt.bucketSize,
+				}, tt.metricName, tt.values,
+			)
 			if tt.wantErr != nil {
 				require.Equal(t, tt.wantErr, err)
 				return
@@ -79,7 +89,11 @@ func TestNewHistogramFrameWithValues(t *testing.T) {
 }
 
 func TestHistogram_AddValue(t *testing.T) {
-	frame, err := tabular.NewHistogramFrame(0, 50, 10)
+	frame, err := tabular.NewHistogramFrame(tabular.HistogramOptions{
+		MinValue:   float64(0),
+		MaxValue:   float64(50),
+		BucketSize: float64(10),
+	})
 	require.Nil(t, err)
 	err = frame.AddValue("foo", map[string]string{"env": "dev"}, []float64{1, 2, 3, 4, 5})
 	require.Nil(t, err)

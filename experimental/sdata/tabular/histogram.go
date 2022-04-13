@@ -19,11 +19,14 @@ type HistogramOptions struct {
 	BucketSize float64
 }
 
-func NewHistogramFrame(minValue float64, maxValue float64, bucketSize float64) (*Histogram, error) {
+func NewHistogramFrame(options HistogramOptions) (*Histogram, error) {
 	type bucket struct {
 		MinValue float64
 		MaxValue float64
 	}
+	minValue := options.MinValue
+	maxValue := options.MaxValue
+	bucketSize := options.BucketSize
 	if bucketSize <= 0 {
 		return nil, errors.New("invalid bucket size")
 	}
@@ -56,8 +59,8 @@ func NewHistogramFrame(minValue float64, maxValue float64, bucketSize float64) (
 	return &Histogram{histogramFrame}, nil
 }
 
-func NewHistogramFrameWithValues(minValue float64, maxValue float64, bucketSize float64, metricName string, values []float64) (*Histogram, error) {
-	hg, err := NewHistogramFrame(minValue, maxValue, bucketSize)
+func NewHistogramFrameWithValues(options HistogramOptions, metricName string, values []float64) (*Histogram, error) {
+	hg, err := NewHistogramFrame(options)
 	if err != nil {
 		return nil, err
 	}
