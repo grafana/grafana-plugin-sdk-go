@@ -30,11 +30,11 @@ func NewFixture(store storage.Storage) *Fixture {
 }
 
 // Add processes the http.Request and http.Response with the Fixture's RequestProcessor and ResponseProcessor and adds them to the Fixure's Storage.
-func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) {
+func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) error {
 	req := f.processRequest(originalReq)
 	res := f.processResponse(originalRes)
 	defer res.Body.Close()
-	f.store.Add(req, res)
+	return f.store.Add(req, res)
 }
 
 // Delete deletes the entry with the given ID from the Fixture's Storage.

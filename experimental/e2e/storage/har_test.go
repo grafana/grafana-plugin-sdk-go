@@ -21,7 +21,9 @@ func TestHARStorage(t *testing.T) {
 			require.NoError(t, err)
 			s := storage.NewHARStorage(f.Name())
 			req, res := exampleRequest()
-			s.Add(req, res)
+			defer res.Body.Close()
+			err = s.Add(req, res)
+			require.NoError(t, err)
 			require.Len(t, s.Entries(), 1)
 			require.Equal(t, req.URL.String(), s.Entries()[0].Request.URL.String())
 			require.Equal(t, res.Status, s.Entries()[0].Response.Status)
@@ -37,13 +39,17 @@ func TestHARStorage(t *testing.T) {
 			two := storage.NewHARStorage(f.Name())
 			go func() {
 				req, res := exampleRequest()
+				defer res.Body.Close()
 				req.URL.Path = "/one"
-				one.Add(req, res)
+				e := one.Add(req, res)
+				require.NoError(t, e)
 				c <- true
 			}()
 			req, res := exampleRequest()
+			defer res.Body.Close()
 			req.URL.Path = "/two"
-			two.Add(req, res)
+			err = two.Add(req, res)
+			require.NoError(t, err)
 			<-c
 			require.Len(t, one.Entries(), 2)
 			require.Len(t, two.Entries(), 2)
@@ -110,7 +116,8 @@ func TestHARStorage(t *testing.T) {
 			})
 			dest.Init()
 			for _, entry := range source.Entries() {
-				dest.Add(entry.Request, entry.Response)
+				err = dest.Add(entry.Request, entry.Response)
+				require.NoError(t, err)
 			}
 			require.NoError(t, err)
 			sourceData, err := os.ReadFile("testdata/example.har")

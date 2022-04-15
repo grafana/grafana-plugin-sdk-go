@@ -81,8 +81,7 @@ func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 		return res, err
 	}
 
-	hl.fixture.Add(req, res)
-
+	err = hl.fixture.Add(req, res)
 	return res, err
 }
 

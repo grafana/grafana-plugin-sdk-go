@@ -52,7 +52,7 @@ func (e *Entry) Match(incoming *http.Request) *http.Response {
 
 // Storage is an interface for storing Entry objects.
 type Storage interface {
-	Add(*http.Request, *http.Response)
+	Add(*http.Request, *http.Response) error
 	Delete(*http.Request) bool
 	Load() error
 	Save() error

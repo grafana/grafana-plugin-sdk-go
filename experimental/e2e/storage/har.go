@@ -42,35 +42,37 @@ func (f *files) add(path string) *file {
 }
 
 func (f *files) getOrAdd(path string) *file {
-	if file := f.get(path); file != nil {
-		return file
+	if h := f.get(path); h != nil {
+		return h
 	}
 	return f.add(path)
 }
 
 // RLock locks the HAR file for reading.
 func (f *files) RLock(path string) {
-	file := f.getOrAdd(path)
-	file.RLock()
+	h := f.getOrAdd(path)
+	h.RLock()
 }
 
 // RUnlock releases the read lock on the HAR file.
 func (f *files) RUnlock(path string) {
-	file := f.getOrAdd(path)
-	file.RUnlock()
+	h := f.getOrAdd(path)
+	h.RUnlock()
 }
 
 // Lock locks the HAR file for writing.
 func (f *files) Lock(path string) {
-	file := f.getOrAdd(path)
-	file.Lock()
+	h := f.getOrAdd(path)
+	h.Lock()
 }
 
 // Unlock releases the write lock on the HAR file.
 func (f *files) Unlock(path string) {
-	file := f.getOrAdd(path)
-	file.Unlock()
+	h := f.getOrAdd(path)
+	h.Unlock()
 }
+
+var harFiles = files{files: map[string]*file{}}
 
 // HAR is a Storage implementation that stores requests and responses in HAR format on disk.
 type HAR struct {
@@ -79,8 +81,6 @@ type HAR struct {
 	currentTime func() time.Time
 	newUUID     func() string
 }
-
-var harFiles = files{files: map[string]*file{}}
 
 // NewHARStorage creates a new HARStorage.
 func NewHARStorage(path string) *HAR {
@@ -106,6 +106,7 @@ func (s *HAR) WithUUIDOverride(fn func() string) {
 	s.Init()
 }
 
+// Init initializes the HAR storage.
 func (s *HAR) Init() {
 	if err := s.Load(); err == nil {
 		return
@@ -127,7 +128,7 @@ func (s *HAR) Init() {
 }
 
 // Add converts the http.Request and http.Response to a har.Entry and adds it to the Fixture.
-func (s *HAR) Add(req *http.Request, res *http.Response) {
+func (s *HAR) Add(req *http.Request, res *http.Response) error {
 	var (
 		err     error
 		reqBody []byte
@@ -152,14 +153,14 @@ func (s *HAR) Add(req *http.Request, res *http.Response) {
 	if req.Body != nil {
 		reqBody, err = utils.ReadRequestBody(req)
 		if err != nil {
-			fmt.Println("Failed to read request body", "err", err)
+			return err
 		}
 	}
 
 	if res.Body != nil {
 		resBody, err = io.ReadAll(res.Body)
 		if err != nil {
-			fmt.Println("Failed to read response body", "err", err)
+			return err
 		}
 		res.Body = ioutil.NopCloser(bytes.NewReader(resBody))
 	}
@@ -216,7 +217,7 @@ func (s *HAR) Add(req *http.Request, res *http.Response) {
 			},
 		},
 	})
-	s.Save()
+	return s.Save()
 }
 
 // Entries converts HAR entries to a slice of Entry (http.Request and http.Response pairs).
@@ -275,8 +276,8 @@ func (s *HAR) Delete(req *http.Request) bool {
 	_ = s.Load()
 	if i, entry := s.findEntry(req); entry != nil {
 		s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
-		s.Save()
-		return true
+		err := s.Save()
+		return err == nil
 	}
 	return false
 }

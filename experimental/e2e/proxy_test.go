@@ -65,7 +65,8 @@ func TestProxy(t *testing.T) {
 				Request:    req,
 			}
 			require.Len(t, proxy.Fixtures[0].Entries(), 0)
-			proxy.Fixtures[0].Add(req, res)
+			err = proxy.Fixtures[0].Add(req, res)
+			require.NoError(t, err)
 			require.Len(t, proxy.Fixtures[0].Entries(), 1)
 			req, err = http.NewRequest(http.MethodPost, srv.URL+"/foo", bytes.NewBuffer([]byte("bar")))
 			require.NoError(t, err)
@@ -127,7 +128,8 @@ func TestProxy(t *testing.T) {
 				Body:       ioutil.NopCloser(bytes.NewBufferString("bar")),
 				Request:    req,
 			}
-			proxy.Fixtures[0].Add(req, res)
+			err = proxy.Fixtures[0].Add(req, res)
+			require.NoError(t, err)
 			resp, err := client.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
@@ -212,10 +214,10 @@ func newFakeStorage() *fakeStorage {
 	}
 }
 
-func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
+func (s *fakeStorage) Add(req *http.Request, res *http.Response) error {
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	res.Body = io.NopCloser(bytes.NewBuffer(resBody))
 	resCopy := *res
@@ -224,6 +226,7 @@ func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
 		Request:  req,
 		Response: &resCopy,
 	})
+	return nil
 }
 
 func (s *fakeStorage) Delete(req *http.Request) bool {
