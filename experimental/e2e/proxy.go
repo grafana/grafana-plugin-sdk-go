@@ -125,10 +125,6 @@ func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response
 		return matched
 	}
 	f.Add(res.Request, res)
-	err := f.Save()
-	if err != nil {
-		panic(err)
-	}
 	fmt.Println("Append", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 	return res
 }
@@ -143,10 +139,6 @@ func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Respo
 		fmt.Println("Removed existing match", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 	}
 	f.Add(res.Request, res)
-	err := f.Save()
-	if err != nil {
-		panic(err)
-	}
 	fmt.Println("Overwrite", "url:", res.Request.URL.String(), "status:", res.StatusCode)
 	return res
 }

@@ -18,14 +18,69 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
 )
 
+type file struct {
+	sync.RWMutex
+	Path string
+}
+
+type files struct {
+	mu    sync.RWMutex
+	files map[string]*file
+}
+
+func (f *files) get(path string) *file {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.files[path]
+}
+
+func (f *files) add(path string) *file {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.files[path] = &file{Path: path}
+	return f.files[path]
+}
+
+func (f *files) getOrAdd(path string) *file {
+	if file := f.get(path); file != nil {
+		return file
+	}
+	return f.add(path)
+}
+
+// RLock locks the HAR file for reading.
+func (f *files) RLock(path string) {
+	file := f.getOrAdd(path)
+	file.RLock()
+}
+
+// RUnlock releases the read lock on the HAR file.
+func (f *files) RUnlock(path string) {
+	file := f.getOrAdd(path)
+	file.RUnlock()
+}
+
+// Lock locks the HAR file for writing.
+func (f *files) Lock(path string) {
+	file := f.getOrAdd(path)
+	file.Lock()
+}
+
+// Unlock releases the write lock on the HAR file.
+func (f *files) Unlock(path string) {
+	file := f.getOrAdd(path)
+	file.Unlock()
+}
+
 // HAR is a Storage implementation that stores requests and responses in HAR format on disk.
 type HAR struct {
-	lock        sync.RWMutex
 	path        string
 	har         *har.HAR
 	currentTime func() time.Time
 	newUUID     func() string
 }
+
+var harFiles = files{files: map[string]*file{}}
 
 // NewHARStorage creates a new HARStorage.
 func NewHARStorage(path string) *HAR {
@@ -55,8 +110,6 @@ func (s *HAR) Init() {
 	if err := s.Load(); err == nil {
 		return
 	}
-	s.lock.Lock()
-	defer s.lock.Unlock()
 	s.har.Log = &har.Log{
 		Version: "1.2",
 		Creator: &har.Creator{
@@ -121,8 +174,7 @@ func (s *HAR) Add(req *http.Request, res *http.Response) {
 		resCookies = append(resCookies, &har.Cookie{Name: cookie.Name, Value: cookie.Value})
 	}
 
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	_ = s.Load()
 	s.har.Log.Entries = append(s.har.Log.Entries, &har.Entry{
 		StartedDateTime: s.currentTime().Format(time.RFC3339),
 		Time:            0.0,
@@ -164,13 +216,12 @@ func (s *HAR) Add(req *http.Request, res *http.Response) {
 			},
 		},
 	})
+	s.Save()
 }
 
 // Entries converts HAR entries to a slice of Entry (http.Request and http.Response pairs).
 func (s *HAR) Entries() []*Entry {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
-
+	_ = s.Load()
 	entries := make([]*Entry, len(s.har.Log.Entries))
 	for i, e := range s.har.Log.Entries {
 		postData := ""
@@ -221,10 +272,10 @@ func (s *HAR) Entries() []*Entry {
 
 // Delete removes the HAR entry matching the given Request.
 func (s *HAR) Delete(req *http.Request) bool {
+	_ = s.Load()
 	if i, entry := s.findEntry(req); entry != nil {
-		s.lock.Lock()
 		s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
-		s.lock.Unlock()
+		s.Save()
 		return true
 	}
 	return false
@@ -232,8 +283,8 @@ func (s *HAR) Delete(req *http.Request) bool {
 
 // Save writes the HAR to disk.
 func (s *HAR) Save() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	harFiles.Lock(s.path)
+	defer harFiles.Unlock(s.path)
 	err := os.MkdirAll(filepath.Dir(s.path), os.ModePerm)
 	if err != nil {
 		return err
@@ -247,8 +298,8 @@ func (s *HAR) Save() error {
 
 // Load reads the HAR from disk.
 func (s *HAR) Load() error {
-	s.lock.Lock()
-	defer s.lock.Unlock()
+	harFiles.RLock(s.path)
+	defer harFiles.RUnlock(s.path)
 	raw, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return err
@@ -258,8 +309,6 @@ func (s *HAR) Load() error {
 
 // Match returns the stored http.Response for the given request.
 func (s *HAR) Match(req *http.Request) *http.Response {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
 	if _, entry := s.findEntry(req); entry != nil {
 		return entry.Response
 	}
@@ -268,8 +317,6 @@ func (s *HAR) Match(req *http.Request) *http.Response {
 
 // findEntry returns them matching entry index and entry for the given request.
 func (s *HAR) findEntry(req *http.Request) (int, *Entry) {
-	s.lock.RLock()
-	defer s.lock.RUnlock()
 	for i, entry := range s.Entries() {
 		if res := entry.Match(req); res != nil {
 			res.Body.Close()
