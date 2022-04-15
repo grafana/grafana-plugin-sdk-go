@@ -140,6 +140,7 @@ func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
 var protoDataSourceInstanceSettings = &pluginv2.DataSourceInstanceSettings{
 	Id:                      2,
 	Uid:                     "uid 2",
+	Type:                    "example-datasource",
 	Name:                    "bestData",
 	Url:                     "http://grafana.com",
 	User:                    "aUser",
@@ -177,6 +178,7 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 
 	requireCounter.Equal(t, protoDSIS.Id, sdkDSIS.ID)
 	requireCounter.Equal(t, protoDSIS.Uid, sdkDSIS.UID)
+	requireCounter.Equal(t, protoDSIS.Type, sdkDSIS.Type)
 	requireCounter.Equal(t, protoDSIS.Name, sdkDSIS.Name)
 	requireCounter.Equal(t, protoDSIS.Url, sdkDSIS.URL)
 	requireCounter.Equal(t, protoDSIS.User, sdkDSIS.User)
@@ -245,6 +247,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Name, sdkCtx.DataSourceInstanceSettings.Name)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Id, sdkCtx.DataSourceInstanceSettings.ID)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Uid, sdkCtx.DataSourceInstanceSettings.UID)
+	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Type, sdkCtx.DataSourceInstanceSettings.Type)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Url, sdkCtx.DataSourceInstanceSettings.URL)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.User, sdkCtx.DataSourceInstanceSettings.User)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Database, sdkCtx.DataSourceInstanceSettings.Database)
@@ -398,6 +401,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Name, sdkQDR.PluginContext.DataSourceInstanceSettings.Name)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Uid, sdkQDR.PluginContext.DataSourceInstanceSettings.UID)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Type, sdkQDR.PluginContext.DataSourceInstanceSettings.Type)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Url, sdkQDR.PluginContext.DataSourceInstanceSettings.URL)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.User, sdkQDR.PluginContext.DataSourceInstanceSettings.User)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Database, sdkQDR.PluginContext.DataSourceInstanceSettings.Database)

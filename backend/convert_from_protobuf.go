@@ -57,6 +57,7 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 	return &DataSourceInstanceSettings{
 		ID:                      proto.Id,
 		UID:                     proto.Uid,
+		Type:                    proto.Type,
 		Name:                    proto.Name,
 		URL:                     proto.Url,
 		User:                    proto.User,
