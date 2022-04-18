@@ -8,6 +8,9 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
+// WideFrame is a time series format where all the series live in one frame.
+// This time series format should be use for data that natively uses Labels and
+// when all of the series are guaranteed to have identical time values.
 type WideFrame []*data.Frame
 
 func NewWideFrame() *WideFrame {
@@ -41,7 +44,7 @@ func (wf *WideFrame) SetTime(timeName string, t []time.Time) error {
 	return nil
 }
 
-func (wf *WideFrame) AddMetric(metricName string, l data.Labels, values interface{}) error {
+func (wf *WideFrame) AddSeries(metricName string, l data.Labels, values interface{}) error {
 	if !data.ValidFieldType(values) {
 		return fmt.Errorf("type %T is not a valid data frame field type", values)
 	}
@@ -61,7 +64,7 @@ func (wf *WideFrame) AddMetric(metricName string, l data.Labels, values interfac
 		return fmt.Errorf("missing is nil, NewWideFrame must be called first")
 	}
 
-	// Note: Readers are not required to make the Time field first, but using New/SetTime/AddMetric does.
+	// Note: Readers are not required to make the Time field first, but using New/SetTime/AddSeries does.
 	if len(frame.Fields) == 0 || frame.Fields[0].Type() != data.FieldTypeTime {
 		return fmt.Errorf("frame is missing time field or time field is not first, SetTime must be called first")
 	}

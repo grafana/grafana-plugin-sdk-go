@@ -9,20 +9,27 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
+// MultiFrame is a time series format where each series lives in its own single frame.
+// This time series format should be use for data that natively uses Labels and
+// when all of the series are not guaranteed to have identical time values.
 type MultiFrame []*data.Frame
 
+// NewMultiFrame creates an empty MultiFrame formatted time series.
+// This function must be called before the AddSeries Method.
+// The returned MultiFrame is a valid typed data response that corresponds to "No Data".
 func NewMultiFrame() *MultiFrame {
 	return &MultiFrame{
 		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
 	}
+	// Consider: MultiFrame.New()
 }
 
 // values must be a numeric slice such as []int64, []float64, []*float64, etc or []bool / []*bool.
-func (mfs *MultiFrame) AddMetric(metricName string, l data.Labels, t []time.Time, values interface{}) error {
+func (mfs *MultiFrame) AddSeries(metricName string, l data.Labels, t []time.Time, values interface{}) error {
 	var err error
 
 	if mfs == nil || len(*mfs) == 0 {
-		return fmt.Errorf("zero frames when calling AddMetric must call NewMultiFrame first") // panic? maybe?
+		return fmt.Errorf("zero frames when calling AddSeries must call NewMultiFrame first") // panic? maybe?
 	}
 
 	if !data.ValidFieldType(values) {
@@ -87,15 +94,12 @@ When things get ignored
 - Frames that don't have the type indicator as long as they are not first
 - Fields when the type indicator is present and the frame is valid (e.g. has both time and value fields):
   - String, Additional Time Fields, Additional Value fields
-
 */
 func (mfs *MultiFrame) Validate(validateData bool) (ignoredFields []sdata.FrameFieldIndex, err error) {
 	_, ignoredFields, err = validateAndGetRefsMulti(mfs, validateData, false)
 	return ignoredFields, err
 }
 
-// wrap validation and metric ref fetching together for consistency in validation
-// not sure if "getRefs" should be there or not, or if should just always be built and ignored.
 func validateAndGetRefsMulti(mfs *MultiFrame, validateData, getRefs bool) (refs []MetricRef, ignoredFields []sdata.FrameFieldIndex, err error) {
 	if mfs == nil || len(*mfs) == 0 {
 		return nil, nil, fmt.Errorf("must have at least one frame to be valid")

@@ -32,10 +32,10 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	t.Run("multi frame", func(t *testing.T) {
 		sc := timeseries.NewMultiFrame()
 
-		err := sc.AddMetric(metricName, data.Labels{"host": "a"}, timeSlice, valuesA)
+		err := sc.AddSeries(metricName, data.Labels{"host": "a"}, timeSlice, valuesA)
 		require.NoError(t, err)
 
-		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, timeSlice, valuesB)
+		err = sc.AddSeries(metricName, data.Labels{"host": "b"}, timeSlice, valuesB)
 		require.NoError(t, err)
 
 		var r timeseries.CollectionReader = sc
@@ -52,10 +52,10 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		err := sc.SetTime("time", timeSlice)
 		require.NoError(t, err)
 
-		err = sc.AddMetric(metricName, data.Labels{"host": "a"}, valuesA)
+		err = sc.AddSeries(metricName, data.Labels{"host": "a"}, valuesA)
 		require.NoError(t, err)
 
-		err = sc.AddMetric(metricName, data.Labels{"host": "b"}, valuesB)
+		err = sc.AddSeries(metricName, data.Labels{"host": "b"}, valuesB)
 		require.NoError(t, err)
 
 		var r timeseries.CollectionReader = sc
@@ -66,6 +66,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		require.Nil(t, extraFields)
 		require.Equal(t, expectedRefs, mFrameRefs)
 	})
+	
 	t.Run("long frame", func(t *testing.T) {
 		ls := &timeseries.LongFrame{data.NewFrame("",
 			data.NewField("time", nil, []time.Time{timeSlice[0], timeSlice[0],

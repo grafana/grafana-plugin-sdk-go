@@ -67,6 +67,10 @@ Rules:
 - If validateData is true, duplicate metricName+Labels will error
 - If all frames and their fields are ignored, and it is not the empty response case, an error is returned
 
+Things to decide:
+ - Seems like allowing (ignoring) more than 1 row is not a good idea (outside of Long)
+ - Will allow for extra frames
+
 TODO: Change this to follow the above
 */
 func validateAndGetRefsMulti(mf *MultiFrame, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {

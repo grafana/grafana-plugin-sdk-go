@@ -94,7 +94,6 @@ func sortTimeSeriesMetricRef(refs []MetricRef) {
 		}
 
 		// If here Names are equal, next sort based on if there are labels.
-
 		if iRef.GetLabels() == nil && jRef.GetLabels() == nil {
 			return true // no labels first
 		}
