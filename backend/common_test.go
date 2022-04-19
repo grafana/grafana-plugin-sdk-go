@@ -84,6 +84,7 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 					Name:             "ds1",
 					UID:              "uid1",
 					User:             "user",
+					Type:             "example-datasource",
 					JSONData:         []byte("{}"),
 					BasicAuthEnabled: true,
 					BasicAuthUser:    "buser",
@@ -100,6 +101,7 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 					Labels: map[string]string{
 						"datasource_name": "ds1",
 						"datasource_uid":  "uid1",
+						"datasource_type": "example-datasource",
 					},
 					CustomOptions: map[string]interface{}{
 						dataCustomOptionsKey: map[string]interface{}{},
@@ -114,6 +116,7 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 				instanceSettings: &DataSourceInstanceSettings{
 					Name:             "ds2",
 					UID:              "uid2",
+					Type:             "example-datasource-2",
 					User:             "user",
 					JSONData:         []byte("{}"),
 					BasicAuthEnabled: false,
@@ -131,6 +134,7 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 					Labels: map[string]string{
 						"datasource_name": "ds2",
 						"datasource_uid":  "uid2",
+						"datasource_type": "example-datasource-2",
 					},
 					CustomOptions: map[string]interface{}{
 						dataCustomOptionsKey: map[string]interface{}{},

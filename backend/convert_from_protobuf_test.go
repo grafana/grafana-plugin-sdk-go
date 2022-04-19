@@ -161,7 +161,7 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "proto", "DataSourceInstanceSettings", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
 	}
 
-	sdkDSIS := f.DataSourceInstanceSettings(protoDSIS)
+	sdkDSIS := f.DataSourceInstanceSettings(protoDSIS, "example-datasource")
 
 	sdkWalker := &walker{}
 	err = reflectwalk.Walk(sdkDSIS, sdkWalker)
@@ -171,12 +171,14 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
+	// adding +1 to the proto field count to account for the Type field in the SDK
+	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
 	requireCounter.Equal(t, protoDSIS.Id, sdkDSIS.ID)
 	requireCounter.Equal(t, protoDSIS.Uid, sdkDSIS.UID)
+	requireCounter.Equal(t, "example-datasource", sdkDSIS.Type)
 	requireCounter.Equal(t, protoDSIS.Name, sdkDSIS.Name)
 	requireCounter.Equal(t, protoDSIS.Url, sdkDSIS.URL)
 	requireCounter.Equal(t, protoDSIS.User, sdkDSIS.User)
@@ -223,7 +225,8 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
+	// adding +1 to the proto field count to account for the Type field in the SDK
+	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -245,6 +248,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Name, sdkCtx.DataSourceInstanceSettings.Name)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Id, sdkCtx.DataSourceInstanceSettings.ID)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Uid, sdkCtx.DataSourceInstanceSettings.UID)
+	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.DataSourceInstanceSettings.Type)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Url, sdkCtx.DataSourceInstanceSettings.URL)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.User, sdkCtx.DataSourceInstanceSettings.User)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Database, sdkCtx.DataSourceInstanceSettings.Database)
@@ -374,7 +378,8 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "QueryDataRequest", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
+	// adding +1 to the proto field count to account for the Type field in the SDK
+	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -398,6 +403,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Name, sdkQDR.PluginContext.DataSourceInstanceSettings.Name)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Uid, sdkQDR.PluginContext.DataSourceInstanceSettings.UID)
+	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.DataSourceInstanceSettings.Type)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Url, sdkQDR.PluginContext.DataSourceInstanceSettings.URL)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.User, sdkQDR.PluginContext.DataSourceInstanceSettings.User)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Database, sdkQDR.PluginContext.DataSourceInstanceSettings.Database)
