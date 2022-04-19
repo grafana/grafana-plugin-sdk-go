@@ -72,7 +72,6 @@ func TestFixtureAdd(t *testing.T) {
 		require.Equal(t, 0, len(f.Entries()))
 		err := f.Add(req, res)
 		require.NoError(t, err)
-		require.NoError(t, err)
 		require.Equal(t, 1, len(f.Entries()))
 		require.Equal(t, 201, f.Entries()[0].Response.StatusCode)
 	})

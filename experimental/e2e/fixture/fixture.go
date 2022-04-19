@@ -47,11 +47,6 @@ func (f *Fixture) Entries() []*storage.Entry {
 	return f.store.Entries()
 }
 
-// Save saves the current state of the Fixture's Storage.
-func (f *Fixture) Save() error {
-	return f.store.Save()
-}
-
 // WithRequestProcessor sets the RequestProcessor for the Fixture.
 func (f *Fixture) WithRequestProcessor(processRequest RequestProcessor) {
 	f.processRequest = processRequest

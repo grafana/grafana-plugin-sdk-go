@@ -133,9 +133,9 @@ func TestHARStorage(t *testing.T) {
 }
 
 func exampleRequest() (*http.Request, *http.Response) {
-	req, _ := http.NewRequest("GET", "http://example.com/", nil)
+	req, _ := http.NewRequest(http.MethodGet, "http://example.com/", nil)
 	res := &http.Response{
-		StatusCode: 404,
+		StatusCode: http.StatusNotFound,
 		Body:       ioutil.NopCloser(strings.NewReader("")),
 	}
 	return req, res

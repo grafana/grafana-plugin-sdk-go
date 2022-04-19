@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"net/http"
+	"sync"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
 )
@@ -54,8 +55,65 @@ func (e *Entry) Match(incoming *http.Request) *http.Response {
 type Storage interface {
 	Add(*http.Request, *http.Response) error
 	Delete(*http.Request) bool
-	Load() error
-	Save() error
 	Entries() []*Entry
 	Match(*http.Request) *http.Response
+}
+
+// file adds a read/write mutex to a file path.
+type file struct {
+	sync.RWMutex
+	path string
+}
+
+// files allows multiple storage instances to hold read or write lock on a file.
+type files struct {
+	mu    sync.RWMutex
+	files map[string]*file
+}
+
+// get returns the file struct for the given path.
+func (f *files) get(path string) *file {
+	f.mu.RLock()
+	defer f.mu.RUnlock()
+	return f.files[path]
+}
+
+// add adds a new path to the files map.
+func (f *files) add(path string) *file {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.files[path] = &file{path: path}
+	return f.files[path]
+}
+
+// getOrAdd returns the file struct for the given path, or creates it if it does not exist.
+func (f *files) getOrAdd(path string) *file {
+	if h := f.get(path); h != nil {
+		return h
+	}
+	return f.add(path)
+}
+
+// rLock locks the HAR file for reading.
+func (f *files) rLock(path string) {
+	h := f.getOrAdd(path)
+	h.RLock()
+}
+
+// rUnlock releases the read lock on the HAR file.
+func (f *files) rUnlock(path string) {
+	h := f.getOrAdd(path)
+	h.RUnlock()
+}
+
+// lock locks the HAR file for writing.
+func (f *files) lock(path string) {
+	h := f.getOrAdd(path)
+	h.Lock()
+}
+
+// unlock releases the write lock on the HAR file.
+func (f *files) unlock(path string) {
+	h := f.getOrAdd(path)
+	h.Unlock()
 }

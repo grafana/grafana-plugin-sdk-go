@@ -10,7 +10,6 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/chromedp/cdproto/har"
@@ -18,60 +17,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/utils"
 )
 
-type file struct {
-	sync.RWMutex
-	Path string
-}
-
-type files struct {
-	mu    sync.RWMutex
-	files map[string]*file
-}
-
-func (f *files) get(path string) *file {
-	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.files[path]
-}
-
-func (f *files) add(path string) *file {
-	f.mu.Lock()
-	defer f.mu.Unlock()
-	f.files[path] = &file{Path: path}
-	return f.files[path]
-}
-
-func (f *files) getOrAdd(path string) *file {
-	if h := f.get(path); h != nil {
-		return h
-	}
-	return f.add(path)
-}
-
-// RLock locks the HAR file for reading.
-func (f *files) RLock(path string) {
-	h := f.getOrAdd(path)
-	h.RLock()
-}
-
-// RUnlock releases the read lock on the HAR file.
-func (f *files) RUnlock(path string) {
-	h := f.getOrAdd(path)
-	h.RUnlock()
-}
-
-// Lock locks the HAR file for writing.
-func (f *files) Lock(path string) {
-	h := f.getOrAdd(path)
-	h.Lock()
-}
-
-// Unlock releases the write lock on the HAR file.
-func (f *files) Unlock(path string) {
-	h := f.getOrAdd(path)
-	h.Unlock()
-}
-
+// harFiles is a global map of HAR files that are currently being read or written.
 var harFiles = files{files: map[string]*file{}}
 
 // HAR is a Storage implementation that stores requests and responses in HAR format on disk.
@@ -284,8 +230,8 @@ func (s *HAR) Delete(req *http.Request) bool {
 
 // Save writes the HAR to disk.
 func (s *HAR) Save() error {
-	harFiles.Lock(s.path)
-	defer harFiles.Unlock(s.path)
+	harFiles.lock(s.path)
+	defer harFiles.unlock(s.path)
 	err := os.MkdirAll(filepath.Dir(s.path), os.ModePerm)
 	if err != nil {
 		return err
@@ -299,8 +245,8 @@ func (s *HAR) Save() error {
 
 // Load reads the HAR from disk.
 func (s *HAR) Load() error {
-	harFiles.RLock(s.path)
-	defer harFiles.RUnlock(s.path)
+	harFiles.rLock(s.path)
+	defer harFiles.rUnlock(s.path)
 	raw, err := ioutil.ReadFile(s.path)
 	if err != nil {
 		return err
