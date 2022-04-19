@@ -53,7 +53,6 @@ func (s *AppInstanceSettings) HTTPClientOptions() (httpclient.Options, error) {
 // In Grafana a data source instance is a data source plugin of certain
 // type that have been configured and created in a Grafana organization.
 type DataSourceInstanceSettings struct {
-
 	// ID is the Grafana assigned numeric identifier of the the data source instance.
 	ID int64
 
