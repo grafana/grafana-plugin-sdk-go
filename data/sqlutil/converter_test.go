@@ -14,17 +14,19 @@ import (
 
 func TestDefaultConverter(t *testing.T) {
 	type Suite struct {
-		Name     string
-		Type     reflect.Type
-		Nullable bool
-		Expected sqlutil.Converter
+		Name             string
+		Type             reflect.Type
+		DatabaseTypeName string
+		Nullable         bool
+		Expected         sqlutil.Converter
 	}
 
 	suite := []Suite{
 		{
-			Name:     "non-nullable type",
-			Type:     reflect.TypeOf(int64(0)),
-			Nullable: false,
+			Name:             "non-nullable type",
+			Type:             reflect.TypeOf(int64(0)),
+			Nullable:         false,
+			DatabaseTypeName: "",
 			Expected: sqlutil.Converter{
 				InputScanType: reflect.TypeOf(int64(0)),
 				FrameConverter: sqlutil.FrameConverter{
@@ -33,9 +35,10 @@ func TestDefaultConverter(t *testing.T) {
 			},
 		},
 		{
-			Name:     "nullable int64",
-			Type:     reflect.TypeOf(int64(0)),
-			Nullable: true,
+			Name:             "nullable int64",
+			Type:             reflect.TypeOf(int64(0)),
+			Nullable:         true,
+			DatabaseTypeName: "",
 			Expected: sqlutil.Converter{
 				InputScanType: reflect.TypeOf(sql.NullInt64{}),
 				FrameConverter: sqlutil.FrameConverter{
@@ -44,9 +47,10 @@ func TestDefaultConverter(t *testing.T) {
 			},
 		},
 		{
-			Name:     "string",
-			Type:     reflect.TypeOf(""),
-			Nullable: false,
+			Name:             "string",
+			Type:             reflect.TypeOf(""),
+			Nullable:         false,
+			DatabaseTypeName: "",
 			Expected: sqlutil.Converter{
 				InputScanType: reflect.TypeOf(""),
 				FrameConverter: sqlutil.FrameConverter{
@@ -55,9 +59,10 @@ func TestDefaultConverter(t *testing.T) {
 			},
 		},
 		{
-			Name:     "nullable string",
-			Type:     reflect.TypeOf(""),
-			Nullable: true,
+			Name:             "nullable string",
+			Type:             reflect.TypeOf(""),
+			Nullable:         true,
+			DatabaseTypeName: "",
 			Expected: sqlutil.Converter{
 				InputScanType: reflect.TypeOf(sql.NullString{}),
 				FrameConverter: sqlutil.FrameConverter{
@@ -66,9 +71,10 @@ func TestDefaultConverter(t *testing.T) {
 			},
 		},
 		{
-			Name:     "string",
-			Type:     reflect.TypeOf(time.Time{}),
-			Nullable: false,
+			Name:             "string",
+			Type:             reflect.TypeOf(time.Time{}),
+			Nullable:         false,
+			DatabaseTypeName: "",
 			Expected: sqlutil.Converter{
 				InputScanType: reflect.TypeOf(time.Time{}),
 				FrameConverter: sqlutil.FrameConverter{
@@ -77,9 +83,10 @@ func TestDefaultConverter(t *testing.T) {
 			},
 		},
 		{
-			Name:     "nullable time",
-			Type:     reflect.TypeOf(time.Time{}),
-			Nullable: true,
+			Name:             "nullable time",
+			Type:             reflect.TypeOf(time.Time{}),
+			Nullable:         true,
+			DatabaseTypeName: "",
 			Expected: sqlutil.Converter{
 				InputScanType: reflect.TypeOf(sql.NullTime{}),
 				FrameConverter: sqlutil.FrameConverter{
@@ -88,9 +95,22 @@ func TestDefaultConverter(t *testing.T) {
 			},
 		},
 		{
-			Name:     "nullable bool",
-			Type:     reflect.TypeOf(false),
-			Nullable: true,
+			Name:             "nullable bool",
+			Type:             reflect.TypeOf(false),
+			Nullable:         true,
+			DatabaseTypeName: "",
+			Expected: sqlutil.Converter{
+				InputScanType: reflect.TypeOf(sql.NullBool{}),
+				FrameConverter: sqlutil.FrameConverter{
+					FieldType: data.FieldTypeBool.NullableType(),
+				},
+			},
+		},
+		{
+			Name:             "nullable bool with database type",
+			Type:             reflect.TypeOf(false),
+			Nullable:         true,
+			DatabaseTypeName: "BOOLEAN",
 			Expected: sqlutil.Converter{
 				InputScanType: reflect.TypeOf(sql.NullBool{}),
 				FrameConverter: sqlutil.FrameConverter{
@@ -102,7 +122,7 @@ func TestDefaultConverter(t *testing.T) {
 
 	for i, v := range suite {
 		t.Run(fmt.Sprintf("[%d/%d] %s", i+1, len(suite), v.Name), func(t *testing.T) {
-			c := sqlutil.NewDefaultConverter(v.Name, v.Nullable, v.Type)
+			c := sqlutil.NewDefaultConverter(v.Name, v.Nullable, v.Type, v.DatabaseTypeName)
 			assert.Equal(t, c.FrameConverter.FieldType, v.Expected.FrameConverter.FieldType)
 			assert.Equal(t, c.InputScanType.String(), v.Expected.InputScanType.String())
 

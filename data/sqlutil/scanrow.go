@@ -96,7 +96,7 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 		}
 
 		if converter == nil {
-			v := NewDefaultConverter(colType.Name(), nullable, scanType)
+			v := NewDefaultConverter(colType.Name(), nullable, scanType, colType.DatabaseTypeName())
 			converter = &v
 			scanType = v.InputScanType
 		}

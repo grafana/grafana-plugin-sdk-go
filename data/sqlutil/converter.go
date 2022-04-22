@@ -147,7 +147,12 @@ func DefaultConverterFunc(t reflect.Type) func(in interface{}) (interface{}, err
 }
 
 // NewDefaultConverter creates a Converter that assumes that the value is scannable into a String, and placed into the dataframe as a nullable string.
-func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
+func NewDefaultConverter(name string, nullable bool, t reflect.Type, databaseType string) Converter {
+	for _, c := range NullConverters {
+		if c.InputTypeName == databaseType {
+			return c
+		}
+	}
 	slice := reflect.MakeSlice(reflect.SliceOf(t), 0, 0).Interface()
 	if !data.ValidFieldType(slice) {
 		return Converter{
