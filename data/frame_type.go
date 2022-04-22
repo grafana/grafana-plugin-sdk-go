@@ -41,19 +41,19 @@ const (
 	// This structure is typically part of a list of frames with the same structure
 	FrameTypeTimeSeriesMany = "timeseries-many"
 
-	// FrameTypeTimeSeriesLabeled has at least two fields:
+	// FrameTypeLabeledTimeValues has at least three fields:
 	// field[0]:
 	//  * type: string field
 	//  * name: "labels"
 	//  * value: JSON serialized data.Labels structures
 	// field[1]:
 	//  * type: time
-	//  *  😬  ascending or decending values within each label set
+	//  * ascending or decending values within each label set.
 	// field[2..n]:
 	//  * type: any
 	// NOTE: no field [0..n] should have a populated "labels" attribute
 	// NOTE: this format is similar to influx line protocol, except that the field set is consistent
-	FrameTypeTimeSeriesLabeled = "timeseries-labeled"
+	FrameTypeLabeledTimeValues = "labeled-time-values"
 
 	// Soon?
 	// "timeseries-wide-ohlc" -- known fields for open/high/low/close
@@ -82,7 +82,7 @@ func (p FrameType) IsKnownType() bool {
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
 		FrameTypeTimeSeriesMany,
-		FrameTypeTimeSeriesLabeled,
+		FrameTypeLabeledTimeValues,
 		FrameTypeDirectoryListing,
 		FrameTypeTable:
 		return true
@@ -96,7 +96,7 @@ func FrameTypes() []FrameType {
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
 		FrameTypeTimeSeriesMany,
-		FrameTypeTimeSeriesLabeled,
+		FrameTypeLabeledTimeValues,
 		FrameTypeDirectoryListing,
 		FrameTypeTable,
 	}
@@ -108,8 +108,7 @@ func (p FrameType) IsTimeSeries() bool {
 	case
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
-		FrameTypeTimeSeriesMany,
-		FrameTypeTimeSeriesLabeled:
+		FrameTypeTimeSeriesMany:
 		return true
 	}
 	return false
