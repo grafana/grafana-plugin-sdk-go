@@ -186,6 +186,10 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 		case *nullableTimeTimeVector:
 			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
 
+		case *jsonRawMessageVector:
+			columns[fieldIdx] = *buildJSONColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableJsonRawMessageVector:
+			columns[fieldIdx] = *buildNullableJSONColumn(pool, arrowFields[fieldIdx], v)
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
@@ -281,6 +285,11 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.TimestampType{}, false, nil
 	case *nullableTimeTimeVector:
 		return &arrow.TimestampType{}, true, nil
+
+	case *jsonRawMessageVector:
+		return &arrow.StringType{}, false, nil
+	case *nullableJsonRawMessageVector:
+		return &arrow.StringType{}, true, nil
 
 	default:
 		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.vector)
