@@ -291,3 +291,21 @@ var JSONValueToNullableInt64 = data.FieldConverter{
 		return ptr, err
 	},
 }
+
+// Uint8ToNullableString parses a string value from a []uint8.
+var Uint8ArrayToNullableString = data.FieldConverter{
+	OutputFieldType: data.FieldTypeNullableString,
+	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *string
+		if v == nil {
+			return ptr, nil
+		}
+		val, ok := v.([]uint8)
+		if !ok {
+			return ptr, toConversionError("string", v)
+		}
+		fV := string(val)
+		ptr = &fV
+		return ptr, nil
+	},
+}

@@ -125,11 +125,17 @@ type Converter struct {
 	// InputTypeRegex will be used if not nil instead of InputTypeName
 	InputTypeRegex *regexp.Regexp
 
+	// InputColumnName is the case-sensitive name that must match the column that this converter matches
+	InputColumnName string
+
 	// FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe
 	FrameConverter FrameConverter
 
 	// colType is the underlying sql column type, set during scan
 	colType sql.ColumnType
+
+	// try to determine the type
+	Dynamic bool
 }
 
 // DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
@@ -326,4 +332,73 @@ var NullConverters = map[reflect.Type]Converter{
 	reflect.TypeOf(""):          NullStringConverter,
 	reflect.TypeOf(time.Time{}): NullTimeConverter,
 	reflect.TypeOf(false):       NullBoolConverter,
+}
+
+// IntOrFloatToNullableFloat64 returns an error if the input is not an int,int32.int64 or float.
+var IntOrFloatToNullableFloat64 = data.FieldConverter{
+	OutputFieldType: data.FieldTypeNullableFloat64,
+	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *float64
+		if v == nil {
+			return ptr, nil
+		}
+
+		switch val := v.(type) {
+		case float64:
+			return &val, nil
+		case float32:
+			return float64(val), nil
+		case int:
+			fval := float64(val)
+			return &fval, nil
+		case int8:
+			fval := float64(val)
+			return &fval, nil
+		case int16:
+			fval := float64(val)
+			return &fval, nil
+		case int32:
+			fval := float64(val)
+			return &fval, nil
+		case int64:
+			fval := float64(val)
+			return &fval, nil
+		case uint:
+			fval := float64(val)
+			return &fval, nil
+		case uint8:
+			fval := float64(val)
+			return &fval, nil
+		case uint16:
+			fval := float64(val)
+			return &fval, nil
+		case uint32:
+			fval := float64(val)
+			return &fval, nil
+		case uint64:
+			fval := float64(val)
+			return &fval, nil
+		}
+
+		return ptr, toConversionError("int or float", v)
+	},
+}
+
+// TimeToNullableTime returns an error if the input is not a time
+var TimeToNullableTime = data.FieldConverter{
+	OutputFieldType: data.FieldTypeNullableTime,
+	Converter: func(v interface{}) (interface{}, error) {
+		if v == nil {
+			return nil, nil
+		}
+		val, ok := v.(time.Time)
+		if ok {
+			return &val, nil
+		}
+		return v, toConversionError("time", v)
+	},
+}
+
+func toConversionError(expected string, v interface{}) error {
+	return fmt.Errorf(`expected %s input but got type %T for value "%v"`, expected, v, v)
 }
