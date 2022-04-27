@@ -2,6 +2,7 @@ package storage_test
 
 import (
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -16,26 +17,52 @@ import (
 func TestHARStorage(t *testing.T) {
 	t.Run("Add", func(t *testing.T) {
 		t.Run("should add a new entry to the storage", func(t *testing.T) {
-			s := storage.NewHARStorage("testdata/example_add.har")
-			s.Init()
-			req, err := http.NewRequest("GET", "http://example.com/", nil)
+			f, err := os.CreateTemp("", "example_*.har")
 			require.NoError(t, err)
-			res := &http.Response{
-				StatusCode: 404,
-				Body:       ioutil.NopCloser(strings.NewReader("")),
-			}
-			s.Add(req, res)
+			s := storage.NewHARStorage(f.Name())
+			req, res := exampleRequest()
+			defer res.Body.Close()
+			err = s.Add(req, res)
+			require.NoError(t, err)
 			require.Len(t, s.Entries(), 1)
 			require.Equal(t, req.URL.String(), s.Entries()[0].Request.URL.String())
 			require.Equal(t, res.Status, s.Entries()[0].Response.Status)
+			err = os.Remove(f.Name())
+			require.NoError(t, err)
+		})
+
+		t.Run("should support multiple instances concurrently adding to the same file", func(t *testing.T) {
+			f, err := os.CreateTemp("", "example_*.har")
+			require.NoError(t, err)
+			c := make(chan bool)
+			one := storage.NewHARStorage(f.Name())
+			two := storage.NewHARStorage(f.Name())
+			go func() {
+				req, res := exampleRequest()
+				defer res.Body.Close()
+				req.URL.Path = "/one"
+				e := one.Add(req, res)
+				require.NoError(t, e)
+				c <- true
+			}()
+			req, res := exampleRequest()
+			defer res.Body.Close()
+			req.URL.Path = "/two"
+			err = two.Add(req, res)
+			require.NoError(t, err)
+			<-c
+			require.Len(t, one.Entries(), 2)
+			require.Len(t, two.Entries(), 2)
+			require.Equal(t, one.Entries()[0].Request.URL.String(), two.Entries()[0].Request.URL.String())
+			require.Equal(t, one.Entries()[1].Request.URL.String(), two.Entries()[1].Request.URL.String())
+			err = os.Remove(f.Name())
+			require.NoError(t, err)
 		})
 	})
 
 	t.Run("Load", func(t *testing.T) {
 		t.Run("should load the HAR from disk", func(t *testing.T) {
 			s := storage.NewHARStorage("testdata/example.har")
-			err := s.Load()
-			require.NoError(t, err)
 			req := s.Entries()[0].Request
 			res := s.Entries()[0].Response
 			require.Equal(t, "https://grafana.com/api/plugins", req.URL.String())
@@ -58,9 +85,13 @@ func TestHARStorage(t *testing.T) {
 
 	t.Run("Delete", func(t *testing.T) {
 		t.Run("should delete second entry", func(t *testing.T) {
-			s := storage.NewHARStorage("testdata/example.har")
-			err := s.Load()
+			source, err := os.Open("testdata/example.har")
 			require.NoError(t, err)
+			f, err := os.CreateTemp("", "example_*.har")
+			require.NoError(t, err)
+			_, err = io.Copy(f, source)
+			require.NoError(t, err)
+			s := storage.NewHARStorage(f.Name())
 			require.Equal(t, 2, len(s.Entries()))
 			ok := s.Delete(s.Entries()[1].Request)
 			require.True(t, ok)
@@ -72,8 +103,6 @@ func TestHARStorage(t *testing.T) {
 	t.Run("Save", func(t *testing.T) {
 		t.Run("should save", func(t *testing.T) {
 			source := storage.NewHARStorage("testdata/example.har")
-			err := source.Load()
-			require.NoError(t, err)
 			f, err := os.CreateTemp("", "example_*.har")
 			require.NoError(t, err)
 			dest := storage.NewHARStorage(f.Name())
@@ -87,9 +116,9 @@ func TestHARStorage(t *testing.T) {
 			})
 			dest.Init()
 			for _, entry := range source.Entries() {
-				dest.Add(entry.Request, entry.Response)
+				err = dest.Add(entry.Request, entry.Response)
+				require.NoError(t, err)
 			}
-			err = dest.Save()
 			require.NoError(t, err)
 			sourceData, err := os.ReadFile("testdata/example.har")
 			require.NoError(t, err)
@@ -101,4 +130,13 @@ func TestHARStorage(t *testing.T) {
 			require.NoError(t, err)
 		})
 	})
+}
+
+func exampleRequest() (*http.Request, *http.Response) {
+	req, _ := http.NewRequest(http.MethodGet, "http://example.com/", nil)
+	res := &http.Response{
+		StatusCode: http.StatusNotFound,
+		Body:       ioutil.NopCloser(strings.NewReader("")),
+	}
+	return req, res
 }
