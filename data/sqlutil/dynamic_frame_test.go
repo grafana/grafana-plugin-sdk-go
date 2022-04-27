@@ -54,15 +54,13 @@ func (rs *MockRows) Next() bool {
 
 func (rs *MockRows) Scan(dest ...interface{}) error {
 	data := rs.data[rs.index]
-	for _, d := range dest {
-		cols := d.([]interface{})
-		for j, v := range cols {
-			val := reflect.ValueOf(v)
-			if val.Kind() != reflect.Ptr {
-				panic("val must be a pointer")
-			}
-			val.Elem().Set(reflect.ValueOf(data[j]))
+	for i, d := range dest {
+		foo := d.(*interface{})
+		val := reflect.ValueOf(foo)
+		if val.Kind() != reflect.Ptr {
+			panic("val must be a pointer")
 		}
+		val.Elem().Set(reflect.ValueOf(data[i]))
 	}
 	return nil
 }
