@@ -812,7 +812,6 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 					} else {
 						stream.WriteVal(v)
 					}
-
 				default:
 					stream.WriteVal(v)
 				}
@@ -1115,7 +1114,7 @@ func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
-			iter.ReportError("readUint8VectorJSON", "expected array")
+			iter.ReportError("readJSONVectorJSON", "expected array")
 			return nil, iter.Error
 		}
 
