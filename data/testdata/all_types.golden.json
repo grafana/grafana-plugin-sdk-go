@@ -74,8 +74,8 @@
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" }, "config": { "interval": 1000 } },
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
       { "name": "nullable_timestamps", "type": "time", "typeInfo": { "frame": "time.Time", "nullable": true } },
-      { "name": "json", "type":"json", "typeInfo": { "frame": "json.RawMessage" } },
-      { "name": "nullable_json", "type":"json", "typeInfo": { "frame": "json.RawMessage", "nullable": true } }
+      { "name": "json", "type":"other", "typeInfo": { "frame": "json.RawMessage" } },
+      { "name": "nullable_json", "type":"other", "typeInfo": { "frame": "json.RawMessage", "nullable": true } }
     ]
   },
   "data": {

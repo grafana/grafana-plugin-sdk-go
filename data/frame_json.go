@@ -22,7 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
-const simpleTypeJSON = "json"
+const simpleTypeOther = "other"
 
 const jsonKeySchema = "schema"
 const jsonKeyData = "data"
@@ -556,7 +556,7 @@ func getSimpleTypeString(t FieldType) (string, bool) {
 		return simpleTypeString, true
 	}
 	if t == FieldTypeJSON || t == FieldTypeNullableJSON {
-		return simpleTypeJSON, true
+		return simpleTypeOther, true
 	}
 
 	return "", false
