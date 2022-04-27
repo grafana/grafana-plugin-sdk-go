@@ -17,7 +17,7 @@ func isDynamic(converters []Converter) bool {
 	return false
 }
 
-func findDataTypes(rows *sql.Rows, rowLimit int64, types []*sql.ColumnType) ([]Field, [][]interface{}, error) {
+func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field, [][]interface{}, error) {
 	var i int64
 	fields := make(map[int]Field)
 
@@ -96,7 +96,7 @@ func findDataTypes(rows *sql.Rows, rowLimit int64, types []*sql.ColumnType) ([]F
 	return fieldList, returnData, nil
 }
 
-func frameDynamic(rows *sql.Rows, rowLimit int64, types []*sql.ColumnType, converters []Converter) (*data.Frame, error) {
+func frameDynamic(rows Rows, rowLimit int64, types []*sql.ColumnType, converters []Converter) (*data.Frame, error) {
 	// find data type(s) from the data
 	fields, rawRows, err := findDataTypes(rows, rowLimit, types)
 	if err != nil {
@@ -168,4 +168,21 @@ type Field struct {
 	name      string
 	converter *data.FieldConverter
 	kind      string
+}
+
+type RowIterator interface {
+	Next() bool
+	Scan(dest ...interface{}) error
+}
+
+type Rows struct {
+	itr RowIterator
+}
+
+func (rs Rows) Next() bool {
+	return rs.itr.Next()
+}
+
+func (rs Rows) Scan(dest ...interface{}) error {
+	return rs.itr.Scan(dest)
 }
