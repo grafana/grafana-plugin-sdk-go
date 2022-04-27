@@ -34,7 +34,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 		for i := range row {
 			row[i] = new(interface{})
 		}
-		err := rows.Scan(row...)
+		err := rows.Scan(row)
 		if err != nil {
 			return nil, nil, err
 		}
@@ -85,14 +85,14 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 	for colIdx, col := range types {
 		field, ok := fields[colIdx]
 		field.name = col.Name()
-		if ok {
-			fieldList = append(fieldList, field)
+		if !ok {
+			field = Field{
+				converter: &converters.AnyToNullableString,
+				kind:      "string",
+				name:      col.Name(),
+			}
 		}
-		field = Field{
-			converter: &converters.AnyToNullableString,
-			kind:      "string",
-			name:      col.Name(),
-		}
+		fieldList = append(fieldList, field)
 	}
 
 	return fieldList, returnData, nil
@@ -185,6 +185,6 @@ func (rs Rows) Next() bool {
 	return rs.itr.Next()
 }
 
-func (rs Rows) Scan(dest ...interface{}) error {
-	return rs.itr.Scan(dest)
+func (rs Rows) Scan(dest []interface{}) error {
+	return rs.itr.Scan(dest...)
 }
