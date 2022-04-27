@@ -788,6 +788,26 @@ func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) *fieldEnti
 	return entities
 }
 
+func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
+	count := col.Len()
+
+	v := array.NewBinaryData(col.Data())
+	stream.WriteArrayStart()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if col.IsNull(i) {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteString(string(v.Value(i)))
+	}
+	stream.WriteArrayEnd()
+	return entities
+}
+
 func readBoolVectorJSON(iter *jsoniter.Iterator, size int) (*boolVector, error) {
 	arr := newBoolVector(size)
 	for i := 0; i < size; i++ {

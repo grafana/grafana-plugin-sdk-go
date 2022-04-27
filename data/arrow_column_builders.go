@@ -427,11 +427,11 @@ func buildNullableTimeColumn(pool memory.Allocator, field arrow.Field, vec *null
 }
 
 func buildJSONColumn(pool memory.Allocator, field arrow.Field, vec *jsonRawMessageVector) *array.Column {
-	builder := array.NewStringBuilder(pool)
+	builder := array.NewBinaryBuilder(pool, &arrow.BinaryType{})
 	defer builder.Release()
 
 	for _, v := range *vec {
-		builder.Append(string(v))
+		builder.Append(v)
 	}
 
 	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
@@ -441,7 +441,7 @@ func buildJSONColumn(pool memory.Allocator, field arrow.Field, vec *jsonRawMessa
 }
 
 func buildNullableJSONColumn(pool memory.Allocator, field arrow.Field, vec *nullableJsonRawMessageVector) *array.Column {
-	builder := array.NewStringBuilder(pool)
+	builder := array.NewBinaryBuilder(pool, &arrow.BinaryType{})
 	defer builder.Release()
 
 	for _, v := range *vec {
@@ -449,7 +449,7 @@ func buildNullableJSONColumn(pool memory.Allocator, field arrow.Field, vec *null
 			builder.AppendNull()
 			continue
 		}
-		builder.Append(string(*v))
+		builder.Append(*v)
 	}
 
 	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
