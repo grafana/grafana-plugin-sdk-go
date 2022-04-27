@@ -334,7 +334,7 @@ var NullConverters = map[reflect.Type]Converter{
 	reflect.TypeOf(false):       NullBoolConverter,
 }
 
-// IntOrFloatToNullableFloat64 returns an error if the input is not an int,int32.int64 or float.
+// IntOrFloatToNullableFloat64 returns an error if the input is not a variation of int or float.
 var IntOrFloatToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
@@ -347,7 +347,8 @@ var IntOrFloatToNullableFloat64 = data.FieldConverter{
 		case float64:
 			return &val, nil
 		case float32:
-			return float64(val), nil
+			fval := float64(val)
+			return fval, nil
 		case int:
 			fval := float64(val)
 			return &fval, nil

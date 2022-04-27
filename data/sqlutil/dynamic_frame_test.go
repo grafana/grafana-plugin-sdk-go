@@ -48,11 +48,8 @@ type MockRows struct {
 }
 
 func (rs *MockRows) Next() bool {
-	rs.index += 1
-	if rs.index >= len(rs.data) {
-		return false
-	}
-	return true
+	rs.index++
+	return rs.index < len(rs.data)
 }
 
 func (rs *MockRows) Scan(dest ...interface{}) error {

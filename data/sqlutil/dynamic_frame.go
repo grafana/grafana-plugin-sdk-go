@@ -8,6 +8,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 )
 
+const STRING = "string"
+
 func isDynamic(converters []Converter) bool {
 	for _, conv := range converters {
 		if conv.Dynamic {
@@ -59,24 +61,24 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 				field.name = colType.Name()
 			case string:
 				field.converter = &converters.AnyToNullableString
-				field.kind = "string"
+				field.kind = STRING
 				field.name = colType.Name()
 			case []uint8:
 				field.converter = &converters.Uint8ArrayToNullableString
-				field.kind = "string"
+				field.kind = STRING
 				field.name = colType.Name()
 			case nil:
 				continue
 			default:
 				field.converter = &converters.AnyToNullableString
-				field.kind = "string"
+				field.kind = STRING
 				field.name = colType.Name()
 			}
 
 			fields[colIdx] = field
 		}
 
-		i += 1
+		i++
 	}
 
 	fieldList := []Field{}
