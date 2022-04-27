@@ -774,7 +774,6 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 		isTime := f.Type().Time()
 		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
 			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
-		isJSON := f.Type() == FieldTypeJSON || f.Type() == FieldTypeNullableJSON
 
 		stream.WriteArrayStart()
 		for i := 0; i < rowCount; i++ {
@@ -814,8 +813,6 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 						stream.WriteVal(v)
 					}
 
-				case isJSON:
-					stream.WriteRaw(string(v.(json.RawMessage)))
 				default:
 					stream.WriteVal(v)
 				}
