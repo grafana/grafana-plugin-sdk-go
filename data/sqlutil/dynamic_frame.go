@@ -34,7 +34,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 		for i := range row {
 			row[i] = new(interface{})
 		}
-		err := rows.Scan(row[:]...)
+		err := rows.Scan(row...)
 		if err != nil {
 			return nil, nil, err
 		}
