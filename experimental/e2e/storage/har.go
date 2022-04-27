@@ -220,12 +220,17 @@ func (s *HAR) Entries() []*Entry {
 // Delete removes the HAR entry matching the given Request.
 func (s *HAR) Delete(req *http.Request) bool {
 	_ = s.Load()
-	if i, entry := s.findEntry(req); entry != nil {
-		s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
-		err := s.Save()
-		return err == nil
+	i, entry := s.findEntry(req)
+	if entry == nil {
+		return false
 	}
-	return false
+	s.har.Log.Entries = append(s.har.Log.Entries[:i], s.har.Log.Entries[i+1:]...)
+	err := s.Save()
+	if err != nil {
+		fmt.Printf("Failed to delete entry: %s\n", err.Error())
+		return false
+	}
+	return true
 }
 
 // Save writes the HAR to disk.
