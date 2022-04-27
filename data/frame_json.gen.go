@@ -802,7 +802,7 @@ func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEn
 			stream.WriteNil()
 			continue
 		}
-		stream.WriteString(string(v.Value(i)))
+		stream.WriteRaw(string(v.Value(i)))
 	}
 	stream.WriteArrayEnd()
 	return entities

@@ -74,8 +74,8 @@
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" }, "config": { "interval": 1000 } },
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
       { "name": "nullable_timestamps", "type": "time", "typeInfo": { "frame": "time.Time", "nullable": true } },
-      { "name": "json", "typeInfo": { "frame": "json.RawMessage" } },
-      { "name": "nullable_json", "typeInfo": { "frame": "json.RawMessage", "nullable": true } }
+      { "name": "json", "type":"json", "typeInfo": { "frame": "json.RawMessage" } },
+      { "name": "nullable_json", "type":"json", "typeInfo": { "frame": "json.RawMessage", "nullable": true } }
     ]
   },
   "data": {
@@ -111,8 +111,8 @@
       [0, 1568039445000, 1568039450000, 9007199254, 9223372036854],
       [0, 1568039445000, 1568039450000, 9007199254, 9223372036854],
       [0, 1568039445000, null, 9007199254, 9223372036854],
-			[{"a":1},[1,2,3],{"b":2},[{"c":3},{"d":4}],{"e":{"f":5}}],
-			[{"a":1},[1,2,3],null,[{"c":3},{"d":4}],{"e":{"f":5}}]
+      [{"a":1},[1,2,3],{"b":2},[{"c":3},{"d":4}],{"e":{"f":5}}],
+      [{"a":1},[1,2,3],null,[{"c":3},{"d":4}],{"e":{"f":5}}]
     ],
     "entities": [
       null,

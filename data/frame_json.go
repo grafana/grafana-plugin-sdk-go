@@ -22,6 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
+const simpleTypeJSON = "json"
 
 const jsonKeySchema = "schema"
 const jsonKeyData = "data"
@@ -554,6 +555,9 @@ func getSimpleTypeString(t FieldType) (string, bool) {
 	if t == FieldTypeString || t == FieldTypeNullableString {
 		return simpleTypeString, true
 	}
+	if t == FieldTypeJSON || t == FieldTypeNullableJSON {
+		return simpleTypeJSON, true
+	}
 
 	return "", false
 }
@@ -708,24 +712,22 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 			started = true
 		}
 
-		if true {
-			ft := f.Type()
-			nnt := ft.NonNullableType()
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField("typeInfo")
-			stream.WriteObjectStart()
-			stream.WriteObjectField("frame")
-			stream.WriteString(nnt.ItemTypeString())
-			if ft.Nullable() {
-				stream.WriteMore()
-				stream.WriteObjectField("nullable")
-				stream.WriteBool(true)
-			}
-			stream.WriteObjectEnd()
-			started = true
+		ft := f.Type()
+		nnt := ft.NonNullableType()
+		if started {
+			stream.WriteMore()
 		}
+		stream.WriteObjectField("typeInfo")
+		stream.WriteObjectStart()
+		stream.WriteObjectField("frame")
+		stream.WriteString(nnt.ItemTypeString())
+		if ft.Nullable() {
+			stream.WriteMore()
+			stream.WriteObjectField("nullable")
+			stream.WriteBool(true)
+		}
+		stream.WriteObjectEnd()
+		started = true
 
 		if f.Labels != nil {
 			if started {
@@ -772,6 +774,7 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 		isTime := f.Type().Time()
 		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
 			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
+		isJSON := f.Type() == FieldTypeJSON || f.Type() == FieldTypeNullableJSON
 
 		stream.WriteArrayStart()
 		for i := 0; i < rowCount; i++ {
@@ -810,6 +813,9 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 					} else {
 						stream.WriteVal(v)
 					}
+
+				case isJSON:
+					stream.WriteRaw(string(v.(json.RawMessage)))
 				default:
 					stream.WriteVal(v)
 				}
