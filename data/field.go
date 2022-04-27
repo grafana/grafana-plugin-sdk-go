@@ -1,7 +1,6 @@
 package data
 
 import (
-	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -14,7 +13,7 @@ import (
 // See NewField() for supported types.
 //
 // The slice data in the Field is a not exported, so methods on the Field are used to to manipulate its data.
-type Field struct {
+type Field[T vectorType] struct {
 	// Name is default identifier of the field. The name does not have to be unique, but the combination
 	// of name and Labels should be unique for proper behavior in all situations.
 	Name string `json:"name,omitempty"`
@@ -28,13 +27,13 @@ type Field struct {
 
 	// vector is the unexported values. it is unexported so we can change the underlying structure without
 	// major breaking changes.
-	vector vector
+	vector vector[T]
 }
 
 // Fields is a slice of Field pointers.
-type Fields []*Field
+type Fields[T vectorType] []*Field[T]
 
-// NewField returns a instance of *Field. Supported types for values are:
+// NewField returns a instance of *Field[T]. Supported types for values are:
 //
 // Integers:
 //  []int8, []*int8, []int16, []*int16, []int32, []*int32, []int64, []*int64
@@ -49,80 +48,28 @@ type Fields []*Field
 //
 // If an unsupported values type is passed, NewField will panic.
 // nolint:gocyclo
-func NewField(name string, labels Labels, values interface{}) *Field {
-	var vec vector
-	switch v := values.(type) {
-	case []int8:
-		vec = newInt8VectorWithValues(v)
-	case []*int8:
-		vec = newNullableInt8VectorWithValues(v)
-	case []int16:
-		vec = newInt16VectorWithValues(v)
-	case []*int16:
-		vec = newNullableInt16VectorWithValues(v)
-	case []int32:
-		vec = newInt32VectorWithValues(v)
-	case []*int32:
-		vec = newNullableInt32VectorWithValues(v)
-	case []int64:
-		vec = newInt64VectorWithValues(v)
-	case []*int64:
-		vec = newNullableInt64VectorWithValues(v)
-	case []uint8:
-		vec = newUint8VectorWithValues(v)
-	case []*uint8:
-		vec = newNullableUint8VectorWithValues(v)
-	case []uint16:
-		vec = newUint16VectorWithValues(v)
-	case []*uint16:
-		vec = newNullableUint16VectorWithValues(v)
-	case []uint32:
-		vec = newUint32VectorWithValues(v)
-	case []*uint32:
-		vec = newNullableUint32VectorWithValues(v)
-	case []uint64:
-		vec = newUint64VectorWithValues(v)
-	case []*uint64:
-		vec = newNullableUint64VectorWithValues(v)
-	case []float32:
-		vec = newFloat32VectorWithValues(v)
-	case []*float32:
-		vec = newNullableFloat32VectorWithValues(v)
-	case []float64:
-		vec = newFloat64VectorWithValues(v)
-	case []*float64:
-		vec = newNullableFloat64VectorWithValues(v)
-	case []string:
-		vec = newStringVectorWithValues(v)
-	case []*string:
-		vec = newNullableStringVectorWithValues(v)
-	case []bool:
-		vec = newBoolVectorWithValues(v)
-	case []*bool:
-		vec = newNullableBoolVectorWithValues(v)
-	case []time.Time:
-		vec = newTimeTimeVectorWithValues(v)
-	case []*time.Time:
-		vec = newNullableTimeTimeVectorWithValues(v)
-	case []json.RawMessage:
-		vec = newJsonRawMessageVectorWithValues(v)
-	case []*json.RawMessage:
-		vec = newNullableJsonRawMessageVectorWithValues(v)
-	default:
-		panic(fmt.Errorf("field '%s' specified with unsupported type %T", name, v))
-	}
-
-	return &Field{
+func NewField[T vectorType](name string, labels Labels, values []T) *Field[T] {
+	return &Field[T]{
 		Name:   name,
-		vector: vec,
+		vector: newVectorWithValues[T](values),
 		Labels: labels,
 	}
+}
+
+// NewFieldWithSize returns a new Field[T] with the specified size.
+func NewFieldWithSize[T vectorType](n int) *Field[T] {
+	return &Field[T]{
+		Name:   "",
+		vector: newVector[T](n),
+		Labels: make(Labels, 0),
+	}
+
 }
 
 // Set sets the Field's value at index idx to val.
 // It will panic if idx is out of range or if
 // the underlying type of val does not match the element type of the Field.
-func (f *Field) Set(idx int, val interface{}) {
+func (f *Field[T]) Set(idx int, val T) {
 	f.vector.Set(idx, val)
 }
 
@@ -131,42 +78,42 @@ func (f *Field) Set(idx int, val interface{}) {
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable, then this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
-func (f *Field) SetConcrete(idx int, val interface{}) {
+func (f *Field[T]) SetConcrete(idx int, val T) {
 	f.vector.SetConcrete(idx, val)
 }
 
 // Append appends element e to the Field.
 // it will panic if the underlying type of e does not match the element type of the Field.
-func (f *Field) Append(e interface{}) {
+func (f *Field[T]) Append(e T) {
 	f.vector.Append(e)
 }
 
 // Extend extends the Field length by i.
 // Consider using Frame.Extend() when possible since all Fields within
 // a Frame need to be of the same length before marshalling and transmission.
-func (f *Field) Extend(i int) {
+func (f *Field[T]) Extend(i int) {
 	f.vector.Extend(i)
 }
 
 // At returns the the element at index idx of the Field.
 // It will panic if idx is out of range.
-func (f *Field) At(idx int) interface{} {
+func (f *Field[T]) At(idx int) T {
 	return f.vector.At(idx)
 }
 
 // Len returns the number of elements in the Field.
-func (f *Field) Len() int {
+func (f *Field[T]) Len() int {
 	return f.vector.Len()
 }
 
 // Type returns the FieldType of the Field, which indicates what type of slice it is.
-func (f *Field) Type() FieldType {
+func (f *Field[T]) Type() FieldType {
 	return f.vector.Type()
 }
 
 // PointerAt returns a pointer to the value at idx of the Field.
 // It will panic if idx is out of range.
-func (f *Field) PointerAt(idx int) interface{} {
+func (f *Field[T]) PointerAt(idx int) *T {
 	return f.vector.PointerAt(idx)
 }
 
@@ -175,18 +122,18 @@ func (f *Field) PointerAt(idx int) interface{} {
 // and inserts val at index idx of the Field.
 // If idx is equal to the Field length, then val will be appended.
 // It idx exceeds the Field length, this method will panic.
-func (f *Field) Insert(idx int, val interface{}) {
+func (f *Field[T]) Insert(idx int, val T) {
 	f.vector.Insert(idx, val)
 }
 
 // Delete delete element at index idx of the Field.
-func (f *Field) Delete(idx int) {
+func (f *Field[T]) Delete(idx int) {
 	f.vector.Delete(idx)
 }
 
 // CopyAt returns a copy of the value of the specified index idx.
 // It will panic if idx is out of range.
-func (f *Field) CopyAt(idx int) interface{} {
+func (f *Field[T]) CopyAt(idx int) T {
 	return f.vector.CopyAt(idx)
 }
 
@@ -194,12 +141,12 @@ func (f *Field) CopyAt(idx int) interface{} {
 // A non-pointer type is returned regardless if the underlying vector is a pointer
 // type or not. If the value is a pointer type, and is nil, then the zero value
 // is returned and ok will be false.
-func (f *Field) ConcreteAt(idx int) (val interface{}, ok bool) {
+func (f *Field[T]) ConcreteAt(idx int) (val T, ok bool) {
 	return f.vector.ConcreteAt(idx)
 }
 
 // Nullable returns if the the Field's elements are nullable.
-func (f *Field) Nullable() bool {
+func (f *Field[T]) Nullable() bool {
 	return f.Type().Nullable()
 }
 
@@ -217,66 +164,67 @@ func (f *Field) Nullable() bool {
 // If the Field type is a string, then strconv.ParseFloat is called on it and will return
 // an error if ParseFloat errors. If the value is nil, NaN is returned.
 // nolint:gocyclo
-func (f *Field) FloatAt(idx int) (float64, error) {
-	switch f.Type() {
-	case FieldTypeInt8:
-		return float64(f.At(idx).(int8)), nil
-	case FieldTypeNullableInt8:
-		iv := f.At(idx).(*int8)
+func (f *Field[T]) FloatAt(idx int) (float64, error) {
+	v := any(f.At(idx))
+	switch v.(type) {
+	case int8:
+		return float64(v.(int8)), nil
+	case *int8:
+		iv := v.(*int8)
 		if iv == nil {
 			return math.NaN(), nil
 		}
 		return float64(*iv), nil
 
-	case FieldTypeInt16:
-		return float64(f.At(idx).(int16)), nil
-	case FieldTypeNullableInt16:
-		iv := f.At(idx).(*int16)
+	case int16:
+		return float64(v.(int16)), nil
+	case *int16:
+		iv := v.(*int16)
 		if iv == nil {
 			return math.NaN(), nil
 		}
 		return float64(*iv), nil
 
-	case FieldTypeInt32:
-		return float64(f.At(idx).(int32)), nil
-	case FieldTypeNullableInt32:
-		iv := f.At(idx).(*int32)
+	case int32:
+		return float64(v.(int32)), nil
+	case *int32:
+		iv := v.(*int32)
 		if iv == nil {
 			return math.NaN(), nil
 		}
 		return float64(*iv), nil
 
-	case FieldTypeInt64:
-		return float64(f.At(idx).(int64)), nil
-	case FieldTypeNullableInt64:
-		iv := f.At(idx).(*int64)
+	case int64:
+		return float64(v.(int64)), nil
+	case *int64:
+		iv := v.(*int64)
 		if iv == nil {
 			return math.NaN(), nil
 		}
 		return float64(*iv), nil
 
-	case FieldTypeUint8:
-		return float64(f.At(idx).(uint8)), nil
-	case FieldTypeNullableUint8:
-		uiv := f.At(idx).(*uint8)
+	case uint8:
+		return float64(v.(uint8)), nil
+	case *uint8:
+		uiv := v.(*uint8)
 		if uiv == nil {
 			return math.NaN(), nil
 		}
 		return float64(*uiv), nil
 
-	case FieldTypeUint16:
-		return float64(f.At(idx).(uint16)), nil
-	case FieldTypeNullableUint16:
-		uiv := f.At(idx).(*uint16)
+	case uint16:
+		return float64(v.(uint16)), nil
+	case *uint16:
+		uiv := v.(*uint16)
 		if uiv == nil {
 			return math.NaN(), nil
 		}
 		return float64(*uiv), nil
 
-	case FieldTypeUint32:
-		return float64(f.At(idx).(uint32)), nil
-	case FieldTypeNullableUint32:
-		uiv := f.At(idx).(*uint32)
+	case uint32:
+		return float64(v.(uint32)), nil
+	case *uint32:
+		uiv := v.(*uint32)
 		if uiv == nil {
 			return math.NaN(), nil
 		}
@@ -284,42 +232,42 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 
 	// TODO: third param for loss of precision?
 	// Maybe something in math/big can help with this (also see https://github.com/golang/go/issues/29463).
-	case FieldTypeUint64:
-		return float64(f.At(idx).(uint64)), nil
-	case FieldTypeNullableUint64:
-		uiv := f.At(idx).(*uint64)
+	case uint64:
+		return float64(v.(uint64)), nil
+	case *uint64:
+		uiv := v.(*uint64)
 		if uiv == nil {
 			return math.NaN(), nil
 		}
 		return float64(*uiv), nil
 
-	case FieldTypeFloat32:
-		return float64(f.At(idx).(float32)), nil
-	case FieldTypeNullableFloat32:
-		fv := f.At(idx).(*float32)
+	case float32:
+		return float64(v.(float32)), nil
+	case *float32:
+		fv := v.(*float32)
 		if fv == nil {
 			return math.NaN(), nil
 		}
 		return float64(*fv), nil
 
-	case FieldTypeFloat64:
-		return f.At(idx).(float64), nil
-	case FieldTypeNullableFloat64:
-		fv := f.At(idx).(*float64)
+	case float64:
+		return v.(float64), nil
+	case *float64:
+		fv := v.(*float64)
 		if fv == nil {
 			return math.NaN(), nil
 		}
 		return *fv, nil
 
-	case FieldTypeString:
-		s := f.At(idx).(string)
+	case string:
+		s := v.(string)
 		ft, err := strconv.ParseFloat(s, 64)
 		if err != nil {
 			return 0, err
 		}
 		return ft, nil
-	case FieldTypeNullableString:
-		s := f.At(idx).(*string)
+	case *string:
+		s := v.(*string)
 		if s == nil {
 			return math.NaN(), nil
 		}
@@ -329,23 +277,23 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		}
 		return ft, nil
 
-	case FieldTypeBool:
-		if f.At(idx).(bool) {
+	case bool:
+		if v.(bool) {
 			return 1, nil
 		}
 		return 0, nil
 
-	case FieldTypeNullableBool:
-		b := f.At(idx).(*bool)
+	case *bool:
+		b := v.(*bool)
 		if b == nil || !*b {
 			return 0, nil
 		}
 		return 1, nil
 
-	case FieldTypeTime:
-		return float64(f.At(idx).(time.Time).UnixNano() / int64(time.Millisecond)), nil
-	case FieldTypeNullableTime:
-		t := f.At(idx).(*time.Time)
+	case time.Time:
+		return float64(v.(time.Time).UnixNano() / int64(time.Millisecond)), nil
+	case *time.Time:
+		t := v.(*time.Time)
 		if t == nil {
 			return math.NaN(), nil
 		}
@@ -356,125 +304,10 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 
 // NullableFloatAt it is similar to FloatAt but returns a *float64 at the specified index idx for all supported Field types.
 // It will panic if idx is out of range.
-// nolint:gocyclo
-func (f *Field) NullableFloatAt(idx int) (*float64, error) {
-	if !f.Nullable() {
-		fv, err := f.FloatAt(idx)
-		if err != nil {
-			return nil, err
-		}
-		return &fv, nil
+func (f *Field[T]) NullableFloatAt(idx int) (*float64, error) {
+	fv, err := f.FloatAt(idx)
+	if err != nil {
+		return nil, err
 	}
-
-	switch f.Type() {
-	case FieldTypeNullableInt8:
-		iv := f.At(idx).(*int8)
-		if iv == nil {
-			return nil, nil
-		}
-		f := float64(*iv)
-		return &f, nil
-
-	case FieldTypeNullableInt16:
-		iv := f.At(idx).(*int16)
-		if iv == nil {
-			return nil, nil
-		}
-		f := float64(*iv)
-		return &f, nil
-
-	case FieldTypeNullableInt32:
-		iv := f.At(idx).(*int32)
-		if iv == nil {
-			return nil, nil
-		}
-		f := float64(*iv)
-		return &f, nil
-
-	case FieldTypeNullableInt64:
-		iv := f.At(idx).(*int64)
-		if iv == nil {
-			return nil, nil
-		}
-		f := float64(*iv)
-		return &f, nil
-
-	case FieldTypeNullableUint8:
-		uiv := f.At(idx).(*uint8)
-		if uiv == nil {
-			return nil, nil
-		}
-		f := float64(*uiv)
-		return &f, nil
-
-	case FieldTypeNullableUint16:
-		uiv := f.At(idx).(*uint16)
-		if uiv == nil {
-			return nil, nil
-		}
-		f := float64(*uiv)
-		return &f, nil
-
-	case FieldTypeNullableUint32:
-		uiv := f.At(idx).(*uint32)
-		if uiv == nil {
-			return nil, nil
-		}
-		f := float64(*uiv)
-		return &f, nil
-
-	case FieldTypeNullableUint64:
-		uiv := f.At(idx).(*uint64)
-		if uiv == nil {
-			return nil, nil
-		}
-		f := float64(*uiv)
-		return &f, nil
-
-	case FieldTypeNullableFloat32:
-		fv := f.At(idx).(*float32)
-		if fv == nil {
-			return nil, nil
-		}
-		f := float64(*fv)
-		return &f, nil
-
-	case FieldTypeNullableFloat64:
-		fv := f.At(idx).(*float64)
-		if fv == nil {
-			return nil, nil
-		}
-		return fv, nil
-
-	case FieldTypeNullableString:
-		s := f.At(idx).(*string)
-		if s == nil {
-			return nil, nil
-		}
-		ft, err := strconv.ParseFloat(*s, 64)
-		if err != nil {
-			return nil, err
-		}
-		return &ft, nil
-
-	case FieldTypeNullableBool:
-		b := f.At(idx).(*bool)
-		if b == nil {
-			return nil, nil
-		}
-		f := 0.0
-		if *b {
-			f = 1.0
-		}
-		return &f, nil
-
-	case FieldTypeNullableTime:
-		t := f.At(idx).(*time.Time)
-		if t == nil {
-			return nil, nil
-		}
-		f := float64(t.UnixNano() / int64(time.Millisecond))
-		return &f, nil
-	}
-	return nil, fmt.Errorf("unsupported field type %T", f.Type())
+	return &fv, nil
 }

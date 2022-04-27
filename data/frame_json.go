@@ -471,7 +471,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 	return f.vector, nil
 }
 
-func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error) {
+func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector[T], error) {
 	if false {
 		first := make([]interface{}, 0)
 		iter.ReadVal(&first)

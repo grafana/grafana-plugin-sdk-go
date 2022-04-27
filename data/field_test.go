@@ -40,7 +40,7 @@ func TestField_NullableFloat64(t *testing.T) {
 		}
 
 		require.Nil(t, f.At(0))
-		require.Equal(t, &val, f.At(1).(*float64))
+		require.Equal(t, &val, f.At(1))
 		require.Nil(t, f.At(2))
 	})
 

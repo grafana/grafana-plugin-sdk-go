@@ -406,8 +406,8 @@ func (p FieldType) ItemTypeString() string {
 }
 
 // ValidFieldType returns if a primitive slice is a valid supported Field type.
-func ValidFieldType(t interface{}) bool {
-	switch t.(type) {
+func ValidFieldType[T vectorType](t T) bool {
+	switch any(&t).(type) {
 	// ints
 	case []int8:
 		return true

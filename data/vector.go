@@ -1,94 +1,103 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 )
 
+type vectorType interface {
+	uint8 | uint16 | uint32 | uint64 | int8 | int16 | int32 | int64 | float32 | float64 | string | bool | time.Time |
+		*uint8 | *uint16 | *uint32 | *uint64 | *int8 | *int16 | *int32 | *int64 | *float32 | *float64 | *string | *bool | *time.Time
+}
+
 // vector represents a Field's collection of Elements.
-type vector interface {
-	Set(idx int, i interface{})
-	Append(i interface{})
+type vector[T vectorType] interface {
+	Set(idx int, v T)
+	Append(v T)
 	Extend(i int)
-	At(i int) interface{}
+	At(i int) T
 	Len() int
 	Type() FieldType
-	PointerAt(i int) interface{}
-	CopyAt(i int) interface{}
-	ConcreteAt(i int) (val interface{}, ok bool)
-	SetConcrete(i int, val interface{})
-	Insert(i int, val interface{})
+	PointerAt(i int) *T
+	CopyAt(i int) T
+	ConcreteAt(i int) (val T, ok bool)
+	SetConcrete(i int, val T)
+	Insert(i int, val T)
 	Delete(i int)
 }
 
-func vectorFieldType(v vector) FieldType {
-	switch v.(type) {
-	case *int8Vector:
+func vectorFieldType[T vectorType](v vector[T]) FieldType {
+	var vt T
+	switch any(vt).(type) {
+	case int8:
 		return FieldTypeInt8
-	case *nullableInt8Vector:
+	case *int8:
 		return FieldTypeNullableInt8
 
-	case *int16Vector:
+	case int16:
 		return FieldTypeInt16
-	case *nullableInt16Vector:
+	case *int16:
 		return FieldTypeNullableInt16
 
-	case *int32Vector:
+	case int32:
 		return FieldTypeInt32
-	case *nullableInt32Vector:
+	case *int32:
 		return FieldTypeNullableInt32
 
-	case *int64Vector:
+	case int64:
 		return FieldTypeInt64
-	case *nullableInt64Vector:
+	case *int64:
 		return FieldTypeNullableInt64
 
-	case *uint8Vector:
+	case uint8:
 		return FieldTypeUint8
-	case *nullableUint8Vector:
+	case *uint8:
 		return FieldTypeNullableUint8
 
-	case *uint16Vector:
+	case uint16:
 		return FieldTypeUint16
-	case *nullableUint16Vector:
+	case *uint16:
 		return FieldTypeNullableUint16
 
-	case *uint32Vector:
+	case uint32:
 		return FieldTypeUint32
-	case *nullableUint32Vector:
+	case *uint32:
 		return FieldTypeNullableUint32
 
-	case *uint64Vector:
+	case uint64:
 		return FieldTypeUint64
-	case *nullableUint64Vector:
+	case *uint64:
 		return FieldTypeNullableUint64
 
-	case *float32Vector:
+	case float32:
 		return FieldTypeFloat32
-	case *nullableFloat32Vector:
+	case *float32:
 		return FieldTypeNullableFloat32
 
-	case *float64Vector:
+	case float64:
 		return FieldTypeFloat64
-	case *nullableFloat64Vector:
+	case *float64:
 		return FieldTypeNullableFloat64
 
-	case *stringVector:
+	case string:
 		return FieldTypeString
-	case *nullableStringVector:
+	case *string:
 		return FieldTypeNullableString
 
-	case *boolVector:
+	case bool:
 		return FieldTypeBool
-	case *nullableBoolVector:
+	case *bool:
 		return FieldTypeNullableBool
 
-	case *timeTimeVector:
+	case time.Time:
 		return FieldTypeTime
-	case *nullableTimeTimeVector:
+	case *time.Time:
 		return FieldTypeNullableTime
-	case *jsonRawMessageVector:
+
+	case json.RawMessage:
 		return FieldTypeJSON
-	case *nullableJsonRawMessageVector:
+	case *json.RawMessage:
 		return FieldTypeNullableJSON
 	}
 
@@ -102,85 +111,74 @@ func (p FieldType) String() string {
 	return fmt.Sprintf("[]%v", p.ItemTypeString())
 }
 
-// NewFieldFromFieldType creates a new Field of the given FieldType of length n.
-func NewFieldFromFieldType(p FieldType, n int) *Field {
-	f := &Field{}
-	switch p {
-	// ints
-	case FieldTypeInt8:
-		f.vector = newInt8Vector(n)
-	case FieldTypeNullableInt8:
-		f.vector = newNullableInt8Vector(n)
+type genericVector[T vectorType] []T
 
-	case FieldTypeInt16:
-		f.vector = newInt16Vector(n)
-	case FieldTypeNullableInt16:
-		f.vector = newNullableInt16Vector(n)
+func newVector[T vectorType](n int) *genericVector[T] {
+	v := genericVector[T](make([]T, n))
+	return &v
+}
 
-	case FieldTypeInt32:
-		f.vector = newInt32Vector(n)
-	case FieldTypeNullableInt32:
-		f.vector = newNullableInt32Vector(n)
+func newVectorWithValues[T vectorType](s []T) *genericVector[T] {
+	v := make([]T, len(s))
+	copy(v, s)
+	return (*genericVector[T])(&v)
+}
 
-	case FieldTypeInt64:
-		f.vector = newInt64Vector(n)
-	case FieldTypeNullableInt64:
-		f.vector = newNullableInt64Vector(n)
+func (v *genericVector[T]) Set(idx int, i T) {
+	(*v)[idx] = i
+}
 
-	// uints
-	case FieldTypeUint8:
-		f.vector = newUint8Vector(n)
-	case FieldTypeNullableUint8:
-		f.vector = newNullableUint8Vector(n)
+func (v *genericVector[T]) SetConcrete(idx int, i T) {
+	v.Set(idx, i)
+}
 
-	case FieldTypeUint16:
-		f.vector = newUint16Vector(n)
-	case FieldTypeNullableUint16:
-		f.vector = newNullableUint16Vector(n)
+func (v *genericVector[T]) Append(i T) {
+	*v = append(*v, i)
+}
 
-	case FieldTypeUint32:
-		f.vector = newUint32Vector(n)
-	case FieldTypeNullableUint32:
-		f.vector = newNullableUint32Vector(n)
+func (v *genericVector[T]) At(i int) T {
+	return (*v)[i]
+}
 
-	case FieldTypeUint64:
-		f.vector = newUint64Vector(n)
-	case FieldTypeNullableUint64:
-		f.vector = newNullableUint64Vector(n)
+func (v *genericVector[T]) PointerAt(i int) *T {
+	return &(*v)[i]
+}
 
-	// floats
-	case FieldTypeFloat32:
-		f.vector = newFloat32Vector(n)
-	case FieldTypeNullableFloat32:
-		f.vector = newNullableFloat32Vector(n)
+func (v *genericVector[T]) Len() int {
+	return len(*v)
+}
 
-	case FieldTypeFloat64:
-		f.vector = newFloat64Vector(n)
-	case FieldTypeNullableFloat64:
-		f.vector = newNullableFloat64Vector(n)
+func (v *genericVector[T]) CopyAt(i int) T {
+	var g T
+	g = (*v)[i]
+	return g
+}
 
-	// other
-	case FieldTypeString:
-		f.vector = newStringVector(n)
-	case FieldTypeNullableString:
-		f.vector = newNullableStringVector(n)
+func (v *genericVector[T]) ConcreteAt(i int) (T, bool) {
+	return v.At(i), true
+}
 
-	case FieldTypeBool:
-		f.vector = newBoolVector(n)
-	case FieldTypeNullableBool:
-		f.vector = newNullableBoolVector(n)
+func (v *genericVector[T]) Type() FieldType {
+	return vectorFieldType[T](v)
+}
 
-	case FieldTypeTime:
-		f.vector = newTimeTimeVector(n)
-	case FieldTypeNullableTime:
-		f.vector = newNullableTimeTimeVector(n)
+func (v *genericVector[T]) Extend(i int) {
+	*v = append(*v, make([]T, i)...)
+}
 
-	case FieldTypeJSON:
-		f.vector = newJsonRawMessageVector(n)
-	case FieldTypeNullableJSON:
-		f.vector = newNullableJsonRawMessageVector(n)
-	default:
-		panic("unsupported FieldType")
+func (v *genericVector[T]) Insert(i int, val T) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
 	}
-	return f
+}
+
+func (v *genericVector[T]) Delete(i int) {
+	*v = append((*v)[:i], (*v)[i+1:]...)
 }

@@ -30,13 +30,13 @@ import (
 //
 // A Frame is a general data container for Grafana. A Frame can be table data
 // or time series data depending on its content and field types.
-type Frame struct {
+type Frame[T vectorType] struct {
 	// Name is used in some Grafana visualizations.
 	Name string
 
 	// Fields are the columns of a frame.
 	// All Fields must be of the same the length when marshalling the Frame for transmission.
-	Fields []*Field
+	Fields []*Field[T]
 
 	// RefID is a property that can be set to match a Frame to its originating query.
 	RefID string
@@ -46,13 +46,13 @@ type Frame struct {
 }
 
 // UnmarshalJSON allows unmarshalling Frame from JSON.
-func (f *Frame) UnmarshalJSON(b []byte) error {
+func (f *Frame[T]) UnmarshalJSON(b []byte) error {
 	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
 	return readDataFrameJSON(f, iter)
 }
 
 // MarshalJSON marshals Frame to JSON.
-func (f *Frame) MarshalJSON() ([]byte, error) {
+func (f *Frame[T]) MarshalJSON() ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
@@ -74,7 +74,7 @@ type Frames []*Frame
 // The Frame's Fields must be initialized or AppendRow will panic.
 // The number of arguments must match the number of Fields in the Frame and each type must correspond
 // to the Field type or AppendRow will panic.
-func (f *Frame) AppendRow(vals ...interface{}) {
+func (f *Frame[T]) AppendRow(vals ...interface{}) {
 	for i, v := range vals {
 		f.Fields[i].vector.Append(v)
 	}
@@ -86,7 +86,7 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 // and inserts the corresponding val at index rowIdx of the Field.
 // If rowIdx is equal to the Frame RowLen, then val will be appended.
 // If rowIdx exceeds the Field length, this method will panic.
-func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
+func (f *Frame[T]) InsertRow(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
 		f.Fields[i].vector.Insert(rowIdx, v)
 	}
@@ -95,7 +95,7 @@ func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
 // DeleteRow deletes row at index rowIdx of the Frame.
 // DeleteRow calls each field's Delete
 // If idx is out of range, this method will panic.
-func (f *Frame) DeleteRow(rowIdx int) {
+func (f *Frame[T]) DeleteRow(rowIdx int) {
 	for _, field := range f.Fields {
 		field.vector.Delete(rowIdx)
 	}
@@ -103,14 +103,14 @@ func (f *Frame) DeleteRow(rowIdx int) {
 
 // SetRow sets vals at the index rowIdx of the Frame.
 // SetRow calls each field's Set which sets the Field's value at index idx to val.
-func (f *Frame) SetRow(rowIdx int, vals ...interface{}) {
+func (f *Frame[T]) SetRow(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
 		f.Fields[i].vector.Set(rowIdx, v)
 	}
 }
 
 // RowCopy returns an interface slice that contains the values of each Field for the given rowIdx.
-func (f *Frame) RowCopy(rowIdx int) []interface{} {
+func (f *Frame[T]) RowCopy(rowIdx int) []interface{} {
 	vals := make([]interface{}, len(f.Fields))
 	for i := range f.Fields {
 		vals[i] = f.CopyAt(i, rowIdx)
@@ -120,7 +120,7 @@ func (f *Frame) RowCopy(rowIdx int) []interface{} {
 
 // FilterRowsByField returns a copy of frame f (as per EmptyCopy()) that includes rows
 // where the filter returns true and no error. If filter returns an error, then an error is returned.
-func (f *Frame) FilterRowsByField(fieldIdx int, filter func(i interface{}) (bool, error)) (*Frame, error) {
+func (f *Frame[T]) FilterRowsByField(fieldIdx int, filter func(i interface{}) (bool, error)) (*Frame, error) {
 	filteredFrame := f.EmptyCopy()
 	rowLen, err := f.RowLen()
 	if err != nil {
@@ -140,15 +140,15 @@ func (f *Frame) FilterRowsByField(fieldIdx int, filter func(i interface{}) (bool
 }
 
 // EmptyCopy returns a copy of Frame f but with Fields of zero length, and no copy of the FieldConfigs, Metadata, or Warnings.
-func (f *Frame) EmptyCopy() *Frame {
-	newFrame := &Frame{
+func (f *Frame[T]) EmptyCopy() *Frame[T] {
+	newFrame := &Frame[T]{
 		Name:   f.Name,
 		RefID:  f.RefID,
-		Fields: make(Fields, 0, len(f.Fields)),
+		Fields: make(Fields[T], 0, len(f.Fields)),
 	}
 
 	for _, field := range f.Fields {
-		fieldCopy := NewFieldFromFieldType(field.Type(), 0)
+		fieldCopy := NewFieldWithSize[T](0)
 		fieldCopy.Name = field.Name
 		fieldCopy.Labels = field.Labels.Copy()
 		newFrame.Fields = append(newFrame.Fields, fieldCopy)
@@ -159,18 +159,18 @@ func (f *Frame) EmptyCopy() *Frame {
 // NewFrameOfFieldTypes returns a Frame where the Fields are initialized to the
 // corresponding field type in fTypes. Each Field will be of length FieldLen.
 func NewFrameOfFieldTypes(name string, fieldLen int, fTypes ...FieldType) *Frame {
-	f := &Frame{
+	f := &Frame[T]{
 		Name:   name,
-		Fields: make(Fields, len(fTypes)),
+		Fields: make(Fields[T], len(fTypes)),
 	}
 	for i, fT := range fTypes {
-		f.Fields[i] = NewFieldFromFieldType(fT, fieldLen)
+		f.Fields[i] = NewFieldWithSize[T](fieldLen)
 	}
 	return f
 }
 
 // TypeIndices returns a slice of Field index positions for the given fTypes.
-func (f *Frame) TypeIndices(fTypes ...FieldType) []int {
+func (f *Frame[T]) TypeIndices(fTypes ...FieldType) []int {
 	var indices []int
 	if f.Fields == nil {
 		return indices
@@ -203,13 +203,13 @@ func NewFrame(name string, fields ...*Field) *Frame {
 }
 
 // SetMeta sets the Frame's Meta attribute to m and returns the Frame.
-func (f *Frame) SetMeta(m *FrameMeta) *Frame {
+func (f *Frame[T]) SetMeta(m *FrameMeta) *Frame {
 	f.Meta = m
 	return f
 }
 
 // Rows returns the number of rows in the frame.
-func (f *Frame) Rows() int {
+func (f *Frame[T]) Rows() int {
 	if len(f.Fields) > 0 {
 		return f.Fields[0].Len()
 	}
@@ -218,20 +218,20 @@ func (f *Frame) Rows() int {
 
 // At returns the value of the specified fieldIdx and rowIdx.
 // It will panic if either fieldIdx or rowIdx are out of range.
-func (f *Frame) At(fieldIdx int, rowIdx int) interface{} {
+func (f *Frame[T]) At(fieldIdx int, rowIdx int) interface{} {
 	return f.Fields[fieldIdx].vector.At(rowIdx)
 }
 
 // CopyAt returns a copy of the value of the specified fieldIdx and rowIdx.
 // It will panic if either fieldIdx or rowIdx are out of range.
-func (f *Frame) CopyAt(fieldIdx int, rowIdx int) interface{} {
+func (f *Frame[T]) CopyAt(fieldIdx int, rowIdx int) interface{} {
 	return f.Fields[fieldIdx].vector.CopyAt(rowIdx)
 }
 
 // Set sets the val at the specified fieldIdx and rowIdx.
 // It will panic if either fieldIdx or rowIdx are out of range or
 // if the underlying type of val does not match the element type of the Field.
-func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
+func (f *Frame[T]) Set(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.Set(rowIdx, val)
 }
 
@@ -240,12 +240,12 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
-func (f *Frame) SetConcrete(fieldIdx int, rowIdx int, val interface{}) {
+func (f *Frame[T]) SetConcrete(fieldIdx int, rowIdx int, val interface{}) {
 	f.Fields[fieldIdx].vector.SetConcrete(rowIdx, val)
 }
 
 // Extend extends all the Fields by length by i.
-func (f *Frame) Extend(i int) {
+func (f *Frame[T]) Extend(i int) {
 	for _, f := range f.Fields {
 		f.vector.Extend(i)
 	}
@@ -255,13 +255,13 @@ func (f *Frame) Extend(i int) {
 // A non-pointer type is returned regardless if the underlying type is a pointer
 // type or not. If the value is a nil pointer, the the zero value
 // is returned and ok will be false.
-func (f *Frame) ConcreteAt(fieldIdx int, rowIdx int) (val interface{}, ok bool) {
+func (f *Frame[T]) ConcreteAt(fieldIdx int, rowIdx int) (val interface{}, ok bool) {
 	return f.Fields[fieldIdx].vector.ConcreteAt(rowIdx)
 }
 
 // RowLen returns the the length of the Frame Fields.
 // If the lengths of all the Fields are not the same an error is returned.
-func (f *Frame) RowLen() (int, error) {
+func (f *Frame[T]) RowLen() (int, error) {
 	if len(f.Fields) == 0 {
 		return 0, nil
 	}
@@ -284,13 +284,13 @@ func (f *Frame) RowLen() (int, error) {
 
 // FloatAt returns a float64 representation of the value at the specified fieldIdx and rowIdx, as per Field.FloatAt().
 // It will panic if either the fieldIdx or rowIdx are out of range.
-func (f *Frame) FloatAt(fieldIdx int, rowIdx int) (float64, error) {
+func (f *Frame[T]) FloatAt(fieldIdx int, rowIdx int) (float64, error) {
 	return f.Fields[fieldIdx].FloatAt(rowIdx)
 }
 
 // SetFieldNames sets each Field Name in the frame to the corresponding frame.
 // If the number of provided names does not match the number of Fields in the frame an error is returned.
-func (f *Frame) SetFieldNames(names ...string) error {
+func (f *Frame[T]) SetFieldNames(names ...string) error {
 	fieldLen := 0
 	if f.Fields != nil {
 		fieldLen = len(f.Fields)
@@ -411,7 +411,7 @@ const maxLengthExceededStr = "..."
 // or testing.
 // The table's width is limited to maxFields and the length is limited to maxRows (a value of -1 is unlimited).
 // If the width or length is exceeded, the last column or row displays "..." as the contents.
-func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
+func (f *Frame[T]) StringTable(maxFields, maxRows int) (string, error) {
 	if maxFields > 0 && maxFields < 2 {
 		return "", fmt.Errorf("maxFields must be less than 0 (unlimited) or greather than 2, got %v", maxFields)
 	}
@@ -497,7 +497,7 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 // FieldByName returns Field by its name and its index in Frame.Fields.
 // If not found then *Field will be nil and index will be -1.
-func (f *Frame) FieldByName(fieldName string) (*Field, int) {
+func (f *Frame[T]) FieldByName(fieldName string) (*Field[T], int) {
 	for i, field := range f.Fields {
 		if field.Name == fieldName {
 			return field, i
