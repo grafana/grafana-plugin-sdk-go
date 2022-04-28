@@ -8,7 +8,6 @@ import (
 //-------------------------------------------------------------
 // The rest of this file is generated from frame_json_test.go
 //-------------------------------------------------------------
-
 func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
@@ -29,8 +28,8 @@ func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) *fieldEnt
 	return entities
 }
 
-func readUint8VectorJSON(iter *jsoniter.Iterator, size int) (*uint8Vector, error) {
-	arr := newUint8Vector(size)
+func readUint8VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[uint8], error) {
+	arr := newVector[uint8](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint8VectorJSON", "expected array")
@@ -53,8 +52,8 @@ func readUint8VectorJSON(iter *jsoniter.Iterator, size int) (*uint8Vector, error
 	return arr, nil
 }
 
-func readNullableUint8VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUint8Vector, error) {
-	arr := newNullableUint8Vector(size)
+func readNullableUint8VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[uint8], error) {
+	arr := newVector[uint8](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableUint8VectorJSON", "expected array")
@@ -96,8 +95,8 @@ func writeArrowDataUint16(stream *jsoniter.Stream, col array.Interface) *fieldEn
 	return entities
 }
 
-func readUint16VectorJSON(iter *jsoniter.Iterator, size int) (*uint16Vector, error) {
-	arr := newUint16Vector(size)
+func readUint16VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[uint16], error) {
+	arr := newVector[uint16](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint16VectorJSON", "expected array")
@@ -120,8 +119,8 @@ func readUint16VectorJSON(iter *jsoniter.Iterator, size int) (*uint16Vector, err
 	return arr, nil
 }
 
-func readNullableUint16VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUint16Vector, error) {
-	arr := newNullableUint16Vector(size)
+func readNullableUint16VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[uint16], error) {
+	arr := newVector[uint16](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableUint16VectorJSON", "expected array")
@@ -163,8 +162,8 @@ func writeArrowDataUint32(stream *jsoniter.Stream, col array.Interface) *fieldEn
 	return entities
 }
 
-func readUint32VectorJSON(iter *jsoniter.Iterator, size int) (*uint32Vector, error) {
-	arr := newUint32Vector(size)
+func readUint32VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[uint32], error) {
+	arr := newVector[uint32](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint32VectorJSON", "expected array")
@@ -187,8 +186,8 @@ func readUint32VectorJSON(iter *jsoniter.Iterator, size int) (*uint32Vector, err
 	return arr, nil
 }
 
-func readNullableUint32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUint32Vector, error) {
-	arr := newNullableUint32Vector(size)
+func readNullableUint32VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[uint32], error) {
+	arr := newVector[uint32](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableUint32VectorJSON", "expected array")
@@ -230,8 +229,8 @@ func writeArrowDataUint64(stream *jsoniter.Stream, col array.Interface) *fieldEn
 	return entities
 }
 
-func readUint64VectorJSON(iter *jsoniter.Iterator, size int) (*uint64Vector, error) {
-	arr := newUint64Vector(size)
+func readUint64VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[uint64], error) {
+	arr := newVector[uint64](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint64VectorJSON", "expected array")
@@ -254,8 +253,8 @@ func readUint64VectorJSON(iter *jsoniter.Iterator, size int) (*uint64Vector, err
 	return arr, nil
 }
 
-func readNullableUint64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUint64Vector, error) {
-	arr := newNullableUint64Vector(size)
+func readNullableUint64VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[uint64], error) {
+	arr := newVector[uint64](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableUint64VectorJSON", "expected array")
@@ -297,8 +296,8 @@ func writeArrowDataInt8(stream *jsoniter.Stream, col array.Interface) *fieldEnti
 	return entities
 }
 
-func readInt8VectorJSON(iter *jsoniter.Iterator, size int) (*int8Vector, error) {
-	arr := newInt8Vector(size)
+func readInt8VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[int8], error) {
+	arr := newVector[int8](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readInt8VectorJSON", "expected array")
@@ -321,8 +320,8 @@ func readInt8VectorJSON(iter *jsoniter.Iterator, size int) (*int8Vector, error) 
 	return arr, nil
 }
 
-func readNullableInt8VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt8Vector, error) {
-	arr := newNullableInt8Vector(size)
+func readNullableInt8VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[int8], error) {
+	arr := newVector[int8](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableInt8VectorJSON", "expected array")
@@ -364,8 +363,8 @@ func writeArrowDataInt16(stream *jsoniter.Stream, col array.Interface) *fieldEnt
 	return entities
 }
 
-func readInt16VectorJSON(iter *jsoniter.Iterator, size int) (*int16Vector, error) {
-	arr := newInt16Vector(size)
+func readInt16VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[int16], error) {
+	arr := newVector[int16](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readInt16VectorJSON", "expected array")
@@ -388,8 +387,8 @@ func readInt16VectorJSON(iter *jsoniter.Iterator, size int) (*int16Vector, error
 	return arr, nil
 }
 
-func readNullableInt16VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt16Vector, error) {
-	arr := newNullableInt16Vector(size)
+func readNullableInt16VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[int16], error) {
+	arr := newVector[int16](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableInt16VectorJSON", "expected array")
@@ -431,8 +430,8 @@ func writeArrowDataInt32(stream *jsoniter.Stream, col array.Interface) *fieldEnt
 	return entities
 }
 
-func readInt32VectorJSON(iter *jsoniter.Iterator, size int) (*int32Vector, error) {
-	arr := newInt32Vector(size)
+func readInt32VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[int32], error) {
+	arr := newVector[int32](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readInt32VectorJSON", "expected array")
@@ -455,8 +454,8 @@ func readInt32VectorJSON(iter *jsoniter.Iterator, size int) (*int32Vector, error
 	return arr, nil
 }
 
-func readNullableInt32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt32Vector, error) {
-	arr := newNullableInt32Vector(size)
+func readNullableInt32VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[int32], error) {
+	arr := newVector[int32](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableInt32VectorJSON", "expected array")
@@ -498,8 +497,8 @@ func writeArrowDataInt64(stream *jsoniter.Stream, col array.Interface) *fieldEnt
 	return entities
 }
 
-func readInt64VectorJSON(iter *jsoniter.Iterator, size int) (*int64Vector, error) {
-	arr := newInt64Vector(size)
+func readInt64VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[int64], error) {
+	arr := newVector[int64](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readInt64VectorJSON", "expected array")
@@ -522,8 +521,8 @@ func readInt64VectorJSON(iter *jsoniter.Iterator, size int) (*int64Vector, error
 	return arr, nil
 }
 
-func readNullableInt64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt64Vector, error) {
-	arr := newNullableInt64Vector(size)
+func readNullableInt64VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[int64], error) {
+	arr := newVector[int64](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableInt64VectorJSON", "expected array")
@@ -576,8 +575,8 @@ func writeArrowDataFloat32(stream *jsoniter.Stream, col array.Interface) *fieldE
 	return entities
 }
 
-func readFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*float32Vector, error) {
-	arr := newFloat32Vector(size)
+func readFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[float32], error) {
+	arr := newVector[float32](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readFloat32VectorJSON", "expected array")
@@ -600,8 +599,8 @@ func readFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*float32Vector, e
 	return arr, nil
 }
 
-func readNullableFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableFloat32Vector, error) {
-	arr := newNullableFloat32Vector(size)
+func readNullableFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[float32], error) {
+	arr := newVector[float32](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableFloat32VectorJSON", "expected array")
@@ -654,8 +653,8 @@ func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) *fieldE
 	return entities
 }
 
-func readFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*float64Vector, error) {
-	arr := newFloat64Vector(size)
+func readFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[float64], error) {
+	arr := newVector[float64](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readFloat64VectorJSON", "expected array")
@@ -678,8 +677,8 @@ func readFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*float64Vector, e
 	return arr, nil
 }
 
-func readNullableFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableFloat64Vector, error) {
-	arr := newNullableFloat64Vector(size)
+func readNullableFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[float64], error) {
+	arr := newVector[float64](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableFloat64VectorJSON", "expected array")
@@ -721,8 +720,8 @@ func writeArrowDataString(stream *jsoniter.Stream, col array.Interface) *fieldEn
 	return entities
 }
 
-func readStringVectorJSON(iter *jsoniter.Iterator, size int) (*stringVector, error) {
-	arr := newStringVector(size)
+func readStringVectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[string], error) {
+	arr := newVector[string](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readStringVectorJSON", "expected array")
@@ -745,8 +744,8 @@ func readStringVectorJSON(iter *jsoniter.Iterator, size int) (*stringVector, err
 	return arr, nil
 }
 
-func readNullableStringVectorJSON(iter *jsoniter.Iterator, size int) (*nullableStringVector, error) {
-	arr := newNullableStringVector(size)
+func readNullableStringVectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[string], error) {
+	arr := newVector[string](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableStringVectorJSON", "expected array")
@@ -788,28 +787,8 @@ func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) *fieldEnti
 	return entities
 }
 
-func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
-	var entities *fieldEntityLookup
-	count := col.Len()
-
-	v := array.NewBinaryData(col.Data())
-	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
-		if i > 0 {
-			stream.WriteRaw(",")
-		}
-		if col.IsNull(i) {
-			stream.WriteNil()
-			continue
-		}
-		stream.WriteRaw(string(v.Value(i)))
-	}
-	stream.WriteArrayEnd()
-	return entities
-}
-
-func readBoolVectorJSON(iter *jsoniter.Iterator, size int) (*boolVector, error) {
-	arr := newBoolVector(size)
+func readBoolVectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[bool], error) {
+	arr := newVector[bool](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readBoolVectorJSON", "expected array")
@@ -832,8 +811,8 @@ func readBoolVectorJSON(iter *jsoniter.Iterator, size int) (*boolVector, error) 
 	return arr, nil
 }
 
-func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*nullableBoolVector, error) {
-	arr := newNullableBoolVector(size)
+func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[bool], error) {
+	arr := newVector[bool](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableBoolVectorJSON", "expected array")

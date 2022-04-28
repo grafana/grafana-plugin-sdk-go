@@ -120,81 +120,83 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	columns := make([]array.Column, len(f.Fields))
 
 	for fieldIdx, field := range f.Fields {
-		switch v := field.vector.(type) {
-		case *int8Vector:
+		v := field.vector
+		switch v.Type() {
+		case FieldTypeInt8:
 			columns[fieldIdx] = *buildInt8Column(pool, arrowFields[fieldIdx], v)
-		case *nullableInt8Vector:
+		case FieldTypeNullableInt8:
 			columns[fieldIdx] = *buildNullableInt8Column(pool, arrowFields[fieldIdx], v)
 
-		case *int16Vector:
+		case FieldTypeInt16:
 			columns[fieldIdx] = *buildInt16Column(pool, arrowFields[fieldIdx], v)
-		case *nullableInt16Vector:
+		case FieldTypeNullableInt16:
 			columns[fieldIdx] = *buildNullableInt16Column(pool, arrowFields[fieldIdx], v)
 
-		case *int32Vector:
+		case FieldTypeInt32:
 			columns[fieldIdx] = *buildInt32Column(pool, arrowFields[fieldIdx], v)
-		case *nullableInt32Vector:
+		case FieldTypeNullableInt32:
 			columns[fieldIdx] = *buildNullableInt32Column(pool, arrowFields[fieldIdx], v)
 
-		case *int64Vector:
+		case FieldTypeInt64:
 			columns[fieldIdx] = *buildInt64Column(pool, arrowFields[fieldIdx], v)
-		case *nullableInt64Vector:
+		case FieldTypeNullableInt64:
 			columns[fieldIdx] = *buildNullableInt64Column(pool, arrowFields[fieldIdx], v)
 
-		case *uint8Vector:
+		case FieldTypeUint8:
 			columns[fieldIdx] = *buildUInt8Column(pool, arrowFields[fieldIdx], v)
-		case *nullableUint8Vector:
+		case FieldTypeNullableUint8:
 			columns[fieldIdx] = *buildNullableUInt8Column(pool, arrowFields[fieldIdx], v)
 
-		case *uint16Vector:
+		case FieldTypeUint16:
 			columns[fieldIdx] = *buildUInt16Column(pool, arrowFields[fieldIdx], v)
-		case *nullableUint16Vector:
+		case FieldTypeNullableUint16:
 			columns[fieldIdx] = *buildNullableUInt16Column(pool, arrowFields[fieldIdx], v)
 
-		case *uint32Vector:
+		case FieldTypeUint32:
 			columns[fieldIdx] = *buildUInt32Column(pool, arrowFields[fieldIdx], v)
-		case *nullableUint32Vector:
+		case FieldTypeNullableUint32:
 			columns[fieldIdx] = *buildNullableUInt32Column(pool, arrowFields[fieldIdx], v)
 
-		case *uint64Vector:
+		case FieldTypeUint64:
 			columns[fieldIdx] = *buildUInt64Column(pool, arrowFields[fieldIdx], v)
-		case *nullableUint64Vector:
+		case FieldTypeNullableUint64:
 			columns[fieldIdx] = *buildNullableUInt64Column(pool, arrowFields[fieldIdx], v)
 
-		case *stringVector:
+		case FieldTypeString:
 			columns[fieldIdx] = *buildStringColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableStringVector:
+		case FieldTypeNullableString:
 			columns[fieldIdx] = *buildNullableStringColumn(pool, arrowFields[fieldIdx], v)
 
-		case *float32Vector:
+		case FieldTypeFloat32:
 			columns[fieldIdx] = *buildFloat32Column(pool, arrowFields[fieldIdx], v)
-		case *nullableFloat32Vector:
+		case FieldTypeNullableFloat32:
 			columns[fieldIdx] = *buildNullableFloat32Column(pool, arrowFields[fieldIdx], v)
 
-		case *float64Vector:
+		case FieldTypeFloat64:
 			columns[fieldIdx] = *buildFloat64Column(pool, arrowFields[fieldIdx], v)
-		case *nullableFloat64Vector:
+		case FieldTypeNullableFloat64:
 			columns[fieldIdx] = *buildNullableFloat64Column(pool, arrowFields[fieldIdx], v)
 
-		case *boolVector:
+		case FieldTypeBool:
 			columns[fieldIdx] = *buildBoolColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableBoolVector:
+		case FieldTypeNullableBool:
 			columns[fieldIdx] = *buildNullableBoolColumn(pool, arrowFields[fieldIdx], v)
 
-		case *timeTimeVector:
+		case FieldTypeTime:
 			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableTimeTimeVector:
+		case FieldTypeNullableTime:
 			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
 
-		case *jsonRawMessageVector:
+		case FieldTypeJSON:
 			columns[fieldIdx] = *buildJSONColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableJsonRawMessageVector:
+		case FieldTypeNullableJSON:
 			columns[fieldIdx] = *buildNullableJSONColumn(pool, arrowFields[fieldIdx], v)
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
 	}
 	return columns, nil
+	return nil, nil
 }
 
 // buildArrowSchema builds an Arrow schema for a Frame.
@@ -218,77 +220,77 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 // fieldToArrow returns the corresponding Arrow primitive type and nullable property to the fields'
 // Vector primitives.
 func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
-	switch f.vector.(type) {
-	case *stringVector:
+	switch f.vector.Type() {
+	case FieldTypeString:
 		return &arrow.StringType{}, false, nil
-	case *nullableStringVector:
+	case FieldTypeNullableString:
 		return &arrow.StringType{}, true, nil
 
 	// Ints
-	case *int8Vector:
+	case FieldTypeInt8:
 		return &arrow.Int8Type{}, false, nil
-	case *nullableInt8Vector:
+	case FieldTypeNullableInt8:
 		return &arrow.Int8Type{}, true, nil
 
-	case *int16Vector:
+	case FieldTypeInt16:
 		return &arrow.Int16Type{}, false, nil
-	case *nullableInt16Vector:
+	case FieldTypeNullableInt16:
 		return &arrow.Int16Type{}, true, nil
 
-	case *int32Vector:
+	case FieldTypeInt32:
 		return &arrow.Int32Type{}, false, nil
-	case *nullableInt32Vector:
+	case FieldTypeNullableInt32:
 		return &arrow.Int32Type{}, true, nil
 
-	case *int64Vector:
+	case FieldTypeInt64:
 		return &arrow.Int64Type{}, false, nil
-	case *nullableInt64Vector:
+	case FieldTypeNullableInt64:
 		return &arrow.Int64Type{}, true, nil
 
 	// Uints
-	case *uint8Vector:
+	case FieldTypeUint8:
 		return &arrow.Uint8Type{}, false, nil
-	case *nullableUint8Vector:
+	case FieldTypeNullableUint8:
 		return &arrow.Uint8Type{}, true, nil
 
-	case *uint16Vector:
+	case FieldTypeUint16:
 		return &arrow.Uint16Type{}, false, nil
-	case *nullableUint16Vector:
+	case FieldTypeNullableUint16:
 		return &arrow.Uint16Type{}, true, nil
 
-	case *uint32Vector:
+	case FieldTypeUint32:
 		return &arrow.Uint32Type{}, false, nil
-	case *nullableUint32Vector:
+	case FieldTypeNullableUint32:
 		return &arrow.Uint32Type{}, true, nil
 
-	case *uint64Vector:
+	case FieldTypeUint64:
 		return &arrow.Uint64Type{}, false, nil
-	case *nullableUint64Vector:
+	case FieldTypeNullableUint64:
 		return &arrow.Uint64Type{}, true, nil
 
-	case *float32Vector:
+	case FieldTypeFloat32:
 		return &arrow.Float32Type{}, false, nil
-	case *nullableFloat32Vector:
+	case FieldTypeNullableFloat32:
 		return &arrow.Float32Type{}, true, nil
 
-	case *float64Vector:
+	case FieldTypeFloat64:
 		return &arrow.Float64Type{}, false, nil
-	case *nullableFloat64Vector:
+	case FieldTypeNullableFloat64:
 		return &arrow.Float64Type{}, true, nil
 
-	case *boolVector:
+	case FieldTypeBool:
 		return &arrow.BooleanType{}, false, nil
-	case *nullableBoolVector:
+	case FieldTypeNullableBool:
 		return &arrow.BooleanType{}, true, nil
 
-	case *timeTimeVector:
+	case FieldTypeTime:
 		return &arrow.TimestampType{}, false, nil
-	case *nullableTimeTimeVector:
+	case FieldTypeNullableTime:
 		return &arrow.TimestampType{}, true, nil
 
-	case *jsonRawMessageVector:
+	case FieldTypeJSON:
 		return &arrow.BinaryType{}, false, nil
-	case *nullableJsonRawMessageVector:
+	case FieldTypeNullableJSON:
 		return &arrow.BinaryType{}, true, nil
 
 	default:
@@ -338,88 +340,88 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 	switch field.Type.ID() {
 	case arrow.STRING:
 		if nullable[idx] {
-			sdkField.vector = newNullableStringVector(0)
+			sdkField.vector = newVector[*string](0)
 			break
 		}
-		sdkField.vector = newStringVector(0)
+		sdkField.vector = newVector[string](0)
 	case arrow.INT8:
 		if nullable[idx] {
-			sdkField.vector = newNullableInt8Vector(0)
+			sdkField.vector = newVector[*int8](0)
 			break
 		}
-		sdkField.vector = newInt8Vector(0)
+		sdkField.vector = newVector[int8](0)
 	case arrow.INT16:
 		if nullable[idx] {
-			sdkField.vector = newNullableInt16Vector(0)
+			sdkField.vector = newVector[*int16](0)
 			break
 		}
-		sdkField.vector = newInt16Vector(0)
+		sdkField.vector = newVector[int16](0)
 	case arrow.INT32:
 		if nullable[idx] {
-			sdkField.vector = newNullableInt32Vector(0)
+			sdkField.vector = newVector[*int32](0)
 			break
 		}
-		sdkField.vector = newInt32Vector(0)
+		sdkField.vector = newVector[int32](0)
 	case arrow.INT64:
 		if nullable[idx] {
-			sdkField.vector = newNullableInt64Vector(0)
+			sdkField.vector = newVector[*int64](0)
 			break
 		}
-		sdkField.vector = newInt64Vector(0)
+		sdkField.vector = newVector[int64](0)
 	case arrow.UINT8:
 		if nullable[idx] {
-			sdkField.vector = newNullableUint8Vector(0)
+			sdkField.vector = newVector[*uint8](0)
 			break
 		}
-		sdkField.vector = newUint8Vector(0)
+		sdkField.vector = newVector[uint8](0)
 	case arrow.UINT16:
 		if nullable[idx] {
-			sdkField.vector = newNullableUint16Vector(0)
+			sdkField.vector = newVector[*uint16](0)
 			break
 		}
-		sdkField.vector = newUint16Vector(0)
+		sdkField.vector = newVector[uint16](0)
 	case arrow.UINT32:
 		if nullable[idx] {
-			sdkField.vector = newNullableUint32Vector(0)
+			sdkField.vector = newVector[*uint32](0)
 			break
 		}
-		sdkField.vector = newUint32Vector(0)
+		sdkField.vector = newVector[uint32](0)
 	case arrow.UINT64:
 		if nullable[idx] {
-			sdkField.vector = newNullableUint64Vector(0)
+			sdkField.vector = newVector[*uint64](0)
 			break
 		}
-		sdkField.vector = newUint64Vector(0)
+		sdkField.vector = newVector[uint64](0)
 	case arrow.FLOAT32:
 		if nullable[idx] {
-			sdkField.vector = newNullableFloat32Vector(0)
+			sdkField.vector = newVector[*float32](0)
 			break
 		}
-		sdkField.vector = newFloat32Vector(0)
+		sdkField.vector = newVector[float32](0)
 	case arrow.FLOAT64:
 		if nullable[idx] {
-			sdkField.vector = newNullableFloat64Vector(0)
+			sdkField.vector = newVector[*float64](0)
 			break
 		}
-		sdkField.vector = newFloat64Vector(0)
+		sdkField.vector = newVector[float64](0)
 	case arrow.BOOL:
 		if nullable[idx] {
-			sdkField.vector = newNullableBoolVector(0)
+			sdkField.vector = newVector[*bool](0)
 			break
 		}
-		sdkField.vector = newBoolVector(0)
+		sdkField.vector = newVector[bool](0)
 	case arrow.TIMESTAMP:
 		if nullable[idx] {
-			sdkField.vector = newNullableTimeTimeVector(0)
+			sdkField.vector = newVector[*time.Time](0)
 			break
 		}
-		sdkField.vector = newTimeTimeVector(0)
+		sdkField.vector = newVector[time.Time](0)
 	case arrow.BINARY:
 		if nullable[idx] {
-			sdkField.vector = newNullableJsonRawMessageVector(0)
+			sdkField.vector = newVector[*json.RawMessage](0)
 			break
 		}
-		sdkField.vector = newJsonRawMessageVector(0)
+		sdkField.vector = newVector[json.RawMessage](0)
 	default:
 		return fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 	}

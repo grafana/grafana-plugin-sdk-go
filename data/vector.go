@@ -2,34 +2,81 @@ package data
 
 import (
 	"encoding/json"
-	"fmt"
 	"time"
 )
 
-type vectorType interface {
-	uint8 | uint16 | uint32 | uint64 | int8 | int16 | int32 | int64 | float32 | float64 | string | bool | time.Time |
-		*uint8 | *uint16 | *uint32 | *uint64 | *int8 | *int16 | *int32 | *int64 | *float32 | *float64 | *string | *bool | *time.Time
-}
-
 // vector represents a Field's collection of Elements.
-type vector[T vectorType] interface {
-	Set(idx int, v T)
-	Append(v T)
+type vector interface {
+	Set(idx int, v interface{})
+	Append(v interface{})
 	Extend(i int)
-	At(i int) T
+	At(i int) interface{}
 	Len() int
 	Type() FieldType
-	PointerAt(i int) *T
-	CopyAt(i int) T
-	ConcreteAt(i int) (val T, ok bool)
-	SetConcrete(i int, val T)
-	Insert(i int, val T)
+	PointerAt(i int) interface{}
+	CopyAt(i int) interface{}
+	ConcreteAt(i int) (val interface{}, ok bool)
+	SetConcrete(i int, val interface{})
+	Insert(i int, val interface{})
 	Delete(i int)
 }
 
-func vectorFieldType[T vectorType](v vector[T]) FieldType {
-	var vt T
-	switch any(vt).(type) {
+type vectorType interface {
+	uint8 | uint16 | uint32 | uint64 | int8 | int16 | int32 | int64 | float32 | float64 | string | bool | time.Time | json.RawMessage |
+		*uint8 | *uint16 | *uint32 | *uint64 | *int8 | *int16 | *int32 | *int64 | *float32 | *float64 | *string | *bool | *time.Time | *json.RawMessage
+}
+
+type genericVector[T vectorType] []T
+
+func newVector[T vectorType](n int) *genericVector[T] {
+	v := genericVector[T](make([]T, n))
+	return &v
+}
+
+func newVectorWithValues[T vectorType](s []T) *genericVector[T] {
+	v := make([]T, len(s))
+	copy(v, s)
+	return (*genericVector[T])(&v)
+}
+
+func (v *genericVector[T]) Set(idx int, i interface{}) {
+	(*v)[idx] = i.(T)
+}
+
+func (v *genericVector[T]) SetConcrete(idx int, i interface{}) {
+	v.Set(idx, i)
+}
+
+func (v *genericVector[T]) Append(i interface{}) {
+	*v = append(*v, i.(T))
+}
+
+func (v *genericVector[T]) At(i int) interface{} {
+	return (*v)[i]
+}
+
+func (v *genericVector[T]) PointerAt(i int) interface{} {
+	return &(*v)[i]
+}
+
+func (v *genericVector[T]) Len() int {
+	return len(*v)
+}
+
+func (v *genericVector[T]) CopyAt(i int) interface{} {
+	var g T
+	g = (*v)[i]
+	return g
+}
+
+func (v *genericVector[T]) ConcreteAt(i int) (interface{}, bool) {
+	return v.At(i), true
+}
+
+func (v *genericVector[T]) Type() FieldType {
+	var t FieldType
+	vt := any(t)
+	switch vt.(type) {
 	case int8:
 		return FieldTypeInt8
 	case *int8:
@@ -104,69 +151,11 @@ func vectorFieldType[T vectorType](v vector[T]) FieldType {
 	return FieldTypeUnknown
 }
 
-func (p FieldType) String() string {
-	if p <= 0 {
-		return "invalid/unsupported"
-	}
-	return fmt.Sprintf("[]%v", p.ItemTypeString())
-}
-
-type genericVector[T vectorType] []T
-
-func newVector[T vectorType](n int) *genericVector[T] {
-	v := genericVector[T](make([]T, n))
-	return &v
-}
-
-func newVectorWithValues[T vectorType](s []T) *genericVector[T] {
-	v := make([]T, len(s))
-	copy(v, s)
-	return (*genericVector[T])(&v)
-}
-
-func (v *genericVector[T]) Set(idx int, i T) {
-	(*v)[idx] = i
-}
-
-func (v *genericVector[T]) SetConcrete(idx int, i T) {
-	v.Set(idx, i)
-}
-
-func (v *genericVector[T]) Append(i T) {
-	*v = append(*v, i)
-}
-
-func (v *genericVector[T]) At(i int) T {
-	return (*v)[i]
-}
-
-func (v *genericVector[T]) PointerAt(i int) *T {
-	return &(*v)[i]
-}
-
-func (v *genericVector[T]) Len() int {
-	return len(*v)
-}
-
-func (v *genericVector[T]) CopyAt(i int) T {
-	var g T
-	g = (*v)[i]
-	return g
-}
-
-func (v *genericVector[T]) ConcreteAt(i int) (T, bool) {
-	return v.At(i), true
-}
-
-func (v *genericVector[T]) Type() FieldType {
-	return vectorFieldType[T](v)
-}
-
 func (v *genericVector[T]) Extend(i int) {
 	*v = append(*v, make([]T, i)...)
 }
 
-func (v *genericVector[T]) Insert(i int, val T) {
+func (v *genericVector[T]) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

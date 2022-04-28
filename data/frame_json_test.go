@@ -199,7 +199,6 @@ func TestFrame_UnmarshalJSON_DataOnly(t *testing.T) {
 // This function will write code to the console that should be copy/pasted into frame_json.gen.go
 // when changes are required. Typically this function will always be skipped.
 func TestGenerateGenericArrowCode(t *testing.T) {
-	t.Skip()
 
 	types := []string{
 		"uint8", "uint16", "uint32", "uint64",
@@ -241,8 +240,8 @@ func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fiel
 	return entities
 }
 
-func read{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*{{.Typen}}Vector, error) {
-	arr := new{{.Type}}Vector(size)
+func read{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[{{.Typen}}], error) {
+	arr := newVector[{{.Typen}}](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("read{{.Type}}VectorJSON", "expected array")
@@ -266,8 +265,8 @@ func read{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*{{.Typen}}Vect
 }
 
 
-func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullable{{.Type}}Vector, error) {
-	arr := newNullable{{.Type}}Vector(size)
+func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*genericVector[{{.Typen}}], error) {
+	arr := newVector[{{.Typen}}](size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullable{{.Type}}VectorJSON", "expected array")

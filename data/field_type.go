@@ -406,8 +406,8 @@ func (p FieldType) ItemTypeString() string {
 }
 
 // ValidFieldType returns if a primitive slice is a valid supported Field type.
-func ValidFieldType[T vectorType](t T) bool {
-	switch any(&t).(type) {
+func ValidFieldType(t interface{}) bool {
+	switch t.(type) {
 	// ints
 	case []int8:
 		return true
@@ -473,6 +473,13 @@ func ValidFieldType[T vectorType](t T) bool {
 	default:
 		return false
 	}
+}
+
+func (p FieldType) String() string {
+	if p <= 0 {
+		return "invalid/unsupported"
+	}
+	return fmt.Sprintf("[]%v", p.ItemTypeString())
 }
 
 // Nullable returns if Field type is a nullable type
