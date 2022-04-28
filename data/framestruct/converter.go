@@ -24,7 +24,7 @@ type converter struct {
 }
 
 // ToDataFrame flattens an arbitrary struct or slice of structs into a *data.Frame
-func ToDataFrame(name string, toConvert interface{}, opts ...FramestructOption) (*data.Frame, error) {
+func ToDataFrame(name string, toConvert interface{}, opts ...Option) (*data.Frame, error) {
 	cr := &converter{
 		fields:     make(map[string]*data.Field),
 		tags:       make([]string, 3),
@@ -44,7 +44,7 @@ func ToDataFrame(name string, toConvert interface{}, opts ...FramestructOption) 
 // for the type conversion. If this function delegates to a data.Framer, it
 // will use the data.Frame name defined by the type rather than passed to this
 // function
-func ToDataFrames(name string, toConvert interface{}, opts ...FramestructOption) (data.Frames, error) {
+func ToDataFrames(name string, toConvert interface{}, opts ...Option) (data.Frames, error) {
 	framer, ok := toConvert.(data.Framer)
 	if ok {
 		return framer.Frames()
@@ -62,13 +62,13 @@ func ToDataFrames(name string, toConvert interface{}, opts ...FramestructOption)
 // and returns the new value as an interface
 type FieldConverter func(interface{}) (interface{}, error)
 
-// FramestructOption takes a converter and applies some configuration to it
-type FramestructOption func(cr *converter)
+// Option takes a converter and applies some configuration to it
+type Option func(cr *converter)
 
 // WithConverterFor configures a FieldConverter for a field with the name
 // fieldname. This converter will be applied to fields _after_ the name structag
 // is applied.
-func WithConverterFor(fieldname string, c FieldConverter) FramestructOption {
+func WithConverterFor(fieldname string, c FieldConverter) Option {
 	return func(cr *converter) {
 		cr.converters[fieldname] = c
 	}
@@ -77,7 +77,7 @@ func WithConverterFor(fieldname string, c FieldConverter) FramestructOption {
 // WithColumn0 specifies the 0th column of the returned Data Frame. Using this
 // option will override any `col0` framestruct tags that have been set. This is
 // most useful when marshalling maps
-func WithColumn0(fieldname string) FramestructOption {
+func WithColumn0(fieldname string) Option {
 	return func(cr *converter) {
 		cr.col0 = fieldname
 	}

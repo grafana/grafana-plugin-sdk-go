@@ -14,6 +14,7 @@ ignore-generated-header = false
 [linters]
 disable-all = true
 enable = [
+  "bodyclose",
   "deadcode",
   "depguard",
   "dogsled",
