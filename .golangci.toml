@@ -1,5 +1,5 @@
 [run]
-skip-files = ["data/.*\\.gen\\.go", "data/generic_nullable_vector\\.go", "data/generic_vector\\.go"]
+skip-files = ["data/.*\\.gen\\.go"]
 
 [linters-settings.golint]
 min-confidence = 1
@@ -14,7 +14,6 @@ ignore-generated-header = false
 [linters]
 disable-all = true
 enable = [
-  "bodyclose",
   "deadcode",
   "depguard",
   "dogsled",
@@ -23,7 +22,7 @@ enable = [
   "goconst",
   "gocritic",
   "goimports",
-  "golint",
+  "revive",
   "goprintffuncname",
   "gosec",
   "gosimple",

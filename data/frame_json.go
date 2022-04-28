@@ -485,59 +485,59 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 	case FieldTypeNullableTime:
 		return readTimeVectorJSON(iter, true, size)
 
-		// Generated
-		//case FieldTypeUint8:
-		//	return readUint8VectorJSON(iter, size)
-		//case FieldTypeNullableUint8:
-		//	return readNullableUint8VectorJSON(iter, size)
-		//case FieldTypeUint16:
-		//	return readUint16VectorJSON(iter, size)
-		//case FieldTypeNullableUint16:
-		//	return readNullableUint16VectorJSON(iter, size)
-		//case FieldTypeUint32:
-		//	return readUint32VectorJSON(iter, size)
-		//case FieldTypeNullableUint32:
-		//	return readNullableUint32VectorJSON(iter, size)
-		//case FieldTypeUint64:
-		//	return readUint64VectorJSON(iter, size)
-		//case FieldTypeNullableUint64:
-		//	return readNullableUint64VectorJSON(iter, size)
-		//case FieldTypeInt8:
-		//	return readInt8VectorJSON(iter, size)
-		//case FieldTypeNullableInt8:
-		//	return readNullableInt8VectorJSON(iter, size)
-		//case FieldTypeInt16:
-		//	return readInt16VectorJSON(iter, size)
-		//case FieldTypeNullableInt16:
-		//	return readNullableInt16VectorJSON(iter, size)
-		//case FieldTypeInt32:
-		//	return readInt32VectorJSON(iter, size)
-		//case FieldTypeNullableInt32:
-		//	return readNullableInt32VectorJSON(iter, size)
-		//case FieldTypeInt64:
-		//	return readInt64VectorJSON(iter, size)
-		//case FieldTypeNullableInt64:
-		//	return readNullableInt64VectorJSON(iter, size)
-		//case FieldTypeFloat32:
-		//	return readFloat32VectorJSON(iter, size)
-		//case FieldTypeNullableFloat32:
-		//	return readNullableFloat32VectorJSON(iter, size)
-		//case FieldTypeFloat64:
-		//	return readFloat64VectorJSON(iter, size)
-		//case FieldTypeNullableFloat64:
-		//	return readNullableFloat64VectorJSON(iter, size)
-		//case FieldTypeString:
-		//	return readStringVectorJSON(iter, size)
-		//case FieldTypeNullableString:
-		//	return readNullableStringVectorJSON(iter, size)
-		//case FieldTypeBool:
-		//	return readBoolVectorJSON(iter, size)
-		//case FieldTypeNullableBool:
-		//	return readNullableBoolVectorJSON(iter, size)
-		//case FieldTypeJSON:
-		//	return readJSONVectorJSON(iter, false, size)
-		//case FieldTypeNullableJSON:
-		//	return readJSONVectorJSON(iter, true, size)
+	// Generated
+	case FieldTypeUint8:
+		return readUint8VectorJSON(iter, size)
+	case FieldTypeNullableUint8:
+		return readNullableUint8VectorJSON(iter, size)
+	case FieldTypeUint16:
+		return readUint16VectorJSON(iter, size)
+	case FieldTypeNullableUint16:
+		return readNullableUint16VectorJSON(iter, size)
+	case FieldTypeUint32:
+		return readUint32VectorJSON(iter, size)
+	case FieldTypeNullableUint32:
+		return readNullableUint32VectorJSON(iter, size)
+	case FieldTypeUint64:
+		return readUint64VectorJSON(iter, size)
+	case FieldTypeNullableUint64:
+		return readNullableUint64VectorJSON(iter, size)
+	case FieldTypeInt8:
+		return readInt8VectorJSON(iter, size)
+	case FieldTypeNullableInt8:
+		return readNullableInt8VectorJSON(iter, size)
+	case FieldTypeInt16:
+		return readInt16VectorJSON(iter, size)
+	case FieldTypeNullableInt16:
+		return readNullableInt16VectorJSON(iter, size)
+	case FieldTypeInt32:
+		return readInt32VectorJSON(iter, size)
+	case FieldTypeNullableInt32:
+		return readNullableInt32VectorJSON(iter, size)
+	case FieldTypeInt64:
+		return readInt64VectorJSON(iter, size)
+	case FieldTypeNullableInt64:
+		return readNullableInt64VectorJSON(iter, size)
+	case FieldTypeFloat32:
+		return readFloat32VectorJSON(iter, size)
+	case FieldTypeNullableFloat32:
+		return readNullableFloat32VectorJSON(iter, size)
+	case FieldTypeFloat64:
+		return readFloat64VectorJSON(iter, size)
+	case FieldTypeNullableFloat64:
+		return readNullableFloat64VectorJSON(iter, size)
+	case FieldTypeString:
+		return readStringVectorJSON(iter, size)
+	case FieldTypeNullableString:
+		return readNullableStringVectorJSON(iter, size)
+	case FieldTypeBool:
+		return readBoolVectorJSON(iter, size)
+	case FieldTypeNullableBool:
+		return readNullableBoolVectorJSON(iter, size)
+	case FieldTypeJSON:
+		return readJSONVectorJSON(iter, false, size)
+	case FieldTypeNullableJSON:
+		return readJSONVectorJSON(iter, true, size)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }
