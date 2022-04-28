@@ -16,17 +16,17 @@ trigger:
 
 steps:
 - name: build
-  image: grafana/grafana-plugin-ci:1.3.0-alpine
+  image: grafana/grafana-plugin-ci:1.4.1-alpine
   commands:
   - mage -v build
 
 - name: lint
-  image: grafana/grafana-plugin-ci:1.3.0-alpine
+  image: grafana/grafana-plugin-ci:1.4.1-alpine
   commands:
   - mage -v lint
 
 - name: test
-  image: grafana/grafana-plugin-ci:1.3.0-alpine
+  image: grafana/grafana-plugin-ci:1.4.1-alpine
   commands:
   - mage -v testRace
 ---
@@ -44,22 +44,22 @@ trigger:
 
 steps:
 - name: build
-  image: grafana/grafana-plugin-ci:1.3.0-alpine
+  image: grafana/grafana-plugin-ci:1.4.1-alpine
   commands:
   - mage -v build
 
 - name: lint
-  image: grafana/grafana-plugin-ci:1.3.0-alpine
+  image: grafana/grafana-plugin-ci:1.4.1-alpine
   commands:
   - mage -v lint
 
 - name: test
-  image: grafana/grafana-plugin-ci:1.3.0-alpine
+  image: grafana/grafana-plugin-ci:1.4.1-alpine
   commands:
   - mage -v testRace
 
 ---
 kind: signature
-hmac: 54a40860ed9a1a675f7605f96b02c8dbd1b25e769cb942a27a952425a9673ad4
+hmac: 682f8a4ba8bf0292995f46cb0a6143cc1aad12711491d6614e5e4ddb83a0240b
 
 ...

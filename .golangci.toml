@@ -14,7 +14,6 @@ ignore-generated-header = false
 [linters]
 disable-all = true
 enable = [
-  "bodyclose",
   "deadcode",
   "depguard",
   "dogsled",
@@ -23,7 +22,7 @@ enable = [
   "goconst",
   "gocritic",
   "goimports",
-  "golint",
+  "revive",
   "goprintffuncname",
   "gosec",
   "gosimple",
