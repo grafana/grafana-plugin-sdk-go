@@ -199,6 +199,7 @@ func TestFrame_UnmarshalJSON_DataOnly(t *testing.T) {
 // This function will write code to the console that should be copy/pasted into frame_json.gen.go
 // when changes are required. Typically this function will always be skipped.
 func TestGenerateGenericArrowCode(t *testing.T) {
+	t.Skip()
 
 	types := []string{
 		"uint8", "uint16", "uint32", "uint64",

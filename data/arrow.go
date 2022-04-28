@@ -120,83 +120,81 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 	columns := make([]array.Column, len(f.Fields))
 
 	for fieldIdx, field := range f.Fields {
-		v := field.vector
-		switch v.Type() {
-		case FieldTypeInt8:
+		switch v := field.vector.(type) {
+		case *genericVector[int8]:
 			columns[fieldIdx] = *buildInt8Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableInt8:
+		case *genericVector[*int8]:
 			columns[fieldIdx] = *buildNullableInt8Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeInt16:
+		case *genericVector[int16]:
 			columns[fieldIdx] = *buildInt16Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableInt16:
+		case *genericVector[*int16]:
 			columns[fieldIdx] = *buildNullableInt16Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeInt32:
+		case *genericVector[int32]:
 			columns[fieldIdx] = *buildInt32Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableInt32:
+		case *genericVector[*int32]:
 			columns[fieldIdx] = *buildNullableInt32Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeInt64:
+		case *genericVector[int64]:
 			columns[fieldIdx] = *buildInt64Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableInt64:
+		case *genericVector[*int64]:
 			columns[fieldIdx] = *buildNullableInt64Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeUint8:
+		case *genericVector[uint8]:
 			columns[fieldIdx] = *buildUInt8Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableUint8:
+		case *genericVector[*uint8]:
 			columns[fieldIdx] = *buildNullableUInt8Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeUint16:
+		case *genericVector[uint16]:
 			columns[fieldIdx] = *buildUInt16Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableUint16:
+		case *genericVector[*uint16]:
 			columns[fieldIdx] = *buildNullableUInt16Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeUint32:
+		case *genericVector[uint32]:
 			columns[fieldIdx] = *buildUInt32Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableUint32:
+		case *genericVector[*uint32]:
 			columns[fieldIdx] = *buildNullableUInt32Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeUint64:
+		case *genericVector[uint64]:
 			columns[fieldIdx] = *buildUInt64Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableUint64:
+		case *genericVector[*uint64]:
 			columns[fieldIdx] = *buildNullableUInt64Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeString:
+		case *genericVector[string]:
 			columns[fieldIdx] = *buildStringColumn(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableString:
+		case *genericVector[*string]:
 			columns[fieldIdx] = *buildNullableStringColumn(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeFloat32:
+		case *genericVector[float32]:
 			columns[fieldIdx] = *buildFloat32Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableFloat32:
+		case *genericVector[*float32]:
 			columns[fieldIdx] = *buildNullableFloat32Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeFloat64:
+		case *genericVector[float64]:
 			columns[fieldIdx] = *buildFloat64Column(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableFloat64:
+		case *genericVector[*float64]:
 			columns[fieldIdx] = *buildNullableFloat64Column(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeBool:
+		case *genericVector[bool]:
 			columns[fieldIdx] = *buildBoolColumn(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableBool:
+		case *genericVector[*bool]:
 			columns[fieldIdx] = *buildNullableBoolColumn(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeTime:
+		case *genericVector[time.Time]:
 			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableTime:
+		case *genericVector[*time.Time]:
 			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
 
-		case FieldTypeJSON:
+		case *genericVector[json.RawMessage]:
 			columns[fieldIdx] = *buildJSONColumn(pool, arrowFields[fieldIdx], v)
-		case FieldTypeNullableJSON:
+		case *genericVector[*json.RawMessage]:
 			columns[fieldIdx] = *buildNullableJSONColumn(pool, arrowFields[fieldIdx], v)
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
 	}
 	return columns, nil
-	return nil, nil
 }
 
 // buildArrowSchema builds an Arrow schema for a Frame.
@@ -294,7 +292,7 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.BinaryType{}, true, nil
 
 	default:
-		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.vector)
+		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %s", f.vector.Type())
 	}
 }
 

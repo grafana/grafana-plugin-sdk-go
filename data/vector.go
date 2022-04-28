@@ -70,11 +70,11 @@ func (v *genericVector[T]) CopyAt(i int) interface{} {
 }
 
 func (v *genericVector[T]) ConcreteAt(i int) (interface{}, bool) {
-	return v.At(i), true
+	return v.At(i).(T), true
 }
 
 func (v *genericVector[T]) Type() FieldType {
-	var t FieldType
+	var t T
 	vt := any(t)
 	switch vt.(type) {
 	case int8:
