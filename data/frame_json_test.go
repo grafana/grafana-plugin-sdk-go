@@ -12,6 +12,8 @@ import (
 	"text/template"
 
 	jsoniter "github.com/json-iterator/go"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -291,11 +293,13 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 
 `
 
+	caser := cases.Title(language.English)
+
 	// switch col.DataType().ID() {
 	// 	// case arrow.STRING:
 	// 	// 	ent := writeArrowSTRING(stream, col)
 	for _, tstr := range types {
-		tname := strings.Title(tstr)
+		tname := caser.String(tstr)
 		tuppr := strings.ToUpper(tstr)
 
 		fmt.Printf("    case arrow." + tuppr + ":\n\t\tent = writeArrowData" + tname + "(stream, col)\n")
@@ -313,8 +317,8 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 			Typen              string
 			HasSpecialEntities bool
 		}{
-			Type:               strings.Title(tstr),
-			Typex:              strings.Title(typex),
+			Type:               caser.String(tstr),
+			Typex:              caser.String(typex),
 			Typen:              tstr,
 			HasSpecialEntities: hasSpecialEntities,
 		}
@@ -326,7 +330,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 	}
 
 	for _, tstr := range types {
-		tname := strings.Title(tstr)
+		tname := caser.String(tstr)
 		fmt.Printf("    case FieldType" + tname + ": return read" + tname + "VectorJSON(iter, size)\n")
 		fmt.Printf("    case FieldTypeNullable" + tname + ": return readNullable" + tname + "VectorJSON(iter, size)\n")
 	}
