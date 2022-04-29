@@ -482,10 +482,18 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 			}
 
 			val := reflect.Indirect(reflect.ValueOf(v))
-			if val.IsValid() {
-				sRow[colIdx] = fmt.Sprintf("%v", val)
-			} else {
+			if !val.IsValid() {
 				sRow[colIdx] = "null"
+				continue
+			}
+
+			switch {
+			case f.Fields[colIdx].Type() == FieldTypeJSON:
+				sRow[colIdx] = fmt.Sprintf("%s", v.(json.RawMessage))
+			case f.Fields[colIdx].Type() == FieldTypeNullableJSON:
+				sRow[colIdx] = fmt.Sprintf("%s", *v.(*json.RawMessage))
+			default:
+				sRow[colIdx] = fmt.Sprintf("%v", val)
 			}
 		}
 		table.Append(sRow)

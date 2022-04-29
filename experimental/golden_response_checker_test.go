@@ -1,6 +1,7 @@
 package experimental
 
 import (
+	"encoding/json"
 	"flag"
 	"path/filepath"
 	"testing"
@@ -75,6 +76,23 @@ func TestGoldenResponseChecker(t *testing.T) {
 		goldenFile := filepath.Join("testdata", "frame-custom-meta.golden.txt")
 		err := CheckGoldenDataResponse(goldenFile, dr, true)
 
+		require.NoError(t, err)
+	})
+
+	t.Run("should render string for JSON fields", func(t *testing.T) {
+		m := map[string]int{"a": 1, "b": 2}
+		b, err := json.Marshal(m)
+		require.NoError(t, err)
+		r := json.RawMessage(b)
+		res := &backend.DataResponse{
+			Frames: data.Frames{
+				data.NewFrame("JSON frame",
+					data.NewField("json.RawMessage", nil, []json.RawMessage{r}),
+					data.NewField("*json.RawMessage", nil, []*json.RawMessage{&r}),
+				),
+			}}
+		goldenFile := filepath.Join("testdata", "frame-json.txt")
+		err = CheckGoldenDataResponse(goldenFile, res, true)
 		require.NoError(t, err)
 	})
 }
