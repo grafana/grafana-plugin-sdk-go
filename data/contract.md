@@ -14,14 +14,13 @@ There are logical **_kinds_** (like Time Series Data, Numeric, Histogram, etc), 
 
 A **_data type_** definition or declaration in this framework includes both a kind and format. For example, "TimeSeriesWide" is: kind: "Time Series", format: "Wide".
 
-
 ## Dimensional Set Based Kinds
 
 Within a data type (kind+format), there can be multiple **_items_** of data that are uniquely identified. This forms a **_set_** of data items. For example, in the numeric kind there can be a set of numbers, or, in the time series kind, a set of time series-es :-).
 
-Each item of data in a set is uniquely identified by its **_name_** and **_dimensions_**. 
+Each item of data in a set is uniquely identified by its **_name_** and **_dimensions_**.
 
-Dimensions are facets of data (such as "location" or "host") with a corresponding value. For example, {"host"="a", "location"="new york"}. 
+Dimensions are facets of data (such as "location" or "host") with a corresponding value. For example, {"host"="a", "location"="new york"}.
 
 Within a dataframe, dimensions are in either a field's Labels property or in string field(s).
 
@@ -662,23 +661,10 @@ Remainder Data
 
 ## Considerations to Add / Todo
 
-* Why There are Logical Kinds with Different formats 
-    * (Answer: Keep data comprehensible by passing data the way the datasource formats (SQL vs Prometheus and their variants).
-* Why built-on data frames
-    * What we are using, works well, and mostly out of scope.
-    * Worth noting that something like a Google Sheets that is a table structure but mixed primitive field types doesn't map well to our dataframe, but something like SQL and Prom do
-* Why data frame's primitive field type / schema type not enough?
-    * Can't tell e.g. Instant Vector (Bar chart) and time series (time series plot) apart, since the both include time columns.
-    * Empty responses.
-    * It constrains which Fields can be included in a Frame in order to be considered a type  
-* Multi-Kinds in a response from a single query with this query centric type model needs more consideration
-    * Yes this is a problem, we already have this I believe with exemplars (and I have seen this pattern in responses from the Azure API which returns a dataframe like structure). So will have to come back to this soon, but only so much scope for this first pass
-    * With SSE, one feature that has been considered is to be able to visualization the connection between operations 
-* Empty Responses require more consideration
-* Meta-data is a thing but not scoping that for now at least
-* If the type/schema is declared, do we need to support the case where, for whatever reason, the type can be considered multiple Kinds at once.
+* Meta-data (Frame and Field)
+* If the type/schema is declared, do we need to support the case where, for whatever reason, the type can be considered multiple Kinds at once?
 * So far ordering is ignored (For example, the order of Value Fields in TimeSeriesWide or the order of Frames in TimeSeriesMulti). Need to decide if ordering as any symantec meaning, if so what it is, and consider it properties of converting between formats
-    * Note: Issue on ordering [https://github.com/grafana/grafana-plugin-sdk-go/issues/366](https://github.com/grafana/grafana-plugin-sdk-go/issues/366) , not sure if it is display issue or not at this time
+  * Note: Issue on ordering [https://github.com/grafana/grafana-plugin-sdk-go/issues/366](https://github.com/grafana/grafana-plugin-sdk-go/issues/366) , not sure if it is display issue or not at this time
 
 <!-- Footnotes themselves at the bottom. -->
 ## Notes
