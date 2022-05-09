@@ -59,6 +59,9 @@ message PluginContext {
   //
   // Will only be set if request targeting a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
+
+  // The version of the plugin the request is originating from.
+  string pluginVersion = 6;
 }
 
 //---------------------------------------------------------

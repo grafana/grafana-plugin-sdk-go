@@ -203,6 +203,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
+	PluginVersion:              "1.2.3",
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
@@ -232,6 +233,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 
 	requireCounter.Equal(t, protoCtx.OrgId, sdkCtx.OrgID)
 	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.PluginID)
+	requireCounter.Equal(t, protoCtx.PluginVersion, sdkCtx.PluginVersion)
 
 	// User
 	requireCounter.Equal(t, protoCtx.User.Login, sdkCtx.User.Login)
@@ -388,6 +390,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	// PluginContext
 	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.PluginID)
+	requireCounter.Equal(t, protoQDR.PluginContext.PluginVersion, sdkQDR.PluginContext.PluginVersion)
 	// User
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Login, sdkQDR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)

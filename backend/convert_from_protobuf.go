@@ -75,6 +75,7 @@ func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 	return PluginContext{
 		OrgID:                      proto.OrgId,
 		PluginID:                   proto.PluginId,
+		PluginVersion:              proto.PluginVersion,
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
