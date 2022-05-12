@@ -1,0 +1,42 @@
+{
+    "frames": [
+        {
+            "schema": {
+                "name": "JSON frame",
+                "fields": [
+                    {
+                        "name": "json.RawMessage",
+                        "type": "other",
+                        "typeInfo": {
+                            "frame": "json.RawMessage"
+                        }
+                    },
+                    {
+                        "name": "*json.RawMessage",
+                        "type": "other",
+                        "typeInfo": {
+                            "frame": "json.RawMessage",
+                            "nullable": true
+                        }
+                    }
+                ]
+            },
+            "data": {
+                "values": [
+                    [
+                        {
+                            "a": 1,
+                            "b": 2
+                        }
+                    ],
+                    [
+                        {
+                            "a": 1,
+                            "b": 2
+                        }
+                    ]
+                ]
+            }
+        }
+    ]
+}

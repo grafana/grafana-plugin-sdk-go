@@ -1,0 +1,66 @@
+{
+    "frames": [
+        {
+            "schema": {
+                "name": "Frame One",
+                "meta": {
+                    "custom": {
+                        "someValue": "value"
+                    }
+                },
+                "fields": [
+                    {
+                        "name": "Single float64",
+                        "type": "number",
+                        "typeInfo": {
+                            "frame": "float64"
+                        },
+                        "config": {
+                            "unit": "Percent"
+                        }
+                    }
+                ]
+            },
+            "data": {
+                "values": [
+                    [
+                        8.26,
+                        8.7,
+                        14.82,
+                        10.07,
+                        8.52
+                    ]
+                ]
+            }
+        },
+        {
+            "schema": {
+                "name": "Frame Two",
+                "fields": [
+                    {
+                        "name": "single string",
+                        "type": "string",
+                        "typeInfo": {
+                            "frame": "string"
+                        },
+                        "labels": {
+                            "a": "b"
+                        },
+                        "config": {
+                            "displayName": "123"
+                        }
+                    }
+                ]
+            },
+            "data": {
+                "values": [
+                    [
+                        "a",
+                        "b",
+                        "c"
+                    ]
+                ]
+            }
+        }
+    ]
+}

@@ -35,10 +35,8 @@ func TestGoldenResponseChecker(t *testing.T) {
 	}
 
 	t.Run("create data frames with no meta", func(t *testing.T) {
-		goldenFile := filepath.Join("testdata", "frame-no-meta.golden.txt")
-		err := CheckGoldenDataResponse(goldenFile, dr, *update)
-
-		require.NoError(t, err)
+		goldenFile := filepath.Join("testdata", "frame-no-meta.golden")
+		checkGoldenFiles(t, goldenFile, dr)
 	})
 
 	t.Run("create data frames with some non-custom meta", func(t *testing.T) {
@@ -49,10 +47,8 @@ func TestGoldenResponseChecker(t *testing.T) {
 			},
 		}
 
-		goldenFile := filepath.Join("testdata", "frame-non-custom-meta.golden.txt")
-		err := CheckGoldenDataResponse(goldenFile, dr, *update)
-
-		require.NoError(t, err)
+		goldenFile := filepath.Join("testdata", "frame-non-custom-meta.golden")
+		checkGoldenFiles(t, goldenFile, dr)
 	})
 
 	t.Run("create data frames with some empty custom meta", func(t *testing.T) {
@@ -60,10 +56,8 @@ func TestGoldenResponseChecker(t *testing.T) {
 			Custom: SomeCustomMeta{},
 		}
 
-		goldenFile := filepath.Join("testdata", "frame-empty-custom-meta.golden.txt")
-		err := CheckGoldenDataResponse(goldenFile, dr, true)
-
-		require.NoError(t, err)
+		goldenFile := filepath.Join("testdata", "frame-empty-custom-meta.golden")
+		checkGoldenFiles(t, goldenFile, dr)
 	})
 
 	t.Run("create data frames with some custom meta", func(t *testing.T) {
@@ -73,10 +67,8 @@ func TestGoldenResponseChecker(t *testing.T) {
 			},
 		}
 
-		goldenFile := filepath.Join("testdata", "frame-custom-meta.golden.txt")
-		err := CheckGoldenDataResponse(goldenFile, dr, true)
-
-		require.NoError(t, err)
+		goldenFile := filepath.Join("testdata", "frame-custom-meta.golden")
+		checkGoldenFiles(t, goldenFile, dr)
 	})
 
 	t.Run("should render string for JSON fields", func(t *testing.T) {
@@ -91,9 +83,8 @@ func TestGoldenResponseChecker(t *testing.T) {
 					data.NewField("*json.RawMessage", nil, []*json.RawMessage{&r}),
 				),
 			}}
-		goldenFile := filepath.Join("testdata", "frame-json.txt")
-		err = CheckGoldenDataResponse(goldenFile, res, true)
-		require.NoError(t, err)
+		goldenFile := filepath.Join("testdata", "frame-json")
+		checkGoldenFiles(t, goldenFile, res)
 	})
 }
 
@@ -104,4 +95,12 @@ func TestReadGoldenFile(t *testing.T) {
 		require.NotEmpty(t, dr)
 		require.NoError(t, err)
 	})
+}
+
+func checkGoldenFiles(t *testing.T, goldenFile string, dr *backend.DataResponse) {
+	err := CheckGoldenDataResponse(goldenFile+".txt", dr, *update)
+	require.NoError(t, err)
+
+	err = CheckGoldenJSON(goldenFile+".json", dr, *update)
+	require.NoError(t, err)
 }

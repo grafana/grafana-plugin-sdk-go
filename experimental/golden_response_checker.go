@@ -8,6 +8,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -31,42 +32,70 @@ func CheckGoldenFrame(path string, f *data.Frame, updateFile bool) error {
 // when the updateFile flag is set, this will both add errors to the response and update the saved file
 func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile bool) error {
 	saved, err := readGoldenFile(path)
-
 	if err != nil {
 		return errorAfterUpdate(fmt.Errorf("error reading golden file:  %s\n%s", path, err.Error()), path, dr, updateFile)
 	}
 
-	if diff := cmp.Diff(saved.Error, dr.Error); diff != "" {
-		return errorAfterUpdate(fmt.Errorf("errors mismatch %s (-want +got):\n%s", path, diff), path, dr, updateFile)
+	if err := compareResponse(path, saved, dr); err != nil {
+		return errorAfterUpdate(err, path, dr, updateFile)
+	}
+
+	return nil // OK
+}
+
+// CheckGoldenJSON will verify that the stored JSON file matches the given data.DataResponse
+// when the updateFile flag is set, this will both add errors to the response and update the saved file
+func CheckGoldenJSON(path string, dr *backend.DataResponse, updateFile bool) error {
+	saved, err := readGoldenJSONFile(path)
+	if err != nil {
+		return errorAfterUpdate(fmt.Errorf("error reading golden file:  %s\n%s", path, err.Error()), path, dr, updateFile)
+	}
+
+	if err := compareResponse(path, saved, dr); err != nil {
+		return errorAfterUpdate(err, path, dr, updateFile)
+	}
+
+	return nil // OK
+}
+
+func compareResponse(path string, expected *backend.DataResponse, actual *backend.DataResponse) error {
+	if diff := cmp.Diff(expected.Error, actual.Error); diff != "" {
+		return fmt.Errorf("errors mismatch %s (-want +got):\n%s", path, diff)
 	}
 
 	// When the frame count is different, you can check manually
-	if diff := cmp.Diff(len(saved.Frames), len(dr.Frames)); diff != "" {
-		return errorAfterUpdate(fmt.Errorf("frame count mismatch (-want +got):\n%s", diff), path, dr, updateFile)
+	if diff := cmp.Diff(len(expected.Frames), len(actual.Frames)); diff != "" {
+		return fmt.Errorf("frame count mismatch (-want +got):\n%s", diff)
 	}
 
 	errorString := ""
 
 	// Check each frame
-	for idx, frame := range dr.Frames {
-		expectedFrame := saved.Frames[idx]
+	for idx, frame := range actual.Frames {
+		expectedFrame := expected.Frames[idx]
 		if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
 			errorString += fmt.Sprintf("frame[%d] mismatch (-want +got):\n%s\n", idx, diff)
 		}
 	}
 
 	if len(errorString) > 0 {
-		return errorAfterUpdate(fmt.Errorf(errorString), path, dr, updateFile)
+		return fmt.Errorf(errorString)
 	}
 
 	return nil // OK
 }
 
 func errorAfterUpdate(err error, path string, dr *backend.DataResponse, updateFile bool) error {
-	if updateFile {
-		_ = writeGoldenFile(path, dr)
-		log.Printf("golden file updated: %s\n", path)
+	if !updateFile {
+		return err
 	}
+	if filepath.Ext(path) == ".txt" {
+		_ = writeGoldenFile(path, dr)
+	}
+	if filepath.Ext(path) == ".json" {
+		_ = writeGoldenJSONFile(path, dr)
+	}
+	log.Printf("golden file updated: %s\n", path)
 	return err
 }
 
@@ -168,4 +197,24 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 	str += "\n"
 
 	return ioutil.WriteFile(path, []byte(str), 0600)
+}
+
+func readGoldenJSONFile(fpath string) (*backend.DataResponse, error) {
+	raw, err := ioutil.ReadFile(fpath)
+	if err != nil {
+		return nil, err
+	}
+	var dr backend.DataResponse
+	if err = json.Unmarshal(raw, &dr); err != nil {
+		return nil, err
+	}
+	return &dr, nil
+}
+
+func writeGoldenJSONFile(fpath string, dr *backend.DataResponse) error {
+	str, err := json.MarshalIndent(dr, "", "    ")
+	if err != nil {
+		return err
+	}
+	return ioutil.WriteFile(fpath, []byte(str), 0600)
 }
