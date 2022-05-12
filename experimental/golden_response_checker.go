@@ -8,11 +8,14 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"path"
 	"strings"
+	"testing"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/stretchr/testify/assert"
 )
 
 // CheckGoldenFramer calls CheckGoldenDataResponse using a data.Framer instead of a backend.DataResponse.
@@ -60,6 +63,25 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile b
 	}
 
 	return nil // OK
+}
+
+// CheckGoldenJSONResponse will verify that the stored JSON file matches the given data.DataResponse
+func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.DataResponse, updateFile bool) {
+	t.Helper()
+	fpath := path.Join(dir, name+".jsonc")
+
+	expected, err := readGoldenJSONFile(fpath)
+	assert.NoError(t, err)
+
+	actual, err := json.Marshal(dr)
+	assert.NoError(t, err)
+
+	assert.JSONEq(t, expected, string(actual))
+
+	if updateFile {
+		err = writeGoldenJSONFile(fpath, dr)
+		assert.NoError(t, err)
+	}
 }
 
 func errorAfterUpdate(err error, path string, dr *backend.DataResponse, updateFile bool) error {
@@ -136,7 +158,28 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 // The golden file has a text description at the top and a binary response at the bottom
 // The text part is not used for testing, but aims to give a legible response format
 func writeGoldenFile(path string, dr *backend.DataResponse) error {
-	str := "🌟 This was machine generated.  Do not edit. 🌟\n"
+	str := generateHeaderString(dr)
+
+	// Add the binary section flag
+	str += binaryDataSection
+
+	if dr.Error != nil {
+		str += "\nERROR=" + dr.Error.Error()
+	}
+	for _, frame := range dr.Frames {
+		bytes, _ := frame.MarshalArrow()
+		encoded := base64.StdEncoding.EncodeToString(bytes)
+		str += "\nFRAME=" + encoded
+	}
+	str += "\n"
+
+	return ioutil.WriteFile(path, []byte(str), 0600)
+}
+
+const machineStr = "🌟 This was machine generated.  Do not edit. 🌟\n"
+
+func generateHeaderString(dr *backend.DataResponse) string {
+	str := machineStr
 	if dr.Error != nil {
 		str = fmt.Sprintf("\nERROR: %+v", dr.Error)
 	}
@@ -153,19 +196,28 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 			str += "\n" + table + "\n\n"
 		}
 	}
+	return str
+}
 
-	// Add the binary section flag
-	str += binaryDataSection
-
-	if dr.Error != nil {
-		str += "\nERROR=" + dr.Error.Error()
+func readGoldenJSONFile(fpath string) (string, error) {
+	raw, err := ioutil.ReadFile(fpath)
+	if err != nil {
+		return "", err
 	}
-	for _, frame := range dr.Frames {
-		bytes, _ := frame.MarshalArrow()
-		encoded := base64.StdEncoding.EncodeToString(bytes)
-		str += "\nFRAME=" + encoded
+	chunks := strings.Split(string(raw), "//  "+machineStr)
+	if len(chunks) < 3 {
+		return "", fmt.Errorf("no golden data found in: %s", fpath)
 	}
-	str += "\n"
+	return chunks[2], nil
+}
 
-	return ioutil.WriteFile(path, []byte(str), 0600)
+func writeGoldenJSONFile(fpath string, dr *backend.DataResponse) error {
+	header := strings.Split(generateHeaderString(dr), "\n")
+	str := "//  " + strings.Join(header, "\n//  ") + machineStr
+	raw, err := json.MarshalIndent(dr, "", "  ")
+	if err != nil {
+		return err
+	}
+	str += string(raw)
+	return ioutil.WriteFile(fpath, []byte(str), 0600)
 }
