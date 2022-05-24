@@ -83,13 +83,13 @@ There exists a row for every cell in the heatmap.
     <td>
       <strong>Type: Time</strong>
       <p>
-        <strong>Name: xMax</strong>
+        <strong>Name: xMax|xMin|x</strong>
       </p>
     </td>
     <td>
       <strong>Type: Number</strong>
       <p>
-        <strong>Name: yMax</strong>
+        <strong>Name: yMax|yMin|y</strong>
       </p>
     </td>
     <td>
@@ -160,6 +160,12 @@ This format requires uniform cell sizing
 
 Note that multiple "value" fields can included to represent multiple dimensions within the same cell.  
 The first value field is used in the display, unless explicilty configured
+
+The field names for yMax|yMin|y indicate the aggregation period or the supplied values.
+* yMax: the values are from the bucket below
+* yMin: the values are from to bucket above
+* y: the values are in the middle of the bucket
+
 
 ## Heatmap sparse (HeatmapSparse)
 

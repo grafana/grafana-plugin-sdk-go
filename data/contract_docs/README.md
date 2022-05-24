@@ -16,7 +16,7 @@ A **_data type_** definition or declaration in this framework includes both a ki
 
 * [Time series](./timeseries.md)
      * [Wide](./timeseries.md#time-series-wide-format-timeserieswide)
-     * [Long](./timeseries.md#time-series-wide-format-timeserieswide)
+     * [Long](./timeseries.md#time-series-long-format-timeserieslong-sql-like)
      * [Multi](./timeseries.md#time-series-multi-format-timeseriesmulti)
 * [Numeric](./numeric.md)
      * [Wide](./numeric.md#numeric-wide-format-numericwide)
