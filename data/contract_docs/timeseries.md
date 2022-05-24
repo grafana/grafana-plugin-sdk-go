@@ -1,68 +1,6 @@
-# Data Plane Contract - Technical Specification
+# Time Series Kind Formats
 
-Status: Draft/Proposal
-
-## Doc Objective
-
-Define in detail common query response schemas for data returned from data sources. This improves the experience for developers of both features and datasources. This will also improve the experience for users through more reliability and quality - which leads to more development time spent more towards improving experience.
-
-Current Backend [proof of concept code](https://github.com/grafana/grafana-plugin-sdk-go/pull/440).
-
-## Kinds and Formats
-
-There are logical **_kinds_** (like Time Series Data, Numeric, Histogram, etc), and there are **_formats_** that a kind can be in.
-
-A **_data type_** definition or declaration in this framework includes both a kind and format. For example, "TimeSeriesWide" is: kind: "Time Series", format: "Wide".
-
-## Dimensional Set Based Kinds
-
-Within a data type (kind+format), there can be multiple **_items_** of data that are uniquely identified. This forms a **_set_** of data items. For example, in the numeric kind there can be a set of numbers, or, in the time series kind, a set of time series-es :-).
-
-Each item of data in a set is uniquely identified by its **_name_** and **_dimensions_**.
-
-Dimensions are facets of data (such as "location" or "host") with a corresponding value. For example, {"host"="a", "location"="new york"}.
-
-Within a dataframe, dimensions are in either a field's Labels property or in string field(s).
-
-### Properties Shared by all Dimensional Set Based Kinds
-
-* When there are multiple items that have the same name, they should have different dimensions (e.g. labels) that uniquely identifies each item[^1].
-* The item name should appear in the Name property of each value (numeric or bool typed) Field, as should any Labels[^2]
-* A response can have different item names in the response (Note: SSE doesn't currently handle this)
-
-## Remainder Data
-
-Data is encoded into dataframe(s), therefore all types are implemented as an array of data.Frames.
-
-There can be data in dataframe(s) that is not part of the data type's data. This extra data is **_remainder data_**. What readers choose to do with this data is open. However, libraries based on this contract must clearly delineate remainder data from data that is part of the type.
-
-What data becomes remainder data is dependent on and specified in the data type. Generally, it can be additional frames and/or additional fields of a certain field type.
-
-## Invalid Data
-
-Although there is remainder data, there are still cases where the reader should error. The situation for this is when the data type specifier exists on the frame(s), but rules about that type are not followed.
-
-## "No Data" and Empty
-
-There are two named cases for when a response is lacking data and also doesn't have an error.
-
- **_"No Data"_** is for when we retrieve a response from a datasource but the response has no data items. The encoding for the form of a type is a single frame, with the data type declaration, and a zero length of fields (null or []). This is for the case when the entire set has no items.
-
-We retrieve one or more data items from a datasource but an item has no values, that item is said to be an "**_Empty value_**". In this case, the required dataframe fields should still be present (but the fields themselves each have no values).
-
-## Multi Data Type Responses
-
-The case where a response has multiple data types in a single result (Within a RefID) exists but is currently out of scope for this version of the spec.
-
-However, it needs to be possible to add support for this case. For now, the following logic is suggested:
-
-* Per data type, within a response, only one format should be used. For example: There may be TimeSeriesWide and NumericLong, but there should _not_ be TimeSeriesWide and TimeSeriesLong.
-* The borders between the types are derived from adjacent frames (within the array of frames) that share the same data type.
-* If a reader does not opt-in into multi-type responses, it should be able to get the first data type that matches what the reader is looking for.
-
-## Time Series Kind Formats
-
-### Properties Shared by All Time Series Based Formats
+## Properties Shared by All Time Series Based Formats
 
 * Frames should be sorted by the time column/field in ascending order[^3]
 * The Time field(s):
@@ -75,7 +13,7 @@ However, it needs to be possible to add support for this case. For now, the foll
     * in JS 'number'
   * The series name comes the Value Field's Name property
 
-#### Invalid Cases
+### Invalid Cases
 
 * The is not at least both a time field and a value field (unless the single frame "no data" case)
 * The "No Data" case is present (a frame with no fields) alongside data
@@ -83,7 +21,7 @@ However, it needs to be possible to add support for this case. For now, the foll
   * Duplicate items (identified by name+dimensions)
   * Unsorted (time is not sorted from old to new)
 
-### Time Series Wide Format (TimeSeriesWide)
+## Time Series Wide Format (TimeSeriesWide)
 
 The wide format has a set of time series in a single Frame that share the same time field. It is called "wide" because it gets _wider_ as more series are added.
 
@@ -161,7 +99,7 @@ Notes:
 
 * A Go example of an approximation of this is [here](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data#example-Frame-TSDBTimeSeriesSharedTimeIndex).
 
-### Time Series Multi Format (TimeSeriesMulti)
+## Time Series Multi Format (TimeSeriesMulti)
 
 The TimeSeriesMulti format has one time series per frame. If the response has multiple series where the time values may not line up, this format must be used over TimeSeriesWide.  The format is called "multi" because the data lives across _multiple_ data frames.
 
@@ -270,7 +208,7 @@ Notes:
 * Go example [here](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data#example-Frame-TSDBTimeSeriesDifferentTimeIndices).
 * The many format is the only format that can be converted to from the other formats without data manipulation. Therefore it is a type that can contain the series information of all the other types.
 
-### Time Series Long Format (TimeSeriesLong) [SQL-Like]
+## Time Series Long Format (TimeSeriesLong) [SQL-Like]
 
 This is a response format common to SQL like systems[^4]. See [Grafana documentation: Multiple dimensions in table format](https://grafana.com/docs/grafana/latest/basics/timeseries-dimensions/#multiple-dimensions-in-table-format) for some more simple (but not complete) examples. It currently exists as a data transformation within some datasources[^5] in the backend that query SQL-like data, see [this Go Example for how that code works](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data#example-Frame-TableLikeLongTimeSeries).
 
@@ -387,7 +325,7 @@ Additional Properties or Considerations:
 * Since dimensions are represented in fields that are present for all derived series, this can not hold mixed dimension keys so all series will have the same set of dimension keys. For example, one could not have net.bytes{host="a"} and net.bytes{host="a",int="eth0"} together - the first would have to become net.bytes{host="a",**int=""**}
 * It is unclear if a bool type Field should be considered a value field (e.g. and up/down metric) or a dimension (where it would be treated conceptually like labels) 
 
-### Converting Between Time Series Formats
+## Converting Between Time Series Formats
 
 <table>
   <tr>
@@ -512,170 +450,8 @@ Additional Properties or Considerations:
   </tr>
 </table>
 
-## Numeric Kind Formats
-
-Numeric Kinds are generally similar to their corresponding time series type, except that their value is a single number, instead of a series of (time, numeric value). So the value of each metric is a single number like 1, 2.3, or NaN
-
-This generally corresponds to a prometheus instant vector, or a SQL table with string and number columns and multiple rows.
-
-### Numeric Wide Format (NumericWide)
-
-Example:
-
-<table>
-  <tr>
-   <td><strong>Type: Number</strong>
-<p>
-<strong>Name: cpu</strong>
-<p>
-<strong>Labels: {"host":<em> "a"}</em></strong>
-   </td>
-   <td><strong>Type: Number</strong>
-<p>
-<strong>Name: cpu</strong>
-<p>
-<strong>Labels: {"host":<em> "b"</em>}</strong>
-   </td>
-  </tr>
-  <tr>
-   <td>1
-   </td>
-   <td>6
-   </td>
-  </tr>
-</table>
-
-Properties:
-
-* There should only be one frame with the type indicator
-* There should be no rows or a single row in the frame
-* All fields should have a numeric or bool type (e.g. if Go float64, *int, etc)
-* Field Labels are used
-
-Remainder Data:
-
-* Any additional frames without the type indicator or a different one
-* Any time or string fields
-
-### Numeric Many Format (NumericMany)
-
-This logically is no different than NumericWide, except that instead of having one frame with many Fields there are multiple frames with a single field.
-
-**Example:**
-
-Frame 0:
-
-<table>
-  <tr>
-   <td><strong>Type: Number</strong>
-<p>
-<strong>Name: cpu</strong>
-<p>
-<strong>Labels: {"host":<em> "a"}</em></strong>
-   </td>
-  </tr>
-  <tr>
-   <td>1
-   </td>
-  </tr>
-</table>
-
-Frame 1:
-
-
-<table>
-  <tr>
-   <td><strong>Type: Number</strong>
-<p>
-<strong>Name: cpu</strong>
-<p>
-<strong>Labels: {"host":<em> "b"</em>}</strong>
-   </td>
-  </tr>
-  <tr>
-   <td>6
-   </td>
-  </tr>
-</table>
-
-Properties:
-
-* There should be no rows or a single row in the frame
-* There should be one value field per frame
-
-Remainder Data:
-
-* Any time or string fields
-* Any value fields after the first
-* Any additional frames without the type indicator
-
-### Numeric Long Format (NumericLong) [SQL-Table-Like]
-
-This is the response one would imagine with a query like `Select Host, avg(cpu) … group by host". This is similar to the TimeSeriesLong format in that dimensions exist in string columns[^9].
-
-Example:
-
-<table>
-  <tr>
-   <td><strong>Type: Number</strong>
-<p>
-<strong>Name: cpu</strong>
-<p>
-<strong>Labels: nil</strong>
-   </td>
-   <td><strong>Type: String</strong>
-<p>
-<strong>Name: host</strong>
-<p>
-<strong>Labels: nil</strong>
-   </td>
-  </tr>
-  <tr>
-   <td>1
-   </td>
-   <td>a
-   </td>
-  </tr>
-  <tr>
-   <td>6
-   </td>
-   <td>b
-   </td>
-  </tr>
-</table>
-
-
-Properties:
-
-* There should be a single Frame
-* There may be one or more value fields 
-* If there is more than one row there needs to be one or more string fields
-* Each string column is a dimension, where the field/field name is the name of the dimension, and the corresponding values of the field are the dimensions value (e.g. a field with the name "host" would create a dimension like "host=web1" for a row/value in that field containing "web1"
-* The Labels property of each Field is unused
-* For each value field, the unique combination of item name (value Field Name) and its set of key (String field Name) and value (string field values) pairs form each unique item identifier.
-
-Remainder Data
-
-* Any additional frames with a different or no type indicator
-* Any time fields
-
-## Considerations to Add / Todo
-
-* Meta-data (Frame and Field)
-* If the type/schema is declared, do we need to support the case where, for whatever reason, the type can be considered multiple Kinds at once?
-* So far ordering is ignored (For example, the order of Value Fields in TimeSeriesWide or the order of Frames in TimeSeriesMulti). Need to decide if ordering as any symantec meaning, if so what it is, and consider it properties of converting between formats
-  * Note: Issue on ordering [https://github.com/grafana/grafana-plugin-sdk-go/issues/366](https://github.com/grafana/grafana-plugin-sdk-go/issues/366) , not sure if it is display issue or not at this time
-
 <!-- Footnotes themselves at the bottom. -->
 ## Notes
-
-[^1]:
-
-     In theory they can still be passed for things like visualization because Fields do have a numeric ordering within the frame, but this won't work with things like SSE/alerting.
-
-[^2]:
-
-     Using Field Name keeps naming consistent with the TimeSeriesMulti format (vs using the Frame Name)
 
 [^3]:
 
@@ -698,6 +474,3 @@ Remainder Data
 [^8]:
 <p>
      This is used by the SQL datasources to extract time series from the "Long" format (via go sdk/data pkg). In hindsight I sort of wish we had gone with LongToMany instead. See "related" in <a href="https://github.com/grafana/grafana-plugin-sdk-go/issues/315#issuecomment-817839070">this issue comment</a>.
-
-[^9]:
-     Other than this connection, "Long" is perhaps a bad name in this context, numeric table perhaps?
