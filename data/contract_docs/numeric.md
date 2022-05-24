@@ -144,3 +144,9 @@ Remainder Data
 
 * Any additional frames with a different or no type indicator
 * Any time fields
+
+<!-- Footnotes themselves at the bottom. -->
+## Notes
+
+[^9]:
+     Other than this connection, "Long" is perhaps a bad name in this context, numeric table perhaps?

@@ -77,6 +77,3 @@ However, it needs to be possible to add support for this case. For now, the foll
 [^2]:
 
      Using Field Name keeps naming consistent with the TimeSeriesMulti format (vs using the Frame Name)
-
-[^9]:
-     Other than this connection, "Long" is perhaps a bad name in this context, numeric table perhaps?
