@@ -71,6 +71,10 @@ Example:
 </table>
 
 
+Note: [Timeseries wide](./timeseries.md#time-series-wide-format-timeserieswide) can be used directly
+as heatmap-buckets, in this case each value field becomes a row in the heatmap.
+
+
 ## Heatmap scanlines (HeatmapScanlines)
 
 In this format, each row in the frame indicates the value of a single cell in a heatmap.
