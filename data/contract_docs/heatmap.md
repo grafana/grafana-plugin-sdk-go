@@ -95,7 +95,19 @@ There exists a row for every cell in the heatmap.
     <td>
       <strong>Type: Number</strong>
       <p>
-        <strong>Name: Value</strong>
+        <strong>Name: Count</strong>
+      </p>
+    </td>
+    <td>
+      <strong>Type: Number</strong>
+      <p>
+        <strong>Name: Total</strong>
+      </p>
+    </td>
+    <td>
+      <strong>Type: Number</strong>
+      <p>
+        <strong>Name: Speed</strong>
       </p>
     </td>
   </tr>
@@ -103,15 +115,21 @@ There exists a row for every cell in the heatmap.
     <td>1653416391000</td>
     <td>100</td>
     <td>1</td>
+    <td>1</td>
+    <td>1</td>
   </tr>
   <tr>
     <td>1653416391000</td>
     <td>200</td>
     <td>2</td>
+    <td>2</td>
+    <td>2</td>
   </tr>
   <tr>
     <td>1653416391000</td>
     <td>300</td>
+    <td>3</td>
+    <td>3</td>
     <td>3</td>
   </tr>
 
@@ -119,21 +137,29 @@ There exists a row for every cell in the heatmap.
     <td>1653416392000</td>
     <td>100</td>
     <td>4</td>
+    <td>4</td>
+    <td>4</td>
   </tr>
   <tr>
     <td>1653416392000</td>
     <td>200</td>
+    <td>5</td>
+    <td>5</td>
     <td>5</td>
   </tr>
   <tr>
     <td>1653416392000</td>
     <td>300</td>
     <td>6</td>
+    <td>6</td>
+    <td>6</td>
   </tr>
 </table>
 
 This format requires uniform cell sizing
 
+Note that multiple "value" fields can included to represent multiple dimensions within the same cell.  
+The first value field is used in the display, unless explicilty configured
 
 ## Heatmap sparse (HeatmapSparse)
 
