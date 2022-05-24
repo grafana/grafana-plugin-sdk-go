@@ -14,6 +14,20 @@ There are logical **_kinds_** (like Time Series Data, Numeric, Histogram, etc), 
 
 A **_data type_** definition or declaration in this framework includes both a kind and format. For example, "TimeSeriesWide" is: kind: "Time Series", format: "Wide".
 
+* [Time series](./timeseries.md)
+     * [Wide](./timeseries.md#time-series-wide-format-timeserieswide)
+     * [Long](./timeseries.md#time-series-wide-format-timeserieswide)
+     * [Multi](./timeseries.md#time-series-multi-format-timeseriesmulti)
+* [Numeric](./numeric.md)
+     * [Wide](./numeric.md#numeric-wide-format-numericwide)
+     * [Many](./numeric.md#numeric-many-format-numericmany)
+* [Heatmap](./heatmap.md)
+     * [Buckets](./heatmap.md#heatmap-buckets-heatmapbuckets)
+     * [Scanlines](./heatmap.md#heatmap-scanlines-heatmapscanlines)
+     * [Sparse](./heatmap.md#heatmap-sparse-heatmapsparse)
+
+
+
 ## Dimensional Set Based Kinds
 
 Within a data type (kind+format), there can be multiple **_items_** of data that are uniquely identified. This forms a **_set_** of data items. For example, in the numeric kind there can be a set of numbers, or, in the time series kind, a set of time series-es :-).
