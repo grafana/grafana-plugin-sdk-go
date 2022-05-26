@@ -42,9 +42,7 @@ func errorStatus(err error) ErrorStatus {
 	if os.IsPermission(err) {
 		return Unauthorized
 	}
-
-	switch {
-	case errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED):
+	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
 		return ConnectionError
 	}
 	return Undefined
