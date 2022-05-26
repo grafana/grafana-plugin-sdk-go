@@ -66,7 +66,7 @@ func TestReadMappings(t *testing.T) {
 		  ]
 	}`
 
-	cfg := &data.FieldConfig{}
+	cfg := data.FieldConfig{}
 	err := json.Unmarshal([]byte(jsonText), &cfg)
 	require.NoError(t, err, "error parsing json")
 

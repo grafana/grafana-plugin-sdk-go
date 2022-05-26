@@ -78,6 +78,11 @@ const (
 	FieldTypeTime
 	// FieldTypeNullableTime indicates the underlying primitive is a []*time.Time.
 	FieldTypeNullableTime
+
+	// FieldTypeJSON indicates the underlying primitive is a []json.RawMessage.
+	FieldTypeJSON
+	// FieldTypeNullableJSON indicates the underlying primitive is a []*json.RawMessage.
+	FieldTypeNullableJSON
 )
 
 // MarshalJSON marshals the enum as a quoted json string
@@ -135,6 +140,8 @@ func FieldTypeFor(t interface{}) FieldType {
 		return FieldTypeString
 	case time.Time:
 		return FieldTypeTime
+	case json.RawMessage:
+		return FieldTypeJSON
 	}
 	return FieldTypeUnknown
 }
@@ -184,6 +191,9 @@ func (p FieldType) NullableType() FieldType {
 
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeNullableTime
+
+	case FieldTypeJSON, FieldTypeNullableJSON:
+		return FieldTypeNullableJSON
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
@@ -234,6 +244,9 @@ func (p FieldType) NonNullableType() FieldType {
 
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeTime
+
+	case FieldTypeJSON, FieldTypeNullableJSON:
+		return FieldTypeJSON
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
@@ -307,6 +320,11 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 		return FieldTypeTime, true
 	case "*time.Time":
 		return FieldTypeNullableTime, true
+
+	case "json", "json.RawMessage":
+		return FieldTypeJSON, true
+	case "*json.RawMessage":
+		return FieldTypeNullableJSON, true
 	}
 	return FieldTypeNullableString, false
 }
@@ -378,6 +396,11 @@ func (p FieldType) ItemTypeString() string {
 		return "time.Time"
 	case FieldTypeNullableTime:
 		return "*time.Time"
+
+	case FieldTypeJSON:
+		return "json.RawMessage"
+	case FieldTypeNullableJSON:
+		return "*json.RawMessage"
 	}
 	return "invalid/unsupported type"
 }
@@ -443,6 +466,10 @@ func ValidFieldType(t interface{}) bool {
 		return true
 	case []*time.Time:
 		return true
+	case []json.RawMessage:
+		return true
+	case []*json.RawMessage:
+		return true
 	default:
 		return false
 	}
@@ -467,6 +494,8 @@ func (p FieldType) Nullable() bool {
 		return true
 
 	case FieldTypeNullableTime:
+		return true
+	case FieldTypeNullableJSON:
 		return true
 	}
 	return false
@@ -496,6 +525,11 @@ func (p FieldType) Numeric() bool {
 // Time returns if Field type is a time type (FieldTypeTime or FieldTypeNullableTime).
 func (p FieldType) Time() bool {
 	return p == FieldTypeTime || p == FieldTypeNullableTime
+}
+
+// JSON returns if Field type is a json type (FieldTypeJSON or FieldTypeNullableJSON).
+func (p FieldType) JSON() bool {
+	return p == FieldTypeJSON || p == FieldTypeNullableJSON
 }
 
 // numericFieldTypes is an array of FieldTypes that are numeric.

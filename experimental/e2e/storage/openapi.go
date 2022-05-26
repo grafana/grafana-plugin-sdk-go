@@ -33,7 +33,9 @@ func NewOpenAPIStorage(path string) *OpenAPI {
 }
 
 // Add is a no-op for OpenAPI storage.
-func (o *OpenAPI) Add(*http.Request, *http.Response) {}
+func (o *OpenAPI) Add(*http.Request, *http.Response) error {
+	return nil
+}
 
 // Delete is a no-op for OpenAPI storage.
 func (o *OpenAPI) Delete(*http.Request) bool {

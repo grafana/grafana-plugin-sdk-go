@@ -20,7 +20,8 @@ func TestFixtureAdd(t *testing.T) {
 		store := newFakeStorage()
 		f := fixture.NewFixture(store)
 		require.Equal(t, 0, len(f.Entries()))
-		f.Add(req, res)
+		err := f.Add(req, res)
+		require.NoError(t, err)
 		require.Equal(t, 1, len(f.Entries()))
 		require.Equal(t, "http://example.com", f.Entries()[0].Request.URL.String())
 		require.Equal(t, 200, f.Entries()[0].Response.StatusCode)
@@ -36,7 +37,8 @@ func TestFixtureAdd(t *testing.T) {
 			return req
 		})
 		require.Equal(t, 0, len(f.Entries()))
-		f.Add(req, res)
+		err := f.Add(req, res)
+		require.NoError(t, err)
 		require.Equal(t, 1, len(f.Entries()))
 		require.Equal(t, "http://example.com/example", f.Entries()[0].Request.URL.String())
 	})
@@ -51,7 +53,8 @@ func TestFixtureAdd(t *testing.T) {
 			return res
 		})
 		require.Equal(t, 0, len(f.Entries()))
-		f.Add(req, res)
+		err := f.Add(req, res)
+		require.NoError(t, err)
 		require.Equal(t, 1, len(f.Entries()))
 		require.Equal(t, 201, f.Entries()[0].Response.StatusCode)
 	})
@@ -67,7 +70,8 @@ func TestFixtureAdd(t *testing.T) {
 			return res
 		})
 		require.Equal(t, 0, len(f.Entries()))
-		f.Add(req, res)
+		err := f.Add(req, res)
+		require.NoError(t, err)
 		require.Equal(t, 1, len(f.Entries()))
 		require.Equal(t, 201, f.Entries()[0].Response.StatusCode)
 	})
@@ -205,10 +209,10 @@ func newFakeStorage() *fakeStorage {
 	}
 }
 
-func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
+func (s *fakeStorage) Add(req *http.Request, res *http.Response) error {
 	resBody, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		panic(err)
+		return err
 	}
 	res.Body = io.NopCloser(bytes.NewBuffer(resBody))
 	resCopy := *res
@@ -217,6 +221,7 @@ func (s *fakeStorage) Add(req *http.Request, res *http.Response) {
 		Request:  req,
 		Response: &resCopy,
 	})
+	return nil
 }
 
 func (s *fakeStorage) Delete(req *http.Request) bool {
