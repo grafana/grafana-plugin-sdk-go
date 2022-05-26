@@ -11,7 +11,6 @@ import (
 var (
 	connErr *url.Error
 	netErr  *net.OpError
-	sysErr  *os.SyscallError
 )
 
 type ErrorStatus int32
@@ -45,12 +44,8 @@ func errorStatus(err error) ErrorStatus {
 	}
 
 	switch {
-	case errors.Is(err, connErr) || errors.Is(err, netErr):
+	case errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED):
 		return ConnectionError
-	case errors.Is(err, sysErr):
-		if sysErr.Err == syscall.ECONNREFUSED {
-			return ConnectionError
-		}
 	}
 	return Undefined
 }
