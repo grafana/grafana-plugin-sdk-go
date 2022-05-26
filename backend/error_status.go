@@ -8,6 +8,12 @@ import (
 	"syscall"
 )
 
+var (
+	connErr *url.Error
+	netErr  *net.OpError
+	sysErr  *os.SyscallError
+)
+
 type ErrorStatus int32
 
 const (
@@ -38,13 +44,11 @@ func errorStatus(err error) ErrorStatus {
 		return Unauthorized
 	}
 
-	switch t := err.(type) {
-	case *url.Error:
+	switch {
+	case errors.Is(err, connErr) || errors.Is(err, netErr):
 		return ConnectionError
-	case *net.OpError:
-		return ConnectionError
-	case syscall.Errno:
-		if t == syscall.ECONNREFUSED {
+	case errors.Is(err, sysErr):
+		if sysErr.Err == syscall.ECONNREFUSED {
 			return ConnectionError
 		}
 	}
