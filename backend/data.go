@@ -107,8 +107,11 @@ type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.
 	Frames data.Frames
 
-	// Error is a property to be set if the the corresponding DataQuery has an error.
+	// Error is a property to be set if the corresponding DataQuery has an error.
 	Error error
+
+	// ErrorStatus is a property to be set if the corresponding DataQuery has an error.
+	ErrorStatus ErrorStatus
 }
 
 // MarshalJSON writes the results as json
@@ -134,3 +137,12 @@ type TimeRange struct {
 func (tr TimeRange) Duration() time.Duration {
 	return tr.To.Sub(tr.From)
 }
+
+type ErrorStatus string
+
+const (
+	Unknown         ErrorStatus = "UNKNOWN"
+	Timeout         ErrorStatus = "TIMEOUT"
+	Unauthorized    ErrorStatus = "UNAUTHORIZED"
+	ConnectionError ErrorStatus = "CONNECTION_ERROR"
+)
