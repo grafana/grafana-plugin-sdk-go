@@ -454,6 +454,6 @@ func TestConvertFromProtobufCheckHealthRequest(t *testing.T) {
 
 		req := FromProto().CheckHealthRequest(protoReq)
 		require.NotNil(t, req)
-		require.NotNil(t, req.Headers)
+		require.Equal(t, map[string]string{}, req.Headers)
 	})
 }
