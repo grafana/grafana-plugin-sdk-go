@@ -110,7 +110,7 @@ type DataResponse struct {
 	// Error is a property to be set if the corresponding DataQuery has an error.
 	Error error
 
-	// Status is a property to be set if the corresponding DataQuery has an error.
+	// ErrorStatus is a property to be set if the corresponding DataQuery has an error.
 	ErrorStatus ErrorStatus
 }
 
