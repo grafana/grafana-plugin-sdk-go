@@ -16,7 +16,7 @@ type SomeCustomMeta struct {
 	SomeValue string `json:"someValue,omitempty"`
 }
 
-var update = flag.Bool("update", false, "update.golden.data files")
+var update = flag.Bool("update", true, "update.golden.data files")
 
 func TestGoldenResponseChecker(t *testing.T) {
 	dr := &backend.DataResponse{}
@@ -88,6 +88,19 @@ func TestGoldenResponseChecker(t *testing.T) {
 	})
 }
 
+func TestGoldenJSONFrame(t *testing.T) {
+	f := data.NewFrame("Frame One",
+		data.NewField("Single float64", nil, []float64{
+			8.26, 8.7, 14.82, 10.07, 8.52,
+		}).SetConfig(&data.FieldConfig{Unit: "Percent"}),
+	)
+	CheckGoldenJSONFrame(t, "testdata", "single-json-frame.golden", f, *update)
+}
+
+func TestGoldenJSONFramer(t *testing.T) {
+	CheckGoldenJSONFramer(t, "testdata", "single-json-framer.golden", &fakeFramer{}, *update)
+}
+
 func TestReadGoldenFile(t *testing.T) {
 	t.Run("read a large golden file", func(t *testing.T) {
 		goldenFile := filepath.Join("testdata", "large.golden.txt")
@@ -104,4 +117,13 @@ func checkGoldenFiles(t *testing.T, name string, dr *backend.DataResponse) {
 	require.NoError(t, err)
 
 	CheckGoldenJSONResponse(t, "testdata", name, dr, *update)
+}
+
+type fakeFramer struct{}
+
+func (f *fakeFramer) Frames() (data.Frames, error) {
+	return data.Frames{
+		data.NewFrame("Frame One", data.NewField("A", nil, []float64{1, 2, 3})),
+		data.NewFrame("Frame Two", data.NewField("B", nil, []float64{4})),
+	}, nil
 }

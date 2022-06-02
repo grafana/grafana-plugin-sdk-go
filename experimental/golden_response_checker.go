@@ -19,11 +19,15 @@ import (
 )
 
 // CheckGoldenFramer calls CheckGoldenDataResponse using a data.Framer instead of a backend.DataResponse.
+//
+// Deprecated: Use CheckGoldenJSONFramer instead
 func CheckGoldenFramer(path string, f data.Framer, updateFile bool) error {
 	return CheckGoldenDataResponse(path, backend.FrameResponse(f), updateFile)
 }
 
 // CheckGoldenFrame calls CheckGoldenDataResponse using a single frame
+//
+// Deprecated: Use CheckGoldenJSONFrame instead
 func CheckGoldenFrame(path string, f *data.Frame, updateFile bool) error {
 	dr := backend.DataResponse{}
 	dr.Frames = data.Frames{f}
@@ -32,6 +36,8 @@ func CheckGoldenFrame(path string, f *data.Frame, updateFile bool) error {
 
 // CheckGoldenDataResponse will verify that the stored file matches the given data.DataResponse
 // when the updateFile flag is set, this will both add errors to the response and update the saved file
+//
+// Deprecated: Use CheckGoldenJSONResponse instead
 func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile bool) error {
 	saved, err := readGoldenFile(path)
 
@@ -63,25 +69,6 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile b
 	}
 
 	return nil // OK
-}
-
-// CheckGoldenJSONResponse will verify that the stored JSON file matches the given data.DataResponse
-func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.DataResponse, updateFile bool) {
-	t.Helper()
-	fpath := path.Join(dir, name+".jsonc")
-
-	expected, err := readGoldenJSONFile(fpath)
-	assert.NoError(t, err)
-
-	actual, err := json.Marshal(dr)
-	assert.NoError(t, err)
-
-	assert.JSONEq(t, expected, string(actual))
-
-	if updateFile {
-		err = writeGoldenJSONFile(fpath, dr)
-		assert.NoError(t, err)
-	}
 }
 
 func errorAfterUpdate(err error, path string, dr *backend.DataResponse, updateFile bool) error {
@@ -197,6 +184,39 @@ func generateHeaderString(dr *backend.DataResponse) string {
 		}
 	}
 	return str
+}
+
+// CheckGoldenJSONFramer calls CheckGoldenJSONResponse using a data.Framer instead of a backend.DataResponse.
+func CheckGoldenJSONFramer(t *testing.T, dir string, name string, f data.Framer, updateFile bool) {
+	t.Helper()
+	CheckGoldenJSONResponse(t, dir, name, backend.FrameResponse(f), updateFile)
+}
+
+// CheckGoldenJSONFrame calls CheckGoldenJSONResponse using a single frame.
+func CheckGoldenJSONFrame(t *testing.T, dir string, name string, f *data.Frame, updateFile bool) {
+	t.Helper()
+	dr := backend.DataResponse{}
+	dr.Frames = data.Frames{f}
+	CheckGoldenJSONResponse(t, dir, name, &dr, updateFile)
+}
+
+// CheckGoldenJSONResponse will verify that the stored JSON file matches the given backend.DataResponse.
+func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.DataResponse, updateFile bool) {
+	t.Helper()
+	fpath := path.Join(dir, name+".jsonc")
+
+	expected, err := readGoldenJSONFile(fpath)
+	assert.NoError(t, err)
+
+	actual, err := json.Marshal(dr)
+	assert.NoError(t, err)
+
+	assert.JSONEq(t, expected, string(actual))
+
+	if updateFile {
+		err = writeGoldenJSONFile(fpath, dr)
+		assert.NoError(t, err)
+	}
 }
 
 func readGoldenJSONFile(fpath string) (string, error) {
