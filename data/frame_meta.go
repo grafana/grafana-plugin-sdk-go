@@ -16,7 +16,7 @@ type FrameMeta struct {
 	// Path is a browsable path on the datasource.
 	Path string `json:"path,omitempty"`
 
-	// PathSeparator defines the separator pattern to decode a hiearchy. The default separator is '/'.
+	// PathSeparator defines the separator pattern to decode a hierarchy. The default separator is '/'.
 	PathSeparator string `json:"pathSeparator,omitempty"`
 
 	// Custom datasource specific values.
