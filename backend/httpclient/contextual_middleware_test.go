@@ -49,12 +49,9 @@ func TestContextualMiddleware(t *testing.T) {
 		require.Equal(t, ContextualMiddlewareName, middlewareName.MiddlewareName())
 
 		ctx := context.Background()
-		contextualMiddlewares := []Middleware{
-			tCtx.createMiddleware("ctxmw1"),
-			tCtx.createMiddleware("ctxmw2"),
-			tCtx.createMiddleware("ctxmw3"),
-		}
-		ctx = WithContextualMiddleware(ctx, contextualMiddlewares...)
+		ctx = WithContextualMiddleware(ctx, tCtx.createMiddleware("ctxmw1"))
+		ctx = WithContextualMiddleware(ctx, tCtx.createMiddleware("ctxmw2"))
+		ctx = WithContextualMiddleware(ctx, tCtx.createMiddleware("ctxmw3"))
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://", nil)
 		require.NoError(t, err)
 		res, err := rt.RoundTrip(req)

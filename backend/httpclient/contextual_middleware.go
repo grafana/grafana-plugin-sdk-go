@@ -32,9 +32,15 @@ type contextualMiddlewareKey struct{}
 
 // WithContextualMiddleware returns a copy of parent in which the provided
 // middlewares is associated.
+// If contextual middleware already exists, new middleware will be appended.
 func WithContextualMiddleware(parent context.Context, middlewares ...Middleware) context.Context {
 	if len(middlewares) == 0 {
 		middlewares = []Middleware{}
+	}
+
+	existingMiddlewares := ContextualMiddlewareFromContext(parent)
+	if len(existingMiddlewares) > 0 {
+		middlewares = append(existingMiddlewares, middlewares...)
 	}
 
 	return context.WithValue(parent, contextualMiddlewareKey{}, contextualMiddlewareValue{
