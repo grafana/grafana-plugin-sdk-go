@@ -15,8 +15,12 @@ func TestAppInstanceSettings(t *testing.T) {
 			expectedClientOptions httpclient.Options
 		}{
 			{
-				instanceSettings:      &AppInstanceSettings{},
-				expectedClientOptions: httpclient.Options{},
+				instanceSettings: &AppInstanceSettings{},
+				expectedClientOptions: httpclient.Options{
+					CustomOptions: map[string]interface{}{
+						forwardOAuthIdentityOptionsKey: false,
+					},
+				},
 			},
 			{
 				instanceSettings: &AppInstanceSettings{
@@ -33,6 +37,7 @@ func TestAppInstanceSettings(t *testing.T) {
 						secureDataCustomOptionsKey: map[string]string{
 							"sKey": "sValue",
 						},
+						forwardOAuthIdentityOptionsKey: false,
 					},
 				},
 			},
@@ -76,8 +81,12 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 			expectedClientOptions httpclient.Options
 		}{
 			{
-				instanceSettings:      &DataSourceInstanceSettings{},
-				expectedClientOptions: httpclient.Options{},
+				instanceSettings: &DataSourceInstanceSettings{},
+				expectedClientOptions: httpclient.Options{
+					CustomOptions: map[string]interface{}{
+						forwardOAuthIdentityOptionsKey: false,
+					},
+				},
 			},
 			{
 				instanceSettings: &DataSourceInstanceSettings{
@@ -109,6 +118,7 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 							"basicAuthPassword": "bpwd",
 							"password":          "pwd",
 						},
+						forwardOAuthIdentityOptionsKey: false,
 					},
 				},
 			},
@@ -142,6 +152,7 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 							"basicAuthPassword": "bpwd",
 							"password":          "pwd",
 						},
+						forwardOAuthIdentityOptionsKey: false,
 					},
 				},
 			},
@@ -160,6 +171,7 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 						secureDataCustomOptionsKey: map[string]string{
 							"sKey": "sValue",
 						},
+						forwardOAuthIdentityOptionsKey: false,
 					},
 				},
 			},
@@ -235,5 +247,61 @@ func TestCustomOptions(t *testing.T) {
 
 		require.Empty(t, jsonData)
 		require.Empty(t, secureJSONData)
+	})
+
+	t.Run("Should be able to extract forwardOAuthIdentity from custom options", func(t *testing.T) {
+		tcs := []struct {
+			input    bool
+			expected bool
+		}{
+			{
+				input:    false,
+				expected: false,
+			},
+			{
+				input:    true,
+				expected: true,
+			},
+		}
+
+		for _, tc := range tcs {
+			opts := &httpclient.Options{}
+			setCustomOptionsFromHTTPSettings(opts, &HTTPSettings{
+				ForwardOAauthIdentity: tc.input,
+			})
+			actual := forwardOAuthIdentityFromHTTPClientOptions(*opts)
+
+			require.Equal(t, tc.expected, actual)
+		}
+	})
+
+	t.Run("Should be able to extract forwardCookies from custom options", func(t *testing.T) {
+		tcs := []struct {
+			input    []string
+			expected []string
+		}{
+			{
+				input:    nil,
+				expected: []string{},
+			},
+			{
+				input:    []string{},
+				expected: []string{},
+			},
+			{
+				input:    []string{"c1", "c2", "c3"},
+				expected: []string{"c1", "c2", "c3"},
+			},
+		}
+
+		for _, tc := range tcs {
+			opts := &httpclient.Options{}
+			setCustomOptionsFromHTTPSettings(opts, &HTTPSettings{
+				ForwardCookies: tc.input,
+			})
+			actual := forwardCookiesFromHTTPClientOptions(*opts)
+
+			require.Equal(t, tc.expected, actual)
+		}
 	})
 }

@@ -11,12 +11,14 @@ import (
 // HTTPSettings is a convenient struct for holding decoded HTTP settings from
 // jsonData and secureJSONData.
 type HTTPSettings struct {
-	Access            string
-	URL               string
-	BasicAuthEnabled  bool
-	BasicAuthUser     string
-	BasicAuthPassword string
-	Headers           map[string]string
+	Access                string
+	URL                   string
+	BasicAuthEnabled      bool
+	BasicAuthUser         string
+	BasicAuthPassword     string
+	Headers               map[string]string
+	ForwardOAauthIdentity bool
+	ForwardCookies        []string
 
 	Timeout               time.Duration
 	DialTimeout           time.Duration
@@ -104,7 +106,8 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 //gocyclo:ignore
 func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]string) (*HTTPSettings, error) {
 	s := &HTTPSettings{
-		Headers: map[string]string{},
+		Headers:        map[string]string{},
+		ForwardCookies: []string{},
 	}
 
 	var dat map[string]interface{}
@@ -134,6 +137,19 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		}
 		if v, exists := secureJSONData["basicAuthPassword"]; exists {
 			s.BasicAuthPassword = v
+		}
+	}
+
+	if v, exists := dat["oauthPassThru"]; exists {
+		s.ForwardOAauthIdentity = v.(bool)
+	}
+
+	if v, exists := dat["keepCookies"]; exists {
+		if forwardCookies, ok := v.([]interface{}); ok {
+			s.ForwardCookies = make([]string, len(forwardCookies))
+			for index, v := range forwardCookies {
+				s.ForwardCookies[index] = v.(string)
+			}
 		}
 	}
 

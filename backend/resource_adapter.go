@@ -3,6 +3,7 @@ package backend
 import (
 	"net/http"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -34,5 +35,22 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
-	return a.callResourceHandler.CallResource(protoSrv.Context(), FromProto().CallResourceRequest(protoReq), fn)
+	req := FromProto().CallResourceRequest(protoReq)
+	headers := stringMapListToStringMap(req.Headers)
+	ctx := httpclient.WithContextualMiddleware(protoSrv.Context(),
+		forwardedOAuthIdentityMiddleware(headers),
+		forwardedCookiesMiddleware(headers))
+
+	return a.callResourceHandler.CallResource(ctx, req, fn)
+}
+
+func stringMapListToStringMap(m map[string][]string) map[string]string {
+	result := map[string]string{}
+	for k, v := range m {
+		if len(v) > 0 {
+			result[k] = v[0]
+		}
+	}
+
+	return result
 }

@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -17,8 +18,13 @@ func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 	}
 }
 
-func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	resp, err := a.queryDataHandler.QueryData(ctx, FromProto().QueryDataRequest(req))
+func (a *dataSDKAdapter) QueryData(ctx context.Context, protoReq *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
+	req := FromProto().QueryDataRequest(protoReq)
+	ctx = httpclient.WithContextualMiddleware(ctx,
+		forwardedOAuthIdentityMiddleware(req.Headers),
+		forwardedCookiesMiddleware(req.Headers))
+
+	resp, err := a.queryDataHandler.QueryData(ctx, req)
 	if err != nil {
 		return nil, err
 	}

@@ -9,6 +9,8 @@ import (
 
 const dataCustomOptionsKey = "grafanaData"
 const secureDataCustomOptionsKey = "grafanaSecureData"
+const forwardOAuthIdentityOptionsKey = "grafanaForwardOAuthIdentity"
+const forwardCookiesOptionsKey = "grafanaForwardCookies"
 
 // User represents a Grafana user.
 type User struct {
@@ -164,6 +166,12 @@ func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HT
 	if httpSettings.SecureJSONData != nil {
 		opts.CustomOptions[secureDataCustomOptionsKey] = httpSettings.SecureJSONData
 	}
+
+	opts.CustomOptions[forwardOAuthIdentityOptionsKey] = httpSettings.ForwardOAauthIdentity
+
+	if len(httpSettings.ForwardCookies) > 0 {
+		opts.CustomOptions[forwardCookiesOptionsKey] = httpSettings.ForwardCookies
+	}
 }
 
 // JSONDataFromHTTPClientOptions extracts JSON data from CustomOptions of httpclient.Options.
@@ -202,4 +210,40 @@ func SecureJSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[strin
 	}
 
 	return secureJSONData
+}
+
+func forwardOAuthIdentityFromHTTPClientOptions(opts httpclient.Options) bool {
+	if opts.CustomOptions == nil {
+		return false
+	}
+
+	val, exists := opts.CustomOptions[forwardOAuthIdentityOptionsKey]
+	if !exists {
+		return false
+	}
+
+	forwardOAuth, ok := val.(bool)
+	if !ok {
+		return false
+	}
+
+	return forwardOAuth
+}
+
+func forwardCookiesFromHTTPClientOptions(opts httpclient.Options) []string {
+	if opts.CustomOptions == nil {
+		return []string{}
+	}
+
+	val, exists := opts.CustomOptions[forwardCookiesOptionsKey]
+	if !exists {
+		return []string{}
+	}
+
+	forwardCookies, ok := val.([]string)
+	if !ok {
+		return []string{}
+	}
+
+	return forwardCookies
 }

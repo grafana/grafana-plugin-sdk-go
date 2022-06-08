@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
@@ -45,7 +46,12 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.Co
 
 func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.checkHealthHandler != nil {
-		res, err := a.checkHealthHandler.CheckHealth(ctx, FromProto().CheckHealthRequest(protoReq))
+		req := FromProto().CheckHealthRequest(protoReq)
+		ctx = httpclient.WithContextualMiddleware(ctx,
+			forwardedOAuthIdentityMiddleware(req.Headers),
+			forwardedCookiesMiddleware(req.Headers))
+
+		res, err := a.checkHealthHandler.CheckHealth(ctx, req)
 		if err != nil {
 			return nil, err
 		}

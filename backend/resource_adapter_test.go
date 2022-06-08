@@ -197,6 +197,7 @@ type testCallResourceServer struct {
 
 func newTestCallResourceServer() *testCallResourceServer {
 	return &testCallResourceServer{
+		ctx:          context.Background(),
 		respMessages: []*pluginv2.CallResourceResponse{},
 	}
 }
