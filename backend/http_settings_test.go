@@ -74,7 +74,7 @@ func TestParseHTTPSettings(t *testing.T) {
 				"X-HeaderOne": "SecretOne",
 				"X-HeaderTwo": "SecretTwo",
 			},
-			ForwardOAauthIdentity: true,
+			ForwardOAuthIdentity:  true,
 			ForwardCookies:        []string{"c1", "c2", "c3"},
 			Timeout:               10 * time.Second,
 			DialTimeout:           10 * time.Second,

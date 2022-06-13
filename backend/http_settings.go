@@ -11,14 +11,14 @@ import (
 // HTTPSettings is a convenient struct for holding decoded HTTP settings from
 // jsonData and secureJSONData.
 type HTTPSettings struct {
-	Access                string
-	URL                   string
-	BasicAuthEnabled      bool
-	BasicAuthUser         string
-	BasicAuthPassword     string
-	Headers               map[string]string
-	ForwardOAauthIdentity bool
-	ForwardCookies        []string
+	Access               string
+	URL                  string
+	BasicAuthEnabled     bool
+	BasicAuthUser        string
+	BasicAuthPassword    string
+	Headers              map[string]string
+	ForwardOAuthIdentity bool
+	ForwardCookies       []string
 
 	Timeout               time.Duration
 	DialTimeout           time.Duration
@@ -141,7 +141,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 	}
 
 	if v, exists := dat["oauthPassThru"]; exists {
-		s.ForwardOAauthIdentity = v.(bool)
+		s.ForwardOAuthIdentity = v.(bool)
 	}
 
 	if v, exists := dat["keepCookies"]; exists {

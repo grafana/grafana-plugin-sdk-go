@@ -267,7 +267,7 @@ func TestCustomOptions(t *testing.T) {
 		for _, tc := range tcs {
 			opts := &httpclient.Options{}
 			setCustomOptionsFromHTTPSettings(opts, &HTTPSettings{
-				ForwardOAauthIdentity: tc.input,
+				ForwardOAuthIdentity: tc.input,
 			})
 			actual := forwardOAuthIdentityFromHTTPClientOptions(*opts)
 

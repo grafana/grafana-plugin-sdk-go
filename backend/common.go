@@ -167,7 +167,7 @@ func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HT
 		opts.CustomOptions[secureDataCustomOptionsKey] = httpSettings.SecureJSONData
 	}
 
-	opts.CustomOptions[forwardOAuthIdentityOptionsKey] = httpSettings.ForwardOAauthIdentity
+	opts.CustomOptions[forwardOAuthIdentityOptionsKey] = httpSettings.ForwardOAuthIdentity
 
 	if len(httpSettings.ForwardCookies) > 0 {
 		opts.CustomOptions[forwardCookiesOptionsKey] = httpSettings.ForwardCookies
