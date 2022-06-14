@@ -61,6 +61,11 @@ message PluginContext {
   //
   // Will only be set if request targeting a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
+
+  // TODO better name and comment?
+  // Callback Server ID is the broker ID that can be used to callback Grafana
+  // server for bi-directonnal communications.
+	uint32 callbackServerID = 6;
 }
 
 //-------------------------------------------
