@@ -152,6 +152,10 @@ type PluginContext struct {
 	//
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
+
+	// Callback Server ID is the broker ID that can be used to callback Grafana
+	// server for bi-directonnal communications.
+	CallbackServerID uint32
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
