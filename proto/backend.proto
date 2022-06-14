@@ -3,6 +3,8 @@ package pluginv2;
 
 option go_package = "./;pluginv2";
 
+import "google/protobuf/any.proto";
+
 //-----------------------------------------------
 // Common
 //-----------------------------------------------
@@ -59,6 +61,86 @@ message PluginContext {
   //
   // Will only be set if request targeting a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
+}
+
+//-------------------------------------------
+// Common: Access Control
+//-------------------------------------------
+
+/* Types */
+
+message Permission {
+  string action = 1;
+  string scope = 2;
+}
+
+message Role {
+  string name = 1;
+  string uid = 2;
+  int64 version = 3;
+  string displayName = 4;
+  string description = 5;
+  string group = 6;
+  bool hidden = 7;
+  repeated Permission permissions = 8;
+}
+
+message RoleRegistration {
+  Role role = 1;
+  repeated string Grants = 2;
+}
+
+message PermissionEvaluator {
+  string action = 1;
+  repeated string scope = 2;
+}
+
+message AnyEvaluator {
+  repeated google.protobuf.Any anyOf = 1;
+}
+
+message AllEvaluator {
+  repeated google.protobuf.Any allOf = 1;
+}
+
+message Evaluator {
+  google.protobuf.Any ev = 1;
+}
+
+/* Requests and Responses */ 
+message QueryPluginRolesRequest {
+  PluginContext pluginContext = 1;
+}
+
+message QueryPluginRolesResponse {
+  repeated RoleRegistration registrations = 1;
+}
+
+message HasAccessRequest {
+  User user = 1;
+  Evaluator evaluator = 2;
+}
+
+message HasAccessResponse {
+  bool hasAccess = 1;
+}
+
+message IsDisabledResponse {
+  bool isDisabled = 1;
+}
+
+message Void {}
+
+/* Services */
+// Service implemented by Grafana for callbacks from the plugin
+service AccessControl {
+  rpc IsDisabled(Void) returns (IsDisabledResponse);
+  rpc HasAccess(HasAccessRequest) returns (HasAccessResponse);
+}
+
+// Service implemented by the plugin to register its custom roles and their assignments
+service RoleRegistrer {
+  rpc QueryPluginRoles(QueryPluginRolesRequest) returns (QueryPluginRolesResponse);
 }
 
 //---------------------------------------------------------

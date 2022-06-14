@@ -14,6 +14,210 @@ import (
 // Requires gRPC-Go v1.32.0 or later.
 const _ = grpc.SupportPackageIsVersion7
 
+// AccessControlClient is the client API for AccessControl service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type AccessControlClient interface {
+	IsDisabled(ctx context.Context, in *Void, opts ...grpc.CallOption) (*IsDisabledResponse, error)
+	HasAccess(ctx context.Context, in *HasAccessRequest, opts ...grpc.CallOption) (*HasAccessResponse, error)
+}
+
+type accessControlClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAccessControlClient(cc grpc.ClientConnInterface) AccessControlClient {
+	return &accessControlClient{cc}
+}
+
+func (c *accessControlClient) IsDisabled(ctx context.Context, in *Void, opts ...grpc.CallOption) (*IsDisabledResponse, error) {
+	out := new(IsDisabledResponse)
+	err := c.cc.Invoke(ctx, "/pluginv2.AccessControl/IsDisabled", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *accessControlClient) HasAccess(ctx context.Context, in *HasAccessRequest, opts ...grpc.CallOption) (*HasAccessResponse, error) {
+	out := new(HasAccessResponse)
+	err := c.cc.Invoke(ctx, "/pluginv2.AccessControl/HasAccess", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AccessControlServer is the server API for AccessControl service.
+// All implementations should embed UnimplementedAccessControlServer
+// for forward compatibility
+type AccessControlServer interface {
+	IsDisabled(context.Context, *Void) (*IsDisabledResponse, error)
+	HasAccess(context.Context, *HasAccessRequest) (*HasAccessResponse, error)
+}
+
+// UnimplementedAccessControlServer should be embedded to have forward compatible implementations.
+type UnimplementedAccessControlServer struct {
+}
+
+func (UnimplementedAccessControlServer) IsDisabled(context.Context, *Void) (*IsDisabledResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method IsDisabled not implemented")
+}
+func (UnimplementedAccessControlServer) HasAccess(context.Context, *HasAccessRequest) (*HasAccessResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method HasAccess not implemented")
+}
+
+// UnsafeAccessControlServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AccessControlServer will
+// result in compilation errors.
+type UnsafeAccessControlServer interface {
+	mustEmbedUnimplementedAccessControlServer()
+}
+
+func RegisterAccessControlServer(s grpc.ServiceRegistrar, srv AccessControlServer) {
+	s.RegisterService(&AccessControl_ServiceDesc, srv)
+}
+
+func _AccessControl_IsDisabled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Void)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccessControlServer).IsDisabled(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pluginv2.AccessControl/IsDisabled",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccessControlServer).IsDisabled(ctx, req.(*Void))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AccessControl_HasAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HasAccessRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AccessControlServer).HasAccess(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pluginv2.AccessControl/HasAccess",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AccessControlServer).HasAccess(ctx, req.(*HasAccessRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AccessControl_ServiceDesc is the grpc.ServiceDesc for AccessControl service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AccessControl_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.AccessControl",
+	HandlerType: (*AccessControlServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "IsDisabled",
+			Handler:    _AccessControl_IsDisabled_Handler,
+		},
+		{
+			MethodName: "HasAccess",
+			Handler:    _AccessControl_HasAccess_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "backend.proto",
+}
+
+// RoleRegistrerClient is the client API for RoleRegistrer service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type RoleRegistrerClient interface {
+	QueryPluginRoles(ctx context.Context, in *QueryPluginRolesRequest, opts ...grpc.CallOption) (*QueryPluginRolesResponse, error)
+}
+
+type roleRegistrerClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewRoleRegistrerClient(cc grpc.ClientConnInterface) RoleRegistrerClient {
+	return &roleRegistrerClient{cc}
+}
+
+func (c *roleRegistrerClient) QueryPluginRoles(ctx context.Context, in *QueryPluginRolesRequest, opts ...grpc.CallOption) (*QueryPluginRolesResponse, error) {
+	out := new(QueryPluginRolesResponse)
+	err := c.cc.Invoke(ctx, "/pluginv2.RoleRegistrer/QueryPluginRoles", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// RoleRegistrerServer is the server API for RoleRegistrer service.
+// All implementations should embed UnimplementedRoleRegistrerServer
+// for forward compatibility
+type RoleRegistrerServer interface {
+	QueryPluginRoles(context.Context, *QueryPluginRolesRequest) (*QueryPluginRolesResponse, error)
+}
+
+// UnimplementedRoleRegistrerServer should be embedded to have forward compatible implementations.
+type UnimplementedRoleRegistrerServer struct {
+}
+
+func (UnimplementedRoleRegistrerServer) QueryPluginRoles(context.Context, *QueryPluginRolesRequest) (*QueryPluginRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryPluginRoles not implemented")
+}
+
+// UnsafeRoleRegistrerServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RoleRegistrerServer will
+// result in compilation errors.
+type UnsafeRoleRegistrerServer interface {
+	mustEmbedUnimplementedRoleRegistrerServer()
+}
+
+func RegisterRoleRegistrerServer(s grpc.ServiceRegistrar, srv RoleRegistrerServer) {
+	s.RegisterService(&RoleRegistrer_ServiceDesc, srv)
+}
+
+func _RoleRegistrer_QueryPluginRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryPluginRolesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoleRegistrerServer).QueryPluginRoles(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pluginv2.RoleRegistrer/QueryPluginRoles",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoleRegistrerServer).QueryPluginRoles(ctx, req.(*QueryPluginRolesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// RoleRegistrer_ServiceDesc is the grpc.ServiceDesc for RoleRegistrer service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var RoleRegistrer_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.RoleRegistrer",
+	HandlerType: (*RoleRegistrerServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "QueryPluginRoles",
+			Handler:    _RoleRegistrer_QueryPluginRoles_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "backend.proto",
+}
+
 // ResourceClient is the client API for Resource service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
