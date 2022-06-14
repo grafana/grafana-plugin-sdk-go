@@ -87,7 +87,7 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 				}
 			}
 
-			if v.InputColumnName == colName {
+			if v.InputColumnName == colName && v.InputColumnName != "" {
 				scanType = v.InputScanType
 				converter = &converters[i]
 				break
