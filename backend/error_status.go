@@ -13,6 +13,10 @@ var (
 	netErr  *net.OpError
 )
 
+type ErrorDetails struct {
+	Status ErrorStatus
+}
+
 type ErrorStatus int32
 
 const (

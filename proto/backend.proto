@@ -132,7 +132,11 @@ message DataResponse {
   repeated bytes frames = 1;
   string error = 2;
   bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
-  int32 errorStatus = 4;
+  ErrorDetails errorDetails = 4;
+}
+
+message ErrorDetails {
+  int32 status = 1;
 }
 
 //-----------------------------------------------
