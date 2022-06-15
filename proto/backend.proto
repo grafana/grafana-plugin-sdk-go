@@ -158,6 +158,9 @@ message CollectMetricsResponse {
 
 message CheckHealthRequest {
   PluginContext pluginContext = 1;
+
+  // Environment info
+  map<string,string> headers = 2;
 }
 
 message CheckHealthResponse {

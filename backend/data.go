@@ -101,7 +101,7 @@ func NewQueryDataResponse() *QueryDataResponse {
 type Responses map[string]DataResponse
 
 // DataResponse contains the results from a DataQuery.
-// A map of RefIDs (unique query identifers) to this type makes up the Responses property of a QueryDataResponse.
+// A map of RefIDs (unique query identifiers) to this type makes up the Responses property of a QueryDataResponse.
 // The Error property is used to allow for partial success responses from the containing QueryDataResponse.
 type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.

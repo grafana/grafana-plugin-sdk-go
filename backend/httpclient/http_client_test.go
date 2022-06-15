@@ -55,9 +55,10 @@ func TestNewClient(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client)
 
-		require.Len(t, usedMiddlewares, 2)
-		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+		require.Len(t, usedMiddlewares, 3)
+		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+		require.Equal(t, ContextualMiddlewareName, usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 	})
 
 	t.Run("New() with opts middleware should return expected http.Client", func(t *testing.T) {
@@ -80,9 +81,9 @@ func TestNewClient(t *testing.T) {
 
 		t.Run("Should use configured middlewares and implement MiddlewareName", func(t *testing.T) {
 			require.Len(t, usedMiddlewares, 3)
-			require.Equal(t, "mw1", usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+			require.Equal(t, "mw3", usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 			require.Equal(t, "mw2", usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-			require.Equal(t, "mw3", usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+			require.Equal(t, "mw1", usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("When roundtrip should call expected middlewares", func(t *testing.T) {
@@ -154,5 +155,59 @@ func (c *testContext) createMiddleware(name string) Middleware {
 			c.callChain = append(c.callChain, fmt.Sprintf("after %s", name))
 			return res, err
 		})
+	})
+}
+
+func TestReverseMiddlewares(t *testing.T) {
+	t.Run("Should reverse 1 middleware", func(t *testing.T) {
+		tCtx := testContext{}
+		middlewares := []Middleware{
+			tCtx.createMiddleware("mw1"),
+		}
+		reversed := reverseMiddlewares(middlewares)
+		require.Len(t, reversed, 1)
+		require.Equal(t, "mw1", reversed[0].(MiddlewareName).MiddlewareName())
+	})
+
+	t.Run("Should reverse 2 middlewares", func(t *testing.T) {
+		tCtx := testContext{}
+		middlewares := []Middleware{
+			tCtx.createMiddleware("mw1"),
+			tCtx.createMiddleware("mw2"),
+		}
+		reversed := reverseMiddlewares(middlewares)
+		require.Len(t, reversed, 2)
+		require.Equal(t, "mw2", reversed[0].(MiddlewareName).MiddlewareName())
+		require.Equal(t, "mw1", reversed[1].(MiddlewareName).MiddlewareName())
+	})
+
+	t.Run("Should reverse 3 middlewares", func(t *testing.T) {
+		tCtx := testContext{}
+		middlewares := []Middleware{
+			tCtx.createMiddleware("mw1"),
+			tCtx.createMiddleware("mw2"),
+			tCtx.createMiddleware("mw3"),
+		}
+		reversed := reverseMiddlewares(middlewares)
+		require.Len(t, reversed, 3)
+		require.Equal(t, "mw3", reversed[0].(MiddlewareName).MiddlewareName())
+		require.Equal(t, "mw2", reversed[1].(MiddlewareName).MiddlewareName())
+		require.Equal(t, "mw1", reversed[2].(MiddlewareName).MiddlewareName())
+	})
+
+	t.Run("Should reverse 4 middlewares", func(t *testing.T) {
+		tCtx := testContext{}
+		middlewares := []Middleware{
+			tCtx.createMiddleware("mw1"),
+			tCtx.createMiddleware("mw2"),
+			tCtx.createMiddleware("mw3"),
+			tCtx.createMiddleware("mw4"),
+		}
+		reversed := reverseMiddlewares(middlewares)
+		require.Len(t, reversed, 4)
+		require.Equal(t, "mw4", reversed[0].(MiddlewareName).MiddlewareName())
+		require.Equal(t, "mw3", reversed[1].(MiddlewareName).MiddlewareName())
+		require.Equal(t, "mw2", reversed[2].(MiddlewareName).MiddlewareName())
+		require.Equal(t, "mw1", reversed[3].(MiddlewareName).MiddlewareName())
 	})
 }

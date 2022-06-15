@@ -178,8 +178,13 @@ func (f ConvertFromProtobuf) CallResourceResponse(protoResp *pluginv2.CallResour
 
 // CheckHealthRequest converts protobuf version of a CheckHealthRequest to the SDK version.
 func (f ConvertFromProtobuf) CheckHealthRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
+	if protoReq.Headers == nil {
+		protoReq.Headers = map[string]string{}
+	}
+
 	return &CheckHealthRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Headers:       protoReq.Headers,
 	}
 }
 
