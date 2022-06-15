@@ -307,8 +307,8 @@ func (t ConvertToProtobuf) QueryRolesResponse(resp *QueryRolesResponse) *pluginv
 }
 
 // QueryRolesRequest converts the SDK version of a QueryRolesRequest to the protobuf version.
-func (t ConvertToProtobuf) QueryRolesRequest(resp *QueryRolesRequest) *pluginv2.QueryRolesRequest {
+func (t ConvertToProtobuf) QueryRolesRequest(req *QueryRolesRequest) *pluginv2.QueryRolesRequest {
 	return &pluginv2.QueryRolesRequest{
-		PluginContext: t.PluginContext(resp.PluginContext),
+		PluginContext: t.PluginContext(req.PluginContext),
 	}
 }
