@@ -68,6 +68,13 @@ type RegistrationHandler interface {
 	QueryRoles(ctx context.Context, req *QueryRolesRequest) (*QueryRolesResponse, error)
 }
 
+type QueryRolesHandlerFunc func(ctx context.Context, req *QueryRolesRequest) (*QueryRolesResponse, error)
+
+// QueryRoles calls fn(ctx, req).
+func (fn QueryRolesHandlerFunc) QueryRoles(ctx context.Context, req *QueryRolesRequest) (*QueryRolesResponse, error) {
+	return fn(ctx, req)
+}
+
 //   /* Services */
 //   // Service implemented by Grafana for callbacks from the plugin
 //   service AccessControl {
