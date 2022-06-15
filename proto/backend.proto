@@ -97,7 +97,7 @@ message RoleRegistration {
 
 message PermissionEvaluator {
   string action = 1;
-  repeated string scope = 2;
+  repeated string scopes = 2;
 }
 
 message AnyEvaluator {
@@ -113,11 +113,11 @@ message Evaluator {
 }
 
 /* Requests and Responses */ 
-message QueryPluginRolesRequest {
+message QueryRolesRequest {
   PluginContext pluginContext = 1;
 }
 
-message QueryPluginRolesResponse {
+message QueryRolesResponse {
   repeated RoleRegistration registrations = 1;
 }
 
@@ -144,8 +144,8 @@ service AccessControl {
 }
 
 // Service implemented by the plugin to register its custom roles and their assignments
-service RoleRegistrer {
-  rpc QueryPluginRoles(QueryPluginRolesRequest) returns (QueryPluginRolesResponse);
+service Registration {
+  rpc QueryRoles(QueryRolesRequest) returns (QueryRolesResponse);
 }
 
 //---------------------------------------------------------

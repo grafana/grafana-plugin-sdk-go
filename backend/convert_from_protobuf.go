@@ -270,3 +270,11 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 		Data: protoReq.GetData(),
 	}
 }
+
+// TODO TEST
+// QueryRolesRequest converts protobuf version of a QueryRolesRequest to the SDK version.
+func (f ConvertFromProtobuf) QueryRolesRequest(protoReq *pluginv2.QueryRolesRequest) *QueryRolesRequest {
+	return &QueryRolesRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+	}
+}

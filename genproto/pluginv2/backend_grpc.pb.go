@@ -134,84 +134,84 @@ var AccessControl_ServiceDesc = grpc.ServiceDesc{
 	Metadata: "backend.proto",
 }
 
-// RoleRegistrerClient is the client API for RoleRegistrer service.
+// RegistrationClient is the client API for Registration service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type RoleRegistrerClient interface {
-	QueryPluginRoles(ctx context.Context, in *QueryPluginRolesRequest, opts ...grpc.CallOption) (*QueryPluginRolesResponse, error)
+type RegistrationClient interface {
+	QueryRoles(ctx context.Context, in *QueryRolesRequest, opts ...grpc.CallOption) (*QueryRolesResponse, error)
 }
 
-type roleRegistrerClient struct {
+type registrationClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewRoleRegistrerClient(cc grpc.ClientConnInterface) RoleRegistrerClient {
-	return &roleRegistrerClient{cc}
+func NewRegistrationClient(cc grpc.ClientConnInterface) RegistrationClient {
+	return &registrationClient{cc}
 }
 
-func (c *roleRegistrerClient) QueryPluginRoles(ctx context.Context, in *QueryPluginRolesRequest, opts ...grpc.CallOption) (*QueryPluginRolesResponse, error) {
-	out := new(QueryPluginRolesResponse)
-	err := c.cc.Invoke(ctx, "/pluginv2.RoleRegistrer/QueryPluginRoles", in, out, opts...)
+func (c *registrationClient) QueryRoles(ctx context.Context, in *QueryRolesRequest, opts ...grpc.CallOption) (*QueryRolesResponse, error) {
+	out := new(QueryRolesResponse)
+	err := c.cc.Invoke(ctx, "/pluginv2.Registration/QueryRoles", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// RoleRegistrerServer is the server API for RoleRegistrer service.
-// All implementations should embed UnimplementedRoleRegistrerServer
+// RegistrationServer is the server API for Registration service.
+// All implementations should embed UnimplementedRegistrationServer
 // for forward compatibility
-type RoleRegistrerServer interface {
-	QueryPluginRoles(context.Context, *QueryPluginRolesRequest) (*QueryPluginRolesResponse, error)
+type RegistrationServer interface {
+	QueryRoles(context.Context, *QueryRolesRequest) (*QueryRolesResponse, error)
 }
 
-// UnimplementedRoleRegistrerServer should be embedded to have forward compatible implementations.
-type UnimplementedRoleRegistrerServer struct {
+// UnimplementedRegistrationServer should be embedded to have forward compatible implementations.
+type UnimplementedRegistrationServer struct {
 }
 
-func (UnimplementedRoleRegistrerServer) QueryPluginRoles(context.Context, *QueryPluginRolesRequest) (*QueryPluginRolesResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method QueryPluginRoles not implemented")
+func (UnimplementedRegistrationServer) QueryRoles(context.Context, *QueryRolesRequest) (*QueryRolesResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method QueryRoles not implemented")
 }
 
-// UnsafeRoleRegistrerServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to RoleRegistrerServer will
+// UnsafeRegistrationServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to RegistrationServer will
 // result in compilation errors.
-type UnsafeRoleRegistrerServer interface {
-	mustEmbedUnimplementedRoleRegistrerServer()
+type UnsafeRegistrationServer interface {
+	mustEmbedUnimplementedRegistrationServer()
 }
 
-func RegisterRoleRegistrerServer(s grpc.ServiceRegistrar, srv RoleRegistrerServer) {
-	s.RegisterService(&RoleRegistrer_ServiceDesc, srv)
+func RegisterRegistrationServer(s grpc.ServiceRegistrar, srv RegistrationServer) {
+	s.RegisterService(&Registration_ServiceDesc, srv)
 }
 
-func _RoleRegistrer_QueryPluginRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(QueryPluginRolesRequest)
+func _Registration_QueryRoles_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(QueryRolesRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(RoleRegistrerServer).QueryPluginRoles(ctx, in)
+		return srv.(RegistrationServer).QueryRoles(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/pluginv2.RoleRegistrer/QueryPluginRoles",
+		FullMethod: "/pluginv2.Registration/QueryRoles",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(RoleRegistrerServer).QueryPluginRoles(ctx, req.(*QueryPluginRolesRequest))
+		return srv.(RegistrationServer).QueryRoles(ctx, req.(*QueryRolesRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// RoleRegistrer_ServiceDesc is the grpc.ServiceDesc for RoleRegistrer service.
+// Registration_ServiceDesc is the grpc.ServiceDesc for Registration service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var RoleRegistrer_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pluginv2.RoleRegistrer",
-	HandlerType: (*RoleRegistrerServer)(nil),
+var Registration_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.Registration",
+	HandlerType: (*RegistrationServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "QueryPluginRoles",
-			Handler:    _RoleRegistrer_QueryPluginRoles_Handler,
+			MethodName: "QueryRoles",
+			Handler:    _Registration_QueryRoles_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
