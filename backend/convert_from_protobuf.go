@@ -317,13 +317,13 @@ func (f ConvertFromProtobuf) RoleRegistration(reg *pluginv2.RoleRegistration) *R
 }
 
 // QueryRolesResponse converts protobuf version of a QueryRolesResponse to the SDK version.
-func (f ConvertFromProtobuf) QueryRolesResponse(protoReq *pluginv2.QueryRolesResponse) *QueryRolesResponse {
-	if protoReq == nil {
+func (f ConvertFromProtobuf) QueryRolesResponse(protoResp *pluginv2.QueryRolesResponse) *QueryRolesResponse {
+	if protoResp == nil {
 		return nil
 	}
-	registrations := make([]RoleRegistration, len(protoReq.Registrations))
-	for i := range protoReq.Registrations {
-		reg := f.RoleRegistration(protoReq.Registrations[i])
+	registrations := make([]RoleRegistration, len(protoResp.Registrations))
+	for i := range protoResp.Registrations {
+		reg := f.RoleRegistration(protoResp.Registrations[i])
 		if reg == nil {
 			continue
 		}
