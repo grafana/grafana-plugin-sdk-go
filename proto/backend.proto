@@ -74,27 +74,6 @@ message PluginContext {
 
 /* Types */
 
-message Permission {
-  string action = 1;
-  string scope = 2;
-}
-
-message Role {
-  string name = 1;
-  string uid = 2;
-  int64 version = 3;
-  string displayName = 4;
-  string description = 5;
-  string group = 6;
-  bool hidden = 7;
-  repeated Permission permissions = 8;
-}
-
-message RoleRegistration {
-  Role role = 1;
-  repeated string Grants = 2;
-}
-
 message PermissionEvaluator {
   string action = 1;
   repeated string scopes = 2;
@@ -113,13 +92,6 @@ message Evaluator {
 }
 
 /* Requests and Responses */ 
-message QueryRolesRequest {
-  PluginContext pluginContext = 1;
-}
-
-message QueryRolesResponse {
-  repeated RoleRegistration registrations = 1;
-}
 
 message HasAccessRequest {
   User user = 1;
@@ -141,11 +113,6 @@ message Void {}
 service AccessControl {
   rpc IsDisabled(Void) returns (IsDisabledResponse);
   rpc HasAccess(HasAccessRequest) returns (HasAccessResponse);
-}
-
-// Service implemented by the plugin to register its custom roles and their assignments
-service Registration {
-  rpc QueryRoles(QueryRolesRequest) returns (QueryRolesResponse);
 }
 
 //---------------------------------------------------------

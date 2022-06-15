@@ -43,10 +43,6 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 8.
 	StreamHandler StreamHandler
 
-	// Role handler for declaring access control roles to Grafana.
-	// This is EXPERIMENTAL and is subject to change till Grafana 10.
-	RegistrationHandler RegistrationHandler
-
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }
@@ -66,10 +62,6 @@ func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 
 	if opts.StreamHandler != nil {
 		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
-	}
-
-	if opts.RegistrationHandler != nil {
-		pluginOpts.RegistrationServer = newRegistrationSDKAdapter(opts.RegistrationHandler)
 	}
 
 	return pluginOpts
