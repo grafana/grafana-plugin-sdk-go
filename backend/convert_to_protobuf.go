@@ -295,7 +295,7 @@ func (t ConvertToProtobuf) RoleRegistration(reg RoleRegistration) *pluginv2.Role
 	return res
 }
 
-// QueryRolesResponse converts the SDK version of a CollectMetricsResult to the protobuf version.
+// QueryRolesResponse converts the SDK version of a QueryRolesResponse to the protobuf version.
 func (t ConvertToProtobuf) QueryRolesResponse(resp *QueryRolesResponse) *pluginv2.QueryRolesResponse {
 	registrations := make([]*pluginv2.RoleRegistration, len(resp.Registrations))
 	for i := range resp.Registrations {
@@ -303,5 +303,12 @@ func (t ConvertToProtobuf) QueryRolesResponse(resp *QueryRolesResponse) *pluginv
 	}
 	return &pluginv2.QueryRolesResponse{
 		Registrations: registrations,
+	}
+}
+
+// QueryRolesRequest converts the SDK version of a QueryRolesRequest to the protobuf version.
+func (t ConvertToProtobuf) QueryRolesRequest(resp *QueryRolesRequest) *pluginv2.QueryRolesRequest {
+	return &pluginv2.QueryRolesRequest{
+		PluginContext: t.PluginContext(resp.PluginContext),
 	}
 }

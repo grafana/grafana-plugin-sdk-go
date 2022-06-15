@@ -278,3 +278,58 @@ func (f ConvertFromProtobuf) QueryRolesRequest(protoReq *pluginv2.QueryRolesRequ
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 	}
 }
+
+func (f ConvertFromProtobuf) Permission(permission *pluginv2.Permission) *Permission {
+	if permission == nil {
+		return nil
+	}
+	return &Permission{
+		Action: permission.Action,
+		Scope:  permission.Scope,
+	}
+}
+
+func (f ConvertFromProtobuf) RoleRegistration(reg *pluginv2.RoleRegistration) *RoleRegistration {
+	if reg == nil {
+		return nil
+	}
+	res := &RoleRegistration{
+		Role: Role{
+			Name:        reg.Role.Name,
+			UID:         reg.Role.Uid,
+			Version:     reg.Role.Version,
+			DisplayName: reg.Role.DisplayName,
+			Description: reg.Role.Description,
+			Group:       reg.Role.Group,
+			Hidden:      reg.Role.Hidden,
+			Permissions: make([]Permission, len(reg.Role.Permissions)),
+		},
+		Grants: reg.Grants,
+	}
+	for i := range reg.Role.Permissions {
+		perm := f.Permission(reg.Role.Permissions[i])
+		if perm == nil {
+			continue
+		}
+		res.Role.Permissions[i] = *perm
+	}
+	return res
+}
+
+// QueryRolesResponse converts protobuf version of a QueryRolesResponse to the SDK version.
+func (f ConvertFromProtobuf) QueryRolesResponse(protoReq *pluginv2.QueryRolesResponse) *QueryRolesResponse {
+	if protoReq == nil {
+		return nil
+	}
+	registrations := make([]RoleRegistration, len(protoReq.Registrations))
+	for i := range protoReq.Registrations {
+		reg := f.RoleRegistration(protoReq.Registrations[i])
+		if reg == nil {
+			continue
+		}
+		registrations[i] = *reg
+	}
+	return &QueryRolesResponse{
+		Registrations: registrations,
+	}
+}
