@@ -65,7 +65,7 @@ type IsDisabledResponse struct {
 type Void struct{}
 
 type RegistrationHandler interface {
-	QueryRoles(ctx context.Context, req *QueryRolesRequest) *QueryRolesResponse
+	QueryRoles(ctx context.Context, req *QueryRolesRequest) (*QueryRolesResponse, error)
 }
 
 //   /* Services */

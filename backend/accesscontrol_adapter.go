@@ -19,7 +19,10 @@ func newRegistrationSDKAdapter(handler RegistrationHandler) *registrationSDKAdap
 
 // TODO test
 func (r *registrationSDKAdapter) QueryRoles(ctx context.Context, req *pluginv2.QueryRolesRequest) (*pluginv2.QueryRolesResponse, error) {
-	resp := r.registrationHandler.QueryRoles(ctx, FromProto().QueryRolesRequest(req))
+	resp, err := r.registrationHandler.QueryRoles(ctx, FromProto().QueryRolesRequest(req))
+	if err != nil {
+		return nil, err
+	}
 
 	return ToProto().QueryRolesResponse(resp), nil
 }
