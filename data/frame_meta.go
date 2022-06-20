@@ -38,6 +38,10 @@ type FrameMeta struct {
 	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
+
+	// Optionally identify which topic the frame should be assigned to.
+	// A value specified in the response will override what the request asked for.
+	DataTopic string `json:"dataTopic,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType
