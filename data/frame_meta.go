@@ -66,9 +66,12 @@ const (
 type VisType string
 
 const (
+	// DataTopicAnnotations is used to specify that the frame should be used as annotation of the actual data frame response.
+	// Example: When DataTopic is set to DataTopicAnnotations, the frame will be used as exemplar data in timeseries panel
 	DataTopicAnnotations DataTopic = "annotations"
 )
 
+// DataTopic is used to identify which topic the frame should be assigned to.
 type DataTopic string
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string
