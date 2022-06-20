@@ -41,7 +41,7 @@ type FrameMeta struct {
 
 	// Optionally identify which topic the frame should be assigned to.
 	// A value specified in the response will override what the request asked for.
-	DataTopic string `json:"dataTopic,omitempty"`
+	DataTopic DataTopic `json:"dataTopic,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType
@@ -64,6 +64,12 @@ const (
 
 // VisType is used to indicate how the data should be visualized in explore.
 type VisType string
+
+const (
+	DataTopicAnnotations = "annotations"
+)
+
+type DataTopic string
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string
 func FrameMetaFromJSON(jsonStr string) (*FrameMeta, error) {
