@@ -66,7 +66,7 @@ const (
 type VisType string
 
 const (
-	DataTopicAnnotations = "annotations"
+	DataTopicAnnotations DataTopic = "annotations"
 )
 
 type DataTopic string
