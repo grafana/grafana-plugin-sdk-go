@@ -2,12 +2,13 @@ package backend
 
 import (
 	"fmt"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
 	"io/fs"
 	"os"
 	"syscall"
 	"testing"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 func TestConvertToProtobufQueryDataResponse(t *testing.T) {
