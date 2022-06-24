@@ -99,6 +99,13 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 	panic("unsupported protobuf health status type in sdk")
 }
 
+// ErrorDetails converts the SDK version of an ErrorDetails to the protobuf version.
+func (t ConvertToProtobuf) ErrorDetails(errDetails *ErrorDetails) *pluginv2.ErrorDetails {
+	return &pluginv2.ErrorDetails{
+		Status: int32(errDetails.Status),
+	}
+}
+
 // CheckHealthResponse converts the SDK version of a CheckHealthResponse to the protobuf version.
 func (t ConvertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealthResponse {
 	return &pluginv2.CheckHealthResponse{
@@ -155,6 +162,11 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		}
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
+			if dr.ErrorDetails == nil {
+				pDR.ErrorDetails = &pluginv2.ErrorDetails{Status: int32(calculateErrorStatus(dr.Error))}
+			} else {
+				pDR.ErrorDetails = t.ErrorDetails(dr.ErrorDetails)
+			}
 		}
 		pQDR.Responses[refID] = &pDR
 	}

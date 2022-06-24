@@ -133,15 +133,10 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
-
-			if res.ErrorDetails == nil {
-				dr.ErrorDetails = &ErrorDetails{
-					Status: calculateErrorStatus(dr.Error),
-				}
-			} else {
-				dr.ErrorDetails = &ErrorDetails{
-					Status: ErrorStatus(res.ErrorDetails.Status),
-				}
+		}
+		if res.ErrorDetails != nil {
+			dr.ErrorDetails = &ErrorDetails{
+				Status: ErrorStatus(res.ErrorDetails.Status),
 			}
 		}
 		qdr.Responses[refID] = dr

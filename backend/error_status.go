@@ -20,7 +20,7 @@ type ErrorDetails struct {
 type ErrorStatus int32
 
 const (
-	Undefined ErrorStatus = iota + 1
+	Unknown ErrorStatus = iota + 1
 	Timeout
 	Unauthorized
 	ConnectionError
@@ -29,12 +29,12 @@ const (
 func calculateErrorStatus(err error) ErrorStatus {
 	for {
 		result := errorStatus(err)
-		if result != Undefined {
+		if result != Unknown {
 			return result
 		}
 
 		if err = errors.Unwrap(err); err == nil {
-			return Undefined
+			return Unknown
 		}
 	}
 }
@@ -49,5 +49,5 @@ func errorStatus(err error) ErrorStatus {
 	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
 		return ConnectionError
 	}
-	return Undefined
+	return Unknown
 }
