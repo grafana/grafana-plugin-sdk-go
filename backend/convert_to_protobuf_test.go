@@ -2,11 +2,12 @@ package backend
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"io/fs"
 	"os"
 	"syscall"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
