@@ -26,7 +26,7 @@ const (
 	ConnectionError
 )
 
-func calculateErrorStatus(err error) ErrorStatus {
+func InferErrorStatus(err error) ErrorStatus {
 	for {
 		result := errorStatus(err)
 		if result != Unknown {

@@ -163,7 +163,7 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
 			if dr.ErrorDetails == nil {
-				pDR.ErrorDetails = &pluginv2.ErrorDetails{Status: int32(calculateErrorStatus(dr.Error))}
+				pDR.ErrorDetails = &pluginv2.ErrorDetails{Status: int32(InferErrorStatus(dr.Error))}
 			} else {
 				pDR.ErrorDetails = t.ErrorDetails(dr.ErrorDetails)
 			}
