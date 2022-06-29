@@ -29,6 +29,7 @@ type ResourceGRPCPlugin struct {
 func (p *ResourceGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
 	pluginv2.RegisterResourceServer(s, &resourceGRPCServer{
 		server: p.ResourceServer,
+		broker: broker,
 	})
 	return nil
 }
@@ -40,10 +41,15 @@ func (p *ResourceGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPC
 
 type resourceGRPCServer struct {
 	server ResourceServer
+	broker *plugin.GRPCBroker
 }
 
 // CallResource calls a resource.
 func (s *resourceGRPCServer) CallResource(req *pluginv2.CallResourceRequest, srv pluginv2.Resource_CallResourceServer) error {
+	//create a new grpc client
+	//calling the callback ID from pluginContext
+	//call the registered handler
+
 	return s.server.CallResource(req, srv)
 }
 

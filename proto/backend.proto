@@ -93,6 +93,7 @@ message Evaluator {
 
 /* Requests and Responses */ 
 
+// TODO add fallback role?
 message HasAccessRequest {
   User user = 1;
   Evaluator evaluator = 2;
@@ -102,16 +103,16 @@ message HasAccessResponse {
   bool hasAccess = 1;
 }
 
-message IsDisabledResponse {
-  bool isDisabled = 1;
-}
+// message IsDisabledResponse {
+//   bool isDisabled = 1;
+// }
 
-message Void {}
+// message Void {}
 
 /* Services */
 // Service implemented by Grafana for callbacks from the plugin
 service AccessControl {
-  rpc IsDisabled(Void) returns (IsDisabledResponse);
+  // rpc IsDisabled(Void) returns (IsDisabledResponse);
   rpc HasAccess(HasAccessRequest) returns (HasAccessResponse);
 }
 

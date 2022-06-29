@@ -18,7 +18,7 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AccessControlClient interface {
-	IsDisabled(ctx context.Context, in *Void, opts ...grpc.CallOption) (*IsDisabledResponse, error)
+	// rpc IsDisabled(Void) returns (IsDisabledResponse);
 	HasAccess(ctx context.Context, in *HasAccessRequest, opts ...grpc.CallOption) (*HasAccessResponse, error)
 }
 
@@ -28,15 +28,6 @@ type accessControlClient struct {
 
 func NewAccessControlClient(cc grpc.ClientConnInterface) AccessControlClient {
 	return &accessControlClient{cc}
-}
-
-func (c *accessControlClient) IsDisabled(ctx context.Context, in *Void, opts ...grpc.CallOption) (*IsDisabledResponse, error) {
-	out := new(IsDisabledResponse)
-	err := c.cc.Invoke(ctx, "/pluginv2.AccessControl/IsDisabled", in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
 }
 
 func (c *accessControlClient) HasAccess(ctx context.Context, in *HasAccessRequest, opts ...grpc.CallOption) (*HasAccessResponse, error) {
@@ -52,7 +43,7 @@ func (c *accessControlClient) HasAccess(ctx context.Context, in *HasAccessReques
 // All implementations should embed UnimplementedAccessControlServer
 // for forward compatibility
 type AccessControlServer interface {
-	IsDisabled(context.Context, *Void) (*IsDisabledResponse, error)
+	// rpc IsDisabled(Void) returns (IsDisabledResponse);
 	HasAccess(context.Context, *HasAccessRequest) (*HasAccessResponse, error)
 }
 
@@ -60,9 +51,6 @@ type AccessControlServer interface {
 type UnimplementedAccessControlServer struct {
 }
 
-func (UnimplementedAccessControlServer) IsDisabled(context.Context, *Void) (*IsDisabledResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method IsDisabled not implemented")
-}
 func (UnimplementedAccessControlServer) HasAccess(context.Context, *HasAccessRequest) (*HasAccessResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method HasAccess not implemented")
 }
@@ -76,24 +64,6 @@ type UnsafeAccessControlServer interface {
 
 func RegisterAccessControlServer(s grpc.ServiceRegistrar, srv AccessControlServer) {
 	s.RegisterService(&AccessControl_ServiceDesc, srv)
-}
-
-func _AccessControl_IsDisabled_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(Void)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(AccessControlServer).IsDisabled(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: "/pluginv2.AccessControl/IsDisabled",
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AccessControlServer).IsDisabled(ctx, req.(*Void))
-	}
-	return interceptor(ctx, in, info, handler)
 }
 
 func _AccessControl_HasAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -121,10 +91,6 @@ var AccessControl_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "pluginv2.AccessControl",
 	HandlerType: (*AccessControlServer)(nil),
 	Methods: []grpc.MethodDesc{
-		{
-			MethodName: "IsDisabled",
-			Handler:    _AccessControl_IsDisabled_Handler,
-		},
 		{
 			MethodName: "HasAccess",
 			Handler:    _AccessControl_HasAccess_Handler,
