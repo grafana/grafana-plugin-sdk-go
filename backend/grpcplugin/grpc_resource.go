@@ -8,14 +8,14 @@ import (
 	"google.golang.org/grpc"
 )
 
-// ResourceServer is the server API for the Resource service.
+// ResourceServer represents a Resource server for the SDK Adapter layer
 type ResourceServer interface {
-	pluginv2.ResourceServer
+	CallResource(*pluginv2.CallResourceRequest, pluginv2.Resource_CallResourceServer, pluginv2.AccessControlClient) error
 }
 
-// ResourceClient is the client API for the Resource service.
+// ResourceClient represents a Resource client for the SDK Adapter layer
 type ResourceClient interface {
-	pluginv2.ResourceClient
+	CallResource(ctx context.Context, in *pluginv2.CallResourceRequest, opts ...grpc.CallOption) (pluginv2.Resource_CallResourceClient, error)
 }
 
 // ResourceGRPCPlugin implements the GRPCPlugin interface from github.com/hashicorp/go-plugin.
@@ -46,11 +46,8 @@ type resourceGRPCServer struct {
 
 // CallResource calls a resource.
 func (s *resourceGRPCServer) CallResource(req *pluginv2.CallResourceRequest, srv pluginv2.Resource_CallResourceServer) error {
-	//create a new grpc client
-	//calling the callback ID from pluginContext
-	//call the registered handler
-
-	return s.server.CallResource(req, srv)
+	accessControlClient := newAccessControlClient(s.broker, req.PluginContext.CallbackServerID)
+	return s.server.CallResource(req, srv, accessControlClient)
 }
 
 type resourceGRPCClient struct {
@@ -62,5 +59,5 @@ func (m *resourceGRPCClient) CallResource(ctx context.Context, req *pluginv2.Cal
 	return m.client.CallResource(ctx, req, opts...)
 }
 
-var _ ResourceServer = &resourceGRPCServer{}
-var _ ResourceClient = &resourceGRPCClient{}
+var _ pluginv2.ResourceServer = &resourceGRPCServer{}
+var _ pluginv2.ResourceClient = &resourceGRPCClient{}

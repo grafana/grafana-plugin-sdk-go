@@ -23,7 +23,7 @@ func (fn callResourceResponseSenderFunc) Send(resp *CallResourceResponse) error 
 	return fn(resp)
 }
 
-func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest, protoSrv pluginv2.Resource_CallResourceServer) error {
+func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest, protoSrv pluginv2.Resource_CallResourceServer, acClient pluginv2.AccessControlClient) error {
 	if a.callResourceHandler == nil {
 		return protoSrv.Send(&pluginv2.CallResourceResponse{
 			Code: http.StatusNotImplemented,
@@ -34,5 +34,7 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
-	return a.callResourceHandler.CallResource(protoSrv.Context(), FromProto().CallResourceRequest(protoReq), fn)
+	req := FromProto().CallResourceRequest(protoReq)
+	req.PluginContext.AccessControlClient = FromProto().AccessControlClient(acClient)
+	return a.callResourceHandler.CallResource(protoSrv.Context(), req, fn)
 }

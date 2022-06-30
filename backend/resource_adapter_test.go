@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
@@ -15,7 +16,7 @@ func TestCallResource(t *testing.T) {
 	t.Run("When call resource handler not set should return http status not implemented", func(t *testing.T) {
 		testSender := newTestCallResourceServer()
 		adapter := &resourceSDKAdapter{}
-		err := adapter.CallResource(&pluginv2.CallResourceRequest{}, testSender)
+		err := adapter.CallResource(&pluginv2.CallResourceRequest{}, testSender, &grpcplugin.AccessControlClientMock{})
 		require.NoError(t, err)
 		require.Len(t, testSender.respMessages, 1)
 		resp := testSender.respMessages[0]
@@ -55,7 +56,7 @@ func TestCallResource(t *testing.T) {
 			},
 			Body: body,
 		}
-		err = adapter.CallResource(req, testSender)
+		err = adapter.CallResource(req, testSender, &grpcplugin.AccessControlClientMock{})
 
 		require.NoError(t, err)
 
@@ -114,7 +115,7 @@ func TestCallResource(t *testing.T) {
 			Url:     "plugins/test-plugin/resources/some/path?test=1",
 			Headers: map[string]*pluginv2.StringList{},
 		}
-		err := adapter.CallResource(req, testSender)
+		err := adapter.CallResource(req, testSender, &grpcplugin.AccessControlClientMock{})
 
 		require.NoError(t, err)
 

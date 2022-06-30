@@ -351,6 +351,10 @@ func (f ConvertFromProtobuf) HasAccessResponse(res *pluginv2.HasAccessResponse) 
 }
 
 func (f ConvertFromProtobuf) AccessControlClient(grpcAcClient pluginv2.AccessControlClient) AccessControlClient {
+	if grpcAcClient == nil {
+		return nil
+	}
+
 	return HasAccessFunc(func(ctx context.Context, has *HasAccessRequest) (*HasAccessResponse, error) {
 		resp, err := grpcAcClient.HasAccess(ctx, ToProto().HasAccessRequest(has))
 		return FromProto().HasAccessResponse(resp), err

@@ -115,8 +115,9 @@ func StandaloneServe(dsopts ServeOpts, address string) error {
 	}
 
 	if opts.ResourceServer != nil {
-		pluginv2.RegisterResourceServer(server, opts.ResourceServer)
-		plugKeys = append(plugKeys, "resources")
+		// TODO FIX THIS
+		// pluginv2.RegisterResourceServer(server, opts.ResourceServer)
+		// plugKeys = append(plugKeys, "resources")
 	}
 
 	if opts.DataServer != nil {
