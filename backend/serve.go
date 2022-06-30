@@ -120,8 +120,9 @@ func StandaloneServe(dsopts ServeOpts, address string) error {
 	}
 
 	if opts.DataServer != nil {
-		pluginv2.RegisterDataServer(server, opts.DataServer)
-		plugKeys = append(plugKeys, "data")
+		// TODO FIX THIS
+		// pluginv2.RegisterDataServer(server, opts.DataServer)
+		// plugKeys = append(plugKeys, "data")
 	}
 
 	if opts.StreamServer != nil {

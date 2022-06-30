@@ -1,8 +1,8 @@
 package backend
 
-import "context"
-
-// TODO add callback to PluginContext
+import (
+	"context"
+)
 
 type Evaluator interface{}
 
@@ -37,17 +37,12 @@ type HasAccessResponse struct {
 // 	IsDisabled(ctx context.Context, void *Void) (*IsDisabledResponse, error)
 // }
 
-type HasAccessHandler interface {
+type AccessControlClient interface {
 	HasAccess(ctx context.Context, has *HasAccessRequest) (*HasAccessResponse, error)
 }
 
-type AccessControl interface {
-	// IsDisabledHandler
-	HasAccessHandler
-}
-
 // HasAccessFunc is an adapter to allow the use of
-// ordinary functions as backend.HasAccessHandler. If f is a function
+// ordinary functions as backend.AccessControlClient. If f is a function
 // with the appropriate signature, HasAccessHandlerFunc(f) is a
 // Handler that calls f.
 type HasAccessFunc func(ctx context.Context, has *HasAccessRequest) (*HasAccessResponse, error)

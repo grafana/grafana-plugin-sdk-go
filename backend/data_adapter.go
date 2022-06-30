@@ -17,8 +17,14 @@ func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 	}
 }
 
-func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	resp, err := a.queryDataHandler.QueryData(ctx, FromProto().QueryDataRequest(req))
+func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest, acClient pluginv2.AccessControlClient) (*pluginv2.QueryDataResponse, error) {
+	// Convert req to SDK req
+	sdkReq := FromProto().QueryDataRequest(req)
+
+	// Set AccessControlClient
+	sdkReq.PluginContext.AccessControlClient = FromProto().AccessControlClient(acClient)
+
+	resp, err := a.queryDataHandler.QueryData(ctx, sdkReq)
 	if err != nil {
 		return nil, err
 	}

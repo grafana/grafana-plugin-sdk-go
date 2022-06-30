@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"time"
 
@@ -79,7 +80,6 @@ func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
-		CallbackServerID:           proto.CallbackServerID,
 	}
 }
 
@@ -348,4 +348,11 @@ func (f ConvertFromProtobuf) HasAccessResponse(res *pluginv2.HasAccessResponse) 
 	return &HasAccessResponse{
 		HasAccess: res.HasAccess,
 	}
+}
+
+func (f ConvertFromProtobuf) AccessControlClient(grpcAcClient pluginv2.AccessControlClient) AccessControlClient {
+	return HasAccessFunc(func(ctx context.Context, has *HasAccessRequest) (*HasAccessResponse, error) {
+		resp, err := grpcAcClient.HasAccess(ctx, ToProto().HasAccessRequest(has))
+		return FromProto().HasAccessResponse(resp), err
+	})
 }
