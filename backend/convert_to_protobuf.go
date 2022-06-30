@@ -275,11 +275,10 @@ func (t ConvertToProtobuf) Evaluator(ev Evaluator) *anypb.Any {
 	}
 
 	res := &anypb.Any{}
-	switch ev.(type) {
+	switch ev := ev.(type) {
 	case AnyEvaluator:
-		anyEvSrc, _ := ev.(AnyEvaluator)
 		anyEvDst := pluginv2.AnyEvaluator{AnyOf: []*anypb.Any{}}
-		for _, evSrc := range anyEvSrc.AnyOf {
+		for _, evSrc := range ev.AnyOf {
 			evDst := t.Evaluator(evSrc)
 			if evDst != nil {
 				anyEvDst.AnyOf = append(anyEvDst.AnyOf, evDst)
@@ -289,9 +288,8 @@ func (t ConvertToProtobuf) Evaluator(ev Evaluator) *anypb.Any {
 		_ = anypb.MarshalFrom(res, &anyEvDst, proto.MarshalOptions{})
 		return res
 	case AllEvaluator:
-		allEvSrc, _ := ev.(AllEvaluator)
 		allEvDst := pluginv2.AllEvaluator{AllOf: []*anypb.Any{}}
-		for _, evSrc := range allEvSrc.AllOf {
+		for _, evSrc := range ev.AllOf {
 			evDst := t.Evaluator(evSrc)
 			if evDst != nil {
 				allEvDst.AllOf = append(allEvDst.AllOf, evDst)
@@ -301,10 +299,9 @@ func (t ConvertToProtobuf) Evaluator(ev Evaluator) *anypb.Any {
 		_ = anypb.MarshalFrom(res, &allEvDst, proto.MarshalOptions{})
 		return res
 	case PermissionEvaluator:
-		permEvSrc, _ := ev.(PermissionEvaluator)
 		permEvDst := pluginv2.PermissionEvaluator{
-			Action: permEvSrc.Action,
-			Scopes: permEvSrc.Scopes,
+			Action: ev.Action,
+			Scopes: ev.Scopes,
 		}
 		// TODO think about this error
 		_ = anypb.MarshalFrom(res, &permEvDst, proto.MarshalOptions{})
