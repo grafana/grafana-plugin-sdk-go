@@ -9,6 +9,7 @@ import (
 // https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L11
 // NOTE -- in javascript this can accept any `[key: string]: any;` however
 // this interface only exposes the values we want to be exposed
+//swagger:model
 type FrameMeta struct {
 	// Type asserts that the frame matches a known type structure
 	Type FrameType `json:"type,omitempty"`
