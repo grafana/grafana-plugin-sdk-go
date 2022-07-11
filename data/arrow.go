@@ -186,6 +186,10 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 		case *nullableTimeTimeVector:
 			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
 
+		case *jsonRawMessageVector:
+			columns[fieldIdx] = *buildJSONColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableJsonRawMessageVector:
+			columns[fieldIdx] = *buildNullableJSONColumn(pool, arrowFields[fieldIdx], v)
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
@@ -282,6 +286,11 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableTimeTimeVector:
 		return &arrow.TimestampType{}, true, nil
 
+	case *jsonRawMessageVector:
+		return &arrow.BinaryType{}, false, nil
+	case *nullableJsonRawMessageVector:
+		return &arrow.BinaryType{}, true, nil
+
 	default:
 		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.vector)
 	}
@@ -298,7 +307,7 @@ func getMDKey(key string, metaData arrow.Metadata) (string, bool) {
 func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	nullable := make([]bool, len(schema.Fields()))
 	for idx, field := range schema.Fields() {
-		sdkField := &Field{
+		sdkField := Field{
 			Name: field.Name,
 		}
 		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
@@ -307,16 +316,20 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 			}
 		}
 		if configAsString, ok := getMDKey("config", field.Metadata); ok {
-			if err := json.Unmarshal([]byte(configAsString), &sdkField.Config); err != nil {
+			// make sure that Config is not nil, otherwise create a new one
+			if sdkField.Config == nil {
+				sdkField.Config = &FieldConfig{}
+			}
+			if err := json.Unmarshal([]byte(configAsString), sdkField.Config); err != nil {
 				return nil, err
 			}
 		}
 		nullable[idx] = field.Nullable
-		if err := initializeFrameField(field, idx, nullable, sdkField); err != nil {
+		if err := initializeFrameField(field, idx, nullable, &sdkField); err != nil {
 			return nil, err
 		}
 
-		frame.Fields = append(frame.Fields, sdkField)
+		frame.Fields = append(frame.Fields, &sdkField)
 	}
 	return nullable, nil
 }
@@ -401,6 +414,12 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 			break
 		}
 		sdkField.vector = newTimeTimeVector(0)
+	case arrow.BINARY:
+		if nullable[idx] {
+			sdkField.vector = newNullableJsonRawMessageVector(0)
+			break
+		}
+		sdkField.vector = newJsonRawMessageVector(0)
 	default:
 		return fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 	}
@@ -632,6 +651,22 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) erro
 				continue
 			}
 			frame.Fields[i].vector.Append(t)
+		}
+	case arrow.BINARY:
+		v := array.NewBinaryData(col.Data())
+		for sIdx := 0; sIdx < v.Len(); sIdx++ {
+			if nullable[i] {
+				if v.IsNull(sIdx) {
+					var nb *json.RawMessage
+					frame.Fields[i].vector.Append(nb)
+					continue
+				}
+				r := json.RawMessage(v.Value(sIdx))
+				frame.Fields[i].vector.Append(&r)
+				continue
+			}
+			r := json.RawMessage(v.Value(sIdx))
+			frame.Fields[i].vector.Append(r)
 		}
 	default:
 		return fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())

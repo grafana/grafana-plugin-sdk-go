@@ -4,7 +4,10 @@
 
 package data
 
-import "time"
+import (
+	"encoding/json"
+	"time"
+)
 
 type nullableUint8Vector []*uint8
 
@@ -1186,5 +1189,96 @@ func (v *nullableTimeTimeVector) Insert(i int, val interface{}) {
 }
 
 func (v *nullableTimeTimeVector) Delete(i int) {
+	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+type nullableJsonRawMessageVector []*json.RawMessage
+
+func newNullableJsonRawMessageVector(n int) *nullableJsonRawMessageVector {
+	v := nullableJsonRawMessageVector(make([]*json.RawMessage, n))
+	return &v
+}
+
+func newNullableJsonRawMessageVectorWithValues(s []*json.RawMessage) *nullableJsonRawMessageVector {
+	v := make([]*json.RawMessage, len(s))
+	copy(v, s)
+	return (*nullableJsonRawMessageVector)(&v)
+}
+
+func (v *nullableJsonRawMessageVector) Set(idx int, i interface{}) {
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	(*v)[idx] = i.(*json.RawMessage)
+}
+
+func (v *nullableJsonRawMessageVector) SetConcrete(idx int, i interface{}) {
+	val := i.(json.RawMessage)
+	(*v)[idx] = &val
+}
+
+func (v *nullableJsonRawMessageVector) Append(i interface{}) {
+	if i == nil {
+		*v = append(*v, nil)
+		return
+	}
+	*v = append(*v, i.(*json.RawMessage))
+}
+
+func (v *nullableJsonRawMessageVector) At(i int) interface{} {
+	return (*v)[i]
+}
+
+func (v *nullableJsonRawMessageVector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *json.RawMessage
+		return g
+	}
+	var g json.RawMessage
+	g = *(*v)[i]
+	return &g
+}
+
+func (v *nullableJsonRawMessageVector) ConcreteAt(i int) (interface{}, bool) {
+	var g json.RawMessage
+	val := (*v)[i]
+	if val == nil {
+		return g, false
+	}
+	g = *val
+	return g, true
+}
+
+func (v *nullableJsonRawMessageVector) PointerAt(i int) interface{} {
+	return &(*v)[i]
+}
+
+func (v *nullableJsonRawMessageVector) Len() int {
+	return len(*v)
+}
+
+func (v *nullableJsonRawMessageVector) Type() FieldType {
+	return vectorFieldType(v)
+}
+
+func (v *nullableJsonRawMessageVector) Extend(i int) {
+	*v = append(*v, make([]*json.RawMessage, i)...)
+}
+
+func (v *nullableJsonRawMessageVector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableJsonRawMessageVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }

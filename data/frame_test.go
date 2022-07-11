@@ -630,6 +630,10 @@ func boolPtr(b bool) *bool {
 	return &b
 }
 
+func jsonRawMessagePtr(j json.RawMessage) *json.RawMessage {
+	return &j
+}
+
 func TestFrameFieldIndexByName(t *testing.T) {
 	frame := data.NewFrame("Frame Name",
 		data.NewField("Time", nil, []time.Time{}),

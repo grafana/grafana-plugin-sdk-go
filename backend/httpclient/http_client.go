@@ -199,21 +199,30 @@ func DefaultMiddlewares() []Middleware {
 	return []Middleware{
 		BasicAuthenticationMiddleware(),
 		CustomHeadersMiddleware(),
+		ContextualMiddleware(),
 	}
 }
 
 func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) http.RoundTripper {
-	for i, j := 0, len(middlewares)-1; i < j; i, j = i+1, j-1 {
-		middlewares[i], middlewares[j] = middlewares[j], middlewares[i]
-	}
-
+	reversed := reverseMiddlewares(middlewares)
 	next := finalRoundTripper
 
-	for _, m := range middlewares {
+	for _, m := range reversed {
 		next = m.CreateMiddleware(opts, next)
 	}
 
 	return next
+}
+
+func reverseMiddlewares(middlewares []Middleware) []Middleware {
+	reversed := make([]Middleware, len(middlewares))
+	copy(reversed, middlewares)
+
+	for i, j := 0, len(reversed)-1; i < j; i, j = i+1, j-1 {
+		reversed[i], reversed[j] = reversed[j], reversed[i]
+	}
+
+	return reversed
 }
 
 type namedMiddleware struct {

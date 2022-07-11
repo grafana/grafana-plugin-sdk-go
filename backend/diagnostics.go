@@ -54,6 +54,7 @@ func (hs HealthStatus) String() string {
 // CheckHealthRequest contains the healthcheck request
 type CheckHealthRequest struct {
 	PluginContext PluginContext
+	Headers       map[string]string
 }
 
 // CheckHealthResult contains the healthcheck response

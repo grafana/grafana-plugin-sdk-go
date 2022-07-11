@@ -29,17 +29,26 @@ type HTTPLogger struct {
 	fixture  *fixture.Fixture
 }
 
+type Options struct {
+	Path      string
+	EnabledFn func() bool
+}
+
 // NewHTTPLogger creates a new HTTPLogger.
-func NewHTTPLogger(pluginID string, proxied http.RoundTripper) *HTTPLogger {
-	path := defaultPath(pluginID)
-	s := storage.NewHARStorage(path)
+func NewHTTPLogger(pluginID string, proxied http.RoundTripper, opts ...Options) *HTTPLogger {
+	if len(opts) > 1 {
+		panic("too many Options arguments provided")
+	}
+
+	loggerOpts := getOptions(pluginID, opts...)
+	s := storage.NewHARStorage(loggerOpts.Path)
 	f := fixture.NewFixture(s)
 
 	return &HTTPLogger{
 		pluginID: pluginID,
 		proxied:  proxied,
 		fixture:  f,
-		enabled:  defaultEnabledCheck,
+		enabled:  loggerOpts.EnabledFn,
 	}
 }
 
@@ -72,9 +81,7 @@ func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 		return res, err
 	}
 
-	hl.fixture.Add(req, res)
-	err = hl.fixture.Save()
-
+	err = hl.fixture.Add(req, res)
 	return res, err
 }
 
@@ -95,4 +102,23 @@ func defaultEnabledCheck() bool {
 func getTempFilePath(pluginID string) string {
 	filename := fmt.Sprintf("%s_%d.har", pluginID, time.Now().UnixMilli())
 	return path.Join(os.TempDir(), filename)
+}
+
+func getOptions(pluginID string, opts ...Options) Options {
+	o := Options{EnabledFn: defaultEnabledCheck, Path: defaultPath(pluginID)}
+
+	// if there's not one set of options provided, return the defaults
+	if len(opts) != 1 {
+		return o
+	}
+
+	if opts[0].Path != "" {
+		o.Path = opts[0].Path
+	}
+
+	if opts[0].EnabledFn != nil {
+		o.EnabledFn = opts[0].EnabledFn
+	}
+
+	return o
 }

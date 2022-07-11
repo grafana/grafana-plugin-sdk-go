@@ -49,7 +49,7 @@ func (f ConvertFromProtobuf) AppInstanceSettings(proto *pluginv2.AppInstanceSett
 }
 
 // DataSourceInstanceSettings converts protobuf version of a DataSourceInstanceSettings to the SDK version.
-func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSourceInstanceSettings) *DataSourceInstanceSettings {
+func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSourceInstanceSettings, pluginID string) *DataSourceInstanceSettings {
 	if proto == nil {
 		return nil
 	}
@@ -57,6 +57,7 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 	return &DataSourceInstanceSettings{
 		ID:                      proto.Id,
 		UID:                     proto.Uid,
+		Type:                    pluginID,
 		Name:                    proto.Name,
 		URL:                     proto.Url,
 		User:                    proto.User,
@@ -76,7 +77,7 @@ func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 		PluginID:                   proto.PluginId,
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
-		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings),
+		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
 	}
 }
 
@@ -171,8 +172,13 @@ func (f ConvertFromProtobuf) CallResourceResponse(protoResp *pluginv2.CallResour
 
 // CheckHealthRequest converts protobuf version of a CheckHealthRequest to the SDK version.
 func (f ConvertFromProtobuf) CheckHealthRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
+	if protoReq.Headers == nil {
+		protoReq.Headers = map[string]string{}
+	}
+
 	return &CheckHealthRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Headers:       protoReq.Headers,
 	}
 }
 

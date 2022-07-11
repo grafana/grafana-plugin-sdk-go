@@ -22,6 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
+const simpleTypeOther = "other"
 
 const jsonKeySchema = "schema"
 const jsonKeyData = "data"
@@ -446,6 +447,15 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			val := v.(bool)
 			return val, nil
 		}
+
+	case FieldTypeJSON:
+		convert = func(v interface{}) (interface{}, error) {
+			r, ok := v.(json.RawMessage)
+			if ok {
+				return r, nil
+			}
+			return nil, fmt.Errorf("unable to convert to json.RawMessage")
+		}
 	}
 
 	f := NewFieldFromFieldType(ft, len(arr))
@@ -524,6 +534,10 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readBoolVectorJSON(iter, size)
 	case FieldTypeNullableBool:
 		return readNullableBoolVectorJSON(iter, size)
+	case FieldTypeJSON:
+		return readJSONVectorJSON(iter, false, size)
+	case FieldTypeNullableJSON:
+		return readJSONVectorJSON(iter, true, size)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }
@@ -540,6 +554,9 @@ func getSimpleTypeString(t FieldType) (string, bool) {
 	}
 	if t == FieldTypeString || t == FieldTypeNullableString {
 		return simpleTypeString, true
+	}
+	if t == FieldTypeJSON || t == FieldTypeNullableJSON {
+		return simpleTypeOther, true
 	}
 
 	return "", false
@@ -573,6 +590,8 @@ func getFieldTypeForArrow(t arrow.DataType) FieldType {
 		return FieldTypeString
 	case arrow.BOOL:
 		return FieldTypeBool
+	case arrow.BINARY:
+		return FieldTypeJSON
 	}
 	return FieldTypeUnknown
 }
@@ -693,24 +712,22 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 			started = true
 		}
 
-		if true {
-			ft := f.Type()
-			nnt := ft.NonNullableType()
-			if started {
-				stream.WriteMore()
-			}
-			stream.WriteObjectField("typeInfo")
-			stream.WriteObjectStart()
-			stream.WriteObjectField("frame")
-			stream.WriteString(nnt.ItemTypeString())
-			if ft.Nullable() {
-				stream.WriteMore()
-				stream.WriteObjectField("nullable")
-				stream.WriteBool(true)
-			}
-			stream.WriteObjectEnd()
-			started = true
+		ft := f.Type()
+		nnt := ft.NonNullableType()
+		if started {
+			stream.WriteMore()
 		}
+		stream.WriteObjectField("typeInfo")
+		stream.WriteObjectStart()
+		stream.WriteObjectField("frame")
+		stream.WriteString(nnt.ItemTypeString())
+		if ft.Nullable() {
+			stream.WriteMore()
+			stream.WriteObjectField("nullable")
+			stream.WriteBool(true)
+		}
+		stream.WriteObjectEnd()
+		started = true
 
 		if f.Labels != nil {
 			if started {
@@ -1006,6 +1023,8 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 			ent = writeArrowDataString(stream, col)
 		case arrow.BOOL:
 			ent = writeArrowDataBool(stream, col)
+		case arrow.BINARY:
+			ent = writeArrowDataBinary(stream, col)
 		default:
 			return fmt.Errorf("unsupported arrow type %s for JSON", col.DataType().ID())
 		}
@@ -1075,6 +1094,37 @@ func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 
 			tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6))
 			arr.SetConcrete(i, tv)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("read", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
+	var arr vector
+	if nullable {
+		arr = newNullableJsonRawMessageVector(size)
+	} else {
+		arr = newJsonRawMessageVector(size)
+	}
+
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readJSONVectorJSON", "expected array")
+			return nil, iter.Error
+		}
+
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			var v json.RawMessage
+			iter.ReadVal(&v)
+			arr.SetConcrete(i, v)
 		}
 	}
 
