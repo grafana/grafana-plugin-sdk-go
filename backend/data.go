@@ -97,7 +97,7 @@ func NewQueryDataResponse() *QueryDataResponse {
 
 // Responses is a map of RefIDs (Unique Query ID) to DataResponses.
 // The QueryData method the QueryDataHandler method will set the RefId
-// property on the DataRespones' frames based on these RefIDs.
+// property on the DataResponses' frames based on these RefIDs.
 type Responses map[string]DataResponse
 
 // DataResponse contains the results from a DataQuery.
