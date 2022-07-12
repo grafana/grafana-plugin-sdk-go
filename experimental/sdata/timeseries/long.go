@@ -8,10 +8,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-//// WideFrame is a time series format where all the series live in one frame.
-//// This time series format should be use for data that natively uses Labels and
-//// when all of the series are guaranteed to have identical time values.
-
 // LongFrame is a time series format where all series live in one frame.
 // This time series format should be used with Table-like sources (e.g. SQL) that
 // do not have a native concept of Labels.

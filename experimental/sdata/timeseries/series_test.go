@@ -66,7 +66,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		require.Nil(t, extraFields)
 		require.Equal(t, expectedRefs, mFrameRefs)
 	})
-	
+
 	t.Run("long frame", func(t *testing.T) {
 		ls := &timeseries.LongFrame{data.NewFrame("",
 			data.NewField("time", nil, []time.Time{timeSlice[0], timeSlice[0],
