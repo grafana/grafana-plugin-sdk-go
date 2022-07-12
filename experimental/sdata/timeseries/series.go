@@ -9,12 +9,6 @@ import (
 )
 
 type CollectionReader interface {
-	// Validate will error if the data is invalid according to its type rules.
-	// validateData will check for duplicate metrics and sorting and costs more resources.
-	// If the data is valid, then any data that was not part of the time series data
-	// is also returned as ignoredFieldIndices.
-	Validate(validateData bool) (ignoredFieldIndices []sdata.FrameFieldIndex, err error)
-
 	// GetMetricRefs runs validate without validateData. If the data is valid, then
 	// []TimeSeriesMetricRef is returned from reading as well as any ignored data. If invalid,
 	// then an error is returned, and no refs or ignoredFieldIndices are returned.
