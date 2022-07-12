@@ -16,7 +16,6 @@ type Collection interface {
 }
 
 type CollectionReader interface {
-	Validate() (isEmpty bool, errors []error)
 	GetMetricRefs() (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
 }
 
