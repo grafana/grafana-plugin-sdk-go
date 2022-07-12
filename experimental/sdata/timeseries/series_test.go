@@ -40,7 +40,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 
 		var r timeseries.CollectionReader = sc
 
-		mFrameRefs, extraFields, err := r.GetMetricRefs()
+		mFrameRefs, extraFields, err := r.GetMetricRefs(true)
 		require.Nil(t, err)
 		require.Nil(t, extraFields)
 		require.Equal(t, expectedRefs, mFrameRefs)
@@ -60,7 +60,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 
 		var r timeseries.CollectionReader = sc
 
-		mFrameRefs, extraFields, err := r.GetMetricRefs()
+		mFrameRefs, extraFields, err := r.GetMetricRefs(true)
 		require.Nil(t, err)
 
 		require.Nil(t, extraFields)
@@ -79,7 +79,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 
 		var r timeseries.CollectionReader = ls
 
-		mFrameRefs, extraFields, err := r.GetMetricRefs()
+		mFrameRefs, extraFields, err := r.GetMetricRefs(true)
 		require.Nil(t, err)
 
 		require.Nil(t, extraFields)
@@ -112,25 +112,25 @@ func TestEmptyFromNew(t *testing.T) {
 			r, err := timeseries.CollectionReaderFromFrames(frames)
 			require.NoError(t, err)
 
-			refs, ignored, err := r.GetMetricRefs()
+			refs, ignored, err := r.GetMetricRefs(true)
 			emptyReqs(refs, ignored, err)
 		})
 	}
 
 	t.Run("multi", func(t *testing.T) {
-		refs, ignored, err := multi.GetMetricRefs()
+		refs, ignored, err := multi.GetMetricRefs(true)
 		emptyReqs(refs, ignored, err)
 		viaFrames(multi)
 	})
 
 	t.Run("wide", func(t *testing.T) {
-		refs, ignored, err := wide.GetMetricRefs()
+		refs, ignored, err := wide.GetMetricRefs(true)
 		emptyReqs(refs, ignored, err)
 		viaFrames(wide)
 	})
 
 	t.Run("long", func(t *testing.T) {
-		refs, ignored, err := long.GetMetricRefs()
+		refs, ignored, err := long.GetMetricRefs(true)
 		emptyReqs(refs, ignored, err)
 		viaFrames(long)
 	})

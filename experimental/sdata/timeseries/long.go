@@ -17,16 +17,8 @@ func NewLongFrame() *LongFrame { // possible TODO: argument BoolAsMetric
 	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong)}
 }
 
-func (ls *LongFrame) Validate(validateData bool) (ignoredFields []sdata.FrameFieldIndex, err error) {
-	_, ignored, err := validateAndGetRefsLong(ls, validateData, false)
-	if err != nil {
-		return nil, err
-	}
-	return ignored, nil
-}
-
-func (ls *LongFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
-	return validateAndGetRefsLong(ls, false, true)
+func (ls *LongFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsLong(ls, validateData, true)
 }
 
 func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {

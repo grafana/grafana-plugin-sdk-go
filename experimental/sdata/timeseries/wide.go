@@ -81,20 +81,15 @@ func (wf *WideFrame) AddSeries(metricName string, l data.Labels, values interfac
 	return nil
 }
 
-func (wf *WideFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
-	return validateAndGetRefsWide(wf, false, true)
+func (wf *WideFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsWide(wf, validateData)
 }
 
 func (wf *WideFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
 	panic("not implemented")
 }
 
-func (wf *WideFrame) Validate(validateData bool) (ignoredFields []sdata.FrameFieldIndex, err error) {
-	_, ignoredFields, err = validateAndGetRefsWide(wf, validateData, false)
-	return ignoredFields, err
-}
-
-func validateAndGetRefsWide(wf *WideFrame, validateData, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsWide(wf *WideFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
 	var refs []MetricRef
 	var ignoredFields []sdata.FrameFieldIndex
 	metricIndex := make(map[[2]string]struct{})
@@ -153,12 +148,10 @@ func validateAndGetRefsWide(wf *WideFrame, validateData, getRefs bool) ([]Metric
 			}
 			metricIndex[metricKey] = struct{}{}
 		}
-		if getRefs {
-			refs = append(refs, MetricRef{
-				TimeField:  timeField,
-				ValueField: vField,
-			})
-		}
+		refs = append(refs, MetricRef{
+			TimeField:  timeField,
+			ValueField: vField,
+		})
 	}
 
 	// Validate time Field is sorted in ascending (oldest to newest) order

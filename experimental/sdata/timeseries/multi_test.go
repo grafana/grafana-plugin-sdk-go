@@ -58,7 +58,7 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ignoredFieldIndices, err := tt.mfs().Validate(true)
+			_, ignoredFieldIndices, err := tt.mfs().GetMetricRefs(true)
 			require.Nil(t, err)
 			require.Equal(t, tt.ignoredFieldIndices, ignoredFieldIndices)
 		})
@@ -131,24 +131,15 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			ignoredFieldIndices, err := tt.mfs.Validate(true)
+			_, ignoredFieldIndices, err := tt.mfs.GetMetricRefs(true)
 			require.True(t, strings.Contains(err.Error(), tt.errContains), fmt.Sprintf("error '%v' does not contain '%v'", err.Error(), tt.errContains))
 			require.Nil(t, ignoredFieldIndices)
 
 			// If the test does not have dataOnly, make sure it is the same with Validate(false)
 			if !tt.dataOnly {
-				ignoredFieldIndices, err := tt.mfs.Validate(false)
+				_, ignoredFieldIndices, err := tt.mfs.GetMetricRefs(false)
 				require.True(t, strings.Contains(err.Error(), tt.errContains), fmt.Sprintf("error '%v' does not contain '%v'", err.Error(), tt.errContains))
 				require.Nil(t, ignoredFieldIndices)
-			}
-
-			// Also check that GetMetricRefs returns matching errors when not checking data
-			refs, ignoredFieldIndices, err := tt.mfs.GetMetricRefs()
-			if !tt.dataOnly {
-				require.Error(t, err)
-				require.True(t, strings.Contains(err.Error(), tt.errContains), fmt.Sprintf("error '%v' does not contain '%v'", err.Error(), tt.errContains))
-				require.Nil(t, ignoredFieldIndices)
-				require.Nil(t, refs)
 			}
 		})
 	}
@@ -164,7 +155,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	t.Run("empty response reads as zero length metric refs and nil ignoredFields", func(t *testing.T) {
 		s := timeseries.NewMultiFrame()
 
-		refs, ignoredFieldIndices, err := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs(true)
 		require.Nil(t, err)
 
 		require.Nil(t, ignoredFieldIndices)
@@ -182,7 +173,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 			data.NewField("cpu", nil, []float64{}),
 		)
 
-		refs, ignoredFieldIndices, err := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs(true)
 		require.NoError(t, err)
 		require.Len(t, refs, 0)
 		require.Equal(t, []sdata.FrameFieldIndex{
@@ -194,7 +185,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	t.Run("uninitialized frames returns nil refs and nil ignored", func(t *testing.T) {
 		s := timeseries.MultiFrame{}
 
-		refs, ignoredFieldIndices, err := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs(true)
 		require.Error(t, err)
 
 		require.Nil(t, ignoredFieldIndices)
@@ -205,7 +196,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 		s := timeseries.NewMultiFrame()
 		*s = append(*s, nil)
 
-		refs, ignoredFieldIndices, err := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs(true)
 		require.Nil(t, refs)
 		require.Nil(t, ignoredFieldIndices)
 		require.Error(t, err)
@@ -218,7 +209,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 				data.NewField("foo", nil, []float64{}),
 			)}
 
-		refs, ignoredFieldIndices, err := s.GetMetricRefs()
+		refs, ignoredFieldIndices, err := s.GetMetricRefs(true)
 
 		require.Nil(t, refs)
 		require.Nil(t, ignoredFieldIndices)

@@ -12,7 +12,7 @@ type CollectionReader interface {
 	// GetMetricRefs runs validate without validateData. If the data is valid, then
 	// []TimeSeriesMetricRef is returned from reading as well as any ignored data. If invalid,
 	// then an error is returned, and no refs or ignoredFieldIndices are returned.
-	GetMetricRefs() (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
+	GetMetricRefs(validateData bool) (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
 
 	Frames() []*data.Frame // returns underlying frames
 }

@@ -22,7 +22,7 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 			).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
 		}
 
-		refs, ignoredFields, err := ls.GetMetricRefs()
+		refs, ignoredFields, err := ls.GetMetricRefs(false)
 		require.NoError(t, err)
 
 		expectedRefs := []timeseries.MetricRef{

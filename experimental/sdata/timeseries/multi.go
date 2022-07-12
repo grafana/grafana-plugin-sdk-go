@@ -66,8 +66,8 @@ func (mfs *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.Fie
 	panic("not implemented")
 }
 
-func (mfs *MultiFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
-	return validateAndGetRefsMulti(mfs, false, true)
+func (mfs *MultiFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsMulti(mfs, validateData)
 }
 
 /*
@@ -95,12 +95,7 @@ When things get ignored
 - Fields when the type indicator is present and the frame is valid (e.g. has both time and value fields):
   - String, Additional Time Fields, Additional Value fields
 */
-func (mfs *MultiFrame) Validate(validateData bool) (ignoredFields []sdata.FrameFieldIndex, err error) {
-	_, ignoredFields, err = validateAndGetRefsMulti(mfs, validateData, false)
-	return ignoredFields, err
-}
-
-func validateAndGetRefsMulti(mfs *MultiFrame, validateData, getRefs bool) (refs []MetricRef, ignoredFields []sdata.FrameFieldIndex, err error) {
+func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (refs []MetricRef, ignoredFields []sdata.FrameFieldIndex, err error) {
 	if mfs == nil || len(*mfs) == 0 {
 		return nil, nil, fmt.Errorf("must have at least one frame to be valid")
 	}
@@ -193,12 +188,10 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData, getRefs bool) (refs 
 			}
 		}
 
-		if getRefs {
-			refs = append(refs, MetricRef{
-				TimeField:  timeField,
-				ValueField: frame.Fields[valueFields[0]],
-			})
-		}
+		refs = append(refs, MetricRef{
+			TimeField:  timeField,
+			ValueField: frame.Fields[valueFields[0]],
+		})
 
 		// TODO this is fragile if new types are added
 		otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
