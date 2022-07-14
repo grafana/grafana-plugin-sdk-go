@@ -16,7 +16,7 @@ type Collection interface {
 }
 
 type CollectionReader interface {
-	GetMetricRefs() (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
+	GetMetricRefs(validateData bool) (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
 }
 
 type MetricRef struct {

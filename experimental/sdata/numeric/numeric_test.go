@@ -31,7 +31,7 @@ func TestSimpleNumeric(t *testing.T) {
 		var mFrameNC numeric.Collection = numeric.NewMultiFrame()
 		addMetrics(mFrameNC)
 
-		mFrameRefs, ignored, err := mFrameNC.GetMetricRefs()
+		mFrameRefs, ignored, err := mFrameNC.GetMetricRefs(false)
 		require.Nil(t, err)
 		require.Nil(t, ignored)
 		require.Equal(t, expectedRefs, mFrameRefs)
@@ -41,7 +41,7 @@ func TestSimpleNumeric(t *testing.T) {
 		var wFrameNC numeric.Collection = numeric.NewWideFrame()
 		addMetrics(wFrameNC)
 
-		wFrameRefs, ignored, err := wFrameNC.GetMetricRefs()
+		wFrameRefs, ignored, err := wFrameNC.GetMetricRefs(false)
 		require.Nil(t, err)
 		require.Nil(t, ignored)
 		require.Equal(t, expectedRefs, wFrameRefs)
@@ -55,7 +55,7 @@ func TestSimpleNumeric(t *testing.T) {
 		}
 		var lFrameNCR numeric.CollectionReader = lfn
 
-		lFrameRefs, ignored, err := lFrameNCR.GetMetricRefs()
+		lFrameRefs, ignored, err := lFrameNCR.GetMetricRefs(false)
 		require.Nil(t, err)
 		require.Nil(t, ignored)
 		require.Equal(t, expectedRefs, lFrameRefs)

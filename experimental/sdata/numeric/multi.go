@@ -43,12 +43,8 @@ func (mf *MultiFrame) AddMetric(metricName string, l data.Labels, value interfac
 	return nil
 }
 
-func (mf *MultiFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
-	return validateAndGetRefsMulti(mf, true)
-}
-
-func (mf *MultiFrame) Validate() (isEmpty bool, errors []error) {
-	panic("not implemented")
+func (mf *MultiFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsMulti(mf, validateData)
 }
 
 func (mf *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig) {
@@ -73,7 +69,10 @@ Things to decide:
 
 TODO: Change this to follow the above
 */
-func validateAndGetRefsMulti(mf *MultiFrame, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsMulti(mf *MultiFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	if validateData {
+		panic("validateData option is not implemented")
+	}
 	refs := []MetricRef{}
 	for _, frame := range *mf {
 		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)

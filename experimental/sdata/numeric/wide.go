@@ -44,12 +44,15 @@ func (wf *WideFrame) AddMetric(metricName string, l data.Labels, value interface
 	return nil
 }
 
-func (wf *WideFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
-	return validateAndGetRefsWide(wf, true)
+func (wf *WideFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsWide(wf, validateData)
 }
 
 // TODO: Update with current rules to match(ish) time series
-func validateAndGetRefsWide(wf *WideFrame, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsWide(wf *WideFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	if validateData {
+		panic("validateData option is not implemented")
+	}
 	refs := []MetricRef{}
 	for _, field := range wf.Fields {
 		if !field.Type().Numeric() {

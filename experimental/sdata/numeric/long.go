@@ -18,12 +18,15 @@ func NewLongFrame() *LongFrame {
 	return &LongFrame{emptyFrameWithTypeMD(FrameTypeNumericLong)}
 }
 
-func (lf *LongFrame) GetMetricRefs() ([]MetricRef, []sdata.FrameFieldIndex, error) {
-	return validateAndGetRefsLong(lf, true)
+func (lf *LongFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	return validateAndGetRefsLong(lf, validateData)
 }
 
 // TODO: Update with current rules to match(ish) time series
-func validateAndGetRefsLong(lf *LongFrame, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsLong(lf *LongFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+	if validateData {
+		panic("validateData option is not implemented")
+	}
 	if lf == nil || lf.Frame == nil {
 		return nil, nil, fmt.Errorf("zero frames when calling AddMetric must call NewLongFrame first")
 	}
@@ -65,10 +68,6 @@ func validateAndGetRefsLong(lf *LongFrame, getRefs bool) ([]MetricRef, []sdata.F
 	}
 	sortNumericMetricRef(refs)
 	return refs, nil, nil
-}
-
-func (lf *LongFrame) Validate() (isEmpty bool, errors []error) {
-	panic("not implemented")
 }
 
 func sortNumericMetricRef(refs []MetricRef) {
