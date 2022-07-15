@@ -27,20 +27,12 @@ func (wf *WideFrame) AddMetric(metricName string, l data.Labels, value interface
 		return fmt.Errorf("zero frames when calling AddMetric must call NewWideFrame first")
 	}
 
-	if wf.Frame == nil {
-		wf.Frame = data.NewFrame("").SetMeta(&data.FrameMeta{
-			Type: data.FrameType(FrameTypeNumericWide), // TODO: make type
-		})
-	}
 	field := data.NewFieldFromFieldType(fType, 1)
 	field.Name = metricName
 	field.Labels = l
 	field.Set(0, value)
-	if len(wf.Fields) == 0 {
-		wf.Fields = append(wf.Fields, field)
-		return nil
-	}
 	wf.Fields = append(wf.Fields, field)
+
 	return nil
 }
 

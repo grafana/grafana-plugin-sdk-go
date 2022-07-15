@@ -28,7 +28,7 @@ func validateAndGetRefsLong(lf *LongFrame, validateData bool) ([]MetricRef, []sd
 		panic("validateData option is not implemented")
 	}
 	if lf == nil || lf.Frame == nil {
-		return nil, nil, fmt.Errorf("zero frames when calling AddMetric must call NewLongFrame first")
+		return nil, nil, fmt.Errorf("nil frame is invalid")
 	}
 	stringFieldIdxs, numericFieldIdxs := []int{}, []int{}
 	stringFieldNames, numericFieldNames := []string{}, []string{}

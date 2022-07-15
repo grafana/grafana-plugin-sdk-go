@@ -24,9 +24,6 @@ func (f FrameFieldIndices) Len() int {
 }
 
 func (f FrameFieldIndices) Less(i, j int) bool {
-	if f[i].FrameIdx == f[j].FrameIdx {
-		return f[i].FieldIdx < f[j].FieldIdx
-	}
 	return f[i].FrameIdx < f[j].FrameIdx
 }
 
