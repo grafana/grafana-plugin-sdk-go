@@ -38,8 +38,10 @@ message EntityProperties {
     // encode "tags" as empty value like we do for annotations
     map<string,string> labels = 3;  
 
-    // Keys required from a secret service
-    repeated string secureKeys = 4;
+    // NOTE: Although APIs will limit exposing this to people without permissions,
+    // The contents of this map (key+value) may be stored in externally secured object stores (S3, disk, etc)
+    // The values should be lookup keys into a secret service
+    map<string,string> secureKeys = 4;
 
     // Where did the entity come from
     Provinance provinance = 5;
@@ -110,9 +112,16 @@ message Folder {
     // v1  (includes container+object)
     string apiVersion = 3; 
     
+    // Folder properties
     EntityProperties props = 4;
+
+    // This refers to the folder propeties, not the contents of the folder
     StorageMetadata meta = 5; 
+
+    // Child entity information
     repeated Entity items = 6;
+
+    // More items exist
     string nextPageToken = 7;
 }
 
@@ -187,8 +196,13 @@ message ListFolderRequest {
     // max items in the list
     int32 maxResults = 5; 
 
+    // Include the ACLs for listed items
     bool withACL = 6;
+
+    // Include items properties (name, etc)
     bool withProps = 7;
+
+    // Includ storage metadata (last changed, etc)
     bool withStroageMeta = 8;
 }
 
