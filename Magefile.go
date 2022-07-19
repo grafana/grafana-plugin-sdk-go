@@ -23,7 +23,11 @@ func Protobuf() error {
 		return err
 	}
 
-	return sh.RunV("./proto/generate.sh")
+	err := sh.RunV("./proto/generate.sh")
+	if err == nil {
+		sh.RunV("./experimental/entity/generate.sh")
+	}
+	return err
 }
 
 // Test runs the test suite.

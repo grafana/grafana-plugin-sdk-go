@@ -1,0 +1,256 @@
+syntax = "proto3";
+package entity;
+
+option go_package = "./;entity";
+
+
+message Entity {
+    // Path includes slashes
+    string path = 1; 
+
+    // dash, ds, alert, folder, svg, png, df, dqr, ... (will validate body)
+    string kind = 2; 
+
+    // v1  -- defines the wrapper
+    string apiVersion = 3; 
+
+    // defines the body contents
+    string schemaVersion = 4; 
+
+    // common user defined properties avaliable for everything
+    EntityProperties props = 5; 
+
+    // Metadata managed by the underlying storage engine(s)
+    StorageMetadata meta = 6; 
+
+    // The real payload
+    bytes body = 7; 
+}
+
+// Defined by user interaction
+message EntityProperties {
+    // Entity name
+    string name = 1;
+
+    // Entity description
+    string description = 2;
+
+    // encode "tags" as empty value like we do for annotations
+    map<string,string> labels = 3;  
+
+    // Keys required from a secret service
+    repeated string secureKeys = 4;
+
+    // Where did the entity come from
+    Provinance provinance = 5;
+}
+
+// Define how an item got into the system
+message Provinance {
+     // Unix millis when the event happened
+    int64 when = 1;
+
+    // Identifier for the source.  ex: provisioning
+    string source = 2; 
+
+    // optional path to the original source
+    string path = 3; 
+}
+
+// System manages these properties
+message StorageMetadata {
+    // Unix millis for the creation time
+    int64 createdAt = 1;
+
+    // Unix millis for last update time
+    int64 updatedAt = 2;
+
+    // UserID that last updated the entity
+    string updatedBy = 3;
+
+    // Version identifier (might be a hash, does not need to be sortable)
+    string version = 4; 
+
+    // Content checksum
+    string etag = 5; 
+
+    // Size in bytes
+    int64 size = 6;
+
+    // list of GRNs? extracted from the body... based on kind?
+    repeated EntityLocator dependencies = 8;  
+
+    // list of operations the calling user can perform
+    repeated string accessControl = 9; 
+
+    // avaliable PRs for this path
+    repeated EntityPR prs = 10; 
+}
+
+message EntityLocator {
+    string path = 1;
+    string kind = 2;
+}
+
+message EntityPR {
+    // PR Title
+    string name = 2;
+
+    // External URL
+    string url = 1;
+
+    // passed to get and it will load the content
+    string version = 3; 
+}
+  
+message Folder {
+    // uid?  with slashes
+    string path = 1; 
+
+    // v1  (includes container+object)
+    string apiVersion = 3; 
+    
+    EntityProperties props = 4;
+    StorageMetadata meta = 5; 
+    repeated Entity items = 6;
+    string nextPageToken = 7;
+}
+
+message EntityHistory {
+    // Unix millis when the event happened
+    int64 when = 1; 
+    // Identifier for the source 
+    string who = 2; 
+    // optional path to source location
+    string comment = 3; 
+}
+
+message EntityHistoryResponse {
+    string path = 1; 
+    string kind = 2;
+
+    repeated EntityHistory event = 3;
+
+    // optional path to source location
+    string nextPageToken = 4; 
+}
+
+//---------------------------------------------------------
+// Resource service enables HTTP-style requests over gRPC.
+//---------------------------------------------------------
+
+message AuthInfo {
+    string uid = 1;
+    // teams/groups/role?
+    // ????
+}
+
+message GetEntityRequest {
+    AuthInfo auth = 1;
+
+    string path = 2; 
+    string kind = 3; 
+
+    // empty is latest, branch/hash/etc
+    string version = 4;  
+
+    // Include common properties in the response 
+    bool withProps = 5;
+
+    // Include storage metadata in the response
+    bool withStroageMeta = 8;
+
+    // Include the body in response
+    bool withBody = 6;
+
+    // Augment results with access restrictions
+    bool withACL = 7;
+
+    // Include the list of required secure keys.  This requires edit rights to view
+    bool withSecureKeys = 9; 
+
+    // Include a list of alternative versions (support depends on storage engine) 
+    bool withPRs = 10;
+}
+
+message ListFolderRequest {
+    AuthInfo auth = 1;
+
+    string path = 2; 
+
+    // version of the folder metadata
+    string version = 3;  
+
+    // Optional next token to iterate with
+    string pageToken = 4; 
+    
+    // max items in the list
+    int32 maxResults = 5; 
+
+    bool withACL = 6;
+    bool withProps = 7;
+    bool withStroageMeta = 8;
+}
+
+message GetHistoryRequest {
+    AuthInfo auth = 1;
+
+    string path = 2; 
+    string kind = 3;  
+    string pageToken = 4;  
+    int32 maxResults = 5; 
+}
+
+message SaveEntityRequest {
+    AuthInfo auth = 1;
+
+    string path = 2; 
+    string kind = 3; 
+
+    // Required Create vs Update with optimistic locking
+    string previousVersion = 4;  
+
+    EntityProperties props = 5;
+    bytes body = 6;
+
+    string comment = 7; 
+}
+
+message CreatePullRequest {
+    AuthInfo auth = 1;
+
+    string path = 2; 
+    string kind = 3; 
+
+    EntityProperties props = 4;
+    bytes body = 5;
+
+    string title = 6;
+    string comment = 7; 
+}
+
+message DeleteEntityRequest {
+    AuthInfo auth = 1;
+
+    string path = 2; 
+    string kind = 3; 
+    string version = 4; // for pull requests 
+
+    bool recursive = 5; // for folders
+}
+
+message DeleteResponse {
+    bool ok = 1; 
+}
+
+service EntityStore {
+    rpc GetEntity(GetEntityRequest) returns (Entity);
+    rpc ListFolder(ListFolderRequest) returns (Folder); 
+    rpc SaveEntity(SaveEntityRequest) returns (Entity); 
+    rpc DeleteEntity(DeleteEntityRequest) returns (DeleteResponse);
+    rpc GetEntityHistory(GetHistoryRequest) returns (EntityHistoryResponse);
+    rpc CreatePR(CreatePullRequest) returns (Entity); 
+
+    // Later... 
+    rpc WatchEntity(GetEntityRequest) returns (stream Entity);
+}
