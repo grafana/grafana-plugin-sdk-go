@@ -1,9 +1,0 @@
-{
-  "kind": "x",
-  "name": "Hello",
-  "description": "describing a generic file",
-  "body": {
-    "hello": "world",
-    "xyz": 123
-  }
-}

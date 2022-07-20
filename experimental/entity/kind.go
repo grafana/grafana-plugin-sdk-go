@@ -9,7 +9,6 @@ type KindInfo struct {
 	ID                  string `json:"id"`
 	Description         string `json:"description,omitempty"`
 	FileSuffix          string `json:"suffix"` // "-dash.json"
-	Category            string `json:"category,omitempty"`
 	LatestSchemaVersion string `json:"latestSchemaVersion,omitempty"`
 
 	// For kinds with secure keys -- the keys will be strpped unless user has editor access
@@ -31,6 +30,9 @@ type Kind interface {
 
 	// Marshal raw payload into an entity type.
 	Read(payload []byte) (interface{}, error)
+
+	// Given a well defined object, create the expected payload
+	Write(interface{}) ([]byte, error)
 
 	// The expected go type from read
 	GoType() interface{}
