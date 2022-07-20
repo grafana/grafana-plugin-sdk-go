@@ -206,7 +206,7 @@ Remainder Data:
 Notes:
 
 * Go example [here](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data#example-Frame-TSDBTimeSeriesDifferentTimeIndices).
-* The many format is the only format that can be converted to from the other formats without data manipulation. Therefore it is a type that can contain the series information of all the other types.
+* The multi format is the only format that can be converted to from the other formats without data manipulation. Therefore it is a type that can contain the series information of all the other types.
 
 ## Time Series Long Format (TimeSeriesLong) [SQL-Like]
 
@@ -341,22 +341,22 @@ Additional Properties or Considerations:
   <tr>
    <td>Wide
    </td>
-   <td>Many
+   <td>Multi
    </td>
    <td><strong>No</strong>[^6]
    </td>
    <td>
 <ul>
 
-<li>One Frame to many Frames
+<li>One Frame to multi Frames
 
-<li>Each value (numeric) field alongside a copy of the time field from the Wide Frame is moved to its own individual Frame when converted to the Many format
+<li>Each value (numeric) field alongside a copy of the time field from the Wide Frame is moved to its own individual Frame when converted to the Multi format
 </li>
 </ul>
    </td>
   </tr>
   <tr>
-   <td>Many
+   <td>Multi
    </td>
    <td>Wide
    </td>
@@ -365,9 +365,9 @@ Additional Properties or Considerations:
    <td>
 <ul>
 
-<li>Many Frames to one Frame
+<li>Multiple Frames to one Frame
 
-<li>A union must be performed: All of the Time fields from all the Frames in the Many Format must become one Time Field for the Wide Frame
+<li>A union must be performed: All of the Time fields from all the Frames in the Multi Format must become one Time Field for the Wide Frame
 
 <li>Each value field is moved into the Wide Frame
 
@@ -419,14 +419,14 @@ Additional Properties or Considerations:
   <tr>
    <td>Long
    </td>
-   <td>Many
+   <td>Multi
    </td>
    <td><strong>No</strong>
    </td>
    <td>
 <ul>
 
-<li>One Frame to Many Frames (with a series per frame)
+<li>One Frame to Multiple Frames (with a series per frame)
 
 <li>Each Frames Time field is built when a series is matched for that time
 </li>
@@ -434,7 +434,7 @@ Additional Properties or Considerations:
    </td>
   </tr>
   <tr>
-   <td>Many
+   <td>Multi
    </td>
    <td><em>Long</em>
    </td>
@@ -443,7 +443,7 @@ Additional Properties or Considerations:
    <td>
 <ul>
 
-<li>Labels from the Many format Frames become string Fields in the Long Frame, and the string columns are present for all rows in Frame for the Long format. Therefore label keys may get added to series
+<li>Labels from the Multi format Frames become string Fields in the Long Frame, and the string columns are present for all rows in Frame for the Long format. Therefore label keys may get added to series
 </li>
 </ul>
    </td>
@@ -465,7 +465,7 @@ Additional Properties or Considerations:
 
 [^6]:
 <p>
-     Of the time series format, only when the format being converted to is "Many" can the underlying time series data not be manipulated
+     Of the time series format, only when the format being converted to is "Multi" can the underlying time series data not be manipulated
 
 [^7]:
 <p>
