@@ -22,12 +22,12 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type EntityStoreClient interface {
-	GetEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (*Entity, error)
-	ListFolder(ctx context.Context, in *ListFolderRequest, opts ...grpc.CallOption) (*Folder, error)
-	SaveEntity(ctx context.Context, in *SaveEntityRequest, opts ...grpc.CallOption) (*Entity, error)
+	GetEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (*EntityMessage, error)
+	ListFolder(ctx context.Context, in *ListFolderRequest, opts ...grpc.CallOption) (*FolderListing, error)
+	SaveEntity(ctx context.Context, in *SaveEntityRequest, opts ...grpc.CallOption) (*EntityMessage, error)
 	DeleteEntity(ctx context.Context, in *DeleteEntityRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 	GetEntityHistory(ctx context.Context, in *GetHistoryRequest, opts ...grpc.CallOption) (*EntityHistoryResponse, error)
-	CreatePR(ctx context.Context, in *CreatePullRequest, opts ...grpc.CallOption) (*Entity, error)
+	CreatePR(ctx context.Context, in *CreatePullRequest, opts ...grpc.CallOption) (*EntityMessage, error)
 	// Later...
 	WatchEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (EntityStore_WatchEntityClient, error)
 }
@@ -40,8 +40,8 @@ func NewEntityStoreClient(cc grpc.ClientConnInterface) EntityStoreClient {
 	return &entityStoreClient{cc}
 }
 
-func (c *entityStoreClient) GetEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (*Entity, error) {
-	out := new(Entity)
+func (c *entityStoreClient) GetEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (*EntityMessage, error) {
+	out := new(EntityMessage)
 	err := c.cc.Invoke(ctx, "/entity.EntityStore/GetEntity", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -49,8 +49,8 @@ func (c *entityStoreClient) GetEntity(ctx context.Context, in *GetEntityRequest,
 	return out, nil
 }
 
-func (c *entityStoreClient) ListFolder(ctx context.Context, in *ListFolderRequest, opts ...grpc.CallOption) (*Folder, error) {
-	out := new(Folder)
+func (c *entityStoreClient) ListFolder(ctx context.Context, in *ListFolderRequest, opts ...grpc.CallOption) (*FolderListing, error) {
+	out := new(FolderListing)
 	err := c.cc.Invoke(ctx, "/entity.EntityStore/ListFolder", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -58,8 +58,8 @@ func (c *entityStoreClient) ListFolder(ctx context.Context, in *ListFolderReques
 	return out, nil
 }
 
-func (c *entityStoreClient) SaveEntity(ctx context.Context, in *SaveEntityRequest, opts ...grpc.CallOption) (*Entity, error) {
-	out := new(Entity)
+func (c *entityStoreClient) SaveEntity(ctx context.Context, in *SaveEntityRequest, opts ...grpc.CallOption) (*EntityMessage, error) {
+	out := new(EntityMessage)
 	err := c.cc.Invoke(ctx, "/entity.EntityStore/SaveEntity", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -85,8 +85,8 @@ func (c *entityStoreClient) GetEntityHistory(ctx context.Context, in *GetHistory
 	return out, nil
 }
 
-func (c *entityStoreClient) CreatePR(ctx context.Context, in *CreatePullRequest, opts ...grpc.CallOption) (*Entity, error) {
-	out := new(Entity)
+func (c *entityStoreClient) CreatePR(ctx context.Context, in *CreatePullRequest, opts ...grpc.CallOption) (*EntityMessage, error) {
+	out := new(EntityMessage)
 	err := c.cc.Invoke(ctx, "/entity.EntityStore/CreatePR", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (c *entityStoreClient) WatchEntity(ctx context.Context, in *GetEntityReques
 }
 
 type EntityStore_WatchEntityClient interface {
-	Recv() (*Entity, error)
+	Recv() (*EntityMessage, error)
 	grpc.ClientStream
 }
 
@@ -118,8 +118,8 @@ type entityStoreWatchEntityClient struct {
 	grpc.ClientStream
 }
 
-func (x *entityStoreWatchEntityClient) Recv() (*Entity, error) {
-	m := new(Entity)
+func (x *entityStoreWatchEntityClient) Recv() (*EntityMessage, error) {
+	m := new(EntityMessage)
 	if err := x.ClientStream.RecvMsg(m); err != nil {
 		return nil, err
 	}
@@ -130,12 +130,12 @@ func (x *entityStoreWatchEntityClient) Recv() (*Entity, error) {
 // All implementations should embed UnimplementedEntityStoreServer
 // for forward compatibility
 type EntityStoreServer interface {
-	GetEntity(context.Context, *GetEntityRequest) (*Entity, error)
-	ListFolder(context.Context, *ListFolderRequest) (*Folder, error)
-	SaveEntity(context.Context, *SaveEntityRequest) (*Entity, error)
+	GetEntity(context.Context, *GetEntityRequest) (*EntityMessage, error)
+	ListFolder(context.Context, *ListFolderRequest) (*FolderListing, error)
+	SaveEntity(context.Context, *SaveEntityRequest) (*EntityMessage, error)
 	DeleteEntity(context.Context, *DeleteEntityRequest) (*DeleteResponse, error)
 	GetEntityHistory(context.Context, *GetHistoryRequest) (*EntityHistoryResponse, error)
-	CreatePR(context.Context, *CreatePullRequest) (*Entity, error)
+	CreatePR(context.Context, *CreatePullRequest) (*EntityMessage, error)
 	// Later...
 	WatchEntity(*GetEntityRequest, EntityStore_WatchEntityServer) error
 }
@@ -144,13 +144,13 @@ type EntityStoreServer interface {
 type UnimplementedEntityStoreServer struct {
 }
 
-func (UnimplementedEntityStoreServer) GetEntity(context.Context, *GetEntityRequest) (*Entity, error) {
+func (UnimplementedEntityStoreServer) GetEntity(context.Context, *GetEntityRequest) (*EntityMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEntity not implemented")
 }
-func (UnimplementedEntityStoreServer) ListFolder(context.Context, *ListFolderRequest) (*Folder, error) {
+func (UnimplementedEntityStoreServer) ListFolder(context.Context, *ListFolderRequest) (*FolderListing, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ListFolder not implemented")
 }
-func (UnimplementedEntityStoreServer) SaveEntity(context.Context, *SaveEntityRequest) (*Entity, error) {
+func (UnimplementedEntityStoreServer) SaveEntity(context.Context, *SaveEntityRequest) (*EntityMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method SaveEntity not implemented")
 }
 func (UnimplementedEntityStoreServer) DeleteEntity(context.Context, *DeleteEntityRequest) (*DeleteResponse, error) {
@@ -159,7 +159,7 @@ func (UnimplementedEntityStoreServer) DeleteEntity(context.Context, *DeleteEntit
 func (UnimplementedEntityStoreServer) GetEntityHistory(context.Context, *GetHistoryRequest) (*EntityHistoryResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method GetEntityHistory not implemented")
 }
-func (UnimplementedEntityStoreServer) CreatePR(context.Context, *CreatePullRequest) (*Entity, error) {
+func (UnimplementedEntityStoreServer) CreatePR(context.Context, *CreatePullRequest) (*EntityMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePR not implemented")
 }
 func (UnimplementedEntityStoreServer) WatchEntity(*GetEntityRequest, EntityStore_WatchEntityServer) error {
@@ -294,7 +294,7 @@ func _EntityStore_WatchEntity_Handler(srv interface{}, stream grpc.ServerStream)
 }
 
 type EntityStore_WatchEntityServer interface {
-	Send(*Entity) error
+	Send(*EntityMessage) error
 	grpc.ServerStream
 }
 
@@ -302,7 +302,7 @@ type entityStoreWatchEntityServer struct {
 	grpc.ServerStream
 }
 
-func (x *entityStoreWatchEntityServer) Send(m *Entity) error {
+func (x *entityStoreWatchEntityServer) Send(m *EntityMessage) error {
 	return x.ServerStream.SendMsg(m)
 }
 

@@ -4,59 +4,18 @@ package entity;
 option go_package = "./;entity";
 
 
-message Entity {
-    // Path includes slashes
-    string path = 1; 
+message EntityMessage {
+    // UID may contain / to indicate parent folder's
+    string UID = 1; 
 
     // dash, ds, alert, folder, svg, png, df, dqr, ... (will validate body)
     string kind = 2; 
 
-    // v1  -- defines the wrapper
-    string apiVersion = 3; 
-
-    // defines the body contents
-    string schemaVersion = 4; 
-
-    // common user defined properties avaliable for everything
-    EntityProperties props = 5; 
-
     // Metadata managed by the underlying storage engine(s)
-    StorageMetadata meta = 6; 
+    StorageMetadata meta = 3; 
 
-    // The real payload
-    bytes body = 7; 
-}
-
-// Defined by user interaction
-message EntityProperties {
-    // Entity name
-    string name = 1;
-
-    // Entity description
-    string description = 2;
-
-    // encode "tags" as empty value like we do for annotations
-    map<string,string> labels = 3;  
-
-    // NOTE: Although APIs will limit exposing this to people without permissions,
-    // The contents of this map (key+value) may be stored in externally secured object stores (S3, disk, etc)
-    // The values should be lookup keys into a secret service
-    map<string,string> secureKeys = 4;
-
-    // Where did the entity come from
-    Provinance provinance = 5;
-}
-
-// Define how an item got into the system
-message Provinance {
-     // Unix millis when the event happened
-    int64 when = 1;
-
-    // Identifier for the source.  ex: provisioning
-    string source = 2; 
-
-    // optional path to the original source
-    string path = 3; 
+    // The raw entity bytes
+    bytes payload = 4; 
 }
 
 // System manages these properties
@@ -79,19 +38,11 @@ message StorageMetadata {
     // Size in bytes
     int64 size = 6;
 
-    // list of GRNs? extracted from the body... based on kind?
-    repeated EntityLocator dependencies = 8;  
-
     // list of operations the calling user can perform
-    repeated string accessControl = 9; 
+    repeated string allowedOperations = 7; 
 
     // avaliable PRs for this path
-    repeated EntityPR prs = 10; 
-}
-
-message EntityLocator {
-    string path = 1;
-    string kind = 2;
+    repeated EntityPR prs = 8; 
 }
 
 message EntityPR {
@@ -104,38 +55,30 @@ message EntityPR {
     // passed to get and it will load the content
     string version = 3; 
 }
-  
-message Folder {
-    // uid?  with slashes
-    string path = 1; 
 
-    // v1  (includes container+object)
-    string apiVersion = 3; 
-    
-    // Folder properties
-    EntityProperties props = 4;
-
-    // This refers to the folder propeties, not the contents of the folder
-    StorageMetadata meta = 5; 
+message FolderListing {
+    string uid = 1; 
 
     // Child entity information
-    repeated Entity items = 6;
+    repeated EntityMessage items = 6;
 
     // More items exist
     string nextPageToken = 7;
 }
 
 message EntityHistory {
+    // the version that will load the entity object
+    string version = 1; 
     // Unix millis when the event happened
-    int64 when = 1; 
+    int64 when = 2; 
     // Identifier for the source 
-    string who = 2; 
+    string who = 3; 
     // optional path to source location
-    string comment = 3; 
+    string comment = 4; 
 }
 
 message EntityHistoryResponse {
-    string path = 1; 
+    string uid = 1; 
     string kind = 2;
 
     repeated EntityHistory event = 3;
@@ -157,26 +100,18 @@ message AuthInfo {
 message GetEntityRequest {
     AuthInfo auth = 1;
 
-    string path = 2; 
+    string UID = 2; 
     string kind = 3; 
-
-    // empty is latest, branch/hash/etc
     string version = 4;  
-
-    // Include common properties in the response 
-    bool withProps = 5;
 
     // Include storage metadata in the response
     bool withStroageMeta = 8;
 
-    // Include the body in response
-    bool withBody = 6;
+    // Include the entity payload in response
+    bool withPayload = 6;
 
     // Augment results with access restrictions
     bool withACL = 7;
-
-    // Include the list of required secure keys.  This requires edit rights to view
-    bool withSecureKeys = 9; 
 
     // Include a list of alternative versions (support depends on storage engine) 
     bool withPRs = 10;
@@ -185,25 +120,19 @@ message GetEntityRequest {
 message ListFolderRequest {
     AuthInfo auth = 1;
 
-    string path = 2; 
+    string uid = 2; 
 
-    // version of the folder metadata
-    string version = 3;  
+    // Include storage metadata for each item
+    bool withStroageMeta = 8;
+
+    // Include the entity payload for each item
+    bool withPayload = 6;
 
     // Optional next token to iterate with
-    string pageToken = 4; 
+    string pageToken = 3; 
     
     // max items in the list
-    int32 maxResults = 5; 
-
-    // Include the ACLs for listed items
-    bool withACL = 6;
-
-    // Include items properties (name, etc)
-    bool withProps = 7;
-
-    // Includ storage metadata (last changed, etc)
-    bool withStroageMeta = 8;
+    int32 maxResults = 4; 
 }
 
 message GetHistoryRequest {
@@ -224,8 +153,7 @@ message SaveEntityRequest {
     // Required Create vs Update with optimistic locking
     string previousVersion = 4;  
 
-    EntityProperties props = 5;
-    bytes body = 6;
+    bytes payload = 6;
 
     string comment = 7; 
 }
@@ -236,11 +164,10 @@ message CreatePullRequest {
     string path = 2; 
     string kind = 3; 
 
-    EntityProperties props = 4;
-    bytes body = 5;
+    bytes payload = 4;
 
-    string title = 6;
-    string comment = 7; 
+    string title = 5;
+    string comment = 6; 
 }
 
 message DeleteEntityRequest {
@@ -258,13 +185,13 @@ message DeleteResponse {
 }
 
 service EntityStore {
-    rpc GetEntity(GetEntityRequest) returns (Entity);
-    rpc ListFolder(ListFolderRequest) returns (Folder); 
-    rpc SaveEntity(SaveEntityRequest) returns (Entity); 
+    rpc GetEntity(GetEntityRequest) returns (EntityMessage);
+    rpc ListFolder(ListFolderRequest) returns (FolderListing); 
+    rpc SaveEntity(SaveEntityRequest) returns (EntityMessage); 
     rpc DeleteEntity(DeleteEntityRequest) returns (DeleteResponse);
     rpc GetEntityHistory(GetHistoryRequest) returns (EntityHistoryResponse);
-    rpc CreatePR(CreatePullRequest) returns (Entity); 
+    rpc CreatePR(CreatePullRequest) returns (EntityMessage); 
 
     // Later... 
-    rpc WatchEntity(GetEntityRequest) returns (stream Entity);
+    rpc WatchEntity(GetEntityRequest) returns (stream EntityMessage);
 }
