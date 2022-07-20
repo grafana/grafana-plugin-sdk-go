@@ -1,0 +1,9 @@
+{
+  "kind": "x",
+  "name": "Test",
+  "description": "some description here",
+  "body": {
+    "hello": "world",
+    "number": 123
+  }
+}
