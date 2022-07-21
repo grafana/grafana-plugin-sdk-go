@@ -17,18 +17,18 @@ var _ Kind = &RawFileKind{}
 type RawFileSanitizer = func(payload []byte) ([]byte, error)
 
 type RawFileKind struct {
-	info     KindInfo
+	info     *KindInfo
 	sanitize RawFileSanitizer
 }
 
-func NewRawFileKind(info KindInfo, sanitize RawFileSanitizer) *RawFileKind {
+func NewRawFileKind(info *KindInfo, sanitize RawFileSanitizer) *RawFileKind {
 	return &RawFileKind{
 		info:     info,
 		sanitize: sanitize,
 	}
 }
 
-func (k *RawFileKind) Info() KindInfo {
+func (k *RawFileKind) Info() *KindInfo {
 	k.info.IsRaw = true
 	return k.info
 }
@@ -76,7 +76,7 @@ func (k *RawFileKind) Sanitize(payload []byte, details bool) ValidationResponse 
 }
 
 func (k *RawFileKind) Migrate(payload []byte, targetVersion string) ValidationResponse {
-	return k.Validate(payload, false) // migration is a noop
+	return k.Sanitize(payload, false) // migration is a noop
 }
 
 func (k *RawFileKind) GetSchemaVersions() []string {
