@@ -11,20 +11,20 @@ import (
 
 func TestSimpleEntities(t *testing.T) {
 	kinds, err := NewKindRegistry(
-		NewPlainTextKind(KindInfo{
+		NewPlainTextKind(&KindInfo{
 			ID:         "text",
-			FileSuffix: ".txt",
-		}), NewPlainTextKind(KindInfo{
+			PathSuffix: ".txt",
+		}), NewPlainTextKind(&KindInfo{
 			ID:         "readme",
-			FileSuffix: "README.md",
-		}), NewGenericKind(KindInfo{
+			PathSuffix: "README.md",
+		}), NewGenericKind(&KindInfo{
 			ID:          "x",
 			Description: "example",
-			FileSuffix:  ".x.json",
-		}), NewGenericKind(KindInfo{
+			PathSuffix:  ".x.json",
+		}), NewGenericKind(&KindInfo{
 			ID:          "yx",
 			Description: "longer extension",
-			FileSuffix:  ".y.x.json",
+			PathSuffix:  ".y.x.json",
 		}))
 	require.NoError(t, err)
 	require.NotNil(t, kinds)
@@ -36,7 +36,7 @@ func TestSimpleEntities(t *testing.T) {
 	payload, err := ioutil.ReadFile("testdata/generic.x.json")
 	require.NoError(t, err)
 
-	rsp := kind.Validate(payload, false)
+	rsp := kind.Sanitize(payload, false)
 	require.True(t, rsp.Valid)
 
 	ggg := &GenericEntity{

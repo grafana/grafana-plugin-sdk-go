@@ -18,7 +18,7 @@ type Envelope struct {
 	Description string `json:"description,omitempty"`
 
 	// Tags to add for search
-	Tags []string `json:"tags,omitempty"`
+	Labels map[string]string `json:"labels,omitempty"`
 
 	// Optional metadata describing where the body came from
 	Provinance *Provinance `json:"provinance,omitempty"`

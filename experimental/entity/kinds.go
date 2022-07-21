@@ -39,17 +39,17 @@ func (r *Kinds) Register(kinds ...Kind) error {
 		if r.kinds[info.ID] != nil {
 			return fmt.Errorf("kind already registered: %s", info.ID)
 		}
-		if info.FileSuffix == "" {
+		if info.PathSuffix == "" {
 			return fmt.Errorf("kind must have a suffix")
 		}
-		if strings.ContainsAny(info.FileSuffix, "$%*();#@/\\") {
+		if strings.ContainsAny(info.PathSuffix, "$%*();#@/\\") {
 			return fmt.Errorf("invalid suffix")
 		}
 
-		size := len(info.FileSuffix)
+		size := len(info.PathSuffix)
 		runes := make([]byte, size) // each characeter
 		for i := size - 1; i >= 0; i-- {
-			runes[i] = info.FileSuffix[i]
+			runes[i] = info.PathSuffix[i]
 		}
 
 		err := r.suffix.register(k, runes)
@@ -140,7 +140,7 @@ func (s *suffixMap) register(k Kind, runes []byte) error {
 		prev, ok := s.kinds[runes[0]]
 		if ok {
 			if prev.kind != nil {
-				return fmt.Errorf("suffix already registered for: %s", k.Info().FileSuffix)
+				return fmt.Errorf("suffix already registered for: %s", k.Info().PathSuffix)
 			}
 			prev.kind = k
 		} else {
@@ -169,80 +169,80 @@ func (s *suffixMap) register(k Kind, runes []byte) error {
 // var kinds = []EntityKindInfo{
 // 	{
 // 		ID:         "dashboard",
-// 		FileSuffix: "-dash.json",
+// 		PathSuffix: "-dash.json",
 // 	},
 // 	{
 // 		ID:         "alert",
-// 		FileSuffix: "-alert.json",
+// 		PathSuffix: "-alert.json",
 // 	},
 // 	{
 // 		ID:         "datasource",
-// 		FileSuffix: "-ds.json",
+// 		PathSuffix: "-ds.json",
 // 	},
 // 	{
 // 		ID:         "playlist",
-// 		FileSuffix: "-playlist.json",
+// 		PathSuffix: "-playlist.json",
 // 	},
 // 	{
 // 		ID:          "annotation",
 // 		Description: "Single annotation event",
-// 		FileSuffix:  "-anno.json",
+// 		PathSuffix:  "-anno.json",
 // 	},
 // 	// ???
 // 	{
 // 		ID:         "readme",
-// 		FileSuffix: "README.md",
+// 		PathSuffix: "README.md",
 // 	},
 // 	{
 // 		ID:         "folder",
-// 		FileSuffix: "__folder.json",
+// 		PathSuffix: "__folder.json",
 // 	},
 // 	// Data
 // 	{
 // 		ID:         "dataFrame",
-// 		FileSuffix: "-df.json",
+// 		PathSuffix: "-df.json",
 // 		Category:   "Data",
 // 	},
 // 	{
 // 		ID:          "dataQueryResponse",
 // 		Description: "query result format",
-// 		FileSuffix:  "-dqr.json",
+// 		PathSuffix:  "-dqr.json",
 // 		Category:    "Data",
 // 	},
 // 	{
 // 		ID:         "CSV",
-// 		FileSuffix: ".csv",
+// 		PathSuffix: ".csv",
 // 		Category:   "Data",
 // 	},
 // 	{
 // 		ID:         "GeoJSON",
-// 		FileSuffix: ".geojson",
+// 		PathSuffix: ".geojson",
 // 		Category:   "Data",
 // 	},
 // 	{
 // 		ID:         "WorldMap location lookup",
-// 		FileSuffix: "-wm.json",
+// 		PathSuffix: "-wm.json",
 // 		Category:   "Data",
 // 	},
 // 	// Images (binary)
 // 	{
 // 		ID:         "SVG",
-// 		FileSuffix: ".svg",
+// 		PathSuffix: ".svg",
 // 		Category:   "Image",
 // 	},
 // 	{
 // 		ID:         "PNG",
-// 		FileSuffix: ".png",
+// 		PathSuffix: ".png",
 // 		Category:   "Image",
 // 	},
 // 	{
 // 		ID:         "JPEG",
-// 		FileSuffix: ".jpg",
+// 		PathSuffix: ".jpg",
 // 		Category:   "Image",
 // 	},
 // 	{
 // 		ID:         "GIF",
-// 		FileSuffix: ".gif",
+// 		PathSuffix: ".gif",
 // 		Category:   "Image",
 // 	},
 // }

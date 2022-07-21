@@ -15,14 +15,14 @@ type PlainTextEntity struct {
 var _ Kind = &PlainTextKind{}
 
 type PlainTextKind struct {
-	info KindInfo
+	info *KindInfo
 }
 
-func NewPlainTextKind(info KindInfo) *PlainTextKind {
+func NewPlainTextKind(info *KindInfo) *PlainTextKind {
 	return &PlainTextKind{info: info}
 }
 
-func (k *PlainTextKind) Info() KindInfo {
+func (k *PlainTextKind) Info() *KindInfo {
 	k.info.IsRaw = true
 	return k.info
 }
@@ -50,7 +50,7 @@ func (k *PlainTextKind) GetReferences(v interface{}) []EntityLocator {
 	return nil
 }
 
-func (k *PlainTextKind) Validate(payload []byte, details bool) ValidationResponse {
+func (k *PlainTextKind) Sanitize(payload []byte, details bool) ValidationResponse {
 	_, err := k.Read(payload)
 	if err != nil {
 		return ValidationResponse{
@@ -70,7 +70,7 @@ func (k *PlainTextKind) Validate(payload []byte, details bool) ValidationRespons
 }
 
 func (k *PlainTextKind) Migrate(payload []byte, targetVersion string) ValidationResponse {
-	return k.Validate(payload, false) // migration is a noop
+	return k.Sanitize(payload, false) // migration is a noop
 }
 
 func (k *PlainTextKind) GetSchemaVersions() []string {

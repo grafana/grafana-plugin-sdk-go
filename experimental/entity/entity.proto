@@ -3,19 +3,15 @@ package entity;
 
 option go_package = "./;entity";
 
-
 message EntityMessage {
-    // UID may contain / to indicate parent folder's
-    string UID = 1; 
-
-    // dash, ds, alert, folder, svg, png, df, dqr, ... (will validate body)
-    string kind = 2; 
+    // Path encodes the UID and kind.  It will include / to indicate folders
+    string path = 1; 
 
     // Metadata managed by the underlying storage engine(s)
-    StorageMetadata meta = 3; 
+    StorageMetadata meta = 2; 
 
     // The raw entity bytes
-    bytes payload = 4; 
+    bytes payload = 3; 
 }
 
 // System manages these properties
@@ -48,23 +44,26 @@ message StorageMetadata {
 
 message EntityPR {
     // PR Title
-    string name = 2;
-
-    // External URL
-    string url = 1;
+    string name = 1;
 
     // passed to get and it will load the content
-    string version = 3; 
+    string version = 2; 
+
+    // Unix millis for last update time
+    int64 updatedAt = 3;
+
+    // External URL
+    string url = 4;
 }
 
 message FolderListing {
-    string uid = 1; 
+    string path = 1; 
 
     // Child entity information
-    repeated EntityMessage items = 6;
+    repeated EntityMessage items = 2;
 
     // More items exist
-    string nextPageToken = 7;
+    string nextPageToken = 3;
 }
 
 message EntityHistory {
@@ -88,101 +87,116 @@ message EntityHistoryResponse {
     string nextPageToken = 4; 
 }
 
+message KindInfo {
+    string ID = 1;
+    string description = 2;
+    string category = 3;
+
+    // Detect the kind from a path suffix
+    string pathSuffix = 4;
+
+    // Latest verson of the schema
+    string latestSchemaVersion = 5;
+
+    // For kinds with secure keys -- the keys will be strpped unless user has editor access
+    bool hasSecureKeys = 6;
+
+	// The entity store does not extend the base EntityEnvelope -- this is typical for
+	// non-object-model formats like images (png, svg, etc)
+    bool isRaw = 7;
+}
+
 //---------------------------------------------------------
 // Resource service enables HTTP-style requests over gRPC.
 //---------------------------------------------------------
 
-message AuthInfo {
-    string uid = 1;
-    // teams/groups/role?
-    // ????
-}
-
 message GetEntityRequest {
-    AuthInfo auth = 1;
+    // Path encodes the UID + kind.  The schema registry will know how to map suffix to registered kinds
+    string path = 1; 
 
-    string UID = 2; 
-    string kind = 3; 
-    string version = 4;  
+    // Version specifies which version of the 
+    string version = 2;  
 
     // Include storage metadata in the response
-    bool withStorageMeta = 8;
+    bool withStorageMeta = 3;
 
     // Include the entity payload in response
-    bool withPayload = 6;
+    bool withPayload = 4;
 
     // Augment results with access restrictions
-    bool withACL = 7;
+    bool withACL = 5;
 
     // Include a list of alternative versions (support depends on storage engine) 
-    bool withPRs = 10;
+    bool withPRs = 6;
 }
 
 message ListFolderRequest {
-    AuthInfo auth = 1;
+    string path = 1; 
 
-    string uid = 2; 
+    string filterKind = 2;
 
     // Include storage metadata for each item
-    bool withStorageMeta = 8;
+    bool withStorageMeta = 3;
 
     // Include the entity payload for each item
-    bool withPayload = 6;
+    bool withPayload = 4;
 
     // Optional next token to iterate with
-    string pageToken = 3; 
+    string pageToken = 5; 
     
     // max items in the list
-    int32 maxResults = 4; 
+    int32 maxResults = 6; 
 }
 
 message GetHistoryRequest {
-    AuthInfo auth = 1;
-
     string path = 2; 
-    string kind = 3;  
     string pageToken = 4;  
     int32 maxResults = 5; 
 }
 
 message SaveEntityRequest {
-    AuthInfo auth = 1;
+    string path = 1; 
 
-    string path = 2; 
-    string kind = 3; 
+    bytes payload = 2;
 
-    // Required Create vs Update with optimistic locking
+    string comment = 3; 
+
+    // When set, this will implement optimistic locking
     string previousVersion = 4;  
-
-    bytes payload = 6;
-
-    string comment = 7; 
 }
 
 message CreatePullRequest {
-    AuthInfo auth = 1;
+    // Path to the entity we want to change
+    string path = 1; 
 
-    string path = 2; 
-    string kind = 3; 
+    // Title for the new change requests
+    string title = 2;
 
+    // Comment in the new change request
+    string comment = 3; 
+
+    // Proposed payload for the enitty
     bytes payload = 4;
-
-    string title = 5;
-    string comment = 6; 
 }
 
 message DeleteEntityRequest {
-    AuthInfo auth = 1;
+    // encodes uid + kind
+    string path = 1; 
 
-    string path = 2; 
-    string kind = 3; 
-    string version = 4; // for pull requests 
+    // Version may only be supported for pull requests
+    string version = 2; 
 
-    bool recursive = 5; // for folders
+    // Recursive only supported for folders
+    bool recursive = 3;
 }
 
 message DeleteResponse {
     bool ok = 1; 
+}
+
+message ListKindsRequest {}
+message ListKindsResponse {
+    repeated KindInfo kinds = 1;
 }
 
 service EntityStore {
@@ -192,6 +206,8 @@ service EntityStore {
     rpc DeleteEntity(DeleteEntityRequest) returns (DeleteResponse);
     rpc GetEntityHistory(GetHistoryRequest) returns (EntityHistoryResponse);
     rpc CreatePR(CreatePullRequest) returns (EntityMessage); 
+
+    rpc ListKinds(ListKindsRequest) returns (ListKindsResponse); 
 
     // Later... 
     rpc WatchEntity(GetEntityRequest) returns (stream EntityMessage);

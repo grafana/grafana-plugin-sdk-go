@@ -28,6 +28,7 @@ type EntityStoreClient interface {
 	DeleteEntity(ctx context.Context, in *DeleteEntityRequest, opts ...grpc.CallOption) (*DeleteResponse, error)
 	GetEntityHistory(ctx context.Context, in *GetHistoryRequest, opts ...grpc.CallOption) (*EntityHistoryResponse, error)
 	CreatePR(ctx context.Context, in *CreatePullRequest, opts ...grpc.CallOption) (*EntityMessage, error)
+	ListKinds(ctx context.Context, in *ListKindsRequest, opts ...grpc.CallOption) (*ListKindsResponse, error)
 	// Later...
 	WatchEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (EntityStore_WatchEntityClient, error)
 }
@@ -94,6 +95,15 @@ func (c *entityStoreClient) CreatePR(ctx context.Context, in *CreatePullRequest,
 	return out, nil
 }
 
+func (c *entityStoreClient) ListKinds(ctx context.Context, in *ListKindsRequest, opts ...grpc.CallOption) (*ListKindsResponse, error) {
+	out := new(ListKindsResponse)
+	err := c.cc.Invoke(ctx, "/entity.EntityStore/ListKinds", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *entityStoreClient) WatchEntity(ctx context.Context, in *GetEntityRequest, opts ...grpc.CallOption) (EntityStore_WatchEntityClient, error) {
 	stream, err := c.cc.NewStream(ctx, &EntityStore_ServiceDesc.Streams[0], "/entity.EntityStore/WatchEntity", opts...)
 	if err != nil {
@@ -136,6 +146,7 @@ type EntityStoreServer interface {
 	DeleteEntity(context.Context, *DeleteEntityRequest) (*DeleteResponse, error)
 	GetEntityHistory(context.Context, *GetHistoryRequest) (*EntityHistoryResponse, error)
 	CreatePR(context.Context, *CreatePullRequest) (*EntityMessage, error)
+	ListKinds(context.Context, *ListKindsRequest) (*ListKindsResponse, error)
 	// Later...
 	WatchEntity(*GetEntityRequest, EntityStore_WatchEntityServer) error
 }
@@ -161,6 +172,9 @@ func (UnimplementedEntityStoreServer) GetEntityHistory(context.Context, *GetHist
 }
 func (UnimplementedEntityStoreServer) CreatePR(context.Context, *CreatePullRequest) (*EntityMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method CreatePR not implemented")
+}
+func (UnimplementedEntityStoreServer) ListKinds(context.Context, *ListKindsRequest) (*ListKindsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ListKinds not implemented")
 }
 func (UnimplementedEntityStoreServer) WatchEntity(*GetEntityRequest, EntityStore_WatchEntityServer) error {
 	return status.Errorf(codes.Unimplemented, "method WatchEntity not implemented")
@@ -285,6 +299,24 @@ func _EntityStore_CreatePR_Handler(srv interface{}, ctx context.Context, dec fun
 	return interceptor(ctx, in, info, handler)
 }
 
+func _EntityStore_ListKinds_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListKindsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(EntityStoreServer).ListKinds(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/entity.EntityStore/ListKinds",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(EntityStoreServer).ListKinds(ctx, req.(*ListKindsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _EntityStore_WatchEntity_Handler(srv interface{}, stream grpc.ServerStream) error {
 	m := new(GetEntityRequest)
 	if err := stream.RecvMsg(m); err != nil {
@@ -336,6 +368,10 @@ var EntityStore_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreatePR",
 			Handler:    _EntityStore_CreatePR_Handler,
+		},
+		{
+			MethodName: "ListKinds",
+			Handler:    _EntityStore_ListKinds_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

@@ -16,14 +16,14 @@ type GenericEntity struct {
 var _ Kind = &GenericKind{}
 
 type GenericKind struct {
-	info KindInfo
+	info *KindInfo
 }
 
-func NewGenericKind(info KindInfo) *GenericKind {
+func NewGenericKind(info *KindInfo) *GenericKind {
 	return &GenericKind{info: info}
 }
 
-func (k *GenericKind) Info() KindInfo {
+func (k *GenericKind) Info() *KindInfo {
 	return k.info
 }
 
@@ -57,7 +57,7 @@ func (k *GenericKind) GetReferences(v interface{}) []EntityLocator {
 	return nil
 }
 
-func (k *GenericKind) Validate(payload []byte, details bool) ValidationResponse {
+func (k *GenericKind) Sanitize(payload []byte, details bool) ValidationResponse {
 	g, err := k.Read(payload)
 	if err == nil {
 		// pretty print the payload
@@ -83,7 +83,7 @@ func (k *GenericKind) Validate(payload []byte, details bool) ValidationResponse 
 }
 
 func (k *GenericKind) Migrate(payload []byte, targetVersion string) ValidationResponse {
-	return k.Validate(payload, false) // migration is a noop
+	return k.Sanitize(payload, false) // migration is a noop
 }
 
 func (k *GenericKind) GetSchemaVersions() []string {

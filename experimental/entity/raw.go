@@ -56,7 +56,7 @@ func (k *RawFileKind) GetReferences(v interface{}) []EntityLocator {
 	return nil
 }
 
-func (k *RawFileKind) Validate(payload []byte, details bool) ValidationResponse {
+func (k *RawFileKind) Sanitize(payload []byte, details bool) ValidationResponse {
 	out, err := k.sanitize(payload)
 	if err != nil {
 		return ValidationResponse{
