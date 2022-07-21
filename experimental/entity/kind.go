@@ -35,6 +35,9 @@ type Kind interface {
 	// Given a well defined object, create the expected payload
 	Write(interface{}) ([]byte, error)
 
+	// Identify referenced items
+	GetReferences(interface{}) []EntityLocator
+
 	// The expected go type from read
 	GoType() interface{}
 

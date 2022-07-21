@@ -46,6 +46,10 @@ func (k *PlainTextKind) Write(v interface{}) ([]byte, error) {
 	return []byte(g.Body), nil
 }
 
+func (k *PlainTextKind) GetReferences(v interface{}) []EntityLocator {
+	return nil
+}
+
 func (k *PlainTextKind) Validate(payload []byte, details bool) ValidationResponse {
 	_, err := k.Read(payload)
 	if err != nil {

@@ -53,6 +53,10 @@ func (k *GenericKind) Write(v interface{}) ([]byte, error) {
 	return json.MarshalIndent(g, "", "  ")
 }
 
+func (k *GenericKind) GetReferences(v interface{}) []EntityLocator {
+	return nil
+}
+
 func (k *GenericKind) Validate(payload []byte, details bool) ValidationResponse {
 	g, err := k.Read(payload)
 	if err == nil {

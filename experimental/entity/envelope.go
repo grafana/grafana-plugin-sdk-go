@@ -43,3 +43,11 @@ type Provinance struct {
 	// optional path to the original source
 	Path string `json:"path,omitempty"`
 }
+
+type EntityLocator struct {
+	// UID may contain / to indicate parent folder's
+	UID string `json:"UID,omitempty"`
+
+	// dash, ds, alert, folder, svg, png, df, dqr, ... (will validate body)
+	Kind string `json:"kind,omitempty"`
+}

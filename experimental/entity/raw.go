@@ -52,6 +52,10 @@ func (k *RawFileKind) Write(v interface{}) ([]byte, error) {
 	return g.Body, nil
 }
 
+func (k *RawFileKind) GetReferences(v interface{}) []EntityLocator {
+	return nil
+}
+
 func (k *RawFileKind) Validate(payload []byte, details bool) ValidationResponse {
 	out, err := k.sanitize(payload)
 	if err != nil {
