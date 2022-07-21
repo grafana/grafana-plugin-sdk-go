@@ -65,5 +65,5 @@ func TestSimpleEntities(t *testing.T) {
 	kind = kinds.GetBySuffix("hello/world.y.x.json")
 	require.Equal(t, "yx", kind.Info().ID)
 
-	//t.FailNow()
+	// t.FailNow()
 }

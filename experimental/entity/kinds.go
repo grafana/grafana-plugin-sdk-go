@@ -52,7 +52,10 @@ func (r *Kinds) Register(kinds ...Kind) error {
 			runes[i] = info.FileSuffix[i]
 		}
 
-		r.suffix.register(k, runes)
+		err := r.suffix.register(k, runes)
+		if err != nil {
+			return err
+		}
 		r.kinds[info.ID] = k
 	}
 	return nil
