@@ -57,7 +57,7 @@ func (k *GenericKind) GetReferences(v interface{}) []EntityLocator {
 	return nil
 }
 
-func (k *GenericKind) Sanitize(payload []byte, details bool) ValidationResponse {
+func (k *GenericKind) Normalize(payload []byte, details bool) NormalizeResponse {
 	g, err := k.Read(payload)
 	if err == nil {
 		// pretty print the payload
@@ -65,7 +65,7 @@ func (k *GenericKind) Sanitize(payload []byte, details bool) ValidationResponse 
 	}
 
 	if err != nil {
-		return ValidationResponse{
+		return NormalizeResponse{
 			Valid: false,
 			Info: []data.Notice{
 				{
@@ -76,14 +76,14 @@ func (k *GenericKind) Sanitize(payload []byte, details bool) ValidationResponse 
 		}
 	}
 
-	return ValidationResponse{
+	return NormalizeResponse{
 		Valid:  true,
 		Result: payload,
 	}
 }
 
-func (k *GenericKind) Migrate(payload []byte, targetVersion string) ValidationResponse {
-	return k.Sanitize(payload, false) // migration is a noop
+func (k *GenericKind) Migrate(payload []byte, targetVersion string) NormalizeResponse {
+	return k.Normalize(payload, false) // migration is a noop
 }
 
 func (k *GenericKind) GetSchemaVersions() []string {

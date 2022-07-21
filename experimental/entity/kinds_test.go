@@ -1,7 +1,6 @@
 package entity
 
 import (
-	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -36,7 +35,7 @@ func TestSimpleEntities(t *testing.T) {
 	payload, err := ioutil.ReadFile("testdata/generic.x.json")
 	require.NoError(t, err)
 
-	rsp := kind.Sanitize(payload, false)
+	rsp := kind.Normalize(payload, false)
 	require.True(t, rsp.Valid)
 
 	ggg := &GenericEntity{
@@ -55,14 +54,10 @@ func TestSimpleEntities(t *testing.T) {
 
 	fmt.Printf("HELLO: %+v\n", string(rsp.Result))
 
-	jj, err := json.MarshalIndent(kinds.suffix, "", "  ")
-	require.NoError(t, err)
-	fmt.Printf("ALL: %+v\n", string(jj))
-
-	kind = kinds.GetBySuffix("hello/world.x.json")
+	kind = kinds.GetFromSuffix("hello/world.x.json")
 	require.Equal(t, "x", kind.Info().ID)
 
-	kind = kinds.GetBySuffix("hello/world.y.x.json")
+	kind = kinds.GetFromSuffix("hello/world.y.x.json")
 	require.Equal(t, "yx", kind.Info().ID)
 
 	// t.FailNow()

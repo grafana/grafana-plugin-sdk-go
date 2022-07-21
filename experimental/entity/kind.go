@@ -4,14 +4,21 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+type KindRegistry interface {
+	Get(id string) Kind
+	GetFromSuffix(path string) Kind
+	List() []Kind
+	Register(kinds ...Kind) error
+}
+
 type Kind interface {
 	Info() *KindInfo
 
 	// Called before saving any object.  The result will be sanitized and safe to write on disk
-	Sanitize(payload []byte, details bool) ValidationResponse
+	Normalize(payload []byte, details bool) NormalizeResponse
 
 	// Modify the object payload
-	Migrate(payload []byte, targetVersion string) ValidationResponse
+	Migrate(payload []byte, targetVersion string) NormalizeResponse
 
 	// Marshal raw payload into an entity type.  The resulting interface will implement `Envelope`
 	Read(payload []byte) (interface{}, error)
@@ -32,7 +39,7 @@ type Kind interface {
 	GetJSONSchema(schemaVersion string) []byte
 }
 
-type ValidationResponse struct {
+type NormalizeResponse struct {
 	Valid bool `json:"valid"`
 
 	// This includes potential errors and warnings

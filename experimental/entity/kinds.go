@@ -1,20 +1,21 @@
 package entity
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 	sync "sync"
 )
 
-type Kinds struct {
+type kinds struct {
 	kinds  map[string]Kind
 	lock   sync.RWMutex
 	suffix suffixMap
 }
 
-func NewKindRegistry(k ...Kind) (*Kinds, error) {
-	kinds := &Kinds{
+var _ KindRegistry = &kinds{}
+
+func NewKindRegistry(k ...Kind) (KindRegistry, error) {
+	kinds := &kinds{
 		kinds:  make(map[string]Kind),
 		suffix: suffixMap{},
 	}
@@ -27,7 +28,7 @@ func NewKindRegistry(k ...Kind) (*Kinds, error) {
 
 // Register adds additional kinds to the registry.
 // This will throw an error if duplicate IDs or file extensions exist
-func (r *Kinds) Register(kinds ...Kind) error {
+func (r *kinds) Register(kinds ...Kind) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
 
@@ -62,14 +63,14 @@ func (r *Kinds) Register(kinds ...Kind) error {
 }
 
 // Get looks up a Kind from ID
-func (r *Kinds) Get(id string) Kind {
+func (r *kinds) Get(id string) Kind {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	return r.kinds[id]
 }
 
 // List shows all supported kinds
-func (r *Kinds) List() []Kind {
+func (r *kinds) List() []Kind {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 
@@ -81,7 +82,7 @@ func (r *Kinds) List() []Kind {
 }
 
 // GetBySuffix finds the kind registered to the file extension
-func (r *Kinds) GetBySuffix(path string) Kind {
+func (r *kinds) GetFromSuffix(path string) Kind {
 	return r.suffix.find(path, len(path)-1, nil)
 }
 
@@ -106,25 +107,6 @@ func (s *suffixMap) find(path string, idx int, match Kind) Kind {
 		}
 	}
 	return match
-}
-
-// helpful for debugging
-func (s suffixMap) MarshalJSON() ([]byte, error) {
-	type sub = struct {
-		Key string                `json:"found,omitempty"`
-		Sub map[string]*suffixMap `json:"match,omitempty"`
-	}
-	inst := &sub{}
-	if s.kind != nil {
-		inst.Key = s.kind.Info().ID
-	}
-	if s.kinds != nil {
-		inst.Sub = make(map[string]*suffixMap)
-		for k, v := range s.kinds {
-			inst.Sub[string(k)] = v
-		}
-	}
-	return json.Marshal(inst)
 }
 
 func (s *suffixMap) register(k Kind, runes []byte) error {
@@ -159,96 +141,3 @@ func (s *suffixMap) register(k Kind, runes []byte) error {
 	}
 	return prev.register(k, rest)
 }
-
-// 	Register(k ... Kind) error
-// 	GetKind(k string) Kind
-// 	List() []Kind
-// 	GetFromSuffix(path string) Kind
-// }
-
-// var kinds = []EntityKindInfo{
-// 	{
-// 		ID:         "dashboard",
-// 		PathSuffix: "-dash.json",
-// 	},
-// 	{
-// 		ID:         "alert",
-// 		PathSuffix: "-alert.json",
-// 	},
-// 	{
-// 		ID:         "datasource",
-// 		PathSuffix: "-ds.json",
-// 	},
-// 	{
-// 		ID:         "playlist",
-// 		PathSuffix: "-playlist.json",
-// 	},
-// 	{
-// 		ID:          "annotation",
-// 		Description: "Single annotation event",
-// 		PathSuffix:  "-anno.json",
-// 	},
-// 	// ???
-// 	{
-// 		ID:         "readme",
-// 		PathSuffix: "README.md",
-// 	},
-// 	{
-// 		ID:         "folder",
-// 		PathSuffix: "__folder.json",
-// 	},
-// 	// Data
-// 	{
-// 		ID:         "dataFrame",
-// 		PathSuffix: "-df.json",
-// 		Category:   "Data",
-// 	},
-// 	{
-// 		ID:          "dataQueryResponse",
-// 		Description: "query result format",
-// 		PathSuffix:  "-dqr.json",
-// 		Category:    "Data",
-// 	},
-// 	{
-// 		ID:         "CSV",
-// 		PathSuffix: ".csv",
-// 		Category:   "Data",
-// 	},
-// 	{
-// 		ID:         "GeoJSON",
-// 		PathSuffix: ".geojson",
-// 		Category:   "Data",
-// 	},
-// 	{
-// 		ID:         "WorldMap location lookup",
-// 		PathSuffix: "-wm.json",
-// 		Category:   "Data",
-// 	},
-// 	// Images (binary)
-// 	{
-// 		ID:         "SVG",
-// 		PathSuffix: ".svg",
-// 		Category:   "Image",
-// 	},
-// 	{
-// 		ID:         "PNG",
-// 		PathSuffix: ".png",
-// 		Category:   "Image",
-// 	},
-// 	{
-// 		ID:         "JPEG",
-// 		PathSuffix: ".jpg",
-// 		Category:   "Image",
-// 	},
-// 	{
-// 		ID:         "GIF",
-// 		PathSuffix: ".gif",
-// 		Category:   "Image",
-// 	},
-// }
-
-// func GetXXX() {
-// 	for _, k := range kinds {
-// 		fmt.Printf("%+v\n", k)
-// 	}
-// }

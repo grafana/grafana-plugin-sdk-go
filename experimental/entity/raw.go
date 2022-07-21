@@ -56,10 +56,10 @@ func (k *RawFileKind) GetReferences(v interface{}) []EntityLocator {
 	return nil
 }
 
-func (k *RawFileKind) Sanitize(payload []byte, details bool) ValidationResponse {
+func (k *RawFileKind) Normalize(payload []byte, details bool) NormalizeResponse {
 	out, err := k.sanitize(payload)
 	if err != nil {
-		return ValidationResponse{
+		return NormalizeResponse{
 			Valid: false,
 			Info: []data.Notice{
 				{
@@ -69,14 +69,14 @@ func (k *RawFileKind) Sanitize(payload []byte, details bool) ValidationResponse 
 			},
 		}
 	}
-	return ValidationResponse{
+	return NormalizeResponse{
 		Valid:  true,
 		Result: out,
 	}
 }
 
-func (k *RawFileKind) Migrate(payload []byte, targetVersion string) ValidationResponse {
-	return k.Sanitize(payload, false) // migration is a noop
+func (k *RawFileKind) Migrate(payload []byte, targetVersion string) NormalizeResponse {
+	return k.Normalize(payload, false) // migration is a noop
 }
 
 func (k *RawFileKind) GetSchemaVersions() []string {
