@@ -13,14 +13,6 @@ type Kinds struct {
 	suffix suffixMap
 }
 
-type suffixMap struct {
-	// The selected kind
-	kind Kind
-
-	// non-null when more suffixes may match
-	kinds map[byte]*suffixMap
-}
-
 func NewKindRegistry(k ...Kind) (*Kinds, error) {
 	kinds := &Kinds{
 		kinds:  make(map[string]Kind),
@@ -33,6 +25,8 @@ func NewKindRegistry(k ...Kind) (*Kinds, error) {
 	return kinds, nil
 }
 
+// Register adds additional kinds to the registry.
+// This will throw an error if duplicate IDs or file extensions exist
 func (r *Kinds) Register(kinds ...Kind) error {
 	r.lock.Lock()
 	defer r.lock.Unlock()
@@ -64,12 +58,14 @@ func (r *Kinds) Register(kinds ...Kind) error {
 	return nil
 }
 
+// Get looks up a Kind from ID
 func (r *Kinds) Get(id string) Kind {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
 	return r.kinds[id]
 }
 
+// List shows all supported kinds
 func (r *Kinds) List() []Kind {
 	r.lock.RLock()
 	defer r.lock.RUnlock()
@@ -81,8 +77,18 @@ func (r *Kinds) List() []Kind {
 	return kinds
 }
 
+// GetBySuffix finds the kind registered to the file extension
 func (r *Kinds) GetBySuffix(path string) Kind {
 	return r.suffix.find(path, len(path)-1, nil)
+}
+
+// Reverse order lookup
+type suffixMap struct {
+	// The selected kind
+	kind Kind
+
+	// non-null when more suffixes may match
+	kinds map[byte]*suffixMap
 }
 
 func (s *suffixMap) find(path string, idx int, match Kind) Kind {
@@ -99,6 +105,7 @@ func (s *suffixMap) find(path string, idx int, match Kind) Kind {
 	return match
 }
 
+// helpful for debugging
 func (s suffixMap) MarshalJSON() ([]byte, error) {
 	type sub = struct {
 		Key string                `json:"found,omitempty"`

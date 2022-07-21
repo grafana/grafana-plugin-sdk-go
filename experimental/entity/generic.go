@@ -87,23 +87,34 @@ func (k *GenericKind) GetSchemaVersions() []string {
 }
 
 func (k *GenericKind) GetJSONSchema(schemaVersion string) []byte {
+	return GetEnvelopeJSON(k.info.ID)
+}
+
+func GetEnvelopeJSON(kind string) []byte {
+	kindRule := `{
+		"type": "string",
+		"description": "Entity kind identifier"
+	  }`
+	if kind != "" {
+		kindRule = `{
+			"type": "string",
+			"pattern": "^` + kind + `$"
+		  }`
+	}
+
 	return []byte(`{
-		"$id": "https://example.com/person.schema.json",
 		"$schema": "https://json-schema.org/draft/2020-12/schema",
-		"title": "Generic Entity envelope",
+		"title": "Entity envelope",
 		"type": "object",
 		"properties": {
 		  "uid": {
 			"type": "string",
-			"description": "The person's first name."
+			"description": "System identifier."
 		  },
-		  "kind": {
-			"type": "string",
-			"description": "The person's last name."
-		  },
+		  "kind": ` + kindRule + `,
 		  "schemaVersion": {
 			"type": "string",
-			"description": "Age in years which must be equal to or greater than zero."
+			"description": "The schema used to validate json messages (including the envelope)"
 		  }
 		  "body": {
 			"type": "object",

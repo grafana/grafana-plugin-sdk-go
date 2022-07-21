@@ -24,6 +24,7 @@ type Envelope struct {
 	Provinance *Provinance `json:"provinance,omitempty"`
 }
 
+// Extension to the core entity wrapper that supports managed secure keys
 type EnvelopeWithSecureKeys struct {
 	Envelope
 

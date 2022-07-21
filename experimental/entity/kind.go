@@ -8,6 +8,7 @@ import (
 type KindInfo struct {
 	ID                  string `json:"id"`
 	Description         string `json:"description,omitempty"`
+	Category            string `json:"category,omitempty"`
 	FileSuffix          string `json:"suffix"` // "-dash.json"
 	LatestSchemaVersion string `json:"latestSchemaVersion,omitempty"`
 
