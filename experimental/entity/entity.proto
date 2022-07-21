@@ -7,11 +7,17 @@ message EntityMessage {
     // Path encodes the UID and kind.  It will include / to indicate folders
     string path = 1; 
 
-    // Metadata managed by the underlying storage engine(s)
-    StorageMetadata meta = 2; 
+    // The kind (extracted from path suffix)
+    string kind = 2;
 
     // The raw entity bytes
     bytes payload = 3; 
+
+    // Payload content type (typically json)
+    string contentType = 4;
+
+    // Metadata managed by the underlying storage engine(s)
+    StorageMetadata meta = 5; 
 }
 
 // System manages these properties
@@ -78,13 +84,12 @@ message EntityHistory {
 }
 
 message EntityHistoryResponse {
-    string uid = 1; 
-    string kind = 2;
-
-    repeated EntityHistory event = 3;
+    string path = 1;
+    
+    repeated EntityHistory event = 2;
 
     // optional path to source location
-    string nextPageToken = 4; 
+    string nextPageToken = 3; 
 }
 
 message KindInfo {
