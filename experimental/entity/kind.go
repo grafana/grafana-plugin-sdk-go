@@ -52,7 +52,7 @@ type NormalizeResponse struct {
 	Result []byte `json:"result,omitempty"`
 }
 
-// The standard folder container -- this only has envelope
+// FolderKind is the kind used to indicate a folder.  Folders do not have a body, but can include a listing
 var FolderKind = NewGenericKind(&KindInfo{
 	ID:          "folder",
 	Description: "Folder",
