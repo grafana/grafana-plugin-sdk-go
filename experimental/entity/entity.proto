@@ -13,11 +13,8 @@ message EntityMessage {
     // The raw entity bytes
     bytes payload = 3; 
 
-    // Payload content type (typically json)
-    string contentType = 4;
-
     // Metadata managed by the underlying storage engine(s)
-    StorageMetadata meta = 5; 
+    StorageMetadata meta = 4; 
 }
 
 // System manages these properties
@@ -109,6 +106,9 @@ message KindInfo {
 	// The entity store does not extend the base EntityEnvelope -- this is typical for
 	// non-object-model formats like images (png, svg, etc)
     bool isRaw = 7;
+
+    // For raw content types, this is set as an HTTP header
+    string contentType = 8;
 }
 
 //---------------------------------------------------------

@@ -51,3 +51,9 @@ type NormalizeResponse struct {
 	// When this exists, the payload has been sanitized and is considered safe to save
 	Result []byte `json:"result,omitempty"`
 }
+
+// The standard folder container -- this only has envelope
+var FolderKind = NewGenericKind(&KindInfo{
+	ID:          "folder",
+	Description: "Folder",
+})
