@@ -2,6 +2,7 @@ package data_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
 	"io/ioutil"
 	"math"
@@ -256,6 +257,20 @@ func goldenDF() *data.Frame {
 			nil,
 			timePtr(time.Unix(0, maxEcma6Int)),
 			timePtr(time.Unix(0, math.MaxInt64)),
+		}),
+		data.NewField("json", nil, []json.RawMessage{
+			json.RawMessage("{\"a\":1}"),
+			json.RawMessage("[1,2,3]"),
+			json.RawMessage("{\"b\":2}"),
+			json.RawMessage("[{\"c\":3},{\"d\":4}]"),
+			json.RawMessage("{\"e\":{\"f\":5}}"),
+		}),
+		data.NewField("nullable_json", nil, []*json.RawMessage{
+			jsonRawMessagePtr(json.RawMessage("{\"a\":1}")),
+			jsonRawMessagePtr(json.RawMessage("[1,2,3]")),
+			nil,
+			jsonRawMessagePtr(json.RawMessage("[{\"c\":3},{\"d\":4}]")),
+			jsonRawMessagePtr(json.RawMessage("{\"e\":{\"f\":5}}")),
 		}),
 	).SetMeta(&data.FrameMeta{
 		Custom:              map[string]interface{}{"Hi": "there"},

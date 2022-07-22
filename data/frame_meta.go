@@ -9,6 +9,7 @@ import (
 // https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L11
 // NOTE -- in javascript this can accept any `[key: string]: any;` however
 // this interface only exposes the values we want to be exposed
+//swagger:model
 type FrameMeta struct {
 	// Type asserts that the frame matches a known type structure
 	Type FrameType `json:"type,omitempty"`
@@ -16,7 +17,7 @@ type FrameMeta struct {
 	// Path is a browsable path on the datasource.
 	Path string `json:"path,omitempty"`
 
-	// PathSeparator defines the separator pattern to decode a hiearchy. The default separator is '/'.
+	// PathSeparator defines the separator pattern to decode a hierarchy. The default separator is '/'.
 	PathSeparator string `json:"pathSeparator,omitempty"`
 
 	// Custom datasource specific values.
@@ -38,6 +39,10 @@ type FrameMeta struct {
 	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
 	ExecutedQueryString string `json:"executedQueryString,omitempty"`
+
+	// Optionally identify which topic the frame should be assigned to.
+	// A value specified in the response will override what the request asked for.
+	DataTopic DataTopic `json:"dataTopic,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType
@@ -60,6 +65,15 @@ const (
 
 // VisType is used to indicate how the data should be visualized in explore.
 type VisType string
+
+const (
+	// DataTopicAnnotations is used to specify that the frame should be used as annotation of the actual data frame response.
+	// Example: When DataTopic is set to DataTopicAnnotations, the frame will be used as exemplar data in timeseries panel
+	DataTopicAnnotations DataTopic = "annotations"
+)
+
+// DataTopic is used to identify which topic the frame should be assigned to.
+type DataTopic string
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string
 func FrameMetaFromJSON(jsonStr string) (*FrameMeta, error) {

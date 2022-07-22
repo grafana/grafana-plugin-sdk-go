@@ -1,6 +1,7 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -13,6 +14,7 @@ import (
 // See NewField() for supported types.
 //
 // The slice data in the Field is a not exported, so methods on the Field are used to to manipulate its data.
+//swagger:model
 type Field struct {
 	// Name is default identifier of the field. The name does not have to be unique, but the combination
 	// of name and Labels should be unique for proper behavior in all situations.
@@ -43,6 +45,8 @@ type Fields []*Field
 //  []float32, []*float32, []float64, []*float64
 // String, Bool, and Time:
 //  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+// JSON:
+//  []json.RawMessage, []*json.RawMessage
 //
 // If an unsupported values type is passed, NewField will panic.
 // nolint:gocyclo
@@ -101,6 +105,10 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		vec = newTimeTimeVectorWithValues(v)
 	case []*time.Time:
 		vec = newNullableTimeTimeVectorWithValues(v)
+	case []json.RawMessage:
+		vec = newJsonRawMessageVectorWithValues(v)
+	case []*json.RawMessage:
+		vec = newNullableJsonRawMessageVectorWithValues(v)
 	default:
 		panic(fmt.Errorf("field '%s' specified with unsupported type %T", name, v))
 	}

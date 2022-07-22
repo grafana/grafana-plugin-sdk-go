@@ -429,3 +429,31 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	//
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-6, "untested fields in conversion") // -6 Struct Fields
 }
+
+func TestConvertFromProtobufCheckHealthRequest(t *testing.T) {
+	t.Run("Should convert provided headers", func(t *testing.T) {
+		protoReq := &pluginv2.CheckHealthRequest{
+			PluginContext: protoPluginContext,
+			Headers: map[string]string{
+				"foo": "fooVal",
+				"bar": "barVal",
+			},
+		}
+
+		req := FromProto().CheckHealthRequest(protoReq)
+		require.NotNil(t, req)
+		require.NotNil(t, req.PluginContext)
+		require.Equal(t, protoPluginContext.OrgId, req.PluginContext.OrgID)
+		require.Equal(t, protoReq.Headers, req.Headers)
+	})
+
+	t.Run("Should handle nil-provided headers", func(t *testing.T) {
+		protoReq := &pluginv2.CheckHealthRequest{
+			PluginContext: protoPluginContext,
+		}
+
+		req := FromProto().CheckHealthRequest(protoReq)
+		require.NotNil(t, req)
+		require.Equal(t, map[string]string{}, req.Headers)
+	})
+}
