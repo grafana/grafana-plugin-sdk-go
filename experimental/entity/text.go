@@ -15,14 +15,14 @@ type PlainTextEntity struct {
 var _ Kind = &PlainTextKind{}
 
 type PlainTextKind struct {
-	info *KindInfo
+	info KindInfo
 }
 
-func NewPlainTextKind(info *KindInfo) *PlainTextKind {
+func NewPlainTextKind(info KindInfo) *PlainTextKind {
 	return &PlainTextKind{info: info}
 }
 
-func (k *PlainTextKind) Info() *KindInfo {
+func (k *PlainTextKind) Info() KindInfo {
 	k.info.IsRaw = true
 	return k.info
 }

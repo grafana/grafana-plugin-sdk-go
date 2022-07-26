@@ -89,7 +89,7 @@ message EntityHistoryResponse {
     string nextPageToken = 3; 
 }
 
-message KindInfo {
+message KindSummary {
     string ID = 1;
     string description = 2;
     string category = 3;
@@ -97,8 +97,8 @@ message KindInfo {
     // Detect the kind from a path suffix
     string pathSuffix = 4;
 
-    // Latest verson of the schema
-    string latestSchemaVersion = 5;
+    // The go package type for this kind
+    string goType = 5;
 
     // For kinds with secure keys -- the keys will be strpped unless user has editor access
     bool hasSecureKeys = 6;
@@ -201,7 +201,7 @@ message DeleteResponse {
 
 message ListKindsRequest {}
 message ListKindsResponse {
-    repeated KindInfo kinds = 1;
+    repeated KindSummary kinds = 1;
 }
 
 service EntityStore {

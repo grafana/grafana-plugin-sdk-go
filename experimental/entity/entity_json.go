@@ -2,7 +2,6 @@ package entity
 
 import (
 	"encoding/json"
-	"fmt"
 	"unsafe"
 
 	jsoniter "github.com/json-iterator/go"
@@ -10,7 +9,7 @@ import (
 
 func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("entity.EntityMessage", &entityMessageCodec{})
-	jsoniter.RegisterTypeDecoder("entity.EntityMessage", &entityMessageCodec{})
+	//	jsoniter.RegisterTypeDecoder("entity.EntityMessage", &entityMessageCodec{})
 }
 
 type entityMessageCodec struct{}
@@ -41,18 +40,18 @@ func (codec *entityMessageCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Str
 	writeEntityMessageJSON((*EntityMessage)(ptr), stream)
 }
 
-func (codec *entityMessageCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
-	msg := EntityMessage{}
-	err := fmt.Errorf("TODO")
-	if err != nil {
-		// keep existing iter error if it exists
-		if iter.Error == nil {
-			iter.Error = err
-		}
-		return
-	}
-	*((*EntityMessage)(ptr)) = msg
-}
+// func (codec *entityMessageCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
+// 	msg := EntityMessage{}
+// 	err := fmt.Errorf("TODO")
+// 	if err != nil {
+// 		// keep existing iter error if it exists
+// 		if iter.Error == nil {
+// 			iter.Error = err
+// 		}
+// 		return
+// 	}
+// 	*((*EntityMessage)(ptr)) = msg
+// }
 
 func writeEntityMessageJSON(f *EntityMessage, stream *jsoniter.Stream) {
 	stream.WriteObjectStart()
@@ -69,7 +68,11 @@ func writeEntityMessageJSON(f *EntityMessage, stream *jsoniter.Stream) {
 		stream.WriteMore()
 		stream.WriteObjectField("payload")
 		if json.Valid(f.Payload) {
-			stream.Write(f.Payload)
+			_, err := stream.Write(f.Payload)
+			if err != nil {
+				stream.Error = err
+				return
+			}
 		} else {
 			stream.WriteVal(f.Payload) // base64 encoded?
 		}

@@ -11,8 +11,26 @@ type KindRegistry interface {
 	Register(kinds ...Kind) error
 }
 
+type KindInfo struct {
+	ID          string `json:"ID,omitempty"`
+	Description string `json:"description,omitempty"`
+	Category    string `json:"category,omitempty"`
+	// Detect the kind from a path suffix
+	PathSuffix string `json:"pathSuffix,omitempty"`
+
+	// For kinds with secure keys -- the keys will be strpped unless user has editor access
+	HasSecureKeys bool `json:"hasSecureKeys,omitempty"`
+
+	// The entity store does not extend the base EntityEnvelope -- this is typical for
+	// non-object-model formats like images (png, svg, etc)
+	IsRaw bool `json:"isRaw,omitempty"`
+
+	// For raw content types, this is set as an HTTP header
+	ContentType string `json:"contentType,omitempty"`
+}
+
 type Kind interface {
-	Info() *KindInfo
+	Info() KindInfo
 
 	// Called before saving any object.  The result will be sanitized and safe to write on disk
 	Normalize(payload []byte, details bool) NormalizeResponse
@@ -52,8 +70,11 @@ type NormalizeResponse struct {
 	Result []byte `json:"result,omitempty"`
 }
 
+// The Kind indicator for folders
+const FolderKindID = "folder"
+
 // FolderKind is the kind used to indicate a folder.  Folders do not have a body, but can include a listing
-var FolderKind = NewGenericKind(&KindInfo{
-	ID:          "folder",
+var FolderKind = NewGenericKind(KindInfo{
+	ID:          FolderKindID,
 	Description: "Folder",
 })

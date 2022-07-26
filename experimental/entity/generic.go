@@ -16,14 +16,14 @@ type GenericEntity struct {
 var _ Kind = &GenericKind{}
 
 type GenericKind struct {
-	info *KindInfo
+	info KindInfo
 }
 
-func NewGenericKind(info *KindInfo) *GenericKind {
+func NewGenericKind(info KindInfo) *GenericKind {
 	return &GenericKind{info: info}
 }
 
-func (k *GenericKind) Info() *KindInfo {
+func (k *GenericKind) Info() KindInfo {
 	return k.info
 }
 

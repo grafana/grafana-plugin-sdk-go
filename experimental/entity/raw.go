@@ -17,18 +17,18 @@ var _ Kind = &RawFileKind{}
 type RawFileSanitizer = func(payload []byte) ([]byte, error)
 
 type RawFileKind struct {
-	info     *KindInfo
+	info     KindInfo
 	sanitize RawFileSanitizer
 }
 
-func NewRawFileKind(info *KindInfo, sanitize RawFileSanitizer) *RawFileKind {
+func NewRawFileKind(info KindInfo, sanitize RawFileSanitizer) *RawFileKind {
 	return &RawFileKind{
 		info:     info,
 		sanitize: sanitize,
 	}
 }
 
-func (k *RawFileKind) Info() *KindInfo {
+func (k *RawFileKind) Info() KindInfo {
 	k.info.IsRaw = true
 	return k.info
 }
