@@ -14,7 +14,7 @@ func init() { //nolint:gochecknoinits
 
 type entityMessageCodec struct{}
 
-// Custom writer that will send payload direclty as JSON when appropriate
+// Custom writer that will send payload directly as JSON when appropriate
 func (u *EntityMessage) MarshalJSON() ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
