@@ -10,17 +10,17 @@ import (
 
 func TestSimpleEntities(t *testing.T) {
 	kinds, err := NewKindRegistry(
-		NewPlainTextKind(&KindInfo{
+		NewPlainTextKind(KindInfo{
 			ID:         "text",
 			PathSuffix: ".txt",
-		}), NewPlainTextKind(&KindInfo{
+		}), NewPlainTextKind(KindInfo{
 			ID:         "readme",
 			PathSuffix: "README.md",
-		}), NewGenericKind(&KindInfo{
+		}), NewGenericKind(KindInfo{
 			ID:          "x",
 			Description: "example",
 			PathSuffix:  ".x.json",
-		}), NewGenericKind(&KindInfo{
+		}), NewGenericKind(KindInfo{
 			ID:          "yx",
 			Description: "longer extension",
 			PathSuffix:  ".y.x.json",
