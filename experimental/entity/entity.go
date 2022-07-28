@@ -21,7 +21,7 @@ type Envelope struct {
 	Labels map[string]string `json:"labels,omitempty"`
 
 	// Optional metadata describing where the body came from
-	Provinance *Provinance `json:"provinance,omitempty"`
+	Provenance *Provenance `json:"provenance,omitempty"`
 }
 
 // Extension to the core entity wrapper that supports managed secure keys
