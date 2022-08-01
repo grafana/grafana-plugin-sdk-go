@@ -35,7 +35,7 @@ type EnvelopeWithSecureKeys struct {
 }
 
 // Define how an item got into the system
-type Provinance struct {
+type Provenance struct {
 	// Unix millis when the event happened
 	When int64 `json:"when,omitempty"`
 	// Identifier for the source.  ex: provisioning
