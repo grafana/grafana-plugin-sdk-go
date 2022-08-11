@@ -14,16 +14,24 @@ var (
 )
 
 type ErrorDetails struct {
-	Status ErrorStatus
+	Status  ErrorStatus
+	Message string
 }
 
 type ErrorStatus int32
 
 const (
-	Unknown ErrorStatus = iota + 1
-	Timeout
+	InvalidArgument ErrorStatus = iota + 1
+	Unauthenticated
 	Unauthorized
-	ConnectionError
+	NotFound
+	ResourceExhausted
+	Cancelled
+	Unknown
+	Internal
+	NotImplemented
+	Unavailable
+	Timeout
 )
 
 func InferErrorStatus(err error) ErrorStatus {
@@ -47,7 +55,7 @@ func errorStatus(err error) ErrorStatus {
 		return Unauthorized
 	}
 	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
-		return ConnectionError
+		return Unavailable // ConnectionError
 	}
 	return Unknown
 }

@@ -102,8 +102,37 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 // ErrorDetails converts the SDK version of an ErrorDetails to the protobuf version.
 func (t ConvertToProtobuf) ErrorDetails(errDetails *ErrorDetails) *pluginv2.ErrorDetails {
 	return &pluginv2.ErrorDetails{
-		Status: int32(errDetails.Status),
+		Status:  t.ErrorDetailsStatus(errDetails.Status),
+		Message: errDetails.Message,
 	}
+}
+
+func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.ErrorDetails_Status {
+	switch status {
+	case InvalidArgument:
+		return pluginv2.ErrorDetails_INVALID_ARGUMENT
+	case Unauthenticated:
+		return pluginv2.ErrorDetails_UNAUTHENTICATED
+	case Unauthorized:
+		return pluginv2.ErrorDetails_UNAUTHORIZED
+	case NotFound:
+		return pluginv2.ErrorDetails_NOT_FOUND
+	case ResourceExhausted:
+		return pluginv2.ErrorDetails_RESOURCE_EXHAUSTED
+	case Cancelled:
+		return pluginv2.ErrorDetails_CANCELLED
+	case Unknown:
+		return pluginv2.ErrorDetails_UNKNOWN
+	case Internal:
+		return pluginv2.ErrorDetails_INTERNAL
+	case NotImplemented:
+		return pluginv2.ErrorDetails_NOT_IMPLEMENTED
+	case Unavailable:
+		return pluginv2.ErrorDetails_UNAVAILABLE
+	case Timeout:
+		return pluginv2.ErrorDetails_TIMEOUT
+	}
+	return pluginv2.ErrorDetails_UNKNOWN
 }
 
 // CheckHealthResponse converts the SDK version of a CheckHealthResponse to the protobuf version.
@@ -163,7 +192,10 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
 			if dr.ErrorDetails == nil {
-				pDR.ErrorDetails = &pluginv2.ErrorDetails{Status: int32(InferErrorStatus(dr.Error))}
+				pDR.ErrorDetails = &pluginv2.ErrorDetails{
+					Status:  t.ErrorDetailsStatus(InferErrorStatus(dr.Error)),
+					Message: dr.Error.Error(),
+				}
 			} else {
 				pDR.ErrorDetails = t.ErrorDetails(dr.ErrorDetails)
 			}

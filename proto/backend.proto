@@ -130,13 +130,29 @@ message DataResponse {
   // Arrow encoded DataFrames
   // Frame has its own meta, warnings, and repeats refId
   repeated bytes frames = 1;
-  string error = 2;
+  string error = 2;// Deprecated. Use errorDetails.message instead
   bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
   ErrorDetails errorDetails = 4;
 }
 
 message ErrorDetails {
-  int32 status = 1;
+  Status status = 1;
+
+  enum Status {
+    INVALID_ARGUMENT = 0;
+    UNAUTHENTICATED = 1;
+    UNAUTHORIZED = 2;
+    NOT_FOUND = 3;
+    RESOURCE_EXHAUSTED = 4;
+    CANCELLED = 5;
+    UNKNOWN = 6;
+    INTERNAL = 7;
+    NOT_IMPLEMENTED = 8;
+    UNAVAILABLE = 9;
+    TIMEOUT = 10;
+  }
+
+  string message = 2;
 }
 
 //-----------------------------------------------
