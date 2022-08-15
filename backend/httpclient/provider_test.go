@@ -23,9 +23,10 @@ func TestProvider(t *testing.T) {
 			client, err := ctx.provider.New()
 			require.NoError(t, err)
 			require.NotNil(t, client)
-			require.Len(t, ctx.usedMiddlewares, 2)
+			require.Len(t, ctx.usedMiddlewares, 3)
 			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("Transport should use default middlewares", func(t *testing.T) {
@@ -33,9 +34,10 @@ func TestProvider(t *testing.T) {
 			transport, err := ctx.provider.GetTransport()
 			require.NoError(t, err)
 			require.NotNil(t, transport)
-			require.Len(t, ctx.usedMiddlewares, 2)
+			require.Len(t, ctx.usedMiddlewares, 3)
 			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("New() with options and no middleware should return expected http client and transport", func(t *testing.T) {
@@ -57,14 +59,12 @@ func TestProvider(t *testing.T) {
 			require.NotNil(t, client)
 			require.Equal(t, time.Second, client.Timeout)
 
-			transport, ok := client.Transport.(*http.Transport)
-			require.True(t, ok)
-			require.NotNil(t, transport)
-			require.Equal(t, 3*time.Second, transport.TLSHandshakeTimeout)
-			require.Equal(t, 4*time.Second, transport.ExpectContinueTimeout)
-			require.Equal(t, 5, transport.MaxIdleConns)
-			require.Equal(t, 7, transport.MaxIdleConnsPerHost)
-			require.Equal(t, 6*time.Second, transport.IdleConnTimeout)
+			require.NotNil(t, ctx.transport)
+			require.Equal(t, 3*time.Second, ctx.transport.TLSHandshakeTimeout)
+			require.Equal(t, 4*time.Second, ctx.transport.ExpectContinueTimeout)
+			require.Equal(t, 5, ctx.transport.MaxIdleConns)
+			require.Equal(t, 7, ctx.transport.MaxIdleConnsPerHost)
+			require.Equal(t, 6*time.Second, ctx.transport.IdleConnTimeout)
 		})
 
 		t.Run("New() with options middleware should return expected http.Client", func(t *testing.T) {
@@ -78,12 +78,13 @@ func TestProvider(t *testing.T) {
 			require.Equal(t, DefaultTimeoutOptions.Timeout, client.Timeout)
 
 			t.Run("Should use configured middlewares and implement MiddlewareName", func(t *testing.T) {
-				require.Len(t, pCtx.usedMiddlewares, 5)
+				require.Len(t, pCtx.usedMiddlewares, 6)
 				require.Equal(t, "mw1", pCtx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw2", pCtx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw3", pCtx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 				require.Equal(t, BasicAuthenticationMiddlewareName, pCtx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
 				require.Equal(t, CustomHeadersMiddlewareName, pCtx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
+				require.Equal(t, ContextualMiddlewareName, pCtx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
 			})
 
 			t.Run("When roundtrip should call expected middlewares", func(t *testing.T) {
