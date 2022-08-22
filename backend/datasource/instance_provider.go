@@ -41,17 +41,11 @@ type instanceProvider struct {
 }
 
 func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interface{}, error) {
-	if pluginContext.DataSourceInstanceSettings == nil && pluginContext.AppInstanceSettings == nil {
-		return nil, fmt.Errorf("data source and app instance settings cannot be nil")
+	if pluginContext.DataSourceInstanceSettings == nil {
+		return nil, fmt.Errorf("data source instance settings cannot be nil")
 	}
 
-	// Must be a datasource plugin
-	if pluginContext.DataSourceInstanceSettings != nil {
-		return pluginContext.DataSourceInstanceSettings.ID, nil
-	}
-
-	// Since app plugins have just one instance, use pluginID as instance cache key
-	return pluginContext.PluginID, nil
+	return pluginContext.DataSourceInstanceSettings.ID, nil
 }
 
 func (ip *instanceProvider) NeedsUpdate(pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
