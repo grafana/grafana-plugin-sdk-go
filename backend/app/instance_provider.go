@@ -1,4 +1,4 @@
-package datasource
+package app
 
 import (
 	"fmt"
@@ -8,7 +8,7 @@ import (
 )
 
 // InstanceFactoryFunc factory method for creating data source instances.
-type InstanceFactoryFunc func(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error)
+type InstanceFactoryFunc func(settings backend.AppInstanceSettings) (instancemgmt.Instance, error)
 
 // NewInstanceManager creates a new data source instance manager,
 //
@@ -41,13 +41,8 @@ type instanceProvider struct {
 }
 
 func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interface{}, error) {
-	if pluginContext.DataSourceInstanceSettings == nil && pluginContext.AppInstanceSettings == nil {
-		return nil, fmt.Errorf("data source and app instance settings cannot be nil")
-	}
-
-	// Must be a datasource plugin
-	if pluginContext.DataSourceInstanceSettings != nil {
-		return pluginContext.DataSourceInstanceSettings.ID, nil
+	if pluginContext.AppInstanceSettings == nil {
+		return nil, fmt.Errorf("app instance settings cannot be nil")
 	}
 
 	// Since app plugins have just one instance, use pluginID as instance cache key
@@ -55,11 +50,11 @@ func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interfa
 }
 
 func (ip *instanceProvider) NeedsUpdate(pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
-	curSettings := pluginContext.DataSourceInstanceSettings
-	cachedSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
+	curSettings := pluginContext.AppInstanceSettings
+	cachedSettings := cachedInstance.PluginContext.AppInstanceSettings
 	return !curSettings.Updated.Equal(cachedSettings.Updated)
 }
 
 func (ip *instanceProvider) NewInstance(pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
-	return ip.factory(*pluginContext.DataSourceInstanceSettings)
+	return ip.factory(*pluginContext.AppInstanceSettings)
 }
