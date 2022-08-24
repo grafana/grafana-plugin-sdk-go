@@ -17,7 +17,8 @@ type DataServer interface {
 // DataServer represents a data client for the SDK Adapter layer
 type DataClient interface {
 	// pluginv2.DataClient
-	QueryData(ctx context.Context, in *pluginv2.QueryDataRequest, opts ...grpc.CallOption) (*pluginv2.QueryDataResponse, error)
+	// TODO check if we want to abstract this
+	QueryData(ctx context.Context, req *pluginv2.QueryDataRequest, acSrv pluginv2.AccessControlServer, opts ...grpc.CallOption) (*pluginv2.QueryDataResponse, error)
 }
 
 // DataGRPCPlugin implements the GRPCPlugin interface from github.com/hashicorp/go-plugin.
@@ -38,7 +39,10 @@ func (p *DataGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) e
 
 // GRPCClient returns c as a data gRPC client.
 func (p *DataGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &dataGRPCClient{client: pluginv2.NewDataClient(c)}, nil
+	return &dataGRPCClient{
+		client: pluginv2.NewDataClient(c),
+		broker: broker,
+	}, nil
 }
 
 type dataGRPCServer struct {
@@ -54,12 +58,14 @@ func (s *dataGRPCServer) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 
 type dataGRPCClient struct {
 	client pluginv2.DataClient
+	broker *plugin.GRPCBroker
 }
 
-// QueryData queries m for data.
-func (m *dataGRPCClient) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest, opts ...grpc.CallOption) (*pluginv2.QueryDataResponse, error) {
+// QueryData start a grpc accesscontrol server then queries m for data.
+func (m *dataGRPCClient) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest, acSrv pluginv2.AccessControlServer, opts ...grpc.CallOption) (*pluginv2.QueryDataResponse, error) {
+	req.PluginContext.CallbackServerID = newAccessControlServer(ctx, m.broker, acSrv)
 	return m.client.QueryData(ctx, req, opts...)
 }
 
 var _ pluginv2.DataServer = &dataGRPCServer{}
-var _ pluginv2.DataClient = &dataGRPCClient{}
+var _ DataClient = &dataGRPCClient{}

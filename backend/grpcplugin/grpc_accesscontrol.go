@@ -8,7 +8,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-// HasAccessFunc is an wrapper to allow the use of
+// HasAccessFunc is a wrapper to allow the use of
 // ordinary functions as pluginv2.AccessControlClient. If f is a function
 // with the appropriate signature, HasAccessHandlerFunc(f) is a
 // Handler that calls f.
@@ -29,4 +29,26 @@ func newAccessControlClient(broker *plugin.GRPCBroker, callbackID uint32) plugin
 
 		return pluginv2.NewAccessControlClient(conn).HasAccess(helperCtx, helperReq)
 	})
+}
+
+// newAccessControlServer starts a new grpc AccessControlServer and returns the broker ID that it is bound to.
+// When the provided ctx is Done, the grpc server is stopped.'
+func newAccessControlServer(ctx context.Context, broker *plugin.GRPCBroker, acSrv pluginv2.AccessControlServer) uint32 {
+	var s *grpc.Server
+	serverFunc := func(opts []grpc.ServerOption) *grpc.Server {
+		s = grpc.NewServer(opts...)
+		pluginv2.RegisterAccessControlServer(s, acSrv)
+
+		return s
+	}
+
+	callbackID := broker.NextId()
+
+	go func() {
+		broker.AcceptAndServe(callbackID, serverFunc)
+		<-ctx.Done()
+		s.Stop()
+	}()
+
+	return callbackID
 }

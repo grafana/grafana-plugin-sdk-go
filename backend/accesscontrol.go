@@ -37,7 +37,7 @@ type HasAccessResponse struct {
 // 	IsDisabled(ctx context.Context, void *Void) (*IsDisabledResponse, error)
 // }
 
-type AccessControlClient interface {
+type AccessControl interface {
 	HasAccess(ctx context.Context, has *HasAccessRequest) (*HasAccessResponse, error)
 }
 

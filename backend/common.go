@@ -153,7 +153,7 @@ type PluginContext struct {
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
 
-	AccessControlClient AccessControlClient
+	AccessControlClient AccessControl
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

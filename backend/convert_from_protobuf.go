@@ -350,7 +350,7 @@ func (f ConvertFromProtobuf) HasAccessResponse(res *pluginv2.HasAccessResponse) 
 	}
 }
 
-func (f ConvertFromProtobuf) AccessControlClient(grpcAcClient pluginv2.AccessControlClient) AccessControlClient {
+func (f ConvertFromProtobuf) AccessControlClient(grpcAcClient pluginv2.AccessControlClient) AccessControl {
 	if grpcAcClient == nil {
 		return nil
 	}

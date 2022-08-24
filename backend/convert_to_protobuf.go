@@ -336,3 +336,11 @@ func (t ConvertToProtobuf) HasAccessResponse(res *HasAccessResponse) *pluginv2.H
 		HasAccess: res.HasAccess,
 	}
 }
+
+func (t ConvertToProtobuf) AccessControlServer(grpcAcServer AccessControl) pluginv2.AccessControlServer {
+	if grpcAcServer == nil {
+		return nil
+	}
+
+	return NewAccesscontrolSDKAdpater(grpcAcServer)
+}
