@@ -15,7 +15,7 @@ type ResourceServer interface {
 
 // ResourceClient represents a Resource client for the SDK Adapter layer
 type ResourceClient interface {
-	CallResource(ctx context.Context, in *pluginv2.CallResourceRequest, opts ...grpc.CallOption) (pluginv2.Resource_CallResourceClient, error)
+	CallResource(ctx context.Context, in *pluginv2.CallResourceRequest, acSrv pluginv2.AccessControlServer, opts ...grpc.CallOption) (pluginv2.Resource_CallResourceClient, error)
 }
 
 // ResourceGRPCPlugin implements the GRPCPlugin interface from github.com/hashicorp/go-plugin.
@@ -36,7 +36,10 @@ func (p *ResourceGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Serve
 
 // GRPCClient returns c as a resource gRPC client.
 func (p *ResourceGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &resourceGRPCClient{client: pluginv2.NewResourceClient(c)}, nil
+	return &resourceGRPCClient{
+		client: pluginv2.NewResourceClient(c),
+		broker: broker,
+	}, nil
 }
 
 type resourceGRPCServer struct {
@@ -52,12 +55,15 @@ func (s *resourceGRPCServer) CallResource(req *pluginv2.CallResourceRequest, srv
 
 type resourceGRPCClient struct {
 	client pluginv2.ResourceClient
+	broker *plugin.GRPCBroker
 }
 
 // CallResource calls a resource.
-func (m *resourceGRPCClient) CallResource(ctx context.Context, req *pluginv2.CallResourceRequest, opts ...grpc.CallOption) (pluginv2.Resource_CallResourceClient, error) {
+func (m *resourceGRPCClient) CallResource(ctx context.Context, req *pluginv2.CallResourceRequest, acSrv pluginv2.AccessControlServer, opts ...grpc.CallOption) (pluginv2.Resource_CallResourceClient, error) {
+	// CallResource start a grpc accesscontrol server then queries m for data.
+	req.PluginContext.CallbackServerID = newAccessControlServer(ctx, m.broker, acSrv)
 	return m.client.CallResource(ctx, req, opts...)
 }
 
 var _ pluginv2.ResourceServer = &resourceGRPCServer{}
-var _ pluginv2.ResourceClient = &resourceGRPCClient{}
+var _ ResourceClient = &resourceGRPCClient{}
