@@ -1,5 +1,7 @@
 package accesscontrol
 
+// NOTE: this package is temporary, the aim is actually to make this a module
+
 import (
 	"context"
 	"strings"

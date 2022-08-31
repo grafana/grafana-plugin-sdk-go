@@ -154,14 +154,15 @@ func TestCheckerExamples(t *testing.T) {
 
 	userPermissions := Permissions{
 		"pid.dashboards:create": []string{},
-		"pid.dashboards:read":   []string{"pid.dashboards:uid:dash1", "pid.dashboards:uid:dash2", "pid.folders:uid:fold1", "pid.folders:uid:fold2"},
+		"pid.dashboards:read":   []string{"pid.dashboards:uid:*", "pid.folders:uid:*"},
+		"pid.dashboards:write":  []string{"pid.dashboards:uid:dash1", "pid.dashboards:uid:dash2", "pid.folders:uid:fold1", "pid.folders:uid:fold2"},
 	}
 
 	dashboards := []dashboard{
-		{UID: "dash1", parentUID: "fold1"}, // Can read dash directly and through folder
-		{UID: "dash2", parentUID: "fold3"}, // Can read dash directly
-		{UID: "dash3", parentUID: "fold2"}, // Can read dash through folder
-		{UID: "dash4", parentUID: "fold3"}, // Cannot read dash
+		{UID: "dash1", parentUID: "fold1"}, // Can write dash directly and through folder
+		{UID: "dash2", parentUID: "fold3"}, // Can write dash directly
+		{UID: "dash3", parentUID: "fold2"}, // Can write dash through folder
+		{UID: "dash4", parentUID: "fold3"}, // Cannot write dash
 	}
 
 	// Check on action only
@@ -171,18 +172,18 @@ func TestCheckerExamples(t *testing.T) {
 	require.False(t, canDeleteDashboards())
 
 	// Check on either dashboard or folder
-	canReadDashboards := GenerateChecker(context.Background(), userPermissions, "pid.dashboards:read", "pid.folders:read")
+	canReadDashboards := GenerateChecker(context.Background(), userPermissions, "pid.dashboards:read", "pid.dashboards:uid", "pid.folders:uid")
 	require.True(t, canReadDashboards("pid.dashboards:uid:dash2"), "should be allowed to read dashboard")
 	require.True(t, canReadDashboards("pid.folders:uid:fold2"), "should be allowed to read dashboard in the folder")
-	require.True(t, canReadDashboards("pid.dashboards:uid:dash3", "pid.folders:uid:fold2"), "should be allowed to read dashboards in the folder")
-	require.False(t, canReadDashboards("pid.dashboards:uid:dash4", "pid.folders:uid:fold3"), "should not be allowed to read dashboards (directly or through folder)")
+	require.True(t, canReadDashboards("pid.dashboards:uid:dash4", "pid.folders:uid:fold3"), "should be allowed to read dashboards in the folder")
 
 	// Filter resources
-	readOkUIDs := []string{}
+	canWriteDashboards := GenerateChecker(context.Background(), userPermissions, "pid.dashboards:write", "pid.dashboards:uid", "pid.folders:uid")
+	writeOK := []string{}
 	for _, dash := range dashboards {
-		if canReadDashboards("pid.dashboards:uid:"+dash.UID, "pid.folders:uid:"+dash.parentUID) {
-			readOkUIDs = append(readOkUIDs, dash.UID)
+		if canWriteDashboards("pid.dashboards:uid:"+dash.UID, "pid.folders:uid:"+dash.parentUID) {
+			writeOK = append(writeOK, dash.UID)
 		}
 	}
-	require.EqualValues(t, []string{"dash1", "dash2", "dash3"}, readOkUIDs)
+	require.EqualValues(t, []string{"dash1", "dash2", "dash3"}, writeOK)
 }
