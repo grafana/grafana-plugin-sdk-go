@@ -25,11 +25,17 @@ func (t ConvertToProtobuf) User(user *User) *pluginv2.User {
 		return nil
 	}
 
+	permissions := map[string]*pluginv2.StringList{}
+	for key, values := range user.Permissions {
+		permissions[key] = &pluginv2.StringList{Values: values}
+	}
+
 	return &pluginv2.User{
-		Login: user.Login,
-		Name:  user.Name,
-		Email: user.Email,
-		Role:  user.Role,
+		Login:       user.Login,
+		Name:        user.Name,
+		Email:       user.Email,
+		Role:        user.Role,
+		Permissions: permissions,
 	}
 }
 

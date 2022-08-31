@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/accesscontrol"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
@@ -27,11 +28,17 @@ func (f ConvertFromProtobuf) User(user *pluginv2.User) *User {
 		return nil
 	}
 
+	permissions := accesscontrol.Permissions{}
+	for k, values := range user.Permissions {
+		permissions[k] = values.Values
+	}
+
 	return &User{
-		Login: user.Login,
-		Name:  user.Name,
-		Email: user.Email,
-		Role:  user.Role,
+		Login:       user.Login,
+		Name:        user.Name,
+		Email:       user.Email,
+		Role:        user.Role,
+		Permissions: permissions,
 	}
 }
 

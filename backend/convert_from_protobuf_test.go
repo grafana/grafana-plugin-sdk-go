@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/accesscontrol"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
@@ -60,10 +61,11 @@ const unsetErrFmt = "%v type for %v has unset fields, %v of %v unset, set all fi
 
 func TestConvertFromProtobufUser(t *testing.T) {
 	protoUser := &pluginv2.User{
-		Login: "bestUser",
-		Name:  "Best User",
-		Email: "example@justAstring",
-		Role:  "Lord",
+		Login:       "bestUser",
+		Name:        "Best User",
+		Email:       "example@justAstring",
+		Role:        "Lord",
+		Permissions: map[string]*pluginv2.StringList{"bestaction": {Values: []string{"bestscope"}}},
 	}
 
 	protoWalker := &walker{}
@@ -85,7 +87,8 @@ func TestConvertFromProtobufUser(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "User", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
+	// substracting 1 to the protoWalker to account for the StringList field in the user permissions
+	require.Equal(t, protoWalker.FieldCount-1, sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -93,6 +96,7 @@ func TestConvertFromProtobufUser(t *testing.T) {
 	requireCounter.Equal(t, protoUser.Name, sdkUser.Name)
 	requireCounter.Equal(t, protoUser.Email, sdkUser.Email)
 	requireCounter.Equal(t, protoUser.Role, sdkUser.Role)
+	requireCounter.Equal(t, len(protoUser.Permissions), len(sdkUser.Permissions))
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 }
@@ -196,10 +200,11 @@ var protoPluginContext = &pluginv2.PluginContext{
 	OrgId:    3,
 	PluginId: "the-best-plugin",
 	User: &pluginv2.User{
-		Login: "bestUser",
-		Name:  "Best User",
-		Email: "example@justAstring",
-		Role:  "Lord",
+		Login:       "bestUser",
+		Name:        "Best User",
+		Email:       "example@justAstring",
+		Role:        "Lord",
+		Permissions: map[string]*pluginv2.StringList{"bestaction": {Values: []string{"bestscope"}}},
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
@@ -226,7 +231,8 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	}
 
 	// adding +1 to the proto field count to account for the Type field in the SDK
-	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
+	// substracting 1 to the proto field count to account for the StringList field in the user permissions
+	require.Equal(t, protoWalker.FieldCount+1-1, sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -238,6 +244,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.User.Name, sdkCtx.User.Name)
 	requireCounter.Equal(t, protoCtx.User.Email, sdkCtx.User.Email)
 	requireCounter.Equal(t, protoCtx.User.Role, sdkCtx.User.Role)
+	requireCounter.Equal(t, accesscontrol.Permissions{"bestaction": []string{"bestscope"}}, sdkCtx.User.Permissions)
 
 	// App Instance Settings
 	requireCounter.Equal(t, json.RawMessage(protoCtx.AppInstanceSettings.JsonData), sdkCtx.AppInstanceSettings.JSONData)
@@ -379,7 +386,8 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	}
 
 	// adding +1 to the proto field count to account for the Type field in the SDK
-	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
+	// substracting 1 to the proto field count to account for the StringList field in the user permissions
+	require.Equal(t, protoWalker.FieldCount+1-1, sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -393,6 +401,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Email, sdkQDR.PluginContext.User.Email)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Role, sdkQDR.PluginContext.User.Role)
+	requireCounter.Equal(t, accesscontrol.Permissions{"bestaction": []string{"bestscope"}}, sdkQDR.PluginContext.User.Permissions)
 
 	// App Instance Settings
 	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.AppInstanceSettings.JsonData), sdkQDR.PluginContext.AppInstanceSettings.JSONData)

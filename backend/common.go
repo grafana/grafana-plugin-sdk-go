@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/accesscontrol"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
@@ -12,10 +13,11 @@ const secureDataCustomOptionsKey = "grafanaSecureData"
 
 // User represents a Grafana user.
 type User struct {
-	Login string
-	Name  string
-	Email string
-	Role  string
+	Login       string
+	Name        string
+	Email       string
+	Role        string
+	Permissions accesscontrol.Permissions
 }
 
 // AppInstanceSettings represents settings for an app instance.
