@@ -100,8 +100,8 @@ message KindSummary {
     // The go package type for this kind
     string goType = 5;
 
-    // For kinds with secure keys -- the keys will be strpped unless user has editor access
-    bool hasSecureKeys = 6;
+    // For kinds with secure values -- the values will be strpped unless user has editor access
+    bool hasSecureValues = 6;
 
 	// The entity store does not extend the base EntityEnvelope -- this is typical for
 	// non-object-model formats like images (png, svg, etc)

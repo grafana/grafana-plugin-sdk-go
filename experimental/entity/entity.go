@@ -25,13 +25,13 @@ type Envelope struct {
 }
 
 // Extension to the core entity wrapper that supports managed secure keys
-type EnvelopeWithSecureKeys struct {
+type EnvelopeWithSecureValues struct {
 	Envelope
 
 	// NOTE: Although APIs will limit exposing this to people without permissions,
 	// The contents of this map (key+value) may be stored in externally secured object stores (S3, disk, etc)
 	// The values should be lookup keys into a secret service
-	SecureKeys map[string]string `json:"secureKeys,omitempty"`
+	SecureValues map[string]string `json:"secureValues,omitempty"`
 }
 
 // Define how an item got into the system
