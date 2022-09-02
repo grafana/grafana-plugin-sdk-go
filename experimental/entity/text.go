@@ -1,6 +1,7 @@
 package entity
 
 import (
+	context "context"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -50,7 +51,7 @@ func (k *PlainTextKind) GetReferences(v interface{}) []EntityLocator {
 	return nil
 }
 
-func (k *PlainTextKind) Normalize(payload []byte, details bool) NormalizeResponse {
+func (k *PlainTextKind) Normalize(_ context.Context, payload []byte, details bool) (NormalizeResponse, error) {
 	_, err := k.Read(payload)
 	if err != nil {
 		return NormalizeResponse{
@@ -61,16 +62,16 @@ func (k *PlainTextKind) Normalize(payload []byte, details bool) NormalizeRespons
 					Text:     err.Error(),
 				},
 			},
-		}
+		}, nil
 	}
 	return NormalizeResponse{
 		Valid:  true,
 		Result: payload,
-	}
+	}, nil
 }
 
-func (k *PlainTextKind) Migrate(payload []byte, targetVersion string) NormalizeResponse {
-	return k.Normalize(payload, false) // migration is a noop
+func (k *PlainTextKind) Migrate(ctx context.Context, payload []byte, targetVersion string) (NormalizeResponse, error) {
+	return k.Normalize(ctx, payload, false) // migration is a noop
 }
 
 func (k *PlainTextKind) GetSchemaVersions() []string {

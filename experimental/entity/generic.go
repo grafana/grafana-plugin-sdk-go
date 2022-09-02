@@ -1,6 +1,7 @@
 package entity
 
 import (
+	context "context"
 	"encoding/json"
 	"fmt"
 
@@ -57,7 +58,7 @@ func (k *GenericKind) GetReferences(v interface{}) []EntityLocator {
 	return nil
 }
 
-func (k *GenericKind) Normalize(payload []byte, details bool) NormalizeResponse {
+func (k *GenericKind) Normalize(_ context.Context, payload []byte, details bool) (NormalizeResponse, error) {
 	g, err := k.Read(payload)
 	if err == nil {
 		// pretty print the payload
@@ -73,17 +74,17 @@ func (k *GenericKind) Normalize(payload []byte, details bool) NormalizeResponse 
 					Text:     err.Error(),
 				},
 			},
-		}
+		}, nil
 	}
 
 	return NormalizeResponse{
 		Valid:  true,
 		Result: payload,
-	}
+	}, nil
 }
 
-func (k *GenericKind) Migrate(payload []byte, targetVersion string) NormalizeResponse {
-	return k.Normalize(payload, false) // migration is a noop
+func (k *GenericKind) Migrate(ctx context.Context, payload []byte, targetVersion string) (NormalizeResponse, error) {
+	return k.Normalize(ctx, payload, false) // migration is a noop
 }
 
 func (k *GenericKind) GetSchemaVersions() []string {

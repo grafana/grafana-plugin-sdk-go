@@ -1,6 +1,8 @@
 package entity
 
 import (
+	context "context"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -33,10 +35,10 @@ type Kind interface {
 	Info() KindInfo
 
 	// Called before saving any object.  The result will be sanitized and safe to write on disk
-	Normalize(payload []byte, details bool) NormalizeResponse
+	Normalize(ctx context.Context, payload []byte, details bool) (NormalizeResponse, error)
 
 	// Modify the object payload
-	Migrate(payload []byte, targetVersion string) NormalizeResponse
+	Migrate(ctx context.Context, payload []byte, targetVersion string) (NormalizeResponse, error)
 
 	// Marshal raw payload into an entity type.  The resulting interface will implement `Envelope`
 	Read(payload []byte) (interface{}, error)

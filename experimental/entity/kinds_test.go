@@ -1,6 +1,7 @@
 package entity
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 	"testing"
@@ -9,6 +10,7 @@ import (
 )
 
 func TestSimpleEntities(t *testing.T) {
+	ctx := context.Background()
 	kinds, err := NewKindRegistry(
 		NewPlainTextKind(KindInfo{
 			ID:         "text",
@@ -35,7 +37,8 @@ func TestSimpleEntities(t *testing.T) {
 	payload, err := ioutil.ReadFile("testdata/generic.x.json")
 	require.NoError(t, err)
 
-	rsp := kind.Normalize(payload, false)
+	rsp, err := kind.Normalize(ctx, payload, false)
+	require.NoError(t, err)
 	require.True(t, rsp.Valid)
 
 	ggg := &GenericEntity{

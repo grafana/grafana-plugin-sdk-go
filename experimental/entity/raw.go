@@ -1,6 +1,7 @@
 package entity
 
 import (
+	context "context"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -56,7 +57,7 @@ func (k *RawFileKind) GetReferences(v interface{}) []EntityLocator {
 	return nil
 }
 
-func (k *RawFileKind) Normalize(payload []byte, details bool) NormalizeResponse {
+func (k *RawFileKind) Normalize(_ context.Context, payload []byte, details bool) (NormalizeResponse, error) {
 	out, err := k.sanitize(payload)
 	if err != nil {
 		return NormalizeResponse{
@@ -67,16 +68,16 @@ func (k *RawFileKind) Normalize(payload []byte, details bool) NormalizeResponse 
 					Text:     err.Error(),
 				},
 			},
-		}
+		}, nil
 	}
 	return NormalizeResponse{
 		Valid:  true,
 		Result: out,
-	}
+	}, nil
 }
 
-func (k *RawFileKind) Migrate(payload []byte, targetVersion string) NormalizeResponse {
-	return k.Normalize(payload, false) // migration is a noop
+func (k *RawFileKind) Migrate(ctx context.Context, payload []byte, targetVersion string) (NormalizeResponse, error) {
+	return k.Normalize(ctx, payload, false) // migration is a noop
 }
 
 func (k *RawFileKind) GetSchemaVersions() []string {
