@@ -4,9 +4,7 @@
 package main
 
 import (
-	"fmt"
 	"github.com/magefile/mage/sh"
-	"runtime"
 )
 
 // Build builds the binaries.
@@ -26,13 +24,6 @@ func Protobuf() error {
 	}
 
 	return sh.RunV("./proto/generate.sh")
-}
-
-// Info writes system info
-func Info() error {
-	fmt.Printf("runtime.GOOS: %s\n", runtime.GOOS)
-	fmt.Printf("runtime.GOARCH: %s\n", runtime.GOARCH)
-	return nil
 }
 
 // Test runs the test suite.
