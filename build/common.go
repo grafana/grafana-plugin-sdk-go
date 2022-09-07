@@ -180,7 +180,7 @@ func (Build) Backend() error {
 		if err != nil {
 			return err
 		}
-		buildBackend(newBuildConfig("darwin", "amd64"))
+		return buildBackend(newBuildConfig("darwin", "amd64"))
 	}
 	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
 	return buildBackend(cfg)
