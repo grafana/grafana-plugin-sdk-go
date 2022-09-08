@@ -19,12 +19,12 @@ func NewInstanceManager(fn InstanceFactoryFunc) instancemgmt.InstanceManager {
 	return instancemgmt.New(ip)
 }
 
-// NewInstanceProvider create a new data source instance provuder,
+// NewInstanceProvider create a new app instance provider,
 //
-// The instance provider is responsible for providing cache keys for data source instances,
+// The instance provider is responsible for providing cache keys for application instances,
 // creating new instances when needed and invalidating cached instances when they have been
 // updated in Grafana.
-// Cache key is based on the numerical data source identifier.
+// Cache key is based on the app plugin identifier, and the numeric Grafana organization ID.
 // If fn is nil, NewInstanceProvider panics.
 func NewInstanceProvider(fn InstanceFactoryFunc) instancemgmt.InstanceProvider {
 	if fn == nil {
@@ -45,8 +45,9 @@ func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interfa
 		return nil, fmt.Errorf("app instance settings cannot be nil")
 	}
 
-	// Since app plugins have just one instance, use pluginID as instance cache key
-	return pluginContext.PluginID, nil
+	// The instance key generated for app plugins should include both plugin ID, and the OrgID, since for a single
+	// Grafana instance there might be different orgs using the same plugin.
+	return fmt.Sprintf("%s#%v", pluginContext.PluginID, pluginContext.OrgID), nil
 }
 
 func (ip *instanceProvider) NeedsUpdate(pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
