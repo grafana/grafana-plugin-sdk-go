@@ -48,7 +48,7 @@ type EntityLocator struct {
 	// UID may contain / to indicate parent folder's
 	UID string `json:"UID,omitempty"`
 
-	// dasboard, datasource, etc
+	// dashboard, datasource, folder, etc
 	Kind string `json:"kind,omitempty"`
 
 	// prometheus etc
