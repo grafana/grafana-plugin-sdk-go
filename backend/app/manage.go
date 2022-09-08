@@ -12,7 +12,7 @@ type ManageOpts struct {
 	GRPCSettings backend.GRPCSettings
 }
 
-// Manage starts serving the data source over gPRC with automatic instance management.
+// Manage starts serving the app over gPRC with automatic instance management.
 // pluginID should match the one from plugin.json.
 func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpts) error {
 	backend.SetupPluginEnvironment(pluginID) // Enable profiler.
