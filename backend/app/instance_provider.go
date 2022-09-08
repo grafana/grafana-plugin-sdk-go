@@ -7,7 +7,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 )
 
-// InstanceFactoryFunc factory method for creating data source instances.
+// InstanceFactoryFunc factory method for creating app instances.
 type InstanceFactoryFunc func(settings backend.AppInstanceSettings) (instancemgmt.Instance, error)
 
 // NewInstanceManager creates a new data source instance manager,
