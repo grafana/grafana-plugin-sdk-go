@@ -42,6 +42,7 @@ type instanceProvider struct {
 
 func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interface{}, error) {
 	if pluginContext.AppInstanceSettings == nil {
+		// fail fast if there is no app settings
 		return nil, fmt.Errorf("app instance settings cannot be nil")
 	}
 
