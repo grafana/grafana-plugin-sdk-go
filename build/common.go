@@ -140,6 +140,11 @@ func (Build) Linux() error {
 	return buildBackend(newBuildConfig("linux", "amd64"))
 }
 
+// Linux builds the back-end plugin for Linux for s390x.
+func (Build) Linuxs390x() error {
+	return buildBackend(newBuildConfig("linux", "s390x"))
+}
+
 // LinuxARM builds the back-end plugin for Linux on ARM.
 func (Build) LinuxARM() error {
 	return buildBackend(newBuildConfig("linux", "arm"))
@@ -189,7 +194,7 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.Linuxs390x)
 }
 
 // Test runs backend tests.
