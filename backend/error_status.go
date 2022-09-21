@@ -3,6 +3,7 @@ package backend
 import (
 	"errors"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"syscall"
@@ -23,7 +24,7 @@ type ErrorStatus int32
 const (
 	InvalidArgument ErrorStatus = iota + 1
 	Unauthenticated
-	Unauthorized
+	Unauthorized // remove?
 	NotFound
 	ResourceExhausted
 	Cancelled
@@ -34,7 +35,7 @@ const (
 	Timeout
 )
 
-func InferErrorStatus(err error) ErrorStatus {
+func InferErrorStatusFromError(err error) ErrorStatus {
 	for {
 		result := errorStatus(err)
 		if result != Unknown {
@@ -45,6 +46,26 @@ func InferErrorStatus(err error) ErrorStatus {
 			return Unknown
 		}
 	}
+}
+
+func InferErrorStatusFromHTTPResponse(resp *http.Response) ErrorStatus {
+	switch resp.StatusCode {
+	case http.StatusUnauthorized, http.StatusForbidden:
+		return Unauthorized
+	case http.StatusNotFound:
+		return NotFound
+	case http.StatusTooManyRequests:
+		return ResourceExhausted
+	case http.StatusInternalServerError:
+		return Internal
+	case http.StatusNotImplemented, http.StatusMethodNotAllowed:
+		return NotImplemented
+	case http.StatusGatewayTimeout, http.StatusRequestTimeout:
+		return Timeout
+	case http.StatusServiceUnavailable, http.StatusBadGateway:
+		return Unavailable
+	}
+	return Unknown
 }
 
 func errorStatus(err error) ErrorStatus {
