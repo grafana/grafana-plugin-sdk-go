@@ -97,12 +97,14 @@ func NewQueryDataResponse() *QueryDataResponse {
 
 // Responses is a map of RefIDs (Unique Query ID) to DataResponses.
 // The QueryData method the QueryDataHandler method will set the RefId
-// property on the DataRespones' frames based on these RefIDs.
+// property on the DataResponses' frames based on these RefIDs.
+//swagger:model
 type Responses map[string]DataResponse
 
 // DataResponse contains the results from a DataQuery.
 // A map of RefIDs (unique query identifiers) to this type makes up the Responses property of a QueryDataResponse.
 // The Error property is used to allow for partial success responses from the containing QueryDataResponse.
+//swagger:model
 type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.
 	Frames data.Frames

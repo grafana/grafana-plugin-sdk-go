@@ -14,6 +14,7 @@ import (
 // See NewField() for supported types.
 //
 // The slice data in the Field is a not exported, so methods on the Field are used to to manipulate its data.
+//swagger:model
 type Field struct {
 	// Name is default identifier of the field. The name does not have to be unique, but the combination
 	// of name and Labels should be unique for proper behavior in all situations.

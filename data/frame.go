@@ -30,6 +30,7 @@ import (
 //
 // A Frame is a general data container for Grafana. A Frame can be table data
 // or time series data depending on its content and field types.
+//swagger:model
 type Frame struct {
 	// Name is used in some Grafana visualizations.
 	Name string
@@ -67,6 +68,7 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 
 // Frames is a slice of Frame pointers.
 // It is the main data container within a backend.DataResponse.
+//swagger:model
 type Frames []*Frame
 
 // AppendRow adds a new row to the Frame by appending to each element of vals to
