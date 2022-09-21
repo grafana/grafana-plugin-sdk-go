@@ -12,10 +12,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 )
 
-const (
-	responseStatusNotImplemented = "501 Not implemented"
-)
-
 type RoundTripper struct {
 	// Response mock
 	Body            string
@@ -51,14 +47,14 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		err := storage.Load()
 		if err != nil {
 			res.StatusCode = http.StatusNotImplemented
-			res.Status = responseStatusNotImplemented
+			res.Status = http.StatusText(http.StatusNotImplemented)
 			res.Body = io.NopCloser(bytes.NewBufferString("no matching HAR files found"))
 			return res, errors.New("no matching HAR files found")
 		}
 		matchedRequest := storage.Match(req)
 		if matchedRequest == nil {
 			res.StatusCode = http.StatusNotImplemented
-			res.Status = responseStatusNotImplemented
+			res.Status = http.StatusText(http.StatusNotImplemented)
 			res.Body = io.NopCloser(bytes.NewBufferString("no matched request found in HAR file"))
 			return res, errors.New("no matched request found in HAR file")
 		}
@@ -69,9 +65,7 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		if err != nil {
 			return res, fmt.Errorf("error reading mock response file %s", rt.FileName)
 		}
-		reader := io.NopCloser(bytes.NewReader(b))
-		defer reader.Close()
-		res.Body = reader
+		res.Body = io.NopCloser(bytes.NewReader(b))
 		return rt.wrap(res), nil
 	}
 	if rt.Body != "" {
