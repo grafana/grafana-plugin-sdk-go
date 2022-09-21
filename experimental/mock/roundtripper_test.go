@@ -25,6 +25,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 		{
 			name: "default mock client should return valid result",
 			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
 				require.NotNil(t, res)
 				assert.Equal(t, http.StatusOK, res.StatusCode)
 				assert.Equal(t, "200 OK", res.Status)
@@ -35,6 +36,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 			name: "should return body if present",
 			rt:   &mock.RoundTripper{Body: `{ "message" : "ok" }`},
 			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
 				require.NotNil(t, res)
 				assert.Equal(t, http.StatusOK, res.StatusCode)
 				assert.Equal(t, "200 OK", res.Status)
@@ -45,6 +47,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 			name: "should return body if present and respect status code",
 			rt:   &mock.RoundTripper{Body: `{ "message" : "error" }`, StatusCode: 500, Status: "err"},
 			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
 				require.NotNil(t, res)
 				assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 				assert.Equal(t, "err", res.Status)
@@ -53,8 +56,10 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 		},
 		{
 			name: "should return file content if present",
+			req:  exampleRequest(http.MethodPost, "http://foo/ok"),
 			rt:   &mock.RoundTripper{FileName: "testdata/ok.json"},
 			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
 				require.NotNil(t, res)
 				assert.Equal(t, http.StatusOK, res.StatusCode)
 				assert.Equal(t, "200 OK", res.Status)
@@ -67,6 +72,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 			name: "should return file content if present and respect status code",
 			rt:   &mock.RoundTripper{FileName: "testdata/error.json", StatusCode: 500, Status: "err"},
 			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
 				require.NotNil(t, res)
 				assert.Equal(t, http.StatusInternalServerError, res.StatusCode)
 				assert.Equal(t, "err", res.Status)
@@ -81,6 +87,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 			req:     exampleRequest(http.MethodGet, "https://grafana.com/api/plugins/two"),
 			wantErr: errors.New("no matched request found in HAR file"),
 			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
 				require.NotNil(t, res)
 				assert.Equal(t, http.StatusOK, res.StatusCode)
 				assert.Equal(t, "OK", res.Status)
@@ -98,6 +105,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 			rt:   &mock.RoundTripper{BasicAuthEnabled: true, BasicAuthUser: "foo", BasicAuthPassword: "bar"},
 			req:  exampleRequest(http.MethodGet, "https://grafana.com/api/plugins"),
 			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
 				require.Equal(t, http.StatusUnauthorized, res.StatusCode)
 			},
 		},
@@ -106,6 +114,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 			rt:   &mock.RoundTripper{BasicAuthEnabled: true, BasicAuthUser: "foo", BasicAuthPassword: "bar"},
 			req:  exampleRequest(http.MethodGet, "https://foo:bar@grafana.com/api/plugins"),
 			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
 				require.Equal(t, http.StatusOK, res.StatusCode)
 			},
 		},
@@ -117,6 +126,9 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 				rt = tt.rt
 			}
 			got, err := rt.RoundTrip(tt.req)
+			if got != nil {
+				defer got.Body.Close()
+			}
 			if tt.wantErr != nil {
 				require.NotNil(t, err)
 				assert.Equal(t, tt.wantErr, err)
