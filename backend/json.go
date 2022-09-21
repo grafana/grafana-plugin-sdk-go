@@ -66,6 +66,9 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		stream.WriteObjectStart()
 		stream.WriteObjectField("status")
 		stream.WriteVal(dr.ErrorDetails.Status)
+		stream.WriteMore()
+		stream.WriteObjectField("message")
+		stream.WriteString(dr.ErrorDetails.Message)
 		stream.WriteObjectEnd()
 		started = true
 	}
