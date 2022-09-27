@@ -103,33 +103,31 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 func (t ConvertToProtobuf) ErrorDetails(errDetails *ErrorDetails) *pluginv2.ErrorDetails {
 	return &pluginv2.ErrorDetails{
 		Status:  t.ErrorDetailsStatus(errDetails.Status),
-		Message: errDetails.Message,
+		Message: errDetails.PublicMessage,
 	}
 }
 
 func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.ErrorDetails_Status {
 	switch status {
-	case InvalidArgument:
+	case InvalidArgumentErrorStatus:
 		return pluginv2.ErrorDetails_INVALID_ARGUMENT
-	case Unauthenticated:
-		return pluginv2.ErrorDetails_UNAUTHENTICATED
-	case Unauthorized:
+	case UnauthorizedErrorStatus:
 		return pluginv2.ErrorDetails_UNAUTHORIZED
-	case NotFound:
+	case NotFoundErrorStatus:
 		return pluginv2.ErrorDetails_NOT_FOUND
-	case ResourceExhausted:
+	case ResourceExhaustedErrorStatus:
 		return pluginv2.ErrorDetails_RESOURCE_EXHAUSTED
-	case Cancelled:
+	case CancelledErrorStatus:
 		return pluginv2.ErrorDetails_CANCELLED
-	case Unknown:
+	case UnknownErrorStatus:
 		return pluginv2.ErrorDetails_UNKNOWN
-	case Internal:
+	case InternalErrorStatus:
 		return pluginv2.ErrorDetails_INTERNAL
-	case NotImplemented:
+	case NotImplementedErrorStatus:
 		return pluginv2.ErrorDetails_NOT_IMPLEMENTED
-	case Unavailable:
+	case UnavailableErrorStatus:
 		return pluginv2.ErrorDetails_UNAVAILABLE
-	case Timeout:
+	case TimeoutErrorStatus:
 		return pluginv2.ErrorDetails_TIMEOUT
 	}
 	return pluginv2.ErrorDetails_UNKNOWN

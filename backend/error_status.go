@@ -15,35 +15,49 @@ var (
 )
 
 type ErrorDetails struct {
-	Status  ErrorStatus
-	Message string
+	Status        ErrorStatus
+	PublicMessage string
 }
 
-type ErrorStatus int32
+type ErrorStatus string
 
 const (
-	InvalidArgument ErrorStatus = iota + 1
-	Unauthenticated
-	Unauthorized // remove?
-	NotFound
-	ResourceExhausted
-	Cancelled
-	Unknown
-	Internal
-	NotImplemented
-	Unavailable
-	Timeout
+	InvalidArgumentErrorStatus   ErrorStatus = "Invalid argument"
+	UnauthorizedErrorStatus      ErrorStatus = "Unauthorized"
+	NotFoundErrorStatus          ErrorStatus = "Not found"
+	ResourceExhaustedErrorStatus ErrorStatus = "Resource exhausted"
+	CancelledErrorStatus         ErrorStatus = "Cancelled"
+	UnknownErrorStatus           ErrorStatus = "Unknown"
+	InternalErrorStatus          ErrorStatus = "Internal"
+	NotImplementedErrorStatus    ErrorStatus = "Not implemented"
+	UnavailableErrorStatus       ErrorStatus = "Unavailable"
+	TimeoutErrorStatus           ErrorStatus = "Timeout"
 )
+
+func ErrorStatuses() []ErrorStatus {
+	return []ErrorStatus{
+		InvalidArgumentErrorStatus,
+		UnauthorizedErrorStatus,
+		NotFoundErrorStatus,
+		ResourceExhaustedErrorStatus,
+		CancelledErrorStatus,
+		UnknownErrorStatus,
+		InternalErrorStatus,
+		NotImplementedErrorStatus,
+		UnavailableErrorStatus,
+		TimeoutErrorStatus,
+	}
+}
 
 func InferErrorStatusFromError(err error) ErrorStatus {
 	for {
 		result := errorStatus(err)
-		if result != Unknown {
+		if result != UnknownErrorStatus {
 			return result
 		}
 
 		if err = errors.Unwrap(err); err == nil {
-			return Unknown
+			return UnknownErrorStatus
 		}
 	}
 }
@@ -51,32 +65,32 @@ func InferErrorStatusFromError(err error) ErrorStatus {
 func InferErrorStatusFromHTTPResponse(resp *http.Response) ErrorStatus {
 	switch resp.StatusCode {
 	case http.StatusUnauthorized, http.StatusForbidden:
-		return Unauthorized
+		return UnauthorizedErrorStatus
 	case http.StatusNotFound:
-		return NotFound
+		return NotFoundErrorStatus
 	case http.StatusTooManyRequests:
-		return ResourceExhausted
+		return ResourceExhaustedErrorStatus
 	case http.StatusInternalServerError:
-		return Internal
+		return InternalErrorStatus
 	case http.StatusNotImplemented, http.StatusMethodNotAllowed:
-		return NotImplemented
+		return NotImplementedErrorStatus
 	case http.StatusGatewayTimeout, http.StatusRequestTimeout:
-		return Timeout
+		return TimeoutErrorStatus
 	case http.StatusServiceUnavailable, http.StatusBadGateway:
-		return Unavailable
+		return UnavailableErrorStatus
 	}
-	return Unknown
+	return UnknownErrorStatus
 }
 
 func errorStatus(err error) ErrorStatus {
 	if os.IsTimeout(err) {
-		return Timeout
+		return TimeoutErrorStatus
 	}
 	if os.IsPermission(err) {
-		return Unauthorized
+		return UnauthorizedErrorStatus
 	}
 	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
-		return Unavailable // ConnectionError
+		return UnavailableErrorStatus // ConnectionError
 	}
-	return Unknown
+	return UnknownErrorStatus
 }
