@@ -24,7 +24,7 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 	}{
 		{
 			name: "If ErrorDetails is set, the ErrorDetails status is the expected error status",
-			err: &ErrorDetails{
+			err: ErrorDetails{
 				Status:        TimeoutErrorStatus,
 				PublicMessage: fmt.Errorf("something went wrong").Error(),
 			},
@@ -71,7 +71,10 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, qdr)
 			require.NotNil(t, qdr.Responses)
-			require.Equal(t, tc.expectedErrorStatus, qdr.Responses["A"].ErrorDetails.Status)
+
+			receivedStatus := qdr.Responses["A"].ErrorDetails.Status
+
+			require.Equal(t, tc.expectedErrorStatus, receivedStatus)
 		})
 	}
 }

@@ -131,12 +131,12 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 			Frames: frames,
 		}
 		if res.ErrorDetails != nil {
-			dr.Error = &ErrorDetails{
+			dr.Error = ErrorDetails{
 				Status:        f.ErrorDetailsStatus(res.ErrorDetails.Status),
 				PublicMessage: res.ErrorDetails.Message,
 			}
 		} else if res.Error != "" {
-			dr.Error = &ErrorDetails{
+			dr.Error = ErrorDetails{
 				Status:        UnknownErrorStatus,
 				PublicMessage: res.Error,
 			}

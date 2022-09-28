@@ -101,8 +101,8 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 }
 
 // ErrorDetails converts the SDK version of an ErrorDetails to the protobuf version.
-func (t ConvertToProtobuf) ErrorDetails(errDetails *ErrorDetails) *pluginv2.ErrorDetails {
-	return &pluginv2.ErrorDetails{
+func (t ConvertToProtobuf) ErrorDetails(errDetails *ErrorDetails) pluginv2.ErrorDetails {
+	return pluginv2.ErrorDetails{
 		Status:  t.ErrorDetailsStatus(errDetails.Status),
 		Message: errDetails.PublicMessage,
 	}
@@ -190,8 +190,8 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		}
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
-			var ed *ErrorDetails
-			if errors.As(err, &ed) {
+			var ed ErrorDetails
+			if errors.As(dr.Error, &ed) {
 				pDR.ErrorDetails = &pluginv2.ErrorDetails{
 					Status:  t.ErrorDetailsStatus(ed.Status),
 					Message: ed.PublicMessage,
