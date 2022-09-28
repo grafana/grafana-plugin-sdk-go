@@ -111,9 +111,6 @@ type DataResponse struct {
 
 	// Error is a property to be set if the corresponding DataQuery has an error.
 	Error error
-
-	// ErrorDetails is a property to be set if the corresponding DataQuery has an error.
-	ErrorDetails *ErrorDetails
 }
 
 // MarshalJSON writes the results as json

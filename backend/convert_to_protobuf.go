@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -189,13 +190,17 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		}
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
-			if dr.ErrorDetails == nil {
+			var ed *ErrorDetails
+			if errors.Is(err, ed) {
+				pDR.ErrorDetails = &pluginv2.ErrorDetails{
+					Status:  t.ErrorDetailsStatus(ed.Status),
+					Message: ed.PublicMessage,
+				}
+			} else {
 				pDR.ErrorDetails = &pluginv2.ErrorDetails{
 					Status:  t.ErrorDetailsStatus(InferErrorStatusFromError(dr.Error)),
 					Message: dr.Error.Error(),
 				}
-			} else {
-				pDR.ErrorDetails = t.ErrorDetails(dr.ErrorDetails)
 			}
 		}
 		pQDR.Responses[refID] = &pDR

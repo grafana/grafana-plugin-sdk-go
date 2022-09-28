@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -131,13 +130,15 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		dr := DataResponse{
 			Frames: frames,
 		}
-		if res.Error != "" {
-			dr.Error = errors.New(res.Error)
-		}
 		if res.ErrorDetails != nil {
-			dr.ErrorDetails = &ErrorDetails{
-				Status:        ErrorStatus(res.ErrorDetails.Status),
+			dr.Error = &ErrorDetails{
+				Status:        f.ErrorDetailsStatus(res.ErrorDetails.Status),
 				PublicMessage: res.ErrorDetails.Message,
+			}
+		} else if res.Error != "" {
+			dr.Error = &ErrorDetails{
+				Status:        UnknownErrorStatus,
+				PublicMessage: res.Error,
 			}
 		}
 		qdr.Responses[refID] = dr
@@ -274,4 +275,30 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	return &StreamPacket{
 		Data: protoReq.GetData(),
 	}
+}
+
+func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.ErrorDetails_Status) ErrorStatus {
+	switch status {
+	case pluginv2.ErrorDetails_INVALID_ARGUMENT:
+		return InvalidArgumentErrorStatus
+	case pluginv2.ErrorDetails_UNAUTHORIZED:
+		return UnauthorizedErrorStatus
+	case pluginv2.ErrorDetails_NOT_FOUND:
+		return NotImplementedErrorStatus
+	case pluginv2.ErrorDetails_RESOURCE_EXHAUSTED:
+		return ResourceExhaustedErrorStatus
+	case pluginv2.ErrorDetails_CANCELLED:
+		return CancelledErrorStatus
+	case pluginv2.ErrorDetails_UNKNOWN:
+		return UnknownErrorStatus
+	case pluginv2.ErrorDetails_INTERNAL:
+		return InternalErrorStatus
+	case pluginv2.ErrorDetails_NOT_IMPLEMENTED:
+		return NotImplementedErrorStatus
+	case pluginv2.ErrorDetails_UNAVAILABLE:
+		return UnavailableErrorStatus
+	case pluginv2.ErrorDetails_TIMEOUT:
+		return TimeoutErrorStatus
+	}
+	return UnknownErrorStatus
 }

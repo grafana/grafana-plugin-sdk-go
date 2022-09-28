@@ -19,6 +19,10 @@ type ErrorDetails struct {
 	PublicMessage string
 }
 
+func (e ErrorDetails) Error() string {
+	return e.PublicMessage
+}
+
 type ErrorStatus string
 
 const (

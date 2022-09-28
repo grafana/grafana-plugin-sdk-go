@@ -1056,7 +1056,7 @@ type DataResponse struct {
 	// Arrow encoded DataFrames
 	// Frame has its own meta, warnings, and repeats refId
 	Frames       [][]byte      `protobuf:"bytes,1,rep,name=frames,proto3" json:"frames,omitempty"`
-	Error        string        `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`       // Deprecated. Use errorDetails.message instead
+	Error        string        `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	JsonMeta     []byte        `protobuf:"bytes,3,opt,name=jsonMeta,proto3" json:"jsonMeta,omitempty"` // Warning: Current ignored by frontend. Would be for metadata about the query.
 	ErrorDetails *ErrorDetails `protobuf:"bytes,4,opt,name=errorDetails,proto3" json:"errorDetails,omitempty"`
 }
