@@ -277,6 +277,7 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	}
 }
 
+// ErrorDetailsStatus converts the protobuf version of an ErrorDetails.Status to the SDK version ErrorStatus.
 func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.ErrorDetails_Status) ErrorStatus {
 	switch status {
 	case pluginv2.ErrorDetails_INVALID_ARGUMENT:

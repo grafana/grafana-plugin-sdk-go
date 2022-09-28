@@ -130,8 +130,8 @@ message DataResponse {
   // Arrow encoded DataFrames
   // Frame has its own meta, warnings, and repeats refId
   repeated bytes frames = 1;
-  string error = 2;// Deprecated. Use errorDetails.message instead
-  bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
+  string error = 2;
+  bytes jsonMeta = 3; // Warning: Currently ignored by frontend. Would be for metadata about the query.
   ErrorDetails errorDetails = 4;
 }
 
