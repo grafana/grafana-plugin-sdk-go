@@ -53,6 +53,27 @@ func ErrorStatuses() []ErrorStatus {
 	}
 }
 
+func (e ErrorStatus) HTTPStatus() int {
+	switch e {
+	case UnauthorizedErrorStatus:
+		return http.StatusUnauthorized
+	case NotFoundErrorStatus:
+		return http.StatusNotFound
+	case TimeoutErrorStatus:
+		return http.StatusGatewayTimeout
+	case ResourceExhaustedErrorStatus:
+		return http.StatusTooManyRequests
+	case InvalidArgumentErrorStatus:
+		return http.StatusBadRequest
+	case NotImplementedErrorStatus:
+		return http.StatusNotImplemented
+	case UnknownErrorStatus, InternalErrorStatus:
+		return http.StatusInternalServerError
+	default:
+		return http.StatusInternalServerError
+	}
+}
+
 func InferErrorStatusFromError(err error) ErrorStatus {
 	for {
 		result := errorStatus(err)

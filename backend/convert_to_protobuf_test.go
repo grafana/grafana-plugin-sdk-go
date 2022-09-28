@@ -31,6 +31,14 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 			expectedErrorStatus: pluginv2.ErrorDetails_TIMEOUT,
 		},
 		{
+			name: "If ErrorDetails is set as pointer type, the ErrorDetails status is the expected error status",
+			err: &ErrorDetails{
+				Status:        ResourceExhaustedErrorStatus,
+				PublicMessage: fmt.Errorf("something went wrong").Error(),
+			},
+			expectedErrorStatus: pluginv2.ErrorDetails_RESOURCE_EXHAUSTED,
+		},
+		{
 			name:                "If ErrorDetails is not set, a connection error status is calculated based on the Error field",
 			err:                 syscall.ECONNREFUSED,
 			expectedErrorStatus: pluginv2.ErrorDetails_UNAVAILABLE,
