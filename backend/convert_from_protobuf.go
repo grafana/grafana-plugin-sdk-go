@@ -131,14 +131,14 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 			Frames: frames,
 		}
 		if res.ErrorDetails != nil {
-			dr.Error = ErrorDetails{
-				Status:        f.ErrorDetailsStatus(res.ErrorDetails.Status),
-				PublicMessage: res.ErrorDetails.Message,
+			dr.Error = Error{
+				status: f.ErrorDetailsStatus(res.ErrorDetails.Status),
+				msg:    res.ErrorDetails.Message,
 			}
 		} else if res.Error != "" {
-			dr.Error = ErrorDetails{
-				Status:        UnknownErrorStatus,
-				PublicMessage: res.Error,
+			dr.Error = Error{
+				status: UnknownErrorStatus,
+				msg:    res.Error,
 			}
 		}
 		qdr.Responses[refID] = dr
@@ -277,7 +277,7 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	}
 }
 
-// ErrorDetailsStatus converts the protobuf version of an ErrorDetails.Status to the SDK version ErrorStatus.
+// ErrorDetailsStatus converts the protobuf version of an Error.Status to the SDK version ErrorStatus.
 func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.ErrorDetails_Status) ErrorStatus {
 	switch status {
 	case pluginv2.ErrorDetails_BAD_REQUEST, pluginv2.ErrorDetails_VALIDATION_FAILED:
@@ -290,8 +290,6 @@ func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.ErrorDetails_Sta
 		return NotImplementedErrorStatus
 	case pluginv2.ErrorDetails_TOO_MANY_REQUESTS:
 		return TooManyRequestsErrorStatus
-	case pluginv2.ErrorDetails_CANCELLED:
-		return CancelledErrorStatus
 	case pluginv2.ErrorDetails_UNKNOWN:
 		return UnknownErrorStatus
 	case pluginv2.ErrorDetails_INTERNAL:

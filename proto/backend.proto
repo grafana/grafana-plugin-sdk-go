@@ -149,8 +149,7 @@ message ErrorDetails {
     INTERNAL = 7;
     NOT_IMPLEMENTED = 8;
     TIMEOUT = 9;
-    CANCELLED = 10;
-    BAD_GATEWAY = 11;
+    BAD_GATEWAY = 10;
   }
 
   string message = 2;

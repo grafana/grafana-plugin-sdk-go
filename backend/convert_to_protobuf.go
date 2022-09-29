@@ -100,11 +100,11 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 	panic("unsupported protobuf health status type in sdk")
 }
 
-// ErrorDetails converts the SDK version of an ErrorDetails to the protobuf version.
-func (t ConvertToProtobuf) ErrorDetails(errDetails *ErrorDetails) pluginv2.ErrorDetails {
+// ErrorDetails converts the SDK version of an Error to the protobuf version ErrorDetails.
+func (t ConvertToProtobuf) ErrorDetails(err *Error) pluginv2.ErrorDetails {
 	return pluginv2.ErrorDetails{
-		Status:  t.ErrorDetailsStatus(errDetails.Status),
-		Message: errDetails.PublicMessage,
+		Status:  t.ErrorDetailsStatus(err.status),
+		Message: err.msg,
 	}
 }
 
@@ -120,8 +120,6 @@ func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.Error
 		return pluginv2.ErrorDetails_NOT_FOUND
 	case TooManyRequestsErrorStatus:
 		return pluginv2.ErrorDetails_TOO_MANY_REQUESTS
-	case CancelledErrorStatus:
-		return pluginv2.ErrorDetails_CANCELLED
 	case UnknownErrorStatus:
 		return pluginv2.ErrorDetails_UNKNOWN
 	case InternalErrorStatus:
@@ -192,21 +190,21 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		}
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
-			var ed ErrorDetails
-			var ed2 *ErrorDetails
+			var ed Error
+			var ed2 *Error
 			if errors.As(dr.Error, &ed) {
 				pDR.ErrorDetails = &pluginv2.ErrorDetails{
-					Status:  t.ErrorDetailsStatus(ed.Status),
-					Message: ed.PublicMessage,
+					Status:  t.ErrorDetailsStatus(ed.status),
+					Message: ed.msg,
 				}
 			} else if errors.As(dr.Error, &ed2) {
 				pDR.ErrorDetails = &pluginv2.ErrorDetails{
-					Status:  t.ErrorDetailsStatus(ed2.Status),
-					Message: ed2.PublicMessage,
+					Status:  t.ErrorDetailsStatus(ed2.status),
+					Message: ed2.msg,
 				}
 			} else {
 				pDR.ErrorDetails = &pluginv2.ErrorDetails{
-					Status:  t.ErrorDetailsStatus(InferErrorStatusFromError(dr.Error)),
+					Status:  t.ErrorDetailsStatus(ErrorStatusFromError(dr.Error)),
 					Message: dr.Error.Error(),
 				}
 			}

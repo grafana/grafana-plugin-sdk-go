@@ -2,6 +2,7 @@ package backend
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"net/url"
@@ -9,18 +10,27 @@ import (
 	"syscall"
 )
 
-var (
-	connErr *url.Error
-	netErr  *net.OpError
-)
-
-type ErrorDetails struct {
-	Status        ErrorStatus
-	PublicMessage string
+type Error struct {
+	status ErrorStatus
+	msg    string
 }
 
-func (e ErrorDetails) Error() string {
-	return e.PublicMessage
+func NewError(status ErrorStatus, msg string) Error {
+	return Error{
+		status: status,
+		msg:    msg,
+	}
+}
+
+func (e Error) Error() string {
+	return fmt.Sprintf("%s: %s", e.Status(), e.msg)
+}
+
+func (e Error) Status() ErrorStatus {
+	if e.status == "" || !e.status.isValid() {
+		return UnknownErrorStatus
+	}
+	return e.status
 }
 
 type ErrorStatus string
@@ -36,26 +46,17 @@ const (
 	InternalErrorStatus         ErrorStatus = "Internal"
 	NotImplementedErrorStatus   ErrorStatus = "Not implemented"
 	TimeoutErrorStatus          ErrorStatus = "Timeout"
-	CancelledErrorStatus        ErrorStatus = "Cancelled"   // TODO keep?
-	BadGatewayErrorStatus       ErrorStatus = "Bad gateway" // TODO keep?
+	BadGatewayErrorStatus       ErrorStatus = "Bad gateway"
 )
 
-func ErrorStatuses() []ErrorStatus {
-	return []ErrorStatus{
-		UnknownErrorStatus,
-		UnauthorizedErrorStatus,
-		ForbiddenErrorStatus,
-		NotFoundErrorStatus,
-		TooManyRequestsErrorStatus,
-		BadRequestErrorStatus,
-		ValidationFailedErrorStatus,
-		InternalErrorStatus,
-		NotImplementedErrorStatus,
-		TimeoutErrorStatus,
-		TimeoutErrorStatus,
-		CancelledErrorStatus,
-		BadGatewayErrorStatus,
+func (e ErrorStatus) isValid() bool {
+	switch e {
+	case UnknownErrorStatus, UnauthorizedErrorStatus, ForbiddenErrorStatus, NotFoundErrorStatus,
+		TooManyRequestsErrorStatus, BadRequestErrorStatus, ValidationFailedErrorStatus, InternalErrorStatus,
+		NotImplementedErrorStatus, TimeoutErrorStatus, BadGatewayErrorStatus:
+		return true
 	}
+	return false
 }
 
 func (e ErrorStatus) HTTPStatus() int {
@@ -83,7 +84,7 @@ func (e ErrorStatus) HTTPStatus() int {
 	}
 }
 
-func InferErrorStatusFromError(err error) ErrorStatus {
+func ErrorStatusFromError(err error) ErrorStatus {
 	for {
 		result := errorStatus(err)
 		if result != UnknownErrorStatus {
@@ -96,7 +97,7 @@ func InferErrorStatusFromError(err error) ErrorStatus {
 	}
 }
 
-func InferErrorStatusFromHTTPResponse(resp *http.Response) ErrorStatus {
+func ErrorStatusFromHTTPResponse(resp *http.Response) ErrorStatus {
 	switch resp.StatusCode {
 	case http.StatusUnauthorized:
 		return UnauthorizedErrorStatus
@@ -125,6 +126,10 @@ func errorStatus(err error) ErrorStatus {
 	if os.IsPermission(err) {
 		return UnauthorizedErrorStatus
 	}
+	var (
+		connErr *url.Error
+		netErr  *net.OpError
+	)
 	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
 		return BadGatewayErrorStatus
 	}
