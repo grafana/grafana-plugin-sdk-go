@@ -31,13 +31,6 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 			expectedErrorStatus: pluginv2.ErrorDetails_TIMEOUT,
 		},
 		{
-			name: "If Error pointer type is used, Error.status is the expected error status",
-			err: &Error{
-				status: ForbiddenErrorStatus,
-			},
-			expectedErrorStatus: pluginv2.ErrorDetails_FORBIDDEN,
-		},
-		{
 			name:                "If Error type is used, Error.status is the expected error status",
 			err:                 NewError(TooManyRequestsErrorStatus, "Resource exhausted"),
 			expectedErrorStatus: pluginv2.ErrorDetails_TOO_MANY_REQUESTS,

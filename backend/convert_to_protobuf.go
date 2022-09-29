@@ -191,16 +191,10 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
 			var ed Error
-			var ed2 *Error
 			if errors.As(dr.Error, &ed) {
 				pDR.ErrorDetails = &pluginv2.ErrorDetails{
 					Status:  t.ErrorDetailsStatus(ed.status),
 					Message: ed.msg,
-				}
-			} else if errors.As(dr.Error, &ed2) {
-				pDR.ErrorDetails = &pluginv2.ErrorDetails{
-					Status:  t.ErrorDetailsStatus(ed2.status),
-					Message: ed2.msg,
 				}
 			} else {
 				pDR.ErrorDetails = &pluginv2.ErrorDetails{

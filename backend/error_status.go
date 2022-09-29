@@ -23,7 +23,10 @@ func NewError(status ErrorStatus, msg string) Error {
 }
 
 func (e Error) Error() string {
-	return fmt.Sprintf("%s: %s", e.Status(), e.msg)
+	if e.msg == "" {
+		return fmt.Sprintf("An error occurred: %s", e.Status())
+	}
+	return e.msg
 }
 
 func (e Error) Status() ErrorStatus {
