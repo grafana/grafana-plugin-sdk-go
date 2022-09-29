@@ -26,30 +26,35 @@ func (e ErrorDetails) Error() string {
 type ErrorStatus string
 
 const (
-	InvalidArgumentErrorStatus   ErrorStatus = "Invalid argument"
-	UnauthorizedErrorStatus      ErrorStatus = "Unauthorized"
-	NotFoundErrorStatus          ErrorStatus = "Not found"
-	ResourceExhaustedErrorStatus ErrorStatus = "Resource exhausted"
-	CancelledErrorStatus         ErrorStatus = "Cancelled"
-	UnknownErrorStatus           ErrorStatus = "Unknown"
-	InternalErrorStatus          ErrorStatus = "Internal"
-	NotImplementedErrorStatus    ErrorStatus = "Not implemented"
-	UnavailableErrorStatus       ErrorStatus = "Unavailable"
-	TimeoutErrorStatus           ErrorStatus = "Timeout"
+	UnknownErrorStatus          ErrorStatus = "Unknown"
+	UnauthorizedErrorStatus     ErrorStatus = "Unauthorized"
+	ForbiddenErrorStatus        ErrorStatus = "Forbidden"
+	NotFoundErrorStatus         ErrorStatus = "Not found"
+	TooManyRequestsErrorStatus  ErrorStatus = "Resource exhausted"
+	BadRequestErrorStatus       ErrorStatus = "Bad request"
+	ValidationFailedErrorStatus ErrorStatus = "Validation failed"
+	InternalErrorStatus         ErrorStatus = "Internal"
+	NotImplementedErrorStatus   ErrorStatus = "Not implemented"
+	TimeoutErrorStatus          ErrorStatus = "Timeout"
+	CancelledErrorStatus        ErrorStatus = "Cancelled"   // TODO keep?
+	BadGatewayErrorStatus       ErrorStatus = "Bad gateway" // TODO keep?
 )
 
 func ErrorStatuses() []ErrorStatus {
 	return []ErrorStatus{
-		InvalidArgumentErrorStatus,
-		UnauthorizedErrorStatus,
-		NotFoundErrorStatus,
-		ResourceExhaustedErrorStatus,
-		CancelledErrorStatus,
 		UnknownErrorStatus,
+		UnauthorizedErrorStatus,
+		ForbiddenErrorStatus,
+		NotFoundErrorStatus,
+		TooManyRequestsErrorStatus,
+		BadRequestErrorStatus,
+		ValidationFailedErrorStatus,
 		InternalErrorStatus,
 		NotImplementedErrorStatus,
-		UnavailableErrorStatus,
 		TimeoutErrorStatus,
+		TimeoutErrorStatus,
+		CancelledErrorStatus,
+		BadGatewayErrorStatus,
 	}
 }
 
@@ -57,18 +62,22 @@ func (e ErrorStatus) HTTPStatus() int {
 	switch e {
 	case UnauthorizedErrorStatus:
 		return http.StatusUnauthorized
+	case ForbiddenErrorStatus:
+		return http.StatusForbidden
 	case NotFoundErrorStatus:
 		return http.StatusNotFound
 	case TimeoutErrorStatus:
 		return http.StatusGatewayTimeout
-	case ResourceExhaustedErrorStatus:
+	case TooManyRequestsErrorStatus:
 		return http.StatusTooManyRequests
-	case InvalidArgumentErrorStatus:
+	case BadRequestErrorStatus, ValidationFailedErrorStatus:
 		return http.StatusBadRequest
 	case NotImplementedErrorStatus:
 		return http.StatusNotImplemented
 	case UnknownErrorStatus, InternalErrorStatus:
 		return http.StatusInternalServerError
+	case BadGatewayErrorStatus:
+		return http.StatusBadGateway
 	default:
 		return http.StatusInternalServerError
 	}
@@ -89,20 +98,22 @@ func InferErrorStatusFromError(err error) ErrorStatus {
 
 func InferErrorStatusFromHTTPResponse(resp *http.Response) ErrorStatus {
 	switch resp.StatusCode {
-	case http.StatusUnauthorized, http.StatusForbidden:
+	case http.StatusUnauthorized:
 		return UnauthorizedErrorStatus
+	case http.StatusForbidden:
+		return ForbiddenErrorStatus
 	case http.StatusNotFound:
 		return NotFoundErrorStatus
 	case http.StatusTooManyRequests:
-		return ResourceExhaustedErrorStatus
+		return TooManyRequestsErrorStatus
 	case http.StatusInternalServerError:
 		return InternalErrorStatus
 	case http.StatusNotImplemented, http.StatusMethodNotAllowed:
 		return NotImplementedErrorStatus
 	case http.StatusGatewayTimeout, http.StatusRequestTimeout:
 		return TimeoutErrorStatus
-	case http.StatusServiceUnavailable, http.StatusBadGateway:
-		return UnavailableErrorStatus
+	case http.StatusBadRequest:
+		return BadRequestErrorStatus
 	}
 	return UnknownErrorStatus
 }
@@ -115,7 +126,7 @@ func errorStatus(err error) ErrorStatus {
 		return UnauthorizedErrorStatus
 	}
 	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
-		return UnavailableErrorStatus // ConnectionError
+		return BadGatewayErrorStatus
 	}
 	return UnknownErrorStatus
 }

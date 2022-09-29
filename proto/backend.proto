@@ -139,16 +139,18 @@ message ErrorDetails {
   Status status = 1;
 
   enum Status {
-    INVALID_ARGUMENT = 0;
+    UNKNOWN = 0;
     UNAUTHORIZED = 1;
-    NOT_FOUND = 2;
-    RESOURCE_EXHAUSTED = 3;
-    CANCELLED = 4;
-    UNKNOWN = 5;
-    INTERNAL = 6;
-    NOT_IMPLEMENTED = 7;
-    UNAVAILABLE = 8;
+    FORBIDDEN = 2;
+    NOT_FOUND = 3;
+    TOO_MANY_REQUESTS = 4;
+    BAD_REQUEST = 5;
+    VALIDATION_FAILED = 6;
+    INTERNAL = 7;
+    NOT_IMPLEMENTED = 8;
     TIMEOUT = 9;
+    CANCELLED = 10;
+    BAD_GATEWAY = 11;
   }
 
   string message = 2;

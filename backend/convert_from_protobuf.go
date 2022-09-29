@@ -280,14 +280,16 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 // ErrorDetailsStatus converts the protobuf version of an ErrorDetails.Status to the SDK version ErrorStatus.
 func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.ErrorDetails_Status) ErrorStatus {
 	switch status {
-	case pluginv2.ErrorDetails_INVALID_ARGUMENT:
-		return InvalidArgumentErrorStatus
+	case pluginv2.ErrorDetails_BAD_REQUEST, pluginv2.ErrorDetails_VALIDATION_FAILED:
+		return BadRequestErrorStatus
+	case pluginv2.ErrorDetails_FORBIDDEN:
+		return ForbiddenErrorStatus
 	case pluginv2.ErrorDetails_UNAUTHORIZED:
 		return UnauthorizedErrorStatus
 	case pluginv2.ErrorDetails_NOT_FOUND:
 		return NotImplementedErrorStatus
-	case pluginv2.ErrorDetails_RESOURCE_EXHAUSTED:
-		return ResourceExhaustedErrorStatus
+	case pluginv2.ErrorDetails_TOO_MANY_REQUESTS:
+		return TooManyRequestsErrorStatus
 	case pluginv2.ErrorDetails_CANCELLED:
 		return CancelledErrorStatus
 	case pluginv2.ErrorDetails_UNKNOWN:
@@ -296,10 +298,10 @@ func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.ErrorDetails_Sta
 		return InternalErrorStatus
 	case pluginv2.ErrorDetails_NOT_IMPLEMENTED:
 		return NotImplementedErrorStatus
-	case pluginv2.ErrorDetails_UNAVAILABLE:
-		return UnavailableErrorStatus
 	case pluginv2.ErrorDetails_TIMEOUT:
 		return TimeoutErrorStatus
+	case pluginv2.ErrorDetails_BAD_GATEWAY:
+		return BadGatewayErrorStatus
 	}
 	return UnknownErrorStatus
 }

@@ -110,14 +110,16 @@ func (t ConvertToProtobuf) ErrorDetails(errDetails *ErrorDetails) pluginv2.Error
 
 func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.ErrorDetails_Status {
 	switch status {
-	case InvalidArgumentErrorStatus:
-		return pluginv2.ErrorDetails_INVALID_ARGUMENT
+	case BadRequestErrorStatus:
+		return pluginv2.ErrorDetails_BAD_REQUEST
 	case UnauthorizedErrorStatus:
 		return pluginv2.ErrorDetails_UNAUTHORIZED
+	case ForbiddenErrorStatus:
+		return pluginv2.ErrorDetails_FORBIDDEN
 	case NotFoundErrorStatus:
 		return pluginv2.ErrorDetails_NOT_FOUND
-	case ResourceExhaustedErrorStatus:
-		return pluginv2.ErrorDetails_RESOURCE_EXHAUSTED
+	case TooManyRequestsErrorStatus:
+		return pluginv2.ErrorDetails_TOO_MANY_REQUESTS
 	case CancelledErrorStatus:
 		return pluginv2.ErrorDetails_CANCELLED
 	case UnknownErrorStatus:
@@ -126,8 +128,8 @@ func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.Error
 		return pluginv2.ErrorDetails_INTERNAL
 	case NotImplementedErrorStatus:
 		return pluginv2.ErrorDetails_NOT_IMPLEMENTED
-	case UnavailableErrorStatus:
-		return pluginv2.ErrorDetails_UNAVAILABLE
+	case BadGatewayErrorStatus:
+		return pluginv2.ErrorDetails_BAD_GATEWAY
 	case TimeoutErrorStatus:
 		return pluginv2.ErrorDetails_TIMEOUT
 	}
