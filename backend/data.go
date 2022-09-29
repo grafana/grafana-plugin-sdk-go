@@ -111,6 +111,12 @@ type DataResponse struct {
 
 	// Error is a property to be set if the the corresponding DataQuery has an error.
 	Error error
+
+	// Status codes map to HTTP status values
+	Status int32
+
+	// Optional metadata for the query response (not yet passed to the frontend)
+	Metadata map[string]interface{}
 }
 
 // MarshalJSON writes the results as json

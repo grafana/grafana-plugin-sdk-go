@@ -52,9 +52,33 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	stream.WriteObjectStart()
 	started := false
 
+	status := dr.Status
+
 	if dr.Error != nil {
 		stream.WriteObjectField("error")
 		stream.WriteString(dr.Error.Error())
+		started = true
+
+		if status < 100 {
+			status = 400 // TODO guess from error type?
+		}
+	}
+
+	if status >= 100 {
+		if started {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("status")
+		stream.WriteInt32(status)
+		started = true
+	}
+
+	if dr.Metadata != nil {
+		if started {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("metadata")
+		stream.WriteVal(dr.Metadata)
 		started = true
 	}
 
@@ -144,6 +168,14 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 		switch l2Field {
 		case "error":
 			rsp.Error = fmt.Errorf(iter.ReadString())
+
+		case "status":
+			rsp.Status = iter.ReadInt32()
+
+		case "metadata":
+			meta := make(map[string]interface{})
+			iter.ReadVal(&meta)
+			rsp.Metadata = meta
 
 		case "frames":
 			for iter.ReadArray() {

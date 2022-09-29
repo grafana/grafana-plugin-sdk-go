@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -130,9 +131,17 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		dr := DataResponse{
 			Frames: frames,
+			Status: res.Status,
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
+		}
+		if res.JsonMeta != nil {
+			dr.Metadata = map[string]interface{}{}
+			err = json.Unmarshal(res.JsonMeta, &dr.Metadata)
+			if err != nil {
+				return nil, err
+			}
 		}
 		qdr.Responses[refID] = dr
 	}

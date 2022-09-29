@@ -83,7 +83,8 @@ message CallResourceRequest {
 }
 
 message CallResourceResponse {
-  int32 code = 1;
+  // Maps to raw HTTP status codes when passed over HTTP
+  int32 code = 1; 
   map<string,StringList> headers = 2;
   bytes body = 3;
 }
@@ -130,8 +131,15 @@ message DataResponse {
   // Arrow encoded DataFrames
   // Frame has its own meta, warnings, and repeats refId
   repeated bytes frames = 1;
+
+  // Error message
   string error = 2;
-  bytes jsonMeta = 3; // Warning: Current ignored by frontend. Would be for metadata about the query.
+
+  // Meta fields passed as JSON string (warning, this is not exposed to the frontend yet)
+  bytes jsonMeta = 3;
+
+  // Maps to raw HTTP status codes when passed over HTTP
+  int32 status = 4; 
 }
 
 //-----------------------------------------------
