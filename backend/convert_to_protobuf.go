@@ -102,25 +102,25 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 
 func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.DataResponse_Status {
 	switch status {
-	case BadRequestErrorStatus:
+	case ErrorStatusBadRequest:
 		return pluginv2.DataResponse_BAD_REQUEST
-	case UnauthorizedErrorStatus:
+	case ErrorStatusUnauthorized:
 		return pluginv2.DataResponse_UNAUTHORIZED
-	case ForbiddenErrorStatus:
+	case ErrorStatusForbidden:
 		return pluginv2.DataResponse_FORBIDDEN
-	case NotFoundErrorStatus:
+	case ErrorStatusNotFound:
 		return pluginv2.DataResponse_NOT_FOUND
-	case TooManyRequestsErrorStatus:
+	case ErrorStatusTooManyRequests:
 		return pluginv2.DataResponse_TOO_MANY_REQUESTS
-	case UnknownErrorStatus:
+	case ErrorStatusUnknown:
 		return pluginv2.DataResponse_UNKNOWN
-	case InternalErrorStatus:
+	case ErrorStatusInternal:
 		return pluginv2.DataResponse_INTERNAL
-	case NotImplementedErrorStatus:
+	case ErrorStatusNotImplemented:
 		return pluginv2.DataResponse_NOT_IMPLEMENTED
-	case BadGatewayErrorStatus:
+	case ErrorStatusBadGateway:
 		return pluginv2.DataResponse_BAD_GATEWAY
-	case TimeoutErrorStatus:
+	case ErrorStatusTimeout:
 		return pluginv2.DataResponse_TIMEOUT
 	}
 	return pluginv2.DataResponse_UNKNOWN

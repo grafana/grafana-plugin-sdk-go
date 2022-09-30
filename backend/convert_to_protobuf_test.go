@@ -26,14 +26,14 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 		{
 			name: "If Error type is used, Error.status is the expected error status",
 			err: Error{
-				status: TimeoutErrorStatus,
+				status: ErrorStatusTimeout,
 				msg:    fmt.Errorf("something went wrong").Error(),
 			},
 			expectedErrorStatus: pluginv2.DataResponse_TIMEOUT,
 		},
 		{
 			name:                "If Error type is used, Error.status is the expected error status",
-			err:                 NewError(TooManyRequestsErrorStatus, "Resource exhausted"),
+			err:                 NewError(ErrorStatusTooManyRequests, "Resource exhausted"),
 			expectedErrorStatus: pluginv2.DataResponse_TOO_MANY_REQUESTS,
 		},
 		{

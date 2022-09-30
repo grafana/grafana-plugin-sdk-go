@@ -276,25 +276,25 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.DataResponse_Status) ErrorStatus {
 	switch status {
 	case pluginv2.DataResponse_BAD_REQUEST, pluginv2.DataResponse_VALIDATION_FAILED:
-		return BadRequestErrorStatus
+		return ErrorStatusBadRequest
 	case pluginv2.DataResponse_FORBIDDEN:
-		return ForbiddenErrorStatus
+		return ErrorStatusForbidden
 	case pluginv2.DataResponse_UNAUTHORIZED:
-		return UnauthorizedErrorStatus
+		return ErrorStatusUnauthorized
 	case pluginv2.DataResponse_NOT_FOUND:
-		return NotImplementedErrorStatus
+		return ErrorStatusNotImplemented
 	case pluginv2.DataResponse_TOO_MANY_REQUESTS:
-		return TooManyRequestsErrorStatus
+		return ErrorStatusTooManyRequests
 	case pluginv2.DataResponse_UNKNOWN:
-		return UnknownErrorStatus
+		return ErrorStatusUnknown
 	case pluginv2.DataResponse_INTERNAL:
-		return InternalErrorStatus
+		return ErrorStatusInternal
 	case pluginv2.DataResponse_NOT_IMPLEMENTED:
-		return NotImplementedErrorStatus
+		return ErrorStatusNotImplemented
 	case pluginv2.DataResponse_TIMEOUT:
-		return TimeoutErrorStatus
+		return ErrorStatusTimeout
 	case pluginv2.DataResponse_BAD_GATEWAY:
-		return BadGatewayErrorStatus
+		return ErrorStatusBadGateway
 	}
-	return UnknownErrorStatus
+	return ErrorStatusUnknown
 }

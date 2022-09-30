@@ -15,12 +15,12 @@ func TestError_Error(t *testing.T) {
 		{
 			name:        "An empty error is considered an unknown error",
 			err:         Error{},
-			expectedErr: Error{status: UnknownErrorStatus},
+			expectedErr: Error{status: ErrorStatusUnknown},
 		},
 		{
 			name:        "An error with an invalid status is considered an unknown error",
 			err:         Error{status: "invalidStatus"},
-			expectedErr: Error{status: UnknownErrorStatus},
+			expectedErr: Error{status: ErrorStatusUnknown},
 		},
 	}
 	for _, tc := range tcs {
