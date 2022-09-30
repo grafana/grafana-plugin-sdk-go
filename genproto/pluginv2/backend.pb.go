@@ -662,9 +662,11 @@ type CallResourceResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Maps to raw HTTP status codes when passed over HTTP
-	Code    int32                  `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
+	Code int32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
+	// Raw HTTP headers sent to the client
 	Headers map[string]*StringList `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
-	Body    []byte                 `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	// Raw HTTP body bytes sent to the client
+	Body []byte `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
 }
 
 func (x *CallResourceResponse) Reset() {
@@ -988,7 +990,8 @@ type DataResponse struct {
 	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	// Meta fields passed as JSON string (warning, this is not exposed to the frontend yet)
 	JsonMeta []byte `protobuf:"bytes,3,opt,name=jsonMeta,proto3" json:"jsonMeta,omitempty"`
-	// Maps to raw HTTP status codes when passed over HTTP
+	// When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code
+	// The status codes should match values from standard HTTP status codes
 	Status int32 `protobuf:"varint,4,opt,name=status,proto3" json:"status,omitempty"`
 }
 

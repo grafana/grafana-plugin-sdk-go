@@ -85,7 +85,11 @@ message CallResourceRequest {
 message CallResourceResponse {
   // Maps to raw HTTP status codes when passed over HTTP
   int32 code = 1; 
+
+  // Raw HTTP headers sent to the client
   map<string,StringList> headers = 2;
+
+  // Raw HTTP body bytes sent to the client
   bytes body = 3;
 }
 
@@ -138,7 +142,8 @@ message DataResponse {
   // Meta fields passed as JSON string (warning, this is not exposed to the frontend yet)
   bytes jsonMeta = 3;
 
-  // Maps to raw HTTP status codes when passed over HTTP
+  // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code
+  // The status codes should match values from standard HTTP status codes
   int32 status = 4; 
 }
 
