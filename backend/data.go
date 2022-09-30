@@ -3,6 +3,12 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"errors"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"syscall"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -141,4 +147,21 @@ type TimeRange struct {
 // Duration returns a time.Duration representing the amount of time between From and To.
 func (tr TimeRange) Duration() time.Duration {
 	return tr.To.Sub(tr.From)
+}
+
+func guessErrorStatusCode(err error) int32 {
+	if os.IsTimeout(err) {
+		return http.StatusRequestTimeout
+	}
+	if os.IsPermission(err) {
+		return http.StatusUnauthorized
+	}
+	var (
+		connErr *url.Error
+		netErr  *net.OpError
+	)
+	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
+		return http.StatusBadGateway
+	}
+	return http.StatusInternalServerError // 500
 }

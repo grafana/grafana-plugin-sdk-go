@@ -60,7 +60,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		started = true
 
 		if status < 100 {
-			status = 400 // TODO guess from error type?
+			status = guessErrorStatusCode(dr.Error)
 		}
 	}
 
