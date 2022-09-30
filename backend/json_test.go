@@ -31,50 +31,96 @@ func testDataResponse() backend.DataResponse {
 	}
 }
 
+func testDataErrorResponse() backend.DataResponse {
+	return backend.DataResponse{
+		Error: backend.NewError(backend.ErrorStatusBadRequest, "Invalid query syntax"),
+	}
+}
+
 // TestResponseEncoder makes sure that the JSON produced from arrow and dataframes match
 func TestResponseEncoder(t *testing.T) {
-	dr := testDataResponse()
+	t.Run("data response with frames", func(t *testing.T) {
+		dr := testDataResponse()
 
-	b, err := json.Marshal(dr)
-	require.NoError(t, err)
+		b, err := json.Marshal(dr)
+		require.NoError(t, err)
 
-	str := string(b)
-	require.Equal(t, `{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`, str)
+		str := string(b)
+		require.Equal(t, `{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`, str)
 
-	b2, err := json.Marshal(&dr)
-	require.NoError(t, err)
-	require.Equal(t, str, string(b2), "same result from pointer or object")
+		b2, err := json.Marshal(&dr)
+		require.NoError(t, err)
+		require.Equal(t, str, string(b2), "same result from pointer or object")
 
-	// Now the same thing in query data
-	qdr := backend.NewQueryDataResponse()
-	qdr.Responses["A"] = dr
+		// Now the same thing in query data
+		qdr := backend.NewQueryDataResponse()
+		qdr.Responses["A"] = dr
 
-	b, err = json.Marshal(qdr)
-	require.NoError(t, err)
+		b, err = json.Marshal(qdr)
+		require.NoError(t, err)
 
-	str = string(b)
-	require.Equal(t, `{"results":{"A":{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
+		str = string(b)
+		require.Equal(t, `{"results":{"A":{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
 
-	// Read the parsed result and make sure it is the same
-	respCopy := &backend.QueryDataResponse{}
-	err = json.Unmarshal(b, respCopy)
-	require.NoError(t, err)
-	require.Equal(t, len(qdr.Responses), len(respCopy.Responses))
+		// Read the parsed result and make sure it is the same
+		respCopy := &backend.QueryDataResponse{}
+		err = json.Unmarshal(b, respCopy)
+		require.NoError(t, err)
+		require.Equal(t, len(qdr.Responses), len(respCopy.Responses))
 
-	// Check the final result
-	for k, val := range qdr.Responses {
-		other := respCopy.Responses[k]
-		require.Equal(t, len(val.Frames), len(other.Frames))
+		// Check the final result
+		for k, val := range qdr.Responses {
+			other := respCopy.Responses[k]
+			require.Equal(t, len(val.Frames), len(other.Frames))
 
-		for idx := range val.Frames {
-			a := val.Frames[idx]
-			b := other.Frames[idx]
+			for idx := range val.Frames {
+				a := val.Frames[idx]
+				b := other.Frames[idx]
 
-			if diff := cmp.Diff(a, b, data.FrameTestCompareOptions()...); diff != "" {
-				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+				if diff := cmp.Diff(a, b, data.FrameTestCompareOptions()...); diff != "" {
+					t.Errorf("Result mismatch (-want +got):\n%s", diff)
+				}
 			}
 		}
-	}
+	})
+
+	t.Run("data response with error", func(t *testing.T) {
+		dr := testDataErrorResponse()
+
+		b, err := json.Marshal(dr)
+		require.NoError(t, err)
+
+		str := string(b)
+		require.Equal(t, `{"error":"Invalid query syntax","status":400}`, str)
+
+		b2, err := json.Marshal(&dr)
+		require.NoError(t, err)
+		require.Equal(t, str, string(b2), "same result from pointer or object")
+
+		// Now the same thing in query data
+		qdr := backend.NewQueryDataResponse()
+		qdr.Responses["A"] = dr
+
+		b, err = json.Marshal(qdr)
+		require.NoError(t, err)
+
+		str = string(b)
+		require.Equal(t, `{"results":{"A":{"error":"Invalid query syntax","status":400}}}`, str)
+
+		// Read the parsed result and make sure it is the same
+		respCopy := &backend.QueryDataResponse{}
+		err = json.Unmarshal(b, respCopy)
+		require.NoError(t, err)
+		require.Equal(t, len(qdr.Responses), len(respCopy.Responses))
+
+		// Check the final result
+		for k, val := range qdr.Responses {
+			other := respCopy.Responses[k]
+			require.Error(t, val.Error)
+			require.Error(t, other.Error)
+			require.Equal(t, val.Error, other.Error)
+		}
+	})
 }
 
 func TestDataResponseMarshalJSONConcurrent(t *testing.T) {

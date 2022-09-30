@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"sort"
 	"unsafe"
@@ -56,6 +57,16 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		stream.WriteObjectField("error")
 		stream.WriteString(dr.Error.Error())
 		started = true
+
+		stream.WriteMore()
+		stream.WriteObjectField("status")
+
+		var ed Error
+		if errors.As(dr.Error, &ed) {
+			stream.WriteInt(ed.Status().HTTPStatus())
+		} else {
+			stream.WriteInt(ErrorStatusUnknown.HTTPStatus())
+		}
 	}
 
 	if dr.Frames != nil {
@@ -140,10 +151,16 @@ func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
 }
 
 func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
+	var errStr string
+
 	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 		switch l2Field {
 		case "error":
-			rsp.Error = fmt.Errorf(iter.ReadString())
+			errStr = iter.ReadString()
+			rsp.Error = fmt.Errorf(errStr)
+
+		case "status":
+			rsp.Error = NewError(ErrorStatusFromHTTPStatus(iter.ReadInt()), errStr)
 
 		case "frames":
 			for iter.ReadArray() {
