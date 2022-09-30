@@ -15,6 +15,10 @@ type Error struct {
 	msg    string
 }
 
+/*
+	Usage for example:
+	DataResponse.Error = backend.NewError(TooManyRequestsErrorStatus, fmt.Sprintf("Resource %s was exhausted", resource))
+*/
 func NewError(status ErrorStatus, msg string) Error {
 	return Error{
 		status: status,
