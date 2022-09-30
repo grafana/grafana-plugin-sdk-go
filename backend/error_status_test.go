@@ -1,8 +1,9 @@
 package backend
 
 import (
-	"github.com/stretchr/testify/require"
 	"testing"
+
+	"github.com/stretchr/testify/require"
 )
 
 func TestError_Error(t *testing.T) {
