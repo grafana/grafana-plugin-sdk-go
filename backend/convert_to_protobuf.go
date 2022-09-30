@@ -100,38 +100,30 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 	panic("unsupported protobuf health status type in sdk")
 }
 
-// ErrorDetails converts the SDK version of an Error to the protobuf version ErrorDetails.
-func (t ConvertToProtobuf) ErrorDetails(err *Error) pluginv2.ErrorDetails {
-	return pluginv2.ErrorDetails{
-		Status:  t.ErrorDetailsStatus(err.status),
-		Message: err.msg,
-	}
-}
-
-func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.ErrorDetails_Status {
+func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.DataResponse_Status {
 	switch status {
 	case BadRequestErrorStatus:
-		return pluginv2.ErrorDetails_BAD_REQUEST
+		return pluginv2.DataResponse_BAD_REQUEST
 	case UnauthorizedErrorStatus:
-		return pluginv2.ErrorDetails_UNAUTHORIZED
+		return pluginv2.DataResponse_UNAUTHORIZED
 	case ForbiddenErrorStatus:
-		return pluginv2.ErrorDetails_FORBIDDEN
+		return pluginv2.DataResponse_FORBIDDEN
 	case NotFoundErrorStatus:
-		return pluginv2.ErrorDetails_NOT_FOUND
+		return pluginv2.DataResponse_NOT_FOUND
 	case TooManyRequestsErrorStatus:
-		return pluginv2.ErrorDetails_TOO_MANY_REQUESTS
+		return pluginv2.DataResponse_TOO_MANY_REQUESTS
 	case UnknownErrorStatus:
-		return pluginv2.ErrorDetails_UNKNOWN
+		return pluginv2.DataResponse_UNKNOWN
 	case InternalErrorStatus:
-		return pluginv2.ErrorDetails_INTERNAL
+		return pluginv2.DataResponse_INTERNAL
 	case NotImplementedErrorStatus:
-		return pluginv2.ErrorDetails_NOT_IMPLEMENTED
+		return pluginv2.DataResponse_NOT_IMPLEMENTED
 	case BadGatewayErrorStatus:
-		return pluginv2.ErrorDetails_BAD_GATEWAY
+		return pluginv2.DataResponse_BAD_GATEWAY
 	case TimeoutErrorStatus:
-		return pluginv2.ErrorDetails_TIMEOUT
+		return pluginv2.DataResponse_TIMEOUT
 	}
-	return pluginv2.ErrorDetails_UNKNOWN
+	return pluginv2.DataResponse_UNKNOWN
 }
 
 // CheckHealthResponse converts the SDK version of a CheckHealthResponse to the protobuf version.
@@ -192,15 +184,10 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 			pDR.Error = dr.Error.Error()
 			var ed Error
 			if errors.As(dr.Error, &ed) {
-				pDR.ErrorDetails = &pluginv2.ErrorDetails{
-					Status:  t.ErrorDetailsStatus(ed.status),
-					Message: ed.msg,
-				}
+				pDR.Error = ed.msg
+				pDR.Status = t.ErrorDetailsStatus(ed.status)
 			} else {
-				pDR.ErrorDetails = &pluginv2.ErrorDetails{
-					Status:  t.ErrorDetailsStatus(ErrorStatusFromError(dr.Error)),
-					Message: dr.Error.Error(),
-				}
+				pDR.Status = t.ErrorDetailsStatus(ErrorStatusFromError(dr.Error))
 			}
 		}
 		pQDR.Responses[refID] = &pDR

@@ -130,10 +130,10 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		dr := DataResponse{
 			Frames: frames,
 		}
-		if res.ErrorDetails != nil {
+		if res.Error != "" {
 			dr.Error = Error{
-				status: f.ErrorDetailsStatus(res.ErrorDetails.Status),
-				msg:    res.ErrorDetails.Message,
+				status: f.ErrorDetailsStatus(res.Status),
+				msg:    res.Error,
 			}
 		} else if res.Error != "" {
 			dr.Error = Error{
@@ -278,27 +278,27 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 }
 
 // ErrorDetailsStatus converts the protobuf version of an Error.Status to the SDK version ErrorStatus.
-func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.ErrorDetails_Status) ErrorStatus {
+func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.DataResponse_Status) ErrorStatus {
 	switch status {
-	case pluginv2.ErrorDetails_BAD_REQUEST, pluginv2.ErrorDetails_VALIDATION_FAILED:
+	case pluginv2.DataResponse_BAD_REQUEST, pluginv2.DataResponse_VALIDATION_FAILED:
 		return BadRequestErrorStatus
-	case pluginv2.ErrorDetails_FORBIDDEN:
+	case pluginv2.DataResponse_FORBIDDEN:
 		return ForbiddenErrorStatus
-	case pluginv2.ErrorDetails_UNAUTHORIZED:
+	case pluginv2.DataResponse_UNAUTHORIZED:
 		return UnauthorizedErrorStatus
-	case pluginv2.ErrorDetails_NOT_FOUND:
+	case pluginv2.DataResponse_NOT_FOUND:
 		return NotImplementedErrorStatus
-	case pluginv2.ErrorDetails_TOO_MANY_REQUESTS:
+	case pluginv2.DataResponse_TOO_MANY_REQUESTS:
 		return TooManyRequestsErrorStatus
-	case pluginv2.ErrorDetails_UNKNOWN:
+	case pluginv2.DataResponse_UNKNOWN:
 		return UnknownErrorStatus
-	case pluginv2.ErrorDetails_INTERNAL:
+	case pluginv2.DataResponse_INTERNAL:
 		return InternalErrorStatus
-	case pluginv2.ErrorDetails_NOT_IMPLEMENTED:
+	case pluginv2.DataResponse_NOT_IMPLEMENTED:
 		return NotImplementedErrorStatus
-	case pluginv2.ErrorDetails_TIMEOUT:
+	case pluginv2.DataResponse_TIMEOUT:
 		return TimeoutErrorStatus
-	case pluginv2.ErrorDetails_BAD_GATEWAY:
+	case pluginv2.DataResponse_BAD_GATEWAY:
 		return BadGatewayErrorStatus
 	}
 	return UnknownErrorStatus

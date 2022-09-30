@@ -132,11 +132,7 @@ message DataResponse {
   repeated bytes frames = 1;
   string error = 2;
   bytes jsonMeta = 3; // Warning: Currently ignored by frontend. Would be for metadata about the query.
-  ErrorDetails errorDetails = 4;
-}
-
-message ErrorDetails {
-  Status status = 1;
+  Status status = 4;
 
   enum Status {
     UNKNOWN = 0;
@@ -151,8 +147,6 @@ message ErrorDetails {
     TIMEOUT = 9;
     BAD_GATEWAY = 10;
   }
-
-  string message = 2;
 }
 
 //-----------------------------------------------
