@@ -153,9 +153,9 @@ func ErrorStatusFromError(err error) ErrorStatus {
 	}
 }
 
-// ErrorStatusFromHTTPResponse gets ErrorStatus from resp.
-func ErrorStatusFromHTTPResponse(resp *http.Response) ErrorStatus {
-	switch resp.StatusCode {
+// ErrorStatusFromHTTPStatus gets ErrorStatus from statusCode.
+func ErrorStatusFromHTTPStatus(statusCode int) ErrorStatus {
+	switch statusCode {
 	case http.StatusUnauthorized:
 		return ErrorStatusUnauthorized
 	case http.StatusForbidden:
