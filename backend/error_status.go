@@ -18,10 +18,12 @@ type Error struct {
 }
 
 // NewError returns an Error representing status and msg.
-func NewError(status ErrorStatus, msg string) Error {
+// publicMessage should not contain any sensitive information as it may
+// be displayed directly to the caller
+func NewError(status ErrorStatus, publicMessage string) Error {
 	return Error{
 		status: status,
-		msg:    msg,
+		msg:    publicMessage,
 	}
 }
 
