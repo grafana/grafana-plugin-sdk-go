@@ -58,14 +58,6 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		started = true
 	}
 
-	if dr.Status != "" {
-		if started {
-			stream.WriteMore()
-		}
-		stream.WriteObjectField("status")
-		stream.WriteVal(dr.Status)
-	}
-
 	if dr.Frames != nil {
 		if started {
 			stream.WriteMore()
@@ -152,10 +144,6 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 		switch l2Field {
 		case "error":
 			rsp.Error = fmt.Errorf(iter.ReadString())
-
-		case "status":
-			statusStr := iter.ReadString()
-			rsp.Status = Status(statusStr)
 
 		case "frames":
 			for iter.ReadArray() {
