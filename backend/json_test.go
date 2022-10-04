@@ -92,7 +92,7 @@ func TestResponseEncoder(t *testing.T) {
 		require.NoError(t, err)
 
 		str := string(b)
-		require.Equal(t, `{"error":"invalid query syntax","status":"BAD_REQUEST"}`, str)
+		require.Equal(t, `{"error":"invalid query syntax"}`, str)
 
 		b2, err := json.Marshal(&dr)
 		require.NoError(t, err)
@@ -106,7 +106,7 @@ func TestResponseEncoder(t *testing.T) {
 		require.NoError(t, err)
 
 		str = string(b)
-		require.Equal(t, `{"results":{"A":{"error":"invalid query syntax","status":"BAD_REQUEST"}}}`, str)
+		require.Equal(t, `{"results":{"A":{"error":"invalid query syntax"}}}`, str)
 
 		// Read the parsed result and make sure it is the same
 		respCopy := &backend.QueryDataResponse{}
