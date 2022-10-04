@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -131,10 +132,10 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 			Frames: frames,
 		}
 		if res.Error != "" {
-			dr.Error = Error{
-				status: f.ErrorDetailsStatus(res.Status),
-				msg:    res.Error,
-			}
+			dr.Error = errors.New(res.Error)
+		}
+		if dr.Status != "" {
+			dr.Status = f.ErrorDetailsStatus(res.Status)
 		}
 		qdr.Responses[refID] = dr
 	}
@@ -272,29 +273,31 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	}
 }
 
-// ErrorDetailsStatus converts the protobuf version of an Error.Status to the SDK version ErrorStatus.
-func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.DataResponse_Status) ErrorStatus {
+// ErrorDetailsStatus converts the protobuf version of an Error.Status to the SDK version Status.
+func (f ConvertFromProtobuf) ErrorDetailsStatus(status pluginv2.DataResponse_Status) Status {
 	switch status {
-	case pluginv2.DataResponse_BAD_REQUEST, pluginv2.DataResponse_VALIDATION_FAILED:
-		return ErrorStatusBadRequest
-	case pluginv2.DataResponse_FORBIDDEN:
-		return ErrorStatusForbidden
-	case pluginv2.DataResponse_UNAUTHORIZED:
-		return ErrorStatusUnauthorized
-	case pluginv2.DataResponse_NOT_FOUND:
-		return ErrorStatusNotImplemented
-	case pluginv2.DataResponse_TOO_MANY_REQUESTS:
-		return ErrorStatusTooManyRequests
 	case pluginv2.DataResponse_UNKNOWN:
-		return ErrorStatusUnknown
+		return StatusUnknown
+	case pluginv2.DataResponse_OK:
+		return StatusOK
+	case pluginv2.DataResponse_UNAUTHORIZED:
+		return StatusUnauthorized
+	case pluginv2.DataResponse_FORBIDDEN:
+		return StatusForbidden
+	case pluginv2.DataResponse_NOT_FOUND:
+		return StatusNotImplemented
+	case pluginv2.DataResponse_TOO_MANY_REQUESTS:
+		return StatusTooManyRequests
+	case pluginv2.DataResponse_BAD_REQUEST, pluginv2.DataResponse_VALIDATION_FAILED:
+		return StatusBadRequest
 	case pluginv2.DataResponse_INTERNAL:
-		return ErrorStatusInternal
+		return StatusInternal
 	case pluginv2.DataResponse_NOT_IMPLEMENTED:
-		return ErrorStatusNotImplemented
+		return StatusNotImplemented
 	case pluginv2.DataResponse_TIMEOUT:
-		return ErrorStatusTimeout
+		return StatusTimeout
 	case pluginv2.DataResponse_BAD_GATEWAY:
-		return ErrorStatusBadGateway
+		return StatusBadGateway
 	}
-	return ErrorStatusUnknown
+	return StatusUnknown
 }

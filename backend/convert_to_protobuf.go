@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -100,28 +99,32 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 	panic("unsupported protobuf health status type in sdk")
 }
 
-func (t ConvertToProtobuf) ErrorDetailsStatus(status ErrorStatus) pluginv2.DataResponse_Status {
+func (t ConvertToProtobuf) ErrorDetailsStatus(status Status) pluginv2.DataResponse_Status {
 	switch status {
-	case ErrorStatusBadRequest:
-		return pluginv2.DataResponse_BAD_REQUEST
-	case ErrorStatusUnauthorized:
-		return pluginv2.DataResponse_UNAUTHORIZED
-	case ErrorStatusForbidden:
-		return pluginv2.DataResponse_FORBIDDEN
-	case ErrorStatusNotFound:
-		return pluginv2.DataResponse_NOT_FOUND
-	case ErrorStatusTooManyRequests:
-		return pluginv2.DataResponse_TOO_MANY_REQUESTS
-	case ErrorStatusUnknown:
+	case StatusOK:
+		return pluginv2.DataResponse_OK
+	case StatusUnknown:
 		return pluginv2.DataResponse_UNKNOWN
-	case ErrorStatusInternal:
+	case StatusUnauthorized:
+		return pluginv2.DataResponse_UNAUTHORIZED
+	case StatusForbidden:
+		return pluginv2.DataResponse_FORBIDDEN
+	case StatusNotFound:
+		return pluginv2.DataResponse_NOT_FOUND
+	case StatusTooManyRequests:
+		return pluginv2.DataResponse_TOO_MANY_REQUESTS
+	case StatusBadRequest:
+		return pluginv2.DataResponse_BAD_REQUEST
+	case StatusValidationFailed:
+		return pluginv2.DataResponse_VALIDATION_FAILED
+	case StatusInternal:
 		return pluginv2.DataResponse_INTERNAL
-	case ErrorStatusNotImplemented:
+	case StatusNotImplemented:
 		return pluginv2.DataResponse_NOT_IMPLEMENTED
-	case ErrorStatusBadGateway:
-		return pluginv2.DataResponse_BAD_GATEWAY
-	case ErrorStatusTimeout:
+	case StatusTimeout:
 		return pluginv2.DataResponse_TIMEOUT
+	case StatusBadGateway:
+		return pluginv2.DataResponse_BAD_GATEWAY
 	}
 	return pluginv2.DataResponse_UNKNOWN
 }
@@ -182,14 +185,11 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		}
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
-			var ed Error
-			if errors.As(dr.Error, &ed) {
-				pDR.Error = ed.msg
-				pDR.Status = t.ErrorDetailsStatus(ed.status)
-			} else {
-				pDR.Status = t.ErrorDetailsStatus(ErrorStatusFromError(dr.Error))
-			}
 		}
+		if dr.Status != "" {
+			pDR.Status = t.ErrorDetailsStatus(dr.Status)
+		}
+
 		pQDR.Responses[refID] = &pDR
 	}
 

@@ -136,16 +136,17 @@ message DataResponse {
 
   enum Status {
     UNKNOWN = 0;
-    UNAUTHORIZED = 1;
-    FORBIDDEN = 2;
-    NOT_FOUND = 3;
-    TOO_MANY_REQUESTS = 4;
-    BAD_REQUEST = 5;
-    VALIDATION_FAILED = 6;
-    INTERNAL = 7;
-    NOT_IMPLEMENTED = 8;
-    TIMEOUT = 9;
-    BAD_GATEWAY = 10;
+    OK = 1;
+    UNAUTHORIZED = 2;
+    FORBIDDEN = 3;
+    NOT_FOUND = 4;
+    TOO_MANY_REQUESTS = 5;
+    BAD_REQUEST = 6;
+    VALIDATION_FAILED = 7;
+    INTERNAL = 8;
+    NOT_IMPLEMENTED = 9;
+    TIMEOUT = 10;
+    BAD_GATEWAY = 11;
   }
 }
 
