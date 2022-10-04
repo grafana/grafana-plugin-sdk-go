@@ -148,13 +148,10 @@ func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
 }
 
 func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
-	var errStr string
-
 	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 		switch l2Field {
 		case "error":
-			errStr = iter.ReadString()
-			rsp.Error = fmt.Errorf(errStr)
+			rsp.Error = fmt.Errorf(iter.ReadString())
 
 		case "status":
 			statusStr := iter.ReadString()
