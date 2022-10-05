@@ -122,6 +122,14 @@ func TestResponseEncoder(t *testing.T) {
 			require.Equal(t, val.Error, other.Error)
 		}
 	})
+
+	t.Run("Unmarshalling a QueryDataResponse with an unexpected field should return an error", func(t *testing.T) {
+		respJSON := []byte(`{"results":{"A":{"error":"invalid query syntax","status":400,"foo":"bar"}}}`)
+
+		qdr := &backend.QueryDataResponse{}
+		err := json.Unmarshal(respJSON, qdr)
+		require.Error(t, err)
+	})
 }
 
 func TestDataResponseMarshalJSONConcurrent(t *testing.T) {
