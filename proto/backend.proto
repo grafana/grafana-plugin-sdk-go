@@ -139,7 +139,7 @@ message DataResponse {
   // Error message
   string error = 2;
 
-  // Meta fields passed as JSON string (warning, this is not exposed to the frontend yet)
+  // Currently not used and not exposed in the frontend
   bytes jsonMeta = 3;
 
   // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code

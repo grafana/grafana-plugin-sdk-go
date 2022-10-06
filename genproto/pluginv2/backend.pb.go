@@ -988,7 +988,7 @@ type DataResponse struct {
 	Frames [][]byte `protobuf:"bytes,1,rep,name=frames,proto3" json:"frames,omitempty"`
 	// Error message
 	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
-	// Meta fields passed as JSON string (warning, this is not exposed to the frontend yet)
+	// Currently not used and not exposed in the frontend
 	JsonMeta []byte `protobuf:"bytes,3,opt,name=jsonMeta,proto3" json:"jsonMeta,omitempty"`
 	// When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code
 	// The status codes should match values from standard HTTP status codes
