@@ -990,8 +990,9 @@ type DataResponse struct {
 	Error string `protobuf:"bytes,2,opt,name=error,proto3" json:"error,omitempty"`
 	// Currently not used and not exposed in the frontend
 	JsonMeta []byte `protobuf:"bytes,3,opt,name=jsonMeta,proto3" json:"jsonMeta,omitempty"`
-	// When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code
+	// When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
 	// The status codes should match values from standard HTTP status codes
+	// If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
 	Status int32 `protobuf:"varint,4,opt,name=status,proto3" json:"status,omitempty"`
 }
 
