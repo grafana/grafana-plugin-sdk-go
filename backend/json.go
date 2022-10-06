@@ -73,15 +73,6 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		started = true
 	}
 
-	if dr.Metadata != nil {
-		if started {
-			stream.WriteMore()
-		}
-		stream.WriteObjectField("metadata")
-		stream.WriteVal(dr.Metadata)
-		started = true
-	}
-
 	if dr.Frames != nil {
 		if started {
 			stream.WriteMore()
@@ -171,11 +162,6 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 
 		case "status":
 			rsp.Status = iter.ReadInt32()
-
-		case "metadata":
-			meta := make(map[string]interface{})
-			iter.ReadVal(&meta)
-			rsp.Metadata = meta
 
 		case "frames":
 			for iter.ReadArray() {

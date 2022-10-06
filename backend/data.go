@@ -120,9 +120,6 @@ type DataResponse struct {
 
 	// Status codes map to HTTP status values
 	Status int32
-
-	// Optional metadata for the query response (not yet passed to the frontend)
-	Metadata map[string]interface{}
 }
 
 // MarshalJSON writes the results as json

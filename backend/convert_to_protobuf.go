@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"encoding/json"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -163,14 +162,6 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		}
 		if status >= 100 {
 			pDR.Status = status
-		}
-
-		if dr.Metadata != nil {
-			raw, err := json.Marshal(dr.Metadata)
-			if err != nil {
-				return nil, err
-			}
-			pDR.JsonMeta = raw
 		}
 
 		pQDR.Responses[refID] = &pDR
