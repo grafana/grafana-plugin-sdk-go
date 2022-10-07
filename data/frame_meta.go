@@ -61,6 +61,9 @@ const (
 
 	// VisTypeNodeGraph indicates the response should be visualized using a node graph visualization.
 	VisTypeNodeGraph = "nodeGraph"
+
+	// VisTypeFlameGraph indicates the response should be visualized using a flame graph visualization.
+	VisTypeFlameGraph = "flamegraph"
 )
 
 // VisType is used to indicate how the data should be visualized in explore.
