@@ -118,6 +118,52 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 				require.Equal(t, http.StatusOK, res.StatusCode)
 			},
 		},
+		{
+			name: "should conditionally return file content based on request",
+			rt: &mock.RoundTripper{
+				FileName: "testdata/foo.json",
+				GetFileName: func(req *http.Request) string {
+					switch req.URL.String() {
+					case "https://ok":
+						return "testdata/ok.json"
+					case "https://error":
+						return "testdata/error.json"
+					default:
+						return "testdata/unknown.json"
+					}
+				},
+			},
+			req: exampleRequest(http.MethodGet, "https://error"),
+			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, res.StatusCode)
+				b, _ := os.ReadFile("testdata/error.json")
+				rb, _ := io.ReadAll(res.Body)
+				assert.Equal(t, b, rb)
+			},
+		},
+		{
+			name: "should conditionally return body based on request",
+			rt: &mock.RoundTripper{
+				Body: "foo",
+				GetBody: func(req *http.Request) string {
+					switch req.URL.String() {
+					case "https://ok":
+						return "ok"
+					case "https://error":
+						return "error"
+					default:
+						return "unknown"
+					}
+				},
+			},
+			req: exampleRequest(http.MethodGet, "https://error"),
+			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, res.StatusCode)
+				assert.Equal(t, io.NopCloser(bytes.NewBufferString(`error`)), res.Body)
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
