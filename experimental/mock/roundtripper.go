@@ -14,9 +14,12 @@ import (
 
 type RoundTripper struct {
 	// Response mock
-	Body            string
-	FileName        string // filename (relative path of where it is being called)
-	HARFileName     string // filename (relative path of where it is being called)
+	HARFileName string // filename (relative path of where it is being called)
+	GetFileName func(req *http.Request) string
+	FileName    string // filename (relative path of where it is being called)
+	GetBody     func(req *http.Request) string
+	Body        string
+	// Response status and headers
 	StatusCode      int
 	Status          string
 	ResponseHeaders map[string]string
@@ -28,7 +31,9 @@ type RoundTripper struct {
 
 // RoundTrip provides a http transport method for simulating http response
 // If HARFileName present, it will take priority
+// Else if GetFileName present and return valid file name, it will respond with corresponding file content
 // Else if FileName present, it will read the response from the filename
+// Else if GetBody present and return valid string, it will respond with corresponding string
 // Else if Body present, it will echo the body
 // Else default response {} will be sent
 func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
@@ -60,16 +65,28 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 		return matchedRequest, nil
 	}
-	if rt.FileName != "" {
-		b, err := os.ReadFile(rt.FileName)
+	fileName := rt.FileName
+	if rt.GetFileName != nil {
+		if newFileName := rt.GetFileName(req); newFileName != "" {
+			fileName = newFileName
+		}
+	}
+	if fileName != "" {
+		b, err := os.ReadFile(fileName)
 		if err != nil {
-			return res, fmt.Errorf("error reading mock response file %s", rt.FileName)
+			return res, fmt.Errorf("error reading mock response file %s", fileName)
 		}
 		res.Body = io.NopCloser(bytes.NewReader(b))
 		return rt.wrap(res), nil
 	}
-	if rt.Body != "" {
-		res.Body = io.NopCloser(bytes.NewBufferString(rt.Body))
+	body := rt.Body
+	if rt.GetBody != nil {
+		if newBody := rt.GetBody(req); newBody != "" {
+			body = newBody
+		}
+	}
+	if body != "" {
+		res.Body = io.NopCloser(bytes.NewBufferString(body))
 		return rt.wrap(res), nil
 	}
 	return rt.wrap(res), nil
