@@ -14,6 +14,7 @@ import (
 
 type RoundTripper struct {
 	// Response mock
+	GetResponse func(req *http.Request) (*http.Response, error)
 	HARFileName string // filename (relative path of where it is being called)
 	GetFileName func(req *http.Request) string
 	FileName    string // filename (relative path of where it is being called)
@@ -30,7 +31,8 @@ type RoundTripper struct {
 }
 
 // RoundTrip provides a http transport method for simulating http response
-// If HARFileName present, it will take priority
+// If GetResponse present and return non-nil values, they will be returned. This will be useful to mock authentication errors bases on request headers
+// Else If HARFileName present, it will take priority
 // Else if GetFileName present and return valid file name, it will respond with corresponding file content
 // Else if FileName present, it will read the response from the filename
 // Else if GetBody present and return valid string, it will respond with corresponding string
@@ -38,9 +40,16 @@ type RoundTripper struct {
 // Else default response {} will be sent
 func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	res := &http.Response{
+		Request:    req,
+		Header:     make(http.Header),
 		StatusCode: http.StatusOK,
 		Status:     "200 OK",
 		Body:       io.NopCloser(bytes.NewBufferString("{}")),
+	}
+	if rt.GetResponse != nil {
+		if res, err := rt.GetResponse(req); res != nil || err != nil {
+			return res, err
+		}
 	}
 	if rt.BasicAuthEnabled && (req.URL.User.String() != fmt.Sprintf("%s:%s", rt.BasicAuthUser, rt.BasicAuthPassword)) {
 		res.StatusCode = 401
