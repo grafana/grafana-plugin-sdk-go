@@ -6,6 +6,7 @@ import (
 	"io"
 	"net/http"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/mock"
@@ -160,6 +161,41 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 				assert.Equal(t, io.NopCloser(bytes.NewBufferString(`error`)), res.Body)
 			},
 		},
+		{
+			name: "should skip GetResponse when nil values returned",
+			rt: &mock.RoundTripper{
+				GetResponse: func(req *http.Request) (*http.Response, error) {
+					return nil, nil
+				},
+				Body: "default body",
+			},
+			req: exampleRequest(http.MethodGet, "https://error"),
+			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
+				require.Equal(t, http.StatusOK, res.StatusCode)
+				assert.Equal(t, io.NopCloser(bytes.NewBufferString(`default body`)), res.Body)
+			},
+		},
+		{
+			name: "should not skip GetResponse when non nil values present",
+			rt: &mock.RoundTripper{
+				GetResponse: func(req *http.Request) (*http.Response, error) {
+					if strings.EqualFold(req.URL.Path, "/foo") {
+						return &http.Response{
+							StatusCode: http.StatusNotImplemented,
+						}, nil
+					}
+					return nil, nil
+				},
+				Body: "default body",
+			},
+			req: exampleRequest(http.MethodGet, "https://error/foo"),
+			test: func(t *testing.T, res *http.Response) {
+				t.Helper()
+				require.Equal(t, http.StatusNotImplemented, res.StatusCode)
+				assert.Equal(t, nil, res.Body)
+			},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -168,7 +204,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 				rt = tt.rt
 			}
 			got, err := rt.RoundTrip(tt.req)
-			if got != nil {
+			if got != nil && got.Body != nil {
 				defer got.Body.Close()
 			}
 			if tt.wantErr != nil {
