@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
-	"net/http"
 	"net/url"
 	"os"
 	"syscall"
@@ -115,11 +114,18 @@ type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.
 	Frames data.Frames
 
-	// Error is a property to be set if the the corresponding DataQuery has an error.
+	// Error is a property to be set if the corresponding DataQuery has an error.
 	Error error
 
 	// Status codes map to HTTP status values
-	Status int32
+	Status Status
+}
+
+func ErrDataResponse(status Status, message string) DataResponse {
+	return DataResponse{
+		Error:  errors.New(message),
+		Status: status,
+	}
 }
 
 // MarshalJSON writes the results as json
@@ -146,19 +152,19 @@ func (tr TimeRange) Duration() time.Duration {
 	return tr.To.Sub(tr.From)
 }
 
-func guessErrorStatusCode(err error) int32 {
+func guessErrorStatus(err error) Status {
 	if os.IsTimeout(err) {
-		return http.StatusRequestTimeout
+		return StatusTimeout
 	}
 	if os.IsPermission(err) {
-		return http.StatusUnauthorized
+		return StatusUnauthorized
 	}
 	var (
 		connErr *url.Error
 		netErr  *net.OpError
 	)
 	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
-		return http.StatusBadGateway
+		return StatusBadGateway
 	}
-	return http.StatusInternalServerError // 500
+	return StatusInternal
 }

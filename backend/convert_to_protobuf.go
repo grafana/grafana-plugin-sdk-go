@@ -156,12 +156,12 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		status := dr.Status
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
-			if status < 100 {
-				status = guessErrorStatusCode(dr.Error)
+			if status < 100 || status >= 600 {
+				status = guessErrorStatus(dr.Error)
 			}
 		}
-		if status >= 100 {
-			pDR.Status = status
+		if status >= 100 && status < 600 {
+			pDR.Status = int32(status)
 		}
 
 		pQDR.Responses[refID] = &pDR

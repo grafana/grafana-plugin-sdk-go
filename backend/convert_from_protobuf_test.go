@@ -476,6 +476,6 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, rsp)
 		require.Equal(t, "oops", rsp.Responses["A"].Error.Error())
-		require.Equal(t, int32(424), rsp.Responses["A"].Status)
+		require.Equal(t, Status(424), rsp.Responses["A"].Status)
 	})
 }

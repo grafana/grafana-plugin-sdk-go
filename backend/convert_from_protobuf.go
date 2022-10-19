@@ -130,7 +130,7 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		dr := DataResponse{
 			Frames: frames,
-			Status: res.Status,
+			Status: Status(res.Status),
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)

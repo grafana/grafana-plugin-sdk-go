@@ -60,7 +60,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		started = true
 
 		if status < 100 {
-			status = guessErrorStatusCode(dr.Error)
+			status = guessErrorStatus(dr.Error)
 		}
 	}
 
@@ -69,7 +69,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 			stream.WriteMore()
 		}
 		stream.WriteObjectField("status")
-		stream.WriteInt32(status)
+		stream.WriteInt32(int32(status))
 		started = true
 	}
 
@@ -161,7 +161,7 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 			rsp.Error = fmt.Errorf(iter.ReadString())
 
 		case "status":
-			rsp.Status = iter.ReadInt32()
+			rsp.Status = Status(iter.ReadInt32())
 
 		case "frames":
 			for iter.ReadArray() {

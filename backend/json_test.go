@@ -62,7 +62,7 @@ func TestResponseEncoder(t *testing.T) {
 	err = json.Unmarshal(b, respCopy)
 	require.NoError(t, err)
 	require.Equal(t, len(qdr.Responses), len(respCopy.Responses))
-	require.Equal(t, int32(202), respCopy.Responses["A"].Status)
+	require.Equal(t, backend.Status(202), respCopy.Responses["A"].Status)
 
 	// Check the final result
 	for k, val := range qdr.Responses {
