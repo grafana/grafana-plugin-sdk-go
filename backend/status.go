@@ -21,7 +21,7 @@ const (
 	StatusUnauthorized Status = http.StatusUnauthorized
 
 	// StatusForbidden means that the data source refuses to perform the
-	// requested action for the authenticated uer.
+	// requested action for the authenticated user.
 	// HTTP status code 403.
 	StatusForbidden Status = http.StatusForbidden
 
