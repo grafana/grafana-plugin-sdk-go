@@ -174,6 +174,14 @@ func (Build) Debug() error {
 
 // Backend build a production build for the current platform
 func (Build) Backend() error {
+	// The M1 platform detection is kinda flakey, so we will just build both
+	if runtime.GOOS == "darwin" {
+		err := buildBackend(newBuildConfig("darwin", "arm64"))
+		if err != nil {
+			return err
+		}
+		return buildBackend(newBuildConfig("darwin", "amd64"))
+	}
 	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
 	return buildBackend(cfg)
 }
