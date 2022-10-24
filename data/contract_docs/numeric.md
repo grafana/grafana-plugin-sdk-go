@@ -43,9 +43,9 @@ Remainder Data:
 * Any additional frames without the type indicator or a different one
 * Any time or string fields
 
-## Numeric Many Format (NumericMany)
+## Numeric Multi Format (NumericMulti)
 
-This logically is no different than NumericWide, except that instead of having one frame with many Fields there are multiple frames with a single field.
+This logically is no different than NumericWide, except that instead of having one frame with multiple Fields there are multiple frames with a single field.
 
 **Example:**
 
