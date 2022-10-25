@@ -461,21 +461,32 @@ func TestConvertFromProtobufCheckHealthRequest(t *testing.T) {
 
 func TestConvertFromProtobufDataResponse(t *testing.T) {
 	t.Run("Should convert data query response", func(t *testing.T) {
-		var err error
-		dataRsp := &pluginv2.DataResponse{
-			Error:  "oops",
-			Status: http.StatusFailedDependency, // 424
-		}
-		require.NoError(t, err)
-
-		rsp, err := FromProto().QueryDataResponse(&pluginv2.QueryDataResponse{
-			Responses: map[string]*pluginv2.DataResponse{
-				"A": dataRsp,
+		tcs := []struct {
+			rsp            *pluginv2.DataResponse
+			expectedStatus Status
+		}{
+			{
+				rsp: &pluginv2.DataResponse{
+					Status: http.StatusOK,
+				},
+				expectedStatus: StatusOK,
+			}, {
+				rsp: &pluginv2.DataResponse{
+					Status: http.StatusFailedDependency,
+				},
+				expectedStatus: Status(424),
 			},
-		})
-		require.NoError(t, err)
-		require.NotNil(t, rsp)
-		require.Equal(t, "oops", rsp.Responses["A"].Error.Error())
-		require.Equal(t, Status(424), rsp.Responses["A"].Status)
+		}
+
+		for _, tc := range tcs {
+			rsp, err := FromProto().QueryDataResponse(&pluginv2.QueryDataResponse{
+				Responses: map[string]*pluginv2.DataResponse{
+					"A": tc.rsp,
+				},
+			})
+			require.NoError(t, err)
+			require.NotNil(t, rsp)
+			require.Equal(t, tc.expectedStatus, rsp.Responses["A"].Status)
+		}
 	})
 }

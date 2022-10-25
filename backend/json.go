@@ -59,8 +59,8 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		stream.WriteString(dr.Error.Error())
 		started = true
 
-		if status < 100 {
-			status = guessErrorStatus(dr.Error)
+		if !status.IsValid() {
+			status = statusFromError(dr.Error)
 		}
 	}
 

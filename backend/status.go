@@ -1,6 +1,13 @@
 package backend
 
-import "net/http"
+import (
+	"errors"
+	"net"
+	"net/http"
+	"net/url"
+	"os"
+	"syscall"
+)
 
 type Status int
 
@@ -68,9 +75,42 @@ const (
 	StatusBadGateway Status = http.StatusBadGateway
 )
 
+func (s Status) IsValid() bool {
+	return s >= 100 && s < 600
+}
+
 func (s Status) String() string {
 	if ss := http.StatusText(int(s)); ss != "" {
 		return ss
 	}
 	return StatusUnknown.String()
+}
+
+func statusFromError(err error) Status {
+	for {
+		result := guessErrorStatus(err)
+		if result != StatusUnknown {
+			return result
+		}
+		if err = errors.Unwrap(err); err == nil {
+			return StatusUnknown
+		}
+	}
+}
+
+func guessErrorStatus(err error) Status {
+	if os.IsTimeout(err) {
+		return StatusTimeout
+	}
+	if os.IsPermission(err) {
+		return StatusUnauthorized
+	}
+	var (
+		connErr *url.Error
+		netErr  *net.OpError
+	)
+	if errors.Is(err, connErr) || errors.Is(err, netErr) || errors.Is(err, syscall.ECONNREFUSED) {
+		return StatusBadGateway
+	}
+	return StatusUnknown
 }
