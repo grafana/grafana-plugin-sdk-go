@@ -35,15 +35,29 @@ func testDataResponse() backend.DataResponse {
 
 // TestResponseEncoder makes sure that the JSON produced from arrow and dataframes match
 func TestResponseEncoder(t *testing.T) {
+	// invalid status will not be marshalled
 	dr := testDataResponse()
+	dr.Status = 999
 
 	b, err := json.Marshal(dr)
 	require.NoError(t, err)
 
 	str := string(b)
-	require.Equal(t, `{"status":202,"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`, str)
+	require.Equal(t, `{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`, str)
 
 	b2, err := json.Marshal(&dr)
+	require.NoError(t, err)
+
+	// valid status will be marshalled
+	dr = testDataResponse()
+
+	b, err = json.Marshal(dr)
+	require.NoError(t, err)
+
+	str = string(b)
+	require.Equal(t, `{"status":202,"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`, str)
+
+	b2, err = json.Marshal(&dr)
 	require.NoError(t, err)
 	require.Equal(t, str, string(b2), "same result from pointer or object")
 

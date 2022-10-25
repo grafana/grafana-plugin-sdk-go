@@ -64,12 +64,16 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		}
 	}
 
-	if status >= 100 {
+	if status.IsValid() || status == 0 {
 		if started {
 			stream.WriteMore()
 		}
 		stream.WriteObjectField("status")
-		stream.WriteInt32(int32(status))
+		if status.IsValid() {
+			stream.WriteInt32(int32(status))
+		} else if status == 0 {
+			stream.WriteInt32(int32(StatusOK))
+		}
 		started = true
 	}
 

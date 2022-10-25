@@ -160,9 +160,9 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 				status = statusFromError(dr.Error)
 			}
 		}
-		if status >= 100 && status < 600 {
+		if status.IsValid() {
 			pDR.Status = int32(status)
-		} else {
+		} else if status == 0 {
 			pDR.Status = int32(StatusOK)
 		}
 
