@@ -33,6 +33,7 @@ func TestGoldenResponseChecker(t *testing.T) {
 			}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
 		),
 	}
+	dr.Status = backend.StatusOK
 
 	t.Run("create data frames with no meta", func(t *testing.T) {
 		goldenFile := "frame-no-meta.golden"

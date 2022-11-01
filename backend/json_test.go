@@ -3,6 +3,7 @@ package backend_test
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"sync"
 	"testing"
 	"time"
@@ -28,18 +29,30 @@ func testDataResponse() backend.DataResponse {
 	}
 	return backend.DataResponse{
 		Frames: frames,
+		Status: http.StatusAccepted,
 	}
 }
 
 // TestResponseEncoder makes sure that the JSON produced from arrow and dataframes match
 func TestResponseEncoder(t *testing.T) {
+	// invalid status will not be marshalled
 	dr := testDataResponse()
+	dr.Status = 999
 
 	b, err := json.Marshal(dr)
 	require.NoError(t, err)
 
 	str := string(b)
 	require.Equal(t, `{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`, str)
+
+	// valid status will be marshalled
+	dr = testDataResponse()
+
+	b, err = json.Marshal(dr)
+	require.NoError(t, err)
+
+	str = string(b)
+	require.Equal(t, `{"status":202,"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`, str)
 
 	b2, err := json.Marshal(&dr)
 	require.NoError(t, err)
@@ -53,13 +66,14 @@ func TestResponseEncoder(t *testing.T) {
 	require.NoError(t, err)
 
 	str = string(b)
-	require.Equal(t, `{"results":{"A":{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
+	require.Equal(t, `{"results":{"A":{"status":202,"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}}}`, str)
 
 	// Read the parsed result and make sure it is the same
 	respCopy := &backend.QueryDataResponse{}
 	err = json.Unmarshal(b, respCopy)
 	require.NoError(t, err)
 	require.Equal(t, len(qdr.Responses), len(respCopy.Responses))
+	require.Equal(t, backend.Status(202), respCopy.Responses["A"].Status)
 
 	// Check the final result
 	for k, val := range qdr.Responses {
@@ -124,7 +138,8 @@ func TestQueryDataResponseOrdering(t *testing.T) {
 	b, err := json.Marshal(qdr)
 	require.NoError(t, err)
 
-	expectedDataResponse := `{"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`
+	expectedDataResponse := `{"status":202,"frames":[{"schema":{"name":"simple","fields":[{"name":"time","type":"time","typeInfo":{"frame":"time.Time"}},{"name":"valid","type":"boolean","typeInfo":{"frame":"bool"}}]},"data":{"values":[[1577934240000,1577934300000],[true,false]]}},{"schema":{"name":"other","fields":[{"name":"value","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1]]}}]}`
 	expected := fmt.Sprintf(`{"results":{"A":%s,"B":%s,"C":%s}}`, expectedDataResponse, expectedDataResponse, expectedDataResponse)
-	require.Equal(t, expected, string(b))
+
+	require.JSONEq(t, expected, string(b))
 }

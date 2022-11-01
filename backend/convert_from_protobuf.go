@@ -128,8 +128,15 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		if err != nil {
 			return nil, err
 		}
+
+		status := Status(res.Status)
+		if !status.IsValid() {
+			status = StatusUnknown
+		}
+
 		dr := DataResponse{
 			Frames: frames,
+			Status: status,
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
