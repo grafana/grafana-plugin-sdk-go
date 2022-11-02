@@ -2,6 +2,7 @@ package backend
 
 import (
 	"encoding/json"
+	"net/http"
 	"reflect"
 	"strings"
 	"testing"
@@ -455,5 +456,37 @@ func TestConvertFromProtobufCheckHealthRequest(t *testing.T) {
 		req := FromProto().CheckHealthRequest(protoReq)
 		require.NotNil(t, req)
 		require.Equal(t, map[string]string{}, req.Headers)
+	})
+}
+
+func TestConvertFromProtobufDataResponse(t *testing.T) {
+	t.Run("Should convert data query response", func(t *testing.T) {
+		tcs := []struct {
+			rsp            *pluginv2.DataResponse
+			expectedStatus Status
+		}{
+			{
+				rsp: &pluginv2.DataResponse{
+					Status: http.StatusOK,
+				},
+				expectedStatus: StatusOK,
+			}, {
+				rsp: &pluginv2.DataResponse{
+					Status: http.StatusFailedDependency,
+				},
+				expectedStatus: Status(424),
+			},
+		}
+
+		for _, tc := range tcs {
+			rsp, err := FromProto().QueryDataResponse(&pluginv2.QueryDataResponse{
+				Responses: map[string]*pluginv2.DataResponse{
+					"A": tc.rsp,
+				},
+			})
+			require.NoError(t, err)
+			require.NotNil(t, rsp)
+			require.Equal(t, tc.expectedStatus, rsp.Responses["A"].Status)
+		}
 	})
 }
