@@ -52,9 +52,11 @@ We retrieve one or more data items from a datasource but an item has no values, 
 
 ## Error Responses
 
-Errors are returned from outside the dataframes using the `Error` property of a [DataResponse](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/backend#DataResponse).
+An error is returned from outside the dataframes using the `Error` and `Status` properties on a [DataResponse](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/backend#DataResponse).
 
 When an error is returned with the DataResponse, a single frame with no fields may be included as well. If the error is present, this will not be considered "No Data". This frame is included so that metadata, in particular a Frame's `ExecutedQueryString`, can be returned to the caller with an error.
+
+Note: In a backend plugin an error can be returned from a [`DataQueryHandler`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/backend#QueryDataHandler) call. This should only be used when the entire request (all queries) will fail.
 
 ## Multi Data Type Responses
 
