@@ -153,9 +153,19 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		pDR := pluginv2.DataResponse{
 			Frames: encodedFrames,
 		}
+		status := dr.Status
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
+			if !status.IsValid() {
+				status = statusFromError(dr.Error)
+			}
 		}
+		if status.IsValid() {
+			pDR.Status = int32(status)
+		} else if status == 0 {
+			pDR.Status = int32(StatusOK)
+		}
+
 		pQDR.Responses[refID] = &pDR
 	}
 

@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -109,8 +110,18 @@ type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.
 	Frames data.Frames
 
-	// Error is a property to be set if the the corresponding DataQuery has an error.
+	// Error is a property to be set if the corresponding DataQuery has an error.
 	Error error
+
+	// Status codes map to HTTP status values
+	Status Status
+}
+
+func ErrDataResponse(status Status, message string) DataResponse {
+	return DataResponse{
+		Error:  errors.New(message),
+		Status: status,
+	}
 }
 
 // MarshalJSON writes the results as json

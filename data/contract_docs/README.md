@@ -64,6 +64,14 @@ There are two named cases for when a response is lacking data and also doesn't h
 
 We retrieve one or more data items from a datasource but an item has no values, that item is said to be an "**_Empty value_**". In this case, the required dataframe fields should still be present (but the fields themselves each have no values).
 
+## Error Responses
+
+An error is returned from outside the dataframes using the `Error` and `Status` properties on a [DataResponse](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/backend#DataResponse).
+
+When an error is returned with the DataResponse, a single frame with no fields may be included as well. If the error is present, this will not be considered "No Data". This frame is included so that metadata, in particular a Frame's `ExecutedQueryString`, can be returned to the caller with an error.
+
+Note: In a backend plugin an error can be returned from a [`DataQueryHandler`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/backend#QueryDataHandler) call. This should only be used when the entire request (all queries) will fail.
+
 ## Multi Data Type Responses
 
 The case where a response has multiple data types in a single result (Within a RefID) exists but is currently out of scope for this version of the spec.

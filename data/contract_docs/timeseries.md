@@ -348,7 +348,7 @@ Additional Properties or Considerations:
    <td>
 <ul>
 
-<li>One Frame to multi Frames
+<li>One Frame to multiple Frames
 
 <li>Each value (numeric) field alongside a copy of the time field from the Wide Frame is moved to its own individual Frame when converted to the Multi format
 </li>
