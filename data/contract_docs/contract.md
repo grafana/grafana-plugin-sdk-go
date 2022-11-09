@@ -20,7 +20,7 @@ A **_data type_** definition or declaration in this framework includes both a ki
      * [Multi](./timeseries.md#time-series-multi-format-timeseriesmulti)
 * [Numeric](./numeric.md)
      * [Wide](./numeric.md#numeric-wide-format-numericwide)
-     * [Many](./numeric.md#numeric-many-format-numericmany)
+     * [Multi](./numeric.md#numeric-many-format-numericmany)
      * [Long](./numeric.md#numeric-many-format-numericlong)
 * [Heatmap](./heatmap.md)
      * [Buckets](./heatmap.md#heatmap-buckets-heatmapbuckets)
