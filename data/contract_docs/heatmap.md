@@ -160,7 +160,7 @@ There exists a row for every cell in the heatmap.
   </tr>
 </table>
 
-This format requires uniform cell sizing
+This format requires uniform cell sizing. The size of the cell is defined by the columns in each row that are chosen as the xMax|xMin|x and the yMax|yMin|y. We can see that the Number column(yMax|yMin|y) increases by 100(each cell is roughly 100 higher than the previous cell on the y axis) for each row containing a similar Time value(these stacked cells all have roughly the same location along the x axis). This produces a uniform cell size.
 
 Note that multiple "value" fields can included to represent multiple dimensions within the same cell.  
 The first value field is used in the display, unless explicilty configured
@@ -174,7 +174,7 @@ The field names for yMax|yMin|y indicate the aggregation period or the supplied 
 ## Heatmap sparse (HeatmapSparse)
 
 This format is simplar to Heatmap scanlines, except that each cell is independent from its adjacent values.
-Unlike scanlines, this allows resolutions to change over time.  When 
+Unlike scanlines, this allows resolutions to change over time. Where scanline has uniformity of cells over time, heatmap sparse allows for variability of cells along the x axis(Time).
 
 Example:
 
