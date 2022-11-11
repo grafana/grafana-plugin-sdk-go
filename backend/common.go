@@ -72,9 +72,9 @@ type DataSourceInstanceSettings struct {
 	// User is a configured user for a data source instance. This is not a Grafana user, rather an arbitrary string.
 	User string
 
-	// Database is the configured database for a data source instance. Only used by Elasticsearch and Influxdb.
-	//
-	// Deprecated: use JSONData to store information related to database.
+	// Database is the configured database for a data source instance.
+	// Only used by Elasticsearch and Influxdb.
+	// Please use JSONData to store information related to database.
 	Database string
 
 	// BasicAuthEnabled indicates if this data source instance should use basic authentication.
