@@ -15,19 +15,17 @@ There are logical **_kinds_** (like Time Series Data, Numeric, Histogram, etc), 
 A **_data type_** definition or declaration in this framework includes both a kind and format. For example, "TimeSeriesWide" is: kind: "Time Series", format: "Wide".
 
 * [Time series](./timeseries.md)
-     * [Wide](./timeseries.md#time-series-wide-format-timeserieswide)
-     * [Long](./timeseries.md#time-series-long-format-timeserieslong-sql-like)
-     * [Multi](./timeseries.md#time-series-multi-format-timeseriesmulti)
+  * [Wide](./timeseries.md#time-series-wide-format-timeserieswide)
+  * [Long](./timeseries.md#time-series-long-format-timeserieslong-sql-like)
+  * [Multi](./timeseries.md#time-series-multi-format-timeseriesmulti)
 * [Numeric](./numeric.md)
-     * [Wide](./numeric.md#numeric-wide-format-numericwide)
-     * [Multi](./numeric.md#numeric-multi-format-numericmulti)
-     * [Long](./numeric.md#numeric-many-format-numericlong)
+  * [Wide](./numeric.md#numeric-wide-format-numericwide)
+  * [Multi](./numeric.md#numeric-multi-format-numericmulti)
+  * [Long](./numeric.md#numeric-many-format-numericlong)
 * [Heatmap](./heatmap.md)
-     * [Buckets](./heatmap.md#heatmap-buckets-heatmapbuckets)
-     * [Scanlines](./heatmap.md#heatmap-scanlines-heatmapscanlines)
-     * [Sparse](./heatmap.md#heatmap-sparse-heatmapsparse)
-
-
+  * [Buckets](./heatmap.md#heatmap-buckets-heatmapbuckets)
+  * [Scanlines](./heatmap.md#heatmap-scanlines-heatmapscanlines)
+  * [Sparse](./heatmap.md#heatmap-sparse-heatmapsparse)
 
 ## Dimensional Set Based Kinds
 
