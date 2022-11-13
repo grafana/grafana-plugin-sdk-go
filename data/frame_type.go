@@ -147,10 +147,10 @@ const KindUnknown FrameTypeKind = ""
 
 // KindTimeSeries means the FrameType's Kind is time series. See [Data Plane Time Series Kind].
 //
-// [Data Plane Time Series Kind Formats]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md
+// [Data Plane Time Series Kind]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md
 const KindTimeSeries FrameTypeKind = "timeseries"
 
 // KindNumeric means the FrameType's Kind is numeric. See [Data Plane Numeric Kind].
 //
-// [Data Plane Numeric]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md
+// [Data Plane Numeric Kind]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md
 const KindNumeric FrameTypeKind = "numeric"
