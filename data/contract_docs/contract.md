@@ -1,6 +1,6 @@
 # Data Plane Contract - Technical Specification
 
-Status: Draft/Proposal
+Status: Draft
 
 ## Doc Objective
 
