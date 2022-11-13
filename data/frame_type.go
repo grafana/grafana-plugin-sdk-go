@@ -75,7 +75,12 @@ func (p FrameType) IsKnownType() bool {
 	case
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
-		FrameTypeTimeSeriesMany:
+		FrameTypeTimeSeriesMulti,
+		FrameTypeTimeSeriesMany,
+
+		FrameTypeNumericWide,
+		FrameTypeNumericLong,
+		FrameTypeNumericMulti:
 		return true
 	}
 	return false
@@ -86,18 +91,66 @@ func FrameTypes() []FrameType {
 	return []FrameType{
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
+		FrameTypeTimeSeriesMulti,
 		FrameTypeTimeSeriesMany,
+
+		FrameTypeNumericWide,
+		FrameTypeNumericLong,
+		FrameTypeNumericMulti,
 	}
 }
 
-// IsTimeSeries checks if the type represents a timeseries
+// IsTimeSeries checks if the FrameType is KindTimeSeries
 func (p FrameType) IsTimeSeries() bool {
 	switch p {
 	case
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
+		FrameTypeTimeSeriesMulti,
 		FrameTypeTimeSeriesMany:
 		return true
 	}
 	return false
 }
+
+// IsNumeric checks if the FrameType is KindNumeric.
+func (p FrameType) IsNumeric() bool {
+	switch p {
+	case
+		FrameTypeNumericWide,
+		FrameTypeNumericLong,
+		FrameTypeNumericMulti:
+		return true
+	}
+	return false
+}
+
+// Kind returns the FrameTypeKind from the FrameType.
+func (p FrameType) Kind() FrameTypeKind {
+	switch {
+	case p.IsTimeSeries():
+		return KindTimeSeries
+	case p.IsNumeric():
+		return KindNumeric
+	default:
+		return KindUnknown
+	}
+}
+
+// FrameTypeKind represents the Kind a particular FrameType falls into. See [Kinds and Formats] in
+// the data plane documentation.
+//
+// [Kinds and Formats]: https://github.com/grafana/grafana-plugin-sdk-go/tree/main/data/contract_docs#kinds-and-formats
+type FrameTypeKind string
+
+const KindUnknown FrameTypeKind = ""
+
+// KindTimeSeries means the FrameType's Kind is time series. See [Data Plane Time Series Kind].
+//
+// [Data Plane Time Series Kind Formats]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md
+const KindTimeSeries FrameTypeKind = "timeseries"
+
+// KindNumeric means the FrameType's Kind is numeric. See [Data Plane Numeric Kind].
+//
+// [Data Plane Numeric]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md
+const KindNumeric FrameTypeKind = "numeric"
