@@ -25,11 +25,12 @@ const FrameTypeTimeSeriesWide FrameType = "timeseries-wide"
 // [Developer Data Frame Documentation on Long Format]: https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#long-format
 const FrameTypeTimeSeriesLong FrameType = "timeseries-long"
 
-// FrameTypeTimeSeriesMany is the same as "Wide" with exactly one numeric value field
+// FrameTypeTimeSeriesMany is the same as "Wide" with exactly one numeric value field.
+//
 // Deprecated: use FrameTypeTimeSeriesMulti instead.
 const FrameTypeTimeSeriesMany FrameType = "timeseries-many"
 
-// FrameTypeTimeSeriesMulti is documented in the [Time Series Multi Format in the Data Plane Contract]
+// FrameTypeTimeSeriesMulti is documented in the [Time Series Multi Format in the Data Plane Contract].
 // This replaces FrameTypeTimeSeriesMany.
 //
 // [Time Series Multi Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md#time-series-multi-format-timeseriesmulti
