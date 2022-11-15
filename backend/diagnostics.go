@@ -2,7 +2,11 @@ package backend
 
 import (
 	"context"
+	"fmt"
+	"net/http"
+	"net/textproto"
 	"strconv"
+	"strings"
 )
 
 // CheckHealthHandler enables users to send health check
@@ -53,8 +57,42 @@ func (hs HealthStatus) String() string {
 
 // CheckHealthRequest contains the healthcheck request
 type CheckHealthRequest struct {
+	ForwardHTTPHeaders
 	PluginContext PluginContext
 	Headers       map[string]string
+}
+
+func (req *CheckHealthRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	req.Headers[fmt.Sprintf("http_%s", key)] = value
+}
+
+func (req CheckHealthRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+func (req CheckHealthRequest) GetHTTPHeaders() http.Header {
+	httpHeaders := http.Header{}
+
+	for k, v := range req.Headers {
+		if textproto.CanonicalMIMEHeaderKey(k) == OAuthIdentityTokenHeaderName {
+			httpHeaders.Set(k, v)
+		}
+
+		if textproto.CanonicalMIMEHeaderKey(k) == OAuthIdentityIDTokenHeaderName {
+			httpHeaders.Set(k, v)
+		}
+
+		if strings.HasPrefix(k, "http_") {
+			hKey := strings.TrimPrefix(k, "http_")
+			httpHeaders.Set(hKey, v)
+		}
+	}
+
+	return httpHeaders
 }
 
 // CheckHealthResult contains the healthcheck response

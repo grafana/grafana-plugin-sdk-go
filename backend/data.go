@@ -4,6 +4,10 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
+	"net/textproto"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -37,9 +41,43 @@ func (fn QueryDataHandlerFunc) QueryData(ctx context.Context, req *QueryDataRequ
 // QueryDataRequest contains a single request which contains multiple queries.
 // It is the input type for a QueryData call.
 type QueryDataRequest struct {
+	ForwardHTTPHeaders
 	PluginContext PluginContext
 	Headers       map[string]string
 	Queries       []DataQuery
+}
+
+func (req *QueryDataRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	req.Headers[fmt.Sprintf("http_%s", key)] = value
+}
+
+func (req QueryDataRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+func (req QueryDataRequest) GetHTTPHeaders() http.Header {
+	httpHeaders := http.Header{}
+
+	for k, v := range req.Headers {
+		if textproto.CanonicalMIMEHeaderKey(k) == OAuthIdentityTokenHeaderName {
+			httpHeaders.Set(k, v)
+		}
+
+		if textproto.CanonicalMIMEHeaderKey(k) == OAuthIdentityIDTokenHeaderName {
+			httpHeaders.Set(k, v)
+		}
+
+		if strings.HasPrefix(k, "http_") {
+			hKey := strings.TrimPrefix(k, "http_")
+			httpHeaders.Set(hKey, v)
+		}
+	}
+
+	return httpHeaders
 }
 
 // DataQuery represents a single query as sent from the frontend.
@@ -99,12 +137,14 @@ func NewQueryDataResponse() *QueryDataResponse {
 // Responses is a map of RefIDs (Unique Query ID) to DataResponses.
 // The QueryData method the QueryDataHandler method will set the RefId
 // property on the DataResponses' frames based on these RefIDs.
+//
 //swagger:model
 type Responses map[string]DataResponse
 
 // DataResponse contains the results from a DataQuery.
 // A map of RefIDs (unique query identifiers) to this type makes up the Responses property of a QueryDataResponse.
 // The Error property is used to allow for partial success responses from the containing QueryDataResponse.
+//
 //swagger:model
 type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.

@@ -2,16 +2,42 @@ package backend
 
 import (
 	"context"
+	"net/http"
 )
 
 // CallResourceRequest represents a request for a resource call.
 type CallResourceRequest struct {
+	ForwardHTTPHeaders
 	PluginContext PluginContext
 	Path          string
 	Method        string
 	URL           string
 	Headers       map[string][]string
 	Body          []byte
+}
+
+func (req *CallResourceRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string][]string{}
+	}
+
+	req.Headers[key] = []string{value}
+}
+
+func (req CallResourceRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+func (req CallResourceRequest) GetHTTPHeaders() http.Header {
+	httpHeaders := http.Header{}
+
+	for k, v := range req.Headers {
+		for _, strVal := range v {
+			httpHeaders.Add(k, strVal)
+		}
+	}
+
+	return httpHeaders
 }
 
 // CallResourceResponse represents a response from a resource call.
