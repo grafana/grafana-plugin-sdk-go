@@ -2,6 +2,7 @@ package build
 
 import (
 	"bufio"
+	"embed"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/build/utils"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
 	ca "github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/certificate_authority"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
@@ -18,6 +20,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
+	bra "github.com/unknwon/bra/cmd"
+	"github.com/urfave/cli"
 )
 
 // Callbacks give you a way to run custom behavior when things happen
@@ -190,6 +194,46 @@ func (Build) Backend() error {
 func BuildAll() { //revive:disable-line
 	b := Build{}
 	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
+}
+
+//go:embed tmpl/*
+var tmpl embed.FS
+
+// ensureWatchConfig creates a default .bra.toml file in the current directory if it doesn't exist.
+func ensureWatchConfig() error {
+	exists, err := utils.Exists(".bra.toml")
+	if err != nil {
+		return err
+	}
+
+	//
+	if !exists {
+		fmt.Println("No .bra.toml file found. Creating one...")
+		config, err := tmpl.ReadFile("tmpl/bra.toml")
+		if err != nil {
+			return err
+		}
+		if err = os.WriteFile(".bra.toml", config, 0644); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// Watch rebuilds the plugin backend when files change.
+func Watch() error {
+	if err := ensureWatchConfig(); err != nil {
+		return err
+	}
+
+	// this is needed to run `bra run` programmatically
+	app := cli.NewApp()
+	app.Name = "bra"
+	app.Usage = ""
+	app.Action = func(c *cli.Context) error {
+		return bra.Run.Run(c)
+	}
+	return app.Run(os.Args)
 }
 
 // Test runs backend tests.
