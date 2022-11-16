@@ -206,18 +206,17 @@ func ensureWatchConfig() error {
 		return err
 	}
 
-	//
-	if !exists {
-		fmt.Println("No .bra.toml file found. Creating one...")
-		config, err := tmpl.ReadFile("tmpl/bra.toml")
-		if err != nil {
-			return err
-		}
-		if err = os.WriteFile(".bra.toml", config, 0644); err != nil {
-			return err
-		}
+	if exists {
+		return nil
 	}
-	return nil
+
+	fmt.Println("No .bra.toml file found. Creating one...")
+	config, err := tmpl.ReadFile("tmpl/bra.toml")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(".bra.toml", config, 0600)
 }
 
 // Watch rebuilds the plugin backend when files change.
