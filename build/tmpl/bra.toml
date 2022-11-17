@@ -10,8 +10,9 @@ watch_all = true
 follow_symlinks = false
 watch_dirs = [
   "pkg",
+  "src",
 ]
-watch_exts = [".go"]
+watch_exts = [".go", ".json"]
 build_delay = 1500
 cmds = [
   ["mage", "-v", "build:backend"],
