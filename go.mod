@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/prometheus/client_golang v1.12.1
-	github.com/prometheus/common v0.32.1
+	github.com/prometheus/common v0.37.0
 	github.com/stretchr/testify v1.7.2
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
 	google.golang.org/grpc v1.41.0
@@ -33,6 +33,7 @@ require (
 	github.com/getkin/kin-openapi v0.94.0
 	github.com/google/uuid v1.3.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
+	github.com/urfave/cli v1.22.1
 )
 
 require (
@@ -67,9 +68,8 @@ require (
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
 	github.com/unknwon/log v0.0.0-20150304194804-e617c87089d3 // indirect
-	github.com/urfave/cli v1.22.1 // indirect
-	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
-	golang.org/x/text v0.3.6 // indirect
+	golang.org/x/net v0.0.0-20220225172249-27dd8689420f // indirect
+	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/genproto v0.0.0-20210630183607-d20f26d13c79 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
