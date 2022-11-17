@@ -11,6 +11,9 @@ min-occurrences = 2
 [linters-settings.revive]
 ignore-generated-header = false
 
+[linters-settings.misspell]
+ignore-words = ["unknwon"]
+
 [linters]
 disable-all = true
 enable = [

@@ -1,0 +1,20 @@
+# default configuration created by the `mage watch` command.
+# this file can be edited and should be checked into source control.
+# see https://github.com/unknwon/bra/blob/master/templates/default.bra.toml for more configuration options.
+[run]
+init_cmds = [
+  ["mage", "-v", "build:backend"],
+  ["mage", "-v" , "reloadPlugin"]
+]
+watch_all = true
+follow_symlinks = false
+watch_dirs = [
+  "pkg",
+  "src",
+]
+watch_exts = [".go", ".json"]
+build_delay = 1500
+cmds = [
+  ["mage", "-v", "build:backend"],
+  ["mage", "-v" , "reloadPlugin"]
+]
