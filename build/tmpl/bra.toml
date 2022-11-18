@@ -8,12 +8,14 @@ init_cmds = [
 ]
 watch_all = true
 follow_symlinks = false
+ignore = [".git", "node_modules", "dist"]
+ignore_files = ["mage_output_file.go"]
 watch_dirs = [
   "pkg",
   "src",
 ]
 watch_exts = [".go", ".json"]
-build_delay = 1500
+build_delay = 2000
 cmds = [
   ["mage", "-v", "build:backend"],
   ["mage", "-v" , "reloadPlugin"]
