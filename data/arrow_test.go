@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/arrow/ipc"
+	"github.com/apache/arrow/go/v11/arrow/ipc"
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
@@ -326,9 +326,9 @@ func TestEncode(t *testing.T) {
 	}
 }
 
-// protip: `go get github.com/apache/arrow/go/arrow/ipc/cmd/arrow-cat` (in GOPATH to install cmd).
+// protip: `go get github.com/apache/arrow/go/v11/arrow/ipc/cmd/arrow-cat` (in GOPATH to install cmd).
 // Then in shell: `arrow-cat data/testdata/all_types.golden.arrow`
-// also: `go get github.com/apache/arrow/go/arrow/ipc/cmd/arrow-ls` to see metadata
+// also: `go get github.com/apache/arrow/go/v11/arrow/ipc/cmd/arrow-ls` to see metadata
 
 func TestDecode(t *testing.T) {
 	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")

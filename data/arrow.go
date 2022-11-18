@@ -7,11 +7,11 @@ import (
 	"io"
 	"time"
 
-	"github.com/apache/arrow/go/arrow"
-	"github.com/apache/arrow/go/arrow/array"
-	"github.com/apache/arrow/go/arrow/arrio"
-	"github.com/apache/arrow/go/arrow/ipc"
-	"github.com/apache/arrow/go/arrow/memory"
+	"github.com/apache/arrow/go/v11/arrow"
+	"github.com/apache/arrow/go/v11/arrow/array"
+	"github.com/apache/arrow/go/v11/arrow/arrio"
+	"github.com/apache/arrow/go/v11/arrow/ipc"
+	"github.com/apache/arrow/go/v11/arrow/memory"
 	"github.com/mattetti/filebuffer"
 )
 
@@ -37,7 +37,7 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer func(cols []array.Column) {
+	defer func(cols []arrow.Column) {
 		for _, col := range cols {
 			col.Release()
 		}
@@ -115,9 +115,9 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 }
 
 // buildArrowColumns builds Arrow columns from a Frame.
-func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, error) {
+func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]arrow.Column, error) {
 	pool := memory.NewGoAllocator()
-	columns := make([]array.Column, len(f.Fields))
+	columns := make([]arrow.Column, len(f.Fields))
 
 	for fieldIdx, field := range f.Fields {
 		switch v := field.vector.(type) {
@@ -427,7 +427,7 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 	return nil
 }
 
-func populateFrameFieldsFromRecord(record array.Record, nullable []bool, frame *Frame) error {
+func populateFrameFieldsFromRecord(record arrow.Record, nullable []bool, frame *Frame) error {
 	for i := 0; i < len(frame.Fields); i++ {
 		col := record.Column(i)
 		if err := parseColumn(col, i, nullable, frame); err != nil {
@@ -455,7 +455,7 @@ func populateFrameFields(fR arrio.Reader, nullable []bool, frame *Frame) error {
 }
 
 // nolint:gocyclo
-func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) error {
+func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 	switch col.DataType().ID() {
 	case arrow.STRING:
 		v := array.NewStringData(col.Data())
@@ -689,7 +689,7 @@ func populateFrameFromSchema(schema *arrow.Schema, frame *Frame) error {
 }
 
 // FromArrowRecord converts a an Arrow record batch into a Frame.
-func FromArrowRecord(record array.Record) (*Frame, error) {
+func FromArrowRecord(record arrow.Record) (*Frame, error) {
 	schema := record.Schema()
 	frame := &Frame{}
 	if err := populateFrameFromSchema(schema, frame); err != nil {

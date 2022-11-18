@@ -11,9 +11,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/apache/arrow/go/arrow"
-	"github.com/apache/arrow/go/arrow/array"
-	"github.com/apache/arrow/go/arrow/ipc"
+	"github.com/apache/arrow/go/v11/arrow"
+	"github.com/apache/arrow/go/v11/arrow/array"
+	"github.com/apache/arrow/go/v11/arrow/ipc"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattetti/filebuffer"
 )
@@ -856,7 +856,7 @@ func ArrowBufferToJSON(b []byte, include FrameInclude) ([]byte, error) {
 
 // ArrowToJSON writes a frame to JSON
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func ArrowToJSON(record array.Record, include FrameInclude) ([]byte, error) {
+func ArrowToJSON(record arrow.Record, include FrameInclude) ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
@@ -887,7 +887,7 @@ func ArrowToJSON(record array.Record, include FrameInclude) ([]byte, error) {
 	return append([]byte(nil), stream.Buffer()...), nil
 }
 
-func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
+func writeArrowSchema(stream *jsoniter.Stream, record arrow.Record) {
 	started := false
 	metaData := record.Schema().Metadata()
 
@@ -978,7 +978,7 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 	stream.WriteObjectEnd()
 }
 
-func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
+func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error {
 	fieldCount := len(record.Schema().Fields())
 
 	stream.WriteObjectStart()
@@ -1047,7 +1047,7 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 }
 
 // Custom timestamp extraction... assumes nanoseconds for everything now
-func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
+func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col arrow.Array) {
 	count := col.Len()
 
 	v := array.NewTimestampData(col.Data())
