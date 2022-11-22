@@ -169,7 +169,7 @@ The field names for yMax|yMin|y indicate the aggregation period or the supplied 
 
 ## Heatmap sparse (HeatmapSparse)
 
-This format is simplar to Heatmap scanlines, except that each cell is independent from its adjacent values.
+This format is similar to Heatmap scanlines, except that each cell is independent from its adjacent values.
 Unlike scanlines, this allows resolutions to change over time. Where scanline has uniformity of cells over time, heatmap sparse allows for variability of cells along the x axis(Time).
 
 Example:
