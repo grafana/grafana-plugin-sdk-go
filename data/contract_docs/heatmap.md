@@ -4,7 +4,7 @@ Status: EARLY Draft/Proposal
 
 Heatmaps are used to show the magnitude of a phenomenon as color in two dimensions. The variation in color may give visual cues about how the phenomenon is clustered or varies over space.
 
-## Heatmap buckets (HeatmapBuckets)
+## Heatmap Rows (HeatmapRows)
 
 The first field represents the X axis, the rest of the fields indicate rows in the heatmap.  
 The true numeric range of each bucket can be indicated using an "le" label.  When absent,
@@ -71,7 +71,7 @@ Example:
 Note: [Timeseries wide](./timeseries.md#time-series-wide-format-timeserieswide) can be used directly
 as heatmap-buckets, in this case each value field becomes a row in the heatmap.
 
-## Heatmap scanlines (HeatmapScanlines)
+## Heatmap cells (HeatmapCells)
 
 In this format, each row in the frame indicates the value of a single cell in a heatmap.
 There exists a row for every cell in the heatmap.
