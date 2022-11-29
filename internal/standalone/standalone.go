@@ -3,7 +3,6 @@ package standalone
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net"
 	"os"
@@ -62,7 +61,7 @@ func GetInfo(id string) (Args, error) {
 	}
 
 	// Check the local file for address
-	addrBytes, err := ioutil.ReadFile(filePath)
+	addrBytes, err := os.ReadFile(filePath)
 	if address == "" {
 		if err == nil && len(addrBytes) > 0 {
 			address = string(addrBytes)
@@ -75,7 +74,7 @@ func GetInfo(id string) (Args, error) {
 		if info.Address == "" {
 			return info, fmt.Errorf("standalone address must be specified")
 		}
-		_ = ioutil.WriteFile(filePath, []byte(info.Address), 0600)
+		_ = os.WriteFile(filePath, []byte(info.Address), 0600)
 		// sadly vs-code can not listen to shutdown events
 		// https://github.com/golang/vscode-go/issues/120
 

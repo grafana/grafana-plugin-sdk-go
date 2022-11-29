@@ -5,7 +5,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -160,7 +159,7 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 	}
 	str += "\n"
 
-	return ioutil.WriteFile(path, []byte(str), 0600)
+	return os.WriteFile(path, []byte(str), 0600)
 }
 
 const machineStr = "🌟 This was machine generated.  Do not edit. 🌟\n"
@@ -220,13 +219,16 @@ func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.
 }
 
 func readGoldenJSONFile(fpath string) (string, error) {
-	raw, err := ioutil.ReadFile(fpath)
+	raw, err := os.ReadFile(fpath)
 	if err != nil {
 		return "", err
 	}
+	if len(raw) < 3 {
+		return "", fmt.Errorf("empty file found: %s", fpath)
+	}
 	chunks := strings.Split(string(raw), "//  "+machineStr)
 	if len(chunks) < 3 {
-		return "", fmt.Errorf("no golden data found in: %s", fpath)
+		return "", fmt.Errorf("no golden data found in: %s (%d bytes)", fpath, len(raw))
 	}
 	return chunks[2], nil
 }
@@ -239,5 +241,5 @@ func writeGoldenJSONFile(fpath string, dr *backend.DataResponse) error {
 		return err
 	}
 	str += string(raw)
-	return ioutil.WriteFile(fpath, []byte(str), 0600)
+	return os.WriteFile(fpath, []byte(str), 0600)
 }
