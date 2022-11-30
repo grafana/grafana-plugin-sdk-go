@@ -91,8 +91,12 @@ However, it needs to be possible to add support for this case. For now, the foll
   * Note: Issue on ordering [https://github.com/grafana/grafana-plugin-sdk-go/issues/366](https://github.com/grafana/grafana-plugin-sdk-go/issues/366) , not sure if it is display issue or not at this time
 
 <!-- Footnotes themselves at the bottom. -->
-
 ## Notes
 
-[^1]: In theory they can still be passed for things like visualization because Fields do have a numeric ordering within the frame, but this won't work with things like SSE/alerting.
-[^2]: Using Field Name keeps naming consistent with the TimeSeriesMulti format (vs using the Frame Name)
+[^1]:
+
+     In theory they can still be passed for things like visualization because Fields do have a numeric ordering within the frame, but this won't work with things like SSE/alerting.
+
+[^2]:
+
+     Using Field Name keeps naming consistent with the TimeSeriesMulti format (vs using the Frame Name)
