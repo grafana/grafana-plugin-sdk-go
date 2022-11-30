@@ -2,6 +2,8 @@ package experimental
 
 import (
 	"bufio"
+	// ignoring the G505 so that the checksum matches git hash
+	// nolint:gosec
 	"crypto/sha1"
 	"encoding/base64"
 	"encoding/hex"
