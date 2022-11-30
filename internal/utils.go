@@ -3,13 +3,13 @@ package internal
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"os"
 	"path"
 	"strings"
 )
 
 func GetStringValueFromJSON(fpath string, key string) (string, error) {
-	byteValue, err := ioutil.ReadFile(fpath)
+	byteValue, err := os.ReadFile(fpath)
 	if err != nil {
 		return "", err
 	}
