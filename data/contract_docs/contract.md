@@ -14,20 +14,20 @@ There are logical **_kinds_** (like Time Series Data, Numeric, Histogram, etc), 
 
 A **_data type_** definition or declaration in this framework includes both a kind and format. For example, "TimeSeriesWide" is: kind: "Time Series", format: "Wide".
 
-- [Time series](./timeseries.md)
-  - [Wide](./timeseries.md#time-series-wide-format-timeserieswide)
-  - [Long](./timeseries.md#time-series-long-format-timeserieslong-sql-like)
-  - [Multi](./timeseries.md#time-series-multi-format-timeseriesmulti)
-- [Numeric](./numeric.md)
-  - [Wide](./numeric.md#numeric-wide-format-numericwide)
-  - [Multi](./numeric.md#numeric-multi-format-numericmulti)
-  - [Long](./numeric.md#numeric-many-format-numericlong)
-- [Heatmap](./heatmap.md)
-  - [Buckets](./heatmap.md#heatmap-buckets-heatmapbuckets)
-  - [Scanlines](./heatmap.md#heatmap-scanlines-heatmapscanlines)
-  - [Sparse](./heatmap.md#heatmap-sparse-heatmapsparse)
-- [Logs](./logs.md)
-  - [LogLines](./logs.md#loglines)
+* [Time series](./timeseries.md)
+  * [Wide](./timeseries.md#time-series-wide-format-timeserieswide)
+  * [Long](./timeseries.md#time-series-long-format-timeserieslong-sql-like)
+  * [Multi](./timeseries.md#time-series-multi-format-timeseriesmulti)
+* [Numeric](./numeric.md)
+  * [Wide](./numeric.md#numeric-wide-format-numericwide)
+  * [Multi](./numeric.md#numeric-multi-format-numericmulti)
+  * [Long](./numeric.md#numeric-many-format-numericlong)
+* [Heatmap](./heatmap.md)
+  * [Buckets](./heatmap.md#heatmap-buckets-heatmapbuckets)
+  * [Scanlines](./heatmap.md#heatmap-scanlines-heatmapscanlines)
+  * [Sparse](./heatmap.md#heatmap-sparse-heatmapsparse)
+* [Logs](./logs.md)
+  * [LogLines](./logs.md#loglines)
 
 ## Dimensional Set Based Kinds
 
@@ -41,9 +41,9 @@ Within a dataframe, dimensions are in either a field's Labels property or in str
 
 ### Properties Shared by all Dimensional Set Based Kinds
 
-- When there are multiple items that have the same name, they should have different dimensions (e.g. labels) that uniquely identifies each item[^1].
-- The item name should appear in the Name property of each value (numeric or bool typed) Field, as should any Labels[^2]
-- A response can have different item names in the response (Note: SSE doesn't currently handle this)
+* When there are multiple items that have the same name, they should have different dimensions (e.g. labels) that uniquely identifies each item[^1].
+* The item name should appear in the Name property of each value (numeric or bool typed) Field, as should any Labels[^2]
+* A response can have different item names in the response (Note: SSE doesn't currently handle this)
 
 ## Remainder Data
 
@@ -79,16 +79,16 @@ The case where a response has multiple data types in a single result (Within a R
 
 However, it needs to be possible to add support for this case. For now, the following logic is suggested:
 
-- Per data type, within a response, only one format should be used. For example: There may be TimeSeriesWide and NumericLong, but there should _not_ be TimeSeriesWide and TimeSeriesLong.
-- The borders between the types are derived from adjacent frames (within the array of frames) that share the same data type.
-- If a reader does not opt-in into multi-type responses, it should be able to get the first data type that matches what the reader is looking for.
+* Per data type, within a response, only one format should be used. For example: There may be TimeSeriesWide and NumericLong, but there should _not_ be TimeSeriesWide and TimeSeriesLong.
+* The borders between the types are derived from adjacent frames (within the array of frames) that share the same data type.
+* If a reader does not opt-in into multi-type responses, it should be able to get the first data type that matches what the reader is looking for.
 
 ## Considerations to Add / Todo
 
-- Meta-data (Frame and Field)
-- If the type/schema is declared, do we need to support the case where, for whatever reason, the type can be considered multiple Kinds at once?
-- So far ordering is ignored (For example, the order of Value Fields in TimeSeriesWide or the order of Frames in TimeSeriesMulti). Need to decide if ordering as any symantec meaning, if so what it is, and consider it properties of converting between formats
-  - Note: Issue on ordering [https://github.com/grafana/grafana-plugin-sdk-go/issues/366](https://github.com/grafana/grafana-plugin-sdk-go/issues/366) , not sure if it is display issue or not at this time
+* Meta-data (Frame and Field)
+* If the type/schema is declared, do we need to support the case where, for whatever reason, the type can be considered multiple Kinds at once?
+* So far ordering is ignored (For example, the order of Value Fields in TimeSeriesWide or the order of Frames in TimeSeriesMulti). Need to decide if ordering as any symantec meaning, if so what it is, and consider it properties of converting between formats
+  * Note: Issue on ordering [https://github.com/grafana/grafana-plugin-sdk-go/issues/366](https://github.com/grafana/grafana-plugin-sdk-go/issues/366) , not sure if it is display issue or not at this time
 
 <!-- Footnotes themselves at the bottom. -->
 
