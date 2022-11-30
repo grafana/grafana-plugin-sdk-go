@@ -2,7 +2,9 @@ package experimental
 
 import (
 	"bufio"
+	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -223,12 +225,13 @@ func readGoldenJSONFile(fpath string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	if len(raw) < 3 {
+	if len(raw) == 0 {
 		return "", fmt.Errorf("empty file found: %s", fpath)
 	}
 	chunks := strings.Split(string(raw), "//  "+machineStr)
 	if len(chunks) < 3 {
-		return "", fmt.Errorf("no golden data found in: %s (%d bytes)", fpath, len(raw))
+		hash := sha1.Sum(raw)
+		return "", fmt.Errorf("no golden data found in: %s (%d bytes, sha1: %s)", fpath, len(raw), hex.EncodeToString(hash[:]))
 	}
 	return chunks[2], nil
 }
