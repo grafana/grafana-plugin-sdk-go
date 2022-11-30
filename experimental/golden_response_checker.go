@@ -233,6 +233,8 @@ func readGoldenJSONFile(fpath string) (string, error) {
 	}
 	chunks := strings.Split(string(raw), "//  "+machineStr)
 	if len(chunks) < 3 {
+		// ignoring the G401 so that the checksum matches git hash
+		// nolint:gosec
 		hash := sha1.Sum(raw)
 		return "", fmt.Errorf("no golden data found in: %s (%d bytes, sha1: %s)", fpath, len(raw), hex.EncodeToString(hash[:]))
 	}
