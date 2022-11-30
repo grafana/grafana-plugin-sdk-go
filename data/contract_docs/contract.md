@@ -59,7 +59,7 @@ Although there is remainder data, there are still cases where the reader should 
 
 There are two named cases for when a response is lacking data and also doesn't have an error.
 
- **_"No Data"_** is for when we retrieve a response from a datasource but the response has no data items. The encoding for the form of a type is a single frame, with the data type declaration, and a zero length of fields (null or []). This is for the case when the entire set has no items.
+**_"No Data"_** is for when we retrieve a response from a datasource but the response has no data items. The encoding for the form of a type is a single frame, with the data type declaration, and a zero length of fields (null or []). This is for the case when the entire set has no items. No Data may also be a response with no frames (and no error). However, in this case the Type and other metadata can not be returned -- so the single frame form is usually preferable.
 
 We retrieve one or more data items from a datasource but an item has no values, that item is said to be an "**_Empty value_**". In this case, the required dataframe fields should still be present (but the fields themselves each have no values).
 
