@@ -208,6 +208,9 @@ func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.
 
 	expected, err := readGoldenJSONFile(fpath)
 	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
 
 	actual, err := json.Marshal(dr)
 	assert.NoError(t, err)
