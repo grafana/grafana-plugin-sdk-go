@@ -19,7 +19,7 @@ type MultiFrame []*data.Frame
 // The returned MultiFrame is a valid typed data response that corresponds to "No Data".
 func NewMultiFrame() *MultiFrame {
 	return &MultiFrame{
-		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany),
+		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti),
 	}
 	// Consider: MultiFrame.New()
 }
@@ -55,7 +55,7 @@ func (mfs *MultiFrame) AddSeries(metricName string, l data.Labels, t []time.Time
 	if len(*mfs) == 1 && len((*mfs)[0].Fields) == 0 { // update empty response placeholder frame
 		(*mfs)[0].Fields = append((*mfs)[0].Fields, timeField, valueField)
 	} else {
-		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMany)
+		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti)
 		frame.Fields = append(frame.Fields, timeField, valueField)
 		*mfs = append(*mfs, frame)
 	}
@@ -74,21 +74,20 @@ func (mfs *MultiFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.Fr
 Generally, when the type indicator in present on a frame, we become stricter on what the shape of the frame can be.
 However, there are still degrees of freedom: - extra frames without the indicator, or extra fields when the indicator is present.
 
-
 Rules
-- Whenever an error is returned, there are no ignored fields returned
-- Must have at least one frame
-- The first frame may have no fields, if so it is considered the empty response case
-- The first frame must be valid or will error, additional invalid frames with the type indicator will error,
+  - Whenever an error is returned, there are no ignored fields returned
+  - Must have at least one frame
+  - The first frame may have no fields, if so it is considered the empty response case
+  - The first frame must be valid or will error, additional invalid frames with the type indicator will error,
     frames without type indicator are ignored
-- A valid individual Frame (in the non empty case) has:
-	- The type indicator
-	- a []time.Time field (not []*time.Time) sorted from oldest to newest
-	- a numeric value field
-- Any nil Frames or Fields will cause an error (e.g. [Frame, Frame, nil, Frame] or [nil])
-- If any frame has fields within the frame of different lengths, an error will be returned
-- If validateData is true, duplicate labels and sorted time fields will error, otherwise only the schema/metadata is checked.
-- If all frames and their fields are ignored, and it is not the empty response case, an error is returned
+  - A valid individual Frame (in the non empty case) has:
+  - The type indicator
+  - a []time.Time field (not []*time.Time) sorted from oldest to newest
+  - a numeric value field
+  - Any nil Frames or Fields will cause an error (e.g. [Frame, Frame, nil, Frame] or [nil])
+  - If any frame has fields within the frame of different lengths, an error will be returned
+  - If validateData is true, duplicate labels and sorted time fields will error, otherwise only the schema/metadata is checked.
+  - If all frames and their fields are ignored, and it is not the empty response case, an error is returned
 
 When things get ignored
 - Frames that don't have the type indicator as long as they are not first
@@ -107,7 +106,7 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (refs []MetricR
 		return nil, nil, fmt.Errorf("frame 0 is nil which is invalid")
 	case firstFrame.Meta == nil:
 		return nil, nil, fmt.Errorf("frame 0 is missing a type indicator")
-	case !frameHasType(firstFrame, data.FrameTypeTimeSeriesMany):
+	case !frameHasType(firstFrame, data.FrameTypeTimeSeriesMulti):
 		return nil, nil, fmt.Errorf("frame 0 has wrong type, expected many/multi but got %q", firstFrame.Meta.Type)
 	case len(firstFrame.Fields) == 0:
 		if len(*mfs) > 1 {
@@ -133,7 +132,7 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (refs []MetricR
 			}
 		}
 
-		if !frameHasType(frame, data.FrameTypeTimeSeriesMany) {
+		if !frameHasType(frame, data.FrameTypeTimeSeriesMulti) {
 			if frameIdx == 0 {
 				return nil, nil, fmt.Errorf("first frame must have the many/multi type indicator in frame metadata")
 			}
