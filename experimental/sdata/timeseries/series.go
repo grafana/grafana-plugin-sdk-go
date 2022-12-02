@@ -44,7 +44,7 @@ func CollectionReaderFromFrames(frames []*data.Frame) (CollectionReader, error) 
 	var tcr CollectionReader
 
 	switch {
-	case mt == data.FrameTypeTimeSeriesMany: // aka multi
+	case mt == data.FrameTypeTimeSeriesMulti:
 		mfs := MultiFrame(frames)
 		tcr = &mfs
 	case mt == data.FrameTypeTimeSeriesLong:
