@@ -2,7 +2,6 @@ package backend
 
 import (
 	"encoding/json"
-	"net/http"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -206,32 +205,3 @@ func SecureJSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[strin
 
 	return secureJSONData
 }
-
-// ForwardHTTPHeaders interface marking that forward of HTTP headers is supported.
-type ForwardHTTPHeaders interface {
-	// SetHTTPHeader sets the header entries associated with key to the
-	// single element value. It replaces any existing values
-	// associated with key. The key is case insensitive; it is
-	// canonicalized by textproto.CanonicalMIMEHeaderKey.
-	SetHTTPHeader(key, value string)
-
-	// GetHTTPHeader gets the first value associated with the given key. If
-	// there are no values associated with the key, Get returns "".
-	// It is case insensitive; textproto.CanonicalMIMEHeaderKey is
-	// used to canonicalize the provided key. Get assumes that all
-	// keys are stored in canonical form.
-	GetHTTPHeader(key string) string
-
-	// GetHTTPHeaders returns forwarded HTTP headers, if any.
-	GetHTTPHeaders() http.Header
-}
-
-const (
-	// OAuthIdentityTokenHeaderName the header name used for forwarding
-	// OAuth Identity access token.
-	OAuthIdentityTokenHeaderName = "Authorization"
-
-	// OAuthIdentityIDTokenHeaderName the header name used for forwarding
-	// OAuth Identity ID token.
-	OAuthIdentityIDTokenHeaderName = "X-ID-Token"
-)

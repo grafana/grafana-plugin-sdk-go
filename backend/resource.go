@@ -7,15 +7,33 @@ import (
 
 // CallResourceRequest represents a request for a resource call.
 type CallResourceRequest struct {
-	ForwardHTTPHeaders
+	// PluginContext the contextual information for the request.
 	PluginContext PluginContext
-	Path          string
-	Method        string
-	URL           string
-	Headers       map[string][]string
-	Body          []byte
+
+	// Path the forwarded HTTP path for the request.
+	Path string
+
+	// Method the forwarded HTTP method for the request.
+	Method string
+
+	// URL the forwarded HTTP URL for the request.
+	URL string
+
+	// Headers the forwarded HTTP headers for the request, if any.
+	//
+	// Recommended to use GetHTTPHeaders or GetHTTPHeader
+	// since it automatically handles canonicalization of
+	// HTTP header keys.
+	Headers map[string][]string
+
+	// Body the forwarded HTTP body for the request, if any.
+	Body []byte
 }
 
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
 func (req *CallResourceRequest) SetHTTPHeader(key, value string) {
 	if req.Headers == nil {
 		req.Headers = map[string][]string{}
@@ -24,10 +42,16 @@ func (req *CallResourceRequest) SetHTTPHeader(key, value string) {
 	req.Headers[key] = []string{value}
 }
 
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
 func (req CallResourceRequest) GetHTTPHeader(key string) string {
 	return req.GetHTTPHeaders().Get(key)
 }
 
+// GetHTTPHeaders returns HTTP headers.
 func (req CallResourceRequest) GetHTTPHeaders() http.Header {
 	httpHeaders := http.Header{}
 
@@ -42,9 +66,14 @@ func (req CallResourceRequest) GetHTTPHeaders() http.Header {
 
 // CallResourceResponse represents a response from a resource call.
 type CallResourceResponse struct {
-	Status  int
+	// Status the HTTP response status.
+	Status int
+
+	// Headers the HTTP response headers.
 	Headers map[string][]string
-	Body    []byte
+
+	// Body the HTTP response body.
+	Body []byte
 }
 
 // CallResourceResponseSender is used for sending resource call responses.
@@ -67,3 +96,5 @@ type CallResourceHandlerFunc func(ctx context.Context, req *CallResourceRequest,
 func (fn CallResourceHandlerFunc) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	return fn(ctx, req, sender)
 }
+
+var _ ForwardHTTPHeaders = (*CallResourceRequest)(nil)

@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"net/textproto"
-	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -41,43 +39,43 @@ func (fn QueryDataHandlerFunc) QueryData(ctx context.Context, req *QueryDataRequ
 // QueryDataRequest contains a single request which contains multiple queries.
 // It is the input type for a QueryData call.
 type QueryDataRequest struct {
-	ForwardHTTPHeaders
+	// PluginContext the contextual information for the request.
 	PluginContext PluginContext
-	Headers       map[string]string
-	Queries       []DataQuery
+
+	// Headers the environment/metadata information for the request.
+	//
+	// To access forwarded HTTP headers please use
+	// GetHTTPHeaders or GetHTTPHeader.
+	Headers map[string]string
+
+	// Queries the data queries for the request.
+	Queries []DataQuery
 }
 
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
 func (req *QueryDataRequest) SetHTTPHeader(key, value string) {
 	if req.Headers == nil {
 		req.Headers = map[string]string{}
 	}
 
-	req.Headers[fmt.Sprintf("http_%s", key)] = value
+	req.Headers[fmt.Sprintf("%s%s", httpHeaderPrefix, key)] = value
 }
 
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
 func (req QueryDataRequest) GetHTTPHeader(key string) string {
 	return req.GetHTTPHeaders().Get(key)
 }
 
+// GetHTTPHeaders returns HTTP headers.
 func (req QueryDataRequest) GetHTTPHeaders() http.Header {
-	httpHeaders := http.Header{}
-
-	for k, v := range req.Headers {
-		if textproto.CanonicalMIMEHeaderKey(k) == OAuthIdentityTokenHeaderName {
-			httpHeaders.Set(k, v)
-		}
-
-		if textproto.CanonicalMIMEHeaderKey(k) == OAuthIdentityIDTokenHeaderName {
-			httpHeaders.Set(k, v)
-		}
-
-		if strings.HasPrefix(k, "http_") {
-			hKey := strings.TrimPrefix(k, "http_")
-			httpHeaders.Set(hKey, v)
-		}
-	}
-
-	return httpHeaders
+	return getHTTPHeadersFromStringMap(req.Headers)
 }
 
 // DataQuery represents a single query as sent from the frontend.
@@ -157,6 +155,7 @@ type DataResponse struct {
 	Status Status
 }
 
+// ErrDataResponse returns an error DataResponse given status and message.
 func ErrDataResponse(status Status, message string) DataResponse {
 	return DataResponse{
 		Error:  errors.New(message),
@@ -187,3 +186,5 @@ type TimeRange struct {
 func (tr TimeRange) Duration() time.Duration {
 	return tr.To.Sub(tr.From)
 }
+
+var _ ForwardHTTPHeaders = (*QueryDataRequest)(nil)
