@@ -2,10 +2,13 @@ package experimental
 
 import (
 	"bufio"
+	// ignoring the G505 so that the checksum matches git hash
+	// nolint:gosec
+	"crypto/sha1"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path"
@@ -160,7 +163,7 @@ func writeGoldenFile(path string, dr *backend.DataResponse) error {
 	}
 	str += "\n"
 
-	return ioutil.WriteFile(path, []byte(str), 0600)
+	return os.WriteFile(path, []byte(str), 0600)
 }
 
 const machineStr = "🌟 This was machine generated.  Do not edit. 🌟\n"
@@ -207,6 +210,9 @@ func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.
 
 	expected, err := readGoldenJSONFile(fpath)
 	assert.NoError(t, err)
+	if err != nil {
+		return
+	}
 
 	actual, err := json.Marshal(dr)
 	assert.NoError(t, err)
@@ -220,13 +226,19 @@ func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.
 }
 
 func readGoldenJSONFile(fpath string) (string, error) {
-	raw, err := ioutil.ReadFile(fpath)
+	raw, err := os.ReadFile(fpath)
 	if err != nil {
 		return "", err
 	}
+	if len(raw) == 0 {
+		return "", fmt.Errorf("empty file found: %s", fpath)
+	}
 	chunks := strings.Split(string(raw), "//  "+machineStr)
 	if len(chunks) < 3 {
-		return "", fmt.Errorf("no golden data found in: %s", fpath)
+		// ignoring the G401 so that the checksum matches git hash
+		// nolint:gosec
+		hash := sha1.Sum(raw)
+		return "", fmt.Errorf("no golden data found in: %s (%d bytes, sha1: %s)", fpath, len(raw), hex.EncodeToString(hash[:]))
 	}
 	return chunks[2], nil
 }
@@ -239,5 +251,5 @@ func writeGoldenJSONFile(fpath string, dr *backend.DataResponse) error {
 		return err
 	}
 	str += string(raw)
-	return ioutil.WriteFile(fpath, []byte(str), 0600)
+	return os.WriteFile(fpath, []byte(str), 0600)
 }
