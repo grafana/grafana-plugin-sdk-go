@@ -47,12 +47,12 @@ func (req *CallResourceRequest) SetHTTPHeader(key, value string) {
 // It is case insensitive; textproto.CanonicalMIMEHeaderKey is
 // used to canonicalize the provided key. Get assumes that all
 // keys are stored in canonical form.
-func (req CallResourceRequest) GetHTTPHeader(key string) string {
+func (req *CallResourceRequest) GetHTTPHeader(key string) string {
 	return req.GetHTTPHeaders().Get(key)
 }
 
 // GetHTTPHeaders returns HTTP headers.
-func (req CallResourceRequest) GetHTTPHeaders() http.Header {
+func (req *CallResourceRequest) GetHTTPHeaders() http.Header {
 	httpHeaders := http.Header{}
 
 	for k, v := range req.Headers {

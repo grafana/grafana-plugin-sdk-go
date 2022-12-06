@@ -82,12 +82,12 @@ func (req *CheckHealthRequest) SetHTTPHeader(key, value string) {
 // It is case insensitive; textproto.CanonicalMIMEHeaderKey is
 // used to canonicalize the provided key. Get assumes that all
 // keys are stored in canonical form.
-func (req CheckHealthRequest) GetHTTPHeader(key string) string {
+func (req *CheckHealthRequest) GetHTTPHeader(key string) string {
 	return req.GetHTTPHeaders().Get(key)
 }
 
 // GetHTTPHeaders returns HTTP headers.
-func (req CheckHealthRequest) GetHTTPHeaders() http.Header {
+func (req *CheckHealthRequest) GetHTTPHeaders() http.Header {
 	return getHTTPHeadersFromStringMap(req.Headers)
 }
 
