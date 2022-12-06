@@ -17,7 +17,7 @@ const (
 
 	// CookiesHeaderName the header name used for forwarding
 	// cookies.
-	CookiesHeaderName = "Cookies"
+	CookiesHeaderName = "Cookie"
 
 	httpHeaderPrefix = "http_"
 )

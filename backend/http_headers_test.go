@@ -15,7 +15,7 @@ func TestGetHTTPHeadersFromStringMap(t *testing.T) {
 			input: map[string]string{
 				"authorization": "a",
 				"x-id-token":    "b",
-				"cookies":       "c",
+				"cookie":        "c",
 			},
 			expected: map[string]string{
 				"":              "",
@@ -24,15 +24,15 @@ func TestGetHTTPHeadersFromStringMap(t *testing.T) {
 				"Authorization": "a",
 				"x-id-token":    "b",
 				"X-Id-Token":    "b",
-				"cookies":       "c",
-				"Cookies":       "c",
+				"cookie":        "c",
+				"Cookie":        "c",
 			},
 		},
 		{
 			input: map[string]string{
 				"Authorization": "a",
 				"X-ID-Token":    "b",
-				"Cookies":       "c",
+				"Cookie":        "c",
 			},
 			expected: map[string]string{
 				"":              "",
@@ -41,8 +41,8 @@ func TestGetHTTPHeadersFromStringMap(t *testing.T) {
 				"Authorization": "a",
 				"x-id-token":    "b",
 				"X-Id-Token":    "b",
-				"cookies":       "c",
-				"Cookies":       "c",
+				"cookie":        "c",
+				"Cookie":        "c",
 			},
 		},
 	}

@@ -15,7 +15,7 @@ func TestCheckHealthRequest(t *testing.T) {
 		req.Headers = map[string]string{
 			"Authorization":  "a",
 			"X-ID-Token":     "b",
-			"Cookies":        "c",
+			"Cookie":         "c",
 			customHeaderName: "d",
 		}
 
