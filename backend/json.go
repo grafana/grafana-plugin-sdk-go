@@ -1,6 +1,8 @@
 package backend
 
 import (
+	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"unsafe"
@@ -48,6 +50,18 @@ func (codec *queryDataResponseCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.I
 // Private stream readers
 //-----------------------------------------------------------------
 
+type DatasourceErrataError struct {
+	Code    string                 `json:"code"`
+	Message string                 `json:"message"`
+	URL     string                 `json:"url"`
+	Guide   string                 `json:"guide"`
+	Args    map[string]interface{} `json:"args"`
+}
+
+func (r *DatasourceErrataError) Error() string {
+	return fmt.Sprintf("%v", r.Message)
+}
+
 func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	stream.WriteObjectStart()
 	started := false
@@ -55,8 +69,26 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	status := dr.Status
 
 	if dr.Error != nil {
-		stream.WriteObjectField("error")
-		stream.WriteString(dr.Error.Error())
+		var dsError *DatasourceErrataError
+		if errors.As(dr.Error, &dsError) {
+			dsErrorJSON, err := json.Marshal(&dsError)
+			if err != nil {
+				stream.WriteObjectField("error")
+				stream.WriteString(err.Error())
+			} else {
+				stream.WriteObjectField("error")
+				stream.WriteObjectStart()
+				stream.WriteObjectField("message")
+				stream.WriteString(dr.Error.Error())
+				stream.WriteMore()
+				stream.WriteObjectField("errata")
+				stream.Write(dsErrorJSON)
+				stream.WriteObjectEnd()
+			}
+		} else {
+			stream.WriteObjectField("error")
+			stream.WriteString(dr.Error.Error())
+		}
 		started = true
 
 		if !status.IsValid() {
