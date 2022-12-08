@@ -33,6 +33,14 @@ func TestCheckHealthRequest(t *testing.T) {
 			require.Equal(t, "c", req.GetHTTPHeader(CookiesHeaderName))
 			require.Empty(t, req.GetHTTPHeader(customHeaderName))
 		})
+
+		t.Run("DeleteHTTPHeader canonical form", func(t *testing.T) {
+			req.DeleteHTTPHeader(OAuthIdentityTokenHeaderName)
+			req.DeleteHTTPHeader(OAuthIdentityIDTokenHeaderName)
+			req.DeleteHTTPHeader(CookiesHeaderName)
+			req.DeleteHTTPHeader(customHeaderName)
+			require.Empty(t, req.Headers)
+		})
 	})
 
 	t.Run("SetHTTPHeader canonical form", func(t *testing.T) {
@@ -55,6 +63,14 @@ func TestCheckHealthRequest(t *testing.T) {
 			require.Equal(t, "c", req.GetHTTPHeader(CookiesHeaderName))
 			require.Equal(t, "d", req.GetHTTPHeader(customHeaderName))
 		})
+
+		t.Run("DeleteHTTPHeader canonical form", func(t *testing.T) {
+			req.DeleteHTTPHeader(OAuthIdentityTokenHeaderName)
+			req.DeleteHTTPHeader(OAuthIdentityIDTokenHeaderName)
+			req.DeleteHTTPHeader(CookiesHeaderName)
+			req.DeleteHTTPHeader(customHeaderName)
+			require.Empty(t, req.Headers)
+		})
 	})
 
 	t.Run("SetHTTPHeader non-canonical form", func(t *testing.T) {
@@ -76,6 +92,14 @@ func TestCheckHealthRequest(t *testing.T) {
 			require.Equal(t, "b", req.GetHTTPHeader(strings.ToLower(OAuthIdentityIDTokenHeaderName)))
 			require.Equal(t, "c", req.GetHTTPHeader(strings.ToLower(CookiesHeaderName)))
 			require.Equal(t, "d", req.GetHTTPHeader(strings.ToLower(customHeaderName)))
+		})
+
+		t.Run("DeleteHTTPHeader non-canonical form", func(t *testing.T) {
+			req.DeleteHTTPHeader(strings.ToLower(OAuthIdentityTokenHeaderName))
+			req.DeleteHTTPHeader(strings.ToLower(OAuthIdentityIDTokenHeaderName))
+			req.DeleteHTTPHeader(strings.ToLower(CookiesHeaderName))
+			req.DeleteHTTPHeader(strings.ToLower(customHeaderName))
+			require.Empty(t, req.Headers)
 		})
 	})
 }

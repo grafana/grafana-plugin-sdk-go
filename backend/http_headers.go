@@ -30,6 +30,11 @@ type ForwardHTTPHeaders interface {
 	// canonicalized by textproto.CanonicalMIMEHeaderKey.
 	SetHTTPHeader(key, value string)
 
+	// DeleteHTTPHeader deletes the values associated with key.
+	// The key is case insensitive; it is canonicalized by
+	// CanonicalHeaderKey.
+	DeleteHTTPHeader(key string)
+
 	// GetHTTPHeader gets the first value associated with the given key. If
 	// there are no values associated with the key, Get returns "".
 	// It is case insensitive; textproto.CanonicalMIMEHeaderKey is

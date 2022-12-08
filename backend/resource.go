@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"net/http"
+	"net/textproto"
 )
 
 // CallResourceRequest represents a request for a resource call.
@@ -40,6 +41,27 @@ func (req *CallResourceRequest) SetHTTPHeader(key, value string) {
 	}
 
 	req.Headers[key] = []string{value}
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *CallResourceRequest) DeleteHTTPHeader(key string) {
+	if req.Headers == nil {
+		return
+	}
+
+	var deleteKey string
+	for k := range req.Headers {
+		if textproto.CanonicalMIMEHeaderKey(k) == textproto.CanonicalMIMEHeaderKey(key) {
+			deleteKey = k
+			break
+		}
+	}
+
+	if deleteKey != "" {
+		delete(req.Headers, deleteKey)
+	}
 }
 
 // GetHTTPHeader gets the first value associated with the given key. If

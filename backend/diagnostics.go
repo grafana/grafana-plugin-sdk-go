@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"net/textproto"
 	"strconv"
 )
 
@@ -75,6 +76,28 @@ func (req *CheckHealthRequest) SetHTTPHeader(key, value string) {
 	}
 
 	req.Headers[fmt.Sprintf("%s%s", httpHeaderPrefix, key)] = value
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *CheckHealthRequest) DeleteHTTPHeader(key string) {
+	if req.Headers == nil {
+		return
+	}
+
+	var deleteKey string
+	for k := range req.Headers {
+		if textproto.CanonicalMIMEHeaderKey(k) == textproto.CanonicalMIMEHeaderKey(key) ||
+			textproto.CanonicalMIMEHeaderKey(k) == textproto.CanonicalMIMEHeaderKey(fmt.Sprintf("%s%s", httpHeaderPrefix, key)) {
+			deleteKey = k
+			break
+		}
+	}
+
+	if deleteKey != "" {
+		delete(req.Headers, deleteKey)
+	}
 }
 
 // GetHTTPHeader gets the first value associated with the given key. If
