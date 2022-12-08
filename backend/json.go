@@ -50,18 +50,6 @@ func (codec *queryDataResponseCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.I
 // Private stream readers
 //-----------------------------------------------------------------
 
-type DatasourceErrataError struct {
-	Code    string                 `json:"code"`
-	Message string                 `json:"message"`
-	URL     string                 `json:"url"`
-	Guide   string                 `json:"guide"`
-	Args    map[string]interface{} `json:"args"`
-}
-
-func (r *DatasourceErrataError) Error() string {
-	return fmt.Sprintf("%v", r.Message)
-}
-
 func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	stream.WriteObjectStart()
 	started := false
