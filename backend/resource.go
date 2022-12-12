@@ -51,16 +51,11 @@ func (req *CallResourceRequest) DeleteHTTPHeader(key string) {
 		return
 	}
 
-	var deleteKey string
 	for k := range req.Headers {
 		if textproto.CanonicalMIMEHeaderKey(k) == textproto.CanonicalMIMEHeaderKey(key) {
-			deleteKey = k
+			delete(req.Headers, k)
 			break
 		}
-	}
-
-	if deleteKey != "" {
-		delete(req.Headers, deleteKey)
 	}
 }
 

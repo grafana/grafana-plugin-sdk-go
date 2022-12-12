@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"fmt"
 	"net/http"
 	"net/textproto"
 	"strings"
@@ -46,6 +47,14 @@ type ForwardHTTPHeaders interface {
 	GetHTTPHeaders() http.Header
 }
 
+func setHTTPHeaderInStringMap(headers map[string]string, key string, value string) {
+	if headers == nil {
+		headers = map[string]string{}
+	}
+
+	headers[fmt.Sprintf("%s%s", httpHeaderPrefix, key)] = value
+}
+
 func getHTTPHeadersFromStringMap(headers map[string]string) http.Header {
 	httpHeaders := http.Header{}
 
@@ -69,4 +78,14 @@ func getHTTPHeadersFromStringMap(headers map[string]string) http.Header {
 	}
 
 	return httpHeaders
+}
+
+func deleteHTTPHeaderInStringMap(headers map[string]string, key string) {
+	for k := range headers {
+		if textproto.CanonicalMIMEHeaderKey(k) == textproto.CanonicalMIMEHeaderKey(key) ||
+			textproto.CanonicalMIMEHeaderKey(k) == textproto.CanonicalMIMEHeaderKey(fmt.Sprintf("%s%s", httpHeaderPrefix, key)) {
+			delete(headers, k)
+			break
+		}
+	}
 }
