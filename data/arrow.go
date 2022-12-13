@@ -20,7 +20,7 @@ const metadataKeyName = "name"     // standard property
 const metadataKeyConfig = "config" // FieldConfig serialized as JSON
 const metadataKeyLabels = "labels" // labels serialized as JSON
 const metadataKeyTSType = "tstype" // typescript type
-const metadataKeyRefId = "refId"   // added to the table metadata
+const metadataKeyRefID = "refId"   // added to the table metadata
 
 // MarshalArrow converts the Frame to an arrow table and returns a byte
 // representation of that table.
@@ -211,7 +211,7 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 	tableMetaMap := map[string]string{
 		metadataKeyName:  f.Name,
-		metadataKeyRefId: f.RefID,
+		metadataKeyRefID: f.RefID,
 	}
 	if f.Meta != nil {
 		str, err := toJSONString(f.Meta)
@@ -688,7 +688,7 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) erro
 func populateFrameFromSchema(schema *arrow.Schema, frame *Frame) error {
 	metaData := schema.Metadata()
 	frame.Name, _ = getMDKey(metadataKeyName, metaData) // No need to check ok, zero value ("") is returned
-	frame.RefID, _ = getMDKey(metadataKeyRefId, metaData)
+	frame.RefID, _ = getMDKey(metadataKeyRefID, metaData)
 
 	var err error
 	if metaAsString, ok := getMDKey("meta", metaData); ok {
