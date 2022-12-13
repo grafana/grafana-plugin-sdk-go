@@ -90,6 +90,10 @@ func vectorFieldType(v vector) FieldType {
 		return FieldTypeJSON
 	case *nullableJsonRawMessageVector:
 		return FieldTypeNullableJSON
+	case *enumVector:
+		return FieldTypeEnum
+	case *nullableEnumVector:
+		return FieldTypeNullableEnum
 	}
 
 	return FieldTypeUnknown
@@ -179,6 +183,11 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 		f.vector = newJsonRawMessageVector(n)
 	case FieldTypeNullableJSON:
 		f.vector = newNullableJsonRawMessageVector(n)
+
+	case FieldTypeEnum:
+		f.vector = newEnumVector(n)
+	case FieldTypeNullableEnum:
+		f.vector = newNullableEnumVector(n)
 	default:
 		panic("unsupported FieldType")
 	}

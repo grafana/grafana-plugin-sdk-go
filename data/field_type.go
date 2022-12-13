@@ -83,6 +83,11 @@ const (
 	FieldTypeJSON
 	// FieldTypeNullableJSON indicates the underlying primitive is a []*json.RawMessage.
 	FieldTypeNullableJSON
+
+	// FieldTypeEnum indicates the underlying primitive is a []uint16, with field mapping metadata
+	FieldTypeEnum
+	// FieldTypeNullableEnum indicates the underlying primitive is a []*uint16, with field mapping metadata
+	FieldTypeNullableEnum
 )
 
 // MarshalJSON marshals the enum as a quoted json string
@@ -253,6 +258,7 @@ func (p FieldType) NonNullableType() FieldType {
 }
 
 // FieldTypeFromItemTypeString returns a field type from the current string
+//
 //nolint:goconst,gocyclo
 func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	switch s {

@@ -22,6 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
+const simpleTypeEnum = "enum"
 const simpleTypeOther = "other"
 
 const jsonKeySchema = "schema"
@@ -381,6 +382,8 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			return uint8(iV), err
 		}
 
+	case FieldTypeEnum:
+		fallthrough // enums and uint16 share the same backings
 	case FieldTypeUint16:
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
@@ -556,10 +559,12 @@ func getTypeScriptTypeString(t FieldType) (string, bool) {
 	if t == FieldTypeString || t == FieldTypeNullableString {
 		return simpleTypeString, true
 	}
+	if t == FieldTypeEnum || t == FieldTypeNullableEnum {
+		return simpleTypeEnum, true
+	}
 	if t == FieldTypeJSON || t == FieldTypeNullableJSON {
 		return simpleTypeOther, true
 	}
-
 	return "", false
 }
 

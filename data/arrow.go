@@ -383,6 +383,14 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 		}
 		sdkField.vector = newUint8Vector(0)
 	case arrow.UINT16:
+		tstype, ok := getMDKey(metadata_key_tstype, field.Metadata)
+		if ok && tstype == simpleTypeEnum {
+			if nullable[idx] {
+				sdkField.vector = newNullableEnumVector(0)
+				break
+			}
+			sdkField.vector = newEnumVector(0)
+		}
 		if nullable[idx] {
 			sdkField.vector = newNullableUint16Vector(0)
 			break
