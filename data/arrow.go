@@ -95,7 +95,6 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 		}
 		tstype, _ := getTypeScriptTypeString(field.Type())
 		fieldMeta := map[string]string{
-			metadataKeyName:   field.Name,
 			metadataKeyTSType: tstype,
 		}
 
@@ -200,6 +199,12 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 			columns[fieldIdx] = *buildJSONColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableJsonRawMessageVector:
 			columns[fieldIdx] = *buildNullableJSONColumn(pool, arrowFields[fieldIdx], v)
+
+		case *enumVector:
+			columns[fieldIdx] = *buildEnumColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableEnumVector:
+			columns[fieldIdx] = *buildNullableEnumColumn(pool, arrowFields[fieldIdx], v)
+
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
@@ -301,6 +306,11 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableJsonRawMessageVector:
 		return &arrow.BinaryType{}, true, nil
 
+	case *enumVector:
+		return &arrow.Uint16Type{}, false, nil
+	case *nullableEnumVector:
+		return &arrow.Uint16Type{}, false, nil
+
 	default:
 		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.vector)
 	}
@@ -383,13 +393,14 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 		}
 		sdkField.vector = newUint8Vector(0)
 	case arrow.UINT16:
-		tstype, ok := getMDKey(metadata_key_tstype, field.Metadata)
+		tstype, ok := getMDKey(metadataKeyTSType, field.Metadata)
 		if ok && tstype == simpleTypeEnum {
 			if nullable[idx] {
 				sdkField.vector = newNullableEnumVector(0)
-				break
+			} else {
+				sdkField.vector = newEnumVector(0)
 			}
-			sdkField.vector = newEnumVector(0)
+			break
 		}
 		if nullable[idx] {
 			sdkField.vector = newNullableUint16Vector(0)

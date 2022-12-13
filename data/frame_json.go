@@ -8,6 +8,7 @@ import (
 	"io"
 	"math"
 	"strconv"
+	"strings"
 	"time"
 	"unsafe"
 
@@ -222,6 +223,10 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 
 			// Create a new field for each object
 			for _, f := range schema.Fields {
+				if strings.Contains(f.Name, "enum") {
+					fmt.Println("xxxx")
+				}
+
 				ft := f.TypeInfo.Frame
 				if f.TypeInfo.Nullable {
 					ft = ft.NullableType()
@@ -541,6 +546,10 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readJSONVectorJSON(iter, false, size)
 	case FieldTypeNullableJSON:
 		return readJSONVectorJSON(iter, true, size)
+	case FieldTypeEnum:
+		return readEnumVectorJSON(iter, size)
+	case FieldTypeNullableEnum:
+		return readNullableEnumVectorJSON(iter, size)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }
@@ -568,13 +577,16 @@ func getTypeScriptTypeString(t FieldType) (string, bool) {
 	return "", false
 }
 
-func getFieldTypeForArrow(t arrow.DataType) FieldType {
+func getFieldTypeForArrow(t arrow.DataType, tsType string) FieldType {
 	switch t.ID() {
 	case arrow.TIMESTAMP:
 		return FieldTypeTime
 	case arrow.UINT8:
 		return FieldTypeUint8
 	case arrow.UINT16:
+		if tsType == simpleTypeEnum {
+			return FieldTypeEnum
+		}
 		return FieldTypeUint16
 	case arrow.UINT32:
 		return FieldTypeUint32
@@ -706,6 +718,10 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 			stream.WriteObjectField("name")
 			stream.WriteString(f.Name)
 			started = true
+		}
+
+		if strings.Contains(f.Name, "enum") {
+			fmt.Sprintf("xxx")
 		}
 
 		t, ok := getTypeScriptTypeString(f.Type())
@@ -899,8 +915,8 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 
 	stream.WriteObjectStart()
 
-	name, _ := getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
-	refID, _ := getMDKey("refId", metaData)
+	name, _ := getMDKey(metadataKeyName, metaData) // No need to check ok, zero value ("") is returned
+	refID, _ := getMDKey(metadataKeyRefID, metaData)
 
 	if len(name) > 0 {
 		stream.WriteObjectField("name")
@@ -942,15 +958,22 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 			stream.WriteString(f.Name)
 			started = true
 		}
+		if strings.Contains(f.Name, "enum") {
+			fmt.Sprintf("xxx")
+		}
 
-		ft := getFieldTypeForArrow(f.Type)
-		t, ok := getTypeScriptTypeString(ft)
+		tsType, ok := getMDKey(metadataKeyTSType, f.Metadata)
+		ft := getFieldTypeForArrow(f.Type, tsType)
+		if !ok {
+			tsType, ok = getTypeScriptTypeString(ft)
+		}
+
 		if ok {
 			if started {
 				stream.WriteMore()
 			}
 			stream.WriteObjectField("type")
-			stream.WriteString(t)
+			stream.WriteString(tsType)
 
 			nnt := ft.NonNullableType()
 			stream.WriteMore()

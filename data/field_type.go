@@ -116,6 +116,8 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 
 // FieldTypeFor returns a concrete type for a given interface or unknown if not known
 func FieldTypeFor(t interface{}) FieldType {
+	// NOTE: enum does not have a native mapping ;(
+
 	switch t.(type) {
 	case int8:
 		return FieldTypeInt8
@@ -199,6 +201,9 @@ func (p FieldType) NullableType() FieldType {
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeNullableJSON
+
+	case FieldTypeEnum, FieldTypeNullableEnum:
+		return FieldTypeNullableEnum
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
@@ -252,6 +257,9 @@ func (p FieldType) NonNullableType() FieldType {
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeJSON
+
+	case FieldTypeEnum, FieldTypeNullableEnum:
+		return FieldTypeEnum
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
@@ -331,7 +339,13 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 		return FieldTypeJSON, true
 	case "*json.RawMessage":
 		return FieldTypeNullableJSON, true
+
+	case "enum":
+		return FieldTypeEnum, true
+	case "*enum":
+		return FieldTypeNullableEnum, true
 	}
+
 	return FieldTypeNullableString, false
 }
 
@@ -407,6 +421,12 @@ func (p FieldType) ItemTypeString() string {
 		return "json.RawMessage"
 	case FieldTypeNullableJSON:
 		return "*json.RawMessage"
+
+	// Non-standard field type
+	case FieldTypeEnum:
+		return "enum"
+	case FieldTypeNullableEnum:
+		return "*enum"
 	}
 	return "invalid/unsupported type"
 }

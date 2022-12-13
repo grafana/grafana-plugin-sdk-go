@@ -94,6 +94,23 @@ func TestFieldTypeToJSON(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, data.FieldTypeInt8, v.FType)
 	assert.Equal(t, data.FieldTypeTime, *v.FType2)
+
+	// Read/write enum field
+	frame := data.NewFrame("test",
+		newField("enum", data.FieldTypeEnum, []uint16{
+			1, 2, 2, 1, 1,
+		}))
+
+	orig, err := data.FrameToJSON(frame, data.IncludeAll)
+	require.NoError(t, err)
+
+	out := &data.Frame{}
+	err = json.Unmarshal(orig, out)
+	require.NoError(t, err)
+
+	second, err := data.FrameToJSON(frame, data.IncludeAll)
+	require.NoError(t, err)
+	require.JSONEq(t, string(orig), string(second))
 }
 
 func BenchmarkFrameToJSON(b *testing.B) {
@@ -205,6 +222,7 @@ func TestGenerateGenericArrowCode(t *testing.T) {
 		"uint8", "uint16", "uint32", "uint64",
 		"int8", "int16", "int32", "int64",
 		"float32", "float64", "string", "bool",
+		"enum", // Maps to uint16
 	}
 
 	code := `
@@ -232,7 +250,7 @@ func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fiel
 			entities.add(entityType, i)
 			stream.WriteNil()
 		} else {
-			stream.Write{{.Type}}(val)
+			stream.Write{{.IterType}}(val)
 		}
 {{ else }}
 		stream.Write{{.Type}}(v.Value(i)){{ end }}
@@ -253,7 +271,7 @@ func read{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*{{.Typen}}Vect
 		if t == jsoniter.NilValue {
 			iter.ReadNil()
 		} else {
-			v := iter.Read{{.Type}}()
+			v := iter.Read{{.IterType}}()
 			arr.Set(i, v)
 		}
 	}
@@ -277,7 +295,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 		if t == jsoniter.NilValue {
 			iter.ReadNil()
 		} else {
-			v := iter.Read{{.Type}}()
+			v := iter.Read{{.IterType}}()
 			arr.Set(i, &v)
 		}
 	}
@@ -302,20 +320,27 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 	}
 
 	for _, tstr := range types {
+		itertype := strings.Title(tstr)
 		typex := tstr
 		if tstr == "bool" {
 			typex = "Boolean"
+		}
+		if tstr == "enum" {
+			typex = "uint16"
+			itertype = strings.Title(typex)
 		}
 		hasSpecialEntities := tstr == "float32" || tstr == "float64"
 		tmplData := struct {
 			Type               string
 			Typex              string
 			Typen              string
+			IterType           string
 			HasSpecialEntities bool
 		}{
 			Type:               strings.Title(tstr),
 			Typex:              strings.Title(typex),
 			Typen:              tstr,
+			IterType:           itertype,
 			HasSpecialEntities: hasSpecialEntities,
 		}
 		tmpl, err := template.New("").Parse(code)
