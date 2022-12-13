@@ -11,6 +11,7 @@ import (
 )
 
 // Labels are used to add metadata to an object.  The JSON will always be sorted keys
+//
 //swagger:model FrameLabels
 type Labels map[string]string
 
