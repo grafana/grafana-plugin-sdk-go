@@ -15,6 +15,13 @@ import (
 	"github.com/mattetti/filebuffer"
 )
 
+// keys added to arrow field metadata
+const metadata_key_name = "name"     // standard property
+const metadata_key_config = "config" // FieldConfig serialized as JSON
+const metadata_key_labels = "labels" // labels serialized as JSON
+const metadata_key_tstype = "tstype" // typescript type
+const metadata_key_refId = "refId"   // added to the table metadata
+
 // MarshalArrow converts the Frame to an arrow table and returns a byte
 // representation of that table.
 // All fields of a Frame must be of the same length or an error is returned.
@@ -86,11 +93,14 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		fieldMeta := map[string]string{"name": field.Name}
+		tstype, _ := getTypeScriptTypeString(field.Type())
+		fieldMeta := map[string]string{
+			metadata_key_name:   field.Name,
+			metadata_key_tstype: tstype,
+		}
 
 		if field.Labels != nil {
-			if fieldMeta["labels"], err = toJSONString(field.Labels); err != nil {
+			if fieldMeta[metadata_key_labels], err = toJSONString(field.Labels); err != nil {
 				return nil, err
 			}
 		}
@@ -100,7 +110,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			if err != nil {
 				return nil, err
 			}
-			fieldMeta["config"] = str
+			fieldMeta[metadata_key_config] = str
 		}
 
 		arrowFields[i] = arrow.Field{
@@ -200,8 +210,8 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 // buildArrowSchema builds an Arrow schema for a Frame.
 func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 	tableMetaMap := map[string]string{
-		"name":  f.Name,
-		"refId": f.RefID,
+		metadata_key_name:  f.Name,
+		metadata_key_refId: f.RefID,
 	}
 	if f.Meta != nil {
 		str, err := toJSONString(f.Meta)
@@ -310,12 +320,12 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		sdkField := Field{
 			Name: field.Name,
 		}
-		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
+		if labelsAsString, ok := getMDKey(metadata_key_labels, field.Metadata); ok {
 			if err := json.Unmarshal([]byte(labelsAsString), &sdkField.Labels); err != nil {
 				return nil, err
 			}
 		}
-		if configAsString, ok := getMDKey("config", field.Metadata); ok {
+		if configAsString, ok := getMDKey(metadata_key_config, field.Metadata); ok {
 			// make sure that Config is not nil, otherwise create a new one
 			if sdkField.Config == nil {
 				sdkField.Config = &FieldConfig{}
@@ -677,8 +687,8 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) erro
 
 func populateFrameFromSchema(schema *arrow.Schema, frame *Frame) error {
 	metaData := schema.Metadata()
-	frame.Name, _ = getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
-	frame.RefID, _ = getMDKey("refId", metaData)
+	frame.Name, _ = getMDKey(metadata_key_name, metaData) // No need to check ok, zero value ("") is returned
+	frame.RefID, _ = getMDKey(metadata_key_refId, metaData)
 
 	var err error
 	if metaAsString, ok := getMDKey("meta", metaData); ok {

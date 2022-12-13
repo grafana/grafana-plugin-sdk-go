@@ -542,7 +542,8 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }
 
-func getSimpleTypeString(t FieldType) (string, bool) {
+// This returns the type name that is used in javascript
+func getTypeScriptTypeString(t FieldType) (string, bool) {
 	if t.Time() {
 		return simpleTypeTime, true
 	}
@@ -702,7 +703,7 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 			started = true
 		}
 
-		t, ok := getSimpleTypeString(f.Type())
+		t, ok := getTypeScriptTypeString(f.Type())
 		if ok {
 			if started {
 				stream.WriteMore()
@@ -938,7 +939,7 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 		}
 
 		ft := getFieldTypeForArrow(f.Type)
-		t, ok := getSimpleTypeString(ft)
+		t, ok := getTypeScriptTypeString(ft)
 		if ok {
 			if started {
 				stream.WriteMore()
