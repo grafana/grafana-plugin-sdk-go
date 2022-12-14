@@ -80,7 +80,9 @@
         "name": "enum",
         "type": "enum",
         "typeInfo": { "frame": "enum" },
-        "config": { "mappings": [{ "type": "enum", "options": { "value": ["", "ONE", "TWO", "THREE"] } }] }
+        "config": {
+          "type": { "enum": { "value": ["", "ONE", "TWO", "THREE"] } }
+        }
       },
       { "name": "nullable_enum", "type": "enum", "typeInfo": { "frame": "enum", "nullable": true } }
     ]

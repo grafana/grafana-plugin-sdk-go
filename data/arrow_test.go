@@ -274,8 +274,8 @@ func goldenDF() *data.Frame {
 		newField("enum", data.FieldTypeEnum, []uint16{
 			1, 2, 2, 1, 1,
 		}).SetConfig(&data.FieldConfig{
-			Mappings: data.ValueMappings{
-				data.EnumValueMapper{
+			TypeConfig: &data.FieldTypeConfig{
+				Enum: &data.EnumFieldConfig{
 					Value: []string{
 						"", "ONE", "TWO", "THREE",
 					},

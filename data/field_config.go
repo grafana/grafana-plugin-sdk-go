@@ -63,8 +63,41 @@ type FieldConfig struct {
 	// Alternative to empty string
 	NoValue string `json:"noValue,omitempty"`
 
+	// Type specific configs
+	TypeConfig *FieldTypeConfig `json:"type,omitempty"`
+
 	// Panel Specific Values
 	Custom map[string]interface{} `json:"custom,omitempty"`
+}
+
+// FieldTypeConfig has type specific configs, only one should be active at a time
+type FieldTypeConfig struct {
+	Enum       *EnumFieldConfig       `json:"enum,omitempty"`
+	TimeOffset *TimeOffsetFieldConfig `json:"timeOffset,omitempty"`
+}
+
+// Enum field config
+type EnumFieldConfig struct {
+	// Value is the string display value for a given index
+	Text []string `json:"text"`
+
+	// Color is the color value for a given index (empty is undefined)
+	Color []string `json:"color,omitempty"`
+
+	// Icon supports setting an icon for a given index value
+	Icon []string `json:"icon,omitempty"`
+}
+
+// Time offset field config
+type TimeOffsetFieldConfig struct {
+	// Unix epoch mills start time
+	StartTime int64 `json:"startTime,omitempty"`
+
+	// added to start time (nanoseconds)
+	NanoOffset int64 `json:"nanoOffset,omitempty"`
+
+	// “ns”, “us” (or “µs”), “ms”, “s”, “m”, “h”.
+	OffsetUnit string `json:"offsetUnit"`
 }
 
 // ExplicitNullValue is the string representation for null
