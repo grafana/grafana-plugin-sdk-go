@@ -309,7 +309,7 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *enumVector:
 		return &arrow.Uint16Type{}, false, nil
 	case *nullableEnumVector:
-		return &arrow.Uint16Type{}, false, nil
+		return &arrow.Uint16Type{}, true, nil
 
 	default:
 		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.vector)

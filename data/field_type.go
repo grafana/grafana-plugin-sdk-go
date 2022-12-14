@@ -516,7 +516,7 @@ func (p FieldType) Nullable() bool {
 	case FieldTypeNullableString:
 		return true
 
-	case FieldTypeNullableBool:
+	case FieldTypeNullableBool, FieldTypeNullableEnum:
 		return true
 
 	case FieldTypeNullableTime:

@@ -275,12 +275,13 @@ func goldenDF() *data.Frame {
 		newField("enum", data.FieldTypeEnum, []uint16{
 			1, 2, 2, 1, 1,
 		}),
-		// newField("nullable_enum", data.FieldTypeEnum, []*uint16{
-		// 	uint16Ptr(0),
-		// 	uint16Ptr(1),
-		// 	nil,
-		// 	uint16Ptr(3),
-		// }),
+		newField("nullable_enum", data.FieldTypeNullableEnum, []*uint16{
+			uint16Ptr(1),
+			uint16Ptr(2),
+			nil,
+			uint16Ptr(3),
+			uint16Ptr(0),
+		}),
 	).SetMeta(&data.FrameMeta{
 		Custom:              map[string]interface{}{"Hi": "there"},
 		ExecutedQueryString: "SELECT * FROM table",
