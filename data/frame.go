@@ -505,11 +505,9 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 			switch {
 			case f.Fields[colIdx].Type() == FieldTypeJSON:
-				//nolint
-				sRow[colIdx] = fmt.Sprintf("%s", v.(json.RawMessage))
+				sRow[colIdx] = string(v.(json.RawMessage))
 			case f.Fields[colIdx].Type() == FieldTypeNullableJSON:
-				//nolint
-				sRow[colIdx] = fmt.Sprintf("%s", *v.(*json.RawMessage))
+				sRow[colIdx] = string(*v.(*json.RawMessage))
 			default:
 				sRow[colIdx] = fmt.Sprintf("%v", val)
 			}

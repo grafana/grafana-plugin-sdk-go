@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"io"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/elazarl/goproxy"
@@ -20,7 +19,7 @@ func ReadRequestBody(r *http.Request) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(body))
+	r.Body = io.NopCloser(bytes.NewBuffer(body))
 	return body, nil
 }
 
@@ -34,7 +33,7 @@ func RoundTripper(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response
 	}
 	buf := &bytes.Buffer{}
 	tee := io.TeeReader(req.Body, buf)
-	req.Body = ioutil.NopCloser(tee)
+	req.Body = io.NopCloser(tee)
 	_, resp, err = tr.DetailedRoundTrip(req)
 	if resp != nil {
 		resp.Request.Body = io.NopCloser(buf)

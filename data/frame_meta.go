@@ -77,6 +77,8 @@ const (
 )
 
 // DataTopic is used to identify which topic the frame should be assigned to.
+//
+//nolint:revive
 type DataTopic string
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string
