@@ -2,17 +2,19 @@ package ca
 
 import (
 	_ "embed" // Needed for embedding the CA certificate and key
+	"os"
 
 	"crypto/tls"
-	"io/ioutil"
 )
 
-//go:embed grafana-e2e-ca.pem
 // CACertificate Certificate Authority certificate used by the proxy.
+//
+//go:embed grafana-e2e-ca.pem
 var CACertificate []byte
 
-//go:embed grafana-e2e-ca.key.pem
 // CAKey Certificate Authority private key used by the proxy.
+//
+//go:embed grafana-e2e-ca.key.pem
 var CAKey []byte
 
 // Loads the CA key pair from the provided paths, and falls back to the default key pair if paths are not provided.
@@ -29,12 +31,12 @@ func GetCertificate(certPath, keyPath string) (tls.Certificate, error) {
 
 // Loads the CA key pair from the provided paths.
 func LoadKeyPair(certPath, keyPath string) ([]byte, []byte, error) {
-	cert, err := ioutil.ReadFile(certPath)
+	cert, err := os.ReadFile(certPath)
 	if err != nil {
 		return []byte{}, []byte{}, err
 	}
 
-	key, err := ioutil.ReadFile(keyPath)
+	key, err := os.ReadFile(keyPath)
 	if err != nil {
 		return []byte{}, []byte{}, err
 	}

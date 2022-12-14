@@ -239,7 +239,6 @@ import (
 	build "github.com/grafana/grafana-plugin-sdk-go/build"
 
 	"bytes"
-	"io/ioutil"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
@@ -285,7 +284,7 @@ func CustomE2E() error {
 				return &http.Response{
 					StatusCode: http.StatusNotFound,
 					Header:     http.Header{},
-					Body:       ioutil.NopCloser(bytes.NewBufferString("Not found")),
+					Body:       io.NopCloser(bytes.NewBufferString("Not found")),
 				}
 			}
 			return nil

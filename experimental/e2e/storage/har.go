@@ -5,7 +5,6 @@ import (
 	"context"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -108,7 +107,7 @@ func (s *HAR) Add(req *http.Request, res *http.Response) error {
 		if err != nil {
 			return err
 		}
-		res.Body = ioutil.NopCloser(bytes.NewReader(resBody))
+		res.Body = io.NopCloser(bytes.NewReader(resBody))
 	}
 
 	reqCookies := make([]*har.Cookie, 0)
@@ -180,7 +179,7 @@ func (s *HAR) Entries() []*Entry {
 			fmt.Println("Failed to create request", "err", err)
 			continue
 		}
-		req.Body = ioutil.NopCloser(strings.NewReader(postData))
+		req.Body = io.NopCloser(strings.NewReader(postData))
 		req.ContentLength = e.Request.BodySize
 		req.Header = make(http.Header)
 		for _, header := range e.Request.Headers {
@@ -188,13 +187,13 @@ func (s *HAR) Entries() []*Entry {
 		}
 
 		bodyReq := req.Clone(context.Background())
-		bodyReq.Body = ioutil.NopCloser(strings.NewReader(postData))
+		bodyReq.Body = io.NopCloser(strings.NewReader(postData))
 		res := &http.Response{
 			StatusCode:    int(e.Response.Status),
 			Status:        e.Response.StatusText,
 			Proto:         e.Response.HTTPVersion,
 			Header:        make(http.Header),
-			Body:          ioutil.NopCloser(strings.NewReader(e.Response.Content.Text)),
+			Body:          io.NopCloser(strings.NewReader(e.Response.Content.Text)),
 			ContentLength: int64(len(e.Response.Content.Text)),
 			Request:       bodyReq,
 		}
@@ -245,14 +244,14 @@ func (s *HAR) Save() error {
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(s.path, raw, 0600)
+	return os.WriteFile(s.path, raw, 0600)
 }
 
 // Load reads the HAR from disk.
 func (s *HAR) Load() error {
 	harFiles.rLock(s.path)
 	defer harFiles.rUnlock(s.path)
-	raw, err := ioutil.ReadFile(s.path)
+	raw, err := os.ReadFile(s.path)
 	if err != nil {
 		return err
 	}
