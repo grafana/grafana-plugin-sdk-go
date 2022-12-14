@@ -720,10 +720,6 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 			started = true
 		}
 
-		if strings.Contains(f.Name, "enum") {
-			fmt.Sprintf("xxx")
-		}
-
 		t, ok := getTypeScriptTypeString(f.Type())
 		if ok {
 			if started {
@@ -957,9 +953,6 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 			stream.WriteObjectField("name")
 			stream.WriteString(f.Name)
 			started = true
-		}
-		if strings.Contains(f.Name, "enum") {
-			fmt.Sprintf("xxx")
 		}
 
 		tsType, ok := getMDKey(metadataKeyTSType, f.Metadata)
