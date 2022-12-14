@@ -22,6 +22,7 @@ type Logger interface {
 	Info(msg string, args ...interface{})
 	Warn(msg string, args ...interface{})
 	Error(msg string, args ...interface{})
+	With(args ...interface{}) Logger
 	Level() Level
 }
 
@@ -80,6 +81,13 @@ func (l *hclogWrapper) Level() Level {
 		return Error
 	}
 	return NoLevel
+}
+
+// With creates a sub-logger that will always have the given key/value pairs.
+func (l *hclogWrapper) With(args ...interface{}) Logger {
+	return &hclogWrapper{
+		logger: l.logger.With(args...),
+	}
 }
 
 // DefaultLogger is the default logger.
