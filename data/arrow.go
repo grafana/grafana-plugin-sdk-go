@@ -95,7 +95,6 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 		}
 		tstype, _ := getTypeScriptTypeString(field.Type())
 		fieldMeta := map[string]string{
-			metadataKeyName:   field.Name,
 			metadataKeyTSType: tstype,
 		}
 
