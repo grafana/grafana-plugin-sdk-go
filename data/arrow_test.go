@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var update = flag.Bool("update", false, "update .golden.arrow files")
+var update = flag.Bool("update", true, "update .golden.arrow files")
 
 const maxEcma6Int = 1<<53 - 1
 const minEcma6Int = -maxEcma6Int
