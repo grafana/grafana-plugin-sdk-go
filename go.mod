@@ -1,26 +1,26 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
-go 1.17
+go 1.18
 
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20211112161151-bc219186db40
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.7
+	github.com/google/go-cmp v0.5.9
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-hclog v0.14.1
 	github.com/hashicorp/go-plugin v1.4.3
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/json-iterator/go v1.1.12
-	github.com/magefile/mage v1.13.0
+	github.com/magefile/mage v1.14.0
 	github.com/mattetti/filebuffer v1.0.1
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
-	github.com/stretchr/testify v1.7.2
+	github.com/stretchr/testify v1.8.1
 	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
@@ -33,6 +33,7 @@ require (
 	github.com/getkin/kin-openapi v0.94.0
 	github.com/google/uuid v1.3.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
+	github.com/urfave/cli v1.22.1
 )
 
 require (
@@ -67,7 +68,6 @@ require (
 	github.com/shurcooL/sanitized_anchor_name v1.0.0 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
 	github.com/unknwon/log v0.0.0-20150304194804-e617c87089d3 // indirect
-	github.com/urfave/cli v1.22.1 // indirect
 	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
 	golang.org/x/text v0.3.6 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
