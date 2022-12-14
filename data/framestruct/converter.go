@@ -63,6 +63,8 @@ func ToDataFrames(name string, toConvert interface{}, opts ...FramestructOption)
 type FieldConverter func(interface{}) (interface{}, error)
 
 // FramestructOption takes a converter and applies some configuration to it
+//
+//nolint:revive
 type FramestructOption func(cr *converter)
 
 // WithConverterFor configures a FieldConverter for a field with the name

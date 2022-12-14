@@ -2,7 +2,7 @@ package config
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"os"
 )
 
 // Config is the configuration for the proxy.
@@ -49,7 +49,7 @@ func LoadConfig(path string) (*Config, error) {
 		path = "proxy.json"
 	}
 
-	raw, err := ioutil.ReadFile(path)
+	raw, err := os.ReadFile(path)
 	if err != nil {
 		return &Config{
 			Storage: []*StorageConfig{{

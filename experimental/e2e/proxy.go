@@ -89,6 +89,7 @@ func NewProxy(mode ProxyMode, fixture []*fixture.Fixture, config *config.Config)
 // Start starts the proxy server.
 func (p *Proxy) Start() error {
 	fmt.Println("Starting proxy", "mode", p.Mode.String(), "addr", p.Config.Address)
+	//nolint:gosec
 	return http.ListenAndServe(p.Config.Address, p.Server)
 }
 

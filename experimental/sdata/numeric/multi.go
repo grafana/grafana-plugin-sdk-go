@@ -53,19 +53,19 @@ func (mf *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.Fiel
 
 /*
 Rules:
-- Whenever an error is returned, there are no ignored fields returned
-- Must have at least one frame
-- The first frame must be valid or will error, additional invalid frames with the type indicator will error,
+  - Whenever an error is returned, there are no ignored fields returned
+  - Must have at least one frame
+  - The first frame must be valid or will error, additional invalid frames with the type indicator will error,
     frames without type indicator are ignored
-- A valid individual Frame (in the non empty case) has a numeric field and a type indicator
-- Any nil Frames or Fields will cause an error (e.g. [Frame, Frame, nil, Frame] or [nil])
-- If any frame has fields within the frame of different lengths, an error will be returned
-- If validateData is true, duplicate metricName+Labels will error
-- If all frames and their fields are ignored, and it is not the empty response case, an error is returned
+  - A valid individual Frame (in the non empty case) has a numeric field and a type indicator
+  - Any nil Frames or Fields will cause an error (e.g. [Frame, Frame, nil, Frame] or [nil])
+  - If any frame has fields within the frame of different lengths, an error will be returned
+  - If validateData is true, duplicate metricName+Labels will error
+  - If all frames and their fields are ignored, and it is not the empty response case, an error is returned
 
 Things to decide:
- - Seems like allowing (ignoring) more than 1 row is not a good idea (outside of Long)
- - Will allow for extra frames
+  - Seems like allowing (ignoring) more than 1 row is not a good idea (outside of Long)
+  - Will allow for extra frames
 
 TODO: Change this to follow the above
 */

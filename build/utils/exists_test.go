@@ -1,7 +1,6 @@
 package utils
 
 import (
-	"io/ioutil"
 	"os"
 	"testing"
 
@@ -16,7 +15,7 @@ func TestExists_NonExistent(t *testing.T) {
 }
 
 func TestExists_Existent(t *testing.T) {
-	f, err := ioutil.TempFile("", "")
+	f, err := os.CreateTemp("", "")
 	require.NoError(t, err)
 	defer os.Remove(f.Name())
 
