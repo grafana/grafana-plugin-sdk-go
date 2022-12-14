@@ -14,6 +14,7 @@ import (
 // See NewField() for supported types.
 //
 // The slice data in the Field is a not exported, so methods on the Field are used to to manipulate its data.
+//
 //swagger:model
 type Field struct {
 	// Name is default identifier of the field. The name does not have to be unique, but the combination
@@ -38,15 +39,24 @@ type Fields []*Field
 // NewField returns a instance of *Field. Supported types for values are:
 //
 // Integers:
-//  []int8, []*int8, []int16, []*int16, []int32, []*int32, []int64, []*int64
+//
+//	[]int8, []*int8, []int16, []*int16, []int32, []*int32, []int64, []*int64
+//
 // Unsigned Integers:
-//  []uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
+//
+//	[]uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
+//
 // Floats:
-//  []float32, []*float32, []float64, []*float64
+//
+//	[]float32, []*float32, []float64, []*float64
+//
 // String, Bool, and Time:
-//  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+//
+//	[]string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+//
 // JSON:
-//  []json.RawMessage, []*json.RawMessage
+//
+//	[]json.RawMessage, []*json.RawMessage
 //
 // If an unsupported values type is passed, NewField will panic.
 // nolint:gocyclo

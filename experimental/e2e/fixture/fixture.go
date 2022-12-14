@@ -2,7 +2,7 @@ package fixture
 
 import (
 	"bytes"
-	"io/ioutil"
+	"io"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
@@ -87,7 +87,7 @@ func DefaultProcessRequest(req *http.Request) *http.Request {
 	if err != nil {
 		return processedReq
 	}
-	req.Body = ioutil.NopCloser(bytes.NewBuffer(b))
+	req.Body = io.NopCloser(bytes.NewBuffer(b))
 	return processedReq
 }
 

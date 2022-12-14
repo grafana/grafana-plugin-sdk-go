@@ -2,7 +2,7 @@ package storage_test
 
 import (
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -19,7 +19,7 @@ func TestOpenAPIStorage(t *testing.T) {
 		defer res.Body.Close()
 		require.Equal(t, http.StatusOK, res.StatusCode)
 		var respBody map[string]string
-		b, err := ioutil.ReadAll(res.Body)
+		b, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 		err = json.Unmarshal(b, &respBody)
 		require.NoError(t, err)

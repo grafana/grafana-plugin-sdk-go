@@ -30,6 +30,7 @@ import (
 //
 // A Frame is a general data container for Grafana. A Frame can be table data
 // or time series data depending on its content and field types.
+//
 //swagger:model
 type Frame struct {
 	// Name is used in some Grafana visualizations.
@@ -68,6 +69,7 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 
 // Frames is a slice of Frame pointers.
 // It is the main data container within a backend.DataResponse.
+//
 //swagger:model
 type Frames []*Frame
 
@@ -491,9 +493,9 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 
 			switch {
 			case f.Fields[colIdx].Type() == FieldTypeJSON:
-				sRow[colIdx] = fmt.Sprintf("%s", v.(json.RawMessage))
+				sRow[colIdx] = string(v.(json.RawMessage))
 			case f.Fields[colIdx].Type() == FieldTypeNullableJSON:
-				sRow[colIdx] = fmt.Sprintf("%s", *v.(*json.RawMessage))
+				sRow[colIdx] = string(*v.(*json.RawMessage))
 			default:
 				sRow[colIdx] = fmt.Sprintf("%v", val)
 			}

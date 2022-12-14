@@ -38,11 +38,12 @@ const FrameTypeTimeSeriesMulti FrameType = "timeseries-multi"
 
 // FrameTypeDirectoryListing represents the items in a directory
 // field[0]:
-//  * name
-//  * new paths can be constructed from the parent path + separator + name
+//   - name
+//   - new paths can be constructed from the parent path + separator + name
+//
 // field[1]:
-//  * media-type
-//  * when "directory" it can be nested
+//   - media-type
+//   - when "directory" it can be nested
 const FrameTypeDirectoryListing FrameType = "directory-listing"
 
 // FrameTypeTable represents an arbitrary table structure with no constraints.

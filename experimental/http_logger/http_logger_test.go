@@ -3,7 +3,7 @@ package httplogger_test
 import (
 	"bytes"
 	"errors"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"testing"
@@ -21,7 +21,7 @@ func TestHTTPLogger(t *testing.T) {
 		require.NoError(t, err)
 		defer res.Body.Close()
 		require.Equal(t, http.StatusOK, res.StatusCode)
-		b, err := ioutil.ReadAll(res.Body)
+		b, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 		require.Equal(t, "OK", string(b))
 		expected := storage.NewHARStorage("testdata/example.har")
@@ -29,7 +29,7 @@ func TestHTTPLogger(t *testing.T) {
 		require.Equal(t, 1, len(actual.Entries()))
 		require.Equal(t, expected.Entries()[0].Request, actual.Entries()[0].Request)
 		require.Equal(t, expected.Entries()[0].Response, actual.Entries()[0].Response)
-		har, err := ioutil.ReadFile(f.Name())
+		har, err := os.ReadFile(f.Name())
 		require.NoError(t, err)
 		require.Greater(t, len(har), 0)
 	})
@@ -40,7 +40,7 @@ func TestHTTPLogger(t *testing.T) {
 		require.NoError(t, err)
 		defer res.Body.Close()
 		require.Equal(t, http.StatusOK, res.StatusCode)
-		b, err := ioutil.ReadAll(res.Body)
+		b, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 		require.Equal(t, "OK", string(b))
 		actual := storage.NewHARStorage(f.Name())
@@ -69,7 +69,7 @@ func TestHTTPLogger(t *testing.T) {
 		require.NoError(t, err)
 		defer res.Body.Close()
 		require.Equal(t, http.StatusOK, res.StatusCode)
-		b, err := ioutil.ReadAll(res.Body)
+		b, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 		require.Equal(t, "OK", string(b))
 		expected := storage.NewHARStorage("testdata/example.har")
@@ -77,7 +77,7 @@ func TestHTTPLogger(t *testing.T) {
 		require.Equal(t, 1, len(actual.Entries()))
 		require.Equal(t, expected.Entries()[0].Request, actual.Entries()[0].Request)
 		require.Equal(t, expected.Entries()[0].Response, actual.Entries()[0].Response)
-		har, err := ioutil.ReadFile(f.Name())
+		har, err := os.ReadFile(f.Name())
 		require.NoError(t, err)
 		require.Greater(t, len(har), 0)
 	})
@@ -110,6 +110,6 @@ type fakeRoundTripper struct{}
 func (hl *fakeRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 	return &http.Response{
 		StatusCode: http.StatusOK,
-		Body:       ioutil.NopCloser(bytes.NewBufferString("OK")),
+		Body:       io.NopCloser(bytes.NewBufferString("OK")),
 	}, nil
 }

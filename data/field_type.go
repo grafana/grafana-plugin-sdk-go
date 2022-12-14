@@ -253,6 +253,7 @@ func (p FieldType) NonNullableType() FieldType {
 }
 
 // FieldTypeFromItemTypeString returns a field type from the current string
+//
 //nolint:goconst,gocyclo
 func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	switch s {
