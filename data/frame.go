@@ -405,8 +405,20 @@ func FrameTestCompareOptions() []cmp.Option {
 		return bytes.Equal(xJSON, yJSON)
 	})
 
+	rawjs := cmp.Comparer(func(x, y json.RawMessage) bool {
+		var a interface{}
+		var b interface{}
+		_ = json.Unmarshal([]byte(x), &a)
+		_ = json.Unmarshal([]byte(y), &b)
+
+		xJSON, _ := json.Marshal(a)
+		yJSON, _ := json.Marshal(b)
+
+		return bytes.Equal(xJSON, yJSON)
+	})
+
 	unexportedField := cmp.AllowUnexported(Field{})
-	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, times, metas, unexportedField, cmpopts.EquateEmpty()}
+	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, times, metas, rawjs, unexportedField, cmpopts.EquateEmpty()}
 }
 
 const maxLengthExceededStr = "..."
