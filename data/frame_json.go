@@ -479,6 +479,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 	return f.vector, nil
 }
 
+// nolint:gocyclo
 func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error) {
 	if false {
 		first := make([]interface{}, 0)

@@ -124,6 +124,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 }
 
 // buildArrowColumns builds Arrow columns from a Frame.
+// nolint:gocyclo
 func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, error) {
 	pool := memory.NewGoAllocator()
 	columns := make([]array.Column, len(f.Fields))
@@ -232,6 +233,7 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 
 // fieldToArrow returns the corresponding Arrow primitive type and nullable property to the fields'
 // Vector primitives.
+// nolint:gocyclo
 func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	switch f.vector.(type) {
 	case *stringVector:
@@ -354,6 +356,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	return nullable, nil
 }
 
+// nolint:gocyclo
 func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField *Field) error {
 	switch field.Type.ID() {
 	case arrow.STRING:

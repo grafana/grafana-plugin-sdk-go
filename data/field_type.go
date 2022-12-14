@@ -350,6 +350,7 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 }
 
 // ItemTypeString returns the string representation of the type of element within in the vector
+// nolint:gocyclo
 func (p FieldType) ItemTypeString() string {
 	switch p {
 	case FieldTypeInt8:

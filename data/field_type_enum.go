@@ -39,9 +39,7 @@ func (v *enumVector) Len() int {
 }
 
 func (v *enumVector) CopyAt(i int) interface{} {
-	var g uint16
-	g = (*v)[i]
-	return g
+	return (*v)[i]
 }
 
 func (v *enumVector) ConcreteAt(i int) (interface{}, bool) {
@@ -110,8 +108,7 @@ func (v *nullableEnumVector) CopyAt(i int) interface{} {
 		var g *uint16
 		return g
 	}
-	var g uint16
-	g = *(*v)[i]
+	g := *(*v)[i]
 	return &g
 }
 

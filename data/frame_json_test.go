@@ -322,14 +322,14 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 	}
 
 	for _, tstr := range types {
-		itertype := strings.Title(tstr)
+		itertype := caser.String(tstr)
 		typex := tstr
 		if tstr == "bool" {
 			typex = "Boolean"
 		}
 		if tstr == "enum" {
 			typex = "uint16"
-			itertype = strings.Title(typex)
+			itertype = caser.String(typex)
 		}
 		hasSpecialEntities := tstr == "float32" || tstr == "float64"
 		tmplData := struct {

@@ -20,6 +20,7 @@ type vector interface {
 	Delete(i int)
 }
 
+// nolint:gocyclo
 func vectorFieldType(v vector) FieldType {
 	switch v.(type) {
 	case *int8Vector:
@@ -107,6 +108,7 @@ func (p FieldType) String() string {
 }
 
 // NewFieldFromFieldType creates a new Field of the given FieldType of length n.
+// nolint:gocyclo
 func NewFieldFromFieldType(p FieldType, n int) *Field {
 	f := &Field{}
 	switch p {
