@@ -9,6 +9,7 @@ import (
 // https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L11
 // NOTE -- in javascript this can accept any `[key: string]: any;` however
 // this interface only exposes the values we want to be exposed
+//
 //swagger:model
 type FrameMeta struct {
 	// Type asserts that the frame matches a known type structure
@@ -76,6 +77,8 @@ const (
 )
 
 // DataTopic is used to identify which topic the frame should be assigned to.
+//
+//nolint:revive
 type DataTopic string
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string

@@ -3,7 +3,6 @@ package data_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -43,11 +42,11 @@ func TestGoldenFrameJSON(t *testing.T) {
 
 	goldenFile := filepath.Join("testdata", "all_types.golden.json")
 	if _, err := os.Stat(goldenFile); os.IsNotExist(err) {
-		_ = ioutil.WriteFile(goldenFile, b, 0600)
+		_ = os.WriteFile(goldenFile, b, 0600)
 		assert.FailNow(t, "wrote golden file")
 	}
 
-	b, err = ioutil.ReadFile(goldenFile)
+	b, err = os.ReadFile(goldenFile)
 	require.NoError(t, err)
 
 	strG := string(b)
@@ -295,6 +294,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 	// 	// case arrow.STRING:
 	// 	// 	ent := writeArrowSTRING(stream, col)
 	for _, tstr := range types {
+		//nolint:staticcheck
 		tname := strings.Title(tstr)
 		tuppr := strings.ToUpper(tstr)
 
@@ -313,7 +313,9 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 			Typen              string
 			HasSpecialEntities bool
 		}{
-			Type:               strings.Title(tstr),
+			//nolint:staticcheck
+			Type: strings.Title(tstr),
+			//nolint:staticcheck
 			Typex:              strings.Title(typex),
 			Typen:              tstr,
 			HasSpecialEntities: hasSpecialEntities,
@@ -326,6 +328,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 	}
 
 	for _, tstr := range types {
+		//nolint:staticcheck
 		tname := strings.Title(tstr)
 		fmt.Printf("    case FieldType" + tname + ": return read" + tname + "VectorJSON(iter, size)\n")
 		fmt.Printf("    case FieldTypeNullable" + tname + ": return readNullable" + tname + "VectorJSON(iter, size)\n")

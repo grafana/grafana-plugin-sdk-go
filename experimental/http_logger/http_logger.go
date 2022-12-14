@@ -3,7 +3,7 @@ package httplogger
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"path"
@@ -61,7 +61,7 @@ func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 	buf := []byte{}
 	if req.Body != nil {
 		if b, err := utils.ReadRequestBody(req); err == nil {
-			req.Body = ioutil.NopCloser(bytes.NewReader(b))
+			req.Body = io.NopCloser(bytes.NewReader(b))
 			buf = b
 		}
 	}
@@ -73,7 +73,7 @@ func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	// reset the request body before saving
 	if req.Body != nil {
-		req.Body = ioutil.NopCloser(bytes.NewBuffer(buf))
+		req.Body = io.NopCloser(bytes.NewBuffer(buf))
 	}
 
 	// skip saving if there's an existing entry for this request

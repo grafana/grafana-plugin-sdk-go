@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
@@ -87,7 +87,7 @@ func (o *OpenAPI) Match(req *http.Request) *http.Response {
 		ProtoMajor: 1,
 		ProtoMinor: 1,
 		Header:     make(http.Header),
-		Body:       ioutil.NopCloser(bytes.NewReader([]byte{})),
+		Body:       io.NopCloser(bytes.NewReader([]byte{})),
 	}
 	res.Request = req
 
@@ -119,7 +119,7 @@ func (o *OpenAPI) Match(req *http.Request) *http.Response {
 	}
 
 	if body, err := json.Marshal(example); err == nil {
-		res.Body = ioutil.NopCloser(bytes.NewReader(body))
+		res.Body = io.NopCloser(bytes.NewReader(body))
 	}
 
 	return res

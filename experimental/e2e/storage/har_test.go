@@ -3,7 +3,6 @@ package storage_test
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"strings"
@@ -136,7 +135,7 @@ func exampleRequest() (*http.Request, *http.Response) {
 	req, _ := http.NewRequest(http.MethodGet, "http://example.com/", nil)
 	res := &http.Response{
 		StatusCode: http.StatusNotFound,
-		Body:       ioutil.NopCloser(strings.NewReader("")),
+		Body:       io.NopCloser(strings.NewReader("")),
 	}
 	return req, res
 }

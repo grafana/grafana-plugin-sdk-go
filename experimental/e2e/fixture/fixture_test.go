@@ -3,7 +3,6 @@ package fixture_test
 import (
 	"bytes"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"strings"
 	"testing"
@@ -149,7 +148,7 @@ func TestFixtureMatch(t *testing.T) {
 			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
 			defer resp.Body.Close()
-			req.Body = ioutil.NopCloser(bytes.NewBufferString("foo"))
+			req.Body = io.NopCloser(bytes.NewBufferString("foo"))
 			res := f.Match(req) // nolint:bodyclose
 			require.Nil(t, res)
 		})
@@ -184,7 +183,7 @@ func TestFixtureDelete(t *testing.T) {
 }
 
 func setupFixture() (*http.Request, *http.Response) {
-	req, err := http.NewRequest("POST", "http://example.com", ioutil.NopCloser(strings.NewReader("test")))
+	req, err := http.NewRequest("POST", "http://example.com", io.NopCloser(strings.NewReader("test")))
 	if err != nil {
 		panic(err)
 	}
@@ -192,7 +191,7 @@ func setupFixture() (*http.Request, *http.Response) {
 	res := &http.Response{
 		StatusCode: 200,
 		Header:     make(http.Header),
-		Body:       ioutil.NopCloser(strings.NewReader("{\"foo\":\"bar\"}")),
+		Body:       io.NopCloser(strings.NewReader("{\"foo\":\"bar\"}")),
 	}
 	return req, res
 }
@@ -210,13 +209,13 @@ func newFakeStorage() *fakeStorage {
 }
 
 func (s *fakeStorage) Add(req *http.Request, res *http.Response) error {
-	resBody, err := ioutil.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
 	res.Body = io.NopCloser(bytes.NewBuffer(resBody))
 	resCopy := *res
-	resCopy.Body = ioutil.NopCloser(bytes.NewBuffer(resBody))
+	resCopy.Body = io.NopCloser(bytes.NewBuffer(resBody))
 	s.entries = append(s.entries, &storage.Entry{
 		Request:  req,
 		Response: &resCopy,

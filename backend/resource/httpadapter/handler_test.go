@@ -3,7 +3,7 @@ package httpadapter
 import (
 	"context"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"testing"
 
@@ -70,7 +70,7 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Equal(t, []string{"F"}, httpHandler.req.Header["X-Header-In-2"])
 			require.NotNil(t, httpHandler.req.Body)
 			defer httpHandler.req.Body.Close()
-			actualBodyBytes, err := ioutil.ReadAll(httpHandler.req.Body)
+			actualBodyBytes, err := io.ReadAll(httpHandler.req.Body)
 			require.NoError(t, err)
 			var actualJSONMap map[string]interface{}
 			err = json.Unmarshal(actualBodyBytes, &actualJSONMap)

@@ -59,6 +59,7 @@ func SetupPluginEnvironment(pluginID string) {
 		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 		go func() {
+			//nolint:gosec
 			if err := http.ListenAndServe(portConfig, r); err != nil {
 				Logger.Error("Error Running profiler: %s", err.Error())
 			}
