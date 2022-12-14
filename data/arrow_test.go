@@ -274,6 +274,14 @@ func goldenDF() *data.Frame {
 		}),
 		newField("enum", data.FieldTypeEnum, []uint16{
 			1, 2, 2, 1, 1,
+		}).SetConfig(&data.FieldConfig{
+			Mappings: data.ValueMappings{
+				data.EnumValueMapper{
+					Value: []string{
+						"", "ONE", "TWO", "THREE",
+					},
+				},
+			},
 		}),
 		newField("nullable_enum", data.FieldTypeNullableEnum, []*uint16{
 			uint16Ptr(1),

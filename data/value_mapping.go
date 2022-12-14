@@ -15,6 +15,7 @@ const (
 	valueToText  mappingType = "value"
 	rangeToText  mappingType = "range"
 	specialValue mappingType = "special"
+	enumValueMap mappingType = "enum"
 )
 
 type SpecialValueMatch string
@@ -100,6 +101,13 @@ func (m *ValueMappings) UnmarshalJSON(b []byte) error {
 				return err
 			}
 			mappings = append(mappings, mapper)
+		case enumValueMap:
+			var mapper EnumValueMapper
+			err := json.Unmarshal(objMap["options"], &mapper)
+			if err != nil {
+				return err
+			}
+			mappings = append(mappings, mapper)
 		default:
 			return fmt.Errorf("unknown mapping type: %s", mt)
 		}
@@ -125,6 +133,21 @@ func (m SpecialValueMapper) getType() mappingType {
 	return specialValue
 }
 
+type EnumValueMapper struct {
+	// Value is the string display value for a given index
+	Value []string `json:"value"`
+
+	// Color is the color value for a given index (empty is undefined)
+	Color []string `json:"color,omitempty"`
+
+	// Icon supports setting an icon for a given index value
+	Icon []string `json:"icon,omitempty"`
+}
+
+func (m EnumValueMapper) getType() mappingType {
+	return enumValueMap
+}
+
 type RangeValueMapper struct {
 	From   *ConfFloat64       `json:"from,omitempty"`
 	To     *ConfFloat64       `json:"to,omitempty"`
@@ -140,4 +163,5 @@ var (
 	_ ValueMapping = (*ValueMapper)(nil)
 	_ ValueMapping = (*RangeValueMapper)(nil)
 	_ ValueMapping = (*SpecialValueMapper)(nil)
+	_ ValueMapping = (*EnumValueMapper)(nil)
 )
