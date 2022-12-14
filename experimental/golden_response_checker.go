@@ -216,7 +216,7 @@ func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.
 			require.NoError(t, err)
 			return
 		}
-		require.NoError(t, err)
+		require.Fail(t, "Error reading golden JSON file")
 	}
 
 	actual, err := json.Marshal(dr)
