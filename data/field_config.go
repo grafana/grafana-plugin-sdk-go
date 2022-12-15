@@ -72,7 +72,10 @@ type FieldConfig struct {
 
 // FieldTypeConfig has type specific configs, only one should be active at a time
 type FieldTypeConfig struct {
-	Enum       *EnumFieldConfig       `json:"enum,omitempty"`
+	// Enum field config
+	Enum *EnumFieldConfig `json:"enum,omitempty"`
+
+	// TimeOffset field config
 	TimeOffset *TimeOffsetFieldConfig `json:"timeOffset,omitempty"`
 }
 
