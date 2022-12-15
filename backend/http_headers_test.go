@@ -3,7 +3,6 @@ package backend
 import (
 	"testing"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/stretchr/testify/require"
 )
 
@@ -66,7 +65,6 @@ func TestSetHTTPHeaderInStringMap(t *testing.T) {
 			setHTTPHeaderInStringMap(headerMap, k, v)
 		}
 		headers := getHTTPHeadersFromStringMap(headerMap)
-		spew.Dump(headers)
 
 		for k, v := range tc.expected {
 			require.Equal(t, v, headers.Get(k))
