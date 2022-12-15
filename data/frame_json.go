@@ -8,7 +8,6 @@ import (
 	"io"
 	"math"
 	"strconv"
-	"strings"
 	"time"
 	"unsafe"
 
@@ -223,10 +222,6 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 
 			// Create a new field for each object
 			for _, f := range schema.Fields {
-				if strings.Contains(f.Name, "enum") {
-					fmt.Println("xxxx")
-				}
-
 				ft := f.TypeInfo.Frame
 				if f.TypeInfo.Nullable {
 					ft = ft.NullableType()
