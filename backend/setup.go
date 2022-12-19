@@ -61,7 +61,7 @@ func SetupPluginEnvironment(pluginID string) {
 		go func() {
 			//nolint:gosec
 			if err := http.ListenAndServe(portConfig, r); err != nil {
-				Logger.Error("Error Running profiler: %s", err.Error())
+				Logger.Error("Error Running profiler: ", "error", err)
 			}
 		}()
 	}
