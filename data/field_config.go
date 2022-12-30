@@ -80,6 +80,7 @@ type FieldTypeConfig struct {
 }
 
 // Enum field config
+// Vector values are used as lookup keys into the enum fields
 type EnumFieldConfig struct {
 	// Value is the string display value for a given index
 	Text []string `json:"text"`
@@ -89,6 +90,9 @@ type EnumFieldConfig struct {
 
 	// Icon supports setting an icon for a given index value
 	Icon []string `json:"icon,omitempty"`
+
+	// Description of the enum state
+	Description []string `json:"description,omitempty"`
 }
 
 // Time offset field config

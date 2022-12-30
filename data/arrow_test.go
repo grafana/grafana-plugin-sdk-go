@@ -276,7 +276,7 @@ func goldenDF() *data.Frame {
 		}).SetConfig(&data.FieldConfig{
 			TypeConfig: &data.FieldTypeConfig{
 				Enum: &data.EnumFieldConfig{
-					Value: []string{
+					Text: []string{
 						"", "ONE", "TWO", "THREE",
 					},
 				},
