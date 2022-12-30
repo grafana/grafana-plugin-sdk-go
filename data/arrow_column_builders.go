@@ -489,3 +489,35 @@ func buildEnumColumn(pool memory.Allocator, field arrow.Field, vec *enumVector) 
 
 	return array.NewColumn(field, chunked)
 }
+
+func buildTimeOffsetColumn(pool memory.Allocator, field arrow.Field, vec *timeOffsetVector) *array.Column {
+	builder := array.NewInt64Builder(pool)
+	defer builder.Release()
+
+	for _, v := range *vec {
+		builder.Append(v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildNullableTimeOffsetColumn(pool memory.Allocator, field arrow.Field, vec *nullableTimeOffsetVector) *array.Column {
+	builder := array.NewInt64Builder(pool)
+	defer builder.Release()
+
+	for _, v := range *vec {
+		if v == nil {
+			builder.AppendNull()
+			continue
+		}
+		builder.Append(*v)
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}

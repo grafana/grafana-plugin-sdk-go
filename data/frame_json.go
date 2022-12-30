@@ -22,6 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
+const simpleTypeTimeOffset = "timeOffset"
 const simpleTypeEnum = "enum"
 const simpleTypeOther = "other"
 
@@ -382,9 +383,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			return uint8(iV), err
 		}
 
-	case FieldTypeEnum:
-		fallthrough // enums and uint16 share the same backings
-	case FieldTypeUint16:
+	case FieldTypeUint16, FieldTypeEnum: // enums and uint16 share the same backings
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
 			return uint16(iV), err
@@ -420,7 +419,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			return int32(iV), err
 		}
 
-	case FieldTypeInt64:
+	case FieldTypeInt64, FieldTypeTimeOffset: // time offset is backed by int64
 		convert = func(v interface{}) (interface{}, error) {
 			return int64FromJSON(v)
 		}
@@ -489,6 +488,11 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 	case FieldTypeNullableTime:
 		return readTimeVectorJSON(iter, true, size)
 
+	case FieldTypeJSON:
+		return readJSONVectorJSON(iter, false, size)
+	case FieldTypeNullableJSON:
+		return readJSONVectorJSON(iter, true, size)
+
 	// Generated
 	case FieldTypeUint8:
 		return readUint8VectorJSON(iter, size)
@@ -538,14 +542,14 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readBoolVectorJSON(iter, size)
 	case FieldTypeNullableBool:
 		return readNullableBoolVectorJSON(iter, size)
-	case FieldTypeJSON:
-		return readJSONVectorJSON(iter, false, size)
-	case FieldTypeNullableJSON:
-		return readJSONVectorJSON(iter, true, size)
 	case FieldTypeEnum:
 		return readEnumVectorJSON(iter, size)
 	case FieldTypeNullableEnum:
 		return readNullableEnumVectorJSON(iter, size)
+	case FieldTypeTimeOffset:
+		return readTimeOffsetVectorJSON(iter, size)
+	case FieldTypeNullableTimeOffset:
+		return readNullableTimeOffsetVectorJSON(iter, size)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }
@@ -558,17 +562,17 @@ func getTypeScriptTypeString(t FieldType) (string, bool) {
 	if t.Numeric() {
 		return simpleTypeNumber, true
 	}
-	if t == FieldTypeBool || t == FieldTypeNullableBool {
+	switch t {
+	case FieldTypeBool, FieldTypeNullableBool:
 		return simpleTypeBool, true
-	}
-	if t == FieldTypeString || t == FieldTypeNullableString {
+	case FieldTypeString, FieldTypeNullableString:
 		return simpleTypeString, true
-	}
-	if t == FieldTypeEnum || t == FieldTypeNullableEnum {
+	case FieldTypeEnum, FieldTypeNullableEnum:
 		return simpleTypeEnum, true
-	}
-	if t == FieldTypeJSON || t == FieldTypeNullableJSON {
+	case FieldTypeJSON, FieldTypeNullableJSON:
 		return simpleTypeOther, true
+	case FieldTypeTimeOffset, FieldTypeNullableTimeOffset:
+		return simpleTypeTimeOffset, true
 	}
 	return "", false
 }
@@ -595,6 +599,9 @@ func getFieldTypeForArrow(t arrow.DataType, tsType string) FieldType {
 	case arrow.INT32:
 		return FieldTypeInt32
 	case arrow.INT64:
+		if tsType == simpleTypeTimeOffset {
+			return FieldTypeTimeOffset
+		}
 		return FieldTypeInt64
 	case arrow.FLOAT32:
 		return FieldTypeFloat32
@@ -949,6 +956,10 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 			stream.WriteObjectField("name")
 			stream.WriteString(f.Name)
 			started = true
+		}
+
+		if f.Name == "timeOffset" {
+			fmt.Println("xxx")
 		}
 
 		tsType, ok := getMDKey(metadataKeyTSType, f.Metadata)

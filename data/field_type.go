@@ -79,6 +79,11 @@ const (
 	// FieldTypeNullableTime indicates the underlying primitive is a []*time.Time.
 	FieldTypeNullableTime
 
+	// FieldTypeTimeOffset indicates an offset from a start time
+	FieldTypeTimeOffset
+	// FieldTypeNullableTime indicates an offset from a start time
+	FieldTypeNullableTimeOffset
+
 	// FieldTypeJSON indicates the underlying primitive is a []json.RawMessage.
 	FieldTypeJSON
 	// FieldTypeNullableJSON indicates the underlying primitive is a []*json.RawMessage.
@@ -199,6 +204,9 @@ func (p FieldType) NullableType() FieldType {
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeNullableTime
 
+	case FieldTypeTimeOffset, FieldTypeNullableTimeOffset:
+		return FieldTypeNullableTimeOffset
+
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeNullableJSON
 
@@ -254,6 +262,9 @@ func (p FieldType) NonNullableType() FieldType {
 
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeTime
+
+	case FieldTypeTimeOffset, FieldTypeNullableTimeOffset:
+		return FieldTypeTimeOffset
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeJSON
@@ -334,6 +345,11 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 		return FieldTypeTime, true
 	case "*time.Time":
 		return FieldTypeNullableTime, true
+
+	case simpleTypeTimeOffset: // "timeOffset"
+		return FieldTypeTimeOffset, true
+	case "*timeOffset":
+		return FieldTypeNullableTimeOffset, true
 
 	case "json", "json.RawMessage":
 		return FieldTypeJSON, true
@@ -417,6 +433,11 @@ func (p FieldType) ItemTypeString() string {
 		return "time.Time"
 	case FieldTypeNullableTime:
 		return "*time.Time"
+
+	case FieldTypeTimeOffset:
+		return simpleTypeTimeOffset
+	case FieldTypeNullableTimeOffset:
+		return "*" + simpleTypeTimeOffset
 
 	case FieldTypeJSON:
 		return "json.RawMessage"

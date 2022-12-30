@@ -96,11 +96,16 @@ func TestFieldTypeToJSON(t *testing.T) {
 	assert.Equal(t, data.FieldTypeInt8, v.FType)
 	assert.Equal(t, data.FieldTypeTime, *v.FType2)
 
+	// field := newField("enum", data.FieldTypeEnum, []uint16{
+	// 	1, 2, 2, 1, 1,
+	// })
+
+	field := newField("timeOffset", data.FieldTypeTimeOffset, []int64{
+		1, 2, 2, 1, 1,
+	})
+
 	// Read/write enum field
-	frame := data.NewFrame("test",
-		newField("enum", data.FieldTypeEnum, []uint16{
-			1, 2, 2, 1, 1,
-		}))
+	frame := data.NewFrame("test", field)
 
 	orig, err := data.FrameToJSON(frame, data.IncludeAll)
 	require.NoError(t, err)
@@ -223,7 +228,8 @@ func TestGenerateGenericArrowCode(t *testing.T) {
 		"uint8", "uint16", "uint32", "uint64",
 		"int8", "int16", "int32", "int64",
 		"float32", "float64", "string", "bool",
-		"enum", // Maps to uint16
+		"enum",       // Maps to uint16
+		"timeOffset", // Maps to int64
 	}
 
 	code := `
@@ -254,7 +260,7 @@ func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fiel
 			stream.Write{{.IterType}}(val)
 		}
 {{ else }}
-		stream.Write{{.Type}}(v.Value(i)){{ end }}
+		stream.Write{{.IterType}}(v.Value(i)){{ end }}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -309,7 +315,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 }
 
 `
-	caser := cases.Title(language.English)
+	caser := cases.Title(language.English, cases.NoLower)
 
 	// switch col.DataType().ID() {
 	// 	// case arrow.STRING:
@@ -324,11 +330,14 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 	for _, tstr := range types {
 		itertype := caser.String(tstr)
 		typex := tstr
-		if tstr == "bool" {
+		switch tstr {
+		case "bool":
 			typex = "Boolean"
-		}
-		if tstr == "enum" {
+		case "enum":
 			typex = "uint16"
+			itertype = caser.String(typex)
+		case "timeOffset":
+			typex = "int64"
 			itertype = caser.String(typex)
 		}
 		hasSpecialEntities := tstr == "float32" || tstr == "float64"
@@ -358,5 +367,5 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 		fmt.Printf("    case FieldTypeNullable" + tname + ": return readNullable" + tname + "VectorJSON(iter, size)\n")
 	}
 
-	assert.Equal(t, 1, 2)
+	assert.FailNow(t, "fail so we see the output")
 }

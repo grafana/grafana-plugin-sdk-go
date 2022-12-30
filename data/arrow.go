@@ -206,6 +206,11 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 		case *nullableEnumVector:
 			columns[fieldIdx] = *buildNullableEnumColumn(pool, arrowFields[fieldIdx], v)
 
+		case *timeOffsetVector:
+			columns[fieldIdx] = *buildTimeOffsetColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableTimeOffsetVector:
+			columns[fieldIdx] = *buildNullableTimeOffsetColumn(pool, arrowFields[fieldIdx], v)
+
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
@@ -257,9 +262,9 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableInt32Vector:
 		return &arrow.Int32Type{}, true, nil
 
-	case *int64Vector:
+	case *int64Vector, *timeOffsetVector:
 		return &arrow.Int64Type{}, false, nil
-	case *nullableInt64Vector:
+	case *nullableInt64Vector, *nullableTimeOffsetVector:
 		return &arrow.Int64Type{}, true, nil
 
 	// Uints
@@ -268,9 +273,9 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableUint8Vector:
 		return &arrow.Uint8Type{}, true, nil
 
-	case *uint16Vector:
+	case *uint16Vector, *enumVector:
 		return &arrow.Uint16Type{}, false, nil
-	case *nullableUint16Vector:
+	case *nullableUint16Vector, *nullableEnumVector:
 		return &arrow.Uint16Type{}, true, nil
 
 	case *uint32Vector:
@@ -307,11 +312,6 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.BinaryType{}, false, nil
 	case *nullableJsonRawMessageVector:
 		return &arrow.BinaryType{}, true, nil
-
-	case *enumVector:
-		return &arrow.Uint16Type{}, false, nil
-	case *nullableEnumVector:
-		return &arrow.Uint16Type{}, true, nil
 
 	default:
 		return nil, false, fmt.Errorf("unsupported type for conversion to arrow: %T", f.vector)
