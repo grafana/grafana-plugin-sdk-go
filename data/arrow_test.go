@@ -268,6 +268,21 @@ func goldenDF() *data.Frame {
 				},
 			},
 		}),
+		newField("nullableTimeOffset", data.FieldTypeNullableTimeOffset, []*int64{
+			int64Ptr(1),
+			int64Ptr(2),
+			nil,
+			int64Ptr(1),
+			int64Ptr(1),
+		}).SetConfig(&data.FieldConfig{
+			TypeConfig: &data.FieldTypeConfig{
+				TimeOffset: &data.TimeOffsetFieldConfig{
+					StartTime:  123456789, // 1970
+					NanoOffset: 20000,
+					OffsetUnit: "ns",
+				},
+			},
+		}),
 		data.NewField("json", nil, []json.RawMessage{
 			json.RawMessage("{\"a\":1}"),
 			json.RawMessage("[1,2,3]"),
