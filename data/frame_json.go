@@ -382,9 +382,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			return uint8(iV), err
 		}
 
-	case FieldTypeEnum:
-		fallthrough // enums and uint16 share the same backings
-	case FieldTypeUint16:
+	case FieldTypeUint16, FieldTypeEnum: // enums and uint16 share the same backings
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
 			return uint16(iV), err
@@ -558,16 +556,14 @@ func getTypeScriptTypeString(t FieldType) (string, bool) {
 	if t.Numeric() {
 		return simpleTypeNumber, true
 	}
-	if t == FieldTypeBool || t == FieldTypeNullableBool {
+	switch t {
+	case FieldTypeBool, FieldTypeNullableBool:
 		return simpleTypeBool, true
-	}
-	if t == FieldTypeString || t == FieldTypeNullableString {
+	case FieldTypeString, FieldTypeNullableString:
 		return simpleTypeString, true
-	}
-	if t == FieldTypeEnum || t == FieldTypeNullableEnum {
+	case FieldTypeEnum, FieldTypeNullableEnum:
 		return simpleTypeEnum, true
-	}
-	if t == FieldTypeJSON || t == FieldTypeNullableJSON {
+	case FieldTypeJSON, FieldTypeNullableJSON:
 		return simpleTypeOther, true
 	}
 	return "", false
