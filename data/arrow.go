@@ -384,6 +384,15 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 		}
 		sdkField.vector = newInt32Vector(0)
 	case arrow.INT64:
+		tstype, ok := getMDKey(metadataKeyTSType, field.Metadata)
+		if ok && tstype == simpleTypeTimeOffset {
+			if nullable[idx] {
+				sdkField.vector = newNullableTimeOffsetVector(0)
+			} else {
+				sdkField.vector = newTimeOffsetVector(0)
+			}
+			break
+		}
 		if nullable[idx] {
 			sdkField.vector = newNullableInt64Vector(0)
 			break
