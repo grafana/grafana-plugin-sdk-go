@@ -5,6 +5,26 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
+func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
+	count := col.Len()
+
+	v := array.NewBinaryData(col.Data())
+	stream.WriteArrayStart()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if col.IsNull(i) {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteRaw(string(v.Value(i)))
+	}
+	stream.WriteArrayEnd()
+	return entities
+}
+
 //-------------------------------------------------------------
 // The rest of this file is generated from frame_json_test.go
 //-------------------------------------------------------------
@@ -833,26 +853,6 @@ func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*nullableBoo
 		return nil, iter.Error
 	}
 	return arr, nil
-}
-
-func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
-	var entities *fieldEntityLookup
-	count := col.Len()
-
-	v := array.NewBinaryData(col.Data())
-	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
-		if i > 0 {
-			stream.WriteRaw(",")
-		}
-		if col.IsNull(i) {
-			stream.WriteNil()
-			continue
-		}
-		stream.WriteRaw(string(v.Value(i)))
-	}
-	stream.WriteArrayEnd()
-	return entities
 }
 
 func writeArrowDataEnum(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
