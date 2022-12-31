@@ -26,6 +26,7 @@ func TestFieldTypeConversion(t *testing.T) {
 		{ftype: data.FieldTypeNullableEnum, value: "*enum"},
 		{ftype: data.FieldTypeJSON, value: "json.RawMessage"},
 		{ftype: data.FieldTypeTimeOffset, value: "timeOffset"},
+		{ftype: data.FieldTypeNullableTimeOffset, value: "*timeOffset"},
 	}
 	for idx, check := range info {
 		s := check.ftype.ItemTypeString()

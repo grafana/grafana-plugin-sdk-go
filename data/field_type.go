@@ -525,28 +525,7 @@ func ValidFieldType(t interface{}) bool {
 
 // Nullable returns if Field type is a nullable type
 func (p FieldType) Nullable() bool {
-	switch p {
-	case FieldTypeNullableInt8, FieldTypeNullableInt16, FieldTypeNullableInt32, FieldTypeNullableInt64:
-		return true
-
-	case FieldTypeNullableUint8, FieldTypeNullableUint16, FieldTypeNullableUint32, FieldTypeNullableUint64:
-		return true
-
-	case FieldTypeNullableFloat32, FieldTypeNullableFloat64:
-		return true
-
-	case FieldTypeNullableString:
-		return true
-
-	case FieldTypeNullableBool, FieldTypeNullableEnum:
-		return true
-
-	case FieldTypeNullableTime:
-		return true
-	case FieldTypeNullableJSON:
-		return true
-	}
-	return false
+	return p.NullableType() == p
 }
 
 // Numeric returns if Field type is a nullable type.

@@ -958,10 +958,6 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 			started = true
 		}
 
-		if f.Name == "timeOffset" {
-			fmt.Println("xxx")
-		}
-
 		tsType, ok := getMDKey(metadataKeyTSType, f.Metadata)
 		ft := getFieldTypeForArrow(f.Type, tsType)
 		if !ok {
