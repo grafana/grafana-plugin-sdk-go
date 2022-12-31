@@ -530,23 +530,7 @@ func (p FieldType) Nullable() bool {
 
 // Numeric returns if Field type is a nullable type.
 func (p FieldType) Numeric() bool {
-	switch p {
-	case FieldTypeInt8, FieldTypeInt16, FieldTypeInt32, FieldTypeInt64:
-		return true
-	case FieldTypeNullableInt8, FieldTypeNullableInt16, FieldTypeNullableInt32, FieldTypeNullableInt64:
-		return true
-
-	case FieldTypeUint8, FieldTypeUint16, FieldTypeUint32, FieldTypeUint64:
-		return true
-	case FieldTypeNullableUint8, FieldTypeNullableUint16, FieldTypeNullableUint32, FieldTypeNullableUint64:
-		return true
-
-	case FieldTypeFloat32, FieldTypeFloat64:
-		return true
-	case FieldTypeNullableFloat32, FieldTypeNullableFloat64:
-		return true
-	}
-	return false
+	return p.NullableType() == p
 }
 
 // Time returns if Field type is a time type (FieldTypeTime or FieldTypeNullableTime).
