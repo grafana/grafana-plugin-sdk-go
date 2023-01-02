@@ -1,25 +1,26 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
-go 1.17
+go 1.19
 
 require (
+	github.com/apache/arrow/go/v11 v11.0.0-20221118160532-e9222ae00b51
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-cmp v0.5.8
+	github.com/google/go-cmp v0.5.9
 	github.com/grpc-ecosystem/go-grpc-middleware v1.3.0
 	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-hclog v0.14.1
 	github.com/hashicorp/go-plugin v1.4.3
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/json-iterator/go v1.1.12
-	github.com/magefile/mage v1.13.0
+	github.com/magefile/mage v1.14.0
 	github.com/mattetti/filebuffer v1.0.1
 	github.com/mitchellh/go-testing-interface v1.0.0 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
-	github.com/stretchr/testify v1.8.0
+	github.com/stretchr/testify v1.8.1
 	golang.org/x/sys v0.0.0-20220829200755-d48e67d00261
 	google.golang.org/grpc v1.49.0
 	google.golang.org/protobuf v1.28.1
@@ -27,13 +28,12 @@ require (
 )
 
 require (
-	github.com/apache/arrow/go/v11 v11.0.0-20221118160532-e9222ae00b51
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
 	github.com/elazarl/goproxy v0.0.0-20220115173737-adb46da277ac
 	github.com/getkin/kin-openapi v0.94.0
 	github.com/google/uuid v1.3.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
-	github.com/urfave/cli v1.22.10
+	github.com/urfave/cli v1.22.1
 )
 
 require (
