@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
@@ -17,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-var update = flag.Bool("update", false, "update .golden.arrow files")
+var update = flag.Bool("update", true, "update .golden.arrow files")
 
 const maxEcma6Int = 1<<53 - 1
 const minEcma6Int = -maxEcma6Int
@@ -300,12 +299,12 @@ func TestEncode(t *testing.T) {
 	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
 
 	if *update {
-		if err := ioutil.WriteFile(goldenFile, b, 0600); err != nil {
+		if err := os.WriteFile(goldenFile, b, 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	want, err := ioutil.ReadFile(goldenFile)
+	want, err := os.ReadFile(goldenFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -332,7 +331,7 @@ func TestEncode(t *testing.T) {
 
 func TestDecode(t *testing.T) {
 	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
-	b, err := ioutil.ReadFile(goldenFile)
+	b, err := os.ReadFile(goldenFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -391,7 +390,7 @@ func TestFromRecord(t *testing.T) {
 	}
 
 	// Write golden data frame to file so we can read it back in via Record reader
-	fd, err := ioutil.TempFile("", "data-test-from-record")
+	fd, err := os.CreateTemp("", "data-test-from-record")
 	require.NoError(t, err)
 	name := fd.Name()
 	defer os.Remove(name)

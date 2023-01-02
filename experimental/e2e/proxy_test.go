@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"crypto/tls"
 	"io"
-	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -46,7 +45,7 @@ func TestProxy(t *testing.T) {
 			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			require.Equal(t, http.StatusOK, res.StatusCode)
-			resBody, err := ioutil.ReadAll(res.Body)
+			resBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			require.Equal(t, "/foo", string(resBody))
 		})
@@ -61,7 +60,7 @@ func TestProxy(t *testing.T) {
 			req.Header = make(http.Header)
 			res := &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString("bar")),
+				Body:       io.NopCloser(bytes.NewBufferString("bar")),
 				Request:    req,
 			}
 			require.Len(t, proxy.Fixtures[0].Entries(), 0)
@@ -76,7 +75,7 @@ func TestProxy(t *testing.T) {
 			require.Len(t, proxy.Fixtures[0].Entries(), 1)
 			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, "bar", string(body))
 		})
@@ -109,7 +108,7 @@ func TestProxy(t *testing.T) {
 			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			require.Equal(t, http.StatusOK, res.StatusCode)
-			resBody, err := ioutil.ReadAll(res.Body)
+			resBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
 			require.Equal(t, "/foo", string(resBody))
 		})
@@ -122,10 +121,10 @@ func TestProxy(t *testing.T) {
 			req, err := http.NewRequest(http.MethodGet, srv.URL+"/foo", nil)
 			require.NoError(t, err)
 			req.Header = make(http.Header)
-			req.Body = ioutil.NopCloser(bytes.NewBuffer([]byte("bar")))
+			req.Body = io.NopCloser(bytes.NewBuffer([]byte("bar")))
 			res := &http.Response{
 				StatusCode: http.StatusOK,
-				Body:       ioutil.NopCloser(bytes.NewBufferString("bar")),
+				Body:       io.NopCloser(bytes.NewBufferString("bar")),
 				Request:    req,
 			}
 			err = proxy.Fixtures[0].Add(req, res)
@@ -135,7 +134,7 @@ func TestProxy(t *testing.T) {
 			defer resp.Body.Close()
 			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
-			body, err := ioutil.ReadAll(resp.Body)
+			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
 			require.Equal(t, "/foo", string(body))
 		})
@@ -189,7 +188,7 @@ func setupProxy(mode e2e.ProxyMode) (proxy *e2e.Proxy, client *http.Client, serv
 }
 
 func setupFixture() (*http.Request, *http.Response) {
-	req, err := http.NewRequest("POST", "http://example.com", ioutil.NopCloser(strings.NewReader("test")))
+	req, err := http.NewRequest("POST", "http://example.com", io.NopCloser(strings.NewReader("test")))
 	if err != nil {
 		panic(err)
 	}
@@ -197,7 +196,7 @@ func setupFixture() (*http.Request, *http.Response) {
 	res := &http.Response{
 		StatusCode: http.StatusOK,
 		Header:     make(http.Header),
-		Body:       ioutil.NopCloser(strings.NewReader("{\"foo\":\"bar\"}")),
+		Body:       io.NopCloser(strings.NewReader("{\"foo\":\"bar\"}")),
 	}
 	return req, res
 }
@@ -215,13 +214,13 @@ func newFakeStorage() *fakeStorage {
 }
 
 func (s *fakeStorage) Add(req *http.Request, res *http.Response) error {
-	resBody, err := ioutil.ReadAll(res.Body)
+	resBody, err := io.ReadAll(res.Body)
 	if err != nil {
 		return err
 	}
 	res.Body = io.NopCloser(bytes.NewBuffer(resBody))
 	resCopy := *res
-	resCopy.Body = ioutil.NopCloser(bytes.NewBuffer(resBody))
+	resCopy.Body = io.NopCloser(bytes.NewBuffer(resBody))
 	s.entries = append(s.entries, &storage.Entry{
 		Request:  req,
 		Response: &resCopy,

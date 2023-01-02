@@ -1,7 +1,6 @@
 package experimental
 
 import (
-	"io/ioutil"
 	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -14,7 +13,7 @@ func GetDirectoryFrame(p string, details bool) (*data.Frame, error) {
 	// ModTime() time.Time // modification time
 	// IsDir() bool        // abbreviation for Mode().IsDir()
 
-	files, err := ioutil.ReadDir(p)
+	files, err := os.ReadDir(p)
 	if err != nil {
 		return nil, err
 	}
@@ -42,8 +41,11 @@ func GetDirectoryFrame(p string, details bool) (*data.Frame, error) {
 
 		mtype.Set(i, mediaType)
 		if details {
-			size.Set(i, file.Size())
-			modified.Set(i, file.ModTime())
+			stat, err := os.Stat(file.Name())
+			if err == nil {
+				size.Set(i, stat.Size())
+				modified.Set(i, stat.ModTime())
+			}
 		}
 	}
 

@@ -6,60 +6,70 @@ package data
 // the Frame correspond to a defined FrameType.
 type FrameType string
 
-const (
-	// FrameTypeUnknown indicates that we do not know the field type
-	FrameTypeUnknown FrameType = ""
+// ---
+// Docs Note: Constants need to be on their own line for links to work with the pkgsite docs.
+// ---
 
-	// FrameTypeTimeSeriesWide has at least two fields:
-	// field[0]:
-	//  * type time
-	//  * unique ascending values
-	// field[1..n]:
-	//  * distinct labels may be attached to each field
-	//  * numeric & boolean fields can be drawn as lines on a graph
-	// See https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#wide-format
-	FrameTypeTimeSeriesWide = "timeseries-wide"
+// FrameTypeUnknown indicates that we do not know the frame type
+const FrameTypeUnknown FrameType = ""
 
-	// FrameTypeTimeSeriesLong uses string fields to define dimensions.  I has at least two fields:
-	// field[0]:
-	//  * type time
-	//  * ascending values
-	//  * duplicate times exist for multiple dimensions
-	// field[1..n]:
-	//  * string fields define series dimensions
-	//  * non-string fields define the series progression
-	// See https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#long-format
-	FrameTypeTimeSeriesLong = "timeseries-long"
+// FrameTypeTimeSeriesWide uses labels on fields to define dimensions and is documented in [Time Series Wide Format in the Data Plane Contract]. There is additional documentation in the [Developer Data Frame Documentation on the Wide Format].
+//
+// [Time Series Wide Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md#time-series-wide-format-timeserieswide
+// [Developer Data Frame Documentation on the Wide Format]: https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#wide-format
+const FrameTypeTimeSeriesWide FrameType = "timeseries-wide"
 
-	// FrameTypeTimeSeriesMany is the same as "Wide" with exactly one numeric value field
-	// field[0]:
-	//  * type time
-	//  * ascending values
-	// field[1]:
-	//  * number field
-	//  * labels represent the series dimensions
-	// This structure is typically part of a list of frames with the same structure
-	FrameTypeTimeSeriesMany = "timeseries-many"
+// FrameTypeTimeSeriesLong uses string fields to define dimensions and is documented in [Time Series Long Format in the Data Plane Contract]. There is additional documentation in the [Developer Data Frame Documentation on Long Format].
+//
+// [Time Series Long Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md#time-series-long-format-timeserieslong-sql-like
+// [Developer Data Frame Documentation on Long Format]: https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#long-format
+const FrameTypeTimeSeriesLong FrameType = "timeseries-long"
 
-	// Soon?
-	// "timeseries-wide-ohlc" -- known fields for open/high/low/close
-	// "histogram" -- BucketMin, BucketMax, values...
-	// "trace" -- ??
-	// "node-graph-nodes"
-	// "node-graph-edges"
+// FrameTypeTimeSeriesMany is the same as "Wide" with exactly one numeric value field.
+//
+// Deprecated: use FrameTypeTimeSeriesMulti instead.
+const FrameTypeTimeSeriesMany FrameType = "timeseries-many"
 
-	// FrameTypeDirectoryListing represents the items in a directory
-	// field[0]:
-	//  * name
-	//  * new paths can be constructed from the parent path + separator + name
-	// field[1]:
-	//  * media-type
-	//  * when "directory" it can be nested
-	FrameTypeDirectoryListing = "directory-listing"
+// FrameTypeTimeSeriesMulti is documented in the [Time Series Multi Format in the Data Plane Contract].
+// This replaces FrameTypeTimeSeriesMany.
+//
+// [Time Series Multi Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md#time-series-multi-format-timeseriesmulti
+const FrameTypeTimeSeriesMulti FrameType = "timeseries-multi"
 
-	// FrameTypeTable represents an arbitrary table structure with no constraints
-	FrameTypeTable = "table"
-)
+// FrameTypeDirectoryListing represents the items in a directory
+// field[0]:
+//   - name
+//   - new paths can be constructed from the parent path + separator + name
+//
+// field[1]:
+//   - media-type
+//   - when "directory" it can be nested
+const FrameTypeDirectoryListing FrameType = "directory-listing"
+
+// FrameTypeTable represents an arbitrary table structure with no constraints.
+const FrameTypeTable FrameType = "table"
+
+// FrameTypeNumericWide is documented in the [Numeric Wide Format in the Data Plane Contract].
+//
+// [Numeric Wide Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md#numeric-wide-format-numericwide
+const FrameTypeNumericWide FrameType = "numeric-wide"
+
+// FrameTypeNumericMulti is documented in the [Numeric Multi Format in the Data Plane Contract].
+//
+// [Numeric Multi Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md#numeric-multi-format-numericmulti
+const FrameTypeNumericMulti FrameType = "numeric-multi"
+
+// FrameTypeNumericLong is documented in the [Numeric Long Format in the Data Plane Contract].
+//
+// [Numeric Long Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md#numeric-long-format-numericlong-sql-table-like
+const FrameTypeNumericLong FrameType = "numeric-long"
+
+// Soon?
+// "timeseries-wide-ohlc" -- known fields for open/high/low/close
+// "histogram" -- BucketMin, BucketMax, values...
+// "trace" -- ??
+// "node-graph-nodes"
+// "node-graph-edges"
 
 // IsKnownType checks if the value is a known structure
 func (p FrameType) IsKnownType() bool {
@@ -67,7 +77,12 @@ func (p FrameType) IsKnownType() bool {
 	case
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
-		FrameTypeTimeSeriesMany:
+		FrameTypeTimeSeriesMulti,
+		FrameTypeTimeSeriesMany,
+
+		FrameTypeNumericWide,
+		FrameTypeNumericLong,
+		FrameTypeNumericMulti:
 		return true
 	}
 	return false
@@ -78,18 +93,66 @@ func FrameTypes() []FrameType {
 	return []FrameType{
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
+		FrameTypeTimeSeriesMulti,
 		FrameTypeTimeSeriesMany,
+
+		FrameTypeNumericWide,
+		FrameTypeNumericLong,
+		FrameTypeNumericMulti,
 	}
 }
 
-// IsTimeSeries checks if the type represents a timeseries
+// IsTimeSeries checks if the FrameType is KindTimeSeries
 func (p FrameType) IsTimeSeries() bool {
 	switch p {
 	case
 		FrameTypeTimeSeriesWide,
 		FrameTypeTimeSeriesLong,
+		FrameTypeTimeSeriesMulti,
 		FrameTypeTimeSeriesMany:
 		return true
 	}
 	return false
 }
+
+// IsNumeric checks if the FrameType is KindNumeric.
+func (p FrameType) IsNumeric() bool {
+	switch p {
+	case
+		FrameTypeNumericWide,
+		FrameTypeNumericLong,
+		FrameTypeNumericMulti:
+		return true
+	}
+	return false
+}
+
+// Kind returns the FrameTypeKind from the FrameType.
+func (p FrameType) Kind() FrameTypeKind {
+	switch {
+	case p.IsTimeSeries():
+		return KindTimeSeries
+	case p.IsNumeric():
+		return KindNumeric
+	default:
+		return KindUnknown
+	}
+}
+
+// FrameTypeKind represents the Kind a particular FrameType falls into. See [Kinds and Formats] in
+// the data plane documentation.
+//
+// [Kinds and Formats]: https://github.com/grafana/grafana-plugin-sdk-go/tree/main/data/contract_docs#kinds-and-formats
+type FrameTypeKind string
+
+const KindUnknown FrameTypeKind = ""
+
+// KindTimeSeries means the FrameType's Kind is time series. See [Data Plane Time Series Kind].
+//
+// [Data Plane Time Series Kind]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md
+const KindTimeSeries FrameTypeKind = "timeseries"
+
+// KindNumeric means the FrameType's Kind is numeric. See [Data Plane Numeric Kind].
+//
+// [Data Plane Numeric Kind]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md
+const KindNumeric FrameTypeKind = "numeric"

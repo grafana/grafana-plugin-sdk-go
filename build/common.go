@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"embed"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
@@ -340,7 +339,7 @@ func e2eProxy(mode e2e.ProxyMode) error {
 // checkLinuxPtraceScope verifies that ptrace is configured as required.
 func checkLinuxPtraceScope() error {
 	ptracePath := "/proc/sys/kernel/yama/ptrace_scope"
-	byteValue, err := ioutil.ReadFile(ptracePath)
+	byteValue, err := os.ReadFile(ptracePath)
 	if err != nil {
 		return fmt.Errorf("unable to read ptrace_scope: %w", err)
 	}
