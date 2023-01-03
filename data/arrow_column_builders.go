@@ -458,6 +458,29 @@ func buildNullableJSONColumn(pool memory.Allocator, field arrow.Field, vec *null
 	return array.NewColumn(field, chunked)
 }
 
+func buildDataFrameColumn(pool memory.Allocator, field arrow.Field, vec *dataFrameVector) *array.Column {
+	builder := array.NewBinaryBuilder(pool, &arrow.BinaryType{})
+	defer builder.Release()
+
+	for _, v := range *vec {
+		var asjson []byte
+		if v != nil {
+			asjson, _ = v.MarshalJSON()
+		}
+		if asjson != nil {
+			builder.AppendNull()
+		} else {
+			builder.Append(asjson)
+		}
+
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
 func buildNullableEnumColumn(pool memory.Allocator, field arrow.Field, vec *nullableEnumVector) *array.Column {
 	builder := array.NewUint16Builder(pool)
 	defer builder.Release()
@@ -482,38 +505,6 @@ func buildEnumColumn(pool memory.Allocator, field arrow.Field, vec *enumVector) 
 
 	for _, v := range *vec {
 		builder.Append(v)
-	}
-
-	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
-	defer chunked.Release()
-
-	return array.NewColumn(field, chunked)
-}
-
-func buildTimeOffsetColumn(pool memory.Allocator, field arrow.Field, vec *timeOffsetVector) *array.Column {
-	builder := array.NewInt64Builder(pool)
-	defer builder.Release()
-
-	for _, v := range *vec {
-		builder.Append(v)
-	}
-
-	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
-	defer chunked.Release()
-
-	return array.NewColumn(field, chunked)
-}
-
-func buildNullableTimeOffsetColumn(pool memory.Allocator, field arrow.Field, vec *nullableTimeOffsetVector) *array.Column {
-	builder := array.NewInt64Builder(pool)
-	defer builder.Release()
-
-	for _, v := range *vec {
-		if v == nil {
-			builder.AppendNull()
-			continue
-		}
-		builder.Append(*v)
 	}
 
 	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})

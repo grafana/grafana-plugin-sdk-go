@@ -79,10 +79,8 @@ const (
 	// FieldTypeNullableTime indicates the underlying primitive is a []*time.Time.
 	FieldTypeNullableTime
 
-	// FieldTypeTimeOffset indicates an offset from a start time
-	FieldTypeTimeOffset
-	// FieldTypeNullableTime indicates an offset from a start time
-	FieldTypeNullableTimeOffset
+	// FieldTypeDataFrame is a field where each cell is a *data.Frame (note, this is always nullable)
+	FieldTypeDataFrame
 
 	// FieldTypeJSON indicates the underlying primitive is a []json.RawMessage.
 	FieldTypeJSON
@@ -204,8 +202,8 @@ func (p FieldType) NullableType() FieldType {
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeNullableTime
 
-	case FieldTypeTimeOffset, FieldTypeNullableTimeOffset:
-		return FieldTypeNullableTimeOffset
+	case FieldTypeDataFrame:
+		return FieldTypeDataFrame
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeNullableJSON
@@ -263,8 +261,8 @@ func (p FieldType) NonNullableType() FieldType {
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeTime
 
-	case FieldTypeTimeOffset, FieldTypeNullableTimeOffset:
-		return FieldTypeTimeOffset
+	case FieldTypeDataFrame:
+		return FieldTypeDataFrame // ???? always nullable
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeJSON
@@ -346,10 +344,8 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*time.Time":
 		return FieldTypeNullableTime, true
 
-	case simpleTypeTimeOffset: // "timeOffset"
-		return FieldTypeTimeOffset, true
-	case "*timeOffset":
-		return FieldTypeNullableTimeOffset, true
+	case "*dataFrame", simpleTypeDataFrame: // "dataFrame"
+		return FieldTypeDataFrame, true
 
 	case "json", "json.RawMessage":
 		return FieldTypeJSON, true
@@ -434,10 +430,8 @@ func (p FieldType) ItemTypeString() string {
 	case FieldTypeNullableTime:
 		return "*time.Time"
 
-	case FieldTypeTimeOffset:
-		return simpleTypeTimeOffset
-	case FieldTypeNullableTimeOffset:
-		return "*" + simpleTypeTimeOffset
+	case FieldTypeDataFrame:
+		return simpleTypeDataFrame
 
 	case FieldTypeJSON:
 		return "json.RawMessage"

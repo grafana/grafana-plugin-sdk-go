@@ -922,7 +922,7 @@ func readNullableEnumVectorJSON(iter *jsoniter.Iterator, size int) (*nullableEnu
 	return arr, nil
 }
 
-func writeArrowDataTimeOffset(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataDataFrame(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -942,11 +942,11 @@ func writeArrowDataTimeOffset(stream *jsoniter.Stream, col array.Interface) *fie
 	return entities
 }
 
-func readTimeOffsetVectorJSON(iter *jsoniter.Iterator, size int) (*timeOffsetVector, error) {
-	arr := newTimeOffsetVector(size)
+func readDataFrameVectorJSON(iter *jsoniter.Iterator, size int) (*dataFrameVector, error) {
+	arr := newDataFrameVector(size)
 	for i := 0; i < size; i++ {
 		if !iter.ReadArray() {
-			iter.ReportError("readTimeOffsetVectorJSON", "expected array")
+			iter.ReportError("readDataFrameVectorJSON", "expected array")
 			return nil, iter.Error
 		}
 
@@ -954,36 +954,18 @@ func readTimeOffsetVectorJSON(iter *jsoniter.Iterator, size int) (*timeOffsetVec
 		if t == jsoniter.NilValue {
 			iter.ReadNil()
 		} else {
-			v := iter.ReadInt64()
-			arr.Set(i, v)
+			frame := &Frame{}
+			err := readDataFrameJSON(frame, iter)
+			if err != nil {
+				iter.ReportError("readDataFrameVectorJSON", "error reading json: "+err.Error())
+				return nil, iter.Error
+			}
+			arr.Set(i, frame)
 		}
 	}
 
 	if iter.ReadArray() {
 		iter.ReportError("read", "expected close array")
-		return nil, iter.Error
-	}
-	return arr, nil
-}
-
-func readNullableTimeOffsetVectorJSON(iter *jsoniter.Iterator, size int) (*nullableTimeOffsetVector, error) {
-	arr := newNullableTimeOffsetVector(size)
-	for i := 0; i < size; i++ {
-		if !iter.ReadArray() {
-			iter.ReportError("readNullableTimeOffsetVectorJSON", "expected array")
-			return nil, iter.Error
-		}
-		t := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
-			iter.ReadNil()
-		} else {
-			v := iter.ReadInt64()
-			arr.Set(i, &v)
-		}
-	}
-
-	if iter.ReadArray() {
-		iter.ReportError("readNullableTimeOffsetVectorJSON", "expected close array")
 		return nil, iter.Error
 	}
 	return arr, nil

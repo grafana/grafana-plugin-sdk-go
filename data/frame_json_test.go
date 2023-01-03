@@ -100,7 +100,7 @@ func TestFieldTypeToJSON(t *testing.T) {
 	// 	1, 2, 2, 1, 1,
 	// })
 
-	field := newField("timeOffset", data.FieldTypeTimeOffset, []int64{
+	field := newField("dataFrame", data.FieldTypeDataFrame, []int64{
 		1, 2, 2, 1, 1,
 	})
 
@@ -228,8 +228,8 @@ func TestGenerateGenericArrowCode(t *testing.T) {
 		"uint8", "uint16", "uint32", "uint64",
 		"int8", "int16", "int32", "int64",
 		"float32", "float64", "string", "bool",
-		"enum",       // Maps to uint16
-		"timeOffset", // Maps to int64
+		"enum",      // Maps to uint16
+		"dataFrame", // Maps to int64
 	}
 
 	code := `
@@ -336,7 +336,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 		case "enum":
 			typex = "uint16"
 			itertype = caser.String(typex)
-		case "timeOffset":
+		case "dataFrame":
 			typex = "int64"
 			itertype = caser.String(typex)
 		}

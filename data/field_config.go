@@ -75,8 +75,8 @@ type FieldTypeConfig struct {
 	// Enum field config
 	Enum *EnumFieldConfig `json:"enum,omitempty"`
 
-	// TimeOffset field config
-	TimeOffset *TimeOffsetFieldConfig `json:"timeOffset,omitempty"`
+	// DataFrame field config
+	DataFrame *DataFrameFieldConfig `json:"dataFrame,omitempty"`
 }
 
 // Enum field config
@@ -96,7 +96,7 @@ type EnumFieldConfig struct {
 }
 
 // Time offset field config
-type TimeOffsetFieldConfig struct {
+type DataFrameFieldConfig struct {
 	// Unix epoch mills start time
 	StartTime int64 `json:"startTime,omitempty"`
 

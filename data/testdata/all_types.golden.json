@@ -75,16 +75,16 @@
       { "name": "timestamps", "type": "time", "typeInfo": { "frame": "time.Time" } },
       { "name": "nullable_timestamps", "type": "time", "typeInfo": { "frame": "time.Time", "nullable": true } },
       {
-        "name": "timeOffset",
-        "type": "timeOffset",
-        "typeInfo": { "frame": "timeOffset" },
-        "config": { "type": { "timeOffset": { "startTime": 123456789, "nanoOffset": 20000, "offsetUnit": "ms" } } }
+        "name": "dataFrame",
+        "type": "dataFrame",
+        "typeInfo": { "frame": "dataFrame" },
+        "config": { "type": { "dataFrame": { "startTime": 123456789, "nanoOffset": 20000, "offsetUnit": "ms" } } }
       },
       {
-        "name": "nullableTimeOffset",
-        "type": "timeOffset",
-        "typeInfo": { "frame": "timeOffset", "nullable": true },
-        "config": { "type": { "timeOffset": { "startTime": 123456789, "nanoOffset": 20000, "offsetUnit": "ns" } } }
+        "name": "nullableDataFrame",
+        "type": "dataFrame",
+        "typeInfo": { "frame": "dataFrame", "nullable": true },
+        "config": { "type": { "dataFrame": { "startTime": 123456789, "nanoOffset": 20000, "offsetUnit": "ns" } } }
       },
       { "name": "json", "type": "other", "typeInfo": { "frame": "json.RawMessage" } },
       { "name": "nullable_json", "type": "other", "typeInfo": { "frame": "json.RawMessage", "nullable": true } },

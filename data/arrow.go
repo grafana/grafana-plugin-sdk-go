@@ -206,10 +206,8 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 		case *nullableEnumVector:
 			columns[fieldIdx] = *buildNullableEnumColumn(pool, arrowFields[fieldIdx], v)
 
-		case *timeOffsetVector:
-			columns[fieldIdx] = *buildTimeOffsetColumn(pool, arrowFields[fieldIdx], v)
-		case *nullableTimeOffsetVector:
-			columns[fieldIdx] = *buildNullableTimeOffsetColumn(pool, arrowFields[fieldIdx], v)
+		case *dataFrameVector:
+			columns[fieldIdx] = *buildDataFrameColumn(pool, arrowFields[fieldIdx], v)
 
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
@@ -262,9 +260,9 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableInt32Vector:
 		return &arrow.Int32Type{}, true, nil
 
-	case *int64Vector, *timeOffsetVector:
+	case *int64Vector:
 		return &arrow.Int64Type{}, false, nil
-	case *nullableInt64Vector, *nullableTimeOffsetVector:
+	case *nullableInt64Vector:
 		return &arrow.Int64Type{}, true, nil
 
 	// Uints
@@ -308,7 +306,7 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableTimeTimeVector:
 		return &arrow.TimestampType{}, true, nil
 
-	case *jsonRawMessageVector:
+	case *jsonRawMessageVector, *dataFrameVector:
 		return &arrow.BinaryType{}, false, nil
 	case *nullableJsonRawMessageVector:
 		return &arrow.BinaryType{}, true, nil
@@ -384,15 +382,6 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 		}
 		sdkField.vector = newInt32Vector(0)
 	case arrow.INT64:
-		tstype, ok := getMDKey(metadataKeyTSType, field.Metadata)
-		if ok && tstype == simpleTypeTimeOffset {
-			if nullable[idx] {
-				sdkField.vector = newNullableTimeOffsetVector(0)
-			} else {
-				sdkField.vector = newTimeOffsetVector(0)
-			}
-			break
-		}
 		if nullable[idx] {
 			sdkField.vector = newNullableInt64Vector(0)
 			break
@@ -456,6 +445,11 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 		}
 		sdkField.vector = newTimeTimeVector(0)
 	case arrow.BINARY:
+		tstype, ok := getMDKey(metadataKeyTSType, field.Metadata)
+		if ok && tstype == simpleTypeDataFrame {
+			sdkField.vector = newDataFrameVector(0) // always nullable
+			break
+		}
 		if nullable[idx] {
 			sdkField.vector = newNullableJsonRawMessageVector(0)
 			break
