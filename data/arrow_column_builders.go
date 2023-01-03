@@ -400,6 +400,7 @@ func buildTimeColumn(pool memory.Allocator, field arrow.Field, vec *timeTimeVect
 		builder.Append(arrow.Timestamp((v).UnixNano()))
 	}
 
+	// panic???
 	chunked := arrow.NewChunked(field.Type, []arrow.Array{builder.NewArray()})
 	defer chunked.Release()
 
