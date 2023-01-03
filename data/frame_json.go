@@ -487,6 +487,10 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readTimeVectorJSON(iter, false, size)
 	case FieldTypeNullableTime:
 		return readTimeVectorJSON(iter, true, size)
+	case FieldTypeJSON:
+		return readJSONVectorJSON(iter, false, size)
+	case FieldTypeNullableJSON:
+		return readJSONVectorJSON(iter, true, size)
 
 	case FieldTypeJSON:
 		return readJSONVectorJSON(iter, false, size)
