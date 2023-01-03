@@ -14,7 +14,7 @@ var (
 )
 
 // MacroFunc defines a signature for applying a query macro
-// Query macro implementations are defined by users / consumers of this package
+// Query macro implementations are defined by users/consumers of this package
 type MacroFunc func(*Query, []string) (string, error)
 
 // Macros is a list of MacroFuncs.
@@ -51,7 +51,6 @@ func macroTimeFrom(query *Query, args []string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s >= '%s'", args[0], query.TimeRange.From.UTC().Format(time.RFC3339)), nil
-
 }
 
 // Default time filter for SQL based on the ending query time range.
@@ -115,7 +114,7 @@ func macroColumn(query *Query, args []string) (string, error) {
 	return query.Column, nil
 }
 
-var DefaultMacros Macros = Macros{
+var DefaultMacros = Macros{
 	"timeFilter": macroTimeFilter,
 	"timeFrom":   macroTimeFrom,
 	"timeGroup":  macroTimeGroup,
@@ -138,15 +137,14 @@ func trimAll(s []string) []string {
 func getMacroMatches(input string, name string) ([][]string, error) {
 	macroName := fmt.Sprintf("\\$__%s\\b", name)
 	matchedMacros := [][]string{}
-	rgx, err := regexp.Compile(macroName)
 
+	rgx, err := regexp.Compile(macroName)
 	if err != nil {
 		return nil, err
 	}
 
 	// get all matching macro instances
 	matched := rgx.FindAllStringIndex(input, -1)
-
 	if matched == nil {
 		return nil, nil
 	}
@@ -215,11 +213,11 @@ func Interpolate(query *Query, macros Macros) (string, error) {
 	rawSQL := query.RawSQL
 
 	for key, macro := range macros {
-		matches, err := getMatches(key, rawSQL)
-
+		matches, err := getMacroMatches(rawSQL, key)
 		if err != nil {
 			return rawSQL, err
 		}
+
 		for _, match := range matches {
 			if len(match) == 0 {
 				// There were no matches for this macro
@@ -237,19 +235,9 @@ func Interpolate(query *Query, macros Macros) (string, error) {
 				return rawSQL, err
 			}
 
-			rawSQL = strings.Replace(rawSQL, match[0], res, -1)
+			rawSQL = strings.ReplaceAll(rawSQL, match[0], res)
 		}
 	}
 
 	return rawSQL, nil
-}
-
-func getMatches(macroName, rawSQL string) ([][]string, error) {
-	parsedInput, err := getMacroMatches(rawSQL, macroName)
-
-	if err != nil {
-		return nil, err
-	}
-
-	return parsedInput, err
 }
