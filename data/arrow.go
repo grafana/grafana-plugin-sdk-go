@@ -693,7 +693,14 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame, tsTy
 		v := array.NewBinaryData(col.Data())
 
 		if tsType == simpleTypeDataFrame {
-			fmt.Printf("READ JSON?")
+			for sIdx := 0; sIdx < v.Len(); sIdx++ {
+				data := v.Value(sIdx)
+				cell := &Frame{}
+				if data != nil && !v.IsNull(sIdx) {
+					_ = json.Unmarshal(data, cell)
+				}
+				frame.Fields[i].vector.Append(cell)
+			}
 		} else {
 			for sIdx := 0; sIdx < v.Len(); sIdx++ {
 				if nullable[i] {
