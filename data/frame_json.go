@@ -492,11 +492,6 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 	case FieldTypeNullableJSON:
 		return readJSONVectorJSON(iter, true, size)
 
-	case FieldTypeJSON:
-		return readJSONVectorJSON(iter, false, size)
-	case FieldTypeNullableJSON:
-		return readJSONVectorJSON(iter, true, size)
-
 	// Generated
 	case FieldTypeUint8:
 		return readUint8VectorJSON(iter, size)
