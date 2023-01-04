@@ -922,26 +922,6 @@ func readNullableEnumVectorJSON(iter *jsoniter.Iterator, size int) (*nullableEnu
 	return arr, nil
 }
 
-func writeArrowDataDataFrame(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
-	var entities *fieldEntityLookup
-	count := col.Len()
-
-	v := array.NewInt64Data(col.Data())
-	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
-		if i > 0 {
-			stream.WriteRaw(",")
-		}
-		if col.IsNull(i) {
-			stream.WriteNil()
-			continue
-		}
-		stream.WriteInt64(v.Value(i))
-	}
-	stream.WriteArrayEnd()
-	return entities
-}
-
 func readDataFrameVectorJSON(iter *jsoniter.Iterator, size int) (*dataFrameVector, error) {
 	arr := newDataFrameVector(size)
 	for i := 0; i < size; i++ {
@@ -967,6 +947,25 @@ func readDataFrameVectorJSON(iter *jsoniter.Iterator, size int) (*dataFrameVecto
 	if iter.ReadArray() {
 		iter.ReportError("read", "expected close array")
 		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func readDataFrameVectorJSONArray(iter *jsoniter.Iterator) (*dataFrameVector, error) {
+	arr := newDataFrameVector(0)
+	for iter.ReadArray() {
+		frame := &Frame{}
+		t := iter.WhatIsNext()
+		if t == jsoniter.ObjectValue {
+			err := readDataFrameJSON(frame, iter)
+			if err != nil {
+				iter.ReportError("readDataFrameVectorJSON", "error reading json: "+err.Error())
+				return nil, iter.Error
+			}
+		} else {
+			iter.ReadAny() // skip nills
+		}
+		arr.Append(frame)
 	}
 	return arr, nil
 }

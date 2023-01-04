@@ -263,19 +263,27 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 				return errors.New("fields is nil, malformed key order or frame without schema")
 			}
 			field := frame.Fields[0]
-			first := make([]interface{}, 0)
-			iter.ReadVal(&first)
-			vec, err := jsonValuesToVector(field.Type(), first)
-			if err != nil {
-				return err
+			if field.Type() == FieldTypeDataFrame {
+				vec, err := readDataFrameVectorJSONArray(iter)
+				if err != nil {
+					return err
+				}
+				field.vector = vec
+			} else {
+				first := make([]interface{}, 0)
+				iter.ReadVal(&first)
+				vec, err := jsonValuesToVector(field.Type(), first)
+				if err != nil {
+					return err
+				}
+				field.vector = vec
 			}
-			field.vector = vec
-			size := len(first)
+			size := field.vector.Len()
 
 			fieldIndex := 1
 			for iter.ReadArray() {
 				field = frame.Fields[fieldIndex]
-				vec, err = readVector(iter, field.Type(), size)
+				vec, err := readVector(iter, field.Type(), size)
 				if err != nil {
 					return err
 				}
@@ -359,7 +367,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 		return int64(fV), nil
 	}
 
-	return 0, fmt.Errorf("unable to convert int64 in json")
+	return 0, fmt.Errorf("unable to convert int64 in json [%T]", v)
 }
 
 func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
@@ -419,7 +427,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			return int32(iV), err
 		}
 
-	case FieldTypeInt64, FieldTypeDataFrame: // time offset is backed by int64
+	case FieldTypeInt64:
 		convert = func(v interface{}) (interface{}, error) {
 			return int64FromJSON(v)
 		}

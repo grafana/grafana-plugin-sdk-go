@@ -463,9 +463,11 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 }
 
 func populateFrameFieldsFromRecord(record array.Record, nullable []bool, frame *Frame) error {
+	fields := record.Schema().Fields()
 	for i := 0; i < len(frame.Fields); i++ {
 		col := record.Column(i)
-		if err := parseColumn(col, i, nullable, frame); err != nil {
+		tsType, _ := getMDKey(metadataKeyTSType, fields[i].Metadata)
+		if err := parseColumn(col, i, nullable, frame, tsType); err != nil {
 			return err
 		}
 	}
@@ -490,7 +492,7 @@ func populateFrameFields(fR arrio.Reader, nullable []bool, frame *Frame) error {
 }
 
 // nolint:gocyclo
-func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) error {
+func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame, tsType string) error {
 	switch col.DataType().ID() {
 	case arrow.STRING:
 		v := array.NewStringData(col.Data())
@@ -689,19 +691,24 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) erro
 		}
 	case arrow.BINARY:
 		v := array.NewBinaryData(col.Data())
-		for sIdx := 0; sIdx < v.Len(); sIdx++ {
-			if nullable[i] {
-				if v.IsNull(sIdx) {
-					var nb *json.RawMessage
-					frame.Fields[i].vector.Append(nb)
+
+		if tsType == simpleTypeDataFrame {
+			fmt.Printf("READ JSON?")
+		} else {
+			for sIdx := 0; sIdx < v.Len(); sIdx++ {
+				if nullable[i] {
+					if v.IsNull(sIdx) {
+						var nb *json.RawMessage
+						frame.Fields[i].vector.Append(nb)
+						continue
+					}
+					r := json.RawMessage(v.Value(sIdx))
+					frame.Fields[i].vector.Append(&r)
 					continue
 				}
 				r := json.RawMessage(v.Value(sIdx))
-				frame.Fields[i].vector.Append(&r)
-				continue
+				frame.Fields[i].vector.Append(r)
 			}
-			r := json.RawMessage(v.Value(sIdx))
-			frame.Fields[i].vector.Append(r)
 		}
 	default:
 		return fmt.Errorf("unsupported arrow type %s for conversion", col.DataType().ID())

@@ -96,10 +96,6 @@ func TestFieldTypeToJSON(t *testing.T) {
 	assert.Equal(t, data.FieldTypeInt8, v.FType)
 	assert.Equal(t, data.FieldTypeTime, *v.FType2)
 
-	// field := newField("enum", data.FieldTypeEnum, []uint16{
-	// 	1, 2, 2, 1, 1,
-	// })
-
 	field := newField("dataFrame", data.FieldTypeDataFrame, []*data.Frame{
 		data.NewFrame("frame 1", data.NewField("first", nil, []int64{1, 2})),
 		nil,
