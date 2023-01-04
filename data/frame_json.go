@@ -342,7 +342,7 @@ func float64FromJSON(v interface{}) (float64, error) {
 		return strconv.ParseFloat(sV, 64)
 	}
 
-	return 0, fmt.Errorf("unable to conver")
+	return 0, fmt.Errorf("unable to convert float64 in json")
 }
 
 func int64FromJSON(v interface{}) (int64, error) {
@@ -359,7 +359,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 		return int64(fV), nil
 	}
 
-	return 0, fmt.Errorf("unable to conver")
+	return 0, fmt.Errorf("unable to convert int64 in json")
 }
 
 func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
@@ -491,11 +491,8 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readJSONVectorJSON(iter, false, size)
 	case FieldTypeNullableJSON:
 		return readJSONVectorJSON(iter, true, size)
-
-	case FieldTypeJSON:
-		return readJSONVectorJSON(iter, false, size)
-	case FieldTypeNullableJSON:
-		return readJSONVectorJSON(iter, true, size)
+	case FieldTypeDataFrame:
+		return readDataFrameVectorJSON(iter, size)
 
 	// Generated
 	case FieldTypeUint8:
@@ -550,8 +547,6 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readEnumVectorJSON(iter, size)
 	case FieldTypeNullableEnum:
 		return readNullableEnumVectorJSON(iter, size)
-	case FieldTypeDataFrame:
-		return readDataFrameVectorJSON(iter, size)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }
@@ -601,9 +596,6 @@ func getFieldTypeForArrow(t arrow.DataType, tsType string) FieldType {
 	case arrow.INT32:
 		return FieldTypeInt32
 	case arrow.INT64:
-		if tsType == simpleTypeDataFrame {
-			return FieldTypeDataFrame
-		}
 		return FieldTypeInt64
 	case arrow.FLOAT32:
 		return FieldTypeFloat32
@@ -614,6 +606,9 @@ func getFieldTypeForArrow(t arrow.DataType, tsType string) FieldType {
 	case arrow.BOOL:
 		return FieldTypeBool
 	case arrow.BINARY:
+		if tsType == simpleTypeDataFrame {
+			return FieldTypeDataFrame
+		}
 		return FieldTypeJSON
 	}
 	return FieldTypeUnknown
