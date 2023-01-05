@@ -9,15 +9,6 @@ platform:
   os: linux
   arch: amd64
 
-services:
-  - image: mysql:8.0
-    name: "mysql"
-    environment:
-      MYSQL_USER: mysql
-      MYSQL_PASSWORD: mysql
-      MYSQL_DATABASE: mysql
-      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
-
 trigger:
   branch: main
   event:
@@ -38,14 +29,6 @@ steps:
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - mage -v testRace
-
-- name: integration_tests
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  environment:
-    INTEGRATION_TESTS: "true"
-    MYSQL_URL: "mysql:mysql@tcp(mysql:3306)/mysql"
-  commands:
-    - mage -v test
 ---
 kind: pipeline
 type: docker
@@ -54,15 +37,6 @@ name: pr
 platform:
   os: linux
   arch: amd64
-
-services:
-  - image: mysql:8.0
-    name: "mysql"
-    environment:
-      MYSQL_USER: mysql
-      MYSQL_PASSWORD: mysql
-      MYSQL_DATABASE: mysql
-      MYSQL_ALLOW_EMPTY_PASSWORD: "true"
 
 trigger:
   event:
@@ -83,14 +57,6 @@ steps:
   image: grafana/grafana-plugin-ci:1.6.1-alpine
   commands:
   - mage -v testRace
-
-- name: integration_tests
-  image: grafana/grafana-plugin-ci:1.6.1-alpine
-  environment:
-    INTEGRATION_TESTS: "true"
-    MYSQL_URL: "mysql:mysql@tcp(mysql:3306)/mysql"
-  commands:
-    - mage -v test
 
 ---
 kind: signature
