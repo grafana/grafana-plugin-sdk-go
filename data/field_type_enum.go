@@ -5,8 +5,6 @@ package data
 // a uint16, but has special semantics and interacts with the metadata
 // Unlike the other fields it can not be easily generated
 
-// NOTE: no implementation for newEnumVectorWithValues -- since
-
 type enumVector []uint16
 
 func newEnumVector(n int) *enumVector {
