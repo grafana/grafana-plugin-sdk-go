@@ -350,7 +350,7 @@ func float64FromJSON(v interface{}) (float64, error) {
 		return strconv.ParseFloat(sV, 64)
 	}
 
-	return 0, fmt.Errorf("unable to convert float64 in json")
+	return 0, fmt.Errorf("unable to convert float64 in json [%T]", v)
 }
 
 func int64FromJSON(v interface{}) (int64, error) {
