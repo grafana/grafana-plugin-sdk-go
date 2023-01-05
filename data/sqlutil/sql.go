@@ -104,7 +104,7 @@ func QueryDB(ctx context.Context, db Connection, converters []Converter, fillMod
 
 	// Check for an error response
 	if err := rows.Err(); err != nil {
-		if err == sql.ErrNoRows {
+		if errors.Is(err, sql.ErrNoRows) {
 			// Should we even response with an error here?
 			// The panel will simply show "no data"
 			return ErrorFrameFromQuery(query), fmt.Errorf("%s: %w", "No results from query", err)
