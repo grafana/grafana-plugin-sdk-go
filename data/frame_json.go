@@ -341,7 +341,7 @@ func float64FromJSON(v interface{}) (float64, error) {
 		return strconv.ParseFloat(sV, 64)
 	}
 
-	return 0, fmt.Errorf("unable to conver")
+	return 0, fmt.Errorf("unable to convert float64 in json [%T]", v)
 }
 
 func int64FromJSON(v interface{}) (int64, error) {
@@ -358,7 +358,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 		return int64(fV), nil
 	}
 
-	return 0, fmt.Errorf("unable to conver")
+	return 0, fmt.Errorf("unable to convert int64 in json [%T]", v)
 }
 
 func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
