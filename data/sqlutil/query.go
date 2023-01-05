@@ -2,15 +2,12 @@ package sqlutil
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
-
-var ErrorJSON = errors.New("error unmarshaling query JSON to the Query Model")
 
 // FormatQueryOption defines how the user has chosen to represent the data
 type FormatQueryOption uint32
