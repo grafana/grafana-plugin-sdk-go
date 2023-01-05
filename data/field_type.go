@@ -83,6 +83,11 @@ const (
 	FieldTypeJSON
 	// FieldTypeNullableJSON indicates the underlying primitive is a []*json.RawMessage.
 	FieldTypeNullableJSON
+
+	// FieldTypeEnum indicates the underlying primitive is a []uint16, with field mapping metadata
+	FieldTypeEnum
+	// FieldTypeNullableEnum indicates the underlying primitive is a []*uint16, with field mapping metadata
+	FieldTypeNullableEnum
 )
 
 // MarshalJSON marshals the enum as a quoted json string
@@ -111,6 +116,8 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 
 // FieldTypeFor returns a concrete type for a given interface or unknown if not known
 func FieldTypeFor(t interface{}) FieldType {
+	// NOTE: enum does not have a native mapping ;(
+
 	switch t.(type) {
 	case int8:
 		return FieldTypeInt8
@@ -194,6 +201,9 @@ func (p FieldType) NullableType() FieldType {
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeNullableJSON
+
+	case FieldTypeEnum, FieldTypeNullableEnum:
+		return FieldTypeNullableEnum
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
@@ -247,6 +257,9 @@ func (p FieldType) NonNullableType() FieldType {
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeJSON
+
+	case FieldTypeEnum, FieldTypeNullableEnum:
+		return FieldTypeEnum
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
@@ -326,11 +339,18 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 		return FieldTypeJSON, true
 	case "*json.RawMessage":
 		return FieldTypeNullableJSON, true
+
+	case "enum":
+		return FieldTypeEnum, true
+	case "*enum":
+		return FieldTypeNullableEnum, true
 	}
+
 	return FieldTypeNullableString, false
 }
 
 // ItemTypeString returns the string representation of the type of element within in the vector
+// nolint:gocyclo
 func (p FieldType) ItemTypeString() string {
 	switch p {
 	case FieldTypeInt8:
@@ -402,6 +422,12 @@ func (p FieldType) ItemTypeString() string {
 		return "json.RawMessage"
 	case FieldTypeNullableJSON:
 		return "*json.RawMessage"
+
+	// Non-standard field type
+	case FieldTypeEnum:
+		return "enum"
+	case FieldTypeNullableEnum:
+		return "*enum"
 	}
 	return "invalid/unsupported type"
 }
@@ -476,33 +502,12 @@ func ValidFieldType(t interface{}) bool {
 	}
 }
 
-// Nullable returns if Field type is a nullable type
+// Nullable returns true if the field type is nullable
 func (p FieldType) Nullable() bool {
-	switch p {
-	case FieldTypeNullableInt8, FieldTypeNullableInt16, FieldTypeNullableInt32, FieldTypeNullableInt64:
-		return true
-
-	case FieldTypeNullableUint8, FieldTypeNullableUint16, FieldTypeNullableUint32, FieldTypeNullableUint64:
-		return true
-
-	case FieldTypeNullableFloat32, FieldTypeNullableFloat64:
-		return true
-
-	case FieldTypeNullableString:
-		return true
-
-	case FieldTypeNullableBool:
-		return true
-
-	case FieldTypeNullableTime:
-		return true
-	case FieldTypeNullableJSON:
-		return true
-	}
-	return false
+	return p.NullableType() == p
 }
 
-// Numeric returns if Field type is a nullable type.
+// Numeric returns true if the field type is numeric
 func (p FieldType) Numeric() bool {
 	switch p {
 	case FieldTypeInt8, FieldTypeInt16, FieldTypeInt32, FieldTypeInt64:

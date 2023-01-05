@@ -5,6 +5,26 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
+func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
+	count := col.Len()
+
+	v := array.NewBinaryData(col.Data())
+	stream.WriteArrayStart()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if col.IsNull(i) {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteRaw(string(v.Value(i)))
+	}
+	stream.WriteArrayEnd()
+	return entities
+}
+
 //-------------------------------------------------------------
 // The rest of this file is generated from frame_json_test.go
 //-------------------------------------------------------------
@@ -788,26 +808,6 @@ func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) *fieldEnti
 	return entities
 }
 
-func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
-	var entities *fieldEntityLookup
-	count := col.Len()
-
-	v := array.NewBinaryData(col.Data())
-	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
-		if i > 0 {
-			stream.WriteRaw(",")
-		}
-		if col.IsNull(i) {
-			stream.WriteNil()
-			continue
-		}
-		stream.WriteRaw(string(v.Value(i)))
-	}
-	stream.WriteArrayEnd()
-	return entities
-}
-
 func readBoolVectorJSON(iter *jsoniter.Iterator, size int) (*boolVector, error) {
 	arr := newBoolVector(size)
 	for i := 0; i < size; i++ {
@@ -850,6 +850,73 @@ func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*nullableBoo
 
 	if iter.ReadArray() {
 		iter.ReportError("readNullableBoolVectorJSON", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func writeArrowDataEnum(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	var entities *fieldEntityLookup
+	count := col.Len()
+
+	v := array.NewUint16Data(col.Data())
+	stream.WriteArrayStart()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if col.IsNull(i) {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteUint16(v.Value(i))
+	}
+	stream.WriteArrayEnd()
+	return entities
+}
+
+func readEnumVectorJSON(iter *jsoniter.Iterator, size int) (*enumVector, error) {
+	arr := newEnumVector(size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readEnumVectorJSON", "expected array")
+			return nil, iter.Error
+		}
+
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := iter.ReadUint16()
+			arr.Set(i, v)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("read", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func readNullableEnumVectorJSON(iter *jsoniter.Iterator, size int) (*nullableEnumVector, error) {
+	arr := newNullableEnumVector(size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readNullableEnumVectorJSON", "expected array")
+			return nil, iter.Error
+		}
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := iter.ReadUint16()
+			arr.Set(i, &v)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("readNullableEnumVectorJSON", "expected close array")
 		return nil, iter.Error
 	}
 	return arr, nil

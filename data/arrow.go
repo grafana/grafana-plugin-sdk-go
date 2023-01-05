@@ -124,6 +124,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 }
 
 // buildArrowColumns builds Arrow columns from a Frame.
+// nolint:gocyclo
 func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, error) {
 	pool := memory.NewGoAllocator()
 	columns := make([]array.Column, len(f.Fields))
@@ -199,6 +200,12 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 			columns[fieldIdx] = *buildJSONColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableJsonRawMessageVector:
 			columns[fieldIdx] = *buildNullableJSONColumn(pool, arrowFields[fieldIdx], v)
+
+		case *enumVector:
+			columns[fieldIdx] = *buildEnumColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableEnumVector:
+			columns[fieldIdx] = *buildNullableEnumColumn(pool, arrowFields[fieldIdx], v)
+
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
@@ -226,6 +233,7 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 
 // fieldToArrow returns the corresponding Arrow primitive type and nullable property to the fields'
 // Vector primitives.
+// nolint:gocyclo
 func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	switch f.vector.(type) {
 	case *stringVector:
@@ -260,9 +268,9 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableUint8Vector:
 		return &arrow.Uint8Type{}, true, nil
 
-	case *uint16Vector:
+	case *uint16Vector, *enumVector:
 		return &arrow.Uint16Type{}, false, nil
-	case *nullableUint16Vector:
+	case *nullableUint16Vector, *nullableEnumVector:
 		return &arrow.Uint16Type{}, true, nil
 
 	case *uint32Vector:
@@ -343,6 +351,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	return nullable, nil
 }
 
+// nolint:gocyclo
 func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField *Field) error {
 	switch field.Type.ID() {
 	case arrow.STRING:
@@ -382,6 +391,15 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 		}
 		sdkField.vector = newUint8Vector(0)
 	case arrow.UINT16:
+		tstype, ok := getMDKey(metadataKeyTSType, field.Metadata)
+		if ok && tstype == simpleTypeEnum {
+			if nullable[idx] {
+				sdkField.vector = newNullableEnumVector(0)
+			} else {
+				sdkField.vector = newEnumVector(0)
+			}
+			break
+		}
 		if nullable[idx] {
 			sdkField.vector = newNullableUint16Vector(0)
 			break

@@ -20,6 +20,7 @@ type vector interface {
 	Delete(i int)
 }
 
+// nolint:gocyclo
 func vectorFieldType(v vector) FieldType {
 	switch v.(type) {
 	case *int8Vector:
@@ -90,6 +91,10 @@ func vectorFieldType(v vector) FieldType {
 		return FieldTypeJSON
 	case *nullableJsonRawMessageVector:
 		return FieldTypeNullableJSON
+	case *enumVector:
+		return FieldTypeEnum
+	case *nullableEnumVector:
+		return FieldTypeNullableEnum
 	}
 
 	return FieldTypeUnknown
@@ -103,6 +108,7 @@ func (p FieldType) String() string {
 }
 
 // NewFieldFromFieldType creates a new Field of the given FieldType of length n.
+// nolint:gocyclo
 func NewFieldFromFieldType(p FieldType, n int) *Field {
 	f := &Field{}
 	switch p {
@@ -179,6 +185,11 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 		f.vector = newJsonRawMessageVector(n)
 	case FieldTypeNullableJSON:
 		f.vector = newNullableJsonRawMessageVector(n)
+
+	case FieldTypeEnum:
+		f.vector = newEnumVector(n)
+	case FieldTypeNullableEnum:
+		f.vector = newNullableEnumVector(n)
 	default:
 		panic("unsupported FieldType")
 	}

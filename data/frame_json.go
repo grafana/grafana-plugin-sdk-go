@@ -22,6 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
+const simpleTypeEnum = "enum"
 const simpleTypeOther = "other"
 
 const jsonKeySchema = "schema"
@@ -340,7 +341,7 @@ func float64FromJSON(v interface{}) (float64, error) {
 		return strconv.ParseFloat(sV, 64)
 	}
 
-	return 0, fmt.Errorf("unable to conver")
+	return 0, fmt.Errorf("unable to convert float64 in json [%T]", v)
 }
 
 func int64FromJSON(v interface{}) (int64, error) {
@@ -357,7 +358,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 		return int64(fV), nil
 	}
 
-	return 0, fmt.Errorf("unable to conver")
+	return 0, fmt.Errorf("unable to convert int64 in json [%T]", v)
 }
 
 func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
@@ -381,7 +382,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			return uint8(iV), err
 		}
 
-	case FieldTypeUint16:
+	case FieldTypeUint16, FieldTypeEnum: // enums and uint16 share the same backings
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
 			return uint16(iV), err
@@ -471,6 +472,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 	return f.vector, nil
 }
 
+// nolint:gocyclo
 func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error) {
 	if false {
 		first := make([]interface{}, 0)
@@ -484,6 +486,10 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readTimeVectorJSON(iter, false, size)
 	case FieldTypeNullableTime:
 		return readTimeVectorJSON(iter, true, size)
+	case FieldTypeJSON:
+		return readJSONVectorJSON(iter, false, size)
+	case FieldTypeNullableJSON:
+		return readJSONVectorJSON(iter, true, size)
 
 	// Generated
 	case FieldTypeUint8:
@@ -534,10 +540,10 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readBoolVectorJSON(iter, size)
 	case FieldTypeNullableBool:
 		return readNullableBoolVectorJSON(iter, size)
-	case FieldTypeJSON:
-		return readJSONVectorJSON(iter, false, size)
-	case FieldTypeNullableJSON:
-		return readJSONVectorJSON(iter, true, size)
+	case FieldTypeEnum:
+		return readEnumVectorJSON(iter, size)
+	case FieldTypeNullableEnum:
+		return readNullableEnumVectorJSON(iter, size)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }
@@ -550,26 +556,29 @@ func getTypeScriptTypeString(t FieldType) (string, bool) {
 	if t.Numeric() {
 		return simpleTypeNumber, true
 	}
-	if t == FieldTypeBool || t == FieldTypeNullableBool {
+	switch t {
+	case FieldTypeBool, FieldTypeNullableBool:
 		return simpleTypeBool, true
-	}
-	if t == FieldTypeString || t == FieldTypeNullableString {
+	case FieldTypeString, FieldTypeNullableString:
 		return simpleTypeString, true
-	}
-	if t == FieldTypeJSON || t == FieldTypeNullableJSON {
+	case FieldTypeEnum, FieldTypeNullableEnum:
+		return simpleTypeEnum, true
+	case FieldTypeJSON, FieldTypeNullableJSON:
 		return simpleTypeOther, true
 	}
-
 	return "", false
 }
 
-func getFieldTypeForArrow(t arrow.DataType) FieldType {
+func getFieldTypeForArrow(t arrow.DataType, tsType string) FieldType {
 	switch t.ID() {
 	case arrow.TIMESTAMP:
 		return FieldTypeTime
 	case arrow.UINT8:
 		return FieldTypeUint8
 	case arrow.UINT16:
+		if tsType == simpleTypeEnum {
+			return FieldTypeEnum
+		}
 		return FieldTypeUint16
 	case arrow.UINT32:
 		return FieldTypeUint32
@@ -894,8 +903,8 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 
 	stream.WriteObjectStart()
 
-	name, _ := getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
-	refID, _ := getMDKey("refId", metaData)
+	name, _ := getMDKey(metadataKeyName, metaData) // No need to check ok, zero value ("") is returned
+	refID, _ := getMDKey(metadataKeyRefID, metaData)
 
 	if len(name) > 0 {
 		stream.WriteObjectField("name")
@@ -938,14 +947,18 @@ func writeArrowSchema(stream *jsoniter.Stream, record array.Record) {
 			started = true
 		}
 
-		ft := getFieldTypeForArrow(f.Type)
-		t, ok := getTypeScriptTypeString(ft)
+		tsType, ok := getMDKey(metadataKeyTSType, f.Metadata)
+		ft := getFieldTypeForArrow(f.Type, tsType)
+		if !ok {
+			tsType, ok = getTypeScriptTypeString(ft)
+		}
+
 		if ok {
 			if started {
 				stream.WriteMore()
 			}
 			stream.WriteObjectField("type")
-			stream.WriteString(t)
+			stream.WriteString(tsType)
 
 			nnt := ft.NonNullableType()
 			stream.WriteMore()

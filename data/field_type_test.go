@@ -15,17 +15,29 @@ type simpleFieldInfo struct {
 }
 
 func TestFieldTypeConversion(t *testing.T) {
-	f := data.FieldTypeBool
-	s := f.ItemTypeString()
-	require.Equal(t, "bool", s)
-	c, ok := data.FieldTypeFromItemTypeString(s)
-	require.True(t, ok, "must parse ok")
-	require.Equal(t, f, c)
+	type scenario struct {
+		ftype data.FieldType
+		value string
+	}
 
-	_, ok = data.FieldTypeFromItemTypeString("????")
+	info := []scenario{
+		{ftype: data.FieldTypeBool, value: "bool"},
+		{ftype: data.FieldTypeEnum, value: "enum"},
+		{ftype: data.FieldTypeNullableEnum, value: "*enum"},
+		{ftype: data.FieldTypeJSON, value: "json.RawMessage"},
+	}
+	for idx, check := range info {
+		s := check.ftype.ItemTypeString()
+		require.Equal(t, check.value, s, "index: %d", idx)
+		c, ok := data.FieldTypeFromItemTypeString(s)
+		require.True(t, ok, "must parse ok")
+		require.Equal(t, check.ftype, c)
+	}
+
+	_, ok := data.FieldTypeFromItemTypeString("????")
 	require.False(t, ok, "unknown type")
 
-	c, ok = data.FieldTypeFromItemTypeString("float")
+	c, ok := data.FieldTypeFromItemTypeString("float")
 	require.True(t, ok, "must parse ok")
 	require.Equal(t, data.FieldTypeFloat64, c)
 

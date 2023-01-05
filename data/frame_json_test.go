@@ -95,6 +95,24 @@ func TestFieldTypeToJSON(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, data.FieldTypeInt8, v.FType)
 	assert.Equal(t, data.FieldTypeTime, *v.FType2)
+
+	field := newField("enum", data.FieldTypeEnum, []uint16{
+		1, 2, 2, 1, 1,
+	})
+
+	// Read/write enum field
+	frame := data.NewFrame("test", field)
+
+	orig, err := data.FrameToJSON(frame, data.IncludeAll)
+	require.NoError(t, err)
+
+	out := &data.Frame{}
+	err = json.Unmarshal(orig, out)
+	require.NoError(t, err)
+
+	second, err := data.FrameToJSON(frame, data.IncludeAll)
+	require.NoError(t, err)
+	require.JSONEq(t, string(orig), string(second))
 }
 
 func BenchmarkFrameToJSON(b *testing.B) {
@@ -206,6 +224,7 @@ func TestGenerateGenericArrowCode(t *testing.T) {
 		"uint8", "uint16", "uint32", "uint64",
 		"int8", "int16", "int32", "int64",
 		"float32", "float64", "string", "bool",
+		"enum", // Maps to uint16
 	}
 
 	code := `
@@ -233,10 +252,10 @@ func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fiel
 			entities.add(entityType, i)
 			stream.WriteNil()
 		} else {
-			stream.Write{{.Type}}(val)
+			stream.Write{{.IterType}}(val)
 		}
 {{ else }}
-		stream.Write{{.Type}}(v.Value(i)){{ end }}
+		stream.Write{{.IterType}}(v.Value(i)){{ end }}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -254,7 +273,7 @@ func read{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*{{.Typen}}Vect
 		if t == jsoniter.NilValue {
 			iter.ReadNil()
 		} else {
-			v := iter.Read{{.Type}}()
+			v := iter.Read{{.IterType}}()
 			arr.Set(i, v)
 		}
 	}
@@ -278,7 +297,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 		if t == jsoniter.NilValue {
 			iter.ReadNil()
 		} else {
-			v := iter.Read{{.Type}}()
+			v := iter.Read{{.IterType}}()
 			arr.Set(i, &v)
 		}
 	}
@@ -291,7 +310,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 }
 
 `
-	caser := cases.Title(language.English)
+	caser := cases.Title(language.English, cases.NoLower)
 
 	// switch col.DataType().ID() {
 	// 	// case arrow.STRING:
@@ -304,20 +323,30 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 	}
 
 	for _, tstr := range types {
+		itertype := caser.String(tstr)
 		typex := tstr
-		if tstr == "bool" {
+		switch tstr {
+		case "bool":
 			typex = "Boolean"
+		case "enum":
+			typex = "uint16"
+			itertype = caser.String(typex)
+		case "timeOffset":
+			typex = "int64"
+			itertype = caser.String(typex)
 		}
 		hasSpecialEntities := tstr == "float32" || tstr == "float64"
 		tmplData := struct {
 			Type               string
 			Typex              string
 			Typen              string
+			IterType           string
 			HasSpecialEntities bool
 		}{
 			Type:               caser.String(tstr),
 			Typex:              caser.String(typex),
 			Typen:              tstr,
+			IterType:           itertype,
 			HasSpecialEntities: hasSpecialEntities,
 		}
 		tmpl, err := template.New("").Parse(code)
@@ -333,5 +362,5 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 		fmt.Printf("    case FieldTypeNullable" + tname + ": return readNullable" + tname + "VectorJSON(iter, size)\n")
 	}
 
-	assert.Equal(t, 1, 2)
+	assert.FailNow(t, "fail so we see the output")
 }

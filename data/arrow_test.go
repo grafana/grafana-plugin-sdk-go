@@ -271,6 +271,24 @@ func goldenDF() *data.Frame {
 			jsonRawMessagePtr(json.RawMessage("[{\"c\":3},{\"d\":4}]")),
 			jsonRawMessagePtr(json.RawMessage("{\"e\":{\"f\":5}}")),
 		}),
+		newField("enum", data.FieldTypeEnum, []uint16{
+			1, 2, 2, 1, 1,
+		}).SetConfig(&data.FieldConfig{
+			TypeConfig: &data.FieldTypeConfig{
+				Enum: &data.EnumFieldConfig{
+					Text: []string{
+						"", "ONE", "TWO", "THREE",
+					},
+				},
+			},
+		}),
+		newField("nullable_enum", data.FieldTypeNullableEnum, []*uint16{
+			uint16Ptr(1),
+			uint16Ptr(2),
+			nil,
+			uint16Ptr(3),
+			uint16Ptr(0),
+		}),
 	).SetMeta(&data.FrameMeta{
 		Custom:              map[string]interface{}{"Hi": "there"},
 		ExecutedQueryString: "SELECT * FROM table",
@@ -287,6 +305,15 @@ func goldenDF() *data.Frame {
 
 	df.RefID = "A"
 	return df
+}
+
+func newField[V any](name string, ftype data.FieldType, vals []V) *data.Field {
+	field := data.NewFieldFromFieldType(ftype, len(vals))
+	field.Name = name
+	for i, v := range vals {
+		field.Set(i, v)
+	}
+	return field
 }
 
 func TestEncode(t *testing.T) {
