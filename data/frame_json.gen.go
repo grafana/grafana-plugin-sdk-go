@@ -855,26 +855,6 @@ func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*nullableBoo
 	return arr, nil
 }
 
-func writeArrowDataEnum(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
-	var entities *fieldEntityLookup
-	count := col.Len()
-
-	v := array.NewUint16Data(col.Data())
-	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
-		if i > 0 {
-			stream.WriteRaw(",")
-		}
-		if col.IsNull(i) {
-			stream.WriteNil()
-			continue
-		}
-		stream.WriteUint16(v.Value(i))
-	}
-	stream.WriteArrayEnd()
-	return entities
-}
-
 func readEnumVectorJSON(iter *jsoniter.Iterator, size int) (*enumVector, error) {
 	arr := newEnumVector(size)
 	for i := 0; i < size; i++ {
@@ -920,26 +900,6 @@ func readNullableEnumVectorJSON(iter *jsoniter.Iterator, size int) (*nullableEnu
 		return nil, iter.Error
 	}
 	return arr, nil
-}
-
-func writeArrowDataTimeOffset(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
-	var entities *fieldEntityLookup
-	count := col.Len()
-
-	v := array.NewInt64Data(col.Data())
-	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
-		if i > 0 {
-			stream.WriteRaw(",")
-		}
-		if col.IsNull(i) {
-			stream.WriteNil()
-			continue
-		}
-		stream.WriteInt64(v.Value(i))
-	}
-	stream.WriteArrayEnd()
-	return entities
 }
 
 func readTimeOffsetVectorJSON(iter *jsoniter.Iterator, size int) (*timeOffsetVector, error) {
