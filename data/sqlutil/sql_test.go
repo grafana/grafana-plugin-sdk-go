@@ -34,7 +34,7 @@ func (t *testConnection) QueryContext(ctx context.Context, query string, args ..
 	}
 }
 
-func TestQuery_Timeout(t *testing.T) {
+func TestRunQuery_Timeout(t *testing.T) {
 	t.Run("it should return context.Canceled if the query timeout is exceeded", func(t *testing.T) {
 		ctx, cancel := context.WithTimeout(context.Background(), time.Second*2)
 		defer cancel()
@@ -43,7 +43,7 @@ func TestQuery_Timeout(t *testing.T) {
 			QueryWait: time.Second * 5,
 		}
 
-		_, err := sqlutil.QueryDB(ctx, conn, []sqlutil.Converter{}, nil, &sqlutil.Query{})
+		_, err := sqlutil.RunQuery(ctx, conn, []sqlutil.Converter{}, nil, &sqlutil.Query{})
 
 		if !errors.Is(err, context.Canceled) {
 			t.Fatal("expected error to be context.Canceled, received", err)
@@ -62,7 +62,7 @@ func TestQuery_Timeout(t *testing.T) {
 			QueryWait: time.Second,
 		}
 
-		_, err := sqlutil.QueryDB(ctx, conn, []sqlutil.Converter{}, nil, &sqlutil.Query{})
+		_, err := sqlutil.RunQuery(ctx, conn, []sqlutil.Converter{}, nil, &sqlutil.Query{})
 
 		if !errors.Is(err, sqlutil.ErrorQuery) {
 			t.Fatal("expected function to complete, received error: ", err)

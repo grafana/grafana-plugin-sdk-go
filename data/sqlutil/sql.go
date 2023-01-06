@@ -89,8 +89,8 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 	return frame, nil
 }
 
-// QueryDB sends the query to the connection and converts the rows to a dataframe.
-func QueryDB(ctx context.Context, db Connection, converters []Converter, fillMode *data.FillMissing, query *Query, args ...interface{}) (data.Frames, error) {
+// RunQuery sends the query to the connection and converts the rows to a dataframe.
+func RunQuery(ctx context.Context, db Connection, converters []Converter, fillMode *data.FillMissing, query *Query, args ...interface{}) (data.Frames, error) {
 	// Query the rows from the database
 	rows, err := db.QueryContext(ctx, query.RawSQL, args...)
 	if err != nil {
