@@ -16,7 +16,7 @@ type FrameMeta struct {
 	Type FrameType `json:"type,omitempty"`
 
 	// TypeVersion is the version of the Type property
-	TypeVersion FrameTypeVersion
+	TypeVersion FrameTypeVersion `json:"typeVersion,omitempty"`
 
 	// Path is a browsable path on the datasource.
 	Path string `json:"path,omitempty"`
