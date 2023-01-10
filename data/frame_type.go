@@ -1,5 +1,11 @@
 package data
 
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
+
 // A FrameType string, when present in a frame's metadata, asserts that the
 // frame's structure conforms to the FrameType's specification.
 // This property is currently optional, so FrameType may be FrameTypeUnknown even if the properties of
@@ -156,3 +162,36 @@ const KindTimeSeries FrameTypeKind = "timeseries"
 //
 // [Data Plane Numeric Kind]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md
 const KindNumeric FrameTypeKind = "numeric"
+
+// FrameType is a 2 number version (Major / Minor).
+type FrameTypeVersion [2]uint
+
+func (sv FrameTypeVersion) Less(osv FrameTypeVersion) bool {
+	return sv[0] < osv[0] || sv[1] < osv[1]
+}
+
+func (sv FrameTypeVersion) String() string {
+	return fmt.Sprintf("%v.%v", sv[0], sv[1])
+}
+
+// ParseFrameTypeVersion parses a canonical representation of a
+// [FrameTypeVersion] (e.g. "0.0") from a string.
+func ParseFrameTypeVersion(s string) (FrameTypeVersion, error) {
+	parts := strings.Split(s, ".")
+	if len(parts) != 2 {
+		return FrameTypeVersion{0, 0}, fmt.Errorf("invalid version %s", s)
+	}
+
+	// i mean 4 billion is probably enough version numbers
+	a, err := strconv.ParseUint(parts[0], 10, 32)
+	if err != nil {
+		return FrameTypeVersion{0, 0}, fmt.Errorf("%w: first part %q has invalid version number", err, parts[0])
+	}
+
+	// especially when squared
+	b, err := strconv.ParseUint(parts[1], 10, 32)
+	if err != nil {
+		return FrameTypeVersion{0, 0}, fmt.Errorf("%w: second part %q has invalid version number", err, parts[1])
+	}
+	return FrameTypeVersion{uint(a), uint(b)}, nil
+}

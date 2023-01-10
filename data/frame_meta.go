@@ -15,6 +15,9 @@ type FrameMeta struct {
 	// Type asserts that the frame matches a known type structure
 	Type FrameType `json:"type,omitempty"`
 
+	// TypeVersion is the version of the Type property
+	TypeVersion FrameTypeVersion
+
 	// Path is a browsable path on the datasource.
 	Path string `json:"path,omitempty"`
 
