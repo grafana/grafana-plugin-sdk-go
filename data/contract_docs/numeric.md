@@ -6,6 +6,8 @@ This generally corresponds to a prometheus instant vector, or a SQL table with s
 
 ## Numeric Wide Format (NumericWide)
 
+Version: 0.1
+
 Example:
 
 <table>
@@ -44,6 +46,8 @@ Remainder Data:
 * Any time or string fields
 
 ## Numeric Multi Format (NumericMulti)
+
+Version: 0.1
 
 This logically is no different than NumericWide, except that instead of having one frame with multiple Fields there are multiple frames with a single field.
 
@@ -96,6 +100,8 @@ Remainder Data:
 * Any additional frames without the type indicator
 
 ## Numeric Long Format (NumericLong) [SQL-Table-Like]
+
+Version: 0.1
 
 This is the response one would imagine with a query like `Select Host, avg(cpu) … group by host". This is similar to the TimeSeriesLong format in that dimensions exist in string columns[^9].
 

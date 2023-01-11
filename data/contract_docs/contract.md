@@ -1,6 +1,7 @@
 # Data Plane Contract - Technical Specification
 
 Status: Draft
+Version: 0.1
 
 ## Doc Objective
 
