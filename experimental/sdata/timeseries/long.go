@@ -13,8 +13,10 @@ import (
 // do not have a native concept of Labels.
 type LongFrame []*data.Frame
 
+var longVersion = data.FrameTypeVersion{0, 1}
+
 func NewLongFrame() *LongFrame { // possible TODO: argument BoolAsMetric
-	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong)}
+	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong, longVersion)}
 }
 
 func (ls *LongFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
@@ -37,6 +39,10 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) ([]Metric
 
 	if !frameHasType(frame, data.FrameTypeTimeSeriesLong) {
 		return nil, nil, fmt.Errorf("frame 0 is missing long type indicator")
+	}
+
+	if frame.Meta.TypeVersion.Less(longVersion) {
+		
 	}
 
 	var ignoredFields []sdata.FrameFieldIndex

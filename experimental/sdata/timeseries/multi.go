@@ -9,6 +9,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
+var multiVersion = data.FrameTypeVersion{0, 1}
+
 // MultiFrame is a time series format where each series lives in its own single frame.
 // This time series format should be use for data that natively uses Labels and
 // when all of the series are not guaranteed to have identical time values.
@@ -19,7 +21,7 @@ type MultiFrame []*data.Frame
 // The returned MultiFrame is a valid typed data response that corresponds to "No Data".
 func NewMultiFrame() *MultiFrame {
 	return &MultiFrame{
-		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti),
+		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, multiVersion),
 	}
 	// Consider: MultiFrame.New()
 }
@@ -55,7 +57,7 @@ func (mfs *MultiFrame) AddSeries(metricName string, l data.Labels, t []time.Time
 	if len(*mfs) == 1 && len((*mfs)[0].Fields) == 0 { // update empty response placeholder frame
 		(*mfs)[0].Fields = append((*mfs)[0].Fields, timeField, valueField)
 	} else {
-		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti)
+		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, multiVersion)
 		frame.Fields = append(frame.Fields, timeField, valueField)
 		*mfs = append(*mfs, frame)
 	}

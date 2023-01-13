@@ -8,7 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
+func emptyFrameWithTypeMD(t data.FrameType, v data.FrameTypeVersion) *data.Frame {
 	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t})
 }
 
