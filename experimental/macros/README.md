@@ -5,4 +5,3 @@ This is an experimental package to provide support for grafana global variables 
 ## Related links
 
 - [\${\_\_from} and \${\_\_to} macros](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__from-and-__to)
-- [\${\_\_user} macro](https://grafana.com/docs/grafana/latest/dashboards/variables/add-template-variables/#__user)
