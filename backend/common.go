@@ -11,11 +11,14 @@ const dataCustomOptionsKey = "grafanaData"
 const secureDataCustomOptionsKey = "grafanaSecureData"
 
 // User represents a Grafana user.
+// This detail is retrieved from the grafana object https://github.com/grafana/grafana/blob/v9.3.2/pkg/services/user/model.go#L195
+// and passed via https://github.com/grafana/grafana/blob/v9.3.2/pkg/services/query/query.go#L200
 type User struct {
-	Login string
-	Name  string
-	Email string
-	Role  string
+	UserID string
+	Login  string
+	Name   string
+	Email  string
+	Role   string
 }
 
 // AppInstanceSettings represents settings for an app instance.
