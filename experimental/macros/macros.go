@@ -51,7 +51,7 @@ func applyMacro(macroKey string, queryString string, macro macroFunc) (string, e
 		if err != nil {
 			return queryString, err
 		}
-		queryString = strings.Replace(queryString, match[0], res, -1)
+		queryString = strings.ReplaceAll(queryString, match[0], res)
 	}
 	return strings.TrimSpace(queryString), nil
 }

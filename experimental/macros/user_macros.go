@@ -7,7 +7,7 @@ import (
 )
 
 var (
-	ErrUserContextNotExit error = errors.New("user context doesn't exist in the plugin context")
+	ErrUserContextNotExit = errors.New("user context doesn't exist in the plugin context")
 )
 
 func UserMacro(inputString string, pluginContext backend.PluginContext) (string, error) {
