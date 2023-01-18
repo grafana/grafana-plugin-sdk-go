@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
 const FrameTypeNumericWide = "numeric_wide"
@@ -36,24 +35,26 @@ func (wf *WideFrame) AddMetric(metricName string, l data.Labels, value interface
 	return nil
 }
 
-func (wf *WideFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func (wf *WideFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsWide(wf, validateData)
 }
 
 // TODO: Update with current rules to match(ish) time series
-func validateAndGetRefsWide(wf *WideFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsWide(wf *WideFrame, validateData bool) (Collection, error) {
 	if validateData {
 		panic("validateData option is not implemented")
 	}
-	refs := []MetricRef{}
+
+	var c Collection
+
 	for _, field := range wf.Fields {
 		if !field.Type().Numeric() {
 			continue
 		}
-		refs = append(refs, MetricRef{field})
+		c.Refs = append(c.Refs, MetricRef{field})
 	}
-	sortNumericMetricRef(refs)
-	return refs, nil, nil
+	sortNumericMetricRef(c.Refs)
+	return c, nil
 }
 
 func (wf *WideFrame) Validate() (isEmpty bool, errors []error) {

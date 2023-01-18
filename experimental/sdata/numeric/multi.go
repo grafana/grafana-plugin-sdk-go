@@ -43,7 +43,7 @@ func (mf *MultiFrame) AddMetric(metricName string, l data.Labels, value interfac
 	return nil
 }
 
-func (mf *MultiFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func (mf *MultiFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsMulti(mf, validateData)
 }
 
@@ -69,18 +69,20 @@ Things to decide:
 
 TODO: Change this to follow the above
 */
-func validateAndGetRefsMulti(mf *MultiFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsMulti(mf *MultiFrame, validateData bool) (Collection, error) {
 	if validateData {
 		panic("validateData option is not implemented")
 	}
-	refs := []MetricRef{}
+
+	var c Collection
+
 	for _, frame := range *mf {
 		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)
 		if len(valueFields) == 0 {
 			continue
 		}
-		refs = append(refs, MetricRef{frame.Fields[valueFields[0]]})
+		c.Refs = append(c.Refs, MetricRef{frame.Fields[valueFields[0]]})
 	}
-	sortNumericMetricRef(refs)
-	return refs, nil, nil
+	sortNumericMetricRef(c.Refs)
+	return c, nil
 }

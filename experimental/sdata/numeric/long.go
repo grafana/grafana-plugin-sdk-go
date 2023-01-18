@@ -5,7 +5,6 @@ import (
 	"sort"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
 const FrameTypeNumericLong = "numeric_long"
@@ -18,22 +17,21 @@ func NewLongFrame() *LongFrame {
 	return &LongFrame{emptyFrameWithTypeMD(FrameTypeNumericLong)}
 }
 
-func (lf *LongFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func (lf *LongFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsLong(lf, validateData)
 }
 
 // TODO: Update with current rules to match(ish) time series
-func validateAndGetRefsLong(lf *LongFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsLong(lf *LongFrame, validateData bool) (Collection, error) {
+	var c Collection
 	if validateData {
 		panic("validateData option is not implemented")
 	}
 	if lf == nil || lf.Frame == nil {
-		return nil, nil, fmt.Errorf("nil frame is invalid")
+		return c, fmt.Errorf("nil frame is invalid")
 	}
 	stringFieldIdxs, numericFieldIdxs := []int{}, []int{}
 	stringFieldNames, numericFieldNames := []string{}, []string{}
-
-	refs := []MetricRef{}
 
 	for i, field := range lf.Fields {
 		fType := field.Type()
@@ -61,13 +59,13 @@ func validateAndGetRefsLong(lf *LongFrame, validateData bool) ([]MetricRef, []sd
 			field.Name = numericFieldNames[i]
 			field.Labels = l
 			field.Set(0, lf.Fields[fieldIdx].At(rowIdx))
-			refs = append(refs, MetricRef{
+			c.Refs = append(c.Refs, MetricRef{
 				ValueField: field,
 			})
 		}
 	}
-	sortNumericMetricRef(refs)
-	return refs, nil, nil
+	sortNumericMetricRef(c.Refs)
+	return c, nil
 }
 
 func sortNumericMetricRef(refs []MetricRef) {

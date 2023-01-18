@@ -10,13 +10,13 @@ type CollectionWriter interface {
 	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
 }
 
-type Collection interface {
+type CollectionRW interface {
 	CollectionWriter
 	CollectionReader
 }
 
 type CollectionReader interface {
-	GetMetricRefs(validateData bool) (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
+	GetCollection(validateData bool) (Collection, error)
 }
 
 type MetricRef struct {
@@ -35,4 +35,10 @@ func (n MetricRef) GetLabels() data.Labels {
 		return n.ValueField.Labels
 	}
 	return nil
+}
+
+type Collection struct {
+	Refs             []MetricRef
+	RemainderIndices []sdata.FrameFieldIndex
+	Warning          error
 }

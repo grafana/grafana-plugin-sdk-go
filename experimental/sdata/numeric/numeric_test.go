@@ -28,23 +28,23 @@ func TestSimpleNumeric(t *testing.T) {
 	}
 
 	t.Run("multi frame", func(t *testing.T) {
-		var mFrameNC numeric.Collection = numeric.NewMultiFrame()
+		var mFrameNC numeric.CollectionRW = numeric.NewMultiFrame()
 		addMetrics(mFrameNC)
 
-		mFrameRefs, ignored, err := mFrameNC.GetMetricRefs(false)
+		mc, err := mFrameNC.GetCollection(false)
 		require.Nil(t, err)
-		require.Nil(t, ignored)
-		require.Equal(t, expectedRefs, mFrameRefs)
+		require.Nil(t, mc.RemainderIndices)
+		require.Equal(t, expectedRefs, mc.Refs)
 	})
 
 	t.Run("wide frame", func(t *testing.T) {
-		var wFrameNC numeric.Collection = numeric.NewWideFrame()
+		var wFrameNC numeric.CollectionRW = numeric.NewWideFrame()
 		addMetrics(wFrameNC)
 
-		wFrameRefs, ignored, err := wFrameNC.GetMetricRefs(false)
+		wc, err := wFrameNC.GetCollection(false)
 		require.Nil(t, err)
-		require.Nil(t, ignored)
-		require.Equal(t, expectedRefs, wFrameRefs)
+		require.Nil(t, wc.RemainderIndices)
+		require.Equal(t, expectedRefs, wc.Refs)
 	})
 	t.Run("long frame", func(t *testing.T) {
 		lfn := &numeric.LongFrame{
@@ -53,11 +53,11 @@ func TestSimpleNumeric(t *testing.T) {
 				data.NewField("host", nil, []string{"a", "b"}),
 			),
 		}
-		var lFrameNCR numeric.CollectionReader = lfn
+		var lcr numeric.CollectionReader = lfn
 
-		lFrameRefs, ignored, err := lFrameNCR.GetMetricRefs(false)
+		lc, err := lcr.GetCollection(false)
 		require.Nil(t, err)
-		require.Nil(t, ignored)
-		require.Equal(t, expectedRefs, lFrameRefs)
+		require.Nil(t, lc.RemainderIndices)
+		require.Equal(t, expectedRefs, lc.Refs)
 	})
 }
