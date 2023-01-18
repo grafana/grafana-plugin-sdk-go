@@ -81,7 +81,7 @@ func (wf *WideFrame) AddSeries(metricName string, l data.Labels, values interfac
 	return nil
 }
 
-func (wf *WideFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func (wf *WideFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsWide(wf, validateData)
 }
 
@@ -89,52 +89,52 @@ func (wf *WideFrame) SetMetricMD(metricName string, l data.Labels, fc data.Field
 	panic("not implemented")
 }
 
-func validateAndGetRefsWide(wf *WideFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
-	var refs []MetricRef
-	var ignoredFields []sdata.FrameFieldIndex
+func validateAndGetRefsWide(wf *WideFrame, validateData bool) (Collection, error) {
+	var c Collection
 	metricIndex := make(map[[2]string]struct{})
 
 	switch {
 	case wf == nil:
-		return nil, nil, fmt.Errorf("frames may not be nil")
+		return c, fmt.Errorf("frames may not be nil")
 	case len(*wf) == 0:
-		return nil, nil, fmt.Errorf("missing frame, must be at least one frame")
+		return c, fmt.Errorf("missing frame, must be at least one frame")
 	}
 
 	frame := (*wf)[0]
 
 	if frame == nil {
-		return nil, nil, fmt.Errorf("frame is nil which is invalid")
+		return c, fmt.Errorf("frame is nil which is invalid")
 	}
 
 	if len(frame.Fields) == 0 { // TODO: Error differently if nil and not zero length?
-		if err := ignoreAdditionalFrames("additional frame on empty response", *wf, &ignoredFields); err != nil {
-			return nil, nil, err
+		if err := ignoreAdditionalFrames("additional frame on empty response", *wf, &c.RemainderIndices); err != nil {
+			return c, err
 		}
-		return []MetricRef{}, nil, nil // empty response
+		c.Refs = []MetricRef{}
+		return c, nil // empty response
 	}
 
 	if err := malformedFrameCheck(0, frame); err != nil {
-		return nil, nil, err
+		return c, err
 	}
 
 	timeField, ignoredTimedFields, err := seriesCheckSelectTime(0, frame)
 	if err != nil {
-		return nil, nil, err
+		return c, err
 	}
 	if ignoredTimedFields != nil {
-		ignoredFields = append(ignoredFields, ignoredTimedFields...)
+		c.RemainderIndices = append(c.RemainderIndices, ignoredTimedFields...)
 	}
 
 	valueFieldIndices := frame.TypeIndices(sdata.ValidValueFields()...)
 	if len(valueFieldIndices) == 0 {
-		return nil, nil, fmt.Errorf("frame is missing a numeric value field")
+		return c, fmt.Errorf("frame is missing a numeric value field")
 	}
 
 	// TODO this is fragile if new types are added
 	otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
 	for _, fieldIdx := range otherFields {
-		ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+		c.RemainderIndices = append(c.RemainderIndices, sdata.FrameFieldIndex{
 			FrameIdx: 0, FieldIdx: fieldIdx,
 			Reason: fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())})
 	}
@@ -144,11 +144,11 @@ func validateAndGetRefsWide(wf *WideFrame, validateData bool) ([]MetricRef, []sd
 		if validateData {
 			metricKey := [2]string{vField.Name, vField.Labels.String()}
 			if _, ok := metricIndex[metricKey]; ok && validateData {
-				return nil, nil, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
+				return c, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
 			}
 			metricIndex[metricKey] = struct{}{}
 		}
-		refs = append(refs, MetricRef{
+		c.Refs = append(c.Refs, MetricRef{
 			TimeField:  timeField,
 			ValueField: vField,
 		})
@@ -158,19 +158,19 @@ func validateAndGetRefsWide(wf *WideFrame, validateData bool) ([]MetricRef, []sd
 	if validateData {
 		sorted, err := timeIsSorted(timeField)
 		if err != nil {
-			return nil, nil, fmt.Errorf("frame has an malformed time field")
+			return c, fmt.Errorf("frame has an malformed time field")
 		}
 		if !sorted {
-			return nil, nil, fmt.Errorf("frame has an unsorted time field")
+			return c, fmt.Errorf("frame has an unsorted time field")
 		}
 	}
 
-	if err := ignoreAdditionalFrames("additional frame", *wf, &ignoredFields); err != nil {
-		return nil, nil, err
+	if err := ignoreAdditionalFrames("additional frame", *wf, &c.RemainderIndices); err != nil {
+		return c, err
 	}
 
-	sortTimeSeriesMetricRef(refs)
-	return refs, ignoredFields, nil
+	sortTimeSeriesMetricRef(c.Refs)
+	return c, nil
 }
 
 func (wf *WideFrame) Frames() []*data.Frame {

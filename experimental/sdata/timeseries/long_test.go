@@ -22,7 +22,7 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 			).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
 		}
 
-		refs, ignoredFields, err := ls.GetMetricRefs(false)
+		c, err := ls.GetCollection(false)
 		require.NoError(t, err)
 
 		expectedRefs := []timeseries.MetricRef{
@@ -44,9 +44,9 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 			},
 		}
 
-		require.Empty(t, ignoredFields) // TODO more specific []x{} vs nil
+		require.Empty(t, c.RemainderIndices) // TODO more specific []x{} vs nil
 
-		if diff := cmp.Diff(expectedRefs, refs, data.FrameTestCompareOptions()...); diff != "" {
+		if diff := cmp.Diff(expectedRefs, c.Refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n", diff)
 		}
 	})

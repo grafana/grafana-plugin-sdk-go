@@ -68,7 +68,7 @@ func (mfs *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.Fie
 	panic("not implemented")
 }
 
-func (mfs *MultiFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func (mfs *MultiFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsMulti(mfs, validateData)
 }
 
@@ -96,39 +96,42 @@ When things get ignored
 - Fields when the type indicator is present and the frame is valid (e.g. has both time and value fields):
   - String, Additional Time Fields, Additional Value fields
 */
-func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (refs []MetricRef, ignoredFields []sdata.FrameFieldIndex, err error) {
+func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (Collection, error) {
+	var c Collection
 	if mfs == nil || len(*mfs) == 0 {
-		return nil, nil, fmt.Errorf("must have at least one frame to be valid")
+		return c, fmt.Errorf("must have at least one frame to be valid")
 	}
 
 	firstFrame := (*mfs)[0]
 
 	switch {
 	case firstFrame == nil:
-		return nil, nil, fmt.Errorf("frame 0 is nil which is invalid")
+		return c, fmt.Errorf("frame 0 is nil which is invalid")
 	case firstFrame.Meta == nil:
-		return nil, nil, fmt.Errorf("frame 0 is missing a type indicator")
+		return c, fmt.Errorf("frame 0 is missing a type indicator")
 	case !frameHasType(firstFrame, data.FrameTypeTimeSeriesMulti):
-		return nil, nil, fmt.Errorf("frame 0 has wrong type, expected many/multi but got %q", firstFrame.Meta.Type)
+		return c, fmt.Errorf("frame 0 has wrong type, expected many/multi but got %q", firstFrame.Meta.Type)
 	case len(firstFrame.Fields) == 0:
 		if len(*mfs) > 1 {
-			if err := ignoreAdditionalFrames("extra frame on empty response", *mfs, &ignoredFields); err != nil {
-				return nil, nil, err
+			if err := ignoreAdditionalFrames("extra frame on empty response", *mfs, &c.RemainderIndices); err != nil {
+				return c, err
 			}
 		}
-		return []MetricRef{}, ignoredFields, nil
+		// Empty Response
+		c.Refs = make([]MetricRef, 0)
+		return c, nil
 	}
 
 	metricIndex := make(map[[2]string]struct{})
 
 	for frameIdx, frame := range *mfs {
 		if frame == nil {
-			return nil, nil, fmt.Errorf("frame %v is nil which is not valid", frameIdx)
+			return c, fmt.Errorf("frame %v is nil which is not valid", frameIdx)
 		}
 
 		ignoreAllFields := func(reason string) {
 			for fieldIdx := range frame.Fields {
-				ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+				c.RemainderIndices = append(c.RemainderIndices, sdata.FrameFieldIndex{
 					FrameIdx: frameIdx, FieldIdx: fieldIdx, Reason: reason},
 				)
 			}
@@ -136,35 +139,35 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (refs []MetricR
 
 		if !frameHasType(frame, data.FrameTypeTimeSeriesMulti) {
 			if frameIdx == 0 {
-				return nil, nil, fmt.Errorf("first frame must have the many/multi type indicator in frame metadata")
+				return c, fmt.Errorf("first frame must have the many/multi type indicator in frame metadata")
 			}
 			ignoreAllFields("no type indicator in frame or metadata is not type many/multi")
 			continue
 		}
 
 		if len(frame.Fields) == 0 { // note: single frame with no fields is acceptable, but is returned before this
-			return nil, nil, fmt.Errorf("frame %v has zero or null fields which is invalid when more than one frame", frameIdx)
+			return c, fmt.Errorf("frame %v has zero or null fields which is invalid when more than one frame", frameIdx)
 		}
 
 		if err := malformedFrameCheck(frameIdx, frame); err != nil {
-			return nil, nil, err
+			return c, err
 		}
 
 		timeField, ignoredTimedFields, err := seriesCheckSelectTime(frameIdx, frame)
 		if err != nil {
-			return nil, nil, err
+			return c, err
 		}
 		if ignoredTimedFields != nil {
-			ignoredFields = append(ignoredFields, ignoredTimedFields...)
+			c.RemainderIndices = append(c.RemainderIndices, ignoredTimedFields...)
 		}
 
 		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)
 		if len(valueFields) == 0 {
-			return nil, nil, fmt.Errorf("frame %v must have at least one value field but has %v", frameIdx, len(valueFields))
+			return c, fmt.Errorf("frame %v must have at least one value field but has %v", frameIdx, len(valueFields))
 		}
 		if len(valueFields) > 1 {
 			for _, fieldIdx := range valueFields[1:] {
-				ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+				c.RemainderIndices = append(c.RemainderIndices, sdata.FrameFieldIndex{
 					FrameIdx: frameIdx, FieldIdx: fieldIdx,
 					Reason: "additional numeric value field"},
 				)
@@ -175,21 +178,21 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (refs []MetricR
 		metricKey := [2]string{vField.Name, vField.Labels.String()}
 
 		if _, ok := metricIndex[metricKey]; ok && validateData {
-			return nil, nil, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
+			return c, fmt.Errorf("duplicate metrics found for metric name %q and labels %q", vField.Name, vField.Labels)
 		}
 		metricIndex[metricKey] = struct{}{}
 
 		if validateData {
 			sorted, err := timeIsSorted(timeField)
 			if err != nil {
-				return nil, nil, fmt.Errorf("frame %v has an malformed time field", 0)
+				return c, fmt.Errorf("frame %v has an malformed time field", 0)
 			}
 			if !sorted {
-				return nil, nil, fmt.Errorf("frame %v has an unsorted time field", 0)
+				return c, fmt.Errorf("frame %v has an unsorted time field", 0)
 			}
 		}
 
-		refs = append(refs, MetricRef{
+		c.Refs = append(c.Refs, MetricRef{
 			TimeField:  timeField,
 			ValueField: frame.Fields[valueFields[0]],
 		})
@@ -197,7 +200,7 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (refs []MetricR
 		// TODO this is fragile if new types are added
 		otherFields := frame.TypeIndices(data.FieldTypeNullableTime, data.FieldTypeString, data.FieldTypeNullableString)
 		for _, fieldIdx := range otherFields {
-			ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+			c.RemainderIndices = append(c.RemainderIndices, sdata.FrameFieldIndex{
 				FrameIdx: frameIdx, FieldIdx: fieldIdx,
 				Reason: fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())},
 			)
@@ -205,12 +208,12 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (refs []MetricR
 	}
 
 	if len(metricIndex) == 0 {
-		return nil, nil, fmt.Errorf("no metrics in response and not an empty response")
+		return c, fmt.Errorf("no metrics in response and not an empty response")
 	}
 
-	sort.Sort(sdata.FrameFieldIndices(ignoredFields))
+	sort.Sort(sdata.FrameFieldIndices(c.RemainderIndices))
 
-	return refs, ignoredFields, nil
+	return c, nil
 }
 
 func (mfs *MultiFrame) Frames() []*data.Frame {

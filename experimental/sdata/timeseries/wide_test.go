@@ -48,7 +48,7 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 		err = wf.AddSeries("one", data.Labels{"host": "b"}, []float64{3, 4})
 		require.NoError(t, err)
 
-		refs, ignoredFields, err := wf.GetMetricRefs(false)
+		c, err := wf.GetCollection(false)
 		require.NoError(t, err)
 
 		expectedRefs := []timeseries.MetricRef{
@@ -62,9 +62,9 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 			},
 		}
 
-		require.Empty(t, ignoredFields) // TODO more specific []x{} vs nil
+		require.Empty(t, c.RemainderIndices) // TODO more specific []x{} vs nil
 
-		if diff := cmp.Diff(expectedRefs, refs, data.FrameTestCompareOptions()...); diff != "" {
+		if diff := cmp.Diff(expectedRefs, c.Refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
 		}
 	})

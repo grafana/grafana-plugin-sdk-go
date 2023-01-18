@@ -9,10 +9,10 @@ import (
 )
 
 type CollectionReader interface {
-	// GetMetricRefs runs validate without validateData. If the data is valid, then
+	// GetCollection runs validate without validateData. If the data is valid, then
 	// []TimeSeriesMetricRef is returned from reading as well as any ignored data. If invalid,
 	// then an error is returned, and no refs or ignoredFieldIndices are returned.
-	GetMetricRefs(validateData bool) (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
+	GetCollection(validateData bool) (Collection, error)
 
 	Frames() []*data.Frame // returns underlying frames
 }
@@ -25,6 +25,12 @@ type MetricRef struct {
 	ValueField *data.Field
 	// TODO: RefID string
 	// TODO: Pointer to frame meta?
+}
+
+type Collection struct {
+	Refs             []MetricRef
+	RemainderIndices []sdata.FrameFieldIndex
+	Warning          error
 }
 
 func CollectionReaderFromFrames(frames []*data.Frame) (CollectionReader, error) {
