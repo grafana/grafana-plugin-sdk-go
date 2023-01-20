@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLongSeriesGetMetricRefs(t *testing.T) {
+func TestLongSeriesGetCollection(t *testing.T) {
 	t.Run("basic", func(t *testing.T) {
 		ls := timeseries.LongFrame{
 			data.NewFrame("",
@@ -19,7 +19,7 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 				data.NewField("iface", nil, []string{"eth0", "eth0"}),
 				data.NewField("in_bytes", nil, []float64{1, 2}),
 				data.NewField("out_bytes", nil, []int64{3, 4}),
-			).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
+			).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong, TypeVersion: data.FrameTypeVersion{0, 1}}),
 		}
 
 		c, err := ls.GetCollection(false)
@@ -45,6 +45,8 @@ func TestLongSeriesGetMetricRefs(t *testing.T) {
 		}
 
 		require.Empty(t, c.RemainderIndices) // TODO more specific []x{} vs nil
+
+		require.NoError(t, c.Warning)
 
 		if diff := cmp.Diff(expectedRefs, c.Refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n", diff)

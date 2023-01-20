@@ -170,12 +170,17 @@ func (sv FrameTypeVersion) Less(osv FrameTypeVersion) bool {
 	return sv[0] < osv[0] || sv[1] < osv[1]
 }
 
+func (sv FrameTypeVersion) Greater(osv FrameTypeVersion) bool {
+	return sv[0] > osv[0] || sv[1] > osv[1]
+}
+
 func (sv FrameTypeVersion) String() string {
 	return fmt.Sprintf("%v.%v", sv[0], sv[1])
 }
 
 // ParseFrameTypeVersion parses a canonical representation of a
 // [FrameTypeVersion] (e.g. "0.0") from a string.
+// Taken from github.com/grafana/thema
 func ParseFrameTypeVersion(s string) (FrameTypeVersion, error) {
 	parts := strings.Split(s, ".")
 	if len(parts) != 2 {

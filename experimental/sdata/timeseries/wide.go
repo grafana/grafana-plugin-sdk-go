@@ -13,9 +13,11 @@ import (
 // when all of the series are guaranteed to have identical time values.
 type WideFrame []*data.Frame
 
+var wideVersion = data.FrameTypeVersion{0, 1}
+
 func NewWideFrame() *WideFrame {
 	f := data.NewFrame("")
-	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
+	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide, TypeVersion: wideVersion})
 	return &WideFrame{f}
 }
 
@@ -104,6 +106,14 @@ func validateAndGetRefsWide(wf *WideFrame, validateData bool) (Collection, error
 
 	if frame == nil {
 		return c, fmt.Errorf("frame is nil which is invalid")
+	}
+
+	if !frameHasType(frame, data.FrameTypeTimeSeriesWide) {
+		return c, fmt.Errorf("frame has wrong type, expected TimeSeriesWide but got %q", frame.Meta.Type)
+	}
+
+	if frame.Meta.TypeVersion != wideVersion {
+		c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: wideVersion, DataType: data.FrameTypeTimeSeriesWide}
 	}
 
 	if len(frame.Fields) == 0 { // TODO: Error differently if nil and not zero length?

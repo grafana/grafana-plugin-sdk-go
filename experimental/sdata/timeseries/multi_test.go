@@ -61,6 +61,7 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 			c, err := tt.mfs().GetCollection(true)
 			require.Nil(t, err)
 			require.Equal(t, tt.remainderIndices, c.RemainderIndices)
+			require.NoError(t, c.Warning)
 		})
 	}
 }

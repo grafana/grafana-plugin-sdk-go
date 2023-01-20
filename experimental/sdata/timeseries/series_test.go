@@ -40,6 +40,8 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		var r timeseries.CollectionReader = sc
 
 		c, err := r.GetCollection(true)
+
+		require.NoError(t, c.Warning)
 		require.Nil(t, err)
 		require.Nil(t, c.RemainderIndices)
 		require.Equal(t, expectedRefs, c.Refs)
@@ -62,6 +64,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		c, err := r.GetCollection(true)
 		require.Nil(t, err)
 
+		require.NoError(t, c.Warning)
 		require.Nil(t, c.RemainderIndices)
 		require.Equal(t, expectedRefs, c.Refs)
 	})
@@ -73,7 +76,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 			data.NewField("os.cpu", nil, []float64{valuesA[0], valuesB[0],
 				valuesA[1], valuesB[1]}),
 			data.NewField("host", nil, []string{"a", "b", "a", "b"}),
-		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
+		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong, TypeVersion: data.FrameTypeVersion{0, 1}}),
 		}
 
 		var r timeseries.CollectionReader = ls
@@ -81,6 +84,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 		c, err := r.GetCollection(true)
 		require.Nil(t, err)
 
+		require.NoError(t, c.Warning)
 		require.Nil(t, c.RemainderIndices)
 		require.Equal(t, expectedRefs, c.Refs)
 	})
@@ -103,6 +107,7 @@ func TestEmptyFromNew(t *testing.T) {
 		require.Nil(t, c.RemainderIndices)
 		require.NotNil(t, c.Refs)
 		require.Len(t, c.Refs, 0)
+		require.NoError(t, c.Warning)
 	}
 
 	viaFrames := func(r timeseries.CollectionReader) {

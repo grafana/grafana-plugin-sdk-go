@@ -42,8 +42,8 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 		return c, fmt.Errorf("frame 0 is missing long type indicator")
 	}
 
-	if frame.Meta.TypeVersion.Less(longVersion) {
-
+	if frame.Meta.TypeVersion != longVersion {
+		c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: longVersion, DataType: data.FrameTypeTimeSeriesLong}
 	}
 
 	if len(frame.Fields) == 0 { // empty response

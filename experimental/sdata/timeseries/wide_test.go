@@ -27,7 +27,7 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 			data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}),
 			data.NewField("one", data.Labels{"host": "a"}, []float64{1, 2}),
 			data.NewField("one", data.Labels{"host": "b"}, []float64{3, 4}),
-		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
+		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide, TypeVersion: data.FrameTypeVersion{0, 1}})
 
 		if diff := cmp.Diff(expectedFrame, (*wf)[0], data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
@@ -63,6 +63,7 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 		}
 
 		require.Empty(t, c.RemainderIndices) // TODO more specific []x{} vs nil
+		require.NoError(t, c.Warning)
 
 		if diff := cmp.Diff(expectedRefs, c.Refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)

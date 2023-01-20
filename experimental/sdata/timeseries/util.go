@@ -9,7 +9,7 @@ import (
 )
 
 func emptyFrameWithTypeMD(t data.FrameType, v data.FrameTypeVersion) *data.Frame {
-	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t})
+	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t, TypeVersion: v})
 }
 
 func frameHasType(f *data.Frame, t data.FrameType) bool {

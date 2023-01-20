@@ -118,7 +118,7 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (Collection, er
 			}
 		}
 		// Empty Response
-		c.Refs = make([]MetricRef, 0)
+		c.Refs = []MetricRef{}
 		return c, nil
 	}
 
@@ -143,6 +143,10 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (Collection, er
 			}
 			ignoreAllFields("no type indicator in frame or metadata is not type many/multi")
 			continue
+		}
+
+		if frame.Meta.TypeVersion != multiVersion {
+			c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: multiVersion, DataType: data.FrameTypeTimeSeriesMulti}
 		}
 
 		if len(frame.Fields) == 0 { // note: single frame with no fields is acceptable, but is returned before this
