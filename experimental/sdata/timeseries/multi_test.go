@@ -21,16 +21,18 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 		{
 			name: "frame with no fields is valid (empty response)",
 			mfs: func() *timeseries.MultiFrame {
-				s := timeseries.NewMultiFrame()
+				s, err := timeseries.NewMultiFrame(timeseries.WideFrameVersionLatest)
+				require.NoError(t, err)
 				return s
 			},
 		},
 		{
 			name: "basic example",
 			mfs: func() *timeseries.MultiFrame {
-				s := timeseries.NewMultiFrame()
+				s, err := timeseries.NewMultiFrame(timeseries.WideFrameVersionLatest)
+				require.NoError(t, err)
 
-				err := s.AddSeries("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
+				err = s.AddSeries("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
 				require.NoError(t, err)
 
 				err = s.AddSeries("two", nil, []time.Time{{}, time.Now().Add(time.Second * 2)}, []float64{0, 1})
@@ -41,9 +43,10 @@ func TestMultiFrameSeriesValidate_ValidCases(t *testing.T) {
 		{
 			name: "there can be extraneous fields (but they have no specific platform-wide meaning)",
 			mfs: func() *timeseries.MultiFrame {
-				s := timeseries.NewMultiFrame()
+				s, err := timeseries.NewMultiFrame(timeseries.WideFrameVersionLatest)
+				require.NoError(t, err)
 
-				err := s.AddSeries("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
+				err = s.AddSeries("one", nil, []time.Time{{}, time.Now().Add(time.Second)}, []float64{0, 1})
 				require.NoError(t, err)
 
 				(*s)[0].Fields = append((*s)[0].Fields, data.NewField("a", nil, []float64{2, 3}))
@@ -154,7 +157,8 @@ var _ = emptyFrameWithTypeMD(data.FrameTypeUnknown) // linter
 
 func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	t.Run("empty response reads as zero length metric refs and nil ignoredFields", func(t *testing.T) {
-		s := timeseries.NewMultiFrame()
+		s, err := timeseries.NewMultiFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 
 		c, err := s.GetCollection(true)
 		require.Nil(t, err)
@@ -165,7 +169,8 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	})
 
 	t.Run("empty response frame with an additional frames cause additional frames to be ignored", func(t *testing.T) {
-		s := timeseries.NewMultiFrame()
+		s, err := timeseries.NewMultiFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 
 		// (s.AddMetric) would alter the first frame which would be the "right thing" to do.
 		*s = append(*s, emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti))
@@ -194,7 +199,8 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	})
 
 	t.Run("a nil frame (a nil entry in slice of frames (very odd)), is not a valid in a response", func(t *testing.T) {
-		s := timeseries.NewMultiFrame()
+		s, err := timeseries.NewMultiFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 		*s = append(*s, nil)
 
 		c, err := s.GetCollection(true)

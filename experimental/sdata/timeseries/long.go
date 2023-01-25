@@ -13,10 +13,17 @@ import (
 // do not have a native concept of Labels.
 type LongFrame []*data.Frame
 
-var longVersion = data.FrameTypeVersion{0, 1}
+var LongFrameVersionLatest = LongFrameVersions()[len(LongFrameVersions())-1]
 
-func NewLongFrame() *LongFrame { // possible TODO: argument BoolAsMetric
-	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong, longVersion)}
+func LongFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
+}
+
+func NewLongFrame(v data.FrameTypeVersion) (*LongFrame, error) {
+	if v.Greater(LongFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create LongFrame of version %s because it is newer than library version %v", v, LongFrameVersionLatest)
+	}
+	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong, v)}, nil
 }
 
 func (ls *LongFrame) GetCollection(validateData bool) (Collection, error) {
@@ -42,8 +49,8 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 		return c, fmt.Errorf("frame 0 is missing long type indicator")
 	}
 
-	if frame.Meta.TypeVersion != longVersion {
-		c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: longVersion, DataType: data.FrameTypeTimeSeriesLong}
+	if frame.Meta.TypeVersion != LongFrameVersionLatest {
+		c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: LongFrameVersionLatest, DataType: data.FrameTypeTimeSeriesLong}
 	}
 
 	if len(frame.Fields) == 0 { // empty response

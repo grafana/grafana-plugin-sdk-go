@@ -13,12 +13,19 @@ import (
 // when all of the series are guaranteed to have identical time values.
 type WideFrame []*data.Frame
 
-var wideVersion = data.FrameTypeVersion{0, 1}
+var WideFrameVersionLatest = WideFrameVersions()[len(WideFrameVersions())-1]
 
-func NewWideFrame() *WideFrame {
+func WideFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
+}
+
+func NewWideFrame(v data.FrameTypeVersion) (*WideFrame, error) {
+	if v.Greater(WideFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create WideFrame of version %s because it is newer than library version %v", v, WideFrameVersionLatest)
+	}
 	f := data.NewFrame("")
-	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide, TypeVersion: wideVersion})
-	return &WideFrame{f}
+	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide, TypeVersion: v})
+	return &WideFrame{f}, nil
 }
 
 func (wf *WideFrame) SetTime(timeName string, t []time.Time) error {
@@ -112,8 +119,8 @@ func validateAndGetRefsWide(wf *WideFrame, validateData bool) (Collection, error
 		return c, fmt.Errorf("frame has wrong type, expected TimeSeriesWide but got %q", frame.Meta.Type)
 	}
 
-	if frame.Meta.TypeVersion != wideVersion {
-		c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: wideVersion, DataType: data.FrameTypeTimeSeriesWide}
+	if frame.Meta.TypeVersion != WideFrameVersionLatest {
+		c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: WideFrameVersionLatest, DataType: data.FrameTypeTimeSeriesWide}
 	}
 
 	if len(frame.Fields) == 0 { // TODO: Error differently if nil and not zero length?

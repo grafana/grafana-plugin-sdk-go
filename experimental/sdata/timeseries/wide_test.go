@@ -12,9 +12,10 @@ import (
 
 func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 	t.Run("add two metrics", func(t *testing.T) {
-		wf := timeseries.NewWideFrame()
+		wf, err := timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 
-		err := wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
+		err = wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
 		require.NoError(t, err)
 
 		err = wf.AddSeries("one", data.Labels{"host": "a"}, []float64{1, 2})
@@ -37,9 +38,10 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 
 func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 	t.Run("two metrics from wide to multi", func(t *testing.T) {
-		wf := timeseries.NewWideFrame()
+		wf, err := timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 
-		err := wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
+		err = wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
 		require.NoError(t, err)
 
 		err = wf.AddSeries("one", data.Labels{"host": "a"}, []float64{1, 2})

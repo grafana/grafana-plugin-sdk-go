@@ -9,21 +9,27 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-var multiVersion = data.FrameTypeVersion{0, 1}
-
 // MultiFrame is a time series format where each series lives in its own single frame.
 // This time series format should be use for data that natively uses Labels and
 // when all of the series are not guaranteed to have identical time values.
 type MultiFrame []*data.Frame
 
+var MultiFrameVersionLatest = MultiFrameVersions()[len(MultiFrameVersions())-1]
+
+func MultiFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
+}
+
 // NewMultiFrame creates an empty MultiFrame formatted time series.
 // This function must be called before the AddSeries Method.
 // The returned MultiFrame is a valid typed data response that corresponds to "No Data".
-func NewMultiFrame() *MultiFrame {
-	return &MultiFrame{
-		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, multiVersion),
+func NewMultiFrame(v data.FrameTypeVersion) (*MultiFrame, error) {
+	if v.Greater(MultiFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create MultiFrame of version %s because it is newer than library version %v", v, MultiFrameVersionLatest)
 	}
-	// Consider: MultiFrame.New()
+	return &MultiFrame{
+		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, v),
+	}, nil
 }
 
 // values must be a numeric slice such as []int64, []float64, []*float64, etc or []bool / []*bool.
@@ -57,7 +63,7 @@ func (mfs *MultiFrame) AddSeries(metricName string, l data.Labels, t []time.Time
 	if len(*mfs) == 1 && len((*mfs)[0].Fields) == 0 { // update empty response placeholder frame
 		(*mfs)[0].Fields = append((*mfs)[0].Fields, timeField, valueField)
 	} else {
-		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, multiVersion)
+		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, (*mfs)[0].Meta.TypeVersion)
 		frame.Fields = append(frame.Fields, timeField, valueField)
 		*mfs = append(*mfs, frame)
 	}
@@ -145,8 +151,8 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (Collection, er
 			continue
 		}
 
-		if frame.Meta.TypeVersion != multiVersion {
-			c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: multiVersion, DataType: data.FrameTypeTimeSeriesMulti}
+		if frame.Meta.TypeVersion.Greater(MultiFrameVersionLatest) {
+			c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: MultiFrameVersionLatest, DataType: data.FrameTypeTimeSeriesMulti}
 		}
 
 		if len(frame.Fields) == 0 { // note: single frame with no fields is acceptable, but is returned before this
