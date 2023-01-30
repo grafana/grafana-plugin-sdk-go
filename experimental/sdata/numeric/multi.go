@@ -9,6 +9,10 @@ import (
 
 type MultiFrame []*data.Frame
 
+func (mf *MultiFrame) Frames() data.Frames {
+	return data.Frames(*mf)
+}
+
 var MultiFrameVersionLatest = MultiFrameVersions()[len(MultiFrameVersions())-1]
 
 func MultiFrameVersions() []data.FrameTypeVersion {

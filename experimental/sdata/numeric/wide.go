@@ -13,6 +13,10 @@ type WideFrame struct {
 	*data.Frame
 }
 
+func (wf *WideFrame) Frames() data.Frames {
+	return data.Frames{wf.Frame}
+}
+
 var WideFrameVersionLatest = WideFrameVersions()[len(WideFrameVersions())-1]
 
 func WideFrameVersions() []data.FrameTypeVersion {

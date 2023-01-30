@@ -14,6 +14,10 @@ type LongFrame struct {
 	*data.Frame
 }
 
+func (lf *LongFrame) Frames() data.Frames {
+	return data.Frames{lf.Frame}
+}
+
 var LongFrameVersionLatest = LongFrameVersions()[len(LongFrameVersions())-1]
 
 func LongFrameVersions() []data.FrameTypeVersion {
