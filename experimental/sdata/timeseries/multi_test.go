@@ -86,7 +86,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		{
 			name: "frame with only value field is not valid, missing time field",
 			mfs: &timeseries.MultiFrame{
-				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti),
+				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, data.FrameTypeVersion{0, 0}),
 					data.NewField("", nil, []float64{})),
 			},
 			errContains: "missing a []time.Time field",
@@ -94,7 +94,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		{
 			name: "frame with only a time field and no value is not valid",
 			mfs: &timeseries.MultiFrame{
-				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti),
+				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, data.FrameTypeVersion{0, 0}),
 					data.NewField("", nil, []time.Time{})),
 			},
 			errContains: "must have at least one value field",
@@ -102,7 +102,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		{
 			name: "fields must be of the same length",
 			mfs: &timeseries.MultiFrame{
-				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti),
+				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, data.FrameTypeVersion{0, 0}),
 					data.NewField("", nil, []float64{1, 2}),
 					data.NewField("", nil, []time.Time{time.UnixMilli(1)})),
 			},
@@ -111,7 +111,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		{
 			name: "frame with unsorted time is not valid",
 			mfs: &timeseries.MultiFrame{
-				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti),
+				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, data.FrameTypeVersion{0, 0}),
 					data.NewField("", nil, []float64{1, 2}),
 					data.NewField("", nil, []time.Time{time.UnixMilli(2), time.UnixMilli(1)})),
 			},
@@ -121,10 +121,10 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 		{
 			name: "duplicate metrics as identified by name + labels are invalid",
 			mfs: &timeseries.MultiFrame{
-				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti),
+				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, data.FrameTypeVersion{0, 0}),
 					data.NewField("os.cpu", data.Labels{"host": "a", "iface": "eth0"}, []float64{1, 2}),
 					data.NewField("", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)})),
-				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti),
+				addFields(emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, data.FrameTypeVersion{0, 0}),
 					data.NewField("os.cpu", data.Labels{"iface": "eth0", "host": "a"}, []float64{1, 2}),
 					data.NewField("", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)})),
 			},
@@ -149,11 +149,11 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 	}
 }
 
-func emptyFrameWithTypeMD(t data.FrameType) *data.Frame {
-	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t})
+func emptyFrameWithTypeMD(t data.FrameType, v data.FrameTypeVersion) *data.Frame {
+	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t, TypeVersion: &v})
 }
 
-var _ = emptyFrameWithTypeMD(data.FrameTypeUnknown) // linter
+var _ = emptyFrameWithTypeMD(data.FrameTypeUnknown, data.FrameTypeVersion{0, 0}) // linter
 
 func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 	t.Run("empty response reads as zero length metric refs and nil ignoredFields", func(t *testing.T) {
@@ -173,7 +173,7 @@ func TestMultiFrameSeriesGetMetricRefs_Empty_Invalid_Edge_Cases(t *testing.T) {
 		require.NoError(t, err)
 
 		// (s.AddMetric) would alter the first frame which would be the "right thing" to do.
-		*s = append(*s, emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti))
+		*s = append(*s, emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, data.FrameTypeVersion{0, 0}))
 		(*s)[1].Fields = append((*s)[1].Fields,
 			data.NewField("time", nil, []time.Time{}),
 			data.NewField("cpu", nil, []float64{}),

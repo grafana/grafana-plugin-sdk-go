@@ -63,7 +63,7 @@ func (mfs *MultiFrame) AddSeries(metricName string, l data.Labels, t []time.Time
 	if len(*mfs) == 1 && len((*mfs)[0].Fields) == 0 { // update empty response placeholder frame
 		(*mfs)[0].Fields = append((*mfs)[0].Fields, timeField, valueField)
 	} else {
-		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, (*mfs)[0].Meta.TypeVersion)
+		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, *(*mfs)[0].Meta.TypeVersion)
 		frame.Fields = append(frame.Fields, timeField, valueField)
 		*mfs = append(*mfs, frame)
 	}
@@ -151,8 +151,12 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (Collection, er
 			continue
 		}
 
-		if frame.Meta.TypeVersion.Greater(MultiFrameVersionLatest) {
-			c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: MultiFrameVersionLatest, DataType: data.FrameTypeTimeSeriesMulti}
+		if frame.Meta.TypeVersion == nil {
+			return c, fmt.Errorf("frame %v is missing the type version property", frameIdx)
+		}
+
+		if *frame.Meta.TypeVersion != MultiFrameVersionLatest {
+			c.Warning = &sdata.VersionWarning{DataVersion: *frame.Meta.TypeVersion, LibraryVersion: MultiFrameVersionLatest, DataType: data.FrameTypeTimeSeriesMulti}
 		}
 
 		if len(frame.Fields) == 0 { // note: single frame with no fields is acceptable, but is returned before this
