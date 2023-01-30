@@ -12,8 +12,19 @@ type WideFrame struct {
 	*data.Frame
 }
 
-func NewWideFrame() *WideFrame {
-	return &WideFrame{emptyFrameWithTypeMD(FrameTypeNumericWide)}
+var WideFrameVersionLatest = WideFrameVersions()[len(WideFrameVersions())-1]
+
+func WideFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
+}
+
+func NewWideFrame(v data.FrameTypeVersion) (*WideFrame, error) {
+	if v.Greater(WideFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create WideFrame of version %s because it is newer than library version %v", v, WideFrameVersionLatest)
+	}
+	f := data.NewFrame("")
+	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeNumericWide, TypeVersion: &v})
+	return &WideFrame{f}, nil
 }
 
 func (wf *WideFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {

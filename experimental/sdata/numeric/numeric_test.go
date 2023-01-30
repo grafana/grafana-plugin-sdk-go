@@ -28,7 +28,11 @@ func TestSimpleNumeric(t *testing.T) {
 	}
 
 	t.Run("multi frame", func(t *testing.T) {
-		var mFrameNC numeric.CollectionRW = numeric.NewMultiFrame()
+		var mFrameNC numeric.CollectionRW
+		var err error
+		mFrameNC, err = numeric.NewMultiFrame(numeric.MultiFrameVersionLatest)
+		require.NoError(t, err)
+		
 		addMetrics(mFrameNC)
 
 		mc, err := mFrameNC.GetCollection(false)
@@ -38,7 +42,11 @@ func TestSimpleNumeric(t *testing.T) {
 	})
 
 	t.Run("wide frame", func(t *testing.T) {
-		var wFrameNC numeric.CollectionRW = numeric.NewWideFrame()
+		var wFrameNC numeric.CollectionRW
+		var err error
+		wFrameNC, err = numeric.NewWideFrame(numeric.WideFrameVersionLatest)
+		require.NoError(t, err)
+
 		addMetrics(wFrameNC)
 
 		wc, err := wFrameNC.GetCollection(false)

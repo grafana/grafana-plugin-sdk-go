@@ -11,10 +11,19 @@ const FrameTypeNumericMulti = "numeric_multi"
 
 type MultiFrame []*data.Frame
 
-func NewMultiFrame() *MultiFrame {
-	return &MultiFrame{
-		emptyFrameWithTypeMD(FrameTypeNumericMulti),
+var MultiFrameVersionLatest = MultiFrameVersions()[len(MultiFrameVersions())-1]
+
+func MultiFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
+}
+
+func NewMultiFrame(v data.FrameTypeVersion) (*MultiFrame, error) {
+	if v.Greater(MultiFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create MultiFrame of version %s because it is newer than library version %v", v, MultiFrameVersionLatest)
 	}
+	return &MultiFrame{
+		emptyFrameWithTypeMD(data.FrameTypeNumericMulti, v),
+	}, nil
 }
 
 func (mf *MultiFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
