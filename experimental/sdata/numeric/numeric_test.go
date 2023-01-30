@@ -32,10 +32,11 @@ func TestSimpleNumeric(t *testing.T) {
 		var err error
 		mFrameNC, err = numeric.NewMultiFrame(numeric.MultiFrameVersionLatest)
 		require.NoError(t, err)
-		
+
 		addMetrics(mFrameNC)
 
 		mc, err := mFrameNC.GetCollection(false)
+		require.NoError(t, mc.Warning)
 		require.Nil(t, err)
 		require.Nil(t, mc.RemainderIndices)
 		require.Equal(t, expectedRefs, mc.Refs)
@@ -50,6 +51,7 @@ func TestSimpleNumeric(t *testing.T) {
 		addMetrics(wFrameNC)
 
 		wc, err := wFrameNC.GetCollection(false)
+		require.NoError(t, wc.Warning)
 		require.Nil(t, err)
 		require.Nil(t, wc.RemainderIndices)
 		require.Equal(t, expectedRefs, wc.Refs)
@@ -59,11 +61,12 @@ func TestSimpleNumeric(t *testing.T) {
 			Frame: data.NewFrame("",
 				data.NewField("os.cpu", nil, []float64{1, 2}),
 				data.NewField("host", nil, []string{"a", "b"}),
-			),
+			).SetMeta(&data.FrameMeta{Type: data.FrameTypeNumericLong, TypeVersion: &numeric.LongFrameVersionLatest}),
 		}
 		var lcr numeric.CollectionReader = lfn
 
 		lc, err := lcr.GetCollection(false)
+		require.NoError(t, lc.Warning)
 		require.Nil(t, err)
 		require.Nil(t, lc.RemainderIndices)
 		require.Equal(t, expectedRefs, lc.Refs)

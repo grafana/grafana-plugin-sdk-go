@@ -7,8 +7,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-const FrameTypeNumericMulti = "numeric_multi"
-
 type MultiFrame []*data.Frame
 
 var MultiFrameVersionLatest = MultiFrameVersions()[len(MultiFrameVersions())-1]
@@ -46,7 +44,8 @@ func (mf *MultiFrame) AddMetric(metricName string, l data.Labels, value interfac
 	}
 
 	*mf = append(*mf, data.NewFrame("", field).SetMeta(&data.FrameMeta{
-		Type: data.FrameType(FrameTypeNumericMulti), // TODO: make type
+		Type:        data.FrameType(data.FrameTypeNumericMulti),
+		TypeVersion: (*mf)[0].Meta.TypeVersion,
 	}))
 
 	return nil
@@ -86,6 +85,18 @@ func validateAndGetRefsMulti(mf *MultiFrame, validateData bool) (Collection, err
 	var c Collection
 
 	for _, frame := range *mf {
+		if !frameHasType(frame, data.FrameTypeNumericMulti) {
+			return c, fmt.Errorf("frame has wrong type, expected NumericMulti but got %q", frame.Meta.Type)
+		}
+
+		if frame.Meta.TypeVersion == nil {
+			return c, fmt.Errorf("frame is missing the type version property")
+		}
+
+		if *frame.Meta.TypeVersion != MultiFrameVersionLatest {
+			c.Warning = &sdata.VersionWarning{DataVersion: *frame.Meta.TypeVersion, LibraryVersion: MultiFrameVersionLatest, DataType: data.FrameTypeNumericMulti}
+		}
+
 		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)
 		if len(valueFields) == 0 {
 			continue

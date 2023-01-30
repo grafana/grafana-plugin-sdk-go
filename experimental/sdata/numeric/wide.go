@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
 const FrameTypeNumericWide = "numeric_wide"
@@ -57,6 +58,18 @@ func validateAndGetRefsWide(wf *WideFrame, validateData bool) (Collection, error
 	}
 
 	var c Collection
+
+	if !frameHasType(wf.Frame, data.FrameTypeNumericWide) {
+		return c, fmt.Errorf("frame has wrong type, expected NumericWide but got %q", wf.Meta.Type)
+	}
+
+	if wf.Meta.TypeVersion == nil {
+		return c, fmt.Errorf("frame is missing the type version property")
+	}
+
+	if *wf.Meta.TypeVersion != WideFrameVersionLatest {
+		c.Warning = &sdata.VersionWarning{DataVersion: *wf.Meta.TypeVersion, LibraryVersion: WideFrameVersionLatest, DataType: data.FrameTypeNumericWide}
+	}
 
 	for _, field := range wf.Fields {
 		if !field.Type().Numeric() {

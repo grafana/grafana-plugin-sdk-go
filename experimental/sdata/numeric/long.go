@@ -5,6 +5,7 @@ import (
 	"sort"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
 const FrameTypeNumericLong = "numeric_long"
@@ -36,9 +37,23 @@ func validateAndGetRefsLong(lf *LongFrame, validateData bool) (Collection, error
 	if validateData {
 		panic("validateData option is not implemented")
 	}
+
 	if lf == nil || lf.Frame == nil {
 		return c, fmt.Errorf("nil frame is invalid")
 	}
+
+	if !frameHasType(lf.Frame, data.FrameTypeNumericLong) {
+		return c, fmt.Errorf("frame is missing %s type indicator", data.FrameTypeNumericLong)
+	}
+
+	if lf.Meta.TypeVersion == nil {
+		return c, fmt.Errorf("frame is missing the type version property")
+	}
+
+	if *lf.Meta.TypeVersion != LongFrameVersionLatest {
+		c.Warning = &sdata.VersionWarning{DataVersion: *lf.Meta.TypeVersion, LibraryVersion: LongFrameVersionLatest, DataType: data.FrameTypeNumericLong}
+	}
+
 	stringFieldIdxs, numericFieldIdxs := []int{}, []int{}
 	stringFieldNames, numericFieldNames := []string{}, []string{}
 
