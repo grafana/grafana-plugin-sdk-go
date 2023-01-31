@@ -57,7 +57,5 @@ func TestCanReadBasedOnMeta(t *testing.T) {
 				fmt.Printf("%v %v %v\n", ref.GetMetricName(), ref.GetLabels().String(), *val)
 			}
 		}
-
 	})
-
 }

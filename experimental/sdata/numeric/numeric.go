@@ -43,7 +43,7 @@ func (n MetricRef) GetLabels() data.Labels {
 // true if the value is empty (no field, or zero length field)
 // and an error if the field can not be converted to a *float64.
 func (n MetricRef) NullableFloat64Value() (*float64, bool, error) {
-	if n.ValueField == nil || n.ValueField.Len() != 1 {
+	if n.ValueField.Len() != 1 {
 		return nil, true, nil
 	}
 	f, err := n.ValueField.NullableFloatAt(0)

@@ -98,7 +98,7 @@ func (m MetricRef) NullableFloat64Point(pointIdx int) (time.Time, *float64, erro
 }
 
 func (m MetricRef) NullableFloat64Value(pointIdx int) (*float64, error) {
-	if m.ValueField == nil || m.ValueField.Len() < pointIdx {
+	if m.ValueField.Len() < pointIdx {
 		return nil, fmt.Errorf("pointIdx %v is out of bounds for series", pointIdx)
 	}
 	f, err := m.ValueField.NullableFloatAt(pointIdx)
@@ -109,7 +109,7 @@ func (m MetricRef) NullableFloat64Value(pointIdx int) (*float64, error) {
 }
 
 func (m MetricRef) Time(pointIdx int) (time.Time, error) {
-	if m.TimeField == nil || m.TimeField.Len() < pointIdx {
+	if m.TimeField.Len() < pointIdx {
 		return time.Time{}, fmt.Errorf("pointIdx %v is out of bounds for series", pointIdx)
 	}
 	ti := m.TimeField.At(pointIdx)
