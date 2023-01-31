@@ -3,6 +3,7 @@ package timeseries
 import (
 	"fmt"
 	"sort"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
@@ -79,6 +80,51 @@ func (m MetricRef) GetLabels() data.Labels {
 		return m.ValueField.Labels
 	}
 	return nil
+}
+
+// NullableFloat64Point returns the time and *float64 value at the specified index.
+// It will error if the index is out of bounds, or if the value can not be converted
+// to a *float64.
+func (m MetricRef) NullableFloat64Point(pointIdx int) (time.Time, *float64, error) {
+	f, err := m.NullableFloat64Value(pointIdx)
+	if err != nil {
+		return time.Time{}, nil, err
+	}
+	t, err := m.Time(pointIdx)
+	if err != nil {
+		return time.Time{}, nil, err
+	}
+	return t, f, nil
+}
+
+func (m MetricRef) NullableFloat64Value(pointIdx int) (*float64, error) {
+	if m.ValueField == nil || m.ValueField.Len() < pointIdx {
+		return nil, fmt.Errorf("pointIdx %v is out of bounds for series", pointIdx)
+	}
+	f, err := m.ValueField.NullableFloatAt(pointIdx)
+	if err != nil {
+		return nil, err
+	}
+	return f, nil
+}
+
+func (m MetricRef) Time(pointIdx int) (time.Time, error) {
+	if m.TimeField == nil || m.TimeField.Len() < pointIdx {
+		return time.Time{}, fmt.Errorf("pointIdx %v is out of bounds for series", pointIdx)
+	}
+	ti := m.TimeField.At(pointIdx)
+	t, ok := ti.(time.Time)
+	if !ok {
+		return time.Time{}, fmt.Errorf("series field is not of expected type time.Time, got %T", ti)
+	}
+	return t, nil
+}
+
+func (m MetricRef) Len() (int, error) {
+	if m.ValueField.Len() != m.TimeField.Len() {
+		return 0, fmt.Errorf("series has mismatched value and time field lengths")
+	}
+	return m.ValueField.Len(), nil
 }
 
 func sortTimeSeriesMetricRef(refs []MetricRef) {

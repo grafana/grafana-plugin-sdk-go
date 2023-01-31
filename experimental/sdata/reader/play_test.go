@@ -1,6 +1,7 @@
 package reader_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -46,8 +47,15 @@ func TestCanReadBasedOnMeta(t *testing.T) {
 			c, err := nr.GetCollection(false)
 			require.NoError(t, err)
 			require.NoError(t, c.Warning)
-			
+
 			require.Len(t, c.Refs, 2)
+			for _, ref := range c.Refs {
+				_ = ref
+				val, empty, err := ref.NullableFloat64Value()
+				require.NoError(t, err)
+				require.Equal(t, false, empty)
+				fmt.Printf("%v %v %v\n", ref.GetMetricName(), ref.GetLabels().String(), *val)
+			}
 		}
 
 	})
