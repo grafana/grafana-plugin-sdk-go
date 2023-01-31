@@ -166,7 +166,11 @@ func (f *Field) At(idx int) interface{} {
 }
 
 // Len returns the number of elements in the Field.
+// It will return 0 if the field is nil.
 func (f *Field) Len() int {
+	if f == nil || f.vector == nil {
+		return 0
+	}
 	return f.vector.Len()
 }
 
