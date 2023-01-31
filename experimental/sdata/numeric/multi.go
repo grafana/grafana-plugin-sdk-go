@@ -48,7 +48,7 @@ func (mf *MultiFrame) AddMetric(metricName string, l data.Labels, value interfac
 	}
 
 	*mf = append(*mf, data.NewFrame("", field).SetMeta(&data.FrameMeta{
-		Type:        data.FrameType(data.FrameTypeNumericMulti),
+		Type:        data.FrameTypeNumericMulti,
 		TypeVersion: (*mf)[0].Meta.TypeVersion,
 	}))
 

@@ -39,8 +39,7 @@ func TestCanReadBasedOnMeta(t *testing.T) {
 		kind, err := reader.CanReadBasedOnMeta(frames)
 		require.NoError(t, err)
 
-		switch kind {
-		case data.KindNumeric:
+		if kind == data.KindNumeric {
 			nr, err := numeric.CollectionReaderFromFrames(frames)
 			require.NoError(t, err)
 
