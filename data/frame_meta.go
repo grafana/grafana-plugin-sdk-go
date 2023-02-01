@@ -12,8 +12,12 @@ import (
 //
 //swagger:model
 type FrameMeta struct {
-	// Type asserts that the frame matches a known type structure
+	// Type asserts that the frame matches a known type structure.
 	Type FrameType `json:"type,omitempty"`
+
+	// TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane
+	// contract documentation https://github.com/grafana/grafana-plugin-sdk-go/tree/main/data/contract_docs.
+	TypeVersion *FrameTypeVersion `json:"typeVersion,omitempty"`
 
 	// Path is a browsable path on the datasource.
 	Path string `json:"path,omitempty"`

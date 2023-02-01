@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata/timeseries"
 	"github.com/stretchr/testify/require"
 )
@@ -30,9 +29,10 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	}
 
 	t.Run("multi frame", func(t *testing.T) {
-		sc := timeseries.NewMultiFrame()
+		sc, err := timeseries.NewMultiFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 
-		err := sc.AddSeries(metricName, data.Labels{"host": "a"}, timeSlice, valuesA)
+		err = sc.AddSeries(metricName, data.Labels{"host": "a"}, timeSlice, valuesA)
 		require.NoError(t, err)
 
 		err = sc.AddSeries(metricName, data.Labels{"host": "b"}, timeSlice, valuesB)
@@ -40,16 +40,19 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 
 		var r timeseries.CollectionReader = sc
 
-		mFrameRefs, extraFields, err := r.GetMetricRefs(true)
+		c, err := r.GetCollection(true)
+
+		require.NoError(t, c.Warning)
 		require.Nil(t, err)
-		require.Nil(t, extraFields)
-		require.Equal(t, expectedRefs, mFrameRefs)
+		require.Nil(t, c.RemainderIndices)
+		require.Equal(t, expectedRefs, c.Refs)
 	})
 
 	t.Run("wide frame", func(t *testing.T) {
-		sc := timeseries.NewWideFrame()
+		sc, err := timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 
-		err := sc.SetTime("time", timeSlice)
+		err = sc.SetTime("time", timeSlice)
 		require.NoError(t, err)
 
 		err = sc.AddSeries(metricName, data.Labels{"host": "a"}, valuesA)
@@ -60,11 +63,12 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 
 		var r timeseries.CollectionReader = sc
 
-		mFrameRefs, extraFields, err := r.GetMetricRefs(true)
+		c, err := r.GetCollection(true)
 		require.Nil(t, err)
 
-		require.Nil(t, extraFields)
-		require.Equal(t, expectedRefs, mFrameRefs)
+		require.NoError(t, c.Warning)
+		require.Nil(t, c.RemainderIndices)
+		require.Equal(t, expectedRefs, c.Refs)
 	})
 
 	t.Run("long frame", func(t *testing.T) {
@@ -74,16 +78,17 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 			data.NewField("os.cpu", nil, []float64{valuesA[0], valuesB[0],
 				valuesA[1], valuesB[1]}),
 			data.NewField("host", nil, []string{"a", "b", "a", "b"}),
-		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong}),
+		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong, TypeVersion: &data.FrameTypeVersion{0, 1}}),
 		}
 
 		var r timeseries.CollectionReader = ls
 
-		mFrameRefs, extraFields, err := r.GetMetricRefs(true)
+		c, err := r.GetCollection(true)
 		require.Nil(t, err)
 
-		require.Nil(t, extraFields)
-		require.Equal(t, expectedRefs, mFrameRefs)
+		require.NoError(t, c.Warning)
+		require.Nil(t, c.RemainderIndices)
+		require.Equal(t, expectedRefs, c.Refs)
 	})
 }
 
@@ -94,16 +99,23 @@ func addFields(frame *data.Frame, fields ...*data.Field) *data.Frame {
 
 func TestEmptyFromNew(t *testing.T) {
 	var multi, wide, long timeseries.CollectionReader
+	var err error
 
-	multi = timeseries.NewMultiFrame()
-	wide = timeseries.NewWideFrame()
-	long = timeseries.NewLongFrame()
+	multi, err = timeseries.NewMultiFrame(timeseries.MultiFrameVersionLatest)
+	require.NoError(t, err)
 
-	emptyReqs := func(refs []timeseries.MetricRef, ignored []sdata.FrameFieldIndex, err error) {
+	wide, err = timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+	require.NoError(t, err)
+
+	long, err = timeseries.NewLongFrame(timeseries.LongFrameVersionLatest)
+	require.NoError(t, err)
+
+	emptyReqs := func(c timeseries.Collection, err error) {
 		require.NoError(t, err)
-		require.Nil(t, ignored)
-		require.NotNil(t, refs)
-		require.Len(t, refs, 0)
+		require.Nil(t, c.RemainderIndices)
+		require.NotNil(t, c.Refs)
+		require.Len(t, c.Refs, 0)
+		require.NoError(t, c.Warning)
 	}
 
 	viaFrames := func(r timeseries.CollectionReader) {
@@ -112,26 +124,26 @@ func TestEmptyFromNew(t *testing.T) {
 			r, err := timeseries.CollectionReaderFromFrames(frames)
 			require.NoError(t, err)
 
-			refs, ignored, err := r.GetMetricRefs(true)
-			emptyReqs(refs, ignored, err)
+			c, err := r.GetCollection(true)
+			emptyReqs(c, err)
 		})
 	}
 
 	t.Run("multi", func(t *testing.T) {
-		refs, ignored, err := multi.GetMetricRefs(true)
-		emptyReqs(refs, ignored, err)
+		c, err := multi.GetCollection(true)
+		emptyReqs(c, err)
 		viaFrames(multi)
 	})
 
 	t.Run("wide", func(t *testing.T) {
-		refs, ignored, err := wide.GetMetricRefs(true)
-		emptyReqs(refs, ignored, err)
+		c, err := wide.GetCollection(true)
+		emptyReqs(c, err)
 		viaFrames(wide)
 	})
 
 	t.Run("long", func(t *testing.T) {
-		refs, ignored, err := long.GetMetricRefs(true)
-		emptyReqs(refs, ignored, err)
+		c, err := long.GetCollection(true)
+		emptyReqs(c, err)
 		viaFrames(long)
 	})
 }

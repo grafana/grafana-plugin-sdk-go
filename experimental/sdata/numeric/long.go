@@ -14,26 +14,52 @@ type LongFrame struct {
 	*data.Frame
 }
 
-func NewLongFrame() *LongFrame {
-	return &LongFrame{emptyFrameWithTypeMD(FrameTypeNumericLong)}
+func (lf *LongFrame) Frames() data.Frames {
+	return data.Frames{lf.Frame}
 }
 
-func (lf *LongFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+var LongFrameVersionLatest = LongFrameVersions()[len(LongFrameVersions())-1]
+
+func LongFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
+}
+
+func NewLongFrame(v data.FrameTypeVersion) (*LongFrame, error) {
+	if v.Greater(LongFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create LongFrame of version %s because it is newer than library version %v", v, LongFrameVersionLatest)
+	}
+	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeNumericLong, v)}, nil
+}
+
+func (lf *LongFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsLong(lf, validateData)
 }
 
 // TODO: Update with current rules to match(ish) time series
-func validateAndGetRefsLong(lf *LongFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsLong(lf *LongFrame, validateData bool) (Collection, error) {
+	var c Collection
 	if validateData {
 		panic("validateData option is not implemented")
 	}
+
 	if lf == nil || lf.Frame == nil {
-		return nil, nil, fmt.Errorf("nil frame is invalid")
+		return c, fmt.Errorf("nil frame is invalid")
 	}
+
+	if !frameHasType(lf.Frame, data.FrameTypeNumericLong) {
+		return c, fmt.Errorf("frame is missing %s type indicator", data.FrameTypeNumericLong)
+	}
+
+	if lf.Meta.TypeVersion == nil {
+		return c, fmt.Errorf("frame is missing the type version property")
+	}
+
+	if *lf.Meta.TypeVersion != LongFrameVersionLatest {
+		c.Warning = &sdata.VersionWarning{DataVersion: *lf.Meta.TypeVersion, LibraryVersion: LongFrameVersionLatest, DataType: data.FrameTypeNumericLong}
+	}
+
 	stringFieldIdxs, numericFieldIdxs := []int{}, []int{}
 	stringFieldNames, numericFieldNames := []string{}, []string{}
-
-	refs := []MetricRef{}
 
 	for i, field := range lf.Fields {
 		fType := field.Type()
@@ -61,13 +87,13 @@ func validateAndGetRefsLong(lf *LongFrame, validateData bool) ([]MetricRef, []sd
 			field.Name = numericFieldNames[i]
 			field.Labels = l
 			field.Set(0, lf.Fields[fieldIdx].At(rowIdx))
-			refs = append(refs, MetricRef{
+			c.Refs = append(c.Refs, MetricRef{
 				ValueField: field,
 			})
 		}
 	}
-	sortNumericMetricRef(refs)
-	return refs, nil, nil
+	sortNumericMetricRef(c.Refs)
+	return c, nil
 }
 
 func sortNumericMetricRef(refs []MetricRef) {

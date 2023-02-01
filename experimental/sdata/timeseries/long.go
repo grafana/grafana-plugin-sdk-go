@@ -13,63 +13,81 @@ import (
 // do not have a native concept of Labels.
 type LongFrame []*data.Frame
 
-func NewLongFrame() *LongFrame { // possible TODO: argument BoolAsMetric
-	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong)}
+var LongFrameVersionLatest = LongFrameVersions()[len(LongFrameVersions())-1]
+
+func LongFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
 }
 
-func (ls *LongFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func NewLongFrame(v data.FrameTypeVersion) (*LongFrame, error) {
+	if v.Greater(LongFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create LongFrame of version %s because it is newer than library version %v", v, LongFrameVersionLatest)
+	}
+	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong, v)}, nil
+}
+
+func (ls *LongFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsLong(ls, validateData, true)
 }
 
-func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collection, error) {
+	var c Collection
 	switch {
 	case ls == nil:
-		return nil, nil, fmt.Errorf("frames may not be nil")
+		return c, fmt.Errorf("frames may not be nil")
 	case len(*ls) == 0:
-		return nil, nil, fmt.Errorf("missing frame, must be at least one frame")
+		return c, fmt.Errorf("missing frame, must be at least one frame")
 	}
 
 	frame := (*ls)[0]
 
 	if frame == nil {
-		return nil, nil, fmt.Errorf("frame 0 must not be nil")
+		return c, fmt.Errorf("frame 0 must not be nil")
 	}
 
 	if !frameHasType(frame, data.FrameTypeTimeSeriesLong) {
-		return nil, nil, fmt.Errorf("frame 0 is missing long type indicator")
+		return c, fmt.Errorf("frame 0 is missing long type indicator")
 	}
 
-	var ignoredFields []sdata.FrameFieldIndex
+	if frame.Meta.TypeVersion == nil {
+		return c, fmt.Errorf("frame 0 is missing the type version property")
+	}
+
+	if *frame.Meta.TypeVersion != LongFrameVersionLatest {
+		c.Warning = &sdata.VersionWarning{DataVersion: *frame.Meta.TypeVersion, LibraryVersion: LongFrameVersionLatest, DataType: data.FrameTypeTimeSeriesLong}
+	}
+
 	if len(frame.Fields) == 0 { // empty response
-		if err := ignoreAdditionalFrames("additional frame on empty response", *ls, &ignoredFields); err != nil {
-			return nil, nil, err
+		if err := ignoreAdditionalFrames("additional frame on empty response", *ls, &c.RemainderIndices); err != nil {
+			return c, err
 		}
-		return []MetricRef{}, ignoredFields, nil
+		// Empty Response
+		c.Refs = []MetricRef{}
+		return c, nil
 	}
 
 	if err := malformedFrameCheck(0, frame); err != nil {
-		return nil, nil, err
+		return c, err
 	}
 
 	// metricName/labels -> SeriesRef
 	mm := make(map[string]map[string]MetricRef)
 
-	timeField, ignoredTimedFields, err := seriesCheckSelectTime(0, frame)
+	timeField, remainderTimeFields, err := seriesCheckSelectTime(0, frame)
 	if err != nil {
-		return nil, nil, err
+		return c, err
 	}
-	if ignoredTimedFields != nil {
-		ignoredFields = append(ignoredFields, ignoredTimedFields...)
+	if remainderTimeFields != nil {
+		c.RemainderIndices = append(c.RemainderIndices, remainderTimeFields...)
 	}
 
 	valueFieldIndices := frame.TypeIndices(sdata.ValidValueFields()...) // TODO switch on bool type option
 	if len(valueFieldIndices) == 0 {
-		return nil, nil, fmt.Errorf("frame is missing a numeric value field")
+		return c, fmt.Errorf("frame is missing a numeric value field")
 	}
 
 	factorFieldIndices := frame.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
 
-	var refs []MetricRef
 	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) error {
 		if mm[metricName] == nil {
 			mm[metricName] = make(map[string]MetricRef)
@@ -86,7 +104,7 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) ([]Metric
 			ref.ValueField.Labels = l
 
 			mm[metricName][lbStr] = ref
-			refs = append(refs, ref)
+			c.Refs = append(c.Refs, ref)
 		} else {
 			if validateData && ref.TimeField.Len() > 1 {
 				prevTime := ref.TimeField.At(ref.TimeField.Len() - 1).(time.Time)
@@ -113,27 +131,27 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) ([]Metric
 			for _, vFieldIdx := range valueFieldIndices {
 				valueField := frame.Fields[vFieldIdx]
 				if err := appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx)); err != nil {
-					return nil, nil, err
+					return c, err
 				}
 			}
 		}
-		sortTimeSeriesMetricRef(refs)
+		sortTimeSeriesMetricRef(c.Refs)
 	}
 
 	// TODO this is fragile if new types are added
 	otherFields := frame.TypeIndices(data.FieldTypeNullableTime)
 	for _, fieldIdx := range otherFields {
-		ignoredFields = append(ignoredFields, sdata.FrameFieldIndex{
+		c.RemainderIndices = append(c.RemainderIndices, sdata.FrameFieldIndex{
 			FrameIdx: 0, FieldIdx: fieldIdx,
 			Reason: fmt.Sprintf("unsupported field type %v", frame.Fields[fieldIdx].Type())},
 		)
 	}
 
-	if err := ignoreAdditionalFrames("additional frame", *ls, &ignoredFields); err != nil {
-		return nil, nil, err
+	if err := ignoreAdditionalFrames("additional frame", *ls, &c.RemainderIndices); err != nil {
+		return c, err
 	}
 
-	return refs, ignoredFields, nil
+	return c, nil
 }
 
 func (ls *LongFrame) Frames() []*data.Frame {

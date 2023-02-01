@@ -1,6 +1,7 @@
 # Data Plane Contract - Technical Specification
 
 Status: Draft
+Version: 0.1
 
 ## Doc Objective
 
@@ -80,6 +81,25 @@ However, it needs to be possible to add support for this case. For now, the foll
 * Per data type, within a response, only one format should be used. For example: There may be TimeSeriesWide and NumericLong, but there should _not_ be TimeSeriesWide and TimeSeriesLong.
 * The borders between the types are derived from adjacent frames (within the array of frames) that share the same data type.
 * If a reader does not opt-in into multi-type responses, it should be able to get the first data type that matches what the reader is looking for.
+
+## Versioning
+
+An object of this contract is to be as stable as possible. When `1.0` is reached, changes should be limited to enhancements until a `2.0` version, which is something that should generally be avoided in datatype versions.
+
+### Contract Versioning
+
+The contract version is only for concepts impacting the overarching concepts of the contract such as error handling or multi data type responses.
+
+The addition of new datatypes, or changing of datatypes does not impact the contract version.
+
+### Datatype Versions
+
+Each individual datatype is given a version in major/minor form (x.x). The version is located in the `Frame.Meta.TypeVersion` property.
+
+* Version `0.0` means the datatype is either pre contract, or in very early development.
+* Version `0.x` means the datatype is well defined in the contract, but may change based on things learned for wider usage.
+* Version `1.0` should be a stable data type, and should have no changes from the previous version
+* Minor version changes beyond `1.0` must be backward compatible for data reader implementations. They also must be forward compatible with other `1.x` versions for readers as well (but without enhancement support).
 
 ## Considerations to Add / Todo
 
