@@ -96,7 +96,11 @@ func TestFieldTypeToJSON(t *testing.T) {
 	assert.Equal(t, data.FieldTypeInt8, v.FType)
 	assert.Equal(t, data.FieldTypeTime, *v.FType2)
 
-	field := newField("enum", data.FieldTypeEnum, []uint16{
+	// field := newField("enum", data.FieldTypeEnum, []uint16{
+	// 	1, 2, 2, 1, 1,
+	// })
+
+	field := newField("timeOffset", data.FieldTypeTimeOffset, []int64{
 		1, 2, 2, 1, 1,
 	})
 
@@ -224,7 +228,8 @@ func TestGenerateGenericArrowCode(t *testing.T) {
 		"uint8", "uint16", "uint32", "uint64",
 		"int8", "int16", "int32", "int64",
 		"float32", "float64", "string", "bool",
-		"enum", // Maps to uint16
+		"enum",       // Maps to uint16
+		"timeOffset", // Maps to int64
 	}
 
 	code := `

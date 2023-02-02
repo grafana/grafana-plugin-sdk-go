@@ -257,6 +257,32 @@ func goldenDF() *data.Frame {
 			timePtr(time.Unix(0, maxEcma6Int)),
 			timePtr(time.Unix(0, math.MaxInt64)),
 		}),
+		newField("timeOffset", data.FieldTypeTimeOffset, []int64{
+			1, 2, 2, 1, 1,
+		}).SetConfig(&data.FieldConfig{
+			TypeConfig: &data.FieldTypeConfig{
+				TimeOffset: &data.TimeOffsetFieldConfig{
+					StartTime:  123456789, // 1970
+					NanoOffset: 20000,
+					OffsetUnit: "ms",
+				},
+			},
+		}),
+		newField("nullableTimeOffset", data.FieldTypeNullableTimeOffset, []*int64{
+			int64Ptr(1),
+			int64Ptr(2),
+			nil,
+			int64Ptr(1),
+			int64Ptr(1),
+		}).SetConfig(&data.FieldConfig{
+			TypeConfig: &data.FieldTypeConfig{
+				TimeOffset: &data.TimeOffsetFieldConfig{
+					StartTime:  123456789, // 1970
+					NanoOffset: 20000,
+					OffsetUnit: "ns",
+				},
+			},
+		}),
 		data.NewField("json", nil, []json.RawMessage{
 			json.RawMessage("{\"a\":1}"),
 			json.RawMessage("[1,2,3]"),

@@ -72,7 +72,11 @@ type FieldConfig struct {
 
 // FieldTypeConfig has type specific configs, only one should be active at a time
 type FieldTypeConfig struct {
+	// Enum field config
 	Enum *EnumFieldConfig `json:"enum,omitempty"`
+
+	// TimeOffset field config
+	TimeOffset *TimeOffsetFieldConfig `json:"timeOffset,omitempty"`
 }
 
 // Enum field config
@@ -89,6 +93,18 @@ type EnumFieldConfig struct {
 
 	// Description of the enum state
 	Description []string `json:"description,omitempty"`
+}
+
+// Time offset field config
+type TimeOffsetFieldConfig struct {
+	// Unix epoch mills start time
+	StartTime int64 `json:"startTime,omitempty"`
+
+	// added to start time (nanoseconds)
+	NanoOffset int64 `json:"nanoOffset,omitempty"`
+
+	// “ns”, “us” (or “µs”), “ms”, “s”, “m”, “h”.
+	OffsetUnit string `json:"offsetUnit"`
 }
 
 // ExplicitNullValue is the string representation for null

@@ -855,26 +855,6 @@ func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*nullableBoo
 	return arr, nil
 }
 
-func writeArrowDataEnum(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
-	var entities *fieldEntityLookup
-	count := col.Len()
-
-	v := array.NewUint16Data(col.Data())
-	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
-		if i > 0 {
-			stream.WriteRaw(",")
-		}
-		if col.IsNull(i) {
-			stream.WriteNil()
-			continue
-		}
-		stream.WriteUint16(v.Value(i))
-	}
-	stream.WriteArrayEnd()
-	return entities
-}
-
 func readEnumVectorJSON(iter *jsoniter.Iterator, size int) (*enumVector, error) {
 	arr := newEnumVector(size)
 	for i := 0; i < size; i++ {
@@ -917,6 +897,53 @@ func readNullableEnumVectorJSON(iter *jsoniter.Iterator, size int) (*nullableEnu
 
 	if iter.ReadArray() {
 		iter.ReportError("readNullableEnumVectorJSON", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func readTimeOffsetVectorJSON(iter *jsoniter.Iterator, size int) (*timeOffsetVector, error) {
+	arr := newTimeOffsetVector(size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readTimeOffsetVectorJSON", "expected array")
+			return nil, iter.Error
+		}
+
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := iter.ReadInt64()
+			arr.Set(i, v)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("read", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func readNullableTimeOffsetVectorJSON(iter *jsoniter.Iterator, size int) (*nullableTimeOffsetVector, error) {
+	arr := newNullableTimeOffsetVector(size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readNullableTimeOffsetVectorJSON", "expected array")
+			return nil, iter.Error
+		}
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := iter.ReadInt64()
+			arr.Set(i, &v)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("readNullableTimeOffsetVectorJSON", "expected close array")
 		return nil, iter.Error
 	}
 	return arr, nil

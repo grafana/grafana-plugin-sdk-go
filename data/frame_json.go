@@ -22,6 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
+const simpleTypeTimeOffset = "timeOffset"
 const simpleTypeEnum = "enum"
 const simpleTypeOther = "other"
 
@@ -418,7 +419,7 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			return int32(iV), err
 		}
 
-	case FieldTypeInt64:
+	case FieldTypeInt64, FieldTypeTimeOffset: // time offset is backed by int64
 		convert = func(v interface{}) (interface{}, error) {
 			return int64FromJSON(v)
 		}
@@ -544,6 +545,10 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 		return readEnumVectorJSON(iter, size)
 	case FieldTypeNullableEnum:
 		return readNullableEnumVectorJSON(iter, size)
+	case FieldTypeTimeOffset:
+		return readTimeOffsetVectorJSON(iter, size)
+	case FieldTypeNullableTimeOffset:
+		return readNullableTimeOffsetVectorJSON(iter, size)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }
@@ -565,6 +570,8 @@ func getTypeScriptTypeString(t FieldType) (string, bool) {
 		return simpleTypeEnum, true
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return simpleTypeOther, true
+	case FieldTypeTimeOffset, FieldTypeNullableTimeOffset:
+		return simpleTypeTimeOffset, true
 	}
 	return "", false
 }
@@ -591,6 +598,9 @@ func getFieldTypeForArrow(t arrow.DataType, tsType string) FieldType {
 	case arrow.INT32:
 		return FieldTypeInt32
 	case arrow.INT64:
+		if tsType == simpleTypeTimeOffset {
+			return FieldTypeTimeOffset
+		}
 		return FieldTypeInt64
 	case arrow.FLOAT32:
 		return FieldTypeFloat32

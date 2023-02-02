@@ -95,6 +95,11 @@ func vectorFieldType(v vector) FieldType {
 		return FieldTypeEnum
 	case *nullableEnumVector:
 		return FieldTypeNullableEnum
+
+	case *timeOffsetVector:
+		return FieldTypeTimeOffset
+	case *nullableTimeOffsetVector:
+		return FieldTypeNullableTimeOffset
 	}
 
 	return FieldTypeUnknown
@@ -180,6 +185,11 @@ func NewFieldFromFieldType(p FieldType, n int) *Field {
 		f.vector = newTimeTimeVector(n)
 	case FieldTypeNullableTime:
 		f.vector = newNullableTimeTimeVector(n)
+
+	case FieldTypeTimeOffset:
+		f.vector = newTimeOffsetVector(n)
+	case FieldTypeNullableTimeOffset:
+		f.vector = newNullableTimeOffsetVector(n)
 
 	case FieldTypeJSON:
 		f.vector = newJsonRawMessageVector(n)
