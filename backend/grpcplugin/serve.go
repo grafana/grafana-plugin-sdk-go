@@ -13,6 +13,10 @@ type ServeOpts struct {
 	DataServer        DataServer
 	StreamServer      StreamServer
 
+	// Extra plugins to serve
+	// Entries may be silently overwritten if colliding with any defined in this struct
+	Extra plugin.PluginSet
+
 	// GRPCServer factory method for creating GRPC server.
 	// If nil, the default one will be used.
 	GRPCServer func(options []grpc.ServerOption) *grpc.Server
@@ -21,7 +25,10 @@ type ServeOpts struct {
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
 	versionedPlugins := make(map[int]plugin.PluginSet)
-	pSet := make(plugin.PluginSet)
+	pSet := make(plugin.PluginSet, len(opts.Extra)+4)
+	for k, v := range opts.Extra {
+		pSet[k] = v
+	}
 
 	if opts.DiagnosticsServer != nil {
 		pSet["diagnostics"] = &DiagnosticsGRPCPlugin{

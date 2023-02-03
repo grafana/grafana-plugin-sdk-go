@@ -26,6 +26,31 @@ type GRPCSettings struct {
 	MaxSendMsgSize int
 }
 
+func (g *GRPCSettings) ServerOptions() []grpc.ServerOption {
+	grpc_prometheus.EnableHandlingTimeHistogram()
+
+	maxRecv := g.MaxReceiveMsgSize
+	if maxRecv <= 0 {
+		maxRecv = defaultServerMaxReceiveMessageSize
+	}
+
+	opts := []grpc.ServerOption{
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			grpc_prometheus.StreamServerInterceptor,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			grpc_prometheus.UnaryServerInterceptor,
+		)),
+		grpc.MaxRecvMsgSize(maxRecv),
+	}
+
+	if g.MaxSendMsgSize > 0 {
+		opts = append(opts, grpc.MaxSendMsgSize(g.MaxSendMsgSize))
+	}
+
+	return opts
+}
+
 // ServeOpts options for serving plugins.
 type ServeOpts struct {
 	// CheckHealthHandler handler for health checks.
@@ -50,6 +75,10 @@ type ServeOpts struct {
 func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	pluginOpts := grpcplugin.ServeOpts{
 		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
+
+		GRPCServer: func(serverOpts []grpc.ServerOption) *grpc.Server {
+			return grpc.NewServer(append(serverOpts, opts.GRPCSettings.ServerOptions()...)...)
+		},
 	}
 
 	if opts.CallResourceHandler != nil {
@@ -63,37 +92,13 @@ func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	if opts.StreamHandler != nil {
 		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
 	}
+
 	return pluginOpts
 }
 
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
-	grpc_prometheus.EnableHandlingTimeHistogram()
-	grpcMiddlewares := []grpc.ServerOption{
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			grpc_prometheus.StreamServerInterceptor,
-		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_prometheus.UnaryServerInterceptor,
-		)),
-	}
-
-	if opts.GRPCSettings.MaxReceiveMsgSize <= 0 {
-		opts.GRPCSettings.MaxReceiveMsgSize = defaultServerMaxReceiveMessageSize
-	}
-
-	grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize)}, grpcMiddlewares...)
-
-	if opts.GRPCSettings.MaxSendMsgSize > 0 {
-		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxSendMsgSize(opts.GRPCSettings.MaxSendMsgSize)}, grpcMiddlewares...)
-	}
-
 	pluginOpts := asGRPCServeOpts(opts)
-	pluginOpts.GRPCServer = func(opts []grpc.ServerOption) *grpc.Server {
-		opts = append(opts, grpcMiddlewares...)
-		return grpc.NewServer(opts...)
-	}
-
 	return grpcplugin.Serve(pluginOpts)
 }
 
