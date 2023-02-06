@@ -62,7 +62,7 @@ func TestSimpleNumeric(t *testing.T) {
 				data.NewField("os.cpu", nil, []float64{1, 2}),
 				data.NewField("host", nil, []string{"a", "b"}),
 			).SetMeta(&data.FrameMeta{Type: data.FrameTypeNumericLong,
-				TypeVersion: &numeric.LongFrameVersionLatest}),
+				TypeVersion: numeric.LongFrameVersionLatest}),
 		}
 		var lcr numeric.CollectionReader = lfn
 

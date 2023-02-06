@@ -150,7 +150,7 @@ func TestMultiFrameSeriesValidate_WithFrames_InvalidCases(t *testing.T) {
 }
 
 func emptyFrameWithTypeMD(t data.FrameType, v data.FrameTypeVersion) *data.Frame {
-	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t, TypeVersion: &v})
+	return data.NewFrame("").SetMeta(&data.FrameMeta{Type: t, TypeVersion: v})
 }
 
 var _ = emptyFrameWithTypeMD(data.FrameTypeUnknown, data.FrameTypeVersion{0, 0}) // linter

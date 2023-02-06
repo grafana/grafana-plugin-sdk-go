@@ -93,12 +93,8 @@ func validateAndGetRefsMulti(mf *MultiFrame, validateData bool) (Collection, err
 			return c, fmt.Errorf("frame has wrong type, expected NumericMulti but got %q", frame.Meta.Type)
 		}
 
-		if frame.Meta.TypeVersion == nil {
-			return c, fmt.Errorf("frame is missing the type version property")
-		}
-
-		if *frame.Meta.TypeVersion != MultiFrameVersionLatest {
-			c.Warning = &sdata.VersionWarning{DataVersion: *frame.Meta.TypeVersion, LibraryVersion: MultiFrameVersionLatest, DataType: data.FrameTypeNumericMulti}
+		if frame.Meta.TypeVersion != MultiFrameVersionLatest {
+			c.Warning = &sdata.VersionWarning{DataVersion: frame.Meta.TypeVersion, LibraryVersion: MultiFrameVersionLatest, DataType: data.FrameTypeNumericMulti}
 		}
 
 		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)
