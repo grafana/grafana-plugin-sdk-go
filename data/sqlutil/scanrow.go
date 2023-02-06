@@ -54,7 +54,7 @@ func (s *ScanRow) NewScannableRow() []interface{} {
 // Applicable converters will substitute the SQL scan type with the one provided by the converter.
 // The list of returned converters is the same length as the SQL rows and corresponds with the rows at the same index. (e.g. value at slice element 3 corresponds with the converter at slice element 3)
 // If no converter is provided for a row that has a type that does not fit into a dataframe, it is skipped.
-func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Converter) (*rowConverter, error) {
+func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Converter) (*RowConverter, error) {
 	// In the future we can probably remove this restriction. But right now we map names to Arrow Field Names.
 	// Arrow Field names must be unique: https://github.com/grafana/grafana-plugin-sdk-go/issues/59
 	seen := map[string]int{}
@@ -97,25 +97,25 @@ func scanKind(v Converter, t reflect.Type) reflect.Type {
 	return t
 }
 
-type rowConverter struct {
+type RowConverter struct {
 	Row        *ScanRow
 	Converters []Converter
 }
 
-func NewRowConverter() *rowConverter {
-	return &rowConverter{Row: NewScanRow(0)}
+func NewRowConverter() *RowConverter {
+	return &RowConverter{Row: NewScanRow(0)}
 }
 
-func (r *rowConverter) append(name string, kind reflect.Type, conv Converter) {
+func (r *RowConverter) append(name string, kind reflect.Type, conv Converter) {
 	r.Row.Append(name, kind)
 	r.Converters = append(r.Converters, conv)
 }
 
-func (r *rowConverter) hasConverter(i int) bool {
+func (r *RowConverter) hasConverter(i int) bool {
 	return len(r.Converters) >= i
 }
 
-func (r *rowConverter) NewScannableRow() []any {
+func (r *RowConverter) NewScannableRow() []any {
 	return r.Row.NewScannableRow()
 }
 
