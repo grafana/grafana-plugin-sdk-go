@@ -143,12 +143,7 @@ func (p FrameType) IsNumeric() bool {
 }
 
 func (p FrameType) IsLogs() bool {
-	switch p {
-	case
-		FrameTypeLogLines:
-		return true
-	}
-	return false
+	return p == FrameTypeLogLines
 }
 
 // Kind returns the FrameTypeKind from the FrameType.
