@@ -57,6 +57,9 @@ const (
 	//  * when "directory" it can be nested
 	FrameTypeDirectoryListing = "directory-listing"
 
+	// FrameTypeLogLines represents the logs data format
+	FrameTypeLogLines = "log-lines"
+
 	// FrameTypeTable represents an arbitrary table structure with no constraints
 	FrameTypeTable = "table"
 )
