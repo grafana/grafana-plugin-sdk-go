@@ -69,20 +69,21 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 	// For each column, define a concrete type in the list of values
 	for i, colType := range colTypes {
 		colName := colNames[i]
+		colType = columnType(colType)
 		nullable, ok := colType.Nullable()
 		if !ok {
 			nullable = true // If we don't know if it is nullable, assume it is
 		}
 
 		for _, v := range converters {
-			if m := match(v, colType, colName); m {
+			if m := match(v, colType.DatabaseTypeName(), colName); m {
 				rc.append(colName, scanType(v, colType.ScanType()), v)
 				break
 			}
 		}
 
 		if !rc.hasConverter(i) {
-			v := NewDefaultConverter(colType.Name(), nullable, colType.ScanType())
+			v := NewDefaultConverter(colName, nullable, colType.ScanType())
 			rc.append(colName, scanType(v, colType.ScanType()), v)
 		}
 	}
@@ -119,13 +120,14 @@ func (r *RowConverter) NewScannableRow() []any {
 	return r.Row.NewScannableRow()
 }
 
-func match(v Converter, colType *sql.ColumnType, colName string) bool {
-	if v.InputColumnName == colName && v.InputColumnName != "" {
-		return true
+func match(v Converter, dbType string, colName string) bool {
+	return (v.InputColumnName == colName && v.InputColumnName != "") ||
+		v.InputTypeName == dbType || (v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(dbType))
+}
+
+func columnType(colType *sql.ColumnType) *sql.ColumnType {
+	if colType != nil {
+		return colType
 	}
-	if colType == nil {
-		return false
-	}
-	return v.InputTypeName == colType.DatabaseTypeName() ||
-		(v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(colType.DatabaseTypeName()))
+	return &sql.ColumnType{}
 }
