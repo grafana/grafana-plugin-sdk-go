@@ -1,6 +1,8 @@
 package sdata
 
 import (
+	"fmt"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -29,4 +31,27 @@ func (f FrameFieldIndices) Less(i, j int) bool {
 
 func (f FrameFieldIndices) Swap(i, j int) {
 	f[i], f[j] = f[j], f[i]
+}
+
+type VersionWarning struct {
+	DataVersion    data.FrameTypeVersion
+	LibraryVersion data.FrameTypeVersion
+	DataType       data.FrameType
+}
+
+func (vw *VersionWarning) Error() string {
+	var newOld string
+	switch {
+	case vw.DataVersion.Greater(vw.LibraryVersion):
+		newOld = "newer"
+	case vw.DataVersion.Less(vw.LibraryVersion):
+		newOld = "older"
+	default:
+		panic(fmt.Sprintf("VersionWarning created with equal versions data version %s and library version %s", vw.DataVersion, vw.LibraryVersion))
+	}
+	return fmt.Sprintf("datatype %s version %s is %s than library version %s", vw.DataType, vw.DataVersion, newOld, vw.LibraryVersion)
+}
+
+func (vw *VersionWarning) DataNewer() bool {
+	return vw.DataVersion.Greater(vw.LibraryVersion)
 }

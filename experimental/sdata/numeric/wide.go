@@ -13,8 +13,23 @@ type WideFrame struct {
 	*data.Frame
 }
 
-func NewWideFrame() *WideFrame {
-	return &WideFrame{emptyFrameWithTypeMD(FrameTypeNumericWide)}
+func (wf *WideFrame) Frames() data.Frames {
+	return data.Frames{wf.Frame}
+}
+
+var WideFrameVersionLatest = WideFrameVersions()[len(WideFrameVersions())-1]
+
+func WideFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
+}
+
+func NewWideFrame(v data.FrameTypeVersion) (*WideFrame, error) {
+	if v.Greater(WideFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create WideFrame of version %s because it is newer than library version %v", v, WideFrameVersionLatest)
+	}
+	f := data.NewFrame("")
+	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeNumericWide, TypeVersion: &v})
+	return &WideFrame{f}, nil
 }
 
 func (wf *WideFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
@@ -36,24 +51,38 @@ func (wf *WideFrame) AddMetric(metricName string, l data.Labels, value interface
 	return nil
 }
 
-func (wf *WideFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func (wf *WideFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsWide(wf, validateData)
 }
 
 // TODO: Update with current rules to match(ish) time series
-func validateAndGetRefsWide(wf *WideFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsWide(wf *WideFrame, validateData bool) (Collection, error) {
 	if validateData {
 		panic("validateData option is not implemented")
 	}
-	refs := []MetricRef{}
+
+	var c Collection
+
+	if !frameHasType(wf.Frame, data.FrameTypeNumericWide) {
+		return c, fmt.Errorf("frame has wrong type, expected NumericWide but got %q", wf.Meta.Type)
+	}
+
+	if wf.Meta.TypeVersion == nil {
+		return c, fmt.Errorf("frame is missing the type version property")
+	}
+
+	if *wf.Meta.TypeVersion != WideFrameVersionLatest {
+		c.Warning = &sdata.VersionWarning{DataVersion: *wf.Meta.TypeVersion, LibraryVersion: WideFrameVersionLatest, DataType: data.FrameTypeNumericWide}
+	}
+
 	for _, field := range wf.Fields {
 		if !field.Type().Numeric() {
 			continue
 		}
-		refs = append(refs, MetricRef{field})
+		c.Refs = append(c.Refs, MetricRef{field})
 	}
-	sortNumericMetricRef(refs)
-	return refs, nil, nil
+	sortNumericMetricRef(c.Refs)
+	return c, nil
 }
 
 func (wf *WideFrame) Validate() (isEmpty bool, errors []error) {

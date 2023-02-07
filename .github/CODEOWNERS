@@ -2,3 +2,4 @@
 # the repo. Unless a later match takes precedence,
 # these will be requested for review when someone opens a pull request.
 * @grafana/plugins-platform-backend
+data @grafana/data-plane-wg

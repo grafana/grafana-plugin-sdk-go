@@ -1,6 +1,8 @@
 package numeric
 
 import (
+	"fmt"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
@@ -10,13 +12,13 @@ type CollectionWriter interface {
 	SetMetricMD(metricName string, l data.Labels, fc data.FieldConfig)
 }
 
-type Collection interface {
+type CollectionRW interface {
 	CollectionWriter
 	CollectionReader
 }
 
 type CollectionReader interface {
-	GetMetricRefs(validateData bool) (refs []MetricRef, ignoredFieldIndices []sdata.FrameFieldIndex, err error)
+	GetCollection(validateData bool) (Collection, error)
 }
 
 type MetricRef struct {
@@ -35,4 +37,56 @@ func (n MetricRef) GetLabels() data.Labels {
 		return n.ValueField.Labels
 	}
 	return nil
+}
+
+// FloatValue returns the *float64 of the value, a bool that is
+// true if the value is empty (no field, or zero length field)
+// and an error if the field can not be converted to a *float64.
+func (n MetricRef) NullableFloat64Value() (*float64, bool, error) {
+	if n.ValueField.Len() != 1 {
+		return nil, true, nil
+	}
+	f, err := n.ValueField.NullableFloatAt(0)
+	if err != nil {
+		return nil, false, err
+	}
+	return f, false, nil
+}
+
+type Collection struct {
+	Refs             []MetricRef
+	RemainderIndices []sdata.FrameFieldIndex
+	Warning          error
+}
+
+func CollectionReaderFromFrames(frames []*data.Frame) (CollectionReader, error) {
+	if len(frames) == 0 {
+		return nil, fmt.Errorf("must be at least one frame")
+	}
+
+	firstFrame := frames[0]
+	if firstFrame == nil {
+		return nil, fmt.Errorf("nil frames are invalid")
+	}
+	if firstFrame.Meta == nil {
+		return nil, fmt.Errorf("metadata missing from first frame, can not determine type")
+	}
+
+	mt := firstFrame.Meta.Type
+	var tcr CollectionReader
+
+	switch {
+	case mt == data.FrameTypeNumericMulti:
+		mfs := MultiFrame(frames)
+		tcr = &mfs
+	case mt == data.FrameTypeNumericLong:
+		ls := LongFrame{firstFrame}
+		tcr = &ls // TODO change to Frames for extra/ignored data?
+	case mt == data.FrameTypeNumericWide:
+		wfs := WideFrame{firstFrame}
+		tcr = &wfs
+	default:
+		return nil, fmt.Errorf("unsupported time series type %q", mt)
+	}
+	return tcr, nil
 }

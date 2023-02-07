@@ -18,7 +18,6 @@ ignore-words = ["unknwon"]
 disable-all = true
 enable = [
   "bodyclose",
-  "deadcode",
   "depguard",
   "dogsled",
   "errcheck",
@@ -26,7 +25,6 @@ enable = [
   "goconst",
   "gocritic",
   "goimports",
-  "golint",
   "goprintffuncname",
   "gosec",
   "gosimple",
@@ -37,12 +35,10 @@ enable = [
   "rowserrcheck",
   "exportloopref",
   "staticcheck",
-  "structcheck",
   "stylecheck",
   "typecheck",
   "unconvert",
   "unused",
-  "varcheck",
   "whitespace",
   "gocyclo",
   "unparam",

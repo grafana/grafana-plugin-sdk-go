@@ -19,6 +19,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // CheckGoldenFramer calls CheckGoldenDataResponse using a data.Framer instead of a backend.DataResponse.
@@ -209,13 +210,17 @@ func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.
 	fpath := path.Join(dir, name+".jsonc")
 
 	expected, err := readGoldenJSONFile(fpath)
-	assert.NoError(t, err)
 	if err != nil {
-		return
+		if updateFile {
+			err = writeGoldenJSONFile(fpath, dr)
+			require.NoError(t, err)
+			return
+		}
+		require.Fail(t, "Error reading golden JSON file")
 	}
 
 	actual, err := json.Marshal(dr)
-	assert.NoError(t, err)
+	require.NoError(t, err)
 
 	assert.JSONEq(t, expected, string(actual))
 

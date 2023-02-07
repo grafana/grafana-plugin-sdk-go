@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net/http"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -37,9 +38,50 @@ func (fn QueryDataHandlerFunc) QueryData(ctx context.Context, req *QueryDataRequ
 // QueryDataRequest contains a single request which contains multiple queries.
 // It is the input type for a QueryData call.
 type QueryDataRequest struct {
+	// PluginContext the contextual information for the request.
 	PluginContext PluginContext
-	Headers       map[string]string
-	Queries       []DataQuery
+
+	// Headers the environment/metadata information for the request.
+	//
+	// To access forwarded HTTP headers please use
+	// GetHTTPHeaders or GetHTTPHeader.
+	Headers map[string]string
+
+	// Queries the data queries for the request.
+	Queries []DataQuery
+}
+
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
+func (req *QueryDataRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	setHTTPHeaderInStringMap(req.Headers, key, value)
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *QueryDataRequest) DeleteHTTPHeader(key string) {
+	deleteHTTPHeaderInStringMap(req.Headers, key)
+}
+
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
+func (req *QueryDataRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+// GetHTTPHeaders returns HTTP headers.
+func (req *QueryDataRequest) GetHTTPHeaders() http.Header {
+	return getHTTPHeadersFromStringMap(req.Headers)
 }
 
 // DataQuery represents a single query as sent from the frontend.
@@ -99,12 +141,14 @@ func NewQueryDataResponse() *QueryDataResponse {
 // Responses is a map of RefIDs (Unique Query ID) to DataResponses.
 // The QueryData method the QueryDataHandler method will set the RefId
 // property on the DataResponses' frames based on these RefIDs.
+//
 //swagger:model
 type Responses map[string]DataResponse
 
 // DataResponse contains the results from a DataQuery.
 // A map of RefIDs (unique query identifiers) to this type makes up the Responses property of a QueryDataResponse.
 // The Error property is used to allow for partial success responses from the containing QueryDataResponse.
+//
 //swagger:model
 type DataResponse struct {
 	// The data returned from the Query. Each Frame repeats the RefID.
@@ -117,6 +161,7 @@ type DataResponse struct {
 	Status Status
 }
 
+// ErrDataResponse returns an error DataResponse given status and message.
 func ErrDataResponse(status Status, message string) DataResponse {
 	return DataResponse{
 		Error:  errors.New(message),
@@ -147,3 +192,5 @@ type TimeRange struct {
 func (tr TimeRange) Duration() time.Duration {
 	return tr.To.Sub(tr.From)
 }
+
+var _ ForwardHTTPHeaders = (*QueryDataRequest)(nil)

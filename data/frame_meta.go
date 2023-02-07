@@ -9,10 +9,15 @@ import (
 // https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/data.ts#L11
 // NOTE -- in javascript this can accept any `[key: string]: any;` however
 // this interface only exposes the values we want to be exposed
+//
 //swagger:model
 type FrameMeta struct {
-	// Type asserts that the frame matches a known type structure
+	// Type asserts that the frame matches a known type structure.
 	Type FrameType `json:"type,omitempty"`
+
+	// TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane
+	// contract documentation https://github.com/grafana/grafana-plugin-sdk-go/tree/main/data/contract_docs.
+	TypeVersion *FrameTypeVersion `json:"typeVersion,omitempty"`
 
 	// Path is a browsable path on the datasource.
 	Path string `json:"path,omitempty"`
@@ -76,6 +81,8 @@ const (
 )
 
 // DataTopic is used to identify which topic the frame should be assigned to.
+//
+//nolint:revive
 type DataTopic string
 
 // FrameMetaFromJSON creates a QueryResultMeta from a json string

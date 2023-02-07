@@ -7,14 +7,25 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-const FrameTypeNumericMulti = "numeric_multi"
-
 type MultiFrame []*data.Frame
 
-func NewMultiFrame() *MultiFrame {
-	return &MultiFrame{
-		emptyFrameWithTypeMD(FrameTypeNumericMulti),
+func (mf *MultiFrame) Frames() data.Frames {
+	return data.Frames(*mf)
+}
+
+var MultiFrameVersionLatest = MultiFrameVersions()[len(MultiFrameVersions())-1]
+
+func MultiFrameVersions() []data.FrameTypeVersion {
+	return []data.FrameTypeVersion{{0, 1}}
+}
+
+func NewMultiFrame(v data.FrameTypeVersion) (*MultiFrame, error) {
+	if v.Greater(MultiFrameVersionLatest) {
+		return nil, fmt.Errorf("can not create MultiFrame of version %s because it is newer than library version %v", v, MultiFrameVersionLatest)
 	}
+	return &MultiFrame{
+		emptyFrameWithTypeMD(data.FrameTypeNumericMulti, v),
+	}, nil
 }
 
 func (mf *MultiFrame) AddMetric(metricName string, l data.Labels, value interface{}) error {
@@ -37,13 +48,14 @@ func (mf *MultiFrame) AddMetric(metricName string, l data.Labels, value interfac
 	}
 
 	*mf = append(*mf, data.NewFrame("", field).SetMeta(&data.FrameMeta{
-		Type: data.FrameType(FrameTypeNumericMulti), // TODO: make type
+		Type:        data.FrameTypeNumericMulti,
+		TypeVersion: (*mf)[0].Meta.TypeVersion,
 	}))
 
 	return nil
 }
 
-func (mf *MultiFrame) GetMetricRefs(validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func (mf *MultiFrame) GetCollection(validateData bool) (Collection, error) {
 	return validateAndGetRefsMulti(mf, validateData)
 }
 
@@ -53,34 +65,48 @@ func (mf *MultiFrame) SetMetricMD(metricName string, l data.Labels, fc data.Fiel
 
 /*
 Rules:
-- Whenever an error is returned, there are no ignored fields returned
-- Must have at least one frame
-- The first frame must be valid or will error, additional invalid frames with the type indicator will error,
+  - Whenever an error is returned, there are no ignored fields returned
+  - Must have at least one frame
+  - The first frame must be valid or will error, additional invalid frames with the type indicator will error,
     frames without type indicator are ignored
-- A valid individual Frame (in the non empty case) has a numeric field and a type indicator
-- Any nil Frames or Fields will cause an error (e.g. [Frame, Frame, nil, Frame] or [nil])
-- If any frame has fields within the frame of different lengths, an error will be returned
-- If validateData is true, duplicate metricName+Labels will error
-- If all frames and their fields are ignored, and it is not the empty response case, an error is returned
+  - A valid individual Frame (in the non empty case) has a numeric field and a type indicator
+  - Any nil Frames or Fields will cause an error (e.g. [Frame, Frame, nil, Frame] or [nil])
+  - If any frame has fields within the frame of different lengths, an error will be returned
+  - If validateData is true, duplicate metricName+Labels will error
+  - If all frames and their fields are ignored, and it is not the empty response case, an error is returned
 
 Things to decide:
- - Seems like allowing (ignoring) more than 1 row is not a good idea (outside of Long)
- - Will allow for extra frames
+  - Seems like allowing (ignoring) more than 1 row is not a good idea (outside of Long)
+  - Will allow for extra frames
 
 TODO: Change this to follow the above
 */
-func validateAndGetRefsMulti(mf *MultiFrame, validateData bool) ([]MetricRef, []sdata.FrameFieldIndex, error) {
+func validateAndGetRefsMulti(mf *MultiFrame, validateData bool) (Collection, error) {
 	if validateData {
 		panic("validateData option is not implemented")
 	}
-	refs := []MetricRef{}
+
+	var c Collection
+
 	for _, frame := range *mf {
+		if !frameHasType(frame, data.FrameTypeNumericMulti) {
+			return c, fmt.Errorf("frame has wrong type, expected NumericMulti but got %q", frame.Meta.Type)
+		}
+
+		if frame.Meta.TypeVersion == nil {
+			return c, fmt.Errorf("frame is missing the type version property")
+		}
+
+		if *frame.Meta.TypeVersion != MultiFrameVersionLatest {
+			c.Warning = &sdata.VersionWarning{DataVersion: *frame.Meta.TypeVersion, LibraryVersion: MultiFrameVersionLatest, DataType: data.FrameTypeNumericMulti}
+		}
+
 		valueFields := frame.TypeIndices(sdata.ValidValueFields()...)
 		if len(valueFields) == 0 {
 			continue
 		}
-		refs = append(refs, MetricRef{frame.Fields[valueFields[0]]})
+		c.Refs = append(c.Refs, MetricRef{frame.Fields[valueFields[0]]})
 	}
-	sortNumericMetricRef(refs)
-	return refs, nil, nil
+	sortNumericMetricRef(c.Refs)
+	return c, nil
 }

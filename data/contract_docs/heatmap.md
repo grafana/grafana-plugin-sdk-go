@@ -6,6 +6,8 @@ Heatmaps are used to show the magnitude of a phenomenon as color in two dimensio
 
 ## Heatmap buckets (HeatmapBuckets)
 
+Version: 0.0
+
 The first field represents the X axis, the rest of the fields indicate rows in the heatmap.  
 The true numeric range of each bucket can be indicated using an "le" label.  When absent,
 The field display is used for the bucket label.
@@ -72,6 +74,8 @@ Note: [Timeseries wide](./timeseries.md#time-series-wide-format-timeserieswide) 
 as heatmap-buckets, in this case each value field becomes a row in the heatmap.
 
 ## Heatmap scanlines (HeatmapScanlines)
+
+Version: 0.0
 
 In this format, each row in the frame indicates the value of a single cell in a heatmap.
 There exists a row for every cell in the heatmap.
@@ -168,6 +172,8 @@ The field names for yMax|yMin|y indicate the aggregation period or the supplied 
 * y: the values are in the middle of the bucket
 
 ## Heatmap sparse (HeatmapSparse)
+
+Version: 0.0
 
 This format is simplar to Heatmap scanlines, except that each cell is independent from its adjacent values.
 Unlike scanlines, this allows resolutions to change over time. Where scanline has uniformity of cells over time, heatmap sparse allows for variability of cells along the x axis(Time).

@@ -12,9 +12,10 @@ import (
 
 func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 	t.Run("add two metrics", func(t *testing.T) {
-		wf := timeseries.NewWideFrame()
+		wf, err := timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 
-		err := wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
+		err = wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
 		require.NoError(t, err)
 
 		err = wf.AddSeries("one", data.Labels{"host": "a"}, []float64{1, 2})
@@ -27,7 +28,7 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 			data.NewField("time", nil, []time.Time{time.UnixMilli(1), time.UnixMilli(2)}),
 			data.NewField("one", data.Labels{"host": "a"}, []float64{1, 2}),
 			data.NewField("one", data.Labels{"host": "b"}, []float64{3, 4}),
-		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide})
+		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide, TypeVersion: &data.FrameTypeVersion{0, 1}})
 
 		if diff := cmp.Diff(expectedFrame, (*wf)[0], data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
@@ -37,9 +38,10 @@ func TestWideFrameAddMetric_ValidCases(t *testing.T) {
 
 func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 	t.Run("two metrics from wide to multi", func(t *testing.T) {
-		wf := timeseries.NewWideFrame()
+		wf, err := timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+		require.NoError(t, err)
 
-		err := wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
+		err = wf.SetTime("time", []time.Time{time.UnixMilli(1), time.UnixMilli(2)})
 		require.NoError(t, err)
 
 		err = wf.AddSeries("one", data.Labels{"host": "a"}, []float64{1, 2})
@@ -48,7 +50,7 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 		err = wf.AddSeries("one", data.Labels{"host": "b"}, []float64{3, 4})
 		require.NoError(t, err)
 
-		refs, ignoredFields, err := wf.GetMetricRefs(false)
+		c, err := wf.GetCollection(false)
 		require.NoError(t, err)
 
 		expectedRefs := []timeseries.MetricRef{
@@ -62,9 +64,10 @@ func TestWideFrameSeriesGetMetricRefs(t *testing.T) {
 			},
 		}
 
-		require.Empty(t, ignoredFields) // TODO more specific []x{} vs nil
+		require.Empty(t, c.RemainderIndices) // TODO more specific []x{} vs nil
+		require.NoError(t, c.Warning)
 
-		if diff := cmp.Diff(expectedRefs, refs, data.FrameTestCompareOptions()...); diff != "" {
+		if diff := cmp.Diff(expectedRefs, c.Refs, data.FrameTestCompareOptions()...); diff != "" {
 			require.FailNow(t, "mismatch (-want +got):\n%s\n", diff)
 		}
 	})
