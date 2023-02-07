@@ -113,7 +113,7 @@ func (r *RowConverter) append(name string, kind reflect.Type, conv Converter) {
 }
 
 func (r *RowConverter) hasConverter(i int) bool {
-	return len(r.Converters) >= i
+	return len(r.Converters) > i
 }
 
 func (r *RowConverter) NewScannableRow() []any {
