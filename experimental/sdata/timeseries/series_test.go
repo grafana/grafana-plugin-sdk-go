@@ -78,7 +78,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 			data.NewField("os.cpu", nil, []float64{valuesA[0], valuesB[0],
 				valuesA[1], valuesB[1]}),
 			data.NewField("host", nil, []string{"a", "b", "a", "b"}),
-		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong, TypeVersion: &data.FrameTypeVersion{0, 1}}),
+		).SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesLong, TypeVersion: data.FrameTypeVersion{0, 1}}),
 		}
 
 		var r timeseries.CollectionReader = ls

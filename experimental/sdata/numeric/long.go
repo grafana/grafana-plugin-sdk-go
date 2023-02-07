@@ -50,12 +50,8 @@ func validateAndGetRefsLong(lf *LongFrame, validateData bool) (Collection, error
 		return c, fmt.Errorf("frame is missing %s type indicator", data.FrameTypeNumericLong)
 	}
 
-	if lf.Meta.TypeVersion == nil {
-		return c, fmt.Errorf("frame is missing the type version property")
-	}
-
-	if *lf.Meta.TypeVersion != LongFrameVersionLatest {
-		c.Warning = &sdata.VersionWarning{DataVersion: *lf.Meta.TypeVersion, LibraryVersion: LongFrameVersionLatest, DataType: data.FrameTypeNumericLong}
+	if lf.Meta.TypeVersion != LongFrameVersionLatest {
+		c.Warning = &sdata.VersionWarning{DataVersion: lf.Meta.TypeVersion, LibraryVersion: LongFrameVersionLatest, DataType: data.FrameTypeNumericLong}
 	}
 
 	stringFieldIdxs, numericFieldIdxs := []int{}, []int{}

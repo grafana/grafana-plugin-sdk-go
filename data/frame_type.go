@@ -178,6 +178,10 @@ func (sv FrameTypeVersion) String() string {
 	return fmt.Sprintf("%v.%v", sv[0], sv[1])
 }
 
+func (sv FrameTypeVersion) IsZero() bool {
+	return sv == FrameTypeVersion{0, 0}
+}
+
 // ParseFrameTypeVersion parses a canonical representation of a
 // [FrameTypeVersion] (e.g. "0.0") from a string.
 // Taken from github.com/grafana/thema

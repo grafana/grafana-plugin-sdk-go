@@ -3,6 +3,7 @@
     "name": "many_types",
     "refId": "A",
     "meta": {
+      "typeVersion": [0, 0],
       "custom": { "Hi": "there" },
       "stats": [{ "displayName": "sample", "value": 1.234 }],
       "channel": "sample/channel/name",

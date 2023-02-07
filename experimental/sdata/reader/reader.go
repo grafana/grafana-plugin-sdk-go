@@ -55,11 +55,9 @@ func CanReadBasedOnMeta(f data.Frames) (data.FrameTypeKind, error) {
 	}
 
 	md := f[0].Meta
-	if md.TypeVersion == nil {
-		return data.KindUnknown, fmt.Errorf("metadata type version is nil")
-	}
+
 	fType := md.Type
-	fTypeVersion := *md.TypeVersion
+	fTypeVersion := md.TypeVersion
 	st := supportedTypes()
 
 	typeToV, ok := st[fType]
