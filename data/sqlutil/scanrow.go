@@ -76,21 +76,21 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 
 		for _, v := range converters {
 			if m := match(v, colType, colName); m {
-				rc.append(colName, scanKind(v, colType.ScanType()), v)
+				rc.append(colName, scanType(v, colType.ScanType()), v)
 				break
 			}
 		}
 
 		if !rc.hasConverter(i) {
 			v := NewDefaultConverter(colType.Name(), nullable, colType.ScanType())
-			rc.append(colName, scanKind(v, colType.ScanType()), v)
+			rc.append(colName, scanType(v, colType.ScanType()), v)
 		}
 	}
 
 	return rc, nil
 }
 
-func scanKind(v Converter, t reflect.Type) reflect.Type {
+func scanType(v Converter, t reflect.Type) reflect.Type {
 	if v.InputScanType != nil {
 		return v.InputScanType
 	}
