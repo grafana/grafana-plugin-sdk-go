@@ -35,12 +35,12 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		return nil, err
 	}
 
-	scanner, converters, err := MakeScanRow(types, names, converters...)
+	scanRow, err := MakeScanRow(types, names, converters...)
 	if err != nil {
 		return nil, err
 	}
 
-	frame := NewFrame(names, converters...)
+	frame := NewFrame(names, scanRow.Converters...)
 
 	var i int64
 	for rows.Next() {
@@ -52,12 +52,12 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 			break
 		}
 
-		r := scanner.NewScannableRow()
+		r := scanRow.NewScannableRow()
 		if err := rows.Scan(r...); err != nil {
 			return nil, err
 		}
 
-		if err := Append(frame, r, converters...); err != nil {
+		if err := Append(frame, r, scanRow.Converters...); err != nil {
 			return nil, err
 		}
 
