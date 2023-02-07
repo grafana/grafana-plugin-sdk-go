@@ -120,7 +120,12 @@ func (r *RowConverter) NewScannableRow() []any {
 }
 
 func match(v Converter, colType *sql.ColumnType, colName string) bool {
-	return (v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(colType.DatabaseTypeName())) ||
-		(v.InputColumnName == colName && v.InputColumnName != "") ||
-		v.InputTypeName == colType.DatabaseTypeName()
+	if v.InputColumnName == colName && v.InputColumnName != "" {
+		return true
+	}
+	if colType == nil {
+		return false
+	}
+	return v.InputTypeName == colType.DatabaseTypeName() ||
+		(v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(colType.DatabaseTypeName()))
 }
