@@ -7,6 +7,7 @@ import (
 	"crypto/sha1" // nolint:gosec
 	"encoding/hex"
 	"errors"
+	"fmt"
 	"io"
 	"io/fs"
 	"os"
@@ -46,6 +47,9 @@ func insecureHashFileContent(path string) (string, error) {
 
 	defer func() {
 		err = f.Close()
+		if err != nil {
+			fmt.Println("error closing file for hashing", err)
+		}
 	}()
 
 	buf := make([]byte, 1024*1024)
