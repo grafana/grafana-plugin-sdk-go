@@ -14,23 +14,23 @@ import (
 	"strings"
 )
 
-func GenerateManifest() string {
+func GenerateManifest() (string, error) {
 	manifest := ""
-	_ = filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
+	err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if !d.IsDir() && strings.HasSuffix(path, ".go") {
 			hash, err := insecureHashFileContent(path)
 			if err != nil {
-				return nil
+				return err
 			}
 			manifest = manifest + hash + ":" + path + "\n"
 		}
 		return nil
 	})
 
-	return manifest
+	return manifest, err
 }
 
 // insecureHashFileContent returns the SHA1 hash of the file content.
@@ -45,7 +45,7 @@ func insecureHashFileContent(path string) (string, error) {
 	}
 
 	defer func() {
-		_ = f.Close()
+		err = f.Close()
 	}()
 
 	buf := make([]byte, 1024*1024)

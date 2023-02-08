@@ -181,13 +181,17 @@ func (Build) GenerateManifestFile() error {
 	if outputPath == "" {
 		outputPath = defaultOutputBinaryPath
 	}
-	manifestContent := utils.GenerateManifest()
-	manifestFile := filepath.Join(outputPath, "go_plugin_build_manifest")
+	manifestContent, err := utils.GenerateManifest()
+	if err != nil {
+		return err
+	}
+
+	manifestFilePath := filepath.Join(outputPath, "go_plugin_build_manifest")
 	err = os.MkdirAll(outputPath, 0755)
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(manifestFile, []byte(manifestContent), 0600)
+	err = os.WriteFile(manifestFilePath, []byte(manifestContent), 0600)
 	if err != nil {
 		return err
 	}
