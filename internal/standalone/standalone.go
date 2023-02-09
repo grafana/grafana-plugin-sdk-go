@@ -147,7 +147,7 @@ func findAndKillCurrentPlugin(dir string) {
 		return
 	}
 
-	out, err := exec.Command("pgrep", exeprefix).Output()
+	out, err := exec.Command("pgrep", "-f", exeprefix).Output()
 	if err != nil {
 		fmt.Printf("error running pgrep: %s (%s)", err.Error(), exeprefix)
 		return
