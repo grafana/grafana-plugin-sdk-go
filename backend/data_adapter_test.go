@@ -33,7 +33,7 @@ func newFakeDataHandlerWithOAuth() *fakeDataHandlerWithOAuth {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		if r.Header.Get(xIdTokenHeader) == "" {
+		if r.Header.Get(xIDTokenHeader) == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -71,7 +71,7 @@ func TestQueryData(t *testing.T) {
 	_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 		Headers: map[string]string{
 			authHeader:     "Bearer 123",
-			xIdTokenHeader: "456",
+			xIDTokenHeader: "456",
 		},
 		PluginContext: &pluginv2.PluginContext{},
 	})

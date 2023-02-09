@@ -21,10 +21,10 @@ func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 
 const (
 	authHeader     = "Authorization"
-	xIdTokenHeader = "X-ID-Token"
+	xIDTokenHeader = "X-ID-Token"
 )
 
-func withOAuthMiddleware(ctx context.Context, authorization, xIdToken string) context.Context {
+func withOAuthMiddleware(ctx context.Context, authorization, xIDToken string) context.Context {
 	if authorization != "" {
 		ctx = httpclient.WithContextualMiddleware(ctx,
 			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
@@ -34,8 +34,8 @@ func withOAuthMiddleware(ctx context.Context, authorization, xIdToken string) co
 						qreq.Header.Set(authHeader, authorization)
 					}
 					// Only set the X-ID-Token header if it is not already set.
-					if xIdToken != "" && qreq.Header.Get(xIdTokenHeader) == "" {
-						qreq.Header.Set(xIdTokenHeader, xIdToken)
+					if xIDToken != "" && qreq.Header.Get(xIDTokenHeader) == "" {
+						qreq.Header.Set(xIDTokenHeader, xIDToken)
 					}
 					return next.RoundTrip(qreq)
 				})
@@ -45,7 +45,7 @@ func withOAuthMiddleware(ctx context.Context, authorization, xIdToken string) co
 }
 
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	ctx = withOAuthMiddleware(ctx, req.Headers[authHeader], req.Headers[xIdTokenHeader])
+	ctx = withOAuthMiddleware(ctx, req.Headers[authHeader], req.Headers[xIDTokenHeader])
 	resp, err := a.queryDataHandler.QueryData(ctx, FromProto().QueryDataRequest(req))
 	if err != nil {
 		return nil, err

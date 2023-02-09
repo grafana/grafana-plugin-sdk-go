@@ -149,7 +149,7 @@ func TestCallResource(t *testing.T) {
 				authHeader: {
 					Values: []string{"Bearer 123"},
 				},
-				xIdTokenHeader: {
+				xIDTokenHeader: {
 					Values: []string{"456"},
 				},
 			},
