@@ -146,10 +146,10 @@ func TestCallResource(t *testing.T) {
 		err := adapter.CallResource(&pluginv2.CallResourceRequest{
 			PluginContext: &pluginv2.PluginContext{},
 			Headers: map[string]*pluginv2.StringList{
-				"Authorization": {
+				authHeader: {
 					Values: []string{"Bearer 123"},
 				},
-				"X-ID-Token": {
+				xIdTokenHeader: {
 					Values: []string{"456"},
 				},
 			},

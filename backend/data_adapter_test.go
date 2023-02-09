@@ -29,11 +29,11 @@ func newFakeDataHandlerWithOAuth() *fakeDataHandlerWithOAuth {
 	}
 
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") == "" {
+		if r.Header.Get(authHeader) == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
-		if r.Header.Get("X-ID-Token") == "" {
+		if r.Header.Get(xIdTokenHeader) == "" {
 			w.WriteHeader(http.StatusUnauthorized)
 			return
 		}
@@ -70,8 +70,8 @@ func TestQueryData(t *testing.T) {
 	ctx := context.Background()
 	_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 		Headers: map[string]string{
-			"Authorization": "Bearer 123",
-			"X-ID-Token":    "456",
+			authHeader:     "Bearer 123",
+			xIdTokenHeader: "456",
 		},
 		PluginContext: &pluginv2.PluginContext{},
 	})

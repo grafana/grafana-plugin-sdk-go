@@ -114,8 +114,8 @@ func TestCheckHealth(t *testing.T) {
 		}
 		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
 			Headers: map[string]string{
-				"Authorization": "Bearer 123",
-				"X-ID-Token":    "456",
+				authHeader:     "Bearer 123",
+				xIdTokenHeader: "456",
 			},
 			PluginContext: &pluginv2.PluginContext{},
 		})
