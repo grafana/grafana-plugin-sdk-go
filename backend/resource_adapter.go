@@ -34,5 +34,14 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
-	return a.callResourceHandler.CallResource(protoSrv.Context(), FromProto().CallResourceRequest(protoReq), fn)
+	auth := ""
+	xIdToken := ""
+	if protoReq.Headers["Authorization"] != nil {
+		auth = protoReq.Headers["Authorization"].String()
+	}
+	if protoReq.Headers["X-ID-Token"] != nil {
+		xIdToken = protoReq.Headers["X-ID-Token"].String()
+	}
+	ctx := withOAuthMiddleware(protoSrv.Context(), auth, xIdToken)
+	return a.callResourceHandler.CallResource(ctx, FromProto().CallResourceRequest(protoReq), fn)
 }

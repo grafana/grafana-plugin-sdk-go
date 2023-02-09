@@ -45,6 +45,7 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.Co
 
 func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.checkHealthHandler != nil {
+		ctx = withOAuthMiddleware(ctx, protoReq.Headers["Authorization"], protoReq.Headers["X-ID-Token"])
 		res, err := a.checkHealthHandler.CheckHealth(ctx, FromProto().CheckHealthRequest(protoReq))
 		if err != nil {
 			return nil, err
