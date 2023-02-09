@@ -142,15 +142,12 @@ func TestCallResource(t *testing.T) {
 
 	t.Run("When oauth headers are set it should set the middleware to set headers", func(t *testing.T) {
 		testSender := newTestCallResourceServer()
-		adapter := newResourceSDKAdapter(&testCallResourceOAuth{})
+		adapter := newResourceSDKAdapter(&testCallResourceWithHeaders{})
 		err := adapter.CallResource(&pluginv2.CallResourceRequest{
 			PluginContext: &pluginv2.PluginContext{},
 			Headers: map[string]*pluginv2.StringList{
-				authHeader: {
+				"Authorization": {
 					Values: []string{"Bearer 123"},
-				},
-				xIDTokenHeader: {
-					Values: []string{"456"},
 				},
 			},
 		}, testSender)
@@ -250,9 +247,9 @@ func (srv *testCallResourceServer) RecvMsg(_ interface{}) error {
 	return nil
 }
 
-type testCallResourceOAuth struct{}
+type testCallResourceWithHeaders struct{}
 
-func (h *testCallResourceOAuth) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+func (h *testCallResourceWithHeaders) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	middlewares := httpclient.ContextualMiddlewareFromContext(ctx)
 	if len(middlewares) == 0 {
 		return fmt.Errorf("no middlewares found")

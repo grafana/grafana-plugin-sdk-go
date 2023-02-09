@@ -108,14 +108,13 @@ func TestCheckHealth(t *testing.T) {
 		}
 	})
 
-	t.Run("When oauth headers are present", func(t *testing.T) {
+	t.Run("When headers are present", func(t *testing.T) {
 		adapter := &diagnosticsSDKAdapter{
-			checkHealthHandler: &testCheckHealthOAuthHandler{},
+			checkHealthHandler: &testCheckHealthHandlerWithHeaders{},
 		}
 		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
 			Headers: map[string]string{
-				authHeader:     "Bearer 123",
-				xIDTokenHeader: "456",
+				"Authorization": "Bearer 123",
 			},
 			PluginContext: &pluginv2.PluginContext{},
 		})
@@ -140,9 +139,9 @@ func (h *testCheckHealthHandler) CheckHealth(_ context.Context, _ *CheckHealthRe
 	}, h.err
 }
 
-type testCheckHealthOAuthHandler struct{}
+type testCheckHealthHandlerWithHeaders struct{}
 
-func (h *testCheckHealthOAuthHandler) CheckHealth(ctx context.Context, _ *CheckHealthRequest) (*CheckHealthResult, error) {
+func (h *testCheckHealthHandlerWithHeaders) CheckHealth(ctx context.Context, _ *CheckHealthRequest) (*CheckHealthResult, error) {
 	middlewares := httpclient.ContextualMiddlewareFromContext(ctx)
 	if len(middlewares) == 0 {
 		return &CheckHealthResult{
