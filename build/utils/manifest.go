@@ -4,7 +4,8 @@ import (
 	// sha1 is not cryptographically secure
 	// but we just want to generate a reproducible fast hash
 	// to compare the contents of the files
-	"crypto/sha1" // nolint:gosec
+	// nolint:gosec
+	"crypto/sha256"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -53,7 +54,7 @@ func insecureHashFileContent(path string) (string, error) {
 	}()
 
 	buf := make([]byte, 1024*1024)
-	h := sha1.New() // nolint:gosec
+	h := sha256.New() // nolint:gosec
 
 	for {
 		bytesRead, err := f.Read(buf)
