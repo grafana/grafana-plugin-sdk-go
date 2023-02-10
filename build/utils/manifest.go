@@ -13,7 +13,7 @@ import (
 )
 
 func GenerateManifest() (string, error) {
-	manifest := ""
+	var manifest strings.Builder
 	err := filepath.WalkDir(".", func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -23,12 +23,13 @@ func GenerateManifest() (string, error) {
 			if err != nil {
 				return err
 			}
-			manifest = manifest + hash + ":" + path + "\n"
+			// manifest = manifest + hash + ":" + path + "\n"
+			manifest.WriteString(hash + ":" + path + "\n")
 		}
 		return nil
 	})
 
-	return manifest, err
+	return manifest.String(), err
 }
 
 // hashFileContent returns the sha256 hash of the file content.
