@@ -1,8 +1,10 @@
 package backend
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -13,8 +15,9 @@ import (
 )
 
 type fakeDataHandlerWithOAuth struct {
-	cli *http.Client
-	svr *httptest.Server
+	cli     *http.Client
+	svr     *httptest.Server
+	lastReq *http.Request
 }
 
 func newFakeDataHandlerWithOAuth() *fakeDataHandlerWithOAuth {
@@ -29,10 +32,6 @@ func newFakeDataHandlerWithOAuth() *fakeDataHandlerWithOAuth {
 	}
 
 	svr := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.Header.Get("Authorization") == "" {
-			w.WriteHeader(http.StatusUnauthorized)
-			return
-		}
 		w.WriteHeader(http.StatusOK)
 	}))
 
@@ -47,6 +46,7 @@ func (f *fakeDataHandlerWithOAuth) QueryData(ctx context.Context, req *QueryData
 	if err != nil {
 		return nil, err
 	}
+	f.lastReq = httpReq
 
 	res, err := f.cli.Do(httpReq)
 	if err != nil {
@@ -62,7 +62,8 @@ func (f *fakeDataHandlerWithOAuth) QueryData(ctx context.Context, req *QueryData
 }
 
 func TestQueryData(t *testing.T) {
-	adapter := newDataSDKAdapter(newFakeDataHandlerWithOAuth())
+	handler := newFakeDataHandlerWithOAuth()
+	adapter := newDataSDKAdapter(handler)
 	ctx := context.Background()
 	_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 		Headers: map[string]string{
@@ -71,4 +72,24 @@ func TestQueryData(t *testing.T) {
 		PluginContext: &pluginv2.PluginContext{},
 	})
 	require.NoError(t, err)
+
+	middlewares := httpclient.ContextualMiddlewareFromContext(handler.lastReq.Context())
+	require.Len(t, middlewares, 1)
+
+	reqClone := handler.lastReq.Clone(handler.lastReq.Context())
+	// clean up headers to be sure they are injected
+	reqClone.Header = http.Header{}
+	res, err := middlewares[0].CreateMiddleware(httpclient.Options{}, finalRoundTripper).RoundTrip(reqClone)
+	require.NoError(t, err)
+	require.NoError(t, res.Body.Close())
+	require.Len(t, reqClone.Header, 1)
+	require.Equal(t, "Bearer 123", reqClone.Header.Get("Authorization"))
 }
+
+var finalRoundTripper = httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+	return &http.Response{
+		StatusCode: http.StatusOK,
+		Request:    req,
+		Body:       io.NopCloser(bytes.NewBufferString("")),
+	}, nil
+})
