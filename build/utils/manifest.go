@@ -45,7 +45,7 @@ func hashFileContent(path string) (string, error) {
 	defer func() {
 		err = f.Close()
 		if err != nil {
-			fmt.Printf("error closing file for hashing %v", err)
+			fmt.Printf("error closing file for hashing: %v", err)
 		}
 	}()
 
