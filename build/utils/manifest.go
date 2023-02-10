@@ -1,10 +1,6 @@
 package utils
 
 import (
-	// sha1 is not cryptographically secure
-	// but we just want to generate a reproducible fast hash
-	// to compare the contents of the files
-	// nolint:gosec
 	"crypto/sha256"
 	"encoding/hex"
 	"errors"
@@ -23,7 +19,7 @@ func GenerateManifest() (string, error) {
 			return err
 		}
 		if !d.IsDir() && strings.HasSuffix(path, ".go") {
-			hash, err := insecureHashFileContent(path)
+			hash, err := hashFileContent(path)
 			if err != nil {
 				return err
 			}
@@ -35,9 +31,8 @@ func GenerateManifest() (string, error) {
 	return manifest, err
 }
 
-// insecureHashFileContent returns the SHA1 hash of the file content.
-// It is not cryptographically secure. do not use for anything else
-func insecureHashFileContent(path string) (string, error) {
+// hashFileContent returns the sha256 hash of the file content.
+func hashFileContent(path string) (string, error) {
 	// Handle hashing big files.
 	// Source: https://stackoverflow.com/q/60328216/1722542
 
@@ -49,12 +44,12 @@ func insecureHashFileContent(path string) (string, error) {
 	defer func() {
 		err = f.Close()
 		if err != nil {
-			fmt.Println("error closing file for hashing", err)
+			fmt.Printf("error closing file for hashing %v", err)
 		}
 	}()
 
 	buf := make([]byte, 1024*1024)
-	h := sha256.New() // nolint:gosec
+	h := sha256.New()
 
 	for {
 		bytesRead, err := f.Read(buf)
