@@ -34,10 +34,7 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
-	headers := make(map[string]string, len(protoReq.Headers))
-	for k, v := range protoReq.Headers {
-		headers[k] = v.String()
-	}
-	ctx := withHeaderMiddleware(protoSrv.Context(), headers)
-	return a.callResourceHandler.CallResource(ctx, FromProto().CallResourceRequest(protoReq), fn)
+	parsedReq := FromProto().CallResourceRequest(protoReq)
+	ctx := withHeaderMiddleware(protoSrv.Context(), parsedReq.GetHTTPHeaders())
+	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
 }

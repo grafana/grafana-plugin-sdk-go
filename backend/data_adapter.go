@@ -19,7 +19,7 @@ func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 	}
 }
 
-func withHeaderMiddleware(ctx context.Context, headers map[string]string) context.Context {
+func withHeaderMiddleware(ctx context.Context, headers http.Header) context.Context {
 	if len(headers) > 0 {
 		ctx = httpclient.WithContextualMiddleware(ctx,
 			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
@@ -27,7 +27,9 @@ func withHeaderMiddleware(ctx context.Context, headers map[string]string) contex
 					// Only set a header if it is not already set.
 					for k, v := range headers {
 						if qreq.Header.Get(k) == "" {
-							qreq.Header.Set(k, v)
+							for _, vv := range v {
+								qreq.Header.Add(k, vv)
+							}
 						}
 					}
 					return next.RoundTrip(qreq)
@@ -38,8 +40,9 @@ func withHeaderMiddleware(ctx context.Context, headers map[string]string) contex
 }
 
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	ctx = withHeaderMiddleware(ctx, req.Headers)
-	resp, err := a.queryDataHandler.QueryData(ctx, FromProto().QueryDataRequest(req))
+	parsedRequest := FromProto().QueryDataRequest(req)
+	ctx = withHeaderMiddleware(ctx, parsedRequest.GetHTTPHeaders())
+	resp, err := a.queryDataHandler.QueryData(ctx, parsedRequest)
 	if err != nil {
 		return nil, err
 	}
