@@ -18,8 +18,24 @@ type ConfigureTransportFunc func(opts Options, transport *http.Transport)
 // Called after tls.Config creation.
 type ConfigureTLSConfigFunc func(opts Options, tlsConfig *tls.Config)
 
+// AuthenticationMethod defines the type of authentication method that needs to be use.
+type AuthenticationMethod string
+
+const (
+	// AuthenticationMethodOAuth2 is oauth2 type authentication.
+	// Currently support client credentials and JWT type OAuth2 workflows.
+	AuthenticationMethodOAuth2 AuthenticationMethod = "oauth2"
+)
+
 // Options defines options for creating HTTP clients.
 type Options struct {
+
+	// AuthenticationMethod defines the type of authentication method used by the http client.
+	AuthenticationMethod AuthenticationMethod
+
+	// OAuth2Options defines options for OAuth2 client. This will be used only if AuthenticationMethod is AuthenticationMethodOAuth.
+	OAuth2Options *OAuth2Options
+
 	// Timeouts timeout/connection related options.
 	Timeouts *TimeoutOptions
 
@@ -63,6 +79,28 @@ type Options struct {
 type BasicAuthOptions struct {
 	User     string
 	Password string
+}
+
+// OAuth2Type defines type of oauth2 grant type
+type OAuth2Type string
+
+const (
+	OAuth2TypeClientCredentials OAuth2Type = "client_credentials"
+	OAuth2TypeJWT               OAuth2Type = "jwt"
+)
+
+// OAuth2Options defines options for OAuth2 Client
+type OAuth2Options struct {
+	OAuth2Type     OAuth2Type
+	TokenURL       string
+	Scopes         []string
+	ClientID       string
+	ClientSecret   string
+	EndpointParams map[string]string
+	Subject        string
+	Email          string
+	PrivateKey     []byte
+	PrivateKeyID   string
 }
 
 // TimeoutOptions timeout/connection options.
