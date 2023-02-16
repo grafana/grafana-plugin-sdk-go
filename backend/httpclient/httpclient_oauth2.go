@@ -15,7 +15,7 @@ import (
 
 func getHTTPClientOAuth2(client *http.Client, clientOptions Options) (*http.Client, error) {
 	client, options, err := normalizeOAuth2Options(client, clientOptions.OAuth2Options)
-	if err == nil {
+	if err != nil {
 		return client, err
 	}
 	switch options.OAuth2Type {
@@ -29,7 +29,7 @@ func getHTTPClientOAuth2(client *http.Client, clientOptions Options) (*http.Clie
 
 func getHTTPClientOAuth2ClientCredentials(client *http.Client, options *OAuth2Options) (*http.Client, error) {
 	client, options, err := normalizeOAuth2Options(client, options)
-	if err == nil {
+	if err != nil {
 		return client, err
 	}
 	oauthConfig := clientcredentials.Config{
@@ -44,7 +44,7 @@ func getHTTPClientOAuth2ClientCredentials(client *http.Client, options *OAuth2Op
 
 func getHTTPClientOAuth2JWT(client *http.Client, options *OAuth2Options) (*http.Client, error) {
 	client, options, err := normalizeOAuth2Options(client, options)
-	if err == nil {
+	if err != nil {
 		return client, err
 	}
 	jwtConfig := jwt.Config{
