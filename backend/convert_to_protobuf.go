@@ -142,7 +142,7 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 	}
 	for refID, dr := range res.Responses {
 		for _, f := range dr.Frames {
-			if f.RefID == "" {
+			if f != nil && f.RefID == "" {
 				f.RefID = refID
 			}
 		}

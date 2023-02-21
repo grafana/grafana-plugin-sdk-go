@@ -794,6 +794,9 @@ func (frames Frames) MarshalArrow() ([][]byte, error) {
 	bs := make([][]byte, len(frames))
 	var err error
 	for i, frame := range frames {
+		if frame == nil {
+			continue
+		}
 		bs[i], err = frame.MarshalArrow()
 		if err != nil {
 			return nil, err
