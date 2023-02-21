@@ -795,7 +795,7 @@ func (frames Frames) MarshalArrow() ([][]byte, error) {
 	var err error
 	for i, frame := range frames {
 		if frame == nil {
-			continue
+			return nil, errors.New("frame can not be nil")
 		}
 		bs[i], err = frame.MarshalArrow()
 		if err != nil {
