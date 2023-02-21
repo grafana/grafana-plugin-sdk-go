@@ -35,10 +35,6 @@ func New(opts ...Options) (*http.Client, error) {
 		clientOpts.ConfigureClient(clientOpts, c)
 	}
 
-	if clientOpts.AuthenticationMethod == AuthenticationMethodOAuth2 {
-		return getHTTPClientOAuth2(c, clientOpts)
-	}
-
 	return c, nil
 }
 
