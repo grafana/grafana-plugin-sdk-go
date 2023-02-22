@@ -3,14 +3,16 @@ package backend
 import (
 	"net"
 
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"google.golang.org/grpc"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/hashicorp/go-plugin"
-	"github.com/prometheus/client_golang/prometheus"
-	"google.golang.org/grpc"
 )
 
 const defaultServerMaxReceiveMessageSize = 1024 * 1024 * 16
@@ -66,65 +68,67 @@ func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	return pluginOpts
 }
 
-// Serve starts serving the plugin over gRPC.
-func Serve(opts ServeOpts) error {
-	grpc_prometheus.EnableHandlingTimeHistogram()
-	grpcMiddlewares := []grpc.ServerOption{
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			grpc_prometheus.StreamServerInterceptor,
-		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_prometheus.UnaryServerInterceptor,
-		)),
-	}
-
+func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	if opts.GRPCSettings.MaxReceiveMsgSize <= 0 {
 		opts.GRPCSettings.MaxReceiveMsgSize = defaultServerMaxReceiveMessageSize
 	}
-
-	grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize)}, grpcMiddlewares...)
-
+	grpcMiddlewares := []grpc.ServerOption{
+		grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			otelgrpc.StreamServerInterceptor(),
+			grpc_opentracing.StreamServerInterceptor(),
+			grpc_prometheus.StreamServerInterceptor,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			otelgrpc.UnaryServerInterceptor(),
+			grpc_opentracing.UnaryServerInterceptor(),
+			grpc_prometheus.UnaryServerInterceptor,
+		)),
+	}
 	if opts.GRPCSettings.MaxSendMsgSize > 0 {
 		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxSendMsgSize(opts.GRPCSettings.MaxSendMsgSize)}, grpcMiddlewares...)
 	}
+	return grpcMiddlewares
+}
 
+// Serve starts serving the plugin over gRPC.
+func Serve(opts ServeOpts) error {
+	grpc_prometheus.EnableHandlingTimeHistogram()
 	pluginOpts := asGRPCServeOpts(opts)
-	pluginOpts.GRPCServer = func(opts []grpc.ServerOption) *grpc.Server {
-		opts = append(opts, grpcMiddlewares...)
-		return grpc.NewServer(opts...)
+	pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
+		return grpc.NewServer(append(defaultGRPCMiddlewares(opts), grpcOptions...)...)
 	}
-
 	return grpcplugin.Serve(pluginOpts)
 }
 
 // StandaloneServe starts a gRPC server that is not managed by hashicorp
-func StandaloneServe(dsopts ServeOpts, address string) error {
-	opts := asGRPCServeOpts(dsopts)
-
-	if opts.GRPCServer == nil {
-		opts.GRPCServer = plugin.DefaultGRPCServer
+func StandaloneServe(opts ServeOpts, address string) error {
+	pluginOpts := asGRPCServeOpts(opts)
+	if pluginOpts.GRPCServer == nil {
+		pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
+			return grpc.NewServer(append(defaultGRPCMiddlewares(opts), grpcOptions...)...)
+		}
 	}
 
-	server := opts.GRPCServer(nil)
-
+	server := pluginOpts.GRPCServer(nil)
 	plugKeys := []string{}
-	if opts.DiagnosticsServer != nil {
-		pluginv2.RegisterDiagnosticsServer(server, opts.DiagnosticsServer)
+	if pluginOpts.DiagnosticsServer != nil {
+		pluginv2.RegisterDiagnosticsServer(server, pluginOpts.DiagnosticsServer)
 		plugKeys = append(plugKeys, "diagnostics")
 	}
 
-	if opts.ResourceServer != nil {
-		pluginv2.RegisterResourceServer(server, opts.ResourceServer)
+	if pluginOpts.ResourceServer != nil {
+		pluginv2.RegisterResourceServer(server, pluginOpts.ResourceServer)
 		plugKeys = append(plugKeys, "resources")
 	}
 
-	if opts.DataServer != nil {
-		pluginv2.RegisterDataServer(server, opts.DataServer)
+	if pluginOpts.DataServer != nil {
+		pluginv2.RegisterDataServer(server, pluginOpts.DataServer)
 		plugKeys = append(plugKeys, "data")
 	}
 
-	if opts.StreamServer != nil {
-		pluginv2.RegisterStreamServer(server, opts.StreamServer)
+	if pluginOpts.StreamServer != nil {
+		pluginv2.RegisterStreamServer(server, pluginOpts.StreamServer)
 		plugKeys = append(plugKeys, "stream")
 	}
 
