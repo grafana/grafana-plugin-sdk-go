@@ -4,6 +4,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
 )
 
 // ManageOpts can modify Manage behaviour.
@@ -31,6 +33,9 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	if err != nil {
 		return err
 	}
+
+	// TODO: different tracing propagators
+	otel.SetTextMapPropagator(propagation.TraceContext{})
 
 	if info.Standalone {
 		return backend.StandaloneServe(serveOpts, info.Address)
