@@ -38,8 +38,12 @@ func GetInfo(id string) (Args, error) {
 		return info, err
 	}
 
-	// When debugging in vscode, write the file in `dist`
-	if standalone && strings.HasPrefix(filepath.Base(ex), "__debug_bin") {
+	// When debugging, write the file in `dist`
+	// VsCode names the file "__debug_bin"
+	vsCodeDebug := strings.HasPrefix(filepath.Base(ex), "__debug_bin")
+	// GoLand places it in: /tmp/GoLand/___XXgo_build_github_com_PACKAGENAME_pkg
+	goLandDebug := strings.Contains(ex, "GoLand") && strings.Contains(ex, "go_build_")
+	if standalone && (vsCodeDebug || goLandDebug) {
 		info.debugger = true
 		port, err := getFreePort()
 		if err == nil {
