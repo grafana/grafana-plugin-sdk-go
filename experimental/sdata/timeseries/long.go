@@ -19,11 +19,11 @@ func LongFrameVersions() []data.FrameTypeVersion {
 	return []data.FrameTypeVersion{{0, 1}}
 }
 
-func NewLongFrame(v data.FrameTypeVersion) (*LongFrame, error) {
+func NewLongFrame(refID string, v data.FrameTypeVersion) (*LongFrame, error) {
 	if v.Greater(LongFrameVersionLatest) {
 		return nil, fmt.Errorf("can not create LongFrame of version %s because it is newer than library version %v", v, LongFrameVersionLatest)
 	}
-	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong, v)}, nil
+	return &LongFrame{emptyFrameWithTypeMD(refID, data.FrameTypeTimeSeriesLong, v)}, nil
 }
 
 func (ls *LongFrame) GetCollection(validateData bool) (Collection, error) {
@@ -44,6 +44,8 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 	if frame == nil {
 		return c, fmt.Errorf("frame 0 must not be nil")
 	}
+
+	c.RefID = frame.RefID
 
 	if !frameHasType(frame, data.FrameTypeTimeSeriesLong) {
 		return c, fmt.Errorf("frame 0 is missing long type indicator")

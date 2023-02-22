@@ -23,12 +23,12 @@ func MultiFrameVersions() []data.FrameTypeVersion {
 // NewMultiFrame creates an empty MultiFrame formatted time series.
 // This function must be called before the AddSeries Method.
 // The returned MultiFrame is a valid typed data response that corresponds to "No Data".
-func NewMultiFrame(v data.FrameTypeVersion) (*MultiFrame, error) {
+func NewMultiFrame(refID string, v data.FrameTypeVersion) (*MultiFrame, error) {
 	if v.Greater(MultiFrameVersionLatest) {
 		return nil, fmt.Errorf("can not create MultiFrame of version %s because it is newer than library version %v", v, MultiFrameVersionLatest)
 	}
 	return &MultiFrame{
-		emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, v),
+		emptyFrameWithTypeMD(refID, data.FrameTypeTimeSeriesMulti, v),
 	}, nil
 }
 
@@ -63,7 +63,7 @@ func (mfs *MultiFrame) AddSeries(metricName string, l data.Labels, t []time.Time
 	if len(*mfs) == 1 && len((*mfs)[0].Fields) == 0 { // update empty response placeholder frame
 		(*mfs)[0].Fields = append((*mfs)[0].Fields, timeField, valueField)
 	} else {
-		frame := emptyFrameWithTypeMD(data.FrameTypeTimeSeriesMulti, (*mfs)[0].Meta.TypeVersion)
+		frame := emptyFrameWithTypeMD((*mfs)[0].RefID, data.FrameTypeTimeSeriesMulti, (*mfs)[0].Meta.TypeVersion)
 		frame.Fields = append(frame.Fields, timeField, valueField)
 		*mfs = append(*mfs, frame)
 	}
@@ -110,14 +110,21 @@ func validateAndGetRefsMulti(mfs *MultiFrame, validateData bool) (Collection, er
 
 	firstFrame := (*mfs)[0]
 
-	switch {
-	case firstFrame == nil:
+	if firstFrame == nil {
 		return c, fmt.Errorf("frame 0 is nil which is invalid")
-	case firstFrame.Meta == nil:
+	}
+
+	if firstFrame.Meta == nil {
 		return c, fmt.Errorf("frame 0 is missing a type indicator")
-	case !frameHasType(firstFrame, data.FrameTypeTimeSeriesMulti):
+	}
+
+	c.RefID = firstFrame.RefID
+
+	if !frameHasType(firstFrame, data.FrameTypeTimeSeriesMulti) {
 		return c, fmt.Errorf("frame 0 has wrong type, expected many/multi but got %q", firstFrame.Meta.Type)
-	case len(firstFrame.Fields) == 0:
+	}
+
+	if len(firstFrame.Fields) == 0 {
 		if len(*mfs) > 1 {
 			if err := ignoreAdditionalFrames("extra frame on empty response", *mfs, &c.RemainderIndices); err != nil {
 				return c, err

@@ -19,11 +19,12 @@ func WideFrameVersions() []data.FrameTypeVersion {
 	return []data.FrameTypeVersion{{0, 1}}
 }
 
-func NewWideFrame(v data.FrameTypeVersion) (*WideFrame, error) {
+func NewWideFrame(refID string, v data.FrameTypeVersion) (*WideFrame, error) {
 	if v.Greater(WideFrameVersionLatest) {
 		return nil, fmt.Errorf("can not create WideFrame of version %s because it is newer than library version %v", v, WideFrameVersionLatest)
 	}
 	f := data.NewFrame("")
+	f.RefID = refID
 	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeTimeSeriesWide, TypeVersion: v})
 	return &WideFrame{f}, nil
 }
@@ -114,6 +115,8 @@ func validateAndGetRefsWide(wf *WideFrame, validateData bool) (Collection, error
 	if frame == nil {
 		return c, fmt.Errorf("frame is nil which is invalid")
 	}
+
+	c.RefID = frame.RefID
 
 	if !frameHasType(frame, data.FrameTypeTimeSeriesWide) {
 		return c, fmt.Errorf("frame has wrong type, expected TimeSeriesWide but got %q", frame.Meta.Type)

@@ -30,7 +30,7 @@ func TestSimpleNumeric(t *testing.T) {
 	t.Run("multi frame", func(t *testing.T) {
 		var mFrameNC numeric.CollectionRW
 		var err error
-		mFrameNC, err = numeric.NewMultiFrame(numeric.MultiFrameVersionLatest)
+		mFrameNC, err = numeric.NewMultiFrame("A", numeric.MultiFrameVersionLatest)
 		require.NoError(t, err)
 
 		addMetrics(mFrameNC)
@@ -45,7 +45,7 @@ func TestSimpleNumeric(t *testing.T) {
 	t.Run("wide frame", func(t *testing.T) {
 		var wFrameNC numeric.CollectionRW
 		var err error
-		wFrameNC, err = numeric.NewWideFrame(numeric.WideFrameVersionLatest)
+		wFrameNC, err = numeric.NewWideFrame("B", numeric.WideFrameVersionLatest)
 		require.NoError(t, err)
 
 		addMetrics(wFrameNC)
@@ -57,13 +57,11 @@ func TestSimpleNumeric(t *testing.T) {
 		require.Equal(t, expectedRefs, wc.Refs)
 	})
 	t.Run("long frame", func(t *testing.T) {
-		lfn := &numeric.LongFrame{
-			Frame: data.NewFrame("",
-				data.NewField("os.cpu", nil, []float64{1, 2}),
-				data.NewField("host", nil, []string{"a", "b"}),
-			).SetMeta(&data.FrameMeta{Type: data.FrameTypeNumericLong,
-				TypeVersion: numeric.LongFrameVersionLatest}),
-		}
+		lfn, err := numeric.NewLongFrame("C", numeric.LongFrameVersionLatest)
+		require.NoError(t, err)
+
+		lfn.Fields = append(lfn.Fields, data.NewField("os.cpu", nil, []float64{1, 2}),
+			data.NewField("host", nil, []string{"a", "b"}))
 		var lcr numeric.CollectionReader = lfn
 
 		lc, err := lcr.GetCollection(false)
