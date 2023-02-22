@@ -158,9 +158,14 @@ func findAndKillCurrentPlugin(dir string) {
 		fmt.Printf("error running pgrep: %s (%s)", err.Error(), exeprefix)
 		return
 	}
+	currentPID := os.Getpid()
 	for _, txt := range strings.Fields(string(out)) {
 		pid, err := strconv.Atoi(txt)
 		if err == nil {
+			// Do not kill ourselves!
+			if pid == currentPID {
+				continue
+			}
 			log.Printf("Killing process: %d", pid)
 			// err := syscall.Kill(pid, 9)
 			pidstr := fmt.Sprintf("%d", pid)
