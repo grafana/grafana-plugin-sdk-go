@@ -26,8 +26,10 @@ func GetInfo(id string) (Args, error) {
 	info := Args{}
 
 	var standalone bool
+	var debug bool
 	var address string
 	flag.BoolVar(&standalone, "standalone", false, "should this run standalone")
+	flag.BoolVar(&debug, "debug", false, "run in debug mode")
 	flag.Parse()
 
 	info.Standalone = standalone
@@ -43,7 +45,7 @@ func GetInfo(id string) (Args, error) {
 	vsCodeDebug := strings.HasPrefix(filepath.Base(ex), "__debug_bin")
 	// GoLand places it in: /tmp/GoLand/___XXgo_build_github_com_PACKAGENAME_pkg
 	goLandDebug := strings.Contains(ex, "GoLand") && strings.Contains(ex, "go_build_")
-	if standalone && (vsCodeDebug || goLandDebug) {
+	if standalone && (vsCodeDebug || goLandDebug || debug) {
 		info.debugger = true
 		port, err := getFreePort()
 		if err == nil {
