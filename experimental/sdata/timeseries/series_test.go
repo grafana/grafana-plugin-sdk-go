@@ -29,7 +29,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	}
 
 	t.Run("multi frame", func(t *testing.T) {
-		sc, err := timeseries.NewMultiFrame(timeseries.WideFrameVersionLatest)
+		sc, err := timeseries.NewMultiFrame("A", timeseries.WideFrameVersionLatest)
 		require.NoError(t, err)
 
 		err = sc.AddSeries(metricName, data.Labels{"host": "a"}, timeSlice, valuesA)
@@ -49,7 +49,7 @@ func TestSeriesCollectionReaderInterface(t *testing.T) {
 	})
 
 	t.Run("wide frame", func(t *testing.T) {
-		sc, err := timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+		sc, err := timeseries.NewWideFrame("B", timeseries.WideFrameVersionLatest)
 		require.NoError(t, err)
 
 		err = sc.SetTime("time", timeSlice)
@@ -101,13 +101,13 @@ func TestEmptyFromNew(t *testing.T) {
 	var multi, wide, long timeseries.CollectionReader
 	var err error
 
-	multi, err = timeseries.NewMultiFrame(timeseries.MultiFrameVersionLatest)
+	multi, err = timeseries.NewMultiFrame("A", timeseries.MultiFrameVersionLatest)
 	require.NoError(t, err)
 
-	wide, err = timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+	wide, err = timeseries.NewWideFrame("B", timeseries.WideFrameVersionLatest)
 	require.NoError(t, err)
 
-	long, err = timeseries.NewLongFrame(timeseries.LongFrameVersionLatest)
+	long, err = timeseries.NewLongFrame("C", timeseries.LongFrameVersionLatest)
 	require.NoError(t, err)
 
 	emptyReqs := func(c timeseries.Collection, err error) {

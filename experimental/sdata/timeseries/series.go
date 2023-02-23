@@ -29,6 +29,7 @@ type MetricRef struct {
 }
 
 type Collection struct {
+	RefID            string
 	Refs             []MetricRef
 	RemainderIndices []sdata.FrameFieldIndex
 	Warning          error

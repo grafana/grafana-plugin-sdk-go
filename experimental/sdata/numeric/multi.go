@@ -19,12 +19,12 @@ func MultiFrameVersions() []data.FrameTypeVersion {
 	return []data.FrameTypeVersion{{0, 1}}
 }
 
-func NewMultiFrame(v data.FrameTypeVersion) (*MultiFrame, error) {
+func NewMultiFrame(refID string, v data.FrameTypeVersion) (*MultiFrame, error) {
 	if v.Greater(MultiFrameVersionLatest) {
 		return nil, fmt.Errorf("can not create MultiFrame of version %s because it is newer than library version %v", v, MultiFrameVersionLatest)
 	}
 	return &MultiFrame{
-		emptyFrameWithTypeMD(data.FrameTypeNumericMulti, v),
+		emptyFrameWithTypeMD(refID, data.FrameTypeNumericMulti, v),
 	}, nil
 }
 
@@ -87,6 +87,15 @@ func validateAndGetRefsMulti(mf *MultiFrame, validateData bool) (Collection, err
 	}
 
 	var c Collection
+	if mf == nil {
+		return c, fmt.Errorf("frame collection is nil")
+	}
+
+	if len(*mf) == 0 {
+		return c, fmt.Errorf("must be at least one frame")
+	}
+
+	c.RefID = (*mf)[0].RefID
 
 	for _, frame := range *mf {
 		if !frameHasType(frame, data.FrameTypeNumericMulti) {
