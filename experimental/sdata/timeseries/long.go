@@ -86,7 +86,7 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 
 	factorFieldIndices := frame.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
 
-	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) error {
+	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}, valType data.FieldType) error {
 		if mm[metricName] == nil {
 			mm[metricName] = make(map[string]MetricRef)
 		}
@@ -95,8 +95,7 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 		if ref, ok := mm[metricName][lbStr]; !ok {
 			ref.TimeField = data.NewField(timeField.Name, nil, []time.Time{t})
 
-			vt := data.FieldTypeFor(value)
-			ref.ValueField = data.NewFieldFromFieldType(vt, 1)
+			ref.ValueField = data.NewFieldFromFieldType(valType, 1)
 			ref.ValueField.Set(0, value)
 			ref.ValueField.Name = metricName
 			ref.ValueField.Labels = l
@@ -128,7 +127,7 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 			}
 			for _, vFieldIdx := range valueFieldIndices {
 				valueField := frame.Fields[vFieldIdx]
-				if err := appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx)); err != nil {
+				if err := appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx), valueField.Type()); err != nil {
 					return c, err
 				}
 			}
