@@ -8,9 +8,9 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sdata"
 )
 
-func emptyFrameWithTypeMD(refId string, t data.FrameType, v data.FrameTypeVersion) *data.Frame {
+func emptyFrameWithTypeMD(refID string, t data.FrameType, v data.FrameTypeVersion) *data.Frame {
 	f := data.NewFrame("").SetMeta(&data.FrameMeta{Type: t, TypeVersion: v})
-	f.RefID = refId
+	f.RefID = refID
 	return f
 }
 
