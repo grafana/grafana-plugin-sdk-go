@@ -46,7 +46,7 @@ func GetInfo(id string) (Args, error) {
 	// GoLand places it in:
 	// 	Linux: /tmp/GoLand/___XXgo_build_github_com_PACKAGENAME_pkg
 	//  Mac OS X: /private/var/folders/lx/XXX/T/GoLand/___go_build_github_com_PACKAGENAME_pkg
-	// 	Windows: C:\Users\Giuseppe\AppData\Local\Temp\GoLand\___go_build_github_com_PACKAGENAME_pkg.exe
+	// 	Windows: C:\Users\USER\AppData\Local\Temp\GoLand\___go_build_github_com_PACKAGENAME_pkg.exe
 	goLandDebug := strings.Contains(ex, "GoLand") && strings.Contains(ex, "go_build_")
 	if standalone && (vsCodeDebug || goLandDebug || debug) {
 		info.debugger = true
