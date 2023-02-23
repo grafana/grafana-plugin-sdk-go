@@ -23,6 +23,8 @@ import (
 	"github.com/urfave/cli"
 )
 
+var defaultOutputBinaryPath = "dist"
+
 // Callbacks give you a way to run custom behavior when things happen
 var beforeBuild = func(cfg Config) (Config, error) {
 	return cfg, nil
@@ -81,7 +83,7 @@ func buildBackend(cfg Config) error {
 
 	outputPath := cfg.OutputBinaryPath
 	if outputPath == "" {
-		outputPath = "dist"
+		outputPath = defaultOutputBinaryPath
 	}
 	args := []string{
 		"build", "-o", filepath.Join(outputPath, exeName),
@@ -168,6 +170,34 @@ func (Build) DarwinARM64() error {
 	return buildBackend(newBuildConfig("darwin", "arm64"))
 }
 
+// GenerateManifestFile generates a manifest file for plugin submissions
+func (Build) GenerateManifestFile() error {
+	config := Config{}
+	config, err := beforeBuild(config)
+	if err != nil {
+		return err
+	}
+	outputPath := config.OutputBinaryPath
+	if outputPath == "" {
+		outputPath = defaultOutputBinaryPath
+	}
+	manifestContent, err := utils.GenerateManifest()
+	if err != nil {
+		return err
+	}
+
+	manifestFilePath := filepath.Join(outputPath, "go_plugin_build_manifest")
+	err = os.MkdirAll(outputPath, 0755)
+	if err != nil {
+		return err
+	}
+	err = os.WriteFile(manifestFilePath, []byte(manifestContent), 0600)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Debug builds the debug version for the current platform
 func (Build) Debug() error {
 	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
@@ -192,7 +222,7 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.GenerateManifestFile)
 }
 
 //go:embed tmpl/*
@@ -241,12 +271,16 @@ func Test() error {
 
 // Coverage runs backend tests and makes a coverage report.
 func Coverage() error {
-	// Create a coverage file if it does not already exist
+	// Create a coverage folder if it does not already exist
 	if err := os.MkdirAll(filepath.Join(".", "coverage"), os.ModePerm); err != nil {
 		return err
 	}
 
-	if err := sh.RunV("go", "test", "./pkg/...", "-v", "-cover", "-coverprofile=coverage/backend.out"); err != nil {
+	if err := sh.RunV("go", "test", "./pkg/...", "-coverpkg", "./...", "-v", "-cover", "-coverprofile=coverage/backend.out"); err != nil {
+		return err
+	}
+
+	if err := sh.RunV("go", "tool", "cover", "-func=coverage/backend.out", "-o", "coverage/backend.txt"); err != nil {
 		return err
 	}
 

@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -142,6 +143,9 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 	}
 	for refID, dr := range res.Responses {
 		for _, f := range dr.Frames {
+			if f == nil {
+				return nil, errors.New("frame can not be nil")
+			}
 			if f.RefID == "" {
 				f.RefID = refID
 			}
