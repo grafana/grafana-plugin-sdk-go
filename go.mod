@@ -21,7 +21,7 @@ require (
 	github.com/prometheus/client_golang v1.12.1
 	github.com/prometheus/common v0.32.1
 	github.com/stretchr/testify v1.8.1
-	golang.org/x/sys v0.0.0-20220114195835-da31bd327af9
+	golang.org/x/sys v0.0.0-20220722155257-8c9f86f7a55f
 	google.golang.org/grpc v1.41.0
 	google.golang.org/protobuf v1.27.1
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -34,7 +34,7 @@ require (
 	github.com/google/uuid v1.3.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
 	github.com/urfave/cli v1.22.1
-	golang.org/x/text v0.3.6
+	golang.org/x/text v0.3.8
 )
 
 require (
