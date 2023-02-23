@@ -18,6 +18,7 @@ type vector interface {
 	SetConcrete(i int, val interface{})
 	Insert(i int, val interface{})
 	Delete(i int)
+	ValueSlice() interface{}
 }
 
 // nolint:gocyclo

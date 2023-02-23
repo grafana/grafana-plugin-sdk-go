@@ -218,6 +218,13 @@ func (f *Field) Nullable() bool {
 	return f.Type().Nullable()
 }
 
+// ValueSlice returns the underlying slice of values for the field
+// as its underlying type. The underlying type that is returned
+// is not part of this library stability guarantees and therefore may change.
+func (f *Field) ValueSlice() interface{} {
+	return f.vector.ValueSlice()
+}
+
 // FloatAt returns a float64 at the specified index idx for all supported Field types.
 // It will panic if idx is out of range.
 //

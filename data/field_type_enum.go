@@ -52,6 +52,10 @@ func (v *enumVector) Extend(i int) {
 	*v = append(*v, make([]uint16, i)...)
 }
 
+func (v *enumVector) ValueSlice() interface{} {
+	return []uint16(*v)
+}
+
 func (v *enumVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():
@@ -151,4 +155,8 @@ func (v *nullableEnumVector) Insert(i int, val interface{}) {
 
 func (v *nullableEnumVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *nullableEnumVector) ValueSlice() interface{} {
+	return []*uint16(*v)
 }

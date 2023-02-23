@@ -100,6 +100,10 @@ func (v *nullableUint8Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *nullableUint8Vector) ValueSlice() interface{} {
+	return ([]*uint8)(*v)
+}
+
 type nullableUint16Vector []*uint16
 
 func newNullableUint16Vector(n int) *nullableUint16Vector {
@@ -189,6 +193,10 @@ func (v *nullableUint16Vector) Insert(i int, val interface{}) {
 
 func (v *nullableUint16Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *nullableUint16Vector) ValueSlice() interface{} {
+	return ([]*uint16)(*v)
 }
 
 type nullableUint32Vector []*uint32
@@ -282,6 +290,10 @@ func (v *nullableUint32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *nullableUint32Vector) ValueSlice() interface{} {
+	return ([]*uint32)(*v)
+}
+
 type nullableUint64Vector []*uint64
 
 func newNullableUint64Vector(n int) *nullableUint64Vector {
@@ -371,6 +383,10 @@ func (v *nullableUint64Vector) Insert(i int, val interface{}) {
 
 func (v *nullableUint64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *nullableUint64Vector) ValueSlice() interface{} {
+	return ([]*uint64)(*v)
 }
 
 type nullableInt8Vector []*int8
@@ -464,6 +480,10 @@ func (v *nullableInt8Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *nullableInt8Vector) ValueSlice() interface{} {
+	return ([]*int8)(*v)
+}
+
 type nullableInt16Vector []*int16
 
 func newNullableInt16Vector(n int) *nullableInt16Vector {
@@ -553,6 +573,10 @@ func (v *nullableInt16Vector) Insert(i int, val interface{}) {
 
 func (v *nullableInt16Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *nullableInt16Vector) ValueSlice() interface{} {
+	return ([]*int16)(*v)
 }
 
 type nullableInt32Vector []*int32
@@ -646,6 +670,10 @@ func (v *nullableInt32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *nullableInt32Vector) ValueSlice() interface{} {
+	return ([]*int32)(*v)
+}
+
 type nullableInt64Vector []*int64
 
 func newNullableInt64Vector(n int) *nullableInt64Vector {
@@ -735,6 +763,10 @@ func (v *nullableInt64Vector) Insert(i int, val interface{}) {
 
 func (v *nullableInt64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *nullableInt64Vector) ValueSlice() interface{} {
+	return ([]*int64)(*v)
 }
 
 type nullableFloat32Vector []*float32
@@ -828,6 +860,10 @@ func (v *nullableFloat32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *nullableFloat32Vector) ValueSlice() interface{} {
+	return ([]*float32)(*v)
+}
+
 type nullableFloat64Vector []*float64
 
 func newNullableFloat64Vector(n int) *nullableFloat64Vector {
@@ -917,6 +953,10 @@ func (v *nullableFloat64Vector) Insert(i int, val interface{}) {
 
 func (v *nullableFloat64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *nullableFloat64Vector) ValueSlice() interface{} {
+	return ([]*float64)(*v)
 }
 
 type nullableStringVector []*string
@@ -1010,6 +1050,10 @@ func (v *nullableStringVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *nullableStringVector) ValueSlice() interface{} {
+	return ([]*string)(*v)
+}
+
 type nullableBoolVector []*bool
 
 func newNullableBoolVector(n int) *nullableBoolVector {
@@ -1099,6 +1143,10 @@ func (v *nullableBoolVector) Insert(i int, val interface{}) {
 
 func (v *nullableBoolVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *nullableBoolVector) ValueSlice() interface{} {
+	return ([]*bool)(*v)
 }
 
 type nullableTimeTimeVector []*time.Time
@@ -1192,6 +1240,10 @@ func (v *nullableTimeTimeVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *nullableTimeTimeVector) ValueSlice() interface{} {
+	return ([]*time.Time)(*v)
+}
+
 type nullableJsonRawMessageVector []*json.RawMessage
 
 func newNullableJsonRawMessageVector(n int) *nullableJsonRawMessageVector {
@@ -1281,4 +1333,8 @@ func (v *nullableJsonRawMessageVector) Insert(i int, val interface{}) {
 
 func (v *nullableJsonRawMessageVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *nullableJsonRawMessageVector) ValueSlice() interface{} {
+	return ([]*json.RawMessage)(*v)
 }

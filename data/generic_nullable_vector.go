@@ -90,3 +90,7 @@ func (v *nullablegenVector) Insert(i int, val interface{}) {
 func (v *nullablegenVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+func (v *nullablegenVector) ValueSlice() interface{} {
+	return ([]*gen)(*v)
+}

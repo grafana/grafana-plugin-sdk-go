@@ -77,3 +77,7 @@ func (v *genVector) Insert(i int, val interface{}) {
 func (v *genVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+func (v *genVector) ValueSlice() interface{} {
+	return ([]gen)(*v)
+}

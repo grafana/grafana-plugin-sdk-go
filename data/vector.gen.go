@@ -81,6 +81,10 @@ func (v *uint8Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *uint8Vector) ValueSlice() interface{} {
+	return ([]uint8)(*v)
+}
+
 type uint16Vector []uint16
 
 func newUint16Vector(n int) *uint16Vector {
@@ -151,6 +155,10 @@ func (v *uint16Vector) Insert(i int, val interface{}) {
 
 func (v *uint16Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *uint16Vector) ValueSlice() interface{} {
+	return ([]uint16)(*v)
 }
 
 type uint32Vector []uint32
@@ -225,6 +233,10 @@ func (v *uint32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *uint32Vector) ValueSlice() interface{} {
+	return ([]uint32)(*v)
+}
+
 type uint64Vector []uint64
 
 func newUint64Vector(n int) *uint64Vector {
@@ -295,6 +307,10 @@ func (v *uint64Vector) Insert(i int, val interface{}) {
 
 func (v *uint64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *uint64Vector) ValueSlice() interface{} {
+	return ([]uint64)(*v)
 }
 
 type int8Vector []int8
@@ -369,6 +385,10 @@ func (v *int8Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *int8Vector) ValueSlice() interface{} {
+	return ([]int8)(*v)
+}
+
 type int16Vector []int16
 
 func newInt16Vector(n int) *int16Vector {
@@ -439,6 +459,10 @@ func (v *int16Vector) Insert(i int, val interface{}) {
 
 func (v *int16Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *int16Vector) ValueSlice() interface{} {
+	return ([]int16)(*v)
 }
 
 type int32Vector []int32
@@ -513,6 +537,10 @@ func (v *int32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *int32Vector) ValueSlice() interface{} {
+	return ([]int32)(*v)
+}
+
 type int64Vector []int64
 
 func newInt64Vector(n int) *int64Vector {
@@ -583,6 +611,10 @@ func (v *int64Vector) Insert(i int, val interface{}) {
 
 func (v *int64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *int64Vector) ValueSlice() interface{} {
+	return ([]int64)(*v)
 }
 
 type float32Vector []float32
@@ -657,6 +689,10 @@ func (v *float32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *float32Vector) ValueSlice() interface{} {
+	return ([]float32)(*v)
+}
+
 type float64Vector []float64
 
 func newFloat64Vector(n int) *float64Vector {
@@ -727,6 +763,10 @@ func (v *float64Vector) Insert(i int, val interface{}) {
 
 func (v *float64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *float64Vector) ValueSlice() interface{} {
+	return ([]float64)(*v)
 }
 
 type stringVector []string
@@ -801,6 +841,10 @@ func (v *stringVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *stringVector) ValueSlice() interface{} {
+	return ([]string)(*v)
+}
+
 type boolVector []bool
 
 func newBoolVector(n int) *boolVector {
@@ -871,6 +915,10 @@ func (v *boolVector) Insert(i int, val interface{}) {
 
 func (v *boolVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *boolVector) ValueSlice() interface{} {
+	return ([]bool)(*v)
 }
 
 type timeTimeVector []time.Time
@@ -945,6 +993,10 @@ func (v *timeTimeVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+func (v *timeTimeVector) ValueSlice() interface{} {
+	return ([]time.Time)(*v)
+}
+
 type jsonRawMessageVector []json.RawMessage
 
 func newJsonRawMessageVector(n int) *jsonRawMessageVector {
@@ -1015,4 +1067,8 @@ func (v *jsonRawMessageVector) Insert(i int, val interface{}) {
 
 func (v *jsonRawMessageVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+func (v *jsonRawMessageVector) ValueSlice() interface{} {
+	return ([]json.RawMessage)(*v)
 }
