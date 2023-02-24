@@ -69,12 +69,11 @@ func setupProfilingEnvironment(pluginID string) {
 }
 
 func setupTracingEnvironment() {
+	var otelAddr, otelPropagation string
 	otelAddr, ok := os.LookupEnv(PluginTracingOpenTelemetryOTLPAddressEnv)
-	if !ok {
-		// Tracing is disabled
-		return
+	if ok {
+		otelPropagation = os.Getenv(PluginTracingOpenTelemetryOTLPPropagationEnv)
 	}
-	otelPropagation := os.Getenv(PluginTracingOpenTelemetryOTLPPropagationEnv)
 	Logger.Info("Tracing", "enabled", otelAddr != "", "propagation", otelPropagation)
 }
 
