@@ -7,7 +7,6 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 	"golang.org/x/oauth2/jwt"
@@ -36,47 +35,47 @@ type OAuth2Options struct {
 }
 
 func getOAuth2Client(client *http.Client, oAuth2Options OAuth2Options) (o *http.Client, err error) {
-	if client == nil {
-		client, err = httpclient.New(httpclient.Options{})
-		if err != nil {
-			return nil, err
-		}
-	}
 	switch oAuth2Options.OAuth2Type {
 	case OAuth2TypeClientCredentials:
-		return getOAuth2ClientCredentialsClient(*client, oAuth2Options)
+		return getOAuth2ClientCredentialsClient(client, oAuth2Options)
 	case OAuth2TypeJWT:
-		return getOAuth2JWTClient(*client, oAuth2Options)
+		return getOAuth2JWTClient(client, oAuth2Options)
 	}
 	return client, fmt.Errorf("invalid/empty oauth2 type (%s)", oAuth2Options.OAuth2Type)
 }
 
-func getOAuth2ClientCredentialsClient(client http.Client, options OAuth2Options) (*http.Client, error) {
+func getOAuth2ClientCredentialsClient(client *http.Client, options OAuth2Options) (*http.Client, error) {
 	config := clientcredentials.Config{
 		TokenURL:       options.TokenURL,
-		Scopes:         normalizeOAuth2Scopes(options),
-		EndpointParams: normalizeOAuth2EndpointParams(options),
+		Scopes:         sanitizeOAuth2Scopes(options),
+		EndpointParams: sanitizeOAuth2EndpointParams(options),
 		ClientID:       options.ClientID,
 		ClientSecret:   options.ClientSecret,
 	}
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &client)
+	if client == nil {
+		return config.Client(context.Background()), nil
+	}
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, client)
 	return config.Client(ctx), nil
 }
 
-func getOAuth2JWTClient(client http.Client, options OAuth2Options) (*http.Client, error) {
+func getOAuth2JWTClient(client *http.Client, options OAuth2Options) (*http.Client, error) {
 	config := jwt.Config{
 		TokenURL:     options.TokenURL,
-		Scopes:       normalizeOAuth2Scopes(options),
+		Scopes:       sanitizeOAuth2Scopes(options),
 		PrivateKey:   options.PrivateKey,
 		PrivateKeyID: options.PrivateKeyID,
 		Email:        options.Email,
 		Subject:      options.Subject,
 	}
-	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, &client)
+	if client == nil {
+		return config.Client(context.Background()), nil
+	}
+	ctx := context.WithValue(context.Background(), oauth2.HTTPClient, client)
 	return config.Client(ctx), nil
 }
 
-func normalizeOAuth2Scopes(options OAuth2Options) []string {
+func sanitizeOAuth2Scopes(options OAuth2Options) []string {
 	scopes := []string{}
 	for _, scope := range options.Scopes {
 		if scope != "" {
@@ -86,7 +85,7 @@ func normalizeOAuth2Scopes(options OAuth2Options) []string {
 	return scopes
 }
 
-func normalizeOAuth2EndpointParams(options OAuth2Options) url.Values {
+func sanitizeOAuth2EndpointParams(options OAuth2Options) url.Values {
 	endpointParams := url.Values{}
 	for k, v := range options.EndpointParams {
 		if k != "" && v != "" {
