@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -19,14 +20,20 @@ var (
 	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT"
 
 	// PluginTracingOpenTelemetryOTLPAddressEnv is a constant for the GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS
-	// environment variable used to specify the OTLP address.
+	// environment variable used to specify the OTLP Address.
 	PluginTracingOpenTelemetryOTLPAddressEnv = "GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS"
 	// PluginTracingOpenTelemetryOTLPPropagationEnv is a constant for the GF_TRACING_OPENTELEMETRY_OTLP_PROPAGATION
 	// environment variable used to specify the OTLP propagation format.
 	PluginTracingOpenTelemetryOTLPPropagationEnv = "GF_TRACING_OPENTELEMETRY_OTLP_PROPAGATION"
 )
 
-func setupProfilingEnvironment(pluginID string) {
+// SetupPluginEnvironment will read the environment variables and apply the
+// standard environment behavior.
+//
+// As the SDK evolves, this will likely change.
+//
+// Currently this function enables and configures profiling with pprof.
+func SetupPluginEnvironment(pluginID string) {
 	// Enable profiler
 	profilerEnabled := false
 	if value, ok := os.LookupEnv(PluginProfilerEnvDeprecated); ok {
@@ -68,22 +75,23 @@ func setupProfilingEnvironment(pluginID string) {
 	}
 }
 
-func setupTracingEnvironment() {
+type TracingConfig struct {
+	Address     string
+	Propagation tracing.PropagatorFormat
+}
+
+func (c TracingConfig) IsEnabled() bool {
+	return c.Address != ""
+}
+
+func GetTracingConfig() TracingConfig {
 	var otelAddr, otelPropagation string
 	otelAddr, ok := os.LookupEnv(PluginTracingOpenTelemetryOTLPAddressEnv)
 	if ok {
 		otelPropagation = os.Getenv(PluginTracingOpenTelemetryOTLPPropagationEnv)
 	}
-	Logger.Info("Tracing", "enabled", otelAddr != "", "propagation", otelPropagation)
-}
-
-// SetupPluginEnvironment will read the environment variables and apply the
-// standard environment behavior.
-//
-// As the SDK evolves, this will likely change.
-//
-// Currently this function enables and configures profiling with pprof.
-func SetupPluginEnvironment(pluginID string) {
-	setupProfilingEnvironment(pluginID)
-	setupTracingEnvironment()
+	return TracingConfig{
+		Address:     otelAddr,
+		Propagation: tracing.PropagatorFormat(otelPropagation),
+	}
 }

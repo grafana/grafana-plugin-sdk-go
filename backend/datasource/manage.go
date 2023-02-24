@@ -1,11 +1,11 @@
 package datasource
 
 import (
+	"fmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
-	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
 )
 
 // ManageOpts can modify Manage behaviour.
@@ -18,6 +18,7 @@ type ManageOpts struct {
 // pluginID should match the one from plugin.json.
 func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpts) error {
 	backend.SetupPluginEnvironment(pluginID) // Enable profiler.
+	tracingCfg := backend.GetTracingConfig()
 
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 
@@ -34,8 +35,17 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		return err
 	}
 
-	// TODO: different tracing propagators
-	otel.SetTextMapPropagator(propagation.TraceContext{})
+	// Set up tracing
+	// TODO: replicate in app as well
+	// TODO: add support for custom version and attributes
+	if tracingCfg.IsEnabled() {
+		tp, err := tracing.NewTraceProvider(tracingCfg.Address, pluginID)
+		if err != nil {
+			return fmt.Errorf("new trace provider: %w", err)
+		}
+		tracing.InitGlobalTraceProvider(tp, tracing.NewPropagatorFormat(tracingCfg.Propagation))
+	}
+	backend.Logger.Info("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
 
 	if info.Standalone {
 		return backend.StandaloneServe(serveOpts, info.Address)

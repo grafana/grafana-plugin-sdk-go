@@ -2,6 +2,7 @@ package httpclient
 
 import (
 	"crypto/tls"
+	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"time"
 )
@@ -18,7 +19,7 @@ type ConfigureTransportFunc func(opts Options, transport *http.Transport)
 // Called after tls.Config creation.
 type ConfigureTLSConfigFunc func(opts Options, tlsConfig *tls.Config)
 
-// Options defines options for creating HTTP clients.
+// Options defines options for creating HTTP clien`ts.
 type Options struct {
 	// Timeouts timeout/connection related options.
 	Timeouts *TimeoutOptions
@@ -57,6 +58,24 @@ type Options struct {
 	// ConfigureTLSConfig optionally provide a ConfigureTLSConfigFunc
 	// to modify the created http.Client.
 	ConfigureTLSConfig ConfigureTLSConfigFunc
+}
+
+// NewOptions returns a new empty Options.
+func NewOptions() Options {
+	return Options{}
+}
+
+// WithTracingMiddleware returns a new Options whose Middlewares are prepended with a TracingMiddleware
+// using the provided trace.Tracer. If there are no middlewares, the resulting Options will have
+// TracingMiddleware followed by DefaultMiddlewares().
+func (o Options) WithTracingMiddleware(tracer trace.Tracer) Options {
+	existingMiddlewares := o.Middlewares
+	if len(existingMiddlewares) == 0 {
+		existingMiddlewares = DefaultMiddlewares()
+	}
+	copy(o.Middlewares, existingMiddlewares)
+	o.Middlewares = append([]Middleware{TracingMiddleware(tracer)}, existingMiddlewares...)
+	return o
 }
 
 // BasicAuthOptions basic authentication options.

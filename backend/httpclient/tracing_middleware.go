@@ -1,0 +1,59 @@
+package httpclient
+
+import (
+	"fmt"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/propagation"
+	"net/http"
+	"strconv"
+
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/trace"
+)
+
+const (
+	TracingMiddlewareName   = "tracing"
+	httpContentLengthTagKey = "http.content_length"
+)
+
+func TracingMiddleware(tracer trace.Tracer) Middleware {
+	return NamedMiddlewareFunc(TracingMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
+		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			ctx, span := tracer.Start(req.Context(), "HTTP Outgoing Request", trace.WithSpanKind(trace.SpanKindClient))
+			defer span.End()
+
+			req = req.WithContext(ctx)
+			for k, v := range opts.Labels {
+				span.SetAttributes(attribute.Key(k).String(v))
+			}
+
+			otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
+			res, err := next.RoundTrip(req)
+
+			span.SetAttributes(attribute.String("http.url", req.URL.String()))
+			span.SetAttributes(attribute.String("http.method", req.Method))
+			// ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
+
+			if err != nil {
+				span.RecordError(err)
+				return res, err
+			}
+
+			if res != nil {
+				// we avoid measuring contentlength less than zero because it indicates
+				// that the content size is unknown. https://godoc.org/github.com/badu/http#Response
+				if res.ContentLength > 0 {
+					span.SetAttributes(attribute.Key(httpContentLengthTagKey).Int64(res.ContentLength))
+				}
+
+				span.SetAttributes(attribute.Int("http.status_code", res.StatusCode))
+				if res.StatusCode >= 400 {
+					span.SetStatus(codes.Error, fmt.Sprintf("error with HTTP status code %s", strconv.Itoa(res.StatusCode)))
+				}
+			}
+
+			return res, err
+		})
+	})
+}
