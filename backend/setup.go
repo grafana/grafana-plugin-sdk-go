@@ -17,15 +17,16 @@ var (
 	PluginProfilerPortEnvDeprecated = "GF_PLUGINS_PROFILER_PORT"
 	// PluginProfilingPortEnv is a constant for the GF_PLUGIN_PROFILING_PORT environment variable use to specify a pprof port (default 6060).
 	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT"
+
+	// PluginTracingOpenTelemetryOTLPAddressEnv is a constant for the GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS
+	// environment variable used to specify the OTLP address.
+	PluginTracingOpenTelemetryOTLPAddressEnv = "GF_TRACING_OPENTELEMETRY_OTLP_ADDRESS"
+	// PluginTracingOpenTelemetryOTLPPropagationEnv is a constant for the GF_TRACING_OPENTELEMETRY_OTLP_PROPAGATION
+	// environment variable used to specify the OTLP propagation format.
+	PluginTracingOpenTelemetryOTLPPropagationEnv = "GF_TRACING_OPENTELEMETRY_OTLP_PROPAGATION"
 )
 
-// SetupPluginEnvironment will read the environment variables and apply the
-// standard environment behavior.
-//
-// As the SDK evolves, this will likely change.
-//
-// Currently this function enables and configures profiling with pprof.
-func SetupPluginEnvironment(pluginID string) {
+func setupProfilingEnvironment(pluginID string) {
 	// Enable profiler
 	profilerEnabled := false
 	if value, ok := os.LookupEnv(PluginProfilerEnvDeprecated); ok {
@@ -65,4 +66,25 @@ func SetupPluginEnvironment(pluginID string) {
 			}
 		}()
 	}
+}
+
+func setupTracingEnvironment() {
+	otelAddr, ok := os.LookupEnv(PluginTracingOpenTelemetryOTLPAddressEnv)
+	if !ok {
+		// Tracing is disabled
+		return
+	}
+	otelPropagation := os.Getenv(PluginTracingOpenTelemetryOTLPPropagationEnv)
+	Logger.Info("Tracing", "enabled", otelAddr != "", "propagation", otelPropagation)
+}
+
+// SetupPluginEnvironment will read the environment variables and apply the
+// standard environment behavior.
+//
+// As the SDK evolves, this will likely change.
+//
+// Currently this function enables and configures profiling with pprof.
+func SetupPluginEnvironment(pluginID string) {
+	setupProfilingEnvironment(pluginID)
+	setupTracingEnvironment()
 }
