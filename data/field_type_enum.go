@@ -5,15 +5,17 @@ package data
 // a uint16, but has special semantics and interacts with the metadata
 // Unlike the other fields it can not be easily generated
 
-type enumVector []uint16
+type enumVector []EnumItemIndex
+
+type EnumItemIndex uint16
 
 func newEnumVector(n int) *enumVector {
-	v := enumVector(make([]uint16, n))
+	v := enumVector(make([]EnumItemIndex, n))
 	return &v
 }
 
 func (v *enumVector) Set(idx int, i interface{}) {
-	(*v)[idx] = i.(uint16)
+		(*v)[idx] = i.(EnumItemIndex)
 }
 
 func (v *enumVector) SetConcrete(idx int, i interface{}) {
@@ -21,7 +23,7 @@ func (v *enumVector) SetConcrete(idx int, i interface{}) {
 }
 
 func (v *enumVector) Append(i interface{}) {
-	*v = append(*v, i.(uint16))
+	*v = append(*v, i.(EnumItemIndex))
 }
 
 func (v *enumVector) At(i int) interface{} {
@@ -49,7 +51,7 @@ func (v *enumVector) Type() FieldType {
 }
 
 func (v *enumVector) Extend(i int) {
-	*v = append(*v, make([]uint16, i)...)
+	*v = append(*v, make([]EnumItemIndex, i)...)
 }
 
 func (v *enumVector) Insert(i int, val interface{}) {
