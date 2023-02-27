@@ -1,8 +1,8 @@
 package data
 
 // this supports the enum type
-// it is diffent than the rest since it is backed by
-// a uint16, but has special semantics and interacts with the metadata
+// it is different than the rest since it is backed by
+// a uint16 but maps to the EnumItemIndex type, and has special semantics and interacts with the metadata
 // Unlike the other fields it can not be easily generated
 
 type enumVector []EnumItemIndex
@@ -15,7 +15,7 @@ func newEnumVector(n int) *enumVector {
 }
 
 func (v *enumVector) Set(idx int, i interface{}) {
-		(*v)[idx] = i.(EnumItemIndex)
+	(*v)[idx] = i.(EnumItemIndex)
 }
 
 func (v *enumVector) SetConcrete(idx int, i interface{}) {
@@ -71,10 +71,10 @@ func (v *enumVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
-type nullableEnumVector []*uint16
+type nullableEnumVector []*EnumItemIndex
 
 func newNullableEnumVector(n int) *nullableEnumVector {
-	v := nullableEnumVector(make([]*uint16, n))
+	v := nullableEnumVector(make([]*EnumItemIndex, n))
 	return &v
 }
 
@@ -83,11 +83,11 @@ func (v *nullableEnumVector) Set(idx int, i interface{}) {
 		(*v)[idx] = nil
 		return
 	}
-	(*v)[idx] = i.(*uint16)
+	(*v)[idx] = i.(*EnumItemIndex)
 }
 
 func (v *nullableEnumVector) SetConcrete(idx int, i interface{}) {
-	val := i.(uint16)
+	val := i.(EnumItemIndex)
 	(*v)[idx] = &val
 }
 
@@ -96,7 +96,7 @@ func (v *nullableEnumVector) Append(i interface{}) {
 		*v = append(*v, nil)
 		return
 	}
-	*v = append(*v, i.(*uint16))
+	*v = append(*v, i.(*EnumItemIndex))
 }
 
 func (v *nullableEnumVector) At(i int) interface{} {
@@ -105,7 +105,7 @@ func (v *nullableEnumVector) At(i int) interface{} {
 
 func (v *nullableEnumVector) CopyAt(i int) interface{} {
 	if (*v)[i] == nil {
-		var g *uint16
+		var g *EnumItemIndex
 		return g
 	}
 	g := *(*v)[i]
@@ -113,7 +113,7 @@ func (v *nullableEnumVector) CopyAt(i int) interface{} {
 }
 
 func (v *nullableEnumVector) ConcreteAt(i int) (interface{}, bool) {
-	var g uint16
+	var g EnumItemIndex
 	val := (*v)[i]
 	if val == nil {
 		return g, false
@@ -135,7 +135,7 @@ func (v *nullableEnumVector) Type() FieldType {
 }
 
 func (v *nullableEnumVector) Extend(i int) {
-	*v = append(*v, make([]*uint16, i)...)
+	*v = append(*v, make([]*EnumItemIndex, i)...)
 }
 
 func (v *nullableEnumVector) Insert(i int, val interface{}) {

@@ -467,7 +467,7 @@ func buildNullableEnumColumn(pool memory.Allocator, field arrow.Field, vec *null
 			builder.AppendNull()
 			continue
 		}
-		builder.Append(*v)
+		builder.Append((uint16)(*v))
 	}
 
 	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
