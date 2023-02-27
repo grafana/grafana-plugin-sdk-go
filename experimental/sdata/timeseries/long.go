@@ -19,11 +19,11 @@ func LongFrameVersions() []data.FrameTypeVersion {
 	return []data.FrameTypeVersion{{0, 1}}
 }
 
-func NewLongFrame(v data.FrameTypeVersion) (*LongFrame, error) {
+func NewLongFrame(refID string, v data.FrameTypeVersion) (*LongFrame, error) {
 	if v.Greater(LongFrameVersionLatest) {
 		return nil, fmt.Errorf("can not create LongFrame of version %s because it is newer than library version %v", v, LongFrameVersionLatest)
 	}
-	return &LongFrame{emptyFrameWithTypeMD(data.FrameTypeTimeSeriesLong, v)}, nil
+	return &LongFrame{emptyFrameWithTypeMD(refID, data.FrameTypeTimeSeriesLong, v)}, nil
 }
 
 func (ls *LongFrame) GetCollection(validateData bool) (Collection, error) {
@@ -44,6 +44,8 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 	if frame == nil {
 		return c, fmt.Errorf("frame 0 must not be nil")
 	}
+
+	c.RefID = frame.RefID
 
 	if !frameHasType(frame, data.FrameTypeTimeSeriesLong) {
 		return c, fmt.Errorf("frame 0 is missing long type indicator")
@@ -84,7 +86,7 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 
 	factorFieldIndices := frame.TypeIndices(data.FieldTypeString, data.FieldTypeNullableString)
 
-	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}) error {
+	appendToMetric := func(metricName string, l data.Labels, t time.Time, value interface{}, valType data.FieldType) error {
 		if mm[metricName] == nil {
 			mm[metricName] = make(map[string]MetricRef)
 		}
@@ -93,8 +95,7 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 		if ref, ok := mm[metricName][lbStr]; !ok {
 			ref.TimeField = data.NewField(timeField.Name, nil, []time.Time{t})
 
-			vt := data.FieldTypeFor(value)
-			ref.ValueField = data.NewFieldFromFieldType(vt, 1)
+			ref.ValueField = data.NewFieldFromFieldType(valType, 1)
 			ref.ValueField.Set(0, value)
 			ref.ValueField.Name = metricName
 			ref.ValueField.Labels = l
@@ -126,7 +127,7 @@ func validateAndGetRefsLong(ls *LongFrame, validateData, getRefs bool) (Collecti
 			}
 			for _, vFieldIdx := range valueFieldIndices {
 				valueField := frame.Fields[vFieldIdx]
-				if err := appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx)); err != nil {
+				if err := appendToMetric(valueField.Name, l, timeField.At(rowIdx).(time.Time), valueField.At(rowIdx), valueField.Type()); err != nil {
 					return c, err
 				}
 			}

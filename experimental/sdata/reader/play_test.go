@@ -13,7 +13,7 @@ import (
 
 func TestCanReadBasedOnMeta(t *testing.T) {
 	t.Run("basic test", func(t *testing.T) {
-		tsWideNoData, err := timeseries.NewWideFrame(timeseries.WideFrameVersionLatest)
+		tsWideNoData, err := timeseries.NewWideFrame("A", timeseries.WideFrameVersionLatest)
 		require.NoError(t, err)
 
 		kind, err := reader.CanReadBasedOnMeta(tsWideNoData.Frames())
@@ -26,7 +26,7 @@ func TestCanReadBasedOnMeta(t *testing.T) {
 	})
 
 	t.Run("read something", func(t *testing.T) {
-		n, err := numeric.NewWideFrame(numeric.WideFrameVersionLatest)
+		n, err := numeric.NewWideFrame("A", numeric.WideFrameVersionLatest)
 		require.NoError(t, err)
 
 		err = n.AddMetric("cpu", data.Labels{"host": "king_sloth"}, 5.3)

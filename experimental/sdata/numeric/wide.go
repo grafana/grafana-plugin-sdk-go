@@ -23,11 +23,12 @@ func WideFrameVersions() []data.FrameTypeVersion {
 	return []data.FrameTypeVersion{{0, 1}}
 }
 
-func NewWideFrame(v data.FrameTypeVersion) (*WideFrame, error) {
+func NewWideFrame(refID string, v data.FrameTypeVersion) (*WideFrame, error) {
 	if v.Greater(WideFrameVersionLatest) {
 		return nil, fmt.Errorf("can not create WideFrame of version %s because it is newer than library version %v", v, WideFrameVersionLatest)
 	}
 	f := data.NewFrame("")
+	f.RefID = refID
 	f.SetMeta(&data.FrameMeta{Type: data.FrameTypeNumericWide, TypeVersion: v})
 	return &WideFrame{f}, nil
 }
@@ -62,6 +63,11 @@ func validateAndGetRefsWide(wf *WideFrame, validateData bool) (Collection, error
 	}
 
 	var c Collection
+	if wf == nil {
+		return c, fmt.Errorf("frame is nil")
+	}
+
+	c.RefID = wf.RefID
 
 	if !frameHasType(wf.Frame, data.FrameTypeNumericWide) {
 		return c, fmt.Errorf("frame has wrong type, expected NumericWide but got %q", wf.Meta.Type)
