@@ -117,6 +117,7 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 // FieldTypeFor will return the FieldType that holds items of item's type.
 // If the FieldType is not recognized, FieldTypeUnknown is returned.
 // For example, for an item of type *int8, FieldTypeNullableInt8 will be returned.
+// nolint:gocyclo
 func FieldTypeFor(item interface{}) FieldType {
 	switch item.(type) {
 	case int8:
