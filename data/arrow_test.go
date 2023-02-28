@@ -271,7 +271,7 @@ func goldenDF() *data.Frame {
 			jsonRawMessagePtr(json.RawMessage("[{\"c\":3},{\"d\":4}]")),
 			jsonRawMessagePtr(json.RawMessage("{\"e\":{\"f\":5}}")),
 		}),
-		newField("enum", data.FieldTypeEnum, []data.EnumItemIndex{
+		data.NewField("enum", nil, []data.EnumItemIndex{
 			1, 2, 2, 1, 1,
 		}).SetConfig(&data.FieldConfig{
 			TypeConfig: &data.FieldTypeConfig{
@@ -282,7 +282,7 @@ func goldenDF() *data.Frame {
 				},
 			},
 		}),
-		newField("nullable_enum", data.FieldTypeNullableEnum, []*data.EnumItemIndex{
+		data.NewField("nullable_enum", nil, []*data.EnumItemIndex{
 			(*data.EnumItemIndex)(uint16Ptr(1)),
 			(*data.EnumItemIndex)(uint16Ptr(2)),
 			nil,

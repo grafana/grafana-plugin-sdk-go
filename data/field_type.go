@@ -84,9 +84,9 @@ const (
 	// FieldTypeNullableJSON indicates the underlying primitive is a []*json.RawMessage.
 	FieldTypeNullableJSON
 
-	// FieldTypeEnum indicates the underlying primitive is a []uint16, with field mapping metadata
+	// FieldTypeEnum indicates the underlying primitive is a []data.EnumItemIndex, with field mapping metadata
 	FieldTypeEnum
-	// FieldTypeNullableEnum indicates the underlying primitive is a []*uint16, with field mapping metadata
+	// FieldTypeNullableEnum indicates the underlying primitive is a []*data.EnumItemIndex, with field mapping metadata
 	FieldTypeNullableEnum
 )
 
@@ -116,10 +116,8 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 
 // FieldTypeFor will return the FieldType that holds items of item's type.
 // If the FieldType is not recognized, FieldTypeUnknown is returned.
-// Enum fields are currently unrecognized.
 // For example, for an item of type *int8, FieldTypeNullableInt8 will be returned.
 func FieldTypeFor(item interface{}) FieldType {
-	// NOTE: enum does not have a native mapping ;(
 	switch item.(type) {
 	case int8:
 		return FieldTypeInt8
@@ -193,6 +191,11 @@ func FieldTypeFor(item interface{}) FieldType {
 		return FieldTypeJSON
 	case *json.RawMessage:
 		return FieldTypeNullableJSON
+
+	case EnumItemIndex:
+		return FieldTypeEnum
+	case *EnumItemIndex:
+		return FieldTypeNullableEnum
 	}
 
 	return FieldTypeUnknown

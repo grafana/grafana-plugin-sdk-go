@@ -14,6 +14,12 @@ func newEnumVector(n int) *enumVector {
 	return &v
 }
 
+func newEnumVectorWithValues(s []EnumItemIndex) *enumVector {
+	v := make([]EnumItemIndex, len(s))
+	copy(v, s)
+	return (*enumVector)(&v)
+}
+
 func (v *enumVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(EnumItemIndex)
 }
@@ -76,6 +82,12 @@ type nullableEnumVector []*EnumItemIndex
 func newNullableEnumVector(n int) *nullableEnumVector {
 	v := nullableEnumVector(make([]*EnumItemIndex, n))
 	return &v
+}
+
+func newNullableEnumVectorWithValues(s []*EnumItemIndex) *nullableEnumVector {
+	v := make([]*EnumItemIndex, len(s))
+	copy(v, s)
+	return (*nullableEnumVector)(&v)
 }
 
 func (v *nullableEnumVector) Set(idx int, i interface{}) {
