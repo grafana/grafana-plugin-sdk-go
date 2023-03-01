@@ -107,6 +107,6 @@ func TestFieldTypeFor(t *testing.T) {
 	}
 }
 
-func pointer[T any](input T) any {
+func pointer[T any](input T) *T {
 	return &input
 }
