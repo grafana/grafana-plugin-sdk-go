@@ -5,6 +5,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"strconv"
 	"syscall"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -124,10 +125,12 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 
 	// Write the address to the local file
 	if info.Debugger {
-		log.DefaultLogger.Info("Creating standalone address file")
-		err := standalone.CreateStandaloneAddressFile(info)
-		if err != nil {
+		log.DefaultLogger.Info("Creating standalone address and pid files")
+		if err := standalone.CreateStandaloneAddressFile(info); err != nil {
 			return fmt.Errorf("create standalone address file: %w", err)
+		}
+		if err := standalone.CreateStandalonePIDFile(info); err != nil {
+			return fmt.Errorf("create standalone pid file: %w", err)
 		}
 
 		// sadly vs-code can not listen to shutdown events
@@ -139,6 +142,9 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 			log.DefaultLogger.Info("Cleaning up standalone address file")
 			if err := standalone.CleanupStandaloneAddressFile(info); err != nil {
 				log.DefaultLogger.Error("Error while cleaning up standalone address file", "error", err)
+			}
+			if err := standalone.CleanupStandalonePIDFile(info); err != nil {
+				log.DefaultLogger.Error("Error while cleaning up standalone pid file", "error", err)
 			}
 		}()
 
@@ -227,6 +233,7 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 	if info.Address != "" && (info.PID == 0 || standalone.CheckPIDIsRunning(info.PID)) {
 		// Grafana is trying to run the dummy plugin locator to connect to the standalone
 		// GRPC server (separate process)
+		Logger.Debug("Running dummy plugin locator", "addr", info.Address, "pid", strconv.Itoa(info.PID))
 		standalone.RunDummyPluginLocator(info.Address)
 		return nil
 	}
