@@ -164,12 +164,12 @@ func FieldTypeFor(item interface{}) FieldType {
 	case float32:
 		return FieldTypeFloat32
 	case *float32:
-		return FieldTypeFloat32
+		return FieldTypeNullableFloat32
 
 	case float64:
 		return FieldTypeFloat64
 	case *float64:
-		return FieldTypeFloat64
+		return FieldTypeNullableFloat64
 
 	// string and bool
 	case bool:
