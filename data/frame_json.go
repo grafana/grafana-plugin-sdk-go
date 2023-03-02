@@ -247,6 +247,18 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 	return iter.Error
 }
 
+func readDataFramesJSON(frames *Frames, iter *jsoniter.Iterator) error {
+	for iter.ReadArray() {
+		frame := &Frame{}
+		iter.ReadVal(frame)
+		if iter.Error != nil {
+			return iter.Error
+		}
+		*frames = append(*frames, frame)
+	}
+	return nil
+}
+
 func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 		switch l2Field {
@@ -846,6 +858,17 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	}
 
 	stream.WriteObjectEnd()
+}
+
+func writeDataFrames(frames *Frames, stream *jsoniter.Stream) {
+	if frames == nil {
+		return
+	}
+	stream.WriteArrayStart()
+	for _, frame := range *frames {
+		stream.WriteVal(frame)
+	}
+	stream.WriteArrayEnd()
 }
 
 // ArrowBufferToJSON writes a frame to JSON

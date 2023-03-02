@@ -115,6 +115,22 @@ func TestFieldTypeToJSON(t *testing.T) {
 	require.JSONEq(t, string(orig), string(second))
 }
 
+func TestJSONFrames(t *testing.T) {
+	frames := data.Frames{goldenDF()}
+	b, err := json.Marshal(frames)
+	require.NoError(t, err)
+
+	var rFrames data.Frames
+
+	err = json.Unmarshal(b, &rFrames)
+	require.NoError(t, err)
+
+	if diff := cmp.Diff(frames, rFrames, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+
+}
+
 func BenchmarkFrameToJSON(b *testing.B) {
 	f := goldenDF()
 	b.ReportAllocs()
