@@ -205,7 +205,7 @@ func cleanupStandaloneFile(fileName string) error {
 // CleanupStandaloneAddressFile attempts to delete standalone.txt from the specified folder.
 // If the file does not exist, the function returns nil.
 func CleanupStandaloneAddressFile(info Args) error {
-	return cleanupStandaloneFile(info.StandalonePIDFilePath())
+	return cleanupStandaloneFile(info.StandaloneAddressFilePath())
 }
 
 // CleanupStandalonePIDFile attempts to delete pid.txt from the specified folder.
@@ -255,6 +255,9 @@ func FindAndKillCurrentPlugin(dir string) {
 
 // CheckPIDIsRunning returns true if there's a process with the specified PID
 func CheckPIDIsRunning(pid int) bool {
+	if pid == 0 {
+		return false
+	}
 	process, err := os.FindProcess(pid)
 	if err != nil {
 		return false
