@@ -232,7 +232,7 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 		return GracefulStandaloneServe(serveOpts, info)
 	}
 
-	if info.Address != "" && (info.PID == 0 || standalone.CheckPIDIsRunning(info.PID)) {
+	if info.Address != "" && standalone.CheckPIDIsRunning(info.PID) {
 		// Grafana is trying to run the dummy plugin locator to connect to the standalone
 		// GRPC server (separate process)
 		Logger.Debug("Running dummy plugin locator", "addr", info.Address, "pid", strconv.Itoa(info.PID))
