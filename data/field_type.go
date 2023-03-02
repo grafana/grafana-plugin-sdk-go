@@ -84,9 +84,9 @@ const (
 	// FieldTypeNullableJSON indicates the underlying primitive is a []*json.RawMessage.
 	FieldTypeNullableJSON
 
-	// FieldTypeEnum indicates the underlying primitive is a []uint16, with field mapping metadata
+	// FieldTypeEnum indicates the underlying primitive is a []data.EnumItemIndex, with field mapping metadata
 	FieldTypeEnum
-	// FieldTypeNullableEnum indicates the underlying primitive is a []*uint16, with field mapping metadata
+	// FieldTypeNullableEnum indicates the underlying primitive is a []*data.EnumItemIndex, with field mapping metadata
 	FieldTypeNullableEnum
 )
 
@@ -114,46 +114,96 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
-// FieldTypeFor returns a concrete type for a given interface or unknown if not known
-func FieldTypeFor(t interface{}) FieldType {
-	// NOTE: enum does not have a native mapping ;(
-
-	switch t.(type) {
+// FieldTypeFor will return the FieldType that holds items of item's type.
+// If the FieldType is not recognized, FieldTypeUnknown is returned.
+// For example, for an item of type *int8, FieldTypeNullableInt8 will be returned.
+// nolint:gocyclo
+func FieldTypeFor(item interface{}) FieldType {
+	switch item.(type) {
 	case int8:
 		return FieldTypeInt8
+	case *int8:
+		return FieldTypeNullableInt8
+
 	case int16:
 		return FieldTypeInt16
+	case *int16:
+		return FieldTypeNullableInt16
 	case int32:
 		return FieldTypeInt32
+	case *int32:
+		return FieldTypeNullableInt32
+
 	case int64:
 		return FieldTypeInt64
+	case *int64:
+		return FieldTypeNullableInt64
 
+	// uints
 	case uint8:
 		return FieldTypeUint8
+	case *uint8:
+		return FieldTypeNullableUint8
+
 	case uint16:
 		return FieldTypeUint16
+	case *uint16:
+		return FieldTypeNullableUint16
+
 	case uint32:
 		return FieldTypeUint32
+	case *uint32:
+		return FieldTypeNullableUint32
+
 	case uint64:
 		return FieldTypeUint64
+	case *uint64:
+		return FieldTypeNullableUint64
 
+	// floats
 	case float32:
 		return FieldTypeFloat32
+	case *float32:
+		return FieldTypeNullableFloat32
+
 	case float64:
 		return FieldTypeFloat64
+	case *float64:
+		return FieldTypeNullableFloat64
+
+	// string and bool
 	case bool:
 		return FieldTypeBool
+	case *bool:
+		return FieldTypeNullableBool
+
 	case string:
 		return FieldTypeString
+	case *string:
+		return FieldTypeNullableString
+
+	// others
 	case time.Time:
 		return FieldTypeTime
+	case *time.Time:
+		return FieldTypeNullableTime
+
 	case json.RawMessage:
 		return FieldTypeJSON
+	case *json.RawMessage:
+		return FieldTypeNullableJSON
+
+	case EnumItemIndex:
+		return FieldTypeEnum
+	case *EnumItemIndex:
+		return FieldTypeNullableEnum
 	}
+
 	return FieldTypeUnknown
 }
 
 // NullableType converts the FieldType to the corresponding nullable type.
+// Calling this on FieldTypeUnknown will panic.
 func (p FieldType) NullableType() FieldType {
 	switch p {
 	// ints
@@ -204,12 +254,14 @@ func (p FieldType) NullableType() FieldType {
 
 	case FieldTypeEnum, FieldTypeNullableEnum:
 		return FieldTypeNullableEnum
+
 	default:
 		panic(fmt.Sprintf("unsupported vector ptype: %+v", p))
 	}
 }
 
 // NonNullableType converts the FieldType to the corresponding not-nullable type.
+// Calling this on FieldTypeUnknown will panic.
 func (p FieldType) NonNullableType() FieldType {
 	switch p {
 	// ints
