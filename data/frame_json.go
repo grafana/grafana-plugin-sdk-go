@@ -382,10 +382,16 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			return uint8(iV), err
 		}
 
-	case FieldTypeUint16, FieldTypeEnum: // enums and uint16 share the same backings
+	case FieldTypeUint16: // enums and uint16 share the same backings
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
 			return uint16(iV), err
+		}
+
+	case FieldTypeEnum: // enums and uint16 share the same backings
+		convert = func(v interface{}) (interface{}, error) {
+			iV, err := int64FromJSON(v)
+			return EnumItemIndex(iV), err
 		}
 
 	case FieldTypeUint32:

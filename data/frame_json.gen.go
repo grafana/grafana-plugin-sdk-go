@@ -888,7 +888,7 @@ func readEnumVectorJSON(iter *jsoniter.Iterator, size int) (*enumVector, error) 
 			iter.ReadNil()
 		} else {
 			v := iter.ReadUint16()
-			arr.Set(i, v)
+			arr.Set(i, EnumItemIndex(v))
 		}
 	}
 
@@ -911,7 +911,8 @@ func readNullableEnumVectorJSON(iter *jsoniter.Iterator, size int) (*nullableEnu
 			iter.ReadNil()
 		} else {
 			v := iter.ReadUint16()
-			arr.Set(i, &v)
+			eII := EnumItemIndex(v)
+			arr.Set(i, &eII)
 		}
 	}
 

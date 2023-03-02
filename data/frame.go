@@ -38,6 +38,7 @@ type Frame struct {
 
 	// Fields are the columns of a frame.
 	// All Fields must be of the same the length when marshalling the Frame for transmission.
+	// There should be no `nil` entries in the Fields slice (making them pointers was a mistake).
 	Fields []*Field
 
 	// RefID is a property that can be set to match a Frame to its originating query.
@@ -69,6 +70,7 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 
 // Frames is a slice of Frame pointers.
 // It is the main data container within a backend.DataResponse.
+// There should be no `nil` entries in the Frames slice (making them pointers was a mistake).
 //
 //swagger:model
 type Frames []*Frame

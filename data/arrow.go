@@ -607,17 +607,31 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) erro
 	case arrow.UINT16:
 		v := array.NewUint16Data(col.Data())
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *uint16
-					frame.Fields[i].vector.Append(ns)
+			if frame.Fields[i].Type().NullableType() == FieldTypeNullableEnum {
+				if nullable[i] {
+					if v.IsNull(rIdx) {
+						var ns *EnumItemIndex
+						frame.Fields[i].vector.Append(ns)
+						continue
+					}
+					rv := EnumItemIndex(v.Value(rIdx))
+					frame.Fields[i].vector.Append(&rv)
 					continue
 				}
-				rv := v.Value(rIdx)
-				frame.Fields[i].vector.Append(&rv)
-				continue
+				frame.Fields[i].vector.Append(EnumItemIndex(v.Value(rIdx)))
+			} else {
+				if nullable[i] {
+					if v.IsNull(rIdx) {
+						var ns *uint16
+						frame.Fields[i].vector.Append(ns)
+						continue
+					}
+					rv := v.Value(rIdx)
+					frame.Fields[i].vector.Append(&rv)
+					continue
+				}
+				frame.Fields[i].vector.Append(v.Value(rIdx))
 			}
-			frame.Fields[i].vector.Append(v.Value(rIdx))
 		}
 	case arrow.FLOAT32:
 		v := array.NewFloat32Data(col.Data())
@@ -794,6 +808,9 @@ func (frames Frames) MarshalArrow() ([][]byte, error) {
 	bs := make([][]byte, len(frames))
 	var err error
 	for i, frame := range frames {
+		if frame == nil {
+			return nil, errors.New("frame can not be nil")
+		}
 		bs[i], err = frame.MarshalArrow()
 		if err != nil {
 			return nil, err
