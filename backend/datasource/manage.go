@@ -17,8 +17,21 @@ type ManageOpts struct {
 // Manage starts serving the data source over gPRC with automatic instance management.
 // pluginID should match the one from plugin.json.
 func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpts) error {
-	backend.SetupPluginEnvironment(pluginID) // Enable profiler.
+	// Enable profiler.
+	backend.SetupPluginEnvironment(pluginID)
+
+	// Set up tracing
+	// TODO: replicate in app as well
+	// TODO: add support for custom version and attributes
 	tracingCfg := backend.GetTracingConfig()
+	if tracingCfg.IsEnabled() {
+		tp, err := tracing.NewTraceProvider(tracingCfg.Address, pluginID)
+		if err != nil {
+			return fmt.Errorf("new trace provider: %w", err)
+		}
+		tracing.InitGlobalTraceProvider(tp, tracing.NewPropagatorFormat(tracingCfg.Propagation))
+	}
+	backend.Logger.Info("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
 
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 
@@ -34,18 +47,6 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	if err != nil {
 		return err
 	}
-
-	// Set up tracing
-	// TODO: replicate in app as well
-	// TODO: add support for custom version and attributes
-	if tracingCfg.IsEnabled() {
-		tp, err := tracing.NewTraceProvider(tracingCfg.Address, pluginID)
-		if err != nil {
-			return fmt.Errorf("new trace provider: %w", err)
-		}
-		tracing.InitGlobalTraceProvider(tp, tracing.NewPropagatorFormat(tracingCfg.Propagation))
-	}
-	backend.Logger.Info("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
 
 	if info.Standalone {
 		return backend.StandaloneServe(serveOpts, info.Address)
