@@ -2,10 +2,11 @@ package backend
 
 import (
 	"fmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"net/http"
 	"net/http/pprof"
 	"os"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 )
 
 var (
