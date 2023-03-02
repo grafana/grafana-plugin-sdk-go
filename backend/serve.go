@@ -136,16 +136,18 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 		// sadly vs-code can not listen to shutdown events
 		// https://github.com/golang/vscode-go/issues/120
 
-		// Cleanup function that deletes standalone.txt, if it exists. Fails silently.
+		// Cleanup function that deletes standalone.txt and pid.txt, if it exists. Fails silently.
 		// This is so the address file is deleted when the plugin shuts down gracefully, if possible.
 		defer func() {
-			log.DefaultLogger.Info("Cleaning up standalone address file")
+			log.DefaultLogger.Info("Cleaning up standalone address and pid files")
 			if err := standalone.CleanupStandaloneAddressFile(info); err != nil {
 				log.DefaultLogger.Error("Error while cleaning up standalone address file", "error", err)
 			}
 			if err := standalone.CleanupStandalonePIDFile(info); err != nil {
 				log.DefaultLogger.Error("Error while cleaning up standalone pid file", "error", err)
 			}
+			// Kill the dummy locator so Grafana reloads the plugin
+			standalone.FindAndKillCurrentPlugin(info.Dir)
 		}()
 
 		// When debugging, be sure to kill the running instances, so we reconnect
