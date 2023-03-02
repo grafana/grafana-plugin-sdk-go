@@ -2,9 +2,10 @@ package httpclient
 
 import (
 	"crypto/tls"
-	"go.opentelemetry.io/otel/trace"
 	"net/http"
 	"time"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 // ConfigureClientFunc function signature for configuring http.Client.
