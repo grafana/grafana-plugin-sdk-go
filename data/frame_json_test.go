@@ -128,7 +128,6 @@ func TestJSONFrames(t *testing.T) {
 	if diff := cmp.Diff(frames, rFrames, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
-
 }
 
 func BenchmarkFrameToJSON(b *testing.B) {
