@@ -12,6 +12,9 @@ import (
 type ManageOpts struct {
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
+
+	// TracingOpts contains settings for tracing setup.
+	TracingOpts tracing.Opts
 }
 
 // Manage starts serving the data source over gPRC with automatic instance management.
@@ -22,10 +25,9 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 
 	// Set up tracing
 	// TODO: replicate in app as well
-	// TODO: add support for custom version and attributes
 	tracingCfg := backend.GetTracingConfig()
 	if tracingCfg.IsEnabled() {
-		tp, err := tracing.NewTraceProvider(tracingCfg.Address, pluginID)
+		tp, err := tracing.NewTraceProvider(tracingCfg.Address, pluginID, opts.TracingOpts)
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
