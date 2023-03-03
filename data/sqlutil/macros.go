@@ -11,6 +11,8 @@ import (
 var (
 	// ErrorBadArgumentCount is returned from macros when the wrong number of arguments were provided
 	ErrorBadArgumentCount = errors.New("unexpected number of arguments")
+	// ErrorUnmatchedParenthesis is returned when parenthesis passed to a macro don't match
+	ErrorUnmatchedParenthesis = errors.New("error parsing args: unmatched parenthesis")
 )
 
 // MacroFunc defines a signature for applying a query macro
@@ -132,15 +134,19 @@ func trimAll(s []string) []string {
 	return r
 }
 
-func parseArgs(argStr string) []string {
+func parseArgs(argStr string) ([]string, error) {
 	parsed := []string{}
 	nested := 0
 	argStart := 0
+
 	for i := 0; i < len(argStr); i++ {
 		switch argStr[i] {
 		case '(':
 			nested++
 		case ')':
+			if nested == 0 {
+				return nil, ErrorUnmatchedParenthesis
+			}
 			nested--
 		case ',':
 			if nested == 0 {
@@ -149,8 +155,12 @@ func parseArgs(argStr string) []string {
 			}
 		}
 	}
+	if nested != 0 {
+		return nil, ErrorUnmatchedParenthesis
+	}
+
 	parsed = append(parsed, argStr[argStart:])
-	return trimAll(parsed)
+	return trimAll(parsed), nil
 }
 
 // getMacroMatches extracts macro strings with their respective arguments from the sql input given
@@ -248,7 +258,10 @@ func Interpolate(query *Query, macros Macros) (string, error) {
 			args := []string{}
 			if len(match) > 1 {
 				// This macro has arguments
-				args = parseArgs(match[1])
+				args, err = parseArgs(match[1])
+				if err != nil {
+					return rawSQL, err
+				}
 			}
 
 			res, err := macro(query.WithSQL(rawSQL), args)

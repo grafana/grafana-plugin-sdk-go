@@ -199,27 +199,48 @@ func TestParseArgs(t *testing.T) {
 		name     string
 		args     string
 		expected []string
+		err      error
 	}{
 		{
 			"single string arg",
 			"foo",
 			[]string{"foo"},
+			nil,
 		},
 		{
 			"single function arg",
 			"foo(bar, baz)",
 			[]string{"foo(bar, baz)"},
+			nil,
 		},
 		{
 			"mixed args",
 			"foo(bar, baz), blah, boo()",
 			[]string{"foo(bar, baz)", "blah", "boo()"},
+			nil,
+		},
+		{
+			"too many closing parenthesis",
+			"foo(bar, baz)), blah",
+			nil,
+			ErrorUnmatchedParenthesis,
+		},
+		{
+			"too many opening parenthesis",
+			"foo(bar, baz, blah",
+			nil,
+			ErrorUnmatchedParenthesis,
 		},
 	}
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
-			result := parseArgs(tc.args)
-			assert.Equal(t, tc.expected, result)
+			result, err := parseArgs(tc.args)
+			if tc.err == nil {
+				assert.NoError(t, err)
+				assert.Equal(t, tc.expected, result)
+			} else {
+				assert.Equal(t, err, tc.err)
+			}
 		})
 	}
 }
