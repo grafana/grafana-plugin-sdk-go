@@ -21,6 +21,12 @@ var macros = Macros{
 		}
 		return "bar", nil
 	},
+	"threeArgs": func(query *Query, args []string) (out string, err error) {
+		if len(args) != 3 {
+			return "", fmt.Errorf("error")
+		}
+		return "three_" + args[0] + "_" + args[1] + "_" + args[2], nil
+	},
 	// overwrite a default macro
 	"timeGroup": func(query *Query, args []string) (out string, err error) {
 		return "grouped!", nil
@@ -80,6 +86,11 @@ func TestInterpolate(t *testing.T) {
 			name:   "with short param",
 			input:  "select * from $__params(h)",
 			output: "select * from bar_h",
+		},
+		{
+			name:   "macros with multiple params",
+			input:  "select * from $__threeArgs(apple, banana(bug), coconut())",
+			output: "select * from three_apple_banana(bug)_coconut()",
 		},
 		{
 			name:   "same macro multiple times with same param",
@@ -181,4 +192,34 @@ func TestGetMacroMatches(t *testing.T) {
 		assert.NoError(t, err)
 		assert.Nil(t, matches)
 	})
+}
+
+func TestParseArgs(t *testing.T) {
+	testcases := []struct {
+		name     string
+		args     string
+		expected []string
+	}{
+		{
+			"single string arg",
+			"foo",
+			[]string{"foo"},
+		},
+		{
+			"single function arg",
+			"foo(bar, baz)",
+			[]string{"foo(bar, baz)"},
+		},
+		{
+			"mixed args",
+			"foo(bar, baz), blah, boo()",
+			[]string{"foo(bar, baz)", "blah", "boo()"},
+		},
+	}
+	for _, tc := range testcases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := parseArgs(tc.args)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
 }

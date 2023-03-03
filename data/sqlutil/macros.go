@@ -132,6 +132,27 @@ func trimAll(s []string) []string {
 	return r
 }
 
+func parseArgs(argStr string) []string {
+	parsed := []string{}
+	nested := 0
+	argStart := 0
+	for i := 0; i < len(argStr); i++ {
+		switch argStr[i] {
+		case '(':
+			nested++
+		case ')':
+			nested--
+		case ',':
+			if nested == 0 {
+				parsed = append(parsed, argStr[argStart:i])
+				argStart = i + 1
+			}
+		}
+	}
+	parsed = append(parsed, argStr[argStart:])
+	return trimAll(parsed)
+}
+
 // getMacroMatches extracts macro strings with their respective arguments from the sql input given
 // It manually parses the string to find the closing parenthesis of the macro (because regex has no memory)
 func getMacroMatches(input string, name string) ([][]string, error) {
@@ -227,7 +248,7 @@ func Interpolate(query *Query, macros Macros) (string, error) {
 			args := []string{}
 			if len(match) > 1 {
 				// This macro has arguments
-				args = trimAll(strings.Split(match[1], ","))
+				args = parseArgs(match[1])
 			}
 
 			res, err := macro(query.WithSQL(rawSQL), args)
