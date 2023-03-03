@@ -26,7 +26,6 @@ A **_data type_** definition or declaration in this framework includes both a ki
 * [Heatmap](./heatmap.md)
   * [Rows](./heatmap.md#heatmap-rows-heatmaprows)
   * [Cells](./heatmap.md#heatmap-cells-heatmapcells)
-  * [Sparse](./heatmap.md#heatmap-sparse-heatmapsparse)
 
 ## Dimensional Set Based Kinds
 
