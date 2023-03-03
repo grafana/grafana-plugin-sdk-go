@@ -23,6 +23,8 @@
 
 ## Time Series Wide Format (TimeSeriesWide)
 
+Version: 0.1
+
 The wide format has a set of time series in a single Frame that share the same time field. It is called "wide" because it gets _wider_ as more series are added.
 
 **Example:**
@@ -100,6 +102,8 @@ Notes:
 * A Go example of an approximation of this is [here](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data#example-Frame-TSDBTimeSeriesSharedTimeIndex).
 
 ## Time Series Multi Format (TimeSeriesMulti)
+
+Version: 0.1
 
 The TimeSeriesMulti format has one time series per frame. If the response has multiple series where the time values may not line up, this format must be used over TimeSeriesWide.  The format is called "multi" because the data lives across _multiple_ data frames.
 
@@ -209,6 +213,8 @@ Notes:
 * The multi format is the only format that can be converted to from the other formats without data manipulation. Therefore it is a type that can contain the series information of all the other types.
 
 ## Time Series Long Format (TimeSeriesLong) [SQL-Like]
+
+Version: 0.1
 
 This is a response format common to SQL like systems[^4]. See [Grafana documentation: Multiple dimensions in table format](https://grafana.com/docs/grafana/latest/basics/timeseries-dimensions/#multiple-dimensions-in-table-format) for some more simple (but not complete) examples. It currently exists as a data transformation within some datasources[^5] in the backend that query SQL-like data, see [this Go Example for how that code works](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data#example-Frame-TableLikeLongTimeSeries).
 

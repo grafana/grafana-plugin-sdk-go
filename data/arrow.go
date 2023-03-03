@@ -15,6 +15,13 @@ import (
 	"github.com/mattetti/filebuffer"
 )
 
+// keys added to arrow field metadata
+const metadataKeyName = "name"     // standard property
+const metadataKeyConfig = "config" // FieldConfig serialized as JSON
+const metadataKeyLabels = "labels" // labels serialized as JSON
+const metadataKeyTSType = "tstype" // typescript type
+const metadataKeyRefID = "refId"   // added to the table metadata
+
 // MarshalArrow converts the Frame to an arrow table and returns a byte
 // representation of that table.
 // All fields of a Frame must be of the same length or an error is returned.
@@ -86,11 +93,13 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 		if err != nil {
 			return nil, err
 		}
-
-		fieldMeta := map[string]string{"name": field.Name}
+		tstype, _ := getTypeScriptTypeString(field.Type())
+		fieldMeta := map[string]string{
+			metadataKeyTSType: tstype,
+		}
 
 		if field.Labels != nil {
-			if fieldMeta["labels"], err = toJSONString(field.Labels); err != nil {
+			if fieldMeta[metadataKeyLabels], err = toJSONString(field.Labels); err != nil {
 				return nil, err
 			}
 		}
@@ -100,7 +109,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 			if err != nil {
 				return nil, err
 			}
-			fieldMeta["config"] = str
+			fieldMeta[metadataKeyConfig] = str
 		}
 
 		arrowFields[i] = arrow.Field{
@@ -115,6 +124,7 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 }
 
 // buildArrowColumns builds Arrow columns from a Frame.
+// nolint:gocyclo
 func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, error) {
 	pool := memory.NewGoAllocator()
 	columns := make([]array.Column, len(f.Fields))
@@ -190,6 +200,12 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 			columns[fieldIdx] = *buildJSONColumn(pool, arrowFields[fieldIdx], v)
 		case *nullableJsonRawMessageVector:
 			columns[fieldIdx] = *buildNullableJSONColumn(pool, arrowFields[fieldIdx], v)
+
+		case *enumVector:
+			columns[fieldIdx] = *buildEnumColumn(pool, arrowFields[fieldIdx], v)
+		case *nullableEnumVector:
+			columns[fieldIdx] = *buildNullableEnumColumn(pool, arrowFields[fieldIdx], v)
+
 		default:
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
@@ -200,8 +216,8 @@ func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]array.Column, err
 // buildArrowSchema builds an Arrow schema for a Frame.
 func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 	tableMetaMap := map[string]string{
-		"name":  f.Name,
-		"refId": f.RefID,
+		metadataKeyName:  f.Name,
+		metadataKeyRefID: f.RefID,
 	}
 	if f.Meta != nil {
 		str, err := toJSONString(f.Meta)
@@ -217,6 +233,7 @@ func buildArrowSchema(f *Frame, fs []arrow.Field) (*arrow.Schema, error) {
 
 // fieldToArrow returns the corresponding Arrow primitive type and nullable property to the fields'
 // Vector primitives.
+// nolint:gocyclo
 func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	switch f.vector.(type) {
 	case *stringVector:
@@ -251,9 +268,9 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 	case *nullableUint8Vector:
 		return &arrow.Uint8Type{}, true, nil
 
-	case *uint16Vector:
+	case *uint16Vector, *enumVector:
 		return &arrow.Uint16Type{}, false, nil
-	case *nullableUint16Vector:
+	case *nullableUint16Vector, *nullableEnumVector:
 		return &arrow.Uint16Type{}, true, nil
 
 	case *uint32Vector:
@@ -310,12 +327,12 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 		sdkField := Field{
 			Name: field.Name,
 		}
-		if labelsAsString, ok := getMDKey("labels", field.Metadata); ok {
+		if labelsAsString, ok := getMDKey(metadataKeyLabels, field.Metadata); ok {
 			if err := json.Unmarshal([]byte(labelsAsString), &sdkField.Labels); err != nil {
 				return nil, err
 			}
 		}
-		if configAsString, ok := getMDKey("config", field.Metadata); ok {
+		if configAsString, ok := getMDKey(metadataKeyConfig, field.Metadata); ok {
 			// make sure that Config is not nil, otherwise create a new one
 			if sdkField.Config == nil {
 				sdkField.Config = &FieldConfig{}
@@ -334,6 +351,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 	return nullable, nil
 }
 
+// nolint:gocyclo
 func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField *Field) error {
 	switch field.Type.ID() {
 	case arrow.STRING:
@@ -373,6 +391,15 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 		}
 		sdkField.vector = newUint8Vector(0)
 	case arrow.UINT16:
+		tstype, ok := getMDKey(metadataKeyTSType, field.Metadata)
+		if ok && tstype == simpleTypeEnum {
+			if nullable[idx] {
+				sdkField.vector = newNullableEnumVector(0)
+			} else {
+				sdkField.vector = newEnumVector(0)
+			}
+			break
+		}
 		if nullable[idx] {
 			sdkField.vector = newNullableUint16Vector(0)
 			break
@@ -580,17 +607,31 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) erro
 	case arrow.UINT16:
 		v := array.NewUint16Data(col.Data())
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *uint16
-					frame.Fields[i].vector.Append(ns)
+			if frame.Fields[i].Type().NullableType() == FieldTypeNullableEnum {
+				if nullable[i] {
+					if v.IsNull(rIdx) {
+						var ns *EnumItemIndex
+						frame.Fields[i].vector.Append(ns)
+						continue
+					}
+					rv := EnumItemIndex(v.Value(rIdx))
+					frame.Fields[i].vector.Append(&rv)
 					continue
 				}
-				rv := v.Value(rIdx)
-				frame.Fields[i].vector.Append(&rv)
-				continue
+				frame.Fields[i].vector.Append(EnumItemIndex(v.Value(rIdx)))
+			} else {
+				if nullable[i] {
+					if v.IsNull(rIdx) {
+						var ns *uint16
+						frame.Fields[i].vector.Append(ns)
+						continue
+					}
+					rv := v.Value(rIdx)
+					frame.Fields[i].vector.Append(&rv)
+					continue
+				}
+				frame.Fields[i].vector.Append(v.Value(rIdx))
 			}
-			frame.Fields[i].vector.Append(v.Value(rIdx))
 		}
 	case arrow.FLOAT32:
 		v := array.NewFloat32Data(col.Data())
@@ -677,8 +718,8 @@ func parseColumn(col array.Interface, i int, nullable []bool, frame *Frame) erro
 
 func populateFrameFromSchema(schema *arrow.Schema, frame *Frame) error {
 	metaData := schema.Metadata()
-	frame.Name, _ = getMDKey("name", metaData) // No need to check ok, zero value ("") is returned
-	frame.RefID, _ = getMDKey("refId", metaData)
+	frame.Name, _ = getMDKey(metadataKeyName, metaData) // No need to check ok, zero value ("") is returned
+	frame.RefID, _ = getMDKey(metadataKeyRefID, metaData)
 
 	var err error
 	if metaAsString, ok := getMDKey("meta", metaData); ok {
@@ -767,6 +808,9 @@ func (frames Frames) MarshalArrow() ([][]byte, error) {
 	bs := make([][]byte, len(frames))
 	var err error
 	for i, frame := range frames {
+		if frame == nil {
+			return nil, errors.New("frame can not be nil")
+		}
 		bs[i], err = frame.MarshalArrow()
 		if err != nil {
 			return nil, err

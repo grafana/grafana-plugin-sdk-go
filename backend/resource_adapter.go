@@ -34,5 +34,7 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
-	return a.callResourceHandler.CallResource(protoSrv.Context(), FromProto().CallResourceRequest(protoReq), fn)
+	parsedReq := FromProto().CallResourceRequest(protoReq)
+	ctx := withHeaderMiddleware(protoSrv.Context(), parsedReq.GetHTTPHeaders())
+	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
 }

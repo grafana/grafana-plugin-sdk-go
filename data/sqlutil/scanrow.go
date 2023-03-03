@@ -54,63 +54,80 @@ func (s *ScanRow) NewScannableRow() []interface{} {
 // Applicable converters will substitute the SQL scan type with the one provided by the converter.
 // The list of returned converters is the same length as the SQL rows and corresponds with the rows at the same index. (e.g. value at slice element 3 corresponds with the converter at slice element 3)
 // If no converter is provided for a row that has a type that does not fit into a dataframe, it is skipped.
-func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Converter) (*ScanRow, []Converter, error) {
+func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Converter) (*RowConverter, error) {
 	// In the future we can probably remove this restriction. But right now we map names to Arrow Field Names.
 	// Arrow Field names must be unique: https://github.com/grafana/grafana-plugin-sdk-go/issues/59
 	seen := map[string]int{}
 	for i, name := range colNames {
 		if j, ok := seen[name]; ok {
-			return nil, nil, fmt.Errorf(`duplicate column names are not allowed, found identical name "%v" at column indices %v and %v`, name, j, i)
+			return nil, fmt.Errorf(`duplicate column names are not allowed, found identical name "%v" at column indices %v and %v`, name, j, i)
 		}
 		seen[name] = i
 	}
 
-	r := NewScanRow(0)
-	c := []Converter{}
-
+	rc := NewRowConverter()
 	// For each column, define a concrete type in the list of values
 	for i, colType := range colTypes {
 		colName := colNames[i]
+		colType = columnType(colType)
 		nullable, ok := colType.Nullable()
 		if !ok {
 			nullable = true // If we don't know if it is nullable, assume it is
 		}
 
-		var converter *Converter
-		scanType := colType.ScanType()
-		for i, v := range converters {
-			if v.InputTypeRegex != nil {
-				if v.InputTypeRegex.MatchString(colType.DatabaseTypeName()) {
-					scanType = v.InputScanType
-					converter = &converters[i]
-					break
-				}
-			}
-
-			if v.InputColumnName == colName && v.InputColumnName != "" {
-				scanType = v.InputScanType
-				converter = &converters[i]
-				break
-			}
-
-			// If there's an applicable converter for this column, scan using the InputScanType.
-			if v.InputTypeName == colType.DatabaseTypeName() {
-				scanType = v.InputScanType
-				converter = &converters[i]
+		for _, v := range converters {
+			if m := match(v, colType.DatabaseTypeName(), colName); m {
+				rc.append(colName, scanType(v, colType.ScanType()), v)
 				break
 			}
 		}
 
-		if converter == nil {
-			v := NewDefaultConverter(colType.Name(), nullable, scanType)
-			converter = &v
-			scanType = v.InputScanType
+		if !rc.hasConverter(i) {
+			v := NewDefaultConverter(colName, nullable, colType.ScanType())
+			rc.append(colName, scanType(v, colType.ScanType()), v)
 		}
-		converter.colType = *colType
-
-		r.Append(colName, scanType)
-		c = append(c, *converter)
 	}
 
-	return r, c, nil
+	return rc, nil
+}
+
+func scanType(v Converter, t reflect.Type) reflect.Type {
+	if v.InputScanType != nil {
+		return v.InputScanType
+	}
+	return t
+}
+
+type RowConverter struct {
+	Row        *ScanRow
+	Converters []Converter
+}
+
+func NewRowConverter() *RowConverter {
+	return &RowConverter{Row: NewScanRow(0)}
+}
+
+func (r *RowConverter) append(name string, kind reflect.Type, conv Converter) {
+	r.Row.Append(name, kind)
+	r.Converters = append(r.Converters, conv)
+}
+
+func (r *RowConverter) hasConverter(i int) bool {
+	return len(r.Converters) > i
+}
+
+func (r *RowConverter) NewScannableRow() []any {
+	return r.Row.NewScannableRow()
+}
+
+func match(v Converter, dbType string, colName string) bool {
+	return (v.InputColumnName == colName && v.InputColumnName != "") ||
+		v.InputTypeName == dbType || (v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(dbType))
+}
+
+func columnType(colType *sql.ColumnType) *sql.ColumnType {
+	if colType != nil {
+		return colType
+	}
+	return &sql.ColumnType{}
 }

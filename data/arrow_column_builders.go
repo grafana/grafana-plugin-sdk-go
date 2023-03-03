@@ -457,3 +457,35 @@ func buildNullableJSONColumn(pool memory.Allocator, field arrow.Field, vec *null
 
 	return array.NewColumn(field, chunked)
 }
+
+func buildNullableEnumColumn(pool memory.Allocator, field arrow.Field, vec *nullableEnumVector) *array.Column {
+	builder := array.NewUint16Builder(pool)
+	defer builder.Release()
+
+	for _, v := range *vec {
+		if v == nil {
+			builder.AppendNull()
+			continue
+		}
+		builder.Append((uint16)(*v))
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}
+
+func buildEnumColumn(pool memory.Allocator, field arrow.Field, vec *enumVector) *array.Column {
+	builder := array.NewUint16Builder(pool)
+	defer builder.Release()
+
+	for _, v := range *vec {
+		builder.Append(uint16(v))
+	}
+
+	chunked := array.NewChunked(field.Type, []array.Interface{builder.NewArray()})
+	defer chunked.Release()
+
+	return array.NewColumn(field, chunked)
+}

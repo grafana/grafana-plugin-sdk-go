@@ -1,6 +1,10 @@
 //  🌟 This was machine generated.  Do not edit. 🌟
 //  
 //  Frame[0] {
+//      "typeVersion": [
+//          0,
+//          0
+//      ],
 //      "notices": [
 //          {
 //              "text": "hello"
@@ -46,6 +50,10 @@
       "schema": {
         "name": "Frame One",
         "meta": {
+          "typeVersion": [
+            0,
+            0
+          ],
           "notices": [
             {
               "text": "hello"

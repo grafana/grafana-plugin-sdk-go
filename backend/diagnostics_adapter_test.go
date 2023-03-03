@@ -6,6 +6,7 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
@@ -106,6 +107,21 @@ func TestCheckHealth(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("When headers are present", func(t *testing.T) {
+		adapter := &diagnosticsSDKAdapter{
+			checkHealthHandler: &testCheckHealthHandlerWithHeaders{},
+		}
+		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
+			Headers: map[string]string{
+				"Authorization": "Bearer 123",
+			},
+			PluginContext: &pluginv2.PluginContext{},
+		})
+		require.NoError(t, err)
+		require.NotNil(t, res)
+		require.Equal(t, pluginv2.CheckHealthResponse_OK, res.Status)
+	})
 }
 
 type testCheckHealthHandler struct {
@@ -121,4 +137,19 @@ func (h *testCheckHealthHandler) CheckHealth(_ context.Context, _ *CheckHealthRe
 		Message:     h.message,
 		JSONDetails: h.jsonDetails,
 	}, h.err
+}
+
+type testCheckHealthHandlerWithHeaders struct{}
+
+func (h *testCheckHealthHandlerWithHeaders) CheckHealth(ctx context.Context, _ *CheckHealthRequest) (*CheckHealthResult, error) {
+	middlewares := httpclient.ContextualMiddlewareFromContext(ctx)
+	if len(middlewares) == 0 {
+		return &CheckHealthResult{
+			Status:  HealthStatusError,
+			Message: "no middleware found",
+		}, nil
+	}
+	return &CheckHealthResult{
+		Status: HealthStatusOk,
+	}, nil
 }

@@ -63,8 +63,32 @@ type FieldConfig struct {
 	// Alternative to empty string
 	NoValue string `json:"noValue,omitempty"`
 
+	// Type specific configs
+	TypeConfig *FieldTypeConfig `json:"type,omitempty"`
+
 	// Panel Specific Values
 	Custom map[string]interface{} `json:"custom,omitempty"`
+}
+
+// FieldTypeConfig has type specific configs, only one should be active at a time
+type FieldTypeConfig struct {
+	Enum *EnumFieldConfig `json:"enum,omitempty"`
+}
+
+// Enum field config
+// Vector values are used as lookup keys into the enum fields
+type EnumFieldConfig struct {
+	// Value is the string display value for a given index
+	Text []string `json:"text"`
+
+	// Color is the color value for a given index (empty is undefined)
+	Color []string `json:"color,omitempty"`
+
+	// Icon supports setting an icon for a given index value
+	Icon []string `json:"icon,omitempty"`
+
+	// Description of the enum state
+	Description []string `json:"description,omitempty"`
 }
 
 // ExplicitNullValue is the string representation for null
