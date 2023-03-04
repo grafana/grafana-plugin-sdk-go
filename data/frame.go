@@ -75,6 +75,25 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 //swagger:model
 type Frames []*Frame
 
+func (frames *Frames) MarshalJSON() ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeDataFrames(frames, stream)
+	if stream.Error != nil {
+		return nil, stream.Error
+	}
+
+	return append([]byte(nil), stream.Buffer()...), nil
+}
+
+// UnmarshalJSON allows unmarshalling Frame from JSON.
+func (frames *Frames) UnmarshalJSON(b []byte) error {
+	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	return readDataFramesJSON(frames, iter)
+}
+
 // AppendRow adds a new row to the Frame by appending to each element of vals to
 // the corresponding Field in the data.
 // The Frame's Fields must be initialized or AppendRow will panic.
