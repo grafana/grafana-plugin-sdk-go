@@ -550,3 +550,14 @@ func (f *Frame) FieldByName(fieldName string) (*Field, int) {
 	}
 	return nil, -1
 }
+
+// TypeInfo returns the FrameType and FrameTypeVersion from the frame's
+// Meta.Type and Meta.TypeVersion properties. If either of those properties
+// are absent, the corresponding zero value (FrameTypeUnknown and FrameTypeVersion{0,0})
+// is returned per each missing property.
+func (f *Frame) TypeInfo(fieldName string) (FrameType, FrameTypeVersion) {
+	if f == nil || f.Meta == nil {
+		return FrameTypeUnknown, FrameTypeVersion{}
+	}
+	return f.Meta.Type, f.Meta.TypeVersion
+}
