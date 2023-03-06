@@ -35,41 +35,29 @@ func (a Args) StandalonePIDFilePath() string {
 	return filepath.Join(a.Dir, "pid.txt")
 }
 
-func GetInfo(id string) (Args, error) {
-	info := Args{}
-
-	var standalone bool
-	var debug bool
-	flag.BoolVar(&standalone, "standalone", false, "should this run standalone")
-	flag.BoolVar(&debug, "debug", false, "run in debug mode")
-	flag.Parse()
-
+func getInfo(id string, executable string, standalone, debug bool) (Args, error) {
+	var info Args
 	info.Standalone = standalone
 
-	// standalone path
-	ex, err := os.Executable()
-	if err != nil {
-		return info, err
-	}
-
 	// VsCode names the file "__debug_bin"
-	vsCodeDebug := strings.HasPrefix(filepath.Base(ex), "__debug_bin")
+	vsCodeDebug := strings.HasPrefix(filepath.Base(executable), "__debug_bin")
 	// GoLand places it in:
-	//  Linux: /tmp/GoLand/___XXgo_build_github_com_PACKAGENAME_pkg
-	//  Mac OS X: /private/var/folders/lx/XXX/T/GoLand/___go_build_github_com_PACKAGENAME_pkg
-	//  Windows: C:\Users\USER\AppData\Local\Temp\GoLand\___go_build_github_com_PACKAGENAME_pkg.exe
-	goLandDebug := strings.Contains(ex, "GoLand") && strings.Contains(ex, "go_build_")
+	//  Linux: /tmp/GoLand/___%d%(CONFIGNAME)s_pkg
+	//  Mac OS X: /private/var/folders/lx/XXX/T/GoLand/___%d%(CONFIGNAME)s_pkg
+	//  Windows: C:\Users\USER\AppData\Local\Temp\GoLand\___%d%(CONFIGNAME)s_pkg.exe
+	goLandDebug := strings.Contains(executable, filepath.Join("GoLand", "___"))
 	if standalone && (vsCodeDebug || goLandDebug || debug) {
 		info.Debugger = true
-		js, err := findPluginJSON(ex)
+		js, err := findPluginJSON(executable)
 		if err != nil {
 			return info, err
 		}
-		ex = js
+		executable = js
 	}
-	info.Dir = filepath.Dir(ex)
+	info.Dir = filepath.Dir(executable)
 
 	// Determine standalone address + PID
+	var err error
 	info.Address, err = getStandaloneAddress(id, info)
 	if err != nil {
 		return info, err
@@ -79,6 +67,21 @@ func GetInfo(id string) (Args, error) {
 		return info, err
 	}
 	return info, nil
+}
+
+func GetInfo(id string) (Args, error) {
+	var standalone, debug bool
+	flag.BoolVar(&standalone, "standalone", false, "should this run standalone")
+	flag.BoolVar(&debug, "debug", false, "run in debug mode")
+	flag.Parse()
+
+	// standalone path
+	ex, err := os.Executable()
+	if err != nil {
+		return Args{}, err
+	}
+
+	return getInfo(id, ex, standalone, debug)
 }
 
 // will check a few options to find the dist plugin json file
