@@ -75,7 +75,6 @@ Compatible changes:
 
 v0.123.0 is a valid semantic version for this release.
 ```
->You may also run `gorelease` without parameters and let it figure the correct next tag. Do validate these tags correspond to the current release and next release.
 
 - Run `git tag <VERSION>` (For example **v0.123.0**)
   - NOTE: We're using Lightweight Tags, so no other options are required
