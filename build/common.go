@@ -191,7 +191,8 @@ func (Build) GenerateManifestFile() error {
 	if err != nil {
 		return err
 	}
-	err = os.WriteFile(manifestFilePath, []byte(manifestContent), 0600)
+	// #nosec G306 - we need reading permissions for this file
+	err = os.WriteFile(manifestFilePath, []byte(manifestContent), 0755)
 	if err != nil {
 		return err
 	}
