@@ -72,29 +72,41 @@ type simpleTestObj struct {
 	FType2 *data.FieldType `json:"typePtr,omitempty"`
 }
 
-func TestJSONTime(t *testing.T) {
-	frameNoNano := data.NewFrame("frame_no_nano",
+func TestJSONNanoTime(t *testing.T) {
+	noNanoFrame := data.NewFrame("frame_no_nano",
 		// 1 second and 1 MS
 		data.NewField("t", nil, []time.Time{time.Unix(1, 1000000)}),
 	)
 
-	frameNano := data.NewFrame("frame_nano",
+	noNanoJSONBytes, err := json.Marshal(noNanoFrame)
+	require.NoError(t, err)
+	spew.Dump(string(noNanoJSONBytes))
+
+	noNanoFrameFromJSON := &data.Frame{}
+	err = json.Unmarshal(noNanoJSONBytes, noNanoFrameFromJSON)
+	require.NoError(t, err)
+
+	if diff := cmp.Diff(noNanoFrame, noNanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+
+	nanoFrame := data.NewFrame("frame_nano",
 		// 1 second and 10 ns
 		data.NewField("i", nil, []int64{1}),
 		data.NewField("t", nil, []time.Time{time.Unix(1, 10)}),
 	)
 
-	b, err := json.Marshal(frameNoNano)
+	nanoJSONBytes, err := json.Marshal(nanoFrame)
 	require.NoError(t, err)
-	spew.Dump(string(b))
+	spew.Dump(string(nanoJSONBytes))
 
-	b2, err2 := json.Marshal(frameNano)
-	require.NoError(t, err2)
-	spew.Dump(string(b2))
-
-	nanoFrame := &data.Frame{}
-	err = json.Unmarshal(b2, nanoFrame)
+	nanoFrameFromJSON := &data.Frame{}
+	err = json.Unmarshal(nanoJSONBytes, nanoFrameFromJSON)
 	require.NoError(t, err)
+
+	if diff := cmp.Diff(nanoFrame, nanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
 }
 
 // TestFieldTypeToJSON makes sure field type will read/write to json

@@ -259,9 +259,12 @@ func readDataFramesJSON(frames *Frames, iter *jsoniter.Iterator) error {
 }
 
 func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
+	var readValues, readNanos bool
 	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 		switch l2Field {
 		case "values":
+			readValues = true
+			_ = readNanos // TODO when nanos is read first
 			if !iter.ReadArray() {
 				continue // empty fields
 			}
@@ -311,7 +314,29 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 				}
 				fieldIndex++
 			}
+		case "nanos":
+			if readValues {
+				fieldIndex := 0
+				for iter.ReadArray() {
+					field := frame.Fields[fieldIndex]
 
+					t := iter.WhatIsNext()
+					if t == jsoniter.ArrayValue {
+						idx := 0
+						for iter.ReadArray() {
+							ns := iter.ReadInt()
+							t := field.vector.At(idx).(time.Time)
+							tWithNS := t.Add(time.Nanosecond * time.Duration(ns))
+							field.vector.SetConcrete(idx, tWithNS)
+							idx++
+						}
+					} else {
+						iter.ReadAny() //skip nills
+					}
+					fieldIndex++
+				}
+			}
+			readNanos = true
 		default:
 			iter.ReportError("bind l2", "unexpected field: "+l2Field)
 		}
@@ -792,6 +817,9 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	entities := make([]*fieldEntityLookup, len(frame.Fields))
 	entityCount := 0
 
+	nanos := make([][]int64, len(frame.Fields))
+	nsOffSetCount := 0
+
 	stream.WriteObjectField("values")
 	stream.WriteArrayStart()
 	for fidx, f := range frame.Fields {
@@ -856,8 +884,8 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 		}
 		stream.WriteArrayEnd()
 		if hasNSTime {
-			stream.WriteMore()
-			stream.WriteVal(nsTime)
+			nanos[fidx] = nsTime
+			nsOffSetCount++
 		}
 	}
 	stream.WriteArrayEnd()
@@ -866,6 +894,12 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 		stream.WriteMore()
 		stream.WriteObjectField("entities")
 		stream.WriteVal(entities)
+	}
+
+	if nsOffSetCount > 0 {
+		stream.WriteMore()
+		stream.WriteObjectField("nanos")
+		stream.WriteVal(nanos)
 	}
 
 	stream.WriteObjectEnd()
