@@ -243,7 +243,6 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 			iter.ReportError("bind l1", "unexpected field: "+l1Field)
 		}
 	}
-
 	return iter.Error
 }
 
@@ -800,6 +799,8 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 			stream.WriteMore()
 		}
 		isTime := f.Type().Time()
+		nsTime := make([]int64, rowCount)
+		var hasNSTime bool
 		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
 			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
 
@@ -811,8 +812,14 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 			if v, ok := f.ConcreteAt(i); ok {
 				switch {
 				case isTime:
-					vTyped := v.(time.Time).UnixNano() / int64(time.Millisecond) // Milliseconds precision.
-					stream.WriteVal(vTyped)
+					t := v.(time.Time)
+					stream.WriteVal(t.UnixMilli())
+					msRes := t.Truncate(time.Millisecond)
+					ns := t.Sub(msRes).Nanoseconds()
+					if ns != 0 {
+						hasNSTime = true
+						nsTime[i] = ns
+					}
 				case isFloat:
 					// For float and nullable float we check whether a value is a special
 					// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
@@ -848,6 +855,10 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 			}
 		}
 		stream.WriteArrayEnd()
+		if hasNSTime {
+			stream.WriteMore()
+			stream.WriteVal(nsTime)
+		}
 	}
 	stream.WriteArrayEnd()
 

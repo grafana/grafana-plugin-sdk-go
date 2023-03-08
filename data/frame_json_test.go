@@ -9,7 +9,9 @@ import (
 	"sync"
 	"testing"
 	"text/template"
+	"time"
 
+	"github.com/davecgh/go-spew/spew"
 	jsoniter "github.com/json-iterator/go"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -68,6 +70,31 @@ type simpleTestObj struct {
 	Name   string          `json:"name,omitempty"`
 	FType  data.FieldType  `json:"type,omitempty"`
 	FType2 *data.FieldType `json:"typePtr,omitempty"`
+}
+
+func TestJSONTime(t *testing.T) {
+	frameNoNano := data.NewFrame("frame_no_nano",
+		// 1 second and 1 MS
+		data.NewField("t", nil, []time.Time{time.Unix(1, 1000000)}),
+	)
+
+	frameNano := data.NewFrame("frame_nano",
+		// 1 second and 10 ns
+		data.NewField("i", nil, []int64{1}),
+		data.NewField("t", nil, []time.Time{time.Unix(1, 10)}),
+	)
+
+	b, err := json.Marshal(frameNoNano)
+	require.NoError(t, err)
+	spew.Dump(string(b))
+
+	b2, err2 := json.Marshal(frameNano)
+	require.NoError(t, err2)
+	spew.Dump(string(b2))
+
+	nanoFrame := &data.Frame{}
+	err = json.Unmarshal(b2, nanoFrame)
+	require.NoError(t, err)
 }
 
 // TestFieldTypeToJSON makes sure field type will read/write to json
