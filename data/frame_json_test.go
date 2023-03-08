@@ -11,7 +11,6 @@ import (
 	"text/template"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	jsoniter "github.com/json-iterator/go"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
@@ -80,7 +79,7 @@ func TestJSONNanoTime(t *testing.T) {
 
 	noNanoJSONBytes, err := json.Marshal(noNanoFrame)
 	require.NoError(t, err)
-	spew.Dump(string(noNanoJSONBytes))
+	fmt.Println(string(noNanoJSONBytes))
 
 	noNanoFrameFromJSON := &data.Frame{}
 	err = json.Unmarshal(noNanoJSONBytes, noNanoFrameFromJSON)
@@ -98,7 +97,7 @@ func TestJSONNanoTime(t *testing.T) {
 
 	nanoJSONBytes, err := json.Marshal(nanoFrame)
 	require.NoError(t, err)
-	spew.Dump(string(nanoJSONBytes))
+	fmt.Println(string(nanoJSONBytes))
 
 	nanoFrameFromJSON := &data.Frame{}
 	err = json.Unmarshal(nanoJSONBytes, nanoFrameFromJSON)

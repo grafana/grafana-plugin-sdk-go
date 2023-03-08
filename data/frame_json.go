@@ -310,7 +310,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 						}
 					}
 				} else {
-					iter.ReadAny() // skip nills
+					iter.ReadAny() // skip nils
 				}
 				fieldIndex++
 			}
@@ -331,7 +331,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 							idx++
 						}
 					} else {
-						iter.ReadAny() //skip nills
+						iter.ReadAny() // skip nils
 					}
 					fieldIndex++
 				}
