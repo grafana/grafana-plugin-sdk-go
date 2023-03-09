@@ -72,40 +72,88 @@ type simpleTestObj struct {
 }
 
 func TestJSONNanoTime(t *testing.T) {
-	noNanoFrame := data.NewFrame("frame_no_nano",
-		// 1 second and 1 MS
-		data.NewField("t", nil, []time.Time{time.Unix(1, 1000000)}),
-	)
+	t.Run("time no nano", func(t *testing.T) {
+		noNanoFrame := data.NewFrame("frame_no_nano",
+			// 1 second and 1 MS
+			data.NewField("t", nil, []time.Time{time.Unix(1, 1000000)}),
+		)
 
-	noNanoJSONBytes, err := json.Marshal(noNanoFrame)
-	require.NoError(t, err)
-	fmt.Println(string(noNanoJSONBytes))
+		noNanoJSONBytes, err := json.Marshal(noNanoFrame)
+		require.NoError(t, err)
 
-	noNanoFrameFromJSON := &data.Frame{}
-	err = json.Unmarshal(noNanoJSONBytes, noNanoFrameFromJSON)
-	require.NoError(t, err)
+		noNanoFrameFromJSON := &data.Frame{}
+		err = json.Unmarshal(noNanoJSONBytes, noNanoFrameFromJSON)
+		require.NoError(t, err)
 
-	if diff := cmp.Diff(noNanoFrame, noNanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
-		t.Errorf("Result mismatch (-want +got):\n%s", diff)
-	}
+		if diff := cmp.Diff(noNanoFrame, noNanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("Result mismatch (-want +got):\n%s", diff)
+		}
+	})
 
-	nanoFrame := data.NewFrame("frame_nano",
-		// 1 second and 10 ns
-		data.NewField("i", nil, []int64{1}),
-		data.NewField("t", nil, []time.Time{time.Unix(1, 10)}),
-	)
+	t.Run("time with nano", func(t *testing.T) {
+		nanoFrame := data.NewFrame("frame_nano",
+			// 1 second and 10 ns
+			data.NewField("i", nil, []int64{1}),
+			data.NewField("t", nil, []time.Time{time.Unix(1, 10)}),
+		)
 
-	nanoJSONBytes, err := json.Marshal(nanoFrame)
-	require.NoError(t, err)
-	fmt.Println(string(nanoJSONBytes))
+		nanoJSONBytes, err := json.Marshal(nanoFrame)
+		require.NoError(t, err)
 
-	nanoFrameFromJSON := &data.Frame{}
-	err = json.Unmarshal(nanoJSONBytes, nanoFrameFromJSON)
-	require.NoError(t, err)
+		nanoFrameFromJSON := &data.Frame{}
+		err = json.Unmarshal(nanoJSONBytes, nanoFrameFromJSON)
+		require.NoError(t, err)
 
-	if diff := cmp.Diff(nanoFrame, nanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
-		t.Errorf("Result mismatch (-want +got):\n%s", diff)
-	}
+		if diff := cmp.Diff(nanoFrame, nanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("Result mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("nullable with nano", func(t *testing.T) {
+		nanoFrame := data.NewFrame("frame_nano",
+			// 1 second and 10 ns
+			data.NewField("i", nil, []int64{1, 2}),
+			data.NewField("t", nil, []*time.Time{nil, timePtr(time.Unix(1, 10))}),
+		)
+
+		nanoJSONBytes, err := json.Marshal(nanoFrame)
+		require.NoError(t, err)
+
+		nanoFrameFromJSON := &data.Frame{}
+		err = json.Unmarshal(nanoJSONBytes, nanoFrameFromJSON)
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(nanoFrame, nanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("Result mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("nanos before values property in data", func(t *testing.T) {
+		jsString := `{
+			"schema": {
+			  "name": "frame_nano",
+			  "fields": [
+				{ "name": "i", "type": "number", "typeInfo": { "frame": "int64" } },
+				{ "name": "t", "type": "time", "typeInfo": { "frame": "time.Time" } }
+			  ]
+			},
+			"data": { "nanos": [null, [10]], "values": [[1], [1000]] }
+		  }`
+
+		nanoFrame := data.NewFrame("frame_nano",
+			// 1 second and 10 ns
+			data.NewField("i", nil, []int64{1}),
+			data.NewField("t", nil, []time.Time{time.Unix(1, 10)}),
+		)
+
+		nanoFrameFromJSON := &data.Frame{}
+		err := json.Unmarshal([]byte(jsString), nanoFrameFromJSON)
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(nanoFrame, nanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+			require.Fail(t, "Result mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 // TestFieldTypeToJSON makes sure field type will read/write to json

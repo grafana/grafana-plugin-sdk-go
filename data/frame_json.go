@@ -260,21 +260,21 @@ func readDataFramesJSON(frames *Frames, iter *jsoniter.Iterator) error {
 
 func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 	var readValues, readNanos bool
+	nanos := make([][]int64, len(frame.Fields))
 	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 		switch l2Field {
 		case "values":
-			readValues = true
-			_ = readNanos // TODO when nanos is read first
 			if !iter.ReadArray() {
 				continue // empty fields
 			}
-
+			var fieldIndex int
 			// Load the first field with a generic interface.
 			// The length of the first will be assumed for the other fields
 			// and can have a specialized parser
 			if frame.Fields == nil {
 				return errors.New("fields is nil, malformed key order or frame without schema")
 			}
+
 			field := frame.Fields[0]
 			first := make([]interface{}, 0)
 			iter.ReadVal(&first)
@@ -285,16 +285,34 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			field.vector = vec
 			size := len(first)
 
-			fieldIndex := 1
+			addNanos := func() {
+				if readNanos {
+					if nanos[fieldIndex] != nil {
+						for i := 0; i < size; i++ {
+							t, ok := field.ConcreteAt(i)
+							if !ok {
+								continue
+							}
+							field.Set(i, t.(time.Time).Add(time.Nanosecond*time.Duration(nanos[fieldIndex][i])))
+						}
+					}
+				}
+			}
+
+			addNanos()
+			fieldIndex++
 			for iter.ReadArray() {
 				field = frame.Fields[fieldIndex]
 				vec, err = readVector(iter, field.Type(), size)
 				if err != nil {
 					return err
 				}
+
 				field.vector = vec
+				addNanos()
 				fieldIndex++
 			}
+			readValues = true
 
 		case "entities":
 			fieldIndex := 0
@@ -314,28 +332,35 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 				}
 				fieldIndex++
 			}
-		case "nanos":
-			if readValues {
-				fieldIndex := 0
-				for iter.ReadArray() {
-					field := frame.Fields[fieldIndex]
 
-					t := iter.WhatIsNext()
-					if t == jsoniter.ArrayValue {
-						idx := 0
-						for iter.ReadArray() {
-							ns := iter.ReadInt()
-							t := field.vector.At(idx).(time.Time)
-							tWithNS := t.Add(time.Nanosecond * time.Duration(ns))
+		case "nanos":
+			fieldIndex := 0
+			for iter.ReadArray() {
+				field := frame.Fields[fieldIndex]
+
+				t := iter.WhatIsNext()
+				if t == jsoniter.ArrayValue {
+					for idx := 0; iter.ReadArray(); idx++ {
+						ns := iter.ReadInt64()
+						if readValues {
+							t, ok := field.vector.ConcreteAt(idx)
+							if !ok {
+								continue
+							}
+							tWithNS := t.(time.Time).Add(time.Nanosecond * time.Duration(ns))
 							field.vector.SetConcrete(idx, tWithNS)
-							idx++
+							continue
 						}
-					} else {
-						iter.ReadAny() // skip nils
+						if idx == 0 {
+							nanos[fieldIndex] = append(nanos[fieldIndex], ns)
+						}
 					}
-					fieldIndex++
+				} else {
+					iter.ReadAny() // skip nils
 				}
+				fieldIndex++
 			}
+
 			readNanos = true
 		default:
 			iter.ReportError("bind l2", "unexpected field: "+l2Field)
