@@ -42,7 +42,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 	fmt.Println(strF)
 	fmt.Println(`}`)
 
-	//assert.JSONEq(t, strF, strA, "arrow and frames should produce the same json")
+	// assert.JSONEq(t, strF, strA, "arrow and frames should produce the same json")
 
 	goldenFile := filepath.Join("testdata", "all_types.golden.json")
 	if _, err := os.Stat(goldenFile); os.IsNotExist(err) {
