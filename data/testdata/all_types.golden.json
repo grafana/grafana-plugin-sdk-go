@@ -88,7 +88,7 @@
   },
   "data": {
     "values": [
-      ["Go Min", "JS Min (for \u003e= 64)", "0 / nil / misc", "JS Max (for \u003e= 64)", "Go Max"],
+      ["Go Min", "JS Min (for >= 64)", "0 / nil / misc", "JS Max (for >= 64)", "Go Max"],
       ["Grafana", "❤️", null, "🦥", "update your unicode/font if no sloth, is 2019."],
       [-128, -128, 0, 127, 127],
       [-128, -128, null, 127, 127],
