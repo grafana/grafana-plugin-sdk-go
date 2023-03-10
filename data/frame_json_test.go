@@ -32,7 +32,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 	strF := string(b)
 
 	// TODO: Arrow Buffer to JSON
-	_, err = data.ArrowBufferToJSON(a, data.IncludeAll)
+	b, err = data.ArrowBufferToJSON(a, data.IncludeAll)
 	require.NoError(t, err)
 	strA := string(b)
 
@@ -42,7 +42,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 	fmt.Println(strF)
 	fmt.Println(`}`)
 
-	// assert.JSONEq(t, strF, strA, "arrow and frames should produce the same json")
+	require.JSONEq(t, strF, strA, "arrow and frames should produce the same json")
 
 	goldenFile := filepath.Join("testdata", "all_types.golden.json")
 	if _, err := os.Stat(goldenFile); os.IsNotExist(err) {

@@ -1097,6 +1097,8 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 	stream.WriteObjectStart()
 
 	entities := make([]*fieldEntityLookup, fieldCount)
+	nanos := make([][]int64, fieldCount)
+	var hasNano bool
 	entityCount := 0
 
 	stream.WriteObjectField("values")
@@ -1110,7 +1112,11 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 
 		switch col.DataType().ID() {
 		case arrow.TIMESTAMP:
-			writeArrowDataTIMESTAMP(stream, col)
+			nanoOffset := writeArrowDataTIMESTAMP(stream, col)
+			if nanoOffset != nil {
+				nanos[fidx] = nanoOffset
+				hasNano = true
+			}
 
 		case arrow.UINT8:
 			ent = writeArrowDataUint8(stream, col)
@@ -1155,14 +1161,21 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 		stream.WriteVal(entities)
 	}
 
+	if hasNano {
+		stream.WriteMore()
+		stream.WriteObjectField("nanos")
+		stream.WriteVal(nanos)
+	}
+
 	stream.WriteObjectEnd()
 	return nil
 }
 
 // Custom timestamp extraction... assumes nanoseconds for everything now
-func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
+func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) []int64 {
 	count := col.Len()
-
+	var hasNSTime bool
+	nsTime := make([]int64, count)
 	v := array.NewTimestampData(col.Data())
 	stream.WriteArrayStart()
 	for i := 0; i < count; i++ {
@@ -1177,12 +1190,22 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
 		ms := int64(ns) / int64(time.Millisecond) // nanosecond assumption
 		stream.WriteInt64(ms)
 
+		nsOffSet := int64(ns) - ms*int64(1e6)
+		if nsOffSet != 0 {
+			hasNSTime = true
+			nsTime[i] = nsOffSet
+		}
+
 		if stream.Error != nil { // ???
 			stream.Error = nil
 			stream.WriteNil()
 		}
 	}
 	stream.WriteArrayEnd()
+	if hasNSTime {
+		return nsTime
+	}
+	return nil
 }
 
 func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
