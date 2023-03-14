@@ -33,8 +33,16 @@ var (
 //
 // As the SDK evolves, this will likely change.
 //
-// Currently this function enables and configures profiling with pprof.
-func SetupPluginEnvironment(pluginID string) {
+// Currently this function enables and configures profiling with pprof and the global tracer.
+func SetupPluginEnvironment(pluginID string, tracingOpts tracing.Opts) error {
+	setupProfiler(pluginID)
+	if err := setupTracer(pluginID, tracingOpts); err != nil {
+		return fmt.Errorf("setup tracer: %w", err)
+	}
+	return nil
+}
+
+func setupProfiler(pluginID string) {
 	// Enable profiler
 	profilerEnabled := false
 	if value, ok := os.LookupEnv(PluginProfilerEnvDeprecated); ok {
@@ -76,6 +84,20 @@ func SetupPluginEnvironment(pluginID string) {
 	}
 }
 
+func setupTracer(pluginID string, tracingOpts tracing.Opts) error {
+	// Set up tracing
+	tracingCfg := getTracingConfig()
+	if tracingCfg.IsEnabled() {
+		tp, err := tracing.NewTraceProvider(tracingCfg.Address, pluginID, tracingOpts)
+		if err != nil {
+			return fmt.Errorf("new trace provider: %w", err)
+		}
+		tracing.InitGlobalTraceProvider(tp, tracing.NewPropagatorFormat(tracingCfg.Propagation))
+	}
+	Logger.Info("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
+	return nil
+}
+
 type TracingConfig struct {
 	Address     string
 	Propagation tracing.PropagatorFormat
@@ -85,7 +107,7 @@ func (c TracingConfig) IsEnabled() bool {
 	return c.Address != ""
 }
 
-func GetTracingConfig() TracingConfig {
+func getTracingConfig() TracingConfig {
 	var otelAddr, otelPropagation string
 	otelAddr, ok := os.LookupEnv(PluginTracingOpenTelemetryOTLPAddressEnv)
 	if ok {
