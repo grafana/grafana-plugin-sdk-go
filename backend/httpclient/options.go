@@ -20,7 +20,7 @@ type ConfigureTransportFunc func(opts Options, transport *http.Transport)
 // Called after tls.Config creation.
 type ConfigureTLSConfigFunc func(opts Options, tlsConfig *tls.Config)
 
-// Options defines options for creating HTTP clien`ts.
+// Options defines options for creating HTTP clients.
 type Options struct {
 	// Timeouts timeout/connection related options.
 	Timeouts *TimeoutOptions
