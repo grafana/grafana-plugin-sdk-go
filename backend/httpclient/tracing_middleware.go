@@ -18,6 +18,8 @@ const (
 	httpContentLengthTagKey = "http.content_length"
 )
 
+// TracingMiddleware is a middleware that creates spans for each outgoing request, tracking the url, method and response
+// code as span attributes.
 func TracingMiddleware(tracer trace.Tracer) Middleware {
 	return NamedMiddlewareFunc(TracingMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
@@ -34,7 +36,6 @@ func TracingMiddleware(tracer trace.Tracer) Middleware {
 
 			span.SetAttributes(attribute.String("http.url", req.URL.String()))
 			span.SetAttributes(attribute.String("http.method", req.Method))
-			// ext.SpanKind.Set(span, ext.SpanKindRPCClientEnum)
 
 			if err != nil {
 				span.RecordError(err)
