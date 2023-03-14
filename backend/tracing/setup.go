@@ -2,7 +2,6 @@ package tracing
 
 import (
 	"context"
-	"os"
 
 	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
 	"go.opentelemetry.io/otel"
@@ -12,27 +11,19 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
-	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 )
 
-// TODO: this should go somwehere else
-const pluginVersionEnv = "GF_PLUGIN_VERSION"
-
-func newOpentelemetryTraceProvider(address, pluginID string, customAttributes ...attribute.KeyValue) (*tracesdk.TracerProvider, error) {
+// newOpentelemetryTraceProvider returns a new OpenTelemetry TracerProvider with default options, for the provided
+// endpoint and with the provided custom attributes.
+func newOpentelemetryTraceProvider(address string, customAttributes ...attribute.KeyValue) (*tracesdk.TracerProvider, error) {
 	client := otlptracegrpc.NewClient(otlptracegrpc.WithEndpoint(address), otlptracegrpc.WithInsecure())
 	exp, err := otlptrace.New(context.Background(), client)
 	if err != nil {
 		return nil, err
 	}
 
-	defAttributes := []attribute.KeyValue{semconv.ServiceNameKey.String(pluginID)}
-	if pv, ok := os.LookupEnv(pluginVersionEnv); ok {
-		defAttributes = append(defAttributes, semconv.ServiceVersionKey.String(pv))
-	}
-
 	res, err := resource.New(
 		context.Background(),
-		resource.WithAttributes(defAttributes...),
 		resource.WithAttributes(customAttributes...),
 		resource.WithProcessRuntimeDescription(),
 		resource.WithTelemetrySDK(),
@@ -57,13 +48,16 @@ type Opts struct {
 	CustomAttributes []attribute.KeyValue
 }
 
-func NewTraceProvider(address, pluginID string, opts Opts) (TracerProvider, error) {
+// NewTraceProvider returns a new TraceProvider depending on the specified address.
+// It returns a noopTracerProvider if the address is empty, otherwise it returns a new OpenTelemetry TracerProvider.
+func NewTraceProvider(address string, opts Opts) (TracerProvider, error) {
 	if address == "" {
 		return newNoOpTraceProvider(), nil
 	}
-	return newOpentelemetryTraceProvider(address, pluginID, opts.CustomAttributes...)
+	return newOpentelemetryTraceProvider(address, opts.CustomAttributes...)
 }
 
+// NewPropagatorFormat takes a string-like value and retrurns the corresponding propagation.TextMapPropagator.
 func NewPropagatorFormat(pf PropagatorFormat) propagation.TextMapPropagator {
 	switch pf {
 	case PropagatorFormatJaeger:
@@ -75,6 +69,8 @@ func NewPropagatorFormat(pf PropagatorFormat) propagation.TextMapPropagator {
 	}
 }
 
+// InitGlobalTraceProvider initializes the global trace provider and global text map propagator with the
+// provided values.
 func InitGlobalTraceProvider(tp TracerProvider, propagator propagation.TextMapPropagator) {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagator)

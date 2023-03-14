@@ -6,6 +6,9 @@ import (
 	"net/http/pprof"
 	"os"
 
+	"go.opentelemetry.io/otel/attribute"
+	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 )
 
@@ -26,6 +29,9 @@ var (
 	// PluginTracingOpenTelemetryOTLPPropagationEnv is a constant for the GF_TRACING_OPENTELEMETRY_OTLP_PROPAGATION
 	// environment variable used to specify the OTLP propagation format.
 	PluginTracingOpenTelemetryOTLPPropagationEnv = "GF_TRACING_OPENTELEMETRY_OTLP_PROPAGATION"
+
+	// PluginVersionEnv is a constant for the GF_PLUGIN_VERSION environment variable containing the plugin's version.
+	PluginVersionEnv = "GF_PLUGIN_VERSION"
 )
 
 // SetupPluginEnvironment will read the environment variables and apply the
@@ -33,7 +39,7 @@ var (
 //
 // As the SDK evolves, this will likely change.
 //
-// Currently this function enables and configures profiling with pprof and the global tracer.
+// Currently, this function enables and configures profiling with pprof and the global tracer.
 func SetupPluginEnvironment(pluginID string, tracingOpts tracing.Opts) error {
 	setupProfiler(pluginID)
 	if err := setupTracer(pluginID, tracingOpts); err != nil {
@@ -88,7 +94,14 @@ func setupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	// Set up tracing
 	tracingCfg := getTracingConfig()
 	if tracingCfg.IsEnabled() {
-		tp, err := tracing.NewTraceProvider(tracingCfg.Address, pluginID, tracingOpts)
+		// Default attributes from instance management (plugin id and version)
+		if pv, ok := os.LookupEnv(PluginVersionEnv); ok {
+			tracingOpts.CustomAttributes = append([]attribute.KeyValue{semconv.ServiceVersionKey.String(pv)}, tracingOpts.CustomAttributes...)
+		}
+		tracingOpts.CustomAttributes = append([]attribute.KeyValue{semconv.ServiceNameKey.String(pluginID)}, tracingOpts.CustomAttributes...)
+
+		// Initialize global tracer
+		tp, err := tracing.NewTraceProvider(tracingCfg.Address, tracingOpts)
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
