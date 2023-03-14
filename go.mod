@@ -21,7 +21,7 @@ require (
 	github.com/prometheus/client_golang v1.14.0
 	github.com/prometheus/common v0.40.0
 	github.com/stretchr/testify v1.8.2
-	golang.org/x/sys v0.5.0
+	golang.org/x/sys v0.6.0
 	google.golang.org/grpc v1.53.0
 	google.golang.org/protobuf v1.28.1
 	gopkg.in/yaml.v3 v3.0.1 // indirect
@@ -41,8 +41,8 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.14.0
 	go.opentelemetry.io/otel/sdk v1.14.0
 	go.opentelemetry.io/otel/trace v1.14.0
-	golang.org/x/oauth2 v0.5.0
-	golang.org/x/text v0.7.0
+	golang.org/x/oauth2 v0.6.0
+	golang.org/x/text v0.8.0
 )
 
 require (
@@ -84,7 +84,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.14.0 // indirect
 	go.opentelemetry.io/otel/metric v0.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
-	golang.org/x/net v0.7.0 // indirect
+	golang.org/x/net v0.8.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230110181048-76db0878b65f // indirect
