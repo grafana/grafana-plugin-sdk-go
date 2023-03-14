@@ -98,22 +98,22 @@ func setupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	return nil
 }
 
-type TracingConfig struct {
+type tracingConfig struct {
 	Address     string
 	Propagation tracing.PropagatorFormat
 }
 
-func (c TracingConfig) IsEnabled() bool {
+func (c tracingConfig) IsEnabled() bool {
 	return c.Address != ""
 }
 
-func getTracingConfig() TracingConfig {
+func getTracingConfig() tracingConfig {
 	var otelAddr, otelPropagation string
 	otelAddr, ok := os.LookupEnv(PluginTracingOpenTelemetryOTLPAddressEnv)
 	if ok {
 		otelPropagation = os.Getenv(PluginTracingOpenTelemetryOTLPPropagationEnv)
 	}
-	return TracingConfig{
+	return tracingConfig{
 		Address:     otelAddr,
 		Propagation: tracing.PropagatorFormat(otelPropagation),
 	}
