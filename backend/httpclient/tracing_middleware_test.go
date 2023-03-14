@@ -3,13 +3,14 @@ package httpclient_test
 import (
 	"bytes"
 	"context"
+	"net/http"
+	"testing"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
-	"net/http"
-	"testing"
 )
 
 type mockTraceProvider struct{}
