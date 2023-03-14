@@ -11,6 +11,7 @@ import (
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_opentracing "github.com/grpc-ecosystem/go-grpc-middleware/tracing/opentracing"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/hashicorp/go-plugin"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"google.golang.org/grpc"
@@ -163,11 +164,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 		pluginOpts.GRPCServer = plugin.DefaultGRPCServer
 	}
 
-	server := opts.GRPCServer(nil)
+	server := pluginOpts.GRPCServer(nil)
 
 	var plugKeys []string
 	if pluginOpts.DiagnosticsServer != nil {
-		pluginv2.RegisterDiagnosticsServer(server, opts.DiagnosticsServer)
+		pluginv2.RegisterDiagnosticsServer(server, pluginOpts.DiagnosticsServer)
 		plugKeys = append(plugKeys, "diagnostics")
 	}
 
