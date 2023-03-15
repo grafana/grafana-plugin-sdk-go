@@ -226,6 +226,20 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 
 // Manage runs the plugin in either standalone mode, dummy locator or normal (hashicorp) mode.
 func Manage(pluginID string, serveOpts ServeOpts) error {
+	defer func() {
+		tp, ok := otel.GetTracerProvider().(tracing.TracerProvider)
+		if !ok {
+			return
+		}
+
+		Logger.Debug("Closing tracing")
+		ctx, canc := context.WithTimeout(context.Background(), time.Second*5)
+		defer canc()
+		if err := tp.Shutdown(ctx); err != nil {
+			Logger.Error("error while shutting down tracer", "err", err)
+		}
+	}()
+
 	info, err := standalone.GetInfo(pluginID)
 	if err != nil {
 		return err
