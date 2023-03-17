@@ -238,7 +238,7 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 		ctx, canc := context.WithTimeout(context.Background(), time.Second*5)
 		defer canc()
 		if err := tp.Shutdown(ctx); err != nil {
-			Logger.Error("error while shutting down tracer", "err", err)
+			Logger.Error("error while shutting down tracer", "error", err)
 		}
 	}()
 
