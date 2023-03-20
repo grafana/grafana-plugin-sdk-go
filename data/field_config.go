@@ -19,6 +19,12 @@ type FieldConfig struct {
 	// DisplayNameFromDS overrides Grafana default naming in a better way that allows users to override it easily.
 	DisplayNameFromDS string `json:"displayNameFromDS,omitempty"`
 
+	// NameWas is a property that can hold a previous field name after a
+	// name has been moved from the Frame to field(s) as part of the dataplane contract.
+	// This is to allow transformations and field override name selectors to continue working after
+	// the change.
+	NameWas string `json:"nameWas,omitempty"`
+
 	// Path is an explicit path to the field in the datasource. When the frame meta includes a path,
 	// this will default to `${frame.meta.path}/${field.name}
 	//
