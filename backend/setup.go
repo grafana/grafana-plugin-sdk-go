@@ -39,13 +39,9 @@ var (
 //
 // As the SDK evolves, this will likely change.
 //
-// Currently, this function enables and configures profiling with pprof and the global tracer.
-func SetupPluginEnvironment(pluginID string, tracingOpts tracing.Opts) error {
+// Currently, this function enables and configures profiling with pprof.
+func SetupPluginEnvironment(pluginID string) {
 	setupProfiler(pluginID)
-	if err := setupTracer(pluginID, tracingOpts); err != nil {
-		return fmt.Errorf("setup tracer: %w", err)
-	}
-	return nil
 }
 
 func setupProfiler(pluginID string) {
@@ -90,7 +86,8 @@ func setupProfiler(pluginID string) {
 	}
 }
 
-func setupTracer(pluginID string, tracingOpts tracing.Opts) error {
+// SetupTracer sets up the global OTEL tracer
+func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	// Set up tracing
 	tracingCfg := getTracingConfig()
 	if tracingCfg.IsEnabled() {
