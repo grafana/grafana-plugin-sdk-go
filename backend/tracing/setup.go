@@ -2,7 +2,6 @@ package tracing
 
 import (
 	"context"
-	"go.opentelemetry.io/otel/trace"
 	"sync"
 
 	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
@@ -13,6 +12,7 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
+	"go.opentelemetry.io/otel/trace"
 )
 
 // newOpentelemetryTraceProvider returns a new OpenTelemetry TracerProvider with default options, for the provided

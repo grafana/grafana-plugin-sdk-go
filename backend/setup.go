@@ -2,11 +2,11 @@ package backend
 
 import (
 	"fmt"
-	"go.opentelemetry.io/otel"
 	"net/http"
 	"net/http/pprof"
 	"os"
 
+	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 

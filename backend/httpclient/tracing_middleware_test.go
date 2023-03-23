@@ -6,11 +6,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
 type mockTraceProvider struct{}
@@ -94,12 +95,12 @@ func (s *mockSpan) End(...trace.SpanEndOption) {
 	s.ended = true
 }
 
-func (s *mockSpan) RecordError(err error, opts ...trace.EventOption) {
+func (s *mockSpan) RecordError(err error, _ ...trace.EventOption) {
 	s.checkValid()
 	s.errs = append(s.errs, err)
 }
 
-func (s *mockSpan) AddEvent(event string, opts ...trace.EventOption) {
+func (s *mockSpan) AddEvent(event string, _ ...trace.EventOption) {
 	s.checkValid()
 	s.events = append(s.events, event)
 }
