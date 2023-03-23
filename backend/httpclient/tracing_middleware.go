@@ -6,11 +6,12 @@ import (
 	"strconv"
 
 	"go.opentelemetry.io/otel"
-	"go.opentelemetry.io/otel/propagation"
-
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 )
 
 const (
@@ -19,9 +20,12 @@ const (
 )
 
 // TracingMiddleware is a middleware that creates spans for each outgoing request, tracking the url, method and response
-// code as span attributes.
+// code as span attributes. If tracer is nil, it will use tracing.DefaultTracer().
 func TracingMiddleware(tracer trace.Tracer) Middleware {
 	return NamedMiddlewareFunc(TracingMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
+		if tracer == nil {
+			tracer = tracing.DefaultTracer()
+		}
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			ctx, span := tracer.Start(req.Context(), "HTTP Outgoing Request", trace.WithSpanKind(trace.SpanKindClient))
 			defer span.End()

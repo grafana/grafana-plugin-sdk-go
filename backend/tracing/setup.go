@@ -2,6 +2,8 @@ package tracing
 
 import (
 	"context"
+	"go.opentelemetry.io/otel/trace"
+	"sync"
 
 	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
 	"go.opentelemetry.io/otel"
@@ -69,9 +71,34 @@ func NewPropagatorFormat(pf PropagatorFormat) propagation.TextMapPropagator {
 	}
 }
 
+const defaultTracerName = "github.com/grafana/grafana-plugin-sdk-go"
+
+var (
+	defaultTracer         trace.Tracer
+	defaultTracerInitOnce sync.Once
+)
+
+// DefaultTracer returns the default tracer that has been set with InitDefaultTracer.
+// If InitDefaultTracer has never been called, the returned default tracer is an otel tracer
+// with its name set to "defaultTracerName".
+func DefaultTracer() trace.Tracer {
+	defaultTracerInitOnce.Do(func() {
+		// Use a non-nil default tracer if it's not set, for the first call.
+		if defaultTracer == nil {
+			defaultTracer = otel.Tracer(defaultTracerName)
+		}
+	})
+	return defaultTracer
+}
+
 // InitGlobalTraceProvider initializes the global trace provider and global text map propagator with the
 // provided values.
 func InitGlobalTraceProvider(tp TracerProvider, propagator propagation.TextMapPropagator) {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagator)
+}
+
+// InitDefaultTracer sets the default tracer to the specified value.
+func InitDefaultTracer(tracer trace.Tracer) {
+	defaultTracer = tracer
 }

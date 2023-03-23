@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"go.opentelemetry.io/otel"
 	"net/http"
 	"net/http/pprof"
 	"os"
@@ -86,7 +87,7 @@ func setupProfiler(pluginID string) {
 	}
 }
 
-// SetupTracer sets up the global OTEL tracer
+// SetupTracer sets up the global OTEL trace provider and tracer.
 func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	// Set up tracing
 	tracingCfg := getTracingConfig()
@@ -103,6 +104,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
 		tracing.InitGlobalTraceProvider(tp, tracing.NewPropagatorFormat(tracingCfg.Propagation))
+		tracing.InitDefaultTracer(otel.Tracer(pluginID))
 	}
 	Logger.Debug("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
 	return nil
