@@ -39,7 +39,7 @@ func SetupPluginEnvironment(pluginID string) {
 		}
 	}
 
-	Logger.Info("Profiler", "enabled", profilerEnabled)
+	Logger.Debug("Profiler", "enabled", profilerEnabled)
 	if profilerEnabled {
 		profilerPort := "6060"
 		for _, env := range []string{PluginProfilerPortEnvDeprecated, PluginProfilingPortEnv} {
