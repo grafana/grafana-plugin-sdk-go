@@ -104,7 +104,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		}
 		tracing.InitGlobalTraceProvider(tp, tracing.NewPropagatorFormat(tracingCfg.Propagation))
 	}
-	Logger.Info("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
+	Logger.Debug("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
 	return nil
 }
 
