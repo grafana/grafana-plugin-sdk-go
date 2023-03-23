@@ -82,7 +82,7 @@ func (s *mockSpan) SetStatus(code codes.Code, message string) {
 
 func (s *mockSpan) SetError(errored bool) {
 	s.checkValid()
-	s.errored = true
+	s.errored = errored
 }
 
 func (s *mockSpan) SetAttributes(kv ...attribute.KeyValue) {
