@@ -19,7 +19,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/prometheus/client_golang v1.14.0
-	github.com/prometheus/common v0.40.0
+	github.com/prometheus/common v0.42.0
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/sys v0.6.0
 	google.golang.org/grpc v1.54.0
