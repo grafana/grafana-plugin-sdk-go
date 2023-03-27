@@ -15,7 +15,7 @@ import (
 )
 
 const (
-	TracingMiddlewareName   = "tracing"
+	TracingMiddlewareName   = "Tracing"
 	httpContentLengthTagKey = "http.content_length"
 )
 
