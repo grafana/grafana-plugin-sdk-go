@@ -103,8 +103,8 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
-		tracing.InitGlobalTraceProvider(tp, tracing.NewPropagatorFormat(tracingCfg.Propagation))
-		tracing.InitDefaultTracer(otel.Tracer(pluginID))
+		initGlobalTraceProvider(tp, tracing.NewPropagatorFormat(tracingCfg.Propagation))
+		initDefaultTracer(otel.Tracer(pluginID))
 	}
 	Logger.Debug("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
 	return nil

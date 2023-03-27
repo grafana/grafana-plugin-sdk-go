@@ -3,6 +3,8 @@ package httpclient
 import (
 	"crypto/tls"
 	"net/http"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 // ProviderOptions are the options that will be used as default if not specified
@@ -32,6 +34,20 @@ type ProviderOptions struct {
 	// ConfigureTLSConfig optionally provide a ConfigureTLSConfigFunc
 	// to modify the created http.Client.
 	ConfigureTLSConfig ConfigureTLSConfigFunc
+}
+
+// NewDefaultProviderOptions returns a new Options with the default middlewares and timeout options.
+func NewDefaultProviderOptions() ProviderOptions {
+	return ProviderOptions{
+		Middlewares: DefaultMiddlewares(),
+		Timeout:     &DefaultTimeoutOptions,
+	}
+}
+
+// WithTracingMiddleware prepends a new TracingMiddleware(tracer) to the middleware stack.
+func (o ProviderOptions) WithTracingMiddleware(tracer trace.Tracer) ProviderOptions {
+	o.Middlewares = append([]Middleware{TracingMiddleware(tracer)}, o.Middlewares...)
+	return o
 }
 
 // Provider is the default HTTP client provider implementation.

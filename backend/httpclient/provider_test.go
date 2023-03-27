@@ -1,12 +1,14 @@
 package httpclient
 
 import (
+	"context"
 	"crypto/tls"
 	"net/http"
 	"testing"
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/trace"
 )
 
 func TestProvider(t *testing.T) {
@@ -14,9 +16,8 @@ func TestProvider(t *testing.T) {
 		t.Run("Should set default middlewares", func(t *testing.T) {
 			provider := NewProvider()
 			require.NotNil(t, provider)
-			require.Equal(t, TracingMiddlewareName, provider.Opts.Middlewares[0].(MiddlewareName).MiddlewareName())
-			require.Equal(t, BasicAuthenticationMiddlewareName, provider.Opts.Middlewares[1].(MiddlewareName).MiddlewareName())
-			require.Equal(t, CustomHeadersMiddlewareName, provider.Opts.Middlewares[2].(MiddlewareName).MiddlewareName())
+			require.Equal(t, BasicAuthenticationMiddlewareName, provider.Opts.Middlewares[0].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, provider.Opts.Middlewares[1].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("New client should use default middlewares", func(t *testing.T) {
@@ -24,11 +25,10 @@ func TestProvider(t *testing.T) {
 			client, err := ctx.provider.New()
 			require.NoError(t, err)
 			require.NotNil(t, client)
-			require.Len(t, ctx.usedMiddlewares, 4)
-			require.Equal(t, TracingMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
-			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
+			require.Len(t, ctx.usedMiddlewares, 3)
+			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("Transport should use default middlewares", func(t *testing.T) {
@@ -36,11 +36,10 @@ func TestProvider(t *testing.T) {
 			transport, err := ctx.provider.GetTransport()
 			require.NoError(t, err)
 			require.NotNil(t, transport)
-			require.Len(t, ctx.usedMiddlewares, 4)
-			require.Equal(t, TracingMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
-			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
+			require.Len(t, ctx.usedMiddlewares, 3)
+			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("New() with options and no middleware should return expected http client and transport", func(t *testing.T) {
@@ -81,14 +80,13 @@ func TestProvider(t *testing.T) {
 			require.Equal(t, DefaultTimeoutOptions.Timeout, client.Timeout)
 
 			t.Run("Should use configured middlewares and implement MiddlewareName", func(t *testing.T) {
-				require.Len(t, pCtx.usedMiddlewares, 7)
+				require.Len(t, pCtx.usedMiddlewares, 6)
 				require.Equal(t, "mw1", pCtx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw2", pCtx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw3", pCtx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
-				require.Equal(t, TracingMiddlewareName, pCtx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
-				require.Equal(t, BasicAuthenticationMiddlewareName, pCtx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
-				require.Equal(t, CustomHeadersMiddlewareName, pCtx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
-				require.Equal(t, ContextualMiddlewareName, pCtx.usedMiddlewares[6].(MiddlewareName).MiddlewareName())
+				require.Equal(t, BasicAuthenticationMiddlewareName, pCtx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
+				require.Equal(t, CustomHeadersMiddlewareName, pCtx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
+				require.Equal(t, ContextualMiddlewareName, pCtx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
 			})
 
 			t.Run("When roundtrip should call expected middlewares", func(t *testing.T) {
@@ -189,6 +187,27 @@ func TestProvider(t *testing.T) {
 			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 		})
 	})
+
+	t.Run("NewProvider() with NewDefaultProviderOptions()", func(t *testing.T) {
+		t.Run("empty uses default options", func(t *testing.T) {
+			provider := NewProvider(NewDefaultProviderOptions())
+			require.Equal(t, &DefaultTimeoutOptions, provider.Opts.Timeout)
+			expDefaultMiddlewares(t, provider.Opts.Middlewares, 0)
+		})
+
+		t.Run("WithTracigMiddleware() prepends tracing middleware", func(t *testing.T) {
+			provider := NewProvider(NewDefaultProviderOptions().WithTracingMiddleware(noOpTracer{}))
+			require.Len(t, provider.Opts.Middlewares, len(DefaultMiddlewares())+1)
+			require.Equal(t, TracingMiddlewareName, provider.Opts.Middlewares[0].(MiddlewareName).MiddlewareName())
+			expDefaultMiddlewares(t, provider.Opts.Middlewares, 1)
+		})
+	})
+}
+
+type noOpTracer struct{}
+
+func (noOpTracer) Start(ctx context.Context, spanName string, opts ...trace.SpanStartOption) (context.Context, trace.Span) {
+	return ctx, nil
 }
 
 type providerTestContext struct {
