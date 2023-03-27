@@ -4,8 +4,6 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
-
-	"go.opentelemetry.io/otel/trace"
 )
 
 // ConfigureClientFunc function signature for configuring http.Client.
@@ -59,20 +57,6 @@ type Options struct {
 	// ConfigureTLSConfig optionally provide a ConfigureTLSConfigFunc
 	// to modify the created http.Client.
 	ConfigureTLSConfig ConfigureTLSConfigFunc
-}
-
-// NewDefaultOptions returns a new Options with the default middlewares and timeout options.
-func NewDefaultOptions() Options {
-	return Options{
-		Middlewares: DefaultMiddlewares(),
-		Timeouts:    &DefaultTimeoutOptions,
-	}
-}
-
-// WithTracingMiddleware prepends a new TracingMiddleware(tracer) to the middleware stack.
-func (o Options) WithTracingMiddleware(tracer trace.Tracer) Options {
-	o.Middlewares = append([]Middleware{TracingMiddleware(tracer)}, o.Middlewares...)
-	return o
 }
 
 // BasicAuthOptions basic authentication options.

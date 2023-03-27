@@ -55,10 +55,11 @@ func TestNewClient(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client)
 
-		require.Len(t, usedMiddlewares, 3)
-		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-		require.Equal(t, ContextualMiddlewareName, usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+		require.Len(t, usedMiddlewares, 4)
+		require.Equal(t, TracingMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+		require.Equal(t, ContextualMiddlewareName, usedMiddlewares[3].(MiddlewareName).MiddlewareName())
 	})
 
 	t.Run("New() with opts middleware should return expected http.Client", func(t *testing.T) {
@@ -97,44 +98,6 @@ func TestNewClient(t *testing.T) {
 			}
 			require.Len(t, ctx.callChain, 6)
 			require.ElementsMatch(t, []string{"before mw3", "before mw2", "before mw1", "after mw1", "after mw2", "after mw3"}, ctx.callChain)
-		})
-	})
-
-	t.Run("New() with NewDefaultOptions()", func(t *testing.T) {
-		t.Run("empty uses default options", func(t *testing.T) {
-			opts := NewDefaultOptions()
-
-			// Intercept middlewares configuration
-			var middlewares []Middleware
-			opts.ConfigureMiddleware = func(opts Options, existingMiddleware []Middleware) []Middleware {
-				middlewares = existingMiddleware
-				return middlewares
-			}
-
-			cl, err := New(opts)
-			require.NoError(t, err)
-			require.NotNil(t, cl)
-			require.Equal(t, DefaultTimeoutOptions.Timeout, cl.Timeout)
-			require.Len(t, middlewares, 3)
-			expDefaultMiddlewares(t, middlewares, 0)
-		})
-
-		t.Run("WithTracingMiddleware prepends tracing middleware", func(t *testing.T) {
-			opts := NewDefaultOptions().WithTracingMiddleware(noOpTracer{})
-
-			// Intercept middlewares configuration
-			var middlewares []Middleware
-			opts.ConfigureMiddleware = func(opts Options, existingMiddleware []Middleware) []Middleware {
-				middlewares = existingMiddleware
-				return middlewares
-			}
-			cl, err := New(opts)
-			require.NoError(t, err)
-			require.NotNil(t, cl)
-			require.Equal(t, DefaultTimeoutOptions.Timeout, cl.Timeout)
-			require.Len(t, middlewares, 4)
-			require.Equal(t, TracingMiddlewareName, middlewares[0].(MiddlewareName).MiddlewareName())
-			expDefaultMiddlewares(t, middlewares, 1)
 		})
 	})
 }
@@ -248,11 +211,4 @@ func TestReverseMiddlewares(t *testing.T) {
 		require.Equal(t, "mw2", reversed[2].(MiddlewareName).MiddlewareName())
 		require.Equal(t, "mw1", reversed[3].(MiddlewareName).MiddlewareName())
 	})
-}
-
-func expDefaultMiddlewares(t *testing.T, mws []Middleware, startIdx int) {
-	require.Len(t, mws, 3+startIdx, "must have same # of middlewares as DefaultMiddlewares()")
-	require.Equal(t, BasicAuthenticationMiddlewareName, mws[startIdx].(MiddlewareName).MiddlewareName())
-	require.Equal(t, CustomHeadersMiddlewareName, mws[startIdx+1].(MiddlewareName).MiddlewareName())
-	require.Equal(t, ContextualMiddlewareName, mws[startIdx+2].(MiddlewareName).MiddlewareName())
 }
