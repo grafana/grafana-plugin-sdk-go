@@ -70,6 +70,11 @@ const FrameTypeNumericMulti FrameType = "numeric-multi"
 // [Numeric Long Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md#numeric-long-format-numericlong-sql-table-like
 const FrameTypeNumericLong FrameType = "numeric-long"
 
+// FrameTypeLogLines is documented in the Logs Format in the Data Plane Contract.
+//
+// [Log Lines Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/logs.md#loglines
+const FrameTypeLogLines FrameType = "log-lines"
+
 // Soon?
 // "timeseries-wide-ohlc" -- known fields for open/high/low/close
 // "histogram" -- BucketMin, BucketMax, values...
@@ -86,6 +91,8 @@ func (p FrameType) IsKnownType() bool {
 		FrameTypeTimeSeriesMulti,
 		FrameTypeTimeSeriesMany,
 
+		FrameTypeLogLines,
+
 		FrameTypeNumericWide,
 		FrameTypeNumericLong,
 		FrameTypeNumericMulti:
@@ -101,6 +108,8 @@ func FrameTypes() []FrameType {
 		FrameTypeTimeSeriesLong,
 		FrameTypeTimeSeriesMulti,
 		FrameTypeTimeSeriesMany,
+
+		FrameTypeLogLines,
 
 		FrameTypeNumericWide,
 		FrameTypeNumericLong,
@@ -133,6 +142,10 @@ func (p FrameType) IsNumeric() bool {
 	return false
 }
 
+func (p FrameType) IsLogs() bool {
+	return p == FrameTypeLogLines
+}
+
 // Kind returns the FrameTypeKind from the FrameType.
 func (p FrameType) Kind() FrameTypeKind {
 	switch {
@@ -162,6 +175,9 @@ const KindTimeSeries FrameTypeKind = "timeseries"
 //
 // [Data Plane Numeric Kind]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md
 const KindNumeric FrameTypeKind = "numeric"
+
+// KindLogs means the FrameType's Kind is logs. See [Data Plane Logs Kind].
+const KindLogs FrameTypeKind = "logs"
 
 // FrameType is a 2 number version (Major / Minor).
 type FrameTypeVersion [2]uint
