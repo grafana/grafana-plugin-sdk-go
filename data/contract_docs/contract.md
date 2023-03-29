@@ -27,6 +27,8 @@ A **_data type_** definition or declaration in this framework includes both a ki
   * [Buckets](./heatmap.md#heatmap-buckets-heatmapbuckets)
   * [Scanlines](./heatmap.md#heatmap-scanlines-heatmapscanlines)
   * [Sparse](./heatmap.md#heatmap-sparse-heatmapsparse)
+* [Logs](./logs.md)
+  * [LogLines](./logs.md#loglines)
 
 ## Dimensional Set Based Kinds
 
