@@ -1,8 +1,7 @@
-package tracing
+package traceprovider
 
 import (
 	"context"
-	"sync"
 
 	jaegerpropagator "go.opentelemetry.io/contrib/propagators/jaeger"
 	"go.opentelemetry.io/otel"
@@ -13,11 +12,37 @@ import (
 	"go.opentelemetry.io/otel/sdk/resource"
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 )
+
+// TracerProvider provides a tracer that can be used to instrument a plugin with tracing.
+type TracerProvider interface {
+	trace.TracerProvider
+
+	// Shutdown performs cleanup operations to ensure the trace provider is disposed correctly.
+	Shutdown(ctx context.Context) error
+}
+
+// noopTracerProvider is a TracerProvider that uses an no-op underlying trace provider.
+type noopTracerProvider struct {
+	trace.TracerProvider
+}
+
+// Shutdown does nothing and always returns nil.
+func (noopTracerProvider) Shutdown(_ context.Context) error {
+	return nil
+}
+
+// newNoOpTraceProvider returns a new noopTracerProvider.
+func newNoOpTraceProvider() TracerProvider {
+	return &noopTracerProvider{TracerProvider: trace.NewNoopTracerProvider()}
+}
 
 // newOpentelemetryTraceProvider returns a new OpenTelemetry TracerProvider with default options, for the provided
 // endpoint and with the provided custom attributes.
 func newOpentelemetryTraceProvider(address string, customAttributes ...attribute.KeyValue) (*tracesdk.TracerProvider, error) {
+	// Same as Grafana core
 	client := otlptracegrpc.NewClient(otlptracegrpc.WithEndpoint(address), otlptracegrpc.WithInsecure())
 	exp, err := otlptrace.New(context.Background(), client)
 	if err != nil {
@@ -44,22 +69,16 @@ func newOpentelemetryTraceProvider(address string, customAttributes ...attribute
 	return tp, nil
 }
 
-// Opts contains settings for tracing setup.
-type Opts struct {
-	// CustomAttributes contains custom key value attributes used for OpenTelemetry.
-	CustomAttributes []attribute.KeyValue
-}
-
 // NewTraceProvider returns a new TraceProvider depending on the specified address.
 // It returns a noopTracerProvider if the address is empty, otherwise it returns a new OpenTelemetry TracerProvider.
-func NewTraceProvider(address string, opts Opts) (TracerProvider, error) {
+func NewTraceProvider(address string, opts tracing.Opts) (TracerProvider, error) {
 	if address == "" {
 		return newNoOpTraceProvider(), nil
 	}
 	return newOpentelemetryTraceProvider(address, opts.CustomAttributes...)
 }
 
-// NewPropagatorFormat takes a string-like value and retrurns the corresponding propagation.TextMapPropagator.
+// NewPropagatorFormat takes a string-like value and returns the corresponding propagation.TextMapPropagator.
 func NewPropagatorFormat(pf PropagatorFormat) propagation.TextMapPropagator {
 	switch pf {
 	case PropagatorFormatJaeger:
@@ -71,34 +90,9 @@ func NewPropagatorFormat(pf PropagatorFormat) propagation.TextMapPropagator {
 	}
 }
 
-const defaultTracerName = "github.com/grafana/grafana-plugin-sdk-go"
-
-var (
-	defaultTracer         trace.Tracer
-	defaultTracerInitOnce sync.Once
-)
-
-// DefaultTracer returns the default tracer that has been set with InitDefaultTracer.
-// If InitDefaultTracer has never been called, the returned default tracer is an otel tracer
-// with its name set to "defaultTracerName".
-func DefaultTracer() trace.Tracer {
-	defaultTracerInitOnce.Do(func() {
-		// Use a non-nil default tracer if it's not set, for the first call.
-		if defaultTracer == nil {
-			defaultTracer = otel.Tracer(defaultTracerName)
-		}
-	})
-	return defaultTracer
-}
-
 // InitGlobalTraceProvider initializes the global trace provider and global text map propagator with the
-// provided values.
+// provided values. This function edits the global (process-wide) OTEL trace provider, use with care!
 func InitGlobalTraceProvider(tp TracerProvider, propagator propagation.TextMapPropagator) {
 	otel.SetTracerProvider(tp)
 	otel.SetTextMapPropagator(propagator)
-}
-
-// InitDefaultTracer sets the default tracer to the specified value.
-func InitDefaultTracer(tracer trace.Tracer) {
-	defaultTracer = tracer
 }

@@ -19,9 +19,9 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/traceprovider"
 )
 
 const defaultServerMaxReceiveMessageSize = 1024 * 1024 * 16
@@ -229,7 +229,7 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 // Manage runs the plugin in either standalone mode, dummy locator or normal (hashicorp) mode.
 func Manage(pluginID string, serveOpts ServeOpts) error {
 	defer func() {
-		tp, ok := otel.GetTracerProvider().(tracing.TracerProvider)
+		tp, ok := otel.GetTracerProvider().(traceprovider.TracerProvider)
 		if !ok {
 			return
 		}
