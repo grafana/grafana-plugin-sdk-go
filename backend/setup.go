@@ -104,7 +104,11 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
-		traceprovider.InitGlobalTraceProvider(tp, traceprovider.NewPropagatorFormat(tracingCfg.Propagation))
+		pf, err := traceprovider.NewTextMapPropagator(string(tracingCfg.Propagation))
+		if err != nil {
+			return fmt.Errorf("new propagator format: %w", err)
+		}
+		traceprovider.InitGlobalTraceProvider(tp, pf)
 
 		// Initialize global tracer for plugin developer usage
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
@@ -116,7 +120,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 // tracingConfig contains the configuration for OTEL tracing.
 type tracingConfig struct {
 	Address     string
-	Propagation traceprovider.PropagatorFormat
+	Propagation string
 }
 
 // IsEnabled returns true if OTEL tracing is enabled.
@@ -133,6 +137,6 @@ func getTracingConfig() tracingConfig {
 	}
 	return tracingConfig{
 		Address:     otelAddr,
-		Propagation: traceprovider.PropagatorFormat(otelPropagation),
+		Propagation: otelPropagation,
 	}
 }

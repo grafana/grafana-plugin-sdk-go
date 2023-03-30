@@ -9,9 +9,11 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
+	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/traceprovider"
 )
 
 type mockTraceProvider struct{}
@@ -250,5 +252,82 @@ func TestTracingMiddleware(t *testing.T) {
 			"http.method":      attribute.StringValue("POST"),
 			"http.status_code": attribute.Int64Value(200),
 		}, attrMap)
+	})
+
+	t.Run("propagation", func(t *testing.T) {
+		traceExporter := tracetest.NewInMemoryExporter()
+		t.Cleanup(func() {
+			require.NoError(t, traceExporter.Shutdown(context.Background()))
+		})
+
+		t.Run("single", func(t *testing.T) {
+			tracer, err := traceprovider.InitializeForTestsWithPropagatorFormat("w3c")
+			require.NoError(t, err)
+
+			ctx, span := tracer.Start(context.Background(), "testspan")
+			defer span.End()
+
+			expectedTraceID := trace.SpanContextFromContext(ctx).TraceID()
+			require.NotEmpty(t, expectedTraceID)
+
+			mw := httpclient.TracingMiddleware(tracer)
+			rt := mw.CreateMiddleware(httpclient.Options{}, httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+				// Only w3c header should be present
+				require.NotEmpty(t, req.Header.Get("Traceparent"))
+				require.Empty(t, req.Header.Get("Uber-Trace-Id"))
+
+				// child span should have the same trace ID as the parent span
+				ctx, span := tracer.Start(req.Context(), "inner")
+				defer span.End()
+
+				require.Equal(t, expectedTraceID, trace.SpanContextFromContext(ctx).TraceID())
+
+				return &http.Response{StatusCode: http.StatusOK, Request: req}, nil
+			}))
+
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://test.com/query", nil)
+			require.NoError(t, err)
+			res, err := rt.RoundTrip(req)
+			require.NoError(t, err)
+			require.NotNil(t, req)
+			if res.Body != nil {
+				require.NoError(t, res.Body.Close())
+			}
+		})
+
+		t.Run("composite", func(t *testing.T) {
+			tracer, err := traceprovider.InitializeForTests()
+			require.NoError(t, err)
+
+			ctx, span := tracer.Start(context.Background(), "testspan")
+			defer span.End()
+
+			expectedTraceID := trace.SpanContextFromContext(ctx).TraceID()
+			require.NotEmpty(t, expectedTraceID)
+
+			mw := httpclient.TracingMiddleware(tracer)
+			rt := mw.CreateMiddleware(httpclient.Options{}, httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+				// both Jaeger and w3c headers should be set
+				require.NotEmpty(t, req.Header.Get("Uber-Trace-Id"))
+				require.NotEmpty(t, req.Header.Get("Traceparent"))
+
+				// child span should have the same trace ID as the parent span
+				ctx, span := tracer.Start(req.Context(), "inner")
+				defer span.End()
+
+				require.Equal(t, expectedTraceID, trace.SpanContextFromContext(ctx).TraceID())
+
+				return &http.Response{StatusCode: http.StatusOK, Request: req}, nil
+			}))
+
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://test.com/query", nil)
+			require.NoError(t, err)
+			res, err := rt.RoundTrip(req)
+			require.NoError(t, err)
+			require.NotNil(t, req)
+			if res.Body != nil {
+				require.NoError(t, res.Body.Close())
+			}
+		})
 	})
 }
