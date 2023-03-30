@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -13,7 +14,6 @@ import (
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/internal/traceprovider"
 )
 
 type mockTracerProvider struct{}
@@ -261,7 +261,7 @@ func TestTracingMiddleware(t *testing.T) {
 		})
 
 		t.Run("single", func(t *testing.T) {
-			tracer, err := traceprovider.InitializeForTestsWithPropagatorFormat("w3c")
+			tracer, err := tracerprovider.InitializeForTestsWithPropagatorFormat("w3c")
 			require.NoError(t, err)
 
 			ctx, span := tracer.Start(context.Background(), "testspan")
@@ -296,7 +296,7 @@ func TestTracingMiddleware(t *testing.T) {
 		})
 
 		t.Run("composite", func(t *testing.T) {
-			tracer, err := traceprovider.InitializeForTests()
+			tracer, err := tracerprovider.InitializeForTests()
 			require.NoError(t, err)
 
 			ctx, span := tracer.Start(context.Background(), "testspan")

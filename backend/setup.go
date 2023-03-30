@@ -108,7 +108,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		if err != nil {
 			return fmt.Errorf("new propagator format: %w", err)
 		}
-		tracerprovider.InitGlobalTraceProvider(tp, pf)
+		tracerprovider.InitGlobalTracerProvider(tp, pf)
 
 		// Initialize global tracer for plugin developer usage
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
