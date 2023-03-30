@@ -167,12 +167,12 @@ type DataLink struct { //revive:disable-line
 
 // InternalDataLink definition to allow Explore links to be constructed in the backend
 type InternalDataLink struct {
-	Query              any                             `json:"query,omitempty"`
-	DatasourceUID      string                          `json:"datasourceUid,omitempty"`
-	DatasourceName     string                          `json:"datasourceName,omitempty"`
-	ExplorePanelsState *ExplorePanelsState             `json:"panelsState,omitempty"`
-	Transformations    *[]DataLinkTransformationConfig `json:"transformations,omitempty"`
-	Range              *TimeRange                      `json:"timeRange,omitempty"`
+	Query              any                         `json:"query,omitempty"`
+	DatasourceUID      string                      `json:"datasourceUid,omitempty"`
+	DatasourceName     string                      `json:"datasourceName,omitempty"`
+	ExplorePanelsState *ExplorePanelsState         `json:"panelsState,omitempty"`
+	Transformations    *[]LinkTransformationConfig `json:"transformations,omitempty"`
+	Range              *TimeRange                  `json:"timeRange,omitempty"`
 }
 
 // This is an object constructed with the keys as the values of the enum VisType and the value being a bag of properties
@@ -184,7 +184,7 @@ type TimeRange struct {
 	To   time.Time `json:"to,omitempty"`
 }
 
-type DataLinkTransformationConfig struct {
+type LinkTransformationConfig struct {
 	Type       SupportedTransformationTypes `json:"type,omitempty"`
 	Field      string                       `json:"field,omitempty"`
 	Expression string                       `json:"expression,omitempty"`
