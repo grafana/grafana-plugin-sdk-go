@@ -1,4 +1,4 @@
-package traceprovider
+package tracerprovider
 
 import (
 	"testing"
