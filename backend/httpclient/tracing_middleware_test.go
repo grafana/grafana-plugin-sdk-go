@@ -16,11 +16,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/internal/traceprovider"
 )
 
-type mockTraceProvider struct{}
+type mockTracerProvider struct{}
 
-var _ trace.TracerProvider = mockTraceProvider{}
+var _ trace.TracerProvider = mockTracerProvider{}
 
-func (p mockTraceProvider) Tracer(string, ...trace.TracerOption) trace.Tracer {
+func (p mockTracerProvider) Tracer(string, ...trace.TracerOption) trace.Tracer {
 	return &mockTracer{}
 }
 
@@ -112,7 +112,7 @@ func (s *mockSpan) SetName(name string) {
 	s.name = name
 }
 
-func (*mockSpan) TracerProvider() trace.TracerProvider { return mockTraceProvider{} }
+func (*mockSpan) TracerProvider() trace.TracerProvider { return mockTracerProvider{} }
 
 func TestTracingMiddleware(t *testing.T) {
 	t.Run("GET request that returns 200 OK should start and capture span", func(t *testing.T) {

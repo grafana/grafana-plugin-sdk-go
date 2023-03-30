@@ -11,7 +11,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
-	"github.com/grafana/grafana-plugin-sdk-go/internal/traceprovider"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 )
 
 var (
@@ -100,15 +100,15 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		tracingOpts.CustomAttributes = append([]attribute.KeyValue{semconv.ServiceNameKey.String(pluginID)}, tracingOpts.CustomAttributes...)
 
 		// Initialize global tracer provider
-		tp, err := traceprovider.NewTraceProvider(tracingCfg.Address, tracingOpts)
+		tp, err := tracerprovider.NewTracerProvider(tracingCfg.Address, tracingOpts)
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
-		pf, err := traceprovider.NewTextMapPropagator(string(tracingCfg.Propagation))
+		pf, err := tracerprovider.NewTextMapPropagator(string(tracingCfg.Propagation))
 		if err != nil {
 			return fmt.Errorf("new propagator format: %w", err)
 		}
-		traceprovider.InitGlobalTraceProvider(tp, pf)
+		tracerprovider.InitGlobalTraceProvider(tp, pf)
 
 		// Initialize global tracer for plugin developer usage
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
