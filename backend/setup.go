@@ -11,7 +11,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
-	"github.com/grafana/grafana-plugin-sdk-go/internal/traceprovider"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 )
 
 var (
@@ -100,11 +100,11 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		tracingOpts.CustomAttributes = append([]attribute.KeyValue{semconv.ServiceNameKey.String(pluginID)}, tracingOpts.CustomAttributes...)
 
 		// Initialize global tracer provider
-		tp, err := traceprovider.NewTraceProvider(tracingCfg.Address, tracingOpts)
+		tp, err := tracerprovider.NewTracerProvider(tracingCfg.Address, tracingOpts)
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
-		traceprovider.InitGlobalTraceProvider(tp, traceprovider.NewPropagatorFormat(tracingCfg.Propagation))
+		tracerprovider.InitGlobalTracerProvider(tp, tracerprovider.NewTextMapPropagator(tracingCfg.Propagation))
 
 		// Initialize global tracer for plugin developer usage
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
@@ -116,7 +116,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 // tracingConfig contains the configuration for OTEL tracing.
 type tracingConfig struct {
 	Address     string
-	Propagation traceprovider.PropagatorFormat
+	Propagation tracerprovider.PropagatorFormat
 }
 
 // IsEnabled returns true if OTEL tracing is enabled.
@@ -133,6 +133,6 @@ func getTracingConfig() tracingConfig {
 	}
 	return tracingConfig{
 		Address:     otelAddr,
-		Propagation: traceprovider.PropagatorFormat(otelPropagation),
+		Propagation: tracerprovider.PropagatorFormat(otelPropagation),
 	}
 }

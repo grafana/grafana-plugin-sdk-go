@@ -1,4 +1,4 @@
-package traceprovider
+package tracerprovider
 
 // PropagatorFormat is an enum-like type representing all the supported OTEL propagator formats.
 type PropagatorFormat string
