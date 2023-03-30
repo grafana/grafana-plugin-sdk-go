@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 )
 
 // FieldConfig represents the display properties for a Field.
@@ -158,10 +159,44 @@ func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
 
 // DataLink define what
 type DataLink struct { //revive:disable-line
-	Title       string `json:"title,omitempty"`
-	TargetBlank bool   `json:"targetBlank,omitempty"`
-	URL         string `json:"url,omitempty"`
+	Title       string            `json:"title,omitempty"`
+	TargetBlank bool              `json:"targetBlank,omitempty"`
+	URL         string            `json:"url,omitempty"`
+	Internal    *InternalDataLink `json:"internal,omitempty"`
 }
+
+// InternalDataLink definition to allow Explore links to be constructed in the backend
+type InternalDataLink struct {
+	Query              any                             `json:"query,omitempty"`
+	DatasourceUID      string                          `json:"datasourceUid,omitempty"`
+	DatasourceName     string                          `json:"datasourceName,omitempty"`
+	ExplorePanelsState *ExplorePanelsState             `json:"panelsState,omitempty"`
+	Transformations    *[]DataLinkTransformationConfig `json:"transformations,omitempty"`
+	Range              *TimeRange                      `json:"timeRange,omitempty"`
+}
+
+// This is an object constructed with the keys as the values of the enum VisType and the value being a bag of properties
+type ExplorePanelsState any
+
+// Redefining this to avoid an import cycle
+type TimeRange struct {
+	From time.Time `json:"from,omitempty"`
+	To   time.Time `json:"to,omitempty"`
+}
+
+type DataLinkTransformationConfig struct {
+	Type       SupportedTransformationTypes `json:"type,omitempty"`
+	Field      string                       `json:"field,omitempty"`
+	Expression string                       `json:"expression,omitempty"`
+	MapValue   string                       `json:"mapValue,omitempty"`
+}
+
+type SupportedTransformationTypes string
+
+const (
+	Regex  SupportedTransformationTypes = "regex"
+	Logfmt SupportedTransformationTypes = "logfmt"
+)
 
 // ThresholdsConfig setup thresholds
 type ThresholdsConfig struct {
