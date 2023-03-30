@@ -51,6 +51,7 @@ func newOpentelemetryTracerProvider(address string, customAttributes ...attribut
 	if err != nil {
 		return nil, err
 	}
+
 	return initTracerProvider(exp, customAttributes...)
 }
 
