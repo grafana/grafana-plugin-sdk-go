@@ -55,10 +55,11 @@ func TestNewClient(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client)
 
-		require.Len(t, usedMiddlewares, 3)
-		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-		require.Equal(t, ContextualMiddlewareName, usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+		require.Len(t, usedMiddlewares, 4)
+		require.Equal(t, TracingMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
+		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+		require.Equal(t, ContextualMiddlewareName, usedMiddlewares[3].(MiddlewareName).MiddlewareName())
 	})
 
 	t.Run("New() with opts middleware should return expected http.Client", func(t *testing.T) {

@@ -1,23 +1,27 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"os"
 	"os/signal"
 	"strconv"
 	"syscall"
+	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/hashicorp/go-plugin"
 	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 )
 
 const defaultServerMaxReceiveMessageSize = 1024 * 1024 * 16
@@ -73,34 +77,34 @@ func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	return pluginOpts
 }
 
-// Serve starts serving the plugin over gRPC.
-func Serve(opts ServeOpts) error {
-	grpc_prometheus.EnableHandlingTimeHistogram()
-	grpcMiddlewares := []grpc.ServerOption{
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			grpc_prometheus.StreamServerInterceptor,
-		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_prometheus.UnaryServerInterceptor,
-		)),
-	}
-
+func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	if opts.GRPCSettings.MaxReceiveMsgSize <= 0 {
 		opts.GRPCSettings.MaxReceiveMsgSize = defaultServerMaxReceiveMessageSize
 	}
-
-	grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize)}, grpcMiddlewares...)
-
+	grpcMiddlewares := []grpc.ServerOption{
+		grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			otelgrpc.StreamServerInterceptor(),
+			grpc_prometheus.StreamServerInterceptor,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			otelgrpc.UnaryServerInterceptor(),
+			grpc_prometheus.UnaryServerInterceptor,
+		)),
+	}
 	if opts.GRPCSettings.MaxSendMsgSize > 0 {
 		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxSendMsgSize(opts.GRPCSettings.MaxSendMsgSize)}, grpcMiddlewares...)
 	}
+	return grpcMiddlewares
+}
 
+// Serve starts serving the plugin over gRPC.
+func Serve(opts ServeOpts) error {
+	grpc_prometheus.EnableHandlingTimeHistogram()
 	pluginOpts := asGRPCServeOpts(opts)
-	pluginOpts.GRPCServer = func(opts []grpc.ServerOption) *grpc.Server {
-		opts = append(opts, grpcMiddlewares...)
-		return grpc.NewServer(opts...)
+	pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
+		return grpc.NewServer(append(defaultGRPCMiddlewares(opts), grpcOptions...)...)
 	}
-
 	return grpcplugin.Serve(pluginOpts)
 }
 
@@ -155,31 +159,33 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 	}
 
 	// Start GRPC server
-	opts := asGRPCServeOpts(dsopts)
-	if opts.GRPCServer == nil {
-		opts.GRPCServer = plugin.DefaultGRPCServer
+	pluginOpts := asGRPCServeOpts(dsopts)
+	if pluginOpts.GRPCServer == nil {
+		pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
+			return grpc.NewServer(append(defaultGRPCMiddlewares(dsopts), grpcOptions...)...)
+		}
 	}
 
-	server := opts.GRPCServer(nil)
+	server := pluginOpts.GRPCServer(nil)
 
 	var plugKeys []string
-	if opts.DiagnosticsServer != nil {
-		pluginv2.RegisterDiagnosticsServer(server, opts.DiagnosticsServer)
+	if pluginOpts.DiagnosticsServer != nil {
+		pluginv2.RegisterDiagnosticsServer(server, pluginOpts.DiagnosticsServer)
 		plugKeys = append(plugKeys, "diagnostics")
 	}
 
-	if opts.ResourceServer != nil {
-		pluginv2.RegisterResourceServer(server, opts.ResourceServer)
+	if pluginOpts.ResourceServer != nil {
+		pluginv2.RegisterResourceServer(server, pluginOpts.ResourceServer)
 		plugKeys = append(plugKeys, "resources")
 	}
 
-	if opts.DataServer != nil {
-		pluginv2.RegisterDataServer(server, opts.DataServer)
+	if pluginOpts.DataServer != nil {
+		pluginv2.RegisterDataServer(server, pluginOpts.DataServer)
 		plugKeys = append(plugKeys, "data")
 	}
 
-	if opts.StreamServer != nil {
-		pluginv2.RegisterStreamServer(server, opts.StreamServer)
+	if pluginOpts.StreamServer != nil {
+		pluginv2.RegisterStreamServer(server, pluginOpts.StreamServer)
 		plugKeys = append(plugKeys, "stream")
 	}
 
@@ -222,6 +228,20 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 
 // Manage runs the plugin in either standalone mode, dummy locator or normal (hashicorp) mode.
 func Manage(pluginID string, serveOpts ServeOpts) error {
+	defer func() {
+		tp, ok := otel.GetTracerProvider().(tracerprovider.TracerProvider)
+		if !ok {
+			return
+		}
+
+		Logger.Debug("Closing tracing")
+		ctx, canc := context.WithTimeout(context.Background(), time.Second*5)
+		defer canc()
+		if err := tp.Shutdown(ctx); err != nil {
+			Logger.Error("error while shutting down tracer", "error", err)
+		}
+	}()
+
 	info, err := standalone.GetInfo(pluginID)
 	if err != nil {
 		return err
