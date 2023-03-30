@@ -17,10 +17,12 @@ Version: 0.0
   - There must be at least one non nullable time field
   - If there are multiple time fields present, following will decide the priority
     - First matching time field with name `timestamp`
+      - If there are multiple time fields, and none of them is named `timestamp`, it is considered an error.
 - **Message field** - _required_
   - There must be at lease one non nullable string field must present
   - If more than one string fields found, the following will decide the priority
     - First matching string field with name `body`
+      - If there are multiple string fields, and none of them is named `body`, it is considered an error.
 - **Severity field** - _optional_
   - This is optional field
   - Level/Severity of the log line can be represented with this field.
