@@ -86,8 +86,8 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		clientOpts.Middlewares = clientOpts.ConfigureMiddleware(clientOpts, clientOpts.Middlewares)
 	}
 
-	if proxy.SecureSocksProxyEnabled(nil) && clientOpts.SecureSocksProxyEnabled {
-		err = proxy.NewSecureSocksHTTPProxy(nil, transport, clientOpts.Labels["datasource_uid"])
+	if proxy.SecureSocksProxyEnabled() && clientOpts.SecureSocksProxyEnabled {
+		err = proxy.NewSecureSocksHTTPProxy(transport, clientOpts.Labels["datasource_uid"])
 		if err != nil {
 			return nil, err
 		}

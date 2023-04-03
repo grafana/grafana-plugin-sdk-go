@@ -28,47 +28,54 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	// The gosec G304 warning can be ignored because all values come from the test
 	_, err := os.Create(tempEmptyFile)
 	require.NoError(t, err)
+	os.Setenv(PluginSecureSocksProxyClientCert, settings.ClientCert)
+	os.Setenv(PluginSecureSocksProxyClientKey, settings.ClientKey)
+	os.Setenv(PluginSecureSocksProxyRootCACert, settings.RootCA)
+	os.Setenv(PluginSecureSocksProxyProxyAddress, settings.ProxyAddress)
+	os.Setenv(PluginSecureSocksProxyServerName, settings.ServerName)
+	os.Setenv(PluginSecureSocksProxyEnabled, "true")
 
 	t.Run("New socks proxy should be properly configured when all settings are valid", func(t *testing.T) {
-		require.NoError(t, NewSecureSocksHTTPProxy(settings, &http.Transport{}, "uid"))
+		require.NoError(t, NewSecureSocksHTTPProxy(&http.Transport{}, "uid"))
 	})
 
 	t.Run("Client cert must be valid", func(t *testing.T) {
 		clientCertBefore := settings.ClientCert
 		settings.ClientCert = tempEmptyFile
+		os.Setenv(PluginSecureSocksProxyClientCert, settings.ClientCert)
 		t.Cleanup(func() {
 			settings.ClientCert = clientCertBefore
+			os.Setenv(PluginSecureSocksProxyClientCert, settings.ClientCert)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(settings, &http.Transport{}, "uid"))
+		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, "uid"))
 	})
 
 	t.Run("Client key must be valid", func(t *testing.T) {
 		clientKeyBefore := settings.ClientKey
 		settings.ClientKey = tempEmptyFile
+		os.Setenv(PluginSecureSocksProxyClientKey, settings.ClientKey)
 		t.Cleanup(func() {
 			settings.ClientKey = clientKeyBefore
+			os.Setenv(PluginSecureSocksProxyClientKey, settings.ClientKey)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(settings, &http.Transport{}, "uid"))
+		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, "uid"))
 	})
 
 	t.Run("Root CA must be valid", func(t *testing.T) {
 		rootCABefore := settings.RootCA
 		settings.RootCA = tempEmptyFile
+		os.Setenv(PluginSecureSocksProxyRootCACert, settings.RootCA)
 		t.Cleanup(func() {
 			settings.RootCA = rootCABefore
+			os.Setenv(PluginSecureSocksProxyRootCACert, settings.RootCA)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(settings, &http.Transport{}, "uid"))
+		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, "uid"))
 	})
 }
 
 func TestSecureSocksProxyEnabled(t *testing.T) {
-	t.Run("Secure socks proxy should be enabled if the config says so", func(t *testing.T) {
-		assert.Equal(t, true, SecureSocksProxyEnabled(&SecureSocksProxyConfig{Enabled: true}))
-	})
-	t.Run("Secure socks proxy should be enabled if the env variables say so", func(t *testing.T) {
-		os.Setenv(PluginSecureSocksProxyEnabled, "true")
-		assert.Equal(t, true, SecureSocksProxyEnabled(nil))
-	})
+	os.Setenv(PluginSecureSocksProxyEnabled, "true")
+	assert.Equal(t, true, SecureSocksProxyEnabled())
 }
 
 func TestSecureSocksProxyConfigEnv(t *testing.T) {
@@ -131,14 +138,16 @@ func TestPreventInvalidRootCA(t *testing.T) {
 			Bytes: []byte("testing"),
 		})
 		require.NoError(t, err)
-		_, err = NewSecureSocksProxyContextDialer(&SecureSocksProxyConfig{RootCA: rootCACert}, "test")
+		os.Setenv(PluginSecureSocksProxyRootCACert, rootCACert)
+		_, err = NewSecureSocksProxyContextDialer("test")
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 	t.Run("root ca has to have valid content", func(t *testing.T) {
 		rootCACert := filepath.Join(tempDir, "ca.cert")
 		err := os.WriteFile(rootCACert, []byte("this is not a pem encoded file"), fs.ModeAppend)
 		require.NoError(t, err)
-		_, err = NewSecureSocksProxyContextDialer(&SecureSocksProxyConfig{RootCA: rootCACert}, "test")
+		os.Setenv(PluginSecureSocksProxyRootCACert, rootCACert)
+		_, err = NewSecureSocksProxyContextDialer("test")
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 }

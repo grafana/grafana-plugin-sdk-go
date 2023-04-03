@@ -39,7 +39,6 @@ var (
 // SecureSocksProxyConfig contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy
 type SecureSocksProxyConfig struct {
-	Enabled      bool
 	ClientCert   string
 	ClientKey    string
 	RootCA       string
@@ -48,12 +47,7 @@ type SecureSocksProxyConfig struct {
 }
 
 // SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
-func SecureSocksProxyEnabled(cfg *SecureSocksProxyConfig) bool {
-	// if passed in, use the config, otherwise attempt to find it as an env variable
-	if cfg != nil {
-		return cfg.Enabled
-	}
-
+func SecureSocksProxyEnabled() bool {
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyEnabled); ok {
 		res, err := strconv.ParseBool(value)
 		if err != nil {
@@ -82,8 +76,8 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 }
 
 // NewSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
-func NewSecureSocksHTTPProxy(cfg *SecureSocksProxyConfig, transport *http.Transport, dsUID string) error {
-	dialSocksProxy, err := NewSecureSocksProxyContextDialer(cfg, dsUID)
+func NewSecureSocksHTTPProxy(transport *http.Transport, dsUID string) error {
+	dialSocksProxy, err := NewSecureSocksProxyContextDialer(dsUID)
 	if err != nil {
 		return err
 	}
@@ -98,14 +92,11 @@ func NewSecureSocksHTTPProxy(cfg *SecureSocksProxyConfig, transport *http.Transp
 }
 
 // NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
-func NewSecureSocksProxyContextDialer(cfg *SecureSocksProxyConfig, dsUID string) (proxy.Dialer, error) {
+func NewSecureSocksProxyContextDialer(dsUID string) (proxy.Dialer, error) {
 	var err error
-	// use the config, if passed in, otherwise attempt to get the values from the env
-	if cfg == nil {
-		cfg, err = getConfigFromEnv()
-		if err != nil {
-			return nil, err
-		}
+	cfg, err := getConfigFromEnv()
+	if err != nil {
+		return nil, err
 	}
 
 	certPool := x509.NewCertPool()
