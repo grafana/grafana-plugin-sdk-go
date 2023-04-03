@@ -23,7 +23,7 @@ require (
 	github.com/stretchr/testify v1.8.2
 	golang.org/x/sys v0.6.0
 	google.golang.org/grpc v1.54.0
-	google.golang.org/protobuf v1.28.1
+	google.golang.org/protobuf v1.30.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
 
