@@ -15,14 +15,29 @@ import (
 )
 
 var (
-	PluginSecureSocksProxyEnabled      = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
-	PluginSecureSocksProxyClientCert   = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
-	PluginSecureSocksProxyClientKey    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	PluginSecureSocksProxyRootCACert   = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+
+	// PluginSecureSocksProxyEnabled is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED
+	// environment variable used to specify if a secure socks proxy is allowed to be used for datasource connections.
+	PluginSecureSocksProxyEnabled = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
+	// PluginSecureSocksProxyClientCert is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT
+	// environment variable used to specify the file location of the client cert for the secure socks proxy.
+	PluginSecureSocksProxyClientCert = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
+	// PluginSecureSocksProxyClientKey is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY
+	// environment variable used to specify the file location of the client key for the secure socks proxy.
+	PluginSecureSocksProxyClientKey = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
+	// PluginSecureSocksProxyRootCACert is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT
+	// environment variable used to specify the file location of the root ca for the secure socks proxy.
+	PluginSecureSocksProxyRootCACert = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+	// PluginSecureSocksProxyProxyAddress is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS
+	// environment variable used to specify the secure socks proxy server address to proxy the connections to.
 	PluginSecureSocksProxyProxyAddress = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
-	PluginSecureSocksProxyServerName   = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+	// PluginSecureSocksProxyServerName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
+	// environment variable used to specify the server name of the secure socks proxy.
+	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
 )
 
+// SecureSocksProxyConfig contains the information needed to allow datasource connections to be
+// proxied to a secure socks proxy
 type SecureSocksProxyConfig struct {
 	Enabled      bool
 	ClientCert   string
@@ -51,7 +66,8 @@ func SecureSocksProxyEnabled(cfg *SecureSocksProxyConfig) bool {
 	return false
 }
 
-// SecureSocksProxyEnabledOnDS checks the datasource json data to see if the secure socks proxy is enabled on it
+// SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`
+// to determine if the secure socks proxy should be enabled on it
 func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 	res, enabled := jsonData["enableSecureSocksProxy"]
 	if !enabled {
@@ -81,7 +97,7 @@ func NewSecureSocksHTTPProxy(cfg *SecureSocksProxyConfig, transport *http.Transp
 	return nil
 }
 
-// NewSecureSocksProxyContextDialer returns a proxy context dialer that will wrap connections in a secure socks proxy
+// NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
 func NewSecureSocksProxyContextDialer(cfg *SecureSocksProxyConfig, dsUID string) (proxy.Dialer, error) {
 	var err error
 	// use the config, if passed in, otherwise attempt to get the values from the env
@@ -137,7 +153,7 @@ func NewSecureSocksProxyContextDialer(cfg *SecureSocksProxyConfig, dsUID string)
 	return dialSocksProxy, nil
 }
 
-// getConfigFromEnv gets the proxy information via env variables that were set by Grafana with values from the config ini
+// getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
 func getConfigFromEnv() (*SecureSocksProxyConfig, error) {
 	clientCert := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCert); ok {
