@@ -3,6 +3,7 @@ package proxy
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/pem"
 	"errors"
 	"fmt"
 	"net/http"
@@ -94,12 +95,19 @@ func NewSecureSocksProxyContextDialer(cfg *SecureSocksProxyConfig, dsUID string)
 	certPool := x509.NewCertPool()
 	for _, rootCAFile := range strings.Split(cfg.RootCA, " ") {
 		// nolint:gosec
-		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini.
-		pem, err := os.ReadFile(rootCAFile)
+		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
+		// and we check below if it's the right file type
+		pemBytes, err := os.ReadFile(rootCAFile)
 		if err != nil {
 			return nil, err
 		}
-		if !certPool.AppendCertsFromPEM(pem) {
+
+		pemDecoded, _ := pem.Decode(pemBytes)
+		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
+			return nil, errors.New("root ca is invalid")
+		}
+
+		if !certPool.AppendCertsFromPEM(pemBytes) {
 			return nil, errors.New("failed to append CA certificate " + rootCAFile)
 		}
 	}

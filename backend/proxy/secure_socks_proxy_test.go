@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"io/fs"
 	"math/big"
 	"net/http"
 	"os"
@@ -116,6 +117,29 @@ func TestSecureSocksProxyEnabledOnDS(t *testing.T) {
 		for _, tt := range tests {
 			assert.Equal(t, tt.enabled, SecureSocksProxyEnabledOnDS(tt.jsonData))
 		}
+	})
+}
+
+func TestPreventInvalidRootCA(t *testing.T) {
+	tempDir := t.TempDir()
+	t.Run("root ca must be of the type CERTIFICATE", func(t *testing.T) {
+		rootCACert := filepath.Join(tempDir, "ca.cert")
+		caCertFile, err := os.Create(rootCACert)
+		require.NoError(t, err)
+		err = pem.Encode(caCertFile, &pem.Block{
+			Type:  "PUBLIC KEY",
+			Bytes: []byte("testing"),
+		})
+		require.NoError(t, err)
+		_, err = NewSecureSocksProxyContextDialer(&SecureSocksProxyConfig{RootCA: rootCACert}, "test")
+		require.Contains(t, err.Error(), "root ca is invalid")
+	})
+	t.Run("root ca has to have valid content", func(t *testing.T) {
+		rootCACert := filepath.Join(tempDir, "ca.cert")
+		err := os.WriteFile(rootCACert, []byte("this is not a pem encoded file"), fs.ModeAppend)
+		require.NoError(t, err)
+		_, err = NewSecureSocksProxyContextDialer(&SecureSocksProxyConfig{RootCA: rootCACert}, "test")
+		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 }
 
