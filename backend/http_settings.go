@@ -45,6 +45,8 @@ type HTTPSettings struct {
 	SigV4AccessKey     string
 	SigV4SecretKey     string
 
+	SecureSocksProxyEnabled bool
+
 	JSONData       map[string]interface{}
 	SecureJSONData map[string]string
 }
@@ -52,9 +54,10 @@ type HTTPSettings struct {
 // HTTPClientOptions creates and returns httpclient.Options.
 func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 	opts := httpclient.Options{
-		Headers:       s.Headers,
-		Labels:        map[string]string{},
-		CustomOptions: map[string]interface{}{},
+		Headers:                 s.Headers,
+		Labels:                  map[string]string{},
+		CustomOptions:           map[string]interface{}{},
+		SecureSocksProxyEnabled: s.SecureSocksProxyEnabled,
 	}
 
 	opts.Timeouts = &httpclient.TimeoutOptions{
@@ -263,6 +266,11 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		if v, exists := secureJSONData["sigV4SecretKey"]; exists {
 			s.SigV4SecretKey = v
 		}
+	}
+
+	// secure socks proxy
+	if v, exists := dat["enableSecureSocksProxy"]; exists {
+		s.SecureSocksProxyEnabled = v.(bool)
 	}
 
 	// headers

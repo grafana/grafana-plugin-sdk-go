@@ -30,6 +30,9 @@ type Options struct {
 	TLS   *TLSOptions
 	SigV4 *SigV4Config
 
+	// Secure socks proxy related option.
+	SecureSocksProxyEnabled bool
+
 	// Headers custom headers.
 	Headers map[string]string
 
