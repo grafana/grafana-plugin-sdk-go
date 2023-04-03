@@ -104,7 +104,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
-		pf, err := tracerprovider.NewTextMapPropagator(string(tracingCfg.Propagation))
+		pf, err := tracerprovider.NewTextMapPropagator(tracingCfg.Propagation)
 		if err != nil {
 			return fmt.Errorf("new propagator format: %w", err)
 		}
