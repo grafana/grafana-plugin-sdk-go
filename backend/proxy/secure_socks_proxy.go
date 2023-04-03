@@ -38,12 +38,12 @@ var (
 
 // SecureSocksProxyConfig contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy
-type SecureSocksProxyConfig struct {
-	ClientCert   string
-	ClientKey    string
-	RootCA       string
-	ProxyAddress string
-	ServerName   string
+type secureSocksProxyConfig struct {
+	clientCert   string
+	clientKey    string
+	rootCA       string
+	proxyAddress string
+	serverName   string
 }
 
 // SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
@@ -100,7 +100,7 @@ func NewSecureSocksProxyContextDialer(dsUID string) (proxy.Dialer, error) {
 	}
 
 	certPool := x509.NewCertPool()
-	for _, rootCAFile := range strings.Split(cfg.RootCA, " ") {
+	for _, rootCAFile := range strings.Split(cfg.rootCA, " ") {
 		// nolint:gosec
 		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
 		// and we check below if it's the right file type
@@ -119,7 +119,7 @@ func NewSecureSocksProxyContextDialer(dsUID string) (proxy.Dialer, error) {
 		}
 	}
 
-	cert, err := tls.LoadX509KeyPair(cfg.ClientCert, cfg.ClientKey)
+	cert, err := tls.LoadX509KeyPair(cfg.clientCert, cfg.clientKey)
 	if err != nil {
 		return nil, err
 	}
@@ -127,8 +127,9 @@ func NewSecureSocksProxyContextDialer(dsUID string) (proxy.Dialer, error) {
 	tlsDialer := &tls.Dialer{
 		Config: &tls.Config{
 			Certificates: []tls.Certificate{cert},
-			ServerName:   cfg.ServerName,
+			ServerName:   cfg.serverName,
 			RootCAs:      certPool,
+			MinVersion:   tls.VersionTLS13,
 		},
 	}
 
@@ -136,7 +137,7 @@ func NewSecureSocksProxyContextDialer(dsUID string) (proxy.Dialer, error) {
 		User: dsUID,
 	}
 
-	dialSocksProxy, err := proxy.SOCKS5("tcp", cfg.ProxyAddress, &dsInfo, tlsDialer)
+	dialSocksProxy, err := proxy.SOCKS5("tcp", cfg.proxyAddress, &dsInfo, tlsDialer)
 	if err != nil {
 		return nil, err
 	}
@@ -145,7 +146,7 @@ func NewSecureSocksProxyContextDialer(dsUID string) (proxy.Dialer, error) {
 }
 
 // getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
-func getConfigFromEnv() (*SecureSocksProxyConfig, error) {
+func getConfigFromEnv() (*secureSocksProxyConfig, error) {
 	clientCert := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCert); ok {
 		clientCert = value
@@ -181,11 +182,11 @@ func getConfigFromEnv() (*SecureSocksProxyConfig, error) {
 		return nil, fmt.Errorf("missing server name")
 	}
 
-	return &SecureSocksProxyConfig{
-		ClientCert:   clientCert,
-		ClientKey:    clientKey,
-		RootCA:       rootCA,
-		ProxyAddress: proxyAddress,
-		ServerName:   serverName,
+	return &secureSocksProxyConfig{
+		clientCert:   clientCert,
+		clientKey:    clientKey,
+		rootCA:       rootCA,
+		proxyAddress: proxyAddress,
+		serverName:   serverName,
 	}, nil
 }

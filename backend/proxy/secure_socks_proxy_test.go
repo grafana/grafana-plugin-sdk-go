@@ -28,11 +28,11 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	// The gosec G304 warning can be ignored because all values come from the test
 	_, err := os.Create(tempEmptyFile)
 	require.NoError(t, err)
-	os.Setenv(PluginSecureSocksProxyClientCert, settings.ClientCert)
-	os.Setenv(PluginSecureSocksProxyClientKey, settings.ClientKey)
-	os.Setenv(PluginSecureSocksProxyRootCACert, settings.RootCA)
-	os.Setenv(PluginSecureSocksProxyProxyAddress, settings.ProxyAddress)
-	os.Setenv(PluginSecureSocksProxyServerName, settings.ServerName)
+	os.Setenv(PluginSecureSocksProxyClientCert, settings.clientCert)
+	os.Setenv(PluginSecureSocksProxyClientKey, settings.clientKey)
+	os.Setenv(PluginSecureSocksProxyRootCACert, settings.rootCA)
+	os.Setenv(PluginSecureSocksProxyProxyAddress, settings.proxyAddress)
+	os.Setenv(PluginSecureSocksProxyServerName, settings.serverName)
 	os.Setenv(PluginSecureSocksProxyEnabled, "true")
 
 	t.Run("New socks proxy should be properly configured when all settings are valid", func(t *testing.T) {
@@ -40,34 +40,34 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	})
 
 	t.Run("Client cert must be valid", func(t *testing.T) {
-		clientCertBefore := settings.ClientCert
-		settings.ClientCert = tempEmptyFile
-		os.Setenv(PluginSecureSocksProxyClientCert, settings.ClientCert)
+		clientCertBefore := settings.clientCert
+		settings.clientCert = tempEmptyFile
+		os.Setenv(PluginSecureSocksProxyClientCert, settings.clientCert)
 		t.Cleanup(func() {
-			settings.ClientCert = clientCertBefore
-			os.Setenv(PluginSecureSocksProxyClientCert, settings.ClientCert)
+			settings.clientCert = clientCertBefore
+			os.Setenv(PluginSecureSocksProxyClientCert, settings.clientCert)
 		})
 		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, "uid"))
 	})
 
 	t.Run("Client key must be valid", func(t *testing.T) {
-		clientKeyBefore := settings.ClientKey
-		settings.ClientKey = tempEmptyFile
-		os.Setenv(PluginSecureSocksProxyClientKey, settings.ClientKey)
+		clientKeyBefore := settings.clientKey
+		settings.clientKey = tempEmptyFile
+		os.Setenv(PluginSecureSocksProxyClientKey, settings.clientKey)
 		t.Cleanup(func() {
-			settings.ClientKey = clientKeyBefore
-			os.Setenv(PluginSecureSocksProxyClientKey, settings.ClientKey)
+			settings.clientKey = clientKeyBefore
+			os.Setenv(PluginSecureSocksProxyClientKey, settings.clientKey)
 		})
 		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, "uid"))
 	})
 
 	t.Run("Root CA must be valid", func(t *testing.T) {
-		rootCABefore := settings.RootCA
-		settings.RootCA = tempEmptyFile
-		os.Setenv(PluginSecureSocksProxyRootCACert, settings.RootCA)
+		rootCABefore := settings.rootCA
+		settings.rootCA = tempEmptyFile
+		os.Setenv(PluginSecureSocksProxyRootCACert, settings.rootCA)
 		t.Cleanup(func() {
-			settings.RootCA = rootCABefore
-			os.Setenv(PluginSecureSocksProxyRootCACert, settings.RootCA)
+			settings.rootCA = rootCABefore
+			os.Setenv(PluginSecureSocksProxyRootCACert, settings.rootCA)
 		})
 		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, "uid"))
 	})
@@ -79,18 +79,18 @@ func TestSecureSocksProxyEnabled(t *testing.T) {
 }
 
 func TestSecureSocksProxyConfigEnv(t *testing.T) {
-	expected := SecureSocksProxyConfig{
-		ClientCert:   "client.crt",
-		ClientKey:    "client.key",
-		RootCA:       "ca.crt",
-		ProxyAddress: "localhost:8080",
-		ServerName:   "testServer",
+	expected := secureSocksProxyConfig{
+		clientCert:   "client.crt",
+		clientKey:    "client.key",
+		rootCA:       "ca.crt",
+		proxyAddress: "localhost:8080",
+		serverName:   "testServer",
 	}
-	os.Setenv(PluginSecureSocksProxyClientCert, expected.ClientCert)
-	os.Setenv(PluginSecureSocksProxyClientKey, expected.ClientKey)
-	os.Setenv(PluginSecureSocksProxyRootCACert, expected.RootCA)
-	os.Setenv(PluginSecureSocksProxyProxyAddress, expected.ProxyAddress)
-	os.Setenv(PluginSecureSocksProxyServerName, expected.ServerName)
+	os.Setenv(PluginSecureSocksProxyClientCert, expected.clientCert)
+	os.Setenv(PluginSecureSocksProxyClientKey, expected.clientKey)
+	os.Setenv(PluginSecureSocksProxyRootCACert, expected.rootCA)
+	os.Setenv(PluginSecureSocksProxyProxyAddress, expected.proxyAddress)
+	os.Setenv(PluginSecureSocksProxyServerName, expected.serverName)
 
 	actual, err := getConfigFromEnv()
 	assert.NoError(t, err)
@@ -152,7 +152,8 @@ func TestPreventInvalidRootCA(t *testing.T) {
 	})
 }
 
-func setupTestSecureSocksProxySettings(t *testing.T) *SecureSocksProxyConfig {
+func setupTestSecureSocksProxySettings(t *testing.T) *secureSocksProxyConfig {
+	t.Helper()
 	proxyAddress := "localhost:3000"
 	serverName := "localhost"
 	tempDir := t.TempDir()
@@ -224,11 +225,11 @@ func setupTestSecureSocksProxySettings(t *testing.T) *SecureSocksProxyConfig {
 	})
 	require.NoError(t, err)
 
-	return &SecureSocksProxyConfig{
-		ClientCert:   clientCert,
-		ClientKey:    clientKey,
-		RootCA:       rootCACert,
-		ServerName:   serverName,
-		ProxyAddress: proxyAddress,
+	return &secureSocksProxyConfig{
+		clientCert:   clientCert,
+		clientKey:    clientKey,
+		rootCA:       rootCACert,
+		serverName:   serverName,
+		proxyAddress: proxyAddress,
 	}
 }
