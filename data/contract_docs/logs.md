@@ -48,7 +48,7 @@ Version: 0.0
   - Field type must be nullable number and field name must be `tsNs`
   - when this field detected, clients use this as an additional timeField property to calculate the nano second precision.
 
-If any other fields (remainder fields) found, they will be treated as items of the attributes field.
+Any other field is ignored.
 
 ## Example
 
