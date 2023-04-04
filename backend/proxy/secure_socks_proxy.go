@@ -6,6 +6,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"os"
 	"strconv"
@@ -76,8 +77,8 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 }
 
 // NewSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
-func NewSecureSocksHTTPProxy(transport *http.Transport, dsUID string) error {
-	dialSocksProxy, err := NewSecureSocksProxyContextDialer(dsUID)
+func NewSecureSocksHTTPProxy(transport *http.Transport, opts *Options, dsUID string) error {
+	dialSocksProxy, err := NewSecureSocksProxyContextDialer(dsUID, opts)
 	if err != nil {
 		return err
 	}
@@ -92,12 +93,14 @@ func NewSecureSocksHTTPProxy(transport *http.Transport, dsUID string) error {
 }
 
 // NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
-func NewSecureSocksProxyContextDialer(dsUID string) (proxy.Dialer, error) {
+func NewSecureSocksProxyContextDialer(dsUID string, opts *Options) (proxy.Dialer, error) {
 	var err error
 	cfg, err := getConfigFromEnv()
 	if err != nil {
 		return nil, err
 	}
+
+	clientOpts := createOptions(opts)
 
 	certPool := x509.NewCertPool()
 	for _, rootCAFile := range strings.Split(cfg.rootCA, " ") {
@@ -130,6 +133,10 @@ func NewSecureSocksProxyContextDialer(dsUID string) (proxy.Dialer, error) {
 			ServerName:   cfg.serverName,
 			RootCAs:      certPool,
 			MinVersion:   tls.VersionTLS13,
+		},
+		NetDialer: &net.Dialer{
+			Timeout:   clientOpts.Timeout,
+			KeepAlive: clientOpts.KeepAlive,
 		},
 	}
 
