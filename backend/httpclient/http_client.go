@@ -86,14 +86,8 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		clientOpts.Middlewares = clientOpts.ConfigureMiddleware(clientOpts, clientOpts.Middlewares)
 	}
 
-	if proxy.SecureSocksProxyEnabled() && clientOpts.SecureSocksProxyEnabled {
-		err = proxy.NewSecureSocksHTTPProxy(transport,
-			&proxy.Options{
-				KeepAlive: clientOpts.Timeouts.KeepAlive,
-				Timeout:   clientOpts.Timeouts.Timeout,
-			},
-			clientOpts.Labels["datasource_uid"],
-		)
+	if proxy.SecureSocksProxyEnabled(clientOpts.ProxyOptions) {
+		err = proxy.NewSecureSocksHTTPProxy(transport, clientOpts.ProxyOptions)
 		if err != nil {
 			return nil, err
 		}
@@ -165,6 +159,17 @@ func createOptions(providedOpts ...Options) Options {
 
 	if opts.Middlewares == nil {
 		opts.Middlewares = DefaultMiddlewares()
+	}
+
+	if proxy.SecureSocksProxyEnabled(opts.ProxyOptions) {
+		// default username is the datasource uid, this can be updated
+		// by setting `secureSocksProxyUsername` in the datasource json
+		if opts.ProxyOptions.Auth == nil {
+			opts.ProxyOptions.Auth = &proxy.AuthOptions{}
+		}
+		if opts.ProxyOptions.Auth.Username == "" {
+			opts.ProxyOptions.Auth.Username = opts.Labels["datasource_uid"]
+		}
 	}
 
 	return opts

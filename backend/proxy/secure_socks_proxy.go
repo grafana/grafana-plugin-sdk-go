@@ -48,14 +48,23 @@ type secureSocksProxyConfig struct {
 }
 
 // SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
-func SecureSocksProxyEnabled() bool {
+// and datasource specifies to use the proxy
+func SecureSocksProxyEnabled(opts *Options) bool {
+	if opts == nil {
+		return false
+	}
+
+	if !opts.EnabledOnDS {
+		return false
+	}
+
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyEnabled); ok {
-		res, err := strconv.ParseBool(value)
+		enabledOnInst, err := strconv.ParseBool(value)
 		if err != nil {
 			return false
 		}
 
-		return res
+		return enabledOnInst
 	}
 
 	return false
@@ -77,8 +86,8 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 }
 
 // NewSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
-func NewSecureSocksHTTPProxy(transport *http.Transport, opts *Options, dsUID string) error {
-	dialSocksProxy, err := NewSecureSocksProxyContextDialer(dsUID, opts)
+func NewSecureSocksHTTPProxy(transport *http.Transport, opts *Options) error {
+	dialSocksProxy, err := NewSecureSocksProxyContextDialer(opts)
 	if err != nil {
 		return err
 	}
@@ -93,7 +102,7 @@ func NewSecureSocksHTTPProxy(transport *http.Transport, opts *Options, dsUID str
 }
 
 // NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
-func NewSecureSocksProxyContextDialer(dsUID string, opts *Options) (proxy.Dialer, error) {
+func NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error) {
 	var err error
 	cfg, err := getConfigFromEnv()
 	if err != nil {
@@ -135,16 +144,20 @@ func NewSecureSocksProxyContextDialer(dsUID string, opts *Options) (proxy.Dialer
 			MinVersion:   tls.VersionTLS13,
 		},
 		NetDialer: &net.Dialer{
-			Timeout:   clientOpts.Timeout,
-			KeepAlive: clientOpts.KeepAlive,
+			Timeout:   clientOpts.Timeouts.Timeout,
+			KeepAlive: clientOpts.Timeouts.KeepAlive,
 		},
 	}
 
-	dsInfo := proxy.Auth{
-		User: dsUID,
+	var dsInfo *proxy.Auth
+	if clientOpts.Auth != nil {
+		dsInfo = &proxy.Auth{
+			User:     clientOpts.Auth.Username,
+			Password: clientOpts.Auth.Password,
+		}
 	}
 
-	dialSocksProxy, err := proxy.SOCKS5("tcp", cfg.proxyAddress, &dsInfo, tlsDialer)
+	dialSocksProxy, err := proxy.SOCKS5("tcp", cfg.proxyAddress, dsInfo, tlsDialer)
 	if err != nil {
 		return nil, err
 	}

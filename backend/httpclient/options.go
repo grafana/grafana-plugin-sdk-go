@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
 
 // ConfigureClientFunc function signature for configuring http.Client.
@@ -30,8 +32,8 @@ type Options struct {
 	TLS   *TLSOptions
 	SigV4 *SigV4Config
 
-	// Secure socks proxy related option.
-	SecureSocksProxyEnabled bool
+	// Proxy related options.
+	ProxyOptions *proxy.Options
 
 	// Headers custom headers.
 	Headers map[string]string

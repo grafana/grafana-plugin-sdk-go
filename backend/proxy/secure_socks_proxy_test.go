@@ -36,7 +36,7 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	os.Setenv(PluginSecureSocksProxyEnabled, "true")
 
 	t.Run("New socks proxy should be properly configured when all settings are valid", func(t *testing.T) {
-		require.NoError(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{Timeout: time.Duration(30), KeepAlive: time.Duration(15)}, "uid"))
+		require.NoError(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)}, Auth: &AuthOptions{Username: "user1"}}))
 	})
 
 	t.Run("Client cert must be valid", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestNewSecureSocksProxy(t *testing.T) {
 			settings.clientCert = clientCertBefore
 			os.Setenv(PluginSecureSocksProxyClientCert, settings.clientCert)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}, "uid"))
+		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}))
 	})
 
 	t.Run("Client key must be valid", func(t *testing.T) {
@@ -58,7 +58,7 @@ func TestNewSecureSocksProxy(t *testing.T) {
 			settings.clientKey = clientKeyBefore
 			os.Setenv(PluginSecureSocksProxyClientKey, settings.clientKey)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}, "uid"))
+		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}))
 	})
 
 	t.Run("Root CA must be valid", func(t *testing.T) {
@@ -69,13 +69,27 @@ func TestNewSecureSocksProxy(t *testing.T) {
 			settings.rootCA = rootCABefore
 			os.Setenv(PluginSecureSocksProxyRootCACert, settings.rootCA)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}, "uid"))
+		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}))
 	})
 }
 
 func TestSecureSocksProxyEnabled(t *testing.T) {
-	os.Setenv(PluginSecureSocksProxyEnabled, "true")
-	assert.Equal(t, true, SecureSocksProxyEnabled())
+	t.Run("not enabled if not enabled on grafana instance", func(t *testing.T) {
+		os.Setenv(PluginSecureSocksProxyEnabled, "false")
+		assert.Equal(t, false, SecureSocksProxyEnabled(&Options{EnabledOnDS: true}))
+	})
+	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
+		os.Setenv(PluginSecureSocksProxyEnabled, "true")
+		assert.Equal(t, false, SecureSocksProxyEnabled(&Options{EnabledOnDS: false}))
+	})
+	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
+		os.Setenv(PluginSecureSocksProxyEnabled, "true")
+		assert.Equal(t, false, SecureSocksProxyEnabled(nil))
+	})
+	t.Run("enabled, if enabled on grafana instance and datasource", func(t *testing.T) {
+		os.Setenv(PluginSecureSocksProxyEnabled, "true")
+		assert.Equal(t, true, SecureSocksProxyEnabled(&Options{EnabledOnDS: true}))
+	})
 }
 
 func TestSecureSocksProxyConfigEnv(t *testing.T) {
@@ -139,7 +153,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 		})
 		require.NoError(t, err)
 		os.Setenv(PluginSecureSocksProxyRootCACert, rootCACert)
-		_, err = NewSecureSocksProxyContextDialer("test", nil)
+		_, err = NewSecureSocksProxyContextDialer(nil)
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 	t.Run("root ca has to have valid content", func(t *testing.T) {
@@ -147,7 +161,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 		err := os.WriteFile(rootCACert, []byte("this is not a pem encoded file"), fs.ModeAppend)
 		require.NoError(t, err)
 		os.Setenv(PluginSecureSocksProxyRootCACert, rootCACert)
-		_, err = NewSecureSocksProxyContextDialer("test", nil)
+		_, err = NewSecureSocksProxyContextDialer(nil)
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 }

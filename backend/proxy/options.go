@@ -2,22 +2,42 @@ package proxy
 
 import "time"
 
-// Options defines options for creating the proxy dialer.
+// Options defines per datasource options for creating the proxy dialer.
 type Options struct {
+	EnabledOnDS bool
+	Auth        *AuthOptions
+	Timeouts    *TimeoutOptions
+}
+
+// AuthOptions socks5 username and password options.
+// Every datasource can have separate credentials to the proxy.
+type AuthOptions struct {
+	Username string
+	Password string
+}
+
+// TimeoutOptions timeout/connection options.
+type TimeoutOptions struct {
 	Timeout   time.Duration
 	KeepAlive time.Duration
 }
 
-// DefaultOptions default timeout/connection options for the proxy.
-var DefaultOptions = Options{
-	Timeout:   180 * time.Second,
+// DefaultTimeoutOptions default timeout/connection options for the proxy.
+var DefaultTimeoutOptions = TimeoutOptions{
+	Timeout:   30 * time.Second,
 	KeepAlive: 30 * time.Second,
 }
 
 func createOptions(providedOpts *Options) Options {
+	var opts Options
 	if providedOpts == nil {
-		return DefaultOptions
+		return opts
 	}
 
-	return *providedOpts
+	opts = *providedOpts
+	if opts.Timeouts == nil {
+		opts.Timeouts = &DefaultTimeoutOptions
+	}
+
+	return opts
 }
