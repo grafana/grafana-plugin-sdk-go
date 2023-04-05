@@ -48,7 +48,7 @@ type secureSocksProxyConfig struct {
 }
 
 // SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
-// and datasource specifies to use the proxy
+// and the datasource options specify to use the proxy
 func SecureSocksProxyEnabled(opts *Options) bool {
 	if opts == nil {
 		return false
