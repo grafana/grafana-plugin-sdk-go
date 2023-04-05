@@ -362,8 +362,6 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			}
 
 			readNanos = true
-		default:
-			iter.ReportError("bind l2", "unexpected field: "+l2Field)
 		}
 	}
 	return nil

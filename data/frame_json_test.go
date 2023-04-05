@@ -31,7 +31,6 @@ func TestGoldenFrameJSON(t *testing.T) {
 	require.NoError(t, err)
 	strF := string(b)
 
-	// TODO: Arrow Buffer to JSON
 	b, err = data.ArrowBufferToJSON(a, data.IncludeAll)
 	require.NoError(t, err)
 	strA := string(b)
