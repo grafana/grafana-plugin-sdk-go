@@ -243,7 +243,6 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 			iter.ReportError("bind l1", "unexpected field: "+l1Field)
 		}
 	}
-
 	return iter.Error
 }
 
@@ -260,19 +259,22 @@ func readDataFramesJSON(frames *Frames, iter *jsoniter.Iterator) error {
 }
 
 func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
+	var readValues, readNanos bool
+	nanos := make([][]int64, len(frame.Fields))
 	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 		switch l2Field {
 		case "values":
 			if !iter.ReadArray() {
 				continue // empty fields
 			}
-
+			var fieldIndex int
 			// Load the first field with a generic interface.
 			// The length of the first will be assumed for the other fields
 			// and can have a specialized parser
 			if frame.Fields == nil {
 				return errors.New("fields is nil, malformed key order or frame without schema")
 			}
+
 			field := frame.Fields[0]
 			first := make([]interface{}, 0)
 			iter.ReadVal(&first)
@@ -283,16 +285,34 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			field.vector = vec
 			size := len(first)
 
-			fieldIndex := 1
+			addNanos := func() {
+				if readNanos {
+					if nanos[fieldIndex] != nil {
+						for i := 0; i < size; i++ {
+							t, ok := field.ConcreteAt(i)
+							if !ok {
+								continue
+							}
+							field.Set(i, t.(time.Time).Add(time.Nanosecond*time.Duration(nanos[fieldIndex][i])))
+						}
+					}
+				}
+			}
+
+			addNanos()
+			fieldIndex++
 			for iter.ReadArray() {
 				field = frame.Fields[fieldIndex]
 				vec, err = readVector(iter, field.Type(), size)
 				if err != nil {
 					return err
 				}
+
 				field.vector = vec
+				addNanos()
 				fieldIndex++
 			}
+			readValues = true
 
 		case "entities":
 			fieldIndex := 0
@@ -308,13 +328,40 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 						}
 					}
 				} else {
-					iter.ReadAny() // skip nills
+					iter.ReadAny() // skip nils
 				}
 				fieldIndex++
 			}
 
-		default:
-			iter.ReportError("bind l2", "unexpected field: "+l2Field)
+		case "nanos":
+			fieldIndex := 0
+			for iter.ReadArray() {
+				field := frame.Fields[fieldIndex]
+
+				t := iter.WhatIsNext()
+				if t == jsoniter.ArrayValue {
+					for idx := 0; iter.ReadArray(); idx++ {
+						ns := iter.ReadInt64()
+						if readValues {
+							t, ok := field.vector.ConcreteAt(idx)
+							if !ok {
+								continue
+							}
+							tWithNS := t.(time.Time).Add(time.Nanosecond * time.Duration(ns))
+							field.vector.SetConcrete(idx, tWithNS)
+							continue
+						}
+						if idx == 0 {
+							nanos[fieldIndex] = append(nanos[fieldIndex], ns)
+						}
+					}
+				} else {
+					iter.ReadAny() // skip nils
+				}
+				fieldIndex++
+			}
+
+			readNanos = true
 		}
 	}
 	return nil
@@ -793,6 +840,9 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	entities := make([]*fieldEntityLookup, len(frame.Fields))
 	entityCount := 0
 
+	nanos := make([][]int64, len(frame.Fields))
+	nsOffSetCount := 0
+
 	stream.WriteObjectField("values")
 	stream.WriteArrayStart()
 	for fidx, f := range frame.Fields {
@@ -800,6 +850,8 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 			stream.WriteMore()
 		}
 		isTime := f.Type().Time()
+		nsTime := make([]int64, rowCount)
+		var hasNSTime bool
 		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
 			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
 
@@ -811,8 +863,14 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 			if v, ok := f.ConcreteAt(i); ok {
 				switch {
 				case isTime:
-					vTyped := v.(time.Time).UnixNano() / int64(time.Millisecond) // Milliseconds precision.
-					stream.WriteVal(vTyped)
+					t := v.(time.Time)
+					stream.WriteVal(t.UnixMilli())
+					msRes := t.Truncate(time.Millisecond)
+					ns := t.Sub(msRes).Nanoseconds()
+					if ns != 0 {
+						hasNSTime = true
+						nsTime[i] = ns
+					}
 				case isFloat:
 					// For float and nullable float we check whether a value is a special
 					// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
@@ -848,6 +906,10 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 			}
 		}
 		stream.WriteArrayEnd()
+		if hasNSTime {
+			nanos[fidx] = nsTime
+			nsOffSetCount++
+		}
 	}
 	stream.WriteArrayEnd()
 
@@ -855,6 +917,12 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 		stream.WriteMore()
 		stream.WriteObjectField("entities")
 		stream.WriteVal(entities)
+	}
+
+	if nsOffSetCount > 0 {
+		stream.WriteMore()
+		stream.WriteObjectField("nanos")
+		stream.WriteVal(nanos)
 	}
 
 	stream.WriteObjectEnd()
@@ -1027,6 +1095,8 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 	stream.WriteObjectStart()
 
 	entities := make([]*fieldEntityLookup, fieldCount)
+	nanos := make([][]int64, fieldCount)
+	var hasNano bool
 	entityCount := 0
 
 	stream.WriteObjectField("values")
@@ -1040,7 +1110,11 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 
 		switch col.DataType().ID() {
 		case arrow.TIMESTAMP:
-			writeArrowDataTIMESTAMP(stream, col)
+			nanoOffset := writeArrowDataTIMESTAMP(stream, col)
+			if nanoOffset != nil {
+				nanos[fidx] = nanoOffset
+				hasNano = true
+			}
 
 		case arrow.UINT8:
 			ent = writeArrowDataUint8(stream, col)
@@ -1085,14 +1159,21 @@ func writeArrowData(stream *jsoniter.Stream, record array.Record) error {
 		stream.WriteVal(entities)
 	}
 
+	if hasNano {
+		stream.WriteMore()
+		stream.WriteObjectField("nanos")
+		stream.WriteVal(nanos)
+	}
+
 	stream.WriteObjectEnd()
 	return nil
 }
 
 // Custom timestamp extraction... assumes nanoseconds for everything now
-func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
+func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) []int64 {
 	count := col.Len()
-
+	var hasNSTime bool
+	nsTime := make([]int64, count)
 	v := array.NewTimestampData(col.Data())
 	stream.WriteArrayStart()
 	for i := 0; i < count; i++ {
@@ -1107,12 +1188,22 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col array.Interface) {
 		ms := int64(ns) / int64(time.Millisecond) // nanosecond assumption
 		stream.WriteInt64(ms)
 
+		nsOffSet := int64(ns) - ms*int64(1e6)
+		if nsOffSet != 0 {
+			hasNSTime = true
+			nsTime[i] = nsOffSet
+		}
+
 		if stream.Error != nil { // ???
 			stream.Error = nil
 			stream.WriteNil()
 		}
 	}
 	stream.WriteArrayEnd()
+	if hasNSTime {
+		return nsTime
+	}
+	return nil
 }
 
 func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
