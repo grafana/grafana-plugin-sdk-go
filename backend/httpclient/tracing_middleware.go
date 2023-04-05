@@ -3,8 +3,10 @@ package httpclient
 import (
 	"fmt"
 	"net/http"
+	"net/http/httptrace"
 	"strconv"
 
+	"go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
@@ -29,6 +31,11 @@ func TracingMiddleware(tracer trace.Tracer) Middleware {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			ctx, span := tracer.Start(req.Context(), "HTTP Outgoing Request", trace.WithSpanKind(trace.SpanKindClient))
 			defer span.End()
+
+			ctx = httptrace.WithClientTrace(
+				ctx,
+				otelhttptrace.NewClientTrace(ctx, otelhttptrace.WithoutSubSpans(), otelhttptrace.WithoutHeaders()),
+			)
 
 			req = req.WithContext(ctx)
 			for k, v := range opts.Labels {
