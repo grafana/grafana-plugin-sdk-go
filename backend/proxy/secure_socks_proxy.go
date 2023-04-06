@@ -54,7 +54,7 @@ func SecureSocksProxyEnabled(opts *Options) bool {
 		return false
 	}
 
-	if !opts.EnabledOnDS {
+	if !opts.Enabled {
 		return false
 	}
 
@@ -85,8 +85,13 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 	return false
 }
 
-// NewSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
-func NewSecureSocksHTTPProxy(transport *http.Transport, opts *Options) error {
+// ConfigureSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
+// if it is enabled on the datasource and the grafana instance
+func ConfigureSecureSocksHTTPProxy(transport *http.Transport, opts *Options) error {
+	if !SecureSocksProxyEnabled(opts) {
+		return nil
+	}
+
 	dialSocksProxy, err := NewSecureSocksProxyContextDialer(opts)
 	if err != nil {
 		return err

@@ -36,7 +36,7 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	os.Setenv(PluginSecureSocksProxyEnabled, "true")
 
 	t.Run("New socks proxy should be properly configured when all settings are valid", func(t *testing.T) {
-		require.NoError(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)}, Auth: &AuthOptions{Username: "user1"}}))
+		require.NoError(t, ConfigureSecureSocksHTTPProxy(&http.Transport{}, &Options{Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)}, Auth: &AuthOptions{Username: "user1"}}))
 	})
 
 	t.Run("Client cert must be valid", func(t *testing.T) {
@@ -47,7 +47,7 @@ func TestNewSecureSocksProxy(t *testing.T) {
 			settings.clientCert = clientCertBefore
 			os.Setenv(PluginSecureSocksProxyClientCert, settings.clientCert)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}))
+		require.Error(t, ConfigureSecureSocksHTTPProxy(&http.Transport{}, &Options{Enabled: true}))
 	})
 
 	t.Run("Client key must be valid", func(t *testing.T) {
@@ -58,7 +58,7 @@ func TestNewSecureSocksProxy(t *testing.T) {
 			settings.clientKey = clientKeyBefore
 			os.Setenv(PluginSecureSocksProxyClientKey, settings.clientKey)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}))
+		require.Error(t, ConfigureSecureSocksHTTPProxy(&http.Transport{}, &Options{Enabled: true}))
 	})
 
 	t.Run("Root CA must be valid", func(t *testing.T) {
@@ -69,18 +69,18 @@ func TestNewSecureSocksProxy(t *testing.T) {
 			settings.rootCA = rootCABefore
 			os.Setenv(PluginSecureSocksProxyRootCACert, settings.rootCA)
 		})
-		require.Error(t, NewSecureSocksHTTPProxy(&http.Transport{}, &Options{}))
+		require.Error(t, ConfigureSecureSocksHTTPProxy(&http.Transport{}, &Options{Enabled: true}))
 	})
 }
 
 func TestSecureSocksProxyEnabled(t *testing.T) {
 	t.Run("not enabled if not enabled on grafana instance", func(t *testing.T) {
 		os.Setenv(PluginSecureSocksProxyEnabled, "false")
-		assert.Equal(t, false, SecureSocksProxyEnabled(&Options{EnabledOnDS: true}))
+		assert.Equal(t, false, SecureSocksProxyEnabled(&Options{Enabled: true}))
 	})
 	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
 		os.Setenv(PluginSecureSocksProxyEnabled, "true")
-		assert.Equal(t, false, SecureSocksProxyEnabled(&Options{EnabledOnDS: false}))
+		assert.Equal(t, false, SecureSocksProxyEnabled(&Options{Enabled: false}))
 	})
 	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
 		os.Setenv(PluginSecureSocksProxyEnabled, "true")
@@ -88,7 +88,7 @@ func TestSecureSocksProxyEnabled(t *testing.T) {
 	})
 	t.Run("enabled, if enabled on grafana instance and datasource", func(t *testing.T) {
 		os.Setenv(PluginSecureSocksProxyEnabled, "true")
-		assert.Equal(t, true, SecureSocksProxyEnabled(&Options{EnabledOnDS: true}))
+		assert.Equal(t, true, SecureSocksProxyEnabled(&Options{Enabled: true}))
 	})
 }
 

@@ -105,7 +105,7 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 
 	if s.SecureSocksProxyEnabled {
 		opts.ProxyOptions = &proxy.Options{
-			EnabledOnDS: s.SecureSocksProxyEnabled,
+			Enabled: s.SecureSocksProxyEnabled,
 			Timeouts: &proxy.TimeoutOptions{
 				Timeout:   s.Timeout,
 				KeepAlive: s.KeepAlive,
