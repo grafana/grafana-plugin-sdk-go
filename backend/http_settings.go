@@ -294,7 +294,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 			s.SecureSocksProxyUsername = v.(string)
 		}
 		if v, exists := secureJSONData["secureSocksProxyPassword"]; exists {
-			s.SecureSocksProxyUsername = v
+			s.SecureSocksProxyPass = v
 		}
 	}
 
