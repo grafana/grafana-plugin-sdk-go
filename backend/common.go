@@ -143,17 +143,20 @@ type PluginContext struct {
 	// In Grafana an app instance is an app plugin of certain
 	// type that have been configured and enabled in a Grafana organization.
 	//
-	// Will only be set if request targeting an app instance.
+	// Will only be set if request targets an app instance.
 	AppInstanceSettings *AppInstanceSettings
 
 	// DataSourceConfig is the configured data source instance
 	// settings.
 	//
-	// In Grafana a data source instance is a data source plugin of certain
+	// In Grafana a data source instance is a data source plugin of a certain
 	// type that have been configured and created in a Grafana organization.
 	//
-	// Will only be set if request targeting a data source instance.
+	// Will only be set if request targets a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
+
+	// The Grafana request key id the request originates from.
+	Key string
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

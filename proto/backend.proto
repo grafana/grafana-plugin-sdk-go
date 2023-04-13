@@ -35,30 +35,36 @@ message User {
 }
 
 message PluginContext {
-  // The Grafana organization id the request originating from.
+  // The Grafana organization id the request originates from.
   int64 orgId = 1;
 
-  // The unique identifier of the plugin the request  originating from.
+  // The unique identifier of the plugin the request originates for.
   string pluginId = 2;
 
-  // The Grafana user the request originating from.
+  // The Grafana user the request originates from.
   //
   // Will not be provided if Grafana backend initiated the request.
   User user = 3;
 
   // App plugin instance settings is the configured app instance settings.
-  // In Grafana an app instance is an enabled app plugin in a
-  // Grafana organization.
   //
-  // Will only be set if request targeting an app instance.
+  // In Grafana an app instance is an app plugin of certain
+  // type that have been configured and enabled in a Grafana organization.
+  //
+  // Will only be set if request targets an app instance.
   AppInstanceSettings appInstanceSettings = 4;
 
   // Data source instance settings is the configured data source instance
-  // settings. In Grafana a data source instance is a created data source
-  // in a Grafana organization.
+  // settings.
   //
-  // Will only be set if request targeting a data source instance.
+  // In Grafana a data source instance is a data source plugin of a certain
+  // type that have been configured and created in a Grafana organization.
+  //
+  // Will only be set if request targets a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
+
+  // The Grafana request key.
+  string key = 6;
 }
 
 //---------------------------------------------------------
@@ -84,7 +90,7 @@ message CallResourceRequest {
 
 message CallResourceResponse {
   // Maps to raw HTTP status codes when passed over HTTP
-  int32 code = 1; 
+  int32 code = 1;
 
   // Raw HTTP headers sent to the client
   map<string,StringList> headers = 2;
@@ -145,7 +151,7 @@ message DataResponse {
   // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
   // The status codes should match values from standard HTTP status codes
   // If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
-  int32 status = 4; 
+  int32 status = 4;
 }
 
 //-----------------------------------------------

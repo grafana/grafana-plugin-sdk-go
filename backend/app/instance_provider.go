@@ -48,7 +48,7 @@ func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interfa
 
 	// The instance key generated for app plugins should include both plugin ID, and the OrgID, since for a single
 	// Grafana instance there might be different orgs using the same plugin.
-	return fmt.Sprintf("%s#%v", pluginContext.PluginID, pluginContext.OrgID), nil
+	return fmt.Sprintf("%s#%s#%v", pluginContext.Key, pluginContext.PluginID, pluginContext.OrgID), nil
 }
 
 func (ip *instanceProvider) NeedsUpdate(pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
