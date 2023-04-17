@@ -21,7 +21,7 @@ type User struct {
 // AppInstanceSettings represents settings for an app instance.
 //
 // In Grafana an app instance is an app plugin of certain
-// type that have been configured and enabled in a Grafana organization.
+// type that has been configured and enabled in a Grafana organization.
 type AppInstanceSettings struct {
 	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any
 	// custom properties associated with the plugin config instance.
@@ -51,12 +51,12 @@ func (s *AppInstanceSettings) HTTPClientOptions() (httpclient.Options, error) {
 // DataSourceInstanceSettings represents settings for a data source instance.
 //
 // In Grafana a data source instance is a data source plugin of certain
-// type that have been configured and created in a Grafana organization.
+// type that has been configured and created in a Grafana organization.
 type DataSourceInstanceSettings struct {
-	// ID is the Grafana assigned numeric identifier of the the data source instance.
+	// ID is the Grafana assigned numeric identifier of the data source instance.
 	ID int64
 
-	// UID is the Grafana assigned string identifier of the the data source instance.
+	// UID is the Grafana assigned string identifier of the data source instance.
 	UID string
 
 	// Type is the unique identifier of the plugin that the request is for.
@@ -141,7 +141,7 @@ type PluginContext struct {
 	// AppInstanceSettings is the configured app instance settings.
 	//
 	// In Grafana an app instance is an app plugin of certain
-	// type that have been configured and enabled in a Grafana organization.
+	// type that has been configured and enabled in a Grafana organization.
 	//
 	// Will only be set if request targets an app instance.
 	AppInstanceSettings *AppInstanceSettings
@@ -150,12 +150,12 @@ type PluginContext struct {
 	// settings.
 	//
 	// In Grafana a data source instance is a data source plugin of a certain
-	// type that have been configured and created in a Grafana organization.
+	// type that has been configured and created in a Grafana organization.
 	//
 	// Will only be set if request targets a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
 
-	// The plugin instance key.
+	// The unique key of the plugin instance the request is intended for.
 	InstanceKey string
 }
 
