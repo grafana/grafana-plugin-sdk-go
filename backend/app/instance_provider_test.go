@@ -35,6 +35,18 @@ func TestInstanceProvider(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, "super-app-plugin#42", key)
+
+		t.Run("When InstanceKey field is present, it takes precedence", func(t *testing.T) {
+			instanceKey := "some-instance-key"
+			key, err = ip.GetKey(backend.PluginContext{
+				PluginID:            testAppPluginID,
+				OrgID:               testOrgID,
+				AppInstanceSettings: &backend.AppInstanceSettings{},
+				InstanceKey:         instanceKey,
+			})
+			require.NoError(t, err)
+			require.Equal(t, instanceKey, key)
+		})
 	})
 
 	t.Run("When current app instance settings compared to cached instance haven't been updated should return false", func(t *testing.T) {

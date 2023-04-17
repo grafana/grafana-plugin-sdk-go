@@ -155,8 +155,8 @@ type PluginContext struct {
 	// Will only be set if request targets a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
 
-	// The Grafana request key id the request originates from.
-	Key string
+	// The plugin instance key.
+	InstanceKey string
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

@@ -30,6 +30,18 @@ func TestInstanceProvider(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.Equal(t, int64(4), key)
+
+		t.Run("When InstanceKey field is present, it takes precedence", func(t *testing.T) {
+			instanceKey := "some-instance-key"
+			key, err = ip.GetKey(backend.PluginContext{
+				DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+					ID: 4,
+				},
+				InstanceKey: instanceKey,
+			})
+			require.NoError(t, err)
+			require.Equal(t, instanceKey, key)
+		})
 	})
 
 	t.Run("When current data source instance settings compared to cached instance haven't been updated should return false", func(t *testing.T) {

@@ -38,7 +38,7 @@ message PluginContext {
   // The Grafana organization id the request originates from.
   int64 orgId = 1;
 
-  // The unique identifier of the plugin the request originates for.
+  // The unique identifier of the plugin the request is intended for.
   string pluginId = 2;
 
   // The Grafana user the request originates from.
@@ -63,8 +63,8 @@ message PluginContext {
   // Will only be set if request targets a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 
-  // The Grafana request key.
-  string key = 6;
+  // The unique key of the plugin instance the request is intended for.
+  string instanceKey = 6;
 }
 
 //---------------------------------------------------------
