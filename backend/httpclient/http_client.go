@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net"
 	"net/http"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
 
 // New creates a new http.Client.
@@ -84,6 +86,11 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		clientOpts.Middlewares = clientOpts.ConfigureMiddleware(clientOpts, clientOpts.Middlewares)
 	}
 
+	err = proxy.ConfigureSecureSocksHTTPProxy(transport, clientOpts.ProxyOptions)
+	if err != nil {
+		return nil, err
+	}
+
 	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport), nil
 }
 
@@ -150,6 +157,17 @@ func createOptions(providedOpts ...Options) Options {
 
 	if opts.Middlewares == nil {
 		opts.Middlewares = DefaultMiddlewares()
+	}
+
+	if proxy.SecureSocksProxyEnabled(opts.ProxyOptions) {
+		// default username is the datasource uid, this can be updated
+		// by setting `secureSocksProxyUsername` in the datasource json
+		if opts.ProxyOptions.Auth == nil {
+			opts.ProxyOptions.Auth = &proxy.AuthOptions{}
+		}
+		if opts.ProxyOptions.Auth.Username == "" {
+			opts.ProxyOptions.Auth.Username = opts.Labels["datasource_uid"]
+		}
 	}
 
 	return opts
