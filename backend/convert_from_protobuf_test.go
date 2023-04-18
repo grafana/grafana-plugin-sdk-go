@@ -204,7 +204,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
-	InstanceKey:                "instance-123",
+	TenantId:                   "tenant-123",
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
@@ -234,7 +234,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 
 	requireCounter.Equal(t, protoCtx.OrgId, sdkCtx.OrgID)
 	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.PluginID)
-	requireCounter.Equal(t, protoCtx.InstanceKey, sdkCtx.InstanceKey)
+	requireCounter.Equal(t, protoCtx.TenantId, sdkCtx.TenantID)
 
 	// User
 	requireCounter.Equal(t, protoCtx.User.Login, sdkCtx.User.Login)
@@ -391,7 +391,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	// PluginContext
 	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.PluginID)
-	requireCounter.Equal(t, protoQDR.PluginContext.InstanceKey, sdkQDR.PluginContext.InstanceKey)
+	requireCounter.Equal(t, protoQDR.PluginContext.TenantId, sdkQDR.PluginContext.TenantID)
 	// User
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Login, sdkQDR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)

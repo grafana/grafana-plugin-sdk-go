@@ -126,7 +126,7 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 // PluginContext holds contextual information about a plugin request, such as
 // Grafana organization, user and plugin instance settings.
 type PluginContext struct {
-	// OrgID is The Grafana organization identifier the request originating from.
+	// OrgID is the Grafana organization identifier the request originates from.
 	OrgID int64
 
 	// PluginID is the unique identifier of the plugin that the request is for.
@@ -155,8 +155,8 @@ type PluginContext struct {
 	// Will only be set if request targets a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
 
-	// The unique key of the plugin instance the request is intended for.
-	InstanceKey string
+	// TenantID is the identifier of the Grafana tenant making the request.
+	TenantID string
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

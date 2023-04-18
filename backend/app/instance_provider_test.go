@@ -12,6 +12,7 @@ import (
 const (
 	testAppPluginID = "super-app-plugin"
 	testOrgID       = 42
+	testTenantID    = "tenant-123"
 )
 
 func TestInstanceProvider(t *testing.T) {
@@ -36,16 +37,15 @@ func TestInstanceProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "super-app-plugin#42", key)
 
-		t.Run("When InstanceKey field is present, it takes precedence", func(t *testing.T) {
-			instanceKey := "some-instance-key"
+		t.Run("When TenantID field is present, it is used as part of the instance key", func(t *testing.T) {
 			key, err = ip.GetKey(backend.PluginContext{
 				PluginID:            testAppPluginID,
 				OrgID:               testOrgID,
 				AppInstanceSettings: &backend.AppInstanceSettings{},
-				InstanceKey:         instanceKey,
+				TenantID:            testTenantID,
 			})
 			require.NoError(t, err)
-			require.Equal(t, instanceKey, key)
+			require.Equal(t, "tenant-123#super-app-plugin#42", key)
 		})
 	})
 

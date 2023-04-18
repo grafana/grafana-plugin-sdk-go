@@ -31,16 +31,15 @@ func TestInstanceProvider(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, int64(4), key)
 
-		t.Run("When InstanceKey field is present, it takes precedence", func(t *testing.T) {
-			instanceKey := "some-instance-key"
+		t.Run("When TenantID field is present, it is used as part of the instance key", func(t *testing.T) {
 			key, err = ip.GetKey(backend.PluginContext{
 				DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 					ID: 4,
 				},
-				InstanceKey: instanceKey,
+				TenantID: "tenant-id-123",
 			})
 			require.NoError(t, err)
-			require.Equal(t, instanceKey, key)
+			require.Equal(t, "tenant-id-123#4", key)
 		})
 	})
 

@@ -45,11 +45,12 @@ func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interfa
 		return nil, fmt.Errorf("data source instance settings cannot be nil")
 	}
 
-	if pluginContext.InstanceKey == "" {
-		return pluginContext.DataSourceInstanceSettings.ID, nil
+	defaultKey := pluginContext.DataSourceInstanceSettings.ID
+	if pluginContext.TenantID != "" {
+		return fmt.Sprintf("%s#%v", pluginContext.TenantID, defaultKey), nil
 	}
 
-	return pluginContext.InstanceKey, nil
+	return defaultKey, nil
 }
 
 func (ip *instanceProvider) NeedsUpdate(pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {

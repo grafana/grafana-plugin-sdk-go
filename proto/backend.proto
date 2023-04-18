@@ -63,8 +63,8 @@ message PluginContext {
   // Will only be set if request targets a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 
-  // The unique key of the plugin instance the request is intended for.
-  string instanceKey = 6;
+  // The identifier of the Grafana tenant making the request.
+  string tenantId = 6;
 }
 
 //---------------------------------------------------------
