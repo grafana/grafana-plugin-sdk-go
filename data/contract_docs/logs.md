@@ -43,12 +43,6 @@ Version: 0.0
     - Should not be empty string.
     - Value should be represented with `Record<string,any>` type in javascript.
   - First matching string field with name `attributes` will be considered as attributes field
-- **NanoSecond Time field** - _optional_
-  - When the log line have sub-milli second precisions, regular time field not suitable to represent them.
-  - Min Value: null/0
-  - Max Value: 999999
-  - Field type must be nullable number and field name must be `tsNs`
-  - when this field detected, clients use this as an additional timeField property to calculate the nano second precision.
 
 Any other field is ignored.
 
@@ -64,17 +58,16 @@ data.NewFrame(
     data.NewField("severity", nil, []string{"critical", "error", "warning"}),
     data.NewField("id", nil, []string{"xxx-001", "xyz-002", "111-003"}),
     data.NewField("attributes", nil, []json.RawMessage{[]byte(`{}`), []byte(`{"hello":"world"}`), []byte(`{"hello":"world", "foo": 123.45, "bar" :["yellow","red"], "baz" : { "name": "alice" }}`)}),
-    data.NewField("tsNs", nil, []*number{757120, nil, 745040}),
 )
 ```
 
 the same can be represented as
 
-| Name: timestamp <br/> Type: []time.Time | Name: body <br/> Type: []string | Name: severity <br/> Type: []\*string | Name: id <br/> Type: []\*string | Name: attributes <br/> Type: []json.RawMessage                                         | Name: tsNs <br/> Type: []\*number |
-| --------------------------------------- | ------------------------------- | ------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------- | --------------------------------- |
-| 2022-02-16 16:50:44.810 +0000 GMT       | message one                     | critical                              | xxx-001                         | {}                                                                                     | 757120                            |
-| 2022-02-16 16:50:47.027 +0000 GMT       | message two                     | error                                 | xyz-002                         | {"hello":"world"}                                                                      | nil                               |
-| 2022-02-16 16:50:47.027 +0000 GMT       | message three                   | warning                               | 111-003                         | {"hello":"world", "foo": 123.45, "bar" :["yellow","red"], "baz" : { "name": "alice" }} | 745040                            |
+| Name: timestamp <br/> Type: []time.Time | Name: body <br/> Type: []string | Name: severity <br/> Type: []\*string | Name: id <br/> Type: []\*string | Name: attributes <br/> Type: []json.RawMessage                                         |
+| --------------------------------------- | ------------------------------- | ------------------------------------- | ------------------------------- | -------------------------------------------------------------------------------------- |
+| 2022-02-16 16:50:44.810 +0000 GMT       | message one                     | critical                              | xxx-001                         | {}                                                                                     |
+| 2022-02-16 16:50:47.027 +0000 GMT       | message two                     | error                                 | xyz-002                         | {"hello":"world"}                                                                      |
+| 2022-02-16 16:50:47.027 +0000 GMT       | message three                   | warning                               | 111-003                         | {"hello":"world", "foo": 123.45, "bar" :["yellow","red"], "baz" : { "name": "alice" }} |
 
 ## Meta data requirements
 
