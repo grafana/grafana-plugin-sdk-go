@@ -64,6 +64,7 @@ message PluginContext {
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 
   // The identifier of the Grafana tenant making the request.
+  // NOTE: this field should be considered experimental.
   string tenantId = 6;
 }
 

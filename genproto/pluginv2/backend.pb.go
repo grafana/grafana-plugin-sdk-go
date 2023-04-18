@@ -457,6 +457,7 @@ type PluginContext struct {
 	// Will only be set if request targets a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings `protobuf:"bytes,5,opt,name=dataSourceInstanceSettings,proto3" json:"dataSourceInstanceSettings,omitempty"`
 	// The identifier of the Grafana tenant making the request.
+	// NOTE: this field should be considered experimental.
 	TenantId string `protobuf:"bytes,6,opt,name=tenantId,proto3" json:"tenantId,omitempty"`
 }
 
