@@ -444,7 +444,7 @@ type PluginContext struct {
 	// App plugin instance settings is the configured app instance settings.
 	//
 	// In Grafana an app instance is an app plugin of certain
-	// type that have been configured and enabled in a Grafana organization.
+	// type that has been configured and enabled in a Grafana organization.
 	//
 	// Will only be set if request targets an app instance.
 	AppInstanceSettings *AppInstanceSettings `protobuf:"bytes,4,opt,name=appInstanceSettings,proto3" json:"appInstanceSettings,omitempty"`
@@ -452,7 +452,7 @@ type PluginContext struct {
 	// settings.
 	//
 	// In Grafana a data source instance is a data source plugin of a certain
-	// type that have been configured and created in a Grafana organization.
+	// type that has been configured and created in a Grafana organization.
 	//
 	// Will only be set if request targets a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings `protobuf:"bytes,5,opt,name=dataSourceInstanceSettings,proto3" json:"dataSourceInstanceSettings,omitempty"`
