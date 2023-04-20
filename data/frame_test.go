@@ -191,7 +191,7 @@ type mockResponse struct {
 	Series []mockSeries
 }
 
-func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
+func ExampleFrame_timeSeriesMulti() {
 	// A common tsdb response pattern is to return a collection
 	// of time series where each time series is uniquely identified
 	// by a Name and a set of key value pairs (Labels (a.k.a Tags)).
@@ -201,6 +201,8 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 	// Number fields.
 
 	// Each Frame should have its value sorted by time in ascending order.
+
+	// See https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md for more information.
 
 	res := mockResponse{
 		[]mockSeries{
@@ -233,10 +235,14 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 
 	frames := make([]*data.Frame, len(res.Series))
 	for i, series := range res.Series {
-		frames[i] = data.NewFrame(series.Name,
+		frames[i] = data.NewFrame("multiExample",
 			data.NewField("time", nil, make([]time.Time, len(series.Points))),
 			data.NewField(series.Name, series.Labels, make([]float64, len(series.Points))),
-		)
+		).SetMeta(&data.FrameMeta{
+			Type:        data.FrameTypeTimeSeriesMulti,
+			TypeVersion: data.FrameTypeVersion{0, 1},
+		})
+
 		for pIdx, point := range series.Points {
 			frames[i].Set(0, pIdx, point.Time)
 			frames[i].Set(1, pIdx, point.Value)
@@ -248,7 +254,7 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 		fmt.Println(st)
 	}
 	// Output:
-	// Name: cpu
+	// Name: multiExample
 	// Dimensions: 2 Fields by 2 Rows
 	// +-------------------------------+-----------------+
 	// | Name: time                    | Name: cpu       |
@@ -259,7 +265,7 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 	// | 2020-01-02 03:05:00 +0000 UTC | 6               |
 	// +-------------------------------+-----------------+
 	//
-	// Name: cpu
+	// Name: multiExample
 	// Dimensions: 2 Fields by 2 Rows
 	// +-------------------------------+-----------------+
 	// | Name: time                    | Name: cpu       |
@@ -271,7 +277,7 @@ func ExampleFrame_tSDBTimeSeriesDifferentTimeIndices() {
 	// +-------------------------------+-----------------+
 }
 
-func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
+func ExampleFrame_timeSeriesWide() {
 	// In the case where you do know all the response will share the same time index, then
 	// a "wide" dataframe can be created that holds all the responses. So your response is
 	// all in a Single Frame.
@@ -305,7 +311,12 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 		},
 	}
 
-	frame := &data.Frame{Name: "Wide"}
+	frame := &data.Frame{Name: "wideExample"}
+	frame = frame.SetMeta(&data.FrameMeta{
+		Type:        data.FrameTypeTimeSeriesWide,
+		TypeVersion: data.FrameTypeVersion{0, 1},
+	})
+
 	for i, series := range singleTimeIndexRes.Series {
 		if i == 0 {
 			frame.Fields = append(frame.Fields,
@@ -326,7 +337,7 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 	st, _ := frame.StringTable(-1, -1)
 	fmt.Println(st)
 	// Output:
-	// Name: Wide
+	// Name: wideExample
 	// Dimensions: 3 Fields by 2 Rows
 	// +-------------------------------+-----------------+-----------------+
 	// | Name: time                    | Name: cpu       | Name: cpu       |
@@ -338,7 +349,7 @@ func ExampleFrame_tSDBTimeSeriesSharedTimeIndex() {
 	// +-------------------------------+-----------------+-----------------+
 }
 
-func ExampleFrame_tableLikeLongTimeSeries() {
+func ExampleFrame_timeSeriesLong() {
 	// a common SQL or CSV like pattern is to have repeated times, multiple numbered value
 	// columns, and string columns to identify a factors. This is a "Long" time series.
 
@@ -372,16 +383,15 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 		data.FieldTypeTime,
 		data.FieldTypeFloat64, data.FieldTypeFloat64,
 		data.FieldTypeString,
-	)
+	).SetMeta(&data.FrameMeta{
+		Type:        data.FrameTypeTimeSeriesLong,
+		TypeVersion: data.FrameTypeVersion{0, 1},
+	})
 	_ = frame.SetFieldNames(myLongTable.Headers...)
 	for _, row := range myLongTable.Rows {
 		frame.AppendRow(row...)
 	}
 	st, _ := frame.StringTable(-1, -1)
-	fmt.Println(st)
-	w, _ := data.LongToWide(frame, nil)
-	w.Name = "Wide"
-	st, _ = w.StringTable(-1, -1)
 	fmt.Println(st)
 	// Output:
 	// Name: Long
@@ -396,17 +406,6 @@ func ExampleFrame_tableLikeLongTimeSeries() {
 	// | 2020-01-02 03:05:00 +0000 UTC | 3               | 11              | foo              |
 	// | 2020-01-02 03:05:00 +0000 UTC | 6               | 16              | bar              |
 	// +-------------------------------+-----------------+-----------------+------------------+
-	//
-	// Name: Wide
-	// Dimensions: 5 Fields by 2 Rows
-	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
-	// | Name: time                    | Name: aMetric          | Name: aMetric          | Name: bMetric          | Name: bMetric          |
-	// | Labels:                       | Labels: SomeFactor=bar | Labels: SomeFactor=foo | Labels: SomeFactor=bar | Labels: SomeFactor=foo |
-	// | Type: []time.Time             | Type: []float64        | Type: []float64        | Type: []float64        | Type: []float64        |
-	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
-	// | 2020-01-02 03:04:00 +0000 UTC | 5                      | 2                      | 15                     | 10                     |
-	// | 2020-01-02 03:05:00 +0000 UTC | 6                      | 3                      | 16                     | 11                     |
-	// +-------------------------------+------------------------+------------------------+------------------------+------------------------+
 }
 
 func TestStringTable(t *testing.T) {
