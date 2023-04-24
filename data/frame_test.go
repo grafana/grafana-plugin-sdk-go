@@ -282,6 +282,8 @@ func ExampleFrame_timeSeriesWide() {
 	// a "wide" dataframe can be created that holds all the responses. So your response is
 	// all in a Single Frame.
 
+	// See https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md for more information.
+
 	singleTimeIndexRes := mockResponse{
 		[]mockSeries{
 			{
@@ -356,6 +358,8 @@ func ExampleFrame_timeSeriesLong() {
 	// Presently the backend supports converting Long formatted series to "Wide" format
 	// which the frontend understands. Goal is frontend support eventually
 	// (https://github.com/grafana/grafana/issues/22219).
+
+	// See https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md for more information.
 
 	type aTable struct {
 		Headers []string
