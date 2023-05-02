@@ -1,1 +1,1 @@
-contract.md
+Moved to [grafana/dataplane/docs](https://github.com/grafana/dataplane/tree/main/docs)
