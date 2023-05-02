@@ -3,6 +3,7 @@ package backend
 import (
 	"net/http"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -34,7 +35,11 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
+	ctx := protoSrv.Context()
+	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
+		ctx = tenant.WithTenant(ctx, tid)
+	}
 	parsedReq := FromProto().CallResourceRequest(protoReq)
-	ctx := withHeaderMiddleware(protoSrv.Context(), parsedReq.GetHTTPHeaders())
+	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
 }
