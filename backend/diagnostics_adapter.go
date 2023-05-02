@@ -24,11 +24,7 @@ func newDiagnosticsSDKAdapter(metricGatherer prometheus.Gatherer, checkHealthHan
 	}
 }
 
-func (a *diagnosticsSDKAdapter) CollectMetrics(ctx context.Context, _ *pluginv2.CollectMetricsRequest) (*pluginv2.CollectMetricsResponse, error) {
-	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
-		ctx = tenant.WithTenant(ctx, tid)
-	}
-
+func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.CollectMetricsRequest) (*pluginv2.CollectMetricsResponse, error) {
 	mfs, err := a.metricGatherer.Gather()
 	if err != nil {
 		return nil, err

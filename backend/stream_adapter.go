@@ -66,5 +66,5 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 		ctx = tenant.WithTenant(ctx, tid)
 	}
 	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
-	return a.streamHandler.RunStream(protoSrv.Context(), FromProto().RunStreamRequest(protoReq), sender)
+	return a.streamHandler.RunStream(ctx, FromProto().RunStreamRequest(protoReq), sender)
 }
