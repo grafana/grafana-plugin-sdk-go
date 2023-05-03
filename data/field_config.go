@@ -14,7 +14,7 @@ type FieldConfig struct {
 	// https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/dataFrame.ts#L23
 	// All properties are optional should be omitted from JSON when empty or not set.
 
-	// DisplayName overrides Grafana's default naming, should not be used from a data source
+	// DisplayName overrides Grafana default naming, should not be used from a data source
 	DisplayName string `json:"displayName,omitempty"`
 
 	// DisplayNameFromDS overrides Grafana default naming strategy.
