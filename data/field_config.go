@@ -14,10 +14,10 @@ type FieldConfig struct {
 	// https://github.com/grafana/grafana/blob/master/packages/grafana-data/src/types/dataFrame.ts#L23
 	// All properties are optional should be omitted from JSON when empty or not set.
 
-	// DisplayName overrides Grafana default naming, should not be used from a data source
+	// DisplayName overrides Grafana's default naming, should not be used from a data source
 	DisplayName string `json:"displayName,omitempty"`
 
-	// DisplayNameFromDS overrides Grafana default naming in a better way that allows users to override it easily.
+	// DisplayNameFromDS overrides Grafana default naming strategy.
 	DisplayNameFromDS string `json:"displayNameFromDS,omitempty"`
 
 	// Path is an explicit path to the field in the datasource. When the frame meta includes a path,
