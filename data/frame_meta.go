@@ -16,7 +16,7 @@ type FrameMeta struct {
 	Type FrameType `json:"type,omitempty"`
 
 	// TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane
-	// contract documentation https://github.com/grafana/grafana-plugin-sdk-go/tree/main/data/contract_docs.
+	// contract documentation https://grafana.github.io/dataplane/contract/.
 	TypeVersion FrameTypeVersion `json:"typeVersion"`
 
 	// Path is a browsable path on the datasource.
