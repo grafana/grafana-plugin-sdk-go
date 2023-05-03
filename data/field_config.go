@@ -17,7 +17,7 @@ type FieldConfig struct {
 	// DisplayName overrides Grafana default naming, should not be used from a data source
 	DisplayName string `json:"displayName,omitempty"`
 
-	// DisplayNameFromDS overrides Grafana default naming in a better way that allows users to override it easily.
+	// DisplayNameFromDS overrides Grafana default naming strategy.
 	DisplayNameFromDS string `json:"displayNameFromDS,omitempty"`
 
 	// Path is an explicit path to the field in the datasource. When the frame meta includes a path,
