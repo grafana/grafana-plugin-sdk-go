@@ -62,6 +62,12 @@ type Options struct {
 	// ConfigureTLSConfig optionally provide a ConfigureTLSConfigFunc
 	// to modify the created http.Client.
 	ConfigureTLSConfig ConfigureTLSConfigFunc
+
+	// ForwardHTTPHeaders enable forwarding of all HTTP headers
+	// included in backend.QueryDataRequest, backend.CallResourceRequest,
+	// backend.CheckHealthRequest, e.g. based on if Allowed cookies or
+	// Forward OAuth Identity is configured.
+	ForwardHTTPHeaders bool
 }
 
 // BasicAuthOptions basic authentication options.
