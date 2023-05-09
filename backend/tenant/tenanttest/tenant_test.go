@@ -1,4 +1,4 @@
-package tenant
+package tenanttest
 
 import (
 	"context"
@@ -16,6 +16,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
@@ -77,7 +78,7 @@ func TestTenantWithPluginInstanceManagement(t *testing.T) {
 		require.Equal(t, 1, factoryInvocations)
 
 		t.Run("Request from tenant #1 creates new instance", func(t *testing.T) {
-			ctx = metadata.AppendToOutgoingContext(context.Background(), CtxKey, tenantID1)
+			ctx = metadata.AppendToOutgoingContext(context.Background(), tenant.CtxKey, tenantID1)
 			resp, err = pc.QueryData(ctx, qdr)
 			require.NoError(t, err)
 			require.NotNil(t, resp)
@@ -96,7 +97,7 @@ func TestTenantWithPluginInstanceManagement(t *testing.T) {
 			require.Equal(t, 2, factoryInvocations)
 
 			t.Run("Request from tenant #2 creates new instance", func(t *testing.T) {
-				ctx = metadata.AppendToOutgoingContext(context.Background(), CtxKey, tenantID2)
+				ctx = metadata.AppendToOutgoingContext(context.Background(), tenant.CtxKey, tenantID2)
 				resp, err = pc.QueryData(ctx, qdr)
 				require.NoError(t, err)
 				require.NotNil(t, resp)
@@ -109,7 +110,7 @@ func TestTenantWithPluginInstanceManagement(t *testing.T) {
 			})
 
 			// subsequent requests from tenantID1 with same settings will reuse instance
-			ctx = metadata.AppendToOutgoingContext(context.Background(), CtxKey, tenantID1)
+			ctx = metadata.AppendToOutgoingContext(context.Background(), tenant.CtxKey, tenantID1)
 			resp, err = pc.QueryData(ctx, qdr)
 			require.NoError(t, err)
 			require.NotNil(t, resp)
