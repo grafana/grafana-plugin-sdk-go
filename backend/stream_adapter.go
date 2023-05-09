@@ -24,7 +24,7 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
-	ctx = propagateTenantIdIfPresent(ctx)
+	ctx = propagateTenantIDIfPresent(ctx)
 	resp, err := a.streamHandler.SubscribeStream(ctx, FromProto().SubscribeStreamRequest(protoReq))
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
-	ctx = propagateTenantIdIfPresent(ctx)
+	ctx = propagateTenantIDIfPresent(ctx)
 	resp, err := a.streamHandler.PublishStream(ctx, FromProto().PublishStreamRequest(protoReq))
 	if err != nil {
 		return nil, err
@@ -57,7 +57,7 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 		return status.Error(codes.Unimplemented, "not implemented")
 	}
 	ctx := protoSrv.Context()
-	ctx = propagateTenantIdIfPresent(ctx)
+	ctx = propagateTenantIDIfPresent(ctx)
 	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
 	return a.streamHandler.RunStream(ctx, FromProto().RunStreamRequest(protoReq), sender)
 }

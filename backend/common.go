@@ -208,7 +208,7 @@ func SecureJSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[strin
 	return secureJSONData
 }
 
-func propagateTenantIdIfPresent(ctx context.Context) context.Context {
+func propagateTenantIDIfPresent(ctx context.Context) context.Context {
 	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
 		ctx = tenant.WithTenant(ctx, tid)
 	}
