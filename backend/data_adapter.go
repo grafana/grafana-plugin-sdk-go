@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -45,9 +44,7 @@ func withHeaderMiddleware(ctx context.Context, headers http.Header) context.Cont
 }
 
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
-		ctx = tenant.WithTenant(ctx, tid)
-	}
+	ctx = propagateTenantIdIfPresent(ctx)
 	parsedRequest := FromProto().QueryDataRequest(req)
 	ctx = withHeaderMiddleware(ctx, parsedRequest.GetHTTPHeaders())
 	resp, err := a.queryDataHandler.QueryData(ctx, parsedRequest)

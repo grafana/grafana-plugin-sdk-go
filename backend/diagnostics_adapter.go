@@ -7,7 +7,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -47,9 +46,7 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.Co
 
 func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.checkHealthHandler != nil {
-		if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
-			ctx = tenant.WithTenant(ctx, tid)
-		}
+		ctx = propagateTenantIdIfPresent(ctx)
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)

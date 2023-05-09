@@ -6,7 +6,6 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -25,9 +24,7 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
-	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
-		ctx = tenant.WithTenant(ctx, tid)
-	}
+	ctx = propagateTenantIdIfPresent(ctx)
 	resp, err := a.streamHandler.SubscribeStream(ctx, FromProto().SubscribeStreamRequest(protoReq))
 	if err != nil {
 		return nil, err
@@ -39,9 +36,7 @@ func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
-	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
-		ctx = tenant.WithTenant(ctx, tid)
-	}
+	ctx = propagateTenantIdIfPresent(ctx)
 	resp, err := a.streamHandler.PublishStream(ctx, FromProto().PublishStreamRequest(protoReq))
 	if err != nil {
 		return nil, err
@@ -62,9 +57,7 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 		return status.Error(codes.Unimplemented, "not implemented")
 	}
 	ctx := protoSrv.Context()
-	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
-		ctx = tenant.WithTenant(ctx, tid)
-	}
+	ctx = propagateTenantIdIfPresent(ctx)
 	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
 	return a.streamHandler.RunStream(ctx, FromProto().RunStreamRequest(protoReq), sender)
 }
