@@ -24,6 +24,10 @@ func withHeaderMiddleware(ctx context.Context, headers http.Header) context.Cont
 	if len(headers) > 0 {
 		ctx = httpclient.WithContextualMiddleware(ctx,
 			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
+				if !opts.ForwardHTTPHeaders {
+					return next
+				}
+
 				return httpclient.RoundTripperFunc(func(qreq *http.Request) (*http.Response, error) {
 					// Only set a header if it is not already set.
 					for k, v := range headers {
