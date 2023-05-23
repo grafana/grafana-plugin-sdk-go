@@ -4,7 +4,7 @@
 **Full Changelog**: https://github.com/grafana/grafana-plugin-sdk-go/compare/v0.161.0...v0.162.0
 
 ## Breaking change
-Both the [Instance Manager](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go@v0.161.0/backend/instancemgmt#InstanceManager) and [Instance Provider](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go@v0.161.0/backend/instancemgmt#InstanceProvider) interfaces have been updated to require a [context.Context](https://pkg.go.dev/context#Context) as part of their APIs.This affects all plugins which perform manual instance management via the Instance Manager API.
+Both the [Instance Manager](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go@v0.161.0/backend/instancemgmt#InstanceManager) and [Instance Provider](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go@v0.161.0/backend/instancemgmt#InstanceProvider) interfaces have been updated to require a [context.Context](https://pkg.go.dev/context#Context) as part of their APIs. This affects all plugins which perform manual instance management via the Instance Manager API. Adding context as a parameter to instance management faciliates propagation of contextual information, which is useful particularly for instance caching.
 
 For example:
 
