@@ -9,9 +9,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/metadata"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 type fakeDataHandlerWithOAuth struct {
@@ -110,6 +113,22 @@ func TestQueryData(t *testing.T) {
 		require.NoError(t, err)
 		require.NoError(t, res.Body.Close())
 		require.Empty(t, reqClone.Header)
+	})
+
+	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
+		tid := "123456"
+		a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+			require.Equal(t, tid, tenant.IDFromContext(ctx))
+			return NewQueryDataResponse(), nil
+		}))
+
+		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
+			tenant.CtxKey: tid,
+		}))
+		_, err := a.QueryData(ctx, &pluginv2.QueryDataRequest{
+			PluginContext: &pluginv2.PluginContext{},
+		})
+		require.NoError(t, err)
 	})
 }
 

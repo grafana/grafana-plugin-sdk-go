@@ -34,7 +34,9 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
+	ctx := protoSrv.Context()
+	ctx = propagateTenantIDIfPresent(ctx)
 	parsedReq := FromProto().CallResourceRequest(protoReq)
-	ctx := withHeaderMiddleware(protoSrv.Context(), parsedReq.GetHTTPHeaders())
+	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
 }

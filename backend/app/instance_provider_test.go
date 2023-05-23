@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -23,12 +24,12 @@ func TestInstanceProvider(t *testing.T) {
 	})
 
 	t.Run("When data source instance settings not provided should return error", func(t *testing.T) {
-		_, err := ip.GetKey(backend.PluginContext{})
+		_, err := ip.GetKey(context.Background(), backend.PluginContext{})
 		require.Error(t, err)
 	})
 
 	t.Run("When app instance settings provided should return expected key", func(t *testing.T) {
-		key, err := ip.GetKey(backend.PluginContext{
+		key, err := ip.GetKey(context.Background(), backend.PluginContext{
 			PluginID:            testAppPluginID,
 			OrgID:               testOrgID,
 			AppInstanceSettings: &backend.AppInstanceSettings{},
@@ -50,7 +51,7 @@ func TestInstanceProvider(t *testing.T) {
 				},
 			},
 		}
-		needsUpdate := ip.NeedsUpdate(curSettings, cachedInstance)
+		needsUpdate := ip.NeedsUpdate(context.Background(), curSettings, cachedInstance)
 		require.False(t, needsUpdate)
 	})
 
@@ -67,12 +68,12 @@ func TestInstanceProvider(t *testing.T) {
 				},
 			},
 		}
-		needsUpdate := ip.NeedsUpdate(curSettings, cachedInstance)
+		needsUpdate := ip.NeedsUpdate(context.Background(), curSettings, cachedInstance)
 		require.True(t, needsUpdate)
 	})
 
 	t.Run("When creating a new instance should return expected instance", func(t *testing.T) {
-		i, err := ip.NewInstance(backend.PluginContext{
+		i, err := ip.NewInstance(context.Background(), backend.PluginContext{
 			PluginID:            testAppPluginID,
 			OrgID:               testOrgID,
 			AppInstanceSettings: &backend.AppInstanceSettings{},
