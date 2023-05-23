@@ -40,7 +40,7 @@ func New() datasource.ServeOpts {
 
 func newPlugin() *Plugin {
 	return &Service{
-		im: datasource.NewInstanceManager(newDataSourceInstance)
+		im: datasource.NewInstanceManager(newDataSourceInstance),
 	}
 }
 
