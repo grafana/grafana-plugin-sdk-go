@@ -68,7 +68,7 @@ func (p *plugin) QueryData(ctx context.Context, req *backend.QueryDataRequest) (
 ```
 
 #### Alternative
-If you would prefer not to use automatic instance management, you can instead just pass [context.Context](https://pkg.go.dev/context#Context) from each handler to the instance manager.
+We highly encourage that all plugin developers make use of automatic instance management. However, as short term solution you can instead pass [context.Context](https://pkg.go.dev/context#Context) from each handler to the instance manager.
 
 For example:
 
