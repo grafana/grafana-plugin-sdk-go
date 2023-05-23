@@ -9,44 +9,10 @@ Both the [Instance Manager](https://pkg.go.dev/github.com/grafana/grafana-plugin
 For example:
 
 ```go
-package main
-
-func main() {
-	err := datasource.Serve(plugin.New())
-	if err != nil {
-		os.Exit(1)
-	}
-}
-
-```
-
-```go
 package plugin
 
 type Plugin struct {
 	im instancemgmt.InstanceManager
-}
-
-type instance struct {
-	token string
-}
-
-func New() datasource.ServeOpts {
-	p := newPlugin()
-	return datasource.ServeOpts{
-		QueryDataHandler: p,
-	}
-}
-
-func newPlugin() *Plugin {
-	return &Service{
-		im: datasource.NewInstanceManager(newDataSourceInstance),
-	}
-}
-
-func newDataSourceInstance(s backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	cfg := models.LoadCfg(s)
-	return &instance{token: cfg.Token}, nil
 }
 
 func (p *Plugin) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
