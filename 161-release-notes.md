@@ -28,7 +28,7 @@ func (p *Plugin) QueryData(ctx context.Context, req *backend.QueryDataRequest) (
 
 #### Automatic instance management
 Automatic instance management for data sources was added to the SDK in version [0.97.0](https://github.com/grafana/grafana-plugin-sdk-go/releases/tag/v0.97.0), which
-removes the need for the plugin developer to use the [Instance Manager](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go@v0.161.0/backend/instancemgmt#InstanceManager) directly. Support for app plugins was added in [v0.140.0](https://github.com/grafana/grafana-plugin-sdk-go/releases/tag/v0.140.0).
+removes the need for plugin developers to use the [Instance Manager](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go@v0.161.0/backend/instancemgmt#InstanceManager) directly. Support for app plugins was added in [v0.140.0](https://github.com/grafana/grafana-plugin-sdk-go/releases/tag/v0.140.0).
 
 To use auto instance management, please refer to the relevant SDK documentation:
 
@@ -36,7 +36,7 @@ To use auto instance management, please refer to the relevant SDK documentation:
 - [Apps](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go@v0.161.0/backend/app#Manage)
 
 
-The following demonstrates a migration from the example above to use automatic instance management:
+The following demonstrates usage of automatic instance management:
 
 ```go
 package main
