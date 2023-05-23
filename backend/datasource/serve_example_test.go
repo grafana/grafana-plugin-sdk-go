@@ -65,7 +65,7 @@ func (ds *testDataSource) getSettings(pluginContext backend.PluginContext) (*tes
 	return iface.(*testDataSourceInstanceSettings), nil
 }
 
-func (ds *testDataSource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (ds *testDataSource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	settings, err := ds.getSettings(req.PluginContext)
 	if err != nil {
 		return nil, err
@@ -80,7 +80,7 @@ func (ds *testDataSource) CheckHealth(ctx context.Context, req *backend.CheckHea
 	return nil, nil
 }
 
-func (ds *testDataSource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (ds *testDataSource) QueryData(_ context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	var resp *backend.QueryDataResponse
 	err := ds.im.Do(req.PluginContext, func(settings *testDataSourceInstanceSettings) error {
 		// Handle request

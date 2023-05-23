@@ -117,7 +117,7 @@ func (p *Proxy) replay(req *http.Request, ctx *goproxy.ProxyCtx) (*http.Request,
 }
 
 // append appends a response to the fixture store if there currently is not a match for the request.
-func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
+func (p *Proxy) append(res *http.Response, _ *goproxy.ProxyCtx) *http.Response {
 	if !p.matchesHosts(res.Request.URL.Host) {
 		return res
 	}
@@ -135,7 +135,7 @@ func (p *Proxy) append(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response
 }
 
 // overwrite replaces a response in the fixture store if there currently is a match for the request.
-func (p *Proxy) overwrite(res *http.Response, ctx *goproxy.ProxyCtx) *http.Response {
+func (p *Proxy) overwrite(res *http.Response, _ *goproxy.ProxyCtx) *http.Response {
 	if !p.matchesHosts(res.Request.URL.Host) {
 		return res
 	}

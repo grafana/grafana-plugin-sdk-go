@@ -26,7 +26,7 @@ type StreamGRPCPlugin struct {
 }
 
 // GRPCServer registers p as a resource gRPC server.
-func (p *StreamGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+func (p *StreamGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error {
 	pluginv2.RegisterStreamServer(s, &streamGRPCServer{
 		server: p.StreamServer,
 	})
@@ -34,7 +34,7 @@ func (p *StreamGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server)
 }
 
 // GRPCClient returns c as a resource gRPC client.
-func (p *StreamGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *StreamGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &streamGRPCClient{client: pluginv2.NewStreamClient(c)}, nil
 }
 

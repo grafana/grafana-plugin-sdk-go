@@ -74,7 +74,7 @@ type testHandler struct {
 	request   *backend.QueryDataRequest
 }
 
-func (th *testHandler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (th *testHandler) QueryData(_ context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	th.callCount++
 	th.request = req
 	responses := backend.Responses{}

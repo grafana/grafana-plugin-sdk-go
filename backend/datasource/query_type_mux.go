@@ -106,7 +106,7 @@ func (mux *QueryTypeMux) getHandler(queryType string) (string, backend.QueryData
 	return queryType, handler
 }
 
-func fallbackHandler(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func fallbackHandler(_ context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	responses := backend.Responses{}
 	for _, q := range req.Queries {
 		responses[q.RefID] = backend.DataResponse{
