@@ -232,6 +232,6 @@ func newTestCallResourceResponseSender() *testCallResourceResponseSender {
 	return &testCallResourceResponseSender{}
 }
 
-func (s *testCallResourceResponseSender) Send(resp *backend.CallResourceResponse) error {
+func (s *testCallResourceResponseSender) Send(_ *backend.CallResourceResponse) error {
 	return nil
 }

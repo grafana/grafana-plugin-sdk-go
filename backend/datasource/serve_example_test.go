@@ -80,7 +80,7 @@ func (ds *testDataSource) CheckHealth(ctx context.Context, req *backend.CheckHea
 	return nil, nil
 }
 
-func (ds *testDataSource) QueryData(_ context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (ds *testDataSource) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	var resp *backend.QueryDataResponse
 	err := ds.im.Do(ctx, req.PluginContext, func(settings *testDataSourceInstanceSettings) error {
 		// Handle request
