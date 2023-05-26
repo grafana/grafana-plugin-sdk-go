@@ -6,11 +6,14 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/metadata"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 func TestCollectMetrcis(t *testing.T) {
@@ -121,6 +124,22 @@ func TestCheckHealth(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, res)
 		require.Equal(t, pluginv2.CheckHealthResponse_OK, res.Status)
+	})
+
+	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
+		tid := "123456"
+		a := newDiagnosticsSDKAdapter(nil, CheckHealthHandlerFunc(func(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+			require.Equal(t, tid, tenant.IDFromContext(ctx))
+			return &CheckHealthResult{}, nil
+		}))
+
+		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
+			tenant.CtxKey: tid,
+		}))
+		_, err := a.CheckHealth(ctx, &pluginv2.CheckHealthRequest{
+			PluginContext: &pluginv2.PluginContext{},
+		})
+		require.NoError(t, err)
 	})
 }
 

@@ -1,10 +1,12 @@
 package backend
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 )
 
 const dataCustomOptionsKey = "grafanaData"
@@ -204,4 +206,11 @@ func SecureJSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[strin
 	}
 
 	return secureJSONData
+}
+
+func propagateTenantIDIfPresent(ctx context.Context) context.Context {
+	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
+		ctx = tenant.WithTenant(ctx, tid)
+	}
+	return ctx
 }

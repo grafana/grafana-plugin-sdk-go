@@ -56,8 +56,8 @@ func newDataSource() datasource.ServeOpts {
 	}
 }
 
-func (ds *testDataSource) getSettings(pluginContext backend.PluginContext) (*testDataSourceInstanceSettings, error) {
-	iface, err := ds.im.Get(pluginContext)
+func (ds *testDataSource) getSettings(ctx context.Context, pluginContext backend.PluginContext) (*testDataSourceInstanceSettings, error) {
+	iface, err := ds.im.Get(ctx, pluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -65,8 +65,8 @@ func (ds *testDataSource) getSettings(pluginContext backend.PluginContext) (*tes
 	return iface.(*testDataSourceInstanceSettings), nil
 }
 
-func (ds *testDataSource) CheckHealth(_ context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	settings, err := ds.getSettings(req.PluginContext)
+func (ds *testDataSource) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	settings, err := ds.getSettings(ctx, req.PluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (ds *testDataSource) CheckHealth(_ context.Context, req *backend.CheckHealt
 
 func (ds *testDataSource) QueryData(_ context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	var resp *backend.QueryDataResponse
-	err := ds.im.Do(req.PluginContext, func(settings *testDataSourceInstanceSettings) error {
+	err := ds.im.Do(ctx, req.PluginContext, func(settings *testDataSourceInstanceSettings) error {
 		// Handle request
 		resp, err := settings.httpClient.Get("http://")
 		if err != nil {
@@ -96,8 +96,9 @@ func (ds *testDataSource) QueryData(_ context.Context, req *backend.QueryDataReq
 }
 
 func (ds *testDataSource) handleTest(rw http.ResponseWriter, req *http.Request) {
-	pluginContext := httpadapter.PluginConfigFromContext(req.Context())
-	settings, err := ds.getSettings(pluginContext)
+	ctx := req.Context()
+	pluginContext := httpadapter.PluginConfigFromContext(ctx)
+	settings, err := ds.getSettings(ctx, pluginContext)
 	if err != nil {
 		rw.WriteHeader(500)
 		return
