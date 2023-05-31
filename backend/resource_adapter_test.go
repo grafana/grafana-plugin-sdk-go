@@ -11,8 +11,8 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 func TestCallResource(t *testing.T) {

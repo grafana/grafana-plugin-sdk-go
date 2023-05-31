@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 func TestSubscribeStream(t *testing.T) {
