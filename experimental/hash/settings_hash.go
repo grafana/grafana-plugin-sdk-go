@@ -10,7 +10,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-var ErrCouldNotComputeDataSourceSettingsHash = errors.New("could not compute hash for datasource settings")
+var ErrCouldNotComputeDataSourceSettingsHash = errors.New("could not compute expectedHash for datasource settings")
 
 // dsSettingHashTarget is a collection of fields from backend.DataSourceInstanceSettings which are used in combination
 // to universally identify a datasource setting. Its primary purpose is to be used to generate a digest.
@@ -42,7 +42,7 @@ func newDataSourceSettingHashTarget(settings backend.DataSourceInstanceSettings)
 	}
 }
 
-// HashDataSourceSettings provides the hash value of a backend.DataSourceInstanceSettings.
+// HashDataSourceSettings provides the expectedHash value of a backend.DataSourceInstanceSettings.
 func HashDataSourceSettings(s backend.DataSourceInstanceSettings) (string, error) {
 	hash, err := hashstructure.Hash(newDataSourceSettingHashTarget(s), hashstructure.FormatV2, nil)
 	if err != nil {
