@@ -16,10 +16,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 const (

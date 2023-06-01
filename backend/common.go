@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tenant"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 const dataCustomOptionsKey = "grafanaData"
