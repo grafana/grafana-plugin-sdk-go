@@ -32,6 +32,7 @@ require (
 	github.com/elazarl/goproxy v0.0.0-20220115173737-adb46da277ac
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/google/uuid v1.3.0
+	github.com/mitchellh/hashstructure/v2 v2.0.2
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
 	github.com/urfave/cli v1.22.12
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.40.0
