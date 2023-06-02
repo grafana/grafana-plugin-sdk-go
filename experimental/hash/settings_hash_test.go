@@ -102,7 +102,7 @@ func TestHashDataSourceSettings(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			hash, err := HashDataSourceSettings(tc.settings)
+			hash, err := DataSourceSettings(tc.settings)
 			require.NoError(t, err)
 			require.Equal(t, tc.expectedHash, hash)
 		})

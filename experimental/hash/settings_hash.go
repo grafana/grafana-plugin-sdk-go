@@ -42,8 +42,8 @@ func newDataSourceSettingHashTarget(settings backend.DataSourceInstanceSettings)
 	}
 }
 
-// HashDataSourceSettings provides the expectedHash value of a backend.DataSourceInstanceSettings.
-func HashDataSourceSettings(s backend.DataSourceInstanceSettings) (string, error) {
+// DataSourceSettings provides the expectedHash value of a backend.DataSourceInstanceSettings.
+func DataSourceSettings(s backend.DataSourceInstanceSettings) (string, error) {
 	hash, err := hashstructure.Hash(newDataSourceSettingHashTarget(s), hashstructure.FormatV2, nil)
 	if err != nil {
 		return "", ErrCouldNotComputeDataSourceSettingsHash
