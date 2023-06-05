@@ -18,8 +18,8 @@ The SDK documentation can be navigated in the form of [Go docs](https://pkg.go.d
 - [`backend`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/backend): Package `backend` provides SDK handler interfaces and contracts for implementing and serving backend plugins. It includes multiple sub-packages.
 - [`build`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/build): Package `build` includes standard mage targets useful when building plugins.
 - [`data`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data): Package `data` provides data structures that Grafana recognizes. It includes multiple subpackages like `converters`, `framestruct` and `sqlutil`.
-- [`experimental`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data): Package `experimental` provides multiple experimental features. It includes multiple sub-packages.
-- [`live`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/data): Package `live` provides types for the Grafana Live server.
+- [`experimental`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/experimental): Package `experimental` provides multiple experimental features. It includes multiple sub-packages.
+- [`live`](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go/live): Package `live` provides types for the Grafana Live server.
 
 See the list of all packages [here](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go#section-directories).
 
