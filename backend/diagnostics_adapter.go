@@ -50,7 +50,7 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
-		if err != nil {
+		if err != nil && res == nil {
 			return nil, err
 		}
 		return ToProto().CheckHealthResponse(res), nil
