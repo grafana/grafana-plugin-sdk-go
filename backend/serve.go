@@ -54,6 +54,10 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 8.
 	StreamHandler StreamHandler
 
+	// ProvideMetadataHandler is a handler for metadata queries.
+	// This is EXPERIMENTAL.
+	ProvideMetadataHandler ProvideMetadataHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }
@@ -74,6 +78,11 @@ func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	if opts.StreamHandler != nil {
 		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
 	}
+
+	if opts.ProvideMetadataHandler != nil {
+		pluginOpts.MetadataServer = newMetadataSDKAdapter(opts.ProvideMetadataHandler)
+	}
+
 	return pluginOpts
 }
 
@@ -187,6 +196,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
 	if pluginOpts.StreamServer != nil {
 		pluginv2.RegisterStreamServer(server, pluginOpts.StreamServer)
 		plugKeys = append(plugKeys, "stream")
+	}
+
+	if pluginOpts.MetadataServer != nil {
+		pluginv2.RegisterMetadataServer(server, pluginOpts.MetadataServer)
+		plugKeys = append(plugKeys, "metadata")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly

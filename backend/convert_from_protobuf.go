@@ -276,3 +276,21 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 		Data: protoReq.GetData(),
 	}
 }
+
+// ProvideMetadataRequest ...
+func (f ConvertFromProtobuf) ProvideMetadataRequest(protoReq *pluginv2.ProvideMetadataRequest) *ProvideMetadataRequest {
+	return &ProvideMetadataRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+	}
+}
+
+// ProvideMetadataResponse ...
+func (f ConvertFromProtobuf) ProvideMetadataResponse(protoReq *pluginv2.ProvideMetadataResponse) *ProvideMetadataResponse {
+	metadata := map[string][]string{}
+	for k, values := range protoReq.Metadata {
+		metadata[k] = values.Values
+	}
+	return &ProvideMetadataResponse{
+		Metadata: metadata,
+	}
+}

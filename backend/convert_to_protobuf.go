@@ -280,3 +280,23 @@ func (t ConvertToProtobuf) CollectMetricsResult(res *CollectMetricsResult) *plug
 		},
 	}
 }
+
+// ProvideMetadataRequest ...
+func (t ConvertToProtobuf) ProvideMetadataRequest(req *ProvideMetadataRequest) *pluginv2.ProvideMetadataRequest {
+	protoReq := &pluginv2.ProvideMetadataRequest{
+		PluginContext: t.PluginContext(req.PluginContext),
+	}
+	return protoReq
+}
+
+// ProvideMetadataResponse ...
+func (t ConvertToProtobuf) ProvideMetadataResponse(res *ProvideMetadataResponse) *pluginv2.ProvideMetadataResponse {
+	metadata := map[string]*pluginv2.StringList{}
+
+	for key, values := range res.Metadata {
+		metadata[key] = &pluginv2.StringList{Values: values}
+	}
+	return &pluginv2.ProvideMetadataResponse{
+		Metadata: metadata,
+	}
+}

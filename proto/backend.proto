@@ -84,7 +84,7 @@ message CallResourceRequest {
 
 message CallResourceResponse {
   // Maps to raw HTTP status codes when passed over HTTP
-  int32 code = 1; 
+  int32 code = 1;
 
   // Raw HTTP headers sent to the client
   map<string,StringList> headers = 2;
@@ -145,7 +145,7 @@ message DataResponse {
   // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
   // The status codes should match values from standard HTTP status codes
   // If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
-  int32 status = 4; 
+  int32 status = 4;
 }
 
 //-----------------------------------------------
@@ -277,4 +277,23 @@ message RunStreamRequest {
 message StreamPacket {
   // JSON-encoded data to publish into a channel.
   bytes data = 1;
+}
+
+//------------------------
+// Metadata - EXPERIMENTAL
+//------------------------
+
+service Metadata {
+  // ProvideMetadata is called by Grafana to get metadata belonging to the datasource instance.
+  // This is in the form of collections of text which can be queried by natural language models
+  // to aid the user in writing queries.
+  rpc ProvideMetadata(ProvideMetadataRequest) returns (ProvideMetadataResponse);
+}
+
+message ProvideMetadataRequest {
+  PluginContext pluginContext = 1;
+}
+
+message ProvideMetadataResponse {
+  map<string,StringList> metadata = 1;
 }
