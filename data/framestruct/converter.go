@@ -129,6 +129,7 @@ func (c *converter) convertStruct(field reflect.Value, fieldName string) error {
 
 func (c *converter) convertSlice(s reflect.Value, prefix string) error {
 	for i := 0; i < s.Len(); i++ {
+		c.maxLen++
 		v := s.Index(i)
 		switch v.Kind() {
 		case reflect.Map:
@@ -259,9 +260,6 @@ func (c *converter) convertField(v reflect.Value, fieldName string) (interface{}
 
 func (c *converter) appendToField(name string, value interface{}) {
 	c.fields[name].Append(value)
-	if c.fields[name].Len() > c.maxLen {
-		c.maxLen++
-	}
 }
 
 func (c *converter) createFrame(name string) *data.Frame {
