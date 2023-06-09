@@ -1,6 +1,10 @@
 //  🌟 This was machine generated.  Do not edit. 🌟
 //  
 //  Frame[0] {
+//      "typeVersion": [
+//          0,
+//          0
+//      ],
 //      "custom": {}
 //  }
 //  Name: Frame One
@@ -41,6 +45,10 @@
       "schema": {
         "name": "Frame One",
         "meta": {
+          "typeVersion": [
+            0,
+            0
+          ],
           "custom": {}
         },
         "fields": [

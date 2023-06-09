@@ -1,6 +1,7 @@
 package standalone
 
 import (
+	"bytes"
 	"flag"
 	"fmt"
 	"log"
@@ -10,6 +11,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
@@ -17,73 +19,69 @@ import (
 
 type Args struct {
 	Address    string
+	PID        int
 	Standalone bool
-	debugger   bool
-	dir        string
+	Dir        string
+	Debugger   bool
+}
+
+// StandaloneAddressFilePath returns the path to the standalone.txt file, which contains the standalone GRPC address
+func (a Args) StandaloneAddressFilePath() string {
+	return filepath.Join(a.Dir, "standalone.txt")
+}
+
+// StandalonePIDFilePath returns the path to the pid.txt file, which contains the standalone GRPC's server PID
+func (a Args) StandalonePIDFilePath() string {
+	return filepath.Join(a.Dir, "pid.txt")
+}
+
+func getInfo(id string, executable string, standalone, debug bool) (Args, error) {
+	var info Args
+	info.Standalone = standalone
+
+	// VsCode names the file "__debug_bin"
+	vsCodeDebug := strings.HasPrefix(filepath.Base(executable), "__debug_bin")
+	// GoLand places it in:
+	//  Linux: /tmp/GoLand/___%d%(CONFIGNAME)s_pkg
+	//  Mac OS X: /private/var/folders/lx/XXX/T/GoLand/___%d%(CONFIGNAME)s_pkg
+	//  Windows: C:\Users\USER\AppData\Local\Temp\GoLand\___%d%(CONFIGNAME)s_pkg.exe
+	goLandDebug := strings.Contains(executable, filepath.Join("GoLand", "___"))
+	if standalone && (vsCodeDebug || goLandDebug || debug) {
+		info.Debugger = true
+		js, err := findPluginJSON(executable)
+		if err != nil {
+			return info, err
+		}
+		executable = js
+	}
+	info.Dir = filepath.Dir(executable)
+
+	// Determine standalone address + PID
+	var err error
+	info.Address, err = getStandaloneAddress(id, info)
+	if err != nil {
+		return info, err
+	}
+	info.PID, err = getStandalonePID(info)
+	if err != nil {
+		return info, err
+	}
+	return info, nil
 }
 
 func GetInfo(id string) (Args, error) {
-	info := Args{}
-
-	var standalone bool
-	var address string
+	var standalone, debug bool
 	flag.BoolVar(&standalone, "standalone", false, "should this run standalone")
+	flag.BoolVar(&debug, "debug", false, "run in debug mode")
 	flag.Parse()
-
-	info.Standalone = standalone
 
 	// standalone path
 	ex, err := os.Executable()
 	if err != nil {
-		return info, err
+		return Args{}, err
 	}
 
-	// When debugging in vscode, write the file in `dist`
-	if standalone && strings.HasPrefix(filepath.Base(ex), "__debug_bin") {
-		info.debugger = true
-		port, err := getFreePort()
-		if err == nil {
-			address = fmt.Sprintf(":%d", port)
-		}
-		js, err := findPluginJSON(ex)
-		if err != nil {
-			return info, err
-		}
-		ex = js
-	}
-	info.dir = filepath.Dir(ex)
-	filePath := filepath.Join(info.dir, "standalone.txt")
-
-	// Address from environment variable
-	if address == "" {
-		envvar := "GF_PLUGIN_GRPC_ADDRESS_" + strings.ReplaceAll(strings.ToUpper(id), "-", "_")
-		address = os.Getenv(envvar)
-	}
-
-	// Check the local file for address
-	addrBytes, err := os.ReadFile(filePath)
-	if address == "" {
-		if err == nil && len(addrBytes) > 0 {
-			address = string(addrBytes)
-		}
-	}
-	info.Address = address
-
-	// Write the address to the local file
-	if standalone {
-		if info.Address == "" {
-			return info, fmt.Errorf("standalone address must be specified")
-		}
-		_ = os.WriteFile(filePath, []byte(info.Address), 0600)
-		// sadly vs-code can not listen to shutdown events
-		// https://github.com/golang/vscode-go/issues/120
-
-		// When debugging, be sure to kill the running instances so we reconnect
-		if info.debugger {
-			findAndKillCurrentPlugin(info.dir)
-		}
-	}
-	return info, nil
+	return getInfo(id, ex, standalone, debug)
 }
 
 // will check a few options to find the dist plugin json file
@@ -109,6 +107,55 @@ func findPluginJSON(exe string) (string, error) {
 	return exe, fmt.Errorf("can not find plugin.json in: %v", check)
 }
 
+func getStandaloneAddress(pluginID string, info Args) (string, error) {
+	if info.Debugger {
+		port, err := getFreePort()
+		if err != nil {
+			return "", fmt.Errorf("get free port: %w", err)
+		}
+		return fmt.Sprintf(":%d", port), nil
+	}
+
+	// Address from environment variable
+	envvar := "GF_PLUGIN_GRPC_ADDRESS_" + strings.ReplaceAll(strings.ToUpper(pluginID), "-", "_")
+	if v, ok := os.LookupEnv(envvar); ok {
+		return v, nil
+	}
+
+	// Check the local file for address
+	fb, err := os.ReadFile(info.StandaloneAddressFilePath())
+	addressFileContent := string(bytes.TrimSpace(fb))
+	switch {
+	case err != nil && !os.IsNotExist(err):
+		return "", fmt.Errorf("read standalone file: %w", err)
+	case os.IsNotExist(err) || len(addressFileContent) == 0:
+		// No standalone file, do not treat as standalone
+		return "", nil
+	}
+	return addressFileContent, nil
+}
+
+func getStandalonePID(info Args) (int, error) {
+	// Read PID (optional, as it was introduced later on)
+	fb, err := os.ReadFile(info.StandalonePIDFilePath())
+	pidFileContent := string(bytes.TrimSpace(fb))
+	switch {
+	case err != nil && !os.IsNotExist(err):
+		return 0, fmt.Errorf("read pid file: %w", err)
+	case os.IsNotExist(err) || len(pidFileContent) == 0:
+		// No PID, this is optional as it was introduced later, so it's fine.
+		// We lose hot switching between debug and non-debug without the pid file,
+		// but there's nothing better we can do.
+		return 0, nil
+	default:
+		pid, err := strconv.Atoi(pidFileContent)
+		if err != nil {
+			return 0, fmt.Errorf("could not parse pid: %w", err)
+		}
+		return pid, err
+	}
+}
+
 func RunDummyPluginLocator(address string) {
 	fmt.Printf("1|2|tcp|%s|grpc\n", address)
 	t := time.NewTicker(time.Second * 10)
@@ -132,9 +179,47 @@ func getFreePort() (int, error) {
 	return l.Addr().(*net.TCPAddr).Port, nil
 }
 
-// Killing the currently registered plugin will cause grafana to restart it
-// this time pointing to our new host
-func findAndKillCurrentPlugin(dir string) {
+// CreateStandaloneAddressFile creates the standalone.txt file containing the address of the GRPC server
+func CreateStandaloneAddressFile(info Args) error {
+	return os.WriteFile(
+		info.StandaloneAddressFilePath(),
+		[]byte(info.Address),
+		0600,
+	)
+}
+
+// CreateStandalonePIDFile creates the pid.txt file containing the PID of the GRPC server process
+func CreateStandalonePIDFile(info Args) error {
+	return os.WriteFile(
+		info.StandalonePIDFilePath(),
+		[]byte(strconv.Itoa(os.Getpid())),
+		0600,
+	)
+}
+
+func cleanupStandaloneFile(fileName string) error {
+	err := os.Remove(fileName)
+	if err != nil && !os.IsNotExist(err) {
+		return err
+	}
+	return nil
+}
+
+// CleanupStandaloneAddressFile attempts to delete standalone.txt from the specified folder.
+// If the file does not exist, the function returns nil.
+func CleanupStandaloneAddressFile(info Args) error {
+	return cleanupStandaloneFile(info.StandaloneAddressFilePath())
+}
+
+// CleanupStandalonePIDFile attempts to delete pid.txt from the specified folder.
+// If the file does not exist, the function returns nil.
+func CleanupStandalonePIDFile(info Args) error {
+	return cleanupStandaloneFile(info.StandalonePIDFilePath())
+}
+
+// FindAndKillCurrentPlugin kills the currently registered plugin, causing grafana to restart it
+// this time pointing to our new host.
+func FindAndKillCurrentPlugin(dir string) {
 	defer func() {
 		if r := recover(); r != nil {
 			fmt.Println("Error finding processes", r)
@@ -147,14 +232,19 @@ func findAndKillCurrentPlugin(dir string) {
 		return
 	}
 
-	out, err := exec.Command("pgrep", exeprefix).Output()
+	out, err := exec.Command("pgrep", "-f", exeprefix).Output()
 	if err != nil {
 		fmt.Printf("error running pgrep: %s (%s)", err.Error(), exeprefix)
 		return
 	}
+	currentPID := os.Getpid()
 	for _, txt := range strings.Fields(string(out)) {
 		pid, err := strconv.Atoi(txt)
 		if err == nil {
+			// Do not kill the plugin process
+			if pid == currentPID {
+				continue
+			}
 			log.Printf("Killing process: %d", pid)
 			// err := syscall.Kill(pid, 9)
 			pidstr := fmt.Sprintf("%d", pid)
@@ -164,4 +254,27 @@ func findAndKillCurrentPlugin(dir string) {
 			}
 		}
 	}
+}
+
+// CheckPIDIsRunning returns true if there's a process with the specified PID
+func CheckPIDIsRunning(pid int) bool {
+	if pid == 0 {
+		return false
+	}
+	process, err := os.FindProcess(pid)
+	if err != nil {
+		return false
+	}
+	// FindProcess does not return an error if the process does not exist in UNIX.
+	//
+	// From man kill:
+	//	 If  sig  is 0, then no signal is sent, but error checking is still per‐
+	//   formed; this can be used to check for the existence of a process ID  or
+	//   process group ID.
+	//
+	// So we send try to send a 0 signal to the process instead to test if it exists.
+	if err := process.Signal(syscall.Signal(0)); err != nil {
+		return false
+	}
+	return true
 }

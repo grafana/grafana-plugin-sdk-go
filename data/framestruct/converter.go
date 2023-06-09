@@ -197,6 +197,11 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 
 	for _, name := range sortedKeys(m) {
 		value := m[name]
+		if value == nil {
+			// skip nil values (as they will lead to "nil" values later on anyways);
+			// and the reflection code below crashes on nil.
+			continue
+		}
 		fieldName := c.fieldName(name, tags, prefix)
 		v := c.ensureValue(reflect.ValueOf(value))
 		if err := c.handleValue(v, "", fieldName); err != nil {

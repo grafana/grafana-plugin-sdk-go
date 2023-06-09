@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"net/http"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
 
 // ConfigureClientFunc function signature for configuring http.Client.
@@ -29,6 +31,9 @@ type Options struct {
 	// TLS TLS related options.
 	TLS   *TLSOptions
 	SigV4 *SigV4Config
+
+	// Proxy related options.
+	ProxyOptions *proxy.Options
 
 	// Headers custom headers.
 	Headers map[string]string
@@ -57,6 +62,13 @@ type Options struct {
 	// ConfigureTLSConfig optionally provide a ConfigureTLSConfigFunc
 	// to modify the created http.Client.
 	ConfigureTLSConfig ConfigureTLSConfigFunc
+
+	// ForwardHTTPHeaders enable forwarding of all HTTP headers
+	// included in backend.QueryDataRequest, backend.CallResourceRequest,
+	// backend.CheckHealthRequest, e.g. based on if Allowed cookies or
+	// Forward OAuth Identity is configured for the datasource or any
+	// other forwarded HTTP header from Grafana.
+	ForwardHTTPHeaders bool
 }
 
 // BasicAuthOptions basic authentication options.

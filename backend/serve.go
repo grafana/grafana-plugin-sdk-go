@@ -1,16 +1,27 @@
 package backend
 
 import (
+	"context"
+	"fmt"
 	"net"
+	"os"
+	"os/signal"
+	"strconv"
+	"syscall"
+	"time"
+
+	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
+	"github.com/prometheus/client_golang/prometheus"
+	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
+	"go.opentelemetry.io/otel"
+	"google.golang.org/grpc"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
-	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
-	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-prometheus"
-	"github.com/hashicorp/go-plugin"
-	"github.com/prometheus/client_golang/prometheus"
-	"google.golang.org/grpc"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 )
 
 const defaultServerMaxReceiveMessageSize = 1024 * 1024 * 16
@@ -66,80 +77,189 @@ func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	return pluginOpts
 }
 
-// Serve starts serving the plugin over gRPC.
-func Serve(opts ServeOpts) error {
-	grpc_prometheus.EnableHandlingTimeHistogram()
-	grpcMiddlewares := []grpc.ServerOption{
-		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			grpc_prometheus.StreamServerInterceptor,
-		)),
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			grpc_prometheus.UnaryServerInterceptor,
-		)),
-	}
-
+func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	if opts.GRPCSettings.MaxReceiveMsgSize <= 0 {
 		opts.GRPCSettings.MaxReceiveMsgSize = defaultServerMaxReceiveMessageSize
 	}
-
-	grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize)}, grpcMiddlewares...)
-
+	grpcMiddlewares := []grpc.ServerOption{
+		grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize),
+		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
+			otelgrpc.StreamServerInterceptor(),
+			grpc_prometheus.StreamServerInterceptor,
+		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
+			otelgrpc.UnaryServerInterceptor(),
+			grpc_prometheus.UnaryServerInterceptor,
+		)),
+	}
 	if opts.GRPCSettings.MaxSendMsgSize > 0 {
 		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxSendMsgSize(opts.GRPCSettings.MaxSendMsgSize)}, grpcMiddlewares...)
 	}
+	return grpcMiddlewares
+}
 
+// Serve starts serving the plugin over gRPC.
+func Serve(opts ServeOpts) error {
+	grpc_prometheus.EnableHandlingTimeHistogram()
 	pluginOpts := asGRPCServeOpts(opts)
-	pluginOpts.GRPCServer = func(opts []grpc.ServerOption) *grpc.Server {
-		opts = append(opts, grpcMiddlewares...)
-		return grpc.NewServer(opts...)
+	pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
+		return grpc.NewServer(append(defaultGRPCMiddlewares(opts), grpcOptions...)...)
 	}
-
 	return grpcplugin.Serve(pluginOpts)
 }
 
-// StandaloneServe starts a gRPC server that is not managed by hashicorp
+// StandaloneServe starts a gRPC server that is not managed by hashicorp.
+// Deprecated: use GracefulStandaloneServe instead.
 func StandaloneServe(dsopts ServeOpts, address string) error {
-	opts := asGRPCServeOpts(dsopts)
+	// GracefulStandaloneServe has a new signature, this function keeps the old
+	// signature for existing plugins for backwards compatibility.
+	// Create a new standalone.Args and disable all the standalone-file-related features.
+	return GracefulStandaloneServe(dsopts, standalone.Args{Address: address})
+}
 
-	if opts.GRPCServer == nil {
-		opts.GRPCServer = plugin.DefaultGRPCServer
+// GracefulStandaloneServe starts a gRPC server that is not managed by hashicorp.
+// The provided standalone.Args must have an Address set, or the function returns an error.
+// The function handles creating/cleaning up the standalone address file, and graceful GRPC server termination.
+// The function returns after the GRPC server has been terminated.
+func GracefulStandaloneServe(dsopts ServeOpts, info standalone.Args) error {
+	// We must have an address if we want to run the plugin in standalone mode
+	if info.Address == "" {
+		return fmt.Errorf("standalone address must be specified")
 	}
 
-	server := opts.GRPCServer(nil)
+	// Write the address to the local file
+	if info.Debugger {
+		log.DefaultLogger.Info("Creating standalone address and pid files")
+		if err := standalone.CreateStandaloneAddressFile(info); err != nil {
+			return fmt.Errorf("create standalone address file: %w", err)
+		}
+		if err := standalone.CreateStandalonePIDFile(info); err != nil {
+			return fmt.Errorf("create standalone pid file: %w", err)
+		}
 
-	plugKeys := []string{}
-	if opts.DiagnosticsServer != nil {
-		pluginv2.RegisterDiagnosticsServer(server, opts.DiagnosticsServer)
+		// sadly vs-code can not listen to shutdown events
+		// https://github.com/golang/vscode-go/issues/120
+
+		// Cleanup function that deletes standalone.txt and pid.txt, if it exists. Fails silently.
+		// This is so the address file is deleted when the plugin shuts down gracefully, if possible.
+		defer func() {
+			log.DefaultLogger.Info("Cleaning up standalone address and pid files")
+			if err := standalone.CleanupStandaloneAddressFile(info); err != nil {
+				log.DefaultLogger.Error("Error while cleaning up standalone address file", "error", err)
+			}
+			if err := standalone.CleanupStandalonePIDFile(info); err != nil {
+				log.DefaultLogger.Error("Error while cleaning up standalone pid file", "error", err)
+			}
+			// Kill the dummy locator so Grafana reloads the plugin
+			standalone.FindAndKillCurrentPlugin(info.Dir)
+		}()
+
+		// When debugging, be sure to kill the running instances, so we reconnect
+		standalone.FindAndKillCurrentPlugin(info.Dir)
+	}
+
+	// Start GRPC server
+	pluginOpts := asGRPCServeOpts(dsopts)
+	if pluginOpts.GRPCServer == nil {
+		pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
+			return grpc.NewServer(append(defaultGRPCMiddlewares(dsopts), grpcOptions...)...)
+		}
+	}
+
+	server := pluginOpts.GRPCServer(nil)
+
+	var plugKeys []string
+	if pluginOpts.DiagnosticsServer != nil {
+		pluginv2.RegisterDiagnosticsServer(server, pluginOpts.DiagnosticsServer)
 		plugKeys = append(plugKeys, "diagnostics")
 	}
 
-	if opts.ResourceServer != nil {
-		pluginv2.RegisterResourceServer(server, opts.ResourceServer)
+	if pluginOpts.ResourceServer != nil {
+		pluginv2.RegisterResourceServer(server, pluginOpts.ResourceServer)
 		plugKeys = append(plugKeys, "resources")
 	}
 
-	if opts.DataServer != nil {
-		pluginv2.RegisterDataServer(server, opts.DataServer)
+	if pluginOpts.DataServer != nil {
+		pluginv2.RegisterDataServer(server, pluginOpts.DataServer)
 		plugKeys = append(plugKeys, "data")
 	}
 
-	if opts.StreamServer != nil {
-		pluginv2.RegisterStreamServer(server, opts.StreamServer)
+	if pluginOpts.StreamServer != nil {
+		pluginv2.RegisterStreamServer(server, pluginOpts.StreamServer)
 		plugKeys = append(plugKeys, "stream")
 	}
 
+	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
-
-	listener, err := net.Listen("tcp", address)
+	listener, err := net.Listen("tcp", info.Address)
 	if err != nil {
 		return err
 	}
 
-	err = server.Serve(listener)
-	if err != nil {
+	signalChan := make(chan os.Signal, 1)
+	serverErrChan := make(chan error, 1)
+	signal.Notify(signalChan, syscall.SIGINT, syscall.SIGTERM)
+
+	// Unregister signal handlers before returning
+	defer signal.Stop(signalChan)
+
+	// Start GRPC server in a separate goroutine
+	go func() {
+		serverErrChan <- server.Serve(listener)
+	}()
+
+	// Block until signal or GRPC server termination
+	select {
+	case <-signalChan:
+		// Signal received, stop the server
+		server.Stop()
+		if err := <-serverErrChan; err != nil {
+			// Bubble up error
+			return err
+		}
+	case err := <-serverErrChan:
+		// Server stopped prematurely, bubble up the error
 		return err
 	}
+
 	log.DefaultLogger.Debug("Plugin server exited")
-
 	return nil
+}
+
+// Manage runs the plugin in either standalone mode, dummy locator or normal (hashicorp) mode.
+func Manage(pluginID string, serveOpts ServeOpts) error {
+	defer func() {
+		tp, ok := otel.GetTracerProvider().(tracerprovider.TracerProvider)
+		if !ok {
+			return
+		}
+
+		Logger.Debug("Closing tracing")
+		ctx, canc := context.WithTimeout(context.Background(), time.Second*5)
+		defer canc()
+		if err := tp.Shutdown(ctx); err != nil {
+			Logger.Error("error while shutting down tracer", "error", err)
+		}
+	}()
+
+	info, err := standalone.GetInfo(pluginID)
+	if err != nil {
+		return err
+	}
+
+	if info.Standalone {
+		// Run the standalone GRPC server
+		return GracefulStandaloneServe(serveOpts, info)
+	}
+
+	if info.Address != "" && standalone.CheckPIDIsRunning(info.PID) {
+		// Grafana is trying to run the dummy plugin locator to connect to the standalone
+		// GRPC server (separate process)
+		Logger.Debug("Running dummy plugin locator", "addr", info.Address, "pid", strconv.Itoa(info.PID))
+		standalone.RunDummyPluginLocator(info.Address)
+		return nil
+	}
+
+	// The default/normal hashicorp path.
+	return Serve(serveOpts)
 }

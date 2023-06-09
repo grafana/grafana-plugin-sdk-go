@@ -1,10 +1,12 @@
 package app
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 // InstanceFactoryFunc factory method for creating app instances.
@@ -40,7 +42,7 @@ type instanceProvider struct {
 	factory InstanceFactoryFunc
 }
 
-func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interface{}, error) {
+func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
 	if pluginContext.AppInstanceSettings == nil {
 		// fail fast if there is no app settings
 		return nil, fmt.Errorf("app instance settings cannot be nil")
@@ -48,15 +50,20 @@ func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interfa
 
 	// The instance key generated for app plugins should include both plugin ID, and the OrgID, since for a single
 	// Grafana instance there might be different orgs using the same plugin.
-	return fmt.Sprintf("%s#%v", pluginContext.PluginID, pluginContext.OrgID), nil
+	defaultKey := fmt.Sprintf("%s#%v", pluginContext.PluginID, pluginContext.OrgID)
+	if tID := tenant.IDFromContext(ctx); tID != "" {
+		return fmt.Sprintf("%s#%s", tID, defaultKey), nil
+	}
+
+	return defaultKey, nil
 }
 
-func (ip *instanceProvider) NeedsUpdate(pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
+func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
 	curSettings := pluginContext.AppInstanceSettings
 	cachedSettings := cachedInstance.PluginContext.AppInstanceSettings
 	return !curSettings.Updated.Equal(cachedSettings.Updated)
 }
 
-func (ip *instanceProvider) NewInstance(pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
+func (ip *instanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
 	return ip.factory(*pluginContext.AppInstanceSettings)
 }

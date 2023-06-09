@@ -4,9 +4,10 @@ import (
 	"bytes"
 	"context"
 
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 // diagnosticsSDKAdapter adapter between low level plugin protocol and SDK interfaces.
@@ -45,7 +46,10 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.Co
 
 func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.checkHealthHandler != nil {
-		res, err := a.checkHealthHandler.CheckHealth(ctx, FromProto().CheckHealthRequest(protoReq))
+		ctx = propagateTenantIDIfPresent(ctx)
+		parsedReq := FromProto().CheckHealthRequest(protoReq)
+		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
 		if err != nil {
 			return nil, err
 		}

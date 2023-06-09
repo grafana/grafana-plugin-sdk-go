@@ -71,6 +71,13 @@ func TestField_NullableFloat64(t *testing.T) {
 	})
 }
 
+func TestFieldLen(t *testing.T) {
+	var fp *data.Field
+	var f data.Field
+	require.Equal(t, 0, fp.Len())
+	require.Equal(t, 0, f.Len())
+}
+
 func TestField_String(t *testing.T) {
 	field := data.NewField("value", nil, make([]*string, 3))
 

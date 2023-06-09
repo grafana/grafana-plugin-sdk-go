@@ -16,7 +16,7 @@ import (
 
 func TestHTTPLogger(t *testing.T) {
 	t.Run("saved file should match example", func(t *testing.T) {
-		c, f := setup(true)
+		c, f := setup(t, true)
 		res, err := c.Get("http://example.com")
 		require.NoError(t, err)
 		defer res.Body.Close()
@@ -35,7 +35,7 @@ func TestHTTPLogger(t *testing.T) {
 	})
 
 	t.Run("file should not be created by storage if http logging is disabled", func(t *testing.T) {
-		c, f := setup(false)
+		c, f := setup(t, false)
 		res, err := c.Get("http://example.com")
 		require.NoError(t, err)
 		defer res.Body.Close()
@@ -51,8 +51,8 @@ func TestHTTPLogger(t *testing.T) {
 
 	t.Run("should set path and enabled overrides", func(t *testing.T) {
 		// ensure env variables are not set
-		os.Setenv(httplogger.PluginHARLogEnabledEnv, "false")
-		os.Setenv(httplogger.PluginHARLogPathEnv, "")
+		t.Setenv(httplogger.PluginHARLogEnabledEnv, "false")
+		t.Setenv(httplogger.PluginHARLogPathEnv, "")
 
 		f, err := os.CreateTemp("", "test_*.har")
 		defer os.Remove(f.Name())
@@ -83,7 +83,9 @@ func TestHTTPLogger(t *testing.T) {
 	})
 }
 
-func setup(enabled bool) (*http.Client, *os.File) {
+func setup(t *testing.T, enabled bool) (*http.Client, *os.File) {
+	t.Helper()
+
 	f, err := os.CreateTemp("", "example_*.har")
 	defer os.Remove(f.Name())
 	if err != nil {
@@ -91,10 +93,10 @@ func setup(enabled bool) (*http.Client, *os.File) {
 	}
 
 	if enabled {
-		os.Setenv(httplogger.PluginHARLogEnabledEnv, "true")
-		os.Setenv(httplogger.PluginHARLogPathEnv, f.Name())
+		t.Setenv(httplogger.PluginHARLogEnabledEnv, "true")
+		t.Setenv(httplogger.PluginHARLogPathEnv, f.Name())
 	} else {
-		os.Setenv(httplogger.PluginHARLogEnabledEnv, "false")
+		t.Setenv(httplogger.PluginHARLogEnabledEnv, "false")
 	}
 
 	h := httplogger.NewHTTPLogger("example-plugin-id", &fakeRoundTripper{})

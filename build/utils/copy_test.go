@@ -36,18 +36,14 @@ func TestCopyFile_NonExistentDestDir(t *testing.T) {
 }
 
 func TestCopyRecursive_NonExistentDest(t *testing.T) {
-	src, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer os.RemoveAll(src)
+	src := t.TempDir()
 
-	err = os.MkdirAll(path.Join(src, "data"), 0755)
+	err := os.MkdirAll(path.Join(src, "data"), 0755)
 	require.NoError(t, err)
 	err = os.WriteFile(path.Join(src, "data", "file.txt"), []byte("Test"), 0600)
 	require.NoError(t, err)
 
-	dstParent, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer os.RemoveAll(dstParent)
+	dstParent := t.TempDir()
 
 	dst := path.Join(dstParent, "dest")
 
@@ -58,18 +54,14 @@ func TestCopyRecursive_NonExistentDest(t *testing.T) {
 }
 
 func TestCopyRecursive_ExistentDest(t *testing.T) {
-	src, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer os.RemoveAll(src)
+	src := t.TempDir()
 
-	err = os.MkdirAll(path.Join(src, "data"), 0755)
+	err := os.MkdirAll(path.Join(src, "data"), 0755)
 	require.NoError(t, err)
 	err = os.WriteFile(path.Join(src, "data", "file.txt"), []byte("Test"), 0600)
 	require.NoError(t, err)
 
-	dst, err := os.MkdirTemp("", "")
-	require.NoError(t, err)
-	defer os.RemoveAll(dst)
+	dst := t.TempDir()
 
 	err = CopyRecursive(src, dst)
 	require.NoError(t, err)

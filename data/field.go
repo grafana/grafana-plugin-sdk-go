@@ -58,6 +58,10 @@ type Fields []*Field
 //
 //	[]json.RawMessage, []*json.RawMessage
 //
+// Enum:
+//
+//	[]data.EnumItemIndex, []*data.EnumItemIndex
+//
 // If an unsupported values type is passed, NewField will panic.
 // nolint:gocyclo
 func NewField(name string, labels Labels, values interface{}) *Field {
@@ -119,6 +123,10 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		vec = newJsonRawMessageVectorWithValues(v)
 	case []*json.RawMessage:
 		vec = newNullableJsonRawMessageVectorWithValues(v)
+	case []EnumItemIndex:
+		vec = newEnumVectorWithValues(v)
+	case []*EnumItemIndex:
+		vec = newNullableEnumVectorWithValues(v)
 	default:
 		panic(fmt.Errorf("field '%s' specified with unsupported type %T", name, v))
 	}
@@ -166,7 +174,11 @@ func (f *Field) At(idx int) interface{} {
 }
 
 // Len returns the number of elements in the Field.
+// It will return 0 if the field is nil.
 func (f *Field) Len() int {
+	if f == nil || f.vector == nil {
+		return 0
+	}
 	return f.vector.Len()
 }
 
