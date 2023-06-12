@@ -9,9 +9,12 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/metadata"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
-	"github.com/stretchr/testify/require"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 type fakeDataHandlerWithOAuth struct {
@@ -64,26 +67,69 @@ func (f *fakeDataHandlerWithOAuth) QueryData(ctx context.Context, req *QueryData
 func TestQueryData(t *testing.T) {
 	handler := newFakeDataHandlerWithOAuth()
 	adapter := newDataSDKAdapter(handler)
-	ctx := context.Background()
-	_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
-		Headers: map[string]string{
-			"Authorization": "Bearer 123",
-		},
-		PluginContext: &pluginv2.PluginContext{},
+
+	t.Run("When forward HTTP headers enabled should forward headers", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
+			Headers: map[string]string{
+				"Authorization": "Bearer 123",
+			},
+			PluginContext: &pluginv2.PluginContext{},
+		})
+		require.NoError(t, err)
+
+		middlewares := httpclient.ContextualMiddlewareFromContext(handler.lastReq.Context())
+		require.Len(t, middlewares, 1)
+
+		reqClone := handler.lastReq.Clone(handler.lastReq.Context())
+		// clean up headers to be sure they are injected
+		reqClone.Header = http.Header{}
+
+		res, err := middlewares[0].CreateMiddleware(httpclient.Options{ForwardHTTPHeaders: true}, finalRoundTripper).RoundTrip(reqClone)
+		require.NoError(t, err)
+		require.NoError(t, res.Body.Close())
+		require.Len(t, reqClone.Header, 1)
+		require.Equal(t, "Bearer 123", reqClone.Header.Get("Authorization"))
 	})
-	require.NoError(t, err)
 
-	middlewares := httpclient.ContextualMiddlewareFromContext(handler.lastReq.Context())
-	require.Len(t, middlewares, 1)
+	t.Run("When forward HTTP headers disable should not forward headers", func(t *testing.T) {
+		ctx := context.Background()
+		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
+			Headers: map[string]string{
+				"Authorization": "Bearer 123",
+			},
+			PluginContext: &pluginv2.PluginContext{},
+		})
+		require.NoError(t, err)
 
-	reqClone := handler.lastReq.Clone(handler.lastReq.Context())
-	// clean up headers to be sure they are injected
-	reqClone.Header = http.Header{}
-	res, err := middlewares[0].CreateMiddleware(httpclient.Options{}, finalRoundTripper).RoundTrip(reqClone)
-	require.NoError(t, err)
-	require.NoError(t, res.Body.Close())
-	require.Len(t, reqClone.Header, 1)
-	require.Equal(t, "Bearer 123", reqClone.Header.Get("Authorization"))
+		middlewares := httpclient.ContextualMiddlewareFromContext(handler.lastReq.Context())
+		require.Len(t, middlewares, 1)
+
+		reqClone := handler.lastReq.Clone(handler.lastReq.Context())
+		// clean up headers to be sure they are injected
+		reqClone.Header = http.Header{}
+
+		res, err := middlewares[0].CreateMiddleware(httpclient.Options{ForwardHTTPHeaders: false}, finalRoundTripper).RoundTrip(reqClone)
+		require.NoError(t, err)
+		require.NoError(t, res.Body.Close())
+		require.Empty(t, reqClone.Header)
+	})
+
+	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
+		tid := "123456"
+		a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+			require.Equal(t, tid, tenant.IDFromContext(ctx))
+			return NewQueryDataResponse(), nil
+		}))
+
+		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
+			tenant.CtxKey: tid,
+		}))
+		_, err := a.QueryData(ctx, &pluginv2.QueryDataRequest{
+			PluginContext: &pluginv2.PluginContext{},
+		})
+		require.NoError(t, err)
+	})
 }
 
 var finalRoundTripper = httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {

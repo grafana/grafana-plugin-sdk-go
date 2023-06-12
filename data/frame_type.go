@@ -21,13 +21,13 @@ const FrameTypeUnknown FrameType = ""
 
 // FrameTypeTimeSeriesWide uses labels on fields to define dimensions and is documented in [Time Series Wide Format in the Data Plane Contract]. There is additional documentation in the [Developer Data Frame Documentation on the Wide Format].
 //
-// [Time Series Wide Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md#time-series-wide-format-timeserieswide
+// [Time Series Wide Format in the Data Plane Contract]: https://grafana.github.io/dataplane/contract/timeseries#time-series-wide-format-timeserieswide
 // [Developer Data Frame Documentation on the Wide Format]: https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#wide-format
 const FrameTypeTimeSeriesWide FrameType = "timeseries-wide"
 
 // FrameTypeTimeSeriesLong uses string fields to define dimensions and is documented in [Time Series Long Format in the Data Plane Contract]. There is additional documentation in the [Developer Data Frame Documentation on Long Format].
 //
-// [Time Series Long Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md#time-series-long-format-timeserieslong-sql-like
+// [Time Series Long Format in the Data Plane Contract]: https://grafana.github.io/dataplane/contract/timeseries#time-series-long-format-timeserieslong-sql-like
 // [Developer Data Frame Documentation on Long Format]: https://grafana.com/docs/grafana/latest/developers/plugins/data-frames/#long-format
 const FrameTypeTimeSeriesLong FrameType = "timeseries-long"
 
@@ -39,7 +39,7 @@ const FrameTypeTimeSeriesMany FrameType = "timeseries-many"
 // FrameTypeTimeSeriesMulti is documented in the [Time Series Multi Format in the Data Plane Contract].
 // This replaces FrameTypeTimeSeriesMany.
 //
-// [Time Series Multi Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md#time-series-multi-format-timeseriesmulti
+// [Time Series Multi Format in the Data Plane Contract]: https://grafana.github.io/dataplane/contract/timeseries#time-series-multi-format-timeseriesmulti
 const FrameTypeTimeSeriesMulti FrameType = "timeseries-multi"
 
 // FrameTypeDirectoryListing represents the items in a directory
@@ -57,18 +57,23 @@ const FrameTypeTable FrameType = "table"
 
 // FrameTypeNumericWide is documented in the [Numeric Wide Format in the Data Plane Contract].
 //
-// [Numeric Wide Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md#numeric-wide-format-numericwide
+// [Numeric Wide Format in the Data Plane Contract]: https://grafana.github.io/dataplane/contract/numeric#numeric-wide-format-numericwide
 const FrameTypeNumericWide FrameType = "numeric-wide"
 
 // FrameTypeNumericMulti is documented in the [Numeric Multi Format in the Data Plane Contract].
 //
-// [Numeric Multi Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md#numeric-multi-format-numericmulti
+// [Numeric Multi Format in the Data Plane Contract]: https://grafana.github.io/dataplane/contract/numeric#numeric-multi-format-numericmulti
 const FrameTypeNumericMulti FrameType = "numeric-multi"
 
 // FrameTypeNumericLong is documented in the [Numeric Long Format in the Data Plane Contract].
 //
-// [Numeric Long Format in the Data Plane Contract]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md#numeric-long-format-numericlong-sql-table-like
+// [Numeric Long Format in the Data Plane Contract]: https://grafana.github.io/dataplane/contract/numeric#numeric-long-format-numericlong-sql-table-like
 const FrameTypeNumericLong FrameType = "numeric-long"
+
+// FrameTypeLogLines is documented in the Logs Format in the Data Plane Contract.
+//
+// [Log Lines Format in the Data Plane Contract]: https://grafana.github.io/dataplane/contract/logs#loglines
+const FrameTypeLogLines FrameType = "log-lines"
 
 // Soon?
 // "timeseries-wide-ohlc" -- known fields for open/high/low/close
@@ -86,6 +91,8 @@ func (p FrameType) IsKnownType() bool {
 		FrameTypeTimeSeriesMulti,
 		FrameTypeTimeSeriesMany,
 
+		FrameTypeLogLines,
+
 		FrameTypeNumericWide,
 		FrameTypeNumericLong,
 		FrameTypeNumericMulti:
@@ -101,6 +108,8 @@ func FrameTypes() []FrameType {
 		FrameTypeTimeSeriesLong,
 		FrameTypeTimeSeriesMulti,
 		FrameTypeTimeSeriesMany,
+
+		FrameTypeLogLines,
 
 		FrameTypeNumericWide,
 		FrameTypeNumericLong,
@@ -133,6 +142,10 @@ func (p FrameType) IsNumeric() bool {
 	return false
 }
 
+func (p FrameType) IsLogs() bool {
+	return p == FrameTypeLogLines
+}
+
 // Kind returns the FrameTypeKind from the FrameType.
 func (p FrameType) Kind() FrameTypeKind {
 	switch {
@@ -148,20 +161,23 @@ func (p FrameType) Kind() FrameTypeKind {
 // FrameTypeKind represents the Kind a particular FrameType falls into. See [Kinds and Formats] in
 // the data plane documentation.
 //
-// [Kinds and Formats]: https://github.com/grafana/grafana-plugin-sdk-go/tree/main/data/contract_docs#kinds-and-formats
+// [Kinds and Formats]: https://grafana.github.io/dataplane/contract/#kinds-and-formats
 type FrameTypeKind string
 
 const KindUnknown FrameTypeKind = ""
 
 // KindTimeSeries means the FrameType's Kind is time series. See [Data Plane Time Series Kind].
 //
-// [Data Plane Time Series Kind]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/timeseries.md
+// [Data Plane Time Series Kind]: https://grafana.github.io/dataplane/contract/timeseries
 const KindTimeSeries FrameTypeKind = "timeseries"
 
 // KindNumeric means the FrameType's Kind is numeric. See [Data Plane Numeric Kind].
 //
-// [Data Plane Numeric Kind]: https://github.com/grafana/grafana-plugin-sdk-go/blob/main/data/contract_docs/numeric.md
+// [Data Plane Numeric Kind]: https://grafana.github.io/dataplane/contract/numeric
 const KindNumeric FrameTypeKind = "numeric"
+
+// KindLogs means the FrameType's Kind is logs. See [Data Plane Logs Kind].
+const KindLogs FrameTypeKind = "logs"
 
 // FrameType is a 2 number version (Major / Minor).
 type FrameTypeVersion [2]uint

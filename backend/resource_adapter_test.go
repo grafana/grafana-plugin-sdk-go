@@ -7,10 +7,12 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 func TestCallResource(t *testing.T) {
@@ -153,6 +155,24 @@ func TestCallResource(t *testing.T) {
 		}, testSender)
 		require.NoError(t, err)
 	})
+
+	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
+		tid := "123456"
+		a := newResourceSDKAdapter(CallResourceHandlerFunc(func(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+			require.Equal(t, tid, tenant.IDFromContext(ctx))
+			return nil
+		}))
+
+		testSender := newTestCallResourceServer()
+		testSender.WithContext(metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
+			tenant.CtxKey: tid,
+		})))
+
+		err := a.CallResource(&pluginv2.CallResourceRequest{
+			PluginContext: &pluginv2.PluginContext{},
+		}, testSender)
+		require.NoError(t, err)
+	})
 }
 
 type testCallResourceHandler struct {
@@ -245,6 +265,10 @@ func (srv *testCallResourceServer) SendMsg(_ interface{}) error {
 
 func (srv *testCallResourceServer) RecvMsg(_ interface{}) error {
 	return nil
+}
+
+func (srv *testCallResourceServer) WithContext(ctx context.Context) {
+	srv.ctx = ctx
 }
 
 type testCallResourceWithHeaders struct{}

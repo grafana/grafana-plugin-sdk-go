@@ -16,7 +16,6 @@ import (
 	"math"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -400,19 +399,6 @@ func FrameTestCompareOptions() []cmp.Option {
 			x == y
 	})
 
-	times := cmp.Comparer(func(x, y time.Time) bool {
-		if !x.Equal(y) {
-			// Check that the millisecond precision is the same.
-			// Avoids problems like:
-			// - s"1970-04-14 21:59:59.254740991 -0800 PST",
-			// + s"1970-04-14 21:59:59.254 -0800 PST",
-			xMS := x.UnixNano() / int64(time.Millisecond)
-			yMS := y.UnixNano() / int64(time.Millisecond)
-			return xMS == yMS
-		}
-		return true
-	})
-
 	metas := cmp.Comparer(func(x, y *FrameMeta) bool {
 		// This checks that the meta attached to the frame and
 		// in the Golden file are the same. A conversion to JSON
@@ -439,7 +425,7 @@ func FrameTestCompareOptions() []cmp.Option {
 	})
 
 	unexportedField := cmp.AllowUnexported(Field{})
-	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, times, metas, rawjs, unexportedField, cmpopts.EquateEmpty()}
+	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, metas, rawjs, unexportedField, cmpopts.EquateEmpty()}
 }
 
 const maxLengthExceededStr = "..."

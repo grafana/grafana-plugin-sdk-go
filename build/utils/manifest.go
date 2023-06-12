@@ -24,7 +24,7 @@ func GenerateManifest() (string, error) {
 				return err
 			}
 			// manifest = manifest + hash + ":" + path + "\n"
-			manifest.WriteString(hash + ":" + path + "\n")
+			manifest.WriteString(hash + ":" + filepath.ToSlash(path) + "\n")
 		}
 		return nil
 	})

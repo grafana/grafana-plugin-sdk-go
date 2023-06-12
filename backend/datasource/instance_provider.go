@@ -1,10 +1,12 @@
 package datasource
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 // InstanceFactoryFunc factory method for creating data source instances.
@@ -40,20 +42,25 @@ type instanceProvider struct {
 	factory InstanceFactoryFunc
 }
 
-func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interface{}, error) {
+func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
 	if pluginContext.DataSourceInstanceSettings == nil {
 		return nil, fmt.Errorf("data source instance settings cannot be nil")
 	}
 
-	return pluginContext.DataSourceInstanceSettings.ID, nil
+	defaultKey := pluginContext.DataSourceInstanceSettings.ID
+	if tID := tenant.IDFromContext(ctx); tID != "" {
+		return fmt.Sprintf("%s#%v", tID, defaultKey), nil
+	}
+
+	return defaultKey, nil
 }
 
-func (ip *instanceProvider) NeedsUpdate(pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
+func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
 	curSettings := pluginContext.DataSourceInstanceSettings
 	cachedSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
 	return !curSettings.Updated.Equal(cachedSettings.Updated)
 }
 
-func (ip *instanceProvider) NewInstance(pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
+func (ip *instanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
 	return ip.factory(*pluginContext.DataSourceInstanceSettings)
 }
