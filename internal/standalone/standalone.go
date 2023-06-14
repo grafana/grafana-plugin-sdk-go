@@ -245,7 +245,7 @@ func getStandalonePID(dir string) (int, error) {
 		}
 
 		if !checkPIDIsRunning(pid) {
-			return 0, errors.New("standlone pid is not running")
+			return 0, errors.New("standalone server is not running")
 		}
 
 		return pid, nil
@@ -372,7 +372,7 @@ func checkPIDIsRunning(pid int) bool {
 	//   process group ID.
 	//
 	// So we send try to send a 0 signal to the process instead to test if it exists.
-	if err := process.Signal(syscall.Signal(0)); err != nil {
+	if err = process.Signal(syscall.Signal(0)); err != nil {
 		return false
 	}
 	return true
