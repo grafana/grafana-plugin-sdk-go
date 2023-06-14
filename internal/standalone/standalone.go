@@ -85,14 +85,17 @@ func RunDummyPluginLocator(address string) {
 }
 
 func serverSettings(pluginID string) (ServerSettings, error) {
-	dir, err := currentProcPath()
+	curProcPath, err := currentProcPath()
 	if err != nil {
 		return ServerSettings{}, err
 	}
 
-	debug := debuggerEnabled(dir)
+	dir := filepath.Dir(curProcPath) // Default to current directory
+
+	debug := debuggerEnabled(curProcPath)
 	if debug {
-		pluginDir, err := findPluginRootDir(dir)
+		// If debug is enabled, we need to find the plugin root directory
+		pluginDir, err := findPluginRootDir(curProcPath)
 		if err != nil {
 			return ServerSettings{}, err
 		}
@@ -112,10 +115,12 @@ func serverSettings(pluginID string) (ServerSettings, error) {
 
 // clientSettings will attempt to find a standalone server's address and PID.
 func clientSettings(pluginID string) (ClientSettings, error) {
-	dir, err := currentProcPath()
+	procPath, err := currentProcPath()
 	if err != nil {
 		return ClientSettings{}, err
 	}
+
+	dir := filepath.Dir(procPath)
 
 	// Determine running standalone address + PID
 	standaloneAddress, err := getStandaloneAddress(pluginID, dir)
@@ -143,7 +148,7 @@ func currentProcPath() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return filepath.Dir(curProcPath), nil
+	return curProcPath, nil
 }
 
 // findPluginRootDir will attempt to find a plugin directory based on the executing process's file-system path.
