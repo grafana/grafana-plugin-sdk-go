@@ -168,8 +168,7 @@ func findPluginRootDir(exe string) (string, error) {
 		}
 	}
 
-	log.Printf("Can not find plugin.json in: %v", check)
-	return "", nil
+	return "", fmt.Errorf("can not find plugin.json in: %v", check)
 }
 
 // debuggedEnabled returns true if the plugin should run in debug mode.
