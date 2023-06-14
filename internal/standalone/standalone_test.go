@@ -8,7 +8,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const pluginID = "grafana-test-datasource"
+const (
+	pluginID = "grafana-test-datasource"
+	addr     = "localhost:1234"
+)
 
 func TestServerModeEnabled(t *testing.T) {
 	t.Run("Disabled by default", func(t *testing.T) {
@@ -84,7 +87,6 @@ func TestClientModeEnabled(t *testing.T) {
 	})
 
 	t.Run("Enabled by env var", func(t *testing.T) {
-		addr := "localhost:1234"
 		t.Setenv("GF_PLUGIN_GRPC_ADDRESS_GRAFANA_TEST_DATASOURCE", addr)
 
 		settings, enabled := ClientModeEnabled(pluginID)
@@ -94,8 +96,6 @@ func TestClientModeEnabled(t *testing.T) {
 	})
 
 	t.Run("Enabled by standalone.txt file with valid address", func(t *testing.T) {
-		addr := "localhost:1234"
-
 		curProcPath, err := os.Executable()
 		require.NoError(t, err)
 
@@ -136,7 +136,6 @@ func TestClientModeEnabled(t *testing.T) {
 	})
 
 	t.Run("Enabled if pid.txt exists, but is empty", func(t *testing.T) {
-		addr := "localhost:1234"
 		t.Setenv("GF_PLUGIN_GRPC_ADDRESS_GRAFANA_TEST_DATASOURCE", addr)
 
 		curProcPath, err := os.Executable()
@@ -157,7 +156,6 @@ func TestClientModeEnabled(t *testing.T) {
 	})
 
 	t.Run("Disabled if pid.txt exists, but has invalid pid", func(t *testing.T) {
-		addr := "localhost:1234"
 		t.Setenv("GF_PLUGIN_GRPC_ADDRESS_GRAFANA_TEST_DATASOURCE", addr)
 
 		curProcPath, err := os.Executable()
