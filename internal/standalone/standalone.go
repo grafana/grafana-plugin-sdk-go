@@ -146,18 +146,18 @@ func currentProcPath() (string, error) {
 	return filepath.Dir(curProcPath), nil
 }
 
-// findPluginRootDir will attempt to find the dist plugin.json file based on the executing process's file-system path.
-func findPluginRootDir(exe string) (string, error) {
+// findPluginRootDir will attempt to find a plugin directory based on the executing process's file-system path.
+func findPluginRootDir(curProcPath string) (string, error) {
 	cwd, _ := os.Getwd()
 	if filepath.Base(cwd) == "pkg" {
 		cwd = filepath.Join(cwd, "..")
 	}
 
 	check := []string{
-		filepath.Join(exe, "plugin.json"),
-		filepath.Join(exe, "dist", "plugin.json"),
-		filepath.Join(filepath.Dir(exe), "plugin.json"),
-		filepath.Join(filepath.Dir(exe), "..", "dist", "plugin.json"),
+		filepath.Join(curProcPath, "plugin.json"),
+		filepath.Join(curProcPath, "dist", "plugin.json"),
+		filepath.Join(filepath.Dir(curProcPath), "plugin.json"),
+		filepath.Join(filepath.Dir(curProcPath), "..", "dist", "plugin.json"),
 		filepath.Join(cwd, "dist", "plugin.json"),
 		filepath.Join(cwd, "plugin.json"),
 	}
