@@ -189,9 +189,8 @@ func debuggerEnabled(curProcPath string) bool {
 }
 
 func getStandaloneAddress(pluginID string, dir string) (string, error) {
-	addressEnvVar := "GF_PLUGIN_GRPC_ADDRESS_" + strings.ReplaceAll(strings.ToUpper(pluginID), "-", "_")
-	if v, ok := os.LookupEnv(addressEnvVar); ok {
-		return v, nil
+	if addressEnvVar, exists := standaloneAddressFromEnv(pluginID); exists {
+		return addressEnvVar, nil
 	}
 
 	// Check the local file for address
@@ -208,9 +207,8 @@ func getStandaloneAddress(pluginID string, dir string) (string, error) {
 }
 
 func createStandaloneAddress(pluginID string) (string, error) {
-	addressEnvVar := "GF_PLUGIN_GRPC_ADDRESS_" + strings.ReplaceAll(strings.ToUpper(pluginID), "-", "_")
-	if v, ok := os.LookupEnv(addressEnvVar); ok {
-		return v, nil
+	if addressEnvVar, exists := standaloneAddressFromEnv(pluginID); exists {
+		return addressEnvVar, nil
 	}
 
 	port, err := getFreePort()
@@ -218,6 +216,14 @@ func createStandaloneAddress(pluginID string) (string, error) {
 		return "", fmt.Errorf("get free port: %w", err)
 	}
 	return fmt.Sprintf(":%d", port), nil
+}
+
+func standaloneAddressFromEnv(pluginID string) (string, bool) {
+	addressEnvVar := "GF_PLUGIN_GRPC_ADDRESS_" + strings.ReplaceAll(strings.ToUpper(pluginID), "-", "_")
+	if v, ok := os.LookupEnv(addressEnvVar); ok {
+		return v, true
+	}
+	return "", false
 }
 
 func getStandalonePID(dir string) (int, error) {
