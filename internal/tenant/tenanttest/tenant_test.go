@@ -53,7 +53,7 @@ func TestTenantWithPluginInstanceManagement(t *testing.T) {
 			CallResourceHandler: handler,
 			StreamHandler:       handler,
 			CheckHealthHandler:  handler,
-		}, standalone.NewServerSettings(addr))
+		}, standalone.NewServerSettings(addr, t.TempDir()))
 		require.NoError(t, err)
 	}()
 

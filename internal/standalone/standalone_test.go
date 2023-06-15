@@ -28,49 +28,43 @@ func TestServerModeEnabled(t *testing.T) {
 		truthy := true
 		standaloneEnabled = &truthy
 
+		curProcPath, err := os.Executable()
+		require.NoError(t, err)
+
 		settings, enabled := ServerModeEnabled(pluginID)
 		require.True(t, enabled)
-		require.False(t, settings.Debugger)
 		require.NotEmpty(t, settings.Address)
-		require.NotEmpty(t, settings.Dir)
+		require.Equal(t, filepath.Dir(curProcPath), settings.Dir)
 	})
 
-	t.Run("Debug enabled by flag, but only when standalone is also enabled and process has access to a plugin.json file",
+	t.Run("Nearby dist folder will be used as server directory",
 		func(t *testing.T) {
-			before := debugEnabled
-			t.Cleanup(func() {
-				debugEnabled = before
-			})
-			truthy := true
-			debugEnabled = &truthy
-
-			settings, enabled := ServerModeEnabled(pluginID)
-			require.False(t, enabled)
-			require.Empty(t, settings)
-
 			curProcPath, err := os.Executable()
 			require.NoError(t, err)
 
-			dir := filepath.Dir(curProcPath)
+			procDir := filepath.Dir(curProcPath)
+			distDir := filepath.Join(procDir, "dist")
 
-			file, err := os.Create(filepath.Join(dir, "plugin.json"))
+			err = os.MkdirAll(distDir, 0755)
+			require.NoError(t, err)
+			_, err = os.Create(filepath.Join(distDir, "plugin.json"))
 			require.NoError(t, err)
 			t.Cleanup(func() {
-				err = os.Remove(file.Name())
+				err = os.RemoveAll(distDir)
 				require.NoError(t, err)
 			})
 
-			before = standaloneEnabled
+			before := standaloneEnabled
 			t.Cleanup(func() {
 				standaloneEnabled = before
 			})
+			truthy := true
 			standaloneEnabled = &truthy
 
-			settings, enabled = ServerModeEnabled(pluginID)
+			settings, enabled := ServerModeEnabled(pluginID)
 			require.True(t, enabled)
-			require.True(t, settings.Debugger)
 			require.NotEmpty(t, settings.Address)
-			require.Equal(t, dir, settings.Dir)
+			require.Equal(t, distDir, settings.Dir)
 		})
 }
 
@@ -170,25 +164,5 @@ func TestClientModeEnabled(t *testing.T) {
 		require.False(t, enabled)
 		require.Empty(t, settings.TargetAddress)
 		require.Zero(t, settings.TargetPID)
-	})
-}
-
-func Test_debuggerEnabled(t *testing.T) {
-	t.Run("debug paths", func(t *testing.T) {
-		for _, processPaths := range []string{
-			// VsCode
-			"testdata/plugin/__debug_bin",
-			"testdata/plugin/__debug_bin.exe",
-			// GoLand: Default run config name
-			"testdata/GoLand/___XXgo_build_github_com_PACKAGENAME_pkg",
-			"testdata/GoLand/___XXgo_build_github_com_PACKAGENAME_pkg.exe",
-			// GoLand: Different run config name
-			"testdata/GoLand/___1PLUGIN",
-			"testdata/GoLand/___1PLUGIN.exe",
-		} {
-			t.Run(processPaths, func(t *testing.T) {
-				require.True(t, debuggerEnabled(processPaths))
-			})
-		}
 	})
 }

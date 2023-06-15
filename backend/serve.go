@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -108,15 +109,6 @@ func Serve(opts ServeOpts) error {
 	return grpcplugin.Serve(pluginOpts)
 }
 
-// StandaloneServe starts a gRPC server that is not managed by hashicorp.
-// Deprecated: use GracefulStandaloneServe instead.
-func StandaloneServe(dsopts ServeOpts, address string) error {
-	// GracefulStandaloneServe has a new signature, this function keeps the old
-	// signature for existing plugins for backwards compatibility.
-	// Create a new standalone.Args and disable all the standalone-file-related features.
-	return GracefulStandaloneServe(dsopts, standalone.NewServerSettings(address))
-}
-
 // GracefulStandaloneServe starts a gRPC server that is not managed by hashicorp.
 // The provided standalone.Args must have an Address set, or the function returns an error.
 // The function handles creating/cleaning up the standalone address file, and graceful GRPC server termination.
@@ -124,39 +116,41 @@ func StandaloneServe(dsopts ServeOpts, address string) error {
 func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) error {
 	// We must have an address if we want to run the plugin in standalone mode
 	if info.Address == "" {
-		return fmt.Errorf("standalone address must be specified")
+		return errors.New("standalone address must be specified")
+	}
+
+	if info.Dir == "" {
+		return errors.New("directory must be specified")
 	}
 
 	// Write the address and PID to local files
-	if info.Debugger {
-		log.DefaultLogger.Info("Creating standalone address and pid files")
-		if err := standalone.CreateStandaloneAddressFile(info.Address, info.Dir); err != nil {
-			return fmt.Errorf("create standalone address file: %w", err)
-		}
-		if err := standalone.CreateStandalonePIDFile(os.Getpid(), info.Dir); err != nil {
-			return fmt.Errorf("create standalone pid file: %w", err)
-		}
-
-		// sadly vs-code can not listen to shutdown events
-		// https://github.com/golang/vscode-go/issues/120
-
-		// Cleanup function that deletes standalone.txt and pid.txt, if it exists. Fails silently.
-		// This is so the address file is deleted when the plugin shuts down gracefully, if possible.
-		defer func() {
-			log.DefaultLogger.Info("Cleaning up standalone address and pid files")
-			if err := standalone.CleanupStandaloneAddressFile(info); err != nil {
-				log.DefaultLogger.Error("Error while cleaning up standalone address file", "error", err)
-			}
-			if err := standalone.CleanupStandalonePIDFile(info); err != nil {
-				log.DefaultLogger.Error("Error while cleaning up standalone pid file", "error", err)
-			}
-			// Kill the dummy locator so Grafana reloads the plugin
-			standalone.FindAndKillCurrentPlugin(info.Dir)
-		}()
-
-		// When debugging, be sure to kill the running instances, so that we can reconnect
-		standalone.FindAndKillCurrentPlugin(info.Dir)
+	log.DefaultLogger.Info("Creating standalone address and pid files", "dir", info.Dir)
+	if err := standalone.CreateStandaloneAddressFile(info.Address, info.Dir); err != nil {
+		return fmt.Errorf("create standalone address file: %w", err)
 	}
+	if err := standalone.CreateStandalonePIDFile(os.Getpid(), info.Dir); err != nil {
+		return fmt.Errorf("create standalone pid file: %w", err)
+	}
+
+	// sadly vs-code can not listen to shutdown events
+	// https://github.com/golang/vscode-go/issues/120
+
+	// Cleanup function that deletes standalone.txt and pid.txt, if it exists. Fails silently.
+	// This is so the address file is deleted when the plugin shuts down gracefully, if possible.
+	defer func() {
+		log.DefaultLogger.Info("Cleaning up standalone address and pid files")
+		if err := standalone.CleanupStandaloneAddressFile(info); err != nil {
+			log.DefaultLogger.Error("Error while cleaning up standalone address file", "error", err)
+		}
+		if err := standalone.CleanupStandalonePIDFile(info); err != nil {
+			log.DefaultLogger.Error("Error while cleaning up standalone pid file", "error", err)
+		}
+		// Kill the dummy locator so Grafana reloads the plugin
+		standalone.FindAndKillCurrentPlugin(info.Dir)
+	}()
+
+	// When debugging, be sure to kill the running instances, so that we can reconnect
+	standalone.FindAndKillCurrentPlugin(info.Dir)
 
 	// Start GRPC server
 	pluginOpts := asGRPCServeOpts(dsopts)

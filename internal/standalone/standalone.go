@@ -20,19 +20,18 @@ import (
 
 var (
 	standaloneEnabled = flag.Bool("standalone", false, "should this run standalone")
-	debugEnabled      = flag.Bool("debug", false, "run in debug mode")
 )
 
-func NewServerSettings(address string) ServerSettings {
+func NewServerSettings(address, dir string) ServerSettings {
 	return ServerSettings{
 		Address: address,
+		Dir:     dir,
 	}
 }
 
 type ServerSettings struct {
-	Address  string
-	Dir      string
-	Debugger bool
+	Address string
+	Dir     string
 }
 
 type ClientSettings struct {
@@ -41,9 +40,8 @@ type ClientSettings struct {
 }
 
 // ServerModeEnabled returns true if the plugin should run in standalone server mode.
-// It will first check for an environment variable GF_PLUGIN_GRPC_STANDALONE_<PLUGIN_ID>, and then the -standalone flag.
 func ServerModeEnabled(pluginID string) (ServerSettings, bool) {
-	flag.Parse() // Parse the flags so that we can check values for -standalone and -debug
+	flag.Parse() // Parse the flags so that we can check values for -standalone
 
 	if *standaloneEnabled {
 		s, err := serverSettings(pluginID)
@@ -83,14 +81,7 @@ func serverSettings(pluginID string) (ServerSettings, error) {
 	}
 
 	dir := filepath.Dir(curProcPath) // Default to current directory
-
-	debug := debuggerEnabled(curProcPath)
-	if debug {
-		// If debug is enabled, we need to find the plugin root directory
-		pluginDir, err := findPluginRootDir(curProcPath)
-		if err != nil {
-			return ServerSettings{}, err
-		}
+	if pluginDir, found := findPluginRootDir(curProcPath); found {
 		dir = pluginDir
 	}
 
@@ -99,9 +90,8 @@ func serverSettings(pluginID string) (ServerSettings, error) {
 		return ServerSettings{}, err
 	}
 	return ServerSettings{
-		Address:  address,
-		Dir:      dir,
-		Debugger: debug,
+		Address: address,
+		Dir:     dir,
 	}, nil
 }
 
@@ -144,7 +134,7 @@ func currentProcPath() (string, error) {
 }
 
 // findPluginRootDir will attempt to find a plugin directory based on the executing process's file-system path.
-func findPluginRootDir(curProcPath string) (string, error) {
+func findPluginRootDir(curProcPath string) (string, bool) {
 	cwd, _ := os.Getwd()
 	if filepath.Base(cwd) == "pkg" {
 		cwd = filepath.Join(cwd, "..")
@@ -154,36 +144,18 @@ func findPluginRootDir(curProcPath string) (string, error) {
 		filepath.Join(curProcPath, "plugin.json"),
 		filepath.Join(curProcPath, "dist", "plugin.json"),
 		filepath.Join(filepath.Dir(curProcPath), "plugin.json"),
-		filepath.Join(filepath.Dir(curProcPath), "..", "dist", "plugin.json"),
+		filepath.Join(filepath.Dir(curProcPath), "dist", "plugin.json"),
 		filepath.Join(cwd, "dist", "plugin.json"),
 		filepath.Join(cwd, "plugin.json"),
 	}
 
 	for _, path := range check {
 		if _, err := os.Stat(path); err == nil {
-			return filepath.Dir(path), nil
+			return filepath.Dir(path), true
 		}
 	}
 
-	return "", fmt.Errorf("can not find plugin.json in: %v", check)
-}
-
-// debuggedEnabled returns true if the plugin should run in debug mode.
-// It will first check the -debug flag and the name of the running process.
-func debuggerEnabled(curProcPath string) bool {
-	flag.Parse()
-
-	// VsCode names the file "__debug_bin"
-	vsCodeDebug := strings.HasPrefix(filepath.Base(curProcPath), "__debug_bin")
-	// GoLand places it in:
-	//  Linux: /tmp/GoLand/___%d%(CONFIGNAME)s_pkg
-	//  Mac OS X: /private/var/folders/lx/XXX/T/GoLand/___%d%(CONFIGNAME)s_pkg
-	//  Windows: C:\Users\USER\AppData\Local\Temp\GoLand\___%d%(CONFIGNAME)s_pkg.exe
-	// We also want to confirm we're not running a test through Goland, as that could lead to a false positive
-	// since all processes will match the below pattern.
-	goLandDebug := strings.Contains(curProcPath, filepath.Join("GoLand", "___")) && filepath.Ext(curProcPath) != ".test"
-	df := *debugEnabled
-	return df || vsCodeDebug || goLandDebug
+	return "", false
 }
 
 func getStandaloneAddress(pluginID string, dir string) (string, error) {
