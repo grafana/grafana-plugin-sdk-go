@@ -20,16 +20,6 @@ func TestServerModeEnabled(t *testing.T) {
 		require.Empty(t, settings)
 	})
 
-	t.Run("Enabled by env var", func(t *testing.T) {
-		t.Setenv("GF_PLUGIN_GRPC_STANDALONE_GRAFANA_TEST_DATASOURCE", "true")
-
-		settings, enabled := ServerModeEnabled(pluginID)
-		require.True(t, enabled)
-		require.False(t, settings.Debugger)
-		require.NotEmpty(t, settings.Address)
-		require.NotEmpty(t, settings.Dir)
-	})
-
 	t.Run("Enabled by flag", func(t *testing.T) {
 		before := standaloneEnabled
 		t.Cleanup(func() {
@@ -70,7 +60,12 @@ func TestServerModeEnabled(t *testing.T) {
 				require.NoError(t, err)
 			})
 
-			t.Setenv("GF_PLUGIN_GRPC_STANDALONE_GRAFANA_TEST_DATASOURCE", "true")
+			before = standaloneEnabled
+			t.Cleanup(func() {
+				standaloneEnabled = before
+			})
+			standaloneEnabled = &truthy
+
 			settings, enabled = ServerModeEnabled(pluginID)
 			require.True(t, enabled)
 			require.True(t, settings.Debugger)

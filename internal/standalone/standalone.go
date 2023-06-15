@@ -45,15 +45,7 @@ type ClientSettings struct {
 func ServerModeEnabled(pluginID string) (ServerSettings, bool) {
 	flag.Parse() // Parse the flags so that we can check values for -standalone and -debug
 
-	var enabled bool
-	standaloneEnvVar := "GF_PLUGIN_GRPC_STANDALONE_" + strings.ReplaceAll(strings.ToUpper(pluginID), "-", "_")
-	if v, ok := os.LookupEnv(standaloneEnvVar); ok && v == "true" {
-		enabled = true
-	}
-
-	enabled = enabled || *standaloneEnabled
-
-	if enabled {
+	if *standaloneEnabled {
 		s, err := serverSettings(pluginID)
 		if err != nil {
 			log.Printf("Error: %s", err.Error())
@@ -187,7 +179,8 @@ func debuggerEnabled(curProcPath string) bool {
 	//  Linux: /tmp/GoLand/___%d%(CONFIGNAME)s_pkg
 	//  Mac OS X: /private/var/folders/lx/XXX/T/GoLand/___%d%(CONFIGNAME)s_pkg
 	//  Windows: C:\Users\USER\AppData\Local\Temp\GoLand\___%d%(CONFIGNAME)s_pkg.exe
-	// Note: We also want to confirm we're not running a Go test binary
+	// We also want to confirm we're not running a test through Goland, as that could lead to a false positive
+	// since all processes will match the below pattern.
 	goLandDebug := strings.Contains(curProcPath, filepath.Join("GoLand", "___")) && filepath.Ext(curProcPath) != ".test"
 	df := *debugEnabled
 	return df || vsCodeDebug || goLandDebug
