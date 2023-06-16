@@ -58,6 +58,7 @@ func ServerModeEnabled(pluginID string) (ServerSettings, bool) {
 func ClientModeEnabled(pluginID string) (ClientSettings, bool) {
 	s, err := clientSettings(pluginID)
 	if err != nil {
+		log.Printf("Error: %s", err.Error())
 		return ClientSettings{}, false
 	}
 
@@ -111,7 +112,7 @@ func clientSettings(pluginID string) (ClientSettings, error) {
 	}
 
 	if standaloneAddress == "" {
-		return ClientSettings{}, fmt.Errorf("address is empty")
+		return ClientSettings{}, errors.New("address is empty")
 	}
 
 	standalonePID, err := getStandalonePID(dir)
