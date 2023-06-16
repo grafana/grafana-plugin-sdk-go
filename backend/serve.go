@@ -251,3 +251,62 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 	// The default/normal hashicorp path.
 	return Serve(serveOpts)
 }
+
+// TestStandaloneServe starts a gRPC server that is not managed by hashicorp.
+// The function returns a cleanup function that should be called when the server is no longer required.
+func TestStandaloneServe(dsopts ServeOpts, address string) (*grpc.Server, error) {
+	pluginOpts := asGRPCServeOpts(dsopts)
+	if pluginOpts.GRPCServer == nil {
+		pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
+			return grpc.NewServer(append(defaultGRPCMiddlewares(dsopts), grpcOptions...)...)
+		}
+	}
+
+	server := pluginOpts.GRPCServer(nil)
+
+	var plugKeys []string
+	if pluginOpts.DiagnosticsServer != nil {
+		pluginv2.RegisterDiagnosticsServer(server, pluginOpts.DiagnosticsServer)
+		plugKeys = append(plugKeys, "diagnostics")
+	}
+
+	if pluginOpts.ResourceServer != nil {
+		pluginv2.RegisterResourceServer(server, pluginOpts.ResourceServer)
+		plugKeys = append(plugKeys, "resources")
+	}
+
+	if pluginOpts.DataServer != nil {
+		pluginv2.RegisterDataServer(server, pluginOpts.DataServer)
+		plugKeys = append(plugKeys, "data")
+	}
+
+	if pluginOpts.StreamServer != nil {
+		pluginv2.RegisterStreamServer(server, pluginOpts.StreamServer)
+		plugKeys = append(plugKeys, "stream")
+	}
+
+	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
+	log.DefaultLogger.Info("Standalone plugin server", "capabilities", plugKeys)
+	listener, err := net.Listen("tcp", address)
+	if err != nil {
+		return nil, err
+	}
+
+	serverErrChan := make(chan error, 1)
+	// Start GRPC server in a separate goroutine
+	go func() {
+		serverErrChan <- server.Serve(listener)
+	}()
+
+	// Wait until signal or GRPC server termination in a separate goroutine
+	go func() {
+		select {
+		case err := <-serverErrChan:
+			if err != nil {
+				log.DefaultLogger.Error("Server experienced an error", "error", err)
+			}
+		}
+	}()
+
+	return server, nil
+}
