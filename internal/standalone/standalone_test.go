@@ -1,68 +1,168 @@
 package standalone
 
 import (
+	"os"
+	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 )
 
-func TestGetInfo(t *testing.T) {
-	t.Run("normal", func(t *testing.T) {
-		info, err := getInfo("plugin", "testdata/plugin/gpx_plugin", false, false)
-		require.NoError(t, err)
-		require.False(t, info.Standalone)
-		require.False(t, info.Debugger)
+const (
+	pluginID = "grafana-test-datasource"
+	addr     = "localhost:1234"
+)
+
+func TestServerModeEnabled(t *testing.T) {
+	t.Run("Disabled by default", func(t *testing.T) {
+		settings, enabled := ServerModeEnabled(pluginID)
+		require.False(t, enabled)
+		require.Empty(t, settings)
 	})
 
-	t.Run("standalone", func(t *testing.T) {
-		t.Run("without debug flag", func(t *testing.T) {
-			info, err := getInfo("plugin", "testdata/plugin/gpx_plugin", true, false)
+	t.Run("Enabled by flag", func(t *testing.T) {
+		before := standaloneEnabled
+		t.Cleanup(func() {
+			standaloneEnabled = before
+		})
+		truthy := true
+		standaloneEnabled = &truthy
+
+		curProcPath, err := os.Executable()
+		require.NoError(t, err)
+
+		settings, enabled := ServerModeEnabled(pluginID)
+		require.True(t, enabled)
+		require.NotEmpty(t, settings.Address)
+		require.Equal(t, filepath.Dir(curProcPath), settings.Dir)
+	})
+
+	t.Run("Nearby dist folder will be used as server directory",
+		func(t *testing.T) {
+			curProcPath, err := os.Executable()
 			require.NoError(t, err)
-			require.True(t, info.Standalone)
-			require.False(t, info.Debugger)
-			// No random free port, must be read from standalone.txt
-			require.Empty(t, info.Address)
+
+			procDir := filepath.Dir(curProcPath)
+			distDir := filepath.Join(procDir, "dist")
+
+			err = os.MkdirAll(distDir, 0755)
+			require.NoError(t, err)
+			_, err = os.Create(filepath.Join(distDir, "plugin.json"))
+			require.NoError(t, err)
+			t.Cleanup(func() {
+				err = os.RemoveAll(distDir)
+				require.NoError(t, err)
+			})
+
+			before := standaloneEnabled
+			t.Cleanup(func() {
+				standaloneEnabled = before
+			})
+			truthy := true
+			standaloneEnabled = &truthy
+
+			settings, enabled := ServerModeEnabled(pluginID)
+			require.True(t, enabled)
+			require.NotEmpty(t, settings.Address)
+			require.Equal(t, distDir, settings.Dir)
+		})
+}
+
+func TestClientModeEnabled(t *testing.T) {
+	t.Run("Disabled by default", func(t *testing.T) {
+		settings, enabled := ClientModeEnabled(pluginID)
+		require.False(t, enabled)
+		require.Empty(t, settings)
+	})
+
+	t.Run("Enabled by env var", func(t *testing.T) {
+		t.Setenv("GF_PLUGIN_GRPC_ADDRESS_GRAFANA_TEST_DATASOURCE", addr)
+
+		settings, enabled := ClientModeEnabled(pluginID)
+		require.True(t, enabled)
+		require.Equal(t, addr, settings.TargetAddress)
+		require.Zero(t, settings.TargetPID)
+	})
+
+	t.Run("Enabled by standalone.txt file with valid address", func(t *testing.T) {
+		curProcPath, err := os.Executable()
+		require.NoError(t, err)
+
+		dir := filepath.Dir(curProcPath)
+
+		file, err := os.Create(filepath.Join(dir, "standalone.txt"))
+		require.NoError(t, err)
+		_, err = file.WriteString(addr)
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			err = os.Remove(file.Name())
+			require.NoError(t, err)
 		})
 
-		t.Run("with debug flag", func(t *testing.T) {
-			info, err := getInfo("plugin", "testdata/plugin/gpx_plugin", true, true)
+		settings, enabled := ClientModeEnabled(pluginID)
+		require.True(t, enabled)
+		require.Equal(t, addr, settings.TargetAddress)
+		require.Zero(t, settings.TargetPID)
+	})
+
+	t.Run("Disabled if standalone.txt does not contain a valid address", func(t *testing.T) {
+		curProcPath, err := os.Executable()
+		require.NoError(t, err)
+
+		dir := filepath.Dir(curProcPath)
+
+		file, err := os.Create(filepath.Join(dir, "standalone.txt"))
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			err = os.Remove(file.Name())
 			require.NoError(t, err)
-			require.True(t, info.Standalone)
-			require.True(t, info.Debugger)
-			// Should have a random free port
-			require.NotEmpty(t, info.Address)
 		})
 
-		t.Run("with debug executable", func(t *testing.T) {
-			for _, fn := range []string{
-				// VsCode
-				"testdata/plugin/__debug_bin",
-				"testdata/plugin/__debug_bin.exe",
-				// GoLand: Default run config name
-				"testdata/GoLand/___XXgo_build_github_com_PACKAGENAME_pkg",
-				"testdata/GoLand/___XXgo_build_github_com_PACKAGENAME_pkg.exe",
-				// GoLand: Different run config name
-				"testdata/GoLand/___1PLUGIN",
-				"testdata/GoLand/___1PLUGIN.exe",
-			} {
-				t.Run(fn, func(t *testing.T) {
-					info, err := getInfo("plugin", fn, true, false)
-					require.NoError(t, err)
-					require.True(t, info.Standalone)
-					require.True(t, info.Debugger)
-					// Should have a random free port
-					require.NotEmpty(t, info.Address)
-				})
-			}
+		settings, enabled := ClientModeEnabled(pluginID)
+		require.False(t, enabled)
+		require.Empty(t, settings.TargetAddress)
+		require.Zero(t, settings.TargetPID)
+	})
+
+	t.Run("Enabled if pid.txt exists, but is empty", func(t *testing.T) {
+		t.Setenv("GF_PLUGIN_GRPC_ADDRESS_GRAFANA_TEST_DATASOURCE", addr)
+
+		curProcPath, err := os.Executable()
+		require.NoError(t, err)
+
+		dir := filepath.Dir(curProcPath)
+		file, err := os.Create(filepath.Join(dir, "pid.txt"))
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			err = os.Remove(file.Name())
+			require.NoError(t, err)
 		})
 
-		t.Run("no debug with standalone.txt file", func(t *testing.T) {
-			info, err := getInfo("plugin", "testdata/standalone-txt/gpx_plugin", true, false)
+		settings, enabled := ClientModeEnabled(pluginID)
+		require.True(t, enabled)
+		require.Equal(t, addr, settings.TargetAddress)
+		require.Zero(t, settings.TargetPID)
+	})
+
+	t.Run("Disabled if pid.txt exists, but has invalid pid", func(t *testing.T) {
+		t.Setenv("GF_PLUGIN_GRPC_ADDRESS_GRAFANA_TEST_DATASOURCE", addr)
+
+		curProcPath, err := os.Executable()
+		require.NoError(t, err)
+
+		dir := filepath.Dir(curProcPath)
+		file, err := os.Create(filepath.Join(dir, "pid.txt"))
+		require.NoError(t, err)
+		_, err = file.WriteString("100000000000000")
+		require.NoError(t, err)
+		t.Cleanup(func() {
+			err = os.Remove(file.Name())
 			require.NoError(t, err)
-			require.True(t, info.Standalone)
-			require.False(t, info.Debugger)
-			// Read from standalone.txt
-			require.Equal(t, ":1234", info.Address)
 		})
+
+		settings, enabled := ClientModeEnabled(pluginID)
+		require.False(t, enabled)
+		require.Empty(t, settings.TargetAddress)
+		require.Zero(t, settings.TargetPID)
 	})
 }
