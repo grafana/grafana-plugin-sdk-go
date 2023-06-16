@@ -300,11 +300,9 @@ func TestStandaloneServe(dsopts ServeOpts, address string) (*grpc.Server, error)
 
 	// Wait until signal or GRPC server termination in a separate goroutine
 	go func() {
-		select {
-		case err := <-serverErrChan:
-			if err != nil {
-				log.DefaultLogger.Error("Server experienced an error", "error", err)
-			}
+		err := <-serverErrChan
+		if err != nil {
+			log.DefaultLogger.Error("Server experienced an error", "error", err)
 		}
 	}()
 
