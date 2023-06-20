@@ -43,7 +43,7 @@ type FrameMeta struct {
 
 	// PreferredVisualizationPluginId sets the panel plugin id to use to render the data when using Explore. If
 	// the plugin cannot be found will fall back to PreferredVisualization.
-	PreferredVisualizationPluginId string `json:"preferredVisualisationPluginId,omitempty"`
+	PreferredVisualizationPluginID string `json:"preferredVisualisationPluginId,omitempty"`
 
 	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
