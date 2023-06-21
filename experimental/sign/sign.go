@@ -1,22 +1,22 @@
 package sign
 
 import (
-	"crypto"
 	"crypto/ecdsa"
-	"crypto/rand"
 	"crypto/rsa"
-	"crypto/sha256"
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
 	"fmt"
+
+	"github.com/go-jose/go-jose/v3"
+	"github.com/go-jose/go-jose/v3/jwt"
 )
 
-// Signer is an interface for signing data.
-type Signer interface {
+// JWTSigner is an interface for signing data.
+type JWTSigner interface {
 	// Sign returns raw signature for the given data. This method
 	// will apply the hash specified for the key type to the data.
-	SignSHA256(data []byte) ([]byte, error)
+	Sign(data interface{}) (string, error)
 	// Alg returns the algorithm used to create the signature.
 	Alg() string
 }
@@ -25,11 +25,8 @@ type rsaPrivateKey struct {
 	*rsa.PrivateKey
 }
 
-func (r *rsaPrivateKey) SignSHA256(data []byte) ([]byte, error) {
-	h := sha256.New()
-	h.Write(data)
-	d := h.Sum(nil)
-	return rsa.SignPKCS1v15(rand.Reader, r.PrivateKey, crypto.SHA256, d)
+func (r *rsaPrivateKey) Sign(data interface{}) (string, error) {
+	return signJWT(jose.SignatureAlgorithm(r.Alg()), r.PrivateKey, data)
 }
 
 func (r *rsaPrivateKey) Alg() string {
@@ -40,35 +37,16 @@ type ecdsaPrivateKey struct {
 	*ecdsa.PrivateKey
 }
 
-func (r *ecdsaPrivateKey) SignSHA256(data []byte) ([]byte, error) {
-	h := sha256.New()
-	h.Write(data)
-	d := h.Sum(nil)
-
-	rr, s, err := ecdsa.Sign(rand.Reader, r.PrivateKey, d)
-	if err != nil {
-		panic(err)
-	}
-
-	keyBytes := 32
-
-	rBytes := rr.Bytes()
-	rBytesPadded := make([]byte, keyBytes)
-	copy(rBytesPadded[keyBytes-len(rBytes):], rBytes)
-
-	sBytes := s.Bytes()
-	sBytesPadded := make([]byte, keyBytes)
-	copy(sBytesPadded[keyBytes-len(sBytes):], sBytes)
-
-	return append(rBytesPadded, sBytesPadded...), nil
+func (r *ecdsaPrivateKey) Sign(data interface{}) (string, error) {
+	return signJWT(jose.SignatureAlgorithm(r.Alg()), r.PrivateKey, data)
 }
 
 func (r *ecdsaPrivateKey) Alg() string {
 	return "ES256"
 }
 
-func newSignerFromKey(k interface{}) (Signer, error) {
-	var sshKey Signer
+func newSignerFromKey(k interface{}) (JWTSigner, error) {
+	var sshKey JWTSigner
 	switch t := k.(type) {
 	case *rsa.PrivateKey:
 		sshKey = &rsaPrivateKey{t}
@@ -80,8 +58,21 @@ func newSignerFromKey(k interface{}) (Signer, error) {
 	return sshKey, nil
 }
 
+func signJWT(alg jose.SignatureAlgorithm, privateKey interface{}, payload interface{}) (string, error) {
+	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: alg, Key: privateKey}, &jose.SignerOptions{})
+	if err != nil {
+		return "", err
+	}
+
+	result, err := jwt.Signed(signer).Claims(payload).CompactSerialize()
+	if err != nil {
+		return "", err
+	}
+	return result, nil
+}
+
 // ParsePrivateKey parses a PEM encoded private key.
-func ParsePrivateKey(pemBytes []byte) (Signer, error) {
+func ParsePrivateKey(pemBytes []byte) (JWTSigner, error) {
 	block, _ := pem.Decode(pemBytes)
 	if block == nil {
 		return nil, errors.New("crypto: no key found")
