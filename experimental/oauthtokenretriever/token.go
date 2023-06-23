@@ -1,24 +1,24 @@
 package oauthtokenretriever
 
 import (
-	"bytes"
-	"encoding/json"
+	"context"
 	"fmt"
-	"io"
-	"net/http"
-	"net/url"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
+	"golang.org/x/oauth2"
 )
 
-type tokenRetriever struct {
-	GrafanaAppURL string
-	ClientID      string
-	ClientSecret  string
-	HTTPClient    *http.Client
+type TokenRetriever interface {
+	OnBehalfOfUser(userID string) (string, error)
+	Self() (string, error)
+}
 
+type tokenRetriever struct {
 	signer signer
+	conf   *oauth2.Config
 }
 
 // tokenPayload returns a JWT payload for the given user ID, client ID, and host.
@@ -27,9 +27,9 @@ func (t *tokenRetriever) tokenPayload(userID string) map[string]interface{} {
 	exp := iat + 1800
 	u := uuid.New()
 	payload := map[string]interface{}{
-		"iss": t.ClientID,
+		"iss": t.conf.ClientID,
 		"sub": fmt.Sprintf("user:id:%s", userID),
-		"aud": t.GrafanaAppURL + "/oauth2/token",
+		"aud": t.conf.Endpoint.TokenURL,
 		"exp": exp,
 		"iat": iat,
 		"jti": u.String(),
@@ -37,92 +37,72 @@ func (t *tokenRetriever) tokenPayload(userID string) map[string]interface{} {
 	return payload
 }
 
-type jwtBearer struct {
-	AccessToken string `json:"access_token"`
-	ExpiresIn   int    `json:"expires_in"`
-	Scope       string `json:"scope"`
-	TokenType   string `json:"token_type"`
+func (t *tokenRetriever) Self() (string, error) {
+	tok, err := t.conf.Exchange(context.Background(), "",
+		oauth2.SetAuthURLParam("grant_type", "client_credentials"),
+		oauth2.SetAuthURLParam("scope", "profile email entitlements"),
+	)
+	if err != nil {
+		return "", err
+	}
+	return tok.AccessToken, nil
 }
 
-// retrieveJWTBearerToken returns a JWT bearer token for the given user ID.
-func (t *tokenRetriever) retrieveJWTBearerToken(userID string) (string, error) {
+func (t *tokenRetriever) OnBehalfOfUser(userID string) (string, error) {
 	signed, err := t.signer.sign(t.tokenPayload(userID))
 	if err != nil {
-		return "", fmt.Errorf(fmt.Sprintf("Could not sign the request: %v", err))
-	}
-
-	requestParams := url.Values{}
-	requestParams.Add("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer")
-	requestParams.Add("assertion", signed)
-	requestParams.Add("client_id", t.ClientID)
-	requestParams.Add("client_secret", t.ClientSecret)
-	requestParams.Add("scope", "profile email entitlements")
-	buff := bytes.NewBufferString(requestParams.Encode())
-
-	return t.postTokenRequest(buff)
-}
-
-// retrieveSelfToken returns a JWT bearer token for the service account created with the app.
-func (t *tokenRetriever) retrieveSelfToken() (string, error) {
-	requestParams := url.Values{}
-	requestParams.Add("grant_type", "client_credentials")
-	requestParams.Add("client_id", t.ClientID)
-	requestParams.Add("client_secret", t.ClientSecret)
-	requestParams.Add("scope", "profile email entitlements")
-	buff := bytes.NewBufferString(requestParams.Encode())
-
-	return t.postTokenRequest(buff)
-}
-
-// postTokenRequest posts the given request body to the token endpoint and returns the access token.
-func (t *tokenRetriever) postTokenRequest(buff *bytes.Buffer) (string, error) {
-	req, err := http.NewRequest("POST", t.GrafanaAppURL+"/oauth2/token", buff)
-	if err != nil {
 		return "", err
 	}
-	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 
-	resp, err := t.HTTPClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
+	tok, err := t.conf.Exchange(context.Background(), "",
+		oauth2.SetAuthURLParam("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
+		oauth2.SetAuthURLParam("assertion", signed),
+		oauth2.SetAuthURLParam("scope", "profile email entitlements"),
+	)
 	if err != nil {
 		return "", err
 	}
 
-	var bearer jwtBearer
-	err = json.Unmarshal(body, &bearer)
-	if err != nil {
-		return "", err
+	return tok.AccessToken, nil
+}
+
+func New() (TokenRetriever, error) {
+	// The Grafana URL is required to obtain tokens later on
+	grafanaAppURL := strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
+	if grafanaAppURL == "" {
+		// For debugging purposes only
+		grafanaAppURL = "http://localhost:3000"
 	}
 
-	return bearer.AccessToken, nil
-}
-
-type TokenRetriever interface {
-	GetExternalServiceToken(userID string) (string, error)
-}
-
-func (t *tokenRetriever) GetExternalServiceToken(userID string) (string, error) {
-	if userID == "" {
-		return t.retrieveSelfToken()
+	clientID := os.Getenv("GF_PLUGIN_APP_CLIENT_ID")
+	if clientID == "" {
+		return nil, fmt.Errorf("GF_PLUGIN_APP_CLIENT_ID is required")
 	}
-	return t.retrieveJWTBearerToken(userID)
-}
 
-func New(httpClient *http.Client, grafanaAppURL string, externalSvcClientID string, externalSvcClientSecret string, externalSvcPrivateKey string) (TokenRetriever, error) {
-	signer, err := parsePrivateKey([]byte(externalSvcPrivateKey))
+	clientSecret := os.Getenv("GF_PLUGIN_APP_CLIENT_SECRET")
+	if clientSecret == "" {
+		return nil, fmt.Errorf("GF_PLUGIN_APP_CLIENT_SECRET is required")
+	}
+
+	privateKey := os.Getenv("GF_PLUGIN_APP_PRIVATE_KEY")
+	if privateKey == "" {
+		return nil, fmt.Errorf("GF_PLUGIN_APP_PRIVATE_KEY is required")
+	}
+
+	signer, err := parsePrivateKey([]byte(privateKey))
 	if err != nil {
 		return nil, err
 	}
+
 	return &tokenRetriever{
-		GrafanaAppURL: grafanaAppURL,
-		ClientID:      externalSvcClientID,
-		ClientSecret:  externalSvcClientSecret,
-		HTTPClient:    httpClient,
-		signer:        signer,
+		signer: signer,
+		conf: &oauth2.Config{
+			ClientID:     clientID,
+			ClientSecret: clientSecret,
+			Endpoint: oauth2.Endpoint{
+				TokenURL:  grafanaAppURL + "/oauth2/token",
+				AuthStyle: oauth2.AuthStyleInParams,
+			},
+		},
 	}, nil
 }
