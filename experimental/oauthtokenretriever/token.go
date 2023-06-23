@@ -3,12 +3,14 @@ package oauthtokenretriever
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 	"strings"
 	"time"
 
 	"github.com/google/uuid"
 	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/clientcredentials"
 )
 
 type TokenRetriever interface {
@@ -18,7 +20,7 @@ type TokenRetriever interface {
 
 type tokenRetriever struct {
 	signer signer
-	conf   *oauth2.Config
+	conf   *clientcredentials.Config
 }
 
 // tokenPayload returns a JWT payload for the given user ID, client ID, and host.
@@ -29,7 +31,7 @@ func (t *tokenRetriever) tokenPayload(userID string) map[string]interface{} {
 	payload := map[string]interface{}{
 		"iss": t.conf.ClientID,
 		"sub": fmt.Sprintf("user:id:%s", userID),
-		"aud": t.conf.Endpoint.TokenURL,
+		"aud": t.conf.TokenURL,
 		"exp": exp,
 		"iat": iat,
 		"jti": u.String(),
@@ -38,10 +40,8 @@ func (t *tokenRetriever) tokenPayload(userID string) map[string]interface{} {
 }
 
 func (t *tokenRetriever) Self() (string, error) {
-	tok, err := t.conf.Exchange(context.Background(), "",
-		oauth2.SetAuthURLParam("grant_type", "client_credentials"),
-		oauth2.SetAuthURLParam("scope", "profile email entitlements"),
-	)
+	t.conf.EndpointParams = url.Values{}
+	tok, err := t.conf.TokenSource(context.Background()).Token()
 	if err != nil {
 		return "", err
 	}
@@ -54,11 +54,11 @@ func (t *tokenRetriever) OnBehalfOfUser(userID string) (string, error) {
 		return "", err
 	}
 
-	tok, err := t.conf.Exchange(context.Background(), "",
-		oauth2.SetAuthURLParam("grant_type", "urn:ietf:params:oauth:grant-type:jwt-bearer"),
-		oauth2.SetAuthURLParam("assertion", signed),
-		oauth2.SetAuthURLParam("scope", "profile email entitlements"),
-	)
+	t.conf.EndpointParams = url.Values{
+		"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
+		"assertion":  {signed},
+	}
+	tok, err := t.conf.TokenSource(context.Background()).Token()
 	if err != nil {
 		return "", err
 	}
@@ -96,13 +96,12 @@ func New() (TokenRetriever, error) {
 
 	return &tokenRetriever{
 		signer: signer,
-		conf: &oauth2.Config{
+		conf: &clientcredentials.Config{
 			ClientID:     clientID,
 			ClientSecret: clientSecret,
-			Endpoint: oauth2.Endpoint{
-				TokenURL:  grafanaAppURL + "/oauth2/token",
-				AuthStyle: oauth2.AuthStyleInParams,
-			},
+			TokenURL:     grafanaAppURL + "/oauth2/token",
+			AuthStyle:    oauth2.AuthStyleInParams,
+			Scopes:       []string{"profile", "email", "entitlements"},
 		},
 	}, nil
 }
