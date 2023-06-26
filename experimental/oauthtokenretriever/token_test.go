@@ -1,6 +1,7 @@
 package oauthtokenretriever
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -52,9 +53,9 @@ func Test_GetExternalServiceToken(t *testing.T) {
 
 			var token string
 			if test.userID != "" {
-				token, err = ss.OnBehalfOfUser(test.userID)
+				token, err = ss.OnBehalfOfUser(context.Background(), test.userID)
 			} else {
-				token, err = ss.Self()
+				token, err = ss.Self(context.Background())
 			}
 			assert.NoError(t, err)
 			assert.Equal(t, "test_token", token)
