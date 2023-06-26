@@ -14,8 +14,8 @@ import (
 )
 
 type TokenRetriever interface {
-	OnBehalfOfUser(userID string) (string, error)
-	Self() (string, error)
+	OnBehalfOfUser(ctx context.Context, userID string) (string, error)
+	Self(ctx context.Context) (string, error)
 }
 
 type tokenRetriever struct {
@@ -39,16 +39,16 @@ func (t *tokenRetriever) tokenPayload(userID string) map[string]interface{} {
 	return payload
 }
 
-func (t *tokenRetriever) Self() (string, error) {
+func (t *tokenRetriever) Self(ctx context.Context) (string, error) {
 	t.conf.EndpointParams = url.Values{}
-	tok, err := t.conf.TokenSource(context.Background()).Token()
+	tok, err := t.conf.TokenSource(ctx).Token()
 	if err != nil {
 		return "", err
 	}
 	return tok.AccessToken, nil
 }
 
-func (t *tokenRetriever) OnBehalfOfUser(userID string) (string, error) {
+func (t *tokenRetriever) OnBehalfOfUser(ctx context.Context, userID string) (string, error) {
 	signed, err := t.signer.sign(t.tokenPayload(userID))
 	if err != nil {
 		return "", err
@@ -58,7 +58,7 @@ func (t *tokenRetriever) OnBehalfOfUser(userID string) (string, error) {
 		"grant_type": {"urn:ietf:params:oauth:grant-type:jwt-bearer"},
 		"assertion":  {signed},
 	}
-	tok, err := t.conf.TokenSource(context.Background()).Token()
+	tok, err := t.conf.TokenSource(ctx).Token()
 	if err != nil {
 		return "", err
 	}
