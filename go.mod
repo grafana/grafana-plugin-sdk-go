@@ -31,6 +31,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
 	github.com/elazarl/goproxy v0.0.0-20220115173737-adb46da277ac
 	github.com/getkin/kin-openapi v0.112.0
+	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/google/uuid v1.3.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
 	github.com/urfave/cli v1.22.12
@@ -56,7 +57,6 @@ require (
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/elazarl/goproxy/ext v0.0.0-20220115173737-adb46da277ac // indirect
 	github.com/fatih/color v1.15.0 // indirect
-	github.com/go-jose/go-jose/v3 v3.0.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/jsonpointer v0.19.5 // indirect
@@ -87,7 +87,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/internal/retry v1.14.0 // indirect
 	go.opentelemetry.io/otel/metric v0.37.0 // indirect
 	go.opentelemetry.io/proto/otlp v0.19.0 // indirect
-	golang.org/x/crypto v0.0.0-20200622213623-75b288015ac9 // indirect
+	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 	google.golang.org/genproto v0.0.0-20230410155749-daa745c078e1 // indirect
