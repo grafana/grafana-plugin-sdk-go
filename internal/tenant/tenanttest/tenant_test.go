@@ -27,7 +27,7 @@ func TestTenantWithPluginInstanceManagement(t *testing.T) {
 		factoryInvocations++
 		return &testPlugin{}, nil
 	})
-	tp, err := experimentalDS.Manage(factory, experimentalDS.ManageTestOpts{Address: addr})
+	tp, err := experimentalDS.Manage(factory, experimentalDS.ManageOpts{Address: addr})
 	require.NoError(t, err)
 	defer func() {
 		err = tp.Client.Shutdown()
