@@ -10,7 +10,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	experimentalDS "github.com/grafana/grafana-plugin-sdk-go/experimental/datasource"
+	experimentalDS "github.com/grafana/grafana-plugin-sdk-go/experimental/datasourcetest"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -27,7 +27,7 @@ func TestTenantWithPluginInstanceManagement(t *testing.T) {
 		factoryInvocations++
 		return &testPlugin{}, nil
 	})
-	tp, err := experimentalDS.ManageForTest(factory, experimentalDS.ManageTestOpts{Address: addr})
+	tp, err := experimentalDS.Manage(factory, experimentalDS.ManageTestOpts{Address: addr})
 	require.NoError(t, err)
 	defer func() {
 		err = tp.Client.Shutdown()

@@ -1,4 +1,4 @@
-package datasource
+package datasourcetest
 
 import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -6,7 +6,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 )
 
-type ManageTestOpts struct {
+type ManageOpts struct {
 	Address string
 }
 
@@ -15,7 +15,7 @@ type TestPlugin struct {
 	Server *TestPluginServer
 }
 
-func ManageForTest(instanceFactory datasource.InstanceFactoryFunc, opts ManageTestOpts) (TestPlugin, error) {
+func Manage(instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) (TestPlugin, error) {
 	handler := automanagement.NewManager(datasource.NewInstanceManager(instanceFactory))
 	s, err := backend.TestStandaloneServe(backend.ServeOpts{
 		CheckHealthHandler:  handler,
