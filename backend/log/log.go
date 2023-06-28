@@ -44,6 +44,20 @@ func NewWithLevel(level Level) Logger {
 	}
 }
 
+type NopLogger struct{}
+
+func (n *NopLogger) Debug(msg string, args ...interface{}) {}
+
+func (n *NopLogger) Info(msg string, args ...interface{}) {}
+
+func (n *NopLogger) Warn(msg string, args ...interface{}) {}
+
+func (n *NopLogger) Error(msg string, args ...interface{}) {}
+
+func (n *NopLogger) Level() Level {
+	return NoLevel
+}
+
 type hclogWrapper struct {
 	logger hclog.Logger
 }
