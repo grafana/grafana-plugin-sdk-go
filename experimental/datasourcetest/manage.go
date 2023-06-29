@@ -15,6 +15,17 @@ type TestPlugin struct {
 	Server *TestPluginServer
 }
 
+func (p *TestPlugin) Shutdown() error {
+	if p.Server != nil {
+		p.Server.shutdown()
+	}
+
+	if p.Client != nil {
+		return p.Client.shutdown()
+	}
+	return nil
+}
+
 func Manage(instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) (TestPlugin, error) {
 	handler := automanagement.NewManager(datasource.NewInstanceManager(instanceFactory))
 	s, err := backend.TestStandaloneServe(backend.ServeOpts{

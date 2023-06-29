@@ -11,7 +11,6 @@ func newTestPluginServer(s *grpc.Server) *TestPluginServer {
 		srv: s,
 	}
 }
-func (s *TestPluginServer) Shutdown() error {
+func (s *TestPluginServer) shutdown() {
 	s.srv.Stop()
-	return nil
 }

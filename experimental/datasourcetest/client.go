@@ -91,6 +91,6 @@ func (p *TestPluginClient) CallResource(ctx context.Context, r *backend.CallReso
 	}
 }
 
-func (p *TestPluginClient) Shutdown() error {
+func (p *TestPluginClient) shutdown() error {
 	return p.conn.Close()
 }

@@ -30,10 +30,8 @@ func TestTenantWithPluginInstanceManagement(t *testing.T) {
 	tp, err := experimentalDS.Manage(factory, experimentalDS.ManageOpts{Address: addr})
 	require.NoError(t, err)
 	defer func() {
-		err = tp.Client.Shutdown()
-		t.Log("client shutdown error", err)
-		err = tp.Server.Shutdown()
-		t.Log("server shutdown error", err)
+		err = tp.Shutdown()
+		t.Log("plugin shutdown error", err)
 	}()
 
 	t.Run("Request without tenant information creates an instance", func(t *testing.T) {
