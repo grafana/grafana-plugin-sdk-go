@@ -253,12 +253,12 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 }
 
 // TestStandaloneServe starts a gRPC server that is not managed by hashicorp.
-// The function returns a cleanup function that should be called when the server is no longer required.
-func TestStandaloneServe(dsopts ServeOpts, address string) (*grpc.Server, error) {
-	pluginOpts := asGRPCServeOpts(dsopts)
+// The function returns the gRPC server which should be closed by the consumer.
+func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
+	pluginOpts := asGRPCServeOpts(opts)
 	if pluginOpts.GRPCServer == nil {
 		pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
-			return grpc.NewServer(append(defaultGRPCMiddlewares(dsopts), grpcOptions...)...)
+			return grpc.NewServer(append(defaultGRPCMiddlewares(opts), grpcOptions...)...)
 		}
 	}
 
