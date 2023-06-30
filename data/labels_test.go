@@ -83,3 +83,32 @@ func TestLabelsFromString(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, result, data.Labels{"method": "GET"})
 }
+
+func TestLabelsFingerprint(t *testing.T) {
+	testCases := []struct {
+		name        string
+		labels      data.Labels
+		fingerprint data.Fingerprint
+	}{
+		{
+			name:        "should work if nil",
+			labels:      nil,
+			fingerprint: data.Fingerprint(0xcbf29ce484222325),
+		},
+		{
+			name:        "should work if empty",
+			labels:      make(data.Labels),
+			fingerprint: data.Fingerprint(0xcbf29ce484222325),
+		},
+		{
+			name:        "should calculate hash",
+			labels:      data.Labels{"a": "AAA", "b": "BBB", "c": "CCC", "d": "DDD"},
+			fingerprint: data.Fingerprint(0xfb4532f90d896635),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			require.Equal(t, testCase.fingerprint, testCase.labels.Fingerprint())
+		})
+	}
+}
