@@ -4,9 +4,20 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
+)
+
+var (
+	datasourceInstancesCreated = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "plugins",
+		Name:      "datasource_instances_total",
+		Help:      "The total number of data source instances created",
+	})
 )
 
 // InstanceFactoryFunc factory method for creating data source instances.
@@ -62,5 +73,6 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 }
 
 func (ip *instanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
+	datasourceInstancesCreated.Inc()
 	return ip.factory(*pluginContext.DataSourceInstanceSettings)
 }
