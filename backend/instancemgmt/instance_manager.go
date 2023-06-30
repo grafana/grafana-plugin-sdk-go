@@ -5,7 +5,18 @@ import (
 	"reflect"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+)
+
+var (
+	activeInstances = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: "plugins",
+		Name:      "active_instances",
+		Help:      "The number of active plugin instances",
+	})
 )
 
 // Instance is a marker interface for an instance.
@@ -109,6 +120,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			disposer.Dispose()
+			activeInstances.Dec()
 		}
 	}
 
@@ -120,6 +132,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		PluginContext: pluginContext,
 		instance:      instance,
 	})
+	activeInstances.Inc()
 
 	return instance, nil
 }
