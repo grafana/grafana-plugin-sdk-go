@@ -60,6 +60,6 @@ steps:
 
 ---
 kind: signature
-hmac: 329582f349b7f3a2bc25d2848d2bc3bd6232a66d1596e73b7c7317eac2a50d7e
+hmac: 6f03e7026ce25ca829f7969c38628da6ee4ccdf0f5898b592f95c71f9090a093
 
 ...
