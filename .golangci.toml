@@ -46,8 +46,7 @@ enable = [
   "asciicheck",
   "errorlint",
   "sqlclosecheck",
-  "thelper",
-  "revive"
+  "thelper"
 ]
 # Don't require that errors are included through wrapping, since might not always want to wrap an error
 [[issues.exclude-rules]]
