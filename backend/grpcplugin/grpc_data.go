@@ -3,9 +3,10 @@ package grpcplugin
 import (
 	"context"
 
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 // DataServer represents a data server.
@@ -26,7 +27,7 @@ type DataGRPCPlugin struct {
 }
 
 // GRPCServer registers p as a data gRPC server.
-func (p *DataGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+func (p *DataGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error {
 	pluginv2.RegisterDataServer(s, &dataGRPCServer{
 		server: p.DataServer,
 	})
@@ -34,7 +35,7 @@ func (p *DataGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) e
 }
 
 // GRPCClient returns c as a data gRPC client.
-func (p *DataGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *DataGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &dataGRPCClient{client: pluginv2.NewDataClient(c)}, nil
 }
 

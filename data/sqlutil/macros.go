@@ -72,7 +72,7 @@ func macroTimeTo(query *Query, args []string) (string, error) {
 // Example:
 //
 //	$__timeTo(time, month) => "datepart(year, time), datepart(month, time)'"
-func macroTimeGroup(query *Query, args []string) (string, error) {
+func macroTimeGroup(_ *Query, args []string) (string, error) {
 	if len(args) != 2 {
 		return "", fmt.Errorf("%w: expected 1 argument, received %d", ErrorBadArgumentCount, len(args))
 	}
@@ -102,7 +102,7 @@ func macroTimeGroup(query *Query, args []string) (string, error) {
 // Example:
 //
 //	$__table => "my_table"
-func macroTable(query *Query, args []string) (string, error) {
+func macroTable(query *Query, _ []string) (string, error) {
 	return query.Table, nil
 }
 
@@ -110,7 +110,7 @@ func macroTable(query *Query, args []string) (string, error) {
 // Example:
 //
 //	$__column => "my_col"
-func macroColumn(query *Query, args []string) (string, error) {
+func macroColumn(query *Query, _ []string) (string, error) {
 	return query.Column, nil
 }
 

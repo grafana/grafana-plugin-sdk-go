@@ -44,7 +44,7 @@ func newFakeDataHandlerWithOAuth() *fakeDataHandlerWithOAuth {
 	}
 }
 
-func (f *fakeDataHandlerWithOAuth) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+func (f *fakeDataHandlerWithOAuth) QueryData(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 	httpReq, err := http.NewRequestWithContext(ctx, "GET", f.svr.URL, nil)
 	if err != nil {
 		return nil, err
