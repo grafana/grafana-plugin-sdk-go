@@ -3,9 +3,10 @@ package grpcplugin
 import (
 	"context"
 
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 // DiagnosticsServer is the server API for the Diagnostics service.
@@ -26,7 +27,7 @@ type DiagnosticsGRPCPlugin struct {
 }
 
 // GRPCServer registers p as a diagnostics gRPC server.
-func (p *DiagnosticsGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Server) error {
+func (p *DiagnosticsGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error {
 	pluginv2.RegisterDiagnosticsServer(s, &diagnosticsGRPCServer{
 		server: p.DiagnosticsServer,
 	})
@@ -34,7 +35,7 @@ func (p *DiagnosticsGRPCPlugin) GRPCServer(broker *plugin.GRPCBroker, s *grpc.Se
 }
 
 // GRPCClient returns c as a diagnostics gRPC client.
-func (p *DiagnosticsGRPCPlugin) GRPCClient(ctx context.Context, broker *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *DiagnosticsGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &diagnosticsGRPCClient{client: pluginv2.NewDiagnosticsClient(c)}, nil
 }
 

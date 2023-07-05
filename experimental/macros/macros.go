@@ -8,7 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-func ApplyMacros(input string, timeRange backend.TimeRange, pluginContext backend.PluginContext) (string, error) {
+func ApplyMacros(input string, timeRange backend.TimeRange, _ backend.PluginContext) (string, error) {
 	input, err := FromMacro(input, timeRange)
 	if err != nil {
 		return input, err

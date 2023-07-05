@@ -273,7 +273,7 @@ func (srv *testCallResourceServer) WithContext(ctx context.Context) {
 
 type testCallResourceWithHeaders struct{}
 
-func (h *testCallResourceWithHeaders) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+func (h *testCallResourceWithHeaders) CallResource(ctx context.Context, _ *CallResourceRequest, _ CallResourceResponseSender) error {
 	middlewares := httpclient.ContextualMiddlewareFromContext(ctx)
 	if len(middlewares) == 0 {
 		return fmt.Errorf("no middlewares found")

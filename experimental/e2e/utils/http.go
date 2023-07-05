@@ -24,7 +24,7 @@ func ReadRequestBody(r *http.Request) ([]byte, error) {
 }
 
 // RoundTripper is a http.RoundTripper that can be used to proxy requests without consuming the req.Body.
-func RoundTripper(req *http.Request, ctx *goproxy.ProxyCtx) (resp *http.Response, err error) {
+func RoundTripper(req *http.Request, _ *goproxy.ProxyCtx) (resp *http.Response, err error) {
 	// ignoring the G402 error here because this proxy is only used in test environments
 	// nolint:gosec
 	tr := transport.Transport{

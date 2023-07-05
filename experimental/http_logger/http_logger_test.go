@@ -9,9 +9,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 	httplogger "github.com/grafana/grafana-plugin-sdk-go/experimental/http_logger"
-	"github.com/stretchr/testify/require"
 )
 
 func TestHTTPLogger(t *testing.T) {
@@ -109,7 +110,7 @@ func setup(t *testing.T, enabled bool) (*http.Client, *os.File) {
 
 type fakeRoundTripper struct{}
 
-func (hl *fakeRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
+func (hl *fakeRoundTripper) RoundTrip(_ *http.Request) (*http.Response, error) {
 	return &http.Response{
 		StatusCode: http.StatusOK,
 		Body:       io.NopCloser(bytes.NewBufferString("OK")),
