@@ -83,6 +83,10 @@ func (l Labels) String() string {
 
 type Fingerprint uint64
 
+func (f Fingerprint) String() string {
+	return fmt.Sprintf("%016x", uint64(f))
+}
+
 // Fingerprint calculates a 64-bit FNV-1 hash of the labels. Labels are sorted by key to make sure the hash is stable.
 func (l Labels) Fingerprint() Fingerprint {
 	h := fnv.New64()
