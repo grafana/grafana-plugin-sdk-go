@@ -119,6 +119,8 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		vec = newTimeTimeVectorWithValues(v)
 	case []*time.Time:
 		vec = newNullableTimeTimeVectorWithValues(v)
+	case []*time.Duration:
+		vec = newNullableTimeDurationVectorWithValues(v)
 	case []json.RawMessage:
 		vec = newJsonRawMessageVectorWithValues(v)
 	case []*json.RawMessage:

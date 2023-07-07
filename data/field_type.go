@@ -88,6 +88,9 @@ const (
 	FieldTypeEnum
 	// FieldTypeNullableEnum indicates the underlying primitive is a []*data.EnumItemIndex, with field mapping metadata
 	FieldTypeNullableEnum
+
+	// FieldTypeTime indicates the underlying primitive is a []time.Duration.
+	FieldTypeTimeOffset
 )
 
 // MarshalJSON marshals the enum as a quoted json string
@@ -187,6 +190,8 @@ func FieldTypeFor(item interface{}) FieldType {
 		return FieldTypeTime
 	case *time.Time:
 		return FieldTypeNullableTime
+	case *time.Duration:
+		return FieldTypeTimeOffset
 
 	case json.RawMessage:
 		return FieldTypeJSON
@@ -249,6 +254,9 @@ func (p FieldType) NullableType() FieldType {
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeNullableTime
 
+	case FieldTypeTimeOffset:
+		return FieldTypeTimeOffset
+
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeNullableJSON
 
@@ -306,6 +314,9 @@ func (p FieldType) NonNullableType() FieldType {
 
 	case FieldTypeTime, FieldTypeNullableTime:
 		return FieldTypeTime
+
+	case FieldTypeTimeOffset:
+		return FieldTypeTimeOffset
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return FieldTypeJSON
@@ -382,6 +393,8 @@ func FieldTypeFromItemTypeString(s string) (FieldType, bool) {
 	case "*bool":
 		return FieldTypeNullableBool, true
 
+	case "*time.Duration":
+		return FieldTypeTimeOffset, true
 	case "time", "time.Time":
 		return FieldTypeTime, true
 	case "*time.Time":
@@ -469,6 +482,9 @@ func (p FieldType) ItemTypeString() string {
 		return "time.Time"
 	case FieldTypeNullableTime:
 		return "*time.Time"
+
+	case FieldTypeTimeOffset:
+		return "*type.Duration"
 
 	case FieldTypeJSON:
 		return "json.RawMessage"

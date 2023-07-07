@@ -1192,6 +1192,92 @@ func (v *nullableTimeTimeVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+type nullableTimeDurationVector []*time.Duration
+
+func newNullableTimeDurationVectorWithValues(s []*time.Duration) *nullableTimeDurationVector {
+	v := make([]*time.Duration, len(s))
+	copy(v, s)
+	return (*nullableTimeDurationVector)(&v)
+}
+
+func (v *nullableTimeDurationVector) Set(idx int, i interface{}) {
+	if i == nil {
+		(*v)[idx] = nil
+		return
+	}
+	(*v)[idx] = i.(*time.Duration)
+}
+
+func (v *nullableTimeDurationVector) SetConcrete(idx int, i interface{}) {
+	val := i.(time.Duration)
+	(*v)[idx] = &val
+}
+
+func (v *nullableTimeDurationVector) Append(i interface{}) {
+	if i == nil {
+		*v = append(*v, nil)
+		return
+	}
+	*v = append(*v, i.(*time.Duration))
+}
+
+func (v *nullableTimeDurationVector) At(i int) interface{} {
+	return (*v)[i]
+}
+
+func (v *nullableTimeDurationVector) CopyAt(i int) interface{} {
+	if (*v)[i] == nil {
+		var g *time.Duration
+		return g
+	}
+	var g time.Duration
+	g = *(*v)[i]
+	return &g
+}
+
+func (v *nullableTimeDurationVector) ConcreteAt(i int) (interface{}, bool) {
+	var g time.Duration
+	val := (*v)[i]
+	if val == nil {
+		return g, false
+	}
+	g = *val
+	return g, true
+}
+
+func (v *nullableTimeDurationVector) PointerAt(i int) interface{} {
+	return &(*v)[i]
+}
+
+func (v *nullableTimeDurationVector) Len() int {
+	return len(*v)
+}
+
+func (v *nullableTimeDurationVector) Type() FieldType {
+	return vectorFieldType(v)
+}
+
+func (v *nullableTimeDurationVector) Extend(i int) {
+	*v = append(*v, make([]*time.Duration, i)...)
+}
+
+func (v *nullableTimeDurationVector) Insert(i int, val interface{}) {
+	switch {
+	case i < v.Len():
+		v.Extend(1)
+		copy((*v)[i+1:], (*v)[i:])
+		v.Set(i, val)
+	case i == v.Len():
+		v.Append(val)
+	case i > v.Len():
+		panic("Invalid index; vector length should be greater or equal to that index")
+	}
+}
+
+func (v *nullableTimeDurationVector) Delete(i int) {
+	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
 type nullableJsonRawMessageVector []*json.RawMessage
 
 func newNullableJsonRawMessageVector(n int) *nullableJsonRawMessageVector {

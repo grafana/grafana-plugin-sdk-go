@@ -48,6 +48,9 @@ type FrameMeta struct {
 	// Optionally identify which topic the frame should be assigned to.
 	// A value specified in the response will override what the request asked for.
 	DataTopic DataTopic `json:"dataTopic,omitempty"`
+
+	// When transporting time using FieldTypeTimeOffset, provide the offset reference in milliseconds.
+	FromEpochMS int64 `json:"fromEpochMs,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType

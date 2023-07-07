@@ -87,6 +87,10 @@ func vectorFieldType(v vector) FieldType {
 		return FieldTypeTime
 	case *nullableTimeTimeVector:
 		return FieldTypeNullableTime
+
+	case *nullableTimeDurationVector:
+		return FieldTypeTimeOffset
+
 	case *jsonRawMessageVector:
 		return FieldTypeJSON
 	case *nullableJsonRawMessageVector:

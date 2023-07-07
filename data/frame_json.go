@@ -22,6 +22,7 @@ const simpleTypeString = "string"
 const simpleTypeNumber = "number"
 const simpleTypeBool = "boolean"
 const simpleTypeTime = "time"
+const simpleTypeTimeOffset = "timeOffset"
 const simpleTypeEnum = "enum"
 const simpleTypeOther = "other"
 
@@ -630,6 +631,8 @@ func getTypeScriptTypeString(t FieldType) (string, bool) {
 		return simpleTypeEnum, true
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		return simpleTypeOther, true
+	case FieldTypeTimeOffset:
+		return simpleTypeTimeOffset, true
 	}
 	return "", false
 }
