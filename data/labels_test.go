@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // Equals returns true if the argument has the same k=v pairs as the receiver.
@@ -82,4 +83,50 @@ func TestLabelsFromString(t *testing.T) {
 	result, err = data.LabelsFromString(`{method="GET"}`)
 	require.NoError(t, err)
 	require.Equal(t, result, data.Labels{"method": "GET"})
+}
+
+func TestLabelsFingerprint(t *testing.T) {
+	testCases := []struct {
+		name        string
+		labels      data.Labels
+		fingerprint data.Fingerprint
+	}{
+		{
+			name:        "should work if nil",
+			labels:      nil,
+			fingerprint: data.Fingerprint(0xcbf29ce484222325),
+		},
+		{
+			name:        "should work if empty",
+			labels:      make(data.Labels),
+			fingerprint: data.Fingerprint(0xcbf29ce484222325),
+		},
+		{
+			name:        "should calculate hash",
+			labels:      data.Labels{"a": "AAA", "b": "BBB", "c": "CCC", "d": "DDD"},
+			fingerprint: data.Fingerprint(0xfb4532f90d896635),
+		},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			require.Equal(t, testCase.fingerprint, testCase.labels.Fingerprint())
+		})
+	}
+}
+
+func TestLabelsFingerprintString(t *testing.T) {
+	testCases := []struct {
+		name        string
+		fingerprint data.Fingerprint
+		expected    string
+	}{
+		{"simple", data.Fingerprint(0x1234567890abcdef), "1234567890abcdef"},
+		{"zero", data.Fingerprint(0), "0000000000000000"},
+		{"max", data.Fingerprint(0xffffffffffffffff), "ffffffffffffffff"},
+	}
+	for _, testCase := range testCases {
+		t.Run(testCase.name, func(t *testing.T) {
+			require.Equal(t, testCase.expected, testCase.fingerprint.String())
+		})
+	}
 }
