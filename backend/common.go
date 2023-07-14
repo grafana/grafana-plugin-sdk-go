@@ -134,6 +134,11 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
+	opts.ProxyOptions, err = s.ProxyOptions()
+	if err != nil {
+		return opts, err
+	}
+
 	return opts, nil
 }
 
@@ -225,4 +230,51 @@ func propagateTenantIDIfPresent(ctx context.Context) context.Context {
 		ctx = tenant.WithTenant(ctx, tid)
 	}
 	return ctx
+}
+
+func (s *DataSourceInstanceSettings) ProxyOptions() (*proxy.Options, error) {
+	opts := &proxy.Options{}
+
+	var dat map[string]interface{}
+	if s.JSONData != nil {
+		if err := json.Unmarshal(s.JSONData, &dat); err != nil {
+			return nil, err
+		}
+	}
+
+	opts.Enabled = proxy.SecureSocksProxyEnabledOnDS(dat)
+	if !opts.Enabled {
+		return opts, nil
+	}
+
+	opts.Auth = &proxy.AuthOptions{}
+	opts.Timeouts = &proxy.TimeoutOptions{}
+	if v, exists := dat["secureSocksProxyUsername"]; exists {
+		opts.Auth.Username = v.(string)
+	} else {
+		// default username is the datasource uid
+		opts.Auth.Username = s.UID
+	}
+
+	if v, exists := s.DecryptedSecureJSONData["secureSocksProxyPassword"]; exists {
+		opts.Auth.Password = v
+	}
+
+	if v, exists := dat["timeout"]; exists {
+		if iv, ok := v.(float64); ok {
+			opts.Timeouts.Timeout = time.Duration(iv) * time.Second
+		}
+	} else {
+		opts.Timeouts.Timeout = proxy.DefaultTimeoutOptions.Timeout
+	}
+
+	if v, exists := dat["keepAlive"]; exists {
+		if iv, ok := v.(float64); ok {
+			opts.Timeouts.KeepAlive = time.Duration(iv) * time.Second
+		}
+	} else {
+		opts.Timeouts.KeepAlive = proxy.DefaultTimeoutOptions.KeepAlive
+	}
+
+	return opts, nil
 }
