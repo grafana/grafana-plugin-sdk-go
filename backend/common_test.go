@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -160,6 +161,27 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 						secureDataCustomOptionsKey: map[string]string{
 							"sKey": "sValue",
 						},
+					},
+				},
+			},
+			{
+				instanceSettings: &DataSourceInstanceSettings{
+					UID:                     "uid1",
+					JSONData:                []byte("{ \"enableSecureSocksProxy\": true }"),
+					DecryptedSecureJSONData: map[string]string{},
+				},
+				expectedClientOptions: httpclient.Options{
+					ProxyOptions: &proxy.Options{
+						Enabled: true,
+						Auth: &proxy.AuthOptions{
+							Username: "uid1",
+						},
+					},
+					CustomOptions: map[string]interface{}{
+						dataCustomOptionsKey: map[string]interface{}{
+							"enableSecureSocksProxy": true,
+						},
+						secureDataCustomOptionsKey: map[string]string{},
 					},
 				},
 			},

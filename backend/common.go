@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -119,6 +120,17 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 	opts.Labels["datasource_name"] = s.Name
 	opts.Labels["datasource_uid"] = s.UID
 	opts.Labels["datasource_type"] = s.Type
+
+	if opts.ProxyOptions != nil {
+		// default username is the datasource uid, this can be updated
+		// by setting `secureSocksProxyUsername` in the datasource json
+		if opts.ProxyOptions.Auth == nil {
+			opts.ProxyOptions.Auth = &proxy.AuthOptions{}
+		}
+		if opts.ProxyOptions.Auth.Username == "" {
+			opts.ProxyOptions.Auth.Username = opts.Labels["datasource_uid"]
+		}
+	}
 
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
