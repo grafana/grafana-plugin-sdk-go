@@ -108,36 +108,6 @@ func TestSecureSocksProxyConfigEnv(t *testing.T) {
 	assert.Equal(t, &expected, actual)
 }
 
-func TestSecureSocksProxyEnabledOnDS(t *testing.T) {
-	t.Run("Secure socks proxy should only be enabled when the json data contains enableSecureSocksProxy=true", func(t *testing.T) {
-		tests := []struct {
-			jsonData map[string]interface{}
-			enabled  bool
-		}{
-			{
-				jsonData: map[string]interface{}{},
-				enabled:  false,
-			},
-			{
-				jsonData: map[string]interface{}{"enableSecureSocksProxy": "nonbool"},
-				enabled:  false,
-			},
-			{
-				jsonData: map[string]interface{}{"enableSecureSocksProxy": false},
-				enabled:  false,
-			},
-			{
-				jsonData: map[string]interface{}{"enableSecureSocksProxy": true},
-				enabled:  true,
-			},
-		}
-
-		for _, tt := range tests {
-			assert.Equal(t, tt.enabled, SecureSocksProxyEnabledOnDS(tt.jsonData))
-		}
-	})
-}
-
 func TestPreventInvalidRootCA(t *testing.T) {
 	tempDir := t.TempDir()
 	t.Setenv(PluginSecureSocksProxyClientCert, "client.crt")

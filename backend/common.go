@@ -121,17 +121,6 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 	opts.Labels["datasource_uid"] = s.UID
 	opts.Labels["datasource_type"] = s.Type
 
-	if opts.ProxyOptions != nil {
-		// default username is the datasource uid, this can be updated
-		// by setting `secureSocksProxyUsername` in the datasource json
-		if opts.ProxyOptions.Auth == nil {
-			opts.ProxyOptions.Auth = &proxy.AuthOptions{}
-		}
-		if opts.ProxyOptions.Auth.Username == "" {
-			opts.ProxyOptions.Auth.Username = opts.Labels["datasource_uid"]
-		}
-	}
-
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
 	opts.ProxyOptions, err = s.ProxyOptions()
@@ -242,8 +231,13 @@ func (s *DataSourceInstanceSettings) ProxyOptions() (*proxy.Options, error) {
 		}
 	}
 
-	opts.Enabled = proxy.SecureSocksProxyEnabledOnDS(dat)
-	if !opts.Enabled {
+	// the proxy defaults to disabled
+	if res, exists := dat["enableSecureSocksProxy"]; exists {
+		if val, ok := res.(bool); !ok || !val {
+			return opts, nil
+		}
+		opts.Enabled = true
+	} else {
 		return opts, nil
 	}
 

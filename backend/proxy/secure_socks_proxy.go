@@ -70,21 +70,6 @@ func SecureSocksProxyEnabled(opts *Options) bool {
 	return false
 }
 
-// SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`
-// to determine if the secure socks proxy should be enabled on it
-func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
-	res, enabled := jsonData["enableSecureSocksProxy"]
-	if !enabled {
-		return false
-	}
-
-	if val, ok := res.(bool); ok {
-		return val
-	}
-
-	return false
-}
-
 // ConfigureSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
 // if it is enabled on the datasource and the grafana instance
 func ConfigureSecureSocksHTTPProxy(transport *http.Transport, opts *Options) error {
