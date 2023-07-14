@@ -112,7 +112,6 @@ func TestSecureSocksProxyConfig(t *testing.T) {
 		SetSecureSocksProxyConfig(&expected)
 		assert.Equal(t, &expected, proxyConfig)
 	})
-
 }
 
 func TestSecureSocksProxyEnabledOnDS(t *testing.T) {
