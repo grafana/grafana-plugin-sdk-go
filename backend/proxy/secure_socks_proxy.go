@@ -36,16 +36,16 @@ var (
 	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
 )
 
-// ProxyClient is the main ProxyClient interface.
-type ProxyClient interface {
+// Client is the main Proxy Client interface.
+type Client interface {
 	SecureSocksProxyEnabled(opts *Options) bool
 	ConfigureSecureSocksHTTPProxy(transport *http.Transport, opts *Options) error
 	NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error)
 }
 
-// ProxyClientCfg contains the information needed to allow datasource connections to be
+// ClientCfg contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy.
-type ProxyClientCfg struct {
+type ClientCfg struct {
 	Enabled      bool
 	ClientCert   string
 	ClientKey    string
@@ -54,23 +54,23 @@ type ProxyClientCfg struct {
 	ServerName   string
 }
 
-// ProxyCli is the default ProxyClient.
-var ProxyCli = New()
+// Cli is the default Proxy Client.
+var Cli = New()
 
 // New creates a new proxy client from the environment variables set by the grafana-server in the plugin.
-func New() ProxyClient {
+func New() Client {
 	return NewWithCfg(getConfigFromEnv())
 }
 
 // NewWithCfg creates a new proxy client from a given config.
-func NewWithCfg(cfg *ProxyClientCfg) ProxyClient {
+func NewWithCfg(cfg *ClientCfg) Client {
 	return &cfgProxyWrapper{
 		cfg: cfg,
 	}
 }
 
 type cfgProxyWrapper struct {
-	cfg *ProxyClientCfg
+	cfg *ClientCfg
 }
 
 // SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
@@ -171,7 +171,7 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer(opts *Options) (proxy
 }
 
 // getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
-func getConfigFromEnv() *ProxyClientCfg {
+func getConfigFromEnv() *ClientCfg {
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyEnabled); ok {
 		enabled, err := strconv.ParseBool(value)
 		if err != nil || !enabled {
@@ -214,7 +214,7 @@ func getConfigFromEnv() *ProxyClientCfg {
 		return nil
 	}
 
-	return &ProxyClientCfg{
+	return &ClientCfg{
 		Enabled:      true,
 		ClientCert:   clientCert,
 		ClientKey:    clientKey,

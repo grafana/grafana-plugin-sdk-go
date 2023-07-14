@@ -70,25 +70,25 @@ func TestNewSecureSocksProxy(t *testing.T) {
 
 func TestSecureSocksProxyEnabled(t *testing.T) {
 	t.Run("not enabled if not enabled on grafana instance", func(t *testing.T) {
-		cli := NewWithCfg(&ProxyClientCfg{Enabled: false})
+		cli := NewWithCfg(&ClientCfg{Enabled: false})
 		assert.Equal(t, false, cli.SecureSocksProxyEnabled(&Options{Enabled: true}))
 	})
 	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ProxyClientCfg{Enabled: true})
+		cli := NewWithCfg(&ClientCfg{Enabled: true})
 		assert.Equal(t, false, cli.SecureSocksProxyEnabled(&Options{Enabled: false}))
 	})
 	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ProxyClientCfg{Enabled: true})
+		cli := NewWithCfg(&ClientCfg{Enabled: true})
 		assert.Equal(t, false, cli.SecureSocksProxyEnabled(nil))
 	})
 	t.Run("enabled, if enabled on grafana instance and datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ProxyClientCfg{Enabled: true})
+		cli := NewWithCfg(&ClientCfg{Enabled: true})
 		assert.Equal(t, true, cli.SecureSocksProxyEnabled(&Options{Enabled: true}))
 	})
 }
 
 func TestSecureSocksProxyConfig(t *testing.T) {
-	expected := ProxyClientCfg{
+	expected := ClientCfg{
 		Enabled:      true,
 		ClientCert:   "client.crt",
 		ClientKey:    "client.key",
@@ -146,7 +146,7 @@ func TestSecureSocksProxyEnabledOnDS(t *testing.T) {
 
 func TestPreventInvalidRootCA(t *testing.T) {
 	tempDir := t.TempDir()
-	cfg := &ProxyClientCfg{
+	cfg := &ClientCfg{
 		Enabled:      true,
 		ClientCert:   "client.crt",
 		ClientKey:    "client.key",
@@ -179,7 +179,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 	})
 }
 
-func setupTestSecureSocksProxySettings(t *testing.T) *ProxyClientCfg {
+func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	t.Helper()
 	proxyAddress := "localhost:3000"
 	serverName := "localhost"
@@ -252,7 +252,7 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ProxyClientCfg {
 	})
 	require.NoError(t, err)
 
-	cfg := &ProxyClientCfg{
+	cfg := &ClientCfg{
 		Enabled:      true,
 		ClientCert:   clientCert,
 		ClientKey:    clientKey,
