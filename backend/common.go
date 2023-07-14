@@ -231,14 +231,9 @@ func (s *DataSourceInstanceSettings) ProxyOptions() (*proxy.Options, error) {
 		}
 	}
 
-	// the proxy defaults to disabled
-	if res, exists := dat["enableSecureSocksProxy"]; exists {
-		if val, ok := res.(bool); !ok || !val {
-			return opts, nil
-		}
-		opts.Enabled = true
-	} else {
-		return opts, nil
+	opts.Enabled = proxy.SecureSocksProxyEnabledOnDS(dat)
+	if !opts.Enabled {
+		return nil, nil
 	}
 
 	opts.Auth = &proxy.AuthOptions{}

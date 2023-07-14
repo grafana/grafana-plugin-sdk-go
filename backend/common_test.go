@@ -265,11 +265,11 @@ func TestProxyOptions(t *testing.T) {
 	t.Run("ProxyOptions() should translate settings as expected", func(t *testing.T) {
 		tcs := []struct {
 			instanceSettings      *DataSourceInstanceSettings
-			expectedClientOptions proxy.Options
+			expectedClientOptions *proxy.Options
 		}{
 			{
 				instanceSettings:      &DataSourceInstanceSettings{},
-				expectedClientOptions: proxy.Options{},
+				expectedClientOptions: nil,
 			},
 			{
 				instanceSettings: &DataSourceInstanceSettings{
@@ -281,7 +281,7 @@ func TestProxyOptions(t *testing.T) {
 					BasicAuthEnabled: true,
 					BasicAuthUser:    "buser",
 				},
-				expectedClientOptions: proxy.Options{},
+				expectedClientOptions: nil,
 			},
 			{
 				instanceSettings: &DataSourceInstanceSettings{
@@ -293,7 +293,7 @@ func TestProxyOptions(t *testing.T) {
 					BasicAuthEnabled: true,
 					BasicAuthUser:    "buser",
 				},
-				expectedClientOptions: proxy.Options{
+				expectedClientOptions: &proxy.Options{
 					Enabled: true,
 					Auth: &proxy.AuthOptions{
 						Username: "uid1",
@@ -314,7 +314,7 @@ func TestProxyOptions(t *testing.T) {
 						"secureSocksProxyPassword": "pswd",
 					},
 				},
-				expectedClientOptions: proxy.Options{
+				expectedClientOptions: &proxy.Options{
 					Enabled: true,
 					Auth: &proxy.AuthOptions{
 						Username: "username",
@@ -333,7 +333,7 @@ func TestProxyOptions(t *testing.T) {
 					BasicAuthEnabled: true,
 					BasicAuthUser:    "buser",
 				},
-				expectedClientOptions: proxy.Options{
+				expectedClientOptions: &proxy.Options{
 					Enabled: true,
 					Auth: &proxy.AuthOptions{
 						Username: "uid1",
@@ -349,9 +349,7 @@ func TestProxyOptions(t *testing.T) {
 		for _, tc := range tcs {
 			opts, err := tc.instanceSettings.ProxyOptions()
 			assert.NoError(t, err)
-			assert.Equal(t, tc.expectedClientOptions.Enabled, opts.Enabled)
-			assert.Equal(t, tc.expectedClientOptions.Auth, opts.Auth)
-			assert.Equal(t, tc.expectedClientOptions.Timeouts, opts.Timeouts)
+			assert.Equal(t, tc.expectedClientOptions, opts)
 		}
 	})
 }
