@@ -86,7 +86,7 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		clientOpts.Middlewares = clientOpts.ConfigureMiddleware(clientOpts, clientOpts.Middlewares)
 	}
 
-	err = proxy.ConfigureSecureSocksHTTPProxy(transport, clientOpts.ProxyOptions)
+	err = proxy.Cli.ConfigureSecureSocksHTTPProxy(transport, clientOpts.ProxyOptions)
 	if err != nil {
 		return nil, err
 	}

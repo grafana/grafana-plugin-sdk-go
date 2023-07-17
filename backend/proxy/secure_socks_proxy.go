@@ -16,7 +16,6 @@ import (
 )
 
 var (
-
 	// PluginSecureSocksProxyEnabled is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED
 	// environment variable used to specify if a secure socks proxy is allowed to be used for datasource connections.
 	PluginSecureSocksProxyEnabled = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
@@ -37,62 +36,63 @@ var (
 	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
 )
 
-// SecureSocksProxyConfig contains the information needed to allow datasource connections to be
-// proxied to a secure socks proxy
-type secureSocksProxyConfig struct {
-	clientCert   string
-	clientKey    string
-	rootCA       string
-	proxyAddress string
-	serverName   string
+// Client is the main Proxy Client interface.
+type Client interface {
+	SecureSocksProxyEnabled(opts *Options) bool
+	ConfigureSecureSocksHTTPProxy(transport *http.Transport, opts *Options) error
+	NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error)
+}
+
+// ClientCfg contains the information needed to allow datasource connections to be
+// proxied to a secure socks proxy.
+type ClientCfg struct {
+	Enabled      bool
+	ClientCert   string
+	ClientKey    string
+	RootCA       string
+	ProxyAddress string
+	ServerName   string
+}
+
+// Cli is the default Proxy Client.
+var Cli = New()
+
+// New creates a new proxy client from the environment variables set by the grafana-server in the plugin.
+func New() Client {
+	return NewWithCfg(getConfigFromEnv())
+}
+
+// NewWithCfg creates a new proxy client from a given config.
+func NewWithCfg(cfg *ClientCfg) Client {
+	return &cfgProxyWrapper{
+		cfg: cfg,
+	}
+}
+
+type cfgProxyWrapper struct {
+	cfg *ClientCfg
 }
 
 // SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
 // and the datasource options specify to use the proxy
-func SecureSocksProxyEnabled(opts *Options) bool {
-	if opts == nil {
+func (p *cfgProxyWrapper) SecureSocksProxyEnabled(opts *Options) bool {
+	// it cannot be enabled if it's not enabled on Grafana
+	if p.cfg == nil || !p.cfg.Enabled {
 		return false
 	}
 
-	if !opts.Enabled {
-		return false
-	}
-
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyEnabled); ok {
-		enabledOnInst, err := strconv.ParseBool(value)
-		if err != nil {
-			return false
-		}
-
-		return enabledOnInst
-	}
-
-	return false
-}
-
-// SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`
-// to determine if the secure socks proxy should be enabled on it
-func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
-	res, enabled := jsonData["enableSecureSocksProxy"]
-	if !enabled {
-		return false
-	}
-
-	if val, ok := res.(bool); ok {
-		return val
-	}
-
-	return false
+	// if it's enabled on Grafana, check if the datasource is using it
+	return (opts != nil) && opts.Enabled
 }
 
 // ConfigureSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
 // if it is enabled on the datasource and the grafana instance
-func ConfigureSecureSocksHTTPProxy(transport *http.Transport, opts *Options) error {
-	if !SecureSocksProxyEnabled(opts) {
+func (p *cfgProxyWrapper) ConfigureSecureSocksHTTPProxy(transport *http.Transport, opts *Options) error {
+	if !p.SecureSocksProxyEnabled(opts) {
 		return nil
 	}
 
-	dialSocksProxy, err := NewSecureSocksProxyContextDialer(opts)
+	dialSocksProxy, err := p.NewSecureSocksProxyContextDialer(opts)
 	if err != nil {
 		return err
 	}
@@ -107,17 +107,15 @@ func ConfigureSecureSocksHTTPProxy(transport *http.Transport, opts *Options) err
 }
 
 // NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
-func NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error) {
-	var err error
-	cfg, err := getConfigFromEnv()
-	if err != nil {
-		return nil, err
+func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error) {
+	if !p.SecureSocksProxyEnabled(opts) {
+		return nil, fmt.Errorf("proxy not enabled")
 	}
 
 	clientOpts := setDefaults(opts)
 
 	certPool := x509.NewCertPool()
-	for _, rootCAFile := range strings.Split(cfg.rootCA, " ") {
+	for _, rootCAFile := range strings.Split(p.cfg.RootCA, " ") {
 		// nolint:gosec
 		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
 		// and we check below if it's the right file type
@@ -136,7 +134,7 @@ func NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error) {
 		}
 	}
 
-	cert, err := tls.LoadX509KeyPair(cfg.clientCert, cfg.clientKey)
+	cert, err := tls.LoadX509KeyPair(p.cfg.ClientCert, p.cfg.ClientKey)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +142,7 @@ func NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error) {
 	tlsDialer := &tls.Dialer{
 		Config: &tls.Config{
 			Certificates: []tls.Certificate{cert},
-			ServerName:   cfg.serverName,
+			ServerName:   p.cfg.ServerName,
 			RootCAs:      certPool,
 			MinVersion:   tls.VersionTLS13,
 		},
@@ -154,15 +152,15 @@ func NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error) {
 		},
 	}
 
-	var dsInfo *proxy.Auth
+	var auth *proxy.Auth
 	if clientOpts.Auth != nil {
-		dsInfo = &proxy.Auth{
+		auth = &proxy.Auth{
 			User:     clientOpts.Auth.Username,
 			Password: clientOpts.Auth.Password,
 		}
 	}
 
-	dialSocksProxy, err := proxy.SOCKS5("tcp", cfg.proxyAddress, dsInfo, tlsDialer)
+	dialSocksProxy, err := proxy.SOCKS5("tcp", p.cfg.ProxyAddress, auth, tlsDialer)
 	if err != nil {
 		return nil, err
 	}
@@ -171,47 +169,70 @@ func NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error) {
 }
 
 // getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
-func getConfigFromEnv() (*secureSocksProxyConfig, error) {
+func getConfigFromEnv() *ClientCfg {
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyEnabled); ok {
+		enabled, err := strconv.ParseBool(value)
+		if err != nil || !enabled {
+			return nil
+		}
+	}
+
 	clientCert := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCert); ok {
 		clientCert = value
 	} else {
-		return nil, fmt.Errorf("missing client cert")
+		return nil
 	}
 
 	clientKey := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientKey); ok {
 		clientKey = value
 	} else {
-		return nil, fmt.Errorf("missing client key")
+		return nil
 	}
 
 	rootCA := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACert); ok {
 		rootCA = value
 	} else {
-		return nil, fmt.Errorf("missing root ca")
+		return nil
 	}
 
 	proxyAddress := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyProxyAddress); ok {
 		proxyAddress = value
 	} else {
-		return nil, fmt.Errorf("missing proxy address")
+		return nil
 	}
 
 	serverName := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyServerName); ok {
 		serverName = value
 	} else {
-		return nil, fmt.Errorf("missing server name")
+		return nil
 	}
 
-	return &secureSocksProxyConfig{
-		clientCert:   clientCert,
-		clientKey:    clientKey,
-		rootCA:       rootCA,
-		proxyAddress: proxyAddress,
-		serverName:   serverName,
-	}, nil
+	return &ClientCfg{
+		Enabled:      true,
+		ClientCert:   clientCert,
+		ClientKey:    clientKey,
+		RootCA:       rootCA,
+		ProxyAddress: proxyAddress,
+		ServerName:   serverName,
+	}
+}
+
+// SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`
+// to determine if the secure socks proxy should be enabled on it
+func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
+	res, enabled := jsonData["enableSecureSocksProxy"]
+	if !enabled {
+		return false
+	}
+
+	if val, ok := res.(bool); ok {
+		return val
+	}
+
+	return false
 }
