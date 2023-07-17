@@ -28,7 +28,7 @@ var DefaultTimeoutOptions = TimeoutOptions{
 	KeepAlive: 30 * time.Second,
 }
 
-func createOptions(providedOpts *Options) Options {
+func setDefaults(providedOpts *Options) Options {
 	var opts Options
 	if providedOpts == nil {
 		return opts

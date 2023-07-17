@@ -114,7 +114,7 @@ func NewSecureSocksProxyContextDialer(opts *Options) (proxy.Dialer, error) {
 		return nil, err
 	}
 
-	clientOpts := createOptions(opts)
+	clientOpts := setDefaults(opts)
 
 	certPool := x509.NewCertPool()
 	for _, rootCAFile := range strings.Split(cfg.rootCA, " ") {
