@@ -159,17 +159,6 @@ func createOptions(providedOpts ...Options) Options {
 		opts.Middlewares = DefaultMiddlewares()
 	}
 
-	if proxy.Cli.SecureSocksProxyEnabled(opts.ProxyOptions) {
-		// default username is the datasource uid, this can be updated
-		// by setting `secureSocksProxyUsername` in the datasource json
-		if opts.ProxyOptions.Auth == nil {
-			opts.ProxyOptions.Auth = &proxy.AuthOptions{}
-		}
-		if opts.ProxyOptions.Auth.Username == "" {
-			opts.ProxyOptions.Auth.Username = opts.Labels["datasource_uid"]
-		}
-	}
-
 	return opts
 }
 

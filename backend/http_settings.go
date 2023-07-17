@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
 
 // HTTPSettings is a convenient struct for holding decoded HTTP settings from
@@ -45,10 +44,6 @@ type HTTPSettings struct {
 	SigV4Profile       string
 	SigV4AccessKey     string
 	SigV4SecretKey     string
-
-	SecureSocksProxyEnabled  bool
-	SecureSocksProxyUsername string
-	SecureSocksProxyPass     string
 
 	JSONData       map[string]interface{}
 	SecureJSONData map[string]string
@@ -100,20 +95,6 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 			AssumeRoleARN: s.SigV4AssumeRoleARN,
 			ExternalID:    s.SigV4ExternalID,
 			Region:        s.SigV4Region,
-		}
-	}
-
-	if s.SecureSocksProxyEnabled {
-		opts.ProxyOptions = &proxy.Options{
-			Enabled: s.SecureSocksProxyEnabled,
-			Timeouts: &proxy.TimeoutOptions{
-				Timeout:   s.Timeout,
-				KeepAlive: s.KeepAlive,
-			},
-			Auth: &proxy.AuthOptions{
-				Username: s.SecureSocksProxyUsername,
-				Password: s.SecureSocksProxyPass,
-			},
 		}
 	}
 
@@ -281,20 +262,6 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		}
 		if v, exists := secureJSONData["sigV4SecretKey"]; exists {
 			s.SigV4SecretKey = v
-		}
-	}
-
-	// secure socks proxy
-	if v, exists := dat["enableSecureSocksProxy"]; exists {
-		s.SecureSocksProxyEnabled = v.(bool)
-	}
-
-	if s.SecureSocksProxyEnabled {
-		if v, exists := dat["secureSocksProxyUsername"]; exists {
-			s.SecureSocksProxyUsername = v.(string)
-		}
-		if v, exists := secureJSONData["secureSocksProxyPassword"]; exists {
-			s.SecureSocksProxyPass = v
 		}
 	}
 

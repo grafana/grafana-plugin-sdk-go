@@ -112,7 +112,7 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer(opts *Options) (proxy
 		return nil, fmt.Errorf("proxy not enabled")
 	}
 
-	clientOpts := createOptions(opts)
+	clientOpts := setDefaults(opts)
 
 	certPool := x509.NewCertPool()
 	for _, rootCAFile := range strings.Split(p.cfg.RootCA, " ") {

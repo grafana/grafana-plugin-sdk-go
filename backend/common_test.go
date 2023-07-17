@@ -2,8 +2,10 @@ package backend
 
 import (
 	"testing"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -163,6 +165,27 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 					},
 				},
 			},
+			{
+				instanceSettings: &DataSourceInstanceSettings{
+					UID:                     "uid1",
+					JSONData:                []byte("{ \"enableSecureSocksProxy\": true }"),
+					DecryptedSecureJSONData: map[string]string{},
+				},
+				expectedClientOptions: httpclient.Options{
+					ProxyOptions: &proxy.Options{
+						Enabled: true,
+						Auth: &proxy.AuthOptions{
+							Username: "uid1",
+						},
+					},
+					CustomOptions: map[string]interface{}{
+						dataCustomOptionsKey: map[string]interface{}{
+							"enableSecureSocksProxy": true,
+						},
+						secureDataCustomOptionsKey: map[string]string{},
+					},
+				},
+			},
 		}
 
 		for _, tc := range tcs {
@@ -235,5 +258,98 @@ func TestCustomOptions(t *testing.T) {
 
 		require.Empty(t, jsonData)
 		require.Empty(t, secureJSONData)
+	})
+}
+
+func TestProxyOptions(t *testing.T) {
+	t.Run("ProxyOptions() should translate settings as expected", func(t *testing.T) {
+		tcs := []struct {
+			instanceSettings      *DataSourceInstanceSettings
+			expectedClientOptions *proxy.Options
+		}{
+			{
+				instanceSettings:      &DataSourceInstanceSettings{},
+				expectedClientOptions: nil,
+			},
+			{
+				instanceSettings: &DataSourceInstanceSettings{
+					Name:             "ds1",
+					UID:              "uid1",
+					User:             "user",
+					Type:             "example-datasource",
+					JSONData:         []byte("{ \"enableSecureSocksProxy\": false }"),
+					BasicAuthEnabled: true,
+					BasicAuthUser:    "buser",
+				},
+				expectedClientOptions: nil,
+			},
+			{
+				instanceSettings: &DataSourceInstanceSettings{
+					Name:             "ds1",
+					UID:              "uid1",
+					User:             "user",
+					Type:             "example-datasource",
+					JSONData:         []byte("{ \"enableSecureSocksProxy\": true }"),
+					BasicAuthEnabled: true,
+					BasicAuthUser:    "buser",
+				},
+				expectedClientOptions: &proxy.Options{
+					Enabled: true,
+					Auth: &proxy.AuthOptions{
+						Username: "uid1",
+					},
+					Timeouts: &proxy.DefaultTimeoutOptions,
+				},
+			},
+			{
+				instanceSettings: &DataSourceInstanceSettings{
+					Name:             "ds1",
+					UID:              "uid1",
+					User:             "user",
+					Type:             "example-datasource",
+					JSONData:         []byte("{ \"enableSecureSocksProxy\": true, \"secureSocksProxyUsername\": \"username\" }"),
+					BasicAuthEnabled: true,
+					BasicAuthUser:    "buser",
+					DecryptedSecureJSONData: map[string]string{
+						"secureSocksProxyPassword": "pswd",
+					},
+				},
+				expectedClientOptions: &proxy.Options{
+					Enabled: true,
+					Auth: &proxy.AuthOptions{
+						Username: "username",
+						Password: "pswd",
+					},
+					Timeouts: &proxy.DefaultTimeoutOptions,
+				},
+			},
+			{
+				instanceSettings: &DataSourceInstanceSettings{
+					Name:             "ds1",
+					UID:              "uid1",
+					User:             "user",
+					Type:             "example-datasource",
+					JSONData:         []byte("{ \"enableSecureSocksProxy\": true, \"timeout\": 10, \"keepAlive\": 15 }"),
+					BasicAuthEnabled: true,
+					BasicAuthUser:    "buser",
+				},
+				expectedClientOptions: &proxy.Options{
+					Enabled: true,
+					Auth: &proxy.AuthOptions{
+						Username: "uid1",
+					},
+					Timeouts: &proxy.TimeoutOptions{
+						KeepAlive: time.Second * 15,
+						Timeout:   time.Second * 10,
+					},
+				},
+			},
+		}
+
+		for _, tc := range tcs {
+			opts, err := tc.instanceSettings.ProxyOptions()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedClientOptions, opts)
+		}
 	})
 }
