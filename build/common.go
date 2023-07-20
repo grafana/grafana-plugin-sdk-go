@@ -223,7 +223,7 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.GenerateManifestFile)
+	mg.SerialDeps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.GenerateManifestFile)
 }
 
 //go:embed tmpl/*
