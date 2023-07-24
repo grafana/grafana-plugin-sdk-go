@@ -36,12 +36,27 @@ func (m *Manager) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 }
 
 func (m *Manager) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+
 	h, err := m.Get(ctx, req.PluginContext)
 	if err != nil {
-		return &backend.CheckHealthResult{
-			Status:  backend.HealthStatusError,
-			Message: err.Error(),
-		}, nil
+		if err != nil {
+			var payload []byte
+			var err error
+			type jsoner interface{ JSON() ([]byte, error) }
+			if j, ok := err.(jsoner); ok {
+				payload, err = j.JSON()
+				// handle err, probably just logging it?
+			}
+			return &backend.CheckHealthResult{
+				Status:      backend.HealthStatusError,
+				Message:     err.Error(),
+				JSONDetails: payload,
+			}, nil
+		}
+		// return &backend.CheckHealthResult{
+		// 	Status:  backend.HealthStatusError,
+		// 	Message: err.Error(),
+		// }, nil
 	}
 	if ds, ok := h.(backend.CheckHealthHandler); ok {
 		return ds.CheckHealth(ctx, req)
