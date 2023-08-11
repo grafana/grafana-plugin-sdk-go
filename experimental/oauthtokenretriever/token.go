@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
@@ -19,8 +20,9 @@ type TokenRetriever interface {
 }
 
 type tokenRetriever struct {
-	signer signer
-	conf   *clientcredentials.Config
+	audience string
+	signer   signer
+	conf     *clientcredentials.Config
 }
 
 // tokenPayload returns a JWT payload for the given user ID, client ID, and host.
@@ -31,7 +33,7 @@ func (t *tokenRetriever) tokenPayload(userID string) map[string]interface{} {
 	payload := map[string]interface{}{
 		"iss": t.conf.ClientID,
 		"sub": fmt.Sprintf("user:id:%s", userID),
-		"aud": t.conf.TokenURL,
+		"aud": []string{t.conf.TokenURL, t.audience},
 		"exp": exp,
 		"iat": iat,
 		"jti": u.String(),
@@ -40,7 +42,9 @@ func (t *tokenRetriever) tokenPayload(userID string) map[string]interface{} {
 }
 
 func (t *tokenRetriever) Self(ctx context.Context) (string, error) {
-	t.conf.EndpointParams = url.Values{}
+	t.conf.EndpointParams = url.Values{
+		"audience": {t.audience},
+	}
 	tok, err := t.conf.TokenSource(ctx).Token()
 	if err != nil {
 		return "", err
@@ -66,22 +70,12 @@ func (t *tokenRetriever) OnBehalfOfUser(ctx context.Context, userID string) (str
 	return tok.AccessToken, nil
 }
 
-func New() (TokenRetriever, error) {
+func New(settings backend.AppInstanceSettings) (TokenRetriever, error) {
 	// The Grafana URL is required to obtain tokens later on
 	grafanaAppURL := strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
 	if grafanaAppURL == "" {
 		// For debugging purposes only
 		grafanaAppURL = "http://localhost:3000"
-	}
-
-	clientID := os.Getenv("GF_PLUGIN_APP_CLIENT_ID")
-	if clientID == "" {
-		return nil, fmt.Errorf("GF_PLUGIN_APP_CLIENT_ID is required")
-	}
-
-	clientSecret := os.Getenv("GF_PLUGIN_APP_CLIENT_SECRET")
-	if clientSecret == "" {
-		return nil, fmt.Errorf("GF_PLUGIN_APP_CLIENT_SECRET is required")
 	}
 
 	privateKey := os.Getenv("GF_PLUGIN_APP_PRIVATE_KEY")
@@ -94,14 +88,57 @@ func New() (TokenRetriever, error) {
 		return nil, err
 	}
 
-	return &tokenRetriever{
-		signer: signer,
-		conf: &clientcredentials.Config{
-			ClientID:     clientID,
-			ClientSecret: clientSecret,
-			TokenURL:     grafanaAppURL + "/oauth2/token",
-			AuthStyle:    oauth2.AuthStyleInParams,
-			Scopes:       []string{"profile", "email", "entitlements"},
-		},
-	}, nil
+	useMultiTenantAuthSvc := os.Getenv("GF_USE_MULTI_TENANT_AUTH_SERVICE") == "true"
+	if useMultiTenantAuthSvc {
+		clientID := settings.DecryptedSecureJSONData["clientId"]
+		clientSecret := settings.DecryptedSecureJSONData["clientSecret"]
+		audience := os.Getenv("GF_PLUGIN_AUTH_AUDIENCE")
+		if audience == "" {
+			return nil, fmt.Errorf("GF_PLUGIN_AUTH_AUDIENCE is required")
+		}
+
+		authServiceURL := os.Getenv("GF_PLUGIN_AUTH_SERVICE_URL")
+		if authServiceURL == "" {
+			return nil, fmt.Errorf("GF_PLUGIN_AUTH_SERVICE_URL is required")
+		}
+
+		tokenEndpointURL, err := url.JoinPath(authServiceURL, "/oauth2/token")
+		if err != nil {
+			return nil, fmt.Errorf("failed to generate token endpoint URL: %w", err)
+		}
+
+		return &tokenRetriever{
+			audience: audience,
+			signer:   signer,
+			conf: &clientcredentials.Config{
+				ClientID:     clientID,
+				ClientSecret: clientSecret,
+				TokenURL:     tokenEndpointURL,
+				AuthStyle:    oauth2.AuthStyleInParams,
+				Scopes:       []string{"profile", "email", "entitlements"},
+			},
+		}, nil
+	} else {
+
+		clientID := os.Getenv("GF_PLUGIN_APP_CLIENT_ID")
+		if clientID == "" {
+			return nil, fmt.Errorf("GF_PLUGIN_APP_CLIENT_ID is required")
+		}
+
+		clientSecret := os.Getenv("GF_PLUGIN_APP_CLIENT_SECRET")
+		if clientSecret == "" {
+			return nil, fmt.Errorf("GF_PLUGIN_APP_CLIENT_SECRET is required")
+		}
+
+		return &tokenRetriever{
+			signer: signer,
+			conf: &clientcredentials.Config{
+				ClientID:     clientID,
+				ClientSecret: clientSecret,
+				TokenURL:     grafanaAppURL + "/oauth2/token",
+				AuthStyle:    oauth2.AuthStyleInParams,
+				Scopes:       []string{"profile", "email", "entitlements"},
+			},
+		}, nil
+	}
 }

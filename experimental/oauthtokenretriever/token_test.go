@@ -8,6 +8,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -39,6 +40,9 @@ func Test_GetExternalServiceToken(t *testing.T) {
 			}))
 			defer s.Close()
 
+			os.Setenv("GF_USE_MULTI_TENANT_AUTH_SERVICE", "false")
+			defer os.Unsetenv("GF_USE_MULTI_TENANT_AUTH_SERVICE")
+
 			os.Setenv("GF_APP_URL", s.URL)
 			defer os.Unsetenv("GF_APP_URL")
 			os.Setenv("GF_PLUGIN_APP_CLIENT_ID", "test_client_id")
@@ -48,7 +52,7 @@ func Test_GetExternalServiceToken(t *testing.T) {
 			os.Setenv("GF_PLUGIN_APP_PRIVATE_KEY", testECDSAKey)
 			defer os.Unsetenv("GF_PLUGIN_APP_PRIVATE_KEY")
 
-			ss, err := New()
+			ss, err := New(backend.AppInstanceSettings{})
 			assert.NoError(t, err)
 
 			var token string
