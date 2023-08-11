@@ -112,9 +112,10 @@ func (f ConvertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 	}
 
 	return &QueryDataRequest{
-		PluginContext: f.PluginContext(protoReq.PluginContext),
-		Headers:       protoReq.Headers,
-		Queries:       queries,
+		PluginContext:         f.PluginContext(protoReq.PluginContext),
+		Headers:               protoReq.Headers,
+		Queries:               queries,
+		FeatureTogglesEnabled: protoReq.GetFeatureTogglesEnabled(),
 	}
 }
 

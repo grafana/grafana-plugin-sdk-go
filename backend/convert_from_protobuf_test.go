@@ -358,6 +358,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 		Queries: []*pluginv2.DataQuery{
 			protoDataQuery,
 		},
+		FeatureTogglesEnabled: []byte(` {"first":true,"second":true}`),
 	}
 
 	protoWalker := &walker{}
@@ -422,6 +423,9 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, sdkTimeRange.From, sdkQDR.Queries[0].TimeRange.From)
 	requireCounter.Equal(t, sdkTimeRange.To, sdkQDR.Queries[0].TimeRange.To)
 	requireCounter.Equal(t, json.RawMessage(protoQDR.Queries[0].Json), sdkQDR.Queries[0].JSON)
+
+	// FeatureTogglesEnabled
+	requireCounter.Equal(t, json.RawMessage(protoQDR.FeatureTogglesEnabled), sdkQDR.FeatureTogglesEnabled)
 
 	// -6 is:
 	// PluginContext, .User, .AppInstanceSettings, .DataSourceInstanceSettings
