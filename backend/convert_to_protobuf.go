@@ -76,6 +76,7 @@ func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.Plug
 		User:                       t.User(pluginCtx.User),
 		AppInstanceSettings:        t.AppInstanceSettings(pluginCtx.AppInstanceSettings),
 		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pluginCtx.DataSourceInstanceSettings),
+		FeatureTogglesEnabled:      pluginCtx.FeatureTogglesEnabled,
 	}
 }
 
@@ -128,10 +129,9 @@ func (t ConvertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 		queries[i] = t.DataQuery(q)
 	}
 	return &pluginv2.QueryDataRequest{
-		PluginContext:         t.PluginContext(req.PluginContext),
-		Headers:               req.Headers,
-		Queries:               queries,
-		FeatureTogglesEnabled: req.FeatureTogglesEnabled,
+		PluginContext: t.PluginContext(req.PluginContext),
+		Headers:       req.Headers,
+		Queries:       queries,
 	}
 }
 

@@ -204,6 +204,10 @@ var protoPluginContext = &pluginv2.PluginContext{
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
+	FeatureTogglesEnabled: map[string]bool{
+		"feat-1": true,
+		"feat-2": true,
+	},
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
@@ -233,6 +237,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 
 	requireCounter.Equal(t, protoCtx.OrgId, sdkCtx.OrgID)
 	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.PluginID)
+	requireCounter.Equal(t, protoCtx.FeatureTogglesEnabled, sdkCtx.FeatureTogglesEnabled)
 
 	// User
 	requireCounter.Equal(t, protoCtx.User.Login, sdkCtx.User.Login)
@@ -358,7 +363,6 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 		Queries: []*pluginv2.DataQuery{
 			protoDataQuery,
 		},
-		FeatureTogglesEnabled: []byte(` {"first":true,"second":true}`),
 	}
 
 	protoWalker := &walker{}
@@ -390,6 +394,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	// PluginContext
 	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.PluginID)
+	requireCounter.Equal(t, protoQDR.PluginContext.FeatureTogglesEnabled, sdkQDR.PluginContext.FeatureTogglesEnabled)
 	// User
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Login, sdkQDR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)
@@ -423,9 +428,6 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, sdkTimeRange.From, sdkQDR.Queries[0].TimeRange.From)
 	requireCounter.Equal(t, sdkTimeRange.To, sdkQDR.Queries[0].TimeRange.To)
 	requireCounter.Equal(t, json.RawMessage(protoQDR.Queries[0].Json), sdkQDR.Queries[0].JSON)
-
-	// FeatureTogglesEnabled
-	requireCounter.Equal(t, json.RawMessage(protoQDR.FeatureTogglesEnabled), sdkQDR.FeatureTogglesEnabled)
 
 	// -6 is:
 	// PluginContext, .User, .AppInstanceSettings, .DataSourceInstanceSettings

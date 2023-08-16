@@ -162,6 +162,9 @@ type PluginContext struct {
 	//
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
+
+	// Feature toggles that are enabled in Grafana core
+	FeatureTogglesEnabled map[string]bool
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

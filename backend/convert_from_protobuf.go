@@ -78,6 +78,7 @@ func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
+		FeatureTogglesEnabled:      proto.FeatureTogglesEnabled,
 	}
 }
 
@@ -112,10 +113,9 @@ func (f ConvertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 	}
 
 	return &QueryDataRequest{
-		PluginContext:         f.PluginContext(protoReq.PluginContext),
-		Headers:               protoReq.Headers,
-		Queries:               queries,
-		FeatureTogglesEnabled: protoReq.GetFeatureTogglesEnabled(),
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Headers:       protoReq.Headers,
+		Queries:       queries,
 	}
 }
 

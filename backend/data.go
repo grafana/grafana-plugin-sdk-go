@@ -49,9 +49,6 @@ type QueryDataRequest struct {
 
 	// Queries the data queries for the request.
 	Queries []DataQuery
-
-	// Feature toggles that are enabled in Grafana core
-	FeatureTogglesEnabled json.RawMessage
 }
 
 // SetHTTPHeader sets the header entries associated with key to the
