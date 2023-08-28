@@ -34,7 +34,7 @@ func newFeatureTogglesFromEnv() featureToggles {
 // flagsMapFromEnv returns a new set-like map[string]struct{}, where the keys are the space-separated names in
 // the `envFeatureTogglesEnable` env var.
 func flagsMapFromEnv() map[string]struct{} {
-	flags := strings.Split(os.Getenv(envFeatureTogglesEnable), " ")
+	flags := strings.Split(os.Getenv(envFeatureTogglesEnable), ",")
 	r := make(map[string]struct{}, len(flags))
 	for _, flag := range flags {
 		r[flag] = struct{}{}
