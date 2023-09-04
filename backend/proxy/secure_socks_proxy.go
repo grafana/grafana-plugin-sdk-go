@@ -11,7 +11,10 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/net/proxy"
 )
 
@@ -34,6 +37,14 @@ var (
 	// PluginSecureSocksProxyServerName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
 	// environment variable used to specify the server name of the secure socks proxy.
 	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+)
+
+var (
+	secureSocksConnectionsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "plugins", //TODO: what is the correct namespace here ?
+		Name:      "secure_socks_connections_duration",
+		Help:      "Duration of establishing a connection to a secure socks proxy",
+	}, []string{"status"})
 )
 
 // Client is the main Proxy Client interface.
@@ -165,7 +176,9 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer(opts *Options) (proxy
 		return nil, err
 	}
 
-	return dialSocksProxy, nil
+	instrumentedDialer := NewInstrumentedDialer(dialSocksProxy)
+
+	return instrumentedDialer, nil
 }
 
 // getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
@@ -235,4 +248,28 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 	}
 
 	return false
+}
+
+// Dial is a wrapper around the proxy.Dialer.Dial method and records the connection duration.
+type instrumentedDialer struct {
+	dialer proxy.Dialer
+}
+
+// NewInstrumentedDialer creates a new instrumented dialer
+func NewInstrumentedDialer(dialer proxy.Dialer) proxy.Dialer {
+	return &instrumentedDialer{
+		dialer: dialer,
+	}
+}
+
+// Dial records the duration of the request
+func (d *instrumentedDialer) Dial(network, addr string) (net.Conn, error) {
+	start := time.Now()
+	c, err := d.dialer.Dial(network, addr)
+	status := "success"
+	if err != nil {
+		status = "error"
+	}
+	secureSocksConnectionsDuration.WithLabelValues(status).Observe(time.Since(start).Seconds())
+	return c, err
 }
