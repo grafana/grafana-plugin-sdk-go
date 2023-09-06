@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -162,6 +163,34 @@ type PluginContext struct {
 	//
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
+
+	// config is the configuration of the plugin instance.
+	config map[string]string
+}
+
+// Config returns the configuration of the plugin instance.
+// Note: Exposing this directly might not be a good idea as someone could technically try print all of it
+func (c PluginContext) Config() Cfg {
+	return Cfg{
+		config: c.config,
+	}
+}
+
+// WithConfig returns a copy of the PluginContext with the provided configuration.
+// Keys are case insensitive.
+// Note: This will overwrite any existing configuration.
+func (c PluginContext) WithConfig(cfg map[string]string) PluginContext {
+	if cfg == nil {
+		cfg = make(map[string]string)
+	}
+	c.config = cfg
+
+	// Make sure all keys are uppercase
+	for k, v := range cfg {
+		c.config[strings.ToUpper(k)] = v
+	}
+
+	return c
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

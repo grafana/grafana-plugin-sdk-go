@@ -172,8 +172,7 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	// adding +1 to the proto field count to account for the Type field in the SDK
-	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -204,10 +203,14 @@ var protoPluginContext = &pluginv2.PluginContext{
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
+	Config: map[string]string{
+		"foo": "bar",
+	},
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
 	protoCtx := protoPluginContext
+
 	protoWalker := &walker{}
 	err := reflectwalk.Walk(protoCtx, protoWalker)
 	require.NoError(t, err)
@@ -226,8 +229,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	// adding +1 to the proto field count to account for the Type field in the SDK
-	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount+pluginContextSdkFieldCountDelta())
 
 	requireCounter := &requireCounter{}
 
@@ -379,8 +381,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "QueryDataRequest", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	// adding +1 to the proto field count to account for the Type field in the SDK
-	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount+pluginContextSdkFieldCountDelta())
 
 	requireCounter := &requireCounter{}
 
@@ -489,4 +490,16 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 			require.Equal(t, tc.expectedStatus, rsp.Responses["A"].Status)
 		}
 	})
+}
+
+// datasourceInstanceProtoFieldCountDelta returns the extra number of SDK fields that do not exist in the protobuf.
+func datasourceInstanceProtoFieldCountDelta() int64 {
+	// returning 1 to account for the Type field in the SDK that is not in the protobuf
+	return int64(1)
+}
+
+// pluginContextSdkFieldCountDelta returns the extra number of protobuf fields that do not exist in the SDK.
+func pluginContextSdkFieldCountDelta() int64 {
+	// returning 1 to account for the unexported config field in the SDK
+	return int64(1)
 }

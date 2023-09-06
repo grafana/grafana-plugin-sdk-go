@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -55,7 +56,7 @@ type instanceProvider struct {
 
 func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
 	if pluginContext.DataSourceInstanceSettings == nil {
-		return nil, fmt.Errorf("data source instance settings cannot be nil")
+		return nil, errors.New("data source instance settings cannot be nil")
 	}
 
 	defaultKey := pluginContext.DataSourceInstanceSettings.ID
@@ -67,9 +68,15 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
-	curSettings := pluginContext.DataSourceInstanceSettings
-	cachedSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
-	return !curSettings.Updated.Equal(cachedSettings.Updated)
+	curConfig := pluginContext.Config()
+	cachedConfig := cachedInstance.PluginContext.Config()
+	configUpdated := !cachedConfig.Equal(curConfig)
+
+	curDataSourceSettings := pluginContext.DataSourceInstanceSettings
+	cachedDataSourceSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
+	dsUpdated := !curDataSourceSettings.Updated.Equal(cachedDataSourceSettings.Updated)
+
+	return dsUpdated || configUpdated
 }
 
 func (ip *instanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {

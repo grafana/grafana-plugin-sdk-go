@@ -33,38 +33,64 @@ func TestInstanceProvider(t *testing.T) {
 		require.Equal(t, int64(4), key)
 	})
 
-	t.Run("When current data source instance settings compared to cached instance haven't been updated should return false", func(t *testing.T) {
+	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
+		config := map[string]string{
+			"foo": "bar",
+			"baz": "qux",
+		}
+
 		curSettings := backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 				Updated: time.Now(),
 			},
-		}
-		cachedInstance := instancemgmt.CachedInstance{
-			PluginContext: backend.PluginContext{
-				DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
-					Updated: curSettings.DataSourceInstanceSettings.Updated,
-				},
+		}.WithConfig(config)
+
+		cachedSettings := backend.PluginContext{
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+				Updated: curSettings.DataSourceInstanceSettings.Updated,
 			},
+		}.WithConfig(config)
+
+		cachedInstance := instancemgmt.CachedInstance{
+			PluginContext: cachedSettings,
 		}
 		needsUpdate := ip.NeedsUpdate(context.Background(), curSettings, cachedInstance)
 		require.False(t, needsUpdate)
 	})
 
-	t.Run("When current data source instance settings compared to cached instance have been updated should return true", func(t *testing.T) {
+	t.Run("When either the configuration or updated field of current data source instance settings are not equal to the cache, should return tru", func(t *testing.T) {
 		curSettings := backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 				Updated: time.Now(),
 			},
 		}
-		cachedInstance := instancemgmt.CachedInstance{
-			PluginContext: backend.PluginContext{
-				DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
-					Updated: curSettings.DataSourceInstanceSettings.Updated.Add(time.Second),
-				},
+		cachedSettings := backend.PluginContext{
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+				Updated: curSettings.DataSourceInstanceSettings.Updated.Add(time.Second),
 			},
+		}
+
+		cachedInstance := instancemgmt.CachedInstance{
+			PluginContext: cachedSettings,
 		}
 		needsUpdate := ip.NeedsUpdate(context.Background(), curSettings, cachedInstance)
 		require.True(t, needsUpdate)
+
+		t.Run("Should return true when cached config is changed", func(t *testing.T) {
+			curSettings = curSettings.WithConfig(map[string]string{
+				"foo": "true",
+			})
+
+			cachedSettings = cachedSettings.WithConfig(map[string]string{
+				"foo": "false",
+			})
+
+			cachedInstance = instancemgmt.CachedInstance{
+				PluginContext: cachedSettings,
+			}
+			needsUpdate = ip.NeedsUpdate(context.Background(), curSettings, cachedInstance)
+			require.True(t, needsUpdate)
+		})
 	})
 
 	t.Run("When creating a new instance should return expected instance", func(t *testing.T) {
@@ -75,4 +101,119 @@ func TestInstanceProvider(t *testing.T) {
 		require.NotNil(t, i)
 		require.Equal(t, "hello", i.(testInstance).value)
 	})
+}
+
+func Test_instanceProvider_NeedsUpdate(t *testing.T) {
+	ts := time.Now()
+
+	type args struct {
+		pluginContext  backend.PluginContext
+		cachedInstance instancemgmt.CachedInstance
+	}
+	tests := []struct {
+		name     string
+		args     args
+		expected bool
+	}{
+		{
+			name: "Empty instance settings should return false",
+			args: args{
+				pluginContext: backend.PluginContext{
+					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{},
+				},
+				cachedInstance: instancemgmt.CachedInstance{
+					PluginContext: backend.PluginContext{
+						DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Instance settings with identical updated field should return false",
+			args: args{
+				pluginContext: backend.PluginContext{
+					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+						Updated: ts,
+					},
+				},
+				cachedInstance: instancemgmt.CachedInstance{
+					PluginContext: backend.PluginContext{
+						DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+							Updated: ts,
+						},
+					},
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Instance settings with identical updated field and config should return false",
+			args: args{
+				pluginContext: backend.PluginContext{
+					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+						Updated: ts,
+					},
+				}.WithConfig(map[string]string{
+					"foo": "bar",
+					"baz": "qux",
+				}),
+				cachedInstance: instancemgmt.CachedInstance{
+					PluginContext: backend.PluginContext{
+						DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+							Updated: ts,
+						},
+					}.WithConfig(map[string]string{
+						"baz": "qux",
+						"foo": "bar",
+					}),
+				},
+			},
+			expected: false,
+		},
+		{
+			name: "Instance settings with different updated field should return true",
+			args: args{
+				pluginContext: backend.PluginContext{
+					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+						Updated: ts,
+					},
+				},
+				cachedInstance: instancemgmt.CachedInstance{
+					PluginContext: backend.PluginContext{
+						DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+							Updated: ts.Add(time.Millisecond),
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "Instance settings with identical updated field and different config should return true",
+			args: args{
+				pluginContext: backend.PluginContext{
+					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+						Updated: ts,
+					},
+				}.WithConfig(map[string]string{"foo": "bar"}),
+				cachedInstance: instancemgmt.CachedInstance{
+					PluginContext: backend.PluginContext{
+						DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+							Updated: ts,
+						},
+					},
+				},
+			},
+			expected: true,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			ip := &instanceProvider{}
+			if got := ip.NeedsUpdate(context.Background(), tt.args.pluginContext, tt.args.cachedInstance); got != tt.expected {
+				t.Errorf("NeedsUpdate() = %v, expected %v", got, tt.expected)
+			}
+		})
+	}
 }
