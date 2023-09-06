@@ -1,8 +1,9 @@
 package backend
 
 import (
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 	"strings"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
 const GrafanaVersion = "GF_VERSION"

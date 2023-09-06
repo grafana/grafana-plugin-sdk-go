@@ -16,8 +16,8 @@ import (
 const (
 	AppURL          = "GF_APP_URL"
 	AppClientID     = "GF_PLUGIN_APP_CLIENT_ID"
-	AppClientSecret = "GF_PLUGIN_APP_CLIENT_SECRET"
 	AppPrivateKey   = "GF_PLUGIN_APP_PRIVATE_KEY"
+	AppClientSecret = "GF_PLUGIN_APP_CLIENT_SECRET" //nolint:gosec
 )
 
 type TokenRetriever interface {
