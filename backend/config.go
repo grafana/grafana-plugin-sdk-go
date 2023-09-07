@@ -16,19 +16,7 @@ func (c Cfg) Get(key string) string {
 	return c.config[strings.ToUpper(key)]
 }
 
-func (c Cfg) Equal(c2 Cfg) bool {
-	if len(c.config) != len(c2.config) {
-		return false
-	}
-	for k, v1 := range c.config {
-		if v2, ok := c2.config[k]; !ok || v1 != v2 {
-			return false
-		}
-	}
-	return true
-}
-
-func (c *Cfg) FeatureToggles() FeatureToggles {
+func (c Cfg) FeatureToggles() FeatureToggles {
 	features, exists := c.config[featuretoggles.EnabledFeatures]
 	if !exists {
 		return FeatureToggles{}
@@ -45,6 +33,18 @@ func (c *Cfg) FeatureToggles() FeatureToggles {
 	return FeatureToggles{
 		enabled: enabledFeatures,
 	}
+}
+
+func (c Cfg) Equal(c2 Cfg) bool {
+	if len(c.config) != len(c2.config) {
+		return false
+	}
+	for k, v1 := range c.config {
+		if v2, ok := c2.config[k]; !ok || v1 != v2 {
+			return false
+		}
+	}
+	return true
 }
 
 type FeatureToggles struct {

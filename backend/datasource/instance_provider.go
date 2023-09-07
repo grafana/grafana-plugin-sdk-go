@@ -22,7 +22,7 @@ var (
 )
 
 // InstanceFactoryFunc factory method for creating data source instances.
-type InstanceFactoryFunc func(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error)
+type InstanceFactoryFunc func(ctx context.Context, settings backend.DataSourceInstanceSettings, cfg backend.Cfg) (instancemgmt.Instance, error)
 
 // NewInstanceManager creates a new data source instance manager,
 //
@@ -79,7 +79,7 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 	return dsUpdated || configUpdated
 }
 
-func (ip *instanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
+func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
 	datasourceInstancesCreated.Inc()
-	return ip.factory(*pluginContext.DataSourceInstanceSettings)
+	return ip.factory(ctx, *pluginContext.DataSourceInstanceSettings, pluginContext.Config())
 }

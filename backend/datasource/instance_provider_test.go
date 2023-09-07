@@ -14,7 +14,7 @@ func TestInstanceProvider(t *testing.T) {
 	type testInstance struct {
 		value string
 	}
-	ip := NewInstanceProvider(func(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	ip := NewInstanceProvider(func(ctx context.Context, settings backend.DataSourceInstanceSettings, cfg backend.Cfg) (instancemgmt.Instance, error) {
 		return testInstance{value: "hello"}, nil
 	})
 
