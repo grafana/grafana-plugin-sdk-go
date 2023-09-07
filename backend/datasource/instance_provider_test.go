@@ -60,7 +60,7 @@ func TestInstanceProvider(t *testing.T) {
 		require.False(t, needsUpdate)
 	})
 
-	t.Run("When either the configuration or updated field of current data source instance settings are not equal to the cache, should return tru", func(t *testing.T) {
+	t.Run("When either the config or updated field of current data source instance settings are not equal to the cache, should return tru", func(t *testing.T) {
 		curSettings := backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 				Updated: time.Now(),

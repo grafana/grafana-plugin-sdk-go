@@ -210,7 +210,6 @@ var protoPluginContext = &pluginv2.PluginContext{
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
 	protoCtx := protoPluginContext
-
 	protoWalker := &walker{}
 	err := reflectwalk.Walk(protoCtx, protoWalker)
 	require.NoError(t, err)
@@ -229,7 +228,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount+pluginContextSdkFieldCountDelta())
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -383,7 +382,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "QueryDataRequest", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount+pluginContextSdkFieldCountDelta())
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -498,10 +497,4 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 func datasourceInstanceProtoFieldCountDelta() int64 {
 	// returning 1 to account for the Type field in the SDK that is not in the protobuf
 	return int64(1)
-}
-
-// pluginContextSdkFieldCountDelta returns the extra number of protobuf fields that do not exist in the SDK.
-func pluginContextSdkFieldCountDelta() int64 {
-	// returning 1 to account for the unexported Config field in the SDK
-	return int64(0)
 }

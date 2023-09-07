@@ -14,10 +14,11 @@ import (
 )
 
 const (
-	AppURL          = "GF_APP_URL"
-	AppClientID     = "GF_PLUGIN_APP_CLIENT_ID"
-	AppPrivateKey   = "GF_PLUGIN_APP_PRIVATE_KEY"
-	AppClientSecret = "GF_PLUGIN_APP_CLIENT_SECRET" //nolint:gosec
+	AppURL        = "GF_APP_URL"
+	AppClientID   = "GF_PLUGIN_APP_CLIENT_ID"
+	AppPrivateKey = "GF_PLUGIN_APP_PRIVATE_KEY"
+	//nolint:gosec the AppClientSecret constant represents a string index value, rather than a secret itself.
+	AppClientSecret = "GF_PLUGIN_APP_CLIENT_SECRET"
 )
 
 type TokenRetriever interface {
