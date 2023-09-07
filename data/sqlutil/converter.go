@@ -398,7 +398,7 @@ var IntOrFloatToNullableFloat64 = data.FieldConverter{
 			return &val, nil
 		case float32:
 			fval := float64(val)
-			return fval, nil
+			return &fval, nil
 		case int:
 			fval := float64(val)
 			return &fval, nil
