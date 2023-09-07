@@ -12,11 +12,21 @@ type Cfg struct {
 	config map[string]string
 }
 
-func (c Cfg) Get(key string) string {
+func NewCfg(cfg map[string]string) *Cfg {
+	// Make sure all keys are uppercase
+	normalized := make(map[string]string, len(cfg))
+	for k, v := range cfg {
+		normalized[strings.ToUpper(k)] = v
+	}
+
+	return &Cfg{config: normalized}
+}
+
+func (c *Cfg) Get(key string) string {
 	return c.config[strings.ToUpper(key)]
 }
 
-func (c Cfg) FeatureToggles() FeatureToggles {
+func (c *Cfg) FeatureToggles() FeatureToggles {
 	features, exists := c.config[featuretoggles.EnabledFeatures]
 	if !exists {
 		return FeatureToggles{}
@@ -35,7 +45,14 @@ func (c Cfg) FeatureToggles() FeatureToggles {
 	}
 }
 
-func (c Cfg) Equal(c2 Cfg) bool {
+func (c *Cfg) Equal(c2 *Cfg) bool {
+	if c == nil && c2 == nil {
+		return true
+	}
+	if c == nil || c2 == nil {
+		return false
+	}
+
 	if len(c.config) != len(c2.config) {
 		return false
 	}

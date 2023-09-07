@@ -76,7 +76,7 @@ func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.Plug
 		User:                       t.User(pluginCtx.User),
 		AppInstanceSettings:        t.AppInstanceSettings(pluginCtx.AppInstanceSettings),
 		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pluginCtx.DataSourceInstanceSettings),
-		Config:                     pluginCtx.config,
+		Config:                     t.Config(pluginCtx.Config),
 	}
 }
 
@@ -280,4 +280,12 @@ func (t ConvertToProtobuf) CollectMetricsResult(res *CollectMetricsResult) *plug
 			Prometheus: res.PrometheusMetrics,
 		},
 	}
+}
+
+// Config converts the SDK version of a Cfg to the protobuf version.
+func (t ConvertToProtobuf) Config(cfg *Cfg) map[string]string {
+	if cfg == nil {
+		return map[string]string{}
+	}
+	return cfg.config
 }

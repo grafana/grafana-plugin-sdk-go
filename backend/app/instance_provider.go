@@ -59,8 +59,8 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
-	curConfig := pluginContext.Config()
-	cachedConfig := cachedInstance.PluginContext.Config()
+	curConfig := pluginContext.Config
+	cachedConfig := cachedInstance.PluginContext.Config
 	configUpdated := !cachedConfig.Equal(curConfig)
 
 	cachedAppSettings := cachedInstance.PluginContext.AppInstanceSettings
@@ -71,5 +71,9 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 }
 
 func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
-	return ip.factory(ctx, *pluginContext.AppInstanceSettings, pluginContext.Config())
+	cfg := pluginContext.Config
+	if cfg == nil {
+		cfg = backend.NewCfg(map[string]string{})
+	}
+	return ip.factory(ctx, *pluginContext.AppInstanceSettings, *cfg)
 }

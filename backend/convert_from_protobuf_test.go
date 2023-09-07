@@ -261,6 +261,8 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
 
+	requireCounter.Equal(t, protoCtx.Config, sdkCtx.Config.config)
+
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-3, "untested fields in conversion") // -3 Struct Fields
 }
 
@@ -424,12 +426,12 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, sdkTimeRange.To, sdkQDR.Queries[0].TimeRange.To)
 	requireCounter.Equal(t, json.RawMessage(protoQDR.Queries[0].Json), sdkQDR.Queries[0].JSON)
 
-	// -6 is:
+	// -7 is:
 	// PluginContext, .User, .AppInstanceSettings, .DataSourceInstanceSettings
-	// DataQuery, .TimeRange
+	// DataQuery, .TimeRange, .Config
 	//
 	//
-	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-6, "untested fields in conversion") // -6 Struct Fields
+	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-7, "untested fields in conversion") // -6 Struct Fields
 }
 
 func TestConvertFromProtobufCheckHealthRequest(t *testing.T) {
@@ -500,6 +502,6 @@ func datasourceInstanceProtoFieldCountDelta() int64 {
 
 // pluginContextSdkFieldCountDelta returns the extra number of protobuf fields that do not exist in the SDK.
 func pluginContextSdkFieldCountDelta() int64 {
-	// returning 1 to account for the unexported config field in the SDK
-	return int64(1)
+	// returning 1 to account for the unexported Config field in the SDK
+	return int64(0)
 }

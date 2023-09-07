@@ -47,13 +47,15 @@ func TestInstanceProvider(t *testing.T) {
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
-		}.WithConfig(config)
+			Config: backend.NewCfg(config),
+		}
 
 		cachedSettings := backend.PluginContext{
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: curSettings.AppInstanceSettings.Updated,
 			},
-		}.WithConfig(config)
+			Config: backend.NewCfg(config),
+		}
 
 		cachedInstance := instancemgmt.CachedInstance{
 			PluginContext: cachedSettings,
@@ -82,11 +84,11 @@ func TestInstanceProvider(t *testing.T) {
 		require.True(t, needsUpdate)
 
 		t.Run("Should return true when cached config is changed", func(t *testing.T) {
-			curSettings = curSettings.WithConfig(map[string]string{
+			curSettings.Config = backend.NewCfg(map[string]string{
 				"foo": "bar",
 			})
 
-			cachedSettings = cachedSettings.WithConfig(map[string]string{
+			cachedSettings.Config = backend.NewCfg(map[string]string{
 				"baz": "qux",
 			})
 
@@ -161,19 +163,15 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					AppInstanceSettings: &backend.AppInstanceSettings{
 						Updated: ts,
 					},
-				}.WithConfig(map[string]string{
-					"foo": "bar",
-					"baz": "qux",
-				}),
+					Config: backend.NewCfg(map[string]string{"foo": "bar", "baz": "qux"}),
+				},
 				cachedInstance: instancemgmt.CachedInstance{
 					PluginContext: backend.PluginContext{
 						AppInstanceSettings: &backend.AppInstanceSettings{
 							Updated: ts,
 						},
-					}.WithConfig(map[string]string{
-						"baz": "qux",
-						"foo": "bar",
-					}),
+						Config: backend.NewCfg(map[string]string{"foo": "bar", "baz": "qux"}),
+					},
 				},
 			},
 			expected: false,
@@ -203,7 +201,8 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					AppInstanceSettings: &backend.AppInstanceSettings{
 						Updated: ts,
 					},
-				}.WithConfig(map[string]string{"foo": "bar"}),
+					Config: backend.NewCfg(map[string]string{"foo": "bar"}),
+				},
 				cachedInstance: instancemgmt.CachedInstance{
 					PluginContext: backend.PluginContext{
 						AppInstanceSettings: &backend.AppInstanceSettings{

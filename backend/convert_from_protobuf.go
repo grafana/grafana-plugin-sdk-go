@@ -78,7 +78,7 @@ func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
-		config:                     proto.Config,
+		Config:                     f.Config(proto.Config),
 	}
 }
 
@@ -275,5 +275,11 @@ func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamReques
 func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *StreamPacket {
 	return &StreamPacket{
 		Data: protoReq.GetData(),
+	}
+}
+
+func (f ConvertFromProtobuf) Config(cfg map[string]string) *Cfg {
+	return &Cfg{
+		config: cfg,
 	}
 }
