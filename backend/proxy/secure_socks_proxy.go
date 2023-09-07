@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -9,6 +10,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -40,11 +42,12 @@ var (
 )
 
 var (
+	socksUnknownError              = regexp.MustCompile(`unknown code: (\d+)`)
 	secureSocksConnectionsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-		Namespace: "plugins", //TODO: what is the correct namespace here ?
+		Namespace: "grafana",
 		Name:      "secure_socks_connections_duration",
 		Help:      "Duration of establishing a connection to a secure socks proxy",
-	}, []string{"status"})
+	}, []string{"code"})
 )
 
 // Client is the main Proxy Client interface.
@@ -176,9 +179,9 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer(opts *Options) (proxy
 		return nil, err
 	}
 
-	instrumentedDialer := NewInstrumentedDialer(dialSocksProxy)
+	instrumentedSocksDialer := NewInstrumentedSocksDialer(dialSocksProxy)
 
-	return instrumentedDialer, nil
+	return instrumentedSocksDialer, nil
 }
 
 // getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
@@ -250,26 +253,63 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 	return false
 }
 
-// Dial is a wrapper around the proxy.Dialer.Dial method and records the connection duration.
-type instrumentedDialer struct {
+// instrumentedSocksDialer  is a wrapper around the proxy.Dialer and proxy.DialContext
+// that records relevant socks secure socks proxy.
+type instrumentedSocksDialer struct {
 	dialer proxy.Dialer
 }
 
-// NewInstrumentedDialer creates a new instrumented dialer
-func NewInstrumentedDialer(dialer proxy.Dialer) proxy.Dialer {
-	return &instrumentedDialer{
+// NewInstrumenSockstedDialer creates a new instrumented dialer
+func NewInstrumentedSocksDialer(dialer proxy.Dialer) proxy.Dialer {
+	return &instrumentedSocksDialer{
 		dialer: dialer,
 	}
 }
 
-// Dial records the duration of the request
-func (d *instrumentedDialer) Dial(network, addr string) (net.Conn, error) {
+// Dial -
+func (d *instrumentedSocksDialer) Dial(network, addr string) (net.Conn, error) {
+	return d.DialContext(context.Background(), network, addr)
+}
+
+// DialContext -
+func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr string) (net.Conn, error) {
 	start := time.Now()
-	c, err := d.dialer.Dial(network, addr)
-	status := "success"
-	if err != nil {
-		status = "error"
+	dialer, ok := d.dialer.(proxy.ContextDialer)
+	if !ok {
+		return nil, errors.New("unable to cast socks proxy dialer to context proxy dialer")
 	}
-	secureSocksConnectionsDuration.WithLabelValues(status).Observe(time.Since(start).Seconds())
+	c, err := dialer.DialContext(ctx, n, addr)
+
+	var code string
+	if err == nil {
+		code = "0"
+	} else if socksErr, ok := err.(*net.OpError); ok && strings.Contains(socksErr.Op, "socks") {
+		// Socks errors defined here: https://cs.opensource.google/go/x/net/+/refs/tags/v0.15.0:internal/socks/socks.go;l=40-63
+		if strings.Contains(socksErr.Error(), "general SOCKS server failure") {
+			code = "1"
+		} else if strings.Contains(socksErr.Error(), "connection not allowed by ruleset") {
+			code = "2"
+		} else if strings.Contains(socksErr.Error(), "network unreachable") {
+			code = "3"
+		} else if strings.Contains(socksErr.Error(), "host unreachable") {
+			code = "4"
+		} else if strings.Contains(socksErr.Error(), "connection refused") {
+			code = "5"
+		} else if strings.Contains(socksErr.Error(), "TTL expired") {
+			code = "6"
+		} else if strings.Contains(socksErr.Error(), "command not supported") {
+			code = "7"
+		} else if strings.Contains(socksErr.Error(), "address type not supported") {
+			code = "8"
+		} else if match := socksUnknownError.FindStringSubmatch(socksErr.Error()); len(match) > 1 {
+			code = match[1]
+		} else {
+			code = "socks_unknown_error"
+		}
+	} else {
+		code = "dial_error"
+	}
+
+	secureSocksConnectionsDuration.WithLabelValues(code).Observe(time.Since(start).Seconds())
 	return c, err
 }
