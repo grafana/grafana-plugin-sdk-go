@@ -179,7 +179,7 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer(opts *Options) (proxy
 		return nil, err
 	}
 
-	instrumentedSocksDialer := NewInstrumentedSocksDialer(dialSocksProxy)
+	instrumentedSocksDialer := newInstrumentedSocksDialer(dialSocksProxy)
 
 	return instrumentedSocksDialer, nil
 }
@@ -260,7 +260,7 @@ type instrumentedSocksDialer struct {
 }
 
 // NewInstrumenSockstedDialer creates a new instrumented dialer
-func NewInstrumentedSocksDialer(dialer proxy.Dialer) proxy.Dialer {
+func newInstrumentedSocksDialer(dialer proxy.Dialer) proxy.Dialer {
 	return &instrumentedSocksDialer{
 		dialer: dialer,
 	}
@@ -281,31 +281,38 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 	c, err := dialer.DialContext(ctx, n, addr)
 
 	var code string
+	var e *net.OpError
+
 	if err == nil {
 		code = "0"
-	} else if socksErr, ok := err.(*net.OpError); ok && strings.Contains(socksErr.Op, "socks") {
+	} else if errors.As(err, &e) && strings.Contains(err.(*net.OpError).Op, "socks") {
 		// Socks errors defined here: https://cs.opensource.google/go/x/net/+/refs/tags/v0.15.0:internal/socks/socks.go;l=40-63
-		if strings.Contains(socksErr.Error(), "general SOCKS server failure") {
+
+		unknownCode := socksUnknownError.FindStringSubmatch(err.Error())
+
+		switch {
+		case strings.Contains(err.Error(), "general SOCKS server failure"):
 			code = "1"
-		} else if strings.Contains(socksErr.Error(), "connection not allowed by ruleset") {
+		case strings.Contains(err.Error(), "connection not allowed by ruleset"):
 			code = "2"
-		} else if strings.Contains(socksErr.Error(), "network unreachable") {
+		case strings.Contains(err.Error(), "network unreachable"):
 			code = "3"
-		} else if strings.Contains(socksErr.Error(), "host unreachable") {
+		case strings.Contains(err.Error(), "host unreachable"):
 			code = "4"
-		} else if strings.Contains(socksErr.Error(), "connection refused") {
+		case strings.Contains(err.Error(), "connection refused"):
 			code = "5"
-		} else if strings.Contains(socksErr.Error(), "TTL expired") {
+		case strings.Contains(err.Error(), "TTL expired"):
 			code = "6"
-		} else if strings.Contains(socksErr.Error(), "command not supported") {
+		case strings.Contains(err.Error(), "command not supported"):
 			code = "7"
-		} else if strings.Contains(socksErr.Error(), "address type not supported") {
+		case strings.Contains(err.Error(), "address type not supported"):
 			code = "8"
-		} else if match := socksUnknownError.FindStringSubmatch(socksErr.Error()); len(match) > 1 {
-			code = match[1]
-		} else {
+		case len(unknownCode) > 1:
+			code = unknownCode[1]
+		default:
 			code = "socks_unknown_error"
 		}
+
 	} else {
 		code = "dial_error"
 	}
