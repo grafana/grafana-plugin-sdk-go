@@ -281,11 +281,11 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 	c, err := dialer.DialContext(ctx, n, addr)
 
 	var code string
-	var e *net.OpError
+	var socksErr *net.OpError
 
 	if err == nil {
 		code = "0"
-	} else if errors.As(err, &e) && strings.Contains(err.(*net.OpError).Op, "socks") {
+	} else if errors.As(err, &socksErr) && strings.Contains(socksErr.Op, "socks") {
 		// Socks errors defined here: https://cs.opensource.google/go/x/net/+/refs/tags/v0.15.0:internal/socks/socks.go;l=40-63
 
 		unknownCode := socksUnknownError.FindStringSubmatch(err.Error())
