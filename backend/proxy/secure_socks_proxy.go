@@ -42,11 +42,11 @@ var (
 )
 
 var (
-	socksUnknownError              = regexp.MustCompile(`unknown code: (\d+)`)
-	secureSocksConnectionsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+	socksUnknownError           = regexp.MustCompile(`unknown code: (\d+)`)
+	secureSocksRequestsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 		Namespace: "grafana",
-		Name:      "secure_socks_connections_duration",
-		Help:      "Duration of establishing a connection to a secure socks proxy",
+		Name:      "secure_socks_requests_duration",
+		Help:      "Duration of requests to the secure socks proxy",
 	}, []string{"code"})
 )
 
@@ -317,6 +317,6 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 		code = "dial_error"
 	}
 
-	secureSocksConnectionsDuration.WithLabelValues(code).Observe(time.Since(start).Seconds())
+	secureSocksRequestsDuration.WithLabelValues(code).Observe(time.Since(start).Seconds())
 	return c, err
 }
