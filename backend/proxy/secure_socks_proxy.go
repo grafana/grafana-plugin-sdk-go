@@ -1,6 +1,7 @@
 package proxy
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -9,9 +10,13 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
+	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/net/proxy"
 )
 
@@ -34,6 +39,15 @@ var (
 	// PluginSecureSocksProxyServerName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
 	// environment variable used to specify the server name of the secure socks proxy.
 	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+)
+
+var (
+	socksUnknownError           = regexp.MustCompile(`unknown code: (\d+)`)
+	secureSocksRequestsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
+		Namespace: "grafana",
+		Name:      "secure_socks_requests_duration",
+		Help:      "Duration of requests to the secure socks proxy",
+	}, []string{"code"})
 )
 
 // Client is the main Proxy Client interface.
@@ -165,7 +179,9 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer(opts *Options) (proxy
 		return nil, err
 	}
 
-	return dialSocksProxy, nil
+	instrumentedSocksDialer := newInstrumentedSocksDialer(dialSocksProxy)
+
+	return instrumentedSocksDialer, nil
 }
 
 // getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
@@ -235,4 +251,72 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 	}
 
 	return false
+}
+
+// instrumentedSocksDialer  is a wrapper around the proxy.Dialer and proxy.DialContext
+// that records relevant socks secure socks proxy.
+type instrumentedSocksDialer struct {
+	dialer proxy.Dialer
+}
+
+// NewInstrumenSockstedDialer creates a new instrumented dialer
+func newInstrumentedSocksDialer(dialer proxy.Dialer) proxy.Dialer {
+	return &instrumentedSocksDialer{
+		dialer: dialer,
+	}
+}
+
+// Dial -
+func (d *instrumentedSocksDialer) Dial(network, addr string) (net.Conn, error) {
+	return d.DialContext(context.Background(), network, addr)
+}
+
+// DialContext -
+func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr string) (net.Conn, error) {
+	start := time.Now()
+	dialer, ok := d.dialer.(proxy.ContextDialer)
+	if !ok {
+		return nil, errors.New("unable to cast socks proxy dialer to context proxy dialer")
+	}
+	c, err := dialer.DialContext(ctx, n, addr)
+
+	var code string
+	var oppErr *net.OpError
+
+	switch {
+	case err == nil:
+		code = "0"
+	case errors.As(err, &oppErr):
+		// Socks errors defined here: https://cs.opensource.google/go/x/net/+/refs/tags/v0.15.0:internal/socks/socks.go;l=40-63
+
+		unknownCode := socksUnknownError.FindStringSubmatch(err.Error())
+
+		switch {
+		case strings.Contains(err.Error(), "general SOCKS server failure"):
+			code = "1"
+		case strings.Contains(err.Error(), "connection not allowed by ruleset"):
+			code = "2"
+		case strings.Contains(err.Error(), "network unreachable"):
+			code = "3"
+		case strings.Contains(err.Error(), "host unreachable"):
+			code = "4"
+		case strings.Contains(err.Error(), "connection refused"):
+			code = "5"
+		case strings.Contains(err.Error(), "TTL expired"):
+			code = "6"
+		case strings.Contains(err.Error(), "command not supported"):
+			code = "7"
+		case strings.Contains(err.Error(), "address type not supported"):
+			code = "8"
+		case len(unknownCode) > 1:
+			code = unknownCode[1]
+		default:
+			code = "socks_unknown_error"
+		}
+	default:
+		code = "dial_error"
+	}
+
+	secureSocksRequestsDuration.WithLabelValues(code).Observe(time.Since(start).Seconds())
+	return c, err
 }
