@@ -2,12 +2,10 @@ package instancemgmt
 
 import (
 	"context"
-	"reflect"
-	"sync"
-	"time"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
+	"reflect"
+	"sync"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -156,22 +154,4 @@ func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
 	var params = []reflect.Value{}
 	params = append(params, reflect.ValueOf(instance))
 	reflect.ValueOf(fn).Call(params)
-}
-
-func (c CachedInstance) IsStale(ts time.Time, cfg *backend.GrafanaCfg) bool {
-	cachedConfig := c.PluginContext.GrafanaConfig
-	configUpdated := !cachedConfig.Equal(cfg)
-
-	var settingsUpdated bool
-	if c.PluginContext.DataSourceInstanceSettings != nil {
-		cachedDataSourceSettings := c.PluginContext.DataSourceInstanceSettings
-		settingsUpdated = !ts.Equal(cachedDataSourceSettings.Updated)
-	}
-
-	if c.PluginContext.AppInstanceSettings != nil {
-		cachedAppSettings := c.PluginContext.AppInstanceSettings
-		settingsUpdated = settingsUpdated || !ts.Equal(cachedAppSettings.Updated)
-	}
-
-	return settingsUpdated || configUpdated
 }

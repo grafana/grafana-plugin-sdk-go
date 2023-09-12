@@ -9,8 +9,8 @@ import (
 
 type configKey struct{}
 
-// ConfigFromContext returns config from context.
-func ConfigFromContext(ctx context.Context) *GrafanaCfg {
+// GrafanaConfigFromContext returns Grafana config from context.
+func GrafanaConfigFromContext(ctx context.Context) *GrafanaCfg {
 	v := ctx.Value(configKey{})
 	if v == nil {
 		return NewGrafanaCfg(nil)
@@ -19,8 +19,8 @@ func ConfigFromContext(ctx context.Context) *GrafanaCfg {
 	return v.(*GrafanaCfg)
 }
 
-// contextWithConfig injects supplied config into context.
-func contextWithConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
+// contextWithGrafanaConfig injects supplied Grafana config into context.
+func contextWithGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
 	ctx = context.WithValue(ctx, configKey{}, cfg)
 	return ctx
 }
