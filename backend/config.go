@@ -1,29 +1,40 @@
 package backend
 
 import (
+	"context"
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
-const GrafanaVersion = "GF_VERSION"
+type configKey struct{}
+
+// ConfigFromContext returns config from context.
+func ConfigFromContext(ctx context.Context) *Cfg {
+	v := ctx.Value(configKey{})
+	if v == nil {
+		return NewCfg(nil)
+	}
+
+	return v.(*Cfg)
+}
+
+// contextWithConfig injects supplied config into context.
+func contextWithConfig(ctx context.Context, cfg *Cfg) context.Context {
+	ctx = context.WithValue(ctx, configKey{}, cfg)
+	return ctx
+}
 
 type Cfg struct {
 	config map[string]string
 }
 
 func NewCfg(cfg map[string]string) *Cfg {
-	// Make sure all keys are uppercase
-	normalized := make(map[string]string, len(cfg))
-	for k, v := range cfg {
-		normalized[strings.ToUpper(k)] = v
-	}
-
-	return &Cfg{config: normalized}
+	return &Cfg{config: cfg}
 }
 
 func (c *Cfg) Get(key string) string {
-	return c.config[strings.ToUpper(key)]
+	return c.config[key]
 }
 
 func (c *Cfg) FeatureToggles() FeatureToggles {
@@ -65,7 +76,7 @@ func (c *Cfg) Equal(c2 *Cfg) bool {
 }
 
 type FeatureToggles struct {
-	// flags is a set-like map of feature flags that are enabled.
+	// enabled is a set-like map of feature flags that are enabled.
 	enabled map[string]struct{}
 }
 

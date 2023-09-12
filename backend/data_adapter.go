@@ -45,6 +45,7 @@ func withHeaderMiddleware(ctx context.Context, headers http.Header) context.Cont
 
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	ctx = propagateTenantIDIfPresent(ctx)
+	ctx = contextWithConfig(ctx, NewCfg(req.PluginContext.Config))
 	parsedRequest := FromProto().QueryDataRequest(req)
 	ctx = withHeaderMiddleware(ctx, parsedRequest.GetHTTPHeaders())
 	resp, err := a.queryDataHandler.QueryData(ctx, parsedRequest)

@@ -23,7 +23,7 @@ const (
 // A test to verify the impact tenant ID (passed via context) has on plugin instance management
 func TestTenantWithPluginInstanceManagement(t *testing.T) {
 	factoryInvocations := 0
-	factory := datasource.InstanceFactoryFunc(func(ctx context.Context, settings backend.DataSourceInstanceSettings, cfg backend.Cfg) (instancemgmt.Instance, error) {
+	factory := datasource.InstanceFactoryFunc(func(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 		factoryInvocations++
 		return &testPlugin{}, nil
 	})

@@ -279,7 +279,5 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 }
 
 func (f ConvertFromProtobuf) Config(cfg map[string]string) *Cfg {
-	return &Cfg{
-		config: cfg,
-	}
+	return NewCfg(cfg)
 }

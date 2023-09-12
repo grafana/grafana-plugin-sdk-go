@@ -11,7 +11,7 @@ import (
 )
 
 // InstanceFactoryFunc factory method for creating app instances.
-type InstanceFactoryFunc func(ctx context.Context, settings backend.AppInstanceSettings, cfg backend.Cfg) (instancemgmt.Instance, error)
+type InstanceFactoryFunc func(ctx context.Context, settings backend.AppInstanceSettings) (instancemgmt.Instance, error)
 
 // NewInstanceManager creates a new app instance manager,
 //
@@ -71,9 +71,5 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 }
 
 func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
-	cfg := pluginContext.Config
-	if cfg == nil {
-		cfg = backend.NewCfg(map[string]string{})
-	}
-	return ip.factory(ctx, *pluginContext.AppInstanceSettings, *cfg)
+	return ip.factory(ctx, *pluginContext.AppInstanceSettings)
 }

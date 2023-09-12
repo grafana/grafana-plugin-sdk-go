@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -155,4 +156,14 @@ func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
 	var params = []reflect.Value{}
 	params = append(params, reflect.ValueOf(instance))
 	reflect.ValueOf(fn).Call(params)
+}
+
+func (c CachedInstance) IsStale(ts time.Time, curConfig *backend.Cfg) bool {
+	cachedConfig := c.PluginContext.Config
+	configUpdated := !cachedConfig.Equal(curConfig)
+
+	cachedDataSourceSettings := c.PluginContext.DataSourceInstanceSettings
+	dsUpdated := !ts.Equal(cachedDataSourceSettings.Updated)
+
+	return dsUpdated || configUpdated
 }
