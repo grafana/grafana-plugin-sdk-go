@@ -164,7 +164,7 @@ type PluginContext struct {
 	DataSourceInstanceSettings *DataSourceInstanceSettings
 
 	// GrafanaConfig is the configuration settings provided by Grafana.
-	GrafanaConfig *Cfg
+	GrafanaConfig *GrafanaCfg
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

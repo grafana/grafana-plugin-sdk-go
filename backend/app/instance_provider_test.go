@@ -47,14 +47,14 @@ func TestInstanceProvider(t *testing.T) {
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
-			GrafanaConfig: backend.NewCfg(config),
+			GrafanaConfig: backend.NewGrafanaCfg(config),
 		}
 
 		cachedSettings := backend.PluginContext{
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: curSettings.AppInstanceSettings.Updated,
 			},
-			GrafanaConfig: backend.NewCfg(config),
+			GrafanaConfig: backend.NewGrafanaCfg(config),
 		}
 
 		cachedInstance := instancemgmt.CachedInstance{
@@ -84,11 +84,11 @@ func TestInstanceProvider(t *testing.T) {
 		require.True(t, needsUpdate)
 
 		t.Run("Should return true when cached config is changed", func(t *testing.T) {
-			curSettings.GrafanaConfig = backend.NewCfg(map[string]string{
+			curSettings.GrafanaConfig = backend.NewGrafanaCfg(map[string]string{
 				"foo": "bar",
 			})
 
-			cachedSettings.GrafanaConfig = backend.NewCfg(map[string]string{
+			cachedSettings.GrafanaConfig = backend.NewGrafanaCfg(map[string]string{
 				"baz": "qux",
 			})
 
@@ -163,14 +163,14 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					AppInstanceSettings: &backend.AppInstanceSettings{
 						Updated: ts,
 					},
-					GrafanaConfig: backend.NewCfg(map[string]string{"foo": "bar", "baz": "qux"}),
+					GrafanaConfig: backend.NewGrafanaCfg(map[string]string{"foo": "bar", "baz": "qux"}),
 				},
 				cachedInstance: instancemgmt.CachedInstance{
 					PluginContext: backend.PluginContext{
 						AppInstanceSettings: &backend.AppInstanceSettings{
 							Updated: ts,
 						},
-						GrafanaConfig: backend.NewCfg(map[string]string{"foo": "bar", "baz": "qux"}),
+						GrafanaConfig: backend.NewGrafanaCfg(map[string]string{"foo": "bar", "baz": "qux"}),
 					},
 				},
 			},
@@ -201,7 +201,7 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					AppInstanceSettings: &backend.AppInstanceSettings{
 						Updated: ts,
 					},
-					GrafanaConfig: backend.NewCfg(map[string]string{"foo": "bar"}),
+					GrafanaConfig: backend.NewGrafanaCfg(map[string]string{"foo": "bar"}),
 				},
 				cachedInstance: instancemgmt.CachedInstance{
 					PluginContext: backend.PluginContext{

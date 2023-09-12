@@ -158,12 +158,20 @@ func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
 	reflect.ValueOf(fn).Call(params)
 }
 
-func (c CachedInstance) IsStale(ts time.Time, curConfig *backend.Cfg) bool {
+func (c CachedInstance) IsStale(ts time.Time, cfg *backend.GrafanaCfg) bool {
 	cachedConfig := c.PluginContext.GrafanaConfig
-	configUpdated := !cachedConfig.Equal(curConfig)
+	configUpdated := !cachedConfig.Equal(cfg)
 
-	cachedDataSourceSettings := c.PluginContext.DataSourceInstanceSettings
-	dsUpdated := !ts.Equal(cachedDataSourceSettings.Updated)
+	var settingsUpdated bool
+	if c.PluginContext.DataSourceInstanceSettings != nil {
+		cachedDataSourceSettings := c.PluginContext.DataSourceInstanceSettings
+		settingsUpdated = !ts.Equal(cachedDataSourceSettings.Updated)
+	}
 
-	return dsUpdated || configUpdated
+	if c.PluginContext.AppInstanceSettings != nil {
+		cachedAppSettings := c.PluginContext.AppInstanceSettings
+		settingsUpdated = settingsUpdated || !ts.Equal(cachedAppSettings.Updated)
+	}
+
+	return settingsUpdated || configUpdated
 }

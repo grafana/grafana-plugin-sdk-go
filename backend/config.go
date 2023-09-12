@@ -10,34 +10,34 @@ import (
 type configKey struct{}
 
 // ConfigFromContext returns config from context.
-func ConfigFromContext(ctx context.Context) *Cfg {
+func ConfigFromContext(ctx context.Context) *GrafanaCfg {
 	v := ctx.Value(configKey{})
 	if v == nil {
-		return NewCfg(nil)
+		return NewGrafanaCfg(nil)
 	}
 
-	return v.(*Cfg)
+	return v.(*GrafanaCfg)
 }
 
 // contextWithConfig injects supplied config into context.
-func contextWithConfig(ctx context.Context, cfg *Cfg) context.Context {
+func contextWithConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
 	ctx = context.WithValue(ctx, configKey{}, cfg)
 	return ctx
 }
 
-type Cfg struct {
+type GrafanaCfg struct {
 	config map[string]string
 }
 
-func NewCfg(cfg map[string]string) *Cfg {
-	return &Cfg{config: cfg}
+func NewGrafanaCfg(cfg map[string]string) *GrafanaCfg {
+	return &GrafanaCfg{config: cfg}
 }
 
-func (c *Cfg) Get(key string) string {
+func (c *GrafanaCfg) Get(key string) string {
 	return c.config[key]
 }
 
-func (c *Cfg) FeatureToggles() FeatureToggles {
+func (c *GrafanaCfg) FeatureToggles() FeatureToggles {
 	features, exists := c.config[featuretoggles.EnabledFeatures]
 	if !exists {
 		return FeatureToggles{}
@@ -49,14 +49,12 @@ func (c *Cfg) FeatureToggles() FeatureToggles {
 		enabledFeatures[f] = struct{}{}
 	}
 
-	// TODO fallback to legacy env var
-
 	return FeatureToggles{
 		enabled: enabledFeatures,
 	}
 }
 
-func (c *Cfg) Equal(c2 *Cfg) bool {
+func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	if c == nil && c2 == nil {
 		return true
 	}
