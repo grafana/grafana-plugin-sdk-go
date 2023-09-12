@@ -68,15 +68,7 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
-	curConfig := pluginContext.GrafanaConfig
-	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
-	configUpdated := !cachedConfig.Equal(curConfig)
-
-	curDataSourceSettings := pluginContext.DataSourceInstanceSettings
-	cachedDataSourceSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
-	dsUpdated := !curDataSourceSettings.Updated.Equal(cachedDataSourceSettings.Updated)
-
-	return dsUpdated || configUpdated
+	return cachedInstance.IsStale(pluginContext)
 }
 
 func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
