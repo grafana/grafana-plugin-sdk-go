@@ -111,10 +111,10 @@ type TLSOptions struct {
 	InsecureSkipVerify bool
 	ServerName         string
 
-	// MinVersion configures the tls.GrafanaConfig.MinVersion.
+	// MinVersion configures the tls.Config.MinVersion.
 	MinVersion uint16
 
-	// MaxVersion configures the tls.GrafanaConfig.MaxVersion.
+	// MaxVersion configures the tls.Config.MaxVersion.
 	MaxVersion uint16
 }
 

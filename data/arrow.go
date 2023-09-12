@@ -333,7 +333,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 			}
 		}
 		if configAsString, ok := getMDKey(metadataKeyConfig, field.Metadata); ok {
-			// make sure that GrafanaConfig is not nil, otherwise create a new one
+			// make sure that Config is not nil, otherwise create a new one
 			if sdkField.Config == nil {
 				sdkField.Config = &FieldConfig{}
 			}

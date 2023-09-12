@@ -60,7 +60,7 @@ message PluginContext {
   // Will only be set if request targeting a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 
-  // The plugin instance configuration as a map of key/value pairs.
+  // The grafana configuration as a map of key/value pairs.
   map<string,string> config = 6;
 }
 
