@@ -61,7 +61,7 @@ message PluginContext {
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 
   // The grafana configuration as a map of key/value pairs.
-  map<string,string> config = 6;
+  map<string,string> grafanaConfig = 6;
 }
 
 //---------------------------------------------------------

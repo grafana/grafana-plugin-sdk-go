@@ -203,7 +203,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
-	Config: map[string]string{
+	GrafanaConfig: map[string]string{
 		"foo": "bar",
 	},
 }
@@ -260,7 +260,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
 
-	requireCounter.Equal(t, protoCtx.Config, sdkCtx.GrafanaConfig.config)
+	requireCounter.Equal(t, protoCtx.GrafanaConfig, sdkCtx.GrafanaConfig.config)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-3, "untested fields in conversion") // -3 Struct Fields
 }
