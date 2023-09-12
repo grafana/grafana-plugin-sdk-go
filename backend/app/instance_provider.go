@@ -59,8 +59,8 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
-	curConfig := pluginContext.Config
-	cachedConfig := cachedInstance.PluginContext.Config
+	curConfig := pluginContext.GrafanaConfig
+	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
 	configUpdated := !cachedConfig.Equal(curConfig)
 
 	cachedAppSettings := cachedInstance.PluginContext.AppInstanceSettings

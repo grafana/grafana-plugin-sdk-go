@@ -260,7 +260,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
 
-	requireCounter.Equal(t, protoCtx.Config, sdkCtx.Config.config)
+	requireCounter.Equal(t, protoCtx.Config, sdkCtx.GrafanaConfig.config)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-3, "untested fields in conversion") // -3 Struct Fields
 }
@@ -427,7 +427,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 
 	// -7 is:
 	// PluginContext, .User, .AppInstanceSettings, .DataSourceInstanceSettings
-	// DataQuery, .TimeRange, .Config
+	// DataQuery, .TimeRange, .GrafanaConfig
 	//
 	//
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-7, "untested fields in conversion") // -6 Struct Fields

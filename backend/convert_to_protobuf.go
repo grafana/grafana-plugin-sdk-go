@@ -76,7 +76,7 @@ func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.Plug
 		User:                       t.User(pluginCtx.User),
 		AppInstanceSettings:        t.AppInstanceSettings(pluginCtx.AppInstanceSettings),
 		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pluginCtx.DataSourceInstanceSettings),
-		Config:                     t.Config(pluginCtx.Config),
+		Config:                     t.Config(pluginCtx.GrafanaConfig),
 	}
 }
 

@@ -43,14 +43,14 @@ func TestInstanceProvider(t *testing.T) {
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 				Updated: time.Now(),
 			},
-			Config: backend.NewCfg(config),
+			GrafanaConfig: backend.NewCfg(config),
 		}
 
 		cachedSettings := backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 				Updated: curSettings.DataSourceInstanceSettings.Updated,
 			},
-			Config: backend.NewCfg(config),
+			GrafanaConfig: backend.NewCfg(config),
 		}
 
 		cachedInstance := instancemgmt.CachedInstance{
@@ -79,11 +79,11 @@ func TestInstanceProvider(t *testing.T) {
 		require.True(t, needsUpdate)
 
 		t.Run("Should return true when cached config is changed", func(t *testing.T) {
-			curSettings.Config = backend.NewCfg(map[string]string{
+			curSettings.GrafanaConfig = backend.NewCfg(map[string]string{
 				"foo": "true",
 			})
 
-			cachedSettings.Config = backend.NewCfg(map[string]string{
+			cachedSettings.GrafanaConfig = backend.NewCfg(map[string]string{
 				"foo": "false",
 			})
 
@@ -156,7 +156,7 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 						Updated: ts,
 					},
-					Config: backend.NewCfg(map[string]string{
+					GrafanaConfig: backend.NewCfg(map[string]string{
 						"foo": "bar",
 						"baz": "qux",
 					}),
@@ -166,7 +166,7 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 						DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 							Updated: ts,
 						},
-						Config: backend.NewCfg(map[string]string{
+						GrafanaConfig: backend.NewCfg(map[string]string{
 							"baz": "qux",
 							"foo": "bar",
 						}),
@@ -200,7 +200,7 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 						Updated: ts,
 					},
-					Config: backend.NewCfg(map[string]string{
+					GrafanaConfig: backend.NewCfg(map[string]string{
 						"foo": "bar",
 					}),
 				},

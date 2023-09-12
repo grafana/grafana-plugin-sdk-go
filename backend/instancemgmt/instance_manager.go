@@ -159,7 +159,7 @@ func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
 }
 
 func (c CachedInstance) IsStale(ts time.Time, curConfig *backend.Cfg) bool {
-	cachedConfig := c.PluginContext.Config
+	cachedConfig := c.PluginContext.GrafanaConfig
 	configUpdated := !cachedConfig.Equal(curConfig)
 
 	cachedDataSourceSettings := c.PluginContext.DataSourceInstanceSettings
