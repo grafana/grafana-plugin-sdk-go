@@ -4,6 +4,10 @@ import (
 	"context"
 	"reflect"
 	"sync"
+	"time"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -157,18 +161,20 @@ func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
 	reflect.ValueOf(fn).Call(params)
 }
 
-func (c CachedInstance) IsStale(pluginContext backend.PluginContext) bool {
-	if !pluginContext.GrafanaConfig.Equal(c.PluginContext.GrafanaConfig) {
-		return true
+func (c CachedInstance) IsStale(ts time.Time, cfg *backend.GrafanaCfg) bool {
+	cachedConfig := c.PluginContext.GrafanaConfig
+	configUpdated := !cachedConfig.Equal(cfg)
+
+	var settingsUpdated bool
+	if c.PluginContext.DataSourceInstanceSettings != nil {
+		cachedDataSourceSettings := c.PluginContext.DataSourceInstanceSettings
+		settingsUpdated = !ts.Equal(cachedDataSourceSettings.Updated)
 	}
 
-	if pluginContext.DataSourceInstanceSettings != nil {
-		return !pluginContext.DataSourceInstanceSettings.Updated.Equal(c.PluginContext.DataSourceInstanceSettings.Updated)
+	if c.PluginContext.AppInstanceSettings != nil {
+		cachedAppSettings := c.PluginContext.AppInstanceSettings
+		settingsUpdated = settingsUpdated || !ts.Equal(cachedAppSettings.Updated)
 	}
 
-	if pluginContext.AppInstanceSettings != nil {
-		return !pluginContext.AppInstanceSettings.Updated.Equal(c.PluginContext.AppInstanceSettings.Updated)
-	}
-
-	return false
+	return settingsUpdated || configUpdated
 }
