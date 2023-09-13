@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
@@ -82,4 +83,28 @@ type FeatureToggles struct {
 func (ft FeatureToggles) IsEnabled(f string) bool {
 	_, exists := ft.enabled[f]
 	return exists
+}
+
+type ProxyClient struct {
+	cfg proxy.ClientCfg
+}
+
+func (pc ProxyClient) ClientConfig() proxy.ClientCfg {
+	return pc.cfg
+}
+
+func (c *GrafanaCfg) Proxy() ProxyClient {
+	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == "true" {
+		return ProxyClient{
+			cfg: proxy.ClientCfg{
+				Enabled:      true,
+				ClientCert:   c.Get(proxy.PluginSecureSocksProxyClientCert),
+				ClientKey:    c.Get(proxy.PluginSecureSocksProxyClientKey),
+				RootCA:       c.Get(proxy.PluginSecureSocksProxyRootCACert),
+				ProxyAddress: c.Get(proxy.PluginSecureSocksProxyProxyAddress),
+				ServerName:   c.Get(proxy.PluginSecureSocksProxyServerName),
+			},
+		}
+	}
+	return ProxyClient{cfg: proxy.ClientCfg{}}
 }
