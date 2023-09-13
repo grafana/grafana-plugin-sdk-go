@@ -140,6 +140,9 @@ type PluginContext struct {
 	// PluginID is the unique identifier of the plugin that the request is for.
 	PluginID string
 
+	// PluginVersion is the version of the plugin that the request is for.
+	PluginVersion string
+
 	// User is the Grafana user making the request.
 	//
 	// Will not be provided if Grafana backend initiated the request,
