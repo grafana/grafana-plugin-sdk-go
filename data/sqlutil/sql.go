@@ -43,7 +43,8 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 	frame := NewFrame(names, scanRow.Converters...)
 
 	var i int64
-	for rows.NextResultSet() {
+	for {
+		// first iterate over rows may be nop if not switched result set to next
 		for rows.Next() {
 			if i == rowLimit {
 				frame.AppendNotices(data.Notice{
@@ -63,6 +64,9 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 			}
 
 			i++
+		}
+		if !rows.NextResultSet() {
+			break
 		}
 	}
 
