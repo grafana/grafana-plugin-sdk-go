@@ -43,25 +43,27 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 	frame := NewFrame(names, scanRow.Converters...)
 
 	var i int64
-	for rows.Next() {
-		if i == rowLimit {
-			frame.AppendNotices(data.Notice{
-				Severity: data.NoticeSeverityWarning,
-				Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
-			})
-			break
-		}
+	for rows.NextResultSet() {
+		for rows.Next() {
+			if i == rowLimit {
+				frame.AppendNotices(data.Notice{
+					Severity: data.NoticeSeverityWarning,
+					Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
+				})
+				break
+			}
 
-		r := scanRow.NewScannableRow()
-		if err := rows.Scan(r...); err != nil {
-			return nil, err
-		}
+			r := scanRow.NewScannableRow()
+			if err := rows.Scan(r...); err != nil {
+				return nil, err
+			}
 
-		if err := Append(frame, r, scanRow.Converters...); err != nil {
-			return nil, err
-		}
+			if err := Append(frame, r, scanRow.Converters...); err != nil {
+				return nil, err
+			}
 
-		i++
+			i++
+		}
 	}
 
 	if err := rows.Err(); err != nil {
