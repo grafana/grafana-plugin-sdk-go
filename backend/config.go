@@ -19,8 +19,8 @@ func GrafanaConfigFromContext(ctx context.Context) *GrafanaCfg {
 	return v.(*GrafanaCfg)
 }
 
-// contextWithGrafanaConfig injects supplied Grafana config into context.
-func contextWithGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
+// withGrafanaConfig injects supplied Grafana config into context.
+func withGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
 	ctx = context.WithValue(ctx, configKey{}, cfg)
 	return ctx
 }
