@@ -1,4 +1,4 @@
-package sqlutil
+package sqlutil_test
 
 import (
 	"context"
@@ -12,6 +12,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/data/sqlutil"
 )
 
 type fakeDB struct {
@@ -173,7 +174,7 @@ func TestFrameFromRows(t *testing.T) {
 		name       string
 		rows       *sql.Rows
 		rowLimit   int64
-		converters []Converter
+		converters []sqlutil.Converter
 		frame      *data.Frame
 		err        bool
 	}{
@@ -272,7 +273,7 @@ func TestFrameFromRows(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			frame, err := FrameFromRows(tt.rows, tt.rowLimit, tt.converters...)
+			frame, err := sqlutil.FrameFromRows(tt.rows, tt.rowLimit, tt.converters...)
 			if tt.err {
 				require.Error(t, err)
 			} else {
