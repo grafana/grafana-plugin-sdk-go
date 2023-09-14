@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"strconv"
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
@@ -90,11 +91,12 @@ type ProxyClient struct {
 }
 
 func (pc ProxyClient) ClientConfig() proxy.ClientCfg {
+
 	return pc.cfg
 }
 
 func (c *GrafanaCfg) Proxy() ProxyClient {
-	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == "true" {
+	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
 		return ProxyClient{
 			cfg: proxy.ClientCfg{
 				Enabled:      true,
