@@ -205,6 +205,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
+	UserAgent:                  "Grafana/10.0.0 (linux; amd64)",
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
@@ -260,6 +261,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoCtx.DataSourceInstanceSettings.JsonData), sdkCtx.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
+	requireCounter.Equal(t, protoCtx.UserAgent, sdkCtx.UserAgent.String())
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-3, "untested fields in conversion") // -3 Struct Fields
 }
@@ -416,6 +418,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.DataSourceInstanceSettings.JsonData), sdkQDR.PluginContext.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkQDR.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkQDR.PluginContext.DataSourceInstanceSettings.Updated)
+	requireCounter.Equal(t, protoQDR.PluginContext.UserAgent, sdkQDR.PluginContext.UserAgent.String())
 
 	// Queries
 	requireCounter.Equal(t, protoQDR.Queries[0].RefId, sdkQDR.Queries[0].RefID)
