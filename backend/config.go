@@ -91,7 +91,6 @@ type ProxyClient struct {
 }
 
 func (pc ProxyClient) ClientConfig() proxy.ClientCfg {
-
 	return pc.cfg
 }
 
