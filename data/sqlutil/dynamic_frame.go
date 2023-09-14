@@ -26,10 +26,10 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 	var returnData [][]interface{}
 
 	for {
-		if i == rowLimit {
-			break
-		}
 		for rows.Next() {
+			if i == rowLimit {
+				break
+			}
 			row := make([]interface{}, len(types))
 			for i := range row {
 				row[i] = new(interface{})
@@ -80,7 +80,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 
 			i++
 		}
-		if !rows.NextResultSet() {
+		if i == rowLimit || !rows.NextResultSet() {
 			break
 		}
 	}

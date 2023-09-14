@@ -165,11 +165,10 @@ func makeMultipleResultSets(
 	return rows
 }
 
-func ptr(s string) *string {
-	return &s
-}
-
 func TestFrameFromRows(t *testing.T) {
+	ptr := func(s string) *string {
+		return &s
+	}
 	for _, tt := range []struct {
 		name       string
 		rows       *sql.Rows
@@ -203,6 +202,43 @@ func TestFrameFromRows(t *testing.T) {
 					data.NewField("a", nil, []*string{ptr("1"), ptr("4"), ptr("7")}),
 					data.NewField("b", nil, []*string{ptr("2"), ptr("5"), ptr("8")}),
 					data.NewField("c", nil, []*string{ptr("3"), ptr("6"), ptr("9")}),
+				},
+			},
+			err: false,
+		},
+		{
+			name: "rows not implements driver.RowsNextResultSet, limit reached",
+			rows: makeSingleResultSet( //nolint:rowserrcheck
+				[]string{
+					"a",
+					"b",
+					"c",
+				},
+				[]interface{}{
+					1, 2, 3,
+				},
+				[]interface{}{
+					4, 5, 6,
+				},
+				[]interface{}{
+					7, 8, 9,
+				},
+			),
+			rowLimit:   2,
+			converters: nil,
+			frame: &data.Frame{
+				Fields: []*data.Field{
+					data.NewField("a", nil, []*string{ptr("1"), ptr("4")}),
+					data.NewField("b", nil, []*string{ptr("2"), ptr("5")}),
+					data.NewField("c", nil, []*string{ptr("3"), ptr("6")}),
+				},
+				Meta: &data.FrameMeta{
+					Notices: []data.Notice{
+						{
+							Severity: data.NoticeSeverityWarning,
+							Text:     "Results have been limited to 2 because the SQL row limit was reached",
+						},
+					},
 				},
 			},
 			err: false,
@@ -267,6 +303,39 @@ func TestFrameFromRows(t *testing.T) {
 					data.NewField("a", nil, []*string{ptr("1"), ptr("4"), ptr("7")}),
 					data.NewField("b", nil, []*string{ptr("2"), ptr("5"), ptr("8")}),
 					data.NewField("c", nil, []*string{ptr("3"), ptr("6"), ptr("9")}),
+				},
+			},
+			err: false,
+		},
+		{
+			name: "rows implements driver.RowsNextResultSet, limit reached",
+			rows: makeMultipleResultSets( //nolint:rowserrcheck
+				[]string{
+					"a",
+					"b",
+					"c",
+				},
+				[][]interface{}{
+					{
+						1, 2, 3,
+					},
+					{
+						4, 5, 6,
+					},
+				},
+				[][]interface{}{
+					{
+						7, 8, 9,
+					},
+				},
+			),
+			rowLimit:   2,
+			converters: nil,
+			frame: &data.Frame{
+				Fields: []*data.Field{
+					data.NewField("a", nil, []*string{ptr("1"), ptr("4")}),
+					data.NewField("b", nil, []*string{ptr("2"), ptr("5")}),
+					data.NewField("c", nil, []*string{ptr("3"), ptr("6")}),
 				},
 			},
 			err: false,

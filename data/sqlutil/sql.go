@@ -65,7 +65,7 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 
 			i++
 		}
-		if !rows.NextResultSet() {
+		if i == rowLimit || !rows.NextResultSet() {
 			break
 		}
 	}
