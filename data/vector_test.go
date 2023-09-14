@@ -3,8 +3,9 @@ package data_test
 import (
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 func TestCopyAtDoesNotMutatePointerVector(t *testing.T) {
@@ -28,5 +29,5 @@ func TestCopyAtDoesNotMutateVector(t *testing.T) {
 		frameB.Set(0, i, frameA.Fields[0].CopyAt(i))
 	}
 	frameB.Set(0, 0, 2.0)
-	require.Equal(t, frameA.At(0, 0), (1.0))
+	require.Equal(t, frameA.At(0, 0), 1.0)
 }

@@ -10,10 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/arrow/ipc"
+	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 var update = flag.Bool("update", true, "update .golden.arrow files")
