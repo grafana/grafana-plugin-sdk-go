@@ -12,13 +12,15 @@ var (
 
 // UserAgent represents a Grafana user agent.
 // Its format is "Grafana/<version> (<os>; <arch>)"
-// Example: "Grafana/7.0.0-beta1 (darwin; amd64)"
+// Example: "Grafana/7.0.0-beta1 (darwin; amd64)", "Grafana/10.0.0 (windows; x86)"
 type UserAgent struct {
 	grafanaVersion string
 	arch           string
 	os             string
 }
 
+// New creates a new UserAgent.
+// The version must be a valid semver string, and the os and arch must be valid strings.
 func New(grafanaVersion, os, arch string) (*UserAgent, error) {
 	ua := &UserAgent{
 		grafanaVersion: grafanaVersion,
@@ -29,6 +31,7 @@ func New(grafanaVersion, os, arch string) (*UserAgent, error) {
 	return NewFromString(ua.String())
 }
 
+// NewFromString creates a new UserAgent from a string.
 func NewFromString(s string) (*UserAgent, error) {
 	matches := userAgentRegex.FindStringSubmatch(s)
 	if len(matches) != 4 {
@@ -46,12 +49,12 @@ func (ua *UserAgent) GrafanaVersion() string {
 	return ua.grafanaVersion
 }
 
-func (ua *UserAgent) Arch() string {
-	return ua.arch
-}
-
 func (ua *UserAgent) OS() string {
 	return ua.os
+}
+
+func (ua *UserAgent) Arch() string {
+	return ua.arch
 }
 
 func (ua *UserAgent) String() string {

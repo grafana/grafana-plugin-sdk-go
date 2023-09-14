@@ -15,11 +15,19 @@ func TestFromString(t *testing.T) {
 	}{
 		{
 			name:      "valid",
+			userAgent: "Grafana/10.2.0 (darwin; amd64)",
+			expected: &UserAgent{
+				grafanaVersion: "10.2.0",
+				os:             "darwin",
+				arch:           "amd64",
+			},
+		}, {
+			name:      "valid (with semver suffix)",
 			userAgent: "Grafana/7.0.0-beta1 (darwin; amd64)",
 			expected: &UserAgent{
 				grafanaVersion: "7.0.0-beta1",
-				arch:           "amd64",
 				os:             "darwin",
+				arch:           "amd64",
 			},
 		},
 		{
