@@ -45,18 +45,6 @@ func NewFromString(s string) (*UserAgent, error) {
 	}, nil
 }
 
-func (ua *UserAgent) GrafanaVersion() string {
-	return ua.grafanaVersion
-}
-
-func (ua *UserAgent) OS() string {
-	return ua.os
-}
-
-func (ua *UserAgent) Arch() string {
-	return ua.arch
-}
-
 func (ua *UserAgent) String() string {
 	return "Grafana/" + ua.grafanaVersion + " (" + ua.os + "; " + ua.arch + ")"
 }
