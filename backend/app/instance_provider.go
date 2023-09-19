@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -10,7 +11,7 @@ import (
 )
 
 // InstanceFactoryFunc factory method for creating app instances.
-type InstanceFactoryFunc func(settings backend.AppInstanceSettings) (instancemgmt.Instance, error)
+type InstanceFactoryFunc func(ctx context.Context, settings backend.AppInstanceSettings) (instancemgmt.Instance, error)
 
 // NewInstanceManager creates a new app instance manager,
 //
@@ -44,8 +45,7 @@ type instanceProvider struct {
 
 func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
 	if pluginContext.AppInstanceSettings == nil {
-		// fail fast if there is no app settings
-		return nil, fmt.Errorf("app instance settings cannot be nil")
+		return nil, errors.New("app instance settings cannot be nil")
 	}
 
 	// The instance key generated for app plugins should include both plugin ID, and the OrgID, since for a single
@@ -59,11 +59,17 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
-	curSettings := pluginContext.AppInstanceSettings
-	cachedSettings := cachedInstance.PluginContext.AppInstanceSettings
-	return !curSettings.Updated.Equal(cachedSettings.Updated)
+	curConfig := pluginContext.GrafanaConfig
+	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
+	configUpdated := !cachedConfig.Equal(curConfig)
+
+	cachedAppSettings := cachedInstance.PluginContext.AppInstanceSettings
+	curAppSettings := pluginContext.AppInstanceSettings
+	appUpdated := !curAppSettings.Updated.Equal(cachedAppSettings.Updated)
+
+	return appUpdated || configUpdated
 }
 
-func (ip *instanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
-	return ip.factory(*pluginContext.AppInstanceSettings)
+func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
+	return ip.factory(ctx, *pluginContext.AppInstanceSettings)
 }

@@ -59,6 +59,9 @@ message PluginContext {
   //
   // Will only be set if request targeting a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
+
+  // The grafana configuration as a map of key/value pairs.
+  map<string,string> grafanaConfig = 6;
 }
 
 //---------------------------------------------------------
@@ -84,7 +87,7 @@ message CallResourceRequest {
 
 message CallResourceResponse {
   // Maps to raw HTTP status codes when passed over HTTP
-  int32 code = 1; 
+  int32 code = 1;
 
   // Raw HTTP headers sent to the client
   map<string,StringList> headers = 2;
@@ -145,7 +148,7 @@ message DataResponse {
   // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
   // The status codes should match values from standard HTTP status codes
   // If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
-  int32 status = 4; 
+  int32 status = 4;
 }
 
 //-----------------------------------------------

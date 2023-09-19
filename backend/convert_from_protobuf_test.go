@@ -172,8 +172,7 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	// adding +1 to the proto field count to account for the Type field in the SDK
-	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -204,6 +203,9 @@ var protoPluginContext = &pluginv2.PluginContext{
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
+	GrafanaConfig: map[string]string{
+		"foo": "bar",
+	},
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
@@ -226,8 +228,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "DataSourceInstanceSettings", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	// adding +1 to the proto field count to account for the Type field in the SDK
-	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -258,6 +259,8 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoCtx.DataSourceInstanceSettings.JsonData), sdkCtx.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
+
+	requireCounter.Equal(t, protoCtx.GrafanaConfig, sdkCtx.GrafanaConfig.config)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-3, "untested fields in conversion") // -3 Struct Fields
 }
@@ -379,8 +382,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 		t.Fatalf(unsetErrFmt, "sdk", "QueryDataRequest", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
 	}
 
-	// adding +1 to the proto field count to account for the Type field in the SDK
-	require.Equal(t, protoWalker.FieldCount+1, sdkWalker.FieldCount)
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount)
 
 	requireCounter := &requireCounter{}
 
@@ -423,12 +425,12 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, sdkTimeRange.To, sdkQDR.Queries[0].TimeRange.To)
 	requireCounter.Equal(t, json.RawMessage(protoQDR.Queries[0].Json), sdkQDR.Queries[0].JSON)
 
-	// -6 is:
+	// -7 is:
 	// PluginContext, .User, .AppInstanceSettings, .DataSourceInstanceSettings
-	// DataQuery, .TimeRange
+	// DataQuery, .TimeRange, .GrafanaConfig
 	//
 	//
-	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-6, "untested fields in conversion") // -6 Struct Fields
+	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-7, "untested fields in conversion") // -6 Struct Fields
 }
 
 func TestConvertFromProtobufCheckHealthRequest(t *testing.T) {
@@ -489,4 +491,10 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 			require.Equal(t, tc.expectedStatus, rsp.Responses["A"].Status)
 		}
 	})
+}
+
+// datasourceInstanceProtoFieldCountDelta returns the extra number of SDK fields that do not exist in the protobuf.
+func datasourceInstanceProtoFieldCountDelta() int64 {
+	// returning 1 to account for the Type field in the SDK that is not in the protobuf
+	return int64(1)
 }

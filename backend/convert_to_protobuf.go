@@ -76,6 +76,7 @@ func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.Plug
 		User:                       t.User(pluginCtx.User),
 		AppInstanceSettings:        t.AppInstanceSettings(pluginCtx.AppInstanceSettings),
 		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pluginCtx.DataSourceInstanceSettings),
+		GrafanaConfig:              t.GrafanaConfig(pluginCtx.GrafanaConfig),
 	}
 }
 
@@ -279,4 +280,12 @@ func (t ConvertToProtobuf) CollectMetricsResult(res *CollectMetricsResult) *plug
 			Prometheus: res.PrometheusMetrics,
 		},
 	}
+}
+
+// GrafanaConfig converts the SDK version of a GrafanaCfg to the protobuf version.
+func (t ConvertToProtobuf) GrafanaConfig(cfg *GrafanaCfg) map[string]string {
+	if cfg == nil {
+		return map[string]string{}
+	}
+	return cfg.config
 }
