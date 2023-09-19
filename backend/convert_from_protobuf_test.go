@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 type walker struct {
@@ -207,7 +208,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 	GrafanaConfig: map[string]string{
 		"foo": "bar",
 	},
-	UserAgent:                  "Grafana/10.0.0 (linux; amd64)",
+	UserAgent: "Grafana/10.0.0 (linux; amd64)",
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
