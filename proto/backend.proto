@@ -60,11 +60,14 @@ message PluginContext {
   // Will only be set if request targeting a data source instance.
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 
+  // The grafana configuration as a map of key/value pairs.
+  map<string,string> grafanaConfig = 6;
+
   // The version of the plugin the request is targeted for.
-  string pluginVersion = 6;
+  string pluginVersion = 7;
 
   // The user agent of the Grafana client that initiated the gRPC request.
-  string userAgent = 7;
+  string userAgent = 8;
 }
 
 //---------------------------------------------------------

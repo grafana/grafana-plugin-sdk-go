@@ -167,6 +167,9 @@ type PluginContext struct {
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
 
+	// GrafanaConfig is the configuration settings provided by Grafana.
+	GrafanaConfig *GrafanaCfg
+
 	// UserAgent is the user agent of the Grafana client that initiated the gRPC request.
 	UserAgent *useragent.UserAgent
 }

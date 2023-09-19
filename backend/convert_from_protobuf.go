@@ -89,6 +89,7 @@ func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
+		GrafanaConfig:              f.GrafanaConfig(proto.GrafanaConfig),
 		UserAgent:                  f.UserAgent(proto.UserAgent),
 	}
 }
@@ -287,4 +288,8 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	return &StreamPacket{
 		Data: protoReq.GetData(),
 	}
+}
+
+func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
+	return NewGrafanaCfg(cfg)
 }

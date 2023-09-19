@@ -16,8 +16,8 @@ type testDataSourceInstanceSettings struct {
 	httpClient *http.Client
 }
 
-func newDataSourceInstance(setting backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	opts, err := setting.HTTPClientOptions()
+func newDataSourceInstance(_ context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	opts, err := settings.HTTPClientOptions()
 	if err != nil {
 		return nil, err
 	}
