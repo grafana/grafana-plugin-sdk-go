@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/prometheus/client_golang/prometheus"
@@ -21,7 +22,7 @@ var (
 )
 
 // InstanceFactoryFunc factory method for creating data source instances.
-type InstanceFactoryFunc func(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error)
+type InstanceFactoryFunc func(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error)
 
 // NewInstanceManager creates a new data source instance manager,
 //
@@ -55,7 +56,7 @@ type instanceProvider struct {
 
 func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
 	if pluginContext.DataSourceInstanceSettings == nil {
-		return nil, fmt.Errorf("data source instance settings cannot be nil")
+		return nil, errors.New("data source instance settings cannot be nil")
 	}
 
 	defaultKey := pluginContext.DataSourceInstanceSettings.ID
@@ -67,12 +68,18 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
-	curSettings := pluginContext.DataSourceInstanceSettings
-	cachedSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
-	return !curSettings.Updated.Equal(cachedSettings.Updated)
+	curConfig := pluginContext.GrafanaConfig
+	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
+	configUpdated := !cachedConfig.Equal(curConfig)
+
+	curDataSourceSettings := pluginContext.DataSourceInstanceSettings
+	cachedDataSourceSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
+	dsUpdated := !curDataSourceSettings.Updated.Equal(cachedDataSourceSettings.Updated)
+
+	return dsUpdated || configUpdated
 }
 
-func (ip *instanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
+func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
 	datasourceInstancesCreated.Inc()
-	return ip.factory(*pluginContext.DataSourceInstanceSettings)
+	return ip.factory(ctx, *pluginContext.DataSourceInstanceSettings)
 }

@@ -25,63 +25,67 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 
 	var returnData [][]interface{}
 
-	for rows.Next() {
-		if i == rowLimit {
-			break
-		}
-
-		row := make([]interface{}, len(types))
-		for i := range row {
-			row[i] = new(interface{})
-		}
-		err := rows.Scan(row)
-		if err != nil {
-			return nil, nil, err
-		}
-
-		returnData = append(returnData, row)
-
-		if len(fields) == len(types) {
-			// found all data types.  keep looping to load all the return data
-			continue
-		}
-
-		for colIdx, col := range row {
-			val := *col.(*interface{})
-			var field Field
-			colType := types[colIdx]
-			switch val.(type) {
-			case time.Time, *time.Time:
-				field.converter = &TimeToNullableTime
-				field.kind = "time"
-				field.name = colType.Name()
-			case float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
-				field.converter = &IntOrFloatToNullableFloat64
-				field.kind = "float64"
-				field.name = colType.Name()
-			case string:
-				field.converter = &converters.AnyToNullableString
-				field.kind = STRING
-				field.name = colType.Name()
-			case []uint8:
-				field.converter = &converters.Uint8ArrayToNullableString
-				field.kind = STRING
-				field.name = colType.Name()
-			case nil:
-				continue
-			default:
-				field.converter = &converters.AnyToNullableString
-				field.kind = STRING
-				field.name = colType.Name()
+	for {
+		for rows.Next() {
+			if i == rowLimit {
+				break
+			}
+			row := make([]interface{}, len(types))
+			for i := range row {
+				row[i] = new(interface{})
+			}
+			err := rows.Scan(row)
+			if err != nil {
+				return nil, nil, err
 			}
 
-			fields[colIdx] = field
-		}
+			returnData = append(returnData, row)
 
-		i++
+			if len(fields) == len(types) {
+				// found all data types.  keep looping to load all the return data
+				continue
+			}
+
+			for colIdx, col := range row {
+				val := *col.(*interface{})
+				var field Field
+				colType := types[colIdx]
+				switch val.(type) {
+				case time.Time, *time.Time:
+					field.converter = &TimeToNullableTime
+					field.kind = "time"
+					field.name = colType.Name()
+				case float64, float32, int, int8, int16, int32, int64, uint, uint8, uint16, uint32, uint64:
+					field.converter = &IntOrFloatToNullableFloat64
+					field.kind = "float64"
+					field.name = colType.Name()
+				case string:
+					field.converter = &converters.AnyToNullableString
+					field.kind = STRING
+					field.name = colType.Name()
+				case []uint8:
+					field.converter = &converters.Uint8ArrayToNullableString
+					field.kind = STRING
+					field.name = colType.Name()
+				case nil:
+					continue
+				default:
+					field.converter = &converters.AnyToNullableString
+					field.kind = STRING
+					field.name = colType.Name()
+				}
+
+				fields[colIdx] = field
+			}
+
+			i++
+		}
+		if i == rowLimit || !rows.NextResultSet() {
+			break
+		}
 	}
 
-	fieldList := []Field{}
+	fieldList := make([]Field, len(types))
 	for colIdx, col := range types {
 		field, ok := fields[colIdx]
 		field.name = col.Name()
@@ -92,7 +96,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 				name:      col.Name(),
 			}
 		}
-		fieldList = append(fieldList, field)
+		fieldList[colIdx] = field
 	}
 
 	return fieldList, returnData, nil
@@ -172,6 +176,10 @@ type Field struct {
 	kind      string
 }
 
+type ResultSetIterator interface {
+	NextResultSet() bool
+}
+
 type RowIterator interface {
 	Next() bool
 	Scan(dest ...interface{}) error
@@ -179,6 +187,13 @@ type RowIterator interface {
 
 type Rows struct {
 	itr RowIterator
+}
+
+func (rs Rows) NextResultSet() bool {
+	if itr, has := rs.itr.(ResultSetIterator); has {
+		return itr.NextResultSet()
+	}
+	return false
 }
 
 func (rs Rows) Next() bool {

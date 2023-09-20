@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -140,6 +141,9 @@ type PluginContext struct {
 	// PluginID is the unique identifier of the plugin that the request is for.
 	PluginID string
 
+	// PluginVersion is the version of the plugin that the request is for.
+	PluginVersion string
+
 	// User is the Grafana user making the request.
 	//
 	// Will not be provided if Grafana backend initiated the request,
@@ -162,6 +166,13 @@ type PluginContext struct {
 	//
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
+
+	// GrafanaConfig is the configuration settings provided by Grafana.
+	GrafanaConfig *GrafanaCfg
+
+	// UserAgent is the user agent of the Grafana server that initiated the gRPC request.
+	// Will only be set if request is made from Grafana v10.2.0 or later.
+	UserAgent *useragent.UserAgent
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
