@@ -8,9 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 type walker struct {
@@ -193,8 +194,9 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 }
 
 var protoPluginContext = &pluginv2.PluginContext{
-	OrgId:    3,
-	PluginId: "the-best-plugin",
+	OrgId:         3,
+	PluginId:      "the-best-plugin",
+	PluginVersion: "1.0.0",
 	User: &pluginv2.User{
 		Login: "bestUser",
 		Name:  "Best User",
@@ -206,6 +208,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 	GrafanaConfig: map[string]string{
 		"foo": "bar",
 	},
+	UserAgent: "Grafana/10.0.0 (linux; amd64)",
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
@@ -251,6 +254,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Id, sdkCtx.DataSourceInstanceSettings.ID)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Uid, sdkCtx.DataSourceInstanceSettings.UID)
 	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.DataSourceInstanceSettings.Type)
+	requireCounter.Equal(t, protoCtx.PluginVersion, sdkCtx.PluginVersion)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Url, sdkCtx.DataSourceInstanceSettings.URL)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.User, sdkCtx.DataSourceInstanceSettings.User)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Database, sdkCtx.DataSourceInstanceSettings.Database)
@@ -259,6 +263,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoCtx.DataSourceInstanceSettings.JsonData), sdkCtx.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
+	requireCounter.Equal(t, protoCtx.UserAgent, sdkCtx.UserAgent.String())
 
 	requireCounter.Equal(t, protoCtx.GrafanaConfig, sdkCtx.GrafanaConfig.config)
 
@@ -407,6 +412,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Uid, sdkQDR.PluginContext.DataSourceInstanceSettings.UID)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.DataSourceInstanceSettings.Type)
+	requireCounter.Equal(t, protoQDR.PluginContext.PluginVersion, sdkQDR.PluginContext.PluginVersion)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Url, sdkQDR.PluginContext.DataSourceInstanceSettings.URL)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.User, sdkQDR.PluginContext.DataSourceInstanceSettings.User)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Database, sdkQDR.PluginContext.DataSourceInstanceSettings.Database)
@@ -415,6 +421,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.DataSourceInstanceSettings.JsonData), sdkQDR.PluginContext.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkQDR.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkQDR.PluginContext.DataSourceInstanceSettings.Updated)
+	requireCounter.Equal(t, protoQDR.PluginContext.UserAgent, sdkQDR.PluginContext.UserAgent.String())
 
 	// Queries
 	requireCounter.Equal(t, protoQDR.Queries[0].RefId, sdkQDR.Queries[0].RefID)
