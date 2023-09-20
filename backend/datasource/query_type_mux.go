@@ -111,7 +111,7 @@ func fallbackHandler(_ context.Context, req *backend.QueryDataRequest) (*backend
 	for _, q := range req.Queries {
 		responses[q.RefID] = backend.DataResponse{
 			Error:       fmt.Errorf("no handler found for query type '%s'", q.QueryType),
-			ErrorSource: backend.ERROR_SOURCE_PLUGIN,
+			ErrorSource: backend.Error_Source_Plugin,
 		}
 	}
 
