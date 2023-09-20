@@ -33,6 +33,7 @@ require (
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/google/uuid v1.3.0
+	github.com/sashabaranov/go-openai v1.15.3
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
 	github.com/urfave/cli v1.22.12
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
