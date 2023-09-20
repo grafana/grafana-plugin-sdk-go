@@ -299,9 +299,9 @@ func fieldToArrow(f *Field) (arrow.DataType, bool, error) {
 		return &arrow.BooleanType{}, true, nil
 
 	case *timeTimeVector:
-		return &arrow.TimestampType{}, false, nil
+		return &arrow.TimestampType{Unit: arrow.Nanosecond}, false, nil
 	case *nullableTimeTimeVector:
-		return &arrow.TimestampType{}, true, nil
+		return &arrow.TimestampType{Unit: arrow.Nanosecond}, true, nil
 
 	case *jsonRawMessageVector:
 		return &arrow.BinaryType{}, false, nil
