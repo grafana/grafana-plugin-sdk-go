@@ -63,9 +63,9 @@ func TestFromString(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
-			res, err := NewFromString(tc.userAgent)
+			res, err := Parse(tc.userAgent)
 			require.ErrorIs(t, err, tc.err)
-			require.Equalf(t, tc.expected, res, "NewFromString(%v)", tc.userAgent)
+			require.Equalf(t, tc.expected, res, "Parse(%v)", tc.userAgent)
 		})
 	}
 }

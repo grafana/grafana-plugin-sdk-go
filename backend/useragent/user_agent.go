@@ -28,11 +28,11 @@ func New(grafanaVersion, os, arch string) (*UserAgent, error) {
 		arch:           arch,
 	}
 
-	return NewFromString(ua.String())
+	return Parse(ua.String())
 }
 
-// NewFromString creates a new UserAgent from a string.
-func NewFromString(s string) (*UserAgent, error) {
+// Parse creates a new UserAgent from a string.
+func Parse(s string) (*UserAgent, error) {
 	matches := userAgentRegex.FindStringSubmatch(s)
 	if len(matches) != 4 {
 		return nil, errInvalidFormat
@@ -43,6 +43,10 @@ func NewFromString(s string) (*UserAgent, error) {
 		os:             matches[2],
 		arch:           matches[3],
 	}, nil
+}
+
+func (ua *UserAgent) GrafanaVersion() string {
+	return ua.grafanaVersion
 }
 
 func (ua *UserAgent) String() string {

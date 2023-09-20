@@ -170,7 +170,7 @@ type PluginContext struct {
 	// GrafanaConfig is the configuration settings provided by Grafana.
 	GrafanaConfig *GrafanaCfg
 
-	// UserAgent is the user agent of the Grafana client that initiated the gRPC request.
+	// UserAgent is the user agent of the Grafana server that initiated the gRPC request.
 	UserAgent *useragent.UserAgent
 }
 

@@ -73,7 +73,7 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 
 // UserAgent converts protobuf version of a UserAgent to the SDK version.
 func (f ConvertFromProtobuf) UserAgent(u string) *useragent.UserAgent {
-	ua, err := useragent.NewFromString(u)
+	ua, err := useragent.Parse(u)
 	if err != nil {
 		return &useragent.UserAgent{}
 	}
