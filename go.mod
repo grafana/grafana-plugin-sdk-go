@@ -22,7 +22,7 @@ require (
 	github.com/prometheus/common v0.42.0
 	github.com/stretchr/testify v1.8.3
 	golang.org/x/sys v0.10.0
-	google.golang.org/grpc v1.57.0
+	google.golang.org/grpc v1.58.1
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
@@ -33,6 +33,8 @@ require (
 	github.com/getkin/kin-openapi v0.112.0
 	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/google/uuid v1.3.0
+	github.com/grafana/grafana-llm-app/llmclient v0.0.0-20230922072756-d4ccf8288c53
+	github.com/sashabaranov/go-openai v1.15.3
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
 	github.com/urfave/cli v1.22.12
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.42.0
