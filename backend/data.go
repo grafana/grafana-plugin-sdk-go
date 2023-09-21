@@ -181,7 +181,7 @@ func ErrDataResponse(status Status, message string) DataResponse {
 	}
 }
 
-// ErrDataResponseWithSource returns an error DataResponse given status and message.
+// ErrDataResponseWithSource returns an error DataResponse given status, source of the error and message.
 func ErrDataResponseWithSource(status Status, src ErrorSource, message string) DataResponse {
 	return DataResponse{
 		Error:       errors.New(message),
