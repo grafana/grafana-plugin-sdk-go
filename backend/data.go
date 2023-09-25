@@ -168,9 +168,8 @@ type DataResponse struct {
 type ErrorSource string
 
 const (
-	ErrorSourceDatabase ErrorSource = "database"
 	ErrorSourcePlugin   ErrorSource = "plugin"
-	ErrorSourceExternal ErrorSource = "external"
+	ErrorSourceExternal ErrorSource = "downstream"
 )
 
 // ErrDataResponse returns an error DataResponse given status and message.
