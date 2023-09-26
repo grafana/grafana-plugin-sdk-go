@@ -298,7 +298,9 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 			code = "2"
 		case strings.Contains(err.Error(), "network unreachable"):
 			code = "3"
-		case strings.Contains(err.Error(), "host unreachable"):
+		case strings.Contains(err.Error(), "host unreachable") ||
+			// OpenSSH returns a "broken pipe" error when the remote host is unreachable.
+			strings.HasSuffix(err.Error(), "EOF"):
 			code = "4"
 		case strings.Contains(err.Error(), "connection refused"):
 			code = "5"
