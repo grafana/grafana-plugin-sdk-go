@@ -471,8 +471,9 @@ func TestConvertFromProtobufCheckHealthRequest(t *testing.T) {
 func TestConvertFromProtobufDataResponse(t *testing.T) {
 	t.Run("Should convert data query response", func(t *testing.T) {
 		tcs := []struct {
-			rsp            *pluginv2.DataResponse
-			expectedStatus Status
+			rsp                 *pluginv2.DataResponse
+			expectedStatus      Status
+			expectedErrorSource ErrorSource
 		}{
 			{
 				rsp: &pluginv2.DataResponse{
@@ -484,6 +485,21 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 					Status: http.StatusFailedDependency,
 				},
 				expectedStatus: Status(424),
+			}, {
+				rsp: &pluginv2.DataResponse{
+					Status: http.StatusInternalServerError,
+					Error:  "foo",
+				},
+				expectedStatus: Status(500),
+			},
+			{
+				rsp: &pluginv2.DataResponse{
+					Status:      http.StatusInternalServerError,
+					Error:       "foo",
+					ErrorSource: string(ErrorSourceExternal),
+				},
+				expectedStatus:      Status(500),
+				expectedErrorSource: ErrorSourceExternal,
 			},
 		}
 
@@ -496,6 +512,7 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, rsp)
 			require.Equal(t, tc.expectedStatus, rsp.Responses["A"].Status)
+			require.Equal(t, tc.expectedErrorSource, rsp.Responses["A"].ErrorSource)
 		}
 	})
 }
