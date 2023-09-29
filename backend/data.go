@@ -160,7 +160,7 @@ type DataResponse struct {
 	// Status codes map to HTTP status values
 	Status Status
 
-	// Source is the the source of the error
+	// ErrorSource is the the source of the error
 	ErrorSource ErrorSource
 }
 

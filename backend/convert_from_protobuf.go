@@ -156,7 +156,7 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
-			dr.ErrorSource = ErrorSource(res.Source)
+			dr.ErrorSource = ErrorSource(res.ErrorSource)
 		}
 		qdr.Responses[refID] = dr
 	}

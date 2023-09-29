@@ -157,7 +157,7 @@ message DataResponse {
   int32 status = 4;
 
   // Error source
-  string source = 5;
+  string errorSource = 5;
 }
 
 //-----------------------------------------------

@@ -64,7 +64,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		}
 
 		stream.WriteMore()
-		stream.WriteObjectField("source")
+		stream.WriteObjectField("errorSource")
 		stream.WriteString(string(dr.ErrorSource))
 	}
 
@@ -171,7 +171,7 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 		case "status":
 			rsp.Status = Status(iter.ReadInt32())
 
-		case "source":
+		case "errorSource":
 			rsp.ErrorSource = ErrorSource(iter.ReadString())
 
 		case "frames":
