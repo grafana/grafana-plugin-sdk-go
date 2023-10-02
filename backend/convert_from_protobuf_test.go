@@ -496,10 +496,10 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 				rsp: &pluginv2.DataResponse{
 					Status:      http.StatusInternalServerError,
 					Error:       "foo",
-					ErrorSource: string(ErrorSourceExternal),
+					ErrorSource: string(ErrorSourceDownstream),
 				},
 				expectedStatus:      Status(500),
-				expectedErrorSource: ErrorSourceExternal,
+				expectedErrorSource: ErrorSourceDownstream,
 			},
 		}
 
