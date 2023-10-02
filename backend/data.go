@@ -169,7 +169,7 @@ type ErrorSource string
 
 const (
 	ErrorSourcePlugin   ErrorSource = "plugin"
-	ErrorSourceExternal ErrorSource = "downstream"
+	ErrorSourceDownstream ErrorSource = "downstream"
 )
 
 // ErrDataResponse returns an error DataResponse given status and message.
