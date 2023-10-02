@@ -168,7 +168,7 @@ type DataResponse struct {
 type ErrorSource string
 
 const (
-	ErrorSourcePlugin   ErrorSource = "plugin"
+	ErrorSourcePlugin     ErrorSource = "plugin"
 	ErrorSourceDownstream ErrorSource = "downstream"
 )
 
