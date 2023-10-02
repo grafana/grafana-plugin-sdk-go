@@ -62,6 +62,10 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		if !status.IsValid() {
 			status = statusFromError(dr.Error)
 		}
+
+		stream.WriteMore()
+		stream.WriteObjectField("errorSource")
+		stream.WriteString(string(dr.ErrorSource))
 	}
 
 	if status.IsValid() || status == 0 {
@@ -166,6 +170,9 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 
 		case "status":
 			rsp.Status = Status(iter.ReadInt32())
+
+		case "errorSource":
+			rsp.ErrorSource = ErrorSource(iter.ReadString())
 
 		case "frames":
 			for iter.ReadArray() {
