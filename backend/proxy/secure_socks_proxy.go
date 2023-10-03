@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/net/proxy"
@@ -259,7 +260,7 @@ type instrumentedSocksDialer struct {
 	dialer proxy.Dialer
 }
 
-// NewInstrumenSockstedDialer creates a new instrumented dialer
+// newInstrumentedSocksDialer creates a new instrumented dialer
 func newInstrumentedSocksDialer(dialer proxy.Dialer) proxy.Dialer {
 	return &instrumentedSocksDialer{
 		dialer: dialer,
@@ -287,10 +288,9 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 	case err == nil:
 		code = "0"
 	case errors.As(err, &oppErr):
-		// Socks errors defined here: https://cs.opensource.google/go/x/net/+/refs/tags/v0.15.0:internal/socks/socks.go;l=40-63
-
 		unknownCode := socksUnknownError.FindStringSubmatch(err.Error())
 
+		// Socks errors defined here: https://cs.opensource.google/go/x/net/+/refs/tags/v0.15.0:internal/socks/socks.go;l=40-63
 		switch {
 		case strings.Contains(err.Error(), "general SOCKS server failure"):
 			code = "1"
@@ -308,12 +308,20 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 			code = "7"
 		case strings.Contains(err.Error(), "address type not supported"):
 			code = "8"
+		case strings.HasSuffix(err.Error(), "EOF"):
+			code = "eof_error"
+		case strings.HasSuffix(err.Error(), "i/o timeout"):
+			code = "io_timeout_error"
+		case strings.HasSuffix(err.Error(), "context canceled"):
+			code = "context_canceled_error"
 		case len(unknownCode) > 1:
 			code = unknownCode[1]
 		default:
 			code = "socks_unknown_error"
 		}
+		log.DefaultLogger.Error("received oppErr from dialer", "network", n, "addr", addr, "oppErr", oppErr, "code", code)
 	default:
+		log.DefaultLogger.Error("received err from dialer", "network", n, "addr", addr, "err", err)
 		code = "dial_error"
 	}
 
