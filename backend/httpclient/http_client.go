@@ -208,6 +208,7 @@ func DefaultMiddlewares() []Middleware {
 		BasicAuthenticationMiddleware(),
 		CustomHeadersMiddleware(),
 		ContextualMiddleware(),
+		ErrorSourceMiddleware(),
 	}
 }
 
