@@ -90,7 +90,7 @@ type Proxy struct {
 	clientCfg *proxy.ClientCfg
 }
 
-func (c *GrafanaCfg) Proxy() Proxy {
+func (c *GrafanaCfg) proxy() Proxy {
 	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
 		return Proxy{
 			clientCfg: &proxy.ClientCfg{
