@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	e "github.com/grafana/grafana-plugin-sdk-go/backend/errors"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -156,7 +157,7 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
-			dr.ErrorSource = ErrorSource(res.ErrorSource)
+			dr.ErrorSource = e.ErrorSource(res.ErrorSource)
 		}
 		qdr.Responses[refID] = dr
 	}

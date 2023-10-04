@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"time"
 
+	e "github.com/grafana/grafana-plugin-sdk-go/backend/errors"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -161,16 +162,8 @@ type DataResponse struct {
 	Status Status
 
 	// ErrorSource is the the source of the error
-	ErrorSource ErrorSource
+	ErrorSource e.ErrorSource
 }
-
-// ErrorSource type defines the source of the error
-type ErrorSource string
-
-const (
-	ErrorSourcePlugin     ErrorSource = "plugin"
-	ErrorSourceDownstream ErrorSource = "downstream"
-)
 
 // ErrDataResponse returns an error DataResponse given status and message.
 func ErrDataResponse(status Status, message string) DataResponse {
@@ -181,7 +174,7 @@ func ErrDataResponse(status Status, message string) DataResponse {
 }
 
 // ErrDataResponseWithSource returns an error DataResponse given status, source of the error and message.
-func ErrDataResponseWithSource(status Status, src ErrorSource, message string) DataResponse {
+func ErrDataResponseWithSource(status Status, src e.ErrorSource, message string) DataResponse {
 	return DataResponse{
 		Error:       errors.New(message),
 		ErrorSource: src,
