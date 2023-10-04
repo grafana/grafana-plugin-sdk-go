@@ -25,7 +25,7 @@ type fakeDataHandlerWithOAuth struct {
 
 func newFakeDataHandlerWithOAuth() *fakeDataHandlerWithOAuth {
 	settings := DataSourceInstanceSettings{}
-	opts, err := settings.HTTPClientOptions()
+	opts, err := settings.HTTPClientOptions(context.Background())
 	if err != nil {
 		panic("http client options: " + err.Error())
 	}

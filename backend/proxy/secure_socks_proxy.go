@@ -61,7 +61,6 @@ type Client interface {
 // ClientCfg contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy.
 type ClientCfg struct {
-	Enabled      bool
 	ClientCert   string
 	ClientKey    string
 	RootCA       string
@@ -92,7 +91,7 @@ type cfgProxyWrapper struct {
 // and the datasource options specify to use the proxy
 func (p *cfgProxyWrapper) SecureSocksProxyEnabled(opts *Options) bool {
 	// it cannot be enabled if it's not enabled on Grafana
-	if p.cfg == nil || !p.cfg.Enabled {
+	if p.cfg == nil {
 		return false
 	}
 
@@ -230,7 +229,6 @@ func getConfigFromEnv() *ClientCfg {
 	}
 
 	return &ClientCfg{
-		Enabled:      true,
 		ClientCert:   clientCert,
 		ClientKey:    clientKey,
 		RootCA:       rootCA,

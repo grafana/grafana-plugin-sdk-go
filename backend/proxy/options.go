@@ -4,9 +4,10 @@ import "time"
 
 // Options defines per datasource options for creating the proxy dialer.
 type Options struct {
-	Enabled  bool
-	Auth     *AuthOptions
-	Timeouts *TimeoutOptions
+	Enabled   bool
+	Auth      *AuthOptions
+	Timeouts  *TimeoutOptions
+	ClientCfg ClientCfg
 }
 
 // AuthOptions socks5 username and password options.

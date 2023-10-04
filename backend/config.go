@@ -98,7 +98,6 @@ func (c *GrafanaCfg) Proxy() Proxy {
 	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
 		return Proxy{
 			clientCfg: proxy.ClientCfg{
-				Enabled:      true,
 				ClientCert:   c.Get(proxy.PluginSecureSocksProxyClientCert),
 				ClientKey:    c.Get(proxy.PluginSecureSocksProxyClientKey),
 				RootCA:       c.Get(proxy.PluginSecureSocksProxyRootCACert),

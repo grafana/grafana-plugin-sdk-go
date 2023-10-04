@@ -70,26 +70,25 @@ func TestNewSecureSocksProxy(t *testing.T) {
 
 func TestSecureSocksProxyEnabled(t *testing.T) {
 	t.Run("not enabled if not enabled on grafana instance", func(t *testing.T) {
-		cli := NewWithCfg(&ClientCfg{Enabled: false})
+		cli := NewWithCfg(nil)
 		assert.Equal(t, false, cli.SecureSocksProxyEnabled(&Options{Enabled: true}))
 	})
 	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ClientCfg{Enabled: true})
+		cli := NewWithCfg(&ClientCfg{})
 		assert.Equal(t, false, cli.SecureSocksProxyEnabled(&Options{Enabled: false}))
 	})
 	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ClientCfg{Enabled: true})
+		cli := NewWithCfg(&ClientCfg{})
 		assert.Equal(t, false, cli.SecureSocksProxyEnabled(nil))
 	})
 	t.Run("enabled, if enabled on grafana instance and datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ClientCfg{Enabled: true})
+		cli := NewWithCfg(&ClientCfg{})
 		assert.Equal(t, true, cli.SecureSocksProxyEnabled(&Options{Enabled: true}))
 	})
 }
 
 func TestSecureSocksProxyConfig(t *testing.T) {
 	expected := ClientCfg{
-		Enabled:      true,
 		ClientCert:   "client.crt",
 		ClientKey:    "client.key",
 		RootCA:       "ca.crt",
@@ -147,7 +146,6 @@ func TestSecureSocksProxyEnabledOnDS(t *testing.T) {
 func TestPreventInvalidRootCA(t *testing.T) {
 	tempDir := t.TempDir()
 	cfg := &ClientCfg{
-		Enabled:      true,
 		ClientCert:   "client.crt",
 		ClientKey:    "client.key",
 		ProxyAddress: "localhost:8080",
@@ -253,7 +251,6 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	require.NoError(t, err)
 
 	cfg := &ClientCfg{
-		Enabled:      true,
 		ClientCert:   clientCert,
 		ClientKey:    clientKey,
 		RootCA:       rootCACert,
