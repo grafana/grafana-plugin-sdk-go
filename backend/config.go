@@ -87,17 +87,13 @@ func (ft FeatureToggles) IsEnabled(f string) bool {
 }
 
 type Proxy struct {
-	clientCfg proxy.ClientCfg
-}
-
-func (pc Proxy) ClientConfig() proxy.ClientCfg {
-	return pc.clientCfg
+	clientCfg *proxy.ClientCfg
 }
 
 func (c *GrafanaCfg) Proxy() Proxy {
 	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
 		return Proxy{
-			clientCfg: proxy.ClientCfg{
+			clientCfg: &proxy.ClientCfg{
 				ClientCert:   c.Get(proxy.PluginSecureSocksProxyClientCert),
 				ClientKey:    c.Get(proxy.PluginSecureSocksProxyClientKey),
 				RootCA:       c.Get(proxy.PluginSecureSocksProxyRootCACert),
@@ -106,5 +102,5 @@ func (c *GrafanaCfg) Proxy() Proxy {
 			},
 		}
 	}
-	return Proxy{clientCfg: proxy.ClientCfg{}}
+	return Proxy{}
 }

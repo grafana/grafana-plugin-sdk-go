@@ -266,7 +266,7 @@ func TestProxyOptions(t *testing.T) {
 	t.Run("ProxyOptions() should translate settings as expected", func(t *testing.T) {
 		tcs := []struct {
 			instanceSettings      *DataSourceInstanceSettings
-			proxyClientCfg        proxy.ClientCfg
+			proxyClientCfg        *proxy.ClientCfg
 			expectedClientOptions *proxy.Options
 		}{
 			{
@@ -356,7 +356,7 @@ func TestProxyOptions(t *testing.T) {
 					BasicAuthEnabled: true,
 					BasicAuthUser:    "buser",
 				},
-				proxyClientCfg: proxy.ClientCfg{
+				proxyClientCfg: &proxy.ClientCfg{
 					ClientCert:   "<client-cert>",
 					ClientKey:    "123abc",
 					RootCA:       "<root-ca-cert>",
@@ -372,7 +372,7 @@ func TestProxyOptions(t *testing.T) {
 						KeepAlive: time.Second * 15,
 						Timeout:   time.Second * 10,
 					},
-					ClientCfg: proxy.ClientCfg{
+					ClientCfg: &proxy.ClientCfg{
 						ClientCert:   "<client-cert>",
 						ClientKey:    "123abc",
 						RootCA:       "<root-ca-cert>",

@@ -7,7 +7,7 @@ type Options struct {
 	Enabled   bool
 	Auth      *AuthOptions
 	Timeouts  *TimeoutOptions
-	ClientCfg ClientCfg
+	ClientCfg *ClientCfg
 }
 
 // AuthOptions socks5 username and password options.
@@ -38,6 +38,10 @@ func setDefaults(providedOpts *Options) Options {
 	opts = *providedOpts
 	if opts.Timeouts == nil {
 		opts.Timeouts = &DefaultTimeoutOptions
+	}
+
+	if opts.ClientCfg == nil {
+		opts.ClientCfg = getConfigFromEnv()
 	}
 
 	return opts
