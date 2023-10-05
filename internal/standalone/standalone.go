@@ -2,6 +2,7 @@ package standalone
 
 import (
 	"bytes"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -15,11 +16,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/build"
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
 )
 
 var (
 	standaloneEnabled = flag.Bool("standalone", false, "should this run standalone")
+	buildInfoMode     = flag.Bool("buildinfo", false, "print build info and exit")
+	versionMode       = flag.Bool("version", false, "print version and exit")
 )
 
 func NewServerSettings(address, dir string) ServerSettings {
@@ -37,6 +41,35 @@ type ServerSettings struct {
 type ClientSettings struct {
 	TargetAddress string
 	TargetPID     int
+}
+
+// InfoModeEnabled returns true if the plugin should run in build info mode
+// (-buildinfo or -version flags provided).
+func InfoModeEnabled() bool {
+	flag.Parse()
+	return *buildInfoMode || *versionMode
+}
+
+// RunInfoMode runs the plugin in build info mode, which prints the build info (or just the version) to stdout and returns.
+// The caller should call os.Exit right after.
+func RunInfoMode() error {
+	if !InfoModeEnabled() {
+		return fmt.Errorf("build info mode not enabled")
+	}
+	bi, err := build.GetBuildInfo()
+	if err != nil {
+		return fmt.Errorf("get build info: %w", err)
+	}
+	bib, err := json.Marshal(bi)
+	if err != nil {
+		return fmt.Errorf("marshal build info: %w", err)
+	}
+	if *versionMode {
+		fmt.Println(bi.Version)
+	} else {
+		fmt.Println(string(bib))
+	}
+	return nil
 }
 
 // ServerModeEnabled returns true if the plugin should run in standalone server mode.
