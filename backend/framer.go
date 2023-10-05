@@ -28,7 +28,7 @@ func FrameResponseWithError(f data.Framer, err error) *DataResponse {
 func FrameResponseWithErrorAndSource(f data.Framer, err error, source ErrorSource) *DataResponse {
 	if err != nil {
 		return &DataResponse{
-			Error:       err,
+			Error:       &PluginError{Err: err, Source: source},
 			ErrorSource: source,
 		}
 	}

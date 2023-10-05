@@ -10,6 +10,16 @@ const (
 	ErrorSourceDownstream ErrorSource = "downstream"
 )
 
+type PluginError struct {
+	Source ErrorSource
+
+	Err error
+}
+
+func (r PluginError) Error() string {
+	return r.Err.Error()
+}
+
 // ErrorSourceFromStatus returns an ErrorSource based on provided HTTP status code.
 func ErrorSourceFromHTTPStatus(statusCode int) ErrorSource {
 	switch statusCode {

@@ -152,6 +152,9 @@ func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
 			for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 				dr := DataResponse{}
 				readDataResponseJSON(&dr, iter)
+				if dr.ErrorSource != "" {
+					dr.Error = &PluginError{Err: dr.Error, Source: dr.ErrorSource}
+				}
 				qdr.Responses[l2Field] = dr
 			}
 

@@ -109,8 +109,12 @@ func (mux *QueryTypeMux) getHandler(queryType string) (string, backend.QueryData
 func fallbackHandler(_ context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	responses := backend.Responses{}
 	for _, q := range req.Queries {
+		err := &backend.PluginError{
+			Err:    fmt.Errorf("no handler found for query type '%s'", q.QueryType),
+			Source: backend.ErrorSourcePlugin,
+		}
 		responses[q.RefID] = backend.DataResponse{
-			Error:       fmt.Errorf("no handler found for query type '%s'", q.QueryType),
+			Error:       err,
 			ErrorSource: backend.ErrorSourcePlugin,
 		}
 	}
