@@ -23,7 +23,7 @@ func ErrorSourceMiddleware(plugin string) httpclient.Middleware {
 		return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			res, err := next.RoundTrip(req)
 			if res != nil && res.StatusCode >= 400 {
-				errorSource := backend.GetErrorSource(res.StatusCode)
+				errorSource := backend.ErrorSourceFromHTTPStatus(res.StatusCode)
 				return res, &PluginError{Source: errorSource, Err: err}
 			}
 			return res, err
