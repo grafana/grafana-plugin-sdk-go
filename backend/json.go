@@ -5,7 +5,6 @@ import (
 	"sort"
 	"unsafe"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/errors"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -173,7 +172,7 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 			rsp.Status = Status(iter.ReadInt32())
 
 		case "errorSource":
-			rsp.ErrorSource = errors.ErrorSource(iter.ReadString())
+			rsp.ErrorSource = ErrorSource(iter.ReadString())
 
 		case "frames":
 			for iter.ReadArray() {

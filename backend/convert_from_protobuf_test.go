@@ -11,7 +11,6 @@ import (
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
 
-	e "github.com/grafana/grafana-plugin-sdk-go/backend/errors"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -474,7 +473,7 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 		tcs := []struct {
 			rsp                 *pluginv2.DataResponse
 			expectedStatus      Status
-			expectedErrorSource e.ErrorSource
+			expectedErrorSource ErrorSource
 		}{
 			{
 				rsp: &pluginv2.DataResponse{
@@ -497,10 +496,10 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 				rsp: &pluginv2.DataResponse{
 					Status:      http.StatusInternalServerError,
 					Error:       "foo",
-					ErrorSource: string(e.ErrorSourceDownstream),
+					ErrorSource: string(ErrorSourceDownstream),
 				},
 				expectedStatus:      Status(500),
-				expectedErrorSource: e.ErrorSourceDownstream,
+				expectedErrorSource: ErrorSourceDownstream,
 			},
 		}
 

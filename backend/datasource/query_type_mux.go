@@ -5,7 +5,6 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/errors"
 )
 
 // QueryTypeMux is a query type multiplexer.
@@ -112,7 +111,7 @@ func fallbackHandler(_ context.Context, req *backend.QueryDataRequest) (*backend
 	for _, q := range req.Queries {
 		responses[q.RefID] = backend.DataResponse{
 			Error:       fmt.Errorf("no handler found for query type '%s'", q.QueryType),
-			ErrorSource: errors.ErrorSourcePlugin,
+			ErrorSource: backend.ErrorSourcePlugin,
 		}
 	}
 

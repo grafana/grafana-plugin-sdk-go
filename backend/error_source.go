@@ -1,9 +1,17 @@
-package errors
+package backend
 
-import (
-	"net/http"
+import "net/http"
+
+// ErrorSource type defines the source of the error
+type ErrorSource string
+
+const (
+	ErrorSourcePlugin     ErrorSource = "plugin"
+	ErrorSourceDownstream ErrorSource = "downstream"
+	ErrorSourceNone       ErrorSource = "none"
 )
 
+// GetErrorSource returns a error source based on http status code
 func GetErrorSource(statusCode int) ErrorSource {
 	switch statusCode {
 	case http.StatusBadRequest,
@@ -26,12 +34,3 @@ func GetErrorSource(statusCode int) ErrorSource {
 
 	return ErrorSourceDownstream
 }
-
-// ErrorSource type defines the source of the error
-type ErrorSource string
-
-const (
-	ErrorSourcePlugin     ErrorSource = "plugin"
-	ErrorSourceDownstream ErrorSource = "downstream"
-	ErrorSourceNone       ErrorSource = "none"
-)

@@ -1,7 +1,6 @@
 package backend
 
 import (
-	e "github.com/grafana/grafana-plugin-sdk-go/backend/errors"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -28,7 +27,7 @@ func FrameResponseWithError(f data.Framer, err error) *DataResponse {
 
 // FrameResponseWithErrorAndSource creates a DataResponse with the error's contents (if not nil), and the Framer's data.Frames, and the source of the error.
 // This function is particularly useful if you have a function that returns `(StructX, error)`, where StructX implements Framer, which is a very common pattern.
-func FrameResponseWithErrorAndSource(f data.Framer, err error, source e.ErrorSource) *DataResponse {
+func FrameResponseWithErrorAndSource(f data.Framer, err error, source ErrorSource) *DataResponse {
 	if err != nil {
 		return &DataResponse{
 			Error:       err,
