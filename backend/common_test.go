@@ -42,7 +42,7 @@ func TestAppInstanceSettings(t *testing.T) {
 		}
 
 		for _, tc := range tcs {
-			opts, err := tc.instanceSettings.HTTPClientOptions()
+			opts, err := tc.instanceSettings.HTTPClientOptions(context.Background())
 			assert.NoError(t, err)
 			if tc.expectedClientOptions.BasicAuth != nil {
 				assert.Equal(t, tc.expectedClientOptions.BasicAuth, opts.BasicAuth)
