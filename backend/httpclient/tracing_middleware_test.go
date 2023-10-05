@@ -116,7 +116,6 @@ func (*mockSpan) TracerProvider() trace.TracerProvider { return mockTracerProvid
 
 func TestTracingMiddlewareWithDefaultTracerDataRace(t *testing.T) {
 	var tracer trace.Tracer
-	tracer = nil
 
 	mw := httpclient.TracingMiddleware(tracer)
 	done := make(chan struct{})
