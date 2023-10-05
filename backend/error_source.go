@@ -10,8 +10,8 @@ const (
 	ErrorSourceDownstream ErrorSource = "downstream"
 )
 
-// GetErrorSource returns a error source based on http status code
-func GetErrorSource(statusCode int) ErrorSource {
+// ErrorSourceFromStatus returns an ErrorSource based on provided HTTP status code.
+func ErrorSourceFromHTTPStatus(statusCode int) ErrorSource {
 	switch statusCode {
 	case http.StatusBadRequest,
 		http.StatusMethodNotAllowed,
