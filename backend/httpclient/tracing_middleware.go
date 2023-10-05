@@ -25,6 +25,7 @@ const (
 // code as span attributes. If tracer is nil, it will use tracing.DefaultTracer().
 func TracingMiddleware(tracer trace.Tracer) Middleware {
 	return NamedMiddlewareFunc(TracingMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
+		tracer := tracer
 		if tracer == nil {
 			tracer = tracing.DefaultTracer()
 		}
