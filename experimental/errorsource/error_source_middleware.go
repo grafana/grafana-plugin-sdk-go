@@ -5,17 +5,17 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-var (
-	errors = promauto.NewCounterVec(prometheus.CounterOpts{
-		Namespace: "plugins",
-		Name:      "datasource_error_total",
-		Help:      "Total number of times a plugin errored",
-	}, []string{"plugin_name", "error_source"})
-)
+type PluginError struct {
+	Source backend.ErrorSource
+
+	Err error
+}
+
+func (r PluginError) Error() string {
+	return r.Err.Error()
+}
 
 // ErrorSourceMiddleware captures error source metric
 func ErrorSourcenMiddleware(plugin string) httpclient.Middleware {
@@ -24,7 +24,7 @@ func ErrorSourcenMiddleware(plugin string) httpclient.Middleware {
 			res, err := next.RoundTrip(req)
 			if res != nil && res.StatusCode >= 400 {
 				errorSource := backend.GetErrorSource(res.StatusCode)
-				errors.WithLabelValues(plugin, string(errorSource)).Inc()
+				return res, &PluginError{Source: errorSource, Err: err}
 			}
 			return res, err
 		})
