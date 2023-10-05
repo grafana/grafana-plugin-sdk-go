@@ -114,6 +114,25 @@ func (s *mockSpan) SetName(name string) {
 
 func (*mockSpan) TracerProvider() trace.TracerProvider { return mockTracerProvider{} }
 
+func TestTracingMiddlewareWithDefaultTracerDataRace(t *testing.T) {
+	var tracer trace.Tracer
+	tracer = nil
+
+	mw := httpclient.TracingMiddleware(tracer)
+	done := make(chan struct{})
+	for i := 0; i < 2; i++ {
+		go func() {
+			rt := mw.CreateMiddleware(httpclient.Options{}, nil)
+			require.NotNil(t, rt)
+			done <- struct{}{}
+		}()
+	}
+	<-done
+	<-done
+	close(done)
+	require.Nil(t, tracer)
+}
+
 func TestTracingMiddleware(t *testing.T) {
 	t.Run("GET request that returns 200 OK should start and capture span", func(t *testing.T) {
 		tracer := &mockTracer{}
