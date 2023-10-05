@@ -40,7 +40,7 @@ type AppInstanceSettings struct {
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
-func (s *AppInstanceSettings) HTTPClientOptions() (httpclient.Options, error) {
+func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.Options, error) {
 	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
 	if err != nil {
 		return httpclient.Options{}, err
