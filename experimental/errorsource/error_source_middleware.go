@@ -9,9 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
-// ErrorSourceMiddlewareName is the middleware name used by ErrorSourceMiddleware.
-const ErrorSourceMiddlewareName = "ErrorSource"
-
 var (
 	errors = promauto.NewCounterVec(prometheus.CounterOpts{
 		Namespace: "plugins",
