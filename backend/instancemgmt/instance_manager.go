@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -17,6 +18,8 @@ var (
 		Name:      "active_instances",
 		Help:      "The number of active plugin instances",
 	})
+	disposedTTL = time.Second * 5
+	disposeWG   sync.WaitGroup
 )
 
 // Instance is a marker interface for an instance.
@@ -118,9 +121,13 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 			return ci.instance, nil
 		}
 
-		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			disposer.Dispose()
-			activeInstances.Dec()
+		if id, ok := ci.instance.(InstanceDisposer); ok {
+			disposeWG.Add(1)
+			time.AfterFunc(disposedTTL, func() {
+				id.Dispose()
+				activeInstances.Dec()
+				disposeWG.Done()
+			})
 		}
 	}
 

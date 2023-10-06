@@ -2,6 +2,7 @@ package instancemgmt
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
@@ -19,6 +20,12 @@ func TestInstanceManager(t *testing.T) {
 			Updated: time.Now(),
 		},
 	}
+
+	backupDisposedTTL := disposedTTL
+	disposedTTL = time.Millisecond * 10
+	t.Cleanup(func() {
+		disposedTTL = backupDisposedTTL
+	})
 
 	tip := &testInstanceProvider{}
 	im := New(tip)
@@ -56,8 +63,10 @@ func TestInstanceManager(t *testing.T) {
 				require.NotSame(t, instance, newInstance)
 			})
 
-			t.Run("Old instance should be disposed", func(t *testing.T) {
+			t.Run("Old instance should be disposed after a certain amount of time", func(t *testing.T) {
+				disposeWG.Wait()
 				require.True(t, instance.(*testInstance).disposed)
+				require.Equal(t, int64(1), instance.(*testInstance).disposedTimes, "Instance should be disposed only once")
 			})
 		})
 	})
@@ -140,7 +149,9 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		}
 		wg.Wait()
 
-		t.Run("Initial instance should be disposed only once", func(t *testing.T) {
+		t.Run("Initial instance should be disposed only once (and after a certain amount of time)", func(t *testing.T) {
+			disposeWG.Wait()
+			require.True(t, instanceToDispose.(*testInstance).disposed)
 			require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
 		})
 		t.Run("All created instances should be either disposed or exist in cache for later disposing", func(t *testing.T) {
@@ -214,20 +225,33 @@ func (ti *testInstance) Dispose() {
 }
 
 type testInstanceProvider struct {
+	getKeyFunc      func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error)
+	needsUpdateFunc func(ctx context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool
+	newInstanceFunc func(ctx context.Context, pluginContext backend.PluginContext) (Instance, error)
+
 	delay time.Duration
 }
 
 func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (interface{}, error) {
+	if tip.getKeyFunc != nil {
+		return tip.getKeyFunc(context.Background(), pluginContext)
+	}
 	return pluginContext.OrgID, nil
 }
 
 func (tip *testInstanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
+	if tip.needsUpdateFunc != nil {
+		return tip.needsUpdateFunc(context.Background(), pluginContext, cachedInstance)
+	}
 	curUpdated := pluginContext.AppInstanceSettings.Updated
 	cachedUpdated := cachedInstance.PluginContext.AppInstanceSettings.Updated
 	return !curUpdated.Equal(cachedUpdated)
 }
 
 func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (Instance, error) {
+	if tip.newInstanceFunc != nil {
+		return tip.newInstanceFunc(context.Background(), pluginContext)
+	}
 	if tip.delay > 0 {
 		time.Sleep(tip.delay)
 	}
@@ -235,4 +259,93 @@ func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext ba
 		orgID:   pluginContext.OrgID,
 		updated: pluginContext.AppInstanceSettings.Updated,
 	}, nil
+}
+
+func TestInstanceManagerFun(t *testing.T) {
+	backupDisposedTTL := disposedTTL
+	disposedTTL = time.Millisecond * 10
+	t.Cleanup(func() {
+		disposedTTL = backupDisposedTTL
+	})
+
+	di1Disposed := 0
+	di1 := newDisposableInstance(func() {
+		di1Disposed++
+	})
+
+	ip := &testInstanceProvider{
+		getKeyFunc: func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
+			return "123", nil
+		},
+		newInstanceFunc: func(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
+			return di1, nil
+		},
+	}
+
+	// Create instance manager and get instance saved into cache
+	im := New(ip)
+	pc := backend.PluginContext{}
+	i, err := im.Get(context.Background(), pc)
+	require.NoError(t, err)
+	require.Equal(t, di1, i)
+	require.Equal(t, 0, di1Disposed)
+
+	err = i.(*disposableInstance).DoWork()
+	require.NoError(t, err)
+
+	// update instance provider mock to ensure the needsUpdateFunc to always return true so that next call to im.Get
+	// will be forced to call newInstanceFunc for the cache entry with key "123"
+	ip.needsUpdateFunc = func(ctx context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
+		return true
+	}
+	ip.getKeyFunc = func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
+		return "123", nil
+	}
+	ip.newInstanceFunc = func(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
+		return newDisposableInstance(func() {}), nil
+	}
+
+	i, err = im.Get(context.Background(), pc)
+	require.NoError(t, err)
+	require.NotSame(t, di1, i)
+	require.Equal(t, 0, di1Disposed)
+
+	// di1 instance is still valid and not disposed
+	err = di1.DoWork()
+	require.NoError(t, err)
+
+	// di1 instance is disposed after grace period
+	disposeWG.Wait()
+	err = di1.DoWork()
+	require.Error(t, err)
+}
+
+type disposableInstance struct {
+	m           sync.RWMutex
+	disposeFunc func()
+	disposed    bool
+}
+
+func newDisposableInstance(f func()) *disposableInstance {
+	return &disposableInstance{
+		disposeFunc: f,
+	}
+}
+
+func (di *disposableInstance) DoWork() error {
+	di.m.RLock()
+	defer di.m.RUnlock()
+	if di.disposed {
+		return errors.New("OH NO")
+	}
+	return nil
+}
+
+func (di *disposableInstance) Dispose() {
+	di.m.Lock()
+	di.disposed = true
+	di.m.Unlock()
+	if di.disposeFunc != nil {
+		di.disposeFunc()
+	}
 }
