@@ -4,12 +4,12 @@ import (
 	"context"
 	"reflect"
 	"sync"
-	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 var (
@@ -18,8 +18,6 @@ var (
 		Name:      "active_instances",
 		Help:      "The number of active plugin instances",
 	})
-	disposedTTL = time.Second * 5
-	disposeWG   sync.WaitGroup
 )
 
 // Instance is a marker interface for an instance.
@@ -79,16 +77,18 @@ func New(provider InstanceProvider) InstanceManager {
 	}
 
 	return &instanceManager{
-		provider: provider,
-		cache:    sync.Map{},
-		locker:   newLocker(),
+		provider:         provider,
+		instanceDisposer: newInstanceDisposer(),
+		cache:            sync.Map{},
+		locker:           newLocker(),
 	}
 }
 
 type instanceManager struct {
-	locker   *locker
-	provider InstanceProvider
-	cache    sync.Map
+	locker           *locker
+	provider         InstanceProvider
+	instanceDisposer instanceDisposer
+	cache            sync.Map
 }
 
 func (im *instanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
@@ -106,6 +106,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
+			im.instanceDisposer.disposeIfExists(cacheKey)
 			return ci.instance, nil
 		}
 	}
@@ -118,16 +119,15 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
+			im.instanceDisposer.disposeIfExists(cacheKey)
 			return ci.instance, nil
 		}
 
-		if id, ok := ci.instance.(InstanceDisposer); ok {
-			disposeWG.Add(1)
-			time.AfterFunc(disposedTTL, func() {
-				id.Dispose()
-				activeInstances.Dec()
-				disposeWG.Done()
-			})
+		if id, ok := im.instanceDisposer.disposable(ci.instance); ok {
+			err = im.instanceDisposer.track(cacheKey, id)
+			if err != nil {
+				log.DefaultLogger.Error("Failed to track disposable instance", "error", err)
+			}
 		}
 	}
 
@@ -162,4 +162,45 @@ func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
 	var params = []reflect.Value{}
 	params = append(params, reflect.ValueOf(instance))
 	reflect.ValueOf(fn).Call(params)
+}
+
+// instanceDisposer tracks and disposes of disposable instances.
+type instanceDisposer struct {
+	disposableCache sync.Map
+	m               sync.RWMutex
+}
+
+func newInstanceDisposer() instanceDisposer {
+	return instanceDisposer{
+		disposableCache: sync.Map{},
+	}
+}
+
+// disposable returns whether an instance is disposable.
+func (id *instanceDisposer) disposable(i Instance) (InstanceDisposer, bool) {
+	if d, ok := i.(InstanceDisposer); ok {
+		return d, true
+	}
+	return nil, false
+}
+
+// track tracks a disposable instance. If there is a disposable instance already, we should dispose of it first.
+func (id *instanceDisposer) track(cacheKey interface{}, disposableInstance InstanceDisposer) error {
+	id.disposeIfExists(cacheKey)
+
+	id.m.Lock()
+	defer id.m.Unlock()
+	id.disposableCache.Store(cacheKey, disposableInstance)
+	return nil
+}
+
+// disposeIfExists disposes of a disposable instance.
+func (id *instanceDisposer) disposeIfExists(cacheKey interface{}) {
+	id.m.Lock()
+	defer id.m.Unlock()
+	if d, exists := id.disposableCache.LoadAndDelete(cacheKey); exists {
+		disposable := d.(InstanceDisposer)
+		disposable.Dispose()
+		activeInstances.Dec()
+	}
 }

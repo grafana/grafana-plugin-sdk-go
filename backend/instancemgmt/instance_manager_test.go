@@ -21,12 +21,6 @@ func TestInstanceManager(t *testing.T) {
 		},
 	}
 
-	backupDisposedTTL := disposedTTL
-	disposedTTL = time.Millisecond * 10
-	t.Cleanup(func() {
-		disposedTTL = backupDisposedTTL
-	})
-
 	tip := &testInstanceProvider{}
 	im := New(tip)
 
@@ -63,8 +57,12 @@ func TestInstanceManager(t *testing.T) {
 				require.NotSame(t, instance, newInstance)
 			})
 
-			t.Run("Old instance should be disposed after a certain amount of time", func(t *testing.T) {
-				disposeWG.Wait()
+			t.Run("Old instance should only be disposed after subsequent call to get instance", func(t *testing.T) {
+				require.False(t, instance.(*testInstance).disposed)
+
+				_, err = im.Get(ctx, pCtxUpdated)
+				require.NoError(t, err)
+
 				require.True(t, instance.(*testInstance).disposed)
 				require.Equal(t, int64(1), instance.(*testInstance).disposedTimes, "Instance should be disposed only once")
 			})
@@ -149,8 +147,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		}
 		wg.Wait()
 
-		t.Run("Initial instance should be disposed only once (and after a certain amount of time)", func(t *testing.T) {
-			disposeWG.Wait()
+		t.Run("Initial instance should be disposed only once", func(t *testing.T) {
 			require.True(t, instanceToDispose.(*testInstance).disposed)
 			require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
 		})
@@ -261,13 +258,7 @@ func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext ba
 	}, nil
 }
 
-func TestInstanceManagerFun(t *testing.T) {
-	backupDisposedTTL := disposedTTL
-	disposedTTL = time.Millisecond * 10
-	t.Cleanup(func() {
-		disposedTTL = backupDisposedTTL
-	})
-
+func TestInstanceManager_DisposableInstances(t *testing.T) {
 	di1Disposed := 0
 	di1 := newDisposableInstance(func() {
 		di1Disposed++
@@ -284,8 +275,7 @@ func TestInstanceManagerFun(t *testing.T) {
 
 	// Create instance manager and get instance saved into cache
 	im := New(ip)
-	pc := backend.PluginContext{}
-	i, err := im.Get(context.Background(), pc)
+	i, err := im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
 	require.Equal(t, di1, i)
 	require.Equal(t, 0, di1Disposed)
@@ -305,7 +295,7 @@ func TestInstanceManagerFun(t *testing.T) {
 		return newDisposableInstance(func() {}), nil
 	}
 
-	i, err = im.Get(context.Background(), pc)
+	i, err = im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
 	require.NotSame(t, di1, i)
 	require.Equal(t, 0, di1Disposed)
@@ -314,8 +304,10 @@ func TestInstanceManagerFun(t *testing.T) {
 	err = di1.DoWork()
 	require.NoError(t, err)
 
-	// di1 instance is disposed after grace period
-	disposeWG.Wait()
+	// di1 instance is disposed after subsequent call to im.Get
+	_, err = im.Get(context.Background(), backend.PluginContext{})
+	require.NoError(t, err)
+
 	err = di1.DoWork()
 	require.Error(t, err)
 }
