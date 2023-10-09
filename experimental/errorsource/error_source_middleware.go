@@ -7,13 +7,14 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
-type PluginError struct {
+// Error captures error source and implements the error interface
+type Error struct {
 	Source backend.ErrorSource
 
 	Err error
 }
 
-func (r PluginError) Error() string {
+func (r Error) Error() string {
 	return r.Err.Error()
 }
 
@@ -24,7 +25,7 @@ func Middleware(plugin string) httpclient.Middleware {
 			res, err := next.RoundTrip(req)
 			if res != nil && res.StatusCode >= 400 {
 				errorSource := backend.ErrorSourceFromHTTPStatus(res.StatusCode)
-				return res, &PluginError{Source: errorSource, Err: err}
+				return res, &Error{Source: errorSource, Err: err}
 			}
 			return res, err
 		})
