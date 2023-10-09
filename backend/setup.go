@@ -107,10 +107,10 @@ func getTracerCustomAttributes(pluginID string) []attribute.KeyValue {
 			pluginVersion = pv
 		}
 	}
-	if pluginVersion != "" {
-		customAttributes = append([]attribute.KeyValue{semconv.ServiceVersionKey.String(pluginVersion)}, customAttributes...)
+	customAttributes = []attribute.KeyValue{
+		semconv.ServiceNameKey.String(pluginID),
+		semconv.ServiceVersionKey.String(pluginVersion),
 	}
-	customAttributes = append([]attribute.KeyValue{semconv.ServiceNameKey.String(pluginID)}, customAttributes...)
 	return customAttributes
 }
 
