@@ -4,6 +4,7 @@ import (
 	"context"
 	"reflect"
 	"sync"
+	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -17,6 +18,7 @@ var (
 		Name:      "active_instances",
 		Help:      "The number of active plugin instances",
 	})
+	disposeTTL = 5 * time.Second
 )
 
 // Instance is a marker interface for an instance.
@@ -79,7 +81,7 @@ func New(provider InstanceProvider) InstanceManager {
 		provider:         provider,
 		cache:            sync.Map{},
 		locker:           newLocker(),
-		instanceDisposer: newInstanceDisposer(),
+		instanceDisposer: newInstanceDisposer(disposeTTL),
 	}
 }
 

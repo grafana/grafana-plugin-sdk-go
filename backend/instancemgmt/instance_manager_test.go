@@ -22,6 +22,12 @@ func TestInstanceManager(t *testing.T) {
 		},
 	}
 
+	backupDisposeTTL := disposeTTL
+	disposeTTL = time.Duration(0)
+	t.Cleanup(func() {
+		disposeTTL = backupDisposeTTL
+	})
+
 	tip := &testInstanceProvider{}
 	im := New(tip)
 
@@ -58,20 +64,28 @@ func TestInstanceManager(t *testing.T) {
 				require.NotSame(t, instance, newInstance)
 			})
 
-			t.Run("Old instance should only be disposed after subsequent call to retrieve instance", func(t *testing.T) {
+			t.Run("Old instance should only be disposed after subsequent call to retrieve instance and TTL has exceeded", func(t *testing.T) {
 				require.False(t, instance.(*testInstance).disposed)
 
 				_, err = im.Get(ctx, pCtxUpdated)
 				require.NoError(t, err)
 
-				require.True(t, instance.(*testInstance).disposed)
-				require.Equal(t, int64(1), instance.(*testInstance).disposedTimes, "Instance should be disposed only once")
+				time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
+					require.True(t, instance.(*testInstance).disposed)
+					require.Equal(t, int64(1), instance.(*testInstance).disposedTimes, "Instance should be disposed only once")
+				})
 			})
 		})
 	})
 }
 
 func TestInstanceManagerConcurrency(t *testing.T) {
+	backupDisposeTTL := disposeTTL
+	disposeTTL = time.Duration(0)
+	t.Cleanup(func() {
+		disposeTTL = backupDisposeTTL
+	})
+
 	t.Run("Check possible race condition issues when initially creating instance", func(t *testing.T) {
 		ctx := context.Background()
 		tip := &testInstanceProvider{}
@@ -148,9 +162,11 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		}
 		wg.Wait()
 
-		t.Run("Initial instance should be disposed only once", func(t *testing.T) {
-			require.True(t, instanceToDispose.(*testInstance).disposed)
-			require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
+		t.Run("Initial instance should be disposed only once (and only after TTL has exceeded)", func(t *testing.T) {
+			time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
+				require.True(t, instanceToDispose.(*testInstance).disposed)
+				require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
+			})
 		})
 		t.Run("All created instances should be either disposed or exist in cache for later disposing", func(t *testing.T) {
 			cachedInstance, _ := im.Get(ctx, updatedPCtx)
@@ -211,6 +227,12 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 }
 
 func TestInstanceManager_DisposableInstances(t *testing.T) {
+	backupDisposeTTL := disposeTTL
+	disposeTTL = time.Duration(0)
+	t.Cleanup(func() {
+		disposeTTL = backupDisposeTTL
+	})
+
 	ip := &testInstanceProvider{
 		getKeyFunc: func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
 			return "123", nil
@@ -251,8 +273,11 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 	// i1 instance is disposed after subsequent call to im.Get
 	_, err = im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
-	require.True(t, i1.disposed)
-	require.False(t, i2.disposed)
+
+	time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
+		require.True(t, i1.disposed)
+		require.False(t, i2.disposed)
+	})
 
 	err = i1.DoWork()
 	require.Error(t, err)
@@ -260,7 +285,10 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 	// i2 instance is disposed after subsequent call to im.Get
 	_, err = im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
-	require.True(t, i2.disposed)
+
+	time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
+		require.True(t, i2.disposed)
+	})
 
 	err = i2.DoWork()
 	require.Error(t, err)

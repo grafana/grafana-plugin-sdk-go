@@ -1,17 +1,22 @@
 package instancemgmt
 
-import "sync"
+import (
+	"sync"
+	"time"
+)
 
 // instanceDisposer tracks and disposes of disposable instances.
 type instanceDisposer struct {
-	cache sync.Map
-	m     sync.RWMutex
+	disposeTTL time.Duration
+	cache      sync.Map
+	m          sync.RWMutex
 }
 
 // newInstanceDisposer creates a new instanceDisposer.
-func newInstanceDisposer() instanceDisposer {
+func newInstanceDisposer(disposeTTL time.Duration) instanceDisposer {
 	return instanceDisposer{
-		cache: sync.Map{},
+		disposeTTL: disposeTTL,
+		cache:      sync.Map{},
 	}
 }
 
@@ -47,10 +52,12 @@ func (d *instanceDisposer) tracking(cacheKey interface{}) bool {
 
 // dispose disposes of a disposable instance.
 func (d *instanceDisposer) dispose(cacheKey interface{}) {
-	d.m.Lock()
-	defer d.m.Unlock()
-	if i, ok := d.cache.LoadAndDelete(cacheKey); ok {
-		i.(InstanceDisposer).Dispose()
-		activeInstances.Dec()
-	}
+	time.AfterFunc(d.disposeTTL, func() {
+		d.m.Lock()
+		defer d.m.Unlock()
+		if i, ok := d.cache.LoadAndDelete(cacheKey); ok {
+			i.(InstanceDisposer).Dispose()
+			activeInstances.Dec()
+		}
+	})
 }
