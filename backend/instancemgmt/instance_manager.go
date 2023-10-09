@@ -78,17 +78,17 @@ func New(provider InstanceProvider) InstanceManager {
 
 	return &instanceManager{
 		provider:         provider,
-		instanceDisposer: newInstanceDisposer(),
 		cache:            sync.Map{},
 		locker:           newLocker(),
+		instanceDisposer: newInstanceDisposer(),
 	}
 }
 
 type instanceManager struct {
 	locker           *locker
 	provider         InstanceProvider
-	instanceDisposer instanceDisposer
 	cache            sync.Map
+	instanceDisposer instanceDisposer
 }
 
 func (im *instanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {

@@ -58,7 +58,7 @@ func TestInstanceManager(t *testing.T) {
 				require.NotSame(t, instance, newInstance)
 			})
 
-			t.Run("Old instance should only be disposed after subsequent call to get instance", func(t *testing.T) {
+			t.Run("Old instance should only be disposed after subsequent call to retrieve instance", func(t *testing.T) {
 				require.False(t, instance.(*testInstance).disposed)
 
 				_, err = im.Get(ctx, pCtxUpdated)
@@ -260,17 +260,12 @@ func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext ba
 }
 
 func TestInstanceManager_DisposableInstances(t *testing.T) {
-	di1Disposed := 0
-	di1 := newDisposableInstance(func() {
-		di1Disposed++
-	})
-
 	ip := &testInstanceProvider{
 		getKeyFunc: func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
 			return "123", nil
 		},
 		newInstanceFunc: func(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
-			return di1, nil
+			return newDisposableInstance(), nil
 		},
 	}
 
@@ -278,8 +273,9 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 	im := New(ip)
 	i, err := im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
-	require.Equal(t, di1, i)
-	require.Equal(t, 0, di1Disposed)
+	i1, ok := i.(*disposableInstance)
+	require.True(t, ok)
+	require.False(t, i1.disposed)
 
 	err = i.(*disposableInstance).DoWork()
 	require.NoError(t, err)
@@ -289,56 +285,51 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 	ip.needsUpdateFunc = func(ctx context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
 		return true
 	}
-	ip.getKeyFunc = func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
-		return "123", nil
-	}
-	ip.newInstanceFunc = func(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
-		return newDisposableInstance(func() {}), nil
-	}
 
 	i, err = im.Get(context.Background(), backend.PluginContext{})
+	i2, ok := i.(*disposableInstance)
+	require.True(t, ok)
+	require.False(t, i2.disposed)
 	require.NoError(t, err)
-	require.NotSame(t, di1, i)
-	require.Equal(t, 0, di1Disposed)
+	require.NotSame(t, i1, i2)
 
-	// di1 instance is still valid and not disposed
-	err = di1.DoWork()
+	// i1 instance is still valid and not disposed
+	err = i1.DoWork()
 	require.NoError(t, err)
 
-	// di1 instance is disposed after subsequent call to im.Get
+	// i1 instance is disposed after subsequent call to im.Get
 	_, err = im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
+	require.True(t, i1.disposed)
+	require.False(t, i2.disposed)
 
-	err = di1.DoWork()
+	err = i1.DoWork()
+	require.Error(t, err)
+
+	// i2 instance is disposed after subsequent call to im.Get
+	_, err = im.Get(context.Background(), backend.PluginContext{})
+	require.NoError(t, err)
+	require.True(t, i2.disposed)
+
+	err = i2.DoWork()
 	require.Error(t, err)
 }
 
 type disposableInstance struct {
-	m           sync.RWMutex
-	disposeFunc func()
-	disposed    bool
+	disposed bool
 }
 
-func newDisposableInstance(f func()) *disposableInstance {
-	return &disposableInstance{
-		disposeFunc: f,
-	}
+func newDisposableInstance() *disposableInstance {
+	return &disposableInstance{}
 }
 
 func (di *disposableInstance) DoWork() error {
-	di.m.RLock()
-	defer di.m.RUnlock()
 	if di.disposed {
-		return errors.New("OH NO")
+		return errors.New("i'm disposed")
 	}
 	return nil
 }
 
 func (di *disposableInstance) Dispose() {
-	di.m.Lock()
 	di.disposed = true
-	di.m.Unlock()
-	if di.disposeFunc != nil {
-		di.disposeFunc()
-	}
 }
