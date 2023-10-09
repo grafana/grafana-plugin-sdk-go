@@ -64,7 +64,7 @@ func TestInstanceManager(t *testing.T) {
 				require.NotSame(t, instance, newInstance)
 			})
 
-			t.Run("Old instance should only be disposed after subsequent call to retrieve instance and TTL has exceeded", func(t *testing.T) {
+			t.Run("Old instance should only be disposed after subsequent call to retrieve instance and TTL has expired", func(t *testing.T) {
 				require.False(t, instance.(*testInstance).disposed)
 
 				_, err = im.Get(ctx, pCtxUpdated)
@@ -162,7 +162,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		}
 		wg.Wait()
 
-		t.Run("Initial instance should be disposed only once (and only after TTL has exceeded)", func(t *testing.T) {
+		t.Run("Initial instance should be disposed only once (and only after TTL has expired)", func(t *testing.T) {
 			time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
 				require.True(t, instanceToDispose.(*testInstance).disposed)
 				require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
@@ -270,7 +270,7 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 	err = i1.DoWork()
 	require.NoError(t, err)
 
-	// i1 instance is disposed after subsequent call to im.Get
+	// i1 instance is disposed after subsequent call to im.Get and TTL has expired
 	_, err = im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
 
@@ -282,7 +282,7 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 	err = i1.DoWork()
 	require.Error(t, err)
 
-	// i2 instance is disposed after subsequent call to im.Get
+	// i2 instance is disposed after subsequent call to im.Get and TTL has expired
 	_, err = im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
 
