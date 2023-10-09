@@ -120,9 +120,6 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
-			if im.instanceDisposer.tracking(cacheKey) {
-				im.instanceDisposer.dispose(cacheKey)
-			}
 			return ci.instance, nil
 		}
 
