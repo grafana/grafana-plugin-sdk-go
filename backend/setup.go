@@ -11,6 +11,7 @@ import (
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
+	"github.com/grafana/grafana-plugin-sdk-go/build"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 )
 
@@ -33,6 +34,7 @@ var (
 	PluginTracingOpenTelemetryOTLPPropagationEnv = "GF_INSTANCE_OTLP_PROPAGATION"
 
 	// PluginVersionEnv is a constant for the GF_PLUGIN_VERSION environment variable containing the plugin's version.
+	// Deprecated: Use build.GetBuildInfo().Version instead.
 	PluginVersionEnv = "GF_PLUGIN_VERSION"
 )
 
@@ -88,16 +90,37 @@ func setupProfiler(pluginID string) {
 	}
 }
 
+func getTracerCustomAttributes(pluginID string) []attribute.KeyValue {
+	var customAttributes []attribute.KeyValue
+	// Add plugin id and version to custom attributes
+	// Try to get plugin version from build info
+	// If not available, fallback to environment variable
+	var pluginVersion string
+	buildInfo, err := build.GetBuildInfo()
+	if err != nil {
+		Logger.Debug("Failed to get build info", "error", err)
+	} else {
+		pluginVersion = buildInfo.Version
+	}
+	if pluginVersion == "" {
+		if pv, ok := os.LookupEnv(PluginVersionEnv); ok {
+			pluginVersion = pv
+		}
+	}
+	customAttributes = []attribute.KeyValue{
+		semconv.ServiceNameKey.String(pluginID),
+		semconv.ServiceVersionKey.String(pluginVersion),
+	}
+	return customAttributes
+}
+
 // SetupTracer sets up the global OTEL trace provider and tracer.
 func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	// Set up tracing
 	tracingCfg := getTracingConfig()
 	if tracingCfg.IsEnabled() {
-		// Default attributes from instance management (plugin id and version)
-		if pv, ok := os.LookupEnv(PluginVersionEnv); ok {
-			tracingOpts.CustomAttributes = append([]attribute.KeyValue{semconv.ServiceVersionKey.String(pv)}, tracingOpts.CustomAttributes...)
-		}
-		tracingOpts.CustomAttributes = append([]attribute.KeyValue{semconv.ServiceNameKey.String(pluginID)}, tracingOpts.CustomAttributes...)
+		// Append custom attributes to the default ones
+		tracingOpts.CustomAttributes = append(getTracerCustomAttributes(pluginID), tracingOpts.CustomAttributes...)
 
 		// Initialize global tracer provider
 		tp, err := tracerprovider.NewTracerProvider(tracingCfg.Address, tracingOpts)
