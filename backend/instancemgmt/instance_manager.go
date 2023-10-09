@@ -9,7 +9,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 var (
@@ -106,7 +105,9 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
-			im.instanceDisposer.disposeIfExists(cacheKey)
+			if im.instanceDisposer.tracking(cacheKey) {
+				im.instanceDisposer.dispose(cacheKey)
+			}
 			return ci.instance, nil
 		}
 	}
@@ -119,15 +120,14 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
-			im.instanceDisposer.disposeIfExists(cacheKey)
+			if im.instanceDisposer.tracking(cacheKey) {
+				im.instanceDisposer.dispose(cacheKey)
+			}
 			return ci.instance, nil
 		}
 
 		if id, ok := im.instanceDisposer.disposable(ci.instance); ok {
-			err = im.instanceDisposer.track(cacheKey, id)
-			if err != nil {
-				log.DefaultLogger.Error("Failed to track disposable instance", "error", err)
-			}
+			im.instanceDisposer.track(cacheKey, id)
 		}
 	}
 
@@ -185,22 +185,29 @@ func (id *instanceDisposer) disposable(i Instance) (InstanceDisposer, bool) {
 }
 
 // track tracks a disposable instance. If there is a disposable instance already, we should dispose of it first.
-func (id *instanceDisposer) track(cacheKey interface{}, disposableInstance InstanceDisposer) error {
-	id.disposeIfExists(cacheKey)
-
+func (id *instanceDisposer) track(cacheKey interface{}, disposableInstance InstanceDisposer) {
 	id.m.Lock()
 	defer id.m.Unlock()
+
+	// If there is a disposable instance already, we should dispose of it first.
+	if _, exists := id.disposableCache.Load(cacheKey); exists {
+		id.disposableCache.Delete(cacheKey)
+	}
+
 	id.disposableCache.Store(cacheKey, disposableInstance)
-	return nil
 }
 
 // disposeIfExists disposes of a disposable instance.
-func (id *instanceDisposer) disposeIfExists(cacheKey interface{}) {
+func (id *instanceDisposer) tracking(cacheKey interface{}) bool {
+	id.m.RLock()
+	defer id.m.RUnlock()
+	_, exists := id.disposableCache.Load(cacheKey)
+	return exists
+}
+
+// disposeIfExists disposes of a disposable instance.
+func (id *instanceDisposer) dispose(cacheKey interface{}) {
 	id.m.Lock()
 	defer id.m.Unlock()
-	if d, exists := id.disposableCache.LoadAndDelete(cacheKey); exists {
-		disposable := d.(InstanceDisposer)
-		disposable.Dispose()
-		activeInstances.Dec()
-	}
+	id.disposableCache.Delete(cacheKey)
 }
