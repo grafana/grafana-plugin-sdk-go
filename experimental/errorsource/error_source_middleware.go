@@ -17,8 +17,8 @@ func (r PluginError) Error() string {
 	return r.Err.Error()
 }
 
-// ErrorSourceMiddleware captures error source metric
-func ErrorSourceMiddleware(plugin string) httpclient.Middleware {
+// Middleware captures error source metric
+func Middleware(plugin string) httpclient.Middleware {
 	return httpclient.NamedMiddlewareFunc(plugin, func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
 		return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			res, err := next.RoundTrip(req)
