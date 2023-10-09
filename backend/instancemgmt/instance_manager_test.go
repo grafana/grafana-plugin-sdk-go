@@ -210,55 +210,6 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 	})
 }
 
-type testInstance struct {
-	orgID         int64
-	updated       time.Time
-	disposed      bool
-	disposedTimes int64
-}
-
-func (ti *testInstance) Dispose() {
-	ti.disposed = true
-	atomic.AddInt64(&ti.disposedTimes, 1)
-}
-
-type testInstanceProvider struct {
-	getKeyFunc      func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error)
-	needsUpdateFunc func(ctx context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool
-	newInstanceFunc func(ctx context.Context, pluginContext backend.PluginContext) (Instance, error)
-
-	delay time.Duration
-}
-
-func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (interface{}, error) {
-	if tip.getKeyFunc != nil {
-		return tip.getKeyFunc(context.Background(), pluginContext)
-	}
-	return pluginContext.OrgID, nil
-}
-
-func (tip *testInstanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
-	if tip.needsUpdateFunc != nil {
-		return tip.needsUpdateFunc(context.Background(), pluginContext, cachedInstance)
-	}
-	curUpdated := pluginContext.AppInstanceSettings.Updated
-	cachedUpdated := cachedInstance.PluginContext.AppInstanceSettings.Updated
-	return !curUpdated.Equal(cachedUpdated)
-}
-
-func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (Instance, error) {
-	if tip.newInstanceFunc != nil {
-		return tip.newInstanceFunc(context.Background(), pluginContext)
-	}
-	if tip.delay > 0 {
-		time.Sleep(tip.delay)
-	}
-	return &testInstance{
-		orgID:   pluginContext.OrgID,
-		updated: pluginContext.AppInstanceSettings.Updated,
-	}, nil
-}
-
 func TestInstanceManager_DisposableInstances(t *testing.T) {
 	ip := &testInstanceProvider{
 		getKeyFunc: func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
@@ -313,6 +264,55 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 
 	err = i2.DoWork()
 	require.Error(t, err)
+}
+
+type testInstance struct {
+	orgID         int64
+	updated       time.Time
+	disposed      bool
+	disposedTimes int64
+}
+
+func (ti *testInstance) Dispose() {
+	ti.disposed = true
+	atomic.AddInt64(&ti.disposedTimes, 1)
+}
+
+type testInstanceProvider struct {
+	getKeyFunc      func(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error)
+	needsUpdateFunc func(ctx context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool
+	newInstanceFunc func(ctx context.Context, pluginContext backend.PluginContext) (Instance, error)
+
+	delay time.Duration
+}
+
+func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (interface{}, error) {
+	if tip.getKeyFunc != nil {
+		return tip.getKeyFunc(context.Background(), pluginContext)
+	}
+	return pluginContext.OrgID, nil
+}
+
+func (tip *testInstanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
+	if tip.needsUpdateFunc != nil {
+		return tip.needsUpdateFunc(context.Background(), pluginContext, cachedInstance)
+	}
+	curUpdated := pluginContext.AppInstanceSettings.Updated
+	cachedUpdated := cachedInstance.PluginContext.AppInstanceSettings.Updated
+	return !curUpdated.Equal(cachedUpdated)
+}
+
+func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (Instance, error) {
+	if tip.newInstanceFunc != nil {
+		return tip.newInstanceFunc(context.Background(), pluginContext)
+	}
+	if tip.delay > 0 {
+		time.Sleep(tip.delay)
+	}
+	return &testInstance{
+		orgID:   pluginContext.OrgID,
+		updated: pluginContext.AppInstanceSettings.Updated,
+	}, nil
 }
 
 type disposableInstance struct {
