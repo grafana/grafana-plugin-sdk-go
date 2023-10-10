@@ -505,7 +505,6 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 
 		for _, tc := range tcs {
 			rsp, err := FromProto().QueryDataResponse(&pluginv2.QueryDataResponse{
-				DataType: pluginv2.QueryDataResponse_ARROW,
 				Responses: map[string]*pluginv2.DataResponse{
 					"A": tc.rsp,
 				},
