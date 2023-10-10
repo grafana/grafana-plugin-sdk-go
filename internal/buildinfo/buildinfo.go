@@ -9,7 +9,7 @@ import (
 )
 
 var (
-	buildInfoMode = flag.Bool("buildinfo", false, "nntifare print build info and exit")
+	buildInfoMode = flag.Bool("buildinfo", false, "print build info and exit")
 	versionMode   = flag.Bool("version", false, "print version and exit")
 )
 
