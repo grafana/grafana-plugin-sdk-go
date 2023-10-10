@@ -137,7 +137,7 @@ message QueryDataRequest {
 
 message QueryDataResponse {
   // Map of refId to response
-  // Not populated if dataType is not ARROW.
+  // Only populated if dataType is ARROW.
   map<string,DataResponse> responses = 1;
 
   enum QueryDataResponseType {
