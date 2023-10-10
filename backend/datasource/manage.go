@@ -7,7 +7,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
-	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/buildinfo"
 )
 
 // ManageOpts can modify Manage behaviour.
@@ -23,8 +23,8 @@ type ManageOpts struct {
 // pluginID should match the one from plugin.json.
 func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpts) error {
 	// If we are running in build info mode, run that and exit
-	if standalone.InfoModeEnabled() {
-		if err := standalone.RunInfoMode(); err != nil {
+	if buildinfo.InfoModeEnabled() {
+		if err := buildinfo.RunInfoMode(); err != nil {
 			os.Exit(1)
 			return err
 		}
