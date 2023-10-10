@@ -216,12 +216,10 @@ func (t ConvertToProtobuf) jsonQueryDataResponse(res *QueryDataResponse) (*plugi
 		return nil, err
 	}
 
-	pQDR := &pluginv2.QueryDataResponse{
+	return &pluginv2.QueryDataResponse{
 		DataType: pluginv2.QueryDataResponse_JSON,
 		Data:     bytes,
-	}
-
-	return pQDR, nil
+	}, nil
 }
 
 // CallResourceResponse converts the SDK version of a CallResourceResponse to the protobuf version.

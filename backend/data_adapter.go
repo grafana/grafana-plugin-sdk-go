@@ -54,7 +54,6 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	}
 
 	accept := ""
-
 	if req.Headers != nil {
 		if val, exists := req.Headers["accept"]; exists {
 			accept = val

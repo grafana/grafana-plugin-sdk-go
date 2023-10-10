@@ -1009,7 +1009,7 @@ type QueryDataResponse struct {
 	unknownFields protoimpl.UnknownFields
 
 	// Map of refId to response
-	// Not populated if dataType is not ARROW.
+	// Only populated if dataType is ARROW.
 	Responses map[string]*DataResponse `protobuf:"bytes,1,rep,name=responses,proto3" json:"responses,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// The type of the data response.
 	DataType QueryDataResponse_QueryDataResponseType `protobuf:"varint,2,opt,name=dataType,proto3,enum=pluginv2.QueryDataResponse_QueryDataResponseType" json:"dataType,omitempty"`
