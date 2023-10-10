@@ -2,6 +2,7 @@ package buildinfo
 
 import (
 	"encoding/json"
+	"errors"
 	"flag"
 	"fmt"
 
@@ -24,7 +25,7 @@ func InfoModeEnabled() bool {
 // The caller should call os.Exit right after.
 func RunInfoMode() error {
 	if !InfoModeEnabled() {
-		return fmt.Errorf("build info mode not enabled")
+		return errors.New("build info mode not enabled")
 	}
 	bi, err := build.GetBuildInfo()
 	if err != nil {
