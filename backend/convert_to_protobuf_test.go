@@ -86,8 +86,7 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 			require.NotNil(t, qdr)
 			require.NotNil(t, qdr.Responses)
 			resp := qdr.Responses["A"]
-			receivedStatus := resp.Status
-			require.Equal(t, tc.expectedStatus, receivedStatus)
+			require.Equal(t, tc.expectedStatus, resp.Status)
 			require.Equal(t, tc.expectedErrorSource, resp.ErrorSource)
 		})
 	}
