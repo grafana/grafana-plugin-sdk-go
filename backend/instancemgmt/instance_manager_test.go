@@ -65,15 +65,14 @@ func TestInstanceManager(t *testing.T) {
 			})
 
 			t.Run("Old instance should only be disposed after subsequent call to retrieve instance and TTL has expired", func(t *testing.T) {
-				require.False(t, instance.(*testInstance).disposed)
+				require.False(t, instance.(*testInstance).Disposed())
 
 				_, err = im.Get(ctx, pCtxUpdated)
 				require.NoError(t, err)
 
-				time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
-					require.True(t, instance.(*testInstance).disposed)
-					require.Equal(t, int64(1), instance.(*testInstance).disposedTimes, "Instance should be disposed only once")
-				})
+				<-time.After(disposeTTL + time.Millisecond*10)
+				require.True(t, instance.(*testInstance).Disposed())
+				require.Equal(t, int64(1), instance.(*testInstance).disposedTimes, "Instance should be disposed only once")
 			})
 		})
 	})
@@ -163,10 +162,9 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		wg.Wait()
 
 		t.Run("Initial instance should be disposed only once (and only after TTL has expired)", func(t *testing.T) {
-			time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
-				require.True(t, instanceToDispose.(*testInstance).disposed)
-				require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
-			})
+			<-time.After(disposeTTL + time.Millisecond*10)
+			require.True(t, instanceToDispose.(*testInstance).Disposed())
+			require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
 		})
 		t.Run("All created instances should be either disposed or exist in cache for later disposing", func(t *testing.T) {
 			cachedInstance, _ := im.Get(ctx, updatedPCtx)
@@ -274,10 +272,9 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 	_, err = im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
 
-	time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
-		require.True(t, i1.disposed)
-		require.False(t, i2.disposed)
-	})
+	<-time.After(disposeTTL + time.Millisecond*10)
+	require.True(t, i1.disposed)
+	require.False(t, i2.disposed)
 
 	err = i1.DoWork()
 	require.Error(t, err)
@@ -286,9 +283,8 @@ func TestInstanceManager_DisposableInstances(t *testing.T) {
 	_, err = im.Get(context.Background(), backend.PluginContext{})
 	require.NoError(t, err)
 
-	time.AfterFunc(disposeTTL+time.Millisecond*10, func() {
-		require.True(t, i2.disposed)
-	})
+	<-time.After(disposeTTL + time.Millisecond*10)
+	require.True(t, i2.disposed)
 
 	err = i2.DoWork()
 	require.Error(t, err)
@@ -299,9 +295,19 @@ type testInstance struct {
 	updated       time.Time
 	disposed      bool
 	disposedTimes int64
+
+	m sync.RWMutex
+}
+
+func (ti *testInstance) Disposed() bool {
+	ti.m.RLock()
+	defer ti.m.RUnlock()
+	return ti.disposed
 }
 
 func (ti *testInstance) Dispose() {
+	ti.m.Lock()
+	defer ti.m.Unlock()
 	ti.disposed = true
 	atomic.AddInt64(&ti.disposedTimes, 1)
 }
