@@ -56,8 +56,8 @@ func (d *instanceDisposer) dispose(cacheKey interface{}) {
 		d.m.Lock()
 		defer d.m.Unlock()
 		if i, exists := d.cache.LoadAndDelete(cacheKey); exists {
-			if _, ok := d.disposable(i); ok {
-				i.(InstanceDisposer).Dispose()
+			if id, ok := d.disposable(i); ok {
+				id.Dispose()
 				activeInstances.Dec()
 			}
 		}
