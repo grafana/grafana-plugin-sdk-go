@@ -164,14 +164,6 @@ type DataResponse struct {
 	ErrorSource ErrorSource
 }
 
-// ErrorSource type defines the source of the error
-type ErrorSource string
-
-const (
-	ErrorSourcePlugin     ErrorSource = "plugin"
-	ErrorSourceDownstream ErrorSource = "downstream"
-)
-
 // ErrDataResponse returns an error DataResponse given status and message.
 func ErrDataResponse(status Status, message string) DataResponse {
 	return DataResponse{
