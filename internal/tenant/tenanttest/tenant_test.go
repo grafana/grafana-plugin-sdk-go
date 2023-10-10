@@ -130,7 +130,7 @@ func (s *testCallResourceResponseSender) Send(_ *backend.CallResourceResponse) e
 }
 
 // getFreePort returns a random free port listening on 127.0.0.1.
-func getFreePort() (port int, err error) {
+func getFreePort() (int, error) {
 	a, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
 	if err != nil {
 		return 0, fmt.Errorf("resolve tcp addr: %w", err)
@@ -139,11 +139,9 @@ func getFreePort() (port int, err error) {
 	if err != nil {
 		return 0, fmt.Errorf("listen tcp: %w", err)
 	}
-	defer func() {
-		closeErr := l.Close()
-		if err == nil && closeErr != nil {
-			err = fmt.Errorf("close: %w", closeErr)
-		}
-	}()
-	return l.Addr().(*net.TCPAddr).Port, nil
+	port := l.Addr().(*net.TCPAddr).Port
+	if err = l.Close(); err != nil {
+		return 0, fmt.Errorf("close: %w", err)
+	}
+	return port, nil
 }
