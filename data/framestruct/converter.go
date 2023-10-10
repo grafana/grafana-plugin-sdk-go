@@ -63,6 +63,8 @@ func ToDataFrames(name string, toConvert interface{}, opts ...FramestructOption)
 type FieldConverter func(interface{}) (interface{}, error)
 
 // FramestructOption takes a converter and applies some configuration to it
+//
+//nolint:revive
 type FramestructOption func(cr *converter)
 
 // WithConverterFor configures a FieldConverter for a field with the name
@@ -127,6 +129,7 @@ func (c *converter) convertStruct(field reflect.Value, fieldName string) error {
 
 func (c *converter) convertSlice(s reflect.Value, prefix string) error {
 	for i := 0; i < s.Len(); i++ {
+		c.maxLen++
 		v := s.Index(i)
 		switch v.Kind() {
 		case reflect.Map:
@@ -194,6 +197,11 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 
 	for _, name := range sortedKeys(m) {
 		value := m[name]
+		if value == nil {
+			// skip nil values (as they will lead to "nil" values later on anyways);
+			// and the reflection code below crashes on nil.
+			continue
+		}
 		fieldName := c.fieldName(name, tags, prefix)
 		v := c.ensureValue(reflect.ValueOf(value))
 		if err := c.handleValue(v, "", fieldName); err != nil {
@@ -252,9 +260,6 @@ func (c *converter) convertField(v reflect.Value, fieldName string) (interface{}
 
 func (c *converter) appendToField(name string, value interface{}) {
 	c.fields[name].Append(value)
-	if c.fields[name].Len() > c.maxLen {
-		c.maxLen++
-	}
 }
 
 func (c *converter) createFrame(name string) *data.Frame {

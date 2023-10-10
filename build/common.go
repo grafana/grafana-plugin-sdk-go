@@ -2,18 +2,28 @@ package build
 
 import (
 	"bufio"
+	"embed"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/build/utils"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
+	ca "github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/certificate_authority"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
+	bra "github.com/unknwon/bra/cmd"
+	"github.com/urfave/cli"
 )
+
+var defaultOutputBinaryPath = "dist"
 
 // Callbacks give you a way to run custom behavior when things happen
 var beforeBuild = func(cfg Config) (Config, error) {
@@ -73,7 +83,7 @@ func buildBackend(cfg Config) error {
 
 	outputPath := cfg.OutputBinaryPath
 	if outputPath == "" {
-		outputPath = "dist"
+		outputPath = defaultOutputBinaryPath
 	}
 	args := []string{
 		"build", "-o", filepath.Join(outputPath, exeName),
@@ -160,6 +170,35 @@ func (Build) DarwinARM64() error {
 	return buildBackend(newBuildConfig("darwin", "arm64"))
 }
 
+// GenerateManifestFile generates a manifest file for plugin submissions
+func (Build) GenerateManifestFile() error {
+	config := Config{}
+	config, err := beforeBuild(config)
+	if err != nil {
+		return err
+	}
+	outputPath := config.OutputBinaryPath
+	if outputPath == "" {
+		outputPath = defaultOutputBinaryPath
+	}
+	manifestContent, err := utils.GenerateManifest()
+	if err != nil {
+		return err
+	}
+
+	manifestFilePath := filepath.Join(outputPath, "go_plugin_build_manifest")
+	err = os.MkdirAll(outputPath, 0755)
+	if err != nil {
+		return err
+	}
+	// #nosec G306 - we need reading permissions for this file
+	err = os.WriteFile(manifestFilePath, []byte(manifestContent), 0755)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 // Debug builds the debug version for the current platform
 func (Build) Debug() error {
 	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
@@ -169,6 +208,14 @@ func (Build) Debug() error {
 
 // Backend build a production build for the current platform
 func (Build) Backend() error {
+	// The M1 platform detection is kinda flakey, so we will just build both
+	if runtime.GOOS == "darwin" {
+		err := buildBackend(newBuildConfig("darwin", "arm64"))
+		if err != nil {
+			return err
+		}
+		return buildBackend(newBuildConfig("darwin", "amd64"))
+	}
 	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
 	return buildBackend(cfg)
 }
@@ -176,7 +223,46 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.GenerateManifestFile)
+}
+
+//go:embed tmpl/*
+var tmpl embed.FS
+
+// ensureWatchConfig creates a default .bra.toml file in the current directory if it doesn't exist.
+func ensureWatchConfig() error {
+	exists, err := utils.Exists(".bra.toml")
+	if err != nil {
+		return err
+	}
+
+	if exists {
+		return nil
+	}
+
+	fmt.Println("No .bra.toml file found. Creating one...")
+	config, err := tmpl.ReadFile("tmpl/bra.toml")
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(".bra.toml", config, 0600)
+}
+
+// Watch rebuilds the plugin backend when files change.
+func Watch() error {
+	if err := ensureWatchConfig(); err != nil {
+		return err
+	}
+
+	// this is needed to run `bra run` programmatically
+	app := cli.NewApp()
+	app.Name = "bra"
+	app.Usage = ""
+	app.Action = func(c *cli.Context) error {
+		return bra.Run.Run(c)
+	}
+	return app.Run(os.Args)
 }
 
 // Test runs backend tests.
@@ -186,12 +272,16 @@ func Test() error {
 
 // Coverage runs backend tests and makes a coverage report.
 func Coverage() error {
-	// Create a coverage file if it does not already exist
+	// Create a coverage folder if it does not already exist
 	if err := os.MkdirAll(filepath.Join(".", "coverage"), os.ModePerm); err != nil {
 		return err
 	}
 
-	if err := sh.RunV("go", "test", "./pkg/...", "-v", "-cover", "-coverprofile=coverage/backend.out"); err != nil {
+	if err := sh.RunV("go", "test", "./pkg/...", "-coverpkg", "./...", "-v", "-cover", "-coverprofile=coverage/backend.out"); err != nil {
+		return err
+	}
+
+	if err := sh.RunV("go", "tool", "cover", "-func=coverage/backend.out", "-o", "coverage/backend.txt"); err != nil {
 		return err
 	}
 
@@ -227,10 +317,64 @@ func Clean() error {
 	return nil
 }
 
+// E2E is a namespace.
+type E2E mg.Namespace
+
+// Append starts the E2E proxy in append mode.
+func (E2E) Append() error {
+	return e2eProxy(e2e.ProxyModeAppend)
+}
+
+// Overwrite starts the E2E proxy in overwrite mode.
+func (E2E) Overwrite() error {
+	return e2eProxy(e2e.ProxyModeOverwrite)
+}
+
+// Replay starts the E2E proxy in replay mode.
+func (E2E) Replay() error {
+	return e2eProxy(e2e.ProxyModeReplay)
+}
+
+// Certificate prints the CA certificate to stdout.
+func (E2E) Certificate() error {
+	cfg, err := config.LoadConfig("proxy.json")
+	if err != nil {
+		return err
+	}
+
+	if cert, _, err := ca.LoadKeyPair(cfg.CAConfig.Cert, cfg.CAConfig.PrivateKey); err == nil {
+		fmt.Print(string(cert))
+		return nil
+	}
+
+	fmt.Print(string(ca.CACertificate))
+	return nil
+}
+
+func e2eProxy(mode e2e.ProxyMode) error {
+	cfg, err := config.LoadConfig("proxy.json")
+	if err != nil {
+		return err
+	}
+	fixtures := make([]*fixture.Fixture, 0)
+	for _, s := range cfg.Storage {
+		switch s.Type {
+		case config.StorageTypeHAR:
+			store := storage.NewHARStorage(s.Path)
+			fixtures = append(fixtures, fixture.NewFixture(store))
+		case config.StorageTypeOpenAPI:
+			store := storage.NewOpenAPIStorage(s.Path)
+			fixtures = append(fixtures, fixture.NewFixture(store))
+		}
+	}
+	proxy := e2e.NewProxy(mode, fixtures, cfg)
+	return proxy.Start()
+}
+
 // checkLinuxPtraceScope verifies that ptrace is configured as required.
 func checkLinuxPtraceScope() error {
 	ptracePath := "/proc/sys/kernel/yama/ptrace_scope"
-	byteValue, err := ioutil.ReadFile(ptracePath)
+	byteValue, err := os.ReadFile(ptracePath)
 	if err != nil {
 		return fmt.Errorf("unable to read ptrace_scope: %w", err)
 	}

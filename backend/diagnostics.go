@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"net/http"
 	"strconv"
 )
 
@@ -53,13 +54,58 @@ func (hs HealthStatus) String() string {
 
 // CheckHealthRequest contains the healthcheck request
 type CheckHealthRequest struct {
+	// PluginContext the contextual information for the request.
 	PluginContext PluginContext
+
+	// Headers the environment/metadata information for the request.
+	//
+	// To access forwarded HTTP headers please use
+	// GetHTTPHeaders or GetHTTPHeader.
+	Headers map[string]string
+}
+
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
+func (req *CheckHealthRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	setHTTPHeaderInStringMap(req.Headers, key, value)
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *CheckHealthRequest) DeleteHTTPHeader(key string) {
+	deleteHTTPHeaderInStringMap(req.Headers, key)
+}
+
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
+func (req *CheckHealthRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+// GetHTTPHeaders returns HTTP headers.
+func (req *CheckHealthRequest) GetHTTPHeaders() http.Header {
+	return getHTTPHeadersFromStringMap(req.Headers)
 }
 
 // CheckHealthResult contains the healthcheck response
 type CheckHealthResult struct {
-	Status      HealthStatus
-	Message     string
+	// Status the HealthStatus of the healthcheck.
+	Status HealthStatus
+
+	// Message the message of the healthcheck, if any.
+	Message string
+
+	// JSONDetails the details of the healthcheck, if any, encoded as JSON bytes.
 	JSONDetails []byte
 }
 
@@ -81,10 +127,14 @@ func (fn CollectMetricsHandlerFunc) CollectMetrics(ctx context.Context, req *Col
 
 // CollectMetricsRequest contains the metrics request
 type CollectMetricsRequest struct {
+	// PluginContext the contextual information for the request.
 	PluginContext PluginContext
 }
 
 // CollectMetricsResult collect metrics result.
 type CollectMetricsResult struct {
+	// PrometheusMetrics the Prometheus metrics encoded as bytes.
 	PrometheusMetrics []byte
 }
+
+var _ ForwardHTTPHeaders = (*CheckHealthRequest)(nil)

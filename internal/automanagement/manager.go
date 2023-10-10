@@ -25,7 +25,7 @@ func NewManager(instanceManager instancemgmt.InstanceManager) *Manager {
 }
 
 func (m *Manager) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	h, err := m.Get(req.PluginContext)
+	h, err := m.Get(ctx, req.PluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -36,7 +36,7 @@ func (m *Manager) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 }
 
 func (m *Manager) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	h, err := m.Get(req.PluginContext)
+	h, err := m.Get(ctx, req.PluginContext)
 	if err != nil {
 		return &backend.CheckHealthResult{
 			Status:  backend.HealthStatusError,
@@ -50,7 +50,7 @@ func (m *Manager) CheckHealth(ctx context.Context, req *backend.CheckHealthReque
 }
 
 func (m *Manager) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	h, err := m.Get(req.PluginContext)
+	h, err := m.Get(ctx, req.PluginContext)
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (m *Manager) CallResource(ctx context.Context, req *backend.CallResourceReq
 }
 
 func (m *Manager) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
-	h, err := m.Get(req.PluginContext)
+	h, err := m.Get(ctx, req.PluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -72,7 +72,7 @@ func (m *Manager) SubscribeStream(ctx context.Context, req *backend.SubscribeStr
 }
 
 func (m *Manager) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
-	h, err := m.Get(req.PluginContext)
+	h, err := m.Get(ctx, req.PluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (m *Manager) PublishStream(ctx context.Context, req *backend.PublishStreamR
 }
 
 func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
-	h, err := m.Get(req.PluginContext)
+	h, err := m.Get(ctx, req.PluginContext)
 	if err != nil {
 		return err
 	}

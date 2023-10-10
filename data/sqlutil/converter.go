@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"reflect"
 	"regexp"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -125,11 +126,17 @@ type Converter struct {
 	// InputTypeRegex will be used if not nil instead of InputTypeName
 	InputTypeRegex *regexp.Regexp
 
+	// InputColumnName is the case-sensitive name that must match the column that this converter matches
+	InputColumnName string
+
 	// FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe
 	FrameConverter FrameConverter
 
 	// colType is the underlying sql column type, set during scan
 	colType sql.ColumnType
+
+	// try to determine the type
+	Dynamic bool
 }
 
 // DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
@@ -149,7 +156,8 @@ func DefaultConverterFunc(t reflect.Type) func(in interface{}) (interface{}, err
 // NewDefaultConverter creates a Converter that assumes that the value is scannable into a String, and placed into the dataframe as a nullable string.
 func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 	slice := reflect.MakeSlice(reflect.SliceOf(t), 0, 0).Interface()
-	if !data.ValidFieldType(slice) {
+	kind := fmt.Sprint(t)
+	if !strings.HasPrefix(kind, "sql.Null") && !data.ValidFieldType(slice) {
 		return Converter{
 			Name:          fmt.Sprintf("[%s] String converter", t),
 			InputScanType: reflect.TypeOf(sql.NullString{}),
@@ -277,6 +285,26 @@ var (
 		},
 	}
 
+	// NullInt16Converter creates a *int16 using the scan type of `sql.NullInt16`
+	NullInt16Converter = Converter{
+		Name:          "NULLABLE int16 converter",
+		InputScanType: reflect.TypeOf(sql.NullInt16{}),
+		InputTypeName: "INTEGER",
+		FrameConverter: FrameConverter{
+			FieldType: data.FieldTypeNullableInt16,
+			ConverterFunc: func(n any) (any, error) {
+				v := n.(*sql.NullInt16)
+
+				if !v.Valid {
+					return (*int16)(nil), nil
+				}
+
+				f := v.Int16
+				return &f, nil
+			},
+		},
+	}
+
 	// NullTimeConverter creates a *time.time using the scan type of `sql.NullTime`
 	NullTimeConverter = Converter{
 		Name:          "NULLABLE time.Time converter",
@@ -315,15 +343,113 @@ var (
 			},
 		},
 	}
+
+	// NullByteConverter creates a *string using the scan type of `sql.NullByte`
+	NullByteConverter = Converter{
+		Name:          "nullable byte converter",
+		InputScanType: reflect.TypeOf(sql.NullByte{}),
+		InputTypeName: "BYTE",
+		FrameConverter: FrameConverter{
+			FieldType: data.FieldTypeNullableString,
+			ConverterFunc: func(n any) (any, error) {
+				v := n.(*sql.NullByte)
+
+				if !v.Valid {
+					return (*string)(nil), nil
+				}
+
+				val := string(v.Byte)
+				return &val, nil
+			},
+		},
+	}
 )
 
 // NullConverters is a map of data type names (from reflect.TypeOf(...).String()) to converters
 // Converters supplied here are used as defaults for fields that do not have a supplied Converter
 var NullConverters = map[reflect.Type]Converter{
-	reflect.TypeOf(float64(0)):  NullDecimalConverter,
-	reflect.TypeOf(int64(0)):    NullInt64Converter,
-	reflect.TypeOf(int32(0)):    NullInt32Converter,
-	reflect.TypeOf(""):          NullStringConverter,
-	reflect.TypeOf(time.Time{}): NullTimeConverter,
-	reflect.TypeOf(false):       NullBoolConverter,
+	reflect.TypeOf(float64(0)):        NullDecimalConverter,
+	reflect.TypeOf(int64(0)):          NullInt64Converter,
+	reflect.TypeOf(int32(0)):          NullInt32Converter,
+	reflect.TypeOf(""):                NullStringConverter,
+	reflect.TypeOf(time.Time{}):       NullTimeConverter,
+	reflect.TypeOf(false):             NullBoolConverter,
+	reflect.TypeOf(sql.NullFloat64{}): NullDecimalConverter,
+	reflect.TypeOf(sql.NullTime{}):    NullTimeConverter,
+	reflect.TypeOf(sql.NullBool{}):    NullBoolConverter,
+	reflect.TypeOf(sql.NullInt64{}):   NullInt64Converter,
+	reflect.TypeOf(sql.NullInt32{}):   NullInt32Converter,
+	reflect.TypeOf(sql.NullInt16{}):   NullInt16Converter,
+	reflect.TypeOf(sql.NullByte{}):    NullByteConverter,
+	reflect.TypeOf(sql.NullString{}):  NullStringConverter,
+}
+
+// IntOrFloatToNullableFloat64 returns an error if the input is not a variation of int or float.
+var IntOrFloatToNullableFloat64 = data.FieldConverter{
+	OutputFieldType: data.FieldTypeNullableFloat64,
+	Converter: func(v interface{}) (interface{}, error) {
+		var ptr *float64
+		if v == nil {
+			return ptr, nil
+		}
+
+		switch val := v.(type) {
+		case float64:
+			return &val, nil
+		case float32:
+			fval := float64(val)
+			return &fval, nil
+		case int:
+			fval := float64(val)
+			return &fval, nil
+		case int8:
+			fval := float64(val)
+			return &fval, nil
+		case int16:
+			fval := float64(val)
+			return &fval, nil
+		case int32:
+			fval := float64(val)
+			return &fval, nil
+		case int64:
+			fval := float64(val)
+			return &fval, nil
+		case uint:
+			fval := float64(val)
+			return &fval, nil
+		case uint8:
+			fval := float64(val)
+			return &fval, nil
+		case uint16:
+			fval := float64(val)
+			return &fval, nil
+		case uint32:
+			fval := float64(val)
+			return &fval, nil
+		case uint64:
+			fval := float64(val)
+			return &fval, nil
+		}
+
+		return ptr, toConversionError("int or float", v)
+	},
+}
+
+// TimeToNullableTime returns an error if the input is not a time
+var TimeToNullableTime = data.FieldConverter{
+	OutputFieldType: data.FieldTypeNullableTime,
+	Converter: func(v interface{}) (interface{}, error) {
+		if v == nil {
+			return nil, nil
+		}
+		val, ok := v.(time.Time)
+		if ok {
+			return &val, nil
+		}
+		return v, toConversionError("time", v)
+	},
+}
+
+func toConversionError(expected string, v interface{}) error {
+	return fmt.Errorf(`expected %s input but got type %T for value "%v"`, expected, v, v)
 }

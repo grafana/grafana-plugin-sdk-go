@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"strconv"
+	"time"
 )
 
 // FieldConfig represents the display properties for a Field.
@@ -16,7 +17,7 @@ type FieldConfig struct {
 	// DisplayName overrides Grafana default naming, should not be used from a data source
 	DisplayName string `json:"displayName,omitempty"`
 
-	// DisplayNameFromDS overrides Grafana default naming in a better way that allows users to override it easily.
+	// DisplayNameFromDS overrides Grafana default naming strategy.
 	DisplayNameFromDS string `json:"displayNameFromDS,omitempty"`
 
 	// Path is an explicit path to the field in the datasource. When the frame meta includes a path,
@@ -63,8 +64,32 @@ type FieldConfig struct {
 	// Alternative to empty string
 	NoValue string `json:"noValue,omitempty"`
 
+	// Type specific configs
+	TypeConfig *FieldTypeConfig `json:"type,omitempty"`
+
 	// Panel Specific Values
 	Custom map[string]interface{} `json:"custom,omitempty"`
+}
+
+// FieldTypeConfig has type specific configs, only one should be active at a time
+type FieldTypeConfig struct {
+	Enum *EnumFieldConfig `json:"enum,omitempty"`
+}
+
+// Enum field config
+// Vector values are used as lookup keys into the enum fields
+type EnumFieldConfig struct {
+	// Value is the string display value for a given index
+	Text []string `json:"text"`
+
+	// Color is the color value for a given index (empty is undefined)
+	Color []string `json:"color,omitempty"`
+
+	// Icon supports setting an icon for a given index value
+	Icon []string `json:"icon,omitempty"`
+
+	// Description of the enum state
+	Description []string `json:"description,omitempty"`
 }
 
 // ExplicitNullValue is the string representation for null
@@ -134,10 +159,44 @@ func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
 
 // DataLink define what
 type DataLink struct { //revive:disable-line
-	Title       string `json:"title,omitempty"`
-	TargetBlank bool   `json:"targetBlank,omitempty"`
-	URL         string `json:"url,omitempty"`
+	Title       string            `json:"title,omitempty"`
+	TargetBlank bool              `json:"targetBlank,omitempty"`
+	URL         string            `json:"url,omitempty"`
+	Internal    *InternalDataLink `json:"internal,omitempty"`
 }
+
+// InternalDataLink definition to allow Explore links to be constructed in the backend
+type InternalDataLink struct {
+	Query              any                         `json:"query,omitempty"`
+	DatasourceUID      string                      `json:"datasourceUid,omitempty"`
+	DatasourceName     string                      `json:"datasourceName,omitempty"`
+	ExplorePanelsState *ExplorePanelsState         `json:"panelsState,omitempty"`
+	Transformations    *[]LinkTransformationConfig `json:"transformations,omitempty"`
+	Range              *TimeRange                  `json:"timeRange,omitempty"`
+}
+
+// This is an object constructed with the keys as the values of the enum VisType and the value being a bag of properties
+type ExplorePanelsState any
+
+// Redefining this to avoid an import cycle
+type TimeRange struct {
+	From time.Time `json:"from,omitempty"`
+	To   time.Time `json:"to,omitempty"`
+}
+
+type LinkTransformationConfig struct {
+	Type       SupportedTransformationTypes `json:"type,omitempty"`
+	Field      string                       `json:"field,omitempty"`
+	Expression string                       `json:"expression,omitempty"`
+	MapValue   string                       `json:"mapValue,omitempty"`
+}
+
+type SupportedTransformationTypes string
+
+const (
+	Regex  SupportedTransformationTypes = "regex"
+	Logfmt SupportedTransformationTypes = "logfmt"
+)
 
 // ThresholdsConfig setup thresholds
 type ThresholdsConfig struct {

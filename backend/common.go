@@ -1,10 +1,14 @@
 package backend
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
 const dataCustomOptionsKey = "grafanaData"
@@ -59,6 +63,10 @@ type DataSourceInstanceSettings struct {
 	// UID is the Grafana assigned string identifier of the the data source instance.
 	UID string
 
+	// Type is the unique identifier of the plugin that the request is for.
+	// This should be the same value as PluginContext.PluginId.
+	Type string
+
 	// Name is the configured name of the data source instance.
 	Name string
 
@@ -68,7 +76,9 @@ type DataSourceInstanceSettings struct {
 	// User is a configured user for a data source instance. This is not a Grafana user, rather an arbitrary string.
 	User string
 
-	// Database is the configured database for a data source instance. (e.g. the default Database a SQL data source would connect to).
+	// Database is the configured database for a data source instance.
+	// Only used by Elasticsearch and Influxdb.
+	// Please use JSONData to store information related to database.
 	Database string
 
 	// BasicAuthEnabled indicates if this data source instance should use basic authentication.
@@ -110,8 +120,14 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 	opts := httpSettings.HTTPClientOptions()
 	opts.Labels["datasource_name"] = s.Name
 	opts.Labels["datasource_uid"] = s.UID
+	opts.Labels["datasource_type"] = s.Type
 
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
+
+	opts.ProxyOptions, err = s.ProxyOptions()
+	if err != nil {
+		return opts, err
+	}
 
 	return opts, nil
 }
@@ -124,6 +140,9 @@ type PluginContext struct {
 
 	// PluginID is the unique identifier of the plugin that the request is for.
 	PluginID string
+
+	// PluginVersion is the version of the plugin that the request is for.
+	PluginVersion string
 
 	// User is the Grafana user making the request.
 	//
@@ -147,6 +166,13 @@ type PluginContext struct {
 	//
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
+
+	// GrafanaConfig is the configuration settings provided by Grafana.
+	GrafanaConfig *GrafanaCfg
+
+	// UserAgent is the user agent of the Grafana server that initiated the gRPC request.
+	// Will only be set if request is made from Grafana v10.2.0 or later.
+	UserAgent *useragent.UserAgent
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
@@ -197,4 +223,58 @@ func SecureJSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[strin
 	}
 
 	return secureJSONData
+}
+
+func propagateTenantIDIfPresent(ctx context.Context) context.Context {
+	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
+		ctx = tenant.WithTenant(ctx, tid)
+	}
+	return ctx
+}
+
+func (s *DataSourceInstanceSettings) ProxyOptions() (*proxy.Options, error) {
+	opts := &proxy.Options{}
+
+	var dat map[string]interface{}
+	if s.JSONData != nil {
+		if err := json.Unmarshal(s.JSONData, &dat); err != nil {
+			return nil, err
+		}
+	}
+
+	opts.Enabled = proxy.SecureSocksProxyEnabledOnDS(dat)
+	if !opts.Enabled {
+		return nil, nil
+	}
+
+	opts.Auth = &proxy.AuthOptions{}
+	opts.Timeouts = &proxy.TimeoutOptions{}
+	if v, exists := dat["secureSocksProxyUsername"]; exists {
+		opts.Auth.Username = v.(string)
+	} else {
+		// default username is the datasource uid
+		opts.Auth.Username = s.UID
+	}
+
+	if v, exists := s.DecryptedSecureJSONData["secureSocksProxyPassword"]; exists {
+		opts.Auth.Password = v
+	}
+
+	if v, exists := dat["timeout"]; exists {
+		if iv, ok := v.(float64); ok {
+			opts.Timeouts.Timeout = time.Duration(iv) * time.Second
+		}
+	} else {
+		opts.Timeouts.Timeout = proxy.DefaultTimeoutOptions.Timeout
+	}
+
+	if v, exists := dat["keepAlive"]; exists {
+		if iv, ok := v.(float64); ok {
+			opts.Timeouts.KeepAlive = time.Duration(iv) * time.Second
+		}
+	} else {
+		opts.Timeouts.KeepAlive = proxy.DefaultTimeoutOptions.KeepAlive
+	}
+
+	return opts, nil
 }

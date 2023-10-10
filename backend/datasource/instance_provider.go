@@ -1,14 +1,28 @@
 package datasource
 
 import (
+	"context"
+	"errors"
 	"fmt"
+
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
+)
+
+var (
+	datasourceInstancesCreated = promauto.NewCounter(prometheus.CounterOpts{
+		Namespace: "plugins",
+		Name:      "datasource_instances_total",
+		Help:      "The total number of data source instances created",
+	})
 )
 
 // InstanceFactoryFunc factory method for creating data source instances.
-type InstanceFactoryFunc func(settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error)
+type InstanceFactoryFunc func(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error)
 
 // NewInstanceManager creates a new data source instance manager,
 //
@@ -40,20 +54,32 @@ type instanceProvider struct {
 	factory InstanceFactoryFunc
 }
 
-func (ip *instanceProvider) GetKey(pluginContext backend.PluginContext) (interface{}, error) {
+func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
 	if pluginContext.DataSourceInstanceSettings == nil {
-		return nil, fmt.Errorf("data source instance settings cannot be nil")
+		return nil, errors.New("data source instance settings cannot be nil")
 	}
 
-	return pluginContext.DataSourceInstanceSettings.ID, nil
+	defaultKey := pluginContext.DataSourceInstanceSettings.ID
+	if tID := tenant.IDFromContext(ctx); tID != "" {
+		return fmt.Sprintf("%s#%v", tID, defaultKey), nil
+	}
+
+	return defaultKey, nil
 }
 
-func (ip *instanceProvider) NeedsUpdate(pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
-	curSettings := pluginContext.DataSourceInstanceSettings
-	cachedSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
-	return !curSettings.Updated.Equal(cachedSettings.Updated)
+func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
+	curConfig := pluginContext.GrafanaConfig
+	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
+	configUpdated := !cachedConfig.Equal(curConfig)
+
+	curDataSourceSettings := pluginContext.DataSourceInstanceSettings
+	cachedDataSourceSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
+	dsUpdated := !curDataSourceSettings.Updated.Equal(cachedDataSourceSettings.Updated)
+
+	return dsUpdated || configUpdated
 }
 
-func (ip *instanceProvider) NewInstance(pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
-	return ip.factory(*pluginContext.DataSourceInstanceSettings)
+func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
+	datasourceInstancesCreated.Inc()
+	return ip.factory(ctx, *pluginContext.DataSourceInstanceSettings)
 }

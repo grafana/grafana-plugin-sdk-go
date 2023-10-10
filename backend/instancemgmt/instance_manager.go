@@ -1,10 +1,22 @@
 package instancemgmt
 
 import (
+	"context"
 	"reflect"
 	"sync"
 
+	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/promauto"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+)
+
+var (
+	activeInstances = promauto.NewGauge(prometheus.GaugeOpts{
+		Namespace: "plugins",
+		Name:      "active_instances",
+		Help:      "The number of active plugin instances",
+	})
 )
 
 // Instance is a marker interface for an instance.
@@ -30,13 +42,13 @@ type InstanceManager interface {
 	//
 	// If Instance is cached and not updated it's returned. If Instance is not cached or
 	// updated, a new Instance is created and cached before returned.
-	Get(pluginContext backend.PluginContext) (Instance, error)
+	Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error)
 
 	// Do provides an Instance as argument to fn.
 	//
 	// If Instance is cached and not updated provides as argument to fn. If Instance is not cached or
 	// updated, a new Instance is created and cached before provided as argument to fn.
-	Do(pluginContext backend.PluginContext, fn InstanceCallbackFunc) error
+	Do(ctx context.Context, pluginContext backend.PluginContext, fn InstanceCallbackFunc) error
 }
 
 // CachedInstance a cached Instance.
@@ -48,13 +60,13 @@ type CachedInstance struct {
 // InstanceProvider defines an instance provider, providing instances.
 type InstanceProvider interface {
 	// GetKey returns a cache key to be used for caching an Instance.
-	GetKey(pluginContext backend.PluginContext) (interface{}, error)
+	GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error)
 
 	// NeedsUpdate returns whether a cached Instance have been updated.
-	NeedsUpdate(pluginContext backend.PluginContext, cachedInstance CachedInstance) bool
+	NeedsUpdate(ctx context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool
 
 	// NewInstance creates a new Instance.
-	NewInstance(pluginContext backend.PluginContext) (Instance, error)
+	NewInstance(ctx context.Context, pluginContext backend.PluginContext) (Instance, error)
 }
 
 // New create a new instance manager.
@@ -76,8 +88,8 @@ type instanceManager struct {
 	cache    sync.Map
 }
 
-func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, error) {
-	cacheKey, err := im.provider.GetKey(pluginContext)
+func (im *instanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
+	cacheKey, err := im.provider.GetKey(ctx, pluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +100,7 @@ func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, e
 
 	if ok {
 		ci := item.(CachedInstance)
-		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci)
+		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
 			return ci.instance, nil
@@ -100,7 +112,7 @@ func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, e
 
 	if item, ok := im.cache.Load(cacheKey); ok {
 		ci := item.(CachedInstance)
-		needsUpdate := im.provider.NeedsUpdate(pluginContext, ci)
+		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
 			return ci.instance, nil
@@ -108,10 +120,11 @@ func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, e
 
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			disposer.Dispose()
+			activeInstances.Dec()
 		}
 	}
 
-	instance, err := im.provider.NewInstance(pluginContext)
+	instance, err := im.provider.NewInstance(ctx, pluginContext)
 	if err != nil {
 		return nil, err
 	}
@@ -119,16 +132,17 @@ func (im *instanceManager) Get(pluginContext backend.PluginContext) (Instance, e
 		PluginContext: pluginContext,
 		instance:      instance,
 	})
+	activeInstances.Inc()
 
 	return instance, nil
 }
 
-func (im *instanceManager) Do(pluginContext backend.PluginContext, fn InstanceCallbackFunc) error {
+func (im *instanceManager) Do(ctx context.Context, pluginContext backend.PluginContext, fn InstanceCallbackFunc) error {
 	if fn == nil {
 		panic("fn cannot be nil")
 	}
 
-	instance, err := im.Get(pluginContext)
+	instance, err := im.Get(ctx, pluginContext)
 	if err != nil {
 		return err
 	}

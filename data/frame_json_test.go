@@ -3,20 +3,23 @@ package data_test
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
 	"text/template"
+	"time"
 
 	jsoniter "github.com/json-iterator/go"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // TestGoldenFrameJSON makes sure that the JSON produced from arrow and dataframes match
@@ -39,19 +42,19 @@ func TestGoldenFrameJSON(t *testing.T) {
 	fmt.Println(strF)
 	fmt.Println(`}`)
 
-	assert.JSONEq(t, strF, strA, "arrow and frames should produce the same json")
+	require.JSONEq(t, strF, strA, "arrow and frames should produce the same json")
 
 	goldenFile := filepath.Join("testdata", "all_types.golden.json")
 	if _, err := os.Stat(goldenFile); os.IsNotExist(err) {
-		_ = ioutil.WriteFile(goldenFile, b, 0600)
+		_ = os.WriteFile(goldenFile, b, 0600)
 		assert.FailNow(t, "wrote golden file")
 	}
 
-	b, err = ioutil.ReadFile(goldenFile)
+	b, err = os.ReadFile(goldenFile)
 	require.NoError(t, err)
 
 	strG := string(b)
-	assert.JSONEq(t, strF, strG, "saved json must match produced json")
+	require.JSONEq(t, strF, strG, "saved json must match produced json")
 
 	// Read the frame from json
 	out := &data.Frame{}
@@ -67,6 +70,91 @@ type simpleTestObj struct {
 	Name   string          `json:"name,omitempty"`
 	FType  data.FieldType  `json:"type,omitempty"`
 	FType2 *data.FieldType `json:"typePtr,omitempty"`
+}
+
+func TestJSONNanoTime(t *testing.T) {
+	t.Run("time no nano", func(t *testing.T) {
+		noNanoFrame := data.NewFrame("frame_no_nano",
+			// 1 second and 1 MS
+			data.NewField("t", nil, []time.Time{time.Unix(1, 1000000)}),
+		)
+
+		noNanoJSONBytes, err := json.Marshal(noNanoFrame)
+		require.NoError(t, err)
+
+		noNanoFrameFromJSON := &data.Frame{}
+		err = json.Unmarshal(noNanoJSONBytes, noNanoFrameFromJSON)
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(noNanoFrame, noNanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("Result mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("time with nano", func(t *testing.T) {
+		nanoFrame := data.NewFrame("frame_nano",
+			// 1 second and 10 ns
+			data.NewField("i", nil, []int64{1}),
+			data.NewField("t", nil, []time.Time{time.Unix(1, 10)}),
+		)
+
+		nanoJSONBytes, err := json.Marshal(nanoFrame)
+		require.NoError(t, err)
+
+		nanoFrameFromJSON := &data.Frame{}
+		err = json.Unmarshal(nanoJSONBytes, nanoFrameFromJSON)
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(nanoFrame, nanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("Result mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("nullable with nano", func(t *testing.T) {
+		nanoFrame := data.NewFrame("frame_nano",
+			// 1 second and 10 ns
+			data.NewField("i", nil, []int64{1, 2}),
+			data.NewField("t", nil, []*time.Time{nil, timePtr(time.Unix(1, 10))}),
+		)
+
+		nanoJSONBytes, err := json.Marshal(nanoFrame)
+		require.NoError(t, err)
+
+		nanoFrameFromJSON := &data.Frame{}
+		err = json.Unmarshal(nanoJSONBytes, nanoFrameFromJSON)
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(nanoFrame, nanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("Result mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("nanos before values property in data", func(t *testing.T) {
+		jsString := `{
+			"schema": {
+			  "name": "frame_nano",
+			  "fields": [
+				{ "name": "i", "type": "number", "typeInfo": { "frame": "int64" } },
+				{ "name": "t", "type": "time", "typeInfo": { "frame": "time.Time" } }
+			  ]
+			},
+			"data": { "nanos": [null, [10]], "values": [[1], [1000]] }
+		  }`
+
+		nanoFrame := data.NewFrame("frame_nano",
+			// 1 second and 10 ns
+			data.NewField("i", nil, []int64{1}),
+			data.NewField("t", nil, []time.Time{time.Unix(1, 10)}),
+		)
+
+		nanoFrameFromJSON := &data.Frame{}
+		err := json.Unmarshal([]byte(jsString), nanoFrameFromJSON)
+		require.NoError(t, err)
+
+		if diff := cmp.Diff(nanoFrame, nanoFrameFromJSON, data.FrameTestCompareOptions()...); diff != "" {
+			require.Fail(t, "Result mismatch (-want +got):\n%s", diff)
+		}
+	})
 }
 
 // TestFieldTypeToJSON makes sure field type will read/write to json
@@ -94,6 +182,39 @@ func TestFieldTypeToJSON(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, data.FieldTypeInt8, v.FType)
 	assert.Equal(t, data.FieldTypeTime, *v.FType2)
+
+	field := newField("enum", data.FieldTypeEnum, []data.EnumItemIndex{
+		1, 2, 2, 1, 1,
+	})
+
+	// Read/write enum field
+	frame := data.NewFrame("test", field)
+
+	orig, err := data.FrameToJSON(frame, data.IncludeAll)
+	require.NoError(t, err)
+
+	out := &data.Frame{}
+	err = json.Unmarshal(orig, out)
+	require.NoError(t, err)
+
+	second, err := data.FrameToJSON(frame, data.IncludeAll)
+	require.NoError(t, err)
+	require.JSONEq(t, string(orig), string(second))
+}
+
+func TestJSONFrames(t *testing.T) {
+	frames := data.Frames{goldenDF()}
+	b, err := json.Marshal(frames)
+	require.NoError(t, err)
+
+	var rFrames data.Frames
+
+	err = json.Unmarshal(b, &rFrames)
+	require.NoError(t, err)
+
+	if diff := cmp.Diff(frames, rFrames, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
 }
 
 func BenchmarkFrameToJSON(b *testing.B) {
@@ -205,6 +326,7 @@ func TestGenerateGenericArrowCode(t *testing.T) {
 		"uint8", "uint16", "uint32", "uint64",
 		"int8", "int16", "int32", "int64",
 		"float32", "float64", "string", "bool",
+		"enum", // Maps to uint16
 	}
 
 	code := `
@@ -232,10 +354,10 @@ func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fiel
 			entities.add(entityType, i)
 			stream.WriteNil()
 		} else {
-			stream.Write{{.Type}}(val)
+			stream.Write{{.IterType}}(val)
 		}
 {{ else }}
-		stream.Write{{.Type}}(v.Value(i)){{ end }}
+		stream.Write{{.IterType}}(v.Value(i)){{ end }}
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -253,7 +375,7 @@ func read{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*{{.Typen}}Vect
 		if t == jsoniter.NilValue {
 			iter.ReadNil()
 		} else {
-			v := iter.Read{{.Type}}()
+			v := iter.Read{{.IterType}}()
 			arr.Set(i, v)
 		}
 	}
@@ -277,7 +399,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 		if t == jsoniter.NilValue {
 			iter.ReadNil()
 		} else {
-			v := iter.Read{{.Type}}()
+			v := iter.Read{{.IterType}}()
 			arr.Set(i, &v)
 		}
 	}
@@ -290,32 +412,43 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 }
 
 `
+	caser := cases.Title(language.English, cases.NoLower)
 
 	// switch col.DataType().ID() {
 	// 	// case arrow.STRING:
 	// 	// 	ent := writeArrowSTRING(stream, col)
 	for _, tstr := range types {
-		tname := strings.Title(tstr)
+		tname := caser.String(tstr)
 		tuppr := strings.ToUpper(tstr)
 
 		fmt.Printf("    case arrow." + tuppr + ":\n\t\tent = writeArrowData" + tname + "(stream, col)\n")
 	}
 
 	for _, tstr := range types {
+		itertype := caser.String(tstr)
 		typex := tstr
-		if tstr == "bool" {
+		switch tstr {
+		case "bool":
 			typex = "Boolean"
+		case "enum":
+			typex = "uint16"
+			itertype = caser.String(typex)
+		case "timeOffset":
+			typex = "int64"
+			itertype = caser.String(typex)
 		}
 		hasSpecialEntities := tstr == "float32" || tstr == "float64"
 		tmplData := struct {
 			Type               string
 			Typex              string
 			Typen              string
+			IterType           string
 			HasSpecialEntities bool
 		}{
-			Type:               strings.Title(tstr),
-			Typex:              strings.Title(typex),
+			Type:               caser.String(tstr),
+			Typex:              caser.String(typex),
 			Typen:              tstr,
+			IterType:           itertype,
 			HasSpecialEntities: hasSpecialEntities,
 		}
 		tmpl, err := template.New("").Parse(code)
@@ -326,10 +459,10 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 	}
 
 	for _, tstr := range types {
-		tname := strings.Title(tstr)
+		tname := caser.String(tstr)
 		fmt.Printf("    case FieldType" + tname + ": return read" + tname + "VectorJSON(iter, size)\n")
 		fmt.Printf("    case FieldTypeNullable" + tname + ": return readNullable" + tname + "VectorJSON(iter, size)\n")
 	}
 
-	assert.Equal(t, 1, 2)
+	assert.FailNow(t, "fail so we see the output")
 }

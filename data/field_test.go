@@ -5,8 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 func TestField(t *testing.T) {
@@ -69,6 +70,13 @@ func TestField_NullableFloat64(t *testing.T) {
 			t.Errorf("%+v", *got)
 		}
 	})
+}
+
+func TestFieldLen(t *testing.T) {
+	var fp *data.Field
+	var f data.Field
+	require.Equal(t, 0, fp.Len())
+	require.Equal(t, 0, f.Len())
 }
 
 func TestField_String(t *testing.T) {

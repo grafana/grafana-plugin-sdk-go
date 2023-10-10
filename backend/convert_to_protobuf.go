@@ -1,8 +1,10 @@
 package backend
 
 import (
+	"errors"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -67,14 +69,26 @@ func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 	}
 }
 
+// UserAgent converts the SDK version of a useragent.UserAgent to the protobuf version.
+func (t ConvertToProtobuf) UserAgent(ua *useragent.UserAgent) string {
+	if ua == nil {
+		return ""
+	}
+
+	return ua.String()
+}
+
 // PluginContext converts the SDK version of a PluginContext to the protobuf version.
 func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.PluginContext {
 	return &pluginv2.PluginContext{
 		OrgId:                      pluginCtx.OrgID,
 		PluginId:                   pluginCtx.PluginID,
+		PluginVersion:              pluginCtx.PluginVersion,
 		User:                       t.User(pluginCtx.User),
 		AppInstanceSettings:        t.AppInstanceSettings(pluginCtx.AppInstanceSettings),
 		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pluginCtx.DataSourceInstanceSettings),
+		GrafanaConfig:              t.GrafanaConfig(pluginCtx.GrafanaConfig),
+		UserAgent:                  t.UserAgent(pluginCtx.UserAgent),
 	}
 }
 
@@ -163,6 +177,9 @@ func (t ConvertToProtobuf) arrowQueryDataResponse(res *QueryDataResponse) (*plug
 
 	for refID, dr := range res.Responses {
 		for _, f := range dr.Frames {
+			if f == nil {
+				return nil, errors.New("frame can not be nil")
+			}
 			if f.RefID == "" {
 				f.RefID = refID
 			}
@@ -174,9 +191,19 @@ func (t ConvertToProtobuf) arrowQueryDataResponse(res *QueryDataResponse) (*plug
 		pDR := pluginv2.DataResponse{
 			Frames: encodedFrames,
 		}
+		status := dr.Status
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
+			if !status.IsValid() {
+				status = statusFromError(dr.Error)
+			}
 		}
+		if status.IsValid() {
+			pDR.Status = int32(status)
+		} else if status == 0 {
+			pDR.Status = int32(StatusOK)
+		}
+
 		pQDR.Responses[refID] = &pDR
 	}
 
@@ -300,4 +327,12 @@ func (t ConvertToProtobuf) CollectMetricsResult(res *CollectMetricsResult) *plug
 			Prometheus: res.PrometheusMetrics,
 		},
 	}
+}
+
+// GrafanaConfig converts the SDK version of a GrafanaCfg to the protobuf version.
+func (t ConvertToProtobuf) GrafanaConfig(cfg *GrafanaCfg) map[string]string {
+	if cfg == nil {
+		return map[string]string{}
+	}
+	return cfg.config
 }

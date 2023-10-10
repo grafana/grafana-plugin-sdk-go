@@ -3,6 +3,7 @@ package backend
 import (
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -47,7 +48,7 @@ func (f ConvertFromProtobuf) AppInstanceSettings(proto *pluginv2.AppInstanceSett
 }
 
 // DataSourceInstanceSettings converts protobuf version of a DataSourceInstanceSettings to the SDK version.
-func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSourceInstanceSettings) *DataSourceInstanceSettings {
+func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSourceInstanceSettings, pluginID string) *DataSourceInstanceSettings {
 	if proto == nil {
 		return nil
 	}
@@ -55,6 +56,7 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 	return &DataSourceInstanceSettings{
 		ID:                      proto.Id,
 		UID:                     proto.Uid,
+		Type:                    pluginID,
 		Name:                    proto.Name,
 		URL:                     proto.Url,
 		User:                    proto.User,
@@ -67,14 +69,29 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 	}
 }
 
+// UserAgent converts protobuf version of a UserAgent to the SDK version.
+func (f ConvertFromProtobuf) UserAgent(u string) *useragent.UserAgent {
+	if len(u) == 0 {
+		return nil
+	}
+	ua, err := useragent.Parse(u)
+	if err != nil {
+		return nil
+	}
+	return ua
+}
+
 // PluginContext converts protobuf version of a PluginContext to the SDK version.
 func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) PluginContext {
 	return PluginContext{
 		OrgID:                      proto.OrgId,
 		PluginID:                   proto.PluginId,
+		PluginVersion:              proto.PluginVersion,
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
-		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings),
+		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
+		GrafanaConfig:              f.GrafanaConfig(proto.GrafanaConfig),
+		UserAgent:                  f.UserAgent(proto.UserAgent),
 	}
 }
 
@@ -161,8 +178,13 @@ func (f ConvertFromProtobuf) CallResourceResponse(protoResp *pluginv2.CallResour
 
 // CheckHealthRequest converts protobuf version of a CheckHealthRequest to the SDK version.
 func (f ConvertFromProtobuf) CheckHealthRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
+	if protoReq.Headers == nil {
+		protoReq.Headers = map[string]string{}
+	}
+
 	return &CheckHealthRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Headers:       protoReq.Headers,
 	}
 }
 
@@ -252,4 +274,8 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	return &StreamPacket{
 		Data: protoReq.GetData(),
 	}
+}
+
+func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
+	return NewGrafanaCfg(cfg)
 }

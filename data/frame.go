@@ -16,7 +16,6 @@ import (
 	"math"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
@@ -30,12 +29,15 @@ import (
 //
 // A Frame is a general data container for Grafana. A Frame can be table data
 // or time series data depending on its content and field types.
+//
+//swagger:model
 type Frame struct {
 	// Name is used in some Grafana visualizations.
 	Name string
 
 	// Fields are the columns of a frame.
 	// All Fields must be of the same the length when marshalling the Frame for transmission.
+	// There should be no `nil` entries in the Fields slice (making them pointers was a mistake).
 	Fields []*Field
 
 	// RefID is a property that can be set to match a Frame to its originating query.
@@ -67,7 +69,29 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 
 // Frames is a slice of Frame pointers.
 // It is the main data container within a backend.DataResponse.
+// There should be no `nil` entries in the Frames slice (making them pointers was a mistake).
+//
+//swagger:model
 type Frames []*Frame
+
+func (frames *Frames) MarshalJSON() ([]byte, error) {
+	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	stream := cfg.BorrowStream(nil)
+	defer cfg.ReturnStream(stream)
+
+	writeDataFrames(frames, stream)
+	if stream.Error != nil {
+		return nil, stream.Error
+	}
+
+	return append([]byte(nil), stream.Buffer()...), nil
+}
+
+// UnmarshalJSON allows unmarshalling Frame from JSON.
+func (frames *Frames) UnmarshalJSON(b []byte) error {
+	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	return readDataFramesJSON(frames, iter)
+}
 
 // AppendRow adds a new row to the Frame by appending to each element of vals to
 // the corresponding Field in the data.
@@ -375,19 +399,6 @@ func FrameTestCompareOptions() []cmp.Option {
 			x == y
 	})
 
-	times := cmp.Comparer(func(x, y time.Time) bool {
-		if !x.Equal(y) {
-			// Check that the millisecond precision is the same.
-			// Avoids problems like:
-			// - s"1970-04-14 21:59:59.254740991 -0800 PST",
-			// + s"1970-04-14 21:59:59.254 -0800 PST",
-			xMS := x.UnixNano() / int64(time.Millisecond)
-			yMS := y.UnixNano() / int64(time.Millisecond)
-			return xMS == yMS
-		}
-		return true
-	})
-
 	metas := cmp.Comparer(func(x, y *FrameMeta) bool {
 		// This checks that the meta attached to the frame and
 		// in the Golden file are the same. A conversion to JSON
@@ -401,8 +412,20 @@ func FrameTestCompareOptions() []cmp.Option {
 		return bytes.Equal(xJSON, yJSON)
 	})
 
+	rawjs := cmp.Comparer(func(x, y json.RawMessage) bool {
+		var a interface{}
+		var b interface{}
+		_ = json.Unmarshal([]byte(x), &a)
+		_ = json.Unmarshal([]byte(y), &b)
+
+		xJSON, _ := json.Marshal(a)
+		yJSON, _ := json.Marshal(b)
+
+		return bytes.Equal(xJSON, yJSON)
+	})
+
 	unexportedField := cmp.AllowUnexported(Field{})
-	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, times, metas, unexportedField, cmpopts.EquateEmpty()}
+	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, metas, rawjs, unexportedField, cmpopts.EquateEmpty()}
 }
 
 const maxLengthExceededStr = "..."
@@ -482,10 +505,18 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 			}
 
 			val := reflect.Indirect(reflect.ValueOf(v))
-			if val.IsValid() {
-				sRow[colIdx] = fmt.Sprintf("%v", val)
-			} else {
+			if !val.IsValid() {
 				sRow[colIdx] = "null"
+				continue
+			}
+
+			switch {
+			case f.Fields[colIdx].Type() == FieldTypeJSON:
+				sRow[colIdx] = string(v.(json.RawMessage))
+			case f.Fields[colIdx].Type() == FieldTypeNullableJSON:
+				sRow[colIdx] = string(*v.(*json.RawMessage))
+			default:
+				sRow[colIdx] = fmt.Sprintf("%v", val)
 			}
 		}
 		table.Append(sRow)
@@ -504,4 +535,15 @@ func (f *Frame) FieldByName(fieldName string) (*Field, int) {
 		}
 	}
 	return nil, -1
+}
+
+// TypeInfo returns the FrameType and FrameTypeVersion from the frame's
+// Meta.Type and Meta.TypeVersion properties. If either of those properties
+// are absent, the corresponding zero value (FrameTypeUnknown and FrameTypeVersion{0,0})
+// is returned per each missing property.
+func (f *Frame) TypeInfo(_ string) (FrameType, FrameTypeVersion) {
+	if f == nil || f.Meta == nil {
+		return FrameTypeUnknown, FrameTypeVersion{}
+	}
+	return f.Meta.Type, f.Meta.TypeVersion
 }

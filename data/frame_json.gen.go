@@ -1,15 +1,36 @@
 package data
 
 import (
-	"github.com/apache/arrow/go/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow"
+	"github.com/apache/arrow/go/v13/arrow/array"
 	jsoniter "github.com/json-iterator/go"
 )
 
-//-------------------------------------------------------------
-// The rest of this file is generated from frame_json_test.go
-//-------------------------------------------------------------
+func writeArrowDataBinary(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
+	var entities *fieldEntityLookup
+	count := col.Len()
 
-func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+	v := array.NewBinaryData(col.Data())
+	stream.WriteArrayStart()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if col.IsNull(i) {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteRaw(string(v.Value(i)))
+	}
+	stream.WriteArrayEnd()
+	return entities
+}
+
+// -------------------------------------------------------------
+// The rest of this file is generated from frame_json_test.go
+// -------------------------------------------------------------
+
+func writeArrowDataUint8(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -76,7 +97,7 @@ func readNullableUint8VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUi
 	return arr, nil
 }
 
-func writeArrowDataUint16(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataUint16(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -143,7 +164,7 @@ func readNullableUint16VectorJSON(iter *jsoniter.Iterator, size int) (*nullableU
 	return arr, nil
 }
 
-func writeArrowDataUint32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataUint32(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -210,7 +231,7 @@ func readNullableUint32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableU
 	return arr, nil
 }
 
-func writeArrowDataUint64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataUint64(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -277,7 +298,7 @@ func readNullableUint64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableU
 	return arr, nil
 }
 
-func writeArrowDataInt8(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataInt8(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -344,7 +365,7 @@ func readNullableInt8VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt
 	return arr, nil
 }
 
-func writeArrowDataInt16(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataInt16(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -411,7 +432,7 @@ func readNullableInt16VectorJSON(iter *jsoniter.Iterator, size int) (*nullableIn
 	return arr, nil
 }
 
-func writeArrowDataInt32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataInt32(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -478,7 +499,7 @@ func readNullableInt32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableIn
 	return arr, nil
 }
 
-func writeArrowDataInt64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataInt64(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -545,7 +566,7 @@ func readNullableInt64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableIn
 	return arr, nil
 }
 
-func writeArrowDataFloat32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataFloat32(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -623,7 +644,7 @@ func readNullableFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*nullable
 	return arr, nil
 }
 
-func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataFloat64(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -701,7 +722,7 @@ func readNullableFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*nullable
 	return arr, nil
 }
 
-func writeArrowDataString(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataString(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -768,7 +789,7 @@ func readNullableStringVectorJSON(iter *jsoniter.Iterator, size int) (*nullableS
 	return arr, nil
 }
 
-func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataBool(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -830,6 +851,74 @@ func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*nullableBoo
 
 	if iter.ReadArray() {
 		iter.ReportError("readNullableBoolVectorJSON", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func writeArrowDataEnum(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
+	var entities *fieldEntityLookup
+	count := col.Len()
+
+	v := array.NewUint16Data(col.Data())
+	stream.WriteArrayStart()
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if col.IsNull(i) {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteUint16(v.Value(i))
+	}
+	stream.WriteArrayEnd()
+	return entities
+}
+
+func readEnumVectorJSON(iter *jsoniter.Iterator, size int) (*enumVector, error) {
+	arr := newEnumVector(size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readEnumVectorJSON", "expected array")
+			return nil, iter.Error
+		}
+
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := iter.ReadUint16()
+			arr.Set(i, EnumItemIndex(v))
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("read", "expected close array")
+		return nil, iter.Error
+	}
+	return arr, nil
+}
+
+func readNullableEnumVectorJSON(iter *jsoniter.Iterator, size int) (*nullableEnumVector, error) {
+	arr := newNullableEnumVector(size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			iter.ReportError("readNullableEnumVectorJSON", "expected array")
+			return nil, iter.Error
+		}
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := iter.ReadUint16()
+			eII := EnumItemIndex(v)
+			arr.Set(i, &eII)
+		}
+	}
+
+	if iter.ReadArray() {
+		iter.ReportError("readNullableEnumVectorJSON", "expected close array")
 		return nil, iter.Error
 	}
 	return arr, nil

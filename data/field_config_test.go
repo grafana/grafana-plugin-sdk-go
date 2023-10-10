@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 func TestReadMappings(t *testing.T) {
@@ -66,7 +67,7 @@ func TestReadMappings(t *testing.T) {
 		  ]
 	}`
 
-	cfg := &data.FieldConfig{}
+	cfg := data.FieldConfig{}
 	err := json.Unmarshal([]byte(jsonText), &cfg)
 	require.NoError(t, err, "error parsing json")
 

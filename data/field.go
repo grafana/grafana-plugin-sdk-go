@@ -1,6 +1,7 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"strconv"
@@ -13,6 +14,8 @@ import (
 // See NewField() for supported types.
 //
 // The slice data in the Field is a not exported, so methods on the Field are used to to manipulate its data.
+//
+//swagger:model
 type Field struct {
 	// Name is default identifier of the field. The name does not have to be unique, but the combination
 	// of name and Labels should be unique for proper behavior in all situations.
@@ -36,13 +39,28 @@ type Fields []*Field
 // NewField returns a instance of *Field. Supported types for values are:
 //
 // Integers:
-//  []int8, []*int8, []int16, []*int16, []int32, []*int32, []int64, []*int64
+//
+//	[]int8, []*int8, []int16, []*int16, []int32, []*int32, []int64, []*int64
+//
 // Unsigned Integers:
-//  []uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
+//
+//	[]uint8, []*uint8, []uint16, []*uint16, []uint32, []*uint32, []uint64, []*uint64
+//
 // Floats:
-//  []float32, []*float32, []float64, []*float64
+//
+//	[]float32, []*float32, []float64, []*float64
+//
 // String, Bool, and Time:
-//  []string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+//
+//	[]string, []*string, []bool, []*bool, []time.Time, and []*time.Time.
+//
+// JSON:
+//
+//	[]json.RawMessage, []*json.RawMessage
+//
+// Enum:
+//
+//	[]data.EnumItemIndex, []*data.EnumItemIndex
 //
 // If an unsupported values type is passed, NewField will panic.
 // nolint:gocyclo
@@ -101,6 +119,14 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 		vec = newTimeTimeVectorWithValues(v)
 	case []*time.Time:
 		vec = newNullableTimeTimeVectorWithValues(v)
+	case []json.RawMessage:
+		vec = newJsonRawMessageVectorWithValues(v)
+	case []*json.RawMessage:
+		vec = newNullableJsonRawMessageVectorWithValues(v)
+	case []EnumItemIndex:
+		vec = newEnumVectorWithValues(v)
+	case []*EnumItemIndex:
+		vec = newNullableEnumVectorWithValues(v)
 	default:
 		panic(fmt.Errorf("field '%s' specified with unsupported type %T", name, v))
 	}
@@ -148,7 +174,11 @@ func (f *Field) At(idx int) interface{} {
 }
 
 // Len returns the number of elements in the Field.
+// It will return 0 if the field is nil.
 func (f *Field) Len() int {
+	if f == nil || f.vector == nil {
+		return 0
+	}
 	return f.vector.Len()
 }
 

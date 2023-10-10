@@ -6,6 +6,8 @@ import (
 	"errors"
 	"net"
 	"net/http"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
 
 // New creates a new http.Client.
@@ -82,6 +84,11 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 
 	if clientOpts.ConfigureMiddleware != nil {
 		clientOpts.Middlewares = clientOpts.ConfigureMiddleware(clientOpts, clientOpts.Middlewares)
+	}
+
+	err = proxy.Cli.ConfigureSecureSocksHTTPProxy(transport, clientOpts.ProxyOptions)
+	if err != nil {
+		return nil, err
 	}
 
 	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport), nil
@@ -193,27 +200,37 @@ type ConfigureMiddlewareFunc func(opts Options, existingMiddleware []Middleware)
 
 // DefaultMiddlewares is the default middleware applied when creating
 // new HTTP clients and no middleware is provided.
-// BasicAuthenticationMiddleware and CustomHeadersMiddleware are
+// TracingMiddleware, BasicAuthenticationMiddleware and CustomHeadersMiddleware are
 // the default middlewares.
 func DefaultMiddlewares() []Middleware {
 	return []Middleware{
+		TracingMiddleware(nil),
 		BasicAuthenticationMiddleware(),
 		CustomHeadersMiddleware(),
+		ContextualMiddleware(),
 	}
 }
 
 func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) http.RoundTripper {
-	for i, j := 0, len(middlewares)-1; i < j; i, j = i+1, j-1 {
-		middlewares[i], middlewares[j] = middlewares[j], middlewares[i]
-	}
-
+	reversed := reverseMiddlewares(middlewares)
 	next := finalRoundTripper
 
-	for _, m := range middlewares {
+	for _, m := range reversed {
 		next = m.CreateMiddleware(opts, next)
 	}
 
 	return next
+}
+
+func reverseMiddlewares(middlewares []Middleware) []Middleware {
+	reversed := make([]Middleware, len(middlewares))
+	copy(reversed, middlewares)
+
+	for i, j := 0, len(reversed)-1; i < j; i, j = i+1, j-1 {
+		reversed[i], reversed[j] = reversed[j], reversed[i]
+	}
+
+	return reversed
 }
 
 type namedMiddleware struct {

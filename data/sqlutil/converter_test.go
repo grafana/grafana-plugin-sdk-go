@@ -4,12 +4,14 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/data/sqlutil"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestDefaultConverter(t *testing.T) {
@@ -98,6 +100,61 @@ func TestDefaultConverter(t *testing.T) {
 				},
 			},
 		},
+		{
+			Name:     "nullable sql bool",
+			Type:     reflect.TypeOf(sql.NullBool{}),
+			Nullable: true,
+			Expected: sqlutil.Converter{
+				InputScanType: reflect.TypeOf(sql.NullBool{}),
+				FrameConverter: sqlutil.FrameConverter{
+					FieldType: data.FieldTypeBool.NullableType(),
+				},
+			},
+		},
+		{
+			Name:     "nullable sql float",
+			Type:     reflect.TypeOf(sql.NullFloat64{}),
+			Nullable: true,
+			Expected: sqlutil.Converter{
+				InputScanType: reflect.TypeOf(sql.NullFloat64{}),
+				FrameConverter: sqlutil.FrameConverter{
+					FieldType: data.FieldTypeFloat64.NullableType(),
+				},
+			},
+		},
+		{
+			Name:     "nullable sql string",
+			Type:     reflect.TypeOf(sql.NullString{}),
+			Nullable: true,
+			Expected: sqlutil.Converter{
+				InputScanType: reflect.TypeOf(sql.NullString{}),
+				FrameConverter: sqlutil.FrameConverter{
+					FieldType: data.FieldTypeString.NullableType(),
+				},
+			},
+		},
+		{
+			Name:     "nullable sql time",
+			Type:     reflect.TypeOf(sql.NullTime{}),
+			Nullable: true,
+			Expected: sqlutil.Converter{
+				InputScanType: reflect.TypeOf(sql.NullTime{}),
+				FrameConverter: sqlutil.FrameConverter{
+					FieldType: data.FieldTypeTime.NullableType(),
+				},
+			},
+		},
+		{
+			Name:     "nullable sql time",
+			Type:     reflect.TypeOf(sql.NullInt64{}),
+			Nullable: true,
+			Expected: sqlutil.Converter{
+				InputScanType: reflect.TypeOf(sql.NullInt64{}),
+				FrameConverter: sqlutil.FrameConverter{
+					FieldType: data.FieldTypeInt64.NullableType(),
+				},
+			},
+		},
 	}
 
 	for i, v := range suite {
@@ -116,7 +173,15 @@ func TestDefaultConverter(t *testing.T) {
 					assert.Equal(t, reflect.TypeOf(value).String(), v.Type.String())
 				} else {
 					// nullable fields should not exactly match
-					assert.Equal(t, reflect.TypeOf(value).String(), reflect.PtrTo(v.Type).String())
+					kind := reflect.PtrTo(v.Type).String()
+					valueKind := reflect.TypeOf(value).String()
+					if !strings.HasPrefix(kind, "*sql.Null") {
+						assert.Equal(t, valueKind, kind)
+					} else {
+						valueType := strings.Replace(valueKind, "*", "", 1)
+						valueType = strings.Split(valueType, ".")[0]
+						assert.Contains(t, strings.ToLower(kind), valueType)
+					}
 				}
 			})
 		})

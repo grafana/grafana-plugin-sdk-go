@@ -2,21 +2,22 @@ package data_test
 
 import (
 	"bytes"
+	"encoding/json"
 	"flag"
-	"io/ioutil"
 	"math"
 	"os"
 	"path/filepath"
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/arrow/ipc"
+	"github.com/apache/arrow/go/v13/arrow/ipc"
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-var update = flag.Bool("update", false, "update .golden.arrow files")
+var update = flag.Bool("update", true, "update .golden.arrow files")
 
 const maxEcma6Int = 1<<53 - 1
 const minEcma6Int = -maxEcma6Int
@@ -257,6 +258,38 @@ func goldenDF() *data.Frame {
 			timePtr(time.Unix(0, maxEcma6Int)),
 			timePtr(time.Unix(0, math.MaxInt64)),
 		}),
+		data.NewField("json", nil, []json.RawMessage{
+			json.RawMessage("{\"a\":1}"),
+			json.RawMessage("[1,2,3]"),
+			json.RawMessage("{\"b\":2}"),
+			json.RawMessage("[{\"c\":3},{\"d\":4}]"),
+			json.RawMessage("{\"e\":{\"f\":5}}"),
+		}),
+		data.NewField("nullable_json", nil, []*json.RawMessage{
+			jsonRawMessagePtr(json.RawMessage("{\"a\":1}")),
+			jsonRawMessagePtr(json.RawMessage("[1,2,3]")),
+			nil,
+			jsonRawMessagePtr(json.RawMessage("[{\"c\":3},{\"d\":4}]")),
+			jsonRawMessagePtr(json.RawMessage("{\"e\":{\"f\":5}}")),
+		}),
+		data.NewField("enum", nil, []data.EnumItemIndex{
+			1, 2, 2, 1, 1,
+		}).SetConfig(&data.FieldConfig{
+			TypeConfig: &data.FieldTypeConfig{
+				Enum: &data.EnumFieldConfig{
+					Text: []string{
+						"", "ONE", "TWO", "THREE",
+					},
+				},
+			},
+		}),
+		data.NewField("nullable_enum", nil, []*data.EnumItemIndex{
+			(*data.EnumItemIndex)(uint16Ptr(1)),
+			(*data.EnumItemIndex)(uint16Ptr(2)),
+			nil,
+			(*data.EnumItemIndex)(uint16Ptr(3)),
+			(*data.EnumItemIndex)(uint16Ptr(0)),
+		}),
 	).SetMeta(&data.FrameMeta{
 		Custom:              map[string]interface{}{"Hi": "there"},
 		ExecutedQueryString: "SELECT * FROM table",
@@ -275,6 +308,15 @@ func goldenDF() *data.Frame {
 	return df
 }
 
+func newField[V any](name string, ftype data.FieldType, vals []V) *data.Field {
+	field := data.NewFieldFromFieldType(ftype, len(vals))
+	field.Name = name
+	for i, v := range vals {
+		field.Set(i, v)
+	}
+	return field
+}
+
 func TestEncode(t *testing.T) {
 	df := goldenDF()
 	b, err := df.MarshalArrow()
@@ -285,12 +327,12 @@ func TestEncode(t *testing.T) {
 	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
 
 	if *update {
-		if err := ioutil.WriteFile(goldenFile, b, 0600); err != nil {
+		if err := os.WriteFile(goldenFile, b, 0600); err != nil {
 			t.Fatal(err)
 		}
 	}
 
-	want, err := ioutil.ReadFile(goldenFile)
+	want, err := os.ReadFile(goldenFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -317,7 +359,7 @@ func TestEncode(t *testing.T) {
 
 func TestDecode(t *testing.T) {
 	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
-	b, err := ioutil.ReadFile(goldenFile)
+	b, err := os.ReadFile(goldenFile)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -376,7 +418,7 @@ func TestFromRecord(t *testing.T) {
 	}
 
 	// Write golden data frame to file so we can read it back in via Record reader
-	fd, err := ioutil.TempFile("", "data-test-from-record")
+	fd, err := os.CreateTemp("", "data-test-from-record")
 	require.NoError(t, err)
 	name := fd.Name()
 	defer os.Remove(name)

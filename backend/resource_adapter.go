@@ -34,5 +34,10 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 
-	return a.callResourceHandler.CallResource(protoSrv.Context(), FromProto().CallResourceRequest(protoReq), fn)
+	ctx := protoSrv.Context()
+	ctx = propagateTenantIDIfPresent(ctx)
+	ctx = withGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
+	parsedReq := FromProto().CallResourceRequest(protoReq)
+	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
 }
