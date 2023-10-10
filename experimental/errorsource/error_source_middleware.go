@@ -1,6 +1,7 @@
 package errorsource
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -25,6 +26,9 @@ func Middleware(plugin string) httpclient.Middleware {
 			res, err := next.RoundTrip(req)
 			if res != nil && res.StatusCode >= 400 {
 				errorSource := backend.ErrorSourceFromHTTPStatus(res.StatusCode)
+				if err == nil {
+					err = errors.New(res.Status)
+				}
 				return res, &Error{Source: errorSource, Err: err}
 			}
 			return res, err
