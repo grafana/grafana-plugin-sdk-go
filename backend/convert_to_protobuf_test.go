@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"io/fs"
 	"net/http"
@@ -16,10 +17,13 @@ import (
 func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 	frames := data.Frames{data.NewFrame("test", data.NewField("test", nil, []int64{1}))}
 	tcs := []struct {
-		name           string
-		err            error
-		status         Status
-		expectedStatus int32
+		name        string
+		err         error
+		status      Status
+		errorSource ErrorSource
+
+		expectedStatus      int32
+		expectedErrorSource string
 	}{
 		{
 			name:           "If a HTTP Status code is used, use backend.Status equivalent status code",
@@ -56,15 +60,24 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 			err:            fmt.Errorf("wrap 2: %w", fmt.Errorf("wrap 1: %w", os.ErrDeadlineExceeded)),
 			expectedStatus: int32(StatusTimeout),
 		},
+		{
+			name:                "ErrorSource is marshalled",
+			err:                 errors.New("oh no"),
+			status:              StatusBadGateway,
+			errorSource:         ErrorSourceDownstream,
+			expectedStatus:      int32(StatusBadGateway),
+			expectedErrorSource: "downstream",
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			protoRes := &QueryDataResponse{
 				Responses: map[string]DataResponse{
 					"A": {
-						Frames: frames,
-						Error:  tc.err,
-						Status: tc.status,
+						Frames:      frames,
+						Error:       tc.err,
+						Status:      tc.status,
+						ErrorSource: tc.errorSource,
 					},
 				},
 			}
@@ -72,8 +85,9 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 			require.NoError(t, err)
 			require.NotNil(t, qdr)
 			require.NotNil(t, qdr.Responses)
-			receivedStatus := qdr.Responses["A"].Status
-			require.Equal(t, tc.expectedStatus, receivedStatus)
+			resp := qdr.Responses["A"]
+			require.Equal(t, tc.expectedStatus, resp.Status)
+			require.Equal(t, tc.expectedErrorSource, resp.ErrorSource)
 		})
 	}
 }
