@@ -65,7 +65,7 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 			err:                 errors.New("oh no"),
 			status:              StatusBadGateway,
 			errorSource:         ErrorSourceDownstream,
-			expectedStatus:      502,
+			expectedStatus:      int32(StatusBadGateway),
 			expectedErrorSource: "downstream",
 		},
 	}
