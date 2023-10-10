@@ -43,6 +43,11 @@ func TestInstanceManager(t *testing.T) {
 					Updated: time.Now(),
 				},
 			}
+			origDisposeTTL := disposeTTL
+			disposeTTL = time.Millisecond
+			t.Cleanup(func() {
+				disposeTTL = origDisposeTTL
+			})
 			newInstance, err := im.Get(ctx, pCtxUpdated)
 
 			t.Run("New instance should be created", func(t *testing.T) {
@@ -57,7 +62,9 @@ func TestInstanceManager(t *testing.T) {
 			})
 
 			t.Run("Old instance should be disposed", func(t *testing.T) {
-				require.True(t, instance.(*testInstance).disposed)
+				require.Eventually(t, func() bool {
+					return instance.(*testInstance).disposed
+				}, 3*time.Millisecond, time.Millisecond)
 			})
 		})
 	})
@@ -103,6 +110,12 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 	})
 
 	t.Run("Check possible race condition issues when re-creating instance on settings update", func(t *testing.T) {
+		origDisposeTTL := disposeTTL
+		disposeTTL = time.Millisecond
+		t.Cleanup(func() {
+			disposeTTL = origDisposeTTL
+		})
+
 		ctx := context.Background()
 		initialPCtx := backend.PluginContext{
 			OrgID: 1,
@@ -141,6 +154,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		wg.Wait()
 
 		t.Run("Initial instance should be disposed only once", func(t *testing.T) {
+			time.Sleep(2 * time.Millisecond)
 			require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
 		})
 		t.Run("All created instances should be either disposed or exist in cache for later disposing", func(t *testing.T) {
