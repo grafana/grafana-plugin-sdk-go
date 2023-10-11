@@ -63,8 +63,8 @@ func TestInstanceManager(t *testing.T) {
 
 			t.Run("Old instance should be disposed", func(t *testing.T) {
 				require.Eventually(t, func() bool {
-					return instance.(*testInstance).disposed
-				}, 3*time.Millisecond, time.Millisecond)
+					return instance.(*testInstance).disposed.Load() && instance.(*testInstance).disposedTimes.Load() == 1
+				}, 10*time.Millisecond, time.Millisecond)
 			})
 		})
 	})
@@ -102,7 +102,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		t.Run("All created instances should be either disposed or exist in cache for later disposing", func(t *testing.T) {
 			cachedInstance, _ := im.Get(ctx, pCtx)
 			for _, instance := range createdInstances {
-				if cachedInstance.(*testInstance) != instance && instance.disposedTimes < 1 {
+				if cachedInstance.(*testInstance) != instance && instance.disposedTimes.Load() < 1 {
 					require.FailNow(t, "Found lost reference to un-disposed instance")
 				}
 			}
@@ -154,13 +154,13 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		wg.Wait()
 
 		t.Run("Initial instance should be disposed only once", func(t *testing.T) {
-			time.Sleep(2 * time.Millisecond)
-			require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes, "Instance should be disposed only once")
+			time.Sleep(10 * time.Millisecond)
+			require.Equal(t, int64(1), instanceToDispose.(*testInstance).disposedTimes.Load(), "Instance should be disposed only once")
 		})
 		t.Run("All created instances should be either disposed or exist in cache for later disposing", func(t *testing.T) {
 			cachedInstance, _ := im.Get(ctx, updatedPCtx)
 			for _, instance := range createdInstances {
-				if cachedInstance.(*testInstance) != instance && instance.disposedTimes < 1 {
+				if cachedInstance.(*testInstance) != instance && instance.disposedTimes.Load() < 1 {
 					require.FailNow(t, "Found lost reference to un-disposed instance")
 				}
 			}
@@ -218,13 +218,13 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 type testInstance struct {
 	orgID         int64
 	updated       time.Time
-	disposed      bool
-	disposedTimes int64
+	disposed      atomic.Bool
+	disposedTimes atomic.Int64
 }
 
 func (ti *testInstance) Dispose() {
-	ti.disposed = true
-	atomic.AddInt64(&ti.disposedTimes, 1)
+	ti.disposed.Store(true)
+	ti.disposedTimes.Add(1)
 }
 
 type testInstanceProvider struct {

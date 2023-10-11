@@ -125,7 +125,6 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 				disposer.Dispose()
 				activeInstances.Dec()
 			})
-
 		} else {
 			activeInstances.Dec()
 		}
