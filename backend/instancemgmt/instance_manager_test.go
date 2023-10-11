@@ -62,9 +62,9 @@ func TestInstanceManager(t *testing.T) {
 			})
 
 			t.Run("Old instance should be disposed", func(t *testing.T) {
-				require.Eventually(t, func() bool {
-					return instance.(*testInstance).disposed.Load() && instance.(*testInstance).disposedTimes.Load() == 1
-				}, 10*time.Millisecond, time.Millisecond)
+				time.Sleep(10 * time.Millisecond)
+				require.True(t, instance.(*testInstance).disposed.Load())
+				require.Equal(t, int64(1), instance.(*testInstance).disposedTimes.Load())
 			})
 		})
 	})
