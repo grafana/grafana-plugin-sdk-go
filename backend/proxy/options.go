@@ -30,6 +30,10 @@ var DefaultTimeoutOptions = TimeoutOptions{
 }
 
 func (o *Options) setDefaults() {
+	if o == nil {
+		return
+	}
+
 	if o.Timeouts == nil {
 		o.Timeouts = &DefaultTimeoutOptions
 	}

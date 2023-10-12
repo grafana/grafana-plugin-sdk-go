@@ -82,7 +82,7 @@ type cfgProxyWrapper struct {
 // and the datasource options specify to use the proxy
 func (p *cfgProxyWrapper) SecureSocksProxyEnabled() bool {
 	// it cannot be enabled if it's not enabled on Grafana
-	if p.opts == nil || p.opts.ClientCfg == nil {
+	if p.opts == nil {
 		return false
 	}
 
@@ -113,11 +113,11 @@ func (p *cfgProxyWrapper) ConfigureSecureSocksHTTPProxy(transport *http.Transpor
 
 // NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
 func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, error) {
+	p.opts.setDefaults()
+
 	if !p.SecureSocksProxyEnabled() {
 		return nil, errors.New("proxy not enabled")
 	}
-
-	p.opts.setDefaults()
 
 	certPool := x509.NewCertPool()
 	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
