@@ -41,7 +41,11 @@ func setDefaults(providedOpts *Options) Options {
 	}
 
 	if opts.ClientCfg == nil {
-		opts.ClientCfg = getConfigFromEnv()
+		clientCfg := getConfigFromEnv()
+		if clientCfg == nil {
+			return opts
+		}
+		opts.ClientCfg = clientCfg
 	}
 
 	return opts
