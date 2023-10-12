@@ -15,8 +15,14 @@ type Error struct {
 	Err error
 }
 
+// Error implements the interface
 func (r Error) Error() string {
 	return r.Err.Error()
+}
+
+// Unwrap implements the interface
+func (r Error) Unwrap() error {
+	return r.Err
 }
 
 // Middleware captures error source metric
@@ -34,4 +40,27 @@ func Middleware(plugin string) httpclient.Middleware {
 			return res, err
 		})
 	})
+}
+
+// PluginError will apply the source as plugin
+func PluginError(err error, override bool) error {
+	return SourceError(backend.ErrorSourcePlugin, err, override)
+}
+
+// DownstreamError will apply the source as downstream
+func DownstreamError(err error, override bool) error {
+	return SourceError(backend.ErrorSourceDownstream, err, override)
+}
+
+// SourceError returns an error with the source
+// If source is already defined, it will return it, or you can override
+func SourceError(source backend.ErrorSource, err error, override bool) error {
+	var sourceError Error
+	if errors.As(err, &sourceError) && !override {
+		return err // already has a source
+	}
+	return Error{
+		Source: source,
+		Err:    err,
+	}
 }
