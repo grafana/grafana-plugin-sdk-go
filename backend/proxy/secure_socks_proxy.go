@@ -117,7 +117,7 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		return nil, errors.New("proxy not enabled")
 	}
 
-	clientOpts := setDefaults(p.opts)
+	p.opts.setDefaults()
 
 	certPool := x509.NewCertPool()
 	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
@@ -152,16 +152,16 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 			MinVersion:   tls.VersionTLS13,
 		},
 		NetDialer: &net.Dialer{
-			Timeout:   clientOpts.Timeouts.Timeout,
-			KeepAlive: clientOpts.Timeouts.KeepAlive,
+			Timeout:   p.opts.Timeouts.Timeout,
+			KeepAlive: p.opts.Timeouts.KeepAlive,
 		},
 	}
 
 	var auth *proxy.Auth
-	if clientOpts.Auth != nil {
+	if p.opts.Auth != nil {
 		auth = &proxy.Auth{
-			User:     clientOpts.Auth.Username,
-			Password: clientOpts.Auth.Password,
+			User:     p.opts.Auth.Username,
+			Password: p.opts.Auth.Password,
 		}
 	}
 

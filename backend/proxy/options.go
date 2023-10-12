@@ -29,24 +29,12 @@ var DefaultTimeoutOptions = TimeoutOptions{
 	KeepAlive: 30 * time.Second,
 }
 
-func setDefaults(providedOpts *Options) Options {
-	var opts Options
-	if providedOpts == nil {
-		return opts
+func (o *Options) setDefaults() {
+	if o.Timeouts == nil {
+		o.Timeouts = &DefaultTimeoutOptions
 	}
 
-	opts = *providedOpts
-	if opts.Timeouts == nil {
-		opts.Timeouts = &DefaultTimeoutOptions
+	if o.ClientCfg == nil {
+		o.ClientCfg = getConfigFromEnv()
 	}
-
-	if opts.ClientCfg == nil {
-		clientCfg := getConfigFromEnv()
-		if clientCfg == nil {
-			return opts
-		}
-		opts.ClientCfg = clientCfg
-	}
-
-	return opts
 }
