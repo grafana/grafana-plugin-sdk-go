@@ -55,9 +55,9 @@ func DownstreamError(err error, override bool) error {
 // SourceError returns an error with the source
 // If source is already defined, it will return it, or you can override
 func SourceError(source backend.ErrorSource, err error, override bool) error {
-	_, ok := err.(Error)
-	if ok && !override {
-		return err //already has a source
+	var sourceError Error
+	if errors.As(err, &sourceError) && !override {
+		return err // already has a source
 	}
 	return Error{
 		Source: source,
