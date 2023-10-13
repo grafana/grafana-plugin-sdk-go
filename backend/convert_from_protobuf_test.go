@@ -66,6 +66,7 @@ func TestConvertFromProtobufUser(t *testing.T) {
 		Name:  "Best User",
 		Email: "example@justAstring",
 		Role:  "Lord",
+		Teams: []int64{101},
 	}
 
 	protoWalker := &walker{}
@@ -95,6 +96,7 @@ func TestConvertFromProtobufUser(t *testing.T) {
 	requireCounter.Equal(t, protoUser.Name, sdkUser.Name)
 	requireCounter.Equal(t, protoUser.Email, sdkUser.Email)
 	requireCounter.Equal(t, protoUser.Role, sdkUser.Role)
+	requireCounter.Equal(t, protoUser.Teams, sdkUser.Teams)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 }
@@ -202,6 +204,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 		Name:  "Best User",
 		Email: "example@justAstring",
 		Role:  "Lord",
+		Teams: []int64{101},
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
@@ -243,6 +246,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.User.Name, sdkCtx.User.Name)
 	requireCounter.Equal(t, protoCtx.User.Email, sdkCtx.User.Email)
 	requireCounter.Equal(t, protoCtx.User.Role, sdkCtx.User.Role)
+	requireCounter.Equal(t, protoCtx.User.Teams, sdkCtx.User.Teams)
 
 	// App Instance Settings
 	requireCounter.Equal(t, json.RawMessage(protoCtx.AppInstanceSettings.JsonData), sdkCtx.AppInstanceSettings.JSONData)
@@ -401,6 +405,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Email, sdkQDR.PluginContext.User.Email)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Role, sdkQDR.PluginContext.User.Role)
+	requireCounter.Equal(t, protoQDR.PluginContext.User.Teams, sdkQDR.PluginContext.User.Teams)
 
 	// App Instance Settings
 	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.AppInstanceSettings.JsonData), sdkQDR.PluginContext.AppInstanceSettings.JSONData)

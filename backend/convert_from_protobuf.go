@@ -33,6 +33,7 @@ func (f ConvertFromProtobuf) User(user *pluginv2.User) *User {
 		Name:  user.Name,
 		Email: user.Email,
 		Role:  user.Role,
+		Teams: user.Teams,
 	}
 }
 
