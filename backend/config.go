@@ -15,7 +15,7 @@ type configKey struct{}
 func GrafanaConfigFromContext(ctx context.Context) *GrafanaCfg {
 	v := ctx.Value(configKey{})
 	if v == nil {
-		return NewGrafanaCfg(nil)
+		return NewGrafanaCfg(make(map[string]string))
 	}
 
 	return v.(*GrafanaCfg)
@@ -32,6 +32,9 @@ type GrafanaCfg struct {
 }
 
 func NewGrafanaCfg(cfg map[string]string) *GrafanaCfg {
+	if cfg == nil {
+		cfg = make(map[string]string)
+	}
 	return &GrafanaCfg{config: cfg}
 }
 
