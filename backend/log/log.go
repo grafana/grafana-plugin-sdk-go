@@ -6,8 +6,6 @@ import (
 
 	hclog "github.com/hashicorp/go-hclog"
 	"go.opentelemetry.io/otel/trace"
-
-	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
 type Level int32
