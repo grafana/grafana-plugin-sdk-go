@@ -2,7 +2,12 @@
 package log
 
 import (
+	"context"
+
 	hclog "github.com/hashicorp/go-hclog"
+	"go.opentelemetry.io/otel/trace"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/resource/httpadapter"
 )
 
 type Level int32
@@ -92,3 +97,13 @@ func (l *hclogWrapper) With(args ...interface{}) Logger {
 
 // DefaultLogger is the default logger.
 var DefaultLogger = New()
+
+// ContextualLogger returns a new Logger with contextual information from the given context.
+func ContextualLogger(ctx context.Context) Logger {
+	var logParams []any
+	if tid := trace.SpanContextFromContext(ctx).TraceID(); tid.IsValid() {
+		logParams = append(logParams, "traceID", tid.String())
+	}
+	// more params can be added here...
+	return New().With(logParams...)
+}
