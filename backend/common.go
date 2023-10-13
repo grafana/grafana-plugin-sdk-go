@@ -20,6 +20,7 @@ type User struct {
 	Name  string
 	Email string
 	Role  string
+	Teams []int64
 }
 
 // AppInstanceSettings represents settings for an app instance.
