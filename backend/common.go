@@ -40,7 +40,7 @@ type AppInstanceSettings struct {
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
-func (s *AppInstanceSettings) HTTPClientOptions() (httpclient.Options, error) {
+func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.Options, error) {
 	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
 	if err != nil {
 		return httpclient.Options{}, err
@@ -101,7 +101,7 @@ type DataSourceInstanceSettings struct {
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
-func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, error) {
+func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (httpclient.Options, error) {
 	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
 	if err != nil {
 		return httpclient.Options{}, err
@@ -124,7 +124,8 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
-	opts.ProxyOptions, err = s.ProxyOptions()
+	cfg := GrafanaConfigFromContext(ctx)
+	opts.ProxyOptions, err = s.ProxyOptions(cfg.proxy().clientCfg)
 	if err != nil {
 		return opts, err
 	}
@@ -232,7 +233,7 @@ func propagateTenantIDIfPresent(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (s *DataSourceInstanceSettings) ProxyOptions() (*proxy.Options, error) {
+func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*proxy.Options, error) {
 	opts := &proxy.Options{}
 
 	var dat map[string]interface{}
@@ -275,6 +276,8 @@ func (s *DataSourceInstanceSettings) ProxyOptions() (*proxy.Options, error) {
 	} else {
 		opts.Timeouts.KeepAlive = proxy.DefaultTimeoutOptions.KeepAlive
 	}
+
+	opts.ClientCfg = clientCfg
 
 	return opts, nil
 }
