@@ -34,7 +34,7 @@ require (
 	github.com/go-jose/go-jose/v3 v3.0.0
 	github.com/google/uuid v1.3.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
-	github.com/urfave/cli v1.22.12
+	github.com/urfave/cli v1.22.14
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.45.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.45.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.20.0
@@ -50,7 +50,7 @@ require (
 
 require (
 	cloud.google.com/go/compute v1.23.0 // indirect
-	github.com/BurntSushi/toml v1.2.1 // indirect
+	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.2.1 // indirect
 	github.com/cespare/xxhash/v2 v2.2.0 // indirect
