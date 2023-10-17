@@ -11,7 +11,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-func checkCtxLogger(t *testing.T, ctx context.Context) {
+func checkCtxLogger(ctx context.Context, t *testing.T) {
+	t.Helper()
 	// Make sure we have a ctx logger and that it's different from the DefaultLogger
 	ctxLogger := log.FromContext(ctx)
 	require.NotEqual(t, log.DefaultLogger, ctxLogger)
@@ -22,7 +23,7 @@ func TestContextualLogger(t *testing.T) {
 	t.Run("DataSDKAdapter", func(t *testing.T) {
 		run := make(chan struct{}, 1)
 		a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
-			checkCtxLogger(t, ctx)
+			checkCtxLogger(ctx, t)
 			run <- struct{}{}
 			return NewQueryDataResponse(), nil
 		}))
@@ -36,7 +37,7 @@ func TestContextualLogger(t *testing.T) {
 	t.Run("DiagnosticsSDKAdapter", func(t *testing.T) {
 		run := make(chan struct{}, 1)
 		a := newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, CheckHealthHandlerFunc(func(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
-			checkCtxLogger(t, ctx)
+			checkCtxLogger(ctx, t)
 			run <- struct{}{}
 			return &CheckHealthResult{}, nil
 		}))
@@ -50,7 +51,7 @@ func TestContextualLogger(t *testing.T) {
 	t.Run("ResourceSDKAdapter", func(t *testing.T) {
 		run := make(chan struct{}, 1)
 		a := newResourceSDKAdapter(CallResourceHandlerFunc(func(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
-			checkCtxLogger(t, ctx)
+			checkCtxLogger(ctx, t)
 			run <- struct{}{}
 			return nil
 		}))
@@ -67,17 +68,17 @@ func TestContextualLogger(t *testing.T) {
 		runStreamRun := make(chan struct{}, 1)
 		a := newStreamSDKAdapter(&streamAdapter{
 			subscribeStreamFunc: func(ctx context.Context, request *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
-				checkCtxLogger(t, ctx)
+				checkCtxLogger(ctx, t)
 				subscribeStreamRun <- struct{}{}
 				return &SubscribeStreamResponse{}, nil
 			},
 			publishStreamFunc: func(ctx context.Context, request *PublishStreamRequest) (*PublishStreamResponse, error) {
-				checkCtxLogger(t, ctx)
+				checkCtxLogger(ctx, t)
 				publishStreamRun <- struct{}{}
 				return &PublishStreamResponse{}, nil
 			},
 			runStreamFunc: func(ctx context.Context, request *RunStreamRequest, sender *StreamSender) error {
-				checkCtxLogger(t, ctx)
+				checkCtxLogger(ctx, t)
 				runStreamRun <- struct{}{}
 				return nil
 			},
