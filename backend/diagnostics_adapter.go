@@ -50,6 +50,7 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+		ctx = withContextualLogger(ctx, parsedReq.PluginContext, endpointCheckHealth)
 		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
 		if err != nil {
 			return nil, err

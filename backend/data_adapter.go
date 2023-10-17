@@ -8,13 +8,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-const (
-	endpointCallResource   = "callResource"
-	endpointCheckHealth    = "checkHealth"
-	endpointCollectMetrics = "collectMetrics"
-	endpointQueryData      = "queryData"
-)
-
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type dataSDKAdapter struct {
 	queryDataHandler QueryDataHandler
@@ -55,7 +48,6 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedRequest := FromProto().QueryDataRequest(req)
 	ctx = withHeaderMiddleware(ctx, parsedRequest.GetHTTPHeaders())
-	// TODO: needs to be done for all other methods instead
 	ctx = withContextualLogger(ctx, parsedRequest.PluginContext, endpointQueryData)
 	resp, err := a.queryDataHandler.QueryData(ctx, parsedRequest)
 	if err != nil {

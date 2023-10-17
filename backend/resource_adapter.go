@@ -39,5 +39,6 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().CallResourceRequest(protoReq)
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+	ctx = withContextualLogger(ctx, parsedReq.PluginContext, endpointCallResource)
 	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
 }
