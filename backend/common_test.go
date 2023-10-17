@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"testing"
 	"time"
 
@@ -41,7 +42,7 @@ func TestAppInstanceSettings(t *testing.T) {
 		}
 
 		for _, tc := range tcs {
-			opts, err := tc.instanceSettings.HTTPClientOptions()
+			opts, err := tc.instanceSettings.HTTPClientOptions(context.Background())
 			assert.NoError(t, err)
 			if tc.expectedClientOptions.BasicAuth != nil {
 				assert.Equal(t, tc.expectedClientOptions.BasicAuth, opts.BasicAuth)
@@ -189,7 +190,7 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 		}
 
 		for _, tc := range tcs {
-			opts, err := tc.instanceSettings.HTTPClientOptions()
+			opts, err := tc.instanceSettings.HTTPClientOptions(context.Background())
 			assert.NoError(t, err)
 			if tc.expectedClientOptions.BasicAuth != nil {
 				assert.Equal(t, tc.expectedClientOptions.BasicAuth, opts.BasicAuth)
@@ -265,6 +266,7 @@ func TestProxyOptions(t *testing.T) {
 	t.Run("ProxyOptions() should translate settings as expected", func(t *testing.T) {
 		tcs := []struct {
 			instanceSettings      *DataSourceInstanceSettings
+			proxyClientCfg        *proxy.ClientCfg
 			expectedClientOptions *proxy.Options
 		}{
 			{
@@ -344,10 +346,45 @@ func TestProxyOptions(t *testing.T) {
 					},
 				},
 			},
+			{
+				instanceSettings: &DataSourceInstanceSettings{
+					Name:             "ds1",
+					UID:              "uid1",
+					User:             "user",
+					Type:             "example-datasource",
+					JSONData:         []byte("{ \"enableSecureSocksProxy\": true, \"timeout\": 10, \"keepAlive\": 15 }"),
+					BasicAuthEnabled: true,
+					BasicAuthUser:    "buser",
+				},
+				proxyClientCfg: &proxy.ClientCfg{
+					ClientCert:   "<client-cert>",
+					ClientKey:    "123abc",
+					RootCA:       "<root-ca-cert>",
+					ProxyAddress: "10.1.2.3",
+					ServerName:   "grafana-server",
+				},
+				expectedClientOptions: &proxy.Options{
+					Enabled: true,
+					Auth: &proxy.AuthOptions{
+						Username: "uid1",
+					},
+					Timeouts: &proxy.TimeoutOptions{
+						KeepAlive: time.Second * 15,
+						Timeout:   time.Second * 10,
+					},
+					ClientCfg: &proxy.ClientCfg{
+						ClientCert:   "<client-cert>",
+						ClientKey:    "123abc",
+						RootCA:       "<root-ca-cert>",
+						ProxyAddress: "10.1.2.3",
+						ServerName:   "grafana-server",
+					},
+				},
+			},
 		}
 
 		for _, tc := range tcs {
-			opts, err := tc.instanceSettings.ProxyOptions()
+			opts, err := tc.instanceSettings.ProxyOptions(tc.proxyClientCfg)
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedClientOptions, opts)
 		}

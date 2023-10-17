@@ -28,8 +28,10 @@ type Options struct {
 	// BasicAuth basic authentication related options.
 	BasicAuth *BasicAuthOptions
 
-	// TLS TLS related options.
-	TLS   *TLSOptions
+	// TLS related options.
+	TLS *TLSOptions
+
+	// SigV4 related options.
 	SigV4 *SigV4Config
 
 	// Proxy related options.
