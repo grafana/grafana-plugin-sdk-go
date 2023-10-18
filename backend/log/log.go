@@ -2,6 +2,8 @@
 package log
 
 import (
+	"context"
+
 	hclog "github.com/hashicorp/go-hclog"
 )
 
@@ -24,6 +26,7 @@ type Logger interface {
 	Error(msg string, args ...interface{})
 	With(args ...interface{}) Logger
 	Level() Level
+	FromContext(ctx context.Context) Logger
 }
 
 // New creates a new logger.
@@ -88,6 +91,12 @@ func (l *hclogWrapper) With(args ...interface{}) Logger {
 	return &hclogWrapper{
 		logger: l.logger.With(args...),
 	}
+}
+
+// FromContext creates a sub-logger with the contextual log parameters from the given context.
+// The contextual log parameters can be set using [WithContextualAttributes].
+func (l *hclogWrapper) FromContext(ctx context.Context) Logger {
+	return l.With(ContextualAttributesFromContext(ctx)...)
 }
 
 // DefaultLogger is the default logger.

@@ -48,6 +48,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedRequest := FromProto().QueryDataRequest(req)
 	ctx = withHeaderMiddleware(ctx, parsedRequest.GetHTTPHeaders())
+	ctx = withContextualLogAttributes(ctx, parsedRequest.PluginContext, endpointQueryData)
 	resp, err := a.queryDataHandler.QueryData(ctx, parsedRequest)
 	if err != nil {
 		return nil, err
