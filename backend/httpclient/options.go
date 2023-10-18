@@ -28,6 +28,9 @@ type Options struct {
 	// BasicAuth basic authentication related options.
 	BasicAuth *BasicAuthOptions
 
+	// BearerAuth bearer token authentication related options.
+	BearerAuth *BearerAuthOptions
+
 	// TLS related options.
 	TLS *TLSOptions
 
@@ -77,6 +80,11 @@ type Options struct {
 type BasicAuthOptions struct {
 	User     string
 	Password string
+}
+
+// BearerAuthOptions bearer token authentication options.
+type BearerAuthOptions struct {
+	Token string
 }
 
 // TimeoutOptions timeout/connection options.
