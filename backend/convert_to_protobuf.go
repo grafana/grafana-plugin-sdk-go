@@ -182,6 +182,7 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		} else if status == 0 {
 			pDR.Status = int32(StatusOK)
 		}
+		pDR.ErrorSource = string(dr.ErrorSource)
 
 		pQDR.Responses[refID] = &pDR
 	}

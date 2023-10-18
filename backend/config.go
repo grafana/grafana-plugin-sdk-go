@@ -18,11 +18,16 @@ func GrafanaConfigFromContext(ctx context.Context) *GrafanaCfg {
 		return NewGrafanaCfg(nil)
 	}
 
-	return v.(*GrafanaCfg)
+	cfg := v.(*GrafanaCfg)
+	if cfg == nil {
+		return NewGrafanaCfg(nil)
+	}
+
+	return cfg
 }
 
-// withGrafanaConfig injects supplied Grafana config into context.
-func withGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
+// WithGrafanaConfig injects supplied Grafana config into context.
+func WithGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
 	ctx = context.WithValue(ctx, configKey{}, cfg)
 	return ctx
 }
@@ -41,7 +46,7 @@ func (c *GrafanaCfg) Get(key string) string {
 
 func (c *GrafanaCfg) FeatureToggles() FeatureToggles {
 	features, exists := c.config[featuretoggles.EnabledFeatures]
-	if !exists {
+	if !exists || features == "" {
 		return FeatureToggles{}
 	}
 
@@ -87,18 +92,13 @@ func (ft FeatureToggles) IsEnabled(f string) bool {
 }
 
 type Proxy struct {
-	clientCfg proxy.ClientCfg
+	clientCfg *proxy.ClientCfg
 }
 
-func (pc Proxy) ClientConfig() proxy.ClientCfg {
-	return pc.clientCfg
-}
-
-func (c *GrafanaCfg) Proxy() Proxy {
+func (c *GrafanaCfg) proxy() Proxy {
 	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
 		return Proxy{
-			clientCfg: proxy.ClientCfg{
-				Enabled:      true,
+			clientCfg: &proxy.ClientCfg{
 				ClientCert:   c.Get(proxy.PluginSecureSocksProxyClientCert),
 				ClientKey:    c.Get(proxy.PluginSecureSocksProxyClientKey),
 				RootCA:       c.Get(proxy.PluginSecureSocksProxyRootCACert),
@@ -107,5 +107,5 @@ func (c *GrafanaCfg) Proxy() Proxy {
 			},
 		}
 	}
-	return Proxy{clientCfg: proxy.ClientCfg{}}
+	return Proxy{}
 }

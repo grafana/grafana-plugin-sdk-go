@@ -19,8 +19,13 @@ import (
 )
 
 func TestNewSecureSocksProxy(t *testing.T) {
-	cfg := setupTestSecureSocksProxySettings(t)
-	cli := NewWithCfg(cfg)
+	opts := &Options{
+		Enabled:   true,
+		Timeouts:  &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)},
+		Auth:      &AuthOptions{Username: "user1"},
+		ClientCfg: setupTestSecureSocksProxySettings(t),
+	}
+	cli := New(opts)
 
 	// create empty file for testing invalid configs
 	tempDir := t.TempDir()
@@ -31,65 +36,60 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("New socks proxy should be properly configured when all settings are valid", func(t *testing.T) {
-		require.NoError(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}, &Options{Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)}, Auth: &AuthOptions{Username: "user1"}}))
+		require.NoError(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Client cert must be valid", func(t *testing.T) {
-		clientCertBefore := cfg.ClientCert
-		cfg.ClientCert = tempEmptyFile
-		cli = NewWithCfg(cfg)
+		clientCertBefore := opts.ClientCfg.ClientCert
+		opts.ClientCfg.ClientCert = tempEmptyFile
+		cli = New(opts)
 		t.Cleanup(func() {
-			cfg.ClientCert = clientCertBefore
-			cli = NewWithCfg(cfg)
+			opts.ClientCfg.ClientCert = clientCertBefore
+			cli = New(opts)
 		})
-		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}, &Options{Enabled: true}))
+		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Client key must be valid", func(t *testing.T) {
-		clientKeyBefore := cfg.ClientKey
-		cfg.ClientKey = tempEmptyFile
-		cli = NewWithCfg(cfg)
+		clientKeyBefore := opts.ClientCfg.ClientKey
+		opts.ClientCfg.ClientKey = tempEmptyFile
+		cli = New(opts)
 		t.Cleanup(func() {
-			cfg.ClientKey = clientKeyBefore
-			cli = NewWithCfg(cfg)
+			opts.ClientCfg.ClientKey = clientKeyBefore
+			cli = New(opts)
 		})
-		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}, &Options{Enabled: true}))
+		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Root CA must be valid", func(t *testing.T) {
-		rootCABefore := cfg.RootCA
-		cfg.RootCA = tempEmptyFile
-		cli = NewWithCfg(cfg)
+		rootCABefore := opts.ClientCfg.RootCA
+		opts.ClientCfg.RootCA = tempEmptyFile
+		cli = New(opts)
 		t.Cleanup(func() {
-			cfg.RootCA = rootCABefore
-			cli = NewWithCfg(cfg)
+			opts.ClientCfg.RootCA = rootCABefore
+			cli = New(opts)
 		})
-		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}, &Options{Enabled: true}))
+		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 }
 
 func TestSecureSocksProxyEnabled(t *testing.T) {
-	t.Run("not enabled if not enabled on grafana instance", func(t *testing.T) {
-		cli := NewWithCfg(&ClientCfg{Enabled: false})
-		assert.Equal(t, false, cli.SecureSocksProxyEnabled(&Options{Enabled: true}))
+	t.Run("not enabled if Enabled field is not true", func(t *testing.T) {
+		cli := New(&Options{Enabled: false})
+		assert.Equal(t, false, cli.SecureSocksProxyEnabled())
 	})
-	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ClientCfg{Enabled: true})
-		assert.Equal(t, false, cli.SecureSocksProxyEnabled(&Options{Enabled: false}))
+	t.Run("not enabled if opts is nil", func(t *testing.T) {
+		cli := New(nil)
+		assert.Equal(t, false, cli.SecureSocksProxyEnabled())
 	})
-	t.Run("not enabled if not enabled on datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ClientCfg{Enabled: true})
-		assert.Equal(t, false, cli.SecureSocksProxyEnabled(nil))
-	})
-	t.Run("enabled, if enabled on grafana instance and datasource", func(t *testing.T) {
-		cli := NewWithCfg(&ClientCfg{Enabled: true})
-		assert.Equal(t, true, cli.SecureSocksProxyEnabled(&Options{Enabled: true}))
+	t.Run("enabled, if Enabled field is true", func(t *testing.T) {
+		cli := New(&Options{Enabled: true})
+		assert.Equal(t, true, cli.SecureSocksProxyEnabled())
 	})
 }
 
 func TestSecureSocksProxyConfig(t *testing.T) {
 	expected := ClientCfg{
-		Enabled:      true,
 		ClientCert:   "client.crt",
 		ClientKey:    "client.key",
 		RootCA:       "ca.crt",
@@ -146,12 +146,16 @@ func TestSecureSocksProxyEnabledOnDS(t *testing.T) {
 
 func TestPreventInvalidRootCA(t *testing.T) {
 	tempDir := t.TempDir()
-	cfg := &ClientCfg{
-		Enabled:      true,
-		ClientCert:   "client.crt",
-		ClientKey:    "client.key",
-		ProxyAddress: "localhost:8080",
-		ServerName:   "testServer",
+	opts := &Options{
+		Enabled:  true,
+		Auth:     nil,
+		Timeouts: nil,
+		ClientCfg: &ClientCfg{
+			ClientCert:   "client.crt",
+			ClientKey:    "client.key",
+			ProxyAddress: "localhost:8080",
+			ServerName:   "testServer",
+		},
 	}
 
 	t.Run("root ca must be of the type CERTIFICATE", func(t *testing.T) {
@@ -163,18 +167,18 @@ func TestPreventInvalidRootCA(t *testing.T) {
 			Bytes: []byte("testing"),
 		})
 		require.NoError(t, err)
-		cfg.RootCA = rootCACert
-		cli := NewWithCfg(cfg)
-		_, err = cli.NewSecureSocksProxyContextDialer(&Options{Enabled: true})
+		opts.ClientCfg.RootCA = rootCACert
+		cli := New(opts)
+		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 	t.Run("root ca has to have valid content", func(t *testing.T) {
 		rootCACert := filepath.Join(tempDir, "ca.cert")
 		err := os.WriteFile(rootCACert, []byte("this is not a pem encoded file"), fs.ModeAppend)
 		require.NoError(t, err)
-		cfg.RootCA = rootCACert
-		cli := NewWithCfg(cfg)
-		_, err = cli.NewSecureSocksProxyContextDialer(&Options{Enabled: true})
+		opts.ClientCfg.RootCA = rootCACert
+		cli := New(opts)
+		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 }
@@ -253,7 +257,6 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	require.NoError(t, err)
 
 	cfg := &ClientCfg{
-		Enabled:      true,
 		ClientCert:   clientCert,
 		ClientKey:    clientKey,
 		RootCA:       rootCACert,
