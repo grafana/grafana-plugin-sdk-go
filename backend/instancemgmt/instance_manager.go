@@ -10,6 +10,7 @@ import (
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 var (
@@ -122,8 +123,10 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			time.AfterFunc(disposeTTL, func() {
+				log.DefaultLogger.Debug("Disposing instance", "cacheKey", cacheKey)
 				disposer.Dispose()
 				activeInstances.Dec()
+				log.DefaultLogger.Debug("Instance disposed", "cacheKey", cacheKey)
 			})
 		} else {
 			activeInstances.Dec()
@@ -139,6 +142,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		instance:      instance,
 	})
 	activeInstances.Inc()
+	log.DefaultLogger.Debug("Instance created", "cacheKey", cacheKey)
 
 	return instance, nil
 }
