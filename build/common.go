@@ -24,6 +24,7 @@ import (
 )
 
 var defaultOutputBinaryPath = "dist"
+var defaultPluginJSONPath = "src"
 
 // Callbacks give you a way to run custom behavior when things happen
 var beforeBuild = func(cfg Config) (Config, error) {
@@ -38,9 +39,9 @@ func SetBeforeBuildCallback(cb BeforeBuildCallback) error {
 
 var exname string
 
-func getExecutableName(os string, arch string) (string, error) {
+func getExecutableName(os string, arch string, pluginJSONPath string) (string, error) {
 	if exname == "" {
-		exename, err := internal.GetExecutableFromPluginJSON("src")
+		exename, err := internal.GetExecutableFromPluginJSON(pluginJSONPath)
 		if err != nil {
 			return "", err
 		}
@@ -61,7 +62,11 @@ func buildBackend(cfg Config) error {
 		return err
 	}
 
-	exeName, err := getExecutableName(cfg.OS, cfg.Arch)
+	pluginJSONPath := defaultPluginJSONPath
+	if cfg.PluginJSONPath != "" {
+		pluginJSONPath = cfg.PluginJSONPath
+	}
+	exeName, err := getExecutableName(cfg.OS, cfg.Arch, pluginJSONPath)
 	if err != nil {
 		return err
 	}
