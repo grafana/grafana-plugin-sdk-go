@@ -207,6 +207,7 @@ func DefaultMiddlewares() []Middleware {
 	return []Middleware{
 		TracingMiddleware(nil),
 		BasicAuthenticationMiddleware(),
+		BearerAuthenticationMiddleware(),
 		CustomHeadersMiddleware(),
 		ContextualMiddleware(),
 	}
