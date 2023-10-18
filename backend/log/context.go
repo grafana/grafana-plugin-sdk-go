@@ -2,21 +2,25 @@ package log
 
 import "context"
 
-type loggerCtxKeyType struct{}
+type loggerParamsCtxKeyType struct{}
 
-var loggerCtxKey = loggerCtxKeyType{}
+var loggerParamsCtxKey = loggerParamsCtxKeyType{}
 
-// FromContext returns a logger from the context if one is set, otherwise it returns [DefaultLogger].
-func FromContext(ctx context.Context) Logger {
-	logger, ok := ctx.Value(loggerCtxKey).(Logger)
-	if !ok {
-		return DefaultLogger
+// WithContextualAttributes returns a new context with the given key/value log parameters appended to the existing ones.
+// It's possible to get a logger with those contextual parameters by using [FromContext].
+func WithContextualAttributes(ctx context.Context, logParams []any) context.Context {
+	p := logParams
+	if ctxParams := ctx.Value(loggerParamsCtxKey); ctxParams != nil {
+		p = append(ctxParams.([]any), logParams...)
 	}
-	return logger
+	return context.WithValue(ctx, loggerParamsCtxKey, p)
 }
 
-// WithContext returns a new context with the logger set to the provided value.
-// The logger can be retrieved later using [FromContext].
-func WithContext(ctx context.Context, logger Logger) context.Context {
-	return context.WithValue(ctx, loggerCtxKey, logger)
+// ContextualAttributesFromContext returns the contextual key/value log parameters from the given context.
+// If no contextual log parameters are set, it returns nil.
+func ContextualAttributesFromContext(ctx context.Context) []any {
+	if logParams := ctx.Value(loggerParamsCtxKey); logParams != nil {
+		return logParams.([]any)
+	}
+	return nil
 }

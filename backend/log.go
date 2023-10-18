@@ -27,8 +27,7 @@ var NewLoggerWith = func(args ...interface{}) log.Logger {
 	return log.New().With(args...)
 }
 
-func withContextualLogger(ctx context.Context, pCtx PluginContext, endpoint string) context.Context {
-	logger := log.FromContext(ctx)
+func withContextualLogAttributes(ctx context.Context, pCtx PluginContext, endpoint string) context.Context {
 	args := []any{"pluginID", pCtx.PluginID, "endpoint", endpoint}
 	if tid := trace.SpanContextFromContext(ctx).TraceID(); tid.IsValid() {
 		args = append(args, "traceID", tid.String())
@@ -43,6 +42,6 @@ func withContextualLogger(ctx context.Context, pCtx PluginContext, endpoint stri
 			args = append(args, "uname", pCtx.User.Name)
 		}
 	}
-	ctx = log.WithContext(ctx, logger.With(args...))
+	ctx = log.WithContextualAttributes(ctx, args)
 	return ctx
 }
