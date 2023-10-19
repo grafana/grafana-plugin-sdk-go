@@ -11,15 +11,14 @@ import (
 // CopyFile copies a file from src to dst. If src and dst files exist, and are
 // the same, then return success. Otherise, attempt to create a hard link
 // between the two files. If that fail, copy the file contents from src to dst.
-func CopyFile(src, dst string) (err error) {
+func CopyFile(src, dst string) error {
 	absSrc, err := filepath.Abs(src)
 	if err != nil {
 		return fmt.Errorf("failed to get absolute path of source file %q: %w", src, err)
 	}
 	sfi, err := os.Stat(src)
 	if err != nil {
-		err = fmt.Errorf("couldn't stat source file %q: %w", absSrc, err)
-		return
+		return fmt.Errorf("couldn't stat source file %q: %w", absSrc, err)
 	}
 	if !sfi.Mode().IsRegular() {
 		// Cannot copy non-regular files (e.g., directories, symlinks, devices, etc.)
@@ -31,27 +30,26 @@ func CopyFile(src, dst string) (err error) {
 		return err
 	}
 	if !exists {
-		err = fmt.Errorf("destination directory doesn't exist: %q", dpath)
-		return
+		return fmt.Errorf("destination directory doesn't exist: %q", dpath)
 	}
 
 	var dfi os.FileInfo
 	dfi, err = os.Stat(dst)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return
+			return err
 		}
 	} else {
 		if !(dfi.Mode().IsRegular()) {
 			return fmt.Errorf("non-regular destination file %s (%q)", dfi.Name(), dfi.Mode().String())
 		}
 		if os.SameFile(sfi, dfi) {
-			return
+			return err
 		}
 	}
 
 	if err = os.Link(src, dst); err == nil {
-		return
+		return err
 	}
 
 	err = copyFileContents(src, dst)

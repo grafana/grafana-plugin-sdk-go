@@ -22,13 +22,13 @@ var (
 	PluginProfilingEnabledEnv = "GF_PLUGIN_PROFILING_ENABLED"
 
 	// PluginProfilerPortEnvDeprecated is a constant for the GF_PLUGINS_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
-	PluginProfilerPortEnvDeprecated = "GF_PLUGINS_PROFILER_PORT"
+	PluginProfilerPortEnvDeprecated = "GF_PLUGINS_PROFILER_PORT" // nolint:gosec
 	// PluginProfilingPortEnv is a constant for the GF_PLUGIN_PROFILING_PORT environment variable use to specify a pprof port (default 6060).
-	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT"
+	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT" // nolint:gosec
 
 	// PluginTracingOpenTelemetryOTLPAddressEnv is a constant for the GF_INSTANCE_OTLP_ADDRESS
 	// environment variable used to specify the OTLP Address.
-	PluginTracingOpenTelemetryOTLPAddressEnv = "GF_INSTANCE_OTLP_ADDRESS"
+	PluginTracingOpenTelemetryOTLPAddressEnv = "GF_INSTANCE_OTLP_ADDRESS" // nolint:gosec
 	// PluginTracingOpenTelemetryOTLPPropagationEnv is a constant for the GF_INSTANCE_OTLP_PROPAGATION
 	// environment variable used to specify the OTLP propagation format.
 	PluginTracingOpenTelemetryOTLPPropagationEnv = "GF_INSTANCE_OTLP_PROPAGATION"
