@@ -18,7 +18,7 @@ import (
 
 // ReloadPlugin - kills any running instances and waits for grafana to reload the plugin
 func ReloadPlugin() error {
-	exeName, err := getExecutableName(runtime.GOOS, runtime.GOARCH)
+	exeName, err := getExecutableName(runtime.GOOS, runtime.GOARCH, defaultPluginJSONPath)
 	if err != nil {
 		return err
 	}
@@ -56,7 +56,7 @@ func Debugger() error {
 	mg.Deps(b.Debug)
 
 	// 1. kill any running instance
-	exeName, err := getExecutableName(runtime.GOOS, runtime.GOARCH)
+	exeName, err := getExecutableName(runtime.GOOS, runtime.GOARCH, defaultPluginJSONPath)
 	if err != nil {
 		return err
 	}
