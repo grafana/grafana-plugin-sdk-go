@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"strconv"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
@@ -32,6 +33,10 @@ var (
 	// PluginTracingOpenTelemetryOTLPPropagationEnv is a constant for the GF_INSTANCE_OTLP_PROPAGATION
 	// environment variable used to specify the OTLP propagation format.
 	PluginTracingOpenTelemetryOTLPPropagationEnv = "GF_INSTANCE_OTLP_PROPAGATION"
+
+	PluginTracingSamplingTypeEnv   = "GF_INSTANCE_OTLP_SAMPLING_TYPE"
+	PluginTracingSamplingParamEnv  = "GF_INSTANCE_OTLP_SAMPLING_PARAM"
+	PluginTracingSamplingRemoteURL = "GF_INSTANCE_OTLP_SAMPLING_REMOTE_URL"
 
 	// PluginVersionEnv is a constant for the GF_PLUGIN_VERSION environment variable containing the plugin's version.
 	// Deprecated: Use build.GetBuildInfo().Version instead.
@@ -123,7 +128,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		tracingOpts.CustomAttributes = append(getTracerCustomAttributes(pluginID), tracingOpts.CustomAttributes...)
 
 		// Initialize global tracer provider
-		tp, err := tracerprovider.NewTracerProvider(tracingCfg.Address, tracingOpts)
+		tp, err := tracerprovider.NewTracerProvider(tracingCfg.Address, tracingCfg.Sampler, tracingOpts)
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
@@ -142,8 +147,12 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 
 // tracingConfig contains the configuration for OTEL tracing.
 type tracingConfig struct {
+	// TODO: unexport?
+
 	Address     string
 	Propagation string
+
+	Sampler tracerprovider.SamplerOptions
 }
 
 // IsEnabled returns true if OTEL tracing is enabled.
@@ -153,13 +162,35 @@ func (c tracingConfig) IsEnabled() bool {
 
 // getTracingConfig returns a new tracingConfig based on the current environment variables.
 func getTracingConfig() tracingConfig {
-	var otelAddr, otelPropagation string
+	var otelAddr, otelPropagation, samplerType, samplerRemoteURL, samplerParamString string
+	var samplerParam float64
 	otelAddr, ok := os.LookupEnv(PluginTracingOpenTelemetryOTLPAddressEnv)
 	if ok {
+		// Additional OTEL config
 		otelPropagation = os.Getenv(PluginTracingOpenTelemetryOTLPPropagationEnv)
+
+		// Sampling config
+		samplerType = os.Getenv(PluginTracingSamplingTypeEnv)
+		samplerRemoteURL = os.Getenv(PluginTracingSamplingRemoteURL)
+		samplerParamString = os.Getenv(PluginTracingSamplingParamEnv)
+		var err error
+		samplerParam, err = strconv.ParseFloat(samplerParamString, 64)
+		if err != nil {
+			// Default value if invalid float is provided is 1.0 (AlwaysSample)
+			samplerParam = 1.0
+		}
 	}
 	return tracingConfig{
 		Address:     otelAddr,
 		Propagation: otelPropagation,
+		Sampler: tracerprovider.SamplerOptions{
+			SamplerType: tracerprovider.SamplerType(samplerType),
+			Param:       samplerParam,
+			Remote: tracerprovider.RemoteSamplerOptions{
+				URL: samplerRemoteURL,
+				// TODO: change
+				ServiceName: "grafana-plugin",
+			},
+		},
 	}
 }
