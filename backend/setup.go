@@ -34,9 +34,9 @@ var (
 	// environment variable used to specify the OTLP propagation format.
 	PluginTracingOpenTelemetryOTLPPropagationEnv = "GF_INSTANCE_OTLP_PROPAGATION"
 
-	PluginTracingSamplingTypeEnv   = "GF_INSTANCE_OTLP_SAMPLING_TYPE"
-	PluginTracingSamplingParamEnv  = "GF_INSTANCE_OTLP_SAMPLING_PARAM"
-	PluginTracingSamplingRemoteURL = "GF_INSTANCE_OTLP_SAMPLING_REMOTE_URL"
+	PluginTracingSamplerTypeEnv   = "GF_INSTANCE_OTLP_SAMPLER_TYPE"
+	PluginTracingSamplerParamEnv  = "GF_INSTANCE_OTLP_SAMPLER_PARAM"
+	PluginTracingSamplerRemoteURL = "GF_INSTANCE_OTLP_SAMPLER_REMOTE_URL"
 
 	// PluginVersionEnv is a constant for the GF_PLUGIN_VERSION environment variable containing the plugin's version.
 	// Deprecated: Use build.GetBuildInfo().Version instead.
@@ -170,9 +170,9 @@ func getTracingConfig() tracingConfig {
 		otelPropagation = os.Getenv(PluginTracingOpenTelemetryOTLPPropagationEnv)
 
 		// Sampling config
-		samplerType = os.Getenv(PluginTracingSamplingTypeEnv)
-		samplerRemoteURL = os.Getenv(PluginTracingSamplingRemoteURL)
-		samplerParamString = os.Getenv(PluginTracingSamplingParamEnv)
+		samplerType = os.Getenv(PluginTracingSamplerTypeEnv)
+		samplerRemoteURL = os.Getenv(PluginTracingSamplerRemoteURL)
+		samplerParamString = os.Getenv(PluginTracingSamplerParamEnv)
 		var err error
 		samplerParam, err = strconv.ParseFloat(samplerParamString, 64)
 		if err != nil {
