@@ -28,6 +28,8 @@ steps:
 - name: test
   image: grafana/grafana-plugin-ci:1.9.5
   commands:
+  - apt update
+  - apt install -y gcc
   - mage -v testRace
   environment:
     # -race requires cgo
@@ -59,6 +61,8 @@ steps:
 - name: test
   image: grafana/grafana-plugin-ci:1.9.5
   commands:
+  - apt update
+  - apt install -y gcc
   - mage -v testRace
   environment:
     # -race requires cgo
@@ -66,6 +70,6 @@ steps:
 
 ---
 kind: signature
-hmac: b148443a2ef693d80a4291b253e935c6bb337abd347e35e1524f65f611dca864
+hmac: 1bf1d193ce89ab19332b69fe807b1087a8c3808f459456c71ede5eb3da1ce50e
 
 ...
