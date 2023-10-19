@@ -29,6 +29,9 @@ steps:
   image: grafana/grafana-plugin-ci:1.9.5
   commands:
   - mage -v testRace
+  environment:
+    # -race requires cgo
+    CGO_ENABLED: "1"
 ---
 kind: pipeline
 type: docker
@@ -57,9 +60,12 @@ steps:
   image: grafana/grafana-plugin-ci:1.9.5
   commands:
   - mage -v testRace
+  environment:
+    # -race requires cgo
+    CGO_ENABLED: "1"
 
 ---
 kind: signature
-hmac: b7ab5d7df4753837c999e7502e27ed73fc23448500960a34e3ed68f3776cc067
+hmac: b148443a2ef693d80a4291b253e935c6bb337abd347e35e1524f65f611dca864
 
 ...
