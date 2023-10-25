@@ -58,6 +58,7 @@ func DownstreamError(err error, override bool) error {
 func SourceError(source backend.ErrorSource, err error, override bool) Error {
 	var sourceError Error
 	if errors.As(err, &sourceError) && !override {
+		// nolint:gosec
 		return err.(Error) // already has a source
 	}
 	return Error{
