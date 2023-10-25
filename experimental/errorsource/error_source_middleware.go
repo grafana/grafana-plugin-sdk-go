@@ -68,9 +68,17 @@ func SourceError(source backend.ErrorSource, err error, override bool) Error {
 
 // Response returns an error DataResponse given status, source of the error and message.
 func Response(err error) backend.DataResponse {
-	e := SourceError(backend.ErrorSourcePlugin, err, false)
+	var e Error
+	if !errors.As(err, &e) {
+		// generic error, default to "plugin" error source
+		return backend.DataResponse{
+			Error:       err,
+			ErrorSource: backend.ErrorSourcePlugin,
+			Status:      backend.Status(0), // alternatively, `backend.StatusUnknown` which is 500
+		}
+	}
 	return backend.DataResponse{
-		Error:       e,
+		Error:       err,
 		ErrorSource: e.Source,
 		Status:      e.Status,
 	}
