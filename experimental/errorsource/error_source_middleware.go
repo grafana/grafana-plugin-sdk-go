@@ -11,6 +11,7 @@ import (
 // Error captures error source and implements the error interface
 type Error struct {
 	Source backend.ErrorSource
+	Status backend.Status
 
 	Err error
 }
@@ -54,13 +55,28 @@ func DownstreamError(err error, override bool) error {
 
 // SourceError returns an error with the source
 // If source is already defined, it will return it, or you can override
-func SourceError(source backend.ErrorSource, err error, override bool) error {
+func SourceError(source backend.ErrorSource, err error, override bool) Error {
 	var sourceError Error
 	if errors.As(err, &sourceError) && !override {
-		return err // already has a source
+		return err.(Error) // already has a source
 	}
 	return Error{
 		Source: source,
 		Err:    err,
 	}
+}
+
+// Response returns an error DataResponse given status, source of the error and message.
+func Response(err error) backend.DataResponse {
+	e := SourceError(backend.ErrorSourcePlugin, err, false)
+	return backend.DataResponse{
+		Error:       errors.New(err.Error()),
+		ErrorSource: e.Source,
+		Status:      e.Status,
+	}
+}
+
+// FromStatus returns error source from status
+func FromStatus(status backend.Status) backend.ErrorSource {
+	return backend.ErrorSourceFromHTTPStatus(int(status))
 }
