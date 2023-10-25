@@ -74,7 +74,7 @@ func Response(err error) backend.DataResponse {
 		return backend.DataResponse{
 			Error:       err,
 			ErrorSource: backend.ErrorSourcePlugin,
-			Status:      backend.Status(0), // alternatively, `backend.StatusUnknown` which is 500
+			Status:      backend.Status(backend.StatusUnknown),
 		}
 	}
 	return backend.DataResponse{
