@@ -71,7 +71,7 @@ func SourceError(source backend.ErrorSource, err error, override bool) Error {
 func Response(err error) backend.DataResponse {
 	e := SourceError(backend.ErrorSourcePlugin, err, false)
 	return backend.DataResponse{
-		Error:       errors.New(err.Error()),
+		Error:       e,
 		ErrorSource: e.Source,
 		Status:      e.Status,
 	}
