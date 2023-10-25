@@ -49,7 +49,7 @@ func TestResponse(t *testing.T) {
 	}
 }
 
-func TestWithOptions(t *testing.T) {
+func TestResponseWithOptions(t *testing.T) {
 	unknown := New(errors.New("unknown"), backend.ErrorSourcePlugin, backend.StatusUnknown)
 	badgateway := New(errors.New("bad gateway"), backend.ErrorSourceDownstream, backend.StatusBadGateway)
 
