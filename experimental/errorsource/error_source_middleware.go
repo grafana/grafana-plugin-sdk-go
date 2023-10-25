@@ -8,22 +8,26 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
+func New(err error, source backend.ErrorSource, status backend.Status) Error {
+	return Error{err: err, source: source, status: status}
+}
+
 // Error captures error source and implements the error interface
 type Error struct {
-	Source backend.ErrorSource
-	Status backend.Status
+	source backend.ErrorSource
+	status backend.Status
 
-	Err error
+	err error
 }
 
 // Error implements the interface
 func (r Error) Error() string {
-	return r.Err.Error()
+	return r.err.Error()
 }
 
 // Unwrap implements the interface
 func (r Error) Unwrap() error {
-	return r.Err
+	return r.err
 }
 
 // Middleware captures error source metric
@@ -36,7 +40,7 @@ func Middleware(plugin string) httpclient.Middleware {
 				if err == nil {
 					err = errors.New(res.Status)
 				}
-				return nil, &Error{Source: errorSource, Err: err}
+				return nil, &Error{source: errorSource, err: err}
 			}
 			return res, err
 		})
@@ -61,8 +65,8 @@ func SourceError(source backend.ErrorSource, err error, override bool) Error {
 		return sourceError // already has a source
 	}
 	return Error{
-		Source: source,
-		Err:    err,
+		source: source,
+		err:    err,
 	}
 }
 
@@ -79,8 +83,8 @@ func Response(err error) backend.DataResponse {
 	}
 	return backend.DataResponse{
 		Error:       err,
-		ErrorSource: e.Source,
-		Status:      e.Status,
+		ErrorSource: e.source,
+		Status:      e.status,
 	}
 }
 
