@@ -176,13 +176,19 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 			if !status.IsValid() {
 				status = statusFromError(dr.Error)
 			}
+			var sourceError Error
+			if errors.As(dr.Error, &sourceError) {
+				pDR.ErrorSource = string(sourceError.source)
+			}
+		}
+		if pDR.ErrorSource == "" {
+			pDR.ErrorSource = string(dr.ErrorSource)
 		}
 		if status.IsValid() {
 			pDR.Status = int32(status)
 		} else if status == 0 {
 			pDR.Status = int32(StatusOK)
 		}
-		pDR.ErrorSource = string(dr.ErrorSource)
 
 		pQDR.Responses[refID] = &pDR
 	}
