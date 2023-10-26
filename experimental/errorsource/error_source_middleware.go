@@ -18,7 +18,7 @@ func Middleware(plugin string) httpclient.Middleware {
 				if err == nil {
 					err = errors.New(res.Status)
 				}
-				return nil, &Error{source: errorSource, err: err}
+				return nil, Error{source: errorSource, err: err}
 			}
 			return res, err
 		})
