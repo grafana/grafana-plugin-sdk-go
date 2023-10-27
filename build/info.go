@@ -18,18 +18,22 @@ var now = time.Now
 
 // Info See also PluginBuildInfo in https://github.com/grafana/grafana/blob/master/pkg/plugins/models.go
 type Info struct {
-	Time    int64  `json:"time,omitempty"`
-	Version string `json:"version,omitempty"`
-	Repo    string `json:"repo,omitempty"`
-	Branch  string `json:"branch,omitempty"`
-	Hash    string `json:"hash,omitempty"`
-	Build   int64  `json:"build,omitempty"`
-	PR      int64  `json:"pr,omitempty"`
+	Time     int64  `json:"time,omitempty"`
+	PluginID string `json:"pluginID,omitempty"`
+	Version  string `json:"version,omitempty"`
+	Repo     string `json:"repo,omitempty"`
+	Branch   string `json:"branch,omitempty"`
+	Hash     string `json:"hash,omitempty"`
+	Build    int64  `json:"build,omitempty"`
+	PR       int64  `json:"pr,omitempty"`
 }
 
 // this will append build flags -- the keys are picked to match existing
 // grafana build flags from bra
 func (v Info) appendFlags(flags map[string]string) {
+	if v.PluginID != "" {
+		flags["main.pluginID"] = v.PluginID
+	}
 	if v.Version != "" {
 		flags["main.version"] = v.Version
 	}

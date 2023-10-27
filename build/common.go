@@ -10,6 +10,11 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/magefile/mage/mg"
+	"github.com/magefile/mage/sh"
+	bra "github.com/unknwon/bra/cmd"
+	"github.com/urfave/cli"
+
 	"github.com/grafana/grafana-plugin-sdk-go/build/utils"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
 	ca "github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/certificate_authority"
@@ -17,10 +22,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
-	"github.com/magefile/mage/mg"
-	"github.com/magefile/mage/sh"
-	bra "github.com/unknwon/bra/cmd"
-	"github.com/urfave/cli"
 )
 
 var defaultOutputBinaryPath = "dist"
@@ -95,6 +96,10 @@ func buildBackend(cfg Config) error {
 	}
 
 	info := getBuildInfoFromEnvironment()
+	pluginID, err := internal.GetStringValueFromJSON(filepath.Join("src", "plugin.json"), "id")
+	if err == nil && len(pluginID) > 0 {
+		info.PluginID = pluginID
+	}
 	version, err := internal.GetStringValueFromJSON("package.json", "version")
 	if err == nil && len(version) > 0 {
 		info.Version = version
