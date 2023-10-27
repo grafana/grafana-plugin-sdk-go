@@ -18,7 +18,7 @@ const (
 	SamplerTypeConst         SamplerType = "const"
 	SamplerTypeProbabilistic SamplerType = "probabilistic"
 	SamplerTypeRateLimiting  SamplerType = "rateLimiting"
-	SamplerTypeRemote        SamplerType = "Remote"
+	SamplerTypeRemote        SamplerType = "remote"
 )
 
 type SamplerOptions struct {
