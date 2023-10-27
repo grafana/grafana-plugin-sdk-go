@@ -110,7 +110,7 @@ func Serve(opts ServeOpts) error {
 }
 
 // GracefulStandaloneServe starts a gRPC server that is not managed by hashicorp.
-// The provided standalone.Args must have an Address set, or the function returns an error.
+// The provided standalone.Args must have an address set, or the function returns an error.
 // The function handles creating/cleaning up the standalone address file, and graceful GRPC server termination.
 // The function returns after the GRPC server has been terminated.
 func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) error {

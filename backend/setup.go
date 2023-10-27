@@ -28,7 +28,7 @@ var (
 	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT" // nolint:gosec
 
 	// PluginTracingOpenTelemetryOTLPAddressEnv is a constant for the GF_INSTANCE_OTLP_ADDRESS
-	// environment variable used to specify the OTLP Address.
+	// environment variable used to specify the OTLP address.
 	PluginTracingOpenTelemetryOTLPAddressEnv = "GF_INSTANCE_OTLP_ADDRESS" // nolint:gosec
 	// PluginTracingOpenTelemetryOTLPPropagationEnv is a constant for the GF_INSTANCE_OTLP_PROPAGATION
 	// environment variable used to specify the OTLP propagation format.
@@ -128,11 +128,11 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		tracingOpts.CustomAttributes = append(getTracerCustomAttributes(pluginID), tracingOpts.CustomAttributes...)
 
 		// Initialize global tracer provider
-		tp, err := tracerprovider.NewTracerProvider(tracingCfg.Address, tracingCfg.Sampler, tracingOpts)
+		tp, err := tracerprovider.NewTracerProvider(tracingCfg.address, tracingCfg.sampler, tracingOpts)
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
-		pf, err := tracerprovider.NewTextMapPropagator(tracingCfg.Propagation)
+		pf, err := tracerprovider.NewTextMapPropagator(tracingCfg.propagation)
 		if err != nil {
 			return fmt.Errorf("new propagator format: %w", err)
 		}
@@ -141,23 +141,21 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		// Initialize global tracer for plugin developer usage
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
 	}
-	Logger.Debug("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.Propagation)
+	Logger.Debug("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.propagation)
 	return nil
 }
 
 // tracingConfig contains the configuration for OTEL tracing.
 type tracingConfig struct {
-	// TODO: unexport?
+	address     string
+	propagation string
 
-	Address     string
-	Propagation string
-
-	Sampler tracerprovider.SamplerOptions
+	sampler tracerprovider.SamplerOptions
 }
 
 // IsEnabled returns true if OTEL tracing is enabled.
 func (c tracingConfig) IsEnabled() bool {
-	return c.Address != ""
+	return c.address != ""
 }
 
 // getTracingConfig returns a new tracingConfig based on the current environment variables.
@@ -181,9 +179,9 @@ func getTracingConfig() tracingConfig {
 		}
 	}
 	return tracingConfig{
-		Address:     otelAddr,
-		Propagation: otelPropagation,
-		Sampler: tracerprovider.SamplerOptions{
+		address:     otelAddr,
+		propagation: otelPropagation,
+		sampler: tracerprovider.SamplerOptions{
 			SamplerType: tracerprovider.SamplerType(samplerType),
 			Param:       samplerParam,
 			Remote: tracerprovider.RemoteSamplerOptions{
