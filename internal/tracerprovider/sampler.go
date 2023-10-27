@@ -81,7 +81,7 @@ func (rl *rateLimiter) ShouldSample(p tracesdk.SamplingParameters) tracesdk.Samp
 	defer rl.Unlock()
 	psc := trace.SpanContextFromContext(p.ParentContext)
 	if rl.balance >= 1 {
-		rl.balance -= 1
+		rl.balance--
 		return tracesdk.SamplingResult{Decision: tracesdk.RecordAndSample, Tracestate: psc.TraceState()}
 	}
 	currentTime := rl.now()
@@ -89,7 +89,7 @@ func (rl *rateLimiter) ShouldSample(p tracesdk.SamplingParameters) tracesdk.Samp
 	rl.lastTick = currentTime
 	rl.balance = math.Min(rl.maxBalance, rl.balance+elapsedTime*rl.rps)
 	if rl.balance >= 1 {
-		rl.balance -= 1
+		rl.balance--
 		return tracesdk.SamplingResult{Decision: tracesdk.RecordAndSample, Tracestate: psc.TraceState()}
 	}
 	return tracesdk.SamplingResult{Decision: tracesdk.Drop, Tracestate: psc.TraceState()}
