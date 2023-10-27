@@ -10,12 +10,15 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/config"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/fixture"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/storage"
-	"github.com/stretchr/testify/require"
 )
+
+const handlerFoo = "/foo"
 
 func TestProxy(t *testing.T) {
 	t.Run("Append", func(t *testing.T) {
@@ -37,17 +40,17 @@ func TestProxy(t *testing.T) {
 		t.Run("should add new request to store", func(t *testing.T) {
 			proxy, client, s := setupProxy(e2e.ProxyModeAppend)
 			defer s.Close()
-			req, err := http.NewRequest(http.MethodGet, srv.URL+"/foo", nil)
+			req, err := http.NewRequest(http.MethodGet, srv.URL+handlerFoo, nil)
 			require.NoError(t, err)
 			res, err := client.Do(req)
 			require.NoError(t, err)
 			defer res.Body.Close()
-			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
+			require.Equal(t, handlerFoo, proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			require.Equal(t, http.StatusOK, res.StatusCode)
 			resBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
-			require.Equal(t, "/foo", string(resBody))
+			require.Equal(t, handlerFoo, string(resBody))
 		})
 
 		t.Run("should not add or modify existing request", func(t *testing.T) {
@@ -55,7 +58,7 @@ func TestProxy(t *testing.T) {
 			proxy, client, s := setupProxy(e2e.ProxyModeAppend)
 			defer s.Close()
 			// Add an existing request directly to the fixture
-			req, err := http.NewRequest(http.MethodPost, srv.URL+"/foo", bytes.NewBuffer([]byte("bar")))
+			req, err := http.NewRequest(http.MethodPost, srv.URL+handlerFoo, bytes.NewBuffer([]byte("bar")))
 			require.NoError(t, err)
 			req.Header = make(http.Header)
 			res := &http.Response{
@@ -67,13 +70,13 @@ func TestProxy(t *testing.T) {
 			err = proxy.Fixtures[0].Add(req, res)
 			require.NoError(t, err)
 			require.Len(t, proxy.Fixtures[0].Entries(), 1)
-			req, err = http.NewRequest(http.MethodPost, srv.URL+"/foo", bytes.NewBuffer([]byte("bar")))
+			req, err = http.NewRequest(http.MethodPost, srv.URL+handlerFoo, bytes.NewBuffer([]byte("bar")))
 			require.NoError(t, err)
 			resp, err := client.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
 			require.Len(t, proxy.Fixtures[0].Entries(), 1)
-			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
+			require.Equal(t, handlerFoo, proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
@@ -100,17 +103,17 @@ func TestProxy(t *testing.T) {
 		t.Run("should add new request to store", func(t *testing.T) {
 			proxy, client, s := setupProxy(e2e.ProxyModeOverwrite)
 			defer s.Close()
-			req, err := http.NewRequest(http.MethodGet, srv.URL+"/foo", nil)
+			req, err := http.NewRequest(http.MethodGet, srv.URL+handlerFoo, nil)
 			require.NoError(t, err)
 			res, err := client.Do(req)
 			require.NoError(t, err)
 			defer res.Body.Close()
-			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
+			require.Equal(t, handlerFoo, proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			require.Equal(t, http.StatusOK, res.StatusCode)
 			resBody, err := io.ReadAll(res.Body)
 			require.NoError(t, err)
-			require.Equal(t, "/foo", string(resBody))
+			require.Equal(t, handlerFoo, string(resBody))
 		})
 
 		t.Run("should replace existing request", func(t *testing.T) {
@@ -118,7 +121,7 @@ func TestProxy(t *testing.T) {
 			proxy, client, s := setupProxy(e2e.ProxyModeOverwrite)
 			defer s.Close()
 			// Add an existing request directly to the fixture
-			req, err := http.NewRequest(http.MethodGet, srv.URL+"/foo", nil)
+			req, err := http.NewRequest(http.MethodGet, srv.URL+handlerFoo, nil)
 			require.NoError(t, err)
 			req.Header = make(http.Header)
 			req.Body = io.NopCloser(bytes.NewBuffer([]byte("bar")))
@@ -132,11 +135,11 @@ func TestProxy(t *testing.T) {
 			resp, err := client.Do(req)
 			require.NoError(t, err)
 			defer resp.Body.Close()
-			require.Equal(t, "/foo", proxy.Fixtures[0].Entries()[0].Request.URL.Path)
+			require.Equal(t, handlerFoo, proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			body, err := io.ReadAll(resp.Body)
 			require.NoError(t, err)
-			require.Equal(t, "/foo", string(body))
+			require.Equal(t, handlerFoo, string(body))
 		})
 	})
 
