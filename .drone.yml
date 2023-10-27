@@ -16,19 +16,24 @@ trigger:
 
 steps:
 - name: build
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.5
   commands:
   - mage -v build
 
 - name: lint
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.5
   commands:
   - mage -v lint
 
 - name: test
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.5
   commands:
+  # -race requires cgo + a C compiler
+  - apt update
+  - apt install -y gcc
   - mage -v testRace
+  environment:
+    CGO_ENABLED: "1"
 ---
 kind: pipeline
 type: docker
@@ -44,22 +49,27 @@ trigger:
 
 steps:
 - name: build
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.5
   commands:
   - mage -v build
 
 - name: lint
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.5
   commands:
   - mage -v lint
 
 - name: test
-  image: grafana/grafana-plugin-ci:1.8.1-alpine
+  image: grafana/grafana-plugin-ci:1.9.5
   commands:
+  # -race requires cgo + a C compiler
+  - apt update
+  - apt install -y gcc
   - mage -v testRace
+  environment:
+    CGO_ENABLED: "1"
 
 ---
 kind: signature
-hmac: 6f03e7026ce25ca829f7969c38628da6ee4ccdf0f5898b592f95c71f9090a093
+hmac: cee688a6f8ed3ecb1ddd384e349a6556d28b23b298057d8fa02da37ab50b0ba7
 
 ...
