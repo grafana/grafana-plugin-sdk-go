@@ -86,6 +86,7 @@ func AddDownstreamErrorToResponse(refID string, response *backend.QueryDataRespo
 	return AddErrorToResponse(refID, response, DownstreamError(err, false))
 }
 
+// AddErrorToResponse adds the error to the response
 func AddErrorToResponse(refID string, response *backend.QueryDataResponse, err error) *backend.QueryDataResponse {
 	response.Responses[refID] = Response(err)
 	return response
