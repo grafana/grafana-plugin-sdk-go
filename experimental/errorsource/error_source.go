@@ -73,3 +73,20 @@ func Response(err error) backend.DataResponse {
 func FromStatus(status backend.Status) backend.ErrorSource {
 	return backend.ErrorSourceFromHTTPStatus(int(status))
 }
+
+// AddPluginErrorToResponse adds the error as plugin error source to the response
+// if the error already has a source, the existing source will be used
+func AddPluginErrorToResponse(refID string, response *backend.QueryDataResponse, err error) *backend.QueryDataResponse {
+	return AddErrorToResponse(refID, response, PluginError(err, false))
+}
+
+// AddDownstreamErrorToResponse adds the error as downstream source to the response
+// if the error already has a source, the existing source will be used
+func AddDownstreamErrorToResponse(refID string, response *backend.QueryDataResponse, err error) *backend.QueryDataResponse {
+	return AddErrorToResponse(refID, response, DownstreamError(err, false))
+}
+
+func AddErrorToResponse(refID string, response *backend.QueryDataResponse, err error) *backend.QueryDataResponse {
+	response.Responses[refID] = Response(err)
+	return response
+}
