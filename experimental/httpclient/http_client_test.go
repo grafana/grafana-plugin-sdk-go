@@ -2,7 +2,6 @@ package httpclient
 
 import (
 	"errors"
-	"io"
 	"net/http"
 	"net/url"
 	"testing"
@@ -24,11 +23,16 @@ func TestShouldErrorDownstream(t *testing.T) {
 			Host:   "localhost",
 		},
 		Header: http.Header{},
-		Body:   io.NopCloser(&io.PipeReader{}),
 	}
-	defer req.Body.Close()
-	_, err = c.Transport.RoundTrip(&req)
-	assert.NotNil(t, err)
+
+	res, err := c.Transport.RoundTrip(&req)
+	if err == nil {
+		t.Fail()
+		return
+	}
+	if res != nil {
+		defer res.Body.Close()
+	}
 
 	var e errorsource.Error
 	errors.As(err, &e)
