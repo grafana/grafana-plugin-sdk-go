@@ -5,8 +5,8 @@ skip-files = ["data/.*\\.gen\\.go", "data/generic_nullable_vector\\.go", "data/g
 min-confidence = 1
 
 [linters-settings.goconst]
-min-len = 2
-min-occurrences = 2
+min-len = 5
+min-occurrences = 5
 
 [linters-settings.revive]
 ignore-generated-header = false
