@@ -96,7 +96,7 @@ func buildBackend(cfg Config) error {
 	}
 
 	info := getBuildInfoFromEnvironment()
-	pluginID, err := internal.GetStringValueFromJSON(pluginJSONPath, "id")
+	pluginID, err := internal.GetStringValueFromJSON(filepath.Join(pluginJSONPath, "plugin.json"), "id")
 	if err == nil && len(pluginID) > 0 {
 		info.PluginID = pluginID
 	}
