@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -114,6 +115,10 @@ func (c *GrafanaCfg) proxy() Proxy {
 	return Proxy{}
 }
 
-func (c *GrafanaCfg) AppURL() string {
-	return c.config[AppURL]
+func (c *GrafanaCfg) AppURL() (string, error) {
+	url, ok := c.config[AppURL]
+	if !ok {
+		return "", fmt.Errorf("app URL not set in config. May be needed a more recent version of Grafana")
+	}
+	return url, nil
 }
