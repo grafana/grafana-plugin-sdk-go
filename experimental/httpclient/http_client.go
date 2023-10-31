@@ -11,6 +11,9 @@ import (
 // New wraps the existing http client constructor and adds the error source middleware
 func New(opts *httpclient.Options) (*http.Client, error) {
 	id := uuid.New()
+	if len(opts.Middlewares) == 0 {
+		opts.Middlewares = httpclient.DefaultMiddlewares()
+	}
 	opts.Middlewares = append(opts.Middlewares, errorsource.Middleware(id.String()))
 	c, err := httpclient.New(*opts)
 	if err != nil {
