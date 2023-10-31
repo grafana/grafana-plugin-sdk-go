@@ -3,6 +3,7 @@ package errorsource
 import (
 	"errors"
 	"net/http"
+	"syscall"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -19,6 +20,9 @@ func Middleware(plugin string) httpclient.Middleware {
 					err = errors.New(res.Status)
 				}
 				return nil, Error{source: errorSource, err: err}
+			}
+			if errors.Is(err, syscall.ECONNREFUSED) {
+				return nil, Error{source: backend.ErrorSourceDownstream, err: err}
 			}
 			return res, err
 		})

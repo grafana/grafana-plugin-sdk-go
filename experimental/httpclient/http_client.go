@@ -10,12 +10,17 @@ import (
 const name = "errorsource"
 
 // New wraps the existing http client constructor and adds the error source middleware
-func New(opts *httpclient.Options) (*http.Client, error) {
-	if len(opts.Middlewares) == 0 {
-		opts.Middlewares = httpclient.DefaultMiddlewares()
+func New(opts ...httpclient.Options) (*http.Client, error) {
+	if len(opts) == 0 {
+		opts = append(opts, httpclient.Options{
+			Middlewares: httpclient.DefaultMiddlewares(),
+		})
 	}
-	opts.Middlewares = append(opts.Middlewares, errorsource.Middleware(name))
-	c, err := httpclient.New(*opts)
+	if len(opts[0].Middlewares) == 0 {
+		opts[0].Middlewares = httpclient.DefaultMiddlewares()
+	}
+	opts[0].Middlewares = append(opts[0].Middlewares, errorsource.Middleware(name))
+	c, err := httpclient.New(opts...)
 	if err != nil {
 		return nil, err
 	}
