@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/errorsource"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,5 +30,5 @@ func TestShouldErrorDownstream(t *testing.T) {
 	var e errorsource.Error
 	errors.As(err, &e)
 
-	// assert.Equal(t, e.Source)
+	assert.Equal(t, backend.ErrorSourceDownstream, e.Source())
 }
