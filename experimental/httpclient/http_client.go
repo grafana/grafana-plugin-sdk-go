@@ -20,10 +20,5 @@ func New(opts ...httpclient.Options) (*http.Client, error) {
 		opts[0].Middlewares = httpclient.DefaultMiddlewares()
 	}
 	opts[0].Middlewares = append(opts[0].Middlewares, errorsource.Middleware(name))
-	c, err := httpclient.New(opts...)
-	if err != nil {
-		return nil, err
-	}
-
-	return c, nil
+	return httpclient.New(opts...)
 }
