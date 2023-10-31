@@ -118,7 +118,7 @@ func (c *GrafanaCfg) proxy() Proxy {
 func (c *GrafanaCfg) AppURL() (string, error) {
 	url, ok := c.config[AppURL]
 	if !ok {
-		return "", fmt.Errorf("app URL not set in config. May be needed a more recent version of Grafana")
+		return "", fmt.Errorf("app URL not set in config. A more recent version of Grafana may be required")
 	}
 	return url, nil
 }
