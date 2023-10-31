@@ -11,6 +11,9 @@ const name = "errorsource"
 
 // New wraps the existing http client constructor and adds the error source middleware
 func New(opts *httpclient.Options) (*http.Client, error) {
+	if len(opts.Middlewares) == 0 {
+		opts.Middlewares = httpclient.DefaultMiddlewares()
+	}
 	opts.Middlewares = append(opts.Middlewares, errorsource.Middleware(name))
 	c, err := httpclient.New(*opts)
 	if err != nil {
