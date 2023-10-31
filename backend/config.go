@@ -9,6 +9,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
+const (
+	AppURL = "GF_APP_URL"
+)
+
 type configKey struct{}
 
 // GrafanaConfigFromContext returns Grafana config from context.
@@ -108,4 +112,8 @@ func (c *GrafanaCfg) proxy() Proxy {
 		}
 	}
 	return Proxy{}
+}
+
+func (c *GrafanaCfg) AppURL() string {
+	return c.config[AppURL]
 }
