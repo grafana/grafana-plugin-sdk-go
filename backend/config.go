@@ -2,11 +2,16 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
+)
+
+const (
+	AppURL = "GF_APP_URL"
 )
 
 type configKey struct{}
@@ -108,4 +113,12 @@ func (c *GrafanaCfg) proxy() Proxy {
 		}
 	}
 	return Proxy{}
+}
+
+func (c *GrafanaCfg) AppURL() (string, error) {
+	url, ok := c.config[AppURL]
+	if !ok {
+		return "", fmt.Errorf("app URL not set in config. A more recent version of Grafana may be required")
+	}
+	return url, nil
 }

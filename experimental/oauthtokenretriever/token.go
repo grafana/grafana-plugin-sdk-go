@@ -9,12 +9,12 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
 )
 
 const (
-	AppURL        = "GF_APP_URL"
 	AppClientID   = "GF_PLUGIN_APP_CLIENT_ID"
 	AppPrivateKey = "GF_PLUGIN_APP_PRIVATE_KEY"
 	// nolint:gosec
@@ -77,7 +77,7 @@ func (t *tokenRetriever) OnBehalfOfUser(ctx context.Context, userID string) (str
 
 func New() (TokenRetriever, error) {
 	// The Grafana URL is required to obtain tokens later on
-	grafanaAppURL := strings.TrimRight(os.Getenv(AppURL), "/")
+	grafanaAppURL := strings.TrimRight(os.Getenv(backend.AppURL), "/")
 	if grafanaAppURL == "" {
 		// For debugging purposes only
 		grafanaAppURL = "http://localhost:3000"
