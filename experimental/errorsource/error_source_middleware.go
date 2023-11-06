@@ -23,10 +23,10 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 			if err == nil {
 				err = errors.New(res.Status)
 			}
-			return nil, Error{source: errorSource, err: err}
+			return res, Error{source: errorSource, err: err}
 		}
 		if errors.Is(err, syscall.ECONNREFUSED) {
-			return nil, Error{source: backend.ErrorSourceDownstream, err: err}
+			return res, Error{source: backend.ErrorSourceDownstream, err: err}
 		}
 		return res, err
 	})
