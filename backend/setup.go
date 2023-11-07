@@ -122,7 +122,7 @@ func getTracerCustomAttributes(pluginID string) []attribute.KeyValue {
 // SetupTracer sets up the global OTEL trace provider and tracer.
 func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	// Set up tracing
-	tracingCfg := getTracingConfig()
+	tracingCfg := getTracingConfig(build.GetBuildInfo)
 	if tracingCfg.IsEnabled() {
 		// Append custom attributes to the default ones
 		tracingOpts.CustomAttributes = append(getTracerCustomAttributes(pluginID), tracingOpts.CustomAttributes...)
@@ -159,8 +159,9 @@ func (c tracingConfig) IsEnabled() bool {
 }
 
 // getTracingConfig returns a new tracingConfig based on the current environment variables.
-func getTracingConfig() tracingConfig {
-	var otelAddr, otelPropagation, samplerType, samplerRemoteURL, samplerParamString string
+func getTracingConfig(buildInfoGetter build.InfoGetter) tracingConfig {
+	var otelAddr, otelPropagation, samplerRemoteURL, samplerParamString string
+	var samplerType tracerprovider.SamplerType
 	var samplerParam float64
 	otelAddr, ok := os.LookupEnv(PluginTracingOpenTelemetryOTLPAddressEnv)
 	if ok {
@@ -168,7 +169,7 @@ func getTracingConfig() tracingConfig {
 		otelPropagation = os.Getenv(PluginTracingOpenTelemetryOTLPPropagationEnv)
 
 		// Sampling config
-		samplerType = os.Getenv(PluginTracingSamplerTypeEnv)
+		samplerType = tracerprovider.SamplerType(os.Getenv(PluginTracingSamplerTypeEnv))
 		samplerRemoteURL = os.Getenv(PluginTracingSamplerRemoteURL)
 		samplerParamString = os.Getenv(PluginTracingSamplerParamEnv)
 		var err error
@@ -179,18 +180,21 @@ func getTracingConfig() tracingConfig {
 		}
 	}
 
-	// Use plugin id as service name, if possible. Otherwise, use a generic default value.
-	bi, _ := build.GetBuildInfo()
-	serviceName := bi.PluginID
-	if serviceName == "" {
-		serviceName = "grafana-plugin"
+	var serviceName string
+	if samplerType == tracerprovider.SamplerTypeRemote {
+		// Use plugin id as service name, if possible. Otherwise, use a generic default value.
+		bi, _ := buildInfoGetter.GetInfo()
+		serviceName = bi.PluginID
+		if serviceName == "" {
+			serviceName = "grafana-plugin"
+		}
 	}
-	
+
 	return tracingConfig{
 		address:     otelAddr,
 		propagation: otelPropagation,
 		sampler: tracerprovider.SamplerOptions{
-			SamplerType: tracerprovider.SamplerType(samplerType),
+			SamplerType: samplerType,
 			Param:       samplerParam,
 			Remote: tracerprovider.RemoteSamplerOptions{
 				URL:         samplerRemoteURL,

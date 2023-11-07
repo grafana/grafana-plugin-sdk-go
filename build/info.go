@@ -111,13 +111,26 @@ func getBuildInfoFromEnvironment() Info {
 	return v
 }
 
-// GetBuildInfo returns the build information that was compiled into the binary using:
+// InfoGetter is an interface with a method for returning the build info.
+type InfoGetter interface {
+	// GetInfo returns the build info.
+	GetInfo() (Info, error)
+}
+
+// InfoGetterFunc can be used to adapt ordinary functions into types satisfying the InfoGetter interface .
+type InfoGetterFunc func() (Info, error)
+
+func (f InfoGetterFunc) GetInfo() (Info, error) {
+	return f()
+}
+
+// GetBuildInfo is the default InfoGetter that returns the build information that was compiled into the binary using:
 // -X `github.com/grafana/grafana-plugin-sdk-go/build.buildInfoJSON={...}`
-func GetBuildInfo() (Info, error) {
+var GetBuildInfo = InfoGetterFunc(func() (Info, error) {
 	v := Info{}
 	if buildInfoJSON == "" {
 		return v, fmt.Errorf("build info was now set when this was compiled")
 	}
 	err := json.Unmarshal([]byte(buildInfoJSON), &v)
 	return v, err
-}
+})
