@@ -178,6 +178,14 @@ func getTracingConfig() tracingConfig {
 			samplerParam = 1.0
 		}
 	}
+
+	// Use plugin id as service name, if possible. Otherwise, use a generic default value.
+	bi, _ := build.GetBuildInfo()
+	serviceName := bi.PluginID
+	if serviceName == "" {
+		serviceName = "grafana-plugin"
+	}
+	
 	return tracingConfig{
 		address:     otelAddr,
 		propagation: otelPropagation,
@@ -185,9 +193,8 @@ func getTracingConfig() tracingConfig {
 			SamplerType: tracerprovider.SamplerType(samplerType),
 			Param:       samplerParam,
 			Remote: tracerprovider.RemoteSamplerOptions{
-				URL: samplerRemoteURL,
-				// TODO: change
-				ServiceName: "grafana-plugin",
+				URL:         samplerRemoteURL,
+				ServiceName: serviceName,
 			},
 		},
 	}
