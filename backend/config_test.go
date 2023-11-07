@@ -119,3 +119,20 @@ func TestConfig(t *testing.T) {
 		}
 	})
 }
+
+func TestAppURL(t *testing.T) {
+	t.Run("it should return the configured app URL", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			AppURL: "http://localhost:3000",
+		})
+		url, err := cfg.AppURL()
+		require.NoError(t, err)
+		require.Equal(t, "http://localhost:3000", url)
+	})
+
+	t.Run("it should return an error if the app URL is missing", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{})
+		_, err := cfg.AppURL()
+		require.Error(t, err)
+	})
+}
