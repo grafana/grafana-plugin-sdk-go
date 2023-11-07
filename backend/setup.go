@@ -16,7 +16,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 )
 
-var (
+const (
 	// PluginProfilerEnvDeprecated is a deprecated constant for the GF_PLUGINS_PROFILER environment variable used to enable pprof.
 	PluginProfilerEnvDeprecated = "GF_PLUGINS_PROFILER"
 	// PluginProfilingEnabledEnv is a constant for the GF_PLUGIN_PROFILING_ENABLED environment variable used to enable pprof.
@@ -41,6 +41,8 @@ var (
 	// PluginVersionEnv is a constant for the GF_PLUGIN_VERSION environment variable containing the plugin's version.
 	// Deprecated: Use build.GetBuildInfo().Version instead.
 	PluginVersionEnv = "GF_PLUGIN_VERSION"
+
+	defaultServiceName = "grafana-plugin"
 )
 
 // SetupPluginEnvironment will read the environment variables and apply the
@@ -141,7 +143,12 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		// Initialize global tracer for plugin developer usage
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
 	}
-	Logger.Debug("Tracing", "enabled", tracingCfg.IsEnabled(), "propagation", tracingCfg.propagation)
+	Logger.Debug(
+		"Tracing",
+		"enabled", tracingCfg.IsEnabled(),
+		"propagation", tracingCfg.propagation,
+		"sampler", fmt.Sprintf("%+v", tracingCfg.sampler),
+	)
 	return nil
 }
 
@@ -186,7 +193,7 @@ func getTracingConfig(buildInfoGetter build.InfoGetter) tracingConfig {
 		bi, _ := buildInfoGetter.GetInfo()
 		serviceName = bi.PluginID
 		if serviceName == "" {
-			serviceName = "grafana-plugin"
+			serviceName = defaultServiceName
 		}
 	}
 
