@@ -150,7 +150,8 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		"propagation", tracingCfg.propagation,
 		"samplerType", tracingCfg.sampler.SamplerType,
 		"samplerParam", tracingCfg.sampler.Param,
-		"samplerRemote", tracingCfg.sampler.Remote,
+		"samplerRemoteURL", tracingCfg.sampler.Remote.URL,
+		"samplerRemoteServiceName", tracingCfg.sampler.Remote.ServiceName,
 	)
 	return nil
 }
