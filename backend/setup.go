@@ -42,7 +42,7 @@ const (
 	// Deprecated: Use build.GetBuildInfo().Version instead.
 	PluginVersionEnv = "GF_PLUGIN_VERSION"
 
-	defaultServiceName = "grafana-plugin"
+	defaultRemoteSamplerServiceName = "grafana-plugin"
 )
 
 // SetupPluginEnvironment will read the environment variables and apply the
@@ -190,17 +190,10 @@ func getTracingConfig(buildInfoGetter build.InfoGetter) tracingConfig {
 			samplerParam = 1.0
 		}
 	}
-
 	var serviceName string
 	if samplerType == tracerprovider.SamplerTypeRemote {
-		// Use plugin id as service name, if possible. Otherwise, use a generic default value.
-		bi, _ := buildInfoGetter.GetInfo()
-		serviceName = bi.PluginID
-		if serviceName == "" {
-			serviceName = defaultServiceName
-		}
+		serviceName = remoteSamplerServiceName(buildInfoGetter)
 	}
-
 	return tracingConfig{
 		address:     otelAddr,
 		propagation: otelPropagation,
@@ -213,4 +206,19 @@ func getTracingConfig(buildInfoGetter build.InfoGetter) tracingConfig {
 			},
 		},
 	}
+}
+
+// remoteSamplerServiceName returns the service name for the remote tracing sampler.
+// It attempts to get it from the provided buildinfo getter. If unsuccessful or empty,
+// defaultRemoteSamplerServiceName is returned instead.
+func remoteSamplerServiceName(buildInfoGetter build.InfoGetter) string {
+	// Use plugin id as service name, if possible. Otherwise, use a generic default value.
+	bi, err := buildInfoGetter.GetInfo()
+	if err != nil {
+		return defaultRemoteSamplerServiceName
+	}
+	if bi.PluginID == "" {
+		return defaultRemoteSamplerServiceName
+	}
+	return bi.PluginID
 }
