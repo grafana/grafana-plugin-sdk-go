@@ -143,11 +143,14 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		// Initialize global tracer for plugin developer usage
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
 	}
+
 	Logger.Debug(
 		"Tracing",
 		"enabled", tracingCfg.IsEnabled(),
 		"propagation", tracingCfg.propagation,
-		"sampler", fmt.Sprintf("%+v", tracingCfg.sampler),
+		"samplerType", tracingCfg.sampler.SamplerType,
+		"samplerParam", tracingCfg.sampler.Param,
+		"samplerRemote", tracingCfg.sampler.Remote,
 	)
 	return nil
 }
