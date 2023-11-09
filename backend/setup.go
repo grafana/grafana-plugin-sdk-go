@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/build"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
@@ -199,6 +200,10 @@ func getTracingConfig(buildInfoGetter build.InfoGetter) tracingConfig {
 		samplerParam, err = strconv.ParseFloat(samplerParamString, 64)
 		if err != nil {
 			// Default value if invalid float is provided is 1.0 (AlwaysSample)
+			log.DefaultLogger.Warn(
+				"Could not parse sampler param to float, defaulting to 1.0",
+				"samplerParam", samplerParamString,
+			)
 			samplerParam = 1.0
 		}
 	}
@@ -227,6 +232,7 @@ func remoteSamplerServiceName(buildInfoGetter build.InfoGetter) string {
 	// Use plugin id as service name, if possible. Otherwise, use a generic default value.
 	bi, err := buildInfoGetter.GetInfo()
 	if err != nil {
+		log.DefaultLogger.Warn("Could not get build info for remote sampler service name", "error", err)
 		return defaultRemoteSamplerServiceName
 	}
 	if bi.PluginID == "" {
