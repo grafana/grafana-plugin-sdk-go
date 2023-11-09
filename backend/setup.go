@@ -34,14 +34,26 @@ const (
 	// environment variable used to specify the OTLP propagation format.
 	PluginTracingOpenTelemetryOTLPPropagationEnv = "GF_INSTANCE_OTLP_PROPAGATION"
 
-	PluginTracingSamplerTypeEnv   = "GF_INSTANCE_OTLP_SAMPLER_TYPE"
-	PluginTracingSamplerParamEnv  = "GF_INSTANCE_OTLP_SAMPLER_PARAM"
+	// PluginTracingSamplerTypeEnv is a constant for the GF_INSTANCE_OTLP_SAMPLER_TYPE
+	// environment variable used to specify the OTLP sampler type.
+	PluginTracingSamplerTypeEnv = "GF_INSTANCE_OTLP_SAMPLER_TYPE"
+
+	// PluginTracingSamplerParamEnv is a constant for the GF_INSTANCE_OTLP_SAMPLER_PARAM
+	// environment variable used to specify an additional float parameter used by the OTLP sampler,
+	// depending on the type.
+	PluginTracingSamplerParamEnv = "GF_INSTANCE_OTLP_SAMPLER_PARAM"
+
+	// PluginTracingSamplerRemoteURL is a constant for the GF_INSTANCE_OTLP_SAMPLER_REMOTE_URL
+	// environment variable used to specify the remote url for the sampler type. This is relevant
+	// only when GF_INSTANCE_OTLP_SAMPLER_TYPE is "remote".
 	PluginTracingSamplerRemoteURL = "GF_INSTANCE_OTLP_SAMPLER_REMOTE_URL"
 
 	// PluginVersionEnv is a constant for the GF_PLUGIN_VERSION environment variable containing the plugin's version.
 	// Deprecated: Use build.GetBuildInfo().Version instead.
 	PluginVersionEnv = "GF_PLUGIN_VERSION"
 
+	// defaultRemoteSamplerServiceName is the default service name passed to the remote sampler when it cannot be
+	// determined from the build info.
 	defaultRemoteSamplerServiceName = "grafana-plugin"
 )
 
