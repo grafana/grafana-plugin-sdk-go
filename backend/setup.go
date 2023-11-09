@@ -202,7 +202,7 @@ func getTracingConfig(buildInfoGetter build.InfoGetter) tracingConfig {
 			// Default value if invalid float is provided is 1.0 (AlwaysSample)
 			log.DefaultLogger.Warn(
 				"Could not parse sampler param to float, defaulting to 1.0",
-				"samplerParam", samplerParamString,
+				"samplerParam", samplerParamString, "error", err,
 			)
 			samplerParam = 1.0
 		}
