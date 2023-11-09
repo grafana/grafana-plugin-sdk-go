@@ -118,7 +118,7 @@ func TestGetTracingConfig(t *testing.T) {
 				tc.buildInfoGetter = build.GetBuildInfo
 			}
 			cfg := getTracingConfig(tc.buildInfoGetter)
-			require.Equal(t, tc.expEnabled, cfg.IsEnabled())
+			require.Equal(t, tc.expEnabled, cfg.isEnabled())
 			require.Equal(t, tc.expCfg, cfg)
 		})
 	}

@@ -137,7 +137,7 @@ func getTracerCustomAttributes(pluginID string) []attribute.KeyValue {
 func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	// Set up tracing
 	tracingCfg := getTracingConfig(build.GetBuildInfo)
-	if tracingCfg.IsEnabled() {
+	if tracingCfg.isEnabled() {
 		// Append custom attributes to the default ones
 		tracingOpts.CustomAttributes = append(getTracerCustomAttributes(pluginID), tracingOpts.CustomAttributes...)
 
@@ -158,7 +158,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 
 	Logger.Debug(
 		"Tracing",
-		"enabled", tracingCfg.IsEnabled(),
+		"enabled", tracingCfg.isEnabled(),
 		"propagation", tracingCfg.propagation,
 		"samplerType", tracingCfg.sampler.SamplerType,
 		"samplerParam", tracingCfg.sampler.Param,
@@ -176,8 +176,8 @@ type tracingConfig struct {
 	sampler tracerprovider.SamplerOptions
 }
 
-// IsEnabled returns true if OTEL tracing is enabled.
-func (c tracingConfig) IsEnabled() bool {
+// isEnabled returns true if OTEL tracing is enabled.
+func (c tracingConfig) isEnabled() bool {
 	return c.address != ""
 }
 
