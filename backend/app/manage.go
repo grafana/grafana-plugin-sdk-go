@@ -2,6 +2,7 @@ package app
 
 import (
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -25,7 +26,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	// If we are running in build info mode, run that and exit
 	if buildinfo.InfoModeEnabled() {
 		if err := buildinfo.RunInfoMode(); err != nil {
-			os.Exit(1)
+			log.Fatalln(err)
 			return err
 		}
 		os.Exit(0)
