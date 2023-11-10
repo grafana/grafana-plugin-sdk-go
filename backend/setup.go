@@ -157,15 +157,18 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
 	}
 
-	Logger.Debug(
-		"Tracing",
-		"enabled", tracingCfg.isEnabled(),
-		"propagation", tracingCfg.propagation,
-		"samplerType", tracingCfg.sampler.SamplerType,
-		"samplerParam", tracingCfg.sampler.Param,
-		"samplerRemoteURL", tracingCfg.sampler.Remote.URL,
-		"samplerRemoteServiceName", tracingCfg.sampler.Remote.ServiceName,
-	)
+	enabled := tracingCfg.isEnabled()
+	Logger.Debug("Tracing", "enabled", enabled)
+	if enabled {
+		Logger.Debug(
+			"Tracing configuration",
+			"propagation", tracingCfg.propagation,
+			"samplerType", tracingCfg.sampler.SamplerType,
+			"samplerParam", tracingCfg.sampler.Param,
+			"samplerRemoteURL", tracingCfg.sampler.Remote.URL,
+			"samplerRemoteServiceName", tracingCfg.sampler.Remote.ServiceName,
+		)
+	}
 	return nil
 }
 
