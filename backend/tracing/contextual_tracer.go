@@ -5,6 +5,7 @@ import (
 
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/embedded"
 
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
@@ -16,6 +17,8 @@ const (
 // contextualTracer is a wrapper around a trace.Tracer that adds contextual attributes to spans.
 // This is the default tracer used by the SDK.
 type contextualTracer struct {
+	embedded.Tracer
+
 	tracer trace.Tracer
 }
 
