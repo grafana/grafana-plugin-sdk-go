@@ -15,6 +15,7 @@ import (
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 )
@@ -39,7 +40,7 @@ func (noopTracerProvider) Shutdown(_ context.Context) error {
 
 // newNoOpTracerProvider returns a new noopTracerProvider.
 func newNoOpTracerProvider() TracerProvider {
-	return &noopTracerProvider{TracerProvider: trace.NewNoopTracerProvider()}
+	return &noopTracerProvider{TracerProvider: noop.NewTracerProvider()}
 }
 
 // newOtelTracerProvider returns a new OpenTelemetry TracerProvider with default options, for the provided
