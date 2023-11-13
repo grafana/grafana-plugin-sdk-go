@@ -16,6 +16,7 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattetti/filebuffer"
+	"github.com/modern-go/reflect2"
 )
 
 const simpleTypeString = "string"
@@ -276,14 +277,12 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			}
 
 			field := frame.Fields[0]
-			first := make([]interface{}, 0)
-			iter.ReadVal(&first)
-			vec, err := jsonValuesToVector(field.Type(), first)
+			vec, err := jsonValuesToVector(iter, field.Type())
 			if err != nil {
 				return err
 			}
 			field.vector = vec
-			size := len(first)
+			size := vec.Len()
 
 			addNanos := func() {
 				if readNanos {
@@ -420,7 +419,35 @@ func int64FromJSON(v interface{}) (int64, error) {
 	return 0, fmt.Errorf("unable to convert int64 in json [%T]", v)
 }
 
-func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
+func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
+	switch ft {
+	case FieldTypeUint64:
+		u, err := readArrayOfNumbers[uint64](iter, func(s string) (uint64, error) {
+			return strconv.ParseUint(s, 0, 64)
+		}, func() uint64 {
+			return iter.ReadUint64()
+		})
+		if err != nil {
+			return nil, err
+		}
+		return newUint64VectorWithValues(u), nil
+	case FieldTypeNullableUint64:
+		u, err := readArrayOfNumbers[*uint64](iter, func(s string) (*uint64, error) {
+			u, err := strconv.ParseUint(s, 0, 64)
+			if err != nil {
+				return nil, err
+			}
+			return &u, nil
+		}, func() *uint64 {
+			u := iter.ReadUint64()
+			return &u
+		})
+		if err != nil {
+			return nil, err
+		}
+		return newNullableUint64VectorWithValues(u), nil
+	}
+
 	convert := func(v interface{}) (interface{}, error) {
 		return v, nil
 	}
@@ -458,13 +485,6 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 			iV, err := int64FromJSON(v)
 			return uint32(iV), err
 		}
-
-	case FieldTypeUint64:
-		convert = func(v interface{}) (interface{}, error) {
-			iV, err := int64FromJSON(v)
-			return uint64(iV), err
-		}
-
 	case FieldTypeInt8:
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
@@ -524,6 +544,11 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 		}
 	}
 
+	arr := make([]interface{}, 0)
+	iter.ReadVal(&arr)
+	if iter.Error != nil {
+		return nil, iter.Error
+	}
 	f := NewFieldFromFieldType(ft, len(arr))
 	for i, v := range arr {
 		if v != nil {
@@ -537,14 +562,45 @@ func jsonValuesToVector(ft FieldType, arr []interface{}) (vector, error) {
 	return f.vector, nil
 }
 
+func readArrayOfNumbers[T any](iter *jsoniter.Iterator, parse func(string) (T, error), reader func() T) ([]T, error) {
+	if iter.Error != nil {
+		return nil, iter.Error
+	}
+	var def T
+	var result []T
+	for iter.ReadArray() {
+		switch iter.WhatIsNext() {
+		case jsoniter.StringValue:
+			str := iter.ReadString()
+			u, err := parse(str)
+			if err != nil {
+				iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "cannot parse string")
+			} else {
+				result = append(result, u)
+			}
+		case jsoniter.NilValue:
+			if reflect2.IsNil(def) {
+				result = append(result, def)
+			} else {
+				iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "value cannot be null")
+			}
+		case jsoniter.NumberValue:
+			u := reader()
+			result = append(result, u)
+		default:
+			iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), fmt.Sprintf("expected string or number but got %s", iter.WhatIsNext()))
+		}
+
+		if iter.Error != nil {
+			return nil, iter.Error
+		}
+
+	}
+	return result, nil
+}
+
 // nolint:gocyclo
 func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error) {
-	if false {
-		first := make([]interface{}, 0)
-		iter.ReadVal(&first)
-		return jsonValuesToVector(ft, first)
-	}
-
 	switch ft {
 	// Manual
 	case FieldTypeTime:
