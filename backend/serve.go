@@ -85,11 +85,11 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	grpcMiddlewares := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			otelgrpc.StreamServerInterceptor(),
+			otelgrpc.StreamServerInterceptor(), //nolint:staticcheck
 			grpc_prometheus.StreamServerInterceptor,
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			otelgrpc.UnaryServerInterceptor(),
+			otelgrpc.UnaryServerInterceptor(), //nolint:staticcheck
 			grpc_prometheus.UnaryServerInterceptor,
 		)),
 	}
