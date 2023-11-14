@@ -11,12 +11,15 @@ import (
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/embedded"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 )
 
-type mockTracerProvider struct{}
+type mockTracerProvider struct {
+	embedded.TracerProvider
+}
 
 var _ trace.TracerProvider = mockTracerProvider{}
 
@@ -25,6 +28,8 @@ func (p mockTracerProvider) Tracer(string, ...trace.TracerOption) trace.Tracer {
 }
 
 type mockTracer struct {
+	embedded.Tracer
+
 	spans []*mockSpan
 }
 
@@ -41,6 +46,8 @@ func (t *mockTracer) Start(ctx context.Context, name string, opts ...trace.SpanS
 
 // mockSpan is an implementation of Span that preforms no operations.
 type mockSpan struct {
+	embedded.Span
+
 	name  string
 	ended bool
 

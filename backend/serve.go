@@ -78,6 +78,18 @@ func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	return pluginOpts
 }
 
+// grpcServerOptions returns a new []grpc.ServerOption that can be passed to grpc.NewServer.
+// The returned options are the default ones, and any customOpts are appended at the end.
+// The default options are:
+//   - default middlewares (see defaultGRPCMiddlewares)
+//   - otel grpc stats handler (see otelgrpc.NewServerHandler)
+func grpcServerOptions(serveOpts ServeOpts, customOpts ...grpc.ServerOption) []grpc.ServerOption {
+	options := defaultGRPCMiddlewares(serveOpts)
+	options = append(options, grpc.StatsHandler(otelgrpc.NewServerHandler()))
+	options = append(options, customOpts...)
+	return options
+}
+
 func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	if opts.GRPCSettings.MaxReceiveMsgSize <= 0 {
 		opts.GRPCSettings.MaxReceiveMsgSize = defaultServerMaxReceiveMessageSize
@@ -85,11 +97,9 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	grpcMiddlewares := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize),
 		grpc.StreamInterceptor(grpc_middleware.ChainStreamServer(
-			otelgrpc.StreamServerInterceptor(),
 			grpc_prometheus.StreamServerInterceptor,
 		)),
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			otelgrpc.UnaryServerInterceptor(),
 			grpc_prometheus.UnaryServerInterceptor,
 		)),
 	}
@@ -103,8 +113,8 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 func Serve(opts ServeOpts) error {
 	grpc_prometheus.EnableHandlingTimeHistogram()
 	pluginOpts := asGRPCServeOpts(opts)
-	pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
-		return grpc.NewServer(append(defaultGRPCMiddlewares(opts), grpcOptions...)...)
+	pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
+		return grpc.NewServer(grpcServerOptions(opts, customOptions...)...)
 	}
 	return grpcplugin.Serve(pluginOpts)
 }
@@ -155,8 +165,8 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 	// Start GRPC server
 	pluginOpts := asGRPCServeOpts(dsopts)
 	if pluginOpts.GRPCServer == nil {
-		pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
-			return grpc.NewServer(append(defaultGRPCMiddlewares(dsopts), grpcOptions...)...)
+		pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
+			return grpc.NewServer(grpcServerOptions(dsopts, customOptions...)...)
 		}
 	}
 
@@ -257,8 +267,8 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	pluginOpts := asGRPCServeOpts(opts)
 	if pluginOpts.GRPCServer == nil {
-		pluginOpts.GRPCServer = func(grpcOptions []grpc.ServerOption) *grpc.Server {
-			return grpc.NewServer(append(defaultGRPCMiddlewares(opts), grpcOptions...)...)
+		pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
+			return grpc.NewServer(grpcServerOptions(opts, customOptions...)...)
 		}
 	}
 
