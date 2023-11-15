@@ -16,7 +16,6 @@ import (
 	"github.com/apache/arrow/go/v13/arrow/ipc"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattetti/filebuffer"
-	"github.com/modern-go/reflect2"
 
 	"github.com/grafana/grafana-plugin-sdk-go/internal/jsonitere"
 )
@@ -425,28 +424,32 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	itere := jsonitere.NewIterator(iter)
 	// we handle Uint64 differently because the regular method for unmarshalling to []any does not work for uint64 correctly
 	// due to jsoniter parsing logic that automatically converts all numbers to float64.
+	// We can't use readUint64VectorJSON here because the size of the array is not known and the function requires the length parameter
 	switch ft {
 	case FieldTypeUint64:
-		u, err := readArrayOfNumbers[uint64](itere, func(s string) (uint64, error) {
+		parseUint64 := func(s string) (uint64, error) {
 			return strconv.ParseUint(s, 0, 64)
-		}, itere.ReadUint64)
+		}
+		u, err := readArrayOfNumbers[uint64](itere, parseUint64, itere.ReadUint64)
 		if err != nil {
 			return nil, err
 		}
 		return newUint64VectorWithValues(u), nil
 	case FieldTypeNullableUint64:
-		u, err := readArrayOfNumbers[*uint64](itere, func(s string) (*uint64, error) {
+		parseUint64 := func(s string) (*uint64, error) {
 			u, err := strconv.ParseUint(s, 0, 64)
 			if err != nil {
 				return nil, err
 			}
 			return &u, nil
-		}, itere.ReadUint64Pointer)
+		}
+		u, err := readArrayOfNumbers[*uint64](itere, parseUint64, itere.ReadUint64Pointer)
 		if err != nil {
 			return nil, err
 		}
 		return newNullableUint64VectorWithValues(u), nil
 	}
+	// if it's not uint64 field, handle the array the old way
 
 	convert := func(v interface{}) (interface{}, error) {
 		return v, nil
@@ -586,15 +589,16 @@ func readArrayOfNumbers[T any](iter *jsonitere.Iterator, parse func(string) (T, 
 			u, err := parse(str)
 			if err != nil {
 				return nil, iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "cannot parse string")
-			} else {
-				result = append(result, u)
 			}
+			result = append(result, u)
 		case jsoniter.NilValue:
-			if reflect2.IsNil(def) {
-				result = append(result, def)
-			} else {
-				return nil, iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "value cannot be null")
+			_, err := iter.ReadNil()
+			if err != nil {
+				return nil, err
 			}
+			// add T's default value. For reference type it will be nil, for value types the default value such as 0, false, ""
+			// This is the same logic as in `read<Type>VectorJSON`
+			result = append(result, def)
 		default: // read as a number, if it is not expected field type, there will be error.
 			u, err := reader()
 			if err != nil {
