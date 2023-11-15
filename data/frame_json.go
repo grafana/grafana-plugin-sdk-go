@@ -1331,8 +1331,3 @@ func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 	}
 	return arr, nil
 }
-
-func appendDefault[T any](t []T) []T {
-	var def T
-	return append(t, def)
-}
