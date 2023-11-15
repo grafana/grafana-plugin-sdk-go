@@ -12,8 +12,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// RESTClient interface
-type RESTClient interface {
+// Client interface
+type Client interface {
 	Fetch(ctx context.Context, uriPath string, uriQuery string) (*http.Response, error)
 }
 
@@ -26,7 +26,7 @@ type Input struct {
 
 // API takes calls from the host, using the client to retrieve data from rest apis.
 type API struct {
-	Client         RESTClient
+	Client         Client
 	Routes         map[string]string
 	DefaultParams  map[string]string
 	ErrorFormatter func(string) string
