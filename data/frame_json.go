@@ -17,6 +17,8 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattetti/filebuffer"
 	"github.com/modern-go/reflect2"
+
+	"github.com/grafana/grafana-plugin-sdk-go/internal/jsonitere"
 )
 
 const simpleTypeString = "string"
@@ -420,28 +422,26 @@ func int64FromJSON(v interface{}) (int64, error) {
 }
 
 func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
+	itere := jsonitere.NewIterator(iter)
+	// we handle Uint64 differently because the regular method for unmarshalling to []any does not work for uint64 correctly
+	// due to jsoniter parsing logic that automatically converts all numbers to float64.
 	switch ft {
 	case FieldTypeUint64:
-		u, err := readArrayOfNumbers[uint64](iter, func(s string) (uint64, error) {
+		u, err := readArrayOfNumbers[uint64](itere, func(s string) (uint64, error) {
 			return strconv.ParseUint(s, 0, 64)
-		}, func() uint64 {
-			return iter.ReadUint64()
-		})
+		}, itere.ReadUint64)
 		if err != nil {
 			return nil, err
 		}
 		return newUint64VectorWithValues(u), nil
 	case FieldTypeNullableUint64:
-		u, err := readArrayOfNumbers[*uint64](iter, func(s string) (*uint64, error) {
+		u, err := readArrayOfNumbers[*uint64](itere, func(s string) (*uint64, error) {
 			u, err := strconv.ParseUint(s, 0, 64)
 			if err != nil {
 				return nil, err
 			}
 			return &u, nil
-		}, func() *uint64 {
-			u := iter.ReadUint64()
-			return &u
-		})
+		}, itere.ReadUint64Pointer)
 		if err != nil {
 			return nil, err
 		}
@@ -545,9 +545,9 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	}
 
 	arr := make([]interface{}, 0)
-	iter.ReadVal(&arr)
-	if iter.Error != nil {
-		return nil, iter.Error
+	err := itere.ReadVal(&arr)
+	if err != nil {
+		return nil, err
 	}
 	f := NewFieldFromFieldType(ft, len(arr))
 	for i, v := range arr {
@@ -562,19 +562,30 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	return f.vector, nil
 }
 
-func readArrayOfNumbers[T any](iter *jsoniter.Iterator, parse func(string) (T, error), reader func() T) ([]T, error) {
-	if iter.Error != nil {
-		return nil, iter.Error
-	}
+func readArrayOfNumbers[T any](iter *jsonitere.Iterator, parse func(string) (T, error), reader func() (T, error)) ([]T, error) {
 	var def T
 	var result []T
-	for iter.ReadArray() {
-		switch iter.WhatIsNext() {
+	for {
+		next, err := iter.ReadArray()
+		if err != nil {
+			return nil, err
+		}
+		if !next {
+			break
+		}
+		nextType, err := iter.WhatIsNext()
+		if err != nil {
+			return nil, err
+		}
+		switch nextType {
 		case jsoniter.StringValue:
-			str := iter.ReadString()
+			str, err := iter.ReadString()
+			if err != nil {
+				return nil, err
+			}
 			u, err := parse(str)
 			if err != nil {
-				iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "cannot parse string")
+				return nil, iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "cannot parse string")
 			} else {
 				result = append(result, u)
 			}
@@ -582,19 +593,15 @@ func readArrayOfNumbers[T any](iter *jsoniter.Iterator, parse func(string) (T, e
 			if reflect2.IsNil(def) {
 				result = append(result, def)
 			} else {
-				iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "value cannot be null")
+				return nil, iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "value cannot be null")
 			}
-		case jsoniter.NumberValue:
-			u := reader()
+		default: // read as a number, if it is not expected field type, there will be error.
+			u, err := reader()
+			if err != nil {
+				return nil, err
+			}
 			result = append(result, u)
-		default:
-			iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), fmt.Sprintf("expected string or number but got %s", iter.WhatIsNext()))
 		}
-
-		if iter.Error != nil {
-			return nil, iter.Error
-		}
-
 	}
 	return result, nil
 }
@@ -1323,4 +1330,9 @@ func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 		return nil, iter.Error
 	}
 	return arr, nil
+}
+
+func appendDefault[T any](t []T) []T {
+	var def T
+	return append(t, def)
 }
