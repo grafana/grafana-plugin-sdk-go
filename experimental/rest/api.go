@@ -33,7 +33,7 @@ type API struct {
 }
 
 // Call rest api and convert to dataframes.
-func (api *API) Call(context context.Context, kind string, inputs []Input) ([]*data.Frame, error) {
+func (api *API) Call(ctx context.Context, kind string, inputs []Input) ([]*data.Frame, error) {
 	path, params := api.GetPathParams(kind, inputs)
 
 	resp, err := api.Client.Fetch(context, path, params)
