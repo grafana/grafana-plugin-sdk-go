@@ -40,7 +40,11 @@ func (api *API) Call(ctx context.Context, kind string, inputs []Input) ([]*data.
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close() //nolint
+	defer func() {
+		if closeErr := resp.Body.Close(); err == nil && closeErr != nil {
+			err = fmt.Errorf("failed to close response body: %w", closeErr)
+		}
+	}()
 
 	if resp.StatusCode >= 400 {
 		d, err := io.ReadAll(resp.Body)
