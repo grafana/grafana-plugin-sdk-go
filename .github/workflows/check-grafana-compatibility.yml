@@ -1,0 +1,36 @@
+# Checks if the current update to go.mod is compatible with Grafana.
+
+name: Detect breaking change with Grafana
+
+on:
+  pull_request:
+    paths:
+      - 'go.mod'
+      - 'go.sum'
+    branches:
+      - 'main'
+  
+jobs:
+  buildPR:
+    name: Build PR
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        path: './grafana-plugin-sdk-go'
+    - uses: actions/checkout@v4
+      with:
+        repository: 'grafana/grafana'
+        path: './grafana'
+  
+    - uses: actions/setup-go@v4
+      with:
+        go-version-file: 'pr/go.mod'
+
+    - name: Link sdk
+      working-directory: './grafana'
+      run: echo 'replace github.com/grafana/grafana-plugin-sdk-go => ../grafana-plugin-sdk-go' >> go.mod
+
+    - name: Build Grafana
+      working-directory: './grafana'
+      run: make build-go
