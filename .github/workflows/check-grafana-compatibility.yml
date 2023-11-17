@@ -22,10 +22,21 @@ jobs:
       with:
         repository: 'grafana/grafana'
         path: './grafana'
-  
     - uses: actions/setup-go@v4
       with:
         go-version-file: 'grafana-plugin-sdk-go/go.mod'
+  
+    # Check if the branch exists in Grafana
+    - name: Check if branch exists in Grafana
+      working-directory: './grafana'
+      run: |
+        if git ls-remote --heads --quiet --exit-code origin ${{ github.head_ref }}
+        then
+          echo "Found branch ${{ github.head_ref }} in Grafana"
+          git checkout ${{ github.head_ref }}
+        else
+          echo "Branch ${{ github.head_ref }} not found in Grafana"
+        fi
 
     - name: Link sdk
       working-directory: './grafana'
