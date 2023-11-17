@@ -33,6 +33,7 @@ jobs:
         if git ls-remote --heads --quiet --exit-code origin ${{ github.head_ref }}
         then
           echo "Found branch ${{ github.head_ref }} in Grafana"
+          git fetch origin buildGrafanaWorkflow
           git checkout ${{ github.head_ref }}
         else
           echo "Branch ${{ github.head_ref }} not found in Grafana"
