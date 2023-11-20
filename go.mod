@@ -38,11 +38,11 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.46.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.46.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.21.1
-	go.opentelemetry.io/contrib/samplers/jaegerremote v0.14.0
+	go.opentelemetry.io/contrib/samplers/jaegerremote v0.15.1
 	go.opentelemetry.io/otel v1.21.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.20.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.20.0
-	go.opentelemetry.io/otel/sdk v1.20.0
+	go.opentelemetry.io/otel/sdk v1.21.0
 	go.opentelemetry.io/otel/trace v1.21.0
 	golang.org/x/net v0.18.0
 	golang.org/x/oauth2 v0.14.0
