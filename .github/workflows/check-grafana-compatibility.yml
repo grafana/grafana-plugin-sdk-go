@@ -42,6 +42,10 @@ jobs:
       working-directory: './grafana'
       run: echo 'replace github.com/grafana/grafana-plugin-sdk-go => ../grafana-plugin-sdk-go' >> go.mod
 
+    - name: Automatic updates
+      working-directory: './grafana'
+      run: go mod tidy
+
     - name: Build Grafana
       working-directory: './grafana'
       run: make build-go
