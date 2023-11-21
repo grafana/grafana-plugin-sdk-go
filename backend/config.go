@@ -130,12 +130,12 @@ type userAgentKey struct{}
 func UserAgentFromContext(ctx context.Context) (*useragent.UserAgent, error) {
 	v := ctx.Value(userAgentKey{})
 	if v == nil {
-		return useragent.New("0.0.0", "unknown", "unknown")
+		return useragent.Empty()
 	}
 
 	ua := v.(*useragent.UserAgent)
 	if ua == nil {
-		return useragent.New("0.0.0", "unknown", "unknown")
+		return useragent.Empty()
 	}
 
 	return ua, nil

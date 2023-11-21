@@ -45,6 +45,11 @@ func Parse(s string) (*UserAgent, error) {
 	}, nil
 }
 
+// Empty creates a new UserAgent with default values.
+func Empty() (*UserAgent, error) {
+	return New("0.0.0", "unknown", "unknown")
+}
+
 func (ua *UserAgent) GrafanaVersion() string {
 	return ua.grafanaVersion
 }
