@@ -140,18 +140,12 @@ func TestAppURL(t *testing.T) {
 
 func TestUserAgentFromContext(t *testing.T) {
 	ua, err := useragent.New("10.0.0", "test", "test")
-
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
+	require.NoError(t, err)
 
 	ctx := WithUserAgent(context.Background(), ua)
 
 	result, err := UserAgentFromContext(ctx)
-
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
+	require.NoError(t, err)
 	if result.GrafanaVersion() != "10.0.0" {
 		t.Errorf("Expected Grafana version to be '10.0.0', got %s", result.GrafanaVersion())
 	}
@@ -164,10 +158,7 @@ func TestUserAgentFromContext_NoUserAgent(t *testing.T) {
 	ctx := context.Background()
 
 	result, err := UserAgentFromContext(ctx)
-
-	if err != nil {
-		t.Errorf("Expected no error, got %v", err)
-	}
+	require.NoError(t, err)
 	if result.GrafanaVersion() != "0.0.0" {
 		t.Errorf("Expected Grafana version to be '0.0.0', got %s", result.GrafanaVersion())
 	}
