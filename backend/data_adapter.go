@@ -46,10 +46,11 @@ func withHeaderMiddleware(ctx context.Context, headers http.Header) context.Cont
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
-	parsedRequest := FromProto().QueryDataRequest(req)
-	ctx = withHeaderMiddleware(ctx, parsedRequest.GetHTTPHeaders())
-	ctx = withContextualLogAttributes(ctx, parsedRequest.PluginContext, endpointQueryData)
-	resp, err := a.queryDataHandler.QueryData(ctx, parsedRequest)
+	parsedReq := FromProto().QueryDataRequest(req)
+	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointQueryData)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
+	resp, err := a.queryDataHandler.QueryData(ctx, parsedReq)
 	if err != nil {
 		return nil, err
 	}

@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
@@ -135,4 +136,42 @@ func TestAppURL(t *testing.T) {
 		_, err := cfg.AppURL()
 		require.Error(t, err)
 	})
+}
+
+func TestUserAgentFromContext(t *testing.T) {
+	ua, err := useragent.New("10.0.0", "test", "test")
+
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+
+	ctx := WithUserAgent(context.Background(), ua)
+
+	result, err := UserAgentFromContext(ctx)
+
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if result.GrafanaVersion() != "10.0.0" {
+		t.Errorf("Expected Grafana version to be '10.0.0', got %s", result.GrafanaVersion())
+	}
+	if result.String() != "Grafana/10.0.0 (test; test)" {
+		t.Errorf("Expected correctly formed UA string, got %s", result.String())
+	}
+}
+
+func TestUserAgentFromContext_NoUserAgent(t *testing.T) {
+	ctx := context.Background()
+
+	result, err := UserAgentFromContext(ctx)
+
+	if err != nil {
+		t.Errorf("Expected no error, got %v", err)
+	}
+	if result.GrafanaVersion() != "0.0.0" {
+		t.Errorf("Expected Grafana version to be '0.0.0', got %s", result.GrafanaVersion())
+	}
+	if result.String() != "Grafana/0.0.0 (unknown; unknown)" {
+		t.Errorf("Expected correctly formed UA string, got %s", result.String())
+	}
 }
