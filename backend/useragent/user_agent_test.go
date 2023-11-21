@@ -113,3 +113,14 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
+
+func TestEmpty(t *testing.T) {
+	expected := &UserAgent{
+		grafanaVersion: "0.0.0",
+		os:             "unknown",
+		arch:           "unknown",
+	}
+	res, err := Empty()
+	require.NoError(t, err)
+	require.Equal(t, expected, res)
+}
