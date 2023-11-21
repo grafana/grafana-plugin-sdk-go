@@ -146,12 +146,8 @@ func TestUserAgentFromContext(t *testing.T) {
 
 	result, err := UserAgentFromContext(ctx)
 	require.NoError(t, err)
-	if result.GrafanaVersion() != "10.0.0" {
-		t.Errorf("Expected Grafana version to be '10.0.0', got %s", result.GrafanaVersion())
-	}
-	if result.String() != "Grafana/10.0.0 (test; test)" {
-		t.Errorf("Expected correctly formed UA string, got %s", result.String())
-	}
+	require.Equal(t, "10.0.0", result.GrafanaVersion())
+	require.Equal(t, "Grafana/10.0.0 (test; test)", result.String())
 }
 
 func TestUserAgentFromContext_NoUserAgent(t *testing.T) {
@@ -159,10 +155,6 @@ func TestUserAgentFromContext_NoUserAgent(t *testing.T) {
 
 	result, err := UserAgentFromContext(ctx)
 	require.NoError(t, err)
-	if result.GrafanaVersion() != "0.0.0" {
-		t.Errorf("Expected Grafana version to be '0.0.0', got %s", result.GrafanaVersion())
-	}
-	if result.String() != "Grafana/0.0.0 (unknown; unknown)" {
-		t.Errorf("Expected correctly formed UA string, got %s", result.String())
-	}
+	require.Equal(t, "0.0.0", result.GrafanaVersion())
+	require.Equal(t, "Grafana/0.0.0 (unknown; unknown)", result.String())
 }
