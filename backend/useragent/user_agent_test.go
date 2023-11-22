@@ -120,7 +120,6 @@ func TestEmpty(t *testing.T) {
 		os:             "unknown",
 		arch:           "unknown",
 	}
-	res, err := Empty()
-	require.NoError(t, err)
+	res := Empty()
 	require.Equal(t, expected, res)
 }
