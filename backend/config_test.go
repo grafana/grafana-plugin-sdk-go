@@ -143,9 +143,8 @@ func TestUserAgentFromContext(t *testing.T) {
 	require.NoError(t, err)
 
 	ctx := WithUserAgent(context.Background(), ua)
+	result := UserAgentFromContext(ctx)
 
-	result, err := UserAgentFromContext(ctx)
-	require.NoError(t, err)
 	require.Equal(t, "10.0.0", result.GrafanaVersion())
 	require.Equal(t, "Grafana/10.0.0 (test; test)", result.String())
 }
@@ -153,8 +152,7 @@ func TestUserAgentFromContext(t *testing.T) {
 func TestUserAgentFromContext_NoUserAgent(t *testing.T) {
 	ctx := context.Background()
 
-	result, err := UserAgentFromContext(ctx)
-	require.NoError(t, err)
+	result := UserAgentFromContext(ctx)
 	require.Equal(t, "0.0.0", result.GrafanaVersion())
 	require.Equal(t, "Grafana/0.0.0 (unknown; unknown)", result.String())
 }

@@ -127,18 +127,20 @@ func (c *GrafanaCfg) AppURL() (string, error) {
 type userAgentKey struct{}
 
 // UserAgentFromContext returns user agent from context.
-func UserAgentFromContext(ctx context.Context) (*useragent.UserAgent, error) {
+func UserAgentFromContext(ctx context.Context) *useragent.UserAgent {
 	v := ctx.Value(userAgentKey{})
 	if v == nil {
-		return useragent.Empty()
+		e, _ := useragent.Empty()
+		return e
 	}
 
 	ua := v.(*useragent.UserAgent)
 	if ua == nil {
-		return useragent.Empty()
+		e, _ := useragent.Empty()
+		return e
 	}
 
-	return ua, nil
+	return ua
 }
 
 // WithUserAgent injects supplied user agent into context.
