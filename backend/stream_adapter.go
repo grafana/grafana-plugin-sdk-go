@@ -67,6 +67,7 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().RunStreamRequest(protoReq)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointRunStream)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
 	return a.streamHandler.RunStream(ctx, parsedReq, sender)
 }

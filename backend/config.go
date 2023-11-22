@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
@@ -121,4 +122,27 @@ func (c *GrafanaCfg) AppURL() (string, error) {
 		return "", fmt.Errorf("app URL not set in config. A more recent version of Grafana may be required")
 	}
 	return url, nil
+}
+
+type userAgentKey struct{}
+
+// UserAgentFromContext returns user agent from context.
+func UserAgentFromContext(ctx context.Context) *useragent.UserAgent {
+	v := ctx.Value(userAgentKey{})
+	if v == nil {
+		return useragent.Empty()
+	}
+
+	ua := v.(*useragent.UserAgent)
+	if ua == nil {
+		return useragent.Empty()
+	}
+
+	return ua
+}
+
+// WithUserAgent injects supplied user agent into context.
+func WithUserAgent(ctx context.Context, ua *useragent.UserAgent) context.Context {
+	ctx = context.WithValue(ctx, userAgentKey{}, ua)
+	return ctx
 }

@@ -40,5 +40,6 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	parsedReq := FromProto().CallResourceRequest(protoReq)
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointCallResource)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
 }

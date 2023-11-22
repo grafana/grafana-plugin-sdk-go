@@ -51,6 +51,7 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointCheckHealth)
+		ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
 		if err != nil {
 			return nil, err

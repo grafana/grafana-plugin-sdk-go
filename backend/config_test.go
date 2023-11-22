@@ -7,6 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
@@ -135,4 +136,23 @@ func TestAppURL(t *testing.T) {
 		_, err := cfg.AppURL()
 		require.Error(t, err)
 	})
+}
+
+func TestUserAgentFromContext(t *testing.T) {
+	ua, err := useragent.New("10.0.0", "test", "test")
+	require.NoError(t, err)
+
+	ctx := WithUserAgent(context.Background(), ua)
+	result := UserAgentFromContext(ctx)
+
+	require.Equal(t, "10.0.0", result.GrafanaVersion())
+	require.Equal(t, "Grafana/10.0.0 (test; test)", result.String())
+}
+
+func TestUserAgentFromContext_NoUserAgent(t *testing.T) {
+	ctx := context.Background()
+
+	result := UserAgentFromContext(ctx)
+	require.Equal(t, "0.0.0", result.GrafanaVersion())
+	require.Equal(t, "Grafana/0.0.0 (unknown; unknown)", result.String())
 }
