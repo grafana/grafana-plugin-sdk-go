@@ -11,10 +11,9 @@ import (
 
 func TestParseHTTPSettings(t *testing.T) {
 	t.Run("When parseHTTPSettings of empty jsonData and secureJSONData", func(t *testing.T) {
-		jsonStr := `{}`
+		data := map[string]interface{}{}
 		secureData := map[string]string{}
-		s, err := parseHTTPSettings([]byte(jsonStr), secureData)
-		require.NoError(t, err)
+		s := parseHTTPSettings(data, secureData)
 		require.NotNil(t, s)
 	})
 
@@ -59,8 +58,7 @@ func TestParseHTTPSettings(t *testing.T) {
 		var jsonMap map[string]interface{}
 		err := json.Unmarshal([]byte(jsonStr), &jsonMap)
 		require.NoError(t, err)
-		s, err := parseHTTPSettings([]byte(jsonStr), secureData)
-		require.NoError(t, err)
+		s := parseHTTPSettings(jsonMap, secureData)
 		require.NotNil(t, s)
 		require.Equal(t, &HTTPSettings{
 			Access:            "browser",

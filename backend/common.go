@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"sync"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -29,6 +30,7 @@ type User struct {
 type AppInstanceSettings struct {
 	// JSONData repeats the properties at this level of the object (excluding DataSourceConfig), and also includes any
 	// custom properties associated with the plugin config instance.
+	// Deprecated: Use JSONDataMap() instead.
 	JSONData json.RawMessage
 
 	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration plugin instance in Grafana
@@ -37,19 +39,27 @@ type AppInstanceSettings struct {
 
 	// Updated is the last time this plugin instance's configuration was updated.
 	Updated time.Time
+
+	// internal
+	jsonData jsonDataType
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
 func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.Options, error) {
-	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
+	dat, err := s.jsonData.parse(s.JSONData)
 	if err != nil {
 		return httpclient.Options{}, err
 	}
 
+	httpSettings := parseHTTPSettings(dat, s.DecryptedSecureJSONData)
 	opts := httpSettings.HTTPClientOptions()
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
 	return opts, nil
+}
+
+func (s *AppInstanceSettings) JSONDataMap() (map[string]any, error) {
+	return s.jsonData.parse(s.JSONData)
 }
 
 // DataSourceInstanceSettings represents settings for a data source instance.
@@ -90,6 +100,7 @@ type DataSourceInstanceSettings struct {
 
 	// JSONData contains the raw DataSourceConfig as JSON as stored by Grafana server. It repeats the properties in
 	// this object and includes custom properties.
+	// Deprecated: Use JSONDataMap instead.
 	JSONData json.RawMessage
 
 	// DecryptedSecureJSONData contains key,value pairs where the encrypted configuration in Grafana server have been
@@ -98,15 +109,19 @@ type DataSourceInstanceSettings struct {
 
 	// Updated is the last time the configuration for the data source instance was updated.
 	Updated time.Time
+
+	// internal
+	jsonData jsonDataType
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
 func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (httpclient.Options, error) {
-	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
+	dat, err := s.JSONDataMap()
 	if err != nil {
 		return httpclient.Options{}, err
 	}
 
+	httpSettings := parseHTTPSettings(dat, s.DecryptedSecureJSONData)
 	if s.BasicAuthEnabled {
 		httpSettings.BasicAuthEnabled = s.BasicAuthEnabled
 		httpSettings.BasicAuthUser = s.BasicAuthUser
@@ -236,11 +251,9 @@ func propagateTenantIDIfPresent(ctx context.Context) context.Context {
 func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*proxy.Options, error) {
 	opts := &proxy.Options{}
 
-	var dat map[string]interface{}
-	if s.JSONData != nil {
-		if err := json.Unmarshal(s.JSONData, &dat); err != nil {
-			return nil, err
-		}
+	dat, err := s.JSONDataMap()
+	if err != nil {
+		return nil, err
 	}
 
 	opts.Enabled = proxy.SecureSocksProxyEnabledOnDS(dat)
@@ -280,4 +293,40 @@ func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*
 	opts.ClientCfg = clientCfg
 
 	return opts, nil
+}
+
+func (s *DataSourceInstanceSettings) JSONDataMap() (map[string]any, error) {
+	return s.jsonData.parse(s.JSONData)
+}
+
+type jsonDataType struct {
+	data map[string]any
+	lock sync.Mutex
+}
+
+func (s *jsonDataType) parse(raw json.RawMessage) (map[string]any, error) {
+	s.lock.Lock()
+	defer s.lock.Unlock()
+
+	if s.data != nil {
+		return s.data, nil
+	}
+
+	var dat map[string]any
+	if raw != nil {
+		if err := json.Unmarshal(raw, &dat); err != nil {
+			return nil, err
+		}
+	}
+
+	s.data = dat
+	return s.data, nil
+}
+
+func JSONDataGet[T any](src map[string]any, key string) (res T, found bool) {
+	if v, exists := src[key]; exists {
+		res = v.(T)
+		found = true
+	}
+	return
 }

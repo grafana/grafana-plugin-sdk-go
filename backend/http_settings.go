@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"encoding/json"
 	"fmt"
 	"time"
 
@@ -102,34 +101,27 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 }
 
 //gocyclo:ignore
-func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]string) (*HTTPSettings, error) {
+func parseHTTPSettings(jsonData map[string]interface{}, secureJSONData map[string]string) *HTTPSettings {
 	s := &HTTPSettings{
 		Headers: map[string]string{},
 	}
 
-	var dat map[string]interface{}
-	if jsonData != nil {
-		if err := json.Unmarshal(jsonData, &dat); err != nil {
-			return nil, err
-		}
-	}
-
-	if v, exists := dat["access"]; exists {
+	if v, exists := jsonData["access"]; exists {
 		s.Access = v.(string)
 	} else {
 		s.Access = "proxy"
 	}
 
-	if v, exists := dat["url"]; exists {
+	if v, exists := jsonData["url"]; exists {
 		s.URL = v.(string)
 	}
 
 	// Basic auth
-	if v, exists := dat["basicAuth"]; exists {
+	if v, exists := jsonData["basicAuth"]; exists {
 		s.BasicAuthEnabled = v.(bool)
 	}
 	if s.BasicAuthEnabled {
-		if v, exists := dat["basicAuthUser"]; exists {
+		if v, exists := jsonData["basicAuthUser"]; exists {
 			s.BasicAuthUser = v.(string)
 		}
 		if v, exists := secureJSONData["basicAuthPassword"]; exists {
@@ -138,7 +130,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 	}
 
 	// Timeouts
-	if v, exists := dat["timeout"]; exists {
+	if v, exists := jsonData["timeout"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.Timeout = time.Duration(iv) * time.Second
 		}
@@ -146,7 +138,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.Timeout = httpclient.DefaultTimeoutOptions.Timeout
 	}
 
-	if v, exists := dat["dialTimeout"]; exists {
+	if v, exists := jsonData["dialTimeout"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.DialTimeout = time.Duration(iv) * time.Second
 		}
@@ -154,7 +146,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.DialTimeout = httpclient.DefaultTimeoutOptions.DialTimeout
 	}
 
-	if v, exists := dat["httpKeepAlive"]; exists {
+	if v, exists := jsonData["httpKeepAlive"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.KeepAlive = time.Duration(iv) * time.Second
 		}
@@ -162,7 +154,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.KeepAlive = httpclient.DefaultTimeoutOptions.KeepAlive
 	}
 
-	if v, exists := dat["httpTLSHandshakeTimeout"]; exists {
+	if v, exists := jsonData["httpTLSHandshakeTimeout"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.TLSHandshakeTimeout = time.Duration(iv) * time.Second
 		}
@@ -170,7 +162,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.TLSHandshakeTimeout = httpclient.DefaultTimeoutOptions.TLSHandshakeTimeout
 	}
 
-	if v, exists := dat["httpExpectContinueTimeout"]; exists {
+	if v, exists := jsonData["httpExpectContinueTimeout"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.ExpectContinueTimeout = time.Duration(iv) * time.Second
 		}
@@ -178,7 +170,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.ExpectContinueTimeout = httpclient.DefaultTimeoutOptions.ExpectContinueTimeout
 	}
 
-	if v, exists := dat["httpMaxConnsPerHost"]; exists {
+	if v, exists := jsonData["httpMaxConnsPerHost"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.MaxConnsPerHost = int(iv)
 		}
@@ -186,7 +178,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.MaxConnsPerHost = httpclient.DefaultTimeoutOptions.MaxConnsPerHost
 	}
 
-	if v, exists := dat["httpMaxIdleConns"]; exists {
+	if v, exists := jsonData["httpMaxIdleConns"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.MaxIdleConns = int(iv)
 		}
@@ -194,7 +186,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.MaxIdleConns = httpclient.DefaultTimeoutOptions.MaxIdleConns
 	}
 
-	if v, exists := dat["httpMaxIdleConnsPerHost"]; exists {
+	if v, exists := jsonData["httpMaxIdleConnsPerHost"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.MaxIdleConnsPerHost = int(iv)
 		}
@@ -202,7 +194,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		s.MaxIdleConnsPerHost = httpclient.DefaultTimeoutOptions.MaxIdleConnsPerHost
 	}
 
-	if v, exists := dat["httpIdleConnTimeout"]; exists {
+	if v, exists := jsonData["httpIdleConnTimeout"]; exists {
 		if iv, ok := v.(float64); ok {
 			s.IdleConnTimeout = time.Duration(iv) * time.Second
 		}
@@ -211,18 +203,18 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 	}
 
 	// TLS
-	if v, exists := dat["tlsAuth"]; exists {
+	if v, exists := jsonData["tlsAuth"]; exists {
 		s.TLSClientAuth = v.(bool)
 	}
-	if v, exists := dat["tlsAuthWithCACert"]; exists {
+	if v, exists := jsonData["tlsAuthWithCACert"]; exists {
 		s.TLSAuthWithCACert = v.(bool)
 	}
-	if v, exists := dat["tlsSkipVerify"]; exists {
+	if v, exists := jsonData["tlsSkipVerify"]; exists {
 		s.TLSSkipVerify = v.(bool)
 	}
 
 	if s.TLSClientAuth || s.TLSAuthWithCACert {
-		if v, exists := dat["serverName"]; exists {
+		if v, exists := jsonData["serverName"]; exists {
 			s.TLSServerName = v.(string)
 		}
 		if v, exists := secureJSONData["tlsCACert"]; exists {
@@ -237,24 +229,24 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 	}
 
 	// SigV4
-	if v, exists := dat["sigV4Auth"]; exists {
+	if v, exists := jsonData["sigV4Auth"]; exists {
 		s.SigV4Auth = v.(bool)
 	}
 
 	if s.SigV4Auth {
-		if v, exists := dat["sigV4Region"]; exists {
+		if v, exists := jsonData["sigV4Region"]; exists {
 			s.SigV4Region = v.(string)
 		}
-		if v, exists := dat["sigV4AssumeRoleArn"]; exists {
+		if v, exists := jsonData["sigV4AssumeRoleArn"]; exists {
 			s.SigV4AssumeRoleARN = v.(string)
 		}
-		if v, exists := dat["sigV4AuthType"]; exists {
+		if v, exists := jsonData["sigV4AuthType"]; exists {
 			s.SigV4AuthType = v.(string)
 		}
-		if v, exists := dat["sigV4ExternalId"]; exists {
+		if v, exists := jsonData["sigV4ExternalId"]; exists {
 			s.SigV4ExternalID = v.(string)
 		}
-		if v, exists := dat["sigV4Profile"]; exists {
+		if v, exists := jsonData["sigV4Profile"]; exists {
 			s.SigV4Profile = v.(string)
 		}
 		if v, exists := secureJSONData["sigV4AccessKey"]; exists {
@@ -271,7 +263,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		headerNameSuffix := fmt.Sprintf("httpHeaderName%d", index)
 		headerValueSuffix := fmt.Sprintf("httpHeaderValue%d", index)
 
-		if key, exists := dat[headerNameSuffix]; exists {
+		if key, exists := jsonData[headerNameSuffix]; exists {
 			if value, exists := secureJSONData[headerValueSuffix]; exists {
 				s.Headers[key.(string)] = value
 			}
@@ -282,8 +274,8 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		index++
 	}
 
-	s.JSONData = dat
+	s.JSONData = jsonData
 	s.SecureJSONData = secureJSONData
 
-	return s, nil
+	return s
 }

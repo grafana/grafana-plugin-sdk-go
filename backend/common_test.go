@@ -218,6 +218,26 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 			}
 		}
 	})
+
+	t.Run("JSONDataMap() should return JSONData", func(t *testing.T) {
+		tcs := []struct {
+			instanceSettings *DataSourceInstanceSettings
+			expectedMap      map[string]interface{}
+		}{
+			{instanceSettings: &DataSourceInstanceSettings{
+				JSONData: []byte("{ \"key\": \"value\" }"),
+			},
+				expectedMap: map[string]interface{}{
+					"key": "value",
+				},
+			},
+		}
+		for _, tc := range tcs {
+			jsonMap, err := tc.instanceSettings.JSONDataMap()
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expectedMap, jsonMap)
+		}
+	})
 }
 
 func TestCustomOptions(t *testing.T) {
@@ -388,5 +408,25 @@ func TestProxyOptions(t *testing.T) {
 			assert.NoError(t, err)
 			assert.Equal(t, tc.expectedClientOptions, opts)
 		}
+	})
+}
+
+func TestJSONDataGet(t *testing.T) {
+	t.Run("Should be able to get JSONData value", func(t *testing.T) {
+		jsonData := map[string]interface{}{
+			"key": "value",
+		}
+		value, found := JSONDataGet[string](jsonData, "key")
+		require.True(t, found)
+		require.Equal(t, "value", value)
+	})
+
+	t.Run("Should return not found", func(t *testing.T) {
+		jsonData := map[string]interface{}{
+			"key": "value",
+		}
+		value, found := JSONDataGet[string](jsonData, "other")
+		require.False(t, found)
+		require.Equal(t, "", value)
 	})
 }
