@@ -41,12 +41,12 @@ type AppInstanceSettings struct {
 	Updated time.Time
 
 	// internal
-	jsonData jsonDataType
+	jsonData *jsonDataType
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
 func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.Options, error) {
-	dat, err := s.jsonData.parse(s.JSONData)
+	dat, err := s.JSONDataMap()
 	if err != nil {
 		return httpclient.Options{}, err
 	}
@@ -59,6 +59,9 @@ func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.O
 }
 
 func (s *AppInstanceSettings) JSONDataMap() (map[string]any, error) {
+	if s.jsonData == nil {
+		s.jsonData = &jsonDataType{}
+	}
 	return s.jsonData.parse(s.JSONData)
 }
 
@@ -111,7 +114,7 @@ type DataSourceInstanceSettings struct {
 	Updated time.Time
 
 	// internal
-	jsonData jsonDataType
+	jsonData *jsonDataType
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
@@ -296,6 +299,9 @@ func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*
 }
 
 func (s *DataSourceInstanceSettings) JSONDataMap() (map[string]any, error) {
+	if s.jsonData == nil {
+		s.jsonData = &jsonDataType{}
+	}
 	return s.jsonData.parse(s.JSONData)
 }
 
