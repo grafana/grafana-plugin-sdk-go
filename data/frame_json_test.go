@@ -3,6 +3,7 @@ package data_test
 import (
 	"encoding/json"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strings"
@@ -315,6 +316,25 @@ func TestFrame_UnmarshalJSON_DataOnly(t *testing.T) {
 	var newFrame data.Frame
 	err = json.Unmarshal(d, &newFrame)
 	require.Error(t, err)
+}
+
+func TestFrame_UnmarshallUint64(t *testing.T) {
+	expected := `
+	{"schema":{"name":"test","fields":[{"name":"test-field","type":"number","typeInfo":{"frame":"uint64"}}]},"data":{"values":[[18446744073709551615,"18446744073709551615",0,1,2,3,4,5]]}}
+	`
+
+	var actual data.Frame
+	require.NoError(t, json.Unmarshal([]byte(expected), &actual))
+	require.Len(t, actual.Fields, 1)
+	require.Equal(t, data.FieldTypeUint64, actual.Fields[0].Type())
+	var values []uint64
+	for i := 0; i < actual.Fields[0].Len(); i++ {
+		v, ok := actual.Fields[0].ConcreteAt(i)
+		require.True(t, ok)
+		require.IsType(t, v, uint64(1))
+		values = append(values, v.(uint64))
+	}
+	require.EqualValues(t, []uint64{math.MaxUint64, math.MaxUint64, 0, 1, 2, 3, 4, 5}, values)
 }
 
 // This function will write code to the console that should be copy/pasted into frame_json.gen.go
