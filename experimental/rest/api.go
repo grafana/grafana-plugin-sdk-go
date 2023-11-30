@@ -30,7 +30,7 @@ type API struct {
 	Client         Client
 	Routes         map[string]string
 	DefaultParams  map[string]string
-	ErrorFormatter func(string) string
+	ErrorFormatter func(body io.ReadCloser) error
 	Framer         func(name string, results []Data) (data.Frames, error)
 	IsError        func(resp http.Response) bool
 }
@@ -49,19 +49,8 @@ func (api *API) Call(ctx context.Context, kind string, inputs []Input) ([]*data.
 		}
 	}()
 
-	if api.IsError == nil {
-		api.IsError = isError
-	}
-	if api.IsError(*resp) {
-		d, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return nil, err
-		}
-		message := string(d)
-		if api.ErrorFormatter != nil {
-			message = api.ErrorFormatter(message)
-		}
-		return nil, errors.New(message)
+	if api.hasError(*resp) {
+		return nil, api.error(*resp)
 	}
 
 	results := []Data{}
@@ -97,6 +86,28 @@ func (api *API) GetPathParams(kind string, inputs []Input) (string, string) {
 	return uriPath, uriQuery.Encode()
 }
 
+func (api *API) hasError(resp http.Response) bool {
+	if api.IsError == nil {
+		return isError(resp)
+	}
+	return api.IsError(resp)
+}
+
+func (api *API) error(resp http.Response) error {
+	if api.ErrorFormatter != nil {
+		return api.ErrorFormatter(resp.Body)
+	}
+	return errorFormatter(resp.Body)
+}
+
 func isError(resp http.Response) bool {
 	return resp.StatusCode >= 400
+}
+
+func errorFormatter(body io.ReadCloser) error {
+	d, err := io.ReadAll(body)
+	if err != nil {
+		return err
+	}
+	return errors.New(string(d))
 }
