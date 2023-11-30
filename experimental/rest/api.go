@@ -31,7 +31,8 @@ type API struct {
 	Routes         map[string]string
 	DefaultParams  map[string]string
 	ErrorFormatter func(string) string
-	Framer         data.Framer
+	Framer         func(name string, results []Data) (data.Frames, error)
+	IsError        func(resp http.Response) bool
 }
 
 // Call rest api and convert to dataframes.
@@ -48,7 +49,10 @@ func (api *API) Call(ctx context.Context, kind string, inputs []Input) ([]*data.
 		}
 	}()
 
-	if resp.StatusCode >= 400 {
+	if api.IsError == nil {
+		api.IsError = isError
+	}
+	if api.IsError(*resp) {
 		d, err := io.ReadAll(resp.Body)
 		if err != nil {
 			return nil, err
@@ -67,7 +71,7 @@ func (api *API) Call(ctx context.Context, kind string, inputs []Input) ([]*data.
 	}
 
 	if api.Framer != nil {
-		return api.Framer.Frames()
+		return api.Framer(kind, results)
 	}
 	framer := JSONFramer{data: results, name: kind}
 	return framer.Frames()
@@ -91,4 +95,8 @@ func (api *API) GetPathParams(kind string, inputs []Input) (string, string) {
 	}
 
 	return uriPath, uriQuery.Encode()
+}
+
+func isError(resp http.Response) bool {
+	return resp.StatusCode >= 400
 }
