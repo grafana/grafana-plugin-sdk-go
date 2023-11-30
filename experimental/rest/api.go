@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
@@ -36,7 +37,7 @@ type API struct {
 func (api *API) Call(ctx context.Context, kind string, inputs []Input) ([]*data.Frame, error) {
 	path, params := api.GetPathParams(kind, inputs)
 
-	resp, err := api.Client.Fetch(context, path, params)
+	resp, err := api.Client.Fetch(ctx, path, params)
 	if err != nil {
 		return nil, err
 	}
@@ -72,14 +73,16 @@ func (api *API) Call(ctx context.Context, kind string, inputs []Input) ([]*data.
 func (api *API) GetPathParams(kind string, inputs []Input) (string, string) {
 	uriPathTemplate := api.Routes[kind]
 	uriQuery := make(url.Values)
-	uriQuery.Set("output", "json")
+	for k, v := range api.DefaultParams {
+		uriQuery.Set(k, v)
+	}
 
 	uriPath := uriPathTemplate
 	for _, input := range inputs {
 		if input.Type == "query" {
 			uriQuery.Set(input.Name, input.Value)
 		} else {
-			uriPath = fmt.Sprintf(uriPath, input.Value)
+			uriPath = strings.Replace(uriPath, input.Name, input.Value, -1)
 		}
 	}
 
