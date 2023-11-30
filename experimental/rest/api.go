@@ -31,6 +31,7 @@ type API struct {
 	Routes         map[string]string
 	DefaultParams  map[string]string
 	ErrorFormatter func(string) string
+	Framer         data.Framer
 }
 
 // Call rest api and convert to dataframes.
@@ -65,6 +66,9 @@ func (api *API) Call(ctx context.Context, kind string, inputs []Input) ([]*data.
 		return nil, err
 	}
 
+	if api.Framer != nil {
+		return api.Framer.Frames()
+	}
 	framer := JSONFramer{data: results, name: kind}
 	return framer.Frames()
 }
