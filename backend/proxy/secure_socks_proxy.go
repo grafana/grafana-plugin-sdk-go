@@ -60,11 +60,13 @@ type Client interface {
 // ClientCfg contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy.
 type ClientCfg struct {
-	ClientCert   string
-	ClientKey    string
-	RootCA       string
-	ProxyAddress string
-	ServerName   string
+	ClientCert    string
+	ClientKey     string
+	ClientCertPEM []byte
+	ClientKeyPEM  []byte
+	RootCA        string
+	ProxyAddress  string
+	ServerName    string
 }
 
 // New creates a new proxy client from a given config.
@@ -139,9 +141,19 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		}
 	}
 
-	cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
-	if err != nil {
-		return nil, err
+	var cert tls.Certificate
+	var err error
+
+	if p.opts.ClientCfg.ClientCertPEM != nil && p.opts.ClientCfg.ClientKeyPEM != nil {
+		cert, err = tls.X509KeyPair(p.opts.ClientCfg.ClientCertPEM, p.opts.ClientCfg.ClientKeyPEM)
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		cert, err = tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	tlsDialer := &tls.Dialer{
