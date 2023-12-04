@@ -2,6 +2,9 @@ module github.com/grafana/grafana-plugin-sdk-go
 
 go 1.21
 
+// The v0.120.0 is needed for now to be compatible with grafana/thema.
+replace github.com/getkin/kin-openapi => github.com/getkin/kin-openapi v0.120.0
+
 require (
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.5.3 // indirect
@@ -30,7 +33,7 @@ require (
 	github.com/apache/arrow/go/v13 v13.0.0
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
 	github.com/elazarl/goproxy v0.0.0-20230731152917-f99041a5c027
-	github.com/getkin/kin-openapi v0.122.0
+	github.com/getkin/kin-openapi v0.120.0
 	github.com/go-jose/go-jose/v3 v3.0.1
 	github.com/google/uuid v1.4.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
