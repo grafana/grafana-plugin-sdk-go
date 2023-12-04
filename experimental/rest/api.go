@@ -79,7 +79,7 @@ func (api *API) GetPathParams(kind string, inputs []Input) (string, string) {
 		if input.Type == "query" {
 			uriQuery.Set(input.Name, input.Value)
 		} else {
-			uriPath = strings.Replace(uriPath, input.Name, input.Value, -1)
+			uriPath = strings.ReplaceAll(uriPath, input.Name, input.Value)
 		}
 	}
 
