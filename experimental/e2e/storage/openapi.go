@@ -139,7 +139,7 @@ func (o *OpenAPI) getResponse(op *openapi3.Operation) (int, *openapi3.Response) 
 	fallbackStatus := http.StatusNotFound
 	fallbackRef := defaultRef
 
-	for k, r := range op.Responses {
+	for k, r := range op.Responses.Map() {
 		s, err := strconv.Atoi(k)
 		if err != nil {
 			continue
