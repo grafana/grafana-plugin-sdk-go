@@ -103,6 +103,7 @@ type DataSourceInstanceSettings struct {
 
 	// JSONData contains the raw DataSourceConfig as JSON as stored by Grafana server. It repeats the properties in
 	// this object and includes custom properties.
+	//
 	// Deprecated: Use JSONDataMap instead.
 	JSONData json.RawMessage
 
