@@ -109,6 +109,30 @@ func TestConfig(t *testing.T) {
 					},
 				},
 			},
+			{
+				name: "feature toggles disabled and insecure proxy enabled",
+				cfg: NewGrafanaCfg(map[string]string{
+					featuretoggles.EnabledFeatures:            "",
+					proxy.PluginSecureSocksProxyEnabled:       "true",
+					proxy.PluginSecureSocksProxyProxyAddress:  "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:    "localhost",
+					proxy.PluginSecureSocksProxyClientKey:     "clientKey",
+					proxy.PluginSecureSocksProxyClientCert:    "clientCert",
+					proxy.PluginSecureSocksProxyRootCACert:    "rootCACert",
+					proxy.PluginSecureSocksProxyAllowInsecure: "true",
+				}),
+				expectedFeatureToggles: FeatureToggles{},
+				expectedProxy: Proxy{
+					clientCfg: &proxy.ClientCfg{
+						ClientCert:    "clientCert",
+						ClientKey:     "clientKey",
+						RootCA:        "rootCACert",
+						ProxyAddress:  "localhost:1234",
+						ServerName:    "localhost",
+						AllowInsecure: true,
+					},
+				},
+			},
 		}
 
 		for _, tc := range tcs {

@@ -39,6 +39,9 @@ var (
 	// PluginSecureSocksProxyServerName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
 	// environment variable used to specify the server name of the secure socks proxy.
 	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+	// PluginSecureSocksProxyAllowInsecure is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE
+	// environment variable used to specify if the proxy should use a TLS dialer.
+	PluginSecureSocksProxyAllowInsecure = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
 var (
@@ -60,11 +63,12 @@ type Client interface {
 // ClientCfg contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy.
 type ClientCfg struct {
-	ClientCert   string
-	ClientKey    string
-	RootCA       string
-	ProxyAddress string
-	ServerName   string
+	ClientCert    string
+	ClientKey     string
+	RootCA        string
+	ProxyAddress  string
+	ServerName    string
+	AllowInsecure bool
 }
 
 // New creates a new proxy client from a given config.
@@ -108,7 +112,7 @@ func (p *cfgProxyWrapper) ConfigureSecureSocksHTTPProxy(transport *http.Transpor
 	}
 
 	transport.DialContext = contextDialer.DialContext
-	return nil
+	return nil // No need to include the TLS config since the proxy won't use it.
 }
 
 // NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
@@ -119,42 +123,51 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		return nil, errors.New("proxy not enabled")
 	}
 
-	certPool := x509.NewCertPool()
-	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
-		// nolint:gosec
-		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
-		// and we check below if it's the right file type
-		pemBytes, err := os.ReadFile(rootCAFile)
+	var dialer proxy.Dialer
+
+	if p.opts.ClientCfg.AllowInsecure {
+		dialer = &net.Dialer{
+			Timeout:   p.opts.Timeouts.Timeout,
+			KeepAlive: p.opts.Timeouts.KeepAlive,
+		}
+	} else {
+		certPool := x509.NewCertPool()
+		for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
+			// nolint:gosec
+			// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
+			// and we check below if it's the right file type
+			pemBytes, err := os.ReadFile(rootCAFile)
+			if err != nil {
+				return nil, err
+			}
+
+			pemDecoded, _ := pem.Decode(pemBytes)
+			if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
+				return nil, errors.New("root ca is invalid")
+			}
+
+			if !certPool.AppendCertsFromPEM(pemBytes) {
+				return nil, errors.New("failed to append CA certificate " + rootCAFile)
+			}
+		}
+
+		cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
 		if err != nil {
 			return nil, err
 		}
 
-		pemDecoded, _ := pem.Decode(pemBytes)
-		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
-			return nil, errors.New("root ca is invalid")
+		dialer = &tls.Dialer{
+			Config: &tls.Config{
+				Certificates: []tls.Certificate{cert},
+				ServerName:   p.opts.ClientCfg.ServerName,
+				RootCAs:      certPool,
+				MinVersion:   tls.VersionTLS13,
+			},
+			NetDialer: &net.Dialer{
+				Timeout:   p.opts.Timeouts.Timeout,
+				KeepAlive: p.opts.Timeouts.KeepAlive,
+			},
 		}
-
-		if !certPool.AppendCertsFromPEM(pemBytes) {
-			return nil, errors.New("failed to append CA certificate " + rootCAFile)
-		}
-	}
-
-	cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
-	if err != nil {
-		return nil, err
-	}
-
-	tlsDialer := &tls.Dialer{
-		Config: &tls.Config{
-			Certificates: []tls.Certificate{cert},
-			ServerName:   p.opts.ClientCfg.ServerName,
-			RootCAs:      certPool,
-			MinVersion:   tls.VersionTLS13,
-		},
-		NetDialer: &net.Dialer{
-			Timeout:   p.opts.Timeouts.Timeout,
-			KeepAlive: p.opts.Timeouts.KeepAlive,
-		},
 	}
 
 	var auth *proxy.Auth
@@ -165,7 +178,7 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		}
 	}
 
-	dialSocksProxy, err := proxy.SOCKS5("tcp", p.opts.ClientCfg.ProxyAddress, auth, tlsDialer)
+	dialSocksProxy, err := proxy.SOCKS5("tcp", p.opts.ClientCfg.ProxyAddress, auth, dialer)
 	if err != nil {
 		return nil, err
 	}
@@ -217,12 +230,18 @@ func getConfigFromEnv() *ClientCfg {
 		return nil
 	}
 
+	allowInsecure := false
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyAllowInsecure); ok {
+		allowInsecure, _ = strconv.ParseBool(value)
+	}
+
 	return &ClientCfg{
-		ClientCert:   clientCert,
-		ClientKey:    clientKey,
-		RootCA:       rootCA,
-		ProxyAddress: proxyAddress,
-		ServerName:   serverName,
+		ClientCert:    clientCert,
+		ClientKey:     clientKey,
+		RootCA:        rootCA,
+		ProxyAddress:  proxyAddress,
+		ServerName:    serverName,
+		AllowInsecure: allowInsecure,
 	}
 }
 

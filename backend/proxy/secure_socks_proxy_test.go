@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"io/fs"
 	"math/big"
 	"net/http"
@@ -17,6 +18,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestNewSecureSocksProxyContextDialerInsecureProxy(t *testing.T) {
+	opts := &Options{
+		Enabled:  true,
+		Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)},
+		Auth:     &AuthOptions{Username: "user1"},
+		// No need to include the TLS config since the proxy won't use it.
+		ClientCfg: &ClientCfg{
+			AllowInsecure: true,
+		},
+	}
+	cli := New(opts)
+
+	// No errors are expected even though the TLS config was not provided
+	// because the socks proxcy won't use TLS.
+	dialer, err := cli.NewSecureSocksProxyContextDialer()
+	assert.NotNil(t, dialer)
+	assert.NoError(t, err)
+}
 
 func TestNewSecureSocksProxy(t *testing.T) {
 	opts := &Options{
@@ -90,11 +110,12 @@ func TestSecureSocksProxyEnabled(t *testing.T) {
 
 func TestSecureSocksProxyConfig(t *testing.T) {
 	expected := ClientCfg{
-		ClientCert:   "client.crt",
-		ClientKey:    "client.key",
-		RootCA:       "ca.crt",
-		ProxyAddress: "localhost:8080",
-		ServerName:   "testServer",
+		ClientCert:    "client.crt",
+		ClientKey:     "client.key",
+		RootCA:        "ca.crt",
+		ProxyAddress:  "localhost:8080",
+		ServerName:    "testServer",
+		AllowInsecure: true,
 	}
 	t.Setenv(PluginSecureSocksProxyEnabled, "true")
 	t.Setenv(PluginSecureSocksProxyClientCert, expected.ClientCert)
@@ -102,6 +123,7 @@ func TestSecureSocksProxyConfig(t *testing.T) {
 	t.Setenv(PluginSecureSocksProxyRootCACert, expected.RootCA)
 	t.Setenv(PluginSecureSocksProxyProxyAddress, expected.ProxyAddress)
 	t.Setenv(PluginSecureSocksProxyServerName, expected.ServerName)
+	t.Setenv(PluginSecureSocksProxyAllowInsecure, fmt.Sprint(expected.AllowInsecure))
 
 	t.Run("test env variables", func(t *testing.T) {
 		assert.Equal(t, &expected, getConfigFromEnv())

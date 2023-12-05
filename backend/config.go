@@ -103,13 +103,15 @@ type Proxy struct {
 
 func (c *GrafanaCfg) proxy() Proxy {
 	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
+		allowInsecure, _ := strconv.ParseBool(c.Get(proxy.PluginSecureSocksProxyAllowInsecure))
 		return Proxy{
 			clientCfg: &proxy.ClientCfg{
-				ClientCert:   c.Get(proxy.PluginSecureSocksProxyClientCert),
-				ClientKey:    c.Get(proxy.PluginSecureSocksProxyClientKey),
-				RootCA:       c.Get(proxy.PluginSecureSocksProxyRootCACert),
-				ProxyAddress: c.Get(proxy.PluginSecureSocksProxyProxyAddress),
-				ServerName:   c.Get(proxy.PluginSecureSocksProxyServerName),
+				ClientCert:    c.Get(proxy.PluginSecureSocksProxyClientCert),
+				ClientKey:     c.Get(proxy.PluginSecureSocksProxyClientKey),
+				RootCA:        c.Get(proxy.PluginSecureSocksProxyRootCACert),
+				ProxyAddress:  c.Get(proxy.PluginSecureSocksProxyProxyAddress),
+				ServerName:    c.Get(proxy.PluginSecureSocksProxyServerName),
+				AllowInsecure: allowInsecure,
 			},
 		}
 	}
