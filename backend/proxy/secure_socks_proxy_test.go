@@ -169,7 +169,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 		require.NoError(t, err)
 		opts.ClientCfg.RootCA = rootCACert
 		cli := New(opts)
-		_, err = cli.NewSecureSocksProxyContextDialer()
+		_, err = cli.newSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 	t.Run("root ca has to have valid content", func(t *testing.T) {
@@ -178,7 +178,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 		require.NoError(t, err)
 		opts.ClientCfg.RootCA = rootCACert
 		cli := New(opts)
-		_, err = cli.NewSecureSocksProxyContextDialer()
+		_, err = cli.newSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 }

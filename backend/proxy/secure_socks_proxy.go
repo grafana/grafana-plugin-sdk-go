@@ -54,7 +54,7 @@ var (
 type Client interface {
 	SecureSocksProxyEnabled() bool
 	ConfigureSecureSocksHTTPProxy(transport *http.Transport) error
-	NewSecureSocksProxyContextDialer() (proxy.Dialer, error)
+	newSecureSocksProxyContextDialer() (proxy.Dialer, error)
 }
 
 // ClientCfg contains the information needed to allow datasource connections to be
@@ -90,14 +90,14 @@ func (p *cfgProxyWrapper) SecureSocksProxyEnabled() bool {
 	return (p.opts != nil) && p.opts.Enabled
 }
 
-// ConfigureSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
+// ConfigureSecureSocksHTTPProxy takes a http.Transport and wraps it in a socks5 proxy with TLS
 // if it is enabled on the datasource and the grafana instance
 func (p *cfgProxyWrapper) ConfigureSecureSocksHTTPProxy(transport *http.Transport) error {
 	if !p.SecureSocksProxyEnabled() {
 		return nil
 	}
 
-	dialSocksProxy, err := p.NewSecureSocksProxyContextDialer()
+	dialSocksProxy, err := p.newSecureSocksProxyContextDialer()
 	if err != nil {
 		return err
 	}
@@ -111,8 +111,8 @@ func (p *cfgProxyWrapper) ConfigureSecureSocksHTTPProxy(transport *http.Transpor
 	return nil
 }
 
-// NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
-func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, error) {
+// newSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
+func (p *cfgProxyWrapper) newSecureSocksProxyContextDialer() (proxy.Dialer, error) {
 	p.opts.setDefaults()
 
 	if !p.SecureSocksProxyEnabled() {
