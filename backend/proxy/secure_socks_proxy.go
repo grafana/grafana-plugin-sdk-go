@@ -132,6 +132,9 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 	}
 
 	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
+		if rootCAFile == "" {
+			continue
+		}
 		// nolint:gosec
 		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
 		// and we check below if it's the right file type
