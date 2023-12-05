@@ -31,7 +31,7 @@ func TestNew(t *testing.T) {
 		t.Run("client credentials", func(t *testing.T) {
 			t.Run("valid client credentials", func(t *testing.T) {
 				hc, err := authclient.New(httpclient.Options{
-					Headers: map[string]string{"h1": "v1"},
+					Header: http.Header{"H1": {"v1"}},
 				}, authclient.AuthOptions{
 					AuthMethod: authclient.AuthMethodOAuth2,
 					OAuth2Options: &authclient.OAuth2Options{
@@ -54,7 +54,7 @@ func TestNew(t *testing.T) {
 			})
 			t.Run("valid client credentials with basic auth settings", func(t *testing.T) {
 				hc, err := authclient.New(httpclient.Options{
-					Headers:   map[string]string{"h1": "v1"},
+					Header:    http.Header{"H1": {"v1"}},
 					BasicAuth: &httpclient.BasicAuthOptions{User: "userFoo", Password: "pwdBar"},
 				}, authclient.AuthOptions{
 					AuthMethod: authclient.AuthMethodOAuth2,
@@ -81,7 +81,7 @@ func TestNew(t *testing.T) {
 			t.Run("invalid private key", func(t *testing.T) {
 				privateKey := generateKey(t, true)
 				hc, err := authclient.New(httpclient.Options{
-					Headers: map[string]string{"h1": "v1"},
+					Header: http.Header{"H1": {"v1"}},
 				}, authclient.AuthOptions{
 					AuthMethod: authclient.AuthMethodOAuth2,
 					OAuth2Options: &authclient.OAuth2Options{
@@ -103,7 +103,7 @@ func TestNew(t *testing.T) {
 			t.Run("valid private key", func(t *testing.T) {
 				privateKey := generateKey(t, false)
 				hc, err := authclient.New(httpclient.Options{
-					Headers: map[string]string{"h1": "v1"},
+					Header: http.Header{"H1": {"v1"}},
 				}, authclient.AuthOptions{
 					AuthMethod: authclient.AuthMethodOAuth2,
 					OAuth2Options: &authclient.OAuth2Options{
@@ -134,7 +134,7 @@ func getOAuthServer(t *testing.T) *httptest.Server {
 	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		oAuth2TokenValue := "foo"
 		t.Run("ensure custom headers propagated correctly", func(t *testing.T) {
-			require.Equal(t, "v1", r.Header.Get("h1"))
+			require.Equal(t, "v1", r.Header.Get("H1"))
 		})
 		if r.URL.String() == handlerToken {
 			w.Header().Set("Content-Type", "application/json")
