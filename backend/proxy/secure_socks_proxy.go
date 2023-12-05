@@ -65,6 +65,7 @@ type ClientCfg struct {
 	ClientCertPEM []byte
 	ClientKeyPEM  []byte
 	RootCA        string
+	RootCAPEM     []byte
 	ProxyAddress  string
 	ServerName    string
 }
@@ -122,6 +123,14 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 	}
 
 	certPool := x509.NewCertPool()
+
+	// Allow CA to be provided via config, as well as via file path
+	if p.opts.ClientCfg.RootCAPEM != nil {
+		if !certPool.AppendCertsFromPEM(p.opts.ClientCfg.RootCAPEM) {
+			return nil, errors.New("failed to append CA certificate from RootCAPEM")
+		}
+	}
+
 	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
 		// nolint:gosec
 		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
