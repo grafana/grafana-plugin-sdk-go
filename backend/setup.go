@@ -64,7 +64,7 @@ const (
 // As the SDK evolves, this will likely change.
 //
 // Currently, this function enables and configures profiling with pprof.
-func SetupPluginEnvironment(pluginID string) {
+func SetupPluginEnvironment2(pluginID string) {
 	setupProfiler(pluginID)
 }
 
