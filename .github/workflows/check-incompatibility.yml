@@ -20,6 +20,7 @@ jobs:
         path: './grafana-plugin-sdk-go'
     - uses: actions/setup-go@v5
       with:
+        check-latest: true
         go-version-file: './grafana-plugin-sdk-go/go.mod'
 
     - name: Install gorelease
