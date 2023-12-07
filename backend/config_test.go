@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
@@ -140,7 +141,10 @@ func TestConfig(t *testing.T) {
 			cfg := GrafanaConfigFromContext(ctx)
 
 			require.Equal(t, tc.expectedFeatureToggles, cfg.FeatureToggles())
-			require.Equal(t, tc.expectedProxy, cfg.proxy())
+			proxy, err := cfg.proxy()
+			assert.NoError(t, err)
+
+			require.Equal(t, tc.expectedProxy, proxy)
 		}
 	})
 }

@@ -101,9 +101,20 @@ type Proxy struct {
 	clientCfg *proxy.ClientCfg
 }
 
-func (c *GrafanaCfg) proxy() Proxy {
+func (c *GrafanaCfg) proxy() (Proxy, error) {
 	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
-		allowInsecure, _ := strconv.ParseBool(c.Get(proxy.PluginSecureSocksProxyAllowInsecure))
+		var (
+			allowInsecure = false
+			err           error
+		)
+
+		if v := c.Get(proxy.PluginSecureSocksProxyAllowInsecure); v != "" {
+			allowInsecure, err = strconv.ParseBool(c.Get(proxy.PluginSecureSocksProxyAllowInsecure))
+			if err != nil {
+				return Proxy{}, fmt.Errorf("parsing %s, value must be a boolean: %w", proxy.PluginSecureSocksProxyAllowInsecure, err)
+			}
+		}
+
 		return Proxy{
 			clientCfg: &proxy.ClientCfg{
 				ClientCert:    c.Get(proxy.PluginSecureSocksProxyClientCert),
@@ -113,9 +124,10 @@ func (c *GrafanaCfg) proxy() Proxy {
 				ServerName:    c.Get(proxy.PluginSecureSocksProxyServerName),
 				AllowInsecure: allowInsecure,
 			},
-		}
+		}, nil
 	}
-	return Proxy{}
+
+	return Proxy{}, nil
 }
 
 func (c *GrafanaCfg) AppURL() (string, error) {

@@ -125,7 +125,11 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (htt
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
 	cfg := GrafanaConfigFromContext(ctx)
-	opts.ProxyOptions, err = s.ProxyOptions(cfg.proxy().clientCfg)
+	proxy, err := cfg.proxy()
+	if err != nil {
+		return opts, err
+	}
+	opts.ProxyOptions, err = s.ProxyOptions(proxy.clientCfg)
 	if err != nil {
 		return opts, err
 	}
