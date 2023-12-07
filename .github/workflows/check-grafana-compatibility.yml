@@ -9,7 +9,7 @@ on:
       - 'go.sum'
     branches:
       - 'main'
-  
+
 jobs:
   buildPR:
     name: Build PR
@@ -22,10 +22,12 @@ jobs:
       with:
         repository: 'grafana/grafana'
         path: './grafana'
-    - uses: actions/setup-go@v4
+    - uses: actions/setup-go@v5
       with:
+        cache: false
+        check-latest: true
         go-version-file: 'grafana-plugin-sdk-go/go.mod'
-  
+
     - name: Check if branch exists in Grafana
       working-directory: './grafana'
       run: |
