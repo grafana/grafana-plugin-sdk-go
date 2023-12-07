@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -206,3 +207,7 @@ func (tr TimeRange) Duration() time.Duration {
 }
 
 var _ ForwardHTTPHeaders = (*QueryDataRequest)(nil)
+
+func TestCompatFunc() {
+	fmt.Println("test")
+}
