@@ -33,7 +33,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		return nil
 	}
 
-	backend.SetupPluginEnvironment2(pluginID)
+	backend.SetupPluginEnvironment(pluginID)
 	if err := backend.SetupTracer(pluginID, opts.TracingOpts); err != nil {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
