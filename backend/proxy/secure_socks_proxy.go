@@ -112,7 +112,7 @@ func (p *cfgProxyWrapper) ConfigureSecureSocksHTTPProxy(transport *http.Transpor
 	}
 
 	transport.DialContext = contextDialer.DialContext
-	return nil // No need to include the TLS config since the proxy won't use it.
+	return nil
 }
 
 // NewSecureSocksProxyContextDialer returns a proxy context dialer that can be used to allow datasource connections to go through a secure socks proxy
