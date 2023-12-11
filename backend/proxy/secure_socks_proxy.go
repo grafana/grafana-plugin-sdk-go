@@ -204,6 +204,26 @@ func getConfigFromEnv() *ClientCfg {
 		}
 	}
 
+	proxyAddress := ""
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyProxyAddress); ok {
+		proxyAddress = value
+	} else {
+		return nil
+	}
+
+	allowInsecure := false
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyAllowInsecure); ok {
+		allowInsecure, _ = strconv.ParseBool(value)
+	}
+
+	// We only need to fill these fields on insecure mode.
+	if allowInsecure {
+		return &ClientCfg{
+			ProxyAddress:  proxyAddress,
+			AllowInsecure: allowInsecure,
+		}
+	}
+
 	clientCert := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCert); ok {
 		clientCert = value
@@ -225,23 +245,11 @@ func getConfigFromEnv() *ClientCfg {
 		return nil
 	}
 
-	proxyAddress := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyProxyAddress); ok {
-		proxyAddress = value
-	} else {
-		return nil
-	}
-
 	serverName := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyServerName); ok {
 		serverName = value
 	} else {
 		return nil
-	}
-
-	allowInsecure := false
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyAllowInsecure); ok {
-		allowInsecure, _ = strconv.ParseBool(value)
 	}
 
 	return &ClientCfg{
@@ -250,7 +258,7 @@ func getConfigFromEnv() *ClientCfg {
 		RootCA:        rootCA,
 		ProxyAddress:  proxyAddress,
 		ServerName:    serverName,
-		AllowInsecure: allowInsecure,
+		AllowInsecure: false,
 	}
 }
 
