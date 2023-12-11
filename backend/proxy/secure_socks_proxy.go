@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -131,43 +132,11 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 			KeepAlive: p.opts.Timeouts.KeepAlive,
 		}
 	} else {
-		certPool := x509.NewCertPool()
-		for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
-			// nolint:gosec
-			// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
-			// and we check below if it's the right file type
-			pemBytes, err := os.ReadFile(rootCAFile)
-			if err != nil {
-				return nil, err
-			}
-
-			pemDecoded, _ := pem.Decode(pemBytes)
-			if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
-				return nil, errors.New("root ca is invalid")
-			}
-
-			if !certPool.AppendCertsFromPEM(pemBytes) {
-				return nil, errors.New("failed to append CA certificate " + rootCAFile)
-			}
-		}
-
-		cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
+		d, err := p.getTLSDialer()
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("instantiating tls dialer: %w", err)
 		}
-
-		dialer = &tls.Dialer{
-			Config: &tls.Config{
-				Certificates: []tls.Certificate{cert},
-				ServerName:   p.opts.ClientCfg.ServerName,
-				RootCAs:      certPool,
-				MinVersion:   tls.VersionTLS13,
-			},
-			NetDialer: &net.Dialer{
-				Timeout:   p.opts.Timeouts.Timeout,
-				KeepAlive: p.opts.Timeouts.KeepAlive,
-			},
-		}
+		dialer = d
 	}
 
 	var auth *proxy.Auth
@@ -184,6 +153,46 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 	}
 
 	return newInstrumentedSocksDialer(dialSocksProxy), nil
+}
+
+func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
+	certPool := x509.NewCertPool()
+	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
+		// nolint:gosec
+		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
+		// and we check below if it's the right file type
+		pemBytes, err := os.ReadFile(rootCAFile)
+		if err != nil {
+			return nil, err
+		}
+
+		pemDecoded, _ := pem.Decode(pemBytes)
+		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
+			return nil, errors.New("root ca is invalid")
+		}
+
+		if !certPool.AppendCertsFromPEM(pemBytes) {
+			return nil, errors.New("failed to append CA certificate " + rootCAFile)
+		}
+	}
+
+	cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return &tls.Dialer{
+		Config: &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ServerName:   p.opts.ClientCfg.ServerName,
+			RootCAs:      certPool,
+			MinVersion:   tls.VersionTLS13,
+		},
+		NetDialer: &net.Dialer{
+			Timeout:   p.opts.Timeouts.Timeout,
+			KeepAlive: p.opts.Timeouts.KeepAlive,
+		},
+	}, nil
 }
 
 // getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
