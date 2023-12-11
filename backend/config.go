@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/grafana/grafana-azure-sdk-go/azsettings"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
@@ -145,4 +146,57 @@ func UserAgentFromContext(ctx context.Context) *useragent.UserAgent {
 func WithUserAgent(ctx context.Context, ua *useragent.UserAgent) context.Context {
 	ctx = context.WithValue(ctx, userAgentKey{}, ua)
 	return ctx
+}
+
+// Changes here are dependant on https://github.com/grafana/grafana/tree/main/pkg/plugins/envvars/envvars.go#L148
+func (c *GrafanaCfg) Azure() *azsettings.AzureSettings {
+	settings := &azsettings.AzureSettings{}
+	if v, exists := c.config[azsettings.AzureCloud]; exists && v != "" {
+		settings.Cloud = v
+	}
+
+	if v, exists := c.config[azsettings.ManagedIdentityEnabled]; exists && v == strconv.FormatBool(true) {
+		settings.ManagedIdentityEnabled = true
+
+		if v, exists := c.config[azsettings.ManagedIdentityClientID]; exists && v != "" {
+			settings.ManagedIdentityClientId = v
+		}
+	}
+
+	if v, exists := c.config[azsettings.UserIdentityEnabled]; exists && v == strconv.FormatBool(true) {
+		settings.UserIdentityEnabled = true
+
+		settings.UserIdentityTokenEndpoint = &azsettings.TokenEndpointSettings{}
+
+		if v, exists := c.config[azsettings.UserIdentityClientID]; exists && v != "" {
+			settings.UserIdentityTokenEndpoint.ClientId = v
+		}
+		if v, exists := c.config[azsettings.UserIdentityClientSecret]; exists && v != "" {
+			settings.UserIdentityTokenEndpoint.ClientSecret = v
+		}
+		if v, exists := c.config[azsettings.UserIdentityTokenURL]; exists && v != "" {
+			settings.UserIdentityTokenEndpoint.TokenUrl = v
+		}
+		if v, exists := c.config[azsettings.UserIdentityAssertion]; exists && v == "username" {
+			settings.UserIdentityTokenEndpoint.UsernameAssertion = true
+		}
+	}
+
+	if v, exists := c.config[azsettings.WorkloadIdentityEnabled]; exists && v == strconv.FormatBool(true) {
+		settings.WorkloadIdentityEnabled = true
+
+		settings.WorkloadIdentitySettings = &azsettings.WorkloadIdentitySettings{}
+
+		if v, exists := c.config[azsettings.WorkloadIdentityClientID]; exists && v != "" {
+			settings.WorkloadIdentitySettings.ClientId = v
+		}
+		if v, exists := c.config[azsettings.WorkloadIdentityTenantID]; exists && v != "" {
+			settings.WorkloadIdentitySettings.TenantId = v
+		}
+		if v, exists := c.config[azsettings.WorkloadIdentityTokenFile]; exists && v != "" {
+			settings.WorkloadIdentitySettings.TokenFile = v
+		}
+	}
+
+	return settings
 }

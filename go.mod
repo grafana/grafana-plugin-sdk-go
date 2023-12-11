@@ -69,6 +69,7 @@ require (
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/google/flatbuffers v23.1.21+incompatible // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/grafana/grafana-azure-sdk-go v1.10.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.16.2 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect

@@ -6,6 +6,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/grafana/grafana-azure-sdk-go/azsettings"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
@@ -18,30 +19,35 @@ func TestConfig(t *testing.T) {
 			cfg                    *GrafanaCfg
 			expectedFeatureToggles FeatureToggles
 			expectedProxy          Proxy
+			expectedAzure          *azsettings.AzureSettings
 		}{
 			{
 				name:                   "nil config",
 				cfg:                    nil,
 				expectedFeatureToggles: FeatureToggles{},
 				expectedProxy:          Proxy{},
+				expectedAzure:          &azsettings.AzureSettings{},
 			},
 			{
 				name:                   "empty config",
 				cfg:                    &GrafanaCfg{},
 				expectedFeatureToggles: FeatureToggles{},
 				expectedProxy:          Proxy{},
+				expectedAzure:          &azsettings.AzureSettings{},
 			},
 			{
 				name:                   "nil config map",
 				cfg:                    NewGrafanaCfg(nil),
 				expectedFeatureToggles: FeatureToggles{},
 				expectedProxy:          Proxy{},
+				expectedAzure:          &azsettings.AzureSettings{},
 			},
 			{
 				name:                   "empty config map",
 				cfg:                    NewGrafanaCfg(make(map[string]string)),
 				expectedFeatureToggles: FeatureToggles{},
 				expectedProxy:          Proxy{},
+				expectedAzure:          &azsettings.AzureSettings{},
 			},
 			{
 				name: "feature toggles and proxy enabled",
@@ -68,6 +74,7 @@ func TestConfig(t *testing.T) {
 						ServerName:   "localhost",
 					},
 				},
+				expectedAzure: &azsettings.AzureSettings{},
 			},
 			{
 				name: "feature toggles enabled and proxy disabled",
@@ -86,6 +93,7 @@ func TestConfig(t *testing.T) {
 					},
 				},
 				expectedProxy: Proxy{},
+				expectedAzure: &azsettings.AzureSettings{},
 			},
 			{
 				name: "feature toggles disabled and proxy enabled",
@@ -108,6 +116,44 @@ func TestConfig(t *testing.T) {
 						ServerName:   "localhost",
 					},
 				},
+				expectedAzure: &azsettings.AzureSettings{},
+			},
+			{
+				name: "azure settings in config",
+				cfg: NewGrafanaCfg(map[string]string{
+					azsettings.AzureCloud:                azsettings.AzureCloud,
+					azsettings.ManagedIdentityEnabled:    "true",
+					azsettings.ManagedIdentityClientID:   "mock_managed_identity_client_id",
+					azsettings.UserIdentityEnabled:       "true",
+					azsettings.UserIdentityClientID:      "mock_user_identity_client_id",
+					azsettings.UserIdentityClientSecret:  "mock_managed_identity_client_secret",
+					azsettings.UserIdentityTokenURL:      "mock_managed_identity_token_url",
+					azsettings.UserIdentityAssertion:     "username",
+					azsettings.WorkloadIdentityEnabled:   "true",
+					azsettings.WorkloadIdentityClientID:  "mock_workload_identity_client_id",
+					azsettings.WorkloadIdentityTenantID:  "mock_workload_identity_tenant_id",
+					azsettings.WorkloadIdentityTokenFile: "mock_workload_identity_token_file",
+				}),
+				expectedFeatureToggles: FeatureToggles{},
+				expectedProxy:          Proxy{},
+				expectedAzure: &azsettings.AzureSettings{
+					Cloud:                   azsettings.AzureCloud,
+					ManagedIdentityEnabled:  true,
+					ManagedIdentityClientId: "mock_managed_identity_client_id",
+					UserIdentityEnabled:     true,
+					UserIdentityTokenEndpoint: &azsettings.TokenEndpointSettings{
+						ClientId:          "mock_user_identity_client_id",
+						ClientSecret:      "mock_managed_identity_client_secret",
+						TokenUrl:          "mock_managed_identity_token_url",
+						UsernameAssertion: true,
+					},
+					WorkloadIdentityEnabled: true,
+					WorkloadIdentitySettings: &azsettings.WorkloadIdentitySettings{
+						ClientId:  "mock_workload_identity_client_id",
+						TenantId:  "mock_workload_identity_tenant_id",
+						TokenFile: "mock_workload_identity_token_file",
+					},
+				},
 			},
 		}
 
@@ -117,6 +163,7 @@ func TestConfig(t *testing.T) {
 
 			require.Equal(t, tc.expectedFeatureToggles, cfg.FeatureToggles())
 			require.Equal(t, tc.expectedProxy, cfg.proxy())
+			require.Equal(t, tc.expectedAzure, cfg.Azure())
 		}
 	})
 }
