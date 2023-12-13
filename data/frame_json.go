@@ -17,7 +17,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattetti/filebuffer"
 
-	"github.com/grafana/grafana-plugin-sdk-go/internal/jsonitere"
+	"github.com/grafana/grafana-plugin-sdk-go/jsonitere"
 )
 
 const simpleTypeString = "string"
