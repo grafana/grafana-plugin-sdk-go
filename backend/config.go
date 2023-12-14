@@ -101,19 +101,33 @@ type Proxy struct {
 	clientCfg *proxy.ClientCfg
 }
 
-func (c *GrafanaCfg) proxy() Proxy {
+func (c *GrafanaCfg) proxy() (Proxy, error) {
 	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
+		var (
+			allowInsecure = false
+			err           error
+		)
+
+		if v := c.Get(proxy.PluginSecureSocksProxyAllowInsecure); v != "" {
+			allowInsecure, err = strconv.ParseBool(c.Get(proxy.PluginSecureSocksProxyAllowInsecure))
+			if err != nil {
+				return Proxy{}, fmt.Errorf("parsing %s, value must be a boolean: %w", proxy.PluginSecureSocksProxyAllowInsecure, err)
+			}
+		}
+
 		return Proxy{
 			clientCfg: &proxy.ClientCfg{
-				ClientCert:   c.Get(proxy.PluginSecureSocksProxyClientCert),
-				ClientKey:    c.Get(proxy.PluginSecureSocksProxyClientKey),
-				RootCA:       c.Get(proxy.PluginSecureSocksProxyRootCACert),
-				ProxyAddress: c.Get(proxy.PluginSecureSocksProxyProxyAddress),
-				ServerName:   c.Get(proxy.PluginSecureSocksProxyServerName),
+				ClientCert:    c.Get(proxy.PluginSecureSocksProxyClientCert),
+				ClientKey:     c.Get(proxy.PluginSecureSocksProxyClientKey),
+				RootCA:        c.Get(proxy.PluginSecureSocksProxyRootCACert),
+				ProxyAddress:  c.Get(proxy.PluginSecureSocksProxyProxyAddress),
+				ServerName:    c.Get(proxy.PluginSecureSocksProxyServerName),
+				AllowInsecure: allowInsecure,
 			},
-		}
+		}, nil
 	}
-	return Proxy{}
+
+	return Proxy{}, nil
 }
 
 func (c *GrafanaCfg) AppURL() (string, error) {

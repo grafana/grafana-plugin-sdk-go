@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
@@ -109,6 +110,30 @@ func TestConfig(t *testing.T) {
 					},
 				},
 			},
+			{
+				name: "feature toggles disabled and insecure proxy enabled",
+				cfg: NewGrafanaCfg(map[string]string{
+					featuretoggles.EnabledFeatures:            "",
+					proxy.PluginSecureSocksProxyEnabled:       "true",
+					proxy.PluginSecureSocksProxyProxyAddress:  "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:    "localhost",
+					proxy.PluginSecureSocksProxyClientKey:     "clientKey",
+					proxy.PluginSecureSocksProxyClientCert:    "clientCert",
+					proxy.PluginSecureSocksProxyRootCACert:    "rootCACert",
+					proxy.PluginSecureSocksProxyAllowInsecure: "true",
+				}),
+				expectedFeatureToggles: FeatureToggles{},
+				expectedProxy: Proxy{
+					clientCfg: &proxy.ClientCfg{
+						ClientCert:    "clientCert",
+						ClientKey:     "clientKey",
+						RootCA:        "rootCACert",
+						ProxyAddress:  "localhost:1234",
+						ServerName:    "localhost",
+						AllowInsecure: true,
+					},
+				},
+			},
 		}
 
 		for _, tc := range tcs {
@@ -116,7 +141,10 @@ func TestConfig(t *testing.T) {
 			cfg := GrafanaConfigFromContext(ctx)
 
 			require.Equal(t, tc.expectedFeatureToggles, cfg.FeatureToggles())
-			require.Equal(t, tc.expectedProxy, cfg.proxy())
+			proxy, err := cfg.proxy()
+			assert.NoError(t, err)
+
+			require.Equal(t, tc.expectedProxy, proxy)
 		}
 	})
 }

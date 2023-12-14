@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 	"os"
@@ -39,6 +40,9 @@ var (
 	// PluginSecureSocksProxyServerName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
 	// environment variable used to specify the server name of the secure socks proxy.
 	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+	// PluginSecureSocksProxyAllowInsecure is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE
+	// environment variable used to specify if the proxy should use a TLS dialer.
+	PluginSecureSocksProxyAllowInsecure = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
 var (
@@ -60,11 +64,12 @@ type Client interface {
 // ClientCfg contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy.
 type ClientCfg struct {
-	ClientCert   string
-	ClientKey    string
-	RootCA       string
-	ProxyAddress string
-	ServerName   string
+	ClientCert    string
+	ClientKey     string
+	RootCA        string
+	ProxyAddress  string
+	ServerName    string
+	AllowInsecure bool
 }
 
 // New creates a new proxy client from a given config.
@@ -119,6 +124,38 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		return nil, errors.New("proxy not enabled")
 	}
 
+	var dialer proxy.Dialer
+
+	if p.opts.ClientCfg.AllowInsecure {
+		dialer = &net.Dialer{
+			Timeout:   p.opts.Timeouts.Timeout,
+			KeepAlive: p.opts.Timeouts.KeepAlive,
+		}
+	} else {
+		d, err := p.getTLSDialer()
+		if err != nil {
+			return nil, fmt.Errorf("instantiating tls dialer: %w", err)
+		}
+		dialer = d
+	}
+
+	var auth *proxy.Auth
+	if p.opts.Auth != nil {
+		auth = &proxy.Auth{
+			User:     p.opts.Auth.Username,
+			Password: p.opts.Auth.Password,
+		}
+	}
+
+	dialSocksProxy, err := proxy.SOCKS5("tcp", p.opts.ClientCfg.ProxyAddress, auth, dialer)
+	if err != nil {
+		return nil, err
+	}
+
+	return newInstrumentedSocksDialer(dialSocksProxy), nil
+}
+
+func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
 	certPool := x509.NewCertPool()
 	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
 		// nolint:gosec
@@ -144,7 +181,7 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		return nil, err
 	}
 
-	tlsDialer := &tls.Dialer{
+	return &tls.Dialer{
 		Config: &tls.Config{
 			Certificates: []tls.Certificate{cert},
 			ServerName:   p.opts.ClientCfg.ServerName,
@@ -155,22 +192,7 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 			Timeout:   p.opts.Timeouts.Timeout,
 			KeepAlive: p.opts.Timeouts.KeepAlive,
 		},
-	}
-
-	var auth *proxy.Auth
-	if p.opts.Auth != nil {
-		auth = &proxy.Auth{
-			User:     p.opts.Auth.Username,
-			Password: p.opts.Auth.Password,
-		}
-	}
-
-	dialSocksProxy, err := proxy.SOCKS5("tcp", p.opts.ClientCfg.ProxyAddress, auth, tlsDialer)
-	if err != nil {
-		return nil, err
-	}
-
-	return newInstrumentedSocksDialer(dialSocksProxy), nil
+	}, nil
 }
 
 // getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
@@ -179,6 +201,26 @@ func getConfigFromEnv() *ClientCfg {
 		enabled, err := strconv.ParseBool(value)
 		if err != nil || !enabled {
 			return nil
+		}
+	}
+
+	proxyAddress := ""
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyProxyAddress); ok {
+		proxyAddress = value
+	} else {
+		return nil
+	}
+
+	allowInsecure := false
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyAllowInsecure); ok {
+		allowInsecure, _ = strconv.ParseBool(value)
+	}
+
+	// We only need to fill these fields on insecure mode.
+	if allowInsecure {
+		return &ClientCfg{
+			ProxyAddress:  proxyAddress,
+			AllowInsecure: allowInsecure,
 		}
 	}
 
@@ -203,13 +245,6 @@ func getConfigFromEnv() *ClientCfg {
 		return nil
 	}
 
-	proxyAddress := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyProxyAddress); ok {
-		proxyAddress = value
-	} else {
-		return nil
-	}
-
 	serverName := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyServerName); ok {
 		serverName = value
@@ -218,11 +253,12 @@ func getConfigFromEnv() *ClientCfg {
 	}
 
 	return &ClientCfg{
-		ClientCert:   clientCert,
-		ClientKey:    clientKey,
-		RootCA:       rootCA,
-		ProxyAddress: proxyAddress,
-		ServerName:   serverName,
+		ClientCert:    clientCert,
+		ClientKey:     clientKey,
+		RootCA:        rootCA,
+		ProxyAddress:  proxyAddress,
+		ServerName:    serverName,
+		AllowInsecure: false,
 	}
 }
 

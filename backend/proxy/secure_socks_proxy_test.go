@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"fmt"
 	"io/fs"
 	"math/big"
 	"net/http"
@@ -17,6 +18,25 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+func TestNewSecureSocksProxyContextDialerInsecureProxy(t *testing.T) {
+	opts := &Options{
+		Enabled:  true,
+		Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)},
+		Auth:     &AuthOptions{Username: "user1"},
+		// No need to include the TLS config since the proxy won't use it.
+		ClientCfg: &ClientCfg{
+			AllowInsecure: true,
+		},
+	}
+	cli := New(opts)
+
+	// No errors are expected even though the TLS config was not provided
+	// because the socks proxcy won't use TLS.
+	dialer, err := cli.NewSecureSocksProxyContextDialer()
+	assert.NotNil(t, dialer)
+	assert.NoError(t, err)
+}
 
 func TestNewSecureSocksProxy(t *testing.T) {
 	opts := &Options{
@@ -88,20 +108,118 @@ func TestSecureSocksProxyEnabled(t *testing.T) {
 	})
 }
 
+func TestGetConfigFromEnv(t *testing.T) {
+	cases := []struct {
+		description string
+		envVars     map[string]string
+		expected    *ClientCfg
+	}{
+		{
+			description: "socks proxy not enabled, should return nil",
+			envVars: map[string]string{
+				PluginSecureSocksProxyEnabled:      "false",
+				PluginSecureSocksProxyProxyAddress: "localhost",
+				PluginSecureSocksProxyClientCert:   "cert",
+				PluginSecureSocksProxyClientKey:    "key",
+				PluginSecureSocksProxyRootCACert:   "root_ca",
+				PluginSecureSocksProxyServerName:   "server_name",
+			},
+			expected: nil,
+		},
+		{
+			description: "allowInsecure=true, should return config without tls fields filled",
+			envVars: map[string]string{
+				PluginSecureSocksProxyEnabled:       "true",
+				PluginSecureSocksProxyProxyAddress:  "localhost",
+				PluginSecureSocksProxyAllowInsecure: "true",
+			},
+			expected: &ClientCfg{
+				ProxyAddress:  "localhost",
+				AllowInsecure: true,
+			},
+		},
+		{
+			description: "allowInsecure=false, client cert is required, should return nil",
+			envVars: map[string]string{
+				PluginSecureSocksProxyEnabled:       "true",
+				PluginSecureSocksProxyProxyAddress:  "localhost",
+				PluginSecureSocksProxyAllowInsecure: "false",
+			},
+			expected: nil,
+		},
+		{
+			description: "allowInsecure=false, client key is required, should return nil",
+			envVars: map[string]string{
+				PluginSecureSocksProxyEnabled:       "true",
+				PluginSecureSocksProxyProxyAddress:  "localhost",
+				PluginSecureSocksProxyAllowInsecure: "false",
+				PluginSecureSocksProxyClientCert:    "cert",
+			},
+			expected: nil,
+		},
+		{
+			description: "allowInsecure=false, root ca is required, should return nil",
+			envVars: map[string]string{
+				PluginSecureSocksProxyEnabled:       "true",
+				PluginSecureSocksProxyProxyAddress:  "localhost",
+				PluginSecureSocksProxyAllowInsecure: "false",
+				PluginSecureSocksProxyClientCert:    "cert",
+				PluginSecureSocksProxyClientKey:     "key",
+			},
+			expected: nil,
+		},
+		{
+			description: "allowInsecure=false, server name is required, should return nil",
+			envVars: map[string]string{
+				PluginSecureSocksProxyEnabled:       "true",
+				PluginSecureSocksProxyProxyAddress:  "localhost",
+				PluginSecureSocksProxyAllowInsecure: "false",
+				PluginSecureSocksProxyClientCert:    "cert",
+				PluginSecureSocksProxyClientKey:     "key",
+				PluginSecureSocksProxyRootCACert:    "root",
+			},
+			expected: nil,
+		},
+		{
+			description: "allowInsecure=false, should return config with tls fields filled",
+			envVars: map[string]string{
+				PluginSecureSocksProxyEnabled:       "true",
+				PluginSecureSocksProxyProxyAddress:  "localhost",
+				PluginSecureSocksProxyAllowInsecure: "false",
+				PluginSecureSocksProxyClientCert:    "cert",
+				PluginSecureSocksProxyClientKey:     "key",
+				PluginSecureSocksProxyRootCACert:    "root",
+				PluginSecureSocksProxyServerName:    "name",
+			},
+			expected: &ClientCfg{
+				ProxyAddress:  "localhost",
+				ClientCert:    "cert",
+				ClientKey:     "key",
+				RootCA:        "root",
+				ServerName:    "name",
+				AllowInsecure: false,
+			},
+		},
+	}
+
+	for _, tt := range cases {
+		t.Run(tt.description, func(t *testing.T) {
+			for key, value := range tt.envVars {
+				t.Setenv(key, value)
+			}
+			assert.Equal(t, tt.expected, getConfigFromEnv())
+		})
+	}
+}
+
 func TestSecureSocksProxyConfig(t *testing.T) {
 	expected := ClientCfg{
-		ClientCert:   "client.crt",
-		ClientKey:    "client.key",
-		RootCA:       "ca.crt",
-		ProxyAddress: "localhost:8080",
-		ServerName:   "testServer",
+		ProxyAddress:  "localhost:8080",
+		AllowInsecure: true,
 	}
 	t.Setenv(PluginSecureSocksProxyEnabled, "true")
-	t.Setenv(PluginSecureSocksProxyClientCert, expected.ClientCert)
-	t.Setenv(PluginSecureSocksProxyClientKey, expected.ClientKey)
-	t.Setenv(PluginSecureSocksProxyRootCACert, expected.RootCA)
 	t.Setenv(PluginSecureSocksProxyProxyAddress, expected.ProxyAddress)
-	t.Setenv(PluginSecureSocksProxyServerName, expected.ServerName)
+	t.Setenv(PluginSecureSocksProxyAllowInsecure, fmt.Sprint(expected.AllowInsecure))
 
 	t.Run("test env variables", func(t *testing.T) {
 		assert.Equal(t, &expected, getConfigFromEnv())
