@@ -1,12 +1,28 @@
-// package jsonitere wraps json-iterator/go's Iterator methods with error returns
+// Package jsoniter wraps json-iterator/go's Iterator methods with error returns
 // so linting can catch unchecked errors.
 // The underlying iterator's Error property is returned and not reset.
 // See json-iterator/go for method documentation and additional methods that
 // can be added to this library.
-package jsonitere
+package jsoniter
 
 import (
+	"io"
+
 	j "github.com/json-iterator/go"
+)
+
+const (
+	InvalidValue = j.InvalidValue
+	StringValue  = j.StringValue
+	NumberValue  = j.NumberValue
+	NilValue     = j.NilValue
+	BoolValue    = j.BoolValue
+	ArrayValue   = j.ArrayValue
+	ObjectValue  = j.ObjectValue
+)
+
+var (
+	ConfigDefault = j.ConfigDefault
 )
 
 type Iterator struct {
@@ -84,4 +100,24 @@ func (iter *Iterator) ReadBool() (bool, error) {
 func (iter *Iterator) ReportError(op, msg string) error {
 	iter.i.ReportError(op, msg)
 	return iter.i.Error
+}
+
+func (iter *Iterator) Marshal(v interface{}) ([]byte, error) {
+	return ConfigDefault.Marshal(v)
+}
+
+func (iter *Iterator) Unmarshal(data []byte, v interface{}) error {
+	return ConfigDefault.Unmarshal(data, v)
+}
+
+func (iter *Iterator) Parse(cfg j.API, reader io.Reader, bufSize int) (*Iterator, error) {
+	return &Iterator{j.Parse(cfg, reader, bufSize)}, iter.i.Error
+}
+
+func (iter *Iterator) ParseBytes(cfg j.API, input []byte) (*Iterator, error) {
+	return &Iterator{j.ParseBytes(cfg, input)}, iter.i.Error
+}
+
+func (iter *Iterator) ParseString(cfg j.API, input string) (*Iterator, error) {
+	return &Iterator{j.ParseString(cfg, input)}, iter.i.Error
 }
