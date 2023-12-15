@@ -17,7 +17,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 	"github.com/mattetti/filebuffer"
 
-	jiter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 const simpleTypeString = "string"
@@ -318,7 +318,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			fieldIndex := 0
 			for iter.ReadArray() {
 				t := iter.WhatIsNext()
-				if t == jiter.ObjectValue {
+				if t == sdkjsoniter.ObjectValue {
 					for l3Field := iter.ReadObject(); l3Field != ""; l3Field = iter.ReadObject() {
 						field := frame.Fields[fieldIndex]
 						replace := getReplacementValue(l3Field, field.Type())
@@ -339,7 +339,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 				field := frame.Fields[fieldIndex]
 
 				t := iter.WhatIsNext()
-				if t == jiter.ArrayValue {
+				if t == sdkjsoniter.ArrayValue {
 					for idx := 0; iter.ReadArray(); idx++ {
 						ns := iter.ReadInt64()
 						if readValues {
@@ -421,7 +421,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 }
 
 func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
-	itere := jiter.NewIterator(iter)
+	itere := sdkjsoniter.NewIterator(iter)
 	// we handle Uint64 differently because the regular method for unmarshalling to []any does not work for uint64 correctly
 	// due to jsoniter parsing logic that automatically converts all numbers to float64.
 	// We can't use readUint64VectorJSON here because the size of the array is not known and the function requires the length parameter
@@ -565,7 +565,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	return f.vector, nil
 }
 
-func readArrayOfNumbers[T any](iter *jiter.Iterator, parse func(string) (T, error), reader func() (T, error)) ([]T, error) {
+func readArrayOfNumbers[T any](iter *sdkjsoniter.Iterator, parse func(string) (T, error), reader func() (T, error)) ([]T, error) {
 	var def T
 	var result []T
 	for {
@@ -581,7 +581,7 @@ func readArrayOfNumbers[T any](iter *jiter.Iterator, parse func(string) (T, erro
 			return nil, err
 		}
 		switch nextType {
-		case jiter.StringValue:
+		case sdkjsoniter.StringValue:
 			str, err := iter.ReadString()
 			if err != nil {
 				return nil, err
@@ -591,7 +591,7 @@ func readArrayOfNumbers[T any](iter *jiter.Iterator, parse func(string) (T, erro
 				return nil, iter.ReportError(fmt.Sprintf("readArrayOfNumbers[%T]", def), "cannot parse string")
 			}
 			result = append(result, u)
-		case jiter.NilValue:
+		case sdkjsoniter.NilValue:
 			_, err := iter.ReadNil()
 			if err != nil {
 				return nil, err
@@ -1288,7 +1288,7 @@ func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 		}
 
 		t := iter.WhatIsNext()
-		if t == jiter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			ms := iter.ReadInt64()
@@ -1320,7 +1320,7 @@ func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 		}
 
 		t := iter.WhatIsNext()
-		if t == jiter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			var v json.RawMessage
