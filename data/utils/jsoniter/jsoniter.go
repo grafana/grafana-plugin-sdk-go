@@ -117,3 +117,7 @@ func (iter *Iterator) Parse(cfg j.API, reader io.Reader, bufSize int) (*Iterator
 func (iter *Iterator) ParseBytes(cfg j.API, input []byte) (*Iterator, error) {
 	return &Iterator{j.ParseBytes(cfg, input)}, iter.i.Error
 }
+
+func (iter *Iterator) ParseString(cfg j.API, input string) (*Iterator, error) {
+	return &Iterator{j.ParseString(cfg, input)}, iter.i.Error
+}
