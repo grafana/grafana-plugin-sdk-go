@@ -12,7 +12,6 @@ import (
 	"text/template"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 
@@ -21,6 +20,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 // TestGoldenFrameJSON makes sure that the JSON produced from arrow and dataframes match
@@ -247,7 +247,7 @@ func BenchmarkFrameMarshalJSONIter(b *testing.B) {
 	b.ReportAllocs()
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_, err := jsoniter.Marshal(f)
+		_, err := sdkjsoniter.Marshal(f)
 		if err != nil {
 			b.Fatal(err)
 		}
