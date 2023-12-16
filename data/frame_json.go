@@ -113,7 +113,7 @@ func (f *FrameJSONCache) SameSchema(dst *FrameJSONCache) bool {
 
 // SetData updates the data bytes with new values
 func (f *FrameJSONCache) setData(frame *Frame) error {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -131,7 +131,7 @@ func (f *FrameJSONCache) setData(frame *Frame) error {
 
 // SetSchema updates the schema bytes with new values
 func (f *FrameJSONCache) setSchema(frame *Frame) error {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -158,7 +158,7 @@ func (f *FrameJSONCache) MarshalJSON() ([]byte, error) {
 //
 // NOTE: the format should be considered experimental until grafana 8 is released.
 func FrameToJSON(frame *Frame, include FrameInclude) ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -1031,7 +1031,7 @@ func ArrowBufferToJSON(b []byte, include FrameInclude) ([]byte, error) {
 // ArrowToJSON writes a frame to JSON
 // NOTE: the format should be considered experimental until grafana 8 is released.
 func ArrowToJSON(record arrow.Record, include FrameInclude) ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 

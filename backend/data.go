@@ -7,8 +7,10 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 // QueryDataHandler handles data queries.
@@ -116,7 +118,7 @@ type QueryDataResponse struct {
 
 // MarshalJSON writes the results as json
 func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -183,7 +185,7 @@ func ErrDataResponseWithSource(status Status, src ErrorSource, message string) D
 
 // MarshalJSON writes the results as json
 func (r DataResponse) MarshalJSON() ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 

@@ -21,6 +21,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/olekukonko/tablewriter"
+
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 // Frame is a columnar data structure where each column is a Field.
@@ -55,7 +57,7 @@ func (f *Frame) UnmarshalJSON(b []byte) error {
 
 // MarshalJSON marshals Frame to JSON.
 func (f *Frame) MarshalJSON() ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -75,7 +77,7 @@ func (f *Frame) MarshalJSON() ([]byte, error) {
 type Frames []*Frame
 
 func (frames *Frames) MarshalJSON() ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 

@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
+
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 // MappingType see https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/types/valueMapping.ts
@@ -44,7 +46,7 @@ type ValueMappings []ValueMapping
 
 // MarshalJSON writes the results as json
 func (m ValueMappings) MarshalJSON() ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 

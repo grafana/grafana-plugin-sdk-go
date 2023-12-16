@@ -151,7 +151,7 @@ func LabelsFromString(s string) (Labels, error) {
 
 // MarshalJSON marshals Labels to JSON.
 func (l Labels) MarshalJSON() ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
