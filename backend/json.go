@@ -12,8 +12,8 @@ import (
 )
 
 func init() { //nolint:gochecknoinits
-	jsoniter.RegisterTypeEncoder("backend.DataResponse", &dataResponseCodec{})
-	jsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
+	sdkjsoniter.RegisterTypeEncoder("backend.DataResponse", &dataResponseCodec{})
+	sdkjsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
 }
 
 type dataResponseCodec struct{}

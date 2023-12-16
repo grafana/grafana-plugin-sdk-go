@@ -8,8 +8,6 @@ import (
 	"strings"
 	"unsafe"
 
-	jsoniter "github.com/json-iterator/go"
-
 	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
@@ -19,7 +17,7 @@ import (
 type Labels map[string]string
 
 func init() { //nolint:gochecknoinits
-	jsoniter.RegisterTypeEncoder("data.Labels", &dataLabelsCodec{})
+	sdkjsoniter.RegisterTypeEncoder("data.Labels", &dataLabelsCodec{})
 }
 
 // Equals returns true if the argument has the same k=v pairs as the receiver.
