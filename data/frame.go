@@ -19,7 +19,6 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	jsoniter "github.com/json-iterator/go"
 	"github.com/olekukonko/tablewriter"
 
 	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
@@ -51,7 +50,7 @@ type Frame struct {
 
 // UnmarshalJSON allows unmarshalling Frame from JSON.
 func (f *Frame) UnmarshalJSON(b []byte) error {
-	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	iter, _ := sdkjsoniter.ParseBytes(sdkjsoniter.ConfigDefault, b)
 	return readDataFrameJSON(f, iter)
 }
 
@@ -91,7 +90,7 @@ func (frames *Frames) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON allows unmarshalling Frame from JSON.
 func (frames *Frames) UnmarshalJSON(b []byte) error {
-	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	iter, _ := sdkjsoniter.ParseBytes(sdkjsoniter.ConfigDefault, b)
 	return readDataFramesJSON(frames, iter)
 }
 

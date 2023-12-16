@@ -59,6 +59,11 @@ func (iter *Iterator) ReadArray() (bool, error) {
 	return iter.i.ReadArray(), iter.i.Error
 }
 
+func (iter *Iterator) CanReadArray() bool {
+	ok, err := iter.ReadArray()
+	return ok && err == nil
+}
+
 func (iter *Iterator) ReadObject() (string, error) {
 	return iter.i.ReadObject(), iter.i.Error
 }
