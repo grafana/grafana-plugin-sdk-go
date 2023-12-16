@@ -7,8 +7,6 @@ import (
 	"net/http"
 	"time"
 
-	jsoniter "github.com/json-iterator/go"
-
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
@@ -128,9 +126,9 @@ func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON will read JSON into a QueryDataResponse
 func (r *QueryDataResponse) UnmarshalJSON(b []byte) error {
-	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	iter, _ := sdkjsoniter.ParseBytes(sdkjsoniter.ConfigDefault, b)
 	readQueryDataResultsJSON(r, iter)
-	return iter.Error
+	return iter.ReadError()
 }
 
 // NewQueryDataResponse returns a QueryDataResponse with the Responses property initialized.

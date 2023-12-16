@@ -42,7 +42,7 @@ func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *sdkjsoni
 
 func (codec *queryDataResponseCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 	qdr := QueryDataResponse{}
-	readQueryDataResultsJSON(&qdr, iter)
+	readQueryDataResultsJSON(&qdr, sdkjsoniter.NewIterator(iter))
 	*((*QueryDataResponse)(ptr)) = qdr
 }
 
@@ -137,10 +137,10 @@ func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *sdkjsoniter.Stre
 // Private stream readers
 // -----------------------------------------------------------------
 
-func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
+func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *sdkjsoniter.Iterator) {
 	found := false
 
-	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+	for l1Field, _ := iter.ReadObject(); l1Field != ""; l1Field, _ = iter.ReadObject() {
 		switch l1Field {
 		case "results":
 			if found {
@@ -151,7 +151,7 @@ func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
 
 			qdr.Responses = make(Responses)
 
-			for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+			for l2Field, _ := iter.ReadObject(); l2Field != ""; l2Field, _ = iter.ReadObject() {
 				dr := DataResponse{}
 				readDataResponseJSON(&dr, iter)
 				qdr.Responses[l2Field] = dr
@@ -164,23 +164,25 @@ func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
 	}
 }
 
-func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
-	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+func readDataResponseJSON(rsp *DataResponse, iter *sdkjsoniter.Iterator) {
+	for l2Field, _ := iter.ReadObject(); l2Field != ""; l2Field, _ = iter.ReadObject() {
 		switch l2Field {
 		case "error":
 			rsp.Error = fmt.Errorf(iter.ReadString())
 
 		case "status":
-			rsp.Status = Status(iter.ReadInt32())
+			s, _ := iter.ReadInt32()
+			rsp.Status = Status(s)
 
 		case "errorSource":
-			rsp.ErrorSource = ErrorSource(iter.ReadString())
+			src, _ := iter.ReadString()
+			rsp.ErrorSource = ErrorSource(src)
 
 		case "frames":
-			for iter.ReadArray() {
+			for iter.CanReadArray() {
 				frame := &data.Frame{}
 				iter.ReadVal(frame)
-				if iter.Error != nil {
+				if iter.ReadError() != nil {
 					return
 				}
 				rsp.Frames = append(rsp.Frames, frame)
