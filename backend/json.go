@@ -5,8 +5,10 @@ import (
 	"sort"
 	"unsafe"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 func init() { //nolint:gochecknoinits
@@ -21,7 +23,7 @@ func (codec *dataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
 	return dr.Error == nil && dr.Frames == nil
 }
 
-func (codec *dataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+func (codec *dataResponseCodec) Encode(ptr unsafe.Pointer, stream *sdkjsoniter.Stream) {
 	dr := (*DataResponse)(ptr)
 	writeDataResponseJSON(dr, stream)
 }
@@ -33,7 +35,7 @@ func (codec *queryDataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
 	return qdr.Responses == nil
 }
 
-func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *sdkjsoniter.Stream) {
 	qdr := (*QueryDataResponse)(ptr)
 	writeQueryDataResponseJSON(qdr, stream)
 }
@@ -44,11 +46,11 @@ func (codec *queryDataResponseCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.I
 	*((*QueryDataResponse)(ptr)) = qdr
 }
 
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
 // Private stream readers
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
 
-func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
+func writeDataResponseJSON(dr *DataResponse, stream *sdkjsoniter.Stream) {
 	stream.WriteObjectStart()
 	started := false
 
@@ -102,7 +104,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	stream.WriteObjectEnd()
 }
 
-func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *jsoniter.Stream) {
+func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *sdkjsoniter.Stream) {
 	stream.WriteObjectStart()
 	stream.WriteObjectField("results")
 	stream.WriteObjectStart()
@@ -131,9 +133,9 @@ func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *jsoniter.Stream)
 	stream.WriteObjectEnd()
 }
 
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
 // Private stream readers
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
 
 func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
 	found := false

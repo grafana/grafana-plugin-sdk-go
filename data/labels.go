@@ -9,6 +9,8 @@ import (
 	"unsafe"
 
 	jsoniter "github.com/json-iterator/go"
+
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 // Labels are used to add metadata to an object.  The JSON will always be sorted keys
@@ -161,7 +163,7 @@ func (l Labels) MarshalJSON() ([]byte, error) {
 	return append([]byte(nil), stream.Buffer()...), nil
 }
 
-func writeLabelsJSON(l Labels, stream *jsoniter.Stream) {
+func writeLabelsJSON(l Labels, stream *sdkjsoniter.Stream) {
 	keys := make([]string, len(l))
 	i := 0
 	for k := range l {
@@ -188,7 +190,7 @@ func (codec *dataLabelsCodec) IsEmpty(ptr unsafe.Pointer) bool {
 	return f.Fields == nil && f.RefID == "" && f.Meta == nil
 }
 
-func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *sdkjsoniter.Stream) {
 	v := (*Labels)(ptr)
 	if v == nil {
 		stream.WriteNil()

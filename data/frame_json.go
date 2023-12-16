@@ -42,7 +42,7 @@ func (codec *dataFrameCodec) IsEmpty(ptr unsafe.Pointer) bool {
 	return f.Fields == nil && f.RefID == "" && f.Meta == nil
 }
 
-func (codec *dataFrameCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+func (codec *dataFrameCodec) Encode(ptr unsafe.Pointer, stream *sdkjsoniter.Stream) {
 	f := (*Frame)(ptr)
 	writeDataFrame(f, stream, true, true)
 }
@@ -781,7 +781,7 @@ func isSpecialEntity(v float64) (string, bool) {
 	}
 }
 
-func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) {
+func writeDataFrame(frame *Frame, stream *sdkjsoniter.Stream, includeSchema bool, includeData bool) {
 	stream.WriteObjectStart()
 	if includeSchema {
 		stream.WriteObjectField(jsonKeySchema)
@@ -799,7 +799,7 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 	stream.WriteObjectEnd()
 }
 
-func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
+func writeDataFrameSchema(frame *Frame, stream *sdkjsoniter.Stream) {
 	started := false
 	stream.WriteObjectStart()
 
@@ -895,7 +895,7 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 	stream.WriteObjectEnd()
 }
 
-func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
+func writeDataFrameData(frame *Frame, stream *sdkjsoniter.Stream) {
 	rowCount, err := frame.RowLen()
 	if err != nil {
 		stream.Error = err
@@ -995,7 +995,7 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	stream.WriteObjectEnd()
 }
 
-func writeDataFrames(frames *Frames, stream *jsoniter.Stream) {
+func writeDataFrames(frames *Frames, stream *sdkjsoniter.Stream) {
 	if frames == nil {
 		return
 	}
@@ -1061,7 +1061,7 @@ func ArrowToJSON(record arrow.Record, include FrameInclude) ([]byte, error) {
 	return append([]byte(nil), stream.Buffer()...), nil
 }
 
-func writeArrowSchema(stream *jsoniter.Stream, record arrow.Record) {
+func writeArrowSchema(stream *sdkjsoniter.Stream, record arrow.Record) {
 	started := false
 	metaData := record.Schema().Metadata()
 
@@ -1156,7 +1156,7 @@ func writeArrowSchema(stream *jsoniter.Stream, record arrow.Record) {
 	stream.WriteObjectEnd()
 }
 
-func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error {
+func writeArrowData(stream *sdkjsoniter.Stream, record arrow.Record) error {
 	fieldCount := len(record.Schema().Fields())
 
 	stream.WriteObjectStart()
@@ -1237,7 +1237,7 @@ func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error {
 }
 
 // Custom timestamp extraction... assumes nanoseconds for everything now
-func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col arrow.Array) []int64 {
+func writeArrowDataTIMESTAMP(stream *sdkjsoniter.Stream, col arrow.Array) []int64 {
 	count := col.Len()
 	var hasNSTime bool
 	nsTime := make([]int64, count)

@@ -350,7 +350,7 @@ func TestGenerateGenericArrowCode(t *testing.T) {
 	}
 
 	code := `
-func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowData{{.Type}}(stream *sdkjsoniter.Stream, col array.Interface) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
