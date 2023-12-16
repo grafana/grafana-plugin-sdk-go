@@ -3,7 +3,6 @@ package data
 import (
 	"github.com/apache/arrow/go/v13/arrow"
 	"github.com/apache/arrow/go/v13/arrow/array"
-	jsoniter "github.com/json-iterator/go"
 
 	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
@@ -61,7 +60,7 @@ func readUint8VectorJSON(iter *sdkjsoniter.Iterator, size int) (*uint8Vector, er
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint8()
@@ -84,7 +83,7 @@ func readNullableUint8VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullabl
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint8()
@@ -128,7 +127,7 @@ func readUint16VectorJSON(iter *sdkjsoniter.Iterator, size int) (*uint16Vector, 
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint16()
@@ -151,7 +150,7 @@ func readNullableUint16VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullab
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint16()
@@ -195,7 +194,7 @@ func readUint32VectorJSON(iter *sdkjsoniter.Iterator, size int) (*uint32Vector, 
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint32()
@@ -218,7 +217,7 @@ func readNullableUint32VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullab
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint32()
@@ -262,7 +261,7 @@ func readUint64VectorJSON(iter *sdkjsoniter.Iterator, size int) (*uint64Vector, 
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint64()
@@ -285,7 +284,7 @@ func readNullableUint64VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullab
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint64()
@@ -329,7 +328,7 @@ func readInt8VectorJSON(iter *sdkjsoniter.Iterator, size int) (*int8Vector, erro
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadInt8()
@@ -352,7 +351,7 @@ func readNullableInt8VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullable
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadInt8()
@@ -396,7 +395,7 @@ func readInt16VectorJSON(iter *sdkjsoniter.Iterator, size int) (*int16Vector, er
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadInt16()
@@ -419,7 +418,7 @@ func readNullableInt16VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullabl
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadInt16()
@@ -463,7 +462,7 @@ func readInt32VectorJSON(iter *sdkjsoniter.Iterator, size int) (*int32Vector, er
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadInt32()
@@ -486,7 +485,7 @@ func readNullableInt32VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullabl
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadInt32()
@@ -530,7 +529,7 @@ func readInt64VectorJSON(iter *sdkjsoniter.Iterator, size int) (*int64Vector, er
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadInt64()
@@ -553,7 +552,7 @@ func readNullableInt64VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullabl
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadInt64()
@@ -608,7 +607,7 @@ func readFloat32VectorJSON(iter *sdkjsoniter.Iterator, size int) (*float32Vector
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadFloat32()
@@ -631,7 +630,7 @@ func readNullableFloat32VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nulla
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadFloat32()
@@ -686,7 +685,7 @@ func readFloat64VectorJSON(iter *sdkjsoniter.Iterator, size int) (*float64Vector
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadFloat64()
@@ -709,7 +708,7 @@ func readNullableFloat64VectorJSON(iter *sdkjsoniter.Iterator, size int) (*nulla
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadFloat64()
@@ -753,7 +752,7 @@ func readStringVectorJSON(iter *sdkjsoniter.Iterator, size int) (*stringVector, 
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadString()
@@ -776,7 +775,7 @@ func readNullableStringVectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullab
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadString()
@@ -820,7 +819,7 @@ func readBoolVectorJSON(iter *sdkjsoniter.Iterator, size int) (*boolVector, erro
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadBool()
@@ -843,7 +842,7 @@ func readNullableBoolVectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullable
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadBool()
@@ -887,7 +886,7 @@ func readEnumVectorJSON(iter *sdkjsoniter.Iterator, size int) (*enumVector, erro
 		}
 
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint16()
@@ -910,7 +909,7 @@ func readNullableEnumVectorJSON(iter *sdkjsoniter.Iterator, size int) (*nullable
 			return nil, iter.ReadError()
 		}
 		t, _ := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
+		if t == sdkjsoniter.NilValue {
 			iter.ReadNil()
 		} else {
 			v, _ := iter.ReadUint16()
