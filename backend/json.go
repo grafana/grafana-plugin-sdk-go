@@ -144,7 +144,7 @@ func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *sdkjsoniter.Iterator
 		switch l1Field {
 		case "results":
 			if found {
-				iter.ReportError("read results", "already found results")
+				_ = iter.ReportError("read results", "already found results")
 				return
 			}
 			found = true
@@ -158,7 +158,7 @@ func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *sdkjsoniter.Iterator
 			}
 
 		default:
-			iter.ReportError("bind l1", "unexpected field: "+l1Field)
+			_ = iter.ReportError("bind l1", "unexpected field: "+l1Field)
 			return
 		}
 	}
@@ -181,15 +181,15 @@ func readDataResponseJSON(rsp *DataResponse, iter *sdkjsoniter.Iterator) {
 		case "frames":
 			for iter.CanReadArray() {
 				frame := &data.Frame{}
-				iter.ReadVal(frame)
-				if iter.ReadError() != nil {
+				err := iter.ReadVal(frame)
+				if err != nil {
 					return
 				}
 				rsp.Frames = append(rsp.Frames, frame)
 			}
 
 		default:
-			iter.ReportError("bind l2", "unexpected field: "+l2Field)
+			_ = iter.ReportError("bind l2", "unexpected field: "+l2Field)
 			return
 		}
 	}

@@ -217,7 +217,10 @@ func readDataFrameJSON(frame *Frame, iter *sdkjsoniter.Iterator) error {
 		switch l1Field {
 		case jsonKeySchema:
 			schema := frameSchema{}
-			iter.ReadVal(&schema)
+			err := iter.ReadVal(&schema)
+			if err != nil {
+				return err
+			}
 			frame.Name = schema.Name
 			frame.RefID = schema.RefID
 			frame.Meta = schema.Meta
@@ -242,7 +245,7 @@ func readDataFrameJSON(frame *Frame, iter *sdkjsoniter.Iterator) error {
 			}
 
 		default:
-			iter.ReportError("bind l1", "unexpected field: "+l1Field)
+			return iter.ReportError("bind l1", "unexpected field: "+l1Field)
 		}
 	}
 	return iter.ReadError()
@@ -251,9 +254,9 @@ func readDataFrameJSON(frame *Frame, iter *sdkjsoniter.Iterator) error {
 func readDataFramesJSON(frames *Frames, iter *sdkjsoniter.Iterator) error {
 	for iter.CanReadArray() {
 		frame := &Frame{}
-		iter.ReadVal(frame)
-		if iter.ReadError() != nil {
-			return iter.ReadError()
+		err := iter.ReadVal(frame)
+		if err != nil {
+			return err
 		}
 		*frames = append(*frames, frame)
 	}
@@ -328,7 +331,10 @@ func readFrameData(iter *sdkjsoniter.Iterator, frame *Frame) error {
 						}
 					}
 				} else {
-					iter.ReadAny() // skip nils
+					_, err := iter.ReadAny() // skip nils
+					if err != nil {
+						return err
+					}
 				}
 				fieldIndex++
 			}
@@ -356,7 +362,10 @@ func readFrameData(iter *sdkjsoniter.Iterator, frame *Frame) error {
 						}
 					}
 				} else {
-					iter.ReadAny() // skip nils
+					_, err := iter.ReadAny() // skip nils
+					if err != nil {
+						return err
+					}
 				}
 				fieldIndex++
 			}
@@ -1282,13 +1291,15 @@ func readTimeVectorJSON(iter *sdkjsoniter.Iterator, nullable bool, size int) (ve
 
 	for i := 0; i < size; i++ {
 		if !iter.CanReadArray() {
-			iter.ReportError("readUint8VectorJSON", "expected array")
-			return nil, iter.ReadError()
+			return nil, iter.ReportError("readUint8VectorJSON", "expected array")
 		}
 
 		t, _ := iter.WhatIsNext()
 		if t == sdkjsoniter.NilValue {
-			iter.ReadNil()
+			_, err := iter.ReadNil()
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			ms, _ := iter.ReadInt64()
 
@@ -1298,8 +1309,7 @@ func readTimeVectorJSON(iter *sdkjsoniter.Iterator, nullable bool, size int) (ve
 	}
 
 	if iter.CanReadArray() {
-		iter.ReportError("read", "expected close array")
-		return nil, iter.ReadError()
+		return nil, iter.ReportError("read", "expected close array")
 	}
 	return arr, nil
 }
@@ -1314,23 +1324,27 @@ func readJSONVectorJSON(iter *sdkjsoniter.Iterator, nullable bool, size int) (ve
 
 	for i := 0; i < size; i++ {
 		if !iter.CanReadArray() {
-			iter.ReportError("readJSONVectorJSON", "expected array")
-			return nil, iter.ReadError()
+			return nil, iter.ReportError("readJSONVectorJSON", "expected array")
 		}
 
 		t, _ := iter.WhatIsNext()
 		if t == sdkjsoniter.NilValue {
-			iter.ReadNil()
+			_, err := iter.ReadNil()
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			var v json.RawMessage
-			iter.ReadVal(&v)
+			err := iter.ReadVal(&v)
+			if err != nil {
+				return nil, err
+			}
 			arr.SetConcrete(i, v)
 		}
 	}
 
 	if iter.CanReadArray() {
-		iter.ReportError("read", "expected close array")
-		return nil, iter.ReadError()
+		return nil, iter.ReportError("read", "expected close array")
 	}
 	return arr, nil
 }

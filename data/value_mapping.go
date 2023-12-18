@@ -75,7 +75,10 @@ func (m *ValueMappings) UnmarshalJSON(b []byte) error {
 
 	for iter.CanReadArray() {
 		var objMap map[string]json.RawMessage
-		iter.ReadVal(&objMap)
+		err := iter.ReadVal(&objMap)
+		if err != nil {
+			return err
+		}
 		mt := mappingType(strings.Trim(string(objMap["type"]), `"`))
 
 		switch mt {
