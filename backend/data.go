@@ -126,7 +126,10 @@ func (r QueryDataResponse) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON will read JSON into a QueryDataResponse
 func (r *QueryDataResponse) UnmarshalJSON(b []byte) error {
-	iter, _ := sdkjsoniter.ParseBytes(sdkjsoniter.ConfigDefault, b)
+	iter, err := sdkjsoniter.ParseBytes(sdkjsoniter.ConfigDefault, b)
+	if err != nil {
+		return err
+	}
 	readQueryDataResultsJSON(r, iter)
 	return iter.ReadError()
 }
