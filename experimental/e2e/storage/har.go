@@ -74,6 +74,8 @@ func (s *HAR) Init() {
 
 // Add converts the http.Request and http.Response to a har.Entry and adds it to the Fixture.
 func (s *HAR) Add(req *http.Request, res *http.Response) error {
+	harFiles.lock(s.path)
+	defer harFiles.unlock(s.path)
 	var (
 		err     error
 		reqBody []byte
@@ -120,7 +122,7 @@ func (s *HAR) Add(req *http.Request, res *http.Response) error {
 		resCookies = append(resCookies, &har.Cookie{Name: cookie.Name, Value: cookie.Value})
 	}
 
-	_ = s.Load()
+	_ = s.loadUnsafe()
 	s.har.Log.Entries = append(s.har.Log.Entries, &har.Entry{
 		StartedDateTime: s.currentTime().Format(time.RFC3339),
 		Time:            0.0,
@@ -162,7 +164,7 @@ func (s *HAR) Add(req *http.Request, res *http.Response) error {
 			},
 		},
 	})
-	return s.Save()
+	return s.saveUnsafe()
 }
 
 // Entries converts HAR entries to a slice of Entry (http.Request and http.Response pairs).
@@ -236,6 +238,10 @@ func (s *HAR) Delete(req *http.Request) bool {
 func (s *HAR) Save() error {
 	harFiles.lock(s.path)
 	defer harFiles.unlock(s.path)
+	return s.saveUnsafe()
+}
+
+func (s *HAR) saveUnsafe() error {
 	err := os.MkdirAll(filepath.Dir(s.path), os.ModePerm)
 	if err != nil {
 		return err
@@ -251,6 +257,10 @@ func (s *HAR) Save() error {
 func (s *HAR) Load() error {
 	harFiles.rLock(s.path)
 	defer harFiles.rUnlock(s.path)
+	return s.loadUnsafe()
+}
+
+func (s *HAR) loadUnsafe() error {
 	raw, err := os.ReadFile(s.path)
 	if err != nil {
 		return err

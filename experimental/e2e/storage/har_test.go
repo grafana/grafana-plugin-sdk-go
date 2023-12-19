@@ -31,9 +31,6 @@ func TestHARStorage(t *testing.T) {
 		})
 
 		t.Run("should support multiple instances concurrently adding to the same file", func(t *testing.T) {
-			// FIXME: this test is flaky
-			// Tracking in https://github.com/grafana/grafana-plugin-sdk-go/issues/842
-			t.SkipNow()
 			f, err := os.CreateTemp("", "example_*.har")
 			require.NoError(t, err)
 			c := make(chan bool)
