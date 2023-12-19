@@ -32,7 +32,7 @@ const jsonKeyData = "data"
 
 func init() { //nolint:gochecknoinits
 	sdkjsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
-	jsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
+	sdkjsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
 }
 
 type dataFrameCodec struct{}

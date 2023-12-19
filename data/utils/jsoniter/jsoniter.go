@@ -28,6 +28,7 @@ var (
 
 type Stream = j.Stream
 type ValEncoder = j.ValEncoder
+type ValDecoder = j.ValDecoder
 
 type Iterator struct {
 	// named property instead of embedded so there is no
@@ -177,4 +178,8 @@ func ParseString(cfg j.API, input string) (*Iterator, error) {
 
 func RegisterTypeEncoder(typ string, encoder ValEncoder) {
 	j.RegisterTypeEncoder(typ, encoder)
+}
+
+func RegisterTypeDecoder(typ string, decoder ValDecoder) {
+	j.RegisterTypeDecoder(typ, decoder)
 }
