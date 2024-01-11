@@ -62,10 +62,11 @@ const unsetErrFmt = "%v type for %v has unset fields, %v of %v unset, set all fi
 
 func TestConvertFromProtobufUser(t *testing.T) {
 	protoUser := &pluginv2.User{
-		Login: "bestUser",
-		Name:  "Best User",
-		Email: "example@justAstring",
-		Role:  "Lord",
+		Login:           "bestUser",
+		Name:            "Best User",
+		Email:           "example@justAstring",
+		Role:            "Lord",
+		AuthenticatedBy: "auth_provider",
 	}
 
 	protoWalker := &walker{}
@@ -95,6 +96,7 @@ func TestConvertFromProtobufUser(t *testing.T) {
 	requireCounter.Equal(t, protoUser.Name, sdkUser.Name)
 	requireCounter.Equal(t, protoUser.Email, sdkUser.Email)
 	requireCounter.Equal(t, protoUser.Role, sdkUser.Role)
+	requireCounter.Equal(t, protoUser.AuthenticatedBy, sdkUser.AuthenticatedBy)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 }
@@ -198,10 +200,11 @@ var protoPluginContext = &pluginv2.PluginContext{
 	PluginId:      "the-best-plugin",
 	PluginVersion: "1.0.0",
 	User: &pluginv2.User{
-		Login: "bestUser",
-		Name:  "Best User",
-		Email: "example@justAstring",
-		Role:  "Lord",
+		Login:           "bestUser",
+		Name:            "Best User",
+		Email:           "example@justAstring",
+		Role:            "Lord",
+		AuthenticatedBy: "auth_provider",
 	},
 	AppInstanceSettings:        protoAppInstanceSettings,
 	DataSourceInstanceSettings: protoDataSourceInstanceSettings,
@@ -243,6 +246,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.User.Name, sdkCtx.User.Name)
 	requireCounter.Equal(t, protoCtx.User.Email, sdkCtx.User.Email)
 	requireCounter.Equal(t, protoCtx.User.Role, sdkCtx.User.Role)
+	requireCounter.Equal(t, protoCtx.User.AuthenticatedBy, sdkCtx.User.AuthenticatedBy)
 
 	// App Instance Settings
 	requireCounter.Equal(t, json.RawMessage(protoCtx.AppInstanceSettings.JsonData), sdkCtx.AppInstanceSettings.JSONData)
@@ -401,6 +405,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Email, sdkQDR.PluginContext.User.Email)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Role, sdkQDR.PluginContext.User.Role)
+	requireCounter.Equal(t, protoQDR.PluginContext.User.AuthenticatedBy, sdkQDR.PluginContext.User.AuthenticatedBy)
 
 	// App Instance Settings
 	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.AppInstanceSettings.JsonData), sdkQDR.PluginContext.AppInstanceSettings.JSONData)

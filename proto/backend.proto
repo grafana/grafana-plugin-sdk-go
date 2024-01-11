@@ -32,6 +32,7 @@ message User {
   string name = 2;
   string email = 3;
   string role = 4;
+  string authenticatedBy = 5;
 }
 
 message PluginContext {

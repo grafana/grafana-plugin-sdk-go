@@ -29,10 +29,11 @@ func (f ConvertFromProtobuf) User(user *pluginv2.User) *User {
 	}
 
 	return &User{
-		Login: user.Login,
-		Name:  user.Name,
-		Email: user.Email,
-		Role:  user.Role,
+		Login:           user.Login,
+		Name:            user.Name,
+		Email:           user.Email,
+		Role:            user.Role,
+		AuthenticatedBy: user.AuthenticatedBy,
 	}
 }
 
