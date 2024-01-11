@@ -18,7 +18,12 @@ func CustomHeadersMiddleware() Middleware {
 
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			for key, value := range opts.Headers {
-				req.Header.Set(key, value)
+				// According to https://pkg.go.dev/net/http#Request.Header, Host is a special case
+				if http.CanonicalHeaderKey(key) == "Host" {
+					req.Host = value
+				} else {
+					req.Header.Set(key, value)
+				}
 			}
 
 			return next.RoundTrip(req)
