@@ -57,7 +57,7 @@ func (p *TestPluginClient) CheckHealth(ctx context.Context, r *backend.CheckHeal
 		return nil, err
 	}
 
-	return backend.FromProto().CheckHealthResponse(resp), nil
+	return backend.FromProto().CheckHealthResponse(resp), backend.FromProto().Error(resp.Error)
 }
 
 func (p *TestPluginClient) CallResource(ctx context.Context, r *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {

@@ -7,6 +7,17 @@ option go_package = "./;pluginv2";
 // Common
 //-----------------------------------------------
 
+enum ErrorSource {
+  UNKNOWN = 0;
+  PLUGIN = 1;
+  DOWNSTREAM = 2;
+}
+
+message Error {
+  string error = 1;
+  ErrorSource source = 2;
+}
+
 message AppInstanceSettings {
   bytes jsonData = 3;
   map<string,string> decryptedSecureJsonData = 4;
@@ -100,6 +111,8 @@ message CallResourceResponse {
 
   // Raw HTTP body bytes sent to the client
   bytes body = 3;
+
+  optional Error error = 4;
 }
 
 //-----------------------------------------------
@@ -198,6 +211,7 @@ message CheckHealthResponse {
   HealthStatus status = 1;
   string message = 2;
   bytes jsonDetails = 3;
+  Error error = 4;
 }
 
 //-----------------------------------------------------------------

@@ -10,7 +10,7 @@ const (
 	ErrorSourceDownstream ErrorSource = "downstream"
 )
 
-// ErrorSourceFromStatus returns an ErrorSource based on provided HTTP status code.
+// ErrorSourceFromHTTPStatus returns an ErrorSource based on provided HTTP status code.
 func ErrorSourceFromHTTPStatus(statusCode int) ErrorSource {
 	switch statusCode {
 	case http.StatusMethodNotAllowed,

@@ -2,6 +2,7 @@ package backend
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
@@ -100,6 +101,29 @@ func (t ConvertToProtobuf) TimeRange(tr TimeRange) *pluginv2.TimeRange {
 	}
 }
 
+func (t ConvertToProtobuf) ErrorSource(errorSource ErrorSource) pluginv2.ErrorSource {
+	enumValue, ok := pluginv2.ErrorSource_value[strings.ToUpper(string(errorSource))]
+	if !ok {
+		return pluginv2.ErrorSource_UNKNOWN
+	}
+	return pluginv2.ErrorSource(enumValue)
+}
+
+func (t ConvertToProtobuf) Error(err error) *pluginv2.Error {
+	if err == nil {
+		return nil
+	}
+	protoErr := &pluginv2.Error{
+		Error:  err.Error(),
+		Source: pluginv2.ErrorSource_UNKNOWN,
+	}
+	// TODO: what happens with wrapped errors
+	if pluginErr, ok := err.(Error); ok {
+		protoErr.Source = t.ErrorSource(pluginErr.Source())
+	}
+	return protoErr
+}
+
 // HealthStatus converts the SDK version of a HealthStatus to the protobuf version.
 func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealthResponse_HealthStatus {
 	switch status {
@@ -115,6 +139,9 @@ func (t ConvertToProtobuf) HealthStatus(status HealthStatus) pluginv2.CheckHealt
 
 // CheckHealthResponse converts the SDK version of a CheckHealthResponse to the protobuf version.
 func (t ConvertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2.CheckHealthResponse {
+	if res == nil {
+		return &pluginv2.CheckHealthResponse{}
+	}
 	return &pluginv2.CheckHealthResponse{
 		Status:      t.HealthStatus(res.Status),
 		Message:     res.Message,
