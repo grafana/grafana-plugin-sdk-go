@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -17,8 +19,8 @@ var (
 // Query macro implementations are defined by users/consumers of this package
 type MacroFunc func(*Query, []string) (string, error)
 
-// Macros is a list of MacroFuncs.
-// The "string" key is the name of the macro function. This name has to be regex friendly.
+// Macros is a map of macro name to MacroFunc.
+// The macro name must be regex friendly.
 type Macros map[string]MacroFunc
 
 // Default time filter for SQL based on the query time range.
@@ -71,7 +73,7 @@ func macroTimeTo(query *Query, args []string) (string, error) {
 // It requires two arguments, the column to filter and the period.
 // Example:
 //
-//	$__timeTo(time, month) => "datepart(year, time), datepart(month, time)'"
+//	$__timeGroup(time, month) => "datepart(year, time), datepart(month, time)'"
 func macroTimeGroup(_ *Query, args []string) (string, error) {
 	if len(args) != 2 {
 		return "", fmt.Errorf("%w: expected 1 argument, received %d", ErrorBadArgumentCount, len(args))
@@ -123,119 +125,93 @@ var DefaultMacros = Macros{
 	"column":     macroColumn,
 }
 
-func trimAll(s []string) []string {
-	r := make([]string, len(s))
-	for i, v := range s {
-		r[i] = strings.TrimSpace(v)
-	}
-
-	return r
+type macroMatch struct {
+	full string
+	args []string
 }
 
 // getMacroMatches extracts macro strings with their respective arguments from the sql input given
 // It manually parses the string to find the closing parenthesis of the macro (because regex has no memory)
-func getMacroMatches(input string, name string) ([][]string, error) {
-	macroName := fmt.Sprintf("\\$__%s\\b", name)
-	matchedMacros := [][]string{}
-
-	rgx, err := regexp.Compile(macroName)
+func getMacroMatches(input string, name string) ([]macroMatch, error) {
+	rgx, err := regexp.Compile(fmt.Sprintf(`\$__%s\b`, name))
 	if err != nil {
 		return nil, err
 	}
 
-	// get all matching macro instances
-	matched := rgx.FindAllStringIndex(input, -1)
-	if matched == nil {
-		return nil, nil
+	var matches []macroMatch
+	for _, window := range rgx.FindAllStringIndex(input, -1) {
+		start, end := window[0], window[1]
+		args, length := parseArgs(input[end:])
+		matches = append(matches, macroMatch{full: input[start : end+length], args: args})
+	}
+	return matches, nil
+}
+
+// parseArgs looks for a bracketed argument list at the beginning of
+// argString. If one is present, returns a list of whitespace-trimmed
+// arguments and the length of the string comprising the argument list.
+func parseArgs(argString string) ([]string, int) {
+	if argString == "" || argString[0] != '(' {
+		return nil, 0
 	}
 
-	for matchedIndex := 0; matchedIndex < len(matched); matchedIndex++ {
-		var macroEnd = 0
-		var argStart = 0
-		// quick exit from the loop, when we encounter a closing bracket before an opening one (ie "($__macro)", where we can skip the closing one from the result)
-		var forceBreak = false
-		macroStart := matched[matchedIndex][0]
-		inputCopy := input[macroStart:]
-		cache := make([]rune, 0)
+	var args []string
+	depth := 0
+	arg := []rune{}
 
-		// find the opening and closing arguments brackets
-		for idx, r := range inputCopy {
-			if len(cache) == 0 && macroEnd > 0 || forceBreak {
-				break
+	for i, r := range argString {
+		switch r {
+		case '(':
+			depth++
+			if depth == 1 {
+				continue
 			}
-			switch r {
-			case '(':
-				cache = append(cache, r)
-				if argStart == 0 {
-					argStart = idx + 1
-				}
-			case ')':
-				l := len(cache)
-				if l == 0 {
-					macroEnd = 0
-					forceBreak = true
-					break
-				}
-				cache = cache[:l-1]
-				macroEnd = idx + 1
-			default:
+		case ')':
+			depth--
+			if depth == 0 {
+				// this is the closing bracket
+				args = append(args, strings.TrimSpace(string(arg)))
+				return args, i + 1
+			}
+		case ',':
+			if depth == 1 {
+				// top level of the bracketed arg list
+				args = append(args, strings.TrimSpace(string(arg)))
+				arg = []rune{}
+				// don't include the comma in the next arg
 				continue
 			}
 		}
-
-		// macroEnd equals to 0 means there are no parentheses, so just set it
-		// to the end of the regex match
-		if macroEnd == 0 {
-			macroEnd = matched[matchedIndex][1] - macroStart
-		}
-		macroString := inputCopy[0:macroEnd]
-		macroMatch := []string{macroString}
-
-		args := ""
-		// if opening parenthesis was found, extract contents as arguments
-		if argStart > 0 {
-			args = inputCopy[argStart : macroEnd-1]
-		}
-		macroMatch = append(macroMatch, args)
-		matchedMacros = append(matchedMacros, macroMatch)
+		arg = append(arg, r)
 	}
-	return matchedMacros, nil
+	// FIXME: We only get here if we don't see a matching bracket
+	// before the next arg or the end of the string, which is a kind
+	// of syntax error. How should this be handled?
+	return nil, -1
 }
 
 // Interpolate returns an interpolated query string given a backend.DataQuery
 func Interpolate(query *Query, macros Macros) (string, error) {
-	for key, defaultMacro := range DefaultMacros {
-		if _, ok := macros[key]; !ok {
-			// If the driver doesn't define some macro, use the default one
-			macros[key] = defaultMacro
-		}
-	}
+	// We don't want to alter the passed-in macros!
+	mergedMacros := Macros{}
+	maps.Copy(mergedMacros, DefaultMacros)
+	maps.Copy(mergedMacros, macros)
+
 	rawSQL := query.RawSQL
 
-	for key, macro := range macros {
+	for key, macro := range mergedMacros {
 		matches, err := getMacroMatches(rawSQL, key)
 		if err != nil {
 			return rawSQL, err
 		}
 
 		for _, match := range matches {
-			if len(match) == 0 {
-				// There were no matches for this macro
-				continue
-			}
-
-			args := []string{}
-			if len(match) > 1 {
-				// This macro has arguments
-				args = trimAll(strings.Split(match[1], ","))
-			}
-
-			res, err := macro(query.WithSQL(rawSQL), args)
+			res, err := macro(query.WithSQL(rawSQL), match.args)
 			if err != nil {
 				return rawSQL, err
 			}
 
-			rawSQL = strings.ReplaceAll(rawSQL, match[0], res)
+			rawSQL = strings.ReplaceAll(rawSQL, match.full, res)
 		}
 	}
 
