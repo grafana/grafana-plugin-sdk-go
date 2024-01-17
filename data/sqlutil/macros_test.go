@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func staticMacro(r string) func(*Query, []string) (string, error) {
@@ -35,20 +34,21 @@ var macros = Macros{
 		}
 		return r
 	}),
+	"big":    staticMacro("10000"),
+	"medium": staticMacro("100"),
+	"little": staticMacro("10"),
 	// overwrite a default macro
 	"timeGroup": staticMacro("grouped!"),
-	"big":       staticMacro("10000"),
-	"medium":    staticMacro("100"),
-	"little":    staticMacro("10"),
 }
 
 func TestInterpolate(t *testing.T) {
 	tableName := "my_table"
 	tableColumn := "my_col"
 	type test struct {
-		name   string
-		input  string
-		output string
+		name      string
+		input     string
+		output    string
+		wantError bool
 	}
 	tests := []test{
 		{
@@ -176,10 +176,15 @@ func TestInterpolate(t *testing.T) {
 			output: "select * from foo where bar_FUNC(foo, bar)",
 			name:   "function in macro with multiple parameters",
 		},
-		{ // FIXME: this test is nondeterministic
+		{
 			input:  "select * from foo where ( date <= $__toTime and date >= $__fromTime ) limit 100",
 			output: "select * from foo where ( date <= f(1) and date >= f(0) ) limit 100",
 			name:   "stop on space outside of parens (see https://github.com/grafana/sqlds/pull/83)",
+		},
+		{
+			input:     "select * from foo where ( $__multiParams(100,400",
+			name:      "missing close parentheses is an error",
+			wantError: true,
 		},
 		{
 			input:  "select * from foo where ( $__big*($__little+$__medium) > 1000000) limit 100",
@@ -195,8 +200,10 @@ func TestInterpolate(t *testing.T) {
 				Column: tableColumn,
 			}
 			interpolatedQuery, err := Interpolate(query, macros)
-			require.Nil(t, err)
-			assert.Equal(t, tc.output, interpolatedQuery)
+			assert.Equal(t, err != nil, tc.wantError)
+			if !tc.wantError {
+				assert.Equal(t, tc.output, interpolatedQuery)
+			}
 		})
 	}
 }

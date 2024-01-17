@@ -142,6 +142,9 @@ func getMacroMatches(input string, name string) ([]macroMatch, error) {
 	for _, window := range rgx.FindAllStringIndex(input, -1) {
 		start, end := window[0], window[1]
 		args, length := parseArgs(input[end:])
+		if length < 0 {
+			return nil, fmt.Errorf("failed to parse macro arguments (missing close bracket?)")
+		}
 		matches = append(matches, macroMatch{full: input[start : end+length], args: args})
 	}
 	return matches, nil
@@ -184,9 +187,9 @@ func parseArgs(argString string) ([]string, int) {
 		}
 		arg = append(arg, r)
 	}
-	// FIXME: We only get here if we don't see a matching bracket
-	// before the next arg or the end of the string, which is a kind
-	// of syntax error. How should this be handled?
+	// This means we did not see a closing bracket, which we
+	// will consider an error. Formerly this would lead to
+	// a panic.
 	return nil, -1
 }
 
