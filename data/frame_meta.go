@@ -52,6 +52,12 @@ type FrameMeta struct {
 	// Optionally identify which topic the frame should be assigned to.
 	// A value specified in the response will override what the request asked for.
 	DataTopic DataTopic `json:"dataTopic,omitempty"`
+
+	// Array of field indices which values create a unique id for each row. Ideally this should be globally unique ID
+	// but that isn't guarantied. Should help with keeping track and deduplicating rows in visualizations, especially
+	// with streaming data with frequent updates.
+	// Example: TraceID in Tempo, table name + primary key in SQL
+	UniqueRowIdFields []int `json:"uniqueRowIdFields,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType
