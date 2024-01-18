@@ -57,7 +57,7 @@ type FrameMeta struct {
 	// but that isn't guarantied. Should help with keeping track and deduplicating rows in visualizations, especially
 	// with streaming data with frequent updates.
 	// Example: TraceID in Tempo, table name + primary key in SQL
-	UniqueRowIdFields []int `json:"uniqueRowIdFields,omitempty"`
+	UniqueRowIDFields []int `json:"uniqueRowIdFields,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType
