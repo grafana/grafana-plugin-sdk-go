@@ -22,6 +22,8 @@ const (
 	FormatOptionTable
 	// FormatOptionLogs sets the preferred visualization to logs
 	FormatOptionLogs
+	// FormatOptionsTrace sets the preferred visualization to trace
+	FormatOptionTrace
 )
 
 // Query is the model that represents the query that users submit from the panel/queryeditor.

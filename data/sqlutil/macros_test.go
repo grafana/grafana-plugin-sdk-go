@@ -25,6 +25,13 @@ var macros = Macros{
 	"timeGroup": func(query *Query, args []string) (out string, err error) {
 		return "grouped!", nil
 	},
+	"multiParams": func(query *Query, args []string) (out string, err error) {
+		r := "bar"
+		for _, v := range args {
+			r += "_" + v
+		}
+		return r, nil
+	},
 }
 
 func TestInterpolate(t *testing.T) {
@@ -151,6 +158,16 @@ func TestInterpolate(t *testing.T) {
 			input:  "select * from table where ( datetime >= $__foo ) AND ( datetime <= $__foo ) limit 100",
 			output: "select * from table where ( datetime >= baz ) AND ( datetime <= baz ) limit 100",
 		},
+		{
+			input:  "select * from foo where $__multiParams(foo, bar)",
+			output: "select * from foo where bar_foo_bar",
+			name:   "macro with multiple parameters",
+		},
+		{
+			input:  "select * from foo where $__params(FUNC(foo, bar))",
+			output: "select * from foo where bar_FUNC(foo, bar)",
+			name:   "function in macro with multiple parameters",
+		},
 	}
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("[%d/%d] %s", i+1, len(tests), tc.name), func(t *testing.T) {
@@ -172,7 +189,7 @@ func TestGetMacroMatches(t *testing.T) {
 			matches, err := getMacroMatches(fmt.Sprintf("$__%s", macroName), macroName)
 
 			assert.NoError(t, err)
-			assert.Equal(t, [][]string{{fmt.Sprintf("$__%s", macroName), ""}}, matches)
+			assert.Equal(t, []Macro{{fmt.Sprintf("$__%s", macroName), []string{""}}}, matches)
 		}
 	})
 	t.Run("does not return matches for macro name which is substring", func(t *testing.T) {
