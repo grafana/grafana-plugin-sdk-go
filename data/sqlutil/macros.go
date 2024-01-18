@@ -19,8 +19,7 @@ var (
 // Query macro implementations are defined by users/consumers of this package
 type MacroFunc func(*Query, []string) (string, error)
 
-// Macros is a list of MacroFuncs.
-// The "string" key is the name of the macro function. This name has to be regex friendly.
+// Macros is a map of macro name to MacroFunc. The name must be regex friendly.
 type Macros map[string]MacroFunc
 
 // Default time filter for SQL based on the query time range.
@@ -73,7 +72,7 @@ func macroTimeTo(query *Query, args []string) (string, error) {
 // It requires two arguments, the column to filter and the period.
 // Example:
 //
-//	$__timeTo(time, month) => "datepart(year, time), datepart(month, time)'"
+//	$__timeGroup(time, month) => "datepart(year, time), datepart(month, time)'"
 func macroTimeGroup(_ *Query, args []string) (string, error) {
 	if len(args) != 2 {
 		return "", fmt.Errorf("%w: expected 1 argument, received %d", ErrorBadArgumentCount, len(args))
