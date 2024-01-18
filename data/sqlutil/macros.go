@@ -124,110 +124,72 @@ var DefaultMacros = Macros{
 	"column":     macroColumn,
 }
 
-type Macro struct {
-	Name string
-	Args []string
+type macroMatch struct {
+	full string
+	args []string
 }
 
 // getMacroMatches extracts macro strings with their respective arguments from the sql input given
 // It manually parses the string to find the closing parenthesis of the macro (because regex has no memory)
-func getMacroMatches(input string, name string) ([]Macro, error) {
-	macroName := fmt.Sprintf("\\$__%s\\b", name)
-	matchedMacros := []Macro{}
-	rgx, err := regexp.Compile(macroName)
+func getMacroMatches(input string, name string) ([]macroMatch, error) {
+	rgx, err := regexp.Compile(fmt.Sprintf(`\$__%s\b`, name))
 
 	if err != nil {
 		return nil, err
 	}
 
-	// get all matching macro instances
-	matched := rgx.FindAllStringIndex(input, -1)
+	var matches []macroMatch
+	for _, window := range rgx.FindAllStringIndex(input, -1) {
+		start, end := window[0], window[1]
+		args, length := parseArgs(input[end:])
+		if length < 0 {
+			return nil, fmt.Errorf("failed to parse macro arguments (missing close bracket?)")
+		}
+		matches = append(matches, macroMatch{full: input[start : end+length], args: args})
+	}
+	return matches, nil
+}
 
-	if matched == nil {
-		return nil, nil
+// parseArgs looks for a bracketed argument list at the beginning of argString.
+// If one is present, returns a list of whitespace-trimmed arguments and the
+// length of the string comprising the bracketed argument list.
+func parseArgs(argString string) ([]string, int) {
+	if !strings.HasPrefix(argString, "(") {
+		return nil, 0 // single empty arg for backwards compatibility
 	}
 
-	for matchedIndex := 0; matchedIndex < len(matched); matchedIndex++ {
-		var macroEnd = 0
-		var argStart = 0
-		// quick exit from the loop, when we encounter a closing bracket before an opening one (ie "($__macro)", where we can skip the closing one from the result)
-		var forceBreak = false
-		macroStart := matched[matchedIndex][0]
-		inputCopy := input[macroStart:]
-		cache := make([]rune, 0)
+	var args []string
+	depth := 0
+	arg := []rune{}
 
-		// find the opening and closing arguments brackets
-		for idx, r := range inputCopy {
-			if len(cache) == 0 && macroEnd > 0 || forceBreak {
-				break
+	for i, r := range argString {
+		switch r {
+		case '(':
+			depth++
+			if depth == 1 {
+				// don't include the outer bracket in the arg
+				continue
 			}
-			switch r {
-			case '(':
-				cache = append(cache, r)
-				if argStart == 0 {
-					argStart = idx + 1
-				}
-			case ' ':
-				// when we are inside an argument, we do not want to exit on space
-				if argStart != 0 {
-					continue
-				}
-				fallthrough
-			case ')':
-				l := len(cache)
-				if l == 0 {
-					macroEnd = 0
-					forceBreak = true
-					break
-				}
-				cache = cache[:l-1]
-				macroEnd = idx + 1
-			default:
+		case ')':
+			depth--
+			if depth == 0 {
+				// closing bracket
+				args = append(args, strings.TrimSpace(string(arg)))
+				return args, i + 1
+			}
+		case ',':
+			if depth == 1 {
+				// a comma at this level is separating args
+				args = append(args, strings.TrimSpace(string(arg)))
+				arg = []rune{}
 				continue
 			}
 		}
-
-		// macroEnd equals to 0 means there are no parentheses, so just set it
-		// to the end of the regex match
-		if macroEnd == 0 {
-			macroEnd = matched[matchedIndex][1] - macroStart
-		}
-		macroString := inputCopy[0:macroEnd]
-		macroMatch := Macro{Name: macroString}
-
-		args := ""
-		// if opening parenthesis was found, extract contents as arguments
-		if argStart > 0 {
-			args = inputCopy[argStart : macroEnd-1]
-		}
-		macroMatch.Args = parseArgs(args)
-		matchedMacros = append(matchedMacros, macroMatch)
+		arg = append(arg, r)
 	}
-	return matchedMacros, nil
-}
-
-func parseArgs(args string) []string {
-	argsArray := []string{}
-	phrase := []rune{}
-	bracketCount := 0
-	for _, v := range args {
-		phrase = append(phrase, v)
-		if v == '(' {
-			bracketCount++
-			continue
-		}
-		if v == ')' {
-			bracketCount--
-			continue
-		}
-		if v == ',' && bracketCount == 0 {
-			removeComma := phrase[:len(phrase)-1]
-			argsArray = append(argsArray, string(removeComma))
-			phrase = []rune{}
-		}
-	}
-	argsArray = append(argsArray, strings.TrimSpace(string(phrase)))
-	return argsArray
+	// If we get here, we have seen an open bracket but not a close bracket. This
+	// would formerly cause a panic; now it is treated as an error.
+	return nil, -1
 }
 
 // Interpolate returns an interpolated query string given a backend.DataQuery
@@ -243,17 +205,14 @@ func Interpolate(query *Query, macros Macros) (string, error) {
 		if err != nil {
 			return rawSQL, err
 		}
-		if len(matches) == 0 {
-			continue
-		}
 
 		for _, match := range matches {
-			res, err := macro(query.WithSQL(rawSQL), match.Args)
+			res, err := macro(query.WithSQL(rawSQL), match.args)
 			if err != nil {
 				return rawSQL, err
 			}
 
-			rawSQL = strings.ReplaceAll(rawSQL, match.Name, res)
+			rawSQL = strings.ReplaceAll(rawSQL, match.full, res)
 		}
 	}
 
