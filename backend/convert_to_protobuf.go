@@ -229,6 +229,7 @@ func (t ConvertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *plu
 		Headers: headers,
 		Code:    int32(resp.Status),
 		Body:    resp.Body,
+		Error:   t.Error(resp.Error),
 	}
 }
 

@@ -112,7 +112,7 @@ message CallResourceResponse {
   // Raw HTTP body bytes sent to the client
   bytes body = 3;
 
-  optional Error error = 4;
+  Error error = 4;
 }
 
 //-----------------------------------------------

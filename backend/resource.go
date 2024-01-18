@@ -91,6 +91,8 @@ type CallResourceResponse struct {
 
 	// Body the HTTP response body.
 	Body []byte
+
+	Error error
 }
 
 // CallResourceResponseSender is used for sending resource call responses.

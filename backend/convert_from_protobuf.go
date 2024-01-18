@@ -199,6 +199,7 @@ func (f ConvertFromProtobuf) CallResourceResponse(protoResp *pluginv2.CallResour
 		Status:  int(protoResp.Code),
 		Body:    protoResp.Body,
 		Headers: headers,
+		Error:   f.Error(protoResp.Error),
 	}
 }
 
