@@ -51,7 +51,7 @@ var (
 		Namespace: "grafana",
 		Name:      "secure_socks_requests_duration",
 		Help:      "Duration of requests to the secure socks proxy",
-	}, []string{"code"})
+	}, []string{"code", "datasource", "datasourceType"})
 )
 
 // Client is the main Proxy Client interface.
@@ -152,7 +152,7 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		return nil, err
 	}
 
-	return newInstrumentedSocksDialer(dialSocksProxy), nil
+	return newInstrumentedSocksDialer(dialSocksProxy, p.opts.DatasourceName, p.opts.DatasourceType), nil
 }
 
 func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
@@ -280,13 +280,20 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 // instrumentedSocksDialer  is a wrapper around the proxy.Dialer and proxy.DialContext
 // that records relevant socks secure socks proxy.
 type instrumentedSocksDialer struct {
-	dialer proxy.Dialer
+	// The name of the datasource the proxy will be used to communicate with.
+	datasourceName string
+	// The type of the datasourceType the proxy will be used to communicate with.
+	// It should be the value assigned to the type property in a datasourceType provisioning file (e.g mysql, prometheus)
+	datasourceType string
+	dialer         proxy.Dialer
 }
 
 // newInstrumentedSocksDialer creates a new instrumented dialer
-func newInstrumentedSocksDialer(dialer proxy.Dialer) proxy.Dialer {
+func newInstrumentedSocksDialer(dialer proxy.Dialer, datasourceName, datasourceType string) proxy.Dialer {
 	return &instrumentedSocksDialer{
-		dialer: dialer,
+		dialer:         dialer,
+		datasourceName: datasourceName,
+		datasourceType: datasourceType,
 	}
 }
 
@@ -348,6 +355,6 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 		code = "dial_error"
 	}
 
-	secureSocksRequestsDuration.WithLabelValues(code).Observe(time.Since(start).Seconds())
+	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType).Observe(time.Since(start).Seconds())
 	return c, err
 }
