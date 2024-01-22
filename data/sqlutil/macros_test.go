@@ -2,29 +2,37 @@ package sqlutil
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
+func staticMacro(output string) MacroFunc {
+	return argMacro(func([]string) string { return output })
+}
+
+func argMacro(f func([]string) string) MacroFunc {
+	return func(_ *Query, args []string) (string, error) { return f(args), nil }
+}
+
 var macros = Macros{
-	"foo": func(query *Query, args []string) (out string, err error) {
-		return "baz", nil
-	},
-	"fooBaz": func(query *Query, args []string) (out string, err error) {
-		return "qux", nil
-	},
-	"params": func(query *Query, args []string) (out string, err error) {
+	"foo":    staticMacro("baz"),
+	"fooBaz": staticMacro("qux"),
+	"params": argMacro(func(args []string) string {
 		if args[0] != "" {
-			return "bar_" + args[0], nil
+			return "bar_" + args[0]
 		}
-		return "bar", nil
-	},
+		return "bar"
+	}),
+	"f": staticMacro("f(1)"),
+	"g": staticMacro("g(1)"),
+	"multiParams": argMacro(func(args []string) string {
+		return strings.Join(append([]string{"bar"}, args...), "_")
+	}),
 	// overwrite a default macro
-	"timeGroup": func(query *Query, args []string) (out string, err error) {
-		return "grouped!", nil
-	},
+	"timeGroup": staticMacro("grouped!"),
 }
 
 func TestInterpolate(t *testing.T) {
@@ -151,6 +159,21 @@ func TestInterpolate(t *testing.T) {
 			input:  "select * from table where ( datetime >= $__foo ) AND ( datetime <= $__foo ) limit 100",
 			output: "select * from table where ( datetime >= baz ) AND ( datetime <= baz ) limit 100",
 		},
+		{
+			input:  "select * from foo where $__multiParams(foo, bar)",
+			output: "select * from foo where bar_foo_bar",
+			name:   "macro with multiple parameters",
+		},
+		{
+			input:  "select * from foo where $__params(FUNC(foo, bar))",
+			output: "select * from foo where bar_FUNC(foo, bar)",
+			name:   "function in macro with multiple parameters",
+		},
+		{
+			input:  "select * from foo where $__f > $__g",
+			output: "select * from foo where f(1) > g(1)",
+			name:   "don't consume args after a space (see https://github.com/grafana/sqlds/issues/82)",
+		},
 	}
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("[%d/%d] %s", i+1, len(tests), tc.name), func(t *testing.T) {
@@ -167,12 +190,12 @@ func TestInterpolate(t *testing.T) {
 }
 
 func TestGetMacroMatches(t *testing.T) {
-	t.Run("FindAllStringSubmatch returns DefaultMacros", func(t *testing.T) {
+	t.Run("getMacroMatches applies DefaultMacros", func(t *testing.T) {
 		for macroName := range DefaultMacros {
 			matches, err := getMacroMatches(fmt.Sprintf("$__%s", macroName), macroName)
 
 			assert.NoError(t, err)
-			assert.Equal(t, [][]string{{fmt.Sprintf("$__%s", macroName), ""}}, matches)
+			assert.Equal(t, []Macro{{fmt.Sprintf("$__%s", macroName), []string{""}}}, matches)
 		}
 	})
 	t.Run("does not return matches for macro name which is substring", func(t *testing.T) {

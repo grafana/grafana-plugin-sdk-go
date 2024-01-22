@@ -6,6 +6,8 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"golang.org/x/exp/maps"
 )
 
 var (
@@ -17,8 +19,7 @@ var (
 // Query macro implementations are defined by users/consumers of this package
 type MacroFunc func(*Query, []string) (string, error)
 
-// Macros is a list of MacroFuncs.
-// The "string" key is the name of the macro function. This name has to be regex friendly.
+// Macros is a map of macro name to MacroFunc. The name must be regex friendly.
 type Macros map[string]MacroFunc
 
 // Default time filter for SQL based on the query time range.
@@ -71,7 +72,7 @@ func macroTimeTo(query *Query, args []string) (string, error) {
 // It requires two arguments, the column to filter and the period.
 // Example:
 //
-//	$__timeTo(time, month) => "datepart(year, time), datepart(month, time)'"
+//	$__timeGroup(time, month) => "datepart(year, time), datepart(month, time)'"
 func macroTimeGroup(_ *Query, args []string) (string, error) {
 	if len(args) != 2 {
 		return "", fmt.Errorf("%w: expected 1 argument, received %d", ErrorBadArgumentCount, len(args))
@@ -123,28 +124,25 @@ var DefaultMacros = Macros{
 	"column":     macroColumn,
 }
 
-func trimAll(s []string) []string {
-	r := make([]string, len(s))
-	for i, v := range s {
-		r[i] = strings.TrimSpace(v)
-	}
-
-	return r
+type Macro struct {
+	Name string
+	Args []string
 }
 
 // getMacroMatches extracts macro strings with their respective arguments from the sql input given
 // It manually parses the string to find the closing parenthesis of the macro (because regex has no memory)
-func getMacroMatches(input string, name string) ([][]string, error) {
+func getMacroMatches(input string, name string) ([]Macro, error) {
 	macroName := fmt.Sprintf("\\$__%s\\b", name)
-	matchedMacros := [][]string{}
-
+	matchedMacros := []Macro{}
 	rgx, err := regexp.Compile(macroName)
+
 	if err != nil {
 		return nil, err
 	}
 
 	// get all matching macro instances
 	matched := rgx.FindAllStringIndex(input, -1)
+
 	if matched == nil {
 		return nil, nil
 	}
@@ -169,6 +167,12 @@ func getMacroMatches(input string, name string) ([][]string, error) {
 				if argStart == 0 {
 					argStart = idx + 1
 				}
+			case ' ':
+				// when we are inside an argument, we do not want to exit on space
+				if argStart != 0 {
+					continue
+				}
+				fallthrough
 			case ')':
 				l := len(cache)
 				if l == 0 {
@@ -189,53 +193,67 @@ func getMacroMatches(input string, name string) ([][]string, error) {
 			macroEnd = matched[matchedIndex][1] - macroStart
 		}
 		macroString := inputCopy[0:macroEnd]
-		macroMatch := []string{macroString}
+		macroMatch := Macro{Name: macroString}
 
 		args := ""
 		// if opening parenthesis was found, extract contents as arguments
 		if argStart > 0 {
 			args = inputCopy[argStart : macroEnd-1]
 		}
-		macroMatch = append(macroMatch, args)
+		macroMatch.Args = parseArgs(args)
 		matchedMacros = append(matchedMacros, macroMatch)
 	}
 	return matchedMacros, nil
 }
 
-// Interpolate returns an interpolated query string given a backend.DataQuery
-func Interpolate(query *Query, macros Macros) (string, error) {
-	for key, defaultMacro := range DefaultMacros {
-		if _, ok := macros[key]; !ok {
-			// If the driver doesn't define some macro, use the default one
-			macros[key] = defaultMacro
+func parseArgs(args string) []string {
+	argsArray := []string{}
+	phrase := []rune{}
+	bracketCount := 0
+	for _, v := range args {
+		phrase = append(phrase, v)
+		if v == '(' {
+			bracketCount++
+			continue
+		}
+		if v == ')' {
+			bracketCount--
+			continue
+		}
+		if v == ',' && bracketCount == 0 {
+			removeComma := phrase[:len(phrase)-1]
+			argsArray = append(argsArray, string(removeComma))
+			phrase = []rune{}
 		}
 	}
+	argsArray = append(argsArray, strings.TrimSpace(string(phrase)))
+	return argsArray
+}
+
+// Interpolate returns an interpolated query string given a backend.DataQuery
+func Interpolate(query *Query, macros Macros) (string, error) {
+	mergedMacros := Macros{}
+	maps.Copy(mergedMacros, DefaultMacros)
+	maps.Copy(mergedMacros, macros)
+
 	rawSQL := query.RawSQL
 
-	for key, macro := range macros {
+	for key, macro := range mergedMacros {
 		matches, err := getMacroMatches(rawSQL, key)
 		if err != nil {
 			return rawSQL, err
 		}
+		if len(matches) == 0 {
+			continue
+		}
 
 		for _, match := range matches {
-			if len(match) == 0 {
-				// There were no matches for this macro
-				continue
-			}
-
-			args := []string{}
-			if len(match) > 1 {
-				// This macro has arguments
-				args = trimAll(strings.Split(match[1], ","))
-			}
-
-			res, err := macro(query.WithSQL(rawSQL), args)
+			res, err := macro(query.WithSQL(rawSQL), match.Args)
 			if err != nil {
 				return rawSQL, err
 			}
 
-			rawSQL = strings.ReplaceAll(rawSQL, match[0], res)
+			rawSQL = strings.ReplaceAll(rawSQL, match.Name, res)
 		}
 	}
 
