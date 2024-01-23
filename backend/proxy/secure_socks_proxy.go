@@ -51,7 +51,7 @@ var (
 		Namespace: "grafana",
 		Name:      "secure_socks_requests_duration",
 		Help:      "Duration of requests to the secure socks proxy",
-	}, []string{"code", "datasource", "datasourceType"})
+	}, []string{"code", "datasource", "datasource_type"})
 )
 
 // Client is the main Proxy Client interface.
