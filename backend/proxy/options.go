@@ -5,9 +5,9 @@ import "time"
 // Options defines per datasource options for creating the proxy dialer.
 type Options struct {
 	Enabled bool
-	// The name of the datasource the proxy will be used to communicate with.
+	// DatasourceName is the name of the datasource the proxy will be used to communicate with.
 	DatasourceName string
-	// The type of the datasource the proxy will be used to communicate with.
+	// DatasourceType is the type of the datasource the proxy will be used to communicate with.
 	// It should be the value assigned to the type property in a datasource provisioning file (e.g mysql, prometheus)
 	DatasourceType string
 	Auth           *AuthOptions
