@@ -280,9 +280,9 @@ func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
 // instrumentedSocksDialer  is a wrapper around the proxy.Dialer and proxy.DialContext
 // that records relevant socks secure socks proxy.
 type instrumentedSocksDialer struct {
-	// The name of the datasource the proxy will be used to communicate with.
+	// datasourceName is the name of the datasource the proxy will be used to communicate with.
 	datasourceName string
-	// The type of the datasourceType the proxy will be used to communicate with.
+	// datasourceType is the type of the datasourceType the proxy will be used to communicate with.
 	// It should be the value assigned to the type property in a datasourceType provisioning file (e.g mysql, prometheus)
 	datasourceType string
 	dialer         proxy.Dialer
