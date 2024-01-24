@@ -178,6 +178,10 @@ type PluginContext struct {
 	// UserAgent is the user agent of the Grafana server that initiated the gRPC request.
 	// Will only be set if request is made from Grafana v10.2.0 or later.
 	UserAgent *useragent.UserAgent
+
+	// FromService is the service in Grafana that initiated the request.
+	// Will only be set if request is made from Grafana v10.4.0 or later.
+	FromService string
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
