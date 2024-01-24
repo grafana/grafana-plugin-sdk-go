@@ -165,6 +165,11 @@ func (Build) LinuxARM64() error {
 	return buildBackend(newBuildConfig("linux", "arm64"))
 }
 
+// LinuxLOONG64 builds the back-end plugin for Linux on LOONG64.
+func (Build) LinuxLOONG64() error {
+	return buildBackend(newBuildConfig("linux", "loong64"))
+}
+
 // Windows builds the back-end plugin for Windows.
 func (Build) Windows() error {
 	return buildBackend(newBuildConfig("windows", "amd64"))
