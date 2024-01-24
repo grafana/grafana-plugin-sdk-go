@@ -24,6 +24,8 @@ const (
 	FormatOptionLogs
 	// FormatOptionsTrace sets the preferred visualization to trace
 	FormatOptionTrace
+	// FormatOptionMulti formats the query results as a timeseries using "LongToMulti"
+	FormatOptionMulti
 )
 
 // Query is the model that represents the query that users submit from the panel/queryeditor.
