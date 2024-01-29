@@ -13,7 +13,7 @@ import (
 
 const (
 	AppURL               = "GF_APP_URL"
-	ConcurrentQueryCount = "GF_PLUGIN_CONCURRENT_QUERY_COUNT"
+	ConcurrentQueryCount = "GF_CONCURRENT_QUERY_COUNT"
 )
 
 type configKey struct{}
