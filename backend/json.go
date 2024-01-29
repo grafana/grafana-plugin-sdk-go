@@ -5,13 +5,15 @@ import (
 	"sort"
 	"unsafe"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 func init() { //nolint:gochecknoinits
-	jsoniter.RegisterTypeEncoder("backend.DataResponse", &dataResponseCodec{})
-	jsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
+	sdkjsoniter.RegisterTypeEncoder("backend.DataResponse", &dataResponseCodec{})
+	sdkjsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
 }
 
 type dataResponseCodec struct{}
@@ -21,7 +23,7 @@ func (codec *dataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
 	return dr.Error == nil && dr.Frames == nil
 }
 
-func (codec *dataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+func (codec *dataResponseCodec) Encode(ptr unsafe.Pointer, stream *sdkjsoniter.Stream) {
 	dr := (*DataResponse)(ptr)
 	writeDataResponseJSON(dr, stream)
 }
@@ -33,22 +35,22 @@ func (codec *queryDataResponseCodec) IsEmpty(ptr unsafe.Pointer) bool {
 	return qdr.Responses == nil
 }
 
-func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *sdkjsoniter.Stream) {
 	qdr := (*QueryDataResponse)(ptr)
 	writeQueryDataResponseJSON(qdr, stream)
 }
 
 func (codec *queryDataResponseCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 	qdr := QueryDataResponse{}
-	readQueryDataResultsJSON(&qdr, iter)
+	readQueryDataResultsJSON(&qdr, sdkjsoniter.NewIterator(iter))
 	*((*QueryDataResponse)(ptr)) = qdr
 }
 
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
 // Private stream readers
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
 
-func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
+func writeDataResponseJSON(dr *DataResponse, stream *sdkjsoniter.Stream) {
 	stream.WriteObjectStart()
 	started := false
 
@@ -102,7 +104,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 	stream.WriteObjectEnd()
 }
 
-func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *jsoniter.Stream) {
+func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *sdkjsoniter.Stream) {
 	stream.WriteObjectStart()
 	stream.WriteObjectField("results")
 	stream.WriteObjectStart()
@@ -131,61 +133,63 @@ func writeQueryDataResponseJSON(qdr *QueryDataResponse, stream *jsoniter.Stream)
 	stream.WriteObjectEnd()
 }
 
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
 // Private stream readers
-//-----------------------------------------------------------------
+// -----------------------------------------------------------------
 
-func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
+func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *sdkjsoniter.Iterator) {
 	found := false
 
-	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+	for l1Field, _ := iter.ReadObject(); l1Field != ""; l1Field, _ = iter.ReadObject() {
 		switch l1Field {
 		case "results":
 			if found {
-				iter.ReportError("read results", "already found results")
+				_ = iter.ReportError("read results", "already found results")
 				return
 			}
 			found = true
 
 			qdr.Responses = make(Responses)
 
-			for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+			for l2Field, _ := iter.ReadObject(); l2Field != ""; l2Field, _ = iter.ReadObject() {
 				dr := DataResponse{}
 				readDataResponseJSON(&dr, iter)
 				qdr.Responses[l2Field] = dr
 			}
 
 		default:
-			iter.ReportError("bind l1", "unexpected field: "+l1Field)
+			_ = iter.ReportError("bind l1", "unexpected field: "+l1Field)
 			return
 		}
 	}
 }
 
-func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
-	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+func readDataResponseJSON(rsp *DataResponse, iter *sdkjsoniter.Iterator) {
+	for l2Field, _ := iter.ReadObject(); l2Field != ""; l2Field, _ = iter.ReadObject() {
 		switch l2Field {
 		case "error":
 			rsp.Error = fmt.Errorf(iter.ReadString())
 
 		case "status":
-			rsp.Status = Status(iter.ReadInt32())
+			s, _ := iter.ReadInt32()
+			rsp.Status = Status(s)
 
 		case "errorSource":
-			rsp.ErrorSource = ErrorSource(iter.ReadString())
+			src, _ := iter.ReadString()
+			rsp.ErrorSource = ErrorSource(src)
 
 		case "frames":
-			for iter.ReadArray() {
+			for iter.CanReadArray() {
 				frame := &data.Frame{}
-				iter.ReadVal(frame)
-				if iter.Error != nil {
+				err := iter.ReadVal(frame)
+				if err != nil {
 					return
 				}
 				rsp.Frames = append(rsp.Frames, frame)
 			}
 
 		default:
-			iter.ReportError("bind l2", "unexpected field: "+l2Field)
+			_ = iter.ReportError("bind l2", "unexpected field: "+l2Field)
 			return
 		}
 	}

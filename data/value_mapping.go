@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	jsoniter "github.com/json-iterator/go"
+	sdkjsoniter "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 // MappingType see https://github.com/grafana/grafana/blob/main/packages/grafana-data/src/types/valueMapping.ts
@@ -44,7 +44,7 @@ type ValueMappings []ValueMapping
 
 // MarshalJSON writes the results as json
 func (m ValueMappings) MarshalJSON() ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -70,12 +70,15 @@ func (m ValueMappings) MarshalJSON() ([]byte, error) {
 
 // UnmarshalJSON will read JSON into the appropriate go types
 func (m *ValueMappings) UnmarshalJSON(b []byte) error {
-	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	iter, _ := sdkjsoniter.ParseBytes(sdkjsoniter.ConfigDefault, b)
 	var mappings ValueMappings
 
-	for iter.ReadArray() {
+	for iter.CanReadArray() {
 		var objMap map[string]json.RawMessage
-		iter.ReadVal(&objMap)
+		err := iter.ReadVal(&objMap)
+		if err != nil {
+			return err
+		}
 		mt := mappingType(strings.Trim(string(objMap["type"]), `"`))
 
 		switch mt {
@@ -106,7 +109,7 @@ func (m *ValueMappings) UnmarshalJSON(b []byte) error {
 	}
 
 	*m = mappings
-	return iter.Error
+	return iter.ReadError()
 }
 
 // ValueMapper converts one set of strings to another

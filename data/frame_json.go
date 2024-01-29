@@ -31,8 +31,8 @@ const jsonKeySchema = "schema"
 const jsonKeyData = "data"
 
 func init() { //nolint:gochecknoinits
-	jsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
-	jsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
+	sdkjsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
+	sdkjsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
 }
 
 type dataFrameCodec struct{}
@@ -42,14 +42,14 @@ func (codec *dataFrameCodec) IsEmpty(ptr unsafe.Pointer) bool {
 	return f.Fields == nil && f.RefID == "" && f.Meta == nil
 }
 
-func (codec *dataFrameCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
+func (codec *dataFrameCodec) Encode(ptr unsafe.Pointer, stream *sdkjsoniter.Stream) {
 	f := (*Frame)(ptr)
 	writeDataFrame(f, stream, true, true)
 }
 
 func (codec *dataFrameCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
 	frame := Frame{}
-	err := readDataFrameJSON(&frame, iter)
+	err := readDataFrameJSON(&frame, sdkjsoniter.NewIterator(iter))
 	if err != nil {
 		// keep existing iter error if it exists
 		if iter.Error == nil {
@@ -113,7 +113,7 @@ func (f *FrameJSONCache) SameSchema(dst *FrameJSONCache) bool {
 
 // SetData updates the data bytes with new values
 func (f *FrameJSONCache) setData(frame *Frame) error {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -131,7 +131,7 @@ func (f *FrameJSONCache) setData(frame *Frame) error {
 
 // SetSchema updates the schema bytes with new values
 func (f *FrameJSONCache) setSchema(frame *Frame) error {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -158,7 +158,7 @@ func (f *FrameJSONCache) MarshalJSON() ([]byte, error) {
 //
 // NOTE: the format should be considered experimental until grafana 8 is released.
 func FrameToJSON(frame *Frame, include FrameInclude) ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -212,12 +212,15 @@ type schemaField struct {
 	TypeInfo fieldTypeInfo `json:"typeInfo,omitempty"`
 }
 
-func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
-	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+func readDataFrameJSON(frame *Frame, iter *sdkjsoniter.Iterator) error {
+	for l1Field, _ := iter.ReadObject(); l1Field != ""; l1Field, _ = iter.ReadObject() {
 		switch l1Field {
 		case jsonKeySchema:
 			schema := frameSchema{}
-			iter.ReadVal(&schema)
+			err := iter.ReadVal(&schema)
+			if err != nil {
+				return err
+			}
 			frame.Name = schema.Name
 			frame.RefID = schema.RefID
 			frame.Meta = schema.Meta
@@ -242,31 +245,31 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 			}
 
 		default:
-			iter.ReportError("bind l1", "unexpected field: "+l1Field)
+			return iter.ReportError("bind l1", "unexpected field: "+l1Field)
 		}
 	}
-	return iter.Error
+	return iter.ReadError()
 }
 
-func readDataFramesJSON(frames *Frames, iter *jsoniter.Iterator) error {
-	for iter.ReadArray() {
+func readDataFramesJSON(frames *Frames, iter *sdkjsoniter.Iterator) error {
+	for iter.CanReadArray() {
 		frame := &Frame{}
-		iter.ReadVal(frame)
-		if iter.Error != nil {
-			return iter.Error
+		err := iter.ReadVal(frame)
+		if err != nil {
+			return err
 		}
 		*frames = append(*frames, frame)
 	}
 	return nil
 }
 
-func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
+func readFrameData(iter *sdkjsoniter.Iterator, frame *Frame) error {
 	var readValues, readNanos bool
 	nanos := make([][]int64, len(frame.Fields))
-	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+	for l2Field, _ := iter.ReadObject(); l2Field != ""; l2Field, _ = iter.ReadObject() {
 		switch l2Field {
 		case "values":
-			if !iter.ReadArray() {
+			if ok, _ := iter.ReadArray(); !ok {
 				continue // empty fields
 			}
 			var fieldIndex int
@@ -301,7 +304,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 
 			addNanos()
 			fieldIndex++
-			for iter.ReadArray() {
+			for iter.CanReadArray() {
 				field = frame.Fields[fieldIndex]
 				vec, err = readVector(iter, field.Type(), size)
 				if err != nil {
@@ -316,32 +319,35 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 
 		case "entities":
 			fieldIndex := 0
-			for iter.ReadArray() {
-				t := iter.WhatIsNext()
+			for iter.CanReadArray() {
+				t, _ := iter.WhatIsNext()
 				if t == sdkjsoniter.ObjectValue {
-					for l3Field := iter.ReadObject(); l3Field != ""; l3Field = iter.ReadObject() {
+					for l3Field, _ := iter.ReadObject(); l3Field != ""; l3Field, _ = iter.ReadObject() {
 						field := frame.Fields[fieldIndex]
 						replace := getReplacementValue(l3Field, field.Type())
-						for iter.ReadArray() {
-							idx := iter.ReadInt()
+						for iter.CanReadArray() {
+							idx, _ := iter.ReadInt()
 							field.vector.SetConcrete(idx, replace)
 						}
 					}
 				} else {
-					iter.ReadAny() // skip nils
+					_, err := iter.ReadAny() // skip nils
+					if err != nil {
+						return err
+					}
 				}
 				fieldIndex++
 			}
 
 		case "nanos":
 			fieldIndex := 0
-			for iter.ReadArray() {
+			for iter.CanReadArray() {
 				field := frame.Fields[fieldIndex]
 
-				t := iter.WhatIsNext()
+				t, _ := iter.WhatIsNext()
 				if t == sdkjsoniter.ArrayValue {
-					for idx := 0; iter.ReadArray(); idx++ {
-						ns := iter.ReadInt64()
+					for idx := 0; iter.CanReadArray(); idx++ {
+						ns, _ := iter.ReadInt64()
 						if readValues {
 							t, ok := field.vector.ConcreteAt(idx)
 							if !ok {
@@ -356,7 +362,10 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 						}
 					}
 				} else {
-					iter.ReadAny() // skip nils
+					_, err := iter.ReadAny() // skip nils
+					if err != nil {
+						return err
+					}
 				}
 				fieldIndex++
 			}
@@ -420,8 +429,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 	return 0, fmt.Errorf("unable to convert int64 in json [%T]", v)
 }
 
-func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
-	itere := sdkjsoniter.NewIterator(iter)
+func jsonValuesToVector(iter *sdkjsoniter.Iterator, ft FieldType) (vector, error) {
 	// we handle Uint64 differently because the regular method for unmarshalling to []any does not work for uint64 correctly
 	// due to jsoniter parsing logic that automatically converts all numbers to float64.
 	// We can't use readUint64VectorJSON here because the size of the array is not known and the function requires the length parameter
@@ -430,7 +438,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		parseUint64 := func(s string) (uint64, error) {
 			return strconv.ParseUint(s, 0, 64)
 		}
-		u, err := readArrayOfNumbers[uint64](itere, parseUint64, itere.ReadUint64)
+		u, err := readArrayOfNumbers[uint64](iter, parseUint64, iter.ReadUint64)
 		if err != nil {
 			return nil, err
 		}
@@ -443,7 +451,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 			}
 			return &u, nil
 		}
-		u, err := readArrayOfNumbers[*uint64](itere, parseUint64, itere.ReadUint64Pointer)
+		u, err := readArrayOfNumbers[*uint64](iter, parseUint64, iter.ReadUint64Pointer)
 		if err != nil {
 			return nil, err
 		}
@@ -548,7 +556,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	}
 
 	arr := make([]interface{}, 0)
-	err := itere.ReadVal(&arr)
+	err := iter.ReadVal(&arr)
 	if err != nil {
 		return nil, err
 	}
@@ -611,7 +619,7 @@ func readArrayOfNumbers[T any](iter *sdkjsoniter.Iterator, parse func(string) (T
 }
 
 // nolint:gocyclo
-func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error) {
+func readVector(iter *sdkjsoniter.Iterator, ft FieldType, size int) (vector, error) {
 	switch ft {
 	// Manual
 	case FieldTypeTime:
@@ -781,7 +789,7 @@ func isSpecialEntity(v float64) (string, bool) {
 	}
 }
 
-func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, includeData bool) {
+func writeDataFrame(frame *Frame, stream *sdkjsoniter.Stream, includeSchema bool, includeData bool) {
 	stream.WriteObjectStart()
 	if includeSchema {
 		stream.WriteObjectField(jsonKeySchema)
@@ -799,7 +807,7 @@ func writeDataFrame(frame *Frame, stream *jsoniter.Stream, includeSchema bool, i
 	stream.WriteObjectEnd()
 }
 
-func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
+func writeDataFrameSchema(frame *Frame, stream *sdkjsoniter.Stream) {
 	started := false
 	stream.WriteObjectStart()
 
@@ -895,7 +903,7 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 	stream.WriteObjectEnd()
 }
 
-func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
+func writeDataFrameData(frame *Frame, stream *sdkjsoniter.Stream) {
 	rowCount, err := frame.RowLen()
 	if err != nil {
 		stream.Error = err
@@ -995,7 +1003,7 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	stream.WriteObjectEnd()
 }
 
-func writeDataFrames(frames *Frames, stream *jsoniter.Stream) {
+func writeDataFrames(frames *Frames, stream *sdkjsoniter.Stream) {
 	if frames == nil {
 		return
 	}
@@ -1031,7 +1039,7 @@ func ArrowBufferToJSON(b []byte, include FrameInclude) ([]byte, error) {
 // ArrowToJSON writes a frame to JSON
 // NOTE: the format should be considered experimental until grafana 8 is released.
 func ArrowToJSON(record arrow.Record, include FrameInclude) ([]byte, error) {
-	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
+	cfg := sdkjsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
@@ -1061,7 +1069,7 @@ func ArrowToJSON(record arrow.Record, include FrameInclude) ([]byte, error) {
 	return append([]byte(nil), stream.Buffer()...), nil
 }
 
-func writeArrowSchema(stream *jsoniter.Stream, record arrow.Record) {
+func writeArrowSchema(stream *sdkjsoniter.Stream, record arrow.Record) {
 	started := false
 	metaData := record.Schema().Metadata()
 
@@ -1156,7 +1164,7 @@ func writeArrowSchema(stream *jsoniter.Stream, record arrow.Record) {
 	stream.WriteObjectEnd()
 }
 
-func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error {
+func writeArrowData(stream *sdkjsoniter.Stream, record arrow.Record) error {
 	fieldCount := len(record.Schema().Fields())
 
 	stream.WriteObjectStart()
@@ -1237,7 +1245,7 @@ func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error {
 }
 
 // Custom timestamp extraction... assumes nanoseconds for everything now
-func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col arrow.Array) []int64 {
+func writeArrowDataTIMESTAMP(stream *sdkjsoniter.Stream, col arrow.Array) []int64 {
 	count := col.Len()
 	var hasNSTime bool
 	nsTime := make([]int64, count)
@@ -1273,7 +1281,7 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col arrow.Array) []int64 {
 	return nil
 }
 
-func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
+func readTimeVectorJSON(iter *sdkjsoniter.Iterator, nullable bool, size int) (vector, error) {
 	var arr vector
 	if nullable {
 		arr = newNullableTimeTimeVector(size)
@@ -1282,30 +1290,31 @@ func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 	}
 
 	for i := 0; i < size; i++ {
-		if !iter.ReadArray() {
-			iter.ReportError("readUint8VectorJSON", "expected array")
-			return nil, iter.Error
+		if !iter.CanReadArray() {
+			return nil, iter.ReportError("readUint8VectorJSON", "expected array")
 		}
 
-		t := iter.WhatIsNext()
+		t, _ := iter.WhatIsNext()
 		if t == sdkjsoniter.NilValue {
-			iter.ReadNil()
+			_, err := iter.ReadNil()
+			if err != nil {
+				return nil, err
+			}
 		} else {
-			ms := iter.ReadInt64()
+			ms, _ := iter.ReadInt64()
 
 			tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6))
 			arr.SetConcrete(i, tv)
 		}
 	}
 
-	if iter.ReadArray() {
-		iter.ReportError("read", "expected close array")
-		return nil, iter.Error
+	if iter.CanReadArray() {
+		return nil, iter.ReportError("read", "expected close array")
 	}
 	return arr, nil
 }
 
-func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
+func readJSONVectorJSON(iter *sdkjsoniter.Iterator, nullable bool, size int) (vector, error) {
 	var arr vector
 	if nullable {
 		arr = newNullableJsonRawMessageVector(size)
@@ -1314,24 +1323,28 @@ func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 	}
 
 	for i := 0; i < size; i++ {
-		if !iter.ReadArray() {
-			iter.ReportError("readJSONVectorJSON", "expected array")
-			return nil, iter.Error
+		if !iter.CanReadArray() {
+			return nil, iter.ReportError("readJSONVectorJSON", "expected array")
 		}
 
-		t := iter.WhatIsNext()
+		t, _ := iter.WhatIsNext()
 		if t == sdkjsoniter.NilValue {
-			iter.ReadNil()
+			_, err := iter.ReadNil()
+			if err != nil {
+				return nil, err
+			}
 		} else {
 			var v json.RawMessage
-			iter.ReadVal(&v)
+			err := iter.ReadVal(&v)
+			if err != nil {
+				return nil, err
+			}
 			arr.SetConcrete(i, v)
 		}
 	}
 
-	if iter.ReadArray() {
-		iter.ReportError("read", "expected close array")
-		return nil, iter.Error
+	if iter.CanReadArray() {
+		return nil, iter.ReportError("read", "expected close array")
 	}
 	return arr, nil
 }
