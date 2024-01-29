@@ -12,7 +12,8 @@ import (
 )
 
 const (
-	AppURL = "GF_APP_URL"
+	AppURL               = "GF_APP_URL"
+	ConcurrentQueryCount = "GF_PLUGIN_CONCURRENT_QUERY_COUNT"
 )
 
 type configKey struct{}
@@ -136,6 +137,18 @@ func (c *GrafanaCfg) AppURL() (string, error) {
 		return "", fmt.Errorf("app URL not set in config. A more recent version of Grafana may be required")
 	}
 	return url, nil
+}
+
+func (c *GrafanaCfg) ConcurrentQueryCount() (int, error) {
+	count, ok := c.config[ConcurrentQueryCount]
+	if !ok {
+		return 0, fmt.Errorf("ConcurrentQueryCount not set in config")
+	}
+	i, err := strconv.Atoi(count)
+	if err != nil {
+		return 0, fmt.Errorf("ConcurrentQueryCount cannot be converted to integer")
+	}
+	return i, nil
 }
 
 type userAgentKey struct{}
