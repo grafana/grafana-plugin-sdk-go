@@ -36,7 +36,8 @@ func TestRead(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	t.Run("should create a new iterator without any error", func(t *testing.T) {
-		iter, err := Parse(ConfigDefault, io.NopCloser(strings.NewReader(`{"test":123}`)), 128)
+		jiter := NewIterator(j.NewIterator(j.ConfigDefault))
+		iter, err := jiter.Parse(ConfigDefault, io.NopCloser(strings.NewReader(`{"test":123}`)), 128)
 		require.NoError(t, err)
 		require.NotNil(t, iter)
 	})
