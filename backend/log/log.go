@@ -47,6 +47,13 @@ func NewWithLevel(level Level) Logger {
 	}
 }
 
+// NewNullLogger returns a logger that does nothing, for testing purposes
+func NewNullLogger() Logger {
+	return &hclogWrapper{
+		logger: hclog.NewNullLogger(),
+	}
+}
+
 type hclogWrapper struct {
 	logger hclog.Logger
 }
