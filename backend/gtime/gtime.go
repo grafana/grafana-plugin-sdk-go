@@ -86,7 +86,7 @@ func parse(inp string) (time.Duration, string, error) {
 	return time.Duration(num), string(result[2]), nil
 }
 
-// FormatInterval converts a duration into the kbn format e.g. 1m 2h or 3d
+// FormatInterval converts a duration into the units that Grafana uses
 func FormatInterval(inter time.Duration) string {
 	year := time.Hour * 24 * 365
 	day := time.Hour * 24
