@@ -85,3 +85,35 @@ func parse(inp string) (time.Duration, string, error) {
 
 	return time.Duration(num), string(result[2]), nil
 }
+
+// FormatInterval converts a duration into the units that Grafana uses
+func FormatInterval(inter time.Duration) string {
+	year := time.Hour * 24 * 365
+	day := time.Hour * 24
+
+	if inter >= year {
+		return fmt.Sprintf("%dy", inter/year)
+	}
+
+	if inter >= day {
+		return fmt.Sprintf("%dd", inter/day)
+	}
+
+	if inter >= time.Hour {
+		return fmt.Sprintf("%dh", inter/time.Hour)
+	}
+
+	if inter >= time.Minute {
+		return fmt.Sprintf("%dm", inter/time.Minute)
+	}
+
+	if inter >= time.Second {
+		return fmt.Sprintf("%ds", inter/time.Second)
+	}
+
+	if inter >= time.Millisecond {
+		return fmt.Sprintf("%dms", inter/time.Millisecond)
+	}
+
+	return "1ms"
+}
