@@ -100,3 +100,23 @@ func calculateDays5y() int {
 
 	return daysInYear
 }
+
+func TestFormatInterval(t *testing.T) {
+	testCases := []struct {
+		name     string
+		duration time.Duration
+		expected string
+	}{
+		{"61s", time.Second * 61, "1m"},
+		{"30ms", time.Millisecond * 30, "30ms"},
+		{"23h", time.Hour * 23, "23h"},
+		{"24h", time.Hour * 24, "1d"},
+		{"367d", time.Hour * 24 * 367, "1y"},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			require.Equal(t, tc.expected, FormatInterval(tc.duration))
+		})
+	}
+}
