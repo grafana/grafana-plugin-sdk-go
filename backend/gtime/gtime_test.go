@@ -23,7 +23,7 @@ func TestParseInterval(t *testing.T) {
 		{inp: "1M", duration: time.Duration(daysInMonth * 24 * int(time.Hour))},
 		{inp: "1y", duration: time.Duration(daysInYear * 24 * int(time.Hour))},
 		{inp: "5y", duration: time.Duration(calculateDays5y() * 24 * int(time.Hour))},
-		{inp: "invalid-expected", err: regexp.MustCompile(`^time: invalid expected "?invalid-expected"?$`)},
+		{inp: "invalid-duration", err: regexp.MustCompile(`^time: invalid duration "?invalid-duration"?$`)},
 	}
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
@@ -54,7 +54,7 @@ func TestParseDuration(t *testing.T) {
 		{inp: "1M", duration: time.Duration(730.5 * float64(time.Hour))},
 		{inp: "1y", duration: 365.25 * 24 * time.Hour},
 		{inp: "5y", duration: 5 * 365.25 * 24 * time.Hour},
-		{inp: "invalid-expected", err: regexp.MustCompile(`^time: invalid expected "?invalid-expected"?$`)},
+		{inp: "invalid-duration", err: regexp.MustCompile(`^time: invalid duration "?invalid-duration"?$`)},
 	}
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
