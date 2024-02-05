@@ -163,7 +163,7 @@ func TestParseIntervalStringToTimeDuration(t *testing.T) {
 		{inp: "1M", duration: time.Duration(730.5 * float64(time.Hour))},
 		{inp: "1y", duration: 365.25 * 24 * time.Hour},
 		{inp: "5y", duration: 5 * 365.25 * 24 * time.Hour},
-		{inp: "invalid-expected", err: regexp.MustCompile(`^time: invalid expected "?invalid-expected"?$`)},
+		{inp: "invalid-duration", err: regexp.MustCompile(`^time: invalid duration "?invalid-duration"?$`)},
 		// ParseIntervalStringToTimeDuration specific conditions
 		{inp: "10", duration: 10 * time.Second},
 		{inp: "<10s>", duration: 10 * time.Second},
