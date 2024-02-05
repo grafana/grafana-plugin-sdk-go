@@ -40,7 +40,7 @@ func ParseInterval(inp string) (time.Duration, error) {
 	return 0, fmt.Errorf("invalid interval %q", inp)
 }
 
-// ParseDuration parses a expected with support for all units that Grafana uses.
+// ParseDuration parses a duration with support for all units that Grafana uses.
 // Durations are independent of wall time.
 func ParseDuration(inp string) (time.Duration, error) {
 	dur, period, err := parse(inp)
@@ -69,7 +69,7 @@ func ParseDuration(inp string) (time.Duration, error) {
 		return dur * year, nil
 	}
 
-	return 0, fmt.Errorf("invalid expected %q", inp)
+	return 0, fmt.Errorf("invalid duration %q", inp)
 }
 
 func parse(inp string) (time.Duration, string, error) {
@@ -87,7 +87,7 @@ func parse(inp string) (time.Duration, string, error) {
 	return time.Duration(num), string(result[2]), nil
 }
 
-// FormatInterval converts a expected into the units that Grafana uses
+// FormatInterval converts a duration into the units that Grafana uses
 func FormatInterval(inter time.Duration) string {
 	year := time.Hour * 24 * 365
 	day := time.Hour * 24
