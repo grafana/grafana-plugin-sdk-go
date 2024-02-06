@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -116,4 +117,52 @@ func FormatInterval(inter time.Duration) string {
 	}
 
 	return "1ms"
+}
+
+// GetIntervalFrom returns the minimum interval.
+// dsInterval is the string representation of data source min interval, if configured.
+// queryInterval is the string representation of query interval (min interval), e.g. "10ms" or "10s".
+// queryIntervalMS is a pre-calculated numeric representation of the query interval in milliseconds.
+func GetIntervalFrom(dsInterval, queryInterval string, queryIntervalMS int64, defaultInterval time.Duration) (time.Duration, error) {
+	// Apparently we are setting default value of queryInterval to 0s now
+	interval := queryInterval
+	if interval == "0s" {
+		interval = ""
+	}
+	if interval == "" {
+		if queryIntervalMS != 0 {
+			return time.Duration(queryIntervalMS) * time.Millisecond, nil
+		}
+	}
+	if interval == "" && dsInterval != "" {
+		interval = dsInterval
+	}
+	if interval == "" {
+		return defaultInterval, nil
+	}
+
+	parsedInterval, err := ParseIntervalStringToTimeDuration(interval)
+	if err != nil {
+		return time.Duration(0), err
+	}
+
+	return parsedInterval, nil
+}
+
+// ParseIntervalStringToTimeDuration converts a string representation of a expected (i.e. 1m30s) to time.Duration
+// this method copied from grafana/grafana/pkg/tsdb/intervalv2.go
+func ParseIntervalStringToTimeDuration(interval string) (time.Duration, error) {
+	formattedInterval := strings.Replace(strings.Replace(interval, "<", "", 1), ">", "", 1)
+	isPureNum, err := regexp.MatchString(`^\d+$`, formattedInterval)
+	if err != nil {
+		return time.Duration(0), err
+	}
+	if isPureNum {
+		formattedInterval += "s"
+	}
+	parsedInterval, err := ParseDuration(formattedInterval)
+	if err != nil {
+		return time.Duration(0), err
+	}
+	return parsedInterval, nil
 }
