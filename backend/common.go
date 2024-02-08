@@ -285,3 +285,17 @@ func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*
 
 	return opts, nil
 }
+
+func (s *DataSourceInstanceSettings) ProxyClient(ctx context.Context) (proxy.Client, error) {
+	cfg := GrafanaConfigFromContext(ctx)
+	p, err := cfg.proxy()
+	if err != nil {
+		return nil, err
+	}
+	proxyOpts, err := s.ProxyOptions(p.clientCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return proxy.New(proxyOpts), nil
+}
