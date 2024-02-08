@@ -64,6 +64,10 @@ func (iter *Iterator) Skip() error {
 	return iter.i.Error
 }
 
+func (iter *Iterator) SkipAndReturnBytes() ([]byte, error) {
+	return iter.i.SkipAndReturnBytes(), iter.i.Error
+}
+
 func (iter *Iterator) ReadVal(obj interface{}) error {
 	iter.i.ReadVal(obj)
 	return iter.i.Error
