@@ -29,7 +29,7 @@ func DefaultTracer() trace.Tracer {
 	defaultTracerInitOnce.Do(func() {
 		// Use a non-nil default tracer if it's not set, for the first call.
 		if defaultTracer == nil {
-			defaultTracer = otel.Tracer(defaultTracerName)
+			defaultTracer = &contextualTracer{tracer: otel.Tracer(defaultTracerName)}
 		}
 	})
 	return defaultTracer
@@ -38,5 +38,5 @@ func DefaultTracer() trace.Tracer {
 // InitDefaultTracer sets the default tracer to the specified value.
 // This method should only be called once during the plugin's initialization, and it's not safe for concurrent use.
 func InitDefaultTracer(tracer trace.Tracer) {
-	defaultTracer = tracer
+	defaultTracer = &contextualTracer{tracer: tracer}
 }

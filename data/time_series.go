@@ -63,16 +63,17 @@ func (t TimeSeriesType) String() string {
 // TimeSeriesSchema returns the TimeSeriesSchema of the frame. The TimeSeriesSchema's Type
 // value will be TimeSeriesNot if it is not a time series.
 // Deprecated
-func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
+func (f *Frame) TimeSeriesSchema() TimeSeriesSchema {
+	var tsSchema TimeSeriesSchema
 	tsSchema.Type = TimeSeriesTypeNot
 	if f.Fields == nil || len(f.Fields) == 0 {
-		return
+		return tsSchema
 	}
 
 	nonValueIndices := make(map[int]struct{})
 	timeIndices := f.TypeIndices(FieldTypeTime, FieldTypeNullableTime)
 	if len(timeIndices) == 0 {
-		return
+		return tsSchema
 	}
 	tsSchema.TimeIndex = timeIndices[0]
 	nonValueIndices[tsSchema.TimeIndex] = struct{}{}
@@ -92,12 +93,12 @@ func (f *Frame) TimeSeriesSchema() (tsSchema TimeSeriesSchema) {
 	}
 
 	if len(tsSchema.ValueIndices) == 0 {
-		return
+		return tsSchema
 	}
 
 	if len(tsSchema.FactorIndices) == 0 {
 		tsSchema.Type = TimeSeriesTypeWide
-		return
+		return tsSchema
 	}
 	tsSchema.Type = TimeSeriesTypeLong
 	return tsSchema

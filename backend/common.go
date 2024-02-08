@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -39,7 +40,7 @@ type AppInstanceSettings struct {
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
-func (s *AppInstanceSettings) HTTPClientOptions() (httpclient.Options, error) {
+func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.Options, error) {
 	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
 	if err != nil {
 		return httpclient.Options{}, err
@@ -100,7 +101,7 @@ type DataSourceInstanceSettings struct {
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
-func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, error) {
+func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (httpclient.Options, error) {
 	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
 	if err != nil {
 		return httpclient.Options{}, err
@@ -123,7 +124,12 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions() (httpclient.Options, er
 
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
-	opts.ProxyOptions, err = s.ProxyOptions()
+	cfg := GrafanaConfigFromContext(ctx)
+	proxy, err := cfg.proxy()
+	if err != nil {
+		return opts, err
+	}
+	opts.ProxyOptions, err = s.ProxyOptions(proxy.clientCfg)
 	if err != nil {
 		return opts, err
 	}
@@ -139,6 +145,9 @@ type PluginContext struct {
 
 	// PluginID is the unique identifier of the plugin that the request is for.
 	PluginID string
+
+	// PluginVersion is the version of the plugin that the request is for.
+	PluginVersion string
 
 	// User is the Grafana user making the request.
 	//
@@ -162,6 +171,13 @@ type PluginContext struct {
 	//
 	// Will only be set if request targeting a data source instance.
 	DataSourceInstanceSettings *DataSourceInstanceSettings
+
+	// GrafanaConfig is the configuration settings provided by Grafana.
+	GrafanaConfig *GrafanaCfg
+
+	// UserAgent is the user agent of the Grafana server that initiated the gRPC request.
+	// Will only be set if request is made from Grafana v10.2.0 or later.
+	UserAgent *useragent.UserAgent
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
@@ -221,7 +237,7 @@ func propagateTenantIDIfPresent(ctx context.Context) context.Context {
 	return ctx
 }
 
-func (s *DataSourceInstanceSettings) ProxyOptions() (*proxy.Options, error) {
+func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*proxy.Options, error) {
 	opts := &proxy.Options{}
 
 	var dat map[string]interface{}
@@ -265,5 +281,21 @@ func (s *DataSourceInstanceSettings) ProxyOptions() (*proxy.Options, error) {
 		opts.Timeouts.KeepAlive = proxy.DefaultTimeoutOptions.KeepAlive
 	}
 
+	opts.ClientCfg = clientCfg
+
 	return opts, nil
+}
+
+func (s *DataSourceInstanceSettings) ProxyClient(ctx context.Context) (proxy.Client, error) {
+	cfg := GrafanaConfigFromContext(ctx)
+	p, err := cfg.proxy()
+	if err != nil {
+		return nil, err
+	}
+	proxyOpts, err := s.ProxyOptions(p.clientCfg)
+	if err != nil {
+		return nil, err
+	}
+
+	return proxy.New(proxyOpts), nil
 }

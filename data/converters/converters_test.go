@@ -4,8 +4,9 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 )
 
 func TestStringConversions(t *testing.T) {

@@ -15,6 +15,7 @@ import (
 	tracesdk "go.opentelemetry.io/otel/sdk/trace"
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"go.opentelemetry.io/otel/trace"
+	"go.opentelemetry.io/otel/trace/noop"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 )
@@ -39,23 +40,12 @@ func (noopTracerProvider) Shutdown(_ context.Context) error {
 
 // newNoOpTracerProvider returns a new noopTracerProvider.
 func newNoOpTracerProvider() TracerProvider {
-	return &noopTracerProvider{TracerProvider: trace.NewNoopTracerProvider()}
+	return &noopTracerProvider{TracerProvider: noop.NewTracerProvider()}
 }
 
-// newOpentelemetryTracerProvider returns a new OpenTelemetry TracerProvider with default options, for the provided
+// newOtelTracerProvider returns a new OpenTelemetry TracerProvider with default options, for the provided
 // endpoint and with the provided custom attributes.
-func newOpentelemetryTracerProvider(address string, customAttributes ...attribute.KeyValue) (*tracesdk.TracerProvider, error) {
-	// Same as Grafana core
-	client := otlptracegrpc.NewClient(otlptracegrpc.WithEndpoint(address), otlptracegrpc.WithInsecure())
-	exp, err := otlptrace.New(context.Background(), client)
-	if err != nil {
-		return nil, err
-	}
-
-	return initTracerProvider(exp, customAttributes...)
-}
-
-func initTracerProvider(exp tracesdk.SpanExporter, customAttributes ...attribute.KeyValue) (*tracesdk.TracerProvider, error) {
+func newOtelTracerProvider(exp tracesdk.SpanExporter, sampler tracesdk.Sampler, customAttributes ...attribute.KeyValue) (*tracesdk.TracerProvider, error) {
 	res, err := resource.New(
 		context.Background(),
 		resource.WithAttributes(customAttributes...),
@@ -68,21 +58,33 @@ func initTracerProvider(exp tracesdk.SpanExporter, customAttributes ...attribute
 
 	tp := tracesdk.NewTracerProvider(
 		tracesdk.WithBatcher(exp),
-		tracesdk.WithSampler(tracesdk.ParentBased(
-			tracesdk.AlwaysSample(),
-		)),
+		tracesdk.WithSampler(tracesdk.ParentBased(sampler)),
 		tracesdk.WithResource(res),
 	)
 	return tp, nil
 }
 
+func newOtelExporter(address string) (tracesdk.SpanExporter, error) {
+	// Same as Grafana core
+	client := otlptracegrpc.NewClient(otlptracegrpc.WithEndpoint(address), otlptracegrpc.WithInsecure())
+	return otlptrace.New(context.Background(), client)
+}
+
 // NewTracerProvider returns a new TracerProvider depending on the specified address.
 // It returns a noopTracerProvider if the address is empty, otherwise it returns a new OpenTelemetry TracerProvider.
-func NewTracerProvider(address string, opts tracing.Opts) (TracerProvider, error) {
+func NewTracerProvider(address string, samplerOpts SamplerOptions, opts tracing.Opts) (TracerProvider, error) {
 	if address == "" {
 		return newNoOpTracerProvider(), nil
 	}
-	return newOpentelemetryTracerProvider(address, opts.CustomAttributes...)
+	exp, err := newOtelExporter(address)
+	if err != nil {
+		return nil, fmt.Errorf("new otel exporter: %w", err)
+	}
+	sampler, err := newOtelSampler(samplerOpts)
+	if err != nil {
+		return nil, fmt.Errorf("new otel SamplerType: %w", err)
+	}
+	return newOtelTracerProvider(exp, sampler, opts.CustomAttributes...)
 }
 
 // NewTextMapPropagator takes a string-like value and returns the corresponding propagation.TextMapPropagator.
@@ -121,7 +123,7 @@ func InitGlobalTracerProvider(tp TracerProvider, propagator propagation.TextMapP
 
 func InitializeForTestsWithPropagatorFormat(propagatorFormat string) (trace.Tracer, error) {
 	exp := tracetest.NewInMemoryExporter()
-	tp, _ := initTracerProvider(exp)
+	tp, _ := newOtelTracerProvider(exp, tracesdk.AlwaysSample())
 	otel.SetTracerProvider(tp)
 
 	propagator, err := NewTextMapPropagator(propagatorFormat)

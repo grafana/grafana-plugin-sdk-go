@@ -44,11 +44,16 @@ func TestHARStorage(t *testing.T) {
 				require.NoError(t, e)
 				c <- true
 			}()
-			req, res := exampleRequest()
-			defer res.Body.Close()
-			req.URL.Path = "/two"
-			err = two.Add(req, res)
-			require.NoError(t, err)
+			go func() {
+				req, res := exampleRequest()
+				defer res.Body.Close()
+				req.URL.Path = "/two"
+				err = two.Add(req, res)
+				require.NoError(t, err)
+				c <- true
+			}()
+
+			<-c
 			<-c
 			require.Len(t, one.Entries(), 2)
 			require.Len(t, two.Entries(), 2)

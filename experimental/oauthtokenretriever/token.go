@@ -9,8 +9,17 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/clientcredentials"
+)
+
+const (
+	AppClientID   = "GF_PLUGIN_APP_CLIENT_ID"
+	AppPrivateKey = "GF_PLUGIN_APP_PRIVATE_KEY"
+	// nolint:gosec
+	// AppClientSecret constant represents a string index value for the secret, not the secret itself.
+	AppClientSecret = "GF_PLUGIN_APP_CLIENT_SECRET"
 )
 
 type TokenRetriever interface {
@@ -68,23 +77,23 @@ func (t *tokenRetriever) OnBehalfOfUser(ctx context.Context, userID string) (str
 
 func New() (TokenRetriever, error) {
 	// The Grafana URL is required to obtain tokens later on
-	grafanaAppURL := strings.TrimRight(os.Getenv("GF_APP_URL"), "/")
+	grafanaAppURL := strings.TrimRight(os.Getenv(backend.AppURL), "/")
 	if grafanaAppURL == "" {
 		// For debugging purposes only
 		grafanaAppURL = "http://localhost:3000"
 	}
 
-	clientID := os.Getenv("GF_PLUGIN_APP_CLIENT_ID")
+	clientID := os.Getenv(AppClientID)
 	if clientID == "" {
 		return nil, fmt.Errorf("GF_PLUGIN_APP_CLIENT_ID is required")
 	}
 
-	clientSecret := os.Getenv("GF_PLUGIN_APP_CLIENT_SECRET")
+	clientSecret := os.Getenv(AppClientSecret)
 	if clientSecret == "" {
 		return nil, fmt.Errorf("GF_PLUGIN_APP_CLIENT_SECRET is required")
 	}
 
-	privateKey := os.Getenv("GF_PLUGIN_APP_PRIVATE_KEY")
+	privateKey := os.Getenv(AppPrivateKey)
 	if privateKey == "" {
 		return nil, fmt.Errorf("GF_PLUGIN_APP_PRIVATE_KEY is required")
 	}

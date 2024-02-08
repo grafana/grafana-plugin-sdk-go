@@ -12,10 +12,16 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/authclient"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/authclient"
+)
+
+const (
+	handlerToken = "/token"
+	handlerFoo   = "/foo"
 )
 
 func TestNew(t *testing.T) {
@@ -30,12 +36,12 @@ func TestNew(t *testing.T) {
 					AuthMethod: authclient.AuthMethodOAuth2,
 					OAuth2Options: &authclient.OAuth2Options{
 						OAuth2Type: authclient.OAuth2TypeClientCredentials,
-						TokenURL:   server.URL + "/token",
+						TokenURL:   server.URL + handlerToken,
 					},
 				})
 				require.Nil(t, err)
 				require.NotNil(t, hc)
-				res, err := hc.Get(server.URL + "/foo")
+				res, err := hc.Get(server.URL + handlerFoo)
 				require.Nil(t, err)
 				require.NotNil(t, res)
 				if res != nil && res.Body != nil {
@@ -54,12 +60,12 @@ func TestNew(t *testing.T) {
 					AuthMethod: authclient.AuthMethodOAuth2,
 					OAuth2Options: &authclient.OAuth2Options{
 						OAuth2Type: authclient.OAuth2TypeClientCredentials,
-						TokenURL:   server.URL + "/token",
+						TokenURL:   server.URL + handlerToken,
 					},
 				})
 				require.Nil(t, err)
 				require.NotNil(t, hc)
-				res, err := hc.Get(server.URL + "/foo")
+				res, err := hc.Get(server.URL + handlerFoo)
 				require.Nil(t, err)
 				require.NotNil(t, res)
 				if res != nil && res.Body != nil {
@@ -80,13 +86,13 @@ func TestNew(t *testing.T) {
 					AuthMethod: authclient.AuthMethodOAuth2,
 					OAuth2Options: &authclient.OAuth2Options{
 						OAuth2Type: authclient.OAuth2TypeJWT,
-						TokenURL:   server.URL + "/token",
+						TokenURL:   server.URL + handlerToken,
 						PrivateKey: privateKey,
 					},
 				})
 				require.Nil(t, err)
 				require.NotNil(t, hc)
-				res, err := hc.Get(server.URL + "/foo")
+				res, err := hc.Get(server.URL + handlerFoo)
 				if res != nil && res.Body != nil {
 					defer res.Body.Close()
 				}
@@ -102,13 +108,13 @@ func TestNew(t *testing.T) {
 					AuthMethod: authclient.AuthMethodOAuth2,
 					OAuth2Options: &authclient.OAuth2Options{
 						OAuth2Type: authclient.OAuth2TypeJWT,
-						TokenURL:   server.URL + "/token",
+						TokenURL:   server.URL + handlerToken,
 						PrivateKey: privateKey,
 					},
 				})
 				require.Nil(t, err)
 				require.NotNil(t, hc)
-				res, err := hc.Get(server.URL + "/foo")
+				res, err := hc.Get(server.URL + handlerFoo)
 				require.Nil(t, err)
 				require.NotNil(t, res)
 				if res != nil && res.Body != nil {
@@ -130,7 +136,7 @@ func getOAuthServer(t *testing.T) *httptest.Server {
 		t.Run("ensure custom headers propagated correctly", func(t *testing.T) {
 			require.Equal(t, "v1", r.Header.Get("h1"))
 		})
-		if r.URL.String() == "/token" {
+		if r.URL.String() == handlerToken {
 			w.Header().Set("Content-Type", "application/json")
 			_, _ = io.WriteString(w, fmt.Sprintf(`{"access_token": "%s", "refresh_token": "bar"}`, oAuth2TokenValue))
 			return

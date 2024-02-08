@@ -10,6 +10,7 @@ type Config struct {
 	EnableCGo        bool
 	RootPackagePath  string
 	OutputBinaryPath string
+	PluginJSONPath   string
 }
 
 // BeforeBuildCallback hooks into the build process

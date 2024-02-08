@@ -25,11 +25,12 @@ const (
 // code as span attributes. If tracer is nil, it will use tracing.DefaultTracer().
 func TracingMiddleware(tracer trace.Tracer) Middleware {
 	return NamedMiddlewareFunc(TracingMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
-		if tracer == nil {
-			tracer = tracing.DefaultTracer()
+		t := tracer
+		if t == nil {
+			t = tracing.DefaultTracer()
 		}
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			ctx, span := tracer.Start(req.Context(), "HTTP Outgoing Request", trace.WithSpanKind(trace.SpanKindClient))
+			ctx, span := t.Start(req.Context(), "HTTP Outgoing Request", trace.WithSpanKind(trace.SpanKindClient))
 			defer span.End()
 
 			ctx = httptrace.WithClientTrace(

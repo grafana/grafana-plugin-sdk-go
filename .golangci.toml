@@ -5,14 +5,20 @@ skip-files = ["data/.*\\.gen\\.go", "data/generic_nullable_vector\\.go", "data/g
 min-confidence = 1
 
 [linters-settings.goconst]
-min-len = 2
-min-occurrences = 2
+min-len = 5
+min-occurrences = 5
 
 [linters-settings.revive]
 ignore-generated-header = false
 
 [linters-settings.misspell]
 ignore-words = ["unknwon"]
+
+[linters-settings.depguard.rules.main]
+allow = [] # allow all
+deny = [
+  { pkg = "io/ioutil", desc = "Deprecated: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details." },
+]
 
 [linters]
 disable-all = true

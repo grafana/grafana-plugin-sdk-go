@@ -7,6 +7,8 @@ import (
 )
 
 const (
+	//nolint: gosec
+	// gosec warning G101 can be ignored because this is just test data
 	testRSAKey = `-----BEGIN RSA PRIVATE KEY-----
 MIICWwIBAAKBgQC35vznv35Kaby20gu+RQBDj/kHhPd64b6p9TKKxqiAs8kukNFj
 Q8keR6MOO41Md0Jh4b/ZSo1O3C3K3K587NORJDWz0H2wVyTWDvSMI36nI/EnGDhh
@@ -23,6 +25,9 @@ ZDmoDYnHv5IAtxpjIQJASxC/V51AHfuQ+rWvbZ6jzoHW6owbFpC2RbZPtFanOlda
 ozjy/YI5hvWLr/bre/wZ3N81pLA9lPgEpJiOPYem3Q==
 -----END RSA PRIVATE KEY-----
 `
+
+	//nolint: gosec
+	// gosec warning G101 can be ignored because this is just test data
 	testECDSAKey = `-----BEGIN PRIVATE KEY-----
 MIGHAgEAMBMGByqGSM49AgEGCCqGSM49AwEHBG0wawIBAQQgYH3q1su2TRDIr4RB
 2okegCNvfhn/Q9CycAXtPnfYsZehRANCAARSs6LcDI314KqKqGHbv2FLGoMXjm6B

@@ -25,7 +25,10 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
 	ctx = propagateTenantIDIfPresent(ctx)
-	resp, err := a.streamHandler.SubscribeStream(ctx, FromProto().SubscribeStreamRequest(protoReq))
+	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
+	parsedReq := FromProto().SubscribeStreamRequest(protoReq)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointSubscribeStream)
+	resp, err := a.streamHandler.SubscribeStream(ctx, parsedReq)
 	if err != nil {
 		return nil, err
 	}
@@ -37,7 +40,10 @@ func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
 	ctx = propagateTenantIDIfPresent(ctx)
-	resp, err := a.streamHandler.PublishStream(ctx, FromProto().PublishStreamRequest(protoReq))
+	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
+	parsedReq := FromProto().PublishStreamRequest(protoReq)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointPublishStream)
+	resp, err := a.streamHandler.PublishStream(ctx, parsedReq)
 	if err != nil {
 		return nil, err
 	}
@@ -58,6 +64,10 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 	}
 	ctx := protoSrv.Context()
 	ctx = propagateTenantIDIfPresent(ctx)
+	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
+	parsedReq := FromProto().RunStreamRequest(protoReq)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointRunStream)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
-	return a.streamHandler.RunStream(ctx, FromProto().RunStreamRequest(protoReq), sender)
+	return a.streamHandler.RunStream(ctx, parsedReq, sender)
 }

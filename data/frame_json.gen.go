@@ -1,11 +1,12 @@
 package data
 
 import (
-	"github.com/apache/arrow/go/arrow/array"
+	"github.com/apache/arrow/go/v13/arrow"
+	"github.com/apache/arrow/go/v13/arrow/array"
 	jsoniter "github.com/json-iterator/go"
 )
 
-func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataBinary(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -25,11 +26,11 @@ func writeArrowDataBinary(stream *jsoniter.Stream, col array.Interface) *fieldEn
 	return entities
 }
 
-//-------------------------------------------------------------
+// -------------------------------------------------------------
 // The rest of this file is generated from frame_json_test.go
-//-------------------------------------------------------------
+// -------------------------------------------------------------
 
-func writeArrowDataUint8(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataUint8(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -96,7 +97,7 @@ func readNullableUint8VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUi
 	return arr, nil
 }
 
-func writeArrowDataUint16(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataUint16(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -163,7 +164,7 @@ func readNullableUint16VectorJSON(iter *jsoniter.Iterator, size int) (*nullableU
 	return arr, nil
 }
 
-func writeArrowDataUint32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataUint32(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -230,7 +231,7 @@ func readNullableUint32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableU
 	return arr, nil
 }
 
-func writeArrowDataUint64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataUint64(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -297,7 +298,7 @@ func readNullableUint64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableU
 	return arr, nil
 }
 
-func writeArrowDataInt8(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataInt8(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -364,7 +365,7 @@ func readNullableInt8VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt
 	return arr, nil
 }
 
-func writeArrowDataInt16(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataInt16(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -431,7 +432,7 @@ func readNullableInt16VectorJSON(iter *jsoniter.Iterator, size int) (*nullableIn
 	return arr, nil
 }
 
-func writeArrowDataInt32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataInt32(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -498,7 +499,7 @@ func readNullableInt32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableIn
 	return arr, nil
 }
 
-func writeArrowDataInt64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataInt64(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -565,7 +566,7 @@ func readNullableInt64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableIn
 	return arr, nil
 }
 
-func writeArrowDataFloat32(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataFloat32(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -643,7 +644,7 @@ func readNullableFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*nullable
 	return arr, nil
 }
 
-func writeArrowDataFloat64(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataFloat64(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -721,7 +722,7 @@ func readNullableFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*nullable
 	return arr, nil
 }
 
-func writeArrowDataString(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataString(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -788,7 +789,7 @@ func readNullableStringVectorJSON(iter *jsoniter.Iterator, size int) (*nullableS
 	return arr, nil
 }
 
-func writeArrowDataBool(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataBool(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 
@@ -855,7 +856,7 @@ func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*nullableBoo
 	return arr, nil
 }
 
-func writeArrowDataEnum(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
+func writeArrowDataEnum(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLookup {
 	var entities *fieldEntityLookup
 	count := col.Len()
 

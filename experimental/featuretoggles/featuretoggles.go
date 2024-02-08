@@ -5,8 +5,9 @@ import (
 	"strings"
 )
 
-// envFeatureTogglesEnable is the environment variable set by Grafana containing the list of enabled feature toggles.
-const envFeatureTogglesEnable = "GF_INSTANCE_FEATURE_TOGGLES_ENABLE"
+const (
+	EnabledFeatures = "GF_INSTANCE_FEATURE_TOGGLES_ENABLE"
+)
 
 // FeatureToggles can check if feature toggles are enabled on the Grafana instance.
 type FeatureToggles interface {
@@ -34,7 +35,7 @@ func newFeatureTogglesFromEnv() featureToggles {
 // flagsMapFromEnv returns a new set-like map[string]struct{}, where the keys are the comma-separated names in
 // the `envFeatureTogglesEnable` env var.
 func flagsMapFromEnv() map[string]struct{} {
-	flags := strings.Split(os.Getenv(envFeatureTogglesEnable), ",")
+	flags := strings.Split(os.Getenv(EnabledFeatures), ",")
 	r := make(map[string]struct{}, len(flags))
 	for _, flag := range flags {
 		r[flag] = struct{}{}

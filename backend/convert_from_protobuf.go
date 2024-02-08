@@ -4,6 +4,7 @@ import (
 	"errors"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
@@ -70,14 +71,29 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 	}
 }
 
+// UserAgent converts protobuf version of a UserAgent to the SDK version.
+func (f ConvertFromProtobuf) UserAgent(u string) *useragent.UserAgent {
+	if len(u) == 0 {
+		return nil
+	}
+	ua, err := useragent.Parse(u)
+	if err != nil {
+		return nil
+	}
+	return ua
+}
+
 // PluginContext converts protobuf version of a PluginContext to the SDK version.
 func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) PluginContext {
 	return PluginContext{
 		OrgID:                      proto.OrgId,
 		PluginID:                   proto.PluginId,
+		PluginVersion:              proto.PluginVersion,
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
+		GrafanaConfig:              f.GrafanaConfig(proto.GrafanaConfig),
+		UserAgent:                  f.UserAgent(proto.UserAgent),
 	}
 }
 
@@ -140,6 +156,7 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
+			dr.ErrorSource = ErrorSource(res.ErrorSource)
 		}
 		qdr.Responses[refID] = dr
 	}
@@ -275,4 +292,8 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	return &StreamPacket{
 		Data: protoReq.GetData(),
 	}
+}
+
+func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
+	return NewGrafanaCfg(cfg)
 }

@@ -159,6 +159,9 @@ type DataResponse struct {
 
 	// Status codes map to HTTP status values
 	Status Status
+
+	// ErrorSource is the the source of the error
+	ErrorSource ErrorSource
 }
 
 // ErrDataResponse returns an error DataResponse given status and message.
@@ -166,6 +169,15 @@ func ErrDataResponse(status Status, message string) DataResponse {
 	return DataResponse{
 		Error:  errors.New(message),
 		Status: status,
+	}
+}
+
+// ErrDataResponseWithSource returns an error DataResponse given status, source of the error and message.
+func ErrDataResponseWithSource(status Status, src ErrorSource, message string) DataResponse {
+	return DataResponse{
+		Error:       errors.New(message),
+		ErrorSource: src,
+		Status:      status,
 	}
 }
 

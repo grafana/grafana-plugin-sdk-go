@@ -4,9 +4,15 @@ import "time"
 
 // Options defines per datasource options for creating the proxy dialer.
 type Options struct {
-	Enabled  bool
-	Auth     *AuthOptions
-	Timeouts *TimeoutOptions
+	Enabled bool
+	// DatasourceName is the name of the datasource the proxy will be used to communicate with.
+	DatasourceName string
+	// DatasourceType is the type of the datasource the proxy will be used to communicate with.
+	// It should be the value assigned to the type property in a datasource provisioning file (e.g mysql, prometheus)
+	DatasourceType string
+	Auth           *AuthOptions
+	Timeouts       *TimeoutOptions
+	ClientCfg      *ClientCfg
 }
 
 // AuthOptions socks5 username and password options.
@@ -28,16 +34,16 @@ var DefaultTimeoutOptions = TimeoutOptions{
 	KeepAlive: 30 * time.Second,
 }
 
-func setDefaults(providedOpts *Options) Options {
-	var opts Options
-	if providedOpts == nil {
-		return opts
+func (o *Options) setDefaults() {
+	if o == nil {
+		return
 	}
 
-	opts = *providedOpts
-	if opts.Timeouts == nil {
-		opts.Timeouts = &DefaultTimeoutOptions
+	if o.Timeouts == nil {
+		o.Timeouts = &DefaultTimeoutOptions
 	}
 
-	return opts
+	if o.ClientCfg == nil {
+		o.ClientCfg = getConfigFromEnv()
+	}
 }
