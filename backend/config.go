@@ -14,6 +14,7 @@ import (
 const (
 	AppURL               = "GF_APP_URL"
 	ConcurrentQueryCount = "GF_CONCURRENT_QUERY_COUNT"
+	ResponseLimit        = "GF_RESPONSE_LIMIT"
 )
 
 type configKey struct{}
@@ -149,6 +150,18 @@ func (c *GrafanaCfg) ConcurrentQueryCount() (int, error) {
 		return 0, fmt.Errorf("ConcurrentQueryCount cannot be converted to integer")
 	}
 	return i, nil
+}
+
+func (c *GrafanaCfg) ResponseLimit() (int64, bool) {
+	limit, ok := c.config[ResponseLimit]
+	if !ok {
+		return 0, false
+	}
+	i, err := strconv.ParseInt(limit, 10, 64)
+	if err != nil {
+		return 0, false
+	}
+	return i, true
 }
 
 type userAgentKey struct{}
