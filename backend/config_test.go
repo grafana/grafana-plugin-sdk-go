@@ -166,6 +166,51 @@ func TestAppURL(t *testing.T) {
 	})
 }
 
+func TestConcurrentQueryCount(t *testing.T) {
+	t.Run("it should return the configured concurrent query count", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			ConcurrentQueryCount: "23",
+		})
+		concurrentQueryCount, err := cfg.ConcurrentQueryCount()
+		require.NoError(t, err)
+		require.Equal(t, 23, concurrentQueryCount)
+	})
+
+	t.Run("it should return an error if the concurrent query count is missing", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{})
+		concurrentQueryCount, err := cfg.ConcurrentQueryCount()
+		require.Error(t, err)
+		require.Equal(t, 0, concurrentQueryCount)
+	})
+}
+
+func TestResponseLimit(t *testing.T) {
+	t.Run("it should return the configured response limit", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			ResponseLimit: "42",
+		})
+		responseLimit, isLimited := cfg.ResponseLimit()
+		require.Equal(t, true, isLimited)
+		require.Equal(t, int64(42), responseLimit)
+	})
+
+	t.Run("it should return false if response limit is not configured", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{})
+		responseLimit, isLimited := cfg.ResponseLimit()
+		require.Equal(t, false, isLimited)
+		require.Equal(t, int64(0), responseLimit)
+	})
+
+	t.Run("it should return false if response limit is badly configured", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			ResponseLimit: "42a",
+		})
+		responseLimit, isLimited := cfg.ResponseLimit()
+		require.Equal(t, false, isLimited)
+		require.Equal(t, int64(0), responseLimit)
+	})
+}
+
 func TestUserAgentFromContext(t *testing.T) {
 	ua, err := useragent.New("10.0.0", "test", "test")
 	require.NoError(t, err)
