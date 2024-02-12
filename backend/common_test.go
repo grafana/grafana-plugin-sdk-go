@@ -300,7 +300,9 @@ func TestProxyOptions(t *testing.T) {
 					Auth: &proxy.AuthOptions{
 						Username: "uid1",
 					},
-					Timeouts: &proxy.DefaultTimeoutOptions,
+					Timeouts:       &proxy.DefaultTimeoutOptions,
+					DatasourceName: "ds1",
+					DatasourceType: "example-datasource",
 				},
 			},
 			{
@@ -322,7 +324,9 @@ func TestProxyOptions(t *testing.T) {
 						Username: "username",
 						Password: "pswd",
 					},
-					Timeouts: &proxy.DefaultTimeoutOptions,
+					Timeouts:       &proxy.DefaultTimeoutOptions,
+					DatasourceName: "ds1",
+					DatasourceType: "example-datasource",
 				},
 			},
 			{
@@ -344,6 +348,8 @@ func TestProxyOptions(t *testing.T) {
 						KeepAlive: time.Second * 15,
 						Timeout:   time.Second * 10,
 					},
+					DatasourceName: "ds1",
+					DatasourceType: "example-datasource",
 				},
 			},
 			{
@@ -379,6 +385,8 @@ func TestProxyOptions(t *testing.T) {
 						ProxyAddress: "10.1.2.3",
 						ServerName:   "grafana-server",
 					},
+					DatasourceName: "ds1",
+					DatasourceType: "example-datasource",
 				},
 			},
 		}
