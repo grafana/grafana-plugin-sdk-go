@@ -1,11 +1,13 @@
 package expr
 
+import "github.com/grafana/grafana-plugin-sdk-go/data"
+
 // QueryType = resample
 type ResampleQuery struct {
 	// The math expression
 	Expression string `json:"expression"`
 
-	// The math expression
+	// A time duration string
 	Window string `json:"window"`
 
 	// The reducer
@@ -13,6 +15,8 @@ type ResampleQuery struct {
 
 	// The reducer
 	Upsampler string `json:"upsampler"`
+
+	LoadedDimensions *data.Frame `json:"loadedDimensions"`
 }
 
 func (*ResampleQuery) ExpressionQueryType() QueryType {
