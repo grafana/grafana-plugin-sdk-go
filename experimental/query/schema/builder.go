@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/query"
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
@@ -82,12 +83,24 @@ func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*Qu
 	if err := r.AddGoComments(opts.BasePackage, opts.CodePath); err != nil {
 		return nil, err
 	}
+	customMapper := map[reflect.Type]*jsonschema.Schema{
+		reflect.TypeOf(data.Frame{}): {
+			Type: "object",
+			Extras: map[string]any{
+				"x-grafana-type": "data.DataFrame",
+			},
+			AdditionalProperties: jsonschema.TrueSchema,
+		},
+	}
+	r.Mapper = func(t reflect.Type) *jsonschema.Schema {
+		return customMapper[t]
+	}
+
 	if len(opts.Enums) > 0 {
 		fields, err := findEnumFields(opts.BasePackage, opts.CodePath)
 		if err != nil {
 			return nil, err
 		}
-		enumMapper := map[reflect.Type]*jsonschema.Schema{}
 		for _, etype := range opts.Enums {
 			for _, f := range fields {
 				if f.Name == etype.Name() && f.Package == etype.PkgPath() {
@@ -104,13 +117,9 @@ func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*Qu
 							enumValueDescriptions[val.Value] = val.Comment
 						}
 					}
-					enumMapper[etype] = s
+					customMapper[etype] = s
 				}
 			}
-		}
-
-		r.Mapper = func(t reflect.Type) *jsonschema.Schema {
-			return enumMapper[t]
 		}
 	}
 
