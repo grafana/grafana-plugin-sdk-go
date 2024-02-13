@@ -12,7 +12,7 @@ type TypedQueryHandler[Q any] interface {
 	QueryTypeField() string
 
 	// Possible query types (if any)
-	QueryTypeDefinitions() []QueryTypeDefinitionSpec
+	QueryTypeDefinitions() []QueryTypeDefinition
 
 	// Get the query parser for a query type
 	// The version is split from the end of the discriminator field
@@ -24,6 +24,20 @@ type TypedQueryHandler[Q any] interface {
 		// An iterator with context for the full node (include common values)
 		iter *jsoniter.Iterator,
 	) (Q, error)
+}
+
+// K8s placeholder
+type QueryTypeDefinition struct {
+	Metadata ObjectMeta `json:"metadata"`
+
+	Spec QueryTypeDefinitionSpec `json:"spec,omitempty"`
+}
+
+type ObjectMeta struct {
+	Name              string            `json:"name"`
+	ResourceVersion   string            `json:"resourceVersion,omitempty"`
+	CreationTimestamp string            `json:"creationTimestamp,omitempty"`
+	Annotations       map[string]string `json:"annotations,omitempty"`
 }
 
 type QueryTypeDefinitionSpec struct {
