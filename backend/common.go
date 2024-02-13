@@ -252,6 +252,9 @@ func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*
 		return nil, nil
 	}
 
+	opts.DatasourceName = s.Name
+	opts.DatasourceType = s.Type
+
 	opts.Auth = &proxy.AuthOptions{}
 	opts.Timeouts = &proxy.TimeoutOptions{}
 	if v, exists := dat["secureSocksProxyUsername"]; exists {
