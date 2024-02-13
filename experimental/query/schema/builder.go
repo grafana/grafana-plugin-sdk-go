@@ -3,11 +3,16 @@ package schema
 import (
 	"encoding/json"
 	"fmt"
+	"os"
 	"reflect"
 	"strings"
+	"testing"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/query"
 	"github.com/invopop/jsonschema"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type QueryTypeInfo struct {
@@ -17,6 +22,7 @@ type QueryTypeInfo struct {
 }
 
 type QueryTypeBuilder struct {
+	t         *testing.T
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
 	byType    map[string]*query.QueryTypeDefinitionSpec
@@ -28,6 +34,12 @@ func (b *QueryTypeBuilder) Add(info QueryTypeInfo) error {
 	if schema == nil {
 		return fmt.Errorf("missing schema")
 	}
+
+	// Ignored by k8s anyway
+	schema.Version = ""
+	schema.ID = ""
+	schema.Anchor = ""
+
 	def, ok := b.byType[info.QueryType]
 	if !ok {
 		def = &query.QueryTypeDefinitionSpec{
@@ -56,13 +68,14 @@ type BuilderOptions struct {
 	DiscriminatorField string
 }
 
-func NewBuilder(opts BuilderOptions, inputs ...QueryTypeInfo) (*QueryTypeBuilder, error) {
+func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*QueryTypeBuilder, error) {
 	r := new(jsonschema.Reflector)
 	r.DoNotReference = true
 	if err := r.AddGoComments(opts.BasePackage, opts.CodePath); err != nil {
 		return nil, err
 	}
 	b := &QueryTypeBuilder{
+		t:         t,
 		opts:      opts,
 		reflector: r,
 		byType:    make(map[string]*query.QueryTypeDefinitionSpec),
@@ -76,13 +89,76 @@ func NewBuilder(opts BuilderOptions, inputs ...QueryTypeInfo) (*QueryTypeBuilder
 	return b, nil
 }
 
-func (b *QueryTypeBuilder) QueryTypeDefinitions() (rsp []query.QueryTypeDefinitionSpec, err error) {
-	for _, v := range b.types {
-		if v != nil {
-			rsp = append(rsp, *v)
+func (b *QueryTypeBuilder) Write(outfile string) json.RawMessage {
+	t := b.t
+	t.Helper()
+
+	now := time.Now().UTC()
+	rv := fmt.Sprintf("%d", now.UnixMilli())
+
+	defs := query.QueryTypeDefinitionList{}
+	byName := make(map[string]*query.QueryTypeDefinition)
+	body, err := os.ReadFile(outfile)
+	if err == nil {
+		err = json.Unmarshal(body, &defs)
+		if err == nil {
+			for i, def := range defs.Items {
+				byName[def.ObjectMeta.Name] = &defs.Items[i]
+			}
 		}
 	}
-	return
+
+	// The updated schemas
+	for _, spec := range b.types {
+		found, ok := byName[spec.Name]
+		if !ok {
+			defs.ObjectMeta.ResourceVersion = rv
+			defs.Items = append(defs.Items, query.QueryTypeDefinition{
+				ObjectMeta: query.ObjectMeta{
+					Name:              spec.Name,
+					ResourceVersion:   rv,
+					CreationTimestamp: now.Format(time.RFC3339),
+				},
+				Spec: *spec,
+			})
+		} else {
+			var o1, o2 interface{}
+			b1, _ := json.Marshal(spec)
+			b2, _ := json.Marshal(found.Spec)
+			_ = json.Unmarshal(b1, &o1)
+			_ = json.Unmarshal(b2, &o2)
+			if !reflect.DeepEqual(o1, o2) {
+				found.ObjectMeta.ResourceVersion = rv
+				found.Spec = *spec
+			}
+			delete(byName, spec.Name)
+		}
+	}
+
+	if defs.ObjectMeta.ResourceVersion == "" {
+		defs.ObjectMeta.ResourceVersion = rv
+	}
+
+	if len(byName) > 0 {
+		require.FailNow(t, "query type removed, manually update (for now)")
+	}
+
+	out, err := json.MarshalIndent(defs, "", "  ")
+	require.NoError(t, err)
+
+	update := false
+	if err == nil {
+		if !assert.JSONEq(t, string(out), string(body)) {
+			update = true
+		}
+	} else {
+		update = true
+	}
+	if update {
+		err = os.WriteFile(outfile, out, 0644)
+		require.NoError(t, err, "error writing file")
+	}
+	return out
 }
 
 func (b *QueryTypeBuilder) FullQuerySchema() (*jsonschema.Schema, error) {

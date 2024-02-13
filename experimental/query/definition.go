@@ -1,18 +1,13 @@
 package query
 
 import (
+	"encoding/json"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
 type TypedQueryHandler[Q any] interface {
-	// QueryTypeField is typically "queryType", but may use a different field to
-	// discriminate different field types.  When multiple versions for a field exist,
-	// The version identifier is appended to the queryType value after a slash.
-	// eg: queryType=showLabels/v2
-	QueryTypeField() string
-
-	// Possible query types (if any)
-	QueryTypeDefinitions() []QueryTypeDefinition
+	QueryTypeDefinitionsJSON() (json.RawMessage, error)
 
 	// Get the query parser for a query type
 	// The version is split from the end of the discriminator field
@@ -27,17 +22,25 @@ type TypedQueryHandler[Q any] interface {
 }
 
 // K8s placeholder
+// This will serialize to the same byte array, but does not require all the imports
 type QueryTypeDefinition struct {
-	Metadata ObjectMeta `json:"metadata"`
+	ObjectMeta ObjectMeta `json:"metadata,omitempty"`
 
 	Spec QueryTypeDefinitionSpec `json:"spec,omitempty"`
 }
 
+// K8s placeholder
+// This will serialize to the same byte array, but does not require all the imports
+type QueryTypeDefinitionList struct {
+	ObjectMeta ObjectMeta            `json:"metadata,omitempty"`
+	Items      []QueryTypeDefinition `json:"items"`
+}
+
+// K8s placeholder
 type ObjectMeta struct {
-	Name              string            `json:"name"`
-	ResourceVersion   string            `json:"resourceVersion,omitempty"`
-	CreationTimestamp string            `json:"creationTimestamp,omitempty"`
-	Annotations       map[string]string `json:"annotations,omitempty"`
+	Name              string `json:"name,omitempty"`            // missing on lists
+	ResourceVersion   string `json:"resourceVersion,omitempty"` // indicates something changed
+	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 }
 
 type QueryTypeDefinitionSpec struct {

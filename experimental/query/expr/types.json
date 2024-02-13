@@ -1,113 +1,133 @@
-[
-  {
-    "name": "math",
-    "versions": [
-      {
-        "schema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "$id": "https://github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr/math-query",
-          "properties": {
-            "expression": {
-              "type": "string",
-              "minLength": 1,
-              "description": "General math expression",
-              "examples": [
-                "$A + 1",
-                "$A/$B"
-              ]
-            }
-          },
-          "additionalProperties": false,
-          "type": "object",
-          "required": [
-            "expression"
-          ]
-        }
-      }
-    ]
+{
+  "metadata": {
+    "resourceVersion": "1707808829418"
   },
-  {
-    "name": "reduce",
-    "versions": [
-      {
-        "schema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "$id": "https://github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr/reduce-query",
-          "properties": {
-            "expression": {
-              "type": "string",
-              "description": "Reference to other query results"
-            },
-            "reducer": {
-              "type": "string",
-              "description": "The reducer"
-            },
-            "settings": {
+  "items": [
+    {
+      "metadata": {
+        "name": "math",
+        "resourceVersion": "1707808587680",
+        "creationTimestamp": "2024-02-13T07:16:27Z"
+      },
+      "spec": {
+        "name": "math",
+        "versions": [
+          {
+            "schema": {
+              "additionalProperties": false,
               "properties": {
-                "mode": {
-                  "type": "string",
-                  "description": "Non-number reduce behavior"
-                },
-                "replaceWithValue": {
-                  "type": "number",
-                  "description": "Only valid when mode is replace"
+                "expression": {
+                  "description": "General math expression",
+                  "examples": [
+                    "$A + 1",
+                    "$A/$B"
+                  ],
+                  "minLength": 1,
+                  "type": "string"
                 }
               },
-              "additionalProperties": false,
-              "type": "object",
               "required": [
-                "mode"
+                "expression"
               ],
-              "description": "Reducer Options"
+              "type": "object"
             }
-          },
-          "additionalProperties": false,
-          "type": "object",
-          "required": [
-            "expression",
-            "reducer",
-            "settings"
-          ]
-        }
+          }
+        ]
       }
-    ]
-  },
-  {
-    "name": "resample",
-    "versions": [
-      {
-        "schema": {
-          "$schema": "https://json-schema.org/draft/2020-12/schema",
-          "$id": "https://github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr/resample-query",
-          "properties": {
-            "expression": {
-              "type": "string",
-              "description": "The math expression"
-            },
-            "window": {
-              "type": "string",
-              "description": "The math expression"
-            },
-            "downsampler": {
-              "type": "string",
-              "description": "The reducer"
-            },
-            "upsampler": {
-              "type": "string",
-              "description": "The reducer"
+    },
+    {
+      "metadata": {
+        "name": "reduce",
+        "resourceVersion": "1707808587680",
+        "creationTimestamp": "2024-02-13T07:16:27Z"
+      },
+      "spec": {
+        "name": "reduce",
+        "versions": [
+          {
+            "schema": {
+              "additionalProperties": false,
+              "properties": {
+                "expression": {
+                  "description": "Reference to other query results",
+                  "type": "string"
+                },
+                "reducer": {
+                  "description": "The reducer",
+                  "type": "string"
+                },
+                "settings": {
+                  "additionalProperties": false,
+                  "description": "Reducer Options",
+                  "properties": {
+                    "mode": {
+                      "description": "Non-number reduce behavior",
+                      "type": "string"
+                    },
+                    "replaceWithValue": {
+                      "description": "Only valid when mode is replace",
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "mode"
+                  ],
+                  "type": "object"
+                }
+              },
+              "required": [
+                "expression",
+                "reducer",
+                "settings"
+              ],
+              "type": "object"
             }
-          },
-          "additionalProperties": false,
-          "type": "object",
-          "required": [
-            "expression",
-            "window",
-            "downsampler",
-            "upsampler"
-          ],
-          "description": "QueryType = resample"
-        }
+          }
+        ]
       }
-    ]
-  }
-]
+    },
+    {
+      "metadata": {
+        "name": "resample",
+        "resourceVersion": "1707808587680",
+        "creationTimestamp": "2024-02-13T07:16:27Z"
+      },
+      "spec": {
+        "name": "resample",
+        "versions": [
+          {
+            "schema": {
+              "additionalProperties": false,
+              "description": "QueryType = resample",
+              "properties": {
+                "downsampler": {
+                  "description": "The reducer",
+                  "type": "string"
+                },
+                "expression": {
+                  "description": "The math expression",
+                  "type": "string"
+                },
+                "upsampler": {
+                  "description": "The reducer",
+                  "type": "string"
+                },
+                "window": {
+                  "description": "The math expression",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "expression",
+                "window",
+                "downsampler",
+                "upsampler"
+              ],
+              "type": "object"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}
