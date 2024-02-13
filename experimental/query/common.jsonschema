@@ -1,80 +1,24 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/grafana/grafana-plugin-sdk-go/experimental/query/common-query-properties",
-  "$ref": "#/$defs/CommonQueryProperties",
-  "$defs": {
-    "CommonQueryProperties": {
-      "properties": {
-        "refId": {
-          "type": "string",
-          "description": "RefID is the unique identifier of the query, set by the frontend call."
-        },
-        "resultAssertions": {
-          "$ref": "#/$defs/ResultAssertions",
-          "description": "Optionally define expected query result behavior"
-        },
-        "timeRange": {
-          "$ref": "#/$defs/TimeRange",
-          "description": "TimeRange represents the query range\nNOTE: unlike generic /ds/query, we can now send explicit time values in each query"
-        },
-        "datasource": {
-          "$ref": "#/$defs/DataSourceRef",
-          "description": "The datasource"
-        },
-        "queryType": {
-          "type": "string",
-          "description": "QueryType is an optional identifier for the type of query.\nIt can be used to distinguish different types of queries."
-        },
-        "maxDataPoints": {
-          "type": "integer",
-          "description": "MaxDataPoints is the maximum number of data points that should be returned from a time series query."
-        },
-        "intervalMs": {
-          "type": "number",
-          "description": "Interval is the suggested duration between time points in a time series query."
-        },
-        "hide": {
-          "type": "boolean",
-          "description": "true if query is disabled (ie should not be returned to the dashboard)\nNote this does not always imply that the query should not be executed since\nthe results from a hidden query may be used as the input to other queries (SSE etc)"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object"
+  "properties": {
+    "refId": {
+      "type": "string",
+      "description": "RefID is the unique identifier of the query, set by the frontend call."
     },
-    "DataSourceRef": {
-      "properties": {
-        "type": {
-          "type": "string",
-          "description": "The datasource plugin type"
-        },
-        "uid": {
-          "type": "string",
-          "description": "Datasource UID"
-        }
-      },
-      "additionalProperties": false,
-      "type": "object",
-      "required": [
-        "type",
-        "uid"
-      ]
-    },
-    "FrameTypeVersion": {
-      "items": {
-        "type": "integer"
-      },
-      "type": "array",
-      "maxItems": 2,
-      "minItems": 2
-    },
-    "ResultAssertions": {
+    "resultAssertions": {
       "properties": {
         "type": {
           "type": "string",
           "description": "Type asserts that the frame matches a known type structure."
         },
         "typeVersion": {
-          "$ref": "#/$defs/FrameTypeVersion",
+          "items": {
+            "type": "integer"
+          },
+          "type": "array",
+          "maxItems": 2,
+          "minItems": 2,
           "description": "TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane\ncontract documentation https://grafana.github.io/dataplane/contract/."
         },
         "maxBytes": {
@@ -91,9 +35,9 @@
       "required": [
         "typeVersion"
       ],
-      "description": "ResultAssertions define the expected response shape and query behavior."
+      "description": "Optionally define expected query result behavior"
     },
-    "TimeRange": {
+    "timeRange": {
       "properties": {
         "from": {
           "type": "string",
@@ -110,7 +54,44 @@
         "from",
         "to"
       ],
-      "description": "TimeRange represents a time range for a query and is a property of DataQuery."
+      "description": "TimeRange represents the query range\nNOTE: unlike generic /ds/query, we can now send explicit time values in each query"
+    },
+    "datasource": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "The datasource plugin type"
+        },
+        "uid": {
+          "type": "string",
+          "description": "Datasource UID"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "uid"
+      ],
+      "description": "The datasource"
+    },
+    "queryType": {
+      "type": "string",
+      "description": "QueryType is an optional identifier for the type of query.\nIt can be used to distinguish different types of queries."
+    },
+    "maxDataPoints": {
+      "type": "integer",
+      "description": "MaxDataPoints is the maximum number of data points that should be returned from a time series query."
+    },
+    "intervalMs": {
+      "type": "number",
+      "description": "Interval is the suggested duration between time points in a time series query."
+    },
+    "hide": {
+      "type": "boolean",
+      "description": "true if query is disabled (ie should not be returned to the dashboard)\nNote this does not always imply that the query should not be executed since\nthe results from a hidden query may be used as the input to other queries (SSE etc)"
     }
-  }
+  },
+  "additionalProperties": false,
+  "type": "object"
 }

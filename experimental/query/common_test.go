@@ -12,15 +12,14 @@ import (
 
 func TestCommonSupport(t *testing.T) {
 	r := new(jsonschema.Reflector)
+	r.DoNotReference = true
 	err := r.AddGoComments("github.com/grafana/grafana-plugin-sdk-go/experimental/query", "./")
 	require.NoError(t, err)
 
 	query := r.Reflect(&CommonQueryProperties{})
-	common, ok := query.Definitions["CommonQueryProperties"]
-	require.True(t, ok)
 
-	// Hide this old property
-	common.Properties.Delete("datasourceId")
+	// // Hide this old property
+	query.Properties.Delete("datasourceId")
 	out, err := json.MarshalIndent(query, "", "  ")
 	require.NoError(t, err)
 
