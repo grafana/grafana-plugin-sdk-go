@@ -6,7 +6,7 @@ var _ ExpressionQuery = (*MathQuery)(nil)
 
 type MathQuery struct {
 	// General math expression
-	Expression string `json:"expression"`
+	Expression string `json:"expression" jsonschema:"minLength=1,example=$A + 1,example=$A/$B"`
 
 	// Parsed from the expression
 	variables []string `json:"-"`

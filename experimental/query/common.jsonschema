@@ -9,6 +9,10 @@
           "type": "string",
           "description": "RefID is the unique identifier of the query, set by the frontend call."
         },
+        "resultAssertions": {
+          "$ref": "#/$defs/ResultAssertions",
+          "description": "Optionally define expected query result behavior"
+        },
         "timeRange": {
           "$ref": "#/$defs/TimeRange",
           "description": "TimeRange represents the query range\nNOTE: unlike generic /ds/query, we can now send explicit time values in each query"
@@ -54,6 +58,40 @@
         "type",
         "uid"
       ]
+    },
+    "FrameTypeVersion": {
+      "items": {
+        "type": "integer"
+      },
+      "type": "array",
+      "maxItems": 2,
+      "minItems": 2
+    },
+    "ResultAssertions": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "description": "Type asserts that the frame matches a known type structure."
+        },
+        "typeVersion": {
+          "$ref": "#/$defs/FrameTypeVersion",
+          "description": "TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane\ncontract documentation https://grafana.github.io/dataplane/contract/."
+        },
+        "maxBytes": {
+          "type": "integer",
+          "description": "Maximum bytes that can be read -- if the query planning expects more then this, the query may fail fast"
+        },
+        "maxFrames": {
+          "type": "integer",
+          "description": "Maximum frame count"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "typeVersion"
+      ],
+      "description": "ResultAssertions define the expected response shape and query behavior."
     },
     "TimeRange": {
       "properties": {

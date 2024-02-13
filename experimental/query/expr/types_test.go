@@ -2,11 +2,12 @@ package expr
 
 import (
 	"encoding/json"
-	"fmt"
+	"os"
 	"reflect"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/query/schema"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -15,7 +16,6 @@ func TestQueryTypeDefinitions(t *testing.T) {
 		schema.BuilderOptions{
 			BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr",
 			CodePath:    "./",
-			PluginIDs:   []string{"expr"},
 		},
 		schema.QueryTypeInfo{
 			QueryType: string(QueryTypeMath),
@@ -32,11 +32,32 @@ func TestQueryTypeDefinitions(t *testing.T) {
 	require.NoError(t, err)
 
 	// The full schema
-	s, err := builder.GetFullQuerySchema()
+	defs, err := builder.QueryTypeDefinitions()
+	require.NoError(t, err)
+	out, err := json.MarshalIndent(defs, "", "  ")
 	require.NoError(t, err)
 
-	out, err := json.MarshalIndent(s, "", "  ")
-	require.NoError(t, err)
+	update := false
+	outfile := "types.json"
+	body, err := os.ReadFile(outfile)
+	if err == nil {
+		if !assert.JSONEq(t, string(out), string(body)) {
+			update = true
+		}
+	} else {
+		update = true
+	}
+	if update {
+		err = os.WriteFile(outfile, out, 0644)
+		require.NoError(t, err, "error writing file")
+	}
 
-	fmt.Printf("%s\n", out)
+	// // The full schema
+	// s, err := builder.FullQuerySchema()
+	// require.NoError(t, err)
+
+	// out, err := json.MarshalIndent(s, "", "  ")
+	// require.NoError(t, err)
+
+	// fmt.Printf("%s\n", out)
 }

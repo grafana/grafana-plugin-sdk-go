@@ -19,8 +19,8 @@ type QueryTypeInfo struct {
 type QueryTypeBuilder struct {
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
-	byType    map[string]*query.QueryTypeDefinition
-	types     []*query.QueryTypeDefinition
+	byType    map[string]*query.QueryTypeDefinitionSpec
+	types     []*query.QueryTypeDefinitionSpec
 }
 
 func (b *QueryTypeBuilder) Add(info QueryTypeInfo) error {
@@ -30,9 +30,10 @@ func (b *QueryTypeBuilder) Add(info QueryTypeInfo) error {
 	}
 	def, ok := b.byType[info.QueryType]
 	if !ok {
-		def = &query.QueryTypeDefinition{
-			Name:     info.QueryType,
-			Versions: []query.QueryTypeVersion{},
+		def = &query.QueryTypeDefinitionSpec{
+			Name:               info.QueryType,
+			DiscriminatorField: b.opts.DiscriminatorField,
+			Versions:           []query.QueryTypeVersion{},
 		}
 		b.byType[info.QueryType] = def
 		b.types = append(b.types, def)
@@ -53,20 +54,18 @@ type BuilderOptions struct {
 
 	// queryType
 	DiscriminatorField string
-
-	// org-xyz-datasource
-	PluginIDs []string
 }
 
 func NewBuilder(opts BuilderOptions, inputs ...QueryTypeInfo) (*QueryTypeBuilder, error) {
 	r := new(jsonschema.Reflector)
+	r.DoNotReference = true
 	if err := r.AddGoComments(opts.BasePackage, opts.CodePath); err != nil {
 		return nil, err
 	}
 	b := &QueryTypeBuilder{
 		opts:      opts,
 		reflector: r,
-		byType:    make(map[string]*query.QueryTypeDefinition),
+		byType:    make(map[string]*query.QueryTypeDefinitionSpec),
 	}
 	for _, input := range inputs {
 		err := b.Add(input)
@@ -77,7 +76,16 @@ func NewBuilder(opts BuilderOptions, inputs ...QueryTypeInfo) (*QueryTypeBuilder
 	return b, nil
 }
 
-func (b *QueryTypeBuilder) GetFullQuerySchema() (*jsonschema.Schema, error) {
+func (b *QueryTypeBuilder) QueryTypeDefinitions() (rsp []query.QueryTypeDefinitionSpec, err error) {
+	for _, v := range b.types {
+		if v != nil {
+			rsp = append(rsp, *v)
+		}
+	}
+	return
+}
+
+func (b *QueryTypeBuilder) FullQuerySchema() (*jsonschema.Schema, error) {
 	discriminator := b.opts.DiscriminatorField
 	if discriminator == "" {
 		discriminator = "queryType"

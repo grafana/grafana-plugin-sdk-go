@@ -12,7 +12,7 @@ type TypedQueryHandler[Q any] interface {
 	QueryTypeField() string
 
 	// Possible query types (if any)
-	QueryTypes() []QueryTypeDefinition
+	QueryTypeDefinitions() []QueryTypeDefinitionSpec
 
 	// Get the query parser for a query type
 	// The version is split from the end of the discriminator field
@@ -26,16 +26,14 @@ type TypedQueryHandler[Q any] interface {
 	) (Q, error)
 }
 
-type QueryTypeDefinitions struct {
-	// Describe whe the query type is for
-	Field string `json:"field,omitempty"`
+type QueryTypeDefinitionSpec struct {
+	// The query type value
+	// NOTE: this must be a k8s compatible name
+	Name string `json:"name,omitempty"` // must be k8s name? compatible
 
-	Types []QueryTypeDefinition `json:"types"`
-}
-
-type QueryTypeDefinition struct {
-	// Describe whe the query type is for
-	Name string `json:"name,omitempty"`
+	// DiscriminatorField is the field used to link behavior to this specific
+	// query type.  It is typically "queryType", but can be another field if necessary
+	DiscriminatorField string `json:"discriminatorField,omitempty"`
 
 	// Describe whe the query type is for
 	Description string `json:"description,omitempty"`

@@ -1,10 +1,18 @@
 package query
 
-import "embed"
+import (
+	"embed"
+	"encoding/json"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+)
 
 type CommonQueryProperties struct {
 	// RefID is the unique identifier of the query, set by the frontend call.
 	RefID string `json:"refId,omitempty"`
+
+	// Optionally define expected query result behavior
+	ResultAssertions *ResultAssertions `json:"resultAssertions,omitempty"`
 
 	// TimeRange represents the query range
 	// NOTE: unlike generic /ds/query, we can now send explicit time values in each query
@@ -52,6 +60,24 @@ type TimeRange struct {
 	To string `json:"to"`
 }
 
+// ResultAssertions define the expected response shape and query behavior.  This is useful to
+// enforce behavior over time.  The assertions are passed to the query engine and can be used
+// to fail queries *before* returning them to a client (select * from bigquery!)
+type ResultAssertions struct {
+	// Type asserts that the frame matches a known type structure.
+	Type data.FrameType `json:"type,omitempty"`
+
+	// TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane
+	// contract documentation https://grafana.github.io/dataplane/contract/.
+	TypeVersion data.FrameTypeVersion `json:"typeVersion"`
+
+	// Maximum bytes that can be read -- if the query planning expects more then this, the query may fail fast
+	MaxBytes int64 `json:"maxBytes,omitempty"`
+
+	// Maximum frame count
+	MaxFrames int64 `json:"maxFrames,omitempty"`
+}
+
 // GenericDataQuery is a replacement for `dtos.MetricRequest` with more explicit typing
 type GenericDataQuery struct {
 	CommonQueryProperties `json:",inline"`
@@ -64,7 +90,7 @@ type GenericDataQuery struct {
 var f embed.FS
 
 // Get the cached feature list (exposed as a k8s resource)
-func GetCommonJSONSchema() []byte {
+func GetCommonJSONSchema() json.RawMessage {
 	body, _ := f.ReadFile("common.jsonschema")
 	return body
 }

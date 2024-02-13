@@ -1,0 +1,113 @@
+[
+  {
+    "name": "math",
+    "versions": [
+      {
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "https://github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr/math-query",
+          "properties": {
+            "expression": {
+              "type": "string",
+              "minLength": 1,
+              "description": "General math expression",
+              "examples": [
+                "$A + 1",
+                "$A/$B"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "expression"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "reduce",
+    "versions": [
+      {
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "https://github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr/reduce-query",
+          "properties": {
+            "expression": {
+              "type": "string",
+              "description": "Reference to other query results"
+            },
+            "reducer": {
+              "type": "string",
+              "description": "The reducer"
+            },
+            "settings": {
+              "properties": {
+                "mode": {
+                  "type": "string",
+                  "description": "Non-number reduce behavior"
+                },
+                "replaceWithValue": {
+                  "type": "number",
+                  "description": "Only valid when mode is replace"
+                }
+              },
+              "additionalProperties": false,
+              "type": "object",
+              "required": [
+                "mode"
+              ],
+              "description": "Reducer Options"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "expression",
+            "reducer",
+            "settings"
+          ]
+        }
+      }
+    ]
+  },
+  {
+    "name": "resample",
+    "versions": [
+      {
+        "schema": {
+          "$schema": "https://json-schema.org/draft/2020-12/schema",
+          "$id": "https://github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr/resample-query",
+          "properties": {
+            "expression": {
+              "type": "string",
+              "description": "The math expression"
+            },
+            "window": {
+              "type": "string",
+              "description": "The math expression"
+            },
+            "downsampler": {
+              "type": "string",
+              "description": "The reducer"
+            },
+            "upsampler": {
+              "type": "string",
+              "description": "The reducer"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "expression",
+            "window",
+            "downsampler",
+            "upsampler"
+          ],
+          "description": "QueryType = resample"
+        }
+      }
+    ]
+  }
+]

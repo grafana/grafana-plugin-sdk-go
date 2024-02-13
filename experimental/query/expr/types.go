@@ -36,8 +36,8 @@ func (*QueyHandler) QueryTypeField() string {
 }
 
 // QueryTypes implements query.TypedQueryHandler.
-func (*QueyHandler) QueryTypes() []query.QueryTypeDefinition {
-	return []query.QueryTypeDefinition{}
+func (*QueyHandler) QueryTypeDefinitions() []query.QueryTypeDefinitionSpec {
+	return []query.QueryTypeDefinitionSpec{}
 }
 
 // ReadQuery implements query.TypedQueryHandler.
