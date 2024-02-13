@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"reflect"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -19,6 +20,7 @@ type QueryTypeInfo struct {
 	QueryType string
 	Version   string
 	GoType    reflect.Type
+	Examples  []query.QueryExample
 }
 
 type QueryTypeBuilder struct {
@@ -34,6 +36,8 @@ func (b *QueryTypeBuilder) Add(info QueryTypeInfo) error {
 	if schema == nil {
 		return fmt.Errorf("missing schema")
 	}
+
+	b.enumify(schema)
 
 	// Ignored by k8s anyway
 	schema.Version = ""
@@ -51,8 +55,9 @@ func (b *QueryTypeBuilder) Add(info QueryTypeInfo) error {
 		b.types = append(b.types, def)
 	}
 	def.Versions = append(def.Versions, query.QueryTypeVersion{
-		Version: info.Version,
-		Schema:  schema,
+		Version:  info.Version,
+		Schema:   schema,
+		Examples: info.Examples,
 	})
 	return nil
 }
@@ -66,6 +71,9 @@ type BuilderOptions struct {
 
 	// queryType
 	DiscriminatorField string
+
+	// explicitly define the enumeration fields
+	Enums []reflect.Type
 }
 
 func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*QueryTypeBuilder, error) {
@@ -74,6 +82,38 @@ func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*Qu
 	if err := r.AddGoComments(opts.BasePackage, opts.CodePath); err != nil {
 		return nil, err
 	}
+	if len(opts.Enums) > 0 {
+		fields, err := findEnumFields(opts.BasePackage, opts.CodePath)
+		if err != nil {
+			return nil, err
+		}
+		enumMapper := map[reflect.Type]*jsonschema.Schema{}
+		for _, etype := range opts.Enums {
+			for _, f := range fields {
+				if f.Name == etype.Name() && f.Package == etype.PkgPath() {
+					enumValueDescriptions := map[string]string{}
+					s := &jsonschema.Schema{
+						Type: "string",
+						Extras: map[string]any{
+							"x-enum-description": enumValueDescriptions,
+						},
+					}
+					for _, val := range f.Values {
+						s.Enum = append(s.Enum, val.Value)
+						if val.Comment != "" {
+							enumValueDescriptions[val.Value] = val.Comment
+						}
+					}
+					enumMapper[etype] = s
+				}
+			}
+		}
+
+		r.Mapper = func(t reflect.Type) *jsonschema.Schema {
+			return enumMapper[t]
+		}
+	}
+
 	b := &QueryTypeBuilder{
 		t:         t,
 		opts:      opts,
@@ -87,6 +127,41 @@ func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*Qu
 		}
 	}
 	return b, nil
+}
+
+// whitespaceRegex is the regex for consecutive whitespaces.
+var whitespaceRegex = regexp.MustCompile(`\s+`)
+
+func (b *QueryTypeBuilder) enumify(s *jsonschema.Schema) {
+	if len(s.Enum) > 0 && s.Extras != nil {
+		extra, ok := s.Extras["x-enum-description"]
+		if !ok {
+			return
+		}
+
+		lookup, ok := extra.(map[string]string)
+		if !ok {
+			return
+		}
+
+		lines := []string{}
+		if s.Description != "" {
+			lines = append(lines, s.Description, "\n")
+		}
+		lines = append(lines, "Possible enum values:")
+		for _, v := range s.Enum {
+			c := lookup[v.(string)]
+			c = whitespaceRegex.ReplaceAllString(c, " ")
+			lines = append(lines, fmt.Sprintf(" - `%q` %s", v, c))
+		}
+
+		s.Description = strings.Join(lines, "\n")
+		return
+	}
+
+	for pair := s.Properties.Oldest(); pair != nil; pair = pair.Next() {
+		b.enumify(pair.Value)
+	}
 }
 
 func (b *QueryTypeBuilder) Write(outfile string) json.RawMessage {

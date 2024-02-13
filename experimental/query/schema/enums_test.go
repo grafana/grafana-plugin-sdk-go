@@ -9,7 +9,7 @@ import (
 )
 
 func TestFindEnums(t *testing.T) {
-	fields, err := FindEnumFields(
+	fields, err := findEnumFields(
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr",
 		"../expr")
 	require.NoError(t, err)

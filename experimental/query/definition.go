@@ -70,10 +70,18 @@ type QueryTypeVersion struct {
 	Schema any `json:"schema"`
 
 	// Examples (include a wrapper) ideally a template!
-	Examples []any `json:"examples,omitempty"`
+	Examples []QueryExample `json:"examples,omitempty"`
 
 	// Changelog defines the changed from the previous version
 	// All changes in the same version *must* be backwards compatible
 	// Only notable changes will be shown here, for the full version history see git!
 	Changelog []string `json:"changelog,omitempty"`
+}
+
+type QueryExample struct {
+	// Version identifier or empty if only one exists
+	Name string `json:"name,omitempty"`
+
+	// An example query
+	Query any `json:"query"`
 }

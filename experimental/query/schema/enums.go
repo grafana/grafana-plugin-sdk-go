@@ -1,7 +1,6 @@
 package schema
 
 import (
-	"fmt"
 	"io/fs"
 	gopath "path"
 	"path/filepath"
@@ -25,7 +24,7 @@ type EnumField struct {
 	Values  []EnumValue
 }
 
-func FindEnumFields(base, path string) ([]EnumField, error) {
+func findEnumFields(base, path string) ([]EnumField, error) {
 	fset := token.NewFileSet()
 	dict := make(map[string][]*ast.Package)
 	err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
@@ -76,8 +75,7 @@ func FindEnumFields(base, path string) ([]EnumField, error) {
 								Comment: strings.TrimSpace(strings.TrimSuffix(txt, "+enum")),
 							})
 							field = &fields[len(fields)-1]
-
-							fmt.Printf("ENUM: %s.%s // %s\n", pkg, typ, txt)
+							//fmt.Printf("ENUM: %s.%s // %s\n", pkg, typ, txt)
 						}
 					}
 				case *ast.ValueSpec:
@@ -93,7 +91,7 @@ func FindEnumFields(base, path string) ([]EnumField, error) {
 									val := strings.TrimPrefix(v.Value, `"`)
 									val = strings.TrimSuffix(val, `"`)
 									txt = strings.TrimSpace(txt)
-									fmt.Printf("%s // %s // %s\n", typ, val, txt)
+									//fmt.Printf("%s // %s // %s\n", typ, val, txt)
 									field.Values = append(field.Values, EnumValue{
 										Value:   val,
 										Comment: txt,
