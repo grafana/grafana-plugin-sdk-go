@@ -10,7 +10,7 @@ import (
 )
 
 func TestQueryTypeDefinitions(t *testing.T) {
-	builder, err := schema.NewBuilder(t,
+	builder, err := schema.NewBuilder(
 		schema.BuilderOptions{
 			BasePackage:        "github.com/grafana/grafana-plugin-sdk-go/experimental/query/expr",
 			DiscriminatorField: "queryType",
@@ -62,5 +62,5 @@ func TestQueryTypeDefinitions(t *testing.T) {
 		})
 	require.NoError(t, err)
 
-	_ = builder.Write("types.json")
+	builder.UpdateSchemaDefinition(t, "types.json")
 }

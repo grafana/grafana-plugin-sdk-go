@@ -29,7 +29,6 @@ type QueryTypeInfo struct {
 }
 
 type QueryTypeBuilder struct {
-	t         *testing.T
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
 	defs      []query.QueryTypeDefinition
@@ -88,7 +87,7 @@ type BuilderOptions struct {
 	Enums []reflect.Type
 }
 
-func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*QueryTypeBuilder, error) {
+func NewBuilder(opts BuilderOptions, inputs ...QueryTypeInfo) (*QueryTypeBuilder, error) {
 	r := new(jsonschema.Reflector)
 	r.DoNotReference = true
 	if err := r.AddGoComments(opts.BasePackage, opts.CodePath); err != nil {
@@ -135,7 +134,6 @@ func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*Qu
 	}
 
 	b := &QueryTypeBuilder{
-		t:         t,
 		opts:      opts,
 		reflector: r,
 	}
@@ -183,8 +181,11 @@ func (b *QueryTypeBuilder) enumify(s *jsonschema.Schema) {
 	}
 }
 
-func (b *QueryTypeBuilder) Write(outfile string) json.RawMessage {
-	t := b.t
+// Update the schema definition file
+// When placed in `static/schema/dataquery.json` folder of a plugin distribution,
+// it can be used to advertise various query types
+// If the spec contents have changed, the test will fail (but still update the output)
+func (b *QueryTypeBuilder) UpdateSchemaDefinition(t *testing.T, outfile string) {
 	t.Helper()
 
 	now := time.Now().UTC()
@@ -201,6 +202,8 @@ func (b *QueryTypeBuilder) Write(outfile string) json.RawMessage {
 			}
 		}
 	}
+	defs.Kind = "QueryTypeDefinitionList"
+	defs.ApiVersion = "query.grafana.app/v0alpha1"
 
 	// The updated schemas
 	for _, def := range b.defs {
@@ -248,5 +251,4 @@ func (b *QueryTypeBuilder) Write(outfile string) json.RawMessage {
 		err = os.WriteFile(outfile, out, 0644)
 		require.NoError(t, err, "error writing file")
 	}
-	return out
 }

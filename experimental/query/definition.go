@@ -26,8 +26,12 @@ type QueryTypeDefinition struct {
 // K8s placeholder
 // This will serialize to the same byte array, but does not require all the imports
 type QueryTypeDefinitionList struct {
-	ObjectMeta ObjectMeta            `json:"metadata,omitempty"`
-	Items      []QueryTypeDefinition `json:"items"`
+	Kind       string `json:"kind"`       // "QueryTypeDefinitionList",
+	ApiVersion string `json:"apiVersion"` // "query.grafana.app/v0alpha1",
+
+	ObjectMeta `json:"metadata,omitempty"`
+
+	Items []QueryTypeDefinition `json:"items"`
 }
 
 // K8s compatible
