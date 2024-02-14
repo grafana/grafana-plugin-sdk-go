@@ -18,18 +18,21 @@ import (
 )
 
 type QueryTypeInfo struct {
-	QueryType string
-	Version   string
-	GoType    reflect.Type
-	Examples  []query.QueryExample
+	// The management name
+	Name string
+	// The discriminator value (requires the field set in ops)
+	Discriminator string
+	// Raw GO type used for reflection
+	GoType reflect.Type
+	// Add sample queries
+	Examples []query.QueryExample
 }
 
 type QueryTypeBuilder struct {
 	t         *testing.T
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
-	byType    map[string]*query.QueryTypeDefinitionSpec
-	types     []*query.QueryTypeDefinitionSpec
+	defs      []query.QueryTypeDefinition
 }
 
 func (b *QueryTypeBuilder) Add(info QueryTypeInfo) error {
@@ -45,20 +48,28 @@ func (b *QueryTypeBuilder) Add(info QueryTypeInfo) error {
 	schema.ID = ""
 	schema.Anchor = ""
 
-	def, ok := b.byType[info.QueryType]
-	if !ok {
-		def = &query.QueryTypeDefinitionSpec{
-			Name:               info.QueryType,
-			DiscriminatorField: b.opts.DiscriminatorField,
-			Versions:           []query.QueryTypeVersion{},
+	name := info.Name
+	if name == "" {
+		name = info.Discriminator
+		if name == "" {
+			return fmt.Errorf("missing name or discriminator")
 		}
-		b.byType[info.QueryType] = def
-		b.types = append(b.types, def)
 	}
-	def.Versions = append(def.Versions, query.QueryTypeVersion{
-		Version:  info.Version,
-		Schema:   schema,
-		Examples: info.Examples,
+
+	if info.Discriminator != "" && b.opts.DiscriminatorField == "" {
+		return fmt.Errorf("missing discriminator field")
+	}
+
+	b.defs = append(b.defs, query.QueryTypeDefinition{
+		ObjectMeta: query.ObjectMeta{
+			Name: name,
+		},
+		Spec: query.QueryTypeDefinitionSpec{
+			DiscriminatorField: b.opts.DiscriminatorField,
+			DiscriminatorValue: info.Discriminator,
+			Schema:             schema,
+			Examples:           info.Examples,
+		},
 	})
 	return nil
 }
@@ -127,7 +138,6 @@ func NewBuilder(t *testing.T, opts BuilderOptions, inputs ...QueryTypeInfo) (*Qu
 		t:         t,
 		opts:      opts,
 		reflector: r,
-		byType:    make(map[string]*query.QueryTypeDefinitionSpec),
 	}
 	for _, input := range inputs {
 		err := b.Add(input)
@@ -193,29 +203,25 @@ func (b *QueryTypeBuilder) Write(outfile string) json.RawMessage {
 	}
 
 	// The updated schemas
-	for _, spec := range b.types {
-		found, ok := byName[spec.Name]
+	for _, def := range b.defs {
+		found, ok := byName[def.ObjectMeta.Name]
 		if !ok {
 			defs.ObjectMeta.ResourceVersion = rv
-			defs.Items = append(defs.Items, query.QueryTypeDefinition{
-				ObjectMeta: query.ObjectMeta{
-					Name:              spec.Name,
-					ResourceVersion:   rv,
-					CreationTimestamp: now.Format(time.RFC3339),
-				},
-				Spec: *spec,
-			})
+			def.ObjectMeta.ResourceVersion = rv
+			def.ObjectMeta.CreationTimestamp = now.Format(time.RFC3339)
+
+			defs.Items = append(defs.Items, def)
 		} else {
 			var o1, o2 interface{}
-			b1, _ := json.Marshal(spec)
+			b1, _ := json.Marshal(def.Spec)
 			b2, _ := json.Marshal(found.Spec)
 			_ = json.Unmarshal(b1, &o1)
 			_ = json.Unmarshal(b2, &o2)
 			if !reflect.DeepEqual(o1, o2) {
 				found.ObjectMeta.ResourceVersion = rv
-				found.Spec = *spec
+				found.Spec = def.Spec
 			}
-			delete(byName, spec.Name)
+			delete(byName, def.ObjectMeta.Name)
 		}
 	}
 
@@ -243,90 +249,4 @@ func (b *QueryTypeBuilder) Write(outfile string) json.RawMessage {
 		require.NoError(t, err, "error writing file")
 	}
 	return out
-}
-
-func (b *QueryTypeBuilder) FullQuerySchema() (*jsonschema.Schema, error) {
-	discriminator := b.opts.DiscriminatorField
-	if discriminator == "" {
-		discriminator = "queryType"
-	}
-
-	query, err := asJSONSchema(query.GetCommonJSONSchema())
-	if err != nil {
-		return nil, err
-	}
-	query.Ref = ""
-	common, ok := query.Definitions["CommonQueryProperties"]
-	if !ok {
-		return nil, fmt.Errorf("error finding common properties")
-	}
-	delete(query.Definitions, "CommonQueryProperties")
-
-	for _, t := range b.types {
-		for _, v := range t.Versions {
-			s, err := asJSONSchema(v.Schema)
-			if err != nil {
-				return nil, err
-			}
-			if s.Ref == "" {
-				return nil, fmt.Errorf("only ref elements supported right now")
-			}
-
-			ref := strings.TrimPrefix(s.Ref, "#/$defs/")
-			body := s
-
-			// Add all types to the
-			for key, def := range s.Definitions {
-				if key == ref {
-					body = def
-				} else {
-					query.Definitions[key] = def
-				}
-			}
-
-			if body.Properties == nil {
-				return nil, fmt.Errorf("expected properties on body")
-			}
-
-			for pair := common.Properties.Oldest(); pair != nil; pair = pair.Next() {
-				body.Properties.Set(pair.Key, pair.Value)
-			}
-			body.Required = append(body.Required, "refId")
-
-			if t.Name != "" {
-				key := t.Name
-				if v.Version != "" {
-					key += "/" + v.Version
-				}
-
-				p, err := body.Properties.GetAndMoveToFront(discriminator)
-				if err != nil {
-					return nil, fmt.Errorf("missing discriminator field: %s", discriminator)
-				}
-				p.Const = key
-				p.Enum = nil
-
-				body.Required = append(body.Required, discriminator)
-			}
-
-			query.OneOf = append(query.OneOf, body)
-		}
-	}
-
-	return query, nil
-}
-
-// Always creates a copy so we can modify it
-func asJSONSchema(v any) (*jsonschema.Schema, error) {
-	var err error
-	s := &jsonschema.Schema{}
-	b, ok := v.([]byte)
-	if !ok {
-		b, err = json.Marshal(v)
-		if err != nil {
-			return nil, err
-		}
-	}
-	err = json.Unmarshal(b, s)
-	return s, err
 }

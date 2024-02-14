@@ -1,19 +1,13 @@
 package query
 
 import (
-	"encoding/json"
-
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
-type TypedQueryHandler[Q any] interface {
-	QueryTypeDefinitionsJSON() (json.RawMessage, error)
-
+type TypedQueryReader[Q any] interface {
 	// Get the query parser for a query type
 	// The version is split from the end of the discriminator field
 	ReadQuery(
-		// The query type split by version (when multiple exist)
-		queryType string, version string,
 		// Properties that have been parsed off the same node
 		common CommonQueryProperties,
 		// An iterator with context for the full node (include common values)
@@ -36,35 +30,26 @@ type QueryTypeDefinitionList struct {
 	Items      []QueryTypeDefinition `json:"items"`
 }
 
-// K8s placeholder
+// K8s compatible
 type ObjectMeta struct {
-	Name              string `json:"name,omitempty"`            // missing on lists
-	ResourceVersion   string `json:"resourceVersion,omitempty"` // indicates something changed
+	// The name is for k8s and description, but not used in the schema
+	Name string `json:"name,omitempty"`
+	// Changes indicate that *something * changed
+	ResourceVersion string `json:"resourceVersion,omitempty"`
+	// Timestamp
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 }
 
 type QueryTypeDefinitionSpec struct {
-	// The query type value
-	// NOTE: this must be a k8s compatible name
-	Name string `json:"name,omitempty"` // must be k8s name? compatible
-
 	// DiscriminatorField is the field used to link behavior to this specific
 	// query type.  It is typically "queryType", but can be another field if necessary
 	DiscriminatorField string `json:"discriminatorField,omitempty"`
 
+	// The discriminator value
+	DiscriminatorValue string `json:"discriminatorValue,omitempty"`
+
 	// Describe whe the query type is for
 	Description string `json:"description,omitempty"`
-
-	// Versions (most recent first)
-	Versions []QueryTypeVersion `json:"versions"`
-
-	// When multiple versions exist, this is the preferredVersion
-	PreferredVersion string `json:"preferredVersion,omitempty"`
-}
-
-type QueryTypeVersion struct {
-	// Version identifier or empty if only one exists
-	Version string `json:"version,omitempty"`
 
 	// The JSONSchema definition for the non-common fields
 	Schema any `json:"schema"`

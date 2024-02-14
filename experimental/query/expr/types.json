@@ -1,50 +1,47 @@
 {
   "metadata": {
-    "resourceVersion": "1707808829418"
+    "resourceVersion": "1707873133114"
   },
   "items": [
     {
       "metadata": {
         "name": "math",
-        "resourceVersion": "1707861521526",
-        "creationTimestamp": "2024-02-13T07:16:27Z"
+        "resourceVersion": "1707873191437",
+        "creationTimestamp": "2024-02-14T01:12:13Z"
       },
       "spec": {
-        "name": "math",
-        "versions": [
+        "discriminatorField": "queryType",
+        "discriminatorValue": "math",
+        "schema": {
+          "properties": {
+            "expression": {
+              "type": "string",
+              "minLength": 1,
+              "description": "General math expression",
+              "examples": [
+                "$A + 1",
+                "$A/$B"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "expression"
+          ]
+        },
+        "examples": [
           {
-            "schema": {
-              "additionalProperties": false,
-              "properties": {
-                "expression": {
-                  "description": "General math expression",
-                  "examples": [
-                    "$A + 1",
-                    "$A/$B"
-                  ],
-                  "minLength": 1,
-                  "type": "string"
-                }
-              },
-              "required": [
-                "expression"
-              ],
-              "type": "object"
-            },
-            "examples": [
-              {
-                "name": "constant addition",
-                "query": {
-                  "expression": "$A + 10"
-                }
-              },
-              {
-                "name": "math with two queries",
-                "query": {
-                  "expression": "$A - $B"
-                }
-              }
-            ]
+            "name": "constant addition",
+            "query": {
+              "expression": "$A + 10"
+            }
+          },
+          {
+            "name": "math with two queries",
+            "query": {
+              "expression": "$A - $B"
+            }
           }
         ]
       }
@@ -52,133 +49,127 @@
     {
       "metadata": {
         "name": "reduce",
-        "resourceVersion": "1707861521526",
-        "creationTimestamp": "2024-02-13T07:16:27Z"
+        "resourceVersion": "1707873191437",
+        "creationTimestamp": "2024-02-14T01:12:13Z"
       },
       "spec": {
-        "name": "reduce",
-        "versions": [
-          {
-            "schema": {
-              "additionalProperties": false,
+        "discriminatorField": "queryType",
+        "discriminatorValue": "reduce",
+        "schema": {
+          "properties": {
+            "expression": {
+              "type": "string",
+              "description": "Reference to other query results"
+            },
+            "reducer": {
+              "type": "string",
+              "enum": [
+                "sum",
+                "mean",
+                "min",
+                "max",
+                "count",
+                "last"
+              ],
+              "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
+              "x-enum-description": {
+                "mean": "The mean",
+                "sum": "The sum"
+              }
+            },
+            "settings": {
               "properties": {
-                "expression": {
-                  "description": "Reference to other query results",
-                  "type": "string"
-                },
-                "reducer": {
-                  "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
+                "mode": {
+                  "type": "string",
                   "enum": [
-                    "sum",
-                    "mean",
-                    "min",
-                    "max",
-                    "count",
-                    "last"
+                    "dropNN",
+                    "replaceNN"
                   ],
-                  "type": "string",
+                  "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
                   "x-enum-description": {
-                    "mean": "The mean",
-                    "sum": "The sum"
+                    "dropNN": "Drop non-numbers",
+                    "replaceNN": "Replace non-numbers"
                   }
                 },
-                "settings": {
-                  "additionalProperties": false,
-                  "description": "Reducer Options",
-                  "properties": {
-                    "mode": {
-                      "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
-                      "enum": [
-                        "dropNN",
-                        "replaceNN"
-                      ],
-                      "type": "string",
-                      "x-enum-description": {
-                        "dropNN": "Drop non-numbers",
-                        "replaceNN": "Replace non-numbers"
-                      }
-                    },
-                    "replaceWithValue": {
-                      "description": "Only valid when mode is replace",
-                      "type": "number"
-                    }
-                  },
-                  "required": [
-                    "mode"
-                  ],
-                  "type": "object"
-                }
-              },
-              "required": [
-                "expression",
-                "reducer",
-                "settings"
-              ],
-              "type": "object"
-            },
-            "examples": [
-              {
-                "name": "get max value",
-                "query": {
-                  "expression": "$A",
-                  "reducer": "max",
-                  "settings": {
-                    "mode": "dropNN"
-                  }
-                }
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "metadata": {
-        "name": "resample",
-        "resourceVersion": "1707865501262",
-        "creationTimestamp": "2024-02-13T07:16:27Z"
-      },
-      "spec": {
-        "name": "resample",
-        "versions": [
-          {
-            "schema": {
-              "properties": {
-                "expression": {
-                  "type": "string",
-                  "description": "The math expression"
-                },
-                "window": {
-                  "type": "string",
-                  "description": "A time duration string"
-                },
-                "downsampler": {
-                  "type": "string",
-                  "description": "The reducer"
-                },
-                "upsampler": {
-                  "type": "string",
-                  "description": "The reducer"
-                },
-                "loadedDimensions": {
-                  "additionalProperties": true,
-                  "type": "object",
-                  "x-grafana-type": "data.DataFrame"
+                "replaceWithValue": {
+                  "type": "number",
+                  "description": "Only valid when mode is replace"
                 }
               },
               "additionalProperties": false,
               "type": "object",
               "required": [
-                "expression",
-                "window",
-                "downsampler",
-                "upsampler",
-                "loadedDimensions"
+                "mode"
               ],
-              "description": "QueryType = resample"
+              "description": "Reducer Options"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "expression",
+            "reducer",
+            "settings"
+          ]
+        },
+        "examples": [
+          {
+            "name": "get max value",
+            "query": {
+              "expression": "$A",
+              "reducer": "max",
+              "settings": {
+                "mode": "dropNN"
+              }
             }
           }
         ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "resample",
+        "resourceVersion": "1707873191437",
+        "creationTimestamp": "2024-02-14T01:12:13Z"
+      },
+      "spec": {
+        "discriminatorField": "queryType",
+        "discriminatorValue": "resample",
+        "schema": {
+          "properties": {
+            "expression": {
+              "type": "string",
+              "description": "The math expression"
+            },
+            "window": {
+              "type": "string",
+              "description": "A time duration string"
+            },
+            "downsampler": {
+              "type": "string",
+              "description": "The reducer"
+            },
+            "upsampler": {
+              "type": "string",
+              "description": "The reducer"
+            },
+            "loadedDimensions": {
+              "additionalProperties": true,
+              "type": "object",
+              "x-grafana-type": "data.DataFrame"
+            }
+          },
+          "additionalProperties": false,
+          "type": "object",
+          "required": [
+            "expression",
+            "window",
+            "downsampler",
+            "upsampler",
+            "loadedDimensions"
+          ],
+          "description": "QueryType = resample"
+        }
       }
     }
   ]
