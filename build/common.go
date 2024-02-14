@@ -215,6 +215,31 @@ func (Build) Debug() error {
 	cfg.EnableDebug = true
 	return buildBackend(cfg)
 }
+func (Build) DebugLinuxAMD64() error {
+	cfg := newBuildConfig("linux", "amd64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+func (Build) DebugLinuxARM64() error {
+	cfg := newBuildConfig("linux", "arm64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+func (Build) DebugDarwinAMD64() error {
+	cfg := newBuildConfig("darwin", "amd64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+func (Build) DebugDarwinARM64() error {
+	cfg := newBuildConfig("darwin", "arm64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+func (Build) DebugWindowsAMD64() error {
+	cfg := newBuildConfig("windows", "amd64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
 
 // Backend build a production build for the current platform
 func (Build) Backend() error {
