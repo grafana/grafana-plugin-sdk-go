@@ -170,12 +170,12 @@ func (Build) Windows() error {
 	return buildBackend(newBuildConfig("windows", "amd64"))
 }
 
-// Darwin builds the back-end plugin for OSX.
+// Darwin builds the back-end plugin for OSX on AMD64.
 func (Build) Darwin() error {
 	return buildBackend(newBuildConfig("darwin", "amd64"))
 }
 
-// DarwinARM64 builds the back-end plugin for OSX on ARM (M1).
+// DarwinARM64 builds the back-end plugin for OSX on ARM (M1/M2).
 func (Build) DarwinARM64() error {
 	return buildBackend(newBuildConfig("darwin", "arm64"))
 }
@@ -209,9 +209,44 @@ func (Build) GenerateManifestFile() error {
 	return nil
 }
 
-// Debug builds the debug version for the current platform
+// Debug builds the debug version for the current platform.
 func (Build) Debug() error {
 	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+
+// DebugLinuxAMD64 builds the debug version targeted for linux on AMD64.
+func (Build) DebugLinuxAMD64() error {
+	cfg := newBuildConfig("linux", "amd64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+
+// DebugLinuxARM64 builds the debug version targeted for linux on ARM64.
+func (Build) DebugLinuxARM64() error {
+	cfg := newBuildConfig("linux", "arm64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+
+// DebugDarwinAMD64 builds the debug version targeted for OSX on AMD64.
+func (Build) DebugDarwinAMD64() error {
+	cfg := newBuildConfig("darwin", "amd64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+
+// DebugDarwinARM64 builds the debug version targeted for OSX on ARM (M1/M2).
+func (Build) DebugDarwinARM64() error {
+	cfg := newBuildConfig("darwin", "arm64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+
+// DebugWindowsAMD64 builds the debug version targeted for windows on AMD64.
+func (Build) DebugWindowsAMD64() error {
+	cfg := newBuildConfig("windows", "amd64")
 	cfg.EnableDebug = true
 	return buildBackend(cfg)
 }
