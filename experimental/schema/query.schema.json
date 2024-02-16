@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft-04/schema",
+  "$id": "https://github.com/grafana/grafana-plugin-sdk-go/experimental/schema/common-query-properties",
+  "properties": {
+    "refId": {
+      "type": "string"
+    },
+    "resultAssertions": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "typeVersion": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array",
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "maxBytes": {
+          "type": "integer"
+        },
+        "maxFrames": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "typeVersion"
+      ]
+    },
+    "timeRange": {
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ]
+    },
+    "datasource": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "uid"
+      ]
+    },
+    "queryType": {
+      "type": "string"
+    },
+    "maxDataPoints": {
+      "type": "integer"
+    },
+    "intervalMs": {
+      "type": "number"
+    },
+    "hide": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false,
+  "type": "object",
+  "description": "Query properties shared by all data sources"
+}

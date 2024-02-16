@@ -1,4 +1,4 @@
-package expr
+package example
 
 import (
 	"embed"
@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/query"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/schema"
 )
 
 // Supported expression types
@@ -29,7 +29,7 @@ type ExpressionQuery interface {
 	Variables() []string
 }
 
-var _ query.TypedQueryReader[ExpressionQuery] = (*QueyHandler)(nil)
+var _ schema.TypedQueryParser[ExpressionQuery] = (*QueyHandler)(nil)
 
 type QueyHandler struct{}
 
@@ -41,9 +41,9 @@ func (*QueyHandler) QueryTypeDefinitionsJSON() (json.RawMessage, error) {
 }
 
 // ReadQuery implements query.TypedQueryHandler.
-func (*QueyHandler) ReadQuery(
+func (*QueyHandler) ParseQuery(
 	// Properties that have been parsed off the same node
-	common query.CommonQueryProperties,
+	common schema.CommonQueryProperties,
 	// An iterator with context for the full node (include common values)
 	iter *jsoniter.Iterator,
 ) (ExpressionQuery, error) {

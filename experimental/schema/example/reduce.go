@@ -1,4 +1,4 @@
-package expr
+package example
 
 var _ ExpressionQuery = (*ReduceQuery)(nil)
 

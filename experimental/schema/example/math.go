@@ -1,4 +1,4 @@
-package expr
+package example
 
 import "github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 

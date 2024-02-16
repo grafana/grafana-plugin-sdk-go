@@ -1,7 +1,8 @@
-package query
+package schema
 
 import (
 	"encoding/json"
+	"fmt"
 	"os"
 	"testing"
 
@@ -17,6 +18,15 @@ func TestCommonSupport(t *testing.T) {
 	require.NoError(t, err)
 
 	query := r.Reflect(&CommonQueryProperties{})
+	query.Version = "https://json-schema.org/draft-04/schema" // used by kube-openapi
+	query.Description = "Query properties shared by all data sources"
+
+	// Write the map of values ignored by the common parser
+	fmt.Printf("var commonKeys = map[string]bool{\n")
+	for pair := query.Properties.Oldest(); pair != nil; pair = pair.Next() {
+		fmt.Printf("  \"%s\": true,\n", pair.Key)
+	}
+	fmt.Printf("}\n")
 
 	// // Hide this old property
 	query.Properties.Delete("datasourceId")
@@ -24,7 +34,7 @@ func TestCommonSupport(t *testing.T) {
 	require.NoError(t, err)
 
 	update := false
-	outfile := "common.jsonschema"
+	outfile := "query.schema.json"
 	body, err := os.ReadFile(outfile)
 	if err == nil {
 		if !assert.JSONEq(t, string(out), string(body)) {

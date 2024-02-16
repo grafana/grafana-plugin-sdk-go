@@ -8,13 +8,14 @@
     {
       "metadata": {
         "name": "math",
-        "resourceVersion": "1707873191437",
+        "resourceVersion": "1708120730495",
         "creationTimestamp": "2024-02-14T01:12:13Z"
       },
       "spec": {
         "discriminatorField": "queryType",
         "discriminatorValue": "math",
-        "schema": {
+        "querySchema": {
+          "$schema": "https://json-schema.org/draft-04/schema",
           "additionalProperties": false,
           "properties": {
             "expression": {
@@ -35,13 +36,13 @@
         "examples": [
           {
             "name": "constant addition",
-            "query": {
+            "queryPayload": {
               "expression": "$A + 10"
             }
           },
           {
             "name": "math with two queries",
-            "query": {
+            "queryPayload": {
               "expression": "$A - $B"
             }
           }
@@ -51,13 +52,14 @@
     {
       "metadata": {
         "name": "reduce",
-        "resourceVersion": "1707873191437",
+        "resourceVersion": "1708120730495",
         "creationTimestamp": "2024-02-14T01:12:13Z"
       },
       "spec": {
         "discriminatorField": "queryType",
         "discriminatorValue": "reduce",
-        "schema": {
+        "querySchema": {
+          "$schema": "https://json-schema.org/draft-04/schema",
           "additionalProperties": false,
           "properties": {
             "expression": {
@@ -117,7 +119,7 @@
         "examples": [
           {
             "name": "get max value",
-            "query": {
+            "queryPayload": {
               "expression": "$A",
               "reducer": "max",
               "settings": {
@@ -131,13 +133,14 @@
     {
       "metadata": {
         "name": "resample",
-        "resourceVersion": "1707873191437",
+        "resourceVersion": "1708120730495",
         "creationTimestamp": "2024-02-14T01:12:13Z"
       },
       "spec": {
         "discriminatorField": "queryType",
         "discriminatorValue": "resample",
-        "schema": {
+        "querySchema": {
+          "$schema": "https://json-schema.org/draft-04/schema",
           "additionalProperties": false,
           "description": "QueryType = resample",
           "properties": {
