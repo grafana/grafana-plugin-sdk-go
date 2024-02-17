@@ -114,14 +114,17 @@ func (iter *Iterator) Unmarshal(data []byte, v interface{}) error {
 	return ConfigDefault.Unmarshal(data, v)
 }
 
-func (iter *Iterator) Parse(cfg j.API, reader io.Reader, bufSize int) (*Iterator, error) {
-	return &Iterator{j.Parse(cfg, reader, bufSize)}, iter.i.Error
+func Parse(cfg j.API, reader io.Reader, bufSize int) (*Iterator, error) {
+	iter := &Iterator{j.Parse(cfg, reader, bufSize)}
+	return iter, iter.i.Error
 }
 
-func (iter *Iterator) ParseBytes(cfg j.API, input []byte) (*Iterator, error) {
-	return &Iterator{j.ParseBytes(cfg, input)}, iter.i.Error
+func ParseBytes(cfg j.API, input []byte) (*Iterator, error) {
+	iter := &Iterator{j.ParseBytes(cfg, input)}
+	return iter, iter.i.Error
 }
 
-func (iter *Iterator) ParseString(cfg j.API, input string) (*Iterator, error) {
-	return &Iterator{j.ParseString(cfg, input)}, iter.i.Error
+func ParseString(cfg j.API, input string) (*Iterator, error) {
+	iter := &Iterator{j.ParseString(cfg, input)}
+	return iter, iter.i.Error
 }
