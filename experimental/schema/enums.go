@@ -50,6 +50,7 @@ func findEnumFields(base, path string) ([]EnumField, error) {
 
 	fields := make([]EnumField, 0)
 	field := &EnumField{}
+	dp := &doc.Package{}
 
 	for pkg, p := range dict {
 		for _, f := range p {
@@ -67,7 +68,7 @@ func findEnumFields(base, path string) ([]EnumField, error) {
 							txt = gtxt
 							gtxt = ""
 						}
-						txt = strings.TrimSpace(doc.Synopsis(txt))
+						txt = strings.TrimSpace(dp.Synopsis(txt))
 						if strings.HasSuffix(txt, "+enum") {
 							fields = append(fields, EnumField{
 								Package: pkg,
@@ -75,7 +76,6 @@ func findEnumFields(base, path string) ([]EnumField, error) {
 								Comment: strings.TrimSpace(strings.TrimSuffix(txt, "+enum")),
 							})
 							field = &fields[len(fields)-1]
-							//fmt.Printf("ENUM: %s.%s // %s\n", pkg, typ, txt)
 						}
 					}
 				case *ast.ValueSpec:
@@ -91,7 +91,6 @@ func findEnumFields(base, path string) ([]EnumField, error) {
 									val := strings.TrimPrefix(v.Value, `"`)
 									val = strings.TrimSuffix(val, `"`)
 									txt = strings.TrimSpace(txt)
-									//fmt.Printf("%s // %s // %s\n", typ, val, txt)
 									field.Values = append(field.Values, EnumValue{
 										Value:   val,
 										Comment: txt,

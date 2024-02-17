@@ -44,7 +44,7 @@ func TestCommonSupport(t *testing.T) {
 		update = true
 	}
 	if update {
-		err = os.WriteFile(outfile, out, 0644)
+		err = os.WriteFile(outfile, out, 0600)
 		require.NoError(t, err, "error writing file")
 	}
 }

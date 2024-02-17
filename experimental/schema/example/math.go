@@ -20,7 +20,9 @@ func (q *MathQuery) Variables() []string {
 	return q.variables
 }
 
-func readMathQuery(iter *jsoniter.Iterator) (q *MathQuery, err error) {
+func readMathQuery(iter *jsoniter.Iterator) (*MathQuery, error) {
+	var q *MathQuery
+	var err error
 	fname := ""
 	for fname, err = iter.ReadObject(); fname != "" && err == nil; fname, err = iter.ReadObject() {
 		switch fname {
@@ -29,8 +31,9 @@ func readMathQuery(iter *jsoniter.Iterator) (q *MathQuery, err error) {
 			if err != nil {
 				return q, err
 			}
-			// TODO actually parse the expression
-			q.Expression = temp
+			q = &MathQuery{
+				Expression: temp,
+			}
 
 		default:
 			_, err = iter.ReadAny() // eat up the unused fields
@@ -39,5 +42,5 @@ func readMathQuery(iter *jsoniter.Iterator) (q *MathQuery, err error) {
 			}
 		}
 	}
-	return
+	return q, nil
 }

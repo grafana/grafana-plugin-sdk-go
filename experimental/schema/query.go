@@ -67,7 +67,7 @@ type CommonQueryProperties struct {
 	Datasource *DataSourceRef `json:"datasource,omitempty"`
 
 	// Deprecated -- use datasource ref instead
-	DatasourceId int64 `json:"datasourceId,omitempty"`
+	DatasourceID int64 `json:"datasourceId,omitempty"`
 
 	// QueryType is an optional identifier for the type of query.
 	// It can be used to distinguish different types of queries.
@@ -96,8 +96,7 @@ type DataSourceRef struct {
 	// Datasource UID
 	UID string `json:"uid"`
 
-	// ?? the datasource API version
-	// ApiVersion string `json:"apiVersion"`
+	// ?? the datasource API version?  (just version, not the group? type | apiVersion?)
 }
 
 // TimeRange represents a time range for a query and is a property of DataQuery.

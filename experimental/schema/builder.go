@@ -20,7 +20,7 @@ import (
 // backend build processes to produce static schema definitions
 // This is not intended as runtime code, and is not the only way to
 // produce a schema (we may also want/need to use typescript as the source)
-type SchemaBuilder struct {
+type Builder struct {
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
 	query     []QueryTypeDefinition
@@ -63,7 +63,7 @@ type SettingTypeInfo struct {
 	SecureGoType reflect.Type
 }
 
-func NewSchemaBuilder(opts BuilderOptions) (*SchemaBuilder, error) {
+func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 	r := new(jsonschema.Reflector)
 	r.DoNotReference = true
 	if err := r.AddGoComments(opts.BasePackage, opts.CodePath); err != nil {
@@ -109,13 +109,13 @@ func NewSchemaBuilder(opts BuilderOptions) (*SchemaBuilder, error) {
 		}
 	}
 
-	return &SchemaBuilder{
+	return &Builder{
 		opts:      opts,
 		reflector: r,
 	}, nil
 }
 
-func (b *SchemaBuilder) AddQueries(inputs ...QueryTypeInfo) error {
+func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 	for _, info := range inputs {
 		schema := b.reflector.ReflectFromType(info.GoType)
 		if schema == nil {
@@ -156,7 +156,7 @@ func (b *SchemaBuilder) AddQueries(inputs ...QueryTypeInfo) error {
 	return nil
 }
 
-func (b *SchemaBuilder) AddSettings(inputs ...SettingTypeInfo) error {
+func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
 	for _, info := range inputs {
 		schema := b.reflector.ReflectFromType(info.GoType)
 		if schema == nil {
@@ -199,7 +199,7 @@ func (b *SchemaBuilder) AddSettings(inputs ...SettingTypeInfo) error {
 // whitespaceRegex is the regex for consecutive whitespaces.
 var whitespaceRegex = regexp.MustCompile(`\s+`)
 
-func (b *SchemaBuilder) enumify(s *jsonschema.Schema) {
+func (b *Builder) enumify(s *jsonschema.Schema) {
 	if len(s.Enum) > 0 && s.Extras != nil {
 		extra, ok := s.Extras["x-enum-description"]
 		if !ok {
@@ -235,7 +235,7 @@ func (b *SchemaBuilder) enumify(s *jsonschema.Schema) {
 // When placed in `static/schema/query.schema.json` folder of a plugin distribution,
 // it can be used to advertise various query types
 // If the spec contents have changed, the test will fail (but still update the output)
-func (b *SchemaBuilder) UpdateQueryDefinition(t *testing.T, outfile string) {
+func (b *Builder) UpdateQueryDefinition(t *testing.T, outfile string) {
 	t.Helper()
 
 	now := time.Now().UTC()
@@ -253,7 +253,7 @@ func (b *SchemaBuilder) UpdateQueryDefinition(t *testing.T, outfile string) {
 		}
 	}
 	defs.Kind = "QueryTypeDefinitionList"
-	defs.ApiVersion = "query.grafana.app/v0alpha1"
+	defs.APIVersion = "query.grafana.app/v0alpha1"
 
 	// The updated schemas
 	for _, def := range b.query {
@@ -298,7 +298,7 @@ func (b *SchemaBuilder) UpdateQueryDefinition(t *testing.T, outfile string) {
 		update = true
 	}
 	if update {
-		err = os.WriteFile(outfile, out, 0644)
+		err = os.WriteFile(outfile, out, 0600)
 		require.NoError(t, err, "error writing file")
 	}
 }
@@ -307,7 +307,7 @@ func (b *SchemaBuilder) UpdateQueryDefinition(t *testing.T, outfile string) {
 // When placed in `static/schema/query.schema.json` folder of a plugin distribution,
 // it can be used to advertise various query types
 // If the spec contents have changed, the test will fail (but still update the output)
-func (b *SchemaBuilder) UpdateSettingsDefinition(t *testing.T, outfile string) {
+func (b *Builder) UpdateSettingsDefinition(t *testing.T, outfile string) {
 	t.Helper()
 
 	now := time.Now().UTC()
@@ -325,7 +325,7 @@ func (b *SchemaBuilder) UpdateSettingsDefinition(t *testing.T, outfile string) {
 		}
 	}
 	defs.Kind = "SettingsDefinitionList"
-	defs.ApiVersion = "common.grafana.app/v0alpha1"
+	defs.APIVersion = "common.grafana.app/v0alpha1"
 
 	// The updated schemas
 	for _, def := range b.query {
@@ -370,7 +370,7 @@ func (b *SchemaBuilder) UpdateSettingsDefinition(t *testing.T, outfile string) {
 		update = true
 	}
 	if update {
-		err = os.WriteFile(outfile, out, 0644)
+		err = os.WriteFile(outfile, out, 0600)
 		require.NoError(t, err, "error writing file")
 	}
 }

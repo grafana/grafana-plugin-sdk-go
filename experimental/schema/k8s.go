@@ -25,7 +25,7 @@ type QueryTypeDefinition struct {
 // exist they must be clearly specified with distinct discriminator field+value pairs
 type QueryTypeDefinitionList struct {
 	Kind       string `json:"kind"`       // "QueryTypeDefinitionList",
-	ApiVersion string `json:"apiVersion"` // "query.grafana.app/v0alpha1",
+	APIVersion string `json:"apiVersion"` // "query.grafana.app/v0alpha1",
 
 	ObjectMeta `json:"metadata,omitempty"`
 
@@ -44,7 +44,7 @@ type SettingsDefinition struct {
 // exist they must be clearly specified with distinct discriminator field+value pairs
 type SettingsDefinitionList struct {
 	Kind       string `json:"kind"`       // "SettingsDefinitionList",
-	ApiVersion string `json:"apiVersion"` // "??.common.grafana.app/v0alpha1",
+	APIVersion string `json:"apiVersion"` // "??.common.grafana.app/v0alpha1",
 
 	ObjectMeta `json:"metadata,omitempty"`
 
