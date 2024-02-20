@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -12,8 +13,13 @@ import (
 )
 
 const (
-	AppURL               = "GF_APP_URL"
-	ConcurrentQueryCount = "GF_CONCURRENT_QUERY_COUNT"
+	AppURL                           = "GF_APP_URL"
+	ConcurrentQueryCount             = "GF_CONCURRENT_QUERY_COUNT"
+	UserFacingDefaultError           = "GF_USER_FACING_DEFAULT_ERROR"
+	SQLRowLimit                      = "GF_SQL_ROW_LIMIT"
+	SQLMaxOpenConnsDefault           = "GF_SQL_MAX_OPEN_CONNS_DEFAULT"
+	SQLMaxIdleConnsDefault           = "GF_SQL_MAX_IDLE_CONNS_DEFAULT"
+	SQLMaxConnLifetimeSecondsDefault = "GF_SQL_MAX_CONN_LIFETIME_SECONDS_DEFAULT"
 )
 
 type configKey struct{}
@@ -149,6 +155,74 @@ func (c *GrafanaCfg) ConcurrentQueryCount() (int, error) {
 		return 0, fmt.Errorf("ConcurrentQueryCount cannot be converted to integer")
 	}
 	return i, nil
+}
+
+type SQLConfig struct {
+	RowLimit                      int64
+	DefaultMaxOpenConns           int
+	DefaultMaxIdleConns           int
+	DefaultMaxConnLifetimeSeconds int
+}
+
+func (c *GrafanaCfg) SQL() (SQLConfig, error) {
+	// max open connections
+	maxOpenString, ok := c.config[SQLMaxOpenConnsDefault]
+	if !ok {
+		return SQLConfig{}, errors.New("SQLDatasourceMaxOpenConnsDefault not set in config")
+	}
+
+	maxOpen, err := strconv.Atoi(maxOpenString)
+	if err != nil {
+		return SQLConfig{}, errors.New("SQLDatasourceMaxOpenConnsDefault config value is not a valid integer")
+	}
+
+	// max idle connections
+	maxIdleString, ok := c.config[SQLMaxIdleConnsDefault]
+	if !ok {
+		return SQLConfig{}, errors.New("SQLDatasourceMaxIdleConnsDefault not set in config")
+	}
+
+	maxIdle, err := strconv.Atoi(maxIdleString)
+	if err != nil {
+		return SQLConfig{}, errors.New("SQLDatasourceMaxIdleConnsDefault config value is not a valid integer")
+	}
+
+	// max connection lifetime
+	maxLifeString, ok := c.config[SQLMaxConnLifetimeSecondsDefault]
+	if !ok {
+		return SQLConfig{}, errors.New("SQLDatasourceMaxConnLifetimeDefault not set in config")
+	}
+
+	maxLife, err := strconv.Atoi(maxLifeString)
+	if err != nil {
+		return SQLConfig{}, errors.New("SQLDatasourceMaxConnLifetimeDefault config value is not a valid integer")
+	}
+
+	rowLimitString, ok := c.config[SQLRowLimit]
+	if !ok {
+		return SQLConfig{}, errors.New("RowLimit not set in config")
+	}
+
+	rowLimit, err := strconv.ParseInt(rowLimitString, 10, 64)
+	if err != nil {
+		return SQLConfig{}, errors.New("RowLimit in config is not a valid integer")
+	}
+
+	return SQLConfig{
+		RowLimit:                      rowLimit,
+		DefaultMaxOpenConns:           maxOpen,
+		DefaultMaxIdleConns:           maxIdle,
+		DefaultMaxConnLifetimeSeconds: maxLife,
+	}, nil
+}
+
+func (c *GrafanaCfg) UserFacingDefaultError() (string, error) {
+	value, ok := c.config[UserFacingDefaultError]
+	if !ok {
+		return "", errors.New("UserFacingDefaultError not set in config")
+	}
+
+	return value, nil
 }
 
 type userAgentKey struct{}
