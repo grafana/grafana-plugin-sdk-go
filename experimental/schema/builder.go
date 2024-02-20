@@ -34,9 +34,6 @@ type BuilderOptions struct {
 	// ex "./"
 	CodePath string
 
-	// queryType
-	DiscriminatorField string
-
 	// explicitly define the enumeration fields
 	Enums []reflect.Type
 }
@@ -44,8 +41,8 @@ type BuilderOptions struct {
 type QueryTypeInfo struct {
 	// The management name
 	Name string
-	// The discriminator value (requires the field set in ops)
-	Discriminator string
+	// Optional discriminators
+	Discriminators []DiscriminatorFieldValue
 	// Raw GO type used for reflection
 	GoType reflect.Type
 	// Add sample queries
@@ -55,8 +52,8 @@ type QueryTypeInfo struct {
 type SettingTypeInfo struct {
 	// The management name
 	Name string
-	// The discriminator value (requires the field set in ops)
-	Discriminator string
+	// Optional discriminators
+	Discriminators []DiscriminatorFieldValue
 	// Raw GO type used for reflection
 	GoType reflect.Type
 	// Map[string]string
@@ -124,32 +121,33 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 
 		b.enumify(schema)
 
-		// used by kube-openapi
-		schema.Version = "https://json-schema.org/draft-04/schema"
-		schema.ID = ""
-		schema.Anchor = ""
-
 		name := info.Name
 		if name == "" {
-			name = info.Discriminator
+			for _, dis := range info.Discriminators {
+				if name != "" {
+					name += "-"
+				}
+				name += dis.Value
+			}
 			if name == "" {
-				return fmt.Errorf("missing name or discriminator")
+				return fmt.Errorf("missing name or discriminators")
 			}
 		}
 
-		if info.Discriminator != "" && b.opts.DiscriminatorField == "" {
-			return fmt.Errorf("missing discriminator field")
-		}
+		// We need to be careful to only use draft-04 so that this is possible to use
+		// with kube-openapi
+		schema.Version = "https://json-schema.org/draft-04/schema"
+		schema.ID = ""
+		schema.Anchor = ""
 
 		b.query = append(b.query, QueryTypeDefinition{
 			ObjectMeta: ObjectMeta{
 				Name: name,
 			},
 			Spec: QueryTypeDefinitionSpec{
-				DiscriminatorField: b.opts.DiscriminatorField,
-				DiscriminatorValue: info.Discriminator,
-				QuerySchema:        schema,
-				Examples:           info.Examples,
+				Discriminators: info.Discriminators,
+				QuerySchema:    schema,
+				Examples:       info.Examples,
 			},
 		})
 	}
@@ -158,6 +156,11 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 
 func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
 	for _, info := range inputs {
+		name := info.Name
+		if name == "" {
+			return fmt.Errorf("missing name")
+		}
+
 		schema := b.reflector.ReflectFromType(info.GoType)
 		if schema == nil {
 			return fmt.Errorf("missing schema")
@@ -170,26 +173,13 @@ func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
 		schema.ID = ""
 		schema.Anchor = ""
 
-		name := info.Name
-		if name == "" {
-			name = info.Discriminator
-			if name == "" {
-				return fmt.Errorf("missing name or discriminator")
-			}
-		}
-
-		if info.Discriminator != "" && b.opts.DiscriminatorField == "" {
-			return fmt.Errorf("missing discriminator field")
-		}
-
 		b.setting = append(b.setting, SettingsDefinition{
 			ObjectMeta: ObjectMeta{
 				Name: name,
 			},
 			Spec: SettingsDefinitionSpec{
-				DiscriminatorField: b.opts.DiscriminatorField,
-				DiscriminatorValue: info.Discriminator,
-				JSONDataSchema:     schema,
+				Discriminators: info.Discriminators,
+				JSONDataSchema: schema,
 			},
 		})
 	}

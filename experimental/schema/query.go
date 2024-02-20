@@ -3,17 +3,38 @@ package schema
 import (
 	"embed"
 	"encoding/json"
+	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-type QueryTypeDefinitionSpec struct {
+type DiscriminatorFieldValue struct {
 	// DiscriminatorField is the field used to link behavior to this specific
 	// query type.  It is typically "queryType", but can be another field if necessary
-	DiscriminatorField string `json:"discriminatorField,omitempty"`
+	Field string `json:"field"`
 
 	// The discriminator value
-	DiscriminatorValue string `json:"discriminatorValue,omitempty"`
+	Value string `json:"value"`
+}
+
+// using any since this will often be enumerations
+func NewDiscriminators(keyvals ...any) []DiscriminatorFieldValue {
+	if len(keyvals)%2 != 0 {
+		panic("values must be even")
+	}
+	dis := []DiscriminatorFieldValue{}
+	for i := 0; i < len(keyvals); i += 2 {
+		dis = append(dis, DiscriminatorFieldValue{
+			Field: fmt.Sprintf("%v", keyvals[i]),
+			Value: fmt.Sprintf("%v", keyvals[i+1]),
+		})
+	}
+	return dis
+}
+
+type QueryTypeDefinitionSpec struct {
+	// Multiple schemas can be defined using discriminators
+	Discriminators []DiscriminatorFieldValue `json:"discriminators,omitempty"`
 
 	// Describe whe the query type is for
 	Description string `json:"description,omitempty"`

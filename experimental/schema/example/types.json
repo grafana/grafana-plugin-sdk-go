@@ -8,30 +8,34 @@
     {
       "metadata": {
         "name": "math",
-        "resourceVersion": "1708120730495",
+        "resourceVersion": "1708445277328",
         "creationTimestamp": "2024-02-14T01:12:13Z"
       },
       "spec": {
-        "discriminatorField": "queryType",
-        "discriminatorValue": "math",
+        "discriminators": [
+          {
+            "field": "queryType",
+            "value": "math"
+          }
+        ],
         "querySchema": {
           "$schema": "https://json-schema.org/draft-04/schema",
-          "additionalProperties": false,
           "properties": {
             "expression": {
+              "type": "string",
+              "minLength": 1,
               "description": "General math expression",
               "examples": [
                 "$A + 1",
                 "$A/$B"
-              ],
-              "minLength": 1,
-              "type": "string"
+              ]
             }
           },
+          "additionalProperties": false,
+          "type": "object",
           "required": [
             "expression"
-          ],
-          "type": "object"
+          ]
         },
         "examples": [
           {
@@ -52,22 +56,25 @@
     {
       "metadata": {
         "name": "reduce",
-        "resourceVersion": "1708120730495",
+        "resourceVersion": "1708445277328",
         "creationTimestamp": "2024-02-14T01:12:13Z"
       },
       "spec": {
-        "discriminatorField": "queryType",
-        "discriminatorValue": "reduce",
+        "discriminators": [
+          {
+            "field": "queryType",
+            "value": "reduce"
+          }
+        ],
         "querySchema": {
           "$schema": "https://json-schema.org/draft-04/schema",
-          "additionalProperties": false,
           "properties": {
             "expression": {
-              "description": "Reference to other query results",
-              "type": "string"
+              "type": "string",
+              "description": "Reference to other query results"
             },
             "reducer": {
-              "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
+              "type": "string",
               "enum": [
                 "sum",
                 "mean",
@@ -76,45 +83,46 @@
                 "count",
                 "last"
               ],
-              "type": "string",
+              "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
               "x-enum-description": {
                 "mean": "The mean",
                 "sum": "The sum"
               }
             },
             "settings": {
-              "additionalProperties": false,
-              "description": "Reducer Options",
               "properties": {
                 "mode": {
-                  "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
+                  "type": "string",
                   "enum": [
                     "dropNN",
                     "replaceNN"
                   ],
-                  "type": "string",
+                  "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
                   "x-enum-description": {
                     "dropNN": "Drop non-numbers",
                     "replaceNN": "Replace non-numbers"
                   }
                 },
                 "replaceWithValue": {
-                  "description": "Only valid when mode is replace",
-                  "type": "number"
+                  "type": "number",
+                  "description": "Only valid when mode is replace"
                 }
               },
+              "additionalProperties": false,
+              "type": "object",
               "required": [
                 "mode"
               ],
-              "type": "object"
+              "description": "Reducer Options"
             }
           },
+          "additionalProperties": false,
+          "type": "object",
           "required": [
             "expression",
             "reducer",
             "settings"
-          ],
-          "type": "object"
+          ]
         },
         "examples": [
           {
@@ -133,39 +141,43 @@
     {
       "metadata": {
         "name": "resample",
-        "resourceVersion": "1708120730495",
+        "resourceVersion": "1708445277328",
         "creationTimestamp": "2024-02-14T01:12:13Z"
       },
       "spec": {
-        "discriminatorField": "queryType",
-        "discriminatorValue": "resample",
+        "discriminators": [
+          {
+            "field": "queryType",
+            "value": "resample"
+          }
+        ],
         "querySchema": {
           "$schema": "https://json-schema.org/draft-04/schema",
-          "additionalProperties": false,
-          "description": "QueryType = resample",
           "properties": {
-            "downsampler": {
-              "description": "The reducer",
-              "type": "string"
-            },
             "expression": {
-              "description": "The math expression",
-              "type": "string"
+              "type": "string",
+              "description": "The math expression"
+            },
+            "window": {
+              "type": "string",
+              "description": "A time duration string"
+            },
+            "downsampler": {
+              "type": "string",
+              "description": "The reducer"
+            },
+            "upsampler": {
+              "type": "string",
+              "description": "The reducer"
             },
             "loadedDimensions": {
               "additionalProperties": true,
               "type": "object",
               "x-grafana-type": "data.DataFrame"
-            },
-            "upsampler": {
-              "description": "The reducer",
-              "type": "string"
-            },
-            "window": {
-              "description": "A time duration string",
-              "type": "string"
             }
           },
+          "additionalProperties": false,
+          "type": "object",
           "required": [
             "expression",
             "window",
@@ -173,7 +185,7 @@
             "upsampler",
             "loadedDimensions"
           ],
-          "type": "object"
+          "description": "QueryType = resample"
         }
       }
     }

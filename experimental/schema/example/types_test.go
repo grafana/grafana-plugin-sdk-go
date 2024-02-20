@@ -10,9 +10,8 @@ import (
 
 func TestQueryTypeDefinitions(t *testing.T) {
 	builder, err := schema.NewSchemaBuilder(schema.BuilderOptions{
-		BasePackage:        "github.com/grafana/grafana-plugin-sdk-go/experimental/schema/example",
-		DiscriminatorField: "queryType",
-		CodePath:           "./",
+		BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/schema/example",
+		CodePath:    "./",
 		// We need to identify the enum fields explicitly :(
 		// *AND* have the +enum common for this to work
 		Enums: []reflect.Type{
@@ -22,8 +21,8 @@ func TestQueryTypeDefinitions(t *testing.T) {
 	})
 	require.NoError(t, err)
 	err = builder.AddQueries(schema.QueryTypeInfo{
-		Discriminator: string(QueryTypeMath),
-		GoType:        reflect.TypeOf(&MathQuery{}),
+		Discriminators: schema.NewDiscriminators("queryType", QueryTypeMath),
+		GoType:         reflect.TypeOf(&MathQuery{}),
 		Examples: []schema.QueryExample{
 			{
 				Name: "constant addition",
@@ -40,8 +39,8 @@ func TestQueryTypeDefinitions(t *testing.T) {
 		},
 	},
 		schema.QueryTypeInfo{
-			Discriminator: string(QueryTypeReduce),
-			GoType:        reflect.TypeOf(&ReduceQuery{}),
+			Discriminators: schema.NewDiscriminators("queryType", QueryTypeReduce),
+			GoType:         reflect.TypeOf(&ReduceQuery{}),
 			Examples: []schema.QueryExample{
 				{
 					Name: "get max value",
@@ -56,8 +55,8 @@ func TestQueryTypeDefinitions(t *testing.T) {
 			},
 		},
 		schema.QueryTypeInfo{
-			Discriminator: string(QueryTypeResample),
-			GoType:        reflect.TypeOf(&ResampleQuery{}),
+			Discriminators: schema.NewDiscriminators("queryType", QueryTypeResample),
+			GoType:         reflect.TypeOf(&ResampleQuery{}),
 		})
 	require.NoError(t, err)
 

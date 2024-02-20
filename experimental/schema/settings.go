@@ -1,12 +1,8 @@
 package schema
 
 type SettingsDefinitionSpec struct {
-	// DiscriminatorField is the field used to link behavior to this specific
-	// query type.  It is typically "queryType", but can be another field if necessary
-	DiscriminatorField string `json:"discriminatorField,omitempty"`
-
-	// The discriminator value
-	DiscriminatorValue string `json:"discriminatorValue,omitempty"`
+	// Multiple schemas can be defined using discriminators
+	Discriminators []DiscriminatorFieldValue `json:"discriminators,omitempty"`
 
 	// Describe whe the query type is for
 	Description string `json:"description,omitempty"`
