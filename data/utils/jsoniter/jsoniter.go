@@ -22,8 +22,13 @@ const (
 )
 
 var (
-	ConfigDefault = j.ConfigDefault
+	ConfigDefault                       = j.ConfigDefault
+	ConfigCompatibleWithStandardLibrary = j.ConfigCompatibleWithStandardLibrary
 )
+
+type Stream = j.Stream
+type ValEncoder = j.ValEncoder
+type ValDecoder = j.ValDecoder
 
 type Iterator struct {
 	// named property instead of embedded so there is no
@@ -33,6 +38,14 @@ type Iterator struct {
 
 func NewIterator(i *j.Iterator) *Iterator {
 	return &Iterator{i}
+}
+
+func (iter *Iterator) ReadError() error {
+	return iter.i.Error
+}
+
+func (iter *Iterator) SetError(err error) {
+	iter.i.Error = err
 }
 
 func (iter *Iterator) Read() (interface{}, error) {
@@ -49,6 +62,11 @@ func (iter *Iterator) ReadArray() (bool, error) {
 
 func (iter *Iterator) ReadObject() (string, error) {
 	return iter.i.ReadObject(), iter.i.Error
+}
+
+func (iter *Iterator) CanReadArray() bool {
+	ok, err := iter.ReadArray()
+	return ok && err == nil
 }
 
 func (iter *Iterator) ReadString() (string, error) {
@@ -73,12 +91,44 @@ func (iter *Iterator) ReadVal(obj interface{}) error {
 	return iter.i.Error
 }
 
+func (iter *Iterator) ReadFloat32() (float32, error) {
+	return iter.i.ReadFloat32(), iter.i.Error
+}
+
 func (iter *Iterator) ReadFloat64() (float64, error) {
 	return iter.i.ReadFloat64(), iter.i.Error
 }
 
+func (iter *Iterator) ReadInt() (int, error) {
+	return iter.i.ReadInt(), iter.i.Error
+}
+
 func (iter *Iterator) ReadInt8() (int8, error) {
 	return iter.i.ReadInt8(), iter.i.Error
+}
+
+func (iter *Iterator) ReadInt16() (int16, error) {
+	return iter.i.ReadInt16(), iter.i.Error
+}
+
+func (iter *Iterator) ReadInt32() (int32, error) {
+	return iter.i.ReadInt32(), iter.i.Error
+}
+
+func (iter *Iterator) ReadInt64() (int64, error) {
+	return iter.i.ReadInt64(), iter.i.Error
+}
+
+func (iter *Iterator) ReadUint8() (uint8, error) {
+	return iter.i.ReadUint8(), iter.i.Error
+}
+
+func (iter *Iterator) ReadUint16() (uint16, error) {
+	return iter.i.ReadUint16(), iter.i.Error
+}
+
+func (iter *Iterator) ReadUint32() (uint32, error) {
+	return iter.i.ReadUint32(), iter.i.Error
 }
 
 func (iter *Iterator) ReadUint64() (uint64, error) {
@@ -127,4 +177,12 @@ func ParseBytes(cfg j.API, input []byte) (*Iterator, error) {
 func ParseString(cfg j.API, input string) (*Iterator, error) {
 	iter := &Iterator{j.ParseString(cfg, input)}
 	return iter, iter.i.Error
+}
+
+func RegisterTypeEncoder(typ string, encoder ValEncoder) {
+	j.RegisterTypeEncoder(typ, encoder)
+}
+
+func RegisterTypeDecoder(typ string, decoder ValDecoder) {
+	j.RegisterTypeDecoder(typ, decoder)
 }
