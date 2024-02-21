@@ -60,5 +60,5 @@ func TestQueryTypeDefinitions(t *testing.T) {
 		})
 	require.NoError(t, err)
 
-	builder.UpdateQueryDefinition(t, "types.json")
+	builder.UpdateQueryDefinition(t, "./")
 }

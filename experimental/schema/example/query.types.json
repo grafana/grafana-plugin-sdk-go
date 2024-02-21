@@ -2,14 +2,14 @@
   "kind": "QueryTypeDefinitionList",
   "apiVersion": "query.grafana.app/v0alpha1",
   "metadata": {
-    "resourceVersion": "1707873133114"
+    "resourceVersion": "1708548629808"
   },
   "items": [
     {
       "metadata": {
         "name": "math",
-        "resourceVersion": "1708445277328",
-        "creationTimestamp": "2024-02-14T01:12:13Z"
+        "resourceVersion": "1708548629808",
+        "creationTimestamp": "2024-02-21T20:50:29Z"
       },
       "spec": {
         "discriminators": [
@@ -56,8 +56,8 @@
     {
       "metadata": {
         "name": "reduce",
-        "resourceVersion": "1708445277328",
-        "creationTimestamp": "2024-02-14T01:12:13Z"
+        "resourceVersion": "1708548629808",
+        "creationTimestamp": "2024-02-21T20:50:29Z"
       },
       "spec": {
         "discriminators": [
@@ -141,8 +141,8 @@
     {
       "metadata": {
         "name": "resample",
-        "resourceVersion": "1708445277328",
-        "creationTimestamp": "2024-02-14T01:12:13Z"
+        "resourceVersion": "1708548629808",
+        "creationTimestamp": "2024-02-21T20:50:29Z"
       },
       "spec": {
         "discriminators": [

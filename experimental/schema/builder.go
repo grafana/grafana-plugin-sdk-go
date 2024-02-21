@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"regexp"
 	"strings"
@@ -222,12 +223,13 @@ func (b *Builder) enumify(s *jsonschema.Schema) {
 }
 
 // Update the schema definition file
-// When placed in `static/schema/query.schema.json` folder of a plugin distribution,
+// When placed in `static/schema/query.types.json` folder of a plugin distribution,
 // it can be used to advertise various query types
 // If the spec contents have changed, the test will fail (but still update the output)
-func (b *Builder) UpdateQueryDefinition(t *testing.T, outfile string) {
+func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) {
 	t.Helper()
 
+	outfile := filepath.Join(outdir, "query.types.json")
 	now := time.Now().UTC()
 	rv := fmt.Sprintf("%d", now.UnixMilli())
 
@@ -275,22 +277,35 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outfile string) {
 	if len(byName) > 0 {
 		require.FailNow(t, "query type removed, manually update (for now)")
 	}
+	maybeUpdateFile(t, outfile, defs, body)
 
-	out, err := json.MarshalIndent(defs, "", "  ")
+	// Read query info
+	r := new(jsonschema.Reflector)
+	r.DoNotReference = true
+	err = r.AddGoComments("github.com/grafana/grafana-plugin-sdk-go/experimental/schema", "./")
 	require.NoError(t, err)
 
-	update := false
-	if err == nil {
-		if !assert.JSONEq(t, string(out), string(body)) {
-			update = true
-		}
-	} else {
-		update = true
-	}
-	if update {
-		err = os.WriteFile(outfile, out, 0600)
-		require.NoError(t, err, "error writing file")
-	}
+	query := r.Reflect(&CommonQueryProperties{})
+	query.Version = "https://json-schema.org/draft-04/schema" // used by kube-openapi
+	query.Description = "Query properties shared by all data sources"
+
+	// Now update the query files
+	//----------------------------
+	outfile = filepath.Join(outdir, "query.post.schema.json")
+	schema, err := toQuerySchema(query, defs, false)
+	require.NoError(t, err)
+
+	body, _ = os.ReadFile(outfile)
+	maybeUpdateFile(t, outfile, schema, body)
+
+	// Now update the query files
+	//----------------------------
+	outfile = filepath.Join(outdir, "query.save.schema.json")
+	schema, err = toQuerySchema(query, defs, true)
+	require.NoError(t, err)
+
+	body, _ = os.ReadFile(outfile)
+	maybeUpdateFile(t, outfile, schema, body)
 }
 
 // Update the schema definition file
@@ -348,7 +363,109 @@ func (b *Builder) UpdateSettingsDefinition(t *testing.T, outfile string) {
 		require.FailNow(t, "query type removed, manually update (for now)")
 	}
 
-	out, err := json.MarshalIndent(defs, "", "  ")
+}
+
+// This
+func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, saveModel bool) (*jsonschema.Schema, error) {
+	descr := "Query model (the payload sent to /ds/query)"
+	if saveModel {
+		descr = "Save model (the payload saved in dashboards and alerts)"
+	}
+
+	ignoreForSave := map[string]bool{"maxDataPoints": true, "intervalMs": true, "timeRange": true}
+	definitions := make(jsonschema.Definitions)
+	common := make(map[string]*jsonschema.Schema)
+	for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
+		if saveModel && ignoreForSave[pair.Key] {
+			continue //
+		}
+		definitions[pair.Key] = pair.Value
+		common[pair.Key] = &jsonschema.Schema{Ref: "#/definitions/" + pair.Key}
+	}
+
+	// The types for each query type
+	queryTypes := []*jsonschema.Schema{}
+	for _, qt := range defs.Items {
+		node, err := asJSONSchema(qt.Spec.QuerySchema)
+		node.Version = ""
+		if err != nil {
+			return nil, fmt.Errorf("error reading query types schema: %s // %w", qt.ObjectMeta.Name, err)
+		}
+		if node == nil {
+			return nil, fmt.Errorf("missing query schema: %s // %v", qt.ObjectMeta.Name, qt)
+		}
+
+		// Match all discriminators
+		for _, d := range qt.Spec.Discriminators {
+			ds, ok := node.Properties.Get(d.Field)
+			if !ok {
+				ds = &jsonschema.Schema{Type: "string"}
+				node.Properties.Set(d.Field, ds)
+			}
+			ds.Pattern = `^` + d.Value + `$`
+			node.Required = append(node.Required, d.Field)
+		}
+
+		queryTypes = append(queryTypes, node)
+	}
+
+	// Single node -- just union the global and local properties
+	if len(queryTypes) == 1 {
+		node := queryTypes[0]
+		node.Version = "https://json-schema.org/draft-04/schema"
+		node.Description = descr
+		for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
+			_, found := node.Properties.Get(pair.Key)
+			if found {
+				continue
+			}
+			node.Properties.Set(pair.Key, pair.Value)
+		}
+		return node, nil
+	}
+
+	s := &jsonschema.Schema{
+		Type:        "object",
+		Version:     "https://json-schema.org/draft-04/schema",
+		Properties:  jsonschema.NewProperties(),
+		Definitions: make(jsonschema.Definitions),
+		Description: descr,
+	}
+
+	for _, qt := range queryTypes {
+		qt.Required = append(qt.Required, "refId")
+
+		for k, v := range common {
+			_, found := qt.Properties.Get(k)
+			if found {
+				continue
+			}
+			qt.Properties.Set(k, v)
+		}
+
+		s.OneOf = append(s.OneOf, qt)
+	}
+	return s, nil
+}
+
+func asJSONSchema(v any) (*jsonschema.Schema, error) {
+	s, ok := v.(*jsonschema.Schema)
+	if ok {
+		return s, nil
+	}
+	b, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+	s = &jsonschema.Schema{}
+	err = json.Unmarshal(b, s)
+	return s, err
+}
+
+func maybeUpdateFile(t *testing.T, outfile string, value any, body []byte) {
+	t.Helper()
+
+	out, err := json.MarshalIndent(value, "", "  ")
 	require.NoError(t, err)
 
 	update := false

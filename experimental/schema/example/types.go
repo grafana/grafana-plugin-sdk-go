@@ -33,11 +33,11 @@ var _ schema.TypedQueryParser[ExpressionQuery] = (*QueyHandler)(nil)
 
 type QueyHandler struct{}
 
-//go:embed types.json
+//go:embed query.types.json
 var f embed.FS
 
 func (*QueyHandler) QueryTypeDefinitionsJSON() (json.RawMessage, error) {
-	return f.ReadFile("types.json")
+	return f.ReadFile("query.types.json")
 }
 
 // ReadQuery implements query.TypedQueryHandler.
