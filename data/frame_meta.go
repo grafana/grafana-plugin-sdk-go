@@ -46,7 +46,7 @@ type FrameMeta struct {
 	PreferredVisualizationPluginID string `json:"preferredVisualisationPluginId,omitempty"`
 
 	// PreferredVisualizationPanelHeight sets the panel height when rendering in Explore.
-	PreferredVisualizationPanelHeight int `json:"preferredVisualizationPanelHeight,omitempty"`
+	PreferredVisualizationPanelHeight int `json:"preferredVisualisationPanelHeight,omitempty"`
 
 	// ExecutedQueryString is the raw query sent to the underlying system. All macros and templating
 	// have been applied.  When metadata contains this value, it will be shown in the query inspector.
