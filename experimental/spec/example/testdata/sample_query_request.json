@@ -1,22 +1,6 @@
 {
-  "from": "now-1h",
-  "to": "now",
-  "queries": [
-    {
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana-plugin-sdk-go/10b145dd3c45ac25f8048358164099ef6d747687/experimental/spec/example/query.post.schema.json",
       "refId": "A",
       "expression": "$A + 10"
-    },
-    {
-      "refId": "B",
-      "expression": "$A - $B"
-    },
-    {
-      "refId": "C",
-      "expression": "$A",
-      "reducer": "max",
-      "settings": {
-        "mode": "dropNN"
-      }
-    }
-  ]
+  
 }

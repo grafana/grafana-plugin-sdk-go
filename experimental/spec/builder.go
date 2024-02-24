@@ -388,7 +388,7 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 			continue //
 		}
 		definitions[pair.Key] = pair.Value
-		common[pair.Key] = &jsonschema.Schema{Ref: "#/definitions/" + pair.Key}
+		common[pair.Key] = &jsonschema.Schema{Ref: "#/defs/" + pair.Key}
 	}
 
 	// The types for each query type

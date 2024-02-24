@@ -73,19 +73,19 @@
           "pattern": "^math$"
         },
         "hide": {
-          "$ref": "#/definitions/hide"
+          "$ref": "#/defs/hide"
         },
         "refId": {
-          "$ref": "#/definitions/refId"
+          "$ref": "#/defs/refId"
         },
         "resultAssertions": {
-          "$ref": "#/definitions/resultAssertions"
+          "$ref": "#/defs/resultAssertions"
         },
         "datasource": {
-          "$ref": "#/definitions/datasource"
+          "$ref": "#/defs/datasource"
         },
         "datasourceId": {
-          "$ref": "#/definitions/datasourceId"
+          "$ref": "#/defs/datasourceId"
         }
       },
       "additionalProperties": false,
@@ -141,19 +141,19 @@
           "pattern": "^reduce$"
         },
         "refId": {
-          "$ref": "#/definitions/refId"
+          "$ref": "#/defs/refId"
         },
         "resultAssertions": {
-          "$ref": "#/definitions/resultAssertions"
+          "$ref": "#/defs/resultAssertions"
         },
         "datasource": {
-          "$ref": "#/definitions/datasource"
+          "$ref": "#/defs/datasource"
         },
         "datasourceId": {
-          "$ref": "#/definitions/datasourceId"
+          "$ref": "#/defs/datasourceId"
         },
         "hide": {
-          "$ref": "#/definitions/hide"
+          "$ref": "#/defs/hide"
         }
       },
       "additionalProperties": false,
@@ -193,19 +193,19 @@
           "pattern": "^resample$"
         },
         "datasource": {
-          "$ref": "#/definitions/datasource"
+          "$ref": "#/defs/datasource"
         },
         "datasourceId": {
-          "$ref": "#/definitions/datasourceId"
+          "$ref": "#/defs/datasourceId"
         },
         "hide": {
-          "$ref": "#/definitions/hide"
+          "$ref": "#/defs/hide"
         },
         "refId": {
-          "$ref": "#/definitions/refId"
+          "$ref": "#/defs/refId"
         },
         "resultAssertions": {
-          "$ref": "#/definitions/resultAssertions"
+          "$ref": "#/defs/resultAssertions"
         }
       },
       "additionalProperties": false,
