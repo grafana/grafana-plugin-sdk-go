@@ -1,5 +1,83 @@
 {
   "$schema": "https://json-schema.org/draft-04/schema",
+  "$defs": {
+    "datasource": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "uid"
+      ]
+    },
+    "datasourceId": {
+      "type": "integer"
+    },
+    "hide": {
+      "type": "boolean"
+    },
+    "intervalMs": {
+      "type": "number"
+    },
+    "maxDataPoints": {
+      "type": "integer"
+    },
+    "queryType": {
+      "type": "string"
+    },
+    "refId": {
+      "type": "string"
+    },
+    "resultAssertions": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "typeVersion": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array",
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "maxBytes": {
+          "type": "integer"
+        },
+        "maxFrames": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "typeVersion"
+      ]
+    },
+    "timeRange": {
+      "properties": {
+        "from": {
+          "type": "string"
+        },
+        "to": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ]
+    }
+  },
   "oneOf": [
     {
       "properties": {
@@ -16,20 +94,14 @@
           "type": "string",
           "pattern": "^math$"
         },
-        "datasourceId": {
-          "$ref": "#/definitions/datasourceId"
-        },
-        "maxDataPoints": {
-          "$ref": "#/definitions/maxDataPoints"
-        },
         "intervalMs": {
           "$ref": "#/definitions/intervalMs"
         },
         "hide": {
           "$ref": "#/definitions/hide"
         },
-        "refId": {
-          "$ref": "#/definitions/refId"
+        "datasource": {
+          "$ref": "#/definitions/datasource"
         },
         "resultAssertions": {
           "$ref": "#/definitions/resultAssertions"
@@ -37,8 +109,14 @@
         "timeRange": {
           "$ref": "#/definitions/timeRange"
         },
-        "datasource": {
-          "$ref": "#/definitions/datasource"
+        "datasourceId": {
+          "$ref": "#/definitions/datasourceId"
+        },
+        "maxDataPoints": {
+          "$ref": "#/definitions/maxDataPoints"
+        },
+        "refId": {
+          "$ref": "#/definitions/refId"
         }
       },
       "additionalProperties": false,
@@ -93,8 +171,14 @@
           "type": "string",
           "pattern": "^reduce$"
         },
-        "refId": {
-          "$ref": "#/definitions/refId"
+        "intervalMs": {
+          "$ref": "#/definitions/intervalMs"
+        },
+        "hide": {
+          "$ref": "#/definitions/hide"
+        },
+        "datasource": {
+          "$ref": "#/definitions/datasource"
         },
         "resultAssertions": {
           "$ref": "#/definitions/resultAssertions"
@@ -102,20 +186,14 @@
         "timeRange": {
           "$ref": "#/definitions/timeRange"
         },
-        "datasource": {
-          "$ref": "#/definitions/datasource"
-        },
-        "intervalMs": {
-          "$ref": "#/definitions/intervalMs"
-        },
-        "hide": {
-          "$ref": "#/definitions/hide"
-        },
         "datasourceId": {
           "$ref": "#/definitions/datasourceId"
         },
         "maxDataPoints": {
           "$ref": "#/definitions/maxDataPoints"
+        },
+        "refId": {
+          "$ref": "#/definitions/refId"
         }
       },
       "additionalProperties": false,
@@ -163,6 +241,12 @@
         "timeRange": {
           "$ref": "#/definitions/timeRange"
         },
+        "datasourceId": {
+          "$ref": "#/definitions/datasourceId"
+        },
+        "maxDataPoints": {
+          "$ref": "#/definitions/maxDataPoints"
+        },
         "datasource": {
           "$ref": "#/definitions/datasource"
         },
@@ -171,12 +255,6 @@
         },
         "hide": {
           "$ref": "#/definitions/hide"
-        },
-        "datasourceId": {
-          "$ref": "#/definitions/datasourceId"
-        },
-        "maxDataPoints": {
-          "$ref": "#/definitions/maxDataPoints"
         }
       },
       "additionalProperties": false,

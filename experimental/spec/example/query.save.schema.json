@@ -1,5 +1,61 @@
 {
   "$schema": "https://json-schema.org/draft-04/schema",
+  "$defs": {
+    "datasource": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "uid"
+      ]
+    },
+    "datasourceId": {
+      "type": "integer"
+    },
+    "hide": {
+      "type": "boolean"
+    },
+    "queryType": {
+      "type": "string"
+    },
+    "refId": {
+      "type": "string"
+    },
+    "resultAssertions": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "typeVersion": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array",
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "maxBytes": {
+          "type": "integer"
+        },
+        "maxFrames": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "typeVersion"
+      ]
+    }
+  },
   "oneOf": [
     {
       "properties": {
@@ -16,9 +72,6 @@
           "type": "string",
           "pattern": "^math$"
         },
-        "datasourceId": {
-          "$ref": "#/definitions/datasourceId"
-        },
         "hide": {
           "$ref": "#/definitions/hide"
         },
@@ -30,6 +83,9 @@
         },
         "datasource": {
           "$ref": "#/definitions/datasource"
+        },
+        "datasourceId": {
+          "$ref": "#/definitions/datasourceId"
         }
       },
       "additionalProperties": false,
@@ -136,12 +192,6 @@
           "type": "string",
           "pattern": "^resample$"
         },
-        "refId": {
-          "$ref": "#/definitions/refId"
-        },
-        "resultAssertions": {
-          "$ref": "#/definitions/resultAssertions"
-        },
         "datasource": {
           "$ref": "#/definitions/datasource"
         },
@@ -150,6 +200,12 @@
         },
         "hide": {
           "$ref": "#/definitions/hide"
+        },
+        "refId": {
+          "$ref": "#/definitions/refId"
+        },
+        "resultAssertions": {
+          "$ref": "#/definitions/resultAssertions"
         }
       },
       "additionalProperties": false,

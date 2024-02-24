@@ -14,7 +14,7 @@ import (
 func TestCommonSupport(t *testing.T) {
 	r := new(jsonschema.Reflector)
 	r.DoNotReference = true
-	err := r.AddGoComments("github.com/grafana/grafana-plugin-sdk-go/experimental/query", "./")
+	err := r.AddGoComments("github.com/grafana/grafana-plugin-sdk-go/experimental/spec", "./")
 	require.NoError(t, err)
 
 	query := r.Reflect(&CommonQueryProperties{})

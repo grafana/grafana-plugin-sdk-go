@@ -63,12 +63,7 @@ type QueryExample struct {
 	// Version identifier or empty if only one exists
 	Name string `json:"name,omitempty"`
 
-	// An example payload -- this should not require the frontend code to
-	// pre-process anything
-	QueryPayload any `json:"queryPayload,omitempty"`
-
-	// An example save model -- this will require frontend code to convert it
-	// into a valid query payload
+	// An example value saved that can be saved in a dashboard
 	SaveModel any `json:"saveModel,omitempty"`
 }
 
@@ -152,6 +147,6 @@ var f embed.FS
 
 // Get the cached feature list (exposed as a k8s resource)
 func GetCommonJSONSchema() json.RawMessage {
-	body, _ := f.ReadFile("common.jsonschema")
+	body, _ := f.ReadFile("query.schema.json")
 	return body
 }

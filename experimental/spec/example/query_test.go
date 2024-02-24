@@ -1,15 +1,17 @@
 package example
 
 import (
+	"encoding/json"
+	"fmt"
 	"reflect"
 	"testing"
 
-	schema "github.com/grafana/grafana-plugin-sdk-go/experimental/spec"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/spec"
 	"github.com/stretchr/testify/require"
 )
 
 func TestQueryTypeDefinitions(t *testing.T) {
-	builder, err := schema.NewSchemaBuilder(schema.BuilderOptions{
+	builder, err := spec.NewSchemaBuilder(spec.BuilderOptions{
 		BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/spec/example",
 		CodePath:    "./",
 		// We need to identify the enum fields explicitly :(
@@ -20,31 +22,31 @@ func TestQueryTypeDefinitions(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	err = builder.AddQueries(schema.QueryTypeInfo{
-		Discriminators: schema.NewDiscriminators("queryType", QueryTypeMath),
+	err = builder.AddQueries(spec.QueryTypeInfo{
+		Discriminators: spec.NewDiscriminators("queryType", QueryTypeMath),
 		GoType:         reflect.TypeOf(&MathQuery{}),
-		Examples: []schema.QueryExample{
+		Examples: []spec.QueryExample{
 			{
 				Name: "constant addition",
-				QueryPayload: MathQuery{
+				SaveModel: MathQuery{
 					Expression: "$A + 10",
 				},
 			},
 			{
 				Name: "math with two queries",
-				QueryPayload: MathQuery{
+				SaveModel: MathQuery{
 					Expression: "$A - $B",
 				},
 			},
 		},
 	},
-		schema.QueryTypeInfo{
-			Discriminators: schema.NewDiscriminators("queryType", QueryTypeReduce),
+		spec.QueryTypeInfo{
+			Discriminators: spec.NewDiscriminators("queryType", QueryTypeReduce),
 			GoType:         reflect.TypeOf(&ReduceQuery{}),
-			Examples: []schema.QueryExample{
+			Examples: []spec.QueryExample{
 				{
 					Name: "get max value",
-					QueryPayload: ReduceQuery{
+					SaveModel: ReduceQuery{
 						Expression: "$A",
 						Reducer:    ReducerMax,
 						Settings: ReduceSettings{
@@ -54,11 +56,19 @@ func TestQueryTypeDefinitions(t *testing.T) {
 				},
 			},
 		},
-		schema.QueryTypeInfo{
-			Discriminators: schema.NewDiscriminators("queryType", QueryTypeResample),
+		spec.QueryTypeInfo{
+			Discriminators: spec.NewDiscriminators("queryType", QueryTypeResample),
 			GoType:         reflect.TypeOf(&ResampleQuery{}),
 		})
 	require.NoError(t, err)
 
-	builder.UpdateQueryDefinition(t, "./")
+	defs := builder.UpdateQueryDefinition(t, "./")
+
+	queries, err := spec.GetExampleQueries(defs)
+	require.NoError(t, err)
+
+	out, err := json.MarshalIndent(queries, "", "  ")
+	require.NoError(t, err)
+
+	fmt.Printf("%s", string(out))
 }

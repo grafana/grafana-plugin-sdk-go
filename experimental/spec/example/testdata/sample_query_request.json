@@ -1,0 +1,22 @@
+{
+  "from": "now-1h",
+  "to": "now",
+  "queries": [
+    {
+      "refId": "A",
+      "expression": "$A + 10"
+    },
+    {
+      "refId": "B",
+      "expression": "$A - $B"
+    },
+    {
+      "refId": "C",
+      "expression": "$A",
+      "reducer": "max",
+      "settings": {
+        "mode": "dropNN"
+      }
+    }
+  ]
+}
