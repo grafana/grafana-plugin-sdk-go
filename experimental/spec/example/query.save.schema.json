@@ -4,10 +4,12 @@
     "datasource": {
       "properties": {
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "The datasource plugin type"
         },
         "uid": {
-          "type": "string"
+          "type": "string",
+          "description": "Datasource UID"
         }
       },
       "additionalProperties": false,
@@ -15,24 +17,26 @@
       "required": [
         "type",
         "uid"
-      ]
-    },
-    "datasourceId": {
-      "type": "integer"
+      ],
+      "description": "The datasource"
     },
     "hide": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "true if query is disabled (ie should not be returned to the dashboard)\nNOTE: this does not always imply that the query should not be executed since\nthe results from a hidden query may be used as the input to other queries (SSE etc)"
     },
     "queryType": {
-      "type": "string"
+      "type": "string",
+      "description": "QueryType is an optional identifier for the type of query.\nIt can be used to distinguish different types of queries."
     },
     "refId": {
-      "type": "string"
+      "type": "string",
+      "description": "RefID is the unique identifier of the query, set by the frontend call."
     },
     "resultAssertions": {
       "properties": {
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "Type asserts that the frame matches a known type structure."
         },
         "typeVersion": {
           "items": {
@@ -40,20 +44,43 @@
           },
           "type": "array",
           "maxItems": 2,
-          "minItems": 2
+          "minItems": 2,
+          "description": "TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane\ncontract documentation https://grafana.github.io/dataplane/contract/."
         },
         "maxBytes": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Maximum bytes that can be read -- if the query planning expects more then this, the query may fail fast"
         },
         "maxFrames": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Maximum frame count"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
         "typeVersion"
-      ]
+      ],
+      "description": "Optionally define expected query result behavior"
+    },
+    "timeRange": {
+      "properties": {
+        "from": {
+          "type": "string",
+          "description": "From is the start time of the query."
+        },
+        "to": {
+          "type": "string",
+          "description": "To is the end time of the query."
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ],
+      "description": "TimeRange represents the query range\nNOTE: unlike generic /ds/query, we can now send explicit time values in each query\nNOTE: the values for timeRange are not saved in a dashboard, they are constructed on the fly"
     }
   },
   "oneOf": [
@@ -72,20 +99,20 @@
           "type": "string",
           "pattern": "^math$"
         },
+        "datasource": {
+          "$ref": "#/$defs/datasource"
+        },
         "hide": {
-          "$ref": "#/defs/hide"
+          "$ref": "#/$defs/hide"
         },
         "refId": {
-          "$ref": "#/defs/refId"
+          "$ref": "#/$defs/refId"
         },
         "resultAssertions": {
-          "$ref": "#/defs/resultAssertions"
+          "$ref": "#/$defs/resultAssertions"
         },
-        "datasource": {
-          "$ref": "#/defs/datasource"
-        },
-        "datasourceId": {
-          "$ref": "#/defs/datasourceId"
+        "timeRange": {
+          "$ref": "#/$defs/timeRange"
         }
       },
       "additionalProperties": false,
@@ -140,20 +167,20 @@
           "type": "string",
           "pattern": "^reduce$"
         },
-        "refId": {
-          "$ref": "#/defs/refId"
-        },
-        "resultAssertions": {
-          "$ref": "#/defs/resultAssertions"
+        "timeRange": {
+          "$ref": "#/$defs/timeRange"
         },
         "datasource": {
-          "$ref": "#/defs/datasource"
-        },
-        "datasourceId": {
-          "$ref": "#/defs/datasourceId"
+          "$ref": "#/$defs/datasource"
         },
         "hide": {
-          "$ref": "#/defs/hide"
+          "$ref": "#/$defs/hide"
+        },
+        "refId": {
+          "$ref": "#/$defs/refId"
+        },
+        "resultAssertions": {
+          "$ref": "#/$defs/resultAssertions"
         }
       },
       "additionalProperties": false,
@@ -192,20 +219,20 @@
           "type": "string",
           "pattern": "^resample$"
         },
-        "datasource": {
-          "$ref": "#/defs/datasource"
-        },
-        "datasourceId": {
-          "$ref": "#/defs/datasourceId"
-        },
         "hide": {
-          "$ref": "#/defs/hide"
+          "$ref": "#/$defs/hide"
         },
         "refId": {
-          "$ref": "#/defs/refId"
+          "$ref": "#/$defs/refId"
         },
         "resultAssertions": {
-          "$ref": "#/defs/resultAssertions"
+          "$ref": "#/$defs/resultAssertions"
+        },
+        "timeRange": {
+          "$ref": "#/$defs/timeRange"
+        },
+        "datasource": {
+          "$ref": "#/$defs/datasource"
         }
       },
       "additionalProperties": false,

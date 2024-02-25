@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"unsafe"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 	j "github.com/json-iterator/go"
 )
@@ -97,6 +98,79 @@ func (g *GenericDataQuery) DeepCopy() *GenericDataQuery {
 func (g *GenericDataQuery) DeepCopyInto(out *GenericDataQuery) {
 	clone := g.DeepCopy()
 	*out = *clone
+}
+
+// Set allows setting values using key/value pairs
+func (g *GenericDataQuery) Set(key string, val any) *GenericDataQuery {
+	switch key {
+	case "refId":
+		g.RefID, _ = val.(string)
+	case "resultAssertions":
+		body, err := json.Marshal(val)
+		if err != nil {
+			_ = json.Unmarshal(body, &g.ResultAssertions)
+		}
+	case "timeRange":
+		body, err := json.Marshal(val)
+		if err != nil {
+			_ = json.Unmarshal(body, &g.TimeRange)
+		}
+	case "datasource":
+		body, err := json.Marshal(val)
+		if err != nil {
+			_ = json.Unmarshal(body, &g.Datasource)
+		}
+	case "datasourceId":
+		v, err := converters.JSONValueToInt64.Converter(val)
+		if err != nil {
+			g.DatasourceID, _ = v.(int64)
+		}
+	case "queryType":
+		g.QueryType, _ = val.(string)
+	case "maxDataPoints":
+		v, err := converters.JSONValueToInt64.Converter(val)
+		if err != nil {
+			g.MaxDataPoints, _ = v.(int64)
+		}
+	case "intervalMs":
+		v, err := converters.JSONValueToFloat64.Converter(val)
+		if err != nil {
+			g.IntervalMS, _ = v.(float64)
+		}
+	case "hide":
+		g.Hide, _ = val.(bool)
+	default:
+		if g.additional == nil {
+			g.additional = make(map[string]any)
+		}
+		g.additional[key] = val
+	}
+	return g
+}
+
+func (g *GenericDataQuery) Get(key string) (any, bool) {
+	switch key {
+	case "refId":
+		return g.RefID, true
+	case "resultAssertions":
+		return g.ResultAssertions, true
+	case "timeRange":
+		return g.TimeRange, true
+	case "datasource":
+		return g.Datasource, true
+	case "datasourceId":
+		return g.DatasourceID, true
+	case "queryType":
+		return g.QueryType, true
+	case "maxDataPoints":
+		return g.MaxDataPoints, true
+	case "intervalMs":
+		return g.IntervalMS, true
+	case "hide":
+		return g.Hide, true
+	}
+	v, ok := g.additional[key]
+	return v, ok
 }
 
 type genericQueryCodec struct{}

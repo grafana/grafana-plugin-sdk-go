@@ -4,10 +4,12 @@
     "datasource": {
       "properties": {
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "The datasource plugin type"
         },
         "uid": {
-          "type": "string"
+          "type": "string",
+          "description": "Datasource UID"
         }
       },
       "additionalProperties": false,
@@ -15,30 +17,34 @@
       "required": [
         "type",
         "uid"
-      ]
-    },
-    "datasourceId": {
-      "type": "integer"
+      ],
+      "description": "The datasource"
     },
     "hide": {
-      "type": "boolean"
+      "type": "boolean",
+      "description": "true if query is disabled (ie should not be returned to the dashboard)\nNOTE: this does not always imply that the query should not be executed since\nthe results from a hidden query may be used as the input to other queries (SSE etc)"
     },
     "intervalMs": {
-      "type": "number"
+      "type": "number",
+      "description": "Interval is the suggested duration between time points in a time series query.\nNOTE: the values for intervalMs is not saved in the query model.  It is typically calculated\nfrom the interval required to fill a pixels in the visualization"
     },
     "maxDataPoints": {
-      "type": "integer"
+      "type": "integer",
+      "description": "MaxDataPoints is the maximum number of data points that should be returned from a time series query.\nNOTE: the values for maxDataPoints is not saved in the query model.  It is typically calculated\nfrom the number of pixels visible in a visualization"
     },
     "queryType": {
-      "type": "string"
+      "type": "string",
+      "description": "QueryType is an optional identifier for the type of query.\nIt can be used to distinguish different types of queries."
     },
     "refId": {
-      "type": "string"
+      "type": "string",
+      "description": "RefID is the unique identifier of the query, set by the frontend call."
     },
     "resultAssertions": {
       "properties": {
         "type": {
-          "type": "string"
+          "type": "string",
+          "description": "Type asserts that the frame matches a known type structure."
         },
         "typeVersion": {
           "items": {
@@ -46,28 +52,34 @@
           },
           "type": "array",
           "maxItems": 2,
-          "minItems": 2
+          "minItems": 2,
+          "description": "TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane\ncontract documentation https://grafana.github.io/dataplane/contract/."
         },
         "maxBytes": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Maximum bytes that can be read -- if the query planning expects more then this, the query may fail fast"
         },
         "maxFrames": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Maximum frame count"
         }
       },
       "additionalProperties": false,
       "type": "object",
       "required": [
         "typeVersion"
-      ]
+      ],
+      "description": "Optionally define expected query result behavior"
     },
     "timeRange": {
       "properties": {
         "from": {
-          "type": "string"
+          "type": "string",
+          "description": "From is the start time of the query."
         },
         "to": {
-          "type": "string"
+          "type": "string",
+          "description": "To is the end time of the query."
         }
       },
       "additionalProperties": false,
@@ -75,7 +87,8 @@
       "required": [
         "from",
         "to"
-      ]
+      ],
+      "description": "TimeRange represents the query range\nNOTE: unlike generic /ds/query, we can now send explicit time values in each query\nNOTE: the values for timeRange are not saved in a dashboard, they are constructed on the fly"
     }
   },
   "oneOf": [
@@ -95,28 +108,25 @@
           "pattern": "^math$"
         },
         "timeRange": {
-          "$ref": "#/defs/timeRange"
-        },
-        "maxDataPoints": {
-          "$ref": "#/defs/maxDataPoints"
-        },
-        "hide": {
-          "$ref": "#/defs/hide"
-        },
-        "refId": {
-          "$ref": "#/defs/refId"
+          "$ref": "#/$defs/timeRange"
         },
         "datasource": {
-          "$ref": "#/defs/datasource"
+          "$ref": "#/$defs/datasource"
         },
-        "datasourceId": {
-          "$ref": "#/defs/datasourceId"
+        "maxDataPoints": {
+          "$ref": "#/$defs/maxDataPoints"
         },
         "intervalMs": {
-          "$ref": "#/defs/intervalMs"
+          "$ref": "#/$defs/intervalMs"
+        },
+        "hide": {
+          "$ref": "#/$defs/hide"
+        },
+        "refId": {
+          "$ref": "#/$defs/refId"
         },
         "resultAssertions": {
-          "$ref": "#/defs/resultAssertions"
+          "$ref": "#/$defs/resultAssertions"
         }
       },
       "additionalProperties": false,
@@ -171,29 +181,26 @@
           "type": "string",
           "pattern": "^reduce$"
         },
-        "maxDataPoints": {
-          "$ref": "#/defs/maxDataPoints"
-        },
-        "hide": {
-          "$ref": "#/defs/hide"
-        },
-        "refId": {
-          "$ref": "#/defs/refId"
-        },
         "timeRange": {
-          "$ref": "#/defs/timeRange"
-        },
-        "datasourceId": {
-          "$ref": "#/defs/datasourceId"
-        },
-        "intervalMs": {
-          "$ref": "#/defs/intervalMs"
-        },
-        "resultAssertions": {
-          "$ref": "#/defs/resultAssertions"
+          "$ref": "#/$defs/timeRange"
         },
         "datasource": {
-          "$ref": "#/defs/datasource"
+          "$ref": "#/$defs/datasource"
+        },
+        "maxDataPoints": {
+          "$ref": "#/$defs/maxDataPoints"
+        },
+        "intervalMs": {
+          "$ref": "#/$defs/intervalMs"
+        },
+        "hide": {
+          "$ref": "#/$defs/hide"
+        },
+        "refId": {
+          "$ref": "#/$defs/refId"
+        },
+        "resultAssertions": {
+          "$ref": "#/$defs/resultAssertions"
         }
       },
       "additionalProperties": false,
@@ -232,29 +239,26 @@
           "type": "string",
           "pattern": "^resample$"
         },
-        "resultAssertions": {
-          "$ref": "#/defs/resultAssertions"
-        },
-        "datasource": {
-          "$ref": "#/defs/datasource"
-        },
-        "datasourceId": {
-          "$ref": "#/defs/datasourceId"
-        },
         "intervalMs": {
-          "$ref": "#/defs/intervalMs"
-        },
-        "refId": {
-          "$ref": "#/defs/refId"
-        },
-        "timeRange": {
-          "$ref": "#/defs/timeRange"
-        },
-        "maxDataPoints": {
-          "$ref": "#/defs/maxDataPoints"
+          "$ref": "#/$defs/intervalMs"
         },
         "hide": {
-          "$ref": "#/defs/hide"
+          "$ref": "#/$defs/hide"
+        },
+        "refId": {
+          "$ref": "#/$defs/refId"
+        },
+        "resultAssertions": {
+          "$ref": "#/$defs/resultAssertions"
+        },
+        "timeRange": {
+          "$ref": "#/$defs/timeRange"
+        },
+        "datasource": {
+          "$ref": "#/$defs/datasource"
+        },
+        "maxDataPoints": {
+          "$ref": "#/$defs/maxDataPoints"
         }
       },
       "additionalProperties": false,

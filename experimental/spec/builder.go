@@ -287,12 +287,9 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) QueryTypeDe
 	require.NoError(t, err)
 
 	// Read query info
-	r := new(jsonschema.Reflector)
-	r.DoNotReference = true
-	err = r.AddGoComments("github.com/grafana/grafana-plugin-sdk-go/experimental/spec", "./")
+	query := &jsonschema.Schema{}
+	err = query.UnmarshalJSON(GetCommonJSONSchema())
 	require.NoError(t, err)
-
-	query := r.Reflect(&CommonQueryProperties{})
 	query.Version = draft04 // used by kube-openapi
 	query.Description = "Query properties shared by all data sources"
 
@@ -380,7 +377,7 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 		descr = "Save model (the payload saved in dashboards and alerts)"
 	}
 
-	ignoreForSave := map[string]bool{"maxDataPoints": true, "intervalMs": true, "timeRange": true}
+	ignoreForSave := map[string]bool{"maxDataPoints": true, "intervalMs": true}
 	definitions := make(jsonschema.Definitions)
 	common := make(map[string]*jsonschema.Schema)
 	for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
@@ -388,7 +385,7 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 			continue //
 		}
 		definitions[pair.Key] = pair.Value
-		common[pair.Key] = &jsonschema.Schema{Ref: "#/defs/" + pair.Key}
+		common[pair.Key] = &jsonschema.Schema{Ref: "#/$defs/" + pair.Key}
 	}
 
 	// The types for each query type
@@ -507,8 +504,11 @@ func maybeUpdateFile(t *testing.T, outfile string, value any, body []byte) {
 
 func GetExampleQueries(defs QueryTypeDefinitionList) (QueryRequest[GenericDataQuery], error) {
 	rsp := QueryRequest[GenericDataQuery]{
+		From:    "now-1h",
+		To:      "now",
 		Queries: []GenericDataQuery{},
 	}
+
 	for _, def := range defs.Items {
 		for _, sample := range def.Spec.Examples {
 			if sample.SaveModel != nil {
@@ -518,6 +518,17 @@ func GetExampleQueries(defs QueryTypeDefinitionList) (QueryRequest[GenericDataQu
 						sample.Name, def.ObjectMeta.Name, err)
 				}
 				q.RefID = string(rune('A' + len(rsp.Queries)))
+				for _, dis := range def.Spec.Discriminators {
+					_ = q.Set(dis.Field, dis.Value)
+				}
+
+				if q.MaxDataPoints < 1 {
+					q.MaxDataPoints = 1000
+				}
+				if q.IntervalMS < 1 {
+					q.IntervalMS = 5
+				}
+
 				rsp.Queries = append(rsp.Queries, *q)
 			}
 		}
