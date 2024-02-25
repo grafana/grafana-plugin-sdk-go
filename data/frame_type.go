@@ -10,6 +10,7 @@ import (
 // frame's structure conforms to the FrameType's specification.
 // This property is currently optional, so FrameType may be FrameTypeUnknown even if the properties of
 // the Frame correspond to a defined FrameType.
+// +enum
 type FrameType string
 
 // ---
