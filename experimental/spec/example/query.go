@@ -1,8 +1,6 @@
 package example
 
 import (
-	"embed"
-	"encoding/json"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
@@ -32,13 +30,6 @@ type ExpressionQuery interface {
 var _ spec.TypedQueryParser[ExpressionQuery] = (*QueyHandler)(nil)
 
 type QueyHandler struct{}
-
-//go:embed query.types.json
-var f embed.FS
-
-func (*QueyHandler) QueryTypeDefinitionsJSON() (json.RawMessage, error) {
-	return f.ReadFile("query.types.json")
-}
 
 // ReadQuery implements query.TypedQueryHandler.
 func (*QueyHandler) ParseQuery(

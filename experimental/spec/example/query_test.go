@@ -1,8 +1,6 @@
 package example
 
 import (
-	"encoding/json"
-	"fmt"
 	"reflect"
 	"testing"
 
@@ -62,13 +60,5 @@ func TestQueryTypeDefinitions(t *testing.T) {
 		})
 	require.NoError(t, err)
 
-	defs := builder.UpdateQueryDefinition(t, "./")
-
-	queries, err := spec.GetExampleQueries(defs)
-	require.NoError(t, err)
-
-	out, err := json.MarshalIndent(queries, "", "  ")
-	require.NoError(t, err)
-
-	fmt.Printf("%s", string(out))
+	_ = builder.UpdateQueryDefinition(t, "./")
 }

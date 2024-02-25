@@ -15,6 +15,9 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"k8s.io/kube-openapi/pkg/validation/spec"
+	"k8s.io/kube-openapi/pkg/validation/strfmt"
+	"k8s.io/kube-openapi/pkg/validation/validate"
 )
 
 // The k8s compatible jsonschema version
@@ -95,7 +98,7 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 					s := &jsonschema.Schema{
 						Type: "string",
 						Extras: map[string]any{
-							"x-enum-dictionary": enumValueDescriptions,
+							"x-enum-description": enumValueDescriptions,
 						},
 					}
 					for _, val := range f.Values {
@@ -195,7 +198,7 @@ var whitespaceRegex = regexp.MustCompile(`\s+`)
 
 func (b *Builder) enumify(s *jsonschema.Schema) {
 	if len(s.Enum) > 0 && s.Extras != nil {
-		extra, ok := s.Extras["x-enum-dictionary"]
+		extra, ok := s.Extras["x-enum-description"]
 		if !ok {
 			return
 		}
@@ -282,34 +285,44 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) QueryTypeDe
 	}
 	maybeUpdateFile(t, outfile, defs, body)
 
-	// Make sure the sample queries are actually valid
-	_, err = GetExampleQueries(defs)
-	require.NoError(t, err)
-
-	// Read query info
-	query := &jsonschema.Schema{}
+	// Read common query properties
+	query := &spec.Schema{}
 	err = query.UnmarshalJSON(GetCommonJSONSchema())
 	require.NoError(t, err)
-	query.Version = draft04 // used by kube-openapi
-	query.Description = "Query properties shared by all data sources"
 
-	// Now update the query files
-	//----------------------------
-	outfile = filepath.Join(outdir, "query.request.schema.json")
-	schema, err := toQuerySchema(query, defs, true)
-	require.NoError(t, err)
-
-	body, _ = os.ReadFile(outfile)
-	maybeUpdateFile(t, outfile, schema, body)
-
-	// Now update the query files
-	//----------------------------
+	// Update the query save model schema
+	//------------------------------------
 	outfile = filepath.Join(outdir, "query.schema.json")
-	schema, err = toQuerySchema(query, defs, false)
+	schema, err := toQuerySchema(query, defs, false)
 	require.NoError(t, err)
 
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, schema, body)
+
+	// Update the request payload schema
+	//------------------------------------
+	outfile = filepath.Join(outdir, "query.request.schema.json")
+	schema, err = toQuerySchema(query, defs, true)
+	require.NoError(t, err)
+
+	body, _ = os.ReadFile(outfile)
+	maybeUpdateFile(t, outfile, schema, body)
+
+	// Verify that the example queries actually validate
+	//------------------------------------
+	request, err := GetExampleQueries(defs)
+	require.NoError(t, err)
+
+	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
+	result := validator.Validate(request)
+	require.False(t, result.HasErrorsOrWarnings())
+	require.True(t, result.MatchCount > 0, "must have some rules")
+	fmt.Printf("Validation: %+v\n", result)
+
+	outfile = filepath.Join(outdir, "query.request.examples.json")
+	body, _ = os.ReadFile(outfile)
+	maybeUpdateFile(t, outfile, request, body)
+
 	return defs
 }
 
@@ -373,28 +386,25 @@ func (b *Builder) UpdateSettingsDefinition(t *testing.T, outfile string) Setting
 // Converts a set of queries into a single real schema (merged with the common properties)
 // This returns a the raw bytes because `invopop/jsonschema` requires extra manipulation
 // so that the results are readable by `kubernetes/kube-openapi`
-func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, isRequest bool) (json.RawMessage, error) {
+func toQuerySchema(generic *spec.Schema, defs QueryTypeDefinitionList, isRequest bool) (*spec.Schema, error) {
 	descr := "object saved in dashboard/alert"
 	if isRequest {
 		descr = "Datasource request model"
 	}
 
 	ignoreForSave := map[string]bool{"maxDataPoints": true, "intervalMs": true}
-	definitions := make(jsonschema.Definitions)
-	common := make(map[string]*jsonschema.Schema)
-	for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
-		if !isRequest && ignoreForSave[pair.Key] {
+	common := make(map[string]spec.Schema)
+	for key, val := range generic.Properties {
+		if !isRequest && ignoreForSave[key] {
 			continue //
 		}
-		definitions[pair.Key] = pair.Value
-		common[pair.Key] = &jsonschema.Schema{Ref: "#/definitions/" + pair.Key}
+		common[key] = val
 	}
 
 	// The types for each query type
-	queryTypes := []*jsonschema.Schema{}
+	queryTypes := []*spec.Schema{}
 	for _, qt := range defs.Items {
 		node, err := asJSONSchema(qt.Spec.QuerySchema)
-		node.Version = ""
 		if err != nil {
 			return nil, fmt.Errorf("error reading query types schema: %s // %w", qt.ObjectMeta.Name, err)
 		}
@@ -404,111 +414,83 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, isR
 
 		// Match all discriminators
 		for _, d := range qt.Spec.Discriminators {
-			ds, ok := node.Properties.Get(d.Field)
+			ds, ok := node.Properties[d.Field]
 			if !ok {
-				ds = &jsonschema.Schema{Type: "string"}
-				node.Properties.Set(d.Field, ds)
+				ds = *spec.StringProperty()
 			}
 			ds.Pattern = `^` + d.Value + `$`
+			node.Properties[d.Field] = ds
 			node.Required = append(node.Required, d.Field)
 		}
 
 		queryTypes = append(queryTypes, node)
 	}
 
-	s := &jsonschema.Schema{
-		Type:        "object",
-		Version:     draft04,
-		Properties:  jsonschema.NewProperties(),
-		Definitions: definitions,
-		Description: descr,
+	s := &spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Type:        []string{"object"},
+			Schema:      draft04,
+			Properties:  make(map[string]spec.Schema),
+			Description: descr,
+		},
 	}
 
 	// Single node -- just union the global and local properties
 	if len(queryTypes) == 1 {
 		s = queryTypes[0]
-		s.Version = draft04
+		s.Schema = draft04
 		s.Description = descr
-		for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
-			_, found := s.Properties.Get(pair.Key)
+		for key, val := range generic.Properties {
+			_, found := s.Properties[key]
 			if found {
 				continue
 			}
-			s.Properties.Set(pair.Key, pair.Value)
+			s.Properties[key] = val
 		}
 	} else {
 		for _, qt := range queryTypes {
 			qt.Required = append(qt.Required, "refId")
 
 			for k, v := range common {
-				_, found := qt.Properties.Get(k)
+				_, found := qt.Properties[k]
 				if found {
 					continue
 				}
-				qt.Properties.Set(k, v)
+				qt.Properties[k] = v
 			}
 
-			s.OneOf = append(s.OneOf, qt)
+			s.OneOf = append(s.OneOf, *qt)
 		}
 	}
 
 	if isRequest {
 		s = addRequestWrapper(s)
 	}
-	body, err := json.MarshalIndent(s, "", "  ")
-	if err == nil {
-		// The invopop library should write to the kube-openapi flavor
-		v := strings.Replace(string(body), `"$defs": {`, `"definitions": {`, 1)
-		return []byte(v), nil
-	}
-	return body, err
+	return s, nil
 }
 
-func addRequestWrapper(s *jsonschema.Schema) *jsonschema.Schema {
-	if s.Definitions == nil {
-		s.Definitions = jsonschema.Definitions{}
-	}
-
-	s.Definitions["query"] = &jsonschema.Schema{
-		Properties: s.Properties,
-		AnyOf:      s.AnyOf,
-		AllOf:      s.AllOf,
-		OneOf:      s.OneOf,
-		Type:       "object",
-	}
-	s.AllOf = nil
-	s.AnyOf = nil
-	s.OneOf = nil
-	s.Properties = jsonschema.NewProperties()
-	s.Properties.Set("from", &jsonschema.Schema{
-		Type:        "string",
-		Description: "From Start time in epoch timestamps in milliseconds or relative using Grafana time units.",
-	})
-	s.Properties.Set("to", &jsonschema.Schema{
-		Type:        "string",
-		Description: "To end time in epoch timestamps in milliseconds or relative using Grafana time units.",
-	})
-	s.Properties.Set("queries", &jsonschema.Schema{
-		Type: "array",
-		Items: &jsonschema.Schema{
-			Ref: "#/definitions/query",
+// moves the schema the the query slot in a request
+func addRequestWrapper(s *spec.Schema) *spec.Schema {
+	return &spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Type:                 []string{"object"},
+			Required:             []string{"queries"},
+			AdditionalProperties: &spec.SchemaOrBool{Allows: false},
+			Properties: map[string]spec.Schema{
+				"from": *spec.StringProperty().WithDescription(
+					"From Start time in epoch timestamps in milliseconds or relative using Grafana time units."),
+				"to": *spec.StringProperty().WithDescription(
+					"To end time in epoch timestamps in milliseconds or relative using Grafana time units."),
+				"queries": *spec.ArrayProperty(s),
+				"debug":   *spec.BoolProperty(),
+				"$schema": *spec.StringProperty().WithDescription("helper"),
+			},
 		},
-	})
-	s.Properties.Set("debug", &jsonschema.Schema{
-		Type: "boolean",
-	})
-	s.Properties.Set("$schema", &jsonschema.Schema{
-		Type:        "string",
-		Description: "Optional schema URL -- this is not really used in production, but helpful for vscode debugging",
-	})
-	s.AdditionalProperties = jsonschema.FalseSchema
-	s.Required = []string{"queries"}
-	s.Type = "object"
-	return s
+	}
 }
 
-func asJSONSchema(v any) (*jsonschema.Schema, error) {
-	s, ok := v.(*jsonschema.Schema)
+func asJSONSchema(v any) (*spec.Schema, error) {
+	s, ok := v.(*spec.Schema)
 	if ok {
 		return s, nil
 	}
@@ -516,7 +498,7 @@ func asJSONSchema(v any) (*jsonschema.Schema, error) {
 	if err != nil {
 		return nil, err
 	}
-	s = &jsonschema.Schema{}
+	s = &spec.Schema{}
 	err = json.Unmarshal(b, s)
 	return s, err
 }

@@ -20,22 +20,22 @@
         ],
         "querySchema": {
           "$schema": "https://json-schema.org/draft-04/schema",
+          "additionalProperties": false,
           "properties": {
             "expression": {
-              "type": "string",
-              "minLength": 1,
               "description": "General math expression",
               "examples": [
                 "$A + 1",
                 "$A/$B"
-              ]
+              ],
+              "minLength": 1,
+              "type": "string"
             }
           },
-          "additionalProperties": false,
-          "type": "object",
           "required": [
             "expression"
-          ]
+          ],
+          "type": "object"
         },
         "examples": [
           {
@@ -56,7 +56,7 @@
     {
       "metadata": {
         "name": "reduce",
-        "resourceVersion": "1708817676338",
+        "resourceVersion": "1708876267448",
         "creationTimestamp": "2024-02-21T20:50:29Z"
       },
       "spec": {
@@ -84,7 +84,7 @@
                 "last"
               ],
               "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
-              "x-enum-dictionary": {
+              "x-enum-description": {
                 "mean": "The mean",
                 "sum": "The sum"
               }
@@ -98,7 +98,7 @@
                     "replaceNN"
                   ],
                   "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
-                  "x-enum-dictionary": {
+                  "x-enum-description": {
                     "dropNN": "Drop non-numbers",
                     "replaceNN": "Replace non-numbers"
                   }
