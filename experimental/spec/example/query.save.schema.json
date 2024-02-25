@@ -249,7 +249,11 @@
       "description": "QueryType = resample"
     }
   ],
-  "properties": {},
+  "properties": {
+    "$schema": {
+      "type": "string"
+    }
+  },
   "type": "object",
   "description": "Save model (the payload saved in dashboards and alerts)"
 }

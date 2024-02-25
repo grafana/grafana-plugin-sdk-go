@@ -1,9 +1,8 @@
 {
-  "$schema": "file:/Users/ryan/workspace/grafana/more/grafana-plugin-sdk-go/experimental/spec/example/query.post.schema.json",
-  
-      "refId": "A",
-      "queryType": "math",
-      "maxDataPoints": 1000,
-      "intervalMs": 5,
-      "expression": "$A + 10"
+  "$schema": "https://raw.githubusercontent.com/grafana/grafana-plugin-sdk-go/c67324318b0b055e73b038cb5eaf3090dc8b953c/experimental/spec/example/query.post.schema.json",
+  "refId": "A",
+  "queryType": "math",
+  "maxDataPoints": 1000,
+  "intervalMs": 5,
+  "expression": "$A + 10"
 }
