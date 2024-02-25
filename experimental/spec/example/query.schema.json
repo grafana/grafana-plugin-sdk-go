@@ -219,6 +219,9 @@
           "type": "string",
           "pattern": "^resample$"
         },
+        "hide": {
+          "$ref": "#/definitions/hide"
+        },
         "refId": {
           "$ref": "#/definitions/refId"
         },
@@ -230,9 +233,6 @@
         },
         "datasource": {
           "$ref": "#/definitions/datasource"
-        },
-        "hide": {
-          "$ref": "#/definitions/hide"
         }
       },
       "additionalProperties": false,
@@ -249,11 +249,7 @@
       "description": "QueryType = resample"
     }
   ],
-  "properties": {
-    "$schema": {
-      "type": "string"
-    }
-  },
+  "properties": {},
   "type": "object",
-  "description": "Save model (the payload saved in dashboards and alerts)"
+  "description": "object saved in dashboard/alert"
 }

@@ -1,8 +1,31 @@
 {
-  "$schema": "https://raw.githubusercontent.com/grafana/grafana-plugin-sdk-go/c67324318b0b055e73b038cb5eaf3090dc8b953c/experimental/spec/example/query.post.schema.json",
-  "refId": "A",
-  "queryType": "math",
-  "maxDataPoints": 1000,
-  "intervalMs": 5,
-  "expression": "$A + 10"
+  "from": "now-1h",
+  "to": "now",
+  "queries": [
+    {
+      "refId": "A",
+      "queryType": "math",
+      "maxDataPoints": 1000,
+      "intervalMs": 5,
+      "expression": "$A + 10"
+    },
+    {
+      "refId": "B",
+      "queryType": "math",
+      "maxDataPoints": 1000,
+      "intervalMs": 5,
+      "expression": "$A - $B"
+    },
+    {
+      "refId": "C",
+      "queryType": "reduce",
+      "maxDataPoints": 1000,
+      "intervalMs": 5,
+      "expression": "$A",
+      "reducer": "max",
+      "settings": {
+        "mode": "dropNN"
+      }
+    }
+  ]
 }

@@ -295,8 +295,8 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) QueryTypeDe
 
 	// Now update the query files
 	//----------------------------
-	outfile = filepath.Join(outdir, "query.post.schema.json")
-	schema, err := toQuerySchema(query, defs, false)
+	outfile = filepath.Join(outdir, "query.request.schema.json")
+	schema, err := toQuerySchema(query, defs, true)
 	require.NoError(t, err)
 
 	body, _ = os.ReadFile(outfile)
@@ -304,8 +304,8 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) QueryTypeDe
 
 	// Now update the query files
 	//----------------------------
-	outfile = filepath.Join(outdir, "query.save.schema.json")
-	schema, err = toQuerySchema(query, defs, true)
+	outfile = filepath.Join(outdir, "query.schema.json")
+	schema, err = toQuerySchema(query, defs, false)
 	require.NoError(t, err)
 
 	body, _ = os.ReadFile(outfile)
@@ -373,17 +373,17 @@ func (b *Builder) UpdateSettingsDefinition(t *testing.T, outfile string) Setting
 // Converts a set of queries into a single real schema (merged with the common properties)
 // This returns a the raw bytes because `invopop/jsonschema` requires extra manipulation
 // so that the results are readable by `kubernetes/kube-openapi`
-func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, saveModel bool) (json.RawMessage, error) {
-	descr := "Query model (the payload sent to /ds/query)"
-	if saveModel {
-		descr = "Save model (the payload saved in dashboards and alerts)"
+func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, isRequest bool) (json.RawMessage, error) {
+	descr := "object saved in dashboard/alert"
+	if isRequest {
+		descr = "Datasource request model"
 	}
 
 	ignoreForSave := map[string]bool{"maxDataPoints": true, "intervalMs": true}
 	definitions := make(jsonschema.Definitions)
 	common := make(map[string]*jsonschema.Schema)
 	for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
-		if saveModel && ignoreForSave[pair.Key] {
+		if !isRequest && ignoreForSave[pair.Key] {
 			continue //
 		}
 		definitions[pair.Key] = pair.Value
@@ -416,21 +416,6 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 		queryTypes = append(queryTypes, node)
 	}
 
-	// Single node -- just union the global and local properties
-	if len(queryTypes) == 1 {
-		node := queryTypes[0]
-		node.Version = draft04
-		node.Description = descr
-		for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
-			_, found := node.Properties.Get(pair.Key)
-			if found {
-				continue
-			}
-			node.Properties.Set(pair.Key, pair.Value)
-		}
-		return json.MarshalIndent(node, "", "  ")
-	}
-
 	s := &jsonschema.Schema{
 		Type:        "object",
 		Version:     draft04,
@@ -439,26 +424,83 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 		Description: descr,
 	}
 
-	for _, qt := range queryTypes {
-		qt.Required = append(qt.Required, "refId")
-
-		for k, v := range common {
-			_, found := qt.Properties.Get(k)
+	// Single node -- just union the global and local properties
+	if len(queryTypes) == 1 {
+		s = queryTypes[0]
+		s.Version = draft04
+		s.Description = descr
+		for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
+			_, found := s.Properties.Get(pair.Key)
 			if found {
 				continue
 			}
-			qt.Properties.Set(k, v)
+			s.Properties.Set(pair.Key, pair.Value)
 		}
+	} else {
+		for _, qt := range queryTypes {
+			qt.Required = append(qt.Required, "refId")
 
-		s.OneOf = append(s.OneOf, qt)
+			for k, v := range common {
+				_, found := qt.Properties.Get(k)
+				if found {
+					continue
+				}
+				qt.Properties.Set(k, v)
+			}
+
+			s.OneOf = append(s.OneOf, qt)
+		}
 	}
 
+	if isRequest {
+		s = addRequestWrapper(s)
+	}
 	body, err := json.MarshalIndent(s, "", "  ")
 	if err == nil {
+		// The invopop library should write to the kube-openapi flavor
 		v := strings.Replace(string(body), `"$defs": {`, `"definitions": {`, 1)
 		return []byte(v), nil
 	}
 	return body, err
+}
+
+func addRequestWrapper(s *jsonschema.Schema) *jsonschema.Schema {
+	s.Definitions["query"] = &jsonschema.Schema{
+		Properties: s.Properties,
+		AnyOf:      s.AnyOf,
+		AllOf:      s.AllOf,
+		OneOf:      s.OneOf,
+		Type:       "object",
+	}
+	s.AllOf = nil
+	s.AnyOf = nil
+	s.OneOf = nil
+	s.Properties = jsonschema.NewProperties()
+	s.Properties.Set("from", &jsonschema.Schema{
+		Type:        "string",
+		Description: "From Start time in epoch timestamps in milliseconds or relative using Grafana time units.",
+	})
+	s.Properties.Set("to", &jsonschema.Schema{
+		Type:        "string",
+		Description: "To end time in epoch timestamps in milliseconds or relative using Grafana time units.",
+	})
+	s.Properties.Set("queries", &jsonschema.Schema{
+		Type: "array",
+		Items: &jsonschema.Schema{
+			Ref: "#/definitions/query",
+		},
+	})
+	s.Properties.Set("debug", &jsonschema.Schema{
+		Type: "boolean",
+	})
+	s.Properties.Set("$schema", &jsonschema.Schema{
+		Type:        "string",
+		Description: "Optional schema URL -- this is not really used in production, but helpful for vscode debugging",
+	})
+	s.AdditionalProperties = jsonschema.FalseSchema
+	s.Required = []string{"queries"}
+	s.Type = "object"
+	return s
 }
 
 func asJSONSchema(v any) (*jsonschema.Schema, error) {
