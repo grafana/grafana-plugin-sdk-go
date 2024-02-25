@@ -313,16 +313,19 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) QueryTypeDe
 	request, err := GetExampleQueries(defs)
 	require.NoError(t, err)
 
-	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
-	result := validator.Validate(request)
-	require.False(t, result.HasErrorsOrWarnings())
-	require.True(t, result.MatchCount > 0, "must have some rules")
-	fmt.Printf("Validation: %+v\n", result)
-
 	outfile = filepath.Join(outdir, "query.request.examples.json")
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, request, body)
 
+	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
+	result := validator.Validate(request)
+	if result.HasErrorsOrWarnings() {
+		body, err = json.MarshalIndent(result, "", "  ")
+		require.NoError(t, err)
+		fmt.Printf("Validation: %s\n", string(body))
+		require.Fail(t, "validation failed")
+	}
+	require.True(t, result.MatchCount > 0, "must have some rules")
 	return defs
 }
 
