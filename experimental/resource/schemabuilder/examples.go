@@ -6,7 +6,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
 )
 
-func GetExampleQueries(defs resource.QueryTypeDefinitionList) (resource.QueryRequest[resource.GenericDataQuery], error) {
+func exampleRequest(defs resource.QueryTypeDefinitionList) (resource.QueryRequest[resource.GenericDataQuery], error) {
 	rsp := resource.QueryRequest[resource.GenericDataQuery]{
 		From:    "now-1h",
 		To:      "now",
@@ -38,4 +38,27 @@ func GetExampleQueries(defs resource.QueryTypeDefinitionList) (resource.QueryReq
 		}
 	}
 	return rsp, nil
+}
+
+func examplePanelTargets(ds *resource.DataSourceRef, defs resource.QueryTypeDefinitionList) ([]resource.GenericDataQuery, error) {
+	targets := []resource.GenericDataQuery{}
+
+	for _, def := range defs.Items {
+		for _, sample := range def.Spec.Examples {
+			if sample.SaveModel != nil {
+				q, err := asGenericDataQuery(sample.SaveModel)
+				if err != nil {
+					return nil, fmt.Errorf("invalid sample save query [%s], in %s // %w",
+						sample.Name, def.ObjectMeta.Name, err)
+				}
+				q.Datasource = ds
+				q.RefID = string(rune('A' + len(targets)))
+				for _, dis := range def.Spec.Discriminators {
+					_ = q.Set(dis.Field, dis.Value)
+				}
+				targets = append(targets, *q)
+			}
+		}
+	}
+	return targets, nil
 }

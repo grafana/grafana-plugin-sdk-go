@@ -32,13 +32,13 @@
                 "description": "The datasource",
                 "type": "object",
                 "required": [
-                  "type",
-                  "uid"
+                  "type"
                 ],
                 "properties": {
                   "type": {
                     "description": "The datasource plugin type",
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^__expr__$"
                   },
                   "uid": {
                     "description": "Datasource UID",
@@ -154,13 +154,13 @@
                 "description": "The datasource",
                 "type": "object",
                 "required": [
-                  "type",
-                  "uid"
+                  "type"
                 ],
                 "properties": {
                   "type": {
                     "description": "The datasource plugin type",
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^__expr__$"
                   },
                   "uid": {
                     "description": "Datasource UID",
@@ -316,13 +316,13 @@
                 "description": "The datasource",
                 "type": "object",
                 "required": [
-                  "type",
-                  "uid"
+                  "type"
                 ],
                 "properties": {
                   "type": {
                     "description": "The datasource plugin type",
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^__expr__$"
                   },
                   "uid": {
                     "description": "Datasource UID",
@@ -445,5 +445,6 @@
       "type": "string"
     }
   },
-  "additionalProperties": false
+  "additionalProperties": false,
+  "$schema": "https://json-schema.org/draft-04/schema"
 }

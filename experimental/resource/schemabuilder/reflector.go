@@ -66,6 +66,10 @@ type SettingTypeInfo struct {
 }
 
 func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
+	if len(opts.PluginID) < 1 {
+		return nil, fmt.Errorf("missing plugin id")
+	}
+
 	r := new(jsonschema.Reflector)
 	r.DoNotReference = true
 	if err := r.AddGoComments(opts.BasePackage, opts.CodePath); err != nil {
@@ -250,8 +254,9 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 
 	// Update the query save model schema
 	//------------------------------------
-	outfile = filepath.Join(outdir, "query.schema.json")
+	outfile = filepath.Join(outdir, "query.panel.schema.json")
 	schema, err := GetQuerySchema(QuerySchemaOptions{
+		PluginID:   b.opts.PluginID,
 		QueryTypes: defs.Items,
 		Mode:       SchemaTypePanelModel,
 	})
@@ -260,10 +265,24 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, schema, body)
 
+	panel := resource.PseudoPanel[resource.GenericDataQuery]{
+		Type: "table",
+	}
+	panel.Targets, err = examplePanelTargets(&resource.DataSourceRef{
+		Type: b.opts.PluginID[0],
+		UID:  "TheUID",
+	}, defs)
+	require.NoError(t, err)
+
+	outfile = filepath.Join(outdir, "query.panel.example.json")
+	body, _ = os.ReadFile(outfile)
+	maybeUpdateFile(t, outfile, panel, body)
+
 	// Update the request payload schema
 	//------------------------------------
 	outfile = filepath.Join(outdir, "query.request.schema.json")
 	schema, err = GetQuerySchema(QuerySchemaOptions{
+		PluginID:   b.opts.PluginID,
 		QueryTypes: defs.Items,
 		Mode:       SchemaTypeQueryRequest,
 	})
@@ -272,12 +291,10 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, schema, body)
 
-	// Verify that the example queries actually validate
-	//------------------------------------
-	request, err := GetExampleQueries(defs)
+	request, err := exampleRequest(defs)
 	require.NoError(t, err)
 
-	outfile = filepath.Join(outdir, "query.request.examples.json")
+	outfile = filepath.Join(outdir, "query.request.example.json")
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, request, body)
 

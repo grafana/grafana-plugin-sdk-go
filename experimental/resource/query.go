@@ -105,7 +105,7 @@ type DataSourceRef struct {
 	Type string `json:"type"`
 
 	// Datasource UID
-	UID string `json:"uid"`
+	UID string `json:"uid,omitempty"`
 
 	// ?? the datasource API version?  (just version, not the group? type | apiVersion?)
 }

@@ -79,8 +79,7 @@
       "additionalProperties": false,
       "type": "object",
       "required": [
-        "type",
-        "uid"
+        "type"
       ],
       "description": "The datasource"
     },

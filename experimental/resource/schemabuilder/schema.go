@@ -49,21 +49,27 @@ func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 		if !isRequest && ignoreForSave[key] {
 			continue //
 		}
-		common[key] = val
-	}
 
-	// The datasource requirement
-	switch len(opts.PluginID) {
-	case 0:
-	case 1:
-		s := common["datasource"].Properties["type"]
-		s.Pattern = "xxxx"
-	default:
-		if opts.Mode == SchemaTypePanelModel {
-			return nil, fmt.Errorf("panel model requires pluginId")
+		if key == "datasource" {
+			pattern := ""
+			for _, pid := range opts.PluginID {
+				if pattern != "" {
+					pattern += "|"
+				}
+				pattern += `^` + pid + `$`
+			}
+			if pattern == "" {
+				if opts.Mode == SchemaTypePanelModel {
+					return nil, fmt.Errorf("panel model requires pluginId")
+				}
+			} else {
+				t := val.Properties["type"]
+				t.Pattern = pattern
+				val.Properties["type"] = t
+			}
 		}
-		s := common["datasource"].Properties["type"]
-		s.Pattern = "yyyyy"
+
+		common[key] = val
 	}
 
 	// The types for each query type
@@ -126,8 +132,11 @@ func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 		}
 	}
 
-	if isRequest {
-		s = addRequestWrapper(s)
+	switch opts.Mode {
+	case SchemaTypeQueryRequest:
+		return addRequestWrapper(s), nil
+	case SchemaTypePanelModel:
+		return addPanelWrapper(s), nil
 	}
 	return s, nil
 }
@@ -136,6 +145,7 @@ func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 func addRequestWrapper(s *spec.Schema) *spec.Schema {
 	return &spec.Schema{
 		SchemaProps: spec.SchemaProps{
+			Schema:               draft04,
 			Type:                 []string{"object"},
 			Required:             []string{"queries"},
 			AdditionalProperties: &spec.SchemaOrBool{Allows: false},
@@ -147,6 +157,22 @@ func addRequestWrapper(s *spec.Schema) *spec.Schema {
 				"queries": *spec.ArrayProperty(s),
 				"debug":   *spec.BoolProperty(),
 				"$schema": *spec.StringProperty().WithDescription("helper"),
+			},
+		},
+	}
+}
+
+// Pretends to be a panel object
+func addPanelWrapper(s *spec.Schema) *spec.Schema {
+	return &spec.Schema{
+		SchemaProps: spec.SchemaProps{
+			Schema:               draft04,
+			Type:                 []string{"object"},
+			Required:             []string{"targets", "type"},
+			AdditionalProperties: &spec.SchemaOrBool{Allows: true},
+			Properties: map[string]spec.Schema{
+				"type":    *spec.StringProperty().WithDescription("the panel type"),
+				"targets": *spec.ArrayProperty(s),
 			},
 		},
 	}

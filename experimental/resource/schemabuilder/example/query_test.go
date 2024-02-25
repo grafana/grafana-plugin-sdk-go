@@ -11,6 +11,7 @@ import (
 
 func TestQueryTypeDefinitions(t *testing.T) {
 	builder, err := schemabuilder.NewSchemaBuilder(schemabuilder.BuilderOptions{
+		PluginID:    []string{"__expr__"},
 		BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/resource/schemabuilder/example",
 		CodePath:    "./",
 		// We need to identify the enum fields explicitly :(
