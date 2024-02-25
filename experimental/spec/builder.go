@@ -465,6 +465,10 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, isR
 }
 
 func addRequestWrapper(s *jsonschema.Schema) *jsonschema.Schema {
+	if s.Definitions == nil {
+		s.Definitions = jsonschema.Definitions{}
+	}
+
 	s.Definitions["query"] = &jsonschema.Schema{
 		Properties: s.Properties,
 		AnyOf:      s.AnyOf,

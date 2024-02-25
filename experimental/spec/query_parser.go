@@ -175,7 +175,7 @@ func (g *GenericDataQuery) Get(key string) (any, bool) {
 
 type genericQueryCodec struct{}
 
-func (codec *genericQueryCodec) IsEmpty(ptr unsafe.Pointer) bool {
+func (codec *genericQueryCodec) IsEmpty(_ unsafe.Pointer) bool {
 	return false
 }
 
