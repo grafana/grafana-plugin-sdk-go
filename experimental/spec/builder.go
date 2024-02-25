@@ -371,7 +371,9 @@ func (b *Builder) UpdateSettingsDefinition(t *testing.T, outfile string) Setting
 }
 
 // Converts a set of queries into a single real schema (merged with the common properties)
-func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, saveModel bool) (*jsonschema.Schema, error) {
+// This returns a the raw bytes because `invopop/jsonschema` requires extra manipulation
+// so that the results are readable by `kubernetes/kube-openapi`
+func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, saveModel bool) (json.RawMessage, error) {
 	descr := "Query model (the payload sent to /ds/query)"
 	if saveModel {
 		descr = "Save model (the payload saved in dashboards and alerts)"
@@ -385,7 +387,7 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 			continue //
 		}
 		definitions[pair.Key] = pair.Value
-		common[pair.Key] = &jsonschema.Schema{Ref: "#/$defs/" + pair.Key}
+		common[pair.Key] = &jsonschema.Schema{Ref: "#/definitions/" + pair.Key}
 	}
 
 	// The types for each query type
@@ -419,7 +421,6 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 		node := queryTypes[0]
 		node.Version = draft04
 		node.Description = descr
-		node.Definitions = definitions
 		for pair := generic.Properties.Oldest(); pair != nil; pair = pair.Next() {
 			_, found := node.Properties.Get(pair.Key)
 			if found {
@@ -427,7 +428,7 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 			}
 			node.Properties.Set(pair.Key, pair.Value)
 		}
-		return node, nil
+		return json.MarshalIndent(node, "", "  ")
 	}
 
 	s := &jsonschema.Schema{
@@ -451,7 +452,13 @@ func toQuerySchema(generic *jsonschema.Schema, defs QueryTypeDefinitionList, sav
 
 		s.OneOf = append(s.OneOf, qt)
 	}
-	return s, nil
+
+	body, err := json.MarshalIndent(s, "", "  ")
+	if err == nil {
+		v := strings.Replace(string(body), `"$defs": {`, `"definitions": {`, 1)
+		return []byte(v), nil
+	}
+	return body, err
 }
 
 func asJSONSchema(v any) (*jsonschema.Schema, error) {

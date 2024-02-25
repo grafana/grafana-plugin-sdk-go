@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft-04/schema",
-  "$defs": {
+  "definitions": {
     "datasource": {
       "properties": {
         "type": {
@@ -107,26 +107,26 @@
           "type": "string",
           "pattern": "^math$"
         },
+        "resultAssertions": {
+          "$ref": "#/definitions/resultAssertions"
+        },
         "timeRange": {
-          "$ref": "#/$defs/timeRange"
+          "$ref": "#/definitions/timeRange"
         },
         "datasource": {
-          "$ref": "#/$defs/datasource"
+          "$ref": "#/definitions/datasource"
         },
         "maxDataPoints": {
-          "$ref": "#/$defs/maxDataPoints"
+          "$ref": "#/definitions/maxDataPoints"
         },
         "intervalMs": {
-          "$ref": "#/$defs/intervalMs"
+          "$ref": "#/definitions/intervalMs"
         },
         "hide": {
-          "$ref": "#/$defs/hide"
+          "$ref": "#/definitions/hide"
         },
         "refId": {
-          "$ref": "#/$defs/refId"
-        },
-        "resultAssertions": {
-          "$ref": "#/$defs/resultAssertions"
+          "$ref": "#/definitions/refId"
         }
       },
       "additionalProperties": false,
@@ -181,26 +181,26 @@
           "type": "string",
           "pattern": "^reduce$"
         },
-        "timeRange": {
-          "$ref": "#/$defs/timeRange"
-        },
-        "datasource": {
-          "$ref": "#/$defs/datasource"
-        },
         "maxDataPoints": {
-          "$ref": "#/$defs/maxDataPoints"
+          "$ref": "#/definitions/maxDataPoints"
         },
         "intervalMs": {
-          "$ref": "#/$defs/intervalMs"
+          "$ref": "#/definitions/intervalMs"
         },
         "hide": {
-          "$ref": "#/$defs/hide"
+          "$ref": "#/definitions/hide"
         },
         "refId": {
-          "$ref": "#/$defs/refId"
+          "$ref": "#/definitions/refId"
         },
         "resultAssertions": {
-          "$ref": "#/$defs/resultAssertions"
+          "$ref": "#/definitions/resultAssertions"
+        },
+        "timeRange": {
+          "$ref": "#/definitions/timeRange"
+        },
+        "datasource": {
+          "$ref": "#/definitions/datasource"
         }
       },
       "additionalProperties": false,
@@ -239,26 +239,26 @@
           "type": "string",
           "pattern": "^resample$"
         },
+        "maxDataPoints": {
+          "$ref": "#/definitions/maxDataPoints"
+        },
         "intervalMs": {
-          "$ref": "#/$defs/intervalMs"
+          "$ref": "#/definitions/intervalMs"
         },
         "hide": {
-          "$ref": "#/$defs/hide"
+          "$ref": "#/definitions/hide"
         },
         "refId": {
-          "$ref": "#/$defs/refId"
+          "$ref": "#/definitions/refId"
         },
         "resultAssertions": {
-          "$ref": "#/$defs/resultAssertions"
+          "$ref": "#/definitions/resultAssertions"
         },
         "timeRange": {
-          "$ref": "#/$defs/timeRange"
+          "$ref": "#/definitions/timeRange"
         },
         "datasource": {
-          "$ref": "#/$defs/datasource"
-        },
-        "maxDataPoints": {
-          "$ref": "#/$defs/maxDataPoints"
+          "$ref": "#/definitions/datasource"
         }
       },
       "additionalProperties": false,
