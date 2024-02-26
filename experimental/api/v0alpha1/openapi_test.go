@@ -13,8 +13,9 @@ import (
 )
 
 func TestOpenAPI(t *testing.T) {
-	defs := GetOpenAPIDefinitions(func(path string) spec.Ref {
-		return spec.MustCreateRef(path)
+	//nolint:gocritic
+	defs := GetOpenAPIDefinitions(func(path string) spec.Ref { //  (unlambda: replace ¯\_(ツ)_/¯)
+		return spec.MustCreateRef(path) // placeholder for tests
 	})
 
 	def, ok := defs["github.com/grafana/grafana-plugin-sdk-go/backend.QueryDataResponse"]

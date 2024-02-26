@@ -52,8 +52,8 @@ func (f *Frame) DeepCopy() *Frame {
 	if err != nil {
 		return nil
 	}
-	copy, _ := UnmarshalArrowFrame(arrow)
-	return copy
+	out, _ := UnmarshalArrowFrame(arrow)
+	return out
 }
 
 // UnmarshalJSON allows unmarshalling Frame from JSON.
