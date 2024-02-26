@@ -8,6 +8,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
+	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/require"
 )
 
@@ -34,7 +35,8 @@ func TestWriteQuerySchema(t *testing.T) {
 	updateEnumDescriptions(query)
 	query.ID = ""
 	query.Version = "https://json-schema.org/draft-04/schema" // used by kube-openapi
-	query.Description = "Query properties shared by all data sources"
+	query.Description = "Generic query properties"
+	query.AdditionalProperties = jsonschema.TrueSchema
 
 	// Write the map of values ignored by the common parser
 	fmt.Printf("var commonKeys = map[string]bool{\n")
@@ -51,7 +53,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	maybeUpdateFile(t, outfile, query, old)
 
 	// Make sure the embedded schema is loadable
-	schema, err := resource.CommonQueryPropertiesSchema()
+	schema, err := resource.GenericQuerySchema()
 	require.NoError(t, err)
 	require.Equal(t, 8, len(schema.Properties))
 }
