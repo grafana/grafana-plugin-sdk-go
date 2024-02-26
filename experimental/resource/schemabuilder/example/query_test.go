@@ -11,11 +11,11 @@ import (
 
 func TestQueryTypeDefinitions(t *testing.T) {
 	builder, err := schemabuilder.NewSchemaBuilder(schemabuilder.BuilderOptions{
-		PluginID:    []string{"__expr__"},
-		BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/resource/schemabuilder/example",
-		CodePath:    "./",
-		// We need to identify the enum fields explicitly :(
-		// *AND* have the +enum common for this to work
+		PluginID: []string{"__expr__"},
+		ScanCode: []schemabuilder.CodePaths{{
+			BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/resource/schemabuilder/example",
+			CodePath:    "./",
+		}},
 		Enums: []reflect.Type{
 			reflect.TypeOf(ReducerSum),     // pick an example value (not the root)
 			reflect.TypeOf(ReduceModeDrop), // pick an example value (not the root)

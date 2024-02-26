@@ -124,7 +124,7 @@ type TimeRange struct {
 // to fail queries *before* returning them to a client (select * from bigquery!)
 type ResultAssertions struct {
 	// Type asserts that the frame matches a known type structure.
-	Type data.FrameType `json:"type,omitempty" jsonschema:"example=timeseries-wide,example=timeseries-long"`
+	Type data.FrameType `json:"type,omitempty"`
 
 	// TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane
 	// contract documentation https://grafana.github.io/dataplane/contract/.

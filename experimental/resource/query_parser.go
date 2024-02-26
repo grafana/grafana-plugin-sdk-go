@@ -2,6 +2,7 @@ package resource
 
 import (
 	"encoding/json"
+	"time"
 	"unsafe"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
@@ -12,14 +13,6 @@ import (
 func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("resource.GenericDataQuery", &genericQueryCodec{})
 	jsoniter.RegisterTypeDecoder("resource.GenericDataQuery", &genericQueryCodec{})
-}
-
-// GenericDataQuery is a replacement for `dtos.MetricRequest` with more explicit typing
-type GenericDataQuery struct {
-	CommonQueryProperties `json:",inline"`
-
-	// Additional Properties (that live at the root)
-	additional map[string]any `json:"-"` // note this uses custom JSON marshalling
 }
 
 type QueryRequest[Q any] struct {
@@ -38,6 +31,17 @@ type QueryRequest[Q any] struct {
 	Debug bool `json:"debug,omitempty"`
 }
 
+// GenericDataQuery is a replacement for `dtos.MetricRequest` with more explicit typing
+type GenericDataQuery struct {
+	CommonQueryProperties `json:",inline"`
+
+	// Additional Properties (that live at the root)
+	additional map[string]any `json:"-"` // note this uses custom JSON marshalling
+}
+
+// GenericQueryRequest is a query request that supports any datasource
+type GenericQueryRequest = QueryRequest[GenericDataQuery]
+
 // Generic query parser pattern.
 type TypedQueryParser[Q any] interface {
 	// Get the query parser for a query type
@@ -47,6 +51,8 @@ type TypedQueryParser[Q any] interface {
 		common CommonQueryProperties,
 		// An iterator with context for the full node (include common values)
 		iter *jsoniter.Iterator,
+		// Use this value as "now"
+		now time.Time,
 	) (Q, error)
 }
 
@@ -67,7 +73,7 @@ var _ TypedQueryParser[GenericDataQuery] = (*GenericQueryParser)(nil)
 type GenericQueryParser struct{}
 
 // ParseQuery implements TypedQueryParser.
-func (*GenericQueryParser) ParseQuery(common CommonQueryProperties, iter *jsoniter.Iterator) (GenericDataQuery, error) {
+func (*GenericQueryParser) ParseQuery(common CommonQueryProperties, iter *jsoniter.Iterator, now time.Time) (GenericDataQuery, error) {
 	q := GenericDataQuery{CommonQueryProperties: common, additional: make(map[string]any)}
 	field, err := iter.ReadObject()
 	for field != "" && err == nil {

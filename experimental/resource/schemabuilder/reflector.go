@@ -29,15 +29,20 @@ type Builder struct {
 	setting   []resource.SettingsDefinition
 }
 
-type BuilderOptions struct {
-	// The plugin type ID used in the DataSourceRef type property
-	PluginID []string
-
+type CodePaths struct {
 	// ex "github.com/grafana/github-datasource/pkg/models"
 	BasePackage string
 
 	// ex "./"
 	CodePath string
+}
+
+type BuilderOptions struct {
+	// The plugin type ID used in the DataSourceRef type property
+	PluginID []string
+
+	// Scan comments and enumerations
+	ScanCode []CodePaths
 
 	// explicitly define the enumeration fields
 	Enums []reflect.Type
@@ -72,8 +77,10 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 
 	r := new(jsonschema.Reflector)
 	r.DoNotReference = true
-	if err := r.AddGoComments(opts.BasePackage, opts.CodePath); err != nil {
-		return nil, err
+	for _, scan := range opts.ScanCode {
+		if err := r.AddGoComments(scan.BasePackage, scan.CodePath); err != nil {
+			return nil, err
+		}
 	}
 	customMapper := map[reflect.Type]*jsonschema.Schema{
 		reflect.TypeOf(data.Frame{}): {
@@ -89,10 +96,15 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 	}
 
 	if len(opts.Enums) > 0 {
-		fields, err := findEnumFields(opts.BasePackage, opts.CodePath)
-		if err != nil {
-			return nil, err
+		fields := []EnumField{}
+		for _, scan := range opts.ScanCode {
+			enums, err := findEnumFields(scan.BasePackage, scan.CodePath)
+			if err != nil {
+				return nil, err
+			}
+			fields = append(fields, enums...)
 		}
+
 		for _, etype := range opts.Enums {
 			for _, f := range fields {
 				if f.Name == etype.Name() && f.Package == etype.PkgPath() {
@@ -127,8 +139,7 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 		if schema == nil {
 			return fmt.Errorf("missing schema")
 		}
-
-		UpdateEnumDescriptions(schema)
+		updateEnumDescriptions(schema)
 
 		name := info.Name
 		if name == "" {
@@ -175,7 +186,7 @@ func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
 			return fmt.Errorf("missing schema")
 		}
 
-		UpdateEnumDescriptions(schema)
+		updateEnumDescriptions(schema)
 
 		// used by kube-openapi
 		schema.Version = draft04
@@ -301,6 +312,13 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
 	result := validator.Validate(request)
 	if result.HasErrorsOrWarnings() {
+		for _, err := range result.Errors {
+			assert.NoError(t, err)
+		}
+		for _, err := range result.Warnings {
+			assert.NoError(t, err, "warning")
+		}
+
 		body, err = json.MarshalIndent(result, "", "  ")
 		require.NoError(t, err)
 		fmt.Printf("Validation: %s\n", string(body))

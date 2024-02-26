@@ -2,6 +2,7 @@ package example
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
@@ -31,12 +32,10 @@ var _ resource.TypedQueryParser[ExpressionQuery] = (*QueyHandler)(nil)
 
 type QueyHandler struct{}
 
-// ReadQuery implements query.TypedQueryHandler.
 func (*QueyHandler) ParseQuery(
-	// Properties that have been parsed off the same node
 	common resource.CommonQueryProperties,
-	// An iterator with context for the full node (include common values)
 	iter *jsoniter.Iterator,
+	now time.Time,
 ) (ExpressionQuery, error) {
 	qt := QueryType(common.QueryType)
 	switch qt {

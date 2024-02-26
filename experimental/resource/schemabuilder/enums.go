@@ -28,10 +28,10 @@ type EnumField struct {
 	Values  []EnumValue
 }
 
-func findEnumFields(base, path string) ([]EnumField, error) {
+func findEnumFields(base, startpath string) ([]EnumField, error) {
 	fset := token.NewFileSet()
 	dict := make(map[string][]*ast.Package)
-	err := filepath.Walk(path, func(path string, info fs.FileInfo, err error) error {
+	err := filepath.Walk(startpath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}
@@ -42,7 +42,7 @@ func findEnumFields(base, path string) ([]EnumField, error) {
 			}
 			for _, v := range d {
 				// paths may have multiple packages, like for tests
-				k := gopath.Join(base, path)
+				k := gopath.Join(base, strings.TrimPrefix(path, startpath))
 				dict[k] = append(dict[k], v)
 			}
 		}
@@ -72,8 +72,9 @@ func findEnumFields(base, path string) ([]EnumField, error) {
 							txt = gtxt
 							gtxt = ""
 						}
-						txt = strings.TrimSpace(dp.Synopsis(txt))
+						txt = strings.TrimSpace(txt)
 						if strings.HasSuffix(txt, "+enum") {
+							txt = dp.Synopsis(txt)
 							fields = append(fields, EnumField{
 								Package: pkg,
 								Name:    typ,
@@ -87,7 +88,7 @@ func findEnumFields(base, path string) ([]EnumField, error) {
 					if txt == "" {
 						txt = x.Comment.Text()
 					}
-					if typ == field.Name {
+					if typ == field.Name && len(x.Values) > 0 {
 						for _, n := range x.Names {
 							if ast.IsExported(n.String()) {
 								v, ok := x.Values[0].(*ast.BasicLit)
@@ -118,7 +119,7 @@ func findEnumFields(base, path string) ([]EnumField, error) {
 // whitespaceRegex is the regex for consecutive whitespaces.
 var whitespaceRegex = regexp.MustCompile(`\s+`)
 
-func UpdateEnumDescriptions(s *jsonschema.Schema) {
+func updateEnumDescriptions(s *jsonschema.Schema) {
 	if len(s.Enum) > 0 && s.Extras != nil {
 		extra, ok := s.Extras["x-enum-description"]
 		if !ok {
@@ -146,6 +147,6 @@ func UpdateEnumDescriptions(s *jsonschema.Schema) {
 	}
 
 	for pair := s.Properties.Oldest(); pair != nil; pair = pair.Next() {
-		UpdateEnumDescriptions(pair.Value)
+		updateEnumDescriptions(pair.Value)
 	}
 }
