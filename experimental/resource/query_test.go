@@ -42,7 +42,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 
 	require.Len(t, req.Queries, 2)
 	require.Equal(t, "b1808c48-9fc9-4045-82d7-081781f8a553", req.Queries[0].Datasource.UID)
-	require.Equal(t, "spreadsheetID", req.Queries[0].GetString("spreadsheet"))
+	require.Equal(t, "spreadsheetID", req.Queries[0].MustString("spreadsheet"))
 
 	// Write the query (with additional spreadsheetID) to JSON
 	out, err := json.MarshalIndent(req.Queries[0], "", "  ")
@@ -52,7 +52,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 	query := &GenericDataQuery{}
 	err = json.Unmarshal(out, query)
 	require.NoError(t, err)
-	require.Equal(t, "spreadsheetID", query.GetString("spreadsheet"))
+	require.Equal(t, "spreadsheetID", query.MustString("spreadsheet"))
 
 	// The second query has an explicit time range, and legacy datasource name
 	out, err = json.MarshalIndent(req.Queries[1], "", "  ")
@@ -70,4 +70,33 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		  "to": "200"
 		}
 	  }`, string(out))
+}
+
+func TestQueryBuilders(t *testing.T) {
+	prop := "testkey"
+	testQ1 := &GenericDataQuery{}
+	testQ1.Set(prop, "A")
+	require.Equal(t, "A", testQ1.MustString(prop))
+
+	testQ1.Set(prop, "B")
+	require.Equal(t, "B", testQ1.MustString(prop))
+
+	testQ2 := testQ1
+	testQ2.Set(prop, "C")
+	require.Equal(t, "C", testQ1.MustString(prop))
+	require.Equal(t, "C", testQ2.MustString(prop))
+
+	// Uses the official field when exists
+	testQ2.Set("queryType", "D")
+	require.Equal(t, "D", testQ2.QueryType)
+	require.Equal(t, "D", testQ1.QueryType)
+	require.Equal(t, "D", testQ2.MustString("queryType"))
+
+	// Map constructor
+	testQ3 := NewGenericDataQuery(map[string]any{
+		"queryType": "D",
+		"extra":     "E",
+	})
+	require.Equal(t, "D", testQ3.QueryType)
+	require.Equal(t, "E", testQ3.MustString("extra"))
 }
