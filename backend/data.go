@@ -10,6 +10,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 )
 
 // QueryDataHandler handles data queries.
@@ -108,6 +109,8 @@ type DataQuery struct {
 	JSON json.RawMessage
 }
 
+var _ runtime.Object = (*QueryDataResponse)(nil)
+
 // QueryDataResponse contains the results from a QueryDataRequest.
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
@@ -115,6 +118,23 @@ type QueryDataResponse struct {
 
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
 	Responses Responses
+}
+
+// DeepCopyObject implements runtime.Object. This version writes to/from protobuf internally
+func (r *QueryDataResponse) DeepCopyObject() runtime.Object {
+	into := ConvertToProtobuf{}
+	from := ConvertFromProtobuf{}
+
+	buff, err := into.QueryDataResponse(r)
+	if err == nil {
+		v, err := from.QueryDataResponse(buff)
+		if err == nil {
+			v.APIVersion = r.APIVersion
+			v.Kind = r.Kind
+			return v
+		}
+	}
+	return r
 }
 
 // MarshalJSON writes the results as json
