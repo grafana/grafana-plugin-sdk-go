@@ -12,3 +12,8 @@ type ObjectMeta struct {
 	// Timestamp
 	CreationTimestamp string `json:"creationTimestamp,omitempty"`
 }
+
+type TypeMeta struct {
+	Kind       string `json:"kind"`       // "QueryTypeDefinitionList",
+	APIVersion string `json:"apiVersion"` // "query.grafana.app/v0alpha1",
+}

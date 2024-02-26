@@ -19,9 +19,7 @@ type QueryTypeDefinition struct {
 // For simple data sources, there may be only a single query type, however when multiple types
 // exist they must be clearly specified with distinct discriminator field+value pairs
 type QueryTypeDefinitionList struct {
-	Kind       string `json:"kind"`       // "QueryTypeDefinitionList",
-	APIVersion string `json:"apiVersion"` // "query.grafana.app/v0alpha1",
-
+	TypeMeta   `json:",inline"`
 	ObjectMeta `json:"metadata,omitempty"`
 
 	Items []QueryTypeDefinition `json:"items"`

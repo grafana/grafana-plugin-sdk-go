@@ -35,7 +35,7 @@ type QueyHandler struct{}
 func (*QueyHandler) ParseQuery(
 	common resource.CommonQueryProperties,
 	iter *jsoniter.Iterator,
-	now time.Time,
+	_ time.Time,
 ) (ExpressionQuery, error) {
 	qt := QueryType(common.QueryType)
 	switch qt {

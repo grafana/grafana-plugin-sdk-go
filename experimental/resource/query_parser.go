@@ -73,7 +73,7 @@ var _ TypedQueryParser[GenericDataQuery] = (*GenericQueryParser)(nil)
 type GenericQueryParser struct{}
 
 // ParseQuery implements TypedQueryParser.
-func (*GenericQueryParser) ParseQuery(common CommonQueryProperties, iter *jsoniter.Iterator, now time.Time) (GenericDataQuery, error) {
+func (*GenericQueryParser) ParseQuery(common CommonQueryProperties, iter *jsoniter.Iterator, _ time.Time) (GenericDataQuery, error) {
 	q := GenericDataQuery{CommonQueryProperties: common, additional: make(map[string]any)}
 	field, err := iter.ReadObject()
 	for field != "" && err == nil {

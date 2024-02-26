@@ -11,9 +11,7 @@ type SettingsDefinition struct {
 // For simple data sources, there may be only a single query type, however when multiple types
 // exist they must be clearly specified with distinct discriminator field+value pairs
 type SettingsDefinitionList struct {
-	Kind       string `json:"kind"`       // "SettingsDefinitionList",
-	APIVersion string `json:"apiVersion"` // "??.common.grafana.app/v0alpha1",
-
+	TypeMeta   `json:",inline"`
 	ObjectMeta `json:"metadata,omitempty"`
 
 	Items []SettingsDefinition `json:"items"`
