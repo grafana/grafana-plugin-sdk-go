@@ -9,6 +9,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 )
 
 // QueryDataHandler handles data queries.
@@ -110,6 +111,8 @@ type DataQuery struct {
 // QueryDataResponse contains the results from a QueryDataRequest.
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
+	metav1.TypeMeta `json:",inline"`
+
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
 	Responses Responses
 }
