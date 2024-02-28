@@ -14,12 +14,14 @@ import (
 type diagnosticsSDKAdapter struct {
 	metricGatherer     prometheus.Gatherer
 	checkHealthHandler CheckHealthHandler
+	apiVersion         string
 }
 
-func newDiagnosticsSDKAdapter(metricGatherer prometheus.Gatherer, checkHealthHandler CheckHealthHandler) *diagnosticsSDKAdapter {
+func newDiagnosticsSDKAdapter(metricGatherer prometheus.Gatherer, checkHealthHandler CheckHealthHandler, apiVersion string) *diagnosticsSDKAdapter {
 	return &diagnosticsSDKAdapter{
 		metricGatherer:     metricGatherer,
 		checkHealthHandler: checkHealthHandler,
+		apiVersion:         apiVersion,
 	}
 }
 
@@ -49,6 +51,9 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		ctx = propagateTenantIDIfPresent(ctx)
 		ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
+		if err := parsedReq.PluginContext.verifyApiVersion(a.apiVersion); err != nil {
+			return nil, err
+		}
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointCheckHealth)
 		ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)

@@ -40,6 +40,10 @@ type GRPCSettings struct {
 
 // ServeOpts options for serving plugins.
 type ServeOpts struct {
+	// ApiVersion is the expected API version
+	// when requests exists that do not match this version an error will be returned
+	ApiVersion string
+
 	// CheckHealthHandler handler for health checks.
 	CheckHealthHandler CheckHealthHandler
 
@@ -61,19 +65,19 @@ type ServeOpts struct {
 
 func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	pluginOpts := grpcplugin.ServeOpts{
-		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
+		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler, opts.ApiVersion),
 	}
 
 	if opts.CallResourceHandler != nil {
-		pluginOpts.ResourceServer = newResourceSDKAdapter(opts.CallResourceHandler)
+		pluginOpts.ResourceServer = newResourceSDKAdapter(opts.CallResourceHandler, opts.ApiVersion)
 	}
 
 	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler, opts.ApiVersion)
 	}
 
 	if opts.StreamHandler != nil {
-		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
+		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler, opts.ApiVersion)
 	}
 	return pluginOpts
 }

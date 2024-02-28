@@ -40,7 +40,7 @@ func TestContextualLogger(t *testing.T) {
 			checkCtxLogger(ctx, t, map[string]any{"endpoint": "queryData", "pluginID": pluginID})
 			run <- struct{}{}
 			return NewQueryDataResponse(), nil
-		}))
+		}), "")
 		_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 			PluginContext: pCtx,
 		})
@@ -54,7 +54,7 @@ func TestContextualLogger(t *testing.T) {
 			checkCtxLogger(ctx, t, map[string]any{"endpoint": "checkHealth", "pluginID": pluginID})
 			run <- struct{}{}
 			return &CheckHealthResult{}, nil
-		}))
+		}), "")
 		_, err := a.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
 			PluginContext: pCtx,
 		})
@@ -68,7 +68,7 @@ func TestContextualLogger(t *testing.T) {
 			checkCtxLogger(ctx, t, map[string]any{"endpoint": "callResource", "pluginID": pluginID})
 			run <- struct{}{}
 			return nil
-		}))
+		}), "")
 		err := a.CallResource(&pluginv2.CallResourceRequest{
 			PluginContext: pCtx,
 		}, newTestCallResourceServer())
@@ -96,7 +96,7 @@ func TestContextualLogger(t *testing.T) {
 				runStreamRun <- struct{}{}
 				return nil
 			},
-		})
+		}, "")
 
 		t.Run("SubscribeStream", func(t *testing.T) {
 			_, err := a.SubscribeStream(context.Background(), &pluginv2.SubscribeStreamRequest{

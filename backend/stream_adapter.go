@@ -12,11 +12,13 @@ import (
 // streamSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type streamSDKAdapter struct {
 	streamHandler StreamHandler
+	apiVersion    string
 }
 
-func newStreamSDKAdapter(handler StreamHandler) *streamSDKAdapter {
+func newStreamSDKAdapter(handler StreamHandler, apiVersion string) *streamSDKAdapter {
 	return &streamSDKAdapter{
 		streamHandler: handler,
+		apiVersion:    apiVersion,
 	}
 }
 
@@ -27,6 +29,9 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().SubscribeStreamRequest(protoReq)
+	if err := parsedReq.PluginContext.verifyApiVersion(a.apiVersion); err != nil {
+		return nil, err
+	}
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointSubscribeStream)
 	resp, err := a.streamHandler.SubscribeStream(ctx, parsedReq)
 	if err != nil {

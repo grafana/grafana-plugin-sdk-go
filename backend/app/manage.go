@@ -13,6 +13,11 @@ import (
 
 // ManageOpts can modify Manage behaviour.
 type ManageOpts struct {
+	// ApiVersion is the required ApiVersion -- setting this will
+	// fail any request asking for a different version.  For multi-version servers,
+	// this value should not be set, and be handled directly in each server
+	ApiVersion string
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
 
