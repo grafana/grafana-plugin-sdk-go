@@ -181,13 +181,13 @@ type PluginContext struct {
 	UserAgent *useragent.UserAgent
 
 	// The requested apiVersion
-	ApiVersion string
+	APIVersion string
 }
 
-func (p *PluginContext) verifyApiVersion(expectedApiVersion string) error {
-	if expectedApiVersion != "" && p.ApiVersion != "" &&
-		expectedApiVersion != p.ApiVersion {
-		return fmt.Errorf("requested apiVersion: %s, but running %s", p.ApiVersion, expectedApiVersion)
+func (p *PluginContext) verifyAPIVersion(expectedAPIVersion string) error {
+	if expectedAPIVersion != "" && p.APIVersion != "" &&
+		expectedAPIVersion != p.APIVersion {
+		return fmt.Errorf("requested apiVersion: %s, but running %s", p.APIVersion, expectedAPIVersion)
 	}
 	return nil
 }

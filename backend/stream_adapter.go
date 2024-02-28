@@ -29,7 +29,7 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().SubscribeStreamRequest(protoReq)
-	if err := parsedReq.PluginContext.verifyApiVersion(a.apiVersion); err != nil {
+	if err := parsedReq.PluginContext.verifyAPIVersion(a.apiVersion); err != nil {
 		return nil, err
 	}
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointSubscribeStream)

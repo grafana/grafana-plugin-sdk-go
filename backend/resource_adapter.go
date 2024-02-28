@@ -40,7 +40,7 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().CallResourceRequest(protoReq)
-	if err := parsedReq.PluginContext.verifyApiVersion(a.apiVersion); err != nil {
+	if err := parsedReq.PluginContext.verifyAPIVersion(a.apiVersion); err != nil {
 		return err
 	}
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())

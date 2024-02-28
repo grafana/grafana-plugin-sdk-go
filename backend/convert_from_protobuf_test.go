@@ -256,7 +256,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Uid, sdkCtx.DataSourceInstanceSettings.UID)
 	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.DataSourceInstanceSettings.Type)
 	requireCounter.Equal(t, protoCtx.PluginVersion, sdkCtx.PluginVersion)
-	requireCounter.Equal(t, protoCtx.ApiVersion, sdkCtx.ApiVersion)
+	requireCounter.Equal(t, protoCtx.ApiVersion, sdkCtx.APIVersion)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Url, sdkCtx.DataSourceInstanceSettings.URL)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.User, sdkCtx.DataSourceInstanceSettings.User)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Database, sdkCtx.DataSourceInstanceSettings.Database)
@@ -398,7 +398,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	// PluginContext
 	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.PluginID)
-	requireCounter.Equal(t, protoQDR.PluginContext.ApiVersion, sdkQDR.PluginContext.ApiVersion)
+	requireCounter.Equal(t, protoQDR.PluginContext.ApiVersion, sdkQDR.PluginContext.APIVersion)
 	// User
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Login, sdkQDR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)

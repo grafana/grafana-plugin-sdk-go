@@ -49,7 +49,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().QueryDataRequest(req)
-	if err := parsedReq.PluginContext.verifyApiVersion(a.apiVersion); err != nil {
+	if err := parsedReq.PluginContext.verifyAPIVersion(a.apiVersion); err != nil {
 		return nil, err
 	}
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())

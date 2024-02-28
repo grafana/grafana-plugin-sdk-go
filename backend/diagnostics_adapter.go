@@ -51,7 +51,7 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		ctx = propagateTenantIDIfPresent(ctx)
 		ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
-		if err := parsedReq.PluginContext.verifyApiVersion(a.apiVersion); err != nil {
+		if err := parsedReq.PluginContext.verifyAPIVersion(a.apiVersion); err != nil {
 			return nil, err
 		}
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
