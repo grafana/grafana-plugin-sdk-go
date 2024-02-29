@@ -24,8 +24,8 @@ func TestSchemaSupport(t *testing.T) {
 
 	fmt.Printf("%s\n", string(jj))
 
-	copy := &JSONSchema{}
-	err = copy.UnmarshalJSON(jj)
+	cpy := &JSONSchema{}
+	err = cpy.UnmarshalJSON(jj)
 	require.NoError(t, err)
-	require.Equal(t, val.Spec.Description, copy.Spec.Description)
+	require.Equal(t, val.Spec.Description, cpy.Spec.Description)
 }

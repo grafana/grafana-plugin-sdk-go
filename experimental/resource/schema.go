@@ -22,10 +22,10 @@ func (s JSONSchema) MarshalJSON() ([]byte, error) {
 	if err == nil {
 		// The internal format puts $schema last!
 		// this moves $schema first
-		copy := map[string]any{}
-		err := json.Unmarshal(body, &copy)
+		cpy := map[string]any{}
+		err := json.Unmarshal(body, &cpy)
 		if err == nil {
-			return json.Marshal(copy)
+			return json.Marshal(cpy)
 		}
 	}
 	return body, err
@@ -36,7 +36,7 @@ func (s *JSONSchema) UnmarshalJSON(data []byte) error {
 	return s.Spec.UnmarshalJSON(data)
 }
 
-func (g JSONSchema) OpenAPIDefinition() openapi.OpenAPIDefinition {
+func (s JSONSchema) OpenAPIDefinition() openapi.OpenAPIDefinition {
 	return openapi.OpenAPIDefinition{Schema: spec.Schema{
 		SchemaProps: spec.SchemaProps{
 			Ref:                  spec.MustCreateRef(draft04),
@@ -46,14 +46,14 @@ func (g JSONSchema) OpenAPIDefinition() openapi.OpenAPIDefinition {
 	}}
 }
 
-func (g *JSONSchema) DeepCopy() *JSONSchema {
-	if g == nil {
+func (s *JSONSchema) DeepCopy() *JSONSchema {
+	if s == nil {
 		return nil
 	}
 	out := &JSONSchema{}
-	if g.Spec != nil {
+	if s.Spec != nil {
 		out.Spec = &spec.Schema{}
-		jj, err := json.Marshal(g.Spec)
+		jj, err := json.Marshal(s.Spec)
 		if err == nil {
 			_ = json.Unmarshal(jj, out.Spec)
 		}
@@ -61,10 +61,10 @@ func (g *JSONSchema) DeepCopy() *JSONSchema {
 	return out
 }
 
-func (g *JSONSchema) DeepCopyInto(out *JSONSchema) {
-	if g.Spec == nil {
+func (s *JSONSchema) DeepCopyInto(out *JSONSchema) {
+	if s.Spec == nil {
 		out.Spec = nil
 		return
 	}
-	out.Spec = g.DeepCopy().Spec
+	out.Spec = s.DeepCopy().Spec
 }
