@@ -33,7 +33,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	query := builder.reflector.Reflect(&resource.CommonQueryProperties{})
 	updateEnumDescriptions(query)
 	query.ID = ""
-	query.Version = "https://json-schema.org/draft-04/schema" // used by kube-openapi
+	query.Version = draft04 // used by kube-openapi
 	query.Description = "Generic query properties"
 	query.AdditionalProperties = jsonschema.TrueSchema
 

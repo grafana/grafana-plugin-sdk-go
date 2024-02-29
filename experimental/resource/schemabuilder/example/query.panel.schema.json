@@ -433,7 +433,7 @@
             "$schema": "https://json-schema.org/draft-04/schema"
           }
         ],
-        "$schema": "https://json-schema.org/draft-04/schema"
+        "$schema": "https://json-schema.org/draft-04/schema#"
       }
     },
     "type": {
@@ -442,5 +442,5 @@
     }
   },
   "additionalProperties": true,
-  "$schema": "https://json-schema.org/draft-04/schema"
+  "$schema": "https://json-schema.org/draft-04/schema#"
 }

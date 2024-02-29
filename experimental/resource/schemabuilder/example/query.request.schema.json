@@ -467,7 +467,7 @@
             "$schema": "https://json-schema.org/draft-04/schema"
           }
         ],
-        "$schema": "https://json-schema.org/draft-04/schema"
+        "$schema": "https://json-schema.org/draft-04/schema#"
       }
     },
     "to": {
@@ -476,5 +476,5 @@
     }
   },
   "additionalProperties": false,
-  "$schema": "https://json-schema.org/draft-04/schema"
+  "$schema": "https://json-schema.org/draft-04/schema#"
 }

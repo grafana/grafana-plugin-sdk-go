@@ -18,7 +18,17 @@ func (s JSONSchema) MarshalJSON() ([]byte, error) {
 	if s.Spec == nil {
 		return []byte("{}"), nil
 	}
-	return s.Spec.MarshalJSON()
+	body, err := s.Spec.MarshalJSON()
+	if err == nil {
+		// The internal format puts $schema last!
+		// this moves $schema first
+		copy := map[string]any{}
+		err := json.Unmarshal(body, &copy)
+		if err == nil {
+			return json.Marshal(copy)
+		}
+	}
+	return body, err
 }
 
 func (s *JSONSchema) UnmarshalJSON(data []byte) error {

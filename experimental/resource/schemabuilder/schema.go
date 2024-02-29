@@ -9,7 +9,7 @@ import (
 )
 
 // The k8s compatible jsonschema version
-const draft04 = "https://json-schema.org/draft-04/schema"
+const draft04 = "https://json-schema.org/draft-04/schema#"
 
 // Supported expression types
 // +enum
