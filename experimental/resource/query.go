@@ -1,7 +1,6 @@
 package resource
 
 import (
-	"embed"
 	"encoding/json"
 	"fmt"
 	"unsafe"
@@ -10,8 +9,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 	j "github.com/json-iterator/go"
-	openapi "k8s.io/kube-openapi/pkg/common"
-	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
 func init() { //nolint:gochecknoinits
@@ -64,17 +61,6 @@ func (g *GenericDataQuery) CommonProperties() *CommonQueryProperties {
 // Dependencies implements DataQuery.
 func (g *GenericDataQuery) Dependencies() []string {
 	return nil
-}
-
-// Produce an API definition that represents map[string]any
-func (g GenericDataQuery) OpenAPIDefinition() openapi.OpenAPIDefinition {
-	s, _ := GenericQuerySchema()
-	if s == nil {
-		s = &spec.Schema{}
-	}
-	s.SchemaProps.Type = []string{"object"}
-	s.SchemaProps.AdditionalProperties = &spec.SchemaOrBool{Allows: true}
-	return openapi.OpenAPIDefinition{Schema: *s}
 }
 
 func NewGenericDataQuery(body map[string]any) GenericDataQuery {
@@ -429,18 +415,4 @@ type ResultAssertions struct {
 
 	// Maximum frame count
 	MaxFrames int64 `json:"maxFrames,omitempty"`
-}
-
-//go:embed query.schema.json query.definition.schema.json
-var f embed.FS
-
-// Get the cached feature list (exposed as a k8s resource)
-func GenericQuerySchema() (*spec.Schema, error) {
-	body, err := f.ReadFile("query.schema.json")
-	if err != nil {
-		return nil, err
-	}
-	s := &spec.Schema{}
-	err = s.UnmarshalJSON(body)
-	return s, err
 }

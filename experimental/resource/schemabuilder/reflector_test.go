@@ -58,6 +58,6 @@ func TestWriteQuerySchema(t *testing.T) {
 	old, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
-	def := resource.QueryTypeDefinitionSpec{}.OpenAPIDefinition()
+	def := resource.GetOpenAPIDefinitions(nil)["github.com/grafana/grafana-plugin-sdk-go/experimental/resource.QueryTypeDefinitionSpec"]
 	require.Equal(t, query.Properties.Len(), len(def.Schema.Properties))
 }

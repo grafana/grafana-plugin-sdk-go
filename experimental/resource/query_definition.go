@@ -3,9 +3,6 @@ package resource
 import (
 	"encoding/json"
 	"fmt"
-
-	openapi "k8s.io/kube-openapi/pkg/common"
-	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
 // QueryTypeDefinition is a kubernetes shaped object that represents a single query definition
@@ -44,16 +41,6 @@ type QueryTypeDefinitionSpec struct {
 	// All changes in the same version *must* be backwards compatible
 	// Only notable changes will be shown here, for the full version history see git!
 	Changelog []string `json:"changelog,omitempty"`
-}
-
-// Produce an API definition that represents map[string]any
-func (g QueryTypeDefinitionSpec) OpenAPIDefinition() openapi.OpenAPIDefinition {
-	s := &spec.Schema{}
-	body, err := f.ReadFile("query.definition.schema.json")
-	if err == nil {
-		_ = s.UnmarshalJSON(body)
-	}
-	return openapi.OpenAPIDefinition{Schema: *s}
 }
 
 func (g *QueryTypeDefinitionSpec) DeepCopy() *QueryTypeDefinitionSpec {
