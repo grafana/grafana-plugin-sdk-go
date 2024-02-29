@@ -1,14 +1,7 @@
 package example
 
-import (
-	"fmt"
-	"time"
+import "github.com/grafana/grafana-plugin-sdk-go/data"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
-)
-
-// Supported expression types
 // +enum
 type QueryType string
 
@@ -23,32 +16,70 @@ const (
 	QueryTypeResample QueryType = "resample"
 )
 
-type ExpressionQuery interface {
-	ExpressionQueryType() QueryType
-	Variables() []string
+type MathQuery struct {
+	// General math expression
+	Expression string `json:"expression" jsonschema:"minLength=1,example=$A + 1,example=$A/$B"`
 }
 
-var _ resource.TypedQueryParser[ExpressionQuery] = (*QueyHandler)(nil)
+type ReduceQuery struct {
+	// Reference to other query results
+	Expression string `json:"expression"`
 
-type QueyHandler struct{}
+	// The reducer
+	Reducer ReducerID `json:"reducer"`
 
-func (*QueyHandler) ParseQuery(
-	common resource.CommonQueryProperties,
-	iter *jsoniter.Iterator,
-	_ time.Time,
-) (ExpressionQuery, error) {
-	qt := QueryType(common.QueryType)
-	switch qt {
-	case QueryTypeMath:
-		return readMathQuery(iter)
+	// Reducer Options
+	Settings ReduceSettings `json:"settings"`
+}
 
-	case QueryTypeReduce:
-		q := &ReduceQuery{}
-		err := iter.ReadVal(q)
-		return q, err
+type ReduceSettings struct {
+	// Non-number reduce behavior
+	Mode ReduceMode `json:"mode"`
 
-	case QueryTypeResample:
-		return nil, nil
-	}
-	return nil, fmt.Errorf("unknown query type")
+	// Only valid when mode is replace
+	ReplaceWithValue *float64 `json:"replaceWithValue,omitempty"`
+}
+
+// The reducer function
+// +enum
+type ReducerID string
+
+const (
+	// The sum
+	ReducerSum ReducerID = "sum"
+	// The mean
+	ReducerMean  ReducerID = "mean"
+	ReducerMin   ReducerID = "min"
+	ReducerMax   ReducerID = "max"
+	ReducerCount ReducerID = "count"
+	ReducerLast  ReducerID = "last"
+)
+
+// Non-Number behavior mode
+// +enum
+type ReduceMode string
+
+const (
+	// Drop non-numbers
+	ReduceModeDrop ReduceMode = "dropNN"
+
+	// Replace non-numbers
+	ReduceModeReplace ReduceMode = "replaceNN"
+)
+
+// QueryType = resample
+type ResampleQuery struct {
+	// The math expression
+	Expression string `json:"expression"`
+
+	// A time duration string
+	Window string `json:"window"`
+
+	// The reducer
+	Downsampler string `json:"downsampler"`
+
+	// The reducer
+	Upsampler string `json:"upsampler"`
+
+	LoadedDimensions *data.Frame `json:"loadedDimensions"`
 }

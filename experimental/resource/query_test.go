@@ -3,7 +3,9 @@ package resource
 import (
 	"encoding/json"
 	"testing"
+	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,36 +42,54 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 	err := json.Unmarshal(request, req)
 	require.NoError(t, err)
 
-	require.Len(t, req.Queries, 2)
-	require.Equal(t, "b1808c48-9fc9-4045-82d7-081781f8a553", req.Queries[0].Datasource.UID)
-	require.Equal(t, "spreadsheetID", req.Queries[0].MustString("spreadsheet"))
+	t.Run("verify raw unmarshal", func(t *testing.T) {
+		require.Len(t, req.Queries, 2)
+		require.Equal(t, "b1808c48-9fc9-4045-82d7-081781f8a553", req.Queries[0].Datasource.UID)
+		require.Equal(t, "spreadsheetID", req.Queries[0].MustString("spreadsheet"))
 
-	// Write the query (with additional spreadsheetID) to JSON
-	out, err := json.MarshalIndent(req.Queries[0], "", "  ")
-	require.NoError(t, err)
+		// Write the query (with additional spreadsheetID) to JSON
+		out, err := json.MarshalIndent(req.Queries[0], "", "  ")
+		require.NoError(t, err)
 
-	// And read it back with standard JSON marshal functions
-	query := &GenericDataQuery{}
-	err = json.Unmarshal(out, query)
-	require.NoError(t, err)
-	require.Equal(t, "spreadsheetID", query.MustString("spreadsheet"))
+		// And read it back with standard JSON marshal functions
+		query := &GenericDataQuery{}
+		err = json.Unmarshal(out, query)
+		require.NoError(t, err)
+		require.Equal(t, "spreadsheetID", query.MustString("spreadsheet"))
 
-	// The second query has an explicit time range, and legacy datasource name
-	out, err = json.MarshalIndent(req.Queries[1], "", "  ")
-	require.NoError(t, err)
-	// fmt.Printf("%s\n", string(out))
-	require.JSONEq(t, `{
-		"datasource": {
-		  "type": "", ` /* NOTE! this implies legacy naming */ +`
-		  "uid": "old"
-		},
-		"maxDataPoints": 10,
-		"refId": "Z",
-		"timeRange": {
-		  "from": "100",
-		  "to": "200"
-		}
-	  }`, string(out))
+		// The second query has an explicit time range, and legacy datasource name
+		out, err = json.MarshalIndent(req.Queries[1], "", "  ")
+		require.NoError(t, err)
+		// fmt.Printf("%s\n", string(out))
+		require.JSONEq(t, `{
+			"datasource": {
+			  "type": "", ` /* NOTE! this implies legacy naming */ +`
+			  "uid": "old"
+			},
+			"maxDataPoints": 10,
+			"refId": "Z",
+			"timeRange": {
+			  "from": "100",
+			  "to": "200"
+			}
+		  }`, string(out))
+	})
+
+	t.Run("same results from either parser", func(t *testing.T) {
+		iter, err := jsoniter.ParseBytes(jsoniter.ConfigCompatibleWithStandardLibrary, request)
+		require.NoError(t, err)
+
+		typed, err := ParseQueryRequest(iter, time.Now())
+		require.NoError(t, err)
+
+		out1, err := json.MarshalIndent(req, "", "  ")
+		require.NoError(t, err)
+
+		out2, err := json.MarshalIndent(typed, "", "  ")
+		require.NoError(t, err)
+
+		require.JSONEq(t, string(out1), string(out2))
+	})
 }
 
 func TestQueryBuilders(t *testing.T) {

@@ -1,7 +1,6 @@
 package schemabuilder
 
 import (
-	"fmt"
 	"os"
 	"reflect"
 	"testing"
@@ -37,13 +36,6 @@ func TestWriteQuerySchema(t *testing.T) {
 	query.Version = "https://json-schema.org/draft-04/schema" // used by kube-openapi
 	query.Description = "Generic query properties"
 	query.AdditionalProperties = jsonschema.TrueSchema
-
-	// Write the map of values ignored by the common parser
-	fmt.Printf("var commonKeys = map[string]bool{\n")
-	for pair := query.Properties.Oldest(); pair != nil; pair = pair.Next() {
-		fmt.Printf("  \"%s\": true,\n", pair.Key)
-	}
-	fmt.Printf("}\n")
 
 	// // Hide this old property
 	query.Properties.Delete("datasourceId")

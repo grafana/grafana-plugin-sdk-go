@@ -6,11 +6,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
 )
 
-func exampleRequest(defs resource.QueryTypeDefinitionList) (resource.QueryRequest[resource.GenericDataQuery], error) {
-	rsp := resource.QueryRequest[resource.GenericDataQuery]{
+func exampleRequest(defs resource.QueryTypeDefinitionList) (resource.GenericQueryRequest, error) {
+	rsp := resource.GenericQueryRequest{
 		From:    "now-1h",
 		To:      "now",
-		Queries: []resource.GenericDataQuery{},
+		Queries: []*resource.GenericDataQuery{},
 	}
 
 	for _, def := range defs.Items {
@@ -33,7 +33,7 @@ func exampleRequest(defs resource.QueryTypeDefinitionList) (resource.QueryReques
 					q.IntervalMS = 5
 				}
 
-				rsp.Queries = append(rsp.Queries, *q)
+				rsp.Queries = append(rsp.Queries, q)
 			}
 		}
 	}
