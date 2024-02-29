@@ -6,7 +6,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 )
 
-func ParseQueryRequest(iter *jsoniter.Iterator, now time.Time) (*GenericQueryRequest, error) {
+func ParseQueryRequest(iter *jsoniter.Iterator) (*GenericQueryRequest, error) {
 	return ParseTypedQueryRequest[*GenericDataQuery](&genericQueryReader{}, iter, time.Now())
 }
 
@@ -22,7 +22,7 @@ type TypedQueryReader[T DataQuery] interface {
 func ParseTypedQueryRequest[T DataQuery](reader TypedQueryReader[T], iter *jsoniter.Iterator, now time.Time) (*QueryRequest[T], error) {
 	var err error
 	var root string
-	ok := true
+	var ok bool
 	dqr := &QueryRequest[T]{}
 	for root, err = iter.ReadObject(); root != ""; root, err = iter.ReadObject() {
 		switch root {
@@ -74,7 +74,7 @@ type genericQueryReader struct {
 }
 
 // Called before any custom properties are passed
-func (g *genericQueryReader) Start(p *CommonQueryProperties, now time.Time) error {
+func (g *genericQueryReader) Start(p *CommonQueryProperties, _ time.Time) error {
 	g.additional = make(map[string]any)
 	g.common = p
 	return nil

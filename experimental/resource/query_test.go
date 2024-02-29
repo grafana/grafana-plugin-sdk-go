@@ -3,7 +3,6 @@ package resource
 import (
 	"encoding/json"
 	"testing"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 	"github.com/stretchr/testify/require"
@@ -79,7 +78,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		iter, err := jsoniter.ParseBytes(jsoniter.ConfigCompatibleWithStandardLibrary, request)
 		require.NoError(t, err)
 
-		typed, err := ParseQueryRequest(iter, time.Now())
+		typed, err := ParseQueryRequest(iter)
 		require.NoError(t, err)
 
 		out1, err := json.MarshalIndent(req, "", "  ")
