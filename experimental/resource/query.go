@@ -431,7 +431,7 @@ type ResultAssertions struct {
 	MaxFrames int64 `json:"maxFrames,omitempty"`
 }
 
-//go:embed query.schema.json
+//go:embed query.schema.json query.definition.schema.json
 var f embed.FS
 
 // Get the cached feature list (exposed as a k8s resource)

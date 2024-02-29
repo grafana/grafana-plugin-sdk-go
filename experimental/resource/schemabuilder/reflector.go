@@ -92,6 +92,10 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 			},
 			AdditionalProperties: jsonschema.TrueSchema,
 		},
+		reflect.TypeOf(resource.JSONSchema{}): {
+			Type: "object",
+			Ref:  draft04,
+		},
 	}
 	r.Mapper = func(t reflect.Type) *jsonschema.Schema {
 		return customMapper[t]

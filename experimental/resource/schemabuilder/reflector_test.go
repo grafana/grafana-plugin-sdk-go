@@ -48,4 +48,16 @@ func TestWriteQuerySchema(t *testing.T) {
 	schema, err := resource.GenericQuerySchema()
 	require.NoError(t, err)
 	require.Equal(t, 8, len(schema.Properties))
+
+	// Add schema for query type definition
+	query = builder.reflector.Reflect(&resource.QueryTypeDefinitionSpec{})
+	updateEnumDescriptions(query)
+	query.ID = ""
+	query.Version = draft04 // used by kube-openapi
+	outfile = "../query.definition.schema.json"
+	old, _ = os.ReadFile(outfile)
+	maybeUpdateFile(t, outfile, query, old)
+
+	def := resource.QueryTypeDefinitionSpec{}.OpenAPIDefinition()
+	require.Equal(t, query.Properties.Len(), len(def.Schema.Properties))
 }
