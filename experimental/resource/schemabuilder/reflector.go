@@ -51,6 +51,8 @@ type BuilderOptions struct {
 type QueryTypeInfo struct {
 	// The management name
 	Name string
+	// Optional description
+	Description string
 	// Optional discriminators
 	Discriminators []resource.DiscriminatorFieldValue
 	// Raw GO type used for reflection
@@ -159,15 +161,22 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 		schema.Version = draft04
 		schema.ID = ""
 		schema.Anchor = ""
+		spec, err := asJSONSchema(schema)
+		if err != nil {
+			return err
+		}
 
 		b.query = append(b.query, resource.QueryTypeDefinition{
 			ObjectMeta: resource.ObjectMeta{
 				Name: name,
 			},
 			Spec: resource.QueryTypeDefinitionSpec{
+				Description:    info.Description,
 				Discriminators: info.Discriminators,
-				QuerySchema:    schema,
-				Examples:       info.Examples,
+				Schema: resource.JSONSchema{
+					Spec: spec,
+				},
+				Examples: info.Examples,
 			},
 		})
 	}
@@ -192,6 +201,10 @@ func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
 		schema.Version = draft04
 		schema.ID = ""
 		schema.Anchor = ""
+		spec, err := asJSONSchema(schema)
+		if err != nil {
+			return err
+		}
 
 		b.setting = append(b.setting, resource.SettingsDefinition{
 			ObjectMeta: resource.ObjectMeta{
@@ -199,7 +212,9 @@ func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
 			},
 			Spec: resource.SettingsDefinitionSpec{
 				Discriminators: info.Discriminators,
-				JSONDataSchema: schema,
+				JSONDataSchema: resource.JSONSchema{
+					Spec: spec,
+				},
 			},
 		})
 	}
@@ -241,14 +256,13 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 
 			defs.Items = append(defs.Items, def)
 		} else {
-			var o1, o2 interface{}
 			b1, _ := json.Marshal(def.Spec)
 			b2, _ := json.Marshal(found.Spec)
-			_ = json.Unmarshal(b1, &o1)
-			_ = json.Unmarshal(b2, &o2)
-			if !reflect.DeepEqual(o1, o2) {
+			if !assert.JSONEq(&testing.T{}, string(b1), string(b2)) {
 				found.ObjectMeta.ResourceVersion = rv
 				found.Spec = def.Spec
+
+				fmt.Printf("NEW:%s\n", string(b2))
 			}
 			delete(byName, def.ObjectMeta.Name)
 		}

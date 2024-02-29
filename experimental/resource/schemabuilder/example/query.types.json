@@ -8,7 +8,7 @@
     {
       "metadata": {
         "name": "math",
-        "resourceVersion": "1708817676338",
+        "resourceVersion": "1709227964325",
         "creationTimestamp": "2024-02-21T20:50:29Z"
       },
       "spec": {
@@ -18,24 +18,24 @@
             "value": "math"
           }
         ],
-        "querySchema": {
-          "$schema": "https://json-schema.org/draft-04/schema",
-          "additionalProperties": false,
-          "properties": {
-            "expression": {
-              "description": "General math expression",
-              "examples": [
-                "$A + 1",
-                "$A/$B"
-              ],
-              "minLength": 1,
-              "type": "string"
-            }
-          },
+        "schema": {
+          "type": "object",
           "required": [
             "expression"
           ],
-          "type": "object"
+          "properties": {
+            "expression": {
+              "description": "General math expression",
+              "type": "string",
+              "minLength": 1,
+              "examples": [
+                "$A + 1",
+                "$A/$B"
+              ]
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "https://json-schema.org/draft-04/schema"
         },
         "examples": [
           {
@@ -56,7 +56,7 @@
     {
       "metadata": {
         "name": "reduce",
-        "resourceVersion": "1708876267448",
+        "resourceVersion": "1709227964325",
         "creationTimestamp": "2024-02-21T20:50:29Z"
       },
       "spec": {
@@ -66,14 +66,20 @@
             "value": "reduce"
           }
         ],
-        "querySchema": {
-          "$schema": "https://json-schema.org/draft-04/schema",
+        "schema": {
+          "type": "object",
+          "required": [
+            "expression",
+            "reducer",
+            "settings"
+          ],
           "properties": {
             "expression": {
-              "type": "string",
-              "description": "Reference to other query results"
+              "description": "Reference to other query results",
+              "type": "string"
             },
             "reducer": {
+              "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
               "type": "string",
               "enum": [
                 "sum",
@@ -83,46 +89,40 @@
                 "count",
                 "last"
               ],
-              "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
               "x-enum-description": {
                 "mean": "The mean",
                 "sum": "The sum"
               }
             },
             "settings": {
+              "description": "Reducer Options",
+              "type": "object",
+              "required": [
+                "mode"
+              ],
               "properties": {
                 "mode": {
+                  "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
                   "type": "string",
                   "enum": [
                     "dropNN",
                     "replaceNN"
                   ],
-                  "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
                   "x-enum-description": {
                     "dropNN": "Drop non-numbers",
                     "replaceNN": "Replace non-numbers"
                   }
                 },
                 "replaceWithValue": {
-                  "type": "number",
-                  "description": "Only valid when mode is replace"
+                  "description": "Only valid when mode is replace",
+                  "type": "number"
                 }
               },
-              "additionalProperties": false,
-              "type": "object",
-              "required": [
-                "mode"
-              ],
-              "description": "Reducer Options"
+              "additionalProperties": false
             }
           },
           "additionalProperties": false,
-          "type": "object",
-          "required": [
-            "expression",
-            "reducer",
-            "settings"
-          ]
+          "$schema": "https://json-schema.org/draft-04/schema"
         },
         "examples": [
           {
@@ -141,7 +141,7 @@
     {
       "metadata": {
         "name": "resample",
-        "resourceVersion": "1708548629808",
+        "resourceVersion": "1709227964325",
         "creationTimestamp": "2024-02-21T20:50:29Z"
       },
       "spec": {
@@ -151,10 +151,16 @@
             "value": "resample"
           }
         ],
-        "querySchema": {
-          "$schema": "https://json-schema.org/draft-04/schema",
-          "additionalProperties": false,
+        "schema": {
           "description": "QueryType = resample",
+          "type": "object",
+          "required": [
+            "expression",
+            "window",
+            "downsampler",
+            "upsampler",
+            "loadedDimensions"
+          ],
           "properties": {
             "downsampler": {
               "description": "The reducer",
@@ -165,8 +171,8 @@
               "type": "string"
             },
             "loadedDimensions": {
-              "additionalProperties": true,
               "type": "object",
+              "additionalProperties": true,
               "x-grafana-type": "data.DataFrame"
             },
             "upsampler": {
@@ -178,14 +184,8 @@
               "type": "string"
             }
           },
-          "required": [
-            "expression",
-            "window",
-            "downsampler",
-            "upsampler",
-            "loadedDimensions"
-          ],
-          "type": "object"
+          "additionalProperties": false,
+          "$schema": "https://json-schema.org/draft-04/schema"
         }
       }
     }

@@ -29,13 +29,7 @@ type QueryTypeDefinitionSpec struct {
 	// The query schema represents the properties that can be sent to the API
 	// In many cases, this may be the same properties that are saved in a dashboard
 	// In the case where the save model is different, we must also specify a save model
-	QuerySchema any `json:"querySchema"`
-
-	// The save model defines properties that can be saved into dashboard or similar
-	// These values are processed by frontend components and then sent to the api
-	// When specified, this schema will be used to validate saved objects rather than
-	// the query schema
-	SaveModel any `json:"saveModel,omitempty"`
+	Schema JSONSchema `json:"schema"`
 
 	// Examples (include a wrapper) ideally a template!
 	Examples []QueryExample `json:"examples,omitempty"`
@@ -49,6 +43,9 @@ type QueryTypeDefinitionSpec struct {
 type QueryExample struct {
 	// Version identifier or empty if only one exists
 	Name string `json:"name,omitempty"`
+
+	// Optionally explain why the example is interesting
+	Description string `json:"description,omitempty"`
 
 	// An example value saved that can be saved in a dashboard
 	SaveModel any `json:"saveModel,omitempty"`

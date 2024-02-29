@@ -75,12 +75,9 @@ func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 	// The types for each query type
 	queryTypes := []*spec.Schema{}
 	for _, qt := range opts.QueryTypes {
-		node, err := asJSONSchema(qt.Spec.QuerySchema)
-		if err != nil {
-			return nil, fmt.Errorf("error reading query types schema: %s // %w", qt.ObjectMeta.Name, err)
-		}
+		node := qt.Spec.Schema.DeepCopy().Spec
 		if node == nil {
-			return nil, fmt.Errorf("missing query schema: %s // %v", qt.ObjectMeta.Name, qt)
+			return nil, fmt.Errorf("missing schema for: %s", qt.ObjectMeta.Name)
 		}
 
 		// Match all discriminators

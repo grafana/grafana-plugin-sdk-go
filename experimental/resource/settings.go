@@ -27,11 +27,11 @@ type SettingsDefinitionSpec struct {
 	// The query schema represents the properties that can be sent to the API
 	// In many cases, this may be the same properties that are saved in a dashboard
 	// In the case where the save model is different, we must also specify a save model
-	JSONDataSchema any `json:"jsonDataSchema"`
+	JSONDataSchema JSONSchema `json:"jsonDataSchema"`
 
 	// JSON schema defining the properties needed in secure json
-	// NOTE these must all be string fields
-	SecureJSONSchema any `json:"secureJsonSchema"`
+	// NOTE all properties must be string values!
+	SecureProperties JSONSchema `json:"secureJsonSchema"`
 
 	// Changelog defines the changed from the previous version
 	// All changes in the same version *must* be backwards compatible
