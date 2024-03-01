@@ -35,7 +35,7 @@ type QueryTypeDefinitionSpec struct {
 	Schema JSONSchema `json:"schema"`
 
 	// Examples (include a wrapper) ideally a template!
-	Examples []QueryExample `json:"examples,omitempty"`
+	Examples []QueryExample `json:"examples"`
 
 	// Changelog defines the changed from the previous version
 	// All changes in the same version *must* be backwards compatible

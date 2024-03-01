@@ -264,7 +264,7 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 			defs.Items = append(defs.Items, def)
 		} else {
 			if diff := cmp.Diff(def.Spec, found.Spec, cmpopts.IgnoreUnexported(jsonreference.Ref{})); diff != "" {
-				fmt.Printf("Spec changed:\n%s\n", diff)
+				// fmt.Printf("Spec changed:\n%s\n", diff)
 				found.ObjectMeta.ResourceVersion = rv
 				found.Spec = def.Spec
 			}

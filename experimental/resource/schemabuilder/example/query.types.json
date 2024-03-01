@@ -8,7 +8,7 @@
     {
       "metadata": {
         "name": "math",
-        "resourceVersion": "1709250388761",
+        "resourceVersion": "1709251645142",
         "creationTimestamp": "2024-02-29T18:06:53Z"
       },
       "spec": {
@@ -41,7 +41,7 @@
           {
             "name": "constant addition",
             "saveModel": {
-              "expression": "$A + 10"
+              "expression": "$A + 11"
             }
           },
           {
@@ -141,7 +141,7 @@
     {
       "metadata": {
         "name": "resample",
-        "resourceVersion": "1709230013217",
+        "resourceVersion": "1709252275481",
         "creationTimestamp": "2024-02-29T18:06:53Z"
       },
       "spec": {
@@ -186,7 +186,8 @@
             "loadedDimensions"
           ],
           "type": "object"
-        }
+        },
+        "examples": []
       }
     }
   ]

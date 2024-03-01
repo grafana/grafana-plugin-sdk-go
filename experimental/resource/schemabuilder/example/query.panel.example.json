@@ -8,7 +8,7 @@
         "uid": "TheUID"
       },
       "queryType": "math",
-      "expression": "$A + 10"
+      "expression": "$A + 11"
     },
     {
       "refId": "B",
@@ -26,11 +26,11 @@
         "uid": "TheUID"
       },
       "queryType": "reduce",
-      "expression": "$A",
-      "reducer": "max",
       "settings": {
         "mode": "dropNN"
-      }
+      },
+      "expression": "$A",
+      "reducer": "max"
     }
   ]
 }

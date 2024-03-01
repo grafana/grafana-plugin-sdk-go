@@ -29,7 +29,7 @@ func TestQueryTypeDefinitions(t *testing.T) {
 			{
 				Name: "constant addition",
 				SaveModel: resource.AsUnstructured(MathQuery{
-					Expression: "$A + 10",
+					Expression: "$A + 11",
 				}),
 			},
 			{
@@ -59,6 +59,7 @@ func TestQueryTypeDefinitions(t *testing.T) {
 		schemabuilder.QueryTypeInfo{
 			Discriminators: resource.NewDiscriminators("queryType", QueryTypeResample),
 			GoType:         reflect.TypeOf(&ResampleQuery{}),
+			Examples:       []resource.QueryExample{},
 		})
 	require.NoError(t, err)
 
