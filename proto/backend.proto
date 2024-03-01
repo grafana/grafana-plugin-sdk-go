@@ -69,7 +69,7 @@ message PluginContext {
   // The user agent of the Grafana server that initiated the gRPC request.
   string userAgent = 8;
 
-  // The apiVersion that initiated the request.
+  // The API version of the plugin the request is targeted for.
   string apiVersion = 9;
 }
 
