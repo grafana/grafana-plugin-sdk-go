@@ -12,29 +12,20 @@ var f embed.FS
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/grafana/grafana-plugin-sdk-go/backend.QueryDataResponse":                     schemaQueryDataResponse(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":                          schemaDataResponse(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                    schemaDataFrame(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/resource.GenericDataQuery":        schemaGenericQuery(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/resource.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
 	}
 }
 
-func schemaQueryDataResponse(_ common.ReferenceCallback) common.OpenAPIDefinition {
+// Individual response
+func schemaDataResponse(_ common.ReferenceCallback) common.OpenAPIDefinition {
 	return common.OpenAPIDefinition{
 		Schema: spec.Schema{
 			SchemaProps: spec.SchemaProps{
-				Description: "results keyed by refId",
-				Type:        []string{"object"},
-				Properties: map[string]spec.Schema{
-					"results": *spec.MapProperty(&spec.Schema{
-						SchemaProps: spec.SchemaProps{
-							Description:          "any object for now",
-							Type:                 []string{"object"},
-							Properties:           map[string]spec.Schema{},
-							AdditionalProperties: &spec.SchemaOrBool{Allows: true},
-						},
-					}),
-				},
+				Description:          "todo... improve schema",
+				Type:                 []string{"object"},
 				AdditionalProperties: &spec.SchemaOrBool{Allows: false},
 			},
 		},
