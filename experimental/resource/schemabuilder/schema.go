@@ -188,17 +188,3 @@ func asJSONSchema(v any) (*spec.Schema, error) {
 	err = json.Unmarshal(b, s)
 	return s, err
 }
-
-func asGenericDataQuery(v any) (*resource.GenericDataQuery, error) {
-	s, ok := v.(*resource.GenericDataQuery)
-	if ok {
-		return s, nil
-	}
-	b, err := json.Marshal(v)
-	if err != nil {
-		return nil, err
-	}
-	s = &resource.GenericDataQuery{}
-	err = json.Unmarshal(b, s)
-	return s, err
-}

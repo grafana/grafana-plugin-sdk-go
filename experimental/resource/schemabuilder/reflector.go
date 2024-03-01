@@ -9,6 +9,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/go-openapi/jsonreference"
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
 	"github.com/invopop/jsonschema"
@@ -260,13 +263,10 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 
 			defs.Items = append(defs.Items, def)
 		} else {
-			b1, _ := json.Marshal(def.Spec)
-			b2, _ := json.Marshal(found.Spec)
-			if !assert.JSONEq(&testing.T{}, string(b1), string(b2)) {
+			if diff := cmp.Diff(def.Spec, found.Spec, cmpopts.IgnoreUnexported(jsonreference.Ref{})); diff != "" {
+				fmt.Printf("Spec changed:\n%s\n", diff)
 				found.ObjectMeta.ResourceVersion = rv
 				found.Spec = def.Spec
-
-				fmt.Printf("NEW:%s\n", string(b2))
 			}
 			delete(byName, def.ObjectMeta.Name)
 		}

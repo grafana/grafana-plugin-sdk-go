@@ -8,7 +8,7 @@
     {
       "metadata": {
         "name": "math",
-        "resourceVersion": "1709230013217",
+        "resourceVersion": "1709250388761",
         "creationTimestamp": "2024-02-29T18:06:53Z"
       },
       "spec": {
@@ -56,7 +56,7 @@
     {
       "metadata": {
         "name": "reduce",
-        "resourceVersion": "1709230013217",
+        "resourceVersion": "1709250388761",
         "creationTimestamp": "2024-02-29T18:06:53Z"
       },
       "spec": {

@@ -68,7 +68,7 @@ type QueryExample struct {
 	Description string `json:"description,omitempty"`
 
 	// An example value saved that can be saved in a dashboard
-	SaveModel any `json:"saveModel,omitempty"`
+	SaveModel Unstructured `json:"saveModel,omitempty"`
 }
 
 type DiscriminatorFieldValue struct {

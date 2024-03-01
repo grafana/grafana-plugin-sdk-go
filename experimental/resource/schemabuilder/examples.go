@@ -1,8 +1,6 @@
 package schemabuilder
 
 import (
-	"fmt"
-
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
 )
 
@@ -15,12 +13,8 @@ func exampleRequest(defs resource.QueryTypeDefinitionList) (resource.GenericQuer
 
 	for _, def := range defs.Items {
 		for _, sample := range def.Spec.Examples {
-			if sample.SaveModel != nil {
-				q, err := asGenericDataQuery(sample.SaveModel)
-				if err != nil {
-					return rsp, fmt.Errorf("invalid sample save query [%s], in %s // %w",
-						sample.Name, def.ObjectMeta.Name, err)
-				}
+			if sample.SaveModel.Object != nil {
+				q := resource.NewGenericDataQuery(sample.SaveModel.Object)
 				q.RefID = string(rune('A' + len(rsp.Queries)))
 				for _, dis := range def.Spec.Discriminators {
 					_ = q.Set(dis.Field, dis.Value)
@@ -33,7 +27,7 @@ func exampleRequest(defs resource.QueryTypeDefinitionList) (resource.GenericQuer
 					q.IntervalMS = 5
 				}
 
-				rsp.Queries = append(rsp.Queries, q)
+				rsp.Queries = append(rsp.Queries, &q)
 			}
 		}
 	}
@@ -45,18 +39,14 @@ func examplePanelTargets(ds *resource.DataSourceRef, defs resource.QueryTypeDefi
 
 	for _, def := range defs.Items {
 		for _, sample := range def.Spec.Examples {
-			if sample.SaveModel != nil {
-				q, err := asGenericDataQuery(sample.SaveModel)
-				if err != nil {
-					return nil, fmt.Errorf("invalid sample save query [%s], in %s // %w",
-						sample.Name, def.ObjectMeta.Name, err)
-				}
+			if sample.SaveModel.Object != nil {
+				q := resource.NewGenericDataQuery(sample.SaveModel.Object)
 				q.Datasource = ds
 				q.RefID = string(rune('A' + len(targets)))
 				for _, dis := range def.Spec.Discriminators {
 					_ = q.Set(dis.Field, dis.Value)
 				}
-				targets = append(targets, *q)
+				targets = append(targets, q)
 			}
 		}
 	}
