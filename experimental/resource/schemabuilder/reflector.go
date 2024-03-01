@@ -9,7 +9,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/go-openapi/jsonreference"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -93,6 +92,10 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 			Extras: map[string]any{
 				"x-grafana-type": "data.DataFrame",
 			},
+			AdditionalProperties: jsonschema.TrueSchema,
+		},
+		reflect.TypeOf(resource.Unstructured{}): {
+			Type:                 "object",
 			AdditionalProperties: jsonschema.TrueSchema,
 		},
 		reflect.TypeOf(resource.JSONSchema{}): {
@@ -263,8 +266,10 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 
 			defs.Items = append(defs.Items, def)
 		} else {
-			if diff := cmp.Diff(def.Spec, found.Spec, cmpopts.IgnoreUnexported(jsonreference.Ref{})); diff != "" {
-				// fmt.Printf("Spec changed:\n%s\n", diff)
+			x := resource.AsUnstructured(def.Spec)
+			y := resource.AsUnstructured(found.Spec)
+			if diff := cmp.Diff(stripNilValues(x.Object), stripNilValues(y.Object), cmpopts.EquateEmpty()); diff != "" {
+				fmt.Printf("Spec changed:\n%s\n", diff)
 				found.ObjectMeta.ResourceVersion = rv
 				found.Spec = def.Spec
 			}
@@ -421,4 +426,18 @@ func maybeUpdateFile(t *testing.T, outfile string, value any, body []byte) {
 		err = os.WriteFile(outfile, out, 0600)
 		require.NoError(t, err, "error writing file")
 	}
+}
+
+func stripNilValues(input map[string]any) map[string]any {
+	for k, v := range input {
+		if v == nil {
+			delete(input, k)
+		} else {
+			sub, ok := v.(map[string]any)
+			if ok {
+				stripNilValues(sub)
+			}
+		}
+	}
+	return input
 }

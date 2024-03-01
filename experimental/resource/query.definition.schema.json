@@ -44,6 +44,8 @@
             "description": "Optionally explain why the example is interesting"
           },
           "saveModel": {
+            "additionalProperties": true,
+            "type": "object",
             "description": "An example value saved that can be saved in a dashboard"
           }
         },
@@ -64,6 +66,7 @@
   "additionalProperties": false,
   "type": "object",
   "required": [
-    "schema"
+    "schema",
+    "examples"
   ]
 }
