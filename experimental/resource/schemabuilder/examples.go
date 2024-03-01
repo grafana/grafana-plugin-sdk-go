@@ -4,7 +4,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
 )
 
-func exampleRequest(defs resource.QueryTypeDefinitionList) (resource.GenericQueryRequest, error) {
+func exampleRequest(defs resource.QueryTypeDefinitionList) resource.GenericQueryRequest {
 	rsp := resource.GenericQueryRequest{
 		From:    "now-1h",
 		To:      "now",
@@ -31,7 +31,7 @@ func exampleRequest(defs resource.QueryTypeDefinitionList) (resource.GenericQuer
 			}
 		}
 	}
-	return rsp, nil
+	return rsp
 }
 
 func examplePanelTargets(ds *resource.DataSourceRef, defs resource.QueryTypeDefinitionList) ([]resource.GenericDataQuery, error) {

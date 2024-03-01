@@ -325,9 +325,7 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, schema, body)
 
-	request, err := exampleRequest(defs)
-	require.NoError(t, err)
-
+	request := exampleRequest(defs)
 	outfile = filepath.Join(outdir, "query.request.example.json")
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, request, body)
