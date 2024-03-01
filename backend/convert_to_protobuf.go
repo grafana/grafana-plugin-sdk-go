@@ -45,6 +45,7 @@ func (t ConvertToProtobuf) AppInstanceSettings(s *AppInstanceSettings) *pluginv2
 		JsonData:                s.JSONData,
 		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
 		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
+		ApiVersion:              s.APIVersion,
 	}
 }
 
@@ -66,6 +67,7 @@ func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 		JsonData:                s.JSONData,
 		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
 		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
+		ApiVersion:              s.APIVersion,
 	}
 }
 

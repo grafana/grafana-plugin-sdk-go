@@ -46,6 +46,7 @@ func (f ConvertFromProtobuf) AppInstanceSettings(proto *pluginv2.AppInstanceSett
 		JSONData:                proto.JsonData,
 		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
 		Updated:                 time.Unix(0, proto.LastUpdatedMS*int64(time.Millisecond)),
+		APIVersion:              proto.ApiVersion,
 	}
 }
 
@@ -68,6 +69,7 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 		JSONData:                proto.JsonData,
 		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
 		Updated:                 time.Unix(0, proto.LastUpdatedMS*int64(time.Millisecond)),
+		APIVersion:              proto.ApiVersion,
 	}
 }
 

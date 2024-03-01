@@ -38,6 +38,10 @@ type AppInstanceSettings struct {
 
 	// Updated is the last time this plugin instance's configuration was updated.
 	Updated time.Time
+
+	// The API Version when settings were saved
+	// NOTE: this may be older than the current version
+	APIVersion string
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
@@ -58,7 +62,7 @@ func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.O
 // In Grafana a data source instance is a data source plugin of certain
 // type that have been configured and created in a Grafana organization.
 type DataSourceInstanceSettings struct {
-	// ID is the Grafana assigned numeric identifier of the the data source instance.
+	// Deprecated ID is the Grafana assigned numeric identifier of the the data source instance.
 	ID int64
 
 	// UID is the Grafana assigned string identifier of the the data source instance.
@@ -99,6 +103,10 @@ type DataSourceInstanceSettings struct {
 
 	// Updated is the last time the configuration for the data source instance was updated.
 	Updated time.Time
+
+	// The API Version when settings were saved
+	// NOTE: this may be older than the current version
+	APIVersion string
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.

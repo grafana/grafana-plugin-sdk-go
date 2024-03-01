@@ -11,9 +11,13 @@ message AppInstanceSettings {
   bytes jsonData = 3;
   map<string,string> decryptedSecureJsonData = 4;
   int64 lastUpdatedMS = 5;
+
+  // The API version when the settings were saved
+  string apiVersion = 12;
 }
 
 message DataSourceInstanceSettings {
+  // Deprecatd: Internal ID, do not use this for anythign important
   int64 id = 1;
   string name = 2;
   string url = 3;
@@ -23,8 +27,16 @@ message DataSourceInstanceSettings {
   string basicAuthUser = 7;
   bytes jsonData = 8;
   map<string,string> decryptedSecureJsonData = 9;
+
+  // timestamp when the settings where last changed
   int64 lastUpdatedMS = 10;
+
+  // Datasoruce unique ID (within an org/stack namespace)
   string uid = 11;
+
+  // The API version when the settings were saved.
+  // NOTE: this may be an older version than the current apiVersion
+  string apiVersion = 12;
 }
 
 message User {
@@ -69,7 +81,7 @@ message PluginContext {
   // The user agent of the Grafana server that initiated the gRPC request.
   string userAgent = 8;
 
-  // The API version of the plugin the request is targeted for.
+  // The API version that initiated a request
   string apiVersion = 9;
 }
 
