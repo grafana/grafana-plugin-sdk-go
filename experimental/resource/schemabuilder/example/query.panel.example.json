@@ -26,11 +26,11 @@
         "uid": "TheUID"
       },
       "queryType": "reduce",
+      "expression": "$A",
+      "reducer": "max",
       "settings": {
         "mode": "dropNN"
-      },
-      "expression": "$A",
-      "reducer": "max"
+      }
     }
   ]
 }

@@ -10,12 +10,6 @@ type PseudoPanel struct {
 	// The panel title
 	Title string `json:"title,omitempty"`
 
-	// Options depend on the panel type
-	Options Unstructured `json:"options,omitempty"`
-
-	// FieldConfig values depend on the panel type
-	FieldConfig Unstructured `json:"fieldConfig,omitempty"`
-
 	// This should no longer be necessary since each target has the datasource reference
 	Datasource *DataSourceRef `json:"datasource,omitempty"`
 
