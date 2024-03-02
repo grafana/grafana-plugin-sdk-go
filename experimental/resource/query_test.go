@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
 	"github.com/stretchr/testify/require"
 )
 
@@ -37,7 +36,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		"to": "1692646267389"
 	}`)
 
-	req := &GenericQueryRequest{}
+	req := &DataQueryRequest{}
 	err := json.Unmarshal(request, req)
 	require.NoError(t, err)
 
@@ -51,7 +50,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		require.NoError(t, err)
 
 		// And read it back with standard JSON marshal functions
-		query := &GenericDataQuery{}
+		query := &DataQuery{}
 		err = json.Unmarshal(out, query)
 		require.NoError(t, err)
 		require.Equal(t, "spreadsheetID", query.MustString("spreadsheet"))
@@ -75,10 +74,8 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 	})
 
 	t.Run("same results from either parser", func(t *testing.T) {
-		iter, err := jsoniter.ParseBytes(jsoniter.ConfigCompatibleWithStandardLibrary, request)
-		require.NoError(t, err)
-
-		typed, err := ParseQueryRequest(iter)
+		typed := &DataQueryRequest{}
+		err = json.Unmarshal(request, typed)
 		require.NoError(t, err)
 
 		out1, err := json.MarshalIndent(req, "", "  ")
@@ -93,7 +90,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 
 func TestQueryBuilders(t *testing.T) {
 	prop := "testkey"
-	testQ1 := &GenericDataQuery{}
+	testQ1 := &DataQuery{}
 	testQ1.Set(prop, "A")
 	require.Equal(t, "A", testQ1.MustString(prop))
 
@@ -112,7 +109,7 @@ func TestQueryBuilders(t *testing.T) {
 	require.Equal(t, "D", testQ2.MustString("queryType"))
 
 	// Map constructor
-	testQ3 := NewGenericDataQuery(map[string]any{
+	testQ3 := NewDataQuery(map[string]any{
 		"queryType": "D",
 		"extra":     "E",
 	})

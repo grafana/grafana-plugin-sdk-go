@@ -26,7 +26,7 @@ func schemaDataResponse(_ common.ReferenceCallback) common.OpenAPIDefinition {
 			SchemaProps: spec.SchemaProps{
 				Description:          "todo... improve schema",
 				Type:                 []string{"object"},
-				AdditionalProperties: &spec.SchemaOrBool{Allows: false},
+				AdditionalProperties: &spec.SchemaOrBool{Allows: true},
 			},
 		},
 	}

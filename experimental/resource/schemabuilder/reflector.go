@@ -299,14 +299,13 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, schema, body)
 
-	panel := resource.PseudoPanel[resource.GenericDataQuery]{
+	panel := resource.PseudoPanel{
 		Type: "table",
 	}
-	panel.Targets, err = examplePanelTargets(&resource.DataSourceRef{
+	panel.Targets = examplePanelTargets(&resource.DataSourceRef{
 		Type: b.opts.PluginID[0],
 		UID:  "TheUID",
 	}, defs)
-	require.NoError(t, err)
 
 	outfile = filepath.Join(outdir, "query.panel.example.json")
 	body, _ = os.ReadFile(outfile)

@@ -18,7 +18,7 @@ func TestOpenAPI(t *testing.T) {
 		return spec.MustCreateRef(path) // placeholder for tests
 	})
 
-	def, ok := defs["github.com/grafana/grafana-plugin-sdk-go/backend.QueryDataResponse"]
+	def, ok := defs["github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse"]
 	require.True(t, ok)
 	require.Empty(t, def.Dependencies) // not yet supported!
 

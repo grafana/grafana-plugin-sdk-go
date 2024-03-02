@@ -131,26 +131,26 @@ func (r *QueryDataResponse) UnmarshalJSON(b []byte) error {
 	return iter.Error
 }
 
-func (g *QueryDataResponse) DeepCopy() *QueryDataResponse {
+func (r *QueryDataResponse) DeepCopy() *QueryDataResponse {
 	if g == nil {
 		return nil
 	}
 	out := new(QueryDataResponse)
-	g.DeepCopyInto(out)
+	r.DeepCopyInto(out)
 	return out
 }
 
-func (g *QueryDataResponse) DeepCopyInto(out *QueryDataResponse) {
-	if g.Responses == nil {
+func (r *QueryDataResponse) DeepCopyInto(out *QueryDataResponse) {
+	if r.Responses == nil {
 		out.Responses = nil
 		return
 	}
 	if out.Responses == nil {
-		out.Responses = make(Responses, len(g.Responses))
+		out.Responses = make(Responses, len(r.Responses))
 	} else {
 		clear(out.Responses)
 	}
-	for k, v := range g.Responses {
+	for k, v := range r.Responses {
 		out.Responses[k] = *v.DeepCopy()
 	}
 }

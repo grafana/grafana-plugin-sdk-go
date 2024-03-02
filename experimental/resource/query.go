@@ -12,19 +12,11 @@ import (
 )
 
 func init() { //nolint:gochecknoinits
-	jsoniter.RegisterTypeEncoder("resource.GenericDataQuery", &genericQueryCodec{})
-	jsoniter.RegisterTypeDecoder("resource.GenericDataQuery", &genericQueryCodec{})
+	jsoniter.RegisterTypeEncoder("resource.DataQuery", &genericQueryCodec{})
+	jsoniter.RegisterTypeDecoder("resource.DataQuery", &genericQueryCodec{})
 }
 
-type DataQuery interface {
-	// The standard query properties
-	CommonProperties() *CommonQueryProperties
-
-	// For queries that depend on other queries to run first (eg, other refIds)
-	Dependencies() []string
-}
-
-type QueryRequest[Q DataQuery] struct {
+type DataQueryRequest struct {
 	// From Start time in epoch timestamps in milliseconds or relative using Grafana time units.
 	// example: now-1h
 	From string `json:"from,omitempty"`
@@ -34,19 +26,14 @@ type QueryRequest[Q DataQuery] struct {
 	To string `json:"to,omitempty"`
 
 	// Each item has a
-	Queries []Q `json:"queries"`
+	Queries []DataQuery `json:"queries"`
 
 	// required: false
 	Debug bool `json:"debug,omitempty"`
 }
 
-// GenericQueryRequest is a query request that supports any datasource
-type GenericQueryRequest = QueryRequest[*GenericDataQuery]
-
-var _ DataQuery = (*GenericDataQuery)(nil)
-
-// GenericDataQuery is a replacement for `dtos.MetricRequest` with more explicit typing
-type GenericDataQuery struct {
+// DataQuery is a replacement for `dtos.MetricRequest` with more explicit typing
+type DataQuery struct {
 	CommonQueryProperties `json:",inline"`
 
 	// Additional Properties (that live at the root)
@@ -54,17 +41,17 @@ type GenericDataQuery struct {
 }
 
 // CommonProperties implements DataQuery.
-func (g *GenericDataQuery) CommonProperties() *CommonQueryProperties {
+func (g *DataQuery) CommonProperties() *CommonQueryProperties {
 	return &g.CommonQueryProperties
 }
 
 // Dependencies implements DataQuery.
-func (g *GenericDataQuery) Dependencies() []string {
+func (g *DataQuery) Dependencies() []string {
 	return nil
 }
 
-func NewGenericDataQuery(body map[string]any) GenericDataQuery {
-	g := &GenericDataQuery{
+func NewDataQuery(body map[string]any) DataQuery {
+	g := &DataQuery{
 		additional: make(map[string]any),
 	}
 	for k, v := range body {
@@ -73,11 +60,11 @@ func NewGenericDataQuery(body map[string]any) GenericDataQuery {
 	return *g
 }
 
-func (g *GenericDataQuery) DeepCopy() *GenericDataQuery {
+func (g *DataQuery) DeepCopy() *DataQuery {
 	if g == nil {
 		return nil
 	}
-	out := new(GenericDataQuery)
+	out := new(DataQuery)
 	jj, err := json.Marshal(g)
 	if err == nil {
 		_ = json.Unmarshal(jj, out)
@@ -85,13 +72,13 @@ func (g *GenericDataQuery) DeepCopy() *GenericDataQuery {
 	return out
 }
 
-func (g *GenericDataQuery) DeepCopyInto(out *GenericDataQuery) {
+func (g *DataQuery) DeepCopyInto(out *DataQuery) {
 	clone := g.DeepCopy()
 	*out = *clone
 }
 
 // Set allows setting values using key/value pairs
-func (g *GenericDataQuery) Set(key string, val any) *GenericDataQuery {
+func (g *DataQuery) Set(key string, val any) *DataQuery {
 	switch key {
 	case "refId":
 		g.RefID, _ = val.(string)
@@ -138,7 +125,7 @@ func (g *GenericDataQuery) Set(key string, val any) *GenericDataQuery {
 	return g
 }
 
-func (g *GenericDataQuery) Get(key string) (any, bool) {
+func (g *DataQuery) Get(key string) (any, bool) {
 	switch key {
 	case "refId":
 		return g.RefID, true
@@ -163,7 +150,7 @@ func (g *GenericDataQuery) Get(key string) (any, bool) {
 	return v, ok
 }
 
-func (g *GenericDataQuery) MustString(key string) string {
+func (g *DataQuery) MustString(key string) string {
 	v, ok := g.Get(key)
 	if ok {
 		s, ok := v.(string)
@@ -181,12 +168,12 @@ func (codec *genericQueryCodec) IsEmpty(_ unsafe.Pointer) bool {
 }
 
 func (codec *genericQueryCodec) Encode(ptr unsafe.Pointer, stream *j.Stream) {
-	q := (*GenericDataQuery)(ptr)
+	q := (*DataQuery)(ptr)
 	writeQuery(q, stream)
 }
 
 func (codec *genericQueryCodec) Decode(ptr unsafe.Pointer, iter *j.Iterator) {
-	q := GenericDataQuery{}
+	q := DataQuery{}
 	err := q.readQuery(jsoniter.NewIterator(iter))
 	if err != nil {
 		// keep existing iter error if it exists
@@ -195,11 +182,11 @@ func (codec *genericQueryCodec) Decode(ptr unsafe.Pointer, iter *j.Iterator) {
 		}
 		return
 	}
-	*((*GenericDataQuery)(ptr)) = q
+	*((*DataQuery)(ptr)) = q
 }
 
 // MarshalJSON writes JSON including the common and custom values
-func (g GenericDataQuery) MarshalJSON() ([]byte, error) {
+func (g DataQuery) MarshalJSON() ([]byte, error) {
 	cfg := j.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
@@ -209,7 +196,7 @@ func (g GenericDataQuery) MarshalJSON() ([]byte, error) {
 }
 
 // UnmarshalJSON reads a query from json byte array
-func (g *GenericDataQuery) UnmarshalJSON(b []byte) error {
+func (g *DataQuery) UnmarshalJSON(b []byte) error {
 	iter, err := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
 	if err != nil {
 		return err
@@ -217,7 +204,7 @@ func (g *GenericDataQuery) UnmarshalJSON(b []byte) error {
 	return g.readQuery(iter)
 }
 
-func writeQuery(g *GenericDataQuery, stream *j.Stream) {
+func writeQuery(g *DataQuery, stream *j.Stream) {
 	q := g.CommonQueryProperties
 	stream.WriteObjectStart()
 	stream.WriteObjectField("refId")
@@ -282,7 +269,7 @@ func writeQuery(g *GenericDataQuery, stream *j.Stream) {
 	stream.WriteObjectEnd()
 }
 
-func (g *GenericDataQuery) readQuery(iter *jsoniter.Iterator) error {
+func (g *DataQuery) readQuery(iter *jsoniter.Iterator) error {
 	return g.CommonQueryProperties.readQuery(iter, func(key string, iter *jsoniter.Iterator) error {
 		if g.additional == nil {
 			g.additional = make(map[string]any)
