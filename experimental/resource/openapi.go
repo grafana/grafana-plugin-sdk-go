@@ -14,7 +14,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 	return map[string]common.OpenAPIDefinition{
 		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":                          schemaDataResponse(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                    schemaDataFrame(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/experimental/resource.GenericDataQuery":        schemaGenericQuery(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/experimental/resource.DataQuery":               schemaDataQuery(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/resource.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
 	}
 }
@@ -55,8 +55,8 @@ func schemaQueryTypeDefinitionSpec(_ common.ReferenceCallback) common.OpenAPIDef
 	}
 }
 
-func schemaGenericQuery(_ common.ReferenceCallback) common.OpenAPIDefinition {
-	s, _ := GenericQuerySchema()
+func schemaDataQuery(_ common.ReferenceCallback) common.OpenAPIDefinition {
+	s, _ := DataQuerySchema()
 	if s == nil {
 		s = &spec.Schema{}
 	}
@@ -66,7 +66,7 @@ func schemaGenericQuery(_ common.ReferenceCallback) common.OpenAPIDefinition {
 }
 
 // Get the cached feature list (exposed as a k8s resource)
-func GenericQuerySchema() (*spec.Schema, error) {
+func DataQuerySchema() (*spec.Schema, error) {
 	return loadSchema("query.schema.json")
 }
 

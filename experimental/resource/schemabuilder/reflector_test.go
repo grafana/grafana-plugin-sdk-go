@@ -45,7 +45,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	maybeUpdateFile(t, outfile, query, old)
 
 	// Make sure the embedded schema is loadable
-	schema, err := resource.GenericQuerySchema()
+	schema, err := resource.DataQuerySchema()
 	require.NoError(t, err)
 	require.Equal(t, 8, len(schema.Properties))
 

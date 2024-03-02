@@ -38,7 +38,7 @@ type QuerySchemaOptions struct {
 // Given definitions for a plugin, return a valid spec
 func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 	isRequest := opts.Mode == SchemaTypeQueryPayload || opts.Mode == SchemaTypeQueryRequest
-	generic, err := resource.GenericQuerySchema()
+	generic, err := resource.DataQuerySchema()
 	if err != nil {
 		return nil, err
 	}
