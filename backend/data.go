@@ -132,7 +132,7 @@ func (r *QueryDataResponse) UnmarshalJSON(b []byte) error {
 }
 
 func (r *QueryDataResponse) DeepCopy() *QueryDataResponse {
-	if g == nil {
+	if r == nil {
 		return nil
 	}
 	out := new(QueryDataResponse)
