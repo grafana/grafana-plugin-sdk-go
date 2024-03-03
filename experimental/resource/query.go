@@ -17,13 +17,13 @@ func init() { //nolint:gochecknoinits
 }
 
 type DataQueryRequest struct {
-	// Time range applied to each query where it is not specified
+	// Time range applied to each query (when not included in the query body)
 	TimeRange `json:",inline"`
 
-	// Each item has a
+	// Datasource queries
 	Queries []DataQuery `json:"queries"`
 
-	// required: false
+	// Optionally include debug information in the response
 	Debug bool `json:"debug,omitempty"`
 }
 
@@ -68,6 +68,23 @@ func (g *DataQuery) DeepCopy() *DataQuery {
 }
 
 func (g *DataQuery) DeepCopyInto(out *DataQuery) {
+	clone := g.DeepCopy()
+	*out = *clone
+}
+
+func (g *DataQueryRequest) DeepCopy() *DataQueryRequest {
+	if g == nil {
+		return nil
+	}
+	out := new(DataQueryRequest)
+	jj, err := json.Marshal(g)
+	if err == nil {
+		_ = json.Unmarshal(jj, out)
+	}
+	return out
+}
+
+func (g *DataQueryRequest) DeepCopyInto(out *DataQueryRequest) {
 	clone := g.DeepCopy()
 	*out = *clone
 }
