@@ -17,13 +17,8 @@ func init() { //nolint:gochecknoinits
 }
 
 type DataQueryRequest struct {
-	// From Start time in epoch timestamps in milliseconds or relative using Grafana time units.
-	// example: now-1h
-	From string `json:"from,omitempty"`
-
-	// To End time in epoch timestamps in milliseconds or relative using Grafana time units.
-	// example: now
-	To string `json:"to,omitempty"`
+	// Time range applied to each query where it is not specified
+	TimeRange `json:",inline"`
 
 	// Each item has a
 	Queries []DataQuery `json:"queries"`
@@ -380,10 +375,10 @@ type DataSourceRef struct {
 // TimeRange represents a time range for a query and is a property of DataQuery.
 type TimeRange struct {
 	// From is the start time of the query.
-	From string `json:"from" jsonschema:"example=now-1h"`
+	From string `json:"from" jsonschema:"example=now-1h,default=now-6h"`
 
 	// To is the end time of the query.
-	To string `json:"to" jsonschema:"example=now"`
+	To string `json:"to" jsonschema:"example=now,default=now"`
 }
 
 // ResultAssertions define the expected response shape and query behavior.  This is useful to
@@ -397,9 +392,37 @@ type ResultAssertions struct {
 	// contract documentation https://grafana.github.io/dataplane/contract/.
 	TypeVersion data.FrameTypeVersion `json:"typeVersion"`
 
-	// Maximum bytes that can be read -- if the query planning expects more then this, the query may fail fast
-	MaxBytes int64 `json:"maxBytes,omitempty"`
-
 	// Maximum frame count
 	MaxFrames int64 `json:"maxFrames,omitempty"`
+
+	// Once we can support this, adding max bytes would be helpful
+	// // Maximum bytes that can be read -- if the query planning expects more then this, the query may fail fast
+	// MaxBytes int64 `json:"maxBytes,omitempty"`
+}
+
+func (r *ResultAssertions) Validate(frames data.Frames) error {
+	if r.Type != data.FrameTypeUnknown {
+		for _, frame := range frames {
+			if frame.Meta == nil {
+				return fmt.Errorf("result missing frame type (and metadata)")
+			}
+			if frame.Meta.Type == data.FrameTypeUnknown {
+				// ?? should we try to detect? and see if we can use it as that type?
+				return fmt.Errorf("expected frame type [%s], but the type is unknown", r.Type)
+			}
+			if frame.Meta.Type != r.Type {
+				return fmt.Errorf("expected frame type [%s], but found [%s]", r.Type, frame.Meta.Type)
+			}
+			if !r.TypeVersion.IsZero() {
+				if r.TypeVersion == frame.Meta.TypeVersion {
+					return fmt.Errorf("type versions do not match.  Expected [%s], but found [%s]", r.TypeVersion, frame.Meta.TypeVersion)
+				}
+			}
+		}
+	}
+
+	if r.MaxFrames > 0 && len(frames) > int(r.MaxFrames) {
+		return fmt.Errorf("more than expected frames found")
+	}
+	return nil
 }

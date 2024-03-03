@@ -6,8 +6,10 @@ import (
 
 func exampleRequest(defs resource.QueryTypeDefinitionList) resource.DataQueryRequest {
 	rsp := resource.DataQueryRequest{
-		From:    "now-1h",
-		To:      "now",
+		TimeRange: resource.TimeRange{
+			From: "now-1h",
+			To:   "now",
+		},
 		Queries: []resource.DataQuery{},
 	}
 

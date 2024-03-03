@@ -34,10 +34,6 @@
           "minItems": 2,
           "description": "TypeVersion is the version of the Type property. Versions greater than 0.0 correspond to the dataplane\ncontract documentation https://grafana.github.io/dataplane/contract/."
         },
-        "maxBytes": {
-          "type": "integer",
-          "description": "Maximum bytes that can be read -- if the query planning expects more then this, the query may fail fast"
-        },
         "maxFrames": {
           "type": "integer",
           "description": "Maximum frame count"
@@ -55,6 +51,7 @@
         "from": {
           "type": "string",
           "description": "From is the start time of the query.",
+          "default": "now-6h",
           "examples": [
             "now-1h"
           ]
@@ -62,6 +59,7 @@
         "to": {
           "type": "string",
           "description": "To is the end time of the query.",
+          "default": "now",
           "examples": [
             "now"
           ]

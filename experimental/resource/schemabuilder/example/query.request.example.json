@@ -21,11 +21,11 @@
       "queryType": "reduce",
       "maxDataPoints": 1000,
       "intervalMs": 5,
+      "expression": "$A",
+      "reducer": "max",
       "settings": {
         "mode": "dropNN"
-      },
-      "expression": "$A",
-      "reducer": "max"
+      }
     }
   ]
 }
