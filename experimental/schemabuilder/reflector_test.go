@@ -16,11 +16,11 @@ func TestWriteQuerySchema(t *testing.T) {
 		PluginID: []string{"dummy"},
 		ScanCode: []CodePaths{
 			{
-				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/v0alpha1/dummy",
+				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/v0alpha1",
 				CodePath:    "../../v0alpha1",
 			},
 			{
-				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/data/dummy",
+				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/data",
 				CodePath:    "../../data",
 			},
 		},

@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
+	"strings"
 	"testing"
 	"time"
 
@@ -82,7 +83,14 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 	r := new(jsonschema.Reflector)
 	r.DoNotReference = true
 	for _, scan := range opts.ScanCode {
-		if err := r.AddGoComments(scan.BasePackage, scan.CodePath); err != nil {
+		base := scan.BasePackage
+		for _, v := range strings.Split(scan.CodePath, "/") {
+			if v == "." || v == ".." {
+				continue
+			}
+			base += "/dummy" // fixes the resolution
+		}
+		if err := r.AddGoComments(base, scan.CodePath); err != nil {
 			return nil, err
 		}
 	}
@@ -118,8 +126,10 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 		}
 
 		for _, etype := range opts.Enums {
+			name := etype.Name()
+			pack := etype.PkgPath()
 			for _, f := range fields {
-				if f.Name == etype.Name() && f.Package == etype.PkgPath() {
+				if f.Name == name && f.Package == pack {
 					enumValueDescriptions := map[string]string{}
 					s := &jsonschema.Schema{
 						Type: "string",
