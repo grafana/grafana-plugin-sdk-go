@@ -29,7 +29,6 @@ type Builder struct {
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
 	query     []sdkapi.QueryTypeDefinition
-	setting   []sdkapi.SettingsDefinition
 }
 
 type CodePaths struct {
@@ -203,44 +202,6 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 	return nil
 }
 
-func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
-	for _, info := range inputs {
-		name := info.Name
-		if name == "" {
-			return fmt.Errorf("missing name")
-		}
-
-		schema := b.reflector.ReflectFromType(info.GoType)
-		if schema == nil {
-			return fmt.Errorf("missing schema")
-		}
-
-		updateEnumDescriptions(schema)
-
-		// used by kube-openapi
-		schema.Version = draft04
-		schema.ID = ""
-		schema.Anchor = ""
-		spec, err := asJSONSchema(schema)
-		if err != nil {
-			return err
-		}
-
-		b.setting = append(b.setting, sdkapi.SettingsDefinition{
-			ObjectMeta: sdkapi.ObjectMeta{
-				Name: name,
-			},
-			Spec: sdkapi.SettingsDefinitionSpec{
-				Discriminators: info.Discriminators,
-				JSONDataSchema: sdkapi.JSONSchema{
-					Spec: spec,
-				},
-			},
-		})
-	}
-	return nil
-}
-
 // Update the schema definition file
 // When placed in `static/schema/query.types.json` folder of a plugin distribution,
 // it can be used to advertise various query types
@@ -355,63 +316,6 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 		require.Fail(t, "validation failed")
 	}
 	require.True(t, result.MatchCount > 0, "must have some rules")
-	return defs
-}
-
-// Update the schema definition file
-// When placed in `static/schema/query.schema.json` folder of a plugin distribution,
-// it can be used to advertise various query types
-// If the spec contents have changed, the test will fail (but still update the output)
-func (b *Builder) UpdateSettingsDefinition(t *testing.T, outfile string) sdkapi.SettingsDefinitionList {
-	t.Helper()
-
-	now := time.Now().UTC()
-	rv := fmt.Sprintf("%d", now.UnixMilli())
-
-	defs := sdkapi.SettingsDefinitionList{}
-	byName := make(map[string]*sdkapi.SettingsDefinition)
-	body, err := os.ReadFile(outfile)
-	if err == nil {
-		err = json.Unmarshal(body, &defs)
-		if err == nil {
-			for i, def := range defs.Items {
-				byName[def.ObjectMeta.Name] = &defs.Items[i]
-			}
-		}
-	}
-	defs.Kind = "SettingsDefinitionList"
-	defs.APIVersion = "common.grafana.app/v0alpha1"
-
-	// The updated schemas
-	for _, def := range b.setting {
-		found, ok := byName[def.ObjectMeta.Name]
-		if !ok {
-			defs.ObjectMeta.ResourceVersion = rv
-			def.ObjectMeta.ResourceVersion = rv
-			def.ObjectMeta.CreationTimestamp = now.Format(time.RFC3339)
-
-			defs.Items = append(defs.Items, def)
-		} else {
-			var o1, o2 interface{}
-			b1, _ := json.Marshal(def.Spec)
-			b2, _ := json.Marshal(found.Spec)
-			_ = json.Unmarshal(b1, &o1)
-			_ = json.Unmarshal(b2, &o2)
-			if !reflect.DeepEqual(o1, o2) {
-				found.ObjectMeta.ResourceVersion = rv
-				found.Spec = def.Spec
-			}
-			delete(byName, def.ObjectMeta.Name)
-		}
-	}
-
-	if defs.ObjectMeta.ResourceVersion == "" {
-		defs.ObjectMeta.ResourceVersion = rv
-	}
-
-	if len(byName) > 0 {
-		require.FailNow(t, "settings type removed, manually update (for now)")
-	}
 	return defs
 }
 
