@@ -1,13 +1,12 @@
 package v0alpha1
 
 import (
-	"encoding/json"
 	"fmt"
 )
 
 // QueryTypeDefinition is a kubernetes shaped object that represents a single query definition
 type QueryTypeDefinition struct {
-	ObjectMeta ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta `json:"metadata,omitempty"`
 
 	Spec QueryTypeDefinitionSpec `json:"spec,omitempty"`
 }
@@ -41,23 +40,6 @@ type QueryTypeDefinitionSpec struct {
 	// All changes in the same version *must* be backwards compatible
 	// Only notable changes will be shown here, for the full version history see git!
 	Changelog []string `json:"changelog,omitempty"`
-}
-
-func (g *QueryTypeDefinitionSpec) DeepCopy() *QueryTypeDefinitionSpec {
-	if g == nil {
-		return nil
-	}
-	out := new(QueryTypeDefinitionSpec)
-	jj, err := json.Marshal(g)
-	if err == nil {
-		_ = json.Unmarshal(jj, out)
-	}
-	return out
-}
-
-func (g *QueryTypeDefinitionSpec) DeepCopyInto(out *QueryTypeDefinitionSpec) {
-	clone := g.DeepCopy()
-	*out = *clone
 }
 
 type QueryExample struct {

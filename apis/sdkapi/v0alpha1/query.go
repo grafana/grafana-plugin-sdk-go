@@ -45,40 +45,6 @@ func NewDataQuery(body map[string]any) DataQuery {
 	return *g
 }
 
-func (g *DataQuery) DeepCopy() *DataQuery {
-	if g == nil {
-		return nil
-	}
-	out := new(DataQuery)
-	jj, err := json.Marshal(g)
-	if err == nil {
-		_ = json.Unmarshal(jj, out)
-	}
-	return out
-}
-
-func (g *DataQuery) DeepCopyInto(out *DataQuery) {
-	clone := g.DeepCopy()
-	*out = *clone
-}
-
-func (g *DataQueryRequest) DeepCopy() *DataQueryRequest {
-	if g == nil {
-		return nil
-	}
-	out := new(DataQueryRequest)
-	jj, err := json.Marshal(g)
-	if err == nil {
-		_ = json.Unmarshal(jj, out)
-	}
-	return out
-}
-
-func (g *DataQueryRequest) DeepCopyInto(out *DataQueryRequest) {
-	clone := g.DeepCopy()
-	*out = *clone
-}
-
 // Set allows setting values using key/value pairs
 func (g *DataQuery) Set(key string, val any) *DataQuery {
 	switch key {
@@ -205,6 +171,21 @@ func (g *DataQuery) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	return g.readQuery(iter)
+}
+
+func (in *DataQuery) DeepCopyInto(out *DataQuery) {
+	*out = *in
+	in.CommonQueryProperties.DeepCopyInto(&out.CommonQueryProperties)
+	if in.additional != nil {
+		out.additional = map[string]any{}
+		if len(in.additional) > 0 {
+			jj, err := json.Marshal(in.additional)
+			if err != nil {
+				_ = json.Unmarshal(jj, &out.additional)
+			}
+		}
+	}
+	return
 }
 
 func writeQuery(g *DataQuery, stream *j.Stream) {
