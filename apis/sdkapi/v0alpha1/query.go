@@ -173,19 +173,18 @@ func (g *DataQuery) UnmarshalJSON(b []byte) error {
 	return g.readQuery(iter)
 }
 
-func (in *DataQuery) DeepCopyInto(out *DataQuery) {
-	*out = *in
-	in.CommonQueryProperties.DeepCopyInto(&out.CommonQueryProperties)
-	if in.additional != nil {
+func (g *DataQuery) DeepCopyInto(out *DataQuery) {
+	*out = *g
+	g.CommonQueryProperties.DeepCopyInto(&out.CommonQueryProperties)
+	if g.additional != nil {
 		out.additional = map[string]any{}
-		if len(in.additional) > 0 {
-			jj, err := json.Marshal(in.additional)
+		if len(g.additional) > 0 {
+			jj, err := json.Marshal(g.additional)
 			if err != nil {
 				_ = json.Unmarshal(jj, &out.additional)
 			}
 		}
 	}
-	return
 }
 
 func writeQuery(g *DataQuery, stream *j.Stream) {
