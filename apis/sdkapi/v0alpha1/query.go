@@ -35,16 +35,6 @@ type DataQuery struct {
 	additional map[string]any `json:"-"` // note this uses custom JSON marshalling
 }
 
-// CommonProperties implements DataQuery.
-func (g *DataQuery) CommonProperties() *CommonQueryProperties {
-	return &g.CommonQueryProperties
-}
-
-// Dependencies implements DataQuery.
-func (g *DataQuery) Dependencies() []string {
-	return nil
-}
-
 func NewDataQuery(body map[string]any) DataQuery {
 	g := &DataQuery{
 		additional: make(map[string]any),
@@ -162,9 +152,10 @@ func (g *DataQuery) Get(key string) (any, bool) {
 	return v, ok
 }
 
-func (g *DataQuery) MustString(key string) string {
+func (g *DataQuery) GetString(key string) string {
 	v, ok := g.Get(key)
 	if ok {
+		// At the root convert to string
 		s, ok := v.(string)
 		if ok {
 			return s

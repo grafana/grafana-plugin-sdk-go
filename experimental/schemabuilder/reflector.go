@@ -6,14 +6,13 @@ import (
 	"os"
 	"path/filepath"
 	"reflect"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi/v0alpha1"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	sdkapi "github.com/grafana/grafana-plugin-sdk-go/v0alpha1"
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,14 +81,7 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 	r := new(jsonschema.Reflector)
 	r.DoNotReference = true
 	for _, scan := range opts.ScanCode {
-		base := scan.BasePackage
-		for _, v := range strings.Split(scan.CodePath, "/") {
-			if v == "" || v == "." || v == ".." {
-				continue
-			}
-			base += "/dummy" // fixes the resolution
-		}
-		if err := r.AddGoComments(base, scan.CodePath); err != nil {
+		if err := r.AddGoComments(scan.BasePackage, scan.CodePath); err != nil {
 			return nil, err
 		}
 	}

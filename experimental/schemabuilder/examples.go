@@ -1,7 +1,7 @@
 package schemabuilder
 
 import (
-	sdkapi "github.com/grafana/grafana-plugin-sdk-go/v0alpha1"
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi/v0alpha1"
 )
 
 func exampleRequest(defs sdkapi.QueryTypeDefinitionList) sdkapi.DataQueryRequest {

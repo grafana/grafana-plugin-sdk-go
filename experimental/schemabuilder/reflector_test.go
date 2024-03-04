@@ -5,8 +5,8 @@ import (
 	"reflect"
 	"testing"
 
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi/v0alpha1"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	sdkapi "github.com/grafana/grafana-plugin-sdk-go/v0alpha1"
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/require"
 )
@@ -16,8 +16,8 @@ func TestWriteQuerySchema(t *testing.T) {
 		PluginID: []string{"dummy"},
 		ScanCode: []CodePaths{
 			{
-				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/v0alpha1",
-				CodePath:    "../../v0alpha1",
+				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi",
+				CodePath:    "../../apis/sdkapi/v0alpha1",
 			},
 			{
 				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/data",
@@ -40,7 +40,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	// // Hide this old property
 	query.Properties.Delete("datasourceId")
 
-	outfile := "../../v0alpha1/query.schema.json"
+	outfile := "../../apis/sdkapi/v0alpha1/query.schema.json"
 	old, _ := os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
@@ -54,10 +54,10 @@ func TestWriteQuerySchema(t *testing.T) {
 	updateEnumDescriptions(query)
 	query.ID = ""
 	query.Version = draft04 // used by kube-openapi
-	outfile = "../../v0alpha1/query.definition.schema.json"
+	outfile = "../../apis/sdkapi/v0alpha1/query.definition.schema.json"
 	old, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
-	def := sdkapi.GetOpenAPIDefinitions(nil)["github.com/grafana/grafana-plugin-sdk-go/v0alpha1.QueryTypeDefinitionSpec"]
+	def := sdkapi.GetOpenAPIDefinitions(nil)["github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi/v0alpha1.QueryTypeDefinitionSpec"]
 	require.Equal(t, query.Properties.Len(), len(def.Schema.Properties))
 }
