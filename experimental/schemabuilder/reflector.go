@@ -85,7 +85,7 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 	for _, scan := range opts.ScanCode {
 		base := scan.BasePackage
 		for _, v := range strings.Split(scan.CodePath, "/") {
-			if v == "." || v == ".." {
+			if v == "" || v == "." || v == ".." {
 				continue
 			}
 			base += "/dummy" // fixes the resolution
