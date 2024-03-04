@@ -270,7 +270,7 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, schema, body)
 
-	panel := sdkapi.PseudoPanel{
+	panel := pseudoPanel{
 		Type: "table",
 	}
 	panel.Targets = examplePanelTargets(&sdkapi.DataSourceRef{

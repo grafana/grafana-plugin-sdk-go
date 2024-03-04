@@ -341,6 +341,9 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 	return err
 }
 
+// CommonQueryProperties are properties that can be added to all queries.
+// These properties live in the same JSON level as datasource specific properties,
+// so care must be taken to ensure they do not overlap
 type CommonQueryProperties struct {
 	// RefID is the unique identifier of the query, set by the frontend call.
 	RefID string `json:"refId,omitempty"`
