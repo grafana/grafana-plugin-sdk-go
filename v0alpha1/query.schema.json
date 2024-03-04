@@ -9,21 +9,7 @@
       "properties": {
         "type": {
           "type": "string",
-          "enum": [
-            "",
-            "timeseries-wide",
-            "timeseries-long",
-            "timeseries-many",
-            "timeseries-multi",
-            "directory-listing",
-            "table",
-            "numeric-wide",
-            "numeric-multi",
-            "numeric-long",
-            "log-lines"
-          ],
-          "description": "Type asserts that the frame matches a known type structure.\n\n\nPossible enum values:\n - `\"\"` \n - `\"timeseries-wide\"` \n - `\"timeseries-long\"` \n - `\"timeseries-many\"` \n - `\"timeseries-multi\"` \n - `\"directory-listing\"` \n - `\"table\"` \n - `\"numeric-wide\"` \n - `\"numeric-multi\"` \n - `\"numeric-long\"` \n - `\"log-lines\"` ",
-          "x-enum-description": {}
+          "description": "Type asserts that the frame matches a known type structure."
         },
         "typeVersion": {
           "items": {

@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/v0alpha1"
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -27,8 +27,8 @@ import (
 type Builder struct {
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
-	query     []resource.QueryTypeDefinition
-	setting   []resource.SettingsDefinition
+	query     []sdkapi.QueryTypeDefinition
+	setting   []sdkapi.SettingsDefinition
 }
 
 type CodePaths struct {
@@ -56,18 +56,18 @@ type QueryTypeInfo struct {
 	// Optional description
 	Description string
 	// Optional discriminators
-	Discriminators []resource.DiscriminatorFieldValue
+	Discriminators []sdkapi.DiscriminatorFieldValue
 	// Raw GO type used for reflection
 	GoType reflect.Type
 	// Add sample queries
-	Examples []resource.QueryExample
+	Examples []sdkapi.QueryExample
 }
 
 type SettingTypeInfo struct {
 	// The management name
 	Name string
 	// Optional discriminators
-	Discriminators []resource.DiscriminatorFieldValue
+	Discriminators []sdkapi.DiscriminatorFieldValue
 	// Raw GO type used for reflection
 	GoType reflect.Type
 	// Map[string]string
@@ -94,11 +94,11 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 			},
 			AdditionalProperties: jsonschema.TrueSchema,
 		},
-		reflect.TypeOf(resource.Unstructured{}): {
+		reflect.TypeOf(sdkapi.Unstructured{}): {
 			Type:                 "object",
 			AdditionalProperties: jsonschema.TrueSchema,
 		},
-		reflect.TypeOf(resource.JSONSchema{}): {
+		reflect.TypeOf(sdkapi.JSONSchema{}): {
 			Type: "object",
 			Ref:  draft04,
 		},
@@ -176,14 +176,14 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 			return err
 		}
 
-		b.query = append(b.query, resource.QueryTypeDefinition{
-			ObjectMeta: resource.ObjectMeta{
+		b.query = append(b.query, sdkapi.QueryTypeDefinition{
+			ObjectMeta: sdkapi.ObjectMeta{
 				Name: name,
 			},
-			Spec: resource.QueryTypeDefinitionSpec{
+			Spec: sdkapi.QueryTypeDefinitionSpec{
 				Description:    info.Description,
 				Discriminators: info.Discriminators,
-				Schema: resource.JSONSchema{
+				Schema: sdkapi.JSONSchema{
 					Spec: spec,
 				},
 				Examples: info.Examples,
@@ -216,13 +216,13 @@ func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
 			return err
 		}
 
-		b.setting = append(b.setting, resource.SettingsDefinition{
-			ObjectMeta: resource.ObjectMeta{
+		b.setting = append(b.setting, sdkapi.SettingsDefinition{
+			ObjectMeta: sdkapi.ObjectMeta{
 				Name: name,
 			},
-			Spec: resource.SettingsDefinitionSpec{
+			Spec: sdkapi.SettingsDefinitionSpec{
 				Discriminators: info.Discriminators,
-				JSONDataSchema: resource.JSONSchema{
+				JSONDataSchema: sdkapi.JSONSchema{
 					Spec: spec,
 				},
 			},
@@ -235,15 +235,15 @@ func (b *Builder) AddSettings(inputs ...SettingTypeInfo) error {
 // When placed in `static/schema/query.types.json` folder of a plugin distribution,
 // it can be used to advertise various query types
 // If the spec contents have changed, the test will fail (but still update the output)
-func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.QueryTypeDefinitionList {
+func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.QueryTypeDefinitionList {
 	t.Helper()
 
 	outfile := filepath.Join(outdir, "query.types.json")
 	now := time.Now().UTC()
 	rv := fmt.Sprintf("%d", now.UnixMilli())
 
-	defs := resource.QueryTypeDefinitionList{}
-	byName := make(map[string]*resource.QueryTypeDefinition)
+	defs := sdkapi.QueryTypeDefinitionList{}
+	byName := make(map[string]*sdkapi.QueryTypeDefinition)
 	body, err := os.ReadFile(outfile)
 	if err == nil {
 		err = json.Unmarshal(body, &defs)
@@ -266,8 +266,8 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 
 			defs.Items = append(defs.Items, def)
 		} else {
-			x := resource.AsUnstructured(def.Spec)
-			y := resource.AsUnstructured(found.Spec)
+			x := sdkapi.AsUnstructured(def.Spec)
+			y := sdkapi.AsUnstructured(found.Spec)
 			if diff := cmp.Diff(stripNilValues(x.Object), stripNilValues(y.Object), cmpopts.EquateEmpty()); diff != "" {
 				fmt.Printf("Spec changed:\n%s\n", diff)
 				found.ObjectMeta.ResourceVersion = rv
@@ -299,10 +299,10 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 	body, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, schema, body)
 
-	panel := resource.PseudoPanel{
+	panel := sdkapi.PseudoPanel{
 		Type: "table",
 	}
-	panel.Targets = examplePanelTargets(&resource.DataSourceRef{
+	panel.Targets = examplePanelTargets(&sdkapi.DataSourceRef{
 		Type: b.opts.PluginID[0],
 		UID:  "TheUID",
 	}, defs)
@@ -352,14 +352,14 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) resource.Qu
 // When placed in `static/schema/query.schema.json` folder of a plugin distribution,
 // it can be used to advertise various query types
 // If the spec contents have changed, the test will fail (but still update the output)
-func (b *Builder) UpdateSettingsDefinition(t *testing.T, outfile string) resource.SettingsDefinitionList {
+func (b *Builder) UpdateSettingsDefinition(t *testing.T, outfile string) sdkapi.SettingsDefinitionList {
 	t.Helper()
 
 	now := time.Now().UTC()
 	rv := fmt.Sprintf("%d", now.UnixMilli())
 
-	defs := resource.SettingsDefinitionList{}
-	byName := make(map[string]*resource.SettingsDefinition)
+	defs := sdkapi.SettingsDefinitionList{}
+	byName := make(map[string]*sdkapi.SettingsDefinition)
 	body, err := os.ReadFile(outfile)
 	if err == nil {
 		err = json.Unmarshal(body, &defs)

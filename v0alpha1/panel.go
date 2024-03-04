@@ -1,4 +1,4 @@
-package resource
+package v0alpha1
 
 type PseudoPanel struct {
 	// Numeric panel id

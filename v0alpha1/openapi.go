@@ -1,4 +1,4 @@
-package resource
+package v0alpha1
 
 import (
 	"embed"
@@ -12,10 +12,10 @@ var f embed.FS
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":                          schemaDataResponse(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                    schemaDataFrame(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/experimental/resource.DataQuery":               schemaDataQuery(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/experimental/resource.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":             schemaDataResponse(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                       schemaDataFrame(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/v0alpha1.DataQuery":               schemaDataQuery(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/v0alpha1.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
 	}
 }
 

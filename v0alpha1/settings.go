@@ -1,4 +1,4 @@
-package resource
+package v0alpha1
 
 // SettingsDefinition is a kubernetes shaped object that represents a single query definition
 type SettingsDefinition struct {

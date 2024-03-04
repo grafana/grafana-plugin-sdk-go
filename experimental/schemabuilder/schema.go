@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/v0alpha1"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
@@ -31,14 +31,14 @@ const (
 
 type QuerySchemaOptions struct {
 	PluginID   []string
-	QueryTypes []resource.QueryTypeDefinition
+	QueryTypes []sdkapi.QueryTypeDefinition
 	Mode       SchemaType
 }
 
 // Given definitions for a plugin, return a valid spec
 func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 	isRequest := opts.Mode == SchemaTypeQueryPayload || opts.Mode == SchemaTypeQueryRequest
-	generic, err := resource.DataQuerySchema()
+	generic, err := sdkapi.DataQuerySchema()
 	if err != nil {
 		return nil, err
 	}

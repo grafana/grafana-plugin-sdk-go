@@ -4,8 +4,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource/schemabuilder"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder"
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/v0alpha1"
 	"github.com/stretchr/testify/require"
 )
 
@@ -13,7 +13,7 @@ func TestQueryTypeDefinitions(t *testing.T) {
 	builder, err := schemabuilder.NewSchemaBuilder(schemabuilder.BuilderOptions{
 		PluginID: []string{"__expr__"},
 		ScanCode: []schemabuilder.CodePaths{{
-			BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/resource/schemabuilder/example",
+			BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder/example",
 			CodePath:    "./",
 		}},
 		Enums: []reflect.Type{
@@ -23,30 +23,30 @@ func TestQueryTypeDefinitions(t *testing.T) {
 	})
 	require.NoError(t, err)
 	err = builder.AddQueries(schemabuilder.QueryTypeInfo{
-		Discriminators: resource.NewDiscriminators("queryType", QueryTypeMath),
+		Discriminators: sdkapi.NewDiscriminators("queryType", QueryTypeMath),
 		GoType:         reflect.TypeOf(&MathQuery{}),
-		Examples: []resource.QueryExample{
+		Examples: []sdkapi.QueryExample{
 			{
 				Name: "constant addition",
-				SaveModel: resource.AsUnstructured(MathQuery{
+				SaveModel: sdkapi.AsUnstructured(MathQuery{
 					Expression: "$A + 11",
 				}),
 			},
 			{
 				Name: "math with two queries",
-				SaveModel: resource.AsUnstructured(MathQuery{
+				SaveModel: sdkapi.AsUnstructured(MathQuery{
 					Expression: "$A - $B",
 				}),
 			},
 		},
 	},
 		schemabuilder.QueryTypeInfo{
-			Discriminators: resource.NewDiscriminators("queryType", QueryTypeReduce),
+			Discriminators: sdkapi.NewDiscriminators("queryType", QueryTypeReduce),
 			GoType:         reflect.TypeOf(&ReduceQuery{}),
-			Examples: []resource.QueryExample{
+			Examples: []sdkapi.QueryExample{
 				{
 					Name: "get max value",
-					SaveModel: resource.AsUnstructured(ReduceQuery{
+					SaveModel: sdkapi.AsUnstructured(ReduceQuery{
 						Expression: "$A",
 						Reducer:    ReducerMax,
 						Settings: ReduceSettings{
@@ -57,9 +57,9 @@ func TestQueryTypeDefinitions(t *testing.T) {
 			},
 		},
 		schemabuilder.QueryTypeInfo{
-			Discriminators: resource.NewDiscriminators("queryType", QueryTypeResample),
+			Discriminators: sdkapi.NewDiscriminators("queryType", QueryTypeResample),
 			GoType:         reflect.TypeOf(&ResampleQuery{}),
-			Examples:       []resource.QueryExample{},
+			Examples:       []sdkapi.QueryExample{},
 		})
 	require.NoError(t, err)
 

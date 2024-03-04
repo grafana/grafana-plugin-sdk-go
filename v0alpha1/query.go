@@ -1,4 +1,4 @@
-package resource
+package v0alpha1
 
 import (
 	"encoding/json"
@@ -12,8 +12,8 @@ import (
 )
 
 func init() { //nolint:gochecknoinits
-	jsoniter.RegisterTypeEncoder("resource.DataQuery", &genericQueryCodec{})
-	jsoniter.RegisterTypeDecoder("resource.DataQuery", &genericQueryCodec{})
+	jsoniter.RegisterTypeEncoder("v0alpha1.DataQuery", &genericQueryCodec{})
+	jsoniter.RegisterTypeDecoder("v0alpha1.DataQuery", &genericQueryCodec{})
 }
 
 type DataQueryRequest struct {

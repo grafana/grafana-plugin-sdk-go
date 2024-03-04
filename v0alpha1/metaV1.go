@@ -1,4 +1,4 @@
-package resource
+package v0alpha1
 
 // ObjectMeta is a struct that aims to "look" like a real kubernetes object when
 // written to JSON, however it does not require the pile of dependencies

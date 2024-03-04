@@ -6,7 +6,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/resource"
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/v0alpha1"
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/require"
 )
@@ -16,12 +16,12 @@ func TestWriteQuerySchema(t *testing.T) {
 		PluginID: []string{"dummy"},
 		ScanCode: []CodePaths{
 			{
-				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/resource/dotdothack",
-				CodePath:    "../",
+				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/v0alpha1/dummy",
+				CodePath:    "../../v0alpha1",
 			},
 			{
-				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/data",
-				CodePath:    "../../../data",
+				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/data/dummy",
+				CodePath:    "../../data",
 			},
 		},
 		Enums: []reflect.Type{
@@ -30,7 +30,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	})
 	require.NoError(t, err)
 
-	query := builder.reflector.Reflect(&resource.CommonQueryProperties{})
+	query := builder.reflector.Reflect(&sdkapi.CommonQueryProperties{})
 	updateEnumDescriptions(query)
 	query.ID = ""
 	query.Version = draft04 // used by kube-openapi
@@ -40,24 +40,24 @@ func TestWriteQuerySchema(t *testing.T) {
 	// // Hide this old property
 	query.Properties.Delete("datasourceId")
 
-	outfile := "../query.schema.json"
+	outfile := "../../v0alpha1/query.schema.json"
 	old, _ := os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
 	// Make sure the embedded schema is loadable
-	schema, err := resource.DataQuerySchema()
+	schema, err := sdkapi.DataQuerySchema()
 	require.NoError(t, err)
 	require.Equal(t, 8, len(schema.Properties))
 
 	// Add schema for query type definition
-	query = builder.reflector.Reflect(&resource.QueryTypeDefinitionSpec{})
+	query = builder.reflector.Reflect(&sdkapi.QueryTypeDefinitionSpec{})
 	updateEnumDescriptions(query)
 	query.ID = ""
 	query.Version = draft04 // used by kube-openapi
-	outfile = "../query.definition.schema.json"
+	outfile = "../../v0alpha1/query.definition.schema.json"
 	old, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
-	def := resource.GetOpenAPIDefinitions(nil)["github.com/grafana/grafana-plugin-sdk-go/experimental/resource.QueryTypeDefinitionSpec"]
+	def := sdkapi.GetOpenAPIDefinitions(nil)["github.com/grafana/grafana-plugin-sdk-go/v0alpha1.QueryTypeDefinitionSpec"]
 	require.Equal(t, query.Properties.Len(), len(def.Schema.Properties))
 }

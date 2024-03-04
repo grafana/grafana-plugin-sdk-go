@@ -12,7 +12,7 @@ func TestFindEnums(t *testing.T) {
 	t.Run("data", func(t *testing.T) {
 		fields, err := findEnumFields(
 			"github.com/grafana/grafana-plugin-sdk-go/data",
-			"../../../data")
+			"../../data")
 		require.NoError(t, err)
 
 		out, err := json.MarshalIndent(fields, "", "  ")
@@ -24,7 +24,7 @@ func TestFindEnums(t *testing.T) {
 
 	t.Run("example", func(t *testing.T) {
 		fields, err := findEnumFields(
-			"github.com/grafana/grafana-plugin-sdk-go/experimental/resource/schemabuilder/example",
+			"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder/example",
 			"./example")
 		require.NoError(t, err)
 
