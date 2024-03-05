@@ -1,22 +1,22 @@
 package schemabuilder
 
 import (
-	sdkapi "github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi/v0alpha1"
+	data "github.com/grafana/grafana-plugin-sdk-go/apis/data/v0alpha1"
 )
 
-func exampleRequest(defs sdkapi.QueryTypeDefinitionList) sdkapi.DataQueryRequest {
-	rsp := sdkapi.DataQueryRequest{
-		TimeRange: sdkapi.TimeRange{
+func exampleRequest(defs data.QueryTypeDefinitionList) data.QueryDataRequest {
+	rsp := data.QueryDataRequest{
+		TimeRange: data.TimeRange{
 			From: "now-1h",
 			To:   "now",
 		},
-		Queries: []sdkapi.DataQuery{},
+		Queries: []data.DataQuery{},
 	}
 
 	for _, def := range defs.Items {
 		for _, sample := range def.Spec.Examples {
 			if sample.SaveModel.Object != nil {
-				q := sdkapi.NewDataQuery(sample.SaveModel.Object)
+				q := data.NewDataQuery(sample.SaveModel.Object)
 				q.RefID = string(rune('A' + len(rsp.Queries)))
 				for _, dis := range def.Spec.Discriminators {
 					_ = q.Set(dis.Field, dis.Value)
@@ -36,13 +36,13 @@ func exampleRequest(defs sdkapi.QueryTypeDefinitionList) sdkapi.DataQueryRequest
 	return rsp
 }
 
-func examplePanelTargets(ds *sdkapi.DataSourceRef, defs sdkapi.QueryTypeDefinitionList) []sdkapi.DataQuery {
-	targets := []sdkapi.DataQuery{}
+func examplePanelTargets(ds *data.DataSourceRef, defs data.QueryTypeDefinitionList) []data.DataQuery {
+	targets := []data.DataQuery{}
 
 	for _, def := range defs.Items {
 		for _, sample := range def.Spec.Examples {
 			if sample.SaveModel.Object != nil {
-				q := sdkapi.NewDataQuery(sample.SaveModel.Object)
+				q := data.NewDataQuery(sample.SaveModel.Object)
 				q.Datasource = ds
 				q.RefID = string(rune('A' + len(targets)))
 				for _, dis := range def.Spec.Discriminators {

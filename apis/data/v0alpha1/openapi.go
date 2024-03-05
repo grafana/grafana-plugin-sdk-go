@@ -12,10 +12,10 @@ var f embed.FS
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
-		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":                         schemaDataResponse(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                   schemaDataFrame(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi/v0alpha1.DataQuery":               schemaDataQuery(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi/v0alpha1.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":                       schemaDataResponse(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                 schemaDataFrame(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/apis/data/v0alpha1.DataQuery":               schemaDataQuery(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/apis/data/v0alpha1.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
 	}
 }
 

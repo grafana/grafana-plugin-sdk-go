@@ -4,7 +4,7 @@ import (
 	"reflect"
 	"testing"
 
-	sdkapi "github.com/grafana/grafana-plugin-sdk-go/apis/sdkapi/v0alpha1"
+	data "github.com/grafana/grafana-plugin-sdk-go/apis/data/v0alpha1"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder"
 	"github.com/stretchr/testify/require"
 )
@@ -23,30 +23,30 @@ func TestQueryTypeDefinitions(t *testing.T) {
 	})
 	require.NoError(t, err)
 	err = builder.AddQueries(schemabuilder.QueryTypeInfo{
-		Discriminators: sdkapi.NewDiscriminators("queryType", QueryTypeMath),
+		Discriminators: data.NewDiscriminators("queryType", QueryTypeMath),
 		GoType:         reflect.TypeOf(&MathQuery{}),
-		Examples: []sdkapi.QueryExample{
+		Examples: []data.QueryExample{
 			{
 				Name: "constant addition",
-				SaveModel: sdkapi.AsUnstructured(MathQuery{
+				SaveModel: data.AsUnstructured(MathQuery{
 					Expression: "$A + 11",
 				}),
 			},
 			{
 				Name: "math with two queries",
-				SaveModel: sdkapi.AsUnstructured(MathQuery{
+				SaveModel: data.AsUnstructured(MathQuery{
 					Expression: "$A - $B",
 				}),
 			},
 		},
 	},
 		schemabuilder.QueryTypeInfo{
-			Discriminators: sdkapi.NewDiscriminators("queryType", QueryTypeReduce),
+			Discriminators: data.NewDiscriminators("queryType", QueryTypeReduce),
 			GoType:         reflect.TypeOf(&ReduceQuery{}),
-			Examples: []sdkapi.QueryExample{
+			Examples: []data.QueryExample{
 				{
 					Name: "get max value",
-					SaveModel: sdkapi.AsUnstructured(ReduceQuery{
+					SaveModel: data.AsUnstructured(ReduceQuery{
 						Expression: "$A",
 						Reducer:    ReducerMax,
 						Settings: ReduceSettings{
@@ -57,9 +57,9 @@ func TestQueryTypeDefinitions(t *testing.T) {
 			},
 		},
 		schemabuilder.QueryTypeInfo{
-			Discriminators: sdkapi.NewDiscriminators("queryType", QueryTypeResample),
+			Discriminators: data.NewDiscriminators("queryType", QueryTypeResample),
 			GoType:         reflect.TypeOf(&ResampleQuery{}),
-			Examples:       []sdkapi.QueryExample{},
+			Examples:       []data.QueryExample{},
 		})
 	require.NoError(t, err)
 

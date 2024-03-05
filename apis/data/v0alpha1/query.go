@@ -16,7 +16,7 @@ func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeDecoder("v0alpha1.DataQuery", &genericQueryCodec{})
 }
 
-type DataQueryRequest struct {
+type QueryDataRequest struct {
 	// Time range applied to each query (when not included in the query body)
 	TimeRange `json:",inline"`
 

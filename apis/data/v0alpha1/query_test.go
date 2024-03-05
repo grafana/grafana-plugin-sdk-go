@@ -36,7 +36,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		"to": "1692646267389"
 	}`)
 
-	req := &DataQueryRequest{}
+	req := &QueryDataRequest{}
 	err := json.Unmarshal(request, req)
 	require.NoError(t, err)
 
@@ -74,7 +74,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 	})
 
 	t.Run("same results from either parser", func(t *testing.T) {
-		typed := &DataQueryRequest{}
+		typed := &QueryDataRequest{}
 		err = json.Unmarshal(request, typed)
 		require.NoError(t, err)
 
