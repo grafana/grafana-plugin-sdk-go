@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -12,16 +11,16 @@ import (
 )
 
 type QueryDataClient interface {
-	QueryData(ctx context.Context, req QueryDataRequest, headers ...string) (int, *backend.QueryDataResponse, error)
+	QueryData(ctx context.Context, req QueryDataRequest) (int, *backend.QueryDataResponse, error)
 }
 
 type simpleHTTPClient struct {
 	url     string
 	client  *http.Client
-	headers []string
+	headers map[string]string
 }
 
-func NewQueryDataClient(url string, client *http.Client, headers ...string) QueryDataClient {
+func NewQueryDataClient(url string, client *http.Client, headers map[string]string) QueryDataClient {
 	if client == nil {
 		client = http.DefaultClient
 	}
@@ -32,7 +31,7 @@ func NewQueryDataClient(url string, client *http.Client, headers ...string) Quer
 	}
 }
 
-func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest, headers ...string) (int, *backend.QueryDataResponse, error) {
+func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest) (int, *backend.QueryDataResponse, error) {
 	body, err := json.Marshal(query)
 	if err != nil {
 		return http.StatusBadRequest, nil, err
@@ -42,12 +41,8 @@ func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest
 	if err != nil {
 		return http.StatusBadRequest, nil, err
 	}
-	headers = append(c.headers, headers...)
-	if (len(headers) % 2) != 0 {
-		return http.StatusBadRequest, nil, fmt.Errorf("headers must be in pairs of two")
-	}
-	for i := 0; i < len(headers); i += 2 {
-		req.Header.Set(headers[i], headers[i+1])
+	for k, v := range c.headers {
+		req.Header.Set(k, v)
 	}
 	req.Header.Set("Content-Type", "application/json")
 

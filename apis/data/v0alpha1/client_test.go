@@ -15,8 +15,9 @@ func TestQueryClient(t *testing.T) {
 	t.Skip()
 
 	client := v0alpha1.NewQueryDataClient("http://localhost:3000/api/ds/query", nil,
-		"Authorization", "Bearer YOURKEYHERE",
-	)
+		map[string]string{
+			"Authorization": "Bearer XYZ",
+		})
 	body := `{
 		"from": "",
 		"to": "",
