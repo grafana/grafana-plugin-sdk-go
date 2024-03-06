@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"go.opentelemetry.io/otel/attribute"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -163,7 +164,7 @@ type PluginContext struct {
 	// Will only be set if request targeting an app instance.
 	AppInstanceSettings *AppInstanceSettings
 
-	// DataSourceConfig is the configured data source instance
+	// DataSourceInstanceSettings is the configured data source instance
 	// settings.
 	//
 	// In Grafana a data source instance is a data source plugin of certain
@@ -178,6 +179,21 @@ type PluginContext struct {
 	// UserAgent is the user agent of the Grafana server that initiated the gRPC request.
 	// Will only be set if request is made from Grafana v10.2.0 or later.
 	UserAgent *useragent.UserAgent
+}
+
+func (p PluginContext) AsAttributes() []attribute.KeyValue {
+	attributes := []attribute.KeyValue{
+		attribute.String("plugin_id", p.PluginID),
+		attribute.String("plugin_version", p.PluginVersion),
+		attribute.Int64("org_id", p.OrgID),
+	}
+	if dss := p.DataSourceInstanceSettings; dss != nil {
+		attributes = append(attributes,
+			attribute.Int64("datasource_updated", dss.Updated.Unix()),
+			attribute.String("datasource_type", dss.Type),
+		)
+	}
+	return attributes
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
