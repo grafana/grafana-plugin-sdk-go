@@ -16,6 +16,20 @@ func GetMap(obj map[string]any, key string) (map[string]any, error) {
 	}
 }
 
+func GetMapOptional(obj map[string]any, key string) (map[string]any, error) {
+	if untypedValue, ok := obj[key]; ok {
+		if value, ok := untypedValue.(map[string]any); ok {
+			return value, nil
+		} else {
+			err := fmt.Errorf("the field '%s' should be an object", key)
+			return nil, err
+		}
+	} else {
+		// Value optional, not error
+		return nil, nil
+	}
+}
+
 func GetBool(obj map[string]any, key string) (bool, error) {
 	if untypedValue, ok := obj[key]; ok {
 		if value, ok := untypedValue.(bool); ok {

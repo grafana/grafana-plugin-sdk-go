@@ -65,6 +65,64 @@ func TestGetMap(t *testing.T) {
 	}
 }
 
+func TestGetMapOptional(t *testing.T) {
+	tests := []struct {
+		name           string
+		obj            map[string]interface{}
+		key            string
+		expectedResult map[string]interface{}
+		expectedError  string
+	}{
+		{
+			name: "ExistingKeyMap",
+			obj: map[string]interface{}{
+				"key1": map[string]interface{}{
+					"innerKey": "value",
+				},
+			},
+			key:            "key1",
+			expectedResult: map[string]interface{}{"innerKey": "value"},
+			expectedError:  "",
+		},
+		{
+			name:           "ExistingKeyNonMap",
+			obj:            map[string]interface{}{"key1": "not an object"},
+			key:            "key1",
+			expectedResult: nil,
+			expectedError:  "the field 'key1' should be an object",
+		},
+		{
+			name:           "NonExistingKey",
+			obj:            map[string]interface{}{},
+			key:            "key1",
+			expectedResult: nil,
+			expectedError:  "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := GetMapOptional(tt.obj, tt.key)
+
+			if tt.expectedError != "" {
+				if err == nil {
+					t.Errorf("expected error '%s' but got nil", tt.expectedError)
+				} else if err.Error() != tt.expectedError {
+					t.Errorf("expected error '%s' but got '%s'", tt.expectedError, err.Error())
+				}
+			} else {
+				if err != nil {
+					t.Errorf("unexpected error: %s", err)
+				}
+
+				if !reflect.DeepEqual(result, tt.expectedResult) {
+					t.Errorf("expected %v but got %v", tt.expectedResult, result)
+				}
+			}
+		})
+	}
+}
+
 func TestGetBool(t *testing.T) {
 	tests := []struct {
 		name           string
