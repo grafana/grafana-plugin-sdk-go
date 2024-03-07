@@ -1,4 +1,4 @@
-package config
+package httpclient
 
 import (
 	"errors"

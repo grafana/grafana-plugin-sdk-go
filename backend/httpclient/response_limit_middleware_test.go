@@ -1,4 +1,4 @@
-package config
+package httpclient
 
 import (
 	"context"
@@ -9,8 +9,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/stretchr/testify/require"
 )
 
@@ -27,23 +25,18 @@ func TestResponseLimitMiddleware(t *testing.T) {
 	}
 	for _, tc := range tcs {
 		t.Run(fmt.Sprintf("Test ResponseLimitMiddleware with limit: %d", tc.limit), func(t *testing.T) {
-			finalRoundTripper := httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			finalRoundTripper := RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 				return &http.Response{StatusCode: http.StatusOK, Request: req, Body: io.NopCloser(strings.NewReader("dummy"))}, nil
 			})
 
-			mw := ResponseLimitMiddleware()
-			rt := mw.CreateMiddleware(httpclient.Options{}, finalRoundTripper)
+			mw := ResponseLimitMiddleware(tc.limit)
+			rt := mw.CreateMiddleware(Options{}, finalRoundTripper)
 			require.NotNil(t, rt)
-			middlewareName, ok := mw.(httpclient.MiddlewareName)
+			middlewareName, ok := mw.(MiddlewareName)
 			require.True(t, ok)
 			require.Equal(t, ResponseLimitMiddlewareName, middlewareName.MiddlewareName())
 
-			gcfg := backend.NewGrafanaCfg(map[string]string{
-				backend.ResponseLimit: fmt.Sprintf("%d", tc.limit),
-			})
-
-			ctx := backend.WithGrafanaConfig(context.Background(), gcfg)
-			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://test.com/query", nil)
+			req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "http://test.com/query", nil)
 			require.NoError(t, err)
 			res, err := rt.RoundTrip(req)
 			require.NoError(t, err)
