@@ -2,6 +2,7 @@
 package converters
 
 import (
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -229,6 +230,14 @@ var JSONValueToFloat64 = data.FieldConverter{
 			fV = float64(iiV)
 			return fV, nil
 		}
+		ii, ok := v.(int)
+		if ok {
+			return float64(ii), nil
+		}
+		nn, ok := v.(json.Number)
+		if ok {
+			return nn.Float64()
+		}
 		sV, ok := v.(string)
 		if ok {
 			return strconv.ParseFloat(sV, 64)
@@ -253,6 +262,14 @@ var JSONValueToInt64 = data.FieldConverter{
 		fV, ok := v.(float64)
 		if ok {
 			return int64(fV), nil
+		}
+		ii, ok := v.(int)
+		if ok {
+			return int64(ii), nil
+		}
+		nn, ok := v.(json.Number)
+		if ok {
+			return nn.Int64()
 		}
 		return nil, toConversionError("float64", v)
 	},

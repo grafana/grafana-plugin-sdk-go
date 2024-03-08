@@ -115,4 +115,15 @@ func TestQueryBuilders(t *testing.T) {
 	})
 	require.Equal(t, "D", testQ3.QueryType)
 	require.Equal(t, "E", testQ3.GetString("extra"))
+
+	testQ3.Set("datasource", &DataSourceRef{Type: "TYPE", UID: "UID"})
+	require.NotNil(t, testQ3.Datasource)
+	require.Equal(t, "TYPE", testQ3.Datasource.Type)
+	require.Equal(t, "UID", testQ3.Datasource.UID)
+
+	testQ3.Set("datasource", map[string]any{"uid": "XYZ"})
+	require.Equal(t, "XYZ", testQ3.Datasource.UID)
+
+	testQ3.Set("maxDataPoints", 100)
+	require.Equal(t, int64(100), testQ3.MaxDataPoints)
 }

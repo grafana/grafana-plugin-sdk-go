@@ -52,34 +52,34 @@ func (g *DataQuery) Set(key string, val any) *DataQuery {
 		g.RefID, _ = val.(string)
 	case "resultAssertions":
 		body, err := json.Marshal(val)
-		if err != nil {
+		if err == nil {
 			_ = json.Unmarshal(body, &g.ResultAssertions)
 		}
 	case "timeRange":
 		body, err := json.Marshal(val)
-		if err != nil {
+		if err == nil {
 			_ = json.Unmarshal(body, &g.TimeRange)
 		}
 	case "datasource":
 		body, err := json.Marshal(val)
-		if err != nil {
+		if err == nil {
 			_ = json.Unmarshal(body, &g.Datasource)
 		}
 	case "datasourceId":
 		v, err := converters.JSONValueToInt64.Converter(val)
-		if err != nil {
+		if err == nil {
 			g.DatasourceID, _ = v.(int64)
 		}
 	case "queryType":
 		g.QueryType, _ = val.(string)
 	case "maxDataPoints":
 		v, err := converters.JSONValueToInt64.Converter(val)
-		if err != nil {
+		if err == nil {
 			g.MaxDataPoints, _ = v.(int64)
 		}
 	case "intervalMs":
 		v, err := converters.JSONValueToFloat64.Converter(val)
-		if err != nil {
+		if err == nil {
 			g.IntervalMS, _ = v.(float64)
 		}
 	case "hide":
