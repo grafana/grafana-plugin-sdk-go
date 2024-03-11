@@ -286,7 +286,7 @@ func ensureWatchConfig(braConfig string) error {
 	}
 
 	fmt.Println("No .bra.toml file found. Creating one...")
-	config, err := tmpl.ReadFile("tmpl/bra.toml")
+	config, err := tmpl.ReadFile(braConfig)
 	if err != nil {
 		return err
 	}
