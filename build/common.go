@@ -274,8 +274,8 @@ func BuildAll() { //revive:disable-line
 //go:embed tmpl/*
 var tmpl embed.FS
 
-// ensureWatchConfig creates a default .bra.toml file in the current directory if it doesn't exist.
-func ensureWatchConfig(braConfig string) error {
+// ensureWatchConfig creates a .bra.toml file in the current directory if it doesn't exist, and will populate it with the contents of the template file found at `braConfigPath`.
+func ensureWatchConfig(braConfigPath string) error {
 	exists, err := utils.Exists(".bra.toml")
 	if err != nil {
 		return err
@@ -286,7 +286,7 @@ func ensureWatchConfig(braConfig string) error {
 	}
 
 	fmt.Println("No .bra.toml file found. Creating one...")
-	config, err := tmpl.ReadFile(braConfig)
+	config, err := tmpl.ReadFile(braConfigPath)
 	if err != nil {
 		return err
 	}
