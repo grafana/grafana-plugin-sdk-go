@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"unsafe"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
@@ -53,17 +54,26 @@ func (g *DataQuery) Set(key string, val any) *DataQuery {
 	case "resultAssertions":
 		body, err := json.Marshal(val)
 		if err == nil {
-			_ = json.Unmarshal(body, &g.ResultAssertions)
+			err = json.Unmarshal(body, &g.ResultAssertions)
+			if err != nil {
+				backend.Logger.Warn("err reading timeRange json. %w", err)
+			}
 		}
 	case "timeRange":
 		body, err := json.Marshal(val)
 		if err == nil {
-			_ = json.Unmarshal(body, &g.TimeRange)
+			err = json.Unmarshal(body, &g.TimeRange)
+			if err != nil {
+				backend.Logger.Warn("err reading timeRange json. %w", err)
+			}
 		}
 	case "datasource":
 		body, err := json.Marshal(val)
 		if err == nil {
-			_ = json.Unmarshal(body, &g.Datasource)
+			err = json.Unmarshal(body, &g.Datasource)
+			if err != nil {
+				backend.Logger.Warn("err reading datasource json. %w", err)
+			}
 		}
 	case "datasourceId":
 		v, err := converters.JSONValueToInt64.Converter(val)

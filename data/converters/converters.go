@@ -230,10 +230,6 @@ var JSONValueToFloat64 = data.FieldConverter{
 			fV = float64(iiV)
 			return fV, nil
 		}
-		ii, ok := v.(int)
-		if ok {
-			return float64(ii), nil
-		}
 		nn, ok := v.(json.Number)
 		if ok {
 			return nn.Float64()
