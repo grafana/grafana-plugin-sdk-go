@@ -20,6 +20,7 @@ const (
 	SQLMaxOpenConnsDefault           = "GF_SQL_MAX_OPEN_CONNS_DEFAULT"
 	SQLMaxIdleConnsDefault           = "GF_SQL_MAX_IDLE_CONNS_DEFAULT"
 	SQLMaxConnLifetimeSecondsDefault = "GF_SQL_MAX_CONN_LIFETIME_SECONDS_DEFAULT"
+	ResponseLimit                    = "GF_RESPONSE_LIMIT"
 )
 
 type configKey struct{}
@@ -223,6 +224,18 @@ func (c *GrafanaCfg) UserFacingDefaultError() (string, error) {
 	}
 
 	return value, nil
+}
+
+func (c *GrafanaCfg) ResponseLimit() int64 {
+	count, ok := c.config[ResponseLimit]
+	if !ok {
+		return 0
+	}
+	i, err := strconv.ParseInt(count, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return i
 }
 
 type userAgentKey struct{}
