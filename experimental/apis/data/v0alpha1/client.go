@@ -46,16 +46,18 @@ func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest
 	}
 	req.Header.Set("Content-Type", "application/json")
 
-	rsp, err := c.client.Do(req)
-	if err != nil {
-		return rsp.StatusCode, nil, err
-	}
-	defer rsp.Body.Close()
-
 	qdr := &backend.QueryDataResponse{}
-	iter, err := jsoniter.Parse(jsoniter.ConfigCompatibleWithStandardLibrary, rsp.Body, 1024*10)
-	if err == nil {
-		err = iter.ReadVal(qdr)
+	code := http.StatusNotFound // 404 for network requests etc
+	rsp, err := c.client.Do(req)
+	if rsp != nil {
+		code = rsp.StatusCode
+		defer rsp.Body.Close()
+		if err == nil {
+			iter, e2 := jsoniter.Parse(jsoniter.ConfigCompatibleWithStandardLibrary, rsp.Body, 1024*10)
+			if e2 == nil {
+				err = iter.ReadVal(qdr)
+			}
+		}
 	}
-	return rsp.StatusCode, qdr, err
+	return code, qdr, err
 }

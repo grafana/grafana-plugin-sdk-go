@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"unsafe"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
@@ -51,35 +52,59 @@ func (g *DataQuery) Set(key string, val any) *DataQuery {
 	case "refId":
 		g.RefID, _ = val.(string)
 	case "resultAssertions":
+		v, ok := val.(ResultAssertions)
+		if ok {
+			g.ResultAssertions = &v
+			return g
+		}
 		body, err := json.Marshal(val)
-		if err != nil {
-			_ = json.Unmarshal(body, &g.ResultAssertions)
+		if err == nil {
+			err = json.Unmarshal(body, &g.ResultAssertions)
+			if err != nil {
+				backend.Logger.Warn("error reading resultAssertions from value. %w", err)
+			}
 		}
 	case "timeRange":
+		v, ok := val.(TimeRange)
+		if ok {
+			g.TimeRange = &v
+			return g
+		}
 		body, err := json.Marshal(val)
-		if err != nil {
-			_ = json.Unmarshal(body, &g.TimeRange)
+		if err == nil {
+			err = json.Unmarshal(body, &g.TimeRange)
+			if err != nil {
+				backend.Logger.Warn("error reading timeRange from value. %w", err)
+			}
 		}
 	case "datasource":
+		v, ok := val.(DataSourceRef)
+		if ok {
+			g.Datasource = &v
+			return g
+		}
 		body, err := json.Marshal(val)
-		if err != nil {
-			_ = json.Unmarshal(body, &g.Datasource)
+		if err == nil {
+			err = json.Unmarshal(body, &g.Datasource)
+			if err != nil {
+				backend.Logger.Warn("error reading datasource from value. %w", err)
+			}
 		}
 	case "datasourceId":
 		v, err := converters.JSONValueToInt64.Converter(val)
-		if err != nil {
+		if err == nil {
 			g.DatasourceID, _ = v.(int64)
 		}
 	case "queryType":
 		g.QueryType, _ = val.(string)
 	case "maxDataPoints":
 		v, err := converters.JSONValueToInt64.Converter(val)
-		if err != nil {
+		if err == nil {
 			g.MaxDataPoints, _ = v.(int64)
 		}
 	case "intervalMs":
 		v, err := converters.JSONValueToFloat64.Converter(val)
-		if err != nil {
+		if err == nil {
 			g.IntervalMS, _ = v.(float64)
 		}
 	case "hide":

@@ -11,6 +11,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestClientWithBadURL(t *testing.T) {
+	client := v0alpha1.NewQueryDataClient("http://localhostXYZ:998/api/ds/query", nil, nil)
+	code, _, err := client.QueryData(context.Background(), v0alpha1.QueryDataRequest{})
+	require.Error(t, err)
+	require.Equal(t, 404, code)
+}
+
 func TestQueryClient(t *testing.T) {
 	t.Skip()
 
@@ -30,7 +37,7 @@ func TestQueryClient(t *testing.T) {
 					"uid": "PD8C576611E62080A"
 				},
 				"csvContent": "a,b,c\n1,hello,true",
-				"hide": true
+				"hide": false
 			}
 		]
 	}`
