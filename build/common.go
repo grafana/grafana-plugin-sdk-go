@@ -275,7 +275,7 @@ func BuildAll() { //revive:disable-line
 var tmpl embed.FS
 
 // ensureWatchConfig creates a default .bra.toml file in the current directory if it doesn't exist.
-func ensureWatchConfig() error {
+func ensureWatchConfig(braConfig string) error {
 	exists, err := utils.Exists(".bra.toml")
 	if err != nil {
 		return err
@@ -294,9 +294,22 @@ func ensureWatchConfig() error {
 	return os.WriteFile(".bra.toml", config, 0600)
 }
 
+var watchConfigPath = "tmpl/bra.toml"
+
 // Watch rebuilds the plugin backend when files change.
 func Watch() error {
-	if err := ensureWatchConfig(); err != nil {
+	return runWatchCmd(watchConfigPath)
+}
+
+var watchDebugConfigPath = "tmpl/debug-bra.toml"
+
+// WatchDebug rebuilds the plugin backend debug version when files change.
+func WatchDebug() error {
+	return runWatchCmd(watchDebugConfigPath)
+}
+
+func runWatchCmd(path string) error {
+	if err := ensureWatchConfig(path); err != nil {
 		return err
 	}
 
