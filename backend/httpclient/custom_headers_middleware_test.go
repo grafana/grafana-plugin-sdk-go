@@ -34,10 +34,10 @@ func TestCustomHeadersMiddleware(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		customHeaders := CustomHeadersMiddleware()
-		rt := customHeaders.CreateMiddleware(Options{Headers: map[string]string{
-			"X-HeaderOne":   "ValueOne",
-			"X-HeaderTwo":   "ValueTwo",
-			"X-HeaderThree": "ValueThree",
+		rt := customHeaders.CreateMiddleware(Options{Header: http.Header{
+			"X-Headerone":   {"ValueOne"},
+			"X-Headertwo":   {"ValueTwo"},
+			"X-Headerthree": {"ValueThree", "ValueThreeAgain"},
 		}}, finalRoundTripper)
 		require.NotNil(t, rt)
 		middlewareName, ok := customHeaders.(MiddlewareName)
@@ -55,17 +55,17 @@ func TestCustomHeadersMiddleware(t *testing.T) {
 		require.Len(t, ctx.callChain, 1)
 		require.ElementsMatch(t, []string{"final"}, ctx.callChain)
 
-		require.Equal(t, "ValueOne", req.Header.Get("X-HeaderOne"))
-		require.Equal(t, "ValueTwo", req.Header.Get("X-HeaderTwo"))
-		require.Equal(t, "ValueThree", req.Header.Get("X-HeaderThree"))
+		require.Equal(t, []string{"ValueOne"}, req.Header.Values("X-Headerone"))
+		require.Equal(t, []string{"ValueTwo"}, req.Header.Values("X-Headertwo"))
+		require.Equal(t, []string{"ValueThree", "ValueThreeAgain"}, req.Header.Values("X-Headerthree"))
 	})
 
 	t.Run("With custom Host header set should apply Host to the request", func(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		customHeaders := CustomHeadersMiddleware()
-		rt := customHeaders.CreateMiddleware(Options{Headers: map[string]string{
-			"Host": "example.com",
+		rt := customHeaders.CreateMiddleware(Options{Header: http.Header{
+			"Host": {"example.com"},
 		}}, finalRoundTripper)
 		require.NotNil(t, rt)
 		middlewareName, ok := customHeaders.(MiddlewareName)

@@ -12,17 +12,19 @@ const CustomHeadersMiddlewareName = "CustomHeaders"
 // If opts.Headers is empty, next will be returned.
 func CustomHeadersMiddleware() Middleware {
 	return NamedMiddlewareFunc(CustomHeadersMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
-		if len(opts.Headers) == 0 {
+		if len(opts.Header) == 0 {
 			return next
 		}
 
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			for key, value := range opts.Headers {
+			for key, values := range opts.Header {
 				// According to https://pkg.go.dev/net/http#Request.Header, Host is a special case
 				if http.CanonicalHeaderKey(key) == "Host" {
-					req.Host = value
+					req.Host = values[0]
 				} else {
-					req.Header.Set(key, value)
+					for _, value := range values {
+						req.Header.Add(key, value)
+					}
 				}
 			}
 
