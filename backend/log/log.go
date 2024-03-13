@@ -16,6 +16,7 @@ const (
 	Info
 	Warn
 	Error
+	Off
 )
 
 // Logger is the main Logger interface.
@@ -27,9 +28,11 @@ type Logger interface {
 	With(args ...interface{}) Logger
 	Level() Level
 	FromContext(ctx context.Context) Logger
+
+	SetLevel(level Level)
 }
 
-// New creates a new logger.
+// New creates a new logger with the Debug level.
 func New() Logger {
 	return NewWithLevel(Debug)
 }
@@ -38,7 +41,6 @@ func New() Logger {
 func NewWithLevel(level Level) Logger {
 	return &hclogWrapper{
 		logger: hclog.New(&hclog.LoggerOptions{
-			// Use debug as level since anything less severe is suppressed.
 			Level: hclog.Level(level),
 			// Use JSON format to make the output in Grafana format and work
 			// when using multiple arguments such as Debug("message", "key", "value").
@@ -91,6 +93,10 @@ func (l *hclogWrapper) Level() Level {
 		return Error
 	}
 	return NoLevel
+}
+
+func (l *hclogWrapper) SetLevel(level Level) {
+	l.logger.SetLevel(hclog.Level(level))
 }
 
 // With creates a sub-logger that will always have the given key/value pairs.
