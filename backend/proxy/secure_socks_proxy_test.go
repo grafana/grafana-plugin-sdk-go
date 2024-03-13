@@ -395,14 +395,14 @@ type fakeConn struct {
 	err error
 }
 
-func (fc fakeConn) Dial(network, addr string) (c net.Conn, err error) {
+func (fc fakeConn) Dial(_, _ string) (c net.Conn, err error) {
 	if fc.err != nil {
 		return nil, fc.err
 	}
 	return fc, nil
 }
 
-func (fc fakeConn) DialContext(ctx context.Context, network, addr string) (c net.Conn, err error) {
+func (fc fakeConn) DialContext(_ context.Context, _, _ string) (c net.Conn, err error) {
 	if fc.err != nil {
 		return nil, fc.err
 	}
