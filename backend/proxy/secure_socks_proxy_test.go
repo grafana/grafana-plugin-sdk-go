@@ -1,14 +1,17 @@
 package proxy
 
 import (
+	"context"
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
+	"errors"
 	"fmt"
 	"io/fs"
 	"math/big"
+	"net"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -17,6 +20,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/net/proxy"
 )
 
 func TestNewSecureSocksProxyContextDialerInsecureProxy(t *testing.T) {
@@ -383,4 +387,77 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	}
 
 	return cfg
+}
+
+// fakeConn implements proxy.Dialer and proxy.ContextDialer
+type fakeConn struct {
+	net.Conn
+	err error
+}
+
+func (fc fakeConn) Dial(_, _ string) (c net.Conn, err error) {
+	if fc.err != nil {
+		return nil, fc.err
+	}
+	return fc, nil
+}
+
+func (fc fakeConn) DialContext(_ context.Context, _, _ string) (c net.Conn, err error) {
+	if fc.err != nil {
+		return nil, fc.err
+	}
+	return fc, nil
+}
+
+func (fc *fakeConn) withError(e error) {
+	fc.err = e
+}
+
+func TestInstrumentedSocksDialer(t *testing.T) {
+	t.Parallel()
+	t.Run("returns context err if context is done", func(t *testing.T) {
+		t.Parallel()
+		md := fakeConn{}
+		d := newInstrumentedSocksDialer(md, "name", "type")
+
+		ctx, cancel := context.WithCancelCause(context.Background())
+		cancel(errors.New("my custom error"))
+
+		cd, ok := d.(proxy.ContextDialer)
+		require.True(t, ok)
+
+		c, err := cd.DialContext(ctx, "n", "addr")
+		assert.Nil(t, c)
+		assert.NotNil(t, err)
+		assert.Equal(t, "context canceled", err.Error())
+		assert.Equal(t, "my custom error", context.Cause(ctx).Error())
+	})
+
+	t.Run("returns conn if no error given", func(t *testing.T) {
+		t.Parallel()
+		md := fakeConn{}
+		d := newInstrumentedSocksDialer(md, "name", "type")
+
+		cd, ok := d.(proxy.ContextDialer)
+		require.True(t, ok)
+
+		c, err := cd.DialContext(context.Background(), "n", "addr")
+		assert.Nil(t, err)
+		assert.NotNil(t, c)
+	})
+
+	t.Run("returns error if dialer errors", func(t *testing.T) {
+		t.Parallel()
+		md := fakeConn{}
+		md.withError(errors.New("custom error"))
+		d := newInstrumentedSocksDialer(md, "name", "type")
+
+		cd, ok := d.(proxy.ContextDialer)
+		require.True(t, ok)
+
+		c, err := cd.DialContext(context.Background(), "n", "addr")
+		assert.Nil(t, c)
+		assert.NotNil(t, err)
+		assert.Equal(t, "custom error", err.Error())
+	})
 }
