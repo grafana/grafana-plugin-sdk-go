@@ -305,7 +305,7 @@ func (d *instrumentedSocksDialer) Dial(network, addr string) (net.Conn, error) {
 // DialContext -
 func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr string) (net.Conn, error) {
 	if ctx.Err() != nil {
-		log.DefaultLogger.Debug("context cancelled, returning context error")
+		log.DefaultLogger.Debug("context cancelled or deadline exceeded, returning context error")
 		return nil, ctx.Err()
 	}
 
