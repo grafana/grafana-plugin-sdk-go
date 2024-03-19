@@ -20,13 +20,13 @@ import (
 )
 
 const (
-	SecureSocksProxyEnabled             = "SOCKS_PROXY_SERVER_ENABLED"
-	SecureSocksProxyClientCertFilePath  = "SOCKS_PROXY_CLIENT_CERT"
-	SecureSocksProxyClientKeyFilePath   = "SOCKS_PROXY_CLIENT_KEY"
-	SecureSocksProxyRootCACertFilePaths = "SOCKS_PROXY_ROOT_CA_CERT"
-	SecureSocksProxyAddress             = "SOCKS_PROXY_ADDRESS"
-	SecureSocksProxyServerName          = "SOCKS_PROXY_SERVER_NAME"
-	SecureSocksProxyAllowInsecure       = "SOCKS_PROXY_ALLOW_INSECURE"
+	PluginSecureSocksProxyEnabled             = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
+	PluginSecureSocksProxyClientCertFilePath  = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
+	PluginSecureSocksProxyClientKeyFilePath   = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
+	PluginSecureSocksProxyRootCACertFilePaths = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+	PluginSecureSocksProxyProxyAddress        = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
+	PluginSecureSocksProxyServerName          = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+	PluginSecureSocksProxyAllowInsecure       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
 var (
@@ -67,7 +67,7 @@ type cfgProxyWrapper struct {
 	opts *Options
 }
 
-// SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
+// PluginSecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
 // and the datasource options specify to use the proxy
 func (p *cfgProxyWrapper) SecureSocksProxyEnabled() bool {
 	// it cannot be enabled if it's not enabled on Grafana

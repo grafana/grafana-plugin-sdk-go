@@ -7,25 +7,25 @@ import (
 )
 
 const (
-	// PluginSecureSocksProxyEnabledEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED
+	// Deprecated: PluginSecureSocksProxyEnabledEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED
 	// environment variable used to specify if a secure socks proxy is allowed to be used for datasource connections.
 	PluginSecureSocksProxyEnabledEnvVarName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
-	// PluginSecureSocksProxyClientCertFilePathEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT
+	// Deprecated: PluginSecureSocksProxyClientCertFilePathEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT
 	// environment variable used to specify the file location of the client cert for the secure socks proxy.
 	PluginSecureSocksProxyClientCertFilePathEnvVarName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
-	// PluginSecureSocksProxyClientKeyFilePathEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY
+	// Deprecated: PluginSecureSocksProxyClientKeyFilePathEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY
 	// environment variable used to specify the file location of the client key for the secure socks proxy.
 	PluginSecureSocksProxyClientKeyFilePathEnvVarName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	// PluginSecureSocksProxyRootCACertFilePathsEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT
+	// Deprecated: PluginSecureSocksProxyRootCACertFilePathsEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT
 	// environment variable used to specify the file location of the root ca for the secure socks proxy.
 	PluginSecureSocksProxyRootCACertFilePathsEnvVarName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
-	// PluginSecureSocksProxyAddressEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS
+	// Deprecated: PluginSecureSocksProxyAddressEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS
 	// environment variable used to specify the secure socks proxy server address to proxy the connections to.
 	PluginSecureSocksProxyAddressEnvVarName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
-	// PluginSecureSocksProxyServerNameEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
+	// Deprecated: PluginSecureSocksProxyServerNameEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
 	// environment variable used to specify the server name of the secure socks proxy.
 	PluginSecureSocksProxyServerNameEnvVarName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
-	// PluginSecureSocksProxyAllowInsecureEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE
+	// Deprecated: PluginSecureSocksProxyAllowInsecureEnvVarName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE
 	// environment variable used to specify if the proxy should use a TLS dialer.
 	PluginSecureSocksProxyAllowInsecureEnvVarName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
