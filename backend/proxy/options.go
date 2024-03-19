@@ -44,6 +44,6 @@ func (o *Options) setDefaults() {
 	}
 
 	if o.ClientCfg == nil {
-		o.ClientCfg = getConfigFromEnv()
+		o.ClientCfg = clientCfgFromEnv()
 	}
 }

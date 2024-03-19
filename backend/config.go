@@ -110,26 +110,26 @@ type Proxy struct {
 }
 
 func (c *GrafanaCfg) proxy() (Proxy, error) {
-	if v, exists := c.config[proxy.PluginSecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
+	if v, exists := c.config[proxy.SecureSocksProxyEnabled]; exists && v == strconv.FormatBool(true) {
 		var (
 			allowInsecure = false
 			err           error
 		)
 
-		if v := c.Get(proxy.PluginSecureSocksProxyAllowInsecure); v != "" {
-			allowInsecure, err = strconv.ParseBool(c.Get(proxy.PluginSecureSocksProxyAllowInsecure))
+		if v := c.Get(proxy.SecureSocksProxyAllowInsecure); v != "" {
+			allowInsecure, err = strconv.ParseBool(c.Get(proxy.SecureSocksProxyAllowInsecure))
 			if err != nil {
-				return Proxy{}, fmt.Errorf("parsing %s, value must be a boolean: %w", proxy.PluginSecureSocksProxyAllowInsecure, err)
+				return Proxy{}, fmt.Errorf("parsing %s, value must be a boolean: %w", proxy.SecureSocksProxyAllowInsecure, err)
 			}
 		}
 
 		return Proxy{
 			clientCfg: &proxy.ClientCfg{
-				ClientCert:    c.Get(proxy.PluginSecureSocksProxyClientCertFilePath),
-				ClientKey:     c.Get(proxy.PluginSecureSocksProxyClientKeyFilePath),
-				RootCACerts:   strings.Split(c.Get(proxy.PluginSecureSocksProxyRootCACertFilePaths), " "),
-				ProxyAddress:  c.Get(proxy.PluginSecureSocksProxyProxyAddress),
-				ServerName:    c.Get(proxy.PluginSecureSocksProxyServerName),
+				ClientCert:    c.Get(proxy.SecureSocksProxyClientCertFilePath),
+				ClientKey:     c.Get(proxy.SecureSocksProxyClientKeyFilePath),
+				RootCACerts:   strings.Split(c.Get(proxy.SecureSocksProxyRootCACertFilePaths), " "),
+				ProxyAddress:  c.Get(proxy.SecureSocksProxyAddress),
+				ServerName:    c.Get(proxy.SecureSocksProxyServerName),
 				AllowInsecure: allowInsecure,
 			},
 		}, nil

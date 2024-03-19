@@ -9,9 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -19,30 +17,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/net/proxy"
-)
-
-var (
-	// PluginSecureSocksProxyEnabled is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED
-	// environment variable used to specify if a secure socks proxy is allowed to be used for datasource connections.
-	PluginSecureSocksProxyEnabled = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
-	// PluginSecureSocksProxyClientCertFilePath is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT
-	// environment variable used to specify the file location of the client cert for the secure socks proxy.
-	PluginSecureSocksProxyClientCertFilePath = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
-	// PluginSecureSocksProxyClientKeyFilePath is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY
-	// environment variable used to specify the file location of the client key for the secure socks proxy.
-	PluginSecureSocksProxyClientKeyFilePath = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	// PluginSecureSocksProxyRootCACertFilePaths is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT
-	// environment variable used to specify the file location of the root ca for the secure socks proxy.
-	PluginSecureSocksProxyRootCACertFilePaths = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
-	// PluginSecureSocksProxyProxyAddress is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS
-	// environment variable used to specify the secure socks proxy server address to proxy the connections to.
-	PluginSecureSocksProxyProxyAddress = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
-	// PluginSecureSocksProxyServerName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
-	// environment variable used to specify the server name of the secure socks proxy.
-	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
-	// PluginSecureSocksProxyAllowInsecure is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE
-	// environment variable used to specify if the proxy should use a TLS dialer.
-	PluginSecureSocksProxyAllowInsecure = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
 const (
@@ -201,90 +175,6 @@ func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
 			KeepAlive: p.opts.Timeouts.KeepAlive,
 		},
 	}, nil
-}
-
-// getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
-func getConfigFromEnv() *ClientCfg {
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyEnabled); ok {
-		enabled, err := strconv.ParseBool(value)
-		if err != nil || !enabled {
-			return nil
-		}
-	}
-
-	proxyAddress := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyProxyAddress); ok {
-		proxyAddress = value
-	} else {
-		return nil
-	}
-
-	allowInsecure := false
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyAllowInsecure); ok {
-		allowInsecure, _ = strconv.ParseBool(value)
-	}
-
-	// We only need to fill these fields on insecure mode.
-	if allowInsecure {
-		return &ClientCfg{
-			ProxyAddress:  proxyAddress,
-			AllowInsecure: allowInsecure,
-		}
-	}
-
-	clientCert := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCertFilePath); ok {
-		certPEMBlock, err := os.ReadFile(value)
-		if err != nil {
-			return nil
-		}
-		clientCert = string(certPEMBlock)
-	} else {
-		return nil
-	}
-
-	clientKey := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientKeyFilePath); ok {
-		keyPEMBlock, err := os.ReadFile(value)
-		if err != nil {
-			return nil
-		}
-		clientKey = string(keyPEMBlock)
-	} else {
-		return nil
-	}
-
-	var rootCACerts []string
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACertFilePaths); ok {
-		for _, rootCA := range strings.Split(value, " ") {
-			// nolint:gosec
-			// The gosec G304 warning can be ignored because `rootCA` comes from config ini
-			// and we check below if it's the right file type
-			certPEMBlock, err := os.ReadFile(rootCA)
-			if err != nil {
-				return nil
-			}
-			rootCACerts = append(rootCACerts, string(certPEMBlock))
-		}
-	} else {
-		return nil
-	}
-
-	serverName := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyServerName); ok {
-		serverName = value
-	} else {
-		return nil
-	}
-
-	return &ClientCfg{
-		ClientCert:    clientCert,
-		ClientKey:     clientKey,
-		RootCACerts:   rootCACerts,
-		ProxyAddress:  proxyAddress,
-		ServerName:    serverName,
-		AllowInsecure: false,
-	}
 }
 
 // SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`

@@ -132,21 +132,21 @@ func TestGetConfigFromEnv(t *testing.T) {
 		{
 			description: "socks proxy not enabled, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:             "false",
-				PluginSecureSocksProxyProxyAddress:        "localhost",
-				PluginSecureSocksProxyClientCertFilePath:  "cert",
-				PluginSecureSocksProxyClientKeyFilePath:   "key",
-				PluginSecureSocksProxyRootCACertFilePaths: "root_ca",
-				PluginSecureSocksProxyServerName:          "server_name",
+				PluginSecureSocksProxyEnabledEnvVarName:             "false",
+				PluginSecureSocksProxyAddressEnvVarName:             "localhost",
+				PluginSecureSocksProxyClientCertFilePathEnvVarName:  "cert",
+				PluginSecureSocksProxyClientKeyFilePathEnvVarName:   "key",
+				PluginSecureSocksProxyRootCACertFilePathsEnvVarName: "root_ca",
+				PluginSecureSocksProxyServerNameEnvVarName:          "server_name",
 			},
 			expected: nil,
 		},
 		{
 			description: "allowInsecure=true, should return config without tls fields filled",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "true",
+				PluginSecureSocksProxyEnabledEnvVarName:       "true",
+				PluginSecureSocksProxyAddressEnvVarName:       "localhost",
+				PluginSecureSocksProxyAllowInsecureEnvVarName: "true",
 			},
 			expected: &ClientCfg{
 				ProxyAddress:  "localhost",
@@ -156,55 +156,55 @@ func TestGetConfigFromEnv(t *testing.T) {
 		{
 			description: "allowInsecure=false, client cert is required, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
+				PluginSecureSocksProxyEnabledEnvVarName:       "true",
+				PluginSecureSocksProxyAddressEnvVarName:       "localhost",
+				PluginSecureSocksProxyAllowInsecureEnvVarName: "false",
 			},
 			expected: nil,
 		},
 		{
 			description: "allowInsecure=false, client key is required, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:            "true",
-				PluginSecureSocksProxyProxyAddress:       "localhost",
-				PluginSecureSocksProxyAllowInsecure:      "false",
-				PluginSecureSocksProxyClientCertFilePath: "cert",
+				PluginSecureSocksProxyEnabledEnvVarName:            "true",
+				PluginSecureSocksProxyAddressEnvVarName:            "localhost",
+				PluginSecureSocksProxyAllowInsecureEnvVarName:      "false",
+				PluginSecureSocksProxyClientCertFilePathEnvVarName: "cert",
 			},
 			expected: nil,
 		},
 		{
 			description: "allowInsecure=false, root ca is required, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:            "true",
-				PluginSecureSocksProxyProxyAddress:       "localhost",
-				PluginSecureSocksProxyAllowInsecure:      "false",
-				PluginSecureSocksProxyClientCertFilePath: "cert",
-				PluginSecureSocksProxyClientKeyFilePath:  "key",
+				PluginSecureSocksProxyEnabledEnvVarName:            "true",
+				PluginSecureSocksProxyAddressEnvVarName:            "localhost",
+				PluginSecureSocksProxyAllowInsecureEnvVarName:      "false",
+				PluginSecureSocksProxyClientCertFilePathEnvVarName: "cert",
+				PluginSecureSocksProxyClientKeyFilePathEnvVarName:  "key",
 			},
 			expected: nil,
 		},
 		{
 			description: "allowInsecure=false, server name is required, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:             "true",
-				PluginSecureSocksProxyProxyAddress:        "localhost",
-				PluginSecureSocksProxyAllowInsecure:       "false",
-				PluginSecureSocksProxyClientCertFilePath:  "cert",
-				PluginSecureSocksProxyClientKeyFilePath:   "key",
-				PluginSecureSocksProxyRootCACertFilePaths: "root",
+				PluginSecureSocksProxyEnabledEnvVarName:             "true",
+				PluginSecureSocksProxyAddressEnvVarName:             "localhost",
+				PluginSecureSocksProxyAllowInsecureEnvVarName:       "false",
+				PluginSecureSocksProxyClientCertFilePathEnvVarName:  "cert",
+				PluginSecureSocksProxyClientKeyFilePathEnvVarName:   "key",
+				PluginSecureSocksProxyRootCACertFilePathsEnvVarName: "root",
 			},
 			expected: nil,
 		},
 		{
 			description: "allowInsecure=false, should return config with tls fields filled",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:             "true",
-				PluginSecureSocksProxyProxyAddress:        "localhost",
-				PluginSecureSocksProxyAllowInsecure:       "false",
-				PluginSecureSocksProxyClientCertFilePath:  testFilePath,
-				PluginSecureSocksProxyClientKeyFilePath:   testFilePath,
-				PluginSecureSocksProxyRootCACertFilePaths: fmt.Sprintf("%s %s", testFilePath, testFilePath),
-				PluginSecureSocksProxyServerName:          "name",
+				PluginSecureSocksProxyEnabledEnvVarName:             "true",
+				PluginSecureSocksProxyAddressEnvVarName:             "localhost",
+				PluginSecureSocksProxyAllowInsecureEnvVarName:       "false",
+				PluginSecureSocksProxyClientCertFilePathEnvVarName:  testFilePath,
+				PluginSecureSocksProxyClientKeyFilePathEnvVarName:   testFilePath,
+				PluginSecureSocksProxyRootCACertFilePathsEnvVarName: fmt.Sprintf("%s %s", testFilePath, testFilePath),
+				PluginSecureSocksProxyServerNameEnvVarName:          "name",
 			},
 			expected: &ClientCfg{
 				ProxyAddress:  "localhost",
@@ -222,7 +222,7 @@ func TestGetConfigFromEnv(t *testing.T) {
 			for key, value := range tt.envVars {
 				t.Setenv(key, value)
 			}
-			assert.Equal(t, tt.expected, getConfigFromEnv())
+			assert.Equal(t, tt.expected, clientCfgFromEnv())
 		})
 	}
 }
@@ -232,18 +232,18 @@ func TestSecureSocksProxyConfig(t *testing.T) {
 		ProxyAddress:  "localhost:8080",
 		AllowInsecure: true,
 	}
-	t.Setenv(PluginSecureSocksProxyEnabled, "true")
-	t.Setenv(PluginSecureSocksProxyProxyAddress, expected.ProxyAddress)
-	t.Setenv(PluginSecureSocksProxyAllowInsecure, fmt.Sprint(expected.AllowInsecure))
+	t.Setenv(PluginSecureSocksProxyEnabledEnvVarName, "true")
+	t.Setenv(PluginSecureSocksProxyAddressEnvVarName, expected.ProxyAddress)
+	t.Setenv(PluginSecureSocksProxyAllowInsecureEnvVarName, fmt.Sprint(expected.AllowInsecure))
 
 	t.Run("test env variables", func(t *testing.T) {
-		assert.Equal(t, &expected, getConfigFromEnv())
+		assert.Equal(t, &expected, clientCfgFromEnv())
 	})
 
 	t.Run("test overriding env variables", func(t *testing.T) {
 		expected.ProxyAddress = "localhost:8082"
-		t.Setenv(PluginSecureSocksProxyProxyAddress, expected.ProxyAddress)
-		assert.Equal(t, &expected, getConfigFromEnv())
+		t.Setenv(PluginSecureSocksProxyAddressEnvVarName, expected.ProxyAddress)
+		assert.Equal(t, &expected, clientCfgFromEnv())
 	})
 }
 
