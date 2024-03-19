@@ -20,13 +20,13 @@ import (
 )
 
 const (
-	PluginSecureSocksProxyEnabled             = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
-	PluginSecureSocksProxyClientCertFilePath  = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
-	PluginSecureSocksProxyClientKeyFilePath   = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	PluginSecureSocksProxyRootCACertFilePaths = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
-	PluginSecureSocksProxyProxyAddress        = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
-	PluginSecureSocksProxyServerName          = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
-	PluginSecureSocksProxyAllowInsecure       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
+	PluginSecureSocksProxyEnabled       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
+	PluginSecureSocksProxyClientCert    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
+	PluginSecureSocksProxyClientKey     = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
+	PluginSecureSocksProxyRootCACerts   = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+	PluginSecureSocksProxyProxyAddress  = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
+	PluginSecureSocksProxyServerName    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+	PluginSecureSocksProxyAllowInsecure = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
 var (

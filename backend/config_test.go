@@ -47,13 +47,13 @@ func TestConfig(t *testing.T) {
 			{
 				name: "feature toggles and proxy enabled",
 				cfg: NewGrafanaCfg(map[string]string{
-					featuretoggles.EnabledFeatures:                  "TestFeature",
-					proxy.PluginSecureSocksProxyEnabled:             "true",
-					proxy.PluginSecureSocksProxyProxyAddress:        "localhost:1234",
-					proxy.PluginSecureSocksProxyServerName:          "localhost",
-					proxy.PluginSecureSocksProxyClientKeyFilePath:   "clientKey",
-					proxy.PluginSecureSocksProxyClientCertFilePath:  "clientCert",
-					proxy.PluginSecureSocksProxyRootCACertFilePaths: "rootCACert",
+					featuretoggles.EnabledFeatures:           "TestFeature",
+					proxy.PluginSecureSocksProxyEnabled:      "true",
+					proxy.PluginSecureSocksProxyProxyAddress: "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:   "localhost",
+					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
+					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
+					proxy.PluginSecureSocksProxyRootCACerts:  "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{
 					enabled: map[string]struct{}{
@@ -73,13 +73,13 @@ func TestConfig(t *testing.T) {
 			{
 				name: "feature toggles enabled and proxy disabled",
 				cfg: NewGrafanaCfg(map[string]string{
-					featuretoggles.EnabledFeatures:                  "TestFeature",
-					proxy.PluginSecureSocksProxyEnabled:             "false",
-					proxy.PluginSecureSocksProxyProxyAddress:        "localhost:1234",
-					proxy.PluginSecureSocksProxyServerName:          "localhost",
-					proxy.PluginSecureSocksProxyClientKeyFilePath:   "clientKey",
-					proxy.PluginSecureSocksProxyClientCertFilePath:  "clientCert",
-					proxy.PluginSecureSocksProxyRootCACertFilePaths: "rootCACert",
+					featuretoggles.EnabledFeatures:           "TestFeature",
+					proxy.PluginSecureSocksProxyEnabled:      "false",
+					proxy.PluginSecureSocksProxyProxyAddress: "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:   "localhost",
+					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
+					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
+					proxy.PluginSecureSocksProxyRootCACerts:  "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{
 					enabled: map[string]struct{}{
@@ -91,13 +91,13 @@ func TestConfig(t *testing.T) {
 			{
 				name: "feature toggles disabled and proxy enabled",
 				cfg: NewGrafanaCfg(map[string]string{
-					featuretoggles.EnabledFeatures:                  "",
-					proxy.PluginSecureSocksProxyEnabled:             "true",
-					proxy.PluginSecureSocksProxyProxyAddress:        "localhost:1234",
-					proxy.PluginSecureSocksProxyServerName:          "localhost",
-					proxy.PluginSecureSocksProxyClientKeyFilePath:   "clientKey",
-					proxy.PluginSecureSocksProxyClientCertFilePath:  "clientCert",
-					proxy.PluginSecureSocksProxyRootCACertFilePaths: "rootCACert",
+					featuretoggles.EnabledFeatures:           "",
+					proxy.PluginSecureSocksProxyEnabled:      "true",
+					proxy.PluginSecureSocksProxyProxyAddress: "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:   "localhost",
+					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
+					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
+					proxy.PluginSecureSocksProxyRootCACerts:  "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{},
 				expectedProxy: Proxy{
@@ -113,14 +113,14 @@ func TestConfig(t *testing.T) {
 			{
 				name: "feature toggles disabled and insecure proxy enabled",
 				cfg: NewGrafanaCfg(map[string]string{
-					featuretoggles.EnabledFeatures:                  "",
-					proxy.PluginSecureSocksProxyEnabled:             "true",
-					proxy.PluginSecureSocksProxyProxyAddress:        "localhost:1234",
-					proxy.PluginSecureSocksProxyServerName:          "localhost",
-					proxy.PluginSecureSocksProxyClientKeyFilePath:   "clientKey",
-					proxy.PluginSecureSocksProxyClientCertFilePath:  "clientCert",
-					proxy.PluginSecureSocksProxyRootCACertFilePaths: "rootCACert",
-					proxy.PluginSecureSocksProxyAllowInsecure:       "true",
+					featuretoggles.EnabledFeatures:            "",
+					proxy.PluginSecureSocksProxyEnabled:       "true",
+					proxy.PluginSecureSocksProxyProxyAddress:  "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:    "localhost",
+					proxy.PluginSecureSocksProxyClientKey:     "clientKey",
+					proxy.PluginSecureSocksProxyClientCert:    "clientCert",
+					proxy.PluginSecureSocksProxyRootCACerts:   "rootCACert",
+					proxy.PluginSecureSocksProxyAllowInsecure: "true",
 				}),
 				expectedFeatureToggles: FeatureToggles{},
 				expectedProxy: Proxy{
