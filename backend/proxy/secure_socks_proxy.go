@@ -45,6 +45,16 @@ var (
 	PluginSecureSocksProxyAllowInsecure = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
+const (
+	SecureSocksProxyEnabled             = "SOCKS_PROXY_SERVER_ENABLED"
+	SecureSocksProxyClientCertFilePath  = "SOCKS_PROXY_CLIENT_CERT"
+	SecureSocksProxyClientKeyFilePath   = "SOCKS_PROXY_CLIENT_KEY"
+	SecureSocksProxyRootCACertFilePaths = "SOCKS_PROXY_ROOT_CA_CERT"
+	SecureSocksProxyAddress             = "SOCKS_PROXY_ADDRESS"
+	SecureSocksProxyServerName          = "SOCKS_PROXY_SERVER_NAME"
+	SecureSocksProxyAllowInsecure       = "SOCKS_PROXY_ALLOW_INSECURE"
+)
+
 var (
 	socksUnknownError           = regexp.MustCompile(`unknown code: (\d+)`)
 	secureSocksRequestsDuration = promauto.NewHistogramVec(prometheus.HistogramOpts{
