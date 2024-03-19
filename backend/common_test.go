@@ -365,7 +365,7 @@ func TestProxyOptions(t *testing.T) {
 				proxyClientCfg: &proxy.ClientCfg{
 					ClientCert:   "<client-cert>",
 					ClientKey:    "123abc",
-					RootCA:       "<root-ca-cert>",
+					RootCACerts:  []string{"<root-ca-cert>"},
 					ProxyAddress: "10.1.2.3",
 					ServerName:   "grafana-server",
 				},
@@ -381,7 +381,7 @@ func TestProxyOptions(t *testing.T) {
 					ClientCfg: &proxy.ClientCfg{
 						ClientCert:   "<client-cert>",
 						ClientKey:    "123abc",
-						RootCA:       "<root-ca-cert>",
+						RootCACerts:  []string{"<root-ca-cert>"},
 						ProxyAddress: "10.1.2.3",
 						ServerName:   "grafana-server",
 					},

@@ -25,15 +25,15 @@ var (
 	// PluginSecureSocksProxyEnabled is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED
 	// environment variable used to specify if a secure socks proxy is allowed to be used for datasource connections.
 	PluginSecureSocksProxyEnabled = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
-	// PluginSecureSocksProxyClientCert is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT
+	// PluginSecureSocksProxyClientCertFilePath is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT
 	// environment variable used to specify the file location of the client cert for the secure socks proxy.
-	PluginSecureSocksProxyClientCert = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
-	// PluginSecureSocksProxyClientKey is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY
+	PluginSecureSocksProxyClientCertFilePath = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
+	// PluginSecureSocksProxyClientKeyFilePath is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY
 	// environment variable used to specify the file location of the client key for the secure socks proxy.
-	PluginSecureSocksProxyClientKey = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	// PluginSecureSocksProxyRootCACert is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT
+	PluginSecureSocksProxyClientKeyFilePath = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
+	// PluginSecureSocksProxyRootCACertFilePaths is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT
 	// environment variable used to specify the file location of the root ca for the secure socks proxy.
-	PluginSecureSocksProxyRootCACert = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+	PluginSecureSocksProxyRootCACertFilePaths = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
 	// PluginSecureSocksProxyProxyAddress is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS
 	// environment variable used to specify the secure socks proxy server address to proxy the connections to.
 	PluginSecureSocksProxyProxyAddress = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
@@ -66,7 +66,7 @@ type Client interface {
 type ClientCfg struct {
 	ClientCert    string
 	ClientKey     string
-	RootCA        string
+	RootCACerts   []string
 	ProxyAddress  string
 	ServerName    string
 	AllowInsecure bool
@@ -157,26 +157,24 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 
 func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
 	certPool := x509.NewCertPool()
-	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
-		// nolint:gosec
-		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
-		// and we check below if it's the right file type
-		pemBytes, err := os.ReadFile(rootCAFile)
-		if err != nil {
-			return nil, err
-		}
 
+	if len(p.opts.ClientCfg.RootCACerts) == 0 {
+		return nil, errors.New("one or more root ca are required")
+	}
+
+	for _, rootCA := range p.opts.ClientCfg.RootCACerts {
+		pemBytes := []byte(rootCA)
 		pemDecoded, _ := pem.Decode(pemBytes)
 		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
 			return nil, errors.New("root ca is invalid")
 		}
 
 		if !certPool.AppendCertsFromPEM(pemBytes) {
-			return nil, errors.New("failed to append CA certificate " + rootCAFile)
+			return nil, errors.New("failed to append CA certificate to pool")
 		}
 	}
 
-	cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
+	cert, err := tls.X509KeyPair([]byte(p.opts.ClientCfg.ClientCert), []byte(p.opts.ClientCfg.ClientKey))
 	if err != nil {
 		return nil, err
 	}
@@ -225,22 +223,39 @@ func getConfigFromEnv() *ClientCfg {
 	}
 
 	clientCert := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCert); ok {
-		clientCert = value
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCertFilePath); ok {
+		certPEMBlock, err := os.ReadFile(value)
+		if err != nil {
+			return nil
+		}
+		clientCert = string(certPEMBlock)
 	} else {
 		return nil
 	}
 
 	clientKey := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientKey); ok {
-		clientKey = value
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientKeyFilePath); ok {
+		keyPEMBlock, err := os.ReadFile(value)
+		if err != nil {
+			return nil
+		}
+		clientKey = string(keyPEMBlock)
 	} else {
 		return nil
 	}
 
-	rootCA := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACert); ok {
-		rootCA = value
+	var rootCACerts []string
+	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACertFilePaths); ok {
+		for _, rootCA := range strings.Split(value, " ") {
+			// nolint:gosec
+			// The gosec G304 warning can be ignored because `rootCA` comes from config ini
+			// and we check below if it's the right file type
+			certPEMBlock, err := os.ReadFile(rootCA)
+			if err != nil {
+				return nil
+			}
+			rootCACerts = append(rootCACerts, string(certPEMBlock))
+		}
 	} else {
 		return nil
 	}
@@ -255,7 +270,7 @@ func getConfigFromEnv() *ClientCfg {
 	return &ClientCfg{
 		ClientCert:    clientCert,
 		ClientKey:     clientKey,
-		RootCA:        rootCA,
+		RootCACerts:   rootCACerts,
 		ProxyAddress:  proxyAddress,
 		ServerName:    serverName,
 		AllowInsecure: false,

@@ -15,6 +15,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -51,21 +52,13 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	}
 	cli := New(opts)
 
-	// create empty file for testing invalid configs
-	tempDir := t.TempDir()
-	tempEmptyFile := filepath.Join(tempDir, "emptyfile.txt")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	_, err := os.Create(tempEmptyFile)
-	require.NoError(t, err)
-
 	t.Run("New socks proxy should be properly configured when all settings are valid", func(t *testing.T) {
 		require.NoError(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Client cert must be valid", func(t *testing.T) {
 		clientCertBefore := opts.ClientCfg.ClientCert
-		opts.ClientCfg.ClientCert = tempEmptyFile
+		opts.ClientCfg.ClientCert = ""
 		cli = New(opts)
 		t.Cleanup(func() {
 			opts.ClientCfg.ClientCert = clientCertBefore
@@ -76,7 +69,7 @@ func TestNewSecureSocksProxy(t *testing.T) {
 
 	t.Run("Client key must be valid", func(t *testing.T) {
 		clientKeyBefore := opts.ClientCfg.ClientKey
-		opts.ClientCfg.ClientKey = tempEmptyFile
+		opts.ClientCfg.ClientKey = ""
 		cli = New(opts)
 		t.Cleanup(func() {
 			opts.ClientCfg.ClientKey = clientKeyBefore
@@ -85,12 +78,23 @@ func TestNewSecureSocksProxy(t *testing.T) {
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
-	t.Run("Root CA must be valid", func(t *testing.T) {
-		rootCABefore := opts.ClientCfg.RootCA
-		opts.ClientCfg.RootCA = tempEmptyFile
+	t.Run("Root CA must be not empty", func(t *testing.T) {
+		rootCABefore := opts.ClientCfg.RootCACerts
+		opts.ClientCfg.RootCACerts = []string{}
 		cli = New(opts)
 		t.Cleanup(func() {
-			opts.ClientCfg.RootCA = rootCABefore
+			opts.ClientCfg.RootCACerts = rootCABefore
+			cli = New(opts)
+		})
+		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
+	})
+
+	t.Run("Root CA must be valid", func(t *testing.T) {
+		rootCABefore := opts.ClientCfg.RootCACerts
+		opts.ClientCfg.RootCACerts = []string{""}
+		cli = New(opts)
+		t.Cleanup(func() {
+			opts.ClientCfg.RootCACerts = rootCABefore
 			cli = New(opts)
 		})
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
@@ -113,6 +117,13 @@ func TestSecureSocksProxyEnabled(t *testing.T) {
 }
 
 func TestGetConfigFromEnv(t *testing.T) {
+	// create empty file for testing configs
+	tempDir := t.TempDir()
+	testFilePath := filepath.Join(tempDir, "test")
+	testFileData := "foobar"
+	err := os.WriteFile(testFilePath, []byte(testFileData), 0600)
+	require.NoError(t, err)
+
 	cases := []struct {
 		description string
 		envVars     map[string]string
@@ -121,12 +132,12 @@ func TestGetConfigFromEnv(t *testing.T) {
 		{
 			description: "socks proxy not enabled, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:      "false",
-				PluginSecureSocksProxyProxyAddress: "localhost",
-				PluginSecureSocksProxyClientCert:   "cert",
-				PluginSecureSocksProxyClientKey:    "key",
-				PluginSecureSocksProxyRootCACert:   "root_ca",
-				PluginSecureSocksProxyServerName:   "server_name",
+				PluginSecureSocksProxyEnabled:             "false",
+				PluginSecureSocksProxyProxyAddress:        "localhost",
+				PluginSecureSocksProxyClientCertFilePath:  "cert",
+				PluginSecureSocksProxyClientKeyFilePath:   "key",
+				PluginSecureSocksProxyRootCACertFilePaths: "root_ca",
+				PluginSecureSocksProxyServerName:          "server_name",
 			},
 			expected: nil,
 		},
@@ -154,52 +165,52 @@ func TestGetConfigFromEnv(t *testing.T) {
 		{
 			description: "allowInsecure=false, client key is required, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-				PluginSecureSocksProxyClientCert:    "cert",
+				PluginSecureSocksProxyEnabled:            "true",
+				PluginSecureSocksProxyProxyAddress:       "localhost",
+				PluginSecureSocksProxyAllowInsecure:      "false",
+				PluginSecureSocksProxyClientCertFilePath: "cert",
 			},
 			expected: nil,
 		},
 		{
 			description: "allowInsecure=false, root ca is required, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-				PluginSecureSocksProxyClientCert:    "cert",
-				PluginSecureSocksProxyClientKey:     "key",
+				PluginSecureSocksProxyEnabled:            "true",
+				PluginSecureSocksProxyProxyAddress:       "localhost",
+				PluginSecureSocksProxyAllowInsecure:      "false",
+				PluginSecureSocksProxyClientCertFilePath: "cert",
+				PluginSecureSocksProxyClientKeyFilePath:  "key",
 			},
 			expected: nil,
 		},
 		{
 			description: "allowInsecure=false, server name is required, should return nil",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-				PluginSecureSocksProxyClientCert:    "cert",
-				PluginSecureSocksProxyClientKey:     "key",
-				PluginSecureSocksProxyRootCACert:    "root",
+				PluginSecureSocksProxyEnabled:             "true",
+				PluginSecureSocksProxyProxyAddress:        "localhost",
+				PluginSecureSocksProxyAllowInsecure:       "false",
+				PluginSecureSocksProxyClientCertFilePath:  "cert",
+				PluginSecureSocksProxyClientKeyFilePath:   "key",
+				PluginSecureSocksProxyRootCACertFilePaths: "root",
 			},
 			expected: nil,
 		},
 		{
 			description: "allowInsecure=false, should return config with tls fields filled",
 			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-				PluginSecureSocksProxyClientCert:    "cert",
-				PluginSecureSocksProxyClientKey:     "key",
-				PluginSecureSocksProxyRootCACert:    "root",
-				PluginSecureSocksProxyServerName:    "name",
+				PluginSecureSocksProxyEnabled:             "true",
+				PluginSecureSocksProxyProxyAddress:        "localhost",
+				PluginSecureSocksProxyAllowInsecure:       "false",
+				PluginSecureSocksProxyClientCertFilePath:  testFilePath,
+				PluginSecureSocksProxyClientKeyFilePath:   testFilePath,
+				PluginSecureSocksProxyRootCACertFilePaths: fmt.Sprintf("%s %s", testFilePath, testFilePath),
+				PluginSecureSocksProxyServerName:          "name",
 			},
 			expected: &ClientCfg{
 				ProxyAddress:  "localhost",
-				ClientCert:    "cert",
-				ClientKey:     "key",
-				RootCA:        "root",
+				ClientCert:    testFileData,
+				ClientKey:     testFileData,
+				RootCACerts:   []string{testFileData, testFileData},
 				ServerName:    "name",
 				AllowInsecure: false,
 			},
@@ -281,15 +292,13 @@ func TestPreventInvalidRootCA(t *testing.T) {
 	}
 
 	t.Run("root ca must be of the type CERTIFICATE", func(t *testing.T) {
-		rootCACert := filepath.Join(tempDir, "ca.cert")
-		caCertFile, err := os.Create(rootCACert)
-		require.NoError(t, err)
-		err = pem.Encode(caCertFile, &pem.Block{
+		pemStr := new(strings.Builder)
+		err := pem.Encode(pemStr, &pem.Block{
 			Type:  "PUBLIC KEY",
 			Bytes: []byte("testing"),
 		})
 		require.NoError(t, err)
-		opts.ClientCfg.RootCA = rootCACert
+		opts.ClientCfg.RootCACerts = []string{pemStr.String()}
 		cli := New(opts)
 		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
@@ -298,7 +307,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 		rootCACert := filepath.Join(tempDir, "ca.cert")
 		err := os.WriteFile(rootCACert, []byte("this is not a pem encoded file"), fs.ModeAppend)
 		require.NoError(t, err)
-		opts.ClientCfg.RootCA = rootCACert
+		opts.ClientCfg.RootCACerts = []string{"this is not a pem encoded file"}
 		cli := New(opts)
 		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
@@ -309,7 +318,6 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	t.Helper()
 	proxyAddress := "localhost:3000"
 	serverName := "localhost"
-	tempDir := t.TempDir()
 
 	// generate test rootCA
 	ca := &x509.Certificate{
@@ -329,12 +337,9 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	require.NoError(t, err)
 	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
 	require.NoError(t, err)
-	rootCACert := filepath.Join(tempDir, "ca.cert")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	caCertFile, err := os.Create(rootCACert)
-	require.NoError(t, err)
-	err = pem.Encode(caCertFile, &pem.Block{
+
+	caCert := new(strings.Builder)
+	err = pem.Encode(caCert, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: caBytes,
 	})
@@ -356,32 +361,25 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
 	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivKey)
+	clientCert := new(strings.Builder)
 	require.NoError(t, err)
-	clientCert := filepath.Join(tempDir, "client.cert")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	certFile, err := os.Create(clientCert)
-	require.NoError(t, err)
-	err = pem.Encode(certFile, &pem.Block{
+	err = pem.Encode(clientCert, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: certBytes,
 	})
 	require.NoError(t, err)
-	clientKey := filepath.Join(tempDir, "client.key")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	keyFile, err := os.Create(clientKey)
+	clientKey := new(strings.Builder)
 	require.NoError(t, err)
-	err = pem.Encode(keyFile, &pem.Block{
+	err = pem.Encode(clientKey, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
 	})
 	require.NoError(t, err)
 
 	cfg := &ClientCfg{
-		ClientCert:   clientCert,
-		ClientKey:    clientKey,
-		RootCA:       rootCACert,
+		ClientCert:   clientCert.String(),
+		ClientKey:    clientKey.String(),
+		RootCACerts:  []string{caCert.String()},
 		ServerName:   serverName,
 		ProxyAddress: proxyAddress,
 	}
