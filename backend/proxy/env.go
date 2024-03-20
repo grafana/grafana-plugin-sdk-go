@@ -84,9 +84,6 @@ func clientCfgFromEnv() *ClientCfg {
 	var rootCACerts []string
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACertFilePathsEnvVarName); ok {
 		for _, rootCA := range strings.Split(value, " ") {
-			// nolint:gosec
-			// The gosec G304 warning can be ignored because `rootCA` comes from config ini
-			// and we check below if it's the right file type
 			certPEMBlock, err := os.ReadFile(rootCA)
 			if err != nil {
 				return nil
