@@ -2,6 +2,8 @@ package httpclient
 
 import (
 	"crypto/tls"
+	"errors"
+	"fmt"
 	"net/http"
 )
 
@@ -72,7 +74,10 @@ func NewProvider(opts ...ProviderOptions) *Provider {
 // New creates a new http.Client given provided options.
 // Note: If more than one Options is provided a panic is raised.
 func (p *Provider) New(opts ...Options) (*http.Client, error) {
-	clientOpts := p.createClientOptions(opts...)
+	clientOpts, err := p.createClientOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
 
 	var configuredTransport *http.Transport
 	clientOpts.ConfigureTransport = configureTransportChain(clientOpts.ConfigureTransport, func(opts Options, transport *http.Transport) {
@@ -105,7 +110,10 @@ func (p *Provider) New(opts ...Options) (*http.Client, error) {
 // outgoing request middleware applied.
 // Note: If more than one Options is provided a panic is raised.
 func (p *Provider) GetTransport(opts ...Options) (http.RoundTripper, error) {
-	clientOpts := p.createClientOptions(opts...)
+	clientOpts, err := p.createClientOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
 
 	var configuredTransport *http.Transport
 	clientOpts.ConfigureTransport = configureTransportChain(clientOpts.ConfigureTransport, func(opts Options, transport *http.Transport) {
@@ -133,7 +141,10 @@ func (p *Provider) GetTransport(opts ...Options) (http.RoundTripper, error) {
 // GetTLSConfig creates a new tls.Config given provided options.
 // Note: If more than one Options is provided a panic is raised.
 func (p *Provider) GetTLSConfig(opts ...Options) (*tls.Config, error) {
-	clientOpts := p.createClientOptions(opts...)
+	clientOpts, err := p.createClientOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
 
 	config, err := GetTLSConfig(clientOpts)
 	if err != nil {
@@ -147,7 +158,7 @@ func (p *Provider) GetTLSConfig(opts ...Options) (*tls.Config, error) {
 	return config, nil
 }
 
-func (p *Provider) createClientOptions(providedOpts ...Options) Options {
+func (p *Provider) createClientOptions(providedOpts ...Options) (Options, error) {
 	var clientOpts Options
 
 	switch len(providedOpts) {
@@ -161,12 +172,24 @@ func (p *Provider) createClientOptions(providedOpts ...Options) Options {
 		clientOpts = providedOpts[0]
 		clientOpts.Middlewares = append(clientOpts.Middlewares, p.Opts.Middlewares...)
 	default:
-		panic("only an empty or one Options is valid as argument")
+		return Options{}, errors.New("only an empty or one Options is valid as argument")
+	}
+
+	// Verify that middleware names are unique
+	middlewareNames := make(map[string]struct{})
+	for _, m := range clientOpts.Middlewares {
+		nm, ok := m.(MiddlewareName)
+		if ok {
+			if _, exists := middlewareNames[nm.MiddlewareName()]; exists {
+				return Options{}, fmt.Errorf("middleware with name %s already exists", nm.MiddlewareName())
+			}
+			middlewareNames[nm.MiddlewareName()] = struct{}{}
+		}
 	}
 
 	clientOpts.ConfigureMiddleware = configureMiddlewareChain(clientOpts.ConfigureMiddleware, p.Opts.ConfigureMiddleware)
 
-	return clientOpts
+	return clientOpts, nil
 }
 
 func configureMiddlewareChain(first, second ConfigureMiddlewareFunc) ConfigureMiddlewareFunc {

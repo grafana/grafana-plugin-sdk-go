@@ -103,6 +103,13 @@ func TestProvider(t *testing.T) {
 				require.Len(t, ctx.callChain, 6)
 				require.ElementsMatch(t, []string{"before mw3", "before mw2", "before mw1", "after mw1", "after mw2", "after mw3"}, ctx.callChain)
 			})
+
+			t.Run("New client should use verify that middlewares are not duplicated", func(t *testing.T) {
+				ctx := newProviderTestContext(t)
+				ctx.provider.Opts.Middlewares = append(ctx.provider.Opts.Middlewares, CustomHeadersMiddleware())
+				_, err := ctx.provider.New()
+				require.ErrorContains(t, err, "middleware with name "+CustomHeadersMiddlewareName+" already exists")
+			})
 		})
 	})
 
