@@ -87,6 +87,14 @@ func TestNewClient(t *testing.T) {
 			require.Equal(t, "mw1", usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 		})
 
+		t.Run("New client should verify that middlewares are not duplicated", func(t *testing.T) {
+			ctx := &testContext{}
+			_, err := New(Options{
+				Middlewares: []Middleware{ctx.createMiddleware("mw1"), ctx.createMiddleware("mw1")},
+			})
+			require.ErrorContains(t, err, "middleware with name mw1 already exists")
+		})
+
 		t.Run("When roundtrip should call expected middlewares", func(t *testing.T) {
 			req, err := http.NewRequest(http.MethodGet, "http://www.google.com", nil)
 			require.NoError(t, err)

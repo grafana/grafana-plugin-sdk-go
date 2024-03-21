@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 
@@ -22,7 +23,10 @@ func New(opts ...Options) (*http.Client, error) {
 		return http.DefaultClient, nil
 	}
 
-	clientOpts := createOptions(opts...)
+	clientOpts, err := createOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
 	transport, err := GetTransport(clientOpts)
 	if err != nil {
 		return nil, err
@@ -52,7 +56,10 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		return http.DefaultTransport, nil
 	}
 
-	clientOpts := createOptions(opts...)
+	clientOpts, err := createOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
 	tlsConfig, err := GetTLSConfig(clientOpts)
 	if err != nil {
 		return nil, err
@@ -98,7 +105,10 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 // GetTLSConfig creates a new tls.Config given provided options.
 // Note: If more than one Options is provided a panic is raised.
 func GetTLSConfig(opts ...Options) (*tls.Config, error) {
-	clientOpts := createOptions(opts...)
+	clientOpts, err := createOptions(opts...)
+	if err != nil {
+		return nil, err
+	}
 	if clientOpts.TLS == nil {
 		// #nosec
 		return &tls.Config{}, nil
@@ -140,7 +150,7 @@ func GetTLSConfig(opts ...Options) (*tls.Config, error) {
 	return config, nil
 }
 
-func createOptions(providedOpts ...Options) Options {
+func createOptions(providedOpts ...Options) (Options, error) {
 	var opts Options
 
 	switch len(providedOpts) {
@@ -160,7 +170,19 @@ func createOptions(providedOpts ...Options) Options {
 		opts.Middlewares = DefaultMiddlewares()
 	}
 
-	return opts
+	// Verify that middleware names are unique
+	middlewareNames := make(map[string]struct{})
+	for _, m := range opts.Middlewares {
+		nm, ok := m.(MiddlewareName)
+		if ok {
+			if _, exists := middlewareNames[nm.MiddlewareName()]; exists {
+				return Options{}, fmt.Errorf("middleware with name %s already exists", nm.MiddlewareName())
+			}
+			middlewareNames[nm.MiddlewareName()] = struct{}{}
+		}
+	}
+
+	return opts, nil
 }
 
 // The RoundTripperFunc type is an adapter to allow the use of ordinary
