@@ -30,7 +30,7 @@ const (
 	PluginSecureSocksProxyAllowInsecureEnvVarName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
-// clientCfgFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
+// Deprecated: clientCfgFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
 func clientCfgFromEnv() *ClientCfg {
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyEnabledEnvVarName); ok {
 		enabled, err := strconv.ParseBool(value)
@@ -81,14 +81,14 @@ func clientCfgFromEnv() *ClientCfg {
 		return nil
 	}
 
-	var rootCACerts []string
+	var rootCAs []string
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACertFilePathsEnvVarName); ok {
 		for _, rootCA := range strings.Split(value, " ") {
 			certPEMBlock, err := os.ReadFile(rootCA)
 			if err != nil {
 				return nil
 			}
-			rootCACerts = append(rootCACerts, string(certPEMBlock))
+			rootCAs = append(rootCAs, string(certPEMBlock))
 		}
 	} else {
 		return nil
@@ -104,7 +104,7 @@ func clientCfgFromEnv() *ClientCfg {
 	return &ClientCfg{
 		ClientCert:    clientCert,
 		ClientKey:     clientKey,
-		RootCACerts:   rootCACerts,
+		RootCAs:       rootCAs,
 		ProxyAddress:  proxyAddress,
 		ServerName:    serverName,
 		AllowInsecure: false,

@@ -78,22 +78,22 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	})
 
 	t.Run("Root CA must be not empty", func(t *testing.T) {
-		rootCABefore := opts.ClientCfg.RootCACerts
-		opts.ClientCfg.RootCACerts = []string{}
+		rootCABefore := opts.ClientCfg.RootCAs
+		opts.ClientCfg.RootCAs = []string{}
 		cli = New(opts)
 		t.Cleanup(func() {
-			opts.ClientCfg.RootCACerts = rootCABefore
+			opts.ClientCfg.RootCAs = rootCABefore
 			cli = New(opts)
 		})
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Root CA must be valid", func(t *testing.T) {
-		rootCABefore := opts.ClientCfg.RootCACerts
-		opts.ClientCfg.RootCACerts = []string{""}
+		rootCABefore := opts.ClientCfg.RootCAs
+		opts.ClientCfg.RootCAs = []string{""}
 		cli = New(opts)
 		t.Cleanup(func() {
-			opts.ClientCfg.RootCACerts = rootCABefore
+			opts.ClientCfg.RootCAs = rootCABefore
 			cli = New(opts)
 		})
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
@@ -166,7 +166,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 			Bytes: []byte("testing"),
 		})
 		require.NoError(t, err)
-		opts.ClientCfg.RootCACerts = []string{pemStr.String()}
+		opts.ClientCfg.RootCAs = []string{pemStr.String()}
 		cli := New(opts)
 		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
@@ -175,7 +175,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 		rootCACert := filepath.Join(tempDir, "ca.cert")
 		err := os.WriteFile(rootCACert, []byte("this is not a pem encoded file"), fs.ModeAppend)
 		require.NoError(t, err)
-		opts.ClientCfg.RootCACerts = []string{"this is not a pem encoded file"}
+		opts.ClientCfg.RootCAs = []string{"this is not a pem encoded file"}
 		cli := New(opts)
 		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
@@ -247,7 +247,7 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	cfg := &ClientCfg{
 		ClientCert:   clientCert.String(),
 		ClientKey:    clientKey.String(),
-		RootCACerts:  []string{caCert.String()},
+		RootCAs:      []string{caCert.String()},
 		ServerName:   serverName,
 		ProxyAddress: proxyAddress,
 	}

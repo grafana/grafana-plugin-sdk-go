@@ -23,7 +23,7 @@ const (
 	PluginSecureSocksProxyEnabled       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
 	PluginSecureSocksProxyClientCert    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
 	PluginSecureSocksProxyClientKey     = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	PluginSecureSocksProxyRootCACerts   = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+	PluginSecureSocksProxyRootCAs       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
 	PluginSecureSocksProxyProxyAddress  = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
 	PluginSecureSocksProxyServerName    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
 	PluginSecureSocksProxyAllowInsecure = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
@@ -50,7 +50,7 @@ type Client interface {
 type ClientCfg struct {
 	ClientCert    string
 	ClientKey     string
-	RootCACerts   []string
+	RootCAs       []string
 	ProxyAddress  string
 	ServerName    string
 	AllowInsecure bool
@@ -67,7 +67,7 @@ type cfgProxyWrapper struct {
 	opts *Options
 }
 
-// PluginSecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
+// SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
 // and the datasource options specify to use the proxy
 func (p *cfgProxyWrapper) SecureSocksProxyEnabled() bool {
 	// it cannot be enabled if it's not enabled on Grafana
@@ -142,11 +142,11 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
 	certPool := x509.NewCertPool()
 
-	if len(p.opts.ClientCfg.RootCACerts) == 0 {
+	if len(p.opts.ClientCfg.RootCAs) == 0 {
 		return nil, errors.New("one or more root ca are required")
 	}
 
-	for _, rootCA := range p.opts.ClientCfg.RootCACerts {
+	for _, rootCA := range p.opts.ClientCfg.RootCAs {
 		pemBytes := []byte(rootCA)
 		pemDecoded, _ := pem.Decode(pemBytes)
 		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {

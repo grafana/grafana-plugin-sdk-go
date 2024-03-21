@@ -53,7 +53,7 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyServerName:   "localhost",
 					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
 					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
-					proxy.PluginSecureSocksProxyRootCACerts:  "rootCACert",
+					proxy.PluginSecureSocksProxyRootCAs:      "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{
 					enabled: map[string]struct{}{
@@ -64,7 +64,7 @@ func TestConfig(t *testing.T) {
 					clientCfg: &proxy.ClientCfg{
 						ClientCert:   "clientCert",
 						ClientKey:    "clientKey",
-						RootCACerts:  []string{"rootCACert"},
+						RootCAs:      []string{"rootCACert"},
 						ProxyAddress: "localhost:1234",
 						ServerName:   "localhost",
 					},
@@ -79,7 +79,7 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyServerName:   "localhost",
 					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
 					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
-					proxy.PluginSecureSocksProxyRootCACerts:  "rootCACert",
+					proxy.PluginSecureSocksProxyRootCAs:      "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{
 					enabled: map[string]struct{}{
@@ -97,14 +97,14 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyServerName:   "localhost",
 					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
 					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
-					proxy.PluginSecureSocksProxyRootCACerts:  "rootCACert",
+					proxy.PluginSecureSocksProxyRootCAs:      "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{},
 				expectedProxy: Proxy{
 					clientCfg: &proxy.ClientCfg{
 						ClientCert:   "clientCert",
 						ClientKey:    "clientKey",
-						RootCACerts:  []string{"rootCACert"},
+						RootCAs:      []string{"rootCACert"},
 						ProxyAddress: "localhost:1234",
 						ServerName:   "localhost",
 					},
@@ -119,7 +119,7 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyServerName:    "localhost",
 					proxy.PluginSecureSocksProxyClientKey:     "clientKey",
 					proxy.PluginSecureSocksProxyClientCert:    "clientCert",
-					proxy.PluginSecureSocksProxyRootCACerts:   "rootCACert",
+					proxy.PluginSecureSocksProxyRootCAs:       "rootCACert",
 					proxy.PluginSecureSocksProxyAllowInsecure: "true",
 				}),
 				expectedFeatureToggles: FeatureToggles{},
@@ -127,7 +127,7 @@ func TestConfig(t *testing.T) {
 					clientCfg: &proxy.ClientCfg{
 						ClientCert:    "clientCert",
 						ClientKey:     "clientKey",
-						RootCACerts:   []string{"rootCACert"},
+						RootCAs:       []string{"rootCACert"},
 						ProxyAddress:  "localhost:1234",
 						ServerName:    "localhost",
 						AllowInsecure: true,
