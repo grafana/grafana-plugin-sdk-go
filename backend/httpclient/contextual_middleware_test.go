@@ -42,7 +42,8 @@ func TestContextualMiddleware(t *testing.T) {
 			tCtx.createMiddleware("mw3"),
 			ctxMiddleware,
 		}
-		rt := roundTripperFromMiddlewares(Options{}, middlewares, finalRoundTripper)
+		rt, err := roundTripperFromMiddlewares(Options{}, middlewares, finalRoundTripper)
+		require.NoError(t, err)
 		require.NotNil(t, rt)
 		middlewareName, ok := ctxMiddleware.(MiddlewareName)
 		require.True(t, ok)

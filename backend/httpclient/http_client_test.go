@@ -95,6 +95,17 @@ func TestNewClient(t *testing.T) {
 			require.ErrorContains(t, err, "middleware with name mw1 already exists")
 		})
 
+		t.Run("New client should verify that middlewares are not duplicated when configured", func(t *testing.T) {
+			ctx := &testContext{}
+			_, err := New(Options{
+				Middlewares: []Middleware{ctx.createMiddleware("mw1")},
+				ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
+					return append(existingMiddleware, ctx.createMiddleware("mw1"))
+				},
+			})
+			require.ErrorContains(t, err, "middleware with name mw1 already exists")
+		})
+
 		t.Run("When roundtrip should call expected middlewares", func(t *testing.T) {
 			req, err := http.NewRequest(http.MethodGet, "http://www.google.com", nil)
 			require.NoError(t, err)
@@ -114,7 +125,8 @@ func TestRoundTripperFromMiddlewares(t *testing.T) {
 	t.Run("Without any middleware should call final roundTripper", func(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
-		rt := roundTripperFromMiddlewares(Options{}, nil, finalRoundTripper)
+		rt, err := roundTripperFromMiddlewares(Options{}, nil, finalRoundTripper)
+		require.NoError(t, err)
 		req, err := http.NewRequest(http.MethodGet, "http://", nil)
 		require.NoError(t, err)
 		res, err := rt.RoundTrip(req)
@@ -131,7 +143,8 @@ func TestRoundTripperFromMiddlewares(t *testing.T) {
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		middlewares := []Middleware{ctx.createMiddleware("mw1"), ctx.createMiddleware("mw2"), ctx.createMiddleware("mw3")}
-		rt := roundTripperFromMiddlewares(Options{}, middlewares, finalRoundTripper)
+		rt, err := roundTripperFromMiddlewares(Options{}, middlewares, finalRoundTripper)
+		require.NoError(t, err)
 		req, err := http.NewRequest(http.MethodGet, "http://", nil)
 		require.NoError(t, err)
 		res, err := rt.RoundTrip(req)

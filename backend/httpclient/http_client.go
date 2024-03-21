@@ -23,10 +23,7 @@ func New(opts ...Options) (*http.Client, error) {
 		return http.DefaultClient, nil
 	}
 
-	clientOpts, err := createOptions(opts...)
-	if err != nil {
-		return nil, err
-	}
+	clientOpts := createOptions(opts...)
 	transport, err := GetTransport(clientOpts)
 	if err != nil {
 		return nil, err
@@ -56,10 +53,7 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		return http.DefaultTransport, nil
 	}
 
-	clientOpts, err := createOptions(opts...)
-	if err != nil {
-		return nil, err
-	}
+	clientOpts := createOptions(opts...)
 	tlsConfig, err := GetTLSConfig(clientOpts)
 	if err != nil {
 		return nil, err
@@ -99,16 +93,13 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		return nil, err
 	}
 
-	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport), nil
+	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport)
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
 // Note: If more than one Options is provided a panic is raised.
 func GetTLSConfig(opts ...Options) (*tls.Config, error) {
-	clientOpts, err := createOptions(opts...)
-	if err != nil {
-		return nil, err
-	}
+	clientOpts := createOptions(opts...)
 	if clientOpts.TLS == nil {
 		// #nosec
 		return &tls.Config{}, nil
@@ -150,7 +141,7 @@ func GetTLSConfig(opts ...Options) (*tls.Config, error) {
 	return config, nil
 }
 
-func createOptions(providedOpts ...Options) (Options, error) {
+func createOptions(providedOpts ...Options) Options {
 	var opts Options
 
 	switch len(providedOpts) {
@@ -170,19 +161,7 @@ func createOptions(providedOpts ...Options) (Options, error) {
 		opts.Middlewares = DefaultMiddlewares()
 	}
 
-	// Verify that middleware names are unique
-	middlewareNames := make(map[string]struct{})
-	for _, m := range opts.Middlewares {
-		nm, ok := m.(MiddlewareName)
-		if ok {
-			if _, exists := middlewareNames[nm.MiddlewareName()]; exists {
-				return Options{}, fmt.Errorf("middleware with name %s already exists", nm.MiddlewareName())
-			}
-			middlewareNames[nm.MiddlewareName()] = struct{}{}
-		}
-	}
-
-	return opts, nil
+	return opts
 }
 
 // The RoundTripperFunc type is an adapter to allow the use of ordinary
@@ -234,7 +213,7 @@ func DefaultMiddlewares() []Middleware {
 	}
 }
 
-func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) http.RoundTripper {
+func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) (http.RoundTripper, error) {
 	reversed := reverseMiddlewares(middlewares)
 	next := finalRoundTripper
 
@@ -242,7 +221,19 @@ func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRo
 		next = m.CreateMiddleware(opts, next)
 	}
 
-	return next
+	// Verify that middleware names are unique
+	middlewareNames := make(map[string]struct{})
+	for _, m := range opts.Middlewares {
+		nm, ok := m.(MiddlewareName)
+		if ok {
+			if _, exists := middlewareNames[nm.MiddlewareName()]; exists {
+				return nil, fmt.Errorf("middleware with name %s already exists", nm.MiddlewareName())
+			}
+			middlewareNames[nm.MiddlewareName()] = struct{}{}
+		}
+	}
+
+	return next, nil
 }
 
 func reverseMiddlewares(middlewares []Middleware) []Middleware {
