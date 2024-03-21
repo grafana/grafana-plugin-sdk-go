@@ -85,4 +85,31 @@ func TestCustomHeadersMiddleware(t *testing.T) {
 
 		require.Equal(t, "example.com", req.Host)
 	})
+
+	t.Run("With custom headers set should previous HTTP headers to the request", func(t *testing.T) {
+		ctx := &testContext{}
+		finalRoundTripper := ctx.createRoundTripper("final")
+		customHeaders := CustomHeadersMiddleware()
+		rt := customHeaders.CreateMiddleware(Options{Header: http.Header{
+			"X-Headerone": {"ValueOne"},
+		}}, finalRoundTripper)
+		require.NotNil(t, rt)
+		middlewareName, ok := customHeaders.(MiddlewareName)
+		require.True(t, ok)
+		require.Equal(t, CustomHeadersMiddlewareName, middlewareName.MiddlewareName())
+
+		req, err := http.NewRequest(http.MethodGet, "http://", nil)
+		req.Header.Add("X-Headerone", "Other")
+		require.NoError(t, err)
+		res, err := rt.RoundTrip(req)
+		require.NoError(t, err)
+		require.NotNil(t, res)
+		if res.Body != nil {
+			require.NoError(t, res.Body.Close())
+		}
+		require.Len(t, ctx.callChain, 1)
+		require.ElementsMatch(t, []string{"final"}, ctx.callChain)
+
+		require.Equal(t, []string{"ValueOne"}, req.Header.Values("X-Headerone"))
+	})
 }

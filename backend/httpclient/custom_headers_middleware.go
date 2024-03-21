@@ -22,6 +22,8 @@ func CustomHeadersMiddleware() Middleware {
 				if http.CanonicalHeaderKey(key) == "Host" {
 					req.Host = values[0]
 				} else {
+					// Clean up the header before adding the new values
+					req.Header.Del(key)
 					for _, value := range values {
 						req.Header.Add(key, value)
 					}
