@@ -108,8 +108,11 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		return nil, errors.New("proxy not enabled")
 	}
 
-	var dialer proxy.Dialer
+	if p.opts.ClientCfg == nil {
+		return nil, errors.New("client config is not set")
+	}
 
+	var dialer proxy.Dialer
 	if p.opts.ClientCfg.AllowInsecure {
 		dialer = &net.Dialer{
 			Timeout:   p.opts.Timeouts.Timeout,
