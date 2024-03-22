@@ -8,13 +8,13 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
-	"fmt"
 	"io/fs"
 	"math/big"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -51,21 +51,13 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	}
 	cli := New(opts)
 
-	// create empty file for testing invalid configs
-	tempDir := t.TempDir()
-	tempEmptyFile := filepath.Join(tempDir, "emptyfile.txt")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	_, err := os.Create(tempEmptyFile)
-	require.NoError(t, err)
-
 	t.Run("New socks proxy should be properly configured when all settings are valid", func(t *testing.T) {
 		require.NoError(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Client cert must be valid", func(t *testing.T) {
 		clientCertBefore := opts.ClientCfg.ClientCert
-		opts.ClientCfg.ClientCert = tempEmptyFile
+		opts.ClientCfg.ClientCert = ""
 		cli = New(opts)
 		t.Cleanup(func() {
 			opts.ClientCfg.ClientCert = clientCertBefore
@@ -76,7 +68,7 @@ func TestNewSecureSocksProxy(t *testing.T) {
 
 	t.Run("Client key must be valid", func(t *testing.T) {
 		clientKeyBefore := opts.ClientCfg.ClientKey
-		opts.ClientCfg.ClientKey = tempEmptyFile
+		opts.ClientCfg.ClientKey = ""
 		cli = New(opts)
 		t.Cleanup(func() {
 			opts.ClientCfg.ClientKey = clientKeyBefore
@@ -85,12 +77,23 @@ func TestNewSecureSocksProxy(t *testing.T) {
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
-	t.Run("Root CA must be valid", func(t *testing.T) {
-		rootCABefore := opts.ClientCfg.RootCA
-		opts.ClientCfg.RootCA = tempEmptyFile
+	t.Run("Root CA must be not empty", func(t *testing.T) {
+		rootCABefore := opts.ClientCfg.RootCAs
+		opts.ClientCfg.RootCAs = []string{}
 		cli = New(opts)
 		t.Cleanup(func() {
-			opts.ClientCfg.RootCA = rootCABefore
+			opts.ClientCfg.RootCAs = rootCABefore
+			cli = New(opts)
+		})
+		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
+	})
+
+	t.Run("Root CA must be valid", func(t *testing.T) {
+		rootCABefore := opts.ClientCfg.RootCAs
+		opts.ClientCfg.RootCAs = []string{""}
+		cli = New(opts)
+		t.Cleanup(func() {
+			opts.ClientCfg.RootCAs = rootCABefore
 			cli = New(opts)
 		})
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
@@ -109,130 +112,6 @@ func TestSecureSocksProxyEnabled(t *testing.T) {
 	t.Run("enabled, if Enabled field is true", func(t *testing.T) {
 		cli := New(&Options{Enabled: true})
 		assert.Equal(t, true, cli.SecureSocksProxyEnabled())
-	})
-}
-
-func TestGetConfigFromEnv(t *testing.T) {
-	cases := []struct {
-		description string
-		envVars     map[string]string
-		expected    *ClientCfg
-	}{
-		{
-			description: "socks proxy not enabled, should return nil",
-			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:      "false",
-				PluginSecureSocksProxyProxyAddress: "localhost",
-				PluginSecureSocksProxyClientCert:   "cert",
-				PluginSecureSocksProxyClientKey:    "key",
-				PluginSecureSocksProxyRootCACert:   "root_ca",
-				PluginSecureSocksProxyServerName:   "server_name",
-			},
-			expected: nil,
-		},
-		{
-			description: "allowInsecure=true, should return config without tls fields filled",
-			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "true",
-			},
-			expected: &ClientCfg{
-				ProxyAddress:  "localhost",
-				AllowInsecure: true,
-			},
-		},
-		{
-			description: "allowInsecure=false, client cert is required, should return nil",
-			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-			},
-			expected: nil,
-		},
-		{
-			description: "allowInsecure=false, client key is required, should return nil",
-			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-				PluginSecureSocksProxyClientCert:    "cert",
-			},
-			expected: nil,
-		},
-		{
-			description: "allowInsecure=false, root ca is required, should return nil",
-			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-				PluginSecureSocksProxyClientCert:    "cert",
-				PluginSecureSocksProxyClientKey:     "key",
-			},
-			expected: nil,
-		},
-		{
-			description: "allowInsecure=false, server name is required, should return nil",
-			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-				PluginSecureSocksProxyClientCert:    "cert",
-				PluginSecureSocksProxyClientKey:     "key",
-				PluginSecureSocksProxyRootCACert:    "root",
-			},
-			expected: nil,
-		},
-		{
-			description: "allowInsecure=false, should return config with tls fields filled",
-			envVars: map[string]string{
-				PluginSecureSocksProxyEnabled:       "true",
-				PluginSecureSocksProxyProxyAddress:  "localhost",
-				PluginSecureSocksProxyAllowInsecure: "false",
-				PluginSecureSocksProxyClientCert:    "cert",
-				PluginSecureSocksProxyClientKey:     "key",
-				PluginSecureSocksProxyRootCACert:    "root",
-				PluginSecureSocksProxyServerName:    "name",
-			},
-			expected: &ClientCfg{
-				ProxyAddress:  "localhost",
-				ClientCert:    "cert",
-				ClientKey:     "key",
-				RootCA:        "root",
-				ServerName:    "name",
-				AllowInsecure: false,
-			},
-		},
-	}
-
-	for _, tt := range cases {
-		t.Run(tt.description, func(t *testing.T) {
-			for key, value := range tt.envVars {
-				t.Setenv(key, value)
-			}
-			assert.Equal(t, tt.expected, getConfigFromEnv())
-		})
-	}
-}
-
-func TestSecureSocksProxyConfig(t *testing.T) {
-	expected := ClientCfg{
-		ProxyAddress:  "localhost:8080",
-		AllowInsecure: true,
-	}
-	t.Setenv(PluginSecureSocksProxyEnabled, "true")
-	t.Setenv(PluginSecureSocksProxyProxyAddress, expected.ProxyAddress)
-	t.Setenv(PluginSecureSocksProxyAllowInsecure, fmt.Sprint(expected.AllowInsecure))
-
-	t.Run("test env variables", func(t *testing.T) {
-		assert.Equal(t, &expected, getConfigFromEnv())
-	})
-
-	t.Run("test overriding env variables", func(t *testing.T) {
-		expected.ProxyAddress = "localhost:8082"
-		t.Setenv(PluginSecureSocksProxyProxyAddress, expected.ProxyAddress)
-		assert.Equal(t, &expected, getConfigFromEnv())
 	})
 }
 
@@ -281,15 +160,13 @@ func TestPreventInvalidRootCA(t *testing.T) {
 	}
 
 	t.Run("root ca must be of the type CERTIFICATE", func(t *testing.T) {
-		rootCACert := filepath.Join(tempDir, "ca.cert")
-		caCertFile, err := os.Create(rootCACert)
-		require.NoError(t, err)
-		err = pem.Encode(caCertFile, &pem.Block{
+		pemStr := new(strings.Builder)
+		err := pem.Encode(pemStr, &pem.Block{
 			Type:  "PUBLIC KEY",
 			Bytes: []byte("testing"),
 		})
 		require.NoError(t, err)
-		opts.ClientCfg.RootCA = rootCACert
+		opts.ClientCfg.RootCAs = []string{pemStr.String()}
 		cli := New(opts)
 		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
@@ -298,7 +175,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 		rootCACert := filepath.Join(tempDir, "ca.cert")
 		err := os.WriteFile(rootCACert, []byte("this is not a pem encoded file"), fs.ModeAppend)
 		require.NoError(t, err)
-		opts.ClientCfg.RootCA = rootCACert
+		opts.ClientCfg.RootCAs = []string{"this is not a pem encoded file"}
 		cli := New(opts)
 		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
@@ -309,7 +186,6 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	t.Helper()
 	proxyAddress := "localhost:3000"
 	serverName := "localhost"
-	tempDir := t.TempDir()
 
 	// generate test rootCA
 	ca := &x509.Certificate{
@@ -329,12 +205,9 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	require.NoError(t, err)
 	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
 	require.NoError(t, err)
-	rootCACert := filepath.Join(tempDir, "ca.cert")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	caCertFile, err := os.Create(rootCACert)
-	require.NoError(t, err)
-	err = pem.Encode(caCertFile, &pem.Block{
+
+	caCert := new(strings.Builder)
+	err = pem.Encode(caCert, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: caBytes,
 	})
@@ -356,32 +229,25 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
 	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivKey)
+	clientCert := new(strings.Builder)
 	require.NoError(t, err)
-	clientCert := filepath.Join(tempDir, "client.cert")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	certFile, err := os.Create(clientCert)
-	require.NoError(t, err)
-	err = pem.Encode(certFile, &pem.Block{
+	err = pem.Encode(clientCert, &pem.Block{
 		Type:  "CERTIFICATE",
 		Bytes: certBytes,
 	})
 	require.NoError(t, err)
-	clientKey := filepath.Join(tempDir, "client.key")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	keyFile, err := os.Create(clientKey)
+	clientKey := new(strings.Builder)
 	require.NoError(t, err)
-	err = pem.Encode(keyFile, &pem.Block{
+	err = pem.Encode(clientKey, &pem.Block{
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
 	})
 	require.NoError(t, err)
 
 	cfg := &ClientCfg{
-		ClientCert:   clientCert,
-		ClientKey:    clientKey,
-		RootCA:       rootCACert,
+		ClientCert:   clientCert.String(),
+		ClientKey:    clientKey.String(),
+		RootCAs:      []string{caCert.String()},
 		ServerName:   serverName,
 		ProxyAddress: proxyAddress,
 	}

@@ -127,7 +127,7 @@ func (c *GrafanaCfg) proxy() (Proxy, error) {
 			clientCfg: &proxy.ClientCfg{
 				ClientCert:    c.Get(proxy.PluginSecureSocksProxyClientCert),
 				ClientKey:     c.Get(proxy.PluginSecureSocksProxyClientKey),
-				RootCA:        c.Get(proxy.PluginSecureSocksProxyRootCACert),
+				RootCAs:       strings.Split(c.Get(proxy.PluginSecureSocksProxyRootCAs), ","),
 				ProxyAddress:  c.Get(proxy.PluginSecureSocksProxyProxyAddress),
 				ServerName:    c.Get(proxy.PluginSecureSocksProxyServerName),
 				AllowInsecure: allowInsecure,
