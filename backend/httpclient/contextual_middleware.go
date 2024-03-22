@@ -19,7 +19,11 @@ func ContextualMiddleware() Middleware {
 				return next.RoundTrip(req)
 			}
 
-			return roundTripperFromMiddlewares(opts, ctxMiddlewares, next).RoundTrip(req)
+			rt, err := roundTripperFromMiddlewares(opts, ctxMiddlewares, next)
+			if err != nil {
+				return nil, err
+			}
+			return rt.RoundTrip(req)
 		})
 	})
 }

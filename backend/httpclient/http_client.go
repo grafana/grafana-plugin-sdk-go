@@ -4,6 +4,7 @@ import (
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
+	"fmt"
 	"net"
 	"net/http"
 
@@ -92,7 +93,7 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		return nil, err
 	}
 
-	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport), nil
+	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport)
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
@@ -212,7 +213,7 @@ func DefaultMiddlewares() []Middleware {
 	}
 }
 
-func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) http.RoundTripper {
+func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRoundTripper http.RoundTripper) (http.RoundTripper, error) {
 	reversed := reverseMiddlewares(middlewares)
 	next := finalRoundTripper
 
@@ -220,7 +221,19 @@ func roundTripperFromMiddlewares(opts Options, middlewares []Middleware, finalRo
 		next = m.CreateMiddleware(opts, next)
 	}
 
-	return next
+	// Verify that middleware names are unique
+	middlewareNames := make(map[string]struct{})
+	for _, m := range opts.Middlewares {
+		nm, ok := m.(MiddlewareName)
+		if ok {
+			if _, exists := middlewareNames[nm.MiddlewareName()]; exists {
+				return nil, fmt.Errorf("middleware with name %s already exists", nm.MiddlewareName())
+			}
+			middlewareNames[nm.MiddlewareName()] = struct{}{}
+		}
+	}
+
+	return next, nil
 }
 
 func reverseMiddlewares(middlewares []Middleware) []Middleware {
