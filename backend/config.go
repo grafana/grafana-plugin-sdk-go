@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -21,6 +22,7 @@ const (
 	SQLMaxIdleConnsDefault           = "GF_SQL_MAX_IDLE_CONNS_DEFAULT"
 	SQLMaxConnLifetimeSecondsDefault = "GF_SQL_MAX_CONN_LIFETIME_SECONDS_DEFAULT"
 	ResponseLimit                    = "GF_RESPONSE_LIMIT"
+	PluginAppClientSecret            = "GF_PLUGIN_APP_CLIENT_SECRET" // nolint:gosec
 )
 
 type configKey struct{}
@@ -141,7 +143,11 @@ func (c *GrafanaCfg) proxy() (Proxy, error) {
 func (c *GrafanaCfg) AppURL() (string, error) {
 	url, ok := c.config[AppURL]
 	if !ok {
-		return "", fmt.Errorf("app URL not set in config. A more recent version of Grafana may be required")
+		// Fallback to environment variable for backwards compatibility
+		url = os.Getenv(AppURL)
+		if url == "" {
+			return "", fmt.Errorf("app URL not set in config. A more recent version of Grafana may be required")
+		}
 	}
 	return url, nil
 }
@@ -236,6 +242,19 @@ func (c *GrafanaCfg) ResponseLimit() int64 {
 		return 0
 	}
 	return i
+}
+
+func (c *GrafanaCfg) PluginAppClientSecret() (string, error) {
+	value, ok := c.config[PluginAppClientSecret]
+	if !ok {
+		// Fallback to environment variable for backwards compatibility
+		value = os.Getenv(PluginAppClientSecret)
+		if value == "" {
+			return "", errors.New("PluginAppClientSecret not set in config")
+		}
+	}
+
+	return value, nil
 }
 
 type userAgentKey struct{}
