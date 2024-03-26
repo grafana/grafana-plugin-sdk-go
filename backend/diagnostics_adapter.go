@@ -53,10 +53,14 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointCheckHealth)
 		ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
+		// if err != nil {
+		// return nil, err
+		// }
+		protoRes := ToProto().CheckHealthResponse(res)
 		if err != nil {
-			return nil, err
+			protoRes.Error = ToProto().Error(err)
 		}
-		return ToProto().CheckHealthResponse(res), nil
+		return protoRes, nil
 	}
 
 	return &pluginv2.CheckHealthResponse{

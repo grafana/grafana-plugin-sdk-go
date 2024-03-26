@@ -2,6 +2,7 @@ package backend
 
 import (
 	"errors"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
@@ -105,6 +106,13 @@ func (f ConvertFromProtobuf) TimeRange(proto *pluginv2.TimeRange) TimeRange {
 	}
 }
 
+func (f ConvertFromProtobuf) Error(err *pluginv2.Error) error {
+	if err == nil {
+		return nil
+	}
+	return ErrorWithSource(errors.New(err.Error), ErrorSource(strings.ToLower(pluginv2.ErrorSource_name[int32(err.Source)])))
+}
+
 // DataQuery converts protobuf version of a DataQuery to the SDK version.
 func (f ConvertFromProtobuf) DataQuery(proto *pluginv2.DataQuery) *DataQuery {
 	if proto == nil {
@@ -191,6 +199,7 @@ func (f ConvertFromProtobuf) CallResourceResponse(protoResp *pluginv2.CallResour
 		Status:  int(protoResp.Code),
 		Body:    protoResp.Body,
 		Headers: headers,
+		Error:   f.Error(protoResp.Error),
 	}
 }
 
