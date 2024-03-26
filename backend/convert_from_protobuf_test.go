@@ -106,6 +106,7 @@ var protoAppInstanceSettings = &pluginv2.AppInstanceSettings{
 	JsonData:                []byte(`{ "foo": "gpp"`),
 	DecryptedSecureJsonData: map[string]string{"secret": "quiet"},
 	LastUpdatedMS:           lastUpdatedMS,
+	ApiVersion:              "v1beta2",
 }
 
 func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
@@ -135,6 +136,7 @@ func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoAIS.JsonData), sdkAIS.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkAIS.DecryptedSecureJSONData)
 	requireCounter.Equal(t, lastUpdatedTime, sdkAIS.Updated)
+	requireCounter.Equal(t, protoAIS.ApiVersion, sdkAIS.APIVersion)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 }
@@ -151,6 +153,7 @@ var protoDataSourceInstanceSettings = &pluginv2.DataSourceInstanceSettings{
 	JsonData:                []byte(`{ "foo": "gpp"`),
 	DecryptedSecureJsonData: map[string]string{"secret": "quiet"},
 	LastUpdatedMS:           lastUpdatedMS,
+	ApiVersion:              "v0alpha3",
 }
 
 func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
@@ -189,6 +192,7 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoDSIS.JsonData), sdkDSIS.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkDSIS.DecryptedSecureJSONData)
 	requireCounter.Equal(t, lastUpdatedTime, sdkDSIS.Updated)
+	requireCounter.Equal(t, protoDSIS.ApiVersion, sdkDSIS.APIVersion)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 }
@@ -208,7 +212,8 @@ var protoPluginContext = &pluginv2.PluginContext{
 	GrafanaConfig: map[string]string{
 		"foo": "bar",
 	},
-	UserAgent: "Grafana/10.0.0 (linux; amd64)",
+	UserAgent:  "Grafana/10.0.0 (linux; amd64)",
+	ApiVersion: "v0alpha1",
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
@@ -248,13 +253,16 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoCtx.AppInstanceSettings.JsonData), sdkCtx.AppInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.AppInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.AppInstanceSettings.Updated)
+	requireCounter.Equal(t, protoCtx.AppInstanceSettings.ApiVersion, sdkCtx.AppInstanceSettings.APIVersion)
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Name, sdkCtx.DataSourceInstanceSettings.Name)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Id, sdkCtx.DataSourceInstanceSettings.ID)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Uid, sdkCtx.DataSourceInstanceSettings.UID)
+	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.ApiVersion, sdkCtx.DataSourceInstanceSettings.APIVersion)
 	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.DataSourceInstanceSettings.Type)
 	requireCounter.Equal(t, protoCtx.PluginVersion, sdkCtx.PluginVersion)
+	requireCounter.Equal(t, protoCtx.ApiVersion, sdkCtx.APIVersion)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Url, sdkCtx.DataSourceInstanceSettings.URL)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.User, sdkCtx.DataSourceInstanceSettings.User)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Database, sdkCtx.DataSourceInstanceSettings.Database)
@@ -396,6 +404,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	// PluginContext
 	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.PluginID)
+	requireCounter.Equal(t, protoQDR.PluginContext.ApiVersion, sdkQDR.PluginContext.APIVersion)
 	// User
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Login, sdkQDR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)
@@ -406,11 +415,13 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.AppInstanceSettings.JsonData), sdkQDR.PluginContext.AppInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkQDR.PluginContext.AppInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkQDR.PluginContext.AppInstanceSettings.Updated)
+	requireCounter.Equal(t, protoQDR.PluginContext.AppInstanceSettings.ApiVersion, sdkQDR.PluginContext.AppInstanceSettings.APIVersion)
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Name, sdkQDR.PluginContext.DataSourceInstanceSettings.Name)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Uid, sdkQDR.PluginContext.DataSourceInstanceSettings.UID)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.ApiVersion, sdkQDR.PluginContext.DataSourceInstanceSettings.APIVersion)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.DataSourceInstanceSettings.Type)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginVersion, sdkQDR.PluginContext.PluginVersion)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Url, sdkQDR.PluginContext.DataSourceInstanceSettings.URL)

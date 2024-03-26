@@ -44,7 +44,7 @@ func TestCallResource(t *testing.T) {
 			responseBody: body,
 		}
 		testSender := newTestCallResourceServer()
-		adapter := newResourceSDKAdapter(handler)
+		adapter := newResourceSDKAdapter(handler, "")
 		req := &pluginv2.CallResourceRequest{
 			PluginContext: &pluginv2.PluginContext{
 				OrgId:    2,
@@ -107,7 +107,7 @@ func TestCallResource(t *testing.T) {
 			},
 		}
 		testSender := newTestCallResourceServer()
-		adapter := newResourceSDKAdapter(handler)
+		adapter := newResourceSDKAdapter(handler, "")
 		req := &pluginv2.CallResourceRequest{
 			PluginContext: &pluginv2.PluginContext{
 				OrgId:    2,
@@ -144,7 +144,7 @@ func TestCallResource(t *testing.T) {
 
 	t.Run("When oauth headers are set it should set the middleware to set headers", func(t *testing.T) {
 		testSender := newTestCallResourceServer()
-		adapter := newResourceSDKAdapter(&testCallResourceWithHeaders{})
+		adapter := newResourceSDKAdapter(&testCallResourceWithHeaders{}, "")
 		err := adapter.CallResource(&pluginv2.CallResourceRequest{
 			PluginContext: &pluginv2.PluginContext{},
 			Headers: map[string]*pluginv2.StringList{
@@ -161,7 +161,7 @@ func TestCallResource(t *testing.T) {
 		a := newResourceSDKAdapter(CallResourceHandlerFunc(func(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 			require.Equal(t, tid, tenant.IDFromContext(ctx))
 			return nil
-		}))
+		}), "")
 
 		testSender := newTestCallResourceServer()
 		testSender.WithContext(metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{

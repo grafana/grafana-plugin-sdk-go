@@ -45,6 +45,7 @@ func (t ConvertToProtobuf) AppInstanceSettings(s *AppInstanceSettings) *pluginv2
 		JsonData:                s.JSONData,
 		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
 		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
+		ApiVersion:              s.APIVersion,
 	}
 }
 
@@ -66,6 +67,7 @@ func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 		JsonData:                s.JSONData,
 		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
 		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
+		ApiVersion:              s.APIVersion,
 	}
 }
 
@@ -84,6 +86,7 @@ func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.Plug
 		OrgId:                      pluginCtx.OrgID,
 		PluginId:                   pluginCtx.PluginID,
 		PluginVersion:              pluginCtx.PluginVersion,
+		ApiVersion:                 pluginCtx.APIVersion,
 		User:                       t.User(pluginCtx.User),
 		AppInstanceSettings:        t.AppInstanceSettings(pluginCtx.AppInstanceSettings),
 		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pluginCtx.DataSourceInstanceSettings),
