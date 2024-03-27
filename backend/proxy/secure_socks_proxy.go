@@ -192,6 +192,7 @@ func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
 }
 
 // Deprecated: getTLSDialerFromFiles is a helper function that creates a tls.Dialer from the client cert, client key, and root CA files on disk.
+// As of Grafana 11 we are moving to using the root CA and client cert/key values instead of files.
 func (p *cfgProxyWrapper) getTLSDialerFromFiles() (*tls.Dialer, error) {
 	certPool := x509.NewCertPool()
 	for _, rootCAFile := range p.opts.ClientCfg.RootCAs {
