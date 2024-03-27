@@ -42,6 +42,124 @@ func TestNewSecureSocksProxyContextDialerInsecureProxy(t *testing.T) {
 	assert.NoError(t, err)
 }
 
+func TestNewSecureSocksProxyContextDialer_SupportsFilePathAndContents(t *testing.T) {
+	tempDir := t.TempDir()
+
+	// generate test rootCA
+	ca := &x509.Certificate{
+		SerialNumber: big.NewInt(2019),
+		Subject: pkix.Name{
+			Organization: []string{"Grafana Labs"},
+			CommonName:   "Grafana",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(10, 0, 0),
+		IsCA:                  true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+	}
+	caPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	require.NoError(t, err)
+	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
+	require.NoError(t, err)
+	rootCACertFilePath := filepath.Join(tempDir, "ca.cert")
+	// nolint:gosec
+	// The gosec G304 warning can be ignored because all values come from the test
+	caCertFile, err := os.Create(rootCACertFilePath)
+	require.NoError(t, err)
+	err = pem.Encode(caCertFile, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: caBytes,
+	})
+	require.NoError(t, err)
+	// generate test client cert & key
+	cert := &x509.Certificate{
+		SerialNumber: big.NewInt(2019),
+		Subject: pkix.Name{
+			Organization: []string{"Grafana Labs"},
+			CommonName:   "Grafana",
+		},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().AddDate(10, 0, 0),
+		SubjectKeyId: []byte{1, 2, 3, 4, 6},
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+	}
+	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
+	require.NoError(t, err)
+	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivKey)
+	require.NoError(t, err)
+	clientCertFilePath := filepath.Join(tempDir, "client.cert")
+	// nolint:gosec
+	// The gosec G304 warning can be ignored because all values come from the test
+	certFile, err := os.Create(clientCertFilePath)
+	require.NoError(t, err)
+	err = pem.Encode(certFile, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: certBytes,
+	})
+	require.NoError(t, err)
+	clientKeyFilePath := filepath.Join(tempDir, "client.key")
+	// nolint:gosec
+	// The gosec G304 warning can be ignored because all values come from the test
+	keyFile, err := os.Create(clientKeyFilePath)
+	require.NoError(t, err)
+	err = pem.Encode(keyFile, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
+	})
+	require.NoError(t, err)
+
+	t.Run("Works with file paths", func(t *testing.T) {
+		cli := New(&Options{
+			Enabled:  true,
+			Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)},
+			Auth:     &AuthOptions{Username: "user1"},
+			ClientCfg: &ClientCfg{
+				AllowInsecure: false,
+				ClientCert:    clientCertFilePath,
+				ClientKey:     clientKeyFilePath,
+				RootCAs:       []string{rootCACertFilePath},
+				ServerName:    "localhost",
+				ProxyAddress:  "localhost:3000",
+			},
+		})
+
+		dialer, err := cli.NewSecureSocksProxyContextDialer()
+		assert.NotNil(t, dialer)
+		assert.NoError(t, err)
+	})
+
+	t.Run("Works with file contents", func(t *testing.T) {
+		clientCert, err := os.ReadFile(clientCertFilePath)
+		require.NoError(t, err)
+		clientKey, err := os.ReadFile(clientKeyFilePath)
+		require.NoError(t, err)
+		rootCA, err := os.ReadFile(rootCACertFilePath)
+		require.NoError(t, err)
+
+		cli := New(&Options{
+			Enabled:  true,
+			Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)},
+			Auth:     &AuthOptions{Username: "user1"},
+			// No need to include the TLS config since the proxy won't use it.
+			ClientCfg: &ClientCfg{
+				AllowInsecure: false,
+				ClientCertVal: string(clientCert),
+				ClientKeyVal:  string(clientKey),
+				RootCAsVals:   []string{string(rootCA)},
+				ServerName:    "localhost",
+				ProxyAddress:  "localhost:3000",
+			},
+		})
+
+		dialer, err := cli.NewSecureSocksProxyContextDialer()
+		assert.NotNil(t, dialer)
+		assert.NoError(t, err)
+	})
+}
+
 func TestNewSecureSocksProxy(t *testing.T) {
 	opts := &Options{
 		Enabled:   true,

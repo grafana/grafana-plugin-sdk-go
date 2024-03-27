@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"regexp"
 	"strings"
 	"time"
@@ -20,13 +21,16 @@ import (
 )
 
 const (
-	PluginSecureSocksProxyEnabled       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
-	PluginSecureSocksProxyClientCert    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
-	PluginSecureSocksProxyClientKey     = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	PluginSecureSocksProxyRootCAs       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
-	PluginSecureSocksProxyProxyAddress  = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
-	PluginSecureSocksProxyServerName    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
-	PluginSecureSocksProxyAllowInsecure = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
+	PluginSecureSocksProxyEnabled            = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
+	PluginSecureSocksProxyClientCert         = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
+	PluginSecureSocksProxyClientCertContents = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT_VAL"
+	PluginSecureSocksProxyClientKey          = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
+	PluginSecureSocksProxyClientKeyContents  = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY_VAL"
+	PluginSecureSocksProxyRootCAs            = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+	PluginSecureSocksProxyRootCAsContents    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT_VALS"
+	PluginSecureSocksProxyProxyAddress       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
+	PluginSecureSocksProxyServerName         = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+	PluginSecureSocksProxyAllowInsecure      = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
 var (
@@ -49,8 +53,11 @@ type Client interface {
 // proxied to a secure socks proxy.
 type ClientCfg struct {
 	ClientCert    string
+	ClientCertVal string
 	ClientKey     string
+	ClientKeyVal  string
 	RootCAs       []string
+	RootCAsVals   []string
 	ProxyAddress  string
 	ServerName    string
 	AllowInsecure bool
@@ -143,13 +150,17 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 }
 
 func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
-	certPool := x509.NewCertPool()
+	// legacy file path support
+	if len(p.opts.ClientCfg.RootCAs) > 0 {
+		return p.getTLSDialerFromFiles()
+	}
 
-	if len(p.opts.ClientCfg.RootCAs) == 0 {
+	if len(p.opts.ClientCfg.RootCAsVals) == 0 {
 		return nil, errors.New("one or more root ca are required")
 	}
 
-	for _, rootCA := range p.opts.ClientCfg.RootCAs {
+	certPool := x509.NewCertPool()
+	for _, rootCA := range p.opts.ClientCfg.RootCAsVals {
 		pemBytes := []byte(rootCA)
 		pemDecoded, _ := pem.Decode(pemBytes)
 		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
@@ -161,11 +172,51 @@ func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
 		}
 	}
 
-	cert, err := tls.X509KeyPair([]byte(p.opts.ClientCfg.ClientCert), []byte(p.opts.ClientCfg.ClientKey))
+	cert, err := tls.X509KeyPair([]byte(p.opts.ClientCfg.ClientCertVal), []byte(p.opts.ClientCfg.ClientKeyVal))
 	if err != nil {
 		return nil, err
 	}
 
+	return &tls.Dialer{
+		Config: &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ServerName:   p.opts.ClientCfg.ServerName,
+			RootCAs:      certPool,
+			MinVersion:   tls.VersionTLS13,
+		},
+		NetDialer: &net.Dialer{
+			Timeout:   p.opts.Timeouts.Timeout,
+			KeepAlive: p.opts.Timeouts.KeepAlive,
+		},
+	}, nil
+}
+
+// Deprecated: getTLSDialerFromFiles is a helper function that creates a tls.Dialer from the client cert, client key, and root CA files on disk.
+func (p *cfgProxyWrapper) getTLSDialerFromFiles() (*tls.Dialer, error) {
+	certPool := x509.NewCertPool()
+	for _, rootCAFile := range p.opts.ClientCfg.RootCAs {
+		// nolint:gosec
+		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
+		// and we check below if it's the right file type
+		pemBytes, err := os.ReadFile(rootCAFile)
+		if err != nil {
+			return nil, err
+		}
+
+		pemDecoded, _ := pem.Decode(pemBytes)
+		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
+			return nil, errors.New("root ca is invalid")
+		}
+
+		if !certPool.AppendCertsFromPEM(pemBytes) {
+			return nil, fmt.Errorf("failed to append CA certificate %s", rootCAFile)
+		}
+	}
+
+	cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
+	if err != nil {
+		return nil, err
+	}
 	return &tls.Dialer{
 		Config: &tls.Config{
 			Certificates: []tls.Certificate{cert},
