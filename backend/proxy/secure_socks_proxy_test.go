@@ -143,7 +143,6 @@ func TestNewSecureSocksProxyContextDialer_SupportsFilePathAndContents(t *testing
 			Enabled:  true,
 			Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)},
 			Auth:     &AuthOptions{Username: "user1"},
-			// No need to include the TLS config since the proxy won't use it.
 			ClientCfg: &ClientCfg{
 				AllowInsecure: false,
 				ClientCertVal: string(clientCert),
