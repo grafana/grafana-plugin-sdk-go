@@ -134,6 +134,36 @@ func TestConfig(t *testing.T) {
 					},
 				},
 			},
+			{
+				name: "feature toggles disabled and secure proxy enabled with file contents",
+				cfg: NewGrafanaCfg(map[string]string{
+					featuretoggles.EnabledFeatures:                 "",
+					proxy.PluginSecureSocksProxyEnabled:            "true",
+					proxy.PluginSecureSocksProxyProxyAddress:       "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:         "localhost",
+					proxy.PluginSecureSocksProxyClientKey:          "./clientKey",
+					proxy.PluginSecureSocksProxyClientCert:         "./clientCert",
+					proxy.PluginSecureSocksProxyRootCAs:            "./rootCACert ./rootCACert2",
+					proxy.PluginSecureSocksProxyClientKeyContents:  "clientKey",
+					proxy.PluginSecureSocksProxyClientCertContents: "clientCert",
+					proxy.PluginSecureSocksProxyRootCAsContents:    "rootCACert,rootCACert2",
+					proxy.PluginSecureSocksProxyAllowInsecure:      "true",
+				}),
+				expectedFeatureToggles: FeatureToggles{},
+				expectedProxy: Proxy{
+					clientCfg: &proxy.ClientCfg{
+						ClientCert:    "./clientCert",
+						ClientCertVal: "clientCert",
+						ClientKey:     "./clientKey",
+						ClientKeyVal:  "clientKey",
+						RootCAs:       []string{"./rootCACert", "./rootCACert2"},
+						RootCAsVals:   []string{"rootCACert", "rootCACert2"},
+						ProxyAddress:  "localhost:1234",
+						ServerName:    "localhost",
+						AllowInsecure: true,
+					},
+				},
+			},
 		}
 
 		for _, tc := range tcs {

@@ -52,11 +52,15 @@ type Client interface {
 // ClientCfg contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy.
 type ClientCfg struct {
-	ClientCert    string
+	// Deprecated: ClientCert is the file path to the client certificate.
+	ClientCert string
+	// Deprecated: ClientKey is the file path to the client key.
+	ClientKey string
+	// Deprecated: RootCAs is a list of file paths to the root CA certificates.
+	RootCAs []string
+
 	ClientCertVal string
-	ClientKey     string
 	ClientKeyVal  string
-	RootCAs       []string
 	RootCAsVals   []string
 	ProxyAddress  string
 	ServerName    string

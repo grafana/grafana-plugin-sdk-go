@@ -174,44 +174,44 @@ func TestNewSecureSocksProxy(t *testing.T) {
 	})
 
 	t.Run("Client cert must be valid", func(t *testing.T) {
-		clientCertBefore := opts.ClientCfg.ClientCert
-		opts.ClientCfg.ClientCert = ""
+		clientCertBefore := opts.ClientCfg.ClientCertVal
+		opts.ClientCfg.ClientCertVal = ""
 		cli = New(opts)
 		t.Cleanup(func() {
-			opts.ClientCfg.ClientCert = clientCertBefore
+			opts.ClientCfg.ClientCertVal = clientCertBefore
 			cli = New(opts)
 		})
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Client key must be valid", func(t *testing.T) {
-		clientKeyBefore := opts.ClientCfg.ClientKey
-		opts.ClientCfg.ClientKey = ""
+		clientKeyBefore := opts.ClientCfg.ClientKeyVal
+		opts.ClientCfg.ClientKeyVal = ""
 		cli = New(opts)
 		t.Cleanup(func() {
-			opts.ClientCfg.ClientKey = clientKeyBefore
+			opts.ClientCfg.ClientKeyVal = clientKeyBefore
 			cli = New(opts)
 		})
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Root CA must be not empty", func(t *testing.T) {
-		rootCABefore := opts.ClientCfg.RootCAs
-		opts.ClientCfg.RootCAs = []string{}
+		rootCABefore := opts.ClientCfg.RootCAsVals
+		opts.ClientCfg.RootCAsVals = []string{}
 		cli = New(opts)
 		t.Cleanup(func() {
-			opts.ClientCfg.RootCAs = rootCABefore
+			opts.ClientCfg.RootCAsVals = rootCABefore
 			cli = New(opts)
 		})
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
 	t.Run("Root CA must be valid", func(t *testing.T) {
-		rootCABefore := opts.ClientCfg.RootCAs
-		opts.ClientCfg.RootCAs = []string{""}
+		rootCABefore := opts.ClientCfg.RootCAsVals
+		opts.ClientCfg.RootCAsVals = []string{""}
 		cli = New(opts)
 		t.Cleanup(func() {
-			opts.ClientCfg.RootCAs = rootCABefore
+			opts.ClientCfg.RootCAsVals = rootCABefore
 			cli = New(opts)
 		})
 		require.Error(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
@@ -270,8 +270,6 @@ func TestPreventInvalidRootCA(t *testing.T) {
 		Auth:     nil,
 		Timeouts: nil,
 		ClientCfg: &ClientCfg{
-			ClientCert:   "client.crt",
-			ClientKey:    "client.key",
 			ProxyAddress: "localhost:8080",
 			ServerName:   "testServer",
 		},
@@ -284,16 +282,38 @@ func TestPreventInvalidRootCA(t *testing.T) {
 			Bytes: []byte("testing"),
 		})
 		require.NoError(t, err)
-		opts.ClientCfg.RootCAs = []string{pemStr.String()}
+		opts.ClientCfg.RootCAsVals = []string{pemStr.String()}
 		cli := New(opts)
 		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
 	})
 	t.Run("root ca has to have valid content", func(t *testing.T) {
+		opts.ClientCfg.RootCAsVals = []string{"this is not a pem encoded file"}
+		cli := New(opts)
+		_, err := cli.NewSecureSocksProxyContextDialer()
+		require.Contains(t, err.Error(), "root ca is invalid")
+	})
+
+	t.Run("root ca must be of the type CERTIFICATE", func(t *testing.T) {
+		rootCACert := filepath.Join(tempDir, "ca.cert")
+		caCertFile, err := os.Create(rootCACert)
+		require.NoError(t, err)
+		err = pem.Encode(caCertFile, &pem.Block{
+			Type:  "PUBLIC KEY",
+			Bytes: []byte("testing"),
+		})
+		require.NoError(t, err)
+		opts.ClientCfg.RootCAs = []string{rootCACert}
+		cli := New(opts)
+		_, err = cli.NewSecureSocksProxyContextDialer()
+		require.Contains(t, err.Error(), "root ca is invalid")
+	})
+
+	t.Run("root ca has to have valid content", func(t *testing.T) {
 		rootCACert := filepath.Join(tempDir, "ca.cert")
 		err := os.WriteFile(rootCACert, []byte("this is not a pem encoded file"), fs.ModeAppend)
 		require.NoError(t, err)
-		opts.ClientCfg.RootCAs = []string{"this is not a pem encoded file"}
+		opts.ClientCfg.RootCAs = []string{rootCACert}
 		cli := New(opts)
 		_, err = cli.NewSecureSocksProxyContextDialer()
 		require.Contains(t, err.Error(), "root ca is invalid")
@@ -363,11 +383,11 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	require.NoError(t, err)
 
 	cfg := &ClientCfg{
-		ClientCert:   clientCert.String(),
-		ClientKey:    clientKey.String(),
-		RootCAs:      []string{caCert.String()},
-		ServerName:   serverName,
-		ProxyAddress: proxyAddress,
+		ClientCertVal: clientCert.String(),
+		ClientKeyVal:  clientKey.String(),
+		RootCAsVals:   []string{caCert.String()},
+		ServerName:    serverName,
+		ProxyAddress:  proxyAddress,
 	}
 
 	return cfg
