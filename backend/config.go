@@ -123,11 +123,19 @@ func (c *GrafanaCfg) proxy() (Proxy, error) {
 			}
 		}
 
+		var rootCaVals []string
+		if v = c.Get(proxy.PluginSecureSocksProxyRootCAsContents); v != "" {
+			rootCaVals = strings.Split(c.Get(proxy.PluginSecureSocksProxyRootCAsContents), ",")
+		}
+
 		return Proxy{
 			clientCfg: &proxy.ClientCfg{
 				ClientCert:    c.Get(proxy.PluginSecureSocksProxyClientCert),
+				ClientCertVal: c.Get(proxy.PluginSecureSocksProxyClientCertContents),
 				ClientKey:     c.Get(proxy.PluginSecureSocksProxyClientKey),
-				RootCAs:       strings.Split(c.Get(proxy.PluginSecureSocksProxyRootCAs), ","),
+				ClientKeyVal:  c.Get(proxy.PluginSecureSocksProxyClientKeyContents),
+				RootCAs:       strings.Split(c.Get(proxy.PluginSecureSocksProxyRootCAs), " "),
+				RootCAsVals:   rootCaVals,
 				ProxyAddress:  c.Get(proxy.PluginSecureSocksProxyProxyAddress),
 				ServerName:    c.Get(proxy.PluginSecureSocksProxyServerName),
 				AllowInsecure: allowInsecure,
