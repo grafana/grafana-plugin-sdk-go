@@ -3,6 +3,7 @@ package v0alpha1
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"unsafe"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -322,7 +323,24 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 		case "queryType":
 			g.QueryType, err = iter.ReadString()
 		case "maxDataPoints":
-			g.MaxDataPoints, err = iter.ReadInt64()
+			next, err = iter.WhatIsNext()
+			if err == nil {
+				switch next {
+				case j.StringValue:
+					var v string
+					v, err = iter.ReadString()
+					if err == nil {
+						g.MaxDataPoints, err = strconv.ParseInt(v, 10, 64)
+					}
+				case j.NumberValue:
+					g.MaxDataPoints, err = iter.ReadInt64()
+				default:
+					return fmt.Errorf("expected string or number")
+				}
+			}
+			if err != nil {
+				return err
+			}
 		case "intervalMs":
 			g.IntervalMS, err = iter.ReadFloat64()
 		case "hide":

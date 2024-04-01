@@ -25,7 +25,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 			{
 				"refId": "Z",
 				"datasource": "old",
-				"maxDataPoints": 10,
+				"maxDataPoints": "10",
 				"timeRange": {
 					"from": "100",
 					"to": "200"
@@ -127,3 +127,4 @@ func TestQueryBuilders(t *testing.T) {
 	testQ3.Set("maxDataPoints", 100)
 	require.Equal(t, int64(100), testQ3.MaxDataPoints)
 }
+
