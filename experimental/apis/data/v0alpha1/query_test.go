@@ -127,4 +127,3 @@ func TestQueryBuilders(t *testing.T) {
 	testQ3.Set("maxDataPoints", 100)
 	require.Equal(t, int64(100), testQ3.MaxDataPoints)
 }
-
