@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -194,6 +195,15 @@ func TestAppURL(t *testing.T) {
 		_, err := cfg.AppURL()
 		require.Error(t, err)
 	})
+
+	t.Run("it should return the configured app URL from env", func(t *testing.T) {
+		os.Setenv(AppURL, "http://localhost-env:3000")
+		defer os.Unsetenv(AppURL)
+		cfg := NewGrafanaCfg(map[string]string{})
+		v, err := cfg.AppURL()
+		require.NoError(t, err)
+		require.Equal(t, "http://localhost-env:3000", v)
+	})
 }
 
 func TestUserAgentFromContext(t *testing.T) {
@@ -326,5 +336,25 @@ func TestSql(t *testing.T) {
 
 		_, err = cfg4.SQL()
 		require.ErrorContains(t, err, "not a valid integer")
+	})
+}
+
+func TestPluginAppClientSecret(t *testing.T) {
+	t.Run("it should return the configured PluginAppClientSecret", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			AppClientSecret: "client-secret",
+		})
+		v, err := cfg.PluginAppClientSecret()
+		require.NoError(t, err)
+		require.Equal(t, "client-secret", v)
+	})
+
+	t.Run("it should return the configured PluginAppClientSecret from env", func(t *testing.T) {
+		os.Setenv(AppClientSecret, "client-secret")
+		defer os.Unsetenv(AppClientSecret)
+		cfg := NewGrafanaCfg(map[string]string{})
+		v, err := cfg.PluginAppClientSecret()
+		require.NoError(t, err)
+		require.Equal(t, "client-secret", v)
 	})
 }
