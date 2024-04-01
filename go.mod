@@ -31,7 +31,7 @@ require (
 )
 
 require (
-	github.com/apache/arrow/go/v15 v15.0.0
+	github.com/apache/arrow/go/v15 v15.0.2
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
 	github.com/elazarl/goproxy v0.0.0-20230731152917-f99041a5c027
 	github.com/getkin/kin-openapi v0.120.0
