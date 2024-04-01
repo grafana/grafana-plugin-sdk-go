@@ -312,7 +312,7 @@ func TestSql(t *testing.T) {
 func TestPluginAppClientSecret(t *testing.T) {
 	t.Run("it should return the configured PluginAppClientSecret", func(t *testing.T) {
 		cfg := NewGrafanaCfg(map[string]string{
-			PluginAppClientSecret: "client-secret",
+			AppClientSecret: "client-secret",
 		})
 		v, err := cfg.PluginAppClientSecret()
 		require.NoError(t, err)
@@ -320,8 +320,8 @@ func TestPluginAppClientSecret(t *testing.T) {
 	})
 
 	t.Run("it should return the configured PluginAppClientSecret from env", func(t *testing.T) {
-		os.Setenv(PluginAppClientSecret, "client-secret")
-		defer os.Unsetenv(PluginAppClientSecret)
+		os.Setenv(AppClientSecret, "client-secret")
+		defer os.Unsetenv(AppClientSecret)
 		cfg := NewGrafanaCfg(map[string]string{})
 		v, err := cfg.PluginAppClientSecret()
 		require.NoError(t, err)
