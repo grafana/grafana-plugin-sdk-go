@@ -13,6 +13,7 @@ message AppInstanceSettings {
   int64 lastUpdatedMS = 5;
 
   // The API version when the settings were saved
+  // NOTE: this may be an older version than the current apiVersion
   string apiVersion = 12;
 }
 
