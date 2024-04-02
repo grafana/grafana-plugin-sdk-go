@@ -11,13 +11,11 @@ import (
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type dataSDKAdapter struct {
 	queryDataHandler QueryDataHandler
-	apiVersion       string
 }
 
-func newDataSDKAdapter(handler QueryDataHandler, apiVersion string) *dataSDKAdapter {
+func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 	return &dataSDKAdapter{
 		queryDataHandler: handler,
-		apiVersion:       apiVersion,
 	}
 }
 
@@ -49,9 +47,6 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().QueryDataRequest(req)
-	if err := parsedReq.PluginContext.verifyAPIVersion(a.apiVersion); err != nil {
-		return nil, err
-	}
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointQueryData)
 	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)

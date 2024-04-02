@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -190,14 +189,6 @@ type PluginContext struct {
 
 	// The requested apiVersion
 	APIVersion string
-}
-
-func (p *PluginContext) verifyAPIVersion(expectedAPIVersion string) error {
-	if expectedAPIVersion != "" && p.APIVersion != "" &&
-		expectedAPIVersion != p.APIVersion {
-		return fmt.Errorf("requested apiVersion: %s, but running %s", p.APIVersion, expectedAPIVersion)
-	}
-	return nil
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

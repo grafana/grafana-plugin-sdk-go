@@ -92,7 +92,7 @@ func TestCheckHealth(t *testing.T) {
 				message:     tc.message,
 				jsonDetails: tc.jsonDetails,
 				err:         tc.err,
-			}, "")
+			})
 
 			req := &pluginv2.CheckHealthRequest{
 				PluginContext: &pluginv2.PluginContext{},
@@ -131,7 +131,7 @@ func TestCheckHealth(t *testing.T) {
 		a := newDiagnosticsSDKAdapter(nil, CheckHealthHandlerFunc(func(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
 			require.Equal(t, tid, tenant.IDFromContext(ctx))
 			return &CheckHealthResult{}, nil
-		}), "")
+		}))
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,

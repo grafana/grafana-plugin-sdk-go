@@ -13,11 +13,6 @@ import (
 
 // ManageOpts can modify Manage behaviour.
 type ManageOpts struct {
-	// ApiVersion is the required ApiVersion -- setting this will
-	// fail any request asking for a different version.  For multi-version servers,
-	// this value should not be set, and be handled directly in each server
-	APIVersion string
-
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
 
@@ -44,7 +39,6 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	}
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 	return backend.Manage(pluginID, backend.ServeOpts{
-		APIVersion:          opts.APIVersion,
 		CheckHealthHandler:  handler,
 		CallResourceHandler: handler,
 		QueryDataHandler:    handler,

@@ -19,7 +19,7 @@ func TestSubscribeStream(t *testing.T) {
 				require.Equal(t, tid, tenant.IDFromContext(ctx))
 				return &SubscribeStreamResponse{}, nil
 			},
-		}, "")
+		})
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
@@ -40,7 +40,7 @@ func TestPublishStream(t *testing.T) {
 				require.Equal(t, tid, tenant.IDFromContext(ctx))
 				return &PublishStreamResponse{}, nil
 			},
-		}, "")
+		})
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
@@ -61,7 +61,7 @@ func TestRunStream(t *testing.T) {
 				require.Equal(t, tid, tenant.IDFromContext(ctx))
 				return nil
 			},
-		}, "")
+		})
 
 		testSrv := newTestRunStreamServer()
 		testSrv.WithContext(metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{

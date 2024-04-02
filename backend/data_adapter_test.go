@@ -66,7 +66,7 @@ func (f *fakeDataHandlerWithOAuth) QueryData(ctx context.Context, _ *QueryDataRe
 
 func TestQueryData(t *testing.T) {
 	handler := newFakeDataHandlerWithOAuth()
-	adapter := newDataSDKAdapter(handler, "")
+	adapter := newDataSDKAdapter(handler)
 
 	t.Run("When forward HTTP headers enabled should forward headers", func(t *testing.T) {
 		ctx := context.Background()
@@ -120,7 +120,7 @@ func TestQueryData(t *testing.T) {
 		a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
 			require.Equal(t, tid, tenant.IDFromContext(ctx))
 			return NewQueryDataResponse(), nil
-		}), "")
+		}))
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,

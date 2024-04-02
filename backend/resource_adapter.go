@@ -9,13 +9,11 @@ import (
 // resourceSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type resourceSDKAdapter struct {
 	callResourceHandler CallResourceHandler
-	apiVersion          string
 }
 
-func newResourceSDKAdapter(handler CallResourceHandler, apiVersion string) *resourceSDKAdapter {
+func newResourceSDKAdapter(handler CallResourceHandler) *resourceSDKAdapter {
 	return &resourceSDKAdapter{
 		callResourceHandler: handler,
-		apiVersion:          apiVersion,
 	}
 }
 
@@ -40,9 +38,6 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().CallResourceRequest(protoReq)
-	if err := parsedReq.PluginContext.verifyAPIVersion(a.apiVersion); err != nil {
-		return err
-	}
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointCallResource)
 	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
