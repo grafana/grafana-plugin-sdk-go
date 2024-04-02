@@ -294,7 +294,7 @@ func ensureWatchConfig() error {
 	return os.WriteFile(".bra.toml", config, 0600)
 }
 
-// Watch rebuilds the plugin backend when files change.
+// Watch rebuilds the plugin backend debug version when files change.
 func Watch() error {
 	if err := ensureWatchConfig(); err != nil {
 		return err

@@ -3,6 +3,7 @@ package backend
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -16,7 +17,7 @@ type HTTPSettings struct {
 	BasicAuthEnabled  bool
 	BasicAuthUser     string
 	BasicAuthPassword string
-	Headers           map[string]string
+	Header            http.Header
 
 	Timeout               time.Duration
 	DialTimeout           time.Duration
@@ -52,7 +53,7 @@ type HTTPSettings struct {
 // HTTPClientOptions creates and returns httpclient.Options.
 func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 	opts := httpclient.Options{
-		Headers:       s.Headers,
+		Header:        s.Header,
 		Labels:        map[string]string{},
 		CustomOptions: map[string]interface{}{},
 	}
@@ -104,7 +105,7 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 //gocyclo:ignore
 func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]string) (*HTTPSettings, error) {
 	s := &HTTPSettings{
-		Headers: map[string]string{},
+		Header: http.Header{},
 	}
 
 	var dat map[string]interface{}
@@ -273,7 +274,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 
 		if key, exists := dat[headerNameSuffix]; exists {
 			if value, exists := secureJSONData[headerValueSuffix]; exists {
-				s.Headers[key.(string)] = value
+				s.Header.Add(key.(string), value)
 			}
 		} else {
 			// No (more) header values are available

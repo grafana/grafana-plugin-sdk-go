@@ -111,7 +111,7 @@ type DataQuery struct {
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
-	Responses Responses
+	Responses Responses `json:"results"`
 }
 
 // MarshalJSON writes the results as json
@@ -129,6 +129,30 @@ func (r *QueryDataResponse) UnmarshalJSON(b []byte) error {
 	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
 	readQueryDataResultsJSON(r, iter)
 	return iter.Error
+}
+
+func (r *QueryDataResponse) DeepCopy() *QueryDataResponse {
+	if r == nil {
+		return nil
+	}
+	out := new(QueryDataResponse)
+	r.DeepCopyInto(out)
+	return out
+}
+
+func (r *QueryDataResponse) DeepCopyInto(out *QueryDataResponse) {
+	if r.Responses == nil {
+		out.Responses = nil
+		return
+	}
+	if out.Responses == nil {
+		out.Responses = make(Responses, len(r.Responses))
+	} else {
+		clear(out.Responses)
+	}
+	for k, v := range r.Responses {
+		out.Responses[k] = *v.DeepCopy()
+	}
 }
 
 // NewQueryDataResponse returns a QueryDataResponse with the Responses property initialized.
@@ -189,6 +213,19 @@ func (r DataResponse) MarshalJSON() ([]byte, error) {
 
 	writeDataResponseJSON(&r, stream)
 	return append([]byte(nil), stream.Buffer()...), stream.Error
+}
+
+func (r *DataResponse) DeepCopy() *DataResponse {
+	if r == nil {
+		return nil
+	}
+	out := &DataResponse{}
+	body, err := r.MarshalJSON()
+	if err == nil {
+		iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, body)
+		readDataResponseJSON(out, iter)
+	}
+	return out
 }
 
 // TimeRange represents a time range for a query and is a property of DataQuery.

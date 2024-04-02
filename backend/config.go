@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 	"strconv"
 	"strings"
 
@@ -20,6 +21,8 @@ const (
 	SQLMaxOpenConnsDefault           = "GF_SQL_MAX_OPEN_CONNS_DEFAULT"
 	SQLMaxIdleConnsDefault           = "GF_SQL_MAX_IDLE_CONNS_DEFAULT"
 	SQLMaxConnLifetimeSecondsDefault = "GF_SQL_MAX_CONN_LIFETIME_SECONDS_DEFAULT"
+	ResponseLimit                    = "GF_RESPONSE_LIMIT"
+	AppClientSecret                  = "GF_PLUGIN_APP_CLIENT_SECRET" // nolint:gosec
 )
 
 type configKey struct{}
@@ -122,11 +125,19 @@ func (c *GrafanaCfg) proxy() (Proxy, error) {
 			}
 		}
 
+		var rootCaVals []string
+		if v = c.Get(proxy.PluginSecureSocksProxyRootCAsContents); v != "" {
+			rootCaVals = strings.Split(c.Get(proxy.PluginSecureSocksProxyRootCAsContents), ",")
+		}
+
 		return Proxy{
 			clientCfg: &proxy.ClientCfg{
 				ClientCert:    c.Get(proxy.PluginSecureSocksProxyClientCert),
+				ClientCertVal: c.Get(proxy.PluginSecureSocksProxyClientCertContents),
 				ClientKey:     c.Get(proxy.PluginSecureSocksProxyClientKey),
-				RootCA:        c.Get(proxy.PluginSecureSocksProxyRootCACert),
+				ClientKeyVal:  c.Get(proxy.PluginSecureSocksProxyClientKeyContents),
+				RootCAs:       strings.Split(c.Get(proxy.PluginSecureSocksProxyRootCAs), " "),
+				RootCAsVals:   rootCaVals,
 				ProxyAddress:  c.Get(proxy.PluginSecureSocksProxyProxyAddress),
 				ServerName:    c.Get(proxy.PluginSecureSocksProxyServerName),
 				AllowInsecure: allowInsecure,
@@ -140,7 +151,11 @@ func (c *GrafanaCfg) proxy() (Proxy, error) {
 func (c *GrafanaCfg) AppURL() (string, error) {
 	url, ok := c.config[AppURL]
 	if !ok {
-		return "", fmt.Errorf("app URL not set in config. A more recent version of Grafana may be required")
+		// Fallback to environment variable for backwards compatibility
+		url = os.Getenv(AppURL)
+		if url == "" {
+			return "", errors.New("app URL not set in config. A more recent version of Grafana may be required")
+		}
 	}
 	return url, nil
 }
@@ -220,6 +235,31 @@ func (c *GrafanaCfg) UserFacingDefaultError() (string, error) {
 	value, ok := c.config[UserFacingDefaultError]
 	if !ok {
 		return "", errors.New("UserFacingDefaultError not set in config")
+	}
+
+	return value, nil
+}
+
+func (c *GrafanaCfg) ResponseLimit() int64 {
+	count, ok := c.config[ResponseLimit]
+	if !ok {
+		return 0
+	}
+	i, err := strconv.ParseInt(count, 10, 64)
+	if err != nil {
+		return 0
+	}
+	return i
+}
+
+func (c *GrafanaCfg) PluginAppClientSecret() (string, error) {
+	value, ok := c.config[AppClientSecret]
+	if !ok {
+		// Fallback to environment variable for backwards compatibility
+		value = os.Getenv(AppClientSecret)
+		if value == "" {
+			return "", errors.New("PluginAppClientSecret not set in config")
+		}
 	}
 
 	return value, nil

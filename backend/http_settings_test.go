@@ -2,6 +2,7 @@ package backend
 
 import (
 	"encoding/json"
+	"net/http"
 	"testing"
 	"time"
 
@@ -44,7 +45,8 @@ func TestParseHTTPSettings(t *testing.T) {
 			"sigV4ExternalId": "ext123",
 			"sigV4Profile": "ghi",
 			"httpHeaderName1": "X-HeaderOne",
-			"httpHeaderName2": "X-HeaderTwo"
+			"httpHeaderName2": "X-HeaderTwo",
+			"httpHeaderName3": "X-HeaderTwo"
 		}`
 		secureData := map[string]string{
 			"basicAuthPassword": "pwd",
@@ -55,6 +57,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			"sigV4SecretKey":    "sigV4SecretKey5",
 			"httpHeaderValue1":  "SecretOne",
 			"httpHeaderValue2":  "SecretTwo",
+			"httpHeaderValue3":  "SecretThree",
 		}
 		var jsonMap map[string]interface{}
 		err := json.Unmarshal([]byte(jsonStr), &jsonMap)
@@ -68,9 +71,9 @@ func TestParseHTTPSettings(t *testing.T) {
 			BasicAuthEnabled:  true,
 			BasicAuthUser:     "user",
 			BasicAuthPassword: "pwd",
-			Headers: map[string]string{
-				"X-HeaderOne": "SecretOne",
-				"X-HeaderTwo": "SecretTwo",
+			Header: http.Header{
+				"X-Headerone": {"SecretOne"},
+				"X-Headertwo": {"SecretTwo", "SecretThree"},
 			},
 			Timeout:               10 * time.Second,
 			DialTimeout:           10 * time.Second,
@@ -108,9 +111,9 @@ func TestParseHTTPSettings(t *testing.T) {
 					User:     "user",
 					Password: "pwd",
 				},
-				Headers: map[string]string{
-					"X-HeaderOne": "SecretOne",
-					"X-HeaderTwo": "SecretTwo",
+				Header: http.Header{
+					"X-Headerone": {"SecretOne"},
+					"X-Headertwo": {"SecretTwo", "SecretThree"},
 				},
 				Timeouts: &httpclient.TimeoutOptions{
 					Timeout:               10 * time.Second,
