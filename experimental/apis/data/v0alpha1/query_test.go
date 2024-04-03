@@ -54,6 +54,8 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		err = json.Unmarshal(out, query)
 		require.NoError(t, err)
 		require.Equal(t, "spreadsheetID", query.GetString("spreadsheet"))
+		require.Equal(t, int64(794), query.MaxDataPoints)         // input was a number
+		require.Equal(t, int64(10), req.Queries[1].MaxDataPoints) // input was a string
 
 		// The second query has an explicit time range, and legacy datasource name
 		out, err = json.MarshalIndent(req.Queries[1], "", "  ")

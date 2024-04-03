@@ -306,16 +306,17 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 		case "datasource":
 			// Old datasource values may just be a string
 			next, err = iter.WhatIsNext()
-			if err == nil {
-				switch next {
-				case j.StringValue:
-					g.Datasource = &DataSourceRef{}
-					g.Datasource.UID, err = iter.ReadString()
-				case j.ObjectValue:
-					err = iter.ReadVal(&g.Datasource)
-				default:
-					return fmt.Errorf("expected string or object")
-				}
+			if err != nil {
+				return err
+			}
+			switch next {
+			case j.StringValue:
+				g.Datasource = &DataSourceRef{}
+				g.Datasource.UID, err = iter.ReadString()
+			case j.ObjectValue:
+				err = iter.ReadVal(&g.Datasource)
+			default:
+				return fmt.Errorf("expected string or object")
 			}
 
 		case "datasourceId":
@@ -324,22 +325,20 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 			g.QueryType, err = iter.ReadString()
 		case "maxDataPoints":
 			next, err = iter.WhatIsNext()
-			if err == nil {
-				switch next {
-				case j.StringValue:
-					var v string
-					v, err = iter.ReadString()
-					if err == nil {
-						g.MaxDataPoints, err = strconv.ParseInt(v, 10, 64)
-					}
-				case j.NumberValue:
-					g.MaxDataPoints, err = iter.ReadInt64()
-				default:
-					return fmt.Errorf("expected string or number")
-				}
-			}
 			if err != nil {
 				return err
+			}
+			switch next {
+			case j.StringValue:
+				var v string
+				v, err = iter.ReadString()
+				if err == nil {
+					g.MaxDataPoints, err = strconv.ParseInt(v, 10, 64)
+				}
+			case j.NumberValue:
+				g.MaxDataPoints, err = iter.ReadInt64()
+			default:
+				return fmt.Errorf("expected number or string for maxDataPoints")
 			}
 		case "intervalMs":
 			g.IntervalMS, err = iter.ReadFloat64()
