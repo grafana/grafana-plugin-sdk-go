@@ -15,11 +15,8 @@ func TestFindEnums(t *testing.T) {
 			"../../data")
 		require.NoError(t, err)
 
-		out, err := json.MarshalIndent(fields, "", "  ")
-		require.NoError(t, err)
-		fmt.Printf("%s", string(out))
-
 		require.Equal(t, 1, len(fields))
+		require.Equal(t, "FrameType", fields[0].Name)
 	})
 
 	t.Run("verify enum extraction", func(t *testing.T) {
@@ -28,11 +25,6 @@ func TestFindEnums(t *testing.T) {
 				"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder/example",
 				"./example")
 			require.NoError(t, err)
-
-			for _, f := range fields {
-				fmt.Printf("%s\n", f.Name)
-			}
-
 			require.Equal(t, 3, len(fields))
 
 			var reduceMode EnumField
