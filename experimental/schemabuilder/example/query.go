@@ -59,6 +59,9 @@ const (
 // +enum
 type ReduceMode string
 
+// Dummy value makes sure the enum extraction logic is valid
+const DummyValueA = "dummyA"
+
 const (
 	// Drop non-numbers
 	ReduceModeDrop ReduceMode = "dropNN"
@@ -66,6 +69,9 @@ const (
 	// Replace non-numbers
 	ReduceModeReplace ReduceMode = "replaceNN"
 )
+
+// Dummy value makes sure the enum extraction logic is valid
+const DummyValueB = "dummyB"
 
 // QueryType = resample
 type ResampleQuery struct {
