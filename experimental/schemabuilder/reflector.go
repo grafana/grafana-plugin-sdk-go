@@ -146,6 +146,10 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 	}, nil
 }
 
+func (b *Builder) Reflector() *jsonschema.Reflector {
+	return b.reflector
+}
+
 func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 	for _, info := range inputs {
 		schema := b.reflector.ReflectFromType(info.GoType)
