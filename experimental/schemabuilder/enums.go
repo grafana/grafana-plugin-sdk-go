@@ -88,6 +88,7 @@ func findEnumFields(base, startpath string) ([]EnumField, error) {
 					if txt == "" {
 						txt = x.Comment.Text()
 					}
+					typ = fmt.Sprintf("%v", x.Type)
 					if typ == field.Name && len(x.Values) > 0 {
 						for _, n := range x.Names {
 							if ast.IsExported(n.String()) {
