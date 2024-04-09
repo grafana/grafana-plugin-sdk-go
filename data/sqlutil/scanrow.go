@@ -83,7 +83,11 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 		}
 
 		if !rc.hasConverter(i) {
-			v := NewDefaultConverter(colName, nullable, colType.ScanType())
+			scanTypeValue := colType.ScanType()
+			if scanTypeValue == nil {
+				return nil, fmt.Errorf(`type %s is not supported for column %s`, colType.DatabaseTypeName(), colName)
+			}
+			v := NewDefaultConverter(colName, nullable, scanTypeValue)
 			rc.append(colName, scanType(v, colType.ScanType()), v)
 		}
 	}
