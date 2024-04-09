@@ -302,3 +302,8 @@ func (s *DataSourceInstanceSettings) ProxyClient(ctx context.Context) (proxy.Cli
 
 	return proxy.New(proxyOpts), nil
 }
+
+// WithTenant injects supplied tenant ID into context.
+func WithTenant(ctx context.Context, tenantID string) context.Context {
+	return tenant.WithTenant(ctx, tenantID)
+}
