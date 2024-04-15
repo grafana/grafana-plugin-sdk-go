@@ -398,3 +398,171 @@ func TestProxyOptions(t *testing.T) {
 		}
 	})
 }
+
+func TestProxyOptionsFromContext(t *testing.T) {
+	tcs := []struct {
+		name                  string
+		instanceSettings      *DataSourceInstanceSettings
+		grafanaCfg            *GrafanaCfg
+		expectedClientOptions *proxy.Options
+		err                   error
+	}{
+		{
+			name: "Proxy options are configured when enableSecureSocksProxy is true",
+			instanceSettings: &DataSourceInstanceSettings{
+				Name:                    "ds-name",
+				Type:                    "example-datasource",
+				JSONData:                []byte("{ \"enableSecureSocksProxy\": true, \"timeout\": 10, \"keepAlive\": 15, \"secureSocksProxyUsername\": \"user\" }"),
+				DecryptedSecureJSONData: map[string]string{"secureSocksProxyPassword": "pass"},
+			},
+			grafanaCfg: NewGrafanaCfg(
+				map[string]string{
+					proxy.PluginSecureSocksProxyEnabled:            "true",
+					proxy.PluginSecureSocksProxyClientCert:         "/path/to/client-cert",
+					proxy.PluginSecureSocksProxyClientCertContents: "client-cert-contents",
+					proxy.PluginSecureSocksProxyClientKey:          "/path/to/client-key",
+					proxy.PluginSecureSocksProxyClientKeyContents:  "client-key-contents",
+					proxy.PluginSecureSocksProxyRootCAs:            "/path/to/root-ca",
+					proxy.PluginSecureSocksProxyRootCAsContents:    "root-ca-contents",
+					proxy.PluginSecureSocksProxyProxyAddress:       "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:         "proxy-server",
+					proxy.PluginSecureSocksProxyAllowInsecure:      "true",
+				},
+			),
+			expectedClientOptions: &proxy.Options{
+				Enabled:        true,
+				DatasourceName: "ds-name",
+				DatasourceType: "example-datasource",
+				Auth: &proxy.AuthOptions{
+					Username: "user",
+					Password: "pass",
+				},
+				Timeouts: &proxy.TimeoutOptions{
+					Timeout:   time.Second * 10,
+					KeepAlive: time.Second * 15,
+				},
+				ClientCfg: &proxy.ClientCfg{
+					ClientCert:    "/path/to/client-cert",
+					ClientKey:     "/path/to/client-key",
+					RootCAs:       []string{"/path/to/root-ca"},
+					ClientCertVal: "client-cert-contents",
+					ClientKeyVal:  "client-key-contents",
+					RootCAsVals:   []string{"root-ca-contents"},
+					ProxyAddress:  "localhost:1234",
+					ServerName:    "proxy-server",
+					AllowInsecure: true,
+				},
+			},
+		},
+		{
+			name: "Datasource UID becomes user name when secureSocksProxyUsername is not set",
+			instanceSettings: &DataSourceInstanceSettings{
+				Name:                    "ds-name",
+				UID:                     "ds-uid",
+				Type:                    "example-datasource",
+				JSONData:                []byte("{ \"enableSecureSocksProxy\": true, \"timeout\": 10, \"keepAlive\": 15 }"),
+				DecryptedSecureJSONData: map[string]string{"secureSocksProxyPassword": "pass"},
+			},
+			grafanaCfg: NewGrafanaCfg(
+				map[string]string{
+					proxy.PluginSecureSocksProxyEnabled:            "true",
+					proxy.PluginSecureSocksProxyClientCert:         "/path/to/client-cert",
+					proxy.PluginSecureSocksProxyClientCertContents: "client-cert-contents",
+					proxy.PluginSecureSocksProxyClientKey:          "/path/to/client-key",
+					proxy.PluginSecureSocksProxyClientKeyContents:  "client-key-contents",
+					proxy.PluginSecureSocksProxyRootCAs:            "/path/to/root-ca",
+					proxy.PluginSecureSocksProxyRootCAsContents:    "root-ca-contents",
+					proxy.PluginSecureSocksProxyProxyAddress:       "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:         "proxy-server",
+					proxy.PluginSecureSocksProxyAllowInsecure:      "true",
+				},
+			),
+			expectedClientOptions: &proxy.Options{
+				Enabled:        true,
+				DatasourceName: "ds-name",
+				DatasourceType: "example-datasource",
+				Auth: &proxy.AuthOptions{
+					Username: "ds-uid",
+					Password: "pass",
+				},
+				Timeouts: &proxy.TimeoutOptions{
+					Timeout:   time.Second * 10,
+					KeepAlive: time.Second * 15,
+				},
+				ClientCfg: &proxy.ClientCfg{
+					ClientCert:    "/path/to/client-cert",
+					ClientKey:     "/path/to/client-key",
+					RootCAs:       []string{"/path/to/root-ca"},
+					ClientCertVal: "client-cert-contents",
+					ClientKeyVal:  "client-key-contents",
+					RootCAsVals:   []string{"root-ca-contents"},
+					ProxyAddress:  "localhost:1234",
+					ServerName:    "proxy-server",
+					AllowInsecure: true,
+				},
+			},
+		},
+		{
+			name: "Datasource UID becomes user name when secureSocksProxyUsername is not set",
+			instanceSettings: &DataSourceInstanceSettings{
+				Name:     "ds-name",
+				UID:      "ds-uid",
+				Type:     "example-datasource",
+				JSONData: []byte("{ \"enableSecureSocksProxy\": false }"),
+			},
+			grafanaCfg: NewGrafanaCfg(
+				map[string]string{
+					proxy.PluginSecureSocksProxyEnabled:            "true",
+					proxy.PluginSecureSocksProxyClientCert:         "/path/to/client-cert",
+					proxy.PluginSecureSocksProxyClientCertContents: "client-cert-contents",
+					proxy.PluginSecureSocksProxyClientKey:          "/path/to/client-key",
+					proxy.PluginSecureSocksProxyClientKeyContents:  "client-key-contents",
+					proxy.PluginSecureSocksProxyRootCAs:            "/path/to/root-ca",
+					proxy.PluginSecureSocksProxyRootCAsContents:    "root-ca-contents",
+					proxy.PluginSecureSocksProxyProxyAddress:       "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:         "proxy-server",
+					proxy.PluginSecureSocksProxyAllowInsecure:      "true",
+				},
+			),
+			expectedClientOptions: nil,
+		},
+		{
+			name: "Proxy options client configuration is not set when proxy.PluginSecureSocksProxyEnabled is false",
+			instanceSettings: &DataSourceInstanceSettings{
+				Name:     "ds-name",
+				UID:      "ds-uid",
+				Type:     "example-datasource",
+				JSONData: []byte("{ \"enableSecureSocksProxy\": true }"),
+			},
+			grafanaCfg: NewGrafanaCfg(
+				map[string]string{
+					proxy.PluginSecureSocksProxyEnabled: "false",
+				},
+			),
+			expectedClientOptions: &proxy.Options{
+				Enabled:        true,
+				DatasourceName: "ds-name",
+				DatasourceType: "example-datasource",
+				Auth: &proxy.AuthOptions{
+					Username: "ds-uid",
+				},
+				Timeouts: &proxy.TimeoutOptions{
+					Timeout:   time.Second * 30,
+					KeepAlive: time.Second * 30,
+				},
+				ClientCfg: nil,
+			},
+		},
+	}
+
+	for _, tc := range tcs {
+		ctx := WithGrafanaConfig(context.Background(), tc.grafanaCfg)
+		opts, err := tc.instanceSettings.ProxyOptionsFromContext(ctx)
+		if tc.err != nil {
+			require.ErrorIs(t, err, tc.err)
+			continue
+		}
+		require.NoError(t, err)
+		require.Equal(t, tc.expectedClientOptions, opts)
+	}
+}
