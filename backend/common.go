@@ -237,6 +237,15 @@ func propagateTenantIDIfPresent(ctx context.Context) context.Context {
 	return ctx
 }
 
+func (s *DataSourceInstanceSettings) ProxyOptionsFromContext(ctx context.Context) (*proxy.Options, error) {
+	cfg := GrafanaConfigFromContext(ctx)
+	p, err := cfg.proxy()
+	if err != nil {
+		return nil, err
+	}
+	return s.ProxyOptions(p.clientCfg)
+}
+
 func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*proxy.Options, error) {
 	opts := &proxy.Options{}
 
