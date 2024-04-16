@@ -78,6 +78,25 @@ func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	return pluginOpts
 }
 
+func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
+	pluginOpts := grpcplugin.ServeOpts{
+		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
+	}
+
+	if opts.CallResourceHandler != nil {
+		pluginOpts.ResourceServer = newResourceSDKAdapter(opts.CallResourceHandler)
+	}
+
+	if opts.QueryDataHandler != nil {
+		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+	}
+
+	if opts.StreamHandler != nil {
+		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
+	}
+	return pluginOpts
+}
+
 // grpcServerOptions returns a new []grpc.ServerOption that can be passed to grpc.NewServer.
 // The returned options are the default ones, and any customOpts are appended at the end.
 // The default options are:
