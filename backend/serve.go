@@ -59,25 +59,6 @@ type ServeOpts struct {
 	GRPCSettings GRPCSettings
 }
 
-func asGRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
-	pluginOpts := grpcplugin.ServeOpts{
-		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
-	}
-
-	if opts.CallResourceHandler != nil {
-		pluginOpts.ResourceServer = newResourceSDKAdapter(opts.CallResourceHandler)
-	}
-
-	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
-	}
-
-	if opts.StreamHandler != nil {
-		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
-	}
-	return pluginOpts
-}
-
 func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	pluginOpts := grpcplugin.ServeOpts{
 		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
@@ -131,7 +112,7 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
 	grpc_prometheus.EnableHandlingTimeHistogram()
-	pluginOpts := asGRPCServeOpts(opts)
+	pluginOpts := GRPCServeOpts(opts)
 	pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
 		return grpc.NewServer(grpcServerOptions(opts, customOptions...)...)
 	}
@@ -182,7 +163,7 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 	standalone.FindAndKillCurrentPlugin(info.Dir)
 
 	// Start GRPC server
-	pluginOpts := asGRPCServeOpts(dsopts)
+	pluginOpts := GRPCServeOpts(dsopts)
 	if pluginOpts.GRPCServer == nil {
 		pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
 			return grpc.NewServer(grpcServerOptions(dsopts, customOptions...)...)
@@ -284,7 +265,7 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 // TestStandaloneServe starts a gRPC server that is not managed by hashicorp.
 // The function returns the gRPC server which should be closed by the consumer.
 func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
-	pluginOpts := asGRPCServeOpts(opts)
+	pluginOpts := GRPCServeOpts(opts)
 	if pluginOpts.GRPCServer == nil {
 		pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
 			return grpc.NewServer(grpcServerOptions(opts, customOptions...)...)
