@@ -2,6 +2,7 @@ package sqlutil
 
 import (
 	"database/sql"
+	"slices"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -10,13 +11,21 @@ import (
 
 const STRING = "string"
 
-func isDynamic(converters []Converter) bool {
-	for _, conv := range converters {
+func isDynamic(converters []Converter) (bool, []Converter) {
+	dynamic := false
+	index := -1
+	for i, conv := range converters {
 		if conv.Dynamic {
-			return true
+			dynamic = true
+			index = i
+			break
 		}
 	}
-	return false
+	if dynamic {
+		// Remove the dynamic converter from the list, It's only used to determine if we should use the dynamic framer.
+		return true, slices.Delete(converters, index, 1)
+	}
+	return false, converters
 }
 
 func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field, [][]interface{}, error) {
