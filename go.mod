@@ -9,8 +9,6 @@ require (
 	github.com/cheekybits/genny v1.0.0
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/go-cmp v0.6.0
-	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
-	github.com/grpc-ecosystem/go-grpc-prometheus v1.2.0
 	github.com/hashicorp/go-hclog v1.6.3
 	github.com/hashicorp/go-plugin v1.6.0
 	github.com/hashicorp/yamux v0.1.1 // indirect
@@ -54,6 +52,8 @@ require (
 	k8s.io/kube-openapi v0.0.0-20240220201932-37d671a357a5 // @grafana/grafana-app-platform-squad
 )
 
+require github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.0
+
 require (
 	github.com/BurntSushi/toml v1.3.2 // indirect
 	github.com/asaskevich/govalidator v0.0.0-20190424111038-f61b66f89f4a // indirect
@@ -78,6 +78,7 @@ require (
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.0.0-rc.3 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0 // indirect
 	github.com/invopop/yaml v0.2.0 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
