@@ -42,7 +42,7 @@ jobs:
 
     - name: Link sdk
       working-directory: './grafana'
-      run: echo 'replace github.com/grafana/grafana-plugin-sdk-go => ../grafana-plugin-sdk-go' >> go.mod
+      run: go mod edit -replace github.com/grafana/grafana-plugin-sdk-go=../grafana-plugin-sdk-go
 
     - name: Automatic updates
       working-directory: './grafana'
