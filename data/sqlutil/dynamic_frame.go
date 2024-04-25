@@ -10,25 +10,18 @@ import (
 
 const STRING = "string"
 
-func filterDynamic(converters []Converter) (bool, []Converter) {
-	dynamic := false
-	index := -1
-	for i, conv := range converters {
-		if conv.Dynamic {
-			dynamic = true
-			index = i
-			break
+// reoveDynamicConverter filters out the dynamic converter.  It is not a valid converter.
+func removeDynamicConverter(converters []Converter) (bool, []Converter) {
+	var filtered []Converter
+	var isDynamic bool
+	for _, conv := range converters {
+		if !conv.Dynamic {
+			filtered = append(filtered, conv)
+			continue
 		}
+		isDynamic = true
 	}
-	if dynamic {
-		// Remove the dynamic converter from the list, It's only used to determine if we should use the dynamic framer.
-		return true, remove(converters, index)
-	}
-	return false, converters
-}
-
-func remove[T any](slice []T, s int) []T {
-	return append(slice[:s], slice[s+1:]...)
+	return isDynamic, filtered
 }
 
 func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field, [][]interface{}, error) {
