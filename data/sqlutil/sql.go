@@ -25,7 +25,7 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		return nil, err
 	}
 
-	if dynamic, converters := isDynamic(converters); dynamic {
+	if dynamic, converters := filterDynamic(converters); dynamic {
 		rows := Rows{itr: rows}
 		return frameDynamic(rows, rowLimit, types, converters)
 	}

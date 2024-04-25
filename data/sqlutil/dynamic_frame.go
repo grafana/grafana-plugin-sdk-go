@@ -10,7 +10,7 @@ import (
 
 const STRING = "string"
 
-func isDynamic(converters []Converter) (bool, []Converter) {
+func filterDynamic(converters []Converter) (bool, []Converter) {
 	dynamic := false
 	index := -1
 	for i, conv := range converters {

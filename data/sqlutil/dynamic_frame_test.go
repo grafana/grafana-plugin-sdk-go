@@ -29,7 +29,7 @@ func TestDynamicFrame(t *testing.T) {
 		itr: mock,
 	}
 
-	_, converters = isDynamic(converters)
+	_, converters = filterDynamic(converters)
 	frame, err := frameDynamic(rows, 100, types, converters)
 	assert.Nil(t, err)
 	assert.NotNil(t, frame)
@@ -70,7 +70,7 @@ func TestDynamicFrameShouldNotPanic(t *testing.T) {
 	kind := &sql.ColumnType{}
 	types := []*sql.ColumnType{}
 	types = append(types, kind)
-	converters := Converters()
+	converters := []Converter{dynamic()}
 	data := [][]interface{}{}
 	mockRow := []interface{}{}
 	val := string("foo")
@@ -84,7 +84,7 @@ func TestDynamicFrameShouldNotPanic(t *testing.T) {
 		itr: mock,
 	}
 
-	_, converters = isDynamic(converters)
+	_, converters = filterDynamic(converters)
 	frame, err := frameDynamic(rows, 100, types, converters)
 	assert.Nil(t, err)
 	assert.NotNil(t, frame)
@@ -95,13 +95,8 @@ func TestDynamicFrameShouldNotPanic(t *testing.T) {
 	assert.Equal(t, val, *actual)
 }
 
-// Converters ...
-func Converters() []Converter {
-	return []Converter{Dynamic()}
-}
-
-// Dynamic is the converter that uses the results to determine data types
-func Dynamic() Converter {
+// dynamic is the converter that uses the results to determine data types
+func dynamic() Converter {
 	kind := "dynamic"
 	return Converter{
 		Name:          kind,
