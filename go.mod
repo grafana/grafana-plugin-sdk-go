@@ -2,15 +2,12 @@ module github.com/grafana/grafana-plugin-sdk-go
 
 go 1.21
 
-// The v0.120.0 is needed for now to be compatible with grafana/thema.
-replace github.com/getkin/kin-openapi => github.com/getkin/kin-openapi v0.120.0
-
 require (
 	github.com/apache/arrow/go/v15 v15.0.2
 	github.com/cheekybits/genny v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
 	github.com/elazarl/goproxy v0.0.0-20230731152917-f99041a5c027
-	github.com/getkin/kin-openapi v0.120.0
+	github.com/getkin/kin-openapi v0.124.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
@@ -61,16 +58,16 @@ require (
 	github.com/fatih/color v1.15.0 // indirect
 	github.com/go-logr/logr v1.4.1 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-openapi/jsonpointer v0.19.6 // indirect
+	github.com/go-openapi/jsonpointer v0.20.2 // indirect
 	github.com/go-openapi/jsonreference v0.20.1 // indirect
-	github.com/go-openapi/swag v0.22.4 // indirect
+	github.com/go-openapi/swag v0.22.8 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang/protobuf v1.5.4 // indirect
 	github.com/google/flatbuffers v23.5.26+incompatible // indirect
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/gofuzz v1.1.0 // indirect
-	github.com/gorilla/mux v1.8.0 // indirect
+	github.com/gorilla/mux v1.8.1 // indirect
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.1.0 // indirect
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.19.0 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
@@ -92,7 +89,6 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
 	github.com/prometheus/procfs v0.14.0 // indirect
-	github.com/rogpeppe/go-internal v1.11.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
 	github.com/unknwon/log v0.0.0-20150304194804-e617c87089d3 // indirect
