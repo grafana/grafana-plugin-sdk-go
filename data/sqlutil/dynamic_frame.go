@@ -15,11 +15,11 @@ func removeDynamicConverter(converters []Converter) (bool, []Converter) {
 	var filtered []Converter
 	var isDynamic bool
 	for _, conv := range converters {
-		if !conv.Dynamic {
+		if conv.Dynamic {
+			isDynamic = true
+		} else {
 			filtered = append(filtered, conv)
-			continue
 		}
-		isDynamic = true
 	}
 	return isDynamic, filtered
 }
