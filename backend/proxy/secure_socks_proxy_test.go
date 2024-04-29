@@ -410,6 +410,7 @@ func Test_getTLSDialer(t *testing.T) {
 
 		certPool = x509.NewCertPool()
 		ok = certPool.AppendCertsFromPEM(rootCaCertValue1)
+		require.True(t, ok)
 		require.False(t, dialer.Config.RootCAs.Equal(certPool))
 	})
 }
