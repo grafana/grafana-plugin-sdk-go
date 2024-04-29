@@ -10,7 +10,7 @@ import (
 
 const STRING = "string"
 
-// reoveDynamicConverter filters out the dynamic converter.  It is not a valid converter.
+// removeDynamicConverter filters out the dynamic converter.  It is not a valid converter.
 func removeDynamicConverter(converters []Converter) (bool, []Converter) {
 	var filtered []Converter
 	var isDynamic bool
