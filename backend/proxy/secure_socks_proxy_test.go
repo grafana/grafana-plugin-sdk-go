@@ -43,72 +43,16 @@ func TestNewSecureSocksProxyContextDialerInsecureProxy(t *testing.T) {
 }
 
 func TestNewSecureSocksProxyContextDialer_SupportsFilePathAndContents(t *testing.T) {
-	tempDir := t.TempDir()
-
-	// generate test rootCA
-	ca := &x509.Certificate{
-		SerialNumber: big.NewInt(2019),
-		Subject: pkix.Name{
-			Organization: []string{"Grafana Labs"},
-			CommonName:   "Grafana",
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(10, 0, 0),
-		IsCA:                  true,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		BasicConstraintsValid: true,
-	}
 	caPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
-	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
+
+	rootCACert, rootCACertFilePath, err := createRootCA(t, caPrivKey)
 	require.NoError(t, err)
-	rootCACertFilePath := filepath.Join(tempDir, "ca.cert")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	caCertFile, err := os.Create(rootCACertFilePath)
+	rootCaCertValue, err := os.ReadFile(rootCACertFilePath)
 	require.NoError(t, err)
-	err = pem.Encode(caCertFile, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: caBytes,
-	})
+	clientCertContents, clientCertFilePath, err := createClientCert(t, rootCACert, caPrivKey)
 	require.NoError(t, err)
-	// generate test client cert & key
-	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(2019),
-		Subject: pkix.Name{
-			Organization: []string{"Grafana Labs"},
-			CommonName:   "Grafana",
-		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-		KeyUsage:     x509.KeyUsageDigitalSignature,
-	}
-	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
-	require.NoError(t, err)
-	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivKey)
-	require.NoError(t, err)
-	clientCertFilePath := filepath.Join(tempDir, "client.cert")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	certFile, err := os.Create(clientCertFilePath)
-	require.NoError(t, err)
-	err = pem.Encode(certFile, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: certBytes,
-	})
-	require.NoError(t, err)
-	clientKeyFilePath := filepath.Join(tempDir, "client.key")
-	// nolint:gosec
-	// The gosec G304 warning can be ignored because all values come from the test
-	keyFile, err := os.Create(clientKeyFilePath)
-	require.NoError(t, err)
-	err = pem.Encode(keyFile, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
-	})
+	clientKeyContents, clientKeyFilePath, err := createClientKey(t, caPrivKey)
 	require.NoError(t, err)
 
 	t.Run("Works with file paths", func(t *testing.T) {
@@ -132,22 +76,15 @@ func TestNewSecureSocksProxyContextDialer_SupportsFilePathAndContents(t *testing
 	})
 
 	t.Run("Works with file contents", func(t *testing.T) {
-		clientCert, err := os.ReadFile(clientCertFilePath)
-		require.NoError(t, err)
-		clientKey, err := os.ReadFile(clientKeyFilePath)
-		require.NoError(t, err)
-		rootCA, err := os.ReadFile(rootCACertFilePath)
-		require.NoError(t, err)
-
 		cli := New(&Options{
 			Enabled:  true,
 			Timeouts: &TimeoutOptions{Timeout: time.Duration(30), KeepAlive: time.Duration(15)},
 			Auth:     &AuthOptions{Username: "user1"},
 			ClientCfg: &ClientCfg{
 				AllowInsecure: false,
-				ClientCertVal: string(clientCert),
-				ClientKeyVal:  string(clientKey),
-				RootCAsVals:   []string{string(rootCA)},
+				ClientCertVal: clientCertContents,
+				ClientKeyVal:  clientKeyContents,
+				RootCAsVals:   []string{string(rootCaCertValue)},
 				ServerName:    "localhost",
 				ProxyAddress:  "localhost:3000",
 			},
@@ -321,75 +258,27 @@ func TestPreventInvalidRootCA(t *testing.T) {
 
 func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 	t.Helper()
-	proxyAddress := "localhost:3000"
-	serverName := "localhost"
 
-	// generate test rootCA
-	ca := &x509.Certificate{
-		SerialNumber: big.NewInt(2019),
-		Subject: pkix.Name{
-			Organization: []string{"Grafana Labs"},
-			CommonName:   "Grafana",
-		},
-		NotBefore:             time.Now(),
-		NotAfter:              time.Now().AddDate(10, 0, 0),
-		IsCA:                  true,
-		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
-		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
-		BasicConstraintsValid: true,
-	}
 	caPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
 	require.NoError(t, err)
-	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &caPrivKey.PublicKey, caPrivKey)
+
+	rootCACert, rootCACertFilePath, err := createRootCA(t, caPrivKey)
+	require.NoError(t, err)
+	rootCaCertValue, err := os.ReadFile(rootCACertFilePath)
 	require.NoError(t, err)
 
-	caCert := new(strings.Builder)
-	err = pem.Encode(caCert, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: caBytes,
-	})
+	clientCertValue, _, err := createClientCert(t, rootCACert, caPrivKey)
+	require.NoError(t, err)
+	clientKeyValue, _, err := createClientKey(t, caPrivKey)
 	require.NoError(t, err)
 
-	// generate test client cert & key
-	cert := &x509.Certificate{
-		SerialNumber: big.NewInt(2019),
-		Subject: pkix.Name{
-			Organization: []string{"Grafana Labs"},
-			CommonName:   "Grafana",
-		},
-		NotBefore:    time.Now(),
-		NotAfter:     time.Now().AddDate(10, 0, 0),
-		SubjectKeyId: []byte{1, 2, 3, 4, 6},
-		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
-		KeyUsage:     x509.KeyUsageDigitalSignature,
+	return &ClientCfg{
+		ClientCertVal: clientCertValue,
+		ClientKeyVal:  clientKeyValue,
+		RootCAsVals:   []string{string(rootCaCertValue)},
+		ServerName:    "localhost",
+		ProxyAddress:  "localhost:3000",
 	}
-	certPrivKey, err := rsa.GenerateKey(rand.Reader, 4096)
-	require.NoError(t, err)
-	certBytes, err := x509.CreateCertificate(rand.Reader, cert, ca, &certPrivKey.PublicKey, caPrivKey)
-	clientCert := new(strings.Builder)
-	require.NoError(t, err)
-	err = pem.Encode(clientCert, &pem.Block{
-		Type:  "CERTIFICATE",
-		Bytes: certBytes,
-	})
-	require.NoError(t, err)
-	clientKey := new(strings.Builder)
-	require.NoError(t, err)
-	err = pem.Encode(clientKey, &pem.Block{
-		Type:  "RSA PRIVATE KEY",
-		Bytes: x509.MarshalPKCS1PrivateKey(certPrivKey),
-	})
-	require.NoError(t, err)
-
-	cfg := &ClientCfg{
-		ClientCertVal: clientCert.String(),
-		ClientKeyVal:  clientKey.String(),
-		RootCAsVals:   []string{caCert.String()},
-		ServerName:    serverName,
-		ProxyAddress:  proxyAddress,
-	}
-
-	return cfg
 }
 
 // fakeConn implements proxy.Dialer and proxy.ContextDialer
@@ -463,4 +352,163 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 		assert.NotNil(t, err)
 		assert.Equal(t, "custom error", err.Error())
 	})
+}
+
+func Test_getTLSDialer(t *testing.T) {
+	t.Run("Prefer client config certificate raw value fields over filepath fields", func(t *testing.T) {
+		caPrivKey1, err := rsa.GenerateKey(rand.Reader, 4096)
+		require.NoError(t, err)
+
+		rootCACert1, rootCACertFilePath1, err := createRootCA(t, caPrivKey1)
+		require.NoError(t, err)
+		rootCaCertValue1, err := os.ReadFile(rootCACertFilePath1)
+		require.NoError(t, err)
+
+		clientCertValue1, clientCertFilePath1, err := createClientCert(t, rootCACert1, caPrivKey1)
+		require.NoError(t, err)
+		clientKeyValue1, clientKeyFilePath1, err := createClientKey(t, caPrivKey1)
+		require.NoError(t, err)
+
+		caPrivKey2, err := rsa.GenerateKey(rand.Reader, 4096)
+		require.NoError(t, err)
+
+		rootCACert2, rootCACertFilePath2, err := createRootCA(t, caPrivKey2)
+		require.NoError(t, err)
+		rootCaCertValue2, err := os.ReadFile(rootCACertFilePath2)
+		require.NoError(t, err)
+
+		clientCertValue2, _, err := createClientCert(t, rootCACert2, caPrivKey2)
+		require.NoError(t, err)
+		clientKeyValue2, _, err := createClientKey(t, caPrivKey2)
+		require.NoError(t, err)
+
+		require.NotEqual(t, rootCaCertValue1, rootCaCertValue2)
+		require.NotEqual(t, clientCertValue1, clientCertValue2)
+		require.NotEqual(t, clientKeyValue1, clientKeyValue2)
+
+		clientCfg := &ClientCfg{
+			ClientCert: clientCertFilePath1,
+			ClientKey:  clientKeyFilePath1,
+			RootCAs:    []string{rootCACertFilePath1},
+
+			ClientCertVal: clientCertValue2,
+			ClientKeyVal:  clientKeyValue2,
+			RootCAsVals:   []string{string(rootCaCertValue2)},
+		}
+
+		p := cfgProxyWrapper{opts: &Options{ClientCfg: clientCfg, Timeouts: &TimeoutOptions{}}}
+
+		dialer, err := p.getTLSDialer()
+		require.NoError(t, err)
+		require.NotNil(t, dialer)
+
+		// check that the rootCaCert2 was used instead of rootCaCert1
+		certPool := x509.NewCertPool()
+		ok := certPool.AppendCertsFromPEM(rootCaCertValue2)
+		require.True(t, ok)
+		require.True(t, dialer.Config.RootCAs.Equal(certPool))
+
+		certPool = x509.NewCertPool()
+		ok = certPool.AppendCertsFromPEM(rootCaCertValue1)
+		require.False(t, dialer.Config.RootCAs.Equal(certPool))
+	})
+}
+
+func createRootCA(t *testing.T, pvtKey *rsa.PrivateKey) (*x509.Certificate, string, error) {
+	t.Helper()
+	ca := &x509.Certificate{
+		SerialNumber: big.NewInt(2019),
+		Subject: pkix.Name{
+			Organization: []string{"Grafana Labs"},
+			CommonName:   "Grafana",
+		},
+		NotBefore:             time.Now(),
+		NotAfter:              time.Now().AddDate(10, 0, 0),
+		IsCA:                  true,
+		ExtKeyUsage:           []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth, x509.ExtKeyUsageServerAuth},
+		KeyUsage:              x509.KeyUsageDigitalSignature | x509.KeyUsageCertSign,
+		BasicConstraintsValid: true,
+	}
+	caBytes, err := x509.CreateCertificate(rand.Reader, ca, ca, &pvtKey.PublicKey, pvtKey)
+	if err != nil {
+		return nil, "", err
+	}
+	caCertFile, err := os.CreateTemp(t.TempDir(), "rootCA-*.cert")
+	if err != nil {
+		return nil, "", err
+	}
+	err = pem.Encode(caCertFile, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: caBytes,
+	})
+	if err != nil {
+		return nil, "", err
+	}
+	return ca, caCertFile.Name(), nil
+}
+
+func createClientCert(t *testing.T, rootCaCert *x509.Certificate, pvtKey *rsa.PrivateKey) (string, string, error) {
+	t.Helper()
+
+	cert := &x509.Certificate{
+		SerialNumber: big.NewInt(2019),
+		Subject: pkix.Name{
+			Organization: []string{"Grafana Labs"},
+			CommonName:   "Grafana",
+		},
+		NotBefore:    time.Now(),
+		NotAfter:     time.Now().AddDate(10, 0, 0),
+		SubjectKeyId: []byte{1, 2, 3, 4, 6},
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+	}
+	certBytes, err := x509.CreateCertificate(rand.Reader, cert, rootCaCert, &pvtKey.PublicKey, pvtKey)
+	if err != nil {
+		return "", "", err
+	}
+	certFile, err := os.CreateTemp(t.TempDir(), "client-*.cert")
+	if err != nil {
+		return "", "", err
+	}
+	err = pem.Encode(certFile, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: certBytes,
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	err = certFile.Close()
+	if err != nil {
+		return "", "", err
+	}
+
+	clientCertContents, err := os.ReadFile(certFile.Name())
+	if err != nil {
+		return "", "", err
+	}
+
+	return string(clientCertContents), certFile.Name(), nil
+}
+
+func createClientKey(t *testing.T, pvtKey *rsa.PrivateKey) (string, string, error) {
+	t.Helper()
+
+	keyFile, err := os.CreateTemp(t.TempDir(), "client-*.key")
+	if err != nil {
+		return "", "", err
+	}
+	err = pem.Encode(keyFile, &pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: x509.MarshalPKCS1PrivateKey(pvtKey),
+	})
+	if err != nil {
+		return "", "", err
+	}
+
+	clientKeyContents, err := os.ReadFile(keyFile.Name())
+	if err != nil {
+		return "", "", err
+	}
+	return string(clientKeyContents), keyFile.Name(), nil
 }
