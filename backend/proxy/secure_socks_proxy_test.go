@@ -444,6 +444,11 @@ func createRootCA(t *testing.T, pvtKey *rsa.PrivateKey) (*x509.Certificate, stri
 	if err != nil {
 		return nil, "", err
 	}
+
+	err = caCertFile.Close()
+	if err != nil {
+		return nil, "", err
+	}
 	return ca, caCertFile.Name(), nil
 }
 
@@ -502,6 +507,11 @@ func createClientKey(t *testing.T, pvtKey *rsa.PrivateKey) (string, string, erro
 		Type:  "RSA PRIVATE KEY",
 		Bytes: x509.MarshalPKCS1PrivateKey(pvtKey),
 	})
+	if err != nil {
+		return "", "", err
+	}
+
+	err = keyFile.Close()
 	if err != nil {
 		return "", "", err
 	}
