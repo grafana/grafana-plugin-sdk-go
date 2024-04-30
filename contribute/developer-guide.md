@@ -44,9 +44,22 @@ mage lint
 
 A prerequisite is to have [protoc](http://google.github.io/proto-lens/installing-protoc.html) installed and available in your path.
 
-Next, you need to have [protoc-gen-go](https://github.com/golang/protobuf/tree/v1.3.4#installation) installed and available in your path. It's very important that you match the version specified of `github.com/golang/protobuf` in [go.mod](go.mod) file, as of this writing it's v1.3.4.
+Next, you need to have [protoc-gen-go](https://github.com/protocolbuffers/protobuf-go/tree/master/cmd/protoc-gen-go) and [protoc-gen-grpc-go](https://pkg.go.dev/google.golang.org/grpc/cmd/protoc-gen-go-grpc) installed and available in your path. It's very important that you match the `protoc-gen-go` version specified of `google.golang.org/protobuf` in [go.mod](../go.mod) file, as of this writing it's v1.33.0.
 
+To install protoc-gen-go (version should automatically be taken from the go.mod):
+
+```shell
+go install google.golang.org/protobuf/cmd/protoc-gen-go
 ```
+
+To install protoc-gen-go-grpc (latest version as of this writing is v1.3.0):
+```shell
+go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
+```
+
+To compile the protobuf:
+
+```shell
 mage protobuf
 ```
 
