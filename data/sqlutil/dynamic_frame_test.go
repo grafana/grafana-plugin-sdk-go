@@ -29,6 +29,7 @@ func TestDynamicFrame(t *testing.T) {
 		itr: mock,
 	}
 
+	_, converters = removeDynamicConverter(converters)
 	frame, err := frameDynamic(rows, 100, types, converters)
 	assert.Nil(t, err)
 	assert.NotNil(t, frame)
@@ -63,4 +64,43 @@ func (rs *MockRows) Scan(dest ...interface{}) error {
 		val.Elem().Set(reflect.ValueOf(data[i]))
 	}
 	return nil
+}
+
+func TestDynamicFrameShouldNotPanic(t *testing.T) {
+	kind := &sql.ColumnType{}
+	types := []*sql.ColumnType{}
+	types = append(types, kind)
+	converters := []Converter{dynamic()}
+	data := [][]interface{}{}
+	mockRow := []interface{}{}
+	val := string("foo")
+	mockRow = append(mockRow, val)
+	data = append(data, mockRow)
+	mock := &MockRows{
+		data:  data,
+		index: -1,
+	}
+	rows := Rows{
+		itr: mock,
+	}
+
+	_, converters = removeDynamicConverter(converters)
+	frame, err := frameDynamic(rows, 100, types, converters)
+	assert.Nil(t, err)
+	assert.NotNil(t, frame)
+
+	assert.Equal(t, 1, frame.Rows())
+
+	actual := frame.Fields[0].At(0).(*string)
+	assert.Equal(t, val, *actual)
+}
+
+// dynamic is the converter that uses the results to determine data types
+func dynamic() Converter {
+	kind := "dynamic"
+	return Converter{
+		Name:          kind,
+		InputTypeName: kind,
+		Dynamic:       true,
+	}
 }
