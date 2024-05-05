@@ -279,7 +279,7 @@ func writeQuery(g *DataQuery, stream *j.Stream) {
 }
 
 func (g *DataQuery) readQuery(iter *jsoniter.Iterator) error {
-	return g.CommonQueryProperties.readQuery(iter, func(key string, iter *jsoniter.Iterator) error {
+	return g.CommonQueryProperties.ReadQuery(iter, func(key string, iter *jsoniter.Iterator) error {
 		if g.additional == nil {
 			g.additional = make(map[string]any)
 		}
@@ -289,7 +289,7 @@ func (g *DataQuery) readQuery(iter *jsoniter.Iterator) error {
 	})
 }
 
-func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
+func (g *CommonQueryProperties) ReadQuery(iter *jsoniter.Iterator,
 	processUnknownKey func(key string, iter *jsoniter.Iterator) error,
 ) error {
 	var err error
