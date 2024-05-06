@@ -125,7 +125,7 @@ func TestTracingMiddleware(t *testing.T) {
 		require.False(t, span.EndTime().IsZero())
 		require.Equal(t, codes.Error, span.Status().Code)
 		require.Equal(t, "error with HTTP status code 400", span.Status().Description)
-		require.Equal(t, []attribute.KeyValue{
+		require.ElementsMatch(t, []attribute.KeyValue{
 			attribute.String("l1", "v1"),
 			attribute.String("l2", "v2"),
 			semconv.HTTPURL("http://test.com/query"),
