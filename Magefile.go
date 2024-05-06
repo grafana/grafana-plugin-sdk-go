@@ -19,11 +19,12 @@ func DataGenerate() error {
 
 // Protobuf generates protobuf files.
 func Protobuf() error {
-	if err := sh.RunV("./scripts/protobuf-check.sh"); err != nil {
-		return err
-	}
+	return sh.RunV("buf", "generate")
+}
 
-	return sh.RunV("./proto/generate.sh")
+// ProtobufValidate validate breaking changes in protobuf files.
+func ProtobufValidate() error {
+	return sh.RunV("buf", "breaking", "proto", "--against", "https://github.com/grafana/grafana-plugin-sdk-go.git#branch=main,subdir=proto")
 }
 
 // Test runs the test suite.
