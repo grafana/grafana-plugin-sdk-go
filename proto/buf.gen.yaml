@@ -1,9 +1,8 @@
 version: v1
-managed:
-  enabled: true
 plugins:
   - plugin: go
     out: genproto/pluginv2
+    protoc_path: protoc
   - plugin: go-grpc
     out: genproto/pluginv2
     opt:

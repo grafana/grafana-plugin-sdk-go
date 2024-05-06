@@ -19,7 +19,7 @@ func DataGenerate() error {
 
 // Protobuf generates protobuf files.
 func Protobuf() error {
-	return sh.RunV("buf", "generate")
+	return sh.RunV("buf", "generate", "proto", "--template", "./proto/buf.gen.yaml")
 }
 
 // ProtobufValidate validate breaking changes in protobuf files.

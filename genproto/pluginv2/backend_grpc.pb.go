@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.3.0
 // - protoc             (unknown)
-// source: proto/backend.proto
+// source: backend.proto
 
 package pluginv2
 
@@ -130,7 +130,7 @@ var Resource_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "proto/backend.proto",
+	Metadata: "backend.proto",
 }
 
 const (
@@ -218,7 +218,7 @@ var Data_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/backend.proto",
+	Metadata: "backend.proto",
 }
 
 const (
@@ -343,7 +343,7 @@ var Diagnostics_ServiceDesc = grpc.ServiceDesc{
 		},
 	},
 	Streams:  []grpc.StreamDesc{},
-	Metadata: "proto/backend.proto",
+	Metadata: "backend.proto",
 }
 
 const (
@@ -557,5 +557,5 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "proto/backend.proto",
+	Metadata: "backend.proto",
 }
