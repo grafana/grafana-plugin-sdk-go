@@ -1,0 +1,24 @@
+# Validate protobuf files for incompatible changes.
+
+name: Validate protobuf files
+
+on:
+  pull_request:
+    paths:
+      - 'proto/backend.proto'
+    branches:
+      - 'main'
+
+jobs:
+  validate-protos:
+    runs-on: ubuntu-latest
+    steps:
+      # Run `git checkout`
+      - uses: actions/checkout@v2
+      # Install the `buf` CLI
+      - uses: bufbuild/buf-setup-action@v1
+      # Perform breaking change detection against the `proto` directory in the `main` branch
+      - uses: bufbuild/buf-breaking-action@v1
+        with:
+          input: 'proto'
+          against: 'https://github.com/acme/weather.git#branch=main,subdir=proto'
