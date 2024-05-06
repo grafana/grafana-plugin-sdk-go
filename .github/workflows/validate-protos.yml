@@ -10,7 +10,7 @@ on:
       - 'main'
 
 jobs:
-  validate-protos:
+  main:
     runs-on: ubuntu-latest
     steps:
       # Run `git checkout`
@@ -21,4 +21,4 @@ jobs:
       - uses: bufbuild/buf-breaking-action@v1
         with:
           input: 'proto'
-          against: 'https://github.com/acme/weather.git#branch=main,subdir=proto'
+          against: 'https://github.com/grafana/grafana-plugin-sdk-go.git#branch=main,subdir=proto'
