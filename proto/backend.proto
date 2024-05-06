@@ -10,6 +10,7 @@ option go_package = "./;pluginv2";
 message AppInstanceSettings {
   bytes jsonData = 3;
   map<string,string> decryptedSecureJsonData = 4;
+  int64 lastUpdatedMS = 5;
 }
 
 message DataSourceInstanceSettings {
