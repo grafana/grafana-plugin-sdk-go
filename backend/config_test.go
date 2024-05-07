@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -53,7 +54,7 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyServerName:   "localhost",
 					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
 					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
-					proxy.PluginSecureSocksProxyRootCACert:   "rootCACert",
+					proxy.PluginSecureSocksProxyRootCAs:      "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{
 					enabled: map[string]struct{}{
@@ -64,7 +65,7 @@ func TestConfig(t *testing.T) {
 					clientCfg: &proxy.ClientCfg{
 						ClientCert:   "clientCert",
 						ClientKey:    "clientKey",
-						RootCA:       "rootCACert",
+						RootCAs:      []string{"rootCACert"},
 						ProxyAddress: "localhost:1234",
 						ServerName:   "localhost",
 					},
@@ -79,7 +80,7 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyServerName:   "localhost",
 					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
 					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
-					proxy.PluginSecureSocksProxyRootCACert:   "rootCACert",
+					proxy.PluginSecureSocksProxyRootCAs:      "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{
 					enabled: map[string]struct{}{
@@ -97,14 +98,14 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyServerName:   "localhost",
 					proxy.PluginSecureSocksProxyClientKey:    "clientKey",
 					proxy.PluginSecureSocksProxyClientCert:   "clientCert",
-					proxy.PluginSecureSocksProxyRootCACert:   "rootCACert",
+					proxy.PluginSecureSocksProxyRootCAs:      "rootCACert",
 				}),
 				expectedFeatureToggles: FeatureToggles{},
 				expectedProxy: Proxy{
 					clientCfg: &proxy.ClientCfg{
 						ClientCert:   "clientCert",
 						ClientKey:    "clientKey",
-						RootCA:       "rootCACert",
+						RootCAs:      []string{"rootCACert"},
 						ProxyAddress: "localhost:1234",
 						ServerName:   "localhost",
 					},
@@ -119,7 +120,7 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyServerName:    "localhost",
 					proxy.PluginSecureSocksProxyClientKey:     "clientKey",
 					proxy.PluginSecureSocksProxyClientCert:    "clientCert",
-					proxy.PluginSecureSocksProxyRootCACert:    "rootCACert",
+					proxy.PluginSecureSocksProxyRootCAs:       "rootCACert",
 					proxy.PluginSecureSocksProxyAllowInsecure: "true",
 				}),
 				expectedFeatureToggles: FeatureToggles{},
@@ -127,7 +128,37 @@ func TestConfig(t *testing.T) {
 					clientCfg: &proxy.ClientCfg{
 						ClientCert:    "clientCert",
 						ClientKey:     "clientKey",
-						RootCA:        "rootCACert",
+						RootCAs:       []string{"rootCACert"},
+						ProxyAddress:  "localhost:1234",
+						ServerName:    "localhost",
+						AllowInsecure: true,
+					},
+				},
+			},
+			{
+				name: "feature toggles disabled and secure proxy enabled with file contents",
+				cfg: NewGrafanaCfg(map[string]string{
+					featuretoggles.EnabledFeatures:                 "",
+					proxy.PluginSecureSocksProxyEnabled:            "true",
+					proxy.PluginSecureSocksProxyProxyAddress:       "localhost:1234",
+					proxy.PluginSecureSocksProxyServerName:         "localhost",
+					proxy.PluginSecureSocksProxyClientKey:          "./clientKey",
+					proxy.PluginSecureSocksProxyClientCert:         "./clientCert",
+					proxy.PluginSecureSocksProxyRootCAs:            "./rootCACert ./rootCACert2",
+					proxy.PluginSecureSocksProxyClientKeyContents:  "clientKey",
+					proxy.PluginSecureSocksProxyClientCertContents: "clientCert",
+					proxy.PluginSecureSocksProxyRootCAsContents:    "rootCACert,rootCACert2",
+					proxy.PluginSecureSocksProxyAllowInsecure:      "true",
+				}),
+				expectedFeatureToggles: FeatureToggles{},
+				expectedProxy: Proxy{
+					clientCfg: &proxy.ClientCfg{
+						ClientCert:    "./clientCert",
+						ClientCertVal: "clientCert",
+						ClientKey:     "./clientKey",
+						ClientKeyVal:  "clientKey",
+						RootCAs:       []string{"./rootCACert", "./rootCACert2"},
+						RootCAsVals:   []string{"rootCACert", "rootCACert2"},
 						ProxyAddress:  "localhost:1234",
 						ServerName:    "localhost",
 						AllowInsecure: true,
@@ -163,6 +194,15 @@ func TestAppURL(t *testing.T) {
 		cfg := NewGrafanaCfg(map[string]string{})
 		_, err := cfg.AppURL()
 		require.Error(t, err)
+	})
+
+	t.Run("it should return the configured app URL from env", func(t *testing.T) {
+		os.Setenv(AppURL, "http://localhost-env:3000")
+		defer os.Unsetenv(AppURL)
+		cfg := NewGrafanaCfg(map[string]string{})
+		v, err := cfg.AppURL()
+		require.NoError(t, err)
+		require.Equal(t, "http://localhost-env:3000", v)
 	})
 }
 
@@ -296,5 +336,25 @@ func TestSql(t *testing.T) {
 
 		_, err = cfg4.SQL()
 		require.ErrorContains(t, err, "not a valid integer")
+	})
+}
+
+func TestPluginAppClientSecret(t *testing.T) {
+	t.Run("it should return the configured PluginAppClientSecret", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			AppClientSecret: "client-secret",
+		})
+		v, err := cfg.PluginAppClientSecret()
+		require.NoError(t, err)
+		require.Equal(t, "client-secret", v)
+	})
+
+	t.Run("it should return the configured PluginAppClientSecret from env", func(t *testing.T) {
+		os.Setenv(AppClientSecret, "client-secret")
+		defer os.Unsetenv(AppClientSecret)
+		cfg := NewGrafanaCfg(map[string]string{})
+		v, err := cfg.PluginAppClientSecret()
+		require.NoError(t, err)
+		require.Equal(t, "client-secret", v)
 	})
 }

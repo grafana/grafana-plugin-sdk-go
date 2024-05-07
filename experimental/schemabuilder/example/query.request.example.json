@@ -1,0 +1,31 @@
+{
+  "from": "now-1h",
+  "to": "now",
+  "queries": [
+    {
+      "refId": "A",
+      "queryType": "math",
+      "maxDataPoints": 1000,
+      "intervalMs": 5,
+      "expression": "$A + 11"
+    },
+    {
+      "refId": "B",
+      "queryType": "math",
+      "maxDataPoints": 1000,
+      "intervalMs": 5,
+      "expression": "$A - $B"
+    },
+    {
+      "refId": "C",
+      "queryType": "reduce",
+      "maxDataPoints": 1000,
+      "intervalMs": 5,
+      "expression": "$A",
+      "reducer": "max",
+      "settings": {
+        "mode": "dropNN"
+      }
+    }
+  ]
+}

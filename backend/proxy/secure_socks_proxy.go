@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 	"time"
 
@@ -21,28 +20,17 @@ import (
 	"golang.org/x/net/proxy"
 )
 
-var (
-	// PluginSecureSocksProxyEnabled is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED
-	// environment variable used to specify if a secure socks proxy is allowed to be used for datasource connections.
-	PluginSecureSocksProxyEnabled = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
-	// PluginSecureSocksProxyClientCert is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT
-	// environment variable used to specify the file location of the client cert for the secure socks proxy.
-	PluginSecureSocksProxyClientCert = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
-	// PluginSecureSocksProxyClientKey is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY
-	// environment variable used to specify the file location of the client key for the secure socks proxy.
-	PluginSecureSocksProxyClientKey = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	// PluginSecureSocksProxyRootCACert is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT
-	// environment variable used to specify the file location of the root ca for the secure socks proxy.
-	PluginSecureSocksProxyRootCACert = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
-	// PluginSecureSocksProxyProxyAddress is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS
-	// environment variable used to specify the secure socks proxy server address to proxy the connections to.
-	PluginSecureSocksProxyProxyAddress = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
-	// PluginSecureSocksProxyServerName is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME
-	// environment variable used to specify the server name of the secure socks proxy.
-	PluginSecureSocksProxyServerName = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
-	// PluginSecureSocksProxyAllowInsecure is a constant for the GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE
-	// environment variable used to specify if the proxy should use a TLS dialer.
-	PluginSecureSocksProxyAllowInsecure = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
+const (
+	PluginSecureSocksProxyEnabled            = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
+	PluginSecureSocksProxyClientCert         = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
+	PluginSecureSocksProxyClientCertContents = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT_VAL"
+	PluginSecureSocksProxyClientKey          = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
+	PluginSecureSocksProxyClientKeyContents  = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY_VAL"
+	PluginSecureSocksProxyRootCAs            = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+	PluginSecureSocksProxyRootCAsContents    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT_VALS"
+	PluginSecureSocksProxyProxyAddress       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
+	PluginSecureSocksProxyServerName         = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+	PluginSecureSocksProxyAllowInsecure      = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
 var (
@@ -64,9 +52,16 @@ type Client interface {
 // ClientCfg contains the information needed to allow datasource connections to be
 // proxied to a secure socks proxy.
 type ClientCfg struct {
-	ClientCert    string
-	ClientKey     string
-	RootCA        string
+	// Deprecated: ClientCert is the file path to the client certificate.
+	ClientCert string
+	// Deprecated: ClientKey is the file path to the client key.
+	ClientKey string
+	// Deprecated: RootCAs is a list of file paths to the root CA certificates.
+	RootCAs []string
+
+	ClientCertVal string
+	ClientKeyVal  string
+	RootCAsVals   []string
 	ProxyAddress  string
 	ServerName    string
 	AllowInsecure bool
@@ -124,8 +119,11 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 		return nil, errors.New("proxy not enabled")
 	}
 
-	var dialer proxy.Dialer
+	if p.opts.ClientCfg == nil {
+		return nil, errors.New("client config is not set")
+	}
 
+	var dialer proxy.Dialer
 	if p.opts.ClientCfg.AllowInsecure {
 		dialer = &net.Dialer{
 			Timeout:   p.opts.Timeouts.Timeout,
@@ -156,27 +154,28 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 }
 
 func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
-	certPool := x509.NewCertPool()
-	for _, rootCAFile := range strings.Split(p.opts.ClientCfg.RootCA, " ") {
-		// nolint:gosec
-		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
-		// and we check below if it's the right file type
-		pemBytes, err := os.ReadFile(rootCAFile)
-		if err != nil {
-			return nil, err
+	if len(p.opts.ClientCfg.RootCAsVals) == 0 {
+		// legacy file path support
+		if len(p.opts.ClientCfg.RootCAs) > 0 {
+			return p.getTLSDialerFromFiles()
 		}
+		return nil, errors.New("one or more root ca are required")
+	}
 
+	certPool := x509.NewCertPool()
+	for _, rootCA := range p.opts.ClientCfg.RootCAsVals {
+		pemBytes := []byte(rootCA)
 		pemDecoded, _ := pem.Decode(pemBytes)
 		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
 			return nil, errors.New("root ca is invalid")
 		}
 
 		if !certPool.AppendCertsFromPEM(pemBytes) {
-			return nil, errors.New("failed to append CA certificate " + rootCAFile)
+			return nil, errors.New("failed to append CA certificate to pool")
 		}
 	}
 
-	cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
+	cert, err := tls.X509KeyPair([]byte(p.opts.ClientCfg.ClientCertVal), []byte(p.opts.ClientCfg.ClientKeyVal))
 	if err != nil {
 		return nil, err
 	}
@@ -195,71 +194,45 @@ func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
 	}, nil
 }
 
-// getConfigFromEnv gets the needed proxy information from the env variables that Grafana set with the values from the config ini
-func getConfigFromEnv() *ClientCfg {
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyEnabled); ok {
-		enabled, err := strconv.ParseBool(value)
-		if err != nil || !enabled {
-			return nil
+// Deprecated: getTLSDialerFromFiles is a helper function that creates a tls.Dialer from the client cert, client key, and root CA files on disk.
+// As of Grafana 11 we are moving to using the root CA and client cert/key values instead of files.
+func (p *cfgProxyWrapper) getTLSDialerFromFiles() (*tls.Dialer, error) {
+	certPool := x509.NewCertPool()
+	for _, rootCAFile := range p.opts.ClientCfg.RootCAs {
+		// nolint:gosec
+		// The gosec G304 warning can be ignored because `rootCAFile` comes from config ini
+		// and we check below if it's the right file type
+		pemBytes, err := os.ReadFile(rootCAFile)
+		if err != nil {
+			return nil, err
+		}
+
+		pemDecoded, _ := pem.Decode(pemBytes)
+		if pemDecoded == nil || pemDecoded.Type != "CERTIFICATE" {
+			return nil, errors.New("root ca is invalid")
+		}
+
+		if !certPool.AppendCertsFromPEM(pemBytes) {
+			return nil, fmt.Errorf("failed to append CA certificate %s", rootCAFile)
 		}
 	}
 
-	proxyAddress := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyProxyAddress); ok {
-		proxyAddress = value
-	} else {
-		return nil
+	cert, err := tls.LoadX509KeyPair(p.opts.ClientCfg.ClientCert, p.opts.ClientCfg.ClientKey)
+	if err != nil {
+		return nil, err
 	}
-
-	allowInsecure := false
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyAllowInsecure); ok {
-		allowInsecure, _ = strconv.ParseBool(value)
-	}
-
-	// We only need to fill these fields on insecure mode.
-	if allowInsecure {
-		return &ClientCfg{
-			ProxyAddress:  proxyAddress,
-			AllowInsecure: allowInsecure,
-		}
-	}
-
-	clientCert := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCert); ok {
-		clientCert = value
-	} else {
-		return nil
-	}
-
-	clientKey := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientKey); ok {
-		clientKey = value
-	} else {
-		return nil
-	}
-
-	rootCA := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACert); ok {
-		rootCA = value
-	} else {
-		return nil
-	}
-
-	serverName := ""
-	if value, ok := os.LookupEnv(PluginSecureSocksProxyServerName); ok {
-		serverName = value
-	} else {
-		return nil
-	}
-
-	return &ClientCfg{
-		ClientCert:    clientCert,
-		ClientKey:     clientKey,
-		RootCA:        rootCA,
-		ProxyAddress:  proxyAddress,
-		ServerName:    serverName,
-		AllowInsecure: false,
-	}
+	return &tls.Dialer{
+		Config: &tls.Config{
+			Certificates: []tls.Certificate{cert},
+			ServerName:   p.opts.ClientCfg.ServerName,
+			RootCAs:      certPool,
+			MinVersion:   tls.VersionTLS13,
+		},
+		NetDialer: &net.Dialer{
+			Timeout:   p.opts.Timeouts.Timeout,
+			KeepAlive: p.opts.Timeouts.KeepAlive,
+		},
+	}, nil
 }
 
 // SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`
@@ -304,6 +277,11 @@ func (d *instrumentedSocksDialer) Dial(network, addr string) (net.Conn, error) {
 
 // DialContext -
 func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr string) (net.Conn, error) {
+	if ctx.Err() != nil {
+		log.DefaultLogger.Debug("context cancelled or deadline exceeded, returning context error")
+		return nil, ctx.Err()
+	}
+
 	start := time.Now()
 	dialer, ok := d.dialer.(proxy.ContextDialer)
 	if !ok {

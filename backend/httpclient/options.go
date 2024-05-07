@@ -38,7 +38,7 @@ type Options struct {
 	ProxyOptions *proxy.Options
 
 	// Headers custom headers.
-	Headers map[string]string
+	Header http.Header
 
 	// CustomOptions allows custom options to be provided.
 	CustomOptions map[string]interface{}

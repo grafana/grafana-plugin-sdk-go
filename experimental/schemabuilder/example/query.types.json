@@ -1,0 +1,194 @@
+{
+  "kind": "QueryTypeDefinitionList",
+  "apiVersion": "query.grafana.app/v0alpha1",
+  "metadata": {
+    "resourceVersion": "1709230013217"
+  },
+  "items": [
+    {
+      "metadata": {
+        "name": "math",
+        "resourceVersion": "1709251645142",
+        "creationTimestamp": "2024-02-29T18:06:53Z"
+      },
+      "spec": {
+        "discriminators": [
+          {
+            "field": "queryType",
+            "value": "math"
+          }
+        ],
+        "schema": {
+          "$schema": "https://json-schema.org/draft-04/schema",
+          "additionalProperties": false,
+          "properties": {
+            "expression": {
+              "description": "General math expression",
+              "examples": [
+                "$A + 1",
+                "$A/$B"
+              ],
+              "minLength": 1,
+              "type": "string"
+            }
+          },
+          "required": [
+            "expression"
+          ],
+          "type": "object"
+        },
+        "examples": [
+          {
+            "name": "constant addition",
+            "saveModel": {
+              "expression": "$A + 11"
+            }
+          },
+          {
+            "name": "math with two queries",
+            "saveModel": {
+              "expression": "$A - $B"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "reduce",
+        "resourceVersion": "1709250388761",
+        "creationTimestamp": "2024-02-29T18:06:53Z"
+      },
+      "spec": {
+        "discriminators": [
+          {
+            "field": "queryType",
+            "value": "reduce"
+          }
+        ],
+        "schema": {
+          "$schema": "https://json-schema.org/draft-04/schema",
+          "additionalProperties": false,
+          "properties": {
+            "expression": {
+              "description": "Reference to other query results",
+              "type": "string"
+            },
+            "reducer": {
+              "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
+              "enum": [
+                "sum",
+                "mean",
+                "min",
+                "max",
+                "count",
+                "last"
+              ],
+              "type": "string",
+              "x-enum-description": {
+                "mean": "The mean",
+                "sum": "The sum"
+              }
+            },
+            "settings": {
+              "additionalProperties": false,
+              "description": "Reducer Options",
+              "properties": {
+                "mode": {
+                  "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
+                  "enum": [
+                    "dropNN",
+                    "replaceNN"
+                  ],
+                  "type": "string",
+                  "x-enum-description": {
+                    "dropNN": "Drop non-numbers",
+                    "replaceNN": "Replace non-numbers"
+                  }
+                },
+                "replaceWithValue": {
+                  "description": "Only valid when mode is replace",
+                  "type": "number"
+                }
+              },
+              "required": [
+                "mode"
+              ],
+              "type": "object"
+            }
+          },
+          "required": [
+            "expression",
+            "reducer",
+            "settings"
+          ],
+          "type": "object"
+        },
+        "examples": [
+          {
+            "name": "get max value",
+            "saveModel": {
+              "expression": "$A",
+              "reducer": "max",
+              "settings": {
+                "mode": "dropNN"
+              }
+            }
+          }
+        ]
+      }
+    },
+    {
+      "metadata": {
+        "name": "resample",
+        "resourceVersion": "1709252275481",
+        "creationTimestamp": "2024-02-29T18:06:53Z"
+      },
+      "spec": {
+        "discriminators": [
+          {
+            "field": "queryType",
+            "value": "resample"
+          }
+        ],
+        "schema": {
+          "$schema": "https://json-schema.org/draft-04/schema",
+          "additionalProperties": false,
+          "description": "QueryType = resample",
+          "properties": {
+            "downsampler": {
+              "description": "The reducer",
+              "type": "string"
+            },
+            "expression": {
+              "description": "The math expression",
+              "type": "string"
+            },
+            "loadedDimensions": {
+              "additionalProperties": true,
+              "type": "object",
+              "x-grafana-type": "data.DataFrame"
+            },
+            "upsampler": {
+              "description": "The reducer",
+              "type": "string"
+            },
+            "window": {
+              "description": "A time duration string",
+              "type": "string"
+            }
+          },
+          "required": [
+            "expression",
+            "window",
+            "downsampler",
+            "upsampler",
+            "loadedDimensions"
+          ],
+          "type": "object"
+        },
+        "examples": []
+      }
+    }
+  ]
+}
