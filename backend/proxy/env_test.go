@@ -102,9 +102,9 @@ func TestClientCfgFromEnv(t *testing.T) {
 			},
 			expected: &ClientCfg{
 				ProxyAddress:  "localhost",
-				ClientCert:    testFileData,
-				ClientKey:     testFileData,
-				RootCAs:       []string{testFileData, testFileData},
+				ClientCertVal: testFileData,
+				ClientKeyVal:  testFileData,
+				RootCAsVals:   []string{testFileData, testFileData},
 				ServerName:    "name",
 				AllowInsecure: false,
 			},

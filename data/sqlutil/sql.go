@@ -25,7 +25,9 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		return nil, err
 	}
 
-	if isDynamic(converters) {
+	// If there is a dynamic converter, we need to use the dynamic framer
+	// and remove the dynamic converter from the list of converters ( it is not valid, just a flag )
+	if isDynamic, converters := removeDynamicConverter(converters); isDynamic {
 		rows := Rows{itr: rows}
 		return frameDynamic(rows, rowLimit, types, converters)
 	}

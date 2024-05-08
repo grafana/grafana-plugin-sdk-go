@@ -154,12 +154,11 @@ func (p *cfgProxyWrapper) NewSecureSocksProxyContextDialer() (proxy.Dialer, erro
 }
 
 func (p *cfgProxyWrapper) getTLSDialer() (*tls.Dialer, error) {
-	// legacy file path support
-	if len(p.opts.ClientCfg.RootCAs) > 0 {
-		return p.getTLSDialerFromFiles()
-	}
-
 	if len(p.opts.ClientCfg.RootCAsVals) == 0 {
+		// legacy file path support
+		if len(p.opts.ClientCfg.RootCAs) > 0 {
+			return p.getTLSDialerFromFiles()
+		}
 		return nil, errors.New("one or more root ca are required")
 	}
 

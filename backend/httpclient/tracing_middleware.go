@@ -11,6 +11,7 @@ import (
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/propagation"
+	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
@@ -33,11 +34,7 @@ func TracingMiddleware(tracer trace.Tracer) Middleware {
 			ctx, span := t.Start(req.Context(), "HTTP Outgoing Request", trace.WithSpanKind(trace.SpanKindClient))
 			defer span.End()
 
-			ctx = httptrace.WithClientTrace(
-				ctx,
-				otelhttptrace.NewClientTrace(ctx, otelhttptrace.WithoutSubSpans(), otelhttptrace.WithoutHeaders()),
-			)
-
+			ctx = httptrace.WithClientTrace(ctx, otelhttptrace.NewClientTrace(ctx, otelhttptrace.WithoutSubSpans(), otelhttptrace.WithoutHeaders()))
 			req = req.WithContext(ctx)
 			for k, v := range opts.Labels {
 				span.SetAttributes(attribute.Key(k).String(v))
@@ -46,10 +43,13 @@ func TracingMiddleware(tracer trace.Tracer) Middleware {
 			otel.GetTextMapPropagator().Inject(ctx, propagation.HeaderCarrier(req.Header))
 			res, err := next.RoundTrip(req)
 
-			span.SetAttributes(attribute.String("http.url", req.URL.String()))
-			span.SetAttributes(attribute.String("http.method", req.Method))
+			span.SetAttributes(
+				semconv.HTTPURL(req.URL.String()),
+				semconv.HTTPMethod(req.Method),
+			)
 
 			if err != nil {
+				span.SetStatus(codes.Error, "request failed")
 				span.RecordError(err)
 				return res, err
 			}
@@ -58,10 +58,10 @@ func TracingMiddleware(tracer trace.Tracer) Middleware {
 				// we avoid measuring contentlength less than zero because it indicates
 				// that the content size is unknown. https://godoc.org/github.com/badu/http#Response
 				if res.ContentLength > 0 {
-					span.SetAttributes(attribute.Key(httpContentLengthTagKey).Int64(res.ContentLength))
+					span.SetAttributes(attribute.Int64(httpContentLengthTagKey, res.ContentLength))
 				}
 
-				span.SetAttributes(attribute.Int("http.status_code", res.StatusCode))
+				span.SetAttributes(semconv.HTTPStatusCode(res.StatusCode))
 				if res.StatusCode >= 400 {
 					span.SetStatus(codes.Error, fmt.Sprintf("error with HTTP status code %s", strconv.Itoa(res.StatusCode)))
 				}

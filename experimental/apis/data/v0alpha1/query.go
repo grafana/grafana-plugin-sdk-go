@@ -3,6 +3,7 @@ package v0alpha1
 import (
 	"encoding/json"
 	"fmt"
+	"strconv"
 	"unsafe"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -15,6 +16,7 @@ import (
 func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("v0alpha1.DataQuery", &genericQueryCodec{})
 	jsoniter.RegisterTypeDecoder("v0alpha1.DataQuery", &genericQueryCodec{})
+	jsoniter.RegisterTypeDecoder("v0alpha1.DataSourceRef", &datasourceRefCodec{})
 }
 
 type QueryDataRequest struct {
@@ -156,6 +158,7 @@ func (g *DataQuery) GetString(key string) string {
 }
 
 type genericQueryCodec struct{}
+type datasourceRefCodec struct{}
 
 func (codec *genericQueryCodec) IsEmpty(_ unsafe.Pointer) bool {
 	return false
@@ -179,6 +182,33 @@ func (codec *genericQueryCodec) Decode(ptr unsafe.Pointer, iter *j.Iterator) {
 	*((*DataQuery)(ptr)) = q
 }
 
+// Long ago dashboards referenced data sources with only the name
+func (codec *datasourceRefCodec) Decode(ptr unsafe.Pointer, iter *j.Iterator) {
+	q := DataSourceRef{}
+	switch iter.WhatIsNext() {
+	case j.StringValue:
+		q.UID = iter.ReadString()
+	case j.ObjectValue:
+		for field := iter.ReadObject(); field != ""; field = iter.ReadObject() {
+			if iter.Error != nil {
+				return
+			}
+			switch field {
+			case "type":
+				q.Type = iter.ReadString()
+			case "uid":
+				q.UID = iter.ReadString()
+			default:
+				_ = iter.Read() // ignore unused properties
+			}
+		}
+	default:
+		iter.Error = fmt.Errorf("expected string or object")
+		return
+	}
+	*((*DataSourceRef)(ptr)) = q
+}
+
 // MarshalJSON writes JSON including the common and custom values
 func (g DataQuery) MarshalJSON() ([]byte, error) {
 	cfg := j.ConfigCompatibleWithStandardLibrary
@@ -196,6 +226,15 @@ func (g *DataQuery) UnmarshalJSON(b []byte) error {
 		return err
 	}
 	return g.readQuery(iter)
+}
+
+// UnmarshalJSON reads a query from json byte array
+func (g *DataSourceRef) UnmarshalJSON(b []byte) error {
+	iter, err := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
+	if err != nil {
+		return err
+	}
+	return iter.Unmarshal(b, g)
 }
 
 func (g *DataQuery) DeepCopyInto(out *DataQuery) {
@@ -304,25 +343,29 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 			err = iter.ReadVal(&g.TimeRange)
 		case "datasource":
 			// Old datasource values may just be a string
-			next, err = iter.WhatIsNext()
-			if err == nil {
-				switch next {
-				case j.StringValue:
-					g.Datasource = &DataSourceRef{}
-					g.Datasource.UID, err = iter.ReadString()
-				case j.ObjectValue:
-					err = iter.ReadVal(&g.Datasource)
-				default:
-					return fmt.Errorf("expected string or object")
-				}
-			}
+			err = iter.ReadVal(&g.Datasource)
 
 		case "datasourceId":
 			g.DatasourceID, err = iter.ReadInt64()
 		case "queryType":
 			g.QueryType, err = iter.ReadString()
 		case "maxDataPoints":
-			g.MaxDataPoints, err = iter.ReadInt64()
+			next, err = iter.WhatIsNext()
+			if err != nil {
+				return err
+			}
+			switch next {
+			case j.StringValue:
+				var v string
+				v, err = iter.ReadString()
+				if err == nil {
+					g.MaxDataPoints, err = strconv.ParseInt(v, 10, 64)
+				}
+			case j.NumberValue:
+				g.MaxDataPoints, err = iter.ReadInt64()
+			default:
+				return fmt.Errorf("expected number or string for maxDataPoints")
+			}
 		case "intervalMs":
 			g.IntervalMS, err = iter.ReadFloat64()
 		case "hide":

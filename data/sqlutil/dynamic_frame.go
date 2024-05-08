@@ -10,13 +10,18 @@ import (
 
 const STRING = "string"
 
-func isDynamic(converters []Converter) bool {
+// removeDynamicConverter filters out the dynamic converter.  It is not a valid converter.
+func removeDynamicConverter(converters []Converter) (bool, []Converter) {
+	var filtered []Converter
+	var isDynamic bool
 	for _, conv := range converters {
 		if conv.Dynamic {
-			return true
+			isDynamic = true
+		} else {
+			filtered = append(filtered, conv)
 		}
 	}
-	return false
+	return isDynamic, filtered
 }
 
 func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field, [][]interface{}, error) {

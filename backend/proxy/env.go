@@ -102,9 +102,9 @@ func clientCfgFromEnv() *ClientCfg {
 	}
 
 	return &ClientCfg{
-		ClientCert:    clientCert,
-		ClientKey:     clientKey,
-		RootCAs:       rootCAs,
+		ClientCertVal: clientCert,
+		ClientKeyVal:  clientKey,
+		RootCAsVals:   rootCAs,
 		ProxyAddress:  proxyAddress,
 		ServerName:    serverName,
 		AllowInsecure: false,

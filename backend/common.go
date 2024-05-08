@@ -248,6 +248,15 @@ func propagateTenantIDIfPresent(ctx context.Context) context.Context {
 	return ctx
 }
 
+func (s *DataSourceInstanceSettings) ProxyOptionsFromContext(ctx context.Context) (*proxy.Options, error) {
+	cfg := GrafanaConfigFromContext(ctx)
+	p, err := cfg.proxy()
+	if err != nil {
+		return nil, err
+	}
+	return s.ProxyOptions(p.clientCfg)
+}
+
 func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*proxy.Options, error) {
 	opts := &proxy.Options{}
 
@@ -312,4 +321,9 @@ func (s *DataSourceInstanceSettings) ProxyClient(ctx context.Context) (proxy.Cli
 	}
 
 	return proxy.New(proxyOpts), nil
+}
+
+// WithTenant injects supplied tenant ID into context.
+func WithTenant(ctx context.Context, tenantID string) context.Context {
+	return tenant.WithTenant(ctx, tenantID)
 }

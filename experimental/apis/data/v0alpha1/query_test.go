@@ -25,7 +25,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 			{
 				"refId": "Z",
 				"datasource": "old",
-				"maxDataPoints": 10,
+				"maxDataPoints": "10",
 				"timeRange": {
 					"from": "100",
 					"to": "200"
@@ -54,6 +54,8 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		err = json.Unmarshal(out, query)
 		require.NoError(t, err)
 		require.Equal(t, "spreadsheetID", query.GetString("spreadsheet"))
+		require.Equal(t, int64(794), query.MaxDataPoints)         // input was a number
+		require.Equal(t, int64(10), req.Queries[1].MaxDataPoints) // input was a string
 
 		// The second query has an explicit time range, and legacy datasource name
 		out, err = json.MarshalIndent(req.Queries[1], "", "  ")
@@ -86,6 +88,28 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 
 		require.JSONEq(t, string(out1), string(out2))
 	})
+}
+
+func TestLegacyDataSourceRef(t *testing.T) {
+	type testWrapper struct {
+		Ref DataSourceRef `json:"ref"`
+	}
+
+	wrap := &testWrapper{}
+	err := json.Unmarshal([]byte(`{ "ref": {"type":"ttt", "uid":"UID"}}`), wrap)
+	require.NoError(t, err)
+	require.Equal(t, "ttt", wrap.Ref.Type)
+	require.Equal(t, "UID", wrap.Ref.UID)
+
+	err = json.Unmarshal([]byte(`{ "ref": "name"}`), wrap)
+	require.NoError(t, err)
+	require.Equal(t, "", wrap.Ref.Type)
+	require.Equal(t, "name", wrap.Ref.UID)
+
+	ref := &DataSourceRef{}
+	err = json.Unmarshal([]byte(`"aaa"`), ref) // string as reference
+	require.NoError(t, err)
+	require.Equal(t, "aaa", ref.UID)
 }
 
 func TestQueryBuilders(t *testing.T) {
