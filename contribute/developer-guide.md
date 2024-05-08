@@ -42,9 +42,7 @@ mage lint
 
 ### Generate Go code for Protobuf definitions
 
-A prerequisite is to have [protoc](http://google.github.io/proto-lens/installing-protoc.html) installed and available in your path.
-
-Next, you need to have [protoc-gen-go](https://github.com/protocolbuffers/protobuf-go/tree/master/cmd/protoc-gen-go) and [protoc-gen-grpc-go](https://pkg.go.dev/google.golang.org/grpc/cmd/protoc-gen-go-grpc) installed and available in your path. It's very important that you match the `protoc-gen-go` version specified of `google.golang.org/protobuf` in [go.mod](../go.mod), which at the time of writing is v1.33.0.
+A prerequisite is to have [Buf CLI](https://buf.build/docs/installation) installed and available in your path.
 
 To install protoc-gen-go (version should automatically be taken from the go.mod):
 
@@ -61,6 +59,13 @@ To compile the protobuf:
 
 ```shell
 mage protobuf
+# or
+mage protobuf:generate
+```
+
+To verify no breaking changes Protobuf definitions compared with latest commit in main:
+```shell
+mage protobuf:validate
 ```
 
 ### Changing `generic_*.go` files in the `data` package
