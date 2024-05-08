@@ -187,7 +187,7 @@ type PluginContext struct {
 	// Will only be set if request is made from Grafana v10.2.0 or later.
 	UserAgent *useragent.UserAgent
 
-	// The requested apiVersion
+	// The requested API version
 	APIVersion string
 }
 
