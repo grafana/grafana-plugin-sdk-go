@@ -4,6 +4,7 @@
 package main
 
 import (
+	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
 
@@ -17,13 +18,16 @@ func DataGenerate() error {
 	return sh.Run("go", "generate", "./data")
 }
 
-// Protobuf generates protobuf files.
-func Protobuf() error {
+// Protobuf protobuf related commands.
+type Protobuf mg.Namespace
+
+// Generate generates protobuf files.
+func (Protobuf) Generate() error {
 	return sh.RunV("buf", "generate", "proto", "--template", "./proto/buf.gen.yaml")
 }
 
-// ProtobufValidate validate breaking changes in protobuf files.
-func ProtobufValidate() error {
+// Validate validate breaking changes in protobuf files.
+func (Protobuf) Validate() error {
 	return sh.RunV("buf", "breaking", "proto", "--against", "https://github.com/grafana/grafana-plugin-sdk-go.git#branch=main,subdir=proto")
 }
 
@@ -58,6 +62,10 @@ func Drone() error {
 	}
 
 	return nil
+}
+
+var Aliases = map[string]interface{}{
+	"protobuf": Protobuf.Generate,
 }
 
 var Default = Build

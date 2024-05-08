@@ -59,6 +59,13 @@ To compile the protobuf:
 
 ```shell
 mage protobuf
+# or
+mage protobuf:generate
+```
+
+To verify no breaking changes Protobuf definitions compared with latest commit in main:
+```shell
+mage protobuf:validate
 ```
 
 ### Changing `generic_*.go` files in the `data` package
