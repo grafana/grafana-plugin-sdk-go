@@ -90,6 +90,28 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 	})
 }
 
+func TestLegacyDataSourceRef(t *testing.T) {
+	type testWrapper struct {
+		Ref DataSourceRef `json:"ref"`
+	}
+
+	wrap := &testWrapper{}
+	err := json.Unmarshal([]byte(`{ "ref": {"type":"ttt", "uid":"UID"}}`), wrap)
+	require.NoError(t, err)
+	require.Equal(t, "ttt", wrap.Ref.Type)
+	require.Equal(t, "UID", wrap.Ref.UID)
+
+	err = json.Unmarshal([]byte(`{ "ref": "name"}`), wrap)
+	require.NoError(t, err)
+	require.Equal(t, "", wrap.Ref.Type)
+	require.Equal(t, "name", wrap.Ref.UID)
+
+	ref := &DataSourceRef{}
+	err = json.Unmarshal([]byte(`"aaa"`), ref) // string as reference
+	require.NoError(t, err)
+	require.Equal(t, "aaa", ref.UID)
+}
+
 func TestQueryBuilders(t *testing.T) {
 	prop := "testkey"
 	testQ1 := &DataQuery{}
