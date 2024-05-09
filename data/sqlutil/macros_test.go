@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -111,6 +112,16 @@ func TestInterpolate(t *testing.T) {
 			output: "select * from bar_world AND baz AND bar_hello",
 		},
 		{
+			name:   "default interval",
+			input:  "select * from foo group by bin(time, $__interval)",
+			output: "select * from foo group by bin(time, 10m)",
+		},
+		{
+			name:   "default interval_ms",
+			input:  "select count(*) / $__interval_ms * 1000 as qps from foo",
+			output: "select count(*) / 600000 * 1000 as qps from foo",
+		},
+		{
 			name:   "default timeFilter",
 			input:  "select * from foo where $__timeFilter(time)",
 			output: "select * from foo where time >= '0001-01-01T00:00:00Z' AND time <= '0001-01-01T00:00:00Z'",
@@ -199,9 +210,10 @@ func TestInterpolate(t *testing.T) {
 	for i, tc := range tests {
 		t.Run(fmt.Sprintf("[%d/%d] %s", i+1, len(tests), tc.name), func(t *testing.T) {
 			query := &Query{
-				RawSQL: tc.input,
-				Table:  tableName,
-				Column: tableColumn,
+				RawSQL:   tc.input,
+				Table:    tableName,
+				Column:   tableColumn,
+				Interval: time.Duration(10 * time.Minute),
 			}
 			interpolatedQuery, err := Interpolate(query, macros)
 			assert.Equal(t, err != nil, tc.wantErr, "wantErr != gotErr")
