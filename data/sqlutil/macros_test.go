@@ -213,7 +213,7 @@ func TestInterpolate(t *testing.T) {
 				RawSQL:   tc.input,
 				Table:    tableName,
 				Column:   tableColumn,
-				Interval: time.Duration(10 * time.Minute),
+				Interval: time.Duration(10) * time.Minute,
 			}
 			interpolatedQuery, err := Interpolate(query, macros)
 			assert.Equal(t, err != nil, tc.wantErr, "wantErr != gotErr")
