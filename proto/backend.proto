@@ -359,26 +359,30 @@ message ProcessInstanceSettingsResponse {
 
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
 // NOTE: this does not (yet?) include the PluginContext
+// See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
+// And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
 message AdmissionRequest {
-  enum AdmissionAction {
+  // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
+  enum AdmissionOperation {
     CREATE = 0;
     UPDATE = 1;
     DELETE = 2;
     CONNECT = 3;
   }
 
-  // Action is the type of request being checked for admission
-  AdmissionAction action = 1;
+  // Operation is the type of resource operation being checked for admission control
+  AdmissionOperation operation = 1;
   
   // Group is the object's group
   string group = 2;
   // Version is the object's api version
   string version = 3;
-  // Kind is the object's kind (or resource name)
-  string kind = 4;
+  // Resource is the object's resource type
+  string resource = 4;
 
   // UserInfo is user information about the user making the request
   AdmissionUserInfo userInfo = 5;
+  
   // Object is the object in the request.  This includes the full metadata envelope.
   bytes object_bytes = 6;
   // OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
@@ -397,15 +401,51 @@ message AdmissionUserInfo {
   bytes jsonExtra = 4;
 }
 
+// See https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L118
 message AdmissionResponse {
-  // Maps to raw HTTP status codes when passed over HTTP
-  // When the response is >= 400 it is an error
-  // An unknown kind will return 404
-  int32 code = 1;
+  // Allowed indicates whether or not the admission request was permitted.
+  bool allowed = 1;
 
-  // Optionally  
-  string message = 2;
+  // Result contains extra details into why an admission request was denied.
+  // This field IS NOT consulted in any way if "Allowed" is "true".
+  // +optional
+  StatusResult result = 2;
+
+  // AuditAnnotations is an unstructured key value map set by remote admission controller (e.g. error=image-blacklisted).
+  // MutatingAdmissionWebhook and ValidatingAdmissionWebhook admission controller will prefix the keys with
+  // admission webhook name (e.g. imagepolicy.example.com/error=image-blacklisted). AuditAnnotations will be provided by
+  // the admission webhook to add additional context to the audit log for this request.
+  // +optional
+  map<string,string> auditAnnotations = 3;
+
+  // warnings is a list of warning messages to return to the requesting API client.
+  // Warning messages describe a problem the client making the API request should correct or be aware of.
+  // Limit warnings to 120 characters if possible.
+  // Warnings over 256 characters and large numbers of warnings may be truncated.
+  // +optional
+  repeated string warnings = 4;
 
   // Mutated object bytes (when requested)
-  bytes object_bytes = 3;
+  // +optional
+  bytes object_bytes = 5;
+}
+
+message StatusResult {
+  // Status of the operation.
+  // One of: "Success" or "Failure".
+  // More info: https://git.k8s.io/community/contributors/devel/sig-architecture/api-conventions.md#spec-and-status
+  // +optional
+  string status = 1;
+  // A human-readable description of the status of this operation.
+  // +optional
+  string message = 2;
+  // A machine-readable description of why this operation is in the
+  // "Failure" status. If this value is empty there
+  // is no information available. A Reason clarifies an HTTP status
+  // code but does not override it.
+  // +optional
+  string reason = 3;
+  // Suggested HTTP return code for this status, 0 if not set.
+  // +optional
+  int32 code = 6;
 }
