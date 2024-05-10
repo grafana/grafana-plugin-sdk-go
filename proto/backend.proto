@@ -306,3 +306,106 @@ message StreamPacket {
   // JSON-encoded data to publish into a channel.
   bytes data = 1;
 }
+
+//-----------------------------------------------------------------
+// Admission -- EXPERIMENTAL and is subject to change until 12.??
+//-----------------------------------------------------------------
+
+service Admission {
+  // This allows verifying the app/datasource settings before saving
+  // This is a specalized form of the validation/mutation hooks that only work for instance settings
+  rpc ProcessInstanceSettings(ProcessInstanceSettingsRequest) returns (ProcessInstanceSettingsResponse);
+
+  // Verify if the input request can be admitted
+  rpc ValidateRequest(AdmissionRequest) returns (AdmissionResponse);
+
+  // Verify if the input request can be admitted, and return a copy that can be saved
+  rpc MutateRequest(AdmissionRequest) returns (AdmissionResponse);
+}
+
+message ProcessInstanceSettingsRequest {
+  PluginContext pluginContext = 1;
+
+  // When configured, this will return results in the target APIVersion format
+  string targetApiVersion = 2;
+
+  // In addition to checking the payload, also check if any connection
+  // parameters are successful
+  bool checkHealth = 3;
+}
+
+message ProcessInstanceSettingsResponse {
+  enum ValidationStatus {
+    UNKNOWN = 0;
+    OK = 1;
+    ERROR = 2;
+  }
+
+  // The validation result
+  ValidationStatus status = 1;
+
+  // Optionally  
+  repeated string message = 2;
+
+  // Valid app instance settings if they exist in the request
+  AppInstanceSettings appInstanceSettings = 3;
+
+  // Valid datasource instance settings if they exist in the request
+  DataSourceInstanceSettings dataSourceInstanceSettings = 4;
+
+  // The health response if requested
+  CheckHealthResponse health = 5;
+}
+
+// AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
+// NOTE: this does not (yet?) include the PluginContext
+message AdmissionRequest {
+  enum AdmissionAction {
+    CREATE = 0;
+    UPDATE = 1;
+    DELETE = 2;
+    CONNECT = 3;
+  }
+
+	// Action is the type of request being checked for admission
+	AdmissionAction action = 1;
+  
+  // Group is the object's group
+	string group = 2;
+	// Version is the object's api version
+	string version = 3;
+	// Kind is the object's kind (or resource name)
+	string kind = 4;
+
+	// UserInfo is user information about the user making the request
+	AdmissionUserInfo userInfo = 5;
+	// Object is the object in the request.  This includes the full metadata envelope.
+	bytes object_bytes = 6;
+	// OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
+	bytes old_object_bytes = 7;
+}
+
+// AdmissionUserInfo contains user information for an admission request
+message AdmissionUserInfo {
+	// Username is the username of the user
+	string username = 1;
+	// UID is the UID of the user in the API server's system
+	string uid = 2;
+	// Groups is a list of all groups the user is a part of (if any)
+	repeated string groups = 3;
+  // Extra is a map of extra information, implementation-specific
+	bytes jsonExtra = 4;
+}
+
+message AdmissionResponse {
+  // Maps to raw HTTP status codes when passed over HTTP
+  // When the response is >= 400 it is an error
+  // An unknown kind will return 404
+  int32 code = 1;
+
+  // Optionally  
+  string message = 2;
+
+  // Mutated object bytes (when requested)
+	bytes object_bytes = 3;
+}

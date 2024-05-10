@@ -559,3 +559,173 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "backend.proto",
 }
+
+const (
+	Admission_ProcessInstanceSettings_FullMethodName = "/pluginv2.Admission/ProcessInstanceSettings"
+	Admission_ValidateRequest_FullMethodName         = "/pluginv2.Admission/ValidateRequest"
+	Admission_MutateRequest_FullMethodName           = "/pluginv2.Admission/MutateRequest"
+)
+
+// AdmissionClient is the client API for Admission service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type AdmissionClient interface {
+	// This allows verifying the app/datasource settings before saving
+	// This is a specalized form of the validation/mutation hooks that only work for instance settings
+	ProcessInstanceSettings(ctx context.Context, in *ProcessInstanceSettingsRequest, opts ...grpc.CallOption) (*ProcessInstanceSettingsResponse, error)
+	// Verify if the input request can be admitted
+	ValidateRequest(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
+	// Verify if the input request can be admitted, and return a copy that can be saved
+	MutateRequest(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
+}
+
+type admissionClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAdmissionClient(cc grpc.ClientConnInterface) AdmissionClient {
+	return &admissionClient{cc}
+}
+
+func (c *admissionClient) ProcessInstanceSettings(ctx context.Context, in *ProcessInstanceSettingsRequest, opts ...grpc.CallOption) (*ProcessInstanceSettingsResponse, error) {
+	out := new(ProcessInstanceSettingsResponse)
+	err := c.cc.Invoke(ctx, Admission_ProcessInstanceSettings_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *admissionClient) ValidateRequest(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
+	out := new(AdmissionResponse)
+	err := c.cc.Invoke(ctx, Admission_ValidateRequest_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *admissionClient) MutateRequest(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
+	out := new(AdmissionResponse)
+	err := c.cc.Invoke(ctx, Admission_MutateRequest_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AdmissionServer is the server API for Admission service.
+// All implementations should embed UnimplementedAdmissionServer
+// for forward compatibility
+type AdmissionServer interface {
+	// This allows verifying the app/datasource settings before saving
+	// This is a specalized form of the validation/mutation hooks that only work for instance settings
+	ProcessInstanceSettings(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error)
+	// Verify if the input request can be admitted
+	ValidateRequest(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
+	// Verify if the input request can be admitted, and return a copy that can be saved
+	MutateRequest(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
+}
+
+// UnimplementedAdmissionServer should be embedded to have forward compatible implementations.
+type UnimplementedAdmissionServer struct {
+}
+
+func (UnimplementedAdmissionServer) ProcessInstanceSettings(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ProcessInstanceSettings not implemented")
+}
+func (UnimplementedAdmissionServer) ValidateRequest(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateRequest not implemented")
+}
+func (UnimplementedAdmissionServer) MutateRequest(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MutateRequest not implemented")
+}
+
+// UnsafeAdmissionServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AdmissionServer will
+// result in compilation errors.
+type UnsafeAdmissionServer interface {
+	mustEmbedUnimplementedAdmissionServer()
+}
+
+func RegisterAdmissionServer(s grpc.ServiceRegistrar, srv AdmissionServer) {
+	s.RegisterService(&Admission_ServiceDesc, srv)
+}
+
+func _Admission_ProcessInstanceSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ProcessInstanceSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdmissionServer).ProcessInstanceSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Admission_ProcessInstanceSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdmissionServer).ProcessInstanceSettings(ctx, req.(*ProcessInstanceSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admission_ValidateRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdmissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdmissionServer).ValidateRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Admission_ValidateRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdmissionServer).ValidateRequest(ctx, req.(*AdmissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Admission_MutateRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdmissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdmissionServer).MutateRequest(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Admission_MutateRequest_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdmissionServer).MutateRequest(ctx, req.(*AdmissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Admission_ServiceDesc is the grpc.ServiceDesc for Admission service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var Admission_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.Admission",
+	HandlerType: (*AdmissionServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ProcessInstanceSettings",
+			Handler:    _Admission_ProcessInstanceSettings_Handler,
+		},
+		{
+			MethodName: "ValidateRequest",
+			Handler:    _Admission_ValidateRequest_Handler,
+		},
+		{
+			MethodName: "MutateRequest",
+			Handler:    _Admission_MutateRequest_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "backend.proto",
+}
