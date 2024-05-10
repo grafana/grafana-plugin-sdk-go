@@ -2145,7 +2145,7 @@ type AdmissionResponse struct {
 	Code int32 `protobuf:"varint,1,opt,name=code,proto3" json:"code,omitempty"`
 	// Optionally
 	Message string `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
-	// The object bytes (will be set for mutating requests)
+	// Mutated object bytes (when requested)
 	ObjectBytes []byte `protobuf:"bytes,3,opt,name=object_bytes,json=objectBytes,proto3" json:"object_bytes,omitempty"`
 }
 

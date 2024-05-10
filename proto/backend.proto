@@ -367,34 +367,34 @@ message AdmissionRequest {
     CONNECT = 3;
   }
 
-	// Action is the type of request being checked for admission
-	AdmissionAction action = 1;
+  // Action is the type of request being checked for admission
+  AdmissionAction action = 1;
   
   // Group is the object's group
-	string group = 2;
-	// Version is the object's api version
-	string version = 3;
-	// Kind is the object's kind (or resource name)
-	string kind = 4;
+  string group = 2;
+  // Version is the object's api version
+  string version = 3;
+  // Kind is the object's kind (or resource name)
+  string kind = 4;
 
-	// UserInfo is user information about the user making the request
-	AdmissionUserInfo userInfo = 5;
-	// Object is the object in the request.  This includes the full metadata envelope.
-	bytes object_bytes = 6;
-	// OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
-	bytes old_object_bytes = 7;
+  // UserInfo is user information about the user making the request
+  AdmissionUserInfo userInfo = 5;
+  // Object is the object in the request.  This includes the full metadata envelope.
+  bytes object_bytes = 6;
+  // OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
+  bytes old_object_bytes = 7;
 }
 
 // AdmissionUserInfo contains user information for an admission request
 message AdmissionUserInfo {
-	// Username is the username of the user
-	string username = 1;
-	// UID is the UID of the user in the API server's system
-	string uid = 2;
-	// Groups is a list of all groups the user is a part of (if any)
-	repeated string groups = 3;
+  // Username is the username of the user
+  string username = 1;
+  // UID is the UID of the user in the API server's system
+  string uid = 2;
+  // Groups is a list of all groups the user is a part of (if any)
+  repeated string groups = 3;
   // Extra is a map of extra information, implementation-specific
-	bytes jsonExtra = 4;
+  bytes jsonExtra = 4;
 }
 
 message AdmissionResponse {
@@ -407,5 +407,5 @@ message AdmissionResponse {
   string message = 2;
 
   // Mutated object bytes (when requested)
-	bytes object_bytes = 3;
+  bytes object_bytes = 3;
 }
