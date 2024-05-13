@@ -327,7 +327,7 @@ func (f ConvertFromProtobuf) AdmissionUserInfo(u *pluginv2.AdmissionUserInfo) *A
 func (f ConvertFromProtobuf) ProcessInstanceSettingsRequest(req *pluginv2.ProcessInstanceSettingsRequest) *ProcessInstanceSettingsRequest {
 	return &ProcessInstanceSettingsRequest{
 		PluginContext:    f.PluginContext(req.PluginContext),
-		TargetApiVersion: req.TargetApiVersion,
+		TargetAPIVersion: req.TargetApiVersion,
 		CheckHealth:      req.CheckHealth,
 	}
 }

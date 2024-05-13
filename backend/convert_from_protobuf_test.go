@@ -533,3 +533,77 @@ func datasourceInstanceProtoFieldCountDelta() int64 {
 	// returning 1 to account for the Type field in the SDK that is not in the protobuf
 	return int64(1)
 }
+
+func TestConvertFromProtobufProcessInstanceSettingsRequest(t *testing.T) {
+	protoPIS := &pluginv2.ProcessInstanceSettingsRequest{
+		PluginContext:    protoPluginContext,
+		TargetApiVersion: "v1alpha2",
+		CheckHealth:      true,
+	}
+
+	protoWalker := &walker{}
+	err := reflectwalk.Walk(protoPIS, protoWalker)
+	require.NoError(t, err)
+
+	if protoWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt,
+			"proto", "QueryDataRequest", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
+	}
+
+	sdkPIS := f.ProcessInstanceSettingsRequest(protoPIS)
+
+	sdkWalker := &walker{}
+	err = reflectwalk.Walk(sdkPIS, sdkWalker)
+	require.NoError(t, err)
+
+	if sdkWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt, "sdk", "QueryDataRequest", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
+	}
+
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount)
+
+	requireCounter := &requireCounter{}
+
+	requireCounter.Equal(t, protoPIS.TargetApiVersion, sdkPIS.TargetAPIVersion)
+	requireCounter.Equal(t, protoPIS.CheckHealth, sdkPIS.CheckHealth)
+
+	// PluginContext
+	requireCounter.Equal(t, protoPIS.PluginContext.OrgId, sdkPIS.PluginContext.OrgID)
+	requireCounter.Equal(t, protoPIS.PluginContext.PluginId, sdkPIS.PluginContext.PluginID)
+	requireCounter.Equal(t, protoPIS.PluginContext.ApiVersion, sdkPIS.PluginContext.APIVersion)
+	// User
+	requireCounter.Equal(t, protoPIS.PluginContext.User.Login, sdkPIS.PluginContext.User.Login)
+	requireCounter.Equal(t, protoPIS.PluginContext.User.Name, sdkPIS.PluginContext.User.Name)
+	requireCounter.Equal(t, protoPIS.PluginContext.User.Email, sdkPIS.PluginContext.User.Email)
+	requireCounter.Equal(t, protoPIS.PluginContext.User.Role, sdkPIS.PluginContext.User.Role)
+
+	// App Instance Settings
+	requireCounter.Equal(t, json.RawMessage(protoPIS.PluginContext.AppInstanceSettings.JsonData), sdkPIS.PluginContext.AppInstanceSettings.JSONData)
+	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkPIS.PluginContext.AppInstanceSettings.DecryptedSecureJSONData)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkPIS.PluginContext.AppInstanceSettings.Updated)
+	requireCounter.Equal(t, protoPIS.PluginContext.AppInstanceSettings.ApiVersion, sdkPIS.PluginContext.AppInstanceSettings.APIVersion)
+
+	// Datasource Instance Settings
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.Name, sdkPIS.PluginContext.DataSourceInstanceSettings.Name)
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.Id, sdkPIS.PluginContext.DataSourceInstanceSettings.ID)
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.Uid, sdkPIS.PluginContext.DataSourceInstanceSettings.UID)
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.ApiVersion, sdkPIS.PluginContext.DataSourceInstanceSettings.APIVersion)
+	requireCounter.Equal(t, protoPIS.PluginContext.PluginId, sdkPIS.PluginContext.DataSourceInstanceSettings.Type)
+	requireCounter.Equal(t, protoPIS.PluginContext.PluginVersion, sdkPIS.PluginContext.PluginVersion)
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.Url, sdkPIS.PluginContext.DataSourceInstanceSettings.URL)
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.User, sdkPIS.PluginContext.DataSourceInstanceSettings.User)
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.Database, sdkPIS.PluginContext.DataSourceInstanceSettings.Database)
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled, sdkPIS.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled)
+	requireCounter.Equal(t, protoPIS.PluginContext.DataSourceInstanceSettings.BasicAuthUser, sdkPIS.PluginContext.DataSourceInstanceSettings.BasicAuthUser)
+	requireCounter.Equal(t, json.RawMessage(protoPIS.PluginContext.DataSourceInstanceSettings.JsonData), sdkPIS.PluginContext.DataSourceInstanceSettings.JSONData)
+	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkPIS.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkPIS.PluginContext.DataSourceInstanceSettings.Updated)
+	requireCounter.Equal(t, protoPIS.PluginContext.UserAgent, sdkPIS.PluginContext.UserAgent.String())
+
+	// -5 is:
+	// PluginContext, .User, .AppInstanceSettings, .DataSourceInstanceSettings
+	//
+	//
+	//
+	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-5, "untested fields in conversion") // -6 Struct Fields
+}
