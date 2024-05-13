@@ -31,7 +31,11 @@ func (a *admissionSDKAdapter) ProcessInstanceSettings(ctx context.Context, req *
 }
 
 func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.AdmissionResponse, error) {
+	ctx = propagateTenantIDIfPresent(ctx)
+	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().AdmissionRequest(req)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointQueryData)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	resp, err := a.admissionHandler.ValidateAdmission(ctx, parsedReq)
 	if err != nil {
 		return nil, err
@@ -40,7 +44,11 @@ func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *plugin
 }
 
 func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.AdmissionResponse, error) {
+	ctx = propagateTenantIDIfPresent(ctx)
+	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().AdmissionRequest(req)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointQueryData)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	resp, err := a.admissionHandler.MutateAdmission(ctx, parsedReq)
 	if err != nil {
 		return nil, err

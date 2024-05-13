@@ -17,6 +17,8 @@ type AdmissionHandler interface {
 
 type ProcessInstanceSettingsRequest struct {
 	PluginContext PluginContext `json:"pluginContext"`
+	// Operation is the type of resource operation being checked for admission control
+	Operation AdmissionOperation `json:"operation,omitempty"`
 	// When configured, this will return results in the target APIVersion format
 	TargetAPIVersion string `json:"targetApiVersion"`
 	// In addition to checking the payload, also check if any connection
@@ -61,6 +63,7 @@ const (
 // See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
 // And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
 type AdmissionRequest struct {
+	PluginContext PluginContext `json:"pluginContext"`
 	// Operation is the type of resource operation being checked for admission control
 	Operation AdmissionOperation `json:"operation,omitempty"`
 	// Group is the object's group

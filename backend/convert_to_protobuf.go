@@ -328,6 +328,7 @@ func (t ConvertToProtobuf) AdmissionUserInfo(u *AdmissionUserInfo) *pluginv2.Adm
 func (t ConvertToProtobuf) ProcessInstanceSettingsRequest(req *ProcessInstanceSettingsRequest) *pluginv2.ProcessInstanceSettingsRequest {
 	return &pluginv2.ProcessInstanceSettingsRequest{
 		PluginContext:    t.PluginContext(req.PluginContext),
+		Operation:        pluginv2.AdmissionOperation(req.Operation),
 		TargetApiVersion: req.TargetAPIVersion,
 		CheckHealth:      req.CheckHealth,
 	}
@@ -347,7 +348,8 @@ func (t ConvertToProtobuf) ProcessInstanceSettingsResponse(rsp *ProcessInstanceS
 // AdmissionRequest converts the SDK version of a AdmissionRequest to the protobuf version.
 func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.AdmissionRequest {
 	return &pluginv2.AdmissionRequest{
-		Operation:      pluginv2.AdmissionRequest_AdmissionOperation(req.Operation),
+		PluginContext:  t.PluginContext(req.PluginContext),
+		Operation:      pluginv2.AdmissionOperation(req.Operation),
 		Group:          req.Group,
 		Resource:       req.Resource,
 		Version:        req.Version,

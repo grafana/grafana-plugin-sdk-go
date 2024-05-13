@@ -323,15 +323,26 @@ service Admission {
   rpc MutateAdmission(AdmissionRequest) returns (AdmissionResponse);
 }
 
+// https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
+enum AdmissionOperation {
+  CREATE = 0;
+  UPDATE = 1;
+  DELETE = 2;
+  CONNECT = 3;
+}
+
 message ProcessInstanceSettingsRequest {
   PluginContext pluginContext = 1;
 
+  // Operation is the type of resource operation being checked for admission control
+  AdmissionOperation operation = 2;
+  
   // When configured, this will return results in the target APIVersion format
-  string targetApiVersion = 2;
+  string targetApiVersion = 3;
 
   // In addition to checking the payload, also check if any connection
   // parameters are successful
-  bool checkHealth = 3;
+  bool checkHealth = 4;
 }
 
 message ProcessInstanceSettingsResponse {
@@ -361,35 +372,28 @@ message ProcessInstanceSettingsResponse {
 }
 
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
-// NOTE: this does not (yet?) include the PluginContext
 // See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
 // And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
 message AdmissionRequest {
-  // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
-  enum AdmissionOperation {
-    CREATE = 0;
-    UPDATE = 1;
-    DELETE = 2;
-    CONNECT = 3;
-  }
+  PluginContext pluginContext = 1;
 
   // Operation is the type of resource operation being checked for admission control
-  AdmissionOperation operation = 1;
+  AdmissionOperation operation = 2;
   
   // Group is the object's group
-  string group = 2;
+  string group = 3;
   // Version is the object's api version
-  string version = 3;
+  string version = 4;
   // Resource is the object's resource type
-  string resource = 4;
+  string resource = 5;
 
   // UserInfo is user information about the user making the request
-  AdmissionUserInfo userInfo = 5;
+  AdmissionUserInfo userInfo = 6;
   
   // Object is the object in the request.  This includes the full metadata envelope.
-  bytes object_bytes = 6;
+  bytes object_bytes = 7;
   // OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
-  bytes old_object_bytes = 7;
+  bytes old_object_bytes = 8;
 }
 
 // AdmissionUserInfo contains user information for an admission request
