@@ -297,6 +297,76 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	}
 }
 
+// StatusResult ...
+func (f ConvertFromProtobuf) StatusResult(s *pluginv2.StatusResult) *StatusResult {
+	if s == nil {
+		return nil
+	}
+	return &StatusResult{
+		Status:  s.Status,
+		Message: s.Message,
+		Reason:  s.Reason,
+		Code:    s.Code,
+	}
+}
+
+// AdmissionUserInfo ...
+func (f ConvertFromProtobuf) AdmissionUserInfo(u *pluginv2.AdmissionUserInfo) *AdmissionUserInfo {
+	if u == nil {
+		return nil
+	}
+	return &AdmissionUserInfo{
+		Username:  u.Username,
+		UID:       u.Uid,
+		Groups:    u.Groups,
+		JSONExtra: u.JsonExtra,
+	}
+}
+
+// ProcessInstanceSettingsRequest ...
+func (f ConvertFromProtobuf) ProcessInstanceSettingsRequest(req *pluginv2.ProcessInstanceSettingsRequest) *ProcessInstanceSettingsRequest {
+	return &ProcessInstanceSettingsRequest{
+		PluginContext:    f.PluginContext(req.PluginContext),
+		TargetApiVersion: req.TargetApiVersion,
+		CheckHealth:      req.CheckHealth,
+	}
+}
+
+// ProcessInstanceSettingsResponse ...
+func (f ConvertFromProtobuf) ProcessInstanceSettingsResponse(rsp *pluginv2.ProcessInstanceSettingsResponse) *ProcessInstanceSettingsResponse {
+	return &ProcessInstanceSettingsResponse{
+		Allowed:                    rsp.Allowed,
+		Result:                     f.StatusResult(rsp.Result),
+		Warnings:                   rsp.Warnings,
+		AppInstanceSettings:        f.AppInstanceSettings(rsp.AppInstanceSettings),
+		DataSourceInstanceSettings: f.DataSourceInstanceSettings(rsp.DataSourceInstanceSettings, ""),
+	}
+}
+
+// AdmissionRequest ...
+func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *AdmissionRequest {
+	return &AdmissionRequest{
+		Operation:      AdmissionOperation(req.Operation),
+		Group:          req.Group,
+		Version:        req.Version,
+		Resource:       req.Resource,
+		UserInfo:       f.AdmissionUserInfo(req.UserInfo),
+		ObjectBytes:    req.ObjectBytes,
+		OldObjectBytes: req.OldObjectBytes,
+	}
+}
+
+// AdmissionResponse ...
+func (f ConvertFromProtobuf) AdmissionResponse(rsp *pluginv2.AdmissionResponse) *AdmissionResponse {
+	return &AdmissionResponse{
+		Allowed:          rsp.Allowed,
+		Result:           f.StatusResult(rsp.Result),
+		Warnings:         rsp.Warnings,
+		AuditAnnotations: rsp.GetAuditAnnotations(),
+		ObjectBytes:      rsp.ObjectBytes,
+	}
+}
+
 func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
 	return NewGrafanaCfg(cfg)
 }

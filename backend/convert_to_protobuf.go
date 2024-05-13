@@ -298,6 +298,76 @@ func (t ConvertToProtobuf) CollectMetricsResult(res *CollectMetricsResult) *plug
 	}
 }
 
+// StatusResult converts the SDK version of a StatusResult to the protobuf version.
+func (t ConvertToProtobuf) StatusResult(s *StatusResult) *pluginv2.StatusResult {
+	if s == nil {
+		return nil
+	}
+	return &pluginv2.StatusResult{
+		Status:  s.Status,
+		Message: s.Message,
+		Reason:  s.Reason,
+		Code:    s.Code,
+	}
+}
+
+// StatusResult converts the SDK version of a StatusResult to the protobuf version.
+func (t ConvertToProtobuf) AdmissionUserInfo(u *AdmissionUserInfo) *pluginv2.AdmissionUserInfo {
+	if u == nil {
+		return nil
+	}
+	return &pluginv2.AdmissionUserInfo{
+		Username:  u.Username,
+		Uid:       u.UID,
+		Groups:    u.Groups,
+		JsonExtra: u.JSONExtra,
+	}
+}
+
+// ProcessInstanceSettingsRequest converts the SDK version of a ProcessInstanceSettingsRequest to the protobuf version.
+func (t ConvertToProtobuf) ProcessInstanceSettingsRequest(req *ProcessInstanceSettingsRequest) *pluginv2.ProcessInstanceSettingsRequest {
+	return &pluginv2.ProcessInstanceSettingsRequest{
+		PluginContext:    t.PluginContext(req.PluginContext),
+		TargetApiVersion: req.TargetAPIVersion,
+		CheckHealth:      req.CheckHealth,
+	}
+}
+
+// ProcessInstanceSettingsRequest converts the SDK version of a ProcessInstanceSettingsResponse to the protobuf version.
+func (t ConvertToProtobuf) ProcessInstanceSettingsResponse(rsp *ProcessInstanceSettingsResponse) *pluginv2.ProcessInstanceSettingsResponse {
+	return &pluginv2.ProcessInstanceSettingsResponse{
+		Allowed:                    rsp.Allowed,
+		Result:                     t.StatusResult(rsp.Result),
+		Warnings:                   rsp.Warnings,
+		AppInstanceSettings:        t.AppInstanceSettings(rsp.AppInstanceSettings),
+		DataSourceInstanceSettings: t.DataSourceInstanceSettings(rsp.DataSourceInstanceSettings),
+	}
+}
+
+// AdmissionRequest converts the SDK version of a AdmissionRequest to the protobuf version.
+func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.AdmissionRequest {
+	return &pluginv2.AdmissionRequest{
+		Operation:      pluginv2.AdmissionRequest_AdmissionOperation(req.Operation),
+		Group:          req.Group,
+		Resource:       req.Resource,
+		Version:        req.Version,
+		UserInfo:       t.AdmissionUserInfo(req.UserInfo),
+		ObjectBytes:    req.ObjectBytes,
+		OldObjectBytes: req.OldObjectBytes,
+	}
+}
+
+// AdmissionResponse converts the SDK version of a AdmissionResponse to the protobuf version.
+func (t ConvertToProtobuf) AdmissionResponse(rsp *AdmissionResponse) *pluginv2.AdmissionResponse {
+	return &pluginv2.AdmissionResponse{
+		Allowed:          rsp.Allowed,
+		Result:           t.StatusResult(rsp.Result),
+		Warnings:         rsp.Warnings,
+		AuditAnnotations: rsp.AuditAnnotations,
+		ObjectBytes:      rsp.ObjectBytes,
+	}
+}
+
 // GrafanaConfig converts the SDK version of a GrafanaCfg to the protobuf version.
 func (t ConvertToProtobuf) GrafanaConfig(cfg *GrafanaCfg) map[string]string {
 	if cfg == nil {

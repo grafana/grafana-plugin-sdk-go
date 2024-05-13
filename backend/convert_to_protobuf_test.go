@@ -91,3 +91,14 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 		})
 	}
 }
+
+func TestConvertToProtobufAdmission(t *testing.T) {
+	ar := ToProto().AdmissionRequest(&AdmissionRequest{
+		Operation: AdmissionOperationCreate,
+		Group:     "a",
+		Version:   "v1",
+		Resource:  "xx",
+	})
+	require.NotNil(t, ar)
+	require.Equal(t, "a", ar.Group)
+}

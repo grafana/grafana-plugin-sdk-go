@@ -18,7 +18,7 @@ type AdmissionHandler interface {
 type ProcessInstanceSettingsRequest struct {
 	PluginContext PluginContext `json:"pluginContext"`
 	// When configured, this will return results in the target APIVersion format
-	TargetApiVersion string `json:"targetApiVersion"`
+	TargetAPIVersion string `json:"targetApiVersion"`
 	// In addition to checking the payload, also check if any connection
 	// parameters are successful
 	CheckHealth bool `json:"checkHealth"`
@@ -107,11 +107,11 @@ type AdmissionUserInfo struct {
 	// Username is the username of the user
 	Username string `json:"username,omitempty"`
 	// UID is the UID of the user in the API server's system
-	Uid string `json:"uid,omitempty"`
+	UID string `json:"uid,omitempty"`
 	// Groups is a list of all groups the user is a part of (if any)
 	Groups []string `json:"groups,omitempty"`
 	// Extra is a map of extra information, implementation-specific
-	JsonExtra []byte `json:"jsonExtra,omitempty"`
+	JSONExtra []byte `json:"jsonExtra,omitempty"`
 }
 
 type StatusResult struct {
