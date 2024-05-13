@@ -51,8 +51,11 @@ type ServeOpts struct {
 	QueryDataHandler QueryDataHandler
 
 	// StreamHandler handler for streaming queries.
-	// This is EXPERIMENTAL and is a subject to change till Grafana 8.
 	StreamHandler StreamHandler
+
+	// AdmissionHandler validates resource changes
+	// This is EXPERIMENTAL and is a subject to change till Grafana 12
+	AdmissionHandler AdmissionHandler
 
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
@@ -73,6 +76,10 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 
 	if opts.StreamHandler != nil {
 		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
+	}
+
+	if opts.AdmissionHandler != nil {
+		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
 	}
 	return pluginOpts
 }

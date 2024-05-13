@@ -43,6 +43,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		CallResourceHandler: handler,
 		QueryDataHandler:    handler,
 		StreamHandler:       handler,
+		AdmissionHandler:    handler,
 		GRPCSettings:        opts.GRPCSettings,
 	})
 }

@@ -562,8 +562,8 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 
 const (
 	Admission_ProcessInstanceSettings_FullMethodName = "/pluginv2.Admission/ProcessInstanceSettings"
-	Admission_ValidateRequest_FullMethodName         = "/pluginv2.Admission/ValidateRequest"
-	Admission_MutateRequest_FullMethodName           = "/pluginv2.Admission/MutateRequest"
+	Admission_ValidateAdmission_FullMethodName       = "/pluginv2.Admission/ValidateAdmission"
+	Admission_MutateAdmission_FullMethodName         = "/pluginv2.Admission/MutateAdmission"
 )
 
 // AdmissionClient is the client API for Admission service.
@@ -574,9 +574,9 @@ type AdmissionClient interface {
 	// This is a specalized form of the validation/mutation hooks that only work for instance settings
 	ProcessInstanceSettings(ctx context.Context, in *ProcessInstanceSettingsRequest, opts ...grpc.CallOption) (*ProcessInstanceSettingsResponse, error)
 	// Verify if the input request can be admitted
-	ValidateRequest(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
+	ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
 	// Verify if the input request can be admitted, and return a copy that can be saved
-	MutateRequest(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
+	MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
 }
 
 type admissionClient struct {
@@ -596,18 +596,18 @@ func (c *admissionClient) ProcessInstanceSettings(ctx context.Context, in *Proce
 	return out, nil
 }
 
-func (c *admissionClient) ValidateRequest(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
+func (c *admissionClient) ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
 	out := new(AdmissionResponse)
-	err := c.cc.Invoke(ctx, Admission_ValidateRequest_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Admission_ValidateAdmission_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *admissionClient) MutateRequest(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
+func (c *admissionClient) MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
 	out := new(AdmissionResponse)
-	err := c.cc.Invoke(ctx, Admission_MutateRequest_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Admission_MutateAdmission_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -622,9 +622,9 @@ type AdmissionServer interface {
 	// This is a specalized form of the validation/mutation hooks that only work for instance settings
 	ProcessInstanceSettings(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error)
 	// Verify if the input request can be admitted
-	ValidateRequest(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
+	ValidateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
 	// Verify if the input request can be admitted, and return a copy that can be saved
-	MutateRequest(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
+	MutateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
 }
 
 // UnimplementedAdmissionServer should be embedded to have forward compatible implementations.
@@ -634,11 +634,11 @@ type UnimplementedAdmissionServer struct {
 func (UnimplementedAdmissionServer) ProcessInstanceSettings(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ProcessInstanceSettings not implemented")
 }
-func (UnimplementedAdmissionServer) ValidateRequest(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ValidateRequest not implemented")
+func (UnimplementedAdmissionServer) ValidateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateAdmission not implemented")
 }
-func (UnimplementedAdmissionServer) MutateRequest(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MutateRequest not implemented")
+func (UnimplementedAdmissionServer) MutateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MutateAdmission not implemented")
 }
 
 // UnsafeAdmissionServer may be embedded to opt out of forward compatibility for this service.
@@ -670,38 +670,38 @@ func _Admission_ProcessInstanceSettings_Handler(srv interface{}, ctx context.Con
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Admission_ValidateRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admission_ValidateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AdmissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdmissionServer).ValidateRequest(ctx, in)
+		return srv.(AdmissionServer).ValidateAdmission(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Admission_ValidateRequest_FullMethodName,
+		FullMethod: Admission_ValidateAdmission_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdmissionServer).ValidateRequest(ctx, req.(*AdmissionRequest))
+		return srv.(AdmissionServer).ValidateAdmission(ctx, req.(*AdmissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Admission_MutateRequest_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _Admission_MutateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AdmissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdmissionServer).MutateRequest(ctx, in)
+		return srv.(AdmissionServer).MutateAdmission(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Admission_MutateRequest_FullMethodName,
+		FullMethod: Admission_MutateAdmission_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdmissionServer).MutateRequest(ctx, req.(*AdmissionRequest))
+		return srv.(AdmissionServer).MutateAdmission(ctx, req.(*AdmissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -718,12 +718,12 @@ var Admission_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Admission_ProcessInstanceSettings_Handler,
 		},
 		{
-			MethodName: "ValidateRequest",
-			Handler:    _Admission_ValidateRequest_Handler,
+			MethodName: "ValidateAdmission",
+			Handler:    _Admission_ValidateAdmission_Handler,
 		},
 		{
-			MethodName: "MutateRequest",
-			Handler:    _Admission_MutateRequest_Handler,
+			MethodName: "MutateAdmission",
+			Handler:    _Admission_MutateAdmission_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

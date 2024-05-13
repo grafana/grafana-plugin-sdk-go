@@ -317,10 +317,10 @@ service Admission {
   rpc ProcessInstanceSettings(ProcessInstanceSettingsRequest) returns (ProcessInstanceSettingsResponse);
 
   // Verify if the input request can be admitted
-  rpc ValidateRequest(AdmissionRequest) returns (AdmissionResponse);
+  rpc ValidateAdmission(AdmissionRequest) returns (AdmissionResponse);
 
   // Verify if the input request can be admitted, and return a copy that can be saved
-  rpc MutateRequest(AdmissionRequest) returns (AdmissionResponse);
+  rpc MutateAdmission(AdmissionRequest) returns (AdmissionResponse);
 }
 
 message ProcessInstanceSettingsRequest {
@@ -335,26 +335,29 @@ message ProcessInstanceSettingsRequest {
 }
 
 message ProcessInstanceSettingsResponse {
-  enum ValidationStatus {
-    UNKNOWN = 0;
-    OK = 1;
-    ERROR = 2;
-  }
+  // Allowed indicates whether or not the admission request was permitted.
+  bool allowed = 1;
 
-  // The validation result
-  ValidationStatus status = 1;
+  // Result contains extra details into why an admission request was denied.
+  // This field IS NOT consulted in any way if "Allowed" is "true".
+  // +optional
+  StatusResult result = 2;
 
-  // Optionally  
-  repeated string message = 2;
+  // warnings is a list of warning messages to return to the requesting API client.
+  // Warning messages describe a problem the client making the API request should correct or be aware of.
+  // Limit warnings to 120 characters if possible.
+  // Warnings over 256 characters and large numbers of warnings may be truncated.
+  // +optional
+  repeated string warnings = 3;
 
   // Valid app instance settings if they exist in the request
-  AppInstanceSettings appInstanceSettings = 3;
+  AppInstanceSettings appInstanceSettings = 4;
 
   // Valid datasource instance settings if they exist in the request
-  DataSourceInstanceSettings dataSourceInstanceSettings = 4;
+  DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 
   // The health response if requested
-  CheckHealthResponse health = 5;
+  CheckHealthResponse health = 6;
 }
 
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).

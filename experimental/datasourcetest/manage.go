@@ -33,6 +33,7 @@ func Manage(instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) (Te
 		CallResourceHandler: handler,
 		QueryDataHandler:    handler,
 		StreamHandler:       handler,
+		AdmissionHandler:    handler,
 	}, opts.Address)
 
 	if err != nil {
