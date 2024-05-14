@@ -15,6 +15,11 @@ type splitResponse struct {
 	refID    string
 }
 
+// SingleQuery is a single query to be executed concurrently
+// Index is the index of the query in the request
+// PluginContext is the plugin context
+// Headers are the HTTP headers of the request
+// DataQuery is the query to be executed
 type SingleQuery struct {
 	Index         int
 	PluginContext backend.PluginContext
@@ -22,8 +27,11 @@ type SingleQuery struct {
 	DataQuery     backend.DataQuery
 }
 
+// SingleQueryData is the function that plugins need to define to execute a single query
 type SingleQueryData func(ctx context.Context, query SingleQuery) (res backend.DataResponse)
 
+// QueryData executes all queries from a request concurrently, using the provided function to execute each query.
+// The concurrency limit is set by the limit parameter.
 func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn SingleQueryData, limit int) (*backend.QueryDataResponse, error) {
 	headers := req.GetHTTPHeaders()
 	ctxLogger := log.DefaultLogger.FromContext(ctx)
