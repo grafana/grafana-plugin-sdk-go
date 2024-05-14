@@ -31,7 +31,7 @@ type SingleQuery struct {
 type SingleQueryData func(ctx context.Context, query SingleQuery) (res backend.DataResponse)
 
 // QueryData executes all queries from a request concurrently, using the provided function to execute each query.
-// The concurrency limit is set by the limit parameter.
+// The concurrency limit is set by the limit parameter. A negative limit means no limit.
 func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn SingleQueryData, limit int) (*backend.QueryDataResponse, error) {
 	headers := req.GetHTTPHeaders()
 	ctxLogger := log.DefaultLogger.FromContext(ctx)
