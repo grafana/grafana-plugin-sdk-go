@@ -21,7 +21,6 @@ type splitResponse struct {
 // Headers are the HTTP headers of the request
 // DataQuery is the query to be executed
 type Query struct {
-	Index         int
 	PluginContext backend.PluginContext
 	Headers       http.Header
 	DataQuery     backend.DataQuery
@@ -63,8 +62,7 @@ func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn QueryDataF
 	}
 
 	// Execute each query and store the results by query RefID
-	for i, q := range req.Queries {
-		iIndex := i
+	for _, q := range req.Queries {
 		iQuery := q
 		g.Go(func() error {
 			// Handle panics from the query execution
@@ -72,7 +70,6 @@ func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn QueryDataF
 
 			ctxLogger.Debug("Starting single query", "query", iQuery.RefID)
 			res := fn(ctx, Query{
-				Index:         iIndex,
 				PluginContext: req.PluginContext,
 				Headers:       headers,
 				DataQuery:     iQuery,
