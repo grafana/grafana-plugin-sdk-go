@@ -16,7 +16,7 @@ var duration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "grafana",
 	Name:      "plugin_external_requests_duration",
 	Help:      "Duration of requests to external services",
-}, []string{"plugin", "status_source"})
+}, []string{"plugin", "error_source"})
 
 // Middleware captures duration of requests to external services and the source of errors
 func Middleware(plugin string) httpclient.Middleware {
@@ -29,7 +29,7 @@ func Middleware(plugin string) httpclient.Middleware {
 func RoundTripper(plugin string, _ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 	return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		start := time.Now()
-		var errorSource = backend.ErrorSourcePlugin
+		var errorSource = "none"
 
 		defer func() {
 			duration.WithLabelValues(plugin, string(errorSource)).Observe(time.Since(start).Seconds())
@@ -37,10 +37,10 @@ func RoundTripper(plugin string, _ httpclient.Options, next http.RoundTripper) h
 
 		res, err := next.RoundTrip(req)
 		if res != nil && res.StatusCode >= 400 {
-			errorSource = backend.ErrorSourceFromHTTPStatus(res.StatusCode)
+			errorSource = string(backend.ErrorSourceFromHTTPStatus(res.StatusCode))
 		}
 		if errors.Is(err, syscall.ECONNREFUSED) {
-			errorSource = backend.ErrorSourceDownstream
+			errorSource = string(backend.ErrorSourceDownstream)
 		}
 		return res, err
 	})
