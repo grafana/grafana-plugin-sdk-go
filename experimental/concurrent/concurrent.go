@@ -15,28 +15,33 @@ type splitResponse struct {
 	refID    string
 }
 
-// SingleQuery is a single query to be executed concurrently
+// Query is a single query to be executed concurrently
 // Index is the index of the query in the request
 // PluginContext is the plugin context
 // Headers are the HTTP headers of the request
 // DataQuery is the query to be executed
-type SingleQuery struct {
+type Query struct {
 	Index         int
 	PluginContext backend.PluginContext
 	Headers       http.Header
 	DataQuery     backend.DataQuery
 }
 
-// SingleQueryData is the function that plugins need to define to execute a single query
-type SingleQueryData func(ctx context.Context, query SingleQuery) (res backend.DataResponse)
+// QueryDataFunc is the function that plugins need to define to execute a single query
+type QueryDataFunc func(ctx context.Context, query Query) (res backend.DataResponse)
 
 // QueryData executes all queries from a request concurrently, using the provided function to execute each query.
 // The concurrency limit is set by the limit parameter. A negative limit means no limit.
-func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn SingleQueryData, limit int) (*backend.QueryDataResponse, error) {
-	headers := req.GetHTTPHeaders()
+func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn QueryDataFunc, limit int) (*backend.QueryDataResponse, error) {
 	ctxLogger := log.DefaultLogger.FromContext(ctx)
 	ctxLogger.Debug("Concurrent QueryData", "queries", len(req.Queries))
 
+	if limit <= 0 || limit > 10 {
+		ctxLogger.Warn("QueryData concurrency limit is not set or is too high, setting to 10", "limit", limit)
+		limit = 10
+	}
+
+	headers := req.GetHTTPHeaders()
 	g, ctx := errgroup.WithContext(ctx)
 	g.SetLimit(limit)
 	rchan := make(chan splitResponse, len(req.Queries))
@@ -50,10 +55,10 @@ func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn SingleQuer
 			} else if theErrString, ok := r.(string); ok {
 				err = fmt.Errorf(theErrString)
 			} else {
-				err = fmt.Errorf("unexpected error - %v", err)
+				err = fmt.Errorf("unexpected error - %w", err)
 			}
 			// Due to the panic, there is no valid response for any query for this datasource. Append an error for each one.
-			rchan <- splitResponse{backend.ErrDataResponse(backend.StatusInternal, err.Error()), q.RefID}
+			rchan <- splitResponse{backend.DataResponse{Status: backend.StatusInternal, Error: err}, q.RefID}
 		}
 	}
 
@@ -66,7 +71,7 @@ func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn SingleQuer
 			defer recoveryFn(iQuery)
 
 			ctxLogger.Debug("Starting single query", "query", iQuery.RefID)
-			res := fn(ctx, SingleQuery{
+			res := fn(ctx, Query{
 				Index:         iIndex,
 				PluginContext: req.PluginContext,
 				Headers:       headers,

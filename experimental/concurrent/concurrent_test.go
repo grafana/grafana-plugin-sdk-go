@@ -11,7 +11,7 @@ import (
 func Test_QueryData(t *testing.T) {
 	t.Run("executes all queries concurrently", func(t *testing.T) {
 		secondExecuted := make(chan bool, 1)
-		fn := func(_ context.Context, query SingleQuery) (res backend.DataResponse) {
+		fn := func(_ context.Context, query Query) (res backend.DataResponse) {
 			if query.Index == 0 {
 				// Blocks until the second query is executed
 				<-secondExecuted
@@ -33,7 +33,7 @@ func Test_QueryData(t *testing.T) {
 	t.Run("executes all queries concurrently with limit", func(t *testing.T) {
 		secondExecutedChannel := make(chan bool, 1)
 		secondExecuted := false
-		fn := func(_ context.Context, query SingleQuery) (res backend.DataResponse) {
+		fn := func(_ context.Context, query Query) (res backend.DataResponse) {
 			if query.Index == 0 {
 				// Blocks until the second query is executed
 				secondExecuted = <-secondExecutedChannel
@@ -53,13 +53,13 @@ func Test_QueryData(t *testing.T) {
 		req := &backend.QueryDataRequest{}
 		req.Queries = append(req.Queries, backend.DataQuery{RefID: "A"})
 		req.Queries = append(req.Queries, backend.DataQuery{RefID: "B"})
-		// Limit to 1 query
+		// Limit to 2 queries
 		_, err := QueryData(context.Background(), req, fn, 2)
 		require.NoError(t, err)
 	})
 
 	t.Run("handles panics", func(t *testing.T) {
-		fn := func(_ context.Context, query SingleQuery) (res backend.DataResponse) {
+		fn := func(_ context.Context, query Query) (res backend.DataResponse) {
 			if query.Index == 0 {
 				panic("panic")
 			}
