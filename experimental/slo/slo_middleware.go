@@ -32,7 +32,7 @@ func RoundTripper(plugin string, _ httpclient.Options, next http.RoundTripper) h
 		var errorSource = "none"
 
 		defer func() {
-			duration.WithLabelValues(plugin, string(errorSource)).Observe(time.Since(start).Seconds())
+			duration.WithLabelValues(plugin, errorSource).Observe(time.Since(start).Seconds())
 		}()
 
 		res, err := next.RoundTrip(req)
