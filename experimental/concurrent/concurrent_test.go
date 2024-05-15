@@ -3,6 +3,7 @@ package concurrent
 import (
 	"context"
 	"errors"
+	"sync"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -32,26 +33,20 @@ func Test_QueryData(t *testing.T) {
 	})
 
 	t.Run("executes all queries concurrently with limit", func(t *testing.T) {
-		secondExecutedChannel := make(chan bool, 1)
-		queriesFinished := 0
+		mux := sync.Mutex{}
+		counter := 0
 		fn := func(_ context.Context, query Query) (res backend.DataResponse) {
-			if query.DataQuery.RefID == "A" {
-				// Blocks until the second query is executed
-				<-secondExecutedChannel
-			}
-			if query.DataQuery.RefID == "B" {
-				secondExecutedChannel <- true
-				close(secondExecutedChannel)
-			}
+			mux.Lock()
+			defer mux.Unlock()
+			// Checks that the query with RefID "C" is executed after a previous query is done
 			if query.DataQuery.RefID == "C" {
-				// Should not be executed until a previous query has finished
-				if queriesFinished < 1 {
+				if counter == 0 {
 					return backend.DataResponse{
 						Error: errors.New("query executed without respecting the limit"),
 					}
 				}
 			}
-			queriesFinished++
+			counter++
 			return backend.DataResponse{}
 		}
 
