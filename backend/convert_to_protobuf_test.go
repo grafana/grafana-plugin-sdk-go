@@ -103,5 +103,5 @@ func TestConvertToProtobufStatus(t *testing.T) {
 	require.Equal(t, "a", ar.Status)
 	require.Equal(t, "b", ar.Message)
 	require.Equal(t, "c", ar.Reason)
-	require.Equal(t, int32(234), int32(ar.Code))
+	require.Equal(t, int32(234), ar.Code)
 }
