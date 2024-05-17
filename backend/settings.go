@@ -13,7 +13,7 @@ type InstanceSettingsHandler interface {
 
 // ProcessInstanceSettingsFunc is an adapter to allow the use of
 // ordinary functions as backend.ProcessInstanceSettingsFunc.
-type ProcessInstanceSettingsFunc func(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
+type ProcessInstanceSettingsFunc func(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error)
 
 // Operation is the type of resource operation being checked for admission control
 // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
