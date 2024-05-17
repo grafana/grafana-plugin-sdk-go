@@ -4,8 +4,11 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"strconv"
 	"strings"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/gtime"
 
 	"golang.org/x/exp/maps"
 )
@@ -21,6 +24,22 @@ type MacroFunc func(*Query, []string) (string, error)
 
 // Macros is a map of macro name to MacroFunc. The name must be regex friendly.
 type Macros map[string]MacroFunc
+
+// Default macro to return interval
+// Example:
+//
+// $__interval => "10m"
+func macroInterval(query *Query, _ []string) (string, error) {
+	return gtime.FormatInterval(query.Interval), nil
+}
+
+// Default macro to return interval in ms
+// Example if $__interval is "10m":
+//
+// $__interval_ms => "600000"
+func macroIntervalMS(query *Query, _ []string) (string, error) {
+	return strconv.FormatInt(query.Interval.Milliseconds(), 10), nil
+}
 
 // Default time filter for SQL based on the query time range.
 // It requires one argument, the time column to filter.
@@ -116,12 +135,14 @@ func macroColumn(query *Query, _ []string) (string, error) {
 }
 
 var DefaultMacros = Macros{
-	"timeFilter": macroTimeFilter,
-	"timeFrom":   macroTimeFrom,
-	"timeGroup":  macroTimeGroup,
-	"timeTo":     macroTimeTo,
-	"table":      macroTable,
-	"column":     macroColumn,
+	"interval":    macroInterval,
+	"interval_ms": macroIntervalMS,
+	"timeFilter":  macroTimeFilter,
+	"timeFrom":    macroTimeFrom,
+	"timeGroup":   macroTimeGroup,
+	"timeTo":      macroTimeTo,
+	"table":       macroTable,
+	"column":      macroColumn,
 }
 
 type macroMatch struct {

@@ -12,7 +12,7 @@ require (
 	github.com/google/uuid v1.6.0
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
 	github.com/hashicorp/go-hclog v1.6.3
-	github.com/hashicorp/go-plugin v1.6.0
+	github.com/hashicorp/go-plugin v1.6.1
 	github.com/invopop/jsonschema v0.12.0 // for schema codgen+extraction
 	github.com/json-iterator/go v1.1.12
 	github.com/magefile/mage v1.15.0
@@ -34,8 +34,9 @@ require (
 	go.opentelemetry.io/otel/sdk v1.26.0
 	go.opentelemetry.io/otel/trace v1.26.0
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/net v0.24.0
+	golang.org/x/net v0.25.0
 	golang.org/x/oauth2 v0.20.0
+	golang.org/x/sync v0.7.0
 	golang.org/x/sys v0.20.0
 	golang.org/x/text v0.15.0
 	google.golang.org/grpc v1.63.2
