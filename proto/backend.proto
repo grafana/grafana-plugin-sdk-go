@@ -217,7 +217,7 @@ message CheckHealthResponse {
 }
 
 //-----------------------------------------------------------------
-// Stream -- EXPERIMENTAL and is subject to change until 8.0
+// Stream
 //-----------------------------------------------------------------
 
 service Stream {
@@ -308,40 +308,32 @@ message StreamPacket {
 }
 
 //-----------------------------------------------------------------
-// Admission -- EXPERIMENTAL and is subject to change until 12.??
+// InstanceSettings -- EXPERIMENTAL and is subject to change until 12.??
 //-----------------------------------------------------------------
 
-service Admission {
+service InstanceSettings {
   // This allows verifying the app/datasource settings before saving
   // This is a specalized form of the validation/mutation hooks that only work for instance settings
+  // The response will be in the preferred storage apiVersion
   rpc ProcessInstanceSettings(ProcessInstanceSettingsRequest) returns (ProcessInstanceSettingsResponse);
-
-  // Verify if the input request can be admitted
-  rpc ValidateAdmission(AdmissionRequest) returns (AdmissionResponse);
-
-  // Verify if the input request can be admitted, and return a copy that can be saved
-  rpc MutateAdmission(AdmissionRequest) returns (AdmissionResponse);
-}
-
-// https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
-enum AdmissionOperation {
-  CREATE = 0;
-  UPDATE = 1;
-  DELETE = 2;
-  CONNECT = 3;
 }
 
 message ProcessInstanceSettingsRequest {
+  // Unlike normal plugin context, this may not be saved and the lastUpdatedMS will be changed
+  // with each request.  
   PluginContext pluginContext = 1;
 
   // Operation is the type of resource operation being checked for admission control
-  AdmissionOperation operation = 2;
+  // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
+  enum Operation {
+    CREATE = 0;
+    UPDATE = 1;
+    DELETE = 2;
+  }
   
-  // When configured, this will return results in the target APIVersion format
-  string targetApiVersion = 3;
-
-  // In addition to checking the payload, also check if any connection
-  // parameters are successful
+  Operation operation = 2;
+  
+  // In addition to validating the payload, also check if the connection parameters are successful
   bool checkHealth = 4;
 }
 
@@ -371,72 +363,91 @@ message ProcessInstanceSettingsResponse {
   CheckHealthResponse health = 6;
 }
 
-// AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
-// See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
-// And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
-message AdmissionRequest {
-  PluginContext pluginContext = 1;
+// // TODO load types from???
+// // https://github.com/kubernetes/api/blob/v0.30.1/admission/v1/generated.proto#L33
+// service Storage {
+//   // Verify if the input request can be admitted
+//   rpc ValidateAdmission(AdmissionRequest) returns (AdmissionResponse);
 
-  // Operation is the type of resource operation being checked for admission control
-  AdmissionOperation operation = 2;
+//   // Verify if the input request can be admitted, and return a copy that can be saved
+//   rpc MutateAdmission(AdmissionRequest) returns (AdmissionResponse);
+// }
+
+// // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
+// // See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
+// // And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
+// // NOTE: this does not include a plugin context
+// message AdmissionRequest {
+//   // Operation is the type of resource operation being checked for admission control
+//   // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
+//   enum Operation {
+//     CREATE = 0;
+//     UPDATE = 1;
+//     DELETE = 2;
+//     CONNECT = 3;
+//   }
   
-  // Group is the object's group
-  string group = 3;
-  // Version is the object's api version
-  string version = 4;
-  // Resource is the object's resource type
-  string resource = 5;
-
-  // UserInfo is user information about the user making the request
-  AdmissionUserInfo userInfo = 6;
+//   Operation operation = 2;
   
-  // Object is the object in the request.  This includes the full metadata envelope.
-  bytes object_bytes = 7;
-  // OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
-  bytes old_object_bytes = 8;
-}
+//   // Group is the object's group
+//   string group = 3;
+//   // Version is the object's api version
+//   string version = 4;
+//   // Resource is the object's resource type
+//   string resource = 5;
 
-// AdmissionUserInfo contains user information for an admission request
-message AdmissionUserInfo {
-  // Username is the username of the user
-  string username = 1;
-  // UID is the UID of the user in the API server's system
-  string uid = 2;
-  // Groups is a list of all groups the user is a part of (if any)
-  repeated string groups = 3;
-  // Extra is a map of extra information, implementation-specific
-  bytes jsonExtra = 4;
-}
+//   // UserInfo is user information about the user making the request
+//   AdmissionUserInfo userInfo = 6;
+  
+//   // Object is the object in the request.  This includes the full metadata envelope.
+//   bytes object_bytes = 7;
+//   // OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
+//   bytes old_object_bytes = 8;
+// }
 
-// See https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L118
-message AdmissionResponse {
-  // Allowed indicates whether or not the admission request was permitted.
-  bool allowed = 1;
+// // AdmissionUserInfo contains user information for an admission request
+// message AdmissionUserInfo {
+//   // Username is the username of the user
+//   string username = 1;
+//   // UID is the UID of the user in the API server's system
+//   string uid = 2;
+//   // Groups is a list of all groups the user is a part of (if any)
+//   repeated string groups = 3;
+//   // Extra is a map of extra information, implementation-specific
+//   bytes jsonExtra = 4;
+// }
 
-  // Result contains extra details into why an admission request was denied.
-  // This field IS NOT consulted in any way if "Allowed" is "true".
-  // +optional
-  StatusResult result = 2;
+// // See https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L118
+// message AdmissionResponse {
+//   // Allowed indicates whether or not the admission request was permitted.
+//   bool allowed = 1;
 
-  // AuditAnnotations is an unstructured key value map set by remote admission controller (e.g. error=image-blacklisted).
-  // MutatingAdmissionWebhook and ValidatingAdmissionWebhook admission controller will prefix the keys with
-  // admission webhook name (e.g. imagepolicy.example.com/error=image-blacklisted). AuditAnnotations will be provided by
-  // the admission webhook to add additional context to the audit log for this request.
-  // +optional
-  map<string,string> auditAnnotations = 3;
+//   // Result contains extra details into why an admission request was denied.
+//   // This field IS NOT consulted in any way if "Allowed" is "true".
+//   // +optional
+//   StatusResult result = 2;
 
-  // warnings is a list of warning messages to return to the requesting API client.
-  // Warning messages describe a problem the client making the API request should correct or be aware of.
-  // Limit warnings to 120 characters if possible.
-  // Warnings over 256 characters and large numbers of warnings may be truncated.
-  // +optional
-  repeated string warnings = 4;
+//   // AuditAnnotations is an unstructured key value map set by remote admission controller (e.g. error=image-blacklisted).
+//   // MutatingAdmissionWebhook and ValidatingAdmissionWebhook admission controller will prefix the keys with
+//   // admission webhook name (e.g. imagepolicy.example.com/error=image-blacklisted). AuditAnnotations will be provided by
+//   // the admission webhook to add additional context to the audit log for this request.
+//   // +optional
+//   map<string,string> auditAnnotations = 3;
 
-  // Mutated object bytes (when requested)
-  // +optional
-  bytes object_bytes = 5;
-}
+//   // warnings is a list of warning messages to return to the requesting API client.
+//   // Warning messages describe a problem the client making the API request should correct or be aware of.
+//   // Limit warnings to 120 characters if possible.
+//   // Warnings over 256 characters and large numbers of warnings may be truncated.
+//   // +optional
+//   repeated string warnings = 4;
 
+//   // Mutated object bytes (when requested)
+//   // +optional
+//   bytes object_bytes = 5;
+// }
+
+// This could be:
+// https://github.com/kubernetes/apimachinery/blob/v0.30.1/pkg/apis/meta/v1/generated.proto#L979
 message StatusResult {
   // Status of the operation.
   // One of: "Success" or "Failure".

@@ -536,9 +536,9 @@ func datasourceInstanceProtoFieldCountDelta() int64 {
 
 func TestConvertFromProtobufProcessInstanceSettingsRequest(t *testing.T) {
 	protoPIS := &pluginv2.ProcessInstanceSettingsRequest{
-		PluginContext:    protoPluginContext,
-		TargetApiVersion: "v1alpha2",
-		CheckHealth:      true,
+		PluginContext: protoPluginContext,
+		Operation:     pluginv2.ProcessInstanceSettingsRequest_UPDATE,
+		CheckHealth:   true,
 	}
 
 	protoWalker := &walker{}
@@ -564,7 +564,7 @@ func TestConvertFromProtobufProcessInstanceSettingsRequest(t *testing.T) {
 
 	requireCounter := &requireCounter{}
 
-	requireCounter.Equal(t, protoPIS.TargetApiVersion, sdkPIS.TargetAPIVersion)
+	requireCounter.Equal(t, int32(protoPIS.Operation), int32(sdkPIS.Operation))
 	requireCounter.Equal(t, protoPIS.CheckHealth, sdkPIS.CheckHealth)
 
 	// PluginContext

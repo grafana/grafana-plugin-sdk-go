@@ -311,26 +311,12 @@ func (t ConvertToProtobuf) StatusResult(s *StatusResult) *pluginv2.StatusResult 
 	}
 }
 
-// StatusResult converts the SDK version of a StatusResult to the protobuf version.
-func (t ConvertToProtobuf) AdmissionUserInfo(u *AdmissionUserInfo) *pluginv2.AdmissionUserInfo {
-	if u == nil {
-		return nil
-	}
-	return &pluginv2.AdmissionUserInfo{
-		Username:  u.Username,
-		Uid:       u.UID,
-		Groups:    u.Groups,
-		JsonExtra: u.JSONExtra,
-	}
-}
-
 // ProcessInstanceSettingsRequest converts the SDK version of a ProcessInstanceSettingsRequest to the protobuf version.
 func (t ConvertToProtobuf) ProcessInstanceSettingsRequest(req *ProcessInstanceSettingsRequest) *pluginv2.ProcessInstanceSettingsRequest {
 	return &pluginv2.ProcessInstanceSettingsRequest{
-		PluginContext:    t.PluginContext(req.PluginContext),
-		Operation:        pluginv2.AdmissionOperation(req.Operation),
-		TargetApiVersion: req.TargetAPIVersion,
-		CheckHealth:      req.CheckHealth,
+		PluginContext: t.PluginContext(req.PluginContext),
+		Operation:     pluginv2.ProcessInstanceSettingsRequest_Operation(req.Operation),
+		CheckHealth:   req.CheckHealth,
 	}
 }
 
@@ -342,31 +328,6 @@ func (t ConvertToProtobuf) ProcessInstanceSettingsResponse(rsp *ProcessInstanceS
 		Warnings:                   rsp.Warnings,
 		AppInstanceSettings:        t.AppInstanceSettings(rsp.AppInstanceSettings),
 		DataSourceInstanceSettings: t.DataSourceInstanceSettings(rsp.DataSourceInstanceSettings),
-	}
-}
-
-// AdmissionRequest converts the SDK version of a AdmissionRequest to the protobuf version.
-func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.AdmissionRequest {
-	return &pluginv2.AdmissionRequest{
-		PluginContext:  t.PluginContext(req.PluginContext),
-		Operation:      pluginv2.AdmissionOperation(req.Operation),
-		Group:          req.Group,
-		Resource:       req.Resource,
-		Version:        req.Version,
-		UserInfo:       t.AdmissionUserInfo(req.UserInfo),
-		ObjectBytes:    req.ObjectBytes,
-		OldObjectBytes: req.OldObjectBytes,
-	}
-}
-
-// AdmissionResponse converts the SDK version of a AdmissionResponse to the protobuf version.
-func (t ConvertToProtobuf) AdmissionResponse(rsp *AdmissionResponse) *pluginv2.AdmissionResponse {
-	return &pluginv2.AdmissionResponse{
-		Allowed:          rsp.Allowed,
-		Result:           t.StatusResult(rsp.Result),
-		Warnings:         rsp.Warnings,
-		AuditAnnotations: rsp.AuditAnnotations,
-		ObjectBytes:      rsp.ObjectBytes,
 	}
 }
 

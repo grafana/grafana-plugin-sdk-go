@@ -310,25 +310,12 @@ func (f ConvertFromProtobuf) StatusResult(s *pluginv2.StatusResult) *StatusResul
 	}
 }
 
-// AdmissionUserInfo ...
-func (f ConvertFromProtobuf) AdmissionUserInfo(u *pluginv2.AdmissionUserInfo) *AdmissionUserInfo {
-	if u == nil {
-		return nil
-	}
-	return &AdmissionUserInfo{
-		Username:  u.Username,
-		UID:       u.Uid,
-		Groups:    u.Groups,
-		JSONExtra: u.JsonExtra,
-	}
-}
-
 // ProcessInstanceSettingsRequest ...
 func (f ConvertFromProtobuf) ProcessInstanceSettingsRequest(req *pluginv2.ProcessInstanceSettingsRequest) *ProcessInstanceSettingsRequest {
 	return &ProcessInstanceSettingsRequest{
-		PluginContext:    f.PluginContext(req.PluginContext),
-		TargetAPIVersion: req.TargetApiVersion,
-		CheckHealth:      req.CheckHealth,
+		PluginContext: f.PluginContext(req.PluginContext),
+		Operation:     InstanceSettingsOperation(req.Operation),
+		CheckHealth:   req.CheckHealth,
 	}
 }
 
@@ -340,30 +327,6 @@ func (f ConvertFromProtobuf) ProcessInstanceSettingsResponse(rsp *pluginv2.Proce
 		Warnings:                   rsp.Warnings,
 		AppInstanceSettings:        f.AppInstanceSettings(rsp.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(rsp.DataSourceInstanceSettings, ""),
-	}
-}
-
-// AdmissionRequest ...
-func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *AdmissionRequest {
-	return &AdmissionRequest{
-		Operation:      AdmissionOperation(req.Operation),
-		Group:          req.Group,
-		Version:        req.Version,
-		Resource:       req.Resource,
-		UserInfo:       f.AdmissionUserInfo(req.UserInfo),
-		ObjectBytes:    req.ObjectBytes,
-		OldObjectBytes: req.OldObjectBytes,
-	}
-}
-
-// AdmissionResponse ...
-func (f ConvertFromProtobuf) AdmissionResponse(rsp *pluginv2.AdmissionResponse) *AdmissionResponse {
-	return &AdmissionResponse{
-		Allowed:          rsp.Allowed,
-		Result:           f.StatusResult(rsp.Result),
-		Warnings:         rsp.Warnings,
-		AuditAnnotations: rsp.GetAuditAnnotations(),
-		ObjectBytes:      rsp.ObjectBytes,
 	}
 }
 

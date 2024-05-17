@@ -92,13 +92,16 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 	}
 }
 
-func TestConvertToProtobufAdmission(t *testing.T) {
-	ar := ToProto().AdmissionRequest(&AdmissionRequest{
-		Operation: AdmissionOperationCreate,
-		Group:     "a",
-		Version:   "v1",
-		Resource:  "xx",
+func TestConvertToProtobufStatus(t *testing.T) {
+	ar := ToProto().StatusResult(&StatusResult{
+		Status:  "a",
+		Message: "b",
+		Reason:  "c",
+		Code:    234,
 	})
 	require.NotNil(t, ar)
-	require.Equal(t, "a", ar.Group)
+	require.Equal(t, "a", ar.Status)
+	require.Equal(t, "b", ar.Message)
+	require.Equal(t, "c", ar.Reason)
+	require.Equal(t, int32(234), int32(ar.Code))
 }

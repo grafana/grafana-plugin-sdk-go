@@ -98,30 +98,8 @@ func (m *Manager) ProcessInstanceSettings(ctx context.Context, req *backend.Proc
 	if err != nil {
 		return nil, err
 	}
-	if ds, ok := h.(backend.AdmissionHandler); ok {
+	if ds, ok := h.(backend.InstanceSettingsHandler); ok {
 		return ds.ProcessInstanceSettings(ctx, req)
-	}
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
-}
-
-func (m *Manager) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.AdmissionResponse, error) {
-	h, err := m.Get(ctx, backend.PluginContext{}) // TODO???  there is not a particular context :thinking:
-	if err != nil {
-		return nil, err
-	}
-	if ds, ok := h.(backend.AdmissionHandler); ok {
-		return ds.ValidateAdmission(ctx, req)
-	}
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
-}
-
-func (m *Manager) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.AdmissionResponse, error) {
-	h, err := m.Get(ctx, backend.PluginContext{}) // TODO???  there is not a particular context :thinking:
-	if err != nil {
-		return nil, err
-	}
-	if ds, ok := h.(backend.AdmissionHandler); ok {
-		return ds.MutateAdmission(ctx, req)
 	}
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
