@@ -27,9 +27,7 @@ const DataSourceSLOMiddlewareName = "slo"
 
 // Middleware captures duration of requests to external services and the source of errors
 func Middleware() httpclient.Middleware {
-	return httpclient.NamedMiddlewareFunc(DataSourceSLOMiddlewareName, func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
-		return RoundTripper(opts, next)
-	})
+	return httpclient.NamedMiddlewareFunc(DataSourceSLOMiddlewareName, RoundTripper)
 }
 
 // RoundTripper captures duration of requests to external services and the source of errors
