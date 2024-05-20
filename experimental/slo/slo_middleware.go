@@ -15,7 +15,7 @@ import (
 )
 
 var duration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "grafana",
+	Namespace: "plugins",
 	Name:      "plugin_external_requests_duration_seconds",
 	Help:      "Duration of requests to external services",
 }, []string{"datasource_name", "datasource_type", "error_source"})
