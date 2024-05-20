@@ -4,39 +4,36 @@ import (
 	"context"
 )
 
-// InstanceSettings handles streams.
+// InstanceSettings handles instance settings storage.
 type InstanceSettingsHandler interface {
-	// ProcessInstanceSettings allows verifying the app/datasource settings before saving
-	// This is a specialized form of the validation/mutation hooks that only work for instance settings
-	ProcessInstanceSettings(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error)
+	CreateInstanceSettings(context.Context, *CreateInstanceSettingsRequest) (*InstanceSettingsResponse, error)
+	UpdateInstanceSettings(context.Context, *UpdateInstanceSettingsRequest) (*InstanceSettingsResponse, error)
 }
 
-// ProcessInstanceSettingsFunc is an adapter to allow the use of
-// ordinary functions as backend.ProcessInstanceSettingsFunc.
-type ProcessInstanceSettingsFunc func(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error)
+type CreateInstanceSettingsFunc func(context.Context, *CreateInstanceSettingsRequest) (*InstanceSettingsResponse, error)
+type UpdateInstanceSettingsFunc func(context.Context, *UpdateInstanceSettingsRequest) (*InstanceSettingsResponse, error)
 
-// Operation is the type of resource operation being checked for admission control
-// https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
-type InstanceSettingsOperation int32
-
-const (
-	InstanceSettingsOperationCREATE InstanceSettingsOperation = 0
-	InstanceSettingsOperationUPDATE InstanceSettingsOperation = 1
-	InstanceSettingsOperationDELETE InstanceSettingsOperation = 2
-)
-
-type ProcessInstanceSettingsRequest struct {
-	PluginContext PluginContext `json:"pluginContext"`
-	// Operation is the type of resource operation being checked for admission control
-	Operation InstanceSettingsOperation `json:"operation,omitempty"`
-	// In addition to checking the payload, also check if any connection
-	// parameters are successful
-	CheckHealth bool `json:"checkHealth"`
+type CreateInstanceSettingsRequest struct {
+	// The unique identifier of the plugin the request is targeted for.
+	PluginID string `json:"pluginId,omitempty"`
+	// Requested app instance state (not yet saved)
+	AppInstanceSettings *AppInstanceSettings `json:"appInstanceSettings,omitempty"`
+	// Requested data source instance state (not yet saved)
+	DataSourceInstanceSettings *DataSourceInstanceSettings `json:"dataSourceInstanceSettings,omitempty"`
 }
 
-type ProcessInstanceSettingsResponse struct {
+type UpdateInstanceSettingsRequest struct {
+	// The currently saved properties
+	PluginContext PluginContext `json:"pluginContext,omitempty"`
+	// Requested new sate of the app plugins settings
+	AppInstanceSettings *AppInstanceSettings `json:"appInstanceSettings,omitempty"`
+	// Requested new sate of the datasource plugins settings
+	DataSourceInstanceSettings *DataSourceInstanceSettings `json:"dataSourceInstanceSettings,omitempty"`
+}
+
+type InstanceSettingsResponse struct {
 	// Allowed indicates whether or not the admission request was permitted.
-	Allowed bool `json:"allowed"`
+	Allowed bool `json:"allowed,omitempty"`
 	// Result contains extra details into why an admission request was denied.
 	// This field IS NOT consulted in any way if "Allowed" is "true".
 	// +optional
@@ -51,8 +48,6 @@ type ProcessInstanceSettingsResponse struct {
 	AppInstanceSettings *AppInstanceSettings `json:"appInstanceSettings,omitempty"`
 	// Valid datasource instance settings if they exist in the request
 	DataSourceInstanceSettings *DataSourceInstanceSettings `json:"dataSourceInstanceSettings,omitempty"`
-	// The health response if requested
-	Health *CheckHealthResult `json:"health,omitempty"`
 }
 
 type StatusResult struct {

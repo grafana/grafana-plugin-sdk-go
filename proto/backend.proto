@@ -312,32 +312,36 @@ message StreamPacket {
 //-----------------------------------------------------------------
 
 service InstanceSettings {
-  // This allows verifying the app/datasource settings before saving
-  // This is a specalized form of the validation/mutation hooks that only work for instance settings
-  // The response will be in the preferred storage apiVersion
-  rpc ProcessInstanceSettings(ProcessInstanceSettingsRequest) returns (ProcessInstanceSettingsResponse);
+  // Check with the plugin to figure out if we can create the new instance settings
+  rpc CreateInstanceSettings(CreateInstanceSettingsRequest) returns (InstanceSettingsResponse);
+
+  // Called before saving any updates to instance settings
+  rpc UpdateInstanceSettings(UpdateInstanceSettingsRequest) returns (InstanceSettingsResponse);
 }
 
-message ProcessInstanceSettingsRequest {
-  // Unlike normal plugin context, this may not be saved and the lastUpdatedMS will be changed
-  // with each request.  
+message CreateInstanceSettingsRequest {
+  // The unique identifier of the plugin the request is targeted for.
+  string pluginId = 1;
+
+  // Requested app instance state (not yet saved)
+  AppInstanceSettings appInstanceSettings = 2;
+
+  // Requested data source instance state (not yet saved)
+  DataSourceInstanceSettings dataSourceInstanceSettings = 3;
+}
+
+message UpdateInstanceSettingsRequest {
+  // The currently saved properties
   PluginContext pluginContext = 1;
 
-  // Operation is the type of resource operation being checked for admission control
-  // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
-  enum Operation {
-    CREATE = 0;
-    UPDATE = 1;
-    DELETE = 2;
-  }
-  
-  Operation operation = 2;
-  
-  // In addition to validating the payload, also check if the connection parameters are successful
-  bool checkHealth = 4;
+  // Requested new sate of the app plugins settings
+  AppInstanceSettings appInstanceSettings = 2;
+
+  // Requested new sate of the datasource plugins settings
+  DataSourceInstanceSettings dataSourceInstanceSettings = 3;
 }
 
-message ProcessInstanceSettingsResponse {
+message InstanceSettingsResponse {
   // Allowed indicates whether or not the admission request was permitted.
   bool allowed = 1;
 
@@ -358,9 +362,6 @@ message ProcessInstanceSettingsResponse {
 
   // Valid datasource instance settings if they exist in the request
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
-
-  // The health response if requested
-  CheckHealthResponse health = 6;
 }
 
 // // TODO load types from???

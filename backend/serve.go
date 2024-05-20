@@ -300,6 +300,11 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 		plugKeys = append(plugKeys, "stream")
 	}
 
+	if pluginOpts.InstanceSettingsServer != nil {
+		pluginv2.RegisterInstanceSettingsServer(server, pluginOpts.InstanceSettingsServer)
+		plugKeys = append(plugKeys, "instanceSettings")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Info("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", address)

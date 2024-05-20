@@ -18,6 +18,10 @@ type ManageOpts struct {
 
 	// TracingOpts contains settings for tracing setup.
 	TracingOpts tracing.Opts
+
+	// Changes to instance settings should be handled without first caching
+	// This is EXPERIMENTAL and is a subject to change till Grafana 12
+	InstanceSettingsHandler backend.InstanceSettingsHandler
 }
 
 // Manage starts serving the data source over gPRC with automatic instance management.
@@ -37,7 +41,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	if err := backend.SetupTracer(pluginID, opts.TracingOpts); err != nil {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
-	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
+	handler := automanagement.NewManager(NewInstanceManager(instanceFactory), opts.InstanceSettingsHandler)
 	return backend.Manage(pluginID, backend.ServeOpts{
 		CheckHealthHandler:      handler,
 		CallResourceHandler:     handler,

@@ -311,18 +311,27 @@ func (t ConvertToProtobuf) StatusResult(s *StatusResult) *pluginv2.StatusResult 
 	}
 }
 
-// ProcessInstanceSettingsRequest converts the SDK version of a ProcessInstanceSettingsRequest to the protobuf version.
-func (t ConvertToProtobuf) ProcessInstanceSettingsRequest(req *ProcessInstanceSettingsRequest) *pluginv2.ProcessInstanceSettingsRequest {
-	return &pluginv2.ProcessInstanceSettingsRequest{
-		PluginContext: t.PluginContext(req.PluginContext),
-		Operation:     pluginv2.ProcessInstanceSettingsRequest_Operation(req.Operation),
-		CheckHealth:   req.CheckHealth,
+// CreateInstanceSettingsRequest converts the SDK version of a CreateInstanceSettingsRequest to the protobuf version.
+func (t ConvertToProtobuf) CreateInstanceSettingsRequest(req *CreateInstanceSettingsRequest) *pluginv2.CreateInstanceSettingsRequest {
+	return &pluginv2.CreateInstanceSettingsRequest{
+		PluginId:                   req.PluginID,
+		AppInstanceSettings:        t.AppInstanceSettings(req.AppInstanceSettings),
+		DataSourceInstanceSettings: t.DataSourceInstanceSettings(req.DataSourceInstanceSettings),
+	}
+}
+
+// CreateInstanceSettingsRequest converts the SDK version of a CreateInstanceSettingsRequest to the protobuf version.
+func (t ConvertToProtobuf) UpdateInstanceSettingsRequest(req *UpdateInstanceSettingsRequest) *pluginv2.UpdateInstanceSettingsRequest {
+	return &pluginv2.UpdateInstanceSettingsRequest{
+		PluginContext:              t.PluginContext(req.PluginContext),
+		AppInstanceSettings:        t.AppInstanceSettings(req.AppInstanceSettings),
+		DataSourceInstanceSettings: t.DataSourceInstanceSettings(req.DataSourceInstanceSettings),
 	}
 }
 
 // ProcessInstanceSettingsRequest converts the SDK version of a ProcessInstanceSettingsResponse to the protobuf version.
-func (t ConvertToProtobuf) ProcessInstanceSettingsResponse(rsp *ProcessInstanceSettingsResponse) *pluginv2.ProcessInstanceSettingsResponse {
-	return &pluginv2.ProcessInstanceSettingsResponse{
+func (t ConvertToProtobuf) InstanceSettingsResponse(rsp *InstanceSettingsResponse) *pluginv2.InstanceSettingsResponse {
+	return &pluginv2.InstanceSettingsResponse{
 		Allowed:                    rsp.Allowed,
 		Result:                     t.StatusResult(rsp.Result),
 		Warnings:                   rsp.Warnings,

@@ -27,7 +27,7 @@ func (p *TestPlugin) Shutdown() error {
 }
 
 func Manage(instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) (TestPlugin, error) {
-	handler := automanagement.NewManager(datasource.NewInstanceManager(instanceFactory))
+	handler := automanagement.NewManager(datasource.NewInstanceManager(instanceFactory), nil)
 	s, err := backend.TestStandaloneServe(backend.ServeOpts{
 		CheckHealthHandler:      handler,
 		CallResourceHandler:     handler,

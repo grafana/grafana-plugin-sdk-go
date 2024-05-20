@@ -43,16 +43,24 @@ type instanceSettingsGRPCServer struct {
 	server InstanceSettingsServer
 }
 
-func (s *instanceSettingsGRPCServer) ProcessInstanceSettings(ctx context.Context, req *pluginv2.ProcessInstanceSettingsRequest) (*pluginv2.ProcessInstanceSettingsResponse, error) {
-	return s.server.ProcessInstanceSettings(ctx, req)
+func (s *instanceSettingsGRPCServer) CreateInstanceSettings(ctx context.Context, req *pluginv2.CreateInstanceSettingsRequest) (*pluginv2.InstanceSettingsResponse, error) {
+	return s.server.CreateInstanceSettings(ctx, req)
+}
+
+func (s *instanceSettingsGRPCServer) UpdateInstanceSettings(ctx context.Context, req *pluginv2.UpdateInstanceSettingsRequest) (*pluginv2.InstanceSettingsResponse, error) {
+	return s.server.UpdateInstanceSettings(ctx, req)
 }
 
 type instanceSettingsGRPCClient struct {
 	client pluginv2.InstanceSettingsClient
 }
 
-func (c *instanceSettingsGRPCClient) ProcessInstanceSettings(ctx context.Context, req *pluginv2.ProcessInstanceSettingsRequest, opts ...grpc.CallOption) (*pluginv2.ProcessInstanceSettingsResponse, error) {
-	return c.client.ProcessInstanceSettings(ctx, req, opts...)
+func (c *instanceSettingsGRPCClient) CreateInstanceSettings(ctx context.Context, req *pluginv2.CreateInstanceSettingsRequest, opts ...grpc.CallOption) (*pluginv2.InstanceSettingsResponse, error) {
+	return c.client.CreateInstanceSettings(ctx, req, opts...)
+}
+
+func (c *instanceSettingsGRPCClient) UpdateInstanceSettings(ctx context.Context, req *pluginv2.UpdateInstanceSettingsRequest, opts ...grpc.CallOption) (*pluginv2.InstanceSettingsResponse, error) {
+	return c.client.UpdateInstanceSettings(ctx, req, opts...)
 }
 
 var _ InstanceSettingsServer = &instanceSettingsGRPCServer{}

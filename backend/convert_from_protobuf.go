@@ -310,18 +310,27 @@ func (f ConvertFromProtobuf) StatusResult(s *pluginv2.StatusResult) *StatusResul
 	}
 }
 
-// ProcessInstanceSettingsRequest ...
-func (f ConvertFromProtobuf) ProcessInstanceSettingsRequest(req *pluginv2.ProcessInstanceSettingsRequest) *ProcessInstanceSettingsRequest {
-	return &ProcessInstanceSettingsRequest{
-		PluginContext: f.PluginContext(req.PluginContext),
-		Operation:     InstanceSettingsOperation(req.Operation),
-		CheckHealth:   req.CheckHealth,
+// CreateInstanceSettingsRequest ...
+func (f ConvertFromProtobuf) CreateInstanceSettingsRequest(req *pluginv2.CreateInstanceSettingsRequest) *CreateInstanceSettingsRequest {
+	return &CreateInstanceSettingsRequest{
+		PluginID:                   req.PluginId,
+		AppInstanceSettings:        f.AppInstanceSettings(req.AppInstanceSettings),
+		DataSourceInstanceSettings: f.DataSourceInstanceSettings(req.DataSourceInstanceSettings, ""),
+	}
+}
+
+// CreateInstanceSettingsRequest ...
+func (f ConvertFromProtobuf) UpdateInstanceSettingsRequest(req *pluginv2.UpdateInstanceSettingsRequest) *UpdateInstanceSettingsRequest {
+	return &UpdateInstanceSettingsRequest{
+		PluginContext:              f.PluginContext(req.PluginContext),
+		AppInstanceSettings:        f.AppInstanceSettings(req.AppInstanceSettings),
+		DataSourceInstanceSettings: f.DataSourceInstanceSettings(req.DataSourceInstanceSettings, ""),
 	}
 }
 
 // ProcessInstanceSettingsResponse ...
-func (f ConvertFromProtobuf) ProcessInstanceSettingsResponse(rsp *pluginv2.ProcessInstanceSettingsResponse) *ProcessInstanceSettingsResponse {
-	return &ProcessInstanceSettingsResponse{
+func (f ConvertFromProtobuf) InstanceSettingsResponse(rsp *pluginv2.InstanceSettingsResponse) *InstanceSettingsResponse {
+	return &InstanceSettingsResponse{
 		Allowed:                    rsp.Allowed,
 		Result:                     f.StatusResult(rsp.Result),
 		Warnings:                   rsp.Warnings,

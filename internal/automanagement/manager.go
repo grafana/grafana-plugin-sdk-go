@@ -16,12 +16,16 @@ import (
 // instance created.
 type Manager struct {
 	instancemgmt.InstanceManager
+	settings backend.InstanceSettingsHandler
 }
 
 // NewManager creates Manager. It accepts datasource
 // instance factory.
-func NewManager(instanceManager instancemgmt.InstanceManager) *Manager {
-	return &Manager{InstanceManager: instanceManager}
+func NewManager(instanceManager instancemgmt.InstanceManager, settings backend.InstanceSettingsHandler) *Manager {
+	return &Manager{
+		InstanceManager: instanceManager,
+		settings:        settings,
+	}
 }
 
 func (m *Manager) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -93,13 +97,16 @@ func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, 
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
 
-func (m *Manager) ProcessInstanceSettings(ctx context.Context, req *backend.ProcessInstanceSettingsRequest) (*backend.ProcessInstanceSettingsResponse, error) {
-	h, err := m.Get(ctx, req.PluginContext)
-	if err != nil {
-		return nil, err
+func (m *Manager) CreateInstanceSettings(ctx context.Context, req *backend.CreateInstanceSettingsRequest) (*backend.InstanceSettingsResponse, error) {
+	if m.settings == nil {
+		return nil, status.Error(codes.Unimplemented, "unimplemented")
 	}
-	if ds, ok := h.(backend.InstanceSettingsHandler); ok {
-		return ds.ProcessInstanceSettings(ctx, req)
+	return m.settings.CreateInstanceSettings(ctx, req)
+}
+
+func (m *Manager) UpdateInstanceSettings(ctx context.Context, req *backend.UpdateInstanceSettingsRequest) (*backend.InstanceSettingsResponse, error) {
+	if m.settings == nil {
+		return nil, status.Error(codes.Unimplemented, "unimplemented")
 	}
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
+	return m.settings.UpdateInstanceSettings(ctx, req)
 }

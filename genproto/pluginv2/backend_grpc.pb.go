@@ -561,17 +561,18 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	InstanceSettings_ProcessInstanceSettings_FullMethodName = "/pluginv2.InstanceSettings/ProcessInstanceSettings"
+	InstanceSettings_CreateInstanceSettings_FullMethodName = "/pluginv2.InstanceSettings/CreateInstanceSettings"
+	InstanceSettings_UpdateInstanceSettings_FullMethodName = "/pluginv2.InstanceSettings/UpdateInstanceSettings"
 )
 
 // InstanceSettingsClient is the client API for InstanceSettings service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InstanceSettingsClient interface {
-	// This allows verifying the app/datasource settings before saving
-	// This is a specalized form of the validation/mutation hooks that only work for instance settings
-	// The response will be in the preferred storage apiVersion
-	ProcessInstanceSettings(ctx context.Context, in *ProcessInstanceSettingsRequest, opts ...grpc.CallOption) (*ProcessInstanceSettingsResponse, error)
+	// Check with the plugin to figure out if we can create the new instance settings
+	CreateInstanceSettings(ctx context.Context, in *CreateInstanceSettingsRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error)
+	// Called before saving any updates to instance settings
+	UpdateInstanceSettings(ctx context.Context, in *UpdateInstanceSettingsRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error)
 }
 
 type instanceSettingsClient struct {
@@ -582,9 +583,18 @@ func NewInstanceSettingsClient(cc grpc.ClientConnInterface) InstanceSettingsClie
 	return &instanceSettingsClient{cc}
 }
 
-func (c *instanceSettingsClient) ProcessInstanceSettings(ctx context.Context, in *ProcessInstanceSettingsRequest, opts ...grpc.CallOption) (*ProcessInstanceSettingsResponse, error) {
-	out := new(ProcessInstanceSettingsResponse)
-	err := c.cc.Invoke(ctx, InstanceSettings_ProcessInstanceSettings_FullMethodName, in, out, opts...)
+func (c *instanceSettingsClient) CreateInstanceSettings(ctx context.Context, in *CreateInstanceSettingsRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error) {
+	out := new(InstanceSettingsResponse)
+	err := c.cc.Invoke(ctx, InstanceSettings_CreateInstanceSettings_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *instanceSettingsClient) UpdateInstanceSettings(ctx context.Context, in *UpdateInstanceSettingsRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error) {
+	out := new(InstanceSettingsResponse)
+	err := c.cc.Invoke(ctx, InstanceSettings_UpdateInstanceSettings_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -595,18 +605,21 @@ func (c *instanceSettingsClient) ProcessInstanceSettings(ctx context.Context, in
 // All implementations should embed UnimplementedInstanceSettingsServer
 // for forward compatibility
 type InstanceSettingsServer interface {
-	// This allows verifying the app/datasource settings before saving
-	// This is a specalized form of the validation/mutation hooks that only work for instance settings
-	// The response will be in the preferred storage apiVersion
-	ProcessInstanceSettings(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error)
+	// Check with the plugin to figure out if we can create the new instance settings
+	CreateInstanceSettings(context.Context, *CreateInstanceSettingsRequest) (*InstanceSettingsResponse, error)
+	// Called before saving any updates to instance settings
+	UpdateInstanceSettings(context.Context, *UpdateInstanceSettingsRequest) (*InstanceSettingsResponse, error)
 }
 
 // UnimplementedInstanceSettingsServer should be embedded to have forward compatible implementations.
 type UnimplementedInstanceSettingsServer struct {
 }
 
-func (UnimplementedInstanceSettingsServer) ProcessInstanceSettings(context.Context, *ProcessInstanceSettingsRequest) (*ProcessInstanceSettingsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method ProcessInstanceSettings not implemented")
+func (UnimplementedInstanceSettingsServer) CreateInstanceSettings(context.Context, *CreateInstanceSettingsRequest) (*InstanceSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method CreateInstanceSettings not implemented")
+}
+func (UnimplementedInstanceSettingsServer) UpdateInstanceSettings(context.Context, *UpdateInstanceSettingsRequest) (*InstanceSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpdateInstanceSettings not implemented")
 }
 
 // UnsafeInstanceSettingsServer may be embedded to opt out of forward compatibility for this service.
@@ -620,20 +633,38 @@ func RegisterInstanceSettingsServer(s grpc.ServiceRegistrar, srv InstanceSetting
 	s.RegisterService(&InstanceSettings_ServiceDesc, srv)
 }
 
-func _InstanceSettings_ProcessInstanceSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ProcessInstanceSettingsRequest)
+func _InstanceSettings_CreateInstanceSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(CreateInstanceSettingsRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(InstanceSettingsServer).ProcessInstanceSettings(ctx, in)
+		return srv.(InstanceSettingsServer).CreateInstanceSettings(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: InstanceSettings_ProcessInstanceSettings_FullMethodName,
+		FullMethod: InstanceSettings_CreateInstanceSettings_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InstanceSettingsServer).ProcessInstanceSettings(ctx, req.(*ProcessInstanceSettingsRequest))
+		return srv.(InstanceSettingsServer).CreateInstanceSettings(ctx, req.(*CreateInstanceSettingsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _InstanceSettings_UpdateInstanceSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpdateInstanceSettingsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(InstanceSettingsServer).UpdateInstanceSettings(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: InstanceSettings_UpdateInstanceSettings_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(InstanceSettingsServer).UpdateInstanceSettings(ctx, req.(*UpdateInstanceSettingsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -646,8 +677,12 @@ var InstanceSettings_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*InstanceSettingsServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ProcessInstanceSettings",
-			Handler:    _InstanceSettings_ProcessInstanceSettings_Handler,
+			MethodName: "CreateInstanceSettings",
+			Handler:    _InstanceSettings_CreateInstanceSettings_Handler,
+		},
+		{
+			MethodName: "UpdateInstanceSettings",
+			Handler:    _InstanceSettings_UpdateInstanceSettings_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

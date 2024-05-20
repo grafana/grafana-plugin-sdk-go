@@ -8,24 +8,32 @@ import (
 
 // settingsSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type settingsSDKAdapter struct {
-	admissionHandler InstanceSettingsHandler
+	handler InstanceSettingsHandler
 }
 
 func newInstanceSettingsSDKAdapter(handler InstanceSettingsHandler) *settingsSDKAdapter {
 	return &settingsSDKAdapter{
-		admissionHandler: handler,
+		handler: handler,
 	}
 }
 
-func (a *settingsSDKAdapter) ProcessInstanceSettings(ctx context.Context, req *pluginv2.ProcessInstanceSettingsRequest) (*pluginv2.ProcessInstanceSettingsResponse, error) {
+func (a *settingsSDKAdapter) CreateInstanceSettings(ctx context.Context, req *pluginv2.CreateInstanceSettingsRequest) (*pluginv2.InstanceSettingsResponse, error) {
 	ctx = propagateTenantIDIfPresent(ctx)
-	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
-	parsedReq := FromProto().ProcessInstanceSettingsRequest(req)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointQueryData)
-	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	resp, err := a.admissionHandler.ProcessInstanceSettings(ctx, parsedReq)
+	parsedReq := FromProto().CreateInstanceSettingsRequest(req)
+	resp, err := a.handler.CreateInstanceSettings(ctx, parsedReq)
 	if err != nil {
 		return nil, err
 	}
-	return ToProto().ProcessInstanceSettingsResponse(resp), nil
+	return ToProto().InstanceSettingsResponse(resp), nil
+}
+
+func (a *settingsSDKAdapter) UpdateInstanceSettings(ctx context.Context, req *pluginv2.UpdateInstanceSettingsRequest) (*pluginv2.InstanceSettingsResponse, error) {
+	ctx = propagateTenantIDIfPresent(ctx)
+	parsedReq := FromProto().UpdateInstanceSettingsRequest(req)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
+	resp, err := a.handler.UpdateInstanceSettings(ctx, parsedReq)
+	if err != nil {
+		return nil, err
+	}
+	return ToProto().InstanceSettingsResponse(resp), nil
 }
