@@ -96,10 +96,11 @@ func TestLegacyDataSourceRef(t *testing.T) {
 	}
 
 	wrap := &testWrapper{}
-	err := json.Unmarshal([]byte(`{ "ref": {"type":"ttt", "uid":"UID"}}`), wrap)
+	err := json.Unmarshal([]byte(`{ "ref": {"type":"ttt", "uid":"UID", "apiVersion": "v2"}}`), wrap)
 	require.NoError(t, err)
 	require.Equal(t, "ttt", wrap.Ref.Type)
 	require.Equal(t, "UID", wrap.Ref.UID)
+	require.Equal(t, "v2", wrap.Ref.APIVersion)
 
 	err = json.Unmarshal([]byte(`{ "ref": "name"}`), wrap)
 	require.NoError(t, err)

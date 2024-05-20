@@ -81,7 +81,11 @@
         },
         "uid": {
           "type": "string",
-          "description": "Datasource UID"
+          "description": "Datasource UID (NOTE: name in k8s)"
+        },
+        "apiVersion": {
+          "type": "string",
+          "description": "The apiserver version"
         }
       },
       "additionalProperties": false,
