@@ -23,7 +23,7 @@ type TestPluginClient struct {
 }
 
 func newTestPluginClient(addr string) (*TestPluginClient, error) {
-	c, err := grpc.Dial(addr, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	c, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		return nil, err
 	}
