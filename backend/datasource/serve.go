@@ -21,8 +21,8 @@ type ServeOpts struct {
 	// StreamHandler for streaming queries.
 	backend.StreamHandler
 
-	// InstanceSettingsHandler for processing instance settings
-	backend.InstanceSettingsHandler
+	// StorageHandler for processing instance settings
+	backend.StorageHandler
 
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
@@ -31,11 +31,11 @@ type ServeOpts struct {
 // Serve starts serving the data source over gPRC.
 func Serve(opts ServeOpts) error {
 	return backend.Serve(backend.ServeOpts{
-		CheckHealthHandler:      opts.CheckHealthHandler,
-		CallResourceHandler:     opts.CallResourceHandler,
-		QueryDataHandler:        opts.QueryDataHandler,
-		StreamHandler:           opts.StreamHandler,
-		InstanceSettingsHandler: opts.InstanceSettingsHandler,
-		GRPCSettings:            opts.GRPCSettings,
+		CheckHealthHandler:  opts.CheckHealthHandler,
+		CallResourceHandler: opts.CallResourceHandler,
+		QueryDataHandler:    opts.QueryDataHandler,
+		StreamHandler:       opts.StreamHandler,
+		StorageHandler:      opts.StorageHandler,
+		GRPCSettings:        opts.GRPCSettings,
 	})
 }

@@ -43,7 +43,7 @@ var healthStatusNames = map[int]string{
 	2: "ERROR",
 }
 
-// String textual represntation of the status.
+// String textual representation of the status.
 func (hs HealthStatus) String() string {
 	s, exists := healthStatusNames[int(hs)]
 	if exists {

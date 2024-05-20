@@ -561,128 +561,208 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	InstanceSettings_CreateInstanceSettings_FullMethodName = "/pluginv2.InstanceSettings/CreateInstanceSettings"
-	InstanceSettings_UpdateInstanceSettings_FullMethodName = "/pluginv2.InstanceSettings/UpdateInstanceSettings"
+	Storage_MutateInstanceSettings_FullMethodName = "/pluginv2.Storage/MutateInstanceSettings"
+	Storage_ValidateAdmission_FullMethodName      = "/pluginv2.Storage/ValidateAdmission"
+	Storage_MutateAdmission_FullMethodName        = "/pluginv2.Storage/MutateAdmission"
+	Storage_ConvertObject_FullMethodName          = "/pluginv2.Storage/ConvertObject"
 )
 
-// InstanceSettingsClient is the client API for InstanceSettings service.
+// StorageClient is the client API for Storage service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type InstanceSettingsClient interface {
-	// Check with the plugin to figure out if we can create the new instance settings
-	CreateInstanceSettings(ctx context.Context, in *CreateInstanceSettingsRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error)
-	// Called before saving any updates to instance settings
-	UpdateInstanceSettings(ctx context.Context, in *UpdateInstanceSettingsRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error)
+type StorageClient interface {
+	// Check if the instance settings can be saved.  This is similar to a standard
+	// mutating addmission hook, except that the properties are already typed protobuf
+	MutateInstanceSettings(ctx context.Context, in *InstanceSettingsAdmissionRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error)
+	// Verify if a resource can be saved or return a descriptive error
+	ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*StorageResponse, error)
+	// Return a modified copy of the request that can be saved or a descriptive error
+	MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*StorageResponse, error)
+	// Convert a resource to a new version
+	ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*StorageResponse, error)
 }
 
-type instanceSettingsClient struct {
+type storageClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewInstanceSettingsClient(cc grpc.ClientConnInterface) InstanceSettingsClient {
-	return &instanceSettingsClient{cc}
+func NewStorageClient(cc grpc.ClientConnInterface) StorageClient {
+	return &storageClient{cc}
 }
 
-func (c *instanceSettingsClient) CreateInstanceSettings(ctx context.Context, in *CreateInstanceSettingsRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error) {
+func (c *storageClient) MutateInstanceSettings(ctx context.Context, in *InstanceSettingsAdmissionRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error) {
 	out := new(InstanceSettingsResponse)
-	err := c.cc.Invoke(ctx, InstanceSettings_CreateInstanceSettings_FullMethodName, in, out, opts...)
+	err := c.cc.Invoke(ctx, Storage_MutateInstanceSettings_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *instanceSettingsClient) UpdateInstanceSettings(ctx context.Context, in *UpdateInstanceSettingsRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error) {
-	out := new(InstanceSettingsResponse)
-	err := c.cc.Invoke(ctx, InstanceSettings_UpdateInstanceSettings_FullMethodName, in, out, opts...)
+func (c *storageClient) ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*StorageResponse, error) {
+	out := new(StorageResponse)
+	err := c.cc.Invoke(ctx, Storage_ValidateAdmission_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// InstanceSettingsServer is the server API for InstanceSettings service.
-// All implementations should embed UnimplementedInstanceSettingsServer
+func (c *storageClient) MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*StorageResponse, error) {
+	out := new(StorageResponse)
+	err := c.cc.Invoke(ctx, Storage_MutateAdmission_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *storageClient) ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*StorageResponse, error) {
+	out := new(StorageResponse)
+	err := c.cc.Invoke(ctx, Storage_ConvertObject_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// StorageServer is the server API for Storage service.
+// All implementations should embed UnimplementedStorageServer
 // for forward compatibility
-type InstanceSettingsServer interface {
-	// Check with the plugin to figure out if we can create the new instance settings
-	CreateInstanceSettings(context.Context, *CreateInstanceSettingsRequest) (*InstanceSettingsResponse, error)
-	// Called before saving any updates to instance settings
-	UpdateInstanceSettings(context.Context, *UpdateInstanceSettingsRequest) (*InstanceSettingsResponse, error)
+type StorageServer interface {
+	// Check if the instance settings can be saved.  This is similar to a standard
+	// mutating addmission hook, except that the properties are already typed protobuf
+	MutateInstanceSettings(context.Context, *InstanceSettingsAdmissionRequest) (*InstanceSettingsResponse, error)
+	// Verify if a resource can be saved or return a descriptive error
+	ValidateAdmission(context.Context, *AdmissionRequest) (*StorageResponse, error)
+	// Return a modified copy of the request that can be saved or a descriptive error
+	MutateAdmission(context.Context, *AdmissionRequest) (*StorageResponse, error)
+	// Convert a resource to a new version
+	ConvertObject(context.Context, *ConversionRequest) (*StorageResponse, error)
 }
 
-// UnimplementedInstanceSettingsServer should be embedded to have forward compatible implementations.
-type UnimplementedInstanceSettingsServer struct {
+// UnimplementedStorageServer should be embedded to have forward compatible implementations.
+type UnimplementedStorageServer struct {
 }
 
-func (UnimplementedInstanceSettingsServer) CreateInstanceSettings(context.Context, *CreateInstanceSettingsRequest) (*InstanceSettingsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method CreateInstanceSettings not implemented")
+func (UnimplementedStorageServer) MutateInstanceSettings(context.Context, *InstanceSettingsAdmissionRequest) (*InstanceSettingsResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MutateInstanceSettings not implemented")
 }
-func (UnimplementedInstanceSettingsServer) UpdateInstanceSettings(context.Context, *UpdateInstanceSettingsRequest) (*InstanceSettingsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method UpdateInstanceSettings not implemented")
+func (UnimplementedStorageServer) ValidateAdmission(context.Context, *AdmissionRequest) (*StorageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateAdmission not implemented")
+}
+func (UnimplementedStorageServer) MutateAdmission(context.Context, *AdmissionRequest) (*StorageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MutateAdmission not implemented")
+}
+func (UnimplementedStorageServer) ConvertObject(context.Context, *ConversionRequest) (*StorageResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConvertObject not implemented")
 }
 
-// UnsafeInstanceSettingsServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to InstanceSettingsServer will
+// UnsafeStorageServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to StorageServer will
 // result in compilation errors.
-type UnsafeInstanceSettingsServer interface {
-	mustEmbedUnimplementedInstanceSettingsServer()
+type UnsafeStorageServer interface {
+	mustEmbedUnimplementedStorageServer()
 }
 
-func RegisterInstanceSettingsServer(s grpc.ServiceRegistrar, srv InstanceSettingsServer) {
-	s.RegisterService(&InstanceSettings_ServiceDesc, srv)
+func RegisterStorageServer(s grpc.ServiceRegistrar, srv StorageServer) {
+	s.RegisterService(&Storage_ServiceDesc, srv)
 }
 
-func _InstanceSettings_CreateInstanceSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(CreateInstanceSettingsRequest)
+func _Storage_MutateInstanceSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(InstanceSettingsAdmissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(InstanceSettingsServer).CreateInstanceSettings(ctx, in)
+		return srv.(StorageServer).MutateInstanceSettings(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: InstanceSettings_CreateInstanceSettings_FullMethodName,
+		FullMethod: Storage_MutateInstanceSettings_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InstanceSettingsServer).CreateInstanceSettings(ctx, req.(*CreateInstanceSettingsRequest))
+		return srv.(StorageServer).MutateInstanceSettings(ctx, req.(*InstanceSettingsAdmissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _InstanceSettings_UpdateInstanceSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(UpdateInstanceSettingsRequest)
+func _Storage_ValidateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdmissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(InstanceSettingsServer).UpdateInstanceSettings(ctx, in)
+		return srv.(StorageServer).ValidateAdmission(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: InstanceSettings_UpdateInstanceSettings_FullMethodName,
+		FullMethod: Storage_ValidateAdmission_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InstanceSettingsServer).UpdateInstanceSettings(ctx, req.(*UpdateInstanceSettingsRequest))
+		return srv.(StorageServer).ValidateAdmission(ctx, req.(*AdmissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// InstanceSettings_ServiceDesc is the grpc.ServiceDesc for InstanceSettings service.
+func _Storage_MutateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdmissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServer).MutateAdmission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Storage_MutateAdmission_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServer).MutateAdmission(ctx, req.(*AdmissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Storage_ConvertObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConversionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(StorageServer).ConvertObject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Storage_ConvertObject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(StorageServer).ConvertObject(ctx, req.(*ConversionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// Storage_ServiceDesc is the grpc.ServiceDesc for Storage service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var InstanceSettings_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pluginv2.InstanceSettings",
-	HandlerType: (*InstanceSettingsServer)(nil),
+var Storage_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.Storage",
+	HandlerType: (*StorageServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "CreateInstanceSettings",
-			Handler:    _InstanceSettings_CreateInstanceSettings_Handler,
+			MethodName: "MutateInstanceSettings",
+			Handler:    _Storage_MutateInstanceSettings_Handler,
 		},
 		{
-			MethodName: "UpdateInstanceSettings",
-			Handler:    _InstanceSettings_UpdateInstanceSettings_Handler,
+			MethodName: "ValidateAdmission",
+			Handler:    _Storage_ValidateAdmission_Handler,
+		},
+		{
+			MethodName: "MutateAdmission",
+			Handler:    _Storage_MutateAdmission_Handler,
+		},
+		{
+			MethodName: "ConvertObject",
+			Handler:    _Storage_ConvertObject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

@@ -8,11 +8,11 @@ import (
 
 // ServeOpts contains options for serving plugins.
 type ServeOpts struct {
-	DiagnosticsServer      DiagnosticsServer
-	ResourceServer         ResourceServer
-	DataServer             DataServer
-	StreamServer           StreamServer
-	InstanceSettingsServer InstanceSettingsServer
+	DiagnosticsServer DiagnosticsServer
+	ResourceServer    ResourceServer
+	DataServer        DataServer
+	StreamServer      StreamServer
+	StorageServer     StorageServer
 
 	// GRPCServer factory method for creating GRPC server.
 	// If nil, the default one will be used.
@@ -48,9 +48,9 @@ func Serve(opts ServeOpts) error {
 		}
 	}
 
-	if opts.InstanceSettingsServer != nil {
-		pSet["instanceSettings"] = &InstanceSettingsGRPCPlugin{
-			InstanceSettingsServer: opts.InstanceSettingsServer,
+	if opts.StorageServer != nil {
+		pSet["storage"] = &StorageGRPCPlugin{
+			StorageServer: opts.StorageServer,
 		}
 	}
 

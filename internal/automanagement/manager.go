@@ -16,15 +16,25 @@ import (
 // instance created.
 type Manager struct {
 	instancemgmt.InstanceManager
-	settings backend.InstanceSettingsHandler
+
+	// For create requests, the storage engine will not cache an instance
+	storage backend.StorageHandler
 }
 
-// NewManager creates Manager. It accepts datasource
-// instance factory.
-func NewManager(instanceManager instancemgmt.InstanceManager, settings backend.InstanceSettingsHandler) *Manager {
+var (
+	_ = backend.CollectMetricsHandler(&Manager{})
+	_ = backend.CheckHealthHandler(&Manager{})
+	_ = backend.QueryDataHandler(&Manager{})
+	_ = backend.CallResourceHandler(&Manager{})
+	_ = backend.StreamHandler(&Manager{})
+	_ = backend.StorageHandler(&Manager{})
+)
+
+// NewManager creates Manager. It accepts datasource instance factory.
+func NewManager(instanceManager instancemgmt.InstanceManager, storage backend.StorageHandler) *Manager {
 	return &Manager{
 		InstanceManager: instanceManager,
-		settings:        settings,
+		storage:         storage,
 	}
 }
 
@@ -49,6 +59,17 @@ func (m *Manager) CheckHealth(ctx context.Context, req *backend.CheckHealthReque
 	}
 	if ds, ok := h.(backend.CheckHealthHandler); ok {
 		return ds.CheckHealth(ctx, req)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}
+
+func (m *Manager) CollectMetrics(ctx context.Context, req *backend.CollectMetricsRequest) (*backend.CollectMetricsResult, error) {
+	h, err := m.Get(ctx, req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(backend.CollectMetricsHandler); ok {
+		return ds.CollectMetrics(ctx, req)
 	}
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
@@ -97,16 +118,30 @@ func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, 
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
 
-func (m *Manager) CreateInstanceSettings(ctx context.Context, req *backend.CreateInstanceSettingsRequest) (*backend.InstanceSettingsResponse, error) {
-	if m.settings == nil {
+func (m *Manager) MutateInstanceSettings(ctx context.Context, req *backend.InstanceSettingsAdmissionRequest) (*backend.InstanceSettingsResponse, error) {
+	if m.storage == nil {
 		return nil, status.Error(codes.Unimplemented, "unimplemented")
 	}
-	return m.settings.CreateInstanceSettings(ctx, req)
+	return m.storage.MutateInstanceSettings(ctx, req)
 }
 
-func (m *Manager) UpdateInstanceSettings(ctx context.Context, req *backend.UpdateInstanceSettingsRequest) (*backend.InstanceSettingsResponse, error) {
-	if m.settings == nil {
+func (m *Manager) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.StorageResponse, error) {
+	if m.storage == nil {
 		return nil, status.Error(codes.Unimplemented, "unimplemented")
 	}
-	return m.settings.UpdateInstanceSettings(ctx, req)
+	return m.storage.ValidateAdmission(ctx, req)
+}
+
+func (m *Manager) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.StorageResponse, error) {
+	if m.storage == nil {
+		return nil, status.Error(codes.Unimplemented, "unimplemented")
+	}
+	return m.storage.ValidateAdmission(ctx, req)
+}
+
+func (m *Manager) ConvertObject(ctx context.Context, req *backend.ConversionRequest) (*backend.StorageResponse, error) {
+	if m.storage == nil {
+		return nil, status.Error(codes.Unimplemented, "unimplemented")
+	}
+	return m.storage.ConvertObject(ctx, req)
 }

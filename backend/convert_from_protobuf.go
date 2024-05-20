@@ -310,21 +310,44 @@ func (f ConvertFromProtobuf) StatusResult(s *pluginv2.StatusResult) *StatusResul
 	}
 }
 
-// CreateInstanceSettingsRequest ...
-func (f ConvertFromProtobuf) CreateInstanceSettingsRequest(req *pluginv2.CreateInstanceSettingsRequest) *CreateInstanceSettingsRequest {
-	return &CreateInstanceSettingsRequest{
-		PluginID:                   req.PluginId,
+// InstanceSettingsAdmissionRequest ...
+func (f ConvertFromProtobuf) InstanceSettingsAdmissionRequest(req *pluginv2.InstanceSettingsAdmissionRequest) *InstanceSettingsAdmissionRequest {
+	return &InstanceSettingsAdmissionRequest{
+		PluginContext:              f.PluginContext(req.PluginContext),
+		Operation:                  StorageOperation(req.Operation),
 		AppInstanceSettings:        f.AppInstanceSettings(req.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(req.DataSourceInstanceSettings, ""),
 	}
 }
 
-// CreateInstanceSettingsRequest ...
-func (f ConvertFromProtobuf) UpdateInstanceSettingsRequest(req *pluginv2.UpdateInstanceSettingsRequest) *UpdateInstanceSettingsRequest {
-	return &UpdateInstanceSettingsRequest{
-		PluginContext:              f.PluginContext(req.PluginContext),
-		AppInstanceSettings:        f.AppInstanceSettings(req.AppInstanceSettings),
-		DataSourceInstanceSettings: f.DataSourceInstanceSettings(req.DataSourceInstanceSettings, ""),
+// AdmissionRequest ...
+func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *AdmissionRequest {
+	return &AdmissionRequest{
+		PluginContext:  f.PluginContext(req.PluginContext),
+		Operation:      StorageOperation(req.Operation),
+		ObjectBytes:    req.ObjectBytes,
+		OldObjectBytes: req.OldObjectBytes,
+	}
+}
+
+// ConversionRequest ...
+func (f ConvertFromProtobuf) ConversionRequest(req *pluginv2.ConversionRequest) *ConversionRequest {
+	return &ConversionRequest{
+		PluginContext: f.PluginContext(req.PluginContext),
+		Envelope:      ConversionObjectEnvelope(req.Envelope),
+		ObjectBytes:   req.ObjectBytes,
+		TargetVersion: req.TargetVersion,
+	}
+}
+
+// StorageResponse ...
+func (f ConvertFromProtobuf) StorageResponse(rsp *pluginv2.StorageResponse) *StorageResponse {
+	return &StorageResponse{
+		Allowed:          rsp.Allowed,
+		Result:           f.StatusResult(rsp.Result),
+		Warnings:         rsp.Warnings,
+		AuditAnnotations: rsp.AuditAnnotations,
+		ObjectBytes:      rsp.ObjectBytes,
 	}
 }
 
