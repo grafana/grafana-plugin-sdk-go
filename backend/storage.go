@@ -98,7 +98,7 @@ var conversionNames = map[int]string{
 
 // String textual representation of the operation.
 func (hs ConversionObjectEnvelope) String() string {
-	s, exists := storageOperationNames[int(hs)]
+	s, exists := conversionNames[int(hs)]
 	if exists {
 		return s
 	}
