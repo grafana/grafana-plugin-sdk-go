@@ -10,9 +10,12 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
+
+var Logger = log.DefaultLogger
 
 var duration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "plugins",
@@ -23,40 +26,25 @@ var duration = promauto.NewHistogramVec(prometheus.HistogramOpts{
 const DataSourceSLOMiddlewareName = "slo"
 
 // Middleware captures duration of requests to external services and the source of errors
-func Middleware(plugin string) httpclient.Middleware {
+func Middleware() httpclient.Middleware {
 	return httpclient.NamedMiddlewareFunc(DataSourceSLOMiddlewareName, func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
-		return RoundTripper(plugin, opts, next)
+		return RoundTripper(opts, next)
 	})
 }
 
 // RoundTripper captures duration of requests to external services and the source of errors
-func RoundTripper(plugin string, opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
+func RoundTripper(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
+	name, kind, err := getDSInfo(opts)
+	if err != nil {
+		Logger.Error("failed to get datasource info", "error", err)
+		return next
+	}
 	return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		start := time.Now()
 		var errorSource = "none"
 
 		defer func() {
-			if opts.Labels == nil {
-				return
-			}
-
-			datasourceName, exists := opts.Labels["datasource_name"]
-			if !exists {
-				return
-			}
-
-			datasourceLabelName, err := SanitizeLabelName(datasourceName)
-			// if the datasource named cannot be turned into a prometheus
-			// label we will skip instrumenting these metrics.
-			if err != nil {
-				return
-			}
-
-			datasourceType, exists := opts.Labels["datasource_type"]
-			if !exists {
-				return
-			}
-			duration.WithLabelValues(datasourceLabelName, datasourceType, errorSource).Observe(time.Since(start).Seconds())
+			duration.WithLabelValues(name, kind, errorSource).Observe(time.Since(start).Seconds())
 		}()
 
 		res, err := next.RoundTrip(req)
@@ -68,6 +56,27 @@ func RoundTripper(plugin string, opts httpclient.Options, next http.RoundTripper
 		}
 		return res, err
 	})
+}
+
+func getDSInfo(opts httpclient.Options) (string, string, error) {
+	datasourceName, exists := opts.Labels["datasource_name"]
+	if !exists {
+		return "", "", errors.New("datasource_name label not found")
+	}
+
+	datasourceName, err := SanitizeLabelName(datasourceName)
+	// if the datasource named cannot be turned into a prometheus
+	// label we will skip instrumenting these metrics.
+	if err != nil {
+		return "", "", err
+	}
+
+	datasourceType, exists := opts.Labels["datasource_type"]
+	if !exists {
+		return "", "", errors.New("datasource_type label not found")
+	}
+
+	return datasourceName, datasourceType, nil
 }
 
 // SanitizeLabelName removes all invalid chars from the label name.
