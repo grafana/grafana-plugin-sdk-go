@@ -66,8 +66,10 @@ func (s *AppInstanceSettings) GVK() GroupVersionKind {
 	}
 }
 
-func (s *AppInstanceSettings) ToProto() ([]byte, error) {
-	return proto.Marshal(ConvertToProtobuf{}.AppInstanceSettings(s))
+// ProtoBytes returns the settings the the byte structure expected by admission hooks
+func (s *AppInstanceSettings) ProtoBytes() []byte {
+	v, _ := proto.Marshal(ConvertToProtobuf{}.AppInstanceSettings(s))
+	return v
 }
 
 func AppInstanceSettingsFromProto(body []byte) (*AppInstanceSettings, error) {
@@ -179,8 +181,10 @@ func (s *DataSourceInstanceSettings) GVK() GroupVersionKind {
 	}
 }
 
-func (s *DataSourceInstanceSettings) ToProto() ([]byte, error) {
-	return proto.Marshal(ConvertToProtobuf{}.DataSourceInstanceSettings(s))
+// ProtoBytes returns the settings the the byte structure expected by admission hooks
+func (s *DataSourceInstanceSettings) ProtoBytes() []byte {
+	v, _ := proto.Marshal(ConvertToProtobuf{}.DataSourceInstanceSettings(s))
+	return v
 }
 
 func DataSourceInstanceSettingsFromProto(body []byte, pluginID string) (*DataSourceInstanceSettings, error) {
