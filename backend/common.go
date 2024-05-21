@@ -203,7 +203,7 @@ func (s *DataSourceInstanceSettings) ToAdmissionRequest(old *DataSourceInstanceS
 	return req
 }
 
-func DataSourceInstanceSettingsFromProto(body []byte, pluginId string) (*DataSourceInstanceSettings, error) {
+func DataSourceInstanceSettingsFromProto(body []byte, pluginID string) (*DataSourceInstanceSettings, error) {
 	if len(body) == 0 {
 		return nil, nil
 	}
@@ -212,7 +212,7 @@ func DataSourceInstanceSettingsFromProto(body []byte, pluginId string) (*DataSou
 	if err != nil {
 		return nil, err
 	}
-	return ConvertFromProtobuf{}.DataSourceInstanceSettings(tmp, pluginId), nil
+	return ConvertFromProtobuf{}.DataSourceInstanceSettings(tmp, pluginID), nil
 }
 
 // PluginContext holds contextual information about a plugin request, such as
