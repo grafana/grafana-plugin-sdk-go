@@ -311,8 +311,8 @@ func (f ConvertFromProtobuf) StatusResult(s *pluginv2.StatusResult) *StatusResul
 }
 
 // GroupVersionKindResource ...
-func (f ConvertFromProtobuf) GroupVersionKindResource(req *pluginv2.GroupVersionKindResource) *GroupVersionKindResource {
-	return &GroupVersionKindResource{
+func (f ConvertFromProtobuf) GroupVersionKindResource(req *pluginv2.GroupVersionKindResource) GroupVersionKindResource {
+	return GroupVersionKindResource{
 		Group:    req.Group,
 		Version:  req.Version,
 		Kind:     req.Kind,

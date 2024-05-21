@@ -326,7 +326,7 @@ func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.Adm
 	return &pluginv2.AdmissionRequest{
 		PluginContext:  t.PluginContext(req.PluginContext),
 		Operation:      pluginv2.AdmissionRequest_Operation(req.Operation),
-		Kind:           t.GroupVersionKindResource(req.Kind),
+		Kind:           t.GroupVersionKindResource(&req.Kind),
 		ObjectBytes:    req.ObjectBytes,
 		OldObjectBytes: req.OldObjectBytes,
 	}
@@ -336,7 +336,7 @@ func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.Adm
 func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.ConversionRequest {
 	return &pluginv2.ConversionRequest{
 		PluginContext: t.PluginContext(req.PluginContext),
-		Kind:          t.GroupVersionKindResource(req.Kind),
+		Kind:          t.GroupVersionKindResource(&req.Kind),
 		ObjectBytes:   req.ObjectBytes,
 		TargetVersion: req.TargetVersion,
 	}

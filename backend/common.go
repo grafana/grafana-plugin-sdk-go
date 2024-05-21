@@ -8,7 +8,9 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
+	"google.golang.org/protobuf/proto"
 )
 
 const dataCustomOptionsKey = "grafanaData"
@@ -54,6 +56,40 @@ func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.O
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
 	return opts, nil
+}
+
+func (s *AppInstanceSettings) GVKR() GroupVersionKindResource {
+	return GroupVersionKindResource{
+		Group:   "grafana-plugins-sdk-go",
+		Version: "v0", // the protobuf bytes (json is not valid)
+		Kind:    "AppInstanceSettings",
+	}
+}
+
+func (s *AppInstanceSettings) ToAdmissionRequest(old *AppInstanceSettings) *AdmissionRequest {
+	req := &AdmissionRequest{Kind: s.GVKR()}
+	convert := ConvertToProtobuf{}
+	obj := convert.AppInstanceSettings(s)
+	oldObj := convert.AppInstanceSettings(old)
+	if obj != nil {
+		req.ObjectBytes, _ = proto.Marshal(obj)
+	}
+	if oldObj != nil {
+		req.OldObjectBytes, _ = proto.Marshal(oldObj)
+	}
+	return req
+}
+
+func AppInstanceSettingsFromProto(body []byte) (*AppInstanceSettings, error) {
+	if len(body) == 0 {
+		return nil, nil
+	}
+	tmp := &pluginv2.AppInstanceSettings{}
+	err := proto.Unmarshal(body, tmp)
+	if err != nil {
+		return nil, err
+	}
+	return ConvertFromProtobuf{}.AppInstanceSettings(tmp), nil
 }
 
 // DataSourceInstanceSettings represents settings for a data source instance.
@@ -143,6 +179,40 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (htt
 	}
 
 	return opts, nil
+}
+
+func (s *DataSourceInstanceSettings) GVKR() GroupVersionKindResource {
+	return GroupVersionKindResource{
+		Group:   "grafana-plugins-sdk-go",
+		Version: "v0", // the protobuf bytes (json is not valid)
+		Kind:    "DataSourceInstanceSettings",
+	}
+}
+
+func (s *DataSourceInstanceSettings) ToAdmissionRequest(old *DataSourceInstanceSettings) *AdmissionRequest {
+	req := &AdmissionRequest{Kind: s.GVKR()}
+	convert := ConvertToProtobuf{}
+	obj := convert.DataSourceInstanceSettings(s)
+	oldObj := convert.DataSourceInstanceSettings(old)
+	if obj != nil {
+		req.ObjectBytes, _ = proto.Marshal(obj)
+	}
+	if oldObj != nil {
+		req.OldObjectBytes, _ = proto.Marshal(oldObj)
+	}
+	return req
+}
+
+func DataSourceInstanceSettingsFromProto(body []byte, pluginId string) (*DataSourceInstanceSettings, error) {
+	if len(body) == 0 {
+		return nil, nil
+	}
+	tmp := &pluginv2.DataSourceInstanceSettings{}
+	err := proto.Unmarshal(body, tmp)
+	if err != nil {
+		return nil, err
+	}
+	return ConvertFromProtobuf{}.DataSourceInstanceSettings(tmp, pluginId), nil
 }
 
 // PluginContext holds contextual information about a plugin request, such as
