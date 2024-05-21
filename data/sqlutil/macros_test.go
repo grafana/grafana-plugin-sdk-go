@@ -77,6 +77,11 @@ func TestInterpolate(t *testing.T) {
 			output: "select * from baz",
 		},
 		{
+			name:   "macro that is a substring of another macro",
+			input:  "select $__foo, $__fooBaz from foo",
+			output: "select baz, qux from foo",
+		},
+		{
 			name:   "macro without params",
 			input:  "select * from $__params()",
 			output: "select * from bar",
