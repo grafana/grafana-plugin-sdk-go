@@ -49,7 +49,7 @@ func Serve(opts ServeOpts) error {
 	}
 
 	if opts.AdmissionServer != nil {
-		pSet["admission"] = &StorageGRPCPlugin{
+		pSet["admission"] = &AdmissionGRPCPlugin{
 			AdmissionServer: opts.AdmissionServer,
 		}
 	}

@@ -19,56 +19,56 @@ type AdmissionClient interface {
 	pluginv2.AdmissionControlClient
 }
 
-// StorageGRPCPlugin implements the GRPCPlugin interface from github.com/hashicorp/go-plugin.
-type StorageGRPCPlugin struct {
+// AdmissionGRPCPlugin implements the GRPCPlugin interface from github.com/hashicorp/go-plugin.
+type AdmissionGRPCPlugin struct {
 	plugin.NetRPCUnsupportedPlugin
 	plugin.GRPCPlugin
 	AdmissionServer AdmissionServer
 }
 
 // GRPCServer registers p as an admission control gRPC server.
-func (p *StorageGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error {
-	pluginv2.RegisterAdmissionControlServer(s, &storageGRPCServer{
+func (p *AdmissionGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error {
+	pluginv2.RegisterAdmissionControlServer(s, &admissionGRPCServer{
 		server: p.AdmissionServer,
 	})
 	return nil
 }
 
-func (p *StorageGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
-	return &storageGRPCClient{client: pluginv2.NewAdmissionControlClient(c)}, nil
+func (p *AdmissionGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+	return &admissionGRPCClient{client: pluginv2.NewAdmissionControlClient(c)}, nil
 }
 
-type storageGRPCServer struct {
+type admissionGRPCServer struct {
 	server AdmissionServer
 }
 
-func (s *storageGRPCServer) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCServer) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.AdmissionResponse, error) {
 	return s.server.ValidateAdmission(ctx, req)
 }
 
-func (s *storageGRPCServer) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCServer) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.AdmissionResponse, error) {
 	return s.server.MutateAdmission(ctx, req)
 }
 
-func (s *storageGRPCServer) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCServer) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.AdmissionResponse, error) {
 	return s.server.ConvertObject(ctx, req)
 }
 
-type storageGRPCClient struct {
+type admissionGRPCClient struct {
 	client pluginv2.AdmissionControlClient
 }
 
-func (s *storageGRPCClient) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCClient) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
 	return s.client.ValidateAdmission(ctx, req, opts...)
 }
 
-func (s *storageGRPCClient) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCClient) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
 	return s.client.MutateAdmission(ctx, req, opts...)
 }
 
-func (s *storageGRPCClient) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCClient) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
 	return s.client.ConvertObject(ctx, req, opts...)
 }
 
-var _ AdmissionServer = &storageGRPCServer{}
-var _ AdmissionClient = &storageGRPCClient{}
+var _ AdmissionServer = &admissionGRPCServer{}
+var _ AdmissionClient = &admissionGRPCClient{}
