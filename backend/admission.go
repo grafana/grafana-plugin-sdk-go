@@ -22,9 +22,9 @@ type ConvertObjectFunc func(context.Context, *ConversionRequest) (*AdmissionResp
 type AdmissionRequestOperation int32
 
 const (
-	AdmissionRequestCREATE AdmissionRequestOperation = 0
-	AdmissionRequestUPDATE AdmissionRequestOperation = 1
-	AdmissionRequestDELETE AdmissionRequestOperation = 2
+	AdmissionRequestCreate AdmissionRequestOperation = 0
+	AdmissionRequestUpdate AdmissionRequestOperation = 1
+	AdmissionRequestDelete AdmissionRequestOperation = 2
 )
 
 // String textual representation of the operation.
@@ -34,9 +34,9 @@ func (o AdmissionRequestOperation) String() string {
 
 // Identify the Object properties
 type GroupVersionKind struct {
-	Group   string `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
-	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	Kind    string `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
+	Group   string `json:"group,omitempty"`
+	Version string `json:"version,omitempty"`
+	Kind    string `json:"kind,omitempty"`
 }
 
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
@@ -45,52 +45,52 @@ type GroupVersionKind struct {
 // NOTE: this does not include a plugin context
 type AdmissionRequest struct {
 	// NOTE: this may not include app or datasource instance settings depending on the request
-	PluginContext PluginContext `protobuf:"bytes,1,opt,name=pluginContext,proto3" json:"pluginContext,omitempty"`
+	PluginContext PluginContext `json:"pluginContext,omitempty"`
 	// The requested operation
-	Operation AdmissionRequestOperation `protobuf:"varint,2,opt,name=operation,proto3,enum=pluginv2.AdmissionRequestOperation" json:"operation,omitempty"`
+	Operation AdmissionRequestOperation `json:"operation,omitempty"`
 	// The object kind
-	Kind GroupVersionKind `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
+	Kind GroupVersionKind `json:"kind,omitempty"`
 	// Object is the object in the request.  This includes the full metadata envelope.
-	ObjectBytes []byte `protobuf:"bytes,4,opt,name=object_bytes,json=objectBytes,proto3" json:"object_bytes,omitempty"`
+	ObjectBytes []byte `json:"object_bytes,omitempty"`
 	// OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
-	OldObjectBytes []byte `protobuf:"bytes,5,opt,name=old_object_bytes,json=oldObjectBytes,proto3" json:"old_object_bytes,omitempty"`
+	OldObjectBytes []byte `json:"old_object_bytes,omitempty"`
 }
 
 // ConversionRequest supports converting an object from on version to another
 type ConversionRequest struct {
 	// NOTE: this may not include app or datasource instance settings depending on the request
-	PluginContext PluginContext `protobuf:"bytes,1,opt,name=pluginContext,proto3" json:"pluginContext,omitempty"`
+	PluginContext PluginContext `json:"pluginContext,omitempty"`
 	// The object kind
-	Kind GroupVersionKind `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Kind GroupVersionKind `json:"kind,omitempty"`
 	// Object is the object in the request.  This includes the full metadata envelope.
-	ObjectBytes []byte `protobuf:"bytes,3,opt,name=object_bytes,json=objectBytes,proto3" json:"object_bytes,omitempty"`
+	ObjectBytes []byte `json:"object_bytes,omitempty"`
 	// Target converted version
-	TargetVersion string `protobuf:"bytes,4,opt,name=target_version,json=targetVersion,proto3" json:"target_version,omitempty"`
+	TargetVersion string `json:"target_version,omitempty"`
 }
 
 // See https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L118
 type AdmissionResponse struct {
 	// Allowed indicates whether or not the admission request was permitted.
-	Allowed bool `protobuf:"varint,1,opt,name=allowed,proto3" json:"allowed,omitempty"`
+	Allowed bool `json:"allowed,omitempty"`
 	// Result contains extra details into why an admission request was denied.
 	// This field IS NOT consulted in any way if "Allowed" is "true".
 	// +optional
-	Result *StatusResult `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
+	Result *StatusResult `json:"result,omitempty"`
 	// AuditAnnotations is an unstructured key value map set by remote admission controller (e.g. error=image-blacklisted).
 	// MutatingAdmissionWebhook and ValidatingAdmissionWebhook admission controller will prefix the keys with
 	// admission webhook name (e.g. imagepolicy.example.com/error=image-blacklisted). AuditAnnotations will be provided by
 	// the admission webhook to add additional context to the audit log for this request.
 	// +optional
-	AuditAnnotations map[string]string `protobuf:"bytes,3,rep,name=auditAnnotations,proto3" json:"auditAnnotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
+	AuditAnnotations map[string]string `json:"auditAnnotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// warnings is a list of warning messages to return to the requesting API client.
 	// Warning messages describe a problem the client making the API request should correct or be aware of.
 	// Limit warnings to 120 characters if possible.
 	// Warnings over 256 characters and large numbers of warnings may be truncated.
 	// +optional
-	Warnings []string `protobuf:"bytes,4,rep,name=warnings,proto3" json:"warnings,omitempty"`
+	Warnings []string `json:"warnings,omitempty"`
 	// Mutated object bytes (when requested)
 	// +optional
-	ObjectBytes []byte `protobuf:"bytes,5,opt,name=object_bytes,json=objectBytes,proto3" json:"object_bytes,omitempty"`
+	ObjectBytes []byte `json:"object_bytes,omitempty"`
 }
 
 type StatusResult struct {
