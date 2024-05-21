@@ -12,7 +12,7 @@ type ServeOpts struct {
 	ResourceServer    ResourceServer
 	DataServer        DataServer
 	StreamServer      StreamServer
-	StorageServer     StorageServer
+	AdmissionServer   AdmissionServer
 
 	// GRPCServer factory method for creating GRPC server.
 	// If nil, the default one will be used.
@@ -48,9 +48,9 @@ func Serve(opts ServeOpts) error {
 		}
 	}
 
-	if opts.StorageServer != nil {
-		pSet["storage"] = &StorageGRPCPlugin{
-			StorageServer: opts.StorageServer,
+	if opts.AdmissionServer != nil {
+		pSet["admission"] = &StorageGRPCPlugin{
+			AdmissionServer: opts.AdmissionServer,
 		}
 	}
 

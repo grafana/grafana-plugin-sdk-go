@@ -308,59 +308,27 @@ message StreamPacket {
 }
 
 //-----------------------------------------------------------------
-// Storage -- EXPERIMENTAL and is subject to change until 12.??
+// AdmissionControl -- EXPERIMENTAL and is subject to change until 12.??
 //-----------------------------------------------------------------
 
-service Storage {
-  // Check if the instance settings can be saved.  This is similar to a standard 
-  // mutating addmission hook, except that the properties are already typed protobuf
-  rpc MutateInstanceSettings(InstanceSettingsAdmissionRequest) returns (InstanceSettingsResponse);
-
+service AdmissionControl {
   // Verify if a resource can be saved or return a descriptive error
-  rpc ValidateAdmission(AdmissionRequest) returns (StorageResponse);
+  rpc ValidateAdmission(AdmissionRequest) returns (AdmissionResponse);
 
   // Return a modified copy of the request that can be saved or a descriptive error
-  rpc MutateAdmission(AdmissionRequest) returns (StorageResponse);
+  rpc MutateAdmission(AdmissionRequest) returns (AdmissionResponse);
 
   // Convert a resource to a new version
-  rpc ConvertObject(ConversionRequest) returns (StorageResponse);
+  rpc ConvertObject(ConversionRequest) returns (AdmissionResponse);
 }
 
-message InstanceSettingsAdmissionRequest {
-  // NOTE: this may not include app or datasource instance settings depending on the request
-  PluginContext pluginContext = 1;
-
-  // The requested operation
-  StorageOperation operation = 2;
-
-  // Requested app instance state (not yet saved)
-  AppInstanceSettings appInstanceSettings = 3;
-
-  // Requested data source instance state (not yet saved)
-  DataSourceInstanceSettings dataSourceInstanceSettings = 4;
-}
-
-message InstanceSettingsResponse {
-  // Allowed indicates whether or not the admission request was permitted.
-  bool allowed = 1;
-
-  // Result contains extra details into why an admission request was denied.
-  // This field IS NOT consulted in any way if "Allowed" is "true".
-  // +optional
-  StatusResult result = 2;
-
-  // warnings is a list of warning messages to return to the requesting API client.
-  // Warning messages describe a problem the client making the API request should correct or be aware of.
-  // Limit warnings to 120 characters if possible.
-  // Warnings over 256 characters and large numbers of warnings may be truncated.
-  // +optional
-  repeated string warnings = 3;
-
-  // Valid app instance settings if they exist in the request
-  AppInstanceSettings appInstanceSettings = 4;
-
-  // Valid datasource instance settings if they exist in the request
-  DataSourceInstanceSettings dataSourceInstanceSettings = 5;
+// Identify the Object properties
+// EG, the union of: metav1.GroupVersionKind and metav1.GroupVersionResource
+message GroupVersionKindResource {
+  string group = 1;
+  string version = 2;
+  string kind = 3;
+  string resource = 4;
 }
 
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
@@ -368,36 +336,38 @@ message InstanceSettingsResponse {
 // And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
 // NOTE: this does not include a plugin context
 message AdmissionRequest {
+  // Operation is the type of resource operation being checked for admission control
+  // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
+  enum Operation {
+    CREATE = 0;
+    UPDATE = 1;
+    DELETE = 2;
+  }
+
   // NOTE: this may not include app or datasource instance settings depending on the request
   PluginContext pluginContext = 1;
 
   // The requested operation
-  StorageOperation operation = 2;
+  Operation operation = 2;
   
+  // The object kind
+  GroupVersionKindResource kind = 3;
+
   // Object is the object in the request.  This includes the full metadata envelope.
-  // The Group+Version+Kind will be included in the payload
-  bytes object_bytes = 3;
+  bytes object_bytes = 4;
 
   // OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
-  bytes old_object_bytes = 4;
+  bytes old_object_bytes = 5;
 }
 
 // ConversionRequest supports converting an object from on version to another 
 message ConversionRequest {
-  // NOTE: this context exists because most of the middleware depends on it
-  // The format conversions most likely do not depend on instance settings passed with the context
+  // NOTE: this may not include app or datasource instance settings depending on the request
   PluginContext pluginContext = 1;
 
-  enum ObjectEnvelope {
-    // Kubernetes style resource
-    RESOURCE = 0;
-    // Full query request
-    QUERY_DATA_REQUEST = 1;
-  }
+  // The object kind
+  GroupVersionKindResource kind = 2;
 
-  // object metadata wrapper
-  ObjectEnvelope envelope = 2;
-  
   // Object is the object in the request.  This includes the full metadata envelope.
   bytes object_bytes = 3;
 
@@ -405,16 +375,8 @@ message ConversionRequest {
   string target_version = 4;
 }
 
-// Operation is the type of resource operation being checked for admission control
-// https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
-enum StorageOperation {
-  CREATE = 0;
-  UPDATE = 1;
-  DELETE = 2;
-}
-
 // See https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L118
-message StorageResponse {
+message AdmissionResponse {
   // Allowed indicates whether or not the admission request was permitted.
   bool allowed = 1;
 

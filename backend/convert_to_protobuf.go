@@ -311,13 +311,13 @@ func (t ConvertToProtobuf) StatusResult(s *StatusResult) *pluginv2.StatusResult 
 	}
 }
 
-// InstanceSettingsAdmissionRequest converts the SDK version of a InstanceSettingsAdmissionRequest to the protobuf version.
-func (t ConvertToProtobuf) InstanceSettingsAdmissionRequest(req *InstanceSettingsAdmissionRequest) *pluginv2.InstanceSettingsAdmissionRequest {
-	return &pluginv2.InstanceSettingsAdmissionRequest{
-		PluginContext:              t.PluginContext(req.PluginContext),
-		Operation:                  pluginv2.StorageOperation(req.Operation),
-		AppInstanceSettings:        t.AppInstanceSettings(req.AppInstanceSettings),
-		DataSourceInstanceSettings: t.DataSourceInstanceSettings(req.DataSourceInstanceSettings),
+// GroupVersionKindResource converts the SDK version of a GroupVersionKindResource to the protobuf version.
+func (t ConvertToProtobuf) GroupVersionKindResource(req *GroupVersionKindResource) *pluginv2.GroupVersionKindResource {
+	return &pluginv2.GroupVersionKindResource{
+		Group:    req.Group,
+		Version:  req.Version,
+		Kind:     req.Kind,
+		Resource: req.Resource,
 	}
 }
 
@@ -325,7 +325,8 @@ func (t ConvertToProtobuf) InstanceSettingsAdmissionRequest(req *InstanceSetting
 func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.AdmissionRequest {
 	return &pluginv2.AdmissionRequest{
 		PluginContext:  t.PluginContext(req.PluginContext),
-		Operation:      pluginv2.StorageOperation(req.Operation),
+		Operation:      pluginv2.AdmissionRequest_Operation(req.Operation),
+		Kind:           t.GroupVersionKindResource(req.Kind),
 		ObjectBytes:    req.ObjectBytes,
 		OldObjectBytes: req.OldObjectBytes,
 	}
@@ -335,26 +336,15 @@ func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.Adm
 func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.ConversionRequest {
 	return &pluginv2.ConversionRequest{
 		PluginContext: t.PluginContext(req.PluginContext),
-		Envelope:      pluginv2.ConversionRequest_ObjectEnvelope(req.Envelope),
+		Kind:          t.GroupVersionKindResource(req.Kind),
 		ObjectBytes:   req.ObjectBytes,
 		TargetVersion: req.TargetVersion,
 	}
 }
 
-// InstanceSettingsResponse converts the SDK version of a InstanceSettingsResponse to the protobuf version.
-func (t ConvertToProtobuf) InstanceSettingsResponse(rsp *InstanceSettingsResponse) *pluginv2.InstanceSettingsResponse {
-	return &pluginv2.InstanceSettingsResponse{
-		Allowed:                    rsp.Allowed,
-		Result:                     t.StatusResult(rsp.Result),
-		Warnings:                   rsp.Warnings,
-		AppInstanceSettings:        t.AppInstanceSettings(rsp.AppInstanceSettings),
-		DataSourceInstanceSettings: t.DataSourceInstanceSettings(rsp.DataSourceInstanceSettings),
-	}
-}
-
-// StorageResponse converts the SDK version of a StorageResponse to the protobuf version.
-func (t ConvertToProtobuf) StorageResponse(rsp *StorageResponse) *pluginv2.StorageResponse {
-	return &pluginv2.StorageResponse{
+// AdmissionResponse converts the SDK version of a AdmissionResponse to the protobuf version.
+func (t ConvertToProtobuf) AdmissionResponse(rsp *AdmissionResponse) *pluginv2.AdmissionResponse {
+	return &pluginv2.AdmissionResponse{
 		Allowed:          rsp.Allowed,
 		Result:           t.StatusResult(rsp.Result),
 		Warnings:         rsp.Warnings,

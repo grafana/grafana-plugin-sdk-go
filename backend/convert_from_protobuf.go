@@ -310,13 +310,13 @@ func (f ConvertFromProtobuf) StatusResult(s *pluginv2.StatusResult) *StatusResul
 	}
 }
 
-// InstanceSettingsAdmissionRequest ...
-func (f ConvertFromProtobuf) InstanceSettingsAdmissionRequest(req *pluginv2.InstanceSettingsAdmissionRequest) *InstanceSettingsAdmissionRequest {
-	return &InstanceSettingsAdmissionRequest{
-		PluginContext:              f.PluginContext(req.PluginContext),
-		Operation:                  StorageOperation(req.Operation),
-		AppInstanceSettings:        f.AppInstanceSettings(req.AppInstanceSettings),
-		DataSourceInstanceSettings: f.DataSourceInstanceSettings(req.DataSourceInstanceSettings, ""),
+// GroupVersionKindResource ...
+func (f ConvertFromProtobuf) GroupVersionKindResource(req *pluginv2.GroupVersionKindResource) *GroupVersionKindResource {
+	return &GroupVersionKindResource{
+		Group:    req.Group,
+		Version:  req.Version,
+		Kind:     req.Kind,
+		Resource: req.Resource,
 	}
 }
 
@@ -324,7 +324,8 @@ func (f ConvertFromProtobuf) InstanceSettingsAdmissionRequest(req *pluginv2.Inst
 func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *AdmissionRequest {
 	return &AdmissionRequest{
 		PluginContext:  f.PluginContext(req.PluginContext),
-		Operation:      StorageOperation(req.Operation),
+		Operation:      AdmissionRequest_Operation(req.Operation),
+		Kind:           f.GroupVersionKindResource(req.Kind),
 		ObjectBytes:    req.ObjectBytes,
 		OldObjectBytes: req.OldObjectBytes,
 	}
@@ -334,31 +335,20 @@ func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *A
 func (f ConvertFromProtobuf) ConversionRequest(req *pluginv2.ConversionRequest) *ConversionRequest {
 	return &ConversionRequest{
 		PluginContext: f.PluginContext(req.PluginContext),
-		Envelope:      ConversionObjectEnvelope(req.Envelope),
+		Kind:          f.GroupVersionKindResource(req.Kind),
 		ObjectBytes:   req.ObjectBytes,
 		TargetVersion: req.TargetVersion,
 	}
 }
 
-// StorageResponse ...
-func (f ConvertFromProtobuf) StorageResponse(rsp *pluginv2.StorageResponse) *StorageResponse {
-	return &StorageResponse{
+// AdmissionResponse ...
+func (f ConvertFromProtobuf) AdmissionResponse(rsp *pluginv2.AdmissionResponse) *AdmissionResponse {
+	return &AdmissionResponse{
 		Allowed:          rsp.Allowed,
 		Result:           f.StatusResult(rsp.Result),
 		Warnings:         rsp.Warnings,
 		AuditAnnotations: rsp.AuditAnnotations,
 		ObjectBytes:      rsp.ObjectBytes,
-	}
-}
-
-// ProcessInstanceSettingsResponse ...
-func (f ConvertFromProtobuf) InstanceSettingsResponse(rsp *pluginv2.InstanceSettingsResponse) *InstanceSettingsResponse {
-	return &InstanceSettingsResponse{
-		Allowed:                    rsp.Allowed,
-		Result:                     f.StatusResult(rsp.Result),
-		Warnings:                   rsp.Warnings,
-		AppInstanceSettings:        f.AppInstanceSettings(rsp.AppInstanceSettings),
-		DataSourceInstanceSettings: f.DataSourceInstanceSettings(rsp.DataSourceInstanceSettings, ""),
 	}
 }
 

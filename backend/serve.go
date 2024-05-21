@@ -53,9 +53,9 @@ type ServeOpts struct {
 	// StreamHandler handler for streaming queries.
 	StreamHandler StreamHandler
 
-	// StorageHandler validates resource changes
+	// AdmissionHandler validates resource storage
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
-	StorageHandler StorageHandler
+	AdmissionHandler AdmissionHandler
 
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
@@ -78,8 +78,8 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
 	}
 
-	if opts.StorageHandler != nil {
-		pluginOpts.StorageServer = newStorageSDKAdapter(opts.StorageHandler)
+	if opts.AdmissionHandler != nil {
+		pluginOpts.AdmissionServer = newStorageSDKAdapter(opts.AdmissionHandler)
 	}
 	return pluginOpts
 }
@@ -300,9 +300,9 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 		plugKeys = append(plugKeys, "stream")
 	}
 
-	if pluginOpts.StorageServer != nil {
-		pluginv2.RegisterStorageServer(server, pluginOpts.StorageServer)
-		plugKeys = append(plugKeys, "storage")
+	if pluginOpts.AdmissionServer != nil {
+		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
+		plugKeys = append(plugKeys, "admission")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly

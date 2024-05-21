@@ -16,9 +16,6 @@ import (
 // instance created.
 type Manager struct {
 	instancemgmt.InstanceManager
-
-	// For create requests, the storage engine will not cache an instance
-	storage backend.StorageHandler
 }
 
 var (
@@ -27,14 +24,12 @@ var (
 	_ = backend.QueryDataHandler(&Manager{})
 	_ = backend.CallResourceHandler(&Manager{})
 	_ = backend.StreamHandler(&Manager{})
-	_ = backend.StorageHandler(&Manager{})
 )
 
 // NewManager creates Manager. It accepts datasource instance factory.
-func NewManager(instanceManager instancemgmt.InstanceManager, storage backend.StorageHandler) *Manager {
+func NewManager(instanceManager instancemgmt.InstanceManager) *Manager {
 	return &Manager{
 		InstanceManager: instanceManager,
-		storage:         storage,
 	}
 }
 
@@ -116,32 +111,4 @@ func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, 
 		return ds.RunStream(ctx, req, sender)
 	}
 	return status.Error(codes.Unimplemented, "unimplemented")
-}
-
-func (m *Manager) MutateInstanceSettings(ctx context.Context, req *backend.InstanceSettingsAdmissionRequest) (*backend.InstanceSettingsResponse, error) {
-	if m.storage == nil {
-		return nil, status.Error(codes.Unimplemented, "unimplemented")
-	}
-	return m.storage.MutateInstanceSettings(ctx, req)
-}
-
-func (m *Manager) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.StorageResponse, error) {
-	if m.storage == nil {
-		return nil, status.Error(codes.Unimplemented, "unimplemented")
-	}
-	return m.storage.ValidateAdmission(ctx, req)
-}
-
-func (m *Manager) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.StorageResponse, error) {
-	if m.storage == nil {
-		return nil, status.Error(codes.Unimplemented, "unimplemented")
-	}
-	return m.storage.ValidateAdmission(ctx, req)
-}
-
-func (m *Manager) ConvertObject(ctx context.Context, req *backend.ConversionRequest) (*backend.StorageResponse, error) {
-	if m.storage == nil {
-		return nil, status.Error(codes.Unimplemented, "unimplemented")
-	}
-	return m.storage.ConvertObject(ctx, req)
 }

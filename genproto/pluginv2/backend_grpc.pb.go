@@ -561,208 +561,167 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Storage_MutateInstanceSettings_FullMethodName = "/pluginv2.Storage/MutateInstanceSettings"
-	Storage_ValidateAdmission_FullMethodName      = "/pluginv2.Storage/ValidateAdmission"
-	Storage_MutateAdmission_FullMethodName        = "/pluginv2.Storage/MutateAdmission"
-	Storage_ConvertObject_FullMethodName          = "/pluginv2.Storage/ConvertObject"
+	AdmissionControl_ValidateAdmission_FullMethodName = "/pluginv2.AdmissionControl/ValidateAdmission"
+	AdmissionControl_MutateAdmission_FullMethodName   = "/pluginv2.AdmissionControl/MutateAdmission"
+	AdmissionControl_ConvertObject_FullMethodName     = "/pluginv2.AdmissionControl/ConvertObject"
 )
 
-// StorageClient is the client API for Storage service.
+// AdmissionControlClient is the client API for AdmissionControl service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type StorageClient interface {
-	// Check if the instance settings can be saved.  This is similar to a standard
-	// mutating addmission hook, except that the properties are already typed protobuf
-	MutateInstanceSettings(ctx context.Context, in *InstanceSettingsAdmissionRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error)
+type AdmissionControlClient interface {
 	// Verify if a resource can be saved or return a descriptive error
-	ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*StorageResponse, error)
+	ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
 	// Return a modified copy of the request that can be saved or a descriptive error
-	MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*StorageResponse, error)
+	MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
 	// Convert a resource to a new version
-	ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*StorageResponse, error)
+	ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
 }
 
-type storageClient struct {
+type admissionControlClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewStorageClient(cc grpc.ClientConnInterface) StorageClient {
-	return &storageClient{cc}
+func NewAdmissionControlClient(cc grpc.ClientConnInterface) AdmissionControlClient {
+	return &admissionControlClient{cc}
 }
 
-func (c *storageClient) MutateInstanceSettings(ctx context.Context, in *InstanceSettingsAdmissionRequest, opts ...grpc.CallOption) (*InstanceSettingsResponse, error) {
-	out := new(InstanceSettingsResponse)
-	err := c.cc.Invoke(ctx, Storage_MutateInstanceSettings_FullMethodName, in, out, opts...)
+func (c *admissionControlClient) ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
+	out := new(AdmissionResponse)
+	err := c.cc.Invoke(ctx, AdmissionControl_ValidateAdmission_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *storageClient) ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*StorageResponse, error) {
-	out := new(StorageResponse)
-	err := c.cc.Invoke(ctx, Storage_ValidateAdmission_FullMethodName, in, out, opts...)
+func (c *admissionControlClient) MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
+	out := new(AdmissionResponse)
+	err := c.cc.Invoke(ctx, AdmissionControl_MutateAdmission_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *storageClient) MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*StorageResponse, error) {
-	out := new(StorageResponse)
-	err := c.cc.Invoke(ctx, Storage_MutateAdmission_FullMethodName, in, out, opts...)
+func (c *admissionControlClient) ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
+	out := new(AdmissionResponse)
+	err := c.cc.Invoke(ctx, AdmissionControl_ConvertObject_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *storageClient) ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*StorageResponse, error) {
-	out := new(StorageResponse)
-	err := c.cc.Invoke(ctx, Storage_ConvertObject_FullMethodName, in, out, opts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-// StorageServer is the server API for Storage service.
-// All implementations should embed UnimplementedStorageServer
+// AdmissionControlServer is the server API for AdmissionControl service.
+// All implementations should embed UnimplementedAdmissionControlServer
 // for forward compatibility
-type StorageServer interface {
-	// Check if the instance settings can be saved.  This is similar to a standard
-	// mutating addmission hook, except that the properties are already typed protobuf
-	MutateInstanceSettings(context.Context, *InstanceSettingsAdmissionRequest) (*InstanceSettingsResponse, error)
+type AdmissionControlServer interface {
 	// Verify if a resource can be saved or return a descriptive error
-	ValidateAdmission(context.Context, *AdmissionRequest) (*StorageResponse, error)
+	ValidateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
 	// Return a modified copy of the request that can be saved or a descriptive error
-	MutateAdmission(context.Context, *AdmissionRequest) (*StorageResponse, error)
+	MutateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
 	// Convert a resource to a new version
-	ConvertObject(context.Context, *ConversionRequest) (*StorageResponse, error)
+	ConvertObject(context.Context, *ConversionRequest) (*AdmissionResponse, error)
 }
 
-// UnimplementedStorageServer should be embedded to have forward compatible implementations.
-type UnimplementedStorageServer struct {
+// UnimplementedAdmissionControlServer should be embedded to have forward compatible implementations.
+type UnimplementedAdmissionControlServer struct {
 }
 
-func (UnimplementedStorageServer) MutateInstanceSettings(context.Context, *InstanceSettingsAdmissionRequest) (*InstanceSettingsResponse, error) {
-	return nil, status.Errorf(codes.Unimplemented, "method MutateInstanceSettings not implemented")
-}
-func (UnimplementedStorageServer) ValidateAdmission(context.Context, *AdmissionRequest) (*StorageResponse, error) {
+func (UnimplementedAdmissionControlServer) ValidateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateAdmission not implemented")
 }
-func (UnimplementedStorageServer) MutateAdmission(context.Context, *AdmissionRequest) (*StorageResponse, error) {
+func (UnimplementedAdmissionControlServer) MutateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MutateAdmission not implemented")
 }
-func (UnimplementedStorageServer) ConvertObject(context.Context, *ConversionRequest) (*StorageResponse, error) {
+func (UnimplementedAdmissionControlServer) ConvertObject(context.Context, *ConversionRequest) (*AdmissionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConvertObject not implemented")
 }
 
-// UnsafeStorageServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to StorageServer will
+// UnsafeAdmissionControlServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AdmissionControlServer will
 // result in compilation errors.
-type UnsafeStorageServer interface {
-	mustEmbedUnimplementedStorageServer()
+type UnsafeAdmissionControlServer interface {
+	mustEmbedUnimplementedAdmissionControlServer()
 }
 
-func RegisterStorageServer(s grpc.ServiceRegistrar, srv StorageServer) {
-	s.RegisterService(&Storage_ServiceDesc, srv)
+func RegisterAdmissionControlServer(s grpc.ServiceRegistrar, srv AdmissionControlServer) {
+	s.RegisterService(&AdmissionControl_ServiceDesc, srv)
 }
 
-func _Storage_MutateInstanceSettings_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(InstanceSettingsAdmissionRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(StorageServer).MutateInstanceSettings(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: Storage_MutateInstanceSettings_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageServer).MutateInstanceSettings(ctx, req.(*InstanceSettingsAdmissionRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _Storage_ValidateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdmissionControl_ValidateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AdmissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StorageServer).ValidateAdmission(ctx, in)
+		return srv.(AdmissionControlServer).ValidateAdmission(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Storage_ValidateAdmission_FullMethodName,
+		FullMethod: AdmissionControl_ValidateAdmission_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageServer).ValidateAdmission(ctx, req.(*AdmissionRequest))
+		return srv.(AdmissionControlServer).ValidateAdmission(ctx, req.(*AdmissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Storage_MutateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdmissionControl_MutateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AdmissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StorageServer).MutateAdmission(ctx, in)
+		return srv.(AdmissionControlServer).MutateAdmission(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Storage_MutateAdmission_FullMethodName,
+		FullMethod: AdmissionControl_MutateAdmission_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageServer).MutateAdmission(ctx, req.(*AdmissionRequest))
+		return srv.(AdmissionControlServer).MutateAdmission(ctx, req.(*AdmissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Storage_ConvertObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdmissionControl_ConvertObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ConversionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(StorageServer).ConvertObject(ctx, in)
+		return srv.(AdmissionControlServer).ConvertObject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Storage_ConvertObject_FullMethodName,
+		FullMethod: AdmissionControl_ConvertObject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(StorageServer).ConvertObject(ctx, req.(*ConversionRequest))
+		return srv.(AdmissionControlServer).ConvertObject(ctx, req.(*ConversionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Storage_ServiceDesc is the grpc.ServiceDesc for Storage service.
+// AdmissionControl_ServiceDesc is the grpc.ServiceDesc for AdmissionControl service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Storage_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pluginv2.Storage",
-	HandlerType: (*StorageServer)(nil),
+var AdmissionControl_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.AdmissionControl",
+	HandlerType: (*AdmissionControlServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "MutateInstanceSettings",
-			Handler:    _Storage_MutateInstanceSettings_Handler,
-		},
-		{
 			MethodName: "ValidateAdmission",
-			Handler:    _Storage_ValidateAdmission_Handler,
+			Handler:    _AdmissionControl_ValidateAdmission_Handler,
 		},
 		{
 			MethodName: "MutateAdmission",
-			Handler:    _Storage_MutateAdmission_Handler,
+			Handler:    _AdmissionControl_MutateAdmission_Handler,
 		},
 		{
 			MethodName: "ConvertObject",
-			Handler:    _Storage_ConvertObject_Handler,
+			Handler:    _AdmissionControl_ConvertObject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

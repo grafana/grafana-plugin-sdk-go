@@ -534,12 +534,17 @@ func datasourceInstanceProtoFieldCountDelta() int64 {
 	return int64(1)
 }
 
-func TestConvertFromProtobufInstanceSettingsAdmissionRequest(t *testing.T) {
-	protoPIS := &pluginv2.InstanceSettingsAdmissionRequest{
-		PluginContext:              protoPluginContext,
-		Operation:                  pluginv2.StorageOperation_CREATE,
-		DataSourceInstanceSettings: protoPluginContext.DataSourceInstanceSettings,
-		AppInstanceSettings:        protoPluginContext.AppInstanceSettings,
+func TestConvertFromProtobufAdmissionRequest(t *testing.T) {
+	protoPIS := &pluginv2.AdmissionRequest{
+		PluginContext: protoPluginContext,
+		Operation:     pluginv2.AdmissionRequest_CREATE,
+		Kind: &pluginv2.GroupVersionKindResource{
+			Group:    "g",
+			Version:  "v",
+			Kind:     "k",
+			Resource: "r",
+		},
+		ObjectBytes: []byte(`{}`),
 	}
 
 	protoWalker := &walker{}
