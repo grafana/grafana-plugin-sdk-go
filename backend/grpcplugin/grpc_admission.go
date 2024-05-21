@@ -9,12 +9,12 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-// AdmissionServer represents a data server.
+// AdmissionServer represents an admission control server.
 type AdmissionServer interface {
 	pluginv2.AdmissionControlServer
 }
 
-// AdmissionClient represents a data client.
+// AdmissionClient represents an admission control client.
 type AdmissionClient interface {
 	pluginv2.AdmissionControlClient
 }
@@ -26,7 +26,7 @@ type StorageGRPCPlugin struct {
 	AdmissionServer AdmissionServer
 }
 
-// GRPCServer registers p as a data gRPC server.
+// GRPCServer registers p as an admission control gRPC server.
 func (p *StorageGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error {
 	pluginv2.RegisterAdmissionControlServer(s, &storageGRPCServer{
 		server: p.AdmissionServer,
@@ -34,7 +34,6 @@ func (p *StorageGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) err
 	return nil
 }
 
-// GRPCClient returns c as a data gRPC client.
 func (p *StorageGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
 	return &storageGRPCClient{client: pluginv2.NewAdmissionControlClient(c)}, nil
 }

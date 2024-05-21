@@ -48,6 +48,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		QueryDataHandler:    handler,
 		StreamHandler:       handler,
 		AdmissionHandler:    opts.Stateless.AdmissionHandler,
-		GRPCSettings:        opts.GRPCSettings,
+		//		CollectMetricsHandler: opts.Stateless. ?? is this managed elsewhere?
+		GRPCSettings: opts.GRPCSettings,
 	})
 }

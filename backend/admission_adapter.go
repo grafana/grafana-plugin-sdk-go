@@ -11,7 +11,7 @@ type admissionSDKAdapter struct {
 	handler AdmissionHandler
 }
 
-func newStorageSDKAdapter(handler AdmissionHandler) *admissionSDKAdapter {
+func newAdmissionSDKAdapter(handler AdmissionHandler) *admissionSDKAdapter {
 	return &admissionSDKAdapter{
 		handler: handler,
 	}

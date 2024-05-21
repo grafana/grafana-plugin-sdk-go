@@ -79,7 +79,7 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	}
 
 	if opts.AdmissionHandler != nil {
-		pluginOpts.AdmissionServer = newStorageSDKAdapter(opts.AdmissionHandler)
+		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
 	}
 	return pluginOpts
 }

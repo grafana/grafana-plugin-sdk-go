@@ -18,19 +18,10 @@ type Manager struct {
 	instancemgmt.InstanceManager
 }
 
-var (
-	_ = backend.CollectMetricsHandler(&Manager{})
-	_ = backend.CheckHealthHandler(&Manager{})
-	_ = backend.QueryDataHandler(&Manager{})
-	_ = backend.CallResourceHandler(&Manager{})
-	_ = backend.StreamHandler(&Manager{})
-)
-
-// NewManager creates Manager. It accepts datasource instance factory.
+// NewManager creates Manager. It accepts datasource
+// instance factory.
 func NewManager(instanceManager instancemgmt.InstanceManager) *Manager {
-	return &Manager{
-		InstanceManager: instanceManager,
-	}
+	return &Manager{InstanceManager: instanceManager}
 }
 
 func (m *Manager) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -54,17 +45,6 @@ func (m *Manager) CheckHealth(ctx context.Context, req *backend.CheckHealthReque
 	}
 	if ds, ok := h.(backend.CheckHealthHandler); ok {
 		return ds.CheckHealth(ctx, req)
-	}
-	return nil, status.Error(codes.Unimplemented, "unimplemented")
-}
-
-func (m *Manager) CollectMetrics(ctx context.Context, req *backend.CollectMetricsRequest) (*backend.CollectMetricsResult, error) {
-	h, err := m.Get(ctx, req.PluginContext)
-	if err != nil {
-		return nil, err
-	}
-	if ds, ok := h.(backend.CollectMetricsHandler); ok {
-		return ds.CollectMetrics(ctx, req)
 	}
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }

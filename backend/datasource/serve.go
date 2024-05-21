@@ -21,7 +21,7 @@ type ServeOpts struct {
 	// StreamHandler for streaming queries.
 	backend.StreamHandler
 
-	// AdmissionHandler for processing instance settings
+	// AdmissionHandler for processing storage requests
 	backend.AdmissionHandler
 
 	// GRPCSettings settings for gPRC.
