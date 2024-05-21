@@ -324,7 +324,7 @@ func (f ConvertFromProtobuf) GroupVersionKindResource(req *pluginv2.GroupVersion
 func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *AdmissionRequest {
 	return &AdmissionRequest{
 		PluginContext:  f.PluginContext(req.PluginContext),
-		Operation:      AdmissionRequest_Operation(req.Operation),
+		Operation:      AdmissionRequestOperation(req.Operation),
 		Kind:           f.GroupVersionKindResource(req.Kind),
 		ObjectBytes:    req.ObjectBytes,
 		OldObjectBytes: req.OldObjectBytes,

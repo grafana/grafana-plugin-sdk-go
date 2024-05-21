@@ -19,16 +19,16 @@ type ConvertObjectFunc func(context.Context, *ConversionRequest) (*AdmissionResp
 
 // Operation is the type of resource operation being checked for admission control
 // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
-type AdmissionRequest_Operation int32
+type AdmissionRequestOperation int32
 
 const (
-	AdmissionRequest_CREATE AdmissionRequest_Operation = 0
-	AdmissionRequest_UPDATE AdmissionRequest_Operation = 1
-	AdmissionRequest_DELETE AdmissionRequest_Operation = 2
+	AdmissionRequestCREATE AdmissionRequestOperation = 0
+	AdmissionRequestUPDATE AdmissionRequestOperation = 1
+	AdmissionRequestDELETE AdmissionRequestOperation = 2
 )
 
 // String textual representation of the operation.
-func (o AdmissionRequest_Operation) String() string {
+func (o AdmissionRequestOperation) String() string {
 	return pluginv2.AdmissionRequest_Operation(o).String()
 }
 
@@ -49,7 +49,7 @@ type AdmissionRequest struct {
 	// NOTE: this may not include app or datasource instance settings depending on the request
 	PluginContext PluginContext `protobuf:"bytes,1,opt,name=pluginContext,proto3" json:"pluginContext,omitempty"`
 	// The requested operation
-	Operation AdmissionRequest_Operation `protobuf:"varint,2,opt,name=operation,proto3,enum=pluginv2.AdmissionRequest_Operation" json:"operation,omitempty"`
+	Operation AdmissionRequestOperation `protobuf:"varint,2,opt,name=operation,proto3,enum=pluginv2.AdmissionRequestOperation" json:"operation,omitempty"`
 	// The object kind
 	Kind *GroupVersionKindResource `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Object is the object in the request.  This includes the full metadata envelope.
