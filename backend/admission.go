@@ -33,12 +33,10 @@ func (o AdmissionRequestOperation) String() string {
 }
 
 // Identify the Object properties
-// EG, the union of: metav1.GroupVersionKind and metav1.GroupVersionResource
-type GroupVersionKindResource struct {
-	Group    string `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
-	Version  string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
-	Kind     string `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
-	Resource string `protobuf:"bytes,4,opt,name=resource,proto3" json:"resource,omitempty"`
+type GroupVersionKind struct {
+	Group   string `protobuf:"bytes,1,opt,name=group,proto3" json:"group,omitempty"`
+	Version string `protobuf:"bytes,2,opt,name=version,proto3" json:"version,omitempty"`
+	Kind    string `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
 }
 
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
@@ -51,7 +49,7 @@ type AdmissionRequest struct {
 	// The requested operation
 	Operation AdmissionRequestOperation `protobuf:"varint,2,opt,name=operation,proto3,enum=pluginv2.AdmissionRequestOperation" json:"operation,omitempty"`
 	// The object kind
-	Kind GroupVersionKindResource `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
+	Kind GroupVersionKind `protobuf:"bytes,3,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Object is the object in the request.  This includes the full metadata envelope.
 	ObjectBytes []byte `protobuf:"bytes,4,opt,name=object_bytes,json=objectBytes,proto3" json:"object_bytes,omitempty"`
 	// OldObject is the object as it currently exists in storage. This includes the full metadata envelope.
@@ -63,7 +61,7 @@ type ConversionRequest struct {
 	// NOTE: this may not include app or datasource instance settings depending on the request
 	PluginContext PluginContext `protobuf:"bytes,1,opt,name=pluginContext,proto3" json:"pluginContext,omitempty"`
 	// The object kind
-	Kind GroupVersionKindResource `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
+	Kind GroupVersionKind `protobuf:"bytes,2,opt,name=kind,proto3" json:"kind,omitempty"`
 	// Object is the object in the request.  This includes the full metadata envelope.
 	ObjectBytes []byte `protobuf:"bytes,3,opt,name=object_bytes,json=objectBytes,proto3" json:"object_bytes,omitempty"`
 	// Target converted version

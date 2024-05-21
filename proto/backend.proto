@@ -323,12 +323,10 @@ service AdmissionControl {
 }
 
 // Identify the Object properties
-// EG, the union of: metav1.GroupVersionKind and metav1.GroupVersionResource
-message GroupVersionKindResource {
+message GroupVersionKind {
   string group = 1;
   string version = 2;
   string kind = 3;
-  string resource = 4;
 }
 
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
@@ -351,7 +349,7 @@ message AdmissionRequest {
   Operation operation = 2;
   
   // The object kind
-  GroupVersionKindResource kind = 3;
+  GroupVersionKind kind = 3;
 
   // Object is the object in the request.  This includes the full metadata envelope.
   bytes object_bytes = 4;
@@ -366,7 +364,7 @@ message ConversionRequest {
   PluginContext pluginContext = 1;
 
   // The object kind
-  GroupVersionKindResource kind = 2;
+  GroupVersionKind kind = 2;
 
   // Object is the object in the request.  This includes the full metadata envelope.
   bytes object_bytes = 3;

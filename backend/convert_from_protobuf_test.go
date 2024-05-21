@@ -538,11 +538,10 @@ func TestConvertFromProtobufAdmissionRequest(t *testing.T) {
 	protoPIS := &pluginv2.AdmissionRequest{
 		PluginContext: protoPluginContext,
 		Operation:     pluginv2.AdmissionRequest_CREATE,
-		Kind: &pluginv2.GroupVersionKindResource{
-			Group:    "g",
-			Version:  "v",
-			Kind:     "k",
-			Resource: "r",
+		Kind: &pluginv2.GroupVersionKind{
+			Group:   "g",
+			Version: "v",
+			Kind:    "k",
 		},
 		ObjectBytes: []byte(`{}`),
 	}

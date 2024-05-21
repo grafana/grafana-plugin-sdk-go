@@ -310,13 +310,12 @@ func (f ConvertFromProtobuf) StatusResult(s *pluginv2.StatusResult) *StatusResul
 	}
 }
 
-// GroupVersionKindResource ...
-func (f ConvertFromProtobuf) GroupVersionKindResource(req *pluginv2.GroupVersionKindResource) GroupVersionKindResource {
-	return GroupVersionKindResource{
-		Group:    req.Group,
-		Version:  req.Version,
-		Kind:     req.Kind,
-		Resource: req.Resource,
+// GroupVersionKind ...
+func (f ConvertFromProtobuf) GroupVersionKind(req *pluginv2.GroupVersionKind) GroupVersionKind {
+	return GroupVersionKind{
+		Group:   req.Group,
+		Version: req.Version,
+		Kind:    req.Kind,
 	}
 }
 
@@ -325,7 +324,7 @@ func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *A
 	return &AdmissionRequest{
 		PluginContext:  f.PluginContext(req.PluginContext),
 		Operation:      AdmissionRequestOperation(req.Operation),
-		Kind:           f.GroupVersionKindResource(req.Kind),
+		Kind:           f.GroupVersionKind(req.Kind),
 		ObjectBytes:    req.ObjectBytes,
 		OldObjectBytes: req.OldObjectBytes,
 	}
@@ -335,7 +334,7 @@ func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *A
 func (f ConvertFromProtobuf) ConversionRequest(req *pluginv2.ConversionRequest) *ConversionRequest {
 	return &ConversionRequest{
 		PluginContext: f.PluginContext(req.PluginContext),
-		Kind:          f.GroupVersionKindResource(req.Kind),
+		Kind:          f.GroupVersionKind(req.Kind),
 		ObjectBytes:   req.ObjectBytes,
 		TargetVersion: req.TargetVersion,
 	}

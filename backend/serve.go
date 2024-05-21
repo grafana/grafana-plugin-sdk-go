@@ -198,6 +198,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "stream")
 	}
 
+	if pluginOpts.AdmissionServer != nil {
+		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
+		plugKeys = append(plugKeys, "admission")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)

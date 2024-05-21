@@ -58,26 +58,16 @@ func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.O
 	return opts, nil
 }
 
-func (s *AppInstanceSettings) GVKR() GroupVersionKindResource {
-	return GroupVersionKindResource{
-		Group:   "grafana-plugins-sdk-go",
-		Version: "v0", // the protobuf bytes (json is not valid)
+func (s *AppInstanceSettings) GVK() GroupVersionKind {
+	return GroupVersionKind{
+		Group:   "grafana-plugin-sdk-go", // raw protobuf
+		Version: s.APIVersion,
 		Kind:    "AppInstanceSettings",
 	}
 }
 
-func (s *AppInstanceSettings) ToAdmissionRequest(old *AppInstanceSettings) *AdmissionRequest {
-	req := &AdmissionRequest{Kind: s.GVKR()}
-	convert := ConvertToProtobuf{}
-	obj := convert.AppInstanceSettings(s)
-	oldObj := convert.AppInstanceSettings(old)
-	if obj != nil {
-		req.ObjectBytes, _ = proto.Marshal(obj)
-	}
-	if oldObj != nil {
-		req.OldObjectBytes, _ = proto.Marshal(oldObj)
-	}
-	return req
+func (s *AppInstanceSettings) ToProto() ([]byte, error) {
+	return proto.Marshal(ConvertToProtobuf{}.AppInstanceSettings(s))
 }
 
 func AppInstanceSettingsFromProto(body []byte) (*AppInstanceSettings, error) {
@@ -181,26 +171,16 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (htt
 	return opts, nil
 }
 
-func (s *DataSourceInstanceSettings) GVKR() GroupVersionKindResource {
-	return GroupVersionKindResource{
-		Group:   "grafana-plugins-sdk-go",
-		Version: "v0", // the protobuf bytes (json is not valid)
+func (s *DataSourceInstanceSettings) GVK() GroupVersionKind {
+	return GroupVersionKind{
+		Group:   "grafana-plugin-sdk-go", // raw protobuf
+		Version: s.APIVersion,
 		Kind:    "DataSourceInstanceSettings",
 	}
 }
 
-func (s *DataSourceInstanceSettings) ToAdmissionRequest(old *DataSourceInstanceSettings) *AdmissionRequest {
-	req := &AdmissionRequest{Kind: s.GVKR()}
-	convert := ConvertToProtobuf{}
-	obj := convert.DataSourceInstanceSettings(s)
-	oldObj := convert.DataSourceInstanceSettings(old)
-	if obj != nil {
-		req.ObjectBytes, _ = proto.Marshal(obj)
-	}
-	if oldObj != nil {
-		req.OldObjectBytes, _ = proto.Marshal(oldObj)
-	}
-	return req
+func (s *DataSourceInstanceSettings) ToProto() ([]byte, error) {
+	return proto.Marshal(ConvertToProtobuf{}.DataSourceInstanceSettings(s))
 }
 
 func DataSourceInstanceSettingsFromProto(body []byte, pluginID string) (*DataSourceInstanceSettings, error) {

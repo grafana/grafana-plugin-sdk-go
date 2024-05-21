@@ -311,13 +311,12 @@ func (t ConvertToProtobuf) StatusResult(s *StatusResult) *pluginv2.StatusResult 
 	}
 }
 
-// GroupVersionKindResource converts the SDK version of a GroupVersionKindResource to the protobuf version.
-func (t ConvertToProtobuf) GroupVersionKindResource(req *GroupVersionKindResource) *pluginv2.GroupVersionKindResource {
-	return &pluginv2.GroupVersionKindResource{
-		Group:    req.Group,
-		Version:  req.Version,
-		Kind:     req.Kind,
-		Resource: req.Resource,
+// GroupVersionKind converts the SDK version of a GroupVersionKind to the protobuf version.
+func (t ConvertToProtobuf) GroupVersionKind(req *GroupVersionKind) *pluginv2.GroupVersionKind {
+	return &pluginv2.GroupVersionKind{
+		Group:   req.Group,
+		Version: req.Version,
+		Kind:    req.Kind,
 	}
 }
 
@@ -326,7 +325,7 @@ func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.Adm
 	return &pluginv2.AdmissionRequest{
 		PluginContext:  t.PluginContext(req.PluginContext),
 		Operation:      pluginv2.AdmissionRequest_Operation(req.Operation),
-		Kind:           t.GroupVersionKindResource(&req.Kind),
+		Kind:           t.GroupVersionKind(&req.Kind),
 		ObjectBytes:    req.ObjectBytes,
 		OldObjectBytes: req.OldObjectBytes,
 	}
@@ -336,7 +335,7 @@ func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.Adm
 func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.ConversionRequest {
 	return &pluginv2.ConversionRequest{
 		PluginContext: t.PluginContext(req.PluginContext),
-		Kind:          t.GroupVersionKindResource(&req.Kind),
+		Kind:          t.GroupVersionKind(&req.Kind),
 		ObjectBytes:   req.ObjectBytes,
 		TargetVersion: req.TargetVersion,
 	}

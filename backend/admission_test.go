@@ -19,8 +19,9 @@ func TestInstanceSettingsAdmissionConversions(t *testing.T) {
 				"A": "B",
 			},
 		}
-		req := before.ToAdmissionRequest(nil)
-		after, err := backend.DataSourceInstanceSettingsFromProto(req.ObjectBytes, "")
+		wire, err := before.ToProto()
+		require.NoError(t, err)
+		after, err := backend.DataSourceInstanceSettingsFromProto(wire, "")
 		require.NoError(t, err)
 		require.Equal(t, before.URL, after.URL)
 		require.Equal(t, before.User, after.User)
@@ -36,8 +37,9 @@ func TestInstanceSettingsAdmissionConversions(t *testing.T) {
 				"A": "B",
 			},
 		}
-		req := before.ToAdmissionRequest(nil)
-		after, err := backend.AppInstanceSettingsFromProto(req.ObjectBytes)
+		wire, err := before.ToProto()
+		require.NoError(t, err)
+		after, err := backend.AppInstanceSettingsFromProto(wire)
 		require.NoError(t, err)
 		require.Equal(t, before.JSONData, after.JSONData)
 		require.Equal(t, before.DecryptedSecureJSONData, after.DecryptedSecureJSONData)
