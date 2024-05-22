@@ -6,11 +6,12 @@ import (
 	"io/fs"
 	"net/http"
 	"os"
-	"time"
 	"syscall"
 	"testing"
-	"github.com/stretchr/testify/require"
+	"time"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/stretchr/testify/require"
 )
 
 func TestConvertToProtobufQueryDataResponse(t *testing.T) {
