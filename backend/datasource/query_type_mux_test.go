@@ -52,7 +52,7 @@ func TestQueryTypeMux(t *testing.T) {
 
 	t.Run("When overriding fallback handler should call fallback handler", func(t *testing.T) {
 		errBoom := errors.New("BOOM")
-		mux.HandleFunc("", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		mux.HandleFunc("", func(_ context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 			return nil, errBoom
 		})
 		res, err = mux.QueryData(context.Background(), &backend.QueryDataRequest{

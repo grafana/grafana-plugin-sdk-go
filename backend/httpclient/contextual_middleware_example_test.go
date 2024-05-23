@@ -17,7 +17,7 @@ func ExampleWithContextualMiddleware() {
 
 	parent := context.Background()
 	ctx := httpclient.WithContextualMiddleware(parent,
-		httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
+		httpclient.MiddlewareFunc(func(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 			return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 				req.Header.Set("X-Custom-Header", "val")
 

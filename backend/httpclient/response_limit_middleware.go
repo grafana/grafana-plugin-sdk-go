@@ -8,7 +8,7 @@ import (
 const ResponseLimitMiddlewareName = "response-limit"
 
 func ResponseLimitMiddleware(limit int64) Middleware {
-	return NamedMiddlewareFunc(ResponseLimitMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
+	return NamedMiddlewareFunc(ResponseLimitMiddlewareName, func(_ Options, next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			res, err := next.RoundTrip(req)
 			if err != nil {

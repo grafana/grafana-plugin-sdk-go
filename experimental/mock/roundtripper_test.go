@@ -164,7 +164,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 		{
 			name: "should skip GetResponse when nil values returned",
 			rt: &mock.RoundTripper{
-				GetResponse: func(req *http.Request) (*http.Response, error) {
+				GetResponse: func(_ *http.Request) (*http.Response, error) {
 					return nil, nil
 				},
 				Body: "default body",
