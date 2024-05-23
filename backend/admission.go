@@ -6,9 +6,16 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
+// AdmissionHandler is an EXPERIMENTAL service that allows checking objects before they are saved
+// This is modeled after the kubernetes model for admission controllers
+// Since grafana 11.1, this feature is under active development and will continue to evolve in 2024
+// This may also be replaced with a more native kubernetes solution that does not work with existing tooling
 type AdmissionHandler interface {
+	// ValidateAdmission is a simple yes|no check if an object can be saved
 	ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error)
+	// ValidateAdmission converts the input into an object that can be saved, or rejects the request
 	MutateAdmission(context.Context, *AdmissionRequest) (*MutationResponse, error)
+	// ConvertObject is called to covert objects between different versions
 	ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error)
 }
 
