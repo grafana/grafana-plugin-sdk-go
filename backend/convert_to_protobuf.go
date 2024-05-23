@@ -88,7 +88,6 @@ func DataSourceInstanceSettingsFromProto(body []byte, pluginID string) (*DataSou
 	return ConvertFromProtobuf{}.DataSourceInstanceSettings(tmp, pluginID), nil
 }
 
-
 // DataSourceInstanceSettings converts the SDK version of a DataSourceInstanceSettings to the protobuf version.
 func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSettings) *pluginv2.DataSourceInstanceSettings {
 	if s == nil {
@@ -381,14 +380,31 @@ func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.C
 	}
 }
 
-// AdmissionResponse converts the SDK version of a AdmissionResponse to the protobuf version.
-func (t ConvertToProtobuf) AdmissionResponse(rsp *AdmissionResponse) *pluginv2.AdmissionResponse {
-	return &pluginv2.AdmissionResponse{
+// MutatingResponse converts the SDK version of a MutatingResponse to the protobuf version.
+func (t ConvertToProtobuf) MutatingResponse(rsp *MutatingResponse) *pluginv2.MutatingResponse {
+	return &pluginv2.MutatingResponse{
 		Allowed:          rsp.Allowed,
 		Result:           t.StatusResult(rsp.Result),
 		Warnings:         rsp.Warnings,
 		AuditAnnotations: rsp.AuditAnnotations,
 		ObjectBytes:      rsp.ObjectBytes,
+	}
+}
+
+// ValidationResponse converts the SDK version of a ValidationResponse to the protobuf version.
+func (t ConvertToProtobuf) ValidationResponse(rsp *ValidationResponse) *pluginv2.ValidationResponse {
+	return &pluginv2.ValidationResponse{
+		Allowed: rsp.Allowed,
+	}
+}
+
+// ConversionResponse converts the SDK version of a ConversionResponse to the protobuf version.
+func (t ConvertToProtobuf) ConversionResponse(rsp *ConversionResponse) *pluginv2.ConversionResponse {
+	return &pluginv2.ConversionResponse{
+		Allowed:     rsp.Allowed,
+		Result:      t.StatusResult(rsp.Result),
+		Warnings:    rsp.Warnings,
+		ObjectBytes: rsp.ObjectBytes,
 	}
 }
 

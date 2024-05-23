@@ -311,15 +311,19 @@ message StreamPacket {
 // AdmissionControl -- EXPERIMENTAL and is subject to change until 12.??
 //-----------------------------------------------------------------
 
+// Admission control is a service based on the kubernetes admission webhook patterns.
+// This service can be used to verify if objects are valid and convert between versions
+// See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
+// And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
 service AdmissionControl {
-  // Verify if a resource can be saved or return a descriptive error
-  rpc ValidateAdmission(AdmissionRequest) returns (AdmissionResponse);
+  // Validate a resource -- the response is a simple yes/no
+  rpc ValidateAdmission(AdmissionRequest) returns (ValidationResponse);
 
   // Return a modified copy of the request that can be saved or a descriptive error
-  rpc MutateAdmission(AdmissionRequest) returns (AdmissionResponse);
+  rpc MutateAdmission(AdmissionRequest) returns (MutatingResponse);
 
   // Convert a resource to a new version
-  rpc ConvertObject(ConversionRequest) returns (AdmissionResponse);
+  rpc ConvertObject(ConversionRequest) returns (ConversionResponse);
 }
 
 // Identify the Object properties
@@ -330,9 +334,6 @@ message GroupVersionKind {
 }
 
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
-// See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
-// And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
-// NOTE: this does not include a plugin context
 message AdmissionRequest {
   // Operation is the type of resource operation being checked for admission control
   // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
@@ -358,7 +359,7 @@ message AdmissionRequest {
   bytes old_object_bytes = 5;
 }
 
-// ConversionRequest supports converting an object from on version to another 
+// ConversionRequest supports converting an object from one version to another 
 message ConversionRequest {
   // NOTE: this may not include app or datasource instance settings depending on the request
   PluginContext pluginContext = 1;
@@ -373,8 +374,13 @@ message ConversionRequest {
   string target_version = 4;
 }
 
-// See https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L118
-message AdmissionResponse {
+// Basic request to say if the validation was successful or not
+message ValidationResponse {
+  // Allowed indicates whether or not the admission request was permitted.
+  bool allowed = 1;
+}
+
+message MutatingResponse {
   // Allowed indicates whether or not the admission request was permitted.
   bool allowed = 1;
 
@@ -397,12 +403,31 @@ message AdmissionResponse {
   // +optional
   repeated string warnings = 4;
 
-  // Mutated object bytes (when requested)
-  // +optional
+  // Mutated object bytes
   bytes object_bytes = 5;
 }
 
-// This could be:
+message ConversionResponse {
+  // Allowed indicates whether or not the admission request was permitted.
+  bool allowed = 1;
+
+  // Result contains extra details into why an admission request was denied.
+  // This field IS NOT consulted in any way if "Allowed" is "true".
+  // +optional
+  StatusResult result = 2;
+
+  // warnings is a list of warning messages to return to the requesting API client.
+  // Warning messages describe a problem the client making the API request should correct or be aware of.
+  // Limit warnings to 120 characters if possible.
+  // Warnings over 256 characters and large numbers of warnings may be truncated.
+  // +optional
+  repeated string warnings = 4;
+
+  // Mutated object bytes
+  bytes object_bytes = 5;
+}
+
+// Status structure is copied from:
 // https://github.com/kubernetes/apimachinery/blob/v0.30.1/pkg/apis/meta/v1/generated.proto#L979
 message StatusResult {
   // Status of the operation.

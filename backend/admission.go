@@ -8,14 +8,14 @@ import (
 
 // AdmissionHandler manages objects before they are sent to storage
 type AdmissionHandler interface {
-	ValidateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
-	MutateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
-	ConvertObject(context.Context, *ConversionRequest) (*AdmissionResponse, error)
+	ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error)
+	MutateAdmission(context.Context, *AdmissionRequest) (*MutatingResponse, error)
+	ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error)
 }
 
-type ValidateAdmissionFunc func(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
-type MutateAdmissionFunc func(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
-type ConvertObjectFunc func(context.Context, *ConversionRequest) (*AdmissionResponse, error)
+type ValidateAdmissionFunc func(context.Context, *AdmissionRequest) (*ValidationResponse, error)
+type MutateAdmissionFunc func(context.Context, *AdmissionRequest) (*MutatingResponse, error)
+type ConvertObjectFunc func(context.Context, *ConversionRequest) (*ConversionResponse, error)
 
 // Operation is the type of resource operation being checked for admission control
 // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
@@ -42,7 +42,6 @@ type GroupVersionKind struct {
 // AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
 // See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
 // And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
-// NOTE: this does not include a plugin context
 type AdmissionRequest struct {
 	// NOTE: this may not include app or datasource instance settings depending on the request
 	PluginContext PluginContext `json:"pluginContext,omitempty"`
@@ -68,8 +67,13 @@ type ConversionRequest struct {
 	TargetVersion string `json:"target_version,omitempty"`
 }
 
-// See https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L118
-type AdmissionResponse struct {
+// Basic request to say if the validation was successful or not
+type ValidationResponse struct {
+	// Allowed indicates whether or not the admission request was permitted.
+	Allowed bool `json:"allowed"`
+}
+
+type MutatingResponse struct {
 	// Allowed indicates whether or not the admission request was permitted.
 	Allowed bool `json:"allowed,omitempty"`
 	// Result contains extra details into why an admission request was denied.
@@ -90,6 +94,23 @@ type AdmissionResponse struct {
 	Warnings []string `json:"warnings,omitempty"`
 	// Mutated object bytes (when requested)
 	// +optional
+	ObjectBytes []byte `json:"object_bytes,omitempty"`
+}
+
+type ConversionResponse struct {
+	// Allowed indicates whether or not the admission request was permitted.
+	Allowed bool `json:"allowed,omitempty"`
+	// Result contains extra details into why an admission request was denied.
+	// This field IS NOT consulted in any way if "Allowed" is "true".
+	// +optional
+	Result *StatusResult `json:"result,omitempty"`
+	// warnings is a list of warning messages to return to the requesting API client.
+	// Warning messages describe a problem the client making the API request should correct or be aware of.
+	// Limit warnings to 120 characters if possible.
+	// Warnings over 256 characters and large numbers of warnings may be truncated.
+	// +optional
+	Warnings []string `json:"warnings,omitempty"`
+	// Mutated object bytes
 	ObjectBytes []byte `json:"object_bytes,omitempty"`
 }
 

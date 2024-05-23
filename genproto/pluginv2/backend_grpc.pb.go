@@ -570,12 +570,12 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type AdmissionControlClient interface {
-	// Verify if a resource can be saved or return a descriptive error
-	ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
+	// Validate a resource -- the response is a simple yes/no
+	ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*ValidationResponse, error)
 	// Return a modified copy of the request that can be saved or a descriptive error
-	MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
+	MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*MutatingResponse, error)
 	// Convert a resource to a new version
-	ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error)
+	ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*ConversionResponse, error)
 }
 
 type admissionControlClient struct {
@@ -586,8 +586,8 @@ func NewAdmissionControlClient(cc grpc.ClientConnInterface) AdmissionControlClie
 	return &admissionControlClient{cc}
 }
 
-func (c *admissionControlClient) ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
-	out := new(AdmissionResponse)
+func (c *admissionControlClient) ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*ValidationResponse, error) {
+	out := new(ValidationResponse)
 	err := c.cc.Invoke(ctx, AdmissionControl_ValidateAdmission_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -595,8 +595,8 @@ func (c *admissionControlClient) ValidateAdmission(ctx context.Context, in *Admi
 	return out, nil
 }
 
-func (c *admissionControlClient) MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
-	out := new(AdmissionResponse)
+func (c *admissionControlClient) MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*MutatingResponse, error) {
+	out := new(MutatingResponse)
 	err := c.cc.Invoke(ctx, AdmissionControl_MutateAdmission_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -604,8 +604,8 @@ func (c *admissionControlClient) MutateAdmission(ctx context.Context, in *Admiss
 	return out, nil
 }
 
-func (c *admissionControlClient) ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*AdmissionResponse, error) {
-	out := new(AdmissionResponse)
+func (c *admissionControlClient) ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*ConversionResponse, error) {
+	out := new(ConversionResponse)
 	err := c.cc.Invoke(ctx, AdmissionControl_ConvertObject_FullMethodName, in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -617,25 +617,25 @@ func (c *admissionControlClient) ConvertObject(ctx context.Context, in *Conversi
 // All implementations should embed UnimplementedAdmissionControlServer
 // for forward compatibility
 type AdmissionControlServer interface {
-	// Verify if a resource can be saved or return a descriptive error
-	ValidateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
+	// Validate a resource -- the response is a simple yes/no
+	ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error)
 	// Return a modified copy of the request that can be saved or a descriptive error
-	MutateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
+	MutateAdmission(context.Context, *AdmissionRequest) (*MutatingResponse, error)
 	// Convert a resource to a new version
-	ConvertObject(context.Context, *ConversionRequest) (*AdmissionResponse, error)
+	ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error)
 }
 
 // UnimplementedAdmissionControlServer should be embedded to have forward compatible implementations.
 type UnimplementedAdmissionControlServer struct {
 }
 
-func (UnimplementedAdmissionControlServer) ValidateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
+func (UnimplementedAdmissionControlServer) ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ValidateAdmission not implemented")
 }
-func (UnimplementedAdmissionControlServer) MutateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error) {
+func (UnimplementedAdmissionControlServer) MutateAdmission(context.Context, *AdmissionRequest) (*MutatingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method MutateAdmission not implemented")
 }
-func (UnimplementedAdmissionControlServer) ConvertObject(context.Context, *ConversionRequest) (*AdmissionResponse, error) {
+func (UnimplementedAdmissionControlServer) ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method ConvertObject not implemented")
 }
 

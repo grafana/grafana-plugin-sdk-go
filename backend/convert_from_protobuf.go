@@ -340,14 +340,31 @@ func (f ConvertFromProtobuf) ConversionRequest(req *pluginv2.ConversionRequest) 
 	}
 }
 
-// AdmissionResponse ...
-func (f ConvertFromProtobuf) AdmissionResponse(rsp *pluginv2.AdmissionResponse) *AdmissionResponse {
-	return &AdmissionResponse{
+// MutatingResponse ...
+func (f ConvertFromProtobuf) MutatingResponse(rsp *pluginv2.MutatingResponse) *MutatingResponse {
+	return &MutatingResponse{
 		Allowed:          rsp.Allowed,
 		Result:           f.StatusResult(rsp.Result),
 		Warnings:         rsp.Warnings,
 		AuditAnnotations: rsp.AuditAnnotations,
 		ObjectBytes:      rsp.ObjectBytes,
+	}
+}
+
+// ValidationResponse ...
+func (f ConvertFromProtobuf) ValidationResponse(rsp *pluginv2.ValidationResponse) *ValidationResponse {
+	return &ValidationResponse{
+		Allowed: rsp.Allowed,
+	}
+}
+
+// ConversionResponse ...
+func (f ConvertFromProtobuf) ConversionResponse(rsp *pluginv2.ConversionResponse) *ConversionResponse {
+	return &ConversionResponse{
+		Allowed:     rsp.Allowed,
+		Result:      f.StatusResult(rsp.Result),
+		Warnings:    rsp.Warnings,
+		ObjectBytes: rsp.ObjectBytes,
 	}
 }
 

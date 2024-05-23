@@ -42,15 +42,15 @@ type admissionGRPCServer struct {
 	server AdmissionServer
 }
 
-func (s *admissionGRPCServer) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCServer) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.ValidationResponse, error) {
 	return s.server.ValidateAdmission(ctx, req)
 }
 
-func (s *admissionGRPCServer) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCServer) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutatingResponse, error) {
 	return s.server.MutateAdmission(ctx, req)
 }
 
-func (s *admissionGRPCServer) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCServer) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
 	return s.server.ConvertObject(ctx, req)
 }
 
@@ -58,15 +58,15 @@ type admissionGRPCClient struct {
 	client pluginv2.AdmissionControlClient
 }
 
-func (s *admissionGRPCClient) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCClient) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.ValidationResponse, error) {
 	return s.client.ValidateAdmission(ctx, req, opts...)
 }
 
-func (s *admissionGRPCClient) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCClient) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.MutatingResponse, error) {
 	return s.client.MutateAdmission(ctx, req, opts...)
 }
 
-func (s *admissionGRPCClient) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest, opts ...grpc.CallOption) (*pluginv2.AdmissionResponse, error) {
+func (s *admissionGRPCClient) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest, opts ...grpc.CallOption) (*pluginv2.ConversionResponse, error) {
 	return s.client.ConvertObject(ctx, req, opts...)
 }
 
