@@ -108,7 +108,7 @@ func GetTLSConfig(opts ...Options) (*tls.Config, error) {
 	tlsOpts := clientOpts.TLS
 
 	config := &tls.Config{
-		// #nosec
+		// nolint:gosec
 		InsecureSkipVerify: tlsOpts.InsecureSkipVerify,
 		ServerName:         tlsOpts.ServerName,
 	}
