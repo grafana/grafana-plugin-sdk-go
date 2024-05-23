@@ -6,7 +6,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-// AdmissionHandler manages how objects before they are sent to storage
+// AdmissionHandler manages objects before they are sent to storage
 type AdmissionHandler interface {
 	ValidateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
 	MutateAdmission(context.Context, *AdmissionRequest) (*AdmissionResponse, error)
