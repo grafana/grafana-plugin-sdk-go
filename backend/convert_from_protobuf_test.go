@@ -37,7 +37,6 @@ func (w *walker) StructField(f reflect.StructField, v reflect.Value) error {
 	}
 	w.FieldCount++
 	if v.IsZero() {
-		//fmt.Printf("ZERO: %s\n", f.Name)
 		w.ZeroValueFieldCount++
 	}
 	return nil
