@@ -7,7 +7,7 @@ import (
 )
 
 func Example() {
-	handler := New(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
+	handler := New(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
 		_, err := rw.Write([]byte("Hello world!"))
 		if err != nil {
 			return
@@ -21,7 +21,7 @@ func Example() {
 
 func Example_serve_mux() {
 	mux := http.NewServeMux()
-	mux.HandleFunc("/hello", func(rw http.ResponseWriter, req *http.Request) {
+	mux.HandleFunc("/hello", func(rw http.ResponseWriter, _ *http.Request) {
 		_, err := rw.Write([]byte("Hello world!"))
 		if err != nil {
 			return

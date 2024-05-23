@@ -30,7 +30,7 @@ func TestTenantWithPluginInstanceManagement(t *testing.T) {
 	t.Log("addr:", addr)
 
 	factoryInvocations := 0
-	factory := datasource.InstanceFactoryFunc(func(ctx context.Context, settings backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
+	factory := datasource.InstanceFactoryFunc(func(_ context.Context, _ backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
 		factoryInvocations++
 		return &testPlugin{}, nil
 	})

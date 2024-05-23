@@ -181,7 +181,7 @@ func TestServeMuxHandler(t *testing.T) {
 		testSender := newTestCallResourceResponseSender()
 		mux := http.NewServeMux()
 		handlerWasCalled := false
-		mux.HandleFunc("/test", func(rw http.ResponseWriter, req *http.Request) {
+		mux.HandleFunc("/test", func(_ http.ResponseWriter, _ *http.Request) {
 			handlerWasCalled = true
 		})
 		resourceHandler := New(mux)
