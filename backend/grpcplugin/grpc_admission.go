@@ -46,7 +46,7 @@ func (s *admissionGRPCServer) ValidateAdmission(ctx context.Context, req *plugin
 	return s.server.ValidateAdmission(ctx, req)
 }
 
-func (s *admissionGRPCServer) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutatingResponse, error) {
+func (s *admissionGRPCServer) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutationResponse, error) {
 	return s.server.MutateAdmission(ctx, req)
 }
 
@@ -62,7 +62,7 @@ func (s *admissionGRPCClient) ValidateAdmission(ctx context.Context, req *plugin
 	return s.client.ValidateAdmission(ctx, req, opts...)
 }
 
-func (s *admissionGRPCClient) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.MutatingResponse, error) {
+func (s *admissionGRPCClient) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.MutationResponse, error) {
 	return s.client.MutateAdmission(ctx, req, opts...)
 }
 

@@ -380,14 +380,13 @@ func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.C
 	}
 }
 
-// MutatingResponse converts the SDK version of a MutatingResponse to the protobuf version.
-func (t ConvertToProtobuf) MutatingResponse(rsp *MutatingResponse) *pluginv2.MutatingResponse {
-	return &pluginv2.MutatingResponse{
-		Allowed:          rsp.Allowed,
-		Result:           t.StatusResult(rsp.Result),
-		Warnings:         rsp.Warnings,
-		AuditAnnotations: rsp.AuditAnnotations,
-		ObjectBytes:      rsp.ObjectBytes,
+// MutationResponse converts the SDK version of a MutationResponse to the protobuf version.
+func (t ConvertToProtobuf) MutationResponse(rsp *MutationResponse) *pluginv2.MutationResponse {
+	return &pluginv2.MutationResponse{
+		Allowed:     rsp.Allowed,
+		Result:      t.StatusResult(rsp.Result),
+		Warnings:    rsp.Warnings,
+		ObjectBytes: rsp.ObjectBytes,
 	}
 }
 
@@ -403,7 +402,6 @@ func (t ConvertToProtobuf) ConversionResponse(rsp *ConversionResponse) *pluginv2
 	return &pluginv2.ConversionResponse{
 		Allowed:     rsp.Allowed,
 		Result:      t.StatusResult(rsp.Result),
-		Warnings:    rsp.Warnings,
 		ObjectBytes: rsp.ObjectBytes,
 	}
 }

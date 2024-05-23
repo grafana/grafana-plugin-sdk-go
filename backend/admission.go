@@ -6,15 +6,14 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-// AdmissionHandler manages objects before they are sent to storage
 type AdmissionHandler interface {
 	ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error)
-	MutateAdmission(context.Context, *AdmissionRequest) (*MutatingResponse, error)
+	MutateAdmission(context.Context, *AdmissionRequest) (*MutationResponse, error)
 	ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error)
 }
 
 type ValidateAdmissionFunc func(context.Context, *AdmissionRequest) (*ValidationResponse, error)
-type MutateAdmissionFunc func(context.Context, *AdmissionRequest) (*MutatingResponse, error)
+type MutateAdmissionFunc func(context.Context, *AdmissionRequest) (*MutationResponse, error)
 type ConvertObjectFunc func(context.Context, *ConversionRequest) (*ConversionResponse, error)
 
 // Operation is the type of resource operation being checked for admission control
@@ -39,11 +38,8 @@ type GroupVersionKind struct {
 	Kind    string `json:"kind,omitempty"`
 }
 
-// AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
-// See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
-// And: https://github.com/grafana/grafana-app-sdk/blob/main/resource/admission.go#L14
 type AdmissionRequest struct {
-	// NOTE: this may not include app or datasource instance settings depending on the request
+	// NOTE: this may not include populated instance settings depending on the request
 	PluginContext PluginContext `json:"pluginContext,omitempty"`
 	// The requested operation
 	Operation AdmissionRequestOperation `json:"operation,omitempty"`
@@ -73,19 +69,13 @@ type ValidationResponse struct {
 	Allowed bool `json:"allowed"`
 }
 
-type MutatingResponse struct {
+type MutationResponse struct {
 	// Allowed indicates whether or not the admission request was permitted.
 	Allowed bool `json:"allowed,omitempty"`
 	// Result contains extra details into why an admission request was denied.
 	// This field IS NOT consulted in any way if "Allowed" is "true".
 	// +optional
 	Result *StatusResult `json:"result,omitempty"`
-	// AuditAnnotations is an unstructured key value map set by remote admission controller (e.g. error=image-blacklisted).
-	// MutatingAdmissionWebhook and ValidatingAdmissionWebhook admission controller will prefix the keys with
-	// admission webhook name (e.g. imagepolicy.example.com/error=image-blacklisted). AuditAnnotations will be provided by
-	// the admission webhook to add additional context to the audit log for this request.
-	// +optional
-	AuditAnnotations map[string]string `json:"auditAnnotations,omitempty" protobuf_key:"bytes,1,opt,name=key,proto3" protobuf_val:"bytes,2,opt,name=value,proto3"`
 	// warnings is a list of warning messages to return to the requesting API client.
 	// Warning messages describe a problem the client making the API request should correct or be aware of.
 	// Limit warnings to 120 characters if possible.
@@ -104,13 +94,7 @@ type ConversionResponse struct {
 	// This field IS NOT consulted in any way if "Allowed" is "true".
 	// +optional
 	Result *StatusResult `json:"result,omitempty"`
-	// warnings is a list of warning messages to return to the requesting API client.
-	// Warning messages describe a problem the client making the API request should correct or be aware of.
-	// Limit warnings to 120 characters if possible.
-	// Warnings over 256 characters and large numbers of warnings may be truncated.
-	// +optional
-	Warnings []string `json:"warnings,omitempty"`
-	// Mutated object bytes
+	// Converted object bytes
 	ObjectBytes []byte `json:"object_bytes,omitempty"`
 }
 

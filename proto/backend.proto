@@ -320,7 +320,7 @@ service AdmissionControl {
   rpc ValidateAdmission(AdmissionRequest) returns (ValidationResponse);
 
   // Return a modified copy of the request that can be saved or a descriptive error
-  rpc MutateAdmission(AdmissionRequest) returns (MutatingResponse);
+  rpc MutateAdmission(AdmissionRequest) returns (MutationResponse);
 
   // Convert a resource to a new version
   rpc ConvertObject(ConversionRequest) returns (ConversionResponse);
@@ -374,13 +374,14 @@ message ConversionRequest {
   string target_version = 4;
 }
 
-// Basic request to say if the validation was successful or not
+// Check if an object can be admitted
 message ValidationResponse {
   // Allowed indicates whether or not the admission request was permitted.
   bool allowed = 1;
 }
 
-message MutatingResponse {
+// Return a mutated copy of the object in a form that can be admitted
+message MutationResponse {
   // Allowed indicates whether or not the admission request was permitted.
   bool allowed = 1;
 
@@ -389,22 +390,15 @@ message MutatingResponse {
   // +optional
   StatusResult result = 2;
 
-  // AuditAnnotations is an unstructured key value map set by remote admission controller (e.g. error=image-blacklisted).
-  // MutatingAdmissionWebhook and ValidatingAdmissionWebhook admission controller will prefix the keys with
-  // admission webhook name (e.g. imagepolicy.example.com/error=image-blacklisted). AuditAnnotations will be provided by
-  // the admission webhook to add additional context to the audit log for this request.
-  // +optional
-  map<string,string> auditAnnotations = 3;
-
   // warnings is a list of warning messages to return to the requesting API client.
   // Warning messages describe a problem the client making the API request should correct or be aware of.
   // Limit warnings to 120 characters if possible.
   // Warnings over 256 characters and large numbers of warnings may be truncated.
   // +optional
-  repeated string warnings = 4;
+  repeated string warnings = 3;
 
   // Mutated object bytes
-  bytes object_bytes = 5;
+  bytes object_bytes = 4;
 }
 
 message ConversionResponse {
@@ -416,15 +410,8 @@ message ConversionResponse {
   // +optional
   StatusResult result = 2;
 
-  // warnings is a list of warning messages to return to the requesting API client.
-  // Warning messages describe a problem the client making the API request should correct or be aware of.
-  // Limit warnings to 120 characters if possible.
-  // Warnings over 256 characters and large numbers of warnings may be truncated.
-  // +optional
-  repeated string warnings = 4;
-
-  // Mutated object bytes
-  bytes object_bytes = 5;
+  // Converted object bytes
+  bytes object_bytes = 3;
 }
 
 // Status structure is copied from:
@@ -446,5 +433,5 @@ message StatusResult {
   string reason = 3;
   // Suggested HTTP return code for this status, 0 if not set.
   // +optional
-  int32 code = 6;
+  int32 code = 4;
 }
