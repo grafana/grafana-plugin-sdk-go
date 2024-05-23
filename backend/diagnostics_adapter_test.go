@@ -128,7 +128,7 @@ func TestCheckHealth(t *testing.T) {
 
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
-		a := newDiagnosticsSDKAdapter(nil, CheckHealthHandlerFunc(func(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+		a := newDiagnosticsSDKAdapter(nil, CheckHealthHandlerFunc(func(ctx context.Context, _ *CheckHealthRequest) (*CheckHealthResult, error) {
 			require.Equal(t, tid, tenant.IDFromContext(ctx))
 			return &CheckHealthResult{}, nil
 		}))

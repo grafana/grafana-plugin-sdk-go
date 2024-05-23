@@ -21,7 +21,7 @@ func ExampleProvider_New() {
 			Timeout: 5 * time.Second,
 		},
 		Middlewares: []httpclient.Middleware{
-			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
+			httpclient.MiddlewareFunc(func(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 				return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 					log.Println("Before outgoing request")
 					res, err := next.RoundTrip(req)
@@ -54,7 +54,7 @@ func ExampleProvider_GetTransport() {
 			Timeout: 5 * time.Second,
 		},
 		Middlewares: []httpclient.Middleware{
-			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
+			httpclient.MiddlewareFunc(func(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 				return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 					log.Println("Before outgoing request")
 					res, err := next.RoundTrip(req)

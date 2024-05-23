@@ -9,14 +9,14 @@ import (
 )
 
 func FromMacro(inputString string, timeRange backend.TimeRange) (string, error) {
-	res, err := applyMacro("$$from", inputString, func(query string, args []string) (string, error) {
+	res, err := applyMacro("$$from", inputString, func(_ string, args []string) (string, error) {
 		return expandTimeMacro(timeRange.From, args)
 	})
 	return res, err
 }
 
 func ToMacro(inputString string, timeRange backend.TimeRange) (string, error) {
-	res, err := applyMacro("$$to", inputString, func(query string, args []string) (string, error) {
+	res, err := applyMacro("$$to", inputString, func(_ string, args []string) (string, error) {
 		return expandTimeMacro(timeRange.To, args)
 	})
 	return res, err

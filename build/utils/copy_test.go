@@ -79,7 +79,7 @@ func compareDirs(t *testing.T, src, dst string) {
 
 	require.Equal(t, sfi.Mode(), dfi.Mode())
 
-	err = filepath.Walk(src, func(srcPath string, info os.FileInfo, err error) error {
+	err = filepath.Walk(src, func(srcPath string, _ os.FileInfo, err error) error {
 		if err != nil {
 			return err
 		}

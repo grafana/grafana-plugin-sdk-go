@@ -48,7 +48,7 @@ func TestNewClient(t *testing.T) {
 
 	t.Run("New() with non-empty opts should use default middleware", func(t *testing.T) {
 		usedMiddlewares := []Middleware{}
-		client, err := New(Options{ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
+		client, err := New(Options{ConfigureMiddleware: func(_ Options, existingMiddleware []Middleware) []Middleware {
 			usedMiddlewares = existingMiddleware
 			return existingMiddleware
 		}})
@@ -67,7 +67,7 @@ func TestNewClient(t *testing.T) {
 		usedMiddlewares := []Middleware{}
 		client, err := New(Options{
 			Middlewares: []Middleware{ctx.createMiddleware("mw1"), ctx.createMiddleware("mw2"), ctx.createMiddleware("mw3")},
-			ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
+			ConfigureMiddleware: func(_ Options, existingMiddleware []Middleware) []Middleware {
 				middlewares := existingMiddleware
 				for i, j := 0, len(existingMiddleware)-1; i < j; i, j = i+1, j-1 {
 					middlewares[i], middlewares[j] = middlewares[j], middlewares[i]
@@ -99,7 +99,7 @@ func TestNewClient(t *testing.T) {
 			ctx := &testContext{}
 			_, err := New(Options{
 				Middlewares: []Middleware{ctx.createMiddleware("mw1")},
-				ConfigureMiddleware: func(opts Options, existingMiddleware []Middleware) []Middleware {
+				ConfigureMiddleware: func(_ Options, existingMiddleware []Middleware) []Middleware {
 					return append(existingMiddleware, ctx.createMiddleware("mw1"))
 				},
 			})
@@ -163,14 +163,14 @@ type testContext struct {
 }
 
 func (c *testContext) createRoundTripper(name string) http.RoundTripper {
-	return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+	return RoundTripperFunc(func(_ *http.Request) (*http.Response, error) {
 		c.callChain = append(c.callChain, name)
 		return &http.Response{StatusCode: http.StatusOK}, nil
 	})
 }
 
 func (c *testContext) createMiddleware(name string) Middleware {
-	return NamedMiddlewareFunc(name, func(opts Options, next http.RoundTripper) http.RoundTripper {
+	return NamedMiddlewareFunc(name, func(_ Options, next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			c.callChain = append(c.callChain, fmt.Sprintf("before %s", name))
 			res, err := next.RoundTrip(req)

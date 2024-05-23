@@ -15,7 +15,7 @@ func TestSubscribeStream(t *testing.T) {
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
 		a := newStreamSDKAdapter(&streamAdapter{
-			subscribeStreamFunc: func(ctx context.Context, request *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
+			subscribeStreamFunc: func(ctx context.Context, _ *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
 				require.Equal(t, tid, tenant.IDFromContext(ctx))
 				return &SubscribeStreamResponse{}, nil
 			},
@@ -36,7 +36,7 @@ func TestPublishStream(t *testing.T) {
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
 		a := newStreamSDKAdapter(&streamAdapter{
-			publishStreamFunc: func(ctx context.Context, request *PublishStreamRequest) (*PublishStreamResponse, error) {
+			publishStreamFunc: func(ctx context.Context, _ *PublishStreamRequest) (*PublishStreamResponse, error) {
 				require.Equal(t, tid, tenant.IDFromContext(ctx))
 				return &PublishStreamResponse{}, nil
 			},
@@ -57,7 +57,7 @@ func TestRunStream(t *testing.T) {
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
 		a := newStreamSDKAdapter(&streamAdapter{
-			runStreamFunc: func(ctx context.Context, req *RunStreamRequest, sender *StreamSender) error {
+			runStreamFunc: func(ctx context.Context, _ *RunStreamRequest, _ *StreamSender) error {
 				require.Equal(t, tid, tenant.IDFromContext(ctx))
 				return nil
 			},

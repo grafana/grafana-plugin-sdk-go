@@ -90,7 +90,7 @@ func TestFixtureMatch(t *testing.T) {
 		store := newFakeStorage()
 		_ = store.Load()
 		f := fixture.NewFixture(store)
-		f.WithMatcher(func(res *http.Request) *http.Response {
+		f.WithMatcher(func(_ *http.Request) *http.Response {
 			return nil
 		})
 		res := f.Match(store.entries[0].Request) // nolint:bodyclose

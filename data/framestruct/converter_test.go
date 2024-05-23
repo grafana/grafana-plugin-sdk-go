@@ -788,7 +788,7 @@ func TestToDataframe(t *testing.T) {
 	})
 
 	// This test fails when run with -race when it's not threadsafe
-	t.Run("it is threadsafe", func(t *testing.T) {
+	t.Run("it is threadsafe", func(_ *testing.T) {
 		start := make(chan struct{})
 		end := make(chan struct{})
 
@@ -889,7 +889,7 @@ func TestOptions(t *testing.T) {
 			"Thing1": "1",
 		}
 
-		toError := func(i interface{}) (interface{}, error) {
+		toError := func(_ interface{}) (interface{}, error) {
 			return nil, errors.New("something bad")
 		}
 
