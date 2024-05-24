@@ -393,7 +393,9 @@ func (t ConvertToProtobuf) MutationResponse(rsp *MutationResponse) *pluginv2.Mut
 // ValidationResponse converts the SDK version of a ValidationResponse to the protobuf version.
 func (t ConvertToProtobuf) ValidationResponse(rsp *ValidationResponse) *pluginv2.ValidationResponse {
 	return &pluginv2.ValidationResponse{
-		Allowed: rsp.Allowed,
+		Allowed:  rsp.Allowed,
+		Result:   t.StatusResult(rsp.Result),
+		Warnings: rsp.Warnings,
 	}
 }
 

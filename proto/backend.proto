@@ -378,6 +378,18 @@ message ConversionRequest {
 message ValidationResponse {
   // Allowed indicates whether or not the admission request was permitted.
   bool allowed = 1;
+
+  // Result contains extra details into why an admission request was denied.
+  // This field IS NOT consulted in any way if "Allowed" is "true".
+  // +optional
+  StatusResult result = 2;
+
+  // warnings is a list of warning messages to return to the requesting API client.
+  // Warning messages describe a problem the client making the API request should correct or be aware of.
+  // Limit warnings to 120 characters if possible.
+  // Warnings over 256 characters and large numbers of warnings may be truncated.
+  // +optional
+  repeated string warnings = 3;
 }
 
 // Return a mutated copy of the object in a form that can be admitted

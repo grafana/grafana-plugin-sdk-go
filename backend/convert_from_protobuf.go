@@ -353,7 +353,9 @@ func (f ConvertFromProtobuf) MutationResponse(rsp *pluginv2.MutationResponse) *M
 // ValidationResponse ...
 func (f ConvertFromProtobuf) ValidationResponse(rsp *pluginv2.ValidationResponse) *ValidationResponse {
 	return &ValidationResponse{
-		Allowed: rsp.Allowed,
+		Allowed:  rsp.Allowed,
+		Result:   f.StatusResult(rsp.Result),
+		Warnings: rsp.Warnings,
 	}
 }
 

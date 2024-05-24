@@ -73,7 +73,17 @@ type ConversionRequest struct {
 // Basic request to say if the validation was successful or not
 type ValidationResponse struct {
 	// Allowed indicates whether or not the admission request was permitted.
-	Allowed bool `json:"allowed"`
+	Allowed bool `json:"allowed,omitempty"`
+	// Result contains extra details into why an admission request was denied.
+	// This field IS NOT consulted in any way if "Allowed" is "true".
+	// +optional
+	Result *StatusResult `json:"result,omitempty"`
+	// warnings is a list of warning messages to return to the requesting API client.
+	// Warning messages describe a problem the client making the API request should correct or be aware of.
+	// Limit warnings to 120 characters if possible.
+	// Warnings over 256 characters and large numbers of warnings may be truncated.
+	// +optional
+	Warnings []string `json:"warnings,omitempty"`
 }
 
 type MutationResponse struct {
