@@ -13,7 +13,7 @@ import (
 type AdmissionHandler interface {
 	// ValidateAdmission is a simple yes|no check if an object can be saved
 	ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error)
-	// ValidateAdmission converts the input into an object that can be saved, or rejects the request
+	// MutateAdmission converts the input into an object that can be saved, or rejects the request
 	MutateAdmission(context.Context, *AdmissionRequest) (*MutationResponse, error)
 	// ConvertObject is called to covert objects between different versions
 	ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error)
