@@ -559,3 +559,171 @@ var Stream_ServiceDesc = grpc.ServiceDesc{
 	},
 	Metadata: "backend.proto",
 }
+
+const (
+	AdmissionControl_ValidateAdmission_FullMethodName = "/pluginv2.AdmissionControl/ValidateAdmission"
+	AdmissionControl_MutateAdmission_FullMethodName   = "/pluginv2.AdmissionControl/MutateAdmission"
+	AdmissionControl_ConvertObject_FullMethodName     = "/pluginv2.AdmissionControl/ConvertObject"
+)
+
+// AdmissionControlClient is the client API for AdmissionControl service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type AdmissionControlClient interface {
+	// Validate a resource -- the response is a simple yes/no
+	ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*ValidationResponse, error)
+	// Return a modified copy of the request that can be saved or a descriptive error
+	MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*MutationResponse, error)
+	// Convert a resource to a new version
+	ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*ConversionResponse, error)
+}
+
+type admissionControlClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewAdmissionControlClient(cc grpc.ClientConnInterface) AdmissionControlClient {
+	return &admissionControlClient{cc}
+}
+
+func (c *admissionControlClient) ValidateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*ValidationResponse, error) {
+	out := new(ValidationResponse)
+	err := c.cc.Invoke(ctx, AdmissionControl_ValidateAdmission_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *admissionControlClient) MutateAdmission(ctx context.Context, in *AdmissionRequest, opts ...grpc.CallOption) (*MutationResponse, error) {
+	out := new(MutationResponse)
+	err := c.cc.Invoke(ctx, AdmissionControl_MutateAdmission_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *admissionControlClient) ConvertObject(ctx context.Context, in *ConversionRequest, opts ...grpc.CallOption) (*ConversionResponse, error) {
+	out := new(ConversionResponse)
+	err := c.cc.Invoke(ctx, AdmissionControl_ConvertObject_FullMethodName, in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// AdmissionControlServer is the server API for AdmissionControl service.
+// All implementations should embed UnimplementedAdmissionControlServer
+// for forward compatibility
+type AdmissionControlServer interface {
+	// Validate a resource -- the response is a simple yes/no
+	ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error)
+	// Return a modified copy of the request that can be saved or a descriptive error
+	MutateAdmission(context.Context, *AdmissionRequest) (*MutationResponse, error)
+	// Convert a resource to a new version
+	ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error)
+}
+
+// UnimplementedAdmissionControlServer should be embedded to have forward compatible implementations.
+type UnimplementedAdmissionControlServer struct {
+}
+
+func (UnimplementedAdmissionControlServer) ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ValidateAdmission not implemented")
+}
+func (UnimplementedAdmissionControlServer) MutateAdmission(context.Context, *AdmissionRequest) (*MutationResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method MutateAdmission not implemented")
+}
+func (UnimplementedAdmissionControlServer) ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method ConvertObject not implemented")
+}
+
+// UnsafeAdmissionControlServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to AdmissionControlServer will
+// result in compilation errors.
+type UnsafeAdmissionControlServer interface {
+	mustEmbedUnimplementedAdmissionControlServer()
+}
+
+func RegisterAdmissionControlServer(s grpc.ServiceRegistrar, srv AdmissionControlServer) {
+	s.RegisterService(&AdmissionControl_ServiceDesc, srv)
+}
+
+func _AdmissionControl_ValidateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdmissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdmissionControlServer).ValidateAdmission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdmissionControl_ValidateAdmission_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdmissionControlServer).ValidateAdmission(ctx, req.(*AdmissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdmissionControl_MutateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(AdmissionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdmissionControlServer).MutateAdmission(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdmissionControl_MutateAdmission_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdmissionControlServer).MutateAdmission(ctx, req.(*AdmissionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdmissionControl_ConvertObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ConversionRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdmissionControlServer).ConvertObject(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdmissionControl_ConvertObject_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdmissionControlServer).ConvertObject(ctx, req.(*ConversionRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// AdmissionControl_ServiceDesc is the grpc.ServiceDesc for AdmissionControl service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var AdmissionControl_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.AdmissionControl",
+	HandlerType: (*AdmissionControlServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ValidateAdmission",
+			Handler:    _AdmissionControl_ValidateAdmission_Handler,
+		},
+		{
+			MethodName: "MutateAdmission",
+			Handler:    _AdmissionControl_MutateAdmission_Handler,
+		},
+		{
+			MethodName: "ConvertObject",
+			Handler:    _AdmissionControl_ConvertObject_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "backend.proto",
+}

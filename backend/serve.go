@@ -51,8 +51,11 @@ type ServeOpts struct {
 	QueryDataHandler QueryDataHandler
 
 	// StreamHandler handler for streaming queries.
-	// This is EXPERIMENTAL and is a subject to change till Grafana 8.
 	StreamHandler StreamHandler
+
+	// AdmissionHandler validates resource storage
+	// This is EXPERIMENTAL and is a subject to change till Grafana 12
+	AdmissionHandler AdmissionHandler
 
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
@@ -73,6 +76,10 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 
 	if opts.StreamHandler != nil {
 		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
+	}
+
+	if opts.AdmissionHandler != nil {
+		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
 	}
 	return pluginOpts
 }
@@ -191,6 +198,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "stream")
 	}
 
+	if pluginOpts.AdmissionServer != nil {
+		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
+		plugKeys = append(plugKeys, "admission")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -291,6 +303,11 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.StreamServer != nil {
 		pluginv2.RegisterStreamServer(server, pluginOpts.StreamServer)
 		plugKeys = append(plugKeys, "stream")
+	}
+
+	if pluginOpts.AdmissionServer != nil {
+		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
+		plugKeys = append(plugKeys, "admission")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
