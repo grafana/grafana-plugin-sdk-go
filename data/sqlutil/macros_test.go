@@ -58,8 +58,8 @@ func TestInterpolate(t *testing.T) {
 		},
 		{
 			name:   "this macro name's substring is another macro",
-			input:  "select * from $__fooBaz()",
-			output: "select * from qux",
+			input:  "select $__foo, $__fooBaz from foo",
+			output: "select baz, qux from foo",
 		},
 		{
 			name:   "multiple instances of same macro",

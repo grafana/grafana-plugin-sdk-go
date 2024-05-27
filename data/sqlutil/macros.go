@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -218,16 +219,26 @@ func Interpolate(query *Query, macros Macros) (string, error) {
 	mergedMacros := Macros{}
 	maps.Copy(mergedMacros, DefaultMacros)
 	maps.Copy(mergedMacros, macros)
+	// sort macros so longer macros are applied first to prevent it from being
+	// overridden by a shorter macro that is a substring of the longer one
+	sortedMacroKeys := make([]string, 0, len(mergedMacros))
+	for key := range mergedMacros {
+		sortedMacroKeys = append(sortedMacroKeys, key)
+	}
+	sort.Slice(sortedMacroKeys, func(i, j int) bool {
+		return len(sortedMacroKeys[i]) > len(sortedMacroKeys[j])
+	})
 
 	rawSQL := query.RawSQL
 
-	for key, macro := range mergedMacros {
+	for _, key := range sortedMacroKeys {
 		matches, err := getMacroMatches(rawSQL, key)
 		if err != nil {
 			return rawSQL, err
 		}
 
 		for _, match := range matches {
+			macro := mergedMacros[key]
 			res, err := macro(query.WithSQL(rawSQL), match.args)
 			if err != nil {
 				return rawSQL, err
