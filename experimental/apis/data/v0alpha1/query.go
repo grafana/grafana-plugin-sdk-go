@@ -198,6 +198,8 @@ func (codec *datasourceRefCodec) Decode(ptr unsafe.Pointer, iter *j.Iterator) {
 				q.Type = iter.ReadString()
 			case "uid":
 				q.UID = iter.ReadString()
+			case "apiVersion":
+				q.APIVersion = iter.ReadString()
 			default:
 				_ = iter.Read() // ignore unused properties
 			}
@@ -425,10 +427,11 @@ type DataSourceRef struct {
 	// The datasource plugin type
 	Type string `json:"type"`
 
-	// Datasource UID
+	// Datasource UID (NOTE: name in k8s)
 	UID string `json:"uid,omitempty"`
 
-	// ?? the datasource API version?  (just version, not the group? type | apiVersion?)
+	// The apiserver version
+	APIVersion string `json:"apiVersion,omitempty"`
 }
 
 // TimeRange represents a time range for a query and is a property of DataQuery.

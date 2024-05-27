@@ -75,7 +75,7 @@ func (p *Provider) New(opts ...Options) (*http.Client, error) {
 	clientOpts := p.createClientOptions(opts...)
 
 	var configuredTransport *http.Transport
-	clientOpts.ConfigureTransport = configureTransportChain(clientOpts.ConfigureTransport, func(opts Options, transport *http.Transport) {
+	clientOpts.ConfigureTransport = configureTransportChain(clientOpts.ConfigureTransport, func(_ Options, transport *http.Transport) {
 		configuredTransport = transport
 	})
 
@@ -108,7 +108,7 @@ func (p *Provider) GetTransport(opts ...Options) (http.RoundTripper, error) {
 	clientOpts := p.createClientOptions(opts...)
 
 	var configuredTransport *http.Transport
-	clientOpts.ConfigureTransport = configureTransportChain(clientOpts.ConfigureTransport, func(opts Options, transport *http.Transport) {
+	clientOpts.ConfigureTransport = configureTransportChain(clientOpts.ConfigureTransport, func(_ Options, transport *http.Transport) {
 		configuredTransport = transport
 	})
 

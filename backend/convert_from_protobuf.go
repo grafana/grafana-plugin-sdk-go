@@ -297,6 +297,77 @@ func (f ConvertFromProtobuf) StreamPacket(protoReq *pluginv2.StreamPacket) *Stre
 	}
 }
 
+// StatusResult ...
+func (f ConvertFromProtobuf) StatusResult(s *pluginv2.StatusResult) *StatusResult {
+	if s == nil {
+		return nil
+	}
+	return &StatusResult{
+		Status:  s.Status,
+		Message: s.Message,
+		Reason:  s.Reason,
+		Code:    s.Code,
+	}
+}
+
+// GroupVersionKind ...
+func (f ConvertFromProtobuf) GroupVersionKind(req *pluginv2.GroupVersionKind) GroupVersionKind {
+	return GroupVersionKind{
+		Group:   req.Group,
+		Version: req.Version,
+		Kind:    req.Kind,
+	}
+}
+
+// AdmissionRequest ...
+func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *AdmissionRequest {
+	return &AdmissionRequest{
+		PluginContext:  f.PluginContext(req.PluginContext),
+		Operation:      AdmissionRequestOperation(req.Operation),
+		Kind:           f.GroupVersionKind(req.Kind),
+		ObjectBytes:    req.ObjectBytes,
+		OldObjectBytes: req.OldObjectBytes,
+	}
+}
+
+// ConversionRequest ...
+func (f ConvertFromProtobuf) ConversionRequest(req *pluginv2.ConversionRequest) *ConversionRequest {
+	return &ConversionRequest{
+		PluginContext: f.PluginContext(req.PluginContext),
+		Kind:          f.GroupVersionKind(req.Kind),
+		ObjectBytes:   req.ObjectBytes,
+		TargetVersion: req.TargetVersion,
+	}
+}
+
+// MutationResponse ...
+func (f ConvertFromProtobuf) MutationResponse(rsp *pluginv2.MutationResponse) *MutationResponse {
+	return &MutationResponse{
+		Allowed:     rsp.Allowed,
+		Result:      f.StatusResult(rsp.Result),
+		Warnings:    rsp.Warnings,
+		ObjectBytes: rsp.ObjectBytes,
+	}
+}
+
+// ValidationResponse ...
+func (f ConvertFromProtobuf) ValidationResponse(rsp *pluginv2.ValidationResponse) *ValidationResponse {
+	return &ValidationResponse{
+		Allowed:  rsp.Allowed,
+		Result:   f.StatusResult(rsp.Result),
+		Warnings: rsp.Warnings,
+	}
+}
+
+// ConversionResponse ...
+func (f ConvertFromProtobuf) ConversionResponse(rsp *pluginv2.ConversionResponse) *ConversionResponse {
+	return &ConversionResponse{
+		Allowed:     rsp.Allowed,
+		Result:      f.StatusResult(rsp.Result),
+		ObjectBytes: rsp.ObjectBytes,
+	}
+}
+
 func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
 	return NewGrafanaCfg(cfg)
 }

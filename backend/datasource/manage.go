@@ -11,13 +11,16 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/internal/buildinfo"
 )
 
-// ManageOpts can modify Manage behaviour.
+// ManageOpts can modify Manage behavior.
 type ManageOpts struct {
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
 
 	// TracingOpts contains settings for tracing setup.
 	TracingOpts tracing.Opts
+
+	// Stateless admission handler
+	AdmissionHandler backend.AdmissionHandler
 }
 
 // Manage starts serving the data source over gPRC with automatic instance management.
@@ -43,6 +46,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		CallResourceHandler: handler,
 		QueryDataHandler:    handler,
 		StreamHandler:       handler,
+		AdmissionHandler:    opts.AdmissionHandler,
 		GRPCSettings:        opts.GRPCSettings,
 	})
 }

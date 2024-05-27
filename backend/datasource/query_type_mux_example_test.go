@@ -9,11 +9,11 @@ import (
 
 func ExampleQueryTypeMux() {
 	mux := datasource.NewQueryTypeMux()
-	mux.HandleFunc("queryTypeA", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	mux.HandleFunc("queryTypeA", func(_ context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 		// handle queryTypeA
 		return nil, nil
 	})
-	mux.HandleFunc("queryTypeB", func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	mux.HandleFunc("queryTypeB", func(_ context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 		// handle queryTypeB
 		return nil, nil
 	})

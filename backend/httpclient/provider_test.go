@@ -214,21 +214,21 @@ func newProviderTestContext(t *testing.T, opts ...ProviderOptions) *providerTest
 		providerOpts = ProviderOptions{}
 	}
 
-	providerOpts.ConfigureMiddleware = func(opts Options, existingMiddleware []Middleware) []Middleware {
+	providerOpts.ConfigureMiddleware = func(_ Options, existingMiddleware []Middleware) []Middleware {
 		ctx.configureMiddlewareCount++
 		ctx.usedMiddlewares = make([]Middleware, len(existingMiddleware))
 		copy(ctx.usedMiddlewares, existingMiddleware)
 		return existingMiddleware
 	}
-	providerOpts.ConfigureClient = func(opts Options, client *http.Client) {
+	providerOpts.ConfigureClient = func(_ Options, client *http.Client) {
 		ctx.configureClientCount++
 		ctx.client = client
 	}
-	providerOpts.ConfigureTransport = func(opts Options, transport *http.Transport) {
+	providerOpts.ConfigureTransport = func(_ Options, transport *http.Transport) {
 		ctx.configureTransportCount++
 		ctx.transport = transport
 	}
-	providerOpts.ConfigureTLSConfig = func(opts Options, config *tls.Config) {
+	providerOpts.ConfigureTLSConfig = func(_ Options, config *tls.Config) {
 		ctx.configureTLSConfigCount++
 		ctx.tlsConfig = config
 	}
