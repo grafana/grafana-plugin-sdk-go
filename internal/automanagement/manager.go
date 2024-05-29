@@ -92,3 +92,36 @@ func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, 
 	}
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
+
+func (m *Manager) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
+	h, err := m.Get(ctx, req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(backend.AdmissionHandler); ok {
+		return ds.ValidateAdmission(ctx, req)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}
+
+func (m *Manager) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.MutationResponse, error) {
+	h, err := m.Get(ctx, req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(backend.AdmissionHandler); ok {
+		return ds.MutateAdmission(ctx, req)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}
+
+func (m *Manager) ConvertObject(ctx context.Context, req *backend.ConversionRequest) (*backend.ConversionResponse, error) {
+	h, err := m.Get(ctx, req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(backend.AdmissionHandler); ok {
+		return ds.ConvertObject(ctx, req)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}
