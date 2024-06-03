@@ -17,6 +17,7 @@ func Middleware() httpclient.Middleware {
 	return httpclient.NamedMiddlewareFunc(MiddlewareName, RoundTripper)
 }
 
+// AddMiddleware adds the middleware to the http client options.
 func AddMiddleware(ctx context.Context, s *backend.DataSourceInstanceSettings) (httpclient.Options, error) {
 	opts, err := s.HTTPClientOptions(ctx)
 	if err != nil {
@@ -26,7 +27,7 @@ func AddMiddleware(ctx context.Context, s *backend.DataSourceInstanceSettings) (
 	return opts, nil
 }
 
-// DurationRoundTripper captures the duration of the request in the context
+// RoundTripper captures the duration of the request in the context
 func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 	return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		var duration *Duration
