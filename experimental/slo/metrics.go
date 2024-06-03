@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -24,6 +25,31 @@ type Duration struct {
 	Status     Status
 	Source     Source
 	StatusCode int
+	mutex      sync.Mutex
+}
+
+func (d *Duration) Add(value float64, source Source, statusCode int, err error) {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	if d.Status == "" {
+		d.Status = "ok"
+	}
+	if err != nil {
+		d.Status = "error"
+	}
+	if statusCode >= 400 {
+		d.Status = "error"
+	}
+
+	// If the status code is now ok, but the previous status code was 401 or 403, mark it as ok
+	// assuming a successful re-authentication ( token refresh, etc )
+	if statusCode < 400 && (d.StatusCode == 401 || d.StatusCode == 403) {
+		d.Status = "ok"
+	}
+
+	d.StatusCode = statusCode
+	d.Source = source
+	d.Value += value
 }
 
 // Status is the status of the request

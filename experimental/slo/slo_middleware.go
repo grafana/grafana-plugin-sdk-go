@@ -54,25 +54,7 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 		}
 
 		defer func() {
-			duration.Value += time.Since(start).Seconds()
-			if duration.Status == "" {
-				duration.Status = "ok"
-			}
-			if httpErr != nil {
-				duration.Status = "error"
-			}
-			if statusCode >= 400 {
-				duration.Status = "error"
-			}
-
-			// If the status code is now ok, but the previous status code was 401 or 403, mark it as ok
-			// assuming a successful re-authentication ( token refresh, etc )
-			if statusCode < 400 && (duration.StatusCode == 401 || duration.StatusCode == 403) {
-				duration.Status = "ok"
-			}
-
-			duration.StatusCode = statusCode
-			duration.Source = source
+			duration.Add(time.Since(start).Seconds(), source, statusCode, httpErr)
 		}()
 
 		res, err := next.RoundTrip(req)
