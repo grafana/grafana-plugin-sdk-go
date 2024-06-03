@@ -9,25 +9,25 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
-// DurationMiddlewareName is the middleware name used by DurationMiddleware.
-const DurationMiddlewareName = "Duration"
+// MiddlewareName is the middleware name used by DurationMiddleware.
+const MiddlewareName = "Duration"
 
-// DurationMiddleware applies the duration to the context.
-func DurationMiddleware() httpclient.Middleware {
-	return httpclient.NamedMiddlewareFunc(DurationMiddlewareName, DurationRoundTripper)
+// Middleware applies the duration to the context.
+func Middleware() httpclient.Middleware {
+	return httpclient.NamedMiddlewareFunc(MiddlewareName, RoundTripper)
 }
 
-func AddDurationMiddleware(ctx context.Context, s *backend.DataSourceInstanceSettings) (httpclient.Options, error) {
+func AddMiddleware(ctx context.Context, s *backend.DataSourceInstanceSettings) (httpclient.Options, error) {
 	opts, err := s.HTTPClientOptions(ctx)
 	if err != nil {
 		return opts, err
 	}
-	opts.Middlewares = append(opts.Middlewares, DurationMiddleware())
+	opts.Middlewares = append(opts.Middlewares, Middleware())
 	return opts, nil
 }
 
 // DurationRoundTripper captures the duration of the request in the context
-func DurationRoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
+func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 	return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		var duration *Duration
 		var httpErr error
