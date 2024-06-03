@@ -52,12 +52,12 @@ var durationMetric = promauto.NewHistogramVec(prometheus.HistogramOpts{
 }, []string{"datasource_name", "datasource_type", "source", "endpoint", "status", "status_code"})
 
 // NewMetrics creates a new Metrics instance
-func NewMetrics(dsName, dsType string, endpoint Endpoint) Metrics {
+func NewMetrics(dsName, dsType string) Metrics {
 	dsName, ok := sanitizeLabelName(dsName)
 	if !ok {
 		backend.Logger.Warn("Failed to sanitize datasource name for prometheus label", dsName)
 	}
-	return Metrics{DSName: dsName, DSType: dsType, Endpoint: endpoint}
+	return Metrics{DSName: dsName, DSType: dsType}
 }
 
 // WithEndpoint returns a new Metrics instance with the given endpoint
@@ -117,7 +117,7 @@ func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings) *Metric
 	wrapper := &MetricsWrapper{
 		Name:    s.Name,
 		ID:      s.UID,
-		Metrics: NewMetrics(s.Name, s.UID, EndpointHealth),
+		Metrics: NewMetrics(s.Name, s.UID),
 	}
 	if h, ok := plugin.(backend.CheckHealthHandler); ok {
 		wrapper.healthcheckHandler = h
@@ -134,7 +134,7 @@ func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings) *Metric
 // QueryData calls the QueryDataHandler and collects metrics
 func (ds *MetricsWrapper) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	ctx = context.WithValue(ctx, DurationKey, &Duration{Value: 0})
-	metrics := NewMetrics(ds.Name, ds.ID, EndpointQuery)
+	metrics := ds.Metrics.WithEndpoint(EndpointQuery)
 
 	start := time.Now()
 
@@ -148,7 +148,7 @@ func (ds *MetricsWrapper) QueryData(ctx context.Context, req *backend.QueryDataR
 // CheckHealth calls the CheckHealthHandler and collects metrics
 func (ds *MetricsWrapper) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	ctx = context.WithValue(ctx, DurationKey, &Duration{Value: 0})
-	metrics := NewMetrics(ds.Name, ds.ID, EndpointHealth)
+	metrics := ds.Metrics.WithEndpoint(EndpointHealth)
 
 	start := time.Now()
 
@@ -162,7 +162,7 @@ func (ds *MetricsWrapper) CheckHealth(ctx context.Context, req *backend.CheckHea
 // CallResource calls the CallResourceHandler and collects metrics
 func (ds *MetricsWrapper) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	ctx = context.WithValue(ctx, DurationKey, &Duration{Value: 0})
-	metrics := NewMetrics(ds.Name, ds.ID, EndpointResource)
+	metrics := ds.Metrics.WithEndpoint(EndpointResource)
 
 	start := time.Now()
 
