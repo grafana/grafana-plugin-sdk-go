@@ -12,8 +12,8 @@ import (
 
 var Logger = log.DefaultLogger
 
-// DataSourceSLOMiddlewareName is the middleware name used by DurationMiddleware.
-const DataSourceSLOMiddlewareName = "Duration"
+// DataSourceSLOMiddlewareName is the middleware name used by Middleware.
+const DataSourceSLOMiddlewareName = "slo"
 
 // Middleware applies the duration to the context.
 func Middleware() httpclient.Middleware {
