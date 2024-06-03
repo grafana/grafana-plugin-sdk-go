@@ -14,9 +14,7 @@ const DurationMiddlewareName = "Duration"
 
 // DurationMiddleware applies the duration to the context.
 func DurationMiddleware() httpclient.Middleware {
-	return httpclient.NamedMiddlewareFunc(DurationMiddlewareName, func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
-		return DurationRoundTripper(opts, next)
-	})
+	return httpclient.NamedMiddlewareFunc(DurationMiddlewareName, DurationRoundTripper)
 }
 
 func AddDurationMiddleware(ctx context.Context, s *backend.DataSourceInstanceSettings) (httpclient.Options, error) {
