@@ -7,20 +7,24 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-// MiddlewareName is the middleware name used by DurationMiddleware.
-const MiddlewareName = "Duration"
+var Logger = log.DefaultLogger
+
+// DataSourceSLOMiddlewareName is the middleware name used by DurationMiddleware.
+const DataSourceSLOMiddlewareName = "Duration"
 
 // Middleware applies the duration to the context.
 func Middleware() httpclient.Middleware {
-	return httpclient.NamedMiddlewareFunc(MiddlewareName, RoundTripper)
+	return httpclient.NamedMiddlewareFunc(DataSourceSLOMiddlewareName, RoundTripper)
 }
 
 // AddMiddleware adds the middleware to the http client options.
 func AddMiddleware(ctx context.Context, s *backend.DataSourceInstanceSettings) (httpclient.Options, error) {
 	opts, err := s.HTTPClientOptions(ctx)
 	if err != nil {
+		Logger.Error("failed to get datasource info", "error", err)
 		return opts, err
 	}
 	opts.Middlewares = append(opts.Middlewares, Middleware())

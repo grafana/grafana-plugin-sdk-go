@@ -53,7 +53,7 @@ var durationMetric = promauto.NewHistogramVec(prometheus.HistogramOpts{
 
 // NewMetrics creates a new Metrics instance
 func NewMetrics(dsName, dsType string) Metrics {
-	dsName, ok := sanitizeLabelName(dsName)
+	dsName, ok := SanitizeLabelName(dsName)
 	if !ok {
 		backend.Logger.Warn("Failed to sanitize datasource name for prometheus label", dsName)
 	}
@@ -70,10 +70,10 @@ func (m *Metrics) CollectDuration(source Source, status Status, statusCode int, 
 	durationMetric.WithLabelValues(m.DSName, m.DSType, string(source), string(m.Endpoint), string(status), fmt.Sprint(statusCode)).Observe(duration)
 }
 
-// sanitizeLabelName removes all invalid chars from the label name.
+// SanitizeLabelName removes all invalid chars from the label name.
 // If the label name is empty or contains only invalid chars, it will return false indicating it was not sanitized.
 // copied from https://github.com/grafana/grafana/blob/main/pkg/infra/metrics/metricutil/utils.go#L14
-func sanitizeLabelName(name string) (string, bool) {
+func SanitizeLabelName(name string) (string, bool) {
 	if len(name) == 0 {
 		backend.Logger.Warn(fmt.Sprintf("label name cannot be empty: %s", name))
 		return "", false
