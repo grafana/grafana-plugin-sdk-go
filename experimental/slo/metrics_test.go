@@ -60,7 +60,7 @@ type TestDS struct {
 	client *http.Client
 }
 
-func (m TestDS) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+func (m TestDS) QueryData(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	err := callGet(ctx, m)
 	if err != nil {
 		return nil, err
@@ -68,7 +68,7 @@ func (m TestDS) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*
 	return &backend.QueryDataResponse{}, nil
 }
 
-func (m TestDS) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+func (m TestDS) CheckHealth(ctx context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	err := callGet(ctx, m)
 	if err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (m TestDS) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest
 	}, nil
 }
 
-func (m TestDS) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+func (m TestDS) CallResource(ctx context.Context, _ *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 	err := callGet(ctx, m)
 	if err != nil {
 		return err
@@ -130,7 +130,7 @@ type TestCollector struct {
 	duration float64
 }
 
-func (c *TestCollector) WithEndpoint(endpoint slo.Endpoint) slo.Collector {
+func (c *TestCollector) WithEndpoint(_ slo.Endpoint) slo.Collector {
 	return c
 }
 
