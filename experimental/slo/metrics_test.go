@@ -78,7 +78,7 @@ func (m TestDS) CheckHealth(ctx context.Context, _ *backend.CheckHealthRequest) 
 	}, nil
 }
 
-func (m TestDS) CallResource(ctx context.Context, _ *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+func (m TestDS) CallResource(ctx context.Context, _ *backend.CallResourceRequest, _ backend.CallResourceResponseSender) error {
 	err := callGet(ctx, m)
 	if err != nil {
 		return err
