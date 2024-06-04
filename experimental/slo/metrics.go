@@ -131,7 +131,7 @@ const DurationKey MetricsKey = "downstream_duration"
 // MetricsWrapper is a wrapper for a plugin that collects metrics
 type MetricsWrapper struct {
 	Name               string
-	ID                 string
+	Type               string
 	healthcheckHandler backend.CheckHealthHandler
 	queryDataHandler   backend.QueryDataHandler
 	resourceHandler    backend.CallResourceHandler
@@ -142,8 +142,8 @@ type MetricsWrapper struct {
 func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings) *MetricsWrapper {
 	wrapper := &MetricsWrapper{
 		Name:    s.Name,
-		ID:      s.UID,
-		Metrics: NewMetrics(s.Name, s.UID),
+		Type:    s.Type,
+		Metrics: NewMetrics(s.Name, s.Type),
 	}
 	if h, ok := plugin.(backend.CheckHealthHandler); ok {
 		wrapper.healthcheckHandler = h
