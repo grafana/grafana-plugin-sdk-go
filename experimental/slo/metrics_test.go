@@ -20,11 +20,10 @@ func TestCheckHealthWithMetrics(t *testing.T) {
 	collector := &TestCollector{}
 	wrapper := slo.NewMetricsWrapper(ds, settings, collector)
 
-	ctx := context.Background()
-	res, err := wrapper.CheckHealth(ctx, req)
+	res, err := wrapper.CheckHealth(context.Background(), req)
+
 	assert.Equal(t, nil, err)
 	assert.Equal(t, backend.HealthStatusOk, res.Status)
-
 	assert.True(t, collector.duration > 0)
 }
 
