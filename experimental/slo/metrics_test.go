@@ -11,12 +11,8 @@ import (
 )
 
 func TestCheckHealthWithMetrics(t *testing.T) {
-	client, clientErr := slo.NewClient()
-	assert.Equal(t, nil, clientErr)
-	ds := TestDS{
-		client: client,
-	}
-	req, settings := setupRequest()
+	ds := NewTestDS(t)
+	req, settings := setupHealthRequest()
 	collector := &TestCollector{}
 	wrapper := slo.NewMetricsWrapper(ds, settings, collector)
 
@@ -27,32 +23,103 @@ func TestCheckHealthWithMetrics(t *testing.T) {
 	assert.True(t, collector.duration > 0)
 }
 
+func TestQueryWithMetrics(t *testing.T) {
+	ds := NewTestDS(t)
+	req, settings := setupQueryRequest()
+	collector := &TestCollector{}
+	wrapper := slo.NewMetricsWrapper(ds, settings, collector)
+
+	_, err := wrapper.QueryData(context.Background(), req)
+
+	assert.Equal(t, nil, err)
+	assert.True(t, collector.duration > 0)
+}
+
+func TestResourceWithMetrics(t *testing.T) {
+	ds := NewTestDS(t)
+	req, settings := setupResourceRequest()
+	collector := &TestCollector{}
+	wrapper := slo.NewMetricsWrapper(ds, settings, collector)
+
+	err := wrapper.CallResource(context.Background(), req, nil)
+
+	assert.Equal(t, nil, err)
+	assert.True(t, collector.duration > 0)
+}
+
+func NewTestDS(t *testing.T) *TestDS {
+	t.Helper()
+	client, clientErr := slo.NewClient()
+	assert.Equal(t, nil, clientErr)
+	return &TestDS{
+		client: client,
+	}
+}
+
 type TestDS struct {
 	client *http.Client
 }
 
 func (m TestDS) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	return nil, nil
+	err := callGet(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+	return &backend.QueryDataResponse{}, nil
 }
 
 func (m TestDS) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	r, err := http.NewRequestWithContext(ctx, "GET", "https://httpbin.org/get", nil)
+	err := callGet(ctx, m)
 	if err != nil {
 		return nil, err
 	}
-	res, err := m.client.Do(r)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
 	return &backend.CheckHealthResult{
 		Status: backend.HealthStatusOk,
 	}, nil
 }
 
-func setupRequest() (*backend.CheckHealthRequest, backend.DataSourceInstanceSettings) {
+func (m TestDS) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	err := callGet(ctx, m)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func callGet(ctx context.Context, m TestDS) error {
+	r, err := http.NewRequestWithContext(ctx, "GET", "https://httpbin.org/get", nil)
+	if err != nil {
+		return err
+	}
+	res, err := m.client.Do(r)
+	if err != nil {
+		return err
+	}
+	defer res.Body.Close()
+	return nil
+}
+
+func setupHealthRequest() (*backend.CheckHealthRequest, backend.DataSourceInstanceSettings) {
 	settings := backend.DataSourceInstanceSettings{Name: "foo", UID: "uid", Type: "type", JSONData: []byte(`{}`), DecryptedSecureJSONData: map[string]string{}}
 	return &backend.CheckHealthRequest{
+		PluginContext: backend.PluginContext{
+			DataSourceInstanceSettings: &settings,
+		},
+	}, settings
+}
+
+func setupQueryRequest() (*backend.QueryDataRequest, backend.DataSourceInstanceSettings) {
+	settings := backend.DataSourceInstanceSettings{Name: "foo", UID: "uid", Type: "type", JSONData: []byte(`{}`), DecryptedSecureJSONData: map[string]string{}}
+	return &backend.QueryDataRequest{
+		PluginContext: backend.PluginContext{
+			DataSourceInstanceSettings: &settings,
+		},
+	}, settings
+}
+
+func setupResourceRequest() (*backend.CallResourceRequest, backend.DataSourceInstanceSettings) {
+	settings := backend.DataSourceInstanceSettings{Name: "foo", UID: "uid", Type: "type", JSONData: []byte(`{}`), DecryptedSecureJSONData: map[string]string{}}
+	return &backend.CallResourceRequest{
 		PluginContext: backend.PluginContext{
 			DataSourceInstanceSettings: &settings,
 		},
