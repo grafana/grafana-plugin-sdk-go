@@ -78,7 +78,7 @@ var durationMetric = promauto.NewHistogramVec(prometheus.HistogramOpts{
 }, []string{"datasource_name", "datasource_type", "source", "endpoint", "status", "status_code"})
 
 // NewMetrics creates a new Metrics instance
-func NewMetrics(dsName, dsType string) Metrics {
+func NewMetrics(dsName, dsType string) Collector {
 	dsName, ok := sanitizeLabelName(dsName)
 	if !ok {
 		backend.Logger.Warn("Failed to sanitize datasource name for prometheus label", dsName)
@@ -87,12 +87,12 @@ func NewMetrics(dsName, dsType string) Metrics {
 }
 
 // WithEndpoint returns a new Metrics instance with the given endpoint
-func (m *Metrics) WithEndpoint(endpoint Endpoint) Metrics {
+func (m Metrics) WithEndpoint(endpoint Endpoint) Collector {
 	return Metrics{DSName: m.DSName, DSType: m.DSType, Endpoint: endpoint}
 }
 
 // CollectDuration collects the duration as a metric
-func (m *Metrics) CollectDuration(source Source, status Status, statusCode int, duration float64) {
+func (m Metrics) CollectDuration(source Source, status Status, statusCode int, duration float64) {
 	durationMetric.WithLabelValues(m.DSName, m.DSType, string(source), string(m.Endpoint), string(status), fmt.Sprint(statusCode)).Observe(duration)
 }
 
@@ -135,15 +135,19 @@ type MetricsWrapper struct {
 	healthcheckHandler backend.CheckHealthHandler
 	queryDataHandler   backend.QueryDataHandler
 	resourceHandler    backend.CallResourceHandler
-	Metrics            Metrics
+	Metrics            Collector
 }
 
 // NewMetricsWrapper creates a new MetricsWrapper instance
-func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings) *MetricsWrapper {
+func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings, c ...Collector) *MetricsWrapper {
+	collector := NewMetrics(s.Name, s.Type)
+	if len(c) > 0 {
+		collector = c[0]
+	}
 	wrapper := &MetricsWrapper{
 		Name:    s.Name,
 		Type:    s.Type,
-		Metrics: NewMetrics(s.Name, s.Type),
+		Metrics: collector,
 	}
 	if h, ok := plugin.(backend.CheckHealthHandler); ok {
 		wrapper.healthcheckHandler = h
@@ -199,7 +203,7 @@ func (ds *MetricsWrapper) CallResource(ctx context.Context, req *backend.CallRes
 	return ds.resourceHandler.CallResource(ctx, req, sender)
 }
 
-func collectDuration(ctx context.Context, start time.Time, metrics Metrics) {
+func collectDuration(ctx context.Context, start time.Time, metrics Collector) {
 	totalDuration := time.Since(start).Seconds()
 	downstreamDuration := ctx.Value(DurationKey)
 	if downstreamDuration != nil {
@@ -215,4 +219,9 @@ func SanitizeLabelName(name string) (string, error) {
 		return s, nil
 	}
 	return "", fmt.Errorf("failed to sanitize label name %s", name)
+}
+
+type Collector interface {
+	CollectDuration(source Source, status Status, statusCode int, duration float64)
+	WithEndpoint(endpoint Endpoint) Collector
 }

@@ -71,3 +71,17 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 func FromStatus(status backend.Status) backend.ErrorSource {
 	return backend.ErrorSourceFromHTTPStatus(int(status))
 }
+
+// NewClient wraps the existing http client constructor and adds the duration middleware
+func NewClient(opts ...httpclient.Options) (*http.Client, error) {
+	if len(opts) == 0 {
+		opts = append(opts, httpclient.Options{
+			Middlewares: httpclient.DefaultMiddlewares(),
+		})
+	}
+	if len(opts[0].Middlewares) == 0 {
+		opts[0].Middlewares = httpclient.DefaultMiddlewares()
+	}
+	opts[0].Middlewares = append(opts[0].Middlewares, Middleware())
+	return httpclient.New(opts...)
+}
