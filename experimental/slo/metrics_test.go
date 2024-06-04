@@ -11,10 +11,10 @@ import (
 )
 
 func TestCheckHealthWithMetrics(t *testing.T) {
-	ds, err := test.NewTestDS()
+	ds, err := test.NewDS()
 	assert.Equal(t, nil, err)
 	req := health()
-	collector := &test.TestCollector{}
+	collector := &test.Collector{}
 	wrapper := slo.NewMetricsWrapper(ds, *req.PluginContext.DataSourceInstanceSettings, collector)
 
 	res, err := wrapper.CheckHealth(context.Background(), req)
@@ -25,10 +25,10 @@ func TestCheckHealthWithMetrics(t *testing.T) {
 }
 
 func TestQueryWithMetrics(t *testing.T) {
-	ds, err := test.NewTestDS()
+	ds, err := test.NewDS()
 	assert.Equal(t, nil, err)
 	req := query()
-	collector := &test.TestCollector{}
+	collector := &test.Collector{}
 	wrapper := slo.NewMetricsWrapper(ds, *req.PluginContext.DataSourceInstanceSettings, collector)
 
 	_, err = wrapper.QueryData(context.Background(), req)
@@ -38,10 +38,10 @@ func TestQueryWithMetrics(t *testing.T) {
 }
 
 func TestResourceWithMetrics(t *testing.T) {
-	ds, err := test.NewTestDS()
+	ds, err := test.NewDS()
 	assert.Equal(t, nil, err)
 	req := resource()
-	collector := &test.TestCollector{}
+	collector := &test.Collector{}
 	wrapper := slo.NewMetricsWrapper(ds, *req.PluginContext.DataSourceInstanceSettings, collector)
 
 	err = wrapper.CallResource(context.Background(), req, nil)
