@@ -47,6 +47,9 @@ func assertDuration(t *testing.T, want float64) func(req *http.Request) (*http.R
 		val := ctx.Value(slo.DurationKey)
 		assert.NotNil(t, val)
 		assert.Equal(t, want, val.(*slo.Duration).Value)
-		return nil, nil
+
+		res := &http.Response{Body: http.NoBody}
+		defer res.Body.Close()
+		return res, nil
 	}
 }
