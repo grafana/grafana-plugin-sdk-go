@@ -13,7 +13,10 @@ import (
 func TestAddDuration(t *testing.T) {
 	next := MockRoundTripper{assert: assertDuration(t, 0)}
 	fn := slo.RoundTripper(httpclient.Options{}, next)
-	_, err := fn.RoundTrip(&http.Request{})
+	res, err := fn.RoundTrip(&http.Request{})
+	assert.Equal(t, err, nil)
+
+	err = res.Body.Close()
 	assert.Equal(t, err, nil)
 }
 
@@ -27,8 +30,12 @@ func TestAddDurationExists(t *testing.T) {
 	ctx = context.WithValue(ctx, slo.DurationKey, duration)
 	*req = *req.WithContext(ctx)
 
-	_, err := fn.RoundTrip(req)
+	res, err := fn.RoundTrip(req)
 	assert.Equal(t, err, nil)
+
+	err = res.Body.Close()
+	assert.Equal(t, err, nil)
+
 	assert.True(t, duration.Value > 1)
 }
 
@@ -49,7 +56,6 @@ func assertDuration(t *testing.T, want float64) func(req *http.Request) (*http.R
 		assert.Equal(t, want, val.(*slo.Duration).Value)
 
 		res := &http.Response{Body: http.NoBody}
-		defer res.Body.Close()
 		return res, nil
 	}
 }
