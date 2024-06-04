@@ -41,6 +41,7 @@ func (m MockRoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 }
 
 func assertDuration(t *testing.T, want float64) func(req *http.Request) (*http.Response, error) {
+	t.Helper()
 	return func(req *http.Request) (*http.Response, error) {
 		ctx := req.Context()
 		val := ctx.Value(slo.DurationKey)
