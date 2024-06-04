@@ -11,6 +11,7 @@ import (
 )
 
 func TestAddDuration(t *testing.T) {
+	//nolint:bodyclose
 	next := MockRoundTripper{assert: assertDuration(t, 0)}
 	fn := slo.RoundTripper(httpclient.Options{}, next)
 	res, err := fn.RoundTrip(&http.Request{})
@@ -22,6 +23,7 @@ func TestAddDuration(t *testing.T) {
 
 func TestAddDurationExists(t *testing.T) {
 	duration := &slo.Duration{Value: 1}
+	//nolint:bodyclose
 	next := MockRoundTripper{assert: assertDuration(t, duration.Value)}
 	fn := slo.RoundTripper(httpclient.Options{}, next)
 
