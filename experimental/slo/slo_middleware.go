@@ -48,7 +48,7 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 			// so we always have to add the value to the context in the QueryData method
 			duration = &Duration{Value: 0}
 			ctx = context.WithValue(ctx, DurationKey, duration)
-			req = req.WithContext(ctx)
+			*req = *req.WithContext(ctx)
 		} else {
 			duration = val.(*Duration)
 		}
