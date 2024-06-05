@@ -62,7 +62,10 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	return fb.Buff.Bytes(), nil
 }
 
-// Allocate an arrow table for the frame data
+// FrameToArrowTable creates a new arrow.Table from a data frame
+// To release the allocated memory be sure to call:
+//
+//	defer table.Release()
 func FrameToArrowTable(f *Frame) (arrow.Table, error) {
 	if _, err := f.RowLen(); err != nil {
 		return nil, err
