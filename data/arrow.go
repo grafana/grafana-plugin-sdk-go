@@ -26,32 +26,10 @@ const metadataKeyRefID = "refId"   // added to the table metadata
 // representation of that table.
 // All fields of a Frame must be of the same length or an error is returned.
 func (f *Frame) MarshalArrow() ([]byte, error) {
-	if _, err := f.RowLen(); err != nil {
-		return nil, err
-	}
-
-	arrowFields, err := buildArrowFields(f)
+	table, err := FrameToArrowTable(f)
 	if err != nil {
 		return nil, err
 	}
-
-	schema, err := buildArrowSchema(f, arrowFields)
-	if err != nil {
-		return nil, err
-	}
-
-	columns, err := buildArrowColumns(f, arrowFields)
-	if err != nil {
-		return nil, err
-	}
-	defer func(cols []arrow.Column) {
-		for _, col := range cols {
-			col.Release()
-		}
-	}(columns)
-
-	// Create a table from the schema and columns.
-	table := array.NewTable(schema, columns, -1)
 	defer table.Release()
 
 	tableReader := array.NewTableReader(table, -1)
@@ -82,6 +60,34 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	}
 
 	return fb.Buff.Bytes(), nil
+}
+
+// Allocate an arrow table for the frame data
+func FrameToArrowTable(f *Frame) (arrow.Table, error) {
+	if _, err := f.RowLen(); err != nil {
+		return nil, err
+	}
+
+	arrowFields, err := buildArrowFields(f)
+	if err != nil {
+		return nil, err
+	}
+
+	schema, err := buildArrowSchema(f, arrowFields)
+	if err != nil {
+		return nil, err
+	}
+
+	columns, err := buildArrowColumns(f, arrowFields)
+	if err != nil {
+		for _, col := range columns {
+			col.Release()
+		}
+		return nil, err
+	}
+
+	// Create a table from the schema and columns.
+	return array.NewTable(schema, columns, -1), nil
 }
 
 // buildArrowFields builds Arrow field definitions from a Frame.
