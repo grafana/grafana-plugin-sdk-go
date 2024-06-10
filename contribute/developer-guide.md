@@ -28,6 +28,18 @@ mage -v build
 
 The `-v` flag can be used to show verbose output when running Mage targets.
 
+### Nested plugins
+If you are developing an app plugin that contains a backend data source plugin, you can use the `build` target to build the data source plugin. 
+The data source plugin.json should have the `backend` field set to `true` and the `executable` field set to the name of the binary, prefixed with "gpx_". The 
+`executable` field does not support file paths, nor should not include the file extension.
+
+```json
+{
+  "backend": true,
+  "executable": "gpx_foo-datasource"
+}
+```
+
 ### Testing
 
 ```bash
