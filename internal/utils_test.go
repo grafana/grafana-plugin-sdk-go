@@ -47,6 +47,15 @@ func TestGetExecutableFromPluginJSON(t *testing.T) {
 			pluginJSONDir: filepath.Join("foobar-app", "foobar-datasource"),
 			err:           true,
 		},
+		{
+			name: "Can support relative paths in executable field of plugin.json (for backwards compatibility)",
+			args: args{
+				pluginDir: "foobar-app",
+			},
+			pluginJSONDir: filepath.Join("foobar-app", "datasource"),
+			executable:    "../gpx_foo",
+			expected:      "gpx_foo",
+		},
 	}
 
 	for _, tc := range tcs {
