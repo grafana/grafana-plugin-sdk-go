@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path"
-	"strings"
+	"path/filepath"
 )
 
 func GetStringValueFromJSON(fpath string, key string) (string, error) {
@@ -32,12 +32,10 @@ func GetExecutableFromPluginJSON(dir string) (string, error) {
 	if err != nil {
 		// In app plugins, the exe may be nested
 		exe, err2 := GetStringValueFromJSON(path.Join(dir, "datasource", "plugin.json"), "executable")
-		if err2 == nil {
-			if !strings.HasPrefix(exe, "../") {
-				return "", fmt.Errorf("datasource should reference executable in root folder")
-			}
-			return exe[3:], nil
+		if err2 != nil {
+			return "", err
 		}
+		return filepath.Join("datasource", exe), nil
 	}
 	return exe, err
 }
