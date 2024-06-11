@@ -29,7 +29,7 @@ func TestAddDurationExists(t *testing.T) {
 
 	req := &http.Request{}
 	ctx := context.Background()
-	ctx = context.WithValue(ctx, slo.DurationKey, duration)
+	ctx = context.WithValue(ctx, slo.DurationKey{}, duration)
 	*req = *req.WithContext(ctx)
 
 	res, err := fn.RoundTrip(req)
@@ -53,7 +53,7 @@ func assertDuration(t *testing.T, want float64) func(req *http.Request) (*http.R
 	t.Helper()
 	return func(req *http.Request) (*http.Response, error) {
 		ctx := req.Context()
-		val := ctx.Value(slo.DurationKey)
+		val := ctx.Value(slo.DurationKey{})
 		assert.NotNil(t, val)
 		assert.Equal(t, want, val.(*slo.Duration).Value())
 

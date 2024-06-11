@@ -42,10 +42,10 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 		start := time.Now()
 
 		ctx := req.Context()
-		val := ctx.Value(DurationKey)
+		val := ctx.Value(DurationKey{})
 		if val == nil {
 			duration = &Duration{value: 0}
-			ctx = context.WithValue(ctx, DurationKey, duration)
+			ctx = context.WithValue(ctx, DurationKey{}, duration)
 			*req = *req.WithContext(ctx)
 		} else {
 			duration = val.(*Duration)

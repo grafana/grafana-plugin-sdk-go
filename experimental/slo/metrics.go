@@ -132,11 +132,8 @@ func sanitizeLabelName(name string) (string, bool) {
 	return out.String(), true
 }
 
-// MetricsKey is a key for storing metrics in the context
-type MetricsKey string
-
 // DurationKey is a key for storing the duration in the context
-const DurationKey MetricsKey = "downstream_duration"
+type DurationKey struct{}
 
 // MetricsWrapper is a wrapper for a plugin that collects metrics
 type MetricsWrapper struct {
@@ -173,7 +170,7 @@ func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings, c ...Co
 
 // QueryData calls the QueryDataHandler and collects metrics
 func (ds *MetricsWrapper) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	ctx = context.WithValue(ctx, DurationKey, &Duration{value: 0})
+	ctx = context.WithValue(ctx, DurationKey{}, &Duration{value: 0})
 	metrics := ds.Metrics.WithEndpoint(EndpointQuery)
 
 	start := time.Now()
@@ -187,7 +184,7 @@ func (ds *MetricsWrapper) QueryData(ctx context.Context, req *backend.QueryDataR
 
 // CheckHealth calls the CheckHealthHandler and collects metrics
 func (ds *MetricsWrapper) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	ctx = context.WithValue(ctx, DurationKey, &Duration{value: 0})
+	ctx = context.WithValue(ctx, DurationKey{}, &Duration{value: 0})
 	metrics := ds.Metrics.WithEndpoint(EndpointHealth)
 
 	start := time.Now()
@@ -201,7 +198,7 @@ func (ds *MetricsWrapper) CheckHealth(ctx context.Context, req *backend.CheckHea
 
 // CallResource calls the CallResourceHandler and collects metrics
 func (ds *MetricsWrapper) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	ctx = context.WithValue(ctx, DurationKey, &Duration{value: 0})
+	ctx = context.WithValue(ctx, DurationKey{}, &Duration{value: 0})
 	metrics := ds.Metrics.WithEndpoint(EndpointResource)
 
 	start := time.Now()
@@ -215,7 +212,7 @@ func (ds *MetricsWrapper) CallResource(ctx context.Context, req *backend.CallRes
 
 func collectDuration(ctx context.Context, start time.Time, metrics Collector) {
 	totalDuration := time.Since(start).Seconds()
-	downstreamDuration := ctx.Value(DurationKey)
+	downstreamDuration := ctx.Value(DurationKey{})
 	if downstreamDuration != nil {
 		d := downstreamDuration.(*Duration)
 		pluginDuration := totalDuration - d.value
