@@ -21,35 +21,45 @@ type Metrics struct {
 
 // Duration is stored in the Context and used to collect metrics
 type Duration struct {
-	Value      float64
-	Status     Status
-	Source     Source
-	StatusCode int
+	value      float64
+	status     Status
+	source     Source
+	statusCode int
 	mutex      sync.Mutex
+}
+
+func NewDuration(value float64) *Duration {
+	return &Duration{value: value}
 }
 
 func (d *Duration) Add(value float64, source Source, statusCode int, err error) {
 	d.mutex.Lock()
 	defer d.mutex.Unlock()
-	if d.Status == "" {
-		d.Status = "ok"
+	if d.status == "" {
+		d.status = "ok"
 	}
 	if err != nil {
-		d.Status = "error"
+		d.status = "error"
 	}
 	if statusCode >= 400 {
-		d.Status = "error"
+		d.status = "error"
 	}
 
 	// If the status code is now ok, but the previous status code was 401 or 403, mark it as ok
 	// assuming a successful re-authentication ( token refresh, etc )
-	if statusCode < 400 && (d.StatusCode == 401 || d.StatusCode == 403) {
-		d.Status = "ok"
+	if statusCode < 400 && (d.statusCode == 401 || d.statusCode == 403) {
+		d.status = "ok"
 	}
 
-	d.StatusCode = statusCode
-	d.Source = source
-	d.Value += value
+	d.statusCode = statusCode
+	d.source = source
+	d.value += value
+}
+
+func (d *Duration) Value() float64 {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
+	return d.value
 }
 
 // Status is the status of the request
@@ -163,7 +173,7 @@ func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings, c ...Co
 
 // QueryData calls the QueryDataHandler and collects metrics
 func (ds *MetricsWrapper) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	ctx = context.WithValue(ctx, DurationKey, &Duration{Value: 0})
+	ctx = context.WithValue(ctx, DurationKey, &Duration{value: 0})
 	metrics := ds.Metrics.WithEndpoint(EndpointQuery)
 
 	start := time.Now()
@@ -177,7 +187,7 @@ func (ds *MetricsWrapper) QueryData(ctx context.Context, req *backend.QueryDataR
 
 // CheckHealth calls the CheckHealthHandler and collects metrics
 func (ds *MetricsWrapper) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	ctx = context.WithValue(ctx, DurationKey, &Duration{Value: 0})
+	ctx = context.WithValue(ctx, DurationKey, &Duration{value: 0})
 	metrics := ds.Metrics.WithEndpoint(EndpointHealth)
 
 	start := time.Now()
@@ -191,7 +201,7 @@ func (ds *MetricsWrapper) CheckHealth(ctx context.Context, req *backend.CheckHea
 
 // CallResource calls the CallResourceHandler and collects metrics
 func (ds *MetricsWrapper) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	ctx = context.WithValue(ctx, DurationKey, &Duration{Value: 0})
+	ctx = context.WithValue(ctx, DurationKey, &Duration{value: 0})
 	metrics := ds.Metrics.WithEndpoint(EndpointResource)
 
 	start := time.Now()
@@ -208,8 +218,8 @@ func collectDuration(ctx context.Context, start time.Time, metrics Collector) {
 	downstreamDuration := ctx.Value(DurationKey)
 	if downstreamDuration != nil {
 		d := downstreamDuration.(*Duration)
-		pluginDuration := totalDuration - d.Value
-		metrics.CollectDuration(d.Source, d.Status, d.StatusCode, pluginDuration)
+		pluginDuration := totalDuration - d.value
+		metrics.CollectDuration(d.source, d.status, d.statusCode, pluginDuration)
 	}
 }
 

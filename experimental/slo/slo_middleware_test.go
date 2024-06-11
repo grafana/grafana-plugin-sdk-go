@@ -22,9 +22,9 @@ func TestAddDuration(t *testing.T) {
 }
 
 func TestAddDurationExists(t *testing.T) {
-	duration := &slo.Duration{Value: 1}
+	duration := slo.NewDuration(1)
 	//nolint:bodyclose
-	next := MockRoundTripper{assert: assertDuration(t, duration.Value)}
+	next := MockRoundTripper{assert: assertDuration(t, duration.Value())}
 	fn := slo.RoundTripper(httpclient.Options{}, next)
 
 	req := &http.Request{}
@@ -38,7 +38,7 @@ func TestAddDurationExists(t *testing.T) {
 	err = res.Body.Close()
 	assert.Equal(t, err, nil)
 
-	assert.True(t, duration.Value > 1)
+	assert.True(t, duration.Value() > 1)
 }
 
 type MockRoundTripper struct {
@@ -55,7 +55,7 @@ func assertDuration(t *testing.T, want float64) func(req *http.Request) (*http.R
 		ctx := req.Context()
 		val := ctx.Value(slo.DurationKey)
 		assert.NotNil(t, val)
-		assert.Equal(t, want, val.(*slo.Duration).Value)
+		assert.Equal(t, want, val.(*slo.Duration).Value())
 
 		res := &http.Response{Body: http.NoBody}
 		return res, nil
