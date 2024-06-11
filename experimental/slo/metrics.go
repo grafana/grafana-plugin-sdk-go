@@ -74,7 +74,7 @@ const (
 var durationMetric = promauto.NewHistogramVec(prometheus.HistogramOpts{
 	Namespace: "plugins",
 	Name:      "plugin_request_duration_seconds",
-	Help:      "Duration of plugin execution",
+	Help:      "Duration of plugin execution excluding any downstream call duration",
 }, []string{"datasource_name", "datasource_type", "source", "endpoint", "status", "status_code"})
 
 // NewMetrics creates a new Metrics instance
