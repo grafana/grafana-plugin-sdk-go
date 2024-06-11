@@ -1,102 +1,87 @@
 package slo
 
 import (
-	"errors"
-	"fmt"
+	"context"
 	"net/http"
-	"strings"
-	"syscall"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
-	"github.com/prometheus/client_golang/prometheus"
-	"github.com/prometheus/client_golang/prometheus/promauto"
 )
 
 var Logger = log.DefaultLogger
 
-var duration = promauto.NewHistogramVec(prometheus.HistogramOpts{
-	Namespace: "plugins",
-	Name:      "plugin_external_requests_duration_seconds",
-	Help:      "Duration of requests to external services",
-}, []string{"datasource_name", "datasource_type", "error_source"})
-
+// DataSourceSLOMiddlewareName is the middleware name used by Middleware.
 const DataSourceSLOMiddlewareName = "slo"
 
-// Middleware captures duration of requests to external services and the source of errors
+// Middleware applies the duration to the context.
 func Middleware() httpclient.Middleware {
 	return httpclient.NamedMiddlewareFunc(DataSourceSLOMiddlewareName, RoundTripper)
 }
 
-// RoundTripper captures duration of requests to external services and the source of errors
-func RoundTripper(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
-	name, kind, err := getDSInfo(opts)
+// AddMiddleware adds the middleware to the http client options.
+func AddMiddleware(ctx context.Context, s *backend.DataSourceInstanceSettings) (httpclient.Options, error) {
+	opts, err := s.HTTPClientOptions(ctx)
 	if err != nil {
 		Logger.Error("failed to get datasource info", "error", err)
-		return next
+		return opts, err
 	}
+	opts.Middlewares = append(opts.Middlewares, Middleware())
+	return opts, nil
+}
+
+// RoundTripper captures the duration of the request in the context
+func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 	return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		var duration *Duration
+		var httpErr error
+		var source = SourceDownstream
+		var statusCode int
+
 		start := time.Now()
-		var errorSource = "none"
+
+		ctx := req.Context()
+		val := ctx.Value(DurationKey{})
+		if val == nil {
+			duration = &Duration{value: 0}
+			ctx = context.WithValue(ctx, DurationKey{}, duration)
+			*req = *req.WithContext(ctx)
+		} else {
+			duration = val.(*Duration)
+		}
 
 		defer func() {
-			duration.WithLabelValues(name, kind, errorSource).Observe(time.Since(start).Seconds())
+			duration.Add(time.Since(start).Seconds(), source, statusCode, httpErr)
 		}()
 
 		res, err := next.RoundTrip(req)
-		if res != nil && res.StatusCode >= 400 {
-			errorSource = string(backend.ErrorSourceFromHTTPStatus(res.StatusCode))
+		if err != nil {
+			httpErr = err
 		}
-		if errors.Is(err, syscall.ECONNREFUSED) {
-			errorSource = string(backend.ErrorSourceDownstream)
+		if res != nil {
+			statusCode = res.StatusCode
+			source = Source(FromStatus(backend.Status(res.StatusCode)))
 		}
 		return res, err
 	})
 }
 
-func getDSInfo(opts httpclient.Options) (string, string, error) {
-	datasourceName, exists := opts.Labels["datasource_name"]
-	if !exists {
-		return "", "", errors.New("datasource_name label not found")
-	}
-
-	datasourceName, err := SanitizeLabelName(datasourceName)
-	// if the datasource named cannot be turned into a prometheus
-	// label we will skip instrumenting these metrics.
-	if err != nil {
-		return "", "", err
-	}
-
-	datasourceType, exists := opts.Labels["datasource_type"]
-	if !exists {
-		return "", "", errors.New("datasource_type label not found")
-	}
-
-	return datasourceName, datasourceType, nil
+// FromStatus returns the error source from backend status
+func FromStatus(status backend.Status) backend.ErrorSource {
+	return backend.ErrorSourceFromHTTPStatus(int(status))
 }
 
-// SanitizeLabelName removes all invalid chars from the label name.
-// If the label name is empty or contains only invalid chars, it
-// will return an error.
-func SanitizeLabelName(name string) (string, error) {
-	if len(name) == 0 {
-		return "", errors.New("label name cannot be empty")
+// NewClient wraps the existing http client constructor and adds the duration middleware
+func NewClient(opts ...httpclient.Options) (*http.Client, error) {
+	if len(opts) == 0 {
+		opts = append(opts, httpclient.Options{
+			Middlewares: httpclient.DefaultMiddlewares(),
+		})
 	}
-
-	out := strings.Builder{}
-	for i, b := range name {
-		if (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || b == '_' || (b >= '0' && b <= '9' && i > 0) {
-			out.WriteRune(b)
-		} else if b == ' ' {
-			out.WriteRune('_')
-		}
+	if len(opts[0].Middlewares) == 0 {
+		opts[0].Middlewares = httpclient.DefaultMiddlewares()
 	}
-
-	if out.Len() == 0 {
-		return "", fmt.Errorf("label name only contains invalid chars: %q", name)
-	}
-
-	return out.String(), nil
+	opts[0].Middlewares = append(opts[0].Middlewares, Middleware())
+	return httpclient.New(opts...)
 }
