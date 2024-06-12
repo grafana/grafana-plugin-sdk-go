@@ -124,7 +124,7 @@ func setupProfiler(pluginID string) {
 		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
-		// Register godeltaprof endpoints which are more suitable for continous profiling,
+		// Register godeltaprof endpoints which are more suitable for continuous profiling,
 		// see https://github.com/grafana/pyroscope-go/tree/main/godeltaprof.
 		r.HandleFunc("/debug/pprof/delta_heap", pyroscopepprof.Heap)
 		r.HandleFunc("/debug/pprof/delta_block", pyroscopepprof.Block)
