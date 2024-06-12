@@ -5,8 +5,10 @@ import (
 	"net/http"
 	"net/http/pprof"
 	"os"
+	"runtime"
 	"strconv"
 
+	pyroscopepprof "github.com/grafana/pyroscope-go/godeltaprof/http/pprof"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	semconv "go.opentelemetry.io/otel/semconv/v1.25.0"
@@ -23,10 +25,13 @@ const (
 	// PluginProfilingEnabledEnv is a constant for the GF_PLUGIN_PROFILING_ENABLED environment variable used to enable pprof.
 	PluginProfilingEnabledEnv = "GF_PLUGIN_PROFILING_ENABLED"
 
-	// PluginProfilerPortEnvDeprecated is a constant for the GF_PLUGINS_PROFILER_PORT environment variable use to specify a pprof port (default 6060).
+	// PluginProfilerPortEnvDeprecated is a constant for the GF_PLUGINS_PROFILER_PORT environment variable used to specify a pprof port (default 6060).
 	PluginProfilerPortEnvDeprecated = "GF_PLUGINS_PROFILER_PORT" // nolint:gosec
-	// PluginProfilingPortEnv is a constant for the GF_PLUGIN_PROFILING_PORT environment variable use to specify a pprof port (default 6060).
+	// PluginProfilingPortEnv is a constant for the GF_PLUGIN_PROFILING_PORT environment variable used to specify a pprof port (default 6060).
 	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT" // nolint:gosec
+
+	// PluginProfilingContentionEnv is a constant for the GF_PLUGIN_PROFILING_CONTENTION environment variable used to enable contention profiling (report of all goroutine blocking and mutex contention events) (default false).
+	PluginProfilingContentionEnv = "GF_PLUGIN_PROFILING_CONTENTION" // nolint:gosec
 
 	// PluginTracingOpenTelemetryOTLPAddressEnv is a constant for the GF_INSTANCE_OTLP_ADDRESS
 	// environment variable used to specify the OTLP address.
@@ -75,6 +80,7 @@ func setupProfiler(pluginID string) {
 		// compare value to plugin name
 		if value == pluginID {
 			profilerEnabled = true
+			Logger.Warn("Use of GF_PLUGINS_PROFILER environment variable is deprecated and won't be supported in the future. Please use GF_PLUGIN_PROFILING_ENABLED instead.")
 		}
 	} else if value, ok = os.LookupEnv(PluginProfilingEnabledEnv); ok {
 		if value == "true" {
@@ -82,17 +88,34 @@ func setupProfiler(pluginID string) {
 		}
 	}
 
-	Logger.Debug("Profiler", "enabled", profilerEnabled)
 	if profilerEnabled {
 		profilerPort := "6060"
 		for _, env := range []string{PluginProfilerPortEnvDeprecated, PluginProfilingPortEnv} {
 			if value, ok := os.LookupEnv(env); ok {
 				profilerPort = value
+
+				if env == PluginProfilerPortEnvDeprecated {
+					Logger.Warn("Use of GF_PLUGINS_PROFILER_PORT environment variable is deprecated and won't be supported in the future. Please use GF_PLUGIN_PROFILING_PORT instead.")
+				}
+
 				break
 			}
 		}
-		Logger.Info("Profiler", "port", profilerPort)
+
+		contentionProfiling := false
+		if value, ok := os.LookupEnv(PluginProfilingContentionEnv); ok {
+			if value == "true" {
+				contentionProfiling = true
+			}
+		}
+
+		Logger.Info("Profiling enabled", "port", profilerPort, "contentionProfilingEnabled", contentionProfiling)
 		portConfig := fmt.Sprintf(":%s", profilerPort)
+
+		if contentionProfiling {
+			runtime.SetBlockProfileRate(1)
+			runtime.SetMutexProfileFraction(1)
+		}
 
 		r := http.NewServeMux()
 		r.HandleFunc("/debug/pprof/", pprof.Index)
@@ -100,6 +123,12 @@ func setupProfiler(pluginID string) {
 		r.HandleFunc("/debug/pprof/profile", pprof.Profile)
 		r.HandleFunc("/debug/pprof/symbol", pprof.Symbol)
 		r.HandleFunc("/debug/pprof/trace", pprof.Trace)
+
+		// Register godeltaprof endpoints which are more suitable for continuous profiling,
+		// see https://github.com/grafana/pyroscope-go/tree/main/godeltaprof.
+		r.HandleFunc("/debug/pprof/delta_heap", pyroscopepprof.Heap)
+		r.HandleFunc("/debug/pprof/delta_block", pyroscopepprof.Block)
+		r.HandleFunc("/debug/pprof/delta_mutex", pyroscopepprof.Mutex)
 
 		go func() {
 			//nolint:gosec
@@ -147,6 +176,7 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 		if err != nil {
 			return fmt.Errorf("new trace provider: %w", err)
 		}
+
 		pf, err := tracerprovider.NewTextMapPropagator(tracingCfg.propagation)
 		if err != nil {
 			return fmt.Errorf("new propagator format: %w", err)
@@ -158,8 +188,8 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	}
 
 	enabled := tracingCfg.isEnabled()
-	Logger.Debug("Tracing", "enabled", enabled)
 	if enabled {
+		Logger.Info("Tracing enabled")
 		Logger.Debug(
 			"Tracing configuration",
 			"propagation", tracingCfg.propagation,
