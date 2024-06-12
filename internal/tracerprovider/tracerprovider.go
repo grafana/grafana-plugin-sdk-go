@@ -84,7 +84,12 @@ func NewTracerProvider(address string, samplerOpts SamplerOptions, opts tracing.
 	if err != nil {
 		return nil, fmt.Errorf("new otel SamplerType: %w", err)
 	}
-	return newOtelTracerProvider(exp, sampler, opts.CustomAttributes...)
+	tp, err := newOtelTracerProvider(exp, sampler, opts.CustomAttributes...)
+	if err != nil {
+		return nil, err
+	}
+
+	return newProfilingTracerProvider(tp), nil
 }
 
 // NewTextMapPropagator takes a string-like value and returns the corresponding propagation.TextMapPropagator.
