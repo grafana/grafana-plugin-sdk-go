@@ -30,7 +30,7 @@ const (
 	// PluginProfilingPortEnv is a constant for the GF_PLUGIN_PROFILING_PORT environment variable used to specify a pprof port (default 6060).
 	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT" // nolint:gosec
 
-	// PluginProfilingContentionEnv is a constant for the GF_PLUGIN_PROFILING_CONTENTION environment variable used to enable contention profiling (report of all goroutine blocking and mutex contention events), default false.
+	// PluginProfilingContentionEnv is a constant for the GF_PLUGIN_PROFILING_CONTENTION environment variable used to enable contention profiling (report of all goroutine blocking and mutex contention events) (default false).
 	PluginProfilingContentionEnv = "GF_PLUGIN_PROFILING_CONTENTION" // nolint:gosec
 
 	// PluginTracingOpenTelemetryOTLPAddressEnv is a constant for the GF_INSTANCE_OTLP_ADDRESS
@@ -80,7 +80,7 @@ func setupProfiler(pluginID string) {
 		// compare value to plugin name
 		if value == pluginID {
 			profilerEnabled = true
-			Logger.Warn("Use of GF_PLUGINS_PROFILER environment variable is deprecated and not going to be supported in the future. Please use GF_PLUGIN_PROFILING_ENABLED instead.")
+			Logger.Warn("Use of GF_PLUGINS_PROFILER environment variable is deprecated and won't be supported in the future. Please use GF_PLUGIN_PROFILING_ENABLED instead.")
 		}
 	} else if value, ok = os.LookupEnv(PluginProfilingEnabledEnv); ok {
 		if value == "true" {
@@ -95,7 +95,7 @@ func setupProfiler(pluginID string) {
 				profilerPort = value
 
 				if env == PluginProfilerPortEnvDeprecated {
-					Logger.Warn("Use of GF_PLUGINS_PROFILER_PORT environment variable is deprecated and not going to be supported in the future. Please use GF_PLUGIN_PROFILING_PORT instead.")
+					Logger.Warn("Use of GF_PLUGINS_PROFILER_PORT environment variable is deprecated and won't be supported in the future. Please use GF_PLUGIN_PROFILING_PORT instead.")
 				}
 
 				break
