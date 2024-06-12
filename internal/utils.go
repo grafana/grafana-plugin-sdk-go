@@ -33,10 +33,10 @@ func GetExecutableFromPluginJSON(dir string) (string, error) {
 		// In app plugins, the exe may be nested
 		exe, err2 := GetStringValueFromJSON(path.Join(dir, "datasource", "plugin.json"), "executable")
 		if err2 == nil {
-			if !strings.HasPrefix(exe, "../") {
-				return "", fmt.Errorf("datasource should reference executable in root folder")
+			if strings.HasPrefix(exe, "../") {
+				return exe[3:], nil
 			}
-			return exe[3:], nil
+			return exe, nil
 		}
 	}
 	return exe, err
