@@ -2,12 +2,13 @@ package build
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 	"os"
 	"path/filepath"
 	"strings"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func Test_getExecutableNameForPlugin(t *testing.T) {
@@ -83,9 +84,7 @@ func Test_getExecutableNameForPlugin(t *testing.T) {
 				filepath.Join(rootDir, "foo-datasource"): "gpx_foo",
 				filepath.Join(rootDir, "baz-datasource"): "gpx_baz",
 			},
-			wantErr: func(t assert.TestingT, err error, i ...interface{}) bool {
-				return true
-			},
+			wantErr: assert.Error,
 		},
 	}
 
@@ -111,7 +110,7 @@ func Test_getExecutableNameForPlugin(t *testing.T) {
 			assert.Equalf(t, tc.expected, got, "getExecutableNameForPlugin(%v, %v, %v)", tc.args.os, tc.args.arch, tc.args.pluginDir)
 
 			numCached := 0
-			executableNameCache.Range(func(key, value any) bool {
+			executableNameCache.Range(func(_, _ any) bool {
 				numCached++
 				return true
 			})
@@ -145,6 +144,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				PluginJSONPath: filepath.Join(tmpDir, "foobar-datasource"),
 			},
 			pluginJSONCreate: func(t *testing.T) {
+				t.Helper()
 				createPluginJSON(t, filepath.Join(tmpDir, "foobar-datasource"), "gpx_foo")
 			},
 			expectedCfg: Config{
@@ -165,6 +165,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				PluginJSONPath: filepath.Join(tmpDir, "foobar-app"),
 			},
 			pluginJSONCreate: func(t *testing.T) {
+				t.Helper()
 				createPluginJSON(t, filepath.Join(tmpDir, "foobar-app", defaultNestedDataSourcePath), "gpx_foo")
 			},
 			expectedCfg: Config{
@@ -185,6 +186,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				PluginJSONPath: filepath.Join(tmpDir, "foobarbaz-app"),
 			},
 			pluginJSONCreate: func(t *testing.T) {
+				t.Helper()
 				createPluginJSON(t, filepath.Join(tmpDir, "foobarbaz-app", defaultNestedDataSourcePath), "../gpx_foobarbaz")
 			},
 			expectedCfg: Config{
@@ -217,6 +219,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 }
 
 func createPluginJSON(t *testing.T, pluginDir string, executable string) {
+	t.Helper()
 	err := os.MkdirAll(pluginDir, os.ModePerm)
 	require.NoError(t, err)
 	f, err := os.Create(filepath.Join(pluginDir, "plugin.json"))

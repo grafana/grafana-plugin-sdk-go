@@ -115,17 +115,17 @@ func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
 	if err != nil {
 		// Look for a nested backend data source plugin
 		nestedPluginJSONPath := defaultNestedDataSourcePath
-		if exe, err2 := getExecutableNameForPlugin(cfg.OS, cfg.Arch, filepath.Join(pluginJSONPath, nestedPluginJSONPath)); err2 != nil {
+		exe, err2 := getExecutableNameForPlugin(cfg.OS, cfg.Arch, filepath.Join(pluginJSONPath, nestedPluginJSONPath))
+		if err2 != nil {
 			// return the original error
 			return cfg, []string{}, err
+		}
+		// For backwards compatibility, if the executable is in the root directory, strip that information.
+		if strings.HasPrefix(exe, "../") {
+			exePath = exe[3:]
 		} else {
-			// For backwards compatibility, if the executable is in the root directory, strip that information.
-			if strings.HasPrefix(exe, "../") {
-				exePath = exe[3:]
-			} else {
-				// Make sure the executable is in the relevant nested plugin directory.
-				exePath = filepath.Join(nestedPluginJSONPath, exe)
-			}
+			// Make sure the executable is in the relevant nested plugin directory.
+			exePath = filepath.Join(nestedPluginJSONPath, exe)
 		}
 	}
 
