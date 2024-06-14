@@ -22,7 +22,7 @@ func TestGetExecutableFromPluginJSON(t *testing.T) {
 		err           bool
 	}{
 		{
-			name: "Can retrieve executable from a plugin.json found in provided directory",
+			name: "Can retrieve executable field from a plugin.json found in provided directory",
 			args: args{
 				pluginDir: "foobar-datasource",
 			},
@@ -31,30 +31,31 @@ func TestGetExecutableFromPluginJSON(t *testing.T) {
 			expected:      "gpx_foo",
 		},
 		{
-			name: "Can retrieve executable from plugin.json found in nested 'datasource' directory (when not found in root of provided directory)",
-			args: args{
-				pluginDir: "foobar-app",
-			},
-			pluginJSONDir: filepath.Join("foobar-app", "datasource"),
-			executable:    "gpx_foo",
-			expected:      "gpx_foo",
-		},
-		{
-			name: "Cannot retrieve executable when no plugin.json in root or nested 'datasource' directory",
-			args: args{
-				pluginDir: "foobar-app",
-			},
-			pluginJSONDir: filepath.Join("foobar-app", "foobar-datasource"),
-			err:           true,
-		},
-		{
-			name: "Should remove path information from executable field of nested 'datasource' plugin.json",
+			name: "Can retrieve executable field of nested 'datasource' plugin.json as long as the executable path is in the root directory",
 			args: args{
 				pluginDir: "foobar-app",
 			},
 			pluginJSONDir: filepath.Join("foobar-app", "datasource"),
 			executable:    "../gpx_foo",
 			expected:      "gpx_foo",
+		},
+		{
+			name: "Cannot retrieve executable field of nested 'datasource' plugin.json when executable path is not in the root directory",
+			args: args{
+				pluginDir: "foobar-app",
+			},
+			pluginJSONDir: filepath.Join("foobar-app", "datasource"),
+			executable:    "gpx_foo",
+			err:           true,
+		},
+		{
+			name: "Cannot retrieve executable when no plugin.json found in root or nested 'datasource' directory",
+			args: args{
+				pluginDir: "foobar-app",
+			},
+			pluginJSONDir: filepath.Join("foobar-app", "foobar-datasource"),
+			executable:    "gpx_foo",
+			err:           true,
 		},
 	}
 

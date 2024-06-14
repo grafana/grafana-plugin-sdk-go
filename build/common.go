@@ -6,9 +6,12 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path"
 	"path/filepath"
 	"runtime"
+	"sort"
 	"strings"
+	"sync"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
@@ -24,8 +27,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/internal"
 )
 
-var defaultOutputBinaryPath = "dist"
-var defaultPluginJSONPath = "src"
+var (
+	defaultOutputBinaryPath     = "dist"
+	defaultPluginJSONPath       = "src"
+	defaultNestedDataSourcePath = "datasource"
+)
 
 // Callbacks give you a way to run custom behavior when things happen
 var beforeBuild = func(cfg Config) (Config, error) {
@@ -40,6 +46,10 @@ func SetBeforeBuildCallback(cb BeforeBuildCallback) error {
 
 var exname string
 
+// Deprecated: Use getExecutableNameForPlugin instead.
+// getExecutableName returns the name of the executable for the current platform.
+// It reads the plugin.json from the directory specified in `pluginJSONPath`. It uses internal.GetExecutableFromPluginJSON
+// which will also retrieve the executable from a nested datasource directory which may not be the desired behavior.
 func getExecutableName(os string, arch string, pluginJSONPath string) (string, error) {
 	if exname == "" {
 		exename, err := internal.GetExecutableFromPluginJSON(pluginJSONPath)
@@ -50,26 +60,73 @@ func getExecutableName(os string, arch string, pluginJSONPath string) (string, e
 		exname = exename
 	}
 
-	exeName := fmt.Sprintf("%s_%s_%s", exname, os, arch)
+	return asExecutableName(os, arch, pluginJSONPath), nil
+}
+
+// execNameCache is a cache for the executable name, so we don't have to read the plugin.json file multiple times.
+var executableNameCache sync.Map
+
+// getExecutableNameForPlugin returns the name of the executable from the plugin.json file in the provided directory.
+// The executable name is cached to avoid reading the same file multiple times.
+// If found, the executable name is returned in the format: <executable>_<os>_<arch>
+func getExecutableNameForPlugin(os string, arch string, pluginDir string) (string, error) {
+	if cached, ok := executableNameCache.Load(pluginDir); ok {
+		return asExecutableName(os, arch, cached.(string)), nil
+	}
+	exe, err := internal.GetStringValueFromJSON(path.Join(pluginDir, "plugin.json"), "executable")
+	if err != nil {
+		return "", err
+	}
+
+	executableNameCache.Store(pluginDir, exe)
+
+	return asExecutableName(os, arch, exe), nil
+}
+
+func asExecutableName(os string, arch string, exe string) string {
+	exeName := fmt.Sprintf("%s_%s_%s", exe, os, arch)
 	if os == "windows" {
 		exeName = fmt.Sprintf("%s.exe", exeName)
 	}
-	return exeName, nil
+	return exeName
 }
 
 func buildBackend(cfg Config) error {
-	cfg, err := beforeBuild(cfg)
+	cfg, args, err := getBuildBackendCmdInfo(cfg)
 	if err != nil {
 		return err
+	}
+
+	// TODO: Change to sh.RunWithV once available.
+	return sh.RunWith(cfg.Env, "go", args...)
+}
+
+func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
+	cfg, err := beforeBuild(cfg)
+	if err != nil {
+		return cfg, []string{}, err
 	}
 
 	pluginJSONPath := defaultPluginJSONPath
 	if cfg.PluginJSONPath != "" {
 		pluginJSONPath = cfg.PluginJSONPath
 	}
-	exeName, err := getExecutableName(cfg.OS, cfg.Arch, pluginJSONPath)
+	exePath, err := getExecutableNameForPlugin(cfg.OS, cfg.Arch, pluginJSONPath)
 	if err != nil {
-		return err
+		// Look for a nested backend data source plugin
+		nestedPluginJSONPath := defaultNestedDataSourcePath
+		if exe, err2 := getExecutableNameForPlugin(cfg.OS, cfg.Arch, filepath.Join(pluginJSONPath, nestedPluginJSONPath)); err2 != nil {
+			// return the original error
+			return cfg, []string{}, err
+		} else {
+			// For backwards compatibility, if the executable is in the root directory, strip that information.
+			if strings.HasPrefix(exe, "../") {
+				exePath = exe[3:]
+			} else {
+				// Make sure the executable is in the relevant nested plugin directory.
+				exePath = filepath.Join(nestedPluginJSONPath, exe)
+			}
+		}
 	}
 
 	ldFlags := ""
@@ -92,7 +149,7 @@ func buildBackend(cfg Config) error {
 		outputPath = defaultOutputBinaryPath
 	}
 	args := []string{
-		"build", "-o", filepath.Join(outputPath, exeName),
+		"build", "-o", filepath.Join(outputPath, exePath),
 	}
 
 	info := getBuildInfoFromEnvironment()
@@ -114,8 +171,15 @@ func buildBackend(cfg Config) error {
 		}
 	}
 
-	for k, v := range flags {
-		ldFlags = fmt.Sprintf("%s -X '%s=%s'", ldFlags, k, v)
+	// Sort the flags to ensure a consistent build command
+	flagsKeys := make([]string, 0, len(flags))
+	for k := range flags {
+		flagsKeys = append(flagsKeys, k)
+	}
+	sort.Strings(flagsKeys)
+
+	for _, k := range flagsKeys {
+		ldFlags = fmt.Sprintf("%s -X '%s=%s'", ldFlags, k, flags[k])
 	}
 	args = append(args, "-ldflags", ldFlags)
 
@@ -133,9 +197,7 @@ func buildBackend(cfg Config) error {
 	if !cfg.EnableCGo {
 		cfg.Env["CGO_ENABLED"] = "0"
 	}
-
-	// TODO: Change to sh.RunWithV once available.
-	return sh.RunWith(cfg.Env, "go", args...)
+	return cfg, args, nil
 }
 
 func newBuildConfig(os string, arch string) Config {
