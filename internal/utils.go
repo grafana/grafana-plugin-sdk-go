@@ -2,6 +2,7 @@ package internal
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -27,6 +28,8 @@ func GetStringValueFromJSON(fpath string, key string) (string, error) {
 	return name, nil
 }
 
+// GetExecutableFromPluginJSON returns the executable name from a plugin.json file in the provided directory.
+// If no plugin.json file is found at the root, it will look in a directory named "datasource".
 func GetExecutableFromPluginJSON(dir string) (string, error) {
 	exe, err := GetStringValueFromJSON(path.Join(dir, "plugin.json"), "executable")
 	if err != nil {
@@ -36,7 +39,7 @@ func GetExecutableFromPluginJSON(dir string) (string, error) {
 			if strings.HasPrefix(exe, "../") {
 				return exe[3:], nil
 			}
-			return exe, nil
+			return "", errors.New("datasource should reference executable in root folder")
 		}
 	}
 	return exe, err
