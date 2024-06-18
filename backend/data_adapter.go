@@ -50,7 +50,9 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointQueryData)
 	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	resp, err := a.queryDataHandler.QueryData(ctx, parsedReq)
+	resp, err := panicGuard(func() (*QueryDataResponse, error) {
+		return a.queryDataHandler.QueryData(ctx, parsedReq)
+	})
 	if err != nil {
 		return nil, err
 	}

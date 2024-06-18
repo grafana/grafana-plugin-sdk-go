@@ -41,5 +41,9 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointCallResource)
 	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
+	_, err := panicGuard(func() (interface{}, error) {
+		err := a.callResourceHandler.CallResource(ctx, parsedReq, fn)
+		return nil, err
+	})
+	return err
 }

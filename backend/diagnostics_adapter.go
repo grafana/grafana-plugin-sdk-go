@@ -52,7 +52,9 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointCheckHealth)
 		ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
+		res, err := panicGuard(func() (*CheckHealthResult, error) {
+			return a.checkHealthHandler.CheckHealth(ctx, parsedReq)
+		})
 		if err != nil {
 			return nil, err
 		}

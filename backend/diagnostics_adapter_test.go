@@ -141,6 +141,17 @@ func TestCheckHealth(t *testing.T) {
 		})
 		require.NoError(t, err)
 	})
+
+	t.Run("It should not crash if a panic occurs in the handler", func(t *testing.T) {
+		a := newDiagnosticsSDKAdapter(nil, CheckHealthHandlerFunc(func(ctx context.Context, _ *CheckHealthRequest) (*CheckHealthResult, error) {
+			panic("test")
+		}))
+
+		_, err := a.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
+			PluginContext: &pluginv2.PluginContext{},
+		})
+		require.ErrorContains(t, err, "internal server error")
+	})
 }
 
 type testCheckHealthHandler struct {
