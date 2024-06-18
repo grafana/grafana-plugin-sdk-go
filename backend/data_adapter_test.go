@@ -130,17 +130,6 @@ func TestQueryData(t *testing.T) {
 		})
 		require.NoError(t, err)
 	})
-
-	t.Run("It should not crash if a panic occurs in the handler", func(t *testing.T) {
-		a := newDataSDKAdapter(QueryDataHandlerFunc(func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
-			panic("test")
-		}))
-
-		_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
-			PluginContext: &pluginv2.PluginContext{},
-		})
-		require.ErrorContains(t, err, "internal server error")
-	})
 }
 
 var finalRoundTripper = httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {

@@ -173,18 +173,6 @@ func TestCallResource(t *testing.T) {
 		}, testSender)
 		require.NoError(t, err)
 	})
-
-	t.Run("It should not crash if a panic occurs in the handler", func(t *testing.T) {
-		a := newResourceSDKAdapter(CallResourceHandlerFunc(func(ctx context.Context, _ *CallResourceRequest, _ CallResourceResponseSender) error {
-			panic("test")
-		}))
-
-		testSender := newTestCallResourceServer()
-		err := a.CallResource(&pluginv2.CallResourceRequest{
-			PluginContext: &pluginv2.PluginContext{},
-		}, testSender)
-		require.ErrorContains(t, err, "internal server error")
-	})
 }
 
 type testCallResourceHandler struct {

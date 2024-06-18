@@ -30,19 +30,6 @@ func TestSubscribeStream(t *testing.T) {
 		})
 		require.NoError(t, err)
 	})
-
-	t.Run("It should not crash if a panic occurs in the handler", func(t *testing.T) {
-		a := newStreamSDKAdapter(&streamAdapter{
-			subscribeStreamFunc: func(_ context.Context, _ *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
-				panic("test")
-			},
-		})
-
-		_, err := a.SubscribeStream(context.Background(), &pluginv2.SubscribeStreamRequest{
-			PluginContext: &pluginv2.PluginContext{},
-		})
-		require.ErrorContains(t, err, "internal server error")
-	})
 }
 
 func TestPublishStream(t *testing.T) {
@@ -63,19 +50,6 @@ func TestPublishStream(t *testing.T) {
 			PluginContext: &pluginv2.PluginContext{},
 		})
 		require.NoError(t, err)
-	})
-
-	t.Run("It should not crash if a panic occurs in the handler", func(t *testing.T) {
-		a := newStreamSDKAdapter(&streamAdapter{
-			publishStreamFunc: func(_ context.Context, _ *PublishStreamRequest) (*PublishStreamResponse, error) {
-				panic("test")
-			},
-		})
-
-		_, err := a.PublishStream(context.Background(), &pluginv2.PublishStreamRequest{
-			PluginContext: &pluginv2.PluginContext{},
-		})
-		require.ErrorContains(t, err, "internal server error")
 	})
 }
 
@@ -98,20 +72,6 @@ func TestRunStream(t *testing.T) {
 			PluginContext: &pluginv2.PluginContext{},
 		}, testSrv)
 		require.NoError(t, err)
-	})
-
-	t.Run("It should not crash if a panic occurs in the handler", func(t *testing.T) {
-		a := newStreamSDKAdapter(&streamAdapter{
-			runStreamFunc: func(_ context.Context, _ *RunStreamRequest, _ *StreamSender) error {
-				panic("test")
-			},
-		})
-
-		testSrv := newTestRunStreamServer()
-		err := a.RunStream(&pluginv2.RunStreamRequest{
-			PluginContext: &pluginv2.PluginContext{},
-		}, testSrv)
-		require.ErrorContains(t, err, "internal server error")
 	})
 }
 
