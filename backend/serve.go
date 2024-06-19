@@ -7,15 +7,19 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"runtime/debug"
 	"strconv"
 	"syscall"
 	"time"
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
+	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -95,6 +99,11 @@ func grpcServerOptions(serveOpts ServeOpts, customOpts ...grpc.ServerOption) []g
 	return options
 }
 
+func handlePanic(p any) (err error) {
+	log.DefaultLogger.Error("panic triggered", "error", p, "stack", string(debug.Stack()))
+	return status.Errorf(codes.Unknown, "panic triggered: %v", p)
+}
+
 func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	if opts.GRPCSettings.MaxReceiveMsgSize <= 0 {
 		opts.GRPCSettings.MaxReceiveMsgSize = defaultServerMaxReceiveMessageSize
@@ -106,8 +115,14 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	grpcMiddlewares := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
-		grpc.UnaryInterceptor(srvMetrics.UnaryServerInterceptor()),
-		grpc.StreamInterceptor(srvMetrics.StreamServerInterceptor()),
+		grpc.ChainUnaryInterceptor(
+			srvMetrics.UnaryServerInterceptor(),
+			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(handlePanic)),
+		),
+		grpc.ChainStreamInterceptor(
+			srvMetrics.StreamServerInterceptor(),
+			recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(handlePanic)),
+		),
 	}
 	if opts.GRPCSettings.MaxSendMsgSize > 0 {
 		grpcMiddlewares = append([]grpc.ServerOption{grpc.MaxSendMsgSize(opts.GRPCSettings.MaxSendMsgSize)}, grpcMiddlewares...)
