@@ -4,10 +4,16 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
+)
+
+var (
+	ErrTransport = errors.New("failed to execute request")
 )
 
 type QueryDataClient interface {
@@ -49,15 +55,28 @@ func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest
 	qdr := &backend.QueryDataResponse{}
 	code := http.StatusNotFound // 404 for network requests etc
 	rsp, err := c.client.Do(req)
-	if rsp != nil {
-		code = rsp.StatusCode
-		defer rsp.Body.Close()
+	if err != nil {
+		return code, qdr, fmt.Errorf("%w: %w", ErrTransport, err)
+	}
+
+	code = rsp.StatusCode
+	defer rsp.Body.Close()
+
+	if code/100 != 2 {
+		apiErr := Status{}
+		iter, err := jsoniter.Parse(jsoniter.ConfigCompatibleWithStandardLibrary, rsp.Body, 1024*10)
 		if err == nil {
-			iter, e2 := jsoniter.Parse(jsoniter.ConfigCompatibleWithStandardLibrary, rsp.Body, 1024*10)
-			if e2 == nil {
-				err = iter.ReadVal(qdr)
+			err = iter.ReadVal(&apiErr)
+			if err == nil {
+				return code, qdr, apiErr.Error()
 			}
 		}
+		return code, qdr, fmt.Errorf("failed to deserialize response: %w", err)
+	}
+
+	iter, e2 := jsoniter.Parse(jsoniter.ConfigCompatibleWithStandardLibrary, rsp.Body, 1024*10)
+	if e2 == nil {
+		err = iter.ReadVal(qdr)
 	}
 	return code, qdr, err
 }
