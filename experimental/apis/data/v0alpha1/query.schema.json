@@ -86,6 +86,10 @@
         "apiVersion": {
           "type": "string",
           "description": "The apiserver version"
+        },
+        "pluginVersion": {
+          "type": "string",
+          "description": "PluginVersion is the version of the plugin that created the query"
         }
       },
       "additionalProperties": false,
