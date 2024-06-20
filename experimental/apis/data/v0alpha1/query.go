@@ -432,6 +432,9 @@ type DataSourceRef struct {
 
 	// The apiserver version
 	APIVersion string `json:"apiVersion,omitempty"`
+
+	// PluginVersion is the version of the plugin that created the query
+	PluginVersion string `json:"pluginVersion,omitempty"`
 }
 
 // TimeRange represents a time range for a query and is a property of DataQuery.
