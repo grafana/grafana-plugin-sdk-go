@@ -35,10 +35,12 @@ func TestQueryClient(t *testing.T) {
 	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if respondWithError {
 			rw.WriteHeader(http.StatusInternalServerError)
-			rw.Write([]byte(errResp))
+			_, err := rw.Write([]byte(errResp))
+			require.NoError(t, err)
 		}
 		rw.WriteHeader(http.StatusOK)
-		rw.Write([]byte("{}"))
+		_, err := rw.Write([]byte("{}"))
+		require.NoError(t, err)
 	}))
 	defer srv.Close()
 
