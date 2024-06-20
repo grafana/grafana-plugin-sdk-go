@@ -10,7 +10,7 @@ type Status struct {
 	TypeMeta   `json:",inline"`
 	ObjectMeta `json:"metadata,omitempty"`
 
-	// Status is a textual represenation of the state.
+	// Status is a textual representation of the state.
 	Status string `json:"status"`
 	// Message is a human-readable description of the state. It should not be parsed.
 	Message string `json:"message"`
