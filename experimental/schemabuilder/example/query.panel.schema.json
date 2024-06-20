@@ -29,6 +29,10 @@
                     "description": "The apiserver version",
                     "type": "string"
                   },
+                  "pluginVersion": {
+                    "description": "PluginVersion is the version of the plugin that created the query",
+                    "type": "string"
+                  },
                   "type": {
                     "description": "The datasource plugin type",
                     "type": "string",
@@ -153,6 +157,10 @@
                 "properties": {
                   "apiVersion": {
                     "description": "The apiserver version",
+                    "type": "string"
+                  },
+                  "pluginVersion": {
+                    "description": "PluginVersion is the version of the plugin that created the query",
                     "type": "string"
                   },
                   "type": {
@@ -319,6 +327,10 @@
                 "properties": {
                   "apiVersion": {
                     "description": "The apiserver version",
+                    "type": "string"
+                  },
+                  "pluginVersion": {
+                    "description": "PluginVersion is the version of the plugin that created the query",
                     "type": "string"
                   },
                   "type": {
