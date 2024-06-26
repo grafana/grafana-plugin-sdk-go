@@ -49,6 +49,7 @@ func newOtelTracerProvider(exp tracesdk.SpanExporter, sampler tracesdk.Sampler, 
 	res, err := resource.New(
 		context.Background(),
 		resource.WithAttributes(customAttributes...),
+		resource.WithFromEnv(),
 		resource.WithProcessRuntimeDescription(),
 		resource.WithTelemetrySDK(),
 	)
