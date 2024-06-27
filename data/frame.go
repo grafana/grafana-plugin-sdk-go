@@ -47,6 +47,15 @@ type Frame struct {
 	Meta *FrameMeta
 }
 
+func (f *Frame) DeepCopy() *Frame {
+	arrow, err := f.MarshalArrow()
+	if err != nil {
+		return nil
+	}
+	out, _ := UnmarshalArrowFrame(arrow)
+	return out
+}
+
 // UnmarshalJSON allows unmarshalling Frame from JSON.
 func (f *Frame) UnmarshalJSON(b []byte) error {
 	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
