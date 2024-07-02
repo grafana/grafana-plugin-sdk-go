@@ -212,8 +212,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 	GrafanaConfig: map[string]string{
 		"foo": "bar",
 	},
-	UserAgent:  "Grafana/10.0.0 (linux; amd64)",
-	ApiVersion: "v0alpha1",
+	UserAgent: "Grafana/10.0.0 (linux; amd64)",
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
