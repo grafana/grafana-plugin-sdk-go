@@ -11,6 +11,9 @@ import (
 	jsoniter "github.com/json-iterator/go"
 )
 
+// EndpointQueryData friendly name for the query data endpoint/handler.
+const EndpointQueryData Endpoint = "queryData"
+
 // QueryDataHandler handles data queries.
 type QueryDataHandler interface {
 	// QueryData handles multiple queries and returns multiple responses.

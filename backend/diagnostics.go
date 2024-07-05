@@ -6,6 +6,14 @@ import (
 	"strconv"
 )
 
+const (
+	// EndpointCheckHealth friendly name for the check health endpoint/handler.
+	EndpointCheckHealth Endpoint = "checkHealth"
+
+	// EndpointCollectMetrics friendly name for the collect metrics endpoint/handler.
+	EndpointCollectMetrics Endpoint = "collectMetrics"
+)
+
 // CheckHealthHandler enables users to send health check
 // requests to a backend plugin
 type CheckHealthHandler interface {

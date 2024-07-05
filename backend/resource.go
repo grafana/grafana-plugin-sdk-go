@@ -6,6 +6,9 @@ import (
 	"net/textproto"
 )
 
+// EndpointCallResource friendly name for the call resource endpoint/handler.
+const EndpointCallResource Endpoint = "callResource"
+
 // CallResourceRequest represents a request for a resource call.
 type CallResourceRequest struct {
 	// PluginContext the contextual information for the request.
