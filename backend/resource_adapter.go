@@ -17,12 +17,6 @@ func newResourceSDKAdapter(handler CallResourceHandler) *resourceSDKAdapter {
 	}
 }
 
-type callResourceResponseSenderFunc func(resp *CallResourceResponse) error
-
-func (fn callResourceResponseSenderFunc) Send(resp *CallResourceResponse) error {
-	return fn(resp)
-}
-
 func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest, protoSrv pluginv2.Resource_CallResourceServer) error {
 	if a.callResourceHandler == nil {
 		return protoSrv.Send(&pluginv2.CallResourceResponse{
@@ -30,7 +24,7 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 		})
 	}
 
-	fn := callResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
+	fn := CallResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
 		return protoSrv.Send(ToProto().CallResourceResponse(resp))
 	})
 

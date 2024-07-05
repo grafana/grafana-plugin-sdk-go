@@ -101,6 +101,17 @@ type CallResourceResponseSender interface {
 	Send(*CallResourceResponse) error
 }
 
+// CallResourceResponseSenderFunc is an adapter to allow the use of
+// ordinary functions as [CallResourceResponseSender]. If f is a function
+// with the appropriate signature, CallResourceResponseSenderFunc(f) is a
+// [CallResourceResponseSender] that calls f.
+type CallResourceResponseSenderFunc func(resp *CallResourceResponse) error
+
+// Send calls fn(resp).
+func (fn CallResourceResponseSenderFunc) Send(resp *CallResourceResponse) error {
+	return fn(resp)
+}
+
 // CallResourceHandler handles resource calls.
 type CallResourceHandler interface {
 	CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
