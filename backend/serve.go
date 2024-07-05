@@ -131,6 +131,9 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 }
 
 // Serve starts serving the plugin over gRPC.
+//
+// Deprecated: Serve exists for historical compatibility
+// and might be removed in a future version. Please migrate to use [Manage] instead.
 func Serve(opts ServeOpts) error {
 	pluginOpts := GRPCServeOpts(opts)
 	pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
