@@ -219,6 +219,46 @@ func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HT
 	}
 }
 
+type pluginConfigKey struct{}
+
+// WithPluginContext adds pluginCtx to ctx.
+//
+// Note: Used internally by SDK so you normally don't need to use/call this,
+// unless in tests and such.
+func WithPluginContext(ctx context.Context, pluginCtx PluginContext) context.Context {
+	return context.WithValue(ctx, pluginConfigKey{}, pluginCtx)
+}
+
+// PluginConfigFromContext returns [PluginContext] from context if available, otherwise empty [PluginContext].
+func PluginConfigFromContext(ctx context.Context) PluginContext {
+	v := ctx.Value(pluginConfigKey{})
+	if v == nil {
+		return PluginContext{}
+	}
+
+	return v.(PluginContext)
+}
+
+type userKey struct{}
+
+// WithPluginContext adds user to ctx.
+//
+// Note: Used internally by SDK so you normally don't need to use/call this,
+// unless in tests and such.
+func WithUser(ctx context.Context, user *User) context.Context {
+	return context.WithValue(ctx, userKey{}, user)
+}
+
+// UserFromContext returns [User] from context if available, otherwise nil.
+func UserFromContext(ctx context.Context) *User {
+	v := ctx.Value(userKey{})
+	if v == nil {
+		return nil
+	}
+
+	return v.(*User)
+}
+
 // JSONDataFromHTTPClientOptions extracts JSON data from CustomOptions of httpclient.Options.
 func JSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[string]interface{}) {
 	if opts.CustomOptions == nil {

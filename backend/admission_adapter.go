@@ -21,6 +21,8 @@ func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *plugin
 	ctx = WithEndpoint(ctx, EndpointValidateAdmission)
 	ctx = propagateTenantIDIfPresent(ctx)
 	parsedReq := FromProto().AdmissionRequest(req)
+	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
+	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	resp, err := a.handler.ValidateAdmission(ctx, parsedReq)
 	if err != nil {
@@ -33,6 +35,8 @@ func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2
 	ctx = WithEndpoint(ctx, EndpointMutateAdmission)
 	ctx = propagateTenantIDIfPresent(ctx)
 	parsedReq := FromProto().AdmissionRequest(req)
+	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
+	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	resp, err := a.handler.MutateAdmission(ctx, parsedReq)
 	if err != nil {
@@ -45,6 +49,8 @@ func (a *admissionSDKAdapter) ConvertObject(ctx context.Context, req *pluginv2.C
 	ctx = WithEndpoint(ctx, EndpointConvertObject)
 	ctx = propagateTenantIDIfPresent(ctx)
 	parsedReq := FromProto().ConversionRequest(req)
+	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
+	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	resp, err := a.handler.ConvertObject(ctx, parsedReq)
 	if err != nil {
