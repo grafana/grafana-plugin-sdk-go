@@ -18,8 +18,10 @@ func newAdmissionSDKAdapter(handler AdmissionHandler) *admissionSDKAdapter {
 }
 
 func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.ValidationResponse, error) {
+	ctx = WithEndpoint(ctx, EndpointValidateAdmission)
 	ctx = propagateTenantIDIfPresent(ctx)
 	parsedReq := FromProto().AdmissionRequest(req)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	resp, err := a.handler.ValidateAdmission(ctx, parsedReq)
 	if err != nil {
 		return nil, err
@@ -28,8 +30,10 @@ func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *plugin
 }
 
 func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutationResponse, error) {
+	ctx = WithEndpoint(ctx, EndpointMutateAdmission)
 	ctx = propagateTenantIDIfPresent(ctx)
 	parsedReq := FromProto().AdmissionRequest(req)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	resp, err := a.handler.MutateAdmission(ctx, parsedReq)
 	if err != nil {
 		return nil, err
@@ -38,8 +42,10 @@ func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2
 }
 
 func (a *admissionSDKAdapter) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
+	ctx = WithEndpoint(ctx, EndpointConvertObject)
 	ctx = propagateTenantIDIfPresent(ctx)
 	parsedReq := FromProto().ConversionRequest(req)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	resp, err := a.handler.ConvertObject(ctx, parsedReq)
 	if err != nil {
 		return nil, err

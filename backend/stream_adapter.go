@@ -24,10 +24,11 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
+	ctx = WithEndpoint(ctx, EndpointSubscribeStream)
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().SubscribeStreamRequest(protoReq)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointSubscribeStream)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	resp, err := a.streamHandler.SubscribeStream(ctx, parsedReq)
 	if err != nil {
 		return nil, err
@@ -39,10 +40,11 @@ func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
+	ctx = WithEndpoint(ctx, EndpointPublishStream)
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().PublishStreamRequest(protoReq)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointPublishStream)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	resp, err := a.streamHandler.PublishStream(ctx, parsedReq)
 	if err != nil {
 		return nil, err
@@ -63,10 +65,11 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 		return status.Error(codes.Unimplemented, "not implemented")
 	}
 	ctx := protoSrv.Context()
+	ctx = WithEndpoint(ctx, EndpointRunStream)
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().RunStreamRequest(protoReq)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointRunStream)
+	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
 	return a.streamHandler.RunStream(ctx, parsedReq, sender)

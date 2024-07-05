@@ -46,11 +46,12 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.Co
 
 func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.checkHealthHandler != nil {
+		ctx = WithEndpoint(ctx, EndpointCheckHealth)
 		ctx = propagateTenantIDIfPresent(ctx)
 		ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
-		ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext, endpointCheckHealth)
+		ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 		ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
 		if err != nil {

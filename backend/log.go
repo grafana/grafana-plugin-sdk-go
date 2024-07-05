@@ -8,16 +8,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-const (
-	endpointCallResource    = "callResource"
-	endpointCheckHealth     = "checkHealth"
-	endpointCollectMetrics  = "collectMetrics"
-	endpointQueryData       = "queryData"
-	endpointRunStream       = "runStream"
-	endpointSubscribeStream = "subscribeStream"
-	endpointPublishStream   = "publishStream"
-)
-
 // Logger is the default logger instance. This can be used directly to log from
 // your plugin to grafana-server with calls like backend.Logger.Debug(...).
 var Logger = log.DefaultLogger
@@ -27,8 +17,14 @@ var NewLoggerWith = func(args ...interface{}) log.Logger {
 	return log.New().With(args...)
 }
 
-func withContextualLogAttributes(ctx context.Context, pCtx PluginContext, endpoint string) context.Context {
-	args := []any{"pluginID", pCtx.PluginID, "endpoint", endpoint}
+func withContextualLogAttributes(ctx context.Context, pCtx PluginContext) context.Context {
+	args := []any{"pluginID", pCtx.PluginID}
+
+	endpoint := EndpointFromContext(ctx)
+	if !endpoint.IsEmpty() {
+		args = append(args, "endpoint", string(endpoint))
+	}
+
 	if tid := trace.SpanContextFromContext(ctx).TraceID(); tid.IsValid() {
 		args = append(args, "traceID", tid.String())
 	}
