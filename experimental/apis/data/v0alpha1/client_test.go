@@ -32,7 +32,7 @@ const errResp = `
 
 func TestQueryClient(t *testing.T) {
 	respondWithError := false
-	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, _ *http.Request) {
+	srv := httptest.NewServer(http.HandlerFunc(func(rw http.ResponseWriter, req *http.Request) {
 		if respondWithError {
 			rw.WriteHeader(http.StatusInternalServerError)
 			_, err := rw.Write([]byte(errResp))

@@ -1,3 +1,6 @@
+[run]
+skip-files = ["data/.*\\.gen\\.go", "data/generic_nullable_vector\\.go", "data/generic_vector\\.go"]
+
 [linters-settings.golint]
 min-confidence = 1
 
@@ -52,10 +55,6 @@ enable = [
   "thelper",
   "revive"
 ]
-
-[issues]
-exclude-files = ["data/.*\\.gen\\.go", "data/generic_nullable_vector\\.go", "data/generic_vector\\.go"]
-
 # Don't require that errors are included through wrapping, since might not always want to wrap an error
 [[issues.exclude-rules]]
 linters = ["errorlint"]
