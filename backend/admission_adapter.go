@@ -20,10 +20,12 @@ func newAdmissionSDKAdapter(handler AdmissionHandler) *admissionSDKAdapter {
 func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.ValidationResponse, error) {
 	ctx = WithEndpoint(ctx, EndpointValidateAdmission)
 	ctx = propagateTenantIDIfPresent(ctx)
+	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().AdmissionRequest(req)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	resp, err := a.handler.ValidateAdmission(ctx, parsedReq)
 	if err != nil {
 		return nil, err
@@ -34,10 +36,12 @@ func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *plugin
 func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutationResponse, error) {
 	ctx = WithEndpoint(ctx, EndpointMutateAdmission)
 	ctx = propagateTenantIDIfPresent(ctx)
+	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().AdmissionRequest(req)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	resp, err := a.handler.MutateAdmission(ctx, parsedReq)
 	if err != nil {
 		return nil, err
@@ -48,10 +52,12 @@ func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2
 func (a *admissionSDKAdapter) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
 	ctx = WithEndpoint(ctx, EndpointConvertObject)
 	ctx = propagateTenantIDIfPresent(ctx)
+	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().ConversionRequest(req)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
+	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
 	resp, err := a.handler.ConvertObject(ctx, parsedReq)
 	if err != nil {
 		return nil, err
