@@ -50,8 +50,6 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		ctx = propagateTenantIDIfPresent(ctx)
 		ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
-		ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-		ctx = WithUser(ctx, parsedReq.PluginContext.User)
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 		ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)

@@ -99,7 +99,7 @@ func TestHttpResourceHandler(t *testing.T) {
 
 		t.Run("Should be able to get plugin config from request context", func(t *testing.T) {
 			require.NotNil(t, httpHandler.req)
-			actualPluginCtx := backend.PluginConfigFromContext(httpHandler.req.Context())
+			actualPluginCtx := PluginConfigFromContext(httpHandler.req.Context())
 			require.NotNil(t, actualPluginCtx)
 			require.Equal(t, req.PluginContext.OrgID, actualPluginCtx.OrgID)
 			require.Equal(t, req.PluginContext.PluginID, actualPluginCtx.PluginID)
@@ -112,7 +112,7 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Equal(t, req.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled, actualPluginCtx.DataSourceInstanceSettings.BasicAuthEnabled)
 			require.Equal(t, req.PluginContext.DataSourceInstanceSettings.BasicAuthUser, actualPluginCtx.DataSourceInstanceSettings.BasicAuthUser)
 
-			user := backend.UserFromContext(httpHandler.req.Context())
+			user := UserFromContext(httpHandler.req.Context())
 			require.NotNil(t, user)
 			require.Equal(t, req.PluginContext.User.Name, "foobar")
 			require.Equal(t, req.PluginContext.User.Login, "foo@bar.com")

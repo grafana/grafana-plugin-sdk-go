@@ -29,11 +29,8 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 		reqBodyReader = bytes.NewReader(req.Body)
 	}
 
-	// Shouldn't be needed since adapter adds this, but doesn't hurt to
-	// be on the safe side in case someone depends on this/using this in a
-	// test for example.
-	ctx = backend.WithPluginContext(ctx, req.PluginContext)
-	ctx = backend.WithUser(ctx, req.PluginContext.User)
+	ctx = withPluginContext(ctx, req.PluginContext)
+	ctx = withUser(ctx, req.PluginContext.User)
 	reqURL, err := url.Parse(req.URL)
 	if err != nil {
 		return err
@@ -64,18 +61,34 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 	return nil
 }
 
+type pluginConfigKey struct{}
+
+func withPluginContext(ctx context.Context, pluginCtx backend.PluginContext) context.Context {
+	return context.WithValue(ctx, pluginConfigKey{}, pluginCtx)
+}
+
 // PluginConfigFromContext returns backend.PluginConfig from context.
-//
-// Deprecated: PluginConfigFromContext exists for historical compatibility
-// and might be removed in a future version. Please migrate to [backend.PluginConfigFromContext].
 func PluginConfigFromContext(ctx context.Context) backend.PluginContext {
-	return backend.PluginConfigFromContext(ctx)
+	v := ctx.Value(pluginConfigKey{})
+	if v == nil {
+		return backend.PluginContext{}
+	}
+
+	return v.(backend.PluginContext)
+}
+
+type userKey struct{}
+
+func withUser(ctx context.Context, cfg *backend.User) context.Context {
+	return context.WithValue(ctx, userKey{}, cfg)
 }
 
 // UserFromContext returns backend.User from context.
-//
-// Deprecated: UserFromContext exists for historical compatibility
-// and might be removed in a future version. Please migrate to [backend.UserFromContext].
 func UserFromContext(ctx context.Context) *backend.User {
-	return backend.UserFromContext(ctx)
+	v := ctx.Value(userKey{})
+	if v == nil {
+		return nil
+	}
+
+	return v.(*backend.User)
 }

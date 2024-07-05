@@ -48,8 +48,6 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	ctx = propagateTenantIDIfPresent(ctx)
 	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().QueryDataRequest(req)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
 	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
