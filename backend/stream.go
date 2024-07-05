@@ -10,6 +10,17 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
+const (
+	// EndpointSubscribeStream friendly name for the subscribe stream endpoint/handler.
+	EndpointSubscribeStream Endpoint = "subscribeStream"
+
+	// EndpointPublishStream friendly name for the publish stream endpoint/handler.
+	EndpointPublishStream Endpoint = "publishStream"
+
+	// EndpointRunStream friendly name for the run stream endpoint/handler.
+	EndpointRunStream Endpoint = "runStream"
+)
+
 // StreamHandler handles streams.
 // This is EXPERIMENTAL and is a subject to change till Grafana 8.
 type StreamHandler interface {

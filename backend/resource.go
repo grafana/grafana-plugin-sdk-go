@@ -6,6 +6,9 @@ import (
 	"net/textproto"
 )
 
+// EndpointCallResource friendly name for the call resource endpoint/handler.
+const EndpointCallResource Endpoint = "callResource"
+
 // CallResourceRequest represents a request for a resource call.
 type CallResourceRequest struct {
 	// PluginContext the contextual information for the request.
@@ -98,15 +101,26 @@ type CallResourceResponseSender interface {
 	Send(*CallResourceResponse) error
 }
 
+// CallResourceResponseSenderFunc is an adapter to allow the use of
+// ordinary functions as [CallResourceResponseSender]. If f is a function
+// with the appropriate signature, CallResourceResponseSenderFunc(f) is a
+// [CallResourceResponseSender] that calls f.
+type CallResourceResponseSenderFunc func(resp *CallResourceResponse) error
+
+// Send calls fn(resp).
+func (fn CallResourceResponseSenderFunc) Send(resp *CallResourceResponse) error {
+	return fn(resp)
+}
+
 // CallResourceHandler handles resource calls.
 type CallResourceHandler interface {
 	CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
 }
 
 // CallResourceHandlerFunc is an adapter to allow the use of
-// ordinary functions as backend.CallResourceHandler. If f is a function
+// ordinary functions as [CallResourceHandler]. If f is a function
 // with the appropriate signature, CallResourceHandlerFunc(f) is a
-// Handler that calls f.
+// [CallResourceHandler] that calls f.
 type CallResourceHandlerFunc func(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
 
 // CallResource calls fn(ctx, req, sender).

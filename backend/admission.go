@@ -6,6 +6,17 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
+const (
+	// EndpointValidateAdmission friendly name for the validate admission endpoint/handler.
+	EndpointValidateAdmission Endpoint = "validateAdmission"
+
+	// EndpointMutateAdmission friendly name for the mutate admission endpoint/handler.
+	EndpointMutateAdmission Endpoint = "mutateAdmission"
+
+	// EndpointConvertObject friendly name for the convert object endpoint/handler.
+	EndpointConvertObject Endpoint = "convertObject"
+)
+
 // AdmissionHandler is an EXPERIMENTAL service that allows checking objects before they are saved
 // This is modeled after the kubernetes model for admission controllers
 // Since grafana 11.1, this feature is under active development and will continue to evolve in 2024
