@@ -21,9 +21,9 @@ type CheckHealthHandler interface {
 }
 
 // CheckHealthHandlerFunc is an adapter to allow the use of
-// ordinary functions as backend.CheckHealthHandler. If f is a function
+// ordinary functions as [CheckHealthHandler]. If f is a function
 // with the appropriate signature, CheckHealthHandlerFunc(f) is a
-// Handler that calls f.
+// [CheckHealthHandler] that calls f.
 type CheckHealthHandlerFunc func(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error)
 
 // CheckHealth calls fn(ctx, req).

@@ -118,9 +118,9 @@ type CallResourceHandler interface {
 }
 
 // CallResourceHandlerFunc is an adapter to allow the use of
-// ordinary functions as backend.CallResourceHandler. If f is a function
+// ordinary functions as [CallResourceHandler]. If f is a function
 // with the appropriate signature, CallResourceHandlerFunc(f) is a
-// Handler that calls f.
+// [CallResourceHandler] that calls f.
 type CallResourceHandlerFunc func(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error
 
 // CallResource calls fn(ctx, req, sender).

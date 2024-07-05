@@ -28,9 +28,9 @@ type QueryDataHandler interface {
 }
 
 // QueryDataHandlerFunc is an adapter to allow the use of
-// ordinary functions as backend.QueryDataHandler. If f is a function
+// ordinary functions as [QueryDataHandler]. If f is a function
 // with the appropriate signature, QueryDataHandlerFunc(f) is a
-// Handler that calls f.
+// [QueryDataHandler] that calls f.
 type QueryDataHandlerFunc func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error)
 
 // QueryData calls fn(ctx, req).
