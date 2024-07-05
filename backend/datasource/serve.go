@@ -5,6 +5,9 @@ import (
 )
 
 // ServeOpts options for serving a data source plugin.
+//
+// Deprecated: ServeOpts exists for historical compatibility
+// and might be removed in a future version. Please migrate to use [Manage] instead of [Serve].
 type ServeOpts struct {
 	// CheckHealthHandler handler for health checks.
 	// Optional to implement.
@@ -29,6 +32,9 @@ type ServeOpts struct {
 }
 
 // Serve starts serving the data source over gPRC.
+//
+// Deprecated: Serve exists for historical compatibility
+// and might be removed in a future version. Please migrate to use [Manage] instead.
 func Serve(opts ServeOpts) error {
 	return backend.Serve(backend.ServeOpts{
 		CheckHealthHandler:  opts.CheckHealthHandler,
