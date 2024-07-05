@@ -16,17 +16,17 @@ trigger:
 
 steps:
 - name: build
-  image: grafana/grafana-plugin-ci:1.9.5
+  image: grafana/grafana-plugin-ci:1.9.6
   commands:
   - mage -v build
 
 - name: lint
-  image: grafana/grafana-plugin-ci:1.9.5
+  image: grafana/grafana-plugin-ci:1.9.6
   commands:
   - mage -v lint
 
 - name: test
-  image: grafana/grafana-plugin-ci:1.9.5
+  image: grafana/grafana-plugin-ci:1.9.6
   commands:
   # -race requires cgo + a C compiler
   - apt update
@@ -49,17 +49,17 @@ trigger:
 
 steps:
 - name: build
-  image: grafana/grafana-plugin-ci:1.9.5
+  image: grafana/grafana-plugin-ci:1.9.6
   commands:
   - mage -v build
 
 - name: lint
-  image: grafana/grafana-plugin-ci:1.9.5
+  image: grafana/grafana-plugin-ci:1.9.6
   commands:
   - mage -v lint
 
 - name: test
-  image: grafana/grafana-plugin-ci:1.9.5
+  image: grafana/grafana-plugin-ci:1.9.6
   commands:
   # -race requires cgo + a C compiler
   - apt update
@@ -70,6 +70,6 @@ steps:
 
 ---
 kind: signature
-hmac: cee688a6f8ed3ecb1ddd384e349a6556d28b23b298057d8fa02da37ab50b0ba7
+hmac: 65417116eafb288e3627e0a618d2d88e7fb71527517f3a9ddfbdd032eb654511
 
 ...
