@@ -97,7 +97,7 @@ func (ds *testDataSource) QueryData(ctx context.Context, req *backend.QueryDataR
 
 func (ds *testDataSource) handleTest(rw http.ResponseWriter, req *http.Request) {
 	ctx := req.Context()
-	pluginContext := httpadapter.PluginConfigFromContext(ctx)
+	pluginContext := backend.PluginConfigFromContext(ctx)
 	settings, err := ds.getSettings(ctx, pluginContext)
 	if err != nil {
 		rw.WriteHeader(500)
