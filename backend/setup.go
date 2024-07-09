@@ -30,8 +30,15 @@ const (
 	// PluginProfilingPortEnv is a constant for the GF_PLUGIN_PROFILING_PORT environment variable used to specify a pprof port (default 6060).
 	PluginProfilingPortEnv = "GF_PLUGIN_PROFILING_PORT" // nolint:gosec
 
-	// PluginProfilingContentionEnv is a constant for the GF_PLUGIN_PROFILING_CONTENTION environment variable used to enable contention profiling (report of all goroutine blocking and mutex contention events) (default false).
-	PluginProfilingContentionEnv = "GF_PLUGIN_PROFILING_CONTENTION" // nolint:gosec
+	// PluginProfilingBlockRateEnv is a constant for the GF_PLUGIN_PROFILING_BLOCK_RATE environment
+	// variable used to control the fraction of goroutine blocking events that are reported in the
+	// blocking profile, default `0` (i.e. track no events). Using `5` would report 20% of all events.
+	PluginProfilingBlockRateEnv = "GF_PLUGIN_PROFILING_BLOCK_RATE" // nolint:gosec
+
+	// PluginProfilingMutexRateEnv is a constant for the GF_PLUGIN_PROFILING_MUTEX_RATE environment
+	// variable used to Controls the fraction of mutex contention events that are reported in the
+	// mutex profile, default `0` (i.e. track no events). Using `5` would report 20% of all events.
+	PluginProfilingMutexRateEnv = "GF_PLUGIN_PROFILING_MUTEX_RATE" // nolint:gosec
 
 	// PluginTracingOpenTelemetryOTLPAddressEnv is a constant for the GF_INSTANCE_OTLP_ADDRESS
 	// environment variable used to specify the OTLP address.
@@ -102,20 +109,33 @@ func setupProfiler(pluginID string) {
 			}
 		}
 
-		contentionProfiling := false
-		if value, ok := os.LookupEnv(PluginProfilingContentionEnv); ok {
-			if value == "true" {
-				contentionProfiling = true
+		blockProfileRate := 0
+		if value, ok := os.LookupEnv(PluginProfilingBlockRateEnv); ok {
+			if value != "" {
+				var innerErr error
+				blockProfileRate, innerErr = strconv.Atoi(value)
+				if innerErr != nil {
+					Logger.Error("Failed to parse environment variable as integer", "envVar", PluginProfilingBlockRateEnv, "error", innerErr)
+				}
 			}
 		}
 
-		Logger.Info("Profiling enabled", "port", profilerPort, "contentionProfilingEnabled", contentionProfiling)
+		mutexProfileRate := 0
+		if value, ok := os.LookupEnv(PluginProfilingMutexRateEnv); ok {
+			if value != "" {
+				var innerErr error
+				mutexProfileRate, innerErr = strconv.Atoi(value)
+				if innerErr != nil {
+					Logger.Error("Failed to parse environment variable as integer", "envVar", PluginProfilingMutexRateEnv, "error", innerErr)
+				}
+			}
+		}
+
+		Logger.Info("Profiling enabled", "port", profilerPort, "blockProfileRate", blockProfileRate, "mutexProfileRate", mutexProfileRate)
 		portConfig := fmt.Sprintf(":%s", profilerPort)
 
-		if contentionProfiling {
-			runtime.SetBlockProfileRate(1)
-			runtime.SetMutexProfileFraction(1)
-		}
+		runtime.SetBlockProfileRate(blockProfileRate)
+		runtime.SetMutexProfileFraction(mutexProfileRate)
 
 		r := http.NewServeMux()
 		r.HandleFunc("/debug/pprof/", pprof.Index)
