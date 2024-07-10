@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -31,11 +32,10 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	ctx := protoSrv.Context()
 	ctx = setupContext(ctx, EndpointCallResource)
 	parsedReq := FromProto().CallResourceRequest(protoReq)
-	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
+
+	return wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+		err := a.callResourceHandler.CallResource(ctx, parsedReq, fn)
+		return RequestStatusFromError(err), err
+	})
 }

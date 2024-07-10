@@ -21,38 +21,44 @@ func newStreamSDKAdapter(handler StreamHandler) *streamSDKAdapter {
 }
 
 func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *pluginv2.SubscribeStreamRequest) (*pluginv2.SubscribeStreamResponse, error) {
-	ctx = setupContext(ctx, EndpointSubscribeStream)
-
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
+
+	ctx = setupContext(ctx, EndpointSubscribeStream)
 	parsedReq := FromProto().SubscribeStreamRequest(protoReq)
-	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	resp, err := a.streamHandler.SubscribeStream(ctx, parsedReq)
+
+	var resp *SubscribeStreamResponse
+	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		var innerErr error
+		resp, innerErr = a.streamHandler.SubscribeStream(ctx, parsedReq)
+		return RequestStatusFromError(innerErr), innerErr
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	return ToProto().SubscribeStreamResponse(resp), nil
 }
 
 func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2.PublishStreamRequest) (*pluginv2.PublishStreamResponse, error) {
-	ctx = setupContext(ctx, EndpointPublishStream)
-
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
+
+	ctx = setupContext(ctx, EndpointPublishStream)
 	parsedReq := FromProto().PublishStreamRequest(protoReq)
-	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	resp, err := a.streamHandler.PublishStream(ctx, parsedReq)
+
+	var resp *PublishStreamResponse
+	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		var innerErr error
+		resp, innerErr = a.streamHandler.PublishStream(ctx, parsedReq)
+		return RequestStatusFromError(innerErr), innerErr
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	return ToProto().PublishStreamResponse(resp), nil
 }
 
@@ -71,11 +77,10 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 	ctx := protoSrv.Context()
 	ctx = setupContext(ctx, EndpointRunStream)
 	parsedReq := FromProto().RunStreamRequest(protoReq)
-	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
-	return a.streamHandler.RunStream(ctx, parsedReq, sender)
+
+	return wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
+		err := a.streamHandler.RunStream(ctx, parsedReq, sender)
+		return RequestStatusFromError(err), err
+	})
 }

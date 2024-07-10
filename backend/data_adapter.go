@@ -20,13 +20,14 @@ func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	ctx = setupContext(ctx, EndpointQueryData)
 	parsedReq := FromProto().QueryDataRequest(req)
-	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	resp, err := a.queryDataHandler.QueryData(ctx, parsedReq)
+
+	var resp *QueryDataResponse
+	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+		var innerErr error
+		resp, innerErr = a.queryDataHandler.QueryData(ctx, parsedReq)
+		return RequestStatusFromError(innerErr), innerErr
+	})
 	if err != nil {
 		return nil, err
 	}

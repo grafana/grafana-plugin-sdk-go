@@ -20,44 +20,50 @@ func newAdmissionSDKAdapter(handler AdmissionHandler) *admissionSDKAdapter {
 func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.ValidationResponse, error) {
 	ctx = setupContext(ctx, EndpointValidateAdmission)
 	parsedReq := FromProto().AdmissionRequest(req)
-	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	resp, err := a.handler.ValidateAdmission(ctx, parsedReq)
+
+	var resp *ValidationResponse
+	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		var innerErr error
+		resp, innerErr = a.handler.ValidateAdmission(ctx, parsedReq)
+		return RequestStatusFromError(innerErr), innerErr
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	return ToProto().ValidationResponse(resp), nil
 }
 
 func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutationResponse, error) {
 	ctx = setupContext(ctx, EndpointMutateAdmission)
 	parsedReq := FromProto().AdmissionRequest(req)
-	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	resp, err := a.handler.MutateAdmission(ctx, parsedReq)
+
+	var resp *MutationResponse
+	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		var innerErr error
+		resp, innerErr = a.handler.MutateAdmission(ctx, parsedReq)
+		return RequestStatusFromError(innerErr), innerErr
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	return ToProto().MutationResponse(resp), nil
 }
 
 func (a *admissionSDKAdapter) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
 	ctx = setupContext(ctx, EndpointConvertObject)
 	parsedReq := FromProto().ConversionRequest(req)
-	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	resp, err := a.handler.ConvertObject(ctx, parsedReq)
+
+	var resp *ConversionResponse
+	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		var innerErr error
+		resp, innerErr = a.handler.ConvertObject(ctx, parsedReq)
+		return RequestStatusFromError(innerErr), innerErr
+	})
 	if err != nil {
 		return nil, err
 	}
+
 	return ToProto().ConversionResponse(resp), nil
 }
