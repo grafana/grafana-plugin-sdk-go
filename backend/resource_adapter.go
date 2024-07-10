@@ -29,10 +29,9 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	})
 
 	ctx := protoSrv.Context()
-	ctx = WithEndpoint(ctx, EndpointCallResource)
-	ctx = propagateTenantIDIfPresent(ctx)
-	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
+	ctx = setupContext(ctx, EndpointCallResource)
 	parsedReq := FromProto().CallResourceRequest(protoReq)
+	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())

@@ -18,10 +18,9 @@ func newAdmissionSDKAdapter(handler AdmissionHandler) *admissionSDKAdapter {
 }
 
 func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.ValidationResponse, error) {
-	ctx = WithEndpoint(ctx, EndpointValidateAdmission)
-	ctx = propagateTenantIDIfPresent(ctx)
-	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
+	ctx = setupContext(ctx, EndpointValidateAdmission)
 	parsedReq := FromProto().AdmissionRequest(req)
+	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
@@ -34,10 +33,9 @@ func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *plugin
 }
 
 func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutationResponse, error) {
-	ctx = WithEndpoint(ctx, EndpointMutateAdmission)
-	ctx = propagateTenantIDIfPresent(ctx)
-	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
+	ctx = setupContext(ctx, EndpointMutateAdmission)
 	parsedReq := FromProto().AdmissionRequest(req)
+	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
@@ -50,10 +48,9 @@ func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2
 }
 
 func (a *admissionSDKAdapter) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
-	ctx = WithEndpoint(ctx, EndpointConvertObject)
-	ctx = propagateTenantIDIfPresent(ctx)
-	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(req.PluginContext.GrafanaConfig))
+	ctx = setupContext(ctx, EndpointConvertObject)
 	parsedReq := FromProto().ConversionRequest(req)
+	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)

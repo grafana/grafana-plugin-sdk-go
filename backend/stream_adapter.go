@@ -21,13 +21,13 @@ func newStreamSDKAdapter(handler StreamHandler) *streamSDKAdapter {
 }
 
 func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *pluginv2.SubscribeStreamRequest) (*pluginv2.SubscribeStreamResponse, error) {
+	ctx = setupContext(ctx, EndpointSubscribeStream)
+
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
-	ctx = WithEndpoint(ctx, EndpointSubscribeStream)
-	ctx = propagateTenantIDIfPresent(ctx)
-	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().SubscribeStreamRequest(protoReq)
+	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
@@ -39,13 +39,13 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 }
 
 func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2.PublishStreamRequest) (*pluginv2.PublishStreamResponse, error) {
+	ctx = setupContext(ctx, EndpointPublishStream)
+
 	if a.streamHandler == nil {
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
-	ctx = WithEndpoint(ctx, EndpointPublishStream)
-	ctx = propagateTenantIDIfPresent(ctx)
-	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
 	parsedReq := FromProto().PublishStreamRequest(protoReq)
+	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
@@ -69,10 +69,9 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 		return status.Error(codes.Unimplemented, "not implemented")
 	}
 	ctx := protoSrv.Context()
-	ctx = WithEndpoint(ctx, EndpointRunStream)
-	ctx = propagateTenantIDIfPresent(ctx)
-	ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
+	ctx = setupContext(ctx, EndpointRunStream)
 	parsedReq := FromProto().RunStreamRequest(protoReq)
+	ctx = WithGrafanaConfig(ctx, parsedReq.PluginContext.GrafanaConfig)
 	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
 	ctx = WithUser(ctx, parsedReq.PluginContext.User)
 	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
