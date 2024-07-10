@@ -1,6 +1,7 @@
 package tracing
 
 import (
+	"context"
 	"sync"
 
 	"go.opentelemetry.io/otel"
@@ -39,4 +40,13 @@ func DefaultTracer() trace.Tracer {
 // This method should only be called once during the plugin's initialization, and it's not safe for concurrent use.
 func InitDefaultTracer(tracer trace.Tracer) {
 	defaultTracer = &contextualTracer{tracer: tracer}
+}
+
+func TraceIDFromContext(ctx context.Context, requireSampled bool) string {
+	spanCtx := trace.SpanContextFromContext(ctx)
+	if !spanCtx.HasTraceID() || !spanCtx.IsValid() || (requireSampled && !spanCtx.IsSampled()) {
+		return ""
+	}
+
+	return spanCtx.TraceID().String()
 }
