@@ -2,10 +2,14 @@ package backend
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 type handlerWrapperFunc func(ctx context.Context) (RequestStatus, error)
@@ -20,6 +24,7 @@ func setupContext(ctx context.Context, endpoint Endpoint) context.Context {
 func wrapHandler(ctx context.Context, pluginCtx PluginContext, next handlerWrapperFunc) error {
 	ctx = setupHandlerContext(ctx, pluginCtx)
 	wrapper := logWrapper(next)
+	wrapper = tracingWrapper(wrapper)
 	_, err := wrapper(ctx)
 	return err
 }
@@ -31,6 +36,41 @@ func setupHandlerContext(ctx context.Context, pluginCtx PluginContext) context.C
 	ctx = withContextualLogAttributes(ctx, pluginCtx)
 	ctx = WithUserAgent(ctx, pluginCtx.UserAgent)
 	return ctx
+}
+
+func tracingWrapper(next handlerWrapperFunc) handlerWrapperFunc {
+	return func(ctx context.Context) (RequestStatus, error) {
+		endpoint := EndpointFromContext(ctx)
+		pluginCtx := PluginConfigFromContext(ctx)
+		ctx, span := tracing.DefaultTracer().Start(ctx, fmt.Sprintf("sdk.%s", endpoint), trace.WithAttributes(
+			attribute.String("plugin_id", pluginCtx.PluginID),
+			attribute.Int64("org_id", pluginCtx.OrgID),
+		))
+		defer span.End()
+
+		if pluginCtx.DataSourceInstanceSettings != nil {
+			span.SetAttributes(
+				attribute.String("datasource_name", pluginCtx.DataSourceInstanceSettings.Name),
+				attribute.String("datasource_uid", pluginCtx.DataSourceInstanceSettings.UID),
+			)
+		}
+
+		if u := pluginCtx.User; u != nil {
+			span.SetAttributes(attribute.String("user", pluginCtx.User.Name))
+		}
+
+		status, err := next(ctx)
+
+		span.SetAttributes(
+			attribute.String("request_status", status.String()),
+		)
+
+		if err != nil {
+			return status, tracing.Error(span, err)
+		}
+
+		return status, err
+	}
 }
 
 func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {

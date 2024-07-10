@@ -10,6 +10,10 @@ func (e Endpoint) IsEmpty() bool {
 	return e == ""
 }
 
+func (e Endpoint) String() string {
+	return string(e)
+}
+
 type endpointCtxKeyType struct{}
 
 var endpointCtxKey = endpointCtxKeyType{}
