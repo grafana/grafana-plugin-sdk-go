@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
+	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
 )
@@ -24,6 +26,7 @@ func setupContext(ctx context.Context, endpoint Endpoint) context.Context {
 func wrapHandler(ctx context.Context, pluginCtx PluginContext, next handlerWrapperFunc) error {
 	ctx = setupHandlerContext(ctx, pluginCtx)
 	wrapper := logWrapper(next)
+	wrapper = metricWrapper(wrapper)
 	wrapper = tracingWrapper(wrapper)
 	_, err := wrapper(ctx)
 	return err
@@ -36,6 +39,30 @@ func setupHandlerContext(ctx context.Context, pluginCtx PluginContext) context.C
 	ctx = withContextualLogAttributes(ctx, pluginCtx)
 	ctx = WithUserAgent(ctx, pluginCtx.UserAgent)
 	return ctx
+}
+
+var pluginRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
+	Namespace: "grafana_plugin",
+	Name:      "request_total",
+	Help:      "The total amount of plugin requests",
+}, []string{"endpoint", "status"})
+
+var once = sync.Once{}
+
+func metricWrapper(next handlerWrapperFunc) handlerWrapperFunc {
+	once.Do(func() {
+		prometheus.MustRegister(pluginRequestCounter)
+	})
+
+	return func(ctx context.Context) (RequestStatus, error) {
+		endpoint := EndpointFromContext(ctx)
+		status, err := next(ctx)
+
+		// TODO include error/status source
+		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String()).Inc()
+
+		return status, err
+	}
 }
 
 func tracingWrapper(next handlerWrapperFunc) handlerWrapperFunc {
@@ -87,6 +114,7 @@ func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 			logParams = append(logParams, "error", err)
 		}
 
+		// TODO status source
 		// logParams = append(logParams, "statusSource", pluginrequestmeta.StatusSourceFromContext(ctx))
 
 		ctxLogger := Logger.FromContext(ctx)
