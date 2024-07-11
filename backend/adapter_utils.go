@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"sync"
@@ -25,7 +26,8 @@ func setupContext(ctx context.Context, endpoint Endpoint) context.Context {
 
 func wrapHandler(ctx context.Context, pluginCtx PluginContext, next handlerWrapperFunc) error {
 	ctx = setupHandlerContext(ctx, pluginCtx)
-	wrapper := logWrapper(next)
+	wrapper := errorWrapper(next)
+	wrapper = logWrapper(wrapper)
 	wrapper = metricWrapper(wrapper)
 	wrapper = tracingWrapper(wrapper)
 	_, err := wrapper(ctx)
@@ -33,6 +35,7 @@ func wrapHandler(ctx context.Context, pluginCtx PluginContext, next handlerWrapp
 }
 
 func setupHandlerContext(ctx context.Context, pluginCtx PluginContext) context.Context {
+	ctx = InitErrorSource(ctx)
 	ctx = WithGrafanaConfig(ctx, pluginCtx.GrafanaConfig)
 	ctx = WithPluginContext(ctx, pluginCtx)
 	ctx = WithUser(ctx, pluginCtx.User)
@@ -41,11 +44,25 @@ func setupHandlerContext(ctx context.Context, pluginCtx PluginContext) context.C
 	return ctx
 }
 
+func errorWrapper(next handlerWrapperFunc) handlerWrapperFunc {
+	return func(ctx context.Context) (RequestStatus, error) {
+		status, err := next(ctx)
+
+		if errWithSource, ok := err.(ErrorWithSource); ok {
+			if innerErr := WithErrorSource(ctx, errWithSource.ErrorSource()); innerErr != nil {
+				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
+			}
+		}
+
+		return status, err
+	}
+}
+
 var pluginRequestCounter = prometheus.NewCounterVec(prometheus.CounterOpts{
 	Namespace: "grafana_plugin",
 	Name:      "request_total",
 	Help:      "The total amount of plugin requests",
-}, []string{"endpoint", "status"})
+}, []string{"endpoint", "status", "status_source"})
 
 var once = sync.Once{}
 
@@ -58,8 +75,7 @@ func metricWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 		endpoint := EndpointFromContext(ctx)
 		status, err := next(ctx)
 
-		// TODO include error/status source
-		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String()).Inc()
+		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String(), string(ErrorSourceFromContext(ctx))).Inc()
 
 		return status, err
 	}
@@ -90,6 +106,7 @@ func tracingWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 
 		span.SetAttributes(
 			attribute.String("request_status", status.String()),
+			attribute.String("status_source", string(ErrorSourceFromContext(ctx))),
 		)
 
 		if err != nil {
@@ -114,8 +131,7 @@ func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 			logParams = append(logParams, "error", err)
 		}
 
-		// TODO status source
-		// logParams = append(logParams, "statusSource", pluginrequestmeta.StatusSourceFromContext(ctx))
+		logParams = append(logParams, "statusSource", string(ErrorSourceFromContext(ctx)))
 
 		ctxLogger := Logger.FromContext(ctx)
 		logFunc := ctxLogger.Debug
