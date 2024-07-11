@@ -61,6 +61,10 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
 	AdmissionHandler AdmissionHandler
 
+	// QueryMigrationHandler handles query migration
+	// This is EXPERIMENTAL and is a subject to change till Grafana 12
+	QueryMigrationHandler QueryMigrationHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }
@@ -85,6 +89,11 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	if opts.AdmissionHandler != nil {
 		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
 	}
+
+	if opts.QueryMigrationHandler != nil {
+		pluginOpts.QueryMigrationServer = newQueryMigrationSDKAdapter(opts.QueryMigrationHandler)
+	}
+
 	return pluginOpts
 }
 
@@ -221,6 +230,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "admission")
 	}
 
+	if pluginOpts.QueryMigrationServer != nil {
+		pluginv2.RegisterQueryMigrationControlServer(server, pluginOpts.QueryMigrationServer)
+		plugKeys = append(plugKeys, "migration")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -326,6 +340,11 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.AdmissionServer != nil {
 		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
 		plugKeys = append(plugKeys, "admission")
+	}
+
+	if pluginOpts.QueryMigrationServer != nil {
+		pluginv2.RegisterQueryMigrationControlServer(server, pluginOpts.QueryMigrationServer)
+		plugKeys = append(plugKeys, "migration")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
