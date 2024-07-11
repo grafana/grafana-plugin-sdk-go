@@ -35,7 +35,7 @@ func wrapHandler(ctx context.Context, pluginCtx PluginContext, next handlerWrapp
 }
 
 func setupHandlerContext(ctx context.Context, pluginCtx PluginContext) context.Context {
-	ctx = InitErrorSource(ctx)
+	ctx = initErrorSource(ctx)
 	ctx = WithGrafanaConfig(ctx, pluginCtx.GrafanaConfig)
 	ctx = WithPluginContext(ctx, pluginCtx)
 	ctx = WithUser(ctx, pluginCtx.User)
@@ -48,8 +48,8 @@ func errorWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 	return func(ctx context.Context) (RequestStatus, error) {
 		status, err := next(ctx)
 
-		if errWithSource, ok := err.(ErrorWithSource); ok {
-			if innerErr := WithErrorSource(ctx, errWithSource.ErrorSource()); innerErr != nil {
+		if err != nil && IsDownstreamError(err) {
+			if innerErr := WithDownstreamErrorSource(ctx); innerErr != nil {
 				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
 			}
 		}
@@ -75,7 +75,7 @@ func metricWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 		endpoint := EndpointFromContext(ctx)
 		status, err := next(ctx)
 
-		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String(), string(ErrorSourceFromContext(ctx))).Inc()
+		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String(), string(errorSourceFromContext(ctx))).Inc()
 
 		return status, err
 	}
@@ -106,7 +106,7 @@ func tracingWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 
 		span.SetAttributes(
 			attribute.String("request_status", status.String()),
-			attribute.String("status_source", string(ErrorSourceFromContext(ctx))),
+			attribute.String("status_source", string(errorSourceFromContext(ctx))),
 		)
 
 		if err != nil {
@@ -131,7 +131,7 @@ func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 			logParams = append(logParams, "error", err)
 		}
 
-		logParams = append(logParams, "statusSource", string(ErrorSourceFromContext(ctx)))
+		logParams = append(logParams, "statusSource", string(errorSourceFromContext(ctx)))
 
 		ctxLogger := Logger.FromContext(ctx)
 		logFunc := ctxLogger.Debug

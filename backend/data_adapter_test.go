@@ -196,7 +196,7 @@ func TestQueryData(t *testing.T) {
 					PluginContext: &pluginv2.PluginContext{},
 				})
 				require.NoError(t, err)
-				ss := ErrorSourceFromContext(actualCtx)
+				ss := errorSourceFromContext(actualCtx)
 				require.Equal(t, tc.expErrorSource, ss)
 			})
 		}
