@@ -57,6 +57,7 @@ func IsDownstreamError(err error) bool {
 		ErrorSource() ErrorSource
 	}
 
+	// nolint:errorlint
 	if errWithSource, ok := err.(errorWithSource); ok && errWithSource.ErrorSource() == ErrorSourceDownstream {
 		return true
 	}
