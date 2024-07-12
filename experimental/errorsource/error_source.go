@@ -33,6 +33,10 @@ func (r Error) Source() backend.ErrorSource {
 	return r.source
 }
 
+func (r Error) ErrorSource() backend.ErrorSource {
+	return r.source
+}
+
 // PluginError will apply the source as plugin
 func PluginError(err error, override bool) error {
 	return SourceError(backend.ErrorSourcePlugin, err, override)

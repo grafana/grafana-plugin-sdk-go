@@ -2,10 +2,12 @@ package tracing
 
 import (
 	"context"
+	"fmt"
 	"sync"
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/codes"
 	"go.opentelemetry.io/otel/trace"
 )
 
@@ -49,4 +51,17 @@ func TraceIDFromContext(ctx context.Context, requireSampled bool) string {
 	}
 
 	return spanCtx.TraceID().String()
+}
+
+// Error sets the status to error and record the error as an exception in the provided span.
+func Error(span trace.Span, err error) error {
+	span.SetStatus(codes.Error, err.Error())
+	span.RecordError(err)
+	return err
+}
+
+// Errorf wraps fmt.Errorf and also sets the status to error and record the error as an exception in the provided span.
+func Errorf(span trace.Span, format string, args ...any) error {
+	err := fmt.Errorf(format, args...)
+	return Error(span, err)
 }

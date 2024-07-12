@@ -84,3 +84,12 @@ func TestResponseWithOptions(t *testing.T) {
 		})
 	}
 }
+
+func TestError(t *testing.T) {
+	err := errors.New("boom")
+	require.False(t, backend.IsDownstreamError(err))
+	pErr := PluginError(err, true)
+	require.False(t, backend.IsDownstreamError(pErr))
+	dErr := DownstreamError(err, true)
+	require.True(t, backend.IsDownstreamError(dErr))
+}
