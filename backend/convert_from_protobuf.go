@@ -340,18 +340,6 @@ func (f ConvertFromProtobuf) ConversionRequest(req *pluginv2.ConversionRequest) 
 	}
 }
 
-// QueryMigrationRequest ...
-func (f ConvertFromProtobuf) QueryMigrationRequest(req *pluginv2.QueryMigrationRequest) *QueryMigrationRequest {
-	queries := make([]DataQuery, len(req.Queries))
-	for i, q := range req.Queries {
-		queries[i] = *f.DataQuery(q)
-	}
-	return &QueryMigrationRequest{
-		PluginContext: f.PluginContext(req.PluginContext),
-		Queries:       queries,
-	}
-}
-
 // MutationResponse ...
 func (f ConvertFromProtobuf) MutationResponse(rsp *pluginv2.MutationResponse) *MutationResponse {
 	return &MutationResponse{
@@ -377,17 +365,6 @@ func (f ConvertFromProtobuf) ConversionResponse(rsp *pluginv2.ConversionResponse
 		Allowed:     rsp.Allowed,
 		Result:      f.StatusResult(rsp.Result),
 		ObjectBytes: rsp.ObjectBytes,
-	}
-}
-
-// QueryMigrationResponse ...
-func (f ConvertFromProtobuf) QueryMigrationResponse(rsp *pluginv2.QueryMigrationResponse) *QueryMigrationResponse {
-	queries := make([]DataQuery, len(rsp.Queries))
-	for i, q := range rsp.Queries {
-		queries[i] = *f.DataQuery(q)
-	}
-	return &QueryMigrationResponse{
-		Queries: queries,
 	}
 }
 

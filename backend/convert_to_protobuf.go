@@ -380,17 +380,6 @@ func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.C
 	}
 }
 
-func (t ConvertToProtobuf) QueryMigrationRequest(req *QueryMigrationRequest) *pluginv2.QueryMigrationRequest {
-	queries := make([]*pluginv2.DataQuery, len(req.Queries))
-	for i, q := range req.Queries {
-		queries[i] = t.DataQuery(q)
-	}
-	return &pluginv2.QueryMigrationRequest{
-		PluginContext: t.PluginContext(req.PluginContext),
-		Queries:       queries,
-	}
-}
-
 // MutationResponse converts the SDK version of a MutationResponse to the protobuf version.
 func (t ConvertToProtobuf) MutationResponse(rsp *MutationResponse) *pluginv2.MutationResponse {
 	return &pluginv2.MutationResponse{
@@ -416,17 +405,6 @@ func (t ConvertToProtobuf) ConversionResponse(rsp *ConversionResponse) *pluginv2
 		Allowed:     rsp.Allowed,
 		Result:      t.StatusResult(rsp.Result),
 		ObjectBytes: rsp.ObjectBytes,
-	}
-}
-
-// ConversionResponse converts the SDK version of a ConversionResponse to the protobuf version.
-func (t ConvertToProtobuf) QueryMigrationResponse(rsp *QueryMigrationResponse) *pluginv2.QueryMigrationResponse {
-	queries := make([]*pluginv2.DataQuery, len(rsp.Queries))
-	for i, q := range rsp.Queries {
-		queries[i] = t.DataQuery(q)
-	}
-	return &pluginv2.QueryMigrationResponse{
-		Queries: queries,
 	}
 }
 

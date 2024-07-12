@@ -79,7 +79,11 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	}
 
 	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+		if opts.QueryMigrationHandler != nil {
+			pluginOpts.DataServer = newDataSDKAdapterWithQueryMigration(opts.QueryDataHandler, opts.QueryMigrationHandler)
+		} else {
+			pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+		}
 	}
 
 	if opts.StreamHandler != nil {
@@ -88,10 +92,6 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 
 	if opts.AdmissionHandler != nil {
 		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
-	}
-
-	if opts.QueryMigrationHandler != nil {
-		pluginOpts.QueryMigrationServer = newQueryMigrationSDKAdapter(opts.QueryMigrationHandler)
 	}
 
 	return pluginOpts
@@ -230,11 +230,6 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "admission")
 	}
 
-	if pluginOpts.QueryMigrationServer != nil {
-		pluginv2.RegisterQueryMigrationControlServer(server, pluginOpts.QueryMigrationServer)
-		plugKeys = append(plugKeys, "migration")
-	}
-
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -340,11 +335,6 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.AdmissionServer != nil {
 		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
 		plugKeys = append(plugKeys, "admission")
-	}
-
-	if pluginOpts.QueryMigrationServer != nil {
-		pluginv2.RegisterQueryMigrationControlServer(server, pluginOpts.QueryMigrationServer)
-		plugKeys = append(plugKeys, "migration")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly

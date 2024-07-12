@@ -447,24 +447,3 @@ message StatusResult {
   // +optional
   int32 code = 4;
 }
-
-//-----------------------------------------------------------------
-// QueryMigrationControl -- EXPERIMENTAL and is subject to change -- Migrates queries
-//-----------------------------------------------------------------
-
-service QueryMigrationControl {
-  // Migrates a query
-  rpc MigrateQuery(QueryMigrationRequest) returns (QueryMigrationResponse);
-}
-
-// AdmissionRequest contains information from a kubernetes Admission request and decoded object(s).
-message QueryMigrationRequest {
-  PluginContext pluginContext = 1;
-
-  // List of data queries
-  repeated DataQuery queries = 2;
-}
-
-message QueryMigrationResponse {
-  repeated DataQuery queries = 1;
-}
