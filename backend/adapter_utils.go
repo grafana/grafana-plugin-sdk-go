@@ -124,7 +124,7 @@ func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 
 		logParams := []any{
 			"status", status.String(),
-			"duration", time.Since(start),
+			"duration", time.Since(start).String(),
 		}
 
 		if err != nil {
