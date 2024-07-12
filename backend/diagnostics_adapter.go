@@ -46,20 +46,21 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.Co
 
 func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.checkHealthHandler != nil {
-		ctx = WithEndpoint(ctx, EndpointCheckHealth)
-		ctx = propagateTenantIDIfPresent(ctx)
-		ctx = WithGrafanaConfig(ctx, NewGrafanaCfg(protoReq.PluginContext.GrafanaConfig))
+		ctx = setupContext(ctx, EndpointCheckHealth)
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
-		ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-		ctx = WithUser(ctx, parsedReq.PluginContext.User)
-		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
-		ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-		ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-		res, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
+
+		var resp *CheckHealthResult
+		err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+			ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+			var innerErr error
+			resp, innerErr = a.checkHealthHandler.CheckHealth(ctx, parsedReq)
+			return RequestStatusFromError(innerErr), innerErr
+		})
 		if err != nil {
 			return nil, err
 		}
-		return ToProto().CheckHealthResponse(res), nil
+
+		return ToProto().CheckHealthResponse(resp), nil
 	}
 
 	return &pluginv2.CheckHealthResponse{

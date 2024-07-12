@@ -2,9 +2,9 @@ package backend
 
 import (
 	"context"
-	"net/http"
+	"errors"
+	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -27,52 +27,45 @@ func newDataSDKAdapterWithQueryMigration(handler QueryDataHandler, queryMigratio
 	}
 }
 
-func withHeaderMiddleware(ctx context.Context, headers http.Header) context.Context {
-	if len(headers) > 0 {
-		ctx = httpclient.WithContextualMiddleware(ctx,
-			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
-				if !opts.ForwardHTTPHeaders {
-					return next
-				}
-
-				return httpclient.RoundTripperFunc(func(qreq *http.Request) (*http.Response, error) {
-					// Only set a header if it is not already set.
-					for k, v := range headers {
-						if qreq.Header.Get(k) == "" {
-							for _, vv := range v {
-								qreq.Header.Add(k, vv)
-							}
-						}
-					}
-					return next.RoundTrip(qreq)
-				})
-			}))
-	}
-	return ctx
-}
-
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	ctx = WithEndpoint(ctx, EndpointQueryData)
-	ctx = propagateTenantIDIfPresent(ctx)
-	grafanaCfg := NewGrafanaCfg(req.PluginContext.GrafanaConfig)
-	ctx = WithGrafanaConfig(ctx, grafanaCfg)
+	ctx = setupContext(ctx, EndpointQueryData)
 	parsedReq := FromProto().QueryDataRequest(req)
-	ctx = WithPluginContext(ctx, parsedReq.PluginContext)
-	ctx = WithUser(ctx, parsedReq.PluginContext.User)
-	ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
-	ctx = withContextualLogAttributes(ctx, parsedReq.PluginContext)
-	ctx = WithUserAgent(ctx, parsedReq.PluginContext.UserAgent)
-	if a.queryMigrationHandler != nil && grafanaCfg.FeatureToggles().IsEnabled("queryMigrations") {
-		resp, err := a.queryMigrationHandler.MigrateQuery(ctx, &QueryMigrationRequest{
-			PluginContext: parsedReq.PluginContext,
-			Queries:       parsedReq.Queries,
-		})
-		if err != nil {
-			return nil, err
+
+	var resp *QueryDataResponse
+	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
+		var innerErr error
+		resp, innerErr = a.queryDataHandler.QueryData(ctx, parsedReq)
+
+		if resp == nil || len(resp.Responses) == 0 {
+			return RequestStatusFromError(innerErr), innerErr
 		}
-		parsedReq.Queries = resp.Queries
-	}
-	resp, err := a.queryDataHandler.QueryData(ctx, parsedReq)
+
+		// Set downstream status source in the context if there's at least one response with downstream status source,
+		// and if there's no plugin error
+		var hasPluginError bool
+		var hasDownstreamError bool
+		for _, r := range resp.Responses {
+			if r.Error == nil {
+				continue
+			}
+			if r.ErrorSource == ErrorSourceDownstream {
+				hasDownstreamError = true
+			} else {
+				hasPluginError = true
+			}
+		}
+
+		// A plugin error has higher priority than a downstream error,
+		// so set to downstream only if there's no plugin error
+		if hasDownstreamError && !hasPluginError {
+			if err := WithDownstreamErrorSource(ctx); err != nil {
+				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
+			}
+		}
+
+		return RequestStatusFromError(innerErr), innerErr
+	})
 	if err != nil {
 		return nil, err
 	}
