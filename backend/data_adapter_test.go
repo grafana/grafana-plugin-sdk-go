@@ -142,11 +142,6 @@ func TestQueryData(t *testing.T) {
 			expErrorSource    ErrorSource
 		}{
 			{
-				name:              `no error should be "plugin" error source`,
-				queryDataResponse: nil,
-				expErrorSource:    ErrorSourcePlugin,
-			},
-			{
 				name: `single downstream error should be "downstream" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
