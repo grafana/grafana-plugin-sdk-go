@@ -37,6 +37,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		// and if there's no plugin error
 		var hasPluginError bool
 		var hasDownstreamError bool
+		var dataRespErr error
 		for _, r := range resp.Responses {
 			if r.Error == nil {
 				continue
@@ -45,6 +46,9 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 				hasDownstreamError = true
 			} else {
 				hasPluginError = true
+			}
+			if dataRespErr == nil {
+				dataRespErr = r.Error
 			}
 		}
 
@@ -56,7 +60,15 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			}
 		}
 
-		return RequestStatusFromError(innerErr), innerErr
+		if innerErr != nil {
+			return RequestStatusFromError(innerErr), innerErr
+		}
+
+		if dataRespErr != nil {
+			return RequestStatusFromError(dataRespErr), dataRespErr
+		}
+
+		return RequestStatusOK, nil
 	})
 	if err != nil {
 		return nil, err
