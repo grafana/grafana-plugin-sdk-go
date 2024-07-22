@@ -47,7 +47,6 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 				hasPluginError = true
 			}
 		}
-		ctxLogger := Logger.FromContext(ctx)
 
 		// A plugin error has higher priority than a downstream error,
 		// so set to downstream only if there's no plugin error
@@ -55,14 +54,13 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			if err := WithDownstreamErrorSource(ctx); err != nil {
 				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
 			}
-			ctxLogger.Debug("Set downstream error source")
+			return RequestStatusError, nil
 		}
 
 		if hasPluginError {
 			if err := WithErrorSource(ctx, ErrorSourcePlugin); err != nil {
 				return RequestStatusError, fmt.Errorf("failed to set default status source: %w", errors.Join(innerErr, err))
 			}
-			ctxLogger.Debug("Set default error source")
 			return RequestStatusError, nil
 		}
 

@@ -135,7 +135,7 @@ func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 
 		ctxLogger := Logger.FromContext(ctx)
 		logFunc := ctxLogger.Debug
-		if status > RequestStatusOK {
+		if status > RequestStatusCancelled {
 			logFunc = ctxLogger.Error
 		}
 
