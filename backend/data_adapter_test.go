@@ -135,11 +135,13 @@ func TestQueryData(t *testing.T) {
 
 	t.Run("TestQueryDataResponse", func(t *testing.T) {
 		someErr := errors.New("oops")
+		someOtherErr := errors.New("oops")
 
 		for _, tc := range []struct {
 			name              string
 			queryDataResponse *QueryDataResponse
 			expErrorSource    ErrorSource
+			err               error
 		}{
 			{
 				name: `single downstream error should be "downstream" error source`,
@@ -149,6 +151,7 @@ func TestQueryData(t *testing.T) {
 					},
 				},
 				expErrorSource: ErrorSourceDownstream,
+				err:            someErr,
 			},
 			{
 				name: `single plugin error should be "plugin" error source`,
@@ -158,27 +161,30 @@ func TestQueryData(t *testing.T) {
 					},
 				},
 				expErrorSource: ErrorSourcePlugin,
+				err:            someErr,
 			},
 			{
 				name: `multiple downstream errors should be "downstream" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
 						"A": {Error: someErr, ErrorSource: ErrorSourceDownstream},
-						"B": {Error: someErr, ErrorSource: ErrorSourceDownstream},
+						"B": {Error: someOtherErr, ErrorSource: ErrorSourceDownstream},
 					},
 				},
 				expErrorSource: ErrorSourceDownstream,
+				err:            someErr,
 			},
 			{
 				name: `single plugin error mixed with downstream errors should be "plugin" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourceDownstream},
+						"A": {Error: someOtherErr, ErrorSource: ErrorSourceDownstream},
 						"B": {Error: someErr, ErrorSource: ErrorSourcePlugin},
 						"C": {Error: someErr, ErrorSource: ErrorSourceDownstream},
 					},
 				},
 				expErrorSource: ErrorSourcePlugin,
+				err:            someOtherErr,
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
@@ -190,7 +196,12 @@ func TestQueryData(t *testing.T) {
 				_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 					PluginContext: &pluginv2.PluginContext{},
 				})
-				require.NoError(t, err)
+				if tc.err != nil {
+					require.Error(t, err)
+					require.Equal(t, tc.err, err)
+				} else {
+					require.NoError(t, err)
+				}
 				ss := errorSourceFromContext(actualCtx)
 				require.Equal(t, tc.expErrorSource, ss)
 			})
