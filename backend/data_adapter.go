@@ -59,7 +59,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 
 		if hasCancelledError {
 			if err := WithDownstreamErrorSource(ctx); err != nil {
-				return RequestStatusError, fmt.Errorf("failed to set cancelled status source: %w", errors.Join(innerErr, err))
+				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
 			}
 			return RequestStatusCancelled, nil
 		}
@@ -75,7 +75,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 
 		if hasPluginError {
 			if err := WithErrorSource(ctx, ErrorSourcePlugin); err != nil {
-				return RequestStatusError, fmt.Errorf("failed to set default status source: %w", errors.Join(innerErr, err))
+				return RequestStatusError, fmt.Errorf("failed to set plugin status source: %w", errors.Join(innerErr, err))
 			}
 			return RequestStatusError, nil
 		}
