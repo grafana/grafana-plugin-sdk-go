@@ -33,7 +33,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			return RequestStatusFromError(innerErr), innerErr
 		}
 
-		if errors.Is(innerErr, context.Canceled) {
+		if isCancelledError(innerErr) {
 			return RequestStatusCancelled, nil
 		}
 
@@ -47,7 +47,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 				continue
 			}
 
-			if errors.Is(r.Error, context.Canceled) {
+			if isCancelledError(r.Error) {
 				hasCancelledError = true
 			}
 			if r.ErrorSource == ErrorSourceDownstream {

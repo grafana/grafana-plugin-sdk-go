@@ -32,7 +32,7 @@ func RequestStatusFromError(err error) RequestStatus {
 	status := RequestStatusOK
 	if err != nil {
 		status = RequestStatusError
-		if errors.Is(err, context.Canceled) || grpcstatus.Code(err) == grpccodes.Canceled {
+		if isCancelledError(err) {
 			status = RequestStatusCancelled
 		}
 	}
@@ -100,4 +100,8 @@ func RequestStatusFromProtoQueryDataResponse(res *pluginv2.QueryDataResponse, er
 	}
 
 	return status
+}
+
+func isCancelledError(err error) bool {
+	return errors.Is(err, context.Canceled) || grpcstatus.Code(err) == grpccodes.Canceled
 }
