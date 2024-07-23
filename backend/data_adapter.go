@@ -33,19 +33,35 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			return RequestStatusFromError(innerErr), innerErr
 		}
 
+		if errors.Is(innerErr, context.Canceled) {
+			return RequestStatusCancelled, nil
+		}
+
 		// Set downstream status source in the context if there's at least one response with downstream status source,
 		// and if there's no plugin error
 		var hasPluginError bool
 		var hasDownstreamError bool
+		var hasCancelledError bool
 		for _, r := range resp.Responses {
 			if r.Error == nil {
 				continue
+			}
+
+			if errors.Is(r.Error, context.Canceled) {
+				hasCancelledError = true
 			}
 			if r.ErrorSource == ErrorSourceDownstream {
 				hasDownstreamError = true
 			} else {
 				hasPluginError = true
 			}
+		}
+
+		if hasCancelledError {
+			if err := WithDownstreamErrorSource(ctx); err != nil {
+				return RequestStatusError, fmt.Errorf("failed to set cancelled status source: %w", errors.Join(innerErr, err))
+			}
+			return RequestStatusCancelled, nil
 		}
 
 		// A plugin error has higher priority than a downstream error,
