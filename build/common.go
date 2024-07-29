@@ -60,7 +60,7 @@ func getExecutableName(os string, arch string, pluginJSONPath string) (string, e
 		exname = exename
 	}
 
-	return asExecutableName(os, arch, pluginJSONPath), nil
+	return asExecutableName(os, arch, exname), nil
 }
 
 // execNameCache is a cache for the executable name, so we don't have to read the plugin.json file multiple times.
