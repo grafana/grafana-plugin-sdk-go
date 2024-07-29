@@ -18,7 +18,7 @@ import (
 
 // ReloadPlugin - kills any running instances and waits for grafana to reload the plugin
 func ReloadPlugin() error {
-	exeName, err := getExecutableName(runtime.GOOS, runtime.GOARCH, defaultPluginJSONPath)
+	exeName, err := getExecutableNameForPlugin(runtime.GOOS, runtime.GOARCH, defaultPluginJSONPath)
 	if err != nil {
 		return err
 	}
@@ -85,7 +85,10 @@ func Debugger() error {
 		time.Sleep(250 * time.Millisecond)
 	}
 	if pid == -1 {
-		return fmt.Errorf("could not find plugin process %q, perhaps Grafana is not running?", exeName)
+		return fmt.Errorf(
+			"could not find plugin process %q, perhaps Grafana is not running?",
+			exeName,
+		)
 	}
 
 	pidStr := strconv.Itoa(pid)
