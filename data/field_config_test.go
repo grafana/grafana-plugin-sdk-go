@@ -175,7 +175,7 @@ func TestCreateInternalDataLinks(t *testing.T) {
 						To:   linkTime,
 					},
 				},
-			}, `l`
+			},
 		},
 	}
 
