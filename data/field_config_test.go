@@ -175,11 +175,11 @@ func TestCreateInternalDataLinks(t *testing.T) {
 						To:   linkTime,
 					},
 				},
-			},
+			}, `l`
 		},
 	}
 
-	expectedJson := `{
+	expectedJSON := `{
 		"links": [
 			{
 				"internal": {
@@ -223,5 +223,5 @@ func TestCreateInternalDataLinks(t *testing.T) {
 	require.NoError(t, err, "error marshalling json")
 
 	str := string(out)
-	assert.JSONEq(t, expectedJson, str)
+	assert.JSONEq(t, expectedJSON, str)
 }
