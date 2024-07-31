@@ -2,8 +2,8 @@ package data_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,4 +82,145 @@ func TestReadMappings(t *testing.T) {
 
 	// Same text after export
 	assert.JSONEq(t, jsonText, str)
+}
+
+func TestInternalDataLinks(t *testing.T) {
+	jsonText := `{
+		"links": [
+			{
+				"internal": {
+					"query": "test 1",
+					"range": {
+						"from": "2000-01-01T00:00:00Z",
+						"to": "2000-01-02T00:00:00Z",
+						"raw": {
+							"from": "2000-01-01T00:00:00Z",
+							"to": "2000-01-02T00:00:00Z"
+						}
+					}
+				}
+			},
+			{
+				"internal": {
+					"query": "test 2",
+					"range": {
+						"from": "2000-01-01T00:00:00Z",
+						"to": "2000-01-02T00:00:00Z",
+						"raw": {
+							"from": "now-1h",
+							"to": "now"
+						}
+					}
+				}
+			},
+			{
+				"internal": {
+					"query": "test 3",
+					"range": {
+						"from": "2000-01-01T00:00:00Z",
+						"to": "2000-01-02T00:00:00Z"
+					}
+				}
+			}
+		]
+	}`
+
+	cfg := data.FieldConfig{}
+	err := json.Unmarshal([]byte(jsonText), &cfg)
+
+	require.NoError(t, err, "error parsing json")
+
+	out, err := json.MarshalIndent(cfg, "\t", "\t")
+	require.NoError(t, err, "error parsing json")
+	str := string(out)
+	assert.JSONEq(t, jsonText, str)
+}
+
+func TestCreateInternalDataLinks(t *testing.T) {
+	linkTime, _ := time.Parse("2006-01-02 15:04:05.000", "2000-01-01 00:00:00.000")
+	cfg := data.FieldConfig{
+		Links: []data.DataLink{
+			{
+				Internal: &data.InternalDataLink{
+					Query: "test 1",
+					Range: &data.TimeRange{
+						From: linkTime,
+						To:   linkTime,
+						Raw: &data.RawTimeRangeTime{
+							From: linkTime,
+							To:   linkTime,
+						},
+					},
+				},
+			},
+			{
+				Internal: &data.InternalDataLink{
+					Query: "test 2",
+					Range: &data.TimeRange{
+						From: linkTime,
+						To:   linkTime,
+						Raw: &data.RawTimeRangeString{
+							From: "now-1h",
+							To:   "now",
+						},
+					},
+				},
+			},
+			{
+				Internal: &data.InternalDataLink{
+					Query: "test 3",
+					Range: &data.TimeRange{
+						From: linkTime,
+						To:   linkTime,
+					},
+				},
+			},
+		},
+	}
+
+	expectedJson := `{
+		"links": [
+			{
+				"internal": {
+					"query": "test 1",
+					"range": {
+						"from": "2000-01-01T00:00:00Z",
+						"to": "2000-01-01T00:00:00Z",
+						"raw": {
+							"from": "2000-01-01T00:00:00Z",
+							"to": "2000-01-01T00:00:00Z"
+						}
+					}
+				}
+			},
+			{
+				"internal": {
+					"query": "test 2",
+					"range": {
+						"from": "2000-01-01T00:00:00Z",
+						"to": "2000-01-01T00:00:00Z",
+						"raw": {
+							"from": "now-1h",
+							"to": "now"
+						}
+					}
+				}
+			},
+			{
+				"internal": {
+					"query": "test 3",
+					"range": {
+						"from": "2000-01-01T00:00:00Z",
+						"to": "2000-01-01T00:00:00Z"
+					}
+				}
+			}
+		]
+	}`
+
+	out, err := json.MarshalIndent(cfg, "\t", "\t")
+	require.NoError(t, err, "error marshalling json")
+
+	str := string(out)
+	assert.JSONEq(t, expectedJson, str)
 }

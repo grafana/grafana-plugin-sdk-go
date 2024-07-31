@@ -172,7 +172,7 @@ type InternalDataLink struct {
 	DatasourceName     string                      `json:"datasourceName,omitempty"`
 	ExplorePanelsState *ExplorePanelsState         `json:"panelsState,omitempty"`
 	Transformations    *[]LinkTransformationConfig `json:"transformations,omitempty"`
-	Range              *TimeRange                  `json:"timeRange,omitempty"`
+	Range              *TimeRange                  `json:"range,omitempty"`
 }
 
 // This is an object constructed with the keys as the values of the enum VisType and the value being a bag of properties
@@ -182,6 +182,18 @@ type ExplorePanelsState any
 type TimeRange struct {
 	From time.Time `json:"from,omitempty"`
 	To   time.Time `json:"to,omitempty"`
+	// Use RawTimeRangeTime or RawTimeRangeString when passing it to frontend
+	Raw interface{} `json:"raw,omitempty"`
+}
+
+type RawTimeRangeTime struct {
+	From time.Time `json:"from,omitempty"`
+	To   time.Time `json:"to,omitempty"`
+}
+
+type RawTimeRangeString struct {
+	From string `json:"from,omitempty"`
+	To   string `json:"to,omitempty"`
 }
 
 type LinkTransformationConfig struct {
