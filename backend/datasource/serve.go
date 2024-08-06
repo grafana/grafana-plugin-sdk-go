@@ -27,6 +27,9 @@ type ServeOpts struct {
 	// AdmissionHandler for processing storage requests
 	backend.AdmissionHandler
 
+	// QueryMigrationHandler for handling query migrations.
+	backend.QueryMigrationHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
 }
@@ -37,11 +40,12 @@ type ServeOpts struct {
 // and might be removed in a future version. Please migrate to use [Manage] instead.
 func Serve(opts ServeOpts) error {
 	return backend.Serve(backend.ServeOpts{
-		CheckHealthHandler:  opts.CheckHealthHandler,
-		CallResourceHandler: opts.CallResourceHandler,
-		QueryDataHandler:    opts.QueryDataHandler,
-		StreamHandler:       opts.StreamHandler,
-		AdmissionHandler:    opts.AdmissionHandler,
-		GRPCSettings:        opts.GRPCSettings,
+		CheckHealthHandler:    opts.CheckHealthHandler,
+		CallResourceHandler:   opts.CallResourceHandler,
+		QueryDataHandler:      opts.QueryDataHandler,
+		StreamHandler:         opts.StreamHandler,
+		AdmissionHandler:      opts.AdmissionHandler,
+		QueryMigrationHandler: opts.QueryMigrationHandler,
+		GRPCSettings:          opts.GRPCSettings,
 	})
 }

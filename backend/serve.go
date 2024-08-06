@@ -61,6 +61,10 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
 	AdmissionHandler AdmissionHandler
 
+	// QueryMigrationHandler handles query migration
+	// This is EXPERIMENTAL and is a subject to change till Grafana 12
+	QueryMigrationHandler QueryMigrationHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }
@@ -75,7 +79,11 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	}
 
 	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+		if opts.QueryMigrationHandler != nil {
+			pluginOpts.DataServer = newDataSDKAdapterWithQueryMigration(opts.QueryDataHandler, opts.QueryMigrationHandler)
+		} else {
+			pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+		}
 	}
 
 	if opts.StreamHandler != nil {
@@ -85,6 +93,7 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	if opts.AdmissionHandler != nil {
 		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
 	}
+
 	return pluginOpts
 }
 
