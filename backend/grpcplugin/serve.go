@@ -13,6 +13,7 @@ type ServeOpts struct {
 	DataServer        DataServer
 	StreamServer      StreamServer
 	AdmissionServer   AdmissionServer
+	ConversionServer  ConversionServer
 
 	// GRPCServer factory method for creating GRPC server.
 	// If nil, the default one will be used.
@@ -51,6 +52,12 @@ func Serve(opts ServeOpts) error {
 	if opts.AdmissionServer != nil {
 		pSet["admission"] = &AdmissionGRPCPlugin{
 			AdmissionServer: opts.AdmissionServer,
+		}
+	}
+
+	if opts.ConversionServer != nil {
+		pSet["conversion"] = &ConversionGRPCPlugin{
+			ConversionServer: opts.ConversionServer,
 		}
 	}
 

@@ -61,6 +61,10 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
 	AdmissionHandler AdmissionHandler
 
+	// ConversionHandler converts resources between versions
+	// This is EXPERIMENTAL and is a subject to change till Grafana 12
+	ConversionHandler ConversionHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }
@@ -84,6 +88,10 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 
 	if opts.AdmissionHandler != nil {
 		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
+	}
+
+	if opts.ConversionHandler != nil {
+		pluginOpts.ConversionServer = newConversionSDKAdapter(opts.ConversionHandler)
 	}
 	return pluginOpts
 }
@@ -221,6 +229,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "admission")
 	}
 
+	if pluginOpts.ConversionServer != nil {
+		pluginv2.RegisterResourceConversionServer(server, pluginOpts.ConversionServer)
+		plugKeys = append(plugKeys, "conversion")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -326,6 +339,11 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.AdmissionServer != nil {
 		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
 		plugKeys = append(plugKeys, "admission")
+	}
+
+	if pluginOpts.ConversionServer != nil {
+		pluginv2.RegisterResourceConversionServer(server, pluginOpts.ConversionServer)
+		plugKeys = append(plugKeys, "conversion")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly

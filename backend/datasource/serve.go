@@ -27,6 +27,9 @@ type ServeOpts struct {
 	// AdmissionHandler for processing storage requests
 	backend.AdmissionHandler
 
+	// ConversionHandler for converting objects between resource versions
+	backend.ConversionHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
 }
@@ -42,6 +45,7 @@ func Serve(opts ServeOpts) error {
 		QueryDataHandler:    opts.QueryDataHandler,
 		StreamHandler:       opts.StreamHandler,
 		AdmissionHandler:    opts.AdmissionHandler,
+		ConversionHandler:   opts.ConversionHandler,
 		GRPCSettings:        opts.GRPCSettings,
 	})
 }
