@@ -4,8 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
@@ -87,7 +89,21 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		return RequestStatusOK, nil
 	})
 	if err != nil {
-		return nil, err
+		if !IsDownstreamError(err) {
+			return nil, err
+		}
+
+		st := status.New(codes.Unknown, err.Error())
+		st, innerErr := st.WithDetails(&errdetails.ErrorInfo{
+			Reason:   err.Error(),
+			Domain:   string(ErrorSourceDownstream),
+			Metadata: nil,
+		})
+		if innerErr != nil {
+			return nil, err
+		}
+
+		return nil, st.Err()
 	}
 
 	return ToProto().QueryDataResponse(resp)
