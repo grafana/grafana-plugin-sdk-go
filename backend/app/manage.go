@@ -21,6 +21,9 @@ type ManageOpts struct {
 
 	// Stateless admission handler
 	AdmissionHandler backend.AdmissionHandler
+
+	// Stateless conversion handler
+	ConversionHandler backend.ConversionHandler
 }
 
 // Manage starts serving the app over gPRC with automatic instance management.
@@ -47,6 +50,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		QueryDataHandler:    handler,
 		StreamHandler:       handler,
 		AdmissionHandler:    opts.AdmissionHandler,
+		ConversionHandler:   opts.ConversionHandler,
 		GRPCSettings:        opts.GRPCSettings,
 	})
 }

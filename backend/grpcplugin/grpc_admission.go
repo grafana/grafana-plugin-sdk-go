@@ -50,12 +50,8 @@ func (s *admissionGRPCServer) MutateAdmission(ctx context.Context, req *pluginv2
 	return s.server.MutateAdmission(ctx, req)
 }
 
-func (s *admissionGRPCServer) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
-	return s.server.ConvertObject(ctx, req)
-}
-
 type admissionGRPCClient struct {
-	client pluginv2.AdmissionControlClient
+	client AdmissionClient
 }
 
 func (s *admissionGRPCClient) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.ValidationResponse, error) {
@@ -64,10 +60,6 @@ func (s *admissionGRPCClient) ValidateAdmission(ctx context.Context, req *plugin
 
 func (s *admissionGRPCClient) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest, opts ...grpc.CallOption) (*pluginv2.MutationResponse, error) {
 	return s.client.MutateAdmission(ctx, req, opts...)
-}
-
-func (s *admissionGRPCClient) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest, opts ...grpc.CallOption) (*pluginv2.ConversionResponse, error) {
-	return s.client.ConvertObject(ctx, req, opts...)
 }
 
 var _ AdmissionServer = &admissionGRPCServer{}

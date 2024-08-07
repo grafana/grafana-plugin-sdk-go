@@ -319,6 +319,31 @@ func (f ConvertFromProtobuf) GroupVersionKind(req *pluginv2.GroupVersionKind) Gr
 	}
 }
 
+// GroupVersion ...
+func (f ConvertFromProtobuf) GroupVersion(req *pluginv2.GroupVersion) GroupVersion {
+	return GroupVersion{
+		Group:   req.Group,
+		Version: req.Version,
+	}
+}
+
+// RawObject ...
+func (f ConvertFromProtobuf) RawObject(req *pluginv2.RawObject) RawObject {
+	return RawObject{
+		Raw:         req.Raw,
+		ContentType: req.ContentType,
+	}
+}
+
+// RawObjects ...
+func (f ConvertFromProtobuf) RawObjects(req []*pluginv2.RawObject) []RawObject {
+	rawObjects := make([]RawObject, len(req))
+	for i, r := range req {
+		rawObjects[i] = f.RawObject(r)
+	}
+	return rawObjects
+}
+
 // AdmissionRequest ...
 func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *AdmissionRequest {
 	return &AdmissionRequest{
@@ -334,9 +359,9 @@ func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *A
 func (f ConvertFromProtobuf) ConversionRequest(req *pluginv2.ConversionRequest) *ConversionRequest {
 	return &ConversionRequest{
 		PluginContext: f.PluginContext(req.PluginContext),
-		Kind:          f.GroupVersionKind(req.Kind),
-		ObjectBytes:   req.ObjectBytes,
-		TargetVersion: req.TargetVersion,
+		UID:           req.Uid,
+		Objects:       f.RawObjects(req.Objects),
+		TargetVersion: f.GroupVersion(req.TargetVersion),
 	}
 }
 
@@ -362,9 +387,9 @@ func (f ConvertFromProtobuf) ValidationResponse(rsp *pluginv2.ValidationResponse
 // ConversionResponse ...
 func (f ConvertFromProtobuf) ConversionResponse(rsp *pluginv2.ConversionResponse) *ConversionResponse {
 	return &ConversionResponse{
-		Allowed:     rsp.Allowed,
-		Result:      f.StatusResult(rsp.Result),
-		ObjectBytes: rsp.ObjectBytes,
+		UID:     rsp.Uid,
+		Result:  f.StatusResult(rsp.Result),
+		Objects: f.RawObjects(rsp.Objects),
 	}
 }
 

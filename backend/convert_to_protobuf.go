@@ -359,6 +359,31 @@ func (t ConvertToProtobuf) GroupVersionKind(req *GroupVersionKind) *pluginv2.Gro
 	}
 }
 
+// GroupVersion converts the SDK version of a GroupVersion to the protobuf version.
+func (t ConvertToProtobuf) GroupVersion(req *GroupVersion) *pluginv2.GroupVersion {
+	return &pluginv2.GroupVersion{
+		Group:   req.Group,
+		Version: req.Version,
+	}
+}
+
+// RawObject converts the SDK version of a RawObject to the protobuf version.
+func (t ConvertToProtobuf) RawObject(req RawObject) *pluginv2.RawObject {
+	return &pluginv2.RawObject{
+		Raw:         req.Raw,
+		ContentType: req.ContentType,
+	}
+}
+
+// RawObjects converts the SDK version of a RawObject to the protobuf version.
+func (t ConvertToProtobuf) RawObjects(req []RawObject) []*pluginv2.RawObject {
+	objects := make([]*pluginv2.RawObject, len(req))
+	for i, o := range req {
+		objects[i] = t.RawObject(o)
+	}
+	return objects
+}
+
 // AdmissionRequest converts the SDK version of a AdmissionRequest to the protobuf version.
 func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.AdmissionRequest {
 	return &pluginv2.AdmissionRequest{
@@ -374,9 +399,9 @@ func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.Adm
 func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.ConversionRequest {
 	return &pluginv2.ConversionRequest{
 		PluginContext: t.PluginContext(req.PluginContext),
-		Kind:          t.GroupVersionKind(&req.Kind),
-		ObjectBytes:   req.ObjectBytes,
-		TargetVersion: req.TargetVersion,
+		Uid:           req.UID,
+		TargetVersion: t.GroupVersion(&req.TargetVersion),
+		Objects:       t.RawObjects(req.Objects),
 	}
 }
 
@@ -402,9 +427,9 @@ func (t ConvertToProtobuf) ValidationResponse(rsp *ValidationResponse) *pluginv2
 // ConversionResponse converts the SDK version of a ConversionResponse to the protobuf version.
 func (t ConvertToProtobuf) ConversionResponse(rsp *ConversionResponse) *pluginv2.ConversionResponse {
 	return &pluginv2.ConversionResponse{
-		Allowed:     rsp.Allowed,
-		Result:      t.StatusResult(rsp.Result),
-		ObjectBytes: rsp.ObjectBytes,
+		Uid:     rsp.UID,
+		Result:  t.StatusResult(rsp.Result),
+		Objects: t.RawObjects(rsp.Objects),
 	}
 }
 

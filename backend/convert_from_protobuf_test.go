@@ -2,6 +2,7 @@ package backend
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
@@ -37,6 +38,7 @@ func (w *walker) StructField(f reflect.StructField, v reflect.Value) error {
 	}
 	w.FieldCount++
 	if v.IsZero() {
+		fmt.Printf("Zero value field: %s\n", f.Name)
 		w.ZeroValueFieldCount++
 	}
 	return nil
@@ -660,4 +662,135 @@ func TestConvertFromProtobufMutationResponse(t *testing.T) {
 	requireCounter.Equal(t, protoRSP.Result.Status, sdkRSP.Result.Status)
 
 	require.Equal(t, sdkWalker.FieldCount-1, requireCounter.Count, "untested fields in conversion")
+}
+
+func TestConvertFromProtobufConversionRequest(t *testing.T) {
+	protoCR := &pluginv2.ConversionRequest{
+		PluginContext: protoPluginContext,
+		Uid:           "uid",
+		TargetVersion: &pluginv2.GroupVersion{
+			Group:   "test.example.com",
+			Version: "v1",
+		},
+		Objects: []*pluginv2.RawObject{{
+			Raw:         []byte(`{"hello": "world"}`),
+			ContentType: "application/json",
+		}},
+	}
+
+	protoWalker := &walker{}
+	err := reflectwalk.Walk(protoCR, protoWalker)
+	require.NoError(t, err)
+
+	if protoWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt,
+			"proto", "ConversionRequest", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
+	}
+
+	sdkCR := f.ConversionRequest(protoCR)
+
+	sdkWalker := &walker{}
+	err = reflectwalk.Walk(sdkCR, sdkWalker)
+	require.NoError(t, err)
+
+	if sdkWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt, "sdk", "ConversionRequest", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
+	}
+
+	require.Equal(t, protoWalker.FieldCount+datasourceInstanceProtoFieldCountDelta(), sdkWalker.FieldCount)
+
+	requireCounter := &requireCounter{}
+
+	// PluginContext
+	requireCounter.Equal(t, protoCR.PluginContext.OrgId, sdkCR.PluginContext.OrgID)
+	requireCounter.Equal(t, protoCR.PluginContext.PluginId, sdkCR.PluginContext.PluginID)
+	requireCounter.Equal(t, protoCR.PluginContext.ApiVersion, sdkCR.PluginContext.APIVersion)
+	// User
+	requireCounter.Equal(t, protoCR.PluginContext.User.Login, sdkCR.PluginContext.User.Login)
+	requireCounter.Equal(t, protoCR.PluginContext.User.Name, sdkCR.PluginContext.User.Name)
+	requireCounter.Equal(t, protoCR.PluginContext.User.Email, sdkCR.PluginContext.User.Email)
+	requireCounter.Equal(t, protoCR.PluginContext.User.Role, sdkCR.PluginContext.User.Role)
+
+	// App Instance Settings
+	requireCounter.Equal(t, json.RawMessage(protoCR.PluginContext.AppInstanceSettings.JsonData), sdkCR.PluginContext.AppInstanceSettings.JSONData)
+	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCR.PluginContext.AppInstanceSettings.DecryptedSecureJSONData)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCR.PluginContext.AppInstanceSettings.Updated)
+	requireCounter.Equal(t, protoCR.PluginContext.AppInstanceSettings.ApiVersion, sdkCR.PluginContext.AppInstanceSettings.APIVersion)
+
+	// Datasource Instance Settings
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Name, sdkCR.PluginContext.DataSourceInstanceSettings.Name)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Id, sdkCR.PluginContext.DataSourceInstanceSettings.ID)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Uid, sdkCR.PluginContext.DataSourceInstanceSettings.UID)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.ApiVersion, sdkCR.PluginContext.DataSourceInstanceSettings.APIVersion)
+	requireCounter.Equal(t, protoCR.PluginContext.PluginId, sdkCR.PluginContext.DataSourceInstanceSettings.Type)
+	requireCounter.Equal(t, protoCR.PluginContext.PluginVersion, sdkCR.PluginContext.PluginVersion)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Url, sdkCR.PluginContext.DataSourceInstanceSettings.URL)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.User, sdkCR.PluginContext.DataSourceInstanceSettings.User)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Database, sdkCR.PluginContext.DataSourceInstanceSettings.Database)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled, sdkCR.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.BasicAuthUser, sdkCR.PluginContext.DataSourceInstanceSettings.BasicAuthUser)
+	requireCounter.Equal(t, json.RawMessage(protoCR.PluginContext.DataSourceInstanceSettings.JsonData), sdkCR.PluginContext.DataSourceInstanceSettings.JSONData)
+	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCR.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData)
+	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCR.PluginContext.DataSourceInstanceSettings.Updated)
+	requireCounter.Equal(t, protoCR.PluginContext.UserAgent, sdkCR.PluginContext.UserAgent.String())
+
+	// The actual request values
+	requireCounter.Equal(t, protoCR.TargetVersion.Group, sdkCR.TargetVersion.Group)
+	requireCounter.Equal(t, protoCR.TargetVersion.Version, sdkCR.TargetVersion.Version)
+	requireCounter.Equal(t, protoCR.Uid, sdkCR.UID)
+	requireCounter.Equal(t, protoCR.Objects[0].Raw, sdkCR.Objects[0].Raw)
+	requireCounter.Equal(t, protoCR.Objects[0].ContentType, sdkCR.Objects[0].ContentType)
+
+	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-7, "untested fields in conversion") // -7 Struct Fields
+}
+
+func TestConvertFromProtobufConversionResponse(t *testing.T) {
+	protoCR := &pluginv2.ConversionResponse{
+		Uid: "uid",
+		Result: &pluginv2.StatusResult{
+			Status:  "A",
+			Message: "M",
+			Reason:  "bad",
+			Code:    500,
+		},
+		Objects: []*pluginv2.RawObject{{
+			Raw:         []byte(`{"hello": "world"}`),
+			ContentType: "application/json",
+		}},
+	}
+
+	protoWalker := &walker{}
+	err := reflectwalk.Walk(protoCR, protoWalker)
+	require.NoError(t, err)
+
+	if protoWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt,
+			"proto", "ConversionRequest", protoWalker.ZeroValueFieldCount, protoWalker.FieldCount)
+	}
+
+	sdkCR := f.ConversionResponse(protoCR)
+
+	sdkWalker := &walker{}
+	err = reflectwalk.Walk(sdkCR, sdkWalker)
+	require.NoError(t, err)
+
+	if sdkWalker.HasZeroFields() {
+		t.Fatalf(unsetErrFmt, "sdk", "ConversionResponse", sdkWalker.ZeroValueFieldCount, sdkWalker.FieldCount)
+	}
+
+	require.Equal(t, protoWalker.FieldCount, sdkWalker.FieldCount)
+
+	requireCounter := &requireCounter{}
+
+	requireCounter.Equal(t, protoCR.Uid, sdkCR.UID)
+	requireCounter.Equal(t, protoCR.Objects[0].Raw, sdkCR.Objects[0].Raw)
+	requireCounter.Equal(t, protoCR.Objects[0].ContentType, sdkCR.Objects[0].ContentType)
+	requireCounter.Equal(t, protoCR.Result.Code, sdkCR.Result.Code)
+	requireCounter.Equal(t, protoCR.Result.Message, sdkCR.Result.Message)
+	requireCounter.Equal(t, protoCR.Result.Reason, sdkCR.Result.Reason)
+	requireCounter.Equal(t, protoCR.Result.Status, sdkCR.Result.Status)
+	requireCounter.Equal(t, len(protoCR.Objects), len(sdkCR.Objects))
+
+	// -1 is for the Result pointer
+	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-1, "untested fields in conversion")
 }

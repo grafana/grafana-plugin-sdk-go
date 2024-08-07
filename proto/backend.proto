@@ -321,9 +321,6 @@ service AdmissionControl {
 
   // Return a modified copy of the request that can be saved or a descriptive error
   rpc MutateAdmission(AdmissionRequest) returns (MutationResponse);
-
-  // Convert a resource to a new version
-  rpc ConvertObject(ConversionRequest) returns (ConversionResponse);
 }
 
 // Identify the Object properties
@@ -359,20 +356,6 @@ message AdmissionRequest {
   bytes old_object_bytes = 5;
 }
 
-// ConversionRequest supports converting an object from one version to another 
-message ConversionRequest {
-  // NOTE: this may not include app or datasource instance settings depending on the request
-  PluginContext pluginContext = 1;
-
-  // The object kind
-  GroupVersionKind kind = 2;
-
-  // Object is the object in the request.  This includes the full metadata envelope.
-  bytes object_bytes = 3;
-
-  // Target converted version
-  string target_version = 4;
-}
 
 // Check if an object can be admitted
 message ValidationResponse {
@@ -413,17 +396,63 @@ message MutationResponse {
   bytes object_bytes = 4;
 }
 
-message ConversionResponse {
-  // Allowed indicates whether or not the admission request was permitted.
-  bool allowed = 1;
+//-----------------------------------------------------------------
+// ResourceConversion -- EXPERIMENTAL and is subject to change until 12.??
+//-----------------------------------------------------------------
 
-  // Result contains extra details into why an admission request was denied.
-  // This field IS NOT consulted in any way if "Allowed" is "true".
-  // +optional
+// ResourceConversion is a service that can be used to convert resources between versions
+// See: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-request-and-response
+service ResourceConversion {
+  // Convert objects to a target version
+  rpc ConvertObjects(ConversionRequest) returns (ConversionResponse);
+}
+
+// GroupVersion represents the API group and version of a resource.
+message GroupVersion{
+  string group = 1;
+  string version = 2;
+}
+
+// RawObject contains a resource serialized into a byte array with a content type
+message RawObject {
+  // Raw is the serialized object
+  bytes raw = 1;
+  // ContentType is the media type of the raw object
+  string content_type = 2;
+}
+
+// ConversionRequest supports converting objects from one version to another 
+message ConversionRequest {
+  // NOTE: this may not include app or datasource instance settings depending on the request
+  PluginContext pluginContext = 1;
+
+  // uid is an identifier for the individual request/response. It allows distinguishing instances of requests which are
+  // otherwise identical (parallel requests, etc).
+  // The UID is meant to track the round trip (request/response) between the Kubernetes API server and the webhook, not the user request.
+  // It is suitable for correlating log entries between the webhook and apiserver, for either auditing or debugging.
+  string uid = 2;
+
+  // Objects to convert
+  // +listType=atomic
+  repeated RawObject objects = 3;
+
+  // Target converted version
+  GroupVersion target_version = 4;
+}
+
+
+// ConversionResponse contains the converted objects
+message ConversionResponse {
+  // uid is an identifier for the individual request/response.
+  // This should be copied over from the corresponding `request.uid`.
+  string uid = 1;
+
+  // result contains extra details into why an admission request was denied.
   StatusResult result = 2;
 
-  // Converted object bytes
-  bytes object_bytes = 3;
+  // objects is the list of converted version of `request.objects` if the `result` is successful, otherwise empty.
+  // +listType=atomic
+  repeated RawObject objects = 3;
 }
 
 // Status structure is copied from:

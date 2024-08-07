@@ -50,20 +50,3 @@ func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2
 
 	return ToProto().MutationResponse(resp), nil
 }
-
-func (a *admissionSDKAdapter) ConvertObject(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
-	ctx = setupContext(ctx, EndpointConvertObject)
-	parsedReq := FromProto().ConversionRequest(req)
-
-	var resp *ConversionResponse
-	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = a.handler.ConvertObject(ctx, parsedReq)
-		return RequestStatusFromError(innerErr), innerErr
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return ToProto().ConversionResponse(resp), nil
-}
