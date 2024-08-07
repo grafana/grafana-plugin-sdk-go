@@ -45,7 +45,7 @@ type RawObject struct {
 	// Raw is the underlying serialization of this object.
 	Raw []byte `json:"-" `
 	// ContentType is the media type of the object.
-	ContentType string `json:"_"`
+	ContentType string `json:"-"`
 }
 
 type ConversionResponse struct {
