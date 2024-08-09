@@ -16,6 +16,11 @@ const (
 	// OAuth Identity ID token.
 	OAuthIdentityIDTokenHeaderName = "X-Id-Token"
 
+	// GrafanaUserSignInTokenHeaderName the header name used for forwarding
+	// the SignIn token of a Grafana User.
+	// Requires idForwarded feature toggle enabled.
+	GrafanaUserSignInTokenHeaderName = "X-Grafana-Id"
+
 	// CookiesHeaderName the header name used for forwarding
 	// cookies.
 	CookiesHeaderName = "Cookie"
