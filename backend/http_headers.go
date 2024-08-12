@@ -19,7 +19,7 @@ const (
 	// GrafanaUserSignInTokenHeaderName the header name used for forwarding
 	// the SignIn token of a Grafana User.
 	// Requires idForwarded feature toggle enabled.
-	GrafanaUserSignInTokenHeaderName = "X-Grafana-Id"
+	GrafanaUserSignInTokenHeaderName = "X-Grafana-Id" //nolint:gosec // this is not a hardcoded credential
 
 	// CookiesHeaderName the header name used for forwarding
 	// cookies.
