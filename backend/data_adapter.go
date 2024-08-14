@@ -10,12 +10,20 @@ import (
 
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type dataSDKAdapter struct {
-	queryDataHandler QueryDataHandler
+	queryDataHandler      QueryDataHandler
+	queryMigrationHandler QueryMigrationHandler
 }
 
 func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 	return &dataSDKAdapter{
 		queryDataHandler: handler,
+	}
+}
+
+func newDataSDKAdapterWithQueryMigration(handler QueryDataHandler, queryMigrationHandler QueryMigrationHandler) *dataSDKAdapter {
+	return &dataSDKAdapter{
+		queryDataHandler:      handler,
+		queryMigrationHandler: queryMigrationHandler,
 	}
 }
 

@@ -92,3 +92,14 @@ func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, 
 	}
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
+
+func (m *Manager) MigrateQuery(ctx context.Context, req *backend.QueryMigrationRequest) (*backend.QueryMigrationResponse, error) {
+	h, err := m.Get(ctx, req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(backend.QueryMigrationHandler); ok {
+		return ds.MigrateQuery(ctx, req)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}
