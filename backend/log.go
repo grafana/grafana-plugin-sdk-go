@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+
 	"go.opentelemetry.io/otel/trace"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
