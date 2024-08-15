@@ -19,7 +19,7 @@ type ConversionHandler interface {
 	ConvertObjects(context.Context, *ConversionRequest) (*ConversionResponse, error)
 }
 
-type ConvertObjectFunc func(context.Context, *ConversionRequest) (*ConversionResponse, error)
+type ConvertObjectsFunc func(context.Context, *ConversionRequest) (*ConversionResponse, error)
 
 type GroupVersion struct {
 	Group   string `json:"group,omitempty"`
