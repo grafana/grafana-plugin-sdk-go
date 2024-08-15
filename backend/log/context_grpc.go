@@ -2,6 +2,7 @@ package log
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	"google.golang.org/grpc/metadata"
@@ -16,18 +17,13 @@ func WithContextualAttributesForOutgoingContext(ctx context.Context, logParams [
 		return ctx
 	}
 
-	// join the key/value pairs with a colon, and separate the pairs with a comma
-	var res strings.Builder
 	for i := 0; i < len(logParams); i += 2 {
-		if i > 0 {
-			res.WriteString(",")
-		}
-		res.WriteString(logParams[i].(string))
-		res.WriteString(":")
-		res.WriteString(logParams[i+1].(string))
+		k := logParams[i].(string)
+		v := logParams[i+1].(string)
+		ctx = metadata.AppendToOutgoingContext(ctx, loggerParamsCtxMetadataKey, fmt.Sprintf("%s:%s", k, v))
 	}
 
-	return metadata.AppendToOutgoingContext(ctx, loggerParamsCtxMetadataKey, res.String())
+	return ctx
 }
 
 // ContextualAttributesFromIncomingContext returns the contextual key/value log parameters from the given context.
@@ -38,11 +34,9 @@ func ContextualAttributesFromIncomingContext(ctx context.Context) []any {
 		return nil
 	}
 
-	kvs := strings.Split(logParams[0], ",")
-
 	var res []any
-	for i := 0; i < len(kvs); i++ {
-		kv := strings.Split(kvs[i], ":")
+	for _, param := range logParams {
+		kv := strings.Split(param, ":")
 		res = append(res, kv[0], kv[1])
 	}
 	return res
