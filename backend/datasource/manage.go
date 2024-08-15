@@ -21,6 +21,9 @@ type ManageOpts struct {
 
 	// Stateless admission handler
 	AdmissionHandler backend.AdmissionHandler
+
+	// Stateless conversion handler
+	ConversionHandler backend.ConversionHandler
 }
 
 // Manage starts serving the data source over gPRC with automatic instance management.

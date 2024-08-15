@@ -12,9 +12,6 @@ const (
 
 	// EndpointMutateAdmission friendly name for the mutate admission endpoint/handler.
 	EndpointMutateAdmission Endpoint = "mutateAdmission"
-
-	// EndpointConvertObject friendly name for the convert object endpoint/handler.
-	EndpointConvertObject Endpoint = "convertObject"
 )
 
 // AdmissionHandler is an EXPERIMENTAL service that allows checking objects before they are saved
@@ -26,13 +23,10 @@ type AdmissionHandler interface {
 	ValidateAdmission(context.Context, *AdmissionRequest) (*ValidationResponse, error)
 	// MutateAdmission converts the input into an object that can be saved, or rejects the request
 	MutateAdmission(context.Context, *AdmissionRequest) (*MutationResponse, error)
-	// ConvertObject is called to covert objects between different versions
-	ConvertObject(context.Context, *ConversionRequest) (*ConversionResponse, error)
 }
 
 type ValidateAdmissionFunc func(context.Context, *AdmissionRequest) (*ValidationResponse, error)
 type MutateAdmissionFunc func(context.Context, *AdmissionRequest) (*MutationResponse, error)
-type ConvertObjectFunc func(context.Context, *ConversionRequest) (*ConversionResponse, error)
 
 // Operation is the type of resource operation being checked for admission control
 // https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
@@ -69,18 +63,6 @@ type AdmissionRequest struct {
 	OldObjectBytes []byte `json:"old_object_bytes,omitempty"`
 }
 
-// ConversionRequest supports converting an object from on version to another
-type ConversionRequest struct {
-	// NOTE: this may not include app or datasource instance settings depending on the request
-	PluginContext PluginContext `json:"pluginContext,omitempty"`
-	// The object kind
-	Kind GroupVersionKind `json:"kind,omitempty"`
-	// Object is the object in the request.  This includes the full metadata envelope.
-	ObjectBytes []byte `json:"object_bytes,omitempty"`
-	// Target converted version
-	TargetVersion string `json:"target_version,omitempty"`
-}
-
 // Basic request to say if the validation was successful or not
 type ValidationResponse struct {
 	// Allowed indicates whether or not the admission request was permitted.
@@ -112,17 +94,6 @@ type MutationResponse struct {
 	Warnings []string `json:"warnings,omitempty"`
 	// Mutated object bytes (when requested)
 	// +optional
-	ObjectBytes []byte `json:"object_bytes,omitempty"`
-}
-
-type ConversionResponse struct {
-	// Allowed indicates whether or not the admission request was permitted.
-	Allowed bool `json:"allowed,omitempty"`
-	// Result contains extra details into why an admission request was denied.
-	// This field IS NOT consulted in any way if "Allowed" is "true".
-	// +optional
-	Result *StatusResult `json:"result,omitempty"`
-	// Converted object bytes
 	ObjectBytes []byte `json:"object_bytes,omitempty"`
 }
 
