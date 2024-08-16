@@ -22,6 +22,10 @@ func WithContextualAttributesForOutgoingContext(ctx context.Context, logParams [
 	for i := 0; i < len(logParams); i += 2 {
 		k := logParams[i].(string)
 		v := logParams[i+1].(string)
+		if k == "" || v == "" {
+			continue
+		}
+
 		ctx = metadata.AppendToOutgoingContext(ctx, logParamsCtxMetadataKey, fmt.Sprintf("%s%s%s", k, logParamSeparator, v))
 	}
 
@@ -38,6 +42,9 @@ func ContextualAttributesFromIncomingContext(ctx context.Context) []any {
 	var attrs []any
 	for _, param := range logParams {
 		kv := strings.Split(param, logParamSeparator)
+		if len(kv) != 2 {
+			continue
+		}
 		attrs = append(attrs, kv[0], kv[1])
 	}
 	return attrs
