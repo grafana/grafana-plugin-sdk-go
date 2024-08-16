@@ -37,12 +37,12 @@ func TestWithContextualAttributesForOutgoingContext(t *testing.T) {
 		{
 			name:      "log params with valid key and value",
 			logParams: []any{"key1", "value1"},
-			expected:  []string{"key1:value1"},
+			expected:  []string{logParam("key1", "value1")},
 		},
 		{
 			name:      "log params with multiple key value pairs",
 			logParams: []any{"key1", "value1", "key2", "value2"},
-			expected:  []string{"key1:value1", "key2:value2"},
+			expected:  []string{logParam("key1", "value1"), logParam("key2", "value2")},
 		},
 	}
 
@@ -87,22 +87,22 @@ func TestContextualAttributesFromIncomingContext(t *testing.T) {
 		},
 		{
 			name:     "metadata with valid log params",
-			md:       metadata.MD{logParamsCtxMetadataKey: []string{"key1:value1", "key2:value2"}},
+			md:       metadata.MD{logParamsCtxMetadataKey: []string{logParam("key1", "value1"), logParam("key2", "value2")}},
 			expected: []any{"key1", "value1", "key2", "value2"},
 		},
 		{
 			name:     "metadata with missing key",
-			md:       metadata.MD{logParamsCtxMetadataKey: []string{":value1", "key2:value2"}},
+			md:       metadata.MD{logParamsCtxMetadataKey: []string{logParam("", "value1"), logParam("key2", "value2")}},
 			expected: []any{"key2", "value2"},
 		},
 		{
 			name:     "metadata with missing value",
-			md:       metadata.MD{logParamsCtxMetadataKey: []string{"key1:", "key2:value2"}},
+			md:       metadata.MD{logParamsCtxMetadataKey: []string{logParam("key1", ""), logParam("key2", "value2")}},
 			expected: []any{"key2", "value2"},
 		},
 		{
 			name:     "metadata with invalid key + value",
-			md:       metadata.MD{logParamsCtxMetadataKey: []string{":", "key2:value2"}},
+			md:       metadata.MD{logParamsCtxMetadataKey: []string{logParam("", ""), logParam("key2", "value2")}},
 			expected: []any{"key2", "value2"},
 		},
 	}
