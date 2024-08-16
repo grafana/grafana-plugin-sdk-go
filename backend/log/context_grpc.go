@@ -42,7 +42,7 @@ func ContextualAttributesFromIncomingContext(ctx context.Context) []any {
 	var attrs []any
 	for _, param := range logParams {
 		kv := strings.Split(param, logParamSeparator)
-		if len(kv) != 2 {
+		if len(kv) != 2 || kv[0] == "" || kv[1] == "" {
 			continue
 		}
 		attrs = append(attrs, kv[0], kv[1])

@@ -91,8 +91,18 @@ func TestContextualAttributesFromIncomingContext(t *testing.T) {
 			expected: []any{"key1", "value1", "key2", "value2"},
 		},
 		{
-			name:     "metadata with invalid log params",
-			md:       metadata.MD{logParamsCtxMetadataKey: []string{"key1", "key2:value2"}},
+			name:     "metadata with missing key",
+			md:       metadata.MD{logParamsCtxMetadataKey: []string{":value1", "key2:value2"}},
+			expected: []any{"key2", "value2"},
+		},
+		{
+			name:     "metadata with missing value",
+			md:       metadata.MD{logParamsCtxMetadataKey: []string{"key1:", "key2:value2"}},
+			expected: []any{"key2", "value2"},
+		},
+		{
+			name:     "metadata with invalid key + value",
+			md:       metadata.MD{logParamsCtxMetadataKey: []string{":", "key2:value2"}},
 			expected: []any{"key2", "value2"},
 		},
 	}
