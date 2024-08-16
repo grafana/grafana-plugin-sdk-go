@@ -39,7 +39,7 @@ func withContextualLogAttributes(ctx context.Context, pCtx PluginContext) contex
 		}
 	}
 
-	if ctxLogAttributes := log.contextualAttributesFromIncomingContext(ctx); len(ctxLogAttributes) > 0 {
+	if ctxLogAttributes := log.ContextualAttributesFromIncomingContext(ctx); len(ctxLogAttributes) > 0 {
 		args = append(args, ctxLogAttributes...)
 	}
 
