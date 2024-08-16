@@ -10,7 +10,7 @@ import (
 
 const (
 	logParamsCtxMetadataKey = "loggerParamsCtxMetadata"
-	logParamSeparator       = ":"
+	logParamSeparator       = ":::"
 )
 
 // WithContextualAttributesForOutgoingContext will append the given key/value log parameters to the outgoing context.
@@ -20,8 +20,8 @@ func WithContextualAttributesForOutgoingContext(ctx context.Context, logParams [
 	}
 
 	for i := 0; i < len(logParams); i += 2 {
-		k := logParams[i].(string)
-		v := logParams[i+1].(string)
+		k := fmt.Sprintf("%v", logParams[i])
+		v := fmt.Sprintf("%v", logParams[i+1])
 		if k == "" || v == "" {
 			continue
 		}
