@@ -38,6 +38,11 @@ func withContextualLogAttributes(ctx context.Context, pCtx PluginContext) contex
 			args = append(args, "uname", pCtx.User.Name)
 		}
 	}
+
+	if ctxLogAttributes := log.ContextualAttributesFromIncomingContext(ctx); len(ctxLogAttributes) > 0 {
+		args = append(args, ctxLogAttributes...)
+	}
+
 	ctx = log.WithContextualAttributes(ctx, args)
 	return ctx
 }
