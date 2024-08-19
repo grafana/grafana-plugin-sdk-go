@@ -8,6 +8,7 @@ import (
 	"net"
 	"net/http"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
 
@@ -40,6 +41,30 @@ func New(opts ...Options) (*http.Client, error) {
 
 	return c, nil
 }
+
+type reportSizeRoundtripper struct {
+	next http.RoundTripper
+}
+
+func newReportSizeRoundtripper(next http.RoundTripper) http.RoundTripper {
+	return &reportSizeRoundtripper{next: next}
+}
+
+func (rt *reportSizeRoundtripper) RoundTrip(req *http.Request) (*http.Response, error) {
+	res, err := rt.next.RoundTrip(req)
+
+	if err != nil {
+		return res, err
+	}
+
+	res.Body = CountBytesReader(res.Body, func(size int64) {
+		log.DefaultLogger.Debug("downstream response info", "bytes", size, "url", req.URL.String())
+	})
+
+	return res, err
+}
+
+var _ http.RoundTripper = &reportSizeRoundtripper{}
 
 // GetTransport creates a new http.RoundTripper given provided options.
 // If opts is nil the http.DefaultTransport will be returned.
@@ -93,7 +118,14 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		return nil, err
 	}
 
-	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport)
+	_, hasDatasourceTypeLabel := clientOpts.Labels["datasource_type"]
+
+	var rt http.RoundTripper = transport
+	if hasDatasourceTypeLabel {
+		rt = newReportSizeRoundtripper(rt)
+	}
+
+	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, rt)
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
