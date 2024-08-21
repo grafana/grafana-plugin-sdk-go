@@ -26,21 +26,21 @@ func TestResponse(t *testing.T) {
 		},
 		{
 			name:            "downstream error",
-			err:             DownstreamError(errors.New("bad gateway"), false),
+			err:             DownstreamError(errors.New("bad gateway")),
 			expStatus:       0,
 			expErrorMessage: "bad gateway",
 			expErrorSource:  backend.ErrorSourceDownstream,
 		},
 		{
 			name:            "plugin error",
-			err:             PluginError(errors.New("internal error"), false),
+			err:             PluginError(errors.New("internal error")),
 			expStatus:       0,
 			expErrorMessage: "internal error",
 			expErrorSource:  backend.ErrorSourcePlugin,
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			res := Response(tc.err)
+			res := ResponseWithErrorSource(tc.err)
 			require.Error(t, res.Error)
 			require.Equal(t, tc.expStatus, res.Status)
 			require.Equal(t, tc.expErrorMessage, res.Error.Error())
@@ -76,7 +76,7 @@ func TestResponseWithOptions(t *testing.T) {
 		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
-			res := Response(tc.err)
+			res := ResponseWithErrorSource(tc.err)
 			require.Error(t, res.Error)
 			require.Equal(t, tc.expStatus, res.Status)
 			require.Equal(t, tc.expErrorMessage, res.Error.Error())
@@ -88,8 +88,8 @@ func TestResponseWithOptions(t *testing.T) {
 func TestError(t *testing.T) {
 	err := errors.New("boom")
 	require.False(t, backend.IsDownstreamError(err))
-	pErr := PluginError(err, true)
+	pErr := PluginError(err, WithOverride())
 	require.False(t, backend.IsDownstreamError(pErr))
-	dErr := DownstreamError(err, true)
+	dErr := DownstreamError(err, WithOverride())
 	require.True(t, backend.IsDownstreamError(dErr))
 }
