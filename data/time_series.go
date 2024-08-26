@@ -263,6 +263,11 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		wideFrame.Meta = &FrameMeta{}
 	}
 	wideFrame.Meta.Type = FrameTypeTimeSeriesWide
+
+	// Setting the TypeVersion to greater than [0, 0] (along with Meta.Type being set) indicates that the produced
+	// frame follows the dataplane contract (see https://grafana.com/developers/dataplane/ and https://github.com/grafana/dataplane).
+	// https://grafana.com/developers/dataplane/timeseries#time-series-wide-format-timeserieswide defines TimeSeriesWide in dataplane.
+	wideFrame.Meta.TypeVersion = FrameTypeVersion{0, 1}
 	return wideFrame, nil
 }
 

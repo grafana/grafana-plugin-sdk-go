@@ -78,6 +78,8 @@ func TestTimeSeriesSchema(t *testing.T) {
 	}
 }
 
+var FTV01 = data.FrameTypeVersion{0, 1}
+
 func TestLongToWide(t *testing.T) {
 	tests := []struct {
 		name          string
@@ -121,7 +123,8 @@ func TestLongToWide(t *testing.T) {
 					2.0,
 					4.0,
 				})).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -168,7 +171,8 @@ func TestLongToWide(t *testing.T) {
 						2.0,
 						4.0,
 					})).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -221,7 +225,8 @@ func TestLongToWide(t *testing.T) {
 					2,
 					4,
 				})).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -280,7 +285,8 @@ func TestLongToWide(t *testing.T) {
 					2,
 					4,
 				})).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -319,7 +325,8 @@ func TestLongToWide(t *testing.T) {
 					float64Ptr(2.0),
 					float64Ptr(4.0),
 				})).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -385,7 +392,8 @@ func TestLongToWide(t *testing.T) {
 					0.0,
 					6.0,
 				})).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 
 			Err: require.NoError,
@@ -452,7 +460,8 @@ func TestLongToWide(t *testing.T) {
 					nil,
 					float64Ptr(6.0),
 				})).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -548,7 +557,8 @@ func TestLongToWide(t *testing.T) {
 					6,
 				}),
 			).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -644,7 +654,8 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(6),
 				}),
 			).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -740,7 +751,8 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(6),
 				}),
 			).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -836,7 +848,8 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(6),
 				}),
 			).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -931,7 +944,8 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(6),
 				}),
 			).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -1026,7 +1040,8 @@ func TestLongToWide(t *testing.T) {
 					int64Ptr(6.0),
 				}),
 			).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
@@ -1086,7 +1101,8 @@ func TestLongToWideBool(t *testing.T) {
 					1.0,
 					3.0,
 				})).SetMeta(&data.FrameMeta{
-				Type: data.FrameTypeTimeSeriesWide,
+				Type:        data.FrameTypeTimeSeriesWide,
+				TypeVersion: FTV01,
 			}),
 			Err: require.NoError,
 		},
