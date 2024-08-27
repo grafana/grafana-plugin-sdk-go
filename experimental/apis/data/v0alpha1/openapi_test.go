@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"golang.org/x/exp/maps"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 	"k8s.io/kube-openapi/pkg/validation/strfmt"
 	"k8s.io/kube-openapi/pkg/validation/validate"
@@ -37,4 +38,9 @@ func TestOpenAPI(t *testing.T) {
 	for _, err := range result.Warnings {
 		assert.NoError(t, err, "validation warning")
 	}
+
+	// Ensure DataSourceRef exists and has three properties
+	def, ok = defs["github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataSourceRef"]
+	require.True(t, ok)
+	require.Equal(t, []string{"type", "uid", "apiVersion"}, maps.Keys(def.Schema.Properties))
 }
