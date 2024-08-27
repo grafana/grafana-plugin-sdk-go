@@ -16,6 +16,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                              schemaDataFrame(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataQuery":               schemaDataQuery(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataSourceRef":           schemaDataSourceRef(ref),
 	}
 }
 
@@ -42,6 +43,25 @@ func schemaDataFrame(_ common.ReferenceCallback) common.OpenAPIDefinition {
 				AdditionalProperties: &spec.SchemaOrBool{Allows: true},
 			},
 		},
+	}
+}
+
+func schemaDataSourceRef(_ common.ReferenceCallback) common.OpenAPIDefinition {
+	s, _ := DataQuerySchema()
+	if s == nil {
+		s = &spec.Schema{}
+	}
+	p, ok := s.Properties["datasource"]
+	if !ok {
+		p = spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type:                 []string{"object"},
+				AdditionalProperties: &spec.SchemaOrBool{Allows: true},
+			},
+		}
+	}
+	return common.OpenAPIDefinition{
+		Schema: p,
 	}
 }
 
