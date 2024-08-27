@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
 )
 
@@ -63,9 +62,7 @@ func IsDownstreamError(err error) bool {
 		return true
 	}
 
-	// if error is HTTP network timeout error, we should treat it as downstream error
-	var netErr net.Error
-	if errors.As(err, &netErr) && netErr.Timeout() {
+	if isHTTPTimeoutError(err) {
 		return true
 	}
 
