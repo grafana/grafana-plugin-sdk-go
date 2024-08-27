@@ -114,5 +114,5 @@ func isHTTPTimeoutError(err error) bool {
 		return true
 	}
 
-	return errors.Is(err, os.ErrDeadlineExceeded) // relacement for os.IsTimeout(err)
+	return errors.Is(err, os.ErrDeadlineExceeded) // replacement for os.IsTimeout(err)
 }
