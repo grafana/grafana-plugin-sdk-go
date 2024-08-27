@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"errors"
 	"fmt"
 	"net"
 	"os"
@@ -31,6 +32,11 @@ func TestIsDownstreamError(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "wrapped timeout network error",
+			err:      fmt.Errorf("oh no. err %w", newFakeNetworkError(true, false)),
+			expected: true,
+		},
+		{
 			name:     "temporary timeout network error",
 			err:      newFakeNetworkError(true, true),
 			expected: true,
@@ -43,6 +49,11 @@ func TestIsDownstreamError(t *testing.T) {
 		{
 			name:     "os.ErrDeadlineExceeded",
 			err:      os.ErrDeadlineExceeded,
+			expected: true,
+		},
+		{
+			name:     "wrapped os.ErrDeadlineExceeded",
+			err:      errors.Join(os.ErrDeadlineExceeded),
 			expected: true,
 		},
 		{
