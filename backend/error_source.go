@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"net/http"
-	"os"
 )
 
 // ErrorSource type defines the source of the error
@@ -65,11 +64,8 @@ func IsDownstreamError(err error) bool {
 	}
 
 	// if error is HTTP network timeout error, we should treat it as downstream error
-	if err, ok := err.(net.Error); ok && err.Timeout() {
-		return true
-	}
-
-	if os.IsTimeout(err) {
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
 		return true
 	}
 
