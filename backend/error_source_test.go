@@ -52,8 +52,13 @@ func TestIsDownstreamError(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "os.ErrDeadlineExceeded",
+			err:      fmt.Errorf("error: %w", os.ErrDeadlineExceeded),
+			expected: true,
+		},
+		{
 			name:     "wrapped os.ErrDeadlineExceeded",
-			err:      errors.Join(os.ErrDeadlineExceeded),
+			err:      errors.Join(fmt.Errorf("oh no"), os.ErrDeadlineExceeded),
 			expected: true,
 		},
 		{
