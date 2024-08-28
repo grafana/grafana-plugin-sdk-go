@@ -37,11 +37,16 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			return RequestStatusCancelled, nil
 		}
 
+		if isHTTPTimeoutError(innerErr) {
+			return RequestStatusError, nil
+		}
+
 		// Set downstream status source in the context if there's at least one response with downstream status source,
 		// and if there's no plugin error
 		var hasPluginError bool
 		var hasDownstreamError bool
 		var hasCancelledError bool
+		var hasHTTPTimeoutError bool
 		for _, r := range resp.Responses {
 			if r.Error == nil {
 				continue
@@ -50,6 +55,10 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			if isCancelledError(r.Error) {
 				hasCancelledError = true
 			}
+			if isHTTPTimeoutError(r.Error) {
+				hasHTTPTimeoutError = true
+			}
+
 			if r.ErrorSource == ErrorSourceDownstream {
 				hasDownstreamError = true
 			} else {
@@ -62,6 +71,13 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
 			}
 			return RequestStatusCancelled, nil
+		}
+
+		if hasHTTPTimeoutError {
+			if err := WithDownstreamErrorSource(ctx); err != nil {
+				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
+			}
+			return RequestStatusError, nil
 		}
 
 		// A plugin error has higher priority than a downstream error,

@@ -3,6 +3,8 @@ package backend
 import (
 	"context"
 	"errors"
+	"net"
+	"os"
 	"strings"
 
 	grpccodes "google.golang.org/grpc/codes"
@@ -104,4 +106,13 @@ func RequestStatusFromProtoQueryDataResponse(res *pluginv2.QueryDataResponse, er
 
 func isCancelledError(err error) bool {
 	return errors.Is(err, context.Canceled) || grpcstatus.Code(err) == grpccodes.Canceled
+}
+
+func isHTTPTimeoutError(err error) bool {
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+
+	return errors.Is(err, os.ErrDeadlineExceeded) // replacement for os.IsTimeout(err)
 }

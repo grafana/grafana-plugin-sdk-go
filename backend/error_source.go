@@ -62,6 +62,10 @@ func IsDownstreamError(err error) bool {
 		return true
 	}
 
+	if isHTTPTimeoutError(err) {
+		return true
+	}
+
 	return false
 }
 
