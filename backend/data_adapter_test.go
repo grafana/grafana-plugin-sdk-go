@@ -180,6 +180,26 @@ func TestQueryData(t *testing.T) {
 				},
 				expErrorSource: ErrorSourcePlugin,
 			},
+			{
+				name: `single downstream error without error source should be "downstream" error source`,
+				queryDataResponse: &QueryDataResponse{
+					Responses: map[string]DataResponse{
+						"A": {Error: DownstreamErrorf("boom")},
+					},
+				},
+				expErrorSource: ErrorSourceDownstream,
+			},
+			{
+				name: `multiple downstream error without error source and single plugin error should be "plugin" error source`,
+				queryDataResponse: &QueryDataResponse{
+					Responses: map[string]DataResponse{
+						"A": {Error: DownstreamErrorf("boom")},
+						"B": {Error: someErr},
+						"C": {Error: DownstreamErrorf("boom")},
+					},
+				},
+				expErrorSource: ErrorSourcePlugin,
+			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
 				var actualCtx context.Context
