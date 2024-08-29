@@ -42,5 +42,5 @@ func TestOpenAPI(t *testing.T) {
 	// Ensure DataSourceRef exists and has three properties
 	def, ok = defs["github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataSourceRef"]
 	require.True(t, ok)
-	require.Equal(t, []string{"type", "uid", "apiVersion"}, maps.Keys(def.Schema.Properties))
+	require.ElementsMatch(t, []string{"type", "uid", "apiVersion"}, maps.Keys(def.Schema.Properties))
 }
