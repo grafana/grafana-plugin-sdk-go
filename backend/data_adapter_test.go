@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -69,7 +70,7 @@ func TestQueryData(t *testing.T) {
 	t.Run("When forward HTTP headers enabled should forward headers", func(t *testing.T) {
 		ctx := context.Background()
 		handler := newFakeDataHandlerWithOAuth()
-		adapter := newDataSDKAdapter(handler)
+		adapter := newDataSDKAdapter(handler, nil)
 		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
@@ -95,7 +96,7 @@ func TestQueryData(t *testing.T) {
 	t.Run("When forward HTTP headers disable should not forward headers", func(t *testing.T) {
 		ctx := context.Background()
 		handler := newFakeDataHandlerWithOAuth()
-		adapter := newDataSDKAdapter(handler)
+		adapter := newDataSDKAdapter(handler, nil)
 		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
@@ -122,7 +123,7 @@ func TestQueryData(t *testing.T) {
 		a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 			require.Equal(t, tid, tenant.IDFromContext(ctx))
 			return NewQueryDataResponse(), nil
-		}))
+		}), nil)
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
@@ -186,7 +187,7 @@ func TestQueryData(t *testing.T) {
 				a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 					actualCtx = ctx
 					return tc.queryDataResponse, nil
-				}))
+				}), nil)
 				_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 					PluginContext: &pluginv2.PluginContext{},
 				})
@@ -195,6 +196,37 @@ func TestQueryData(t *testing.T) {
 				require.Equal(t, tc.expErrorSource, ss)
 			})
 		}
+	})
+
+	t.Run("When conversionHandler is defined", func(t *testing.T) {
+		oldQuery := &pluginv2.DataQuery{
+			TimeRange: &pluginv2.TimeRange{},
+			Json:      []byte(`{"old":"value"}`),
+		}
+		a := newDataSDKAdapter(QueryDataHandlerFunc(func(_ context.Context, q *QueryDataRequest) (*QueryDataResponse, error) {
+			require.Len(t, q.Queries, 1)
+			// Assert that the query has been converted
+			require.Equal(t, string(`{"new":"value"}`), string(q.Queries[0].JSON))
+			return &QueryDataResponse{}, nil
+		}), ConvertObjectsFunc(func(_ context.Context, req *ConversionRequest) (*ConversionResponse, error) {
+			// Validate that the request is a query
+			require.Equal(t, "query", req.TargetVersion.Group)
+			require.Equal(t, "v0alpha1", req.TargetVersion.Version)
+			require.Len(t, req.Objects, 1)
+			// Parse the object and change the JSON
+			q := &DataQuery{}
+			require.NoError(t, json.Unmarshal(req.Objects[0].Raw, &q))
+			require.Equal(t, string(`{"old":"value"}`), string(q.JSON))
+			q.JSON = []byte(`{"new":"value"}`)
+			b, err := json.Marshal(q)
+			require.NoError(t, err)
+			return &ConversionResponse{Objects: []RawObject{{Raw: b}}}, nil
+		}))
+		_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
+			PluginContext: &pluginv2.PluginContext{},
+			Queries:       []*pluginv2.DataQuery{oldQuery},
+		})
+		require.NoError(t, err)
 	})
 }
 

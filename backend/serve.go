@@ -79,7 +79,7 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 	}
 
 	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler, opts.ConversionHandler)
 	}
 
 	if opts.StreamHandler != nil {

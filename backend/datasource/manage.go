@@ -51,5 +51,6 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		StreamHandler:       handler,
 		AdmissionHandler:    opts.AdmissionHandler,
 		GRPCSettings:        opts.GRPCSettings,
+		ConversionHandler:   opts.ConversionHandler,
 	})
 }
