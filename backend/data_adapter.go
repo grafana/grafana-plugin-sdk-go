@@ -30,6 +30,11 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		resp, innerErr = a.queryDataHandler.QueryData(ctx, parsedReq)
 
 		status := RequestStatusFromQueryDataResponse(resp, innerErr)
+		if innerErr != nil {
+			return status, innerErr
+		} else if resp == nil {
+			return RequestStatusError, fmt.Errorf("response cannot be nil")
+		}
 		ctxLogger := Logger.FromContext(ctx)
 
 		// Set downstream status source in the context if there's at least one response with downstream status source,
