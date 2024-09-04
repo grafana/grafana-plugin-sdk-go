@@ -43,7 +43,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		var innerErr error
-		if a.queryConversionHandler != nil {
+		if a.queryConversionHandler != nil && GrafanaConfigFromContext(ctx).FeatureToggles().IsEnabled("dsQueryConvert") {
 			parsedReq, innerErr = a.ConvertQueryData(ctx, parsedReq)
 			if innerErr != nil {
 				return RequestStatusError, innerErr

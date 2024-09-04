@@ -68,7 +68,7 @@ func (a *conversionSDKAdapter) ConvertObjects(ctx context.Context, req *pluginv2
 			resp, innerErr = a.handler.ConvertObjects(ctx, parsedReq)
 			return RequestStatusFromError(innerErr), innerErr
 		}
-		if a.queryConversionHandler != nil {
+		if a.queryConversionHandler != nil && GrafanaConfigFromContext(ctx).FeatureToggles().IsEnabled("dsQueryConvert") {
 			resp, innerErr = a.ConvertQueryDataFromObjects(ctx, parsedReq)
 			return RequestStatusFromError(innerErr), innerErr
 		}
