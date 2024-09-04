@@ -10,13 +10,29 @@ import (
 
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type dataSDKAdapter struct {
-	queryDataHandler QueryDataHandler
+	queryDataHandler       QueryDataHandler
+	queryConversionHandler QueryConversionHandler // Optional
 }
 
-func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
+func newDataSDKAdapter(handler QueryDataHandler, queryConversionHandler QueryConversionHandler) *dataSDKAdapter {
 	return &dataSDKAdapter{
-		queryDataHandler: handler,
+		queryDataHandler:       handler,
+		queryConversionHandler: queryConversionHandler,
 	}
+}
+
+func (a *dataSDKAdapter) ConvertQueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataRequest, error) {
+	convertRequest := &QueryConversionRequest{
+		PluginContext: req.PluginContext,
+		Queries:       req.Queries,
+	}
+	convertResponse, err := a.queryConversionHandler.ConvertQuery(ctx, convertRequest)
+	if err != nil {
+		return nil, err
+	}
+	req.Queries = convertResponse.Queries
+
+	return req, nil
 }
 
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
@@ -27,6 +43,12 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		var innerErr error
+		if a.queryConversionHandler != nil && GrafanaConfigFromContext(ctx).FeatureToggles().IsEnabled("dsQueryConvert") {
+			parsedReq, innerErr = a.ConvertQueryData(ctx, parsedReq)
+			if innerErr != nil {
+				return RequestStatusError, innerErr
+			}
+		}
 		resp, innerErr = a.queryDataHandler.QueryData(ctx, parsedReq)
 
 		status := RequestStatusFromQueryDataResponse(resp, innerErr)
