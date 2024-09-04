@@ -140,6 +140,7 @@ func TestQueryData(t *testing.T) {
 			name              string
 			queryDataResponse *QueryDataResponse
 			expErrorSource    ErrorSource
+			expError          bool
 		}{
 			{
 				name: `single downstream error should be "downstream" error source`,
@@ -180,6 +181,32 @@ func TestQueryData(t *testing.T) {
 				},
 				expErrorSource: ErrorSourcePlugin,
 			},
+			{
+				name: `single downstream error without error source should be "downstream" error source`,
+				queryDataResponse: &QueryDataResponse{
+					Responses: map[string]DataResponse{
+						"A": {Error: DownstreamErrorf("boom")},
+					},
+				},
+				expErrorSource: ErrorSourceDownstream,
+			},
+			{
+				name: `multiple downstream error without error source and single plugin error should be "plugin" error source`,
+				queryDataResponse: &QueryDataResponse{
+					Responses: map[string]DataResponse{
+						"A": {Error: DownstreamErrorf("boom")},
+						"B": {Error: someErr},
+						"C": {Error: DownstreamErrorf("boom")},
+					},
+				},
+				expErrorSource: ErrorSourcePlugin,
+			},
+			{
+				name:              "nil queryDataResponse and nil error should throw error",
+				queryDataResponse: nil,
+				expErrorSource:    ErrorSourcePlugin,
+				expError:          true,
+			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
 				var actualCtx context.Context
@@ -190,7 +217,13 @@ func TestQueryData(t *testing.T) {
 				_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 					PluginContext: &pluginv2.PluginContext{},
 				})
-				require.NoError(t, err)
+
+				if tc.expError {
+					require.Error(t, err)
+				} else {
+					require.NoError(t, err)
+				}
+
 				ss := errorSourceFromContext(actualCtx)
 				require.Equal(t, tc.expErrorSource, ss)
 			})

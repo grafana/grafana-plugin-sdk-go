@@ -29,34 +29,29 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		var innerErr error
 		resp, innerErr = a.queryDataHandler.QueryData(ctx, parsedReq)
 
-		if resp == nil || len(resp.Responses) == 0 {
-			return RequestStatusFromError(innerErr), innerErr
+		status := RequestStatusFromQueryDataResponse(resp, innerErr)
+		if innerErr != nil {
+			return status, innerErr
+		} else if resp == nil {
+			return RequestStatusError, errors.New("both response and error are nil, but one must be provided")
 		}
-
-		if isCancelledError(innerErr) {
-			return RequestStatusCancelled, nil
-		}
-
-		if isHTTPTimeoutError(innerErr) {
-			return RequestStatusError, nil
-		}
+		ctxLogger := Logger.FromContext(ctx)
 
 		// Set downstream status source in the context if there's at least one response with downstream status source,
 		// and if there's no plugin error
-		var hasPluginError bool
-		var hasDownstreamError bool
-		var hasCancelledError bool
-		var hasHTTPTimeoutError bool
-		for _, r := range resp.Responses {
+		var hasPluginError, hasDownstreamError bool
+		for refID, r := range resp.Responses {
 			if r.Error == nil {
 				continue
 			}
 
-			if isCancelledError(r.Error) {
-				hasCancelledError = true
+			// if error source not set and the error is a downstream error, set error source to downstream.
+			if !r.ErrorSource.IsValid() && IsDownstreamError(r.Error) {
+				r.ErrorSource = ErrorSourceDownstream
 			}
-			if isHTTPTimeoutError(r.Error) {
-				hasHTTPTimeoutError = true
+
+			if !r.Status.IsValid() {
+				r.Status = statusFromError(r.Error)
 			}
 
 			if r.ErrorSource == ErrorSourceDownstream {
@@ -64,43 +59,29 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			} else {
 				hasPluginError = true
 			}
-		}
 
-		if hasCancelledError {
-			if err := WithDownstreamErrorSource(ctx); err != nil {
-				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
+			logParams := []any{
+				"refID", refID,
+				"status", int(r.Status),
+				"error", r.Error,
+				"statusSource", string(r.ErrorSource),
 			}
-			return RequestStatusCancelled, nil
-		}
-
-		if hasHTTPTimeoutError {
-			if err := WithDownstreamErrorSource(ctx); err != nil {
-				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
-			}
-			return RequestStatusError, nil
+			ctxLogger.Error("Partial data response error", logParams...)
 		}
 
 		// A plugin error has higher priority than a downstream error,
 		// so set to downstream only if there's no plugin error
-		if hasDownstreamError && !hasPluginError {
-			if err := WithDownstreamErrorSource(ctx); err != nil {
-				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
-			}
-			return RequestStatusError, nil
-		}
-
 		if hasPluginError {
 			if err := WithErrorSource(ctx, ErrorSourcePlugin); err != nil {
 				return RequestStatusError, fmt.Errorf("failed to set plugin status source: %w", errors.Join(innerErr, err))
 			}
-			return RequestStatusError, nil
+		} else if hasDownstreamError {
+			if err := WithDownstreamErrorSource(ctx); err != nil {
+				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
+			}
 		}
 
-		if innerErr != nil {
-			return RequestStatusFromError(innerErr), innerErr
-		}
-
-		return RequestStatusOK, nil
+		return status, nil
 	})
 	if err != nil {
 		return nil, err
