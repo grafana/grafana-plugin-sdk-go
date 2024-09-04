@@ -33,7 +33,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		if innerErr != nil {
 			return status, innerErr
 		} else if resp == nil {
-			return RequestStatusError, fmt.Errorf("both response and error are nil, but one must be provided")
+			return RequestStatusError, errors.New("both response and error are nil, but one must be provided")
 		}
 		ctxLogger := Logger.FromContext(ctx)
 
