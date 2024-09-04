@@ -30,7 +30,7 @@ require (
 	github.com/urfave/cli v1.22.15
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.53.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.53.0
-	go.opentelemetry.io/contrib/propagators/jaeger v1.28.0
+	go.opentelemetry.io/contrib/propagators/jaeger v1.29.0
 	go.opentelemetry.io/contrib/samplers/jaegerremote v0.23.0
 	go.opentelemetry.io/otel v1.29.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.29.0
