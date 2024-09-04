@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net"
@@ -8,7 +9,17 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
+
+func TestErrorSource(t *testing.T) {
+	var es ErrorSource
+	require.False(t, es.IsValid())
+	require.True(t, ErrorSourceDownstream.IsValid())
+	require.True(t, ErrorSourcePlugin.IsValid())
+}
 
 func TestIsDownstreamError(t *testing.T) {
 	tcs := []struct {
@@ -65,6 +76,36 @@ func TestIsDownstreamError(t *testing.T) {
 			name:     "other error",
 			err:      fmt.Errorf("other error"),
 			expected: false,
+		},
+		{
+			name:     "context.Canceled",
+			err:      context.Canceled,
+			expected: true,
+		},
+		{
+			name:     "wrapped context.Canceled",
+			err:      fmt.Errorf("error: %w", context.Canceled),
+			expected: true,
+		},
+		{
+			name:     "joined context.Canceled",
+			err:      errors.Join(fmt.Errorf("oh no"), context.Canceled),
+			expected: true,
+		},
+		{
+			name:     "gRPC canceled error",
+			err:      status.Error(codes.Canceled, "canceled"),
+			expected: true,
+		},
+		{
+			name:     "wrapped gRPC canceled error",
+			err:      fmt.Errorf("error: %w", status.Error(codes.Canceled, "canceled")),
+			expected: true,
+		},
+		{
+			name:     "joined gRPC canceled error",
+			err:      errors.Join(fmt.Errorf("oh no"), status.Error(codes.Canceled, "canceled")),
+			expected: true,
 		},
 	}
 	for _, tc := range tcs {

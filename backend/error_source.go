@@ -21,6 +21,10 @@ const (
 	DefaultErrorSource ErrorSource = ErrorSourcePlugin
 )
 
+func (es ErrorSource) IsValid() bool {
+	return es == ErrorSourceDownstream || es == ErrorSourcePlugin
+}
+
 // ErrorSourceFromStatus returns an [ErrorSource] based on provided HTTP status code.
 func ErrorSourceFromHTTPStatus(statusCode int) ErrorSource {
 	switch statusCode {
@@ -62,7 +66,7 @@ func IsDownstreamError(err error) bool {
 		return true
 	}
 
-	if isHTTPTimeoutError(err) {
+	if isHTTPTimeoutError(err) || isCancelledError(err) {
 		return true
 	}
 
