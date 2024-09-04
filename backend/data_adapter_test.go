@@ -3,7 +3,6 @@ package backend
 import (
 	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -208,19 +207,10 @@ func TestQueryData(t *testing.T) {
 			// Assert that the query has been converted
 			require.Equal(t, string(`{"new":"value"}`), string(q.Queries[0].JSON))
 			return &QueryDataResponse{}, nil
-		}), ConvertObjectsFunc(func(_ context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-			// Validate that the request is a query
-			require.Equal(t, "query", req.TargetVersion.Group)
-			require.Equal(t, "v0alpha1", req.TargetVersion.Version)
-			require.Len(t, req.Objects, 1)
-			// Parse the object and change the JSON
-			q := &DataQuery{}
-			require.NoError(t, json.Unmarshal(req.Objects[0].Raw, &q))
-			require.Equal(t, string(`{"old":"value"}`), string(q.JSON))
-			q.JSON = []byte(`{"new":"value"}`)
-			b, err := json.Marshal(q)
-			require.NoError(t, err)
-			return &ConversionResponse{Objects: []RawObject{{Raw: b}}}, nil
+		}), ConvertQueryFunc(func(_ context.Context, req *QueryConversionRequest) (*QueryConversionResponse, error) {
+			require.Len(t, req.Queries, 1)
+			req.Queries[0].JSON = []byte(`{"new":"value"}`)
+			return &QueryConversionResponse{Queries: req.Queries}, nil
 		}))
 		_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 			PluginContext: &pluginv2.PluginContext{},
