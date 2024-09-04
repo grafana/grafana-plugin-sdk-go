@@ -20,6 +20,43 @@ func newConversionSDKAdapter(handler ConversionHandler, queryConversionHandler Q
 	}
 }
 
+func (a *conversionSDKAdapter) ConvertQueryDataFromObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
+	if req.TargetVersion.Group != "query" || req.TargetVersion.Version != "v0alpha1" {
+		return nil, fmt.Errorf("unsupported target version %s/%s", req.TargetVersion.Group, req.TargetVersion.Version)
+	}
+
+	resp := &ConversionResponse{}
+	queries := make([]DataQuery, 0, len(req.Objects))
+	for _, obj := range req.Objects {
+		if obj.ContentType != "application/json" {
+			return nil, fmt.Errorf("unsupported content type %s", obj.ContentType)
+		}
+		input := &DataQuery{}
+		err := json.Unmarshal(obj.Raw, input)
+		if err != nil {
+			return nil, fmt.Errorf("unmarshal: %w", err)
+		}
+		queries = append(queries, *input)
+	}
+	queryConversionRes, innerErr := a.queryConversionHandler.ConvertQuery(ctx, &QueryConversionRequest{
+		Queries: queries,
+	})
+	if innerErr != nil {
+		return nil, innerErr
+	}
+	for _, q := range queryConversionRes.Queries {
+		newJSON, err := json.Marshal(q)
+		if err != nil {
+			return nil, fmt.Errorf("marshal: %w", err)
+		}
+		resp.Objects = append(resp.Objects, RawObject{
+			Raw:         newJSON,
+			ContentType: "application/json",
+		})
+	}
+	return resp, nil
+}
+
 func (a *conversionSDKAdapter) ConvertObjects(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
 	ctx = setupContext(ctx, EndpointConvertObject)
 	parsedReq := FromProto().ConversionRequest(req)
@@ -32,38 +69,8 @@ func (a *conversionSDKAdapter) ConvertObjects(ctx context.Context, req *pluginv2
 			return RequestStatusFromError(innerErr), innerErr
 		}
 		if a.queryConversionHandler != nil {
-			if req.TargetVersion.Group != "query" || req.TargetVersion.Version != "v0alpha1" {
-				return RequestStatusError, fmt.Errorf("unsupported target version %s/%s", req.TargetVersion.Group, req.TargetVersion.Version)
-			}
-			queries := make([]DataQuery, 0, len(req.Objects))
-			for _, obj := range req.Objects {
-				if obj.ContentType != "application/json" {
-					return RequestStatusError, fmt.Errorf("unsupported content type %s", obj.ContentType)
-				}
-				input := &DataQuery{}
-				err := json.Unmarshal(obj.Raw, input)
-				if err != nil {
-					return RequestStatusError, fmt.Errorf("unmarshal: %w", err)
-				}
-				queries = append(queries, *input)
-			}
-			queryConversionRes, innerErr := a.queryConversionHandler.ConvertQuery(ctx, &QueryConversionRequest{
-				Queries: queries,
-			})
-			if innerErr != nil {
-				return RequestStatusFromError(innerErr), innerErr
-			}
-			for _, q := range queryConversionRes.Queries {
-				newJSON, err := json.Marshal(q)
-				if err != nil {
-					return RequestStatusError, fmt.Errorf("marshal: %w", err)
-				}
-				resp.Objects = append(resp.Objects, RawObject{
-					Raw:         newJSON,
-					ContentType: "application/json",
-				})
-			}
-			return RequestStatusOK, nil
+			resp, innerErr = a.ConvertQueryDataFromObjects(ctx, parsedReq)
+			return RequestStatusFromError(innerErr), innerErr
 		}
 		return RequestStatusError, fmt.Errorf("no handler defined")
 	})
