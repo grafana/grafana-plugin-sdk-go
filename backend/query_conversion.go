@@ -13,12 +13,12 @@ type QueryConversionHandler interface {
 
 type ConvertQueryFunc func(context.Context, *QueryConversionRequest) (*QueryConversionResponse, error)
 
-// ConvertObjects calls fn(ctx, req).
+// ConvertQuery calls fn(ctx, req).
 func (fn ConvertQueryFunc) ConvertQuery(ctx context.Context, req *QueryConversionRequest) (*QueryConversionResponse, error) {
 	return fn(ctx, req)
 }
 
-// ConversionRequest supports converting an object from on version to another
+// QueryConversionRequest supports converting a query from on version to another
 type QueryConversionRequest struct {
 	// NOTE: this may not include app or datasource instance settings depending on the request
 	PluginContext PluginContext `json:"pluginContext,omitempty"`
