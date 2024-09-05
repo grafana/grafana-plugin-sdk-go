@@ -6,12 +6,14 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type dataSDKAdapter struct {
 	queryDataHandler       QueryDataHandler
-	queryConversionHandler QueryConversionHandler // Optional
+	queryConversionHandler QueryConversionHandler
 }
 
 func newDataSDKAdapter(handler QueryDataHandler, queryConversionHandler QueryConversionHandler) *dataSDKAdapter {
@@ -44,9 +46,16 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		var innerErr error
 		if a.queryConversionHandler != nil && GrafanaConfigFromContext(ctx).FeatureToggles().IsEnabled("dsQueryConvert") {
-			parsedReq, innerErr = a.ConvertQueryData(ctx, parsedReq)
+			convertedQuery, innerErr := a.ConvertQueryData(ctx, parsedReq)
 			if innerErr != nil {
-				return RequestStatusError, innerErr
+				if status.Code(innerErr) == codes.Unimplemented {
+					// The plugin does not implement query migration, disabling it
+					a.queryConversionHandler = nil
+				} else {
+					return RequestStatusError, innerErr
+				}
+			} else {
+				parsedReq = convertedQuery
 			}
 		}
 		resp, innerErr = a.queryDataHandler.QueryData(ctx, parsedReq)

@@ -92,3 +92,14 @@ func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, 
 	}
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
+
+func (m *Manager) ConvertQuery(ctx context.Context, req *backend.QueryConversionRequest) (*backend.QueryConversionResponse, error) {
+	h, err := m.Get(ctx, req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(backend.QueryConversionHandler); ok {
+		return ds.ConvertQuery(ctx, req)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}

@@ -14,6 +14,7 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
@@ -246,8 +247,13 @@ func TestQueryData(t *testing.T) {
 			return &QueryConversionResponse{Queries: req.Queries}, nil
 		}))
 		_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
-			PluginContext: &pluginv2.PluginContext{},
-			Queries:       []*pluginv2.DataQuery{oldQuery},
+			PluginContext: &pluginv2.PluginContext{
+				// Enable feature flag
+				GrafanaConfig: map[string]string{
+					featuretoggles.EnabledFeatures: "dsQueryConvert",
+				},
+			},
+			Queries: []*pluginv2.DataQuery{oldQuery},
 		})
 		require.NoError(t, err)
 	})
