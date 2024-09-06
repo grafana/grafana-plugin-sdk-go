@@ -14,14 +14,14 @@ import (
 
 func TestResponseLimitMiddleware(t *testing.T) {
 	tcs := []struct {
-		limit      int64
-		bodyLength int
-		body       string
-		err        error
+		limit              int64
+		expectedBodyLength int
+		expectedBody       string
+		err                error
 	}{
-		{limit: 1, bodyLength: 1, body: "d", err: errors.New("error: http: response body too large, response limit is set to: 1")},
-		{limit: 1000000, bodyLength: 5, body: "dummy", err: nil},
-		{limit: 0, bodyLength: 5, body: "dummy", err: nil},
+		{limit: 1, expectedBodyLength: 1, expectedBody: "d", err: errors.New("error: http: response body too large, response limit is set to: 1")},
+		{limit: 1000000, expectedBodyLength: 5, expectedBody: "dummy", err: nil},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil},
 	}
 	for _, tc := range tcs {
 		t.Run(fmt.Sprintf("Test ResponseLimitMiddleware with limit: %d", tc.limit), func(t *testing.T) {
@@ -51,8 +51,8 @@ func TestResponseLimitMiddleware(t *testing.T) {
 			}
 			require.NoError(t, res.Body.Close())
 
-			require.Len(t, bodyBytes, tc.bodyLength)
-			require.Equal(t, string(bodyBytes), tc.body)
+			require.Len(t, bodyBytes, tc.expectedBodyLength)
+			require.Equal(t, string(bodyBytes), tc.expectedBody)
 		})
 	}
 }
