@@ -24,13 +24,13 @@ var ErrResponseBodyTooLarge = errors.New("http: response body too large")
 // MaxBytesReader prevents clients from accidentally or maliciously
 // sending a large request and wasting server resources.
 func MaxBytesReader(r io.ReadCloser, n int64) io.ReadCloser {
-	return &maxBytesReader{r: r, remainingBytes: n, actualLimit: n}
+	return &maxBytesReader{r: r, remainingBytes: n, limit: n}
 }
 
 type maxBytesReader struct {
 	r              io.ReadCloser // underlying reader
 	remainingBytes int64         // max bytes remaining
-	actualLimit    int64         // the actual limit
+	limit          int64         // the actual limit
 	err            error         // sticky error
 }
 
@@ -58,7 +58,7 @@ func (l *maxBytesReader) Read(p []byte) (n int, err error) {
 	n = int(l.remainingBytes)
 	l.remainingBytes = 0
 
-	l.err = fmt.Errorf("error: %w, response limit is set to: %d", ErrResponseBodyTooLarge, l.actualLimit)
+	l.err = fmt.Errorf("error: %w, response limit is set to: %d", ErrResponseBodyTooLarge, l.limit)
 	return n, l.err
 }
 
