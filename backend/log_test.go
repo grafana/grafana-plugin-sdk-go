@@ -40,7 +40,7 @@ func TestContextualLogger(t *testing.T) {
 			checkCtxLogger(ctx, t, map[string]any{"endpoint": "queryData", "pluginID": pluginID})
 			run <- struct{}{}
 			return NewQueryDataResponse(), nil
-		}), nil)
+		}))
 		_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 			PluginContext: pCtx,
 		})

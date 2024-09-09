@@ -14,7 +14,6 @@ import (
 	"google.golang.org/grpc/metadata"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
@@ -70,7 +69,7 @@ func TestQueryData(t *testing.T) {
 	t.Run("When forward HTTP headers enabled should forward headers", func(t *testing.T) {
 		ctx := context.Background()
 		handler := newFakeDataHandlerWithOAuth()
-		adapter := newDataSDKAdapter(handler, nil)
+		adapter := newDataSDKAdapter(handler)
 		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
@@ -96,7 +95,7 @@ func TestQueryData(t *testing.T) {
 	t.Run("When forward HTTP headers disable should not forward headers", func(t *testing.T) {
 		ctx := context.Background()
 		handler := newFakeDataHandlerWithOAuth()
-		adapter := newDataSDKAdapter(handler, nil)
+		adapter := newDataSDKAdapter(handler)
 		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
@@ -123,7 +122,7 @@ func TestQueryData(t *testing.T) {
 		a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 			require.Equal(t, tid, tenant.IDFromContext(ctx))
 			return NewQueryDataResponse(), nil
-		}), nil)
+		}))
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
@@ -214,7 +213,7 @@ func TestQueryData(t *testing.T) {
 				a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 					actualCtx = ctx
 					return tc.queryDataResponse, nil
-				}), nil)
+				}))
 				_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 					PluginContext: &pluginv2.PluginContext{},
 				})
@@ -229,33 +228,6 @@ func TestQueryData(t *testing.T) {
 				require.Equal(t, tc.expErrorSource, ss)
 			})
 		}
-	})
-
-	t.Run("When conversionHandler is defined", func(t *testing.T) {
-		oldQuery := &pluginv2.DataQuery{
-			TimeRange: &pluginv2.TimeRange{},
-			Json:      []byte(`{"old":"value"}`),
-		}
-		a := newDataSDKAdapter(QueryDataHandlerFunc(func(_ context.Context, q *QueryDataRequest) (*QueryDataResponse, error) {
-			require.Len(t, q.Queries, 1)
-			// Assert that the query has been converted
-			require.Equal(t, string(`{"new":"value"}`), string(q.Queries[0].JSON))
-			return &QueryDataResponse{}, nil
-		}), ConvertQueryFunc(func(_ context.Context, req *QueryConversionRequest) (*QueryConversionResponse, error) {
-			require.Len(t, req.Queries, 1)
-			req.Queries[0].JSON = []byte(`{"new":"value"}`)
-			return &QueryConversionResponse{Queries: req.Queries}, nil
-		}))
-		_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
-			PluginContext: &pluginv2.PluginContext{
-				// Enable feature flag
-				GrafanaConfig: map[string]string{
-					featuretoggles.EnabledFeatures: "dsQueryConvert",
-				},
-			},
-			Queries: []*pluginv2.DataQuery{oldQuery},
-		})
-		require.NoError(t, err)
 	})
 }
 

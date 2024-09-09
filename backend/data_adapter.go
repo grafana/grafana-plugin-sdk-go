@@ -6,35 +6,17 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type dataSDKAdapter struct {
-	queryDataHandler       QueryDataHandler
-	queryConversionHandler QueryConversionHandler
+	queryDataHandler QueryDataHandler
 }
 
-func newDataSDKAdapter(handler QueryDataHandler, queryConversionHandler QueryConversionHandler) *dataSDKAdapter {
+func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 	return &dataSDKAdapter{
-		queryDataHandler:       handler,
-		queryConversionHandler: queryConversionHandler,
+		queryDataHandler: handler,
 	}
-}
-
-func (a *dataSDKAdapter) ConvertQueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataRequest, error) {
-	convertRequest := &QueryConversionRequest{
-		PluginContext: req.PluginContext,
-		Queries:       req.Queries,
-	}
-	convertResponse, err := a.queryConversionHandler.ConvertQuery(ctx, convertRequest)
-	if err != nil {
-		return nil, err
-	}
-	req.Queries = convertResponse.Queries
-
-	return req, nil
 }
 
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
@@ -45,19 +27,6 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
 		var innerErr error
-		if a.queryConversionHandler != nil && GrafanaConfigFromContext(ctx).FeatureToggles().IsEnabled("dsQueryConvert") {
-			convertedQuery, innerErr := a.ConvertQueryData(ctx, parsedReq)
-			if innerErr != nil {
-				if status.Code(innerErr) == codes.Unimplemented {
-					// The plugin does not implement query migration, disabling it
-					a.queryConversionHandler = nil
-				} else {
-					return RequestStatusError, innerErr
-				}
-			} else {
-				parsedReq = convertedQuery
-			}
-		}
 		resp, innerErr = a.queryDataHandler.QueryData(ctx, parsedReq)
 
 		status := RequestStatusFromQueryDataResponse(resp, innerErr)
