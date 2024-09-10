@@ -454,15 +454,14 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	case FieldTypeJSON, FieldTypeNullableJSON:
 		vals := newJsonRawMessageVector(0)
 		for iter.ReadArray() {
+			var v json.RawMessage
 			t := iter.WhatIsNext()
 			if t == sdkjsoniter.NilValue {
 				iter.ReadNil()
-				vals.Append(nil)
 			} else {
-				var v json.RawMessage
 				iter.ReadVal(&v)
-				vals.Append(v)
 			}
+			vals.Append(v)
 		}
 
 		// Convert this to the pointer flavor
