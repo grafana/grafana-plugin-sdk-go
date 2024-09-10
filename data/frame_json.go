@@ -1321,7 +1321,7 @@ func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 		} else {
 			ms := iter.ReadInt64()
 
-			tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6))
+			tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6)).UTC()
 			arr.SetConcrete(i, tv)
 		}
 	}
