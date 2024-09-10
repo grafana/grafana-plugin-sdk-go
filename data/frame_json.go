@@ -421,6 +421,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 }
 
 // in this path, we do not yet know the length and must discover it from the array
+// nolint:gocyclo
 func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	itere := sdkjsoniter.NewIterator(iter)
 	// we handle Uint64 differently because the regular method for unmarshalling to []any does not work for uint64 correctly
@@ -477,8 +478,8 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 
 		return vals, nil
 	}
-	// if it's not uint64 field, handle the array the old way
 
+	// if it's not uint64 field, handle the array the old way
 	convert := func(v interface{}) (interface{}, error) {
 		return v, nil
 	}
