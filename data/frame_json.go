@@ -469,7 +469,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 				vals.Append(nil)
 			} else {
 				v := iter.ReadInt64()
-				vals.Append(v)
+				vals.Append(&v)
 			}
 		}
 		return vals, nil
@@ -555,11 +555,6 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
 			return int32(iV), err
-		}
-
-	case FieldTypeInt64:
-		convert = func(v interface{}) (interface{}, error) {
-			return int64FromJSON(v)
 		}
 
 	case FieldTypeFloat32:
