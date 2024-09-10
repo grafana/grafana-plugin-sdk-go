@@ -437,6 +437,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 			return nil, err
 		}
 		return newUint64VectorWithValues(u), nil
+
 	case FieldTypeNullableUint64:
 		parseUint64 := func(s string) (*uint64, error) {
 			u, err := strconv.ParseUint(s, 0, 64)
@@ -456,6 +457,20 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		for iter.ReadArray() {
 			v := iter.ReadInt64()
 			vals.Append(v)
+		}
+		return vals, nil
+
+	case FieldTypeNullableInt64:
+		vals := newNullableInt64Vector(0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadInt64()
+				vals.Append(v)
+			}
 		}
 		return vals, nil
 
