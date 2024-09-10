@@ -420,6 +420,7 @@ func int64FromJSON(v interface{}) (int64, error) {
 	return 0, fmt.Errorf("unable to convert int64 in json [%T]", v)
 }
 
+// in this path, we do not yet know the length and must discover it from the array
 func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	itere := sdkjsoniter.NewIterator(iter)
 	// we handle Uint64 differently because the regular method for unmarshalling to []any does not work for uint64 correctly
@@ -448,6 +449,33 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 			return nil, err
 		}
 		return newNullableUint64VectorWithValues(u), nil
+
+	case FieldTypeJSON, FieldTypeNullableJSON:
+		vals := newJsonRawMessageVector(0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				var v json.RawMessage
+				iter.ReadVal(&v)
+				vals.Append(v)
+			}
+		}
+
+		// Convert this to the pointer flavor
+		if ft == FieldTypeNullableJSON {
+			size := vals.Len()
+			nullable := newNullableJsonRawMessageVector(size)
+			for i := 0; i < size; i++ {
+				v := vals.At(i).(json.RawMessage)
+				nullable.Set(i, &v)
+			}
+			return nullable, nil
+		}
+
+		return vals, nil
 	}
 	// if it's not uint64 field, handle the array the old way
 

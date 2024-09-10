@@ -67,6 +67,30 @@ func TestGoldenFrameJSON(t *testing.T) {
 	}
 }
 
+func TestMarshalFieldTypeJSON(t *testing.T) {
+	testJSON := func(ft data.FieldType) {
+		msg := json.RawMessage([]byte(`{"l1":"v1"}`))
+		f1 := data.NewFieldFromFieldType(ft, 1)
+		f1.SetConcrete(0, msg)
+
+		f := data.NewFrame("frame", f1)
+
+		fbytes, err := json.Marshal(f)
+		require.NoError(t, err)
+
+		// fmt.Println("frame in json:", string(fbytes))
+
+		f2 := &data.Frame{}
+		err = json.Unmarshal(fbytes, f2)
+		require.NoError(t, err)
+		val, ok := f2.Fields[0].ConcreteAt(0)
+		require.True(t, ok)
+		require.Equal(t, msg, val)
+	}
+	testJSON(data.FieldTypeJSON)
+	testJSON(data.FieldTypeNullableJSON) // this version is silly
+}
+
 type simpleTestObj struct {
 	Name   string          `json:"name,omitempty"`
 	FType  data.FieldType  `json:"type,omitempty"`
