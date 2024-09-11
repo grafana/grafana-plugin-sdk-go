@@ -65,6 +65,76 @@ func TestGoldenFrameJSON(t *testing.T) {
 	if diff := cmp.Diff(f, out, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
+
+	// Now try each field as the only field in the frame
+	for idx, field := range f.Fields {
+		expected := out.Fields[idx]
+		size := expected.Len()
+
+		frame := data.NewFrame("test-"+field.Name, field)
+		b, err := data.FrameToJSON(frame, data.IncludeAll) // json.Marshal(f2)
+		require.NoError(t, err)
+
+		f2 := &data.Frame{}
+		err = json.Unmarshal(b, f2)
+		require.NoError(t, err)
+
+		found := f2.Fields[0]
+		require.Equal(t, size, found.Len())
+		for i := 0; i < size; i++ {
+			// Lots of NaN flavors that are really the same
+			if expected.Type().Numeric() {
+				fA, _ := expected.NullableFloatAt(i)
+				fB, _ := found.NullableFloatAt(i)
+				if fA != nil && fB != nil {
+					if math.IsNaN(*fA) && math.IsNaN(*fB) {
+						continue // many flavors of NaN!
+					}
+				}
+			}
+
+			switch expected.Type() {
+			case data.FieldTypeJSON, data.FieldTypeNullableJSON:
+				msgA, okA := expected.ConcreteAt(i)
+				msgB, okB := found.ConcreteAt(i)
+				if okA && okB {
+					a := string(msgA.(json.RawMessage))
+					b := string(msgB.(json.RawMessage))
+					require.JSONEq(t, a, b, field.Name) // pretty print does not matter
+					continue
+				} else if expected.Type() == data.FieldTypeNullableJSON {
+					// The pointer conversions get too weird for this to be reasonable
+					continue
+				}
+			}
+
+			assert.EqualValues(t, expected.At(i), found.At(i), "field: %s, row: %d", field.Name, i)
+		}
+	}
+}
+
+func TestMarshalFieldTypeJSON(t *testing.T) {
+	testJSON := func(ft data.FieldType) {
+		msg := json.RawMessage([]byte(`{"l1":"v1"}`))
+		f1 := data.NewFieldFromFieldType(ft, 1)
+		f1.SetConcrete(0, msg)
+
+		f := data.NewFrame("frame", f1)
+
+		fbytes, err := json.Marshal(f)
+		require.NoError(t, err)
+
+		// fmt.Println("frame in json:", string(fbytes))
+
+		f2 := &data.Frame{}
+		err = json.Unmarshal(fbytes, f2)
+		require.NoError(t, err)
+		val, ok := f2.Fields[0].ConcreteAt(0)
+		require.True(t, ok)
+		require.Equal(t, msg, val)
+	}
+	testJSON(data.FieldTypeJSON)
+	testJSON(data.FieldTypeNullableJSON) // this version is silly
 }
 
 type simpleTestObj struct {

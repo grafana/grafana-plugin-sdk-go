@@ -81,7 +81,9 @@ const (
 
 	// FieldTypeJSON indicates the underlying primitive is a []json.RawMessage.
 	FieldTypeJSON
+
 	// FieldTypeNullableJSON indicates the underlying primitive is a []*json.RawMessage.
+	// Deprecated: Use FieldTypeJSON, an array can be null anyway
 	FieldTypeNullableJSON
 
 	// FieldTypeEnum indicates the underlying primitive is a []data.EnumItemIndex, with field mapping metadata
