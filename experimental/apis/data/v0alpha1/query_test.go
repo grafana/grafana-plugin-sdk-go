@@ -20,7 +20,8 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 				"spreadsheet": "spreadsheetID",
 				"datasourceId": 4,
 				"intervalMs": 30000,
-				"maxDataPoints": 794
+				"maxDataPoints": 794,
+				"expr": "{filename=\"/var/log/docker/2e21a640173f1f3359e2a178905dad6b1b56e2da6e3d53dbdba0a1123cdcb4fe/json.log\"} | logfmt"
 			},
 			{
 				"refId": "Z",
@@ -73,6 +74,11 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 			  "to": "200"
 			}
 		  }`, string(out))
+	})
+
+	t.Run("verify deep copy", func(t *testing.T) {
+		cpy := req.DeepCopy()
+		require.Equal(t, req, cpy)
 	})
 
 	t.Run("same results from either parser", func(t *testing.T) {
