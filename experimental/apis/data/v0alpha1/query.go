@@ -246,7 +246,7 @@ func (g *DataQuery) DeepCopyInto(out *DataQuery) {
 		out.additional = map[string]any{}
 		if len(g.additional) > 0 {
 			jj, err := json.Marshal(g.additional)
-			if err != nil {
+			if err == nil {
 				_ = json.Unmarshal(jj, &out.additional)
 			}
 		}
