@@ -3,9 +3,6 @@ package build
 import (
 	"encoding/json"
 	"fmt"
-	"os"
-	"os/exec"
-	"strings"
 	"time"
 )
 
@@ -36,30 +33,6 @@ func (v Info) appendFlags(flags map[string]string) {
 	if err == nil {
 		flags["github.com/grafana/grafana-plugin-sdk-go/build.buildInfoJSON"] = string(out)
 	}
-}
-
-func getEnvironment(check ...string) string {
-	for _, key := range check {
-		if strings.HasPrefix(key, "> ") {
-			parts := strings.Split(key, " ")
-			cmd := exec.Command(parts[1], parts[2:]...) // #nosec G204
-			out, err := cmd.CombinedOutput()
-			if err == nil && len(out) > 0 {
-				str := strings.TrimSpace(string(out))
-				if strings.Index(str, " ") > 0 {
-					continue // skip any output that has spaces
-				}
-				return str
-			}
-			continue
-		}
-
-		val := os.Getenv(key)
-		if val != "" {
-			return strings.TrimSpace(val)
-		}
-	}
-	return ""
 }
 
 // InfoGetter is an interface with a method for returning the build info.
