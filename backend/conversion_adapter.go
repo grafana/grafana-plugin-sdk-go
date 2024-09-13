@@ -20,34 +20,36 @@ func newConversionSDKAdapter(handler ConversionHandler, queryConversionHandler Q
 	}
 }
 
-func isQueryConversionRequest(req *ConversionRequest) bool {
-	return req.TargetVersion.Group == "query.grafana.app" && req.TargetVersion.Version == "v0alpha1"
-}
-
-func (a *conversionSDKAdapter) ConvertQueryDataFromObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-	resp := &ConversionResponse{}
-	queries := make([]any, 0, len(req.Objects))
+func parseAsQueryRequest(req *ConversionRequest) ([]*QueryDataRequest, error) {
+	var requests []*QueryDataRequest
 	for _, obj := range req.Objects {
 		if obj.ContentType != "application/json" {
 			return nil, fmt.Errorf("unsupported content type %s", obj.ContentType)
 		}
-		input := &DataQuery{}
+		input := &QueryDataRequest{}
 		err := json.Unmarshal(obj.Raw, input)
 		if err != nil {
 			return nil, fmt.Errorf("unmarshal: %w", err)
 		}
-		res, err := a.queryConversionHandler.ConvertQuery(ctx, &QueryConversionRequest{
-			PluginContext: req.PluginContext,
-			Query:         *input,
-		})
+		input.PluginContext = req.PluginContext
+		requests = append(requests, input)
+	}
+	return requests, nil
+}
+
+func (a *conversionSDKAdapter) ConvertQueryDataRequest(ctx context.Context, requests []*QueryDataRequest) (*ConversionResponse, error) {
+	resp := &ConversionResponse{}
+	convertedRequests := make([]QueryDataRequest, 0, len(requests))
+	for _, req := range requests {
+		res, err := a.queryConversionHandler.ConvertQuery(ctx, req)
 		if err != nil {
 			return nil, err
 		}
-		queries = append(queries, res.Query)
+		convertedRequests = append(convertedRequests, *res.QueryRequest)
 	}
 
-	for _, q := range queries {
-		newJSON, err := json.Marshal(q)
+	for _, req := range convertedRequests {
+		newJSON, err := json.Marshal(req)
 		if err != nil {
 			return nil, fmt.Errorf("marshal: %w", err)
 		}
@@ -66,12 +68,14 @@ func (a *conversionSDKAdapter) ConvertObjects(ctx context.Context, req *pluginv2
 	resp := &ConversionResponse{}
 	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		var innerErr error
-		if isQueryConversionRequest(parsedReq) {
-			if a.queryConversionHandler == nil {
-				return RequestStatusError, fmt.Errorf("no query conversion handler defined")
+		if a.queryConversionHandler != nil {
+			// Try to parse it as a query data request
+			reqs, err := parseAsQueryRequest(parsedReq)
+			if err == nil {
+				resp, innerErr = a.ConvertQueryDataRequest(ctx, reqs)
+				return RequestStatusFromError(innerErr), innerErr
 			}
-			resp, innerErr = a.ConvertQueryDataFromObjects(ctx, parsedReq)
-			return RequestStatusFromError(innerErr), innerErr
+			// The object cannot be parsed as a query data request, so we will try to convert it as a generic object
 		}
 		resp, innerErr = a.handler.ConvertObjects(ctx, parsedReq)
 		return RequestStatusFromError(innerErr), innerErr
