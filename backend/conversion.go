@@ -21,7 +21,7 @@ type ConversionHandler interface {
 
 type ConvertObjectsFunc func(context.Context, *ConversionRequest) (*ConversionResponse, error)
 
-// QueryData calls fn(ctx, req).
+// ConvertObjects calls fn(ctx, req).
 func (fn ConvertObjectsFunc) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
 	return fn(ctx, req)
 }
