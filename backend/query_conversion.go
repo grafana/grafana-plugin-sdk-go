@@ -6,15 +6,19 @@ import "context"
 
 type QueryConversionHandler interface {
 	// ConvertQuery is called to covert queries between different versions
-	ConvertQuery(ctx context.Context, req *QueryDataRequest) (*QueryConversionResponse, error)
+	ConvertQueryDataRequest(ctx context.Context, req *QueryDataRequest) (*QueryConversionResponse, error)
 }
 
 type ConvertQueryFunc func(ctx context.Context, req *QueryDataRequest) (*QueryConversionResponse, error)
 
+func (fn ConvertQueryFunc) ConvertQueryDataRequest(ctx context.Context, req *QueryDataRequest) (*QueryConversionResponse, error) {
+	return fn(ctx, req)
+}
+
 type QueryConversionResponse struct {
 	// Converted queries. It should extend v0alpha1.Query
-	QueryRequest *QueryDataRequest `json:"query"`
+	Queries []any
 	// Result contains extra details into why an conversion request was denied.
 	// +optional
-	Result *StatusResult `json:"result,omitempty"`
+	Result *StatusResult
 }

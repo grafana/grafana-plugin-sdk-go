@@ -21,6 +21,11 @@ type ConversionHandler interface {
 
 type ConvertObjectsFunc func(context.Context, *ConversionRequest) (*ConversionResponse, error)
 
+// QueryData calls fn(ctx, req).
+func (fn ConvertObjectsFunc) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
+	return fn(ctx, req)
+}
+
 type GroupVersion struct {
 	Group   string `json:"group,omitempty"`
 	Version string `json:"version,omitempty"`

@@ -37,18 +37,19 @@ func parseAsQueryRequest(req *ConversionRequest) ([]*QueryDataRequest, error) {
 	return requests, nil
 }
 
-func (a *conversionSDKAdapter) ConvertQueryDataRequest(ctx context.Context, requests []*QueryDataRequest) (*ConversionResponse, error) {
+func (a *conversionSDKAdapter) convertQueryDataRequest(ctx context.Context, requests []*QueryDataRequest) (*ConversionResponse, error) {
 	resp := &ConversionResponse{}
-	convertedRequests := make([]QueryDataRequest, 0, len(requests))
+	queries := []any{}
 	for _, req := range requests {
-		res, err := a.queryConversionHandler.ConvertQuery(ctx, req)
+		res, err := a.queryConversionHandler.ConvertQueryDataRequest(ctx, req)
 		if err != nil {
 			return nil, err
 		}
-		convertedRequests = append(convertedRequests, *res.QueryRequest)
+		// Queries are flattened into a single array
+		queries = append(queries, res.Queries...)
 	}
 
-	for _, req := range convertedRequests {
+	for _, req := range queries {
 		newJSON, err := json.Marshal(req)
 		if err != nil {
 			return nil, fmt.Errorf("marshal: %w", err)
@@ -72,7 +73,7 @@ func (a *conversionSDKAdapter) ConvertObjects(ctx context.Context, req *pluginv2
 			// Try to parse it as a query data request
 			reqs, err := parseAsQueryRequest(parsedReq)
 			if err == nil {
-				resp, innerErr = a.ConvertQueryDataRequest(ctx, reqs)
+				resp, innerErr = a.convertQueryDataRequest(ctx, reqs)
 				return RequestStatusFromError(innerErr), innerErr
 			}
 			// The object cannot be parsed as a query data request, so we will try to convert it as a generic object
