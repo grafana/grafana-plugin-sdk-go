@@ -9,7 +9,8 @@ import (
 )
 
 type conversionSDKAdapter struct {
-	handler                ConversionHandler
+	handler ConversionHandler
+	// queryConversionHandler can be nil if the adapter does not support query conversion.
 	queryConversionHandler QueryConversionHandler
 }
 
