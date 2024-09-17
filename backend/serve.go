@@ -65,6 +65,10 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
 	ConversionHandler ConversionHandler
 
+	// QueryConversionHandler converts queries between versions
+	// This is EXPERIMENTAL and is a subject to change till Grafana 12
+	QueryConversionHandler QueryConversionHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 }
@@ -90,8 +94,8 @@ func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
 		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
 	}
 
-	if opts.ConversionHandler != nil {
-		pluginOpts.ConversionServer = newConversionSDKAdapter(opts.ConversionHandler)
+	if opts.ConversionHandler != nil || opts.QueryConversionHandler != nil {
+		pluginOpts.ConversionServer = newConversionSDKAdapter(opts.ConversionHandler, opts.QueryConversionHandler)
 	}
 	return pluginOpts
 }
