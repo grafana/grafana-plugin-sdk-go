@@ -4,6 +4,8 @@ import (
 	"database/sql"
 	"fmt"
 	"reflect"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/errorsource"
 )
 
 // A ScanRow is a container for SQL metadata for a single row.
@@ -60,7 +62,7 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 	seen := map[string]int{}
 	for i, name := range colNames {
 		if j, ok := seen[name]; ok {
-			return nil, fmt.Errorf(`duplicate column names are not allowed, found identical name "%v" at column indices %v and %v`, name, j, i)
+			return nil, errorsource.DownstreamError(fmt.Errorf(`duplicate column names are not allowed, found identical name "%v" at column indices %v and %v`, name, j, i), false)
 		}
 		seen[name] = i
 	}
