@@ -43,11 +43,22 @@ func HandlerFromMiddlewares(finalHandler Handler, middlewares ...HandlerMiddlewa
 	}, nil
 }
 
+func (h *MiddlewareHandler) setupContext(ctx context.Context, pluginCtx PluginContext, endpoint Endpoint) context.Context {
+	ctx = initErrorSource(ctx)
+	ctx = WithEndpoint(ctx, endpoint)
+	ctx = WithPluginContext(ctx, pluginCtx)
+	ctx = WithGrafanaConfig(ctx, pluginCtx.GrafanaConfig)
+	ctx = WithUser(ctx, pluginCtx.User)
+	ctx = WithUserAgent(ctx, pluginCtx.UserAgent)
+	return ctx
+}
+
 func (h *MiddlewareHandler) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointQueryData)
 	return h.handler.QueryData(ctx, req)
 }
 
@@ -60,6 +71,7 @@ func (h MiddlewareHandler) CallResource(ctx context.Context, req *CallResourceRe
 		return errNilSender
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointCallResource)
 	return h.handler.CallResource(ctx, req, sender)
 }
 
@@ -68,6 +80,7 @@ func (h MiddlewareHandler) CollectMetrics(ctx context.Context, req *CollectMetri
 		return nil, errNilRequest
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointCollectMetrics)
 	return h.handler.CollectMetrics(ctx, req)
 }
 
@@ -76,6 +89,7 @@ func (h MiddlewareHandler) CheckHealth(ctx context.Context, req *CheckHealthRequ
 		return nil, errNilRequest
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointCheckHealth)
 	return h.handler.CheckHealth(ctx, req)
 }
 
@@ -84,6 +98,7 @@ func (h MiddlewareHandler) SubscribeStream(ctx context.Context, req *SubscribeSt
 		return nil, errNilRequest
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointSubscribeStream)
 	return h.handler.SubscribeStream(ctx, req)
 }
 
@@ -92,6 +107,7 @@ func (h MiddlewareHandler) PublishStream(ctx context.Context, req *PublishStream
 		return nil, errNilRequest
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointPublishStream)
 	return h.handler.PublishStream(ctx, req)
 }
 
@@ -104,6 +120,7 @@ func (h MiddlewareHandler) RunStream(ctx context.Context, req *RunStreamRequest,
 		return errors.New("sender cannot be nil")
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointRunStream)
 	return h.handler.RunStream(ctx, req, sender)
 }
 
@@ -120,6 +137,7 @@ func (h MiddlewareHandler) MutateAdmission(ctx context.Context, req *AdmissionRe
 		return nil, errNilRequest
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointMutateAdmission)
 	return h.handler.MutateAdmission(ctx, req)
 }
 
@@ -128,6 +146,7 @@ func (h MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionRe
 		return nil, errNilRequest
 	}
 
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointConvertObjects)
 	return h.handler.ConvertObjects(ctx, req)
 }
 
