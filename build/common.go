@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
@@ -152,7 +153,9 @@ func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
 		"build", "-o", filepath.Join(outputPath, exePath),
 	}
 
-	info := getBuildInfoFromEnvironment()
+	info := Info{
+		Time: now().UnixNano() / int64(time.Millisecond),
+	}
 	pluginID, err := internal.GetStringValueFromJSON(filepath.Join(pluginJSONPath, "plugin.json"), "id")
 	if err == nil && len(pluginID) > 0 {
 		info.PluginID = pluginID
