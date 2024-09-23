@@ -17,7 +17,7 @@ var dateUnitPattern = regexp.MustCompile(`^(\d+)([dwMy])$`)
 func ParseInterval(inp string) (time.Duration, error) {
 	dur, period, err := parse(inp)
 	if err != nil {
-		return 0, err
+		return 0, errorsource.DownstreamError(err, false)
 	}
 	if period == "" {
 		return dur, nil
