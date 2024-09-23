@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"errors"
+	"slices"
 )
 
 var (
@@ -29,7 +30,8 @@ func (fn HandlerMiddlewareFunc) CreateHandlerMiddleware(next Handler) Handler {
 
 // MiddlewareHandler decorates a Handler with HandlerMiddleware's.
 type MiddlewareHandler struct {
-	handler Handler
+	middlewares  []HandlerMiddleware
+	finalHandler Handler
 }
 
 // HandlerFromMiddlewares creates a new MiddlewareHandler implementing Handler that decorates finalHandler with middlewares.
@@ -39,7 +41,8 @@ func HandlerFromMiddlewares(finalHandler Handler, middlewares ...HandlerMiddlewa
 	}
 
 	return &MiddlewareHandler{
-		handler: handlerFromMiddlewares(middlewares, finalHandler),
+		middlewares:  middlewares,
+		finalHandler: finalHandler,
 	}, nil
 }
 
@@ -59,7 +62,8 @@ func (h *MiddlewareHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointQueryData)
-	return h.handler.QueryData(ctx, req)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.QueryData(ctx, req)
 }
 
 func (h MiddlewareHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
@@ -72,7 +76,8 @@ func (h MiddlewareHandler) CallResource(ctx context.Context, req *CallResourceRe
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointCallResource)
-	return h.handler.CallResource(ctx, req, sender)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.CallResource(ctx, req, sender)
 }
 
 func (h MiddlewareHandler) CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error) {
@@ -81,7 +86,8 @@ func (h MiddlewareHandler) CollectMetrics(ctx context.Context, req *CollectMetri
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointCollectMetrics)
-	return h.handler.CollectMetrics(ctx, req)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.CollectMetrics(ctx, req)
 }
 
 func (h MiddlewareHandler) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
@@ -90,7 +96,8 @@ func (h MiddlewareHandler) CheckHealth(ctx context.Context, req *CheckHealthRequ
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointCheckHealth)
-	return h.handler.CheckHealth(ctx, req)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.CheckHealth(ctx, req)
 }
 
 func (h MiddlewareHandler) SubscribeStream(ctx context.Context, req *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
@@ -99,7 +106,8 @@ func (h MiddlewareHandler) SubscribeStream(ctx context.Context, req *SubscribeSt
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointSubscribeStream)
-	return h.handler.SubscribeStream(ctx, req)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.SubscribeStream(ctx, req)
 }
 
 func (h MiddlewareHandler) PublishStream(ctx context.Context, req *PublishStreamRequest) (*PublishStreamResponse, error) {
@@ -108,7 +116,8 @@ func (h MiddlewareHandler) PublishStream(ctx context.Context, req *PublishStream
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointPublishStream)
-	return h.handler.PublishStream(ctx, req)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.PublishStream(ctx, req)
 }
 
 func (h MiddlewareHandler) RunStream(ctx context.Context, req *RunStreamRequest, sender *StreamSender) error {
@@ -121,7 +130,8 @@ func (h MiddlewareHandler) RunStream(ctx context.Context, req *RunStreamRequest,
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointRunStream)
-	return h.handler.RunStream(ctx, req, sender)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.RunStream(ctx, req, sender)
 }
 
 func (h MiddlewareHandler) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
@@ -129,7 +139,9 @@ func (h MiddlewareHandler) ValidateAdmission(ctx context.Context, req *Admission
 		return nil, errNilRequest
 	}
 
-	return h.handler.ValidateAdmission(ctx, req)
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointValidateAdmission)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.ValidateAdmission(ctx, req)
 }
 
 func (h MiddlewareHandler) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
@@ -138,7 +150,8 @@ func (h MiddlewareHandler) MutateAdmission(ctx context.Context, req *AdmissionRe
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointMutateAdmission)
-	return h.handler.MutateAdmission(ctx, req)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.MutateAdmission(ctx, req)
 }
 
 func (h MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
@@ -147,7 +160,8 @@ func (h MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionRe
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointConvertObjects)
-	return h.handler.ConvertObjects(ctx, req)
+	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
+	return handler.ConvertObjects(ctx, req)
 }
 
 func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handler) Handler {
@@ -155,23 +169,13 @@ func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handle
 		return finalHandler
 	}
 
-	reversed := reverseMiddlewares(middlewares)
+	clonedMws := slices.Clone(middlewares)
+	slices.Reverse(clonedMws)
 	next := finalHandler
 
-	for _, m := range reversed {
+	for _, m := range clonedMws {
 		next = m.CreateHandlerMiddleware(next)
 	}
 
 	return next
-}
-
-func reverseMiddlewares(middlewares []HandlerMiddleware) []HandlerMiddleware {
-	reversed := make([]HandlerMiddleware, len(middlewares))
-	copy(reversed, middlewares)
-
-	for i, j := 0, len(reversed)-1; i < j; i, j = i+1, j-1 {
-		reversed[i], reversed[j] = reversed[j], reversed[i]
-	}
-
-	return reversed
 }
