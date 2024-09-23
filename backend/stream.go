@@ -175,7 +175,7 @@ type RunStreamRequest struct {
 	Data          json.RawMessage
 }
 
-// StreamPacket represent a stream packet.
+// StreamPacket represents a stream packet.
 type StreamPacket struct {
 	Data json.RawMessage
 }
