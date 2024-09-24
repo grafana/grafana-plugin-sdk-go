@@ -5,8 +5,8 @@ import (
 )
 
 const (
-	// EndpointConvertObject friendly name for the convert object endpoint/handler.
-	EndpointConvertObject Endpoint = "convertObject"
+	// EndpointConvertObjects friendly name for the convert objects endpoint/handler.
+	EndpointConvertObjects Endpoint = "convertObjects"
 )
 
 // ConversionHandler is an EXPERIMENTAL service that allows converting objects between versions

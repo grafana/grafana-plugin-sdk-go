@@ -64,7 +64,7 @@ func (a *conversionSDKAdapter) convertQueryDataRequest(ctx context.Context, requ
 }
 
 func (a *conversionSDKAdapter) ConvertObjects(ctx context.Context, req *pluginv2.ConversionRequest) (*pluginv2.ConversionResponse, error) {
-	ctx = setupContext(ctx, EndpointConvertObject)
+	ctx = setupContext(ctx, EndpointConvertObjects)
 	parsedReq := FromProto().ConversionRequest(req)
 
 	resp := &ConversionResponse{}
