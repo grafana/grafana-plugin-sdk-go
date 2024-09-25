@@ -18,7 +18,7 @@ var NewLoggerWith = func(args ...interface{}) log.Logger {
 }
 
 func withContextualLogAttributes(ctx context.Context, pCtx PluginContext) context.Context {
-	args := []any{"pluginID", pCtx.PluginID}
+	args := []any{"pluginId", pCtx.PluginID}
 
 	endpoint := EndpointFromContext(ctx)
 	if !endpoint.IsEmpty() {
@@ -26,13 +26,13 @@ func withContextualLogAttributes(ctx context.Context, pCtx PluginContext) contex
 	}
 
 	if tid := trace.SpanContextFromContext(ctx).TraceID(); tid.IsValid() {
-		args = append(args, "traceID", tid.String())
+		args = append(args, "traceId", tid.String())
 	}
 	if pCtx.DataSourceInstanceSettings != nil {
 		args = append(
 			args,
 			"dsName", pCtx.DataSourceInstanceSettings.Name,
-			"dsUID", pCtx.DataSourceInstanceSettings.UID,
+			"dsUid", pCtx.DataSourceInstanceSettings.UID,
 		)
 		if pCtx.User != nil {
 			args = append(args, "uname", pCtx.User.Name)
