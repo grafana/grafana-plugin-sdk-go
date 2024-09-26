@@ -207,6 +207,15 @@ func TestQueryData(t *testing.T) {
 				expErrorSource:    ErrorSourcePlugin,
 				expError:          true,
 			},
+			{
+				name: `single error that we override as "downstream" should be "downstream" error source even if "plugin" error source`,
+				queryDataResponse: &QueryDataResponse{
+					Responses: map[string]DataResponse{
+						"A": {Error: context.Canceled, ErrorSource: ErrorSourcePlugin},
+					},
+				},
+				expErrorSource: ErrorSourceDownstream,
+			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
 				var actualCtx context.Context
