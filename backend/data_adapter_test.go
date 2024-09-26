@@ -225,6 +225,15 @@ func TestQueryData(t *testing.T) {
 				},
 				expErrorSource: ErrorSourceDownstream,
 			},
+			{
+				name: `single error response that has no error source should have "plugin" error source`,
+				queryDataResponse: &QueryDataResponse{
+					Responses: map[string]DataResponse{
+						"A": {Error: someErr},
+					},
+				},
+				expErrorSource: ErrorSourcePlugin,
+			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
 				var actualCtx context.Context
