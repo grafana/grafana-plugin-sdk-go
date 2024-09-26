@@ -216,6 +216,15 @@ func TestQueryData(t *testing.T) {
 				},
 				expErrorSource: ErrorSourceDownstream,
 			},
+			{
+				name: `single error that we override as "downstream" and has no error source should have "downstream" error source`,
+				queryDataResponse: &QueryDataResponse{
+					Responses: map[string]DataResponse{
+						"A": {Error: context.Canceled},
+					},
+				},
+				expErrorSource: ErrorSourceDownstream,
+			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
 				var actualCtx context.Context

@@ -48,6 +48,9 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			// we check if error is downstream error and set the error source to downstream.
 			if IsDownstreamError(r.Error) {
 				r.ErrorSource = ErrorSourceDownstream
+			// otherwise we check if error source is valid and if not, we set it to plugin.
+			} else if !r.ErrorSource.IsValid() {
+				r.ErrorSource = ErrorSourcePlugin
 			}
 
 			if !r.Status.IsValid() {
