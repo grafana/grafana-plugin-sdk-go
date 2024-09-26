@@ -120,6 +120,11 @@ func tracingWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 	return func(ctx context.Context) (RequestStatus, error) {
 		start := time.Now()
+
+		ctxLogger := Logger.FromContext(ctx)
+		logFunc := ctxLogger.Debug
+		logFunc("Plugin Request Started")
+
 		status, err := next(ctx)
 
 		logParams := []any{
@@ -133,8 +138,6 @@ func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 
 		logParams = append(logParams, "statusSource", string(errorSourceFromContext(ctx)))
 
-		ctxLogger := Logger.FromContext(ctx)
-		logFunc := ctxLogger.Debug
 		if status > RequestStatusCancelled {
 			logFunc = ctxLogger.Error
 		}
