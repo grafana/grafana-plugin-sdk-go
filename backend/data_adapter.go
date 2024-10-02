@@ -41,7 +41,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		// and if there's no plugin error
 		var hasPluginError, hasDownstreamError bool
 		for refID, r := range resp.Responses {
-			if r.Error == nil {
+			if r.Error == nil || isCancelledError(r.Error) {
 				continue
 			}
 
