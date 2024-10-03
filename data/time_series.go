@@ -6,6 +6,8 @@ import (
 	"sort"
 	"strconv"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/errorsource"
 )
 
 // TimeSeriesType represents the type of time series the schema can be treated as (if any).
@@ -308,7 +310,7 @@ func (p *longRowProcessor) process(longRowIdx int) error {
 	}
 
 	if currentTime.Before(p.lastTime) {
-		return fmt.Errorf("long series must be sorted ascending by time to be converted")
+		return errorsource.DownstreamError(fmt.Errorf("long series must be sorted ascending by time to be converted"), false)
 	}
 
 	sliceKey := make(tupleLabels, len(p.tsSchema.FactorIndices)) // factor columns idx:value tuples (used for lookup)
