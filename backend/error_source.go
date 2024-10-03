@@ -4,7 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
+	"os"
+	"syscall"
+
+	grpccodes "google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 )
 
 // ErrorSource type defines the source of the error
@@ -142,4 +148,75 @@ func WithErrorSource(ctx context.Context, s ErrorSource) error {
 // called before this function.
 func WithDownstreamErrorSource(ctx context.Context) error {
 	return WithErrorSource(ctx, ErrorSourceDownstream)
+}
+
+func IsDownstreamHttpError(err error) bool {
+	e := errorWithSourceImpl{
+		source: ErrorSourceDownstream,
+	}
+	if errors.Is(err, e) {
+		return true
+	}
+
+	type errorWithSource interface {
+		ErrorSource() ErrorSource
+	}
+
+	// nolint:errorlint
+	if errWithSource, ok := err.(errorWithSource); ok && errWithSource.ErrorSource() == ErrorSourceDownstream {
+		return true
+	}
+
+	// Check if the error is a HTTP timeout error or a context cancelled error
+	if isHTTPTimeoutError(err){
+		return true
+	}
+
+	if isCancelledError(err) {	
+		return true
+	}
+
+	if isConnectionResetOrRefusedError(err) {
+		return true
+	}
+
+	if isDnsNotFoundError(err) {
+		return true
+	}
+
+	return false
+}
+
+
+func isCancelledError(err error) bool {
+	return errors.Is(err, context.Canceled) || grpcstatus.Code(err) == grpccodes.Canceled
+}
+
+func isHTTPTimeoutError(err error) bool {
+	var netErr net.Error
+	if errors.As(err, &netErr) && netErr.Timeout() {
+		return true
+	}
+
+	return errors.Is(err, os.ErrDeadlineExceeded) // replacement for os.IsTimeout(err)
+}
+
+func isConnectionResetOrRefusedError(err error) bool {
+	var netErr *net.OpError
+	if errors.As(err, &netErr) {
+		if sysErr, ok := netErr.Err.(*os.SyscallError); ok {
+			return sysErr.Err == syscall.ECONNRESET || sysErr.Err == syscall.ECONNREFUSED
+		}
+	}
+
+	return false
+}
+
+func isDnsNotFoundError(err error) bool {
+	var dnsError *net.DNSError
+	if errors.As(err, &dnsError) && dnsError.IsNotFound {
+		return true
+	}
+
+	return false
 }
