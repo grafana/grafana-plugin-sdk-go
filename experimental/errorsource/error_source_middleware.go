@@ -4,6 +4,7 @@ import (
 	"errors"
 	"net"
 	"net/http"
+	"strings"
 	"syscall"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -31,6 +32,9 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 		}
 		var dnsError *net.DNSError
 		if errors.As(err, &dnsError) && dnsError.IsNotFound {
+			return res, Error{source: backend.ErrorSourceDownstream, err: err}
+		}
+		if strings.Contains(err.Error(), "unsupported protocol scheme") {
 			return res, Error{source: backend.ErrorSourceDownstream, err: err}
 		}
 		return res, err
