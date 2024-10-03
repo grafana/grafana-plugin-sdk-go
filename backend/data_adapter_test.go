@@ -224,7 +224,7 @@ func TestQueryData(t *testing.T) {
 					require.NoError(t, err)
 				}
 
-				ss := errorSourceFromContext(actualCtx)
+				ss := ErrorSourceFromContext(actualCtx)
 				require.Equal(t, tc.expErrorSource, ss)
 			})
 		}
