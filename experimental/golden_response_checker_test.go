@@ -6,6 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/stretchr/testify/require"
@@ -33,7 +35,7 @@ func TestGoldenResponseChecker(t *testing.T) {
 			}).SetConfig(&data.FieldConfig{DisplayName: "123"}),
 		),
 	}
-	dr.Status = backend.StatusOK
+	dr.Status = errorsource.StatusOK
 
 	t.Run("create data frames with no meta", func(t *testing.T) {
 		goldenFile := "frame-no-meta.golden"

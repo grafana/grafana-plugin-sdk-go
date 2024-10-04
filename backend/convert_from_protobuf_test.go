@@ -9,6 +9,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
 
@@ -485,34 +487,34 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 	t.Run("Should convert data query response", func(t *testing.T) {
 		tcs := []struct {
 			rsp                 *pluginv2.DataResponse
-			expectedStatus      Status
-			expectedErrorSource ErrorSource
+			expectedStatus      errorsource.Status
+			expectedErrorSource errorsource.ErrorSource
 		}{
 			{
 				rsp: &pluginv2.DataResponse{
 					Status: http.StatusOK,
 				},
-				expectedStatus: StatusOK,
+				expectedStatus: errorsource.StatusOK,
 			}, {
 				rsp: &pluginv2.DataResponse{
 					Status: http.StatusFailedDependency,
 				},
-				expectedStatus: Status(424),
+				expectedStatus: errorsource.Status(424),
 			}, {
 				rsp: &pluginv2.DataResponse{
 					Status: http.StatusInternalServerError,
 					Error:  "foo",
 				},
-				expectedStatus: Status(500),
+				expectedStatus: errorsource.Status(500),
 			},
 			{
 				rsp: &pluginv2.DataResponse{
 					Status:      http.StatusInternalServerError,
 					Error:       "foo",
-					ErrorSource: string(ErrorSourceDownstream),
+					ErrorSource: string(errorsource.ErrorSourceDownstream),
 				},
-				expectedStatus:      Status(500),
-				expectedErrorSource: ErrorSourceDownstream,
+				expectedStatus:      errorsource.Status(500),
+				expectedErrorSource: errorsource.ErrorSourceDownstream,
 			},
 		}
 

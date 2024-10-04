@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"net"
 	"net/http"
+	"syscall"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
 
@@ -268,4 +270,47 @@ func (nm *namedMiddleware) CreateMiddleware(opts Options, next http.RoundTripper
 
 func (nm *namedMiddleware) MiddlewareName() string {
 	return nm.Name
+}
+
+const httpClientName = "errorsource"
+
+// NewErrorSourceHttpClient wraps the existing http client constructor and adds the error source middleware
+func NewErrorSourceHttpClient(opts ...Options) (*http.Client, error) {
+	if len(opts) == 0 {
+		opts = append(opts, Options{
+			Middlewares: DefaultMiddlewares(),
+		})
+	}
+	if len(opts[0].Middlewares) == 0 {
+		opts[0].Middlewares = DefaultMiddlewares()
+	}
+	opts[0].Middlewares = append(opts[0].Middlewares, ErrorSourceMiddleware(httpClientName))
+	return New(opts...)
+}
+
+// ErrorSourceMiddleware captures error source metric
+func ErrorSourceMiddleware(plugin string) Middleware {
+	return NamedMiddlewareFunc(plugin, RoundTripper)
+}
+
+// RoundTripper returns the error source
+func RoundTripper(_ Options, next http.RoundTripper) http.RoundTripper {
+	return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		res, err := next.RoundTrip(req)
+		if res != nil && res.StatusCode >= 400 {
+			errorSource := errorsource.ErrorSourceFromHTTPStatus(res.StatusCode)
+			if err == nil {
+				err = errors.New(res.Status)
+			}
+			return res, errorsource.WithSource(errorSource, err, false) // should this be override: true?
+		}
+		if errors.Is(err, syscall.ECONNREFUSED) {
+			return res, errorsource.WithDownstreamSource(err, false)
+		}
+		var dnsError *net.DNSError
+		if errors.As(err, &dnsError) && dnsError.IsNotFound {
+			return res, errorsource.WithDownstreamSource(err, false)
+		}
+		return res, err
+	})
 }

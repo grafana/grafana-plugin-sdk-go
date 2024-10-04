@@ -8,6 +8,8 @@ import (
 	"sync"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/prometheus/client_golang/prometheus"
@@ -35,7 +37,7 @@ func wrapHandler(ctx context.Context, pluginCtx PluginContext, next handlerWrapp
 }
 
 func setupHandlerContext(ctx context.Context, pluginCtx PluginContext) context.Context {
-	ctx = initErrorSource(ctx)
+	ctx = errorsource.InitContext(ctx)
 	ctx = WithGrafanaConfig(ctx, pluginCtx.GrafanaConfig)
 	ctx = WithPluginContext(ctx, pluginCtx)
 	ctx = WithUser(ctx, pluginCtx.User)
@@ -48,8 +50,8 @@ func errorWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 	return func(ctx context.Context) (RequestStatus, error) {
 		status, err := next(ctx)
 
-		if err != nil && IsDownstreamError(err) {
-			if innerErr := WithDownstreamErrorSource(ctx); innerErr != nil {
+		if err != nil && errorsource.IsDownstreamError(err) {
+			if innerErr := errorsource.WithDownstreamErrorSource(ctx); innerErr != nil {
 				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
 			}
 		}
@@ -75,7 +77,7 @@ func metricWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 		endpoint := EndpointFromContext(ctx)
 		status, err := next(ctx)
 
-		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String(), string(errorSourceFromContext(ctx))).Inc()
+		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String(), string(errorsource.FromContext(ctx))).Inc()
 
 		return status, err
 	}
@@ -106,7 +108,7 @@ func tracingWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 
 		span.SetAttributes(
 			attribute.String("request_status", status.String()),
-			attribute.String("status_source", string(errorSourceFromContext(ctx))),
+			attribute.String("status_source", string(errorsource.FromContext(ctx))),
 		)
 
 		if err != nil {
@@ -136,7 +138,7 @@ func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 			logParams = append(logParams, "error", err)
 		}
 
-		logParams = append(logParams, "statusSource", string(errorSourceFromContext(ctx)))
+		logParams = append(logParams, "statusSource", string(errorsource.FromContext(ctx)))
 
 		if status > RequestStatusCancelled {
 			logFunc = ctxLogger.Error

@@ -4,6 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -148,9 +150,9 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 			return nil, err
 		}
 
-		status := Status(res.Status)
+		status := errorsource.Status(res.Status)
 		if !status.IsValid() {
-			status = StatusUnknown
+			status = errorsource.StatusUnknown
 		}
 
 		dr := DataResponse{
@@ -159,7 +161,7 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
-			dr.ErrorSource = ErrorSource(res.ErrorSource)
+			dr.ErrorSource = errorsource.ErrorSource(res.ErrorSource)
 		}
 		qdr.Responses[refID] = dr
 	}

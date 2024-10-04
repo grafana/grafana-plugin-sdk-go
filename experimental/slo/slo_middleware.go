@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -61,15 +63,15 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 		}
 		if res != nil {
 			statusCode = res.StatusCode
-			source = Source(FromStatus(backend.Status(res.StatusCode)))
+			source = Source(FromStatus(errorsource.Status(res.StatusCode)))
 		}
 		return res, err
 	})
 }
 
 // FromStatus returns the error source from backend status
-func FromStatus(status backend.Status) backend.ErrorSource {
-	return backend.ErrorSourceFromHTTPStatus(int(status))
+func FromStatus(status errorsource.Status) errorsource.ErrorSource {
+	return errorsource.ErrorSourceFromHTTPStatus(int(status))
 }
 
 // NewClient wraps the existing http client constructor and adds the duration middleware

@@ -8,6 +8,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -73,7 +75,7 @@ func TestResponseEncoder(t *testing.T) {
 	err = json.Unmarshal(b, respCopy)
 	require.NoError(t, err)
 	require.Equal(t, len(qdr.Responses), len(respCopy.Responses))
-	require.Equal(t, backend.Status(202), respCopy.Responses["A"].Status)
+	require.Equal(t, errorsource.Status(202), respCopy.Responses["A"].Status)
 
 	// Check the final result
 	for k, val := range qdr.Responses {

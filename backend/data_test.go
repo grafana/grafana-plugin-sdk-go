@@ -1,8 +1,11 @@
 package backend
 
 import (
+	"errors"
 	"strings"
 	"testing"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
 
 	"github.com/stretchr/testify/require"
 )
@@ -102,4 +105,80 @@ func TestQueryDataRequest(t *testing.T) {
 			require.Empty(t, req.Headers)
 		})
 	})
+}
+
+func TestResponse(t *testing.T) {
+	for _, tc := range []struct {
+		name            string
+		err             error
+		expStatus       errorsource.Status
+		expErrorMessage string
+		expErrorSource  errorsource.ErrorSource
+	}{
+		{
+			name:            "generic error",
+			err:             errors.New("other"),
+			expStatus:       errorsource.StatusUnknown,
+			expErrorMessage: "other",
+			expErrorSource:  errorsource.ErrorSourcePlugin,
+		},
+		{
+			name:            "downstream error",
+			err:             errorsource.WithDownstreamSource(errors.New("bad gateway"), false),
+			expStatus:       0,
+			expErrorMessage: "bad gateway",
+			expErrorSource:  errorsource.ErrorSourceDownstream,
+		},
+		{
+			name:            "plugin error",
+			err:             errorsource.WithPluginSource(errors.New("internal error"), false),
+			expStatus:       0,
+			expErrorMessage: "internal error",
+			expErrorSource:  errorsource.ErrorSourcePlugin,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			res := ErrorResponse(tc.err)
+			require.Error(t, res.Error)
+			require.Equal(t, tc.expStatus, res.Status)
+			require.Equal(t, tc.expErrorMessage, res.Error.Error())
+			require.Equal(t, tc.expErrorSource, res.ErrorSource)
+		})
+	}
+}
+
+func TestResponseWithOptions(t *testing.T) {
+	unknown := errorsource.New(errors.New("unknown"), errorsource.ErrorSourcePlugin, errorsource.StatusUnknown)
+	badgateway := errorsource.New(errors.New("bad gateway"), errorsource.ErrorSourceDownstream, errorsource.StatusBadGateway)
+
+	for _, tc := range []struct {
+		name            string
+		err             errorsource.Error
+		expStatus       errorsource.Status
+		expErrorMessage string
+		expErrorSource  errorsource.ErrorSource
+	}{
+		{
+			name:            "unknown error",
+			err:             unknown,
+			expStatus:       errorsource.StatusUnknown,
+			expErrorMessage: unknown.Error(),
+			expErrorSource:  errorsource.ErrorSourcePlugin,
+		},
+		{
+			name:            "bad gateway",
+			err:             badgateway,
+			expStatus:       errorsource.StatusBadGateway,
+			expErrorMessage: badgateway.Error(),
+			expErrorSource:  errorsource.ErrorSourceDownstream,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			res := ErrorResponse(tc.err)
+			require.Error(t, res.Error)
+			require.Equal(t, tc.expStatus, res.Status)
+			require.Equal(t, tc.expErrorMessage, res.Error.Error())
+			require.Equal(t, tc.expErrorSource, res.ErrorSource)
+		})
+	}
 }

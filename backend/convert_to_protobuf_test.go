@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/mitchellh/reflectwalk"
@@ -22,8 +24,8 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 	tcs := []struct {
 		name        string
 		err         error
-		status      Status
-		errorSource ErrorSource
+		status      errorsource.Status
+		errorSource errorsource.ErrorSource
 
 		expectedStatus      int32
 		expectedErrorSource string
@@ -31,44 +33,44 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 		{
 			name:           "If a HTTP Status code is used, use backend.Status equivalent status code",
 			status:         http.StatusOK,
-			expectedStatus: int32(StatusOK),
+			expectedStatus: int32(errorsource.StatusOK),
 		},
 		{
 			name:           "If a backend.Status is used, use backend.Status int code",
-			status:         StatusTooManyRequests,
-			expectedStatus: int32(StatusTooManyRequests),
+			status:         errorsource.StatusTooManyRequests,
+			expectedStatus: int32(errorsource.StatusTooManyRequests),
 		},
 		{
 			name:           "syscall.ECONNREFUSED is inferred as a Status Bad Gateway",
 			err:            syscall.ECONNREFUSED,
-			expectedStatus: int32(StatusBadGateway),
+			expectedStatus: int32(errorsource.StatusBadGateway),
 		},
 		{
 			name:           "os.ErrDeadlineExceeded is inferred as a Status Timeout",
 			err:            os.ErrDeadlineExceeded,
-			expectedStatus: int32(StatusTimeout),
+			expectedStatus: int32(errorsource.StatusTimeout),
 		},
 		{
 			name:           "fs.ErrPermission is inferred as a Status Unauthorized",
 			err:            fs.ErrPermission,
-			expectedStatus: int32(StatusUnauthorized),
+			expectedStatus: int32(errorsource.StatusUnauthorized),
 		},
 		{
 			name:           "Custom error is inferred as a Status Unknown",
 			err:            fmt.Errorf("some custom error"),
-			expectedStatus: int32(StatusUnknown),
+			expectedStatus: int32(errorsource.StatusUnknown),
 		},
 		{
 			name:           "A wrapped error is appropriately inferred",
 			err:            fmt.Errorf("wrap 2: %w", fmt.Errorf("wrap 1: %w", os.ErrDeadlineExceeded)),
-			expectedStatus: int32(StatusTimeout),
+			expectedStatus: int32(errorsource.StatusTimeout),
 		},
 		{
 			name:                "ErrorSource is marshalled",
 			err:                 errors.New("oh no"),
-			status:              StatusBadGateway,
-			errorSource:         ErrorSourceDownstream,
-			expectedStatus:      int32(StatusBadGateway),
+			status:              errorsource.StatusBadGateway,
+			errorSource:         errorsource.ErrorSourceDownstream,
+			expectedStatus:      int32(errorsource.StatusBadGateway),
 			expectedErrorSource: "downstream",
 		},
 	}

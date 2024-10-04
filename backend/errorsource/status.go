@@ -1,4 +1,4 @@
-package backend
+package errorsource
 
 import (
 	"errors"
@@ -86,9 +86,9 @@ func (s Status) String() string {
 	return StatusUnknown.String()
 }
 
-func statusFromError(err error) Status {
+func StatusFromError(err error) Status {
 	for {
-		result := guessErrorStatus(err)
+		result := GuessErrorStatus(err)
 		if result != StatusUnknown {
 			return result
 		}
@@ -98,7 +98,7 @@ func statusFromError(err error) Status {
 	}
 }
 
-func guessErrorStatus(err error) Status {
+func GuessErrorStatus(err error) Status {
 	if os.IsTimeout(err) {
 		return StatusTimeout
 	}

@@ -7,6 +7,8 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -185,14 +187,14 @@ type DataResponse struct {
 	Error error
 
 	// Status codes map to HTTP status values
-	Status Status
+	Status errorsource.Status
 
 	// ErrorSource is the the source of the error
-	ErrorSource ErrorSource
+	ErrorSource errorsource.ErrorSource
 }
 
 // ErrDataResponse returns an error DataResponse given status and message.
-func ErrDataResponse(status Status, message string) DataResponse {
+func ErrDataResponse(status errorsource.Status, message string) DataResponse {
 	return DataResponse{
 		Error:  errors.New(message),
 		Status: status,
@@ -200,7 +202,7 @@ func ErrDataResponse(status Status, message string) DataResponse {
 }
 
 // ErrDataResponseWithSource returns an error DataResponse given status, source of the error and message.
-func ErrDataResponseWithSource(status Status, src ErrorSource, message string) DataResponse {
+func ErrDataResponseWithSource(status errorsource.Status, src errorsource.ErrorSource, message string) DataResponse {
 	return DataResponse{
 		Error:       errors.New(message),
 		ErrorSource: src,
@@ -246,3 +248,31 @@ func (tr TimeRange) Duration() time.Duration {
 }
 
 var _ ForwardHTTPHeaders = (*QueryDataRequest)(nil)
+
+// AddPluginErrorToResponse adds the error as plugin error source to the response
+// if the error already has a source, the existing source will be used
+func AddPluginErrorToResponse(refID string, response *QueryDataResponse, err error) *QueryDataResponse {
+	return AddErrorToResponse(refID, response, errorsource.WithPluginSource(err, false))
+}
+
+// AddDownstreamErrorToResponse adds the error as downstream source to the response
+// if the error already has a source, the existing source will be used
+func AddDownstreamErrorToResponse(refID string, response *QueryDataResponse, err error) *QueryDataResponse {
+	return AddErrorToResponse(refID, response, errorsource.WithDownstreamSource(err, false))
+}
+
+// AddErrorToResponse adds the error to the response
+func AddErrorToResponse(refID string, response *QueryDataResponse, err error) *QueryDataResponse {
+	response.Responses[refID] = ErrorResponse(err)
+	return response
+}
+
+// ErrorResponse returns an error DataResponse given status, source of the error and message.
+func ErrorResponse(err error) DataResponse {
+	source, status := errorsource.GetSourceAndStatus(err)
+	return DataResponse{
+		Error:       err,
+		ErrorSource: source,
+		Status:      status,
+	}
+}

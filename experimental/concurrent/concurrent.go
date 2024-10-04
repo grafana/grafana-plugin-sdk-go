@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"golang.org/x/sync/errgroup"
@@ -57,7 +59,7 @@ func QueryData(ctx context.Context, req *backend.QueryDataRequest, fn QueryDataF
 				err = fmt.Errorf("unexpected error - %w", err)
 			}
 			// Due to the panic, there is no valid response for any query for this datasource. Append an error for each one.
-			rchan <- splitResponse{backend.DataResponse{Status: backend.StatusInternal, Error: err}, q.RefID}
+			rchan <- splitResponse{backend.DataResponse{Status: errorsource.StatusInternal, Error: err}, q.RefID}
 		}
 	}
 

@@ -1,10 +1,15 @@
 package httpclient
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
+	"net/url"
 	"testing"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+	"github.com/stretchr/testify/assert"
 
 	"github.com/stretchr/testify/require"
 )
@@ -232,4 +237,33 @@ func TestReverseMiddlewares(t *testing.T) {
 		require.Equal(t, "mw2", reversed[2].(MiddlewareName).MiddlewareName())
 		require.Equal(t, "mw1", reversed[3].(MiddlewareName).MiddlewareName())
 	})
+}
+
+func TestShouldErrorDownstream(t *testing.T) {
+	c, err := NewErrorSourceHttpClient()
+	if err != nil {
+		t.Fail()
+	}
+	assert.NotNil(t, c)
+	req := http.Request{
+		URL: &url.URL{
+			Scheme: "http",
+			Host:   "localhost",
+		},
+		Header: http.Header{},
+	}
+
+	res, err := c.Transport.RoundTrip(&req)
+	if err == nil {
+		t.Fail()
+		return
+	}
+	if res != nil {
+		defer res.Body.Close()
+	}
+
+	var e errorsource.Error
+	errors.As(err, &e)
+
+	assert.Equal(t, errorsource.ErrorSourceDownstream, e.Source())
 }

@@ -5,6 +5,8 @@ import (
 	"sort"
 	"unsafe"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 )
@@ -60,7 +62,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		started = true
 
 		if !status.IsValid() {
-			status = statusFromError(dr.Error)
+			status = errorsource.StatusFromError(dr.Error)
 		}
 
 		stream.WriteMore()
@@ -76,7 +78,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		if status.IsValid() {
 			stream.WriteInt32(int32(status))
 		} else if status == 0 {
-			stream.WriteInt32(int32(StatusOK))
+			stream.WriteInt32(int32(errorsource.StatusOK))
 		}
 		started = true
 	}
@@ -169,10 +171,10 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 			rsp.Error = fmt.Errorf(iter.ReadString())
 
 		case "status":
-			rsp.Status = Status(iter.ReadInt32())
+			rsp.Status = errorsource.Status(iter.ReadInt32())
 
 		case "errorSource":
-			rsp.ErrorSource = ErrorSource(iter.ReadString())
+			rsp.ErrorSource = errorsource.ErrorSource(iter.ReadString())
 
 		case "frames":
 			for iter.ReadArray() {

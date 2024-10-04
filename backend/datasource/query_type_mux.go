@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
@@ -111,7 +113,7 @@ func fallbackHandler(_ context.Context, req *backend.QueryDataRequest) (*backend
 	for _, q := range req.Queries {
 		responses[q.RefID] = backend.DataResponse{
 			Error:       fmt.Errorf("no handler found for query type '%s'", q.QueryType),
-			ErrorSource: backend.ErrorSourcePlugin,
+			ErrorSource: errorsource.ErrorSourcePlugin,
 		}
 	}
 

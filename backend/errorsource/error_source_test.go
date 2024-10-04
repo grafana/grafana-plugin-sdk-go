@@ -1,4 +1,4 @@
-package backend
+package errorsource
 
 import (
 	"context"
@@ -139,4 +139,13 @@ func (d *fakeNetworkError) Timeout() bool {
 
 func (d *fakeNetworkError) Temporary() bool {
 	return d.temporary
+}
+
+func TestError(t *testing.T) {
+	err := errors.New("boom")
+	require.False(t, IsDownstreamError(err))
+	pErr := WithPluginSource(err, true)
+	require.False(t, IsDownstreamError(pErr))
+	dErr := WithDownstreamSource(err, true)
+	require.True(t, IsDownstreamError(dErr))
 }

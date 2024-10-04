@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -41,20 +43,20 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		// and if there's no plugin error
 		var hasPluginError, hasDownstreamError bool
 		for refID, r := range resp.Responses {
-			if r.Error == nil || isCancelledError(r.Error) {
+			if r.Error == nil || errorsource.IsCancelledError(r.Error) {
 				continue
 			}
 
 			// if error source not set and the error is a downstream error, set error source to downstream.
-			if !r.ErrorSource.IsValid() && IsDownstreamError(r.Error) {
-				r.ErrorSource = ErrorSourceDownstream
+			if !r.ErrorSource.IsValid() && errorsource.IsDownstreamError(r.Error) {
+				r.ErrorSource = errorsource.ErrorSourceDownstream
 			}
 
 			if !r.Status.IsValid() {
-				r.Status = statusFromError(r.Error)
+				r.Status = errorsource.StatusFromError(r.Error)
 			}
 
-			if r.ErrorSource == ErrorSourceDownstream {
+			if r.ErrorSource == errorsource.ErrorSourceDownstream {
 				hasDownstreamError = true
 			} else {
 				hasPluginError = true
@@ -72,11 +74,11 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		// A plugin error has higher priority than a downstream error,
 		// so set to downstream only if there's no plugin error
 		if hasPluginError {
-			if err := WithErrorSource(ctx, ErrorSourcePlugin); err != nil {
+			if err := errorsource.WithErrorSource(ctx, errorsource.ErrorSourcePlugin); err != nil {
 				return RequestStatusError, fmt.Errorf("failed to set plugin status source: %w", errors.Join(innerErr, err))
 			}
 		} else if hasDownstreamError {
-			if err := WithDownstreamErrorSource(ctx); err != nil {
+			if err := errorsource.WithDownstreamErrorSource(ctx); err != nil {
 				return RequestStatusError, fmt.Errorf("failed to set downstream status source: %w", errors.Join(innerErr, err))
 			}
 		}

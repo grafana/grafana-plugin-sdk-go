@@ -4,6 +4,8 @@ import (
 	"errors"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"google.golang.org/protobuf/proto"
@@ -216,13 +218,13 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
 			if !status.IsValid() {
-				status = statusFromError(dr.Error)
+				status = errorsource.StatusFromError(dr.Error)
 			}
 		}
 		if status.IsValid() {
 			pDR.Status = int32(status)
 		} else if status == 0 {
-			pDR.Status = int32(StatusOK)
+			pDR.Status = int32(errorsource.StatusOK)
 		}
 		pDR.ErrorSource = string(dr.ErrorSource)
 

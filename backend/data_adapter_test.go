@@ -10,6 +10,8 @@ import (
 	"net/http/httptest"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
@@ -139,72 +141,72 @@ func TestQueryData(t *testing.T) {
 		for _, tc := range []struct {
 			name              string
 			queryDataResponse *QueryDataResponse
-			expErrorSource    ErrorSource
+			expErrorSource    errorsource.ErrorSource
 			expError          bool
 		}{
 			{
 				name: `single downstream error should be "downstream" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourceDownstream},
+						"A": {Error: someErr, ErrorSource: errorsource.ErrorSourceDownstream},
 					},
 				},
-				expErrorSource: ErrorSourceDownstream,
+				expErrorSource: errorsource.ErrorSourceDownstream,
 			},
 			{
 				name: `single plugin error should be "plugin" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourcePlugin},
+						"A": {Error: someErr, ErrorSource: errorsource.ErrorSourcePlugin},
 					},
 				},
-				expErrorSource: ErrorSourcePlugin,
+				expErrorSource: errorsource.ErrorSourcePlugin,
 			},
 			{
 				name: `multiple downstream errors should be "downstream" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourceDownstream},
-						"B": {Error: someErr, ErrorSource: ErrorSourceDownstream},
+						"A": {Error: someErr, ErrorSource: errorsource.ErrorSourceDownstream},
+						"B": {Error: someErr, ErrorSource: errorsource.ErrorSourceDownstream},
 					},
 				},
-				expErrorSource: ErrorSourceDownstream,
+				expErrorSource: errorsource.ErrorSourceDownstream,
 			},
 			{
 				name: `single plugin error mixed with downstream errors should be "plugin" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourceDownstream},
-						"B": {Error: someErr, ErrorSource: ErrorSourcePlugin},
-						"C": {Error: someErr, ErrorSource: ErrorSourceDownstream},
+						"A": {Error: someErr, ErrorSource: errorsource.ErrorSourceDownstream},
+						"B": {Error: someErr, ErrorSource: errorsource.ErrorSourcePlugin},
+						"C": {Error: someErr, ErrorSource: errorsource.ErrorSourceDownstream},
 					},
 				},
-				expErrorSource: ErrorSourcePlugin,
+				expErrorSource: errorsource.ErrorSourcePlugin,
 			},
 			{
 				name: `single downstream error without error source should be "downstream" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
-						"A": {Error: DownstreamErrorf("boom")},
+						"A": {Error: errorsource.DownstreamErrorf("boom")},
 					},
 				},
-				expErrorSource: ErrorSourceDownstream,
+				expErrorSource: errorsource.ErrorSourceDownstream,
 			},
 			{
 				name: `multiple downstream error without error source and single plugin error should be "plugin" error source`,
 				queryDataResponse: &QueryDataResponse{
 					Responses: map[string]DataResponse{
-						"A": {Error: DownstreamErrorf("boom")},
+						"A": {Error: errorsource.DownstreamErrorf("boom")},
 						"B": {Error: someErr},
-						"C": {Error: DownstreamErrorf("boom")},
+						"C": {Error: errorsource.DownstreamErrorf("boom")},
 					},
 				},
-				expErrorSource: ErrorSourcePlugin,
+				expErrorSource: errorsource.ErrorSourcePlugin,
 			},
 			{
 				name:              "nil queryDataResponse and nil error should throw error",
 				queryDataResponse: nil,
-				expErrorSource:    ErrorSourcePlugin,
+				expErrorSource:    errorsource.ErrorSourcePlugin,
 				expError:          true,
 			},
 		} {
@@ -224,7 +226,7 @@ func TestQueryData(t *testing.T) {
 					require.NoError(t, err)
 				}
 
-				ss := errorSourceFromContext(actualCtx)
+				ss := errorsource.FromContext(actualCtx)
 				require.Equal(t, tc.expErrorSource, ss)
 			})
 		}

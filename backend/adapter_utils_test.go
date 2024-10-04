@@ -5,12 +5,14 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/errorsource"
+
 	"github.com/stretchr/testify/require"
 )
 
 func TestErrorWrapper(t *testing.T) {
 	t.Run("No downstream error should not set downstream error source in context", func(t *testing.T) {
-		ctx := initErrorSource(context.Background())
+		ctx := errorsource.InitContext(context.Background())
 
 		actualErr := errors.New("BOOM")
 		wrapper := errorWrapper(func(_ context.Context) (RequestStatus, error) {
@@ -19,19 +21,19 @@ func TestErrorWrapper(t *testing.T) {
 		status, err := wrapper(ctx)
 		require.ErrorIs(t, err, actualErr)
 		require.Equal(t, RequestStatusError, status)
-		require.Equal(t, DefaultErrorSource, errorSourceFromContext(ctx))
+		require.Equal(t, errorsource.DefaultErrorSource, errorsource.FromContext(ctx))
 	})
 
 	t.Run("Downstream error should set downstream error source in context", func(t *testing.T) {
-		ctx := initErrorSource(context.Background())
+		ctx := errorsource.InitContext(context.Background())
 
 		actualErr := errors.New("BOOM")
 		wrapper := errorWrapper(func(_ context.Context) (RequestStatus, error) {
-			return RequestStatusError, DownstreamError(actualErr)
+			return RequestStatusError, errorsource.DownstreamError(actualErr)
 		})
 		status, err := wrapper(ctx)
 		require.ErrorIs(t, err, actualErr)
 		require.Equal(t, RequestStatusError, status)
-		require.Equal(t, ErrorSourceDownstream, errorSourceFromContext(ctx))
+		require.Equal(t, errorsource.ErrorSourceDownstream, errorsource.FromContext(ctx))
 	})
 }
