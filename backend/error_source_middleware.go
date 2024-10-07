@@ -40,10 +40,8 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 	resp, err := m.BaseHandler.QueryData(ctx, req)
 	err = m.handleDownstreamError(ctx, err)
 
-	if err != nil {
+	if err != nil || resp == nil || len(resp.Responses) == 0 {
 		return resp, err
-	} else if resp == nil || len(resp.Responses) == 0 {
-		return nil, errors.New("both response and error are nil, but one must be provided")
 	}
 
 	// Set downstream error source in the context if there's at least one response with downstream error source,
