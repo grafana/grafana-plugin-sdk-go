@@ -2,9 +2,7 @@ package errorsource
 
 import (
 	"errors"
-	"net"
 	"net/http"
-	"syscall"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
@@ -26,11 +24,7 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 			}
 			return res, Error{source: errorSource, err: err}
 		}
-		if errors.Is(err, syscall.ECONNREFUSED) {
-			return res, Error{source: backend.ErrorSourceDownstream, err: err}
-		}
-		var dnsError *net.DNSError
-		if errors.As(err, &dnsError) && dnsError.IsNotFound {
+		if httpclient.IsDownstreamHttpError(err) {
 			return res, Error{source: backend.ErrorSourceDownstream, err: err}
 		}
 		return res, err

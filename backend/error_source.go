@@ -9,6 +9,8 @@ import (
 	"os"
 	"syscall"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 )
@@ -29,6 +31,13 @@ const (
 
 func (es ErrorSource) IsValid() bool {
 	return es == ErrorSourceDownstream || es == ErrorSourcePlugin
+}
+
+func ErrorSourceFromHttpError(err error) ErrorSource {
+	if httpclient.IsDownstreamHttpError(err) {
+		return ErrorSourceDownstream
+	}
+	return ErrorSourcePlugin
 }
 
 // ErrorSourceFromStatus returns an [ErrorSource] based on provided HTTP status code.
