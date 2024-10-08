@@ -24,7 +24,7 @@ func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTrippe
 			}
 			return res, Error{source: errorSource, err: err}
 		}
-		if httpclient.IsDownstreamHttpError(err) {
+		if httpclient.IsDownstreamHTTPError(err) {
 			return res, Error{source: backend.ErrorSourceDownstream, err: err}
 		}
 		return res, err

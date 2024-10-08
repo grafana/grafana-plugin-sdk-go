@@ -19,8 +19,8 @@ func ErrorSourceMiddleware() Middleware {
 	return NamedMiddlewareFunc(ResponseLimitMiddlewareName, func(_ Options, next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			res, err := next.RoundTrip(req)
-			if err != nil && IsDownstreamHttpError(err) {
-				return res, DownstreamError(err) 
+			if err != nil && IsDownstreamHTTPError(err) {
+				return res, DownstreamError(err)
 			}
 
 			return res, err
@@ -28,10 +28,10 @@ func ErrorSourceMiddleware() Middleware {
 	})
 }
 
-
 type ErrorSource string
+
 const (
-	ErrorSourcePlugin ErrorSource = "plugin"
+	ErrorSourcePlugin     ErrorSource = "plugin"
 	ErrorSourceDownstream ErrorSource = "downstream"
 )
 
@@ -40,7 +40,7 @@ type errorWithSourceImpl struct {
 	err    error
 }
 
-func IsDownstreamHttpError(err error) bool {
+func IsDownstreamHTTPError(err error) bool {
 	e := errorWithSourceImpl{
 		source: ErrorSourceDownstream,
 	}
@@ -54,11 +54,11 @@ func IsDownstreamHttpError(err error) bool {
 	}
 
 	// Check if the error is a HTTP timeout error or a context cancelled error
-	if isHTTPTimeoutError(err){
+	if isHTTPTimeoutError(err) {
 		return true
 	}
 
-	if isCancelledError(err) {	
+	if isCancelledError(err) {
 		return true
 	}
 
@@ -66,13 +66,12 @@ func IsDownstreamHttpError(err error) bool {
 		return true
 	}
 
-	if isDnsNotFoundError(err) {
+	if isDNSNotFoundError(err) {
 		return true
 	}
 
 	return false
 }
-
 
 func isCancelledError(err error) bool {
 	return errors.Is(err, context.Canceled) || grpcstatus.Code(err) == grpccodes.Canceled
@@ -90,15 +89,16 @@ func isHTTPTimeoutError(err error) bool {
 func isConnectionResetOrRefusedError(err error) bool {
 	var netErr *net.OpError
 	if errors.As(err, &netErr) {
-		if sysErr, ok := netErr.Err.(*os.SyscallError); ok {
-			return sysErr.Err == syscall.ECONNRESET || sysErr.Err == syscall.ECONNREFUSED
+		var sysErr *os.SyscallError
+		if errors.As(netErr.Err, &sysErr) {
+			return errors.Is(sysErr.Err, syscall.ECONNRESET) || errors.Is(sysErr.Err, syscall.ECONNREFUSED)
 		}
 	}
 
 	return false
 }
 
-func isDnsNotFoundError(err error) bool {
+func isDNSNotFoundError(err error) bool {
 	var dnsError *net.DNSError
 	if errors.As(err, &dnsError) && dnsError.IsNotFound {
 		return true
@@ -106,7 +106,6 @@ func isDnsNotFoundError(err error) bool {
 
 	return false
 }
-
 
 func (e errorWithSourceImpl) ErrorSource() ErrorSource {
 	return e.source
