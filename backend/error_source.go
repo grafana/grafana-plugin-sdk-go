@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
 // ErrorSource type defines the source of the error
@@ -23,6 +25,13 @@ const (
 
 func (es ErrorSource) IsValid() bool {
 	return es == ErrorSourceDownstream || es == ErrorSourcePlugin
+}
+
+func ErrorSourceFromHTTPError(err error) ErrorSource {
+	if httpclient.IsDownstreamHTTPError(err) {
+		return ErrorSourceDownstream
+	}
+	return ErrorSourcePlugin
 }
 
 // ErrorSourceFromStatus returns an [ErrorSource] based on provided HTTP status code.

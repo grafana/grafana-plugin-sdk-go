@@ -24,7 +24,7 @@ func TestProvider(t *testing.T) {
 			client, err := ctx.provider.New()
 			require.NoError(t, err)
 			require.NotNil(t, client)
-			require.Len(t, ctx.usedMiddlewares, 4)
+			require.Len(t, ctx.usedMiddlewares, 5)
 			require.Equal(t, TracingMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
@@ -36,7 +36,7 @@ func TestProvider(t *testing.T) {
 			transport, err := ctx.provider.GetTransport()
 			require.NoError(t, err)
 			require.NotNil(t, transport)
-			require.Len(t, ctx.usedMiddlewares, 4)
+			require.Len(t, ctx.usedMiddlewares, 5)
 			require.Equal(t, TracingMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
@@ -81,7 +81,7 @@ func TestProvider(t *testing.T) {
 			require.Equal(t, DefaultTimeoutOptions.Timeout, client.Timeout)
 
 			t.Run("Should use configured middlewares and implement MiddlewareName", func(t *testing.T) {
-				require.Len(t, pCtx.usedMiddlewares, 7)
+				require.Len(t, pCtx.usedMiddlewares, 8)
 				require.Equal(t, "mw1", pCtx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw2", pCtx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw3", pCtx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
