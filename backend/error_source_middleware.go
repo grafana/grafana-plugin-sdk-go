@@ -48,7 +48,7 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 	// and if there's no plugin error
 	var hasPluginError bool
 	var hasDownstreamError bool
-	for _, r := range resp.Responses {
+	for refID, r := range resp.Responses {
 		if r.Error == nil {
 			continue
 		}
@@ -56,10 +56,12 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 		// if error source not set and the error is a downstream error, set error source to downstream.
 		if !r.ErrorSource.IsValid() && IsDownstreamError(r.Error) {
 			r.ErrorSource = ErrorSourceDownstream
+			resp.Responses[refID] = r
 		}
 
 		if !r.Status.IsValid() {
 			r.Status = statusFromError(r.Error)
+			resp.Responses[refID] = r
 		}
 
 		if r.ErrorSource == ErrorSourceDownstream {
