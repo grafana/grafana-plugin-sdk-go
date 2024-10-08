@@ -4,14 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net"
 	"net/http"
-	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-
-	grpccodes "google.golang.org/grpc/codes"
-	grpcstatus "google.golang.org/grpc/status"
 )
 
 // ErrorSource type defines the source of the error
@@ -156,17 +151,4 @@ func WithErrorSource(ctx context.Context, s ErrorSource) error {
 // called before this function.
 func WithDownstreamErrorSource(ctx context.Context) error {
 	return WithErrorSource(ctx, ErrorSourceDownstream)
-}
-
-func isCancelledError(err error) bool {
-	return errors.Is(err, context.Canceled) || grpcstatus.Code(err) == grpccodes.Canceled
-}
-
-func isHTTPTimeoutError(err error) bool {
-	var netErr net.Error
-	if errors.As(err, &netErr) && netErr.Timeout() {
-		return true
-	}
-
-	return errors.Is(err, os.ErrDeadlineExceeded) // replacement for os.IsTimeout(err)
 }
