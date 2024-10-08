@@ -230,13 +230,14 @@ func TestQueryData(t *testing.T) {
 		}
 	})
 
-	t.Run("QueryData response with downstream error should set error source", func(t *testing.T) {
+	t.Run("QueryData response without valid error source error should set error source", func(t *testing.T) {
 		someErr := errors.New("oops")
 		downstreamErr := DownstreamError(someErr)
 		a := newDataSDKAdapter(QueryDataHandlerFunc(func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 			return &QueryDataResponse{
 				Responses: map[string]DataResponse{
-					"A": {Error: downstreamErr},
+					"A": {Error: someErr},
+					"B": {Error: downstreamErr},
 				},
 			}, nil
 		}))
@@ -245,7 +246,8 @@ func TestQueryData(t *testing.T) {
 		})
 
 		require.NoError(t, err)
-		require.Equal(t, ErrorSourceDownstream, ErrorSource(resp.Responses["A"].ErrorSource))
+		require.Equal(t, ErrorSourcePlugin, ErrorSource(resp.Responses["A"].ErrorSource))
+		require.Equal(t, ErrorSourceDownstream, ErrorSource(resp.Responses["B"].ErrorSource))
 	})
 }
 

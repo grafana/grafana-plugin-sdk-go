@@ -162,7 +162,7 @@ func TestErrorSourceMiddleware(t *testing.T) {
 		}
 	})
 
-	t.Run("QueryData response with downstream error should set error source", func(t *testing.T) {
+	t.Run("QueryData response without valid error source error should set error source", func(t *testing.T) {
 		cdt := handlertest.NewHandlerMiddlewareTest(t,
 			handlertest.WithMiddlewares(
 				backend.NewErrorSourceMiddleware(),
@@ -173,13 +173,15 @@ func TestErrorSourceMiddleware(t *testing.T) {
 			cdt.QueryDataCtx = ctx
 			return &backend.QueryDataResponse{
 				Responses: map[string]backend.DataResponse{
-					"A": {Error: downstreamErr},
+					"A": {Error: someErr},
+					"B": {Error: downstreamErr},
 				},
 			}, nil
 		}
 
 		resp, _ := cdt.MiddlewareHandler.QueryData(context.Background(), &backend.QueryDataRequest{})
-		require.Equal(t, backend.ErrorSourceDownstream, resp.Responses["A"].ErrorSource)
+		require.Equal(t, backend.ErrorSourcePlugin, resp.Responses["A"].ErrorSource)
+		require.Equal(t, backend.ErrorSourceDownstream, resp.Responses["B"].ErrorSource)
 	})
 }
 
