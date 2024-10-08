@@ -16,7 +16,7 @@ import (
 const ErrorSourceMiddlewareName = "ErrorSource"
 
 func ErrorSourceMiddleware() Middleware {
-	return NamedMiddlewareFunc(ResponseLimitMiddlewareName, func(_ Options, next http.RoundTripper) http.RoundTripper {
+	return NamedMiddlewareFunc(ErrorSourceMiddlewareName, func(_ Options, next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			res, err := next.RoundTrip(req)
 			if err != nil && IsDownstreamHTTPError(err) {
