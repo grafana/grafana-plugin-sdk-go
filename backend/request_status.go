@@ -7,10 +7,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
-
 	grpccodes "google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 type RequestStatus int
