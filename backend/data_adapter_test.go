@@ -229,6 +229,24 @@ func TestQueryData(t *testing.T) {
 			})
 		}
 	})
+
+	t.Run("QueryData response with downstream error should set error source", func(t *testing.T) {
+		someErr := errors.New("oops")
+		downstreamErr := DownstreamError(someErr)
+		a := newDataSDKAdapter(QueryDataHandlerFunc(func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
+			return &QueryDataResponse{
+				Responses: map[string]DataResponse{
+					"A": {Error: downstreamErr},
+				},
+			}, nil
+		}))
+		resp, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
+			PluginContext: &pluginv2.PluginContext{},
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, ErrorSourceDownstream, ErrorSource(resp.Responses["A"].ErrorSource))
+	})
 }
 
 var finalRoundTripper = httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
