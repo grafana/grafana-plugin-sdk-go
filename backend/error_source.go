@@ -21,8 +21,18 @@ const (
 	DefaultErrorSource ErrorSource = ErrorSourcePlugin
 )
 
+// IsValid return true if es is ErrorSourceDownstream or ErrorSourcePlugin.
 func (es ErrorSource) IsValid() bool {
 	return es == ErrorSourceDownstream || es == ErrorSourcePlugin
+}
+
+// String returns the string representation of es. If es is not valid, DefaultErrorSource is returned.
+func (es ErrorSource) String() string {
+	if !es.IsValid() {
+		return string(DefaultErrorSource)
+	}
+
+	return string(es)
 }
 
 // ErrorSourceFromStatus returns an [ErrorSource] based on provided HTTP status code.
@@ -107,9 +117,9 @@ func (e errorWithSourceImpl) Unwrap() error {
 
 type errorSourceCtxKey struct{}
 
-// errorSourceFromContext returns the error source stored in the context.
+// ErrorSourceFromContext returns the error source stored in the context.
 // If no error source is stored in the context, [DefaultErrorSource] is returned.
-func errorSourceFromContext(ctx context.Context) ErrorSource {
+func ErrorSourceFromContext(ctx context.Context) ErrorSource {
 	value, ok := ctx.Value(errorSourceCtxKey{}).(*ErrorSource)
 	if ok {
 		return *value
@@ -117,8 +127,8 @@ func errorSourceFromContext(ctx context.Context) ErrorSource {
 	return DefaultErrorSource
 }
 
-// initErrorSource initialize the status source for the context.
-func initErrorSource(ctx context.Context) context.Context {
+// InitErrorSource initialize the error source for the context.
+func InitErrorSource(ctx context.Context) context.Context {
 	s := DefaultErrorSource
 	return context.WithValue(ctx, errorSourceCtxKey{}, &s)
 }
