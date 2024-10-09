@@ -21,8 +21,18 @@ const (
 	DefaultErrorSource ErrorSource = ErrorSourcePlugin
 )
 
+// IsValid return true if es is ErrorSourceDownstream or ErrorSourcePlugin.
 func (es ErrorSource) IsValid() bool {
 	return es == ErrorSourceDownstream || es == ErrorSourcePlugin
+}
+
+// String returns the string representation of es. If es is not valid, DefaultErrorSource is returned.
+func (es ErrorSource) String() string {
+	if !es.IsValid() {
+		return string(DefaultErrorSource)
+	}
+
+	return string(es)
 }
 
 // ErrorSourceFromStatus returns an [ErrorSource] based on provided HTTP status code.

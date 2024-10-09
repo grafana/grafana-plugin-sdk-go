@@ -17,8 +17,11 @@ import (
 func TestErrorSource(t *testing.T) {
 	var es ErrorSource
 	require.False(t, es.IsValid())
+	require.Equal(t, "plugin", es.String())
 	require.True(t, ErrorSourceDownstream.IsValid())
+	require.Equal(t, "downstream", ErrorSourceDownstream.String())
 	require.True(t, ErrorSourcePlugin.IsValid())
+	require.Equal(t, "plugin", ErrorSourcePlugin.String())
 }
 
 func TestIsDownstreamError(t *testing.T) {
