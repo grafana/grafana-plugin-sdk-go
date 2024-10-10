@@ -120,11 +120,30 @@ func IsDownstreamError(err error) bool {
 
 	type errorWithSource interface {
 		ErrorSource() Source
+		Error() string
 	}
 
-	// nolint:errorlint
-	if errWithSource, ok := err.(errorWithSource); ok && errWithSource.ErrorSource() == SourceDownstream {
-		return true
+	errCopy := err
+
+	for {
+		// nolint:errorlint
+		if errWithSource, ok := errCopy.(errorWithSource); ok && errWithSource.ErrorSource() == SourceDownstream {
+			return true
+		}
+
+		if uw, ok := errCopy.(interface{ Unwrap() []error }); ok {
+			errs := uw.Unwrap()
+			for _, joinErr := range errs {
+				// nolint:errorlint
+				if errWithSource, ok := joinErr.(errorWithSource); ok && errWithSource.ErrorSource() == SourceDownstream {
+					return true
+				}
+			}
+		}
+
+		if errCopy = errors.Unwrap(errCopy); errCopy == nil {
+			break
+		}
 	}
 
 	return isHTTPTimeoutError(err) || IsCancelledError(err)

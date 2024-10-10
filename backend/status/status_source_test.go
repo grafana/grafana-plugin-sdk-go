@@ -1,4 +1,4 @@
-package status
+package status_test
 
 import (
 	"context"
@@ -9,20 +9,23 @@ import (
 	"syscall"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/status"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/errorsource"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
+	grpccodes "google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
 )
 
 func TestSource(t *testing.T) {
-	var s Source
+	var s status.Source
 	require.False(t, s.IsValid())
 	require.Equal(t, "plugin", s.String())
-	require.True(t, SourceDownstream.IsValid())
-	require.Equal(t, "downstream", SourceDownstream.String())
-	require.True(t, SourcePlugin.IsValid())
-	require.Equal(t, "plugin", SourcePlugin.String())
+	require.True(t, status.SourceDownstream.IsValid())
+	require.Equal(t, "downstream", status.SourceDownstream.String())
+	require.True(t, status.SourcePlugin.IsValid())
+	require.Equal(t, "plugin", status.SourcePlugin.String())
 }
 
 func TestIsDownstreamError(t *testing.T) {
@@ -38,7 +41,7 @@ func TestIsDownstreamError(t *testing.T) {
 		},
 		{
 			name:     "downstream error",
-			err:      DownstreamError(nil),
+			err:      status.DownstreamError(nil),
 			expected: true,
 		},
 		{
@@ -73,17 +76,27 @@ func TestIsDownstreamError(t *testing.T) {
 		},
 		{
 			name:     "gRPC canceled error",
-			err:      status.Error(codes.Canceled, "canceled"),
+			err:      grpcstatus.Error(grpccodes.Canceled, "canceled"),
 			expected: true,
+		},
+		{
+			name:     "experimental Error with downstream source and status",
+			err:      errorsource.New(errors.New("test"), backend.ErrorSourceDownstream, backend.StatusUnknown),
+			expected: true,
+		},
+		{
+			name:     "experimental Error with plugin source and status",
+			err:      errorsource.New(errors.New("test"), backend.ErrorSourcePlugin, backend.StatusUnknown),
+			expected: false,
 		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			wrappedErr := fmt.Errorf("error: %w", tc.err)
 			joinedErr := errors.Join(errors.New("oh no"), tc.err)
-			assert.Equalf(t, tc.expected, IsDownstreamError(tc.err), "IsDownstreamHTTPError(%v)", tc.err)
-			assert.Equalf(t, tc.expected, IsDownstreamError(wrappedErr), "wrapped IsDownstreamHTTPError(%v)", wrappedErr)
-			assert.Equalf(t, tc.expected, IsDownstreamError(joinedErr), "joined IsDownstreamHTTPError(%v)", joinedErr)
+			assert.Equalf(t, tc.expected, status.IsDownstreamError(tc.err), "IsDownstreamHTTPError(%v)", tc.err)
+			assert.Equalf(t, tc.expected, status.IsDownstreamError(wrappedErr), "wrapped IsDownstreamHTTPError(%v)", wrappedErr)
+			assert.Equalf(t, tc.expected, status.IsDownstreamError(joinedErr), "joined IsDownstreamHTTPError(%v)", joinedErr)
 		})
 	}
 }
@@ -101,7 +114,7 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		},
 		{
 			name:     "downstream error",
-			err:      DownstreamError(nil),
+			err:      status.DownstreamError(nil),
 			expected: true,
 		},
 		{
@@ -136,8 +149,18 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		},
 		{
 			name:     "gRPC canceled error",
-			err:      status.Error(codes.Canceled, "canceled"),
+			err:      grpcstatus.Error(grpccodes.Canceled, "canceled"),
 			expected: true,
+		},
+		{
+			name:     "experimental Error with downstream source and status",
+			err:      errorsource.New(errors.New("test"), backend.ErrorSourceDownstream, backend.StatusUnknown),
+			expected: true,
+		},
+		{
+			name:     "experimental Error with plugin source and status",
+			err:      errorsource.New(errors.New("test"), backend.ErrorSourcePlugin, backend.StatusUnknown),
+			expected: false,
 		},
 		{
 			name:     "connection reset error",
@@ -159,9 +182,9 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			wrappedErr := fmt.Errorf("error: %w", tc.err)
 			joinedErr := errors.Join(errors.New("oh no"), tc.err)
-			assert.Equalf(t, tc.expected, IsDownstreamHTTPError(tc.err), "IsDownstreamHTTPError(%v)", tc.err)
-			assert.Equalf(t, tc.expected, IsDownstreamHTTPError(wrappedErr), "wrapped IsDownstreamHTTPError(%v)", wrappedErr)
-			assert.Equalf(t, tc.expected, IsDownstreamHTTPError(joinedErr), "joined IsDownstreamHTTPError(%v)", joinedErr)
+			assert.Equalf(t, tc.expected, status.IsDownstreamHTTPError(tc.err), "IsDownstreamHTTPError(%v)", tc.err)
+			assert.Equalf(t, tc.expected, status.IsDownstreamHTTPError(wrappedErr), "wrapped IsDownstreamHTTPError(%v)", wrappedErr)
+			assert.Equalf(t, tc.expected, status.IsDownstreamHTTPError(joinedErr), "joined IsDownstreamHTTPError(%v)", joinedErr)
 		})
 	}
 }
