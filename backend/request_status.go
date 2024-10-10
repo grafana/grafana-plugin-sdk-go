@@ -2,14 +2,9 @@ package backend
 
 import (
 	"context"
-	"errors"
-	"net"
-	"os"
 	"strings"
 
-	grpccodes "google.golang.org/grpc/codes"
-	grpcstatus "google.golang.org/grpc/status"
-
+	"github.com/grafana/grafana-plugin-sdk-go/backend/status"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -31,15 +26,15 @@ func (status RequestStatus) String() string {
 }
 
 func RequestStatusFromError(err error) RequestStatus {
-	status := RequestStatusOK
+	requestStatus := RequestStatusOK
 	if err != nil {
-		status = RequestStatusError
-		if isCancelledError(err) {
-			status = RequestStatusCancelled
+		requestStatus = RequestStatusError
+		if status.IsCancelledError(err) {
+			requestStatus = RequestStatusCancelled
 		}
 	}
 
-	return status
+	return requestStatus
 }
 
 func RequestStatusFromErrorString(errString string) RequestStatus {
@@ -102,17 +97,4 @@ func RequestStatusFromProtoQueryDataResponse(res *pluginv2.QueryDataResponse, er
 	}
 
 	return status
-}
-
-func isCancelledError(err error) bool {
-	return errors.Is(err, context.Canceled) || grpcstatus.Code(err) == grpccodes.Canceled
-}
-
-func isHTTPTimeoutError(err error) bool {
-	var netErr net.Error
-	if errors.As(err, &netErr) && netErr.Timeout() {
-		return true
-	}
-
-	return errors.Is(err, os.ErrDeadlineExceeded) // replacement for os.IsTimeout(err)
 }
