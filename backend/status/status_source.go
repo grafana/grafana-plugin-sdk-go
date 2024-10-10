@@ -120,7 +120,6 @@ func IsDownstreamError(err error) bool {
 
 	type errorWithSource interface {
 		ErrorSource() Source
-		Error() string
 	}
 
 	errCopy := err
@@ -131,6 +130,7 @@ func IsDownstreamError(err error) bool {
 			return true
 		}
 
+		// nolint:errorlint
 		if uw, ok := errCopy.(interface{ Unwrap() []error }); ok {
 			errs := uw.Unwrap()
 			for _, joinErr := range errs {
