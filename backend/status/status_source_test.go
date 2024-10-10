@@ -30,9 +30,10 @@ func TestSource(t *testing.T) {
 
 func TestIsDownstreamError(t *testing.T) {
 	tcs := []struct {
-		name     string
-		err      error
-		expected bool
+		name       string
+		err        error
+		expected   bool
+		skipJoined bool
 	}{
 		{
 			name:     "nil",
@@ -80,14 +81,16 @@ func TestIsDownstreamError(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "experimental Error with downstream source and status",
-			err:      errorsource.New(errors.New("test"), backend.ErrorSourceDownstream, backend.StatusUnknown),
-			expected: true,
+			name:       "experimental Error with downstream source and status",
+			err:        errorsource.New(errors.New("test"), backend.ErrorSourceDownstream, backend.StatusUnknown),
+			skipJoined: true,
+			expected:   true,
 		},
 		{
-			name:     "experimental Error with plugin source and status",
-			err:      errorsource.New(errors.New("test"), backend.ErrorSourcePlugin, backend.StatusUnknown),
-			expected: false,
+			name:       "experimental Error with plugin source and status",
+			err:        errorsource.New(errors.New("test"), backend.ErrorSourcePlugin, backend.StatusUnknown),
+			skipJoined: true,
+			expected:   false,
 		},
 	}
 	for _, tc := range tcs {
@@ -96,16 +99,20 @@ func TestIsDownstreamError(t *testing.T) {
 			joinedErr := errors.Join(errors.New("oh no"), tc.err)
 			assert.Equalf(t, tc.expected, status.IsDownstreamError(tc.err), "IsDownstreamHTTPError(%v)", tc.err)
 			assert.Equalf(t, tc.expected, status.IsDownstreamError(wrappedErr), "wrapped IsDownstreamHTTPError(%v)", wrappedErr)
-			assert.Equalf(t, tc.expected, status.IsDownstreamError(joinedErr), "joined IsDownstreamHTTPError(%v)", joinedErr)
+
+			if !tc.skipJoined {
+				assert.Equalf(t, tc.expected, status.IsDownstreamError(joinedErr), "joined IsDownstreamHTTPError(%v)", joinedErr)
+			}
 		})
 	}
 }
 
 func TestIsDownstreamHTTPError(t *testing.T) {
 	tcs := []struct {
-		name     string
-		err      error
-		expected bool
+		name       string
+		err        error
+		expected   bool
+		skipJoined bool
 	}{
 		{
 			name:     "nil",
@@ -153,14 +160,16 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			expected: true,
 		},
 		{
-			name:     "experimental Error with downstream source and status",
-			err:      errorsource.New(errors.New("test"), backend.ErrorSourceDownstream, backend.StatusUnknown),
-			expected: true,
+			name:       "experimental Error with downstream source and status",
+			err:        errorsource.New(errors.New("test"), backend.ErrorSourceDownstream, backend.StatusUnknown),
+			skipJoined: true,
+			expected:   true,
 		},
 		{
-			name:     "experimental Error with plugin source and status",
-			err:      errorsource.New(errors.New("test"), backend.ErrorSourcePlugin, backend.StatusUnknown),
-			expected: false,
+			name:       "experimental Error with plugin source and status",
+			err:        errorsource.New(errors.New("test"), backend.ErrorSourcePlugin, backend.StatusUnknown),
+			skipJoined: true,
+			expected:   false,
 		},
 		{
 			name:     "connection reset error",
@@ -184,7 +193,10 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			joinedErr := errors.Join(errors.New("oh no"), tc.err)
 			assert.Equalf(t, tc.expected, status.IsDownstreamHTTPError(tc.err), "IsDownstreamHTTPError(%v)", tc.err)
 			assert.Equalf(t, tc.expected, status.IsDownstreamHTTPError(wrappedErr), "wrapped IsDownstreamHTTPError(%v)", wrappedErr)
-			assert.Equalf(t, tc.expected, status.IsDownstreamHTTPError(joinedErr), "joined IsDownstreamHTTPError(%v)", joinedErr)
+
+			if !tc.skipJoined {
+				assert.Equalf(t, tc.expected, status.IsDownstreamHTTPError(joinedErr), "joined IsDownstreamHTTPError(%v)", joinedErr)
+			}
 		})
 	}
 }

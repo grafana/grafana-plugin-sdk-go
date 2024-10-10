@@ -122,23 +122,13 @@ func IsDownstreamError(err error) bool {
 		ErrorSource() Source
 	}
 
+	// temporary hack to support wrapped errors until experimental errorsource package have been removed.
+	// Note. Joined errors (errors.Join()) is not supported.
 	errCopy := err
-
 	for {
 		// nolint:errorlint
 		if errWithSource, ok := errCopy.(errorWithSource); ok && errWithSource.ErrorSource() == SourceDownstream {
 			return true
-		}
-
-		// nolint:errorlint
-		if uw, ok := errCopy.(interface{ Unwrap() []error }); ok {
-			errs := uw.Unwrap()
-			for _, joinErr := range errs {
-				// nolint:errorlint
-				if errWithSource, ok := joinErr.(errorWithSource); ok && errWithSource.ErrorSource() == SourceDownstream {
-					return true
-				}
-			}
 		}
 
 		if errCopy = errors.Unwrap(errCopy); errCopy == nil {
