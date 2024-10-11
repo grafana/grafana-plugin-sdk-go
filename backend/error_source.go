@@ -2,135 +2,62 @@ package backend
 
 import (
 	"context"
-	"errors"
 	"fmt"
-	"net/http"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 )
 
 // ErrorSource type defines the source of the error
-type ErrorSource string
+type ErrorSource = status.Source
 
 const (
 	// ErrorSourcePlugin error originates from plugin.
-	ErrorSourcePlugin ErrorSource = "plugin"
+	ErrorSourcePlugin = status.SourcePlugin
 
 	// ErrorSourceDownstream error originates from downstream service.
-	ErrorSourceDownstream ErrorSource = "downstream"
+	ErrorSourceDownstream = status.SourceDownstream
 
 	// DefaultErrorSource is the default [ErrorSource] that should be used when it is not explicitly set.
-	DefaultErrorSource ErrorSource = ErrorSourcePlugin
+	DefaultErrorSource = status.SourcePlugin
 )
 
-// IsValid return true if es is ErrorSourceDownstream or ErrorSourcePlugin.
-func (es ErrorSource) IsValid() bool {
-	return es == ErrorSourceDownstream || es == ErrorSourcePlugin
-}
-
-// String returns the string representation of es. If es is not valid, DefaultErrorSource is returned.
-func (es ErrorSource) String() string {
-	if !es.IsValid() {
-		return string(DefaultErrorSource)
-	}
-
-	return string(es)
-}
-
-// ErrorSourceFromStatus returns an [ErrorSource] based on provided HTTP status code.
+// ErrorSourceFromHTTPStatus returns an [ErrorSource] based on provided HTTP status code.
 func ErrorSourceFromHTTPStatus(statusCode int) ErrorSource {
-	switch statusCode {
-	case http.StatusMethodNotAllowed,
-		http.StatusNotAcceptable,
-		http.StatusPreconditionFailed,
-		http.StatusRequestEntityTooLarge,
-		http.StatusRequestHeaderFieldsTooLarge,
-		http.StatusRequestURITooLong,
-		http.StatusExpectationFailed,
-		http.StatusUpgradeRequired,
-		http.StatusRequestedRangeNotSatisfiable,
-		http.StatusNotImplemented:
-		return ErrorSourcePlugin
-	}
-
-	return ErrorSourceDownstream
+	return status.SourceFromHTTPStatus(statusCode)
 }
 
-type errorWithSourceImpl struct {
-	source ErrorSource
-	err    error
-}
-
+// IsDownstreamError return true if provided error is an error with downstream source or
+// a timeout error or a cancelled error.
 func IsDownstreamError(err error) bool {
-	e := errorWithSourceImpl{
-		source: ErrorSourceDownstream,
-	}
-	if errors.Is(err, e) {
-		return true
-	}
-
-	type errorWithSource interface {
-		ErrorSource() ErrorSource
-	}
-
-	// nolint:errorlint
-	if errWithSource, ok := err.(errorWithSource); ok && errWithSource.ErrorSource() == ErrorSourceDownstream {
-		return true
-	}
-
-	if isHTTPTimeoutError(err) || isCancelledError(err) {
-		return true
-	}
-
-	return false
+	return status.IsDownstreamError(err)
 }
 
+// IsDownstreamError return true if provided error is an error with downstream source or
+// a HTTP timeout error or a cancelled error or a connection reset/refused error or dns not found error.
+func IsDownstreamHTTPError(err error) bool {
+	return status.IsDownstreamHTTPError(err)
+}
+
+// DownstreamError creates a new error with status [ErrorSourceDownstream].
 func DownstreamError(err error) error {
-	return errorWithSourceImpl{
-		source: ErrorSourceDownstream,
-		err:    err,
-	}
+	return status.DownstreamError(err)
 }
 
+// DownstreamErrorf creates a new error with status [ErrorSourceDownstream] and formats
+// according to a format specifier and returns the string as a value that satisfies error.
 func DownstreamErrorf(format string, a ...any) error {
 	return DownstreamError(fmt.Errorf(format, a...))
 }
 
-func (e errorWithSourceImpl) ErrorSource() ErrorSource {
-	return e.source
-}
-
-func (e errorWithSourceImpl) Error() string {
-	return fmt.Errorf("%s error: %w", e.source, e.err).Error()
-}
-
-// Implements the interface used by [errors.Is].
-func (e errorWithSourceImpl) Is(err error) bool {
-	if errWithSource, ok := err.(errorWithSourceImpl); ok {
-		return errWithSource.ErrorSource() == e.source
-	}
-
-	return false
-}
-
-func (e errorWithSourceImpl) Unwrap() error {
-	return e.err
-}
-
-type errorSourceCtxKey struct{}
-
 // ErrorSourceFromContext returns the error source stored in the context.
 // If no error source is stored in the context, [DefaultErrorSource] is returned.
 func ErrorSourceFromContext(ctx context.Context) ErrorSource {
-	value, ok := ctx.Value(errorSourceCtxKey{}).(*ErrorSource)
-	if ok {
-		return *value
-	}
-	return DefaultErrorSource
+	return status.SourceFromContext(ctx)
 }
 
 // InitErrorSource initialize the error source for the context.
 func InitErrorSource(ctx context.Context) context.Context {
-	s := DefaultErrorSource
-	return context.WithValue(ctx, errorSourceCtxKey{}, &s)
+	return status.InitSource(ctx)
 }
 
 // WithErrorSource mutates the provided context by setting the error source to
@@ -138,12 +65,7 @@ func InitErrorSource(ctx context.Context) context.Context {
 // will not be mutated and an error returned. This means that [initErrorSource]
 // has to be called before this function.
 func WithErrorSource(ctx context.Context, s ErrorSource) error {
-	v, ok := ctx.Value(errorSourceCtxKey{}).(*ErrorSource)
-	if !ok {
-		return errors.New("the provided context does not have a status source")
-	}
-	*v = s
-	return nil
+	return status.WithSource(ctx, s)
 }
 
 // WithDownstreamErrorSource mutates the provided context by setting the error source to
@@ -151,5 +73,5 @@ func WithErrorSource(ctx context.Context, s ErrorSource) error {
 // will not be mutated and an error returned. This means that [initErrorSource] has to be
 // called before this function.
 func WithDownstreamErrorSource(ctx context.Context) error {
-	return WithErrorSource(ctx, ErrorSourceDownstream)
+	return status.WithDownstreamSource(ctx)
 }

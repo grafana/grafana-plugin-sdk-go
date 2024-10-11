@@ -55,11 +55,12 @@ func TestNewClient(t *testing.T) {
 		require.NoError(t, err)
 		require.NotNil(t, client)
 
-		require.Len(t, usedMiddlewares, 4)
+		require.Len(t, usedMiddlewares, 5)
 		require.Equal(t, TracingMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 		require.Equal(t, ContextualMiddlewareName, usedMiddlewares[3].(MiddlewareName).MiddlewareName())
+		require.Equal(t, ErrorSourceMiddlewareName, usedMiddlewares[4].(MiddlewareName).MiddlewareName())
 	})
 
 	t.Run("New() with opts middleware should return expected http.Client", func(t *testing.T) {
@@ -166,6 +167,12 @@ func (c *testContext) createRoundTripper(name string) http.RoundTripper {
 	return RoundTripperFunc(func(_ *http.Request) (*http.Response, error) {
 		c.callChain = append(c.callChain, name)
 		return &http.Response{StatusCode: http.StatusOK}, nil
+	})
+}
+
+func (c *testContext) createRoundTripperWithError(err error) http.RoundTripper {
+	return RoundTripperFunc(func(_ *http.Request) (*http.Response, error) {
+		return &http.Response{}, err
 	})
 }
 
