@@ -6,7 +6,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/status"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 )
 
 // Middleware captures error source metric

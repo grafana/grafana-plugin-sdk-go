@@ -10,8 +10,8 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/status"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/errorsource"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	grpccodes "google.golang.org/grpc/codes"

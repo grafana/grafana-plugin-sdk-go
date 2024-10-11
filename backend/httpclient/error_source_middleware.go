@@ -3,7 +3,7 @@ package httpclient
 import (
 	"net/http"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/status"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 )
 
 // ErrorSourceMiddlewareName is the middleware name used by ErrorSourceMiddleware.

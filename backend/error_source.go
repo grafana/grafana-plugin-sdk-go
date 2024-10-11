@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/status"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 )
 
 // ErrorSource type defines the source of the error

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/status"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
