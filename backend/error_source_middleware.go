@@ -38,8 +38,11 @@ func (m *ErrorSourceMiddleware) handleDownstreamError(ctx context.Context, err e
 
 func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
 	resp, err := m.BaseHandler.QueryData(ctx, req)
+	// we want to always process the error here first before checking anything else
+	// because we want the opportunity to set the error source in the context.
 	err = m.handleDownstreamError(ctx, err)
 
+	// no point in continue if we have an error or no response to process, so we return early.
 	if err != nil || resp == nil || len(resp.Responses) == 0 {
 		return resp, err
 	}
