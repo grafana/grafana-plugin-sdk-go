@@ -26,7 +26,9 @@ func TestErrorSourceMiddleware(t *testing.T) {
 		require.NoError(t, err)
 		resp, err := rt.RoundTrip(req)
 		require.Error(t, err)
-		require.Nil(t, resp)
+		if resp.Body != nil {
+			require.NoError(t, resp.Body.Close())
+		}
 		require.False(t, status.IsDownstreamError(err))
 		require.ErrorIs(t, err, someErr)
 	})
@@ -46,7 +48,9 @@ func TestErrorSourceMiddleware(t *testing.T) {
 		require.NoError(t, err)
 		resp, err := rt.RoundTrip(req)
 		require.Error(t, err)
-		require.Nil(t, resp)
+		if resp.Body != nil {
+			require.NoError(t, resp.Body.Close())
+		}
 		require.True(t, status.IsDownstreamError(err))
 		require.ErrorIs(t, err, someErr)
 	})

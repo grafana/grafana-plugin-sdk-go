@@ -172,7 +172,7 @@ func (c *testContext) createRoundTripper(name string) http.RoundTripper {
 
 func (c *testContext) createRoundTripperWithError(err error) http.RoundTripper {
 	return RoundTripperFunc(func(_ *http.Request) (*http.Response, error) {
-		return nil, err
+		return &http.Response{}, err
 	})
 }
 
