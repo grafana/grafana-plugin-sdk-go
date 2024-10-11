@@ -21,11 +21,6 @@ const (
 	DefaultErrorSource = status.SourcePlugin
 )
 
-// ErrorSourceFromHTTPError returns an [ErrorSource] based on provided error.
-func ErrorSourceFromHTTPError(err error) ErrorSource {
-	return status.SourceFromHTTPError(err)
-}
-
 // ErrorSourceFromHTTPStatus returns an [ErrorSource] based on provided HTTP status code.
 func ErrorSourceFromHTTPStatus(statusCode int) ErrorSource {
 	return status.SourceFromHTTPStatus(statusCode)

@@ -41,14 +41,6 @@ func (s Source) String() string {
 	return string(s)
 }
 
-// SourceFromHTTPError returns a [Source] based on provided error.
-func SourceFromHTTPError(err error) Source {
-	if IsDownstreamHTTPError(err) {
-		return SourceDownstream
-	}
-	return SourcePlugin
-}
-
 // ErrorSourceFromStatus returns a [Source] based on provided HTTP status code.
 func SourceFromHTTPStatus(statusCode int) Source {
 	switch statusCode {
