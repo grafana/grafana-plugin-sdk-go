@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -29,9 +30,9 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		var innerErr error
 		resp, innerErr = a.queryDataHandler.QueryData(ctx, parsedReq)
 
-		status := RequestStatusFromQueryDataResponse(resp, innerErr)
+		requestStatus := RequestStatusFromQueryDataResponse(resp, innerErr)
 		if innerErr != nil {
-			return status, innerErr
+			return requestStatus, innerErr
 		} else if resp == nil {
 			return RequestStatusError, errors.New("both response and error are nil, but one must be provided")
 		}
@@ -41,7 +42,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		// and if there's no plugin error
 		var hasPluginError, hasDownstreamError bool
 		for refID, r := range resp.Responses {
-			if r.Error == nil || isCancelledError(r.Error) {
+			if r.Error == nil || status.IsCancelledError(r.Error) {
 				continue
 			}
 
@@ -81,7 +82,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			}
 		}
 
-		return status, nil
+		return requestStatus, nil
 	})
 	if err != nil {
 		return nil, err
