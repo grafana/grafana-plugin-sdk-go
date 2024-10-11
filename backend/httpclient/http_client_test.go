@@ -170,6 +170,12 @@ func (c *testContext) createRoundTripper(name string) http.RoundTripper {
 	})
 }
 
+func (c *testContext) createRoundTripperWithError(err error) http.RoundTripper {
+	return RoundTripperFunc(func(_ *http.Request) (*http.Response, error) {
+		return nil, err
+	})
+}
+
 func (c *testContext) createMiddleware(name string) Middleware {
 	return NamedMiddlewareFunc(name, func(_ Options, next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
