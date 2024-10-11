@@ -24,8 +24,9 @@ func TestErrorSourceMiddleware(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodGet, "http://", nil)
 		require.NoError(t, err)
-		_, err = rt.RoundTrip(req)
+		resp, err := rt.RoundTrip(req)
 		require.Error(t, err)
+		require.Nil(t, resp)
 		require.False(t, status.IsDownstreamError(err))
 		require.ErrorIs(t, err, someErr)
 	})
@@ -43,8 +44,9 @@ func TestErrorSourceMiddleware(t *testing.T) {
 
 		req, err := http.NewRequest(http.MethodGet, "http://", nil)
 		require.NoError(t, err)
-		_, err = rt.RoundTrip(req)
+		resp, err := rt.RoundTrip(req)
 		require.Error(t, err)
+		require.Nil(t, resp)
 		require.True(t, status.IsDownstreamError(err))
 		require.ErrorIs(t, err, someErr)
 	})
