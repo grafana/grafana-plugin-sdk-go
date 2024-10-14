@@ -17,13 +17,28 @@ var (
 )
 
 type QueryDataClient interface {
-	QueryData(ctx context.Context, req QueryDataRequest) (int, *backend.QueryDataResponse, error)
+	QueryData(ctx context.Context, req QueryDataRequest) (*backend.QueryDataResponse, error)
 }
 
 type simpleHTTPClient struct {
 	url     string
 	client  *http.Client
 	headers map[string]string
+}
+
+func ResponseFromCode(err error, code int, queries []DataQuery) *backend.QueryDataResponse {
+	responses := make(backend.Responses)
+
+	for _, query := range queries {
+		responses[query.RefID] = backend.DataResponse{
+			Status: backend.Status(code),
+			Error:  err,
+		}
+	}
+
+	return &backend.QueryDataResponse{
+		Responses: responses,
+	}
 }
 
 func NewQueryDataClient(url string, client *http.Client, headers map[string]string) QueryDataClient {
@@ -37,15 +52,15 @@ func NewQueryDataClient(url string, client *http.Client, headers map[string]stri
 	}
 }
 
-func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest) (int, *backend.QueryDataResponse, error) {
+func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest) (*backend.QueryDataResponse, error) {
 	body, err := json.Marshal(query)
 	if err != nil {
-		return http.StatusBadRequest, nil, err
+		return ResponseFromCode(err, http.StatusBadRequest, query.Queries), nil
 	}
 
 	req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.url, bytes.NewBuffer(body))
 	if err != nil {
-		return http.StatusBadRequest, nil, err
+		return ResponseFromCode(err, http.StatusBadRequest, query.Queries), nil
 	}
 	for k, v := range c.headers {
 		req.Header.Set(k, v)
@@ -53,13 +68,12 @@ func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest
 	req.Header.Set("Content-Type", "application/json")
 
 	qdr := &backend.QueryDataResponse{}
-	code := http.StatusNotFound // 404 for network requests etc
 	rsp, err := c.client.Do(req)
 	if err != nil {
-		return code, qdr, fmt.Errorf("%w: %w", ErrTransport, err)
+		return qdr, fmt.Errorf("%w: %w", ErrTransport, err)
 	}
 
-	code = rsp.StatusCode
+	code := rsp.StatusCode
 	defer rsp.Body.Close()
 
 	if code/100 != 2 {
@@ -68,15 +82,15 @@ func (c *simpleHTTPClient) QueryData(ctx context.Context, query QueryDataRequest
 		if err == nil {
 			err = iter.ReadVal(&apiErr)
 			if err == nil {
-				return code, qdr, apiErr.Error()
+				return qdr, apiErr.Error()
 			}
 		}
-		return code, qdr, fmt.Errorf("failed to deserialize response: %w", err)
+		return qdr, fmt.Errorf("failed to deserialize response: %w", err)
 	}
 
 	iter, e2 := jsoniter.Parse(jsoniter.ConfigCompatibleWithStandardLibrary, rsp.Body, 1024*10)
 	if e2 == nil {
 		err = iter.ReadVal(qdr)
 	}
-	return code, qdr, err
+	return qdr, err
 }
