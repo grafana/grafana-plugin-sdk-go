@@ -1,0 +1,50 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Setup Mage
+        uses: magefile/mage-action@v3
+        with:
+          install-only: true
+
+      - name: Build
+        run: |
+          mage -v build
+
+  test:
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y gcc
+
+      - name: Setup Mage
+        uses: magefile/mage-action@v3
+        with:
+          install-only: true
+
+      - name: Test
+        run: |
+          CGO_ENABLED=1 mage -v testRace
