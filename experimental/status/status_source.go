@@ -73,7 +73,7 @@ func DownstreamError(err error) error {
 	}
 }
 
-// DownstreamError creates a new error with status [SourceDownstream] and formats
+// DownstreamErrorf creates a new error with status [SourceDownstream] and formats
 // according to a format specifier and returns the string as a value that satisfies error.
 func DownstreamErrorf(format string, a ...any) error {
 	return DownstreamError(fmt.Errorf(format, a...))

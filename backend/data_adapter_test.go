@@ -224,10 +224,30 @@ func TestQueryData(t *testing.T) {
 					require.NoError(t, err)
 				}
 
-				ss := errorSourceFromContext(actualCtx)
+				ss := ErrorSourceFromContext(actualCtx)
 				require.Equal(t, tc.expErrorSource, ss)
 			})
 		}
+	})
+
+	t.Run("QueryData response without valid error source error should set error source", func(t *testing.T) {
+		someErr := errors.New("oops")
+		downstreamErr := DownstreamError(someErr)
+		a := newDataSDKAdapter(QueryDataHandlerFunc(func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
+			return &QueryDataResponse{
+				Responses: map[string]DataResponse{
+					"A": {Error: someErr},
+					"B": {Error: downstreamErr},
+				},
+			}, nil
+		}))
+		resp, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
+			PluginContext: &pluginv2.PluginContext{},
+		})
+
+		require.NoError(t, err)
+		require.Equal(t, ErrorSourcePlugin, ErrorSource(resp.Responses["A"].ErrorSource))
+		require.Equal(t, ErrorSourceDownstream, ErrorSource(resp.Responses["B"].ErrorSource))
 	})
 }
 

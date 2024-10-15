@@ -19,7 +19,7 @@ func TestErrorWrapper(t *testing.T) {
 		status, err := wrapper(ctx)
 		require.ErrorIs(t, err, actualErr)
 		require.Equal(t, RequestStatusError, status)
-		require.Equal(t, DefaultErrorSource, errorSourceFromContext(ctx))
+		require.Equal(t, DefaultErrorSource, ErrorSourceFromContext(ctx))
 	})
 
 	t.Run("Downstream error should set downstream error source in context", func(t *testing.T) {
@@ -32,6 +32,6 @@ func TestErrorWrapper(t *testing.T) {
 		status, err := wrapper(ctx)
 		require.ErrorIs(t, err, actualErr)
 		require.Equal(t, RequestStatusError, status)
-		require.Equal(t, ErrorSourceDownstream, errorSourceFromContext(ctx))
+		require.Equal(t, ErrorSourceDownstream, ErrorSourceFromContext(ctx))
 	})
 }

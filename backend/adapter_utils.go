@@ -75,7 +75,7 @@ func metricWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 		endpoint := EndpointFromContext(ctx)
 		status, err := next(ctx)
 
-		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String(), string(errorSourceFromContext(ctx))).Inc()
+		pluginRequestCounter.WithLabelValues(endpoint.String(), status.String(), string(ErrorSourceFromContext(ctx))).Inc()
 
 		return status, err
 	}
@@ -106,7 +106,7 @@ func tracingWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 
 		span.SetAttributes(
 			attribute.String("request_status", status.String()),
-			attribute.String("status_source", string(errorSourceFromContext(ctx))),
+			attribute.String("status_source", string(ErrorSourceFromContext(ctx))),
 		)
 
 		if err != nil {
@@ -136,7 +136,7 @@ func logWrapper(next handlerWrapperFunc) handlerWrapperFunc {
 			logParams = append(logParams, "error", err)
 		}
 
-		logParams = append(logParams, "statusSource", string(errorSourceFromContext(ctx)))
+		logParams = append(logParams, "statusSource", string(ErrorSourceFromContext(ctx)))
 
 		if status > RequestStatusCancelled {
 			logFunc = ctxLogger.Error
