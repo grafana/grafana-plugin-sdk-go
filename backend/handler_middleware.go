@@ -47,7 +47,7 @@ func HandlerFromMiddlewares(finalHandler Handler, middlewares ...HandlerMiddlewa
 }
 
 func (h *MiddlewareHandler) setupContext(ctx context.Context, pluginCtx PluginContext, endpoint Endpoint) context.Context {
-	ctx = InitErrorSource(ctx)
+	ctx = initErrorSource(ctx)
 	ctx = WithEndpoint(ctx, endpoint)
 	ctx = WithPluginContext(ctx, pluginCtx)
 	ctx = WithGrafanaConfig(ctx, pluginCtx.GrafanaConfig)

@@ -55,8 +55,8 @@ func ErrorSourceFromContext(ctx context.Context) ErrorSource {
 	return status.SourceFromContext(ctx)
 }
 
-// InitErrorSource initialize the error source for the context.
-func InitErrorSource(ctx context.Context) context.Context {
+// initErrorSource initialize the error source for the context.
+func initErrorSource(ctx context.Context) context.Context {
 	return status.InitSource(ctx)
 }
 

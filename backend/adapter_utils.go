@@ -35,7 +35,7 @@ func wrapHandler(ctx context.Context, pluginCtx PluginContext, next handlerWrapp
 }
 
 func setupHandlerContext(ctx context.Context, pluginCtx PluginContext) context.Context {
-	ctx = InitErrorSource(ctx)
+	ctx = initErrorSource(ctx)
 	ctx = WithGrafanaConfig(ctx, pluginCtx.GrafanaConfig)
 	ctx = WithPluginContext(ctx, pluginCtx)
 	ctx = WithUser(ctx, pluginCtx.User)
