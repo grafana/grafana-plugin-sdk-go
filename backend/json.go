@@ -1,7 +1,7 @@
 package backend
 
 import (
-	"fmt"
+	"errors"
 	"sort"
 	"unsafe"
 
@@ -166,7 +166,7 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 	for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
 		switch l2Field {
 		case "error":
-			rsp.Error = fmt.Errorf(iter.ReadString())
+			rsp.Error = errors.New(iter.ReadString())
 
 		case "status":
 			rsp.Status = Status(iter.ReadInt32())

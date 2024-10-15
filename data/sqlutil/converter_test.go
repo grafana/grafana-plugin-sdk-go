@@ -173,7 +173,7 @@ func TestDefaultConverter(t *testing.T) {
 					assert.Equal(t, reflect.TypeOf(value).String(), v.Type.String())
 				} else {
 					// nullable fields should not exactly match
-					kind := reflect.PtrTo(v.Type).String()
+					kind := reflect.PointerTo(v.Type).String()
 					valueKind := reflect.TypeOf(value).String()
 					if !strings.HasPrefix(kind, "*sql.Null") {
 						assert.Equal(t, valueKind, kind)

@@ -143,7 +143,7 @@ type Converter struct {
 func DefaultConverterFunc(t reflect.Type) func(in interface{}) (interface{}, error) {
 	return func(in interface{}) (interface{}, error) {
 		inType := reflect.TypeOf(in)
-		if inType == reflect.PtrTo(t) {
+		if inType == reflect.PointerTo(t) {
 			n := reflect.ValueOf(in)
 
 			return n.Elem().Interface(), nil
@@ -180,7 +180,7 @@ func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 
 	v := reflect.New(t)
 	var fieldType data.FieldType
-	if v.Type() == reflect.PtrTo(t) {
+	if v.Type() == reflect.PointerTo(t) {
 		v = v.Elem()
 		fieldType = data.FieldTypeFor(v.Interface())
 	} else {

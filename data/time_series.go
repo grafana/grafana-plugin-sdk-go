@@ -66,7 +66,7 @@ func (t TimeSeriesType) String() string {
 func (f *Frame) TimeSeriesSchema() TimeSeriesSchema {
 	var tsSchema TimeSeriesSchema
 	tsSchema.Type = TimeSeriesTypeNot
-	if f.Fields == nil || len(f.Fields) == 0 {
+	if len(f.Fields) == 0 {
 		return tsSchema
 	}
 
