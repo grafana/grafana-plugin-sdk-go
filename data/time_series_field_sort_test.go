@@ -119,7 +119,7 @@ func TestSortWideFrameFields(t *testing.T) {
 			require.NoError(t, err)
 			if diff := cmp.Diff(tt.frameToSort, tt.afterSort, FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("Result mismatch (-want +got):\n%s", diff)
-				t.Logf(tt.frameToSort.StringTable(-1, -1))
+				t.Log(tt.frameToSort.StringTable(-1, -1))
 			}
 		})
 	}
@@ -210,7 +210,7 @@ func TestSortWideFrameFields_MixedLabels(t *testing.T) {
 			require.NoError(t, err)
 			if diff := cmp.Diff(tt.frameToSort, tt.afterSort, FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("Result mismatch (-want +got):\n%s", diff)
-				t.Logf(tt.frameToSort.StringTable(-1, -1))
+				t.Log(tt.frameToSort.StringTable(-1, -1))
 			}
 		})
 	}

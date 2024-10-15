@@ -2,6 +2,8 @@ package experimental
 
 import (
 	"bufio"
+	"errors"
+
 	// ignoring the G505 so that the checksum matches git hash
 	// nolint:gosec
 	"crypto/sha1"
@@ -69,7 +71,7 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile b
 	}
 
 	if len(errorString) > 0 {
-		return errorAfterUpdate(fmt.Errorf(errorString), path, dr, updateFile)
+		return errorAfterUpdate(errors.New(errorString), path, dr, updateFile)
 	}
 
 	return nil // OK

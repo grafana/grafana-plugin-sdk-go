@@ -70,14 +70,14 @@ func LoadConfig(path string) (*Config, error) {
 		cfg.Address = "127.0.0.1:9999"
 	}
 
-	if cfg.Storage == nil || len(cfg.Storage) == 0 {
+	if len(cfg.Storage) == 0 {
 		cfg.Storage = []*StorageConfig{{
 			Type: StorageTypeHAR,
 			Path: "fixtures/e2e.har",
 		}}
 	}
 
-	if cfg.Hosts == nil || len(cfg.Hosts) == 0 {
+	if len(cfg.Hosts) == 0 {
 		cfg.Hosts = make([]string, 0)
 	}
 

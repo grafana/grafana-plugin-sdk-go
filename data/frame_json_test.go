@@ -511,7 +511,7 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 		tname := caser.String(tstr)
 		tuppr := strings.ToUpper(tstr)
 
-		fmt.Printf("    case arrow." + tuppr + ":\n\t\tent = writeArrowData" + tname + "(stream, col)\n")
+		fmt.Printf("    case arrow.%s:\n\t\tent = writeArrowData%s(stream, col)\n", tuppr, tname)
 	}
 
 	for _, tstr := range types {
@@ -550,8 +550,8 @@ func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullab
 
 	for _, tstr := range types {
 		tname := caser.String(tstr)
-		fmt.Printf("    case FieldType" + tname + ": return read" + tname + "VectorJSON(iter, size)\n")
-		fmt.Printf("    case FieldTypeNullable" + tname + ": return readNullable" + tname + "VectorJSON(iter, size)\n")
+		fmt.Printf("    case FieldType%s: return read%sVectorJSON(iter, size)\n", tname, tname)
+		fmt.Printf("    case FieldTypeNullable%s: return readNullable%sVectorJSON(iter, size)\n", tname, tname)
 	}
 
 	assert.FailNow(t, "fail so we see the output")

@@ -1,0 +1,53 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+env:
+  GOLANGCI_LINT_VERSION: v1.61.0
+
+jobs:
+  lint-build-test:
+    name: Lint, Build, and Test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: ./go.mod
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: ${{env.GOLANGCI_LINT_VERSION}}
+          args: |
+            "./..." --timeout=7m
+          skip-cache: true
+          install-mode: binary
+
+      - name: Setup Mage
+        uses: magefile/mage-action@v3
+        with:
+          install-only: true
+
+      - name: Build
+        run: |
+          mage -v build
+
+      - name: Install test dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y gcc
+
+      - name: Test
+        run: |
+          CGO_ENABLED=1 mage -v testRace
