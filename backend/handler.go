@@ -68,3 +68,16 @@ func (m *BaseHandler) MutateAdmission(ctx context.Context, req *AdmissionRequest
 func (m *BaseHandler) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
 	return m.next.ConvertObjects(ctx, req)
 }
+
+// Handlers implements Handler.
+type Handlers struct {
+	QueryDataHandler
+	CheckHealthHandler
+	CallResourceHandler
+	CollectMetricsHandler
+	StreamHandler
+	AdmissionHandler
+	ConversionHandler
+}
+
+var _ Handler = &Handlers{}

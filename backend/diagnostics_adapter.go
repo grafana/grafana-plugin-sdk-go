@@ -46,16 +46,9 @@ func (a *diagnosticsSDKAdapter) CollectMetrics(_ context.Context, _ *pluginv2.Co
 
 func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *pluginv2.CheckHealthRequest) (*pluginv2.CheckHealthResponse, error) {
 	if a.checkHealthHandler != nil {
-		ctx = setupContext(ctx, EndpointCheckHealth)
+		ctx = setupAdapterContext(ctx, EndpointCheckHealth)
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
-
-		var resp *CheckHealthResult
-		err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-			ctx = withHeaderMiddleware(ctx, parsedReq.GetHTTPHeaders())
-			var innerErr error
-			resp, innerErr = a.checkHealthHandler.CheckHealth(ctx, parsedReq)
-			return RequestStatusFromError(innerErr), innerErr
-		})
+		resp, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
 		if err != nil {
 			return nil, err
 		}

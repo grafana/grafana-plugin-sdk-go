@@ -23,6 +23,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/standalone"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
@@ -71,33 +72,54 @@ type ServeOpts struct {
 
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
+
+	// HandlerMiddlewares list of handler middlewares to decorate handlers with.
+	HandlerMiddlewares []HandlerMiddleware
 }
 
-func GRPCServeOpts(opts ServeOpts) grpcplugin.ServeOpts {
+func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
+	handlers := Handlers{
+		CheckHealthHandler:  opts.CheckHealthHandler,
+		CallResourceHandler: opts.CallResourceHandler,
+		QueryDataHandler:    opts.QueryDataHandler,
+		StreamHandler:       opts.StreamHandler,
+		AdmissionHandler:    opts.AdmissionHandler,
+		ConversionHandler:   opts.ConversionHandler,
+	}
+
+	return HandlerFromMiddlewares(handlers, opts.HandlerMiddlewares...)
+}
+
+func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
+	handler, err := opts.HandlerWithMiddlewares()
+	if err != nil {
+		return grpcplugin.ServeOpts{}, fmt.Errorf("failed to create handler with middlewares: %w", err)
+	}
+
 	pluginOpts := grpcplugin.ServeOpts{
-		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, opts.CheckHealthHandler),
+		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, handler),
 	}
 
 	if opts.CallResourceHandler != nil {
-		pluginOpts.ResourceServer = newResourceSDKAdapter(opts.CallResourceHandler)
+		pluginOpts.ResourceServer = newResourceSDKAdapter(handler)
 	}
 
 	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = newDataSDKAdapter(opts.QueryDataHandler)
+		pluginOpts.DataServer = newDataSDKAdapter(handler)
 	}
 
 	if opts.StreamHandler != nil {
-		pluginOpts.StreamServer = newStreamSDKAdapter(opts.StreamHandler)
+		pluginOpts.StreamServer = newStreamSDKAdapter(handler)
 	}
 
 	if opts.AdmissionHandler != nil {
-		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(opts.AdmissionHandler)
+		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(handler)
 	}
 
 	if opts.ConversionHandler != nil || opts.QueryConversionHandler != nil {
-		pluginOpts.ConversionServer = newConversionSDKAdapter(opts.ConversionHandler, opts.QueryConversionHandler)
+		pluginOpts.ConversionServer = newConversionSDKAdapter(handler, opts.QueryConversionHandler)
 	}
-	return pluginOpts
+	return pluginOpts, nil
 }
 
 // grpcServerOptions returns a new []grpc.ServerOption that can be passed to grpc.NewServer.
@@ -147,7 +169,11 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 // Deprecated: Serve exists for historical compatibility
 // and might be removed in a future version. Please migrate to use [Manage] instead.
 func Serve(opts ServeOpts) error {
-	pluginOpts := GRPCServeOpts(opts)
+	pluginOpts, err := GRPCServeOpts(opts)
+	if err != nil {
+		return err
+	}
+
 	pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
 		return grpc.NewServer(grpcServerOptions(opts, customOptions...)...)
 	}
@@ -198,7 +224,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 	standalone.FindAndKillCurrentPlugin(info.Dir)
 
 	// Start GRPC server
-	pluginOpts := GRPCServeOpts(dsopts)
+	pluginOpts, err := GRPCServeOpts(dsopts)
+	if err != nil {
+		return err
+	}
+
 	if pluginOpts.GRPCServer == nil {
 		pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
 			return grpc.NewServer(grpcServerOptions(dsopts, customOptions...)...)
@@ -291,6 +321,20 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 		}
 	}()
 
+	if serveOpts.HandlerMiddlewares == nil {
+		serveOpts.HandlerMiddlewares = make([]HandlerMiddleware, 0)
+	}
+
+	middlewares := []HandlerMiddleware{
+		newContextualLoggerMiddleware(),
+		NewTracingMiddleware(tracing.DefaultTracer()),
+		NewMetricsMiddleware(prometheus.DefaultRegisterer, "grafana", false),
+		NewLoggerMiddleware(Logger, nil),
+		newHeaderMiddleware(),
+		NewErrorSourceMiddleware(),
+	}
+	serveOpts.HandlerMiddlewares = append(middlewares, serveOpts.HandlerMiddlewares...)
+
 	if s, enabled := standalone.ServerModeEnabled(pluginID); enabled {
 		// Run the standalone GRPC server
 		return GracefulStandaloneServe(serveOpts, s)
@@ -310,7 +354,11 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 // TestStandaloneServe starts a gRPC server that is not managed by hashicorp.
 // The function returns the gRPC server which should be closed by the consumer.
 func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
-	pluginOpts := GRPCServeOpts(opts)
+	pluginOpts, err := GRPCServeOpts(opts)
+	if err != nil {
+		return nil, err
+	}
+
 	if pluginOpts.GRPCServer == nil {
 		pluginOpts.GRPCServer = func(customOptions []grpc.ServerOption) *grpc.Server {
 			return grpc.NewServer(grpcServerOptions(opts, customOptions...)...)
