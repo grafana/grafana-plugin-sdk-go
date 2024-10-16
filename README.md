@@ -5,7 +5,7 @@ This SDK enables building [Grafana](https://github.com/grafana/grafana) backend 
 [![License](https://img.shields.io/github/license/grafana/grafana-plugin-sdk-go)](LICENSE)
 [![Go.dev](https://pkg.go.dev/badge/github.com/grafana/grafana-plugin-sdk-go)](https://pkg.go.dev/github.com/grafana/grafana-plugin-sdk-go?tab=doc)
 [![Go Report Card](https://goreportcard.com/badge/github.com/grafana/grafana-plugin-sdk-go)](https://goreportcard.com/report/github.com/grafana/grafana-plugin-sdk-go)
-[![CI Pipeline](https://github.com/grafana/grafana-plugin-sdk-go/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/grafana/grafana-plugin-sdk-go/actions/workflows/ci.yml)
+[![CI Pipeline](https://github.com/grafana/grafana-plugin-sdk-go/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/grafana/grafana-plugin-sdk-go/actions/workflows/ci.yml?query=branch%3Amain)
 
 ## Current state
 
