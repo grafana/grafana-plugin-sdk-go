@@ -33,7 +33,7 @@ require (
 	go.opentelemetry.io/contrib/propagators/jaeger v1.29.0
 	go.opentelemetry.io/contrib/samplers/jaegerremote v0.23.0
 	go.opentelemetry.io/otel v1.31.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.29.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.31.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.28.0
 	go.opentelemetry.io/otel/sdk v1.31.0
 	go.opentelemetry.io/otel/trace v1.31.0
@@ -44,7 +44,7 @@ require (
 	golang.org/x/sys v0.26.0
 	golang.org/x/text v0.18.0
 	google.golang.org/grpc v1.66.0
-	google.golang.org/protobuf v1.34.2
+	google.golang.org/protobuf v1.35.1
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // @grafana/grafana-app-platform-squad
 )
 
