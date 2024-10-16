@@ -67,15 +67,18 @@ func (a *conversionSDKAdapter) ConvertObjects(ctx context.Context, req *pluginv2
 	ctx = setupAdapterContext(ctx, EndpointConvertObjects)
 	parsedReq := FromProto().ConversionRequest(req)
 
-	resp := &ConversionResponse{}
+	var resp *ConversionResponse
 	var err error
 	if a.queryConversionHandler != nil {
 		// Try to parse it as a query data request
-		reqs, err := parseAsQueryRequest(parsedReq)
+		var reqs []*QueryDataRequest
+		reqs, err = parseAsQueryRequest(parsedReq)
 		if err == nil {
 			resp, err = a.convertQueryDataRequest(ctx, reqs)
+		} else {
+			// The object cannot be parsed as a query data request, so we will try to convert it as a generic object
+			resp, err = a.handler.ConvertObjects(ctx, parsedReq)
 		}
-		// The object cannot be parsed as a query data request, so we will try to convert it as a generic object
 	} else {
 		resp, err = a.handler.ConvertObjects(ctx, parsedReq)
 	}
