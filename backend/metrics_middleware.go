@@ -39,7 +39,7 @@ type metricsMiddleware struct {
 	includePluginID bool
 }
 
-func (m *metricsMiddleware) instrumentRequest(ctx context.Context, pCtx PluginContext, fn func(context.Context) (RequestStatus, error)) error {
+func (m *metricsMiddleware) instrumentRequest(ctx context.Context, pCtx PluginContext, fn handlerWrapperFunc) error {
 	status, err := fn(ctx)
 	endpoint := EndpointFromContext(ctx)
 

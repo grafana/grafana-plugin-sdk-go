@@ -26,7 +26,7 @@ type loggerMiddleware struct {
 	extractLogParamsFn func(ctx context.Context, pCtx PluginContext) []any
 }
 
-func (m *loggerMiddleware) logRequest(ctx context.Context, pCtx PluginContext, fn func(ctx context.Context) (RequestStatus, error)) error {
+func (m *loggerMiddleware) logRequest(ctx context.Context, pCtx PluginContext, fn handlerWrapperFunc) error {
 	start := time.Now()
 	logParams := []any{}
 
