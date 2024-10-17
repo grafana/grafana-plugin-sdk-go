@@ -112,8 +112,11 @@ func TestCheckHealth(t *testing.T) {
 	})
 
 	t.Run("When headers are present", func(t *testing.T) {
+		handlers := Handlers{
+			CheckHealthHandler: &testCheckHealthHandlerWithHeaders{},
+		}
 		adapter := &diagnosticsSDKAdapter{
-			checkHealthHandler: &testCheckHealthHandlerWithHeaders{},
+			checkHealthHandler: handlerFromMiddlewares([]HandlerMiddleware{newHeaderMiddleware()}, handlers),
 		}
 		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
 			Headers: map[string]string{

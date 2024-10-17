@@ -383,3 +383,12 @@ func (s *DataSourceInstanceSettings) ProxyClient(ctx context.Context) (proxy.Cli
 func WithTenant(ctx context.Context, tenantID string) context.Context {
 	return tenant.WithTenant(ctx, tenantID)
 }
+
+type handlerWrapperFunc func(ctx context.Context) (RequestStatus, error)
+
+func setupAdapterContext(ctx context.Context, endpoint Endpoint) context.Context {
+	ctx = WithEndpoint(ctx, endpoint)
+	ctx = propagateTenantIDIfPresent(ctx)
+
+	return ctx
+}

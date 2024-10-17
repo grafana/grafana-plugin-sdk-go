@@ -144,7 +144,10 @@ func TestCallResource(t *testing.T) {
 
 	t.Run("When oauth headers are set it should set the middleware to set headers", func(t *testing.T) {
 		testSender := newTestCallResourceServer()
-		adapter := newResourceSDKAdapter(&testCallResourceWithHeaders{})
+		handlers := Handlers{
+			CallResourceHandler: &testCallResourceWithHeaders{},
+		}
+		adapter := newResourceSDKAdapter(handlerFromMiddlewares([]HandlerMiddleware{newHeaderMiddleware()}, handlers))
 		err := adapter.CallResource(&pluginv2.CallResourceRequest{
 			PluginContext: &pluginv2.PluginContext{},
 			Headers: map[string]*pluginv2.StringList{
