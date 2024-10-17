@@ -18,15 +18,9 @@ func newAdmissionSDKAdapter(handler AdmissionHandler) *admissionSDKAdapter {
 }
 
 func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.ValidationResponse, error) {
-	ctx = setupContext(ctx, EndpointValidateAdmission)
+	ctx = setupAdapterContext(ctx, EndpointValidateAdmission)
 	parsedReq := FromProto().AdmissionRequest(req)
-
-	var resp *ValidationResponse
-	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = a.handler.ValidateAdmission(ctx, parsedReq)
-		return RequestStatusFromError(innerErr), innerErr
-	})
+	resp, err := a.handler.ValidateAdmission(ctx, parsedReq)
 	if err != nil {
 		return nil, err
 	}
@@ -35,15 +29,9 @@ func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *plugin
 }
 
 func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutationResponse, error) {
-	ctx = setupContext(ctx, EndpointMutateAdmission)
+	ctx = setupAdapterContext(ctx, EndpointMutateAdmission)
 	parsedReq := FromProto().AdmissionRequest(req)
-
-	var resp *MutationResponse
-	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = a.handler.MutateAdmission(ctx, parsedReq)
-		return RequestStatusFromError(innerErr), innerErr
-	})
+	resp, err := a.handler.MutateAdmission(ctx, parsedReq)
 	if err != nil {
 		return nil, err
 	}
