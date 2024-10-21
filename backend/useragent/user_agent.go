@@ -6,7 +6,7 @@ import (
 )
 
 var (
-	userAgentRegex   = regexp.MustCompile(`^Grafana/([0-9]+\.[0-9]+\.[0-9]+(?:-[a-zA-Z0-9]+)?) \(([a-zA-Z0-9]+); ([a-zA-Z0-9]+)\)$`)
+	userAgentRegex   = regexp.MustCompile(`^Grafana/([0-9]+\.[0-9]+\.[0-9]+(?:[^\s]+)?) \(([a-zA-Z0-9]+); ([a-zA-Z0-9]+)\)$`)
 	errInvalidFormat = errors.New("invalid user agent format")
 )
 

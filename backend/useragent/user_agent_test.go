@@ -73,6 +73,14 @@ func TestParse(t *testing.T) {
 				os:             "darwin",
 				arch:           "amd64",
 			},
+		}, {
+			name:      "valid (with security suffix)",
+			userAgent: "Grafana/11.2.2+security-01 (darwin; amd64)",
+			expected: &UserAgent{
+				grafanaVersion: "11.2.2+security-01",
+				os:             "darwin",
+				arch:           "amd64",
+			},
 		},
 		{
 			name:      "invalid (missing os + arch)",
