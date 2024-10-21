@@ -1,4 +1,4 @@
-package backend
+package contracts
 
 import (
 	"errors"
@@ -6,12 +6,15 @@ import (
 	"unsafe"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	jsoniter "github.com/json-iterator/go"
 )
 
 func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("backend.DataResponse", &dataResponseCodec{})
 	jsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
+	jsoniter.RegisterTypeEncoder("contracts.DataResponse", &dataResponseCodec{})
+	jsoniter.RegisterTypeEncoder("contracts.QueryDataResponse", &queryDataResponseCodec{})
 }
 
 type dataResponseCodec struct{}
@@ -60,7 +63,7 @@ func writeDataResponseJSON(dr *DataResponse, stream *jsoniter.Stream) {
 		started = true
 
 		if !status.IsValid() {
-			status = statusFromError(dr.Error)
+			status = StatusFromError(dr.Error)
 		}
 
 		stream.WriteMore()
@@ -172,7 +175,7 @@ func readDataResponseJSON(rsp *DataResponse, iter *jsoniter.Iterator) {
 			rsp.Status = Status(iter.ReadInt32())
 
 		case "errorSource":
-			rsp.ErrorSource = ErrorSource(iter.ReadString())
+			rsp.ErrorSource = status.Source(iter.ReadString())
 
 		case "frames":
 			for iter.ReadArray() {

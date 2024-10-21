@@ -10,6 +10,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -21,6 +22,13 @@ func setupContext(ctx context.Context, endpoint Endpoint) context.Context {
 	ctx = WithEndpoint(ctx, endpoint)
 	ctx = propagateTenantIDIfPresent(ctx)
 
+	return ctx
+}
+
+func propagateTenantIDIfPresent(ctx context.Context) context.Context {
+	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
+		ctx = tenant.WithTenant(ctx, tid)
+	}
 	return ctx
 }
 

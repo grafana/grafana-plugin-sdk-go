@@ -57,7 +57,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 			}
 
 			if !r.Status.IsValid() {
-				r.Status = statusFromError(r.Error)
+				r.Status = StatusFromError(r.Error)
 				resp.Responses[refID] = r
 			}
 

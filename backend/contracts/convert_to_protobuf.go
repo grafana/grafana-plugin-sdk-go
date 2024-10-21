@@ -1,4 +1,4 @@
-package backend
+package contracts
 
 import (
 	"errors"
@@ -216,7 +216,7 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
 			if !status.IsValid() {
-				status = statusFromError(dr.Error)
+				status = StatusFromError(dr.Error)
 			}
 		}
 		if status.IsValid() {

@@ -1,4 +1,4 @@
-package backend
+package contracts
 
 import (
 	"strings"
@@ -7,16 +7,16 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestQueryDataRequest(t *testing.T) {
-	req := &QueryDataRequest{}
+func TestCallResourceRequest(t *testing.T) {
+	req := &CallResourceRequest{}
 	const customHeaderName = "X-Custom"
 
 	t.Run("Legacy headers", func(t *testing.T) {
-		req.Headers = map[string]string{
-			"Authorization":  "a",
-			"X-ID-Token":     "b",
-			"Cookie":         "c",
-			customHeaderName: "d",
+		req.Headers = map[string][]string{
+			"Authorization":  {"a"},
+			"X-ID-Token":     {"b"},
+			"Cookie":         {"c"},
+			customHeaderName: {"d"},
 		}
 
 		t.Run("GetHTTPHeaders canonical form", func(t *testing.T) {
@@ -24,14 +24,14 @@ func TestQueryDataRequest(t *testing.T) {
 			require.Equal(t, "a", headers.Get(OAuthIdentityTokenHeaderName))
 			require.Equal(t, "b", headers.Get(OAuthIdentityIDTokenHeaderName))
 			require.Equal(t, "c", headers.Get(CookiesHeaderName))
-			require.Empty(t, headers.Get(customHeaderName))
+			require.Equal(t, "d", headers.Get(customHeaderName))
 		})
 
 		t.Run("GetHTTPHeader canonical form", func(t *testing.T) {
 			require.Equal(t, "a", req.GetHTTPHeader(OAuthIdentityTokenHeaderName))
 			require.Equal(t, "b", req.GetHTTPHeader(OAuthIdentityIDTokenHeaderName))
 			require.Equal(t, "c", req.GetHTTPHeader(CookiesHeaderName))
-			require.Empty(t, req.GetHTTPHeader(customHeaderName))
+			require.Equal(t, "d", req.GetHTTPHeader(customHeaderName))
 		})
 
 		t.Run("DeleteHTTPHeader canonical form", func(t *testing.T) {

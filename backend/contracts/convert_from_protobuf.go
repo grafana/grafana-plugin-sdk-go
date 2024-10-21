@@ -1,4 +1,4 @@
-package backend
+package contracts
 
 import (
 	"errors"
@@ -6,6 +6,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -148,18 +149,18 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 			return nil, err
 		}
 
-		status := Status(res.Status)
-		if !status.IsValid() {
-			status = StatusUnknown
+		s := Status(res.Status)
+		if !s.IsValid() {
+			s = StatusUnknown
 		}
 
 		dr := DataResponse{
 			Frames: frames,
-			Status: status,
+			Status: s,
 		}
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
-			dr.ErrorSource = ErrorSource(res.ErrorSource)
+			dr.ErrorSource = status.Source(res.ErrorSource)
 		}
 		qdr.Responses[refID] = dr
 	}

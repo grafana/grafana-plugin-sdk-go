@@ -67,7 +67,7 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 		}
 
 		if !r.Status.IsValid() {
-			r.Status = statusFromError(r.Error)
+			r.Status = StatusFromError(r.Error)
 			resp.Responses[refID] = r
 		}
 

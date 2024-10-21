@@ -1,4 +1,4 @@
-package backend
+package contracts
 
 import (
 	"errors"
@@ -86,7 +86,8 @@ func (s Status) String() string {
 	return StatusUnknown.String()
 }
 
-func statusFromError(err error) Status {
+// StatusFromError return [Status] given err, otherwise [StatusUnknown].
+func StatusFromError(err error) Status {
 	for {
 		result := guessErrorStatus(err)
 		if result != StatusUnknown {
