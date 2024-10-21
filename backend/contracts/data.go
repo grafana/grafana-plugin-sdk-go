@@ -1,4 +1,4 @@
-package backend
+package contracts
 
 import (
 	"context"
@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	jsoniter "github.com/json-iterator/go"
 )
 
@@ -188,7 +189,7 @@ type DataResponse struct {
 	Status Status
 
 	// ErrorSource is the the source of the error
-	ErrorSource ErrorSource
+	ErrorSource status.Source
 }
 
 // ErrDataResponse returns an error DataResponse given status and message.
@@ -200,7 +201,7 @@ func ErrDataResponse(status Status, message string) DataResponse {
 }
 
 // ErrDataResponseWithSource returns an error DataResponse given status, source of the error and message.
-func ErrDataResponseWithSource(status Status, src ErrorSource, message string) DataResponse {
+func ErrDataResponseWithSource(status Status, src status.Source, message string) DataResponse {
 	return DataResponse{
 		Error:       errors.New(message),
 		ErrorSource: src,

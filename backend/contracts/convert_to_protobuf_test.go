@@ -1,4 +1,4 @@
-package backend
+package contracts
 
 import (
 	"encoding/json"
@@ -13,6 +13,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
 )
@@ -23,7 +24,7 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 		name        string
 		err         error
 		status      Status
-		errorSource ErrorSource
+		errorSource status.Source
 
 		expectedStatus      int32
 		expectedErrorSource string
@@ -67,7 +68,7 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 			name:                "ErrorSource is marshalled",
 			err:                 errors.New("oh no"),
 			status:              StatusBadGateway,
-			errorSource:         ErrorSourceDownstream,
+			errorSource:         status.SourceDownstream,
 			expectedStatus:      int32(StatusBadGateway),
 			expectedErrorSource: "downstream",
 		},

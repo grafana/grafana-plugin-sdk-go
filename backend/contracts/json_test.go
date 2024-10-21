@@ -1,4 +1,4 @@
-package backend_test
+package contracts_test
 
 import (
 	"encoding/json"

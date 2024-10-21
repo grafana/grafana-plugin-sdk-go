@@ -1,4 +1,4 @@
-package backend
+package contracts
 
 import (
 	"context"
@@ -295,13 +295,6 @@ func SecureJSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[strin
 	}
 
 	return secureJSONData
-}
-
-func propagateTenantIDIfPresent(ctx context.Context) context.Context {
-	if tid, exists := tenant.IDFromIncomingGRPCContext(ctx); exists {
-		ctx = tenant.WithTenant(ctx, tid)
-	}
-	return ctx
 }
 
 func (s *DataSourceInstanceSettings) ProxyOptionsFromContext(ctx context.Context) (*proxy.Options, error) {
