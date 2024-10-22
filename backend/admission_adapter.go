@@ -18,7 +18,6 @@ func newAdmissionSDKAdapter(handler AdmissionHandler) *admissionSDKAdapter {
 }
 
 func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.ValidationResponse, error) {
-	ctx = setupAdapterContext(ctx, EndpointValidateAdmission)
 	parsedReq := FromProto().AdmissionRequest(req)
 	resp, err := a.handler.ValidateAdmission(ctx, parsedReq)
 	if err != nil {
@@ -29,7 +28,6 @@ func (a *admissionSDKAdapter) ValidateAdmission(ctx context.Context, req *plugin
 }
 
 func (a *admissionSDKAdapter) MutateAdmission(ctx context.Context, req *pluginv2.AdmissionRequest) (*pluginv2.MutationResponse, error) {
-	ctx = setupAdapterContext(ctx, EndpointMutateAdmission)
 	parsedReq := FromProto().AdmissionRequest(req)
 	resp, err := a.handler.MutateAdmission(ctx, parsedReq)
 	if err != nil {

@@ -14,18 +14,23 @@ import (
 func TestSubscribeStream(t *testing.T) {
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
-		a := newStreamSDKAdapter(&streamAdapter{
-			subscribeStreamFunc: func(ctx context.Context, _ *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
-				require.Equal(t, tid, tenant.IDFromContext(ctx))
-				return &SubscribeStreamResponse{}, nil
+		handlers := Handlers{
+			StreamHandler: &streamAdapter{
+				subscribeStreamFunc: func(ctx context.Context, _ *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
+					require.Equal(t, tid, tenant.IDFromContext(ctx))
+					return &SubscribeStreamResponse{}, nil
+				},
 			},
-		})
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		require.NoError(t, err)
+		a := newStreamSDKAdapter(handlerWithMw)
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
 		}))
 
-		_, err := a.SubscribeStream(ctx, &pluginv2.SubscribeStreamRequest{
+		_, err = a.SubscribeStream(ctx, &pluginv2.SubscribeStreamRequest{
 			PluginContext: &pluginv2.PluginContext{},
 		})
 		require.NoError(t, err)
@@ -35,18 +40,23 @@ func TestSubscribeStream(t *testing.T) {
 func TestPublishStream(t *testing.T) {
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
-		a := newStreamSDKAdapter(&streamAdapter{
-			publishStreamFunc: func(ctx context.Context, _ *PublishStreamRequest) (*PublishStreamResponse, error) {
-				require.Equal(t, tid, tenant.IDFromContext(ctx))
-				return &PublishStreamResponse{}, nil
+		handlers := Handlers{
+			StreamHandler: &streamAdapter{
+				publishStreamFunc: func(ctx context.Context, _ *PublishStreamRequest) (*PublishStreamResponse, error) {
+					require.Equal(t, tid, tenant.IDFromContext(ctx))
+					return &PublishStreamResponse{}, nil
+				},
 			},
-		})
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		require.NoError(t, err)
+		a := newStreamSDKAdapter(handlerWithMw)
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
 		}))
 
-		_, err := a.PublishStream(ctx, &pluginv2.PublishStreamRequest{
+		_, err = a.PublishStream(ctx, &pluginv2.PublishStreamRequest{
 			PluginContext: &pluginv2.PluginContext{},
 		})
 		require.NoError(t, err)
@@ -56,19 +66,24 @@ func TestPublishStream(t *testing.T) {
 func TestRunStream(t *testing.T) {
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
-		a := newStreamSDKAdapter(&streamAdapter{
-			runStreamFunc: func(ctx context.Context, _ *RunStreamRequest, _ *StreamSender) error {
-				require.Equal(t, tid, tenant.IDFromContext(ctx))
-				return nil
+		handlers := Handlers{
+			StreamHandler: &streamAdapter{
+				runStreamFunc: func(ctx context.Context, _ *RunStreamRequest, _ *StreamSender) error {
+					require.Equal(t, tid, tenant.IDFromContext(ctx))
+					return nil
+				},
 			},
-		})
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		require.NoError(t, err)
+		a := newStreamSDKAdapter(handlerWithMw)
 
 		testSrv := newTestRunStreamServer()
 		testSrv.WithContext(metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
 		})))
 
-		err := a.RunStream(&pluginv2.RunStreamRequest{
+		err = a.RunStream(&pluginv2.RunStreamRequest{
 			PluginContext: &pluginv2.PluginContext{},
 		}, testSrv)
 		require.NoError(t, err)

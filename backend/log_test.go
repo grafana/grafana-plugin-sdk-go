@@ -44,8 +44,10 @@ func TestContextualLogger(t *testing.T) {
 		handlers := Handlers{
 			QueryDataHandler: handler,
 		}
-		a := newDataSDKAdapter(handlerFromMiddlewares([]HandlerMiddleware{newContextualLoggerMiddleware()}, handlers))
-		_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware(), newContextualLoggerMiddleware())
+		require.NoError(t, err)
+		a := newDataSDKAdapter(handlerWithMw)
+		_, err = a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 			PluginContext: pCtx,
 		})
 		require.NoError(t, err)
@@ -62,8 +64,10 @@ func TestContextualLogger(t *testing.T) {
 		handlers := Handlers{
 			CheckHealthHandler: handler,
 		}
-		a := newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, handlerFromMiddlewares([]HandlerMiddleware{newContextualLoggerMiddleware()}, handlers))
-		_, err := a.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware(), newContextualLoggerMiddleware())
+		require.NoError(t, err)
+		a := newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, handlerWithMw)
+		_, err = a.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
 			PluginContext: pCtx,
 		})
 		require.NoError(t, err)
@@ -80,8 +84,10 @@ func TestContextualLogger(t *testing.T) {
 		handlers := Handlers{
 			CallResourceHandler: handler,
 		}
-		a := newResourceSDKAdapter(handlerFromMiddlewares([]HandlerMiddleware{newContextualLoggerMiddleware()}, handlers))
-		err := a.CallResource(&pluginv2.CallResourceRequest{
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware(), newContextualLoggerMiddleware())
+		require.NoError(t, err)
+		a := newResourceSDKAdapter(handlerWithMw)
+		err = a.CallResource(&pluginv2.CallResourceRequest{
 			PluginContext: pCtx,
 		}, newTestCallResourceServer())
 		require.NoError(t, err)
@@ -111,7 +117,9 @@ func TestContextualLogger(t *testing.T) {
 				},
 			},
 		}
-		a := newStreamSDKAdapter(handlerFromMiddlewares([]HandlerMiddleware{newContextualLoggerMiddleware()}, handlers))
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware(), newContextualLoggerMiddleware())
+		require.NoError(t, err)
+		a := newStreamSDKAdapter(handlerWithMw)
 
 		t.Run("SubscribeStream", func(t *testing.T) {
 			_, err := a.SubscribeStream(context.Background(), &pluginv2.SubscribeStreamRequest{

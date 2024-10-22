@@ -19,7 +19,6 @@ func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
 }
 
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
-	ctx = setupAdapterContext(ctx, EndpointQueryData)
 	parsedReq := FromProto().QueryDataRequest(req)
 	resp, err := a.queryDataHandler.QueryData(ctx, parsedReq)
 	if err != nil {

@@ -25,7 +25,6 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
 
-	ctx = setupAdapterContext(ctx, EndpointSubscribeStream)
 	parsedReq := FromProto().SubscribeStreamRequest(protoReq)
 	resp, err := a.streamHandler.SubscribeStream(ctx, parsedReq)
 	if err != nil {
@@ -40,7 +39,6 @@ func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
 
-	ctx = setupAdapterContext(ctx, EndpointPublishStream)
 	parsedReq := FromProto().PublishStreamRequest(protoReq)
 	resp, err := a.streamHandler.PublishStream(ctx, parsedReq)
 	if err != nil {
@@ -63,7 +61,6 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 		return status.Error(codes.Unimplemented, "not implemented")
 	}
 	ctx := protoSrv.Context()
-	ctx = setupAdapterContext(ctx, EndpointRunStream)
 	parsedReq := FromProto().RunStreamRequest(protoReq)
 	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
 	return a.streamHandler.RunStream(ctx, parsedReq, sender)

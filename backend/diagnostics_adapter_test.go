@@ -115,9 +115,9 @@ func TestCheckHealth(t *testing.T) {
 		handlers := Handlers{
 			CheckHealthHandler: &testCheckHealthHandlerWithHeaders{},
 		}
-		adapter := &diagnosticsSDKAdapter{
-			checkHealthHandler: handlerFromMiddlewares([]HandlerMiddleware{newHeaderMiddleware()}, handlers),
-		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
+		require.NoError(t, err)
+		adapter := newDiagnosticsSDKAdapter(nil, handlerWithMw)
 		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
@@ -131,15 +131,20 @@ func TestCheckHealth(t *testing.T) {
 
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
-		a := newDiagnosticsSDKAdapter(nil, CheckHealthHandlerFunc(func(ctx context.Context, _ *CheckHealthRequest) (*CheckHealthResult, error) {
-			require.Equal(t, tid, tenant.IDFromContext(ctx))
-			return &CheckHealthResult{}, nil
-		}))
+		handlers := Handlers{
+			CheckHealthHandler: CheckHealthHandlerFunc(func(ctx context.Context, _ *CheckHealthRequest) (*CheckHealthResult, error) {
+				require.Equal(t, tid, tenant.IDFromContext(ctx))
+				return &CheckHealthResult{}, nil
+			}),
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		require.NoError(t, err)
+		a := newDiagnosticsSDKAdapter(nil, handlerWithMw)
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
 		}))
-		_, err := a.CheckHealth(ctx, &pluginv2.CheckHealthRequest{
+		_, err = a.CheckHealth(ctx, &pluginv2.CheckHealthRequest{
 			PluginContext: &pluginv2.PluginContext{},
 		})
 		require.NoError(t, err)

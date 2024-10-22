@@ -29,7 +29,6 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 	})
 
 	ctx := protoSrv.Context()
-	ctx = setupAdapterContext(ctx, EndpointCallResource)
 	parsedReq := FromProto().CallResourceRequest(protoReq)
 	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
 }

@@ -326,6 +326,7 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 	}
 
 	middlewares := []HandlerMiddleware{
+		newTenantIDMiddleware(),
 		newContextualLoggerMiddleware(),
 		NewTracingMiddleware(tracing.DefaultTracer()),
 		NewMetricsMiddleware(prometheus.DefaultRegisterer, "grafana", false),

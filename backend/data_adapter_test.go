@@ -71,9 +71,10 @@ func TestQueryData(t *testing.T) {
 		handlers := Handlers{
 			QueryDataHandler: handler,
 		}
-		handlerWithMw := handlerFromMiddlewares([]HandlerMiddleware{newHeaderMiddleware()}, handlers)
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
+		require.NoError(t, err)
 		adapter := newDataSDKAdapter(handlerWithMw)
-		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
+		_, err = adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
 			},
@@ -101,9 +102,10 @@ func TestQueryData(t *testing.T) {
 		handlers := Handlers{
 			QueryDataHandler: handler,
 		}
-		handlerWithMw := handlerFromMiddlewares([]HandlerMiddleware{newHeaderMiddleware()}, handlers)
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
+		require.NoError(t, err)
 		adapter := newDataSDKAdapter(handlerWithMw)
-		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
+		_, err = adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
 			},
@@ -126,15 +128,21 @@ func TestQueryData(t *testing.T) {
 
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
-		a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
-			require.Equal(t, tid, tenant.IDFromContext(ctx))
-			return NewQueryDataResponse(), nil
-		}))
+		handlers := Handlers{
+			QueryDataHandler: QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
+				require.Equal(t, tid, tenant.IDFromContext(ctx))
+				return NewQueryDataResponse(), nil
+			}),
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		require.NoError(t, err)
+		a := newDataSDKAdapter(handlerWithMw)
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
 		}))
-		_, err := a.QueryData(ctx, &pluginv2.QueryDataRequest{
+
+		_, err = a.QueryData(ctx, &pluginv2.QueryDataRequest{
 			PluginContext: &pluginv2.PluginContext{},
 		})
 		require.NoError(t, err)

@@ -147,8 +147,10 @@ func TestCallResource(t *testing.T) {
 		handlers := Handlers{
 			CallResourceHandler: &testCallResourceWithHeaders{},
 		}
-		adapter := newResourceSDKAdapter(handlerFromMiddlewares([]HandlerMiddleware{newHeaderMiddleware()}, handlers))
-		err := adapter.CallResource(&pluginv2.CallResourceRequest{
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
+		require.NoError(t, err)
+		adapter := newResourceSDKAdapter(handlerWithMw)
+		err = adapter.CallResource(&pluginv2.CallResourceRequest{
 			PluginContext: &pluginv2.PluginContext{},
 			Headers: map[string]*pluginv2.StringList{
 				"Authorization": {
@@ -161,17 +163,22 @@ func TestCallResource(t *testing.T) {
 
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
-		a := newResourceSDKAdapter(CallResourceHandlerFunc(func(ctx context.Context, _ *CallResourceRequest, _ CallResourceResponseSender) error {
-			require.Equal(t, tid, tenant.IDFromContext(ctx))
-			return nil
-		}))
+		handlers := Handlers{
+			CallResourceHandler: CallResourceHandlerFunc(func(ctx context.Context, _ *CallResourceRequest, _ CallResourceResponseSender) error {
+				require.Equal(t, tid, tenant.IDFromContext(ctx))
+				return nil
+			}),
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		require.NoError(t, err)
+		a := newResourceSDKAdapter(handlerWithMw)
 
 		testSender := newTestCallResourceServer()
 		testSender.WithContext(metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
 		})))
 
-		err := a.CallResource(&pluginv2.CallResourceRequest{
+		err = a.CallResource(&pluginv2.CallResourceRequest{
 			PluginContext: &pluginv2.PluginContext{},
 		}, testSender)
 		require.NoError(t, err)
