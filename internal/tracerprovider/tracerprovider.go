@@ -38,8 +38,8 @@ func (noopTracerProvider) Shutdown(_ context.Context) error {
 	return nil
 }
 
-// newNoOpTracerProvider returns a new noopTracerProvider.
-func newNoOpTracerProvider() TracerProvider {
+// NewNoOpTracerProvider returns a new noopTracerProvider.
+func NewNoOpTracerProvider() TracerProvider {
 	return &noopTracerProvider{TracerProvider: noop.NewTracerProvider()}
 }
 
@@ -74,7 +74,7 @@ func newOtelExporter(address string) (tracesdk.SpanExporter, error) {
 // It returns a noopTracerProvider if the address is empty, otherwise it returns a new OpenTelemetry TracerProvider.
 func NewTracerProvider(address string, samplerOpts SamplerOptions, opts tracing.Opts) (TracerProvider, error) {
 	if address == "" {
-		return newNoOpTracerProvider(), nil
+		return NewNoOpTracerProvider(), nil
 	}
 	exp, err := newOtelExporter(address)
 	if err != nil {
