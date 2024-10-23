@@ -134,7 +134,7 @@ func TestQueryData(t *testing.T) {
 				return NewQueryDataResponse(), nil
 			}),
 		}
-		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, NewTenantIDMiddleware())
 		require.NoError(t, err)
 		a := newDataSDKAdapter(handlerWithMw)
 

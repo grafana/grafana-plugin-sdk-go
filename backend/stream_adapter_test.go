@@ -22,7 +22,7 @@ func TestSubscribeStream(t *testing.T) {
 				},
 			},
 		}
-		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, NewTenantIDMiddleware())
 		require.NoError(t, err)
 		a := newStreamSDKAdapter(handlerWithMw)
 
@@ -48,7 +48,7 @@ func TestPublishStream(t *testing.T) {
 				},
 			},
 		}
-		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, NewTenantIDMiddleware())
 		require.NoError(t, err)
 		a := newStreamSDKAdapter(handlerWithMw)
 
@@ -74,7 +74,7 @@ func TestRunStream(t *testing.T) {
 				},
 			},
 		}
-		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, NewTenantIDMiddleware())
 		require.NoError(t, err)
 		a := newStreamSDKAdapter(handlerWithMw)
 

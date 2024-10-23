@@ -169,7 +169,7 @@ func TestCallResource(t *testing.T) {
 				return nil
 			}),
 		}
-		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, NewTenantIDMiddleware())
 		require.NoError(t, err)
 		a := newResourceSDKAdapter(handlerWithMw)
 

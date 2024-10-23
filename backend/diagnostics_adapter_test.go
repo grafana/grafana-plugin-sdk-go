@@ -137,7 +137,7 @@ func TestCheckHealth(t *testing.T) {
 				return &CheckHealthResult{}, nil
 			}),
 		}
-		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, NewTenantIDMiddleware())
 		require.NoError(t, err)
 		a := newDiagnosticsSDKAdapter(nil, handlerWithMw)
 

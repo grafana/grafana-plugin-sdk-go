@@ -33,6 +33,7 @@ func Manage(instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) (Te
 		CallResourceHandler: handler,
 		QueryDataHandler:    handler,
 		StreamHandler:       handler,
+		HandlerMiddlewares:  []backend.HandlerMiddleware{backend.NewTenantIDMiddleware()},
 	}, opts.Address)
 
 	if err != nil {
