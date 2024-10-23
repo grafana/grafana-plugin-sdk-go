@@ -25,15 +25,8 @@ func (a *streamSDKAdapter) SubscribeStream(ctx context.Context, protoReq *plugin
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
 
-	ctx = setupContext(ctx, EndpointSubscribeStream)
 	parsedReq := FromProto().SubscribeStreamRequest(protoReq)
-
-	var resp *SubscribeStreamResponse
-	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = a.streamHandler.SubscribeStream(ctx, parsedReq)
-		return RequestStatusFromError(innerErr), innerErr
-	})
+	resp, err := a.streamHandler.SubscribeStream(ctx, parsedReq)
 	if err != nil {
 		return nil, err
 	}
@@ -46,15 +39,8 @@ func (a *streamSDKAdapter) PublishStream(ctx context.Context, protoReq *pluginv2
 		return nil, status.Error(codes.Unimplemented, "not implemented")
 	}
 
-	ctx = setupContext(ctx, EndpointPublishStream)
 	parsedReq := FromProto().PublishStreamRequest(protoReq)
-
-	var resp *PublishStreamResponse
-	err := wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = a.streamHandler.PublishStream(ctx, parsedReq)
-		return RequestStatusFromError(innerErr), innerErr
-	})
+	resp, err := a.streamHandler.PublishStream(ctx, parsedReq)
 	if err != nil {
 		return nil, err
 	}
@@ -75,12 +61,7 @@ func (a *streamSDKAdapter) RunStream(protoReq *pluginv2.RunStreamRequest, protoS
 		return status.Error(codes.Unimplemented, "not implemented")
 	}
 	ctx := protoSrv.Context()
-	ctx = setupContext(ctx, EndpointRunStream)
 	parsedReq := FromProto().RunStreamRequest(protoReq)
-
-	return wrapHandler(ctx, parsedReq.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
-		err := a.streamHandler.RunStream(ctx, parsedReq, sender)
-		return RequestStatusFromError(err), err
-	})
+	sender := NewStreamSender(&runStreamServer{protoSrv: protoSrv})
+	return a.streamHandler.RunStream(ctx, parsedReq, sender)
 }

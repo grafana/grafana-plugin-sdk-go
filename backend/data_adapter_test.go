@@ -3,7 +3,6 @@ package backend
 import (
 	"bytes"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -69,8 +68,13 @@ func TestQueryData(t *testing.T) {
 	t.Run("When forward HTTP headers enabled should forward headers", func(t *testing.T) {
 		ctx := context.Background()
 		handler := newFakeDataHandlerWithOAuth()
-		adapter := newDataSDKAdapter(handler)
-		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
+		handlers := Handlers{
+			QueryDataHandler: handler,
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
+		require.NoError(t, err)
+		adapter := newDataSDKAdapter(handlerWithMw)
+		_, err = adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
 			},
@@ -95,8 +99,13 @@ func TestQueryData(t *testing.T) {
 	t.Run("When forward HTTP headers disable should not forward headers", func(t *testing.T) {
 		ctx := context.Background()
 		handler := newFakeDataHandlerWithOAuth()
-		adapter := newDataSDKAdapter(handler)
-		_, err := adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
+		handlers := Handlers{
+			QueryDataHandler: handler,
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
+		require.NoError(t, err)
+		adapter := newDataSDKAdapter(handlerWithMw)
+		_, err = adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
 			},
@@ -119,135 +128,24 @@ func TestQueryData(t *testing.T) {
 
 	t.Run("When tenant information is attached to incoming context, it is propagated from adapter to handler", func(t *testing.T) {
 		tid := "123456"
-		a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
-			require.Equal(t, tid, tenant.IDFromContext(ctx))
-			return NewQueryDataResponse(), nil
-		}))
+		handlers := Handlers{
+			QueryDataHandler: QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
+				require.Equal(t, tid, tenant.IDFromContext(ctx))
+				return NewQueryDataResponse(), nil
+			}),
+		}
+		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
+		require.NoError(t, err)
+		a := newDataSDKAdapter(handlerWithMw)
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
 		}))
-		_, err := a.QueryData(ctx, &pluginv2.QueryDataRequest{
+
+		_, err = a.QueryData(ctx, &pluginv2.QueryDataRequest{
 			PluginContext: &pluginv2.PluginContext{},
 		})
 		require.NoError(t, err)
-	})
-
-	t.Run("TestQueryDataResponse", func(t *testing.T) {
-		someErr := errors.New("oops")
-
-		for _, tc := range []struct {
-			name              string
-			queryDataResponse *QueryDataResponse
-			expErrorSource    ErrorSource
-			expError          bool
-		}{
-			{
-				name: `single downstream error should be "downstream" error source`,
-				queryDataResponse: &QueryDataResponse{
-					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourceDownstream},
-					},
-				},
-				expErrorSource: ErrorSourceDownstream,
-			},
-			{
-				name: `single plugin error should be "plugin" error source`,
-				queryDataResponse: &QueryDataResponse{
-					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourcePlugin},
-					},
-				},
-				expErrorSource: ErrorSourcePlugin,
-			},
-			{
-				name: `multiple downstream errors should be "downstream" error source`,
-				queryDataResponse: &QueryDataResponse{
-					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourceDownstream},
-						"B": {Error: someErr, ErrorSource: ErrorSourceDownstream},
-					},
-				},
-				expErrorSource: ErrorSourceDownstream,
-			},
-			{
-				name: `single plugin error mixed with downstream errors should be "plugin" error source`,
-				queryDataResponse: &QueryDataResponse{
-					Responses: map[string]DataResponse{
-						"A": {Error: someErr, ErrorSource: ErrorSourceDownstream},
-						"B": {Error: someErr, ErrorSource: ErrorSourcePlugin},
-						"C": {Error: someErr, ErrorSource: ErrorSourceDownstream},
-					},
-				},
-				expErrorSource: ErrorSourcePlugin,
-			},
-			{
-				name: `single downstream error without error source should be "downstream" error source`,
-				queryDataResponse: &QueryDataResponse{
-					Responses: map[string]DataResponse{
-						"A": {Error: DownstreamErrorf("boom")},
-					},
-				},
-				expErrorSource: ErrorSourceDownstream,
-			},
-			{
-				name: `multiple downstream error without error source and single plugin error should be "plugin" error source`,
-				queryDataResponse: &QueryDataResponse{
-					Responses: map[string]DataResponse{
-						"A": {Error: DownstreamErrorf("boom")},
-						"B": {Error: someErr},
-						"C": {Error: DownstreamErrorf("boom")},
-					},
-				},
-				expErrorSource: ErrorSourcePlugin,
-			},
-			{
-				name:              "nil queryDataResponse and nil error should throw error",
-				queryDataResponse: nil,
-				expErrorSource:    ErrorSourcePlugin,
-				expError:          true,
-			},
-		} {
-			t.Run(tc.name, func(t *testing.T) {
-				var actualCtx context.Context
-				a := newDataSDKAdapter(QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
-					actualCtx = ctx
-					return tc.queryDataResponse, nil
-				}))
-				_, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
-					PluginContext: &pluginv2.PluginContext{},
-				})
-
-				if tc.expError {
-					require.Error(t, err)
-				} else {
-					require.NoError(t, err)
-				}
-
-				ss := ErrorSourceFromContext(actualCtx)
-				require.Equal(t, tc.expErrorSource, ss)
-			})
-		}
-	})
-
-	t.Run("QueryData response without valid error source error should set error source", func(t *testing.T) {
-		someErr := errors.New("oops")
-		downstreamErr := DownstreamError(someErr)
-		a := newDataSDKAdapter(QueryDataHandlerFunc(func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
-			return &QueryDataResponse{
-				Responses: map[string]DataResponse{
-					"A": {Error: someErr},
-					"B": {Error: downstreamErr},
-				},
-			}, nil
-		}))
-		resp, err := a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
-			PluginContext: &pluginv2.PluginContext{},
-		})
-
-		require.NoError(t, err)
-		require.Equal(t, ErrorSourcePlugin, ErrorSource(resp.Responses["A"].ErrorSource))
-		require.Equal(t, ErrorSourceDownstream, ErrorSource(resp.Responses["B"].ErrorSource))
 	})
 }
 
