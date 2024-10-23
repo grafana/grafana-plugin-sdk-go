@@ -325,15 +325,7 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 		serveOpts.HandlerMiddlewares = make([]HandlerMiddleware, 0)
 	}
 
-	middlewares := []HandlerMiddleware{
-		NewTenantIDMiddleware(),
-		newContextualLoggerMiddleware(),
-		NewTracingMiddleware(tracing.DefaultTracer()),
-		NewMetricsMiddleware(prometheus.DefaultRegisterer, "grafana", false),
-		NewLoggerMiddleware(Logger, nil),
-		newHeaderMiddleware(),
-		NewErrorSourceMiddleware(),
-	}
+	middlewares := defaultHandlerMiddlewares()
 	serveOpts.HandlerMiddlewares = append(middlewares, serveOpts.HandlerMiddlewares...)
 
 	if s, enabled := standalone.ServerModeEnabled(pluginID); enabled {
@@ -355,6 +347,13 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 // TestStandaloneServe starts a gRPC server that is not managed by hashicorp.
 // The function returns the gRPC server which should be closed by the consumer.
 func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
+	if opts.HandlerMiddlewares == nil {
+		opts.HandlerMiddlewares = make([]HandlerMiddleware, 0)
+	}
+
+	middlewares := defaultHandlerMiddlewares()
+	opts.HandlerMiddlewares = append(middlewares, opts.HandlerMiddlewares...)
+
 	pluginOpts, err := GRPCServeOpts(opts)
 	if err != nil {
 		return nil, err
@@ -421,4 +420,16 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	}()
 
 	return server, nil
+}
+
+func defaultHandlerMiddlewares() []HandlerMiddleware {
+	return []HandlerMiddleware{
+		newTenantIDMiddleware(),
+		newContextualLoggerMiddleware(),
+		NewTracingMiddleware(tracing.DefaultTracer()),
+		NewMetricsMiddleware(prometheus.DefaultRegisterer, "grafana", false),
+		NewLoggerMiddleware(Logger, nil),
+		newHeaderMiddleware(),
+		NewErrorSourceMiddleware(),
+	}
 }

@@ -6,8 +6,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
-// NewTenantIDMiddleware creates a new handler middleware that extract tenant ID from the incoming gRPC context, if available.
-func NewTenantIDMiddleware() HandlerMiddleware {
+// newTenantIDMiddleware creates a new handler middleware that extract tenant ID from the incoming gRPC context, if available.
+func newTenantIDMiddleware() HandlerMiddleware {
 	return HandlerMiddlewareFunc(func(next Handler) Handler {
 		return &tenantIDMiddleware{
 			BaseHandler: NewBaseHandler(next),
