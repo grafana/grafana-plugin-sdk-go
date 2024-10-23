@@ -3,9 +3,11 @@ package backend
 import (
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/build"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
 )
 
 func TestGetTracingConfig(t *testing.T) {
@@ -120,6 +122,15 @@ func TestGetTracingConfig(t *testing.T) {
 			cfg := getTracingConfig(tc.buildInfoGetter)
 			require.Equal(t, tc.expEnabled, cfg.isEnabled())
 			require.Equal(t, tc.expCfg, cfg)
+
+			err := SetupTracer("test", tracing.Opts{})
+			require.NoError(t, err)
+
+			tp := otel.GetTracerProvider()
+			require.NotNil(t, tp)
+
+			_, ok := tp.(tracerprovider.TracerProvider)
+			require.True(t, ok)
 		})
 	}
 }
