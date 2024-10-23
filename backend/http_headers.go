@@ -1,10 +1,13 @@
 package backend
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"net/textproto"
 	"strings"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
 const (
@@ -93,4 +96,71 @@ func deleteHTTPHeaderInStringMap(headers map[string]string, key string) {
 			break
 		}
 	}
+}
+
+// newHeaderMiddleware creates a new handler middleware that forwards HTTP headers to outgoing
+// HTTP request sent using the HTTP client from the httpclient package.
+func newHeaderMiddleware() HandlerMiddleware {
+	return HandlerMiddlewareFunc(func(next Handler) Handler {
+		return &headerMiddleware{
+			BaseHandler: NewBaseHandler(next),
+		}
+	})
+}
+
+// headerMiddleware a handler middleware that forwards HTTP headers to outgoing
+// HTTP request sent using the HTTP client from the httpclient package.
+type headerMiddleware struct {
+	BaseHandler
+}
+
+func (m headerMiddleware) applyHeaders(ctx context.Context, headers http.Header) context.Context {
+	if len(headers) > 0 {
+		ctx = httpclient.WithContextualMiddleware(ctx,
+			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
+				if !opts.ForwardHTTPHeaders {
+					return next
+				}
+
+				return httpclient.RoundTripperFunc(func(qreq *http.Request) (*http.Response, error) {
+					// Only set a header if it is not already set.
+					for k, v := range headers {
+						if qreq.Header.Get(k) == "" {
+							for _, vv := range v {
+								qreq.Header.Add(k, vv)
+							}
+						}
+					}
+					return next.RoundTrip(qreq)
+				})
+			}))
+	}
+	return ctx
+}
+
+func (m *headerMiddleware) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+	if req == nil {
+		return m.BaseHandler.QueryData(ctx, req)
+	}
+
+	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
+	return m.BaseHandler.QueryData(ctx, req)
+}
+
+func (m *headerMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+	if req == nil {
+		return m.BaseHandler.CallResource(ctx, req, sender)
+	}
+
+	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
+	return m.BaseHandler.CallResource(ctx, req, sender)
+}
+
+func (m *headerMiddleware) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+	if req == nil {
+		return m.BaseHandler.CheckHealth(ctx, req)
+	}
+
+	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
+	return m.BaseHandler.CheckHealth(ctx, req)
 }
