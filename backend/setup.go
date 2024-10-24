@@ -205,6 +205,14 @@ func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 
 		// Initialize global tracer for plugin developer usage
 		tracing.InitDefaultTracer(otel.Tracer(pluginID))
+	} else {
+		pf, err := tracerprovider.NewTextMapPropagator(string(tracerprovider.PropagatorFormatW3C))
+		if err != nil {
+			return fmt.Errorf("new propagator format: %w", err)
+		}
+
+		tp := tracerprovider.NewNoOpTracerProvider()
+		tracerprovider.InitGlobalTracerProvider(tp, pf)
 	}
 
 	enabled := tracingCfg.isEnabled()
