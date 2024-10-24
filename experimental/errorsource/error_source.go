@@ -37,23 +37,48 @@ func (r Error) ErrorSource() backend.ErrorSource {
 	return r.source
 }
 
+// Options provides options for error source functions
+type Options struct {
+	// Override will override the error source if it already exists
+	Override bool
+}
+
+// WithOverride will set the override option when creating an error source
+// This will override the error source if it already exists
+func WithOverride() func(*Options) {
+	return func(s *Options) {
+		s.Override = true
+	}
+}
+
 // PluginError will apply the source as plugin
-func PluginError(err error, override bool) error {
-	return SourceError(backend.ErrorSourcePlugin, err, override)
+func PluginError(err error, options ...func(*Options)) error {
+	return ErrorWithSource(err, backend.ErrorSourcePlugin, options...)
 }
 
 // DownstreamError will apply the source as downstream
-func DownstreamError(err error, override bool) error {
-	return SourceError(backend.ErrorSourceDownstream, err, override)
+func DownstreamError(err error, options ...func(*Options)) error {
+	return ErrorWithSource(err, backend.ErrorSourceDownstream, options...)
 }
 
 // SourceError returns an error with the source
 // If source is already defined, it will return it, or you can override
-func SourceError(source backend.ErrorSource, err error, override bool) Error {
+func ErrorWithSource(err error, source backend.ErrorSource, options ...func(*Options)) Error {
 	var sourceError Error
-	if errors.As(err, &sourceError) && !override {
+
+	opts := &Options{
+		// default to not override
+		Override: false,
+	}
+
+	for _, o := range options {
+		o(opts)
+	}
+
+	if errors.As(err, &sourceError) && !opts.Override {
 		return sourceError // already has a source
 	}
+
 	return Error{
 		source: source,
 		err:    err,
@@ -61,7 +86,7 @@ func SourceError(source backend.ErrorSource, err error, override bool) Error {
 }
 
 // Response returns an error DataResponse given status, source of the error and message.
-func Response(err error) backend.DataResponse {
+func ResponseWithErrorSource(err error) backend.DataResponse {
 	var e Error
 	if !errors.As(err, &e) {
 		// generic error, default to "plugin" error source
@@ -86,17 +111,17 @@ func FromStatus(status backend.Status) backend.ErrorSource {
 // AddPluginErrorToResponse adds the error as plugin error source to the response
 // if the error already has a source, the existing source will be used
 func AddPluginErrorToResponse(refID string, response *backend.QueryDataResponse, err error) *backend.QueryDataResponse {
-	return AddErrorToResponse(refID, response, PluginError(err, false))
+	return AddErrorToResponse(refID, response, PluginError(err))
 }
 
 // AddDownstreamErrorToResponse adds the error as downstream source to the response
 // if the error already has a source, the existing source will be used
 func AddDownstreamErrorToResponse(refID string, response *backend.QueryDataResponse, err error) *backend.QueryDataResponse {
-	return AddErrorToResponse(refID, response, DownstreamError(err, false))
+	return AddErrorToResponse(refID, response, DownstreamError(err))
 }
 
 // AddErrorToResponse adds the error to the response
 func AddErrorToResponse(refID string, response *backend.QueryDataResponse, err error) *backend.QueryDataResponse {
-	response.Responses[refID] = Response(err)
+	response.Responses[refID] = ResponseWithErrorSource(err)
 	return response
 }
