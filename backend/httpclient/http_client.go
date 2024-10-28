@@ -211,6 +211,7 @@ func DefaultMiddlewares() []Middleware {
 		CustomHeadersMiddleware(),
 		ContextualMiddleware(),
 		ErrorSourceMiddleware(),
+		DataSourceMetricsMiddleware(),
 	}
 }
 
