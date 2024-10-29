@@ -39,12 +39,18 @@ func (r Error) ErrorSource() backend.ErrorSource {
 
 // PluginError will apply the source as plugin
 func PluginError(err error, override bool) error {
-	return SourceError(backend.ErrorSourcePlugin, err, override)
+	if err != nil {
+		return SourceError(backend.ErrorSourcePlugin, err, override)
+	}
+	return nil
 }
 
 // DownstreamError will apply the source as downstream
 func DownstreamError(err error, override bool) error {
-	return SourceError(backend.ErrorSourceDownstream, err, override)
+	if err != nil {
+		return SourceError(backend.ErrorSourceDownstream, err, override)
+	}
+	return nil
 }
 
 // SourceError returns an error with the source
