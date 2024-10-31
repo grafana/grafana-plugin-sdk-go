@@ -57,11 +57,11 @@ func TestNewClient(t *testing.T) {
 
 		require.Len(t, usedMiddlewares, 6)
 		require.Equal(t, TracingMiddlewareName, usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[2].(MiddlewareName).MiddlewareName())
-		require.Equal(t, ContextualMiddlewareName, usedMiddlewares[3].(MiddlewareName).MiddlewareName())
-		require.Equal(t, ErrorSourceMiddlewareName, usedMiddlewares[4].(MiddlewareName).MiddlewareName())
-		require.Equal(t, DataSourceMetricsMiddlewareName, usedMiddlewares[5].(MiddlewareName).MiddlewareName())
+		require.Equal(t, DataSourceMetricsMiddlewareName, usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+		require.Equal(t, BasicAuthenticationMiddlewareName, usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+		require.Equal(t, CustomHeadersMiddlewareName, usedMiddlewares[3].(MiddlewareName).MiddlewareName())
+		require.Equal(t, ContextualMiddlewareName, usedMiddlewares[4].(MiddlewareName).MiddlewareName())
+		require.Equal(t, ErrorSourceMiddlewareName, usedMiddlewares[5].(MiddlewareName).MiddlewareName())
 	})
 
 	t.Run("New() with opts middleware should return expected http.Client", func(t *testing.T) {

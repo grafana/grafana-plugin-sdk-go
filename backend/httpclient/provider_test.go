@@ -15,8 +15,9 @@ func TestProvider(t *testing.T) {
 			provider := NewProvider()
 			require.NotNil(t, provider)
 			require.Equal(t, TracingMiddlewareName, provider.Opts.Middlewares[0].(MiddlewareName).MiddlewareName())
-			require.Equal(t, BasicAuthenticationMiddlewareName, provider.Opts.Middlewares[1].(MiddlewareName).MiddlewareName())
-			require.Equal(t, CustomHeadersMiddlewareName, provider.Opts.Middlewares[2].(MiddlewareName).MiddlewareName())
+			require.Equal(t, DataSourceMetricsMiddlewareName, provider.Opts.Middlewares[1].(MiddlewareName).MiddlewareName())
+			require.Equal(t, BasicAuthenticationMiddlewareName, provider.Opts.Middlewares[2].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, provider.Opts.Middlewares[3].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("New client should use default middlewares", func(t *testing.T) {
@@ -26,11 +27,11 @@ func TestProvider(t *testing.T) {
 			require.NotNil(t, client)
 			require.Len(t, ctx.usedMiddlewares, 6)
 			require.Equal(t, TracingMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
-			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
-			require.Equal(t, ErrorSourceMiddlewareName, ctx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
-			require.Equal(t, DataSourceMetricsMiddlewareName, ctx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
+			require.Equal(t, DataSourceMetricsMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ErrorSourceMiddlewareName, ctx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("Transport should use default middlewares", func(t *testing.T) {
@@ -40,11 +41,11 @@ func TestProvider(t *testing.T) {
 			require.NotNil(t, transport)
 			require.Len(t, ctx.usedMiddlewares, 6)
 			require.Equal(t, TracingMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
-			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
-			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
-			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
-			require.Equal(t, ErrorSourceMiddlewareName, ctx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
-			require.Equal(t, DataSourceMetricsMiddlewareName, ctx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
+			require.Equal(t, DataSourceMetricsMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
+			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
+			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ErrorSourceMiddlewareName, ctx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("New() with options and no middleware should return expected http client and transport", func(t *testing.T) {
@@ -90,11 +91,11 @@ func TestProvider(t *testing.T) {
 				require.Equal(t, "mw2", pCtx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw3", pCtx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 				require.Equal(t, TracingMiddlewareName, pCtx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
-				require.Equal(t, BasicAuthenticationMiddlewareName, pCtx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
-				require.Equal(t, CustomHeadersMiddlewareName, pCtx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
-				require.Equal(t, ContextualMiddlewareName, pCtx.usedMiddlewares[6].(MiddlewareName).MiddlewareName())
-				require.Equal(t, ErrorSourceMiddlewareName, pCtx.usedMiddlewares[7].(MiddlewareName).MiddlewareName())
-				require.Equal(t, DataSourceMetricsMiddlewareName, pCtx.usedMiddlewares[8].(MiddlewareName).MiddlewareName())
+				require.Equal(t, DataSourceMetricsMiddlewareName, pCtx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
+				require.Equal(t, BasicAuthenticationMiddlewareName, pCtx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
+				require.Equal(t, CustomHeadersMiddlewareName, pCtx.usedMiddlewares[6].(MiddlewareName).MiddlewareName())
+				require.Equal(t, ContextualMiddlewareName, pCtx.usedMiddlewares[7].(MiddlewareName).MiddlewareName())
+				require.Equal(t, ErrorSourceMiddlewareName, pCtx.usedMiddlewares[8].(MiddlewareName).MiddlewareName())
 			})
 
 			t.Run("When roundtrip should call expected middlewares", func(t *testing.T) {
