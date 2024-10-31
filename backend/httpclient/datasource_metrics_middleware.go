@@ -60,10 +60,10 @@ var (
 	)
 )
 
-// SanitizeLabelName removes all invalid chars from the label name.
+// sanitizeLabelName removes all invalid chars from the label name.
 // If the label name is empty or contains only invalid chars, it
 // will return an error.
-func SanitizeLabelName(name string) (string, error) {
+func sanitizeLabelName(name string) (string, error) {
 	if len(name) == 0 {
 		return "", errors.New("label name cannot be empty")
 	}
@@ -99,10 +99,11 @@ func DataSourceMetricsMiddleware() Middleware {
 			return next
 		}
 
-		datasourceLabelName, err := SanitizeLabelName(datasourceName)
+		datasourceLabelName, err := sanitizeLabelName(datasourceName)
 		// if the datasource named cannot be turned into a prometheus
 		// label we will skip instrumenting these metrics.
 		if err != nil {
+			log.DefaultLogger.Error("failed to sanitize datasource name", "error", err)
 			return next
 		}
 
@@ -110,10 +111,11 @@ func DataSourceMetricsMiddleware() Middleware {
 		if !exists {
 			return next
 		}
-		datasourceLabelType, err := SanitizeLabelName(datasourceType)
+		datasourceLabelType, err := sanitizeLabelName(datasourceType)
 		// if the datasource type cannot be turned into a prometheus
 		// label we will skip instrumenting these metrics.
 		if err != nil {
+			log.DefaultLogger.Error("failed to sanitize datasource type", "error", err)
 			return next
 		}
 
