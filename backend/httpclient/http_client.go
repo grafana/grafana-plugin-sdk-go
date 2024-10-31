@@ -207,11 +207,11 @@ type ConfigureMiddlewareFunc func(opts Options, existingMiddleware []Middleware)
 func DefaultMiddlewares() []Middleware {
 	return []Middleware{
 		TracingMiddleware(nil),
+		DataSourceMetricsMiddleware(),
 		BasicAuthenticationMiddleware(),
 		CustomHeadersMiddleware(),
 		ContextualMiddleware(),
 		ErrorSourceMiddleware(),
-		DataSourceMetricsMiddleware(),
 	}
 }
 
