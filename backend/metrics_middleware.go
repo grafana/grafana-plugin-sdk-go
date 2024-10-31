@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 
+	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 	"github.com/prometheus/client_golang/prometheus"
 )
 
@@ -41,7 +42,7 @@ type metricsMiddleware struct {
 
 func (m *metricsMiddleware) instrumentRequest(ctx context.Context, pCtx PluginContext, fn handlerWrapperFunc) error {
 	status, err := fn(ctx)
-	endpoint := EndpointFromContext(ctx)
+	endpoint := ctxHelpers.EndpointFromContext(ctx)
 
 	labelValues := []string{endpoint.String(), status.String(), string(ErrorSourceFromContext(ctx))}
 

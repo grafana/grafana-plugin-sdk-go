@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"slices"
+
+	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 )
 
 var (
@@ -46,9 +48,9 @@ func HandlerFromMiddlewares(finalHandler Handler, middlewares ...HandlerMiddlewa
 	}, nil
 }
 
-func (h *MiddlewareHandler) setupContext(ctx context.Context, pluginCtx PluginContext, endpoint Endpoint) context.Context {
+func (h *MiddlewareHandler) setupContext(ctx context.Context, pluginCtx PluginContext, endpoint ctxHelpers.Endpoint) context.Context {
 	ctx = initErrorSource(ctx)
-	ctx = WithEndpoint(ctx, endpoint)
+	ctx = ctxHelpers.WithEndpoint(ctx, endpoint)
 	ctx = WithPluginContext(ctx, pluginCtx)
 	ctx = WithGrafanaConfig(ctx, pluginCtx.GrafanaConfig)
 	ctx = WithUser(ctx, pluginCtx.User)

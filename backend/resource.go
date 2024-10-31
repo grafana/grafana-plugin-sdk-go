@@ -4,10 +4,12 @@ import (
 	"context"
 	"net/http"
 	"net/textproto"
+
+	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 )
 
 // EndpointCallResource friendly name for the call resource endpoint/handler.
-const EndpointCallResource Endpoint = "callResource"
+const EndpointCallResource ctxHelpers.Endpoint = "callResource"
 
 // CallResourceRequest represents a request for a resource call.
 type CallResourceRequest struct {

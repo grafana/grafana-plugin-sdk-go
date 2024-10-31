@@ -7,12 +7,13 @@ import (
 	"net/http"
 	"time"
 
+	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
 )
 
 // EndpointQueryData friendly name for the query data endpoint/handler.
-const EndpointQueryData Endpoint = "queryData"
+const EndpointQueryData ctxHelpers.Endpoint = "queryData"
 
 // QueryDataHandler handles data queries.
 type QueryDataHandler interface {

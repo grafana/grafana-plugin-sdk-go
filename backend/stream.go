@@ -5,19 +5,20 @@ import (
 	"encoding/json"
 	"fmt"
 
+	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 const (
 	// EndpointSubscribeStream friendly name for the subscribe stream endpoint/handler.
-	EndpointSubscribeStream Endpoint = "subscribeStream"
+	EndpointSubscribeStream ctxHelpers.Endpoint = "subscribeStream"
 
 	// EndpointPublishStream friendly name for the publish stream endpoint/handler.
-	EndpointPublishStream Endpoint = "publishStream"
+	EndpointPublishStream ctxHelpers.Endpoint = "publishStream"
 
 	// EndpointRunStream friendly name for the run stream endpoint/handler.
-	EndpointRunStream Endpoint = "runStream"
+	EndpointRunStream ctxHelpers.Endpoint = "runStream"
 )
 
 // SubscribeStreamHandler handles stream subscription.
