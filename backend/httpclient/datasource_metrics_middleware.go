@@ -8,6 +8,8 @@ import (
 	"strings"
 	"time"
 
+	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -24,7 +26,7 @@ var (
 			Name:      "datasource_request_total",
 			Help:      "A counter for outgoing requests for an external data source",
 		},
-		[]string{"datasource", "datasource_type", "code", "method", "secure_socks_ds_proxy_enabled"},
+		[]string{"datasource", "datasource_type", "code", "method", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 
 	datasourceRequestHistogram = promauto.NewHistogramVec(
@@ -33,7 +35,7 @@ var (
 			Name:      "datasource_request_duration_seconds",
 			Help:      "histogram of durations of outgoing external data source requests sent from Grafana",
 			Buckets:   []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 25, 50, 100},
-		}, []string{"datasource", "datasource_type", "code", "method", "secure_socks_ds_proxy_enabled"},
+		}, []string{"datasource", "datasource_type", "code", "method", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 
 	datasourceResponseHistogram = promauto.NewHistogramVec(
@@ -47,7 +49,7 @@ var (
 			NativeHistogramBucketFactor:     1.1,
 			NativeHistogramMaxBucketNumber:  100,
 			NativeHistogramMinResetDuration: time.Hour,
-		}, []string{"datasource", "datasource_type", "secure_socks_ds_proxy_enabled"},
+		}, []string{"datasource", "datasource_type", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 
 	datasourceRequestsInFlight = promauto.NewGaugeVec(
@@ -56,7 +58,7 @@ var (
 			Name:      "datasource_request_in_flight",
 			Help:      "A gauge of outgoing external data source requests currently being sent by Grafana",
 		},
-		[]string{"datasource", "datasource_type", "secure_socks_ds_proxy_enabled"},
+		[]string{"datasource", "datasource_type", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 )
 
@@ -131,6 +133,8 @@ func DataSourceMetricsMiddleware() Middleware {
 
 func executeMiddleware(next http.RoundTripper, labels prometheus.Labels) http.RoundTripper {
 	return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		ctx := r.Context()
+		labels["endpoint"] = ctxHelpers.EndpointFromContext(ctx).String()
 		requestCounter := datasourceRequestCounter.MustCurryWith(labels)
 		requestHistogram := datasourceRequestHistogram.MustCurryWith(labels)
 		requestInFlight := datasourceRequestsInFlight.With(labels)
