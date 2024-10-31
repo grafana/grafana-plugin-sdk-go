@@ -93,3 +93,11 @@ func TestError(t *testing.T) {
 	dErr := DownstreamError(err, true)
 	require.True(t, backend.IsDownstreamError(dErr))
 }
+
+func TestNilError(t *testing.T) {
+	err := error(nil)
+	pErr := PluginError(err, true)
+	require.Nil(t, pErr)
+	dErr := DownstreamError(err, true)
+	require.Nil(t, dErr)
+}
