@@ -7,6 +7,7 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"net"
 	"net/http"
 	"os"
@@ -65,6 +66,19 @@ type ClientCfg struct {
 	ProxyAddress  string
 	ServerName    string
 	AllowInsecure bool
+}
+
+// Hash is used as part of the plugin instance cache key.
+// The ClientKeyVal and ClientCertVal differ between different Hosted Grafana instances,
+// so we include them in the hash key to avoid false positives in `NeedsUpdate`.
+func (c *ClientCfg) Hash() string {
+	if c == nil {
+		return ""
+	}
+	h := fnv.New64a()
+	_, _ = h.Write([]byte(c.ClientKeyVal))
+	_, _ = h.Write([]byte(c.ClientCertVal))
+	return fmt.Sprintf("%x", h.Sum64())
 }
 
 // New creates a new proxy client from a given config.

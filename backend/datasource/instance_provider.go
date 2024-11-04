@@ -59,12 +59,17 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 		return nil, errors.New("data source instance settings cannot be nil")
 	}
 
-	defaultKey := pluginContext.DataSourceInstanceSettings.ID
-	if tID := tenant.IDFromContext(ctx); tID != "" {
-		return fmt.Sprintf("%s#%v", tID, defaultKey), nil
+	dsID := pluginContext.DataSourceInstanceSettings.ID
+
+	proxyHash := ""
+	proxyOpts, _ := pluginContext.DataSourceInstanceSettings.ProxyOptionsFromContext(ctx)
+	if proxyOpts != nil {
+		proxyHash = proxyOpts.ClientCfg.Hash()
 	}
 
-	return defaultKey, nil
+	tenantID := tenant.IDFromContext(ctx)
+
+	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash), nil
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
