@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 
-	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
@@ -27,7 +26,7 @@ type tracingMiddleware struct {
 }
 
 func (m *tracingMiddleware) traceRequest(ctx context.Context, pCtx PluginContext, fn func(context.Context) (RequestStatus, error)) error {
-	endpoint := ctxHelpers.EndpointFromContext(ctx)
+	endpoint := EndpointFromContext(ctx)
 	ctx, span := m.tracer.Start(ctx, fmt.Sprintf("sdk.%s", endpoint), trace.WithAttributes(
 		attribute.String("plugin_id", pCtx.PluginID),
 		attribute.Int64("org_id", pCtx.OrgID),

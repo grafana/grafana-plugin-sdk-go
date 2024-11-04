@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
+	endpointctx "github.com/grafana/grafana-plugin-sdk-go/backend/internal/endpointctx"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
@@ -134,7 +134,10 @@ func DataSourceMetricsMiddleware() Middleware {
 func executeMiddleware(next http.RoundTripper, labels prometheus.Labels) http.RoundTripper {
 	return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		ctx := r.Context()
-		labels["endpoint"] = ctxHelpers.EndpointFromContext(ctx).String()
+		labels["endpoint"] = ""
+		if ep := ctx.Value(endpointctx.EndpointCtxKey); ep != nil {
+			labels["endpoint"] = ep.(string)
+		}
 		requestCounter := datasourceRequestCounter.MustCurryWith(labels)
 		requestHistogram := datasourceRequestHistogram.MustCurryWith(labels)
 		requestInFlight := datasourceRequestsInFlight.With(labels)

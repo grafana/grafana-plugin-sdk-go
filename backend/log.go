@@ -5,7 +5,6 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
-	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
@@ -21,7 +20,7 @@ var NewLoggerWith = func(args ...interface{}) log.Logger {
 func withContextualLogAttributes(ctx context.Context, pCtx PluginContext) context.Context {
 	args := []any{"pluginId", pCtx.PluginID}
 
-	endpoint := ctxHelpers.EndpointFromContext(ctx)
+	endpoint := EndpointFromContext(ctx)
 	if !endpoint.IsEmpty() {
 		args = append(args, "endpoint", string(endpoint))
 	}

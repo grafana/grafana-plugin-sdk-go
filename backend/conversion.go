@@ -2,13 +2,11 @@ package backend
 
 import (
 	"context"
-
-	pCtx "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 )
 
 const (
 	// EndpointConvertObjects friendly name for the convert objects endpoint/handler.
-	EndpointConvertObjects pCtx.Endpoint = "convertObjects"
+	EndpointConvertObjects Endpoint = "convertObjects"
 )
 
 // ConversionHandler is an EXPERIMENTAL service that allows converting objects between versions

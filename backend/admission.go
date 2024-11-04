@@ -3,16 +3,15 @@ package backend
 import (
 	"context"
 
-	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 const (
 	// EndpointValidateAdmission friendly name for the validate admission endpoint/handler.
-	EndpointValidateAdmission ctxHelpers.Endpoint = "validateAdmission"
+	EndpointValidateAdmission Endpoint = "validateAdmission"
 
 	// EndpointMutateAdmission friendly name for the mutate admission endpoint/handler.
-	EndpointMutateAdmission ctxHelpers.Endpoint = "mutateAdmission"
+	EndpointMutateAdmission Endpoint = "mutateAdmission"
 )
 
 // AdmissionHandler is an EXPERIMENTAL service that allows checking objects before they are saved

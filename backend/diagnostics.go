@@ -4,16 +4,14 @@ import (
 	"context"
 	"net/http"
 	"strconv"
-
-	ctxHelpers "github.com/grafana/grafana-plugin-sdk-go/backend/context"
 )
 
 const (
 	// EndpointCheckHealth friendly name for the check health endpoint/handler.
-	EndpointCheckHealth ctxHelpers.Endpoint = "checkHealth"
+	EndpointCheckHealth Endpoint = "checkHealth"
 
 	// EndpointCollectMetrics friendly name for the collect metrics endpoint/handler.
-	EndpointCollectMetrics ctxHelpers.Endpoint = "collectMetrics"
+	EndpointCollectMetrics Endpoint = "collectMetrics"
 )
 
 // CheckHealthHandler enables users to send health check
