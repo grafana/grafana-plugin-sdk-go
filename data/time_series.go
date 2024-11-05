@@ -308,7 +308,7 @@ func (p *longRowProcessor) process(longRowIdx int) error {
 	}
 
 	if currentTime.Before(p.lastTime) {
-		return fmt.Errorf("long series must be sorted ascending by time to be converted")
+		return ErrorSeriesUnsorted
 	}
 
 	sliceKey := make(tupleLabels, len(p.tsSchema.FactorIndices)) // factor columns idx:value tuples (used for lookup)
@@ -386,7 +386,7 @@ func (p *longRowProcessor) process(longRowIdx int) error {
 func timeAt(idx int, longFrame *Frame, tsSchema TimeSeriesSchema) (time.Time, error) { // get time.Time regardless if pointer
 	val, ok := longFrame.ConcreteAt(tsSchema.TimeIndex, idx)
 	if !ok {
-		return time.Time{}, fmt.Errorf("can not convert to wide series, input has null time values")
+		return time.Time{}, ErrorNullTimeValues
 	}
 	return val.(time.Time), nil
 }
