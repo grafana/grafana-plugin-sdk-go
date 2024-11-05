@@ -1,6 +1,10 @@
 package backend
 
-import "context"
+import (
+	"context"
+
+	endpointctx "github.com/grafana/grafana-plugin-sdk-go/backend/internal/endpointctx"
+)
 
 // Endpoint used for defining names for endpoints/handlers.
 type Endpoint string
@@ -14,18 +18,14 @@ func (e Endpoint) String() string {
 	return string(e)
 }
 
-type endpointCtxKeyType struct{}
-
-var endpointCtxKey = endpointCtxKeyType{}
-
 // WithEndpoint adds endpoint to ctx.
 func WithEndpoint(ctx context.Context, endpoint Endpoint) context.Context {
-	return context.WithValue(ctx, endpointCtxKey, endpoint)
+	return context.WithValue(ctx, endpointctx.EndpointCtxKey, endpoint)
 }
 
 // EndpointFromContext extracts [Endpoint] from ctx if available, otherwise empty [Endpoint].
 func EndpointFromContext(ctx context.Context) Endpoint {
-	if ep := ctx.Value(endpointCtxKey); ep != nil {
+	if ep := ctx.Value(endpointctx.EndpointCtxKey); ep != nil {
 		return ep.(Endpoint)
 	}
 
