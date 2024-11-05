@@ -420,7 +420,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	if err != nil {
 		return nil, err
 	} else if wideLen == 0 {
-		return nil, fmt.Errorf("can not convert to long series, input fields have no rows")
+		return nil, ErrInputFieldsWithoutRows
 	}
 
 	var uniqueValueNames []string                        // unique names of Fields that are value types
