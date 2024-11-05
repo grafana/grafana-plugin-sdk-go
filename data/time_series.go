@@ -420,7 +420,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	if err != nil {
 		return nil, err
 	} else if wideLen == 0 {
-		return nil, ErrInputFieldsWithoutRows
+		return nil, ErrorInputFieldsWithoutRows
 	}
 
 	var uniqueValueNames []string                        // unique names of Fields that are value types
