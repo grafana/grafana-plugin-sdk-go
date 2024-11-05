@@ -60,13 +60,7 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 	}
 
 	dsID := pluginContext.DataSourceInstanceSettings.ID
-
-	proxyHash := ""
-	proxyOpts, _ := pluginContext.DataSourceInstanceSettings.ProxyOptionsFromContext(ctx)
-	if proxyOpts != nil {
-		proxyHash = proxyOpts.ClientCfg.Hash()
-	}
-
+	proxyHash := backend.ProxyHashFromContext(ctx)
 	tenantID := tenant.IDFromContext(ctx)
 
 	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash), nil

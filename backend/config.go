@@ -48,6 +48,17 @@ func WithGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
 	return ctx
 }
 
+// ProxyHashFromContext returns a hash of some of the socks proxy options,
+// if present, for use in datasource instance caching
+func ProxyHashFromContext(ctx context.Context) string {
+	cfg := GrafanaConfigFromContext(ctx)
+	p, err := cfg.proxy()
+	if err != nil {
+		return ""
+	}
+	return p.clientCfg.Hash()
+}
+
 type GrafanaCfg struct {
 	config map[string]string
 }

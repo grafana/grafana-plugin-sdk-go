@@ -68,6 +68,23 @@ func TestInstanceProvider(t *testing.T) {
 		require.Equal(t, "6##831bfc2b12764aa6", key)
 	})
 
+	t.Run("Datasource cache key does not include empty proxy settings", func(t *testing.T) {
+		cfg := backend.NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:            "true",
+			proxy.PluginSecureSocksProxyClientKeyContents:  "",
+			proxy.PluginSecureSocksProxyClientCertContents: "",
+		})
+		ctx := backend.WithGrafanaConfig(context.Background(), cfg)
+		key, err := ip.GetKey(ctx, backend.PluginContext{
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+				ID:       6,
+				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
+			},
+		})
+		require.NoError(t, err)
+		require.Equal(t, "6##", key)
+	})
+
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
 		config := map[string]string{
 			"foo": "bar",

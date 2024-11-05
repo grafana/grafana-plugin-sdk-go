@@ -2,6 +2,8 @@ package backend
 
 import (
 	"context"
+	"crypto/rand"
+	"fmt"
 	"os"
 	"testing"
 
@@ -357,4 +359,37 @@ func TestPluginAppClientSecret(t *testing.T) {
 		require.NoError(t, err)
 		require.Equal(t, "client-secret", v)
 	})
+}
+
+func randomProxyConfig() *GrafanaCfg {
+	key := make([]byte, 500)
+	cert := make([]byte, 500)
+	_, _ = rand.Read(key)
+	_, _ = rand.Read(cert)
+	for i := 0; i < 500; i++ {
+		key[i] = 32 + key[i]%64
+		cert[i] = 32 + cert[i]%64
+	}
+	return NewGrafanaCfg(map[string]string{
+		proxy.PluginSecureSocksProxyEnabled:            "true",
+		proxy.PluginSecureSocksProxyClientKeyContents:  string(key),
+		proxy.PluginSecureSocksProxyClientCertContents: string(cert),
+	})
+}
+
+func Benchmark_ClientCfg_Hash(b *testing.B) {
+	count := 0
+	for i := 0; i < b.N; i++ {
+		// randomize in here so we don't get tricked by any low-level caching
+		// This setup takes about half of the benchmark time. We could use
+		// b.StopTimer() / b.StartTimer() but that seems to slow the overall
+		// benchmark down massively.
+		cfg := randomProxyConfig()
+		ctx := WithGrafanaConfig(context.Background(), cfg)
+		hash := ProxyHashFromContext(ctx)
+		if hash[0] == 'a' {
+			count++
+		}
+	}
+	fmt.Printf("This should be about one in 16: %f\n", float64(count)/float64(b.N))
 }

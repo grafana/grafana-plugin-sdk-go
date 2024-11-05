@@ -72,7 +72,7 @@ type ClientCfg struct {
 // The ClientKeyVal and ClientCertVal differ between different Hosted Grafana instances,
 // so we include them in the hash key to avoid false positives in `NeedsUpdate`.
 func (c *ClientCfg) Hash() string {
-	if c == nil {
+	if c == nil || c.ClientKeyVal == "" || c.ClientCertVal == "" {
 		return ""
 	}
 	h := fnv.New64a()
