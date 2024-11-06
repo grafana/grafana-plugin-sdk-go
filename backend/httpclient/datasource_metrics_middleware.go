@@ -136,7 +136,7 @@ func executeMiddleware(next http.RoundTripper, labels prometheus.Labels) http.Ro
 		ctx := r.Context()
 		labels["endpoint"] = ""
 		if ep := ctx.Value(endpointctx.EndpointCtxKey); ep != nil {
-			labels["endpoint"] = ep.(string)
+			labels["endpoint"] = fmt.Sprintf("%v", ep)
 		}
 		requestCounter := datasourceRequestCounter.MustCurryWith(labels)
 		requestHistogram := datasourceRequestHistogram.MustCurryWith(labels)
