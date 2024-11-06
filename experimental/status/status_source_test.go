@@ -186,6 +186,11 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			err:      &net.DNSError{IsNotFound: true},
 			expected: true,
 		},
+		{
+			name:     "secure sock proxy error",
+			err:      fmt.Errorf("socks connect tcp localhost:10443->bad-connection.com:80: unknown error network unreachable"),
+			expected: true,
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {

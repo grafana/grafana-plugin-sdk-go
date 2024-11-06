@@ -177,7 +177,7 @@ func isDNSNotFoundError(err error) bool {
 }
 
 func isSocksProxyError(err error) bool {
-	return strings.Contains(err.Error(), "socks connect")
+	return err != nil && strings.Contains(err.Error(), "socks connect")
 }
 
 type sourceCtxKey struct{}
