@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"os"
+	"strings"
 	"syscall"
 
 	grpccodes "google.golang.org/grpc/codes"
@@ -136,7 +137,8 @@ func IsDownstreamError(err error) bool {
 func IsDownstreamHTTPError(err error) bool {
 	return IsDownstreamError(err) ||
 		isConnectionResetOrRefusedError(err) ||
-		isDNSNotFoundError(err)
+		isDNSNotFoundError(err) ||
+		isSocksProxyError(err)
 }
 
 // InCancelledError returns true if err is context.Canceled or is gRPC status Canceled.
@@ -172,6 +174,10 @@ func isDNSNotFoundError(err error) bool {
 	}
 
 	return false
+}
+
+func isSocksProxyError(err error) bool {
+	return strings.Contains(err.Error(), "socks connect")
 }
 
 type sourceCtxKey struct{}
