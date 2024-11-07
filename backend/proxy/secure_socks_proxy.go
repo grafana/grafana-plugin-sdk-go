@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 	"golang.org/x/net/proxy"
@@ -336,5 +337,5 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 	}
 
 	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType).Observe(time.Since(start).Seconds())
-	return c, err
+	return c, status.DownstreamError(err)
 }
