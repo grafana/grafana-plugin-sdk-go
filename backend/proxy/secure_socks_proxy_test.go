@@ -350,7 +350,7 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 		c, err := cd.DialContext(context.Background(), "n", "addr")
 		assert.Nil(t, c)
 		assert.NotNil(t, err)
-		assert.Equal(t, "custom error", err.Error())
+		assert.Equal(t, "downstream error: custom error", err.Error())
 	})
 }
 

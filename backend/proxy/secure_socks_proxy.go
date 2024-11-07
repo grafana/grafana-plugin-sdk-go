@@ -335,7 +335,10 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 		log.DefaultLogger.Error("received err from dialer", "network", n, "addr", addr, "err", err)
 		code = "dial_error"
 	}
+	if err != nil {
+		err = status.DownstreamError(err)
+	}
 
 	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType).Observe(time.Since(start).Seconds())
-	return c, status.DownstreamError(err)
+	return c, err
 }
