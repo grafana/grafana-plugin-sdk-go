@@ -116,6 +116,32 @@ type DataSourceInstanceSettings struct {
 	APIVersion string
 }
 
+func (s *DataSourceInstanceSettings) GetURL() string {
+	return s.URL
+}
+
+func (s *DataSourceInstanceSettings) GetName() string {
+	return s.Name
+}
+
+func (s *DataSourceInstanceSettings) IsSecureSocksDSProxyEnabled() bool {
+	if s.JSONData == nil {
+		return false
+	}
+
+	var dat map[string]interface{}
+	if err := json.Unmarshal(s.JSONData, &dat); err != nil {
+		return false
+	}
+
+	enableSecureSocksProxyEnabled, ok := dat["enableSecureSocksProxy"]
+	if !ok {
+		return false
+	}
+
+	return enableSecureSocksProxyEnabled.(bool)
+}
+
 // HTTPClientOptions creates httpclient.Options based on settings.
 func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (httpclient.Options, error) {
 	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
