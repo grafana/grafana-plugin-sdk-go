@@ -36,9 +36,7 @@ func TestInstanceProvider(t *testing.T) {
 
 	t.Run("When PDC is configured, datasource cache key should include its hash", func(t *testing.T) {
 		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyEnabled:            "true",
-			proxy.PluginSecureSocksProxyClientKeyContents:  "clientKey",
-			proxy.PluginSecureSocksProxyClientCertContents: "clientCert",
+			proxy.PluginSecureSocksProxyClientCertContentsHash: "01234568",
 		})
 		ctx := backend.WithGrafanaConfig(context.Background(), cfg)
 		key, err := ip.GetKey(ctx, backend.PluginContext{
@@ -48,41 +46,7 @@ func TestInstanceProvider(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		require.Equal(t, "5##a52015d0f6cbf3f8", key)
-	})
-
-	t.Run("Datasource cache key is different with different proxy settings", func(t *testing.T) {
-		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyEnabled:            "true",
-			proxy.PluginSecureSocksProxyClientKeyContents:  "clientKeyTwo",
-			proxy.PluginSecureSocksProxyClientCertContents: "clientCertTwo",
-		})
-		ctx := backend.WithGrafanaConfig(context.Background(), cfg)
-		key, err := ip.GetKey(ctx, backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
-				ID:       6,
-				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
-			},
-		})
-		require.NoError(t, err)
-		require.Equal(t, "6##831bfc2b12764aa6", key)
-	})
-
-	t.Run("Datasource cache key does not include empty proxy settings", func(t *testing.T) {
-		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyEnabled:            "true",
-			proxy.PluginSecureSocksProxyClientKeyContents:  "",
-			proxy.PluginSecureSocksProxyClientCertContents: "",
-		})
-		ctx := backend.WithGrafanaConfig(context.Background(), cfg)
-		key, err := ip.GetKey(ctx, backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
-				ID:       6,
-				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
-			},
-		})
-		require.NoError(t, err)
-		require.Equal(t, "6##", key)
+		require.Equal(t, "5##01234568", key)
 	})
 
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
