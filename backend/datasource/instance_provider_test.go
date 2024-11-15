@@ -36,17 +36,32 @@ func TestInstanceProvider(t *testing.T) {
 
 	t.Run("When PDC is configured, datasource cache key should include its hash", func(t *testing.T) {
 		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyClientCertContentsHash: "01234568",
+			proxy.PluginSecureSocksProxyClientCertContents: "whee",
 		})
-		ctx := backend.WithGrafanaConfig(context.Background(), cfg)
-		key, err := ip.GetKey(ctx, backend.PluginContext{
+		key, err := ip.GetKey(context.Background(), backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 				ID:       5,
 				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
 			},
+			GrafanaConfig: cfg,
 		})
 		require.NoError(t, err)
-		require.Equal(t, "5##01234568", key)
+		require.Equal(t, "5##84778cf8", key)
+	})
+
+	t.Run("When PDC is configured, different cert contents give different hashes", func(t *testing.T) {
+		cfg := backend.NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyClientCertContents: "oh no",
+		})
+		key, err := ip.GetKey(context.Background(), backend.PluginContext{
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+				ID:       6,
+				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
+			},
+			GrafanaConfig: cfg,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "6##352d64b5", key)
 	})
 
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {

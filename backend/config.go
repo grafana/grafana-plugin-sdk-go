@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"hash/fnv"
 	"os"
 	"strconv"
 	"strings"
@@ -46,13 +47,6 @@ func GrafanaConfigFromContext(ctx context.Context) *GrafanaCfg {
 func WithGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
 	ctx = context.WithValue(ctx, configKey{}, cfg)
 	return ctx
-}
-
-// ProxyHashFromContext returns the hash of the client cert contents, set on
-// the incoming GrafanaCfg, for use in datasource instance caching
-func ProxyHashFromContext(ctx context.Context) string {
-	cfg := GrafanaConfigFromContext(ctx)
-	return cfg.Get(proxy.PluginSecureSocksProxyClientCertContentsHash)
 }
 
 type GrafanaCfg struct {
@@ -101,6 +95,28 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 		}
 	}
 	return true
+}
+
+// ProxyHash returns a hash of the configured proxy client cert contents
+// for use in datasource instance caching. It stores the hash so it only
+// needs to be calculated once per datasource instance.
+func (c *GrafanaCfg) ProxyHash() string {
+	if c == nil {
+		return ""
+	}
+	hash := c.config[proxy.PluginSecureSocksProxyClientCertContentsHash]
+	if hash != "" {
+		return hash
+	}
+	contents := c.config[proxy.PluginSecureSocksProxyClientCertContents]
+	if contents == "" {
+		return ""
+	}
+	h := fnv.New32a()
+	_, _ = h.Write([]byte(contents))
+	hash = fmt.Sprintf("%08x", h.Sum32())
+	c.config[proxy.PluginSecureSocksProxyClientCertContentsHash] = hash
+	return hash
 }
 
 type FeatureToggles struct {

@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
@@ -60,7 +59,7 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 	}
 
 	dsID := pluginContext.DataSourceInstanceSettings.ID
-	proxyHash := backend.ProxyHashFromContext(ctx)
+	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
 	tenantID := tenant.IDFromContext(ctx)
 
 	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash), nil
