@@ -39,11 +39,8 @@ func TestInstanceProvider(t *testing.T) {
 			proxy.PluginSecureSocksProxyClientKeyContents: "This should work",
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
-				ID:       5,
-				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
-			},
-			GrafanaConfig: cfg,
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 5},
+			GrafanaConfig:              cfg,
 		})
 		require.NoError(t, err)
 		require.Equal(t, "5##work", key)
@@ -54,11 +51,8 @@ func TestInstanceProvider(t *testing.T) {
 			proxy.PluginSecureSocksProxyClientKeyContents: "",
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
-				ID:       6,
-				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
-			},
-			GrafanaConfig: cfg,
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 6},
+			GrafanaConfig:              cfg,
 		})
 		require.NoError(t, err)
 		require.Equal(t, "6##", key)
@@ -69,11 +63,8 @@ func TestInstanceProvider(t *testing.T) {
 			proxy.PluginSecureSocksProxyClientKeyContents: "doh",
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
-				ID:       7,
-				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
-			},
-			GrafanaConfig: cfg,
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 7},
+			GrafanaConfig:              cfg,
 		})
 		require.NoError(t, err)
 		require.Equal(t, "7##doh", key)
