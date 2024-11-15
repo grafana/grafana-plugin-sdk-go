@@ -21,17 +21,16 @@ import (
 )
 
 const (
-	PluginSecureSocksProxyEnabled                = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
-	PluginSecureSocksProxyClientCert             = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
-	PluginSecureSocksProxyClientCertContents     = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT_VAL"
-	PluginSecureSocksProxyClientCertContentsHash = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT_HASH"
-	PluginSecureSocksProxyClientKey              = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
-	PluginSecureSocksProxyClientKeyContents      = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY_VAL"
-	PluginSecureSocksProxyRootCAs                = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
-	PluginSecureSocksProxyRootCAsContents        = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT_VALS"
-	PluginSecureSocksProxyProxyAddress           = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
-	PluginSecureSocksProxyServerName             = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
-	PluginSecureSocksProxyAllowInsecure          = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
+	PluginSecureSocksProxyEnabled            = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_ENABLED"
+	PluginSecureSocksProxyClientCert         = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT"
+	PluginSecureSocksProxyClientCertContents = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_CERT_VAL"
+	PluginSecureSocksProxyClientKey          = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY"
+	PluginSecureSocksProxyClientKeyContents  = "GF_SECURE_SOCKS_DATASOURCE_PROXY_CLIENT_KEY_VAL"
+	PluginSecureSocksProxyRootCAs            = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT"
+	PluginSecureSocksProxyRootCAsContents    = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ROOT_CA_CERT_VALS"
+	PluginSecureSocksProxyProxyAddress       = "GF_SECURE_SOCKS_DATASOURCE_PROXY_PROXY_ADDRESS"
+	PluginSecureSocksProxyServerName         = "GF_SECURE_SOCKS_DATASOURCE_PROXY_SERVER_NAME"
+	PluginSecureSocksProxyAllowInsecure      = "GF_SECURE_SOCKS_DATASOURCE_PROXY_ALLOW_INSECURE"
 )
 
 var (

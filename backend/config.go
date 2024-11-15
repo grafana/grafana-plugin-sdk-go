@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"hash/fnv"
 	"os"
 	"strconv"
 	"strings"
@@ -97,26 +96,15 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	return true
 }
 
-// ProxyHash returns a hash of the configured proxy client cert contents
-// for use in datasource instance caching. It stores the hash so it only
-// needs to be calculated once per datasource instance.
+// ProxyHash returns the last four bytes of the PDC client key contents,
+// if present, for use in datasource instance caching
 func (c *GrafanaCfg) ProxyHash() string {
 	if c == nil {
 		return ""
 	}
-	hash := c.config[proxy.PluginSecureSocksProxyClientCertContentsHash]
-	if hash != "" {
-		return hash
-	}
-	contents := c.config[proxy.PluginSecureSocksProxyClientCertContents]
-	if contents == "" {
-		return ""
-	}
-	h := fnv.New32a()
-	_, _ = h.Write([]byte(contents))
-	hash = fmt.Sprintf("%08x", h.Sum32())
-	c.config[proxy.PluginSecureSocksProxyClientCertContentsHash] = hash
-	return hash
+	key := c.config[proxy.PluginSecureSocksProxyClientKeyContents]
+	start := max(len(key)-4, 0)
+	return key[start:]
 }
 
 type FeatureToggles struct {

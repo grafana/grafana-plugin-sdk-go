@@ -34,9 +34,9 @@ func TestInstanceProvider(t *testing.T) {
 		require.Equal(t, "4##", key)
 	})
 
-	t.Run("When PDC is configured, datasource cache key should include its hash", func(t *testing.T) {
+	t.Run("When PDC is configured, datasource cache key should include its (so-called) hash", func(t *testing.T) {
 		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyClientCertContents: "whee",
+			proxy.PluginSecureSocksProxyClientKeyContents: "This should work",
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
@@ -46,12 +46,12 @@ func TestInstanceProvider(t *testing.T) {
 			GrafanaConfig: cfg,
 		})
 		require.NoError(t, err)
-		require.Equal(t, "5##84778cf8", key)
+		require.Equal(t, "5##work", key)
 	})
 
-	t.Run("When PDC is configured, different cert contents give different hashes", func(t *testing.T) {
+	t.Run("When PDC is configured but the key is empty, no problem", func(t *testing.T) {
 		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyClientCertContents: "oh no",
+			proxy.PluginSecureSocksProxyClientKeyContents: "",
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
@@ -61,7 +61,22 @@ func TestInstanceProvider(t *testing.T) {
 			GrafanaConfig: cfg,
 		})
 		require.NoError(t, err)
-		require.Equal(t, "6##352d64b5", key)
+		require.Equal(t, "6##", key)
+	})
+
+	t.Run("When PDC is configured, a too-short key doesn't cause an error", func(t *testing.T) {
+		cfg := backend.NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyClientKeyContents: "doh",
+		})
+		key, err := ip.GetKey(context.Background(), backend.PluginContext{
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
+				ID:       7,
+				JSONData: []byte(`{"enableSecureSocksProxy": true}`),
+			},
+			GrafanaConfig: cfg,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "7##doh", key)
 	})
 
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
