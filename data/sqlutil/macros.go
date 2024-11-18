@@ -74,6 +74,15 @@ func macroTimeFrom(query *Query, args []string) (string, error) {
 	return fmt.Sprintf("%s >= '%s'", args[0], query.TimeRange.From.UTC().Format(time.RFC3339)), nil
 }
 
+// Default macro to return the starting query time range.
+// It requires no arguments.
+// Example:
+//
+//	$__timeFromValue() => '2006-01-02T15:04:05Z07:00'
+func macroTimeFromValue(query *Query, _ []string) (string, error) {
+	return fmt.Sprintf("'%s'", query.TimeRange.To.UTC().Format(time.RFC3339)), nil
+}
+
 // Default time filter for SQL based on the ending query time range.
 // It requires one argument, the time column to filter.
 // Example:
@@ -85,6 +94,15 @@ func macroTimeTo(query *Query, args []string) (string, error) {
 	}
 
 	return fmt.Sprintf("%s <= '%s'", args[0], query.TimeRange.To.UTC().Format(time.RFC3339)), nil
+}
+
+// Default macro to return the ending query time range.
+// It requires no arguments.
+// Example:
+//
+//	$__timeToValue() => '2006-01-02T15:04:05Z07:00'
+func macroTimeToValue(query *Query, _ []string) (string, error) {
+	return fmt.Sprintf("'%s'", query.TimeRange.To.UTC().Format(time.RFC3339)), nil
 }
 
 // Default time group for SQL based the given period.
@@ -136,14 +154,16 @@ func macroColumn(query *Query, _ []string) (string, error) {
 }
 
 var DefaultMacros = Macros{
-	"interval":    macroInterval,
-	"interval_ms": macroIntervalMS,
-	"timeFilter":  macroTimeFilter,
-	"timeFrom":    macroTimeFrom,
-	"timeGroup":   macroTimeGroup,
-	"timeTo":      macroTimeTo,
-	"table":       macroTable,
-	"column":      macroColumn,
+	"interval":      macroInterval,
+	"interval_ms":   macroIntervalMS,
+	"timeFilter":    macroTimeFilter,
+	"timeFrom":      macroTimeFrom,
+	"timeFromValue": macroTimeFromValue,
+	"timeGroup":     macroTimeGroup,
+	"timeTo":        macroTimeTo,
+	"timeToValue":   macroTimeToValue,
+	"table":         macroTable,
+	"column":        macroColumn,
 }
 
 type macroMatch struct {

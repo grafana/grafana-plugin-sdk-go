@@ -142,8 +142,18 @@ func TestInterpolate(t *testing.T) {
 			output: "select * from foo where time <= '0001-01-01T00:00:00Z'",
 		},
 		{
+			name:   "default timeToValue macro",
+			input:  "select * from foo where time <= $__timeToValue()",
+			output: "select * from foo where time <= '0001-01-01T00:00:00Z'",
+		},
+		{
 			name:   "default timeFrom macro",
 			input:  "select * from foo where $__timeFrom(time)",
+			output: "select * from foo where time >= '0001-01-01T00:00:00Z'",
+		},
+		{
+			name:   "default timeFromValue macro",
+			input:  "select * from foo where time >= $__timeFromValue()",
 			output: "select * from foo where time >= '0001-01-01T00:00:00Z'",
 		},
 		{
