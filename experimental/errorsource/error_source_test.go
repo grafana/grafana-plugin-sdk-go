@@ -20,22 +20,19 @@ func TestResponse(t *testing.T) {
 		{
 			name:            "generic error",
 			err:             errors.New("other"),
-			expStatus:       backend.StatusUnknown,
 			expErrorMessage: "other",
-			expErrorSource:  backend.ErrorSourcePlugin,
+			expErrorSource:  "",
 		},
 		{
 			name:            "downstream error",
 			err:             DownstreamError(errors.New("bad gateway"), false),
-			expStatus:       0,
-			expErrorMessage: "bad gateway",
+			expErrorMessage: "downstream error: bad gateway",
 			expErrorSource:  backend.ErrorSourceDownstream,
 		},
 		{
 			name:            "plugin error",
 			err:             PluginError(errors.New("internal error"), false),
-			expStatus:       0,
-			expErrorMessage: "internal error",
+			expErrorMessage: "plugin error: internal error",
 			expErrorSource:  backend.ErrorSourcePlugin,
 		},
 	} {

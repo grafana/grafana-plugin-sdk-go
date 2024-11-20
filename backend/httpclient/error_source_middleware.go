@@ -11,14 +11,17 @@ const ErrorSourceMiddlewareName = "ErrorSource"
 
 // ErrorSourceMiddleware inspect the response error and wraps it in a [status.DownstreamError] if [status.IsDownstreamHTTPError] returns true.
 func ErrorSourceMiddleware() Middleware {
-	return NamedMiddlewareFunc(ErrorSourceMiddlewareName, func(_ Options, next http.RoundTripper) http.RoundTripper {
-		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			res, err := next.RoundTrip(req)
-			if err != nil && status.IsDownstreamHTTPError(err) {
-				return res, status.DownstreamError(err)
-			}
+	return NamedMiddlewareFunc(ErrorSourceMiddlewareName, ErrorSourceRoundTripper)
+}
 
-			return res, err
-		})
+// ErrorSourceRoundTripper inspect the response error and wraps it in a [status.DownstreamError] if [status.IsDownstreamHTTPError] returns true.
+func ErrorSourceRoundTripper(_ Options, next http.RoundTripper) http.RoundTripper {
+	return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		res, err := next.RoundTrip(req)
+		if err != nil && status.IsDownstreamHTTPError(err) {
+			return res, status.DownstreamError(err)
+		}
+
+		return res, err
 	})
 }

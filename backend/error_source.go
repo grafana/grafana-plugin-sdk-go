@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
@@ -9,6 +10,7 @@ import (
 
 // ErrorSource type defines the source of the error
 type ErrorSource = status.Source
+type ErrorWithSource = status.ErrorWithSource
 
 const (
 	// ErrorSourcePlugin error originates from plugin.
@@ -20,6 +22,10 @@ const (
 	// DefaultErrorSource is the default [ErrorSource] that should be used when it is not explicitly set.
 	DefaultErrorSource = status.SourcePlugin
 )
+
+func NewErrorWithSource(err error, source ErrorSource) ErrorWithSource {
+	return status.NewErrorWithSource(err, source)
+}
 
 // ErrorSourceFromHTTPStatus returns an [ErrorSource] based on provided HTTP status code.
 func ErrorSourceFromHTTPStatus(statusCode int) ErrorSource {
@@ -41,6 +47,11 @@ func IsDownstreamHTTPError(err error) bool {
 // DownstreamError creates a new error with status [ErrorSourceDownstream].
 func DownstreamError(err error) error {
 	return status.DownstreamError(err)
+}
+
+// PluginError creates a new error with status [ErrorSourcePlugin].
+func PluginError(err error) error {
+	return status.PluginError(err)
 }
 
 // DownstreamErrorf creates a new error with status [ErrorSourceDownstream] and formats
@@ -74,4 +85,20 @@ func WithErrorSource(ctx context.Context, s ErrorSource) error {
 // called before this function.
 func WithDownstreamErrorSource(ctx context.Context) error {
 	return status.WithDownstreamSource(ctx)
+}
+
+// Response returns an error DataResponse given status, source of the error and message.
+func ErrorResponse(err error) DataResponse {
+	var e ErrorWithSource
+	if errors.As(err, &e) {
+		return DataResponse{
+			Error:       e,
+			ErrorSource: e.ErrorSource(),
+		}
+	}
+	return DataResponse{
+		Error:       err,
+		// We are not adding a source here because we don't know the source
+		// It will default then to a plugin error
+	}
 }
