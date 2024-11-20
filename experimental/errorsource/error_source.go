@@ -45,9 +45,9 @@ func SourceError(source backend.ErrorSource, err error, override bool) Error {
 }
 
 // Response returns an error DataResponse given status, source of the error and message.
-// Deprecated: Use backend.ErrorResponse instead
+// Deprecated: Use backend.ErrorResponseWithErrorSource instead
 func Response(err error) backend.DataResponse {
-	return backend.ErrorResponse(err)
+	return backend.ErrorResponseWithErrorSource(err)
 }
 
 // FromStatus returns error source from status

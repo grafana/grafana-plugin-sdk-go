@@ -87,8 +87,9 @@ func WithDownstreamErrorSource(ctx context.Context) error {
 	return status.WithDownstreamSource(ctx)
 }
 
-// Response returns an error DataResponse given status, source of the error and message.
-func ErrorResponse(err error) DataResponse {
+// Response returns an error DataResponse with error and source of the error if present.
+// If the error does not have a source, it keeps the ErrorSource empty.
+func ErrorResponseWithErrorSource(err error) DataResponse {
 	var e ErrorWithSource
 	if errors.As(err, &e) {
 		return DataResponse{
@@ -98,7 +99,5 @@ func ErrorResponse(err error) DataResponse {
 	}
 	return DataResponse{
 		Error:       err,
-		// We are not adding a source here because we don't know the source
-		// It will default then to a plugin error
 	}
 }
