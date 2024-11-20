@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/errorsource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 var dateUnitPattern = regexp.MustCompile(`^(\d+)([dwMy])$`)
@@ -17,7 +17,7 @@ var dateUnitPattern = regexp.MustCompile(`^(\d+)([dwMy])$`)
 func ParseInterval(inp string) (time.Duration, error) {
 	dur, period, err := parse(inp)
 	if err != nil {
-		return 0, errorsource.DownstreamError(err, false)
+		return 0, backend.DownstreamError(err)
 	}
 	if period == "" {
 		return dur, nil
@@ -39,7 +39,7 @@ func ParseInterval(inp string) (time.Duration, error) {
 		return now.AddDate(num, 0, 0).Sub(now), nil
 	}
 
-	return 0, errorsource.DownstreamError(fmt.Errorf("invalid interval %q", inp), false)
+	return 0, backend.DownstreamError(fmt.Errorf("invalid interval %q", inp))
 }
 
 // ParseDuration parses a duration with support for all units that Grafana uses.
@@ -47,7 +47,7 @@ func ParseInterval(inp string) (time.Duration, error) {
 func ParseDuration(inp string) (time.Duration, error) {
 	dur, period, err := parse(inp)
 	if err != nil {
-		return 0, errorsource.DownstreamError(err, false)
+		return 0, backend.DownstreamError(err)
 	}
 	if period == "" {
 		return dur, nil
@@ -71,7 +71,7 @@ func ParseDuration(inp string) (time.Duration, error) {
 		return dur * year, nil
 	}
 
-	return 0, errorsource.DownstreamError(fmt.Errorf("invalid duration %q", inp), false)
+	return 0, backend.DownstreamError(fmt.Errorf("invalid duration %q", inp))
 }
 
 func parse(inp string) (time.Duration, string, error) {

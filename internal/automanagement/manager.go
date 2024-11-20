@@ -6,7 +6,6 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/errorsource"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -33,13 +32,16 @@ func (m *Manager) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 			// shouldn't be possible, but just in case
 			return nil, err
 		}
-		var esErr errorsource.Error
+		var esErr backend.ErrorWithSource
 		ok := errors.As(err, &esErr)
 		if !ok { // not an errorsource error, return opaquely
 			return nil, err
 		}
 		resp := backend.NewQueryDataResponse()
-		errorsource.AddErrorToResponse(req.Queries[0].RefID, resp, err)
+		resp.Responses[req.Queries[0].RefID] = backend.DataResponse{
+			Error: err,
+			ErrorSource: esErr.ErrorSource(),
+		}
 		return resp, nil
 	}
 	if ds, ok := h.(backend.QueryDataHandler); ok {
