@@ -59,12 +59,11 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 		return nil, errors.New("data source instance settings cannot be nil")
 	}
 
-	defaultKey := pluginContext.DataSourceInstanceSettings.ID
-	if tID := tenant.IDFromContext(ctx); tID != "" {
-		return fmt.Sprintf("%s#%v", tID, defaultKey), nil
-	}
+	dsID := pluginContext.DataSourceInstanceSettings.ID
+	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
+	tenantID := tenant.IDFromContext(ctx)
 
-	return defaultKey, nil
+	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash), nil
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {

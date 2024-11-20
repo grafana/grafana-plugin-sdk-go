@@ -96,6 +96,17 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	return true
 }
 
+// ProxyHash returns the last four bytes of the PDC client key contents,
+// if present, for use in datasource instance caching
+func (c *GrafanaCfg) ProxyHash() string {
+	if c == nil {
+		return ""
+	}
+	key := c.config[proxy.PluginSecureSocksProxyClientKeyContents]
+	start := max(len(key)-4, 0)
+	return key[start:]
+}
+
 type FeatureToggles struct {
 	// enabled is a set-like map of feature flags that are enabled.
 	enabled map[string]struct{}

@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/stretchr/testify/require"
 )
 
@@ -30,7 +31,43 @@ func TestInstanceProvider(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		require.Equal(t, int64(4), key)
+		require.Equal(t, "4##", key)
+	})
+
+	t.Run("When PDC is configured, datasource cache key should include its (so-called) hash", func(t *testing.T) {
+		cfg := backend.NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyClientKeyContents: "This should work",
+		})
+		key, err := ip.GetKey(context.Background(), backend.PluginContext{
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 5},
+			GrafanaConfig:              cfg,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "5##work", key)
+	})
+
+	t.Run("When PDC is configured but the key is empty, no problem", func(t *testing.T) {
+		cfg := backend.NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyClientKeyContents: "",
+		})
+		key, err := ip.GetKey(context.Background(), backend.PluginContext{
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 6},
+			GrafanaConfig:              cfg,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "6##", key)
+	})
+
+	t.Run("When PDC is configured, a too-short key doesn't cause an error", func(t *testing.T) {
+		cfg := backend.NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyClientKeyContents: "doh",
+		})
+		key, err := ip.GetKey(context.Background(), backend.PluginContext{
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 7},
+			GrafanaConfig:              cfg,
+		})
+		require.NoError(t, err)
+		require.Equal(t, "7##doh", key)
 	})
 
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
