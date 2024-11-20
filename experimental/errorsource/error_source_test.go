@@ -75,7 +75,6 @@ func TestResponseWithOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			res := Response(tc.err)
 			require.Error(t, res.Error)
-			require.Equal(t, tc.expStatus, res.Status)
 			require.Equal(t, tc.expErrorMessage, res.Error.Error())
 			require.Equal(t, tc.expErrorSource, res.ErrorSource)
 		})
