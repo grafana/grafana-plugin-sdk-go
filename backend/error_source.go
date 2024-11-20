@@ -98,6 +98,6 @@ func ErrorResponseWithErrorSource(err error) DataResponse {
 		}
 	}
 	return DataResponse{
-		Error:       err,
+		Error: err,
 	}
 }

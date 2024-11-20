@@ -166,7 +166,7 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		},
 		{
 			name:       "experimental Error with plugin source and status",
-			err:       backend.NewErrorWithSource(errors.New("test"), backend.ErrorSourcePlugin),
+			err:        backend.NewErrorWithSource(errors.New("test"), backend.ErrorSourcePlugin),
 			skipJoined: true,
 			expected:   false,
 		},

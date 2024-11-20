@@ -124,7 +124,6 @@ func IsDownstreamError(err error) bool {
 		return true
 	}
 
-
 	return isHTTPTimeoutError(err) || IsCancelledError(err)
 }
 

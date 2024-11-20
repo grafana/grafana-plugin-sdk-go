@@ -10,14 +10,14 @@ type Error = backend.ErrorWithSource
 
 // New creates a new error with the source
 // Deprecated: use backend.NewErrorWithSource instead
-func New(err error, source backend.ErrorSource, status backend.Status) Error {
+func New(err error, source backend.ErrorSource, _ backend.Status) Error {
 	// We are not using status here, but we are keeping it for compatibility
 	return backend.NewErrorWithSource(err, source)
 }
 
 // PluginError will apply the source as plugin
 // Deprecated: use backend.PluginError instead
-func PluginError(err error, override bool) error {
+func PluginError(err error, _ bool) error {
 	if err != nil {
 		return backend.PluginError(err)
 	}
@@ -26,7 +26,7 @@ func PluginError(err error, override bool) error {
 
 // DownstreamError will apply the source as downstream
 // Deprecated: use backend.DownstreamError instead
-func DownstreamError(err error, override bool) error {
+func DownstreamError(err error, _ bool) error {
 	if err != nil {
 		return backend.DownstreamError(err)
 	}

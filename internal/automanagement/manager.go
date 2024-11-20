@@ -39,7 +39,7 @@ func (m *Manager) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 		}
 		resp := backend.NewQueryDataResponse()
 		resp.Responses[req.Queries[0].RefID] = backend.DataResponse{
-			Error: err,
+			Error:       err,
 			ErrorSource: esErr.ErrorSource(),
 		}
 		return resp, nil
