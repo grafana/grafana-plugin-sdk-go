@@ -48,7 +48,7 @@ func TestDataSourceMetricsMiddleware(t *testing.T) {
 		require.False(t, middlewareCalled)
 	})
 
-	t.Run("Without data source name label options set should return next http.RoundTripper", func(t *testing.T) {
+	t.Run("Without data source type label options set should return next http.RoundTripper", func(t *testing.T) {
 		origExecuteMiddlewareFunc := executeMiddlewareFunc
 		executeMiddlewareCalled := false
 		middlewareCalled := false
@@ -86,7 +86,7 @@ func TestDataSourceMetricsMiddleware(t *testing.T) {
 		require.False(t, middlewareCalled)
 	})
 
-	t.Run("With datasource name label options set should execute middleware", func(t *testing.T) {
+	t.Run("With datasource type label options set should execute middleware", func(t *testing.T) {
 		origExecuteMiddlewareFunc := executeMiddlewareFunc
 		executeMiddlewareCalled := false
 		labels := prometheus.Labels{}
@@ -111,14 +111,14 @@ func TestDataSourceMetricsMiddleware(t *testing.T) {
 			{
 				description: "secure socks ds proxy is disabled",
 				httpClientOptions: Options{
-					Labels: map[string]string{"datasource_name": "My Data Source 123", "datasource_type": "prometheus"},
+					Labels: map[string]string{"datasource_type": "prometheus"},
 				},
 				expectedSecureSocksDSProxyEnabled: "false",
 			},
 			{
 				description: "secure socks ds proxy is enabled",
 				httpClientOptions: Options{
-					Labels:       map[string]string{"datasource_name": "My Data Source 123", "datasource_type": "prometheus"},
+					Labels:       map[string]string{"datasource_type": "prometheus"},
 					ProxyOptions: &proxy.Options{Enabled: true},
 				},
 				expectedSecureSocksDSProxyEnabled: "true",
@@ -147,8 +147,7 @@ func TestDataSourceMetricsMiddleware(t *testing.T) {
 				require.Len(t, ctx.callChain, 1)
 				require.ElementsMatch(t, []string{"finalrt"}, ctx.callChain)
 				require.True(t, executeMiddlewareCalled)
-				require.Len(t, labels, 3)
-				require.Equal(t, "My_Data_Source_123", labels["datasource"])
+				require.Len(t, labels, 2)
 				require.Equal(t, "prometheus", labels["datasource_type"])
 				require.Equal(t, tt.expectedSecureSocksDSProxyEnabled, labels["secure_socks_ds_proxy_enabled"])
 				require.True(t, middlewareCalled)

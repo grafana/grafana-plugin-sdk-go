@@ -26,7 +26,7 @@ var (
 			Name:      "datasource_request_total",
 			Help:      "A counter for outgoing requests for an external data source",
 		},
-		[]string{"datasource", "datasource_type", "code", "method", "secure_socks_ds_proxy_enabled", "endpoint"},
+		[]string{"datasource_type", "code", "method", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 
 	datasourceRequestHistogram = promauto.NewHistogramVec(
@@ -35,7 +35,7 @@ var (
 			Name:      "datasource_request_duration_seconds",
 			Help:      "histogram of durations of outgoing external data source requests sent from Grafana",
 			Buckets:   []float64{.005, .01, .025, .05, .1, .25, .5, 1, 2.5, 5, 10, 25, 50, 100},
-		}, []string{"datasource", "datasource_type", "code", "method", "secure_socks_ds_proxy_enabled", "endpoint"},
+		}, []string{"datasource_type", "code", "method", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 
 	datasourceResponseHistogram = promauto.NewHistogramVec(
@@ -49,7 +49,7 @@ var (
 			NativeHistogramBucketFactor:     1.1,
 			NativeHistogramMaxBucketNumber:  100,
 			NativeHistogramMinResetDuration: time.Hour,
-		}, []string{"datasource", "datasource_type", "secure_socks_ds_proxy_enabled", "endpoint"},
+		}, []string{"datasource_type", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 
 	datasourceRequestsInFlight = promauto.NewGaugeVec(
@@ -58,7 +58,7 @@ var (
 			Name:      "datasource_request_in_flight",
 			Help:      "A gauge of outgoing external data source requests currently being sent by Grafana",
 		},
-		[]string{"datasource", "datasource_type", "secure_socks_ds_proxy_enabled", "endpoint"},
+		[]string{"datasource_type", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 )
 
@@ -96,19 +96,6 @@ func DataSourceMetricsMiddleware() Middleware {
 			return next
 		}
 
-		datasourceName, exists := opts.Labels["datasource_name"]
-		if !exists {
-			return next
-		}
-
-		datasourceLabelName, err := sanitizeLabelName(datasourceName)
-		// if the datasource named cannot be turned into a prometheus
-		// label we will skip instrumenting these metrics.
-		if err != nil {
-			log.DefaultLogger.Error("failed to sanitize datasource name", "error", err)
-			return next
-		}
-
 		datasourceType, exists := opts.Labels["datasource_type"]
 		if !exists {
 			return next
@@ -122,7 +109,6 @@ func DataSourceMetricsMiddleware() Middleware {
 		}
 
 		labels := prometheus.Labels{
-			"datasource":                    datasourceLabelName,
 			"datasource_type":               datasourceLabelType,
 			"secure_socks_ds_proxy_enabled": strconv.FormatBool(opts.ProxyOptions != nil && opts.ProxyOptions.Enabled),
 		}
