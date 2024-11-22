@@ -117,9 +117,13 @@ func DataSourceMetricsMiddleware() Middleware {
 	})
 }
 
-func executeMiddleware(next http.RoundTripper, labels prometheus.Labels) http.RoundTripper {
+func executeMiddleware(next http.RoundTripper, labelsIn prometheus.Labels) http.RoundTripper {
 	return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		ctx := r.Context()
+		labels := prometheus.Labels{}
+		for k, v := range labelsIn {
+			labels[k] = v
+		}
 		labels["endpoint"] = ""
 		if ep := ctx.Value(endpointctx.EndpointCtxKey); ep != nil {
 			labels["endpoint"] = fmt.Sprintf("%v", ep)
