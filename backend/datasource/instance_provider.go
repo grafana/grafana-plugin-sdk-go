@@ -63,7 +63,8 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
 	tenantID := tenant.IDFromContext(ctx)
 
-	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash), nil
+	key := fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash)
+	return key, nil
 }
 
 func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
