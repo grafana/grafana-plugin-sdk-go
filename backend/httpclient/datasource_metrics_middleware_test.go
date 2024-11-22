@@ -14,7 +14,7 @@ func TestDataSourceMetricsMiddleware(t *testing.T) {
 		origExecuteMiddlewareFunc := executeMiddlewareFunc
 		executeMiddlewareCalled := false
 		middlewareCalled := false
-		executeMiddlewareFunc = func(next http.RoundTripper, _ prometheus.Labels) http.RoundTripper {
+		executeMiddlewareFunc = func(next http.RoundTripper, _ string, _ string) http.RoundTripper {
 			executeMiddlewareCalled = true
 			return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 				middlewareCalled = true
@@ -52,7 +52,7 @@ func TestDataSourceMetricsMiddleware(t *testing.T) {
 		origExecuteMiddlewareFunc := executeMiddlewareFunc
 		executeMiddlewareCalled := false
 		middlewareCalled := false
-		executeMiddlewareFunc = func(next http.RoundTripper, _ prometheus.Labels) http.RoundTripper {
+		executeMiddlewareFunc = func(next http.RoundTripper, _ string, _ string) http.RoundTripper {
 			executeMiddlewareCalled = true
 			return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 				middlewareCalled = true
@@ -91,9 +91,9 @@ func TestDataSourceMetricsMiddleware(t *testing.T) {
 		executeMiddlewareCalled := false
 		labels := prometheus.Labels{}
 		middlewareCalled := false
-		executeMiddlewareFunc = func(next http.RoundTripper, datasourceLabel prometheus.Labels) http.RoundTripper {
+		executeMiddlewareFunc = func(next http.RoundTripper, datasourceLabel string, secureSocksProxyEnabled string) http.RoundTripper {
 			executeMiddlewareCalled = true
-			labels = datasourceLabel
+			labels = prometheus.Labels{"datasource_type": datasourceLabel, "secure_socks_ds_proxy_enabled": secureSocksProxyEnabled}
 			return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 				middlewareCalled = true
 				return next.RoundTrip(r)

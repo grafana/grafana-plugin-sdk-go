@@ -108,25 +108,21 @@ func DataSourceMetricsMiddleware() Middleware {
 			return next
 		}
 
-		labels := prometheus.Labels{
-			"datasource_type":               datasourceLabelType,
-			"secure_socks_ds_proxy_enabled": strconv.FormatBool(opts.ProxyOptions != nil && opts.ProxyOptions.Enabled),
-		}
-
-		return executeMiddlewareFunc(next, labels)
+		return executeMiddlewareFunc(next, datasourceLabelType, strconv.FormatBool(opts.ProxyOptions != nil && opts.ProxyOptions.Enabled))
 	})
 }
 
-func executeMiddleware(next http.RoundTripper, labelsIn prometheus.Labels) http.RoundTripper {
+func executeMiddleware(next http.RoundTripper, datasourceType string, secureSocksProxyEnabled string) http.RoundTripper {
 	return RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 		ctx := r.Context()
-		labels := prometheus.Labels{}
-		for k, v := range labelsIn {
-			labels[k] = v
-		}
-		labels["endpoint"] = ""
+		endpoint := ""
 		if ep := ctx.Value(endpointctx.EndpointCtxKey); ep != nil {
-			labels["endpoint"] = fmt.Sprintf("%v", ep)
+			endpoint = fmt.Sprintf("%v", ep)
+		}
+		labels := prometheus.Labels{
+			"datasource_type":               datasourceType,
+			"secure_socks_ds_proxy_enabled": secureSocksProxyEnabled,
+			"endpoint":                      endpoint,
 		}
 		requestCounter := datasourceRequestCounter.MustCurryWith(labels)
 		requestHistogram := datasourceRequestHistogram.MustCurryWith(labels)
