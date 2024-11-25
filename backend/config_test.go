@@ -382,7 +382,7 @@ func BenchmarkProxyHash(b *testing.B) {
 		proxy.PluginSecureSocksProxyClientKeyContents: string(kBytes),
 	}
 	for i := 0; i < b.N; i++ {
-		kBytes[88] = b64chars[mathrand.Intn(64)]
+		kBytes[88] = b64chars[mathrand.Intn(64)] //nolint:gosec
 		cm[proxy.PluginSecureSocksProxyClientKeyContents] = string(kBytes)
 		cfg := NewGrafanaCfg(cm)
 		hash := cfg.ProxyHash()
