@@ -1,6 +1,7 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
 go 1.22
+toolchain go1.22.9
 
 require (
 	github.com/apache/arrow/go/v15 v15.0.2
@@ -28,7 +29,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
 	github.com/urfave/cli v1.22.16
-	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.56.0
+	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.57.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.57.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.32.0
 	go.opentelemetry.io/contrib/samplers/jaegerremote v0.26.0
@@ -43,7 +44,7 @@ require (
 	golang.org/x/sync v0.9.0
 	golang.org/x/sys v0.27.0
 	golang.org/x/text v0.20.0
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.35.2
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // @grafana/grafana-app-platform-squad
 )
