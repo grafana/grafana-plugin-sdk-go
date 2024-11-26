@@ -9,7 +9,7 @@ import (
 )
 
 // Middleware captures error source metric
-// Deprecated: If you are using httpclient from sdk, this is already included in the default middleware stack.
+// Deprecated: If you are using sdk httpclient, this is already included in the default middleware.
 // If you are not using the sdk, you should use httpclient.ErrorSourceMiddleware instead.
 func Middleware(plugin string) httpclient.Middleware {
 	return httpclient.NamedMiddlewareFunc(plugin, RoundTripper)
