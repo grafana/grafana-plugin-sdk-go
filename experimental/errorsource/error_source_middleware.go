@@ -16,7 +16,7 @@ func Middleware(plugin string) httpclient.Middleware {
 }
 
 // RoundTripper returns the error source
-// Deprecated: If you are using httpclient from sdk, this is already included in the default middleware.
+// Deprecated: If you are using sdk httpclient, this is already included in the default middleware.
 // If you are not using the sdk httpclient, you should use httpclient.ErrorSourceRoundTripper instead.
 func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 	return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
