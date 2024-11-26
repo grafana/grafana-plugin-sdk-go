@@ -39,11 +39,14 @@ func TestInstanceProvider(t *testing.T) {
 	})
 
 	t.Run("When PDC is configured, datasource cache key should include its (so-called) hash", func(t *testing.T) {
+		// the value of Bytes below must be a multiple of three in length for this test
+		// to pass, but that's an artifact of how the target value is created. The code
+		// itself isn't affected by the length of the key as long as it's at least 3 bytes.
 		contents := pem.EncodeToMemory(&pem.Block{
 			Type:  "PRIVATE KEY",
-			Bytes: []byte("this should work"),
+			Bytes: []byte("this will work."),
 		})
-		want := base64.StdEncoding.EncodeToString([]byte("this should work"))
+		want := base64.StdEncoding.EncodeToString([]byte("this will work."))
 		want = strings.TrimRight(want, "=")
 		want = want[len(want)-4:]
 		cfg := backend.NewGrafanaCfg(map[string]string{
