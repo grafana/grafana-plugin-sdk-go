@@ -108,6 +108,9 @@ func (c *GrafanaCfg) ProxyHash() string {
 		return ""
 	}
 	contents := c.config[proxy.PluginSecureSocksProxyClientKeyContents]
+	if contents == "" {
+		return ""
+	}
 	block, _ := pem.Decode([]byte(contents))
 	if block == nil {
 		Logger.Warn("ProxyHash(): key contents are not PEM-encoded")
