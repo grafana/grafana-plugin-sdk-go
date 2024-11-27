@@ -26,13 +26,13 @@ func TestResponse(t *testing.T) {
 		{
 			name:            "downstream error",
 			err:             DownstreamError(errors.New("bad gateway"), false),
-			expErrorMessage: "downstream error: bad gateway",
+			expErrorMessage: "bad gateway",
 			expErrorSource:  backend.ErrorSourceDownstream,
 		},
 		{
 			name:            "plugin error",
 			err:             PluginError(errors.New("internal error"), false),
-			expErrorMessage: "plugin error: internal error",
+			expErrorMessage: "internal error",
 			expErrorSource:  backend.ErrorSourcePlugin,
 		},
 	} {
