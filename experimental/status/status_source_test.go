@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/errorsource"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -82,13 +81,13 @@ func TestIsDownstreamError(t *testing.T) {
 		},
 		{
 			name:       "experimental Error with downstream source and status",
-			err:        errorsource.New(errors.New("test"), backend.ErrorSourceDownstream, backend.StatusUnknown),
+			err:        backend.NewErrorWithSource(errors.New("test"), backend.ErrorSourceDownstream),
 			skipJoined: true,
 			expected:   true,
 		},
 		{
 			name:       "experimental Error with plugin source and status",
-			err:        errorsource.New(errors.New("test"), backend.ErrorSourcePlugin, backend.StatusUnknown),
+			err:        backend.NewErrorWithSource(errors.New("test"), backend.ErrorSourcePlugin),
 			skipJoined: true,
 			expected:   false,
 		},
@@ -161,13 +160,13 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		},
 		{
 			name:       "experimental Error with downstream source and status",
-			err:        errorsource.New(errors.New("test"), backend.ErrorSourceDownstream, backend.StatusUnknown),
+			err:        backend.NewErrorWithSource(errors.New("test"), backend.ErrorSourceDownstream),
 			skipJoined: true,
 			expected:   true,
 		},
 		{
 			name:       "experimental Error with plugin source and status",
-			err:        errorsource.New(errors.New("test"), backend.ErrorSourcePlugin, backend.StatusUnknown),
+			err:        backend.NewErrorWithSource(errors.New("test"), backend.ErrorSourcePlugin),
 			skipJoined: true,
 			expected:   false,
 		},

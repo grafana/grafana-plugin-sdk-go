@@ -27,6 +27,13 @@ const (
 	DefaultSource Source = SourcePlugin
 )
 
+func NewErrorWithSource(err error, source Source) ErrorWithSource {
+	return ErrorWithSource{
+		source: source,
+		err:    err,
+	}
+}
+
 // IsValid return true if es is [SourceDownstream] or [SourcePlugin].
 func (s Source) IsValid() bool {
 	return s == SourceDownstream || s == SourcePlugin
@@ -60,17 +67,19 @@ func SourceFromHTTPStatus(statusCode int) Source {
 	return SourceDownstream
 }
 
-type errorWithSourceImpl struct {
+type ErrorWithSource struct {
 	source Source
 	err    error
 }
 
 // DownstreamError creates a new error with status [SourceDownstream].
 func DownstreamError(err error) error {
-	return errorWithSourceImpl{
-		source: SourceDownstream,
-		err:    err,
-	}
+	return NewErrorWithSource(err, SourceDownstream)
+}
+
+// DownstreamError creates a new error with status [SourcePlugin].
+func PluginError(err error) error {
+	return NewErrorWithSource(err, SourcePlugin)
 }
 
 // DownstreamErrorf creates a new error with status [SourceDownstream] and formats
@@ -79,53 +88,40 @@ func DownstreamErrorf(format string, a ...any) error {
 	return DownstreamError(fmt.Errorf(format, a...))
 }
 
-func (e errorWithSourceImpl) ErrorSource() Source {
+func (e ErrorWithSource) ErrorSource() Source {
 	return e.source
 }
 
-func (e errorWithSourceImpl) Error() string {
-	return fmt.Errorf("%s error: %w", e.source, e.err).Error()
+// @deprecated Use [ErrorSource] instead.
+func (e ErrorWithSource) Source() Source {
+	return e.source
+}
+
+func (e ErrorWithSource) Error() string {
+	return e.err.Error()
 }
 
 // Implements the interface used by [errors.Is].
-func (e errorWithSourceImpl) Is(err error) bool {
-	if errWithSource, ok := err.(errorWithSourceImpl); ok {
+func (e ErrorWithSource) Is(err error) bool {
+	if errWithSource, ok := err.(ErrorWithSource); ok {
 		return errWithSource.ErrorSource() == e.source
 	}
 
 	return false
 }
 
-func (e errorWithSourceImpl) Unwrap() error {
+func (e ErrorWithSource) Unwrap() error {
 	return e.err
 }
 
 // IsDownstreamError return true if provided error is an error with downstream source or
 // a timeout error or a cancelled error.
 func IsDownstreamError(err error) bool {
-	e := errorWithSourceImpl{
+	e := ErrorWithSource{
 		source: SourceDownstream,
 	}
 	if errors.Is(err, e) {
 		return true
-	}
-
-	type errorWithSource interface {
-		ErrorSource() Source
-	}
-
-	// temporary hack to support wrapped errors until experimental errorsource package have been removed.
-	// Note. Joined errors (errors.Join()) is not supported.
-	errCopy := err
-	for {
-		// nolint:errorlint
-		if errWithSource, ok := errCopy.(errorWithSource); ok && errWithSource.ErrorSource() == SourceDownstream {
-			return true
-		}
-
-		if errCopy = errors.Unwrap(errCopy); errCopy == nil {
-			break
-		}
 	}
 
 	return isHTTPTimeoutError(err) || IsCancelledError(err)

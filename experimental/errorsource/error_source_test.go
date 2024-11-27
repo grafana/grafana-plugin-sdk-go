@@ -20,21 +20,18 @@ func TestResponse(t *testing.T) {
 		{
 			name:            "generic error",
 			err:             errors.New("other"),
-			expStatus:       backend.StatusUnknown,
 			expErrorMessage: "other",
-			expErrorSource:  backend.ErrorSourcePlugin,
+			expErrorSource:  "",
 		},
 		{
 			name:            "downstream error",
 			err:             DownstreamError(errors.New("bad gateway"), false),
-			expStatus:       0,
 			expErrorMessage: "bad gateway",
 			expErrorSource:  backend.ErrorSourceDownstream,
 		},
 		{
 			name:            "plugin error",
 			err:             PluginError(errors.New("internal error"), false),
-			expStatus:       0,
 			expErrorMessage: "internal error",
 			expErrorSource:  backend.ErrorSourcePlugin,
 		},
@@ -78,7 +75,6 @@ func TestResponseWithOptions(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			res := Response(tc.err)
 			require.Error(t, res.Error)
-			require.Equal(t, tc.expStatus, res.Status)
 			require.Equal(t, tc.expErrorMessage, res.Error.Error())
 			require.Equal(t, tc.expErrorSource, res.ErrorSource)
 		})
