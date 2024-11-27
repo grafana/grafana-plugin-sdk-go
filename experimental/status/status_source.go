@@ -98,7 +98,7 @@ func (e ErrorWithSource) Source() Source {
 }
 
 func (e ErrorWithSource) Error() string {
-	return fmt.Errorf("%s error: %w", e.source, e.err).Error()
+	return e.err.Error()
 }
 
 // Implements the interface used by [errors.Is].
