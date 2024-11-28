@@ -50,6 +50,12 @@ func TestResponseWithOptions(t *testing.T) {
 			expErrorMessage: "wrapped: inside error",
 			expErrorSource:  backend.ErrorSourcePlugin,
 		},
+		{
+			name:            "non error source error",
+			err:             errors.New("inside error"),
+			expErrorMessage: "inside error",
+			expErrorSource:  "",
+		},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			res := backend.ErrorResponseWithErrorSource(tc.err)
