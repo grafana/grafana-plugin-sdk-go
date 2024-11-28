@@ -2,6 +2,10 @@ package datasource
 
 import (
 	"context"
+	"encoding/base64"
+	"encoding/pem"
+	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -35,15 +39,25 @@ func TestInstanceProvider(t *testing.T) {
 	})
 
 	t.Run("When PDC is configured, datasource cache key should include its (so-called) hash", func(t *testing.T) {
+		// the value of Bytes below must be a multiple of three in length for this test
+		// to pass, but that's an artifact of how the target value is created. The code
+		// itself isn't affected by the length of the key as long as it's at least 3 bytes.
+		contents := pem.EncodeToMemory(&pem.Block{
+			Type:  "PRIVATE KEY",
+			Bytes: []byte("this will work."),
+		})
+		want := base64.StdEncoding.EncodeToString([]byte("this will work."))
+		want = strings.TrimRight(want, "=")
+		want = want[len(want)-4:]
 		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyClientKeyContents: "This should work",
+			proxy.PluginSecureSocksProxyClientKeyContents: string(contents),
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 5},
 			GrafanaConfig:              cfg,
 		})
 		require.NoError(t, err)
-		require.Equal(t, "5##work", key)
+		require.Equal(t, fmt.Sprintf("5##%s", want), key)
 	})
 
 	t.Run("When PDC is configured but the key is empty, no problem", func(t *testing.T) {
@@ -58,16 +72,16 @@ func TestInstanceProvider(t *testing.T) {
 		require.Equal(t, "6##", key)
 	})
 
-	t.Run("When PDC is configured, a too-short key doesn't cause an error", func(t *testing.T) {
+	t.Run("When PDC is configured but the key is not PEM-encoded, no problem", func(t *testing.T) {
 		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyClientKeyContents: "doh",
+			proxy.PluginSecureSocksProxyClientKeyContents: "this is not\na valid string\n",
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 7},
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 6},
 			GrafanaConfig:              cfg,
 		})
 		require.NoError(t, err)
-		require.Equal(t, "7##doh", key)
+		require.Equal(t, "6##", key)
 	})
 
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
