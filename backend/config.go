@@ -99,7 +99,7 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 }
 
 // ProxyHash returns the last four characters of the base64-encoded
-// // PDC client key contents, if present, for use in datasource instance
+// PDC client key contents, if present, for use in datasource instance
 // caching. The contents should be PEM-encoded, so we try to PEM-decode
 // them, and, if successful, return the base-64 encoding of the final three bytes,
 // giving a four character hash.
