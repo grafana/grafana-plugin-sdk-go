@@ -93,7 +93,7 @@ func ErrorResponseWithErrorSource(err error) DataResponse {
 	var e ErrorWithSource
 	if errors.As(err, &e) {
 		return DataResponse{
-			Error:       e,
+			Error:       err,
 			ErrorSource: e.ErrorSource(),
 		}
 	}
