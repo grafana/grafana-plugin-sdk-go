@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -22,7 +23,7 @@ import (
 func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, error) {
 	types, err := rows.ColumnTypes()
 	if err != nil {
-		return nil, err
+		return nil, backend.DownstreamError(err)
 	}
 
 	// If there is a dynamic converter, we need to use the dynamic framer
@@ -34,7 +35,7 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 
 	names, err := rows.Columns()
 	if err != nil {
-		return nil, err
+		return nil, backend.DownstreamError(err)
 	}
 
 	scanRow, err := MakeScanRow(types, names, converters...)
@@ -73,7 +74,7 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 	}
 
 	if err := rows.Err(); err != nil {
-		return frame, err
+		return frame, backend.DownstreamError(err)
 	}
 
 	return frame, nil
