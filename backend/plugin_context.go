@@ -62,7 +62,6 @@ type PluginContext struct {
 // The search is case-insensitive for the key but case-sensitive for the data source UID.
 // NOTE: This method can't be used in multi-tenant environment such as grafana cloud
 func (pCtx *PluginContext) GetSettingFromEnv(key string) (output string) {
-
 	key = strings.TrimSpace(strings.ToUpper(key))
 
 	if v := strings.TrimSpace(os.Getenv(fmt.Sprintf("GF_PLUGIN_%s", key))); v != "" {
@@ -73,8 +72,8 @@ func (pCtx *PluginContext) GetSettingFromEnv(key string) (output string) {
 		return output
 	}
 
-	pluginId := strings.TrimSpace(strings.ToUpper(pCtx.PluginID))
-	if v := strings.TrimSpace(os.Getenv(fmt.Sprintf("GF_PLUGIN_%s_%s", pluginId, key))); v != "" && pluginId != "" {
+	pluginID := strings.TrimSpace(strings.ToUpper(pCtx.PluginID))
+	if v := strings.TrimSpace(os.Getenv(fmt.Sprintf("GF_PLUGIN_%s_%s", pluginID, key))); v != "" && pluginID != "" {
 		output = v
 	}
 
