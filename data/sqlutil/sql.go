@@ -23,7 +23,7 @@ import (
 func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, error) {
 	types, err := rows.ColumnTypes()
 	if err != nil {
-		return nil, backend.DownstreamError(err)
+		return nil, err
 	}
 
 	// If there is a dynamic converter, we need to use the dynamic framer
@@ -35,7 +35,7 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 
 	names, err := rows.Columns()
 	if err != nil {
-		return nil, backend.DownstreamError(err)
+		return nil, err
 	}
 
 	scanRow, err := MakeScanRow(types, names, converters...)
