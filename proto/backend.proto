@@ -38,6 +38,7 @@ message DataSourceInstanceSettings {
   // The API version when the settings were saved.
   // NOTE: this may be an older version than the current apiVersion
   string apiVersion = 12;
+  bool system = 13;
 }
 
 message User {

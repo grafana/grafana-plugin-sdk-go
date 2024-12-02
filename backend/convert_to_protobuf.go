@@ -107,6 +107,7 @@ func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
 		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
 		ApiVersion:              s.APIVersion,
+		System:                  s.System,
 	}
 }
 
