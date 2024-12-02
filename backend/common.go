@@ -79,6 +79,10 @@ type DataSourceInstanceSettings struct {
 	// This should be the same value as PluginContext.PluginId.
 	Type string
 
+	// This indicates that the instance is a system instance and should not appear
+	// in Grafana except through code that will explicitly request system data sources
+	System bool
+
 	// Name is the configured name of the data source instance.
 	Name string
 
