@@ -156,6 +156,7 @@ var protoDataSourceInstanceSettings = &pluginv2.DataSourceInstanceSettings{
 	DecryptedSecureJsonData: map[string]string{"secret": "quiet"},
 	LastUpdatedMS:           lastUpdatedMS,
 	ApiVersion:              "v0alpha3",
+	System:                  true,
 }
 
 func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
@@ -195,6 +196,7 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkDSIS.DecryptedSecureJSONData)
 	requireCounter.Equal(t, lastUpdatedTime, sdkDSIS.Updated)
 	requireCounter.Equal(t, protoDSIS.ApiVersion, sdkDSIS.APIVersion)
+	requireCounter.Equal(t, protoDSIS.System, sdkDSIS.System)
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount, "untested fields in conversion")
 }
@@ -270,6 +272,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Database, sdkCtx.DataSourceInstanceSettings.Database)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.BasicAuthEnabled, sdkCtx.DataSourceInstanceSettings.BasicAuthEnabled)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.BasicAuthUser, sdkCtx.DataSourceInstanceSettings.BasicAuthUser)
+	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.System, sdkCtx.DataSourceInstanceSettings.System)
 	requireCounter.Equal(t, json.RawMessage(protoCtx.DataSourceInstanceSettings.JsonData), sdkCtx.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCtx.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
@@ -431,6 +434,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Database, sdkQDR.PluginContext.DataSourceInstanceSettings.Database)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled, sdkQDR.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.BasicAuthUser, sdkQDR.PluginContext.DataSourceInstanceSettings.BasicAuthUser)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.System, sdkQDR.PluginContext.DataSourceInstanceSettings.System)
 	requireCounter.Equal(t, json.RawMessage(protoQDR.PluginContext.DataSourceInstanceSettings.JsonData), sdkQDR.PluginContext.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkQDR.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkQDR.PluginContext.DataSourceInstanceSettings.Updated)
@@ -604,6 +608,7 @@ func TestConvertFromProtobufAdmissionRequest(t *testing.T) {
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkAR.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkAR.PluginContext.DataSourceInstanceSettings.Updated)
 	requireCounter.Equal(t, protoAR.PluginContext.UserAgent, sdkAR.PluginContext.UserAgent.String())
+	requireCounter.Equal(t, protoAR.PluginContext.DataSourceInstanceSettings.System, sdkAR.PluginContext.DataSourceInstanceSettings.System, "System must be equal")
 
 	// The actual request values
 	requireCounter.Equal(t, protoAR.Kind.Group, sdkAR.Kind.Group)
@@ -729,6 +734,7 @@ func TestConvertFromProtobufConversionRequest(t *testing.T) {
 	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Database, sdkCR.PluginContext.DataSourceInstanceSettings.Database)
 	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled, sdkCR.PluginContext.DataSourceInstanceSettings.BasicAuthEnabled)
 	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.BasicAuthUser, sdkCR.PluginContext.DataSourceInstanceSettings.BasicAuthUser)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.System, sdkCR.PluginContext.DataSourceInstanceSettings.System)
 	requireCounter.Equal(t, json.RawMessage(protoCR.PluginContext.DataSourceInstanceSettings.JsonData), sdkCR.PluginContext.DataSourceInstanceSettings.JSONData)
 	requireCounter.Equal(t, map[string]string{"secret": "quiet"}, sdkCR.PluginContext.DataSourceInstanceSettings.DecryptedSecureJSONData)
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCR.PluginContext.DataSourceInstanceSettings.Updated)
