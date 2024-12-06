@@ -10,7 +10,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/apache/arrow/go/v15/arrow/ipc"
+	"github.com/apache/arrow-go/v18/arrow/ipc"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
