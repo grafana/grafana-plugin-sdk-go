@@ -1,11 +1,11 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
-go 1.22.0
+go 1.22.7
 
 toolchain go1.23.3
 
 require (
-	github.com/apache/arrow-go/v18 v18.0.0
+	github.com/apache/arrow-go/v18 v18.0.1-0.20241204174348-9d44f3448718
 	github.com/cheekybits/genny v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
 	github.com/elazarl/goproxy v0.0.0-20230731152917-f99041a5c027
@@ -45,7 +45,7 @@ require (
 	golang.org/x/sync v0.9.0
 	golang.org/x/sys v0.27.0
 	golang.org/x/text v0.20.0
-	google.golang.org/grpc v1.67.1
+	google.golang.org/grpc v1.68.0
 	google.golang.org/protobuf v1.35.2
 	k8s.io/kube-openapi v0.0.0-20240228011516-70dd3763d340 // @grafana/grafana-app-platform-squad
 )
@@ -80,7 +80,7 @@ require (
 	github.com/invopop/yaml v0.3.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.17.11 // indirect
-	github.com/klauspost/cpuid/v2 v2.2.8 // indirect
+	github.com/klauspost/cpuid/v2 v2.2.9 // indirect
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mattn/go-colorable v0.1.13 // indirect
 	github.com/mattn/go-isatty v0.0.19 // indirect
@@ -102,8 +102,8 @@ require (
 	github.com/zeebo/xxh3 v1.0.2 // indirect
 	go.opentelemetry.io/otel/metric v1.32.0 // indirect
 	go.opentelemetry.io/proto/otlp v1.3.1 // indirect
-	golang.org/x/mod v0.21.0 // indirect
-	golang.org/x/tools v0.26.0 // indirect
+	golang.org/x/mod v0.22.0 // indirect
+	golang.org/x/tools v0.27.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241104194629-dd2ea8efbc28 // indirect
