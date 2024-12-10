@@ -4,6 +4,11 @@ import (
 	"context"
 	"errors"
 
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc/codes"
+	grpcstatus "google.golang.org/grpc/status"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -22,7 +27,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	parsedReq := FromProto().QueryDataRequest(req)
 	resp, err := a.queryDataHandler.QueryData(ctx, parsedReq)
 	if err != nil {
-		return nil, err
+		return nil, enrichWithErrorSourceInfo(err)
 	}
 
 	if resp == nil {
@@ -30,4 +35,26 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	}
 
 	return ToProto().QueryDataResponse(resp)
+}
+
+// enrichWithErrorSourceInfo returns a gRPC status error with error source info as metadata.
+func enrichWithErrorSourceInfo(err error) error {
+	errorSource := status.DefaultSource
+	if IsDownstreamError(err) {
+		errorSource = status.SourceDownstream
+	} else if IsPluginError(err) {
+		errorSource = status.SourcePlugin
+	}
+
+	status := grpcstatus.New(codes.Unknown, err.Error())
+	status, innerErr := status.WithDetails(&errdetails.ErrorInfo{
+		Metadata: map[string]string{
+			"errorSource": errorSource.String(),
+		},
+	})
+	if innerErr != nil {
+		return err
+	}
+
+	return status.Err()
 }
