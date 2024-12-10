@@ -165,6 +165,8 @@ func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
 		info.Version = version
 	}
 
+	args = append(args, "-tags", "arrow_json_stdlib")
+
 	flags := make(map[string]string, 10)
 	info.appendFlags(flags)
 
