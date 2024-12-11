@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"fmt"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -73,7 +74,7 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 	}
 
 	if err := rows.Err(); err != nil {
-		return frame, err
+		return frame, backend.DownstreamError(err)
 	}
 
 	return frame, nil
