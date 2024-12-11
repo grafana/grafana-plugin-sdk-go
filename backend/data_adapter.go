@@ -39,11 +39,16 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 
 // enrichWithErrorSourceInfo returns a gRPC status error with error source info as metadata.
 func enrichWithErrorSourceInfo(err error) error {
-	errorSource := status.DefaultSource
+	var errorSource status.Source
 	if IsDownstreamError(err) {
 		errorSource = status.SourceDownstream
 	} else if IsPluginError(err) {
 		errorSource = status.SourcePlugin
+	}
+
+	// Unless the error is explicitly marked as a plugin or downstream error, we don't enrich it.
+	if errorSource == "" {
+		return err
 	}
 
 	status := grpcstatus.New(codes.Unknown, err.Error())

@@ -3,6 +3,7 @@ package backend
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -10,7 +11,9 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -146,6 +149,75 @@ func TestQueryData(t *testing.T) {
 			PluginContext: &pluginv2.PluginContext{},
 		})
 		require.NoError(t, err)
+	})
+
+	t.Run("Error source error from QueryData handler will be enriched with grpc status", func(t *testing.T) {
+		t.Run("When error is a downstream error", func(t *testing.T) {
+			adapter := newDataSDKAdapter(QueryDataHandlerFunc(
+				func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+					return nil, DownstreamError(errors.New("oh no"))
+				},
+			))
+
+			_, err := adapter.QueryData(context.Background(), &pluginv2.QueryDataRequest{
+				PluginContext: &pluginv2.PluginContext{},
+			})
+			require.Error(t, err)
+
+			st := status.Convert(err)
+			require.NotNil(t, st)
+			require.NotEmpty(t, st.Details())
+			for _, detail := range st.Details() {
+				errorInfo, ok := detail.(*errdetails.ErrorInfo)
+				require.True(t, ok)
+				require.NotNil(t, errorInfo)
+				errorSource, exists := errorInfo.Metadata["errorSource"]
+				require.True(t, exists)
+				require.Equal(t, ErrorSourceDownstream.String(), errorSource)
+			}
+		})
+
+		t.Run("When error is a plugin error", func(t *testing.T) {
+			adapter := newDataSDKAdapter(QueryDataHandlerFunc(
+				func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+					return nil, PluginError(errors.New("oh no"))
+				},
+			))
+
+			_, err := adapter.QueryData(context.Background(), &pluginv2.QueryDataRequest{
+				PluginContext: &pluginv2.PluginContext{},
+			})
+			require.Error(t, err)
+
+			st := status.Convert(err)
+			require.NotNil(t, st)
+			require.NotEmpty(t, st.Details())
+			for _, detail := range st.Details() {
+				errorInfo, ok := detail.(*errdetails.ErrorInfo)
+				require.True(t, ok)
+				require.NotNil(t, errorInfo)
+				errorSource, exists := errorInfo.Metadata["errorSource"]
+				require.True(t, exists)
+				require.Equal(t, ErrorSourcePlugin.String(), errorSource)
+			}
+		})
+
+		t.Run("When error is neither a downstream or plugin error", func(t *testing.T) {
+			adapter := newDataSDKAdapter(QueryDataHandlerFunc(
+				func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+					return nil, errors.New("oh no")
+				},
+			))
+
+			_, err := adapter.QueryData(context.Background(), &pluginv2.QueryDataRequest{
+				PluginContext: &pluginv2.PluginContext{},
+			})
+			require.Error(t, err)
+
+			st := status.Convert(err)
+			require.NotNil(t, st)
+			require.Empty(t, st.Details())
+		})
 	})
 }
 
