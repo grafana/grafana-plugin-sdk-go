@@ -154,7 +154,7 @@ func TestQueryData(t *testing.T) {
 	t.Run("Error source error from QueryData handler will be enriched with grpc status", func(t *testing.T) {
 		t.Run("When error is a downstream error", func(t *testing.T) {
 			adapter := newDataSDKAdapter(QueryDataHandlerFunc(
-				func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+				func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 					return nil, DownstreamError(errors.New("oh no"))
 				},
 			))
@@ -179,7 +179,7 @@ func TestQueryData(t *testing.T) {
 
 		t.Run("When error is a plugin error", func(t *testing.T) {
 			adapter := newDataSDKAdapter(QueryDataHandlerFunc(
-				func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+				func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 					return nil, PluginError(errors.New("oh no"))
 				},
 			))
@@ -204,7 +204,7 @@ func TestQueryData(t *testing.T) {
 
 		t.Run("When error is neither a downstream or plugin error", func(t *testing.T) {
 			adapter := newDataSDKAdapter(QueryDataHandlerFunc(
-				func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+				func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 					return nil, errors.New("oh no")
 				},
 			))
