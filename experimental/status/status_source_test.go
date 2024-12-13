@@ -187,7 +187,7 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			err:      &net.DNSError{IsNotFound: true},
 			expected: true,
 		},
-				{
+		{
 			name:     "wrapped *url.Error with UnknownAuthorityError",
 			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: x509.UnknownAuthorityError{}},
 			expected: true,
