@@ -2,9 +2,11 @@ package status_test
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
+	"net/url"
 	"os"
 	"syscall"
 	"testing"
@@ -183,6 +185,26 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		{
 			name:     "DNS not found error",
 			err:      &net.DNSError{IsNotFound: true},
+			expected: true,
+		},
+		{
+			name:     "wrapped *url.Error with UnknownAuthorityError",
+			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: x509.UnknownAuthorityError{}},
+			expected: true,
+		},
+		{
+			name:     "wrapped *url.Error with unrelated error",
+			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: fmt.Errorf("some unrelated error")},
+			expected: false,
+		},
+		{
+			name:     "direct CertificateInvalidError",
+			err:      &x509.CertificateInvalidError{Reason: x509.Expired, Cert: nil},
+			expected: true,
+		},
+		{
+			name:     "direct UnknownAuthorityError",
+			err:      x509.UnknownAuthorityError{},
 			expected: true,
 		},
 	}
