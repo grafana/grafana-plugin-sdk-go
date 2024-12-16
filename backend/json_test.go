@@ -143,3 +143,15 @@ func TestQueryDataResponseOrdering(t *testing.T) {
 
 	require.JSONEq(t, expected, string(b))
 }
+
+func TestQueryDataWithoutRefID(t *testing.T) {
+	qdr := backend.NewQueryDataResponse()
+	qdr.Responses[""] = testDataResponse()
+	b, err := json.Marshal(qdr)
+	require.NoError(t, err)
+
+	respCopy := &backend.QueryDataResponse{}
+	//Now unmarshall without a refId
+	err = json.Unmarshal(b, respCopy)
+	require.NoError(t, err)
+}
