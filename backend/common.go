@@ -7,7 +7,6 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -159,52 +158,6 @@ func (s *DataSourceInstanceSettings) GVK() GroupVersionKind {
 		Version: s.APIVersion,
 		Kind:    "DataSourceInstanceSettings",
 	}
-}
-
-// PluginContext holds contextual information about a plugin request, such as
-// Grafana organization, user and plugin instance settings.
-type PluginContext struct {
-	// OrgID is The Grafana organization identifier the request originating from.
-	OrgID int64
-
-	// PluginID is the unique identifier of the plugin that the request is for.
-	PluginID string
-
-	// PluginVersion is the version of the plugin that the request is for.
-	PluginVersion string
-
-	// User is the Grafana user making the request.
-	//
-	// Will not be provided if Grafana backend initiated the request,
-	// for example when request is coming from Grafana Alerting.
-	User *User
-
-	// AppInstanceSettings is the configured app instance settings.
-	//
-	// In Grafana an app instance is an app plugin of certain
-	// type that have been configured and enabled in a Grafana organization.
-	//
-	// Will only be set if request targeting an app instance.
-	AppInstanceSettings *AppInstanceSettings
-
-	// DataSourceConfig is the configured data source instance
-	// settings.
-	//
-	// In Grafana a data source instance is a data source plugin of certain
-	// type that have been configured and created in a Grafana organization.
-	//
-	// Will only be set if request targeting a data source instance.
-	DataSourceInstanceSettings *DataSourceInstanceSettings
-
-	// GrafanaConfig is the configuration settings provided by Grafana.
-	GrafanaConfig *GrafanaCfg
-
-	// UserAgent is the user agent of the Grafana server that initiated the gRPC request.
-	// Will only be set if request is made from Grafana v10.2.0 or later.
-	UserAgent *useragent.UserAgent
-
-	// The requested API version
-	APIVersion string
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
