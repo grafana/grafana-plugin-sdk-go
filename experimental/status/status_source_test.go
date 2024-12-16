@@ -108,6 +108,47 @@ func TestIsDownstreamError(t *testing.T) {
 	}
 }
 
+func TestIsPluginError(t *testing.T) {
+	tcs := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "nil",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "plugin error",
+			err:      backend.NewErrorWithSource(nil, backend.ErrorSourcePlugin),
+			expected: true,
+		},
+		{
+			name:     "downstream error",
+			err:      backend.NewErrorWithSource(nil, backend.ErrorSourceDownstream),
+			expected: false,
+		},
+		{
+			name:     "other error",
+			err:      fmt.Errorf("other error"),
+			expected: false,
+		},
+		{
+			name:     "network error",
+			err:      newFakeNetworkError(true, true),
+			expected: false,
+		},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			wrappedErr := fmt.Errorf("error: %w", tc.err)
+			assert.Equalf(t, tc.expected, status.IsPluginError(tc.err), "IsPluginError(%v)", tc.err)
+			assert.Equalf(t, tc.expected, status.IsPluginError(wrappedErr), "wrapped IsPluginError(%v)", wrappedErr)
+		})
+	}
+}
+
 func TestIsDownstreamHTTPError(t *testing.T) {
 	tcs := []struct {
 		name       string

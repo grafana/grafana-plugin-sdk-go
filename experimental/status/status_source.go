@@ -116,6 +116,13 @@ func (e ErrorWithSource) Unwrap() error {
 	return e.err
 }
 
+func IsPluginError(err error) bool {
+	e := ErrorWithSource{
+		source: SourcePlugin,
+	}
+	return errors.Is(err, e)
+}
+
 // IsDownstreamError return true if provided error is an error with downstream source or
 // a timeout error or a cancelled error.
 func IsDownstreamError(err error) bool {
