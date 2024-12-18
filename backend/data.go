@@ -110,6 +110,21 @@ type DataQuery struct {
 	JSON json.RawMessage
 }
 
+func BatchDataQueriesByTimeRange(queries []DataQuery) [][]DataQuery {
+	timeToBatch := make(map[TimeRange][]DataQuery)
+
+	for _, query := range queries {
+		key := TimeRange{From: query.TimeRange.From.UTC(), To: query.TimeRange.To.UTC()}
+		timeToBatch[key] = append(timeToBatch[key], query)
+	}
+
+	finalBatches := [][]DataQuery{}
+	for _, batch := range timeToBatch {
+		finalBatches = append(finalBatches, batch)
+	}
+	return finalBatches
+}
+
 // QueryDataResponse contains the results from a QueryDataRequest.
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
