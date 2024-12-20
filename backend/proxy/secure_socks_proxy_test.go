@@ -163,8 +163,12 @@ func TestSecureSocksProxyEnabled(t *testing.T) {
 		cli := New(nil)
 		assert.Equal(t, false, cli.SecureSocksProxyEnabled())
 	})
-	t.Run("enabled, if Enabled field is true", func(t *testing.T) {
+	t.Run("not enabled if opts.ClientCfg is nil", func(t *testing.T) {
 		cli := New(&Options{Enabled: true})
+		assert.Equal(t, false, cli.SecureSocksProxyEnabled())
+	})
+	t.Run("enabled, if Enabled field is true", func(t *testing.T) {
+		cli := New(&Options{Enabled: true, ClientCfg: &ClientCfg{}})
 		assert.Equal(t, true, cli.SecureSocksProxyEnabled())
 	})
 }
