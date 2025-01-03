@@ -36,7 +36,7 @@ func TestJSONNotice(t *testing.T) {
 				Severity: NoticeSeverityInfo,
 				Text:     "Some text",
 			},
-			json: `{"text":"Some text"}`,
+			json: `{"severity":"info","text":"Some text"}`,
 		},
 	}
 	for i := range tests {
