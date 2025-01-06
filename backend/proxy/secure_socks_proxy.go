@@ -83,6 +83,8 @@ type cfgProxyWrapper struct {
 // and the datasource options specify to use the proxy
 func (p *cfgProxyWrapper) SecureSocksProxyEnabled() bool {
 	// it cannot be enabled if it's not enabled on Grafana
+	// p.opts is not always nil even if secure socks proxy is not enabled on Grafana
+	// check ClientCfg as well since it doesn't get set if it's not enabled
 	if p.opts == nil || p.opts.ClientCfg == nil {
 		return false
 	}
