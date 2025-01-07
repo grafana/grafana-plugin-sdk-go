@@ -68,9 +68,8 @@ func enrichWithErrorSourceInfo(err error) error {
 	return status.Err()
 }
 
-// HandleGrpcStatusError handles gRPC status errors and sets the error source via context based on the error metadata
-// returned from the plugin. Regardless of the error source, a plugin downstream error is returned as both plugin and
-// downstream errors are treated the same in Grafana.
+// HandleGrpcStatusError handles gRPC status errors by extracting the error source from the error details and injecting
+// the error source into context.
 func ErrorSourceFromGrpcStatusError(ctx context.Context, err error) (status.Source, bool) {
 	st := grpcstatus.Convert(err)
 	if st == nil {
