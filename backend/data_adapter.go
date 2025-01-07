@@ -12,6 +12,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
+const (
+	errorSourceMetadataKey = "errorSource"
+)
+
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type dataSDKAdapter struct {
 	queryDataHandler QueryDataHandler
@@ -54,7 +58,7 @@ func enrichWithErrorSourceInfo(err error) error {
 	status := grpcstatus.New(codes.Unknown, err.Error())
 	status, innerErr := status.WithDetails(&errdetails.ErrorInfo{
 		Metadata: map[string]string{
-			"errorSource": errorSource.String(),
+			errorSourceMetadataKey: errorSource.String(),
 		},
 	})
 	if innerErr != nil {
@@ -62,4 +66,38 @@ func enrichWithErrorSourceInfo(err error) error {
 	}
 
 	return status.Err()
+}
+
+// HandleGrpcStatusError handles gRPC status errors and sets the error source via context based on the error metadata
+// returned from the plugin. Regardless of the error source, a plugin downstream error is returned as both plugin and
+// downstream errors are treated the same in Grafana.
+func ErrorSourceFromGrpcStatusError(ctx context.Context, err error) (status.Source, bool) {
+	st := grpcstatus.Convert(err)
+	if st == nil {
+		return status.DefaultSource, false
+	}
+	for _, detail := range st.Details() {
+		if errorInfo, ok := detail.(*errdetails.ErrorInfo); ok {
+			errorSource, exists := errorInfo.Metadata[errorSourceMetadataKey]
+			if !exists {
+				break
+			}
+
+			switch errorSource {
+			case string(ErrorSourceDownstream):
+				innerErr := WithErrorSource(ctx, ErrorSourceDownstream)
+				if innerErr != nil {
+					Logger.Error("Could not set downstream error source", "error", innerErr)
+				}
+				return status.SourceDownstream, true
+			case string(ErrorSourcePlugin):
+				errorSourceErr := WithErrorSource(ctx, ErrorSourcePlugin)
+				if errorSourceErr != nil {
+					Logger.Error("Could not set plugin error source", "error", errorSourceErr)
+				}
+				return status.SourcePlugin, true
+			}
+		}
+	}
+	return status.DefaultSource, false
 }
