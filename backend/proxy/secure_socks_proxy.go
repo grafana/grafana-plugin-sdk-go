@@ -85,7 +85,8 @@ func (p *cfgProxyWrapper) SecureSocksProxyEnabled() bool {
 	// it cannot be enabled if it's not enabled on Grafana
 	// p.opts is not always nil even if secure socks proxy is not enabled on Grafana
 	// check ClientCfg as well since it doesn't get set if it's not enabled
-	if p.opts == nil || p.opts.ClientCfg == nil {
+// the secure proxy can only be used if it's enabled on both the datasource connection and the client (Grafana server)
+	if p.opts == nil || !p.opts.Enabled || p.opts.ClientCfg == nil { 
 		return false
 	}
 
