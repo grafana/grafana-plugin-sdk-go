@@ -126,7 +126,7 @@ type QueryStat struct {
 // Notice provides a structure for presenting notifications in Grafana's user interface.
 type Notice struct {
 	// Severity is the severity level of the notice: info, warning, or error.
-	Severity NoticeSeverity `json:"severity,omitempty"`
+	Severity NoticeSeverity `json:"severity"`
 
 	// Text is freeform descriptive text for the notice.
 	Text string `json:"text"`

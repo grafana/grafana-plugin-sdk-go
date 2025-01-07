@@ -3,6 +3,7 @@
 Frame[0] {
     "notices": [
         {
+            "severity": "info",
             "text": "hello"
         }
     ],
