@@ -2,10 +2,12 @@ package status
 
 import (
 	"context"
+	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"net/url"
 	"os"
 	"syscall"
 
@@ -139,7 +141,8 @@ func IsDownstreamError(err error) bool {
 func IsDownstreamHTTPError(err error) bool {
 	return IsDownstreamError(err) ||
 		isConnectionResetOrRefusedError(err) ||
-		isDNSNotFoundError(err)
+		isDNSNotFoundError(err) ||
+		isTLSCertificateVerificationError(err)
 }
 
 // InCancelledError returns true if err is context.Canceled or is gRPC status Canceled.
@@ -172,6 +175,28 @@ func isDNSNotFoundError(err error) bool {
 	var dnsError *net.DNSError
 	if errors.As(err, &dnsError) && dnsError.IsNotFound {
 		return true
+	}
+
+	return false
+}
+
+// isTLSCertificateVerificationError checks if the error is related to TLS certificate verification.
+func isTLSCertificateVerificationError(err error) bool {
+	var certErr *x509.CertificateInvalidError
+	var unknownAuthErr x509.UnknownAuthorityError
+
+	// Directly check for CertificateInvalidError or UnknownAuthorityError
+	if errors.As(err, &certErr) || errors.As(err, &unknownAuthErr) {
+		return true
+	}
+
+	// Check if the error is wrapped in a *url.Error
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		// Check the underlying error in urlErr
+		if errors.As(urlErr.Err, &certErr) || errors.As(urlErr.Err, &unknownAuthErr) {
+			return true
+		}
 	}
 
 	return false
