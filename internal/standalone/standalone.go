@@ -20,6 +20,8 @@ import (
 
 var (
 	standaloneEnabled = flag.Bool("standalone", false, "should this run standalone")
+
+	errStandaloneFileNotFound = errors.New("standalone.txt file not found")
 )
 
 func NewServerSettings(address, dir string) ServerSettings {
@@ -58,7 +60,10 @@ func ServerModeEnabled(pluginID string) (ServerSettings, bool) {
 func ClientModeEnabled(pluginID string) (ClientSettings, bool) {
 	s, err := clientSettings(pluginID)
 	if err != nil {
-		log.Printf("Error: %s", err.Error())
+		if !errors.Is(err, errStandaloneFileNotFound) {
+			log.Printf("Error: %s", err.Error())
+		}
+
 		return ClientSettings{}, false
 	}
 
@@ -172,7 +177,7 @@ func getStandaloneAddress(pluginID string, dir string) (string, error) {
 		return "", fmt.Errorf("read standalone file: %w", err)
 	case os.IsNotExist(err) || len(addressFileContent) == 0:
 		// No standalone file, do not treat as standalone
-		return "", nil
+		return "", errStandaloneFileNotFound
 	}
 	return addressFileContent, nil
 }
