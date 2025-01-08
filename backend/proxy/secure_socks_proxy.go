@@ -80,15 +80,14 @@ type cfgProxyWrapper struct {
 }
 
 // SecureSocksProxyEnabled checks if the Grafana instance allows the secure socks proxy to be used
-// and the datasource options specify to use the proxy
+// and the datasource options specify to use the proxy.
+// The secure proxy can only be used if it's enabled on both the datasource connection and the client (Grafana server)
 func (p *cfgProxyWrapper) SecureSocksProxyEnabled() bool {
-	// it cannot be enabled if it's not enabled on Grafana
-	if p.opts == nil {
+	if p.opts == nil || !p.opts.Enabled || p.opts.ClientCfg == nil {
 		return false
 	}
 
-	// if it's enabled on Grafana, check if the datasource is using it
-	return (p.opts != nil) && p.opts.Enabled
+	return true
 }
 
 // ConfigureSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
