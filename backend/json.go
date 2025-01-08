@@ -149,10 +149,24 @@ func readQueryDataResultsJSON(qdr *QueryDataResponse, iter *jsoniter.Iterator) {
 
 			qdr.Responses = make(Responses)
 
-			for l2Field := iter.ReadObject(); l2Field != ""; l2Field = iter.ReadObject() {
+			l2Field := iter.ReadObject()
+			for {
+				// the response may have an empty-string refId. this is not allowed,
+				// but it may happen, and we want to be able to handle the case.
+				// jsonIter uses empty-string to signalize both of these cases:
+				// - end of object
+				// - key found with the value empty-string
+				// to be able to differentiate between these two cases, we use the `WhatIsNext()`
+				// function, that tells us what is coming next, but does not consume content.
+				if (l2Field == "") && (iter.WhatIsNext() != jsoniter.ObjectValue) {
+					break
+				}
+
 				dr := DataResponse{}
 				readDataResponseJSON(&dr, iter)
 				qdr.Responses[l2Field] = dr
+
+				l2Field = iter.ReadObject()
 			}
 
 		default:
