@@ -241,8 +241,8 @@ func TestErrorSourceFromGrpcStatusError(t *testing.T) {
 		{
 			name: "When error is nil",
 			args: args{
-				ctx: backgroundCtx,
-				err: noErr,
+				ctx: context.Background,
+				err: func() error { return nil },
 			},
 			expected: expected{
 				src:   status.DefaultSource,
@@ -252,7 +252,7 @@ func TestErrorSourceFromGrpcStatusError(t *testing.T) {
 		{
 			name: "When error is not a grpc status error",
 			args: args{
-				ctx: backgroundCtx,
+				ctx: context.Background,
 				err: func() error {
 					return errors.New("oh no")
 				},
@@ -265,7 +265,7 @@ func TestErrorSourceFromGrpcStatusError(t *testing.T) {
 		{
 			name: "When error is a grpc status error without error details",
 			args: args{
-				ctx: backgroundCtx,
+				ctx: context.Background,
 				err: func() error {
 					return grpcstatus.Error(codes.Unknown, "oh no")
 				},
@@ -278,7 +278,7 @@ func TestErrorSourceFromGrpcStatusError(t *testing.T) {
 		{
 			name: "When error is a grpc status error with error details",
 			args: args{
-				ctx: backgroundCtx,
+				ctx: context.Background,
 				err: func() error {
 					st := grpcstatus.New(codes.Unknown, "oh no")
 					st, _ = st.WithDetails(&errdetails.ErrorInfo{
@@ -321,7 +321,7 @@ func TestErrorSourceFromGrpcStatusError(t *testing.T) {
 		{
 			name: "When error is a grpc status error with error details but no error source",
 			args: args{
-				ctx: backgroundCtx,
+				ctx: context.Background,
 				err: func() error {
 					st := grpcstatus.New(codes.Unknown, "oh no")
 					st, _ = st.WithDetails(&errdetails.ErrorInfo{
@@ -338,7 +338,7 @@ func TestErrorSourceFromGrpcStatusError(t *testing.T) {
 		{
 			name: "When error is a grpc status error with error details but error source is not a valid source",
 			args: args{
-				ctx: backgroundCtx,
+				ctx: context.Background,
 				err: func() error {
 					st := grpcstatus.New(codes.Unknown, "oh no")
 					st, _ = st.WithDetails(&errdetails.ErrorInfo{
@@ -371,7 +371,3 @@ var finalRoundTripper = httpclient.RoundTripperFunc(func(req *http.Request) (*ht
 		Body:       io.NopCloser(bytes.NewBufferString("")),
 	}, nil
 })
-
-var backgroundCtx = func() context.Context { return context.Background() }
-
-var noErr = func() error { return nil }
