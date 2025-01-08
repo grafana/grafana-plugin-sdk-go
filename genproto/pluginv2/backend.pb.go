@@ -313,6 +313,9 @@ type DataSourceInstanceSettings struct {
 	// The API version when the settings were saved.
 	// NOTE: this may be an older version than the current apiVersion
 	ApiVersion string `protobuf:"bytes,12,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
+	// This indicates that the instance is a system instance and should not appear
+	// in Grafana except through code that will explicitly request system data sources
+	System bool `protobuf:"varint,13,opt,name=system,proto3" json:"system,omitempty"`
 }
 
 func (x *DataSourceInstanceSettings) Reset() {
@@ -422,6 +425,13 @@ func (x *DataSourceInstanceSettings) GetUid() string {
 		return x.Uid
 	}
 	return ""
+}
+
+func (x *DataSourceInstanceSettings) GetSystem() bool {
+	if x != nil {
+		return x.System
+	}
+	return false
 }
 
 func (x *DataSourceInstanceSettings) GetApiVersion() string {
