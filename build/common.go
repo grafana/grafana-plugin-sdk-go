@@ -99,7 +99,12 @@ func buildBackend(cfg Config) error {
 	}
 
 	// TODO: Change to sh.RunWithV once available.
-	return sh.RunWith(cfg.Env, "go", args...)
+	err = sh.RunWith(cfg.Env, "go", args...)
+	if err != nil {
+		return err
+	}
+	b := Build{}
+	return b.GenerateManifestFile()
 }
 
 func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
