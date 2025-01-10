@@ -98,8 +98,7 @@ func buildBackend(cfg Config) error {
 		return err
 	}
 
-	// TODO: Change to sh.RunWithV once available.
-	err = sh.RunWith(cfg.Env, "go", args...)
+	err = sh.RunWithV(cfg.Env, "go", args...)
 	if err != nil {
 		return err
 	}
@@ -340,7 +339,7 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.GenerateManifestFile)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
 }
 
 //go:embed tmpl/*
