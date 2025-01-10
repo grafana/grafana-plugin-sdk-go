@@ -204,7 +204,7 @@ func isTLSCertificateVerificationError(err error) bool {
 	return false
 }
 
-// IsEOFError returns true if the error is an EOF error,indicating the connection was closed before or during header reading.
+// IsEOFError returns true if the error is an EOF error,indicating the connection was closed prematurely by server
 func isEOFError(err error) bool {
 	return errors.Is(err, io.EOF)
 }
