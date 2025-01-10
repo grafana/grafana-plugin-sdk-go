@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/http"
 	"net/url"
@@ -142,7 +143,8 @@ func IsDownstreamHTTPError(err error) bool {
 	return IsDownstreamError(err) ||
 		isConnectionResetOrRefusedError(err) ||
 		isDNSNotFoundError(err) ||
-		isTLSCertificateVerificationError(err)
+		isTLSCertificateVerificationError(err) ||
+		isEOFError(err)
 }
 
 // InCancelledError returns true if err is context.Canceled or is gRPC status Canceled.
@@ -200,6 +202,11 @@ func isTLSCertificateVerificationError(err error) bool {
 	}
 
 	return false
+}
+
+// IsEOFError returns true if the error is an EOF error,indicating the connection was closed before or during header reading.
+func isEOFError(err error) bool {
+	return errors.Is(err, io.EOF)
 }
 
 type sourceCtxKey struct{}

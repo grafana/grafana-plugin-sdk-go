@@ -5,6 +5,7 @@ import (
 	"crypto/x509"
 	"errors"
 	"fmt"
+	"io"
 	"net"
 	"net/url"
 	"os"
@@ -246,6 +247,26 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		{
 			name:     "direct UnknownAuthorityError",
 			err:      x509.UnknownAuthorityError{},
+			expected: true,
+		},
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "io.EOF error",
+			err:      io.EOF,
+			expected: true,
+		},
+		{
+			name:     "wrapped io.EOF error",
+			err:      fmt.Errorf("wrapped: %w", io.EOF),
+			expected: true,
+		},
+		{
+			name:     "joined error with io.EOF",
+			err:      errors.Join(io.EOF, fmt.Errorf("another error")),
 			expected: true,
 		},
 	}
