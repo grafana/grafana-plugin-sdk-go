@@ -8,7 +8,7 @@ require (
 	github.com/apache/arrow-go/v18 v18.0.1-0.20241212180703-82be143d7c30
 	github.com/cheekybits/genny v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20220208224320-6efb837e6bc2
-	github.com/elazarl/goproxy v1.2.6
+	github.com/elazarl/goproxy v1.3.0
 	github.com/getkin/kin-openapi v0.128.0
 	github.com/google/go-cmp v0.6.0
 	github.com/google/uuid v1.6.0
@@ -40,15 +40,17 @@ require (
 	go.opentelemetry.io/otel/sdk v1.33.0
 	go.opentelemetry.io/otel/trace v1.33.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
-	golang.org/x/net v0.33.0
+	golang.org/x/net v0.34.0
 	golang.org/x/oauth2 v0.24.0
 	golang.org/x/sync v0.10.0
-	golang.org/x/sys v0.28.0
+	golang.org/x/sys v0.29.0
 	golang.org/x/text v0.21.0
 	google.golang.org/grpc v1.69.2
 	google.golang.org/protobuf v1.35.2
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // @grafana/grafana-app-platform-squad
 )
+
+require google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576
 
 require (
 	github.com/BurntSushi/toml v1.4.0 // indirect
@@ -106,7 +108,6 @@ require (
 	golang.org/x/tools v0.28.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20241209162323-e6fa225c2576 // indirect
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20241209162323-e6fa225c2576 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8 // indirect
