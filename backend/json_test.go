@@ -143,3 +143,39 @@ func TestQueryDataResponseOrdering(t *testing.T) {
 
 	require.JSONEq(t, expected, string(b))
 }
+
+func testQueryDataResponseRoundtrip(t *testing.T, qdr *backend.QueryDataResponse) {
+	t.Helper()
+	// to json
+	b, err := json.Marshal(qdr)
+	require.NoError(t, err)
+
+	// from json
+	qdr2 := &backend.QueryDataResponse{}
+	err = json.Unmarshal(b, qdr2)
+	require.NoError(t, err)
+
+	// to json again, to compare
+	b2, err := json.Marshal(qdr2)
+	require.NoError(t, err)
+	require.Equal(t, b2, b)
+}
+
+func TestQueryDataWithoutRefID(t *testing.T) {
+	qdr := backend.NewQueryDataResponse()
+	qdr.Responses[""] = testDataResponse()
+
+	testQueryDataResponseRoundtrip(t, qdr)
+}
+
+func TestQueryDataWithtRefID(t *testing.T) {
+	qdr := backend.NewQueryDataResponse()
+	qdr.Responses["A"] = testDataResponse()
+
+	testQueryDataResponseRoundtrip(t, qdr)
+}
+
+func TestQueryDataWithoutResponses(t *testing.T) {
+	qdr := backend.NewQueryDataResponse()
+	testQueryDataResponseRoundtrip(t, qdr)
+}
