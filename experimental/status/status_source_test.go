@@ -257,16 +257,26 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		{
 			name:     "io.EOF error",
 			err:      io.EOF,
+			expected: false,
+		},
+		{
+			name:     "url io.EOF error",
+			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: io.EOF},
 			expected: true,
 		},
 		{
-			name:     "wrapped io.EOF error",
-			err:      fmt.Errorf("wrapped: %w", io.EOF),
+			name:     "net op io.EOF error",
+			err:      &net.OpError{Err: io.EOF},
+			expected: true,
+		},
+		{
+			name:     "wrapped url io.EOF error",
+			err:      fmt.Errorf("wrapped: %w", &url.Error{Op: "Get", URL: "https://example.com", Err: io.EOF}),
 			expected: true,
 		},
 		{
 			name:     "joined error with io.EOF",
-			err:      errors.Join(io.EOF, fmt.Errorf("another error")),
+			err:      errors.Join(io.EOF, &url.Error{Op: "Get", URL: "https://example.com", Err: io.EOF}),
 			expected: true,
 		},
 	}

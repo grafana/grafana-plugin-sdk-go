@@ -144,7 +144,7 @@ func IsDownstreamHTTPError(err error) bool {
 		isConnectionResetOrRefusedError(err) ||
 		isDNSNotFoundError(err) ||
 		isTLSCertificateVerificationError(err) ||
-		isEOFError(err)
+		isHTTPEOFError(err)
 }
 
 // InCancelledError returns true if err is context.Canceled or is gRPC status Canceled.
@@ -205,8 +205,17 @@ func isTLSCertificateVerificationError(err error) bool {
 }
 
 // IsEOFError returns true if the error is an EOF error,indicating the connection was closed prematurely by server
-func isEOFError(err error) bool {
-	return errors.Is(err, io.EOF)
+func isHTTPEOFError(err error) bool {
+	var netErr *net.OpError
+	if errors.As(err, &netErr) {
+		return errors.Is(netErr.Err, io.EOF)
+	}
+
+	var urlErr *url.Error
+	if errors.As(err, &urlErr) {
+		return errors.Is(urlErr.Err, io.EOF)
+	}
+	return false
 }
 
 type sourceCtxKey struct{}
