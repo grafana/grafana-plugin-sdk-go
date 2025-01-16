@@ -204,7 +204,7 @@ func isTLSCertificateVerificationError(err error) bool {
 	return false
 }
 
-// IsEOFError returns true if the error is an EOF error,indicating the connection was closed prematurely by server
+// isHTTPEOFError returns true if the error is an EOF error inside of url.Error or net.OpError, indicating the connection was closed prematurely by server
 func isHTTPEOFError(err error) bool {
 	var netErr *net.OpError
 	if errors.As(err, &netErr) {
