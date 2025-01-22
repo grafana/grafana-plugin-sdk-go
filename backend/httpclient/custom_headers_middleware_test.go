@@ -135,7 +135,6 @@ func TestCustomHeadersMiddleware(t *testing.T) {
 		}
 		require.Len(t, ctx.callChain, 1)
 		require.ElementsMatch(t, []string{"final"}, ctx.callChain)
-
-		require.Empty(t, req.Header.Values(""))
+		require.Equal(t, 0, len(req.Header))
 	})
 }
