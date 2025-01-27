@@ -17,7 +17,7 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.0.1
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.2.0
 	github.com/hashicorp/go-hclog v1.6.3
-	github.com/hashicorp/go-plugin v1.6.2
+	github.com/hashicorp/go-plugin v1.6.3
 	github.com/invopop/jsonschema v0.12.0 // for schema codgen+extraction
 	github.com/json-iterator/go v1.1.12
 	github.com/jszwedko/go-datemath v0.1.1-0.20230526204004-640a500621d6
