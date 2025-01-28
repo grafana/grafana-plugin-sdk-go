@@ -36,7 +36,7 @@ func (v *enumVector) At(i int) interface{} {
 	return (*v)[i]
 }
 
-func (v *enumVector) NilAt(i int) bool {
+func (v *enumVector) NilAt(_ int) bool {
 	return false
 }
 
