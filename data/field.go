@@ -226,6 +226,13 @@ func (f *Field) Nullable() bool {
 	return f.Type().Nullable()
 }
 
+// SetConfig modifies the Field's Config property to
+// be set to conf and returns the Field.
+func (f *Field) SetConfig(conf *FieldConfig) *Field {
+	f.Config = conf
+	return f
+}
+
 // FloatAt returns a float64 at the specified index idx for all supported Field types.
 // It will panic if idx is out of range.
 //
