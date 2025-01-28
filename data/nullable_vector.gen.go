@@ -43,6 +43,10 @@ func (v *nullableUint8Vector) Append(i interface{}) {
 	*v = append(*v, i.(*uint8))
 }
 
+func (v *nullableUint8Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
+}
+
 func (v *nullableUint8Vector) At(i int) interface{} {
 	return (*v)[i]
 }
@@ -132,6 +136,10 @@ func (v *nullableUint16Vector) Append(i interface{}) {
 		return
 	}
 	*v = append(*v, i.(*uint16))
+}
+
+func (v *nullableUint16Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
 }
 
 func (v *nullableUint16Vector) At(i int) interface{} {
@@ -225,6 +233,10 @@ func (v *nullableUint32Vector) Append(i interface{}) {
 	*v = append(*v, i.(*uint32))
 }
 
+func (v *nullableUint32Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
+}
+
 func (v *nullableUint32Vector) At(i int) interface{} {
 	return (*v)[i]
 }
@@ -314,6 +326,10 @@ func (v *nullableUint64Vector) Append(i interface{}) {
 		return
 	}
 	*v = append(*v, i.(*uint64))
+}
+
+func (v *nullableUint64Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
 }
 
 func (v *nullableUint64Vector) At(i int) interface{} {
@@ -407,6 +423,10 @@ func (v *nullableInt8Vector) Append(i interface{}) {
 	*v = append(*v, i.(*int8))
 }
 
+func (v *nullableInt8Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
+}
+
 func (v *nullableInt8Vector) At(i int) interface{} {
 	return (*v)[i]
 }
@@ -496,6 +516,10 @@ func (v *nullableInt16Vector) Append(i interface{}) {
 		return
 	}
 	*v = append(*v, i.(*int16))
+}
+
+func (v *nullableInt16Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
 }
 
 func (v *nullableInt16Vector) At(i int) interface{} {
@@ -589,6 +613,10 @@ func (v *nullableInt32Vector) Append(i interface{}) {
 	*v = append(*v, i.(*int32))
 }
 
+func (v *nullableInt32Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
+}
+
 func (v *nullableInt32Vector) At(i int) interface{} {
 	return (*v)[i]
 }
@@ -678,6 +706,10 @@ func (v *nullableInt64Vector) Append(i interface{}) {
 		return
 	}
 	*v = append(*v, i.(*int64))
+}
+
+func (v *nullableInt64Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
 }
 
 func (v *nullableInt64Vector) At(i int) interface{} {
@@ -771,6 +803,10 @@ func (v *nullableFloat32Vector) Append(i interface{}) {
 	*v = append(*v, i.(*float32))
 }
 
+func (v *nullableFloat32Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
+}
+
 func (v *nullableFloat32Vector) At(i int) interface{} {
 	return (*v)[i]
 }
@@ -860,6 +896,10 @@ func (v *nullableFloat64Vector) Append(i interface{}) {
 		return
 	}
 	*v = append(*v, i.(*float64))
+}
+
+func (v *nullableFloat64Vector) NilAt(i int) bool {
+	return (*v)[i] == nil
 }
 
 func (v *nullableFloat64Vector) At(i int) interface{} {
@@ -953,6 +993,10 @@ func (v *nullableStringVector) Append(i interface{}) {
 	*v = append(*v, i.(*string))
 }
 
+func (v *nullableStringVector) NilAt(i int) bool {
+	return (*v)[i] == nil
+}
+
 func (v *nullableStringVector) At(i int) interface{} {
 	return (*v)[i]
 }
@@ -1042,6 +1086,10 @@ func (v *nullableBoolVector) Append(i interface{}) {
 		return
 	}
 	*v = append(*v, i.(*bool))
+}
+
+func (v *nullableBoolVector) NilAt(i int) bool {
+	return (*v)[i] == nil
 }
 
 func (v *nullableBoolVector) At(i int) interface{} {
@@ -1135,6 +1183,10 @@ func (v *nullableTimeTimeVector) Append(i interface{}) {
 	*v = append(*v, i.(*time.Time))
 }
 
+func (v *nullableTimeTimeVector) NilAt(i int) bool {
+	return (*v)[i] == nil
+}
+
 func (v *nullableTimeTimeVector) At(i int) interface{} {
 	return (*v)[i]
 }
@@ -1224,6 +1276,10 @@ func (v *nullableJsonRawMessageVector) Append(i interface{}) {
 		return
 	}
 	*v = append(*v, i.(*json.RawMessage))
+}
+
+func (v *nullableJsonRawMessageVector) NilAt(i int) bool {
+	return (*v)[i] == nil
 }
 
 func (v *nullableJsonRawMessageVector) At(i int) interface{} {

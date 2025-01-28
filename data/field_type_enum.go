@@ -36,6 +36,10 @@ func (v *enumVector) At(i int) interface{} {
 	return (*v)[i]
 }
 
+func (v *enumVector) NilAt(_ int) bool {
+	return false
+}
+
 func (v *enumVector) PointerAt(i int) interface{} {
 	return &(*v)[i]
 }
@@ -113,6 +117,10 @@ func (v *nullableEnumVector) Append(i interface{}) {
 
 func (v *nullableEnumVector) At(i int) interface{} {
 	return (*v)[i]
+}
+
+func (v *nullableEnumVector) NilAt(i int) bool {
+	return (*v)[i] == nil
 }
 
 func (v *nullableEnumVector) CopyAt(i int) interface{} {

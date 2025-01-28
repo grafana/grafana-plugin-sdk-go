@@ -173,6 +173,15 @@ func (f *Field) At(idx int) interface{} {
 	return f.vector.At(idx)
 }
 
+// NilAt returns true if the element at index idx of the Field is nil.
+// This is useful since the interface returned by At() will not be nil
+// even if the underlying element is nil (without an type assertion).
+// It will always return false if the Field is not nullable.
+// It can panic if idx is out of range.
+func (f *Field) NilAt(idx int) bool {
+	return f.vector.NilAt(idx)
+}
+
 // Len returns the number of elements in the Field.
 // It will return 0 if the field is nil.
 func (f *Field) Len() int {

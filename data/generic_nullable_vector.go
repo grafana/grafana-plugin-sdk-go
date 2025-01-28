@@ -34,6 +34,10 @@ func (v *nullablegenVector) Append(i interface{}) {
 	*v = append(*v, i.(*gen))
 }
 
+func (v *nullablegenVector) NilAt(i int) bool {
+	return (*v)[i] == nil
+}
+
 func (v *nullablegenVector) At(i int) interface{} {
 	return (*v)[i]
 }
