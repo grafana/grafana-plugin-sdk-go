@@ -79,6 +79,19 @@ func TestFieldLen(t *testing.T) {
 	require.Equal(t, 0, f.Len())
 }
 
+func TestFieldNilAt(t *testing.T) {
+	f := data.NewField("value", nil, []*float64{nil, float64Ptr(1)})
+
+	require.True(t, f.NilAt(0))
+	require.False(t, f.At(0) == nil) // Why we have NilAt()
+	require.False(t, f.NilAt(1))
+
+	f = data.NewField("value", nil, []string{"", "foo"})
+	require.False(t, f.NilAt(1))
+	require.False(t, f.NilAt(2))
+	require.False(t, f.NilAt(77))
+}
+
 func TestField_String(t *testing.T) {
 	field := data.NewField("value", nil, make([]*string, 3))
 
