@@ -211,13 +211,6 @@ func (f *Frame) TypeIndices(fTypes ...FieldType) []int {
 	return indices
 }
 
-// SetConfig modifies the Field's Config property to
-// be set to conf and returns the Field.
-func (f *Field) SetConfig(conf *FieldConfig) *Field {
-	f.Config = conf
-	return f
-}
-
 // NewFrame returns a new Frame.
 func NewFrame(name string, fields ...*Field) *Frame {
 	return &Frame{
@@ -229,6 +222,12 @@ func NewFrame(name string, fields ...*Field) *Frame {
 // SetMeta sets the Frame's Meta attribute to m and returns the Frame.
 func (f *Frame) SetMeta(m *FrameMeta) *Frame {
 	f.Meta = m
+	return f
+}
+
+// SetRefID sets the Frame's RefID attribute to r and returns the Frame.
+func (f *Frame) SetRefID(r string) *Frame {
+	f.RefID = r
 	return f
 }
 
