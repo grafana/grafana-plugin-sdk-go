@@ -10,6 +10,7 @@ type vector interface {
 	Append(i interface{})
 	Extend(i int)
 	At(i int) interface{}
+	NilAt(i int) bool
 	Len() int
 	Type() FieldType
 	PointerAt(i int) interface{}

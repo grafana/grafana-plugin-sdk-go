@@ -239,6 +239,12 @@ func (f *Frame) Rows() int {
 	return 0
 }
 
+// NilAt returns true if the element at fieldIdx and rowIdx is nil.
+// It will panic if either fieldIdx or rowIdx are out of range.
+func (f *Frame) NilAt(fieldIdx int, rowIdx int) bool {
+	return f.Fields[fieldIdx].vector.NilAt(rowIdx)
+}
+
 // At returns the value of the specified fieldIdx and rowIdx.
 // It will panic if either fieldIdx or rowIdx are out of range.
 func (f *Frame) At(fieldIdx int, rowIdx int) interface{} {
