@@ -165,7 +165,7 @@ func (t parsableTime) parse() (time.Time, error) {
 	// Duration relative to current time.
 	if diff, err := ParseDuration(t.time); err == nil {
 		return t.now.Add(-diff), nil
-	} 
+	}
 
 	// Advanced time string, mimics the frontend's datemath library.
 	return datemath.ParseAndEvaluate(t.time, t.datemathOptions()...)
