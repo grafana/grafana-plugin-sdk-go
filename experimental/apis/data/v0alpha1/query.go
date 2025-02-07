@@ -3,6 +3,8 @@ package v0alpha1
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
+	"slices"
 	"strconv"
 	"unsafe"
 
@@ -309,7 +311,11 @@ func writeQuery(g *DataQuery, stream *j.Stream) {
 
 	// The additional properties
 	if g.additional != nil {
-		for k, v := range g.additional {
+		// we must sort the map-keys to always produce the same JSON
+		keys := slices.Sorted(maps.Keys(g.additional))
+
+		for _, k := range keys {
+			v := g.additional[k]
 			stream.WriteMore()
 			stream.WriteObjectField(k)
 			stream.WriteVal(v)
