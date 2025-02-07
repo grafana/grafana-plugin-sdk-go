@@ -71,7 +71,7 @@ func GetQuery(query backend.DataQuery) (*Query, error) {
 	model := &Query{}
 
 	if err := json.Unmarshal(query.JSON, &model); err != nil {
-		return nil, fmt.Errorf("%w: %v", ErrorJSON, err)
+		return nil, backend.DownstreamError(fmt.Errorf("%w: %v", ErrorJSON, err))
 	}
 
 	// Copy directly from the well typed query
