@@ -12,8 +12,8 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data/sqlutil"
 )
 
-func TestQuery(t *testing.T) {
-	t.Run("GetQuery", func(t *testing.T) {
+func TestGetQuery(t *testing.T) {
+	t.Run("returns correct query", func(t *testing.T) {
 		timeRange := backend.TimeRange{From: time.Now().Add(-time.Hour), To: time.Now()}
 		dataQuery := backend.DataQuery{
 			RefID:         "foo",
@@ -44,5 +44,24 @@ func TestQuery(t *testing.T) {
 		assert.Equal(t, parsedQuery.Schema, "x")
 		assert.Equal(t, parsedQuery.Table, "y")
 		assert.Equal(t, parsedQuery.Column, "z")
+	})
+
+	t.Run("returns error if invalid query", func(t *testing.T) {
+		timeRange := backend.TimeRange{From: time.Now().Add(-time.Hour), To: time.Now()}
+		dataQuery := backend.DataQuery{
+			RefID:         "foo",
+			MaxDataPoints: 10,
+			Interval:      time.Second,
+			TimeRange:     timeRange,
+			// invalid JSON, rawSql should be a string
+			JSON: json.RawMessage(`{
+			"rawSql": 1,
+		}`),
+		}
+
+		_, err := sqlutil.GetQuery(dataQuery)
+		assert.Error(t, err)
+		assert.ErrorContains(t, err, "error unmarshaling query JSON to the Query Model")
+		assert.True(t, backend.IsDownstreamError(err))
 	})
 }
