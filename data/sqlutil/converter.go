@@ -14,7 +14,6 @@ import (
 
 var ErrorUnexpectedTypeConversionError = errors.New("conversion error")
 
-
 // FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe (OutputFieldType)
 type FrameConverter struct {
 	// FieldType is the type that is created for the dataframe field.
