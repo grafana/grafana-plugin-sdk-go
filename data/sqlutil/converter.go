@@ -2,6 +2,7 @@ package sqlutil
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 	"reflect"
 	"regexp"
@@ -10,6 +11,8 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
+
+var ErrorUnexpectedTypeConversion = errors.New("conversion error")
 
 // FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe (OutputFieldType)
 type FrameConverter struct {
@@ -451,5 +454,6 @@ var TimeToNullableTime = data.FieldConverter{
 }
 
 func toConversionError(expected string, v interface{}) error {
-	return fmt.Errorf(`expected %s input but got type %T for value "%v"`, expected, v, v)
+	return fmt.Errorf(`%w, expected %s input but got type %T for value "%v"`,
+		ErrorUnexpectedTypeConversion, expected, v, v)
 }
