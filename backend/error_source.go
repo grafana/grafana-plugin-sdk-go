@@ -64,6 +64,12 @@ func DownstreamErrorf(format string, a ...any) error {
 	return DownstreamError(fmt.Errorf(format, a...))
 }
 
+// PluginErrorf creates a new error with status [ErrorSourcePlugin] and formats
+// according to a format specifier and returns the string as a value that satisfies error.
+func PluginErrorf(format string, a ...any) error {
+	return PluginError(fmt.Errorf(format, a...))
+}
+
 // ErrorSourceFromContext returns the error source stored in the context.
 // If no error source is stored in the context, [DefaultErrorSource] is returned.
 func ErrorSourceFromContext(ctx context.Context) ErrorSource {
