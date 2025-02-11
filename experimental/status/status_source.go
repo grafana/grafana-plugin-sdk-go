@@ -85,6 +85,9 @@ func PluginError(err error) error {
 	return NewErrorWithSource(err, SourcePlugin)
 }
 
+// Deprecated: DownstreamErrorf is deprecated and will be removed in future versions.
+// For more info, see https://github.com/grafana/grafana-plugin-sdk-go/pull/1228
+// 
 // DownstreamErrorf creates a new error with status [SourceDownstream] and formats
 // according to a format specifier and returns the string as a value that satisfies error.
 func DownstreamErrorf(format string, a ...any) error {
