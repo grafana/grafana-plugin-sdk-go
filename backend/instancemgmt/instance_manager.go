@@ -2,14 +2,15 @@ package instancemgmt
 
 import (
 	"context"
+	"fmt"
 	"reflect"
-	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	gocache "github.com/patrickmn/go-cache"
 )
 
 var (
@@ -19,6 +20,9 @@ var (
 		Help:      "The number of active plugin instances",
 	})
 	disposeTTL = 5 * time.Second
+
+	instanceTTL     = 1 * time.Hour
+	instanceCleanup = 2 * time.Hour
 )
 
 // Instance is a marker interface for an instance.
@@ -76,10 +80,20 @@ func New(provider InstanceProvider) InstanceManager {
 	if provider == nil {
 		panic("provider cannot be nil")
 	}
+	cache := gocache.New(instanceTTL, instanceCleanup)
+	cache.OnEvicted(func(_ string, i interface{}) {
+		ci := i.(CachedInstance)
+		if disposer, valid := ci.instance.(InstanceDisposer); valid {
+			time.AfterFunc(disposeTTL, func() {
+				disposer.Dispose()
+			})
+		}
+		activeInstances.Dec()
+	})
 
 	return &instanceManager{
 		provider: provider,
-		cache:    sync.Map{},
+		cache:    cache,
 		locker:   newLocker(),
 	}
 }
@@ -87,7 +101,7 @@ func New(provider InstanceProvider) InstanceManager {
 type instanceManager struct {
 	locker   *locker
 	provider InstanceProvider
-	cache    sync.Map
+	cache    *gocache.Cache
 }
 
 func (im *instanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
@@ -96,9 +110,10 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		return nil, err
 	}
 	// Double-checked locking for update/create criteria
-	im.locker.RLock(cacheKey)
-	item, ok := im.cache.Load(cacheKey)
-	im.locker.RUnlock(cacheKey)
+	strKey := fmt.Sprintf("%v", cacheKey)
+	im.locker.RLock(strKey)
+	item, ok := im.cache.Get(strKey)
+	im.locker.RUnlock(strKey)
 
 	if ok {
 		ci := item.(CachedInstance)
@@ -109,10 +124,10 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		}
 	}
 
-	im.locker.Lock(cacheKey)
-	defer im.locker.Unlock(cacheKey)
+	im.locker.Lock(strKey)
+	defer im.locker.Unlock(strKey)
 
-	if item, ok := im.cache.Load(cacheKey); ok {
+	if item, ok := im.cache.Get(strKey); ok {
 		ci := item.(CachedInstance)
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
@@ -120,24 +135,17 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 			return ci.instance, nil
 		}
 
-		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			time.AfterFunc(disposeTTL, func() {
-				disposer.Dispose()
-				activeInstances.Dec()
-			})
-		} else {
-			activeInstances.Dec()
-		}
+		im.cache.Delete(strKey)
 	}
 
 	instance, err := im.provider.NewInstance(ctx, pluginContext)
 	if err != nil {
 		return nil, err
 	}
-	im.cache.Store(cacheKey, CachedInstance{
+	im.cache.Set(strKey, CachedInstance{
 		PluginContext: pluginContext,
 		instance:      instance,
-	})
+	}, gocache.DefaultExpiration)
 	activeInstances.Inc()
 
 	return instance, nil
