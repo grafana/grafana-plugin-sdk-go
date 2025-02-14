@@ -63,6 +63,21 @@ func TestTimeRange(t *testing.T) {
 		})
 	})
 
+	t.Run("Can parse from 7d", func(t *testing.T) {
+		tr := TimeRange{
+			From: "7d",
+			Now:  now,
+		}
+
+		t.Run("7d", func(t *testing.T) {
+			expected := now.Add(-7 * 24 * time.Hour)
+
+			res, err := tr.ParseFrom()
+			require.Nil(t, err)
+			require.Equal(t, expected.Unix(), res.Unix())
+		})
+	})
+
 	now, err := time.Parse(time.RFC3339Nano, "2020-03-26T15:12:56.000Z")
 	require.Nil(t, err)
 	t.Run("Can parse now-1M/M, now-1M/M", func(t *testing.T) {
