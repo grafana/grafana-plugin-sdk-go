@@ -91,6 +91,12 @@ func DownstreamErrorf(format string, a ...any) error {
 	return DownstreamError(fmt.Errorf(format, a...))
 }
 
+// PluginErrorf creates a new error with status [ErrorSourcePlugin] and formats
+// according to a format specifier and returns the string as a value that satisfies error.
+func PluginErrorf(format string, a ...any) error {
+	return PluginError(fmt.Errorf(format, a...))
+}
+
 func (e ErrorWithSource) ErrorSource() Source {
 	return e.source
 }

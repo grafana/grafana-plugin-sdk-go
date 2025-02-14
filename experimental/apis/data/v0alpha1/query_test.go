@@ -7,6 +7,31 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestSerializeAdditionalQueryFieldsOrdered(t *testing.T) {
+	q := DataQuery{
+		CommonQueryProperties: CommonQueryProperties{
+			RefID:         "A",
+			MaxDataPoints: 10,
+			IntervalMS:    500,
+		},
+		additional: map[string]any{
+			"utcOffsetSec": 3600,
+			"exemplar":     false,
+			"instant":      false,
+			"range":        true,
+			"editorMode":   "code",
+			"legendFormat": "__auto",
+		},
+	}
+	jsonBytes, err := json.Marshal(q)
+	require.NoError(t, err)
+	// NOTE: we cannot use require.JSONEq() here,
+	// because we want to make sure the object-keys
+	// are ordered
+	expectedBytes := []byte(`{"refId":"A","maxDataPoints":10,"intervalMs":500,"editorMode":"code","exemplar":false,"instant":false,"legendFormat":"__auto","range":true,"utcOffsetSec":3600}`)
+	require.Equal(t, expectedBytes, jsonBytes)
+}
+
 func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 	request := []byte(`{
 		"queries": [
