@@ -70,7 +70,7 @@ func TestTimeRange(t *testing.T) {
 		}
 
 		t.Run("7d", func(t *testing.T) {
-			expected := now.Add(- 7 * 24 * time.Hour)
+			expected := now.Add(-7 * 24 * time.Hour)
 
 			res, err := tr.ParseFrom()
 			require.Nil(t, err)
