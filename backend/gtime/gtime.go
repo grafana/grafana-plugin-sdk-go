@@ -171,9 +171,15 @@ func ParseIntervalStringToTimeDuration(interval string) (time.Duration, error) {
 			break
 		}
 	}
+
 	if isPureNum {
-		formattedInterval += "s"
+		num, err := strconv.ParseInt(formattedInterval, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return time.Duration(num) * time.Second, nil
 	}
+
 	parsedInterval, err := ParseDuration(formattedInterval)
 	if err != nil {
 		return time.Duration(0), err
