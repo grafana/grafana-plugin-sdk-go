@@ -233,6 +233,12 @@ func TestParse(t *testing.T) {
 			wantPeriod: "",
 		},
 		{
+			name:       "simple duration minutes and seconds",
+			input:      "1m30s",
+			wantDur:    90 * time.Second,
+			wantPeriod: "",
+		},
+		{
 			name:       "complex duration",
 			input:      "1h30m",
 			wantDur:    90 * time.Minute,
