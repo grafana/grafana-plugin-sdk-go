@@ -151,14 +151,13 @@ func GetIntervalFrom(dsInterval, queryInterval string, queryIntervalMS int64, de
 	return parsedInterval, nil
 }
 
+var isPureNumRegex = regexp.MustCompile(`^\d+$`)
+
 // ParseIntervalStringToTimeDuration converts a string representation of a expected (i.e. 1m30s) to time.Duration
 // this method copied from grafana/grafana/pkg/tsdb/intervalv2.go
 func ParseIntervalStringToTimeDuration(interval string) (time.Duration, error) {
 	formattedInterval := strings.Replace(strings.Replace(interval, "<", "", 1), ">", "", 1)
-	isPureNum, err := regexp.MatchString(`^\d+$`, formattedInterval)
-	if err != nil {
-		return time.Duration(0), err
-	}
+	isPureNum := isPureNumRegex.MatchString(formattedInterval)
 	if isPureNum {
 		formattedInterval += "s"
 	}
