@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -154,7 +153,15 @@ func GetIntervalFrom(dsInterval, queryInterval string, queryIntervalMS int64, de
 // ParseIntervalStringToTimeDuration converts a string representation of a expected (i.e. 1m30s) to time.Duration
 // this method copied from grafana/grafana/pkg/tsdb/intervalv2.go
 func ParseIntervalStringToTimeDuration(interval string) (time.Duration, error) {
-	formattedInterval := strings.Replace(strings.Replace(interval, "<", "", 1), ">", "", 1)
+	formattedInterval := interval
+	if len(formattedInterval) > 0 {
+		if formattedInterval[0] == '<' {
+			formattedInterval = formattedInterval[1:]
+		}
+		if len(formattedInterval) > 0 && formattedInterval[len(formattedInterval)-1] == '>' {
+			formattedInterval = formattedInterval[:len(formattedInterval)-1]
+		}
+	}
 
 	// Check if string contains only digits
 	isPureNum := true
