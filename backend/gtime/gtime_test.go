@@ -211,3 +211,85 @@ func TestRoundInterval(t *testing.T) {
 		})
 	}
 }
+
+func TestParse(t *testing.T) {
+	tests := []struct {
+		name         string
+		input        string
+		wantDur      time.Duration
+		wantPeriod   string
+		wantErrRegex *regexp.Regexp
+	}{
+		{
+			name:       "simple duration seconds",
+			input:      "30s",
+			wantDur:    30 * time.Second,
+			wantPeriod: "",
+		},
+		{
+			name:       "simple duration minutes",
+			input:      "5m",
+			wantDur:    5 * time.Minute,
+			wantPeriod: "",
+		},
+		{
+			name:       "complex duration",
+			input:      "1h30m",
+			wantDur:    90 * time.Minute,
+			wantPeriod: "",
+		},
+		{
+			name:       "days unit",
+			input:      "7d",
+			wantDur:    7,
+			wantPeriod: "d",
+		},
+		{
+			name:       "weeks unit",
+			input:      "2w",
+			wantDur:    2,
+			wantPeriod: "w",
+		},
+		{
+			name:       "months unit",
+			input:      "3M",
+			wantDur:    3,
+			wantPeriod: "M",
+		},
+		{
+			name:       "years unit",
+			input:      "1y",
+			wantDur:    1,
+			wantPeriod: "y",
+		},
+		{
+			name:         "invalid duration",
+			input:        "invalid",
+			wantErrRegex: regexp.MustCompile(`time: invalid duration "?invalid"?`),
+		},
+		{
+			name:         "invalid number",
+			input:        "abc1d",
+			wantErrRegex: regexp.MustCompile(`time: invalid duration "?abc1d"?`),
+		},
+		{
+			name:         "empty string",
+			input:        "",
+			wantErrRegex: regexp.MustCompile(`time: invalid duration "?"`),
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			gotDur, gotPeriod, err := parse(tt.input)
+			if tt.wantErrRegex != nil {
+				require.Error(t, err)
+				require.Regexp(t, tt.wantErrRegex, err.Error())
+				return
+			}
+			require.NoError(t, err)
+			require.Equal(t, tt.wantDur, gotDur)
+			require.Equal(t, tt.wantPeriod, gotPeriod)
+		})
+	}
+}
