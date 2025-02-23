@@ -152,6 +152,7 @@ func TestParseIntervalStringToTimeDuration(t *testing.T) {
 		{inp: "<10s>", duration: 10 * time.Second},
 		{inp: "10s>", duration: 10 * time.Second},
 		{inp: "<10s", duration: 10 * time.Second},
+		{inp: "", err: regexp.MustCompile(`invalid interval`)},
 	}
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {
