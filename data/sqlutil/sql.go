@@ -2,10 +2,17 @@ package sqlutil
 
 import (
 	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+)
+
+var (
+	warnOnRowLimitTrue  bool = true
+	warnOnRowLimitFalse bool = false
+	ErrEOResults             = errors.New("No more rows to return")
 )
 
 // FrameFromRows returns a new Frame populated with the data from rows. The field types
@@ -21,6 +28,16 @@ import (
 // The converter defines what type to use for scanning, what type to place in the data frame, and a function for converting from one to the other.
 // If you find yourself here after upgrading, you can continue to your StringConverters here by using the `ToConverters` function.
 func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, error) {
+	frame, err := frameFromRows(rows, rowLimit, warnOnRowLimitTrue, converters...)
+	// TODO: this is almost certainly too simple, but it works in the happy
+	// path so it will do for now.
+	if err == ErrEOResults {
+		err = nil
+	}
+	return frame, err
+}
+
+func frameFromRows(rows *sql.Rows, rowLimit int64, warnOnRowLimit bool, converters ...Converter) (*data.Frame, error) {
 	types, err := rows.ColumnTypes()
 	if err != nil {
 		return nil, err
@@ -50,10 +67,12 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		// first iterate over rows may be nop if not switched result set to next
 		for rows.Next() {
 			if i == rowLimit {
-				frame.AppendNotices(data.Notice{
-					Severity: data.NoticeSeverityWarning,
-					Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
-				})
+				if warnOnRowLimit {
+					frame.AppendNotices(data.Notice{
+						Severity: data.NoticeSeverityWarning,
+						Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
+					})
+				}
 				break
 			}
 
@@ -77,5 +96,13 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		return frame, backend.DownstreamError(err)
 	}
 
+	if i != rowLimit {
+		return frame, ErrEOResults
+	}
+
 	return frame, nil
+}
+
+func FrameFromRowsSubset(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, error) {
+	return frameFromRows(rows, rowLimit, warnOnRowLimitFalse, converters...)
 }
