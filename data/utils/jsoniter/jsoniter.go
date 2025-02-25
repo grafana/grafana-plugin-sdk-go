@@ -73,6 +73,10 @@ func (iter *Iterator) ReadString() (string, error) {
 	return iter.i.ReadString(), iter.i.Error
 }
 
+func (iter *Iterator) ReadStringAsSlice() ([]byte, error) {
+	return iter.i.ReadStringAsSlice(), iter.i.Error
+}
+
 func (iter *Iterator) WhatIsNext() (j.ValueType, error) {
 	return iter.i.WhatIsNext(), iter.i.Error
 }
