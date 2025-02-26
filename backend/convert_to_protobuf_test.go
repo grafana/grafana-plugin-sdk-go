@@ -154,10 +154,11 @@ var testPluginContext = PluginContext{
 	PluginID:      "pluginID",
 	PluginVersion: "1.0.0",
 	User: &User{
-		Login: "login",
-		Name:  "name",
-		Email: "email",
-		Role:  "role",
+		Login:   "login",
+		Name:    "name",
+		Email:   "email",
+		Role:    "role",
+		IDToken: "idtoken",
 	},
 	AppInstanceSettings: &AppInstanceSettings{
 		Updated:                 time.Unix(1, 0),
@@ -232,6 +233,7 @@ func TestConvertToProtobufConversionRequest(t *testing.T) {
 	requireCounter.Equal(t, sdkCR.PluginContext.User.Name, protoCR.PluginContext.User.Name)
 	requireCounter.Equal(t, sdkCR.PluginContext.User.Email, protoCR.PluginContext.User.Email)
 	requireCounter.Equal(t, sdkCR.PluginContext.User.Role, protoCR.PluginContext.User.Role)
+	requireCounter.Equal(t, sdkCR.PluginContext.User.IDToken, protoCR.PluginContext.User.IdToken)
 
 	// App Instance Settings
 	requireCounter.Equal(t, sdkCR.PluginContext.AppInstanceSettings.JSONData, json.RawMessage(protoCR.PluginContext.AppInstanceSettings.JsonData))

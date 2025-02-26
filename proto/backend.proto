@@ -45,6 +45,7 @@ message User {
   string name = 2;
   string email = 3;
   string role = 4;
+  string idToken = 5;
 }
 
 message PluginContext {
@@ -345,7 +346,7 @@ message AdmissionRequest {
 
   // The requested operation
   Operation operation = 2;
-  
+
   // The object kind
   GroupVersionKind kind = 3;
 
@@ -421,7 +422,7 @@ message RawObject {
   string content_type = 2;
 }
 
-// ConversionRequest supports converting objects from one version to another 
+// ConversionRequest supports converting objects from one version to another
 message ConversionRequest {
   // NOTE: this may not include app or datasource instance settings depending on the request
   PluginContext pluginContext = 1;
