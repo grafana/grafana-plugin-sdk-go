@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
-	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -154,15 +153,37 @@ func GetIntervalFrom(dsInterval, queryInterval string, queryIntervalMS int64, de
 // ParseIntervalStringToTimeDuration converts a string representation of a expected (i.e. 1m30s) to time.Duration
 // this method copied from grafana/grafana/pkg/tsdb/intervalv2.go
 func ParseIntervalStringToTimeDuration(interval string) (time.Duration, error) {
-	formattedInterval := strings.Replace(strings.Replace(interval, "<", "", 1), ">", "", 1)
-	isPureNum, err := regexp.MatchString(`^\d+$`, formattedInterval)
-	if err != nil {
-		return time.Duration(0), err
+	if len(interval) == 0 {
+		return 0, backend.DownstreamError(fmt.Errorf("invalid interval"))
 	}
+
+	// extract the interval if it is inside brackets i.e. <10m>
+	if interval[0] == '<' {
+		interval = interval[1:]
+	}
+	if len(interval) > 0 && interval[len(interval)-1] == '>' {
+		interval = interval[:len(interval)-1]
+	}
+
+	// Check if string contains only digits
+	isPureNum := true
+	for _, c := range interval {
+		if c < '0' || c > '9' {
+			isPureNum = false
+			break
+		}
+	}
+
+	// if it is number than return it immediately
 	if isPureNum {
-		formattedInterval += "s"
+		num, err := strconv.ParseInt(interval, 10, 64)
+		if err != nil {
+			return 0, err
+		}
+		return time.Duration(num) * time.Second, nil
 	}
-	parsedInterval, err := ParseDuration(formattedInterval)
+
+	parsedInterval, err := ParseDuration(interval)
 	if err != nil {
 		return time.Duration(0), err
 	}
