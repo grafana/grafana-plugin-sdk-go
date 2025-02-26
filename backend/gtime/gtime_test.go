@@ -281,7 +281,41 @@ func TestParse(t *testing.T) {
 		{
 			name:         "empty string",
 			input:        "",
-			wantErrRegex: regexp.MustCompile(`time: invalid duration "?"`),
+			wantErrRegex: regexp.MustCompile(`empty input`),
+		},
+		{
+			name:       "fast path - pure number with date unit",
+			input:      "30d",
+			wantDur:    30,
+			wantPeriod: "d",
+		},
+		{
+			name:       "fast path - pure number with week unit",
+			input:      "2w",
+			wantDur:    2,
+			wantPeriod: "w",
+		},
+		{
+			name:       "fast path - pure number with month unit",
+			input:      "6M",
+			wantDur:    6,
+			wantPeriod: "M",
+		},
+		{
+			name:       "fast path - pure number with year unit",
+			input:      "5y",
+			wantDur:    5,
+			wantPeriod: "y",
+		},
+		{
+			name:         "non-numeric prefix with date unit",
+			input:        "a5d",
+			wantErrRegex: regexp.MustCompile(`time: invalid duration "?a5d"?`),
+		},
+		{
+			name:         "mixed characters with date unit",
+			input:        "5a3d",
+			wantErrRegex: regexp.MustCompile(`time: unknown unit "a" in duration "5a3d"`),
 		},
 	}
 

@@ -1,6 +1,7 @@
 package gtime
 
 import (
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -75,30 +76,32 @@ func ParseDuration(inp string) (time.Duration, error) {
 }
 
 func parse(inp string) (time.Duration, string, error) {
-	// Fast path for simple duration formats (no date units)
-	if len(inp) > 0 {
-		lastChar := inp[len(inp)-1]
-		if lastChar != 'd' && lastChar != 'w' && lastChar != 'M' && lastChar != 'y' {
-			dur, err := time.ParseDuration(inp)
-			return dur, "", err
-		}
+	if inp == "" {
+		return 0, "", backend.DownstreamError(errors.New("empty input"))
+	}
 
-		// Check if the rest is a number for date units
-		numPart := inp[:len(inp)-1]
-		isNum := true
-		for _, c := range numPart {
-			if c < '0' || c > '9' {
-				isNum = false
-				break
-			}
+	// Fast path for simple duration formats (no date units)
+	lastChar := inp[len(inp)-1]
+	if lastChar != 'd' && lastChar != 'w' && lastChar != 'M' && lastChar != 'y' {
+		dur, err := time.ParseDuration(inp)
+		return dur, "", err
+	}
+
+	// Check if the rest is a number for date units
+	numPart := inp[:len(inp)-1]
+	isNum := true
+	for _, c := range numPart {
+		if c < '0' || c > '9' {
+			isNum = false
+			break
 		}
-		if isNum {
-			num, err := strconv.Atoi(numPart)
-			if err != nil {
-				return 0, "", err
-			}
-			return time.Duration(num), string(lastChar), nil
+	}
+	if isNum {
+		num, err := strconv.Atoi(numPart)
+		if err != nil {
+			return 0, "", err
 		}
+		return time.Duration(num), string(lastChar), nil
 	}
 
 	// Fallback to regex for complex cases
