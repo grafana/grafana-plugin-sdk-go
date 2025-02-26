@@ -147,7 +147,7 @@ func IsDownstreamError(err error) bool {
 // a HTTP timeout error or a cancelled error or a connection reset/refused error or dns not found error.
 func IsDownstreamHTTPError(err error) bool {
 	return IsDownstreamError(err) ||
-		isConnectionResetOrRefusedError(err) ||
+		isNetworkSyscallConnectionError(err) ||
 		isDNSNotFoundError(err) ||
 		isTLSCertificateVerificationError(err) ||
 		isHTTPEOFError(err)
@@ -167,12 +167,12 @@ func isHTTPTimeoutError(err error) bool {
 	return errors.Is(err, os.ErrDeadlineExceeded) // replacement for os.IsTimeout(err)
 }
 
-func isConnectionResetOrRefusedError(err error) bool {
+func isNetworkSyscallConnectionError(err error) bool {
 	var netErr *net.OpError
 	if errors.As(err, &netErr) {
 		var sysErr *os.SyscallError
 		if errors.As(netErr.Err, &sysErr) {
-			return errors.Is(sysErr.Err, syscall.ECONNRESET) || errors.Is(sysErr.Err, syscall.ECONNREFUSED)
+			return errors.Is(sysErr.Err, syscall.ECONNRESET) || errors.Is(sysErr.Err, syscall.ECONNREFUSED) || errors.Is(sysErr.Err, syscall.EHOSTUNREACH) || errors.Is(sysErr.Err, syscall.ENETUNREACH)
 		}
 	}
 
