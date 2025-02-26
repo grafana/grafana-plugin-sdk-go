@@ -230,6 +230,11 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "network unreachable error",
+			err:      &net.OpError{Err: &os.SyscallError{Err: syscall.ENETUNREACH}},
+			expected: true,
+		},
+		{
 			name:     "DNS not found error",
 			err:      &net.DNSError{IsNotFound: true},
 			expected: true,
