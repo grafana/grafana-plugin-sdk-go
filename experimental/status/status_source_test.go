@@ -289,6 +289,18 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			err:      errors.Join(io.EOF, &url.Error{Op: "Get", URL: "https://example.com", Err: io.EOF}),
 			expected: true,
 		},
+		{
+			name: "TLS hostname verification error",
+			err: &url.Error{
+				Op:  "Get",
+				URL: "https://example.com",
+				Err: &x509.HostnameError{
+					Host:        "example.com",
+					Certificate: &x509.Certificate{},
+				},
+			},
+			expected: true,
+		},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {

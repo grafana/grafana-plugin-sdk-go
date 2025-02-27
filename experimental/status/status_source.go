@@ -190,11 +190,16 @@ func isDNSNotFoundError(err error) bool {
 
 // isTLSCertificateVerificationError checks if the error is related to TLS certificate verification.
 func isTLSCertificateVerificationError(err error) bool {
-	var certErr *x509.CertificateInvalidError
-	var unknownAuthErr x509.UnknownAuthorityError
+	var (
+		certErr        *x509.CertificateInvalidError
+		unknownAuthErr x509.UnknownAuthorityError
+		hostnameErr    *x509.HostnameError
+	)
 
-	// Directly check for CertificateInvalidError or UnknownAuthorityError
-	if errors.As(err, &certErr) || errors.As(err, &unknownAuthErr) {
+	// Directly check for certificate-related errors
+	if errors.As(err, &certErr) ||
+		errors.As(err, &unknownAuthErr) ||
+		errors.As(err, &hostnameErr) {
 		return true
 	}
 
@@ -202,7 +207,9 @@ func isTLSCertificateVerificationError(err error) bool {
 	var urlErr *url.Error
 	if errors.As(err, &urlErr) {
 		// Check the underlying error in urlErr
-		if errors.As(urlErr.Err, &certErr) || errors.As(urlErr.Err, &unknownAuthErr) {
+		if errors.As(urlErr.Err, &certErr) ||
+			errors.As(urlErr.Err, &unknownAuthErr) ||
+			errors.As(urlErr.Err, &hostnameErr) {
 			return true
 		}
 	}
