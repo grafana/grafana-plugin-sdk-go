@@ -270,6 +270,7 @@ func (f ConvertFromProtobuf) PublishStreamRequest(protoReq *pluginv2.PublishStre
 	return &PublishStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
+		Data:          protoReq.GetData(),
 	}
 }
 
