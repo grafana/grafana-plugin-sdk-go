@@ -36,7 +36,7 @@ type CallResourceRequest struct {
 
 // SetHTTPHeader sets the header entries associated with key to the
 // single element value. It replaces any existing values
-// associated with key. The key is case insensitive; it is
+// associated with key. The key is case-insensitive; it is
 // canonicalized by textproto.CanonicalMIMEHeaderKey.
 func (req *CallResourceRequest) SetHTTPHeader(key, value string) {
 	if req.Headers == nil {
@@ -47,7 +47,7 @@ func (req *CallResourceRequest) SetHTTPHeader(key, value string) {
 }
 
 // DeleteHTTPHeader deletes the values associated with key.
-// The key is case insensitive; it is canonicalized by
+// The key is case-insensitive; it is canonicalized by
 // CanonicalHeaderKey.
 func (req *CallResourceRequest) DeleteHTTPHeader(key string) {
 	if req.Headers == nil {
@@ -64,7 +64,7 @@ func (req *CallResourceRequest) DeleteHTTPHeader(key string) {
 
 // GetHTTPHeader gets the first value associated with the given key. If
 // there are no values associated with the key, Get returns "".
-// It is case insensitive; textproto.CanonicalMIMEHeaderKey is
+// It is case-insensitive; textproto.CanonicalMIMEHeaderKey is
 // used to canonicalize the provided key. Get assumes that all
 // keys are stored in canonical form.
 func (req *CallResourceRequest) GetHTTPHeader(key string) string {

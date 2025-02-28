@@ -45,9 +45,7 @@ type QueryDataRequest struct {
 	PluginContext PluginContext
 
 	// Headers the environment/metadata information for the request.
-	//
-	// To access forwarded HTTP headers please use
-	// GetHTTPHeaders or GetHTTPHeader.
+	// To access forwarded HTTP headers please use GetHTTPHeaders or GetHTTPHeader.
 	Headers map[string]string
 
 	// Queries the data queries for the request.
@@ -56,7 +54,7 @@ type QueryDataRequest struct {
 
 // SetHTTPHeader sets the header entries associated with key to the
 // single element value. It replaces any existing values
-// associated with key. The key is case insensitive; it is
+// associated with key. The key is case-insensitive; it is
 // canonicalized by textproto.CanonicalMIMEHeaderKey.
 func (req *QueryDataRequest) SetHTTPHeader(key, value string) {
 	if req.Headers == nil {
@@ -67,7 +65,7 @@ func (req *QueryDataRequest) SetHTTPHeader(key, value string) {
 }
 
 // DeleteHTTPHeader deletes the values associated with key.
-// The key is case insensitive; it is canonicalized by
+// The key is case-insensitive; it is canonicalized by
 // CanonicalHeaderKey.
 func (req *QueryDataRequest) DeleteHTTPHeader(key string) {
 	deleteHTTPHeaderInStringMap(req.Headers, key)
@@ -75,7 +73,7 @@ func (req *QueryDataRequest) DeleteHTTPHeader(key string) {
 
 // GetHTTPHeader gets the first value associated with the given key. If
 // there are no values associated with the key, Get returns "".
-// It is case insensitive; textproto.CanonicalMIMEHeaderKey is
+// It is case-insensitive; textproto.CanonicalMIMEHeaderKey is
 // used to canonicalize the provided key. Get assumes that all
 // keys are stored in canonical form.
 func (req *QueryDataRequest) GetHTTPHeader(key string) string {
