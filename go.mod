@@ -48,7 +48,10 @@ require (
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // @grafana/grafana-app-platform-squad
 )
 
-require google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f
+require (
+	go.bytecodealliance.org/cm v0.1.0
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f
+)
 
 require (
 	github.com/BurntSushi/toml v1.4.0 // indirect
