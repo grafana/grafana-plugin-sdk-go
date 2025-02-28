@@ -218,7 +218,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		return nil, err
 	}
 	if longLen == 0 {
-		return nil, fmt.Errorf("can not convert to wide series, input fields have no rows")
+		return nil, ErrorInputFieldsWithoutRowsWideSeries
 	}
 
 	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
@@ -420,7 +420,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 	if err != nil {
 		return nil, err
 	} else if wideLen == 0 {
-		return nil, ErrorInputFieldsWithoutRows
+		return nil, ErrorInputFieldsWithoutRowsLongSeries
 	}
 
 	var uniqueValueNames []string                        // unique names of Fields that are value types
