@@ -10,7 +10,10 @@ import (
 	"testing"
 	"time"
 
+	"github.com/apache/arrow-go/v18/arrow"
+	"github.com/apache/arrow-go/v18/arrow/array"
 	"github.com/apache/arrow-go/v18/arrow/ipc"
+	"github.com/apache/arrow-go/v18/arrow/memory"
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/require"
 
@@ -437,6 +440,42 @@ func TestFromRecord(t *testing.T) {
 	require.NoError(t, err)
 
 	if diff := cmp.Diff(df, got, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestFromRecordStringView(t *testing.T) {
+	pool := memory.NewGoAllocator()
+	require.NotNil(t, pool)
+	schema := arrow.NewSchema([]arrow.Field{
+		arrow.Field{Name: "sv", Type: &arrow.StringViewType{}, Nullable: false},
+		arrow.Field{Name: "svn", Type: &arrow.StringViewType{}, Nullable: true},
+	}, nil)
+	require.NotNil(t, schema)
+	b := array.NewRecordBuilder(pool, schema)
+	defer b.Release()
+
+	testStrings := []string{"foo", "", "", "🦥", "bar"}
+	notNull := []bool{true, true, false, true, true}
+	b.Field(0).(*array.StringViewBuilder).AppendValues(testStrings, nil)
+	b.Field(1).(*array.StringViewBuilder).AppendValues(testStrings, notNull)
+	record := b.NewRecord()
+	defer record.Release()
+
+	got, err := data.FromArrowRecord(record)
+	require.NoError(t, err)
+
+	want := data.NewFrame("",
+		data.NewField("sv", data.Labels{}, testStrings),
+		data.NewField("svn", data.Labels{}, []*string{
+			stringPtr("foo"),
+			stringPtr(""),
+			nil,
+			stringPtr("🦥"),
+			stringPtr("bar"),
+		}),
+	)
+	if diff := cmp.Diff(want, got, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 }
