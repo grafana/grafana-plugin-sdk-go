@@ -18,6 +18,10 @@ func CustomHeadersMiddleware() Middleware {
 
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			for key, values := range opts.Header {
+				// Skip empty keys as they are not allowed
+				if key == "" {
+					continue
+				}
 				// According to https://pkg.go.dev/net/http#Request.Header, Host is a special case
 				if http.CanonicalHeaderKey(key) == "Host" {
 					req.Host = values[0]
