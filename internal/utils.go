@@ -2,7 +2,6 @@ package internal
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"os"
 	"path"
@@ -39,7 +38,7 @@ func GetExecutableFromPluginJSON(dir string) (string, error) {
 			if strings.HasPrefix(exe, "../") {
 				return exe[3:], nil
 			}
-			return "", errors.New("datasource should reference executable in root folder")
+			return exe, nil
 		}
 	}
 	return exe, err
