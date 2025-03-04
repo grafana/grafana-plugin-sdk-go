@@ -21,6 +21,9 @@ func TestServerModeEnabled(t *testing.T) {
 	})
 
 	t.Run("Enabled by flag", func(t *testing.T) {
+		testDataDir, err := filepath.Abs("testdata")
+		require.NoError(t, err)
+
 		before := standaloneEnabled
 		t.Cleanup(func() {
 			standaloneEnabled = before
@@ -28,44 +31,11 @@ func TestServerModeEnabled(t *testing.T) {
 		truthy := true
 		standaloneEnabled = &truthy
 
-		curProcPath, err := os.Executable()
-		require.NoError(t, err)
-
 		settings, enabled := ServerModeEnabled(pluginID)
 		require.True(t, enabled)
 		require.NotEmpty(t, settings.Address)
-		require.Equal(t, filepath.Dir(curProcPath), settings.Dir)
+		require.Equal(t, filepath.Join(testDataDir, "plugin"), settings.Dir)
 	})
-
-	t.Run("Nearby dist folder will be used as server directory",
-		func(t *testing.T) {
-			curProcPath, err := os.Executable()
-			require.NoError(t, err)
-
-			procDir := filepath.Dir(curProcPath)
-			distDir := filepath.Join(procDir, "dist")
-
-			err = os.MkdirAll(distDir, 0755)
-			require.NoError(t, err)
-			_, err = os.Create(filepath.Join(distDir, "plugin.json"))
-			require.NoError(t, err)
-			t.Cleanup(func() {
-				err = os.RemoveAll(distDir)
-				require.NoError(t, err)
-			})
-
-			before := standaloneEnabled
-			t.Cleanup(func() {
-				standaloneEnabled = before
-			})
-			truthy := true
-			standaloneEnabled = &truthy
-
-			settings, enabled := ServerModeEnabled(pluginID)
-			require.True(t, enabled)
-			require.NotEmpty(t, settings.Address)
-			require.Equal(t, distDir, settings.Dir)
-		})
 }
 
 func TestClientModeEnabled(t *testing.T) {
@@ -177,21 +147,21 @@ func Test_findPluginDir(t *testing.T) {
 	}{
 		{
 			name:     "existing plugin found from root directory",
-			pluginID: "grafana-foobar-datasource",
+			pluginID: pluginID,
 			dir:      "testdata",
 			want:     filepath.Join("testdata", "plugin"),
 			exists:   true,
 		},
 		{
 			name:     "existing plugin found from plugin directory",
-			pluginID: "grafana-foobar-datasource",
+			pluginID: pluginID,
 			dir:      filepath.Join("testdata", "plugin"),
 			want:     filepath.Join("testdata", "plugin"),
 			exists:   true,
 		},
 		{
 			name:     "non matching plugin id",
-			pluginID: "grafana-foobar-datasource",
+			pluginID: pluginID,
 			dir:      filepath.Join("testdata", "GoLand"),
 			want:     "",
 		},
