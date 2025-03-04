@@ -166,3 +166,58 @@ func TestClientModeEnabled(t *testing.T) {
 		require.Zero(t, settings.TargetPID)
 	})
 }
+
+func Test_findPluginDir(t *testing.T) {
+	tests := []struct {
+		name     string
+		dir      string
+		pluginID string
+		want     string
+		exists   bool
+	}{
+		{
+			name:     "existing plugin found from root directory",
+			pluginID: "grafana-foobar-datasource",
+			dir:      "testdata",
+			want:     filepath.Join("testdata", "plugin"),
+			exists:   true,
+		},
+		{
+			name:     "existing plugin found from plugin directory",
+			pluginID: "grafana-foobar-datasource",
+			dir:      filepath.Join("testdata", "plugin"),
+			want:     filepath.Join("testdata", "plugin"),
+			exists:   true,
+		},
+		{
+			name:     "non matching plugin id",
+			pluginID: "grafana-foobar-datasource",
+			dir:      filepath.Join("testdata", "GoLand"),
+			want:     "",
+		},
+		{
+			name:     "non-existing plugin",
+			pluginID: "non-existing-plugin",
+			dir:      "testdata",
+			want:     "",
+		},
+		{
+			name:     "empty plugin ID",
+			pluginID: "",
+			dir:      "testdata",
+			want:     "",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, found := findPluginDir(tt.dir, tt.pluginID)
+			if found != tt.exists {
+				t.Errorf("findPluginDir() found = %v, want %v", found, tt.exists)
+			}
+			if got != tt.want {
+				t.Errorf("findPluginDir() got = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
