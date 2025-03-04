@@ -89,7 +89,7 @@ func serverSettings(pluginID string) (ServerSettings, error) {
 
 	dir, found := findPluginDir(cwd, pluginID)
 	if !found {
-		return ServerSettings{}, fmt.Errorf("plugin root directory not found for plugin ID: %s", pluginID)
+		return ServerSettings{}, fmt.Errorf("plugin directory not found for plugin ID: %s", pluginID)
 	}
 
 	address, err := createStandaloneAddress(pluginID)
