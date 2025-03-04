@@ -40,13 +40,13 @@ func TestGetExecutableFromPluginJSON(t *testing.T) {
 			expected:      "gpx_foo",
 		},
 		{
-			name: "Cannot retrieve executable field of nested 'datasource' plugin.json when executable path is not in the root directory",
+			name: "Can retrieve executable field of nested 'datasource' plugin.json when executable path is not in the root directory",
 			args: args{
 				pluginDir: "foobar-app",
 			},
 			pluginJSONDir: filepath.Join("foobar-app", "datasource"),
 			executable:    "gpx_foo",
-			err:           true,
+			expected:      "gpx_foo",
 		},
 		{
 			name: "Cannot retrieve executable when no plugin.json found in root or nested 'datasource' directory",
