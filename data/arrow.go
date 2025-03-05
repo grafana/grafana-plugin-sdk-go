@@ -369,6 +369,12 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 			break
 		}
 		sdkField.vector = newStringVector(0)
+	case arrow.STRING_VIEW:
+		if nullable[idx] {
+			sdkField.vector = newNullableStringVector(0)
+			break
+		}
+		sdkField.vector = newStringVector(0)
 	case arrow.INT8:
 		if nullable[idx] {
 			sdkField.vector = newNullableInt8Vector(0)
@@ -495,6 +501,21 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 	switch col.DataType().ID() {
 	case arrow.STRING:
 		v := array.NewStringData(col.Data())
+		for rIdx := 0; rIdx < col.Len(); rIdx++ {
+			if nullable[i] {
+				if v.IsNull(rIdx) {
+					var ns *string
+					frame.Fields[i].vector.Append(ns)
+					continue
+				}
+				rv := v.Value(rIdx)
+				frame.Fields[i].vector.Append(&rv)
+				continue
+			}
+			frame.Fields[i].vector.Append(v.Value(rIdx))
+		}
+	case arrow.STRING_VIEW:
+		v := array.NewStringViewData(col.Data())
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
