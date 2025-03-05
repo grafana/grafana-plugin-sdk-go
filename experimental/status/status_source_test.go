@@ -2,6 +2,7 @@ package status_test
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -241,7 +242,7 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		},
 		{
 			name:     "wrapped *url.Error with UnknownAuthorityError",
-			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: x509.UnknownAuthorityError{}},
+			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: &tls.CertificateVerificationError{Err: x509.UnknownAuthorityError{}}},
 			expected: true,
 		},
 		{
@@ -251,7 +252,7 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 		},
 		{
 			name:     "direct CertificateInvalidError",
-			err:      &x509.CertificateInvalidError{Reason: x509.Expired, Cert: nil},
+			err:      x509.CertificateInvalidError{Reason: x509.Expired, Cert: nil},
 			expected: true,
 		},
 		{
@@ -294,9 +295,24 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			err: &url.Error{
 				Op:  "Get",
 				URL: "https://example.com",
-				Err: &x509.HostnameError{
-					Host:        "example.com",
-					Certificate: &x509.Certificate{},
+				Err: &tls.CertificateVerificationError{
+					Err: x509.HostnameError{
+						Host:        "example.com",
+						Certificate: &x509.Certificate{},
+					},
+				},
+			},
+			expected: true,
+		},
+		{
+			name: "TLS certificate expired",
+			err: &url.Error{
+				Op:  "Get",
+				URL: "https://example.com",
+				Err: &tls.CertificateVerificationError{
+					Err: x509.CertificateInvalidError{
+						Reason: x509.Expired,
+					},
 				},
 			},
 			expected: true,

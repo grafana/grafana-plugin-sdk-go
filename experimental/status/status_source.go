@@ -2,6 +2,7 @@ package status
 
 import (
 	"context"
+	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
@@ -191,30 +192,15 @@ func isDNSNotFoundError(err error) bool {
 // isTLSCertificateVerificationError checks if the error is related to TLS certificate verification.
 func isTLSCertificateVerificationError(err error) bool {
 	var (
-		certErr        *x509.CertificateInvalidError
-		unknownAuthErr x509.UnknownAuthorityError
-		hostnameErr    *x509.HostnameError
+		certErr             x509.CertificateInvalidError
+		unknownAuthorityErr x509.UnknownAuthorityError
+		hostnameErr         x509.HostnameError
+		tlsError            *tls.CertificateVerificationError
 	)
-
-	// Directly check for certificate-related errors
-	if errors.As(err, &certErr) ||
-		errors.As(err, &unknownAuthErr) ||
-		errors.As(err, &hostnameErr) {
-		return true
-	}
-
-	// Check if the error is wrapped in a *url.Error
-	var urlErr *url.Error
-	if errors.As(err, &urlErr) {
-		// Check the underlying error in urlErr
-		if errors.As(urlErr.Err, &certErr) ||
-			errors.As(urlErr.Err, &unknownAuthErr) ||
-			errors.As(urlErr.Err, &hostnameErr) {
-			return true
-		}
-	}
-
-	return false
+	return errors.As(err, &certErr) ||
+		errors.As(err, &unknownAuthorityErr) ||
+		errors.As(err, &hostnameErr) ||
+		errors.As(err, &tlsError)
 }
 
 // isHTTPEOFError returns true if the error is an EOF error inside of url.Error or net.OpError, indicating the connection was closed prematurely by server
