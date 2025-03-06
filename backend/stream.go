@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -92,6 +93,43 @@ type SubscribeStreamRequest struct {
 	PluginContext PluginContext
 	Path          string
 	Data          json.RawMessage
+
+	// Headers the environment/metadata information for the request.
+	// To access forwarded HTTP headers please use GetHTTPHeaders or GetHTTPHeader.
+	Headers map[string]string
+}
+
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case-insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
+func (req *SubscribeStreamRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	setHTTPHeaderInStringMap(req.Headers, key, value)
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case-insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *SubscribeStreamRequest) DeleteHTTPHeader(key string) {
+	deleteHTTPHeaderInStringMap(req.Headers, key)
+}
+
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case-insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
+func (req *SubscribeStreamRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+// GetHTTPHeaders returns HTTP headers.
+func (req *SubscribeStreamRequest) GetHTTPHeaders() http.Header {
+	return getHTTPHeadersFromStringMap(req.Headers)
 }
 
 // SubscribeStreamStatus is a status of subscription response.
@@ -148,6 +186,43 @@ type PublishStreamRequest struct {
 	PluginContext PluginContext
 	Path          string
 	Data          json.RawMessage
+
+	// Headers the environment/metadata information for the request.
+	// To access forwarded HTTP headers please use GetHTTPHeaders or GetHTTPHeader.
+	Headers map[string]string
+}
+
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case-insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
+func (req *PublishStreamRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	setHTTPHeaderInStringMap(req.Headers, key, value)
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case-insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *PublishStreamRequest) DeleteHTTPHeader(key string) {
+	deleteHTTPHeaderInStringMap(req.Headers, key)
+}
+
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case-insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
+func (req *PublishStreamRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+// GetHTTPHeaders returns HTTP headers.
+func (req *PublishStreamRequest) GetHTTPHeaders() http.Header {
+	return getHTTPHeadersFromStringMap(req.Headers)
 }
 
 // PublishStreamStatus is a status of publication response.
@@ -173,6 +248,43 @@ type RunStreamRequest struct {
 	PluginContext PluginContext
 	Path          string
 	Data          json.RawMessage
+
+	// Headers the environment/metadata information for the request.
+	// To access forwarded HTTP headers please use GetHTTPHeaders or GetHTTPHeader.
+	Headers map[string]string
+}
+
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case-insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
+func (req *RunStreamRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	setHTTPHeaderInStringMap(req.Headers, key, value)
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case-insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *RunStreamRequest) DeleteHTTPHeader(key string) {
+	deleteHTTPHeaderInStringMap(req.Headers, key)
+}
+
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case-insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
+func (req *RunStreamRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+// GetHTTPHeaders returns HTTP headers.
+func (req *RunStreamRequest) GetHTTPHeaders() http.Header {
+	return getHTTPHeadersFromStringMap(req.Headers)
 }
 
 // StreamPacket represents a stream packet.
@@ -228,3 +340,7 @@ func (s *StreamSender) SendBytes(data []byte) error {
 	}
 	return s.packetSender.Send(FromProto().StreamPacket(packet))
 }
+
+var _ ForwardHTTPHeaders = (*SubscribeStreamRequest)(nil)
+var _ ForwardHTTPHeaders = (*PublishStreamRequest)(nil)
+var _ ForwardHTTPHeaders = (*RunStreamRequest)(nil)
