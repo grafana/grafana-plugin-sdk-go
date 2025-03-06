@@ -50,6 +50,9 @@ type QueryDataRequest struct {
 
 	// Queries the data queries for the request.
 	Queries []DataQuery
+
+	// Whether to return results in pages
+	PagedResponses bool
 }
 
 // SetHTTPHeader sets the header entries associated with key to the
@@ -113,6 +116,15 @@ type DataQuery struct {
 type QueryDataResponse struct {
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
 	Responses Responses `json:"results"`
+
+	// Frame generator function. This allows QueryData functions
+	// to return frames 'on demand', so the response can be built
+	// and written in chunks.
+	FrameGenerator FrameGenerator
+
+	// If true, readers of QueryDataResponse will use the frameGenerator
+	// to get pages of data from the response.
+	PagedResponses bool
 }
 
 // MarshalJSON writes the results as json
@@ -160,6 +172,18 @@ func (r *QueryDataResponse) DeepCopyInto(out *QueryDataResponse) {
 func NewQueryDataResponse() *QueryDataResponse {
 	return &QueryDataResponse{
 		Responses: make(Responses),
+	}
+}
+
+type FrameGenerator func() (data.Frames, error)
+
+var ErrFrameGeneratorEOF = errors.New("No more frames")
+
+func NewQueryDataResponseWithFrameGenerator(frameGenerator FrameGenerator) *QueryDataResponse {
+	return &QueryDataResponse{
+		Responses:      make(Responses),
+		FrameGenerator: frameGenerator,
+		PagedResponses: true,
 	}
 }
 
