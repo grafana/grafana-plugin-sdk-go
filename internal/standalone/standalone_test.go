@@ -160,6 +160,20 @@ func Test_findPluginDir(t *testing.T) {
 			exists:   true,
 		},
 		{
+			name:     "existing plugin found from nested plugin directory",
+			pluginID: "grafana-nested-datasource",
+			dir:      filepath.Join("testdata", "plugin"),
+			want:     filepath.Join("testdata", "plugin", "datasource"),
+			exists:   true,
+		},
+		{
+			name:     "existing plugin found from dist directory",
+			pluginID: "grafana-foobar-datasource",
+			dir:      filepath.Join("testdata", "dist"),
+			want:     filepath.Join("testdata", "dist"),
+			exists:   true,
+		},
+		{
 			name:     "non matching plugin id",
 			pluginID: pluginID,
 			dir:      filepath.Join("testdata", "GoLand"),
