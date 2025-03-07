@@ -169,6 +169,7 @@ var testPluginContext = PluginContext{
 		ID:                      1,
 		UID:                     "uid",
 		Type:                    "pluginID",
+		System:                  true,
 		Name:                    "name",
 		URL:                     "http://example.com",
 		User:                    "user",
