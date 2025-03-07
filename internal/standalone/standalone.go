@@ -82,9 +82,19 @@ func RunDummyPluginLocator(address string) {
 }
 
 func serverSettings(pluginID string) (ServerSettings, error) {
-	cwd, _ := os.Getwd()
+	cwd, err := os.Getwd()
+	if err != nil {
+		return ServerSettings{}, err
+	}
+
+	// if we are in the pkg directory, go up one level
 	if filepath.Base(cwd) == "pkg" {
 		cwd = filepath.Dir(cwd)
+	}
+
+	// if dist directory exists, use that as the base directory
+	if _, err = os.Stat(filepath.Join(cwd, "dist")); err == nil {
+		cwd = filepath.Join(cwd, "dist")
 	}
 
 	dir, found := findPluginDir(cwd, pluginID)
