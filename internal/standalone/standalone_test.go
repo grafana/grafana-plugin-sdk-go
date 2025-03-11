@@ -1,6 +1,7 @@
 package standalone
 
 import (
+	"errors"
 	"os"
 	"path/filepath"
 	"testing"
@@ -204,4 +205,116 @@ func Test_findPluginDir(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestServerSettings(t *testing.T) {
+	originalWd := currentWd
+	defer func() { currentWd = originalWd }()
+
+	t.Run("Returns settings for valid plugin", func(t *testing.T) {
+		testDataDir, err := filepath.Abs(filepath.Join("testdata", "plugin"))
+		require.NoError(t, err)
+
+		currentWd = func() (string, error) {
+			return testDataDir, nil
+		}
+
+		settings, err := serverSettings(pluginID)
+		require.NoError(t, err)
+		require.NotEmpty(t, settings.Address)
+		require.Equal(t, testDataDir, settings.Dir)
+	})
+
+	t.Run("Returns settings for nested plugin", func(t *testing.T) {
+		testDataDir, err := filepath.Abs(filepath.Join("testdata", "plugin"))
+		require.NoError(t, err)
+
+		currentWd = func() (string, error) {
+			return testDataDir, nil
+		}
+
+		settings, err := serverSettings("grafana-nested-datasource")
+		require.NoError(t, err)
+		require.NotEmpty(t, settings.Address)
+		require.Equal(t, filepath.Join(testDataDir, "datasource"), settings.Dir)
+	})
+
+	t.Run("Returns error for invalid plugin ID", func(t *testing.T) {
+		testDataDir, err := filepath.Abs("testdata")
+		require.NoError(t, err)
+
+		currentWd = func() (string, error) {
+			return testDataDir, nil
+		}
+
+		settings, err := serverSettings("")
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "plugin directory not found")
+		require.Empty(t, settings)
+	})
+
+	t.Run("Handles pkg directory by moving up one level", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "plugin-test")
+		require.NoError(t, err)
+		defer func() {
+			err = os.RemoveAll(tmpDir)
+			t.Log("Error removing temp directory:", err)
+		}()
+
+		pkgDir := filepath.Join(tmpDir, "pkg")
+		err = os.Mkdir(pkgDir, 0755)
+		require.NoError(t, err)
+
+		distDir := filepath.Join(tmpDir, "dist")
+		err = os.Mkdir(distDir, 0755)
+		require.NoError(t, err)
+
+		err = os.WriteFile(filepath.Join(distDir, "plugin.json"), []byte(`{"id": "`+pluginID+`"}`), 0644)
+		require.NoError(t, err)
+
+		currentWd = func() (string, error) {
+			return pkgDir, nil
+		}
+
+		settings, err := serverSettings(pluginID)
+		require.NoError(t, err)
+		require.Equal(t, filepath.Join(tmpDir, "dist"), settings.Dir)
+		require.NotEmpty(t, settings.Address)
+	})
+
+	t.Run("Uses dist directory when available", func(t *testing.T) {
+		tmpDir, err := os.MkdirTemp("", "plugin-test")
+		require.NoError(t, err)
+		defer func() {
+			err = os.RemoveAll(tmpDir)
+			t.Log("Error removing temp directory:", err)
+		}()
+
+		distDir := filepath.Join(tmpDir, "dist")
+		err = os.Mkdir(distDir, 0755)
+		require.NoError(t, err)
+
+		err = os.WriteFile(filepath.Join(distDir, "plugin.json"), []byte(`{"id": "`+pluginID+`"}`), 0644)
+		require.NoError(t, err)
+
+		currentWd = func() (string, error) {
+			return tmpDir, nil
+		}
+
+		settings, err := serverSettings(pluginID)
+		require.NoError(t, err)
+		require.Equal(t, filepath.Join(tmpDir, "dist"), settings.Dir)
+		require.NotEmpty(t, settings.Address)
+	})
+
+	t.Run("Returns error when working directory cannot be determined", func(t *testing.T) {
+		currentWd = func() (string, error) {
+			return "", errors.New("mock working directory error")
+		}
+
+		settings, err := serverSettings(pluginID)
+		require.Error(t, err)
+		require.Contains(t, err.Error(), "mock working directory error")
+		require.Empty(t, settings)
+	})
 }

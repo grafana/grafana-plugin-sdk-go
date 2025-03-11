@@ -82,7 +82,7 @@ func RunDummyPluginLocator(address string) {
 }
 
 func serverSettings(pluginID string) (ServerSettings, error) {
-	cwd, err := os.Getwd()
+	cwd, err := currentWd()
 	if err != nil {
 		return ServerSettings{}, err
 	}
@@ -111,6 +111,10 @@ func serverSettings(pluginID string) (ServerSettings, error) {
 		Dir:     dir,
 	}, nil
 }
+
+// currentWd returns the current working directory.
+// This is a variable so that it can be mocked in tests.
+var currentWd = os.Getwd
 
 // clientSettings will attempt to find a standalone server's address and PID.
 func clientSettings(pluginID string) (ClientSettings, error) {
