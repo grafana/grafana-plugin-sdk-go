@@ -236,6 +236,11 @@ func (Build) LinuxARM64() error {
 	return buildBackend(newBuildConfig("linux", "arm64"))
 }
 
+// LinuxS390x builds the back-end plugin for Linux on s390x.
+func (Build) LinuxS390x() error {
+	return buildBackend(newBuildConfig("linux", "s390x"))
+}
+
 // Windows builds the back-end plugin for Windows.
 func (Build) Windows() error {
 	return buildBackend(newBuildConfig("windows", "amd64"))
@@ -253,12 +258,12 @@ func (Build) DarwinARM64() error {
 
 // GenerateManifestFile generates a manifest file for plugin submissions
 func (Build) GenerateManifestFile() error {
-	config := Config{}
-	config, err := beforeBuild(config)
+	cfg := Config{}
+	beforeBuildCfg, err := beforeBuild(cfg)
 	if err != nil {
 		return err
 	}
-	outputPath := config.OutputBinaryPath
+	outputPath := beforeBuildCfg.OutputBinaryPath
 	if outputPath == "" {
 		outputPath = defaultOutputBinaryPath
 	}
@@ -339,7 +344,7 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.LinuxS390x)
 }
 
 //go:embed tmpl/*
@@ -357,12 +362,12 @@ func ensureWatchConfig() error {
 	}
 
 	fmt.Println("No .bra.toml file found. Creating one...")
-	config, err := tmpl.ReadFile("tmpl/bra.toml")
+	cfg, err := tmpl.ReadFile("tmpl/bra.toml")
 	if err != nil {
 		return err
 	}
 
-	return os.WriteFile(".bra.toml", config, 0600)
+	return os.WriteFile(".bra.toml", cfg, 0600)
 }
 
 // Watch rebuilds the plugin backend debug version when files change.
