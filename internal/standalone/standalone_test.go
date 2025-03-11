@@ -197,12 +197,8 @@ func Test_findPluginDir(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			got, found := findPluginDir(tt.dir, tt.pluginID)
-			if found != tt.exists {
-				t.Errorf("findPluginDir() found = %v, want %v", found, tt.exists)
-			}
-			if got != tt.want {
-				t.Errorf("findPluginDir() got = %v, want %v", got, tt.want)
-			}
+			require.Equal(t, tt.exists, found)
+			require.Equal(t, tt.want, got)
 		})
 	}
 }
@@ -308,13 +304,14 @@ func TestServerSettings(t *testing.T) {
 	})
 
 	t.Run("Returns error when working directory cannot be determined", func(t *testing.T) {
+		wdErr := errors.New("mock working directory error")
 		currentWd = func() (string, error) {
-			return "", errors.New("mock working directory error")
+			return "", wdErr
 		}
 
 		settings, err := serverSettings(pluginID)
 		require.Error(t, err)
-		require.Contains(t, err.Error(), "mock working directory error")
+		require.ErrorIs(t, err, wdErr)
 		require.Empty(t, settings)
 	})
 }

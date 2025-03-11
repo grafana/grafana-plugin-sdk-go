@@ -93,7 +93,7 @@ func serverSettings(pluginID string) (ServerSettings, error) {
 	}
 
 	// if dist directory exists, use that as the base directory
-	if _, err = os.Stat(filepath.Join(cwd, "dist")); err == nil {
+	if finfo, err := os.Stat(filepath.Join(cwd, "dist")); err == nil && finfo.IsDir() {
 		cwd = filepath.Join(cwd, "dist")
 	}
 
@@ -164,7 +164,7 @@ func findPluginDir(dir, pluginID string) (string, bool) {
 			return err
 		}
 
-		if d.Name() != "plugin.json" {
+		if d.Name() != "plugin.json" || d.IsDir() {
 			return nil
 		}
 
