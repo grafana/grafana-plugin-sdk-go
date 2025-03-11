@@ -265,7 +265,7 @@ func TestServerSettings(t *testing.T) {
 		err = os.Mkdir(distDir, 0755)
 		require.NoError(t, err)
 
-		err = os.WriteFile(filepath.Join(distDir, "plugin.json"), []byte(`{"id": "`+pluginID+`"}`), 0644)
+		err = os.WriteFile(filepath.Join(distDir, "plugin.json"), []byte(`{"id": "`+pluginID+`"}`), 0600)
 		require.NoError(t, err)
 
 		currentWd = func() (string, error) {
@@ -290,7 +290,7 @@ func TestServerSettings(t *testing.T) {
 		err = os.Mkdir(distDir, 0755)
 		require.NoError(t, err)
 
-		err = os.WriteFile(filepath.Join(distDir, "plugin.json"), []byte(`{"id": "`+pluginID+`"}`), 0644)
+		err = os.WriteFile(filepath.Join(distDir, "plugin.json"), []byte(`{"id": "`+pluginID+`"}`), 0600)
 		require.NoError(t, err)
 
 		currentWd = func() (string, error) {
