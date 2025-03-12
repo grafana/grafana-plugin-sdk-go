@@ -248,6 +248,9 @@ message SubscribeStreamRequest {
   // optional raw data. May be used as an extra payload supplied upon subscription.
   // For example, can contain JSON query object.
   bytes data = 3;
+
+  // Environment info
+  map<string,string> headers = 4;
 }
 
 message SubscribeStreamResponse {
@@ -273,6 +276,9 @@ message PublishStreamRequest {
   // data that user wants to publish into a stream
   // (only JSON-encoded at the moment).
   bytes data = 3;
+
+  // Environment info
+  map<string,string> headers = 4;
 }
 
 message PublishStreamResponse {
@@ -300,6 +306,9 @@ message RunStreamRequest {
   // optional raw data. May be used as an extra payload supplied upon subscription.
   // For example, can contain JSON query object.
   bytes data = 3;
+
+  // Environment info
+  map<string,string> headers = 4;
 }
 
 message StreamPacket {
@@ -345,7 +354,7 @@ message AdmissionRequest {
 
   // The requested operation
   Operation operation = 2;
-  
+
   // The object kind
   GroupVersionKind kind = 3;
 
@@ -421,7 +430,7 @@ message RawObject {
   string content_type = 2;
 }
 
-// ConversionRequest supports converting objects from one version to another 
+// ConversionRequest supports converting objects from one version to another
 message ConversionRequest {
   // NOTE: this may not include app or datasource instance settings depending on the request
   PluginContext pluginContext = 1;

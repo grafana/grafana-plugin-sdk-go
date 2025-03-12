@@ -481,6 +481,90 @@ func TestConvertFromProtobufCheckHealthRequest(t *testing.T) {
 	})
 }
 
+func TestConvertFromProtobufSubscribeStreamRequest(t *testing.T) {
+	t.Run("Should convert provided headers", func(t *testing.T) {
+		protoReq := &pluginv2.SubscribeStreamRequest{
+			PluginContext: protoPluginContext,
+			Headers: map[string]string{
+				"foo": "fooVal",
+				"bar": "barVal",
+			},
+		}
+
+		req := FromProto().SubscribeStreamRequest(protoReq)
+		require.NotNil(t, req)
+		require.NotNil(t, req.PluginContext)
+		require.Equal(t, protoPluginContext.OrgId, req.PluginContext.OrgID)
+		require.Equal(t, protoReq.Headers, req.Headers)
+	})
+
+	t.Run("Should handle nil-provided headers", func(t *testing.T) {
+		protoReq := &pluginv2.SubscribeStreamRequest{
+			PluginContext: protoPluginContext,
+		}
+
+		req := FromProto().SubscribeStreamRequest(protoReq)
+		require.NotNil(t, req)
+		require.Equal(t, map[string]string{}, req.Headers)
+	})
+}
+
+func TestConvertFromProtobufPublishStreamRequest(t *testing.T) {
+	t.Run("Should convert provided headers", func(t *testing.T) {
+		protoReq := &pluginv2.PublishStreamRequest{
+			PluginContext: protoPluginContext,
+			Headers: map[string]string{
+				"foo": "fooVal",
+				"bar": "barVal",
+			},
+		}
+
+		req := FromProto().PublishStreamRequest(protoReq)
+		require.NotNil(t, req)
+		require.NotNil(t, req.PluginContext)
+		require.Equal(t, protoPluginContext.OrgId, req.PluginContext.OrgID)
+		require.Equal(t, protoReq.Headers, req.Headers)
+	})
+
+	t.Run("Should handle nil-provided headers", func(t *testing.T) {
+		protoReq := &pluginv2.PublishStreamRequest{
+			PluginContext: protoPluginContext,
+		}
+
+		req := FromProto().PublishStreamRequest(protoReq)
+		require.NotNil(t, req)
+		require.Equal(t, map[string]string{}, req.Headers)
+	})
+}
+
+func TestConvertFromProtobufRunStreamRequest(t *testing.T) {
+	t.Run("Should convert provided headers", func(t *testing.T) {
+		protoReq := &pluginv2.RunStreamRequest{
+			PluginContext: protoPluginContext,
+			Headers: map[string]string{
+				"foo": "fooVal",
+				"bar": "barVal",
+			},
+		}
+
+		req := FromProto().RunStreamRequest(protoReq)
+		require.NotNil(t, req)
+		require.NotNil(t, req.PluginContext)
+		require.Equal(t, protoPluginContext.OrgId, req.PluginContext.OrgID)
+		require.Equal(t, protoReq.Headers, req.Headers)
+	})
+
+	t.Run("Should handle nil-provided headers", func(t *testing.T) {
+		protoReq := &pluginv2.RunStreamRequest{
+			PluginContext: protoPluginContext,
+		}
+
+		req := FromProto().RunStreamRequest(protoReq)
+		require.NotNil(t, req)
+		require.Equal(t, map[string]string{}, req.Headers)
+	})
+}
+
 func TestConvertFromProtobufDataResponse(t *testing.T) {
 	t.Run("Should convert data query response", func(t *testing.T) {
 		tcs := []struct {
