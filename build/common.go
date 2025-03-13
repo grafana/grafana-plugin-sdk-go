@@ -221,11 +221,6 @@ func newBuildConfig(os string, arch string) Config {
 // Build is a namespace.
 type Build mg.Namespace
 
-// Custom allows customizable back-end plugin builds for the provided os and arch.
-func (Build) Custom(os, arch string) error {
-	return buildBackend(newBuildConfig(os, arch))
-}
-
 // Linux builds the back-end plugin for Linux.
 func (Build) Linux() error {
 	return buildBackend(newBuildConfig("linux", "amd64"))
@@ -254,6 +249,13 @@ func (Build) Darwin() error {
 // DarwinARM64 builds the back-end plugin for OSX on ARM (M1/M2).
 func (Build) DarwinARM64() error {
 	return buildBackend(newBuildConfig("darwin", "arm64"))
+}
+
+// Custom allows customizable back-end plugin builds for the provided os and arch.
+// Note: Cutomized builds are not officially supported by Grafana, so this option is intended for developers who need
+// to create their own custom build targets.
+func (Build) Custom(os, arch string) error {
+	return buildBackend(newBuildConfig(os, arch))
 }
 
 // GenerateManifestFile generates a manifest file for plugin submissions
