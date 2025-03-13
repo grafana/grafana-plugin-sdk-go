@@ -92,7 +92,8 @@ func asExecutableName(os string, arch string, exe string) string {
 	return exeName
 }
 
-func buildBackend(cfg Config) error {
+// BuildBackend builds backend according to provided build configuration cfg.
+func BuildBackend(cfg Config) error {
 	cfg, args, err := getBuildBackendCmdInfo(cfg)
 	if err != nil {
 		return err
@@ -209,7 +210,8 @@ func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
 	return cfg, args, nil
 }
 
-func newBuildConfig(os string, arch string) Config {
+// NewBuildConfig generates build configuration for given os and arch
+func NewBuildConfig(os string, arch string) Config {
 	return Config{
 		OS:          os,
 		Arch:        arch,
@@ -223,32 +225,32 @@ type Build mg.Namespace
 
 // Linux builds the back-end plugin for Linux.
 func (Build) Linux() error {
-	return buildBackend(newBuildConfig("linux", "amd64"))
+	return BuildBackend(NewBuildConfig("linux", "amd64"))
 }
 
 // LinuxARM builds the back-end plugin for Linux on ARM.
 func (Build) LinuxARM() error {
-	return buildBackend(newBuildConfig("linux", "arm"))
+	return BuildBackend(NewBuildConfig("linux", "arm"))
 }
 
 // LinuxARM64 builds the back-end plugin for Linux on ARM64.
 func (Build) LinuxARM64() error {
-	return buildBackend(newBuildConfig("linux", "arm64"))
+	return BuildBackend(NewBuildConfig("linux", "arm64"))
 }
 
 // Windows builds the back-end plugin for Windows.
 func (Build) Windows() error {
-	return buildBackend(newBuildConfig("windows", "amd64"))
+	return BuildBackend(NewBuildConfig("windows", "amd64"))
 }
 
 // Darwin builds the back-end plugin for OSX on AMD64.
 func (Build) Darwin() error {
-	return buildBackend(newBuildConfig("darwin", "amd64"))
+	return BuildBackend(NewBuildConfig("darwin", "amd64"))
 }
 
 // DarwinARM64 builds the back-end plugin for OSX on ARM (M1/M2).
 func (Build) DarwinARM64() error {
-	return buildBackend(newBuildConfig("darwin", "arm64"))
+	return BuildBackend(NewBuildConfig("darwin", "arm64"))
 }
 
 // GenerateManifestFile generates a manifest file for plugin submissions
@@ -282,58 +284,58 @@ func (Build) GenerateManifestFile() error {
 
 // Debug builds the debug version for the current platform.
 func (Build) Debug() error {
-	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
+	cfg := NewBuildConfig(runtime.GOOS, runtime.GOARCH)
 	cfg.EnableDebug = true
-	return buildBackend(cfg)
+	return BuildBackend(cfg)
 }
 
 // DebugLinuxAMD64 builds the debug version targeted for linux on AMD64.
 func (Build) DebugLinuxAMD64() error {
-	cfg := newBuildConfig("linux", "amd64")
+	cfg := NewBuildConfig("linux", "amd64")
 	cfg.EnableDebug = true
-	return buildBackend(cfg)
+	return BuildBackend(cfg)
 }
 
 // DebugLinuxARM64 builds the debug version targeted for linux on ARM64.
 func (Build) DebugLinuxARM64() error {
-	cfg := newBuildConfig("linux", "arm64")
+	cfg := NewBuildConfig("linux", "arm64")
 	cfg.EnableDebug = true
-	return buildBackend(cfg)
+	return BuildBackend(cfg)
 }
 
 // DebugDarwinAMD64 builds the debug version targeted for OSX on AMD64.
 func (Build) DebugDarwinAMD64() error {
-	cfg := newBuildConfig("darwin", "amd64")
+	cfg := NewBuildConfig("darwin", "amd64")
 	cfg.EnableDebug = true
-	return buildBackend(cfg)
+	return BuildBackend(cfg)
 }
 
 // DebugDarwinARM64 builds the debug version targeted for OSX on ARM (M1/M2).
 func (Build) DebugDarwinARM64() error {
-	cfg := newBuildConfig("darwin", "arm64")
+	cfg := NewBuildConfig("darwin", "arm64")
 	cfg.EnableDebug = true
-	return buildBackend(cfg)
+	return BuildBackend(cfg)
 }
 
 // DebugWindowsAMD64 builds the debug version targeted for windows on AMD64.
 func (Build) DebugWindowsAMD64() error {
-	cfg := newBuildConfig("windows", "amd64")
+	cfg := NewBuildConfig("windows", "amd64")
 	cfg.EnableDebug = true
-	return buildBackend(cfg)
+	return BuildBackend(cfg)
 }
 
 // Backend build a production build for the current platform
 func (Build) Backend() error {
 	// The M1 platform detection is kinda flakey, so we will just build both
 	if runtime.GOOS == "darwin" {
-		err := buildBackend(newBuildConfig("darwin", "arm64"))
+		err := BuildBackend(NewBuildConfig("darwin", "arm64"))
 		if err != nil {
 			return err
 		}
-		return buildBackend(newBuildConfig("darwin", "amd64"))
+		return BuildBackend(NewBuildConfig("darwin", "amd64"))
 	}
-	cfg := newBuildConfig(runtime.GOOS, runtime.GOARCH)
-	return buildBackend(cfg)
+	cfg := NewBuildConfig(runtime.GOOS, runtime.GOARCH)
+	return BuildBackend(cfg)
 }
 
 // BuildAll builds production executables for all supported platforms.
