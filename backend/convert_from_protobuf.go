@@ -248,10 +248,14 @@ func (f ConvertFromProtobuf) CollectMetricsResponse(protoResp *pluginv2.CollectM
 
 // SubscribeStreamRequest ...
 func (f ConvertFromProtobuf) SubscribeStreamRequest(protoReq *pluginv2.SubscribeStreamRequest) *SubscribeStreamRequest {
+	if protoReq.Headers == nil {
+		protoReq.Headers = map[string]string{}
+	}
 	return &SubscribeStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
 		Data:          protoReq.GetData(),
+		Headers:       protoReq.Headers,
 	}
 }
 
@@ -267,10 +271,14 @@ func (f ConvertFromProtobuf) SubscribeStreamResponse(protoReq *pluginv2.Subscrib
 
 // PublishStreamRequest ...
 func (f ConvertFromProtobuf) PublishStreamRequest(protoReq *pluginv2.PublishStreamRequest) *PublishStreamRequest {
+	if protoReq.Headers == nil {
+		protoReq.Headers = map[string]string{}
+	}
 	return &PublishStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
 		Data:          protoReq.GetData(),
+		Headers:       protoReq.Headers,
 	}
 }
 
@@ -284,10 +292,14 @@ func (f ConvertFromProtobuf) PublishStreamResponse(protoReq *pluginv2.PublishStr
 
 // RunStreamRequest ...
 func (f ConvertFromProtobuf) RunStreamRequest(protoReq *pluginv2.RunStreamRequest) *RunStreamRequest {
+	if protoReq.Headers == nil {
+		protoReq.Headers = map[string]string{}
+	}
 	return &RunStreamRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Path:          protoReq.GetPath(),
 		Data:          protoReq.GetData(),
+		Headers:       protoReq.Headers,
 	}
 }
 

@@ -272,6 +272,7 @@ func (t ConvertToProtobuf) RunStreamRequest(req *RunStreamRequest) *pluginv2.Run
 		PluginContext: t.PluginContext(req.PluginContext),
 		Path:          req.Path,
 		Data:          req.Data,
+		Headers:       req.Headers,
 	}
 	return protoReq
 }
@@ -282,6 +283,7 @@ func (t ConvertToProtobuf) SubscribeStreamRequest(req *SubscribeStreamRequest) *
 		PluginContext: t.PluginContext(req.PluginContext),
 		Path:          req.Path,
 		Data:          req.Data,
+		Headers:       req.Headers,
 	}
 }
 
@@ -302,6 +304,7 @@ func (t ConvertToProtobuf) PublishStreamRequest(req *PublishStreamRequest) *plug
 		PluginContext: t.PluginContext(req.PluginContext),
 		Path:          req.Path,
 		Data:          req.Data,
+		Headers:       req.Headers,
 	}
 }
 
