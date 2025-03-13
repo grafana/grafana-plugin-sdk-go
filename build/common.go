@@ -251,6 +251,13 @@ func (Build) DarwinARM64() error {
 	return buildBackend(newBuildConfig("darwin", "arm64"))
 }
 
+// Custom allows customizable back-end plugin builds for the provided os and arch.
+// Note: Cutomized builds are not officially supported by Grafana, so this option is intended for developers who need
+// to create their own custom build targets.
+func (Build) Custom(os, arch string) error {
+	return buildBackend(newBuildConfig(os, arch))
+}
+
 // GenerateManifestFile generates a manifest file for plugin submissions
 func (Build) GenerateManifestFile() error {
 	config := Config{}
