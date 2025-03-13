@@ -221,7 +221,7 @@ func newBuildConfig(os string, arch string) Config {
 // Build is a namespace.
 type Build mg.Namespace
 
-// Linux builds the back-end plugin for Linux.
+// Custom allows customizable back-end plugin builds for the provided os and arch.
 func (Build) Custom(os, arch string) error {
 	return buildBackend(newBuildConfig(os, arch))
 }
