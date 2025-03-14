@@ -393,6 +393,11 @@ func Test() error {
 	return sh.RunV("go", "test", "./pkg/...")
 }
 
+// TestRace runs backend tests with the data race detector enabled.
+func TestRace() error {
+	return sh.RunV("go", "test", "-race", "./pkg/...")
+}
+
 // Coverage runs backend tests and makes a coverage report.
 func Coverage() error {
 	// Create a coverage folder if it does not already exist
