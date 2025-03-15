@@ -102,8 +102,13 @@ func TestParseChannel_IsValid(t *testing.T) {
 			isValid: true,
 		},
 		{
-			name:    "scope_watch_dashboards_with_name",
-			id:      "watch/dashboard.grafana.app/dashboards=name",
+			name:    "scope_watch_dashboards_with_user_id",
+			id:      "watch/dashboard.grafana.app/dashboards/userid",
+			isValid: true,
+		},
+		{
+			name:    "scope_watch_dashboards_with_name_anduser_id",
+			id:      "watch/dashboard.grafana.app/dashboards=XYZ/userid",
 			isValid: true,
 		},
 	}
