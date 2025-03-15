@@ -96,6 +96,16 @@ func TestParseChannel_IsValid(t *testing.T) {
 			id:      "grafana=/test=/path/dash-and-equal",
 			isValid: false,
 		},
+		{
+			name:    "scope_watch_dashboards",
+			id:      "watch/dashboard.grafana.app/dashboards",
+			isValid: true,
+		},
+		{
+			name:    "scope_watch_dashboards_with_name",
+			id:      "watch/dashboard.grafana.app/dashboards=name",
+			isValid: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
