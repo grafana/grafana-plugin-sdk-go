@@ -31,11 +31,11 @@ require (
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.59.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.60.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.34.0
-	go.opentelemetry.io/contrib/samplers/jaegerremote v0.28.0
+	go.opentelemetry.io/contrib/samplers/jaegerremote v0.29.0
 	go.opentelemetry.io/otel v1.35.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.34.0
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.34.0
-	go.opentelemetry.io/otel/sdk v1.34.0
+	go.opentelemetry.io/otel/sdk v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/net v0.36.0
@@ -48,7 +48,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // @grafana/grafana-app-platform-squad
 )
 
-require google.golang.org/genproto/googleapis/rpc v0.0.0-20250115164207-1a7da9e5054f
+require google.golang.org/genproto/googleapis/rpc v0.0.0-20250212204824-5a70512c5d8b
 
 require (
 	github.com/BurntSushi/toml v1.4.0 // indirect
@@ -106,7 +106,7 @@ require (
 	golang.org/x/mod v0.22.0 // indirect
 	golang.org/x/tools v0.28.0 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20250115164207-1a7da9e5054f // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20250218202821-56aae31c358a // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8 // indirect
