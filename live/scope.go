@@ -9,4 +9,6 @@ const (
 	ScopeDatasource = "ds"
 	// ScopeStream is a managed data frame stream.
 	ScopeStream = "stream"
+	// ScopeWatch will watch a k8s style resource
+	ScopeWatch = "watch"
 )
