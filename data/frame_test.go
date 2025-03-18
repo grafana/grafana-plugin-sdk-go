@@ -539,9 +539,9 @@ func TestDataFrameFilterRowsByField(t *testing.T) {
 func TestFrameTestCompareOptionsForConfFloat64(t *testing.T) {
 	var f1 data.ConfFloat64 = 1.23456789
 	var f2 data.ConfFloat64 = 2.3456789
-	var pf1 *data.ConfFloat64 = &f1
-	var pf2 *data.ConfFloat64 = &f2
-	var pnil *data.ConfFloat64 = nil
+	var pf1 = &f1
+	var pf2 = &f2
+	var pnil *data.ConfFloat64
 	t.Run("ConfFloat64 should compare without crashing", func(t *testing.T) {
 		if diff := cmp.Diff(f1, f1, data.FrameTestCompareOptions()...); diff != "" {
 			t.Fatal(diff)
