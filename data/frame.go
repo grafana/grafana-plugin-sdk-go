@@ -347,10 +347,7 @@ func FrameTestCompareOptions() []cmp.Option {
 			if math.IsNaN(float64(*x)) {
 				return true
 			}
-			if math.IsInf(float64(*x), 1) {
-				return true
-			}
-			if math.IsInf(float64(*x), -1) {
+			if math.IsInf(float64(*x), 0) {
 				return true
 			}
 			return false
@@ -359,10 +356,7 @@ func FrameTestCompareOptions() []cmp.Option {
 			if math.IsNaN(float64(*y)) {
 				return true
 			}
-			if math.IsInf(float64(*y), 1) {
-				return true
-			}
-			if math.IsInf(float64(*y), -1) {
+			if math.IsInf(float64(*y), 0) {
 				return true
 			}
 			return false
