@@ -564,10 +564,10 @@ func TestFrameTestCompareOptionsForConfFloat64(t *testing.T) {
 		}
 	})
 	t.Run("nil and non-nil *ConfFloat64 should compare without crashing", func(t *testing.T) {
-		if diff := cmp.Diff(pf1, pf2, data.FrameTestCompareOptions()...); diff == "" {
+		if diff := cmp.Diff(pf1, pnil, data.FrameTestCompareOptions()...); diff == "" {
 			t.Fatal("Expecting diff, got nothing")
 		}
-		if diff := cmp.Diff(pf2, pf1, data.FrameTestCompareOptions()...); diff == "" {
+		if diff := cmp.Diff(pnil, pf1, data.FrameTestCompareOptions()...); diff == "" {
 			t.Fatal("Expecting diff, got nothing")
 		}
 	})
