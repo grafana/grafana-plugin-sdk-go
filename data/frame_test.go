@@ -536,6 +536,43 @@ func TestDataFrameFilterRowsByField(t *testing.T) {
 	}
 }
 
+func TestFrameTestCompareOptionsForConfFloat64(t *testing.T) {
+	var f1 data.ConfFloat64 = 1.23456789
+	var f2 data.ConfFloat64 = 2.3456789
+	var pf1 *data.ConfFloat64 = &f1
+	var pf2 *data.ConfFloat64 = &f2
+	var pnil *data.ConfFloat64 = nil
+	t.Run("ConfFloat64 should compare without crashing", func(t *testing.T) {
+		if diff := cmp.Diff(f1, f1, data.FrameTestCompareOptions()...); diff != "" {
+			t.Fatal(diff)
+		}
+		if diff := cmp.Diff(f1, f2, data.FrameTestCompareOptions()...); diff == "" {
+			t.Fatal("Expecting diff, got nothing")
+		}
+	})
+	t.Run("*ConfFloat64 should compare without crashing", func(t *testing.T) {
+		if diff := cmp.Diff(pf1, pf1, data.FrameTestCompareOptions()...); diff != "" {
+			t.Fatal(diff)
+		}
+		if diff := cmp.Diff(pf1, pf2, data.FrameTestCompareOptions()...); diff == "" {
+			t.Fatal("Expecting diff, got nothing")
+		}
+	})
+	t.Run("nil *ConfFloat64 should compare without crashing", func(t *testing.T) {
+		if diff := cmp.Diff(pnil, pnil, data.FrameTestCompareOptions()...); diff != "" {
+			t.Fatal(diff)
+		}
+	})
+	t.Run("nil and non-nil *ConfFloat64 should compare without crashing", func(t *testing.T) {
+		if diff := cmp.Diff(pf1, pf2, data.FrameTestCompareOptions()...); diff == "" {
+			t.Fatal("Expecting diff, got nothing")
+		}
+		if diff := cmp.Diff(pf2, pf1, data.FrameTestCompareOptions()...); diff == "" {
+			t.Fatal("Expecting diff, got nothing")
+		}
+	})
+}
+
 func TestJSON(t *testing.T) {
 	frames := data.Frames{
 		data.NewFrame("http_requests_total",
