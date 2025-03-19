@@ -171,7 +171,7 @@ func TestFrameFromRows(t *testing.T) {
 	}
 	for _, tt := range []struct {
 		name       string
-		rows       *sql.Rows
+		makeRows   func() *sql.Rows
 		rowLimit   int64
 		converters []sqlutil.Converter
 		frame      *data.Frame
@@ -179,22 +179,14 @@ func TestFrameFromRows(t *testing.T) {
 	}{
 		{
 			name: "rows not implements driver.RowsNextResultSet",
-			rows: makeSingleResultSet( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[]interface{}{
-					1, 2, 3,
-				},
-				[]interface{}{
-					4, 5, 6,
-				},
-				[]interface{}{
-					7, 8, 9,
-				},
-			),
+			makeRows: func() *sql.Rows {
+				return makeSingleResultSet(
+					[]string{"a", "b", "c"},
+					[]interface{}{1, 2, 3},
+					[]interface{}{4, 5, 6},
+					[]interface{}{7, 8, 9},
+				)
+			},
 			rowLimit:   100,
 			converters: nil,
 			frame: &data.Frame{
@@ -208,22 +200,14 @@ func TestFrameFromRows(t *testing.T) {
 		},
 		{
 			name: "rows not implements driver.RowsNextResultSet, limit reached",
-			rows: makeSingleResultSet( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[]interface{}{
-					1, 2, 3,
-				},
-				[]interface{}{
-					4, 5, 6,
-				},
-				[]interface{}{
-					7, 8, 9,
-				},
-			),
+			makeRows: func() *sql.Rows {
+				return makeSingleResultSet(
+					[]string{"a", "b", "c"},
+					[]interface{}{1, 2, 3},
+					[]interface{}{4, 5, 6},
+					[]interface{}{7, 8, 9},
+				)
+			},
 			rowLimit:   2,
 			converters: nil,
 			frame: &data.Frame{
@@ -245,24 +229,16 @@ func TestFrameFromRows(t *testing.T) {
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, but contains only one result set",
-			rows: makeMultipleResultSets( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[][]interface{}{
-					{
-						1, 2, 3,
+			makeRows: func() *sql.Rows {
+				return makeMultipleResultSets(
+					[]string{"a", "b", "c"},
+					[][]interface{}{
+						{1, 2, 3},
+						{4, 5, 6},
+						{7, 8, 9},
 					},
-					{
-						4, 5, 6,
-					},
-					{
-						7, 8, 9,
-					},
-				},
-			),
+				)
+			},
 			rowLimit:   100,
 			converters: nil,
 			frame: &data.Frame{
@@ -276,26 +252,18 @@ func TestFrameFromRows(t *testing.T) {
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, but contains more then one result set",
-			rows: makeMultipleResultSets( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[][]interface{}{
-					{
-						1, 2, 3,
+			makeRows: func() *sql.Rows {
+				return makeMultipleResultSets(
+					[]string{"a", "b", "c"},
+					[][]interface{}{
+						{1, 2, 3},
+						{4, 5, 6},
 					},
-					{
-						4, 5, 6,
+					[][]interface{}{
+						{7, 8, 9},
 					},
-				},
-				[][]interface{}{
-					{
-						7, 8, 9,
-					},
-				},
-			),
+				)
+			},
 			rowLimit:   100,
 			converters: nil,
 			frame: &data.Frame{
@@ -309,26 +277,18 @@ func TestFrameFromRows(t *testing.T) {
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, limit reached",
-			rows: makeMultipleResultSets( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[][]interface{}{
-					{
-						1, 2, 3,
+			makeRows: func() *sql.Rows {
+				return makeMultipleResultSets(
+					[]string{"a", "b", "c"},
+					[][]interface{}{
+						{1, 2, 3},
+						{4, 5, 6},
 					},
-					{
-						4, 5, 6,
+					[][]interface{}{
+						{7, 8, 9},
 					},
-				},
-				[][]interface{}{
-					{
-						7, 8, 9,
-					},
-				},
-			),
+				)
+			},
 			rowLimit:   2,
 			converters: nil,
 			frame: &data.Frame{
@@ -342,7 +302,16 @@ func TestFrameFromRows(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			frame, err := sqlutil.FrameFromRows(tt.rows, tt.rowLimit, tt.converters...)
+			frame, err := sqlutil.FrameFromRows(tt.makeRows(), tt.rowLimit, tt.converters...)
+			if tt.err {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.frame, frame)
+			}
+		})
+		t.Run(tt.name+" (FrameFromRowsWithContext)", func(t *testing.T) {
+			frame, err := sqlutil.FrameFromRowsWithContext(context.Background(), tt.makeRows(), tt.rowLimit, tt.converters...)
 			if tt.err {
 				require.Error(t, err)
 			} else {
