@@ -165,6 +165,45 @@ func makeMultipleResultSets(
 	return rows
 }
 
+type cancellingRows struct {
+	baseRows
+	ctx        context.Context
+	cancel     context.CancelFunc
+	rows       [][]interface{}
+	currentRow int
+}
+
+func (r *cancellingRows) Next(dest []driver.Value) error {
+	r.currentRow++
+	if r.currentRow >= len(r.rows) {
+		return io.EOF
+	}
+
+	// Cancel context after yielding first row
+	if r.currentRow == 1 {
+		r.cancel()
+	}
+
+	for i := range dest {
+		dest[i] = r.rows[r.currentRow][i]
+	}
+	return nil
+}
+
+func makeCancellingRows(ctx context.Context, cancel context.CancelFunc, columnNames []string, data ...[]interface{}) *sql.Rows {
+	db := &fakeDB{
+		rows: &cancellingRows{
+			baseRows:   baseRows{columnNames: columnNames},
+			ctx:        ctx,
+			cancel:     cancel,
+			rows:       data,
+			currentRow: -1,
+		},
+	}
+	rows, _ := sql.OpenDB(db).Query("")
+	return rows
+}
+
 func TestFrameFromRows(t *testing.T) {
 	ptr := func(s string) *string {
 		return &s
@@ -324,4 +363,31 @@ func TestFrameFromRows(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFrameFromRowsWithContext_Cancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	columnNames := []string{"x"}
+	in := [][]interface{}{
+		{1},
+		{2}, // should be skipped due to context cancel
+	}
+
+	rows := makeCancellingRows(ctx, cancel, columnNames, in...)
+
+	frame, err := sqlutil.FrameFromRowsWithContext(ctx, rows, 100)
+	require.NoError(t, err)
+	require.NotNil(t, frame)
+
+	require.Len(t, frame.Fields, 1)
+	require.Equal(t, 1, frame.Fields[0].Len()) // Only 1 row processed
+
+	require.NotNil(t, frame.Meta)
+	require.NotEmpty(t, frame.Meta.Notices)
+
+	notice := frame.Meta.Notices[0]
+	require.Equal(t, data.NoticeSeverityWarning, notice.Severity)
+	require.Contains(t, notice.Text, "cancelled")
+	require.Empty(t, notice.Link)
 }
