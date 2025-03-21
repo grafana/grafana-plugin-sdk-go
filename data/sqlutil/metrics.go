@@ -56,10 +56,22 @@ var cellCountHistogram = prometheus.NewHistogramVec(
 	metricLabelKeys,
 )
 
-func init() {
-	registerOnce := func(c prometheus.Collector) {
-		if err := prometheus.Register(c); err != nil {
+// RegisterMetrics registers Prometheus metrics for sqlutil.
+// It safely handles duplicate registration and returns any non-duplicate errors.
+func RegisterMetrics(reg prometheus.Registerer) error {
+	return registerAll(reg,
+		rowsProcessed,
+		rowCountHistogram,
+		cellsProcessed,
+		cellCountHistogram,
+	)
+}
+
+func registerAll(reg prometheus.Registerer, collectors ...prometheus.Collector) error {
+	for _, c := range collectors {
+		if err := reg.Register(c); err != nil {
 			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+				// Copy underlying collector pointer to avoid nil metric errors
 				switch v := c.(type) {
 				case *prometheus.CounterVec:
 					if existing, ok := are.ExistingCollector.(*prometheus.CounterVec); ok {
@@ -70,14 +82,12 @@ func init() {
 						*v = *existing
 					}
 				}
+				continue // skip AlreadyRegisteredError
 			}
+			return err
 		}
 	}
-
-	registerOnce(rowsProcessed)
-	registerOnce(rowCountHistogram)
-	registerOnce(cellsProcessed)
-	registerOnce(cellCountHistogram)
+	return nil
 }
 
 // Context key for metric labels
