@@ -2,6 +2,7 @@ package sqlutil
 
 import (
 	"context"
+	"errors"
 
 	"github.com/prometheus/client_golang/prometheus"
 )
@@ -70,7 +71,8 @@ func RegisterMetrics(reg prometheus.Registerer) error {
 func registerAll(reg prometheus.Registerer, collectors ...prometheus.Collector) error {
 	for _, c := range collectors {
 		if err := reg.Register(c); err != nil {
-			if are, ok := err.(prometheus.AlreadyRegisteredError); ok {
+			var are prometheus.AlreadyRegisteredError
+			if errors.As(err, &are) {
 				// Copy underlying collector pointer to avoid nil metric errors
 				switch v := c.(type) {
 				case *prometheus.CounterVec:

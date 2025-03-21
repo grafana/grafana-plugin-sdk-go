@@ -302,7 +302,9 @@ func TestFrameFromRows(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			frame, err := sqlutil.FrameFromRows(tt.makeRows(), tt.rowLimit, tt.converters...)
+			rows := tt.makeRows()
+			frame, err := sqlutil.FrameFromRows(rows, tt.rowLimit, tt.converters...)
+			require.NoError(t, rows.Err())
 			if tt.err {
 				require.Error(t, err)
 			} else {
@@ -311,7 +313,9 @@ func TestFrameFromRows(t *testing.T) {
 			}
 		})
 		t.Run(tt.name+" (FrameFromRowsWithContext)", func(t *testing.T) {
-			frame, err := sqlutil.FrameFromRowsWithContext(context.Background(), tt.makeRows(), tt.rowLimit, tt.converters...)
+			rows := tt.makeRows()
+			frame, err := sqlutil.FrameFromRowsWithContext(context.Background(), rows, tt.rowLimit, tt.converters...)
+			require.NoError(t, rows.Err())
 			if tt.err {
 				require.Error(t, err)
 			} else {
