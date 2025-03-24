@@ -33,8 +33,8 @@ require (
 	go.opentelemetry.io/contrib/propagators/jaeger v1.34.0
 	go.opentelemetry.io/contrib/samplers/jaegerremote v0.29.0
 	go.opentelemetry.io/otel v1.35.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.34.0
-	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.34.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace v1.35.0
+	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.35.0
 	go.opentelemetry.io/otel/sdk v1.35.0
 	go.opentelemetry.io/otel/trace v1.35.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
@@ -48,7 +48,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // @grafana/grafana-app-platform-squad
 )
 
-require google.golang.org/genproto/googleapis/rpc v0.0.0-20250212204824-5a70512c5d8b
+require google.golang.org/genproto/googleapis/rpc v0.0.0-20250218202821-56aae31c358a
 
 require (
 	github.com/BurntSushi/toml v1.4.0 // indirect
@@ -74,7 +74,7 @@ require (
 	github.com/google/gnostic-models v0.6.8 // indirect
 	github.com/google/gofuzz v1.2.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.25.1 // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.26.1 // indirect
 	github.com/hashicorp/yamux v0.1.1 // indirect
 	github.com/josharian/intern v1.0.0 // indirect
 	github.com/klauspost/compress v1.18.0 // indirect
