@@ -212,6 +212,7 @@ func DefaultMiddlewares() []Middleware {
 		CustomHeadersMiddleware(),
 		ContextualMiddleware(),
 		ErrorSourceMiddleware(),
+		ResponseLimitMiddleware(0),
 	}
 }
 
