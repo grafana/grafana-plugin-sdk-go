@@ -12,6 +12,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
@@ -30,24 +31,13 @@ const (
 type configKey struct{}
 
 // GrafanaConfigFromContext returns Grafana config from context.
-func GrafanaConfigFromContext(ctx context.Context) *GrafanaCfg {
-	v := ctx.Value(configKey{})
-	if v == nil {
-		return NewGrafanaCfg(nil)
-	}
-
-	cfg := v.(*GrafanaCfg)
-	if cfg == nil {
-		return NewGrafanaCfg(nil)
-	}
-
-	return cfg
+func GrafanaConfigFromContext(ctx context.Context) *config.GrafanaCfg {
+	return config.GrafanaConfigFromContext(ctx)
 }
 
 // WithGrafanaConfig injects supplied Grafana config into context.
-func WithGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
-	ctx = context.WithValue(ctx, configKey{}, cfg)
-	return ctx
+func WithGrafanaConfig(ctx context.Context, cfg *config.GrafanaCfg) context.Context {
+	return config.WithGrafanaConfig(ctx, cfg)
 }
 
 type GrafanaCfg struct {
