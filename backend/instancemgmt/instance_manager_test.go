@@ -70,6 +70,53 @@ func TestInstanceManager(t *testing.T) {
 	})
 }
 
+func TestInstanceManagerExpiration(t *testing.T) {
+	ctx := context.Background()
+	pCtx := backend.PluginContext{
+		OrgID: 1,
+		AppInstanceSettings: &backend.AppInstanceSettings{
+			Updated: time.Now(),
+		},
+	}
+
+	origInstanceTTL := instanceTTL
+	instanceTTL = time.Millisecond
+	origInstanceCleanup := instanceCleanup
+	instanceCleanup = 2 * time.Millisecond
+	t.Cleanup(func() {
+		instanceTTL = origInstanceTTL
+		instanceCleanup = origInstanceCleanup
+	})
+
+	tip := &testInstanceProvider{}
+	im := New(tip)
+
+	instance, err := im.Get(ctx, pCtx)
+	require.NoError(t, err)
+	require.NotNil(t, instance)
+	require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID)
+	require.Equal(t, pCtx.AppInstanceSettings.Updated, instance.(*testInstance).updated)
+
+	t.Run("After expiration", func(t *testing.T) {
+		instance.(*testInstance).wg.Wait()
+		require.True(t, instance.(*testInstance).disposed.Load())
+		require.Equal(t, int64(1), instance.(*testInstance).disposedTimes.Load())
+
+		newInstance, err := im.Get(ctx, pCtx)
+
+		t.Run("New instance should be created", func(t *testing.T) {
+			require.NoError(t, err)
+			require.NotNil(t, newInstance)
+			require.Equal(t, pCtx.OrgID, newInstance.(*testInstance).orgID)
+			require.Equal(t, pCtx.AppInstanceSettings.Updated, newInstance.(*testInstance).updated)
+		})
+
+		t.Run("New instance should not be the same as old instance", func(t *testing.T) {
+			require.NotSame(t, instance, newInstance)
+		})
+	})
+}
+
 func TestInstanceManagerConcurrency(t *testing.T) {
 	t.Run("Check possible race condition issues when initially creating instance", func(t *testing.T) {
 		ctx := context.Background()
