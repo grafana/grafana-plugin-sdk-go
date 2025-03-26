@@ -25,13 +25,14 @@ func TestProvider(t *testing.T) {
 			client, err := ctx.provider.New()
 			require.NoError(t, err)
 			require.NotNil(t, client)
-			require.Len(t, ctx.usedMiddlewares, 6)
+			require.Len(t, ctx.usedMiddlewares, 7)
 			require.Equal(t, TracingMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 			require.Equal(t, DataSourceMetricsMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
 			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
 			require.Equal(t, ErrorSourceMiddlewareName, ctx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ResponseLimitMiddlewareName, ctx.usedMiddlewares[6].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("Transport should use default middlewares", func(t *testing.T) {
