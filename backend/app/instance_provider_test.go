@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -39,7 +40,7 @@ func TestInstanceProvider(t *testing.T) {
 	})
 
 	t.Run("When both the configuration and updated field of current app instance settings are equal to the cache, should return false", func(t *testing.T) {
-		config := map[string]string{
+		cfg := map[string]string{
 			"foo": "bar",
 		}
 
@@ -47,14 +48,14 @@ func TestInstanceProvider(t *testing.T) {
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(config),
+			GrafanaConfig: config.NewGrafanaCfg(cfg),
 		}
 
 		cachedSettings := backend.PluginContext{
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: curSettings.AppInstanceSettings.Updated,
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(config),
+			GrafanaConfig: config.NewGrafanaCfg(cfg),
 		}
 
 		cachedInstance := instancemgmt.CachedInstance{
@@ -84,11 +85,11 @@ func TestInstanceProvider(t *testing.T) {
 		require.True(t, needsUpdate)
 
 		t.Run("Should return true when cached config is changed", func(t *testing.T) {
-			curSettings.GrafanaConfig = backend.NewGrafanaCfg(map[string]string{
+			curSettings.GrafanaConfig = config.NewGrafanaCfg(map[string]string{
 				"foo": "bar",
 			})
 
-			cachedSettings.GrafanaConfig = backend.NewGrafanaCfg(map[string]string{
+			cachedSettings.GrafanaConfig = config.NewGrafanaCfg(map[string]string{
 				"baz": "qux",
 			})
 
@@ -163,14 +164,14 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					AppInstanceSettings: &backend.AppInstanceSettings{
 						Updated: ts,
 					},
-					GrafanaConfig: backend.NewGrafanaCfg(map[string]string{"foo": "bar", "baz": "qux"}),
+					GrafanaConfig: config.NewGrafanaCfg(map[string]string{"foo": "bar", "baz": "qux"}),
 				},
 				cachedInstance: instancemgmt.CachedInstance{
 					PluginContext: backend.PluginContext{
 						AppInstanceSettings: &backend.AppInstanceSettings{
 							Updated: ts,
 						},
-						GrafanaConfig: backend.NewGrafanaCfg(map[string]string{"foo": "bar", "baz": "qux"}),
+						GrafanaConfig: config.NewGrafanaCfg(map[string]string{"foo": "bar", "baz": "qux"}),
 					},
 				},
 			},
@@ -201,7 +202,7 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					AppInstanceSettings: &backend.AppInstanceSettings{
 						Updated: ts,
 					},
-					GrafanaConfig: backend.NewGrafanaCfg(map[string]string{"foo": "bar"}),
+					GrafanaConfig: config.NewGrafanaCfg(map[string]string{"foo": "bar"}),
 				},
 				cachedInstance: instancemgmt.CachedInstance{
 					PluginContext: backend.PluginContext{

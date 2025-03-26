@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 	"google.golang.org/protobuf/proto"
 )
@@ -437,9 +438,9 @@ func (t ConvertToProtobuf) ConversionResponse(rsp *ConversionResponse) *pluginv2
 }
 
 // GrafanaConfig converts the SDK version of a GrafanaCfg to the protobuf version.
-func (t ConvertToProtobuf) GrafanaConfig(cfg *GrafanaCfg) map[string]string {
+func (t ConvertToProtobuf) GrafanaConfig(cfg *config.GrafanaCfg) map[string]string {
 	if cfg == nil {
 		return map[string]string{}
 	}
-	return cfg.config
+	return cfg.Config()
 }

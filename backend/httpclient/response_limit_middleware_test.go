@@ -32,6 +32,7 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "error: http: response body too large, response limit is set to: 1", err.Error())
 		require.Equal(t, "d", string(body))
+		require.NoError(t, res.Body.Close())
 	})
 
 	t.Run("should use context limit when set", func(t *testing.T) {
@@ -61,6 +62,7 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "error: http: response body too large, response limit is set to: 1", err.Error())
 		require.Equal(t, "d", string(body))
+		require.NoError(t, res.Body.Close())
 	})
 
 	t.Run("should not limit response when limit is 0", func(t *testing.T) {
@@ -83,6 +85,7 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		body, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 		require.Equal(t, "dummy", string(body))
+		require.NoError(t, res.Body.Close())
 	})
 
 	t.Run("should not limit response when status is switching protocols", func(t *testing.T) {
@@ -106,6 +109,7 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		body, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
 		require.Equal(t, "dummy", string(body))
+		require.NoError(t, res.Body.Close())
 	})
 }
 

@@ -12,6 +12,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -49,7 +50,7 @@ func TestInstanceProvider(t *testing.T) {
 		want := base64.StdEncoding.EncodeToString([]byte("this will work."))
 		want = strings.TrimRight(want, "=")
 		want = want[len(want)-4:]
-		cfg := backend.NewGrafanaCfg(map[string]string{
+		cfg := config.NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyClientKeyContents: string(contents),
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
@@ -61,7 +62,7 @@ func TestInstanceProvider(t *testing.T) {
 	})
 
 	t.Run("When PDC is configured but the key is empty, no problem", func(t *testing.T) {
-		cfg := backend.NewGrafanaCfg(map[string]string{
+		cfg := config.NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyClientKeyContents: "",
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
@@ -73,7 +74,7 @@ func TestInstanceProvider(t *testing.T) {
 	})
 
 	t.Run("When PDC is configured but the key is not PEM-encoded, no problem", func(t *testing.T) {
-		cfg := backend.NewGrafanaCfg(map[string]string{
+		cfg := config.NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyClientKeyContents: "this is not\na valid string\n",
 		})
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
@@ -85,7 +86,7 @@ func TestInstanceProvider(t *testing.T) {
 	})
 
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
-		config := map[string]string{
+		cfg := map[string]string{
 			"foo": "bar",
 			"baz": "qux",
 		}
@@ -94,14 +95,14 @@ func TestInstanceProvider(t *testing.T) {
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 				Updated: time.Now(),
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(config),
+			GrafanaConfig: config.NewGrafanaCfg(cfg),
 		}
 
 		cachedSettings := backend.PluginContext{
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 				Updated: curSettings.DataSourceInstanceSettings.Updated,
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(config),
+			GrafanaConfig: config.NewGrafanaCfg(cfg),
 		}
 
 		cachedInstance := instancemgmt.CachedInstance{
@@ -130,11 +131,11 @@ func TestInstanceProvider(t *testing.T) {
 		require.True(t, needsUpdate)
 
 		t.Run("Should return true when cached config is changed", func(t *testing.T) {
-			curSettings.GrafanaConfig = backend.NewGrafanaCfg(map[string]string{
+			curSettings.GrafanaConfig = config.NewGrafanaCfg(map[string]string{
 				"foo": "true",
 			})
 
-			cachedSettings.GrafanaConfig = backend.NewGrafanaCfg(map[string]string{
+			cachedSettings.GrafanaConfig = config.NewGrafanaCfg(map[string]string{
 				"foo": "false",
 			})
 
@@ -207,7 +208,7 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 						Updated: ts,
 					},
-					GrafanaConfig: backend.NewGrafanaCfg(map[string]string{
+					GrafanaConfig: config.NewGrafanaCfg(map[string]string{
 						"foo": "bar",
 						"baz": "qux",
 					}),
@@ -217,7 +218,7 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 						DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 							Updated: ts,
 						},
-						GrafanaConfig: backend.NewGrafanaCfg(map[string]string{
+						GrafanaConfig: config.NewGrafanaCfg(map[string]string{
 							"baz": "qux",
 							"foo": "bar",
 						}),
@@ -251,7 +252,7 @@ func Test_instanceProvider_NeedsUpdate(t *testing.T) {
 					DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
 						Updated: ts,
 					},
-					GrafanaConfig: backend.NewGrafanaCfg(map[string]string{
+					GrafanaConfig: config.NewGrafanaCfg(map[string]string{
 						"foo": "bar",
 					}),
 				},

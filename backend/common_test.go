@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -403,7 +404,7 @@ func TestProxyOptionsFromContext(t *testing.T) {
 	tcs := []struct {
 		name                  string
 		instanceSettings      *DataSourceInstanceSettings
-		grafanaCfg            *GrafanaCfg
+		grafanaCfg            *config.GrafanaCfg
 		expectedClientOptions *proxy.Options
 		err                   error
 	}{
@@ -415,7 +416,7 @@ func TestProxyOptionsFromContext(t *testing.T) {
 				JSONData:                []byte("{ \"enableSecureSocksProxy\": true, \"timeout\": 10, \"keepAlive\": 15, \"secureSocksProxyUsername\": \"user\" }"),
 				DecryptedSecureJSONData: map[string]string{"secureSocksProxyPassword": "pass"},
 			},
-			grafanaCfg: NewGrafanaCfg(
+			grafanaCfg: config.NewGrafanaCfg(
 				map[string]string{
 					proxy.PluginSecureSocksProxyEnabled:            "true",
 					proxy.PluginSecureSocksProxyClientCert:         "/path/to/client-cert",
@@ -455,7 +456,7 @@ func TestProxyOptionsFromContext(t *testing.T) {
 			},
 		},
 		{
-			name: "Datasource UID becomes user name when secureSocksProxyUsername is not set",
+			name: "Proxy options are configured when enableSecureSocksProxy is true and no username/password set",
 			instanceSettings: &DataSourceInstanceSettings{
 				Name:                    "ds-name",
 				UID:                     "ds-uid",
@@ -463,7 +464,7 @@ func TestProxyOptionsFromContext(t *testing.T) {
 				JSONData:                []byte("{ \"enableSecureSocksProxy\": true, \"timeout\": 10, \"keepAlive\": 15 }"),
 				DecryptedSecureJSONData: map[string]string{"secureSocksProxyPassword": "pass"},
 			},
-			grafanaCfg: NewGrafanaCfg(
+			grafanaCfg: config.NewGrafanaCfg(
 				map[string]string{
 					proxy.PluginSecureSocksProxyEnabled:            "true",
 					proxy.PluginSecureSocksProxyClientCert:         "/path/to/client-cert",
@@ -510,7 +511,7 @@ func TestProxyOptionsFromContext(t *testing.T) {
 				Type:     "example-datasource",
 				JSONData: []byte("{ \"enableSecureSocksProxy\": false }"),
 			},
-			grafanaCfg: NewGrafanaCfg(
+			grafanaCfg: config.NewGrafanaCfg(
 				map[string]string{
 					proxy.PluginSecureSocksProxyEnabled:            "true",
 					proxy.PluginSecureSocksProxyClientCert:         "/path/to/client-cert",
@@ -534,7 +535,7 @@ func TestProxyOptionsFromContext(t *testing.T) {
 				Type:     "example-datasource",
 				JSONData: []byte("{ \"enableSecureSocksProxy\": true }"),
 			},
-			grafanaCfg: NewGrafanaCfg(
+			grafanaCfg: config.NewGrafanaCfg(
 				map[string]string{
 					proxy.PluginSecureSocksProxyEnabled: "false",
 				},
@@ -556,7 +557,7 @@ func TestProxyOptionsFromContext(t *testing.T) {
 	}
 
 	for _, tc := range tcs {
-		ctx := WithGrafanaConfig(context.Background(), tc.grafanaCfg)
+		ctx := config.WithGrafanaConfig(context.Background(), tc.grafanaCfg)
 		opts, err := tc.instanceSettings.ProxyOptionsFromContext(ctx)
 		if tc.err != nil {
 			require.ErrorIs(t, err, tc.err)
