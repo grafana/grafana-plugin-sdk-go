@@ -26,7 +26,6 @@ func ResponseLimitMiddleware(limit int64) Middleware {
 
 			log.DefaultLogger.Error("failed to parse GF_DATAPROXY_RESPONSE_LIMIT", "error", err)
 		}
-
 	}
 
 	return NamedMiddlewareFunc(ResponseLimitMiddlewareName, func(_ Options, next http.RoundTripper) http.RoundTripper {
