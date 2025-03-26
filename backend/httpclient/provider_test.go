@@ -39,13 +39,14 @@ func TestProvider(t *testing.T) {
 			transport, err := ctx.provider.GetTransport()
 			require.NoError(t, err)
 			require.NotNil(t, transport)
-			require.Len(t, ctx.usedMiddlewares, 6)
+			require.Len(t, ctx.usedMiddlewares, 7)
 			require.Equal(t, TracingMiddlewareName, ctx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 			require.Equal(t, DataSourceMetricsMiddlewareName, ctx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 			require.Equal(t, BasicAuthenticationMiddlewareName, ctx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
 			require.Equal(t, CustomHeadersMiddlewareName, ctx.usedMiddlewares[3].(MiddlewareName).MiddlewareName())
 			require.Equal(t, ContextualMiddlewareName, ctx.usedMiddlewares[4].(MiddlewareName).MiddlewareName())
 			require.Equal(t, ErrorSourceMiddlewareName, ctx.usedMiddlewares[5].(MiddlewareName).MiddlewareName())
+			require.Equal(t, ResponseLimitMiddlewareName, ctx.usedMiddlewares[6].(MiddlewareName).MiddlewareName())
 		})
 
 		t.Run("New() with options and no middleware should return expected http client and transport", func(t *testing.T) {
@@ -86,7 +87,7 @@ func TestProvider(t *testing.T) {
 			require.Equal(t, DefaultTimeoutOptions.Timeout, client.Timeout)
 
 			t.Run("Should use configured middlewares and implement MiddlewareName", func(t *testing.T) {
-				require.Len(t, pCtx.usedMiddlewares, 9)
+				require.Len(t, pCtx.usedMiddlewares, 10)
 				require.Equal(t, "mw1", pCtx.usedMiddlewares[0].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw2", pCtx.usedMiddlewares[1].(MiddlewareName).MiddlewareName())
 				require.Equal(t, "mw3", pCtx.usedMiddlewares[2].(MiddlewareName).MiddlewareName())
@@ -96,6 +97,7 @@ func TestProvider(t *testing.T) {
 				require.Equal(t, CustomHeadersMiddlewareName, pCtx.usedMiddlewares[6].(MiddlewareName).MiddlewareName())
 				require.Equal(t, ContextualMiddlewareName, pCtx.usedMiddlewares[7].(MiddlewareName).MiddlewareName())
 				require.Equal(t, ErrorSourceMiddlewareName, pCtx.usedMiddlewares[8].(MiddlewareName).MiddlewareName())
+				require.Equal(t, ResponseLimitMiddlewareName, pCtx.usedMiddlewares[9].(MiddlewareName).MiddlewareName())
 			})
 
 			t.Run("When roundtrip should call expected middlewares", func(t *testing.T) {
