@@ -3,6 +3,7 @@ package httpclient
 import (
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -11,15 +12,38 @@ import (
 )
 
 func TestResponseLimitMiddleware(t *testing.T) {
-	t.Run("should use static limit when no context limit is set", func(t *testing.T) {
-		next := &mockRoundTripper{
-			response: &http.Response{
-				Body: io.NopCloser(strings.NewReader("dummy")),
-			},
-		}
+	tcs := []struct {
+		limit              int64
+		expectedBodyLength int
+		expectedBody       string
+		err                error
+		envLimit           string
+	}{
+		// Test that the limit is set from arguments
+		{limit: 1, expectedBodyLength: 1, expectedBody: "d", err: errors.New("error: http: response body too large, response limit is set to: 1"), envLimit: ""},
+		{limit: 1000000, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: ""},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: ""},
+		// Test that the limit is set from the environment variable
+		{limit: 0, expectedBodyLength: 1, expectedBody: "d", err: errors.New("error: http: response body too large, response limit is set to: 1"), envLimit: "1"},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: "1000000"},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: "-1"},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: "0"},
+	}
+	for _, tc := range tcs {
+		t.Run(fmt.Sprintf("Test ResponseLimitMiddleware with limit: %d and envLimit: %s", tc.limit, tc.envLimit), func(t *testing.T) {
+			finalRoundTripper := RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{StatusCode: http.StatusOK, Request: req, Body: io.NopCloser(strings.NewReader("dummy"))}, nil
+			})
 
-		middleware := ResponseLimitMiddleware(1)
-		rt := middleware.CreateMiddleware(Options{}, next)
+			os.Setenv(ResponseLimitEnvVar, tc.envLimit)
+			defer os.Unsetenv(ResponseLimitEnvVar)
+
+			mw := ResponseLimitMiddleware(tc.limit)
+			rt := mw.CreateMiddleware(Options{}, finalRoundTripper)
+			require.NotNil(t, rt)
+			middlewareName, ok := mw.(MiddlewareName)
+			require.True(t, ok)
+			require.Equal(t, ResponseLimitMiddlewareName, middlewareName.MiddlewareName())
 
 		req, err := http.NewRequest(http.MethodGet, "http://", nil)
 		require.NoError(t, err)
