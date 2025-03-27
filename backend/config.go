@@ -19,7 +19,7 @@ const (
 	AppClientSecret                  = config.AppClientSecret
 )
 
-func NewGrafanaConfig(m map[string]string) *config.GrafanaCfg {
+func NewGrafanaCfg(m map[string]string) *config.GrafanaCfg {
 	return config.NewGrafanaCfg(m)
 }
 
