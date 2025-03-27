@@ -136,6 +136,7 @@ func (c *GrafanaCfg) ProxyHash() string {
 	return base64.StdEncoding.EncodeToString(block.Bytes[bl-3:])
 }
 
+// FeatureToggles represents Grafana feature toggles.
 type FeatureToggles struct {
 	// enabled is a set-like map of feature flags that are enabled.
 	enabled map[string]struct{}
@@ -147,6 +148,7 @@ func (ft FeatureToggles) IsEnabled(f string) bool {
 	return exists
 }
 
+// Proxy represents Grafana PDC proxy configuration.
 type Proxy struct {
 	ClientCfg *proxy.ClientCfg
 }

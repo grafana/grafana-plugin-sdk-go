@@ -19,16 +19,23 @@ const (
 	AppClientSecret                  = config.AppClientSecret
 )
 
+// Deprecated: Use the config package instead.
+type GrafanaCfg = config.GrafanaCfg
+
+// Deprecated: Use the config package instead.
+type FeatureToggles = config.FeatureToggles
+
+// Deprecated: Use the config package instead.
 func NewGrafanaCfg(m map[string]string) *config.GrafanaCfg {
 	return config.NewGrafanaCfg(m)
 }
 
-// GrafanaConfigFromContext returns Grafana config from context.
+// Deprecated: Use the config package instead.
 func GrafanaConfigFromContext(ctx context.Context) *config.GrafanaCfg {
 	return config.GrafanaConfigFromContext(ctx)
 }
 
-// WithGrafanaConfig injects supplied Grafana config into context.
+// Deprecated: Use the config package instead.
 func WithGrafanaConfig(ctx context.Context, cfg *config.GrafanaCfg) context.Context {
 	return config.WithGrafanaConfig(ctx, cfg)
 }
