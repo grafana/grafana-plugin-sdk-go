@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
@@ -406,6 +407,6 @@ func (f ConvertFromProtobuf) ConversionResponse(rsp *pluginv2.ConversionResponse
 	}
 }
 
-func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
-	return NewGrafanaCfg(cfg)
+func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *config.GrafanaCfg {
+	return config.NewGrafanaCfg(cfg)
 }
