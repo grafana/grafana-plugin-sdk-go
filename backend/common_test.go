@@ -456,7 +456,7 @@ func TestProxyOptionsFromContext(t *testing.T) {
 			},
 		},
 		{
-			name: "Proxy options are configured when enableSecureSocksProxy is true and no username/password set",
+			name: "Datasource UID becomes user name when secureSocksProxyUsername is not set",
 			instanceSettings: &DataSourceInstanceSettings{
 				Name:                    "ds-name",
 				UID:                     "ds-uid",
