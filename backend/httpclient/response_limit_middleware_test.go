@@ -35,7 +35,7 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		require.NoError(t, res.Body.Close())
 	})
 
-	t.Run("should use context limit when set", func(t *testing.T) {
+	t.Run("should prefer static even when context limit is set", func(t *testing.T) {
 		next := &mockRoundTripper{
 			response: &http.Response{
 				Body: io.NopCloser(strings.NewReader("dummy")),
@@ -59,9 +59,8 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		require.NotNil(t, res)
 
 		body, err := io.ReadAll(res.Body)
-		require.Error(t, err)
-		require.Equal(t, "error: http: response body too large, response limit is set to: 1", err.Error())
-		require.Equal(t, "d", string(body))
+		require.NoError(t, err)
+		require.Equal(t, "dummy", string(body))
 		require.NoError(t, res.Body.Close())
 	})
 
