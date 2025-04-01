@@ -1,7 +1,6 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
 go 1.24.1
-
 require (
 	github.com/apache/arrow-go/v18 v18.2.0
 	github.com/cheekybits/genny v1.0.0
@@ -24,7 +23,7 @@ require (
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
 	github.com/prometheus/client_golang v1.20.5
-	github.com/prometheus/common v0.62.0
+	github.com/prometheus/common v0.63.0
 	github.com/stretchr/testify v1.10.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
 	github.com/urfave/cli v1.22.16
