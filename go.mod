@@ -1,7 +1,6 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
 go 1.24.1
-
 require (
 	github.com/apache/arrow-go/v18 v18.2.0
 	github.com/cheekybits/genny v1.0.0
@@ -39,7 +38,7 @@ require (
 	go.opentelemetry.io/otel/trace v1.35.0
 	golang.org/x/exp v0.0.0-20240909161429-701f63a606c0
 	golang.org/x/net v0.37.0
-	golang.org/x/oauth2 v0.27.0
+	golang.org/x/oauth2 v0.28.0
 	golang.org/x/sync v0.12.0
 	golang.org/x/sys v0.31.0
 	golang.org/x/text v0.23.0
