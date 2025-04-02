@@ -62,6 +62,15 @@ func (h *MiddlewareHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	return h.handler.QueryData(ctx, req)
 }
 
+func (h *MiddlewareHandler) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	if req == nil {
+		return errNilRequest
+	}
+
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointQueryData)
+	return h.handler.QueryChunkedData(ctx, req, w)
+}
+
 func (h *MiddlewareHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	if req == nil {
 		return errNilRequest

@@ -108,6 +108,105 @@ type DataQuery struct {
 	JSON json.RawMessage
 }
 
+// QueryChunkedDataHandler defines the interface for handling chunked data requests.
+type QueryChunkedDataHandler interface {
+	// QueryChunkedData handles a chunked data request.
+	// Implementations must use the provided ChunkedDataWriter (w) to send data frames
+	// and errors back to the client.
+	// The ChunkedDataWriter ensures efficient buffering and handles the transmission details.
+	QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error
+}
+
+// ChunkedDataWriter defines the interface for writing data frames and errors
+// back to the client in chunks. Implementations handle buffering and transmission details.
+type ChunkedDataWriter interface {
+	// WriteFrame writes a data frame (f) for the given refID.
+	// It sends the frame structure and any initial rows included in f.
+	// Use WriteFrameRow to send subsequent rows if f is not complete.
+	// Writes are buffered and sent when the buffer is full, or Close is called.
+	WriteFrame(refID string, f *data.Frame) error
+
+	// WriteFrameRow writes a single data row (fields) for the specified refID.
+	// Must be called after WriteFrame for the same refID.
+	// The number of fields must match the frame's column count.
+	// Writes are buffered.
+	WriteFrameRow(refID string, fields ...any) error
+
+	// WriteError writes an error associated with the specified refID.
+	WriteError(refID string, status Status, err error) error
+
+	// Close flushes any buffered data, finalizes the transmission and releases resources.
+	// Must be called to ensure all data is sent and resources are cleaned up.
+	Close() error
+}
+
+// QueryChunkedDataHandlerFunc is an adapter to allow the use of
+// ordinary functions as [QueryChunkedDataHandler]. If f is a function
+// with the appropriate signature, QueryChunkedDataHandlerFunc(f) is a
+// [QueryChunkedDataHandler] that calls f.
+type QueryChunkedDataHandlerFunc func(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error
+
+// QueryChunkedData calls fn(ctx, req).
+func (fn QueryChunkedDataHandlerFunc) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	return fn(ctx, req, w)
+}
+
+// QueryChunkedDataRequest contains all information needed for a chunked data request.
+// It's similar to QueryDataRequest but designed for chunked data transmission.
+type QueryChunkedDataRequest struct {
+	// PluginContext the contextual information for the request.
+	PluginContext PluginContext
+
+	// Headers the environment/metadata information for the request.
+	// To access forwarded HTTP headers please use GetHTTPHeaders or GetHTTPHeader.
+	Headers map[string]string
+
+	// Queries the data queries for the request.
+	Queries []DataQuery
+
+	// Options defines the chunking options for the request. Optional.
+	Options *ChunkingOptions
+}
+
+// ChunkingOptions defines the chunking options for a chunked data request.
+type ChunkingOptions struct {
+	// ChunkSize specifies the size of each chunk in bytes when processing chunked data requests.
+	ChunkSize int
+}
+
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case-insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
+func (req *QueryChunkedDataRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	setHTTPHeaderInStringMap(req.Headers, key, value)
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case-insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *QueryChunkedDataRequest) DeleteHTTPHeader(key string) {
+	deleteHTTPHeaderInStringMap(req.Headers, key)
+}
+
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case-insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
+func (req *QueryChunkedDataRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+// GetHTTPHeaders returns HTTP headers.
+func (req *QueryChunkedDataRequest) GetHTTPHeaders() http.Header {
+	return getHTTPHeadersFromStringMap(req.Headers)
+}
+
 // QueryDataResponse contains the results from a QueryDataRequest.
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
@@ -244,3 +343,4 @@ func (tr TimeRange) Duration() time.Duration {
 }
 
 var _ ForwardHTTPHeaders = (*QueryDataRequest)(nil)
+var _ ForwardHTTPHeaders = (*QueryChunkedDataRequest)(nil)

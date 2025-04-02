@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -45,6 +47,80 @@ func (p *TestPluginClient) QueryData(ctx context.Context, r *backend.QueryDataRe
 	}
 
 	return backend.FromProto().QueryDataResponse(resp)
+}
+
+func (p *TestPluginClient) QueryChunkedData(ctx context.Context, r *backend.QueryChunkedDataRequest) (*backend.QueryDataResponse, error) {
+	req := backend.ToProto().QueryChunkedDataRequest(r)
+
+	stream, err := p.DataClient.QueryChunkedData(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	type streamState struct {
+		frames   []*data.Frame
+		curFrame *data.Frame
+		status   backend.Status
+		err      error
+	}
+
+	stateByRefID := make(map[string]streamState)
+
+	for {
+		sr, err := stream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				resp := backend.Responses{}
+				for refID, state := range stateByRefID {
+					resp[refID] = backend.DataResponse{
+						Status: state.status,
+						Frames: state.frames,
+						Error:  state.err,
+					}
+				}
+
+				// End of stream, return accumulated responses
+				return &backend.QueryDataResponse{Responses: resp}, nil
+			}
+			return nil, err
+		}
+
+		// Get state for this refID
+		st := stateByRefID[sr.RefId]
+
+		// Update status and error
+		st.status = backend.Status(sr.Status)
+		if sr.Error != "" {
+			st.err = errors.New(sr.Error)
+		}
+
+		// Process frames
+		for _, frame := range sr.Frames {
+			f, err := data.UnmarshalArrowFrame(frame)
+			if err != nil {
+				return nil, err
+			}
+
+			if data.IsMarkerFrame(f) {
+				st.curFrame = nil
+				continue
+			}
+
+			if st.curFrame != nil {
+				// Merge current frame with incoming frame
+				for i, field := range f.Fields {
+					st.curFrame.Fields[i].AppendAll(field)
+				}
+				continue
+			}
+
+			// This is a new frame
+			st.frames = append(st.frames, f)
+			st.curFrame = f
+		}
+
+		stateByRefID[sr.RefId] = st
+	}
 }
 
 func (p *TestPluginClient) CheckHealth(ctx context.Context, r *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {

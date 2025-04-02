@@ -124,6 +124,7 @@ message CallResourceResponse {
 
 service Data {
   rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
+  rpc QueryChunkedData(QueryChunkedDataRequest) returns (stream QueryChunkedDataResponse);
 }
 
 message TimeRange {
@@ -174,6 +175,44 @@ message DataResponse {
 
   // Error source
   string errorSource = 5;
+}
+
+message QueryChunkedDataRequest {
+  PluginContext pluginContext = 1;
+
+  // Environment info
+  map<string,string> headers = 2;
+
+  // List of data queries
+  repeated DataQuery queries = 3;
+
+  // Options to configure the behavior of the chunked data request
+  optional ChunkingOptions options = 4;
+}
+
+message QueryChunkedDataResponse {
+  string refId = 1;
+
+  repeated bytes frames = 2;
+
+  // Error message
+  string error = 3;
+
+  // Currently not used and not exposed in the frontend
+  bytes jsonMeta = 4;
+
+  // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
+  // The status codes should match values from standard HTTP status codes
+  // If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
+  int32 status = 5;
+
+  // Error source
+  string errorSource = 6;
+}
+
+message ChunkingOptions {
+  // Number of items to send in each chunk
+  int32 chunkSize = 1;
 }
 
 //-----------------------------------------------

@@ -45,12 +45,13 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	}
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 	return backend.Manage(pluginID, backend.ServeOpts{
-		CheckHealthHandler:  handler,
-		CallResourceHandler: handler,
-		QueryDataHandler:    handler,
-		StreamHandler:       handler,
-		AdmissionHandler:    opts.AdmissionHandler,
-		ConversionHandler:   opts.ConversionHandler,
-		GRPCSettings:        opts.GRPCSettings,
+		CheckHealthHandler:      handler,
+		CallResourceHandler:     handler,
+		QueryDataHandler:        handler,
+		QueryChunkedDataHandler: handler,
+		StreamHandler:           handler,
+		AdmissionHandler:        opts.AdmissionHandler,
+		ConversionHandler:       opts.ConversionHandler,
+		GRPCSettings:            opts.GRPCSettings,
 	})
 }
