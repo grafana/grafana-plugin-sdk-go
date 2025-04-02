@@ -124,6 +124,7 @@ message CallResourceResponse {
 
 service Data {
   rpc QueryData(QueryDataRequest) returns (QueryDataResponse);
+  rpc QueryChunkedData(QueryChunkedDataRequest) returns (stream QueryChunkedDataResponse);
 }
 
 message TimeRange {
@@ -174,6 +175,39 @@ message DataResponse {
 
   // Error source
   string errorSource = 5;
+}
+
+message QueryChunkedDataRequest {
+  PluginContext pluginContext = 1;
+
+  // Environment info
+  map<string,string> headers = 2;
+
+  // List of data queries
+  repeated DataQuery queries = 3;
+}
+
+message QueryChunkedDataResponse {
+  string refId = 1;
+
+  // Frame identifier that links multiple responses together. When an identifier appears the first time,
+  // the frame must include both metadata and rows. Subsequent responses with the same identifier
+  // will only include rows and must match the original frame structure.
+  string frameId = 2;
+
+  // Encoded frame
+  bytes frame = 3;
+
+  // Error message
+  string error = 4;
+
+  // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
+  // The status codes should match values from standard HTTP status codes
+  // If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
+  int32 status = 5;
+
+  // Error source
+  string errorSource = 6;
 }
 
 //-----------------------------------------------

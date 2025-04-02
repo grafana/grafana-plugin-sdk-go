@@ -47,7 +47,7 @@ func TestContextualLogger(t *testing.T) {
 		}
 		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware(), newContextualLoggerMiddleware())
 		require.NoError(t, err)
-		a := newDataSDKAdapter(handlerWithMw)
+		a := newDataSDKAdapter(handlerWithMw, handlerWithMw)
 		_, err = a.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 			PluginContext: pCtx,
 		})
