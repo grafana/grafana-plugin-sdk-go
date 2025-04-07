@@ -1,6 +1,7 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
 go 1.24.1
+
 require (
 	github.com/apache/arrow-go/v18 v18.2.0
 	github.com/cheekybits/genny v1.0.0
@@ -42,7 +43,7 @@ require (
 	golang.org/x/sync v0.12.0
 	golang.org/x/sys v0.31.0
 	golang.org/x/text v0.23.0
-	google.golang.org/grpc v1.71.0
+	google.golang.org/grpc v1.71.1
 	google.golang.org/protobuf v1.36.6
 	k8s.io/kube-openapi v0.0.0-20241105132330-32ad38e42d3f // @grafana/grafana-app-platform-squad
 )
