@@ -41,6 +41,7 @@ var (
 		Name:      "secure_socks_requests_duration",
 		Help:      "Duration of requests to the secure socks proxy",
 	}, []string{"code", "datasource", "datasource_type"})
+	errUseOfHTTPDefaultTransport = errors.New("use of the http.DefaultTransport is not allowed with secure proxy")
 )
 
 // Client is the main Proxy Client interface.
@@ -90,11 +91,15 @@ func (p *cfgProxyWrapper) SecureSocksProxyEnabled() bool {
 	return true
 }
 
-// ConfigureSecureSocksHTTPProxy takes a http.DefaultTransport and wraps it in a socks5 proxy with TLS
+// ConfigureSecureSocksHTTPProxy takes a http.Transport and wraps it in a socks5 proxy with TLS
 // if it is enabled on the datasource and the grafana instance
 func (p *cfgProxyWrapper) ConfigureSecureSocksHTTPProxy(transport *http.Transport) error {
 	if !p.SecureSocksProxyEnabled() {
 		return nil
+	}
+
+	if transport == http.DefaultTransport {
+		return errUseOfHTTPDefaultTransport
 	}
 
 	dialSocksProxy, err := p.NewSecureSocksProxyContextDialer()

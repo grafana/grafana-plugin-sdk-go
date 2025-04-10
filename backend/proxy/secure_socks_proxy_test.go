@@ -109,6 +109,13 @@ func TestNewSecureSocksProxy(t *testing.T) {
 		require.NoError(t, cli.ConfigureSecureSocksHTTPProxy(&http.Transport{}))
 	})
 
+	t.Run("New socks proxy should fail with expect error with using http.DefaultTransport", func(t *testing.T) {
+		defaultHTTPTransport, ok := http.DefaultTransport.(*http.Transport)
+		require.True(t, ok)
+		err := cli.ConfigureSecureSocksHTTPProxy(defaultHTTPTransport)
+		require.Equal(t, errUseOfHTTPDefaultTransport, err)
+	})
+
 	t.Run("Client cert must be valid", func(t *testing.T) {
 		clientCertBefore := opts.ClientCfg.ClientCertVal
 		opts.ClientCfg.ClientCertVal = ""
