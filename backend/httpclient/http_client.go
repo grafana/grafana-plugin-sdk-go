@@ -50,7 +50,7 @@ func New(opts ...Options) (*http.Client, error) {
 // Note: If more than one Options is provided a panic is raised.
 func GetTransport(opts ...Options) (http.RoundTripper, error) {
 	if opts == nil {
-		return http.DefaultTransport, nil
+		return GetDefaultTransport()
 	}
 
 	clientOpts := createOptions(opts...)
@@ -94,6 +94,16 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 	}
 
 	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport)
+}
+
+// GetDefaultTransport returns a clone of http.DefaultTransport, if it's of the
+// correct type, or an error otherwise. There are a number of places where plugin
+// code uses http.DefaultTransport; this supports doing so in a safer way.
+func GetDefaultTransport() (http.RoundTripper, error) {
+	if transport, ok := http.DefaultTransport.(*http.Transport); ok {
+		return transport.Clone(), nil
+	}
+	return nil, fmt.Errorf("http.DefaultTransport is not *http.Transport but %T", http.DefaultTransport)
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
