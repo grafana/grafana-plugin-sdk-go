@@ -241,3 +241,14 @@ func TestReverseMiddlewares(t *testing.T) {
 		require.Equal(t, "mw1", reversed[3].(MiddlewareName).MiddlewareName())
 	})
 }
+
+func TestDefaultTransport(t *testing.T) {
+	t.Run("Transport returned from GetTransport() with no arguments is not http.DefaultTransport", func(t *testing.T) {
+		transport, err := GetTransport()
+		require.NoError(t, err)
+		// This is essentially the same check added to secure_socks_proxy.go in
+		// https://github.com/grafana/grafana-plugin-sdk-go/pull/1295; since that's
+		// addressing the issue we're concerned with here, it should suffice.
+		require.NotEqual(t, transport, http.DefaultTransport.(*http.Transport))
+	})
+}
