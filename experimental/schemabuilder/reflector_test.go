@@ -57,7 +57,7 @@ func TestWriteQuerySchema(t *testing.T) {
 
 	bytes, err := os.ReadFile(outfile)
 	require.NoError(t, err)
-	require.NoError(t, validateOpenAPIv2Schema(t, bytes, outfile), "Generated schema should be a valid OpenAPIv2 schema")
+	validateOpenAPIv2Schema(t, bytes, outfile)
 
 	// Add schema for query type definition
 	query = builder.reflector.Reflect(&apisdata.QueryTypeDefinitionSpec{})
@@ -70,13 +70,13 @@ func TestWriteQuerySchema(t *testing.T) {
 
 	bytes, err = os.ReadFile(outfile)
 	require.NoError(t, err)
-	require.NoError(t, validateOpenAPIv2Schema(t, bytes, outfile), "Generated schema should be a valid OpenAPIv2 schema")
+	validateOpenAPIv2Schema(t, bytes, outfile)
 
 	def := apisdata.GetOpenAPIDefinitions(nil)["github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.QueryTypeDefinitionSpec"]
 	require.Equal(t, query.Properties.Len(), len(def.Schema.Properties))
 }
 
-func validateOpenAPIv2Schema(t *testing.T, data []byte, file string) error {
+func validateOpenAPIv2Schema(t *testing.T, data []byte, file string) {
 	t.Helper()
 	// --- Stage 1: Check for disallowed top-level keys ---
 	// https://github.com/go-openapi/spec/blob/0201d0c/schema.go#L622 json.Unmarshal on `spec.Schema` gets rid of $schema - so need to unmarshall into a generic map
@@ -125,6 +125,4 @@ func validateOpenAPIv2Schema(t *testing.T, data []byte, file string) error {
 	// 2d. Validate the loaded document against the official OpenAPI 2.0 meta-schema.
 	err = validate.Spec(doc, strfmt.Default)
 	require.NoError(t, err, file)
-
-	return nil
 }
