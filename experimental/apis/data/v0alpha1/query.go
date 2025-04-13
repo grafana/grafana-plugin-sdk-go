@@ -443,10 +443,10 @@ type DataSourceRef struct {
 // TimeRange represents a time range for a query and is a property of DataQuery.
 type TimeRange struct {
 	// From is the start time of the query.
-	From string `json:"from" jsonschema:"example=now-1h,default=now-6h"`
+	From string `json:"from" jsonschema:"default=now-6h"`
 
 	// To is the end time of the query.
-	To string `json:"to" jsonschema:"example=now,default=now"`
+	To string `json:"to" jsonschema:"default=now"`
 }
 
 // ResultAssertions define the expected response shape and query behavior.  This is useful to
