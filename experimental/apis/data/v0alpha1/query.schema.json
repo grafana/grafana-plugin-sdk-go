@@ -1,5 +1,4 @@
 {
-  "$schema": "https://json-schema.org/draft-04/schema#",
   "properties": {
     "refId": {
       "type": "string",
@@ -51,18 +50,12 @@
         "from": {
           "type": "string",
           "description": "From is the start time of the query.",
-          "default": "now-6h",
-          "examples": [
-            "now-1h"
-          ]
+          "default": "now-6h"
         },
         "to": {
           "type": "string",
           "description": "To is the end time of the query.",
-          "default": "now",
-          "examples": [
-            "now"
-          ]
+          "default": "now"
         }
       },
       "additionalProperties": false,
