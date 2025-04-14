@@ -215,22 +215,16 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 	if v, exists := dat["tlsAuth"]; exists {
 		if tlsClientAuth, ok := v.(bool); ok {
 			s.TLSClientAuth = tlsClientAuth
-		} else {
-			return nil, DownstreamError(fmt.Errorf("tlsAuth must be a boolean"))
 		}
 	}
 	if v, exists := dat["tlsAuthWithCACert"]; exists {
 		if tslAuthCert, ok := v.(bool); ok {
 			s.TLSAuthWithCACert = tslAuthCert
-		} else {
-			return nil, DownstreamError(fmt.Errorf("tlsAuthWithCACert must be a boolean"))
 		}
 	}
 	if v, exists := dat["tlsSkipVerify"]; exists {
 		if tlsSkipVerify, ok := v.(bool); ok {
 			s.TLSSkipVerify = tlsSkipVerify
-		} else {
-			return nil, DownstreamError(fmt.Errorf("tlsSkipVerify must be a boolean"))
 		}
 	}
 

@@ -2,7 +2,6 @@ package backend
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -150,56 +149,18 @@ func TestParseHTTPSettings(t *testing.T) {
 		})
 	})
 }
-func TestParseHTTTPSettingsWithInvalidOptions(t *testing.T) {
-	for _, tc := range []struct {
-		name       string
-		err        error
-		jsonString string
-	}{
-		{
-			name: "invalid tlsAuth",
-			jsonString: `{
-							"access": "browser",
-							"url": "http://domain.com",
-							"basicAuth": true,
-							"basicAuthUser": "user",
+func TestParseHTTTPSettingsWithInvalidTLSOptions(t *testing.T) {
+	t.Run("ignore TSL options if they are not boolean", func(t *testing.T) {
+		jsonData := `{
 							"tlsAuth": "true",
-							"tlsAuthWithCACert": true,
-							"tlsSkipVerify": true
-							}`,
-			err: DownstreamError(fmt.Errorf("tlsAuth must be a boolean")),
-		},
-		{
-			name: "invalid tlsSkipVerify",
-			jsonString: `{
-							"access": "browser",
-							"url": "http://domain.com",
-							"basicAuth": true,
-							"basicAuthUser": "user",
-							"tlsAuth": true,
-							"tlsAuthWithCACert": true,
+							"tlsAuthWithCACert": "true",
 							"tlsSkipVerify": "true"
-							}`,
-			err: DownstreamError(fmt.Errorf("tlsSkipVerify must be a boolean")),
-		},
-		{
-			name: "invalid tlsAuthWithCACert",
-			jsonString: `{
-				"access": "browser",
-				"url": "http://domain.com",
-				"basicAuth": true,
-				"basicAuthUser": "user",
-				"tlsAuth": true,
-				"tlsAuthWithCACert": "true",
-				"tlsSkipVerify": true
-				}`,
-			err: DownstreamError(fmt.Errorf("tlsAuthWithCACert must be a boolean")),
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			secureData := map[string]string{}
-			_, err := parseHTTPSettings([]byte(tc.jsonString), secureData)
-			require.Equal(t, tc.err, err)
-		})
-	}
+							}`
+		secureData := map[string]string{}
+		res, err := parseHTTPSettings([]byte(jsonData), secureData)
+		require.NoError(t, err)
+		require.False(t, res.TLSClientAuth)
+		require.False(t, res.TLSAuthWithCACert)
+		require.False(t, res.TLSSkipVerify)
+	})
 }
