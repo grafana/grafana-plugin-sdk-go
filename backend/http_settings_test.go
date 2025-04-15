@@ -149,12 +149,14 @@ func TestParseHTTPSettings(t *testing.T) {
 		})
 	})
 }
-func TestParseHTTTPSettingsWithInvalidTLSOptions(t *testing.T) {
-	t.Run("ignore TSL options if they are not boolean", func(t *testing.T) {
+func TestParseHTTTPSettingsWithInvalidOptions(t *testing.T) {
+	t.Run("ignore fields of type bool if they are not boolean", func(t *testing.T) {
 		jsonData := `{
 							"tlsAuth": "true",
 							"tlsAuthWithCACert": "true",
-							"tlsSkipVerify": "true"
+							"tlsSkipVerify": "true",
+							"sigV4Auth": "true",
+							"basicAuthEnabled": "true"
 							}`
 		secureData := map[string]string{}
 		res, err := parseHTTPSettings([]byte(jsonData), secureData)
@@ -162,5 +164,7 @@ func TestParseHTTTPSettingsWithInvalidTLSOptions(t *testing.T) {
 		require.False(t, res.TLSClientAuth)
 		require.False(t, res.TLSAuthWithCACert)
 		require.False(t, res.TLSSkipVerify)
+		require.False(t, res.SigV4Auth)
+		require.False(t, res.BasicAuthEnabled)
 	})
 }
