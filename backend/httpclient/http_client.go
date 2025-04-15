@@ -1,12 +1,14 @@
 package httpclient
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
@@ -50,7 +52,7 @@ func New(opts ...Options) (*http.Client, error) {
 // Note: If more than one Options is provided a panic is raised.
 func GetTransport(opts ...Options) (http.RoundTripper, error) {
 	if opts == nil {
-		return GetDefaultTransport()
+		return NewHTTPTransport(), nil
 	}
 
 	clientOpts := createOptions(opts...)
@@ -96,14 +98,30 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport)
 }
 
-// GetDefaultTransport returns a clone of http.DefaultTransport, if it's of the
-// correct type, or an error otherwise. There are a number of places where plugin
-// code uses http.DefaultTransport; this supports doing so in a safer way.
-func GetDefaultTransport() (http.RoundTripper, error) {
-	if transport, ok := http.DefaultTransport.(*http.Transport); ok {
-		return transport.Clone(), nil
+// NewHTTPTransport returns a new HTTP Transport, based off the definition in
+// the stdlib http.DefaultTransport. It's not a clone, because that would return
+// any mutations of http.DefaultTransport from other code at the time of the call.
+// Any plugin that needs a default http transport should use this function.
+func NewHTTPTransport() http.RoundTripper {
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: func(dialer *net.Dialer) func(context.Context, string, string) (net.Conn, error) {
+			return dialer.DialContext
+		}(&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}),
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
 	}
-	return nil, fmt.Errorf("http.DefaultTransport is not *http.Transport but %T", http.DefaultTransport)
+}
+
+// Deprecated - use NewHTTPTransport. Keeping for backwards compatibility.
+func GetDefaultTransport() (http.RoundTripper, error) {
+	return NewHTTPTransport(), nil
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.
