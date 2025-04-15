@@ -21,8 +21,8 @@ var (
 	})
 	disposeTTL = 5 * time.Second
 
-	instanceTTL     = 1 * time.Hour
-	instanceCleanup = 2 * time.Hour
+	instanceTTL     = 24 * time.Hour
+	instanceCleanup = 48 * time.Hour
 )
 
 // Instance is a marker interface for an instance.
