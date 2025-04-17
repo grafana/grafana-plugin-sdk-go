@@ -19,10 +19,10 @@ var (
 		Name:      "active_instances",
 		Help:      "The number of active plugin instances",
 	})
-	disposeTTL = 5 * time.Second
+	defaultDisposeTTL = 5 * time.Second
 
-	instanceTTL     = 24 * time.Hour
-	instanceCleanup = 48 * time.Hour
+	defaultInstanceTTL     = 24 * time.Hour
+	defaultInstanceCleanup = 48 * time.Hour
 )
 
 // Instance is a marker interface for an instance.
@@ -77,6 +77,10 @@ type InstanceProvider interface {
 
 // New create a new instance manager.
 func New(provider InstanceProvider) InstanceManager {
+	return NewWithOptions(provider, defaultInstanceTTL, defaultInstanceCleanup, defaultDisposeTTL)
+}
+
+func NewWithOptions(provider InstanceProvider, instanceTTL, instanceCleanup, disposeTTL time.Duration) InstanceManager {
 	if provider == nil {
 		panic("provider cannot be nil")
 	}
