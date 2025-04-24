@@ -50,11 +50,6 @@ func TestFrameFromRowsWithContext_MetricsRecorded(t *testing.T) {
 		m := findMetricWithLabels(metrics, name, labels)
 		require.NotNil(t, m, "metric %s not found", name)
 		require.GreaterOrEqual(t, m.GetHistogram().GetSampleCount(), minSamples, "metric %s histogram count too low", name)
-
-		// Optional: log histogram buckets
-		// for _, b := range m.GetHistogram().Bucket {
-		// 	t.Logf("%s bucket le=%.0f count=%d", name, b.GetUpperBound(), b.GetCumulativeCount())
-		// }
 	}
 
 	assertCounter("grafana_datasources_sqlutil_rows_processed_total", 2)

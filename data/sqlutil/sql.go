@@ -104,7 +104,7 @@ func FrameFromRowsWithContext(ctx context.Context, rows *sql.Rows, rowLimit int6
 
 	// Start OpenTelemetry tracing span
 	tracer := otel.Tracer("grafana/sqlutil")
-	ctx, span := tracer.Start(ctx, "FrameFromRows")
+	ctx, span := tracer.Start(ctx, "FrameFromRowsWithContext")
 	defer span.End()
 
 	// Emit metrics + span attributes at the end
