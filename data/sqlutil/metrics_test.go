@@ -26,6 +26,7 @@ func TestFrameFromRowsWithContext_MetricsRecorded(t *testing.T) {
 		[]interface{}{1, 2, 3},
 		[]interface{}{4, 5, 6},
 	)
+	require.NoError(t, rows.Err())
 
 	_, err = sqlutil.FrameFromRowsWithContext(ctx, rows, 100)
 	require.NoError(t, err)

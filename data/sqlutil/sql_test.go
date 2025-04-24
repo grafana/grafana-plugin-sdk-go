@@ -342,8 +342,9 @@ func TestFrameFromRows(t *testing.T) {
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			rows := tt.makeRows()
-			frame, err := sqlutil.FrameFromRows(rows, tt.rowLimit, tt.converters...)
 			require.NoError(t, rows.Err())
+			frame, err := sqlutil.FrameFromRows(rows, tt.rowLimit, tt.converters...)
+			require.NoError(t, err)
 			if tt.err {
 				require.Error(t, err)
 			} else {
@@ -353,8 +354,9 @@ func TestFrameFromRows(t *testing.T) {
 		})
 		t.Run(tt.name+" (FrameFromRowsWithContext)", func(t *testing.T) {
 			rows := tt.makeRows()
-			frame, err := sqlutil.FrameFromRowsWithContext(context.Background(), rows, tt.rowLimit, tt.converters...)
 			require.NoError(t, rows.Err())
+			frame, err := sqlutil.FrameFromRowsWithContext(context.Background(), rows, tt.rowLimit, tt.converters...)
+			require.NoError(t, err)
 			if tt.err {
 				require.Error(t, err)
 			} else {
@@ -375,7 +377,7 @@ func TestFrameFromRowsWithContext_Cancelled(t *testing.T) {
 	}
 
 	rows := makeCancellingRows(ctx, cancel, columnNames, in...)
-
+	require.NoError(t, rows.Err())
 	frame, err := sqlutil.FrameFromRowsWithContext(ctx, rows, 100)
 	require.NoError(t, err)
 	require.NotNil(t, frame)
