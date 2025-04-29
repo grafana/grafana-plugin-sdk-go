@@ -37,10 +37,9 @@ jobs:
       env:
         BRANCH: ${{ github.head_ref }}
       run: |
-        branch="${BRANCH}"
-        if git ls-remote --heads --quiet --exit-code origin "$branch"; then
-          echo "Found branch $branch in Grafana"
-          git fetch origin "$branch" && git checkout "$branch"
+        if git ls-remote --heads --quiet --exit-code origin "$BRANCH"; then
+          echo "Found branch $BRANCH in Grafana"
+          git fetch origin "$BRANCH" && git checkout "$BRANCH"
         else
           echo "Branch $BRANCH not found in Grafana"
         fi
