@@ -9,9 +9,6 @@ on:
 permissions:
   contents: read
 
-env:
-  GOLANGCI_LINT_VERSION: v1.64.2
-
 jobs:
   lint-build-test:
     name: Lint, Build, and Test
@@ -30,7 +27,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6.5.2
         with:
-          version: ${GOLANGCI_LINT_VERSION}
+          version: v1.64.2
           args: |
             "./..." --timeout=7m
           skip-cache: true
