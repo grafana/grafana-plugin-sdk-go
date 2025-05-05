@@ -10,10 +10,34 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	t.Run("New() without any opts should return http.DefaultClient", func(t *testing.T) {
-		client, err := New()
+	t.Run("New() without any opts should return expected http client and transport", func(t *testing.T) {
+		client, err := New(Options{
+			Timeouts: &TimeoutOptions{
+				Timeout:               time.Second,
+				DialTimeout:           7 * time.Second,
+				KeepAlive:             2 * time.Second,
+				TLSHandshakeTimeout:   3 * time.Second,
+				ExpectContinueTimeout: 4 * time.Second,
+				MaxConnsPerHost:       10,
+				MaxIdleConns:          5,
+				MaxIdleConnsPerHost:   7,
+				IdleConnTimeout:       6 * time.Second,
+			},
+			Middlewares: []Middleware{},
+		})
 		require.NoError(t, err)
-		require.Same(t, http.DefaultClient, client)
+		require.NotNil(t, client)
+		require.Equal(t, time.Second, client.Timeout)
+
+		transport, ok := client.Transport.(*http.Transport)
+		require.True(t, ok)
+		require.NotNil(t, transport)
+		require.Equal(t, 3*time.Second, transport.TLSHandshakeTimeout)
+		require.Equal(t, 4*time.Second, transport.ExpectContinueTimeout)
+		require.Equal(t, 10, transport.MaxConnsPerHost)
+		require.Equal(t, 5, transport.MaxIdleConns)
+		require.Equal(t, 7, transport.MaxIdleConnsPerHost)
+		require.Equal(t, 6*time.Second, transport.IdleConnTimeout)
 	})
 
 	t.Run("New() with opts and no middleware should return expected http client and transport", func(t *testing.T) {

@@ -14,17 +14,12 @@ import (
 )
 
 // New creates a new http.Client.
-// If opts is nil the http.DefaultClient will be returned.
 // If no middlewares are provided the DefaultMiddlewares will be used. If you
 // provide middlewares you have to manually add the DefaultMiddlewares for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
 // Note: If more than one Options is provided a panic is raised.
 func New(opts ...Options) (*http.Client, error) {
-	if opts == nil {
-		return http.DefaultClient, nil
-	}
-
 	clientOpts := createOptions(opts...)
 	transport, err := GetTransport(clientOpts)
 	if err != nil {
