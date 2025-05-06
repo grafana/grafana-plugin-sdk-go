@@ -165,13 +165,52 @@ func makeMultipleResultSets(
 	return rows
 }
 
+type cancellingRows struct {
+	baseRows
+	ctx        context.Context
+	cancel     context.CancelFunc
+	rows       [][]interface{}
+	currentRow int
+}
+
+func (r *cancellingRows) Next(dest []driver.Value) error {
+	r.currentRow++
+	if r.currentRow >= len(r.rows) {
+		return io.EOF
+	}
+
+	// Cancel context after yielding first row
+	if r.currentRow == 1 {
+		r.cancel()
+	}
+
+	for i := range dest {
+		dest[i] = r.rows[r.currentRow][i]
+	}
+	return nil
+}
+
+func makeCancellingRows(ctx context.Context, cancel context.CancelFunc, columnNames []string, data ...[]interface{}) *sql.Rows {
+	db := &fakeDB{
+		rows: &cancellingRows{
+			baseRows:   baseRows{columnNames: columnNames},
+			ctx:        ctx,
+			cancel:     cancel,
+			rows:       data,
+			currentRow: -1,
+		},
+	}
+	rows, _ := sql.OpenDB(db).Query("")
+	return rows
+}
+
 func TestFrameFromRows(t *testing.T) {
 	ptr := func(s string) *string {
 		return &s
 	}
 	for _, tt := range []struct {
 		name       string
-		rows       *sql.Rows
+		makeRows   func() *sql.Rows
 		rowLimit   int64
 		converters []sqlutil.Converter
 		frame      *data.Frame
@@ -179,22 +218,14 @@ func TestFrameFromRows(t *testing.T) {
 	}{
 		{
 			name: "rows not implements driver.RowsNextResultSet",
-			rows: makeSingleResultSet( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[]interface{}{
-					1, 2, 3,
-				},
-				[]interface{}{
-					4, 5, 6,
-				},
-				[]interface{}{
-					7, 8, 9,
-				},
-			),
+			makeRows: func() *sql.Rows {
+				return makeSingleResultSet(
+					[]string{"a", "b", "c"},
+					[]interface{}{1, 2, 3},
+					[]interface{}{4, 5, 6},
+					[]interface{}{7, 8, 9},
+				)
+			},
 			rowLimit:   100,
 			converters: nil,
 			frame: &data.Frame{
@@ -208,22 +239,14 @@ func TestFrameFromRows(t *testing.T) {
 		},
 		{
 			name: "rows not implements driver.RowsNextResultSet, limit reached",
-			rows: makeSingleResultSet( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[]interface{}{
-					1, 2, 3,
-				},
-				[]interface{}{
-					4, 5, 6,
-				},
-				[]interface{}{
-					7, 8, 9,
-				},
-			),
+			makeRows: func() *sql.Rows {
+				return makeSingleResultSet(
+					[]string{"a", "b", "c"},
+					[]interface{}{1, 2, 3},
+					[]interface{}{4, 5, 6},
+					[]interface{}{7, 8, 9},
+				)
+			},
 			rowLimit:   2,
 			converters: nil,
 			frame: &data.Frame{
@@ -245,24 +268,16 @@ func TestFrameFromRows(t *testing.T) {
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, but contains only one result set",
-			rows: makeMultipleResultSets( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[][]interface{}{
-					{
-						1, 2, 3,
+			makeRows: func() *sql.Rows {
+				return makeMultipleResultSets(
+					[]string{"a", "b", "c"},
+					[][]interface{}{
+						{1, 2, 3},
+						{4, 5, 6},
+						{7, 8, 9},
 					},
-					{
-						4, 5, 6,
-					},
-					{
-						7, 8, 9,
-					},
-				},
-			),
+				)
+			},
 			rowLimit:   100,
 			converters: nil,
 			frame: &data.Frame{
@@ -276,26 +291,18 @@ func TestFrameFromRows(t *testing.T) {
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, but contains more then one result set",
-			rows: makeMultipleResultSets( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[][]interface{}{
-					{
-						1, 2, 3,
+			makeRows: func() *sql.Rows {
+				return makeMultipleResultSets(
+					[]string{"a", "b", "c"},
+					[][]interface{}{
+						{1, 2, 3},
+						{4, 5, 6},
 					},
-					{
-						4, 5, 6,
+					[][]interface{}{
+						{7, 8, 9},
 					},
-				},
-				[][]interface{}{
-					{
-						7, 8, 9,
-					},
-				},
-			),
+				)
+			},
 			rowLimit:   100,
 			converters: nil,
 			frame: &data.Frame{
@@ -309,26 +316,18 @@ func TestFrameFromRows(t *testing.T) {
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, limit reached",
-			rows: makeMultipleResultSets( //nolint:rowserrcheck
-				[]string{
-					"a",
-					"b",
-					"c",
-				},
-				[][]interface{}{
-					{
-						1, 2, 3,
+			makeRows: func() *sql.Rows {
+				return makeMultipleResultSets(
+					[]string{"a", "b", "c"},
+					[][]interface{}{
+						{1, 2, 3},
+						{4, 5, 6},
 					},
-					{
-						4, 5, 6,
+					[][]interface{}{
+						{7, 8, 9},
 					},
-				},
-				[][]interface{}{
-					{
-						7, 8, 9,
-					},
-				},
-			),
+				)
+			},
 			rowLimit:   2,
 			converters: nil,
 			frame: &data.Frame{
@@ -342,7 +341,22 @@ func TestFrameFromRows(t *testing.T) {
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
-			frame, err := sqlutil.FrameFromRows(tt.rows, tt.rowLimit, tt.converters...)
+			rows := tt.makeRows()
+			require.NoError(t, rows.Err())
+			frame, err := sqlutil.FrameFromRows(rows, tt.rowLimit, tt.converters...)
+			require.NoError(t, err)
+			if tt.err {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.frame, frame)
+			}
+		})
+		t.Run(tt.name+" (FrameFromRowsWithContext)", func(t *testing.T) {
+			rows := tt.makeRows()
+			require.NoError(t, rows.Err())
+			frame, err := sqlutil.FrameFromRowsWithContext(context.Background(), rows, tt.rowLimit, tt.converters...)
+			require.NoError(t, err)
 			if tt.err {
 				require.Error(t, err)
 			} else {
@@ -351,4 +365,31 @@ func TestFrameFromRows(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFrameFromRowsWithContext_Cancelled(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+
+	columnNames := []string{"x"}
+	in := [][]interface{}{
+		{1},
+		{2}, // should be skipped due to context cancel
+	}
+
+	rows := makeCancellingRows(ctx, cancel, columnNames, in...)
+	require.NoError(t, rows.Err())
+	frame, err := sqlutil.FrameFromRowsWithContext(ctx, rows, 100)
+	require.NoError(t, err)
+	require.NotNil(t, frame)
+
+	require.Len(t, frame.Fields, 1)
+	require.Equal(t, 1, frame.Fields[0].Len()) // Only 1 row processed
+
+	require.NotNil(t, frame.Meta)
+	require.NotEmpty(t, frame.Meta.Notices)
+
+	notice := frame.Meta.Notices[0]
+	require.Equal(t, data.NoticeSeverityWarning, notice.Severity)
+	require.Contains(t, notice.Text, "cancelled")
+	require.Empty(t, notice.Link)
 }
