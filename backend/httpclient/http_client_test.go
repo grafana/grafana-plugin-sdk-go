@@ -14,14 +14,20 @@ func TestNewClient(t *testing.T) {
 		client, err := New()
 		require.NoError(t, err)
 		require.NotNil(t, client)
+		require.NotSame(t, http.DefaultClient, client)
+
 		require.Equal(t, 30*time.Second, client.Timeout)
+		require.NotSame(t, &http.DefaultTransport, &client.Transport)
 	})
 
 	t.Run("New() with opts and no middlewares specified should return expected http client and middlewares", func(t *testing.T) {
 		client, err := New(Options{})
 		require.NoError(t, err)
 		require.NotNil(t, client)
+		require.NotSame(t, http.DefaultClient, client)
+
 		require.Equal(t, 30*time.Second, client.Timeout)
+		require.NotSame(t, &http.DefaultTransport, &client.Transport)
 	})
 
 	t.Run("New() with opts and empty middlewares should return expected http client and transport", func(t *testing.T) {
@@ -43,6 +49,7 @@ func TestNewClient(t *testing.T) {
 		require.NotNil(t, client)
 		require.Equal(t, time.Second, client.Timeout)
 
+		// this only works when there are no middlewares, otherwise the transport is wrapped
 		transport, ok := client.Transport.(*http.Transport)
 		require.True(t, ok)
 		require.NotNil(t, transport)
