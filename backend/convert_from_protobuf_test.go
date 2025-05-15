@@ -275,7 +275,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 	requireCounter.Equal(t, time.Unix(0, 86400*2*1e9), sdkCtx.DataSourceInstanceSettings.Updated)
 	requireCounter.Equal(t, protoCtx.UserAgent, sdkCtx.UserAgent.String())
 
-	requireCounter.Equal(t, protoCtx.GrafanaConfig, sdkCtx.GrafanaConfig.config)
+	requireCounter.Equal(t, protoCtx.GrafanaConfig, sdkCtx.GrafanaConfig.Config())
 
 	require.Equal(t, requireCounter.Count, sdkWalker.FieldCount-3, "untested fields in conversion") // -3 Struct Fields
 }
