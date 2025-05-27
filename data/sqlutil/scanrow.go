@@ -8,6 +8,18 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
+// ErrColumnTypeNotSupported is returned when an SQL column has a type that cannot be processed.
+// This typically occurs when a database driver doesn't provide a valid scan type for a column
+// or when encountering custom/exotic data types that don't have appropriate conversion handlers.
+type ErrColumnTypeNotSupported struct {
+	Type   string
+	Column string
+}
+
+func (e ErrColumnTypeNotSupported) Error() string {
+	return fmt.Sprintf("type %q is not supported (column %q)", e.Type, e.Column)
+}
+
 // A ScanRow is a container for SQL metadata for a single row.
 // The row metadata is used to generate dataframe fields and a slice that can be used with sql.Scan
 type ScanRow struct {
@@ -87,7 +99,7 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 		if !rc.hasConverter(i) {
 			scanTypeValue := colType.ScanType()
 			if scanTypeValue == nil {
-				return nil, fmt.Errorf(`type %s is not supported for column %s`, colType.DatabaseTypeName(), colName)
+				return nil, ErrColumnTypeNotSupported{Type: colType.DatabaseTypeName(), Column: colName}
 			}
 			v := NewDefaultConverter(colName, nullable, scanTypeValue)
 			rc.append(colName, scanType(v, colType.ScanType()), v)
