@@ -115,9 +115,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 	}
 	// Double-checked locking for update/create criteria
 	strKey := fmt.Sprintf("%v", cacheKey)
-	im.locker.RLock(strKey)
 	item, ok := im.cache.Get(strKey)
-	im.locker.RUnlock(strKey)
 
 	if ok {
 		ci := item.(CachedInstance)
@@ -146,10 +144,10 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 	if err != nil {
 		return nil, err
 	}
-	im.cache.Set(strKey, CachedInstance{
+	im.cache.SetDefault(strKey, CachedInstance{
 		PluginContext: pluginContext,
 		instance:      instance,
-	}, gocache.DefaultExpiration)
+	})
 	activeInstances.Inc()
 
 	return instance, nil

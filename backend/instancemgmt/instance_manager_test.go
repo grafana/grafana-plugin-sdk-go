@@ -75,7 +75,7 @@ func TestInstanceManagerExpiration(t *testing.T) {
 	}
 
 	tip := &testInstanceProvider{}
-	im := NewWithOptions(tip, time.Millisecond, 2*time.Millisecond, defaultDisposeTTL)
+	im := NewWithOptions(tip, time.Millisecond, 2*time.Millisecond, 10*time.Millisecond)
 
 	instance, err := im.Get(ctx, pCtx)
 	require.NoError(t, err)
