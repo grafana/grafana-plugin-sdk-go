@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"errors"
 	"io"
+	"reflect"
 	"sync"
 	"testing"
 
@@ -36,6 +37,7 @@ type singleResultSet struct {
 
 	rows       [][]interface{}
 	currentRow int
+	scanTypes  []reflect.Type
 }
 
 func (rows *singleResultSet) Next(dest []driver.Value) error {
@@ -48,6 +50,13 @@ func (rows *singleResultSet) Next(dest []driver.Value) error {
 		dest[i] = data[i]
 	}
 	return nil
+}
+
+func (rows *singleResultSet) ColumnTypeScanType(index int) reflect.Type {
+	if index >= len(rows.scanTypes) {
+		return reflect.TypeFor[any]()
+	}
+	return rows.scanTypes[index]
 }
 
 type multipleResultSets struct {
@@ -148,6 +157,24 @@ func makeSingleResultSet(
 	return rows
 }
 
+func makeSingleResultSetWithScanTypes(
+	columnNames []string,
+	scanTypes []reflect.Type,
+	data ...[]interface{},
+) *sql.Rows {
+	rows, _ := sql.OpenDB(&fakeDB{
+		rows: &singleResultSet{
+			baseRows: baseRows{
+				columnNames: columnNames,
+			},
+			rows:       data,
+			currentRow: -1,
+			scanTypes:  scanTypes,
+		},
+	}).Query("")
+	return rows
+}
+
 func makeMultipleResultSets(
 	columnNames []string,
 	resultSets ...[][]interface{},
@@ -175,7 +202,7 @@ func TestFrameFromRows(t *testing.T) {
 		rowLimit   int64
 		converters []sqlutil.Converter
 		frame      *data.Frame
-		err        bool
+		err        error
 	}{
 		{
 			name: "rows not implements driver.RowsNextResultSet",
@@ -204,7 +231,7 @@ func TestFrameFromRows(t *testing.T) {
 					data.NewField("c", nil, []*string{ptr("3"), ptr("6"), ptr("9")}),
 				},
 			},
-			err: false,
+			err: nil,
 		},
 		{
 			name: "rows not implements driver.RowsNextResultSet, limit reached",
@@ -241,7 +268,7 @@ func TestFrameFromRows(t *testing.T) {
 					},
 				},
 			},
-			err: false,
+			err: nil,
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, but contains only one result set",
@@ -272,7 +299,7 @@ func TestFrameFromRows(t *testing.T) {
 					data.NewField("c", nil, []*string{ptr("3"), ptr("6"), ptr("9")}),
 				},
 			},
-			err: false,
+			err: nil,
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, but contains more then one result set",
@@ -305,7 +332,7 @@ func TestFrameFromRows(t *testing.T) {
 					data.NewField("c", nil, []*string{ptr("3"), ptr("6"), ptr("9")}),
 				},
 			},
-			err: false,
+			err: nil,
 		},
 		{
 			name: "rows implements driver.RowsNextResultSet, limit reached",
@@ -338,13 +365,24 @@ func TestFrameFromRows(t *testing.T) {
 					data.NewField("c", nil, []*string{ptr("3"), ptr("6")}),
 				},
 			},
-			err: false,
+			err: nil,
+		},
+		{
+			name: "row contains unsupported column type",
+			rows: makeSingleResultSetWithScanTypes( //nolint:rowserrcheck
+				[]string{"a"},
+				[]reflect.Type{nil},
+				[]interface{}{1},
+			),
+			rowLimit:   100,
+			converters: nil,
+			err:        sqlutil.ErrColumnTypeNotSupported{},
 		},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			frame, err := sqlutil.FrameFromRows(tt.rows, tt.rowLimit, tt.converters...)
-			if tt.err {
-				require.Error(t, err)
+			if tt.err != nil {
+				require.ErrorAs(t, err, &tt.err)
 			} else {
 				require.NoError(t, err)
 				require.Equal(t, tt.frame, frame)
