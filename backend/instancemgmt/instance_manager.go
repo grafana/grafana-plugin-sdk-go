@@ -18,6 +18,9 @@ var (
 		Name:      "active_instances",
 		Help:      "The number of active plugin instances",
 	})
+)
+
+const (
 	disposeTTL = 5 * time.Second
 )
 

@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 func TestInstanceManager(t *testing.T) {
@@ -21,7 +22,7 @@ func TestInstanceManager(t *testing.T) {
 	}
 
 	tip := &testInstanceProvider{}
-	im := NewWithOptions(tip, defaultInstanceTTL, defaultInstanceCleanup, time.Millisecond)
+	im := New(tip)
 
 	t.Run("When getting instance should create a new instance", func(t *testing.T) {
 		instance, err := im.Get(ctx, pCtx)
@@ -75,7 +76,7 @@ func TestInstanceManagerExpiration(t *testing.T) {
 	}
 
 	tip := &testInstanceProvider{}
-	im := NewWithOptions(tip, time.Millisecond, 2*time.Millisecond, 10*time.Millisecond)
+	im := newTTLInstanceManager(tip, time.Millisecond, 2*time.Millisecond)
 
 	instance, err := im.Get(ctx, pCtx)
 	require.NoError(t, err)
@@ -151,7 +152,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 			},
 		}
 		tip := &testInstanceProvider{}
-		im := NewWithOptions(tip, defaultInstanceTTL, defaultInstanceCleanup, time.Millisecond)
+		im := newTTLInstanceManager(tip, defaultInstanceTTL, defaultInstanceCleanupInterval)
 		// Creating initial instance with old contexts
 		instanceToDispose, _ := im.Get(ctx, initialPCtx)
 

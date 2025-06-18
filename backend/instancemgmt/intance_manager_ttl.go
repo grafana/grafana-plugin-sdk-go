@@ -3,11 +3,51 @@ package instancemgmt
 import (
 	"context"
 	"fmt"
+	"time"
 
 	gocache "github.com/patrickmn/go-cache"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
+
+const (
+	defaultInstanceTTL             = 24 * time.Hour
+	defaultInstanceCleanupInterval = 48 * time.Hour
+)
+
+// NewTTLInstanceManager creates a new instance manager with TTL-based caching.
+// Instances will be automatically evicted from the cache after the specified TTL.
+func NewTTLInstanceManager(provider InstanceProvider) InstanceManager {
+	return newTTLInstanceManager(provider, defaultInstanceTTL, defaultInstanceCleanupInterval)
+}
+
+func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceCleanupInterval time.Duration) InstanceManager {
+	if provider == nil {
+		panic("provider cannot be nil")
+	}
+
+	// Use go-cache for TTL-based caching
+	cache := gocache.New(instanceTTL, instanceCleanupInterval)
+
+	// Set up the OnEvicted callback to dispose instances
+	cache.OnEvicted(func(_ string, value interface{}) {
+		ci := value.(CachedInstance)
+		if disposer, valid := ci.instance.(InstanceDisposer); valid {
+			time.AfterFunc(disposeTTL, func() {
+				disposer.Dispose()
+				activeInstances.Dec()
+			})
+		} else {
+			activeInstances.Dec()
+		}
+	})
+
+	return &instanceManagerWithTTL{
+		provider: provider,
+		cache:    cache,
+		locker:   newLocker(),
+	}
+}
 
 type instanceManagerWithTTL struct {
 	locker   *locker
