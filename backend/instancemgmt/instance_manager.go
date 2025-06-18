@@ -2,15 +2,14 @@ package instancemgmt
 
 import (
 	"context"
-	"fmt"
 	"reflect"
+	"sync"
 	"time"
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	gocache "github.com/patrickmn/go-cache"
 )
 
 var (
@@ -19,10 +18,7 @@ var (
 		Name:      "active_instances",
 		Help:      "The number of active plugin instances",
 	})
-	defaultDisposeTTL = 5 * time.Second
-
-	defaultInstanceTTL     = 24 * time.Hour
-	defaultInstanceCleanup = 48 * time.Hour
+	disposeTTL = 5 * time.Second
 )
 
 // Instance is a marker interface for an instance.
@@ -77,27 +73,13 @@ type InstanceProvider interface {
 
 // New create a new instance manager.
 func New(provider InstanceProvider) InstanceManager {
-	return NewWithOptions(provider, defaultInstanceTTL, defaultInstanceCleanup, defaultDisposeTTL)
-}
-
-func NewWithOptions(provider InstanceProvider, instanceTTL, instanceCleanup, disposeTTL time.Duration) InstanceManager {
 	if provider == nil {
 		panic("provider cannot be nil")
 	}
-	cache := gocache.New(instanceTTL, instanceCleanup)
-	cache.OnEvicted(func(_ string, i interface{}) {
-		ci := i.(CachedInstance)
-		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			time.AfterFunc(disposeTTL, func() {
-				disposer.Dispose()
-			})
-		}
-		activeInstances.Dec()
-	})
 
 	return &instanceManager{
 		provider: provider,
-		cache:    cache,
+		cache:    sync.Map{},
 		locker:   newLocker(),
 	}
 }
@@ -105,7 +87,7 @@ func NewWithOptions(provider InstanceProvider, instanceTTL, instanceCleanup, dis
 type instanceManager struct {
 	locker   *locker
 	provider InstanceProvider
-	cache    *gocache.Cache
+	cache    sync.Map
 }
 
 func (im *instanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
@@ -114,8 +96,9 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		return nil, err
 	}
 	// Double-checked locking for update/create criteria
-	strKey := fmt.Sprintf("%v", cacheKey)
-	item, ok := im.cache.Get(strKey)
+	im.locker.RLock(cacheKey)
+	item, ok := im.cache.Load(cacheKey)
+	im.locker.RUnlock(cacheKey)
 
 	if ok {
 		ci := item.(CachedInstance)
@@ -126,10 +109,10 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		}
 	}
 
-	im.locker.Lock(strKey)
-	defer im.locker.Unlock(strKey)
+	im.locker.Lock(cacheKey)
+	defer im.locker.Unlock(cacheKey)
 
-	if item, ok := im.cache.Get(strKey); ok {
+	if item, ok := im.cache.Load(cacheKey); ok {
 		ci := item.(CachedInstance)
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
@@ -137,14 +120,21 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 			return ci.instance, nil
 		}
 
-		im.cache.Delete(strKey)
+		if disposer, valid := ci.instance.(InstanceDisposer); valid {
+			time.AfterFunc(disposeTTL, func() {
+				disposer.Dispose()
+				activeInstances.Dec()
+			})
+		} else {
+			activeInstances.Dec()
+		}
 	}
 
 	instance, err := im.provider.NewInstance(ctx, pluginContext)
 	if err != nil {
 		return nil, err
 	}
-	im.cache.SetDefault(strKey, CachedInstance{
+	im.cache.Store(cacheKey, CachedInstance{
 		PluginContext: pluginContext,
 		instance:      instance,
 	})
