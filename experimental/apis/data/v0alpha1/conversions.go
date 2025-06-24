@@ -69,9 +69,6 @@ func toBackendDataQuery(q DataQuery, defaultTimeRange *backend.TimeRange) (backe
 	if err != nil {
 		return bq, err
 	}
-	if bq.RefID == "" {
-		bq.RefID = "A"
-	}
 	if bq.MaxDataPoints == 0 {
 		bq.MaxDataPoints = 100
 	}

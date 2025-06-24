@@ -12,7 +12,11 @@ func TestConversionsDefaults(t *testing.T) {
 
 	require.NoError(t, err)
 
-	require.Equal(t, "A", res.RefID)
+	// we used to default the refId to "A",
+	// we do not do that anymore,
+	// we verify the new behavior
+	require.Equal(t, "", res.RefID)
+
 	require.Equal(t, int64(100), res.MaxDataPoints)
 	require.Equal(t, time.Second, res.Interval)
 }
