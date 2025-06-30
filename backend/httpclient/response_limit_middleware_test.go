@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"testing"
 
@@ -18,16 +19,26 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		expectedBodyLength int
 		expectedBody       string
 		err                error
+		envLimit           string
 	}{
-		{limit: 1, expectedBodyLength: 1, expectedBody: "d", err: errors.New("error: http: response body too large, response limit is set to: 1")},
-		{limit: 1000000, expectedBodyLength: 5, expectedBody: "dummy", err: nil},
-		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil},
+		// Test that the limit is set from arguments
+		{limit: 1, expectedBodyLength: 1, expectedBody: "d", err: errors.New("error: http: response body too large, response limit is set to: 1"), envLimit: ""},
+		{limit: 1000000, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: ""},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: ""},
+		// Test that the limit is set from the environment variable
+		{limit: 0, expectedBodyLength: 1, expectedBody: "d", err: errors.New("error: http: response body too large, response limit is set to: 1"), envLimit: "1"},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: "1000000"},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: "-1"},
+		{limit: 0, expectedBodyLength: 5, expectedBody: "dummy", err: nil, envLimit: "0"},
 	}
 	for _, tc := range tcs {
-		t.Run(fmt.Sprintf("Test ResponseLimitMiddleware with limit: %d", tc.limit), func(t *testing.T) {
+		t.Run(fmt.Sprintf("Test ResponseLimitMiddleware with limit: %d and envLimit: %s", tc.limit, tc.envLimit), func(t *testing.T) {
 			finalRoundTripper := RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 				return &http.Response{StatusCode: http.StatusOK, Request: req, Body: io.NopCloser(strings.NewReader("dummy"))}, nil
 			})
+
+			os.Setenv(ResponseLimitEnvVar, tc.envLimit)
+			defer os.Unsetenv(ResponseLimitEnvVar)
 
 			mw := ResponseLimitMiddleware(tc.limit)
 			rt := mw.CreateMiddleware(Options{}, finalRoundTripper)
