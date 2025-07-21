@@ -87,30 +87,26 @@ func (f Fingerprint) String() string {
 	return fmt.Sprintf("%016x", uint64(f))
 }
 
-// Fingerprint calculates a 64-bit FNV-1 hash of the labels. Labels are sorted by key to make sure the hash is stable.
+// Fingerprint calculates a 64-bit FNV-1 hash of the labels.
 func (l Labels) Fingerprint() Fingerprint {
 	h := fnv.New64()
 	if len(l) == 0 {
 		return Fingerprint(h.Sum64())
 	}
-	// maps do not guarantee predictable sequence of keys.
-	// Therefore, to make hash stable, we need to sort keys
-	keys := make([]string, 0, len(l))
-	for labelName := range l {
-		keys = append(keys, labelName)
-	}
-	sort.Strings(keys)
-	for _, name := range keys {
+	var result uint64
+	for key, val := range l {
+		h.Reset()
 		// avoid an extra allocation of a slice of bytes using unsafe conversions.
 		// The internal structure of the string is almost like a slice (except capacity).
-		_, _ = h.Write(unsafe.Slice(unsafe.StringData(name), len(name)))
+		_, _ = h.Write(unsafe.Slice(unsafe.StringData(key), len(key)))
 		// ignore errors returned by Write method because fnv never returns them.
 		_, _ = h.Write([]byte{255}) // use an invalid utf-8 sequence as separator
-		value := l[name]
-		_, _ = h.Write(unsafe.Slice(unsafe.StringData(value), len(value)))
+		_, _ = h.Write(unsafe.Slice(unsafe.StringData(val), len(val)))
 		_, _ = h.Write([]byte{255})
+		// XOR the hashes, this allows us to ignore the random order of the elements in the map
+		result ^= h.Sum64()
 	}
-	return Fingerprint(h.Sum64())
+	return Fingerprint(result)
 }
 
 // LabelsFromString() parses string into a Label object.

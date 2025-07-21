@@ -2,9 +2,12 @@ package data_test
 
 import (
 	"encoding/json"
+	"fmt"
+	"maps"
 	"testing"
 
 	jsoniter "github.com/json-iterator/go"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -104,7 +107,7 @@ func TestLabelsFingerprint(t *testing.T) {
 		{
 			name:        "should calculate hash",
 			labels:      data.Labels{"a": "AAA", "b": "BBB", "c": "CCC", "d": "DDD"},
-			fingerprint: data.Fingerprint(0xfb4532f90d896635),
+			fingerprint: data.Fingerprint(0x62626dd4e9a8f99c),
 		},
 	}
 	for _, testCase := range testCases {
@@ -112,6 +115,30 @@ func TestLabelsFingerprint(t *testing.T) {
 			require.Equal(t, testCase.fingerprint, testCase.labels.Fingerprint())
 		})
 	}
+}
+
+func TestLabelsFingerprintConsistency(t *testing.T) {
+	labels := data.Labels{"a": "AAA", "b": "BBB", "c": "CCC", "d": "DDD", "e": "EEE"}
+	expected := labels.Fingerprint()
+	for i := 0; i < 10000; i++ {
+		m := data.Labels{}
+		maps.Copy(m, labels)
+		require.Equal(t, expected, m.Fingerprint())
+	}
+}
+
+func TestLabelsFingerprintCollisions(t *testing.T) {
+	check := func(t *testing.T, labels1, labels2 data.Labels) {
+		t.Helper()
+		assert.NotEqual(t, labels1.Fingerprint(), labels2.Fingerprint())
+	}
+	check(t, data.Labels{"a": "AAA"}, data.Labels{"aA": "AA"})
+	check(t, data.Labels{"a": "AAA", "b": "BBB"}, data.Labels{"a": "BBB", "b": "AAA"})
+	check(t, data.Labels{"a": ""}, data.Labels{"": "a"})
+	check(t, data.Labels{"x": "y", "z": "w"}, data.Labels{"xz": "yw"})
+	check(t, data.Labels{"café": "résumé"}, data.Labels{"cafe": "resume"})
+	check(t, data.Labels{"key\x00": "value"}, data.Labels{"key": "\x00value"})
+	check(t, data.Labels{"Key": "Value"}, data.Labels{"key": "value"})
 }
 
 func TestLabelsFingerprintString(t *testing.T) {
@@ -128,5 +155,17 @@ func TestLabelsFingerprintString(t *testing.T) {
 		t.Run(testCase.name, func(t *testing.T) {
 			require.Equal(t, testCase.expected, testCase.fingerprint.String())
 		})
+	}
+}
+
+func BenchmarkLabelsFingerprint(b *testing.B) {
+	labels := make(data.Labels, 10)
+	for i := 0; i < 10; i++ {
+		labels[fmt.Sprintf("key%d", i)] = fmt.Sprintf("value%d", i)
+	}
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		labels.Fingerprint()
 	}
 }
