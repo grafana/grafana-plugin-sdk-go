@@ -21,8 +21,8 @@ var (
 	})
 	defaultDisposeTTL = 5 * time.Second
 
-	defaultInstanceTTL     = 24 * time.Hour
-	defaultInstanceCleanup = 48 * time.Hour
+	defaultInstanceTTL     = 1 * time.Hour
+	defaultInstanceCleanup = 2 * time.Hour
 )
 
 // Instance is a marker interface for an instance.
@@ -122,6 +122,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
+			im.cache.SetDefault(strKey, ci)
 			return ci.instance, nil
 		}
 	}
@@ -134,6 +135,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
+			im.cache.SetDefault(strKey, ci)
 			return ci.instance, nil
 		}
 
