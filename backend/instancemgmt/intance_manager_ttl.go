@@ -11,8 +11,8 @@ import (
 )
 
 const (
-	defaultInstanceTTL             = 24 * time.Hour
-	defaultInstanceCleanupInterval = 48 * time.Hour
+	defaultInstanceTTL             = 1 * time.Hour
+	defaultInstanceCleanupInterval = 2 * time.Hour
 )
 
 // NewTTLInstanceManager creates a new instance manager with TTL-based caching.
@@ -69,6 +69,7 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
+			im.cache.SetDefault(cacheKey, ci)
 			return ci.instance, nil
 		}
 	}
@@ -81,6 +82,7 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
+			im.cache.SetDefault(cacheKey, ci)
 			return ci.instance, nil
 		}
 
