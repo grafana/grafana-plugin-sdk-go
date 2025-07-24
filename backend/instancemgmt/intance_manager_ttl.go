@@ -69,6 +69,7 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
+			// SetDefault() creates a new cache entry with fresh TTL, effectively extending the instance's lifetime.
 			im.cache.SetDefault(cacheKey, ci)
 			return ci.instance, nil
 		}
@@ -82,6 +83,7 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
+			// SetDefault() creates a new cache entry with fresh TTL, effectively extending the instance's lifetime.
 			im.cache.SetDefault(cacheKey, ci)
 			return ci.instance, nil
 		}
