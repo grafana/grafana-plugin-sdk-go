@@ -46,7 +46,6 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	if err := backend.SetupTracer(pluginID, opts.TracingOpts); err != nil {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
-
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 	return backend.Manage(pluginID, backend.ServeOpts{
 		CheckHealthHandler:     handler,
