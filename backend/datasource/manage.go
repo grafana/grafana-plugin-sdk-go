@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/buildinfo"
@@ -28,11 +27,6 @@ type ManageOpts struct {
 
 	// Stateless query conversion handler
 	QueryConversionHandler backend.QueryConversionHandler
-
-	// UseTTLInstanceManager controls whether to use the TTL-based instance manager.
-	// When true, instances will be automatically evicted from the cache after a configurable TTL.
-	// Default is false, which uses the standard instance manager.
-	UseTTLInstanceManager bool
 }
 
 // Manage starts serving the data source over gPRC with automatic instance management.
@@ -53,16 +47,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 
-	ip := NewInstanceProvider(instanceFactory)
-
-	var im instancemgmt.InstanceManager
-	if opts.UseTTLInstanceManager {
-		im = instancemgmt.NewTTLInstanceManager(ip)
-	} else {
-		im = instancemgmt.New(ip)
-	}
-
-	handler := automanagement.NewManager(im)
+	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 	return backend.Manage(pluginID, backend.ServeOpts{
 		CheckHealthHandler:     handler,
 		CallResourceHandler:    handler,

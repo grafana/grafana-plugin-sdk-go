@@ -10,7 +10,7 @@ const (
 
 	// TTLInstanceManager is a feature toggle for enabling the TTL-based instance manager.
 	// When enabled, instances will be automatically evicted from the cache after a configurable TTL.
-	TTLInstanceManager = "ttlInstanceManager"
+	TTLInstanceManager = "ttlPluginInstanceManager"
 )
 
 // FeatureToggles can check if feature toggles are enabled on the Grafana instance.

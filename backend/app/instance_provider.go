@@ -13,13 +13,13 @@ import (
 // InstanceFactoryFunc factory method for creating app instances.
 type InstanceFactoryFunc func(ctx context.Context, settings backend.AppInstanceSettings) (instancemgmt.Instance, error)
 
-// NewInstanceManager creates a new app instance manager,
+// NewInstanceManager creates a new app instance manager.
 //
 // This is a helper method for calling NewInstanceProvider and creating a new instancemgmt.InstanceProvider,
-// and providing that to instancemgmt.New.
+// and providing that to instancemgmt.NewContextAwareInstanceManager.
 func NewInstanceManager(fn InstanceFactoryFunc) instancemgmt.InstanceManager {
 	ip := NewInstanceProvider(fn)
-	return instancemgmt.New(ip)
+	return instancemgmt.NewContextAwareInstanceManager(ip)
 }
 
 // NewInstanceProvider create a new app instance provider,
