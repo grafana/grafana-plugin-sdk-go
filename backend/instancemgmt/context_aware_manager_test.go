@@ -11,10 +11,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
-func TestContextAwareInstanceManager(t *testing.T) {
+func TestInstanceManagerWrapper(t *testing.T) {
 	ctx := context.Background()
 	tip := &testInstanceProvider{}
-	im := NewContextAwareInstanceManager(tip)
+	im := NewInstanceManagerWrapper(tip)
 
 	t.Run("Should use standard manager when feature toggle is disabled", func(t *testing.T) {
 		pCtx := backend.PluginContext{
@@ -27,7 +27,7 @@ func TestContextAwareInstanceManager(t *testing.T) {
 			}),
 		}
 
-		manager := im.(*contextAwareInstanceManager).selectManager(ctx, pCtx)
+		manager := im.(*instanceManagerWrapper).selectManager(ctx, pCtx)
 		require.IsType(t, &instanceManager{}, manager)
 	})
 
@@ -42,7 +42,7 @@ func TestContextAwareInstanceManager(t *testing.T) {
 			}),
 		}
 
-		manager := im.(*contextAwareInstanceManager).selectManager(ctx, pCtx)
+		manager := im.(*instanceManagerWrapper).selectManager(ctx, pCtx)
 		require.IsType(t, &instanceManagerWithTTL{}, manager)
 	})
 
@@ -55,7 +55,7 @@ func TestContextAwareInstanceManager(t *testing.T) {
 			GrafanaConfig: nil,
 		}
 
-		manager := im.(*contextAwareInstanceManager).selectManager(ctx, pCtx)
+		manager := im.(*instanceManagerWrapper).selectManager(ctx, pCtx)
 		require.IsType(t, &instanceManager{}, manager)
 	})
 
@@ -70,7 +70,7 @@ func TestContextAwareInstanceManager(t *testing.T) {
 			}),
 		}
 
-		manager := im.(*contextAwareInstanceManager).selectManager(ctx, pCtx)
+		manager := im.(*instanceManagerWrapper).selectManager(ctx, pCtx)
 		require.IsType(t, &instanceManagerWithTTL{}, manager)
 	})
 

@@ -62,15 +62,17 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 	}
 	// Double-checked locking for update/create criteria
 	cacheKey := fmt.Sprintf("%v", providerKey)
+	im.locker.RLock(cacheKey)
 	item, ok := im.cache.Get(cacheKey)
-
+	im.locker.RUnlock(cacheKey)
 	if ok {
 		ci := item.(CachedInstance)
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
-			// SetDefault() creates a new cache entry with fresh TTL, effectively extending the instance's lifetime.
-			im.cache.SetDefault(cacheKey, ci)
+			im.locker.Lock(cacheKey)
+			im.refreshTTL(cacheKey, ci)
+			im.locker.Unlock(cacheKey)
 			return ci.instance, nil
 		}
 	}
@@ -83,8 +85,7 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
-			// SetDefault() creates a new cache entry with fresh TTL, effectively extending the instance's lifetime.
-			im.cache.SetDefault(cacheKey, ci)
+			im.refreshTTL(cacheKey, ci)
 			return ci.instance, nil
 		}
 
@@ -116,4 +117,10 @@ func (im *instanceManagerWithTTL) Do(ctx context.Context, pluginContext backend.
 
 	callInstanceHandlerFunc(fn, instance)
 	return nil
+}
+
+// refreshTTL updates the TTL of the cached instance by resetting its expiration time.
+func (im *instanceManagerWithTTL) refreshTTL(cacheKey string, ci CachedInstance) {
+	// SetDefault() technically creates a new cache entry with fresh TTL, effectively extending the instance's lifetime.
+	im.cache.SetDefault(cacheKey, ci)
 }

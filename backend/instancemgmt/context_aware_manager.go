@@ -7,19 +7,19 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
-// NewContextAwareInstanceManager creates a new instance manager that dynamically selects
+// NewInstanceManagerWrapper creates a new instance manager that dynamically selects
 // between standard and TTL instance managers based on feature toggles from the Grafana config.
-func NewContextAwareInstanceManager(provider InstanceProvider) InstanceManager {
-	return &contextAwareInstanceManager{
+func NewInstanceManagerWrapper(provider InstanceProvider) InstanceManager {
+	return &instanceManagerWrapper{
 		provider:        provider,
 		standardManager: New(provider),
 		ttlManager:      NewTTLInstanceManager(provider),
 	}
 }
 
-// contextAwareInstanceManager is a wrapper that dynamically selects the appropriate
+// instanceManagerWrapper is a wrapper that dynamically selects the appropriate
 // instance manager implementation based on feature toggles in the context.
-type contextAwareInstanceManager struct {
+type instanceManagerWrapper struct {
 	provider        InstanceProvider
 	standardManager InstanceManager
 	ttlManager      InstanceManager
@@ -27,7 +27,7 @@ type contextAwareInstanceManager struct {
 
 // selectManager returns the appropriate instance manager based on the feature toggle
 // from the Grafana config in the plugin context.
-func (c *contextAwareInstanceManager) selectManager(_ context.Context, pluginContext backend.PluginContext) InstanceManager {
+func (c *instanceManagerWrapper) selectManager(_ context.Context, pluginContext backend.PluginContext) InstanceManager {
 	// Check if TTL instance manager feature toggle is enabled
 	if pluginContext.GrafanaConfig != nil {
 		featureToggles := pluginContext.GrafanaConfig.FeatureToggles()
@@ -41,13 +41,13 @@ func (c *contextAwareInstanceManager) selectManager(_ context.Context, pluginCon
 }
 
 // Get returns an Instance using the appropriate manager based on feature toggles.
-func (c *contextAwareInstanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
+func (c *instanceManagerWrapper) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
 	manager := c.selectManager(ctx, pluginContext)
 	return manager.Get(ctx, pluginContext)
 }
 
 // Do provides an Instance as argument to fn using the appropriate manager based on feature toggles.
-func (c *contextAwareInstanceManager) Do(ctx context.Context, pluginContext backend.PluginContext, fn InstanceCallbackFunc) error {
+func (c *instanceManagerWrapper) Do(ctx context.Context, pluginContext backend.PluginContext, fn InstanceCallbackFunc) error {
 	manager := c.selectManager(ctx, pluginContext)
 	return manager.Do(ctx, pluginContext, fn)
 }

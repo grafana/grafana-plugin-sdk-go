@@ -16,10 +16,10 @@ type InstanceFactoryFunc func(ctx context.Context, settings backend.AppInstanceS
 // NewInstanceManager creates a new app instance manager.
 //
 // This is a helper method for calling NewInstanceProvider and creating a new instancemgmt.InstanceProvider,
-// and providing that to instancemgmt.NewContextAwareInstanceManager.
+// and providing that to instancemgmt.NewInstanceManagerWrapper.
 func NewInstanceManager(fn InstanceFactoryFunc) instancemgmt.InstanceManager {
 	ip := NewInstanceProvider(fn)
-	return instancemgmt.NewContextAwareInstanceManager(ip)
+	return instancemgmt.NewInstanceManagerWrapper(ip)
 }
 
 // NewInstanceProvider create a new app instance provider,

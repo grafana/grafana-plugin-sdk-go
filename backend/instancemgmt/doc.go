@@ -8,7 +8,7 @@
 //  2. TTL Instance Manager (NewTTLInstanceManager): Uses TTL-based caching
 //     that automatically evicts instances after a configurable time period.
 //
-//  3. Context-Aware Instance Manager (NewContextAwareInstanceManager):
+//  3. Instance Manager Wrapper (NewInstanceManagerWrapper):
 //     Dynamically selects between standard and TTL managers based on
 //     feature toggles from the Grafana config in the context.
 //
