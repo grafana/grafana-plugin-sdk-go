@@ -37,12 +37,12 @@ type DataQuery struct {
 	CommonQueryProperties `json:",inline"`
 
 	// Additional Properties (that live at the root)
-	additional map[string]any `json:"-"` // note this uses custom JSON marshalling
+	Additional map[string]any `json:"-"` // note this uses custom JSON marshalling
 }
 
 func NewDataQuery(body map[string]any) DataQuery {
 	g := &DataQuery{
-		additional: make(map[string]any),
+		Additional: make(map[string]any),
 	}
 	for k, v := range body {
 		_ = g.Set(k, v)
@@ -114,10 +114,10 @@ func (g *DataQuery) Set(key string, val any) *DataQuery {
 	case "hide":
 		g.Hide, _ = val.(bool)
 	default:
-		if g.additional == nil {
-			g.additional = make(map[string]any)
+		if g.Additional == nil {
+			g.Additional = make(map[string]any)
 		}
-		g.additional[key] = val
+		g.Additional[key] = val
 	}
 	return g
 }
@@ -143,7 +143,7 @@ func (g *DataQuery) Get(key string) (any, bool) {
 	case "hide":
 		return g.Hide, true
 	}
-	v, ok := g.additional[key]
+	v, ok := g.Additional[key]
 	return v, ok
 }
 
@@ -244,12 +244,12 @@ func (g *DataSourceRef) UnmarshalJSON(b []byte) error {
 func (g *DataQuery) DeepCopyInto(out *DataQuery) {
 	*out = *g
 	g.CommonQueryProperties.DeepCopyInto(&out.CommonQueryProperties)
-	if g.additional != nil {
-		out.additional = map[string]any{}
-		if len(g.additional) > 0 {
-			jj, err := json.Marshal(g.additional)
+	if g.Additional != nil {
+		out.Additional = map[string]any{}
+		if len(g.Additional) > 0 {
+			jj, err := json.Marshal(g.Additional)
 			if err == nil {
-				_ = json.Unmarshal(jj, &out.additional)
+				_ = json.Unmarshal(jj, &out.Additional)
 			}
 		}
 	}
@@ -309,13 +309,13 @@ func writeQuery(g *DataQuery, stream *j.Stream) {
 		stream.WriteVal(g.Hide)
 	}
 
-	// The additional properties
-	if g.additional != nil {
+	// The Additional properties
+	if g.Additional != nil {
 		// we must sort the map-keys to always produce the same JSON
-		keys := slices.Sorted(maps.Keys(g.additional))
+		keys := slices.Sorted(maps.Keys(g.Additional))
 
 		for _, k := range keys {
-			v := g.additional[k]
+			v := g.Additional[k]
 			stream.WriteMore()
 			stream.WriteObjectField(k)
 			stream.WriteVal(v)
@@ -326,11 +326,11 @@ func writeQuery(g *DataQuery, stream *j.Stream) {
 
 func (g *DataQuery) readQuery(iter *jsoniter.Iterator) error {
 	return g.CommonQueryProperties.readQuery(iter, func(key string, iter *jsoniter.Iterator) error {
-		if g.additional == nil {
-			g.additional = make(map[string]any)
+		if g.Additional == nil {
+			g.Additional = make(map[string]any)
 		}
 		v, err := iter.Read()
-		g.additional[key] = v
+		g.Additional[key] = v
 		return err
 	})
 }

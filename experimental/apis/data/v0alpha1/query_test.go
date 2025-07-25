@@ -14,7 +14,7 @@ func TestSerializeAdditionalQueryFieldsOrdered(t *testing.T) {
 			MaxDataPoints: 10,
 			IntervalMS:    500,
 		},
-		additional: map[string]any{
+		Additional: map[string]any{
 			"utcOffsetSec": 3600,
 			"exemplar":     false,
 			"instant":      false,
@@ -71,7 +71,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		require.Equal(t, "b1808c48-9fc9-4045-82d7-081781f8a553", req.Queries[0].Datasource.UID)
 		require.Equal(t, "spreadsheetID", req.Queries[0].GetString("spreadsheet"))
 
-		// Write the query (with additional spreadsheetID) to JSON
+		// Write the query (with Additional spreadsheetID) to JSON
 		out, err := json.MarshalIndent(req.Queries[0], "", "  ")
 		require.NoError(t, err)
 
