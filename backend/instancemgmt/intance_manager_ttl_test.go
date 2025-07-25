@@ -322,7 +322,7 @@ func TestTTLInstanceManagerDo(t *testing.T) {
 
 	t.Run("Do should panic with nil callback", func(t *testing.T) {
 		require.Panics(t, func() {
-			im.Do(ctx, pCtx, nil)
+			_ = im.Do(ctx, pCtx, nil)
 		})
 	})
 }
