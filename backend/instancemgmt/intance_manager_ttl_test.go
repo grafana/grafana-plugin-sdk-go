@@ -43,11 +43,7 @@ func TestTTLInstanceManager(t *testing.T) {
 					Updated: time.Now(),
 				},
 			}
-			origDisposeTTL := disposeTTL
-			disposeTTL = time.Millisecond
-			t.Cleanup(func() {
-				disposeTTL = origDisposeTTL
-			})
+
 			newInstance, err := im.Get(ctx, pCtxUpdated)
 
 			t.Run("New instance should be created", func(t *testing.T) {
@@ -192,12 +188,6 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 	})
 
 	t.Run("Check possible race condition issues when re-creating instance on settings update", func(t *testing.T) {
-		origDisposeTTL := disposeTTL
-		disposeTTL = time.Millisecond
-		t.Cleanup(func() {
-			disposeTTL = origDisposeTTL
-		})
-
 		ctx := context.Background()
 		initialPCtx := backend.PluginContext{
 			OrgID: 1,

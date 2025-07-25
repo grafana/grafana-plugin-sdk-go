@@ -33,13 +33,9 @@ func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceClean
 	cache.OnEvicted(func(_ string, value interface{}) {
 		ci := value.(CachedInstance)
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			time.AfterFunc(disposeTTL, func() {
-				disposer.Dispose()
-				activeInstances.Dec()
-			})
-		} else {
-			activeInstances.Dec()
+			disposer.Dispose()
 		}
+		activeInstances.Dec()
 	})
 
 	return &instanceManagerWithTTL{
