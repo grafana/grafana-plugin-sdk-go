@@ -5,7 +5,7 @@ go 1.24.1
 require (
 	github.com/apache/arrow-go/v18 v18.4.0
 	github.com/cheekybits/genny v1.0.0
-	github.com/chromedp/cdproto v0.0.0-20250429231605-6ed5b53462d4
+	github.com/chromedp/cdproto v0.0.0-20250724212937-08a3db8b4327
 	github.com/elazarl/goproxy v1.7.2
 	github.com/getkin/kin-openapi v0.132.0
 	github.com/go-openapi/loads v0.22.0
