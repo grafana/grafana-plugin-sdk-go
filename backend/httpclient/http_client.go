@@ -1,28 +1,25 @@
 package httpclient
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"errors"
 	"fmt"
 	"net"
 	"net/http"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 )
 
 // New creates a new http.Client.
-// If opts is nil the http.DefaultClient will be returned.
 // If no middlewares are provided the DefaultMiddlewares will be used. If you
 // provide middlewares you have to manually add the DefaultMiddlewares for it to be
 // enabled.
 // Note: Middlewares will be executed in the same order as provided.
 // Note: If more than one Options is provided a panic is raised.
 func New(opts ...Options) (*http.Client, error) {
-	if opts == nil {
-		return http.DefaultClient, nil
-	}
-
 	clientOpts := createOptions(opts...)
 	transport, err := GetTransport(clientOpts)
 	if err != nil {
@@ -50,7 +47,7 @@ func New(opts ...Options) (*http.Client, error) {
 // Note: If more than one Options is provided a panic is raised.
 func GetTransport(opts ...Options) (http.RoundTripper, error) {
 	if opts == nil {
-		return http.DefaultTransport, nil
+		return NewHTTPTransport(), nil
 	}
 
 	clientOpts := createOptions(opts...)
@@ -94,6 +91,32 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 	}
 
 	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport)
+}
+
+// NewHTTPTransport returns a new HTTP Transport, based off the definition in
+// the stdlib http.DefaultTransport. It's not a clone, because that would return
+// any mutations of http.DefaultTransport from other code at the time of the call.
+// Any plugin that needs a default http transport should use this function.
+func NewHTTPTransport() http.RoundTripper {
+	return &http.Transport{
+		Proxy: http.ProxyFromEnvironment,
+		DialContext: func(dialer *net.Dialer) func(context.Context, string, string) (net.Conn, error) {
+			return dialer.DialContext
+		}(&net.Dialer{
+			Timeout:   30 * time.Second,
+			KeepAlive: 30 * time.Second,
+		}),
+		ForceAttemptHTTP2:     true,
+		MaxIdleConns:          100,
+		IdleConnTimeout:       90 * time.Second,
+		TLSHandshakeTimeout:   10 * time.Second,
+		ExpectContinueTimeout: 1 * time.Second,
+	}
+}
+
+// Deprecated - use NewHTTPTransport. Keeping for backwards compatibility.
+func GetDefaultTransport() (http.RoundTripper, error) {
+	return NewHTTPTransport(), nil
 }
 
 // GetTLSConfig creates a new tls.Config given provided options.

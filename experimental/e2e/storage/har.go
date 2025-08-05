@@ -3,6 +3,7 @@ package storage
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
@@ -246,7 +247,7 @@ func (s *HAR) saveUnsafe() error {
 	if err != nil {
 		return err
 	}
-	raw, err := s.har.MarshalJSON()
+	raw, err := json.Marshal(s.har)
 	if err != nil {
 		return err
 	}
@@ -265,7 +266,8 @@ func (s *HAR) loadUnsafe() error {
 	if err != nil {
 		return err
 	}
-	return s.har.UnmarshalJSON(raw)
+
+	return json.Unmarshal(raw, &s.har)
 }
 
 // Match returns the stored http.Response for the given request.

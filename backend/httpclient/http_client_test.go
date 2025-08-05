@@ -10,13 +10,27 @@ import (
 )
 
 func TestNewClient(t *testing.T) {
-	t.Run("New() without any opts should return http.DefaultClient", func(t *testing.T) {
+	t.Run("New() without any opts should return expected http client and middlewares", func(t *testing.T) {
 		client, err := New()
 		require.NoError(t, err)
-		require.Same(t, http.DefaultClient, client)
+		require.NotNil(t, client)
+		require.NotSame(t, http.DefaultClient, client)
+
+		require.Equal(t, 30*time.Second, client.Timeout)
+		require.NotSame(t, &http.DefaultTransport, &client.Transport)
 	})
 
-	t.Run("New() with opts and no middleware should return expected http client and transport", func(t *testing.T) {
+	t.Run("New() with opts and no middlewares specified should return expected http client and middlewares", func(t *testing.T) {
+		client, err := New(Options{})
+		require.NoError(t, err)
+		require.NotNil(t, client)
+		require.NotSame(t, http.DefaultClient, client)
+
+		require.Equal(t, 30*time.Second, client.Timeout)
+		require.NotSame(t, &http.DefaultTransport, &client.Transport)
+	})
+
+	t.Run("New() with opts and empty middlewares should return expected http client and transport", func(t *testing.T) {
 		client, err := New(Options{
 			Timeouts: &TimeoutOptions{
 				Timeout:               time.Second,
@@ -35,6 +49,7 @@ func TestNewClient(t *testing.T) {
 		require.NotNil(t, client)
 		require.Equal(t, time.Second, client.Timeout)
 
+		// this only works when there are no middlewares, otherwise the transport is wrapped
 		transport, ok := client.Transport.(*http.Transport)
 		require.True(t, ok)
 		require.NotNil(t, transport)
@@ -239,5 +254,16 @@ func TestReverseMiddlewares(t *testing.T) {
 		require.Equal(t, "mw3", reversed[1].(MiddlewareName).MiddlewareName())
 		require.Equal(t, "mw2", reversed[2].(MiddlewareName).MiddlewareName())
 		require.Equal(t, "mw1", reversed[3].(MiddlewareName).MiddlewareName())
+	})
+}
+
+func TestDefaultTransport(t *testing.T) {
+	t.Run("Transport returned from GetTransport() with no arguments is not http.DefaultTransport", func(t *testing.T) {
+		transport, err := GetTransport()
+		require.NoError(t, err)
+		// This is essentially the same check added to secure_socks_proxy.go in
+		// https://github.com/grafana/grafana-plugin-sdk-go/pull/1295; since that's
+		// addressing the issue we're concerned with here, it should suffice.
+		require.NotEqual(t, transport, http.DefaultTransport.(*http.Transport))
 	})
 }

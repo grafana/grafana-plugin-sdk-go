@@ -127,7 +127,9 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 
 	// Basic auth
 	if v, exists := dat["basicAuth"]; exists {
-		s.BasicAuthEnabled = v.(bool)
+		if basicAuth, ok := v.(bool); ok {
+			s.BasicAuthEnabled = basicAuth
+		}
 	}
 	if s.BasicAuthEnabled {
 		if v, exists := dat["basicAuthUser"]; exists {
@@ -213,13 +215,19 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 
 	// TLS
 	if v, exists := dat["tlsAuth"]; exists {
-		s.TLSClientAuth = v.(bool)
+		if tlsClientAuth, ok := v.(bool); ok {
+			s.TLSClientAuth = tlsClientAuth
+		}
 	}
 	if v, exists := dat["tlsAuthWithCACert"]; exists {
-		s.TLSAuthWithCACert = v.(bool)
+		if tslAuthCert, ok := v.(bool); ok {
+			s.TLSAuthWithCACert = tslAuthCert
+		}
 	}
 	if v, exists := dat["tlsSkipVerify"]; exists {
-		s.TLSSkipVerify = v.(bool)
+		if tlsSkipVerify, ok := v.(bool); ok {
+			s.TLSSkipVerify = tlsSkipVerify
+		}
 	}
 
 	if s.TLSClientAuth || s.TLSAuthWithCACert {
@@ -239,7 +247,9 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 
 	// SigV4
 	if v, exists := dat["sigV4Auth"]; exists {
-		s.SigV4Auth = v.(bool)
+		if sigV4Auth, ok := v.(bool); ok {
+			s.SigV4Auth = sigV4Auth
+		}
 	}
 
 	if s.SigV4Auth {

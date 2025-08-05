@@ -52,6 +52,14 @@ var (
 		}, []string{"datasource_type", "secure_socks_ds_proxy_enabled", "endpoint"},
 	)
 
+	datasourceResponseGauge = promauto.NewGaugeVec(
+		prometheus.GaugeOpts{
+			Namespace: "plugins",
+			Name:      "datasource_response_size",
+			Help:      "gauge of data source response sizes returned to Grafana in bytes",
+		}, []string{"datasource_type", "secure_socks_ds_proxy_enabled", "endpoint"},
+	)
+
 	datasourceRequestsInFlight = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Namespace: "plugins",
@@ -128,6 +136,7 @@ func executeMiddleware(next http.RoundTripper, datasourceType string, secureSock
 		requestHistogram := datasourceRequestHistogram.MustCurryWith(labels)
 		requestInFlight := datasourceRequestsInFlight.With(labels)
 		responseSizeHistogram := datasourceResponseHistogram.With(labels)
+		responseSizeGauge := datasourceResponseGauge.With(labels)
 
 		res, err := promhttp.InstrumentRoundTripperDuration(requestHistogram,
 			promhttp.InstrumentRoundTripperCounter(requestCounter,
@@ -140,6 +149,7 @@ func executeMiddleware(next http.RoundTripper, datasourceType string, secureSock
 		if res != nil && res.StatusCode != http.StatusSwitchingProtocols {
 			res.Body = CountBytesReader(res.Body, func(bytesRead int64) {
 				responseSizeHistogram.Observe(float64(bytesRead))
+				responseSizeGauge.Set(float64(bytesRead))
 			})
 		}
 

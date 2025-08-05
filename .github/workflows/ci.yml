@@ -9,33 +9,32 @@ on:
 permissions:
   contents: read
 
-env:
-  GOLANGCI_LINT_VERSION: v1.61.0
-
 jobs:
   lint-build-test:
     name: Lint, Build, and Test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
 
       - name: Setup go
-        uses: actions/setup-go@v5
+        uses: actions/setup-go@d35c59abb061a4a6fb18e82ac0862c26744d6ab5 # 5.5.0
         with:
           go-version-file: ./go.mod
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+        uses: golangci/golangci-lint-action@55c2c1448f86e01eaae002a5a3a9624417608d84 # v6.5.2
         with:
-          version: ${{env.GOLANGCI_LINT_VERSION}}
+          version: v1.64.2
           args: |
             "./..." --timeout=7m
           skip-cache: true
           install-mode: binary
 
       - name: Setup Mage
-        uses: magefile/mage-action@v3
+        uses: magefile/mage-action@6f50bbb8ea47d56e62dee92392788acbc8192d0b # v3
         with:
           install-only: true
 

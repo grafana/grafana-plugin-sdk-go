@@ -114,18 +114,12 @@
                   "from": {
                     "description": "From is the start time of the query.",
                     "type": "string",
-                    "default": "now-6h",
-                    "examples": [
-                      "now-1h"
-                    ]
+                    "default": "now-6h"
                   },
                   "to": {
                     "description": "To is the end time of the query.",
                     "type": "string",
-                    "default": "now",
-                    "examples": [
-                      "now"
-                    ]
+                    "default": "now"
                   }
                 },
                 "additionalProperties": false
@@ -277,18 +271,12 @@
                   "from": {
                     "description": "From is the start time of the query.",
                     "type": "string",
-                    "default": "now-6h",
-                    "examples": [
-                      "now-1h"
-                    ]
+                    "default": "now-6h"
                   },
                   "to": {
                     "description": "To is the end time of the query.",
                     "type": "string",
-                    "default": "now",
-                    "examples": [
-                      "now"
-                    ]
+                    "default": "now"
                   }
                 },
                 "additionalProperties": false
@@ -410,18 +398,12 @@
                   "from": {
                     "description": "From is the start time of the query.",
                     "type": "string",
-                    "default": "now-6h",
-                    "examples": [
-                      "now-1h"
-                    ]
+                    "default": "now-6h"
                   },
                   "to": {
                     "description": "To is the end time of the query.",
                     "type": "string",
-                    "default": "now",
-                    "examples": [
-                      "now"
-                    ]
+                    "default": "now"
                   }
                 },
                 "additionalProperties": false
