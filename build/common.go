@@ -17,7 +17,7 @@ import (
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 	bra "github.com/unknwon/bra/cmd"
-	"github.com/urfave/cli"
+	"github.com/urfave/cli/v3"
 
 	"github.com/grafana/grafana-plugin-sdk-go/build/utils"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"

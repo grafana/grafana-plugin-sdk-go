@@ -31,7 +31,7 @@ require (
 	github.com/prometheus/common v0.65.0
 	github.com/stretchr/testify v1.10.0
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
-	github.com/urfave/cli v1.22.17
+	github.com/urfave/cli/v3 v3.3.9
 	go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc v0.60.0
 	go.opentelemetry.io/contrib/instrumentation/net/http/httptrace/otelhttptrace v0.62.0
 	go.opentelemetry.io/contrib/propagators/jaeger v1.37.0
@@ -52,6 +52,8 @@ require (
 	google.golang.org/protobuf v1.36.7
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // @grafana/grafana-app-platform-squad
 )
+
+require github.com/urfave/cli v1.22.1 // indirect
 
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
