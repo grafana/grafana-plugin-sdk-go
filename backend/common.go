@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -141,11 +142,11 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (htt
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
 	cfg := GrafanaConfigFromContext(ctx)
-	proxy, err := cfg.proxy()
+	proxy, err := cfg.Proxy()
 	if err != nil {
 		return opts, err
 	}
-	opts.ProxyOptions, err = s.ProxyOptions(proxy.clientCfg)
+	opts.ProxyOptions, err = s.ProxyOptions(proxy.ClientCfg)
 	if err != nil {
 		return opts, err
 	}
@@ -197,7 +198,7 @@ type PluginContext struct {
 	DataSourceInstanceSettings *DataSourceInstanceSettings
 
 	// GrafanaConfig is the configuration settings provided by Grafana.
-	GrafanaConfig *GrafanaCfg
+	GrafanaConfig *config.GrafanaCfg
 
 	// UserAgent is the user agent of the Grafana server that initiated the gRPC request.
 	// Will only be set if request is made from Grafana v10.2.0 or later.
@@ -299,11 +300,11 @@ func SecureJSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[strin
 
 func (s *DataSourceInstanceSettings) ProxyOptionsFromContext(ctx context.Context) (*proxy.Options, error) {
 	cfg := GrafanaConfigFromContext(ctx)
-	p, err := cfg.proxy()
+	p, err := cfg.Proxy()
 	if err != nil {
 		return nil, err
 	}
-	return s.ProxyOptions(p.clientCfg)
+	return s.ProxyOptions(p.ClientCfg)
 }
 
 func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*proxy.Options, error) {
@@ -360,11 +361,11 @@ func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*
 
 func (s *DataSourceInstanceSettings) ProxyClient(ctx context.Context) (proxy.Client, error) {
 	cfg := GrafanaConfigFromContext(ctx)
-	p, err := cfg.proxy()
+	p, err := cfg.Proxy()
 	if err != nil {
 		return nil, err
 	}
-	proxyOpts, err := s.ProxyOptions(p.clientCfg)
+	proxyOpts, err := s.ProxyOptions(p.ClientCfg)
 	if err != nil {
 		return nil, err
 	}
