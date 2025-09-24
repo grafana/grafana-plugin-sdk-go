@@ -6,7 +6,7 @@ import (
 	"flag"
 	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/build"
+	"github.com/grafana/grafana-plugin-sdk-go/build/info"
 )
 
 var (
@@ -27,7 +27,7 @@ func RunInfoMode() error {
 	if !InfoModeEnabled() {
 		return errors.New("build info mode not enabled")
 	}
-	bi, err := build.GetBuildInfo()
+	bi, err := info.GetBuildInfo()
 	if err != nil {
 		return fmt.Errorf("get build info: %w", err)
 	}

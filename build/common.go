@@ -19,6 +19,7 @@ import (
 	bra "github.com/unknwon/bra/cmd"
 	"github.com/urfave/cli"
 
+	"github.com/grafana/grafana-plugin-sdk-go/build/info"
 	"github.com/grafana/grafana-plugin-sdk-go/build/utils"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/e2e"
 	ca "github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/certificate_authority"
@@ -157,7 +158,7 @@ func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
 		"build", "-o", filepath.Join(outputPath, exePath),
 	}
 
-	info := Info{
+	info := info.Info{
 		Time: now().UnixNano() / int64(time.Millisecond),
 	}
 	pluginID, err := internal.GetStringValueFromJSON(filepath.Join(pluginJSONPath, "plugin.json"), "id")
@@ -172,7 +173,7 @@ func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
 	args = append(args, "-tags", "arrow_json_stdlib")
 
 	flags := make(map[string]string, 10)
-	info.appendFlags(flags)
+	info.AppendFlags(flags)
 
 	if cfg.CustomVars != nil {
 		for k, v := range cfg.CustomVars {
