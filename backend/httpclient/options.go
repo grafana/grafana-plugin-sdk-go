@@ -127,6 +127,7 @@ type SigV4Config struct {
 	Service       string
 	AccessKey     string
 	SecretKey     string
+	SessionToken  string
 	AssumeRoleARN string
 	ExternalID    string
 	Region        string
