@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
@@ -180,7 +181,7 @@ var testPluginContext = PluginContext{
 		Updated:                 time.Unix(2, 0),
 		APIVersion:              "v1",
 	},
-	GrafanaConfig: &GrafanaCfg{config: map[string]string{"key": "value"}},
+	GrafanaConfig: config.NewGrafanaCfg(map[string]string{"key": "value"}),
 	UserAgent:     testUserAgent,
 	APIVersion:    "v1",
 }
