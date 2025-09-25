@@ -153,7 +153,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "darwin"},
 				PluginJSONPath: filepath.Join(tmpDir, "foobar-datasource"),
 			},
-			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foo_darwin_arm64"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/info.buildInfoJSON={.*}'", "./pkg"},
+			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foo_darwin_arm64"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
 			wantErr:      assert.NoError,
 		},
 		{
@@ -174,7 +174,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "darwin"},
 				PluginJSONPath: filepath.Join(tmpDir, "foobar-app"),
 			},
-			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, defaultNestedDataSourcePath, "gpx_foo_darwin_arm64"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/info.buildInfoJSON={.*}'", "./pkg"},
+			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, defaultNestedDataSourcePath, "gpx_foo_darwin_arm64"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
 			wantErr:      assert.NoError,
 		},
 		{
@@ -195,7 +195,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "amd64", "GOOS": "windows"},
 				PluginJSONPath: filepath.Join(tmpDir, "foobarbaz-app"),
 			},
-			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foobarbaz_windows_amd64.exe"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/info.buildInfoJSON={.*}'", "./pkg"},
+			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foobarbaz_windows_amd64.exe"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
 			wantErr:      assert.NoError,
 		},
 	}

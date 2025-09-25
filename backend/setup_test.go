@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
-	"github.com/grafana/grafana-plugin-sdk-go/build/info"
+	"github.com/grafana/grafana-plugin-sdk-go/build/buildinfo"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
@@ -15,7 +15,7 @@ func TestGetTracingConfig(t *testing.T) {
 		name string
 
 		env             map[string]string
-		buildInfoGetter info.Getter
+		buildInfoGetter buildinfo.Getter
 
 		expEnabled bool
 		expCfg     tracingConfig
@@ -94,8 +94,8 @@ func TestGetTracingConfig(t *testing.T) {
 				PluginTracingSamplerParamEnv:                 "0.5",
 				PluginTracingSamplerRemoteURL:                "127.0.0.1:10001",
 			},
-			buildInfoGetter: info.GetterFunc(func() (info.Info, error) {
-				return info.Info{PluginID: "my-example-datasource"}, nil
+			buildInfoGetter: buildinfo.GetterFunc(func() (buildinfo.Info, error) {
+				return buildinfo.Info{PluginID: "my-example-datasource"}, nil
 			}),
 			expEnabled: true,
 			expCfg: tracingConfig{
@@ -117,7 +117,7 @@ func TestGetTracingConfig(t *testing.T) {
 				t.Setenv(e, v)
 			}
 			if tc.buildInfoGetter == nil {
-				tc.buildInfoGetter = info.GetBuildInfo
+				tc.buildInfoGetter = buildinfo.GetBuildInfo
 			}
 			cfg := getTracingConfig(tc.buildInfoGetter)
 			require.Equal(t, tc.expEnabled, cfg.isEnabled())
