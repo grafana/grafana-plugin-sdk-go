@@ -1,4 +1,4 @@
-package info
+package buildinfo
 
 import (
 	"encoding/json"
@@ -27,7 +27,7 @@ func (v Info) AppendFlags(flags map[string]string) {
 
 	out, err := json.Marshal(v)
 	if err == nil {
-		flags["github.com/grafana/grafana-plugin-sdk-go/build/info.buildInfoJSON"] = string(out)
+		flags["github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON"] = string(out)
 	}
 }
 
@@ -45,7 +45,7 @@ func (f GetterFunc) GetInfo() (Info, error) {
 }
 
 // GetBuildInfo is the default InfoGetter that returns the build information that was compiled into the binary using:
-// -X `github.com/grafana/grafana-plugin-sdk-go/build/info.buildInfoJSON={...}`
+// -X `github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={...}`
 var GetBuildInfo = GetterFunc(func() (Info, error) {
 	v := Info{}
 	if buildInfoJSON == "" {
