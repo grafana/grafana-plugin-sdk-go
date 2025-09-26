@@ -1,63 +1,100 @@
-[issues]
-exclude-files = ["data/.*\\.gen\\.go", "data/generic_nullable_vector\\.go", "data/generic_vector\\.go"]
+version = '2'
 
-[linters-settings.goconst]
+[linters]
+default = 'none'
+enable = [
+  'asciicheck',
+  'bodyclose',
+  'copyloopvar',
+  'depguard',
+  'dogsled',
+  'errcheck',
+  'errorlint',
+  'gochecknoinits',
+  'goconst',
+  'gocritic',
+  'gocyclo',
+  'goprintffuncname',
+  'gosec',
+  'govet',
+  'ineffassign',
+  'misspell',
+  'nakedret',
+  'revive',
+  'rowserrcheck',
+  'sqlclosecheck',
+  'staticcheck',
+  'thelper',
+  'unconvert',
+  'unparam',
+  'unused',
+  'whitespace'
+]
+
+[linters.settings]
+[linters.settings.depguard]
+[linters.settings.depguard.rules]
+[linters.settings.depguard.rules.main]
+[[linters.settings.depguard.rules.main.deny]]
+pkg = 'io/ioutil'
+desc = 'Deprecated: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details.'
+
+[linters.settings.goconst]
 min-len = 5
 min-occurrences = 5
 
-[linters-settings.revive]
-ignore-generated-header = false
-
-[linters-settings.misspell]
-ignore-words = ["unknwon"]
-
-[linters-settings.depguard.rules.main]
-allow = [] # allow all
-deny = [
-  { pkg = "io/ioutil", desc = "Deprecated: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details." },
+[linters.settings.gosec]
+excludes = [
+  'G115'
 ]
 
-[linters]
-disable-all = true
-enable = [
-  "bodyclose",
-  "depguard",
-  "dogsled",
-  "errcheck",
-  "gochecknoinits",
-  "goconst",
-  "gocritic",
-  "goimports",
-  "goprintffuncname",
-  "gosec",
-  "gosimple",
-  "govet",
-  "ineffassign",
-  "misspell",
-  "nakedret",
-  "rowserrcheck",
-  "copyloopvar",
-  "staticcheck",
-  "stylecheck",
-  "typecheck",
-  "unconvert",
-  "unused",
-  "whitespace",
-  "gocyclo",
-  "unparam",
-  "dogsled",
-  "asciicheck",
-  "errorlint",
-  "sqlclosecheck",
-  "thelper",
-  "revive"
+[linters.settings.misspell]
+ignore-rules = [
+  'unknwon'
 ]
+
+[linters.exclusions]
+generated = 'lax'
+presets = [
+  'comments',
+  'common-false-positives',
+  'legacy',
+  'std-error-handling'
+]
+paths = [
+  'data/.*\.gen\.go',
+  'data/generic_nullable_vector\.go',
+  'data/generic_vector\.go',
+  'third_party$',
+  'builtin$',
+  'examples$'
+]
+
 # Don't require that errors are included through wrapping, since might not always want to wrap an error
-[[issues.exclude-rules]]
-linters = ["errorlint"]
-text = "non-wrapping format verb for fmt.Errorf"
-[[issues.exclude-rules]]
-linters = ["staticcheck"]
-text = "SA1019"
-[linters-settings.gosec]
-excludes = ["G115"]
+[[linters.exclusions.rules]]
+linters = [
+  'errorlint'
+]
+text = 'non-wrapping format verb for fmt.Errorf'
+
+[[linters.exclusions.rules]]
+linters = [
+  'staticcheck'
+]
+text = 'SA1019'
+
+[formatters]
+enable = [
+  'goimports'
+]
+
+[formatters.exclusions]
+generated = 'lax'
+paths = [
+  'data/.*\.gen\.go',
+  'data/generic_nullable_vector\.go',
+  'data/generic_vector\.go',
+  'third_party$',
+  'builtin$',
+  'examples$'
+]
