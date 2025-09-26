@@ -21,7 +21,7 @@ func TestInstanceManager(t *testing.T) {
 	}
 
 	tip := &testInstanceProvider{}
-	im := New(tip)
+	im := NewWithOptions(tip, defaultInstanceTTL, defaultInstanceCleanup, time.Millisecond)
 
 	t.Run("When getting instance should create a new instance", func(t *testing.T) {
 		instance, err := im.Get(ctx, pCtx)
@@ -43,11 +43,6 @@ func TestInstanceManager(t *testing.T) {
 					Updated: time.Now(),
 				},
 			}
-			origDisposeTTL := disposeTTL
-			disposeTTL = time.Millisecond
-			t.Cleanup(func() {
-				disposeTTL = origDisposeTTL
-			})
 			newInstance, err := im.Get(ctx, pCtxUpdated)
 
 			t.Run("New instance should be created", func(t *testing.T) {
@@ -66,6 +61,44 @@ func TestInstanceManager(t *testing.T) {
 				require.True(t, instance.(*testInstance).disposed.Load())
 				require.Equal(t, int64(1), instance.(*testInstance).disposedTimes.Load())
 			})
+		})
+	})
+}
+
+func TestInstanceManagerExpiration(t *testing.T) {
+	ctx := context.Background()
+	pCtx := backend.PluginContext{
+		OrgID: 1,
+		AppInstanceSettings: &backend.AppInstanceSettings{
+			Updated: time.Now(),
+		},
+	}
+
+	tip := &testInstanceProvider{}
+	im := NewWithOptions(tip, time.Millisecond, 2*time.Millisecond, 10*time.Millisecond)
+
+	instance, err := im.Get(ctx, pCtx)
+	require.NoError(t, err)
+	require.NotNil(t, instance)
+	require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID)
+	require.Equal(t, pCtx.AppInstanceSettings.Updated, instance.(*testInstance).updated)
+
+	t.Run("After expiration", func(t *testing.T) {
+		instance.(*testInstance).wg.Wait()
+		require.True(t, instance.(*testInstance).disposed.Load())
+		require.Equal(t, int64(1), instance.(*testInstance).disposedTimes.Load())
+
+		newInstance, err := im.Get(ctx, pCtx)
+
+		t.Run("New instance should be created", func(t *testing.T) {
+			require.NoError(t, err)
+			require.NotNil(t, newInstance)
+			require.Equal(t, pCtx.OrgID, newInstance.(*testInstance).orgID)
+			require.Equal(t, pCtx.AppInstanceSettings.Updated, newInstance.(*testInstance).updated)
+		})
+
+		t.Run("New instance should not be the same as old instance", func(t *testing.T) {
+			require.NotSame(t, instance, newInstance)
 		})
 	})
 }
@@ -110,12 +143,6 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 	})
 
 	t.Run("Check possible race condition issues when re-creating instance on settings update", func(t *testing.T) {
-		origDisposeTTL := disposeTTL
-		disposeTTL = time.Millisecond
-		t.Cleanup(func() {
-			disposeTTL = origDisposeTTL
-		})
-
 		ctx := context.Background()
 		initialPCtx := backend.PluginContext{
 			OrgID: 1,
@@ -124,7 +151,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 			},
 		}
 		tip := &testInstanceProvider{}
-		im := New(tip)
+		im := NewWithOptions(tip, defaultInstanceTTL, defaultInstanceCleanup, time.Millisecond)
 		// Creating initial instance with old contexts
 		instanceToDispose, _ := im.Get(ctx, initialPCtx)
 
