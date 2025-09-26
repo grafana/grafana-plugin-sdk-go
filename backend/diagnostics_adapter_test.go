@@ -8,6 +8,7 @@ import (
 
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/common/expfmt"
+	"github.com/prometheus/common/model"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
@@ -27,7 +28,7 @@ func TestCollectMetrcis(t *testing.T) {
 	require.NotNil(t, res.Metrics.Prometheus)
 
 	reader := bytes.NewReader(res.Metrics.Prometheus)
-	var parser expfmt.TextParser
+	parser := expfmt.NewTextParser(model.UTF8Validation)
 	mfs, err := parser.TextToMetricFamilies(reader)
 	require.NoError(t, err)
 	require.Contains(t, mfs, "go_gc_duration_seconds")
