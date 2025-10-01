@@ -67,66 +67,67 @@ type Fields []*Field
 func NewField(name string, labels Labels, values interface{}) *Field {
 	var vec vector
 	switch v := values.(type) {
+	// Use generic vectors for basic types (performance optimized)
 	case []int8:
-		vec = newInt8VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*int8:
-		vec = newNullableInt8VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []int16:
-		vec = newInt16VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*int16:
-		vec = newNullableInt16VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []int32:
-		vec = newInt32VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*int32:
-		vec = newNullableInt32VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []int64:
-		vec = newInt64VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*int64:
-		vec = newNullableInt64VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []uint8:
-		vec = newUint8VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*uint8:
-		vec = newNullableUint8VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []uint16:
-		vec = newUint16VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*uint16:
-		vec = newNullableUint16VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []uint32:
-		vec = newUint32VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*uint32:
-		vec = newNullableUint32VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []uint64:
-		vec = newUint64VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*uint64:
-		vec = newNullableUint64VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []float32:
-		vec = newFloat32VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*float32:
-		vec = newNullableFloat32VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []float64:
-		vec = newFloat64VectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*float64:
-		vec = newNullableFloat64VectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []string:
-		vec = newStringVectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*string:
-		vec = newNullableStringVectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []bool:
-		vec = newBoolVectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*bool:
-		vec = newNullableBoolVectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []time.Time:
-		vec = newTimeTimeVectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*time.Time:
-		vec = newNullableTimeTimeVectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []json.RawMessage:
-		vec = newJsonRawMessageVectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*json.RawMessage:
-		vec = newNullableJsonRawMessageVectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	case []EnumItemIndex:
-		vec = newEnumVectorWithValues(v)
+		vec = newGenericVectorWithValues(v)
 	case []*EnumItemIndex:
-		vec = newNullableEnumVectorWithValues(v)
+		vec = newNullableGenericVectorWithValues(v)
 	default:
 		panic(fmt.Errorf("field '%s' specified with unsupported type %T", name, v))
 	}
@@ -257,10 +258,20 @@ func (f *Field) SetConfig(conf *FieldConfig) *Field {
 // an error if ParseFloat errors. If the value is nil, NaN is returned.
 // nolint:gocyclo
 func (f *Field) FloatAt(idx int) (float64, error) {
+	// Fast path: Use typed accessors for generic vectors (zero allocation)
 	switch f.Type() {
 	case FieldTypeInt8:
+		if gv, ok := f.vector.(*genericVector[int8]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(int8)), nil
 	case FieldTypeNullableInt8:
+		if gv, ok := f.vector.(*nullableGenericVector[int8]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		iv := f.At(idx).(*int8)
 		if iv == nil {
 			return math.NaN(), nil
@@ -268,8 +279,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return float64(*iv), nil
 
 	case FieldTypeInt16:
+		if gv, ok := f.vector.(*genericVector[int16]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(int16)), nil
 	case FieldTypeNullableInt16:
+		if gv, ok := f.vector.(*nullableGenericVector[int16]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		iv := f.At(idx).(*int16)
 		if iv == nil {
 			return math.NaN(), nil
@@ -277,8 +297,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return float64(*iv), nil
 
 	case FieldTypeInt32:
+		if gv, ok := f.vector.(*genericVector[int32]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(int32)), nil
 	case FieldTypeNullableInt32:
+		if gv, ok := f.vector.(*nullableGenericVector[int32]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		iv := f.At(idx).(*int32)
 		if iv == nil {
 			return math.NaN(), nil
@@ -286,8 +315,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return float64(*iv), nil
 
 	case FieldTypeInt64:
+		if gv, ok := f.vector.(*genericVector[int64]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(int64)), nil
 	case FieldTypeNullableInt64:
+		if gv, ok := f.vector.(*nullableGenericVector[int64]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		iv := f.At(idx).(*int64)
 		if iv == nil {
 			return math.NaN(), nil
@@ -295,8 +333,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return float64(*iv), nil
 
 	case FieldTypeUint8:
+		if gv, ok := f.vector.(*genericVector[uint8]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(uint8)), nil
 	case FieldTypeNullableUint8:
+		if gv, ok := f.vector.(*nullableGenericVector[uint8]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		uiv := f.At(idx).(*uint8)
 		if uiv == nil {
 			return math.NaN(), nil
@@ -304,8 +351,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return float64(*uiv), nil
 
 	case FieldTypeUint16:
+		if gv, ok := f.vector.(*genericVector[uint16]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(uint16)), nil
 	case FieldTypeNullableUint16:
+		if gv, ok := f.vector.(*nullableGenericVector[uint16]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		uiv := f.At(idx).(*uint16)
 		if uiv == nil {
 			return math.NaN(), nil
@@ -313,8 +369,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return float64(*uiv), nil
 
 	case FieldTypeUint32:
+		if gv, ok := f.vector.(*genericVector[uint32]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(uint32)), nil
 	case FieldTypeNullableUint32:
+		if gv, ok := f.vector.(*nullableGenericVector[uint32]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		uiv := f.At(idx).(*uint32)
 		if uiv == nil {
 			return math.NaN(), nil
@@ -324,8 +389,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 	// TODO: third param for loss of precision?
 	// Maybe something in math/big can help with this (also see https://github.com/golang/go/issues/29463).
 	case FieldTypeUint64:
+		if gv, ok := f.vector.(*genericVector[uint64]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(uint64)), nil
 	case FieldTypeNullableUint64:
+		if gv, ok := f.vector.(*nullableGenericVector[uint64]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		uiv := f.At(idx).(*uint64)
 		if uiv == nil {
 			return math.NaN(), nil
@@ -333,8 +407,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return float64(*uiv), nil
 
 	case FieldTypeFloat32:
+		if gv, ok := f.vector.(*genericVector[float32]); ok {
+			return float64(gv.AtTyped(idx)), nil
+		}
 		return float64(f.At(idx).(float32)), nil
 	case FieldTypeNullableFloat32:
+		if gv, ok := f.vector.(*nullableGenericVector[float32]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val), nil
+			}
+			return math.NaN(), nil
+		}
 		fv := f.At(idx).(*float32)
 		if fv == nil {
 			return math.NaN(), nil
@@ -342,8 +425,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return float64(*fv), nil
 
 	case FieldTypeFloat64:
+		if gv, ok := f.vector.(*genericVector[float64]); ok {
+			return gv.AtTyped(idx), nil
+		}
 		return f.At(idx).(float64), nil
 	case FieldTypeNullableFloat64:
+		if gv, ok := f.vector.(*nullableGenericVector[float64]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return val, nil
+			}
+			return math.NaN(), nil
+		}
 		fv := f.At(idx).(*float64)
 		if fv == nil {
 			return math.NaN(), nil
@@ -351,6 +443,13 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return *fv, nil
 
 	case FieldTypeString:
+		if gv, ok := f.vector.(*genericVector[string]); ok {
+			ft, err := strconv.ParseFloat(gv.AtTyped(idx), 64)
+			if err != nil {
+				return 0, err
+			}
+			return ft, nil
+		}
 		s := f.At(idx).(string)
 		ft, err := strconv.ParseFloat(s, 64)
 		if err != nil {
@@ -358,6 +457,16 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		}
 		return ft, nil
 	case FieldTypeNullableString:
+		if gv, ok := f.vector.(*nullableGenericVector[string]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				ft, err := strconv.ParseFloat(val, 64)
+				if err != nil {
+					return 0, err
+				}
+				return ft, nil
+			}
+			return math.NaN(), nil
+		}
 		s := f.At(idx).(*string)
 		if s == nil {
 			return math.NaN(), nil
@@ -369,12 +478,24 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return ft, nil
 
 	case FieldTypeBool:
+		if gv, ok := f.vector.(*genericVector[bool]); ok {
+			if gv.AtTyped(idx) {
+				return 1, nil
+			}
+			return 0, nil
+		}
 		if f.At(idx).(bool) {
 			return 1, nil
 		}
 		return 0, nil
 
 	case FieldTypeNullableBool:
+		if gv, ok := f.vector.(*nullableGenericVector[bool]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok && val {
+				return 1, nil
+			}
+			return 0, nil
+		}
 		b := f.At(idx).(*bool)
 		if b == nil || !*b {
 			return 0, nil
@@ -382,8 +503,17 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return 1, nil
 
 	case FieldTypeTime:
+		if gv, ok := f.vector.(*genericVector[time.Time]); ok {
+			return float64(gv.AtTyped(idx).UnixNano() / int64(time.Millisecond)), nil
+		}
 		return float64(f.At(idx).(time.Time).UnixNano() / int64(time.Millisecond)), nil
 	case FieldTypeNullableTime:
+		if gv, ok := f.vector.(*nullableGenericVector[time.Time]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				return float64(val.UnixNano() / int64(time.Millisecond)), nil
+			}
+			return math.NaN(), nil
+		}
 		t := f.At(idx).(*time.Time)
 		if t == nil {
 			return math.NaN(), nil
@@ -405,72 +535,136 @@ func (f *Field) NullableFloatAt(idx int) (*float64, error) {
 		return &fv, nil
 	}
 
+	// Fast path: Use typed accessors for generic vectors (reduces allocation)
 	switch f.Type() {
 	case FieldTypeNullableInt8:
+		if gv, ok := f.vector.(*nullableGenericVector[int8]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		iv := f.At(idx).(*int8)
 		if iv == nil {
 			return nil, nil
 		}
-		f := float64(*iv)
-		return &f, nil
+		fv := float64(*iv)
+		return &fv, nil
 
 	case FieldTypeNullableInt16:
+		if gv, ok := f.vector.(*nullableGenericVector[int16]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		iv := f.At(idx).(*int16)
 		if iv == nil {
 			return nil, nil
 		}
-		f := float64(*iv)
-		return &f, nil
+		fv := float64(*iv)
+		return &fv, nil
 
 	case FieldTypeNullableInt32:
+		if gv, ok := f.vector.(*nullableGenericVector[int32]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		iv := f.At(idx).(*int32)
 		if iv == nil {
 			return nil, nil
 		}
-		f := float64(*iv)
-		return &f, nil
+		fv := float64(*iv)
+		return &fv, nil
 
 	case FieldTypeNullableInt64:
+		if gv, ok := f.vector.(*nullableGenericVector[int64]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		iv := f.At(idx).(*int64)
 		if iv == nil {
 			return nil, nil
 		}
-		f := float64(*iv)
-		return &f, nil
+		fv := float64(*iv)
+		return &fv, nil
 
 	case FieldTypeNullableUint8:
+		if gv, ok := f.vector.(*nullableGenericVector[uint8]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		uiv := f.At(idx).(*uint8)
 		if uiv == nil {
 			return nil, nil
 		}
-		f := float64(*uiv)
-		return &f, nil
+		fv := float64(*uiv)
+		return &fv, nil
 
 	case FieldTypeNullableUint16:
+		if gv, ok := f.vector.(*nullableGenericVector[uint16]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		uiv := f.At(idx).(*uint16)
 		if uiv == nil {
 			return nil, nil
 		}
-		f := float64(*uiv)
-		return &f, nil
+		fv := float64(*uiv)
+		return &fv, nil
 
 	case FieldTypeNullableUint32:
+		if gv, ok := f.vector.(*nullableGenericVector[uint32]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		uiv := f.At(idx).(*uint32)
 		if uiv == nil {
 			return nil, nil
 		}
-		f := float64(*uiv)
-		return &f, nil
+		fv := float64(*uiv)
+		return &fv, nil
 
 	case FieldTypeNullableUint64:
+		if gv, ok := f.vector.(*nullableGenericVector[uint64]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		uiv := f.At(idx).(*uint64)
 		if uiv == nil {
 			return nil, nil
 		}
-		f := float64(*uiv)
-		return &f, nil
+		fv := float64(*uiv)
+		return &fv, nil
 
 	case FieldTypeNullableFloat32:
+		if gv, ok := f.vector.(*nullableGenericVector[float32]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val)
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		fv := f.At(idx).(*float32)
 		if fv == nil {
 			return nil, nil
@@ -479,6 +673,9 @@ func (f *Field) NullableFloatAt(idx int) (*float64, error) {
 		return &f, nil
 
 	case FieldTypeNullableFloat64:
+		if gv, ok := f.vector.(*nullableGenericVector[float64]); ok {
+			return gv.AtTyped(idx), nil
+		}
 		fv := f.At(idx).(*float64)
 		if fv == nil {
 			return nil, nil
@@ -486,6 +683,16 @@ func (f *Field) NullableFloatAt(idx int) (*float64, error) {
 		return fv, nil
 
 	case FieldTypeNullableString:
+		if gv, ok := f.vector.(*nullableGenericVector[string]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				ft, err := strconv.ParseFloat(val, 64)
+				if err != nil {
+					return nil, err
+				}
+				return &ft, nil
+			}
+			return nil, nil
+		}
 		s := f.At(idx).(*string)
 		if s == nil {
 			return nil, nil
@@ -497,23 +704,40 @@ func (f *Field) NullableFloatAt(idx int) (*float64, error) {
 		return &ft, nil
 
 	case FieldTypeNullableBool:
+		if gv, ok := f.vector.(*nullableGenericVector[bool]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := 0.0
+				if val {
+					fv = 1.0
+				}
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		b := f.At(idx).(*bool)
 		if b == nil {
 			return nil, nil
 		}
-		f := 0.0
+		fv := 0.0
 		if *b {
-			f = 1.0
+			fv = 1.0
 		}
-		return &f, nil
+		return &fv, nil
 
 	case FieldTypeNullableTime:
+		if gv, ok := f.vector.(*nullableGenericVector[time.Time]); ok {
+			if val, ok := gv.ConcreteAtTyped(idx); ok {
+				fv := float64(val.UnixNano() / int64(time.Millisecond))
+				return &fv, nil
+			}
+			return nil, nil
+		}
 		t := f.At(idx).(*time.Time)
 		if t == nil {
 			return nil, nil
 		}
-		f := float64(t.UnixNano() / int64(time.Millisecond))
-		return &f, nil
+		fv := float64(t.UnixNano() / int64(time.Millisecond))
+		return &fv, nil
 	}
 	return nil, fmt.Errorf("unsupported field type %T", f.Type())
 }
