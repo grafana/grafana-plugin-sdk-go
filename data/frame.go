@@ -100,7 +100,7 @@ func (frames *Frames) UnmarshalJSON(b []byte) error {
 // to the Field type or AppendRow will panic.
 func (f *Frame) AppendRow(vals ...interface{}) {
 	for i, v := range vals {
-		f.Fields[i].vector.Append(v)
+		appendTypedToVector(f.Fields[i].vector, v)
 	}
 }
 
@@ -112,7 +112,7 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 // If rowIdx exceeds the Field length, this method will panic.
 func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
-		f.Fields[i].vector.Insert(rowIdx, v)
+		insertTypedInVector(f.Fields[i].vector, rowIdx, v)
 	}
 }
 
@@ -129,7 +129,7 @@ func (f *Frame) DeleteRow(rowIdx int) {
 // SetRow calls each field's Set which sets the Field's value at index idx to val.
 func (f *Frame) SetRow(rowIdx int, vals ...interface{}) {
 	for i, v := range vals {
-		f.Fields[i].vector.Set(rowIdx, v)
+		setTypedInVector(f.Fields[i].vector, rowIdx, v)
 	}
 }
 
@@ -261,7 +261,7 @@ func (f *Frame) CopyAt(fieldIdx int, rowIdx int) interface{} {
 // It will panic if either fieldIdx or rowIdx are out of range or
 // if the underlying type of val does not match the element type of the Field.
 func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
-	f.Fields[fieldIdx].vector.Set(rowIdx, val)
+	setTypedInVector(f.Fields[fieldIdx].vector, rowIdx, val)
 }
 
 // SetConcrete sets the val at the specified fieldIdx and rowIdx.
@@ -270,7 +270,7 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 // is not nullable this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
 func (f *Frame) SetConcrete(fieldIdx int, rowIdx int, val interface{}) {
-	f.Fields[fieldIdx].vector.SetConcrete(rowIdx, val)
+	setConcreteTypedInVector(f.Fields[fieldIdx].vector, rowIdx, val)
 }
 
 // Extend extends all the Fields by length by i.
@@ -426,7 +426,40 @@ func FrameTestCompareOptions() []cmp.Option {
 	})
 
 	unexportedField := cmp.AllowUnexported(Field{})
-	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, metas, rawjs, unexportedField, cmpopts.EquateEmpty()}
+
+	// Custom comparer for generic vectors - compares via exported interface methods
+	vectorComparer := cmp.Comparer(func(x, y vector) bool {
+		if x == nil && y == nil {
+			return true
+		}
+		if x == nil || y == nil {
+			return false
+		}
+		if x.Len() != y.Len() {
+			return false
+		}
+		if x.Type() != y.Type() {
+			return false
+		}
+		// Compare each element through the interface
+		for i := 0; i < x.Len(); i++ {
+			xVal := x.At(i)
+			yVal := y.At(i)
+			if x.NilAt(i) != y.NilAt(i) {
+				return false
+			}
+			if x.NilAt(i) {
+				continue // both nil
+			}
+			// Use reflect.DeepEqual for interface{} comparison
+			if !cmp.Equal(xVal, yVal, f32s, f32Ptrs, f64s, f64Ptrs, rawjs) {
+				return false
+			}
+		}
+		return true
+	})
+
+	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, metas, rawjs, unexportedField, vectorComparer, cmpopts.EquateEmpty()}
 }
 
 const maxLengthExceededStr = "..."
