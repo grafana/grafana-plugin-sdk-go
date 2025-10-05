@@ -45,6 +45,7 @@ type HTTPSettings struct {
 	SigV4Profile       string
 	SigV4AccessKey     string
 	SigV4SecretKey     string
+	SigV4SessionToken  string
 
 	JSONData       map[string]interface{}
 	SecureJSONData map[string]string
@@ -93,6 +94,7 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 			Profile:       s.SigV4Profile,
 			AccessKey:     s.SigV4AccessKey,
 			SecretKey:     s.SigV4SecretKey,
+			SessionToken:  s.SigV4SessionToken,
 			AssumeRoleARN: s.SigV4AssumeRoleARN,
 			ExternalID:    s.SigV4ExternalID,
 			Region:        s.SigV4Region,
@@ -273,6 +275,9 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		}
 		if v, exists := secureJSONData["sigV4SecretKey"]; exists {
 			s.SigV4SecretKey = v
+		}
+		if v, exists := secureJSONData["sigV4SessionToken"]; exists {
+			s.SigV4SessionToken = v
 		}
 	}
 
