@@ -1730,6 +1730,7 @@ func writeLabelsMap(stream *jsoniter.Stream, labels map[string]string) {
 
 // writeFieldConfig writes FieldConfig without full reflection
 // This manually serializes common simple fields and uses WriteVal for complex nested structures
+// nolint:gocyclo
 func writeFieldConfig(stream *jsoniter.Stream, config *FieldConfig) {
 	stream.WriteObjectStart()
 	needsComma := false
@@ -1895,7 +1896,7 @@ func writeFieldConfig(stream *jsoniter.Stream, config *FieldConfig) {
 		}
 		stream.WriteObjectField("custom")
 		stream.WriteVal(config.Custom)
-		needsComma = true
+		// needsComma = true last comma is not used
 	}
 
 	stream.WriteObjectEnd()

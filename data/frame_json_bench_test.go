@@ -225,6 +225,7 @@ func BenchmarkFrameUnmarshalJSON_Sizes(b *testing.B) {
 }
 
 // BenchmarkFrameMarshalJSON_FieldTypes benchmarks specific field types to isolate optimized paths
+// nolint:gocyclo
 func BenchmarkFrameMarshalJSON_FieldTypes(b *testing.B) {
 	size := 1000
 
