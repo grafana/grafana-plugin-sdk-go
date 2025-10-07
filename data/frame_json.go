@@ -540,9 +540,348 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		}
 
 		return vals, nil
+
+	case FieldTypeFloat64:
+		vals := newGenericVector[float64](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(float64(0))
+			} else {
+				v := iter.ReadFloat64()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableFloat64:
+		vals := newNullableGenericVector[float64](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadFloat64()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeFloat32:
+		vals := newGenericVector[float32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(float32(0))
+			} else {
+				v := iter.ReadFloat32()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableFloat32:
+		vals := newNullableGenericVector[float32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadFloat32()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeString:
+		vals := newGenericVector[string](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append("")
+			} else {
+				v := iter.ReadString()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableString:
+		vals := newNullableGenericVector[string](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadString()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeBool:
+		vals := newGenericVector[bool](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(false)
+			} else {
+				v := iter.ReadBool()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableBool:
+		vals := newNullableGenericVector[bool](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadBool()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeTime:
+		vals := newGenericVector[time.Time](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(time.Time{})
+			} else {
+				ms := iter.ReadInt64()
+				tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6)).UTC()
+				vals.Append(tv)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableTime:
+		vals := newNullableGenericVector[time.Time](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				ms := iter.ReadInt64()
+				tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6)).UTC()
+				vals.Append(&tv)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeInt8:
+		vals := newGenericVector[int8](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(int8(0))
+			} else {
+				v := iter.ReadInt8()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableInt8:
+		vals := newNullableGenericVector[int8](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadInt8()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeInt16:
+		vals := newGenericVector[int16](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(int16(0))
+			} else {
+				v := iter.ReadInt16()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableInt16:
+		vals := newNullableGenericVector[int16](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadInt16()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeInt32:
+		vals := newGenericVector[int32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(int32(0))
+			} else {
+				v := iter.ReadInt32()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableInt32:
+		vals := newNullableGenericVector[int32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadInt32()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeUint8:
+		vals := newGenericVector[uint8](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(uint8(0))
+			} else {
+				v := iter.ReadUint8()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableUint8:
+		vals := newNullableGenericVector[uint8](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadUint8()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeUint16:
+		vals := newGenericVector[uint16](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(uint16(0))
+			} else {
+				v := iter.ReadUint16()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableUint16:
+		vals := newNullableGenericVector[uint16](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadUint16()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeUint32:
+		vals := newGenericVector[uint32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(uint32(0))
+			} else {
+				v := iter.ReadUint32()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableUint32:
+		vals := newNullableGenericVector[uint32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadUint32()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeEnum:
+		vals := newGenericVector[EnumItemIndex](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(EnumItemIndex(0))
+			} else {
+				v := iter.ReadUint16()
+				vals.Append(EnumItemIndex(v))
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableEnum:
+		vals := newNullableGenericVector[EnumItemIndex](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadUint16()
+				e := EnumItemIndex(v)
+				vals.Append(&e)
+			}
+		}
+		return vals, nil
 	}
 
-	// if it's not uint64 field, handle the array the old way
+	// if it's not one of the above types with fast paths, handle the array the old way
 	convert := func(v interface{}) (interface{}, error) {
 		return v, nil
 	}
@@ -1730,6 +2069,7 @@ func writeLabelsMap(stream *jsoniter.Stream, labels map[string]string) {
 
 // writeFieldConfig writes FieldConfig without full reflection
 // This manually serializes common simple fields and uses WriteVal for complex nested structures
+// nolint:gocyclo
 func writeFieldConfig(stream *jsoniter.Stream, config *FieldConfig) {
 	stream.WriteObjectStart()
 	needsComma := false
@@ -1895,7 +2235,7 @@ func writeFieldConfig(stream *jsoniter.Stream, config *FieldConfig) {
 		}
 		stream.WriteObjectField("custom")
 		stream.WriteVal(config.Custom)
-		needsComma = true
+		// needsComma = true last comma is not used
 	}
 
 	stream.WriteObjectEnd()
