@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
@@ -22,6 +23,19 @@ const metadataKeyLabels = "labels" // labels serialized as JSON
 const metadataKeyTSType = "tstype" // typescript type
 const metadataKeyRefID = "refId"   // added to the table metadata
 
+// Object pools for frequently allocated objects to reduce GC pressure
+var (
+	// arrowAllocatorPool pools Arrow memory allocators to avoid repeated allocation overhead
+	arrowAllocatorPool = sync.Pool{
+		New: func() interface{} { return memory.NewGoAllocator() },
+	}
+
+	// fileBufferPool pools filebuffer.Buffer instances for Arrow marshaling/unmarshaling
+	fileBufferPool = sync.Pool{
+		New: func() interface{} { return filebuffer.New(nil) },
+	}
+)
+
 // MarshalArrow converts the Frame to an arrow table and returns a byte
 // representation of that table.
 // All fields of a Frame must be of the same length or an error is returned.
@@ -35,10 +49,10 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	tableReader := array.NewTableReader(table, -1)
 	defer tableReader.Release()
 
-	// Arrow tables with the Go API are written to files, so we create a fake
-	// file buffer that the FileWriter can write to. In the future, and with
-	// streaming, I think will likely be using the Arrow message type some how.
-	fb := filebuffer.New(nil)
+	// Get filebuffer from pool to reduce allocations
+	fb := fileBufferPool.Get().(*filebuffer.Buffer)
+	fb.Buff.Reset() // Reset buffer for reuse
+	defer fileBufferPool.Put(fb)
 
 	fw, err := ipc.NewFileWriter(fb, ipc.WithSchema(tableReader.Schema()))
 	if err != nil {
@@ -59,7 +73,10 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 		return nil, err
 	}
 
-	return fb.Buff.Bytes(), nil
+	// Copy bytes before returning buffer to pool
+	result := make([]byte, fb.Buff.Len())
+	copy(result, fb.Buff.Bytes())
+	return result, nil
 }
 
 // FrameToArrowTable creates a new arrow.Table from a data frame
@@ -135,7 +152,10 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 // buildArrowColumns builds Arrow columns from a Frame.
 // nolint:gocyclo
 func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]arrow.Column, error) {
-	pool := memory.NewGoAllocator()
+	// Get allocator from pool to reduce allocation overhead
+	pool := arrowAllocatorPool.Get().(memory.Allocator)
+	defer arrowAllocatorPool.Put(pool)
+
 	columns := make([]arrow.Column, len(f.Fields))
 
 	for fieldIdx, field := range f.Fields {
@@ -315,7 +335,7 @@ func getMDKey(key string, metaData arrow.Metadata) (string, bool) {
 	return metaData.Values()[idx], true
 }
 
-func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
+func initializeFrameFields(schema *arrow.Schema, frame *Frame, capacity int) ([]bool, error) {
 	nullable := make([]bool, len(schema.Fields()))
 	for idx, field := range schema.Fields() {
 		sdkField := Field{
@@ -336,7 +356,7 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 			}
 		}
 		nullable[idx] = field.Nullable
-		if err := initializeFrameField(field, idx, nullable, &sdkField); err != nil {
+		if err := initializeFrameField(field, idx, nullable, &sdkField, capacity); err != nil {
 			return nil, err
 		}
 
@@ -346,107 +366,107 @@ func initializeFrameFields(schema *arrow.Schema, frame *Frame) ([]bool, error) {
 }
 
 // nolint:gocyclo
-func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField *Field) error {
+func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField *Field, capacity int) error {
 	switch field.Type.ID() {
 	case arrow.STRING:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[string](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[string](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[string](0)
+		sdkField.vector = newGenericVectorWithCapacity[string](capacity)
 	case arrow.STRING_VIEW:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[string](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[string](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[string](0)
+		sdkField.vector = newGenericVectorWithCapacity[string](capacity)
 	case arrow.INT8:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[int8](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[int8](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[int8](0)
+		sdkField.vector = newGenericVectorWithCapacity[int8](capacity)
 	case arrow.INT16:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[int16](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[int16](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[int16](0)
+		sdkField.vector = newGenericVectorWithCapacity[int16](capacity)
 	case arrow.INT32:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[int32](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[int32](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[int32](0)
+		sdkField.vector = newGenericVectorWithCapacity[int32](capacity)
 	case arrow.INT64:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[int64](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[int64](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[int64](0)
+		sdkField.vector = newGenericVectorWithCapacity[int64](capacity)
 	case arrow.UINT8:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[uint8](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[uint8](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[uint8](0)
+		sdkField.vector = newGenericVectorWithCapacity[uint8](capacity)
 	case arrow.UINT16:
 		tstype, ok := getMDKey(metadataKeyTSType, field.Metadata)
 		if ok && tstype == simpleTypeEnum {
 			if nullable[idx] {
-				sdkField.vector = newNullableGenericVector[EnumItemIndex](0)
+				sdkField.vector = newNullableGenericVectorWithCapacity[EnumItemIndex](capacity)
 			} else {
-				sdkField.vector = newGenericVector[EnumItemIndex](0)
+				sdkField.vector = newGenericVectorWithCapacity[EnumItemIndex](capacity)
 			}
 			break
 		}
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[uint16](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[uint16](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[uint16](0)
+		sdkField.vector = newGenericVectorWithCapacity[uint16](capacity)
 	case arrow.UINT32:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[uint32](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[uint32](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[uint32](0)
+		sdkField.vector = newGenericVectorWithCapacity[uint32](capacity)
 	case arrow.UINT64:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[uint64](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[uint64](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[uint64](0)
+		sdkField.vector = newGenericVectorWithCapacity[uint64](capacity)
 	case arrow.FLOAT32:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[float32](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[float32](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[float32](0)
+		sdkField.vector = newGenericVectorWithCapacity[float32](capacity)
 	case arrow.FLOAT64:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[float64](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[float64](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[float64](0)
+		sdkField.vector = newGenericVectorWithCapacity[float64](capacity)
 	case arrow.BOOL:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[bool](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[bool](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[bool](0)
+		sdkField.vector = newGenericVectorWithCapacity[bool](capacity)
 	case arrow.TIMESTAMP:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[time.Time](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[time.Time](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[time.Time](0)
+		sdkField.vector = newGenericVectorWithCapacity[time.Time](capacity)
 	case arrow.BINARY:
 		if nullable[idx] {
-			sdkField.vector = newNullableGenericVector[json.RawMessage](0)
+			sdkField.vector = newNullableGenericVectorWithCapacity[json.RawMessage](capacity)
 			break
 		}
-		sdkField.vector = newGenericVector[json.RawMessage](0)
+		sdkField.vector = newGenericVectorWithCapacity[json.RawMessage](capacity)
 	default:
 		return fmt.Errorf("unsupported conversion from arrow to sdk type for arrow type %v", field.Type.ID().String())
 	}
@@ -486,6 +506,8 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 	switch col.DataType().ID() {
 	case arrow.STRING:
 		v := array.NewStringData(col.Data())
+		// Note: True zero-copy isn't possible for strings in Go due to immutability
+		// Arrow's Value() method already optimizes string conversion internally
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -501,6 +523,8 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.STRING_VIEW:
 		v := array.NewStringViewData(col.Data())
+		// STRING_VIEW is already optimized in Arrow for avoiding copies
+		// Our vectors still need to materialize strings (Go immutability requirement)
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -516,167 +540,305 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.INT8:
 		v := array.NewInt8Data(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *int8
-					appendTypedToVector(frame.Fields[i].vector, ns)
-					continue
+		values := v.Int8Values()
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[int8]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				for rIdx := range values {
+					if v.IsNull(rIdx) {
+						var ns *int8
+						appendTypedToVector(frame.Fields[i].vector, ns)
+						continue
+					}
+					rv := values[rIdx]
+					appendTypedToVector(frame.Fields[i].vector, &rv)
 				}
-				rv := v.Value(rIdx)
-				appendTypedToVector(frame.Fields[i].vector, &rv)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, v.Value(rIdx))
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[int8]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				for _, val := range values {
+					appendTypedToVector(frame.Fields[i].vector, val)
+				}
+			}
 		}
 	case arrow.INT16:
 		v := array.NewInt16Data(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *int16
-					appendTypedToVector(frame.Fields[i].vector, ns)
-					continue
+		values := v.Int16Values()
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[int16]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				for rIdx := range values {
+					if v.IsNull(rIdx) {
+						var ns *int16
+						appendTypedToVector(frame.Fields[i].vector, ns)
+						continue
+					}
+					rv := values[rIdx]
+					appendTypedToVector(frame.Fields[i].vector, &rv)
 				}
-				rv := v.Value(rIdx)
-				appendTypedToVector(frame.Fields[i].vector, &rv)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, v.Value(rIdx))
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[int16]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				for _, val := range values {
+					appendTypedToVector(frame.Fields[i].vector, val)
+				}
+			}
 		}
 	case arrow.INT32:
 		v := array.NewInt32Data(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *int32
-					appendTypedToVector(frame.Fields[i].vector, ns)
-					continue
+		values := v.Int32Values()
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[int32]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				for rIdx := range values {
+					if v.IsNull(rIdx) {
+						var ns *int32
+						appendTypedToVector(frame.Fields[i].vector, ns)
+						continue
+					}
+					rv := values[rIdx]
+					appendTypedToVector(frame.Fields[i].vector, &rv)
 				}
-				rv := v.Value(rIdx)
-				appendTypedToVector(frame.Fields[i].vector, &rv)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, v.Value(rIdx))
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[int32]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				for _, val := range values {
+					appendTypedToVector(frame.Fields[i].vector, val)
+				}
+			}
 		}
 	case arrow.INT64:
 		v := array.NewInt64Data(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *int64
-					appendTypedToVector(frame.Fields[i].vector, ns)
-					continue
+		// Use zero-copy API to get direct slice access
+		values := v.Int64Values()
+		if nullable[i] {
+			// Batch append with null handling
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[int64]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				// Fallback for unexpected vector type
+				for rIdx := range values {
+					if v.IsNull(rIdx) {
+						var ns *int64
+						appendTypedToVector(frame.Fields[i].vector, ns)
+						continue
+					}
+					rv := values[rIdx]
+					appendTypedToVector(frame.Fields[i].vector, &rv)
 				}
-				rv := v.Value(rIdx)
-				appendTypedToVector(frame.Fields[i].vector, &rv)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, v.Value(rIdx))
+		} else {
+			// Non-nullable: direct batch append
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[int64]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				// Fallback
+				for _, val := range values {
+					appendTypedToVector(frame.Fields[i].vector, val)
+				}
+			}
 		}
 	case arrow.UINT8:
 		v := array.NewUint8Data(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *uint8
-					appendTypedToVector(frame.Fields[i].vector, ns)
-					continue
+		values := v.Uint8Values()
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[uint8]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				for rIdx := range values {
+					if v.IsNull(rIdx) {
+						var ns *uint8
+						appendTypedToVector(frame.Fields[i].vector, ns)
+						continue
+					}
+					rv := values[rIdx]
+					appendTypedToVector(frame.Fields[i].vector, &rv)
 				}
-				rv := v.Value(rIdx)
-				appendTypedToVector(frame.Fields[i].vector, &rv)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, v.Value(rIdx))
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[uint8]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				for _, val := range values {
+					appendTypedToVector(frame.Fields[i].vector, val)
+				}
+			}
 		}
 	case arrow.UINT32:
 		v := array.NewUint32Data(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *uint32
-					appendTypedToVector(frame.Fields[i].vector, ns)
-					continue
+		values := v.Uint32Values()
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[uint32]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				for rIdx := range values {
+					if v.IsNull(rIdx) {
+						var ns *uint32
+						appendTypedToVector(frame.Fields[i].vector, ns)
+						continue
+					}
+					rv := values[rIdx]
+					appendTypedToVector(frame.Fields[i].vector, &rv)
 				}
-				rv := v.Value(rIdx)
-				appendTypedToVector(frame.Fields[i].vector, &rv)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, v.Value(rIdx))
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[uint32]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				for _, val := range values {
+					appendTypedToVector(frame.Fields[i].vector, val)
+				}
+			}
 		}
 	case arrow.UINT64:
 		v := array.NewUint64Data(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *uint64
-					appendTypedToVector(frame.Fields[i].vector, ns)
-					continue
+		values := v.Uint64Values()
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[uint64]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				for rIdx := range values {
+					if v.IsNull(rIdx) {
+						var ns *uint64
+						appendTypedToVector(frame.Fields[i].vector, ns)
+						continue
+					}
+					rv := values[rIdx]
+					appendTypedToVector(frame.Fields[i].vector, &rv)
 				}
-				rv := v.Value(rIdx)
-				appendTypedToVector(frame.Fields[i].vector, &rv)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, v.Value(rIdx))
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[uint64]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				for _, val := range values {
+					appendTypedToVector(frame.Fields[i].vector, val)
+				}
+			}
 		}
 	case arrow.UINT16:
 		v := array.NewUint16Data(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if frame.Fields[i].Type().NullableType() == FieldTypeNullableEnum {
-				if nullable[i] {
-					if v.IsNull(rIdx) {
-						var ns *EnumItemIndex
-						appendTypedToVector(frame.Fields[i].vector, ns)
-						continue
+		values := v.Uint16Values()
+		if frame.Fields[i].Type().NullableType() == FieldTypeNullableEnum {
+			// Handle Enum type
+			if nullable[i] {
+				if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[EnumItemIndex]); ok {
+					// Convert []uint16 to []EnumItemIndex efficiently
+					enumValues := make([]EnumItemIndex, len(values))
+					for idx, val := range values {
+						enumValues[idx] = EnumItemIndex(val)
 					}
-					rv := EnumItemIndex(v.Value(rIdx))
-					appendTypedToVector(frame.Fields[i].vector, &rv)
-					continue
+					nvec.AppendManyWithNulls(enumValues, v.IsNull)
+				} else {
+					for rIdx := range values {
+						if v.IsNull(rIdx) {
+							var ns *EnumItemIndex
+							appendTypedToVector(frame.Fields[i].vector, ns)
+							continue
+						}
+						rv := EnumItemIndex(values[rIdx])
+						appendTypedToVector(frame.Fields[i].vector, &rv)
+					}
 				}
-				appendTypedToVector(frame.Fields[i].vector, EnumItemIndex(v.Value(rIdx)))
 			} else {
-				if nullable[i] {
-					if v.IsNull(rIdx) {
-						var ns *uint16
-						appendTypedToVector(frame.Fields[i].vector, ns)
-						continue
+				if gvec, ok := frame.Fields[i].vector.(*genericVector[EnumItemIndex]); ok {
+					enumValues := make([]EnumItemIndex, len(values))
+					for idx, val := range values {
+						enumValues[idx] = EnumItemIndex(val)
 					}
-					rv := v.Value(rIdx)
-					appendTypedToVector(frame.Fields[i].vector, &rv)
-					continue
+					gvec.AppendManyTyped(enumValues)
+				} else {
+					for _, val := range values {
+						appendTypedToVector(frame.Fields[i].vector, EnumItemIndex(val))
+					}
 				}
-				appendTypedToVector(frame.Fields[i].vector, v.Value(rIdx))
+			}
+		} else {
+			// Handle regular uint16
+			if nullable[i] {
+				if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[uint16]); ok {
+					nvec.AppendManyWithNulls(values, v.IsNull)
+				} else {
+					for rIdx := range values {
+						if v.IsNull(rIdx) {
+							var ns *uint16
+							appendTypedToVector(frame.Fields[i].vector, ns)
+							continue
+						}
+						rv := values[rIdx]
+						appendTypedToVector(frame.Fields[i].vector, &rv)
+					}
+				}
+			} else {
+				if gvec, ok := frame.Fields[i].vector.(*genericVector[uint16]); ok {
+					gvec.AppendManyTyped(values)
+				} else {
+					for _, val := range values {
+						appendTypedToVector(frame.Fields[i].vector, val)
+					}
+				}
 			}
 		}
 	case arrow.FLOAT32:
 		v := array.NewFloat32Data(col.Data())
-		for vIdx, f := range v.Float32Values() {
-			if nullable[i] {
-				if v.IsNull(vIdx) {
-					var nf *float32
-					appendTypedToVector(frame.Fields[i].vector, nf)
-					continue
+		values := v.Float32Values()
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[float32]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				for vIdx, f := range values {
+					if v.IsNull(vIdx) {
+						var nf *float32
+						appendTypedToVector(frame.Fields[i].vector, nf)
+						continue
+					}
+					vF := f
+					appendTypedToVector(frame.Fields[i].vector, &vF)
 				}
-				vF := f
-				appendTypedToVector(frame.Fields[i].vector, &vF)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, f)
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[float32]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				for _, f := range values {
+					appendTypedToVector(frame.Fields[i].vector, f)
+				}
+			}
 		}
 	case arrow.FLOAT64:
 		v := array.NewFloat64Data(col.Data())
-		for vIdx, f := range v.Float64Values() {
-			if nullable[i] {
-				if v.IsNull(vIdx) {
-					var nf *float64
-					appendTypedToVector(frame.Fields[i].vector, nf)
-					continue
+		values := v.Float64Values()
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[float64]); ok {
+				nvec.AppendManyWithNulls(values, v.IsNull)
+			} else {
+				for vIdx, f := range values {
+					if v.IsNull(vIdx) {
+						var nf *float64
+						appendTypedToVector(frame.Fields[i].vector, nf)
+						continue
+					}
+					vF := f
+					appendTypedToVector(frame.Fields[i].vector, &vF)
 				}
-				vF := f
-				appendTypedToVector(frame.Fields[i].vector, &vF)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, f)
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[float64]); ok {
+				gvec.AppendManyTyped(values)
+			} else {
+				for _, f := range values {
+					appendTypedToVector(frame.Fields[i].vector, f)
+				}
+			}
 		}
 	case arrow.BOOL:
 		v := array.NewBooleanData(col.Data())
@@ -695,18 +857,34 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.TIMESTAMP:
 		v := array.NewTimestampData(col.Data())
-		for vIdx, ts := range v.TimestampValues() {
-			t := time.Unix(0, int64(ts)) // nanosecond assumption
-			if nullable[i] {
-				if v.IsNull(vIdx) {
-					var nt *time.Time
-					appendTypedToVector(frame.Fields[i].vector, nt)
-					continue
+		timestamps := v.TimestampValues()
+		// Convert Arrow timestamps to time.Time (nanosecond assumption)
+		times := make([]time.Time, len(timestamps))
+		for idx, ts := range timestamps {
+			times[idx] = time.Unix(0, int64(ts))
+		}
+
+		if nullable[i] {
+			if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[time.Time]); ok {
+				nvec.AppendManyWithNulls(times, v.IsNull)
+			} else {
+				for vIdx, t := range times {
+					if v.IsNull(vIdx) {
+						var nt *time.Time
+						appendTypedToVector(frame.Fields[i].vector, nt)
+						continue
+					}
+					appendTypedToVector(frame.Fields[i].vector, &t)
 				}
-				appendTypedToVector(frame.Fields[i].vector, &t)
-				continue
 			}
-			appendTypedToVector(frame.Fields[i].vector, t)
+		} else {
+			if gvec, ok := frame.Fields[i].vector.(*genericVector[time.Time]); ok {
+				gvec.AppendManyTyped(times)
+			} else {
+				for _, t := range times {
+					appendTypedToVector(frame.Fields[i].vector, t)
+				}
+			}
 		}
 	case arrow.BINARY:
 		v := array.NewBinaryData(col.Data())
@@ -752,7 +930,9 @@ func FromArrowRecord(record arrow.Record) (*Frame, error) {
 		return nil, err
 	}
 
-	nullable, err := initializeFrameFields(schema, frame)
+	// Pre-allocate vectors with the known row count for better performance
+	capacity := int(record.NumRows())
+	nullable, err := initializeFrameFields(schema, frame, capacity)
 	if err != nil {
 		return nil, err
 	}
@@ -765,7 +945,12 @@ func FromArrowRecord(record arrow.Record) (*Frame, error) {
 
 // UnmarshalArrowFrame converts a byte representation of an arrow table to a Frame.
 func UnmarshalArrowFrame(b []byte) (*Frame, error) {
-	fB := filebuffer.New(b)
+	// Get filebuffer from pool to reduce allocations
+	fB := fileBufferPool.Get().(*filebuffer.Buffer)
+	fB.Buff.Reset()
+	fB.Buff.Write(b)
+	defer fileBufferPool.Put(fB)
+
 	fR, err := ipc.NewFileReader(fB)
 	if err != nil {
 		return nil, err
@@ -778,7 +963,19 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 		return nil, err
 	}
 
-	nullable, err := initializeFrameFields(schema, frame)
+	// Calculate total capacity by reading all record batch sizes
+	// This pre-allocates vectors to avoid repeated reallocations
+	capacity := 0
+	for i := 0; i < fR.NumRecords(); i++ {
+		rec, err := fR.Record(i)
+		if err != nil {
+			return nil, err
+		}
+		capacity += int(rec.NumRows())
+		rec.Release()
+	}
+
+	nullable, err := initializeFrameFields(schema, frame, capacity)
 	if err != nil {
 		return nil, err
 	}

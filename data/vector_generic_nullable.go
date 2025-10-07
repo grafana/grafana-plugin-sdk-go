@@ -13,6 +13,14 @@ func newNullableGenericVector[T any](n int) *nullableGenericVector[T] {
 	}
 }
 
+// newNullableGenericVectorWithCapacity creates a new nullable generic vector with length 0 but pre-allocated capacity.
+// This is useful for avoiding reallocations when the final size is known in advance.
+func newNullableGenericVectorWithCapacity[T any](capacity int) *nullableGenericVector[T] {
+	return &nullableGenericVector[T]{
+		data: make([]*T, 0, capacity),
+	}
+}
+
 // newNullableGenericVectorWithValues creates a new nullable generic vector from an existing slice.
 func newNullableGenericVectorWithValues[T any](values []*T) *nullableGenericVector[T] {
 	data := make([]*T, len(values))
@@ -40,6 +48,31 @@ func (v *nullableGenericVector[T]) SetTyped(i int, val *T) {
 // AppendTyped adds a pointer to the end without boxing.
 func (v *nullableGenericVector[T]) AppendTyped(val *T) {
 	v.data = append(v.data, val)
+}
+
+// AppendManyTyped appends multiple pointer values at once from a slice.
+// This is more efficient than calling AppendTyped repeatedly.
+func (v *nullableGenericVector[T]) AppendManyTyped(vals []*T) {
+	v.data = append(v.data, vals...)
+}
+
+// AppendManyWithNulls appends values from a slice, creating pointers for non-null values.
+// The isNull function should return true if the value at index i is null.
+// This is optimized for batch operations from Arrow arrays.
+func (v *nullableGenericVector[T]) AppendManyWithNulls(vals []T, isNull func(int) bool) {
+	startIdx := len(v.data)
+	// Pre-allocate space
+	v.data = append(v.data, make([]*T, len(vals))...)
+
+	// Fill in the values
+	for i, val := range vals {
+		if !isNull(i) {
+			// Create a new variable to get a stable pointer
+			valCopy := val
+			v.data[startIdx+i] = &valCopy
+		}
+		// else: already nil from make()
+	}
 }
 
 // ConcreteAtTyped returns the dereferenced value if not nil.

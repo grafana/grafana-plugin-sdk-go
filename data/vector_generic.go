@@ -15,6 +15,14 @@ func newGenericVector[T any](n int) *genericVector[T] {
 	}
 }
 
+// newGenericVectorWithCapacity creates a new generic vector with length 0 but pre-allocated capacity.
+// This is useful for avoiding reallocations when the final size is known in advance.
+func newGenericVectorWithCapacity[T any](capacity int) *genericVector[T] {
+	return &genericVector[T]{
+		data: make([]T, 0, capacity),
+	}
+}
+
 // newGenericVectorWithValues creates a new generic vector from an existing slice.
 // It copies the data to prevent external modifications.
 func newGenericVectorWithValues[T any](values []T) *genericVector[T] {
@@ -44,6 +52,13 @@ func (v *genericVector[T]) SetTyped(i int, val T) {
 // AppendTyped adds a value to the end without boxing.
 func (v *genericVector[T]) AppendTyped(val T) {
 	v.data = append(v.data, val)
+}
+
+// AppendManyTyped appends multiple values at once from a slice.
+// This is more efficient than calling AppendTyped repeatedly as it
+// reduces slice growth operations and bounds checking overhead.
+func (v *genericVector[T]) AppendManyTyped(vals []T) {
+	v.data = append(v.data, vals...)
 }
 
 // Len returns the length of the vector.

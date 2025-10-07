@@ -32,9 +32,15 @@ const simpleTypeOther = "other"
 const jsonKeySchema = "schema"
 const jsonKeyData = "data"
 
-func init() { //nolint:gochecknoinits
-	jsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
-	jsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
+// jsoniterOnce ensures JSON codecs are registered exactly once, lazily on first use
+var jsoniterOnce sync.Once
+
+// ensureJSONIterInit lazily initializes jsoniter codecs only when JSON operations are used
+func ensureJSONIterInit() {
+	jsoniterOnce.Do(func() {
+		jsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
+		jsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
+	})
 }
 
 type dataFrameCodec struct{}
@@ -180,6 +186,7 @@ func (f *FrameJSONCache) MarshalJSON() ([]byte, error) {
 //
 // NOTE: the format should be considered experimental until grafana 8 is released.
 func FrameToJSON(frame *Frame, include FrameInclude) ([]byte, error) {
+	ensureJSONIterInit() // Lazy initialization of JSON codecs
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
