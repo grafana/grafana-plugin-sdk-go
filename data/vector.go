@@ -1,7 +1,9 @@
 package data
 
 import (
+	"encoding/json"
 	"fmt"
+	"time"
 )
 
 // vector represents a Field's collection of Elements.
@@ -24,78 +26,72 @@ type vector interface {
 // nolint:gocyclo
 func vectorFieldType(v vector) FieldType {
 	switch v.(type) {
-	case *int8Vector:
-		return FieldTypeInt8
-	case *nullableInt8Vector:
-		return FieldTypeNullableInt8
-
-	case *int16Vector:
-		return FieldTypeInt16
-	case *nullableInt16Vector:
-		return FieldTypeNullableInt16
-
-	case *int32Vector:
-		return FieldTypeInt32
-	case *nullableInt32Vector:
-		return FieldTypeNullableInt32
-
-	case *int64Vector:
-		return FieldTypeInt64
-	case *nullableInt64Vector:
-		return FieldTypeNullableInt64
-
-	case *uint8Vector:
-		return FieldTypeUint8
-	case *nullableUint8Vector:
-		return FieldTypeNullableUint8
-
-	case *uint16Vector:
-		return FieldTypeUint16
-	case *nullableUint16Vector:
-		return FieldTypeNullableUint16
-
-	case *uint32Vector:
-		return FieldTypeUint32
-	case *nullableUint32Vector:
-		return FieldTypeNullableUint32
-
-	case *uint64Vector:
-		return FieldTypeUint64
-	case *nullableUint64Vector:
-		return FieldTypeNullableUint64
-
-	case *float32Vector:
-		return FieldTypeFloat32
-	case *nullableFloat32Vector:
-		return FieldTypeNullableFloat32
-
-	case *float64Vector:
-		return FieldTypeFloat64
-	case *nullableFloat64Vector:
-		return FieldTypeNullableFloat64
-
-	case *stringVector:
-		return FieldTypeString
-	case *nullableStringVector:
-		return FieldTypeNullableString
-
-	case *boolVector:
-		return FieldTypeBool
-	case *nullableBoolVector:
-		return FieldTypeNullableBool
-
-	case *timeTimeVector:
+	// time.Time
+	case *genericVector[time.Time]:
 		return FieldTypeTime
-	case *nullableTimeTimeVector:
+	case *nullableGenericVector[time.Time]:
 		return FieldTypeNullableTime
-	case *jsonRawMessageVector:
+
+	// json.RawMessage
+	case *genericVector[json.RawMessage]:
 		return FieldTypeJSON
-	case *nullableJsonRawMessageVector:
+	case *nullableGenericVector[json.RawMessage]:
 		return FieldTypeNullableJSON
-	case *enumVector:
+
+	// EnumItemIndex
+	case *genericVector[EnumItemIndex]:
 		return FieldTypeEnum
-	case *nullableEnumVector:
+	case *nullableGenericVector[EnumItemIndex]:
 		return FieldTypeNullableEnum
+
+	case *genericVector[int8]:
+		return FieldTypeInt8
+	case *nullableGenericVector[int8]:
+		return FieldTypeNullableInt8
+	case *genericVector[int16]:
+		return FieldTypeInt16
+	case *nullableGenericVector[int16]:
+		return FieldTypeNullableInt16
+	case *genericVector[int32]:
+		return FieldTypeInt32
+	case *nullableGenericVector[int32]:
+		return FieldTypeNullableInt32
+	case *genericVector[int64]:
+		return FieldTypeInt64
+	case *nullableGenericVector[int64]:
+		return FieldTypeNullableInt64
+	case *genericVector[uint8]:
+		return FieldTypeUint8
+	case *nullableGenericVector[uint8]:
+		return FieldTypeNullableUint8
+	case *genericVector[uint16]:
+		return FieldTypeUint16
+	case *nullableGenericVector[uint16]:
+		return FieldTypeNullableUint16
+	case *genericVector[uint32]:
+		return FieldTypeUint32
+	case *nullableGenericVector[uint32]:
+		return FieldTypeNullableUint32
+	case *genericVector[uint64]:
+		return FieldTypeUint64
+	case *nullableGenericVector[uint64]:
+		return FieldTypeNullableUint64
+	case *genericVector[float32]:
+		return FieldTypeFloat32
+	case *nullableGenericVector[float32]:
+		return FieldTypeNullableFloat32
+	case *genericVector[float64]:
+		return FieldTypeFloat64
+	case *nullableGenericVector[float64]:
+		return FieldTypeNullableFloat64
+	case *genericVector[string]:
+		return FieldTypeString
+	case *nullableGenericVector[string]:
+		return FieldTypeNullableString
+	case *genericVector[bool]:
+		return FieldTypeBool
+	case *nullableGenericVector[bool]:
+		return FieldTypeNullableBool
 	}
 
 	return FieldTypeUnknown
@@ -113,84 +109,85 @@ func (p FieldType) String() string {
 func NewFieldFromFieldType(p FieldType, n int) *Field {
 	f := &Field{}
 	switch p {
-	// ints
+	// ints (use generic vectors for performance)
 	case FieldTypeInt8:
-		f.vector = newInt8Vector(n)
+		f.vector = newGenericVector[int8](n)
 	case FieldTypeNullableInt8:
-		f.vector = newNullableInt8Vector(n)
+		f.vector = newNullableGenericVector[int8](n)
 
 	case FieldTypeInt16:
-		f.vector = newInt16Vector(n)
+		f.vector = newGenericVector[int16](n)
 	case FieldTypeNullableInt16:
-		f.vector = newNullableInt16Vector(n)
+		f.vector = newNullableGenericVector[int16](n)
 
 	case FieldTypeInt32:
-		f.vector = newInt32Vector(n)
+		f.vector = newGenericVector[int32](n)
 	case FieldTypeNullableInt32:
-		f.vector = newNullableInt32Vector(n)
+		f.vector = newNullableGenericVector[int32](n)
 
 	case FieldTypeInt64:
-		f.vector = newInt64Vector(n)
+		f.vector = newGenericVector[int64](n)
 	case FieldTypeNullableInt64:
-		f.vector = newNullableInt64Vector(n)
+		f.vector = newNullableGenericVector[int64](n)
 
-	// uints
+	// uints (use generic vectors for performance)
 	case FieldTypeUint8:
-		f.vector = newUint8Vector(n)
+		f.vector = newGenericVector[uint8](n)
 	case FieldTypeNullableUint8:
-		f.vector = newNullableUint8Vector(n)
+		f.vector = newNullableGenericVector[uint8](n)
 
 	case FieldTypeUint16:
-		f.vector = newUint16Vector(n)
+		f.vector = newGenericVector[uint16](n)
 	case FieldTypeNullableUint16:
-		f.vector = newNullableUint16Vector(n)
+		f.vector = newNullableGenericVector[uint16](n)
 
 	case FieldTypeUint32:
-		f.vector = newUint32Vector(n)
+		f.vector = newGenericVector[uint32](n)
 	case FieldTypeNullableUint32:
-		f.vector = newNullableUint32Vector(n)
+		f.vector = newNullableGenericVector[uint32](n)
 
 	case FieldTypeUint64:
-		f.vector = newUint64Vector(n)
+		f.vector = newGenericVector[uint64](n)
 	case FieldTypeNullableUint64:
-		f.vector = newNullableUint64Vector(n)
+		f.vector = newNullableGenericVector[uint64](n)
 
-	// floats
+	// floats (use generic vectors for performance)
 	case FieldTypeFloat32:
-		f.vector = newFloat32Vector(n)
+		f.vector = newGenericVector[float32](n)
 	case FieldTypeNullableFloat32:
-		f.vector = newNullableFloat32Vector(n)
+		f.vector = newNullableGenericVector[float32](n)
 
 	case FieldTypeFloat64:
-		f.vector = newFloat64Vector(n)
+		f.vector = newGenericVector[float64](n)
 	case FieldTypeNullableFloat64:
-		f.vector = newNullableFloat64Vector(n)
+		f.vector = newNullableGenericVector[float64](n)
 
-	// other
+	// other basic types (use generic vectors for performance)
 	case FieldTypeString:
-		f.vector = newStringVector(n)
+		f.vector = newGenericVector[string](n)
 	case FieldTypeNullableString:
-		f.vector = newNullableStringVector(n)
+		f.vector = newNullableGenericVector[string](n)
 
 	case FieldTypeBool:
-		f.vector = newBoolVector(n)
+		f.vector = newGenericVector[bool](n)
 	case FieldTypeNullableBool:
-		f.vector = newNullableBoolVector(n)
+		f.vector = newNullableGenericVector[bool](n)
 
+		// complex types (now using generic vectors)
 	case FieldTypeTime:
-		f.vector = newTimeTimeVector(n)
+		f.vector = newGenericVector[time.Time](n)
 	case FieldTypeNullableTime:
-		f.vector = newNullableTimeTimeVector(n)
+		f.vector = newNullableGenericVector[time.Time](n)
 
 	case FieldTypeJSON:
-		f.vector = newJsonRawMessageVector(n)
+		f.vector = newGenericVector[json.RawMessage](n)
 	case FieldTypeNullableJSON:
-		f.vector = newNullableJsonRawMessageVector(n)
+		f.vector = newNullableGenericVector[json.RawMessage](n)
 
 	case FieldTypeEnum:
-		f.vector = newEnumVector(n)
+		f.vector = newGenericVector[EnumItemIndex](n)
 	case FieldTypeNullableEnum:
-		f.vector = newNullableEnumVector(n)
+		f.vector = newNullableGenericVector[EnumItemIndex](n)
 	default:
 		panic("unsupported FieldType")
 	}
