@@ -56,6 +56,18 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 					"from": "100",
 					"to": "200"
 				}
+			},
+			{
+				"refId": "Q",
+				"datasource": {
+					"type": "prometheus",
+					"uid": "u-i-d"
+				},
+				"expr": "42",
+				"_timeRange": {
+					"from": "10",
+					"to": "20"
+				}
 			}
 		],
 		"from": "1692624667389",
@@ -67,7 +79,7 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 	require.NoError(t, err)
 
 	t.Run("verify raw unmarshal", func(t *testing.T) {
-		require.Len(t, req.Queries, 2)
+		require.Len(t, req.Queries, 3)
 		require.Equal(t, "b1808c48-9fc9-4045-82d7-081781f8a553", req.Queries[0].Datasource.UID)
 		require.Equal(t, "spreadsheetID", req.Queries[0].GetString("spreadsheet"))
 
@@ -84,9 +96,11 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 		require.Equal(t, int64(10), req.Queries[1].MaxDataPoints) // input was a string
 
 		// The second query has an explicit time range, and legacy datasource name
+		require.NotNil(t, req.Queries[1].TimeRange)
+		require.Equal(t, "100", req.Queries[1].TimeRange.From)
+		require.Equal(t, "200", req.Queries[1].TimeRange.To)
 		out, err = json.MarshalIndent(req.Queries[1], "", "  ")
 		require.NoError(t, err)
-		// fmt.Printf("%s\n", string(out))
 		require.JSONEq(t, `{
 			"datasource": {
 			  "type": "", ` /* NOTE! this implies legacy naming */ +`
@@ -94,9 +108,28 @@ func TestParseQueriesIntoQueryDataRequest(t *testing.T) {
 			},
 			"maxDataPoints": 10,
 			"refId": "Z",
-			"timeRange": {
+			"_timeRange": {
 			  "from": "100",
 			  "to": "200"
+			}
+		  }`, string(out))
+
+		// The third query has a time-range with an underscore prefix
+		require.NotNil(t, req.Queries[2].TimeRange)
+		require.Equal(t, "10", req.Queries[2].TimeRange.From)
+		require.Equal(t, "20", req.Queries[2].TimeRange.To)
+		out, err = json.MarshalIndent(req.Queries[2], "", "  ")
+		require.NoError(t, err)
+		require.JSONEq(t, `{
+			"datasource": {
+			  "type": "prometheus",
+			  "uid": "u-i-d"
+			},
+			"expr": "42",
+			"refId": "Q",
+			"_timeRange": {
+			  "from": "10",
+			  "to": "20"
 			}
 		  }`, string(out))
 	})

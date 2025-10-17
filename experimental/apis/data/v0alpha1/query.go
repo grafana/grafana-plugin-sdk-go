@@ -269,7 +269,7 @@ func writeQuery(g *DataQuery, stream *j.Stream) {
 
 	if q.TimeRange != nil {
 		stream.WriteMore()
-		stream.WriteObjectField("timeRange")
+		stream.WriteObjectField("_timeRange")
 		stream.WriteVal(g.TimeRange)
 	}
 
@@ -348,6 +348,8 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 		case "resultAssertions":
 			err = iter.ReadVal(&g.ResultAssertions)
 		case "timeRange":
+			err = iter.ReadVal(&g.TimeRange)
+		case "_timeRange":
 			err = iter.ReadVal(&g.TimeRange)
 		case "datasource":
 			// Old datasource values may just be a string
