@@ -54,7 +54,7 @@ func TestToBackendDataQueryJSON(t *testing.T) {
 	require.Equal(t, time.UnixMilli(12345678).UTC(), bq.TimeRange.From)
 	require.Equal(t, time.UnixMilli(87654321).UTC(), bq.TimeRange.To)
 
-	jsonData := `{"refId":"A","timeRange":{"from":"12345678","to":"87654321"},"datasource":{"type":"prometheus","uid":"hello-world"},"queryType":"interesting","maxDataPoints":42,"intervalMs":15,"key1":"value1","key2":"value2"}`
+	jsonData := `{"refId":"A","_timeRange":{"from":"12345678","to":"87654321"},"datasource":{"type":"prometheus","uid":"hello-world"},"queryType":"interesting","maxDataPoints":42,"intervalMs":15,"key1":"value1","key2":"value2"}`
 
 	require.Equal(t, jsonData, string(bq.JSON))
 }
