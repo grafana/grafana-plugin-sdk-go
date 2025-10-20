@@ -347,7 +347,7 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 			g.RefID, err = iter.ReadString()
 		case "resultAssertions":
 			err = iter.ReadVal(&g.ResultAssertions)
-		case "timeRange":
+		case "timeRange": // temporarily kept for backward compatibility
 			err = iter.ReadVal(&g.TimeRange)
 		case "_timeRange":
 			err = iter.ReadVal(&g.TimeRange)
