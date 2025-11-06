@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"errors"
-	"slices"
 )
 
 var (
@@ -30,8 +29,7 @@ func (fn HandlerMiddlewareFunc) CreateHandlerMiddleware(next Handler) Handler {
 
 // MiddlewareHandler decorates a Handler with HandlerMiddleware's.
 type MiddlewareHandler struct {
-	middlewares  []HandlerMiddleware
-	finalHandler Handler
+	handler Handler
 }
 
 // HandlerFromMiddlewares creates a new MiddlewareHandler implementing Handler that decorates finalHandler with middlewares.
@@ -41,8 +39,7 @@ func HandlerFromMiddlewares(finalHandler Handler, middlewares ...HandlerMiddlewa
 	}
 
 	return &MiddlewareHandler{
-		middlewares:  middlewares,
-		finalHandler: finalHandler,
+		handler: handlerFromMiddlewares(middlewares, finalHandler),
 	}, nil
 }
 
@@ -62,11 +59,10 @@ func (h *MiddlewareHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointQueryData)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.QueryData(ctx, req)
+	return h.handler.QueryData(ctx, req)
 }
 
-func (h MiddlewareHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+func (h *MiddlewareHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	if req == nil {
 		return errNilRequest
 	}
@@ -76,51 +72,46 @@ func (h MiddlewareHandler) CallResource(ctx context.Context, req *CallResourceRe
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointCallResource)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.CallResource(ctx, req, sender)
+	return h.handler.CallResource(ctx, req, sender)
 }
 
-func (h MiddlewareHandler) CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error) {
+func (h *MiddlewareHandler) CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointCollectMetrics)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.CollectMetrics(ctx, req)
+	return h.handler.CollectMetrics(ctx, req)
 }
 
-func (h MiddlewareHandler) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+func (h *MiddlewareHandler) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointCheckHealth)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.CheckHealth(ctx, req)
+	return h.handler.CheckHealth(ctx, req)
 }
 
-func (h MiddlewareHandler) SubscribeStream(ctx context.Context, req *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
+func (h *MiddlewareHandler) SubscribeStream(ctx context.Context, req *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointSubscribeStream)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.SubscribeStream(ctx, req)
+	return h.handler.SubscribeStream(ctx, req)
 }
 
-func (h MiddlewareHandler) PublishStream(ctx context.Context, req *PublishStreamRequest) (*PublishStreamResponse, error) {
+func (h *MiddlewareHandler) PublishStream(ctx context.Context, req *PublishStreamRequest) (*PublishStreamResponse, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointPublishStream)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.PublishStream(ctx, req)
+	return h.handler.PublishStream(ctx, req)
 }
 
-func (h MiddlewareHandler) RunStream(ctx context.Context, req *RunStreamRequest, sender *StreamSender) error {
+func (h *MiddlewareHandler) RunStream(ctx context.Context, req *RunStreamRequest, sender *StreamSender) error {
 	if req == nil {
 		return errNilRequest
 	}
@@ -130,51 +121,40 @@ func (h MiddlewareHandler) RunStream(ctx context.Context, req *RunStreamRequest,
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointRunStream)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.RunStream(ctx, req, sender)
+	return h.handler.RunStream(ctx, req, sender)
 }
 
-func (h MiddlewareHandler) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
+func (h *MiddlewareHandler) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointValidateAdmission)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.ValidateAdmission(ctx, req)
+	return h.handler.ValidateAdmission(ctx, req)
 }
 
-func (h MiddlewareHandler) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
+func (h *MiddlewareHandler) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointMutateAdmission)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.MutateAdmission(ctx, req)
+	return h.handler.MutateAdmission(ctx, req)
 }
 
-func (h MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
+func (h *MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointConvertObjects)
-	handler := handlerFromMiddlewares(h.middlewares, h.finalHandler)
-	return handler.ConvertObjects(ctx, req)
+	return h.handler.ConvertObjects(ctx, req)
 }
 
 func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handler) Handler {
-	if len(middlewares) == 0 {
-		return finalHandler
-	}
-
-	clonedMws := slices.Clone(middlewares)
-	slices.Reverse(clonedMws)
 	next := finalHandler
-
-	for _, m := range clonedMws {
-		next = m.CreateHandlerMiddleware(next)
+	for i := len(middlewares) - 1; i >= 0; i-- {
+		next = middlewares[i].CreateHandlerMiddleware(next)
 	}
 
 	return next
