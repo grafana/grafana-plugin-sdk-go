@@ -95,10 +95,13 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 	if err != nil {
 		return nil, err
 	}
+
 	// Double-checked locking for update/create criteria
 	im.locker.RLock(cacheKey)
 	item, ok := im.cache.Load(cacheKey)
 	im.locker.RUnlock(cacheKey)
+
+	backend.Logger.Debug("getting datsource instance", "pluginID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cacheKey", cacheKey, "is_in_cache", ok)
 
 	if ok {
 		ci := item.(CachedInstance)
