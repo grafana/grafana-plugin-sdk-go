@@ -67,6 +67,10 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 	curAppSettings := pluginContext.AppInstanceSettings
 	appUpdated := !curAppSettings.Updated.Equal(cachedAppSettings.Updated)
 
+	if appUpdated || configUpdated {
+		backend.Logger.Debug("instance requires update", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "appUpdated", appUpdated, "configUpdated", configUpdated)
+	}
+
 	return appUpdated || configUpdated
 }
 
