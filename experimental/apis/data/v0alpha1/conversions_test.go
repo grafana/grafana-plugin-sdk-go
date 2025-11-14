@@ -56,14 +56,13 @@ func TestToBackendDataQueryJSON(t *testing.T) {
 	require.Equal(t, time.UnixMilli(87654321).UTC(), bq.TimeRange.To)
 
 	jsonData := `{` +
-		`"refId":"A",` +
-		`"_timeRange":{"from":"12345678","to":"87654321"},` +
 		`"datasource":{"type":"prometheus","uid":"hello-world"},` +
-		`"queryType":"interesting",` +
-		`"maxDataPoints":42,` +
 		`"intervalMs":15,` +
 		`"key1":"value1",` +
-		`"key2":"value2"` +
+		`"key2":"value2",` +
+		`"maxDataPoints":42,` +
+		`"queryType":"interesting",` +
+		`"refId":"A"` +
 		`}`
 
 	require.Equal(t, jsonData, string(bq.JSON))
@@ -126,10 +125,48 @@ func TestToDataSourceQueriesTimeRangeHandling(t *testing.T) {
 	require.Equal(t, time.UnixMilli(1763114120000).UTC(), b.TimeRange.From)
 	require.Equal(t, time.UnixMilli(1763114130000).UTC(), b.TimeRange.To)
 	jsonB := `{` +
-		`"refId":"B",` +
-		`"_timeRange":{"from":"1763114120000","to":"1763114130000"},` +
 		`"datasource":{"type":"prometheus","uid":"prom1"},` +
-		`"expr":"222"` +
+		`"expr":"222",` +
+		`"refId":"B"` +
 		`}`
 	require.Equal(t, jsonB, string(b.JSON))
+}
+
+func TestDeleteTimeRangeFromQueryJSON(t *testing.T) {
+	tests := []struct {
+		name          string
+		data          []byte
+		expected      []byte
+		expectedError bool
+	}{
+		{
+			name:          "invalid json",
+			data:          []byte("hello world"),
+			expectedError: true,
+		},
+		{
+			name:          "with time range",
+			data:          []byte(`{"f1":{"f2":42},"timeRange":{"from":"111","to":"222"},"f3":"v3"}`),
+			expected:      []byte(`{"f1":{"f2":42},"f3":"v3"}`),
+			expectedError: false,
+		},
+		{
+			name:          "without time range",
+			data:          []byte(`{"f1":{"f2":42},"f3":"v3"}`),
+			expected:      []byte(`{"f1":{"f2":42},"f3":"v3"}`),
+			expectedError: false,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := deleteTimeRangeFromQueryJSON(tt.data)
+			if tt.expectedError {
+				require.Error(t, err)
+			} else {
+				require.NoError(t, err)
+				require.Equal(t, tt.expected, result)
+			}
+		})
+	}
 }
