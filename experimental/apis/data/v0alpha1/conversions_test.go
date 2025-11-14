@@ -1,6 +1,7 @@
 package v0alpha1
 
 import (
+	"encoding/json"
 	"testing"
 	"time"
 
@@ -54,7 +55,81 @@ func TestToBackendDataQueryJSON(t *testing.T) {
 	require.Equal(t, time.UnixMilli(12345678).UTC(), bq.TimeRange.From)
 	require.Equal(t, time.UnixMilli(87654321).UTC(), bq.TimeRange.To)
 
-	jsonData := `{"refId":"A","_timeRange":{"from":"12345678","to":"87654321"},"datasource":{"type":"prometheus","uid":"hello-world"},"queryType":"interesting","maxDataPoints":42,"intervalMs":15,"key1":"value1","key2":"value2"}`
+	jsonData := `{` +
+		`"refId":"A",` +
+		`"_timeRange":{"from":"12345678","to":"87654321"},` +
+		`"datasource":{"type":"prometheus","uid":"hello-world"},` +
+		`"queryType":"interesting",` +
+		`"maxDataPoints":42,` +
+		`"intervalMs":15,` +
+		`"key1":"value1",` +
+		`"key2":"value2"` +
+		`}`
 
 	require.Equal(t, jsonData, string(bq.JSON))
+}
+
+func TestToDataSourceQueriesTimeRangeHandling(t *testing.T) {
+	data := `
+		{
+		"queries": [
+			{
+				"datasource": {
+					"type": "prometheus",
+					"uid": "prom1"
+				},
+				"expr": "111",
+				"refId": "A"
+			},
+			{
+				"datasource": {
+					"type": "prometheus",
+					"uid": "prom1"
+				},
+				"expr": "222",
+				"refId": "B",
+				"timeRange": {
+					"from": "1763114120000",
+					"to": "1763114130000"
+				}
+			}
+		],
+		"from": "1763114100000",
+		"to": "1763114110000"
+	}
+	`
+
+	var req QueryDataRequest
+
+	err := json.Unmarshal([]byte(data), &req)
+	require.NoError(t, err)
+
+	queries, _, err := ToDataSourceQueries(req)
+	require.NoError(t, err)
+
+	require.Len(t, queries, 2)
+
+	a := queries[0]
+	require.Equal(t, "A", a.RefID)
+	b := queries[1]
+	require.Equal(t, "B", b.RefID)
+
+	require.Equal(t, time.UnixMilli(1763114100000).UTC(), a.TimeRange.From)
+	require.Equal(t, time.UnixMilli(1763114110000).UTC(), a.TimeRange.To)
+	jsonA := `{` +
+		`"refId":"A",` +
+		`"datasource":{"type":"prometheus","uid":"prom1"},` +
+		`"expr":"111"` +
+		`}`
+	require.Equal(t, jsonA, string(a.JSON))
+
+	require.Equal(t, time.UnixMilli(1763114120000).UTC(), b.TimeRange.From)
+	require.Equal(t, time.UnixMilli(1763114130000).UTC(), b.TimeRange.To)
+	jsonB := `{` +
+		`"refId":"B",` +
+		`"_timeRange":{"from":"1763114120000","to":"1763114130000"},` +
+		`"datasource":{"type":"prometheus","uid":"prom1"},` +
+		`"expr":"222"` +
+		`}`
+	require.Equal(t, jsonB, string(b.JSON))
 }
