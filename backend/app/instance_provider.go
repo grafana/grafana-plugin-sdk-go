@@ -58,13 +58,13 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 	return defaultKey, nil
 }
 
-func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
+func (ip *instanceProvider) NeedsUpdate(ctx context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
 	curConfig := pluginContext.GrafanaConfig
 	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
 	configUpdated := !cachedConfig.Equal(curConfig)
 
 	if configUpdated {
-		backend.Logger.Debug("instance requires update due to config change", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cached_config", cachedConfig, "current_config", curConfig)
+		backend.Logger.FromContext(ctx).Debug("Instance requires update due to config change", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cached_config", cachedConfig, "current_config", curConfig)
 	}
 
 	cachedAppSettings := cachedInstance.PluginContext.AppInstanceSettings
@@ -72,7 +72,7 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 	appUpdated := !curAppSettings.Updated.Equal(cachedAppSettings.Updated)
 
 	if appUpdated {
-		backend.Logger.Debug("instance requires update due to app change", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cached_updated", cachedAppSettings.Updated, "current_updated", curAppSettings.Updated)
+		backend.Logger.FromContext(ctx).Debug("Instance requires update due to app change", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cached_updated", cachedAppSettings.Updated, "current_updated", curAppSettings.Updated)
 	}
 
 	return appUpdated || configUpdated

@@ -101,7 +101,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 	item, ok := im.cache.Load(cacheKey)
 	im.locker.RUnlock(cacheKey)
 
-	backend.Logger.Debug("getting datsource instance", "pluginID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cacheKey", cacheKey, "is_in_cache", ok)
+	backend.Logger.FromContext(ctx).Debug("Creating plugin instance", "pluginID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cacheKey", cacheKey, "is_in_cache", ok)
 
 	if ok {
 		ci := item.(CachedInstance)
