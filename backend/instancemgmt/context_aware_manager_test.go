@@ -105,8 +105,8 @@ func TestInstanceManagerWrapper(t *testing.T) {
 		}
 
 		var receivedInstance *testInstance
-		err := im.Do(ctx, pCtx, func(instance *testInstance) {
-			receivedInstance = instance
+		err := im.Do(ctx, pCtx, func(instance Instance) {
+			receivedInstance = instance.(*testInstance)
 		})
 		require.NoError(t, err)
 		require.NotNil(t, receivedInstance)

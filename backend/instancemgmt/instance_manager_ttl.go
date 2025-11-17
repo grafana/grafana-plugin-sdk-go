@@ -29,11 +29,12 @@ func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceClean
 	cache := gocache.New(instanceTTL, instanceCleanupInterval)
 
 	// Set up the OnEvicted callback to dispose instances
-	cache.OnEvicted(func(_ string, value interface{}) {
+	cache.OnEvicted(func(key string, value interface{}) {
 		ci := value.(CachedInstance)
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			disposer.Dispose()
 		}
+		backend.Logger.Debug("Evicted instance", "key", key)
 		activeInstances.Dec()
 	})
 
@@ -55,19 +56,20 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 	if err != nil {
 		return nil, err
 	}
-	// Double-checked locking for update/create criteria
-	cacheKey := fmt.Sprintf("%v", providerKey)
-	im.locker.RLock(cacheKey)
+	var cacheKey string
+	if s, ok := providerKey.(string); ok {
+		cacheKey = s
+	} else {
+		cacheKey = fmt.Sprintf("%v", providerKey)
+	}
 	item, ok := im.cache.Get(cacheKey)
-	im.locker.RUnlock(cacheKey)
 	if ok {
 		ci := item.(CachedInstance)
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
-			im.locker.Lock(cacheKey)
+			// Refresh TTL without extra locking (go-cache is thread-safe)
 			im.refreshTTL(cacheKey, ci)
-			im.locker.Unlock(cacheKey)
 			return ci.instance, nil
 		}
 	}

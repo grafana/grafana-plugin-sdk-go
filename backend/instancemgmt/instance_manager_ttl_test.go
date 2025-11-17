@@ -113,7 +113,7 @@ func TestTTLInstanceManagerWithCustomTTL(t *testing.T) {
 		require.NotNil(t, instance)
 
 		// Access instance before TTL expires
-		time.Sleep(ttl / 4) // Wait 2.5ms (well before 10ms expiry)
+		time.Sleep(ttl / 4) //  Wait 25% of TTL (well before expiry)
 		sameInstance, err := im.Get(ctx, pCtx)
 		require.NoError(t, err)
 		require.Same(t, instance, sameInstance)
