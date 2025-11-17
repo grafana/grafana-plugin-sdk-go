@@ -63,12 +63,16 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
 	configUpdated := !cachedConfig.Equal(curConfig)
 
+	if configUpdated {
+		backend.Logger.Debug("instance requires update due to config change", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cached_config", cachedConfig, "current_config", curConfig)
+	}
+
 	cachedAppSettings := cachedInstance.PluginContext.AppInstanceSettings
 	curAppSettings := pluginContext.AppInstanceSettings
 	appUpdated := !curAppSettings.Updated.Equal(cachedAppSettings.Updated)
 
-	if appUpdated || configUpdated {
-		backend.Logger.Debug("instance requires update", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "appUpdated", appUpdated, "configUpdated", configUpdated)
+	if appUpdated {
+		backend.Logger.Debug("instance requires update due to app change", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cached_updated", cachedAppSettings.Updated, "current_updated", curAppSettings.Updated)
 	}
 
 	return appUpdated || configUpdated
