@@ -99,8 +99,6 @@ type instanceManager struct {
 	provider   InstanceProvider
 	cache      sync.Map
 	disposeTTL time.Duration
-
-	disposeMutex sync.Mutex // Mutex to protect disposeTTL access in tests
 }
 
 func (im *instanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
@@ -170,13 +168,6 @@ func (im *instanceManager) Do(ctx context.Context, pluginContext backend.PluginC
 	return nil
 }
 
-// setDisposeTTL sets the TTL for disposing instances.
-// This method is only used for testing purposes to control the dispose timing behavior.
-func (im *instanceManager) setDisposeTTL(ttl time.Duration) {
-	im.disposeMutex.Lock()
-	defer im.disposeMutex.Unlock()
-	im.disposeTTL = ttl
-}
 
 func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
 	var params = []reflect.Value{}

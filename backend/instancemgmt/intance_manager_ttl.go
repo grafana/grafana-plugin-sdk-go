@@ -26,7 +26,6 @@ func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceClean
 		panic("provider cannot be nil")
 	}
 
-	// Use go-cache for TTL-based caching
 	cache := gocache.New(instanceTTL, instanceCleanupInterval)
 
 	// Set up the OnEvicted callback to dispose instances

@@ -114,8 +114,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 			},
 		}
 		tip := &testInstanceProvider{}
-		im := New(tip).(*instanceManager)
-		im.setDisposeTTL(time.Millisecond)
+		im := newInstanceManager(tip, time.Millisecond)
 		// Creating initial instance with old contexts
 		instanceToDispose, _ := im.Get(ctx, initialPCtx)
 
