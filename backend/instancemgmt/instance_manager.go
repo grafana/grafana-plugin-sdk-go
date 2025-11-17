@@ -168,7 +168,6 @@ func (im *instanceManager) Do(ctx context.Context, pluginContext backend.PluginC
 	return nil
 }
 
-
 func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
 	var params = []reflect.Value{}
 	params = append(params, reflect.ValueOf(instance))
