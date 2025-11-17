@@ -98,6 +98,48 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	return true
 }
 
+// Diff returns the names of config fields that differ between this config and c2.
+// Returns field names for added, removed, or changed values.
+// Always returns a slice, never nil.
+func (c *GrafanaCfg) Diff(c2 *GrafanaCfg) []string {
+	if c == nil && c2 == nil {
+		return []string{}
+	}
+	if c == nil {
+		var keys []string
+		for k := range c2.config {
+			keys = append(keys, k)
+		}
+		return keys
+	}
+	if c2 == nil {
+		var keys []string
+		for k := range c.config {
+			keys = append(keys, k)
+		}
+		return keys
+	}
+
+	var changed []string
+	keys := make(map[string]bool)
+	for k := range c.config {
+		keys[k] = true
+	}
+	for k := range c2.config {
+		keys[k] = true
+	}
+
+	for key := range keys {
+		v1, ok1 := c.config[key]
+		v2, ok2 := c2.config[key]
+		if ok1 != ok2 || v1 != v2 {
+			changed = append(changed, key)
+		}
+	}
+
+	return changed
+}
+
 // ProxyHash returns the last four characters of the base64-encoded
 // PDC client key contents, if present, for use in datasource instance
 // caching. The contents should be PEM-encoded, so we try to PEM-decode
