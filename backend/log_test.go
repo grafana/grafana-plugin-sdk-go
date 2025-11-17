@@ -33,11 +33,12 @@ func checkCtxLogger(ctx context.Context, t *testing.T, expParams map[string]any)
 
 func TestContextualLogger(t *testing.T) {
 	const pluginID = "plugin-id"
-	pCtx := &pluginv2.PluginContext{PluginId: pluginID}
+	const pluginVersion = "1.0.0"
+	pCtx := &pluginv2.PluginContext{PluginId: pluginID, PluginVersion: pluginVersion}
 	t.Run("DataSDKAdapter", func(t *testing.T) {
 		run := make(chan struct{}, 1)
 		handler := QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
-			checkCtxLogger(ctx, t, map[string]any{"endpoint": "queryData", "pluginId": pluginID})
+			checkCtxLogger(ctx, t, map[string]any{"endpoint": "queryData", "pluginId": pluginID, "pluginVersion": pluginVersion})
 			run <- struct{}{}
 			return NewQueryDataResponse(), nil
 		})
@@ -57,7 +58,7 @@ func TestContextualLogger(t *testing.T) {
 	t.Run("DiagnosticsSDKAdapter", func(t *testing.T) {
 		run := make(chan struct{}, 1)
 		handler := CheckHealthHandlerFunc(func(ctx context.Context, _ *CheckHealthRequest) (*CheckHealthResult, error) {
-			checkCtxLogger(ctx, t, map[string]any{"endpoint": "checkHealth", "pluginId": pluginID})
+			checkCtxLogger(ctx, t, map[string]any{"endpoint": "checkHealth", "pluginId": pluginID, "pluginVersion": pluginVersion})
 			run <- struct{}{}
 			return &CheckHealthResult{}, nil
 		})
@@ -77,7 +78,7 @@ func TestContextualLogger(t *testing.T) {
 	t.Run("ResourceSDKAdapter", func(t *testing.T) {
 		run := make(chan struct{}, 1)
 		handler := CallResourceHandlerFunc(func(ctx context.Context, _ *CallResourceRequest, _ CallResourceResponseSender) error {
-			checkCtxLogger(ctx, t, map[string]any{"endpoint": "callResource", "pluginId": pluginID})
+			checkCtxLogger(ctx, t, map[string]any{"endpoint": "callResource", "pluginId": pluginID, "pluginVersion": pluginVersion})
 			run <- struct{}{}
 			return nil
 		})
@@ -101,17 +102,17 @@ func TestContextualLogger(t *testing.T) {
 		handlers := Handlers{
 			StreamHandler: &streamAdapter{
 				subscribeStreamFunc: func(ctx context.Context, _ *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
-					checkCtxLogger(ctx, t, map[string]any{"endpoint": "subscribeStream", "pluginId": pluginID})
+					checkCtxLogger(ctx, t, map[string]any{"endpoint": "subscribeStream", "pluginId": pluginID, "pluginVersion": pluginVersion})
 					subscribeStreamRun <- struct{}{}
 					return &SubscribeStreamResponse{}, nil
 				},
 				publishStreamFunc: func(ctx context.Context, _ *PublishStreamRequest) (*PublishStreamResponse, error) {
-					checkCtxLogger(ctx, t, map[string]any{"endpoint": "publishStream", "pluginId": pluginID})
+					checkCtxLogger(ctx, t, map[string]any{"endpoint": "publishStream", "pluginId": pluginID, "pluginVersion": pluginVersion})
 					publishStreamRun <- struct{}{}
 					return &PublishStreamResponse{}, nil
 				},
 				runStreamFunc: func(ctx context.Context, _ *RunStreamRequest, _ *StreamSender) error {
-					checkCtxLogger(ctx, t, map[string]any{"endpoint": "runStream", "pluginId": pluginID})
+					checkCtxLogger(ctx, t, map[string]any{"endpoint": "runStream", "pluginId": pluginID, "pluginVersion": pluginVersion})
 					runStreamRun <- struct{}{}
 					return nil
 				},

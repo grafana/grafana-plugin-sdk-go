@@ -18,7 +18,7 @@ var NewLoggerWith = func(args ...interface{}) log.Logger {
 }
 
 func withContextualLogAttributes(ctx context.Context, pCtx PluginContext) context.Context {
-	args := []any{"pluginId", pCtx.PluginID}
+	args := []any{"pluginId", pCtx.PluginID, "pluginVersion", pCtx.PluginVersion}
 
 	endpoint := EndpointFromContext(ctx)
 	if !endpoint.IsEmpty() {

@@ -38,20 +38,33 @@ The goal of the proxy is to provide a way to record and replay HTTP interactions
 
 2. Add the proxy's CA certificate to your environment ([instructions](#ca-certificate-setup)).
 
-3. Start proxy using one of the [commands listed below](#mage-commands). For example:
+3. Add the E2E mage targets to your `Magefile.go` imports.
 
+```diff
+package main
+ 
+import (
+	// mage:import
+	build "github.com/grafana/grafana-plugin-sdk-go/build"
++	// mage:import
++	_ "github.com/grafana/grafana-plugin-sdk-go/experimental/e2e/mage"
+)
 ```
+
+4. Start proxy using one of the [commands listed below](#mage-commands). For example:
+
+```bash
 mage e2e:append
 ```
 
-4. Point Grafana at the proxy by exporting the `HTTP_PROXY` and `HTTPS_PROXY` environment variables:
+5. Point Grafana at the proxy by exporting the `HTTP_PROXY` and `HTTPS_PROXY` environment variables:
 
-```
+```bash
 export HTTP_PROXY=127.0.0.1:9999
 export HTTPS_PROXY=127.0.0.1:9999
 ```
 
-5. Start Grafana
+6. Start Grafana
 
 **Note:** Only queries with **absolute time ranges** should be used with the proxy. Relative time ranges are not supported in the default matcher.
 
@@ -63,13 +76,13 @@ This step is needed so that the proxy can intercept HTTPS traffic. By default, t
 
 1. Add CA certificate:
 
-```
+```bash
 mage e2e:certificate && sudo tee /usr/share/ca-certificates/extra/ca.crt
 ```
 
 2. Update the CA store:
 
-```
+```bash
 sudo update-ca-certificates --fresh
 ```
 
@@ -77,13 +90,13 @@ sudo update-ca-certificates --fresh
 
 1. Create a temporary copy of the CA certificate:
 
-```
+```bash
 mage e2e:certificate > /tmp/grafana-e2e.crt
 ```
 
 2. Add CA certificate:
 
-```
+```bash
 sudo security add-trusted-cert -d -p ssl -p basic -k /Library/Keychains/System.keychain /tmp/grafana-e2e.crt
 ```
 
@@ -186,7 +199,7 @@ Example configuration:
 
 Append mode should be used to record interactions for any new tests. It will record requests and responses for any requests that haven't been seen before, and return recorded responses for any requests that match previously recorded interactions.
 
-```
+```bash
 mage e2e:append
 ```
 
@@ -194,7 +207,7 @@ mage e2e:append
 
 Overwrite mode should be used if previously recorded interactions need to be replaced with new data.
 
-```
+```bash
 mage e2e:overwrite
 ```
 
@@ -202,7 +215,7 @@ mage e2e:overwrite
 
 Replay mode should be used in CI or locally if only playback of recorded data is needed. Replay mode will return recorded responses for any matching requests, and pass any requests that don't match recorded interactions to the target API.
 
-```
+```bash
 mage e2e:replay
 ```
 
@@ -210,7 +223,7 @@ mage e2e:replay
 
 This command prints the CA certificate to stdout so that it can be added to the local test environment. For more information, see the [CA Setup](#ca-certificate-setup) section above.
 
-```
+```bash
 mage e2e:certificate
 ```
 
@@ -300,7 +313,7 @@ func CustomE2E() error {
 
 Start the proxy using the new `CustomE2E` mage target:
 
-```
+```bash
 mage CustomE2E
 ```
 

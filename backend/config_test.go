@@ -375,6 +375,133 @@ func randomProxyContents() []byte {
 
 var b64chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/+"
 
+func TestGrafanaCfg_Diff(t *testing.T) {
+	t.Run("both configs nil should return empty slice", func(t *testing.T) {
+		var cfg1, cfg2 *GrafanaCfg
+		diff := cfg1.Diff(cfg2)
+		require.Empty(t, diff)
+		require.NotNil(t, diff)
+	})
+
+	t.Run("one config nil should return keys from other config", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{"key1": "value1", "key2": "value2"})
+		var cfg2 *GrafanaCfg
+
+		diff1 := cfg1.Diff(cfg2) // cfg1 has keys, cfg2 is nil
+		diff2 := cfg2.Diff(cfg1) // cfg2 is nil, cfg1 has keys
+
+		require.Len(t, diff1, 2)
+		require.Contains(t, diff1, "key1")
+		require.Contains(t, diff1, "key2")
+
+		require.Len(t, diff2, 2)
+		require.Contains(t, diff2, "key1")
+		require.Contains(t, diff2, "key2")
+	})
+
+	t.Run("one config empty should return keys from other config", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{"key1": "value1", "key2": "value2"})
+		cfg2 := NewGrafanaCfg(map[string]string{})
+
+		diff1 := cfg1.Diff(cfg2) // cfg1 has keys, cfg2 is empty
+		diff2 := cfg2.Diff(cfg1) // cfg2 is empty, cfg1 has keys
+
+		require.Len(t, diff1, 2)
+		require.Contains(t, diff1, "key1")
+		require.Contains(t, diff1, "key2")
+
+		require.Len(t, diff2, 2)
+		require.Contains(t, diff2, "key1")
+		require.Contains(t, diff2, "key2")
+	})
+
+	t.Run("empty configs should return empty slice", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{})
+		cfg2 := NewGrafanaCfg(map[string]string{})
+
+		diff := cfg1.Diff(cfg2)
+		require.Empty(t, diff)
+	})
+
+	t.Run("identical configs should return empty slice", func(t *testing.T) {
+		config := map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+			"key3": "value3",
+		}
+		cfg1 := NewGrafanaCfg(config)
+		cfg2 := NewGrafanaCfg(config)
+
+		diff := cfg1.Diff(cfg2)
+		require.Empty(t, diff)
+	})
+
+	t.Run("different values should return changed keys", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"key1": "different_value",
+			"key2": "value2",
+		})
+
+		diff := cfg1.Diff(cfg2)
+		require.Len(t, diff, 1)
+		require.Contains(t, diff, "key1")
+	})
+
+	t.Run("added keys should be detected", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+			"key3": "value3",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		})
+
+		diff := cfg1.Diff(cfg2)
+		require.Len(t, diff, 1)
+		require.Contains(t, diff, "key3")
+	})
+
+	t.Run("removed keys should be detected", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		})
+
+		diff := cfg1.Diff(cfg2)
+		require.Len(t, diff, 1)
+		require.Contains(t, diff, "key2")
+	})
+
+	t.Run("multiple changes should be detected", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			"unchanged": "same_value",
+			"modified":  "old_value",
+			"removed":   "will_be_removed",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"unchanged": "same_value",
+			"modified":  "new_value",
+			"added":     "new_key",
+		})
+
+		diff := cfg1.Diff(cfg2)
+		require.Len(t, diff, 3)
+		require.Contains(t, diff, "modified")
+		require.Contains(t, diff, "removed")
+		require.Contains(t, diff, "added")
+		require.NotContains(t, diff, "unchanged")
+	})
+}
+
 func BenchmarkProxyHash(b *testing.B) {
 	count := 0
 	kBytes := randomProxyContents()
