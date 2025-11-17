@@ -64,7 +64,7 @@ func (ip *instanceProvider) NeedsUpdate(ctx context.Context, pluginContext backe
 	configUpdated := !cachedConfig.Equal(curConfig)
 
 	if configUpdated {
-		backend.Logger.FromContext(ctx).Debug("Instance requires update due to config change", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cached_config", cachedConfig, "current_config", curConfig)
+		backend.Logger.FromContext(ctx).Debug("Instance requires update due to config change", "cached_config", cachedConfig, "current_config", curConfig)
 	}
 
 	cachedAppSettings := cachedInstance.PluginContext.AppInstanceSettings
@@ -72,7 +72,7 @@ func (ip *instanceProvider) NeedsUpdate(ctx context.Context, pluginContext backe
 	appUpdated := !curAppSettings.Updated.Equal(cachedAppSettings.Updated)
 
 	if appUpdated {
-		backend.Logger.FromContext(ctx).Debug("Instance requires update due to app change", "appID", pluginContext.PluginID, "orgID", pluginContext.OrgID, "cached_updated", cachedAppSettings.Updated, "current_updated", curAppSettings.Updated)
+		backend.Logger.FromContext(ctx).Debug("Instance requires update due to app change", "cached_updated", cachedAppSettings.Updated, "current_updated", curAppSettings.Updated)
 	}
 
 	return appUpdated || configUpdated
