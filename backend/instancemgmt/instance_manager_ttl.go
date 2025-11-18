@@ -28,13 +28,14 @@ func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceClean
 
 	cache := gocache.New(instanceTTL, instanceCleanupInterval)
 
-	// Set up the OnEvicted callback to dispose instances
+	// Set up the OnEvicted callback to dispose instances safely
 	cache.OnEvicted(func(key string, value interface{}) {
 		ci := value.(CachedInstance)
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			disposer.Dispose()
+			safeDispose(ci.instance, disposer)
+		} else {
+			backend.Logger.Debug("Evicted instance", "key", key)
 		}
-		backend.Logger.Debug("Evicted instance", "key", key)
 		activeInstances.Dec()
 	})
 
@@ -116,8 +117,51 @@ func (im *instanceManagerWithTTL) Do(ctx context.Context, pluginContext backend.
 	return nil
 }
 
+func (im *instanceManagerWithTTL) Provider() InstanceProvider {
+	return im.provider
+}
+
 // refreshTTL updates the TTL of the cached instance by resetting its expiration time.
 func (im *instanceManagerWithTTL) refreshTTL(cacheKey string, ci CachedInstance) {
 	// SetDefault() technically creates a new cache entry with fresh TTL, effectively extending the instance's lifetime.
 	im.cache.SetDefault(cacheKey, ci)
+}
+
+// safeDispose checks if an instance is busy before disposing it
+// If busy, it will retry with a timeout
+func safeDispose(instance Instance, disposer InstanceDisposer) {
+	if busyChecker, ok := instance.(InstanceBusyChecker); ok && busyChecker.Busy() {
+		backend.Logger.Debug("TTL instance is busy, delaying disposal")
+		retryDispose(instance, disposer, 30*time.Second)
+		return
+	}
+
+	backend.Logger.Debug("Disposing TTL instance")
+	disposer.Dispose()
+}
+
+// retryDispose waits for a TTL instance to become idle before disposing it
+func retryDispose(instance Instance, disposer InstanceDisposer, timeout time.Duration) {
+	go func() {
+		deadline := time.Now().Add(timeout)
+		ticker := time.NewTicker(1 * time.Second)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			// Check if instance is still busy
+			if busyChecker, ok := instance.(InstanceBusyChecker); ok && busyChecker.Busy() {
+				// Still busy, check if we've exceeded timeout
+				if time.Now().After(deadline) {
+					backend.Logger.Warn("Timeout waiting for TTL instance to become idle, disposing anyway")
+					disposer.Dispose()
+					return
+				}
+				continue
+			}
+
+			backend.Logger.Debug("TTL instance became idle, proceeding with disposal")
+			disposer.Dispose()
+			return
+		}
+	}()
 }
