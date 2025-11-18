@@ -32,11 +32,7 @@ func NewFixture(store storage.Storage) *Fixture {
 // Add processes the http.Request and http.Response with the Fixture's RequestProcessor and ResponseProcessor and adds them to the Fixure's Storage.
 func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) error {
 	req := f.processRequest(originalReq)
-	var res *http.Response
-	if originalRes != nil {
-		// only process a response that is not nil
-		res = f.processResponse(originalRes)
-	}
+	res := f.processResponse(originalRes)
 	defer res.Body.Close()
 	return f.store.Add(req, res)
 }
