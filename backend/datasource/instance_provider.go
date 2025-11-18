@@ -30,7 +30,7 @@ type InstanceFactoryFunc func(ctx context.Context, settings backend.DataSourceIn
 // and providing that to instancemgmt.New.
 func NewInstanceManager(fn InstanceFactoryFunc) instancemgmt.InstanceManager {
 	ip := NewInstanceProvider(fn)
-	return instancemgmt.New(ip)
+	return instancemgmt.NewInstanceManagerWrapper(ip)
 }
 
 // NewInstanceProvider create a new data source instance provider,

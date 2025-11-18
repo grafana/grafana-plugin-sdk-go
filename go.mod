@@ -27,6 +27,7 @@ require (
 	github.com/mattetti/filebuffer v1.0.1
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v0.0.5
+	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
 	github.com/prometheus/common v0.67.2
 	github.com/stretchr/testify v1.11.1

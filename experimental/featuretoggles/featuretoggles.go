@@ -7,6 +7,10 @@ import (
 
 const (
 	EnabledFeatures = "GF_INSTANCE_FEATURE_TOGGLES_ENABLE"
+
+	// TTLInstanceManager is a feature toggle for enabling the TTL-based instance manager.
+	// When enabled, instances will be automatically evicted from the cache after a certain TTL.
+	TTLInstanceManager = "ttlPluginInstanceManager"
 )
 
 // FeatureToggles can check if feature toggles are enabled on the Grafana instance.
