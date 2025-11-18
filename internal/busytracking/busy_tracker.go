@@ -36,21 +36,21 @@ func (w *busyTrackingInstanceManager) Get(ctx context.Context, pluginContext bac
 // busyTrackingWrapper automatically wraps any instance with busy tracking
 type busyTrackingWrapper struct {
 	instancemgmt.Instance
-	isBusy int32 // Atomic busy flag
+	activeRequests atomic.Int32
 }
 
 // SetBusy marks this instance as busy or idle
 func (w *busyTrackingWrapper) SetBusy(busy bool) {
 	if busy {
-		atomic.StoreInt32(&w.isBusy, 1)
+		w.activeRequests.Add(1)
 	} else {
-		atomic.StoreInt32(&w.isBusy, 0)
+		w.activeRequests.Add(-1)
 	}
 }
 
 // Busy returns true if this instance is currently busy
 func (w *busyTrackingWrapper) Busy() bool {
-	return atomic.LoadInt32(&w.isBusy) == 1
+	return w.activeRequests.Load() > 0
 }
 
 // Dispose delegates to the wrapped instance if it supports disposal
