@@ -33,9 +33,8 @@ func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceClean
 		ci := value.(CachedInstance)
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			safeDispose(ci.instance, disposer)
-		} else {
-			backend.Logger.Debug("Evicted instance", "key", key)
 		}
+		backend.Logger.Debug("Evicted instance", "key", key)
 		activeInstances.Dec()
 	})
 

@@ -47,7 +47,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	if err := backend.SetupTracer(pluginID, opts.TracingOpts); err != nil {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
-	// Create instance manager with automatic busy tracking to prevent race conditions
+
 	instanceManager := busytracking.NewManager(NewInstanceManager(instanceFactory))
 	handler := automanagement.NewManager(instanceManager)
 	return backend.Manage(pluginID, backend.ServeOpts{

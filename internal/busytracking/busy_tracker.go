@@ -60,8 +60,6 @@ func (w *busyTrackingWrapper) Dispose() {
 	}
 }
 
-// Delegate backend handler methods to the wrapped instance with busy tracking
-
 // QueryData delegates to the wrapped instance with busy tracking
 func (w *busyTrackingWrapper) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	if handler, ok := w.Instance.(backend.QueryDataHandler); ok {
