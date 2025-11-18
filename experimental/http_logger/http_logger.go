@@ -73,8 +73,9 @@ func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 	if err != nil {
 		if !skipSaving {
 			// save information from the request and failed response (if anything is available)
-			// nolint:errcheck - if there is a problem writing the error, we move on and just return the http error
+			// nolint:errcheck
 			hl.fixture.Add(req, res)
+			// re: errcheck - if there is a err this call, we move on and just return the http error
 		}
 		return res, err
 	}
