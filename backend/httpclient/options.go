@@ -118,6 +118,10 @@ type TLSOptions struct {
 
 	// MaxVersion configures the tls.Config.MaxVersion.
 	MaxVersion uint16
+
+	// GetClientCertificate optionally provides a callback
+	// for getting client certificates.
+	GetClientCertificate func(*tls.CertificateRequestInfo) (*tls.Certificate, error)
 }
 
 // SigV4Config AWS SigV4 options.
