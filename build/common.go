@@ -247,6 +247,16 @@ func (Build) DarwinARM64() error {
 	return buildBackend(newBuildConfig("darwin", "arm64"))
 }
 
+// FreeBSD builds the back-end plugin for FreeBSD on AMD64.
+func (Build) FreeBSD() error {
+	return buildBackend(newBuildConfig("freebsd", "amd64"))
+}
+
+// FreeBSDARM64 builds the back-end plugin for FreeBSD on ARM64.
+func (Build) FreeBSDARM64() error {
+	return buildBackend(newBuildConfig("freebsd", "arm"))
+}
+
 // Custom allows customizable back-end plugin builds for the provided os and arch.
 // Note: Cutomized builds are not officially supported by Grafana, so this option is intended for developers who need
 // to create their own custom build targets.
@@ -325,6 +335,20 @@ func (Build) DebugWindowsAMD64() error {
 	return buildBackend(cfg)
 }
 
+// DebugFreeBSDAMD64 builds the debug version targeted for FreeBSD on AMD64.
+func (Build) DebugFreeBSDAMD64() error {
+	cfg := newBuildConfig("freebsd", "amd64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+
+// DebugFreeBSDARM64 builds the debug version targeted for FreeBSD  on ARM64.
+func (Build) DebugFreeBSDARM64() error {
+	cfg := newBuildConfig("freebsd", "arm64")
+	cfg.EnableDebug = true
+	return buildBackend(cfg)
+}
+
 // Backend build a production build for the current platform
 func (Build) Backend() error {
 	// The M1 platform detection is kinda flakey, so we will just build both
@@ -342,7 +366,8 @@ func (Build) Backend() error {
 // BuildAll builds production executables for all supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
+	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM,
+		b.FreeBSD, b.FreeBSDARM64)
 }
 
 //go:embed tmpl/*
