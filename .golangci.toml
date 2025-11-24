@@ -1,14 +1,5 @@
 version = "2"
 
-
-[linters-settings.goconst]
-min-len = 5
-min-occurrences = 5
-
-[linters-settings.revive]
-ignore-generated-header = false
-
-
 [linters]
 enable = [
   "bodyclose",
