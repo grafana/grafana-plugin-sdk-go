@@ -69,7 +69,7 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Contains(t, httpHandler.req.Header, "X-Header-In-2")
 			require.Equal(t, []string{"F"}, httpHandler.req.Header["X-Header-In-2"])
 			require.NotNil(t, httpHandler.req.Body)
-			defer httpHandler.req.Body.Close()
+			defer func() { _ = httpHandler.req.Body.Close() }()
 			actualBodyBytes, err := io.ReadAll(httpHandler.req.Body)
 			require.NoError(t, err)
 			var actualJSONMap map[string]interface{}

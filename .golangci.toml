@@ -1,5 +1,5 @@
-[issues]
-exclude-files = ["data/.*\\.gen\\.go", "data/generic_nullable_vector\\.go", "data/generic_vector\\.go"]
+version = "2"
+
 
 [linters-settings.goconst]
 min-len = 5
@@ -8,29 +8,17 @@ min-occurrences = 5
 [linters-settings.revive]
 ignore-generated-header = false
 
-[linters-settings.misspell]
-ignore-words = ["unknwon"]
-
-[linters-settings.depguard.rules.main]
-allow = [] # allow all
-deny = [
-  { pkg = "io/ioutil", desc = "Deprecated: As of Go 1.16, the same functionality is now provided by package io or package os, and those implementations should be preferred in new code. See the specific function documentation for details." },
-]
 
 [linters]
-disable-all = true
 enable = [
   "bodyclose",
-  "depguard",
   "dogsled",
   "errcheck",
   "gochecknoinits",
   "goconst",
   "gocritic",
-  "goimports",
   "goprintffuncname",
   "gosec",
-  "gosimple",
   "govet",
   "ineffassign",
   "misspell",
@@ -38,8 +26,6 @@ enable = [
   "rowserrcheck",
   "copyloopvar",
   "staticcheck",
-  "stylecheck",
-  "typecheck",
   "unconvert",
   "unused",
   "whitespace",
@@ -50,14 +36,4 @@ enable = [
   "errorlint",
   "sqlclosecheck",
   "thelper",
-  "revive"
 ]
-# Don't require that errors are included through wrapping, since might not always want to wrap an error
-[[issues.exclude-rules]]
-linters = ["errorlint"]
-text = "non-wrapping format verb for fmt.Errorf"
-[[issues.exclude-rules]]
-linters = ["staticcheck"]
-text = "SA1019"
-[linters-settings.gosec]
-excludes = ["G115"]

@@ -48,7 +48,7 @@ func TestNewSecureSocksProxyContextDialer_SupportsFilePathAndContents(t *testing
 
 	rootCACert, rootCACertFilePath, err := createRootCA(t, caPrivKey)
 	require.NoError(t, err)
-	rootCaCertValue, err := os.ReadFile(rootCACertFilePath)
+	rootCaCertValue, err := os.ReadFile(rootCACertFilePath) // #nosec G304
 	require.NoError(t, err)
 	clientCertContents, clientCertFilePath, err := createClientCert(t, rootCACert, caPrivKey)
 	require.NoError(t, err)
@@ -243,7 +243,7 @@ func TestPreventInvalidRootCA(t *testing.T) {
 
 	t.Run("root ca must be of the type CERTIFICATE", func(t *testing.T) {
 		rootCACert := filepath.Join(tempDir, "ca.cert")
-		caCertFile, err := os.Create(rootCACert)
+		caCertFile, err := os.Create(rootCACert) // #nosec G301 G304
 		require.NoError(t, err)
 		err = pem.Encode(caCertFile, &pem.Block{
 			Type:  "PUBLIC KEY",
@@ -275,7 +275,7 @@ func setupTestSecureSocksProxySettings(t *testing.T) *ClientCfg {
 
 	rootCACert, rootCACertFilePath, err := createRootCA(t, caPrivKey)
 	require.NoError(t, err)
-	rootCaCertValue, err := os.ReadFile(rootCACertFilePath)
+	rootCaCertValue, err := os.ReadFile(rootCACertFilePath) // #nosec G304
 	require.NoError(t, err)
 
 	clientCertValue, _, err := createClientCert(t, rootCACert, caPrivKey)
@@ -372,7 +372,7 @@ func Test_getTLSDialer(t *testing.T) {
 
 		rootCACert1, rootCACertFilePath1, err := createRootCA(t, caPrivKey1)
 		require.NoError(t, err)
-		rootCaCertValue1, err := os.ReadFile(rootCACertFilePath1)
+		rootCaCertValue1, err := os.ReadFile(rootCACertFilePath1) // #nosec G304
 		require.NoError(t, err)
 
 		clientCertValue1, clientCertFilePath1, err := createClientCert(t, rootCACert1, caPrivKey1)
@@ -385,7 +385,7 @@ func Test_getTLSDialer(t *testing.T) {
 
 		rootCACert2, rootCACertFilePath2, err := createRootCA(t, caPrivKey2)
 		require.NoError(t, err)
-		rootCaCertValue2, err := os.ReadFile(rootCACertFilePath2)
+		rootCaCertValue2, err := os.ReadFile(rootCACertFilePath2) // #nosec G304
 		require.NoError(t, err)
 
 		clientCertValue2, _, err := createClientCert(t, rootCACert2, caPrivKey2)

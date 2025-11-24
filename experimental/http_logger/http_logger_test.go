@@ -20,7 +20,7 @@ func TestHTTPLogger(t *testing.T) {
 		c, f := setup(t, true)
 		res, err := c.Get("http://example.com")
 		require.NoError(t, err)
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		require.Equal(t, http.StatusOK, res.StatusCode)
 		b, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
@@ -39,7 +39,7 @@ func TestHTTPLogger(t *testing.T) {
 		c, f := setup(t, false)
 		res, err := c.Get("http://example.com")
 		require.NoError(t, err)
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		require.Equal(t, http.StatusOK, res.StatusCode)
 		b, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
@@ -56,7 +56,7 @@ func TestHTTPLogger(t *testing.T) {
 		t.Setenv(httplogger.PluginHARLogPathEnv, "")
 
 		f, err := os.CreateTemp("", "test_*.har")
-		defer os.Remove(f.Name())
+		defer func() { _ = os.Remove(f.Name()) }()
 		require.NoError(t, err)
 		h := httplogger.NewHTTPLogger("example-plugin-id", &fakeRoundTripper{}, httplogger.Options{
 			Path:      f.Name(),
@@ -68,7 +68,7 @@ func TestHTTPLogger(t *testing.T) {
 		}
 		res, err := c.Get("http://example.com")
 		require.NoError(t, err)
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		require.Equal(t, http.StatusOK, res.StatusCode)
 		b, err := io.ReadAll(res.Body)
 		require.NoError(t, err)
@@ -88,7 +88,7 @@ func setup(t *testing.T, enabled bool) (*http.Client, *os.File) {
 	t.Helper()
 
 	f, err := os.CreateTemp("", "example_*.har")
-	defer os.Remove(f.Name())
+	defer func() { _ = os.Remove(f.Name()) }()
 	if err != nil {
 		panic(err)
 	}

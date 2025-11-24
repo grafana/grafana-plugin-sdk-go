@@ -80,8 +80,8 @@ func schemaDataQuery(_ common.ReferenceCallback) common.OpenAPIDefinition {
 	if s == nil {
 		s = &spec.Schema{}
 	}
-	s.SchemaProps.Type = []string{"object"}
-	s.SchemaProps.AdditionalProperties = &spec.SchemaOrBool{Allows: true}
+	s.Type = []string{"object"}
+	s.AdditionalProperties = &spec.SchemaOrBool{Allows: true}
 	return common.OpenAPIDefinition{Schema: *s}
 }
 

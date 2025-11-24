@@ -13,13 +13,13 @@ import (
 func TestCopyFile(t *testing.T) {
 	src, err := os.CreateTemp("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(src.Name())
+	defer func() { _ = os.RemoveAll(src.Name()) }()
 	err = os.WriteFile(src.Name(), []byte("Contents"), 0600)
 	require.NoError(t, err)
 
 	dst, err := os.CreateTemp("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(dst.Name())
+	defer func() { _ = os.RemoveAll(dst.Name()) }()
 
 	err = CopyFile(src.Name(), dst.Name())
 	require.NoError(t, err)
@@ -29,7 +29,7 @@ func TestCopyFile(t *testing.T) {
 func TestCopyFile_NonExistentDestDir(t *testing.T) {
 	src, err := os.CreateTemp("", "")
 	require.NoError(t, err)
-	defer os.RemoveAll(src.Name())
+	defer func() { _ = os.RemoveAll(src.Name()) }()
 
 	err = CopyFile(src.Name(), "non-existent/dest")
 	require.EqualError(t, err, "destination directory doesn't exist: \"non-existent\"")
@@ -38,7 +38,7 @@ func TestCopyFile_NonExistentDestDir(t *testing.T) {
 func TestCopyRecursive_NonExistentDest(t *testing.T) {
 	src := t.TempDir()
 
-	err := os.MkdirAll(path.Join(src, "data"), 0755)
+	err := os.MkdirAll(path.Join(src, "data"), 0755) // #nosec G301 -- Test directory is created in temp dir
 	require.NoError(t, err)
 	err = os.WriteFile(path.Join(src, "data", "file.txt"), []byte("Test"), 0600)
 	require.NoError(t, err)
@@ -56,7 +56,7 @@ func TestCopyRecursive_NonExistentDest(t *testing.T) {
 func TestCopyRecursive_ExistentDest(t *testing.T) {
 	src := t.TempDir()
 
-	err := os.MkdirAll(path.Join(src, "data"), 0755)
+	err := os.MkdirAll(path.Join(src, "data"), 0755) // #nosec G301 -- Test directory is created in temp dir
 	require.NoError(t, err)
 	err = os.WriteFile(path.Join(src, "data", "file.txt"), []byte("Test"), 0600)
 	require.NoError(t, err)
@@ -97,9 +97,9 @@ func compareDirs(t *testing.T, src, dst string) {
 			return nil
 		}
 
-		srcData, err := os.ReadFile(srcPath)
+		srcData, err := os.ReadFile(srcPath) // #nosec G304
 		require.NoError(t, err)
-		dstData, err := os.ReadFile(dstPath)
+		dstData, err := os.ReadFile(dstPath) // #nosec G304
 		require.NoError(t, err)
 
 		require.Equal(t, srcData, dstData)

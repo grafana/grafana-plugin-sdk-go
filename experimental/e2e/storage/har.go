@@ -243,7 +243,7 @@ func (s *HAR) Save() error {
 }
 
 func (s *HAR) saveUnsafe() error {
-	err := os.MkdirAll(filepath.Dir(s.path), os.ModePerm)
+	err := os.MkdirAll(filepath.Dir(s.path), os.ModePerm) // #nosec G301
 	if err != nil {
 		return err
 	}
@@ -282,7 +282,7 @@ func (s *HAR) Match(req *http.Request) *http.Response {
 func (s *HAR) findEntry(req *http.Request) (int, *Entry) {
 	for i, entry := range s.Entries() {
 		if res := entry.Match(req); res != nil {
-			res.Body.Close()
+			_ = res.Body.Close()
 			return i, entry
 		}
 	}

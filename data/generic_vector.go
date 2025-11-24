@@ -1,3 +1,4 @@
+//nolint:unused
 package data
 
 import (
@@ -48,7 +49,7 @@ func (v *genVector) Len() int {
 }
 
 func (v *genVector) CopyAt(i int) interface{} {
-	var g gen
+	var g gen //nolint:staticcheck // S1021: generated code pattern
 	g = (*v)[i]
 	return g
 }

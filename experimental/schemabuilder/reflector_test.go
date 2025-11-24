@@ -136,7 +136,7 @@ func validateOpenAPIv2Schema(t *testing.T, data []byte, file string) {
 
 	tmpFile, err := os.CreateTemp("", "swagger-*.json")
 	require.NoError(t, err, file)
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	_, err = tmpFile.Write(swaggerBytes)
 	require.NoError(t, err, file)

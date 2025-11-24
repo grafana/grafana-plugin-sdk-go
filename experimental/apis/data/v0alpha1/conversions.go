@@ -54,7 +54,7 @@ func ToDataSourceQueries(req QueryDataRequest) ([]backend.DataQuery, *DataSource
 // to improve compatibility, we remove it from the json bytes
 // NOTE: it will still be available in the `.TimeRange` field
 // of `backend.DataQuery`.
-var timeRangeKey = "timeRange"
+const timeRangeKey = "timeRange"
 
 func deleteTimeRangeFromQueryJSON(data []byte) ([]byte, error) {
 	var d map[string]any

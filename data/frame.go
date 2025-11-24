@@ -460,8 +460,8 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 	}
 
 	sb := &strings.Builder{}
-	sb.WriteString(fmt.Sprintf("Name: %v\n", f.Name))
-	sb.WriteString(fmt.Sprintf("Dimensions: %v Fields by %v Rows\n", len(f.Fields), rowLen))
+	fmt.Fprintf(sb, "Name: %v\n", f.Name)
+	fmt.Fprintf(sb, "Dimensions: %v Fields by %v Rows\n", len(f.Fields), rowLen)
 
 	table := tablewriter.NewWriter(sb)
 

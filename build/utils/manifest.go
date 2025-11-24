@@ -37,7 +37,7 @@ func hashFileContent(path string) (string, error) {
 	// Handle hashing big files.
 	// Source: https://stackoverflow.com/q/60328216/1722542
 
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304
 	if err != nil {
 		return "", err
 	}

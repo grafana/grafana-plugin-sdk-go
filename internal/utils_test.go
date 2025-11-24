@@ -62,12 +62,12 @@ func TestGetExecutableFromPluginJSON(t *testing.T) {
 	for _, tc := range tcs {
 		rootDir := t.TempDir()
 		pluginRootDir := filepath.Join(rootDir, tc.pluginJSONDir)
-		err := os.MkdirAll(pluginRootDir, os.ModePerm)
+		err := os.MkdirAll(pluginRootDir, os.ModePerm) // #nosec G301
 		require.NoError(t, err)
-		f, err := os.Create(filepath.Join(pluginRootDir, "plugin.json"))
+		f, err := os.Create(filepath.Join(pluginRootDir, "plugin.json")) // #nosec G304
 		require.NoError(t, err)
 
-		_, err = f.WriteString(fmt.Sprintf(`{"executable": %q}`, tc.executable))
+		_, err = fmt.Fprintf(f, `{"executable": %q}`, tc.executable)
 		require.NoError(t, err)
 		err = f.Close()
 		require.NoError(t, err)
