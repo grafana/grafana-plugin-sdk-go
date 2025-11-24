@@ -52,7 +52,8 @@ func (v *uint8Vector) Len() int {
 }
 
 func (v *uint8Vector) CopyAt(i int) interface{} {
-	var g uint8 = (*v)[i]
+	var g uint8
+	g = (*v)[i]
 	return g
 }
 
@@ -127,7 +128,8 @@ func (v *uint16Vector) Len() int {
 }
 
 func (v *uint16Vector) CopyAt(i int) interface{} {
-	var g uint16 = (*v)[i]
+	var g uint16
+	g = (*v)[i]
 	return g
 }
 
@@ -202,7 +204,8 @@ func (v *uint32Vector) Len() int {
 }
 
 func (v *uint32Vector) CopyAt(i int) interface{} {
-	var g uint32 = (*v)[i]
+	var g uint32
+	g = (*v)[i]
 	return g
 }
 
@@ -277,7 +280,8 @@ func (v *uint64Vector) Len() int {
 }
 
 func (v *uint64Vector) CopyAt(i int) interface{} {
-	var g uint64 = (*v)[i]
+	var g uint64
+	g = (*v)[i]
 	return g
 }
 
@@ -352,7 +356,8 @@ func (v *int8Vector) Len() int {
 }
 
 func (v *int8Vector) CopyAt(i int) interface{} {
-	var g int8 = (*v)[i]
+	var g int8
+	g = (*v)[i]
 	return g
 }
 
@@ -427,7 +432,8 @@ func (v *int16Vector) Len() int {
 }
 
 func (v *int16Vector) CopyAt(i int) interface{} {
-	var g int16 = (*v)[i]
+	var g int16
+	g = (*v)[i]
 	return g
 }
 
@@ -502,7 +508,8 @@ func (v *int32Vector) Len() int {
 }
 
 func (v *int32Vector) CopyAt(i int) interface{} {
-	var g int32 = (*v)[i]
+	var g int32
+	g = (*v)[i]
 	return g
 }
 
@@ -577,7 +584,8 @@ func (v *int64Vector) Len() int {
 }
 
 func (v *int64Vector) CopyAt(i int) interface{} {
-	var g int64 = (*v)[i]
+	var g int64
+	g = (*v)[i]
 	return g
 }
 
@@ -652,7 +660,8 @@ func (v *float32Vector) Len() int {
 }
 
 func (v *float32Vector) CopyAt(i int) interface{} {
-	var g float32 = (*v)[i]
+	var g float32
+	g = (*v)[i]
 	return g
 }
 
@@ -727,7 +736,8 @@ func (v *float64Vector) Len() int {
 }
 
 func (v *float64Vector) CopyAt(i int) interface{} {
-	var g float64 = (*v)[i]
+	var g float64
+	g = (*v)[i]
 	return g
 }
 
@@ -802,7 +812,8 @@ func (v *stringVector) Len() int {
 }
 
 func (v *stringVector) CopyAt(i int) interface{} {
-	var g string = (*v)[i]
+	var g string
+	g = (*v)[i]
 	return g
 }
 
@@ -877,7 +888,8 @@ func (v *boolVector) Len() int {
 }
 
 func (v *boolVector) CopyAt(i int) interface{} {
-	var g bool = (*v)[i]
+	var g bool
+	g = (*v)[i]
 	return g
 }
 
@@ -952,7 +964,8 @@ func (v *timeTimeVector) Len() int {
 }
 
 func (v *timeTimeVector) CopyAt(i int) interface{} {
-	var g time.Time = (*v)[i]
+	var g time.Time
+	g = (*v)[i]
 	return g
 }
 
@@ -1027,7 +1040,8 @@ func (v *jsonRawMessageVector) Len() int {
 }
 
 func (v *jsonRawMessageVector) CopyAt(i int) interface{} {
-	var g json.RawMessage = (*v)[i]
+	var g json.RawMessage
+	g = (*v)[i]
 	return g
 }
 
