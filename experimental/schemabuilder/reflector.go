@@ -225,23 +225,23 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 
 	// The updated schemas
 	for _, def := range b.query {
-	found, ok := byName[def.Name]
-	if !ok {
-		defs.ResourceVersion = rv
-		def.ResourceVersion = rv
-		def.CreationTimestamp = now.Format(time.RFC3339)
+		found, ok := byName[def.Name]
+		if !ok {
+			defs.ResourceVersion = rv
+			def.ResourceVersion = rv
+			def.CreationTimestamp = now.Format(time.RFC3339)
 
-		defs.Items = append(defs.Items, def)
-	} else {
-		x := sdkapi.AsUnstructured(def.Spec)
-		y := sdkapi.AsUnstructured(found.Spec)
-		if diff := cmp.Diff(stripNilValues(x.Object), stripNilValues(y.Object), cmpopts.EquateEmpty()); diff != "" {
-			fmt.Printf("Spec changed:\n%s\n", diff)
-			found.ResourceVersion = rv
-			found.Spec = def.Spec
+			defs.Items = append(defs.Items, def)
+		} else {
+			x := sdkapi.AsUnstructured(def.Spec)
+			y := sdkapi.AsUnstructured(found.Spec)
+			if diff := cmp.Diff(stripNilValues(x.Object), stripNilValues(y.Object), cmpopts.EquateEmpty()); diff != "" {
+				fmt.Printf("Spec changed:\n%s\n", diff)
+				found.ResourceVersion = rv
+				found.Spec = def.Spec
+			}
+			delete(byName, def.Name)
 		}
-		delete(byName, def.Name)
-	}
 	}
 
 	if defs.ResourceVersion == "" {

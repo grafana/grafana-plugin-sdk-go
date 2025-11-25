@@ -75,10 +75,10 @@ func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 	// The types for each query type
 	queryTypes := []*spec.Schema{}
 	for _, qt := range opts.QueryTypes {
-	node := qt.Spec.Schema.DeepCopy().Spec
-	if node == nil {
-		return nil, fmt.Errorf("missing schema for: %s", qt.Name)
-	}
+		node := qt.Spec.Schema.DeepCopy().Spec
+		if node == nil {
+			return nil, fmt.Errorf("missing schema for: %s", qt.Name)
+		}
 
 		// Match all discriminators
 		for _, d := range qt.Spec.Discriminators {
