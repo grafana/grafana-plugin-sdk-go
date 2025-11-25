@@ -201,8 +201,8 @@ func TestAppURL(t *testing.T) {
 	})
 
 	t.Run("it should return the configured app URL from env", func(t *testing.T) {
-		os.Setenv(AppURL, "http://localhost-env:3000")
-		defer os.Unsetenv(AppURL)
+		_ = os.Setenv(AppURL, "http://localhost-env:3000")
+		defer func() { _ = os.Unsetenv(AppURL) }()
 		cfg := NewGrafanaCfg(map[string]string{})
 		v, err := cfg.AppURL()
 		require.NoError(t, err)
@@ -354,8 +354,8 @@ func TestPluginAppClientSecret(t *testing.T) {
 	})
 
 	t.Run("it should return the configured PluginAppClientSecret from env", func(t *testing.T) {
-		os.Setenv(AppClientSecret, "client-secret")
-		defer os.Unsetenv(AppClientSecret)
+		_ = os.Setenv(AppClientSecret, "client-secret")
+		defer func() { _ = os.Unsetenv(AppClientSecret) }()
 		cfg := NewGrafanaCfg(map[string]string{})
 		v, err := cfg.PluginAppClientSecret()
 		require.NoError(t, err)

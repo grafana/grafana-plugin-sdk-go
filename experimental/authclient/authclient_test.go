@@ -35,22 +35,22 @@ func TestNew(t *testing.T) {
 				}, authclient.AuthOptions{
 					AuthMethod: authclient.AuthMethodOAuth2,
 					OAuth2Options: &authclient.OAuth2Options{
-						OAuth2Type: authclient.OAuth2TypeClientCredentials,
-						TokenURL:   server.URL + handlerToken,
-					},
-				})
-				require.Nil(t, err)
-				require.NotNil(t, hc)
-				res, err := hc.Get(server.URL + handlerFoo)
-				require.Nil(t, err)
-				require.NotNil(t, res)
-				if res != nil && res.Body != nil {
-					defer res.Body.Close()
-				}
-				bodyBytes, err := io.ReadAll(res.Body)
-				require.Nil(t, err)
-				assert.Equal(t, http.StatusOK, res.StatusCode)
-				assert.Equal(t, `"hello world"`, string(bodyBytes))
+					OAuth2Type: authclient.OAuth2TypeClientCredentials,
+					TokenURL:   server.URL + handlerToken,
+				},
+			})
+			require.Nil(t, err)
+			require.NotNil(t, hc)
+			res, err := hc.Get(server.URL + handlerFoo)
+			require.Nil(t, err)
+			require.NotNil(t, res)
+			if res != nil && res.Body != nil {
+				defer func() { _ = res.Body.Close() }()
+			}
+			bodyBytes, err := io.ReadAll(res.Body)
+			require.Nil(t, err)
+			assert.Equal(t, http.StatusOK, res.StatusCode)
+			assert.Equal(t, `"hello world"`, string(bodyBytes))
 			})
 			t.Run("valid client credentials with basic auth settings", func(t *testing.T) {
 				hc, err := authclient.New(httpclient.Options{
@@ -69,7 +69,7 @@ func TestNew(t *testing.T) {
 				require.Nil(t, err)
 				require.NotNil(t, res)
 				if res != nil && res.Body != nil {
-					defer res.Body.Close()
+					defer func() { _ = res.Body.Close() }()
 				}
 				bodyBytes, err := io.ReadAll(res.Body)
 				require.Nil(t, err)
@@ -94,7 +94,7 @@ func TestNew(t *testing.T) {
 				require.NotNil(t, hc)
 				res, err := hc.Get(server.URL + handlerFoo)
 				if res != nil && res.Body != nil {
-					defer res.Body.Close()
+					defer func() { _ = res.Body.Close() }()
 				}
 				require.NotNil(t, err)
 				assert.True(t, strings.Contains(err.Error(), "private key should be a PEM or plain PKCS1 or PKCS8; parse error: asn1: structure error"))
@@ -118,7 +118,7 @@ func TestNew(t *testing.T) {
 				require.Nil(t, err)
 				require.NotNil(t, res)
 				if res != nil && res.Body != nil {
-					defer res.Body.Close()
+					defer func() { _ = res.Body.Close() }()
 				}
 				bodyBytes, err := io.ReadAll(res.Body)
 				require.Nil(t, err)

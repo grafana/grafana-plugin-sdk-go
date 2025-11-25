@@ -16,7 +16,7 @@ import (
 
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
-	bra "github.com/unknwon/bra/cmd"
+	bra "github.com/unknwon/bra/cmd" // nolint:misspell
 	"github.com/urfave/cli"
 
 	"github.com/grafana/grafana-plugin-sdk-go/build/buildinfo"
@@ -271,7 +271,7 @@ func (Build) GenerateManifestFile() error {
 	}
 
 	manifestFilePath := filepath.Join(outputPath, "go_plugin_build_manifest")
-	err = os.MkdirAll(outputPath, 0755)
+	err = os.MkdirAll(outputPath, 0755) // #nosec G301
 	if err != nil {
 		return err
 	}
@@ -397,6 +397,7 @@ func TestRace() error {
 // Coverage runs backend tests and makes a coverage report.
 func Coverage() error {
 	// Create a coverage folder if it does not already exist
+	// #nosec G301
 	if err := os.MkdirAll(filepath.Join(".", "coverage"), os.ModePerm); err != nil {
 		return err
 	}

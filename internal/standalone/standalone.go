@@ -283,7 +283,7 @@ func FindAndKillCurrentPlugin(dir string) {
 		return
 	}
 
-	out, err := exec.Command("pgrep", "-f", executablePath).Output()
+	out, err := exec.Command("pgrep", "-f", executablePath).Output() // #nosec G204
 	if err != nil {
 		fmt.Printf("error running pgrep: %s (%s)", err.Error(), executablePath)
 		return
@@ -299,7 +299,7 @@ func FindAndKillCurrentPlugin(dir string) {
 			log.Printf("Killing process: %d", pid)
 			// err := syscall.Kill(pid, 9)
 			pidstr := fmt.Sprintf("%d", pid)
-			err = exec.Command("kill", "-9", pidstr).Run()
+			err = exec.Command("kill", "-9", pidstr).Run() // #nosec G204
 			if err != nil {
 				log.Printf("Error: %s", err.Error())
 			}

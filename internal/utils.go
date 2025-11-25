@@ -10,7 +10,7 @@ import (
 )
 
 func GetStringValueFromJSON(fpath string, key string) (string, error) {
-	byteValue, err := os.ReadFile(fpath)
+	byteValue, err := os.ReadFile(fpath) // #nosec G304
 	if err != nil {
 		return "", err
 	}

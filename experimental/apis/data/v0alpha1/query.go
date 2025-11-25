@@ -15,6 +15,17 @@ import (
 	j "github.com/json-iterator/go"
 )
 
+const (
+	refIDKey            = "refId"
+	resultAssertionsKey = "resultAssertions"
+	datasourceKey       = "datasource"
+	datasourceIDKey     = "datasourceId"
+	queryTypeKey        = "queryType"
+	maxDataPointsKey    = "maxDataPoints"
+	intervalMsKey       = "intervalMs"
+	hideKey             = "hide"
+)
+
 func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("v0alpha1.DataQuery", &genericQueryCodec{})
 	jsoniter.RegisterTypeDecoder("v0alpha1.DataQuery", &genericQueryCodec{})
@@ -53,9 +64,9 @@ func NewDataQuery(body map[string]any) DataQuery {
 // Set allows setting values using key/value pairs
 func (g *DataQuery) Set(key string, val any) *DataQuery {
 	switch key {
-	case "refId":
+	case refIDKey:
 		g.RefID, _ = val.(string)
-	case "resultAssertions":
+	case resultAssertionsKey:
 		v, ok := val.(ResultAssertions)
 		if ok {
 			g.ResultAssertions = &v
@@ -68,7 +79,7 @@ func (g *DataQuery) Set(key string, val any) *DataQuery {
 				backend.Logger.Warn("error reading resultAssertions from value. %w", err)
 			}
 		}
-	case "timeRange":
+	case timeRangeKey:
 		v, ok := val.(TimeRange)
 		if ok {
 			g.TimeRange = &v
@@ -81,7 +92,7 @@ func (g *DataQuery) Set(key string, val any) *DataQuery {
 				backend.Logger.Warn("error reading timeRange from value. %w", err)
 			}
 		}
-	case "datasource":
+	case datasourceKey:
 		v, ok := val.(DataSourceRef)
 		if ok {
 			g.Datasource = &v
@@ -94,24 +105,24 @@ func (g *DataQuery) Set(key string, val any) *DataQuery {
 				backend.Logger.Warn("error reading datasource from value. %w", err)
 			}
 		}
-	case "datasourceId":
+	case datasourceIDKey:
 		v, err := converters.JSONValueToInt64.Converter(val)
 		if err == nil {
 			g.DatasourceID, _ = v.(int64)
 		}
-	case "queryType":
+	case queryTypeKey:
 		g.QueryType, _ = val.(string)
-	case "maxDataPoints":
+	case maxDataPointsKey:
 		v, err := converters.JSONValueToInt64.Converter(val)
 		if err == nil {
 			g.MaxDataPoints, _ = v.(int64)
 		}
-	case "intervalMs":
+	case intervalMsKey:
 		v, err := converters.JSONValueToFloat64.Converter(val)
 		if err == nil {
 			g.IntervalMS, _ = v.(float64)
 		}
-	case "hide":
+	case hideKey:
 		g.Hide, _ = val.(bool)
 	default:
 		if g.additional == nil {
@@ -124,23 +135,23 @@ func (g *DataQuery) Set(key string, val any) *DataQuery {
 
 func (g *DataQuery) Get(key string) (any, bool) {
 	switch key {
-	case "refId":
+	case refIDKey:
 		return g.RefID, true
-	case "resultAssertions":
+	case resultAssertionsKey:
 		return g.ResultAssertions, true
-	case "timeRange":
+	case timeRangeKey:
 		return g.TimeRange, true
-	case "datasource":
+	case datasourceKey:
 		return g.Datasource, true
-	case "datasourceId":
+	case datasourceIDKey:
 		return g.DatasourceID, true
-	case "queryType":
+	case queryTypeKey:
 		return g.QueryType, true
-	case "maxDataPoints":
+	case maxDataPointsKey:
 		return g.MaxDataPoints, true
-	case "intervalMs":
+	case intervalMsKey:
 		return g.IntervalMS, true
-	case "hide":
+	case hideKey:
 		return g.Hide, true
 	}
 	v, ok := g.additional[key]
@@ -258,54 +269,54 @@ func (g *DataQuery) DeepCopyInto(out *DataQuery) {
 func writeQuery(g *DataQuery, stream *j.Stream) {
 	q := g.CommonQueryProperties
 	stream.WriteObjectStart()
-	stream.WriteObjectField("refId")
+	stream.WriteObjectField(refIDKey)
 	stream.WriteVal(g.RefID)
 
 	if q.ResultAssertions != nil {
 		stream.WriteMore()
-		stream.WriteObjectField("resultAssertions")
+		stream.WriteObjectField(resultAssertionsKey)
 		stream.WriteVal(g.ResultAssertions)
 	}
 
 	if q.TimeRange != nil {
 		stream.WriteMore()
-		stream.WriteObjectField("timeRange")
+		stream.WriteObjectField(timeRangeKey)
 		stream.WriteVal(g.TimeRange)
 	}
 
 	if q.Datasource != nil {
 		stream.WriteMore()
-		stream.WriteObjectField("datasource")
+		stream.WriteObjectField(datasourceKey)
 		stream.WriteVal(g.Datasource)
 	}
 
 	if q.DatasourceID > 0 {
 		stream.WriteMore()
-		stream.WriteObjectField("datasourceId")
+		stream.WriteObjectField(datasourceIDKey)
 		stream.WriteVal(g.DatasourceID)
 	}
 
 	if q.QueryType != "" {
 		stream.WriteMore()
-		stream.WriteObjectField("queryType")
+		stream.WriteObjectField(queryTypeKey)
 		stream.WriteVal(g.QueryType)
 	}
 
 	if q.MaxDataPoints > 0 {
 		stream.WriteMore()
-		stream.WriteObjectField("maxDataPoints")
+		stream.WriteObjectField(maxDataPointsKey)
 		stream.WriteVal(g.MaxDataPoints)
 	}
 
 	if q.IntervalMS > 0 {
 		stream.WriteMore()
-		stream.WriteObjectField("intervalMs")
+		stream.WriteObjectField(intervalMsKey)
 		stream.WriteVal(g.IntervalMS)
 	}
 
 	if q.Hide {
 		stream.WriteMore()
-		stream.WriteObjectField("hide")
+		stream.WriteObjectField(hideKey)
 		stream.WriteVal(g.Hide)
 	}
 
@@ -343,21 +354,21 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 	field := ""
 	for field, err = iter.ReadObject(); field != ""; field, err = iter.ReadObject() {
 		switch field {
-		case "refId":
+		case refIDKey:
 			g.RefID, err = iter.ReadString()
-		case "resultAssertions":
+		case resultAssertionsKey:
 			err = iter.ReadVal(&g.ResultAssertions)
-		case "timeRange":
+		case timeRangeKey:
 			err = iter.ReadVal(&g.TimeRange)
-		case "datasource":
+		case datasourceKey:
 			// Old datasource values may just be a string
 			err = iter.ReadVal(&g.Datasource)
 
-		case "datasourceId":
+		case datasourceIDKey:
 			g.DatasourceID, err = iter.ReadInt64()
-		case "queryType":
+		case queryTypeKey:
 			g.QueryType, err = iter.ReadString()
-		case "maxDataPoints":
+		case maxDataPointsKey:
 			next, err = iter.WhatIsNext()
 			if err != nil {
 				return err
@@ -374,9 +385,9 @@ func (g *CommonQueryProperties) readQuery(iter *jsoniter.Iterator,
 			default:
 				return fmt.Errorf("expected number or string for maxDataPoints")
 			}
-		case "intervalMs":
+		case intervalMsKey:
 			g.IntervalMS, err = iter.ReadFloat64()
-		case "hide":
+		case hideKey:
 			g.Hide, err = iter.ReadBool()
 		default:
 			err = processUnknownKey(field, iter)

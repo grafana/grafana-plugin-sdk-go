@@ -61,7 +61,7 @@ func TestClientModeEnabled(t *testing.T) {
 
 		dir := filepath.Dir(curProcPath)
 
-		file, err := os.Create(filepath.Join(dir, "standalone.txt"))
+		file, err := os.Create(filepath.Join(dir, "standalone.txt")) // #nosec G304
 		require.NoError(t, err)
 		_, err = file.WriteString(addr)
 		require.NoError(t, err)
@@ -82,7 +82,7 @@ func TestClientModeEnabled(t *testing.T) {
 
 		dir := filepath.Dir(curProcPath)
 
-		file, err := os.Create(filepath.Join(dir, "standalone.txt"))
+		file, err := os.Create(filepath.Join(dir, "standalone.txt")) // #nosec G304
 		require.NoError(t, err)
 		t.Cleanup(func() {
 			err = os.Remove(file.Name())
@@ -102,7 +102,7 @@ func TestClientModeEnabled(t *testing.T) {
 		require.NoError(t, err)
 
 		dir := filepath.Dir(curProcPath)
-		file, err := os.Create(filepath.Join(dir, "pid.txt"))
+		file, err := os.Create(filepath.Join(dir, "pid.txt")) // #nosec G304
 		require.NoError(t, err)
 		t.Cleanup(func() {
 			err = os.Remove(file.Name())
@@ -122,7 +122,7 @@ func TestClientModeEnabled(t *testing.T) {
 		require.NoError(t, err)
 
 		dir := filepath.Dir(curProcPath)
-		file, err := os.Create(filepath.Join(dir, "pid.txt"))
+		file, err := os.Create(filepath.Join(dir, "pid.txt")) // #nosec G304
 		require.NoError(t, err)
 		_, err = file.WriteString("100000000000000")
 		require.NoError(t, err)
@@ -258,11 +258,11 @@ func TestServerSettings(t *testing.T) {
 		}()
 
 		pkgDir := filepath.Join(tmpDir, "pkg")
-		err = os.Mkdir(pkgDir, 0755)
+		err = os.Mkdir(pkgDir, 0755) // #nosec G301
 		require.NoError(t, err)
 
 		distDir := filepath.Join(tmpDir, "dist")
-		err = os.Mkdir(distDir, 0755)
+		err = os.Mkdir(distDir, 0755) // #nosec G301
 		require.NoError(t, err)
 
 		err = os.WriteFile(filepath.Join(distDir, "plugin.json"), []byte(`{"id": "`+pluginID+`"}`), 0600)
@@ -287,7 +287,7 @@ func TestServerSettings(t *testing.T) {
 		}()
 
 		distDir := filepath.Join(tmpDir, "dist")
-		err = os.Mkdir(distDir, 0755)
+		err = os.Mkdir(distDir, 0755) // #nosec G301
 		require.NoError(t, err)
 
 		err = os.WriteFile(filepath.Join(distDir, "plugin.json"), []byte(`{"id": "`+pluginID+`"}`), 0600)

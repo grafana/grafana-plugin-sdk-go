@@ -62,6 +62,7 @@ const (
 	PluginTracingSamplerRemoteURL = "GF_INSTANCE_OTLP_SAMPLER_REMOTE_URL"
 
 	// PluginVersionEnv is a constant for the GF_PLUGIN_VERSION environment variable containing the plugin's version.
+	//
 	// Deprecated: Use build.GetBuildInfo().Version instead.
 	PluginVersionEnv = "GF_PLUGIN_VERSION"
 

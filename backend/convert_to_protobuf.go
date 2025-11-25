@@ -220,9 +220,9 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 			}
 		}
 		if status.IsValid() {
-			pDR.Status = int32(status)
+			pDR.Status = int32(status) // #nosec G115 -- Status values are HTTP status codes (100-599), always fit in int32
 		} else if status == 0 {
-			pDR.Status = int32(StatusOK)
+			pDR.Status = int32(StatusOK) // #nosec G115 -- StatusOK is 200, always fits in int32
 		}
 		pDR.ErrorSource = string(dr.ErrorSource)
 
@@ -242,7 +242,7 @@ func (t ConvertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *plu
 
 	return &pluginv2.CallResourceResponse{
 		Headers: headers,
-		Code:    int32(resp.Status),
+		Code:    int32(resp.Status), // #nosec G115 -- HTTP status codes (100-599) always fit in int32
 		Body:    resp.Body,
 	}
 }

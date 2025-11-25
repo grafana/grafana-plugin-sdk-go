@@ -9,6 +9,7 @@ import (
 )
 
 // Middleware captures error source metric
+//
 // Deprecated: If you are using sdk httpclient, this is already included in the default middleware.
 // If you are not using the sdk httpclient, you should use httpclient.ErrorSourceMiddleware instead.
 func Middleware(plugin string) httpclient.Middleware {
@@ -16,6 +17,7 @@ func Middleware(plugin string) httpclient.Middleware {
 }
 
 // RoundTripper returns the error source
+//
 // Deprecated: If you are using sdk httpclient, this is already included in the default middleware.
 // If you are not using the sdk httpclient, you should use httpclient.ErrorSourceRoundTripper instead.
 func RoundTripper(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {

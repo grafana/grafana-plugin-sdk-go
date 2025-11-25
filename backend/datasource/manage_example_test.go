@@ -49,7 +49,7 @@ func (ds *testDataSource) CheckHealth(_ context.Context, _ *backend.CheckHealthR
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return nil, nil
 }
 
@@ -60,7 +60,7 @@ func (ds *testDataSource) QueryData(_ context.Context, _ *backend.QueryDataReque
 	if err != nil {
 		return nil, err
 	}
-	httpResp.Body.Close()
+	_ = httpResp.Body.Close()
 
 	return resp, err
 }
@@ -72,7 +72,7 @@ func (ds *testDataSource) handleTest(rw http.ResponseWriter, _ *http.Request) {
 		rw.WriteHeader(500)
 		return
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func Example() {
