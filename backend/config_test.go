@@ -4,8 +4,6 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/pem"
-	"fmt"
-	mathrand "math/rand"
 	"os"
 	"testing"
 
@@ -500,22 +498,4 @@ func TestGrafanaCfg_Diff(t *testing.T) {
 		require.Contains(t, diff, "added")
 		require.NotContains(t, diff, "unchanged")
 	})
-}
-
-func BenchmarkProxyHash(b *testing.B) {
-	count := 0
-	kBytes := randomProxyContents()
-	cm := map[string]string{
-		proxy.PluginSecureSocksProxyClientKeyContents: string(kBytes),
-	}
-	for i := 0; i < b.N; i++ {
-		kBytes[88] = b64chars[mathrand.Intn(64)] //nolint:gosec
-		cm[proxy.PluginSecureSocksProxyClientKeyContents] = string(kBytes)
-		cfg := NewGrafanaCfg(cm)
-		hash := cfg.ProxyHash()
-		if hash[0] == 'a' {
-			count++
-		}
-	}
-	fmt.Printf("This should be about one in 64: %f\n", float64(count)/float64(b.N))
 }

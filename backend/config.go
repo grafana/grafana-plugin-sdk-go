@@ -2,8 +2,6 @@ package backend
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/pem"
 	"errors"
 	"fmt"
 	"os"
@@ -102,72 +100,30 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 // Returns field names for added, removed, or changed values.
 // Always returns a slice, never nil.
 func (c *GrafanaCfg) Diff(c2 *GrafanaCfg) []string {
-	if c == nil && c2 == nil {
-		return []string{}
+	var config1 map[string]string
+	var config2 map[string]string
+	if c != nil {
+		config1 = c.config
 	}
-	if c == nil {
-		var keys []string
-		for k := range c2.config {
-			keys = append(keys, k)
-		}
-		return keys
-	}
-	if c2 == nil {
-		var keys []string
-		for k := range c.config {
-			keys = append(keys, k)
-		}
-		return keys
+	if c2 != nil {
+		config2 = c2.config
 	}
 
-	var changed []string
-	keys := make(map[string]bool)
-	for k := range c.config {
-		keys[k] = true
+	changed := make([]string, 0)
+	seen := make(map[string]bool)
+	for key, val := range config1 {
+		if val2, ok := config2[key]; !ok || val != val2 {
+			changed = append(changed, key)
+		}
+		seen[key] = true
 	}
-	for k := range c2.config {
-		keys[k] = true
-	}
-
-	for key := range keys {
-		v1, ok1 := c.config[key]
-		v2, ok2 := c2.config[key]
-		if ok1 != ok2 || v1 != v2 {
+	for key := range config2 {
+		if !seen[key] {
 			changed = append(changed, key)
 		}
 	}
 
 	return changed
-}
-
-// ProxyHash returns the last four characters of the base64-encoded
-// PDC client key contents, if present, for use in datasource instance
-// caching. The contents should be PEM-encoded, so we try to PEM-decode
-// them, and, if successful, return the base-64 encoding of the final three bytes,
-// giving a four character hash.
-func (c *GrafanaCfg) ProxyHash() string {
-	if c == nil {
-		return ""
-	}
-	contents := c.config[proxy.PluginSecureSocksProxyClientKeyContents]
-	if contents == "" {
-		return ""
-	}
-	block, _ := pem.Decode([]byte(contents))
-	if block == nil {
-		Logger.Warn("ProxyHash(): key contents are not PEM-encoded")
-		return ""
-	}
-	if block.Type != "PRIVATE KEY" {
-		Logger.Warn("ProxyHash(): key contents are not PEM-encoded private key")
-		return ""
-	}
-	bl := len(block.Bytes)
-	if bl < 3 {
-		Logger.Warn("ProxyHash(): key contents too short")
-		return ""
-	}
-	return base64.StdEncoding.EncodeToString(block.Bytes[bl-3:])
 }
 
 type FeatureToggles struct {

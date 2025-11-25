@@ -10,6 +10,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -19,6 +20,14 @@ var (
 		Name:      "datasource_instances_total",
 		Help:      "The total number of data source instances created",
 	})
+	// isVolatileConfigKey contains config keys that do not indicate a meaningful config change
+	// for the purposes of NeedsUpdate
+	isVolatileConfigKey = map[string]bool{
+		proxy.PluginSecureSocksProxyClientKey:          true,
+		proxy.PluginSecureSocksProxyClientKeyContents:  true,
+		proxy.PluginSecureSocksProxyClientCert:         true,
+		proxy.PluginSecureSocksProxyClientCertContents: true,
+	}
 )
 
 // InstanceFactoryFunc factory method for creating data source instances.
@@ -62,10 +71,21 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 	return instanceKey(ctx, pluginContext), nil
 }
 
+// NeedsUpdate returns true if at least one of the following is true:
+//  1. the incoming datasource updated time is different from the cached instance's
+//  2. the incoming GrafanaConfig is different from the cached one, ignoring any keys from
+//     the isVolatileConfigKey map above
 func (ip *instanceProvider) NeedsUpdate(ctx context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
 	curConfig := pluginContext.GrafanaConfig
 	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
-	configUpdated := !cachedConfig.Equal(curConfig)
+	configDiff := cachedConfig.Diff(curConfig)
+	configUpdated := false
+	for _, k := range configDiff {
+		if !isVolatileConfigKey[k] {
+			configUpdated = true
+			break
+		}
+	}
 
 	curDataSourceSettings := pluginContext.DataSourceInstanceSettings
 	cachedDataSourceSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
@@ -79,7 +99,7 @@ func (ip *instanceProvider) NeedsUpdate(ctx context.Context, pluginContext backe
 			logger.Debug("Datasource instance needs update: datasource settings changed", "key", ik)
 		}
 		if configUpdated {
-			logger.Debug("Datasource instance needs update: config changed", "key", ik, "diff", curConfig.Diff(cachedConfig))
+			logger.Debug("Datasource instance needs update: config changed", "key", ik, "diff", configDiff)
 		}
 	}
 
@@ -95,7 +115,6 @@ func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backe
 func instanceKey(ctx context.Context, pluginContext backend.PluginContext) string {
 	dsID := pluginContext.DataSourceInstanceSettings.ID
 	tenantID := tenant.IDFromContext(ctx)
-	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
 
-	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash)
+	return fmt.Sprintf("%d#%s", dsID, tenantID)
 }
