@@ -3,7 +3,6 @@ package backend
 import (
 	"bytes"
 	"context"
-	"crypto"
 	"crypto/ed25519"
 	"crypto/rand"
 	"crypto/sha1"
@@ -370,18 +369,6 @@ func TestPluginAppClientSecret(t *testing.T) {
 	})
 }
 
-func randomProxyContents() []byte {
-	key := make([]byte, 48)
-	_, _ = rand.Read(key)
-	pb := pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: key,
-	}
-	return pem.EncodeToMemory(&pb)
-}
-
-var b64chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/+"
-
 func TestGrafanaCfg_Diff(t *testing.T) {
 	t.Run("both configs nil should return empty slice", func(t *testing.T) {
 		var cfg1, cfg2 *GrafanaCfg
@@ -509,23 +496,6 @@ func TestGrafanaCfg_Diff(t *testing.T) {
 	})
 }
 
-// pEMEncodeEd25519PrivateKey encodes an Ed25519 private key in PEM format
-func pEMEncodeEd25519PrivateKey(key crypto.PrivateKey) ([]byte, error) {
-	var b bytes.Buffer
-	kb, err := x509.MarshalPKCS8PrivateKey(key)
-	if err != nil {
-		return nil, err
-	}
-	err = pem.Encode(&b, &pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: kb,
-	})
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), err
-}
-
 // pEMEncodeCertificate encodes a certificate in PEM format
 func pEMEncodeCertificate(cert []byte) ([]byte, error) {
 	var b bytes.Buffer
@@ -542,25 +512,21 @@ func pEMEncodeCertificate(cert []byte) ([]byte, error) {
 // createTestCertificate generates a test X.509 certificate with Ed25519 key and the given expiry time
 // This aligns with the GenerateEd25519ClientKeys pattern used in production
 // Returns: (certPEM []byte, keyPEM []byte, error)
-func createTestCertificate(notAfter time.Time) ([]byte, []byte, error) {
-	// Generate Ed25519 key pair
+func createTestCertificate(notAfter time.Time) ([]byte, error) {
 	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// Generate SubjectKeyId by taking the SHA-1 hash of the ASN.1 encoding of the public key
-	// This follows RFC 5280 section 4.2.1.2
 	kb, err := x509.MarshalPKIXPublicKey(pubKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
 	//nolint:gosec
 	keyHash := sha1.Sum(kb)
 	ski := keyHash[:]
 
-	// Create certificate with realistic fields matching production pattern
 	clientCert := &x509.Certificate{
 		SerialNumber: big.NewInt(2024),
 		Subject: pkix.Name{
@@ -577,24 +543,18 @@ func createTestCertificate(notAfter time.Time) ([]byte, []byte, error) {
 	// Self-sign the certificate
 	certBytes, err := x509.CreateCertificate(rand.Reader, clientCert, clientCert, pubKey, privKey)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	// Encode both certificate and private key in PEM format using utility functions
 	certPEM, err := pEMEncodeCertificate(certBytes)
 	if err != nil {
-		return nil, nil, err
+		return nil, err
 	}
 
-	keyPEM, err := pEMEncodeEd25519PrivateKey(privKey)
-	if err != nil {
-		return nil, nil, err
-	}
-
-	return certPEM, keyPEM, nil
+	return certPEM, nil
 }
 
-func TestshouldRefreshProxyClientCert(t *testing.T) {
+func TestShouldRefreshProxyClientCert(t *testing.T) {
 	t.Run("returns false when proxy is nil", func(t *testing.T) {
 		cfg := NewGrafanaCfg(map[string]string{})
 		result := cfg.shouldRefreshProxyClientCert()
@@ -610,7 +570,7 @@ func TestshouldRefreshProxyClientCert(t *testing.T) {
 	})
 
 	t.Run("returns true when certificate is already expired", func(t *testing.T) {
-		expiredCert, _, err := createTestCertificate(time.Now().Add(-1 * time.Hour))
+		expiredCert, err := createTestCertificate(time.Now().Add(-1 * time.Hour))
 		require.NoError(t, err)
 
 		cfg := NewGrafanaCfg(map[string]string{
@@ -622,7 +582,7 @@ func TestshouldRefreshProxyClientCert(t *testing.T) {
 	})
 
 	t.Run("returns true when certificate expires within 6 hours", func(t *testing.T) {
-		soonExpiredCert, _, err := createTestCertificate(time.Now().Add(2 * time.Hour))
+		soonExpiredCert, err := createTestCertificate(time.Now().Add(2 * time.Hour))
 		require.NoError(t, err)
 
 		cfg := NewGrafanaCfg(map[string]string{
@@ -634,7 +594,7 @@ func TestshouldRefreshProxyClientCert(t *testing.T) {
 	})
 
 	t.Run("returns false when certificate expires after 6 hours", func(t *testing.T) {
-		validCert, _, err := createTestCertificate(time.Now().Add(12 * time.Hour))
+		validCert, err := createTestCertificate(time.Now().Add(12 * time.Hour))
 		require.NoError(t, err)
 
 		cfg := NewGrafanaCfg(map[string]string{
@@ -648,7 +608,7 @@ func TestshouldRefreshProxyClientCert(t *testing.T) {
 	t.Run("returns false when certificate expires just after 6 hour boundary", func(t *testing.T) {
 		// Expiry slightly after the 6 hour mark to avoid timing issues
 		justAfterBoundary := time.Now().Add(6*time.Hour + 1*time.Second)
-		cert, _, err := createTestCertificate(justAfterBoundary)
+		cert, err := createTestCertificate(justAfterBoundary)
 		require.NoError(t, err)
 
 		cfg := NewGrafanaCfg(map[string]string{
@@ -693,7 +653,7 @@ func TestshouldRefreshProxyClientCert(t *testing.T) {
 	})
 
 	t.Run("returns false when certificate is valid for more than 6 hours (1 month validity)", func(t *testing.T) {
-		validLongCert, _, err := createTestCertificate(time.Now().Add(24 * 30 * time.Hour))
+		validLongCert, err := createTestCertificate(time.Now().Add(24 * 30 * time.Hour))
 		require.NoError(t, err)
 
 		cfg := NewGrafanaCfg(map[string]string{
@@ -760,7 +720,7 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 	})
 
 	t.Run("proxy enabled with valid certificate should return true", func(t *testing.T) {
-		validCert, _, err := createTestCertificate(time.Now().Add(12 * time.Hour))
+		validCert, err := createTestCertificate(time.Now().Add(12 * time.Hour))
 		require.NoError(t, err)
 
 		config := map[string]string{
@@ -774,7 +734,7 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 	})
 
 	t.Run("proxy enabled with expiring certificate returns needsUpdate true", func(t *testing.T) {
-		expiringCert, _, err := createTestCertificate(time.Now().Add(2 * time.Hour))
+		expiringCert, err := createTestCertificate(time.Now().Add(2 * time.Hour))
 		require.NoError(t, err)
 
 		cfg1 := NewGrafanaCfg(map[string]string{
@@ -794,9 +754,9 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 	})
 
 	t.Run("proxy enabled with expiring certificate returns needsUpdate true", func(t *testing.T) {
-		expiringCert, _, err := createTestCertificate(time.Now().Add(2 * time.Hour))
+		expiringCert, err := createTestCertificate(time.Now().Add(2 * time.Hour))
 		require.NoError(t, err)
-		newCert, _, err := createTestCertificate(time.Now().Add(1 * time.Hour))
+		newCert, err := createTestCertificate(time.Now().Add(1 * time.Hour))
 		require.NoError(t, err)
 
 		cfg1 := NewGrafanaCfg(map[string]string{
@@ -816,7 +776,7 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 	})
 
 	t.Run("proxy disabled should ignore certificate expiration", func(t *testing.T) {
-		expiringCert, _, err := createTestCertificate(time.Now().Add(2 * time.Hour))
+		expiringCert, err := createTestCertificate(time.Now().Add(2 * time.Hour))
 		require.NoError(t, err)
 
 		cfg1 := NewGrafanaCfg(map[string]string{
@@ -859,7 +819,7 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 	})
 
 	t.Run("proxy enabled with expired certificate returns needsUpdate", func(t *testing.T) {
-		expiredCert, _, err := createTestCertificate(time.Now().Add(-1 * time.Hour))
+		expiredCert, err := createTestCertificate(time.Now().Add(-1 * time.Hour))
 		require.NoError(t, err)
 
 		cfg1 := NewGrafanaCfg(map[string]string{
@@ -892,7 +852,7 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 	})
 
 	t.Run("different non-proxy keys with expiring certificate returns false", func(t *testing.T) {
-		expiringCert, _, err := createTestCertificate(time.Now().Add(2 * time.Hour))
+		expiringCert, err := createTestCertificate(time.Now().Add(2 * time.Hour))
 		require.NoError(t, err)
 
 		cfg1 := NewGrafanaCfg(map[string]string{
@@ -911,7 +871,7 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 	})
 
 	t.Run("different non-proxy keys with valid certificate returns true", func(t *testing.T) {
-		validCert, _, err := createTestCertificate(time.Now().Add(12 * time.Hour))
+		validCert, err := createTestCertificate(time.Now().Add(12 * time.Hour))
 		require.NoError(t, err)
 
 		cfg1 := NewGrafanaCfg(map[string]string{

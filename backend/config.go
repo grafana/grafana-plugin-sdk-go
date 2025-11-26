@@ -150,12 +150,7 @@ func (c *GrafanaCfg) shouldRefreshProxyClientCert() bool {
 	}
 
 	// Check if the certificate will expire in less than 6 hours
-	sixHoursFromNow := time.Now().Add(6 * time.Hour)
-	if cert.NotAfter.Before(sixHoursFromNow) {
-		return true
-	}
-
-	return false
+	return cert.NotAfter.Before(time.Now().Add(6 * time.Hour))
 }
 
 // Diff returns the names of config fields that differ between this config and c2.
