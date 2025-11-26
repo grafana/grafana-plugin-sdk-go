@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
@@ -90,12 +92,70 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	if len(c.config) != len(c2.config) {
 		return false
 	}
+
+	configsMatch := true
 	for k, v1 := range c.config {
+		// Ignore secure socks proxy config when checking if the configs match
+		if strings.Contains(k, "GF_SECURE_SOCKS_DATASOURCE_PROXY") {
+			continue
+		}
+
 		if v2, ok := c2.config[k]; !ok || v1 != v2 {
-			return false
+			configsMatch = false
 		}
 	}
-	return true
+
+	// Check if the secure socks proxy config is enabled on the datasource
+	// If it is load in the secure socks proxy config and check its expiration date
+	if v, ok := c.config[proxy.PluginSecureSocksProxyEnabled]; ok && v == strconv.FormatBool(true) {
+		if !c.shouldRefreshProxyClientCert() {
+			return true
+		}
+	}
+
+	return configsMatch
+}
+
+// shouldRefreshProxyClientCert checks if the secure socks proxy config is expiring in less than 6 hours
+// If it is, it returns true to trigger a refresh of the secure socks proxy config
+// If it is not, it returns false to continue using the existing secure socks proxy config from cache
+// the lifetime of these certificates is 3 months by default
+func (c *GrafanaCfg) shouldRefreshProxyClientCert() bool {
+	p, err := c.proxy()
+	if err != nil {
+		Logger.Warn("shouldRefreshProxyClientCert(): failed to get proxy client config", "error", err)
+		return true
+	}
+
+	if p.clientCfg == nil {
+		Logger.Warn("shouldRefreshProxyClientCert(): proxy client config is nil")
+		return true
+	}
+
+	certPEM, err := base64.StdEncoding.DecodeString(p.clientCfg.ClientCertVal)
+	if err != nil {
+		Logger.Warn("shouldRefreshProxyClientCert(): failed to decode certificate", "error", err)
+		return true
+	}
+
+	block, _ := pem.Decode(certPEM)
+	if block == nil {
+		return true
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		Logger.Warn("shouldRefreshProxyClientCert(): failed to parse certificate", "error", err)
+		return true
+	}
+
+	// Check if the certificate will expire in less than 6 hours
+	sixHoursFromNow := time.Now().Add(6 * time.Hour)
+	if cert.NotAfter.Before(sixHoursFromNow) {
+		return true
+	}
+
+	return false
 }
 
 // Diff returns the names of config fields that differ between this config and c2.
@@ -138,36 +198,6 @@ func (c *GrafanaCfg) Diff(c2 *GrafanaCfg) []string {
 	}
 
 	return changed
-}
-
-// ProxyHash returns the last four characters of the base64-encoded
-// PDC client key contents, if present, for use in datasource instance
-// caching. The contents should be PEM-encoded, so we try to PEM-decode
-// them, and, if successful, return the base-64 encoding of the final three bytes,
-// giving a four character hash.
-func (c *GrafanaCfg) ProxyHash() string {
-	if c == nil {
-		return ""
-	}
-	contents := c.config[proxy.PluginSecureSocksProxyClientKeyContents]
-	if contents == "" {
-		return ""
-	}
-	block, _ := pem.Decode([]byte(contents))
-	if block == nil {
-		Logger.Warn("ProxyHash(): key contents are not PEM-encoded")
-		return ""
-	}
-	if block.Type != "PRIVATE KEY" {
-		Logger.Warn("ProxyHash(): key contents are not PEM-encoded private key")
-		return ""
-	}
-	bl := len(block.Bytes)
-	if bl < 3 {
-		Logger.Warn("ProxyHash(): key contents too short")
-		return ""
-	}
-	return base64.StdEncoding.EncodeToString(block.Bytes[bl-3:])
 }
 
 type FeatureToggles struct {
