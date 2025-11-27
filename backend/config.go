@@ -104,9 +104,9 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	}
 
 	// By Default, we will always fetch the current config from cloud-config -> hosted-grafana api.
-	//  This will generate a new set of keys / certificates in c2.config.
+	// This will generate a new set of keys / certificates in c2.config.
 	// Since these new keys are always different we would never cache a datasource instance and cause a memory leak.
-	// We test them seperately and if the existing cached config keys are still valid we will continue to use them if not we will refresh the keys.
+	// We test them separately and if the existing cached config keys are still valid we will continue to use them if not we will refresh the keys.
 	if v, ok := c.config[proxy.PluginSecureSocksProxyEnabled]; ok && v == strconv.FormatBool(true) {
 		return !c.isProxyCertificateExpiring() // if the certificate is expiring, we need to refresh the keys
 	}

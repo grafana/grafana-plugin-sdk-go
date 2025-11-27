@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/sha1"
+	"crypto/sha1" //nolint:gosec"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
@@ -720,7 +720,7 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 
 		config := map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "true",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(validCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: validCert,
 			"other_key": "other_value",
 		}
 		cfg1 := NewGrafanaCfg(config)
@@ -734,12 +734,12 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 
 		cfg1 := NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "true",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(expiringCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
 			"other_key": "other_value",
 		})
 		cfg2 := NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "true",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(newCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: newCert,
 			"other_key": "other_value",
 		})
 
@@ -751,11 +751,11 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 
 		cfg1 := NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "false",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(expiringCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
 		})
 		cfg2 := NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "false",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(expiringCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
 		})
 		// Even though certificate is expiring, proxy is disabled so Equal should return true
 		require.True(t, cfg1.Equal(cfg2))
@@ -793,11 +793,11 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 
 		cfg1 := NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "true",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(expiredCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: expiredCert,
 		})
 		cfg2 := NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "true",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(expiredCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: expiredCert,
 		})
 
 		require.False(t, cfg1.Equal(cfg2))
@@ -821,12 +821,12 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 
 		cfg1 := NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "true",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(expiringCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
 			"other_key": "value1",
 		})
 		cfg2 := NewGrafanaCfg(map[string]string{
 			proxy.PluginSecureSocksProxyEnabled:           "true",
-			proxy.PluginSecureSocksProxyClientKeyContents: string(expiringCert),
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
 			"other_key": "value2",
 		})
 
