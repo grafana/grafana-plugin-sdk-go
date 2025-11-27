@@ -1,13 +1,18 @@
 package backend
 
 import (
+	"bytes"
 	"context"
+	"crypto/ed25519"
 	"crypto/rand"
+	"crypto/sha1" //nolint:gosec
+	"crypto/x509"
+	"crypto/x509/pkix"
 	"encoding/pem"
-	"fmt"
-	mathrand "math/rand"
+	"math/big"
 	"os"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -149,8 +154,8 @@ func TestConfig(t *testing.T) {
 					proxy.PluginSecureSocksProxyClientKey:          "./clientKey",
 					proxy.PluginSecureSocksProxyClientCert:         "./clientCert",
 					proxy.PluginSecureSocksProxyRootCAs:            "./rootCACert ./rootCACert2",
-					proxy.PluginSecureSocksProxyClientKeyContents:  "clientKey",
 					proxy.PluginSecureSocksProxyClientCertContents: "clientCert",
+					proxy.PluginSecureSocksProxyClientKeyContents:  "clientKey",
 					proxy.PluginSecureSocksProxyRootCAsContents:    "rootCACert,rootCACert2",
 					proxy.PluginSecureSocksProxyAllowInsecure:      "true",
 				}),
@@ -363,18 +368,6 @@ func TestPluginAppClientSecret(t *testing.T) {
 	})
 }
 
-func randomProxyContents() []byte {
-	key := make([]byte, 48)
-	_, _ = rand.Read(key)
-	pb := pem.Block{
-		Type:  "PRIVATE KEY",
-		Bytes: key,
-	}
-	return pem.EncodeToMemory(&pb)
-}
-
-var b64chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789/+"
-
 func TestGrafanaCfg_Diff(t *testing.T) {
 	t.Run("both configs nil should return empty slice", func(t *testing.T) {
 		var cfg1, cfg2 *GrafanaCfg
@@ -502,20 +495,341 @@ func TestGrafanaCfg_Diff(t *testing.T) {
 	})
 }
 
-func BenchmarkProxyHash(b *testing.B) {
-	count := 0
-	kBytes := randomProxyContents()
-	cm := map[string]string{
-		proxy.PluginSecureSocksProxyClientKeyContents: string(kBytes),
+// pEMEncodeCertificate encodes a certificate in PEM format
+func pEMEncodeCertificate(cert []byte) ([]byte, error) {
+	var b bytes.Buffer
+	err := pem.Encode(&b, &pem.Block{
+		Type:  "CERTIFICATE",
+		Bytes: cert,
+	})
+	if err != nil {
+		return nil, err
 	}
-	for i := 0; i < b.N; i++ {
-		kBytes[88] = b64chars[mathrand.Intn(64)] //nolint:gosec
-		cm[proxy.PluginSecureSocksProxyClientKeyContents] = string(kBytes)
-		cfg := NewGrafanaCfg(cm)
-		hash := cfg.ProxyHash()
-		if hash[0] == 'a' {
-			count++
+	return b.Bytes(), nil
+}
+
+// createTestCertificate generates a test X.509 certificate with Ed25519 key and the given expiry time
+// This aligns with the GenerateEd25519ClientKeys pattern used in production
+// should match something like this;
+// -----BEGIN PRIVATE KEY-----
+// MC4CAQAwBQYDK2VwBCIEII+zrobzViCQkpHXkteM6qmDs2UW6fKAXcuvhb9rdJ2+
+// -----END PRIVATE KEY-----
+func createTestCertificate(notAfter time.Time) string {
+	pubKey, privKey, err := ed25519.GenerateKey(rand.Reader)
+	if err != nil {
+		panic(err)
+	}
+
+	kb, err := x509.MarshalPKIXPublicKey(pubKey)
+	if err != nil {
+		panic(err)
+	}
+
+	//nolint:gosec
+	keyHash := sha1.Sum(kb)
+	ski := keyHash[:]
+
+	clientCert := &x509.Certificate{
+		SerialNumber: big.NewInt(2024),
+		Subject: pkix.Name{
+			Organization: []string{"Grafana Labs"},
+			CommonName:   "test-client-cert",
+		},
+		NotBefore:    time.Now().Add(-24 * time.Hour),
+		NotAfter:     notAfter,
+		SubjectKeyId: ski,
+		KeyUsage:     x509.KeyUsageDigitalSignature,
+		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageClientAuth},
+	}
+
+	// Self-sign the certificate
+	certBytes, err := x509.CreateCertificate(rand.Reader, clientCert, clientCert, pubKey, privKey)
+	if err != nil {
+		panic(err)
+	}
+
+	certPEM, err := pEMEncodeCertificate(certBytes)
+	if err != nil {
+		panic(err)
+	}
+
+	return string(certPEM)
+}
+
+func TestIsProxyCertificateExpiring(t *testing.T) {
+	t.Run("returns false when proxy is nil", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{})
+		result := cfg.isProxyCertificateExpiring()
+		require.True(t, result)
+	})
+
+	t.Run("returns false when proxy is not enabled", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled: "false",
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.True(t, result)
+	})
+
+	t.Run("returns true when certificate is already expired", func(t *testing.T) {
+		expiredCert := createTestCertificate(time.Now().Add(-1 * time.Hour))
+
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: expiredCert,
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.True(t, result)
+	})
+
+	t.Run("returns true when certificate expires within 6 hours", func(t *testing.T) {
+		soonExpiredCert := createTestCertificate(time.Now().Add(2 * time.Hour))
+
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: soonExpiredCert,
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.True(t, result)
+	})
+
+	t.Run("returns false when certificate expires after 6 hours", func(t *testing.T) {
+		validCert := createTestCertificate(time.Now().Add(12 * time.Hour))
+
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: validCert,
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.False(t, result)
+	})
+
+	t.Run("returns false when certificate expires just after 6 hour boundary", func(t *testing.T) {
+		// Expiry slightly after the 6 hour mark to avoid timing issues
+		justAfterBoundary := time.Now().Add(6*time.Hour + 1*time.Second)
+		cert := createTestCertificate(justAfterBoundary)
+
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: cert,
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.False(t, result)
+	})
+
+	t.Run("returns true when certificate cert value is invalid base64", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: "not-valid-base64!@#$",
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.True(t, result)
+	})
+
+	t.Run("returns true when certificate cert value is invalid PEM", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: string([]byte("not-a-pem-certificate")),
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.True(t, result)
+	})
+
+	t.Run("returns true when certificate parsing fails", func(t *testing.T) {
+		invalidCert := pem.EncodeToMemory(&pem.Block{
+			Type:  "CERTIFICATE",
+			Bytes: []byte("invalid-cert-bytes"),
+		})
+
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: string(invalidCert),
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.True(t, result)
+	})
+
+	t.Run("returns false when certificate is valid for more than 6 hours (1 month validity)", func(t *testing.T) {
+		validLongCert := createTestCertificate(time.Now().Add(24 * 30 * time.Hour))
+
+		cfg := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: validLongCert,
+		})
+		result := cfg.isProxyCertificateExpiring()
+		require.False(t, result)
+	})
+}
+
+func TestGrafanaCfg_Equal(t *testing.T) {
+	t.Run("both configs nil should return true", func(t *testing.T) {
+		var cfg1, cfg2 *GrafanaCfg
+		result := cfg1.Equal(cfg2)
+		require.True(t, result)
+	})
+
+	t.Run("one config nil should return false", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{"key": "value"})
+		var cfg2 *GrafanaCfg
+		require.False(t, cfg1.Equal(cfg2))
+		require.False(t, cfg2.Equal(cfg1))
+	})
+
+	t.Run("empty configs should return true", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{})
+		cfg2 := NewGrafanaCfg(map[string]string{})
+		require.True(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("identical configs should return true", func(t *testing.T) {
+		config := map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+			"key3": "value3",
 		}
-	}
-	fmt.Printf("This should be about one in 64: %f\n", float64(count)/float64(b.N))
+		cfg1 := NewGrafanaCfg(config)
+		cfg2 := NewGrafanaCfg(config)
+		require.True(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("different values should return false", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"key1": "different_value",
+			"key2": "value2",
+		})
+		require.False(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("different sizes should return false", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+		})
+		require.False(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("proxy enabled with valid certificate should return true", func(t *testing.T) {
+		validCert := createTestCertificate(time.Now().Add(12 * time.Hour))
+
+		config := map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: validCert,
+			"other_key": "other_value",
+		}
+		cfg1 := NewGrafanaCfg(config)
+		cfg2 := NewGrafanaCfg(config)
+		require.True(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("proxy enabled with expiring certificate returns needsUpdate true", func(t *testing.T) {
+		expiringCert := createTestCertificate(time.Now().Add(12 * time.Hour))
+		newCert := createTestCertificate(time.Now().Add(1 * time.Hour))
+
+		cfg1 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
+			"other_key": "other_value",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: newCert,
+			"other_key": "other_value",
+		})
+
+		require.True(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("proxy disabled should ignore certificate expiration", func(t *testing.T) {
+		expiringCert := createTestCertificate(time.Now().Add(12 * time.Hour))
+
+		cfg1 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "false",
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "false",
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
+		})
+		// Even though certificate is expiring, proxy is disabled so Equal should return true
+		require.True(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("secure socks proxy keys should be ignored in comparison", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			"key1":                              "value1",
+			"GF_SECURE_SOCKS_DATASOURCE_PROXY":  "different_value_should_be_ignored",
+			"GF_SECURE_SOCKS_DATASOURCE_PROXY2": "also_ignored",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"key1":                              "value1",
+			"GF_SECURE_SOCKS_DATASOURCE_PROXY":  "different_value",
+			"GF_SECURE_SOCKS_DATASOURCE_PROXY2": "completely_different",
+		})
+		// Proxy keys should be ignored, other keys are the same
+		require.True(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("non-proxy keys should not be ignored", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+			"key2": "value2",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"key1": "value1",
+			"key2": "different_value",
+		})
+		require.False(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("proxy enabled with expired certificate returns needsUpdate", func(t *testing.T) {
+		expiredCert := createTestCertificate(time.Now().Add(-1 * time.Hour))
+
+		cfg1 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: expiredCert,
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: expiredCert,
+		})
+
+		require.False(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("proxy enabled with invalid certificate returns needsUpdate", func(t *testing.T) {
+		cfg1 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: "invalid-cert",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: "invalid-cert",
+		})
+
+		require.False(t, cfg1.Equal(cfg2))
+	})
+
+	t.Run("different non-proxy keys with expiring certificate returns false", func(t *testing.T) {
+		expiringCert := createTestCertificate(time.Now().Add(2 * time.Hour))
+
+		cfg1 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
+			"other_key": "value1",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyEnabled:           "true",
+			proxy.PluginSecureSocksProxyClientKeyContents: expiringCert,
+			"other_key": "value2",
+		})
+
+		require.False(t, cfg1.Equal(cfg2))
+	})
 }
