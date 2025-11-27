@@ -5,7 +5,7 @@ import (
 	"context"
 	"crypto/ed25519"
 	"crypto/rand"
-	"crypto/sha1" //nolint:gosec"
+	"crypto/sha1" //nolint:gosec
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/pem"
