@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -184,6 +185,40 @@ func (c *GrafanaCfg) Diff(c2 *GrafanaCfg) []string {
 	}
 
 	return changed
+}
+
+// ProxyHash returns the last four characters of the base64-encoded
+// PDC client key contents, if present, for use in datasource instance
+// caching. The contents should be PEM-encoded, so we try to PEM-decode
+// them, and, if successful, return the base-64 encoding of the final three bytes,
+// giving a four character hash.
+//
+// Deprecated: Use Equal() instead for cache invalidation based on certificate expiration.
+func (c *GrafanaCfg) ProxyHash(jsonData []byte) string {
+	if c == nil || jsonData == nil {
+		return ""
+	}
+
+	contents := c.config[proxy.PluginSecureSocksProxyClientKeyContents]
+	if contents == "" {
+		return ""
+	}
+
+	block, _ := pem.Decode([]byte(contents))
+	if block == nil {
+		Logger.Warn("ProxyHash(): key contents are not PEM-encoded")
+		return ""
+	}
+	if block.Type != "PRIVATE KEY" {
+		Logger.Warn("ProxyHash(): key contents are not PEM-encoded private key")
+		return ""
+	}
+	bl := len(block.Bytes)
+	if bl < 3 {
+		Logger.Warn("ProxyHash(): key contents too short")
+		return ""
+	}
+	return base64.StdEncoding.EncodeToString(block.Bytes[bl-3:])
 }
 
 type FeatureToggles struct {
