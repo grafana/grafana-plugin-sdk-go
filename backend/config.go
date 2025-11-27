@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"crypto/x509"
-	"encoding/base64"
 	"encoding/pem"
 	"errors"
 	"fmt"
@@ -93,59 +92,51 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 		return false
 	}
 
-	configsMatch := true
 	for k, v1 := range c.config {
-		// Ignore secure socks proxy config when checking if the configs match
+		// Ignore secure socks proxy config values as they are always different.
 		if strings.Contains(k, "GF_SECURE_SOCKS_DATASOURCE_PROXY") {
 			continue
 		}
 
 		if v2, ok := c2.config[k]; !ok || v1 != v2 {
-			configsMatch = false
+			return false
 		}
 	}
 
-	// Check if the secure socks proxy config is enabled on the datasource
-	// If it is load in the secure socks proxy config and check its expiration date
+	// By Default, we will always fetch the current config from cloud-config -> hosted-grafana api.
+	//  This will generate a new set of keys / certificates in c2.config.
+	// Since these new keys are always different we would never cache a datasource instance and cause a memory leak.
+	// We test them seperately and if the existing cached config keys are still valid we will continue to use them if not we will refresh the keys.
 	if v, ok := c.config[proxy.PluginSecureSocksProxyEnabled]; ok && v == strconv.FormatBool(true) {
-		if !c.shouldRefreshProxyClientCert() {
-			return true
-		}
+		return !c.isProxyCertificateExpiring() // if the certificate is expiring, we need to refresh the keys
 	}
 
-	return configsMatch
+	return true
 }
 
-// shouldRefreshProxyClientCert checks if the secure socks proxy config is expiring in less than 6 hours
-// If it is, it returns true to trigger a refresh of the secure socks proxy config
-// If it is not, it returns false to continue using the existing secure socks proxy config from cache
-// the lifetime of these certificates is 3 months by default
-func (c *GrafanaCfg) shouldRefreshProxyClientCert() bool {
+// isProxyCertificateExpiring checks if the secure socks proxy client key is expiring in less than 6 hours
+// the default lifetime of these certificates is 3 months by default.
+func (c *GrafanaCfg) isProxyCertificateExpiring() bool {
 	p, err := c.proxy()
 	if err != nil {
-		Logger.Warn("shouldRefreshProxyClientCert(): failed to get proxy client config", "error", err)
+		Logger.Warn("isProxyCertificateExpiring(): failed to get proxy client config", "error", err)
 		return true
 	}
 
 	if p.clientCfg == nil {
-		Logger.Warn("shouldRefreshProxyClientCert(): proxy client config is nil")
+		Logger.Warn("isProxyCertificateExpiring(): proxy client config is nil")
 		return true
 	}
 
-	certPEM, err := base64.StdEncoding.DecodeString(p.clientCfg.ClientCertVal)
-	if err != nil {
-		Logger.Warn("shouldRefreshProxyClientCert(): failed to decode certificate", "error", err)
-		return true
-	}
-
-	block, _ := pem.Decode(certPEM)
-	if block == nil {
+	block, _ := pem.Decode([]byte(p.clientCfg.ClientKeyVal))
+	if block == nil || block.Bytes == nil {
+		Logger.Warn("isProxyCertificateExpiring(): failed to decode private key")
 		return true
 	}
 
 	cert, err := x509.ParseCertificate(block.Bytes)
 	if err != nil {
-		Logger.Warn("shouldRefreshProxyClientCert(): failed to parse certificate", "error", err)
+		Logger.Warn("isProxyCertificateExpiring(): failed to parse certificate", "error", err)
 		return true
 	}
 
