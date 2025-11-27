@@ -194,8 +194,8 @@ func (c *GrafanaCfg) Diff(c2 *GrafanaCfg) []string {
 // giving a four character hash.
 //
 // Deprecated: Use Equal() instead for cache invalidation based on certificate expiration.
-func (c *GrafanaCfg) ProxyHash(jsonData []byte) string {
-	if c == nil || jsonData == nil {
+func (c *GrafanaCfg) ProxyHash() string {
+	if c == nil {
 		return ""
 	}
 
