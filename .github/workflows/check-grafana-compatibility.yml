@@ -29,7 +29,7 @@ jobs:
       - uses: actions/setup-go@44694675825211faa026b3c33043df3e48a5fa00 # 6.0.0
         with:
           cache: false
-          go-version: "~1.22"
+          go-version-file: "./grafana/go.mod"
           check-latest: true
 
       - name: Check if branch exists in Grafana
