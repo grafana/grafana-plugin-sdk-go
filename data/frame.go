@@ -431,8 +431,8 @@ func FrameTestCompareOptions() []cmp.Option {
 
 	unexportedField := cmp.AllowUnexported(Field{})
 
-	// Custom comparer for generic vectors - compares via exported interface methods
-	vectorComparer := cmp.Comparer(func(x, y vector) bool {
+	// Helper function to compare vectors - extracted for reuse
+	compareVectors := func(x, y vector) bool {
 		if x == nil && y == nil {
 			return true
 		}
@@ -461,9 +461,36 @@ func FrameTestCompareOptions() []cmp.Option {
 			}
 		}
 		return true
+	}
+
+	// Custom comparer for generic vectors - compares via exported interface methods
+	vectorComparer := cmp.Comparer(compareVectors)
+
+	// Field comparer to handle nil Field pointers before comparing
+	// This must be defined after vectorComparer so it can use compareVectors for vector comparison
+	fieldComparer := cmp.Comparer(func(x, y *Field) bool {
+		if x == nil && y == nil {
+			return true
+		}
+		if x == nil || y == nil {
+			return false
+		}
+		// Both are non-nil, compare exported fields directly and use compareVectors for unexported vector
+		// This avoids recursive cmp.Equal() call for better performance
+		if x.Name != y.Name {
+			return false
+		}
+		if !cmp.Equal(x.Labels, y.Labels) {
+			return false
+		}
+		if !cmp.Equal(x.Config, y.Config, metas) {
+			return false
+		}
+		// Compare unexported vector field directly
+		return compareVectors(x.vector, y.vector)
 	})
 
-	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, metas, rawjs, unexportedField, vectorComparer, cmpopts.EquateEmpty()}
+	return []cmp.Option{f32s, f32Ptrs, f64s, f64Ptrs, confFloats, metas, rawjs, fieldComparer, unexportedField, vectorComparer, cmpopts.EquateEmpty()}
 }
 
 const maxLengthExceededStr = "..."
@@ -542,11 +569,11 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 				break
 			}
 
-		val := reflect.Indirect(reflect.ValueOf(v))
-		if !val.IsValid() {
-			sRow[colIdx] = string(SpecialValueNull)
-			continue
-		}
+			val := reflect.Indirect(reflect.ValueOf(v))
+			if !val.IsValid() {
+				sRow[colIdx] = string(SpecialValueNull)
+				continue
+			}
 
 			switch {
 			case f.Fields[colIdx].Type() == FieldTypeJSON:
