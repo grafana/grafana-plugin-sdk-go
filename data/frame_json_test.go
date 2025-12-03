@@ -6,15 +6,11 @@ import (
 	"math"
 	"os"
 	"path/filepath"
-	"strings"
 	"sync"
 	"testing"
-	"text/template"
 	"time"
 
 	jsoniter "github.com/json-iterator/go"
-	"golang.org/x/text/cases"
-	"golang.org/x/text/language"
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/stretchr/testify/assert"
@@ -291,6 +287,11 @@ func TestJSONFrames(t *testing.T) {
 func BenchmarkFrameToJSON(b *testing.B) {
 	f := goldenDF()
 	b.ReportAllocs()
+	warm, err := data.FrameToJSONCache(f)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(warm.Bytes(data.IncludeAll))))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := data.FrameToJSONCache(f)
@@ -303,6 +304,11 @@ func BenchmarkFrameToJSON(b *testing.B) {
 func BenchmarkFrameMarshalJSONStd(b *testing.B) {
 	f := goldenDF()
 	b.ReportAllocs()
+	warm, err := json.Marshal(f)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(warm)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := json.Marshal(f)
@@ -315,6 +321,11 @@ func BenchmarkFrameMarshalJSONStd(b *testing.B) {
 func BenchmarkFrameMarshalJSONIter(b *testing.B) {
 	f := goldenDF()
 	b.ReportAllocs()
+	warm, err := jsoniter.Marshal(f)
+	if err != nil {
+		b.Fatal(err)
+	}
+	b.SetBytes(int64(len(warm)))
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		_, err := jsoniter.Marshal(f)
@@ -405,154 +416,4 @@ func TestFrame_UnmarshallUint64(t *testing.T) {
 		values = append(values, v.(uint64))
 	}
 	require.EqualValues(t, []uint64{math.MaxUint64, math.MaxUint64, 0, 1, 2, 3, 4, 5}, values)
-}
-
-// This function will write code to the console that should be copy/pasted into frame_json.gen.go
-// when changes are required. Typically this function will always be skipped.
-func TestGenerateGenericArrowCode(t *testing.T) {
-	t.Skip()
-
-	types := []string{
-		"uint8", "uint16", "uint32", "uint64",
-		"int8", "int16", "int32", "int64",
-		"float32", "float64", "string", "bool",
-		"enum", // Maps to uint16
-	}
-
-	code := `
-func writeArrowData{{.Type}}(stream *jsoniter.Stream, col array.Interface) *fieldEntityLookup {
-	var entities *fieldEntityLookup
-	count := col.Len()
-
-	v := array.New{{.Typex}}Data(col.Data())
-	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
-		if i > 0 {
-			stream.WriteRaw(",")
-		}
-		if col.IsNull(i) {
-			stream.WriteNil()
-			continue
-		}
-{{- if .HasSpecialEntities }}
-		val := v.Value(i)
-		f64 := float64(val)
-		if entityType, found := isSpecialEntity(f64); found {
-			if entities == nil {
-				entities = &fieldEntityLookup{}
-			}
-			entities.add(entityType, i)
-			stream.WriteNil()
-		} else {
-			stream.Write{{.IterType}}(val)
-		}
-{{ else }}
-		stream.Write{{.IterType}}(v.Value(i)){{ end }}
-	}
-	stream.WriteArrayEnd()
-	return entities
-}
-
-func read{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*{{.Typen}}Vector, error) {
-	arr := new{{.Type}}Vector(size)
-	for i := 0; i < size; i++ {
-		if !iter.ReadArray() {
-			iter.ReportError("read{{.Type}}VectorJSON", "expected array")
-			return nil, iter.Error
-		}
-
-		t := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
-			iter.ReadNil()
-		} else {
-			v := iter.Read{{.IterType}}()
-			arr.Set(i, v)
-		}
-	}
-
-	if iter.ReadArray() {
-		iter.ReportError("read", "expected close array")
-		return nil, iter.Error
-	}
-	return arr, nil
-}
-
-
-func readNullable{{.Type}}VectorJSON(iter *jsoniter.Iterator, size int) (*nullable{{.Type}}Vector, error) {
-	arr := newNullable{{.Type}}Vector(size)
-	for i := 0; i < size; i++ {
-		if !iter.ReadArray() {
-			iter.ReportError("readNullable{{.Type}}VectorJSON", "expected array")
-			return nil, iter.Error
-		}
-		t := iter.WhatIsNext()
-		if t == jsoniter.NilValue {
-			iter.ReadNil()
-		} else {
-			v := iter.Read{{.IterType}}()
-			arr.Set(i, &v)
-		}
-	}
-
-	if iter.ReadArray() {
-		iter.ReportError("readNullable{{.Type}}VectorJSON", "expected close array")
-		return nil, iter.Error
-	}
-	return arr, nil
-}
-
-`
-	caser := cases.Title(language.English, cases.NoLower)
-
-	// switch col.DataType().ID() {
-	// 	// case arrow.STRING:
-	// 	// 	ent := writeArrowSTRING(stream, col)
-	for _, tstr := range types {
-		tname := caser.String(tstr)
-		tuppr := strings.ToUpper(tstr)
-
-		fmt.Printf("    case arrow.%s:\n\t\tent = writeArrowData%s(stream, col)\n", tuppr, tname)
-	}
-
-	for _, tstr := range types {
-		itertype := caser.String(tstr)
-		typex := tstr
-		switch tstr {
-		case "bool":
-			typex = "Boolean"
-		case "enum":
-			typex = "uint16"
-			itertype = caser.String(typex)
-		case "timeOffset":
-			typex = "int64"
-			itertype = caser.String(typex)
-		}
-		hasSpecialEntities := tstr == "float32" || tstr == "float64"
-		tmplData := struct {
-			Type               string
-			Typex              string
-			Typen              string
-			IterType           string
-			HasSpecialEntities bool
-		}{
-			Type:               caser.String(tstr),
-			Typex:              caser.String(typex),
-			Typen:              tstr,
-			IterType:           itertype,
-			HasSpecialEntities: hasSpecialEntities,
-		}
-		tmpl, err := template.New("").Parse(code)
-		require.NoError(t, err)
-		err = tmpl.Execute(os.Stdout, tmplData)
-		require.NoError(t, err)
-		fmt.Printf("\n")
-	}
-
-	for _, tstr := range types {
-		tname := caser.String(tstr)
-		fmt.Printf("    case FieldType%s: return read%sVectorJSON(iter, size)\n", tname, tname)
-		fmt.Printf("    case FieldTypeNullable%s: return readNullable%sVectorJSON(iter, size)\n", tname, tname)
-	}
-
-	assert.FailNow(t, "fail so we see the output")
 }
