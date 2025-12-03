@@ -481,7 +481,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		parseUint64 := func(s string) (uint64, error) {
 			return strconv.ParseUint(s, 0, 64)
 		}
-		u, err := readArrayOfNumbers[uint64](itere, parseUint64, itere.ReadUint64)
+		u, err := readArrayOfNumbers(itere, parseUint64, itere.ReadUint64)
 		if err != nil {
 			return nil, err
 		}
@@ -495,7 +495,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 			}
 			return &u, nil
 		}
-		u, err := readArrayOfNumbers[*uint64](itere, parseUint64, itere.ReadUint64Pointer)
+		u, err := readArrayOfNumbers(itere, parseUint64, itere.ReadUint64Pointer)
 		if err != nil {
 			return nil, err
 		}
@@ -1134,53 +1134,53 @@ func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error)
 
 	// Generic vectors - inline implementations
 	case FieldTypeUint8:
-		return readgenericVectorJSON[uint8](iter, size, iter.ReadUint8)
+		return readgenericVectorJSON(iter, size, iter.ReadUint8)
 	case FieldTypeNullableUint8:
-		return readnullableGenericVectorJSON[uint8](iter, size, iter.ReadUint8)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadUint8)
 	case FieldTypeUint16:
-		return readgenericVectorJSON[uint16](iter, size, iter.ReadUint16)
+		return readgenericVectorJSON(iter, size, iter.ReadUint16)
 	case FieldTypeNullableUint16:
-		return readnullableGenericVectorJSON[uint16](iter, size, iter.ReadUint16)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadUint16)
 	case FieldTypeUint32:
-		return readgenericVectorJSON[uint32](iter, size, iter.ReadUint32)
+		return readgenericVectorJSON(iter, size, iter.ReadUint32)
 	case FieldTypeNullableUint32:
-		return readnullableGenericVectorJSON[uint32](iter, size, iter.ReadUint32)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadUint32)
 	case FieldTypeUint64:
-		return readgenericVectorJSON[uint64](iter, size, iter.ReadUint64)
+		return readgenericVectorJSON(iter, size, iter.ReadUint64)
 	case FieldTypeNullableUint64:
-		return readnullableGenericVectorJSON[uint64](iter, size, iter.ReadUint64)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadUint64)
 	case FieldTypeInt8:
-		return readgenericVectorJSON[int8](iter, size, iter.ReadInt8)
+		return readgenericVectorJSON(iter, size, iter.ReadInt8)
 	case FieldTypeNullableInt8:
-		return readnullableGenericVectorJSON[int8](iter, size, iter.ReadInt8)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadInt8)
 	case FieldTypeInt16:
-		return readgenericVectorJSON[int16](iter, size, iter.ReadInt16)
+		return readgenericVectorJSON(iter, size, iter.ReadInt16)
 	case FieldTypeNullableInt16:
-		return readnullableGenericVectorJSON[int16](iter, size, iter.ReadInt16)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadInt16)
 	case FieldTypeInt32:
-		return readgenericVectorJSON[int32](iter, size, iter.ReadInt32)
+		return readgenericVectorJSON(iter, size, iter.ReadInt32)
 	case FieldTypeNullableInt32:
-		return readnullableGenericVectorJSON[int32](iter, size, iter.ReadInt32)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadInt32)
 	case FieldTypeInt64:
-		return readgenericVectorJSON[int64](iter, size, iter.ReadInt64)
+		return readgenericVectorJSON(iter, size, iter.ReadInt64)
 	case FieldTypeNullableInt64:
-		return readnullableGenericVectorJSON[int64](iter, size, iter.ReadInt64)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadInt64)
 	case FieldTypeFloat32:
-		return readgenericVectorJSON[float32](iter, size, iter.ReadFloat32)
+		return readgenericVectorJSON(iter, size, iter.ReadFloat32)
 	case FieldTypeNullableFloat32:
-		return readnullableGenericVectorJSON[float32](iter, size, iter.ReadFloat32)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadFloat32)
 	case FieldTypeFloat64:
-		return readgenericVectorJSON[float64](iter, size, iter.ReadFloat64)
+		return readgenericVectorJSON(iter, size, iter.ReadFloat64)
 	case FieldTypeNullableFloat64:
-		return readnullableGenericVectorJSON[float64](iter, size, iter.ReadFloat64)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadFloat64)
 	case FieldTypeString:
-		return readgenericVectorJSON[string](iter, size, iter.ReadString)
+		return readgenericVectorJSON(iter, size, iter.ReadString)
 	case FieldTypeNullableString:
-		return readnullableGenericVectorJSON[string](iter, size, iter.ReadString)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadString)
 	case FieldTypeBool:
-		return readgenericVectorJSON[bool](iter, size, iter.ReadBool)
+		return readgenericVectorJSON(iter, size, iter.ReadBool)
 	case FieldTypeNullableBool:
-		return readnullableGenericVectorJSON[bool](iter, size, iter.ReadBool)
+		return readnullableGenericVectorJSON(iter, size, iter.ReadBool)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
 }

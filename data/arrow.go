@@ -728,7 +728,7 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 	case arrow.UINT16:
 		v := array.NewUint16Data(col.Data())
 		values := v.Uint16Values()
-		if frame.Fields[i].Type().NullableType() == FieldTypeNullableEnum {
+		if frame.Fields[i].Type().NonNullableType() == FieldTypeEnum {
 			// Handle Enum type
 			if nullable[i] {
 				if nvec, ok := frame.Fields[i].vector.(*nullableGenericVector[EnumItemIndex]); ok {
