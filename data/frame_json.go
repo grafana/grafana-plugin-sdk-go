@@ -1319,8 +1319,9 @@ var entityLookupPool = sync.Pool{
 // Pool for reusing string slices when sorting map keys
 var stringSlicePool = sync.Pool{
 	New: func() interface{} {
-		s := make([]string, 0, 16) // Pre-allocate for typical label count
-		return &s
+		s := new([]string)
+		*s = make([]string, 0, 16) // Pre-allocate for typical label count
+		return s
 	},
 }
 
