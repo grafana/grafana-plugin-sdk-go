@@ -72,29 +72,29 @@ func createLargeComplexFrame(rows int) *data.Frame {
 			s := "value_" + string(rune(i%26+97))
 			strings[i] = &s
 
-			i64 := int64(i)
-			int64s[i] = &i64
+		i64 := int64(i)
+		int64s[i] = &i64
 
-			i32 := int32(i)
-			int32s[i] = &i32
+		i32 := int32(i) // #nosec G115 -- benchmark code with controlled input
+		int32s[i] = &i32
 
-			i16 := int16(i % 32767)
-			int16s[i] = &i16
+		i16 := int16(i % 32767) // #nosec G115 -- benchmark code with controlled input
+		int16s[i] = &i16
 
-			i8 := int8(i % 127)
-			int8s[i] = &i8
+		i8 := int8(i % 127) // #nosec G115 -- benchmark code with controlled input
+		int8s[i] = &i8
 
-			u64 := uint64(i)
-			uint64s[i] = &u64
+		u64 := uint64(i) // #nosec G115 -- benchmark code with controlled input
+		uint64s[i] = &u64
 
-			u32 := uint32(i)
-			uint32s[i] = &u32
+		u32 := uint32(i) // #nosec G115 -- benchmark code with controlled input
+		uint32s[i] = &u32
 
-			u16 := uint16(i % 65535)
-			uint16s[i] = &u16
+		u16 := uint16(i % 65535) // #nosec G115 -- benchmark code with controlled input
+		uint16s[i] = &u16
 
-			u8 := uint8(i % 255)
-			uint8s[i] = &u8
+		u8 := uint8(i % 255) // #nosec G115 -- benchmark code with controlled input
+		uint8s[i] = &u8
 
 			b := i%2 == 0
 			bools[i] = &b
@@ -156,8 +156,8 @@ func createNumericOnlyFrame(rows int) *data.Frame {
 	for i := 0; i < rows; i++ {
 		int64s[i] = int64(i)
 		float64s[i] = float64(i) * math.Pi
-		uint64s[i] = uint64(i * 2)
-		int32s[i] = int32(i % math.MaxInt32)
+		uint64s[i] = uint64(i * 2)      // #nosec G115 -- benchmark code with controlled input
+		int32s[i] = int32(i % math.MaxInt32) // #nosec G115 -- benchmark code with controlled input
 	}
 
 	return data.NewFrame("numeric",
@@ -563,7 +563,7 @@ func BenchmarkFromArrowRecord_Small(b *testing.B) {
 	if !tr.Next() {
 		b.Fatal("no records in table")
 	}
-	record := tr.Record()
+	record := tr.RecordBatch()
 	defer record.Release()
 
 	b.ResetTimer()
@@ -590,7 +590,7 @@ func BenchmarkFromArrowRecord_Medium_1000Rows(b *testing.B) {
 	if !tr.Next() {
 		b.Fatal("no records in table")
 	}
-	record := tr.Record()
+	record := tr.RecordBatch()
 	defer record.Release()
 
 	b.ResetTimer()
@@ -617,7 +617,7 @@ func BenchmarkFromArrowRecord_Large_10000Rows(b *testing.B) {
 	if !tr.Next() {
 		b.Fatal("no records in table")
 	}
-	record := tr.Record()
+	record := tr.RecordBatch()
 	defer record.Release()
 
 	b.ResetTimer()

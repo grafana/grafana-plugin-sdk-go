@@ -30,10 +30,10 @@ type InstanceFactoryFunc func(ctx context.Context, settings backend.DataSourceIn
 // and providing that to instancemgmt.New.
 func NewInstanceManager(fn InstanceFactoryFunc) instancemgmt.InstanceManager {
 	ip := NewInstanceProvider(fn)
-	return instancemgmt.New(ip)
+	return instancemgmt.NewInstanceManagerWrapper(ip)
 }
 
-// NewInstanceProvider create a new data source instance provuder,
+// NewInstanceProvider create a new data source instance provider,
 //
 // The instance provider is responsible for providing cache keys for data source instances,
 // creating new instances when needed and invalidating cached instances when they have been
@@ -59,14 +59,10 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 		return nil, errors.New("data source instance settings cannot be nil")
 	}
 
-	dsID := pluginContext.DataSourceInstanceSettings.ID
-	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
-	tenantID := tenant.IDFromContext(ctx)
-
-	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash), nil
+	return instanceKey(ctx, pluginContext), nil
 }
 
-func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
+func (ip *instanceProvider) NeedsUpdate(ctx context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
 	curConfig := pluginContext.GrafanaConfig
 	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
 	configUpdated := !cachedConfig.Equal(curConfig)
@@ -75,10 +71,31 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 	cachedDataSourceSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
 	dsUpdated := !curDataSourceSettings.Updated.Equal(cachedDataSourceSettings.Updated)
 
+	if dsUpdated || configUpdated {
+		logger := backend.Logger.FromContext(ctx)
+
+		ik := instanceKey(ctx, pluginContext)
+		if dsUpdated {
+			logger.Debug("Datasource instance needs update: datasource settings changed", "key", ik)
+		}
+		if configUpdated {
+			logger.Debug("Datasource instance needs update: config changed", "key", ik, "diff", curConfig.Diff(cachedConfig))
+		}
+	}
+
 	return dsUpdated || configUpdated
 }
 
 func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
 	datasourceInstancesCreated.Inc()
+	backend.Logger.FromContext(ctx).Debug("Datasource instance created", "key", instanceKey(ctx, pluginContext))
 	return ip.factory(ctx, *pluginContext.DataSourceInstanceSettings)
+}
+
+func instanceKey(ctx context.Context, pluginContext backend.PluginContext) string {
+	dsID := pluginContext.DataSourceInstanceSettings.ID
+	tenantID := tenant.IDFromContext(ctx)
+	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
+
+	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash)
 }

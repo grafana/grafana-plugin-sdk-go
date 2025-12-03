@@ -211,12 +211,12 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 
 	defs := sdkapi.QueryTypeDefinitionList{}
 	byName := make(map[string]*sdkapi.QueryTypeDefinition)
-	body, err := os.ReadFile(outfile)
+	body, err := os.ReadFile(outfile) // #nosec G304
 	if err == nil {
 		err = json.Unmarshal(body, &defs)
 		if err == nil {
 			for i, def := range defs.Items {
-				byName[def.ObjectMeta.Name] = &defs.Items[i]
+				byName[def.Name] = &defs.Items[i]
 			}
 		}
 	}
@@ -225,11 +225,11 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 
 	// The updated schemas
 	for _, def := range b.query {
-		found, ok := byName[def.ObjectMeta.Name]
+		found, ok := byName[def.Name]
 		if !ok {
-			defs.ObjectMeta.ResourceVersion = rv
-			def.ObjectMeta.ResourceVersion = rv
-			def.ObjectMeta.CreationTimestamp = now.Format(time.RFC3339)
+			defs.ResourceVersion = rv
+			def.ResourceVersion = rv
+			def.CreationTimestamp = now.Format(time.RFC3339)
 
 			defs.Items = append(defs.Items, def)
 		} else {
@@ -237,15 +237,15 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 			y := sdkapi.AsUnstructured(found.Spec)
 			if diff := cmp.Diff(stripNilValues(x.Object), stripNilValues(y.Object), cmpopts.EquateEmpty()); diff != "" {
 				fmt.Printf("Spec changed:\n%s\n", diff)
-				found.ObjectMeta.ResourceVersion = rv
+				found.ResourceVersion = rv
 				found.Spec = def.Spec
 			}
-			delete(byName, def.ObjectMeta.Name)
+			delete(byName, def.Name)
 		}
 	}
 
-	if defs.ObjectMeta.ResourceVersion == "" {
-		defs.ObjectMeta.ResourceVersion = rv
+	if defs.ResourceVersion == "" {
+		defs.ResourceVersion = rv
 	}
 
 	if len(byName) > 0 {
@@ -263,7 +263,7 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 	})
 	require.NoError(t, err)
 
-	body, _ = os.ReadFile(outfile)
+	body, _ = os.ReadFile(outfile) // #nosec G304 // #nosec G304
 	maybeUpdateFile(t, outfile, schema, body)
 
 	panel := pseudoPanel{
@@ -275,7 +275,7 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 	}, defs)
 
 	outfile = filepath.Join(outdir, "query.panel.example.json")
-	body, _ = os.ReadFile(outfile)
+	body, _ = os.ReadFile(outfile) // #nosec G304 // #nosec G304
 	maybeUpdateFile(t, outfile, panel, body)
 
 	// Update the request payload schema
@@ -288,12 +288,12 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 	})
 	require.NoError(t, err)
 
-	body, _ = os.ReadFile(outfile)
+	body, _ = os.ReadFile(outfile) // #nosec G304
 	maybeUpdateFile(t, outfile, schema, body)
 
 	request := exampleRequest(defs)
 	outfile = filepath.Join(outdir, "query.request.example.json")
-	body, _ = os.ReadFile(outfile)
+	body, _ = os.ReadFile(outfile) // #nosec G304
 	maybeUpdateFile(t, outfile, request, body)
 
 	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)

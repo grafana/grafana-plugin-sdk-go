@@ -1,6 +1,7 @@
 package schemabuilder
 
 import (
+	_ "embed"
 	"encoding/json"
 	"os"
 	"reflect"
@@ -9,12 +10,17 @@ import (
 	"github.com/go-openapi/loads"
 	"github.com/go-openapi/spec"
 	"github.com/go-openapi/strfmt"
+	"github.com/go-openapi/swag/loading"
 	"github.com/go-openapi/validate"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-	apisdata "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1"
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+	apisdata "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1"
 )
+
+//go:embed testdata/draft-04-schema.json
+var draft04SchemaJSON []byte
 
 func TestWriteQuerySchema(t *testing.T) {
 	builder, err := NewSchemaBuilder(BuilderOptions{
@@ -118,11 +124,28 @@ func validateOpenAPIv2Schema(t *testing.T, data []byte, file string) {
 	})
 	require.NoError(t, err, file)
 
-	// 2c. Load the spec structure using loads.Analyzed.
-	doc, err := loads.Analyzed(swaggerBytes, "2.0")
-	require.NoError(t, err)
+	localDocLoader := func(path string, opts ...loading.Option) (json.RawMessage, error) {
+		// Use vendored draft-04 schema to avoid network calls
+		if path == "https://json-schema.org/draft-04/schema#" || path == "https://json-schema.org/draft-04/schema" {
+			return draft04SchemaJSON, nil
+		}
 
-	// 2d. Validate the loaded document against the official OpenAPI 2.0 meta-schema.
+		// For other paths (local files or HTTP URLs), use the default loader
+		return loading.JSONDoc(path, opts...)
+	}
+
+	tmpFile, err := os.CreateTemp("", "swagger-*.json")
+	require.NoError(t, err, file)
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
+
+	_, err = tmpFile.Write(swaggerBytes)
+	require.NoError(t, err, file)
+	err = tmpFile.Close()
+	require.NoError(t, err, file)
+
+	doc, err := loads.Spec(tmpFile.Name(), loads.WithDocLoader(localDocLoader))
+	require.NoError(t, err, file)
+
 	err = validate.Spec(doc, strfmt.Default)
 	require.NoError(t, err, file)
 }

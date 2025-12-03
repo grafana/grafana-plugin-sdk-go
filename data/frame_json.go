@@ -417,9 +417,10 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 
 func getReplacementValue(key string, ft FieldType) interface{} {
 	v := math.NaN()
-	if key == "Inf" {
+	switch key {
+	case "Inf":
 		v = math.Inf(1)
-	} else if key == "NegInf" {
+	case "NegInf":
 		v = math.Inf(-1)
 	}
 	if ft == FieldTypeFloat32 || ft == FieldTypeNullableFloat32 {
@@ -906,42 +907,42 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	case FieldTypeUint8:
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
-			return uint8(iV), err
+			return uint8(iV), err // #nosec G115
 		}
 
 	case FieldTypeUint16: // enums and uint16 share the same backings
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
-			return uint16(iV), err
+			return uint16(iV), err // #nosec G115
 		}
 
 	case FieldTypeEnum: // enums and uint16 share the same backings
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
-			return EnumItemIndex(iV), err
+			return EnumItemIndex(iV), err // #nosec G115
 		}
 
 	case FieldTypeUint32:
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
-			return uint32(iV), err
+			return uint32(iV), err // #nosec G115
 		}
 	case FieldTypeInt8:
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
-			return int8(iV), err
+			return int8(iV), err // #nosec G115
 		}
 
 	case FieldTypeInt16:
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
-			return int16(iV), err
+			return int16(iV), err // #nosec G115
 		}
 
 	case FieldTypeInt32:
 		convert = func(v interface{}) (interface{}, error) {
 			iV, err := int64FromJSON(v)
-			return int32(iV), err
+			return int32(iV), err // #nosec G115
 		}
 
 	case FieldTypeFloat32:
@@ -2365,7 +2366,7 @@ func ArrowBufferToJSON(b []byte, include FrameInclude) ([]byte, error) {
 
 // ArrowToJSON writes a frame to JSON
 // NOTE: the format should be considered experimental until grafana 8 is released.
-func ArrowToJSON(record arrow.Record, include FrameInclude) ([]byte, error) {
+func ArrowToJSON(record arrow.Record, include FrameInclude) ([]byte, error) { //nolint:staticcheck // SA1019: Using deprecated Record type for backwards compatibility
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
@@ -2396,7 +2397,7 @@ func ArrowToJSON(record arrow.Record, include FrameInclude) ([]byte, error) {
 	return append([]byte(nil), stream.Buffer()...), nil
 }
 
-func writeArrowSchema(stream *jsoniter.Stream, record arrow.Record) {
+func writeArrowSchema(stream *jsoniter.Stream, record arrow.Record) { //nolint:staticcheck // SA1019: Using deprecated Record type for backwards compatibility
 	started := false
 	metaData := record.Schema().Metadata()
 
@@ -2491,7 +2492,7 @@ func writeArrowSchema(stream *jsoniter.Stream, record arrow.Record) {
 	stream.WriteObjectEnd()
 }
 
-func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error {
+func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error { //nolint:staticcheck // SA1019: Using deprecated Record type for backwards compatibility
 	fieldCount := len(record.Schema().Fields())
 
 	stream.WriteObjectStart()

@@ -60,7 +60,7 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	}
 
 	for tableReader.Next() {
-		rec := tableReader.Record()
+		rec := tableReader.Record() //nolint:staticcheck // SA1019: Using deprecated Record() API for backwards compatibility
 
 		if err := fw.Write(rec); err != nil {
 			rec.Release()
@@ -474,7 +474,7 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 	return nil
 }
 
-func populateFrameFieldsFromRecord(record arrow.Record, nullable []bool, frame *Frame) error {
+func populateFrameFieldsFromRecord(record arrow.Record, nullable []bool, frame *Frame) error { //nolint:staticcheck // SA1019: Using deprecated Record type for backwards compatibility
 	for i := 0; i < len(frame.Fields); i++ {
 		col := record.Column(i)
 		if err := parseColumn(col, i, nullable, frame); err != nil {
@@ -923,7 +923,7 @@ func populateFrameFromSchema(schema *arrow.Schema, frame *Frame) error {
 }
 
 // FromArrowRecord converts a an Arrow record batch into a Frame.
-func FromArrowRecord(record arrow.Record) (*Frame, error) {
+func FromArrowRecord(record arrow.Record) (*Frame, error) { //nolint:staticcheck // SA1019: Using deprecated Record type for backwards compatibility
 	schema := record.Schema()
 	frame := &Frame{}
 	if err := populateFrameFromSchema(schema, frame); err != nil {
@@ -955,7 +955,7 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer fR.Close()
+	defer func() { _ = fR.Close() }()
 
 	schema := fR.Schema()
 	frame := &Frame{}
@@ -967,7 +967,7 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 	// This pre-allocates vectors to avoid repeated reallocations
 	capacity := 0
 	for i := 0; i < fR.NumRecords(); i++ {
-		rec, err := fR.Record(i)
+		rec, err := fR.RecordBatch(i)
 		if err != nil {
 			return nil, err
 		}

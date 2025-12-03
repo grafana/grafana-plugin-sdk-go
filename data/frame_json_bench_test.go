@@ -392,7 +392,7 @@ func BenchmarkFrameMarshalJSON_FieldTypes(b *testing.B) {
 	b.Run("Uint64", func(b *testing.B) {
 		values := make([]uint64, size)
 		for i := range values {
-			values[i] = uint64(i)
+			values[i] = uint64(i) // #nosec G115 -- benchmark code with controlled input
 		}
 		f := data.NewFrame("test", data.NewField("value", nil, values))
 		b.ReportAllocs()
@@ -410,7 +410,7 @@ func BenchmarkFrameMarshalJSON_FieldTypes(b *testing.B) {
 		values := make([]*uint64, size)
 		for i := range values {
 			if i%10 != 0 { // 10% null values
-				v := uint64(i)
+				v := uint64(i) // #nosec G115 -- benchmark code with controlled input
 				values[i] = &v
 			}
 		}
@@ -500,7 +500,7 @@ func BenchmarkFrameMarshalJSON_FieldTypes(b *testing.B) {
 	b.Run("Enum", func(b *testing.B) {
 		values := make([]data.EnumItemIndex, size)
 		for i := range values {
-			values[i] = data.EnumItemIndex(i % 5)
+			values[i] = data.EnumItemIndex(i % 5) // #nosec G115 -- benchmark code with controlled input
 		}
 		f := data.NewFrame("test", data.NewField("value", nil, values))
 		b.ReportAllocs()

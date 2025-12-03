@@ -61,7 +61,7 @@ func (f *fakeDataHandlerWithOAuth) QueryData(ctx context.Context, _ *QueryDataRe
 	if err != nil {
 		return nil, err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 
 	if res.StatusCode != http.StatusOK {
 		return nil, fmt.Errorf("unexpected status code: %d", res.StatusCode)

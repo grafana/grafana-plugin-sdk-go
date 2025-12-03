@@ -44,7 +44,7 @@ func TestProxy(t *testing.T) {
 			require.NoError(t, err)
 			res, err := client.Do(req)
 			require.NoError(t, err)
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			require.Equal(t, handlerFoo, proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			require.Equal(t, http.StatusOK, res.StatusCode)
@@ -74,7 +74,7 @@ func TestProxy(t *testing.T) {
 			require.NoError(t, err)
 			resp, err := client.Do(req)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			require.Len(t, proxy.Fixtures[0].Entries(), 1)
 			require.Equal(t, handlerFoo, proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
@@ -107,7 +107,7 @@ func TestProxy(t *testing.T) {
 			require.NoError(t, err)
 			res, err := client.Do(req)
 			require.NoError(t, err)
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			require.Equal(t, handlerFoo, proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			require.Equal(t, http.StatusOK, res.StatusCode)
@@ -134,7 +134,7 @@ func TestProxy(t *testing.T) {
 			require.NoError(t, err)
 			resp, err := client.Do(req)
 			require.NoError(t, err)
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			require.Equal(t, handlerFoo, proxy.Fixtures[0].Entries()[0].Request.URL.Path)
 			require.Equal(t, http.StatusOK, proxy.Fixtures[0].Entries()[0].Response.StatusCode)
 			body, err := io.ReadAll(resp.Body)
@@ -234,7 +234,7 @@ func (s *fakeStorage) Add(req *http.Request, res *http.Response) error {
 func (s *fakeStorage) Delete(req *http.Request) bool {
 	for i, entry := range s.entries {
 		if res := entry.Match(req); res != nil {
-			res.Body.Close()
+			_ = res.Body.Close()
 			s.entries = append(s.entries[:i], s.entries[i+1:]...)
 			return true
 		}
@@ -245,7 +245,7 @@ func (s *fakeStorage) Delete(req *http.Request) bool {
 func (s *fakeStorage) Load() error {
 	s.entries = make([]*storage.Entry, 0)
 	req, res := setupFixture()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	s.entries = append(s.entries, &storage.Entry{
 		Request:  req,
 		Response: res,

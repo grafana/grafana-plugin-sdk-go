@@ -30,7 +30,7 @@ type EnumField struct {
 
 func findEnumFields(base, startpath string) ([]EnumField, error) {
 	fset := token.NewFileSet()
-	dict := make(map[string][]*ast.Package)
+	dict := make(map[string][]*ast.Package) //nolint:staticcheck // SA1019: Using deprecated ast.Package for parsing compatibility
 	err := filepath.Walk(startpath, func(path string, info fs.FileInfo, err error) error {
 		if err != nil {
 			return err

@@ -13,13 +13,13 @@ import (
 // InstanceFactoryFunc factory method for creating app instances.
 type InstanceFactoryFunc func(ctx context.Context, settings backend.AppInstanceSettings) (instancemgmt.Instance, error)
 
-// NewInstanceManager creates a new app instance manager,
+// NewInstanceManager creates a new app instance manager.
 //
 // This is a helper method for calling NewInstanceProvider and creating a new instancemgmt.InstanceProvider,
-// and providing that to instancemgmt.New.
+// and providing that to instancemgmt.NewInstanceManagerWrapper.
 func NewInstanceManager(fn InstanceFactoryFunc) instancemgmt.InstanceManager {
 	ip := NewInstanceProvider(fn)
-	return instancemgmt.New(ip)
+	return instancemgmt.NewInstanceManagerWrapper(ip)
 }
 
 // NewInstanceProvider create a new app instance provider,
@@ -48,17 +48,10 @@ func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.Pl
 		return nil, errors.New("app instance settings cannot be nil")
 	}
 
-	// The instance key generated for app plugins should include both plugin ID, and the OrgID, since for a single
-	// Grafana instance there might be different orgs using the same plugin.
-	defaultKey := fmt.Sprintf("%s#%v", pluginContext.PluginID, pluginContext.OrgID)
-	if tID := tenant.IDFromContext(ctx); tID != "" {
-		return fmt.Sprintf("%s#%s", tID, defaultKey), nil
-	}
-
-	return defaultKey, nil
+	return instanceKey(ctx, pluginContext), nil
 }
 
-func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
+func (ip *instanceProvider) NeedsUpdate(ctx context.Context, pluginContext backend.PluginContext, cachedInstance instancemgmt.CachedInstance) bool {
 	curConfig := pluginContext.GrafanaConfig
 	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
 	configUpdated := !cachedConfig.Equal(curConfig)
@@ -67,9 +60,33 @@ func (ip *instanceProvider) NeedsUpdate(_ context.Context, pluginContext backend
 	curAppSettings := pluginContext.AppInstanceSettings
 	appUpdated := !curAppSettings.Updated.Equal(cachedAppSettings.Updated)
 
+	if appUpdated || configUpdated {
+		logger := backend.Logger.FromContext(ctx)
+
+		ik := instanceKey(ctx, pluginContext)
+		if appUpdated {
+			logger.Debug("App instance needs update: app settings changed", "key", ik)
+		}
+		if configUpdated {
+			logger.Debug("App instance needs update: config changed", "key", ik, "diff", curConfig.Diff(cachedConfig))
+		}
+	}
+
 	return appUpdated || configUpdated
 }
 
 func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backend.PluginContext) (instancemgmt.Instance, error) {
+	backend.Logger.FromContext(ctx).Debug("App instance created", "key", instanceKey(ctx, pluginContext))
 	return ip.factory(ctx, *pluginContext.AppInstanceSettings)
+}
+
+func instanceKey(ctx context.Context, pluginContext backend.PluginContext) string {
+	// The instance key generated for app plugins should include both plugin ID, and the OrgID, since for a single
+	// Grafana instance there might be different orgs using the same plugin.
+	defaultKey := fmt.Sprintf("%s#%v", pluginContext.PluginID, pluginContext.OrgID)
+	if tID := tenant.IDFromContext(ctx); tID != "" {
+		return fmt.Sprintf("%s#%s", tID, defaultKey)
+	}
+
+	return defaultKey
 }

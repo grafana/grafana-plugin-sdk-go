@@ -90,12 +90,12 @@ func Test_getExecutableNameForPlugin(t *testing.T) {
 
 	for pluginID, executable := range plugins {
 		pluginRootDir := filepath.Join(rootDir, pluginID)
-		err := os.MkdirAll(pluginRootDir, os.ModePerm)
+		err := os.MkdirAll(pluginRootDir, os.ModePerm) // #nosec G301
 		require.NoError(t, err)
-		f, err := os.Create(filepath.Join(pluginRootDir, "plugin.json"))
+		f, err := os.Create(filepath.Join(pluginRootDir, "plugin.json")) // #nosec G301 G304
 		require.NoError(t, err)
 
-		_, err = f.WriteString(fmt.Sprintf(`{"executable": %q}`, executable))
+		_, err = fmt.Fprintf(f, `{"executable": %q}`, executable)
 		require.NoError(t, err)
 		err = f.Close()
 		require.NoError(t, err)
@@ -220,12 +220,12 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 
 func createPluginJSON(t *testing.T, pluginDir string, executable string) {
 	t.Helper()
-	err := os.MkdirAll(pluginDir, os.ModePerm)
+	err := os.MkdirAll(pluginDir, os.ModePerm) // #nosec G301
 	require.NoError(t, err)
-	f, err := os.Create(filepath.Join(pluginDir, "plugin.json"))
+	f, err := os.Create(filepath.Join(pluginDir, "plugin.json")) // #nosec G301 G304
 	require.NoError(t, err)
 
-	_, err = f.WriteString(fmt.Sprintf(`{"executable": %q}`, executable))
+	_, err = fmt.Fprintf(f, `{"executable": %q}`, executable)
 	require.NoError(t, err)
 	err = f.Close()
 	require.NoError(t, err)
