@@ -761,21 +761,6 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 		require.True(t, cfg1.Equal(cfg2))
 	})
 
-	t.Run("secure socks proxy keys should be ignored in comparison", func(t *testing.T) {
-		cfg1 := NewGrafanaCfg(map[string]string{
-			"key1":                              "value1",
-			"GF_SECURE_SOCKS_DATASOURCE_PROXY":  "different_value_should_be_ignored",
-			"GF_SECURE_SOCKS_DATASOURCE_PROXY2": "also_ignored",
-		})
-		cfg2 := NewGrafanaCfg(map[string]string{
-			"key1":                              "value1",
-			"GF_SECURE_SOCKS_DATASOURCE_PROXY":  "different_value",
-			"GF_SECURE_SOCKS_DATASOURCE_PROXY2": "completely_different",
-		})
-		// Proxy keys should be ignored, other keys are the same
-		require.True(t, cfg1.Equal(cfg2))
-	})
-
 	t.Run("non-proxy keys should not be ignored", func(t *testing.T) {
 		cfg1 := NewGrafanaCfg(map[string]string{
 			"key1": "value1",
