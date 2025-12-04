@@ -67,9 +67,9 @@ func (ip *instanceProvider) NeedsUpdate(ctx context.Context, pluginContext backe
 	cachedConfig := cachedInstance.PluginContext.GrafanaConfig
 	configUpdated := !cachedConfig.Equal(curConfig)
 
-	curDataSourceSettings := pluginContext.DataSourceInstanceSettings
-	cachedDataSourceSettings := cachedInstance.PluginContext.DataSourceInstanceSettings
-	dsUpdated := !curDataSourceSettings.Updated.Equal(cachedDataSourceSettings.Updated)
+	curDataSourceSettingsUpdatedTime := pluginContext.DataSourceInstanceSettings.Updated
+	cachedDataSourceSettingsUpdatedTime := cachedInstance.PluginContext.DataSourceInstanceSettings.Updated
+	dsUpdated := !curDataSourceSettingsUpdatedTime.Equal(cachedDataSourceSettingsUpdatedTime)
 
 	if dsUpdated || configUpdated {
 		logger := backend.Logger.FromContext(ctx)
@@ -95,7 +95,6 @@ func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backe
 func instanceKey(ctx context.Context, pluginContext backend.PluginContext) string {
 	dsID := pluginContext.DataSourceInstanceSettings.ID
 	tenantID := tenant.IDFromContext(ctx)
-	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
 
-	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash)
+	return fmt.Sprintf("%d#%s", dsID, tenantID)
 }
