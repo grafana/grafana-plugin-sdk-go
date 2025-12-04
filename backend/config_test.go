@@ -832,4 +832,19 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 
 		require.False(t, cfg1.Equal(cfg2))
 	})
+
+	t.Run("Should return false when skipped key causes false positive", func(t *testing.T) {
+		validCert := createTestCertificate(time.Now().Add(12 * time.Hour))
+
+		cfg1 := NewGrafanaCfg(map[string]string{
+			proxy.PluginSecureSocksProxyClientKeyContents: validCert,
+			"other_key": "value1",
+		})
+		cfg2 := NewGrafanaCfg(map[string]string{
+			"completely_different": "value1", // Same length (2 keys) but totally different key:value
+			"other_key":            "value1",
+		})
+
+		require.False(t, cfg1.Equal(cfg2))
+	})
 }

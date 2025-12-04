@@ -94,12 +94,16 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	}
 
 	for k, v1 := range c.config {
+		v2, ok := c2.config[k]
+		if !ok {
+			return false
+		}
 		// Ignore secure socks proxy config values as they are always different.
-		if strings.Contains(k, "GF_SECURE_SOCKS_DATASOURCE_PROXY") {
+		if k == proxy.PluginSecureSocksProxyClientCertContents || k == proxy.PluginSecureSocksProxyClientKeyContents {
 			continue
 		}
 
-		if v2, ok := c2.config[k]; !ok || v1 != v2 {
+		if v1 != v2 {
 			return false
 		}
 	}
