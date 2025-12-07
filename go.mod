@@ -54,7 +54,7 @@ require (
 	k8s.io/kube-openapi v0.0.0-20250910181357-589584f1c912 // @grafana/grafana-app-platform-squad
 )
 
-require github.com/go-openapi/swag/loading v0.25.1
+require github.com/go-openapi/swag/loading v0.25.3
 
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
@@ -74,14 +74,14 @@ require (
 	github.com/go-openapi/jsonpointer v0.22.1 // indirect
 	github.com/go-openapi/jsonreference v0.21.3 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/go-openapi/swag/conv v0.25.1 // indirect
+	github.com/go-openapi/swag/conv v0.25.3 // indirect
 	github.com/go-openapi/swag/fileutils v0.25.1 // indirect
 	github.com/go-openapi/swag/jsonname v0.25.1 // indirect
-	github.com/go-openapi/swag/jsonutils v0.25.1 // indirect
+	github.com/go-openapi/swag/jsonutils v0.25.3 // indirect
 	github.com/go-openapi/swag/mangling v0.25.1 // indirect
 	github.com/go-openapi/swag/stringutils v0.25.1 // indirect
-	github.com/go-openapi/swag/typeutils v0.25.1 // indirect
-	github.com/go-openapi/swag/yamlutils v0.25.1 // indirect
+	github.com/go-openapi/swag/typeutils v0.25.3 // indirect
+	github.com/go-openapi/swag/yamlutils v0.25.3 // indirect
 	github.com/go-viper/mapstructure/v2 v2.4.0 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
