@@ -221,3 +221,18 @@ func (m *loggerMiddleware) ConvertObjects(ctx context.Context, req *ConversionRe
 
 	return resp, err
 }
+
+func (m *loggerMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+	if req == nil {
+		return m.BaseHandler.Schema(ctx, req)
+	}
+
+	var resp *SchemaResponse
+	err := m.logRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		var innerErr error
+		resp, innerErr = m.BaseHandler.Schema(ctx, req)
+		return RequestStatusFromError(innerErr), innerErr
+	})
+
+	return resp, err
+}

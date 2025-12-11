@@ -76,3 +76,8 @@ func (m *tenantIDMiddleware) ConvertObjects(ctx context.Context, req *Conversion
 	ctx = m.setup(ctx)
 	return m.BaseHandler.ConvertObjects(ctx, req)
 }
+
+func (m *tenantIDMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+	ctx = m.setup(ctx)
+	return m.BaseHandler.Schema(ctx, req)
+}

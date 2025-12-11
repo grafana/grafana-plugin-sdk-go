@@ -18,6 +18,7 @@ type TestPluginClient struct {
 	DataClient        pluginv2.DataClient
 	DiagnosticsClient pluginv2.DiagnosticsClient
 	ResourceClient    pluginv2.ResourceClient
+	InformationClient pluginv2.InformationClient
 
 	conn *grpc.ClientConn
 }
@@ -89,6 +90,19 @@ func (p *TestPluginClient) CallResource(ctx context.Context, r *backend.CallReso
 			return err
 		}
 	}
+}
+
+func (p *TestPluginClient) Schema(ctx context.Context, r *backend.SchemaRequest) (*backend.SchemaResponse, error) {
+	req := &pluginv2.SchemaRequest{
+		PluginContext: backend.ToProto().PluginContext(r.PluginContext),
+	}
+
+	resp, err := p.InformationClient.Schema(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	return backend.FromProto().SchemaResponse(resp), nil
 }
 
 func (p *TestPluginClient) shutdown() error {

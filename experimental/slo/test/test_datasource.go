@@ -45,6 +45,14 @@ func (m DS) CallResource(ctx context.Context, _ *backend.CallResourceRequest, _ 
 	return nil
 }
 
+func (m DS) Schema(ctx context.Context, _ *backend.SchemaRequest) (*backend.SchemaResponse, error) {
+	err := callGet(ctx, m)
+	if err != nil {
+		return nil, err
+	}
+	return &backend.SchemaResponse{}, nil
+}
+
 func callGet(ctx context.Context, m DS) error {
 	r, err := http.NewRequestWithContext(ctx, "GET", "https://httpbin.org/get", nil)
 	if err != nil {

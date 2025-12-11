@@ -485,3 +485,74 @@ message StatusResult {
   // +optional
   int32 code = 4;
 }
+
+//-----------------------------------------------
+// Schema
+//-----------------------------------------------
+
+service Information {
+  rpc Schema(SchemaRequest) returns (SchemaResponse);
+}
+
+message SchemaRequest {
+  PluginContext pluginContext = 1;
+
+  // Environment info
+  map<string,string> headers = 2;
+
+  string type = 3;
+
+  repeated string tables = 4;
+  repeated ColumnsSchemaRequest columns = 5;
+}
+
+message ColumnsSchemaRequest {
+  string table = 1;
+
+  map<string,string> parameters = 2;
+}
+
+message SchemaResponse {
+  Schema fullSchema = 1;
+
+  repeated string tables = 2;
+  map<string,ColumnList> columns = 3;
+  map<string,StringList> columnValues = 4;
+}
+
+message Schema {
+  repeated Table tables = 1;
+  StringList functions = 2;
+  map<string,SubTableMap> subTableValues = 4;
+}
+
+message Table {
+  string name = 1;
+  repeated SubTable subTables = 2;
+  repeated Column columns = 3;
+}
+
+message SubTable {
+  string name = 1;
+  StringList dependsOn = 2;
+  bool root = 3;
+}
+
+message ColumnList {
+  repeated Column values = 1;
+}
+
+message SubTableMap {
+  map<string, StringList> values =1;
+}
+
+message Column {
+  string name = 1;
+
+  enum Type {
+    number = 0;
+    string = 1;
+    datetime = 2;
+  }
+  Type type = 2;
+}

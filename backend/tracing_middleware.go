@@ -157,3 +157,14 @@ func (m *tracingMiddleware) ConvertObjects(ctx context.Context, req *ConversionR
 
 	return resp, err
 }
+
+func (m *tracingMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+	var resp *SchemaResponse
+	err := m.traceRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		var innerErr error
+		resp, innerErr = m.BaseHandler.Schema(ctx, req)
+		return RequestStatusFromError(innerErr), innerErr
+	})
+
+	return resp, err
+}

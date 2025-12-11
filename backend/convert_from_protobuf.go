@@ -409,3 +409,149 @@ func (f ConvertFromProtobuf) ConversionResponse(rsp *pluginv2.ConversionResponse
 func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
 	return NewGrafanaCfg(cfg)
 }
+
+// ColumnsSchemaRequest converts protobuf version of a ColumnsSchemaRequest to the SDK version.
+func (f ConvertFromProtobuf) ColumnsSchemaRequest(proto []*pluginv2.ColumnsSchemaRequest) []ColumnsSchemaRequest {
+	columnsSchemaRequest := []ColumnsSchemaRequest{}
+	if proto == nil {
+		return columnsSchemaRequest
+	}
+
+	for _, colReq := range proto {
+		columnsSchemaRequest = append(columnsSchemaRequest, ColumnsSchemaRequest{
+			Table:      colReq.Table,
+			Parameters: colReq.Parameters,
+		})
+	}
+
+	return columnsSchemaRequest
+}
+
+// SchemaRequest converts protobuf version of a SchemaRequest to the SDK version.
+func (f ConvertFromProtobuf) SchemaRequest(protoReq *pluginv2.SchemaRequest) *SchemaRequest {
+	if protoReq.Headers == nil {
+		protoReq.Headers = map[string]string{}
+	}
+
+	for _, colReq := range protoReq.Columns {
+		if colReq.Parameters == nil {
+			colReq.Parameters = map[string]string{}
+		}
+	}
+
+	return &SchemaRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Headers:       protoReq.Headers,
+		Type:          protoReq.Type,
+		Tables:        protoReq.Tables,
+		Columns:       f.ColumnsSchemaRequest(protoReq.Columns),
+	}
+}
+
+// Column converts protobuf version of Column to the SDK version.
+func (f ConvertFromProtobuf) Column(proto *pluginv2.Column) *Column {
+
+	if proto == nil {
+		return nil
+	}
+
+	colType := ColumnTypeString
+	switch proto.Type {
+	case pluginv2.Column_number:
+		colType = ColumnTypeNumber
+	case pluginv2.Column_string:
+		colType = ColumnTypeString
+	case pluginv2.Column_datetime:
+		colType = ColumnTypeDatetime
+	}
+
+	return &Column{
+		Name: proto.Name,
+		Type: colType,
+	}
+}
+
+// Columns converts protobuf version of Columns to the SDK version.
+func (f ConvertFromProtobuf) Columns(proto map[string]*pluginv2.ColumnList) map[string][]Column {
+	cols := map[string][]Column{}
+	if proto == nil {
+		return cols
+	}
+
+	for table, colList := range proto {
+		columns := []Column{}
+		for _, col := range colList.Values {
+			columns = append(columns, *f.Column(col))
+		}
+		cols[table] = columns
+	}
+
+	return cols
+}
+
+// SubTable converts protobuf version of SubTable to the SDK version.
+func (f ConvertFromProtobuf) SubTable(proto *pluginv2.SubTable) SubTable {
+
+	return SubTable{
+		Name:      proto.Name,
+		DependsOn: proto.DependsOn.Values,
+		Root:      proto.Root,
+	}
+}
+
+// Tables converts protobuf version of Tables to the SDK version.
+func (f ConvertFromProtobuf) Tables(proto []*pluginv2.Table) []Table {
+	tables := []Table{}
+
+	for _, t := range proto {
+		subTables := []SubTable{}
+		for _, st := range t.SubTables {
+			subTables = append(subTables, f.SubTable(st))
+		}
+
+		columns := []Column{}
+		for _, c := range t.Columns {
+			columns = append(columns, *f.Column(c))
+		}
+
+		tables = append(tables, Table{
+			Name:      t.Name,
+			SubTables: subTables,
+			Columns:   columns,
+		})
+	}
+
+	return tables
+}
+
+// Schema converts protobuf version of Schema to the SDK version.
+func (f ConvertFromProtobuf) Schema(proto *pluginv2.Schema) Schema {
+	subTableValues := map[string]map[string][]string{}
+	for k, v := range proto.SubTableValues {
+		subTableValues[k] = map[string][]string{}
+		for subKey, subValues := range v.Values {
+			subTableValues[k][subKey] = subValues.Values
+		}
+	}
+
+	return Schema{
+		Functions:      proto.Functions.Values,
+		Tables:         f.Tables(proto.Tables),
+		SubTableValues: subTableValues,
+	}
+}
+
+// SchemaResponse converts protobuf version of a SchemaResponse to the SDK version.
+func (f ConvertFromProtobuf) SchemaResponse(protoResp *pluginv2.SchemaResponse) *SchemaResponse {
+	colValues := map[string][]string{}
+	for k, values := range protoResp.ColumnValues {
+		colValues[k] = values.Values
+	}
+
+	return &SchemaResponse{
+		FullSchema:   f.Schema(protoResp.FullSchema),
+		Tables:       protoResp.Tables,
+		Columns:      f.Columns(protoResp.Columns),
+		ColumnValues: colValues,
+	}
+}

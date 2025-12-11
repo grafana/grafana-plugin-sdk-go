@@ -75,6 +75,8 @@ type ServeOpts struct {
 
 	// HandlerMiddlewares list of handler middlewares to decorate handlers with.
 	HandlerMiddlewares []HandlerMiddleware
+
+	SchemaHandler SchemaHandler
 }
 
 func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
@@ -85,6 +87,7 @@ func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
 		StreamHandler:       opts.StreamHandler,
 		AdmissionHandler:    opts.AdmissionHandler,
 		ConversionHandler:   opts.ConversionHandler,
+		SchemaHandler:       opts.SchemaHandler,
 	}
 
 	return HandlerFromMiddlewares(handlers, opts.HandlerMiddlewares...)
@@ -119,6 +122,11 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 	if opts.ConversionHandler != nil || opts.QueryConversionHandler != nil {
 		pluginOpts.ConversionServer = newConversionSDKAdapter(handler, opts.QueryConversionHandler)
 	}
+
+	if opts.SchemaHandler != nil {
+		pluginOpts.InformationServer = newInformationSDKAdapter(handler)
+	}
+
 	return pluginOpts, nil
 }
 
@@ -268,6 +276,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "conversion")
 	}
 
+	if pluginOpts.InformationServer != nil {
+		pluginv2.RegisterInformationServer(server, pluginOpts.InformationServer)
+		plugKeys = append(plugKeys, "information")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -396,6 +409,11 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.ConversionServer != nil {
 		pluginv2.RegisterResourceConversionServer(server, pluginOpts.ConversionServer)
 		plugKeys = append(plugKeys, "conversion")
+	}
+
+	if pluginOpts.InformationServer != nil {
+		pluginv2.RegisterInformationServer(server, pluginOpts.InformationServer)
+		plugKeys = append(plugKeys, "information")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly

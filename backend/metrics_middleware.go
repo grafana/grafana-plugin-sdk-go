@@ -152,3 +152,14 @@ func (m *metricsMiddleware) ConvertObjects(ctx context.Context, req *ConversionR
 
 	return resp, err
 }
+
+func (m *metricsMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+	var resp *SchemaResponse
+	err := m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		var innerErr error
+		resp, innerErr = m.BaseHandler.Schema(ctx, req)
+		return RequestStatusFromError(innerErr), innerErr
+	})
+
+	return resp, err
+}

@@ -443,3 +443,150 @@ func (t ConvertToProtobuf) GrafanaConfig(cfg *GrafanaCfg) map[string]string {
 	}
 	return cfg.config
 }
+
+// ColumnsSchemaRequest converts SDK version of a ColumnsSchemaRequest to the protobuf version.
+func (t ConvertToProtobuf) ColumnsSchemaRequest(colsReq []ColumnsSchemaRequest) []*pluginv2.ColumnsSchemaRequest {
+	columnsSchemaRequest := []*pluginv2.ColumnsSchemaRequest{}
+
+	for _, colReq := range colsReq {
+		columnsSchemaRequest = append(columnsSchemaRequest, &pluginv2.ColumnsSchemaRequest{
+			Table:      colReq.Table,
+			Parameters: colReq.Parameters,
+		})
+	}
+
+	return columnsSchemaRequest
+}
+
+// SchemaRequest converts SDK version of a SchemaRequest to the protobuf version.
+func (t ConvertToProtobuf) SchemaRequest(schemaReq *SchemaRequest) *pluginv2.SchemaRequest {
+	if schemaReq.Headers == nil {
+		schemaReq.Headers = map[string]string{}
+	}
+
+	for _, colReq := range schemaReq.Columns {
+		if colReq.Parameters == nil {
+			colReq.Parameters = map[string]string{}
+		}
+	}
+
+	return &pluginv2.SchemaRequest{
+		PluginContext: t.PluginContext(schemaReq.PluginContext),
+		Headers:       schemaReq.Headers,
+		Type:          schemaReq.Type,
+		Tables:        schemaReq.Tables,
+		Columns:       t.ColumnsSchemaRequest(schemaReq.Columns),
+	}
+}
+
+// Column converts SDK version of Column to the protobuf version.
+func (t ConvertToProtobuf) Column(col *Column) *pluginv2.Column {
+
+	if col == nil {
+		return nil
+	}
+
+	colType := pluginv2.Column_string
+	switch col.Type {
+	case ColumnTypeNumber:
+		colType = pluginv2.Column_number
+	case ColumnTypeString:
+		colType = pluginv2.Column_string
+	case ColumnTypeDatetime:
+		colType = pluginv2.Column_datetime
+	}
+
+	return &pluginv2.Column{
+		Name: col.Name,
+		Type: colType,
+	}
+}
+
+// Columns converts SDK version of Columns to the protobuf version.
+func (t ConvertToProtobuf) Columns(cols map[string][]Column) map[string]*pluginv2.ColumnList {
+	protoCols := map[string]*pluginv2.ColumnList{}
+	if cols == nil {
+		return protoCols
+	}
+
+	for table, colList := range cols {
+		columns := []*pluginv2.Column{}
+		for _, col := range colList {
+			columns = append(columns, t.Column(&col))
+		}
+		protoCols[table] = &pluginv2.ColumnList{Values: columns}
+	}
+
+	return protoCols
+}
+
+// SubTable converts SDK version of SubTable to the protobuf version.
+func (t ConvertToProtobuf) SubTable(st SubTable) *pluginv2.SubTable {
+	dependsOn := pluginv2.StringList{Values: st.DependsOn}
+
+	return &pluginv2.SubTable{
+		Name:      st.Name,
+		DependsOn: &dependsOn,
+		Root:      st.Root,
+	}
+}
+
+// Tables converts SDK version of Tables to the protobuf version.
+func (t ConvertToProtobuf) Tables(tables []Table) []*pluginv2.Table {
+	protoTables := []*pluginv2.Table{}
+
+	for _, table := range tables {
+		subTables := []*pluginv2.SubTable{}
+		for _, st := range table.SubTables {
+			subTables = append(subTables, t.SubTable(st))
+		}
+
+		columns := []*pluginv2.Column{}
+		for _, c := range table.Columns {
+			columns = append(columns, t.Column(&c))
+		}
+
+		protoTables = append(protoTables, &pluginv2.Table{
+			Name:      table.Name,
+			SubTables: subTables,
+			Columns:   columns,
+		})
+	}
+
+	return protoTables
+}
+
+// Schema converts SDK version of Schema to the protobuf version.
+func (t ConvertToProtobuf) Schema(schema *Schema) *pluginv2.Schema {
+	functions := pluginv2.StringList{Values: schema.Functions}
+
+	subTableValues := map[string]*pluginv2.SubTableMap{}
+	for k, v := range schema.SubTableValues {
+		values := map[string]*pluginv2.StringList{}
+		for subKey, subValues := range v {
+			values[subKey] = &pluginv2.StringList{Values: subValues}
+		}
+		subTableValues[k] = &pluginv2.SubTableMap{Values: values}
+	}
+
+	return &pluginv2.Schema{
+		Functions:      &functions,
+		Tables:         t.Tables(schema.Tables),
+		SubTableValues: subTableValues,
+	}
+}
+
+// SchemaResponse converts SDK version of a SchemaResponse to the protobuf version.
+func (t ConvertToProtobuf) SchemaResponse(schemaResp *SchemaResponse) *pluginv2.SchemaResponse {
+	colValues := map[string]*pluginv2.StringList{}
+	for k, values := range schemaResp.ColumnValues {
+		colValues[k] = &pluginv2.StringList{Values: values}
+	}
+
+	return &pluginv2.SchemaResponse{
+		FullSchema:   t.Schema(&schemaResp.FullSchema),
+		Tables:       schemaResp.Tables,
+		Columns:      t.Columns(schemaResp.Columns),
+		ColumnValues: colValues,
+	}
+}

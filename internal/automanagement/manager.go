@@ -107,3 +107,14 @@ func (m *Manager) RunStream(ctx context.Context, req *backend.RunStreamRequest, 
 	}
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
+
+func (m *Manager) Schema(ctx context.Context, req *backend.SchemaRequest) (*backend.SchemaResponse, error) {
+	h, err := m.Get(ctx, req.PluginContext)
+	if err != nil {
+		return nil, err
+	}
+	if ds, ok := h.(backend.SchemaHandler); ok {
+		return ds.Schema(ctx, req)
+	}
+	return nil, status.Error(codes.Unimplemented, "unimplemented")
+}

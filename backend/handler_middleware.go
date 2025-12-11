@@ -151,6 +151,15 @@ func (h *MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionR
 	return h.handler.ConvertObjects(ctx, req)
 }
 
+func (h *MiddlewareHandler) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+	if req == nil {
+		return nil, errNilRequest
+	}
+
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointSchema)
+	return h.handler.Schema(ctx, req)
+}
+
 func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handler) Handler {
 	next := finalHandler
 	for i := len(middlewares) - 1; i >= 0; i-- {

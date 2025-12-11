@@ -114,3 +114,8 @@ func (m *contextualLoggerMiddleware) ConvertObjects(ctx context.Context, req *Co
 	ctx = m.setup(ctx, req.PluginContext)
 	return m.BaseHandler.ConvertObjects(ctx, req)
 }
+
+func (m *contextualLoggerMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+	ctx = m.setup(ctx, req.PluginContext)
+	return m.BaseHandler.Schema(ctx, req)
+}
