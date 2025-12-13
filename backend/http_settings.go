@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -36,6 +37,8 @@ type HTTPSettings struct {
 	TLSCACert         string
 	TLSClientCert     string
 	TLSClientKey      string
+	TLSClientCertFile string
+	TLSClientKeyFile  string
 
 	SigV4Auth          bool
 	SigV4Region        string
@@ -85,6 +88,15 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 			ClientKey:          s.TLSClientKey,
 			InsecureSkipVerify: s.TLSSkipVerify,
 			ServerName:         s.TLSServerName,
+		}
+		if s.TLSClientCertFile != "" && s.TLSClientKeyFile != "" {
+			opts.TLS.GetClientCertificate = func(*tls.CertificateRequestInfo) (*tls.Certificate, error) {
+				cert, err := tls.LoadX509KeyPair(s.TLSClientCertFile, s.TLSClientKeyFile)
+				if err != nil {
+					return nil, fmt.Errorf("failed to load X509 key pair: %w", err)
+				}
+				return &cert, nil
+			}
 		}
 	}
 
@@ -235,6 +247,12 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 	if s.TLSClientAuth || s.TLSAuthWithCACert {
 		if v, exists := dat["serverName"]; exists {
 			s.TLSServerName = v.(string)
+		}
+		if v, exists := dat["tlsClientCertFile"]; exists {
+			s.TLSClientCertFile = v.(string)
+		}
+		if v, exists := dat["tlsClientKeyFile"]; exists {
+			s.TLSClientKeyFile = v.(string)
 		}
 		if v, exists := secureJSONData["tlsCACert"]; exists {
 			s.TLSCACert = v
