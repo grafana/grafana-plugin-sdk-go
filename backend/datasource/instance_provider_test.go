@@ -2,16 +2,11 @@ package datasource
 
 import (
 	"context"
-	"encoding/base64"
-	"encoding/pem"
-	"fmt"
-	"strings"
 	"testing"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/stretchr/testify/require"
 )
 
@@ -35,53 +30,7 @@ func TestInstanceProvider(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		require.Equal(t, "4##", key)
-	})
-
-	t.Run("When PDC is configured, datasource cache key should include its (so-called) hash", func(t *testing.T) {
-		// the value of Bytes below must be a multiple of three in length for this test
-		// to pass, but that's an artifact of how the target value is created. The code
-		// itself isn't affected by the length of the key as long as it's at least 3 bytes.
-		contents := pem.EncodeToMemory(&pem.Block{
-			Type:  "PRIVATE KEY",
-			Bytes: []byte("this will work."),
-		})
-		want := base64.StdEncoding.EncodeToString([]byte("this will work."))
-		want = strings.TrimRight(want, "=")
-		want = want[len(want)-4:]
-		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyClientKeyContents: string(contents),
-		})
-		key, err := ip.GetKey(context.Background(), backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 5},
-			GrafanaConfig:              cfg,
-		})
-		require.NoError(t, err)
-		require.Equal(t, fmt.Sprintf("5##%s", want), key)
-	})
-
-	t.Run("When PDC is configured but the key is empty, no problem", func(t *testing.T) {
-		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyClientKeyContents: "",
-		})
-		key, err := ip.GetKey(context.Background(), backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 6},
-			GrafanaConfig:              cfg,
-		})
-		require.NoError(t, err)
-		require.Equal(t, "6##", key)
-	})
-
-	t.Run("When PDC is configured but the key is not PEM-encoded, no problem", func(t *testing.T) {
-		cfg := backend.NewGrafanaCfg(map[string]string{
-			proxy.PluginSecureSocksProxyClientKeyContents: "this is not\na valid string\n",
-		})
-		key, err := ip.GetKey(context.Background(), backend.PluginContext{
-			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 6},
-			GrafanaConfig:              cfg,
-		})
-		require.NoError(t, err)
-		require.Equal(t, "6##", key)
+		require.Equal(t, "4#", key)
 	})
 
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
