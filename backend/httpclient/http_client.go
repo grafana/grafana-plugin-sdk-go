@@ -153,6 +153,10 @@ func GetTLSConfig(opts ...Options) (*tls.Config, error) {
 		config.Certificates = []tls.Certificate{cert}
 	}
 
+	if tlsOpts.GetClientCertificate != nil {
+		config.GetClientCertificate = tlsOpts.GetClientCertificate
+	}
+
 	if tlsOpts.MinVersion > 0 {
 		config.MinVersion = tlsOpts.MinVersion
 	}
