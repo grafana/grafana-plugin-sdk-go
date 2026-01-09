@@ -66,8 +66,31 @@ func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 	}
 
+	// skip saving if there's an existing entry for this request
+	skipSaving := hl.fixture.Match(req) != nil
+
 	res, err := hl.proxied.RoundTrip(req)
 	if err != nil {
+		if !skipSaving {
+			// save information from the request and failed response (if anything is available)
+			resToAdd := res
+			if resToAdd == nil {
+				resToAdd = &http.Response{
+					Status:        "ERROR",
+					StatusCode:    0,
+					Proto:         "",
+					ProtoMajor:    0,
+					ProtoMinor:    0,
+					Body:          io.NopCloser(bytes.NewBufferString(err.Error())),
+					ContentLength: int64(len(err.Error())),
+					Request:       req,
+					Header:        make(http.Header, 0),
+				}
+			}
+			// nolint:errcheck
+			hl.fixture.Add(req, resToAdd)
+			// re: errcheck - if there is a err this call, we move on and just return the http error
+		}
 		return res, err
 	}
 
@@ -76,8 +99,7 @@ func (hl *HTTPLogger) RoundTrip(req *http.Request) (*http.Response, error) {
 		req.Body = io.NopCloser(bytes.NewBuffer(buf))
 	}
 
-	// skip saving if there's an existing entry for this request
-	if exists := hl.fixture.Match(req); exists != nil {
+	if skipSaving {
 		return res, err
 	}
 
