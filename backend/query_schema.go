@@ -5,6 +5,9 @@ import (
 	"encoding/json"
 )
 
+// EndpointGetQuerySchema friendly name for the get query schema endpoint/handler.
+const EndpointGetQuerySchema Endpoint = "getQuerySchema"
+
 // QuerySchemaHandler provides JSON Schema introspection for query models.
 // This is an optional interface that plugins can implement to enable
 // AI-assisted query building and other tooling.

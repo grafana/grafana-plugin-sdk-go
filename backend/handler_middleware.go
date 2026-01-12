@@ -160,6 +160,15 @@ func (h *MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionR
 	return h.handler.ConvertObjects(ctx, req)
 }
 
+func (h *MiddlewareHandler) GetQuerySchema(ctx context.Context, req *GetQuerySchemaRequest) (*GetQuerySchemaResponse, error) {
+	if req == nil {
+		return nil, errNilRequest
+	}
+
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointGetQuerySchema)
+	return h.handler.GetQuerySchema(ctx, req)
+}
+
 func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handler) Handler {
 	next := finalHandler
 	for i := len(middlewares) - 1; i >= 0; i-- {

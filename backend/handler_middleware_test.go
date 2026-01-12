@@ -240,3 +240,7 @@ func (m *TestMiddleware) ConvertObjects(ctx context.Context, req *backend.Conver
 	m.sCtx.ConvertObjectCallChain = append(m.sCtx.ConvertObjectCallChain, fmt.Sprintf("after %s", m.Name))
 	return res, err
 }
+
+func (m *TestMiddleware) GetQuerySchema(ctx context.Context, req *backend.GetQuerySchemaRequest) (*backend.GetQuerySchemaResponse, error) {
+	return m.next.GetQuerySchema(ctx, req)
+}
