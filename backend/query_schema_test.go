@@ -87,3 +87,93 @@ func TestQuerySchemaAdapter(t *testing.T) {
 		require.Nil(t, resp)
 	})
 }
+
+func TestMiddlewareHandlerGetQuerySchema(t *testing.T) {
+	t.Run("Should delegate to underlying handler", func(t *testing.T) {
+		called := false
+		handler := &testHandlerWithQuerySchema{
+			getQuerySchemaFunc: func(ctx context.Context, req *GetQuerySchemaRequest) (*GetQuerySchemaResponse, error) {
+				called = true
+				return &GetQuerySchemaResponse{
+					Schema: json.RawMessage(`{"type": "object"}`),
+				}, nil
+			},
+		}
+
+		mh, err := HandlerFromMiddlewares(handler)
+		require.NoError(t, err)
+
+		resp, err := mh.GetQuerySchema(context.Background(), &GetQuerySchemaRequest{
+			PluginContext: PluginContext{PluginID: "test"},
+		})
+
+		require.NoError(t, err)
+		require.True(t, called)
+		require.NotNil(t, resp)
+		require.JSONEq(t, `{"type": "object"}`, string(resp.Schema))
+	})
+
+	t.Run("Should return error when request is nil", func(t *testing.T) {
+		handler := &testHandlerWithQuerySchema{}
+
+		mh, err := HandlerFromMiddlewares(handler)
+		require.NoError(t, err)
+
+		resp, err := mh.GetQuerySchema(context.Background(), nil)
+
+		require.Error(t, err)
+		require.Nil(t, resp)
+	})
+}
+
+// testHandlerWithQuerySchema implements both Handler and QuerySchemaHandler
+type testHandlerWithQuerySchema struct {
+	getQuerySchemaFunc func(ctx context.Context, req *GetQuerySchemaRequest) (*GetQuerySchemaResponse, error)
+}
+
+func (h *testHandlerWithQuerySchema) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+	return nil, nil
+}
+
+func (h *testHandlerWithQuerySchema) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
+	return nil
+}
+
+func (h *testHandlerWithQuerySchema) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+	return nil, nil
+}
+
+func (h *testHandlerWithQuerySchema) CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error) {
+	return nil, nil
+}
+
+func (h *testHandlerWithQuerySchema) SubscribeStream(ctx context.Context, req *SubscribeStreamRequest) (*SubscribeStreamResponse, error) {
+	return nil, nil
+}
+
+func (h *testHandlerWithQuerySchema) PublishStream(ctx context.Context, req *PublishStreamRequest) (*PublishStreamResponse, error) {
+	return nil, nil
+}
+
+func (h *testHandlerWithQuerySchema) RunStream(ctx context.Context, req *RunStreamRequest, sender *StreamSender) error {
+	return nil
+}
+
+func (h *testHandlerWithQuerySchema) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
+	return nil, nil
+}
+
+func (h *testHandlerWithQuerySchema) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
+	return nil, nil
+}
+
+func (h *testHandlerWithQuerySchema) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
+	return nil, nil
+}
+
+func (h *testHandlerWithQuerySchema) GetQuerySchema(ctx context.Context, req *GetQuerySchemaRequest) (*GetQuerySchemaResponse, error) {
+	if h.getQuerySchemaFunc != nil {
+		return h.getQuerySchemaFunc(ctx, req)
+	}
+	return nil, nil
+}

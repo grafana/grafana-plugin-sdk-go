@@ -11,6 +11,7 @@ type Handler interface {
 	StreamHandler
 	AdmissionHandler
 	ConversionHandler
+	QuerySchemaHandler
 }
 
 var _ = Handler(&BaseHandler{})
@@ -69,6 +70,10 @@ func (m *BaseHandler) ConvertObjects(ctx context.Context, req *ConversionRequest
 	return m.next.ConvertObjects(ctx, req)
 }
 
+func (m *BaseHandler) GetQuerySchema(ctx context.Context, req *GetQuerySchemaRequest) (*GetQuerySchemaResponse, error) {
+	return m.next.GetQuerySchema(ctx, req)
+}
+
 // Handlers implements Handler.
 type Handlers struct {
 	QueryDataHandler
@@ -78,6 +83,7 @@ type Handlers struct {
 	StreamHandler
 	AdmissionHandler
 	ConversionHandler
+	QuerySchemaHandler
 }
 
 var _ Handler = &Handlers{}
