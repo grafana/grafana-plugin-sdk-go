@@ -822,3 +822,111 @@ var ResourceConversion_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "backend.proto",
 }
+
+const (
+	QuerySchema_GetQuerySchema_FullMethodName = "/pluginv2.QuerySchema/GetQuerySchema"
+)
+
+// QuerySchemaClient is the client API for QuerySchema service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// QuerySchema service enables AI agents and other tools to discover
+// the expected structure of datasource query models.
+type QuerySchemaClient interface {
+	// GetQuerySchema returns a JSON Schema describing the query model
+	GetQuerySchema(ctx context.Context, in *GetQuerySchemaRequest, opts ...grpc.CallOption) (*GetQuerySchemaResponse, error)
+}
+
+type querySchemaClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewQuerySchemaClient(cc grpc.ClientConnInterface) QuerySchemaClient {
+	return &querySchemaClient{cc}
+}
+
+func (c *querySchemaClient) GetQuerySchema(ctx context.Context, in *GetQuerySchemaRequest, opts ...grpc.CallOption) (*GetQuerySchemaResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(GetQuerySchemaResponse)
+	err := c.cc.Invoke(ctx, QuerySchema_GetQuerySchema_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+// QuerySchemaServer is the server API for QuerySchema service.
+// All implementations should embed UnimplementedQuerySchemaServer
+// for forward compatibility.
+//
+// QuerySchema service enables AI agents and other tools to discover
+// the expected structure of datasource query models.
+type QuerySchemaServer interface {
+	// GetQuerySchema returns a JSON Schema describing the query model
+	GetQuerySchema(context.Context, *GetQuerySchemaRequest) (*GetQuerySchemaResponse, error)
+}
+
+// UnimplementedQuerySchemaServer should be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedQuerySchemaServer struct{}
+
+func (UnimplementedQuerySchemaServer) GetQuerySchema(context.Context, *GetQuerySchemaRequest) (*GetQuerySchemaResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method GetQuerySchema not implemented")
+}
+func (UnimplementedQuerySchemaServer) testEmbeddedByValue() {}
+
+// UnsafeQuerySchemaServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to QuerySchemaServer will
+// result in compilation errors.
+type UnsafeQuerySchemaServer interface {
+	mustEmbedUnimplementedQuerySchemaServer()
+}
+
+func RegisterQuerySchemaServer(s grpc.ServiceRegistrar, srv QuerySchemaServer) {
+	// If the following call pancis, it indicates UnimplementedQuerySchemaServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&QuerySchema_ServiceDesc, srv)
+}
+
+func _QuerySchema_GetQuerySchema_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(GetQuerySchemaRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(QuerySchemaServer).GetQuerySchema(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: QuerySchema_GetQuerySchema_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(QuerySchemaServer).GetQuerySchema(ctx, req.(*GetQuerySchemaRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+// QuerySchema_ServiceDesc is the grpc.ServiceDesc for QuerySchema service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var QuerySchema_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.QuerySchema",
+	HandlerType: (*QuerySchemaServer)(nil),
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "GetQuerySchema",
+			Handler:    _QuerySchema_GetQuerySchema_Handler,
+		},
+	},
+	Streams:  []grpc.StreamDesc{},
+	Metadata: "backend.proto",
+}
