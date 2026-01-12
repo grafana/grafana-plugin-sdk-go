@@ -424,3 +424,11 @@ func (f ConvertFromProtobuf) ConversionResponse(rsp *pluginv2.ConversionResponse
 func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
 	return NewGrafanaCfg(cfg)
 }
+
+// GetQuerySchemaRequest converts protobuf version of a GetQuerySchemaRequest to the SDK version.
+func (f ConvertFromProtobuf) GetQuerySchemaRequest(req *pluginv2.GetQuerySchemaRequest) *GetQuerySchemaRequest {
+	return &GetQuerySchemaRequest{
+		PluginContext: f.PluginContext(req.PluginContext),
+		QueryType:     req.QueryType,
+	}
+}

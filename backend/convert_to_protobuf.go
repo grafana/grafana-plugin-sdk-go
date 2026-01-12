@@ -456,3 +456,24 @@ func (t ConvertToProtobuf) GrafanaConfig(cfg *GrafanaCfg) map[string]string {
 	}
 	return cfg.config
 }
+
+// GetQuerySchemaResponse converts the SDK version of a GetQuerySchemaResponse to the protobuf version.
+func (t ConvertToProtobuf) GetQuerySchemaResponse(resp *GetQuerySchemaResponse) *pluginv2.GetQuerySchemaResponse {
+	if resp == nil {
+		return nil
+	}
+
+	queryTypes := make([]*pluginv2.QueryTypeInfo, len(resp.QueryTypes))
+	for i, qt := range resp.QueryTypes {
+		queryTypes[i] = &pluginv2.QueryTypeInfo{
+			Type:        qt.Type,
+			Name:        qt.Name,
+			Description: qt.Description,
+		}
+	}
+
+	return &pluginv2.GetQuerySchemaResponse{
+		Schema:     resp.Schema,
+		QueryTypes: queryTypes,
+	}
+}
