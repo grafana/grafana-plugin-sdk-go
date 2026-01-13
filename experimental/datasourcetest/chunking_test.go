@@ -178,8 +178,10 @@ func (p *pluginQueryData) query(q backend.DataQuery) backend.DataResponse {
 	for i := int64(1); i <= q.MaxDataPoints; i++ {
 		frame.Fields[0].Append(i)
 	}
+	frame2 := makeTestFrame(q.RefID)
+	frame2.Name = "second empty frame"
 	return backend.DataResponse{
-		Frames: data.Frames{frame},
+		Frames: data.Frames{frame, frame2},
 	}
 }
 
@@ -211,6 +213,13 @@ func (p *pluginQueryChunked) queryChunked(q backend.DataQuery, w backend.Chunked
 		if err := w.WriteFrame(ctx, q.RefID, frameID, frame); err != nil {
 			return err
 		}
+	}
+
+	// Send an additional frame with the same refId
+	frame2 := makeTestFrame(q.RefID)
+	frame2.Name = "second empty frame"
+	if err := w.WriteFrame(ctx, q.RefID, "y", frame2); err != nil {
+		return err
 	}
 
 	return nil
