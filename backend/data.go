@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // EndpointQueryData friendly name for the query data endpoint/handler.
@@ -118,26 +119,17 @@ type QueryChunkedDataHandler interface {
 }
 
 // ChunkedDataWriter defines the interface for writing data frames and errors
-// back to the client in chunks. Implementations handle buffering and transmission details.
+// back to the client in chunks.
 type ChunkedDataWriter interface {
-	// WriteFrame writes a data frame (f) for the given refID.
-	// It sends the frame structure and any initial rows included in f.
-	// Use WriteFrameRow to send subsequent rows if f is not complete.
-	// Writes are buffered and sent when the buffer is full, or Close is called.
-	WriteFrame(refID string, f *data.Frame) error
-
-	// WriteFrameRow writes a single data row (fields) for the specified refID.
-	// Must be called after WriteFrame for the same refID.
-	// The number of fields must match the frame's column count.
-	// Writes are buffered.
-	WriteFrameRow(refID string, fields ...any) error
+	// WriteFrame writes a data frame (f) for the given query refID
+	// The first time the frameID is written, the metadata and rows will be included
+	// Subsequent calls with the same frameID will append the rows to the existing frame
+	// with a matching frameID.  The metadata structure must match the initial request.
+	// The total frame size should not exceed 1.5mb, and will error if it does
+	WriteFrame(ctx context.Context, refID string, frameID string, f *data.Frame) error
 
 	// WriteError writes an error associated with the specified refID.
-	WriteError(refID string, status Status, err error) error
-
-	// Close flushes any buffered data, finalizes the transmission and releases resources.
-	// Must be called to ensure all data is sent and resources are cleaned up.
-	Close() error
+	WriteError(ctx context.Context, refID string, status Status, err error) error
 }
 
 // QueryChunkedDataHandlerFunc is an adapter to allow the use of
@@ -163,15 +155,6 @@ type QueryChunkedDataRequest struct {
 
 	// Queries the data queries for the request.
 	Queries []DataQuery
-
-	// Options defines the chunking options for the request. Optional.
-	Options *ChunkingOptions
-}
-
-// ChunkingOptions defines the chunking options for a chunked data request.
-type ChunkingOptions struct {
-	// ChunkSize specifies the size of each chunk in bytes when processing chunked data requests.
-	ChunkSize int
 }
 
 // SetHTTPHeader sets the header entries associated with key to the

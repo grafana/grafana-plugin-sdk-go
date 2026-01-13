@@ -6,23 +6,18 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 const (
 	errorSourceMetadataKey = "errorSource"
-)
-
-const (
-	// defaultChunkSize is the default chunk size for QueryChunkedData responses.
-	defaultChunkSize = 1000
 )
 
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
@@ -68,12 +63,7 @@ func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest,
 	ctx := stream.Context()
 	parsedReq := FromProto().QueryChunkedDataRequest(req)
 
-	chunkSize := defaultChunkSize
-	if parsedReq.Options != nil {
-		chunkSize = parsedReq.Options.ChunkSize
-	}
-
-	writer := newChunkedDataWriter(stream, chunkSize)
+	writer := newChunkedDataWriter(stream)
 
 	err := a.queryChunkedDataHandler.QueryChunkedData(ctx, parsedReq, writer)
 	if err != nil {
@@ -86,152 +76,58 @@ func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest,
 // chunkedDataWriter implements the ChunkedDataWriter interface for gRPC streaming.
 // It buffers data frames and manages efficient transmission to clients.
 type chunkedDataWriter struct {
-	stream    grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]
-	chunkSize int
-	states    map[string]*chunkingState
-	count     int
-}
-
-// chunkingState maintains the chunking state of data frames for a specific refID.
-type chunkingState struct {
-	frames   []*data.Frame
-	curFrame *data.Frame // Pointer to the most recently added frame
-
-	// Error handling fields
-	Error       error
-	Status      Status
-	ErrorSource ErrorSource
-}
-
-func (st *chunkingState) addFrame(f *data.Frame) {
-	st.frames = append(st.frames, data.MarkerFrame, f)
-	st.curFrame = f
-}
-
-func (st *chunkingState) addRow(fields ...any) error {
-	if st.curFrame == nil {
-		return errors.New("no frame being processed, cannot add row")
-	}
-
-	// Check field count matches
-	if len(fields) != len(st.curFrame.Fields) {
-		return fmt.Errorf("field count mismatch: got %d, want %d", len(fields), len(st.curFrame.Fields))
-	}
-
-	st.curFrame.AppendRow(fields...)
-	return nil
-}
-
-func (st *chunkingState) reset() {
-	var curFrame *data.Frame
-	var frames []*data.Frame
-
-	if st.curFrame != nil {
-		curFrame = st.curFrame.EmptyCopy()
-		frames = []*data.Frame{curFrame}
-	}
-
-	*st = chunkingState{
-		Status:   st.Status,
-		Error:    st.Error,
-		frames:   frames,
-		curFrame: curFrame,
-	}
+	stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]
+	sent   map[string]bool
 }
 
 // newChunkedDataWriter creates a new writer that handles sending chunked data over gRPC.
 // It manages buffering and efficient transmission of frames to clients.
-func newChunkedDataWriter(stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse], chunkSize int) *chunkedDataWriter {
+func newChunkedDataWriter(stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]) *chunkedDataWriter {
 	return &chunkedDataWriter{
-		stream:    stream,
-		chunkSize: chunkSize,
-		states:    map[string]*chunkingState{},
+		stream: stream,
+		sent:   map[string]bool{},
 	}
 }
 
-func (w *chunkedDataWriter) WriteFrame(refID string, f *data.Frame) error {
-	state := w.states[refID]
-	if state == nil {
-		state = &chunkingState{Status: StatusOK}
-		w.states[refID] = state
+func (w *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameID string, f *data.Frame) (err error) {
+	if frameID == "" {
+		return fmt.Errorf("missing frame identifier")
 	}
-	f.RefID = refID
-	state.addFrame(f)
+	if refID == "" {
+		return fmt.Errorf("missing refID identifier")
+	}
 
-	w.count += f.Rows()
-	return w.maybeFlush()
-}
+	rsp := &pluginv2.QueryChunkedDataResponse{
+		RefId:   refID,
+		FrameId: frameID,
+		Status:  http.StatusOK,
+	}
 
-func (w *chunkedDataWriter) WriteFrameRow(refID string, fields ...any) error {
-	state := w.states[refID]
-	if err := state.addRow(fields...); err != nil {
+	include := data.IncludeAll
+	key := refID + "/" + frameID // ?? or just frameID?
+	if w.sent[key] {
+		include = data.IncludeDataOnly
+	} else {
+		w.sent[key] = true
+	}
+	rsp.Frame, err = data.FrameToJSON(f, include)
+	if err != nil {
 		return err
 	}
-
-	w.count++
-	return w.maybeFlush()
+	return w.stream.Send(rsp)
 }
 
-func (w *chunkedDataWriter) WriteError(refID string, status Status, err error) error {
-	state := w.states[refID]
-	state.Status = status
-	state.Error = err
-	w.states[refID] = state
-
-	w.count++
-	return w.flush()
-}
-
-func (w *chunkedDataWriter) Close() error {
-	return w.flush()
-}
-
-func (w *chunkedDataWriter) maybeFlush() error {
-	if w.count < w.chunkSize {
-		return nil
+func (w *chunkedDataWriter) WriteError(ctx context.Context, refID string, status Status, err error) error {
+	rsp := &pluginv2.QueryChunkedDataResponse{
+		RefId:  refID,
+		Status: int32(status), //nolint:gosec // disable G115
 	}
-	return w.flush()
-}
-
-func (w *chunkedDataWriter) flush() error {
-	if w.count == 0 {
-		return nil
+	if err != nil {
+		rsp.Error = err.Error()
+		// TODO???
+		// error source from context
 	}
-
-	for refID, state := range w.states {
-		errStr := ""
-		if state.Error != nil {
-			errStr = state.Error.Error()
-		}
-
-		resp := &pluginv2.QueryChunkedDataResponse{
-			RefId:       refID,
-			Frames:      make([][]byte, 0, len(state.frames)),
-			Status:      int32(state.Status), //nolint:gosec // disable G115
-			Error:       errStr,
-			ErrorSource: state.ErrorSource.String(),
-		}
-
-		for _, frame := range state.frames {
-			encoded, err := frame.MarshalArrow()
-			if err != nil {
-				return err
-			}
-			resp.Frames = append(resp.Frames, encoded)
-		}
-
-		if err := w.stream.Send(resp); err != nil {
-			return err
-		}
-	}
-
-	// Reset state
-	for _, state := range w.states {
-		state.reset()
-	}
-	w.count = 0
-
-	return nil
+	return w.stream.Send(rsp)
 }
 
 // enrichWithErrorSourceInfo returns a gRPC status error with error source info as metadata.

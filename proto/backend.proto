@@ -185,21 +185,23 @@ message QueryChunkedDataRequest {
 
   // List of data queries
   repeated DataQuery queries = 3;
-
-  // Options to configure the behavior of the chunked data request
-  optional ChunkingOptions options = 4;
 }
 
 message QueryChunkedDataResponse {
+  // The query reference
   string refId = 1;
 
-  repeated bytes frames = 2;
+  // The frame identifier -- the first time the identifier appears, 
+  // the frame must include the metadata and rows.  subsequent requests
+  // must match the same frame structure, and the data will only include
+  // rows (not the metadata)
+  string frameId = 2;
+
+  // JSON encoded frame.  The first request will include metadata
+  bytes frame = 3;
 
   // Error message
-  string error = 3;
-
-  // Currently not used and not exposed in the frontend
-  bytes jsonMeta = 4;
+  string error = 4;
 
   // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
   // The status codes should match values from standard HTTP status codes
@@ -208,11 +210,6 @@ message QueryChunkedDataResponse {
 
   // Error source
   string errorSource = 6;
-}
-
-message ChunkingOptions {
-  // Number of items to send in each chunk
-  int32 chunkSize = 1;
 }
 
 //-----------------------------------------------

@@ -2,20 +2,21 @@ package datasourcetest
 
 import (
 	"context"
+	"fmt"
 	"strconv"
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-
-	"github.com/grafana/grafana-plugin-sdk-go/internal/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/testutil"
 )
 
 // TestQueryDataAndChunkedResponsesAreTheSame verifies that the QueryData and QueryChunkedData methods return the
@@ -45,22 +46,13 @@ func TestQueryDataAndChunkedResponsesAreTheSame(t *testing.T) {
 	// Number of data points to simulate
 	tests := []int64{1, 100, 1000, 999, 1001, 10000, 10001, 100000, 100002}
 
-	// Chunking options to test
-	options := []*backend.ChunkingOptions{nil, {ChunkSize: 1000}, {ChunkSize: 100}, {ChunkSize: 1000_000}}
-
 	// Test each combination of queries
 	for numQueries := 1; numQueries <= maxDataQueries; numQueries++ {
-		// Test each combination of chunking options
-		for _, opt := range options {
-			// Test each combination of data points
-			for n := range len(tests) - numQueries {
-				dataPoints := tests[n : n+numQueries]
-				chunkSizeStr := "default"
-				if opt != nil {
-					chunkSizeStr = strconv.Itoa(opt.ChunkSize)
-				}
-
-				t.Logf("Testing with %d queries, chunk size %v, and %v data points", numQueries, chunkSizeStr, dataPoints)
+		// Test each combination of data points
+		for n := range len(tests) - numQueries {
+			dataPoints := tests[n : n+numQueries]
+			t.Run(fmt.Sprintf("queries (%d), with %d points", numQueries, dataPoints), func(t *testing.T) {
+				// t.Parallel()
 
 				// Create queries array
 				queries := make([]backend.DataQuery, numQueries)
@@ -82,7 +74,6 @@ func TestQueryDataAndChunkedResponsesAreTheSame(t *testing.T) {
 				chunkedResp, err := tpQueryChunked.Client.QueryChunkedData(ctx, &backend.QueryChunkedDataRequest{
 					PluginContext: backend.PluginContext{DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "1"}},
 					Queries:       queries,
-					Options:       opt,
 				})
 				if err != nil {
 					t.Error("QueryChunkedData failed", err)
@@ -93,7 +84,7 @@ func TestQueryDataAndChunkedResponsesAreTheSame(t *testing.T) {
 				if diff := cmp.Diff(resp, chunkedResp, cmp.AllowUnexported(data.Field{})); diff != "" {
 					t.Errorf("QueryData vs QueryChunkedData mismatch (-want +got):\n%s", diff)
 				}
-			}
+			})
 		}
 	}
 }
@@ -169,10 +160,23 @@ func (p *pluginQueryData) QueryData(ctx context.Context, req *backend.QueryDataR
 	return response, nil
 }
 
+func makeTestFrame(refID string) *data.Frame {
+	field := data.NewField("test", data.Labels{
+		"key": "value",
+	}, []int64{})
+	frame := data.NewFrame("frame"+refID, field)
+	frame.RefID = refID
+	frame.Meta = &data.FrameMeta{
+		Type: data.FrameTypeNumericLong,
+		Path: "hello",
+	}
+	return frame
+}
+
 func (p *pluginQueryData) query(q backend.DataQuery) backend.DataResponse {
-	frame := data.NewFrame("frame"+q.RefID, data.NewField("value", nil, []int64{}))
+	frame := makeTestFrame(q.RefID)
 	for i := int64(1); i <= q.MaxDataPoints; i++ {
-		frame.AppendRow(i)
+		frame.Fields[0].Append(i)
 	}
 	return backend.DataResponse{
 		Frames: data.Frames{frame},
@@ -189,22 +193,22 @@ func (p *pluginQueryChunked) QueryChunkedData(ctx context.Context, req *backend.
 			return err
 		}
 	}
-
-	if err := w.Close(); err != nil {
-		return err
-	}
-
 	return nil
 }
 
 func (p *pluginQueryChunked) queryChunked(q backend.DataQuery, w backend.ChunkedDataWriter) error {
-	frame := data.NewFrame("frame"+q.RefID, data.NewField("value", nil, []int64{}))
-	if err := w.WriteFrame(q.RefID, frame); err != nil {
+	ctx := context.Background()
+	frameID := "x"
+
+	frame := makeTestFrame(q.RefID) // zero length
+	if err := w.WriteFrame(ctx, q.RefID, frameID, frame); err != nil {
 		return err
 	}
+	frame.Extend(1) // just one at a time
 
 	for i := int64(1); i <= q.MaxDataPoints; i++ {
-		if err := w.WriteFrameRow(q.RefID, i); err != nil {
+		frame.Fields[0].SetConcrete(0, i)
+		if err := w.WriteFrame(ctx, q.RefID, frameID, frame); err != nil {
 			return err
 		}
 	}

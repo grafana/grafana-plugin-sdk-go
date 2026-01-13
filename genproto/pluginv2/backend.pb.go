@@ -67,7 +67,7 @@ func (x CheckHealthResponse_HealthStatus) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use CheckHealthResponse_HealthStatus.Descriptor instead.
 func (CheckHealthResponse_HealthStatus) EnumDescriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{18, 0}
+	return file_backend_proto_rawDescGZIP(), []int{17, 0}
 }
 
 type SubscribeStreamResponse_Status int32
@@ -116,7 +116,7 @@ func (x SubscribeStreamResponse_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use SubscribeStreamResponse_Status.Descriptor instead.
 func (SubscribeStreamResponse_Status) EnumDescriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{20, 0}
+	return file_backend_proto_rawDescGZIP(), []int{19, 0}
 }
 
 type PublishStreamResponse_Status int32
@@ -165,7 +165,7 @@ func (x PublishStreamResponse_Status) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use PublishStreamResponse_Status.Descriptor instead.
 func (PublishStreamResponse_Status) EnumDescriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{22, 0}
+	return file_backend_proto_rawDescGZIP(), []int{21, 0}
 }
 
 // Operation is the type of resource operation being checked for admission control
@@ -216,7 +216,7 @@ func (x AdmissionRequest_Operation) Number() protoreflect.EnumNumber {
 
 // Deprecated: Use AdmissionRequest_Operation.Descriptor instead.
 func (AdmissionRequest_Operation) EnumDescriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{26, 0}
+	return file_backend_proto_rawDescGZIP(), []int{25, 0}
 }
 
 type AppInstanceSettings struct {
@@ -1146,9 +1146,7 @@ type QueryChunkedDataRequest struct {
 	// Environment info
 	Headers map[string]string `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// List of data queries
-	Queries []*DataQuery `protobuf:"bytes,3,rep,name=queries,proto3" json:"queries,omitempty"`
-	// Options to configure the behavior of the chunked data request, such as chunk size.
-	Options       *ChunkingOptions `protobuf:"bytes,4,opt,name=options,proto3,oneof" json:"options,omitempty"`
+	Queries       []*DataQuery `protobuf:"bytes,3,rep,name=queries,proto3" json:"queries,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1204,21 +1202,19 @@ func (x *QueryChunkedDataRequest) GetQueries() []*DataQuery {
 	return nil
 }
 
-func (x *QueryChunkedDataRequest) GetOptions() *ChunkingOptions {
-	if x != nil {
-		return x.Options
-	}
-	return nil
-}
-
 type QueryChunkedDataResponse struct {
-	state  protoimpl.MessageState `protogen:"open.v1"`
-	RefId  string                 `protobuf:"bytes,1,opt,name=refId,proto3" json:"refId,omitempty"`
-	Frames [][]byte               `protobuf:"bytes,2,rep,name=frames,proto3" json:"frames,omitempty"`
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// The query reference
+	RefId string `protobuf:"bytes,1,opt,name=refId,proto3" json:"refId,omitempty"`
+	// The frame identifier -- the first time the identifier appears,
+	// the frame must include the metadata and rows.  subsequent requests
+	// must match the same frame structure, and the data will only include
+	// rows (not the metadata)
+	FrameId string `protobuf:"bytes,2,opt,name=frameId,proto3" json:"frameId,omitempty"`
+	// JSON encoded frame.  The first request will include metadata
+	Frame []byte `protobuf:"bytes,3,opt,name=frame,proto3" json:"frame,omitempty"`
 	// Error message
-	Error string `protobuf:"bytes,3,opt,name=error,proto3" json:"error,omitempty"`
-	// Currently not used and not exposed in the frontend
-	JsonMeta []byte `protobuf:"bytes,4,opt,name=jsonMeta,proto3" json:"jsonMeta,omitempty"`
+	Error string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	// When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
 	// The status codes should match values from standard HTTP status codes
 	// If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
@@ -1266,9 +1262,16 @@ func (x *QueryChunkedDataResponse) GetRefId() string {
 	return ""
 }
 
-func (x *QueryChunkedDataResponse) GetFrames() [][]byte {
+func (x *QueryChunkedDataResponse) GetFrameId() string {
 	if x != nil {
-		return x.Frames
+		return x.FrameId
+	}
+	return ""
+}
+
+func (x *QueryChunkedDataResponse) GetFrame() []byte {
+	if x != nil {
+		return x.Frame
 	}
 	return nil
 }
@@ -1278,13 +1281,6 @@ func (x *QueryChunkedDataResponse) GetError() string {
 		return x.Error
 	}
 	return ""
-}
-
-func (x *QueryChunkedDataResponse) GetJsonMeta() []byte {
-	if x != nil {
-		return x.JsonMeta
-	}
-	return nil
 }
 
 func (x *QueryChunkedDataResponse) GetStatus() int32 {
@@ -1301,51 +1297,6 @@ func (x *QueryChunkedDataResponse) GetErrorSource() string {
 	return ""
 }
 
-type ChunkingOptions struct {
-	state protoimpl.MessageState `protogen:"open.v1"`
-	// Number of items to send in each chunk
-	ChunkSize     int32 `protobuf:"varint,1,opt,name=chunkSize,proto3" json:"chunkSize,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ChunkingOptions) Reset() {
-	*x = ChunkingOptions{}
-	mi := &file_backend_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ChunkingOptions) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ChunkingOptions) ProtoMessage() {}
-
-func (x *ChunkingOptions) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ChunkingOptions.ProtoReflect.Descriptor instead.
-func (*ChunkingOptions) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *ChunkingOptions) GetChunkSize() int32 {
-	if x != nil {
-		return x.ChunkSize
-	}
-	return 0
-}
-
 type CollectMetricsRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PluginContext *PluginContext         `protobuf:"bytes,1,opt,name=pluginContext,proto3" json:"pluginContext,omitempty"`
@@ -1355,7 +1306,7 @@ type CollectMetricsRequest struct {
 
 func (x *CollectMetricsRequest) Reset() {
 	*x = CollectMetricsRequest{}
-	mi := &file_backend_proto_msgTypes[15]
+	mi := &file_backend_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1367,7 +1318,7 @@ func (x *CollectMetricsRequest) String() string {
 func (*CollectMetricsRequest) ProtoMessage() {}
 
 func (x *CollectMetricsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[15]
+	mi := &file_backend_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1380,7 +1331,7 @@ func (x *CollectMetricsRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectMetricsRequest.ProtoReflect.Descriptor instead.
 func (*CollectMetricsRequest) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{15}
+	return file_backend_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *CollectMetricsRequest) GetPluginContext() *PluginContext {
@@ -1399,7 +1350,7 @@ type CollectMetricsResponse struct {
 
 func (x *CollectMetricsResponse) Reset() {
 	*x = CollectMetricsResponse{}
-	mi := &file_backend_proto_msgTypes[16]
+	mi := &file_backend_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1411,7 +1362,7 @@ func (x *CollectMetricsResponse) String() string {
 func (*CollectMetricsResponse) ProtoMessage() {}
 
 func (x *CollectMetricsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[16]
+	mi := &file_backend_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1424,7 +1375,7 @@ func (x *CollectMetricsResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectMetricsResponse.ProtoReflect.Descriptor instead.
 func (*CollectMetricsResponse) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{16}
+	return file_backend_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *CollectMetricsResponse) GetMetrics() *CollectMetricsResponse_Payload {
@@ -1445,7 +1396,7 @@ type CheckHealthRequest struct {
 
 func (x *CheckHealthRequest) Reset() {
 	*x = CheckHealthRequest{}
-	mi := &file_backend_proto_msgTypes[17]
+	mi := &file_backend_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1457,7 +1408,7 @@ func (x *CheckHealthRequest) String() string {
 func (*CheckHealthRequest) ProtoMessage() {}
 
 func (x *CheckHealthRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[17]
+	mi := &file_backend_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1470,7 +1421,7 @@ func (x *CheckHealthRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckHealthRequest.ProtoReflect.Descriptor instead.
 func (*CheckHealthRequest) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{17}
+	return file_backend_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CheckHealthRequest) GetPluginContext() *PluginContext {
@@ -1498,7 +1449,7 @@ type CheckHealthResponse struct {
 
 func (x *CheckHealthResponse) Reset() {
 	*x = CheckHealthResponse{}
-	mi := &file_backend_proto_msgTypes[18]
+	mi := &file_backend_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1510,7 +1461,7 @@ func (x *CheckHealthResponse) String() string {
 func (*CheckHealthResponse) ProtoMessage() {}
 
 func (x *CheckHealthResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[18]
+	mi := &file_backend_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1523,7 +1474,7 @@ func (x *CheckHealthResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CheckHealthResponse.ProtoReflect.Descriptor instead.
 func (*CheckHealthResponse) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{18}
+	return file_backend_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *CheckHealthResponse) GetStatus() CheckHealthResponse_HealthStatus {
@@ -1563,7 +1514,7 @@ type SubscribeStreamRequest struct {
 
 func (x *SubscribeStreamRequest) Reset() {
 	*x = SubscribeStreamRequest{}
-	mi := &file_backend_proto_msgTypes[19]
+	mi := &file_backend_proto_msgTypes[18]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1575,7 +1526,7 @@ func (x *SubscribeStreamRequest) String() string {
 func (*SubscribeStreamRequest) ProtoMessage() {}
 
 func (x *SubscribeStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[19]
+	mi := &file_backend_proto_msgTypes[18]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1588,7 +1539,7 @@ func (x *SubscribeStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubscribeStreamRequest.ProtoReflect.Descriptor instead.
 func (*SubscribeStreamRequest) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{19}
+	return file_backend_proto_rawDescGZIP(), []int{18}
 }
 
 func (x *SubscribeStreamRequest) GetPluginContext() *PluginContext {
@@ -1633,7 +1584,7 @@ type SubscribeStreamResponse struct {
 
 func (x *SubscribeStreamResponse) Reset() {
 	*x = SubscribeStreamResponse{}
-	mi := &file_backend_proto_msgTypes[20]
+	mi := &file_backend_proto_msgTypes[19]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1645,7 +1596,7 @@ func (x *SubscribeStreamResponse) String() string {
 func (*SubscribeStreamResponse) ProtoMessage() {}
 
 func (x *SubscribeStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[20]
+	mi := &file_backend_proto_msgTypes[19]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1658,7 +1609,7 @@ func (x *SubscribeStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use SubscribeStreamResponse.ProtoReflect.Descriptor instead.
 func (*SubscribeStreamResponse) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{20}
+	return file_backend_proto_rawDescGZIP(), []int{19}
 }
 
 func (x *SubscribeStreamResponse) GetStatus() SubscribeStreamResponse_Status {
@@ -1691,7 +1642,7 @@ type PublishStreamRequest struct {
 
 func (x *PublishStreamRequest) Reset() {
 	*x = PublishStreamRequest{}
-	mi := &file_backend_proto_msgTypes[21]
+	mi := &file_backend_proto_msgTypes[20]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1703,7 +1654,7 @@ func (x *PublishStreamRequest) String() string {
 func (*PublishStreamRequest) ProtoMessage() {}
 
 func (x *PublishStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[21]
+	mi := &file_backend_proto_msgTypes[20]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1716,7 +1667,7 @@ func (x *PublishStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishStreamRequest.ProtoReflect.Descriptor instead.
 func (*PublishStreamRequest) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{21}
+	return file_backend_proto_rawDescGZIP(), []int{20}
 }
 
 func (x *PublishStreamRequest) GetPluginContext() *PluginContext {
@@ -1763,7 +1714,7 @@ type PublishStreamResponse struct {
 
 func (x *PublishStreamResponse) Reset() {
 	*x = PublishStreamResponse{}
-	mi := &file_backend_proto_msgTypes[22]
+	mi := &file_backend_proto_msgTypes[21]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1775,7 +1726,7 @@ func (x *PublishStreamResponse) String() string {
 func (*PublishStreamResponse) ProtoMessage() {}
 
 func (x *PublishStreamResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[22]
+	mi := &file_backend_proto_msgTypes[21]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1788,7 +1739,7 @@ func (x *PublishStreamResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use PublishStreamResponse.ProtoReflect.Descriptor instead.
 func (*PublishStreamResponse) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{22}
+	return file_backend_proto_rawDescGZIP(), []int{21}
 }
 
 func (x *PublishStreamResponse) GetStatus() PublishStreamResponse_Status {
@@ -1821,7 +1772,7 @@ type RunStreamRequest struct {
 
 func (x *RunStreamRequest) Reset() {
 	*x = RunStreamRequest{}
-	mi := &file_backend_proto_msgTypes[23]
+	mi := &file_backend_proto_msgTypes[22]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1833,7 +1784,7 @@ func (x *RunStreamRequest) String() string {
 func (*RunStreamRequest) ProtoMessage() {}
 
 func (x *RunStreamRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[23]
+	mi := &file_backend_proto_msgTypes[22]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1846,7 +1797,7 @@ func (x *RunStreamRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RunStreamRequest.ProtoReflect.Descriptor instead.
 func (*RunStreamRequest) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{23}
+	return file_backend_proto_rawDescGZIP(), []int{22}
 }
 
 func (x *RunStreamRequest) GetPluginContext() *PluginContext {
@@ -1887,7 +1838,7 @@ type StreamPacket struct {
 
 func (x *StreamPacket) Reset() {
 	*x = StreamPacket{}
-	mi := &file_backend_proto_msgTypes[24]
+	mi := &file_backend_proto_msgTypes[23]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1899,7 +1850,7 @@ func (x *StreamPacket) String() string {
 func (*StreamPacket) ProtoMessage() {}
 
 func (x *StreamPacket) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[24]
+	mi := &file_backend_proto_msgTypes[23]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1912,7 +1863,7 @@ func (x *StreamPacket) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamPacket.ProtoReflect.Descriptor instead.
 func (*StreamPacket) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{24}
+	return file_backend_proto_rawDescGZIP(), []int{23}
 }
 
 func (x *StreamPacket) GetData() []byte {
@@ -1934,7 +1885,7 @@ type GroupVersionKind struct {
 
 func (x *GroupVersionKind) Reset() {
 	*x = GroupVersionKind{}
-	mi := &file_backend_proto_msgTypes[25]
+	mi := &file_backend_proto_msgTypes[24]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1946,7 +1897,7 @@ func (x *GroupVersionKind) String() string {
 func (*GroupVersionKind) ProtoMessage() {}
 
 func (x *GroupVersionKind) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[25]
+	mi := &file_backend_proto_msgTypes[24]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1959,7 +1910,7 @@ func (x *GroupVersionKind) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupVersionKind.ProtoReflect.Descriptor instead.
 func (*GroupVersionKind) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{25}
+	return file_backend_proto_rawDescGZIP(), []int{24}
 }
 
 func (x *GroupVersionKind) GetGroup() string {
@@ -2002,7 +1953,7 @@ type AdmissionRequest struct {
 
 func (x *AdmissionRequest) Reset() {
 	*x = AdmissionRequest{}
-	mi := &file_backend_proto_msgTypes[26]
+	mi := &file_backend_proto_msgTypes[25]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2014,7 +1965,7 @@ func (x *AdmissionRequest) String() string {
 func (*AdmissionRequest) ProtoMessage() {}
 
 func (x *AdmissionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[26]
+	mi := &file_backend_proto_msgTypes[25]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2027,7 +1978,7 @@ func (x *AdmissionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AdmissionRequest.ProtoReflect.Descriptor instead.
 func (*AdmissionRequest) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{26}
+	return file_backend_proto_rawDescGZIP(), []int{25}
 }
 
 func (x *AdmissionRequest) GetPluginContext() *PluginContext {
@@ -2086,7 +2037,7 @@ type ValidationResponse struct {
 
 func (x *ValidationResponse) Reset() {
 	*x = ValidationResponse{}
-	mi := &file_backend_proto_msgTypes[27]
+	mi := &file_backend_proto_msgTypes[26]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2098,7 +2049,7 @@ func (x *ValidationResponse) String() string {
 func (*ValidationResponse) ProtoMessage() {}
 
 func (x *ValidationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[27]
+	mi := &file_backend_proto_msgTypes[26]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2111,7 +2062,7 @@ func (x *ValidationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ValidationResponse.ProtoReflect.Descriptor instead.
 func (*ValidationResponse) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{27}
+	return file_backend_proto_rawDescGZIP(), []int{26}
 }
 
 func (x *ValidationResponse) GetAllowed() bool {
@@ -2158,7 +2109,7 @@ type MutationResponse struct {
 
 func (x *MutationResponse) Reset() {
 	*x = MutationResponse{}
-	mi := &file_backend_proto_msgTypes[28]
+	mi := &file_backend_proto_msgTypes[27]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2170,7 +2121,7 @@ func (x *MutationResponse) String() string {
 func (*MutationResponse) ProtoMessage() {}
 
 func (x *MutationResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[28]
+	mi := &file_backend_proto_msgTypes[27]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2183,7 +2134,7 @@ func (x *MutationResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use MutationResponse.ProtoReflect.Descriptor instead.
 func (*MutationResponse) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{28}
+	return file_backend_proto_rawDescGZIP(), []int{27}
 }
 
 func (x *MutationResponse) GetAllowed() bool {
@@ -2225,7 +2176,7 @@ type GroupVersion struct {
 
 func (x *GroupVersion) Reset() {
 	*x = GroupVersion{}
-	mi := &file_backend_proto_msgTypes[29]
+	mi := &file_backend_proto_msgTypes[28]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2237,7 +2188,7 @@ func (x *GroupVersion) String() string {
 func (*GroupVersion) ProtoMessage() {}
 
 func (x *GroupVersion) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[29]
+	mi := &file_backend_proto_msgTypes[28]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2250,7 +2201,7 @@ func (x *GroupVersion) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GroupVersion.ProtoReflect.Descriptor instead.
 func (*GroupVersion) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{29}
+	return file_backend_proto_rawDescGZIP(), []int{28}
 }
 
 func (x *GroupVersion) GetGroup() string {
@@ -2280,7 +2231,7 @@ type RawObject struct {
 
 func (x *RawObject) Reset() {
 	*x = RawObject{}
-	mi := &file_backend_proto_msgTypes[30]
+	mi := &file_backend_proto_msgTypes[29]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2292,7 +2243,7 @@ func (x *RawObject) String() string {
 func (*RawObject) ProtoMessage() {}
 
 func (x *RawObject) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[30]
+	mi := &file_backend_proto_msgTypes[29]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2305,7 +2256,7 @@ func (x *RawObject) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RawObject.ProtoReflect.Descriptor instead.
 func (*RawObject) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{30}
+	return file_backend_proto_rawDescGZIP(), []int{29}
 }
 
 func (x *RawObject) GetRaw() []byte {
@@ -2343,7 +2294,7 @@ type ConversionRequest struct {
 
 func (x *ConversionRequest) Reset() {
 	*x = ConversionRequest{}
-	mi := &file_backend_proto_msgTypes[31]
+	mi := &file_backend_proto_msgTypes[30]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2355,7 +2306,7 @@ func (x *ConversionRequest) String() string {
 func (*ConversionRequest) ProtoMessage() {}
 
 func (x *ConversionRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[31]
+	mi := &file_backend_proto_msgTypes[30]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2368,7 +2319,7 @@ func (x *ConversionRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConversionRequest.ProtoReflect.Descriptor instead.
 func (*ConversionRequest) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{31}
+	return file_backend_proto_rawDescGZIP(), []int{30}
 }
 
 func (x *ConversionRequest) GetPluginContext() *PluginContext {
@@ -2416,7 +2367,7 @@ type ConversionResponse struct {
 
 func (x *ConversionResponse) Reset() {
 	*x = ConversionResponse{}
-	mi := &file_backend_proto_msgTypes[32]
+	mi := &file_backend_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2428,7 +2379,7 @@ func (x *ConversionResponse) String() string {
 func (*ConversionResponse) ProtoMessage() {}
 
 func (x *ConversionResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[32]
+	mi := &file_backend_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2441,7 +2392,7 @@ func (x *ConversionResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ConversionResponse.ProtoReflect.Descriptor instead.
 func (*ConversionResponse) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{32}
+	return file_backend_proto_rawDescGZIP(), []int{31}
 }
 
 func (x *ConversionResponse) GetUid() string {
@@ -2492,7 +2443,7 @@ type StatusResult struct {
 
 func (x *StatusResult) Reset() {
 	*x = StatusResult{}
-	mi := &file_backend_proto_msgTypes[33]
+	mi := &file_backend_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2504,7 +2455,7 @@ func (x *StatusResult) String() string {
 func (*StatusResult) ProtoMessage() {}
 
 func (x *StatusResult) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[33]
+	mi := &file_backend_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2517,7 +2468,7 @@ func (x *StatusResult) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StatusResult.ProtoReflect.Descriptor instead.
 func (*StatusResult) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{33}
+	return file_backend_proto_rawDescGZIP(), []int{32}
 }
 
 func (x *StatusResult) GetStatus() string {
@@ -2557,7 +2508,7 @@ type CollectMetricsResponse_Payload struct {
 
 func (x *CollectMetricsResponse_Payload) Reset() {
 	*x = CollectMetricsResponse_Payload{}
-	mi := &file_backend_proto_msgTypes[42]
+	mi := &file_backend_proto_msgTypes[41]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -2569,7 +2520,7 @@ func (x *CollectMetricsResponse_Payload) String() string {
 func (*CollectMetricsResponse_Payload) ProtoMessage() {}
 
 func (x *CollectMetricsResponse_Payload) ProtoReflect() protoreflect.Message {
-	mi := &file_backend_proto_msgTypes[42]
+	mi := &file_backend_proto_msgTypes[41]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -2582,7 +2533,7 @@ func (x *CollectMetricsResponse_Payload) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CollectMetricsResponse_Payload.ProtoReflect.Descriptor instead.
 func (*CollectMetricsResponse_Payload) Descriptor() ([]byte, []int) {
-	return file_backend_proto_rawDescGZIP(), []int{16, 0}
+	return file_backend_proto_rawDescGZIP(), []int{15, 0}
 }
 
 func (x *CollectMetricsResponse_Payload) GetPrometheus() []byte {
@@ -2695,26 +2646,21 @@ const file_backend_proto_rawDesc = "" +
 	"\x05error\x18\x02 \x01(\tR\x05error\x12\x1a\n" +
 	"\bjsonMeta\x18\x03 \x01(\fR\bjsonMeta\x12\x16\n" +
 	"\x06status\x18\x04 \x01(\x05R\x06status\x12 \n" +
-	"\verrorSource\x18\x05 \x01(\tR\verrorSource\"\xd3\x02\n" +
+	"\verrorSource\x18\x05 \x01(\tR\verrorSource\"\x8d\x02\n" +
 	"\x17QueryChunkedDataRequest\x12=\n" +
 	"\rpluginContext\x18\x01 \x01(\v2\x17.pluginv2.PluginContextR\rpluginContext\x12H\n" +
 	"\aheaders\x18\x02 \x03(\v2..pluginv2.QueryChunkedDataRequest.HeadersEntryR\aheaders\x12-\n" +
-	"\aqueries\x18\x03 \x03(\v2\x13.pluginv2.DataQueryR\aqueries\x128\n" +
-	"\aoptions\x18\x04 \x01(\v2\x19.pluginv2.ChunkingOptionsH\x00R\aoptions\x88\x01\x01\x1a:\n" +
+	"\aqueries\x18\x03 \x03(\v2\x13.pluginv2.DataQueryR\aqueries\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\n" +
-	"\n" +
-	"\b_options\"\xb4\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb0\x01\n" +
 	"\x18QueryChunkedDataResponse\x12\x14\n" +
-	"\x05refId\x18\x01 \x01(\tR\x05refId\x12\x16\n" +
-	"\x06frames\x18\x02 \x03(\fR\x06frames\x12\x14\n" +
-	"\x05error\x18\x03 \x01(\tR\x05error\x12\x1a\n" +
-	"\bjsonMeta\x18\x04 \x01(\fR\bjsonMeta\x12\x16\n" +
+	"\x05refId\x18\x01 \x01(\tR\x05refId\x12\x18\n" +
+	"\aframeId\x18\x02 \x01(\tR\aframeId\x12\x14\n" +
+	"\x05frame\x18\x03 \x01(\fR\x05frame\x12\x14\n" +
+	"\x05error\x18\x04 \x01(\tR\x05error\x12\x16\n" +
 	"\x06status\x18\x05 \x01(\x05R\x06status\x12 \n" +
-	"\verrorSource\x18\x06 \x01(\tR\verrorSource\"/\n" +
-	"\x0fChunkingOptions\x12\x1c\n" +
-	"\tchunkSize\x18\x01 \x01(\x05R\tchunkSize\"V\n" +
+	"\verrorSource\x18\x06 \x01(\tR\verrorSource\"V\n" +
 	"\x15CollectMetricsRequest\x12=\n" +
 	"\rpluginContext\x18\x01 \x01(\v2\x17.pluginv2.PluginContextR\rpluginContext\"\x87\x01\n" +
 	"\x16CollectMetricsResponse\x12B\n" +
@@ -2854,7 +2800,7 @@ func file_backend_proto_rawDescGZIP() []byte {
 }
 
 var file_backend_proto_enumTypes = make([]protoimpl.EnumInfo, 4)
-var file_backend_proto_msgTypes = make([]protoimpl.MessageInfo, 47)
+var file_backend_proto_msgTypes = make([]protoimpl.MessageInfo, 46)
 var file_backend_proto_goTypes = []any{
 	(CheckHealthResponse_HealthStatus)(0),  // 0: pluginv2.CheckHealthResponse.HealthStatus
 	(SubscribeStreamResponse_Status)(0),    // 1: pluginv2.SubscribeStreamResponse.Status
@@ -2874,112 +2820,110 @@ var file_backend_proto_goTypes = []any{
 	(*DataResponse)(nil),                   // 15: pluginv2.DataResponse
 	(*QueryChunkedDataRequest)(nil),        // 16: pluginv2.QueryChunkedDataRequest
 	(*QueryChunkedDataResponse)(nil),       // 17: pluginv2.QueryChunkedDataResponse
-	(*ChunkingOptions)(nil),                // 18: pluginv2.ChunkingOptions
-	(*CollectMetricsRequest)(nil),          // 19: pluginv2.CollectMetricsRequest
-	(*CollectMetricsResponse)(nil),         // 20: pluginv2.CollectMetricsResponse
-	(*CheckHealthRequest)(nil),             // 21: pluginv2.CheckHealthRequest
-	(*CheckHealthResponse)(nil),            // 22: pluginv2.CheckHealthResponse
-	(*SubscribeStreamRequest)(nil),         // 23: pluginv2.SubscribeStreamRequest
-	(*SubscribeStreamResponse)(nil),        // 24: pluginv2.SubscribeStreamResponse
-	(*PublishStreamRequest)(nil),           // 25: pluginv2.PublishStreamRequest
-	(*PublishStreamResponse)(nil),          // 26: pluginv2.PublishStreamResponse
-	(*RunStreamRequest)(nil),               // 27: pluginv2.RunStreamRequest
-	(*StreamPacket)(nil),                   // 28: pluginv2.StreamPacket
-	(*GroupVersionKind)(nil),               // 29: pluginv2.GroupVersionKind
-	(*AdmissionRequest)(nil),               // 30: pluginv2.AdmissionRequest
-	(*ValidationResponse)(nil),             // 31: pluginv2.ValidationResponse
-	(*MutationResponse)(nil),               // 32: pluginv2.MutationResponse
-	(*GroupVersion)(nil),                   // 33: pluginv2.GroupVersion
-	(*RawObject)(nil),                      // 34: pluginv2.RawObject
-	(*ConversionRequest)(nil),              // 35: pluginv2.ConversionRequest
-	(*ConversionResponse)(nil),             // 36: pluginv2.ConversionResponse
-	(*StatusResult)(nil),                   // 37: pluginv2.StatusResult
-	nil,                                    // 38: pluginv2.AppInstanceSettings.DecryptedSecureJsonDataEntry
-	nil,                                    // 39: pluginv2.DataSourceInstanceSettings.DecryptedSecureJsonDataEntry
-	nil,                                    // 40: pluginv2.PluginContext.GrafanaConfigEntry
-	nil,                                    // 41: pluginv2.CallResourceRequest.HeadersEntry
-	nil,                                    // 42: pluginv2.CallResourceResponse.HeadersEntry
-	nil,                                    // 43: pluginv2.QueryDataRequest.HeadersEntry
-	nil,                                    // 44: pluginv2.QueryDataResponse.ResponsesEntry
-	nil,                                    // 45: pluginv2.QueryChunkedDataRequest.HeadersEntry
-	(*CollectMetricsResponse_Payload)(nil), // 46: pluginv2.CollectMetricsResponse.Payload
-	nil,                                    // 47: pluginv2.CheckHealthRequest.HeadersEntry
-	nil,                                    // 48: pluginv2.SubscribeStreamRequest.HeadersEntry
-	nil,                                    // 49: pluginv2.PublishStreamRequest.HeadersEntry
-	nil,                                    // 50: pluginv2.RunStreamRequest.HeadersEntry
+	(*CollectMetricsRequest)(nil),          // 18: pluginv2.CollectMetricsRequest
+	(*CollectMetricsResponse)(nil),         // 19: pluginv2.CollectMetricsResponse
+	(*CheckHealthRequest)(nil),             // 20: pluginv2.CheckHealthRequest
+	(*CheckHealthResponse)(nil),            // 21: pluginv2.CheckHealthResponse
+	(*SubscribeStreamRequest)(nil),         // 22: pluginv2.SubscribeStreamRequest
+	(*SubscribeStreamResponse)(nil),        // 23: pluginv2.SubscribeStreamResponse
+	(*PublishStreamRequest)(nil),           // 24: pluginv2.PublishStreamRequest
+	(*PublishStreamResponse)(nil),          // 25: pluginv2.PublishStreamResponse
+	(*RunStreamRequest)(nil),               // 26: pluginv2.RunStreamRequest
+	(*StreamPacket)(nil),                   // 27: pluginv2.StreamPacket
+	(*GroupVersionKind)(nil),               // 28: pluginv2.GroupVersionKind
+	(*AdmissionRequest)(nil),               // 29: pluginv2.AdmissionRequest
+	(*ValidationResponse)(nil),             // 30: pluginv2.ValidationResponse
+	(*MutationResponse)(nil),               // 31: pluginv2.MutationResponse
+	(*GroupVersion)(nil),                   // 32: pluginv2.GroupVersion
+	(*RawObject)(nil),                      // 33: pluginv2.RawObject
+	(*ConversionRequest)(nil),              // 34: pluginv2.ConversionRequest
+	(*ConversionResponse)(nil),             // 35: pluginv2.ConversionResponse
+	(*StatusResult)(nil),                   // 36: pluginv2.StatusResult
+	nil,                                    // 37: pluginv2.AppInstanceSettings.DecryptedSecureJsonDataEntry
+	nil,                                    // 38: pluginv2.DataSourceInstanceSettings.DecryptedSecureJsonDataEntry
+	nil,                                    // 39: pluginv2.PluginContext.GrafanaConfigEntry
+	nil,                                    // 40: pluginv2.CallResourceRequest.HeadersEntry
+	nil,                                    // 41: pluginv2.CallResourceResponse.HeadersEntry
+	nil,                                    // 42: pluginv2.QueryDataRequest.HeadersEntry
+	nil,                                    // 43: pluginv2.QueryDataResponse.ResponsesEntry
+	nil,                                    // 44: pluginv2.QueryChunkedDataRequest.HeadersEntry
+	(*CollectMetricsResponse_Payload)(nil), // 45: pluginv2.CollectMetricsResponse.Payload
+	nil,                                    // 46: pluginv2.CheckHealthRequest.HeadersEntry
+	nil,                                    // 47: pluginv2.SubscribeStreamRequest.HeadersEntry
+	nil,                                    // 48: pluginv2.PublishStreamRequest.HeadersEntry
+	nil,                                    // 49: pluginv2.RunStreamRequest.HeadersEntry
 }
 var file_backend_proto_depIdxs = []int32{
-	38, // 0: pluginv2.AppInstanceSettings.decryptedSecureJsonData:type_name -> pluginv2.AppInstanceSettings.DecryptedSecureJsonDataEntry
-	39, // 1: pluginv2.DataSourceInstanceSettings.decryptedSecureJsonData:type_name -> pluginv2.DataSourceInstanceSettings.DecryptedSecureJsonDataEntry
+	37, // 0: pluginv2.AppInstanceSettings.decryptedSecureJsonData:type_name -> pluginv2.AppInstanceSettings.DecryptedSecureJsonDataEntry
+	38, // 1: pluginv2.DataSourceInstanceSettings.decryptedSecureJsonData:type_name -> pluginv2.DataSourceInstanceSettings.DecryptedSecureJsonDataEntry
 	6,  // 2: pluginv2.PluginContext.user:type_name -> pluginv2.User
 	4,  // 3: pluginv2.PluginContext.appInstanceSettings:type_name -> pluginv2.AppInstanceSettings
 	5,  // 4: pluginv2.PluginContext.dataSourceInstanceSettings:type_name -> pluginv2.DataSourceInstanceSettings
-	40, // 5: pluginv2.PluginContext.grafanaConfig:type_name -> pluginv2.PluginContext.GrafanaConfigEntry
+	39, // 5: pluginv2.PluginContext.grafanaConfig:type_name -> pluginv2.PluginContext.GrafanaConfigEntry
 	7,  // 6: pluginv2.CallResourceRequest.pluginContext:type_name -> pluginv2.PluginContext
-	41, // 7: pluginv2.CallResourceRequest.headers:type_name -> pluginv2.CallResourceRequest.HeadersEntry
-	42, // 8: pluginv2.CallResourceResponse.headers:type_name -> pluginv2.CallResourceResponse.HeadersEntry
+	40, // 7: pluginv2.CallResourceRequest.headers:type_name -> pluginv2.CallResourceRequest.HeadersEntry
+	41, // 8: pluginv2.CallResourceResponse.headers:type_name -> pluginv2.CallResourceResponse.HeadersEntry
 	11, // 9: pluginv2.DataQuery.timeRange:type_name -> pluginv2.TimeRange
 	7,  // 10: pluginv2.QueryDataRequest.pluginContext:type_name -> pluginv2.PluginContext
-	43, // 11: pluginv2.QueryDataRequest.headers:type_name -> pluginv2.QueryDataRequest.HeadersEntry
+	42, // 11: pluginv2.QueryDataRequest.headers:type_name -> pluginv2.QueryDataRequest.HeadersEntry
 	12, // 12: pluginv2.QueryDataRequest.queries:type_name -> pluginv2.DataQuery
-	44, // 13: pluginv2.QueryDataResponse.responses:type_name -> pluginv2.QueryDataResponse.ResponsesEntry
+	43, // 13: pluginv2.QueryDataResponse.responses:type_name -> pluginv2.QueryDataResponse.ResponsesEntry
 	7,  // 14: pluginv2.QueryChunkedDataRequest.pluginContext:type_name -> pluginv2.PluginContext
-	45, // 15: pluginv2.QueryChunkedDataRequest.headers:type_name -> pluginv2.QueryChunkedDataRequest.HeadersEntry
+	44, // 15: pluginv2.QueryChunkedDataRequest.headers:type_name -> pluginv2.QueryChunkedDataRequest.HeadersEntry
 	12, // 16: pluginv2.QueryChunkedDataRequest.queries:type_name -> pluginv2.DataQuery
-	18, // 17: pluginv2.QueryChunkedDataRequest.options:type_name -> pluginv2.ChunkingOptions
-	7,  // 18: pluginv2.CollectMetricsRequest.pluginContext:type_name -> pluginv2.PluginContext
-	46, // 19: pluginv2.CollectMetricsResponse.metrics:type_name -> pluginv2.CollectMetricsResponse.Payload
-	7,  // 20: pluginv2.CheckHealthRequest.pluginContext:type_name -> pluginv2.PluginContext
-	47, // 21: pluginv2.CheckHealthRequest.headers:type_name -> pluginv2.CheckHealthRequest.HeadersEntry
-	0,  // 22: pluginv2.CheckHealthResponse.status:type_name -> pluginv2.CheckHealthResponse.HealthStatus
-	7,  // 23: pluginv2.SubscribeStreamRequest.pluginContext:type_name -> pluginv2.PluginContext
-	48, // 24: pluginv2.SubscribeStreamRequest.headers:type_name -> pluginv2.SubscribeStreamRequest.HeadersEntry
-	1,  // 25: pluginv2.SubscribeStreamResponse.status:type_name -> pluginv2.SubscribeStreamResponse.Status
-	7,  // 26: pluginv2.PublishStreamRequest.pluginContext:type_name -> pluginv2.PluginContext
-	49, // 27: pluginv2.PublishStreamRequest.headers:type_name -> pluginv2.PublishStreamRequest.HeadersEntry
-	2,  // 28: pluginv2.PublishStreamResponse.status:type_name -> pluginv2.PublishStreamResponse.Status
-	7,  // 29: pluginv2.RunStreamRequest.pluginContext:type_name -> pluginv2.PluginContext
-	50, // 30: pluginv2.RunStreamRequest.headers:type_name -> pluginv2.RunStreamRequest.HeadersEntry
-	7,  // 31: pluginv2.AdmissionRequest.pluginContext:type_name -> pluginv2.PluginContext
-	3,  // 32: pluginv2.AdmissionRequest.operation:type_name -> pluginv2.AdmissionRequest.Operation
-	29, // 33: pluginv2.AdmissionRequest.kind:type_name -> pluginv2.GroupVersionKind
-	37, // 34: pluginv2.ValidationResponse.result:type_name -> pluginv2.StatusResult
-	37, // 35: pluginv2.MutationResponse.result:type_name -> pluginv2.StatusResult
-	7,  // 36: pluginv2.ConversionRequest.pluginContext:type_name -> pluginv2.PluginContext
-	34, // 37: pluginv2.ConversionRequest.objects:type_name -> pluginv2.RawObject
-	33, // 38: pluginv2.ConversionRequest.target_version:type_name -> pluginv2.GroupVersion
-	37, // 39: pluginv2.ConversionResponse.result:type_name -> pluginv2.StatusResult
-	34, // 40: pluginv2.ConversionResponse.objects:type_name -> pluginv2.RawObject
-	8,  // 41: pluginv2.CallResourceRequest.HeadersEntry.value:type_name -> pluginv2.StringList
-	8,  // 42: pluginv2.CallResourceResponse.HeadersEntry.value:type_name -> pluginv2.StringList
-	15, // 43: pluginv2.QueryDataResponse.ResponsesEntry.value:type_name -> pluginv2.DataResponse
-	9,  // 44: pluginv2.Resource.CallResource:input_type -> pluginv2.CallResourceRequest
-	13, // 45: pluginv2.Data.QueryData:input_type -> pluginv2.QueryDataRequest
-	16, // 46: pluginv2.Data.QueryChunkedData:input_type -> pluginv2.QueryChunkedDataRequest
-	21, // 47: pluginv2.Diagnostics.CheckHealth:input_type -> pluginv2.CheckHealthRequest
-	19, // 48: pluginv2.Diagnostics.CollectMetrics:input_type -> pluginv2.CollectMetricsRequest
-	23, // 49: pluginv2.Stream.SubscribeStream:input_type -> pluginv2.SubscribeStreamRequest
-	27, // 50: pluginv2.Stream.RunStream:input_type -> pluginv2.RunStreamRequest
-	25, // 51: pluginv2.Stream.PublishStream:input_type -> pluginv2.PublishStreamRequest
-	30, // 52: pluginv2.AdmissionControl.ValidateAdmission:input_type -> pluginv2.AdmissionRequest
-	30, // 53: pluginv2.AdmissionControl.MutateAdmission:input_type -> pluginv2.AdmissionRequest
-	35, // 54: pluginv2.ResourceConversion.ConvertObjects:input_type -> pluginv2.ConversionRequest
-	10, // 55: pluginv2.Resource.CallResource:output_type -> pluginv2.CallResourceResponse
-	14, // 56: pluginv2.Data.QueryData:output_type -> pluginv2.QueryDataResponse
-	17, // 57: pluginv2.Data.QueryChunkedData:output_type -> pluginv2.QueryChunkedDataResponse
-	22, // 58: pluginv2.Diagnostics.CheckHealth:output_type -> pluginv2.CheckHealthResponse
-	20, // 59: pluginv2.Diagnostics.CollectMetrics:output_type -> pluginv2.CollectMetricsResponse
-	24, // 60: pluginv2.Stream.SubscribeStream:output_type -> pluginv2.SubscribeStreamResponse
-	28, // 61: pluginv2.Stream.RunStream:output_type -> pluginv2.StreamPacket
-	26, // 62: pluginv2.Stream.PublishStream:output_type -> pluginv2.PublishStreamResponse
-	31, // 63: pluginv2.AdmissionControl.ValidateAdmission:output_type -> pluginv2.ValidationResponse
-	32, // 64: pluginv2.AdmissionControl.MutateAdmission:output_type -> pluginv2.MutationResponse
-	36, // 65: pluginv2.ResourceConversion.ConvertObjects:output_type -> pluginv2.ConversionResponse
-	55, // [55:66] is the sub-list for method output_type
-	44, // [44:55] is the sub-list for method input_type
-	44, // [44:44] is the sub-list for extension type_name
-	44, // [44:44] is the sub-list for extension extendee
-	0,  // [0:44] is the sub-list for field type_name
+	7,  // 17: pluginv2.CollectMetricsRequest.pluginContext:type_name -> pluginv2.PluginContext
+	45, // 18: pluginv2.CollectMetricsResponse.metrics:type_name -> pluginv2.CollectMetricsResponse.Payload
+	7,  // 19: pluginv2.CheckHealthRequest.pluginContext:type_name -> pluginv2.PluginContext
+	46, // 20: pluginv2.CheckHealthRequest.headers:type_name -> pluginv2.CheckHealthRequest.HeadersEntry
+	0,  // 21: pluginv2.CheckHealthResponse.status:type_name -> pluginv2.CheckHealthResponse.HealthStatus
+	7,  // 22: pluginv2.SubscribeStreamRequest.pluginContext:type_name -> pluginv2.PluginContext
+	47, // 23: pluginv2.SubscribeStreamRequest.headers:type_name -> pluginv2.SubscribeStreamRequest.HeadersEntry
+	1,  // 24: pluginv2.SubscribeStreamResponse.status:type_name -> pluginv2.SubscribeStreamResponse.Status
+	7,  // 25: pluginv2.PublishStreamRequest.pluginContext:type_name -> pluginv2.PluginContext
+	48, // 26: pluginv2.PublishStreamRequest.headers:type_name -> pluginv2.PublishStreamRequest.HeadersEntry
+	2,  // 27: pluginv2.PublishStreamResponse.status:type_name -> pluginv2.PublishStreamResponse.Status
+	7,  // 28: pluginv2.RunStreamRequest.pluginContext:type_name -> pluginv2.PluginContext
+	49, // 29: pluginv2.RunStreamRequest.headers:type_name -> pluginv2.RunStreamRequest.HeadersEntry
+	7,  // 30: pluginv2.AdmissionRequest.pluginContext:type_name -> pluginv2.PluginContext
+	3,  // 31: pluginv2.AdmissionRequest.operation:type_name -> pluginv2.AdmissionRequest.Operation
+	28, // 32: pluginv2.AdmissionRequest.kind:type_name -> pluginv2.GroupVersionKind
+	36, // 33: pluginv2.ValidationResponse.result:type_name -> pluginv2.StatusResult
+	36, // 34: pluginv2.MutationResponse.result:type_name -> pluginv2.StatusResult
+	7,  // 35: pluginv2.ConversionRequest.pluginContext:type_name -> pluginv2.PluginContext
+	33, // 36: pluginv2.ConversionRequest.objects:type_name -> pluginv2.RawObject
+	32, // 37: pluginv2.ConversionRequest.target_version:type_name -> pluginv2.GroupVersion
+	36, // 38: pluginv2.ConversionResponse.result:type_name -> pluginv2.StatusResult
+	33, // 39: pluginv2.ConversionResponse.objects:type_name -> pluginv2.RawObject
+	8,  // 40: pluginv2.CallResourceRequest.HeadersEntry.value:type_name -> pluginv2.StringList
+	8,  // 41: pluginv2.CallResourceResponse.HeadersEntry.value:type_name -> pluginv2.StringList
+	15, // 42: pluginv2.QueryDataResponse.ResponsesEntry.value:type_name -> pluginv2.DataResponse
+	9,  // 43: pluginv2.Resource.CallResource:input_type -> pluginv2.CallResourceRequest
+	13, // 44: pluginv2.Data.QueryData:input_type -> pluginv2.QueryDataRequest
+	16, // 45: pluginv2.Data.QueryChunkedData:input_type -> pluginv2.QueryChunkedDataRequest
+	20, // 46: pluginv2.Diagnostics.CheckHealth:input_type -> pluginv2.CheckHealthRequest
+	18, // 47: pluginv2.Diagnostics.CollectMetrics:input_type -> pluginv2.CollectMetricsRequest
+	22, // 48: pluginv2.Stream.SubscribeStream:input_type -> pluginv2.SubscribeStreamRequest
+	26, // 49: pluginv2.Stream.RunStream:input_type -> pluginv2.RunStreamRequest
+	24, // 50: pluginv2.Stream.PublishStream:input_type -> pluginv2.PublishStreamRequest
+	29, // 51: pluginv2.AdmissionControl.ValidateAdmission:input_type -> pluginv2.AdmissionRequest
+	29, // 52: pluginv2.AdmissionControl.MutateAdmission:input_type -> pluginv2.AdmissionRequest
+	34, // 53: pluginv2.ResourceConversion.ConvertObjects:input_type -> pluginv2.ConversionRequest
+	10, // 54: pluginv2.Resource.CallResource:output_type -> pluginv2.CallResourceResponse
+	14, // 55: pluginv2.Data.QueryData:output_type -> pluginv2.QueryDataResponse
+	17, // 56: pluginv2.Data.QueryChunkedData:output_type -> pluginv2.QueryChunkedDataResponse
+	21, // 57: pluginv2.Diagnostics.CheckHealth:output_type -> pluginv2.CheckHealthResponse
+	19, // 58: pluginv2.Diagnostics.CollectMetrics:output_type -> pluginv2.CollectMetricsResponse
+	23, // 59: pluginv2.Stream.SubscribeStream:output_type -> pluginv2.SubscribeStreamResponse
+	27, // 60: pluginv2.Stream.RunStream:output_type -> pluginv2.StreamPacket
+	25, // 61: pluginv2.Stream.PublishStream:output_type -> pluginv2.PublishStreamResponse
+	30, // 62: pluginv2.AdmissionControl.ValidateAdmission:output_type -> pluginv2.ValidationResponse
+	31, // 63: pluginv2.AdmissionControl.MutateAdmission:output_type -> pluginv2.MutationResponse
+	35, // 64: pluginv2.ResourceConversion.ConvertObjects:output_type -> pluginv2.ConversionResponse
+	54, // [54:65] is the sub-list for method output_type
+	43, // [43:54] is the sub-list for method input_type
+	43, // [43:43] is the sub-list for extension type_name
+	43, // [43:43] is the sub-list for extension extendee
+	0,  // [0:43] is the sub-list for field type_name
 }
 
 func init() { file_backend_proto_init() }
@@ -2987,14 +2931,13 @@ func file_backend_proto_init() {
 	if File_backend_proto != nil {
 		return
 	}
-	file_backend_proto_msgTypes[12].OneofWrappers = []any{}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_backend_proto_rawDesc), len(file_backend_proto_rawDesc)),
 			NumEnums:      4,
-			NumMessages:   47,
+			NumMessages:   46,
 			NumExtensions: 0,
 			NumServices:   6,
 		},

@@ -178,17 +178,6 @@ func (f ConvertFromProtobuf) QueryChunkedDataRequest(protoReq *pluginv2.QueryChu
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Headers:       protoReq.Headers,
 		Queries:       queries,
-		Options:       f.ChunkingOptions(protoReq.Options),
-	}
-}
-
-func (f ConvertFromProtobuf) ChunkingOptions(proto *pluginv2.ChunkingOptions) *ChunkingOptions {
-	if proto == nil {
-		return nil
-	}
-
-	return &ChunkingOptions{
-		ChunkSize: int(proto.ChunkSize),
 	}
 }
 

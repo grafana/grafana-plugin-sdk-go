@@ -2,10 +2,10 @@ package datasourcetest
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
-
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -13,6 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -57,69 +58,46 @@ func (p *TestPluginClient) QueryChunkedData(ctx context.Context, r *backend.Quer
 		return nil, err
 	}
 
-	type streamState struct {
-		frames   []*data.Frame
-		curFrame *data.Frame
-		status   backend.Status
-		err      error
-	}
-
-	stateByRefID := make(map[string]streamState)
+	responses := make(backend.Responses)
+	frameByKey := make(map[string]*data.Frame)
+	var frame *data.Frame
 
 	for {
 		sr, err := stream.Recv()
 		if err != nil {
 			if errors.Is(err, io.EOF) {
-				resp := backend.Responses{}
-				for refID, state := range stateByRefID {
-					resp[refID] = backend.DataResponse{
-						Status: state.status,
-						Frames: state.frames,
-						Error:  state.err,
-					}
-				}
-
 				// End of stream, return accumulated responses
-				return &backend.QueryDataResponse{Responses: resp}, nil
+				return &backend.QueryDataResponse{Responses: responses}, nil
 			}
 			return nil, err
 		}
 
-		// Get state for this refID
-		st := stateByRefID[sr.RefId]
-
-		// Update status and error
-		st.status = backend.Status(sr.Status)
-		if sr.Error != "" {
-			st.err = errors.New(sr.Error)
-		}
-
-		// Process frames
-		for _, frame := range sr.Frames {
-			f, err := data.UnmarshalArrowFrame(frame)
-			if err != nil {
-				return nil, err
-			}
-
-			if data.IsMarkerFrame(f) {
-				st.curFrame = nil
-				continue
-			}
-
-			if st.curFrame != nil {
-				// Merge current frame with incoming frame
-				for i, field := range f.Fields {
-					st.curFrame.Fields[i].AppendAll(field)
+		rsp := responses[sr.RefId]
+		if len(sr.Frame) > 0 {
+			key := fmt.Sprintf("%s|%s", sr.RefId, sr.FrameId)
+			frame = frameByKey[key]
+			if frame != nil {
+				if err = data.AppendJSONData(frame, sr.Frame); err != nil {
+					return nil, fmt.Errorf("error appending data %w", err)
 				}
-				continue
+			} else {
+				frame = &data.Frame{}
+				if err = json.Unmarshal(sr.Frame, frame); err != nil {
+					return nil, fmt.Errorf("error parsing response %w", err)
+				}
+				frameByKey[key] = frame
+				rsp.Frames = append(rsp.Frames, frame)
 			}
-
-			// This is a new frame
-			st.frames = append(st.frames, f)
-			st.curFrame = f
 		}
 
-		stateByRefID[sr.RefId] = st
+		rsp.Status = backend.Status(sr.Status)
+		if sr.Error != "" {
+			rsp.Error = errors.New(sr.Error)
+		}
+		if sr.ErrorSource != "" {
+			rsp.ErrorSource = backend.ErrorSource(sr.ErrorSource)
+		}
+		responses[sr.RefId] = rsp
 	}
 }
 
