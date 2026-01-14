@@ -720,7 +720,7 @@ func BenchmarkFrameBufferZero(b *testing.B) {
 	}
 }
 
-func BenchmarkFrameBufferEmptyCopy(b *testing.B) {
+func BenchmarkFrameBufferCopy(b *testing.B) {
 	b.ReportAllocs()
 
 	rows := int64(5000)
