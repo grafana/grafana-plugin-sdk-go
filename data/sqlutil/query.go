@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -27,6 +28,43 @@ const (
 	// FormatOptionMulti formats the query results as a timeseries using "LongToMulti"
 	FormatOptionMulti
 )
+
+func (f *FormatQueryOption) UnmarshalJSON(data []byte) error {
+	var num uint32
+	if err := json.Unmarshal(data, &num); err == nil {
+		if num > uint32(FormatOptionMulti) {
+			return fmt.Errorf("invalid format value: %d (max: %d)", num, FormatOptionMulti)
+		}
+		*f = FormatQueryOption(num)
+		return nil
+	}
+	var str string
+	if err := json.Unmarshal(data, &str); err != nil {
+		return err
+	}
+	str = strings.TrimSpace(strings.ToLower(str))
+	switch str {
+	case "0", "timeseries", "time_series", "time-series":
+		*f = FormatOptionTimeSeries
+	case "1", "table":
+		*f = FormatOptionTable
+	case "2", "logs":
+		*f = FormatOptionLogs
+	case "3", "traces":
+		*f = FormatOptionTrace
+	case "4", "multi":
+		*f = FormatOptionMulti
+	case "": // NOTE: empty defaults to timeseries for backwards compatibility
+		*f = FormatOptionTimeSeries
+	default:
+		return fmt.Errorf("invalid format value: %s", str)
+	}
+	return nil
+}
+
+func (f FormatQueryOption) MarshalJSON() ([]byte, error) {
+	return json.Marshal(uint32(f))
+}
 
 // Query is the model that represents the query that users submit from the panel/queryeditor.
 // For the sake of backwards compatibility, when making changes to this type, ensure that changes are
