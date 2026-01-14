@@ -2,7 +2,7 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/cheekybits/genny
 
-//nolint:staticcheck
+//nolint:unused
 package data
 
 import (
@@ -52,7 +52,7 @@ func (v *uint8Vector) Len() int {
 }
 
 func (v *uint8Vector) CopyAt(i int) interface{} {
-	var g uint8
+	var g uint8 //nolint:staticcheck // S1021: uint8erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -67,6 +67,11 @@ func (v *uint8Vector) Type() FieldType {
 
 func (v *uint8Vector) Extend(i int) {
 	*v = append(*v, make([]uint8, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *uint8Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *uint8Vector) Insert(i int, val interface{}) {
@@ -85,6 +90,8 @@ func (v *uint8Vector) Insert(i int, val interface{}) {
 func (v *uint8Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type uint16Vector []uint16
 
@@ -128,7 +135,7 @@ func (v *uint16Vector) Len() int {
 }
 
 func (v *uint16Vector) CopyAt(i int) interface{} {
-	var g uint16
+	var g uint16 //nolint:staticcheck // S1021: uint16erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -143,6 +150,11 @@ func (v *uint16Vector) Type() FieldType {
 
 func (v *uint16Vector) Extend(i int) {
 	*v = append(*v, make([]uint16, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *uint16Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *uint16Vector) Insert(i int, val interface{}) {
@@ -161,6 +173,8 @@ func (v *uint16Vector) Insert(i int, val interface{}) {
 func (v *uint16Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type uint32Vector []uint32
 
@@ -204,7 +218,7 @@ func (v *uint32Vector) Len() int {
 }
 
 func (v *uint32Vector) CopyAt(i int) interface{} {
-	var g uint32
+	var g uint32 //nolint:staticcheck // S1021: uint32erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -219,6 +233,11 @@ func (v *uint32Vector) Type() FieldType {
 
 func (v *uint32Vector) Extend(i int) {
 	*v = append(*v, make([]uint32, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *uint32Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *uint32Vector) Insert(i int, val interface{}) {
@@ -237,6 +256,8 @@ func (v *uint32Vector) Insert(i int, val interface{}) {
 func (v *uint32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type uint64Vector []uint64
 
@@ -280,7 +301,7 @@ func (v *uint64Vector) Len() int {
 }
 
 func (v *uint64Vector) CopyAt(i int) interface{} {
-	var g uint64
+	var g uint64 //nolint:staticcheck // S1021: uint64erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -295,6 +316,11 @@ func (v *uint64Vector) Type() FieldType {
 
 func (v *uint64Vector) Extend(i int) {
 	*v = append(*v, make([]uint64, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *uint64Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *uint64Vector) Insert(i int, val interface{}) {
@@ -313,6 +339,8 @@ func (v *uint64Vector) Insert(i int, val interface{}) {
 func (v *uint64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type int8Vector []int8
 
@@ -356,7 +384,7 @@ func (v *int8Vector) Len() int {
 }
 
 func (v *int8Vector) CopyAt(i int) interface{} {
-	var g int8
+	var g int8 //nolint:staticcheck // S1021: int8erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -371,6 +399,11 @@ func (v *int8Vector) Type() FieldType {
 
 func (v *int8Vector) Extend(i int) {
 	*v = append(*v, make([]int8, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *int8Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *int8Vector) Insert(i int, val interface{}) {
@@ -389,6 +422,8 @@ func (v *int8Vector) Insert(i int, val interface{}) {
 func (v *int8Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type int16Vector []int16
 
@@ -432,7 +467,7 @@ func (v *int16Vector) Len() int {
 }
 
 func (v *int16Vector) CopyAt(i int) interface{} {
-	var g int16
+	var g int16 //nolint:staticcheck // S1021: int16erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -447,6 +482,11 @@ func (v *int16Vector) Type() FieldType {
 
 func (v *int16Vector) Extend(i int) {
 	*v = append(*v, make([]int16, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *int16Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *int16Vector) Insert(i int, val interface{}) {
@@ -465,6 +505,8 @@ func (v *int16Vector) Insert(i int, val interface{}) {
 func (v *int16Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type int32Vector []int32
 
@@ -508,7 +550,7 @@ func (v *int32Vector) Len() int {
 }
 
 func (v *int32Vector) CopyAt(i int) interface{} {
-	var g int32
+	var g int32 //nolint:staticcheck // S1021: int32erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -523,6 +565,11 @@ func (v *int32Vector) Type() FieldType {
 
 func (v *int32Vector) Extend(i int) {
 	*v = append(*v, make([]int32, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *int32Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *int32Vector) Insert(i int, val interface{}) {
@@ -541,6 +588,8 @@ func (v *int32Vector) Insert(i int, val interface{}) {
 func (v *int32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type int64Vector []int64
 
@@ -584,7 +633,7 @@ func (v *int64Vector) Len() int {
 }
 
 func (v *int64Vector) CopyAt(i int) interface{} {
-	var g int64
+	var g int64 //nolint:staticcheck // S1021: int64erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -599,6 +648,11 @@ func (v *int64Vector) Type() FieldType {
 
 func (v *int64Vector) Extend(i int) {
 	*v = append(*v, make([]int64, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *int64Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *int64Vector) Insert(i int, val interface{}) {
@@ -617,6 +671,8 @@ func (v *int64Vector) Insert(i int, val interface{}) {
 func (v *int64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type float32Vector []float32
 
@@ -660,7 +716,7 @@ func (v *float32Vector) Len() int {
 }
 
 func (v *float32Vector) CopyAt(i int) interface{} {
-	var g float32
+	var g float32 //nolint:staticcheck // S1021: float32erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -675,6 +731,11 @@ func (v *float32Vector) Type() FieldType {
 
 func (v *float32Vector) Extend(i int) {
 	*v = append(*v, make([]float32, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *float32Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *float32Vector) Insert(i int, val interface{}) {
@@ -693,6 +754,8 @@ func (v *float32Vector) Insert(i int, val interface{}) {
 func (v *float32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type float64Vector []float64
 
@@ -736,7 +799,7 @@ func (v *float64Vector) Len() int {
 }
 
 func (v *float64Vector) CopyAt(i int) interface{} {
-	var g float64
+	var g float64 //nolint:staticcheck // S1021: float64erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -751,6 +814,11 @@ func (v *float64Vector) Type() FieldType {
 
 func (v *float64Vector) Extend(i int) {
 	*v = append(*v, make([]float64, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *float64Vector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *float64Vector) Insert(i int, val interface{}) {
@@ -769,6 +837,8 @@ func (v *float64Vector) Insert(i int, val interface{}) {
 func (v *float64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type stringVector []string
 
@@ -812,7 +882,7 @@ func (v *stringVector) Len() int {
 }
 
 func (v *stringVector) CopyAt(i int) interface{} {
-	var g string
+	var g string //nolint:staticcheck // S1021: stringerated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -827,6 +897,11 @@ func (v *stringVector) Type() FieldType {
 
 func (v *stringVector) Extend(i int) {
 	*v = append(*v, make([]string, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *stringVector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *stringVector) Insert(i int, val interface{}) {
@@ -845,6 +920,8 @@ func (v *stringVector) Insert(i int, val interface{}) {
 func (v *stringVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type boolVector []bool
 
@@ -888,7 +965,7 @@ func (v *boolVector) Len() int {
 }
 
 func (v *boolVector) CopyAt(i int) interface{} {
-	var g bool
+	var g bool //nolint:staticcheck // S1021: boolerated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -903,6 +980,11 @@ func (v *boolVector) Type() FieldType {
 
 func (v *boolVector) Extend(i int) {
 	*v = append(*v, make([]bool, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *boolVector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *boolVector) Insert(i int, val interface{}) {
@@ -921,6 +1003,8 @@ func (v *boolVector) Insert(i int, val interface{}) {
 func (v *boolVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type timeTimeVector []time.Time
 
@@ -964,7 +1048,7 @@ func (v *timeTimeVector) Len() int {
 }
 
 func (v *timeTimeVector) CopyAt(i int) interface{} {
-	var g time.Time
+	var g time.Time //nolint:staticcheck // S1021: timeTimeerated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -979,6 +1063,11 @@ func (v *timeTimeVector) Type() FieldType {
 
 func (v *timeTimeVector) Extend(i int) {
 	*v = append(*v, make([]time.Time, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *timeTimeVector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *timeTimeVector) Insert(i int, val interface{}) {
@@ -997,6 +1086,8 @@ func (v *timeTimeVector) Insert(i int, val interface{}) {
 func (v *timeTimeVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+//nolint:unused
 
 type jsonRawMessageVector []json.RawMessage
 
@@ -1040,7 +1131,7 @@ func (v *jsonRawMessageVector) Len() int {
 }
 
 func (v *jsonRawMessageVector) CopyAt(i int) interface{} {
-	var g json.RawMessage
+	var g json.RawMessage //nolint:staticcheck // S1021: jsonRawMessageerated code pattern  ;
 	g = (*v)[i]
 	return g
 }
@@ -1055,6 +1146,11 @@ func (v *jsonRawMessageVector) Type() FieldType {
 
 func (v *jsonRawMessageVector) Extend(i int) {
 	*v = append(*v, make([]json.RawMessage, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *jsonRawMessageVector) ZeroLength() {
+	*v = (*v)[:0]
 }
 
 func (v *jsonRawMessageVector) Insert(i int, val interface{}) {

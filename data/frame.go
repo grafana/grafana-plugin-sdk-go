@@ -180,6 +180,14 @@ func (f *Frame) EmptyCopy() *Frame {
 	return newFrame
 }
 
+// ZeroLength sets the length of every field to zero
+// This offers an efficient way to reuse the existing allocated slice in multiple data "pages"
+func (f *Frame) ZeroLength() {
+	for _, field := range f.Fields {
+		field.vector.ZeroLength()
+	}
+}
+
 // NewFrameOfFieldTypes returns a Frame where the Fields are initialized to the
 // corresponding field type in fTypes. Each Field will be of length FieldLen.
 func NewFrameOfFieldTypes(name string, fieldLen int, fTypes ...FieldType) *Frame {
