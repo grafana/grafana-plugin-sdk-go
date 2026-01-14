@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"sort"
 	"strconv"
+	"sync"
 	"time"
 	"unsafe"
 
@@ -30,9 +32,15 @@ const simpleTypeOther = "other"
 const jsonKeySchema = "schema"
 const jsonKeyData = "data"
 
-func init() { //nolint:gochecknoinits
-	jsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
-	jsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
+// jsoniterOnce ensures JSON codecs are registered exactly once, lazily on first use
+var jsoniterOnce sync.Once
+
+// ensureJSONIterInit lazily initializes jsoniter codecs only when JSON operations are used
+func ensureJSONIterInit() {
+	jsoniterOnce.Do(func() {
+		jsoniter.RegisterTypeEncoder("data.Frame", &dataFrameCodec{})
+		jsoniter.RegisterTypeDecoder("data.Frame", &dataFrameCodec{})
+	})
 }
 
 type dataFrameCodec struct{}
@@ -84,20 +92,40 @@ type FrameJSONCache struct {
 // that was not serialized on creation will return an empty value
 func (f *FrameJSONCache) Bytes(args FrameInclude) []byte {
 	if f.schema != nil && (args == IncludeAll || args == IncludeSchemaOnly) {
-		out := append([]byte(`{"`+jsonKeySchema+`":`), f.schema...)
+		// Pre-calculate total size to avoid multiple allocations
+		size := 1 + len(jsonKeySchema) + 3 + len(f.schema) // {" + schema + ":
+		includeData := f.data != nil && (args == IncludeAll || args == IncludeDataOnly)
+		if includeData {
+			size += 1 + len(jsonKeyData) + 3 + len(f.data) // ," + data + ":
+		}
+		size++ // closing }
 
-		if f.data != nil && (args == IncludeAll || args == IncludeDataOnly) {
-			out = append(out, `,"`+jsonKeyData+`":`...)
+		out := make([]byte, 0, size)
+		out = append(out, '{', '"')
+		out = append(out, jsonKeySchema...)
+		out = append(out, '"', ':')
+		out = append(out, f.schema...)
+
+		if includeData {
+			out = append(out, ',', '"')
+			out = append(out, jsonKeyData...)
+			out = append(out, '"', ':')
 			out = append(out, f.data...)
 		}
-		return append(out, "}"...)
+		out = append(out, '}')
+		return out
 	}
 
 	// only data
 	if f.data != nil && (args == IncludeAll || args == IncludeDataOnly) {
-		out := []byte(`{"` + jsonKeyData + `":`)
+		size := 1 + len(jsonKeyData) + 3 + len(f.data) + 1
+		out := make([]byte, 0, size)
+		out = append(out, '{', '"')
+		out = append(out, jsonKeyData...)
+		out = append(out, '"', ':')
 		out = append(out, f.data...)
-		return append(out, []byte("}")...)
+		out = append(out, '}')
+		return out
 	}
 
 	return []byte("{}")
@@ -158,6 +186,7 @@ func (f *FrameJSONCache) MarshalJSON() ([]byte, error) {
 //
 // NOTE: the format should be considered experimental until grafana 8 is released.
 func FrameToJSON(frame *Frame, include FrameInclude) ([]byte, error) {
+	ensureJSONIterInit() // Lazy initialization of JSON codecs
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
@@ -288,12 +317,31 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			addNanos := func() {
 				if readNanos {
 					if nanos[fieldIndex] != nil {
-						for i := 0; i < size; i++ {
-							t, ok := field.ConcreteAt(i)
-							if !ok {
-								continue
+						// Use typed access for time fields to avoid boxing
+						if tv, ok := field.vector.(*genericVector[time.Time]); ok {
+							for i := 0; i < size; i++ {
+								t := tv.AtTyped(i)
+								tv.SetTyped(i, t.Add(time.Nanosecond*time.Duration(nanos[fieldIndex][i])))
 							}
-							field.Set(i, t.(time.Time).Add(time.Nanosecond*time.Duration(nanos[fieldIndex][i])))
+						} else if tv, ok := field.vector.(*nullableGenericVector[time.Time]); ok {
+							for i := 0; i < size; i++ {
+								pt := tv.AtTyped(i)
+								if pt == nil {
+									continue
+								}
+								t := *pt
+								tWithNS := t.Add(time.Nanosecond * time.Duration(nanos[fieldIndex][i]))
+								tv.SetTyped(i, &tWithNS)
+							}
+						} else {
+							// Fallback for other types
+							for i := 0; i < size; i++ {
+								t, ok := field.ConcreteAt(i)
+								if !ok {
+									continue
+								}
+								field.Set(i, t.(time.Time).Add(time.Nanosecond*time.Duration(nanos[fieldIndex][i])))
+							}
 						}
 					}
 				}
@@ -324,7 +372,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 						replace := getReplacementValue(l3Field, field.Type())
 						for iter.ReadArray() {
 							idx := iter.ReadInt()
-							field.vector.SetConcrete(idx, replace)
+							setConcreteTypedInVector(field.vector, idx, replace)
 						}
 					}
 				} else {
@@ -348,7 +396,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 								continue
 							}
 							tWithNS := t.(time.Time).Add(time.Nanosecond * time.Duration(ns))
-							field.vector.SetConcrete(idx, tWithNS)
+							setConcreteTypedInVector(field.vector, idx, tWithNS)
 							continue
 						}
 						if idx == 0 {
@@ -433,11 +481,11 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		parseUint64 := func(s string) (uint64, error) {
 			return strconv.ParseUint(s, 0, 64)
 		}
-		u, err := readArrayOfNumbers[uint64](itere, parseUint64, itere.ReadUint64)
+		u, err := readArrayOfNumbers(itere, parseUint64, itere.ReadUint64)
 		if err != nil {
 			return nil, err
 		}
-		return newUint64VectorWithValues(u), nil
+		return newGenericVectorWithValues(u), nil
 
 	case FieldTypeNullableUint64:
 		parseUint64 := func(s string) (*uint64, error) {
@@ -447,14 +495,14 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 			}
 			return &u, nil
 		}
-		u, err := readArrayOfNumbers[*uint64](itere, parseUint64, itere.ReadUint64Pointer)
+		u, err := readArrayOfNumbers(itere, parseUint64, itere.ReadUint64Pointer)
 		if err != nil {
 			return nil, err
 		}
-		return newNullableUint64VectorWithValues(u), nil
+		return newNullableGenericVectorWithValues(u), nil
 
 	case FieldTypeInt64:
-		vals := newInt64Vector(0)
+		vals := newGenericVector[int64](0)
 		for iter.ReadArray() {
 			v := iter.ReadInt64()
 			vals.Append(v)
@@ -462,7 +510,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		return vals, nil
 
 	case FieldTypeNullableInt64:
-		vals := newNullableInt64Vector(0)
+		vals := newNullableGenericVector[int64](0)
 		for iter.ReadArray() {
 			t := iter.WhatIsNext()
 			if t == sdkjsoniter.NilValue {
@@ -476,7 +524,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		return vals, nil
 
 	case FieldTypeJSON, FieldTypeNullableJSON:
-		vals := newJsonRawMessageVector(0)
+		vals := newGenericVector[json.RawMessage](0)
 		for iter.ReadArray() {
 			var v json.RawMessage
 			t := iter.WhatIsNext()
@@ -491,18 +539,357 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		// Convert this to the pointer flavor
 		if ft == FieldTypeNullableJSON {
 			size := vals.Len()
-			nullable := newNullableJsonRawMessageVector(size)
+			nullable := newNullableGenericVector[json.RawMessage](size)
 			for i := 0; i < size; i++ {
-				v := vals.At(i).(json.RawMessage)
-				nullable.Set(i, &v)
+				v := vals.AtTyped(i) // Use typed access to avoid boxing
+				nullable.SetTyped(i, &v)
 			}
 			return nullable, nil
 		}
 
 		return vals, nil
+
+	case FieldTypeFloat64:
+		vals := newGenericVector[float64](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(float64(0))
+			} else {
+				v := iter.ReadFloat64()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableFloat64:
+		vals := newNullableGenericVector[float64](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadFloat64()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeFloat32:
+		vals := newGenericVector[float32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(float32(0))
+			} else {
+				v := iter.ReadFloat32()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableFloat32:
+		vals := newNullableGenericVector[float32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadFloat32()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeString:
+		vals := newGenericVector[string](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append("")
+			} else {
+				v := iter.ReadString()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableString:
+		vals := newNullableGenericVector[string](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadString()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeBool:
+		vals := newGenericVector[bool](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(false)
+			} else {
+				v := iter.ReadBool()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableBool:
+		vals := newNullableGenericVector[bool](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadBool()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeTime:
+		vals := newGenericVector[time.Time](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(time.Time{})
+			} else {
+				ms := iter.ReadInt64()
+				tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6)).UTC()
+				vals.Append(tv)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableTime:
+		vals := newNullableGenericVector[time.Time](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				ms := iter.ReadInt64()
+				tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6)).UTC()
+				vals.Append(&tv)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeInt8:
+		vals := newGenericVector[int8](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(int8(0))
+			} else {
+				v := iter.ReadInt8()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableInt8:
+		vals := newNullableGenericVector[int8](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadInt8()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeInt16:
+		vals := newGenericVector[int16](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(int16(0))
+			} else {
+				v := iter.ReadInt16()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableInt16:
+		vals := newNullableGenericVector[int16](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadInt16()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeInt32:
+		vals := newGenericVector[int32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(int32(0))
+			} else {
+				v := iter.ReadInt32()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableInt32:
+		vals := newNullableGenericVector[int32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadInt32()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeUint8:
+		vals := newGenericVector[uint8](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(uint8(0))
+			} else {
+				v := iter.ReadUint8()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableUint8:
+		vals := newNullableGenericVector[uint8](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadUint8()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeUint16:
+		vals := newGenericVector[uint16](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(uint16(0))
+			} else {
+				v := iter.ReadUint16()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableUint16:
+		vals := newNullableGenericVector[uint16](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadUint16()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeUint32:
+		vals := newGenericVector[uint32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(uint32(0))
+			} else {
+				v := iter.ReadUint32()
+				vals.Append(v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableUint32:
+		vals := newNullableGenericVector[uint32](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadUint32()
+				vals.Append(&v)
+			}
+		}
+		return vals, nil
+
+	case FieldTypeEnum:
+		vals := newGenericVector[EnumItemIndex](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(EnumItemIndex(0))
+			} else {
+				v := iter.ReadUint16()
+				vals.Append(EnumItemIndex(v))
+			}
+		}
+		return vals, nil
+
+	case FieldTypeNullableEnum:
+		vals := newNullableGenericVector[EnumItemIndex](0)
+		for iter.ReadArray() {
+			t := iter.WhatIsNext()
+			if t == sdkjsoniter.NilValue {
+				iter.ReadNil()
+				vals.Append(nil)
+			} else {
+				v := iter.ReadUint16()
+				e := EnumItemIndex(v)
+				vals.Append(&e)
+			}
+		}
+		return vals, nil
 	}
 
-	// if it's not uint64 field, handle the array the old way
+	// if it's not one of the above types with fast paths, handle the array the old way
 	convert := func(v interface{}) (interface{}, error) {
 		return v, nil
 	}
@@ -606,7 +993,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 			if err != nil {
 				return nil, err
 			}
-			f.vector.SetConcrete(i, norm) // will be pointer for nullable types
+			setConcreteTypedInVector(f.vector, i, norm) // will be pointer for nullable types
 		}
 	}
 	return f.vector, nil
@@ -660,71 +1047,186 @@ func readArrayOfNumbers[T any](iter *sdkjsoniter.Iterator, parse func(string) (T
 // nolint:gocyclo
 func readVector(iter *jsoniter.Iterator, ft FieldType, size int) (vector, error) {
 	switch ft {
-	// Manual
+	// Time, JSON, and Enum types with custom parsing logic
 	case FieldTypeTime:
-		return readTimeVectorJSON(iter, false, size)
+		// generic time vector
+		vec := newGenericVector[time.Time](size)
+		for i := 0; i < size; i++ {
+			if !iter.ReadArray() {
+				return nil, fmt.Errorf("expected array element %d", i)
+			}
+			t := iter.WhatIsNext()
+			if t == jsoniter.NilValue {
+				iter.ReadNil()
+			} else {
+				ms := iter.ReadInt64()
+				tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6)).UTC()
+				vec.SetTyped(i, tv)
+			}
+		}
+		if iter.ReadArray() {
+			return nil, fmt.Errorf("array size mismatch: expected %d elements", size)
+		}
+		return vec, iter.Error
 	case FieldTypeNullableTime:
-		return readTimeVectorJSON(iter, true, size)
+		vec := newNullableGenericVector[time.Time](size)
+		for i := 0; i < size; i++ {
+			if !iter.ReadArray() {
+				return nil, fmt.Errorf("expected array element %d", i)
+			}
+			t := iter.WhatIsNext()
+			if t == jsoniter.NilValue {
+				iter.ReadNil()
+				vec.SetTyped(i, nil)
+			} else {
+				ms := iter.ReadInt64()
+				tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6)).UTC()
+				vec.SetConcreteTyped(i, tv)
+			}
+		}
+		if iter.ReadArray() {
+			return nil, fmt.Errorf("array size mismatch: expected %d elements", size)
+		}
+		return vec, iter.Error
 	case FieldTypeJSON:
-		return readJSONVectorJSON(iter, false, size)
+		vec := newGenericVector[json.RawMessage](size)
+		for i := 0; i < size; i++ {
+			if !iter.ReadArray() {
+				return nil, fmt.Errorf("expected array element %d", i)
+			}
+			t := iter.WhatIsNext()
+			if t == jsoniter.NilValue {
+				iter.ReadNil()
+			} else {
+				var v json.RawMessage
+				iter.ReadVal(&v)
+				vec.SetTyped(i, v)
+			}
+		}
+		if iter.ReadArray() {
+			return nil, fmt.Errorf("array size mismatch: expected %d elements", size)
+		}
+		return vec, iter.Error
 	case FieldTypeNullableJSON:
-		return readJSONVectorJSON(iter, true, size)
-
-	// Generated
-	case FieldTypeUint8:
-		return readUint8VectorJSON(iter, size)
-	case FieldTypeNullableUint8:
-		return readNullableUint8VectorJSON(iter, size)
-	case FieldTypeUint16:
-		return readUint16VectorJSON(iter, size)
-	case FieldTypeNullableUint16:
-		return readNullableUint16VectorJSON(iter, size)
-	case FieldTypeUint32:
-		return readUint32VectorJSON(iter, size)
-	case FieldTypeNullableUint32:
-		return readNullableUint32VectorJSON(iter, size)
-	case FieldTypeUint64:
-		return readUint64VectorJSON(iter, size)
-	case FieldTypeNullableUint64:
-		return readNullableUint64VectorJSON(iter, size)
-	case FieldTypeInt8:
-		return readInt8VectorJSON(iter, size)
-	case FieldTypeNullableInt8:
-		return readNullableInt8VectorJSON(iter, size)
-	case FieldTypeInt16:
-		return readInt16VectorJSON(iter, size)
-	case FieldTypeNullableInt16:
-		return readNullableInt16VectorJSON(iter, size)
-	case FieldTypeInt32:
-		return readInt32VectorJSON(iter, size)
-	case FieldTypeNullableInt32:
-		return readNullableInt32VectorJSON(iter, size)
-	case FieldTypeInt64:
-		return readInt64VectorJSON(iter, size)
-	case FieldTypeNullableInt64:
-		return readNullableInt64VectorJSON(iter, size)
-	case FieldTypeFloat32:
-		return readFloat32VectorJSON(iter, size)
-	case FieldTypeNullableFloat32:
-		return readNullableFloat32VectorJSON(iter, size)
-	case FieldTypeFloat64:
-		return readFloat64VectorJSON(iter, size)
-	case FieldTypeNullableFloat64:
-		return readNullableFloat64VectorJSON(iter, size)
-	case FieldTypeString:
-		return readStringVectorJSON(iter, size)
-	case FieldTypeNullableString:
-		return readNullableStringVectorJSON(iter, size)
-	case FieldTypeBool:
-		return readBoolVectorJSON(iter, size)
-	case FieldTypeNullableBool:
-		return readNullableBoolVectorJSON(iter, size)
+		vec := newNullableGenericVector[json.RawMessage](size)
+		for i := 0; i < size; i++ {
+			if !iter.ReadArray() {
+				return nil, fmt.Errorf("expected array element %d", i)
+			}
+			t := iter.WhatIsNext()
+			if t == jsoniter.NilValue {
+				iter.ReadNil()
+				vec.SetTyped(i, nil)
+			} else {
+				var v json.RawMessage
+				iter.ReadVal(&v)
+				vec.SetTyped(i, &v)
+			}
+		}
+		if iter.ReadArray() {
+			return nil, fmt.Errorf("array size mismatch: expected %d elements", size)
+		}
+		return vec, iter.Error
 	case FieldTypeEnum:
 		return readEnumVectorJSON(iter, size)
 	case FieldTypeNullableEnum:
 		return readNullableEnumVectorJSON(iter, size)
+
+	// Generic vectors - inline implementations
+	case FieldTypeUint8:
+		return readgenericVectorJSON(iter, size, iter.ReadUint8)
+	case FieldTypeNullableUint8:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadUint8)
+	case FieldTypeUint16:
+		return readgenericVectorJSON(iter, size, iter.ReadUint16)
+	case FieldTypeNullableUint16:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadUint16)
+	case FieldTypeUint32:
+		return readgenericVectorJSON(iter, size, iter.ReadUint32)
+	case FieldTypeNullableUint32:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadUint32)
+	case FieldTypeUint64:
+		return readgenericVectorJSON(iter, size, iter.ReadUint64)
+	case FieldTypeNullableUint64:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadUint64)
+	case FieldTypeInt8:
+		return readgenericVectorJSON(iter, size, iter.ReadInt8)
+	case FieldTypeNullableInt8:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadInt8)
+	case FieldTypeInt16:
+		return readgenericVectorJSON(iter, size, iter.ReadInt16)
+	case FieldTypeNullableInt16:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadInt16)
+	case FieldTypeInt32:
+		return readgenericVectorJSON(iter, size, iter.ReadInt32)
+	case FieldTypeNullableInt32:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadInt32)
+	case FieldTypeInt64:
+		return readgenericVectorJSON(iter, size, iter.ReadInt64)
+	case FieldTypeNullableInt64:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadInt64)
+	case FieldTypeFloat32:
+		return readgenericVectorJSON(iter, size, iter.ReadFloat32)
+	case FieldTypeNullableFloat32:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadFloat32)
+	case FieldTypeFloat64:
+		return readgenericVectorJSON(iter, size, iter.ReadFloat64)
+	case FieldTypeNullableFloat64:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadFloat64)
+	case FieldTypeString:
+		return readgenericVectorJSON(iter, size, iter.ReadString)
+	case FieldTypeNullableString:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadString)
+	case FieldTypeBool:
+		return readgenericVectorJSON(iter, size, iter.ReadBool)
+	case FieldTypeNullableBool:
+		return readnullableGenericVectorJSON(iter, size, iter.ReadBool)
 	}
 	return nil, fmt.Errorf("unsuppoted type: %s", ft.ItemTypeString())
+}
+
+// Generic helper for reading non-nullable vectors from JSON
+func readgenericVectorJSON[T any](iter *jsoniter.Iterator, size int, readFunc func() T) (*genericVector[T], error) {
+	vec := newGenericVector[T](size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			return nil, fmt.Errorf("expected array element %d", i)
+		}
+
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+		} else {
+			v := readFunc()
+			vec.SetTyped(i, v)
+		}
+	}
+	if iter.ReadArray() {
+		return nil, fmt.Errorf("array size mismatch: expected %d elements", size)
+	}
+	return vec, iter.Error
+}
+
+// Generic helper for reading nullable vectors from JSON
+func readnullableGenericVectorJSON[T any](iter *jsoniter.Iterator, size int, readFunc func() T) (*nullableGenericVector[T], error) {
+	vec := newNullableGenericVector[T](size)
+	for i := 0; i < size; i++ {
+		if !iter.ReadArray() {
+			return nil, fmt.Errorf("expected array element %d", i)
+		}
+		t := iter.WhatIsNext()
+		if t == jsoniter.NilValue {
+			iter.ReadNil()
+			vec.SetTyped(i, nil)
+		} else {
+			v := readFunc()
+			vec.SetTyped(i, &v)
+		}
+	}
+	if iter.ReadArray() {
+		return nil, fmt.Errorf("array size mismatch: expected %d elements", size)
+	}
+	return vec, iter.Error
 }
 
 // This returns the type name that is used in javascript
@@ -804,13 +1306,58 @@ const (
 	entityNegativeInf = "-Inf"
 )
 
+// Pre-allocate a small capacity to avoid initial allocations
+const entitySliceInitialCap = 8
+
+// Pool for reusing fieldEntityLookup objects
+var entityLookupPool = sync.Pool{
+	New: func() interface{} {
+		return &fieldEntityLookup{}
+	},
+}
+
+// Pool for reusing string slices when sorting map keys
+var stringSlicePool = sync.Pool{
+	New: func() interface{} {
+		s := new([]string)
+		*s = make([]string, 0, 16) // Pre-allocate for typical label count
+		return s
+	},
+}
+
+// getEntityLookup gets a fieldEntityLookup from the pool
+func getEntityLookup() *fieldEntityLookup {
+	return entityLookupPool.Get().(*fieldEntityLookup)
+}
+
+// putEntityLookup returns a fieldEntityLookup to the pool after resetting it
+func putEntityLookup(f *fieldEntityLookup) {
+	if f == nil {
+		return
+	}
+	// Reset slices but keep capacity
+	f.NaN = f.NaN[:0]
+	f.Inf = f.Inf[:0]
+	f.NegInf = f.NegInf[:0]
+	entityLookupPool.Put(f)
+}
+
 func (f *fieldEntityLookup) add(str string, idx int) {
 	switch str {
 	case entityPositiveInf:
+		if f.Inf == nil {
+			f.Inf = make([]int, 0, entitySliceInitialCap)
+		}
 		f.Inf = append(f.Inf, idx)
 	case entityNegativeInf:
+		if f.NegInf == nil {
+			f.NegInf = make([]int, 0, entitySliceInitialCap)
+		}
 		f.NegInf = append(f.NegInf, idx)
 	case entityNaN:
+		if f.NaN == nil {
+			f.NaN = make([]int, 0, entitySliceInitialCap)
+		}
 		f.NaN = append(f.NaN, idx)
 	}
 }
@@ -923,7 +1470,7 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 				stream.WriteMore()
 			}
 			stream.WriteObjectField("labels")
-			stream.WriteVal(f.Labels)
+			writeLabelsMap(stream, f.Labels)
 			started = true
 		}
 
@@ -932,7 +1479,7 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 				stream.WriteMore()
 			}
 			stream.WriteObjectField("config")
-			stream.WriteVal(f.Config)
+			writeFieldConfig(stream, f.Config)
 		}
 
 		stream.WriteObjectEnd()
@@ -940,6 +1487,438 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 	stream.WriteArrayEnd()
 
 	stream.WriteObjectEnd()
+}
+
+// fieldWriteResult contains the results of writing a field
+type fieldWriteResult struct {
+	entities     *fieldEntityLookup
+	nanos        []int64
+	hasNSTime    bool
+	usedFallback bool
+}
+
+// writeTimeField writes time field data to the stream
+func writeTimeField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	var nsTime []int64
+	var hasNSTime bool
+
+	if tv, ok := f.vector.(*genericVector[time.Time]); ok {
+		for i := 0; i < rowCount; i++ {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			t := tv.AtTyped(i)
+			ms := t.UnixMilli()
+			stream.WriteInt64(ms)
+			msRes := t.Truncate(time.Millisecond)
+			ns := t.Sub(msRes).Nanoseconds()
+			if ns != 0 {
+				if !hasNSTime {
+					nsTime = make([]int64, rowCount)
+					hasNSTime = true
+				}
+				nsTime[i] = ns
+			}
+		}
+		return fieldWriteResult{nanos: nsTime, hasNSTime: hasNSTime}
+	}
+
+	// Fallback
+	for i := 0; i < rowCount; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if v, ok := f.ConcreteAt(i); ok {
+			t := v.(time.Time)
+			stream.WriteInt64(t.UnixMilli())
+			msRes := t.Truncate(time.Millisecond)
+			ns := t.Sub(msRes).Nanoseconds()
+			if ns != 0 {
+				if !hasNSTime {
+					nsTime = make([]int64, rowCount)
+					hasNSTime = true
+				}
+				nsTime[i] = ns
+			}
+		} else {
+			stream.WriteNil()
+		}
+	}
+	return fieldWriteResult{nanos: nsTime, hasNSTime: hasNSTime, usedFallback: true}
+}
+
+// writeNullableTimeField writes nullable time field data to the stream
+func writeNullableTimeField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	var nsTime []int64
+	var hasNSTime bool
+
+	if tv, ok := f.vector.(*nullableGenericVector[time.Time]); ok {
+		for i := 0; i < rowCount; i++ {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			pt := tv.AtTyped(i)
+			if pt == nil {
+				stream.WriteNil()
+				continue
+			}
+			t := *pt
+			ms := t.UnixMilli()
+			stream.WriteInt64(ms)
+			msRes := t.Truncate(time.Millisecond)
+			ns := t.Sub(msRes).Nanoseconds()
+			if ns != 0 {
+				if !hasNSTime {
+					nsTime = make([]int64, rowCount)
+					hasNSTime = true
+				}
+				nsTime[i] = ns
+			}
+		}
+		return fieldWriteResult{nanos: nsTime, hasNSTime: hasNSTime}
+	}
+
+	// Fallback
+	for i := 0; i < rowCount; i++ {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if v, ok := f.ConcreteAt(i); ok {
+			t := v.(time.Time)
+			stream.WriteInt64(t.UnixMilli())
+			msRes := t.Truncate(time.Millisecond)
+			ns := t.Sub(msRes).Nanoseconds()
+			if ns != 0 {
+				if !hasNSTime {
+					nsTime = make([]int64, rowCount)
+					hasNSTime = true
+				}
+				nsTime[i] = ns
+			}
+		} else {
+			stream.WriteNil()
+		}
+	}
+	return fieldWriteResult{nanos: nsTime, hasNSTime: hasNSTime, usedFallback: true}
+}
+
+// writeFloatField writes float field data to the stream
+func writeFloatField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	var entities *fieldEntityLookup
+
+	switch f.Type() {
+	case FieldTypeFloat64:
+		if gv, ok := f.vector.(*genericVector[float64]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				v := gv.AtTyped(i)
+				if entityType, found := isSpecialEntity(v); found {
+					if entities == nil {
+						entities = getEntityLookup()
+					}
+					entities.add(entityType, i)
+					stream.WriteNil()
+				} else {
+					stream.WriteFloat64(v)
+				}
+			}
+			return fieldWriteResult{entities: entities}
+		}
+	case FieldTypeNullableFloat64:
+		if gv, ok := f.vector.(*nullableGenericVector[float64]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				pv := gv.AtTyped(i)
+				if pv == nil {
+					stream.WriteNil()
+					continue
+				}
+				v := *pv
+				if entityType, found := isSpecialEntity(v); found {
+					if entities == nil {
+						entities = getEntityLookup()
+					}
+					entities.add(entityType, i)
+					stream.WriteNil()
+				} else {
+					stream.WriteFloat64(v)
+				}
+			}
+			return fieldWriteResult{entities: entities}
+		}
+	case FieldTypeFloat32:
+		if gv, ok := f.vector.(*genericVector[float32]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				v := gv.AtTyped(i)
+				if entityType, found := isSpecialEntity(float64(v)); found {
+					if entities == nil {
+						entities = getEntityLookup()
+					}
+					entities.add(entityType, i)
+					stream.WriteNil()
+				} else {
+					stream.WriteFloat32(v)
+				}
+			}
+			return fieldWriteResult{entities: entities}
+		}
+	case FieldTypeNullableFloat32:
+		if gv, ok := f.vector.(*nullableGenericVector[float32]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				pv := gv.AtTyped(i)
+				if pv == nil {
+					stream.WriteNil()
+					continue
+				}
+				v := *pv
+				if entityType, found := isSpecialEntity(float64(v)); found {
+					if entities == nil {
+						entities = getEntityLookup()
+					}
+					entities.add(entityType, i)
+					stream.WriteNil()
+				} else {
+					stream.WriteFloat32(v)
+				}
+			}
+			return fieldWriteResult{entities: entities}
+		}
+	}
+
+	return fieldWriteResult{usedFallback: true}
+}
+
+// writeSignedIntField writes signed integer field data to the stream using generics
+func writeSignedIntField[T int8 | int16 | int32 | int64](f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	if gv, ok := f.vector.(*genericVector[T]); ok {
+		for i := 0; i < rowCount; i++ {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			stream.WriteInt64(int64(gv.AtTyped(i)))
+		}
+		return fieldWriteResult{}
+	}
+	if gv, ok := f.vector.(*nullableGenericVector[T]); ok {
+		for i := 0; i < rowCount; i++ {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			pv := gv.AtTyped(i)
+			if pv == nil {
+				stream.WriteNil()
+				continue
+			}
+			stream.WriteInt64(int64(*pv))
+		}
+		return fieldWriteResult{}
+	}
+	return fieldWriteResult{usedFallback: true}
+}
+
+// writeIntField writes signed integer field data to the stream
+func writeIntField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	switch f.Type() {
+	case FieldTypeInt8, FieldTypeNullableInt8:
+		return writeSignedIntField[int8](f, rowCount, stream)
+	case FieldTypeInt16, FieldTypeNullableInt16:
+		return writeSignedIntField[int16](f, rowCount, stream)
+	case FieldTypeInt32, FieldTypeNullableInt32:
+		return writeSignedIntField[int32](f, rowCount, stream)
+	case FieldTypeInt64, FieldTypeNullableInt64:
+		return writeSignedIntField[int64](f, rowCount, stream)
+	}
+	return fieldWriteResult{usedFallback: true}
+}
+
+// writeUnsignedIntField writes unsigned integer field data to the stream using generics
+func writeUnsignedIntField[T uint8 | uint16 | uint32 | uint64](f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	if gv, ok := f.vector.(*genericVector[T]); ok {
+		for i := 0; i < rowCount; i++ {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			stream.WriteUint64(uint64(gv.AtTyped(i)))
+		}
+		return fieldWriteResult{}
+	}
+	if gv, ok := f.vector.(*nullableGenericVector[T]); ok {
+		for i := 0; i < rowCount; i++ {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			pv := gv.AtTyped(i)
+			if pv == nil {
+				stream.WriteNil()
+				continue
+			}
+			stream.WriteUint64(uint64(*pv))
+		}
+		return fieldWriteResult{}
+	}
+	return fieldWriteResult{usedFallback: true}
+}
+
+// writeUintField writes unsigned integer field data to the stream
+func writeUintField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	switch f.Type() {
+	case FieldTypeUint8, FieldTypeNullableUint8:
+		return writeUnsignedIntField[uint8](f, rowCount, stream)
+	case FieldTypeUint16, FieldTypeNullableUint16:
+		return writeUnsignedIntField[uint16](f, rowCount, stream)
+	case FieldTypeUint32, FieldTypeNullableUint32:
+		return writeUnsignedIntField[uint32](f, rowCount, stream)
+	case FieldTypeUint64, FieldTypeNullableUint64:
+		return writeUnsignedIntField[uint64](f, rowCount, stream)
+	}
+	return fieldWriteResult{usedFallback: true}
+}
+
+// writeStringField writes string field data to the stream
+func writeStringField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	switch f.Type() {
+	case FieldTypeString:
+		if gv, ok := f.vector.(*genericVector[string]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				stream.WriteString(gv.AtTyped(i))
+			}
+			return fieldWriteResult{}
+		}
+	case FieldTypeNullableString:
+		if gv, ok := f.vector.(*nullableGenericVector[string]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				pv := gv.AtTyped(i)
+				if pv == nil {
+					stream.WriteNil()
+					continue
+				}
+				stream.WriteString(*pv)
+			}
+			return fieldWriteResult{}
+		}
+	}
+
+	return fieldWriteResult{usedFallback: true}
+}
+
+// writeBoolField writes bool field data to the stream
+func writeBoolField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	switch f.Type() {
+	case FieldTypeBool:
+		if gv, ok := f.vector.(*genericVector[bool]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				stream.WriteBool(gv.AtTyped(i))
+			}
+			return fieldWriteResult{}
+		}
+	case FieldTypeNullableBool:
+		if gv, ok := f.vector.(*nullableGenericVector[bool]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				pv := gv.AtTyped(i)
+				if pv == nil {
+					stream.WriteNil()
+					continue
+				}
+				stream.WriteBool(*pv)
+			}
+			return fieldWriteResult{}
+		}
+	}
+
+	return fieldWriteResult{usedFallback: true}
+}
+
+// writeJSONField writes JSON field data to the stream
+func writeJSONField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	switch f.Type() {
+	case FieldTypeJSON:
+		if gv, ok := f.vector.(*genericVector[json.RawMessage]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				msg := gv.AtTyped(i)
+				if len(msg) == 0 || string(msg) == "null" {
+					stream.WriteNil()
+				} else {
+					stream.WriteRaw(string(msg))
+				}
+			}
+			return fieldWriteResult{}
+		}
+	case FieldTypeNullableJSON:
+		if gv, ok := f.vector.(*nullableGenericVector[json.RawMessage]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				pv := gv.AtTyped(i)
+				if pv == nil || len(*pv) == 0 || string(*pv) == "null" {
+					stream.WriteNil()
+				} else {
+					stream.WriteRaw(string(*pv))
+				}
+			}
+			return fieldWriteResult{}
+		}
+	}
+
+	return fieldWriteResult{usedFallback: true}
+}
+
+// writeEnumField writes enum field data to the stream
+func writeEnumField(f *Field, rowCount int, stream *jsoniter.Stream) fieldWriteResult {
+	switch f.Type() {
+	case FieldTypeEnum:
+		if gv, ok := f.vector.(*genericVector[EnumItemIndex]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				stream.WriteUint16(uint16(gv.AtTyped(i)))
+			}
+			return fieldWriteResult{}
+		}
+	case FieldTypeNullableEnum:
+		if gv, ok := f.vector.(*nullableGenericVector[EnumItemIndex]); ok {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
+				}
+				pv := gv.AtTyped(i)
+				if pv == nil {
+					stream.WriteNil()
+					continue
+				}
+				stream.WriteUint16(uint16(*pv))
+			}
+			return fieldWriteResult{}
+		}
+	}
+
+	return fieldWriteResult{usedFallback: true}
 }
 
 func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
@@ -963,65 +1942,61 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 		if fidx > 0 {
 			stream.WriteMore()
 		}
-		isTime := f.Type().Time()
-		nsTime := make([]int64, rowCount)
-		var hasNSTime bool
-		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
-			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
 
 		stream.WriteArrayStart()
-		for i := 0; i < rowCount; i++ {
-			if i > 0 {
-				stream.WriteRaw(",")
-			}
-			if v, ok := f.ConcreteAt(i); ok {
-				switch {
-				case isTime:
-					t := v.(time.Time)
-					stream.WriteVal(t.UnixMilli())
-					msRes := t.Truncate(time.Millisecond)
-					ns := t.Sub(msRes).Nanoseconds()
-					if ns != 0 {
-						hasNSTime = true
-						nsTime[i] = ns
-					}
-				case isFloat:
-					// For float and nullable float we check whether a value is a special
-					// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
-					// information into a separate field to restore on a consumer side (setting
-					// null to the entity position in data). Since we are using f.ConcreteAt
-					// above the value is always float64 or float32 types, and never a *float64
-					// or *float32.
-					var f64 float64
-					switch vt := v.(type) {
-					case float64:
-						f64 = vt
-					case float32:
-						f64 = float64(vt)
-					default:
-						stream.Error = fmt.Errorf("unsupported float type: %T", v)
-						return
-					}
-					if entityType, found := isSpecialEntity(f64); found {
-						if entities[fidx] == nil {
-							entities[fidx] = &fieldEntityLookup{}
-						}
-						entities[fidx].add(entityType, i)
-						entityCount++
-						stream.WriteNil()
-					} else {
-						stream.WriteVal(v)
-					}
-				default:
-					stream.WriteVal(v)
+
+		var result fieldWriteResult
+
+		switch f.Type() {
+		case FieldTypeTime:
+			result = writeTimeField(f, rowCount, stream)
+		case FieldTypeNullableTime:
+			result = writeNullableTimeField(f, rowCount, stream)
+		case FieldTypeFloat64, FieldTypeNullableFloat64, FieldTypeFloat32, FieldTypeNullableFloat32:
+			result = writeFloatField(f, rowCount, stream)
+		case FieldTypeInt8, FieldTypeNullableInt8, FieldTypeInt16, FieldTypeNullableInt16,
+			FieldTypeInt32, FieldTypeNullableInt32, FieldTypeInt64, FieldTypeNullableInt64:
+			result = writeIntField(f, rowCount, stream)
+		case FieldTypeUint8, FieldTypeNullableUint8, FieldTypeUint16, FieldTypeNullableUint16,
+			FieldTypeUint32, FieldTypeNullableUint32, FieldTypeUint64, FieldTypeNullableUint64:
+			result = writeUintField(f, rowCount, stream)
+		case FieldTypeString, FieldTypeNullableString:
+			result = writeStringField(f, rowCount, stream)
+		case FieldTypeBool, FieldTypeNullableBool:
+			result = writeBoolField(f, rowCount, stream)
+		case FieldTypeJSON, FieldTypeNullableJSON:
+			result = writeJSONField(f, rowCount, stream)
+		case FieldTypeEnum, FieldTypeNullableEnum:
+			result = writeEnumField(f, rowCount, stream)
+		default:
+			result = fieldWriteResult{usedFallback: true}
+		}
+
+		// Handle fallback path
+		if result.usedFallback {
+			for i := 0; i < rowCount; i++ {
+				if i > 0 {
+					stream.WriteRaw(",")
 				}
-			} else {
-				stream.WriteNil()
+				if v, ok := f.ConcreteAt(i); ok {
+					stream.WriteVal(v)
+				} else {
+					stream.WriteNil()
+				}
 			}
 		}
+
 		stream.WriteArrayEnd()
-		if hasNSTime {
-			nanos[fidx] = nsTime
+
+		// Handle entities
+		if result.entities != nil {
+			entities[fidx] = result.entities
+			entityCount++
+		}
+
+		// Handle nanosecond time offsets
+		if result.hasNSTime {
+			nanos[fidx] = result.nanos
 			nsOffSetCount++
 		}
 	}
@@ -1030,16 +2005,331 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	if entityCount > 0 {
 		stream.WriteMore()
 		stream.WriteObjectField("entities")
-		stream.WriteVal(entities)
+		writeEntitiesArray(stream, entities)
+		// Return entities to pool after serialization
+		for _, ent := range entities {
+			putEntityLookup(ent)
+		}
 	}
 
 	if nsOffSetCount > 0 {
 		stream.WriteMore()
 		stream.WriteObjectField("nanos")
-		stream.WriteVal(nanos)
+		writeNanosArray(stream, nanos)
 	}
 
 	stream.WriteObjectEnd()
+}
+
+// writeLabelsMap writes a map[string]string without reflection
+// This is significantly faster than WriteVal which uses reflection + sorting
+func writeLabelsMap(stream *jsoniter.Stream, labels map[string]string) {
+	if len(labels) == 0 {
+		stream.WriteObjectStart()
+		stream.WriteObjectEnd()
+		return
+	}
+
+	// Option 1: Fast path - no sorting (non-deterministic)
+	// Use this if deterministic output is not required
+	// Saves ~200-300 MB allocations
+	/*
+		stream.WriteObjectStart()
+		first := true
+		for k, v := range labels {
+			if !first {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField(k)
+			stream.WriteString(v)
+			first = false
+		}
+		stream.WriteObjectEnd()
+	*/
+
+	// Option 2: Deterministic path - with sorting
+	// Required for consistent JSON output / tests
+	// Uses pooled slice to avoid allocation
+	keysPtr := stringSlicePool.Get().(*[]string)
+	keys := (*keysPtr)[:0] // Reset length but keep capacity
+
+	for k := range labels {
+		keys = append(keys, k)
+	}
+
+	// Sort for deterministic output
+	// Most label maps are small (< 10 keys), so this is fast
+	sort.Strings(keys)
+
+	stream.WriteObjectStart()
+	for i, k := range keys {
+		if i > 0 {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField(k)
+		stream.WriteString(labels[k])
+	}
+	stream.WriteObjectEnd()
+
+	// Return keys slice to pool
+	*keysPtr = keys
+	stringSlicePool.Put(keysPtr)
+}
+
+// writeFieldConfig writes FieldConfig without full reflection
+// This manually serializes common simple fields and uses WriteVal for complex nested structures
+// nolint:gocyclo
+func writeFieldConfig(stream *jsoniter.Stream, config *FieldConfig) {
+	stream.WriteObjectStart()
+	needsComma := false
+
+	// Simple string fields
+	if config.DisplayName != "" {
+		stream.WriteObjectField("displayName")
+		stream.WriteString(config.DisplayName)
+		needsComma = true
+	}
+
+	if config.DisplayNameFromDS != "" {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("displayNameFromDS")
+		stream.WriteString(config.DisplayNameFromDS)
+		needsComma = true
+	}
+
+	if config.Path != "" {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("path")
+		stream.WriteString(config.Path)
+		needsComma = true
+	}
+
+	if config.Description != "" {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("description")
+		stream.WriteString(config.Description)
+		needsComma = true
+	}
+
+	// Pointer bool fields
+	if config.Filterable != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("filterable")
+		stream.WriteBool(*config.Filterable)
+		needsComma = true
+	}
+
+	if config.Writeable != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("writeable")
+		stream.WriteBool(*config.Writeable)
+		needsComma = true
+	}
+
+	// Numeric fields
+	if config.Unit != "" {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("unit")
+		stream.WriteString(config.Unit)
+		needsComma = true
+	}
+
+	if config.Decimals != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("decimals")
+		stream.WriteUint16(*config.Decimals)
+		needsComma = true
+	}
+
+	if config.Min != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("min")
+		stream.WriteVal(config.Min) // ConfFloat64 has custom MarshalJSON
+		needsComma = true
+	}
+
+	if config.Max != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("max")
+		stream.WriteVal(config.Max) // ConfFloat64 has custom MarshalJSON
+		needsComma = true
+	}
+
+	if config.Interval != 0 {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("interval")
+		stream.WriteFloat64(config.Interval)
+		needsComma = true
+	}
+
+	// Complex fields - use WriteVal for these as they're less common
+	// and would require hundreds of lines to serialize manually
+	if config.Mappings != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("mappings")
+		stream.WriteVal(config.Mappings)
+		needsComma = true
+	}
+
+	if config.Thresholds != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("thresholds")
+		stream.WriteVal(config.Thresholds)
+		needsComma = true
+	}
+
+	if config.Color != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("color")
+		stream.WriteVal(config.Color)
+		needsComma = true
+	}
+
+	if config.Links != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("links")
+		stream.WriteVal(config.Links)
+		needsComma = true
+	}
+
+	if config.NoValue != "" {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("noValue")
+		stream.WriteString(config.NoValue)
+		needsComma = true
+	}
+
+	if config.TypeConfig != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("type")
+		stream.WriteVal(config.TypeConfig)
+		needsComma = true
+	}
+
+	if config.Custom != nil {
+		if needsComma {
+			stream.WriteMore()
+		}
+		stream.WriteObjectField("custom")
+		stream.WriteVal(config.Custom)
+		// needsComma = true last comma is not used
+	}
+
+	stream.WriteObjectEnd()
+}
+
+// writeEntitiesArray writes entities array without reflection
+func writeEntitiesArray(stream *jsoniter.Stream, entities []*fieldEntityLookup) {
+	stream.WriteArrayStart()
+	for i, ent := range entities {
+		if i > 0 {
+			stream.WriteMore()
+		}
+		if ent == nil {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteObjectStart()
+		hasField := false
+		if len(ent.NaN) > 0 {
+			stream.WriteObjectField("NaN")
+			stream.WriteArrayStart()
+			for j, idx := range ent.NaN {
+				if j > 0 {
+					stream.WriteMore()
+				}
+				stream.WriteInt(idx)
+			}
+			stream.WriteArrayEnd()
+			hasField = true
+		}
+		if len(ent.Inf) > 0 {
+			if hasField {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("Inf")
+			stream.WriteArrayStart()
+			for j, idx := range ent.Inf {
+				if j > 0 {
+					stream.WriteMore()
+				}
+				stream.WriteInt(idx)
+			}
+			stream.WriteArrayEnd()
+			hasField = true
+		}
+		if len(ent.NegInf) > 0 {
+			if hasField {
+				stream.WriteMore()
+			}
+			stream.WriteObjectField("NegInf")
+			stream.WriteArrayStart()
+			for j, idx := range ent.NegInf {
+				if j > 0 {
+					stream.WriteMore()
+				}
+				stream.WriteInt(idx)
+			}
+			stream.WriteArrayEnd()
+		}
+		stream.WriteObjectEnd()
+	}
+	stream.WriteArrayEnd()
+}
+
+// writeNanosArray writes nanos array without reflection
+func writeNanosArray(stream *jsoniter.Stream, nanos [][]int64) {
+	stream.WriteArrayStart()
+	for i, nano := range nanos {
+		if i > 0 {
+			stream.WriteMore()
+		}
+		if nano == nil {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteArrayStart()
+		for j, ns := range nano {
+			if j > 0 {
+				stream.WriteMore()
+			}
+			stream.WriteInt64(ns)
+		}
+		stream.WriteArrayEnd()
+	}
+	stream.WriteArrayEnd()
 }
 
 func writeDataFrames(frames *Frames, stream *jsoniter.Stream) {
@@ -1231,31 +2521,31 @@ func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error { //noli
 			}
 
 		case arrow.UINT8:
-			ent = writeArrowDataUint8(stream, col)
+			writeArrowDataUint8(stream, col)
 		case arrow.UINT16:
-			ent = writeArrowDataUint16(stream, col)
+			writeArrowDataUint16(stream, col)
 		case arrow.UINT32:
-			ent = writeArrowDataUint32(stream, col)
+			writeArrowDataUint32(stream, col)
 		case arrow.UINT64:
-			ent = writeArrowDataUint64(stream, col)
+			writeArrowDataUint64(stream, col)
 		case arrow.INT8:
-			ent = writeArrowDataInt8(stream, col)
+			writeArrowDataInt8(stream, col)
 		case arrow.INT16:
-			ent = writeArrowDataInt16(stream, col)
+			writeArrowDataInt16(stream, col)
 		case arrow.INT32:
-			ent = writeArrowDataInt32(stream, col)
+			writeArrowDataInt32(stream, col)
 		case arrow.INT64:
-			ent = writeArrowDataInt64(stream, col)
+			writeArrowDataInt64(stream, col)
 		case arrow.FLOAT32:
 			ent = writeArrowDataFloat32(stream, col)
 		case arrow.FLOAT64:
 			ent = writeArrowDataFloat64(stream, col)
 		case arrow.STRING:
-			ent = writeArrowDataString(stream, col)
+			writeArrowDataString(stream, col)
 		case arrow.BOOL:
-			ent = writeArrowDataBool(stream, col)
+			writeArrowDataBool(stream, col)
 		case arrow.BINARY:
-			ent = writeArrowDataBinary(stream, col)
+			writeArrowDataBinary(stream, col)
 		default:
 			return fmt.Errorf("unsupported arrow type %s for JSON", col.DataType().ID())
 		}
@@ -1270,13 +2560,17 @@ func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error { //noli
 	if entityCount > 0 {
 		stream.WriteMore()
 		stream.WriteObjectField("entities")
-		stream.WriteVal(entities)
+		writeEntitiesArray(stream, entities)
+		// Return entities to pool after serialization
+		for _, ent := range entities {
+			putEntityLookup(ent)
+		}
 	}
 
 	if hasNano {
 		stream.WriteMore()
 		stream.WriteObjectField("nanos")
-		stream.WriteVal(nanos)
+		writeNanosArray(stream, nanos)
 	}
 
 	stream.WriteObjectEnd()
@@ -1287,7 +2581,7 @@ func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error { //noli
 func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col arrow.Array) []int64 {
 	count := col.Len()
 	var hasNSTime bool
-	nsTime := make([]int64, count)
+	var nsTime []int64
 	v := array.NewTimestampData(col.Data())
 	stream.WriteArrayStart()
 	for i := 0; i < count; i++ {
@@ -1304,7 +2598,10 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col arrow.Array) []int64 {
 
 		nsOffSet := int64(ns) - ms*int64(1e6)
 		if nsOffSet != 0 {
-			hasNSTime = true
+			if !hasNSTime {
+				nsTime = make([]int64, count)
+				hasNSTime = true
+			}
 			nsTime[i] = nsOffSet
 		}
 
@@ -1318,67 +2615,4 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col arrow.Array) []int64 {
 		return nsTime
 	}
 	return nil
-}
-
-func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
-	var arr vector
-	if nullable {
-		arr = newNullableTimeTimeVector(size)
-	} else {
-		arr = newTimeTimeVector(size)
-	}
-
-	for i := 0; i < size; i++ {
-		if !iter.ReadArray() {
-			iter.ReportError("readUint8VectorJSON", "expected array")
-			return nil, iter.Error
-		}
-
-		t := iter.WhatIsNext()
-		if t == sdkjsoniter.NilValue {
-			iter.ReadNil()
-		} else {
-			ms := iter.ReadInt64()
-
-			tv := time.Unix(ms/int64(1e+3), (ms%int64(1e+3))*int64(1e+6)).UTC()
-			arr.SetConcrete(i, tv)
-		}
-	}
-
-	if iter.ReadArray() {
-		iter.ReportError("read", "expected close array")
-		return nil, iter.Error
-	}
-	return arr, nil
-}
-
-func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vector, error) {
-	var arr vector
-	if nullable {
-		arr = newNullableJsonRawMessageVector(size)
-	} else {
-		arr = newJsonRawMessageVector(size)
-	}
-
-	for i := 0; i < size; i++ {
-		if !iter.ReadArray() {
-			iter.ReportError("readJSONVectorJSON", "expected array")
-			return nil, iter.Error
-		}
-
-		t := iter.WhatIsNext()
-		if t == sdkjsoniter.NilValue {
-			iter.ReadNil()
-		} else {
-			var v json.RawMessage
-			iter.ReadVal(&v)
-			arr.SetConcrete(i, v)
-		}
-	}
-
-	if iter.ReadArray() {
-		iter.ReportError("read", "expected close array")
-		return nil, iter.Error
-	}
-	return arr, nil
 }
