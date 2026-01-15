@@ -67,7 +67,7 @@ func (v *genVector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *genVector) ZeroLength() {
+func (v *genVector) Clear() {
 	*v = (*v)[:0]
 }
 

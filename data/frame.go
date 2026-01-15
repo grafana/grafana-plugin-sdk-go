@@ -182,9 +182,9 @@ func (f *Frame) EmptyCopy() *Frame {
 
 // ZeroLength sets the length of every field to zero
 // This offers an efficient way to reuse the existing allocated slice in multiple data "pages"
-func (f *Frame) ZeroLength() {
+func (f *Frame) Clear() {
 	for _, field := range f.Fields {
-		field.vector.ZeroLength()
+		field.vector.Clear()
 	}
 }
 

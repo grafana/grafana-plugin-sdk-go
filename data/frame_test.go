@@ -703,7 +703,7 @@ func TestFrameFieldIndexByName(t *testing.T) {
 	require.Equal(t, -1, i)
 }
 
-func BenchmarkFrameBufferZero(b *testing.B) {
+func BenchmarkFrameBufferClear(b *testing.B) {
 	b.ReportAllocs()
 
 	rows := int64(5000)
@@ -713,7 +713,7 @@ func BenchmarkFrameBufferZero(b *testing.B) {
 	}
 
 	for b.Loop() {
-		f.ZeroLength()
+		f.Clear()
 		for i := range rows {
 			f.AppendRow(fmt.Sprintf("%d", i), i)
 		}

@@ -82,7 +82,7 @@ func (v *enumVector) Delete(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *enumVector) ZeroLength() {
+func (v *enumVector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -181,6 +181,6 @@ func (v *nullableEnumVector) Delete(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *nullableEnumVector) ZeroLength() {
+func (v *nullableEnumVector) Clear() {
 	*v = (*v)[:0]
 }

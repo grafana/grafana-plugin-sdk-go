@@ -70,7 +70,7 @@ func (v *uint8Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *uint8Vector) ZeroLength() {
+func (v *uint8Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -153,7 +153,7 @@ func (v *uint16Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *uint16Vector) ZeroLength() {
+func (v *uint16Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -236,7 +236,7 @@ func (v *uint32Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *uint32Vector) ZeroLength() {
+func (v *uint32Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -319,7 +319,7 @@ func (v *uint64Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *uint64Vector) ZeroLength() {
+func (v *uint64Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -402,7 +402,7 @@ func (v *int8Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *int8Vector) ZeroLength() {
+func (v *int8Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -485,7 +485,7 @@ func (v *int16Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *int16Vector) ZeroLength() {
+func (v *int16Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -568,7 +568,7 @@ func (v *int32Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *int32Vector) ZeroLength() {
+func (v *int32Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -651,7 +651,7 @@ func (v *int64Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *int64Vector) ZeroLength() {
+func (v *int64Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -734,7 +734,7 @@ func (v *float32Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *float32Vector) ZeroLength() {
+func (v *float32Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -817,7 +817,7 @@ func (v *float64Vector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *float64Vector) ZeroLength() {
+func (v *float64Vector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -900,7 +900,7 @@ func (v *stringVector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *stringVector) ZeroLength() {
+func (v *stringVector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -983,7 +983,7 @@ func (v *boolVector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *boolVector) ZeroLength() {
+func (v *boolVector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -1066,7 +1066,7 @@ func (v *timeTimeVector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *timeTimeVector) ZeroLength() {
+func (v *timeTimeVector) Clear() {
 	*v = (*v)[:0]
 }
 
@@ -1149,7 +1149,7 @@ func (v *jsonRawMessageVector) Extend(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *jsonRawMessageVector) ZeroLength() {
+func (v *jsonRawMessageVector) Clear() {
 	*v = (*v)[:0]
 }
 

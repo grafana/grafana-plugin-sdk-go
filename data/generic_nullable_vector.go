@@ -97,6 +97,6 @@ func (v *nullablegenVector) Delete(i int) {
 }
 
 // set the length to zero, but keep the same capacity
-func (v *nullablegenVector) ZeroLength() {
+func (v *nullablegenVector) Clear() {
 	*v = (*v)[:0]
 }
