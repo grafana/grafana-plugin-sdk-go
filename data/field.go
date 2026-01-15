@@ -160,23 +160,6 @@ func (f *Field) Append(e interface{}) {
 	f.vector.Append(e)
 }
 
-// AppendAll appends all elements from Field f2 to Field f.
-// If f2 is empty, no operation is performed.
-// It will copy elements from f2 and append them to f, extending f's length as needed.
-func (f *Field) AppendAll(f2 *Field) {
-	n := f2.Len()
-	if n == 0 {
-		return
-	}
-
-	offset := f.Len()
-	f.Extend(n)
-
-	for i := 0; i < n; i++ {
-		f.Set(offset+i, f2.CopyAt(i))
-	}
-}
-
 // Extend extends the Field length by i.
 // Consider using Frame.Extend() when possible since all Fields within
 // a Frame need to be of the same length before marshalling and transmission.
