@@ -65,3 +65,57 @@ func TestGetQuery(t *testing.T) {
 		assert.True(t, backend.IsDownstreamError(err))
 	})
 }
+
+func TestFormatQueryOption_UnmarshalJSON(t *testing.T) {
+	testCases := []struct {
+		name     string
+		input    []byte
+		expected sqlutil.FormatQueryOption
+	}{
+		{
+			name:     "0 maps to FormatOptionTimeSeries",
+			input:    []byte(`0`),
+			expected: sqlutil.FormatOptionTimeSeries,
+		},
+		{
+			name:     "string 0 maps to FormatOptionTimeSeries",
+			input:    []byte(`"0"`),
+			expected: sqlutil.FormatOptionTimeSeries,
+		},
+		{
+			name:     "timeseries maps to FormatOptionTimeSeries",
+			input:    []byte(`"timeseries"`),
+			expected: sqlutil.FormatOptionTimeSeries,
+		},
+		{
+			name:     "empty string maps to FormatOptionTimeSeries",
+			input:    []byte(`""`),
+			expected: sqlutil.FormatOptionTimeSeries,
+		},
+		{
+			name:     "1 maps to FormatOptionTable",
+			input:    []byte(`1`),
+			expected: sqlutil.FormatOptionTable,
+		},
+		{
+			name:     "table maps to FormatOptionTable",
+			input:    []byte(`"table"`),
+			expected: sqlutil.FormatOptionTable,
+		},
+	}
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			var f sqlutil.FormatQueryOption
+			err := json.Unmarshal(tc.input, &f)
+			assert.NoError(t, err)
+			assert.Equal(t, tc.expected, f)
+		})
+	}
+	t.Run("preserves zero value on unmarshal", func(t *testing.T) {
+		var f sqlutil.FormatQueryOption = 99 // Set to non-zero value initially
+		err := json.Unmarshal([]byte("0"), &f)
+		assert.NoError(t, err)
+		assert.Equal(t, sqlutil.FormatOptionTimeSeries, f)
+		assert.Equal(t, sqlutil.FormatQueryOption(0), f)
+	})
+}
