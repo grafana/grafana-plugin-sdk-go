@@ -66,6 +66,11 @@ func (v *genVector) Extend(i int) {
 	*v = append(*v, make([]gen, i)...)
 }
 
+// set the length to zero, but keep the same capacity
+func (v *genVector) Clear() {
+	*v = (*v)[:0]
+}
+
 func (v *genVector) Insert(i int, val interface{}) {
 	switch {
 	case i < v.Len():

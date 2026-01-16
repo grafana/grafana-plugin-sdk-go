@@ -81,6 +81,11 @@ func (v *enumVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
 
+// set the length to zero, but keep the same capacity
+func (v *enumVector) Clear() {
+	*v = (*v)[:0]
+}
+
 type nullableEnumVector []*EnumItemIndex
 
 func newNullableEnumVector(n int) *nullableEnumVector {
@@ -173,4 +178,9 @@ func (v *nullableEnumVector) Insert(i int, val interface{}) {
 
 func (v *nullableEnumVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *nullableEnumVector) Clear() {
+	*v = (*v)[:0]
 }

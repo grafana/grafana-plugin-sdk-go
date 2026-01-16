@@ -95,3 +95,8 @@ func (v *nullablegenVector) Insert(i int, val interface{}) {
 func (v *nullablegenVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullablegenVector) Clear() {
+	*v = (*v)[:0]
+}

@@ -2,7 +2,7 @@
 // Any changes will be lost if this file is regenerated.
 // see https://github.com/cheekybits/genny
 
-//nolint:staticcheck
+//nolint:unused
 package data
 
 import (
@@ -57,7 +57,7 @@ func (v *nullableUint8Vector) CopyAt(i int) interface{} {
 		var g *uint8
 		return g
 	}
-	var g uint8
+	var g uint8 //nolint:staticcheck // S1021: uint8erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -104,6 +104,13 @@ func (v *nullableUint8Vector) Insert(i int, val interface{}) {
 func (v *nullableUint8Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableUint8Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableUint16Vector []*uint16
 
@@ -152,7 +159,7 @@ func (v *nullableUint16Vector) CopyAt(i int) interface{} {
 		var g *uint16
 		return g
 	}
-	var g uint16
+	var g uint16 //nolint:staticcheck // S1021: uint16erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -199,6 +206,13 @@ func (v *nullableUint16Vector) Insert(i int, val interface{}) {
 func (v *nullableUint16Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableUint16Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableUint32Vector []*uint32
 
@@ -247,7 +261,7 @@ func (v *nullableUint32Vector) CopyAt(i int) interface{} {
 		var g *uint32
 		return g
 	}
-	var g uint32
+	var g uint32 //nolint:staticcheck // S1021: uint32erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -294,6 +308,13 @@ func (v *nullableUint32Vector) Insert(i int, val interface{}) {
 func (v *nullableUint32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableUint32Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableUint64Vector []*uint64
 
@@ -342,7 +363,7 @@ func (v *nullableUint64Vector) CopyAt(i int) interface{} {
 		var g *uint64
 		return g
 	}
-	var g uint64
+	var g uint64 //nolint:staticcheck // S1021: uint64erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -389,6 +410,13 @@ func (v *nullableUint64Vector) Insert(i int, val interface{}) {
 func (v *nullableUint64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableUint64Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableInt8Vector []*int8
 
@@ -437,7 +465,7 @@ func (v *nullableInt8Vector) CopyAt(i int) interface{} {
 		var g *int8
 		return g
 	}
-	var g int8
+	var g int8 //nolint:staticcheck // S1021: int8erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -484,6 +512,13 @@ func (v *nullableInt8Vector) Insert(i int, val interface{}) {
 func (v *nullableInt8Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableInt8Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableInt16Vector []*int16
 
@@ -532,7 +567,7 @@ func (v *nullableInt16Vector) CopyAt(i int) interface{} {
 		var g *int16
 		return g
 	}
-	var g int16
+	var g int16 //nolint:staticcheck // S1021: int16erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -579,6 +614,13 @@ func (v *nullableInt16Vector) Insert(i int, val interface{}) {
 func (v *nullableInt16Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableInt16Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableInt32Vector []*int32
 
@@ -627,7 +669,7 @@ func (v *nullableInt32Vector) CopyAt(i int) interface{} {
 		var g *int32
 		return g
 	}
-	var g int32
+	var g int32 //nolint:staticcheck // S1021: int32erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -674,6 +716,13 @@ func (v *nullableInt32Vector) Insert(i int, val interface{}) {
 func (v *nullableInt32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableInt32Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableInt64Vector []*int64
 
@@ -722,7 +771,7 @@ func (v *nullableInt64Vector) CopyAt(i int) interface{} {
 		var g *int64
 		return g
 	}
-	var g int64
+	var g int64 //nolint:staticcheck // S1021: int64erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -769,6 +818,13 @@ func (v *nullableInt64Vector) Insert(i int, val interface{}) {
 func (v *nullableInt64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableInt64Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableFloat32Vector []*float32
 
@@ -817,7 +873,7 @@ func (v *nullableFloat32Vector) CopyAt(i int) interface{} {
 		var g *float32
 		return g
 	}
-	var g float32
+	var g float32 //nolint:staticcheck // S1021: float32erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -864,6 +920,13 @@ func (v *nullableFloat32Vector) Insert(i int, val interface{}) {
 func (v *nullableFloat32Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableFloat32Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableFloat64Vector []*float64
 
@@ -912,7 +975,7 @@ func (v *nullableFloat64Vector) CopyAt(i int) interface{} {
 		var g *float64
 		return g
 	}
-	var g float64
+	var g float64 //nolint:staticcheck // S1021: float64erated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -959,6 +1022,13 @@ func (v *nullableFloat64Vector) Insert(i int, val interface{}) {
 func (v *nullableFloat64Vector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableFloat64Vector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableStringVector []*string
 
@@ -1007,7 +1077,7 @@ func (v *nullableStringVector) CopyAt(i int) interface{} {
 		var g *string
 		return g
 	}
-	var g string
+	var g string //nolint:staticcheck // S1021: stringerated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -1054,6 +1124,13 @@ func (v *nullableStringVector) Insert(i int, val interface{}) {
 func (v *nullableStringVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableStringVector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableBoolVector []*bool
 
@@ -1102,7 +1179,7 @@ func (v *nullableBoolVector) CopyAt(i int) interface{} {
 		var g *bool
 		return g
 	}
-	var g bool
+	var g bool //nolint:staticcheck // S1021: boolerated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -1149,6 +1226,13 @@ func (v *nullableBoolVector) Insert(i int, val interface{}) {
 func (v *nullableBoolVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableBoolVector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableTimeTimeVector []*time.Time
 
@@ -1197,7 +1281,7 @@ func (v *nullableTimeTimeVector) CopyAt(i int) interface{} {
 		var g *time.Time
 		return g
 	}
-	var g time.Time
+	var g time.Time //nolint:staticcheck // S1021: timeTimeerated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -1244,6 +1328,13 @@ func (v *nullableTimeTimeVector) Insert(i int, val interface{}) {
 func (v *nullableTimeTimeVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
 }
+
+// set the length to zero, but keep the same capacity
+func (v *nullableTimeTimeVector) Clear() {
+	*v = (*v)[:0]
+}
+
+//nolint:unused
 
 type nullableJsonRawMessageVector []*json.RawMessage
 
@@ -1292,7 +1383,7 @@ func (v *nullableJsonRawMessageVector) CopyAt(i int) interface{} {
 		var g *json.RawMessage
 		return g
 	}
-	var g json.RawMessage
+	var g json.RawMessage //nolint:staticcheck // S1021: jsonRawMessageerated code pattern  ;
 	g = *(*v)[i]
 	return &g
 }
@@ -1338,4 +1429,9 @@ func (v *nullableJsonRawMessageVector) Insert(i int, val interface{}) {
 
 func (v *nullableJsonRawMessageVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *nullableJsonRawMessageVector) Clear() {
+	*v = (*v)[:0]
 }
