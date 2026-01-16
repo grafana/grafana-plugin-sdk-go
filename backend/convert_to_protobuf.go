@@ -189,6 +189,19 @@ func (t ConvertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 	}
 }
 
+// Experimental: QueryChunkedDataRequest converts the SDK version of a QueryChunkedDataRequest to the protobuf version.
+func (t ConvertToProtobuf) QueryChunkedDataRequest(req *QueryChunkedDataRequest) *pluginv2.QueryChunkedDataRequest {
+	queries := make([]*pluginv2.DataQuery, len(req.Queries))
+	for i, q := range req.Queries {
+		queries[i] = t.DataQuery(q)
+	}
+	return &pluginv2.QueryChunkedDataRequest{
+		PluginContext: t.PluginContext(req.PluginContext),
+		Headers:       req.Headers,
+		Queries:       queries,
+	}
+}
+
 // QueryDataResponse converts the SDK version of a QueryDataResponse to the protobuf version.
 // It will set the RefID on the frames to the RefID key in Responses if a Frame's
 // RefId property is an empty string.

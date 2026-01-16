@@ -5,6 +5,7 @@ import "context"
 // Handler interface for all handlers.
 type Handler interface {
 	QueryDataHandler
+	QueryChunkedDataHandler
 	CheckHealthHandler
 	CallResourceHandler
 	CollectMetricsHandler
@@ -31,6 +32,10 @@ func NewBaseHandler(next Handler) BaseHandler {
 
 func (m BaseHandler) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
 	return m.next.QueryData(ctx, req)
+}
+
+func (m BaseHandler) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	return m.next.QueryChunkedData(ctx, req, w)
 }
 
 func (m BaseHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
@@ -72,6 +77,7 @@ func (m *BaseHandler) ConvertObjects(ctx context.Context, req *ConversionRequest
 // Handlers implements Handler.
 type Handlers struct {
 	QueryDataHandler
+	QueryChunkedDataHandler
 	CheckHealthHandler
 	CallResourceHandler
 	CollectMetricsHandler

@@ -79,7 +79,7 @@ func TestQueryData(t *testing.T) {
 		}
 		handlerWithMw, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
 		require.NoError(t, err)
-		adapter := newDataSDKAdapter(handlerWithMw)
+		adapter := newDataSDKAdapter(handlerWithMw, handlerWithMw)
 		_, err = adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
@@ -110,7 +110,7 @@ func TestQueryData(t *testing.T) {
 		}
 		handlerWithMw, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
 		require.NoError(t, err)
-		adapter := newDataSDKAdapter(handlerWithMw)
+		adapter := newDataSDKAdapter(handlerWithMw, handlerWithMw)
 		_, err = adapter.QueryData(ctx, &pluginv2.QueryDataRequest{
 			Headers: map[string]string{
 				"Authorization": "Bearer 123",
@@ -142,7 +142,7 @@ func TestQueryData(t *testing.T) {
 		}
 		handlerWithMw, err := HandlerFromMiddlewares(handlers, newTenantIDMiddleware())
 		require.NoError(t, err)
-		a := newDataSDKAdapter(handlerWithMw)
+		a := newDataSDKAdapter(handlerWithMw, handlerWithMw)
 
 		ctx := metadata.NewIncomingContext(context.Background(), metadata.New(map[string]string{
 			tenant.CtxKey: tid,
@@ -160,7 +160,7 @@ func TestQueryData(t *testing.T) {
 				func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 					return nil, DownstreamError(errors.New("oh no"))
 				},
-			))
+			), nil)
 
 			_, err := adapter.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 				PluginContext: &pluginv2.PluginContext{},
@@ -185,7 +185,7 @@ func TestQueryData(t *testing.T) {
 				func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 					return nil, PluginError(errors.New("oh no"))
 				},
-			))
+			), nil)
 
 			_, err := adapter.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 				PluginContext: &pluginv2.PluginContext{},
@@ -210,7 +210,7 @@ func TestQueryData(t *testing.T) {
 				func(_ context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
 					return nil, errors.New("oh no")
 				},
-			))
+			), nil)
 
 			_, err := adapter.QueryData(context.Background(), &pluginv2.QueryDataRequest{
 				PluginContext: &pluginv2.PluginContext{},

@@ -12,6 +12,7 @@ var _ backend.Handler = &Handler{}
 // Handler a test handler implementing backend.Handler.
 type Handler struct {
 	QueryDataFunc         backend.QueryDataHandlerFunc
+	QueryChunkedDataFunc  backend.QueryChunkedDataHandlerFunc
 	CallResourceFunc      backend.CallResourceHandlerFunc
 	CheckHealthFunc       backend.CheckHealthHandlerFunc
 	CollectMetricsFunc    backend.CollectMetricsHandlerFunc
@@ -29,6 +30,14 @@ func (h Handler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (
 	}
 
 	return nil, nil
+}
+
+func (h Handler) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) error {
+	if h.QueryChunkedDataFunc != nil {
+		return h.QueryChunkedDataFunc(ctx, req, w)
+	}
+
+	return nil
 }
 
 func (h Handler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
