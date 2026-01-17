@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"crypto/x509"
 	"encoding/base64"
 	"encoding/pem"
 	"errors"
@@ -9,6 +10,7 @@ import (
 	"os"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
@@ -91,12 +93,61 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	if len(c.config) != len(c2.config) {
 		return false
 	}
+
 	for k, v1 := range c.config {
-		if v2, ok := c2.config[k]; !ok || v1 != v2 {
+		v2, ok := c2.config[k]
+		if !ok {
+			return false
+		}
+		// Ignore secure socks proxy config values as they are always different.
+		if k == proxy.PluginSecureSocksProxyClientCertContents || k == proxy.PluginSecureSocksProxyClientKeyContents {
+			continue
+		}
+
+		if v1 != v2 {
 			return false
 		}
 	}
+
+	// By Default, we will always fetch the current config from cloud-config -> hosted-grafana api.
+	// This will generate a new set of keys / certificates in c2.config.
+	// Since these new keys are always different we would never cache a datasource instance and cause a memory leak.
+	// We test them separately and if the existing cached config keys are still valid we will continue to use them if not we will refresh the keys.
+	if v, ok := c.config[proxy.PluginSecureSocksProxyEnabled]; ok && v == strconv.FormatBool(true) {
+		return !c.isProxyCertificateExpiring() // if the certificate is expiring, we need to refresh the keys
+	}
+
 	return true
+}
+
+// isProxyCertificateExpiring checks if the secure socks proxy client key is expiring in less than 6 hours
+// the default lifetime of these certificates is 3 months by default.
+func (c *GrafanaCfg) isProxyCertificateExpiring() bool {
+	p, err := c.proxy()
+	if err != nil {
+		Logger.Warn("isProxyCertificateExpiring(): failed to get proxy client config", "error", err)
+		return true
+	}
+
+	if p.clientCfg == nil {
+		Logger.Warn("isProxyCertificateExpiring(): proxy client config is nil")
+		return true
+	}
+
+	block, _ := pem.Decode([]byte(p.clientCfg.ClientKeyVal))
+	if block == nil || block.Bytes == nil {
+		Logger.Warn("isProxyCertificateExpiring(): failed to decode private key")
+		return true
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		Logger.Warn("isProxyCertificateExpiring(): failed to parse certificate", "error", err)
+		return true
+	}
+
+	// Check if the certificate will expire in less than 6 hours
+	return cert.NotAfter.Before(time.Now().Add(6 * time.Hour))
 }
 
 // Diff returns the names of config fields that differ between this config and c2.
@@ -146,14 +197,18 @@ func (c *GrafanaCfg) Diff(c2 *GrafanaCfg) []string {
 // caching. The contents should be PEM-encoded, so we try to PEM-decode
 // them, and, if successful, return the base-64 encoding of the final three bytes,
 // giving a four character hash.
+//
+// Deprecated: Use Equal() instead for cache invalidation based on certificate expiration.
 func (c *GrafanaCfg) ProxyHash() string {
 	if c == nil {
 		return ""
 	}
+
 	contents := c.config[proxy.PluginSecureSocksProxyClientKeyContents]
 	if contents == "" {
 		return ""
 	}
+
 	block, _ := pem.Decode([]byte(contents))
 	if block == nil {
 		Logger.Warn("ProxyHash(): key contents are not PEM-encoded")
