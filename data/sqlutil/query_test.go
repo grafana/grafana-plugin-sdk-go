@@ -67,11 +67,12 @@ func TestGetQuery(t *testing.T) {
 }
 
 func TestFormatQueryOption_UnmarshalJSON(t *testing.T) {
-	testCases := []struct {
+	type testCase struct {
 		name     string
 		input    []byte
 		expected sqlutil.FormatQueryOption
-	}{
+	}
+	testCases := []testCase{
 		{
 			name:     "0 maps to FormatOptionTimeSeries",
 			input:    []byte(`0`),
@@ -101,6 +102,36 @@ func TestFormatQueryOption_UnmarshalJSON(t *testing.T) {
 			name:     "table maps to FormatOptionTable",
 			input:    []byte(`"table"`),
 			expected: sqlutil.FormatOptionTable,
+		},
+		{
+			name:     "2 maps to FormatOptionLogs",
+			input:    []byte(`2`),
+			expected: sqlutil.FormatOptionLogs,
+		},
+		{
+			name:     "logs maps to FormatOptionLogs",
+			input:    []byte(`"logs"`),
+			expected: sqlutil.FormatOptionLogs,
+		},
+		{
+			name:     "3 maps to FormatOptionTrace",
+			input:    []byte(`3`),
+			expected: sqlutil.FormatOptionTrace,
+		},
+		{
+			name:     "traces maps to FormatOptionTrace",
+			input:    []byte(`"traces"`),
+			expected: sqlutil.FormatOptionTrace,
+		},
+		{
+			name:     "4 maps to FormatOptionMulti",
+			input:    []byte(`4`),
+			expected: sqlutil.FormatOptionMulti,
+		},
+		{
+			name:     "multi maps to FormatOptionMulti",
+			input:    []byte(`"multi"`),
+			expected: sqlutil.FormatOptionMulti,
 		},
 	}
 	for _, tc := range testCases {
