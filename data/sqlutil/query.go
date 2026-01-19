@@ -44,7 +44,7 @@ func (f *FormatQueryOption) UnmarshalJSON(data []byte) error {
 	}
 	str = strings.TrimSpace(strings.ToLower(str))
 	switch str {
-	case "0", "timeseries", "time_series", "time-series":
+	case "0", "timeseries":
 		*f = FormatOptionTimeSeries
 	case "1", "table":
 		*f = FormatOptionTable
