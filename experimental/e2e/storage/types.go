@@ -78,10 +78,15 @@ func (f *files) get(path string) *file {
 	return f.files[path]
 }
 
-// add adds a new path to the files map.
+// add adds a new path to the files map, or returns existing if already present.
 func (f *files) add(path string) *file {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+
+	if h, ok := f.files[path]; ok {
+		return h
+	}
+
 	f.files[path] = &file{path: path}
 	return f.files[path]
 }
