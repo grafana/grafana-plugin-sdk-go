@@ -71,15 +71,15 @@ type files struct {
 	files map[string]*file
 }
 
-// get returns the file struct for the given path.
-func (f *files) get(path string) *file {
+// getOrAdd returns the file struct for the given path, or creates it if it does not exist.
+func (f *files) getOrAdd(path string) *file {
 	f.mu.RLock()
-	defer f.mu.RUnlock()
-	return f.files[path]
-}
+	if h, ok := f.files[path]; ok {
+		f.mu.RUnlock()
+		return h
+	}
+	f.mu.RUnlock()
 
-// add adds a new path to the files map, or returns existing if already present.
-func (f *files) add(path string) *file {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 
@@ -87,16 +87,9 @@ func (f *files) add(path string) *file {
 		return h
 	}
 
-	f.files[path] = &file{path: path}
-	return f.files[path]
-}
-
-// getOrAdd returns the file struct for the given path, or creates it if it does not exist.
-func (f *files) getOrAdd(path string) *file {
-	if h := f.get(path); h != nil {
-		return h
-	}
-	return f.add(path)
+	file := &file{path: path}
+	f.files[path] = file
+	return file
 }
 
 // rLock locks the HAR file for reading.
