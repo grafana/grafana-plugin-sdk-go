@@ -5,6 +5,8 @@ import (
 	"math"
 	"strconv"
 	"time"
+
+	jsoniter "github.com/json-iterator/go"
 )
 
 // FieldConfig represents the display properties for a Field.
@@ -99,19 +101,23 @@ const ExplicitNullValue = "null"
 // to null.
 type ConfFloat64 float64
 
-// MarshalJSON fullfills the json.Marshaler interface.
+// MarshalJSON fulfills the json.Marshaler interface.
 func (sf *ConfFloat64) MarshalJSON() ([]byte, error) {
-	if sf == nil || math.IsNaN(float64(*sf)) || math.IsInf(float64(*sf), -1) || math.IsInf(float64(*sf), 1) {
+	if sf == nil ||
+		math.IsNaN(float64(*sf)) ||
+		math.IsInf(float64(*sf), -1) ||
+		math.IsInf(float64(*sf), +1) {
 		return []byte(string(ExplicitNullValue)), nil
 	}
 
-	return []byte(fmt.Sprintf(`%v`, float64(*sf))), nil
+	return fmt.Appendf(nil, `%v`, float64(*sf)), nil
 }
 
-// UnmarshalJSON fullfills the json.Unmarshaler interface.
+// UnmarshalJSON fulfills the json.Unmarshaler interface.
 func (sf *ConfFloat64) UnmarshalJSON(data []byte) error {
 	s := string(data)
 	if s == string(ExplicitNullValue) {
+		*sf = ConfFloat64(math.Inf(-1)) // same behavior as the frontend
 		return nil
 	}
 	v, err := strconv.ParseFloat(s, 64)
@@ -211,6 +217,30 @@ type Threshold struct {
 	Value ConfFloat64 `json:"value,omitempty"` // First value is always -Infinity serialize to null
 	Color string      `json:"color,omitempty"`
 	State string      `json:"state,omitempty"`
+}
+
+// UnmarshalJSON fulfills the json.Unmarshaler interface.
+func (t *Threshold) UnmarshalJSON(data []byte) error {
+	t.Value = ConfFloat64(math.Inf(-1))
+
+	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, data)
+	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+		switch l1Field {
+		case "value":
+			if iter.WhatIsNext() == jsoniter.NumberValue {
+				t.Value = ConfFloat64(iter.ReadFloat64())
+			} else {
+				_ = iter.Read() // skip item
+			}
+		case "color":
+			t.Color = iter.ReadString()
+		case "state":
+			t.State = iter.ReadString()
+		default:
+			iter.ReportError("bind l1", "unexpected field: "+l1Field)
+		}
+	}
+	return iter.Error
 }
 
 // NewThreshold Creates a new Threshold object
