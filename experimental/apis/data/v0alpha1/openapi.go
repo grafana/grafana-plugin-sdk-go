@@ -28,6 +28,7 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataQuery":               schemaDataQuery(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataSourceRef":           schemaDataSourceRef(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.TimeRange":               schemaTimeRange(ref),
 	}
 }
 
