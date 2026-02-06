@@ -47,6 +47,10 @@ type Frame struct {
 	Meta *FrameMeta
 }
 
+func (Frame) OpenAPIModelName() string {
+	return "com.github.grafana.grafana-plugin-sdk-go.data.Frame"
+}
+
 // UnmarshalJSON allows unmarshalling Frame from JSON.
 func (f *Frame) UnmarshalJSON(b []byte) error {
 	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
