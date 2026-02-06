@@ -2,6 +2,7 @@ package data
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"sort"
 	"strconv"
@@ -31,6 +32,11 @@ const (
 	// uses labels.
 	TimeSeriesTypeWide
 )
+
+// We've seen memory allocation from creation of this error with a static
+// message show up in profiles before OOM events :lolsob:, so create the
+// error once, and return it.
+var ErrFillMissingDisabled = errors.New("fill missing is disabled")
 
 // FillMode is an integer type denoting how missing values should be filled.
 type FillMode int
@@ -166,7 +172,7 @@ func float64ToType(val float64, ftype FieldType) (interface{}, error) {
 // GetMissing returns the value to be filled for a missing row field.
 func GetMissing(fillMissing *FillMissing, field *Field, previousRowIdx int) (interface{}, error) {
 	if fillMissing == nil {
-		return nil, fmt.Errorf("fill missing is disabled")
+		return nil, ErrFillMissingDisabled
 	}
 	var fillVal interface{}
 	switch fillMissing.Mode {
@@ -300,6 +306,13 @@ func (p *longRowProcessor) process(longRowIdx int) error {
 				p.wideFrame.Set(wideFrameIdx, p.wideFrameRowCounter, currentTime)
 				continue
 			}
+
+			// We've seen memory allocation from this code path show up in profiles
+			// before OOM events :lolsob:, so check this flag before doing the work.
+			if p.fillMissing == nil {
+				continue
+			}
+
 			fillVal, err := GetMissing(p.fillMissing, field, p.wideFrameRowCounter-1)
 			if err == nil {
 				p.wideFrame.Set(wideFrameIdx, p.wideFrameRowCounter, fillVal)
