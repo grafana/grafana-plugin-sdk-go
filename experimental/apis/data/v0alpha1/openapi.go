@@ -5,6 +5,9 @@ import (
 
 	"k8s.io/kube-openapi/pkg/common"
 	spec "k8s.io/kube-openapi/pkg/validation/spec"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 //go:embed query.schema.json query.definition.schema.json
@@ -12,6 +15,14 @@ var f embed.FS
 
 func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenAPIDefinition {
 	return map[string]common.OpenAPIDefinition{
+		backend.DataResponse{}.OpenAPIModelName():    schemaDataResponse(ref),
+		data.Frame{}.OpenAPIModelName():              schemaDataFrame(ref),
+		DataQuery{}.OpenAPIModelName():               schemaDataQuery(ref),
+		QueryTypeDefinitionSpec{}.OpenAPIModelName(): schemaQueryTypeDefinitionSpec(ref),
+		DataSourceRef{}.OpenAPIModelName():           schemaDataSourceRef(ref),
+		TimeRange{}.OpenAPIModelName():               schemaTimeRange(ref),
+
+		// Duplicate path names -- remove after k8s v0.35.0 is widely used
 		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":                                    schemaDataResponse(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                              schemaDataFrame(ref),
 		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataQuery":               schemaDataQuery(ref),
@@ -62,6 +73,17 @@ func schemaDataSourceRef(_ common.ReferenceCallback) common.OpenAPIDefinition {
 	}
 	return common.OpenAPIDefinition{
 		Schema: p,
+	}
+}
+
+func schemaTimeRange(_ common.ReferenceCallback) common.OpenAPIDefinition {
+	return common.OpenAPIDefinition{
+		Schema: spec.Schema{
+			SchemaProps: spec.SchemaProps{
+				Type:                 []string{"object"},
+				AdditionalProperties: &spec.SchemaOrBool{Allows: true},
+			},
+		},
 	}
 }
 

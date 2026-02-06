@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // EndpointQueryData friendly name for the query data endpoint/handler.
@@ -267,6 +268,10 @@ type DataResponse struct {
 
 	// ErrorSource is the the source of the error
 	ErrorSource ErrorSource
+}
+
+func (DataResponse) OpenAPIModelName() string {
+	return "com.github.grafana.grafana-plugin-sdk-go.backend.DataResponse"
 }
 
 // ErrDataResponse returns an error DataResponse given status and message.

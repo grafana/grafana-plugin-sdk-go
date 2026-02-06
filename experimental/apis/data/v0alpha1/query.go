@@ -8,11 +8,12 @@ import (
 	"strconv"
 	"unsafe"
 
+	j "github.com/json-iterator/go"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 	"github.com/grafana/grafana-plugin-sdk-go/data/utils/jsoniter"
-	j "github.com/json-iterator/go"
 )
 
 const (
@@ -24,6 +25,8 @@ const (
 	maxDataPointsKey    = "maxDataPoints"
 	intervalMsKey       = "intervalMs"
 	hideKey             = "hide"
+
+	openAPIPrefix = "com.github.grafana.grafana-plugin-sdk-go.experimental.apis.data.v0alpha1."
 )
 
 func init() { //nolint:gochecknoinits
@@ -43,12 +46,20 @@ type QueryDataRequest struct {
 	Debug bool `json:"debug,omitempty"`
 }
 
+func (QueryDataRequest) OpenAPIModelName() string {
+	return openAPIPrefix + "QueryDataRequest"
+}
+
 // DataQuery is a replacement for `dtos.MetricRequest` with more explicit typing
 type DataQuery struct {
 	CommonQueryProperties `json:",inline"`
 
 	// Additional Properties (that live at the root)
 	additional map[string]any `json:"-"` // note this uses custom JSON marshalling
+}
+
+func (DataQuery) OpenAPIModelName() string {
+	return openAPIPrefix + "DataResponse"
 }
 
 func NewDataQuery(body map[string]any) DataQuery {
@@ -451,6 +462,10 @@ type DataSourceRef struct {
 	APIVersion string `json:"apiVersion,omitempty"`
 }
 
+func (DataSourceRef) OpenAPIModelName() string {
+	return openAPIPrefix + "DataSourceRef"
+}
+
 // TimeRange represents a time range for a query and is a property of DataQuery.
 type TimeRange struct {
 	// From is the start time of the query.
@@ -458,6 +473,10 @@ type TimeRange struct {
 
 	// To is the end time of the query.
 	To string `json:"to" jsonschema:"default=now"`
+}
+
+func (TimeRange) OpenAPIModelName() string {
+	return openAPIPrefix + "TimeRange"
 }
 
 // ResultAssertions define the expected response shape and query behavior.  This is useful to
