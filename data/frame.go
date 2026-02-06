@@ -501,8 +501,8 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 	table.Header(headers...)
 
 	if maxRows == 0 {
-		table.Render()
-		return sb.String(), nil
+		err = table.Render()
+		return sb.String(), err
 	}
 
 	for rowIdx := 0; rowIdx < length; rowIdx++ {
@@ -513,7 +513,9 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 			for i := range sRow {
 				sRow[i] = maxLengthExceededStr
 			}
-			table.Append(sRow)
+			if err = table.Append(sRow); err != nil {
+				return "", err
+			}
 			break
 		}
 
@@ -538,11 +540,13 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 				sRow[colIdx] = fmt.Sprintf("%v", val)
 			}
 		}
-		table.Append(sRow)
+		if err = table.Append(sRow); err != nil {
+			return "", err
+		}
 	}
 
-	table.Render()
-	return sb.String(), nil
+	err = table.Render()
+	return sb.String(), err
 }
 
 // FieldByName returns Field by its name and its index in Frame.Fields.
