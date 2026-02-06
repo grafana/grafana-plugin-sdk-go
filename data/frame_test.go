@@ -469,7 +469,6 @@ Dimensions: 3 Fields by 3 Rows
 | Labels:      | Labels:      | Labels:      |
 | Type: []bool | Type: []bool | Type: []bool |
 +--------------+--------------+--------------+
-+--------------+--------------+--------------+
 `,
 		},
 	}
