@@ -46,10 +46,6 @@ type QueryDataRequest struct {
 	Debug bool `json:"debug,omitempty"`
 }
 
-func (QueryDataRequest) OpenAPIModelName() string {
-	return openAPIPrefix + "QueryDataRequest"
-}
-
 // DataQuery is a replacement for `dtos.MetricRequest` with more explicit typing
 type DataQuery struct {
 	CommonQueryProperties `json:",inline"`
