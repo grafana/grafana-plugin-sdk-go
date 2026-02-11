@@ -3,6 +3,7 @@ package sqlutil
 import (
 	"database/sql"
 	"fmt"
+	"math"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -24,6 +25,11 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 	types, err := rows.ColumnTypes()
 	if err != nil {
 		return nil, err
+	}
+
+	// Set rowLimit to the maximum possible value if no limit is specified (negative value)
+	if rowLimit < 0 {
+		rowLimit = math.MaxInt64
 	}
 
 	// If there is a dynamic converter, we need to use the dynamic framer
