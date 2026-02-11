@@ -234,6 +234,35 @@ func TestFrameFromRows(t *testing.T) {
 			err: nil,
 		},
 		{
+			name: "rows not implements driver.RowsNextResultSet (rowLimit < 0)",
+			rows: makeSingleResultSet( //nolint:rowserrcheck
+				[]string{
+					"a",
+					"b",
+					"c",
+				},
+				[]interface{}{
+					1, 2, 3,
+				},
+				[]interface{}{
+					4, 5, 6,
+				},
+				[]interface{}{
+					7, 8, 9,
+				},
+			),
+			rowLimit:   -1,
+			converters: nil,
+			frame: &data.Frame{
+				Fields: []*data.Field{
+					data.NewField("a", nil, []*string{ptr("1"), ptr("4"), ptr("7")}),
+					data.NewField("b", nil, []*string{ptr("2"), ptr("5"), ptr("8")}),
+					data.NewField("c", nil, []*string{ptr("3"), ptr("6"), ptr("9")}),
+				},
+			},
+			err: nil,
+		},
+		{
 			name: "rows not implements driver.RowsNextResultSet, limit reached",
 			rows: makeSingleResultSet( //nolint:rowserrcheck
 				[]string{
@@ -302,7 +331,38 @@ func TestFrameFromRows(t *testing.T) {
 			err: nil,
 		},
 		{
-			name: "rows implements driver.RowsNextResultSet, but contains more then one result set",
+			name: "rows implements driver.RowsNextResultSet, but contains only one result set (rowLimit < 0)",
+			rows: makeMultipleResultSets( //nolint:rowserrcheck
+				[]string{
+					"a",
+					"b",
+					"c",
+				},
+				[][]interface{}{
+					{
+						1, 2, 3,
+					},
+					{
+						4, 5, 6,
+					},
+					{
+						7, 8, 9,
+					},
+				},
+			),
+			rowLimit:   -1,
+			converters: nil,
+			frame: &data.Frame{
+				Fields: []*data.Field{
+					data.NewField("a", nil, []*string{ptr("1"), ptr("4"), ptr("7")}),
+					data.NewField("b", nil, []*string{ptr("2"), ptr("5"), ptr("8")}),
+					data.NewField("c", nil, []*string{ptr("3"), ptr("6"), ptr("9")}),
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "rows implements driver.RowsNextResultSet, but contains more than one result set",
 			rows: makeMultipleResultSets( //nolint:rowserrcheck
 				[]string{
 					"a",
@@ -324,6 +384,39 @@ func TestFrameFromRows(t *testing.T) {
 				},
 			),
 			rowLimit:   100,
+			converters: nil,
+			frame: &data.Frame{
+				Fields: []*data.Field{
+					data.NewField("a", nil, []*string{ptr("1"), ptr("4"), ptr("7")}),
+					data.NewField("b", nil, []*string{ptr("2"), ptr("5"), ptr("8")}),
+					data.NewField("c", nil, []*string{ptr("3"), ptr("6"), ptr("9")}),
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "rows implements driver.RowsNextResultSet, but contains more than one result set (rowLimit < 0)",
+			rows: makeMultipleResultSets( //nolint:rowserrcheck
+				[]string{
+					"a",
+					"b",
+					"c",
+				},
+				[][]interface{}{
+					{
+						1, 2, 3,
+					},
+					{
+						4, 5, 6,
+					},
+				},
+				[][]interface{}{
+					{
+						7, 8, 9,
+					},
+				},
+			),
+			rowLimit:   -1,
 			converters: nil,
 			frame: &data.Frame{
 				Fields: []*data.Field{
@@ -387,6 +480,17 @@ func TestFrameFromRows(t *testing.T) {
 			err:        sqlutil.ErrColumnTypeNotSupported{},
 		},
 		{
+			name: "row contains unsupported column type (rowLimit < 0)",
+			rows: makeSingleResultSetWithScanTypes( //nolint:rowserrcheck
+				[]string{"a"},
+				[]reflect.Type{nil},
+				[]interface{}{1},
+			),
+			rowLimit:   -1,
+			converters: nil,
+			err:        sqlutil.ErrColumnTypeNotSupported{},
+		},
+		{
 			name: "empty rows",
 			rows: makeSingleResultSet( //nolint:rowserrcheck
 				[]string{
@@ -396,6 +500,26 @@ func TestFrameFromRows(t *testing.T) {
 				},
 			),
 			rowLimit:   100,
+			converters: nil,
+			frame: &data.Frame{
+				Fields: []*data.Field{
+					data.NewField("a", nil, []*string{}),
+					data.NewField("b", nil, []*string{}),
+					data.NewField("c", nil, []*string{}),
+				},
+			},
+			err: nil,
+		},
+		{
+			name: "empty rows (rowLimit < 0)",
+			rows: makeSingleResultSet( //nolint:rowserrcheck
+				[]string{
+					"a",
+					"b",
+					"c",
+				},
+			),
+			rowLimit:   -1,
 			converters: nil,
 			frame: &data.Frame{
 				Fields: []*data.Field{
