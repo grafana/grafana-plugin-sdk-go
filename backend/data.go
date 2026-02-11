@@ -108,6 +108,9 @@ type DataQuery struct {
 	JSON json.RawMessage
 }
 
+// EndpointQueryChunkedData friendly name for the query chunked data endpoint/handler.
+const EndpointQueryChunkedData Endpoint = "queryChunkedData"
+
 // Experimental: QueryChunkedDataHandler defines the interface for handling chunked data requests.
 type QueryChunkedDataHandler interface {
 	// QueryChunkedData handles a chunked data request.
