@@ -67,7 +67,7 @@ func (h *MiddlewareHandler) QueryChunkedData(ctx context.Context, req *QueryChun
 		return errNilRequest
 	}
 
-	ctx = h.setupContext(ctx, req.PluginContext, EndpointQueryData)
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointQueryChunkedData)
 	return h.handler.QueryChunkedData(ctx, req, w)
 }
 
