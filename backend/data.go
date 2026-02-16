@@ -10,6 +10,7 @@ import (
 	jsoniter "github.com/json-iterator/go"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 // EndpointQueryData friendly name for the query data endpoint/handler.
@@ -119,6 +120,11 @@ type QueryChunkedDataHandler interface {
 	// and errors back to the client.
 	// The ChunkedDataWriter ensures efficient buffering and handles the transmission details.
 	QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error
+}
+
+// Experimental: QueryChunkedQueryRawClient allows raw access to the chunked results
+type QueryChunkedQueryRawClient interface {
+	QueryChunked(ctx context.Context, req *QueryChunkedDataRequest, cb func(ctx context.Context, evt *pluginv2.QueryChunkedDataResponse)) error
 }
 
 // Experimental: ChunkedDataWriter defines the interface for writing data frames and errors
