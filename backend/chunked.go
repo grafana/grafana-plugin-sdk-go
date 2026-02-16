@@ -15,28 +15,23 @@ type ChunkedDataCallback = func(chunk *pluginv2.QueryChunkedDataResponse) error
 
 // Experimental: ChunkedDataWriter defines the interface for writing data frames and errors
 // back to the client in chunks.
-type ChunkedDataWriter struct {
+type ChunkedDataWriter interface {
 	// WriteFrame writes a data frame (f) for the given query refID.
 	// The first time the frameID is written, the metadata and rows will be included.
 	// Subsequent calls with the same frameID will append the rows to the existing frame
 	// with a matching frameID. The metadata structure must match the initial request.
-	WriteFrame func(ctx context.Context, refID string, frameID string, f *data.Frame) error
+	WriteFrame(ctx context.Context, refID string, frameID string, f *data.Frame) error
 
 	// WriteError writes an error associated with the specified refID.
-	WriteError func(ctx context.Context, refID string, status Status, err error) error
+	WriteError(ctx context.Context, refID string, status Status, err error) error
 
 	// Allow clients direct access to the raw response
 	// This can avoid an additional encode/decode cycle
-	WriteChunk ChunkedDataCallback
+	WriteChunk(chunk *pluginv2.QueryChunkedDataResponse) error
 }
 
 func NewChunkedDataWriter(req *QueryChunkedDataRequest, write ChunkedDataCallback) ChunkedDataWriter {
-	chunker := &chunkedDataWriter{write: write, asJSON: false, sent: make(map[string]bool)}
-	return ChunkedDataWriter{
-		WriteFrame: chunker.WriteFrame,
-		WriteError: chunker.WriteError,
-		WriteChunk: write, // directly write the chunk
-	}
+	return &chunkedDataWriter{write: write, asJSON: false, sent: make(map[string]bool)}
 }
 
 type chunkedDataWriter struct {
@@ -98,5 +93,10 @@ func (c *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameI
 		return err
 	}
 
+	return c.write(chunk)
+}
+
+// WriteFrame implements [ChunkedDataWriter].
+func (c *chunkedDataWriter) WriteChunk(chunk *pluginv2.QueryChunkedDataResponse) error {
 	return c.write(chunk)
 }
