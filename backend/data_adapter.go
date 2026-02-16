@@ -5,13 +5,14 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"sync"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
@@ -74,6 +75,7 @@ func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest,
 
 // chunkedDataWriter implements the ChunkedDataWriter interface for gRPC streaming.
 type chunkedDataWriter struct {
+	mu     sync.Mutex // thread safety
 	stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]
 }
 
@@ -85,6 +87,9 @@ func newChunkedDataWriter(stream grpc.ServerStreamingServer[pluginv2.QueryChunke
 }
 
 func (w *chunkedDataWriter) WriteFrame(ctx context.Context, refID, frameID string, f *data.Frame) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	if refID == "" {
 		return fmt.Errorf("missing refID identifier")
 	}
@@ -111,6 +116,9 @@ func (w *chunkedDataWriter) WriteFrame(ctx context.Context, refID, frameID strin
 }
 
 func (w *chunkedDataWriter) WriteError(ctx context.Context, refID string, status Status, err error) error {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+
 	rsp := &pluginv2.QueryChunkedDataResponse{
 		RefId:  refID,
 		Status: int32(status), //nolint:gosec // disable G115
