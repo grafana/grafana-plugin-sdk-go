@@ -143,6 +143,7 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 
 type MiddlewareScenarioContext struct {
 	QueryDataCallChain         []string
+	QueryChunkedDataCallChain  []string
 	CallResourceCallChain      []string
 	CollectMetricsCallChain    []string
 	CheckHealthCallChain       []string
@@ -177,6 +178,13 @@ func (m *TestMiddleware) QueryData(ctx context.Context, req *backend.QueryDataRe
 	res, err := m.next.QueryData(ctx, req)
 	m.sCtx.QueryDataCallChain = append(m.sCtx.QueryDataCallChain, fmt.Sprintf("after %s", m.Name))
 	return res, err
+}
+
+func (m *TestMiddleware) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) error {
+	m.sCtx.QueryChunkedDataCallChain = append(m.sCtx.QueryChunkedDataCallChain, fmt.Sprintf("before %s", m.Name))
+	err := m.next.QueryChunkedData(ctx, req, w)
+	m.sCtx.QueryChunkedDataCallChain = append(m.sCtx.QueryChunkedDataCallChain, fmt.Sprintf("after %s", m.Name))
+	return err
 }
 
 func (m *TestMiddleware) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {

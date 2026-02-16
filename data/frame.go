@@ -47,6 +47,10 @@ type Frame struct {
 	Meta *FrameMeta
 }
 
+func (Frame) OpenAPIModelName() string {
+	return "com.github.grafana.grafana-plugin-sdk-go.data.Frame"
+}
+
 // UnmarshalJSON allows unmarshalling Frame from JSON.
 func (f *Frame) UnmarshalJSON(b []byte) error {
 	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, b)
@@ -178,6 +182,14 @@ func (f *Frame) EmptyCopy() *Frame {
 		newFrame.Fields = append(newFrame.Fields, fieldCopy)
 	}
 	return newFrame
+}
+
+// ZeroLength sets the length of every field to zero
+// This offers an efficient way to reuse the existing allocated slice in multiple data "pages"
+func (f *Frame) Clear() {
+	for _, field := range f.Fields {
+		field.vector.Clear()
+	}
 }
 
 // NewFrameOfFieldTypes returns a Frame where the Fields are initialized to the

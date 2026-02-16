@@ -122,7 +122,8 @@ var Resource_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Data_QueryData_FullMethodName = "/pluginv2.Data/QueryData"
+	Data_QueryData_FullMethodName        = "/pluginv2.Data/QueryData"
+	Data_QueryChunkedData_FullMethodName = "/pluginv2.Data/QueryChunkedData"
 )
 
 // DataClient is the client API for Data service.
@@ -130,6 +131,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type DataClient interface {
 	QueryData(ctx context.Context, in *QueryDataRequest, opts ...grpc.CallOption) (*QueryDataResponse, error)
+	QueryChunkedData(ctx context.Context, in *QueryChunkedDataRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueryChunkedDataResponse], error)
 }
 
 type dataClient struct {
@@ -150,11 +152,31 @@ func (c *dataClient) QueryData(ctx context.Context, in *QueryDataRequest, opts .
 	return out, nil
 }
 
+func (c *dataClient) QueryChunkedData(ctx context.Context, in *QueryChunkedDataRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[QueryChunkedDataResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &Data_ServiceDesc.Streams[0], Data_QueryChunkedData_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[QueryChunkedDataRequest, QueryChunkedDataResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Data_QueryChunkedDataClient = grpc.ServerStreamingClient[QueryChunkedDataResponse]
+
 // DataServer is the server API for Data service.
 // All implementations should embed UnimplementedDataServer
 // for forward compatibility.
 type DataServer interface {
 	QueryData(context.Context, *QueryDataRequest) (*QueryDataResponse, error)
+	QueryChunkedData(*QueryChunkedDataRequest, grpc.ServerStreamingServer[QueryChunkedDataResponse]) error
 }
 
 // UnimplementedDataServer should be embedded to have
@@ -166,6 +188,9 @@ type UnimplementedDataServer struct{}
 
 func (UnimplementedDataServer) QueryData(context.Context, *QueryDataRequest) (*QueryDataResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method QueryData not implemented")
+}
+func (UnimplementedDataServer) QueryChunkedData(*QueryChunkedDataRequest, grpc.ServerStreamingServer[QueryChunkedDataResponse]) error {
+	return status.Error(codes.Unimplemented, "method QueryChunkedData not implemented")
 }
 func (UnimplementedDataServer) testEmbeddedByValue() {}
 
@@ -205,6 +230,17 @@ func _Data_QueryData_Handler(srv interface{}, ctx context.Context, dec func(inte
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Data_QueryChunkedData_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(QueryChunkedDataRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(DataServer).QueryChunkedData(m, &grpc.GenericServerStream[QueryChunkedDataRequest, QueryChunkedDataResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type Data_QueryChunkedDataServer = grpc.ServerStreamingServer[QueryChunkedDataResponse]
+
 // Data_ServiceDesc is the grpc.ServiceDesc for Data service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -217,7 +253,13 @@ var Data_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _Data_QueryData_Handler,
 		},
 	},
-	Streams:  []grpc.StreamDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "QueryChunkedData",
+			Handler:       _Data_QueryChunkedData_Handler,
+			ServerStreams: true,
+		},
+	},
 	Metadata: "backend.proto",
 }
 

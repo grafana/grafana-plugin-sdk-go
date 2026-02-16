@@ -5,6 +5,8 @@ import (
 	"errors"
 	"io"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
@@ -24,7 +26,9 @@ type TestPluginClient struct {
 }
 
 func newTestPluginClient(addr string) (*TestPluginClient, error) {
-	c, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	c, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(16*1024*1024)))
 	if err != nil {
 		return nil, err
 	}
@@ -46,6 +50,86 @@ func (p *TestPluginClient) QueryData(ctx context.Context, r *backend.QueryDataRe
 	}
 
 	return backend.FromProto().QueryDataResponse(resp)
+}
+
+func (p *TestPluginClient) QueryChunkedData(ctx context.Context, r *backend.QueryChunkedDataRequest) (*backend.QueryDataResponse, error) {
+	req := backend.ToProto().QueryChunkedDataRequest(r)
+
+	stream, err := p.DataClient.QueryChunkedData(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// A refID identifies a response, while frameID identifies frames within it.
+	// Frames with identical frameIDs represent chunked data and should be merged.
+	// Frames with unique frameIDs represent distinct data and should be appended.
+
+	type refState struct {
+		dr      *backend.DataResponse
+		frameID string
+		frame   *data.Frame
+	}
+
+	responses := backend.Responses{}
+	states := make(map[string]*refState)
+
+	for {
+		sr, err := stream.Recv()
+		if err != nil {
+			if errors.Is(err, io.EOF) {
+				return &backend.QueryDataResponse{Responses: responses}, nil
+			}
+			return nil, err
+		}
+
+		f, err := data.UnmarshalArrowFrame(sr.Frame)
+		if err != nil {
+			return nil, err
+		}
+
+		// First time we see this response?
+		st, ok := states[sr.RefId]
+		if !ok {
+			dr := &backend.DataResponse{
+				Frames: data.Frames{f},
+				Status: backend.Status(sr.Status),
+			}
+			if sr.Error != "" {
+				dr.Error = errors.New(sr.Error)
+				dr.ErrorSource = backend.ErrorSource(sr.ErrorSource)
+			}
+
+			st = &refState{
+				dr:      dr,
+				frameID: sr.FrameId,
+				frame:   f,
+			}
+			states[sr.RefId] = st
+
+			// Store a value copy for the final response map.
+			responses[sr.RefId] = *dr
+			continue
+		}
+
+		// Frames with identical frameIDs represent chunked data and should be merged.
+		if sr.FrameId == st.frameID {
+			if len(f.Fields) != len(st.frame.Fields) {
+				return nil, errors.New("received chunked frame with mismatched field count")
+			}
+			for i, field := range f.Fields {
+				st.frame.Fields[i].AppendAll(field)
+			}
+			continue
+		}
+
+		// Frames with unique frameIDs represent distinct data and should be appended.
+		st.dr.Frames = append(st.dr.Frames, f)
+		st.frameID = sr.FrameId
+		st.frame = f
+
+		// Store a value copy for the final response map.
+		responses[sr.RefId] = *st.dr
+	}
 }
 
 func (p *TestPluginClient) CheckHealth(ctx context.Context, r *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
