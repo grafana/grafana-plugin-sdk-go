@@ -121,19 +121,6 @@ type QueryChunkedDataHandler interface {
 	QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error
 }
 
-// Experimental: ChunkedDataWriter defines the interface for writing data frames and errors
-// back to the client in chunks.
-type ChunkedDataWriter interface {
-	// WriteFrame writes a data frame (f) for the given query refID.
-	// The first time the frameID is written, the metadata and rows will be included.
-	// Subsequent calls with the same frameID will append the rows to the existing frame
-	// with a matching frameID. The metadata structure must match the initial request.
-	WriteFrame(ctx context.Context, refID string, frameID string, f *data.Frame) error
-
-	// WriteError writes an error associated with the specified refID.
-	WriteError(ctx context.Context, refID string, status Status, err error) error
-}
-
 // Experimental: QueryChunkedDataHandlerFunc is an adapter to allow the use of
 // ordinary functions as [QueryChunkedDataHandler]. If f is a function
 // with the appropriate signature, QueryChunkedDataHandlerFunc(f) is a
