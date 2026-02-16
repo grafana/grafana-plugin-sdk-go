@@ -494,7 +494,6 @@ func (t ConvertToProtobuf) TableInformationRequest(schemaReq *TableInformationRe
 
 // Column converts SDK version of Column to the protobuf version.
 func (t ConvertToProtobuf) Column(col *Column) *pluginv2.Column {
-
 	if col == nil {
 		return nil
 	}

@@ -465,7 +465,6 @@ func (f ConvertFromProtobuf) TableInformationRequest(protoReq *pluginv2.TableInf
 
 // Column converts protobuf version of Column to the SDK version.
 func (f ConvertFromProtobuf) Column(proto *pluginv2.Column) *Column {
-
 	if proto == nil {
 		return nil
 	}
@@ -506,7 +505,6 @@ func (f ConvertFromProtobuf) Columns(proto map[string]*pluginv2.ColumnList) map[
 
 // SubTable converts protobuf version of SubTable to the SDK version.
 func (f ConvertFromProtobuf) SubTable(proto *pluginv2.SubTable) SubTable {
-
 	return SubTable{
 		Name:      proto.Name,
 		DependsOn: proto.DependsOn.Values,
