@@ -134,7 +134,7 @@ func (m *ErrorSourceMiddleware) ConvertObjects(ctx context.Context, req *Convers
 	return resp, m.handleDownstreamError(ctx, err)
 }
 
-func (m *ErrorSourceMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
-	resp, err := m.BaseHandler.Schema(ctx, req)
+func (m *ErrorSourceMiddleware) Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error) {
+	resp, err := m.BaseHandler.Tables(ctx, req)
 	return resp, m.handleDownstreamError(ctx, err)
 }

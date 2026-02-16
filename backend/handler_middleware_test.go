@@ -21,7 +21,7 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 	var mutateAdmissionCalled bool
 	var validateAdmissionCalled bool
 	var convertObjectCalled bool
-	var schemaCalled bool
+	var tablesCalled bool
 
 	c := &handlertest.Handler{
 		QueryDataFunc: func(_ context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -64,8 +64,8 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 			convertObjectCalled = true
 			return nil, nil
 		},
-		SchemaFunc: func(_ context.Context, _ *backend.SchemaRequest) (*backend.SchemaResponse, error) {
-			schemaCalled = true
+		TablesFunc: func(_ context.Context, _ *backend.TableInformationRequest) (*backend.TableInformationResponse, error) {
+			tablesCalled = true
 			return nil, nil
 		},
 	}
@@ -116,8 +116,8 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 	_, _ = d.ConvertObjects(context.Background(), &backend.ConversionRequest{})
 	require.True(t, convertObjectCalled)
 
-	_, _ = d.Schema(context.Background(), &backend.SchemaRequest{})
-	require.True(t, schemaCalled)
+	_, _ = d.Tables(context.Background(), &backend.TableInformationRequest{})
+	require.True(t, tablesCalled)
 
 	require.Len(t, ctx.QueryDataCallChain, 4)
 	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.QueryDataCallChain)
@@ -153,7 +153,7 @@ type MiddlewareScenarioContext struct {
 	ValidateAdmissionCallChain []string
 	MutateAdmissionCallChain   []string
 	ConvertObjectCallChain     []string
-	SchemaCallChain            []string
+	TablesCallChain            []string
 }
 
 func (ctx *MiddlewareScenarioContext) NewMiddleware(name string) backend.HandlerMiddleware {
@@ -242,9 +242,9 @@ func (m *TestMiddleware) ConvertObjects(ctx context.Context, req *backend.Conver
 	return res, err
 }
 
-func (m *TestMiddleware) Schema(ctx context.Context, req *backend.SchemaRequest) (*backend.SchemaResponse, error) {
-	m.sCtx.SchemaCallChain = append(m.sCtx.SchemaCallChain, fmt.Sprintf("before %s", m.Name))
-	res, err := m.next.Schema(ctx, req)
-	m.sCtx.SchemaCallChain = append(m.sCtx.SchemaCallChain, fmt.Sprintf("after %s", m.Name))
+func (m *TestMiddleware) Tables(ctx context.Context, req *backend.TableInformationRequest) (*backend.TableInformationResponse, error) {
+	m.sCtx.TablesCallChain = append(m.sCtx.TablesCallChain, fmt.Sprintf("before %s", m.Name))
+	res, err := m.next.Tables(ctx, req)
+	m.sCtx.TablesCallChain = append(m.sCtx.TablesCallChain, fmt.Sprintf("after %s", m.Name))
 	return res, err
 }

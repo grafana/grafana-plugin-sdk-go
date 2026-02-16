@@ -2391,32 +2391,32 @@ func (x *StatusResult) GetCode() int32 {
 	return 0
 }
 
-type SchemaRequest struct {
+type TableInformationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	PluginContext *PluginContext         `protobuf:"bytes,1,opt,name=pluginContext,proto3" json:"pluginContext,omitempty"`
 	// Environment info
-	Headers       map[string]string       `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	Type          string                  `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
-	Tables        []string                `protobuf:"bytes,4,rep,name=tables,proto3" json:"tables,omitempty"`
-	Columns       []*ColumnsSchemaRequest `protobuf:"bytes,5,rep,name=columns,proto3" json:"columns,omitempty"`
+	Headers       map[string]string            `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	Type          string                       `protobuf:"bytes,3,opt,name=type,proto3" json:"type,omitempty"`
+	Tables        []string                     `protobuf:"bytes,4,rep,name=tables,proto3" json:"tables,omitempty"`
+	Columns       []*ColumnsInformationRequest `protobuf:"bytes,5,rep,name=columns,proto3" json:"columns,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SchemaRequest) Reset() {
-	*x = SchemaRequest{}
+func (x *TableInformationRequest) Reset() {
+	*x = TableInformationRequest{}
 	mi := &file_backend_proto_msgTypes[31]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SchemaRequest) String() string {
+func (x *TableInformationRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SchemaRequest) ProtoMessage() {}
+func (*TableInformationRequest) ProtoMessage() {}
 
-func (x *SchemaRequest) ProtoReflect() protoreflect.Message {
+func (x *TableInformationRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_backend_proto_msgTypes[31]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2428,47 +2428,47 @@ func (x *SchemaRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SchemaRequest.ProtoReflect.Descriptor instead.
-func (*SchemaRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use TableInformationRequest.ProtoReflect.Descriptor instead.
+func (*TableInformationRequest) Descriptor() ([]byte, []int) {
 	return file_backend_proto_rawDescGZIP(), []int{31}
 }
 
-func (x *SchemaRequest) GetPluginContext() *PluginContext {
+func (x *TableInformationRequest) GetPluginContext() *PluginContext {
 	if x != nil {
 		return x.PluginContext
 	}
 	return nil
 }
 
-func (x *SchemaRequest) GetHeaders() map[string]string {
+func (x *TableInformationRequest) GetHeaders() map[string]string {
 	if x != nil {
 		return x.Headers
 	}
 	return nil
 }
 
-func (x *SchemaRequest) GetType() string {
+func (x *TableInformationRequest) GetType() string {
 	if x != nil {
 		return x.Type
 	}
 	return ""
 }
 
-func (x *SchemaRequest) GetTables() []string {
+func (x *TableInformationRequest) GetTables() []string {
 	if x != nil {
 		return x.Tables
 	}
 	return nil
 }
 
-func (x *SchemaRequest) GetColumns() []*ColumnsSchemaRequest {
+func (x *TableInformationRequest) GetColumns() []*ColumnsInformationRequest {
 	if x != nil {
 		return x.Columns
 	}
 	return nil
 }
 
-type ColumnsSchemaRequest struct {
+type ColumnsInformationRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Table         string                 `protobuf:"bytes,1,opt,name=table,proto3" json:"table,omitempty"`
 	Parameters    map[string]string      `protobuf:"bytes,2,rep,name=parameters,proto3" json:"parameters,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
@@ -2476,20 +2476,20 @@ type ColumnsSchemaRequest struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ColumnsSchemaRequest) Reset() {
-	*x = ColumnsSchemaRequest{}
+func (x *ColumnsInformationRequest) Reset() {
+	*x = ColumnsInformationRequest{}
 	mi := &file_backend_proto_msgTypes[32]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ColumnsSchemaRequest) String() string {
+func (x *ColumnsInformationRequest) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ColumnsSchemaRequest) ProtoMessage() {}
+func (*ColumnsInformationRequest) ProtoMessage() {}
 
-func (x *ColumnsSchemaRequest) ProtoReflect() protoreflect.Message {
+func (x *ColumnsInformationRequest) ProtoReflect() protoreflect.Message {
 	mi := &file_backend_proto_msgTypes[32]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2501,26 +2501,26 @@ func (x *ColumnsSchemaRequest) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ColumnsSchemaRequest.ProtoReflect.Descriptor instead.
-func (*ColumnsSchemaRequest) Descriptor() ([]byte, []int) {
+// Deprecated: Use ColumnsInformationRequest.ProtoReflect.Descriptor instead.
+func (*ColumnsInformationRequest) Descriptor() ([]byte, []int) {
 	return file_backend_proto_rawDescGZIP(), []int{32}
 }
 
-func (x *ColumnsSchemaRequest) GetTable() string {
+func (x *ColumnsInformationRequest) GetTable() string {
 	if x != nil {
 		return x.Table
 	}
 	return ""
 }
 
-func (x *ColumnsSchemaRequest) GetParameters() map[string]string {
+func (x *ColumnsInformationRequest) GetParameters() map[string]string {
 	if x != nil {
 		return x.Parameters
 	}
 	return nil
 }
 
-type SchemaResponse struct {
+type TableInformationResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	FullSchema    *Schema                `protobuf:"bytes,1,opt,name=fullSchema,proto3" json:"fullSchema,omitempty"`
 	Tables        []string               `protobuf:"bytes,2,rep,name=tables,proto3" json:"tables,omitempty"`
@@ -2530,20 +2530,20 @@ type SchemaResponse struct {
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *SchemaResponse) Reset() {
-	*x = SchemaResponse{}
+func (x *TableInformationResponse) Reset() {
+	*x = TableInformationResponse{}
 	mi := &file_backend_proto_msgTypes[33]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *SchemaResponse) String() string {
+func (x *TableInformationResponse) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*SchemaResponse) ProtoMessage() {}
+func (*TableInformationResponse) ProtoMessage() {}
 
-func (x *SchemaResponse) ProtoReflect() protoreflect.Message {
+func (x *TableInformationResponse) ProtoReflect() protoreflect.Message {
 	mi := &file_backend_proto_msgTypes[33]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -2555,33 +2555,33 @@ func (x *SchemaResponse) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use SchemaResponse.ProtoReflect.Descriptor instead.
-func (*SchemaResponse) Descriptor() ([]byte, []int) {
+// Deprecated: Use TableInformationResponse.ProtoReflect.Descriptor instead.
+func (*TableInformationResponse) Descriptor() ([]byte, []int) {
 	return file_backend_proto_rawDescGZIP(), []int{33}
 }
 
-func (x *SchemaResponse) GetFullSchema() *Schema {
+func (x *TableInformationResponse) GetFullSchema() *Schema {
 	if x != nil {
 		return x.FullSchema
 	}
 	return nil
 }
 
-func (x *SchemaResponse) GetTables() []string {
+func (x *TableInformationResponse) GetTables() []string {
 	if x != nil {
 		return x.Tables
 	}
 	return nil
 }
 
-func (x *SchemaResponse) GetColumns() map[string]*ColumnList {
+func (x *TableInformationResponse) GetColumns() map[string]*ColumnList {
 	if x != nil {
 		return x.Columns
 	}
 	return nil
 }
 
-func (x *SchemaResponse) GetColumnValues() map[string]*StringList {
+func (x *TableInformationResponse) GetColumnValues() map[string]*StringList {
 	if x != nil {
 		return x.ColumnValues
 	}
@@ -3163,31 +3163,31 @@ const file_backend_proto_rawDesc = "" +
 	"\x06status\x18\x01 \x01(\tR\x06status\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12\x16\n" +
 	"\x06reason\x18\x03 \x01(\tR\x06reason\x12\x12\n" +
-	"\x04code\x18\x04 \x01(\x05R\x04code\"\xb0\x02\n" +
-	"\rSchemaRequest\x12=\n" +
-	"\rpluginContext\x18\x01 \x01(\v2\x17.pluginv2.PluginContextR\rpluginContext\x12>\n" +
-	"\aheaders\x18\x02 \x03(\v2$.pluginv2.SchemaRequest.HeadersEntryR\aheaders\x12\x12\n" +
+	"\x04code\x18\x04 \x01(\x05R\x04code\"\xc9\x02\n" +
+	"\x17TableInformationRequest\x12=\n" +
+	"\rpluginContext\x18\x01 \x01(\v2\x17.pluginv2.PluginContextR\rpluginContext\x12H\n" +
+	"\aheaders\x18\x02 \x03(\v2..pluginv2.TableInformationRequest.HeadersEntryR\aheaders\x12\x12\n" +
 	"\x04type\x18\x03 \x01(\tR\x04type\x12\x16\n" +
-	"\x06tables\x18\x04 \x03(\tR\x06tables\x128\n" +
-	"\acolumns\x18\x05 \x03(\v2\x1e.pluginv2.ColumnsSchemaRequestR\acolumns\x1a:\n" +
+	"\x06tables\x18\x04 \x03(\tR\x06tables\x12=\n" +
+	"\acolumns\x18\x05 \x03(\v2#.pluginv2.ColumnsInformationRequestR\acolumns\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xbb\x01\n" +
-	"\x14ColumnsSchemaRequest\x12\x14\n" +
-	"\x05table\x18\x01 \x01(\tR\x05table\x12N\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc5\x01\n" +
+	"\x19ColumnsInformationRequest\x12\x14\n" +
+	"\x05table\x18\x01 \x01(\tR\x05table\x12S\n" +
 	"\n" +
-	"parameters\x18\x02 \x03(\v2..pluginv2.ColumnsSchemaRequest.ParametersEntryR\n" +
+	"parameters\x18\x02 \x03(\v23.pluginv2.ColumnsInformationRequest.ParametersEntryR\n" +
 	"parameters\x1a=\n" +
 	"\x0fParametersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\x94\x03\n" +
-	"\x0eSchemaResponse\x120\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xb2\x03\n" +
+	"\x18TableInformationResponse\x120\n" +
 	"\n" +
 	"fullSchema\x18\x01 \x01(\v2\x10.pluginv2.SchemaR\n" +
 	"fullSchema\x12\x16\n" +
-	"\x06tables\x18\x02 \x03(\tR\x06tables\x12?\n" +
-	"\acolumns\x18\x03 \x03(\v2%.pluginv2.SchemaResponse.ColumnsEntryR\acolumns\x12N\n" +
-	"\fcolumnValues\x18\x04 \x03(\v2*.pluginv2.SchemaResponse.ColumnValuesEntryR\fcolumnValues\x1aP\n" +
+	"\x06tables\x18\x02 \x03(\tR\x06tables\x12I\n" +
+	"\acolumns\x18\x03 \x03(\v2/.pluginv2.TableInformationResponse.ColumnsEntryR\acolumns\x12X\n" +
+	"\fcolumnValues\x18\x04 \x03(\v24.pluginv2.TableInformationResponse.ColumnValuesEntryR\fcolumnValues\x1aP\n" +
 	"\fColumnsEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
 	"\x05value\x18\x02 \x01(\v2\x14.pluginv2.ColumnListR\x05value:\x028\x01\x1aU\n" +
@@ -3241,9 +3241,9 @@ const file_backend_proto_rawDesc = "" +
 	"\x11ValidateAdmission\x12\x1a.pluginv2.AdmissionRequest\x1a\x1c.pluginv2.ValidationResponse\x12I\n" +
 	"\x0fMutateAdmission\x12\x1a.pluginv2.AdmissionRequest\x1a\x1a.pluginv2.MutationResponse2a\n" +
 	"\x12ResourceConversion\x12K\n" +
-	"\x0eConvertObjects\x12\x1b.pluginv2.ConversionRequest\x1a\x1c.pluginv2.ConversionResponse2J\n" +
-	"\vInformation\x12;\n" +
-	"\x06Schema\x12\x17.pluginv2.SchemaRequest\x1a\x18.pluginv2.SchemaResponseB\rZ\v./;pluginv2b\x06proto3"
+	"\x0eConvertObjects\x12\x1b.pluginv2.ConversionRequest\x1a\x1c.pluginv2.ConversionResponse2^\n" +
+	"\vInformation\x12O\n" +
+	"\x06Tables\x12!.pluginv2.TableInformationRequest\x1a\".pluginv2.TableInformationResponseB\rZ\v./;pluginv2b\x06proto3"
 
 var (
 	file_backend_proto_rawDescOnce sync.Once
@@ -3296,9 +3296,9 @@ var file_backend_proto_goTypes = []any{
 	(*ConversionRequest)(nil),              // 33: pluginv2.ConversionRequest
 	(*ConversionResponse)(nil),             // 34: pluginv2.ConversionResponse
 	(*StatusResult)(nil),                   // 35: pluginv2.StatusResult
-	(*SchemaRequest)(nil),                  // 36: pluginv2.SchemaRequest
-	(*ColumnsSchemaRequest)(nil),           // 37: pluginv2.ColumnsSchemaRequest
-	(*SchemaResponse)(nil),                 // 38: pluginv2.SchemaResponse
+	(*TableInformationRequest)(nil),        // 36: pluginv2.TableInformationRequest
+	(*ColumnsInformationRequest)(nil),      // 37: pluginv2.ColumnsInformationRequest
+	(*TableInformationResponse)(nil),       // 38: pluginv2.TableInformationResponse
 	(*Schema)(nil),                         // 39: pluginv2.Schema
 	(*Table)(nil),                          // 40: pluginv2.Table
 	(*SubTable)(nil),                       // 41: pluginv2.SubTable
@@ -3317,10 +3317,10 @@ var file_backend_proto_goTypes = []any{
 	nil,                                    // 54: pluginv2.SubscribeStreamRequest.HeadersEntry
 	nil,                                    // 55: pluginv2.PublishStreamRequest.HeadersEntry
 	nil,                                    // 56: pluginv2.RunStreamRequest.HeadersEntry
-	nil,                                    // 57: pluginv2.SchemaRequest.HeadersEntry
-	nil,                                    // 58: pluginv2.ColumnsSchemaRequest.ParametersEntry
-	nil,                                    // 59: pluginv2.SchemaResponse.ColumnsEntry
-	nil,                                    // 60: pluginv2.SchemaResponse.ColumnValuesEntry
+	nil,                                    // 57: pluginv2.TableInformationRequest.HeadersEntry
+	nil,                                    // 58: pluginv2.ColumnsInformationRequest.ParametersEntry
+	nil,                                    // 59: pluginv2.TableInformationResponse.ColumnsEntry
+	nil,                                    // 60: pluginv2.TableInformationResponse.ColumnValuesEntry
 	nil,                                    // 61: pluginv2.Schema.SubTableValuesEntry
 	nil,                                    // 62: pluginv2.SubTableMap.ValuesEntry
 }
@@ -3362,13 +3362,13 @@ var file_backend_proto_depIdxs = []int32{
 	31, // 34: pluginv2.ConversionRequest.target_version:type_name -> pluginv2.GroupVersion
 	35, // 35: pluginv2.ConversionResponse.result:type_name -> pluginv2.StatusResult
 	32, // 36: pluginv2.ConversionResponse.objects:type_name -> pluginv2.RawObject
-	8,  // 37: pluginv2.SchemaRequest.pluginContext:type_name -> pluginv2.PluginContext
-	57, // 38: pluginv2.SchemaRequest.headers:type_name -> pluginv2.SchemaRequest.HeadersEntry
-	37, // 39: pluginv2.SchemaRequest.columns:type_name -> pluginv2.ColumnsSchemaRequest
-	58, // 40: pluginv2.ColumnsSchemaRequest.parameters:type_name -> pluginv2.ColumnsSchemaRequest.ParametersEntry
-	39, // 41: pluginv2.SchemaResponse.fullSchema:type_name -> pluginv2.Schema
-	59, // 42: pluginv2.SchemaResponse.columns:type_name -> pluginv2.SchemaResponse.ColumnsEntry
-	60, // 43: pluginv2.SchemaResponse.columnValues:type_name -> pluginv2.SchemaResponse.ColumnValuesEntry
+	8,  // 37: pluginv2.TableInformationRequest.pluginContext:type_name -> pluginv2.PluginContext
+	57, // 38: pluginv2.TableInformationRequest.headers:type_name -> pluginv2.TableInformationRequest.HeadersEntry
+	37, // 39: pluginv2.TableInformationRequest.columns:type_name -> pluginv2.ColumnsInformationRequest
+	58, // 40: pluginv2.ColumnsInformationRequest.parameters:type_name -> pluginv2.ColumnsInformationRequest.ParametersEntry
+	39, // 41: pluginv2.TableInformationResponse.fullSchema:type_name -> pluginv2.Schema
+	59, // 42: pluginv2.TableInformationResponse.columns:type_name -> pluginv2.TableInformationResponse.ColumnsEntry
+	60, // 43: pluginv2.TableInformationResponse.columnValues:type_name -> pluginv2.TableInformationResponse.ColumnValuesEntry
 	40, // 44: pluginv2.Schema.tables:type_name -> pluginv2.Table
 	9,  // 45: pluginv2.Schema.functions:type_name -> pluginv2.StringList
 	61, // 46: pluginv2.Schema.subTableValues:type_name -> pluginv2.Schema.SubTableValuesEntry
@@ -3381,8 +3381,8 @@ var file_backend_proto_depIdxs = []int32{
 	9,  // 53: pluginv2.CallResourceRequest.HeadersEntry.value:type_name -> pluginv2.StringList
 	9,  // 54: pluginv2.CallResourceResponse.HeadersEntry.value:type_name -> pluginv2.StringList
 	16, // 55: pluginv2.QueryDataResponse.ResponsesEntry.value:type_name -> pluginv2.DataResponse
-	42, // 56: pluginv2.SchemaResponse.ColumnsEntry.value:type_name -> pluginv2.ColumnList
-	9,  // 57: pluginv2.SchemaResponse.ColumnValuesEntry.value:type_name -> pluginv2.StringList
+	42, // 56: pluginv2.TableInformationResponse.ColumnsEntry.value:type_name -> pluginv2.ColumnList
+	9,  // 57: pluginv2.TableInformationResponse.ColumnValuesEntry.value:type_name -> pluginv2.StringList
 	43, // 58: pluginv2.Schema.SubTableValuesEntry.value:type_name -> pluginv2.SubTableMap
 	9,  // 59: pluginv2.SubTableMap.ValuesEntry.value:type_name -> pluginv2.StringList
 	10, // 60: pluginv2.Resource.CallResource:input_type -> pluginv2.CallResourceRequest
@@ -3395,7 +3395,7 @@ var file_backend_proto_depIdxs = []int32{
 	28, // 67: pluginv2.AdmissionControl.ValidateAdmission:input_type -> pluginv2.AdmissionRequest
 	28, // 68: pluginv2.AdmissionControl.MutateAdmission:input_type -> pluginv2.AdmissionRequest
 	33, // 69: pluginv2.ResourceConversion.ConvertObjects:input_type -> pluginv2.ConversionRequest
-	36, // 70: pluginv2.Information.Schema:input_type -> pluginv2.SchemaRequest
+	36, // 70: pluginv2.Information.Tables:input_type -> pluginv2.TableInformationRequest
 	11, // 71: pluginv2.Resource.CallResource:output_type -> pluginv2.CallResourceResponse
 	15, // 72: pluginv2.Data.QueryData:output_type -> pluginv2.QueryDataResponse
 	20, // 73: pluginv2.Diagnostics.CheckHealth:output_type -> pluginv2.CheckHealthResponse
@@ -3406,7 +3406,7 @@ var file_backend_proto_depIdxs = []int32{
 	29, // 78: pluginv2.AdmissionControl.ValidateAdmission:output_type -> pluginv2.ValidationResponse
 	30, // 79: pluginv2.AdmissionControl.MutateAdmission:output_type -> pluginv2.MutationResponse
 	34, // 80: pluginv2.ResourceConversion.ConvertObjects:output_type -> pluginv2.ConversionResponse
-	38, // 81: pluginv2.Information.Schema:output_type -> pluginv2.SchemaResponse
+	38, // 81: pluginv2.Information.Tables:output_type -> pluginv2.TableInformationResponse
 	71, // [71:82] is the sub-list for method output_type
 	60, // [60:71] is the sub-list for method input_type
 	60, // [60:60] is the sub-list for extension type_name

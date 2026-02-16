@@ -153,11 +153,11 @@ func (m *metricsMiddleware) ConvertObjects(ctx context.Context, req *ConversionR
 	return resp, err
 }
 
-func (m *metricsMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
-	var resp *SchemaResponse
+func (m *metricsMiddleware) Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error) {
+	var resp *TableInformationResponse
 	err := m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		var innerErr error
-		resp, innerErr = m.BaseHandler.Schema(ctx, req)
+		resp, innerErr = m.BaseHandler.Tables(ctx, req)
 		return RequestStatusFromError(innerErr), innerErr
 	})
 

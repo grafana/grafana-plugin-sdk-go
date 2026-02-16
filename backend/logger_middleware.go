@@ -222,15 +222,15 @@ func (m *loggerMiddleware) ConvertObjects(ctx context.Context, req *ConversionRe
 	return resp, err
 }
 
-func (m *loggerMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+func (m *loggerMiddleware) Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error) {
 	if req == nil {
-		return m.BaseHandler.Schema(ctx, req)
+		return m.BaseHandler.Tables(ctx, req)
 	}
 
-	var resp *SchemaResponse
+	var resp *TableInformationResponse
 	err := m.logRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		var innerErr error
-		resp, innerErr = m.BaseHandler.Schema(ctx, req)
+		resp, innerErr = m.BaseHandler.Tables(ctx, req)
 		return RequestStatusFromError(innerErr), innerErr
 	})
 

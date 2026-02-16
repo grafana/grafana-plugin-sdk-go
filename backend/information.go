@@ -6,33 +6,33 @@ import (
 )
 
 const (
-	// EndpointSchema friendly name for the schema endpoint/handler.
-	EndpointSchema Endpoint = "schema"
+	// EndpointSchema friendly name for the tables endpoint/handler.
+	EndpointSchema Endpoint = "tables"
 )
 
-// SchemaHandler enables users to request data source schemas
-type SchemaHandler interface {
-	Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error)
+// InformationHandler enables users to request data source information
+type InformationHandler interface {
+	Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error)
 }
 
-// SchemaHandlerFunc is an adapter to allow the use of
-// ordinary functions as [SchemaHandler]. If f is a function
-// with the appropriate signature, SchemaHandlerFunc(f) is a
-// [SchemaHandler] that calls f.
-type SchemaHandlerFunc func(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error)
+// TablesHandlerFunc is an adapter to allow the use of
+// ordinary functions as [TablesHandler]. If f is a function
+// with the appropriate signature, TablesHandlerFunc(f) is a
+// [TablesHandler] that calls f.
+type TablesHandlerFunc func(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error)
 
-// Schema calls fn(ctx, req).
-func (fn SchemaHandlerFunc) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+// Tables calls fn(ctx, req).
+func (fn TablesHandlerFunc) Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error) {
 	if err := validateRequest(req); err != nil {
 		return nil, err
 	}
 	return fn(ctx, req)
 }
 
-func validateRequest(req *SchemaRequest) error {
+func validateRequest(req *TableInformationRequest) error {
 	// Validate Type
 	if req.Type != "" && req.Type != "tables" && req.Type != "columns" && req.Type != "values" {
-		return DownstreamErrorf("Invalid schema request type. Must be one of tables, columns, values")
+		return DownstreamErrorf("Invalid table information request type. Must be one of tables, columns, values")
 	}
 
 	if req.Type == "columns" && len(req.Tables) == 0 {
@@ -49,7 +49,7 @@ func validateRequest(req *SchemaRequest) error {
 }
 
 // SchemaRequest contains the schema request
-type SchemaRequest struct {
+type TableInformationRequest struct {
 	// PluginContext the contextual information for the request.
 	PluginContext PluginContext
 
@@ -64,10 +64,10 @@ type SchemaRequest struct {
 	Type string
 
 	Tables  []string
-	Columns []ColumnsSchemaRequest
+	Columns []ColumnsInformationRequest
 }
 
-type ColumnsSchemaRequest struct {
+type ColumnsInformationRequest struct {
 	Table      string
 	Parameters map[string]string
 }
@@ -109,8 +109,7 @@ const (
 	ColumnTypeDatetime ColumnType = "datetime"
 )
 
-// CheckHealthResult contains the healthcheck response
-type SchemaResponse struct {
+type TableInformationResponse struct {
 	FullSchema   Schema
 	Tables       []string
 	Columns      map[string][]Column
@@ -121,7 +120,7 @@ type SchemaResponse struct {
 // single element value. It replaces any existing values
 // associated with key. The key is case-insensitive; it is
 // canonicalized by textproto.CanonicalMIMEHeaderKey.
-func (req *SchemaRequest) SetHTTPHeader(key, value string) {
+func (req *TableInformationRequest) SetHTTPHeader(key, value string) {
 	if req.Headers == nil {
 		req.Headers = map[string]string{}
 	}
@@ -132,7 +131,7 @@ func (req *SchemaRequest) SetHTTPHeader(key, value string) {
 // DeleteHTTPHeader deletes the values associated with key.
 // The key is case-insensitive; it is canonicalized by
 // CanonicalHeaderKey.
-func (req *SchemaRequest) DeleteHTTPHeader(key string) {
+func (req *TableInformationRequest) DeleteHTTPHeader(key string) {
 	deleteHTTPHeaderInStringMap(req.Headers, key)
 }
 
@@ -141,13 +140,13 @@ func (req *SchemaRequest) DeleteHTTPHeader(key string) {
 // It is case-insensitive; textproto.CanonicalMIMEHeaderKey is
 // used to canonicalize the provided key. Get assumes that all
 // keys are stored in canonical form.
-func (req *SchemaRequest) GetHTTPHeader(key string) string {
+func (req *TableInformationRequest) GetHTTPHeader(key string) string {
 	return req.GetHTTPHeaders().Get(key)
 }
 
 // GetHTTPHeaders returns HTTP headers.
-func (req *SchemaRequest) GetHTTPHeaders() http.Header {
+func (req *TableInformationRequest) GetHTTPHeaders() http.Header {
 	return getHTTPHeadersFromStringMap(req.Headers)
 }
 
-var _ ForwardHTTPHeaders = (*SchemaRequest)(nil)
+var _ ForwardHTTPHeaders = (*TableInformationRequest)(nil)

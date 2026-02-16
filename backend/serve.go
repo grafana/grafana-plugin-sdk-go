@@ -76,7 +76,7 @@ type ServeOpts struct {
 	// HandlerMiddlewares list of handler middlewares to decorate handlers with.
 	HandlerMiddlewares []HandlerMiddleware
 
-	SchemaHandler SchemaHandler
+	InformationHandler InformationHandler
 }
 
 func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
@@ -87,7 +87,7 @@ func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
 		StreamHandler:       opts.StreamHandler,
 		AdmissionHandler:    opts.AdmissionHandler,
 		ConversionHandler:   opts.ConversionHandler,
-		SchemaHandler:       opts.SchemaHandler,
+		InformationHandler:  opts.InformationHandler,
 	}
 
 	return HandlerFromMiddlewares(handlers, opts.HandlerMiddlewares...)
@@ -123,7 +123,7 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 		pluginOpts.ConversionServer = newConversionSDKAdapter(handler, opts.QueryConversionHandler)
 	}
 
-	if opts.SchemaHandler != nil {
+	if opts.InformationHandler != nil {
 		pluginOpts.InformationServer = newInformationSDKAdapter(handler)
 	}
 

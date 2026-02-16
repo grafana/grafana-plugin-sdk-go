@@ -21,7 +21,7 @@ type Handler struct {
 	MutateAdmissionFunc   backend.MutateAdmissionFunc
 	ValidateAdmissionFunc backend.ValidateAdmissionFunc
 	ConvertObjectsFunc    backend.ConvertObjectsFunc
-	SchemaFunc            backend.SchemaHandlerFunc
+	TablesFunc            backend.TablesHandlerFunc
 }
 
 func (h Handler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -104,9 +104,9 @@ func (h Handler) ConvertObjects(ctx context.Context, req *backend.ConversionRequ
 	return nil, nil
 }
 
-func (h Handler) Schema(ctx context.Context, req *backend.SchemaRequest) (*backend.SchemaResponse, error) {
-	if h.SchemaFunc != nil {
-		return h.SchemaFunc(ctx, req)
+func (h Handler) Tables(ctx context.Context, req *backend.TableInformationRequest) (*backend.TableInformationResponse, error) {
+	if h.TablesFunc != nil {
+		return h.TablesFunc(ctx, req)
 	}
 
 	return nil, nil

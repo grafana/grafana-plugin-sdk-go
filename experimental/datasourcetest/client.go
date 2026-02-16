@@ -92,17 +92,17 @@ func (p *TestPluginClient) CallResource(ctx context.Context, r *backend.CallReso
 	}
 }
 
-func (p *TestPluginClient) Schema(ctx context.Context, r *backend.SchemaRequest) (*backend.SchemaResponse, error) {
-	req := &pluginv2.SchemaRequest{
+func (p *TestPluginClient) Tables(ctx context.Context, r *backend.TableInformationRequest) (*backend.TableInformationResponse, error) {
+	req := &pluginv2.TableInformationRequest{
 		PluginContext: backend.ToProto().PluginContext(r.PluginContext),
 	}
 
-	resp, err := p.InformationClient.Schema(ctx, req)
+	resp, err := p.InformationClient.Tables(ctx, req)
 	if err != nil {
 		return nil, err
 	}
 
-	return backend.FromProto().SchemaResponse(resp), nil
+	return backend.FromProto().TableInformationResponse(resp), nil
 }
 
 func (p *TestPluginClient) shutdown() error {

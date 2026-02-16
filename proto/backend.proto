@@ -487,14 +487,14 @@ message StatusResult {
 }
 
 //-----------------------------------------------
-// Schema
+// DS Information Endpoints
 //-----------------------------------------------
 
 service Information {
-  rpc Schema(SchemaRequest) returns (SchemaResponse);
+  rpc Tables(TableInformationRequest) returns (TableInformationResponse);
 }
 
-message SchemaRequest {
+message TableInformationRequest {
   PluginContext pluginContext = 1;
 
   // Environment info
@@ -503,16 +503,16 @@ message SchemaRequest {
   string type = 3;
 
   repeated string tables = 4;
-  repeated ColumnsSchemaRequest columns = 5;
+  repeated ColumnsInformationRequest columns = 5;
 }
 
-message ColumnsSchemaRequest {
+message ColumnsInformationRequest {
   string table = 1;
 
   map<string,string> parameters = 2;
 }
 
-message SchemaResponse {
+message TableInformationResponse {
   Schema fullSchema = 1;
 
   repeated string tables = 2;

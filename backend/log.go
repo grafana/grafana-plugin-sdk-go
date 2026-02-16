@@ -115,7 +115,7 @@ func (m *contextualLoggerMiddleware) ConvertObjects(ctx context.Context, req *Co
 	return m.BaseHandler.ConvertObjects(ctx, req)
 }
 
-func (m *contextualLoggerMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+func (m *contextualLoggerMiddleware) Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error) {
 	ctx = m.setup(ctx, req.PluginContext)
-	return m.BaseHandler.Schema(ctx, req)
+	return m.BaseHandler.Tables(ctx, req)
 }

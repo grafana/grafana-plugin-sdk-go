@@ -824,14 +824,14 @@ var ResourceConversion_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Information_Schema_FullMethodName = "/pluginv2.Information/Schema"
+	Information_Tables_FullMethodName = "/pluginv2.Information/Tables"
 )
 
 // InformationClient is the client API for Information service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type InformationClient interface {
-	Schema(ctx context.Context, in *SchemaRequest, opts ...grpc.CallOption) (*SchemaResponse, error)
+	Tables(ctx context.Context, in *TableInformationRequest, opts ...grpc.CallOption) (*TableInformationResponse, error)
 }
 
 type informationClient struct {
@@ -842,10 +842,10 @@ func NewInformationClient(cc grpc.ClientConnInterface) InformationClient {
 	return &informationClient{cc}
 }
 
-func (c *informationClient) Schema(ctx context.Context, in *SchemaRequest, opts ...grpc.CallOption) (*SchemaResponse, error) {
+func (c *informationClient) Tables(ctx context.Context, in *TableInformationRequest, opts ...grpc.CallOption) (*TableInformationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(SchemaResponse)
-	err := c.cc.Invoke(ctx, Information_Schema_FullMethodName, in, out, cOpts...)
+	out := new(TableInformationResponse)
+	err := c.cc.Invoke(ctx, Information_Tables_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -856,7 +856,7 @@ func (c *informationClient) Schema(ctx context.Context, in *SchemaRequest, opts 
 // All implementations should embed UnimplementedInformationServer
 // for forward compatibility.
 type InformationServer interface {
-	Schema(context.Context, *SchemaRequest) (*SchemaResponse, error)
+	Tables(context.Context, *TableInformationRequest) (*TableInformationResponse, error)
 }
 
 // UnimplementedInformationServer should be embedded to have
@@ -866,8 +866,8 @@ type InformationServer interface {
 // pointer dereference when methods are called.
 type UnimplementedInformationServer struct{}
 
-func (UnimplementedInformationServer) Schema(context.Context, *SchemaRequest) (*SchemaResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method Schema not implemented")
+func (UnimplementedInformationServer) Tables(context.Context, *TableInformationRequest) (*TableInformationResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method Tables not implemented")
 }
 func (UnimplementedInformationServer) testEmbeddedByValue() {}
 
@@ -889,20 +889,20 @@ func RegisterInformationServer(s grpc.ServiceRegistrar, srv InformationServer) {
 	s.RegisterService(&Information_ServiceDesc, srv)
 }
 
-func _Information_Schema_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(SchemaRequest)
+func _Information_Tables_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TableInformationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(InformationServer).Schema(ctx, in)
+		return srv.(InformationServer).Tables(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Information_Schema_FullMethodName,
+		FullMethod: Information_Tables_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InformationServer).Schema(ctx, req.(*SchemaRequest))
+		return srv.(InformationServer).Tables(ctx, req.(*TableInformationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -915,8 +915,8 @@ var Information_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*InformationServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Schema",
-			Handler:    _Information_Schema_Handler,
+			MethodName: "Tables",
+			Handler:    _Information_Tables_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

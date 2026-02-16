@@ -165,11 +165,11 @@ func (m *headerMiddleware) CheckHealth(ctx context.Context, req *CheckHealthRequ
 	return m.BaseHandler.CheckHealth(ctx, req)
 }
 
-func (m *headerMiddleware) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+func (m *headerMiddleware) Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error) {
 	if req == nil {
-		return m.BaseHandler.Schema(ctx, req)
+		return m.BaseHandler.Tables(ctx, req)
 	}
 
 	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
-	return m.BaseHandler.Schema(ctx, req)
+	return m.BaseHandler.Tables(ctx, req)
 }

@@ -30,8 +30,8 @@ type ServeOpts struct {
 	// ConversionHandler for converting objects between resource versions
 	backend.ConversionHandler
 
-	// SchemaHandler for providing schema information
-	backend.SchemaHandler
+	// InformationHandler for providing data source table information
+	backend.InformationHandler
 
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
@@ -49,7 +49,7 @@ func Serve(opts ServeOpts) error {
 		StreamHandler:       opts.StreamHandler,
 		AdmissionHandler:    opts.AdmissionHandler,
 		ConversionHandler:   opts.ConversionHandler,
-		SchemaHandler:       opts.SchemaHandler,
+		InformationHandler:  opts.InformationHandler,
 		GRPCSettings:        opts.GRPCSettings,
 	})
 }

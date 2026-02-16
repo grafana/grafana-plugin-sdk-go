@@ -8,25 +8,23 @@ import (
 
 // informationSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type informationSDKAdapter struct {
-	schemaHandler SchemaHandler
+	informationHandler InformationHandler
 }
 
-func newInformationSDKAdapter(schemaHandler SchemaHandler) *informationSDKAdapter {
+func newInformationSDKAdapter(informationHandler InformationHandler) *informationSDKAdapter {
 	return &informationSDKAdapter{
-		schemaHandler: schemaHandler,
+		informationHandler: informationHandler,
 	}
 }
 
-func (a *informationSDKAdapter) Schema(ctx context.Context, protoReq *pluginv2.SchemaRequest) (*pluginv2.SchemaResponse, error) {
-	if a.schemaHandler != nil {
-		parsedReq := FromProto().SchemaRequest(protoReq)
-		resp, err := a.schemaHandler.Schema(ctx, parsedReq)
+func (a *informationSDKAdapter) Tables(ctx context.Context, protoReq *pluginv2.TableInformationRequest) (*pluginv2.TableInformationResponse, error) {
+	if a.informationHandler != nil {
+		parsedReq := FromProto().TableInformationRequest(protoReq)
+		resp, err := a.informationHandler.Tables(ctx, parsedReq)
 		if err != nil {
 			return nil, err
 		}
-
-		return ToProto().SchemaResponse(resp), nil
+		return ToProto().TableInformationResponse(resp), nil
 	}
-
 	return nil, nil
 }

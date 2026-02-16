@@ -410,25 +410,25 @@ func (f ConvertFromProtobuf) GrafanaConfig(cfg map[string]string) *GrafanaCfg {
 	return NewGrafanaCfg(cfg)
 }
 
-// ColumnsSchemaRequest converts protobuf version of a ColumnsSchemaRequest to the SDK version.
-func (f ConvertFromProtobuf) ColumnsSchemaRequest(proto []*pluginv2.ColumnsSchemaRequest) []ColumnsSchemaRequest {
-	columnsSchemaRequest := []ColumnsSchemaRequest{}
+// ColumnsInformationRequest converts protobuf version of a ColumnsInformationRequest to the SDK version.
+func (f ConvertFromProtobuf) ColumnsInformationRequest(proto []*pluginv2.ColumnsInformationRequest) []ColumnsInformationRequest {
+	columnsInformationRequest := []ColumnsInformationRequest{}
 	if proto == nil {
-		return columnsSchemaRequest
+		return columnsInformationRequest
 	}
 
 	for _, colReq := range proto {
-		columnsSchemaRequest = append(columnsSchemaRequest, ColumnsSchemaRequest{
+		columnsInformationRequest = append(columnsInformationRequest, ColumnsInformationRequest{
 			Table:      colReq.Table,
 			Parameters: colReq.Parameters,
 		})
 	}
 
-	return columnsSchemaRequest
+	return columnsInformationRequest
 }
 
-// SchemaRequest converts protobuf version of a SchemaRequest to the SDK version.
-func (f ConvertFromProtobuf) SchemaRequest(protoReq *pluginv2.SchemaRequest) *SchemaRequest {
+// TableInformationRequest converts protobuf version of a TableInformationRequest to the SDK version.
+func (f ConvertFromProtobuf) TableInformationRequest(protoReq *pluginv2.TableInformationRequest) *TableInformationRequest {
 	if protoReq.Headers == nil {
 		protoReq.Headers = map[string]string{}
 	}
@@ -439,12 +439,12 @@ func (f ConvertFromProtobuf) SchemaRequest(protoReq *pluginv2.SchemaRequest) *Sc
 		}
 	}
 
-	return &SchemaRequest{
+	return &TableInformationRequest{
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Headers:       protoReq.Headers,
 		Type:          protoReq.Type,
 		Tables:        protoReq.Tables,
-		Columns:       f.ColumnsSchemaRequest(protoReq.Columns),
+		Columns:       f.ColumnsInformationRequest(protoReq.Columns),
 	}
 }
 
@@ -541,14 +541,14 @@ func (f ConvertFromProtobuf) Schema(proto *pluginv2.Schema) Schema {
 	}
 }
 
-// SchemaResponse converts protobuf version of a SchemaResponse to the SDK version.
-func (f ConvertFromProtobuf) SchemaResponse(protoResp *pluginv2.SchemaResponse) *SchemaResponse {
+// TableInformationResponse converts protobuf version of a TableInformationResponse to the SDK version.
+func (f ConvertFromProtobuf) TableInformationResponse(protoResp *pluginv2.TableInformationResponse) *TableInformationResponse {
 	colValues := map[string][]string{}
 	for k, values := range protoResp.ColumnValues {
 		colValues[k] = values.Values
 	}
 
-	return &SchemaResponse{
+	return &TableInformationResponse{
 		FullSchema:   f.Schema(protoResp.FullSchema),
 		Tables:       protoResp.Tables,
 		Columns:      f.Columns(protoResp.Columns),

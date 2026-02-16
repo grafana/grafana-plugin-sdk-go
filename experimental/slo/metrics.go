@@ -77,7 +77,7 @@ const (
 	EndpointHealth   Endpoint = "health"
 	EndpointQuery    Endpoint = "query"
 	EndpointResource Endpoint = "resource"
-	EndpointSchema   Endpoint = "schema"
+	EndpointTables   Endpoint = "tables"
 	SourceDownstream Source   = "downstream"
 	SourcePlugin     Source   = "plugin"
 )
@@ -143,7 +143,7 @@ type MetricsWrapper struct {
 	healthcheckHandler backend.CheckHealthHandler
 	queryDataHandler   backend.QueryDataHandler
 	resourceHandler    backend.CallResourceHandler
-	schemaHandler      backend.SchemaHandler
+	informationHandler backend.InformationHandler
 	Metrics            Collector
 }
 
@@ -167,8 +167,8 @@ func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings, c ...Co
 	if r, ok := plugin.(backend.CallResourceHandler); ok {
 		wrapper.resourceHandler = r
 	}
-	if i, ok := plugin.(backend.SchemaHandler); ok {
-		wrapper.schemaHandler = i
+	if i, ok := plugin.(backend.InformationHandler); ok {
+		wrapper.informationHandler = i
 	}
 	return wrapper
 }
@@ -215,10 +215,10 @@ func (ds *MetricsWrapper) CallResource(ctx context.Context, req *backend.CallRes
 	return ds.resourceHandler.CallResource(ctx, req, sender)
 }
 
-// Schema calls the InformationHandler and collects metrics
-func (ds *MetricsWrapper) Schema(ctx context.Context, req *backend.SchemaRequest) (*backend.SchemaResponse, error) {
+// Tables calls the InformationHandler and returns the data sources tabular information
+func (ds *MetricsWrapper) Tables(ctx context.Context, req *backend.TableInformationRequest) (*backend.TableInformationResponse, error) {
 	ctx = context.WithValue(ctx, DurationKey{}, &Duration{value: 0})
-	metrics := ds.Metrics.WithEndpoint(EndpointSchema)
+	metrics := ds.Metrics.WithEndpoint(EndpointTables)
 
 	start := time.Now()
 
@@ -226,7 +226,7 @@ func (ds *MetricsWrapper) Schema(ctx context.Context, req *backend.SchemaRequest
 		collectDuration(ctx, start, metrics)
 	}()
 
-	return ds.schemaHandler.Schema(ctx, req)
+	return ds.informationHandler.Tables(ctx, req)
 }
 
 func collectDuration(ctx context.Context, start time.Time, metrics Collector) {

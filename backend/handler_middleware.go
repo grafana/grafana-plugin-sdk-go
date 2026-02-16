@@ -151,13 +151,13 @@ func (h *MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionR
 	return h.handler.ConvertObjects(ctx, req)
 }
 
-func (h *MiddlewareHandler) Schema(ctx context.Context, req *SchemaRequest) (*SchemaResponse, error) {
+func (h *MiddlewareHandler) Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error) {
 	if req == nil {
 		return nil, errNilRequest
 	}
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointSchema)
-	return h.handler.Schema(ctx, req)
+	return h.handler.Tables(ctx, req)
 }
 
 func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handler) Handler {

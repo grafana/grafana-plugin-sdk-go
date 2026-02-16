@@ -43,16 +43,16 @@ type informationGRPCServer struct {
 	server InformationServer
 }
 
-func (s informationGRPCServer) Schema(ctx context.Context, request *pluginv2.SchemaRequest) (*pluginv2.SchemaResponse, error) {
-	return s.server.Schema(ctx, request)
+func (s informationGRPCServer) Tables(ctx context.Context, request *pluginv2.TableInformationRequest) (*pluginv2.TableInformationResponse, error) {
+	return s.server.Tables(ctx, request)
 }
 
 type informationGRPCClient struct {
 	client InformationClient
 }
 
-func (s informationGRPCClient) Schema(ctx context.Context, in *pluginv2.SchemaRequest, opts ...grpc.CallOption) (*pluginv2.SchemaResponse, error) {
-	return s.client.Schema(ctx, in, opts...)
+func (s informationGRPCClient) Tables(ctx context.Context, in *pluginv2.TableInformationRequest, opts ...grpc.CallOption) (*pluginv2.TableInformationResponse, error) {
+	return s.client.Tables(ctx, in, opts...)
 }
 
 var _ InformationServer = &informationGRPCServer{}
