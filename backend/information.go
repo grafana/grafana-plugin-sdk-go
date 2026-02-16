@@ -11,6 +11,8 @@ const (
 )
 
 // InformationHandler enables users to request data source information
+// This handler is EXPERIMENTAL and may be replaced or substantially modified in the future.
+// Not suitable for external implementations.
 type InformationHandler interface {
 	Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error)
 }
