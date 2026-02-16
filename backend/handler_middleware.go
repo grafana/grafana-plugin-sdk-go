@@ -3,6 +3,8 @@ package backend
 import (
 	"context"
 	"errors"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 var (
@@ -26,6 +28,10 @@ type HandlerMiddlewareFunc func(next Handler) Handler
 func (fn HandlerMiddlewareFunc) CreateHandlerMiddleware(next Handler) Handler {
 	return fn(next)
 }
+
+var (
+	_ QueryChunkedQueryRawClient = (*MiddlewareHandler)(nil)
+)
 
 // MiddlewareHandler decorates a Handler with HandlerMiddleware's.
 type MiddlewareHandler struct {
@@ -69,6 +75,16 @@ func (h *MiddlewareHandler) QueryChunkedData(ctx context.Context, req *QueryChun
 
 	ctx = h.setupContext(ctx, req.PluginContext, EndpointQueryChunkedData)
 	return h.handler.QueryChunkedData(ctx, req, w)
+}
+
+// QueryChunkedRaw implements [QueryChunkedQueryRawClient].
+func (h *MiddlewareHandler) QueryChunkedRaw(ctx context.Context, req *QueryChunkedDataRequest, cb func(evt *pluginv2.QueryChunkedDataResponse) error) error {
+	if req == nil {
+		return errNilRequest
+	}
+
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointQueryChunkedData)
+	return h.handler.QueryChunkedRaw(ctx, req, cb)
 }
 
 func (h *MiddlewareHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {

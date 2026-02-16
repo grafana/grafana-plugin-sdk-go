@@ -1,11 +1,16 @@
 package backend
 
-import "context"
+import (
+	"context"
+
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
+)
 
 // Handler interface for all handlers.
 type Handler interface {
 	QueryDataHandler
 	QueryChunkedDataHandler
+	QueryChunkedQueryRawClient
 	CheckHealthHandler
 	CallResourceHandler
 	CollectMetricsHandler
@@ -36,6 +41,10 @@ func (m BaseHandler) QueryData(ctx context.Context, req *QueryDataRequest) (*Que
 
 func (m BaseHandler) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
 	return m.next.QueryChunkedData(ctx, req, w)
+}
+
+func (m *BaseHandler) QueryChunkedRaw(ctx context.Context, req *QueryChunkedDataRequest, cb func(evt *pluginv2.QueryChunkedDataResponse) error) error {
+	return m.next.QueryChunkedRaw(ctx, req, cb)
 }
 
 func (m BaseHandler) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
@@ -78,6 +87,7 @@ func (m *BaseHandler) ConvertObjects(ctx context.Context, req *ConversionRequest
 type Handlers struct {
 	QueryDataHandler
 	QueryChunkedDataHandler
+	QueryChunkedQueryRawClient
 	CheckHealthHandler
 	CallResourceHandler
 	CollectMetricsHandler
