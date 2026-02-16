@@ -30,8 +30,8 @@ type ChunkedDataWriter interface {
 	WriteChunk(chunk *pluginv2.QueryChunkedDataResponse) error
 }
 
-func NewChunkedDataWriter(req *QueryChunkedDataRequest, write ChunkedDataCallback) ChunkedDataWriter {
-	return &chunkedDataWriter{write: write, asJSON: false, sent: make(map[string]bool)}
+func NewChunkedDataWriter(asJSON bool, write ChunkedDataCallback) ChunkedDataWriter {
+	return &chunkedDataWriter{write: write, asJSON: asJSON, sent: make(map[string]bool)}
 }
 
 type chunkedDataWriter struct {
