@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 var _ backend.Handler = &Handler{}
@@ -35,6 +36,14 @@ func (h Handler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (
 func (h Handler) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) error {
 	if h.QueryChunkedDataFunc != nil {
 		return h.QueryChunkedDataFunc(ctx, req, w)
+	}
+
+	return nil
+}
+
+func (h Handler) QueryChunkedRaw(ctx context.Context, req *backend.QueryChunkedDataRequest, cb func(evt *pluginv2.QueryChunkedDataResponse) error) error {
+	if h.QueryChunkedDataFunc != nil {
+		return h.QueryChunkedDataFunc(ctx, req, backend.NewChunkedDataCallback(req, cb))
 	}
 
 	return nil

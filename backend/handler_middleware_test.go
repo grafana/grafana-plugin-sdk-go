@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/handlertest"
-	"github.com/stretchr/testify/require"
 )
 
 func TestHandlerFromMiddlewares(t *testing.T) {
@@ -174,6 +175,13 @@ func (m *TestMiddleware) QueryData(ctx context.Context, req *backend.QueryDataRe
 func (m *TestMiddleware) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) error {
 	m.sCtx.QueryChunkedDataCallChain = append(m.sCtx.QueryChunkedDataCallChain, fmt.Sprintf("before %s", m.Name))
 	err := m.next.QueryChunkedData(ctx, req, w)
+	m.sCtx.QueryChunkedDataCallChain = append(m.sCtx.QueryChunkedDataCallChain, fmt.Sprintf("after %s", m.Name))
+	return err
+}
+
+func (m *TestMiddleware) QueryChunkedRaw(ctx context.Context, req *backend.QueryChunkedDataRequest, cb backend.ChunkedDataCallback) error {
+	m.sCtx.QueryChunkedDataCallChain = append(m.sCtx.QueryChunkedDataCallChain, fmt.Sprintf("before %s", m.Name))
+	err := m.next.QueryChunkedRaw(ctx, req, cb)
 	m.sCtx.QueryChunkedDataCallChain = append(m.sCtx.QueryChunkedDataCallChain, fmt.Sprintf("after %s", m.Name))
 	return err
 }
