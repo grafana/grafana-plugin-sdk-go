@@ -3,16 +3,13 @@ package backend
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net/http"
-	"sync"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
@@ -63,7 +60,10 @@ func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest,
 
 	ctx := stream.Context()
 	parsedReq := FromProto().QueryChunkedDataRequest(req)
-	writer := newChunkedDataWriter(stream)
+
+	writer := NewChunkedDataCallback(parsedReq, func(chunk *pluginv2.QueryChunkedDataResponse) error {
+		return stream.Send(chunk)
+	})
 
 	err := a.queryChunkedDataHandler.QueryChunkedData(ctx, parsedReq, writer)
 	if err != nil {
@@ -71,62 +71,6 @@ func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest,
 	}
 
 	return nil
-}
-
-// chunkedDataWriter implements the ChunkedDataWriter interface for gRPC streaming.
-type chunkedDataWriter struct {
-	mu     sync.Mutex // thread safety
-	stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]
-}
-
-// newChunkedDataWriter creates a new writer that handles sending chunked data over gRPC.
-func newChunkedDataWriter(stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]) *chunkedDataWriter {
-	return &chunkedDataWriter{
-		stream: stream,
-	}
-}
-
-func (w *chunkedDataWriter) WriteFrame(ctx context.Context, refID, frameID string, f *data.Frame) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	if refID == "" {
-		return fmt.Errorf("missing refID identifier")
-	}
-
-	if frameID == "" {
-		return fmt.Errorf("missing frame identifier")
-	}
-
-	f.SetRefID(refID)
-
-	encoded, err := f.MarshalArrow()
-	if err != nil {
-		return err
-	}
-
-	resp := &pluginv2.QueryChunkedDataResponse{
-		RefId:   refID,
-		FrameId: frameID,
-		Frame:   encoded,
-		Status:  http.StatusOK,
-	}
-
-	return w.stream.Send(resp)
-}
-
-func (w *chunkedDataWriter) WriteError(ctx context.Context, refID string, status Status, err error) error {
-	w.mu.Lock()
-	defer w.mu.Unlock()
-
-	rsp := &pluginv2.QueryChunkedDataResponse{
-		RefId:  refID,
-		Status: int32(status), //nolint:gosec // disable G115
-	}
-	if err != nil {
-		rsp.Error = err.Error()
-	}
-	return w.stream.Send(rsp)
 }
 
 // enrichWithErrorSourceInfo returns a gRPC status error with error source info as metadata.
