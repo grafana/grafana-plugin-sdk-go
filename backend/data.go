@@ -124,7 +124,7 @@ type QueryChunkedDataHandler interface {
 
 // Experimental: QueryChunkedQueryRawClient allows raw access to the chunked results
 type QueryChunkedQueryRawClient interface {
-	QueryChunked(ctx context.Context, req *QueryChunkedDataRequest, cb func(ctx context.Context, evt *pluginv2.QueryChunkedDataResponse)) error
+	QueryChunkedRaw(ctx context.Context, req *QueryChunkedDataRequest, cb func(evt *pluginv2.QueryChunkedDataResponse) error) error
 }
 
 // Experimental: ChunkedDataWriter defines the interface for writing data frames and errors
