@@ -33,8 +33,8 @@ type ServeOpts struct {
 	// ConversionHandler for converting objects between resource versions
 	backend.ConversionHandler
 
-	// InformationHandler for providing data source table information
-	backend.InformationHandler
+	// TabularInformationHandler for providing data source table information
+	backend.TabularInformationHandler
 
 	// GRPCSettings settings for gPRC.
 	GRPCSettings backend.GRPCSettings
@@ -46,14 +46,14 @@ type ServeOpts struct {
 // and might be removed in a future version. Please migrate to use [Manage] instead.
 func Serve(opts ServeOpts) error {
 	return backend.Serve(backend.ServeOpts{
-		CheckHealthHandler:      opts.CheckHealthHandler,
-		CallResourceHandler:     opts.CallResourceHandler,
-		QueryDataHandler:        opts.QueryDataHandler,
-		QueryChunkedDataHandler: opts.QueryChunkedDataHandler,
-		StreamHandler:           opts.StreamHandler,
-		AdmissionHandler:        opts.AdmissionHandler,
-		ConversionHandler:       opts.ConversionHandler,
-		InformationHandler:      opts.InformationHandler,
-		GRPCSettings:            opts.GRPCSettings,
+		CheckHealthHandler:        opts.CheckHealthHandler,
+		CallResourceHandler:       opts.CallResourceHandler,
+		QueryDataHandler:          opts.QueryDataHandler,
+		QueryChunkedDataHandler:   opts.QueryChunkedDataHandler,
+		StreamHandler:             opts.StreamHandler,
+		AdmissionHandler:          opts.AdmissionHandler,
+		ConversionHandler:         opts.ConversionHandler,
+		TabularInformationHandler: opts.TabularInformationHandler,
+		GRPCSettings:              opts.GRPCSettings,
 	})
 }

@@ -34,7 +34,7 @@ func Manage(instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) (Te
 		QueryDataHandler:        handler,
 		QueryChunkedDataHandler: handler,
 		StreamHandler:           handler,
-		InformationHandler:      handler,
+		TabularInformationHandler:      handler,
 	}, opts.Address)
 
 	if err != nil {

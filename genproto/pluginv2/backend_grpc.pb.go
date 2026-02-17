@@ -866,99 +866,99 @@ var ResourceConversion_ServiceDesc = grpc.ServiceDesc{
 }
 
 const (
-	Information_Tables_FullMethodName = "/pluginv2.Information/Tables"
+	TabularInformation_Tables_FullMethodName = "/pluginv2.TabularInformation/Tables"
 )
 
-// InformationClient is the client API for Information service.
+// TabularInformationClient is the client API for TabularInformation service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
-type InformationClient interface {
+type TabularInformationClient interface {
 	Tables(ctx context.Context, in *TableInformationRequest, opts ...grpc.CallOption) (*TableInformationResponse, error)
 }
 
-type informationClient struct {
+type tabularInformationClient struct {
 	cc grpc.ClientConnInterface
 }
 
-func NewInformationClient(cc grpc.ClientConnInterface) InformationClient {
-	return &informationClient{cc}
+func NewTabularInformationClient(cc grpc.ClientConnInterface) TabularInformationClient {
+	return &tabularInformationClient{cc}
 }
 
-func (c *informationClient) Tables(ctx context.Context, in *TableInformationRequest, opts ...grpc.CallOption) (*TableInformationResponse, error) {
+func (c *tabularInformationClient) Tables(ctx context.Context, in *TableInformationRequest, opts ...grpc.CallOption) (*TableInformationResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(TableInformationResponse)
-	err := c.cc.Invoke(ctx, Information_Tables_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, TabularInformation_Tables_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-// InformationServer is the server API for Information service.
-// All implementations should embed UnimplementedInformationServer
+// TabularInformationServer is the server API for TabularInformation service.
+// All implementations should embed UnimplementedTabularInformationServer
 // for forward compatibility.
-type InformationServer interface {
+type TabularInformationServer interface {
 	Tables(context.Context, *TableInformationRequest) (*TableInformationResponse, error)
 }
 
-// UnimplementedInformationServer should be embedded to have
+// UnimplementedTabularInformationServer should be embedded to have
 // forward compatible implementations.
 //
 // NOTE: this should be embedded by value instead of pointer to avoid a nil
 // pointer dereference when methods are called.
-type UnimplementedInformationServer struct{}
+type UnimplementedTabularInformationServer struct{}
 
-func (UnimplementedInformationServer) Tables(context.Context, *TableInformationRequest) (*TableInformationResponse, error) {
+func (UnimplementedTabularInformationServer) Tables(context.Context, *TableInformationRequest) (*TableInformationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Tables not implemented")
 }
-func (UnimplementedInformationServer) testEmbeddedByValue() {}
+func (UnimplementedTabularInformationServer) testEmbeddedByValue() {}
 
-// UnsafeInformationServer may be embedded to opt out of forward compatibility for this service.
-// Use of this interface is not recommended, as added methods to InformationServer will
+// UnsafeTabularInformationServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to TabularInformationServer will
 // result in compilation errors.
-type UnsafeInformationServer interface {
-	mustEmbedUnimplementedInformationServer()
+type UnsafeTabularInformationServer interface {
+	mustEmbedUnimplementedTabularInformationServer()
 }
 
-func RegisterInformationServer(s grpc.ServiceRegistrar, srv InformationServer) {
-	// If the following call panics, it indicates UnimplementedInformationServer was
+func RegisterTabularInformationServer(s grpc.ServiceRegistrar, srv TabularInformationServer) {
+	// If the following call panics, it indicates UnimplementedTabularInformationServer was
 	// embedded by pointer and is nil.  This will cause panics if an
 	// unimplemented method is ever invoked, so we test this at initialization
 	// time to prevent it from happening at runtime later due to I/O.
 	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
 		t.testEmbeddedByValue()
 	}
-	s.RegisterService(&Information_ServiceDesc, srv)
+	s.RegisterService(&TabularInformation_ServiceDesc, srv)
 }
 
-func _Information_Tables_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _TabularInformation_Tables_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(TableInformationRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(InformationServer).Tables(ctx, in)
+		return srv.(TabularInformationServer).Tables(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: Information_Tables_FullMethodName,
+		FullMethod: TabularInformation_Tables_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(InformationServer).Tables(ctx, req.(*TableInformationRequest))
+		return srv.(TabularInformationServer).Tables(ctx, req.(*TableInformationRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-// Information_ServiceDesc is the grpc.ServiceDesc for Information service.
+// TabularInformation_ServiceDesc is the grpc.ServiceDesc for TabularInformation service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
-var Information_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "pluginv2.Information",
-	HandlerType: (*InformationServer)(nil),
+var TabularInformation_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.TabularInformation",
+	HandlerType: (*TabularInformationServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
 			MethodName: "Tables",
-			Handler:    _Information_Tables_Handler,
+			Handler:    _TabularInformation_Tables_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

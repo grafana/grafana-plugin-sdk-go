@@ -165,7 +165,7 @@ func (h *MiddlewareHandler) Tables(ctx context.Context, req *TableInformationReq
 		return nil, errNilRequest
 	}
 
-	ctx = h.setupContext(ctx, req.PluginContext, EndpointSchema)
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointTables)
 	return h.handler.Tables(ctx, req)
 }
 

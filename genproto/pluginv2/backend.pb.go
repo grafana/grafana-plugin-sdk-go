@@ -3411,8 +3411,8 @@ const file_backend_proto_rawDesc = "" +
 	"\x11ValidateAdmission\x12\x1a.pluginv2.AdmissionRequest\x1a\x1c.pluginv2.ValidationResponse\x12I\n" +
 	"\x0fMutateAdmission\x12\x1a.pluginv2.AdmissionRequest\x1a\x1a.pluginv2.MutationResponse2a\n" +
 	"\x12ResourceConversion\x12K\n" +
-	"\x0eConvertObjects\x12\x1b.pluginv2.ConversionRequest\x1a\x1c.pluginv2.ConversionResponse2^\n" +
-	"\vInformation\x12O\n" +
+	"\x0eConvertObjects\x12\x1b.pluginv2.ConversionRequest\x1a\x1c.pluginv2.ConversionResponse2e\n" +
+	"\x12TabularInformation\x12O\n" +
 	"\x06Tables\x12!.pluginv2.TableInformationRequest\x1a\".pluginv2.TableInformationResponseB\rZ\v./;pluginv2b\x06proto3"
 
 var (
@@ -3572,7 +3572,7 @@ var file_backend_proto_depIdxs = []int32{
 	30, // 71: pluginv2.AdmissionControl.ValidateAdmission:input_type -> pluginv2.AdmissionRequest
 	30, // 72: pluginv2.AdmissionControl.MutateAdmission:input_type -> pluginv2.AdmissionRequest
 	35, // 73: pluginv2.ResourceConversion.ConvertObjects:input_type -> pluginv2.ConversionRequest
-	38, // 74: pluginv2.Information.Tables:input_type -> pluginv2.TableInformationRequest
+	38, // 74: pluginv2.TabularInformation.Tables:input_type -> pluginv2.TableInformationRequest
 	11, // 75: pluginv2.Resource.CallResource:output_type -> pluginv2.CallResourceResponse
 	15, // 76: pluginv2.Data.QueryData:output_type -> pluginv2.QueryDataResponse
 	18, // 77: pluginv2.Data.QueryChunkedData:output_type -> pluginv2.QueryChunkedDataResponse
@@ -3584,7 +3584,7 @@ var file_backend_proto_depIdxs = []int32{
 	31, // 83: pluginv2.AdmissionControl.ValidateAdmission:output_type -> pluginv2.ValidationResponse
 	32, // 84: pluginv2.AdmissionControl.MutateAdmission:output_type -> pluginv2.MutationResponse
 	36, // 85: pluginv2.ResourceConversion.ConvertObjects:output_type -> pluginv2.ConversionResponse
-	40, // 86: pluginv2.Information.Tables:output_type -> pluginv2.TableInformationResponse
+	40, // 86: pluginv2.TabularInformation.Tables:output_type -> pluginv2.TableInformationResponse
 	75, // [75:87] is the sub-list for method output_type
 	63, // [63:75] is the sub-list for method input_type
 	63, // [63:63] is the sub-list for extension type_name

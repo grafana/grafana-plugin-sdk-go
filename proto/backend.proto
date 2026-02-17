@@ -521,10 +521,10 @@ message StatusResult {
 }
 
 //-----------------------------------------------
-// DS Information Endpoints
+// DS Tabular Information Endpoints
 //-----------------------------------------------
 
-service Information {
+service TabularInformation {
   rpc Tables(TableInformationRequest) returns (TableInformationResponse);
 }
 

@@ -6,14 +6,14 @@ import (
 )
 
 const (
-	// EndpointSchema friendly name for the tables endpoint/handler.
-	EndpointSchema Endpoint = "tables"
+	// EndpointTables friendly name for the tables endpoint/handler.
+	EndpointTables Endpoint = "tables"
 )
 
-// InformationHandler enables users to request data source information
+// TabularInformationHandler enables users to request data source tabular information
 // This handler is EXPERIMENTAL and may be replaced or substantially modified in the future.
 // Not suitable for external implementations.
-type InformationHandler interface {
+type TabularInformationHandler interface {
 	Tables(ctx context.Context, req *TableInformationRequest) (*TableInformationResponse, error)
 }
 
@@ -50,7 +50,7 @@ func validateRequest(req *TableInformationRequest) error {
 	return nil
 }
 
-// SchemaRequest contains the schema request
+// TableInformationRequest contains the table information request
 type TableInformationRequest struct {
 	// PluginContext the contextual information for the request.
 	PluginContext PluginContext

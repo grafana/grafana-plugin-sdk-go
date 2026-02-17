@@ -138,13 +138,13 @@ type DurationKey struct{}
 
 // MetricsWrapper is a wrapper for a plugin that collects metrics
 type MetricsWrapper struct {
-	Name               string
-	Type               string
-	healthcheckHandler backend.CheckHealthHandler
-	queryDataHandler   backend.QueryDataHandler
-	resourceHandler    backend.CallResourceHandler
-	informationHandler backend.InformationHandler
-	Metrics            Collector
+	Name                      string
+	Type                      string
+	healthcheckHandler        backend.CheckHealthHandler
+	queryDataHandler          backend.QueryDataHandler
+	resourceHandler           backend.CallResourceHandler
+	tabularInformationHandler backend.TabularInformationHandler
+	Metrics                   Collector
 }
 
 // NewMetricsWrapper creates a new MetricsWrapper instance
@@ -167,8 +167,8 @@ func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings, c ...Co
 	if r, ok := plugin.(backend.CallResourceHandler); ok {
 		wrapper.resourceHandler = r
 	}
-	if i, ok := plugin.(backend.InformationHandler); ok {
-		wrapper.informationHandler = i
+	if i, ok := plugin.(backend.TabularInformationHandler); ok {
+		wrapper.tabularInformationHandler = i
 	}
 	return wrapper
 }
@@ -215,7 +215,7 @@ func (ds *MetricsWrapper) CallResource(ctx context.Context, req *backend.CallRes
 	return ds.resourceHandler.CallResource(ctx, req, sender)
 }
 
-// Tables calls the InformationHandler and returns the data sources tabular information
+// Tables calls the TabularInformationHandler and returns the data sources tabular information
 func (ds *MetricsWrapper) Tables(ctx context.Context, req *backend.TableInformationRequest) (*backend.TableInformationResponse, error) {
 	ctx = context.WithValue(ctx, DurationKey{}, &Duration{value: 0})
 	metrics := ds.Metrics.WithEndpoint(EndpointTables)
@@ -226,7 +226,7 @@ func (ds *MetricsWrapper) Tables(ctx context.Context, req *backend.TableInformat
 		collectDuration(ctx, start, metrics)
 	}()
 
-	return ds.informationHandler.Tables(ctx, req)
+	return ds.tabularInformationHandler.Tables(ctx, req)
 }
 
 func collectDuration(ctx context.Context, start time.Time, metrics Collector) {

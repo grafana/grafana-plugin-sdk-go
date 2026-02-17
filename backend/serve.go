@@ -80,19 +80,19 @@ type ServeOpts struct {
 	// HandlerMiddlewares list of handler middlewares to decorate handlers with.
 	HandlerMiddlewares []HandlerMiddleware
 
-	InformationHandler InformationHandler
+	TabularInformationHandler TabularInformationHandler
 }
 
 func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
 	handlers := Handlers{
-		CheckHealthHandler:      opts.CheckHealthHandler,
-		CallResourceHandler:     opts.CallResourceHandler,
-		QueryDataHandler:        opts.QueryDataHandler,
-		QueryChunkedDataHandler: opts.QueryChunkedDataHandler,
-		StreamHandler:           opts.StreamHandler,
-		AdmissionHandler:        opts.AdmissionHandler,
-		ConversionHandler:       opts.ConversionHandler,
-		InformationHandler:      opts.InformationHandler,
+		CheckHealthHandler:        opts.CheckHealthHandler,
+		CallResourceHandler:       opts.CallResourceHandler,
+		QueryDataHandler:          opts.QueryDataHandler,
+		QueryChunkedDataHandler:   opts.QueryChunkedDataHandler,
+		StreamHandler:             opts.StreamHandler,
+		AdmissionHandler:          opts.AdmissionHandler,
+		ConversionHandler:         opts.ConversionHandler,
+		TabularInformationHandler: opts.TabularInformationHandler,
 	}
 
 	return HandlerFromMiddlewares(handlers, opts.HandlerMiddlewares...)
@@ -128,8 +128,8 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 		pluginOpts.ConversionServer = newConversionSDKAdapter(handler, opts.QueryConversionHandler)
 	}
 
-	if opts.InformationHandler != nil {
-		pluginOpts.InformationServer = newInformationSDKAdapter(handler)
+	if opts.TabularInformationHandler != nil {
+		pluginOpts.TabularInformationServer = newTabularInformationSDKAdapter(handler)
 	}
 
 	return pluginOpts, nil
@@ -281,9 +281,9 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "conversion")
 	}
 
-	if pluginOpts.InformationServer != nil {
-		pluginv2.RegisterInformationServer(server, pluginOpts.InformationServer)
-		plugKeys = append(plugKeys, "information")
+	if pluginOpts.TabularInformationServer != nil {
+		pluginv2.RegisterTabularInformationServer(server, pluginOpts.TabularInformationServer)
+		plugKeys = append(plugKeys, "tabularinformation")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
@@ -416,9 +416,9 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 		plugKeys = append(plugKeys, "conversion")
 	}
 
-	if pluginOpts.InformationServer != nil {
-		pluginv2.RegisterInformationServer(server, pluginOpts.InformationServer)
-		plugKeys = append(plugKeys, "information")
+	if pluginOpts.TabularInformationServer != nil {
+		pluginv2.RegisterTabularInformationServer(server, pluginOpts.TabularInformationServer)
+		plugKeys = append(plugKeys, "tabularinformation")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly

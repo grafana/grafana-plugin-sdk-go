@@ -17,10 +17,10 @@ import (
 )
 
 type TestPluginClient struct {
-	DataClient        pluginv2.DataClient
-	DiagnosticsClient pluginv2.DiagnosticsClient
-	ResourceClient    pluginv2.ResourceClient
-	InformationClient pluginv2.InformationClient
+	DataClient               pluginv2.DataClient
+	DiagnosticsClient        pluginv2.DiagnosticsClient
+	ResourceClient           pluginv2.ResourceClient
+	TabularInformationClient pluginv2.TabularInformationClient
 
 	conn *grpc.ClientConn
 }
@@ -181,7 +181,7 @@ func (p *TestPluginClient) Tables(ctx context.Context, r *backend.TableInformati
 		PluginContext: backend.ToProto().PluginContext(r.PluginContext),
 	}
 
-	resp, err := p.InformationClient.Tables(ctx, req)
+	resp, err := p.TabularInformationClient.Tables(ctx, req)
 	if err != nil {
 		return nil, err
 	}

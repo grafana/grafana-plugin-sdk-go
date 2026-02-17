@@ -8,14 +8,13 @@ import (
 
 // ServeOpts contains options for serving plugins.
 type ServeOpts struct {
-	DiagnosticsServer DiagnosticsServer
-	ResourceServer    ResourceServer
-	DataServer        DataServer
-	StreamServer      StreamServer
-	AdmissionServer   AdmissionServer
-	ConversionServer  ConversionServer
-	InformationServer InformationServer
-
+	DiagnosticsServer        DiagnosticsServer
+	ResourceServer           ResourceServer
+	DataServer               DataServer
+	StreamServer             StreamServer
+	AdmissionServer          AdmissionServer
+	ConversionServer         ConversionServer
+	TabularInformationServer TabularInformationServer
 	// GRPCServer factory method for creating GRPC server.
 	// If nil, the default one will be used.
 	GRPCServer func(options []grpc.ServerOption) *grpc.Server
@@ -62,9 +61,9 @@ func Serve(opts ServeOpts) error {
 		}
 	}
 
-	if opts.InformationServer != nil {
-		pSet["information"] = &InformationGRPCPlugin{
-			InformationServer: opts.InformationServer,
+	if opts.TabularInformationServer != nil {
+		pSet["tabularinformation"] = &TabularInformationGRPCPlugin{
+			TabularInformationServer: opts.TabularInformationServer,
 		}
 	}
 

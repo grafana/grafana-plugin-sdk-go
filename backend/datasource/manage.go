@@ -53,7 +53,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		QueryDataHandler:        handler,
 		QueryChunkedDataHandler: handler,
 		StreamHandler:           handler,
-		InformationHandler:      handler,
+		TabularInformationHandler:      handler,
 		QueryConversionHandler:  opts.QueryConversionHandler,
 		AdmissionHandler:        opts.AdmissionHandler,
 		GRPCSettings:            opts.GRPCSettings,

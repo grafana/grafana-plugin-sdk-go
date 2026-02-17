@@ -124,7 +124,7 @@ func (m *Manager) Tables(ctx context.Context, req *backend.TableInformationReque
 	if err != nil {
 		return nil, err
 	}
-	if ds, ok := h.(backend.InformationHandler); ok {
+	if ds, ok := h.(backend.TabularInformationHandler); ok {
 		return ds.Tables(ctx, req)
 	}
 	return nil, status.Error(codes.Unimplemented, "unimplemented")

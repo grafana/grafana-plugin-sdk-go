@@ -12,7 +12,7 @@ type Handler interface {
 	StreamHandler
 	AdmissionHandler
 	ConversionHandler
-	InformationHandler
+	TabularInformationHandler
 }
 
 var _ = Handler(&BaseHandler{})
@@ -89,7 +89,7 @@ type Handlers struct {
 	StreamHandler
 	AdmissionHandler
 	ConversionHandler
-	InformationHandler
+	TabularInformationHandler
 }
 
 var _ Handler = &Handlers{}
