@@ -132,6 +132,16 @@ func (fn QueryChunkedDataHandlerFunc) QueryChunkedData(ctx context.Context, req 
 	return fn(ctx, req, w)
 }
 
+// Specify the response bytes format
+type QueryResponseFormat int32
+
+const (
+	// Full arrow schema+data
+	QueryResponseFormat_ARROW QueryResponseFormat = 0
+	// JSON Encoded schema+data
+	QueryResponseFormat_JSON QueryResponseFormat = 1
+)
+
 // Experimental: QueryChunkedDataRequest contains all information needed for a chunked data request.
 // It's similar to QueryDataRequest but designed for chunked data transmission.
 type QueryChunkedDataRequest struct {
@@ -144,6 +154,9 @@ type QueryChunkedDataRequest struct {
 
 	// Queries the data queries for the request.
 	Queries []DataQuery
+
+	// Requested response format
+	Format QueryResponseFormat
 }
 
 // SetHTTPHeader sets the header entries associated with key to the

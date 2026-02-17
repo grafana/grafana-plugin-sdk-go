@@ -61,7 +61,7 @@ func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest,
 	ctx := stream.Context()
 	parsedReq := FromProto().QueryChunkedDataRequest(req)
 
-	asJSON := false // TODO, get property from request
+	asJSON := parsedReq.Format == QueryResponseFormat_JSON
 	writer := NewChunkedDataWriter(asJSON, func(chunk *pluginv2.QueryChunkedDataResponse) error {
 		return stream.Send(chunk)
 	})

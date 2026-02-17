@@ -127,6 +127,14 @@ service Data {
   rpc QueryChunkedData(QueryChunkedDataRequest) returns (stream QueryChunkedDataResponse);
 }
 
+// Specify the response bytes format
+enum QueryResponseFormat {
+  // Full arrow schema+data
+  ARROW = 0;
+  // JSON Encoded schema+data
+  JSON = 1;
+}
+
 message TimeRange {
   int64 fromEpochMS = 1;
   int64 toEpochMS = 2;
@@ -185,6 +193,9 @@ message QueryChunkedDataRequest {
 
   // List of data queries
   repeated DataQuery queries = 3;
+
+  // The requested response format
+  QueryResponseFormat format = 4;
 }
 
 message QueryChunkedDataResponse {
@@ -196,6 +207,7 @@ message QueryChunkedDataResponse {
   string frameId = 2;
 
   // Encoded frame
+  // The format will depend on the request parameters, the first bytes can be inspected to detect the format 
   bytes frame = 3;
 
   // Error message
