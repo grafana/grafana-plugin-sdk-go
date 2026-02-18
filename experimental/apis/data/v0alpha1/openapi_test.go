@@ -19,7 +19,7 @@ func TestOpenAPI(t *testing.T) {
 		return spec.MustCreateRef(path) // placeholder for tests
 	})
 
-	def, ok := defs["github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse"]
+	def, ok := defs["com.github.grafana.grafana-plugin-sdk-go.backend.DataResponse"]
 	require.True(t, ok)
 	require.Empty(t, def.Dependencies) // not yet supported!
 
@@ -40,7 +40,7 @@ func TestOpenAPI(t *testing.T) {
 	}
 
 	// Ensure DataSourceRef exists and has three properties
-	def, ok = defs["github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataSourceRef"]
+	def, ok = defs["com.github.grafana.grafana-plugin-sdk-go.experimental.apis.data.v0alpha1.DataSourceRef"]
 	require.True(t, ok)
 	require.ElementsMatch(t, []string{"type", "uid", "apiVersion"}, maps.Keys(def.Schema.Properties))
 }

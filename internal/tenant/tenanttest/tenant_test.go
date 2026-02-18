@@ -2,11 +2,10 @@ package tenanttest
 
 import (
 	"context"
-	"fmt"
-	"net"
 	"strconv"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/internal/testutil"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/metadata"
 
@@ -24,7 +23,7 @@ const (
 
 // A test to verify the impact tenant ID (passed via context) has on plugin instance management
 func TestTenantWithPluginInstanceManagement(t *testing.T) {
-	port, err := getFreePort()
+	port, err := testutil.GetFreePort()
 	require.NoError(t, err)
 	addr := "127.0.0.1:" + strconv.Itoa(port)
 	t.Log("addr:", addr)
@@ -111,6 +110,10 @@ func (p *testPlugin) QueryData(_ context.Context, _ *backend.QueryDataRequest) (
 	return backend.NewQueryDataResponse(), nil
 }
 
+func (p *testPlugin) QueryChunkedData(_ context.Context, _ *backend.QueryChunkedDataRequest, _ backend.ChunkedDataWriter) error {
+	return nil
+}
+
 func (p *testPlugin) CallResource(_ context.Context, _ *backend.CallResourceRequest, _ backend.CallResourceResponseSender) error {
 	return nil
 }
@@ -127,21 +130,4 @@ func newTestCallResourceResponseSender() *testCallResourceResponseSender {
 
 func (s *testCallResourceResponseSender) Send(_ *backend.CallResourceResponse) error {
 	return nil
-}
-
-// getFreePort returns a random free port listening on 127.0.0.1.
-func getFreePort() (int, error) {
-	a, err := net.ResolveTCPAddr("tcp", "127.0.0.1:0")
-	if err != nil {
-		return 0, fmt.Errorf("resolve tcp addr: %w", err)
-	}
-	l, err := net.ListenTCP("tcp", a)
-	if err != nil {
-		return 0, fmt.Errorf("listen tcp: %w", err)
-	}
-	port := l.Addr().(*net.TCPAddr).Port
-	if err = l.Close(); err != nil {
-		return 0, fmt.Errorf("close: %w", err)
-	}
-	return port, nil
 }

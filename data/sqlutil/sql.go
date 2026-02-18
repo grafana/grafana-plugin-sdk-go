@@ -3,6 +3,7 @@ package sqlutil
 import (
 	"database/sql"
 	"fmt"
+	"math"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -26,6 +27,11 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		return nil, err
 	}
 
+	// Set rowLimit to the maximum possible value if no limit is specified (negative value)
+	if rowLimit < 0 {
+		rowLimit = math.MaxInt64
+	}
+
 	// If there is a dynamic converter, we need to use the dynamic framer
 	// and remove the dynamic converter from the list of converters ( it is not valid, just a flag )
 	if isDynamic, converters := removeDynamicConverter(converters); isDynamic {
@@ -46,17 +52,11 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 	frame := NewFrame(names, scanRow.Converters...)
 
 	var i int64
-	for {
+
+outer:
+	for i < rowLimit {
 		// first iterate over rows may be nop if not switched result set to next
 		for rows.Next() {
-			if i == rowLimit {
-				frame.AppendNotices(data.Notice{
-					Severity: data.NoticeSeverityWarning,
-					Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
-				})
-				break
-			}
-
 			r := scanRow.NewScannableRow()
 			if err := rows.Scan(r...); err != nil {
 				return nil, err
@@ -67,8 +67,16 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 			}
 
 			i++
+			if i == rowLimit {
+				frame.AppendNotices(data.Notice{
+					Severity: data.NoticeSeverityWarning,
+					Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
+				})
+				break outer
+			}
 		}
-		if i == rowLimit || !rows.NextResultSet() {
+
+		if !rows.NextResultSet() {
 			break
 		}
 	}
