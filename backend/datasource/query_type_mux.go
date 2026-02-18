@@ -35,6 +35,11 @@ func (mux *QueryTypeMux) Handle(queryType string, handler backend.QueryDataHandl
 		panic("datasource: nil handler")
 	}
 
+	if mux.m == nil {
+		mux.m = map[string]backend.QueryDataHandler{}
+		mux.fallbackHandler = backend.QueryDataHandlerFunc(fallbackHandler)
+	}
+
 	if _, exist := mux.m[queryType]; exist {
 		panic("datasource: multiple registrations for " + queryType)
 	}
@@ -60,10 +65,10 @@ func (mux *QueryTypeMux) HandleFunc(queryType string, handler func(ctx context.C
 // HandleChunkedQueryType registers a chunked chandler function for a given query type.
 func (mux *QueryTypeMux) HandleChunkedQueryType(queryType string, handler backend.QueryChunkedDataHandlerFunc) {
 	if queryType == "" {
-		panic("chunked handler not supported for missing query type")
+		panic("ChunkedHandleFunc: requires query type")
 	}
 	if handler == nil {
-		panic("datasource: nil handler")
+		panic("ChunkedHandleFunc: nil handler")
 	}
 	if _, exist := mux.c[queryType]; exist {
 		panic("ChunkedHandleFunc: multiple registrations for " + queryType)
