@@ -1,6 +1,6 @@
 package schemabuilder
 
-import sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1"
+import sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 
 // This is only used to write out a sample panel query
 // It is not public and not intended to represent a real panel

@@ -18,7 +18,7 @@ import (
 	"k8s.io/kube-openapi/pkg/validation/validate"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1"
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 )
 
 // SchemaBuilder is a helper function that can be used by

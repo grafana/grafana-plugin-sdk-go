@@ -23,12 +23,12 @@ func GetOpenAPIDefinitions(ref common.ReferenceCallback) map[string]common.OpenA
 		TimeRange{}.OpenAPIModelName():               schemaTimeRange(ref),
 
 		// Duplicate path names -- remove after k8s v0.35.0 is widely used
-		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":                                    schemaDataResponse(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                              schemaDataFrame(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataQuery":               schemaDataQuery(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.DataSourceRef":           schemaDataSourceRef(ref),
-		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.TimeRange":               schemaTimeRange(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/backend.DataResponse":                                          schemaDataResponse(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/data.Frame":                                                    schemaDataFrame(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1.DataQuery":               schemaDataQuery(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1.QueryTypeDefinitionSpec": schemaQueryTypeDefinitionSpec(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1.DataSourceRef":           schemaDataSourceRef(ref),
+		"github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1.TimeRange":               schemaTimeRange(ref),
 	}
 }
 
