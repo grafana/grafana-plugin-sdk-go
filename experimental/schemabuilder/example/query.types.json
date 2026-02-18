@@ -1,6 +1,6 @@
 {
   "kind": "QueryTypeDefinitionList",
-  "apiVersion": "query.grafana.app/v0alpha1",
+  "apiVersion": "datasource.grafana.app/v0alpha1",
   "metadata": {
     "resourceVersion": "1709230013217"
   },
@@ -24,17 +24,12 @@
           "properties": {
             "expression": {
               "description": "General math expression",
-              "examples": [
-                "$A + 1",
-                "$A/$B"
-              ],
+              "examples": ["$A + 1", "$A/$B"],
               "minLength": 1,
               "type": "string"
             }
           },
-          "required": [
-            "expression"
-          ],
+          "required": ["expression"],
           "type": "object"
         },
         "examples": [
@@ -76,14 +71,7 @@
             },
             "reducer": {
               "description": "The reducer\n\n\nPossible enum values:\n - `\"sum\"` The sum\n - `\"mean\"` The mean\n - `\"min\"` \n - `\"max\"` \n - `\"count\"` \n - `\"last\"` ",
-              "enum": [
-                "sum",
-                "mean",
-                "min",
-                "max",
-                "count",
-                "last"
-              ],
+              "enum": ["sum", "mean", "min", "max", "count", "last"],
               "type": "string",
               "x-enum-description": {
                 "mean": "The mean",
@@ -96,10 +84,7 @@
               "properties": {
                 "mode": {
                   "description": "Non-number reduce behavior\n\n\nPossible enum values:\n - `\"dropNN\"` Drop non-numbers\n - `\"replaceNN\"` Replace non-numbers",
-                  "enum": [
-                    "dropNN",
-                    "replaceNN"
-                  ],
+                  "enum": ["dropNN", "replaceNN"],
                   "type": "string",
                   "x-enum-description": {
                     "dropNN": "Drop non-numbers",
@@ -111,17 +96,11 @@
                   "type": "number"
                 }
               },
-              "required": [
-                "mode"
-              ],
+              "required": ["mode"],
               "type": "object"
             }
           },
-          "required": [
-            "expression",
-            "reducer",
-            "settings"
-          ],
+          "required": ["expression", "reducer", "settings"],
           "type": "object"
         },
         "examples": [
@@ -178,13 +157,7 @@
               "type": "string"
             }
           },
-          "required": [
-            "expression",
-            "window",
-            "downsampler",
-            "upsampler",
-            "loadedDimensions"
-          ],
+          "required": ["expression", "window", "downsampler", "upsampler", "loadedDimensions"],
           "type": "object"
         },
         "examples": []

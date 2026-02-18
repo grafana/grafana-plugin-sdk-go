@@ -11,13 +11,14 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1"
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"k8s.io/kube-openapi/pkg/validation/strfmt"
 	"k8s.io/kube-openapi/pkg/validation/validate"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1"
 )
 
 // SchemaBuilder is a helper function that can be used by
@@ -221,7 +222,7 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 		}
 	}
 	defs.Kind = "QueryTypeDefinitionList"
-	defs.APIVersion = "query.grafana.app/v0alpha1"
+	defs.APIVersion = "datasource.grafana.app/v0alpha1"
 
 	// The updated schemas
 	for _, def := range b.query {

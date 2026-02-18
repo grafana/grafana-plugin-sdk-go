@@ -15,5 +15,5 @@ type ObjectMeta struct {
 
 type TypeMeta struct {
 	Kind       string `json:"kind"`       // "QueryTypeDefinitionList",
-	APIVersion string `json:"apiVersion"` // "query.grafana.app/v0alpha1",
+	APIVersion string `json:"apiVersion"` // "datasource.grafana.app/v0alpha1",
 }
