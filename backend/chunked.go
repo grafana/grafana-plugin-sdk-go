@@ -26,7 +26,8 @@ type ChunkedDataWriter interface {
 	WriteError(ctx context.Context, refID string, status Status, err error) error
 
 	// Allow clients direct access to the raw response
-	// This can avoid an additional encode/decode cycle
+	// Implementing this method in a client can avoid an additional encode/decode cycle
+	// When writing a datasource plugin (server), this method should not be used
 	WriteChunk(chunk *pluginv2.QueryChunkedDataResponse) error
 }
 
