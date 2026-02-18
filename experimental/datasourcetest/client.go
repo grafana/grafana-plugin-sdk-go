@@ -3,9 +3,8 @@ package datasourcetest
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
-
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -13,6 +12,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -81,7 +81,13 @@ func (p *TestPluginClient) QueryChunkedData(ctx context.Context, r *backend.Quer
 			return nil, err
 		}
 
-		f, err := data.UnmarshalArrowFrame(sr.Frame)
+		var f *data.Frame
+		switch sr.Format {
+		case pluginv2.DataFrameFormat_ARROW:
+			f, err = data.UnmarshalArrowFrame(sr.Frame)
+		case pluginv2.DataFrameFormat_JSON:
+			return nil, fmt.Errorf("JSON format is not yet supported in this client")
+		}
 		if err != nil {
 			return nil, err
 		}
