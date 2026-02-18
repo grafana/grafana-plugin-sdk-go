@@ -9,7 +9,7 @@ option go_package = "./;pluginv2";
 
 message AppInstanceSettings {
   bytes jsonData = 3;
-  map<string,string> decryptedSecureJsonData = 4;
+  map<string, string> decryptedSecureJsonData = 4;
   int64 lastUpdatedMS = 5;
 
   // The API version when the settings were saved
@@ -27,7 +27,7 @@ message DataSourceInstanceSettings {
   bool basicAuthEnabled = 6;
   string basicAuthUser = 7;
   bytes jsonData = 8;
-  map<string,string> decryptedSecureJsonData = 9;
+  map<string, string> decryptedSecureJsonData = 9;
 
   // timestamp when the settings where last changed
   int64 lastUpdatedMS = 10;
@@ -74,7 +74,7 @@ message PluginContext {
   DataSourceInstanceSettings dataSourceInstanceSettings = 5;
 
   // The grafana configuration as a map of key/value pairs.
-  map<string,string> grafanaConfig = 6;
+  map<string, string> grafanaConfig = 6;
 
   // The version of the plugin the request is targeted for.
   string pluginVersion = 7;
@@ -103,7 +103,7 @@ message CallResourceRequest {
   string path = 2;
   string method = 3;
   string url = 4;
-  map<string,StringList> headers = 5;
+  map<string, StringList> headers = 5;
   bytes body = 6;
 }
 
@@ -112,7 +112,7 @@ message CallResourceResponse {
   int32 code = 1;
 
   // Raw HTTP headers sent to the client
-  map<string,StringList> headers = 2;
+  map<string, StringList> headers = 2;
 
   // Raw HTTP body bytes sent to the client
   bytes body = 3;
@@ -146,7 +146,7 @@ message QueryDataRequest {
   PluginContext pluginContext = 1;
 
   // Environment info
-  map<string,string> headers = 2;
+  map<string, string> headers = 2;
 
   // List of data queries
   repeated DataQuery queries = 3;
@@ -154,7 +154,7 @@ message QueryDataRequest {
 
 message QueryDataResponse {
   // Map of refId to response
-  map<string,DataResponse> responses = 1;
+  map<string, DataResponse> responses = 1;
 }
 
 message DataResponse {
@@ -235,7 +235,7 @@ message CheckHealthRequest {
   PluginContext pluginContext = 1;
 
   // Environment info
-  map<string,string> headers = 2;
+  map<string, string> headers = 2;
 }
 
 message CheckHealthResponse {
@@ -284,7 +284,7 @@ message SubscribeStreamRequest {
   bytes data = 3;
 
   // Environment info
-  map<string,string> headers = 4;
+  map<string, string> headers = 4;
 }
 
 message SubscribeStreamResponse {
@@ -312,7 +312,7 @@ message PublishStreamRequest {
   bytes data = 3;
 
   // Environment info
-  map<string,string> headers = 4;
+  map<string, string> headers = 4;
 }
 
 message PublishStreamResponse {
@@ -342,7 +342,7 @@ message RunStreamRequest {
   bytes data = 3;
 
   // Environment info
-  map<string,string> headers = 4;
+  map<string, string> headers = 4;
 }
 
 message StreamPacket {
@@ -399,7 +399,6 @@ message AdmissionRequest {
   bytes old_object_bytes = 5;
 }
 
-
 // Check if an object can be admitted
 message ValidationResponse {
   // Allowed indicates whether or not the admission request was permitted.
@@ -451,7 +450,7 @@ service ResourceConversion {
 }
 
 // GroupVersion represents the API group and version of a resource.
-message GroupVersion{
+message GroupVersion {
   string group = 1;
   string version = 2;
 }
@@ -482,7 +481,6 @@ message ConversionRequest {
   // Target converted version
   GroupVersion target_version = 4;
 }
-
 
 // ConversionResponse contains the converted objects
 message ConversionResponse {
@@ -518,4 +516,42 @@ message StatusResult {
   // Suggested HTTP return code for this status, 0 if not set.
   // +optional
   int32 code = 4;
+}
+
+//-----------------------------------------------------------------
+// QuerySchema -- provides schema introspection for AI tooling
+//-----------------------------------------------------------------
+
+// QuerySchema service enables AI agents and other tools to discover
+// the expected structure of datasource query models.
+service QuerySchema {
+  // GetQuerySchema returns a JSON Schema describing the query model
+  rpc GetQuerySchema(GetQuerySchemaRequest) returns (GetQuerySchemaResponse);
+}
+
+message GetQuerySchemaRequest {
+  PluginContext pluginContext = 1;
+
+  // Optional query type to get schema for.
+  // If empty, returns the default/primary schema.
+  string queryType = 2;
+}
+
+message GetQuerySchemaResponse {
+  // JSON Schema document (draft-07 or later recommended)
+  bytes schema = 1;
+
+  // Available query types if the datasource supports multiple
+  repeated QueryTypeInfo queryTypes = 2;
+}
+
+message QueryTypeInfo {
+  // Type identifier (matches DataQuery.queryType)
+  string type = 1;
+
+  // Human-readable name
+  string name = 2;
+
+  // Description of what this query type does
+  string description = 3;
 }

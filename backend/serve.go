@@ -74,6 +74,10 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
 	QueryConversionHandler QueryConversionHandler
 
+	// QuerySchemaHandler provides schema introspection for AI tooling.
+	// Optional to implement.
+	QuerySchemaHandler QuerySchemaHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 
@@ -123,6 +127,10 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 
 	if opts.ConversionHandler != nil || opts.QueryConversionHandler != nil {
 		pluginOpts.ConversionServer = newConversionSDKAdapter(handler, opts.QueryConversionHandler)
+	}
+
+	if opts.QuerySchemaHandler != nil {
+		pluginOpts.QuerySchemaServer = newQuerySchemaSDKAdapter(opts.QuerySchemaHandler)
 	}
 	return pluginOpts, nil
 }
@@ -273,6 +281,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "conversion")
 	}
 
+	if pluginOpts.QuerySchemaServer != nil {
+		pluginv2.RegisterQuerySchemaServer(server, pluginOpts.QuerySchemaServer)
+		plugKeys = append(plugKeys, "querySchema")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -401,6 +414,11 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.ConversionServer != nil {
 		pluginv2.RegisterResourceConversionServer(server, pluginOpts.ConversionServer)
 		plugKeys = append(plugKeys, "conversion")
+	}
+
+	if pluginOpts.QuerySchemaServer != nil {
+		pluginv2.RegisterQuerySchemaServer(server, pluginOpts.QuerySchemaServer)
+		plugKeys = append(plugKeys, "querySchema")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
