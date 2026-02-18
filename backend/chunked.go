@@ -24,6 +24,10 @@ type ChunkedDataWriter interface {
 
 	// WriteError writes an error associated with the specified refID.
 	WriteError(ctx context.Context, refID string, status Status, err error) error
+
+	// Allow clients direct access to the raw response
+	// This can avoid an additional encode/decode cycle
+	WriteChunk(chunk *pluginv2.QueryChunkedDataResponse) error
 }
 
 func NewChunkedDataWriter(format DataFrameFormat, write ChunkedDataCallback) ChunkedDataWriter {
@@ -96,5 +100,10 @@ func (c *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameI
 		return err
 	}
 
+	return c.write(chunk)
+}
+
+// WriteFrame implements [ChunkedDataWriter].
+func (c *chunkedDataWriter) WriteChunk(chunk *pluginv2.QueryChunkedDataResponse) error {
 	return c.write(chunk)
 }
