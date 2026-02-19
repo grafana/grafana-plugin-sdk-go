@@ -127,6 +127,14 @@ service Data {
   rpc QueryChunkedData(QueryChunkedDataRequest) returns (stream QueryChunkedDataResponse);
 }
 
+// Specify the response bytes format
+enum DataFrameFormat {
+  // Full arrow schema+data
+  ARROW = 0;
+  // JSON Encoded schema+data
+  JSON = 1;
+}
+
 message TimeRange {
   int64 fromEpochMS = 1;
   int64 toEpochMS = 2;
@@ -185,6 +193,9 @@ message QueryChunkedDataRequest {
 
   // List of data queries
   repeated DataQuery queries = 3;
+
+  // The requested response format
+  DataFrameFormat format = 4;
 }
 
 message QueryChunkedDataResponse {
@@ -195,7 +206,7 @@ message QueryChunkedDataResponse {
   // will only include rows and must match the original frame structure.
   string frameId = 2;
 
-  // Encoded frame
+  // Encoded frame -- the format is determined by the format parameter
   bytes frame = 3;
 
   // Error message
@@ -208,6 +219,9 @@ message QueryChunkedDataResponse {
 
   // Error source
   string errorSource = 6;
+
+  // The frame format (default to arrow)
+  DataFrameFormat format = 7;
 }
 
 //-----------------------------------------------

@@ -178,6 +178,7 @@ func (f ConvertFromProtobuf) QueryChunkedDataRequest(protoReq *pluginv2.QueryChu
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Headers:       protoReq.Headers,
 		Queries:       queries,
+		Format:        DataFrameFormat(protoReq.Format),
 	}
 }
 
