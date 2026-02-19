@@ -212,6 +212,29 @@ type schemaField struct {
 	TypeInfo fieldTypeInfo `json:"typeInfo,omitempty"`
 }
 
+func AppendJSONData(frame *Frame, data []byte) error {
+	iter := jsoniter.ParseBytes(jsoniter.ConfigDefault, data)
+	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
+		switch l1Field {
+		case jsonKeySchema:
+			return fmt.Errorf("the payload may not include the schema")
+
+		case jsonKeyData:
+			buffer := frame.EmptyCopy()
+			if err := readFrameData(iter, buffer); err != nil {
+				return err
+			}
+			for i, field := range frame.Fields {
+				field.AppendAll(buffer.Fields[i])
+			}
+
+		default:
+			iter.ReportError("append data", "unexpected field: "+l1Field)
+		}
+	}
+	return iter.Error
+}
+
 func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 	for l1Field := iter.ReadObject(); l1Field != ""; l1Field = iter.ReadObject() {
 		switch l1Field {

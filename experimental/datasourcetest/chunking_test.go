@@ -6,16 +6,16 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
-
-	"github.com/grafana/grafana-plugin-sdk-go/internal/testutil"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/testutil"
 )
 
 // TestQueryDataAndChunkedResponsesAreTheSame verifies that the QueryData and QueryChunkedData methods return the
@@ -96,7 +96,18 @@ func TestQueryDataAndChunkedResponsesAreTheSame(t *testing.T) {
 			}
 
 			// Query data with chunking enabled
-			chunkedResp, err := tpQueryChunked.Client.QueryChunkedData(ctx, &backend.QueryChunkedDataRequest{
+			chunkedRespArrow, err := tpQueryChunked.Client.QueryChunkedData(ctx, &backend.QueryChunkedDataRequest{
+				PluginContext: backend.PluginContext{DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "1"}},
+				Queries:       queries,
+			})
+			if err != nil {
+				t.Error("QueryChunkedData failed", err)
+				return
+			}
+
+			// Query data with chunking enabled
+			chunkedRespJSON, err := tpQueryChunked.Client.QueryChunkedData(ctx, &backend.QueryChunkedDataRequest{
+				Format:        backend.DataFrameFormat_JSON,
 				PluginContext: backend.PluginContext{DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "1"}},
 				Queries:       queries,
 			})
@@ -116,8 +127,11 @@ func TestQueryDataAndChunkedResponsesAreTheSame(t *testing.T) {
 			}
 
 			// Compare responses
-			if diff := cmp.Diff(resp, chunkedResp, cmp.AllowUnexported(data.Field{})); diff != "" {
-				t.Errorf("QueryData vs QueryChunkedData mismatch (-want +got):\n%s", diff)
+			if diff := cmp.Diff(resp, chunkedRespArrow, cmp.AllowUnexported(data.Field{})); diff != "" {
+				t.Errorf("QueryData vs QueryChunkedData (Arrow) mismatch (-want +got):\n%s", diff)
+			}
+			if diff := cmp.Diff(resp, chunkedRespJSON, cmp.AllowUnexported(data.Field{})); diff != "" {
+				t.Errorf("QueryData vs QueryChunkedData (JSON) mismatch (-want +got):\n%s", diff)
 			}
 			if diff := cmp.Diff(respMulti, chunkedRespMulti, cmp.AllowUnexported(data.Field{})); diff != "" {
 				t.Errorf("QueryData vs QueryChunkedData with multiple frames mismatch (-want +got):\n%s", diff)
