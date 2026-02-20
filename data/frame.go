@@ -21,6 +21,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	jsoniter "github.com/json-iterator/go"
 	"github.com/olekukonko/tablewriter"
+	"github.com/olekukonko/tablewriter/renderer"
+	"github.com/olekukonko/tablewriter/tw"
 )
 
 // Frame is a columnar data structure where each column is a Field.
@@ -475,16 +477,32 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 	fmt.Fprintf(sb, "Name: %v\n", f.Name)
 	fmt.Fprintf(sb, "Dimensions: %v Fields by %v Rows\n", len(f.Fields), rowLen)
 
-	table := tablewriter.NewWriter(sb)
-
-	// table formatting options
-	table.SetAutoFormatHeaders(false)
-	table.SetHeaderAlignment(tablewriter.ALIGN_LEFT)
-	table.SetAutoWrapText(false)
-	table.SetAlignment(tablewriter.ALIGN_LEFT)
+	table := tablewriter.NewTable(sb,
+		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
+			Symbols: tw.NewSymbols(tw.StyleASCII),
+		})),
+		tablewriter.WithConfig(tablewriter.Config{
+			Header: tw.CellConfig{
+				Formatting: tw.CellFormatting{
+					AutoFormat: tw.Off,
+				},
+				Alignment: tw.CellAlignment{
+					Global: tw.AlignLeft,
+				},
+			},
+			Row: tw.CellConfig{
+				Formatting: tw.CellFormatting{
+					AutoWrap: tw.WrapNone,
+				},
+				Alignment: tw.CellAlignment{
+					Global: tw.AlignLeft,
+				},
+			},
+		}),
+	)
 
 	// set table headers
-	headers := make([]string, width)
+	headers := make([]any, width)
 	for colIdx, field := range f.Fields {
 		if exceedsWidth && colIdx == maxFields-1 { // if Frame has more Fields than output table width and last Field
 			headers[colIdx] = fmt.Sprintf("...+%v field...", len(f.Fields)-colIdx)
@@ -492,11 +510,11 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 		}
 		headers[colIdx] = fmt.Sprintf("Name: %v\nLabels: %s\nType: %s", field.Name, field.Labels, field.Type())
 	}
-	table.SetHeader(headers)
+	table.Header(headers...)
 
 	if maxRows == 0 {
-		table.Render()
-		return sb.String(), nil
+		err = table.Render()
+		return sb.String(), err
 	}
 
 	for rowIdx := 0; rowIdx < length; rowIdx++ {
@@ -507,7 +525,9 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 			for i := range sRow {
 				sRow[i] = maxLengthExceededStr
 			}
-			table.Append(sRow)
+			if err = table.Append(sRow); err != nil {
+				return "", err
+			}
 			break
 		}
 
@@ -532,11 +552,13 @@ func (f *Frame) StringTable(maxFields, maxRows int) (string, error) {
 				sRow[colIdx] = fmt.Sprintf("%v", val)
 			}
 		}
-		table.Append(sRow)
+		if err = table.Append(sRow); err != nil {
+			return "", err
+		}
 	}
 
-	table.Render()
-	return sb.String(), nil
+	err = table.Render()
+	return sb.String(), err
 }
 
 // FieldByName returns Field by its name and its index in Frame.Fields.
