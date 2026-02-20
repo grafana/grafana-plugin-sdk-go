@@ -26,7 +26,7 @@ const (
 	intervalMsKey       = "intervalMs"
 	hideKey             = "hide"
 
-	openAPIPrefix = "com.github.grafana.grafana-plugin-sdk-go.experimental.apis.data.v0alpha1."
+	openAPIPrefix = "com.github.grafana.grafana-plugin-sdk-go.experimental.apis.datasource.v0alpha1."
 )
 
 func init() { //nolint:gochecknoinits

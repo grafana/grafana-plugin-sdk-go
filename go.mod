@@ -11,6 +11,7 @@ require (
 	github.com/go-openapi/loads v0.23.2
 	github.com/go-openapi/spec v0.22.3
 	github.com/go-openapi/strfmt v0.25.0
+	github.com/go-openapi/swag/loading v0.25.4
 	github.com/go-openapi/validate v0.25.1
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
@@ -51,10 +52,8 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20251202230838-ff82c1b0f217
 	google.golang.org/grpc v1.78.0
 	google.golang.org/protobuf v1.36.11
-	k8s.io/kube-openapi v0.0.0-20251125145642-4e65d59e963e // @grafana/grafana-app-platform-squad
+	k8s.io/kube-openapi v0.0.0-20260127142750-a19766b6e2d4 // @grafana/grafana-app-platform-squad
 )
-
-require github.com/go-openapi/swag/loading v0.25.4
 
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect

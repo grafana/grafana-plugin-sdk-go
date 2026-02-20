@@ -4,8 +4,9 @@ import (
 	"encoding/json"
 	"fmt"
 
-	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1"
 	"k8s.io/kube-openapi/pkg/validation/spec"
+
+	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 )
 
 // The k8s compatible jsonschema version
