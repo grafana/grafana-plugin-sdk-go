@@ -11,10 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 func TestConvertToProtobufQueryDataResponse(t *testing.T) {
@@ -84,7 +85,7 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 					},
 				},
 			}
-			qdr, err := ToProto().QueryDataResponse(protoRes)
+			qdr, err := ToProto().QueryDataResponse(DataFrameFormat_ARROW, protoRes)
 			require.NoError(t, err)
 			require.NotNil(t, qdr)
 			require.NotNil(t, qdr.Responses)

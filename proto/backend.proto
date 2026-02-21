@@ -158,6 +158,9 @@ message QueryDataRequest {
 
   // List of data queries
   repeated DataQuery queries = 3;
+
+  // The frame format (default to arrow)
+  DataFrameFormat format = 7;
 }
 
 message QueryDataResponse {
@@ -183,6 +186,9 @@ message DataResponse {
 
   // Error source
   string errorSource = 5;
+
+  // The frame format (default to arrow)
+  DataFrameFormat format = 7;
 }
 
 message QueryChunkedDataRequest {
