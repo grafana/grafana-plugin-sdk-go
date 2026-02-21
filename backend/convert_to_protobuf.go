@@ -187,6 +187,7 @@ func (t ConvertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 		PluginContext: t.PluginContext(req.PluginContext),
 		Headers:       req.Headers,
 		Queries:       queries,
+		Format:        pluginv2.DataFrameFormat(req.Format),
 	}
 }
 
@@ -221,7 +222,9 @@ func (t ConvertToProtobuf) QueryDataResponse(format DataFrameFormat, res *QueryD
 			}
 		}
 		var err error
-		pDR := pluginv2.DataResponse{}
+		pDR := pluginv2.DataResponse{
+			Format: pluginv2.DataFrameFormat(format),
+		}
 		switch format {
 		case DataFrameFormat_ARROW:
 			pDR.Frames, err = dr.Frames.MarshalArrow()
