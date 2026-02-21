@@ -85,6 +85,19 @@ func TestQueryDataAndChunkedResponsesAreTheSame(t *testing.T) {
 				return
 			}
 
+			respJSON, err := tpQueryData.Client.QueryData(ctx, &backend.QueryDataRequest{
+				PluginContext: backend.PluginContext{DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "1"}},
+				Queries:       queries,
+				Format:        backend.DataFrameFormat_JSON,
+			})
+			if err != nil {
+				t.Error("QueryData failed", err)
+				return
+			}
+			if diff := cmp.Diff(resp, respJSON, cmp.AllowUnexported(data.Field{})); diff != "" {
+				t.Errorf("QueryData vs QueryData (JSON) mismatch (-want +got):\n%s", diff)
+			}
+
 			// Query data (multiple frames)
 			respMulti, err := tpQueryDataMulti.Client.QueryData(ctx, &backend.QueryDataRequest{
 				PluginContext: backend.PluginContext{DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "1"}},

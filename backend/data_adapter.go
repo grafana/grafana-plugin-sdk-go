@@ -46,7 +46,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		return nil, errors.New("both response and error are nil, but one must be provided")
 	}
 
-	return ToProto().QueryDataResponse(resp)
+	return ToProto().QueryDataResponse(parsedReq.Format, resp)
 }
 
 // QueryChunkedData handles incoming gRPC stream data requests by converting them to SDK format

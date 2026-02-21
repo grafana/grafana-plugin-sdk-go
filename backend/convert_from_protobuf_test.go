@@ -376,6 +376,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 		Queries: []*pluginv2.DataQuery{
 			protoDataQuery,
 		},
+		Format: pluginv2.DataFrameFormat_JSON, // the non-zero default value
 	}
 
 	protoWalker := &walker{}
@@ -402,6 +403,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter := &requireCounter{}
 
 	requireCounter.Equal(t, protoQDR.Headers, sdkQDR.Headers)
+	requireCounter.Equal(t, protoQDR.Format, pluginv2.DataFrameFormat(sdkQDR.Format))
 
 	// PluginContext
 	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
