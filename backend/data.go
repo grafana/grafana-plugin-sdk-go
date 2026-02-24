@@ -202,7 +202,7 @@ type QueryDataResponse struct {
 	Responses Responses `json:"results"`
 
 	// response format
-	Format DataFrameFormat `json:"-"`
+	Format DataFrameFormat `json:"-"` // when serialized as JSON, it is already in json format, so we don't need to include this field
 }
 
 // MarshalJSON writes the results as json
