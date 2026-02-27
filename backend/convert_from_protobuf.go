@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -134,6 +135,7 @@ func (f ConvertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Headers:       protoReq.Headers,
 		Queries:       queries,
+		Format:        DataFrameFormat(protoReq.Format),
 	}
 }
 
@@ -142,21 +144,35 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 	qdr := &QueryDataResponse{
 		Responses: make(Responses, len(protoRes.Responses)),
 	}
+	var err error
 	for refID, res := range protoRes.Responses {
-		frames, err := data.UnmarshalArrowFrames(res.Frames)
-		if err != nil {
-			return nil, err
-		}
-
 		status := Status(res.Status)
 		if !status.IsValid() {
 			status = StatusUnknown
 		}
 
-		dr := DataResponse{
-			Frames: frames,
-			Status: status,
+		dr := DataResponse{Status: status}
+
+		switch res.Format {
+		case pluginv2.DataFrameFormat_ARROW:
+			dr.Frames, err = data.UnmarshalArrowFrames(res.Frames)
+			if err != nil {
+				return nil, err
+			}
+		case pluginv2.DataFrameFormat_JSON:
+			dr.Frames = make([]*data.Frame, len(res.Frames))
+			for i, b := range res.Frames {
+				var v *data.Frame
+				err = json.Unmarshal(b, &v)
+				if err != nil {
+					return nil, err
+				}
+				dr.Frames[i] = v
+			}
+		default:
+			return nil, errors.New("unknown data frame format: " + res.Format.String())
 		}
+
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
 			dr.ErrorSource = ErrorSource(res.ErrorSource)

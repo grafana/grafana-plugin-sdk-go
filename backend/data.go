@@ -51,6 +51,9 @@ type QueryDataRequest struct {
 
 	// Queries the data queries for the request.
 	Queries []DataQuery
+
+	// Requested response format
+	Format DataFrameFormat
 }
 
 // SetHTTPHeader sets the header entries associated with key to the
@@ -197,6 +200,9 @@ func (req *QueryChunkedDataRequest) GetHTTPHeaders() http.Header {
 type QueryDataResponse struct {
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
 	Responses Responses `json:"results"`
+
+	// response format
+	Format DataFrameFormat `json:"-"` // when serialized as JSON, it is already in json format, so we don't need to include this field
 }
 
 // MarshalJSON writes the results as json

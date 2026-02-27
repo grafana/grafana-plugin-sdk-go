@@ -187,6 +187,7 @@ func (t ConvertToProtobuf) QueryDataRequest(req *QueryDataRequest) *pluginv2.Que
 		PluginContext: t.PluginContext(req.PluginContext),
 		Headers:       req.Headers,
 		Queries:       queries,
+		Format:        pluginv2.DataFrameFormat(req.Format),
 	}
 }
 
@@ -207,7 +208,7 @@ func (t ConvertToProtobuf) QueryChunkedDataRequest(req *QueryChunkedDataRequest)
 // QueryDataResponse converts the SDK version of a QueryDataResponse to the protobuf version.
 // It will set the RefID on the frames to the RefID key in Responses if a Frame's
 // RefId property is an empty string.
-func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
+func (t ConvertToProtobuf) QueryDataResponse(format DataFrameFormat, res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
 	pQDR := &pluginv2.QueryDataResponse{
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
 	}
@@ -220,13 +221,28 @@ func (t ConvertToProtobuf) QueryDataResponse(res *QueryDataResponse) (*pluginv2.
 				f.RefID = refID
 			}
 		}
-		encodedFrames, err := dr.Frames.MarshalArrow()
+		var err error
+		pDR := pluginv2.DataResponse{
+			Format: pluginv2.DataFrameFormat(format),
+		}
+		switch format {
+		case DataFrameFormat_ARROW:
+			pDR.Frames, err = dr.Frames.MarshalArrow()
+		case DataFrameFormat_JSON:
+			for _, f := range dr.Frames {
+				raw, err := f.MarshalJSON()
+				if err != nil {
+					return nil, err
+				}
+				pDR.Frames = append(pDR.Frames, raw)
+			}
+		default:
+			return nil, errors.New("unsupported data frame format")
+		}
 		if err != nil {
 			return nil, err
 		}
-		pDR := pluginv2.DataResponse{
-			Frames: encodedFrames,
-		}
+
 		status := dr.Status
 		if dr.Error != nil {
 			pDR.Error = dr.Error.Error()
