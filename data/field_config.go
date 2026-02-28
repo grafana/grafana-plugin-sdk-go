@@ -102,15 +102,12 @@ const ExplicitNullValue = "null"
 type ConfFloat64 float64
 
 // MarshalJSON fulfills the json.Marshaler interface.
-func (sf *ConfFloat64) MarshalJSON() ([]byte, error) {
-	if sf == nil ||
-		math.IsNaN(float64(*sf)) ||
-		math.IsInf(float64(*sf), -1) ||
-		math.IsInf(float64(*sf), +1) {
+func (sf ConfFloat64) MarshalJSON() ([]byte, error) {
+	f := float64(sf)
+	if math.IsNaN(f) || math.IsInf(f, -1) || math.IsInf(f, +1) {
 		return []byte(string(ExplicitNullValue)), nil
 	}
-
-	return fmt.Appendf(nil, `%v`, float64(*sf)), nil
+	return fmt.Appendf(nil, `%v`, f), nil
 }
 
 // UnmarshalJSON fulfills the json.Unmarshaler interface.
@@ -214,7 +211,7 @@ type ThresholdsConfig struct {
 
 // Threshold a single step on the threshold list
 type Threshold struct {
-	Value ConfFloat64 `json:"value,omitempty"` // First value is always -Infinity serialize to null
+	Value ConfFloat64 `json:"value"` // First value is always -Infinity serialize to null
 	Color string      `json:"color,omitempty"`
 	State string      `json:"state,omitempty"`
 }
