@@ -2,7 +2,6 @@ package data_test
 
 import (
 	"encoding/json"
-	"fmt"
 	"math"
 	"testing"
 
@@ -94,8 +93,6 @@ func TestFieldCOnfig(t *testing.T) {
 		require.NoError(t, err, "error encoding with encoding/json")
 		str := string(out)
 
-		fmt.Printf("%s", str)
-
 		// Same text after export
 		assert.JSONEq(t, jsonText, str)
 
@@ -104,7 +101,7 @@ func TestFieldCOnfig(t *testing.T) {
 		assert.JSONEq(t, jsonText, string(out))
 	})
 
-	t.Run("ConfFloat64 nan/inf", func(t *testing.T) {
+	t.Run("ConfFloat64 json", func(t *testing.T) {
 		testCases := []struct {
 			name     string
 			input    data.ConfFloat64
@@ -116,17 +113,17 @@ func TestFieldCOnfig(t *testing.T) {
 				expected: "3.14",
 			},
 			{
-				name:     "inf",
-				input:    data.ConfFloat64(math.Inf(0)),
+				name:     "+inf",
+				input:    data.ConfFloat64(math.Inf(+1)),
 				expected: "null",
 			},
 			{
-				name:     "inf",
+				name:     "-inf",
 				input:    data.ConfFloat64(math.Inf(-1)),
 				expected: "null",
 			},
 			{
-				name:     "inf",
+				name:     "nan",
 				input:    data.ConfFloat64(math.NaN()),
 				expected: "null",
 			},
@@ -137,6 +134,91 @@ func TestFieldCOnfig(t *testing.T) {
 				out, err := cf.MarshalJSON()
 				require.NoError(t, err)
 				assert.Equal(t, tc.expected, string(out))
+
+				// non pointer
+				out, err = json.Marshal(cf)
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, string(out))
+
+				// pointer value
+				out, err = json.Marshal(&cf)
+				require.NoError(t, err)
+				assert.Equal(t, tc.expected, string(out))
+
+				threshold := &data.Threshold{
+					Value: tc.input,
+					Color: "red",
+					State: "x",
+				}
+				out, err = json.Marshal(threshold)
+				require.NoError(t, err)
+
+				out = append([]byte("["), out...)
+				out = append(out, byte(']'))
+				thresholds := []data.Threshold{}
+				err = json.Unmarshal(out, &thresholds)
+				require.NoError(t, err)
+				require.Len(t, thresholds, 1)
+
+				f := float64(tc.input)
+				if math.IsNaN(f) || math.IsInf(f, 0) || math.IsInf(f, -1) {
+					require.Equal(t, data.ConfFloat64(math.Inf(-1)), thresholds[0].Value)
+				} else {
+					require.Equal(t, tc.input, thresholds[0].Value)
+				}
+				require.Equal(t, "red", thresholds[0].Color)
+				require.Equal(t, "x", thresholds[0].State)
+			})
+		}
+	})
+
+	t.Run("threshold Marshal/Unmarshal", func(t *testing.T) {
+		testCases := []struct {
+			name   string
+			before data.Threshold
+			after  data.Threshold
+		}{
+			{
+				name: "empty value is zero",
+				before: data.Threshold{
+					Color: "red",
+				},
+				after: data.Threshold{
+					Value: data.ConfFloat64(0), // default value
+					Color: "red",
+				},
+			}, {
+				name: "nan to -inf",
+				before: data.Threshold{
+					Value: data.ConfFloat64(math.NaN()), // json null
+					Color: "orange",
+				},
+				after: data.Threshold{
+					Value: data.ConfFloat64(math.Inf(-1)),
+					Color: "orange",
+				},
+			}, {
+				name: "+inf to -inf",
+				before: data.Threshold{
+					Value: data.ConfFloat64(math.Inf(+1)), // json null
+					Color: "orange",
+				},
+				after: data.Threshold{
+					Value: data.ConfFloat64(math.Inf(-1)),
+					Color: "orange",
+				},
+			},
+		}
+		for _, tc := range testCases {
+			t.Run(tc.name, func(t *testing.T) {
+				out, err := json.Marshal([]data.Threshold{tc.before})
+				require.NoError(t, err)
+
+				arr := []data.Threshold{}
+				err = json.Unmarshal(out, &arr)
+				require.NoError(t, err)
+
+				require.Equal(t, tc.after, arr[0])
 			})
 		}
 	})
