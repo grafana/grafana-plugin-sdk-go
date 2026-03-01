@@ -6,7 +6,7 @@ require (
 	github.com/apache/arrow-go/v18 v18.5.1
 	github.com/cheekybits/genny v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
-	github.com/elazarl/goproxy v1.8.1
+	github.com/elazarl/goproxy v1.8.2
 	github.com/getkin/kin-openapi v0.133.0
 	github.com/go-openapi/loads v0.23.2
 	github.com/go-openapi/spec v0.22.3
