@@ -40,7 +40,7 @@ var (
 		Namespace: "grafana",
 		Name:      "secure_socks_requests_duration",
 		Help:      "Duration of requests to the secure socks proxy",
-	}, []string{"code", "datasource", "datasource_type"})
+	}, []string{"code", "datasource", "datasource_type", "slug"})
 	errUseOfHTTPDefaultTransport = errors.New("use of the http.DefaultTransport is not allowed with secure proxy")
 )
 
@@ -242,7 +242,7 @@ func (p *cfgProxyWrapper) getTLSDialerFromFiles() (*tls.Dialer, error) {
 
 // SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`
 // to determine if the secure socks proxy should be enabled on it
-func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
+func SecureSocksProxyEnabledOnDS(jsonData map[string]any) bool {
 	res, enabled := jsonData["enableSecureSocksProxy"]
 	if !enabled {
 		return false
@@ -343,6 +343,31 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 		err = status.DownstreamError(err)
 	}
 
-	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType).Observe(time.Since(start).Seconds())
+	slug := slugFromContext(ctx)
+	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType, slug).Observe(time.Since(start).Seconds())
 	return c, err
+}
+
+func slugFromContext(ctx context.Context) string {
+	if slug := getContextualLogAttribute(log.ContextualAttributesFromContext(ctx), "slug"); slug != "" {
+		return slug
+	}
+	return getContextualLogAttribute(log.ContextualAttributesFromIncomingContext(ctx), "slug")
+}
+
+func getContextualLogAttribute(attrs []any, key string) string {
+	if len(attrs) < 2 {
+		return ""
+	}
+
+	for i := 0; i+1 < len(attrs); i += 2 {
+		if k, ok := attrs[i].(string); ok && k == key {
+			if v, ok := attrs[i+1].(string); ok {
+				return v
+			}
+			return ""
+		}
+	}
+
+	return ""
 }

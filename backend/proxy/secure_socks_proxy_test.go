@@ -18,9 +18,13 @@ import (
 	"testing"
 	"time"
 
+	sdklog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/proxy"
+	"google.golang.org/grpc/metadata"
 )
 
 func TestNewSecureSocksProxyContextDialerInsecureProxy(t *testing.T) {
@@ -365,6 +369,64 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 	})
 }
 
+func TestInstrumentedSocksDialerMetricsIncludeSlug(t *testing.T) {
+	datasourceName := "name_" + strings.ReplaceAll(t.Name(), "/", "_")
+	datasourceType := "type_" + strings.ReplaceAll(t.Name(), "/", "_")
+	slug := "slug_" + strings.ReplaceAll(t.Name(), "/", "_")
+
+	d := newInstrumentedSocksDialer(fakeConn{}, datasourceName, datasourceType)
+	cd, ok := d.(proxy.ContextDialer)
+	require.True(t, ok)
+
+	withSlugLabels := map[string]string{
+		"code":            "0",
+		"datasource":      datasourceName,
+		"datasource_type": datasourceType,
+		"slug":            slug,
+	}
+	beforeWithSlug := getSecureSocksRequestCount(t, withSlugLabels)
+
+	_, err := cd.DialContext(sdklog.WithContextualAttributes(context.Background(), []any{"slug", slug}), "n", "addr")
+	require.NoError(t, err)
+
+	afterWithSlug := getSecureSocksRequestCount(t, withSlugLabels)
+	assert.Equal(t, beforeWithSlug+1, afterWithSlug)
+
+	withoutSlugLabels := map[string]string{
+		"code":            "0",
+		"datasource":      datasourceName,
+		"datasource_type": datasourceType,
+		"slug":            "",
+	}
+	beforeWithoutSlug := getSecureSocksRequestCount(t, withoutSlugLabels)
+
+	_, err = cd.DialContext(context.Background(), "n", "addr")
+	require.NoError(t, err)
+
+	afterWithoutSlug := getSecureSocksRequestCount(t, withoutSlugLabels)
+	assert.Equal(t, beforeWithoutSlug+1, afterWithoutSlug)
+}
+
+func TestSlugFromContext(t *testing.T) {
+	t.Run("returns slug from contextual attributes", func(t *testing.T) {
+		ctx := sdklog.WithContextualAttributes(context.Background(), []any{"slug", "stack-slug"})
+		assert.Equal(t, "stack-slug", slugFromContext(ctx))
+	})
+
+	t.Run("returns slug from incoming context metadata", func(t *testing.T) {
+		outgoing := sdklog.WithContextualAttributesForOutgoingContext(context.Background(), []any{"slug", "incoming-slug"})
+		md, ok := metadata.FromOutgoingContext(outgoing)
+		require.True(t, ok)
+
+		incoming := metadata.NewIncomingContext(context.Background(), md)
+		assert.Equal(t, "incoming-slug", slugFromContext(incoming))
+	})
+
+	t.Run("returns empty string when slug is missing", func(t *testing.T) {
+		assert.Equal(t, "", slugFromContext(context.Background()))
+	})
+}
+
 func Test_getTLSDialer(t *testing.T) {
 	t.Run("Prefer client config certificate raw value fields over filepath fields", func(t *testing.T) {
 		caPrivKey1, err := rsa.GenerateKey(rand.Reader, 4096)
@@ -424,6 +486,42 @@ func Test_getTLSDialer(t *testing.T) {
 		require.True(t, ok)
 		require.False(t, dialer.Config.RootCAs.Equal(certPool))
 	})
+}
+
+func getSecureSocksRequestCount(t *testing.T, expectedLabels map[string]string) uint64 {
+	t.Helper()
+
+	metrics, err := prometheus.DefaultGatherer.Gather()
+	require.NoError(t, err)
+
+	for _, mf := range metrics {
+		if mf.GetName() != "grafana_secure_socks_requests_duration" {
+			continue
+		}
+
+		for _, m := range mf.GetMetric() {
+			if hasLabels(m.GetLabel(), expectedLabels) {
+				return m.GetHistogram().GetSampleCount()
+			}
+		}
+	}
+
+	return 0
+}
+
+func hasLabels(labelPairs []*dto.LabelPair, expected map[string]string) bool {
+	actual := make(map[string]string, len(labelPairs))
+	for _, lp := range labelPairs {
+		actual[lp.GetName()] = lp.GetValue()
+	}
+
+	for k, v := range expected {
+		if actual[k] != v {
+			return false
+		}
+	}
+
+	return true
 }
 
 func createRootCA(t *testing.T, pvtKey *rsa.PrivateKey) (*x509.Certificate, string, error) {
