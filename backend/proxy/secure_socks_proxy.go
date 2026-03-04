@@ -352,8 +352,6 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 			"network", n,
 			"addr", addr,
 			"code", code,
-			"datasource", d.datasourceName,
-			"datasource_type", d.datasourceType,
 			"slug", slug,
 			"duration", duration,
 			"error", err,
