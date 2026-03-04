@@ -20,7 +20,6 @@ import (
 
 	sdklog "github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/prometheus/client_golang/prometheus"
-	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/proxy"
@@ -369,7 +368,7 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 	})
 }
 
-func TestInstrumentedSocksDialerMetricsIncludeSlug(t *testing.T) {
+func TestInstrumentedSocksDialerMetrics(t *testing.T) {
 	datasourceName := "name_" + strings.ReplaceAll(t.Name(), "/", "_")
 	datasourceType := "type_" + strings.ReplaceAll(t.Name(), "/", "_")
 	slug := "slug_" + strings.ReplaceAll(t.Name(), "/", "_")
@@ -378,33 +377,21 @@ func TestInstrumentedSocksDialerMetricsIncludeSlug(t *testing.T) {
 	cd, ok := d.(proxy.ContextDialer)
 	require.True(t, ok)
 
-	withSlugLabels := map[string]string{
+	labels := map[string]string{
 		"code":            "0",
 		"datasource":      datasourceName,
 		"datasource_type": datasourceType,
-		"slug":            slug,
 	}
-	beforeWithSlug := getSecureSocksRequestCount(t, withSlugLabels)
+	before := getSecureSocksRequestCount(t, labels)
 
 	_, err := cd.DialContext(sdklog.WithContextualAttributes(context.Background(), []any{"slug", slug}), "n", "addr")
 	require.NoError(t, err)
 
-	afterWithSlug := getSecureSocksRequestCount(t, withSlugLabels)
-	assert.Equal(t, beforeWithSlug+1, afterWithSlug)
-
-	withoutSlugLabels := map[string]string{
-		"code":            "0",
-		"datasource":      datasourceName,
-		"datasource_type": datasourceType,
-		"slug":            "",
-	}
-	beforeWithoutSlug := getSecureSocksRequestCount(t, withoutSlugLabels)
-
 	_, err = cd.DialContext(context.Background(), "n", "addr")
 	require.NoError(t, err)
 
-	afterWithoutSlug := getSecureSocksRequestCount(t, withoutSlugLabels)
-	assert.Equal(t, beforeWithoutSlug+1, afterWithoutSlug)
+	after := getSecureSocksRequestCount(t, labels)
+	assert.Equal(t, before+2, after)
 }
 
 func TestSlugFromContext(t *testing.T) {
@@ -500,7 +487,12 @@ func getSecureSocksRequestCount(t *testing.T, expectedLabels map[string]string) 
 		}
 
 		for _, m := range mf.GetMetric() {
-			if hasLabels(m.GetLabel(), expectedLabels) {
+			actualLabels := make(map[string]string, len(m.GetLabel()))
+			for _, lp := range m.GetLabel() {
+				actualLabels[lp.GetName()] = lp.GetValue()
+			}
+
+			if hasLabels(actualLabels, expectedLabels) {
 				return m.GetHistogram().GetSampleCount()
 			}
 		}
@@ -509,10 +501,9 @@ func getSecureSocksRequestCount(t *testing.T, expectedLabels map[string]string) 
 	return 0
 }
 
-func hasLabels(labelPairs []*dto.LabelPair, expected map[string]string) bool {
-	actual := make(map[string]string, len(labelPairs))
-	for _, lp := range labelPairs {
-		actual[lp.GetName()] = lp.GetValue()
+func hasLabels(actual map[string]string, expected map[string]string) bool {
+	if len(actual) != len(expected) {
+		return false
 	}
 
 	for k, v := range expected {

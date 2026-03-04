@@ -40,7 +40,7 @@ var (
 		Namespace: "grafana",
 		Name:      "secure_socks_requests_duration",
 		Help:      "Duration of requests to the secure socks proxy",
-	}, []string{"code", "datasource", "datasource_type", "slug"})
+	}, []string{"code", "datasource", "datasource_type"})
 	errUseOfHTTPDefaultTransport = errors.New("use of the http.DefaultTransport is not allowed with secure proxy")
 )
 
@@ -282,12 +282,14 @@ func (d *instrumentedSocksDialer) Dial(network, addr string) (net.Conn, error) {
 
 // DialContext -
 func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr string) (net.Conn, error) {
+	ctxLogger := log.DefaultLogger.FromContext(ctx)
 	if ctx.Err() != nil {
-		log.DefaultLogger.Debug("context cancelled or deadline exceeded, returning context error")
+		ctxLogger.Debug("context cancelled or deadline exceeded, returning context error")
 		return nil, ctx.Err()
 	}
 
 	start := time.Now()
+	slug := slugFromContext(ctx)
 	dialer, ok := d.dialer.(proxy.ContextDialer)
 	if !ok {
 		return nil, errors.New("unable to cast socks proxy dialer to context proxy dialer")
@@ -334,17 +336,29 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 		default:
 			code = "socks_unknown_error"
 		}
-		log.DefaultLogger.Error("received opErr from dialer", "network", n, "addr", addr, "opErr", opErr, "code", code)
 	default:
-		log.DefaultLogger.Error("received err from dialer", "network", n, "addr", addr, "err", err)
 		code = "dial_error"
 	}
 	if err != nil {
 		err = status.DownstreamError(err)
 	}
 
-	slug := slugFromContext(ctx)
-	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType, slug).Observe(time.Since(start).Seconds())
+	duration := time.Since(start)
+	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType).Observe(duration.Seconds())
+
+	if err != nil {
+		ctxLogger.Error("secure socks dial failed",
+			"eventName", "grafana-secure-socks-dial",
+			"network", n,
+			"addr", addr,
+			"code", code,
+			"datasource", d.datasourceName,
+			"datasource_type", d.datasourceType,
+			"slug", slug,
+			"duration", duration,
+			"error", err,
+		)
+	}
 	return c, err
 }
 
