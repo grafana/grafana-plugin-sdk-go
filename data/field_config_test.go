@@ -211,14 +211,27 @@ func TestFieldCOnfig(t *testing.T) {
 		}
 		for _, tc := range testCases {
 			t.Run(tc.name, func(t *testing.T) {
-				out, err := json.Marshal([]data.Threshold{tc.before})
-				require.NoError(t, err)
+				t.Run("json", func(t *testing.T) {
+					out, err := json.Marshal([]data.Threshold{tc.before})
+					require.NoError(t, err)
 
-				arr := []data.Threshold{}
-				err = json.Unmarshal(out, &arr)
-				require.NoError(t, err)
+					arr := []data.Threshold{}
+					err = json.Unmarshal(out, &arr)
+					require.NoError(t, err)
 
-				require.Equal(t, tc.after, arr[0])
+					require.Equal(t, tc.after, arr[0])
+				})
+
+				t.Run("jsoniter", func(t *testing.T) {
+					out, err := jsoniter.Marshal([]data.Threshold{tc.before})
+					require.NoError(t, err)
+
+					arr := []data.Threshold{}
+					err = jsoniter.Unmarshal(out, &arr)
+					require.NoError(t, err)
+
+					require.Equal(t, tc.after, arr[0])
+				})
 			})
 		}
 	})
