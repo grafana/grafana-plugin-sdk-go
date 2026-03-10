@@ -17,8 +17,26 @@ func chdir(t *testing.T, dir string) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	t.Cleanup(func() { os.Chdir(prev) })
+	t.Cleanup(func() {
+		if err := os.Chdir(prev); err != nil {
+			t.Logf("failed to restore working directory: %v", err)
+		}
+	})
 	if err := os.Chdir(dir); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func writeFile(t *testing.T, path string, data []byte) {
+	t.Helper()
+	if err := os.WriteFile(path, data, 0644); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func mkdirAll(t *testing.T, path string) {
+	t.Helper()
+	if err := os.MkdirAll(path, 0755); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -32,9 +50,9 @@ func TestGenerateManifest_SkipsNodeModules(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
 
-	os.WriteFile("main.go", []byte("package main"), 0644)
-	os.MkdirAll(filepath.Join("node_modules", "somepackage"), 0755)
-	os.WriteFile(filepath.Join("node_modules", "somepackage", "file.go"), []byte("package somepackage"), 0644)
+	writeFile(t, "main.go", []byte("package main"))
+	mkdirAll(t, filepath.Join("node_modules", "somepackage"))
+	writeFile(t, filepath.Join("node_modules", "somepackage", "file.go"), []byte("package somepackage"))
 
 	manifest, err := GenerateManifest()
 	if err != nil {
@@ -53,16 +71,16 @@ func TestGenerateManifest_OnlySkipsRootNodeModules(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
 
-	os.WriteFile("main.go", []byte("package main"), 0644)
+	writeFile(t, "main.go", []byte("package main"))
 
 	// Root node_modules — should be excluded.
-	os.MkdirAll(filepath.Join("node_modules", "pkg"), 0755)
-	os.WriteFile(filepath.Join("node_modules", "pkg", "root.go"), []byte("package pkg"), 0644)
+	mkdirAll(t, filepath.Join("node_modules", "pkg"))
+	writeFile(t, filepath.Join("node_modules", "pkg", "root.go"), []byte("package pkg"))
 
 	// Nested node_modules inside a subdirectory — should be included.
 	nestedNM := filepath.Join("vendor", "lib", "node_modules", "dep")
-	os.MkdirAll(nestedNM, 0755)
-	os.WriteFile(filepath.Join(nestedNM, "nested.go"), []byte("package dep"), 0644)
+	mkdirAll(t, nestedNM)
+	writeFile(t, filepath.Join(nestedNM, "nested.go"), []byte("package dep"))
 
 	manifest, err := GenerateManifest()
 	if err != nil {
@@ -81,10 +99,10 @@ func TestGenerateManifest_OnlyIncludesGoFiles(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
 
-	os.WriteFile("main.go", []byte("package main"), 0644)
-	os.WriteFile("readme.md", []byte("# readme"), 0644)
-	os.WriteFile("config.json", []byte("{}"), 0644)
-	os.WriteFile("script.sh", []byte("#!/bin/bash"), 0644)
+	writeFile(t, "main.go", []byte("package main"))
+	writeFile(t, "readme.md", []byte("# readme"))
+	writeFile(t, "config.json", []byte("{}"))
+	writeFile(t, "script.sh", []byte("#!/bin/bash"))
 
 	manifest, err := GenerateManifest()
 	if err != nil {
@@ -105,9 +123,9 @@ func TestGenerateManifest_IncludesNestedGoFiles(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
 
-	os.WriteFile("main.go", []byte("package main"), 0644)
-	os.MkdirAll(filepath.Join("pkg", "sub"), 0755)
-	os.WriteFile(filepath.Join("pkg", "sub", "helper.go"), []byte("package sub"), 0644)
+	writeFile(t, "main.go", []byte("package main"))
+	mkdirAll(t, filepath.Join("pkg", "sub"))
+	writeFile(t, filepath.Join("pkg", "sub", "helper.go"), []byte("package sub"))
 
 	manifest, err := GenerateManifest()
 	if err != nil {
@@ -127,7 +145,7 @@ func TestGenerateManifest_EntryFormat(t *testing.T) {
 	chdir(t, dir)
 
 	content := []byte("package main")
-	os.WriteFile("main.go", content, 0644)
+	writeFile(t, "main.go", content)
 
 	manifest, err := GenerateManifest()
 	if err != nil {
@@ -150,8 +168,8 @@ func TestGenerateManifest_UsesForwardSlashes(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
 
-	os.MkdirAll(filepath.Join("a", "b"), 0755)
-	os.WriteFile(filepath.Join("a", "b", "c.go"), []byte("package b"), 0644)
+	mkdirAll(t, filepath.Join("a", "b"))
+	writeFile(t, filepath.Join("a", "b", "c.go"), []byte("package b"))
 
 	manifest, err := GenerateManifest()
 	if err != nil {
@@ -176,4 +194,3 @@ func TestGenerateManifest_EmptyDirectory(t *testing.T) {
 		t.Errorf("expected empty manifest for directory with no .go files, got: %q", manifest)
 	}
 }
-
