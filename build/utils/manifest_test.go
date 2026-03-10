@@ -49,6 +49,34 @@ func TestGenerateManifest_SkipsNodeModules(t *testing.T) {
 	}
 }
 
+func TestGenerateManifest_OnlySkipsRootNodeModules(t *testing.T) {
+	dir := t.TempDir()
+	chdir(t, dir)
+
+	os.WriteFile("main.go", []byte("package main"), 0644)
+
+	// Root node_modules — should be excluded.
+	os.MkdirAll(filepath.Join("node_modules", "pkg"), 0755)
+	os.WriteFile(filepath.Join("node_modules", "pkg", "root.go"), []byte("package pkg"), 0644)
+
+	// Nested node_modules inside a subdirectory — should be included.
+	nestedNM := filepath.Join("vendor", "lib", "node_modules", "dep")
+	os.MkdirAll(nestedNM, 0755)
+	os.WriteFile(filepath.Join(nestedNM, "nested.go"), []byte("package dep"), 0644)
+
+	manifest, err := GenerateManifest()
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if strings.Contains(manifest, "root.go") {
+		t.Error("manifest should not contain Go files from root node_modules")
+	}
+	if !strings.Contains(manifest, "nested.go") {
+		t.Error("manifest should contain Go files from nested node_modules")
+	}
+}
+
 func TestGenerateManifest_OnlyIncludesGoFiles(t *testing.T) {
 	dir := t.TempDir()
 	chdir(t, dir)
