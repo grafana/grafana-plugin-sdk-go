@@ -18,6 +18,9 @@ func GenerateManifest() (string, error) {
 		if err != nil {
 			return err
 		}
+		if d.IsDir() && path == "node_modules" {
+			return fs.SkipDir
+		}
 		if !d.IsDir() && strings.HasSuffix(path, ".go") {
 			hash, err := hashFileContent(path)
 			if err != nil {
