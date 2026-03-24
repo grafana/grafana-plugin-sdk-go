@@ -36,7 +36,7 @@ func findEnumFields(base, startpath string) ([]EnumField, error) {
 			return err
 		}
 		if info.IsDir() {
-			d, err := parser.ParseDir(fset, path, nil, parser.ParseComments)
+			d, err := parser.ParseDir(fset, path, nil, parser.ParseComments) //nolint:staticcheck // SA1019: parser.ParseDir deprecated in Go 1.25, migration tracked separately
 			if err != nil {
 				return err
 			}
