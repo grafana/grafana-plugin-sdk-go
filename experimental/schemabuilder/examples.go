@@ -17,7 +17,7 @@ func exampleRequest(defs data.QueryTypeDefinitionList) data.QueryDataRequest {
 		for _, sample := range def.Spec.Examples {
 			if sample.SaveModel.Object != nil {
 				q := data.NewDataQuery(sample.SaveModel.Object)
-				q.RefID = string(rune('A' + len(rsp.Queries)))
+				q.RefID = string(rune('A' + len(rsp.Queries))) // #nosec G115 -- bounded by number of query examples
 				for _, dis := range def.Spec.Discriminators {
 					_ = q.Set(dis.Field, dis.Value)
 				}
@@ -44,7 +44,7 @@ func examplePanelTargets(ds *data.DataSourceRef, defs data.QueryTypeDefinitionLi
 			if sample.SaveModel.Object != nil {
 				q := data.NewDataQuery(sample.SaveModel.Object)
 				q.Datasource = ds
-				q.RefID = string(rune('A' + len(targets)))
+				q.RefID = string(rune('A' + len(targets))) // #nosec G115 -- bounded by number of query examples
 				for _, dis := range def.Spec.Discriminators {
 					_ = q.Set(dis.Field, dis.Value)
 				}

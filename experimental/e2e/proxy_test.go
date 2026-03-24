@@ -163,7 +163,7 @@ var acceptAllCerts = &tls.Config{InsecureSkipVerify: true}
 type pathEcho struct{}
 
 func (pathEcho) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	_, err := io.WriteString(w, req.URL.Path)
+	_, err := io.WriteString(w, req.URL.Path) // #nosec G705 -- test-only handler, not a real HTTP server
 	if err != nil {
 		panic(err)
 	}

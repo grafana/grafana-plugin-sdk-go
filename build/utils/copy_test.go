@@ -97,9 +97,9 @@ func compareDirs(t *testing.T, src, dst string) {
 			return nil
 		}
 
-		srcData, err := os.ReadFile(srcPath) // #nosec G304
+		srcData, err := os.ReadFile(srcPath) // #nosec G304 G122 -- test helper, paths are controlled
 		require.NoError(t, err)
-		dstData, err := os.ReadFile(dstPath) // #nosec G304
+		dstData, err := os.ReadFile(dstPath) // #nosec G304 G122 -- test helper, paths are controlled
 		require.NoError(t, err)
 
 		require.Equal(t, srcData, dstData)
