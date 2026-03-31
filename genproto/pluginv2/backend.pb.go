@@ -7,12 +7,11 @@
 package pluginv2
 
 import (
+	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
+	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
 	sync "sync"
 	unsafe "unsafe"
-
-	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
-	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 )
 
 const (
@@ -575,7 +574,7 @@ type PluginContext struct {
 	UserAgent string `protobuf:"bytes,8,opt,name=userAgent,proto3" json:"userAgent,omitempty"`
 	// The API version that initiated a request
 	ApiVersion string `protobuf:"bytes,9,opt,name=apiVersion,proto3" json:"apiVersion,omitempty"`
-	// The tenant namespace in grafana. This is an appropriate value to use for multi-tenancy isolation in plugins.
+	// The Grafana namespace.
 	Namespace     string `protobuf:"bytes,10,opt,name=namespace,proto3" json:"namespace,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
