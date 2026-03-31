@@ -245,7 +245,7 @@ func TestConvertToProtobufConversionRequest(t *testing.T) {
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.Name, protoCR.PluginContext.DataSourceInstanceSettings.Name)
-	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.ID, protoCR.PluginContext.DataSourceInstanceSettings.Id)
+	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.ID, protoCR.PluginContext.DataSourceInstanceSettings.Id) // nolint:staticcheck
 	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.UID, protoCR.PluginContext.DataSourceInstanceSettings.Uid)
 	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.APIVersion, protoCR.PluginContext.DataSourceInstanceSettings.ApiVersion)
 	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.Type, protoCR.PluginContext.PluginId)

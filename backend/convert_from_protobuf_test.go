@@ -261,7 +261,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Name, sdkCtx.DataSourceInstanceSettings.Name)
-	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Id, sdkCtx.DataSourceInstanceSettings.ID)
+	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Id, sdkCtx.DataSourceInstanceSettings.ID) // nolint:staticcheck
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.Uid, sdkCtx.DataSourceInstanceSettings.UID)
 	requireCounter.Equal(t, protoCtx.DataSourceInstanceSettings.ApiVersion, sdkCtx.DataSourceInstanceSettings.APIVersion)
 	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.DataSourceInstanceSettings.Type)
@@ -426,7 +426,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Name, sdkQDR.PluginContext.DataSourceInstanceSettings.Name)
-	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID) // nolint:staticcheck
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Uid, sdkQDR.PluginContext.DataSourceInstanceSettings.UID)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.ApiVersion, sdkQDR.PluginContext.DataSourceInstanceSettings.APIVersion)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.DataSourceInstanceSettings.Type)
@@ -512,7 +512,7 @@ func TestConvertFromProtobufQueryChunkedDataRequest(t *testing.T) {
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Name, sdkQDR.PluginContext.DataSourceInstanceSettings.Name)
-	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID)
+	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Id, sdkQDR.PluginContext.DataSourceInstanceSettings.ID) // nolint:staticcheck
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.Uid, sdkQDR.PluginContext.DataSourceInstanceSettings.UID)
 	requireCounter.Equal(t, protoQDR.PluginContext.DataSourceInstanceSettings.ApiVersion, sdkQDR.PluginContext.DataSourceInstanceSettings.APIVersion)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.DataSourceInstanceSettings.Type)
@@ -769,7 +769,7 @@ func TestConvertFromProtobufAdmissionRequest(t *testing.T) {
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, protoAR.PluginContext.DataSourceInstanceSettings.Name, sdkAR.PluginContext.DataSourceInstanceSettings.Name)
-	requireCounter.Equal(t, protoAR.PluginContext.DataSourceInstanceSettings.Id, sdkAR.PluginContext.DataSourceInstanceSettings.ID)
+	requireCounter.Equal(t, protoAR.PluginContext.DataSourceInstanceSettings.Id, sdkAR.PluginContext.DataSourceInstanceSettings.ID) // nolint:staticcheck
 	requireCounter.Equal(t, protoAR.PluginContext.DataSourceInstanceSettings.Uid, sdkAR.PluginContext.DataSourceInstanceSettings.UID)
 	requireCounter.Equal(t, protoAR.PluginContext.DataSourceInstanceSettings.ApiVersion, sdkAR.PluginContext.DataSourceInstanceSettings.APIVersion)
 	requireCounter.Equal(t, protoAR.PluginContext.PluginId, sdkAR.PluginContext.DataSourceInstanceSettings.Type)
@@ -899,7 +899,7 @@ func TestConvertFromProtobufConversionRequest(t *testing.T) {
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Name, sdkCR.PluginContext.DataSourceInstanceSettings.Name)
-	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Id, sdkCR.PluginContext.DataSourceInstanceSettings.ID)
+	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Id, sdkCR.PluginContext.DataSourceInstanceSettings.ID) // nolint:staticcheck
 	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.Uid, sdkCR.PluginContext.DataSourceInstanceSettings.UID)
 	requireCounter.Equal(t, protoCR.PluginContext.DataSourceInstanceSettings.ApiVersion, sdkCR.PluginContext.DataSourceInstanceSettings.APIVersion)
 	requireCounter.Equal(t, protoCR.PluginContext.PluginId, sdkCR.PluginContext.DataSourceInstanceSettings.Type)

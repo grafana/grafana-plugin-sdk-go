@@ -165,6 +165,7 @@ func (s *DataSourceInstanceSettings) GVK() GroupVersionKind {
 // Grafana organization, user and plugin instance settings.
 type PluginContext struct {
 	// OrgID is The Grafana organization identifier the request originating from.
+	//
 	// Deprecated: this value should NOT be used for multi-tenancy isolation in plugins. (Use Namespace instead).
 	OrgID int64
 
