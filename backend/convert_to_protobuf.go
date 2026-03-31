@@ -127,6 +127,7 @@ func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.Plug
 		PluginId:                   pluginCtx.PluginID,
 		PluginVersion:              pluginCtx.PluginVersion,
 		ApiVersion:                 pluginCtx.APIVersion,
+		Namespace:                  pluginCtx.Namespace,
 		User:                       t.User(pluginCtx.User),
 		AppInstanceSettings:        t.AppInstanceSettings(pluginCtx.AppInstanceSettings),
 		DataSourceInstanceSettings: t.DataSourceInstanceSettings(pluginCtx.DataSourceInstanceSettings),

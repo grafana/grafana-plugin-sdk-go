@@ -216,6 +216,7 @@ var protoPluginContext = &pluginv2.PluginContext{
 	},
 	UserAgent:  "Grafana/10.0.0 (linux; amd64)",
 	ApiVersion: "v0alpha1",
+	Namespace:  "default",
 }
 
 func TestConvertFromProtobufPluginContext(t *testing.T) {
@@ -244,6 +245,7 @@ func TestConvertFromProtobufPluginContext(t *testing.T) {
 
 	requireCounter.Equal(t, protoCtx.OrgId, sdkCtx.OrgID)
 	requireCounter.Equal(t, protoCtx.PluginId, sdkCtx.PluginID)
+	requireCounter.Equal(t, protoCtx.Namespace, sdkCtx.Namespace)
 
 	// User
 	requireCounter.Equal(t, protoCtx.User.Login, sdkCtx.User.Login)
@@ -409,6 +411,7 @@ func TestConvertFromProtobufQueryDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.PluginID)
 	requireCounter.Equal(t, protoQDR.PluginContext.ApiVersion, sdkQDR.PluginContext.APIVersion)
+	requireCounter.Equal(t, protoQDR.PluginContext.Namespace, sdkQDR.PluginContext.Namespace)
 	// User
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Login, sdkQDR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)
@@ -494,6 +497,7 @@ func TestConvertFromProtobufQueryChunkedDataRequest(t *testing.T) {
 	requireCounter.Equal(t, protoQDR.PluginContext.OrgId, sdkQDR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoQDR.PluginContext.PluginId, sdkQDR.PluginContext.PluginID)
 	requireCounter.Equal(t, protoQDR.PluginContext.ApiVersion, sdkQDR.PluginContext.APIVersion)
+	requireCounter.Equal(t, protoQDR.PluginContext.Namespace, sdkQDR.PluginContext.Namespace)
 	// User
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Login, sdkQDR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoQDR.PluginContext.User.Name, sdkQDR.PluginContext.User.Name)
@@ -750,6 +754,7 @@ func TestConvertFromProtobufAdmissionRequest(t *testing.T) {
 	requireCounter.Equal(t, protoAR.PluginContext.OrgId, sdkAR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoAR.PluginContext.PluginId, sdkAR.PluginContext.PluginID)
 	requireCounter.Equal(t, protoAR.PluginContext.ApiVersion, sdkAR.PluginContext.APIVersion)
+	requireCounter.Equal(t, protoAR.PluginContext.Namespace, sdkAR.PluginContext.Namespace)
 	// User
 	requireCounter.Equal(t, protoAR.PluginContext.User.Login, sdkAR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoAR.PluginContext.User.Name, sdkAR.PluginContext.User.Name)
@@ -879,6 +884,7 @@ func TestConvertFromProtobufConversionRequest(t *testing.T) {
 	requireCounter.Equal(t, protoCR.PluginContext.OrgId, sdkCR.PluginContext.OrgID)
 	requireCounter.Equal(t, protoCR.PluginContext.PluginId, sdkCR.PluginContext.PluginID)
 	requireCounter.Equal(t, protoCR.PluginContext.ApiVersion, sdkCR.PluginContext.APIVersion)
+	requireCounter.Equal(t, protoCR.PluginContext.Namespace, sdkCR.PluginContext.Namespace)
 	// User
 	requireCounter.Equal(t, protoCR.PluginContext.User.Login, sdkCR.PluginContext.User.Login)
 	requireCounter.Equal(t, protoCR.PluginContext.User.Name, sdkCR.PluginContext.User.Name)

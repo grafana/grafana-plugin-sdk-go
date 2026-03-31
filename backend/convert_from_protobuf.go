@@ -93,6 +93,7 @@ func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 		PluginID:                   proto.PluginId,
 		PluginVersion:              proto.PluginVersion,
 		APIVersion:                 proto.ApiVersion,
+		Namespace:                  proto.Namespace,
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),

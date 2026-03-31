@@ -18,7 +18,7 @@ message AppInstanceSettings {
 }
 
 message DataSourceInstanceSettings {
-  // Deprecatd: Internal ID, do not use this for anythign important
+  // Deprecated: Internal ID, do not use this for anythign important
   int64 id = 1;
   string name = 2;
   string url = 3;
@@ -49,6 +49,7 @@ message User {
 
 message PluginContext {
   // The Grafana organization id the request originates from.
+  // Deprecated: this value should NOT be used for multi-tenancy isolation in plugins.
   int64 orgId = 1;
 
   // The unique identifier of the plugin the request is targeted for.
@@ -84,6 +85,9 @@ message PluginContext {
 
   // The API version that initiated a request
   string apiVersion = 9;
+
+  // The tenant namespace in grafana. This is an appropriate value to use for multi-tenancy isolation in plugins.
+  string namespace = 10;
 }
 
 //---------------------------------------------------------
