@@ -208,7 +208,7 @@ type PluginContext struct {
 	// The requested API version
 	APIVersion string
 
-	// The tenant namespace in grafana. This is an appropriate value to use for multi-tenancy isolation in plugins.
+	// The Grafana namespace.
 	Namespace string
 }
 
