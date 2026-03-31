@@ -89,7 +89,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 		instance, err := im.Get(ctx, pCtx)
 		require.NoError(t, err)
 		require.NotNil(t, instance)
-		require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID)
+		require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID) // nolint:staticcheck
 	})
 
 	t.Run("Should delegate Do calls correctly", func(t *testing.T) {
@@ -110,6 +110,6 @@ func TestInstanceManagerWrapper(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, receivedInstance)
-		require.Equal(t, pCtx.OrgID, receivedInstance.orgID)
+		require.Equal(t, pCtx.OrgID, receivedInstance.orgID) // nolint:staticcheck
 	})
 }

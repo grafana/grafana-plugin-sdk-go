@@ -182,7 +182,7 @@ func TestConvertFromProtobufDataSourceInstanceSettings(t *testing.T) {
 
 	requireCounter := &requireCounter{}
 
-	requireCounter.Equal(t, protoDSIS.Id, sdkDSIS.ID)
+	requireCounter.Equal(t, protoDSIS.Id, sdkDSIS.ID) // nolint:staticcheck
 	requireCounter.Equal(t, protoDSIS.Uid, sdkDSIS.UID)
 	requireCounter.Equal(t, "example-datasource", sdkDSIS.Type)
 	requireCounter.Equal(t, protoDSIS.Name, sdkDSIS.Name)

@@ -226,7 +226,7 @@ func TestConvertToProtobufConversionRequest(t *testing.T) {
 	requireCounter := &requireCounter{}
 
 	// PluginContext
-	requireCounter.Equal(t, sdkCR.PluginContext.OrgID, protoCR.PluginContext.OrgId)
+	requireCounter.Equal(t, sdkCR.PluginContext.OrgID, protoCR.PluginContext.OrgId) // nolint:staticcheck
 	requireCounter.Equal(t, sdkCR.PluginContext.PluginID, protoCR.PluginContext.PluginId)
 	requireCounter.Equal(t, sdkCR.PluginContext.PluginVersion, protoCR.PluginContext.PluginVersion)
 	requireCounter.Equal(t, sdkCR.PluginContext.APIVersion, protoCR.PluginContext.ApiVersion)

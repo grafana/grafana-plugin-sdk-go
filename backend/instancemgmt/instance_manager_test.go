@@ -28,7 +28,7 @@ func TestInstanceManager(t *testing.T) {
 		instance, err := im.Get(ctx, pCtx)
 		require.NoError(t, err)
 		require.NotNil(t, instance)
-		require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID)
+		require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID) // nolint:staticcheck
 		require.Equal(t, pCtx.AppInstanceSettings.Updated, instance.(*testInstance).updated)
 
 		t.Run("When getting instance should return same instance", func(t *testing.T) {
@@ -49,7 +49,7 @@ func TestInstanceManager(t *testing.T) {
 			t.Run("New instance should be created", func(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, newInstance)
-				require.Equal(t, pCtxUpdated.OrgID, newInstance.(*testInstance).orgID)
+				require.Equal(t, pCtxUpdated.OrgID, newInstance.(*testInstance).orgID) // nolint:staticcheck
 				require.Equal(t, pCtxUpdated.AppInstanceSettings.Updated, newInstance.(*testInstance).updated)
 			})
 
@@ -224,7 +224,7 @@ type testInstanceProvider struct {
 }
 
 func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (interface{}, error) {
-	return pluginContext.OrgID, nil
+	return pluginContext.OrgID, nil // nolint:staticcheck
 }
 
 func (tip *testInstanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
@@ -239,7 +239,7 @@ func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext ba
 	}
 
 	ti := &testInstance{
-		orgID:   pluginContext.OrgID,
+		orgID:   pluginContext.OrgID, // nolint:staticcheck
 		updated: pluginContext.AppInstanceSettings.Updated,
 	}
 	ti.wg.Add(1)
