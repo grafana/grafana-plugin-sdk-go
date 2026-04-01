@@ -27,7 +27,7 @@ func TestTTLInstanceManager(t *testing.T) {
 		instance, err := im.Get(ctx, pCtx)
 		require.NoError(t, err)
 		require.NotNil(t, instance)
-		require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID)
+		require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID) // nolint:staticcheck
 		require.Equal(t, pCtx.AppInstanceSettings.Updated, instance.(*testInstance).updated)
 
 		t.Run("When getting instance should return same instance", func(t *testing.T) {
@@ -49,7 +49,7 @@ func TestTTLInstanceManager(t *testing.T) {
 			t.Run("New instance should be created", func(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, newInstance)
-				require.Equal(t, pCtxUpdated.OrgID, newInstance.(*testInstance).orgID)
+				require.Equal(t, pCtxUpdated.OrgID, newInstance.(*testInstance).orgID) // nolint:staticcheck
 				require.Equal(t, pCtxUpdated.AppInstanceSettings.Updated, newInstance.(*testInstance).updated)
 			})
 
@@ -307,7 +307,7 @@ func TestTTLInstanceManagerDo(t *testing.T) {
 		})
 		require.NoError(t, err)
 		require.NotNil(t, callbackInstance)
-		require.Equal(t, pCtx.OrgID, callbackInstance.(*testInstance).orgID)
+		require.Equal(t, pCtx.OrgID, callbackInstance.(*testInstance).orgID) // nolint:staticcheck
 	})
 
 	t.Run("Do should panic with nil callback", func(t *testing.T) {

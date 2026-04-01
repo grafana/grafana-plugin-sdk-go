@@ -64,7 +64,7 @@ func TestCallResource(t *testing.T) {
 		require.NoError(t, err)
 
 		require.NotNil(t, handler.actualReq)
-		require.Equal(t, int64(2), handler.actualReq.PluginContext.OrgID)
+		require.Equal(t, int64(2), handler.actualReq.PluginContext.OrgID) // nolint:staticcheck
 		require.Equal(t, "my-plugin", handler.actualReq.PluginContext.PluginID)
 		require.Equal(t, "some/path", handler.actualReq.Path)
 		require.Equal(t, http.MethodGet, handler.actualReq.Method)
