@@ -73,6 +73,36 @@ func Test_getExecutableNameForPlugin(t *testing.T) {
 			wantErr: assert.NoError,
 		},
 		{
+			name: "Checking new s390x arch just in case",
+			args: args{
+				os:        "linux",
+				arch:      "s390x",
+				pluginDir: filepath.Join(rootDir, "bar-datasource"),
+			},
+			expected: "gpx_bar_linux_s390x",
+			expectedCache: map[string]string{
+				filepath.Join(rootDir, "foo-datasource"): "gpx_foo",
+				filepath.Join(rootDir, "baz-datasource"): "gpx_baz",
+				filepath.Join(rootDir, "bar-datasource"): "gpx_bar",
+			},
+			wantErr: assert.NoError,
+		},
+		{
+			name: "Checking new windows/arm64 arch just in case",
+			args: args{
+				os:        "windows",
+				arch:      "arm64",
+				pluginDir: filepath.Join(rootDir, "bar-datasource"),
+			},
+			expected: "gpx_bar_windows_arm64.exe",
+			expectedCache: map[string]string{
+				filepath.Join(rootDir, "foo-datasource"): "gpx_foo",
+				filepath.Join(rootDir, "baz-datasource"): "gpx_baz",
+				filepath.Join(rootDir, "bar-datasource"): "gpx_bar",
+			},
+			wantErr: assert.NoError,
+		},
+		{
 			name: "Non existing plugin returns an error",
 			args: args{
 				os:        "linux",
@@ -83,6 +113,7 @@ func Test_getExecutableNameForPlugin(t *testing.T) {
 			expectedCache: map[string]string{
 				filepath.Join(rootDir, "foo-datasource"): "gpx_foo",
 				filepath.Join(rootDir, "baz-datasource"): "gpx_baz",
+				filepath.Join(rootDir, "bar-datasource"): "gpx_bar",
 			},
 			wantErr: assert.Error,
 		},

@@ -232,9 +232,19 @@ func (Build) LinuxARM64() error {
 	return buildBackend(newBuildConfig("linux", "arm64"))
 }
 
+// LinuxS390X builds the back-end plugin for Linux on s390x (IBM Z).
+func (Build) LinuxS390X() error {
+	return buildBackend(newBuildConfig("linux", "s390x"))
+}
+
 // Windows builds the back-end plugin for Windows.
 func (Build) Windows() error {
 	return buildBackend(newBuildConfig("windows", "amd64"))
+}
+
+// WindowsARM64 builds the back-end plugin for Windows on ARM64.
+func (Build) WindowsARM64() error {
+	return buildBackend(newBuildConfig("windows", "arm64"))
 }
 
 // Darwin builds the back-end plugin for OSX on AMD64.
@@ -339,10 +349,16 @@ func (Build) Backend() error {
 	return buildBackend(cfg)
 }
 
-// BuildAll builds production executables for all supported platforms.
+// BuildAll builds production executables for all default supported platforms.
 func BuildAll() { //revive:disable-line
 	b := Build{}
-	mg.Deps(b.Linux, b.Windows, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
+	mg.Deps(b.Linux, b.Windows, b.WindowsARM64, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM)
+}
+
+// BuildAllPlusS390X adds s390x to the above, for formerly-core datasources that have been externalized
+func BuildAllPlusS390X() { //revive:disable-line
+	b := Build{}
+	mg.Deps(b.Linux, b.Windows, b.WindowsARM64, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.LinuxS390X)
 }
 
 //go:embed tmpl/*
