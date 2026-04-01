@@ -356,7 +356,7 @@ func BuildAll() { //revive:disable-line
 }
 
 // BuildAllPlusS390X adds s390x to the above, for formerly-core datasources that have been externalized
-func BuildAllPlusS390X() { //revive:disable-line
+func BuildWithS390X() { //revive:disable-line
 	b := Build{}
 	mg.Deps(b.Linux, b.Windows, b.WindowsARM64, b.Darwin, b.DarwinARM64, b.LinuxARM64, b.LinuxARM, b.LinuxS390X)
 }
