@@ -10,7 +10,7 @@ require (
 	github.com/getkin/kin-openapi v0.134.0
 	github.com/go-openapi/loads v0.23.3
 	github.com/go-openapi/spec v0.22.4
-	github.com/go-openapi/strfmt v0.26.0
+	github.com/go-openapi/strfmt v0.26.1
 	github.com/go-openapi/swag/loading v0.25.5
 	github.com/go-openapi/validate v0.25.2
 	github.com/google/go-cmp v0.7.0
