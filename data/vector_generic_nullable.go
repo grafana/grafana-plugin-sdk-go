@@ -225,3 +225,8 @@ func (v *nullableGenericVector[T]) Insert(i int, val interface{}) {
 func (v *nullableGenericVector[T]) Delete(i int) {
 	v.DeleteTyped(i)
 }
+
+// Clear sets the length to zero while preserving capacity.
+func (v *nullableGenericVector[T]) Clear() {
+	v.data = v.data[:0]
+}

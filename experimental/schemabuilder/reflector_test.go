@@ -16,7 +16,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
-	apisdata "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1"
+	apisdata "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 )
 
 //go:embed testdata/draft-04-schema.json
@@ -28,7 +28,7 @@ func TestWriteQuerySchema(t *testing.T) {
 		ScanCode: []CodePaths{
 			{
 				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/apis",
-				CodePath:    "../apis/data/v0alpha1",
+				CodePath:    "../apis/datasource/v0alpha1",
 			},
 			{
 				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/data",
@@ -52,7 +52,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	// // Hide this old property
 	query.Properties.Delete("datasourceId")
 
-	outfile := "../apis/data/v0alpha1/query.schema.json"
+	outfile := "../apis/datasource/v0alpha1/query.schema.json"
 	old, _ := os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
@@ -70,7 +70,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	updateEnumDescriptions(query)
 	query.ID = ""
 	query.Version = "" // $schema is not allowed in openapi v2's SchemaObject
-	outfile = "../apis/data/v0alpha1/query.definition.schema.json"
+	outfile = "../apis/datasource/v0alpha1/query.definition.schema.json"
 	old, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
@@ -78,7 +78,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	require.NoError(t, err)
 	validateOpenAPIv2Schema(t, bytes, outfile)
 
-	def := apisdata.GetOpenAPIDefinitions(nil)["github.com/grafana/grafana-plugin-sdk-go/experimental/apis/data/v0alpha1.QueryTypeDefinitionSpec"]
+	def := apisdata.GetOpenAPIDefinitions(nil)["github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1.QueryTypeDefinitionSpec"]
 	require.Equal(t, query.Properties.Len(), len(def.Schema.Properties))
 }
 

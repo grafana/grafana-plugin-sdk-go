@@ -3,8 +3,10 @@ package backend
 import (
 	"context"
 	"errors"
+	"net/http"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
+	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	grpcstatus "google.golang.org/grpc/status"
 
@@ -18,15 +20,21 @@ const (
 
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
 type dataSDKAdapter struct {
-	queryDataHandler QueryDataHandler
+	queryDataHandler        QueryDataHandler
+	queryChunkedDataHandler QueryChunkedDataHandler
 }
 
-func newDataSDKAdapter(handler QueryDataHandler) *dataSDKAdapter {
+// newDataSDKAdapter creates a new adapter between the plugin protocol and SDK interfaces.
+// It handles both query data and chunked query data operations.
+func newDataSDKAdapter(queryDataHandler QueryDataHandler, queryChunkedDataHandler QueryChunkedDataHandler) *dataSDKAdapter {
 	return &dataSDKAdapter{
-		queryDataHandler: handler,
+		queryDataHandler:        queryDataHandler,
+		queryChunkedDataHandler: queryChunkedDataHandler,
 	}
 }
 
+// QueryData handles incoming gRPC data requests by converting them to SDK format
+// and passing them to the registered QueryDataHandler.
 func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest) (*pluginv2.QueryDataResponse, error) {
 	parsedReq := FromProto().QueryDataRequest(req)
 	resp, err := a.queryDataHandler.QueryData(ctx, parsedReq)
@@ -38,7 +46,30 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		return nil, errors.New("both response and error are nil, but one must be provided")
 	}
 
-	return ToProto().QueryDataResponse(resp)
+	return ToProto().QueryDataResponse(parsedReq.Format, resp)
+}
+
+// QueryChunkedData handles incoming gRPC stream data requests by converting them to SDK format
+// and passing them to the registered QueryChunkedDataHandler.
+func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest, stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]) error {
+	if a.queryChunkedDataHandler == nil {
+		return stream.Send(&pluginv2.QueryChunkedDataResponse{
+			Status: http.StatusNotImplemented,
+		})
+	}
+
+	ctx := stream.Context()
+	parsedReq := FromProto().QueryChunkedDataRequest(req)
+	writer := NewChunkedDataWriter(parsedReq.Format, func(chunk *pluginv2.QueryChunkedDataResponse) error {
+		return stream.Send(chunk)
+	})
+
+	err := a.queryChunkedDataHandler.QueryChunkedData(ctx, parsedReq, writer)
+	if err != nil {
+		return enrichWithErrorSourceInfo(err)
+	}
+
+	return nil
 }
 
 // enrichWithErrorSourceInfo returns a gRPC status error with error source info as metadata.

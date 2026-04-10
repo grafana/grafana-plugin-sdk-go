@@ -469,7 +469,6 @@ Dimensions: 3 Fields by 3 Rows
 | Labels:      | Labels:      | Labels:      |
 | Type: []bool | Type: []bool | Type: []bool |
 +--------------+--------------+--------------+
-+--------------+--------------+--------------+
 `,
 		},
 	}
@@ -701,4 +700,38 @@ func TestFrameFieldIndexByName(t *testing.T) {
 	f, i = frame.FieldByName("no-such-field")
 	require.Nil(t, f)
 	require.Equal(t, -1, i)
+}
+
+func BenchmarkFrameBufferClear(b *testing.B) {
+	b.ReportAllocs()
+
+	rows := int64(5000)
+	f := data.NewFrameOfFieldTypes("test", 0, data.FieldTypeString, data.FieldTypeInt64)
+	for i := range rows {
+		f.AppendRow(fmt.Sprintf("%d", i), i)
+	}
+
+	for b.Loop() {
+		f.Clear()
+		for i := range rows {
+			f.AppendRow(fmt.Sprintf("%d", i), i)
+		}
+	}
+}
+
+func BenchmarkFrameBufferCopy(b *testing.B) {
+	b.ReportAllocs()
+
+	rows := int64(5000)
+	f := data.NewFrameOfFieldTypes("test", 0, data.FieldTypeString, data.FieldTypeInt64)
+	for i := range rows {
+		f.AppendRow(fmt.Sprintf("%d", i), i)
+	}
+
+	for b.Loop() {
+		c := f.EmptyCopy()
+		for i := range rows {
+			c.AppendRow(fmt.Sprintf("%d", i), i)
+		}
+	}
 }

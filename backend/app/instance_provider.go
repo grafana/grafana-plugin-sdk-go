@@ -83,7 +83,7 @@ func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backe
 func instanceKey(ctx context.Context, pluginContext backend.PluginContext) string {
 	// The instance key generated for app plugins should include both plugin ID, and the OrgID, since for a single
 	// Grafana instance there might be different orgs using the same plugin.
-	defaultKey := fmt.Sprintf("%s#%v", pluginContext.PluginID, pluginContext.OrgID)
+	defaultKey := fmt.Sprintf("%s#%v", pluginContext.PluginID, pluginContext.OrgID) // nolint:staticcheck
 	if tID := tenant.IDFromContext(ctx); tID != "" {
 		return fmt.Sprintf("%s#%s", tID, defaultKey)
 	}

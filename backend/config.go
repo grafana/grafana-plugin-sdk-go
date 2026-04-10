@@ -25,6 +25,7 @@ const (
 	SQLMaxConnLifetimeSecondsDefault = "GF_SQL_MAX_CONN_LIFETIME_SECONDS_DEFAULT"
 	ResponseLimit                    = "GF_RESPONSE_LIMIT"
 	AppClientSecret                  = "GF_PLUGIN_APP_CLIENT_SECRET" // nolint:gosec
+	LiveClientQueueMaxSize           = "GF_LIVE_CLIENT_QUEUE_MAX_SIZE"
 )
 
 type configKey struct{}

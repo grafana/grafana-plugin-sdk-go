@@ -48,6 +48,10 @@ func (s *dataGRPCServer) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 	return s.server.QueryData(ctx, req)
 }
 
+func (s *dataGRPCServer) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest, stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]) error {
+	return s.server.QueryChunkedData(req, stream)
+}
+
 type dataGRPCClient struct {
 	client pluginv2.DataClient
 }
@@ -55,6 +59,10 @@ type dataGRPCClient struct {
 // QueryData queries m for data.
 func (m *dataGRPCClient) QueryData(ctx context.Context, req *pluginv2.QueryDataRequest, opts ...grpc.CallOption) (*pluginv2.QueryDataResponse, error) {
 	return m.client.QueryData(ctx, req, opts...)
+}
+
+func (m *dataGRPCClient) QueryChunkedData(ctx context.Context, in *pluginv2.QueryChunkedDataRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[pluginv2.QueryChunkedDataResponse], error) {
+	return m.client.QueryChunkedData(ctx, in, opts...)
 }
 
 var _ DataServer = &dataGRPCServer{}

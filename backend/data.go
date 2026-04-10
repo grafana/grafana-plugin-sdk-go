@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	jsoniter "github.com/json-iterator/go"
+
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 // EndpointQueryData friendly name for the query data endpoint/handler.
@@ -50,6 +51,9 @@ type QueryDataRequest struct {
 
 	// Queries the data queries for the request.
 	Queries []DataQuery
+
+	// Requested response format
+	Format DataFrameFormat
 }
 
 // SetHTTPHeader sets the header entries associated with key to the
@@ -108,11 +112,97 @@ type DataQuery struct {
 	JSON json.RawMessage
 }
 
+// EndpointQueryChunkedData friendly name for the query chunked data endpoint/handler.
+const EndpointQueryChunkedData Endpoint = "queryChunkedData"
+
+// Experimental: QueryChunkedDataHandler defines the interface for handling chunked data requests.
+type QueryChunkedDataHandler interface {
+	// QueryChunkedData handles a chunked data request.
+	// Implementations must use the provided ChunkedDataWriter (w) to send data frames
+	// and errors back to the client.
+	// The ChunkedDataWriter ensures efficient buffering and handles the transmission details.
+	QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error
+}
+
+// Experimental: QueryChunkedDataHandlerFunc is an adapter to allow the use of
+// ordinary functions as [QueryChunkedDataHandler]. If f is a function
+// with the appropriate signature, QueryChunkedDataHandlerFunc(f) is a
+// [QueryChunkedDataHandler] that calls f.
+type QueryChunkedDataHandlerFunc func(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error
+
+// QueryChunkedData calls fn(ctx, req).
+func (fn QueryChunkedDataHandlerFunc) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	return fn(ctx, req, w)
+}
+
+// Specify the response bytes format
+type DataFrameFormat int32
+
+const (
+	// Full arrow schema+data
+	DataFrameFormat_ARROW DataFrameFormat = 0
+	// JSON Encoded schema+data
+	DataFrameFormat_JSON DataFrameFormat = 1
+)
+
+// Experimental: QueryChunkedDataRequest contains all information needed for a chunked data request.
+// It's similar to QueryDataRequest but designed for chunked data transmission.
+type QueryChunkedDataRequest struct {
+	// PluginContext the contextual information for the request.
+	PluginContext PluginContext
+
+	// Headers the environment/metadata information for the request.
+	// To access forwarded HTTP headers please use GetHTTPHeaders or GetHTTPHeader.
+	Headers map[string]string
+
+	// Queries the data queries for the request.
+	Queries []DataQuery
+
+	// Requested response format
+	Format DataFrameFormat
+}
+
+// SetHTTPHeader sets the header entries associated with key to the
+// single element value. It replaces any existing values
+// associated with key. The key is case-insensitive; it is
+// canonicalized by textproto.CanonicalMIMEHeaderKey.
+func (req *QueryChunkedDataRequest) SetHTTPHeader(key, value string) {
+	if req.Headers == nil {
+		req.Headers = map[string]string{}
+	}
+
+	setHTTPHeaderInStringMap(req.Headers, key, value)
+}
+
+// DeleteHTTPHeader deletes the values associated with key.
+// The key is case-insensitive; it is canonicalized by
+// CanonicalHeaderKey.
+func (req *QueryChunkedDataRequest) DeleteHTTPHeader(key string) {
+	deleteHTTPHeaderInStringMap(req.Headers, key)
+}
+
+// GetHTTPHeader gets the first value associated with the given key. If
+// there are no values associated with the key, Get returns "".
+// It is case-insensitive; textproto.CanonicalMIMEHeaderKey is
+// used to canonicalize the provided key. Get assumes that all
+// keys are stored in canonical form.
+func (req *QueryChunkedDataRequest) GetHTTPHeader(key string) string {
+	return req.GetHTTPHeaders().Get(key)
+}
+
+// GetHTTPHeaders returns HTTP headers.
+func (req *QueryChunkedDataRequest) GetHTTPHeaders() http.Header {
+	return getHTTPHeadersFromStringMap(req.Headers)
+}
+
 // QueryDataResponse contains the results from a QueryDataRequest.
 // It is the return type of a QueryData call.
 type QueryDataResponse struct {
 	// Responses is a map of RefIDs (Unique Query ID) to *DataResponse.
 	Responses Responses `json:"results"`
+
+	// response format
+	Format DataFrameFormat `json:"-"` // when serialized as JSON, it is already in json format, so we don't need to include this field
 }
 
 // MarshalJSON writes the results as json
@@ -189,6 +279,10 @@ type DataResponse struct {
 	ErrorSource ErrorSource
 }
 
+func (DataResponse) OpenAPIModelName() string {
+	return "com.github.grafana.grafana-plugin-sdk-go.backend.DataResponse"
+}
+
 // ErrDataResponse returns an error DataResponse given status and message.
 func ErrDataResponse(status Status, message string) DataResponse {
 	return DataResponse{
@@ -244,3 +338,4 @@ func (tr TimeRange) Duration() time.Duration {
 }
 
 var _ ForwardHTTPHeaders = (*QueryDataRequest)(nil)
+var _ ForwardHTTPHeaders = (*QueryChunkedDataRequest)(nil)

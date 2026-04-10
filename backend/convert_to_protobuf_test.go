@@ -11,10 +11,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
-	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 func TestConvertToProtobufQueryDataResponse(t *testing.T) {
@@ -84,7 +85,7 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 					},
 				},
 			}
-			qdr, err := ToProto().QueryDataResponse(protoRes)
+			qdr, err := ToProto().QueryDataResponse(DataFrameFormat_ARROW, protoRes)
 			require.NoError(t, err)
 			require.NotNil(t, qdr)
 			require.NotNil(t, qdr.Responses)
@@ -183,6 +184,7 @@ var testPluginContext = PluginContext{
 	GrafanaConfig: &GrafanaCfg{config: map[string]string{"key": "value"}},
 	UserAgent:     testUserAgent,
 	APIVersion:    "v1",
+	Namespace:     "org-6",
 }
 
 func TestConvertToProtobufConversionRequest(t *testing.T) {
@@ -224,9 +226,11 @@ func TestConvertToProtobufConversionRequest(t *testing.T) {
 	requireCounter := &requireCounter{}
 
 	// PluginContext
-	requireCounter.Equal(t, sdkCR.PluginContext.OrgID, protoCR.PluginContext.OrgId)
+	requireCounter.Equal(t, sdkCR.PluginContext.OrgID, protoCR.PluginContext.OrgId) // nolint:staticcheck
 	requireCounter.Equal(t, sdkCR.PluginContext.PluginID, protoCR.PluginContext.PluginId)
+	requireCounter.Equal(t, sdkCR.PluginContext.PluginVersion, protoCR.PluginContext.PluginVersion)
 	requireCounter.Equal(t, sdkCR.PluginContext.APIVersion, protoCR.PluginContext.ApiVersion)
+	requireCounter.Equal(t, sdkCR.PluginContext.Namespace, protoCR.PluginContext.Namespace)
 	// User
 	requireCounter.Equal(t, sdkCR.PluginContext.User.Login, protoCR.PluginContext.User.Login)
 	requireCounter.Equal(t, sdkCR.PluginContext.User.Name, protoCR.PluginContext.User.Name)
@@ -241,7 +245,7 @@ func TestConvertToProtobufConversionRequest(t *testing.T) {
 
 	// Datasource Instance Settings
 	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.Name, protoCR.PluginContext.DataSourceInstanceSettings.Name)
-	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.ID, protoCR.PluginContext.DataSourceInstanceSettings.Id)
+	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.ID, protoCR.PluginContext.DataSourceInstanceSettings.Id) // nolint:staticcheck
 	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.UID, protoCR.PluginContext.DataSourceInstanceSettings.Uid)
 	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.APIVersion, protoCR.PluginContext.DataSourceInstanceSettings.ApiVersion)
 	requireCounter.Equal(t, sdkCR.PluginContext.DataSourceInstanceSettings.Type, protoCR.PluginContext.PluginId)

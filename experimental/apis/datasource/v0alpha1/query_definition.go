@@ -21,6 +21,10 @@ type QueryTypeDefinitionList struct {
 	Items []QueryTypeDefinition `json:"items"`
 }
 
+func (QueryTypeDefinitionList) OpenAPIModelName() string {
+	return openAPIPrefix + "QueryTypeDefinitionList"
+}
+
 type QueryTypeDefinitionSpec struct {
 	// Multiple schemas can be defined using discriminators
 	Discriminators []DiscriminatorFieldValue `json:"discriminators,omitempty"`
@@ -40,6 +44,10 @@ type QueryTypeDefinitionSpec struct {
 	// All changes in the same version *must* be backwards compatible
 	// Only notable changes will be shown here, for the full version history see git!
 	Changelog []string `json:"changelog,omitempty"`
+}
+
+func (QueryTypeDefinitionSpec) OpenAPIModelName() string {
+	return openAPIPrefix + "QueryTypeDefinitionSpec"
 }
 
 type QueryExample struct {
