@@ -106,8 +106,6 @@ func TestResponseLimitMiddlewareFallback(t *testing.T) {
 	})
 
 	t.Run("no limit when limit arg is 0 and env var is unset", func(t *testing.T) {
-		require.Equal(t, int64(0), resolveResponseLimit(0))
-
 		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 		res, err := rt.RoundTrip(newRequest(t))
 		require.NoError(t, err)
@@ -117,9 +115,19 @@ func TestResponseLimitMiddlewareFallback(t *testing.T) {
 		require.Equal(t, "dummy", string(bodyBytes))
 	})
 
-	t.Run("explicit limit arg takes priority over env var", func(t *testing.T) {
-		t.Setenv(responseLimitEnvVar, "1000000")
+	t.Run("env var takes priority over explicit limit arg", func(t *testing.T) {
+		t.Setenv(responseLimitEnvVar, "3")
 
+		// limit arg would allow the body; env var is tighter and wins
+		rt := ResponseLimitMiddleware(1000000).CreateMiddleware(Options{}, newRoundTripper("dummy"))
+		res, err := rt.RoundTrip(newRequest(t))
+		require.NoError(t, err)
+
+		_, err = io.ReadAll(res.Body)
+		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
+	})
+
+	t.Run("explicit limit arg used when env var is unset", func(t *testing.T) {
 		rt := ResponseLimitMiddleware(3).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 		res, err := rt.RoundTrip(newRequest(t))
 		require.NoError(t, err)
@@ -142,12 +150,13 @@ func TestResponseLimitMiddlewareContextPriority(t *testing.T) {
 		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
 	})
 
-	t.Run("context limit overrides env var", func(t *testing.T) {
-		t.Setenv(responseLimitEnvVar, "1000000")
+	t.Run("env var takes priority over context limit", func(t *testing.T) {
+		t.Setenv(responseLimitEnvVar, "3")
 
+		// context limit would allow the body; env var is tighter and wins
 		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 
-		ctx := WithResponseLimitContext(context.Background(), 3)
+		ctx := WithResponseLimitContext(context.Background(), 1000000)
 		res, err := rt.RoundTrip(newRequestWithContext(t, ctx))
 		require.NoError(t, err)
 
@@ -155,21 +164,7 @@ func TestResponseLimitMiddlewareContextPriority(t *testing.T) {
 		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
 	})
 
-	t.Run("context limit 0 disables limiting", func(t *testing.T) {
-		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
-
-		ctx := WithResponseLimitContext(context.Background(), 0)
-		res, err := rt.RoundTrip(newRequestWithContext(t, ctx))
-		require.NoError(t, err)
-
-		bodyBytes, err := io.ReadAll(res.Body)
-		require.NoError(t, err)
-		require.Equal(t, "dummy", string(bodyBytes))
-	})
-
-	t.Run("context limit 0 disables limiting even when env var is set", func(t *testing.T) {
-		t.Setenv(responseLimitEnvVar, "3")
-
+	t.Run("context limit 0 disables limiting when env var is unset", func(t *testing.T) {
 		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 
 		ctx := WithResponseLimitContext(context.Background(), 0)
@@ -290,30 +285,56 @@ func TestResponseLimitMiddlewareStatusCodes(t *testing.T) {
 	})
 }
 
-func TestResolveResponseLimit(t *testing.T) {
+func TestParseEnvResponseLimit(t *testing.T) {
 	tcs := []struct {
 		name     string
-		limit    int64
 		envVar   string
 		expected int64
 	}{
-		{name: "explicit limit used when positive", limit: 500, expected: 500},
-		{name: "env var used when limit is 0", limit: 0, envVar: "1024", expected: 1024},
-		{name: "no limit when limit is 0 and env var unset", limit: 0, expected: 0},
-		{name: "no limit when env var is invalid", limit: 0, envVar: "notanumber", expected: 0},
-		{name: "no limit when env var is 0", limit: 0, envVar: "0", expected: 0},
-		{name: "no limit when env var is negative", limit: 0, envVar: "-1", expected: 0},
-		{name: "explicit limit used even when env var is set", limit: 100, envVar: "9999", expected: 100},
+		{name: "parses valid positive value", envVar: "1024", expected: 1024},
+		{name: "returns 0 when unset", expected: 0},
+		{name: "returns 0 for invalid value", envVar: "notanumber", expected: 0},
+		{name: "returns 0 when env var is 0", envVar: "0", expected: 0},
+		{name: "returns 0 when env var is negative", envVar: "-1", expected: 0},
 	}
 	for _, tc := range tcs {
 		t.Run(tc.name, func(t *testing.T) {
 			if tc.envVar != "" {
 				t.Setenv(responseLimitEnvVar, tc.envVar)
 			}
-			require.Equal(t, tc.expected, resolveResponseLimit(tc.limit))
+			require.Equal(t, tc.expected, parseEnvResponseLimit())
 		})
 	}
 }
+
+func TestResolveResponseLimit(t *testing.T) {
+	tcs := []struct {
+		name     string
+		envLimit int64
+		limit    int64
+		ctxLimit *int64
+		expected int64
+	}{
+		{name: "env var wins over context and limit arg", envLimit: 100, limit: 999, ctxLimit: ptr(int64(999)), expected: 100},
+		{name: "env var wins over context limit", envLimit: 100, ctxLimit: ptr(int64(999)), expected: 100},
+		{name: "env var wins over limit arg", envLimit: 100, limit: 999, expected: 100},
+		{name: "context used when env var unset", limit: 999, ctxLimit: ptr(int64(50)), expected: 50},
+		{name: "context 0 disables when env var unset", ctxLimit: ptr(int64(0)), expected: 0},
+		{name: "limit arg used when env var and context unset", limit: 500, expected: 500},
+		{name: "no limit when all unset", expected: 0},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			ctx := context.Background()
+			if tc.ctxLimit != nil {
+				ctx = WithResponseLimitContext(ctx, *tc.ctxLimit)
+			}
+			require.Equal(t, tc.expected, resolveResponseLimit(tc.envLimit, tc.limit, ctx))
+		})
+	}
+}
+
+func ptr[T any](v T) *T { return &v }
 
 func TestResponseLimitMiddlewareErrors(t *testing.T) {
 	t.Run("propagates round trip error without wrapping body", func(t *testing.T) {

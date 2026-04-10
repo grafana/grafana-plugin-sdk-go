@@ -15,16 +15,21 @@ import (
 // ResponseLimitMiddlewareName is the middleware name used by ResponseLimitMiddleware.
 const ResponseLimitMiddlewareName = "response-limit"
 
-const responseLimitEnvVar = "GF_RESPONSE_LIMIT"
+// responseLimitEnvVar can be set directly on the plugin server to cap response sizes
+// regardless of what Grafana's config system sends. This is useful when running a plugin
+// on a separate server in Cloud environments where you want per-pod control.
+const responseLimitEnvVar = "GF_DATAPROXY_RESPONSE_LIMIT"
 
 type responseLimitContextKey struct{}
 
-// WithResponseLimitContext stores a response limit in the context, to be picked up by
-// ResponseLimitMiddleware on each request. It is called by the backend package from
-// WithGrafanaConfig so that GrafanaCfg.ResponseLimit() takes priority over the env var.
-// A limit of 0 explicitly disables limiting for the request, regardless of any fallback.
-// Note: WithGrafanaConfig only calls this when the cfg limit is > 0, so a zero cfg value
-// falls through to the env var / 200MB default rather than disabling limiting entirely.
+// WithResponseLimitContext injects a response limit into the context so that
+// ResponseLimitMiddleware can apply it per-request. A value of 0 explicitly disables
+// context-based limiting for that request.
+//
+// This is called by WithGrafanaConfig in the backend package — plugins do not need to
+// call it directly. Note that WithGrafanaConfig only forwards limits > 0, so when
+// GrafanaCfg carries no limit the middleware falls back to the limit argument or disables
+// entirely.
 func WithResponseLimitContext(ctx context.Context, limit int64) context.Context {
 	return context.WithValue(ctx, responseLimitContextKey{}, &limit)
 }
@@ -37,23 +42,25 @@ func responseLimitFromContext(ctx context.Context) (int64, bool) {
 	return *v, true
 }
 
-// ResponseLimitMiddleware creates a middleware that limits the size of the response body.
-// The effective limit is resolved per-request in priority order:
-//  1. GrafanaCfg.ResponseLimit() from context (set via WithResponseLimitContext)
-//  2. limit argument, if > 0
-//  3. GF_RESPONSE_LIMIT environment variable
-//  4. 200MB default
+// ResponseLimitMiddleware limits the size of downstream response bodies.
+// When the limit is exceeded the response body returns ErrResponseBodyTooLarge and a
+// warning is logged with the datasource identifiers from opts.Labels.
+//
+// The limit is resolved per-request in the following priority order:
+//  1. GF_DATAPROXY_RESPONSE_LIMIT environment variable — read once at client construction,
+//     takes highest priority so plugin server operators can override Grafana's config
+//  2. GrafanaCfg.ResponseLimit() injected via WithGrafanaConfig (sourced from Grafana's config)
+//  3. The limit argument passed to this function, if > 0
+//
+// If none of the above are set, limiting is disabled for that request.
 func ResponseLimitMiddleware(limit int64) Middleware {
 	return NamedMiddlewareFunc(ResponseLimitMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
-		fallbackLimit := resolveResponseLimit(limit)
+		envLimit := parseEnvResponseLimit()
 		dsUID := opts.Labels["datasource_uid"]
 		dsName := opts.Labels["datasource_name"]
 
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			effectiveLimit := fallbackLimit
-			if ctxLimit, ok := responseLimitFromContext(req.Context()); ok {
-				effectiveLimit = ctxLimit
-			}
+			effectiveLimit := resolveResponseLimit(envLimit, limit, req.Context())
 
 			res, err := next.RoundTrip(req)
 			if err != nil {
@@ -79,16 +86,28 @@ func ResponseLimitMiddleware(limit int64) Middleware {
 	})
 }
 
-func resolveResponseLimit(limit int64) int64 {
-	if limit > 0 {
-		return limit
-	}
-	// GF_RESPONSE_LIMIT is read once at client construction time. Changes to the env var
-	// after the client is built will not take effect until the client is recreated.
-	if v, err := strconv.ParseInt(os.Getenv(responseLimitEnvVar), 10, 64); err == nil && v > 0 {
+// parseEnvResponseLimit reads GF_DATAPROXY_RESPONSE_LIMIT once at client construction time.
+// Changes to the env var after the client is built will not take effect until the client
+// is recreated.
+func parseEnvResponseLimit() int64 {
+	v, err := strconv.ParseInt(os.Getenv(responseLimitEnvVar), 10, 64)
+	if err == nil && v > 0 {
 		return v
 	}
 	return 0
+}
+
+// resolveResponseLimit determines the effective limit for a request.
+// envLimit wins if set, then the per-request context value from GrafanaCfg, then the
+// static limit argument. Returns 0 if none are set, which disables limiting.
+func resolveResponseLimit(envLimit, limit int64, ctx context.Context) int64 {
+	if envLimit > 0 {
+		return envLimit
+	}
+	if ctxLimit, ok := responseLimitFromContext(ctx); ok {
+		return ctxLimit
+	}
+	return limit
 }
 
 type responseLimitBody struct {
