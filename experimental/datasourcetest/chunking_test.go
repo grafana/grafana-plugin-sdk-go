@@ -94,7 +94,7 @@ func TestQueryDataAndChunkedResponsesAreTheSame(t *testing.T) {
 				t.Error("QueryData failed", err)
 				return
 			}
-			if diff := cmp.Diff(resp, respJSON, cmp.AllowUnexported(data.Field{})); diff != "" {
+			if diff := cmp.Diff(resp, respJSON, data.FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("QueryData vs QueryData (JSON) mismatch (-want +got):\n%s", diff)
 			}
 
@@ -140,13 +140,13 @@ func TestQueryDataAndChunkedResponsesAreTheSame(t *testing.T) {
 			}
 
 			// Compare responses
-			if diff := cmp.Diff(resp, chunkedRespArrow, cmp.AllowUnexported(data.Field{})); diff != "" {
+			if diff := cmp.Diff(resp, chunkedRespArrow, data.FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("QueryData vs QueryChunkedData (Arrow) mismatch (-want +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(resp, chunkedRespJSON, cmp.AllowUnexported(data.Field{})); diff != "" {
+			if diff := cmp.Diff(resp, chunkedRespJSON, data.FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("QueryData vs QueryChunkedData (JSON) mismatch (-want +got):\n%s", diff)
 			}
-			if diff := cmp.Diff(respMulti, chunkedRespMulti, cmp.AllowUnexported(data.Field{})); diff != "" {
+			if diff := cmp.Diff(respMulti, chunkedRespMulti, data.FrameTestCompareOptions()...); diff != "" {
 				t.Errorf("QueryData vs QueryChunkedData with multiple frames mismatch (-want +got):\n%s", diff)
 			}
 		}
