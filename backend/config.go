@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
@@ -45,9 +46,17 @@ func GrafanaConfigFromContext(ctx context.Context) *GrafanaCfg {
 	return cfg
 }
 
-// WithGrafanaConfig injects supplied Grafana config into context.
+// WithGrafanaConfig injects the supplied Grafana config into the context.
+// When the config carries a response limit it is also stored via
+// httpclient.WithResponseLimitContext so that ResponseLimitMiddleware can apply it
+// per-request without importing the backend package (which would be a circular import).
 func WithGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
 	ctx = context.WithValue(ctx, configKey{}, cfg)
+	if cfg != nil {
+		if limit := cfg.ResponseLimit(); limit > 0 {
+			ctx = httpclient.WithResponseLimitContext(ctx, limit)
+		}
+	}
 	return ctx
 }
 
