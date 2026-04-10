@@ -15,29 +15,26 @@ import (
 // ResponseLimitMiddlewareName is the middleware name used by ResponseLimitMiddleware.
 const ResponseLimitMiddlewareName = "response-limit"
 
-const (
-	responseLimitEnvVar  = "GF_RESPONSE_LIMIT"
-	defaultResponseLimit = 200 * 1024 * 1024 // 200MB
-)
+const responseLimitEnvVar = "GF_RESPONSE_LIMIT"
 
 type responseLimitContextKey struct{}
 
-type responseLimitContextValue struct {
-	limit int64
-}
-
 // WithResponseLimitContext stores a response limit in the context, to be picked up by
-// ResponseLimitMiddleware on each request. The backend package calls this from
+// ResponseLimitMiddleware on each request. It is called by the backend package from
 // WithGrafanaConfig so that GrafanaCfg.ResponseLimit() takes priority over the env var.
-// A limit of 0 explicitly disables limiting for the request.
+// A limit of 0 explicitly disables limiting for the request, regardless of any fallback.
+// Note: WithGrafanaConfig only calls this when the cfg limit is > 0, so a zero cfg value
+// falls through to the env var / 200MB default rather than disabling limiting entirely.
 func WithResponseLimitContext(ctx context.Context, limit int64) context.Context {
-	return context.WithValue(ctx, responseLimitContextKey{}, responseLimitContextValue{limit})
+	return context.WithValue(ctx, responseLimitContextKey{}, &limit)
 }
 
-// responseLimitFromContext returns the limit and whether it was explicitly set in context.
 func responseLimitFromContext(ctx context.Context) (int64, bool) {
-	v, ok := ctx.Value(responseLimitContextKey{}).(responseLimitContextValue)
-	return v.limit, ok
+	v, ok := ctx.Value(responseLimitContextKey{}).(*int64)
+	if !ok || v == nil {
+		return 0, false
+	}
+	return *v, true
 }
 
 // ResponseLimitMiddleware creates a middleware that limits the size of the response body.
@@ -70,6 +67,7 @@ func ResponseLimitMiddleware(limit int64) Middleware {
 			if res != nil && res.StatusCode != http.StatusSwitchingProtocols {
 				res.Body = &responseLimitBody{
 					ReadCloser: MaxBytesReader(res.Body, effectiveLimit),
+					ctx:        req.Context(),
 					limit:      effectiveLimit,
 					dsUID:      dsUID,
 					dsName:     dsName,
@@ -85,15 +83,17 @@ func resolveResponseLimit(limit int64) int64 {
 	if limit > 0 {
 		return limit
 	}
+	// GF_RESPONSE_LIMIT is read once at client construction time. Changes to the env var
+	// after the client is built will not take effect until the client is recreated.
 	if v, err := strconv.ParseInt(os.Getenv(responseLimitEnvVar), 10, 64); err == nil && v > 0 {
 		return v
 	}
-	return defaultResponseLimit
+	return 0
 }
 
-// responseLimitBody wraps MaxBytesReader to log when the response limit is exceeded.
 type responseLimitBody struct {
 	io.ReadCloser
+	ctx    context.Context
 	limit  int64
 	dsUID  string
 	dsName string
@@ -104,7 +104,7 @@ func (b *responseLimitBody) Read(p []byte) (int, error) {
 	n, err := b.ReadCloser.Read(p)
 	if err != nil && errors.Is(err, ErrResponseBodyTooLarge) {
 		b.once.Do(func() {
-			log.DefaultLogger.Warn("downstream response body exceeded limit",
+			log.DefaultLogger.FromContext(b.ctx).Warn("downstream response body exceeded limit",
 				"datasource_uid", b.dsUID,
 				"datasource_name", b.dsName,
 				"limit_bytes", b.limit,

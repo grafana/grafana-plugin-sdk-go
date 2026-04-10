@@ -29,6 +29,10 @@ func (m *mockLogger) Warn(msg string, args ...interface{}) {
 	m.warns = append(m.warns, mockLogCall{msg, args})
 }
 
+func (m *mockLogger) FromContext(_ context.Context) log.Logger {
+	return m
+}
+
 func newRoundTripper(body string) http.RoundTripper {
 	return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		return &http.Response{
@@ -101,8 +105,8 @@ func TestResponseLimitMiddlewareFallback(t *testing.T) {
 		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
 	})
 
-	t.Run("uses 200MB default when limit arg is 0 and env var is unset", func(t *testing.T) {
-		require.Equal(t, int64(defaultResponseLimit), resolveResponseLimit(0))
+	t.Run("no limit when limit arg is 0 and env var is unset", func(t *testing.T) {
+		require.Equal(t, int64(0), resolveResponseLimit(0))
 
 		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 		res, err := rt.RoundTrip(newRequest(t))
@@ -151,7 +155,7 @@ func TestResponseLimitMiddlewareContextPriority(t *testing.T) {
 		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
 	})
 
-	t.Run("context limit 0 disables limiting even with 200MB fallback", func(t *testing.T) {
+	t.Run("context limit 0 disables limiting", func(t *testing.T) {
 		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 
 		ctx := WithResponseLimitContext(context.Background(), 0)
@@ -295,10 +299,10 @@ func TestResolveResponseLimit(t *testing.T) {
 	}{
 		{name: "explicit limit used when positive", limit: 500, expected: 500},
 		{name: "env var used when limit is 0", limit: 0, envVar: "1024", expected: 1024},
-		{name: "default used when limit is 0 and env var unset", limit: 0, expected: defaultResponseLimit},
-		{name: "default used when env var is invalid", limit: 0, envVar: "notanumber", expected: defaultResponseLimit},
-		{name: "default used when env var is 0", limit: 0, envVar: "0", expected: defaultResponseLimit},
-		{name: "default used when env var is negative", limit: 0, envVar: "-1", expected: defaultResponseLimit},
+		{name: "no limit when limit is 0 and env var unset", limit: 0, expected: 0},
+		{name: "no limit when env var is invalid", limit: 0, envVar: "notanumber", expected: 0},
+		{name: "no limit when env var is 0", limit: 0, envVar: "0", expected: 0},
+		{name: "no limit when env var is negative", limit: 0, envVar: "-1", expected: 0},
 		{name: "explicit limit used even when env var is set", limit: 100, envVar: "9999", expected: 100},
 	}
 	for _, tc := range tcs {
