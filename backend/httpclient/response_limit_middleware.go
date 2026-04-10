@@ -22,16 +22,22 @@ const (
 
 type responseLimitContextKey struct{}
 
+type responseLimitContextValue struct {
+	limit int64
+}
+
 // WithResponseLimitContext stores a response limit in the context, to be picked up by
 // ResponseLimitMiddleware on each request. The backend package calls this from
 // WithGrafanaConfig so that GrafanaCfg.ResponseLimit() takes priority over the env var.
+// A limit of 0 explicitly disables limiting for the request.
 func WithResponseLimitContext(ctx context.Context, limit int64) context.Context {
-	return context.WithValue(ctx, responseLimitContextKey{}, limit)
+	return context.WithValue(ctx, responseLimitContextKey{}, responseLimitContextValue{limit})
 }
 
-func responseLimitFromContext(ctx context.Context) int64 {
-	v, _ := ctx.Value(responseLimitContextKey{}).(int64)
-	return v
+// responseLimitFromContext returns the limit and whether it was explicitly set in context.
+func responseLimitFromContext(ctx context.Context) (int64, bool) {
+	v, ok := ctx.Value(responseLimitContextKey{}).(responseLimitContextValue)
+	return v.limit, ok
 }
 
 // ResponseLimitMiddleware creates a middleware that limits the size of the response body.
@@ -48,13 +54,17 @@ func ResponseLimitMiddleware(limit int64) Middleware {
 
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 			effectiveLimit := fallbackLimit
-			if ctxLimit := responseLimitFromContext(req.Context()); ctxLimit > 0 {
+			if ctxLimit, ok := responseLimitFromContext(req.Context()); ok {
 				effectiveLimit = ctxLimit
 			}
 
 			res, err := next.RoundTrip(req)
 			if err != nil {
 				return nil, err
+			}
+
+			if effectiveLimit <= 0 {
+				return res, nil
 			}
 
 			if res != nil && res.StatusCode != http.StatusSwitchingProtocols {
