@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
@@ -48,6 +49,11 @@ func GrafanaConfigFromContext(ctx context.Context) *GrafanaCfg {
 // WithGrafanaConfig injects supplied Grafana config into context.
 func WithGrafanaConfig(ctx context.Context, cfg *GrafanaCfg) context.Context {
 	ctx = context.WithValue(ctx, configKey{}, cfg)
+	if cfg != nil {
+		if limit := cfg.ResponseLimit(); limit > 0 {
+			ctx = httpclient.WithResponseLimitContext(ctx, limit)
+		}
+	}
 	return ctx
 }
 

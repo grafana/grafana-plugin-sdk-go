@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"errors"
 	"io"
 	"net/http"
@@ -15,22 +16,42 @@ import (
 const ResponseLimitMiddlewareName = "response-limit"
 
 const (
-	responseLimitEnvVar    = "GF_RESPONSE_LIMIT"
-	defaultResponseLimit   = 200 * 1024 * 1024 // 200MB
+	responseLimitEnvVar  = "GF_RESPONSE_LIMIT"
+	defaultResponseLimit = 200 * 1024 * 1024 // 200MB
 )
 
+type responseLimitContextKey struct{}
+
+// WithResponseLimitContext stores a response limit in the context, to be picked up by
+// ResponseLimitMiddleware on each request. The backend package calls this from
+// WithGrafanaConfig so that GrafanaCfg.ResponseLimit() takes priority over the env var.
+func WithResponseLimitContext(ctx context.Context, limit int64) context.Context {
+	return context.WithValue(ctx, responseLimitContextKey{}, limit)
+}
+
+func responseLimitFromContext(ctx context.Context) int64 {
+	v, _ := ctx.Value(responseLimitContextKey{}).(int64)
+	return v
+}
+
 // ResponseLimitMiddleware creates a middleware that limits the size of the response body.
-// The effective limit is resolved in priority order:
-//  1. limit argument, if > 0 (e.g. passed from GrafanaCfg.ResponseLimit())
-//  2. GF_RESPONSE_LIMIT environment variable
-//  3. 200MB default
+// The effective limit is resolved per-request in priority order:
+//  1. GrafanaCfg.ResponseLimit() from context (set via WithResponseLimitContext)
+//  2. limit argument, if > 0
+//  3. GF_RESPONSE_LIMIT environment variable
+//  4. 200MB default
 func ResponseLimitMiddleware(limit int64) Middleware {
 	return NamedMiddlewareFunc(ResponseLimitMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
-		effectiveLimit := resolveResponseLimit(limit)
+		fallbackLimit := resolveResponseLimit(limit)
 		dsUID := opts.Labels["datasource_uid"]
 		dsName := opts.Labels["datasource_name"]
 
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			effectiveLimit := fallbackLimit
+			if ctxLimit := responseLimitFromContext(req.Context()); ctxLimit > 0 {
+				effectiveLimit = ctxLimit
+			}
+
 			res, err := next.RoundTrip(req)
 			if err != nil {
 				return nil, err
