@@ -13,12 +13,10 @@ import (
 )
 
 // ResponseLimitMiddlewareName is the middleware name used by ResponseLimitMiddleware.
-const ResponseLimitMiddlewareName = "response-limit"
-
-// responseLimitEnvVar is read at client construction and takes priority over all other
-// limit sources. It is intended for plugin server operators who need per-pod control
-// independent of Grafana's config (e.g. when running plugins on separate servers in Cloud).
-const responseLimitEnvVar = "GF_DATAPROXY_RESPONSE_LIMIT"
+const (
+	ResponseLimitMiddlewareName = "response-limit"
+	responseLimitEnvVar         = "GF_DATAPROXY_RESPONSE_LIMIT"
+)
 
 type responseLimitContextKey struct{}
 
@@ -53,36 +51,39 @@ func responseLimitFromContext(ctx context.Context) (int64, bool) {
 //
 // If none are set, limiting is disabled.
 func ResponseLimitMiddleware(limit int64) Middleware {
-	return NamedMiddlewareFunc(ResponseLimitMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
-		envLimit := parseEnvResponseLimit()
-		dsUID := opts.Labels["datasource_uid"]
-		dsName := opts.Labels["datasource_name"]
+	return NamedMiddlewareFunc(
+		ResponseLimitMiddlewareName,
+		func(opts Options, next http.RoundTripper) http.RoundTripper {
+			envLimit := parseEnvResponseLimit()
+			dsUID := opts.Labels["datasource_uid"]
+			dsName := opts.Labels["datasource_name"]
 
-		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			effectiveLimit := resolveResponseLimit(envLimit, limit, req.Context())
+			return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+				effectiveLimit := resolveResponseLimit(envLimit, limit, req.Context())
 
-			res, err := next.RoundTrip(req)
-			if err != nil {
-				return nil, err
-			}
-
-			if effectiveLimit <= 0 {
-				return res, nil
-			}
-
-			if res != nil && res.StatusCode != http.StatusSwitchingProtocols {
-				res.Body = &responseLimitBody{
-					ReadCloser: MaxBytesReader(res.Body, effectiveLimit),
-					ctx:        req.Context(),
-					limit:      effectiveLimit,
-					dsUID:      dsUID,
-					dsName:     dsName,
+				res, err := next.RoundTrip(req)
+				if err != nil {
+					return nil, err
 				}
-			}
 
-			return res, nil
-		})
-	})
+				if effectiveLimit <= 0 {
+					return res, nil
+				}
+
+				if res != nil && res.StatusCode != http.StatusSwitchingProtocols {
+					res.Body = &responseLimitBody{
+						ReadCloser: MaxBytesReader(res.Body, effectiveLimit),
+						ctx:        req.Context(),
+						limit:      effectiveLimit,
+						dsUID:      dsUID,
+						dsName:     dsName,
+					}
+				}
+
+				return res, nil
+			})
+		},
+	)
 }
 
 // parseEnvResponseLimit reads GF_DATAPROXY_RESPONSE_LIMIT once at client construction time.
