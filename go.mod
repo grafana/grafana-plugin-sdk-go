@@ -24,7 +24,7 @@ require (
 	github.com/invopop/jsonschema v0.13.0 // for schema codgen+extraction
 	github.com/json-iterator/go v1.1.12
 	github.com/jszwedko/go-datemath v0.1.1-0.20230526204004-640a500621d6
-	github.com/magefile/mage v1.16.1
+	github.com/magefile/mage v1.17.0
 	github.com/mattetti/filebuffer v1.0.1
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v1.1.4
