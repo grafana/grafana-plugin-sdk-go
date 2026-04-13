@@ -38,7 +38,7 @@ func TestReadSampleConfig(t *testing.T) {
 	}
 
 	writeFile := false
-	snapshotJSON, err := os.ReadFile(snapshotPathJSON)
+	snapshotJSON, err := os.ReadFile(snapshotPathJSON) // #nosec G304
 	if err != nil {
 		if os.IsNotExist(err) {
 			writeFile = true
@@ -48,7 +48,7 @@ func TestReadSampleConfig(t *testing.T) {
 		}
 	}
 
-	snapshotYAML, err := os.ReadFile(snapshotPathYAML)
+	snapshotYAML, err := os.ReadFile(snapshotPathYAML) // #nosec G304
 	if err != nil {
 		if os.IsNotExist(err) {
 			writeFile = true
