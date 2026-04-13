@@ -3,6 +3,7 @@ package datasourceschema
 import (
 	"encoding/json"
 
+	v0alpha1 "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/analyze"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/model"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/openapigen"
@@ -31,7 +32,46 @@ type OpenAPIResult struct {
 	Warnings []OpenAPIWarning
 }
 
+type QueryTypesResult struct {
+	Body     []byte
+	Warnings []OpenAPIWarning
+}
+
 func GenerateOpenAPI(opts OpenAPIOptions) (*OpenAPIResult, error) {
+	result, err := generate(opts, true, false)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := json.MarshalIndent(result.OpenAPI, "", "  ")
+	if err != nil {
+		return nil, err
+	}
+
+	return &OpenAPIResult{
+		Body:     body,
+		Warnings: warningsFromModel(result.Warnings),
+	}, nil
+}
+
+func GenerateQueryTypes(opts OpenAPIOptions) (*QueryTypesResult, error) {
+	result, err := generate(opts, false, true)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := marshalQueryTypes(result.QueryTypes)
+	if err != nil {
+		return nil, err
+	}
+
+	return &QueryTypesResult{
+		Body:     body,
+		Warnings: warningsFromModel(result.Warnings),
+	}, nil
+}
+
+func generate(opts OpenAPIOptions, generateSpec bool, generateQueries bool) (*openapigen.Result, error) {
 	cfg := normalizeOptions(opts)
 
 	report, err := analyze.Run(analyze.Config{
@@ -49,22 +89,21 @@ func GenerateOpenAPI(opts OpenAPIOptions) (*OpenAPIResult, error) {
 		Patterns:        cfg.Patterns,
 		BuildFlags:      cfg.BuildFlags,
 		Report:          *report,
-		GenerateSpec:    true,
-		GenerateQueries: true,
+		GenerateSpec:    generateSpec,
+		GenerateQueries: generateQueries,
 	})
 	if err != nil {
 		return nil, err
 	}
 
-	body, err := json.MarshalIndent(result.Extension, "", "  ")
-	if err != nil {
-		return nil, err
-	}
+	return result, nil
+}
 
-	return &OpenAPIResult{
-		Body:     body,
-		Warnings: warningsFromModel(result.Warnings),
-	}, nil
+func marshalQueryTypes(queryTypes *v0alpha1.QueryTypeDefinitionList) ([]byte, error) {
+	if queryTypes == nil {
+		queryTypes = &v0alpha1.QueryTypeDefinitionList{}
+	}
+	return json.MarshalIndent(queryTypes, "", "  ")
 }
 
 func normalizeOptions(opts OpenAPIOptions) OpenAPIOptions {

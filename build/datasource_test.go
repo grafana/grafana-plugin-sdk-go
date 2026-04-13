@@ -70,11 +70,72 @@ func DecodeSecondary(cfg backend.DataSourceInstanceSettings) error {
 	out := stdout.read()
 	errOut := stderr.read()
 
-	if !strings.Contains(out, `"spec"`) {
+	if !strings.Contains(out, `"settings"`) {
 		t.Fatalf("expected JSON output on stdout, got %q", out)
 	}
 	if !strings.Contains(errOut, "warning: datasource_multiple_types:") {
 		t.Fatalf("expected warning output on stderr, got %q", errOut)
+	}
+}
+
+func TestGenerateQueryTypesWritesDefinitionsToStdout(t *testing.T) {
+	dir := writeFixtureModule(t, map[string]string{
+		"go.mod": `
+module fixture
+
+go 1.26.1
+
+require github.com/grafana/grafana-plugin-sdk-go v0.0.0
+
+replace github.com/grafana/grafana-plugin-sdk-go => ./stubs/grafana-plugin-sdk-go
+`,
+		"stubs/grafana-plugin-sdk-go/go.mod": `
+module github.com/grafana/grafana-plugin-sdk-go
+
+go 1.26.1
+`,
+		"stubs/grafana-plugin-sdk-go/backend/backend.go": `
+package backend
+
+type DataQuery struct {
+	JSON []byte
+}
+`,
+		"plugin/plugin.go": `
+package plugin
+
+import (
+	"encoding/json"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+)
+
+type Query struct {
+	QueryType string ` + "`json:\"queryType\"`" + `
+}
+
+func LoadQuery(q backend.DataQuery) error {
+	var query Query
+	return json.Unmarshal(q.JSON, &query)
+}
+`,
+	})
+
+	stdout := captureFile(t, &os.Stdout)
+	stderr := captureFile(t, &os.Stderr)
+
+	if err := (Datasource{}).GenerateQueryTypes(dir); err != nil {
+		t.Fatalf("generate query types failed: %v", err)
+	}
+
+	out := stdout.read()
+	errOut := stderr.read()
+
+	if !strings.Contains(out, `"kind": "QueryTypeDefinitionList"`) {
+		t.Fatalf("expected query definitions JSON on stdout, got %q", out)
+	}
+	if errOut != "" {
+		t.Fatalf("did not expect warning output on stderr, got %q", errOut)
 	}
 }
 

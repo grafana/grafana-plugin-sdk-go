@@ -29,15 +29,28 @@ func (Datasource) GenerateOpenAPI(dir string) error {
 		return err
 	}
 
-	if err := writeOpenAPIWarnings(os.Stderr, result.Warnings); err != nil {
+	return writeDocument(result.Body, result.Warnings)
+}
+
+// GenerateQueryTypes generates datasource query type definitions JSON and outputs to stdout.
+func (Datasource) GenerateQueryTypes(dir string) error {
+	if dir == "" {
+		dir = "."
+	}
+	if os.Getenv("GOTOOLCHAIN") == "" {
+		if err := os.Setenv("GOTOOLCHAIN", "auto"); err != nil {
+			return err
+		}
+	}
+
+	result, err := datasourceschema.GenerateQueryTypes(datasourceschema.OpenAPIOptions{
+		Dir: dir,
+	})
+	if err != nil {
 		return err
 	}
 
-	if _, err := os.Stdout.Write(result.Body); err != nil {
-		return err
-	}
-	_, err = fmt.Fprintln(os.Stdout)
-	return err
+	return writeDocument(result.Body, result.Warnings)
 }
 
 func writeOpenAPIWarnings(f *os.File, warnings []datasourceschema.OpenAPIWarning) error {
@@ -56,4 +69,16 @@ func writeOpenAPIWarnings(f *os.File, warnings []datasourceschema.OpenAPIWarning
 	}
 
 	return nil
+}
+
+func writeDocument(body []byte, warnings []datasourceschema.OpenAPIWarning) error {
+	if err := writeOpenAPIWarnings(os.Stderr, warnings); err != nil {
+		return err
+	}
+
+	if _, err := os.Stdout.Write(body); err != nil {
+		return err
+	}
+	_, err := fmt.Fprintln(os.Stdout)
+	return err
 }

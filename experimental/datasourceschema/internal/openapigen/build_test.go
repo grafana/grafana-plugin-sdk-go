@@ -66,13 +66,10 @@ type Query struct {
 		t.Fatalf("build failed: %v", err)
 	}
 
-	if result.Extension.Spec == nil {
+	if result.OpenAPI == nil || result.OpenAPI.Settings.Spec == nil {
 		t.Fatalf("expected spec to be generated")
 	}
-	properties, ok := result.Extension.Spec["properties"].(map[string]any)
-	if !ok {
-		t.Fatalf("expected spec properties, got %#v", result.Extension.Spec)
-	}
+	properties := result.OpenAPI.Settings.Spec.Properties
 	if _, ok := properties["name"]; !ok {
 		t.Fatalf("expected non-secure property to remain, got %#v", properties)
 	}
@@ -85,11 +82,11 @@ type Query struct {
 	if _, ok := properties["Token"]; ok {
 		t.Fatalf("did not expect case-mismatched secure-backed property in spec, got %#v", properties)
 	}
-	if len(result.Extension.SecureValues) != 3 {
-		t.Fatalf("expected three secure values, got %#v", result.Extension.SecureValues)
+	if len(result.OpenAPI.Settings.SecureValues) != 3 {
+		t.Fatalf("expected three secure values, got %#v", result.OpenAPI.Settings.SecureValues)
 	}
-	if result.Extension.Queries == nil || len(result.Extension.Queries.Items) != 1 {
-		t.Fatalf("expected query definitions, got %#v", result.Extension.Queries)
+	if result.QueryTypes == nil || len(result.QueryTypes.Items) != 1 {
+		t.Fatalf("expected query definitions, got %#v", result.QueryTypes)
 	}
 }
 
@@ -162,10 +159,7 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		t.Fatalf("build failed: %v", err)
 	}
 
-	properties, ok := result.Extension.Spec["properties"].(map[string]any)
-	if !ok {
-		t.Fatalf("expected spec properties, got %#v", result.Extension.Spec)
-	}
+	properties := result.OpenAPI.Settings.Spec.Properties
 	for _, key := range []string{"url", "user", "basicAuth", "basicAuthUser", "timeout", "tlsAuth", "tlsAuthWithCACert", "tlsSkipVerify", "serverName", "enableSecureSocksProxy"} {
 		if _, ok := properties[key]; !ok {
 			t.Fatalf("expected generic property %q, got %#v", key, properties)
@@ -173,12 +167,12 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 	}
 
 	secureNames := map[string]struct{}{}
-	for _, value := range result.Extension.SecureValues {
-		secureNames[value.String] = struct{}{}
+	for _, value := range result.OpenAPI.Settings.SecureValues {
+		secureNames[value.Key] = struct{}{}
 	}
 	for _, key := range []string{"basicAuthPassword", "password", "tlsCACert", "tlsClientCert", "tlsClientKey", "secureSocksProxyPassword", "httpHeaderValue{dynamic}"} {
 		if _, ok := secureNames[key]; !ok {
-			t.Fatalf("expected generic secure value %q, got %#v", key, result.Extension.SecureValues)
+			t.Fatalf("expected generic secure value %q, got %#v", key, result.OpenAPI.Settings.SecureValues)
 		}
 	}
 }
@@ -304,10 +298,7 @@ func NewDatasource() any {
 		t.Fatalf("build failed: %v", err)
 	}
 
-	properties, ok := result.Extension.Spec["properties"].(map[string]any)
-	if !ok {
-		t.Fatalf("expected spec properties, got %#v", result.Extension.Spec)
-	}
+	properties := result.OpenAPI.Settings.Spec.Properties
 	for _, key := range []string{"url", "user", "basicAuth", "basicAuthUser", "timeout", "tlsAuth"} {
 		if _, ok := properties[key]; !ok {
 			t.Fatalf("expected framework-derived generic property %q, got %#v", key, properties)
@@ -315,12 +306,12 @@ func NewDatasource() any {
 	}
 
 	secureNames := map[string]struct{}{}
-	for _, value := range result.Extension.SecureValues {
-		secureNames[value.String] = struct{}{}
+	for _, value := range result.OpenAPI.Settings.SecureValues {
+		secureNames[value.Key] = struct{}{}
 	}
 	for _, key := range []string{"basicAuthPassword", "password", "tlsCACert", "tlsClientCert", "tlsClientKey"} {
 		if _, ok := secureNames[key]; !ok {
-			t.Fatalf("expected framework-derived generic secure value %q, got %#v", key, result.Extension.SecureValues)
+			t.Fatalf("expected framework-derived generic secure value %q, got %#v", key, result.OpenAPI.Settings.SecureValues)
 		}
 	}
 }

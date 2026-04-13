@@ -28,6 +28,10 @@ func (Datasource) GenerateOpenAPI(dir string) error {
 	return (buildmage.Datasource{}).GenerateOpenAPI(dir)
 }
 
+func (Datasource) GenerateQueryTypes(dir string) error {
+	return (buildmage.Datasource{}).GenerateQueryTypes(dir)
+}
+
 // Generate generates protobuf files.
 func (Protobuf) Generate() error {
 	return sh.RunV("buf", "generate", "proto", "--template", "./proto/buf.gen.yaml")

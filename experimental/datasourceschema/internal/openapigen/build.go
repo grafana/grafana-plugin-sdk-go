@@ -1,6 +1,7 @@
 package openapigen
 
 import (
+	"encoding/json"
 	"go/ast"
 	"go/types"
 	"sort"
@@ -8,12 +9,15 @@ import (
 	"unicode"
 
 	"golang.org/x/tools/go/packages"
+	"k8s.io/kube-openapi/pkg/validation/spec"
 
+	v0alpha1 "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/configgen"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/load"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/model"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/querygen"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/ssaresolve"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginspec"
 )
 
 type Options struct {
@@ -26,8 +30,9 @@ type Options struct {
 }
 
 type Result struct {
-	Extension model.DataSourceOpenAPIExtension
-	Warnings  []model.Warning
+	OpenAPI    *pluginspec.OpenAPIExtension
+	QueryTypes *v0alpha1.QueryTypeDefinitionList
+	Warnings   []model.Warning
 }
 
 type genericSettingsUsage struct {
@@ -36,8 +41,8 @@ type genericSettingsUsage struct {
 }
 
 func Build(opts Options) (*Result, error) {
-	extension := model.NewDataSourceOpenAPIExtension()
-	extension.SecureValues = secureValuesFromFindings(opts.Report.Findings)
+	openAPI := &pluginspec.OpenAPIExtension{}
+	openAPI.Settings.SecureValues = secureValuesFromFindings(opts.Report.Findings)
 
 	warnings := append([]model.Warning{}, opts.Report.Warnings...)
 
@@ -45,10 +50,10 @@ func Build(opts Options) (*Result, error) {
 	if err != nil {
 		return nil, err
 	}
-	extension.SecureValues = mergeSecureValues(extension.SecureValues, genericSecureValues(usage))
+	openAPI.Settings.SecureValues = mergeSecureValues(openAPI.Settings.SecureValues, genericSecureValues(usage))
 
 	if opts.GenerateSpec {
-		spec, specWarnings, err := configgen.BuildSchemaFromFindings(configgen.RuntimeOptions{
+		schemaMap, specWarnings, err := configgen.BuildSchemaFromFindings(configgen.RuntimeOptions{
 			Dir:        opts.Dir,
 			Patterns:   opts.Patterns,
 			BuildFlags: opts.BuildFlags,
@@ -56,9 +61,13 @@ func Build(opts Options) (*Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		spec = mergeSchemaProperties(spec, genericSettingsSchema(usage))
-		pruneSecureSpecProperties(spec, extension.SecureValues)
-		extension.Spec = spec
+		schemaMap = mergeSchemaProperties(schemaMap, genericSettingsSchema(usage))
+		pruneSecureSpecProperties(schemaMap, openAPI.Settings.SecureValues)
+		typedSchema, err := asJSONSchema(schemaMap)
+		if err != nil {
+			return nil, err
+		}
+		openAPI.Settings.Spec = typedSchema
 		warnings = append(warnings, specWarnings...)
 	}
 
@@ -71,15 +80,19 @@ func Build(opts Options) (*Result, error) {
 		if err != nil {
 			return nil, err
 		}
-		if queries != nil && len(queries.Items) > 0 {
-			extension.Queries = queries
-		}
 		warnings = append(warnings, queryWarnings...)
+		if queries != nil && len(queries.Items) > 0 {
+			return &Result{
+				OpenAPI:    openAPI,
+				QueryTypes: queries,
+				Warnings:   dedupeWarnings(warnings),
+			}, nil
+		}
 	}
 
 	return &Result{
-		Extension: extension,
-		Warnings:  dedupeWarnings(warnings),
+		OpenAPI:  openAPI,
+		Warnings: dedupeWarnings(warnings),
 	}, nil
 }
 
@@ -144,8 +157,8 @@ func normalizeOpenAPIPatterns(patterns []string) []string {
 	return patterns
 }
 
-func secureValuesFromFindings(findings []model.Finding) []model.SecureValueInfo {
-	values := make([]model.SecureValueInfo, 0)
+func secureValuesFromFindings(findings []model.Finding) []pluginspec.SecureValueInfo {
+	values := make([]pluginspec.SecureValueInfo, 0)
 	seen := map[string]struct{}{}
 
 	for _, finding := range findings {
@@ -166,50 +179,50 @@ func secureValuesFromFindings(findings []model.Finding) []model.SecureValueInfo 
 		}
 		seen[name] = struct{}{}
 
-		values = append(values, model.SecureValueInfo{
-			String: name,
+		values = append(values, pluginspec.SecureValueInfo{
+			Key: name,
 		})
 	}
 
 	sort.Slice(values, func(i int, j int) bool {
-		return values[i].String < values[j].String
+		return values[i].Key < values[j].Key
 	})
 
 	return values
 }
 
-func mergeSecureValues(values []model.SecureValueInfo, extras []model.SecureValueInfo) []model.SecureValueInfo {
+func mergeSecureValues(values []pluginspec.SecureValueInfo, extras []pluginspec.SecureValueInfo) []pluginspec.SecureValueInfo {
 	if len(extras) == 0 {
 		return values
 	}
 
-	merged := append([]model.SecureValueInfo{}, values...)
+	merged := append([]pluginspec.SecureValueInfo{}, values...)
 	seen := map[string]struct{}{}
 	for _, value := range merged {
-		if value.String == "" {
+		if value.Key == "" {
 			continue
 		}
-		seen[value.String] = struct{}{}
+		seen[value.Key] = struct{}{}
 	}
 
 	for _, extra := range extras {
-		if extra.String == "" {
+		if extra.Key == "" {
 			continue
 		}
-		if _, ok := seen[extra.String]; ok {
+		if _, ok := seen[extra.Key]; ok {
 			continue
 		}
-		seen[extra.String] = struct{}{}
+		seen[extra.Key] = struct{}{}
 		merged = append(merged, extra)
 	}
 
 	sort.Slice(merged, func(i int, j int) bool {
-		return merged[i].String < merged[j].String
+		return merged[i].Key < merged[j].Key
 	})
 	return merged
 }
 
-func genericSecureValues(usage genericSettingsUsage) []model.SecureValueInfo {
+func genericSecureValues(usage genericSettingsUsage) []pluginspec.SecureValueInfo {
 	if !usage.UsesHTTPOptions {
 		return nil
 	}
@@ -227,9 +240,9 @@ func genericSecureValues(usage genericSettingsUsage) []model.SecureValueInfo {
 		"tlsClientKey",
 	}
 
-	values := make([]model.SecureValueInfo, 0, len(names))
+	values := make([]pluginspec.SecureValueInfo, 0, len(names))
 	for _, name := range names {
-		values = append(values, model.SecureValueInfo{String: name})
+		values = append(values, pluginspec.SecureValueInfo{Key: name})
 	}
 	return values
 }
@@ -313,7 +326,7 @@ func mergeSchemaProperties(primary map[string]any, extra map[string]any) map[str
 	return primary
 }
 
-func pruneSecureSpecProperties(spec map[string]any, secureValues []model.SecureValueInfo) {
+func pruneSecureSpecProperties(spec map[string]any, secureValues []pluginspec.SecureValueInfo) {
 	if len(spec) == 0 || len(secureValues) == 0 {
 		return
 	}
@@ -324,17 +337,35 @@ func pruneSecureSpecProperties(spec map[string]any, secureValues []model.SecureV
 	}
 
 	for _, secureValue := range secureValues {
-		if secureValue.String == "" {
+		if secureValue.Key == "" {
 			continue
 		}
-		normalizedSecure := normalizeSchemaKey(secureValue.String)
-		delete(properties, secureValue.String)
+		normalizedSecure := normalizeSchemaKey(secureValue.Key)
+		delete(properties, secureValue.Key)
 		for key := range properties {
-			if strings.EqualFold(key, secureValue.String) || normalizeSchemaKey(key) == normalizedSecure {
+			if strings.EqualFold(key, secureValue.Key) || normalizeSchemaKey(key) == normalizedSecure {
 				delete(properties, key)
 			}
 		}
 	}
+}
+
+func asJSONSchema(v any) (*spec.Schema, error) {
+	if s, ok := v.(*spec.Schema); ok {
+		return s, nil
+	}
+
+	body, err := json.Marshal(v)
+	if err != nil {
+		return nil, err
+	}
+
+	out := &spec.Schema{}
+	if err := json.Unmarshal(body, out); err != nil {
+		return nil, err
+	}
+
+	return out, nil
 }
 
 func normalizeSchemaKey(value string) string {

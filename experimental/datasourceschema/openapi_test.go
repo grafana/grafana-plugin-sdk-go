@@ -74,6 +74,9 @@ var _ = doesNotExist
 	if !strings.Contains(string(result.Body), `"name"`) {
 		t.Fatalf("expected generated schema to include tagged settings fields, got %s", result.Body)
 	}
+	if !strings.Contains(string(result.Body), `"settings"`) {
+		t.Fatalf("expected pluginspec settings wrapper, got %s", result.Body)
+	}
 }
 
 func TestGenerateOpenAPIReturnsWarningsForAmbiguousSettingsTargets(t *testing.T) {
@@ -155,7 +158,7 @@ func DecodeSecondary(cfg backend.DataSourceInstanceSettings) error {
 	}
 }
 
-func TestGenerateOpenAPIHandlesAnonymousSettingsTargetsAliasedSecureMapsAndLooseQueries(t *testing.T) {
+func TestGenerateOpenAPIHandlesAnonymousSettingsTargetsAndAliasedSecureMaps(t *testing.T) {
 	dir := writeFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
@@ -237,13 +240,69 @@ func LoadQuery(q backend.DataQuery) error {
 	if !strings.Contains(body, `"apiKey"`) {
 		t.Fatalf("expected aliased secure key in output, got %s", body)
 	}
+	if strings.Contains(body, `"queries"`) {
+		t.Fatalf("did not expect query definitions embedded in pluginspec output, got %s", body)
+	}
+}
 
-	var extension map[string]any
-	if err := json.Unmarshal(result.Body, &extension); err != nil {
+func TestGenerateQueryTypesHandlesLooseQueries(t *testing.T) {
+	dir := writeFixtureModule(t, map[string]string{
+		"go.mod": `
+module fixture
+
+go 1.26.1
+
+require github.com/grafana/grafana-plugin-sdk-go v0.0.0
+
+replace github.com/grafana/grafana-plugin-sdk-go => ./stubs/grafana-plugin-sdk-go
+`,
+		"stubs/grafana-plugin-sdk-go/go.mod": `
+module github.com/grafana/grafana-plugin-sdk-go
+
+go 1.26.1
+`,
+		"stubs/grafana-plugin-sdk-go/backend/backend.go": `
+package backend
+
+type DataQuery struct {
+	JSON []byte
+}
+`,
+		"plugin/plugin.go": `
+package plugin
+
+import (
+	"encoding/json"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+)
+
+type Query struct {
+	QueryType string ` + "`json:\"queryType\"`" + `
+	LogSearch struct {
+		Query string ` + "`json:\"query\"`" + `
+	} ` + "`json:\"logSearch\"`" + `
+}
+
+func LoadQuery(q backend.DataQuery) error {
+	var query Query
+	return json.Unmarshal(q.JSON, &query)
+}
+`,
+	})
+
+	result, err := GenerateQueryTypes(OpenAPIOptions{
+		Dir: dir,
+	})
+	if err != nil {
+		t.Fatalf("generate query types failed: %v", err)
+	}
+
+	var queries map[string]any
+	if err := json.Unmarshal(result.Body, &queries); err != nil {
 		t.Fatalf("unmarshal generated output failed: %v", err)
 	}
 
-	queries := extension["queries"].(map[string]any)
 	items := queries["items"].([]any)
 	item := items[0].(map[string]any)
 	spec := item["spec"].(map[string]any)
