@@ -25,9 +25,9 @@ type responseLimitContextKey struct{}
 // backend package to propagate GrafanaCfg.ResponseLimit() — plugins do not need to call
 // this directly.
 //
-// Note: GF_DATAPROXY_RESPONSE_LIMIT takes priority over the context value. A context
-// value of 0 is only effective when the env var is unset — it disables the cfg-based
-// limit and falls through to the limit argument.
+// Note: when set, the context value takes priority over GF_DATAPROXY_RESPONSE_LIMIT.
+// A context value of 0 disables limiting entirely — the env var and limit argument are
+// not consulted.
 func WithResponseLimitContext(ctx context.Context, limit int64) context.Context {
 	return context.WithValue(ctx, responseLimitContextKey{}, &limit)
 }
@@ -45,8 +45,8 @@ func responseLimitFromContext(ctx context.Context) (int64, bool) {
 // warning is logged with the datasource identifiers from opts.Labels.
 //
 // The limit is resolved per-request in the following priority order:
-//  1. GF_DATAPROXY_RESPONSE_LIMIT env var — read once at client construction
-//  2. GrafanaCfg.ResponseLimit() from the request context, set by WithGrafanaConfig
+//  1. GrafanaCfg.ResponseLimit() from the request context, set by WithGrafanaConfig
+//  2. GF_DATAPROXY_RESPONSE_LIMIT env var — read once at client construction
 //  3. The limit argument, if > 0
 //
 // If none are set, limiting is disabled.
@@ -98,14 +98,14 @@ func parseEnvResponseLimit() int64 {
 }
 
 // resolveResponseLimit determines the effective limit for a request.
-// envLimit wins if set, then the per-request context value from GrafanaCfg, then the
-// static limit argument. Returns 0 if none are set, which disables limiting.
+// The per-request context value from GrafanaCfg wins if present, then the env var,
+// then the static limit argument. Returns 0 if none are set, which disables limiting.
 func resolveResponseLimit(envLimit, limit int64, ctx context.Context) int64 {
-	if envLimit > 0 {
-		return envLimit
-	}
 	if ctxLimit, ok := responseLimitFromContext(ctx); ok {
 		return ctxLimit
+	}
+	if envLimit > 0 {
+		return envLimit
 	}
 	return limit
 }

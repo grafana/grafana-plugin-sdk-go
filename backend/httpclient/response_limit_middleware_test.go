@@ -150,13 +150,13 @@ func TestResponseLimitMiddlewareContextPriority(t *testing.T) {
 		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
 	})
 
-	t.Run("env var takes priority over context limit", func(t *testing.T) {
-		t.Setenv(responseLimitEnvVar, "3")
+	t.Run("context limit takes priority over env var", func(t *testing.T) {
+		t.Setenv(responseLimitEnvVar, "1000000")
 
-		// context limit would allow the body; env var is tighter and wins
+		// env var would allow the body; context limit is tighter and wins
 		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 
-		ctx := WithResponseLimitContext(context.Background(), 1000000)
+		ctx := WithResponseLimitContext(context.Background(), 3)
 		res, err := rt.RoundTrip(newRequestWithContext(t, ctx))
 		require.NoError(t, err)
 
@@ -164,7 +164,9 @@ func TestResponseLimitMiddlewareContextPriority(t *testing.T) {
 		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
 	})
 
-	t.Run("context limit 0 disables limiting when env var is unset", func(t *testing.T) {
+	t.Run("context limit 0 disables limiting even when env var is set", func(t *testing.T) {
+		t.Setenv(responseLimitEnvVar, "3")
+
 		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 
 		ctx := WithResponseLimitContext(context.Background(), 0)
@@ -315,11 +317,11 @@ func TestResolveResponseLimit(t *testing.T) {
 		ctxLimit *int64
 		expected int64
 	}{
-		{name: "env var wins over context and limit arg", envLimit: 100, limit: 999, ctxLimit: ptr(int64(999)), expected: 100},
-		{name: "env var wins over context limit", envLimit: 100, ctxLimit: ptr(int64(999)), expected: 100},
+		{name: "context wins over env var and limit arg", envLimit: 100, limit: 999, ctxLimit: ptr(int64(50)), expected: 50},
+		{name: "context wins over env var", envLimit: 100, ctxLimit: ptr(int64(50)), expected: 50},
 		{name: "env var wins over limit arg", envLimit: 100, limit: 999, expected: 100},
-		{name: "context used when env var unset", limit: 999, ctxLimit: ptr(int64(50)), expected: 50},
-		{name: "context 0 disables when env var unset", ctxLimit: ptr(int64(0)), expected: 0},
+		{name: "context used when env var set", envLimit: 100, limit: 999, ctxLimit: ptr(int64(50)), expected: 50},
+		{name: "context 0 disables even when env var is set", envLimit: 100, ctxLimit: ptr(int64(0)), expected: 0},
 		{name: "limit arg used when env var and context unset", limit: 500, expected: 500},
 		{name: "no limit when all unset", expected: 0},
 	}
