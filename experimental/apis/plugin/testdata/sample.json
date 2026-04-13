@@ -1,0 +1,192 @@
+{
+  "settings": {
+    "schema": {
+      "description": "Test data does not require any explicit configuration",
+      "required": ["title"],
+      "properties": {
+        "title": {
+          "description": "display name",
+          "type": "string"
+        },
+        "url": {
+          "description": "not used",
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "example": {
+        "url": "http://xxxx"
+      }
+    },
+    "secureValues": [
+      {
+        "string": "aaa",
+        "description": "describe aaa",
+        "required": true
+      },
+      {
+        "string": "bbb",
+        "description": "describe bbb"
+      }
+    ],
+    "examples": {
+      "": {
+        "summary": "Empty testdata",
+        "value": {
+          "kind": "DataSource",
+          "metadata": {
+            "name": "my-testdata-datasource"
+          },
+          "spec": {
+            "title": "My TestData Datasource"
+          }
+        }
+      },
+      "with-url": {
+        "summary": "Testdata with URL (not used)",
+        "value": {
+          "kind": "DataSource",
+          "metadata": {
+            "name": "testdata-with-url"
+          },
+          "spec": {
+            "title": "TestData with URL",
+            "url": "http://example.com"
+          }
+        }
+      }
+    }
+  },
+  "routes": {
+    "resource": {
+      "": {
+        "summary": "hello world",
+        "get": {
+          "responses": {
+            "default": {
+              "content": {
+                "text/plain": {
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/stream": {
+        "summary": "Get streaming response",
+        "get": {
+          "parameters": [
+            {
+              "name": "count",
+              "in": "query",
+              "description": "number of points that will be returned",
+              "schema": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "example": 10
+            },
+            {
+              "name": "start",
+              "in": "query",
+              "description": "the start value",
+              "schema": {
+                "type": "integer",
+                "format": "int64"
+              }
+            }
+          ],
+          "responses": {
+            "default": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/test": {
+        "summary": "Echo any request",
+        "post": {
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          },
+          "responses": {
+            "default": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "proxy": {
+      "": {
+        "summary": "simple proxy",
+        "get": {
+          "responses": {
+            "default": {
+              "content": {
+                "text/plain": {
+                  "schema": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "/with-path": {
+        "summary": "proxy with path",
+        "get": {
+          "parameters": [
+            {
+              "name": "count",
+              "in": "query",
+              "description": "number of points that will be returned",
+              "schema": {
+                "type": "integer",
+                "format": "int64"
+              },
+              "example": 10
+            }
+          ],
+          "responses": {
+            "default": {
+              "content": {
+                "application/json": {
+                  "schema": {
+                    "type": "object",
+                    "additionalProperties": true
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
