@@ -32,11 +32,29 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 		rowLimit = math.MaxInt64
 	}
 
-	// If there is a dynamic converter, we need to use the dynamic framer
-	// and remove the dynamic converter from the list of converters ( it is not valid, just a flag )
+	// Check for per-column dynamic converters (new behavior with better type fidelity)
+	dynamicIndices, converters := findDynamicPerColumnConverters(types, converters)
+	if len(dynamicIndices) > 0 {
+		frame, err := frameHybrid(Rows{itr: rows}, rowLimit, types, converters, dynamicIndices)
+		if err != nil {
+			return frame, err
+		}
+		if rowsErr := rows.Err(); rowsErr != nil {
+			return frame, backend.DownstreamError(rowsErr)
+		}
+		return frame, nil
+	}
+
+	// Check for legacy frame-level dynamic converters (preserves backward compatibility)
 	if isDynamic, converters := removeDynamicConverter(converters); isDynamic {
-		rows := Rows{itr: rows}
-		return frameDynamic(rows, rowLimit, types, converters)
+		frame, err := frameDynamic(Rows{itr: rows}, rowLimit, types, converters)
+		if err != nil {
+			return frame, err
+		}
+		if rowsErr := rows.Err(); rowsErr != nil {
+			return frame, backend.DownstreamError(rowsErr)
+		}
+		return frame, nil
 	}
 
 	names, err := rows.Columns()

@@ -138,8 +138,17 @@ type Converter struct {
 	// colType is the underlying sql column type, set during scan
 	colType sql.ColumnType
 
-	// try to determine the type
+	// Dynamic determines the field type from runtime data. When any converter has Dynamic: true,
+	// ALL columns in the frame use runtime type inference, which can degrade type fidelity.
+	// For example, INT columns become *float64, BOOLEAN becomes *string, etc.
+	// Deprecated: Use DynamicPerColumn for better type fidelity.
 	Dynamic bool
+
+	// DynamicPerColumn determines the field type from runtime data, but only for columns
+	// matched by this converter. Other columns preserve their SQL types (INT stays *int32,
+	// BIGINT stays *int64, BOOLEAN stays *bool, etc.).
+	// This provides better type fidelity and avoids type-assertion panics with schema interfaces.
+	DynamicPerColumn bool
 }
 
 // DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.

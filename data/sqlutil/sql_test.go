@@ -35,9 +35,10 @@ func (*baseRows) Close() error {
 type singleResultSet struct {
 	baseRows
 
-	rows       [][]interface{}
-	currentRow int
-	scanTypes  []reflect.Type
+	rows        [][]interface{}
+	currentRow  int
+	scanTypes   []reflect.Type
+	dbTypeNames []string
 }
 
 func (rows *singleResultSet) Next(dest []driver.Value) error {
@@ -57,6 +58,13 @@ func (rows *singleResultSet) ColumnTypeScanType(index int) reflect.Type {
 		return reflect.TypeFor[any]()
 	}
 	return rows.scanTypes[index]
+}
+
+func (rows *singleResultSet) ColumnTypeDatabaseTypeName(index int) string {
+	if index >= len(rows.dbTypeNames) {
+		return ""
+	}
+	return rows.dbTypeNames[index]
 }
 
 type multipleResultSets struct {
@@ -170,6 +178,24 @@ func makeSingleResultSetWithScanTypes(
 			rows:       data,
 			currentRow: -1,
 			scanTypes:  scanTypes,
+		},
+	}).Query("")
+	return rows
+}
+
+func makeSingleResultSetWithDBTypes(
+	columnNames []string,
+	dbTypeNames []string,
+	data ...[]interface{},
+) *sql.Rows {
+	rows, _ := sql.OpenDB(&fakeDB{
+		rows: &singleResultSet{
+			baseRows: baseRows{
+				columnNames: columnNames,
+			},
+			rows:        data,
+			currentRow:  -1,
+			dbTypeNames: dbTypeNames,
 		},
 	}).Query("")
 	return rows
@@ -781,4 +807,59 @@ func TestFrameFromRows_MultipleTimes(t *testing.T) {
 			require.Equal(t, tt.frames, frames)
 		})
 	}
+}
+
+// TestFrameFromRows_DynamicPerColumn verifies that FrameFromRows routes to frameHybrid
+// when a DynamicPerColumn converter is present, and that only matching columns use
+// dynamic inference while static columns keep their proper types.
+func TestFrameFromRows_DynamicPerColumn(t *testing.T) {
+	t.Run("routes to hybrid path when DynamicPerColumn converter present", func(t *testing.T) {
+		rows := makeSingleResultSetWithDBTypes( //nolint:rowserrcheck
+			[]string{"variant_col", "static_col"},
+			[]string{"VARIANT", ""},
+			[]interface{}{"json_value", "plain_text"},
+			[]interface{}{"another_json", "more_text"},
+		)
+
+		converters := []sqlutil.Converter{
+			{
+				Name:             "VARIANT dynamic converter",
+				InputTypeName:    "VARIANT",
+				DynamicPerColumn: true,
+			},
+		}
+
+		frame, err := sqlutil.FrameFromRows(rows, 100, converters...)
+		require.NoError(t, err)
+		require.NotNil(t, frame)
+		require.Equal(t, 2, len(frame.Fields), "Should have 2 fields")
+		require.Equal(t, 2, frame.Rows(), "Should have 2 rows")
+	})
+
+	t.Run("row limit notice is attached on hybrid path", func(t *testing.T) {
+		rows := makeSingleResultSetWithDBTypes( //nolint:rowserrcheck
+			[]string{"variant_col"},
+			[]string{"VARIANT"},
+			[]interface{}{"row1"},
+			[]interface{}{"row2"},
+			[]interface{}{"row3"},
+		)
+
+		converters := []sqlutil.Converter{
+			{
+				Name:             "VARIANT dynamic converter",
+				InputTypeName:    "VARIANT",
+				DynamicPerColumn: true,
+			},
+		}
+
+		frame, err := sqlutil.FrameFromRows(rows, 2, converters...)
+		require.NoError(t, err)
+		require.NotNil(t, frame)
+		require.Equal(t, 2, frame.Rows(), "Should have 2 rows (limited)")
+		require.NotNil(t, frame.Meta, "Frame should have metadata with notice")
+		require.Len(t, frame.Meta.Notices, 1, "Should have exactly one notice")
+		require.Equal(t, data.NoticeSeverityWarning, frame.Meta.Notices[0].Severity)
+		require.Equal(t, "Results have been limited to 2 because the SQL row limit was reached", frame.Meta.Notices[0].Text)
+	})
 }

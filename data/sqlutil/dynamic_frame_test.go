@@ -95,12 +95,12 @@ func TestDynamicFrameShouldNotPanic(t *testing.T) {
 	assert.Equal(t, val, *actual)
 }
 
-// dynamic is the converter that uses the results to determine data types
+// dynamic is the converter that uses the results to determine data types (legacy)
 func dynamic() Converter {
 	kind := "dynamic"
 	return Converter{
 		Name:          kind,
 		InputTypeName: kind,
-		Dynamic:       true,
+		Dynamic:       true, // Legacy field
 	}
 }
