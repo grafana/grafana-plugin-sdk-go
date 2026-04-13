@@ -3,6 +3,7 @@ package pluginspec
 import (
 	"errors"
 	"io/fs"
+	"strings"
 
 	"sigs.k8s.io/yaml"
 )
@@ -45,11 +46,18 @@ func (p *fsSpecProvider) GetQueryTypes(apiVersion string, queryTypes any) (bool,
 
 func (p *fsSpecProvider) getYAMLorJSON(prefix string) ([]byte, error) {
 	data, err := fs.ReadFile(p.fsys, prefix+".yaml")
-	if errors.Is(err, fs.ErrNotExist) {
+	if isNotExists(err) {
 		data, err = fs.ReadFile(p.fsys, prefix+".json")
-		if errors.Is(err, fs.ErrNotExist) {
+		if isNotExists(err) {
 			return nil, nil // does not exist
 		}
 	}
 	return data, err
+}
+
+func isNotExists(err error) bool {
+	if errors.Is(err, fs.ErrNotExist) {
+		return true
+	}
+	return strings.Contains(err.Error(), "file does not exist") // from the os filesystem :(
 }
