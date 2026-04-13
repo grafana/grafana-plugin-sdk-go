@@ -6,7 +6,7 @@ require (
 	github.com/apache/arrow-go/v18 v18.5.2
 	github.com/cheekybits/genny v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
-	github.com/elazarl/goproxy v1.8.2
+	github.com/elazarl/goproxy v1.8.3
 	github.com/getkin/kin-openapi v0.134.0
 	github.com/go-openapi/loads v0.23.3
 	github.com/go-openapi/spec v0.22.4
@@ -24,7 +24,7 @@ require (
 	github.com/invopop/jsonschema v0.13.0 // for schema codgen+extraction
 	github.com/json-iterator/go v1.1.12
 	github.com/jszwedko/go-datemath v0.1.1-0.20230526204004-640a500621d6
-	github.com/magefile/mage v1.16.1
+	github.com/magefile/mage v1.17.0
 	github.com/mattetti/filebuffer v1.0.1
 	github.com/mitchellh/reflectwalk v1.0.2
 	github.com/olekukonko/tablewriter v1.1.4
@@ -47,7 +47,7 @@ require (
 	golang.org/x/net v0.52.0
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
-	golang.org/x/sys v0.42.0
+	golang.org/x/sys v0.43.0
 	golang.org/x/text v0.35.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260226221140-a57be14db171
 	google.golang.org/grpc v1.79.3
