@@ -22,9 +22,10 @@ type OpenAPIExtension struct {
 
 // Define the configuration object
 type Settings struct {
+	// Define the spec section of the resource settings configuration
 	// jsonData will be a child of this object and the siblings should include any valid options
 	// except for secure values -- these are defined by the the `secureValues` property below
-	Schema *spec.Schema `json:"schema"`
+	Spec *spec.Schema `json:"spec"`
 
 	// Define which secure values are required
 	SecureValues []SecureValueInfo `json:"secureValues,omitempty"`

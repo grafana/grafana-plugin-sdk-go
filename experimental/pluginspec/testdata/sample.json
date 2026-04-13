@@ -1,6 +1,6 @@
 {
   "settings": {
-    "schema": {
+    "spec": {
       "description": "Test data does not require any explicit configuration",
       "required": [
         "title"

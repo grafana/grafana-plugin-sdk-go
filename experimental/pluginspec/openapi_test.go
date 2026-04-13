@@ -97,7 +97,7 @@ func TestReadSampleConfig(t *testing.T) {
 func NewSample() (*OpenAPIExtension, error) {
 	oas := &OpenAPIExtension{
 		Settings: Settings{
-			Schema: &spec.Schema{},
+			Spec: &spec.Schema{},
 
 			SecureValues: []SecureValueInfo{
 				{
@@ -145,7 +145,7 @@ func NewSample() (*OpenAPIExtension, error) {
 	}
 
 	// Dummy spec
-	p := oas.Settings.Schema
+	p := oas.Settings.Spec
 	p.Description = "Test data does not require any explicit configuration"
 	p.Required = []string{"title"}
 	p.AdditionalProperties = &spec.SchemaOrBool{Allows: false}

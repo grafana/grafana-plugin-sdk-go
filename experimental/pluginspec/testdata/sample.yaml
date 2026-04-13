@@ -96,7 +96,13 @@ settings:
         spec:
           title: TestData with URL
           url: http://example.com
-  schema:
+  secureValues:
+  - description: describe aaa
+    key: aaa
+    required: true
+  - description: describe bbb
+    key: bbb
+  spec:
     additionalProperties: false
     description: Test data does not require any explicit configuration
     example:
@@ -110,9 +116,3 @@ settings:
         type: string
     required:
     - title
-  secureValues:
-  - description: describe aaa
-    key: aaa
-    required: true
-  - description: describe bbb
-    key: bbb
