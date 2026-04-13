@@ -56,8 +56,11 @@ func (p *fsSpecProvider) getYAMLorJSON(prefix string) ([]byte, error) {
 }
 
 func isNotExists(err error) bool {
+	if err == nil {
+		return false
+	}
 	if errors.Is(err, fs.ErrNotExist) {
 		return true
 	}
-	return strings.Contains(err.Error(), "file does not exist") // from the os filesystem :(
+	return strings.Contains(err.Error(), "file does not exist") // from fs.FS sub-systems
 }
