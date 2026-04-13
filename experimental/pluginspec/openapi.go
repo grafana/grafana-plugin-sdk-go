@@ -6,9 +6,6 @@ import (
 	"sigs.k8s.io/yaml"
 )
 
-// Get the OpenAPI info for a given version (eg, v0alpha1 or v1)
-type OpenAPIExtensionProvider = func(apiVersion string) (*OpenAPIExtension, error)
-
 // Define the plugin settings and routes in the OpenAPI spec
 type OpenAPIExtension struct {
 	// Defines the configuration schema for a plugin (datasource or app)

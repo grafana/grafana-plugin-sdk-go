@@ -1,4 +1,4 @@
-package pluginspec
+package pluginspec_test
 
 import (
 	"encoding/json"
@@ -10,6 +10,8 @@ import (
 	"github.com/google/go-cmp/cmp/cmpopts"
 	"k8s.io/kube-openapi/pkg/spec3"
 	"k8s.io/kube-openapi/pkg/validation/spec"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginspec"
 )
 
 func TestReadSampleConfig(t *testing.T) {
@@ -57,7 +59,7 @@ func TestReadSampleConfig(t *testing.T) {
 	}
 
 	compare := func(snapshotBytes []byte, format string) {
-		snapshot, err := LoadSpec(snapshotBytes)
+		snapshot, err := pluginspec.LoadSpec(snapshotBytes)
 		if err != nil {
 			writeFile = true
 		} else {
@@ -78,7 +80,7 @@ func TestReadSampleConfig(t *testing.T) {
 	}
 
 	if len(snapshotYAML) > 0 {
-		compare(snapshotJSON, "YAML")
+		compare(snapshotYAML, "YAML")
 	}
 
 	if writeFile {
@@ -92,12 +94,12 @@ func TestReadSampleConfig(t *testing.T) {
 	}
 }
 
-func NewSample() (*OpenAPIExtension, error) {
-	oas := &OpenAPIExtension{
-		Settings: Settings{
+func NewSample() (*pluginspec.OpenAPIExtension, error) {
+	oas := &pluginspec.OpenAPIExtension{
+		Settings: pluginspec.Settings{
 			Spec: &spec.Schema{},
 
-			SecureValues: []SecureValueInfo{
+			SecureValues: []pluginspec.SecureValueInfo{
 				{
 					Key:         "aaa",
 					Description: "describe aaa",
@@ -185,7 +187,7 @@ func NewSample() (*OpenAPIExtension, error) {
 		},
 	}
 
-	oas.Routes = &Routes{
+	oas.Routes = &pluginspec.Routes{
 		Resource: map[string]*spec3.Path{
 			"": {
 				PathProps: spec3.PathProps{
