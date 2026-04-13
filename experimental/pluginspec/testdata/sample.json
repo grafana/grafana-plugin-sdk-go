@@ -22,12 +22,12 @@
     },
     "secureValues": [
       {
-        "string": "aaa",
+        "key": "aaa",
         "description": "describe aaa",
         "required": true
       },
       {
-        "string": "bbb",
+        "key": "bbb",
         "description": "describe bbb"
       }
     ],

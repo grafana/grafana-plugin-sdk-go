@@ -112,7 +112,7 @@ settings:
     - title
   secureValues:
   - description: describe aaa
+    key: aaa
     required: true
-    string: aaa
   - description: describe bbb
-    string: bbb
+    key: bbb

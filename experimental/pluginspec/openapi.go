@@ -1,4 +1,4 @@
-package plugin
+package pluginspec
 
 import (
 	"k8s.io/kube-openapi/pkg/spec3"
@@ -34,8 +34,8 @@ type Settings struct {
 }
 
 type SecureValueInfo struct {
-	// The key
-	Key string `json:"string"`
+	// The secure value key
+	Key string `json:"key"`
 
 	// Description
 	Description string `json:"description,omitempty"`
@@ -45,11 +45,17 @@ type SecureValueInfo struct {
 }
 
 type Routes struct {
-	// Resource routes -- the paths exposed under:
-	// {group}/{version}/namespaces/{ns}/datasource/{name}/resource/{route}
+	// Resource routes -- define the paths under "resources":
+	// DataSource:
+	// - {group}/{version}/namespaces/{ns}/datasource/{name}/resources/{route}
+	// Apps:
+	// - {group}/{version}/namespaces/{ns}/resources/{route}
 	Resource map[string]*spec3.Path `json:"resource,omitempty"`
 
 	// Proxy routes -- the paths exposed under:
-	// {group}/{version}/namespaces/{ns}/datasource/{name}/proxy/{route}
+	// DataSource:
+	// - {group}/{version}/namespaces/{ns}/datasource/{name}/proxy/{route}
+	// Apps:
+	// - {group}/{version}/namespaces/{ns}/proxy/{route}
 	Proxy map[string]*spec3.Path `json:"proxy,omitempty"`
 }
