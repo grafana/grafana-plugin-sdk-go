@@ -8,10 +8,8 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
-	"github.com/stretchr/testify/assert"
 	"k8s.io/kube-openapi/pkg/spec3"
 	"k8s.io/kube-openapi/pkg/validation/spec"
-	"sigs.k8s.io/yaml"
 )
 
 func TestReadSampleConfig(t *testing.T) {
@@ -24,7 +22,7 @@ func TestReadSampleConfig(t *testing.T) {
 	if err != nil {
 		t.Fatalf("failed to marshal result: %v", err)
 	}
-	sampleYAML, err := yaml.Marshal(sample)
+	sampleYAML, err := sample.ToYAML()
 	if err != nil {
 		t.Fatalf("failed to marshal result: %v", err)
 	}
@@ -58,16 +56,8 @@ func TestReadSampleConfig(t *testing.T) {
 		}
 	}
 
-	if len(snapshotJSON) > 0 {
-		if !assert.JSONEq(t, string(sampleJSON), string(snapshotJSON)) {
-			writeFile = true
-			t.Error("snapshot changed")
-		}
-	}
-
-	if len(snapshotYAML) > 0 {
-		snapshot := &OpenAPIExtension{}
-		err := yaml.Unmarshal(snapshotYAML, snapshot)
+	compare := func(snapshotBytes []byte, format string) {
+		snapshot, err := LoadSpec(snapshotBytes)
 		if err != nil {
 			writeFile = true
 		} else {
@@ -77,10 +67,18 @@ func TestReadSampleConfig(t *testing.T) {
 				cmp.Comparer(func(a, b spec.Ref) bool {
 					return a.String() == b.String()
 				})); diff != "" {
-				t.Errorf("Yaml results changed (-want +got):\n%s", diff)
+				t.Errorf("%s results changed (-want +got):\n%s", format, diff)
 				writeFile = true
 			}
 		}
+	}
+
+	if len(snapshotJSON) > 0 {
+		compare(snapshotJSON, "JSON")
+	}
+
+	if len(snapshotYAML) > 0 {
+		compare(snapshotJSON, "YAML")
 	}
 
 	if writeFile {

@@ -3,6 +3,7 @@ package pluginspec
 import (
 	"k8s.io/kube-openapi/pkg/spec3"
 	"k8s.io/kube-openapi/pkg/validation/spec"
+	"sigs.k8s.io/yaml"
 )
 
 // Get the OpenAPI info for a given version (eg, v0alpha1 or v1)
@@ -18,6 +19,16 @@ type OpenAPIExtension struct {
 
 	// Additional Schemas added to the result, and may be referenced by the routes above
 	Schemas map[string]*spec.Schema `json:"schemas,omitempty"`
+}
+
+func (o OpenAPIExtension) ToYAML() ([]byte, error) {
+	return yaml.Marshal(o) // this is a k8s compatible format
+}
+
+func LoadSpec(jsonOrYaml []byte) (*OpenAPIExtension, error) {
+	obj := &OpenAPIExtension{}
+	err := yaml.Unmarshal(jsonOrYaml, obj)
+	return obj, err
 }
 
 // Define the configuration object

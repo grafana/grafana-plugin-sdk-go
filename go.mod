@@ -53,9 +53,8 @@ require (
 	google.golang.org/grpc v1.79.3
 	google.golang.org/protobuf v1.36.11
 	k8s.io/kube-openapi v0.0.0-20260127142750-a19766b6e2d4 // @grafana/grafana-app-platform-squad
+	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
-
-require sigs.k8s.io/yaml v1.6.0
 
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
