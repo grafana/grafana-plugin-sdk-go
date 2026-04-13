@@ -33,7 +33,7 @@ func TestReadSampleConfig(t *testing.T) {
 	snapshotPathYAML := filepath.Join("testdata", "sample.yaml")
 	snapshotDir := filepath.Dir(snapshotPathJSON)
 
-	if err := os.MkdirAll(snapshotDir, 0755); err != nil {
+	if err := os.MkdirAll(snapshotDir, 0750); err != nil {
 		t.Fatalf("failed to create testdata directory: %v", err)
 	}
 
@@ -84,10 +84,10 @@ func TestReadSampleConfig(t *testing.T) {
 	}
 
 	if writeFile {
-		if err := os.WriteFile(snapshotPathJSON, sampleJSON, 0644); err != nil {
+		if err := os.WriteFile(snapshotPathJSON, sampleJSON, 0600); err != nil {
 			t.Fatalf("failed to update snapshot: %v", err)
 		}
-		if err := os.WriteFile(snapshotPathYAML, sampleYAML, 0644); err != nil {
+		if err := os.WriteFile(snapshotPathYAML, sampleYAML, 0600); err != nil {
 			t.Fatalf("failed to update snapshot: %v", err)
 		}
 		t.Fatal("snapshot mismatch, snapshot updated")

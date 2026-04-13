@@ -2,7 +2,9 @@
   "settings": {
     "schema": {
       "description": "Test data does not require any explicit configuration",
-      "required": ["title"],
+      "required": [
+        "title"
+      ],
       "properties": {
         "title": {
           "description": "display name",
