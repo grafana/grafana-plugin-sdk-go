@@ -1,6 +1,8 @@
 package pluginspec
 
 import (
+	"github.com/google/go-cmp/cmp"
+	"github.com/google/go-cmp/cmp/cmpopts"
 	"k8s.io/kube-openapi/pkg/spec3"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 	"sigs.k8s.io/yaml"
@@ -18,8 +20,17 @@ type OpenAPIExtension struct {
 	Schemas map[string]*spec.Schema `json:"schemas,omitempty"`
 }
 
-func (o OpenAPIExtension) ToYAML() ([]byte, error) {
-	return yaml.Marshal(o) // this is a k8s compatible format
+func (o *OpenAPIExtension) ToYAML() ([]byte, error) {
+	return yaml.Marshal(o) // ensure a k8s compatible format
+}
+
+func (o *OpenAPIExtension) Diff(snapshot *OpenAPIExtension) string {
+	return cmp.Diff(o, snapshot,
+		alwaysCompareNumeric,
+		cmpopts.EquateApprox(0.001, 0.0001),
+		cmp.Comparer(func(a, b spec.Ref) bool {
+			return a.String() == b.String()
+		}))
 }
 
 func LoadSpec(jsonOrYaml []byte) (*OpenAPIExtension, error) {
@@ -67,4 +78,29 @@ type Routes struct {
 	// Apps:
 	// - {group}/{version}/namespaces/{ns}/proxy/{route}
 	Proxy map[string]*spec3.Path `json:"proxy,omitempty"`
+}
+
+// alwaysCompareNumeric transforms all ints and floats to float64 for comparison
+var alwaysCompareNumeric = cmp.FilterValues(func(x, y any) bool {
+	return isNumeric(x) && isNumeric(y)
+}, cmp.Transformer("NormalizeNumeric", func(v any) float64 {
+	switch t := v.(type) {
+	case int:
+		return float64(t)
+	case int64:
+		return float64(t)
+	case float64:
+		return t
+	default:
+		return 0 // Should be filtered by isNumeric
+	}
+}))
+
+func isNumeric(v any) bool {
+	switch v.(type) {
+	case int, int64, float64:
+		return true
+	default:
+		return false
+	}
 }

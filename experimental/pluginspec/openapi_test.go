@@ -6,8 +6,6 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"k8s.io/kube-openapi/pkg/spec3"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 
@@ -63,12 +61,7 @@ func TestReadSampleConfig(t *testing.T) {
 		if err != nil {
 			writeFile = true
 		} else {
-			if diff := cmp.Diff(sample, snapshot,
-				AlwaysCompareNumeric,
-				cmpopts.EquateApprox(0.001, 0.0001),
-				cmp.Comparer(func(a, b spec.Ref) bool {
-					return a.String() == b.String()
-				})); diff != "" {
+			if diff := sample.Diff(snapshot); diff != "" {
 				t.Errorf("%s results changed (-want +got):\n%s", format, diff)
 				writeFile = true
 			}
@@ -303,29 +296,4 @@ func NewSample() (*pluginspec.OpenAPIExtension, error) {
 		},
 	}
 	return oas, nil
-}
-
-// AlwaysCompareNumeric transforms all ints and floats to float64 for comparison
-var AlwaysCompareNumeric = cmp.FilterValues(func(x, y any) bool {
-	return isNumeric(x) && isNumeric(y)
-}, cmp.Transformer("NormalizeNumeric", func(v any) float64 {
-	switch t := v.(type) {
-	case int:
-		return float64(t)
-	case int64:
-		return float64(t)
-	case float64:
-		return t
-	default:
-		return 0 // Should be filtered by isNumeric
-	}
-}))
-
-func isNumeric(v any) bool {
-	switch v.(type) {
-	case int, int64, float64:
-		return true
-	default:
-		return false
-	}
 }
