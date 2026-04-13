@@ -8,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	dsV0 "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
-
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginspec"
 )
 

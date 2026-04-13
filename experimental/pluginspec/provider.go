@@ -36,7 +36,7 @@ func (p *fsSpecProvider) GetOpenAPI(apiVersion string) (*OpenAPIExtension, error
 // GetQueryTypes implements [SpecProvider].
 // The queryTypes object is dynamic because the exposed version does not exist in this SDK
 func (p *fsSpecProvider) GetQueryTypes(apiVersion string, queryTypes any) (bool, error) {
-	raw, err := p.getYAMLorJSON("spec." + apiVersion + ".query.types")
+	raw, err := p.getYAMLorJSON("spec." + apiVersion + ".query")
 	if err != nil || len(raw) == 0 {
 		return false, err
 	}
@@ -62,5 +62,7 @@ func isNotExists(err error) bool {
 	if errors.Is(err, fs.ErrNotExist) {
 		return true
 	}
-	return strings.Contains(err.Error(), "file does not exist") // from fs.FS sub-systems
+	// Plugins file system uses string:
+	// https://github.com/grafana/grafana/blob/v12.4.2/pkg/plugins/plugins.go#L25
+	return strings.Contains(err.Error(), "file does not exist")
 }
