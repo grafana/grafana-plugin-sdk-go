@@ -14,15 +14,20 @@ That Mage target:
 - sets `GOTOOLCHAIN=auto` when it is not already configured
 - calls `datasourceschema.GenerateOpenAPI(...)`
 - writes warnings to `stderr`
-- writes the generated datasource `experimental/pluginspec` OpenAPI JSON to `stdout`
+- writes `spec.v0alpha1.openapi.json` in the plugin root
 
 The target is exposed by the reusable `build` Mage namespace as:
 
-`mage datasource:generateOpenAPI <path-to-plugin>`
+`mage datasource:generateOpenAPI [path-to-plugin]`
 
 The paired query type output is exposed as:
 
-`mage datasource:generateQueryTypes <path-to-plugin>`
+`mage datasource:generateQueryTypes [path-to-plugin]`
+
+Those targets write the provider-compatible filenames in the plugin root:
+
+- `spec.v0alpha1.openapi.json`
+- `spec.v0alpha1.query.types.json`
 
 ## Programmatic API
 

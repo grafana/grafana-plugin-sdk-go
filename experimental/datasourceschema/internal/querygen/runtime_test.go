@@ -104,6 +104,52 @@ type query struct {
 	}
 }
 
+func TestBuildDefinitionsFromFindingsSkipsUntaggedRuntimeOnlyQueryFields(t *testing.T) {
+	dir := writeRuntimeFixture(t, map[string]string{
+		"go.mod": `
+module fixture
+
+go 1.26.1
+`,
+		"pkg/models/query.go": `
+package models
+
+type Query struct {
+	QueryType string ` + "`json:\"queryType\"`" + `
+	Query     string ` + "`json:\"query\"`" + `
+	RuntimeOnly string
+}
+`,
+	})
+
+	definitions, warnings, err := BuildDefinitionsFromFindings(RuntimeOptions{
+		Dir: dir,
+	}, []model.Finding{{
+		Source: model.SourceKindQueryJSON,
+		Target: &model.TargetRef{
+			PackagePath: "fixture/pkg/models",
+			TypeName:    "Query",
+		},
+	}})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(warnings) != 0 {
+		t.Fatalf("expected no warnings, got %#v", warnings)
+	}
+	if len(definitions.Items) != 1 {
+		t.Fatalf("expected one item, got %#v", definitions.Items)
+	}
+
+	properties := definitions.Items[0].Spec.Schema.Spec.Properties
+	if _, ok := properties["query"]; !ok {
+		t.Fatalf("expected tagged query property, got %#v", properties)
+	}
+	if _, ok := properties["runtimeOnly"]; ok {
+		t.Fatalf("did not expect untagged runtime-only field in schema, got %#v", properties)
+	}
+}
+
 func TestBuildDefinitionsFromFindingsBuildsSQLDSQuerySchemaFromFinding(t *testing.T) {
 	dir := writeRuntimeFixture(t, map[string]string{
 		"go.mod": `

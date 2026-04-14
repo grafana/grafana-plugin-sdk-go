@@ -81,13 +81,11 @@ func Build(opts Options) (*Result, error) {
 			return nil, err
 		}
 		warnings = append(warnings, queryWarnings...)
-		if queries != nil && len(queries.Items) > 0 {
-			return &Result{
-				OpenAPI:    openAPI,
-				QueryTypes: queries,
-				Warnings:   dedupeWarnings(warnings),
-			}, nil
-		}
+		return &Result{
+			OpenAPI:    openAPI,
+			QueryTypes: queries,
+			Warnings:   dedupeWarnings(warnings),
+		}, nil
 	}
 
 	return &Result{

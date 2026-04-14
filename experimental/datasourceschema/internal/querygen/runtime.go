@@ -72,8 +72,8 @@ func buildDefinitions(loadRes *load.Result, registrations []RuntimeRegistration)
 		}
 
 		schema, err := typeschema.BuildTargetSchema(loadRes, target, typeschema.SchemaOptions{
-			IncludeRequired:          false,
-			LowerCamelUntaggedFields: true,
+			IncludeRequired: false,
+			RequireJSONTags: true,
 		})
 		if err != nil {
 			return nil, err

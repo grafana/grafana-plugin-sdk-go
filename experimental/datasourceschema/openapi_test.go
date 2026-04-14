@@ -312,6 +312,67 @@ func LoadQuery(q backend.DataQuery) error {
 	}
 }
 
+func TestGenerateQueryTypesReturnsTypedEmptyListWhenNoQueriesAreFound(t *testing.T) {
+	dir := writeFixtureModule(t, map[string]string{
+		"go.mod": `
+module fixture
+
+go 1.26.1
+
+require github.com/grafana/grafana-plugin-sdk-go v0.0.0
+
+replace github.com/grafana/grafana-plugin-sdk-go => ./stubs/grafana-plugin-sdk-go
+`,
+		"stubs/grafana-plugin-sdk-go/go.mod": `
+module github.com/grafana/grafana-plugin-sdk-go
+
+go 1.26.1
+`,
+		"stubs/grafana-plugin-sdk-go/backend/backend.go": `
+package backend
+
+type DataSourceInstanceSettings struct {
+	JSONData []byte
+}
+`,
+		"plugin/plugin.go": `
+package plugin
+
+import "github.com/grafana/grafana-plugin-sdk-go/backend"
+
+func LoadSettings(cfg backend.DataSourceInstanceSettings) error {
+	return nil
+}
+`,
+	})
+
+	result, err := GenerateQueryTypes(OpenAPIOptions{
+		Dir: dir,
+	})
+	if err != nil {
+		t.Fatalf("generate query types failed: %v", err)
+	}
+
+	var queries map[string]any
+	if err := json.Unmarshal(result.Body, &queries); err != nil {
+		t.Fatalf("unmarshal generated output failed: %v", err)
+	}
+
+	if queries["kind"] != "QueryTypeDefinitionList" {
+		t.Fatalf("expected typed empty list kind, got %#v", queries["kind"])
+	}
+	if queries["apiVersion"] != "datasource.grafana.app/v0alpha1" {
+		t.Fatalf("expected typed empty list apiVersion, got %#v", queries["apiVersion"])
+	}
+	items, ok := queries["items"].([]any)
+	if !ok {
+		t.Fatalf("expected items array, got %#v", queries["items"])
+	}
+	if len(items) != 0 {
+		t.Fatalf("expected empty query type items, got %#v", items)
+	}
+}
+
 func writeFixtureModule(t *testing.T, files map[string]string) string {
 	t.Helper()
 
