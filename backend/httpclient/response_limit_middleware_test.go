@@ -3,7 +3,6 @@ package httpclient
 import (
 	"io"
 	"net/http"
-	"os"
 	"strings"
 	"testing"
 
@@ -35,8 +34,9 @@ func TestResponseLimitMiddleware(t *testing.T) {
 				return &http.Response{StatusCode: http.StatusOK, Request: req, Body: io.NopCloser(strings.NewReader("dummy"))}, nil
 			})
 
-			os.Setenv(ResponseLimitEnvVar, tc.envLimit)
-			defer os.Unsetenv(ResponseLimitEnvVar)
+			if tc.envLimit != "" {
+				t.Setenv(responseLimitEnvVar, tc.envLimit)
+			}
 
 			mw := ResponseLimitMiddleware(tc.limit)
 			rt := mw.CreateMiddleware(Options{}, finalRoundTripper)
@@ -143,4 +143,81 @@ type mockRoundTripper struct {
 
 func (m *mockRoundTripper) RoundTrip(_ *http.Request) (*http.Response, error) {
 	return m.response, m.err
+}
+
+func newRoundTripperWithBody(body string) http.RoundTripper {
+	return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Request:    req,
+			Body:       io.NopCloser(strings.NewReader(body)),
+		}, nil
+	})
+}
+
+func newRequestWithCtx(t *testing.T, ctx context.Context) *http.Request {
+	t.Helper()
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://test.com/query", nil)
+	require.NoError(t, err)
+	return req
+}
+
+func TestResponseLimitMiddlewarePriority(t *testing.T) {
+	t.Run("grafana config limit is applied first", func(t *testing.T) {
+		// env var is loose, context (cfg) is tight — context wins
+		t.Setenv(responseLimitEnvVar, "1000000")
+		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripperWithBody("dummy"))
+
+		ctx := WithResponseLimitContext(context.Background(), 3)
+		res, err := rt.RoundTrip(newRequestWithCtx(t, ctx))
+		require.NoError(t, err)
+
+		_, err = io.ReadAll(res.Body)
+		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
+	})
+
+	t.Run("env var is used when grafana config is not set", func(t *testing.T) {
+		t.Setenv(responseLimitEnvVar, "3")
+		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripperWithBody("dummy"))
+
+		res, err := rt.RoundTrip(newRequestWithCtx(t, context.Background()))
+		require.NoError(t, err)
+
+		_, err = io.ReadAll(res.Body)
+		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
+	})
+
+	t.Run("limit arg is used when grafana config and env var are not set", func(t *testing.T) {
+		rt := ResponseLimitMiddleware(3).CreateMiddleware(Options{}, newRoundTripperWithBody("dummy"))
+
+		res, err := rt.RoundTrip(newRequestWithCtx(t, context.Background()))
+		require.NoError(t, err)
+
+		_, err = io.ReadAll(res.Body)
+		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
+	})
+
+	t.Run("grafana config 0 disables limiting even when env var is set", func(t *testing.T) {
+		t.Setenv(responseLimitEnvVar, "3")
+		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripperWithBody("dummy"))
+
+		ctx := WithResponseLimitContext(context.Background(), 0)
+		res, err := rt.RoundTrip(newRequestWithCtx(t, ctx))
+		require.NoError(t, err)
+
+		bodyBytes, err := io.ReadAll(res.Body)
+		require.NoError(t, err)
+		require.Equal(t, "dummy", string(bodyBytes))
+	})
+
+	t.Run("no limit when nothing is set", func(t *testing.T) {
+		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripperWithBody("dummy"))
+
+		res, err := rt.RoundTrip(newRequestWithCtx(t, context.Background()))
+		require.NoError(t, err)
+
+		bodyBytes, err := io.ReadAll(res.Body)
+		require.NoError(t, err)
+		require.Equal(t, "dummy", string(bodyBytes))
+	})
 }
