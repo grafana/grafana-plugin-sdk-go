@@ -69,7 +69,7 @@ func DecodeSecondary(cfg backend.DataSourceInstanceSettings) error {
 
 	stderr := captureFile(t, &os.Stderr)
 
-	if err := (Datasource{}).GenerateOpenAPI(stringPtr(dir)); err != nil {
+	if err := generateOpenAPI(dir); err != nil {
 		t.Fatalf("generate openapi failed: %v", err)
 	}
 
@@ -133,7 +133,7 @@ func LoadQuery(q backend.DataQuery) error {
 	})
 
 	stderr := captureFile(t, &os.Stderr)
-	if err := (Datasource{}).GenerateQueryTypes(stringPtr(dir)); err != nil {
+	if err := generateQueryTypes(dir); err != nil {
 		t.Fatalf("generate query types file failed: %v", err)
 	}
 	errOut := stderr.read()
@@ -219,10 +219,10 @@ func LoadQuery(q backend.DataQuery) error {
 		_ = os.Chdir(wd)
 	})
 
-	if err := (Datasource{}).GenerateOpenAPI(nil); err != nil {
+	if err := (Datasource{}).GenerateOpenAPI(); err != nil {
 		t.Fatalf("generate openapi with current dir failed: %v", err)
 	}
-	if err := (Datasource{}).GenerateQueryTypes(nil); err != nil {
+	if err := (Datasource{}).GenerateQueryTypes(); err != nil {
 		t.Fatalf("generate query types with current dir failed: %v", err)
 	}
 	_ = stderr.read()
@@ -374,10 +374,10 @@ func writeFixtureModule(t *testing.T, files map[string]string) string {
 	return dir
 }
 
-func runGoCommand(t *testing.T, dir string, args ...string) string {
+func runGoCommand(t *testing.T, dir string, args ...string) {
 	t.Helper()
 
-	return runCommand(t, dir, "go", args...)
+	runCommand(t, dir, "go", args...)
 }
 
 func buildMageBinary(t *testing.T) string {
@@ -388,13 +388,10 @@ func buildMageBinary(t *testing.T) string {
 	return bin
 }
 
-func stringPtr(s string) *string {
-	return &s
-}
-
-func runCommand(t *testing.T, dir string, name string, args ...string) string {
+func runCommand(t *testing.T, dir string, name string, args ...string) {
 	t.Helper()
 
+	// #nosec G204 -- Test helper executes known toolchain binaries with test-defined arguments.
 	cmd := exec.Command(name, args...)
 	if dir != "" {
 		cmd.Dir = dir
@@ -408,6 +405,5 @@ func runCommand(t *testing.T, dir string, name string, args ...string) string {
 	if err != nil {
 		t.Fatalf("%s %s failed: %v\nstderr:\n%s", name, strings.Join(args, " "), err, stderr.String())
 	}
-
-	return string(out)
+	_ = out
 }

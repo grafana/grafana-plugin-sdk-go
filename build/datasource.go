@@ -18,8 +18,17 @@ const (
 )
 
 // GenerateOpenAPI generates datasource OpenAPI JSON and writes spec.v0alpha1.openapi.json in the plugin directory.
-func (Datasource) GenerateOpenAPI(dir *string) error {
-	pluginDir, err := normalizePluginDir(optionalDir(dir))
+func (Datasource) GenerateOpenAPI() error {
+	return generateOpenAPI("")
+}
+
+// GenerateQueryTypes generates datasource query type JSON and writes spec.v0alpha1.query.types.json in the plugin directory.
+func (Datasource) GenerateQueryTypes() error {
+	return generateQueryTypes("")
+}
+
+func generateOpenAPI(dir string) error {
+	pluginDir, err := normalizePluginDir(dir)
 	if err != nil {
 		return err
 	}
@@ -32,9 +41,8 @@ func (Datasource) GenerateOpenAPI(dir *string) error {
 	return writeNamedFile(pluginDir, openAPIFilename, result.Body, result.Warnings)
 }
 
-// GenerateQueryTypes generates datasource query type JSON and writes spec.v0alpha1.query.types.json in the plugin directory.
-func (Datasource) GenerateQueryTypes(dir *string) error {
-	pluginDir, err := normalizePluginDir(optionalDir(dir))
+func generateQueryTypes(dir string) error {
+	pluginDir, err := normalizePluginDir(dir)
 	if err != nil {
 		return err
 	}
@@ -58,14 +66,6 @@ func normalizePluginDir(dir string) (string, error) {
 		}
 	}
 	return pluginDir, nil
-}
-
-func optionalDir(dir *string) string {
-	if dir == nil {
-		return ""
-	}
-
-	return *dir
 }
 
 func writeOpenAPIWarnings(f *os.File, warnings []datasourceschema.OpenAPIWarning) error {

@@ -3,7 +3,6 @@
 package main
 
 import (
-	buildmage "github.com/grafana/grafana-plugin-sdk-go/build"
 	"github.com/magefile/mage/mg"
 	"github.com/magefile/mage/sh"
 )
@@ -20,17 +19,6 @@ func DataGenerate() error {
 
 // Protobuf protobuf related commands.
 type Protobuf mg.Namespace
-
-// Datasource datasource extraction commands.
-type Datasource mg.Namespace
-
-func (Datasource) GenerateOpenAPI(dir *string) error {
-	return (buildmage.Datasource{}).GenerateOpenAPI(dir)
-}
-
-func (Datasource) GenerateQueryTypes(dir *string) error {
-	return (buildmage.Datasource{}).GenerateQueryTypes(dir)
-}
 
 // Generate generates protobuf files.
 func (Protobuf) Generate() error {
