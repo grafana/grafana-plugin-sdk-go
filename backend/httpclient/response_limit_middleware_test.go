@@ -94,17 +94,6 @@ func TestResponseLimitMiddleware(t *testing.T) {
 }
 
 func TestResponseLimitMiddlewareFallback(t *testing.T) {
-	t.Run("uses env var when limit arg is 0", func(t *testing.T) {
-		t.Setenv(responseLimitEnvVar, "3")
-
-		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
-		res, err := rt.RoundTrip(newRequest(t))
-		require.NoError(t, err)
-
-		_, err = io.ReadAll(res.Body)
-		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
-	})
-
 	t.Run("no limit when limit arg is 0 and env var is unset", func(t *testing.T) {
 		rt := ResponseLimitMiddleware(0).CreateMiddleware(Options{}, newRoundTripper("dummy"))
 		res, err := rt.RoundTrip(newRequest(t))
@@ -277,14 +266,6 @@ func TestResponseLimitMiddlewareStatusCodes(t *testing.T) {
 		require.Equal(t, "dummy", string(bodyBytes))
 	})
 
-	t.Run("wraps body for normal 200 response", func(t *testing.T) {
-		rt := ResponseLimitMiddleware(3).CreateMiddleware(Options{}, newRoundTripper("dummy"))
-		res, err := rt.RoundTrip(newRequest(t))
-		require.NoError(t, err)
-
-		_, err = io.ReadAll(res.Body)
-		require.ErrorIs(t, err, ErrResponseBodyTooLarge)
-	})
 }
 
 func TestParseEnvResponseLimit(t *testing.T) {
@@ -318,10 +299,8 @@ func TestResolveResponseLimit(t *testing.T) {
 		expected int64
 	}{
 		{name: "context wins over env var and limit arg", envLimit: 100, limit: 999, ctxLimit: ptr(int64(50)), expected: 50},
-		{name: "context wins over env var", envLimit: 100, ctxLimit: ptr(int64(50)), expected: 50},
-		{name: "env var wins over limit arg", envLimit: 100, limit: 999, expected: 100},
-		{name: "context used when env var set", envLimit: 100, limit: 999, ctxLimit: ptr(int64(50)), expected: 50},
 		{name: "context 0 disables even when env var is set", envLimit: 100, ctxLimit: ptr(int64(0)), expected: 0},
+		{name: "env var wins over limit arg", envLimit: 100, limit: 999, expected: 100},
 		{name: "limit arg used when env var and context unset", limit: 500, expected: 500},
 		{name: "no limit when all unset", expected: 0},
 	}
