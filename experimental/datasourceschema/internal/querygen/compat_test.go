@@ -2,17 +2,17 @@ package querygen
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"testing"
 
 	v0alpha1 "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestBuildDefinitionsMatchLocalGoldenForMultipleQueries(t *testing.T) {
-	dir := writeCompatFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -74,9 +74,7 @@ type ReduceQuery struct {
 			Changelog: []string{"Added reducer input support."},
 		},
 	})
-	if err != nil {
-		t.Fatalf("build failed: %v", err)
-	}
+	require.NoError(t, err, "build failed")
 
 	assertGoldenJSON(t, definitions, `
 {
@@ -165,7 +163,7 @@ type ReduceQuery struct {
 }
 
 func TestBuildDefinitionsMatchLocalGoldenForSingleQuery(t *testing.T) {
-	dir := writeCompatFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -194,9 +192,7 @@ type Query struct {
 			Value: "math",
 		}},
 	}})
-	if err != nil {
-		t.Fatalf("build failed: %v", err)
-	}
+	require.NoError(t, err, "build failed")
 
 	assertGoldenJSON(t, definitions, `
 {
@@ -242,38 +238,14 @@ func assertGoldenJSON(t *testing.T, actual any, expected string) {
 
 	var actualValue any
 	body, err := json.Marshal(actual)
-	if err != nil {
-		t.Fatalf("marshal actual failed: %v", err)
-	}
-	if err := json.Unmarshal(body, &actualValue); err != nil {
-		t.Fatalf("unmarshal actual failed: %v", err)
-	}
+	require.NoError(t, err, "marshal actual failed")
+	require.NoError(t, json.Unmarshal(body, &actualValue), "unmarshal actual failed")
 
 	var expectedValue any
-	if err := json.Unmarshal([]byte(strings.TrimSpace(expected)), &expectedValue); err != nil {
-		t.Fatalf("unmarshal expected failed: %v", err)
-	}
-
+	require.NoError(t, json.Unmarshal([]byte(strings.TrimSpace(expected)), &expectedValue), "unmarshal expected failed")
 	if !reflect.DeepEqual(actualValue, expectedValue) {
 		actualPretty, _ := json.MarshalIndent(actualValue, "", "  ")
 		expectedPretty, _ := json.MarshalIndent(expectedValue, "", "  ")
-		t.Fatalf("golden mismatch\nexpected:\n%s\nactual:\n%s", expectedPretty, actualPretty)
+		require.Failf(t, "golden mismatch", "expected:\n%s\nactual:\n%s", expectedPretty, actualPretty)
 	}
-}
-
-func writeCompatFixture(t *testing.T, files map[string]string) string {
-	t.Helper()
-
-	dir := t.TempDir()
-	for name, content := range files {
-		fullPath := filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
-			t.Fatalf("mkdir failed for %s: %v", fullPath, err)
-		}
-		if err := os.WriteFile(fullPath, []byte(strings.TrimLeft(content, "\n")), 0o644); err != nil {
-			t.Fatalf("write failed for %s: %v", fullPath, err)
-		}
-	}
-
-	return dir
 }

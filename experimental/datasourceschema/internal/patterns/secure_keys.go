@@ -19,10 +19,7 @@ func FindSecureLiteralKeys(pkg *packages.Package, index *ast.IndexExpr) ([]model
 	}
 
 	if lit, ok := index.Index.(*ast.BasicLit); ok && lit.Kind == token.STRING {
-		key, err := unquote(lit.Value)
-		if err != nil {
-			key = lit.Value
-		}
+		key := unquote(lit.Value)
 
 		return []model.Finding{{
 			Kind:         model.DecodeKindSecureLiteral,
@@ -104,12 +101,7 @@ func extractTemplatePattern(pkg *packages.Package, call *ast.CallExpr) (string, 
 			return "", false
 		}
 
-		value, err := unquote(format.Value)
-		if err != nil {
-			return "", false
-		}
-
-		return normalizeTemplate(value), true
+		return normalizeTemplate(unquote(format.Value)), true
 	}
 
 	return extractGuardedReplaceTemplate(pkg, call)
@@ -297,11 +289,7 @@ func stringConstantValue(pkg *packages.Package, expr ast.Expr) (string, bool) {
 	}
 
 	if lit, ok := expr.(*ast.BasicLit); ok && lit.Kind == token.STRING {
-		value, err := unquote(lit.Value)
-		if err != nil {
-			return "", false
-		}
-		return value, true
+		return unquote(lit.Value), true
 	}
 
 	return "", false
@@ -333,9 +321,9 @@ func enclosingPath(pkg *packages.Package, node ast.Node) []ast.Node {
 	return nil
 }
 
-func unquote(value string) (string, error) {
+func unquote(value string) string {
 	if len(value) >= 2 && (value[0] == '"' || value[0] == '`') {
-		return value[1 : len(value)-1], nil
+		return value[1 : len(value)-1]
 	}
-	return value, nil
+	return value
 }

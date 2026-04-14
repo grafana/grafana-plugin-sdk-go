@@ -24,11 +24,11 @@ type Protobuf mg.Namespace
 // Datasource datasource extraction commands.
 type Datasource mg.Namespace
 
-func (Datasource) GenerateOpenAPI(dir string) error {
+func (Datasource) GenerateOpenAPI(dir *string) error {
 	return (buildmage.Datasource{}).GenerateOpenAPI(dir)
 }
 
-func (Datasource) GenerateQueryTypes(dir string) error {
+func (Datasource) GenerateQueryTypes(dir *string) error {
 	return (buildmage.Datasource{}).GenerateQueryTypes(dir)
 }
 

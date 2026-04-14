@@ -12,6 +12,12 @@ import (
 	"golang.org/x/tools/go/packages"
 )
 
+const (
+	processQueriesFuncName = "processQueries"
+	queryHandlerFuncName   = "queryHandler"
+	queryTypeFieldName     = "queryType"
+)
+
 func inferDiscriminators(loadRes *load.Result, registration RuntimeRegistration) []v0alpha1.DiscriminatorFieldValue {
 	if loadRes == nil {
 		return normalizeDiscriminators(registration.Discriminators)
@@ -23,7 +29,7 @@ func inferDiscriminators(loadRes *load.Result, registration RuntimeRegistration)
 	for _, functionName := range registration.FunctionNames {
 		for queryType := range resolver.queryTypesForFunction(functionName) {
 			out = append(out, v0alpha1.DiscriminatorFieldValue{
-				Field: "queryType",
+				Field: queryTypeFieldName,
 				Value: queryType,
 			})
 		}
@@ -175,11 +181,11 @@ func (r *handlerResolver) resolveHandlerFunctions(pkg *packages.Package, expr as
 	if call, ok := expr.(*ast.CallExpr); ok {
 		if calleeName, ok := calledFunctionName(pkg, call); ok {
 			switch calleeName {
-			case "processQueries":
+			case processQueriesFuncName:
 				if len(call.Args) >= 3 {
 					return r.resolveHandlerFunctions(pkg, call.Args[2], depth+1)
 				}
-			case "queryHandler":
+			case queryHandlerFuncName:
 				if len(call.Args) >= 2 {
 					return r.resolveHandlerFunctions(pkg, call.Args[1], depth+1)
 				}
@@ -236,11 +242,11 @@ func (r *handlerResolver) resolveHandlerFunctionsFromBody(ref funcRef, depth int
 		}
 
 		switch calleeName {
-		case "processQueries":
+		case processQueriesFuncName:
 			if len(call.Args) >= 3 {
 				mergeFunctionSets(out, r.resolveHandlerFunctions(ref.pkg, call.Args[2], depth+1))
 			}
-		case "queryHandler":
+		case queryHandlerFuncName:
 			if len(call.Args) >= 2 {
 				mergeFunctionSets(out, r.resolveHandlerFunctions(ref.pkg, call.Args[1], depth+1))
 			}
@@ -279,7 +285,7 @@ func (r *handlerResolver) resolveReturnedHandlerFunctions(pkg *packages.Package,
 			return out
 		}
 		switch calleeName {
-		case "processQueries", "queryHandler":
+		case processQueriesFuncName, queryHandlerFuncName:
 			return r.resolveHandlerFunctions(pkg, typed, depth+1)
 		default:
 			return out
@@ -427,8 +433,8 @@ func inferEnumDiscriminators(loadRes *load.Result, registration RuntimeRegistrat
 			continue
 		}
 
-		fieldName, hasTag := queryJSONFieldName(field, st.Tag(i))
-		if fieldName != "queryType" && !(fieldName == "" && !hasTag && field.Name() == "QueryType") {
+		fieldName, hasTag := queryJSONFieldName(st.Tag(i))
+		if fieldName != queryTypeFieldName && (fieldName != "" || hasTag || field.Name() != "QueryType") {
 			continue
 		}
 
@@ -441,7 +447,7 @@ func inferEnumDiscriminators(loadRes *load.Result, registration RuntimeRegistrat
 		out := make([]v0alpha1.DiscriminatorFieldValue, 0, len(values))
 		for _, value := range values {
 			out = append(out, v0alpha1.DiscriminatorFieldValue{
-				Field: "queryType",
+				Field: queryTypeFieldName,
 				Value: value,
 			})
 		}
@@ -451,7 +457,7 @@ func inferEnumDiscriminators(loadRes *load.Result, registration RuntimeRegistrat
 	return nil
 }
 
-func queryJSONFieldName(field *types.Var, tag string) (string, bool) {
+func queryJSONFieldName(tag string) (string, bool) {
 	jsonTag := reflect.StructTag(tag).Get("json")
 	if jsonTag == "" {
 		return "", false

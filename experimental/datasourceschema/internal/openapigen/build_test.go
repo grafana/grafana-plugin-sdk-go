@@ -1,16 +1,56 @@
 package openapigen
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/model"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/testutil"
+	"github.com/stretchr/testify/require"
 )
 
+var expectedGenericSettingsProperties = []string{
+	"basicAuth",
+	"basicAuthUser",
+	"dialTimeout",
+	"enableSecureSocksProxy",
+	"httpExpectContinueTimeout",
+	"httpIdleConnTimeout",
+	"httpKeepAlive",
+	"httpMaxConnsPerHost",
+	"httpMaxIdleConns",
+	"httpMaxIdleConnsPerHost",
+	"httpTLSHandshakeTimeout",
+	"secureSocksProxyUsername",
+	"serverName",
+	"sigV4AssumeRoleArn",
+	"sigV4Auth",
+	"sigV4AuthType",
+	"sigV4ExternalId",
+	"sigV4Profile",
+	"sigV4Region",
+	"timeout",
+	"tlsAuth",
+	"tlsAuthWithCACert",
+	"tlsSkipVerify",
+	"url",
+	"user",
+}
+
+var expectedGenericSecureValues = []string{
+	"basicAuthPassword",
+	"httpHeaderValue{dynamic}",
+	"password",
+	"secureSocksProxyPassword",
+	"sigV4AccessKey",
+	"sigV4SecretKey",
+	"sigV4SessionToken",
+	"tlsCACert",
+	"tlsClientCert",
+	"tlsClientKey",
+}
+
 func TestBuildAssemblesExtension(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -62,36 +102,21 @@ type Query struct {
 		GenerateSpec:    true,
 		GenerateQueries: true,
 	})
-	if err != nil {
-		t.Fatalf("build failed: %v", err)
-	}
-
-	if result.OpenAPI == nil || result.OpenAPI.Settings.Spec == nil {
-		t.Fatalf("expected spec to be generated")
-	}
+	require.NoError(t, err, "build failed")
+	require.NotNil(t, result.OpenAPI, "expected spec to be generated")
+	require.NotNil(t, result.OpenAPI.Settings.Spec, "expected spec to be generated")
 	properties := result.OpenAPI.Settings.Spec.Properties
-	if _, ok := properties["name"]; !ok {
-		t.Fatalf("expected non-secure property to remain, got %#v", properties)
-	}
-	if _, ok := properties["apiKey"]; ok {
-		t.Fatalf("did not expect secure-backed property in spec, got %#v", properties)
-	}
-	if _, ok := properties["api_key"]; ok {
-		t.Fatalf("did not expect normalized secure-backed legacy property in spec, got %#v", properties)
-	}
-	if _, ok := properties["Token"]; ok {
-		t.Fatalf("did not expect case-mismatched secure-backed property in spec, got %#v", properties)
-	}
-	if len(result.OpenAPI.Settings.SecureValues) != 3 {
-		t.Fatalf("expected three secure values, got %#v", result.OpenAPI.Settings.SecureValues)
-	}
-	if result.QueryTypes == nil || len(result.QueryTypes.Items) != 1 {
-		t.Fatalf("expected query definitions, got %#v", result.QueryTypes)
-	}
+	require.Contains(t, properties, "name", "expected non-secure property to remain")
+	require.NotContains(t, properties, "apiKey", "did not expect secure-backed property in spec")
+	require.NotContains(t, properties, "api_key", "did not expect normalized secure-backed legacy property in spec")
+	require.NotContains(t, properties, "Token", "did not expect case-mismatched secure-backed property in spec")
+	require.Len(t, result.OpenAPI.Settings.SecureValues, 3, "expected three secure values")
+	require.NotNil(t, result.QueryTypes, "expected query definitions")
+	require.Len(t, result.QueryTypes.Items, 1, "expected query definitions")
 }
 
 func TestBuildSynthesizesGenericDatasourceSettingsAndSecureValues(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -155,30 +180,20 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		Report:       model.Report{},
 		GenerateSpec: true,
 	})
-	if err != nil {
-		t.Fatalf("build failed: %v", err)
-	}
+	require.NoError(t, err, "build failed")
 
 	properties := result.OpenAPI.Settings.Spec.Properties
-	for _, key := range []string{"url", "user", "basicAuth", "basicAuthUser", "timeout", "tlsAuth", "tlsAuthWithCACert", "tlsSkipVerify", "serverName", "enableSecureSocksProxy"} {
-		if _, ok := properties[key]; !ok {
-			t.Fatalf("expected generic property %q, got %#v", key, properties)
-		}
-	}
+	require.ElementsMatch(t, expectedGenericSettingsProperties, testutil.KeysOfMap(properties), "expected exact generic properties")
 
 	secureNames := map[string]struct{}{}
 	for _, value := range result.OpenAPI.Settings.SecureValues {
 		secureNames[value.Key] = struct{}{}
 	}
-	for _, key := range []string{"basicAuthPassword", "password", "tlsCACert", "tlsClientCert", "tlsClientKey", "secureSocksProxyPassword", "httpHeaderValue{dynamic}"} {
-		if _, ok := secureNames[key]; !ok {
-			t.Fatalf("expected generic secure value %q, got %#v", key, result.OpenAPI.Settings.SecureValues)
-		}
-	}
+	require.ElementsMatch(t, expectedGenericSecureValues, testutil.KeysOfMap(secureNames), "expected exact generic secure values")
 }
 
 func TestBuildSynthesizesGenericDatasourceSettingsViaFrameworkUsage(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -294,41 +309,14 @@ func NewDatasource() any {
 		Report:       model.Report{},
 		GenerateSpec: true,
 	})
-	if err != nil {
-		t.Fatalf("build failed: %v", err)
-	}
+	require.NoError(t, err, "build failed")
 
 	properties := result.OpenAPI.Settings.Spec.Properties
-	for _, key := range []string{"url", "user", "basicAuth", "basicAuthUser", "timeout", "tlsAuth"} {
-		if _, ok := properties[key]; !ok {
-			t.Fatalf("expected framework-derived generic property %q, got %#v", key, properties)
-		}
-	}
+	require.ElementsMatch(t, expectedGenericSettingsProperties, testutil.KeysOfMap(properties), "expected exact framework-derived generic properties")
 
 	secureNames := map[string]struct{}{}
 	for _, value := range result.OpenAPI.Settings.SecureValues {
 		secureNames[value.Key] = struct{}{}
 	}
-	for _, key := range []string{"basicAuthPassword", "password", "tlsCACert", "tlsClientCert", "tlsClientKey"} {
-		if _, ok := secureNames[key]; !ok {
-			t.Fatalf("expected framework-derived generic secure value %q, got %#v", key, result.OpenAPI.Settings.SecureValues)
-		}
-	}
-}
-
-func writeFixtureModule(t *testing.T, files map[string]string) string {
-	t.Helper()
-
-	dir := t.TempDir()
-	for name, content := range files {
-		fullPath := filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
-			t.Fatalf("mkdir failed for %s: %v", fullPath, err)
-		}
-		if err := os.WriteFile(fullPath, []byte(strings.TrimLeft(content, "\n")), 0o644); err != nil {
-			t.Fatalf("write failed for %s: %v", fullPath, err)
-		}
-	}
-
-	return dir
+	require.ElementsMatch(t, expectedGenericSecureValues, testutil.KeysOfMap(secureNames), "expected exact framework-derived generic secure values")
 }

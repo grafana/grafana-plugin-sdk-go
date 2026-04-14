@@ -336,7 +336,7 @@ func (b *Builder) collectDocs() {
 
 				switch genDecl.Tok {
 				case token.TYPE:
-					b.collectTypeDocs(pkg.PkgPath, pkg.TypesInfo, genDecl)
+					b.collectTypeDocs(pkg.TypesInfo, genDecl)
 				case token.CONST:
 					b.collectConstDocs(pkg.TypesInfo, genDecl)
 				}
@@ -345,7 +345,7 @@ func (b *Builder) collectDocs() {
 	}
 }
 
-func (b *Builder) collectTypeDocs(packagePath string, info *types.Info, genDecl *ast.GenDecl) {
+func (b *Builder) collectTypeDocs(info *types.Info, genDecl *ast.GenDecl) {
 	for _, spec := range genDecl.Specs {
 		typeSpec, ok := spec.(*ast.TypeSpec)
 		if !ok {
@@ -686,11 +686,7 @@ func shouldKeepFieldDescription(description string) bool {
 	}
 
 	words := strings.Fields(description)
-	if len(words) >= 4 {
-		return true
-	}
-
-	return false
+	return len(words) >= 4
 }
 
 func nestedMap(value map[string]any, keys ...string) (map[string]any, bool) {

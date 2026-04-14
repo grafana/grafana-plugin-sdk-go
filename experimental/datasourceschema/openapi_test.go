@@ -2,14 +2,14 @@ package datasourceschema
 
 import (
 	"encoding/json"
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestGenerateOpenAPIPreservesLoadOptions(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -67,20 +67,13 @@ var _ = doesNotExist
 		Patterns:   []string{"./plugin/..."},
 		BuildFlags: []string{"-tags=custom"},
 	})
-	if err != nil {
-		t.Fatalf("generate openapi failed: %v", err)
-	}
-
-	if !strings.Contains(string(result.Body), `"name"`) {
-		t.Fatalf("expected generated schema to include tagged settings fields, got %s", result.Body)
-	}
-	if !strings.Contains(string(result.Body), `"settings"`) {
-		t.Fatalf("expected pluginspec settings wrapper, got %s", result.Body)
-	}
+	require.NoError(t, err, "generate openapi failed")
+	require.Contains(t, string(result.Body), `"name"`, "expected generated schema to include tagged settings fields")
+	require.Contains(t, string(result.Body), `"settings"`, "expected pluginspec settings wrapper")
 }
 
 func TestGenerateOpenAPIReturnsWarningsForAmbiguousSettingsTargets(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -134,13 +127,8 @@ func DecodeSecondary(cfg backend.DataSourceInstanceSettings) error {
 	result, err := GenerateOpenAPI(OpenAPIOptions{
 		Dir: dir,
 	})
-	if err != nil {
-		t.Fatalf("generate openapi failed: %v", err)
-	}
-
-	if len(result.Warnings) == 0 {
-		t.Fatalf("expected extractor warnings, got none")
-	}
+	require.NoError(t, err, "generate openapi failed")
+	require.NotEmpty(t, result.Warnings, "expected extractor warnings")
 
 	found := false
 	for _, warning := range result.Warnings {
@@ -149,17 +137,12 @@ func DecodeSecondary(cfg backend.DataSourceInstanceSettings) error {
 			break
 		}
 	}
-	if !found {
-		t.Fatalf("expected datasource_multiple_types warning, got %#v", result.Warnings)
-	}
-
-	if len(result.Body) == 0 {
-		t.Fatalf("expected generated output body")
-	}
+	require.True(t, found, "expected datasource_multiple_types warning, got %#v", result.Warnings)
+	require.NotEmpty(t, result.Body, "expected generated output body")
 }
 
 func TestGenerateOpenAPIHandlesAnonymousSettingsTargetsAndAliasedSecureMaps(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -226,27 +209,17 @@ func LoadQuery(q backend.DataQuery) error {
 	result, err := GenerateOpenAPI(OpenAPIOptions{
 		Dir: dir,
 	})
-	if err != nil {
-		t.Fatalf("generate openapi failed: %v", err)
-	}
+	require.NoError(t, err, "generate openapi failed")
 
 	body := string(result.Body)
-	if !strings.Contains(body, `"name"`) {
-		t.Fatalf("expected config schema from anonymous target, got %s", body)
-	}
-	if strings.Contains(body, `"Inputs"`) {
-		t.Fatalf("did not expect runtime-only untagged config fields, got %s", body)
-	}
-	if !strings.Contains(body, `"apiKey"`) {
-		t.Fatalf("expected aliased secure key in output, got %s", body)
-	}
-	if strings.Contains(body, `"queries"`) {
-		t.Fatalf("did not expect query definitions embedded in pluginspec output, got %s", body)
-	}
+	require.Contains(t, body, `"name"`, "expected config schema from anonymous target")
+	require.NotContains(t, body, `"Inputs"`, "did not expect runtime-only untagged config fields")
+	require.Contains(t, body, `"apiKey"`, "expected aliased secure key in output")
+	require.NotContains(t, body, `"queries"`, "did not expect query definitions embedded in pluginspec output")
 }
 
 func TestGenerateQueryTypesHandlesLooseQueries(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -294,26 +267,25 @@ func LoadQuery(q backend.DataQuery) error {
 	result, err := GenerateQueryTypes(OpenAPIOptions{
 		Dir: dir,
 	})
-	if err != nil {
-		t.Fatalf("generate query types failed: %v", err)
-	}
+	require.NoError(t, err, "generate query types failed")
 
 	var queries map[string]any
-	if err := json.Unmarshal(result.Body, &queries); err != nil {
-		t.Fatalf("unmarshal generated output failed: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(result.Body, &queries), "unmarshal generated output failed")
 
-	items := queries["items"].([]any)
-	item := items[0].(map[string]any)
-	spec := item["spec"].(map[string]any)
-	schema := spec["schema"].(map[string]any)
-	if _, ok := schema["required"]; ok {
-		t.Fatalf("did not expect auto-discovered query schema required list, got %#v", schema["required"])
-	}
+	items, ok := queries["items"].([]any)
+	require.True(t, ok, "expected items array, got %#v", queries["items"])
+	require.NotEmpty(t, items, "expected at least one query item")
+	item, ok := items[0].(map[string]any)
+	require.True(t, ok, "expected query item object, got %#v", items[0])
+	spec, ok := item["spec"].(map[string]any)
+	require.True(t, ok, "expected query spec object, got %#v", item["spec"])
+	schema, ok := spec["schema"].(map[string]any)
+	require.True(t, ok, "expected query schema object, got %#v", spec["schema"])
+	require.NotContains(t, schema, "required", "did not expect auto-discovered query schema required list")
 }
 
 func TestGenerateQueryTypesReturnsTypedEmptyListWhenNoQueriesAreFound(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -349,43 +321,14 @@ func LoadSettings(cfg backend.DataSourceInstanceSettings) error {
 	result, err := GenerateQueryTypes(OpenAPIOptions{
 		Dir: dir,
 	})
-	if err != nil {
-		t.Fatalf("generate query types failed: %v", err)
-	}
+	require.NoError(t, err, "generate query types failed")
 
 	var queries map[string]any
-	if err := json.Unmarshal(result.Body, &queries); err != nil {
-		t.Fatalf("unmarshal generated output failed: %v", err)
-	}
+	require.NoError(t, json.Unmarshal(result.Body, &queries), "unmarshal generated output failed")
 
-	if queries["kind"] != "QueryTypeDefinitionList" {
-		t.Fatalf("expected typed empty list kind, got %#v", queries["kind"])
-	}
-	if queries["apiVersion"] != "datasource.grafana.app/v0alpha1" {
-		t.Fatalf("expected typed empty list apiVersion, got %#v", queries["apiVersion"])
-	}
+	require.Equal(t, "QueryTypeDefinitionList", queries["kind"], "expected typed empty list kind")
+	require.Equal(t, "datasource.grafana.app/v0alpha1", queries["apiVersion"], "expected typed empty list apiVersion")
 	items, ok := queries["items"].([]any)
-	if !ok {
-		t.Fatalf("expected items array, got %#v", queries["items"])
-	}
-	if len(items) != 0 {
-		t.Fatalf("expected empty query type items, got %#v", items)
-	}
-}
-
-func writeFixtureModule(t *testing.T, files map[string]string) string {
-	t.Helper()
-
-	dir := t.TempDir()
-	for name, content := range files {
-		fullPath := filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
-			t.Fatalf("mkdir failed for %s: %v", fullPath, err)
-		}
-		if err := os.WriteFile(fullPath, []byte(strings.TrimLeft(content, "\n")), 0o644); err != nil {
-			t.Fatalf("write failed for %s: %v", fullPath, err)
-		}
-	}
-
-	return dir
+	require.True(t, ok, "expected items array, got %#v", queries["items"])
+	require.Empty(t, items, "expected empty query type items")
 }

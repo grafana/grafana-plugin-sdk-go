@@ -55,6 +55,12 @@ type localQueryCandidate struct {
 	Description string
 }
 
+const (
+	backendPkgPath                     = "github.com/grafana/grafana-plugin-sdk-go/backend"
+	dataQueryTypeName                  = "DataQuery"
+	dataSourceInstanceSettingsTypeName = "DataSourceInstanceSettings"
+)
+
 func Build(loadRes *load.Result) (*Resolver, error) {
 	if loadRes == nil {
 		return nil, fmt.Errorf("load result is nil")
@@ -493,7 +499,7 @@ func (r *Resolver) resolveDecodeTarget(p patterns.Pending) ([]model.Finding, []m
 		return nil, []model.Warning{r.warningForPending(p, "ssa_decode_unresolved", "unable to classify decode source kind")}
 	}
 
-	fn, _ := r.ssaFunctionForNode(pkg, call)
+	fn := r.ssaFunctionForNode(pkg, call)
 	if fn == nil {
 		return nil, []model.Warning{r.warningForPending(p, "ssa_decode_unresolved", "unable to locate enclosing SSA function")}
 	}
@@ -534,7 +540,7 @@ func (r *Resolver) resolveSecureKey(p patterns.Pending) ([]model.Finding, []mode
 		return nil, []model.Warning{r.warningForPending(p, "ssa_secure_key_unresolved", "unable to locate package for pending secure key")}
 	}
 
-	fn, _ := r.ssaFunctionForNode(pkg, index)
+	fn := r.ssaFunctionForNode(pkg, index)
 	if fn == nil {
 		return nil, []model.Warning{r.warningForPending(p, "ssa_secure_key_unresolved", "unable to locate enclosing SSA function")}
 	}
@@ -576,25 +582,6 @@ func (r *Resolver) resolveSecureKey(p patterns.Pending) ([]model.Finding, []mode
 	}
 
 	return []model.Finding{finding}, nil
-}
-
-func (r *Resolver) functionByName(pkgPath string, fnName string) *ssa.Function {
-	if r == nil || r.Prog == nil {
-		return nil
-	}
-
-	pkg := r.Prog.ImportedPackage(pkgPath)
-	if pkg == nil || pkg.Members == nil {
-		return nil
-	}
-
-	if member, ok := pkg.Members[fnName]; ok {
-		if fn, ok := member.(*ssa.Function); ok {
-			return fn
-		}
-	}
-
-	return nil
 }
 
 func (r *Resolver) traceString(value ssa.Value, depth int) (literal string, pattern string, ok bool) {
@@ -935,14 +922,14 @@ func (r *Resolver) traceReturnedTarget(fn *ssa.Function, pkgPath string, depth i
 	return found, found != nil
 }
 
-func (r *Resolver) ssaFunctionForNode(pkg *packages.Package, node ast.Node) (*ssa.Function, *ast.File) {
+func (r *Resolver) ssaFunctionForNode(pkg *packages.Package, node ast.Node) *ssa.Function {
 	if pkg == nil || node == nil || r == nil || r.Prog == nil {
-		return nil, nil
+		return nil
 	}
 
 	ssaPkg := r.Prog.Package(pkg.Types)
 	if ssaPkg == nil {
-		return nil, nil
+		return nil
 	}
 
 	for _, file := range pkg.Syntax {
@@ -955,10 +942,10 @@ func (r *Resolver) ssaFunctionForNode(pkg *packages.Package, node ast.Node) (*ss
 			continue
 		}
 
-		return ssa.EnclosingFunction(ssaPkg, path), file
+		return ssa.EnclosingFunction(ssaPkg, path)
 	}
 
-	return nil, nil
+	return nil
 }
 
 func (r *Resolver) findPackage(pkgPath string) *packages.Package {
@@ -1045,7 +1032,7 @@ func isSecureFieldValue(field *ssa.Field) bool {
 	}
 
 	obj := named.Obj()
-	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != "github.com/grafana/grafana-plugin-sdk-go/backend" || obj.Name() != "DataSourceInstanceSettings" {
+	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != backendPkgPath || obj.Name() != dataSourceInstanceSettingsTypeName {
 		return false
 	}
 
@@ -1068,7 +1055,7 @@ func isSecureFieldAddrValue(field *ssa.FieldAddr) bool {
 	}
 
 	obj := named.Obj()
-	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != "github.com/grafana/grafana-plugin-sdk-go/backend" || obj.Name() != "DataSourceInstanceSettings" {
+	if obj == nil || obj.Pkg() == nil || obj.Pkg().Path() != backendPkgPath || obj.Name() != dataSourceInstanceSettingsTypeName {
 		return false
 	}
 
@@ -1385,14 +1372,14 @@ func (r *Resolver) dataSourceSettingsUsageInFunction(fn *ssa.Function) DataSourc
 					usage.UsesHTTPOptions = true
 				}
 			}
-			return !(usage.UsesURL && usage.UsesHTTPOptions)
+			return !usage.UsesURL || !usage.UsesHTTPOptions
 		}
 		if obj, ok := pkg.TypesInfo.Uses[sel.Sel].(*types.Func); ok && obj.Name() == "HTTPClientOptions" {
 			if sig, ok := obj.Type().(*types.Signature); ok && sig.Recv() != nil && isDataSourceInstanceSettingsType(sig.Recv().Type()) {
 				usage.UsesHTTPOptions = true
 			}
 		}
-		return !(usage.UsesURL && usage.UsesHTTPOptions)
+		return !usage.UsesURL || !usage.UsesHTTPOptions
 	})
 
 	return usage
@@ -1460,7 +1447,7 @@ func isBackendDataQueryType(typ types.Type) bool {
 		return false
 	}
 	obj := named.Obj()
-	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == "github.com/grafana/grafana-plugin-sdk-go/backend" && obj.Name() == "DataQuery"
+	return obj != nil && obj.Pkg() != nil && obj.Pkg().Path() == backendPkgPath && obj.Name() == dataQueryTypeName
 }
 
 func frameworkQueryCandidateScore(fn *ssa.Function, target *model.TargetRef, fromDecode bool) int {
@@ -1511,7 +1498,7 @@ func looksLikeQueryTarget(target model.TargetRef) bool {
 		return false
 	}
 	typeName := strings.ToLower(target.TypeName)
-	if target.PackagePath == "github.com/grafana/grafana-plugin-sdk-go/backend" && typeName == "dataquery" {
+	if target.PackagePath == backendPkgPath && typeName == "dataquery" {
 		return false
 	}
 	typeString := strings.ToLower(target.TypeString)
@@ -1624,7 +1611,7 @@ func isDataSourceInstanceSettingsType(typ types.Type) bool {
 	if named == nil || named.Obj() == nil || named.Obj().Pkg() == nil {
 		return false
 	}
-	return named.Obj().Pkg().Path() == "github.com/grafana/grafana-plugin-sdk-go/backend" && named.Obj().Name() == "DataSourceInstanceSettings"
+	return named.Obj().Pkg().Path() == backendPkgPath && named.Obj().Name() == dataSourceInstanceSettingsTypeName
 }
 
 func packageHasFileInDir(pkg *packages.Package, dir string) bool {
@@ -1672,19 +1659,4 @@ func fileInDir(name string, dir string) bool {
 		return false
 	}
 	return rel == "." || (!strings.HasPrefix(rel, "..") && rel != "..")
-}
-
-func sameDir(left string, right string) bool {
-	if left == "" || right == "" {
-		return false
-	}
-	absLeft, ok := absPath(left)
-	if !ok {
-		return false
-	}
-	absRight, ok := absPath(right)
-	if !ok {
-		return false
-	}
-	return absLeft == absRight
 }

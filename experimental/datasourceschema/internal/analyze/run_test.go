@@ -1,16 +1,16 @@
 package analyze
 
 import (
-	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/model"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/testutil"
+	"github.com/stretchr/testify/require"
 )
 
 func TestRunFindsDirectJSONTargets(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -71,20 +71,13 @@ func LoadQuery(q backend.DataQuery) error {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "fixture", "Settings", model.SourceKindDatasourceJSON) {
-		t.Fatalf("expected datasource JSON target finding for Settings, got %#v", report.Findings)
-	}
-	if !hasTarget(report.Findings, "fixture", "Query", model.SourceKindQueryJSON) {
-		t.Fatalf("expected query JSON target finding for Query, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "fixture", "Settings", model.SourceKindDatasourceJSON), "expected datasource JSON target finding for Settings, got %#v", report.Findings)
+	require.True(t, hasTarget(report.Findings, "fixture", "Query", model.SourceKindQueryJSON), "expected query JSON target finding for Query, got %#v", report.Findings)
 }
 
 func TestRunResolvesDecodeTargetViaSSA(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -132,17 +125,12 @@ func LoadSettings(config backend.DataSourceInstanceSettings) error {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "fixture", "Settings", model.SourceKindDatasourceJSON) {
-		t.Fatalf("expected SSA-resolved datasource JSON target finding for Settings, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "fixture", "Settings", model.SourceKindDatasourceJSON), "expected SSA-resolved datasource JSON target finding for Settings, got %#v", report.Findings)
 }
 
 func TestRunResolvesSecureKeyPatternViaSSA(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -190,17 +178,12 @@ func LoadSettings(config backend.DataSourceInstanceSettings) string {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasPattern(report.Findings, "auth.{dynamic}.apiKey") {
-		t.Fatalf("expected SSA-resolved secure key pattern, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasPattern(report.Findings, "auth.{dynamic}.apiKey"), "expected SSA-resolved secure key pattern, got %#v", report.Findings)
 }
 
 func TestRunIgnoresNonStructJSONTargetsAndLocalStringMaps(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -258,20 +241,13 @@ func LoadSettings(config backend.DataSourceInstanceSettings) error {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if len(report.Warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", report.Warnings)
-	}
-	if !hasLiteralKey(report.Findings, "apiKey") {
-		t.Fatalf("expected secure key finding, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.Empty(t, report.Warnings, "expected no warnings")
+	require.True(t, hasLiteralKey(report.Findings, "apiKey"), "expected secure key finding, got %#v", report.Findings)
 }
 
 func TestRunInfersGuardedReplaceSecureKeyPattern(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -327,20 +303,13 @@ func LoadSettings(config backend.DataSourceInstanceSettings) error {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if len(report.Warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", report.Warnings)
-	}
-	if !hasPattern(report.Findings, "httpHeaderValue{dynamic}") {
-		t.Fatalf("expected guarded replace pattern, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.Empty(t, report.Warnings, "expected no warnings")
+	require.True(t, hasPattern(report.Findings, "httpHeaderValue{dynamic}"), "expected guarded replace pattern, got %#v", report.Findings)
 }
 
 func TestRunInfersGuardedDynamicSecureKeyPattern(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -403,20 +372,13 @@ func LoadSettings(config backend.DataSourceInstanceSettings) error {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if len(report.Warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", report.Warnings)
-	}
-	if !hasPattern(report.Findings, "{dynamic}") {
-		t.Fatalf("expected dynamic secure key pattern, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.Empty(t, report.Warnings, "expected no warnings")
+	require.True(t, hasPattern(report.Findings, "{dynamic}"), "expected dynamic secure key pattern, got %#v", report.Findings)
 }
 
 func TestRunFindsAliasedAndReencodedQueryTargets(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -474,17 +436,12 @@ func LoadQuery(input backend.DataQuery) error {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "fixture", "Query", model.SourceKindQueryJSON) {
-		t.Fatalf("expected re-encoded query JSON target finding, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "fixture", "Query", model.SourceKindQueryJSON), "expected re-encoded query JSON target finding, got %#v", report.Findings)
 }
 
 func TestRunInfersLocalWrapperQueryTargetViaSSA(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -559,17 +516,12 @@ func parseQuery(req *backend.QueryDataRequest) error {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "fixture", "QueryJSONModel", model.SourceKindQueryJSON) {
-		t.Fatalf("expected local wrapper query target finding, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "fixture", "QueryJSONModel", model.SourceKindQueryJSON), "expected local wrapper query target finding, got %#v", report.Findings)
 }
 
 func TestRunFindsPointerBackedDecodeTargets(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -616,17 +568,12 @@ func LoadSettings(settings backend.DataSourceInstanceSettings) error {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "fixture", "Config", model.SourceKindDatasourceJSON) {
-		t.Fatalf("expected pointer-backed datasource target finding, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "fixture", "Config", model.SourceKindDatasourceJSON), "expected pointer-backed datasource target finding, got %#v", report.Findings)
 }
 
 func TestRunFindsSecurePatternsOnMirroredSecureFields(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -676,17 +623,12 @@ func LoadSettings(config backend.DataSourceInstanceSettings) string {
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasPattern(report.Findings, "auth.{dynamic}.apiKey") {
-		t.Fatalf("expected mirrored secure key pattern, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasPattern(report.Findings, "auth.{dynamic}.apiKey"), "expected mirrored secure key pattern, got %#v", report.Findings)
 }
 
 func TestRunInfersFrameworkQueryTargetViaSSA(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -796,17 +738,12 @@ func NewDatasource(ctx context.Context, settings backend.DataSourceInstanceSetti
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "github.com/grafana/grafana-plugin-sdk-go/data/sqlutil", "Query", model.SourceKindQueryJSON) {
-		t.Fatalf("expected SSA-inferred framework query target finding, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "github.com/grafana/grafana-plugin-sdk-go/data/sqlutil", "Query", model.SourceKindQueryJSON), "expected SSA-inferred framework query target finding, got %#v", report.Findings)
 }
 
 func TestRunInfersDelegatedFrameworkQueryTargetViaSSA(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -938,17 +875,12 @@ func (s *Service) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "github.com/grafana/grafana-prometheus-datasource/pkg/promlib/models", "Query", model.SourceKindQueryJSON) {
-		t.Fatalf("expected SSA-inferred delegated framework query target finding, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "github.com/grafana/grafana-prometheus-datasource/pkg/promlib/models", "Query", model.SourceKindQueryJSON), "expected SSA-inferred delegated framework query target finding, got %#v", report.Findings)
 }
 
 func TestRunInfersDelegatedFrameworkQueryTargetViaSSAFromSubdirectory(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -1084,17 +1016,12 @@ func (s *Service) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 		Patterns: []string{"."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "github.com/grafana/grafana-prometheus-datasource/pkg/promlib/models", "internalQueryModel", model.SourceKindQueryJSON) {
-		t.Fatalf("expected SSA-inferred delegated framework decode target finding from subdirectory, got %#v", report.Findings)
-	}
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "github.com/grafana/grafana-prometheus-datasource/pkg/promlib/models", "internalQueryModel", model.SourceKindQueryJSON), "expected SSA-inferred delegated framework decode target finding from subdirectory, got %#v", report.Findings)
 }
 
 func TestRunInfersFrameworkQueryTargetViaSSAThroughCallbackClosure(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -1247,30 +1174,8 @@ func (s *Service) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 		Patterns: []string{"./..."},
 		UseSSA:   true,
 	})
-	if err != nil {
-		t.Fatalf("run failed: %v", err)
-	}
-
-	if !hasTarget(report.Findings, "github.com/grafana/grafana-prometheus-datasource/pkg/promlib/models", "internalQueryModel", model.SourceKindQueryJSON) {
-		t.Fatalf("expected SSA-inferred framework decode target finding through callback closure, got %#v", report.Findings)
-	}
-}
-
-func writeFixtureModule(t *testing.T, files map[string]string) string {
-	t.Helper()
-
-	dir := t.TempDir()
-	for name, content := range files {
-		fullPath := filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
-			t.Fatalf("mkdir failed for %s: %v", fullPath, err)
-		}
-		if err := os.WriteFile(fullPath, []byte(strings.TrimLeft(content, "\n")), 0o644); err != nil {
-			t.Fatalf("write failed for %s: %v", fullPath, err)
-		}
-	}
-
-	return dir
+	require.NoError(t, err, "run failed")
+	require.True(t, hasTarget(report.Findings, "github.com/grafana/grafana-prometheus-datasource/pkg/promlib/models", "internalQueryModel", model.SourceKindQueryJSON), "expected SSA-inferred framework decode target finding through callback closure, got %#v", report.Findings)
 }
 
 func hasTarget(findings []model.Finding, packagePath string, typeName string, source model.SourceKind) bool {

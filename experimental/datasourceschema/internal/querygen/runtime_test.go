@@ -1,17 +1,18 @@
 package querygen
 
 import (
-	"os"
-	"path/filepath"
-	"strings"
 	"testing"
 
 	v0alpha1 "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/model"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/testutil"
+	"github.com/stretchr/testify/require"
 )
 
+const queryModelName = "Query"
+
 func TestBuildDefinitionsInModule(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -33,42 +34,32 @@ type Query struct {
 		PluginID: []string{"github-datasource"},
 	}, []RuntimeRegistration{{
 		PackagePath:    "fixture/pkg/models",
-		TypeName:       "Query",
+		TypeName:       queryModelName,
 		Name:           "Pull_Requests",
 		Description:    "GitHub pull request query",
-		Discriminators: []v0alpha1.DiscriminatorFieldValue{{Field: "queryType", Value: "Pull_Requests"}},
+		Discriminators: []v0alpha1.DiscriminatorFieldValue{{Field: queryTypeFieldName, Value: "Pull_Requests"}},
 		Examples: []v0alpha1.QueryExample{{
 			Name: "simple",
 			SaveModel: v0alpha1.AsUnstructured(map[string]any{
-				"queryType": "Pull_Requests",
-				"owner":     "grafana",
-				"repo":      "grafana",
+				queryTypeFieldName: "Pull_Requests",
+				"owner":            "grafana",
+				"repo":             "grafana",
 			}),
 		}},
 	}})
-	if err != nil {
-		t.Fatalf("build failed: %v", err)
-	}
+	require.NoError(t, err, "build failed")
 
-	if len(definitions.Items) != 1 {
-		t.Fatalf("expected one item, got %d", len(definitions.Items))
-	}
+	require.Len(t, definitions.Items, 1, "expected one item")
 	item := definitions.Items[0]
-	if item.Name != "Pull_Requests" {
-		t.Fatalf("unexpected item name: %s", item.Name)
-	}
-	if item.Spec.Description != "GitHub pull request query" {
-		t.Fatalf("unexpected description: %q", item.Spec.Description)
-	}
+	require.Equal(t, "Pull_Requests", item.Name, "unexpected item name")
+	require.Equal(t, "GitHub pull request query", item.Spec.Description, "unexpected description")
 
 	properties := item.Spec.Schema.Spec.Properties
-	if _, ok := properties["owner"]; !ok {
-		t.Fatalf("expected owner property in schema, got %#v", properties)
-	}
+	require.ElementsMatch(t, []string{"owner", "queryType", "repo"}, testutil.KeysOfMap(properties), "expected exact query schema property set")
 }
 
 func TestBuildDefinitionsFromFindingsSupportsUnexportedTypes(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -93,19 +84,13 @@ type query struct {
 			TypeName:    "query",
 		},
 	}})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(definitions.Items) != 1 {
-		t.Fatalf("expected one item, got %#v", definitions.Items)
-	}
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", warnings)
-	}
+	require.NoError(t, err, "unexpected error")
+	require.Len(t, definitions.Items, 1, "expected one item")
+	require.Empty(t, warnings, "expected no warnings")
 }
 
 func TestBuildDefinitionsFromFindingsSkipsUntaggedRuntimeOnlyQueryFields(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -128,30 +113,19 @@ type Query struct {
 		Source: model.SourceKindQueryJSON,
 		Target: &model.TargetRef{
 			PackagePath: "fixture/pkg/models",
-			TypeName:    "Query",
+			TypeName:    queryModelName,
 		},
 	}})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", warnings)
-	}
-	if len(definitions.Items) != 1 {
-		t.Fatalf("expected one item, got %#v", definitions.Items)
-	}
+	require.NoError(t, err, "unexpected error")
+	require.Empty(t, warnings, "expected no warnings")
+	require.Len(t, definitions.Items, 1, "expected one item")
 
 	properties := definitions.Items[0].Spec.Schema.Spec.Properties
-	if _, ok := properties["query"]; !ok {
-		t.Fatalf("expected tagged query property, got %#v", properties)
-	}
-	if _, ok := properties["runtimeOnly"]; ok {
-		t.Fatalf("did not expect untagged runtime-only field in schema, got %#v", properties)
-	}
+	require.ElementsMatch(t, []string{"query", "queryType"}, testutil.KeysOfMap(properties), "expected exact tagged query property set")
 }
 
 func TestBuildDefinitionsFromFindingsBuildsSQLDSQuerySchemaFromFinding(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -223,29 +197,19 @@ var _ sqlutil.Query
 		Source: model.SourceKindQueryJSON,
 		Target: &model.TargetRef{
 			PackagePath: "github.com/grafana/grafana-plugin-sdk-go/data/sqlutil",
-			TypeName:    "Query",
+			TypeName:    queryModelName,
 		},
 	}})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", warnings)
-	}
-	if len(definitions.Items) != 1 {
-		t.Fatalf("expected one query definition, got %#v", definitions.Items)
-	}
+	require.NoError(t, err, "unexpected error")
+	require.Empty(t, warnings, "expected no warnings")
+	require.Len(t, definitions.Items, 1, "expected one query definition")
 	item := definitions.Items[0]
-	if item.Name != "Query" {
-		t.Fatalf("expected query name, got %#v", item.Name)
-	}
-	if _, ok := item.Spec.Schema.Spec.Properties["rawSql"]; !ok {
-		t.Fatalf("expected rawSql property in schema, got %#v", item.Spec.Schema.Spec.Properties)
-	}
+	require.Equal(t, queryModelName, item.Name, "expected query name")
+	require.Contains(t, item.Spec.Schema.Spec.Properties, "rawSql", "expected rawSql property in schema")
 }
 
 func TestBuildDefinitionsFromFindingsNormalizesInternalQueryTypeName(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -269,25 +233,15 @@ type internalQueryModel struct {
 			TypeName:    "internalQueryModel",
 		},
 	}})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", warnings)
-	}
-	if len(definitions.Items) != 1 {
-		t.Fatalf("expected one query definition, got %#v", definitions.Items)
-	}
-	if definitions.Items[0].Name != "Query" {
-		t.Fatalf("expected normalized query name, got %#v", definitions.Items[0].Name)
-	}
-	if _, ok := definitions.Items[0].Spec.Schema.Spec.Properties["expr"]; !ok {
-		t.Fatalf("expected expr property in schema, got %#v", definitions.Items[0].Spec.Schema.Spec.Properties)
-	}
+	require.NoError(t, err, "unexpected error")
+	require.Empty(t, warnings, "expected no warnings")
+	require.Len(t, definitions.Items, 1, "expected one query definition")
+	require.Equal(t, queryModelName, definitions.Items[0].Name, "expected normalized query name")
+	require.Contains(t, definitions.Items[0].Spec.Schema.Spec.Properties, "expr", "expected expr property in schema")
 }
 
 func TestBuildDefinitionsFromFindingsInfersDiscriminatorFromQueryTypeMuxWrapper(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -424,29 +378,18 @@ func FrameResponse() backend.DataResponse {
 			TypeName:    "CommitsQuery",
 		},
 	}})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", warnings)
-	}
-	if len(definitions.Items) != 1 {
-		t.Fatalf("expected one item, got %#v", definitions.Items)
-	}
-	if definitions.Items[0].Name != "Commits" {
-		t.Fatalf("expected inferred item name, got %#v", definitions.Items[0].Name)
-	}
-	if len(definitions.Items[0].Spec.Discriminators) != 1 {
-		t.Fatalf("expected one discriminator, got %#v", definitions.Items[0].Spec.Discriminators)
-	}
+	require.NoError(t, err, "unexpected error")
+	require.Empty(t, warnings, "expected no warnings")
+	require.Len(t, definitions.Items, 1, "expected one item")
+	require.Equal(t, "Commits", definitions.Items[0].Name, "expected inferred item name")
+	require.Len(t, definitions.Items[0].Spec.Discriminators, 1, "expected one discriminator")
 	discriminator := definitions.Items[0].Spec.Discriminators[0]
-	if discriminator.Field != "queryType" || discriminator.Value != "Commits" {
-		t.Fatalf("unexpected discriminator: %#v", discriminator)
-	}
+	require.Equal(t, queryTypeFieldName, discriminator.Field, "unexpected discriminator field")
+	require.Equal(t, "Commits", discriminator.Value, "unexpected discriminator value")
 }
 
 func TestBuildDefinitionsFromFindingsInfersMultipleDiscriminatorsForSharedType(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -587,7 +530,7 @@ func HandleStatsQuery(opts *HandlerOpts) func(ctx context.Context, req *backend.
 			FunctionName: "queryHandlerTable",
 			Target: &model.TargetRef{
 				PackagePath: "fixture/pkg/models",
-				TypeName:    "Query",
+				TypeName:    queryModelName,
 			},
 		},
 		{
@@ -595,35 +538,28 @@ func HandleStatsQuery(opts *HandlerOpts) func(ctx context.Context, req *backend.
 			FunctionName: "queryHandlerStats",
 			Target: &model.TargetRef{
 				PackagePath: "fixture/pkg/models",
-				TypeName:    "Query",
+				TypeName:    queryModelName,
 			},
 		},
 	})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", warnings)
-	}
-	if len(definitions.Items) != 2 {
-		t.Fatalf("expected one item per discriminator, got %#v", definitions.Items)
-	}
+	require.NoError(t, err, "unexpected error")
+	require.Empty(t, warnings, "expected no warnings")
+	require.Len(t, definitions.Items, 2, "expected one item per discriminator")
+	require.ElementsMatch(t, []string{"AggregateAPI", "TableAPI"}, queryDefinitionNames(definitions.Items), "expected exact item names")
 
 	got := map[string][]v0alpha1.DiscriminatorFieldValue{}
 	for _, item := range definitions.Items {
 		got[item.Name] = item.Spec.Discriminators
 	}
 
-	if len(got["AggregateAPI"]) != 1 || got["AggregateAPI"][0].Value != "AggregateAPI" {
-		t.Fatalf("unexpected AggregateAPI discriminators: %#v", got["AggregateAPI"])
-	}
-	if len(got["TableAPI"]) != 1 || got["TableAPI"][0].Value != "TableAPI" {
-		t.Fatalf("unexpected TableAPI discriminators: %#v", got["TableAPI"])
-	}
+	require.Len(t, got["AggregateAPI"], 1, "unexpected AggregateAPI discriminators")
+	require.Equal(t, "AggregateAPI", got["AggregateAPI"][0].Value, "unexpected AggregateAPI discriminator value")
+	require.Len(t, got["TableAPI"], 1, "unexpected TableAPI discriminators")
+	require.Equal(t, "TableAPI", got["TableAPI"][0].Value, "unexpected TableAPI discriminator value")
 }
 
 func TestBuildDefinitionsFromFindingsInfersDiscriminatorsFromEnumField(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -651,18 +587,13 @@ type Query struct {
 		Source: model.SourceKindQueryJSON,
 		Target: &model.TargetRef{
 			PackagePath: "fixture/pkg/models",
-			TypeName:    "Query",
+			TypeName:    queryModelName,
 		},
 	}})
-	if err != nil {
-		t.Fatalf("unexpected error: %v", err)
-	}
-	if len(warnings) != 0 {
-		t.Fatalf("expected no warnings, got %#v", warnings)
-	}
-	if len(definitions.Items) != 3 {
-		t.Fatalf("expected one item per enum value, got %#v", definitions.Items)
-	}
+	require.NoError(t, err, "unexpected error")
+	require.Empty(t, warnings, "expected no warnings")
+	require.Len(t, definitions.Items, 3, "expected one item per enum value")
+	require.ElementsMatch(t, []string{"metrics", "raw", "slo"}, queryDefinitionNames(definitions.Items), "expected exact item names")
 
 	got := map[string][]v0alpha1.DiscriminatorFieldValue{}
 	for _, item := range definitions.Items {
@@ -671,17 +602,14 @@ type Query struct {
 
 	for _, name := range []string{"metrics", "raw", "slo"} {
 		discriminators := got[name]
-		if len(discriminators) != 1 {
-			t.Fatalf("expected one discriminator for %s, got %#v", name, discriminators)
-		}
-		if discriminators[0].Field != "queryType" || discriminators[0].Value != name {
-			t.Fatalf("unexpected discriminator for %s: %#v", name, discriminators[0])
-		}
+		require.Len(t, discriminators, 1, "expected one discriminator for %s", name)
+		require.Equal(t, queryTypeFieldName, discriminators[0].Field, "unexpected discriminator field for %s", name)
+		require.Equal(t, name, discriminators[0].Value, "unexpected discriminator value for %s", name)
 	}
 }
 
 func TestBuildDefinitionsInModuleSuppressesRequiredFields(t *testing.T) {
-	dir := writeRuntimeFixture(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -701,54 +629,30 @@ type Query struct {
 
 	definitions, err := BuildDefinitionsInModule(RuntimeOptions{Dir: dir}, []RuntimeRegistration{{
 		PackagePath: "fixture/pkg/models",
-		TypeName:    "Query",
+		TypeName:    queryModelName,
 	}})
-	if err != nil {
-		t.Fatalf("build failed: %v", err)
-	}
+	require.NoError(t, err, "build failed")
 
-	if len(definitions.Items) != 1 {
-		t.Fatalf("expected one item, got %#v", definitions.Items)
-	}
-
-	if len(definitions.Items[0].Spec.Schema.Spec.Required) > 0 {
-		t.Fatalf("did not expect required list, got %#v", definitions.Items[0].Spec.Schema.Spec.Required)
-	}
+	require.Len(t, definitions.Items, 1, "expected one item")
+	require.Empty(t, definitions.Items[0].Spec.Schema.Spec.Required, "did not expect required list")
 
 	logSearch, ok := definitions.Items[0].Spec.Schema.Spec.Properties["logSearch"]
-	if !ok {
-		t.Fatalf("expected logSearch property, got %#v", definitions.Items[0].Spec.Schema.Spec.Properties)
-	}
-	if len(logSearch.Required) > 0 {
-		t.Fatalf("did not expect nested required list, got %#v", logSearch.Required)
-	}
+	require.True(t, ok, "expected logSearch property, got %#v", definitions.Items[0].Spec.Schema.Spec.Properties)
+	require.Empty(t, logSearch.Required, "did not expect nested required list")
 }
 
 func TestAsJSONSchemaRejectsInvalidSchema(t *testing.T) {
 	_, err := asJSONSchema(map[string]any{
 		"type": 123,
 	})
-	if err == nil {
-		t.Fatal("expected schema conversion to fail")
-	}
-	if !strings.Contains(err.Error(), "expected string or array") {
-		t.Fatalf("unexpected error: %v", err)
-	}
+	require.Error(t, err, "expected schema conversion to fail")
+	require.Contains(t, err.Error(), "expected string or array", "unexpected error")
 }
 
-func writeRuntimeFixture(t *testing.T, files map[string]string) string {
-	t.Helper()
-
-	dir := t.TempDir()
-	for name, content := range files {
-		fullPath := filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
-			t.Fatalf("mkdir failed for %s: %v", fullPath, err)
-		}
-		if err := os.WriteFile(fullPath, []byte(strings.TrimLeft(content, "\n")), 0o644); err != nil {
-			t.Fatalf("write failed for %s: %v", fullPath, err)
-		}
+func queryDefinitionNames(items []v0alpha1.QueryTypeDefinition) []string {
+	names := make([]string, 0, len(items))
+	for _, item := range items {
+		names = append(names, item.Name)
 	}
-
-	return dir
+	return names
 }

@@ -1,16 +1,21 @@
 package typeschema
 
 import (
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/load"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/datasourceschema/internal/testutil"
+	"github.com/stretchr/testify/require"
+)
+
+const (
+	objectSchemaType = "object"
+	stringSchemaType = "string"
 )
 
 func TestBuildNamedTypeSchemaHandlesStructTagsAndRequiredFields(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -44,87 +49,54 @@ type Settings struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchema(loadRes, "fixture/pkg/models", "Settings")
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
+	require.NoError(t, err, "schema build failed")
 
-	if schema["$schema"] != draft04 {
-		t.Fatalf("expected draft-04 schema, got %#v", schema["$schema"])
-	}
-	if schema["type"] != "object" {
-		t.Fatalf("expected object type, got %#v", schema["type"])
-	}
-	if schema["description"] != "Settings describe datasource configuration." {
-		t.Fatalf("expected schema description from type comment, got %#v", schema["description"])
-	}
-	if schema["additionalProperties"] != false {
-		t.Fatalf("expected additionalProperties=false, got %#v", schema["additionalProperties"])
-	}
+	require.Equal(t, draft04, schema["$schema"], "expected draft-04 schema")
+	require.Equal(t, objectSchemaType, schema["type"], "expected object type")
+	require.Equal(t, "Settings describe datasource configuration.", schema["description"], "expected schema description from type comment")
+	require.Equal(t, false, schema["additionalProperties"], "expected additionalProperties=false")
 
-	properties, ok := testNestedMap(schema, "properties")
-	if !ok {
-		t.Fatalf("expected properties object, got %#v", schema)
-	}
-	if _, ok := properties["Ignored"]; ok {
-		t.Fatalf("did not expect ignored field in schema, got %#v", properties)
-	}
-	if _, ok := properties["privateVal"]; ok {
-		t.Fatalf("did not expect unexported field in schema, got %#v", properties)
-	}
+	properties, ok := testutil.NestedMap(schema, "properties")
+	require.True(t, ok, "expected properties object, got %#v", schema)
+	require.NotContains(t, properties, "Ignored", "did not expect ignored field in schema")
+	require.NotContains(t, properties, "privateVal", "did not expect unexported field in schema")
 
-	nameField, ok := testNestedMap(schema, "properties", "name")
-	if !ok || nameField["type"] != "string" {
-		t.Fatalf("expected string property for name, got %#v", nameField)
-	}
-	if nameField["description"] != "Human readable datasource name." {
-		t.Fatalf("expected field description for name, got %#v", nameField["description"])
-	}
+	nameField, ok := testutil.NestedMap(schema, "properties", "name")
+	require.True(t, ok, "expected string property for name, got %#v", nameField)
+	require.Equal(t, stringSchemaType, nameField["type"], "expected string property for name")
+	require.Equal(t, "Human readable datasource name.", nameField["description"], "expected field description for name")
 
-	headersField, ok := testNestedMap(schema, "properties", "headers")
-	if !ok || headersField["type"] != "object" {
-		t.Fatalf("expected object property for headers, got %#v", headersField)
-	}
-	if _, ok := headersField["description"]; ok {
-		t.Fatalf("did not expect description on headers field, got %#v", headersField["description"])
-	}
+	headersField, ok := testutil.NestedMap(schema, "properties", "headers")
+	require.True(t, ok, "expected object property for headers, got %#v", headersField)
+	require.Equal(t, objectSchemaType, headersField["type"], "expected object property for headers")
+	require.NotContains(t, headersField, "description", "did not expect description on headers field")
 	additionalProperties, ok := headersField["additionalProperties"].(map[string]any)
-	if !ok || additionalProperties["type"] != "string" {
-		t.Fatalf("expected string additionalProperties for headers, got %#v", headersField["additionalProperties"])
-	}
+	require.True(t, ok, "expected string additionalProperties for headers, got %#v", headersField["additionalProperties"])
+	require.Equal(t, stringSchemaType, additionalProperties["type"], "expected string additionalProperties for headers")
 
-	namespacesField, ok := testNestedMap(schema, "properties", "namespaces")
-	if !ok || namespacesField["type"] != "array" {
-		t.Fatalf("expected array property for namespaces, got %#v", namespacesField)
-	}
+	namespacesField, ok := testutil.NestedMap(schema, "properties", "namespaces")
+	require.True(t, ok, "expected array property for namespaces, got %#v", namespacesField)
+	require.Equal(t, "array", namespacesField["type"], "expected array property for namespaces")
 	items, ok := namespacesField["items"].(map[string]any)
-	if !ok || items["type"] != "string" {
-		t.Fatalf("expected string array items for namespaces, got %#v", namespacesField["items"])
-	}
+	require.True(t, ok, "expected string array items for namespaces, got %#v", namespacesField["items"])
+	require.Equal(t, stringSchemaType, items["type"], "expected string array items for namespaces")
 
-	credsField, ok := testNestedMap(schema, "properties", "creds")
-	if !ok || credsField["type"] != "object" {
-		t.Fatalf("expected object property for creds, got %#v", credsField)
-	}
-	tokenField, ok := testNestedMap(credsField, "properties", "token")
-	if !ok || tokenField["type"] != "string" {
-		t.Fatalf("expected nested token string property, got %#v", tokenField)
-	}
-	if tokenField["description"] != "Token used for bearer auth." {
-		t.Fatalf("expected nested field description for token, got %#v", tokenField["description"])
-	}
+	credsField, ok := testutil.NestedMap(schema, "properties", "creds")
+	require.True(t, ok, "expected object property for creds, got %#v", credsField)
+	require.Equal(t, objectSchemaType, credsField["type"], "expected object property for creds")
+	tokenField, ok := testutil.NestedMap(credsField, "properties", "token")
+	require.True(t, ok, "expected nested token string property, got %#v", tokenField)
+	require.Equal(t, stringSchemaType, tokenField["type"], "expected nested token string property")
+	require.Equal(t, "Token used for bearer auth.", tokenField["description"], "expected nested field description for token")
 
-	if _, ok := schema["required"]; ok {
-		t.Fatalf("did not expect required list, got %#v", schema["required"])
-	}
+	require.NotContains(t, schema, "required", "did not expect required list")
 }
 
 func TestBuildNamedTypeSchemaExtractsSimpleEnums(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -153,40 +125,25 @@ type Query struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchema(loadRes, "fixture/pkg/models", "Query")
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
+	require.NoError(t, err, "schema build failed")
 
-	modeField, ok := testNestedMap(schema, "properties", "mode")
-	if !ok {
-		t.Fatalf("expected mode field in schema, got %#v", schema)
-	}
+	modeField, ok := testutil.NestedMap(schema, "properties", "mode")
+	require.True(t, ok, "expected mode field in schema, got %#v", schema)
 	enumValues, ok := modeField["enum"].([]any)
-	if !ok {
-		t.Fatalf("expected enum values for mode field, got %#v", modeField["enum"])
-	}
-	if len(enumValues) != 2 || enumValues[0] != "one" || enumValues[1] != "two" {
-		t.Fatalf("unexpected enum values %#v", enumValues)
-	}
+	require.True(t, ok, "expected enum values for mode field, got %#v", modeField["enum"])
+	require.Equal(t, []any{"one", "two"}, enumValues, "unexpected enum values")
 	description, _ := modeField["description"].(string)
-	if !strings.Contains(description, "Query execution mode.") {
-		t.Fatalf("expected enum type description, got %#v", description)
-	}
-	if !strings.Contains(description, `Possible enum values:`) {
-		t.Fatalf("expected enum values section, got %#v", description)
-	}
-	if !strings.Contains(description, `Use mode one.`) || !strings.Contains(description, `Use mode two.`) {
-		t.Fatalf("expected enum value comments in description, got %#v", description)
-	}
+	require.Contains(t, description, "Query execution mode.", "expected enum type description")
+	require.Contains(t, description, `Possible enum values:`, "expected enum values section")
+	require.Contains(t, description, `Use mode one.`, "expected enum value comments in description")
+	require.Contains(t, description, `Use mode two.`, "expected enum value comments in description")
 }
 
 func TestBuildNamedTypeSchemaSupportsUnexportedRootTypes(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -205,21 +162,16 @@ type settings struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchema(loadRes, "fixture/pkg/models", "settings")
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
-	if _, ok := testNestedMap(schema, "properties", "name"); !ok {
-		t.Fatalf("expected name property in schema, got %#v", schema)
-	}
+	require.NoError(t, err, "schema build failed")
+	_, ok := testutil.NestedMap(schema, "properties", "name")
+	require.True(t, ok, "expected name property in schema, got %#v", schema)
 }
 
 func TestBuildNamedTypeSchemaSuppressesSectionHeaderFieldComments(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -242,34 +194,22 @@ type Settings struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchema(loadRes, "fixture/pkg/models", "Settings")
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
+	require.NoError(t, err, "schema build failed")
 
-	allowedHostsField, ok := testNestedMap(schema, "properties", "allowedHosts")
-	if !ok {
-		t.Fatalf("expected allowedHosts property, got %#v", schema)
-	}
-	if _, ok := allowedHostsField["description"]; ok {
-		t.Fatalf("expected section header comment to be suppressed, got %#v", allowedHostsField["description"])
-	}
+	allowedHostsField, ok := testutil.NestedMap(schema, "properties", "allowedHosts")
+	require.True(t, ok, "expected allowedHosts property, got %#v", schema)
+	require.NotContains(t, allowedHostsField, "description", "expected section header comment to be suppressed")
 
-	keepCookiesField, ok := testNestedMap(schema, "properties", "keepCookies")
-	if !ok {
-		t.Fatalf("expected keepCookies property, got %#v", schema)
-	}
-	if keepCookiesField["description"] != "Human readable explanation for cookies." {
-		t.Fatalf("expected useful field description to remain, got %#v", keepCookiesField["description"])
-	}
+	keepCookiesField, ok := testutil.NestedMap(schema, "properties", "keepCookies")
+	require.True(t, ok, "expected keepCookies property, got %#v", schema)
+	require.Equal(t, "Human readable explanation for cookies.", keepCookiesField["description"], "expected useful field description to remain")
 }
 
 func TestBuildNamedTypeSchemaWithOptionsRequiresJSONTags(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -289,32 +229,21 @@ type Settings struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchemaWithOptions(loadRes, "fixture/pkg/models", "Settings", SchemaOptions{
 		IncludeRequired: true,
 		RequireJSONTags: true,
 	})
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
+	require.NoError(t, err, "schema build failed")
 
-	properties, ok := testNestedMap(schema, "properties")
-	if !ok {
-		t.Fatalf("expected properties object, got %#v", schema)
-	}
-	if _, ok := properties["name"]; !ok {
-		t.Fatalf("expected tagged field in schema, got %#v", properties)
-	}
-	if _, ok := properties["Inputs"]; ok {
-		t.Fatalf("did not expect untagged field in schema, got %#v", properties)
-	}
+	properties, ok := testutil.NestedMap(schema, "properties")
+	require.True(t, ok, "expected properties object, got %#v", schema)
+	require.ElementsMatch(t, []string{"name"}, testutil.KeysOfMap(properties), "expected exact tagged field set")
 }
 
 func TestBuildNamedTypeSchemaSkipsDashedOmitEmptyTags(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -334,26 +263,18 @@ type Settings struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchema(loadRes, "fixture/pkg/models", "Settings")
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
+	require.NoError(t, err, "schema build failed")
 
-	properties, ok := testNestedMap(schema, "properties")
-	if !ok {
-		t.Fatalf("expected properties object, got %#v", schema)
-	}
-	if _, ok := properties["-"]; ok {
-		t.Fatalf("did not expect dashed property in schema, got %#v", properties)
-	}
+	properties, ok := testutil.NestedMap(schema, "properties")
+	require.True(t, ok, "expected properties object, got %#v", schema)
+	require.NotContains(t, properties, "-", "did not expect dashed property in schema")
 }
 
 func TestBuildNamedTypeSchemaMapsUUIDToString(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -388,29 +309,19 @@ type Query struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchema(loadRes, "fixture/pkg/models", "Query")
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
+	require.NoError(t, err, "schema build failed")
 
-	idField, ok := testNestedMap(schema, "properties", "id")
-	if !ok {
-		t.Fatalf("expected id field in schema, got %#v", schema)
-	}
-	if idField["type"] != "string" {
-		t.Fatalf("expected uuid field to render as string, got %#v", idField)
-	}
-	if idField["format"] != "uuid" {
-		t.Fatalf("expected uuid format, got %#v", idField)
-	}
+	idField, ok := testutil.NestedMap(schema, "properties", "id")
+	require.True(t, ok, "expected id field in schema, got %#v", schema)
+	require.Equal(t, stringSchemaType, idField["type"], "expected uuid field to render as string")
+	require.Equal(t, "uuid", idField["format"], "expected uuid format")
 }
 
 func TestBuildNamedTypeSchemaWithOptionsCanEnableRequired(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -432,40 +343,26 @@ type Query struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchemaWithOptions(loadRes, "fixture/pkg/models", "Query", SchemaOptions{
 		IncludeRequired: true,
 	})
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
+	require.NoError(t, err, "schema build failed")
 
 	required, ok := testStringSlice(schema["required"])
-	if !ok {
-		t.Fatalf("expected required list, got %#v", schema["required"])
-	}
-	if strings.Join(required, ",") != "logs,queryType" {
-		t.Fatalf("unexpected required list: %#v", required)
-	}
+	require.True(t, ok, "expected required list, got %#v", schema["required"])
+	require.Equal(t, "logs,queryType", strings.Join(required, ","), "unexpected required list")
 
-	logsField, ok := testNestedMap(schema, "properties", "logs")
-	if !ok {
-		t.Fatalf("expected logs field in schema, got %#v", schema)
-	}
+	logsField, ok := testutil.NestedMap(schema, "properties", "logs")
+	require.True(t, ok, "expected logs field in schema, got %#v", schema)
 	logsRequired, ok := testStringSlice(logsField["required"])
-	if !ok {
-		t.Fatalf("expected nested required list, got %#v", logsField["required"])
-	}
-	if strings.Join(logsRequired, ",") != "query" {
-		t.Fatalf("unexpected nested required list: %#v", logsRequired)
-	}
+	require.True(t, ok, "expected nested required list, got %#v", logsField["required"])
+	require.Equal(t, "query", strings.Join(logsRequired, ","), "unexpected nested required list")
 }
 
 func TestBuildNamedTypeSchemaWithOptionsLowerCasesUntaggedQueryFields(t *testing.T) {
-	dir := writeFixtureModule(t, map[string]string{
+	dir := testutil.WriteFixtureModule(t, map[string]string{
 		"go.mod": `
 module fixture
 
@@ -486,62 +383,16 @@ type Query struct {
 		Dir:      dir,
 		Patterns: []string{"./..."},
 	})
-	if err != nil {
-		t.Fatalf("load failed: %v", err)
-	}
+	require.NoError(t, err, "load failed")
 
 	schema, err := BuildNamedTypeSchemaWithOptions(loadRes, "fixture/pkg/models", "Query", SchemaOptions{
 		LowerCamelUntaggedFields: true,
 	})
-	if err != nil {
-		t.Fatalf("schema build failed: %v", err)
-	}
+	require.NoError(t, err, "schema build failed")
 
-	properties, ok := testNestedMap(schema, "properties")
-	if !ok {
-		t.Fatalf("expected properties object, got %#v", schema)
-	}
-	if _, ok := properties["maxDataPoints"]; !ok {
-		t.Fatalf("expected lower camel maxDataPoints property, got %#v", properties)
-	}
-	if _, ok := properties["query"]; !ok {
-		t.Fatalf("expected lower camel query property, got %#v", properties)
-	}
-	if _, ok := properties["apiKey"]; !ok {
-		t.Fatalf("expected acronym-aware apiKey property, got %#v", properties)
-	}
-}
-
-func writeFixtureModule(t *testing.T, files map[string]string) string {
-	t.Helper()
-
-	dir := t.TempDir()
-	for name, content := range files {
-		fullPath := filepath.Join(dir, name)
-		if err := os.MkdirAll(filepath.Dir(fullPath), 0o755); err != nil {
-			t.Fatalf("mkdir failed for %s: %v", fullPath, err)
-		}
-		if err := os.WriteFile(fullPath, []byte(strings.TrimLeft(content, "\n")), 0o644); err != nil {
-			t.Fatalf("write failed for %s: %v", fullPath, err)
-		}
-	}
-
-	return dir
-}
-
-func testNestedMap(value map[string]any, keys ...string) (map[string]any, bool) {
-	current := value
-	for _, key := range keys {
-		next, ok := current[key]
-		if !ok {
-			return nil, false
-		}
-		current, ok = next.(map[string]any)
-		if !ok {
-			return nil, false
-		}
-	}
-	return current, true
+	properties, ok := testutil.NestedMap(schema, "properties")
+	require.True(t, ok, "expected properties object, got %#v", schema)
+	require.ElementsMatch(t, []string{"maxDataPoints", "query", "apiKey"}, testutil.KeysOfMap(properties), "expected exact lower camel property set")
 }
 
 func testStringSlice(value any) ([]string, bool) {
