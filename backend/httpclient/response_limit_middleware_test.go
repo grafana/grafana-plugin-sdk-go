@@ -32,7 +32,7 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		{name: "invalid env var ignored", limit: 0, envLimit: "-1", expectedBodyLength: 5, expectedBody: "dummy"},
 		{name: "zero env var ignored", limit: 0, envLimit: "0", expectedBodyLength: 5, expectedBody: "dummy"},
 		// grafana config (context) priority
-		{name: "grafana config wins over env var", limit: 0, ctxLimit: ptr(int64(3)), envLimit: "1000000", expectedBodyLength: 1, expectedBody: "d", expectErr: true},
+		{name: "grafana config wins over env var", limit: 0, ctxLimit: ptr(int64(3)), envLimit: "1000000", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
 		{name: "grafana config 0 disables even when env var is set", limit: 0, ctxLimit: ptr(int64(0)), envLimit: "3", expectedBodyLength: 5, expectedBody: "dummy"},
 		{name: "no limit when nothing is set", limit: 0, expectedBodyLength: 5, expectedBody: "dummy"},
 	}
