@@ -38,6 +38,7 @@ type QueryTypeDefinitionSpec struct {
 	Schema JSONSchema `json:"schema"`
 
 	// Example queries
+	// NOTE, the examples may be loaded from a parallel structure
 	Examples []QueryExample `json:"examples"`
 
 	// Changelog defines the changed from the previous version
@@ -51,7 +52,7 @@ func (QueryTypeDefinitionSpec) OpenAPIModelName() string {
 }
 
 type QueryExample struct {
-	// Version identifier or empty if only one exists
+	// The example display name (shows up in swagger)
 	Name string `json:"name"`
 
 	// Optionally explain why the example is interesting

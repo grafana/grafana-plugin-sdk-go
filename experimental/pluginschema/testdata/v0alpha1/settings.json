@@ -1,0 +1,33 @@
+{
+  "spec": {
+    "description": "Test data does not require any explicit configuration",
+    "required": [
+      "title"
+    ],
+    "properties": {
+      "title": {
+        "description": "display name",
+        "type": "string"
+      },
+      "url": {
+        "description": "not used",
+        "type": "string"
+      }
+    },
+    "additionalProperties": false,
+    "example": {
+      "url": "http://xxxx"
+    }
+  },
+  "secureValues": [
+    {
+      "key": "aaa",
+      "description": "describe aaa",
+      "required": true
+    },
+    {
+      "key": "bbb",
+      "description": "describe bbb"
+    }
+  ]
+}
