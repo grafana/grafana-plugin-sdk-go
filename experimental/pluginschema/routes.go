@@ -25,12 +25,16 @@ func (r *Routes) Register(path string, props spec3.PathProps) {
 // Make sure the paths start with registered values
 func (r *Routes) AssertPrefixes(prefix ...string) error {
 	for k := range r.Paths {
+		found := false
 		for _, p := range prefix {
 			if strings.HasPrefix(k, p) {
-				continue
+				found = true
+				break
 			}
 		}
-		return fmt.Errorf("invalid path: %s, must start with: %v", k, prefix)
+		if !found {
+			return fmt.Errorf("invalid path: %s, must start with: %v", k, prefix)
+		}
 	}
 	return nil
 }
