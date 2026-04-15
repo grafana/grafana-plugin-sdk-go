@@ -17,7 +17,7 @@ type SchemaProvider interface {
 	GetSettingsExamples(apiVersion string) (*SettingsExamples, error)
 
 	// Valid for both DataSources and Apps
-	GetRoutes(apiVersion string) (*RouteOpenAPI, error)
+	GetRoutes(apiVersion string) (*Routes, error)
 
 	// Only valid for datasources
 	// NOTE: this requires passing in the QueryTypeList because the real runtime value
@@ -57,12 +57,12 @@ func (p *fsSpecProvider) GetSettingsExamples(apiVersion string) (*SettingsExampl
 }
 
 // GetOpenAPI implements [SpecProvider].
-func (p *fsSpecProvider) GetRoutes(apiVersion string) (*RouteOpenAPI, error) {
+func (p *fsSpecProvider) GetRoutes(apiVersion string) (*Routes, error) {
 	raw, err := p.getYAMLorJSON(apiVersion, "routes")
 	if err != nil || len(raw) == 0 {
 		return nil, err
 	}
-	v := &RouteOpenAPI{}
+	v := &Routes{}
 	err = Load(raw, &v)
 	return v, err
 }
