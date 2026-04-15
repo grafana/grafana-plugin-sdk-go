@@ -83,13 +83,13 @@ func (p *fsSpecProvider) GetQueryTypes(apiVersion string, queryTypes any) (bool,
 	}
 
 	// Attach any examples to the requested type
-	raw, err = p.getYAMLorJSON(apiVersion, "query.examples")
+	ex, err := p.getYAMLorJSON(apiVersion, "query.examples")
 	if err != nil {
 		return false, err
 	}
-	if len(raw) > 0 {
+	if len(ex) > 0 {
 		examples := &QueryExamples{}
-		if err = Load(raw, examples); err != nil {
+		if err = Load(ex, examples); err != nil {
 			return false, err
 		}
 
