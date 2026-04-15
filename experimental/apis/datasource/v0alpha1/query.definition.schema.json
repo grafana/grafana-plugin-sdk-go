@@ -36,7 +36,7 @@
         "properties": {
           "name": {
             "type": "string",
-            "description": "Version identifier or empty if only one exists"
+            "description": "The example display name (shows up in swagger)"
           },
           "description": {
             "type": "string",
@@ -49,10 +49,14 @@
           }
         },
         "additionalProperties": false,
-        "type": "object"
+        "type": "object",
+        "required": [
+          "name",
+          "saveModel"
+        ]
       },
       "type": "array",
-      "description": "Examples (include a wrapper) ideally a template!"
+      "description": "Example queries\nNOTE, the examples may be loaded from a parallel structure"
     },
     "changelog": {
       "items": {
