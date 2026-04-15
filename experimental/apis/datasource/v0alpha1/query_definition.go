@@ -6,9 +6,9 @@ import (
 
 // QueryTypeDefinition is a kubernetes shaped object that represents a single query definition
 type QueryTypeDefinition struct {
-	ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta `json:"metadata"`
 
-	Spec QueryTypeDefinitionSpec `json:"spec,omitempty"`
+	Spec QueryTypeDefinitionSpec `json:"spec"`
 }
 
 // QueryTypeDefinitionList is a kubernetes shaped object that represents a list of query types
@@ -16,7 +16,7 @@ type QueryTypeDefinition struct {
 // exist they must be clearly specified with distinct discriminator field+value pairs
 type QueryTypeDefinitionList struct {
 	TypeMeta   `json:",inline"`
-	ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta `json:"metadata"`
 
 	Items []QueryTypeDefinition `json:"items"`
 }

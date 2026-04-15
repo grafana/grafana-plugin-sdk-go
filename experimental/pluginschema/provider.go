@@ -25,8 +25,11 @@ type SchemaProvider interface {
 	GetQueryTypes(apiVersion string, queryTypes any) (bool, error)
 }
 
-func NewSchemaProvider(fsys fs.FS, prefix string) SchemaProvider {
-	return &fsSpecProvider{fs: fsys, prefix: prefix}
+func NewSchemaProvider(fss fs.FS, prefix string) SchemaProvider {
+	if prefix != "" && !strings.HasSuffix(prefix, "/") {
+		panic("the prefix must be a folder path ending with /")
+	}
+	return &fsSpecProvider{fs: fss, prefix: prefix}
 }
 
 type fsSpecProvider struct {

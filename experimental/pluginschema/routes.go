@@ -29,8 +29,8 @@ func (r *Routes) AssertPrefixes(prefix ...string) error {
 			if strings.HasPrefix(k, p) {
 				continue
 			}
-			return fmt.Errorf("invalid path: %s, must start with [%v]", k, prefix)
 		}
+		return fmt.Errorf("invalid path: %s, must start with: %v", k, prefix)
 	}
 	return nil
 }
