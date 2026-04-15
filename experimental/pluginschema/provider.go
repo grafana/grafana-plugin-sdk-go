@@ -6,8 +6,6 @@ import (
 	"io/fs"
 	"strings"
 
-	"sigs.k8s.io/yaml"
-
 	dsV0 "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 )
 
@@ -65,7 +63,7 @@ func (p *fsSpecProvider) GetRoutes(apiVersion string) (*RouteOpenAPI, error) {
 		return nil, err
 	}
 	v := &RouteOpenAPI{}
-	err = yaml.Unmarshal(raw, &v)
+	err = Load(raw, &v)
 	return v, err
 }
 
@@ -76,7 +74,10 @@ func (p *fsSpecProvider) GetQueryTypes(apiVersion string, queryTypes any) (bool,
 	if err != nil || len(raw) == 0 {
 		return false, err
 	}
-	err = yaml.Unmarshal(raw, queryTypes)
+	err = Load(raw, queryTypes)
+	if err != nil {
+		return false, err
+	}
 
 	// Attach any examples to the requested type
 	raw, err = p.getYAMLorJSON(apiVersion, "query.examples")
@@ -91,7 +92,7 @@ func (p *fsSpecProvider) GetQueryTypes(apiVersion string, queryTypes any) (bool,
 
 		// HACK -- for now we will explicitly convert
 		types := &dsV0.QueryTypeDefinitionList{}
-		if err = yaml.Unmarshal(raw, queryTypes); err != nil {
+		if err = Load(raw, queryTypes); err != nil {
 			return false, fmt.Errorf("unable to read as QueryTypeDefinitionList %w", err)
 		}
 		lookup := make(map[string]int, len(types.Items))
@@ -109,7 +110,7 @@ func (p *fsSpecProvider) GetQueryTypes(apiVersion string, queryTypes any) (bool,
 		// replace the raw value with one that has examples
 		raw, err = ToYAML(types)
 		if err == nil {
-			err = yaml.Unmarshal(raw, queryTypes)
+			err = Load(raw, queryTypes)
 		}
 	}
 
