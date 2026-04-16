@@ -137,6 +137,8 @@ func isNotExists(err error) bool {
 
 // Update the schema, failing tests if there are any changes
 func UpdateSchema(t *testing.T, s *PluginSchema, dir string) {
+	t.Helper()
+
 	require.NotEmpty(t, s.APIVersion)
 	provider := NewSchemaProvider(os.DirFS(dir), "")
 	current, err := provider.Get(s.APIVersion)
