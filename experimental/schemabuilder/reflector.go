@@ -14,8 +14,6 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/kube-openapi/pkg/validation/strfmt"
-	"k8s.io/kube-openapi/pkg/validation/validate"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
@@ -29,6 +27,7 @@ type Builder struct {
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
 	query     []sdkapi.QueryTypeDefinition
+	examples  sdkapi.QueryExamples
 }
 
 type CodePaths struct {
@@ -59,19 +58,6 @@ type QueryTypeInfo struct {
 	Discriminators []sdkapi.DiscriminatorFieldValue
 	// Raw GO type used for reflection
 	GoType reflect.Type
-	// Add sample queries
-	Examples []sdkapi.QueryExample
-}
-
-type SettingTypeInfo struct {
-	// The management name
-	Name string
-	// Optional discriminators
-	Discriminators []sdkapi.DiscriminatorFieldValue
-	// Raw GO type used for reflection
-	GoType reflect.Type
-	// Map[string]string
-	SecureGoType reflect.Type
 }
 
 func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
@@ -87,18 +73,18 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 		}
 	}
 	customMapper := map[reflect.Type]*jsonschema.Schema{
-		reflect.TypeOf(data.Frame{}): {
+		reflect.TypeFor[data.Frame](): {
 			Type: "object",
 			Extras: map[string]any{
 				"x-grafana-type": "data.DataFrame",
 			},
 			AdditionalProperties: jsonschema.TrueSchema,
 		},
-		reflect.TypeOf(sdkapi.Unstructured{}): {
+		reflect.TypeFor[sdkapi.Unstructured](): {
 			Type:                 "object",
 			AdditionalProperties: jsonschema.TrueSchema,
 		},
-		reflect.TypeOf(sdkapi.JSONSchema{}): {
+		reflect.TypeFor[sdkapi.JSONSchema](): {
 			Type: "object",
 			Ref:  draft04,
 		},
@@ -151,7 +137,7 @@ func (b *Builder) Reflector() *jsonschema.Reflector {
 	return b.reflector
 }
 
-func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
+func (b *Builder) AddQueries(inputs []QueryTypeInfo) error {
 	for _, info := range inputs {
 		schema := b.reflector.ReflectFromType(info.GoType)
 		if schema == nil {
@@ -192,9 +178,21 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 				Schema: sdkapi.JSONSchema{
 					Spec: spec,
 				},
-				Examples: info.Examples,
 			},
 		})
+	}
+	return nil
+}
+
+func (b *Builder) AddExamples(inputs []sdkapi.QueryExample) error {
+	for _, v := range inputs {
+		if v.Name == "" {
+			return fmt.Errorf("missing name for example query: %v", v)
+		}
+		if v.SaveModel.IsZero() {
+			return fmt.Errorf("missing save model example query: %v", v)
+		}
+		b.examples.Examples = append(b.examples.Examples, v)
 	}
 	return nil
 }
@@ -203,10 +201,10 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 // When placed in `static/schema/query.types.json` folder of a plugin distribution,
 // it can be used to advertise various query types
 // If the spec contents have changed, the test will fail (but still update the output)
-func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.QueryTypeDefinitionList {
+func (b *Builder) UpdateQueryTypes(t *testing.T, apiVersion, outdir string) sdkapi.QueryTypeDefinitionList {
 	t.Helper()
 
-	outfile := filepath.Join(outdir, "query.types.json")
+	outfile := filepath.Join(outdir, apiVersion, "query.types.json")
 	now := time.Now().UTC()
 	rv := fmt.Sprintf("%d", now.UnixMilli())
 
@@ -254,77 +252,23 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 	}
 	maybeUpdateFile(t, outfile, defs, body)
 
-	// Update the query save model schema
-	//------------------------------------
-	outfile = filepath.Join(outdir, "query.panel.schema.json")
-	schema, err := GetQuerySchema(QuerySchemaOptions{
-		PluginID:   b.opts.PluginID,
-		QueryTypes: defs.Items,
-		Mode:       SchemaTypePanelModel,
-	})
-	require.NoError(t, err)
-
-	body, _ = os.ReadFile(outfile) // #nosec G304 // #nosec G304
-	maybeUpdateFile(t, outfile, schema, body)
-
-	panel := pseudoPanel{
-		Type: "table",
+	if len(b.examples.Examples) > 0 {
+		outfile = filepath.Join(outdir, apiVersion, "query.examples.json")
+		body, _ := os.ReadFile(outfile) // #nosec G304
+		maybeUpdateFile(t, outfile, b.examples, body)
 	}
-	panel.Targets = examplePanelTargets(&sdkapi.DataSourceRef{
-		Type: b.opts.PluginID[0],
-		UID:  "TheUID",
-	}, defs)
-
-	outfile = filepath.Join(outdir, "query.panel.example.json")
-	body, _ = os.ReadFile(outfile) // #nosec G304 // #nosec G304
-	maybeUpdateFile(t, outfile, panel, body)
-
-	// Update the request payload schema
-	//------------------------------------
-	outfile = filepath.Join(outdir, "query.request.schema.json")
-	schema, err = GetQuerySchema(QuerySchemaOptions{
-		PluginID:   b.opts.PluginID,
-		QueryTypes: defs.Items,
-		Mode:       SchemaTypeQueryRequest,
-	})
-	require.NoError(t, err)
-
-	body, _ = os.ReadFile(outfile) // #nosec G304
-	maybeUpdateFile(t, outfile, schema, body)
-
-	request := exampleRequest(defs)
-	outfile = filepath.Join(outdir, "query.request.example.json")
-	body, _ = os.ReadFile(outfile) // #nosec G304
-	maybeUpdateFile(t, outfile, request, body)
-
-	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
-	result := validator.Validate(request)
-	if result.HasErrorsOrWarnings() {
-		for _, err := range result.Errors {
-			assert.NoError(t, err)
-		}
-		for _, err := range result.Warnings {
-			assert.NoError(t, err, "warning")
-		}
-
-		body, err = json.MarshalIndent(result, "", "  ")
-		require.NoError(t, err)
-		fmt.Printf("Validation: %s\n", string(body))
-		require.Fail(t, "validation failed")
-	}
-	require.True(t, result.MatchCount > 0, "must have some rules")
 	return defs
 }
 
-func maybeUpdateFile(t *testing.T, outfile string, value any, body []byte) {
+func maybeUpdateFile(t *testing.T, outfile string, value any, existing []byte) {
 	t.Helper()
 
 	out, err := json.MarshalIndent(value, "", "  ")
 	require.NoError(t, err)
 
 	update := false
-	if err == nil {
-		if !assert.JSONEq(t, string(out), string(body)) {
+	if err == nil && len(existing) > 0 {
+		if !assert.JSONEq(t, string(existing), string(out)) {
 			update = true
 		}
 	} else {

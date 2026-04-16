@@ -1,0 +1,29 @@
+{
+  "examples": [
+    {
+      "name": "constant addition",
+      "queryType": "math",
+      "saveModel": {
+        "expression": "$A + 11"
+      }
+    },
+    {
+      "name": "math with two queries",
+      "queryType": "math",
+      "saveModel": {
+        "expression": "$A - $B"
+      }
+    },
+    {
+      "name": "get max value",
+      "queryType": "reduce",
+      "saveModel": {
+        "expression": "$A",
+        "reducer": "max",
+        "settings": {
+          "mode": "dropNN"
+        }
+      }
+    }
+  ]
+}

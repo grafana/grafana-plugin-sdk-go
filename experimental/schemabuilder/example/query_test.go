@@ -18,51 +18,46 @@ func TestQueryTypeDefinitions(t *testing.T) {
 			CodePath:    "./",
 		}},
 		Enums: []reflect.Type{
-			reflect.TypeOf(ReducerSum),     // pick an example value (not the root)
-			reflect.TypeOf(ReduceModeDrop), // pick an example value (not the root)
+			reflect.TypeFor[ReducerID](),
+			reflect.TypeFor[ReduceMode](),
 		},
 	})
 	require.NoError(t, err)
-	err = builder.AddQueries(schemabuilder.QueryTypeInfo{
+	err = builder.AddQueries([]schemabuilder.QueryTypeInfo{{
 		Discriminators: data.NewDiscriminators("queryType", QueryTypeMath),
-		GoType:         reflect.TypeOf(&MathQuery{}),
-		Examples: []data.QueryExample{
-			{
-				Name: "constant addition",
-				SaveModel: data.AsUnstructured(MathQuery{
-					Expression: "$A + 11",
-				}),
-			},
-			{
-				Name: "math with two queries",
-				SaveModel: data.AsUnstructured(MathQuery{
-					Expression: "$A - $B",
-				}),
-			},
-		},
-	},
-		schemabuilder.QueryTypeInfo{
-			Discriminators: data.NewDiscriminators("queryType", QueryTypeReduce),
-			GoType:         reflect.TypeOf(&ReduceQuery{}),
-			Examples: []data.QueryExample{
-				{
-					Name: "get max value",
-					SaveModel: data.AsUnstructured(ReduceQuery{
-						Expression: "$A",
-						Reducer:    ReducerMax,
-						Settings: ReduceSettings{
-							Mode: ReduceModeDrop,
-						},
-					}),
-				},
-			},
-		},
-		schemabuilder.QueryTypeInfo{
-			Discriminators: data.NewDiscriminators("queryType", QueryTypeResample),
-			GoType:         reflect.TypeOf(&ResampleQuery{}),
-			Examples:       []data.QueryExample{},
-		})
+		GoType:         reflect.TypeFor[*MathQuery](),
+	}, {
+		Discriminators: data.NewDiscriminators("queryType", QueryTypeReduce),
+		GoType:         reflect.TypeFor[*ReduceQuery](),
+	}, {
+		Discriminators: data.NewDiscriminators("queryType", QueryTypeResample),
+		GoType:         reflect.TypeFor[*ResampleQuery](),
+	}})
 	require.NoError(t, err)
 
-	_ = builder.UpdateQueryDefinition(t, "./")
+	err = builder.AddExamples([]data.QueryExample{{
+		Name:      "constant addition",
+		QueryType: string(QueryTypeMath),
+		SaveModel: data.AsUnstructured(MathQuery{
+			Expression: "$A + 11",
+		}),
+	}, {
+		Name:      "math with two queries",
+		QueryType: string(QueryTypeMath),
+		SaveModel: data.AsUnstructured(MathQuery{
+			Expression: "$A - $B",
+		}),
+	}, {
+		Name:      "get max value",
+		QueryType: string(QueryTypeReduce),
+		SaveModel: data.AsUnstructured(ReduceQuery{
+			Expression: "$A",
+			Reducer:    ReducerMax,
+			Settings: ReduceSettings{
+				Mode: ReduceModeDrop,
+			},
+		}),
+	}})
+
+	_ = builder.UpdateQueryTypes(t, "v0alpha1", "../testdata")
 }

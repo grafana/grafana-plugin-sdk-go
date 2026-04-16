@@ -37,10 +37,6 @@ type QueryTypeDefinitionSpec struct {
 	// In the case where the save model is different, we must also specify a save model
 	Schema JSONSchema `json:"schema"`
 
-	// Example queries
-	// NOTE, the examples may be loaded from a parallel structure
-	Examples []QueryExample `json:"examples"`
-
 	// Changelog defines the changed from the previous version
 	// All changes in the same version *must* be backwards compatible
 	// Only notable changes will be shown here, for the full version history see git!
@@ -49,17 +45,6 @@ type QueryTypeDefinitionSpec struct {
 
 func (QueryTypeDefinitionSpec) OpenAPIModelName() string {
 	return openAPIPrefix + "QueryTypeDefinitionSpec"
-}
-
-type QueryExample struct {
-	// The example display name (shows up in swagger)
-	Name string `json:"name"`
-
-	// Optionally explain why the example is interesting
-	Description string `json:"description,omitempty"`
-
-	// An example value saved that can be saved in a dashboard
-	SaveModel Unstructured `json:"saveModel"`
 }
 
 type DiscriminatorFieldValue struct {

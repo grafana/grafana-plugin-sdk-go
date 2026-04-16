@@ -5,8 +5,6 @@ import (
 	"fmt"
 	"io/fs"
 	"strings"
-
-	dsV0 "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 )
 
 type SchemaProvider interface {
@@ -81,42 +79,6 @@ func (p *fsSpecProvider) GetQueryTypes(apiVersion string, queryTypes any) (bool,
 	if err != nil {
 		return false, err
 	}
-
-	// Attach any examples to the requested type
-	ex, err := p.getYAMLorJSON(apiVersion, "query.examples")
-	if err != nil {
-		return false, err
-	}
-	if len(ex) > 0 {
-		examples := &QueryExamples{}
-		if err = Load(ex, examples); err != nil {
-			return false, err
-		}
-
-		// HACK -- for now we will explicitly convert
-		types := &dsV0.QueryTypeDefinitionList{}
-		if err = Load(raw, queryTypes); err != nil {
-			return false, fmt.Errorf("unable to read as QueryTypeDefinitionList %w", err)
-		}
-		lookup := make(map[string]int, len(types.Items))
-		for idx, v := range types.Items {
-			lookup[v.Name] = idx
-		}
-		for _, example := range examples.Examples {
-			idx, ok := lookup[example.QueryType]
-			if !ok {
-				return false, fmt.Errorf("unknown query type")
-			}
-			types.Items[idx].Spec.Examples = append(types.Items[idx].Spec.Examples, example.Example)
-		}
-
-		// replace the raw value with one that has examples
-		raw, err = ToYAML(types)
-		if err == nil {
-			err = Load(raw, queryTypes)
-		}
-	}
-
 	return true, err
 }
 

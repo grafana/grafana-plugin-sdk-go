@@ -31,33 +31,6 @@
       "type": "object",
       "description": "The query schema represents the properties that can be sent to the API\nIn many cases, this may be the same properties that are saved in a dashboard\nIn the case where the save model is different, we must also specify a save model"
     },
-    "examples": {
-      "items": {
-        "properties": {
-          "name": {
-            "type": "string",
-            "description": "The example display name (shows up in swagger)"
-          },
-          "description": {
-            "type": "string",
-            "description": "Optionally explain why the example is interesting"
-          },
-          "saveModel": {
-            "additionalProperties": true,
-            "type": "object",
-            "description": "An example value saved that can be saved in a dashboard"
-          }
-        },
-        "additionalProperties": false,
-        "type": "object",
-        "required": [
-          "name",
-          "saveModel"
-        ]
-      },
-      "type": "array",
-      "description": "Example queries\nNOTE, the examples may be loaded from a parallel structure"
-    },
     "changelog": {
       "items": {
         "type": "string"
@@ -69,7 +42,6 @@
   "additionalProperties": false,
   "type": "object",
   "required": [
-    "schema",
-    "examples"
+    "schema"
   ]
 }
