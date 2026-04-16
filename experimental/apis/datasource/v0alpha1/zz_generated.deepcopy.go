@@ -128,13 +128,6 @@ func (in *QueryTypeDefinitionSpec) DeepCopyInto(out *QueryTypeDefinitionSpec) {
 		copy(*out, *in)
 	}
 	in.Schema.DeepCopyInto(&out.Schema)
-	if in.Examples != nil {
-		in, out := &in.Examples, &out.Examples
-		*out = make([]QueryExample, len(*in))
-		for i := range *in {
-			(*in)[i].DeepCopyInto(&(*out)[i])
-		}
-	}
 	if in.Changelog != nil {
 		in, out := &in.Changelog, &out.Changelog
 		*out = make([]string, len(*in))

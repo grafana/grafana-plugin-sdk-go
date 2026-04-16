@@ -6,9 +6,9 @@ import (
 
 // QueryTypeDefinition is a kubernetes shaped object that represents a single query definition
 type QueryTypeDefinition struct {
-	ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta `json:"metadata"`
 
-	Spec QueryTypeDefinitionSpec `json:"spec,omitempty"`
+	Spec QueryTypeDefinitionSpec `json:"spec"`
 }
 
 // QueryTypeDefinitionList is a kubernetes shaped object that represents a list of query types
@@ -16,7 +16,7 @@ type QueryTypeDefinition struct {
 // exist they must be clearly specified with distinct discriminator field+value pairs
 type QueryTypeDefinitionList struct {
 	TypeMeta   `json:",inline"`
-	ObjectMeta `json:"metadata,omitempty"`
+	ObjectMeta `json:"metadata"`
 
 	Items []QueryTypeDefinition `json:"items"`
 }
@@ -37,9 +37,6 @@ type QueryTypeDefinitionSpec struct {
 	// In the case where the save model is different, we must also specify a save model
 	Schema JSONSchema `json:"schema"`
 
-	// Examples (include a wrapper) ideally a template!
-	Examples []QueryExample `json:"examples"`
-
 	// Changelog defines the changed from the previous version
 	// All changes in the same version *must* be backwards compatible
 	// Only notable changes will be shown here, for the full version history see git!
@@ -48,17 +45,6 @@ type QueryTypeDefinitionSpec struct {
 
 func (QueryTypeDefinitionSpec) OpenAPIModelName() string {
 	return openAPIPrefix + "QueryTypeDefinitionSpec"
-}
-
-type QueryExample struct {
-	// Version identifier or empty if only one exists
-	Name string `json:"name,omitempty"`
-
-	// Optionally explain why the example is interesting
-	Description string `json:"description,omitempty"`
-
-	// An example value saved that can be saved in a dashboard
-	SaveModel Unstructured `json:"saveModel,omitempty"`
 }
 
 type DiscriminatorFieldValue struct {
