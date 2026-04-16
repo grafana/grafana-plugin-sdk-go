@@ -58,6 +58,7 @@ func TestQueryTypeDefinitions(t *testing.T) {
 			},
 		}),
 	}})
+	require.NoError(t, err)
 
 	_ = builder.UpdateQueryTypes(t, "v0alpha1", "../testdata")
 }
