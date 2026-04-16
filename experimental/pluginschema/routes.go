@@ -9,6 +9,7 @@ import (
 
 // Holds the OpenAPI routes required for /resources and /proxy
 type Routes struct {
+	// Routes added below the configured plugin
 	Paths map[string]*spec3.Path `json:"paths"`
 
 	// Components includes additional re-usable elements that can be referenced in the full spec

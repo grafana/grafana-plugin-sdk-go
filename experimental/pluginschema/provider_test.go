@@ -1,94 +1,70 @@
 package pluginschema_test
 
 import (
-	"io/fs"
 	"testing"
-	"testing/fstest"
 
-	"github.com/stretchr/testify/require"
+	"k8s.io/kube-openapi/pkg/spec3"
+	"k8s.io/kube-openapi/pkg/validation/spec"
 
-	dsV0 "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema"
 )
 
-func TestNewProviderFromFS_LoadsYAML(t *testing.T) {
-	type settingsExpect struct {
-		found       bool
-		err         string
-		description string
-	}
-	type queryExpect struct {
-		found bool
-		err   string
-	}
+func TestProvider(t *testing.T) {
+	pluginschema.UpdateSchema(t, newSchema(), "./testdata")
+}
 
-	testCases := []struct {
-		name     string
-		fs       fs.FS
-		version  string
-		settings settingsExpect
-		query    queryExpect
-	}{{
-		name:    "not found",
-		version: "v0alpha1",
-		fs:      fstest.MapFS{},
-	}, {
-		name:    "yaml with spec description",
-		version: "v0alpha1",
-		settings: settingsExpect{
-			found:       true,
-			description: "Test",
-		},
-		fs: fstest.MapFS{
-			"v0alpha1/settings.yaml": &fstest.MapFile{
-				Data: []byte(`spec:
-    description: Test`),
+func newSchema() *pluginschema.PluginSchema {
+	schema := pluginschema.PluginSchema{
+		APIVersion: "v0alpha1",
+		SettingsSchema: &pluginschema.Settings{
+			Spec: &spec.Schema{
+				SchemaProps: spec.SchemaProps{
+					Description: "Test data does not require any explicit configuration",
+				},
+			},
+
+			SecureValues: []pluginschema.SecureValueInfo{
+				{
+					Key:         "aaa",
+					Description: "describe aaa",
+					Required:    true,
+				}, {
+					Key:         "bbb",
+					Description: "describe bbb",
+				},
 			},
 		},
-	}, {
-		name:    "json with spec description",
-		version: "v0alpha1",
-		settings: settingsExpect{
-			found:       true,
-			description: "Test",
+
+		SettingsExamples: &pluginschema.SettingsExamples{
+			Examples: map[string]*spec3.Example{
+				"": &spec3.Example{
+					ExampleProps: spec3.ExampleProps{
+						Description: "a sample",
+						Value:       "invalid",
+					},
+				},
+			},
 		},
-		fs: fstest.MapFS{
-			"v0alpha1/settings.json": &fstest.MapFile{
-				Data: []byte(`{"spec": { "description": "Test"}}`),
-			}},
-	}}
 
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			provider := pluginschema.NewSchemaProvider(tc.fs, "")
-
-			// Check OpenAPI
-			//---------------
-			ext, err := provider.GetSettings(tc.version)
-			if tc.settings.err != "" {
-				require.ErrorContains(t, err, tc.settings.err)
-			} else {
-				require.NoError(t, err)
-			}
-			if tc.settings.found {
-				require.NotNil(t, ext, "expect something")
-			} else {
-				require.Nil(t, ext, "expect nothing")
-			}
-			if tc.settings.description != "" {
-				require.Equal(t, tc.settings.description, ext.Spec.Description)
-			}
-
-			// Check QueryTypes
-			//-----------------
-			qt := &dsV0.QueryTypeDefinitionList{}
-			found, err := provider.GetQueryTypes(tc.version, qt)
-			if tc.query.err != "" {
-				require.ErrorContains(t, err, tc.query.err)
-			} else {
-				require.NoError(t, err)
-			}
-			require.Equal(t, tc.query.found, found)
-		})
+		Routes: &pluginschema.Routes{},
 	}
+	p := schema.SettingsSchema.Spec
+	p.Required = []string{"title"}
+	p.AdditionalProperties = &spec.SchemaOrBool{Allows: false}
+	p.Properties = map[string]spec.Schema{
+		"title": *spec.StringProperty().WithDescription("display name"),
+		"url":   *spec.StringProperty().WithDescription("not used"),
+	}
+	p.Example = map[string]any{
+		"url": "http://xxxx",
+	}
+
+	schema.Routes.Register("/hello", spec3.PathProps{
+		Description: "world",
+	})
+	schema.Routes.Register("/routes", spec3.PathProps{
+		Description: "more",
+	})
+
+	return &schema
 }

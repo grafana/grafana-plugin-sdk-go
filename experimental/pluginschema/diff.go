@@ -4,7 +4,6 @@ import (
 	"github.com/go-openapi/jsonreference"
 	"github.com/go-openapi/spec"
 	"github.com/google/go-cmp/cmp"
-	"github.com/google/go-cmp/cmp/cmpopts"
 	"sigs.k8s.io/yaml"
 )
 
@@ -20,9 +19,17 @@ func ToYAML(obj any) ([]byte, error) {
 
 // Diff returns a human-readable report of the differences between two settings objects
 func Diff(x, y any) string {
+	if x == nil {
+		if y == nil {
+			return ""
+		}
+		return "y is a new value"
+	} else if y == nil {
+		return "y does not exist"
+	}
+
 	return cmp.Diff(x, y,
 		alwaysCompareNumeric,
-		cmpopts.EquateApprox(0.001, 0.0001),
 		cmp.Comparer(func(a, b spec.Ref) bool {
 			return a.String() == b.String()
 		}),

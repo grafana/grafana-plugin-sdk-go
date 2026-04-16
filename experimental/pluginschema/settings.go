@@ -1,6 +1,7 @@
 package pluginschema
 
 import (
+	"k8s.io/kube-openapi/pkg/spec3"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 )
 
@@ -13,6 +14,11 @@ type Settings struct {
 
 	// Define which secure values are required
 	SecureValues []SecureValueInfo `json:"secureValues,omitempty"`
+}
+
+type SettingsExamples struct {
+	// Example configuration added to the swagger documentation
+	Examples map[string]*spec3.Example `json:"examples"`
 }
 
 type SecureValueInfo struct {
