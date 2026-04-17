@@ -27,6 +27,12 @@ type GrafanaCfg = config.GrafanaCfg
 type FeatureToggles = config.FeatureToggles
 
 // Deprecated: Use the config package instead.
+type Proxy = config.Proxy
+
+// Deprecated: Use the config package instead.
+type SQLConfig = config.SQLConfig
+
+// Deprecated: Use the config package instead.
 func NewGrafanaCfg(m map[string]string) *config.GrafanaCfg {
 	return config.NewGrafanaCfg(m)
 }
