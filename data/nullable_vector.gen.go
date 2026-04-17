@@ -80,12 +80,27 @@ func (v *nullableUint8Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableUint8Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableUint8Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableUint8Vector) Extend(i int) {
 	*v = append(*v, make([]*uint8, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableUint8Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*uint8, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableUint8Vector) Insert(i int, val interface{}) {
@@ -182,12 +197,27 @@ func (v *nullableUint16Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableUint16Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableUint16Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableUint16Vector) Extend(i int) {
 	*v = append(*v, make([]*uint16, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableUint16Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*uint16, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableUint16Vector) Insert(i int, val interface{}) {
@@ -284,12 +314,27 @@ func (v *nullableUint32Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableUint32Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableUint32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableUint32Vector) Extend(i int) {
 	*v = append(*v, make([]*uint32, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableUint32Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*uint32, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableUint32Vector) Insert(i int, val interface{}) {
@@ -386,12 +431,27 @@ func (v *nullableUint64Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableUint64Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableUint64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableUint64Vector) Extend(i int) {
 	*v = append(*v, make([]*uint64, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableUint64Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*uint64, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableUint64Vector) Insert(i int, val interface{}) {
@@ -488,12 +548,27 @@ func (v *nullableInt8Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableInt8Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableInt8Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableInt8Vector) Extend(i int) {
 	*v = append(*v, make([]*int8, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableInt8Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*int8, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableInt8Vector) Insert(i int, val interface{}) {
@@ -590,12 +665,27 @@ func (v *nullableInt16Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableInt16Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableInt16Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableInt16Vector) Extend(i int) {
 	*v = append(*v, make([]*int16, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableInt16Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*int16, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableInt16Vector) Insert(i int, val interface{}) {
@@ -692,12 +782,27 @@ func (v *nullableInt32Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableInt32Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableInt32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableInt32Vector) Extend(i int) {
 	*v = append(*v, make([]*int32, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableInt32Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*int32, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableInt32Vector) Insert(i int, val interface{}) {
@@ -794,12 +899,27 @@ func (v *nullableInt64Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableInt64Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableInt64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableInt64Vector) Extend(i int) {
 	*v = append(*v, make([]*int64, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableInt64Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*int64, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableInt64Vector) Insert(i int, val interface{}) {
@@ -896,12 +1016,27 @@ func (v *nullableFloat32Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableFloat32Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableFloat32Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableFloat32Vector) Extend(i int) {
 	*v = append(*v, make([]*float32, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableFloat32Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*float32, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableFloat32Vector) Insert(i int, val interface{}) {
@@ -998,12 +1133,27 @@ func (v *nullableFloat64Vector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableFloat64Vector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableFloat64Vector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableFloat64Vector) Extend(i int) {
 	*v = append(*v, make([]*float64, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableFloat64Vector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*float64, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableFloat64Vector) Insert(i int, val interface{}) {
@@ -1100,12 +1250,27 @@ func (v *nullableStringVector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableStringVector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableStringVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableStringVector) Extend(i int) {
 	*v = append(*v, make([]*string, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableStringVector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*string, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableStringVector) Insert(i int, val interface{}) {
@@ -1202,12 +1367,27 @@ func (v *nullableBoolVector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableBoolVector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableBoolVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableBoolVector) Extend(i int) {
 	*v = append(*v, make([]*bool, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableBoolVector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*bool, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableBoolVector) Insert(i int, val interface{}) {
@@ -1304,12 +1484,27 @@ func (v *nullableTimeTimeVector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableTimeTimeVector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableTimeTimeVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableTimeTimeVector) Extend(i int) {
 	*v = append(*v, make([]*time.Time, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableTimeTimeVector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*time.Time, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableTimeTimeVector) Insert(i int, val interface{}) {
@@ -1406,12 +1601,27 @@ func (v *nullableJsonRawMessageVector) Len() int {
 	return len(*v)
 }
 
+func (v *nullableJsonRawMessageVector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullableJsonRawMessageVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullableJsonRawMessageVector) Extend(i int) {
 	*v = append(*v, make([]*json.RawMessage, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullableJsonRawMessageVector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*json.RawMessage, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullableJsonRawMessageVector) Insert(i int, val interface{}) {
