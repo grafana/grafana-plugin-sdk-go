@@ -1,4 +1,4 @@
-package builder
+package schemabuilder
 
 import (
 	_ "embed"
@@ -28,11 +28,11 @@ func TestWriteQuerySchema(t *testing.T) {
 		ScanCode: []CodePaths{
 			{
 				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/apis",
-				CodePath:    "../../apis/datasource/v0alpha1",
+				CodePath:    "../apis/datasource/v0alpha1",
 			},
 			{
 				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/data",
-				CodePath:    "../../../data",
+				CodePath:    "../../data",
 			},
 		},
 		Enums: []reflect.Type{
@@ -52,7 +52,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	// // Hide this old property
 	query.Properties.Delete("datasourceId")
 
-	outfile := "../../apis/datasource/v0alpha1/query.schema.json"
+	outfile := "../apis/datasource/v0alpha1/query.schema.json"
 	old, _ := os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
@@ -70,7 +70,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	updateEnumDescriptions(query)
 	query.ID = ""
 	query.Version = "" // $schema is not allowed in openapi v2's SchemaObject
-	outfile = "../../apis/datasource/v0alpha1/query.definition.schema.json"
+	outfile = "../apis/datasource/v0alpha1/query.definition.schema.json"
 	old, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 

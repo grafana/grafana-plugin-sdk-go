@@ -1,4 +1,4 @@
-package builder
+package schemabuilder
 
 import (
 	"github.com/go-openapi/jsonreference"

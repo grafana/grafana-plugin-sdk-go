@@ -1,4 +1,4 @@
-package builder
+package schemabuilder
 
 import (
 	"encoding/json"
