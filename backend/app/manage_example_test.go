@@ -49,7 +49,7 @@ func (ds *testApp) CheckHealth(_ context.Context, _ *backend.CheckHealthRequest)
 	if err != nil {
 		return nil, err
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 	return nil, nil
 }
 
@@ -60,7 +60,7 @@ func (ds *testApp) handleTest(rw http.ResponseWriter, _ *http.Request) {
 		rw.WriteHeader(500)
 		return
 	}
-	resp.Body.Close()
+	_ = resp.Body.Close()
 }
 
 func Example() {

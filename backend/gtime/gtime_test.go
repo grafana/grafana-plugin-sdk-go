@@ -203,7 +203,8 @@ func TestRoundInterval(t *testing.T) {
 		{input: 600000000 * time.Millisecond, expected: time.Millisecond * 86400000},
 		{input: 1500000000 * time.Millisecond, expected: time.Millisecond * 604800000},
 		{input: 3500000000 * time.Millisecond, expected: time.Millisecond * 2592000000},
-		{input: 40000000000 * time.Millisecond, expected: time.Millisecond * 31536000000},
+		{input: 40000000000 * time.Millisecond, expected: time.Millisecond * 2592000000},
+		{input: 70000000000 * time.Millisecond, expected: time.Millisecond * 31536000000},
 	}
 	for i, tc := range tcs {
 		t.Run(fmt.Sprintf("testcase %d", i), func(t *testing.T) {

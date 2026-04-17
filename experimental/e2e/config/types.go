@@ -49,7 +49,7 @@ func LoadConfig(path string) (*Config, error) {
 		path = "proxy.json"
 	}
 
-	raw, err := os.ReadFile(path)
+	raw, err := os.ReadFile(path) // #nosec G304
 	if err != nil {
 		return &Config{
 			Storage: []*StorageConfig{{

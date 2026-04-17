@@ -103,11 +103,11 @@ func (l Labels) Fingerprint() Fingerprint {
 	for _, name := range keys {
 		// avoid an extra allocation of a slice of bytes using unsafe conversions.
 		// The internal structure of the string is almost like a slice (except capacity).
-		_, _ = h.Write(unsafe.Slice(unsafe.StringData(name), len(name)))
+		_, _ = h.Write(unsafe.Slice(unsafe.StringData(name), len(name))) // #nosec G103
 		// ignore errors returned by Write method because fnv never returns them.
 		_, _ = h.Write([]byte{255}) // use an invalid utf-8 sequence as separator
 		value := l[name]
-		_, _ = h.Write(unsafe.Slice(unsafe.StringData(value), len(value)))
+		_, _ = h.Write(unsafe.Slice(unsafe.StringData(value), len(value))) // #nosec G103
 		_, _ = h.Write([]byte{255})
 	}
 	return Fingerprint(h.Sum64())

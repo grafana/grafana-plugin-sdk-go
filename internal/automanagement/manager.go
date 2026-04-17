@@ -50,6 +50,17 @@ func (m *Manager) QueryData(ctx context.Context, req *backend.QueryDataRequest) 
 	return nil, status.Error(codes.Unimplemented, "unimplemented")
 }
 
+func (m *Manager) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) error {
+	h, err := m.Get(ctx, req.PluginContext)
+	if err != nil {
+		return err
+	}
+	if ds, ok := h.(backend.QueryChunkedDataHandler); ok {
+		return ds.QueryChunkedData(ctx, req, w)
+	}
+	return status.Error(codes.Unimplemented, "unimplemented")
+}
+
 func (m *Manager) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 	h, err := m.Get(ctx, req.PluginContext)
 	if err != nil {

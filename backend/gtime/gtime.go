@@ -313,7 +313,7 @@ func RoundInterval(interval time.Duration) time.Duration {
 	case interval <= 1814400000*time.Millisecond:
 		return time.Millisecond * 604800000 // 1w
 	// 2y
-	case interval < 3628800000*time.Millisecond:
+	case interval < 63072000000*time.Millisecond:
 		return time.Millisecond * 2592000000 // 30d
 	default:
 		return time.Millisecond * 31536000000 // 1y

@@ -88,11 +88,11 @@ func errorAfterUpdate(err error, path string, dr *backend.DataResponse, updateFi
 const binaryDataSection = "====== TEST DATA RESPONSE (arrow base64) ======"
 
 func readGoldenFile(path string) (*backend.DataResponse, error) {
-	file, err := os.Open(path)
+	file, err := os.Open(path) // #nosec G304
 	if err != nil {
 		return nil, err
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	dr := &backend.DataResponse{}
 
@@ -233,7 +233,7 @@ func CheckGoldenJSONResponse(t *testing.T, dir string, name string, dr *backend.
 }
 
 func readGoldenJSONFile(fpath string) (string, error) {
-	raw, err := os.ReadFile(fpath)
+	raw, err := os.ReadFile(fpath) // #nosec G304
 	if err != nil {
 		return "", err
 	}

@@ -18,6 +18,9 @@ func GenerateManifest() (string, error) {
 		if err != nil {
 			return err
 		}
+		if d.IsDir() && path == "node_modules" {
+			return fs.SkipDir
+		}
 		if !d.IsDir() && strings.HasSuffix(path, ".go") {
 			hash, err := hashFileContent(path)
 			if err != nil {
@@ -37,7 +40,7 @@ func hashFileContent(path string) (string, error) {
 	// Handle hashing big files.
 	// Source: https://stackoverflow.com/q/60328216/1722542
 
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304
 	if err != nil {
 		return "", err
 	}

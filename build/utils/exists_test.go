@@ -17,7 +17,7 @@ func TestExists_NonExistent(t *testing.T) {
 func TestExists_Existent(t *testing.T) {
 	f, err := os.CreateTemp("", "")
 	require.NoError(t, err)
-	defer os.Remove(f.Name())
+	defer func() { _ = os.Remove(f.Name()) }()
 
 	exists, err := Exists(f.Name())
 	require.NoError(t, err)

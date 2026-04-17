@@ -4,9 +4,10 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/trace"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 )
 
 // NewTracingMiddleware creates a new HandlerMiddleware that will
@@ -29,7 +30,7 @@ func (m *tracingMiddleware) traceRequest(ctx context.Context, pCtx PluginContext
 	endpoint := EndpointFromContext(ctx)
 	ctx, span := m.tracer.Start(ctx, fmt.Sprintf("sdk.%s", endpoint), trace.WithAttributes(
 		attribute.String("plugin_id", pCtx.PluginID),
-		attribute.Int64("org_id", pCtx.OrgID),
+		attribute.Int64("org_id", pCtx.OrgID), // nolint:staticcheck
 	))
 	defer span.End()
 

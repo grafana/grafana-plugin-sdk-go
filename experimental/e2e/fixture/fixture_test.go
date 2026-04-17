@@ -15,7 +15,7 @@ import (
 func TestFixtureAdd(t *testing.T) {
 	t.Run("should add request and response to fixture store", func(t *testing.T) {
 		req, res := setupFixture()
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		store := newFakeStorage()
 		f := fixture.NewFixture(store)
 		require.Equal(t, 0, len(f.Entries()))
@@ -28,7 +28,7 @@ func TestFixtureAdd(t *testing.T) {
 
 	t.Run("should apply request processor", func(t *testing.T) {
 		req, res := setupFixture()
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		store := newFakeStorage()
 		f := fixture.NewFixture(store)
 		f.WithRequestProcessor(func(req *http.Request) *http.Request {
@@ -44,7 +44,7 @@ func TestFixtureAdd(t *testing.T) {
 
 	t.Run("should apply response processor", func(t *testing.T) {
 		req, res := setupFixture()
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		store := newFakeStorage()
 		f := fixture.NewFixture(store)
 		f.WithResponseProcessor(func(res *http.Response) *http.Response {
@@ -60,8 +60,8 @@ func TestFixtureAdd(t *testing.T) {
 
 	t.Run("should apply response processor", func(t *testing.T) {
 		req, res := setupFixture()
-		defer req.Body.Close()
-		defer res.Body.Close()
+		defer func() { _ = req.Body.Close() }()
+		defer func() { _ = res.Body.Close() }()
 		store := newFakeStorage()
 		f := fixture.NewFixture(store)
 		f.WithResponseProcessor(func(res *http.Response) *http.Response {
@@ -82,7 +82,7 @@ func TestFixtureMatch(t *testing.T) {
 		_ = store.Load()
 		f := fixture.NewFixture(store)
 		res := f.Match(store.entries[0].Request)
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		require.Equal(t, 200, res.StatusCode)
 	})
 
@@ -103,9 +103,9 @@ func TestFixtureMatch(t *testing.T) {
 			_ = store.Load()
 			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			res := f.Match(req)
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			require.NotNil(t, res)
 		})
 
@@ -114,7 +114,7 @@ func TestFixtureMatch(t *testing.T) {
 			_ = store.Load()
 			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			req.Method = "PUT"
 			res := f.Match(req) //nolint:bodyclose
 			require.Nil(t, res)
@@ -125,7 +125,7 @@ func TestFixtureMatch(t *testing.T) {
 			_ = store.Load()
 			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			req.URL.Path = "/foo"
 			res := f.Match(req) //nolint:bodyclose
 			require.Nil(t, res)
@@ -136,7 +136,7 @@ func TestFixtureMatch(t *testing.T) {
 			_ = store.Load()
 			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			req.Header.Set("Content-Type", "plain/text")
 			res := f.Match(req) //nolint:bodyclose
 			require.Nil(t, res)
@@ -147,7 +147,7 @@ func TestFixtureMatch(t *testing.T) {
 			_ = store.Load()
 			f := fixture.NewFixture(store)
 			req, resp := setupFixture()
-			defer resp.Body.Close()
+			defer func() { _ = resp.Body.Close() }()
 			req.Body = io.NopCloser(bytes.NewBufferString("foo"))
 			res := f.Match(req) // nolint:bodyclose
 			require.Nil(t, res)
@@ -158,7 +158,7 @@ func TestFixtureMatch(t *testing.T) {
 func TestDefaultProcessRequest(t *testing.T) {
 	t.Run("should remove headers as expected", func(t *testing.T) {
 		req, resp := setupFixture()
-		defer resp.Body.Close()
+		defer func() { _ = resp.Body.Close() }()
 		req.Header.Add("Date", "foo")
 		req.Header.Add("Coookie", "bar")
 		req.Header.Add("Authorization", "baz")
@@ -226,7 +226,7 @@ func (s *fakeStorage) Add(req *http.Request, res *http.Response) error {
 func (s *fakeStorage) Delete(req *http.Request) bool {
 	for i, entry := range s.Entries() {
 		if res := entry.Match(req); res != nil {
-			res.Body.Close()
+			_ = res.Body.Close()
 			s.entries = append(s.entries[:i], s.entries[i+1:]...)
 			return true
 		}
@@ -237,7 +237,7 @@ func (s *fakeStorage) Delete(req *http.Request) bool {
 func (s *fakeStorage) Load() error {
 	s.entries = make([]*storage.Entry, 0)
 	req, res := setupFixture()
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	s.entries = append(s.entries, &storage.Entry{
 		Request:  req,
 		Response: res,

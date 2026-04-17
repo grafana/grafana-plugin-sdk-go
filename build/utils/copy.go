@@ -62,13 +62,13 @@ func CopyFile(src, dst string) error {
 // destination file exists, all it's contents will be replaced by the contents
 // of the source file.
 func copyFileContents(src, dst string) (err error) {
-	in, err := os.Open(src)
+	in, err := os.Open(src) // #nosec G304
 	if err != nil {
 		return
 	}
-	defer in.Close()
+	defer func() { _ = in.Close() }()
 
-	out, err := os.Create(dst)
+	out, err := os.Create(dst) // #nosec G304
 	if err != nil {
 		return
 	}
@@ -98,7 +98,7 @@ func CopyRecursive(src, dst string) error {
 
 	if _, err := os.Stat(dst); os.IsNotExist(err) {
 		if err := os.MkdirAll(dst, sfi.Mode()); err != nil {
-			return fmt.Errorf("failed to create directory %q: %s", dst, err)
+			return fmt.Errorf("failed to create directory %q: %w", dst, err)
 		}
 	}
 

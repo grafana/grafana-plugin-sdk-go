@@ -81,7 +81,7 @@ func (rt *RoundTripper) RoundTrip(req *http.Request) (*http.Response, error) {
 		}
 	}
 	if fileName != "" {
-		b, err := os.ReadFile(fileName)
+		b, err := os.ReadFile(fileName) // #nosec G304
 		if err != nil {
 			return res, fmt.Errorf("error reading mock response file %s", fileName)
 		}

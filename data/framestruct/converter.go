@@ -251,7 +251,7 @@ func (c *converter) convertField(v reflect.Value, fieldName string) (interface{}
 	if converter, exists := c.converters[fieldName]; exists {
 		valueOf, err := converter(v.Interface())
 		if err != nil {
-			return nil, fmt.Errorf("field conversion error %s: %s", fieldName, err)
+			return nil, fmt.Errorf("field conversion error %s: %w", fieldName, err)
 		}
 		return valueOf, nil
 	}

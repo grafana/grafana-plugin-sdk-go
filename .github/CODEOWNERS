@@ -4,5 +4,5 @@
 * @grafana/plugins-platform-backend
 /backend/gtime @grafana/oss-big-tent @grafana/observability-logs @grafana/partner-datasources
 /data/ @grafana/grafana-datasources-core-services
-/experimental/apis/data @grafana/grafana-datasources-core-services
+/experimental/apis/datasource @grafana/grafana-datasources-core-services
 /data/sqlutil @grafana/oss-big-tent

@@ -90,12 +90,12 @@ func Test_getExecutableNameForPlugin(t *testing.T) {
 
 	for pluginID, executable := range plugins {
 		pluginRootDir := filepath.Join(rootDir, pluginID)
-		err := os.MkdirAll(pluginRootDir, os.ModePerm)
+		err := os.MkdirAll(pluginRootDir, os.ModePerm) // #nosec G301
 		require.NoError(t, err)
-		f, err := os.Create(filepath.Join(pluginRootDir, "plugin.json"))
+		f, err := os.Create(filepath.Join(pluginRootDir, "plugin.json")) // #nosec G301 G304
 		require.NoError(t, err)
 
-		_, err = f.WriteString(fmt.Sprintf(`{"executable": %q}`, executable))
+		_, err = fmt.Fprintf(f, `{"executable": %q}`, executable)
 		require.NoError(t, err)
 		err = f.Close()
 		require.NoError(t, err)
@@ -153,7 +153,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "darwin"},
 				PluginJSONPath: filepath.Join(tmpDir, "foobar-datasource"),
 			},
-			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foo_darwin_arm64"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build.buildInfoJSON={.*}'", "./pkg"},
+			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foo_darwin_arm64"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
 			wantErr:      assert.NoError,
 		},
 		{
@@ -174,7 +174,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "darwin"},
 				PluginJSONPath: filepath.Join(tmpDir, "foobar-app"),
 			},
-			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, defaultNestedDataSourcePath, "gpx_foo_darwin_arm64"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build.buildInfoJSON={.*}'", "./pkg"},
+			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, defaultNestedDataSourcePath, "gpx_foo_darwin_arm64"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
 			wantErr:      assert.NoError,
 		},
 		{
@@ -195,7 +195,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "amd64", "GOOS": "windows"},
 				PluginJSONPath: filepath.Join(tmpDir, "foobarbaz-app"),
 			},
-			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foobarbaz_windows_amd64.exe"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build.buildInfoJSON={.*}'", "./pkg"},
+			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foobarbaz_windows_amd64.exe"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
 			wantErr:      assert.NoError,
 		},
 	}
@@ -220,12 +220,12 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 
 func createPluginJSON(t *testing.T, pluginDir string, executable string) {
 	t.Helper()
-	err := os.MkdirAll(pluginDir, os.ModePerm)
+	err := os.MkdirAll(pluginDir, os.ModePerm) // #nosec G301
 	require.NoError(t, err)
-	f, err := os.Create(filepath.Join(pluginDir, "plugin.json"))
+	f, err := os.Create(filepath.Join(pluginDir, "plugin.json")) // #nosec G301 G304
 	require.NoError(t, err)
 
-	_, err = f.WriteString(fmt.Sprintf(`{"executable": %q}`, executable))
+	_, err = fmt.Fprintf(f, `{"executable": %q}`, executable)
 	require.NoError(t, err)
 	err = f.Close()
 	require.NoError(t, err)

@@ -17,6 +17,7 @@ const (
 	SQLMaxConnLifetimeSecondsDefault = config.SQLMaxConnLifetimeSecondsDefault
 	ResponseLimit                    = config.ResponseLimit
 	AppClientSecret                  = config.AppClientSecret
+	LiveClientQueueMaxSize           = config.LiveClientQueueMaxSize
 )
 
 // Deprecated: Use the config package instead.

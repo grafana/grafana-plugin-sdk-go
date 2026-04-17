@@ -1,3 +1,4 @@
+//nolint:unused
 package data
 
 import (
@@ -48,7 +49,7 @@ func (v *genVector) Len() int {
 }
 
 func (v *genVector) CopyAt(i int) interface{} {
-	var g gen
+	var g gen //nolint:staticcheck // S1021: generated code pattern
 	g = (*v)[i]
 	return g
 }
@@ -63,6 +64,11 @@ func (v *genVector) Type() FieldType {
 
 func (v *genVector) Extend(i int) {
 	*v = append(*v, make([]gen, i)...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *genVector) Clear() {
+	*v = (*v)[:0]
 }
 
 func (v *genVector) Insert(i int, val interface{}) {

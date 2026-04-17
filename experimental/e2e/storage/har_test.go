@@ -20,7 +20,7 @@ func TestHARStorage(t *testing.T) {
 			require.NoError(t, err)
 			s := storage.NewHARStorage(f.Name())
 			req, res := exampleRequest()
-			defer res.Body.Close()
+			defer func() { _ = res.Body.Close() }()
 			err = s.Add(req, res)
 			require.NoError(t, err)
 			require.Len(t, s.Entries(), 1)
@@ -38,7 +38,7 @@ func TestHARStorage(t *testing.T) {
 			two := storage.NewHARStorage(f.Name())
 			go func() {
 				req, res := exampleRequest()
-				defer res.Body.Close()
+				defer func() { _ = res.Body.Close() }()
 				req.URL.Path = "/one"
 				e := one.Add(req, res)
 				require.NoError(t, e)
@@ -46,7 +46,7 @@ func TestHARStorage(t *testing.T) {
 			}()
 			go func() {
 				req, res := exampleRequest()
-				defer res.Body.Close()
+				defer func() { _ = res.Body.Close() }()
 				req.URL.Path = "/two"
 				err = two.Add(req, res)
 				require.NoError(t, err)

@@ -55,6 +55,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			"tlsClientKey":      "tlsClientKey3",
 			"sigV4AccessKey":    "sigV4AccessKey4",
 			"sigV4SecretKey":    "sigV4SecretKey5",
+			"sigV4SessionToken": "sigV4SessionToken6",
 			"httpHeaderValue1":  "SecretOne",
 			"httpHeaderValue2":  "SecretTwo",
 			"httpHeaderValue3":  "SecretThree",
@@ -99,6 +100,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			SigV4Profile:          "ghi",
 			SigV4AccessKey:        "sigV4AccessKey4",
 			SigV4SecretKey:        "sigV4SecretKey5",
+			SigV4SessionToken:     "sigV4SessionToken6",
 			JSONData:              jsonMap,
 			SecureJSONData:        secureData,
 		}, s)
@@ -141,6 +143,7 @@ func TestParseHTTPSettings(t *testing.T) {
 					Profile:       "ghi",
 					AccessKey:     "sigV4AccessKey4",
 					SecretKey:     "sigV4SecretKey5",
+					SessionToken:  "sigV4SessionToken6",
 				},
 				Labels:        map[string]string{},
 				CustomOptions: map[string]interface{}{},

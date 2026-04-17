@@ -7,8 +7,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 func TestInstanceManager(t *testing.T) {
@@ -21,13 +22,13 @@ func TestInstanceManager(t *testing.T) {
 	}
 
 	tip := &testInstanceProvider{}
-	im := New(tip)
+	im := newInstanceManager(tip, time.Millisecond)
 
 	t.Run("When getting instance should create a new instance", func(t *testing.T) {
 		instance, err := im.Get(ctx, pCtx)
 		require.NoError(t, err)
 		require.NotNil(t, instance)
-		require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID)
+		require.Equal(t, pCtx.OrgID, instance.(*testInstance).orgID) // nolint:staticcheck
 		require.Equal(t, pCtx.AppInstanceSettings.Updated, instance.(*testInstance).updated)
 
 		t.Run("When getting instance should return same instance", func(t *testing.T) {
@@ -43,17 +44,12 @@ func TestInstanceManager(t *testing.T) {
 					Updated: time.Now(),
 				},
 			}
-			origDisposeTTL := disposeTTL
-			disposeTTL = time.Millisecond
-			t.Cleanup(func() {
-				disposeTTL = origDisposeTTL
-			})
 			newInstance, err := im.Get(ctx, pCtxUpdated)
 
 			t.Run("New instance should be created", func(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, newInstance)
-				require.Equal(t, pCtxUpdated.OrgID, newInstance.(*testInstance).orgID)
+				require.Equal(t, pCtxUpdated.OrgID, newInstance.(*testInstance).orgID) // nolint:staticcheck
 				require.Equal(t, pCtxUpdated.AppInstanceSettings.Updated, newInstance.(*testInstance).updated)
 			})
 
@@ -110,12 +106,6 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 	})
 
 	t.Run("Check possible race condition issues when re-creating instance on settings update", func(t *testing.T) {
-		origDisposeTTL := disposeTTL
-		disposeTTL = time.Millisecond
-		t.Cleanup(func() {
-			disposeTTL = origDisposeTTL
-		})
-
 		ctx := context.Background()
 		initialPCtx := backend.PluginContext{
 			OrgID: 1,
@@ -124,7 +114,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 			},
 		}
 		tip := &testInstanceProvider{}
-		im := New(tip)
+		im := newInstanceManager(tip, time.Millisecond)
 		// Creating initial instance with old contexts
 		instanceToDispose, _ := im.Get(ctx, initialPCtx)
 
@@ -234,7 +224,7 @@ type testInstanceProvider struct {
 }
 
 func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (interface{}, error) {
-	return pluginContext.OrgID, nil
+	return pluginContext.OrgID, nil // nolint:staticcheck
 }
 
 func (tip *testInstanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
@@ -249,7 +239,7 @@ func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext ba
 	}
 
 	ti := &testInstance{
-		orgID:   pluginContext.OrgID,
+		orgID:   pluginContext.OrgID, // nolint:staticcheck
 		updated: pluginContext.AppInstanceSettings.Updated,
 	}
 	ti.wg.Add(1)

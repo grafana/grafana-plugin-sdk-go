@@ -23,7 +23,9 @@ type TestPluginClient struct {
 }
 
 func newTestPluginClient(addr string) (*TestPluginClient, error) {
-	c, err := grpc.NewClient(addr, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	c, err := grpc.NewClient(addr,
+		grpc.WithTransportCredentials(insecure.NewCredentials()),
+		grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(16*1024*1024)))
 	if err != nil {
 		return nil, err
 	}
@@ -45,6 +47,32 @@ func (p *TestPluginClient) QueryData(ctx context.Context, r *backend.QueryDataRe
 	}
 
 	return backend.FromProto().QueryDataResponse(resp)
+}
+
+func (p *TestPluginClient) QueryChunkedData(ctx context.Context, r *backend.QueryChunkedDataRequest) (*backend.QueryDataResponse, error) {
+	req := backend.ToProto().QueryChunkedDataRequest(r)
+
+	stream, err := p.DataClient.QueryChunkedData(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+
+	accumulate := AccumulateArrow
+	if r.Format == backend.DataFrameFormat_JSON {
+		accumulate = AccumulateJSON
+	}
+
+	return accumulate(func(yield func(*pluginv2.QueryChunkedDataResponse, error) bool) {
+		for {
+			chunk, err := stream.Recv()
+			if errors.Is(err, io.EOF) {
+				return // Stream closed properly
+			}
+			if !yield(chunk, err) {
+				return // Caller stopped iterating
+			}
+		}
+	})
 }
 
 func (p *TestPluginClient) CheckHealth(ctx context.Context, r *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {

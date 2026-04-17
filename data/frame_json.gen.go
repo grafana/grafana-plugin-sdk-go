@@ -1,3 +1,4 @@
+//nolint:unused,unparam
 package data
 
 import (
@@ -591,7 +592,6 @@ func writeArrowDataFloat32(stream *jsoniter.Stream, col arrow.Array) *fieldEntit
 		} else {
 			stream.WriteFloat32(val)
 		}
-
 	}
 	stream.WriteArrayEnd()
 	return entities
@@ -669,7 +669,6 @@ func writeArrowDataFloat64(stream *jsoniter.Stream, col arrow.Array) *fieldEntit
 		} else {
 			stream.WriteFloat64(val)
 		}
-
 	}
 	stream.WriteArrayEnd()
 	return entities

@@ -54,6 +54,6 @@ func callGet(ctx context.Context, m DS) error {
 	if err != nil {
 		return err
 	}
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	return nil
 }

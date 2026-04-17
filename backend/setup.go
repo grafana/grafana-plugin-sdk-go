@@ -15,7 +15,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
-	"github.com/grafana/grafana-plugin-sdk-go/build"
+	"github.com/grafana/grafana-plugin-sdk-go/build/buildinfo"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tracerprovider"
 )
 
@@ -62,6 +62,7 @@ const (
 	PluginTracingSamplerRemoteURL = "GF_INSTANCE_OTLP_SAMPLER_REMOTE_URL"
 
 	// PluginVersionEnv is a constant for the GF_PLUGIN_VERSION environment variable containing the plugin's version.
+	//
 	// Deprecated: Use build.GetBuildInfo().Version instead.
 	PluginVersionEnv = "GF_PLUGIN_VERSION"
 
@@ -165,7 +166,7 @@ func getTracerCustomAttributes(pluginID string) []attribute.KeyValue {
 	// Try to get plugin version from build info
 	// If not available, fallback to environment variable
 	var pluginVersion string
-	buildInfo, err := build.GetBuildInfo()
+	buildInfo, err := buildinfo.GetBuildInfo()
 	if err != nil {
 		Logger.Debug("Failed to get build info", "error", err)
 	} else {
@@ -186,7 +187,7 @@ func getTracerCustomAttributes(pluginID string) []attribute.KeyValue {
 // SetupTracer sets up the global OTEL trace provider and tracer.
 func SetupTracer(pluginID string, tracingOpts tracing.Opts) error {
 	// Set up tracing
-	tracingCfg := getTracingConfig(build.GetBuildInfo)
+	tracingCfg := getTracingConfig(buildinfo.GetBuildInfo)
 	if tracingCfg.isEnabled() {
 		// Append custom attributes to the default ones
 		tracingOpts.CustomAttributes = append(getTracerCustomAttributes(pluginID), tracingOpts.CustomAttributes...)
@@ -244,7 +245,7 @@ func (c tracingConfig) isEnabled() bool {
 }
 
 // getTracingConfig returns a new tracingConfig based on the current environment variables.
-func getTracingConfig(buildInfoGetter build.InfoGetter) tracingConfig {
+func getTracingConfig(buildInfoGetter buildinfo.Getter) tracingConfig {
 	var otelAddr, otelPropagation, samplerRemoteURL, samplerParamString string
 	var samplerType tracerprovider.SamplerType
 	var samplerParam float64
@@ -289,7 +290,7 @@ func getTracingConfig(buildInfoGetter build.InfoGetter) tracingConfig {
 // remoteSamplerServiceName returns the service name for the remote tracing sampler.
 // It attempts to get it from the provided buildinfo getter. If unsuccessful or empty,
 // defaultRemoteSamplerServiceName is returned instead.
-func remoteSamplerServiceName(buildInfoGetter build.InfoGetter) string {
+func remoteSamplerServiceName(buildInfoGetter buildinfo.Getter) string {
 	// Use plugin id as service name, if possible. Otherwise, use a generic default value.
 	bi, err := buildInfoGetter.GetInfo()
 	if err != nil {

@@ -83,6 +83,7 @@ const (
 	FieldTypeJSON
 
 	// FieldTypeNullableJSON indicates the underlying primitive is a []*json.RawMessage.
+	//
 	// Deprecated: Use FieldTypeJSON, an array can be null anyway
 	FieldTypeNullableJSON
 

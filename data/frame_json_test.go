@@ -51,7 +51,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 		assert.FailNow(t, "wrote golden file")
 	}
 
-	b, err = os.ReadFile(goldenFile)
+	b, err = os.ReadFile(goldenFile) // #nosec G304 -- Test file is read from testdata directory
 	require.NoError(t, err)
 
 	strG := string(b)

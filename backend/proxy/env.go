@@ -61,7 +61,7 @@ func clientCfgFromEnv() *ClientCfg {
 
 	clientCert := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientCertFilePathEnvVarName); ok {
-		certPEMBlock, err := os.ReadFile(value)
+		certPEMBlock, err := os.ReadFile(value) // #nosec G304
 		if err != nil {
 			return nil
 		}
@@ -72,7 +72,7 @@ func clientCfgFromEnv() *ClientCfg {
 
 	clientKey := ""
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyClientKeyFilePathEnvVarName); ok {
-		keyPEMBlock, err := os.ReadFile(value)
+		keyPEMBlock, err := os.ReadFile(value) // #nosec G304
 		if err != nil {
 			return nil
 		}
@@ -84,7 +84,7 @@ func clientCfgFromEnv() *ClientCfg {
 	var rootCAs []string
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACertFilePathsEnvVarName); ok {
 		for _, rootCA := range strings.Split(value, " ") {
-			certPEMBlock, err := os.ReadFile(rootCA)
+			certPEMBlock, err := os.ReadFile(rootCA) // #nosec G304
 			if err != nil {
 				return nil
 			}

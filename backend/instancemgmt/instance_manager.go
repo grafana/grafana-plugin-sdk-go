@@ -18,8 +18,9 @@ var (
 		Name:      "active_instances",
 		Help:      "The number of active plugin instances",
 	})
-	disposeTTL = 5 * time.Second
 )
+
+const defaultDisposeTTL = 5 * time.Second // Time to wait before disposing an instance
 
 // Instance is a marker interface for an instance.
 type Instance interface{}
@@ -73,21 +74,31 @@ type InstanceProvider interface {
 
 // New create a new instance manager.
 func New(provider InstanceProvider) InstanceManager {
+	return newInstanceManager(provider, defaultDisposeTTL)
+}
+
+func newInstanceManager(provider InstanceProvider, disposeTTL time.Duration) *instanceManager {
 	if provider == nil {
 		panic("provider cannot be nil")
 	}
 
+	if disposeTTL <= 0 {
+		disposeTTL = defaultDisposeTTL
+	}
+
 	return &instanceManager{
-		provider: provider,
-		cache:    sync.Map{},
-		locker:   newLocker(),
+		provider:   provider,
+		cache:      sync.Map{},
+		locker:     newLocker(),
+		disposeTTL: disposeTTL,
 	}
 }
 
 type instanceManager struct {
-	locker   *locker
-	provider InstanceProvider
-	cache    sync.Map
+	locker     *locker
+	provider   InstanceProvider
+	cache      sync.Map
+	disposeTTL time.Duration
 }
 
 func (im *instanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
@@ -121,7 +132,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		}
 
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			time.AfterFunc(disposeTTL, func() {
+			time.AfterFunc(im.disposeTTL, func() {
 				disposer.Dispose()
 				activeInstances.Dec()
 			})

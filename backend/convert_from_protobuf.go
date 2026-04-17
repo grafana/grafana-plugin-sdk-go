@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"encoding/json"
 	"errors"
 	"time"
 
@@ -58,7 +59,7 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 	}
 
 	return &DataSourceInstanceSettings{
-		ID:                      proto.Id,
+		ID:                      proto.Id, // nolint:staticcheck
 		UID:                     proto.Uid,
 		Type:                    pluginID,
 		Name:                    proto.Name,
@@ -89,10 +90,11 @@ func (f ConvertFromProtobuf) UserAgent(u string) *useragent.UserAgent {
 // PluginContext converts protobuf version of a PluginContext to the SDK version.
 func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) PluginContext {
 	return PluginContext{
-		OrgID:                      proto.OrgId,
+		OrgID:                      proto.OrgId, // nolint:staticcheck
 		PluginID:                   proto.PluginId,
 		PluginVersion:              proto.PluginVersion,
 		APIVersion:                 proto.ApiVersion,
+		Namespace:                  proto.Namespace,
 		User:                       f.User(proto.User),
 		AppInstanceSettings:        f.AppInstanceSettings(proto.AppInstanceSettings),
 		DataSourceInstanceSettings: f.DataSourceInstanceSettings(proto.DataSourceInstanceSettings, proto.PluginId),
@@ -135,6 +137,7 @@ func (f ConvertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 		PluginContext: f.PluginContext(protoReq.PluginContext),
 		Headers:       protoReq.Headers,
 		Queries:       queries,
+		Format:        DataFrameFormat(protoReq.Format),
 	}
 }
 
@@ -143,21 +146,35 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 	qdr := &QueryDataResponse{
 		Responses: make(Responses, len(protoRes.Responses)),
 	}
+	var err error
 	for refID, res := range protoRes.Responses {
-		frames, err := data.UnmarshalArrowFrames(res.Frames)
-		if err != nil {
-			return nil, err
-		}
-
 		status := Status(res.Status)
 		if !status.IsValid() {
 			status = StatusUnknown
 		}
 
-		dr := DataResponse{
-			Frames: frames,
-			Status: status,
+		dr := DataResponse{Status: status}
+
+		switch res.Format {
+		case pluginv2.DataFrameFormat_ARROW:
+			dr.Frames, err = data.UnmarshalArrowFrames(res.Frames)
+			if err != nil {
+				return nil, err
+			}
+		case pluginv2.DataFrameFormat_JSON:
+			dr.Frames = make([]*data.Frame, len(res.Frames))
+			for i, b := range res.Frames {
+				var v *data.Frame
+				err = json.Unmarshal(b, &v)
+				if err != nil {
+					return nil, err
+				}
+				dr.Frames[i] = v
+			}
+		default:
+			return nil, errors.New("unknown data frame format: " + res.Format.String())
 		}
+
 		if res.Error != "" {
 			dr.Error = errors.New(res.Error)
 			dr.ErrorSource = ErrorSource(res.ErrorSource)
@@ -165,6 +182,22 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 		qdr.Responses[refID] = dr
 	}
 	return qdr, nil
+}
+
+// Experimental: QueryChunkedDataRequest converts a protobuf QueryChunkedDataRequest to the SDK version.
+// This handles the translation between wire format and SDK objects.
+func (f ConvertFromProtobuf) QueryChunkedDataRequest(protoReq *pluginv2.QueryChunkedDataRequest) *QueryChunkedDataRequest {
+	queries := make([]DataQuery, len(protoReq.Queries))
+	for i, q := range protoReq.Queries {
+		queries[i] = *f.DataQuery(q)
+	}
+
+	return &QueryChunkedDataRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Headers:       protoReq.Headers,
+		Queries:       queries,
+		Format:        DataFrameFormat(protoReq.Format),
+	}
 }
 
 // CallResourceRequest converts protobuf version of a CallResourceRequest to the SDK version.

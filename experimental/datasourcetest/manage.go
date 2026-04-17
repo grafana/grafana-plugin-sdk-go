@@ -29,10 +29,11 @@ func (p *TestPlugin) Shutdown() error {
 func Manage(instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) (TestPlugin, error) {
 	handler := automanagement.NewManager(datasource.NewInstanceManager(instanceFactory))
 	s, err := backend.TestStandaloneServe(backend.ServeOpts{
-		CheckHealthHandler:  handler,
-		CallResourceHandler: handler,
-		QueryDataHandler:    handler,
-		StreamHandler:       handler,
+		CheckHealthHandler:      handler,
+		CallResourceHandler:     handler,
+		QueryDataHandler:        handler,
+		QueryChunkedDataHandler: handler,
+		StreamHandler:           handler,
 	}, opts.Address)
 
 	if err != nil {

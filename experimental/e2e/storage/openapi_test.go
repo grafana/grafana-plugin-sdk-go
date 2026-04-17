@@ -16,7 +16,7 @@ func TestOpenAPIStorage(t *testing.T) {
 		req, err := http.NewRequest("GET", "http://example.com/versions", nil)
 		require.NoError(t, err)
 		res := s.Match(req)
-		defer res.Body.Close()
+		defer func() { _ = res.Body.Close() }()
 		require.Equal(t, http.StatusOK, res.StatusCode)
 		var respBody map[string]string
 		b, err := io.ReadAll(res.Body)

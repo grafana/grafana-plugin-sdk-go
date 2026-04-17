@@ -166,6 +166,8 @@ func (s *DataSourceInstanceSettings) GVK() GroupVersionKind {
 // Grafana organization, user and plugin instance settings.
 type PluginContext struct {
 	// OrgID is The Grafana organization identifier the request originating from.
+	//
+	// Deprecated: Use Namespace instead.
 	OrgID int64
 
 	// PluginID is the unique identifier of the plugin that the request is for.
@@ -206,6 +208,9 @@ type PluginContext struct {
 
 	// The requested API version
 	APIVersion string
+
+	// The Grafana namespace.
+	Namespace string
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {

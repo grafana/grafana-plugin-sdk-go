@@ -1,3 +1,4 @@
+//nolint:unused
 package data
 
 type nullablegenVector []*gen
@@ -47,7 +48,7 @@ func (v *nullablegenVector) CopyAt(i int) interface{} {
 		var g *gen
 		return g
 	}
-	var g gen
+	var g gen //nolint:staticcheck // S1021: generated code pattern
 	g = *(*v)[i]
 	return &g
 }
@@ -93,4 +94,9 @@ func (v *nullablegenVector) Insert(i int, val interface{}) {
 
 func (v *nullablegenVector) Delete(i int) {
 	*v = append((*v)[:i], (*v)[i+1:]...)
+}
+
+// set the length to zero, but keep the same capacity
+func (v *nullablegenVector) Clear() {
+	*v = (*v)[:0]
 }

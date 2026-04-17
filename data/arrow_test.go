@@ -335,7 +335,7 @@ func TestEncode(t *testing.T) {
 		}
 	}
 
-	want, err := os.ReadFile(goldenFile)
+	want, err := os.ReadFile(goldenFile) // #nosec G304 -- Test file is read from testdata directory
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -362,7 +362,7 @@ func TestEncode(t *testing.T) {
 
 func TestDecode(t *testing.T) {
 	goldenFile := filepath.Join("testdata", "all_types.golden.arrow")
-	b, err := os.ReadFile(goldenFile)
+	b, err := os.ReadFile(goldenFile) // #nosec G304 -- Test file is read from testdata directory
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -424,7 +424,7 @@ func TestFromRecord(t *testing.T) {
 	fd, err := os.CreateTemp("", "data-test-from-record")
 	require.NoError(t, err)
 	name := fd.Name()
-	defer os.Remove(name)
+	defer func() { _ = os.Remove(name) }()
 	n, err := fd.Write(b)
 	require.NoError(t, err)
 	require.Equal(t, len(b), n)
@@ -459,7 +459,7 @@ func TestFromRecordStringView(t *testing.T) {
 	notNull := []bool{true, true, false, true, true}
 	b.Field(0).(*array.StringViewBuilder).AppendValues(testStrings, nil)
 	b.Field(1).(*array.StringViewBuilder).AppendValues(testStrings, notNull)
-	record := b.NewRecord()
+	record := b.NewRecord() //nolint:staticcheck // SA1019: Using deprecated NewRecord() for test backwards compatibility
 	defer record.Release()
 
 	got, err := data.FromArrowRecord(record)

@@ -33,7 +33,7 @@ func NewFixture(store storage.Storage) *Fixture {
 func (f *Fixture) Add(originalReq *http.Request, originalRes *http.Response) error {
 	req := f.processRequest(originalReq)
 	res := f.processResponse(originalRes)
-	defer res.Body.Close()
+	defer func() { _ = res.Body.Close() }()
 	return f.store.Add(req, res)
 }
 

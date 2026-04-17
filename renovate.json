@@ -1,0 +1,18 @@
+{
+  "schedule": ["before 6am on the first day of the week"],
+  "packageRules": [
+    {
+      "groupName": "Upstream packages",
+      "matchPackageNames": ["golang.org/x/**"]
+    },
+    {
+      "groupName": "OpenTelemetry packages",
+      "matchPackageNames": ["go.opentelemetry.io/**"]
+    }
+  ],
+  "github-actions": { "enabled": true, "groupName": "GitHub Actions" },
+  "commitMessagePrefix": "chore(deps): ",
+  "minimumReleaseAge": "14 days",
+  "rangeStrategy": "bump",
+  "branchPrefix": "renovate/"
+}

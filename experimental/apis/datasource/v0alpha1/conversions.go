@@ -45,6 +45,36 @@ func ToDataSourceQueries(req QueryDataRequest) ([]backend.DataQuery, *DataSource
 	return queries, dsRef, nil
 }
 
+// when the time range is specified locally, per query,
+// it will appear in the JSON field of backend.DataQuery.
+// this can cause problems in certain data source plugins,
+// that expect that the `timeRange` field does not exist.
+// see https://github.com/grafana/grafana-plugin-sdk-go/issues/1419
+// for more info.
+// to improve compatibility, we remove it from the json bytes
+// NOTE: it will still be available in the `.TimeRange` field
+// of `backend.DataQuery`.
+const timeRangeKey = "timeRange"
+
+func deleteTimeRangeFromQueryJSON(data []byte) ([]byte, error) {
+	var d map[string]any
+	err := json.Unmarshal(data, &d)
+	if err != nil {
+		return nil, err
+	}
+
+	_, found := d[timeRangeKey]
+
+	if !found {
+		// we can finish here, return the original
+		return data, nil
+	}
+
+	delete(d, timeRangeKey)
+
+	return json.Marshal(d)
+}
+
 // Converts a generic query to a backend one
 func toBackendDataQuery(q DataQuery, defaultTimeRange *backend.TimeRange) (backend.DataQuery, error) {
 	var err error
@@ -65,10 +95,31 @@ func toBackendDataQuery(q DataQuery, defaultTimeRange *backend.TimeRange) (backe
 		bq.TimeRange = *defaultTimeRange
 	}
 
-	bq.JSON, err = json.Marshal(q)
+	bytes, err := json.Marshal(q)
 	if err != nil {
 		return bq, err
 	}
+
+	// we understand there is a certain inefficiency here
+	// with re-marshaling the bytes, we chose this approach
+	// for the following reasons:
+	// 1. the smallest possible change
+	// 2. the request object is small, so the performance
+	//    impact should be limited
+	// 3. we can implement faster solutions later,
+	//    as a purely internal change here, without
+	//    affecting anything.
+	//
+	// the alternative approach would be to directly
+	// serialise the v0alpha1.DataQuery structure into JSON
+	// without the timeRange field.
+	fixedBytes, err := deleteTimeRangeFromQueryJSON(bytes)
+	if err != nil {
+		return bq, err
+	}
+
+	bq.JSON = fixedBytes
+
 	if bq.MaxDataPoints == 0 {
 		bq.MaxDataPoints = 100
 	}

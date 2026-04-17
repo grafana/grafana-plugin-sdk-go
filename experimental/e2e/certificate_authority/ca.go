@@ -31,12 +31,12 @@ func GetCertificate(certPath, keyPath string) (tls.Certificate, error) {
 
 // Loads the CA key pair from the provided paths.
 func LoadKeyPair(certPath, keyPath string) ([]byte, []byte, error) {
-	cert, err := os.ReadFile(certPath)
+	cert, err := os.ReadFile(certPath) // #nosec G304
 	if err != nil {
 		return []byte{}, []byte{}, err
 	}
 
-	key, err := os.ReadFile(keyPath)
+	key, err := os.ReadFile(keyPath) // #nosec G304
 	if err != nil {
 		return []byte{}, []byte{}, err
 	}

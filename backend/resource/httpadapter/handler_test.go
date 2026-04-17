@@ -7,8 +7,9 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
 func TestHttpResourceHandler(t *testing.T) {
@@ -69,7 +70,7 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Contains(t, httpHandler.req.Header, "X-Header-In-2")
 			require.Equal(t, []string{"F"}, httpHandler.req.Header["X-Header-In-2"])
 			require.NotNil(t, httpHandler.req.Body)
-			defer httpHandler.req.Body.Close()
+			defer func() { _ = httpHandler.req.Body.Close() }()
 			actualBodyBytes, err := io.ReadAll(httpHandler.req.Body)
 			require.NoError(t, err)
 			var actualJSONMap map[string]interface{}
@@ -101,7 +102,7 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.NotNil(t, httpHandler.req)
 			actualPluginCtx := backend.PluginConfigFromContext(httpHandler.req.Context())
 			require.NotNil(t, actualPluginCtx)
-			require.Equal(t, req.PluginContext.OrgID, actualPluginCtx.OrgID)
+			require.Equal(t, req.PluginContext.OrgID, actualPluginCtx.OrgID) // nolint:staticcheck
 			require.Equal(t, req.PluginContext.PluginID, actualPluginCtx.PluginID)
 			require.NotNil(t, actualPluginCtx.DataSourceInstanceSettings)
 			require.Equal(t, req.PluginContext.DataSourceInstanceSettings.ID, actualPluginCtx.DataSourceInstanceSettings.ID)

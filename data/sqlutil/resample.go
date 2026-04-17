@@ -67,6 +67,7 @@ func getRowFillValues(f *data.Frame, tsSchema data.TimeSeriesSchema, currentTime
 // This is needed in the case of the selected query interval doesn't
 // match the intervals of the time-series field in the data.Frame and
 // therefore needs to be resampled.
+//
 // Deprecated: only used in legacy situations, for new projects
 // use dataplane-based solutions.
 func ResampleWideFrame(f *data.Frame, fillMissing *data.FillMissing, timeRange backend.TimeRange, interval time.Duration) (*data.Frame, error) {

@@ -205,7 +205,7 @@ func TestRoundTripper_RoundTrip(t *testing.T) {
 			}
 			got, err := rt.RoundTrip(tt.req)
 			if got != nil && got.Body != nil {
-				defer got.Body.Close()
+				defer func() { _ = got.Body.Close() }()
 			}
 			if tt.wantErr != nil {
 				require.NotNil(t, err)
