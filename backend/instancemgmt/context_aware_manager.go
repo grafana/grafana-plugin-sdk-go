@@ -51,3 +51,8 @@ func (c *instanceManagerWrapper) Do(ctx context.Context, pluginContext backend.P
 	manager := c.selectManager(ctx, pluginContext)
 	return manager.Do(ctx, pluginContext, fn)
 }
+
+// Provider returns the provider from the selected manager.
+func (c *instanceManagerWrapper) Provider() InstanceProvider {
+	return c.provider
+}
