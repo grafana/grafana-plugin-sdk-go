@@ -31,8 +31,8 @@ type Builder struct {
 	reflector *jsonschema.Reflector // Needed to use comments
 
 	// discovered via reflection
-	query         []sdkapi.QueryTypeDefinition
-	queryExamples sdkapi.QueryExamples
+	query    []sdkapi.QueryTypeDefinition
+	examples sdkapi.QueryExamples
 
 	// Explicitly configured
 	settingsSchema   *pluginschema.Settings
@@ -68,6 +68,8 @@ type QueryTypeInfo struct {
 	Discriminators []sdkapi.DiscriminatorFieldValue
 	// Raw GO type used for reflection
 	GoType reflect.Type
+	// Optional examples
+	Examples []sdkapi.QueryExample
 }
 
 func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
@@ -190,19 +192,15 @@ func (b *Builder) AddQueries(inputs []QueryTypeInfo) error {
 				},
 			},
 		})
-	}
-	return nil
-}
 
-func (b *Builder) AddExamples(inputs []sdkapi.QueryExample) error {
-	for _, v := range inputs {
-		if v.Name == "" {
-			return fmt.Errorf("missing name for example query: %v", v)
+		// Collect each example
+		for _, example := range info.Examples {
+			if example.Name == "" {
+				return fmt.Errorf("all examples require a name: %+v", example)
+			}
+			example.QueryType = info.Name
+			b.examples.Examples = append(b.examples.Examples, example)
 		}
-		if v.SaveModel.IsZero() {
-			return fmt.Errorf("missing save model example query: %v", v)
-		}
-		b.queryExamples.Examples = append(b.queryExamples.Examples, v)
 	}
 	return nil
 }
@@ -214,7 +212,7 @@ func (b *Builder) ConfigureSettings(v *pluginschema.Settings, examples *pluginsc
 }
 
 func (b *Builder) SetRoutes(v *pluginschema.Routes) error {
-	if v.IsZero() {
+	if v != nil && v.IsZero() {
 		v = nil
 	}
 	b.routes = v
@@ -278,10 +276,13 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 	}
 	maybeUpdateFile(t, outfile, defs, body)
 
-	if len(b.queryExamples.Examples) > 0 {
-		outfile = filepath.Join(outdir, apiVersion, "query.examples.json")
+	outfile = filepath.Join(outdir, apiVersion, "query.examples.json")
+	if len(b.examples.Examples) > 0 {
 		body, _ := os.ReadFile(outfile) // #nosec G304
-		maybeUpdateFile(t, outfile, b.queryExamples, body)
+		maybeUpdateFile(t, outfile, b.examples, body)
+	} else {
+		err = os.RemoveAll(outdir)
+		require.NoError(t, err)
 	}
 
 	// Now check the other files

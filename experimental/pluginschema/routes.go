@@ -21,7 +21,7 @@ func (r Routes) IsZero() bool {
 		return false
 	}
 	if r.Components != nil {
-		return true // go deeper?
+		return false // go deeper?
 	}
 	return true
 }

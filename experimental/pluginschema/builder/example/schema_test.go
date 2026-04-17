@@ -26,37 +26,33 @@ func TestPluginSchema(t *testing.T) {
 	err = schema.AddQueries([]builder.QueryTypeInfo{{
 		Discriminators: data.NewDiscriminators("queryType", QueryTypeMath),
 		GoType:         reflect.TypeFor[*MathQuery](),
+		Examples: []data.QueryExample{{
+			Name: "constant addition",
+			SaveModel: data.AsUnstructured(MathQuery{
+				Expression: "$A + 11",
+			}),
+		}, {
+			Name: "math with two queries",
+			SaveModel: data.AsUnstructured(MathQuery{
+				Expression: "$A - $B",
+			}),
+		}},
 	}, {
 		Discriminators: data.NewDiscriminators("queryType", QueryTypeReduce),
 		GoType:         reflect.TypeFor[*ReduceQuery](),
+		Examples: []data.QueryExample{{
+			Name: "get max value",
+			SaveModel: data.AsUnstructured(ReduceQuery{
+				Expression: "$A",
+				Reducer:    ReducerMax,
+				Settings: ReduceSettings{
+					Mode: ReduceModeDrop,
+				},
+			}),
+		}},
 	}, {
 		Discriminators: data.NewDiscriminators("queryType", QueryTypeResample),
 		GoType:         reflect.TypeFor[*ResampleQuery](),
-	}})
-	require.NoError(t, err)
-
-	err = schema.AddExamples([]data.QueryExample{{
-		Name:      "constant addition",
-		QueryType: string(QueryTypeMath),
-		SaveModel: data.AsUnstructured(MathQuery{
-			Expression: "$A + 11",
-		}),
-	}, {
-		Name:      "math with two queries",
-		QueryType: string(QueryTypeMath),
-		SaveModel: data.AsUnstructured(MathQuery{
-			Expression: "$A - $B",
-		}),
-	}, {
-		Name:      "get max value",
-		QueryType: string(QueryTypeReduce),
-		SaveModel: data.AsUnstructured(ReduceQuery{
-			Expression: "$A",
-			Reducer:    ReducerMax,
-			Settings: ReduceSettings{
-				Mode: ReduceModeDrop,
-			},
-		}),
 	}})
 	require.NoError(t, err)
 
