@@ -36,7 +36,7 @@ func TestWriteQuerySchema(t *testing.T) {
 			},
 		},
 		Enums: []reflect.Type{
-			reflect.TypeOf(data.FrameTypeLogLines),
+			reflect.TypeFor[data.FrameType](),
 		},
 	})
 	require.NoError(t, err)
@@ -52,7 +52,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	// // Hide this old property
 	query.Properties.Delete("datasourceId")
 
-	outfile := "../apis/datasource/v0alpha1/query.schema.json"
+	outfile := "../../apis/datasource/v0alpha1/query.schema.json"
 	old, _ := os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
@@ -70,7 +70,7 @@ func TestWriteQuerySchema(t *testing.T) {
 	updateEnumDescriptions(query)
 	query.ID = ""
 	query.Version = "" // $schema is not allowed in openapi v2's SchemaObject
-	outfile = "../apis/datasource/v0alpha1/query.definition.schema.json"
+	outfile = "../../apis/datasource/v0alpha1/query.definition.schema.json"
 	old, _ = os.ReadFile(outfile)
 	maybeUpdateFile(t, outfile, query, old)
 
