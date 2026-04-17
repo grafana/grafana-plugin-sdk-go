@@ -11,23 +11,39 @@ import (
 	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 )
 
-type PluginSchema struct {
-	APIVersion string
-
-	SettingsSchema   *Settings
-	SettingsExamples *SettingsExamples
-
-	// OpenAPI routes
-	Routes *Routes
-
-	QueryTypes    *sdkapi.QueryTypeDefinitionList
-	QueryExamples *sdkapi.QueryExamples
-}
-
 type SchemaProvider interface {
 	Get(apiVersion string) (*PluginSchema, error)
 }
 
+type PluginSchema struct {
+	// The apiVersion where this schema applies
+	APIVersion string
+
+	// Defines the settings (configuration) object
+	SettingsSchema *Settings
+
+	// Explore example settings
+	SettingsExamples *SettingsExamples
+
+	// Defines the OpenAPI routes (and additional components)
+	// Supports: /resources/*, and /proxy/*
+	Routes *Routes
+
+	// Define schemas for different query types
+	// NOTE, this is only valid for DataSource plugins
+	QueryTypes *sdkapi.QueryTypeDefinitionList
+
+	// A list of example queries
+	// NOTE, this is only valid for DataSource plugins
+	QueryExamples *sdkapi.QueryExamples
+}
+
+// Loads a PluginSchema from read-only files.  Specifically:
+// - {apiVersion}/settings.{yaml|json}
+// - {apiVersion}/settings.examples.{yaml|json}
+// - {apiVersion}/routes.{yaml|json}
+// - {apiVersion}/query.types.{yaml|json}
+// - {apiVersion}/query.examples.{yaml|json}
 func NewSchemaProvider(fss fs.FS, prefix string) SchemaProvider {
 	if prefix != "" && !strings.HasSuffix(prefix, "/") {
 		panic("the prefix must be a folder path ending with /")

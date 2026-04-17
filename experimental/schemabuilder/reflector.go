@@ -68,7 +68,7 @@ type QueryTypeInfo struct {
 	Discriminators []sdkapi.DiscriminatorFieldValue
 	// Raw GO type used for reflection
 	GoType reflect.Type
-	// Optional examples
+	// Add sample queries
 	Examples []sdkapi.QueryExample
 }
 
@@ -281,7 +281,7 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 		body, _ := os.ReadFile(outfile) // #nosec G304
 		maybeUpdateFile(t, outfile, b.examples, body)
 	} else {
-		err = os.RemoveAll(outdir)
+		err = os.RemoveAll(outfile)
 		require.NoError(t, err)
 	}
 
