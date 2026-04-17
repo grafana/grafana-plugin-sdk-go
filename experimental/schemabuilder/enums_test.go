@@ -12,7 +12,7 @@ func TestFindEnums(t *testing.T) {
 	t.Run("data", func(t *testing.T) {
 		fields, err := findEnumFields(
 			"github.com/grafana/grafana-plugin-sdk-go/data",
-			"../../../data")
+			"../../data")
 		require.NoError(t, err)
 
 		require.Equal(t, 1, len(fields))
@@ -22,7 +22,7 @@ func TestFindEnums(t *testing.T) {
 	t.Run("verify enum extraction", func(t *testing.T) {
 		for range 5 {
 			fields, err := findEnumFields(
-				"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema/builder/example",
+				"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder/example",
 				"./example")
 			require.NoError(t, err)
 			require.Equal(t, 3, len(fields))
@@ -41,7 +41,7 @@ func TestFindEnums(t *testing.T) {
 			fmt.Printf("%s", string(out))
 
 			require.JSONEq(t, `{
-				"Package": "github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema/builder/example",
+				"Package": "github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder/example",
 				"Name": "ReduceMode",
 				"Comment": "Non-Number behavior mode",
 				"Values": [

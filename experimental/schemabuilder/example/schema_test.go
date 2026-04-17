@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	data "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema/builder"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder"
 )
 
 func TestPluginSchema(t *testing.T) {
-	schema, err := builder.NewSchemaBuilder(builder.BuilderOptions{
+	schema, err := schemabuilder.NewSchemaBuilder(schemabuilder.BuilderOptions{
 		PluginID: []string{"__expr__"},
-		ScanCode: []builder.CodePaths{{
-			BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema/builder/example",
+		ScanCode: []schemabuilder.CodePaths{{
+			BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder/example",
 			CodePath:    "./",
 		}},
 		Enums: []reflect.Type{
@@ -23,7 +23,7 @@ func TestPluginSchema(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	err = schema.AddQueries([]builder.QueryTypeInfo{{
+	err = schema.AddQueries([]schemabuilder.QueryTypeInfo{{
 		Discriminators: data.NewDiscriminators("queryType", QueryTypeMath),
 		GoType:         reflect.TypeFor[*MathQuery](),
 		Examples: []data.QueryExample{{
