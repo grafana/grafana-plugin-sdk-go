@@ -16,6 +16,16 @@ type Routes struct {
 	Components *spec3.Components `json:"components,omitempty"`
 }
 
+func (r Routes) IsZero() bool {
+	if len(r.Paths) > 0 {
+		return false
+	}
+	if r.Components != nil {
+		return true // go deeper?
+	}
+	return true
+}
+
 func (r *Routes) Register(path string, props spec3.PathProps) {
 	if r.Paths == nil {
 		r.Paths = make(map[string]*spec3.Path)

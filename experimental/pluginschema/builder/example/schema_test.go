@@ -7,14 +7,14 @@ import (
 	"github.com/stretchr/testify/require"
 
 	data "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema/builder"
 )
 
-func TestQueryTypeDefinitions(t *testing.T) {
-	builder, err := schemabuilder.NewSchemaBuilder(schemabuilder.BuilderOptions{
+func TestPluginSchema(t *testing.T) {
+	schema, err := builder.NewSchemaBuilder(builder.BuilderOptions{
 		PluginID: []string{"__expr__"},
-		ScanCode: []schemabuilder.CodePaths{{
-			BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder/example",
+		ScanCode: []builder.CodePaths{{
+			BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema/builder/example",
 			CodePath:    "./",
 		}},
 		Enums: []reflect.Type{
@@ -23,7 +23,7 @@ func TestQueryTypeDefinitions(t *testing.T) {
 		},
 	})
 	require.NoError(t, err)
-	err = builder.AddQueries([]schemabuilder.QueryTypeInfo{{
+	err = schema.AddQueries([]builder.QueryTypeInfo{{
 		Discriminators: data.NewDiscriminators("queryType", QueryTypeMath),
 		GoType:         reflect.TypeFor[*MathQuery](),
 	}, {
@@ -35,7 +35,7 @@ func TestQueryTypeDefinitions(t *testing.T) {
 	}})
 	require.NoError(t, err)
 
-	err = builder.AddExamples([]data.QueryExample{{
+	err = schema.AddExamples([]data.QueryExample{{
 		Name:      "constant addition",
 		QueryType: string(QueryTypeMath),
 		SaveModel: data.AsUnstructured(MathQuery{
@@ -60,5 +60,12 @@ func TestQueryTypeDefinitions(t *testing.T) {
 	}})
 	require.NoError(t, err)
 
-	_ = builder.UpdateQueryTypes(t, "v0alpha1", "../testdata")
+	tmp := newSchema()
+	err = schema.ConfigureSettings(tmp.SettingsSchema, tmp.SettingsExamples)
+	require.NoError(t, err)
+
+	err = schema.SetRoutes(tmp.Routes)
+	require.NoError(t, err)
+
+	schema.UpdateProviderFiles(t, "v0alpha1", "../testdata")
 }

@@ -1,17 +1,12 @@
 package pluginschema
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
-	"os"
-	"path"
-	"path/filepath"
 	"strings"
-	"testing"
 
-	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 
 	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
 )
@@ -135,68 +130,12 @@ func isNotExists(err error) bool {
 	return strings.Contains(err.Error(), "file does not exist")
 }
 
-// Update the schema, failing tests if there are any changes
-func UpdateSchema(t *testing.T, s *PluginSchema, dir string) {
-	t.Helper()
+// Load yaml or json into a settings object
+func Load(jsonOrYaml []byte, obj any) error {
+	return yaml.Unmarshal(jsonOrYaml, obj)
+}
 
-	require.NotEmpty(t, s.APIVersion)
-	provider := NewSchemaProvider(os.DirFS(dir), "")
-	current, err := provider.Get(s.APIVersion)
-	require.NoError(t, err)
-	if current == nil {
-		current = &PluginSchema{APIVersion: s.APIVersion}
-	}
-
-	write := func(out []byte, name string) {
-		fpath := path.Join(dir, s.APIVersion, name)
-		err := os.MkdirAll(filepath.Dir(fpath), 0750)
-		require.NoError(t, err)
-		err = os.WriteFile(fpath, out, 0600)
-		require.NoError(t, err)
-	}
-
-	if s.SettingsSchema != nil {
-		if diff := Diff(s.SettingsSchema, current.SettingsSchema); diff != "" {
-			t.Errorf("settings changed (-want +got):\n%s", diff)
-			out, err := json.MarshalIndent(s.SettingsSchema, "", "  ")
-			require.NoError(t, err)
-			write(out, "settings.json")
-		}
-	}
-
-	if s.SettingsExamples != nil {
-		if diff := Diff(s.SettingsExamples, current.SettingsExamples); diff != "" {
-			t.Errorf("settings examples changed (-want +got):\n%s", diff)
-			out, err := json.MarshalIndent(s.SettingsExamples, "", "  ")
-			require.NoError(t, err)
-			write(out, "settings.examples.json")
-		}
-	}
-
-	if s.Routes != nil {
-		if diff := Diff(s.Routes, current.Routes); diff != "" {
-			t.Errorf("routes changed (-want +got):\n%s", diff)
-			out, err := ToYAML(s.Routes)
-			require.NoError(t, err)
-			write(out, "routes.yaml")
-		}
-	}
-
-	if s.QueryTypes != nil {
-		if diff := Diff(s.QueryTypes, current.QueryTypes); diff != "" {
-			t.Errorf("query types changed (-want +got):\n%s", diff)
-			out, err := json.MarshalIndent(s.QueryTypes, "", "  ")
-			require.NoError(t, err)
-			write(out, "query.types.json")
-		}
-	}
-
-	if s.QueryExamples != nil {
-		if diff := Diff(s.QueryExamples, current.QueryExamples); diff != "" {
-			t.Errorf("query examples changed (-want +got):\n%s", diff)
-			out, err := json.MarshalIndent(s.QueryExamples, "", "  ")
-			require.NoError(t, err)
-			write(out, "query.examples.json")
-		}
-	}
+// Write settings objects as yaml (k8s compatible flavor)
+func ToYAML(obj any) ([]byte, error) {
+	return yaml.Marshal(obj) // ensure a k8s compatible format
 }

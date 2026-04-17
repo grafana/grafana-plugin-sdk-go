@@ -1,17 +1,11 @@
-package pluginschema_test
+package example
 
 import (
-	"testing"
-
 	"k8s.io/kube-openapi/pkg/spec3"
 	"k8s.io/kube-openapi/pkg/validation/spec"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema"
 )
-
-func TestProvider(t *testing.T) {
-	pluginschema.UpdateSchema(t, newSchema(), "./testdata")
-}
 
 func newSchema() *pluginschema.PluginSchema {
 	schema := pluginschema.PluginSchema{
@@ -37,7 +31,7 @@ func newSchema() *pluginschema.PluginSchema {
 
 		SettingsExamples: &pluginschema.SettingsExamples{
 			Examples: map[string]*spec3.Example{
-				"": &spec3.Example{
+				"": {
 					ExampleProps: spec3.ExampleProps{
 						Description: "a sample",
 						Value:       "invalid",

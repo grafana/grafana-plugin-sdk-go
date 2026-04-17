@@ -1,0 +1,96 @@
+{
+  "properties": {
+    "refId": {
+      "type": "string"
+    },
+    "resultAssertions": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "",
+            "timeseries-wide",
+            "timeseries-long",
+            "timeseries-many",
+            "timeseries-multi",
+            "directory-listing",
+            "table",
+            "numeric-wide",
+            "numeric-multi",
+            "numeric-long",
+            "log-lines"
+          ],
+          "description": "Possible enum values:\n - `\"\"` \n - `\"timeseries-wide\"` \n - `\"timeseries-long\"` \n - `\"timeseries-many\"` \n - `\"timeseries-multi\"` \n - `\"directory-listing\"` \n - `\"table\"` \n - `\"numeric-wide\"` \n - `\"numeric-multi\"` \n - `\"numeric-long\"` \n - `\"log-lines\"` ",
+          "x-enum-description": {}
+        },
+        "typeVersion": {
+          "items": {
+            "type": "integer"
+          },
+          "type": "array",
+          "maxItems": 2,
+          "minItems": 2
+        },
+        "maxFrames": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "typeVersion"
+      ]
+    },
+    "timeRange": {
+      "properties": {
+        "from": {
+          "type": "string",
+          "default": "now-6h"
+        },
+        "to": {
+          "type": "string",
+          "default": "now"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "from",
+        "to"
+      ]
+    },
+    "datasource": {
+      "properties": {
+        "type": {
+          "type": "string"
+        },
+        "uid": {
+          "type": "string"
+        },
+        "apiVersion": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type"
+      ]
+    },
+    "queryType": {
+      "type": "string"
+    },
+    "maxDataPoints": {
+      "type": "integer"
+    },
+    "intervalMs": {
+      "type": "number"
+    },
+    "hide": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": true,
+  "type": "object",
+  "description": "Generic query properties"
+}

@@ -1,4 +1,4 @@
-package schemabuilder
+package builder
 
 import (
 	_ "embed"
@@ -28,11 +28,11 @@ func TestWriteQuerySchema(t *testing.T) {
 		ScanCode: []CodePaths{
 			{
 				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/experimental/apis",
-				CodePath:    "../apis/datasource/v0alpha1",
+				CodePath:    "../../apis/datasource/v0alpha1",
 			},
 			{
 				BasePackage: "github.com/grafana/grafana-plugin-sdk-go/data",
-				CodePath:    "../../data",
+				CodePath:    "../../../data",
 			},
 		},
 		Enums: []reflect.Type{

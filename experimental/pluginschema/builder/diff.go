@@ -1,21 +1,10 @@
-package pluginschema
+package builder
 
 import (
 	"github.com/go-openapi/jsonreference"
 	"github.com/go-openapi/spec"
 	"github.com/google/go-cmp/cmp"
-	"sigs.k8s.io/yaml"
 )
-
-// Load yaml or json into a settings object
-func Load(jsonOrYaml []byte, obj any) error {
-	return yaml.Unmarshal(jsonOrYaml, obj)
-}
-
-// Write settings objects as yaml (k8s compatible flavor)
-func ToYAML(obj any) ([]byte, error) {
-	return yaml.Marshal(obj) // ensure a k8s compatible format
-}
 
 // Diff returns a human-readable report of the differences between two settings objects
 func Diff(x, y any) string {

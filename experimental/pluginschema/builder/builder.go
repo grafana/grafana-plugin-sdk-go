@@ -1,9 +1,10 @@
-package schemabuilder
+package builder
 
 import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -14,9 +15,11 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"sigs.k8s.io/yaml"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema"
 )
 
 // SchemaBuilder is a helper function that can be used by
@@ -26,8 +29,15 @@ import (
 type Builder struct {
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
-	query     []sdkapi.QueryTypeDefinition
-	examples  sdkapi.QueryExamples
+
+	// discovered via reflection
+	query         []sdkapi.QueryTypeDefinition
+	queryExamples sdkapi.QueryExamples
+
+	// Explicitly configured
+	settingsSchema   *pluginschema.Settings
+	settingsExamples *pluginschema.SettingsExamples
+	routes           *pluginschema.Routes
 }
 
 type CodePaths struct {
@@ -192,8 +202,22 @@ func (b *Builder) AddExamples(inputs []sdkapi.QueryExample) error {
 		if v.SaveModel.IsZero() {
 			return fmt.Errorf("missing save model example query: %v", v)
 		}
-		b.examples.Examples = append(b.examples.Examples, v)
+		b.queryExamples.Examples = append(b.queryExamples.Examples, v)
 	}
+	return nil
+}
+
+func (b *Builder) ConfigureSettings(v *pluginschema.Settings, examples *pluginschema.SettingsExamples) error {
+	b.settingsSchema = v
+	b.settingsExamples = examples
+	return nil
+}
+
+func (b *Builder) SetRoutes(v *pluginschema.Routes) error {
+	if v.IsZero() {
+		v = nil
+	}
+	b.routes = v
 	return nil
 }
 
@@ -201,8 +225,10 @@ func (b *Builder) AddExamples(inputs []sdkapi.QueryExample) error {
 // When placed in `static/schema/query.types.json` folder of a plugin distribution,
 // it can be used to advertise various query types
 // If the spec contents have changed, the test will fail (but still update the output)
-func (b *Builder) UpdateQueryTypes(t *testing.T, apiVersion, outdir string) sdkapi.QueryTypeDefinitionList {
+func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 	t.Helper()
+
+	require.NotEmpty(t, apiVersion, "apiVersion is required")
 
 	outfile := filepath.Join(outdir, apiVersion, "query.types.json")
 	now := time.Now().UTC()
@@ -252,12 +278,55 @@ func (b *Builder) UpdateQueryTypes(t *testing.T, apiVersion, outdir string) sdka
 	}
 	maybeUpdateFile(t, outfile, defs, body)
 
-	if len(b.examples.Examples) > 0 {
+	if len(b.queryExamples.Examples) > 0 {
 		outfile = filepath.Join(outdir, apiVersion, "query.examples.json")
 		body, _ := os.ReadFile(outfile) // #nosec G304
-		maybeUpdateFile(t, outfile, b.examples, body)
+		maybeUpdateFile(t, outfile, b.queryExamples, body)
 	}
-	return defs
+
+	// Now check the other files
+	provider := pluginschema.NewSchemaProvider(os.DirFS(outdir), "")
+	current, err := provider.Get(apiVersion)
+	require.NoError(t, err)
+	if current == nil {
+		current = &pluginschema.PluginSchema{APIVersion: apiVersion}
+	}
+
+	// Write helper
+	write := func(out []byte, name string) {
+		fpath := path.Join(outdir, apiVersion, name)
+		err := os.MkdirAll(filepath.Dir(fpath), 0750)
+		require.NoError(t, err)
+		err = os.WriteFile(fpath, out, 0600)
+		require.NoError(t, err)
+	}
+
+	if b.settingsSchema != nil {
+		if diff := Diff(b.settingsSchema, current.SettingsSchema); diff != "" {
+			t.Errorf("settings changed (-want +got):\n%s", diff)
+			out, err := json.MarshalIndent(b.settingsSchema, "", "  ")
+			require.NoError(t, err)
+			write(out, "settings.json")
+		}
+	}
+
+	if b.settingsExamples != nil {
+		if diff := Diff(b.settingsExamples, current.SettingsExamples); diff != "" {
+			t.Errorf("settings examples changed (-want +got):\n%s", diff)
+			out, err := json.MarshalIndent(b.settingsExamples, "", "  ")
+			require.NoError(t, err)
+			write(out, "settings.examples.json")
+		}
+	}
+
+	if b.routes != nil {
+		if diff := Diff(b.routes, current.Routes); diff != "" {
+			t.Errorf("routes changed (-want +got):\n%s", diff)
+			out, err := yaml.Marshal(b.routes)
+			require.NoError(t, err)
+			write(out, "routes.yaml")
+		}
+	}
 }
 
 func maybeUpdateFile(t *testing.T, outfile string, value any, existing []byte) {
@@ -275,6 +344,8 @@ func maybeUpdateFile(t *testing.T, outfile string, value any, existing []byte) {
 		update = true
 	}
 	if update {
+		err := os.MkdirAll(filepath.Dir(outfile), 0750)
+		require.NoError(t, err, "creating folder")
 		err = os.WriteFile(outfile, out, 0600)
 		require.NoError(t, err, "error writing file")
 	}

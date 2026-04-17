@@ -1,4 +1,4 @@
-package schemabuilder
+package builder
 
 import (
 	"fmt"

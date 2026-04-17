@@ -1,4 +1,4 @@
-package pluginschema
+package builder
 
 import (
 	"testing"
