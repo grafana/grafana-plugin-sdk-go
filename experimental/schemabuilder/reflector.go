@@ -170,6 +170,15 @@ func (b *Builder) AddQueries(inputs []QueryTypeInfo) error {
 			}
 		}
 
+		// Collect each example
+		for _, example := range info.Examples {
+			if example.Name == "" {
+				return fmt.Errorf("all examples require a name: %+v", example)
+			}
+			example.QueryType = name
+			b.examples.Examples = append(b.examples.Examples, example)
+		}
+
 		// We need to be careful to only use draft-04 so that this is possible to use
 		// with kube-openapi
 		schema.Version = draft04
@@ -192,15 +201,6 @@ func (b *Builder) AddQueries(inputs []QueryTypeInfo) error {
 				},
 			},
 		})
-
-		// Collect each example
-		for _, example := range info.Examples {
-			if example.Name == "" {
-				return fmt.Errorf("all examples require a name: %+v", example)
-			}
-			example.QueryType = name
-			b.examples.Examples = append(b.examples.Examples, example)
-		}
 	}
 	return nil
 }
@@ -337,7 +337,7 @@ func maybeUpdateFile(t *testing.T, outfile string, value any, existing []byte) {
 	require.NoError(t, err)
 
 	update := false
-	if err == nil && len(existing) > 0 {
+	if len(existing) > 0 {
 		if !assert.JSONEq(t, string(existing), string(out)) {
 			update = true
 		}
