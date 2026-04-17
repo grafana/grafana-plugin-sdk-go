@@ -16,9 +16,23 @@ type Settings struct {
 	SecureValues []SecureValueInfo `json:"secureValues,omitempty"`
 }
 
+func (s Settings) IsZero() bool {
+	if s.Spec != nil {
+		return false
+	}
+	if len(s.SecureValues) > 0 {
+		return false
+	}
+	return true
+}
+
 type SettingsExamples struct {
 	// Example configuration added to the swagger documentation
 	Examples map[string]*spec3.Example `json:"examples"`
+}
+
+func (s SettingsExamples) IsZero() bool {
+	return len(s.Examples) < 1
 }
 
 type SecureValueInfo struct {

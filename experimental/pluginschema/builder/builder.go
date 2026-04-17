@@ -198,7 +198,7 @@ func (b *Builder) AddQueries(inputs []QueryTypeInfo) error {
 			if example.Name == "" {
 				return fmt.Errorf("all examples require a name: %+v", example)
 			}
-			example.QueryType = info.Name
+			example.QueryType = name
 			b.examples.Examples = append(b.examples.Examples, example)
 		}
 	}
