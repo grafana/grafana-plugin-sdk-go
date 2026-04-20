@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
@@ -22,7 +23,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(map[string]string{
+			GrafanaConfig: config.NewGrafanaCfg(map[string]string{
 				featuretoggles.EnabledFeatures: "",
 			}),
 		}
@@ -37,7 +38,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(map[string]string{
+			GrafanaConfig: config.NewGrafanaCfg(map[string]string{
 				featuretoggles.EnabledFeatures: featuretoggles.TTLInstanceManager,
 			}),
 		}
@@ -65,7 +66,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(map[string]string{
+			GrafanaConfig: config.NewGrafanaCfg(map[string]string{
 				featuretoggles.EnabledFeatures: "someOtherFlag," + featuretoggles.TTLInstanceManager + ",anotherFlag",
 			}),
 		}
@@ -81,7 +82,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(map[string]string{
+			GrafanaConfig: config.NewGrafanaCfg(map[string]string{
 				featuretoggles.EnabledFeatures: featuretoggles.TTLInstanceManager,
 			}),
 		}
@@ -99,7 +100,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
-			GrafanaConfig: backend.NewGrafanaCfg(map[string]string{
+			GrafanaConfig: config.NewGrafanaCfg(map[string]string{
 				featuretoggles.EnabledFeatures: "",
 			}),
 		}
