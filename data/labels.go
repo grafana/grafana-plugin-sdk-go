@@ -147,38 +147,19 @@ func LabelsFromString(s string) (Labels, error) {
 	return labels, nil
 }
 
-// MarshalJSON marshals Labels to JSON.
+// MarshalJSON marshals Labels to JSON with sorted keys. Delegates to the same
+// writer used by Frame serialization (writeLabelsMap) so the stdlib entry, the
+// jsoniter codec, and the Frame hot path all emit identical bytes.
 func (l Labels) MarshalJSON() ([]byte, error) {
 	cfg := jsoniter.ConfigCompatibleWithStandardLibrary
 	stream := cfg.BorrowStream(nil)
 	defer cfg.ReturnStream(stream)
 
-	writeLabelsJSON(l, stream)
+	writeLabelsMap(stream, l)
 	if stream.Error != nil {
 		return nil, stream.Error
 	}
-
 	return append([]byte(nil), stream.Buffer()...), nil
-}
-
-func writeLabelsJSON(l Labels, stream *jsoniter.Stream) {
-	keys := make([]string, len(l))
-	i := 0
-	for k := range l {
-		keys[i] = k
-		i++
-	}
-	sort.Strings(keys)
-
-	stream.WriteObjectStart()
-	for i, k := range keys {
-		if i > 0 {
-			stream.WriteMore()
-		}
-		stream.WriteObjectField(k)
-		stream.WriteString(l[k])
-	}
-	stream.WriteObjectEnd()
 }
 
 type dataLabelsCodec struct{}
@@ -194,5 +175,5 @@ func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream
 		stream.WriteNil()
 		return
 	}
-	writeLabelsJSON(*v, stream)
+	writeLabelsMap(stream, *v)
 }

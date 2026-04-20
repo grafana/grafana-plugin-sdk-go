@@ -4,7 +4,6 @@ go 1.25.7
 
 require (
 	github.com/apache/arrow-go/v18 v18.5.2
-	github.com/cheekybits/genny v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
 	github.com/elazarl/goproxy v1.8.3
 	github.com/getkin/kin-openapi v0.134.0
@@ -48,7 +47,7 @@ require (
 	golang.org/x/oauth2 v0.36.0
 	golang.org/x/sync v0.20.0
 	golang.org/x/sys v0.43.0
-	golang.org/x/text v0.35.0
+	golang.org/x/text v0.35.0 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260401024825-9d38bb4040a9
 	google.golang.org/grpc v1.80.0
 	google.golang.org/protobuf v1.36.11
