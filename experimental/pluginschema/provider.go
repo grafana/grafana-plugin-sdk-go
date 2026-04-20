@@ -38,7 +38,10 @@ type PluginSchema struct {
 	QueryExamples *sdkapi.QueryExamples
 }
 
-func (s PluginSchema) IsZero() bool {
+func (s *PluginSchema) IsZero() bool {
+	if s == nil {
+		return true
+	}
 	if s.SettingsSchema != nil && !s.SettingsSchema.IsZero() {
 		return false
 	}
@@ -145,7 +148,7 @@ func (p *fsSpecProvider) Get(apiVersion string) (*PluginSchema, error) {
 	}
 
 	if !exists {
-		return nil, nil //nothing found!
+		return nil, nil // nothing found!
 	}
 	return schema, nil
 }

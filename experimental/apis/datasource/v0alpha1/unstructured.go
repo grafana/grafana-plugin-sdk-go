@@ -15,7 +15,10 @@ type Unstructured struct {
 	Object map[string]any
 }
 
-func (u Unstructured) IsZero() bool {
+func (u *Unstructured) IsZero() bool {
+	if u == nil {
+		return true
+	}
 	return len(u.Object) < 1
 }
 

@@ -16,7 +16,10 @@ type Routes struct {
 	Components *spec3.Components `json:"components,omitempty"`
 }
 
-func (r Routes) IsZero() bool {
+func (r *Routes) IsZero() bool {
+	if r == nil {
+		return true
+	}
 	if len(r.Paths) > 0 {
 		return false
 	}

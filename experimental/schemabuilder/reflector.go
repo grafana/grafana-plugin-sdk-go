@@ -212,7 +212,7 @@ func (b *Builder) ConfigureSettings(v *pluginschema.Settings, examples *pluginsc
 }
 
 func (b *Builder) SetRoutes(v *pluginschema.Routes) error {
-	if v != nil && v.IsZero() {
+	if v.IsZero() {
 		v = nil
 	}
 	b.routes = v

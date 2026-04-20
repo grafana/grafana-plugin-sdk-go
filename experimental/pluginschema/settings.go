@@ -16,7 +16,10 @@ type Settings struct {
 	SecureValues []SecureValueInfo `json:"secureValues,omitempty"`
 }
 
-func (s Settings) IsZero() bool {
+func (s *Settings) IsZero() bool {
+	if s == nil {
+		return true
+	}
 	if s.Spec != nil {
 		return false
 	}
@@ -31,7 +34,10 @@ type SettingsExamples struct {
 	Examples map[string]*spec3.Example `json:"examples"`
 }
 
-func (s SettingsExamples) IsZero() bool {
+func (s *SettingsExamples) IsZero() bool {
+	if s == nil {
+		return true
+	}
 	return len(s.Examples) < 1
 }
 
