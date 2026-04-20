@@ -2,8 +2,6 @@ package httpclient
 
 import (
 	"net/http"
-
-	"github.com/grafana/grafana-plugin-sdk-go/config"
 )
 
 // ResponseLimitMiddlewareName is the middleware name used by ResponseLimitMiddleware.
@@ -18,12 +16,7 @@ func ResponseLimitMiddleware(limit int64) Middleware {
 			}
 
 			if limit <= 0 {
-				// Check if limit is set in Grafana config
-				if cfgLimit := config.GrafanaConfigFromContext(req.Context()).ResponseLimit(); cfgLimit > 0 {
-					limit = cfgLimit
-				} else {
-					return res, nil
-				}
+				return res, nil
 			}
 
 			if res != nil && res.StatusCode != http.StatusSwitchingProtocols {
