@@ -38,6 +38,25 @@ type PluginSchema struct {
 	QueryExamples *sdkapi.QueryExamples
 }
 
+func (s PluginSchema) IsZero() bool {
+	if s.SettingsSchema != nil && !s.SettingsSchema.IsZero() {
+		return false
+	}
+	if s.SettingsExamples != nil && !s.SettingsExamples.IsZero() {
+		return false
+	}
+	if s.Routes != nil && !s.Routes.IsZero() {
+		return false
+	}
+	if s.QueryTypes != nil && len(s.QueryTypes.Items) > 0 {
+		return false
+	}
+	if s.QueryExamples != nil && len(s.QueryExamples.Examples) > 0 {
+		return false
+	}
+	return true
+}
+
 // Loads a PluginSchema from read-only files.  Specifically:
 // - {apiVersion}/settings.{yaml|json}
 // - {apiVersion}/settings.examples.{yaml|json}
@@ -57,6 +76,7 @@ type fsSpecProvider struct {
 }
 
 func (p *fsSpecProvider) Get(apiVersion string) (*PluginSchema, error) {
+	exists := false
 	schema := &PluginSchema{APIVersion: apiVersion}
 
 	// Settings
@@ -65,6 +85,7 @@ func (p *fsSpecProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
+		exists = true
 		schema.SettingsSchema = &Settings{}
 		if err = Load(raw, schema.SettingsSchema); err != nil {
 			return nil, err
@@ -77,6 +98,7 @@ func (p *fsSpecProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
+		exists = true
 		schema.SettingsExamples = &SettingsExamples{}
 		if err = Load(raw, schema.SettingsExamples); err != nil {
 			return nil, err
@@ -89,6 +111,7 @@ func (p *fsSpecProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
+		exists = true
 		schema.Routes = &Routes{}
 		if err = Load(raw, schema.Routes); err != nil {
 			return nil, err
@@ -101,6 +124,7 @@ func (p *fsSpecProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
+		exists = true
 		schema.QueryTypes = &sdkapi.QueryTypeDefinitionList{}
 		if err = Load(raw, schema.QueryTypes); err != nil {
 			return nil, err
@@ -113,12 +137,16 @@ func (p *fsSpecProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
+		exists = true
 		schema.QueryExamples = &sdkapi.QueryExamples{}
 		if err = Load(raw, schema.QueryExamples); err != nil {
 			return nil, err
 		}
 	}
 
+	if !exists {
+		return nil, nil //nothing found!
+	}
 	return schema, nil
 }
 
