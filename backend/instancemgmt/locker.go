@@ -8,7 +8,7 @@ import (
 // locker is a named reader/writer mutual exclusion lock.
 // The lock for each particular key can be held by an arbitrary number of readers or a single writer.
 type locker struct {
-	locks sync.Map // map[interface{}]*sync.RWMutex
+	locks sync.Map
 }
 
 func newLocker() *locker {
