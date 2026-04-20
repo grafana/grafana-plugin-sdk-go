@@ -100,25 +100,22 @@ func toBackendDataQuery(q DataQuery, defaultTimeRange *backend.TimeRange) (backe
 		return bq, err
 	}
 
-	// we understand there is a certain inefficiency here
-	// with re-marshaling the bytes, we chose this approach
-	// for the following reasons:
-	// 1. the smallest possible change
-	// 2. the request object is small, so the performance
-	//    impact should be limited
-	// 3. we can implement faster solutions later,
-	//    as a purely internal change here, without
-	//    affecting anything.
-	//
-	// the alternative approach would be to directly
-	// serialise the v0alpha1.DataQuery structure into JSON
-	// without the timeRange field.
-	fixedBytes, err := deleteTimeRangeFromQueryJSON(bytes)
-	if err != nil {
-		return bq, err
+	// writeQuery only emits "timeRange" when q.TimeRange != nil, so when both
+	// the typed field and any additional override are absent, the marshaled
+	// bytes can't contain the key — skip the unmarshal/remarshal round-trip.
+	// When either is set, fall through to preserve the byte-for-byte output
+	// format that downstream caches (e.g. grafana-enterprise query caching)
+	// hash.
+	_, timeRangeInAdditional := q.additional[timeRangeKey]
+	if q.TimeRange == nil && !timeRangeInAdditional {
+		bq.JSON = bytes
+	} else {
+		fixedBytes, err := deleteTimeRangeFromQueryJSON(bytes)
+		if err != nil {
+			return bq, err
+		}
+		bq.JSON = fixedBytes
 	}
-
-	bq.JSON = fixedBytes
 
 	if bq.MaxDataPoints == 0 {
 		bq.MaxDataPoints = 100
