@@ -317,13 +317,12 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 			if tc.old == nil {
 				continue // no change
 			}
+			base := path.Join(outdir, apiVersion, tc.name)
 
-			fpath := path.Join(outdir, apiVersion, tc.name, ".yaml")
-			err = os.RemoveAll(fpath)
+			err = os.RemoveAll(base + ".yaml")
 			require.NoError(t, err)
 
-			fpath = path.Join(outdir, apiVersion, tc.name, ".json")
-			err = os.RemoveAll(fpath)
+			err = os.RemoveAll(base + "json")
 			require.NoError(t, err)
 
 			require.Failf(t, "schema property removed: %s", tc.name)
@@ -336,25 +335,24 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 			var err error
 			var out []byte
 			ext := ".json"
-			rem := ".yaml"
+			rem := ".yaml" // remove the other format to ensure only one exists at a time
 			if tc.asYAML {
 				ext = ".yaml"
 				rem = ".json"
-				out, err = yaml.Marshal(tc.new)
+				out, err = yaml.Marshal(tc.new) // k8s compatible
 				require.NoError(t, err)
 			} else {
 				out, err = json.MarshalIndent(tc.new, "", "  ")
 				require.NoError(t, err)
 			}
-			fpath := path.Join(outdir, apiVersion, tc.name) + ext
-			err = os.MkdirAll(filepath.Dir(fpath), 0750)
+			base := path.Join(outdir, apiVersion, tc.name)
+			err = os.MkdirAll(filepath.Dir(base), 0750)
 			require.NoError(t, err)
-			err = os.WriteFile(fpath, out, 0600)
+			err = os.WriteFile(base+ext, out, 0600)
 			require.NoError(t, err)
 
 			// Remove yaml if it was JSON or vis-versa
-			fpath = path.Join(outdir, apiVersion, tc.name) + rem
-			err = os.RemoveAll(fpath)
+			err = os.RemoveAll(base + rem)
 			require.NoError(t, err)
 		}
 	}
