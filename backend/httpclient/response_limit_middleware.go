@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 )
 
 // ResponseLimitMiddlewareName is the middleware name used by ResponseLimitMiddleware.
@@ -17,28 +18,6 @@ const (
 	ResponseLimitMiddlewareName = "response-limit"
 	responseLimitEnvVar         = "GF_DATAPROXY_RESPONSE_LIMIT"
 )
-
-type responseLimitContextKey struct{}
-
-// WithResponseLimitContext stores a response size limit in the context for
-// ResponseLimitMiddleware to apply per-request. Called by WithGrafanaConfig in the
-// backend package to propagate GrafanaCfg.ResponseLimit() — plugins do not need to call
-// this directly.
-//
-// Note: when set, the context value takes priority over GF_DATAPROXY_RESPONSE_LIMIT.
-// A context value of 0 disables limiting entirely — the env var and limit argument are
-// not consulted.
-func WithResponseLimitContext(ctx context.Context, limit int64) context.Context {
-	return context.WithValue(ctx, responseLimitContextKey{}, &limit)
-}
-
-func responseLimitFromContext(ctx context.Context) (int64, bool) {
-	v, ok := ctx.Value(responseLimitContextKey{}).(*int64)
-	if !ok || v == nil {
-		return 0, false
-	}
-	return *v, true
-}
 
 // ResponseLimitMiddleware limits the size of downstream response bodies.
 // When the limit is exceeded the response body returns ErrResponseBodyTooLarge and a
@@ -101,7 +80,7 @@ func parseEnvResponseLimit() int64 {
 // The per-request context value from GrafanaCfg wins if present, then the env var,
 // then the static limit argument. Returns 0 if none are set, which disables limiting.
 func resolveResponseLimit(envLimit, limit int64, ctx context.Context) int64 {
-	if ctxLimit, ok := responseLimitFromContext(ctx); ok {
+	if ctxLimit := config.GrafanaConfigFromContext(ctx).ResponseLimit(); ctxLimit > 0 {
 		return ctxLimit
 	}
 	if envLimit > 0 {
