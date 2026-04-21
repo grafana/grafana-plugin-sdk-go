@@ -38,7 +38,7 @@ func ResponseLimitMiddleware(limit int64) Middleware {
 			dsName := opts.Labels["datasource_name"]
 
 			return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-				effectiveLimit := resolveResponseLimit(envLimit, limit, req.Context())
+				effectiveLimit := resolveResponseLimit(req.Context(), envLimit, limit)
 
 				res, err := next.RoundTrip(req)
 				if err != nil {
@@ -79,7 +79,7 @@ func parseEnvResponseLimit() int64 {
 // resolveResponseLimit determines the effective limit for a request.
 // The per-request context value from GrafanaCfg wins if present, then the env var,
 // then the static limit argument. Returns 0 if none are set, which disables limiting.
-func resolveResponseLimit(envLimit, limit int64, ctx context.Context) int64 {
+func resolveResponseLimit(ctx context.Context, envLimit, limit int64) int64 {
 	if ctxLimit := config.GrafanaConfigFromContext(ctx).ResponseLimit(); ctxLimit > 0 {
 		return ctxLimit
 	}

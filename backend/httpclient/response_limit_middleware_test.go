@@ -4,9 +4,11 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,7 +35,7 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		{name: "zero env var ignored", limit: 0, envLimit: "0", expectedBodyLength: 5, expectedBody: "dummy"},
 		// grafana config (context) priority
 		{name: "grafana config wins over env var", limit: 0, ctxLimit: ptr(int64(3)), envLimit: "1000000", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
-		{name: "grafana config 0 disables even when env var is set", limit: 0, ctxLimit: ptr(int64(0)), envLimit: "3", expectedBodyLength: 5, expectedBody: "dummy"},
+		{name: "grafana config 0 falls back to env var", limit: 0, ctxLimit: ptr(int64(0)), envLimit: "3", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
 		{name: "no limit when nothing is set", limit: 0, expectedBodyLength: 5, expectedBody: "dummy"},
 	}
 	for _, tc := range tcs {
@@ -53,7 +55,9 @@ func TestResponseLimitMiddleware(t *testing.T) {
 
 			ctx := context.Background()
 			if tc.ctxLimit != nil {
-				ctx = WithResponseLimitContext(ctx, *tc.ctxLimit)
+				ctx = config.WithGrafanaConfig(ctx, config.NewGrafanaCfg(map[string]string{
+					config.ResponseLimit: strconv.FormatInt(*tc.ctxLimit, 10),
+				}))
 			}
 			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://test.com/query", nil)
 			require.NoError(t, err)
