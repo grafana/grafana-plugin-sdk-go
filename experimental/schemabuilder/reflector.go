@@ -293,39 +293,63 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 		current = &pluginschema.PluginSchema{APIVersion: apiVersion}
 	}
 
-	// Write helper
-	write := func(out []byte, name string) {
-		fpath := path.Join(outdir, apiVersion, name)
-		err := os.MkdirAll(filepath.Dir(fpath), 0750)
-		require.NoError(t, err)
-		err = os.WriteFile(fpath, out, 0600)
-		require.NoError(t, err)
+	type fileChecker struct {
+		name   string
+		new    any
+		old    any
+		asYAML bool
 	}
-
-	if b.settingsSchema != nil {
-		if diff := Diff(b.settingsSchema, current.SettingsSchema); diff != "" {
-			t.Errorf("settings changed (-want +got):\n%s", diff)
-			out, err := json.MarshalIndent(b.settingsSchema, "", "  ")
+	for _, tc := range []fileChecker{{
+		name: "settings",
+		new:  b.settingsSchema,
+		old:  current.SettingsSchema,
+	}, {
+		name: "settings.examples",
+		new:  b.settingsExamples,
+		old:  current.SettingsExamples,
+	}, {
+		name: "routes",
+		new:  b.routes,
+		old:  current.Routes,
+	}} {
+		// If the property does not exist, remove both the yaml and json snapshots
+		if tc.new == nil {
+			fpath := path.Join(outdir, apiVersion, tc.name, ".yaml")
+			err = os.RemoveAll(fpath)
 			require.NoError(t, err)
-			write(out, "settings.json")
+
+			fpath = path.Join(outdir, apiVersion, tc.name, ".json")
+			err = os.RemoveAll(fpath)
+			require.NoError(t, err)
+			continue
 		}
-	}
 
-	if b.settingsExamples != nil {
-		if diff := Diff(b.settingsExamples, current.SettingsExamples); diff != "" {
-			t.Errorf("settings examples changed (-want +got):\n%s", diff)
-			out, err := json.MarshalIndent(b.settingsExamples, "", "  ")
-			require.NoError(t, err)
-			write(out, "settings.examples.json")
-		}
-	}
+		if diff := Diff(tc.new, tc.old); diff != "" {
+			t.Errorf("%s changed (-want +got):\n%s", tc.name, diff)
 
-	if b.routes != nil {
-		if diff := Diff(b.routes, current.Routes); diff != "" {
-			t.Errorf("routes changed (-want +got):\n%s", diff)
-			out, err := yaml.Marshal(b.routes)
+			var err error
+			var out []byte
+			ext := ".json"
+			rem := ".yaml"
+			if tc.asYAML {
+				ext = ".yaml"
+				rem = ".json"
+				out, err = yaml.Marshal(tc.new)
+				require.NoError(t, err)
+			} else {
+				out, err = json.MarshalIndent(tc.new, "", "  ")
+				require.NoError(t, err)
+			}
+			fpath := path.Join(outdir, apiVersion, tc.name, ext)
+			err = os.MkdirAll(filepath.Dir(fpath), 0750)
 			require.NoError(t, err)
-			write(out, "routes.yaml")
+			err = os.WriteFile(fpath, out, 0600)
+			require.NoError(t, err)
+
+			// Remove yaml if it was JSON or vis-versa
+			fpath = path.Join(outdir, apiVersion, tc.name, rem)
+			err = os.RemoveAll(fpath)
+			require.NoError(t, err)
 		}
 	}
 }
