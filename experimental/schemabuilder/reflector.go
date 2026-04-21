@@ -314,6 +314,10 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 	}} {
 		// If the property does not exist, remove both the yaml and json snapshots
 		if tc.new == nil {
+			if tc.old == nil {
+				continue // no change
+			}
+
 			fpath := path.Join(outdir, apiVersion, tc.name, ".yaml")
 			err = os.RemoveAll(fpath)
 			require.NoError(t, err)
@@ -321,6 +325,8 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 			fpath = path.Join(outdir, apiVersion, tc.name, ".json")
 			err = os.RemoveAll(fpath)
 			require.NoError(t, err)
+
+			require.Failf(t, "schema property removed: %s", tc.name)
 			continue
 		}
 
@@ -340,14 +346,14 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 				out, err = json.MarshalIndent(tc.new, "", "  ")
 				require.NoError(t, err)
 			}
-			fpath := path.Join(outdir, apiVersion, tc.name, ext)
+			fpath := path.Join(outdir, apiVersion, tc.name) + ext
 			err = os.MkdirAll(filepath.Dir(fpath), 0750)
 			require.NoError(t, err)
 			err = os.WriteFile(fpath, out, 0600)
 			require.NoError(t, err)
 
 			// Remove yaml if it was JSON or vis-versa
-			fpath = path.Join(outdir, apiVersion, tc.name, rem)
+			fpath = path.Join(outdir, apiVersion, tc.name) + rem
 			err = os.RemoveAll(fpath)
 			require.NoError(t, err)
 		}
