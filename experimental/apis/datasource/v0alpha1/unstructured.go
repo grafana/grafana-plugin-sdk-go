@@ -15,6 +15,13 @@ type Unstructured struct {
 	Object map[string]any
 }
 
+func (u *Unstructured) IsZero() bool {
+	if u == nil {
+		return true
+	}
+	return len(u.Object) < 1
+}
+
 // Create an unstructured value from any input
 func AsUnstructured(v any) Unstructured {
 	out := Unstructured{}

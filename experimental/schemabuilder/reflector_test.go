@@ -36,7 +36,7 @@ func TestWriteQuerySchema(t *testing.T) {
 			},
 		},
 		Enums: []reflect.Type{
-			reflect.TypeOf(data.FrameTypeLogLines),
+			reflect.TypeFor[data.FrameType](),
 		},
 	})
 	require.NoError(t, err)

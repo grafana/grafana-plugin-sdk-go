@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path"
 	"path/filepath"
 	"reflect"
 	"testing"
@@ -14,11 +15,11 @@ import (
 	"github.com/invopop/jsonschema"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	"k8s.io/kube-openapi/pkg/validation/strfmt"
-	"k8s.io/kube-openapi/pkg/validation/validate"
+	"sigs.k8s.io/yaml"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	sdkapi "github.com/grafana/grafana-plugin-sdk-go/experimental/apis/datasource/v0alpha1"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema"
 )
 
 // SchemaBuilder is a helper function that can be used by
@@ -28,7 +29,15 @@ import (
 type Builder struct {
 	opts      BuilderOptions
 	reflector *jsonschema.Reflector // Needed to use comments
-	query     []sdkapi.QueryTypeDefinition
+
+	// discovered via reflection
+	query         []sdkapi.QueryTypeDefinition
+	queryExamples sdkapi.QueryExamples
+
+	// Explicitly configured
+	settingsSchema   *pluginschema.Settings
+	settingsExamples *pluginschema.SettingsExamples
+	routes           *pluginschema.Routes
 }
 
 type CodePaths struct {
@@ -63,17 +72,6 @@ type QueryTypeInfo struct {
 	Examples []sdkapi.QueryExample
 }
 
-type SettingTypeInfo struct {
-	// The management name
-	Name string
-	// Optional discriminators
-	Discriminators []sdkapi.DiscriminatorFieldValue
-	// Raw GO type used for reflection
-	GoType reflect.Type
-	// Map[string]string
-	SecureGoType reflect.Type
-}
-
 func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 	if len(opts.PluginID) < 1 {
 		return nil, fmt.Errorf("missing plugin id")
@@ -87,18 +85,18 @@ func NewSchemaBuilder(opts BuilderOptions) (*Builder, error) {
 		}
 	}
 	customMapper := map[reflect.Type]*jsonschema.Schema{
-		reflect.TypeOf(data.Frame{}): {
+		reflect.TypeFor[data.Frame](): {
 			Type: "object",
 			Extras: map[string]any{
 				"x-grafana-type": "data.DataFrame",
 			},
 			AdditionalProperties: jsonschema.TrueSchema,
 		},
-		reflect.TypeOf(sdkapi.Unstructured{}): {
+		reflect.TypeFor[sdkapi.Unstructured](): {
 			Type:                 "object",
 			AdditionalProperties: jsonschema.TrueSchema,
 		},
-		reflect.TypeOf(sdkapi.JSONSchema{}): {
+		reflect.TypeFor[sdkapi.JSONSchema](): {
 			Type: "object",
 			Ref:  draft04,
 		},
@@ -151,7 +149,7 @@ func (b *Builder) Reflector() *jsonschema.Reflector {
 	return b.reflector
 }
 
-func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
+func (b *Builder) AddQueries(inputs []QueryTypeInfo) error {
 	for _, info := range inputs {
 		schema := b.reflector.ReflectFromType(info.GoType)
 		if schema == nil {
@@ -170,6 +168,15 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 			if name == "" {
 				return fmt.Errorf("missing name or discriminators")
 			}
+		}
+
+		// Collect each example
+		for _, example := range info.Examples {
+			if example.Name == "" {
+				return fmt.Errorf("all examples require a name: %+v", example)
+			}
+			example.QueryType = name
+			b.queryExamples.Examples = append(b.queryExamples.Examples, example)
 		}
 
 		// We need to be careful to only use draft-04 so that this is possible to use
@@ -192,10 +199,23 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 				Schema: sdkapi.JSONSchema{
 					Spec: spec,
 				},
-				Examples: info.Examples,
 			},
 		})
 	}
+	return nil
+}
+
+func (b *Builder) ConfigureSettings(v *pluginschema.Settings, examples *pluginschema.SettingsExamples) error {
+	b.settingsSchema = v
+	b.settingsExamples = examples
+	return nil
+}
+
+func (b *Builder) SetRoutes(v *pluginschema.Routes) error {
+	if v.IsZero() {
+		v = nil
+	}
+	b.routes = v
 	return nil
 }
 
@@ -203,10 +223,12 @@ func (b *Builder) AddQueries(inputs ...QueryTypeInfo) error {
 // When placed in `static/schema/query.types.json` folder of a plugin distribution,
 // it can be used to advertise various query types
 // If the spec contents have changed, the test will fail (but still update the output)
-func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.QueryTypeDefinitionList {
+func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 	t.Helper()
 
-	outfile := filepath.Join(outdir, "query.types.json")
+	require.NotEmpty(t, apiVersion, "apiVersion is required")
+
+	outfile := filepath.Join(outdir, apiVersion, "query.types.json")
 	now := time.Now().UTC()
 	rv := fmt.Sprintf("%d", now.UnixMilli())
 
@@ -254,83 +276,124 @@ func (b *Builder) UpdateQueryDefinition(t *testing.T, outdir string) sdkapi.Quer
 	}
 	maybeUpdateFile(t, outfile, defs, body)
 
-	// Update the query save model schema
-	//------------------------------------
-	outfile = filepath.Join(outdir, "query.panel.schema.json")
-	schema, err := GetQuerySchema(QuerySchemaOptions{
-		PluginID:   b.opts.PluginID,
-		QueryTypes: defs.Items,
-		Mode:       SchemaTypePanelModel,
-	})
-	require.NoError(t, err)
-
-	body, _ = os.ReadFile(outfile) // #nosec G304 // #nosec G304
-	maybeUpdateFile(t, outfile, schema, body)
-
-	panel := pseudoPanel{
-		Type: "table",
-	}
-	panel.Targets = examplePanelTargets(&sdkapi.DataSourceRef{
-		Type: b.opts.PluginID[0],
-		UID:  "TheUID",
-	}, defs)
-
-	outfile = filepath.Join(outdir, "query.panel.example.json")
-	body, _ = os.ReadFile(outfile) // #nosec G304 // #nosec G304
-	maybeUpdateFile(t, outfile, panel, body)
-
-	// Update the request payload schema
-	//------------------------------------
-	outfile = filepath.Join(outdir, "query.request.schema.json")
-	schema, err = GetQuerySchema(QuerySchemaOptions{
-		PluginID:   b.opts.PluginID,
-		QueryTypes: defs.Items,
-		Mode:       SchemaTypeQueryRequest,
-	})
-	require.NoError(t, err)
-
-	body, _ = os.ReadFile(outfile) // #nosec G304
-	maybeUpdateFile(t, outfile, schema, body)
-
-	request := exampleRequest(defs)
-	outfile = filepath.Join(outdir, "query.request.example.json")
-	body, _ = os.ReadFile(outfile) // #nosec G304
-	maybeUpdateFile(t, outfile, request, body)
-
-	validator := validate.NewSchemaValidator(schema, nil, "", strfmt.Default)
-	result := validator.Validate(request)
-	if result.HasErrorsOrWarnings() {
-		for _, err := range result.Errors {
-			assert.NoError(t, err)
-		}
-		for _, err := range result.Warnings {
-			assert.NoError(t, err, "warning")
-		}
-
-		body, err = json.MarshalIndent(result, "", "  ")
+	outfile = filepath.Join(outdir, apiVersion, "query.examples.json")
+	if len(b.queryExamples.Examples) > 0 {
+		body, _ := os.ReadFile(outfile) // #nosec G304
+		maybeUpdateFile(t, outfile, b.queryExamples, body)
+	} else {
+		err = os.RemoveAll(outfile)
 		require.NoError(t, err)
-		fmt.Printf("Validation: %s\n", string(body))
-		require.Fail(t, "validation failed")
 	}
-	require.True(t, result.MatchCount > 0, "must have some rules")
-	return defs
+
+	// Now check the other files
+	provider := pluginschema.NewCompositeFileSchemaProvider(os.DirFS(outdir))
+	current, err := provider.Get(apiVersion)
+	require.NoError(t, err)
+	if current == nil {
+		current = &pluginschema.PluginSchema{TargetAPIVersion: apiVersion}
+	}
+
+	// Make sure secure json is not defined in the spec
+	if !current.SettingsSchema.IsZero() {
+		_, ok := current.SettingsSchema.Spec.Properties["secureJsonData"]
+		if ok {
+			require.FailNow(t, "secureJsonData should not be defined on the spec, use the SecureValues field instead")
+		}
+	}
+
+	type fileChecker struct {
+		name   string
+		new    any
+		old    any
+		asYAML bool
+	}
+	for _, tc := range []fileChecker{{
+		name: "settings",
+		new:  b.settingsSchema,
+		old:  current.SettingsSchema,
+	}, {
+		name: "settings.examples",
+		new:  b.settingsExamples,
+		old:  current.SettingsExamples,
+	}, {
+		name:   "routes",
+		new:    b.routes,
+		old:    current.Routes,
+		asYAML: true,
+	}} {
+		// If the property does not exist, remove both the yaml and json snapshots
+		if tc.new == nil {
+			if tc.old == nil {
+				continue // no change
+			}
+			base := path.Join(outdir, apiVersion, tc.name)
+
+			err = os.RemoveAll(base + ".yaml")
+			require.NoError(t, err)
+
+			err = os.RemoveAll(base + ".json")
+			require.NoError(t, err)
+
+			require.Failf(t, "schema property removed: %s", tc.name)
+			continue
+		}
+
+		if diff := Diff(tc.new, tc.old); diff != "" {
+			t.Errorf("%s changed (-want +got):\n%s", tc.name, diff)
+
+			var err error
+			var out []byte
+			ext := ".json"
+			rem := ".yaml" // remove the other format to ensure only one exists at a time
+			if tc.asYAML {
+				ext = ".yaml"
+				rem = ".json"
+				out, err = yaml.Marshal(tc.new) // k8s compatible
+				require.NoError(t, err)
+			} else {
+				out, err = json.MarshalIndent(tc.new, "", "  ")
+				require.NoError(t, err)
+			}
+			base := path.Join(outdir, apiVersion, tc.name)
+			err = os.MkdirAll(filepath.Dir(base), 0750)
+			require.NoError(t, err)
+			err = os.WriteFile(base+ext, out, 0600)
+			require.NoError(t, err)
+
+			// Remove yaml if it was JSON or vis-versa
+			err = os.RemoveAll(base + rem)
+			require.NoError(t, err)
+		}
+	}
+
+	// Save the entire schema as a single file for easy loading by the provider
+	if current.SettingsSchema != nil {
+		current, err = provider.Get(apiVersion)
+		require.NoError(t, err)
+		raw, err := json.Marshal(current)
+		require.NoError(t, err)
+		err = os.WriteFile(path.Join(outdir, apiVersion+".json"), raw, 0600)
+		require.NoError(t, err)
+	}
 }
 
-func maybeUpdateFile(t *testing.T, outfile string, value any, body []byte) {
+func maybeUpdateFile(t *testing.T, outfile string, value any, existing []byte) {
 	t.Helper()
 
 	out, err := json.MarshalIndent(value, "", "  ")
 	require.NoError(t, err)
 
 	update := false
-	if err == nil {
-		if !assert.JSONEq(t, string(out), string(body)) {
+	if len(existing) > 0 {
+		if !assert.JSONEq(t, string(existing), string(out)) {
 			update = true
 		}
 	} else {
 		update = true
 	}
 	if update {
+		err := os.MkdirAll(filepath.Dir(outfile), 0750)
+		require.NoError(t, err, "creating folder")
 		err = os.WriteFile(outfile, out, 0600)
 		require.NoError(t, err, "error writing file")
 	}

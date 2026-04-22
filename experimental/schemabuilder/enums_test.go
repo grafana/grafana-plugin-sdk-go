@@ -20,7 +20,7 @@ func TestFindEnums(t *testing.T) {
 	})
 
 	t.Run("verify enum extraction", func(t *testing.T) {
-		for i := 0; i < 5; i++ {
+		for range 5 {
 			fields, err := findEnumFields(
 				"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder/example",
 				"./example")

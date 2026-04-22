@@ -1,0 +1,11 @@
+{
+  "examples": {
+    "simple": {
+      "description": "a sample",
+      "value": {
+        "title": "example title",
+        "url": "http://theurl"
+      }
+    }
+  }
+}
