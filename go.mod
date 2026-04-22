@@ -56,6 +56,8 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
 
+require github.com/prometheus/client_model v0.6.2
+
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
 	github.com/bahlo/generic-list-go v0.2.0 // indirect
@@ -116,7 +118,6 @@ require (
 	github.com/perimeterx/marshmallow v1.1.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.25 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
-	github.com/prometheus/client_model v0.6.2 // indirect
 	github.com/prometheus/procfs v0.16.1 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/unknwon/com v1.0.1 // indirect

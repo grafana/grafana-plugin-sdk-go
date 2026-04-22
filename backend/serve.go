@@ -157,6 +157,7 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 		grpc.ChainUnaryInterceptor(
 			srvMetrics.UnaryServerInterceptor(),
 			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(handlePanic)),
+			grpcResponseSizeInterceptor(),
 		),
 		grpc.ChainStreamInterceptor(
 			srvMetrics.StreamServerInterceptor(),
