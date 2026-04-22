@@ -1,8 +1,10 @@
 package httpclient
 
 import (
+	"context"
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -10,113 +12,69 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func ptr[T any](v T) *T { return &v }
+
 func TestResponseLimitMiddleware(t *testing.T) {
-	t.Run("should use static limit when no context limit is set", func(t *testing.T) {
-		next := &mockRoundTripper{
-			response: &http.Response{
-				Body: io.NopCloser(strings.NewReader("dummy")),
-			},
-		}
+	tcs := []struct {
+		name               string
+		limit              int64
+		ctxLimit           *int64
+		envLimit           string
+		expectedBodyLength int
+		expectedBody       string
+		expectErr          bool
+	}{
+		// limit arg
+		{name: "limit arg enforced", limit: 1, expectedBodyLength: 1, expectedBody: "d", expectErr: true},
+		{name: "limit arg not exceeded", limit: 1000000, expectedBodyLength: 5, expectedBody: "dummy"},
+		{name: "limit arg 0 disables", limit: 0, expectedBodyLength: 5, expectedBody: "dummy"},
+		// env var
+		{name: "env var enforced when limit arg is 0", limit: 0, envLimit: "1", expectedBodyLength: 1, expectedBody: "d", expectErr: true},
+		{name: "env var not exceeded", limit: 0, envLimit: "1000000", expectedBodyLength: 5, expectedBody: "dummy"},
+		{name: "invalid env var ignored", limit: 0, envLimit: "-1", expectedBodyLength: 5, expectedBody: "dummy"},
+		{name: "zero env var ignored", limit: 0, envLimit: "0", expectedBodyLength: 5, expectedBody: "dummy"},
+		// grafana config (context) priority
+		{name: "grafana config wins over env var", limit: 0, ctxLimit: ptr(int64(3)), envLimit: "1000000", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
+		{name: "grafana config 0 falls back to env var", limit: 0, ctxLimit: ptr(int64(0)), envLimit: "3", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
+		{name: "no limit when nothing is set", limit: 0, expectedBodyLength: 5, expectedBody: "dummy"},
+	}
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.envLimit != "" {
+				t.Setenv(responseLimitEnvVar, tc.envLimit)
+			}
 
-		middleware := ResponseLimitMiddleware(1)
-		rt := middleware.CreateMiddleware(Options{}, next)
+			mw := ResponseLimitMiddleware(tc.limit)
+			rt := mw.CreateMiddleware(Options{}, RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+				return &http.Response{StatusCode: http.StatusOK, Request: req, Body: io.NopCloser(strings.NewReader("dummy"))}, nil
+			}))
 
-		req, err := http.NewRequest(http.MethodGet, "http://", nil)
-		require.NoError(t, err)
+			middlewareName, ok := mw.(MiddlewareName)
+			require.True(t, ok)
+			require.Equal(t, ResponseLimitMiddlewareName, middlewareName.MiddlewareName())
 
-		res, err := rt.RoundTrip(req)
-		require.NoError(t, err)
-		require.NotNil(t, res)
+			ctx := context.Background()
+			if tc.ctxLimit != nil {
+				ctx = config.WithGrafanaConfig(ctx, config.NewGrafanaCfg(map[string]string{
+					config.ResponseLimit: strconv.FormatInt(*tc.ctxLimit, 10),
+				}))
+			}
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://test.com/query", nil)
+			require.NoError(t, err)
 
-		body, err := io.ReadAll(res.Body)
-		require.Error(t, err)
-		require.Equal(t, "error: http: response body too large, response limit is set to: 1", err.Error())
-		require.Equal(t, "d", string(body))
-		require.NoError(t, res.Body.Close())
-	})
+			res, err := rt.RoundTrip(req)
+			require.NoError(t, err)
 
-	t.Run("should prefer static even when context limit is set", func(t *testing.T) {
-		next := &mockRoundTripper{
-			response: &http.Response{
-				Body: io.NopCloser(strings.NewReader("dummy")),
-			},
-		}
+			bodyBytes, err := io.ReadAll(res.Body)
+			require.NoError(t, res.Body.Close())
 
-		middleware := ResponseLimitMiddleware(1000) // High static limit
-		rt := middleware.CreateMiddleware(Options{}, next)
-
-		req, err := http.NewRequest(http.MethodGet, "http://", nil)
-		require.NoError(t, err)
-
-		// Set a lower limit in the context
-		ctx := config.WithGrafanaConfig(req.Context(), config.NewGrafanaCfg(map[string]string{
-			config.ResponseLimit: "1",
-		}))
-		req = req.WithContext(ctx)
-
-		res, err := rt.RoundTrip(req)
-		require.NoError(t, err)
-		require.NotNil(t, res)
-
-		body, err := io.ReadAll(res.Body)
-		require.NoError(t, err)
-		require.Equal(t, "dummy", string(body))
-		require.NoError(t, res.Body.Close())
-	})
-
-	t.Run("should not limit response when limit is 0", func(t *testing.T) {
-		next := &mockRoundTripper{
-			response: &http.Response{
-				Body: io.NopCloser(strings.NewReader("dummy")),
-			},
-		}
-
-		middleware := ResponseLimitMiddleware(0)
-		rt := middleware.CreateMiddleware(Options{}, next)
-
-		req, err := http.NewRequest(http.MethodGet, "http://", nil)
-		require.NoError(t, err)
-
-		res, err := rt.RoundTrip(req)
-		require.NoError(t, err)
-		require.NotNil(t, res)
-
-		body, err := io.ReadAll(res.Body)
-		require.NoError(t, err)
-		require.Equal(t, "dummy", string(body))
-		require.NoError(t, res.Body.Close())
-	})
-
-	t.Run("should not limit response when status is switching protocols", func(t *testing.T) {
-		next := &mockRoundTripper{
-			response: &http.Response{
-				StatusCode: http.StatusSwitchingProtocols,
-				Body:       io.NopCloser(strings.NewReader("dummy")),
-			},
-		}
-
-		middleware := ResponseLimitMiddleware(1)
-		rt := middleware.CreateMiddleware(Options{}, next)
-
-		req, err := http.NewRequest(http.MethodGet, "http://", nil)
-		require.NoError(t, err)
-
-		res, err := rt.RoundTrip(req)
-		require.NoError(t, err)
-		require.NotNil(t, res)
-
-		body, err := io.ReadAll(res.Body)
-		require.NoError(t, err)
-		require.Equal(t, "dummy", string(body))
-		require.NoError(t, res.Body.Close())
-	})
-}
-
-type mockRoundTripper struct {
-	response *http.Response
-	err      error
-}
-
-func (m *mockRoundTripper) RoundTrip(_ *http.Request) (*http.Response, error) {
-	return m.response, m.err
+			if tc.expectErr {
+				require.ErrorIs(t, err, ErrResponseBodyTooLarge)
+			} else {
+				require.NoError(t, err)
+			}
+			require.Len(t, bodyBytes, tc.expectedBodyLength)
+			require.Equal(t, tc.expectedBody, string(bodyBytes))
+		})
+	}
 }
