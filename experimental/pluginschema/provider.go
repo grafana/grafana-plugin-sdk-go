@@ -38,14 +38,15 @@ type PluginSchema struct {
 	QueryExamples *sdkapi.QueryExamples `json:"queryExamples,omitempty,omitzero"`
 }
 
+// IsZero returns true if the schema is empty (nil or all fields are zero values)
 func (s *PluginSchema) IsZero() bool {
 	if s == nil {
 		return true
 	}
-	if s.SettingsSchema != nil && !s.SettingsSchema.IsZero() {
+	if !s.SettingsSchema.IsZero() {
 		return false
 	}
-	if s.SettingsExamples != nil && !s.SettingsExamples.IsZero() {
+	if !s.SettingsExamples.IsZero() {
 		return false
 	}
 	if s.Routes != nil && !s.Routes.IsZero() {
@@ -71,11 +72,11 @@ type schemaProvider struct {
 }
 
 func (p *schemaProvider) Get(apiVersion string) (*PluginSchema, error) {
+	schema := &PluginSchema{TargetAPIVersion: apiVersion}
 	data, err := fs.ReadFile(p.fs, apiVersion+".json")
 	if isNotExists(err) {
-		return nil, nil // does not exist
+		return schema, nil // does not exist
 	}
-	schema := &PluginSchema{}
 	err = Load(data, schema)
 	if err != nil {
 		return nil, err
@@ -103,7 +104,6 @@ type compositeProvider struct {
 }
 
 func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
-	exists := false
 	schema := &PluginSchema{TargetAPIVersion: apiVersion}
 
 	// Settings
@@ -112,7 +112,6 @@ func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
-		exists = true
 		schema.SettingsSchema = &Settings{}
 		if err = Load(raw, schema.SettingsSchema); err != nil {
 			return nil, err
@@ -125,7 +124,6 @@ func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
-		exists = true
 		schema.SettingsExamples = &SettingsExamples{}
 		if err = Load(raw, schema.SettingsExamples); err != nil {
 			return nil, err
@@ -138,7 +136,6 @@ func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
-		exists = true
 		schema.Routes = &Routes{}
 		if err = Load(raw, schema.Routes); err != nil {
 			return nil, err
@@ -151,7 +148,6 @@ func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
-		exists = true
 		schema.QueryTypes = &sdkapi.QueryTypeDefinitionList{}
 		if err = Load(raw, schema.QueryTypes); err != nil {
 			return nil, err
@@ -164,16 +160,12 @@ func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
 		return nil, err
 	}
 	if len(raw) > 0 {
-		exists = true
 		schema.QueryExamples = &sdkapi.QueryExamples{}
 		if err = Load(raw, schema.QueryExamples); err != nil {
 			return nil, err
 		}
 	}
 
-	if !exists {
-		return nil, nil // nothing found!
-	}
 	return schema, nil
 }
 
