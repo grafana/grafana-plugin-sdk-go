@@ -111,10 +111,12 @@ func histogramDTO(t *testing.T, service, method string) *dto.Histogram {
 }
 
 func sampleCount(t *testing.T, service, method string) uint64 {
+	t.Helper()
 	return histogramDTO(t, service, method).GetSampleCount()
 }
 
 func latestSample(t *testing.T, service, method string) histSample {
+	t.Helper()
 	h := histogramDTO(t, service, method)
 	return histSample{count: h.GetSampleCount(), sumDelta: h.GetSampleSum()}
 }
