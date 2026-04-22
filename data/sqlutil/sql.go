@@ -52,6 +52,7 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 	frame := NewFrame(names, scanRow.Converters...)
 
 	var i int64
+	defer func() { observeRowsScanned(i) }()
 
 outer:
 	for i < rowLimit {
