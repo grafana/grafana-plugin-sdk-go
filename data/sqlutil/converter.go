@@ -144,14 +144,14 @@ type Converter struct {
 
 // DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
 func DefaultConverterFunc(t reflect.Type) func(in interface{}) (interface{}, error) {
+	// Precompute the expected pointer type once. This used to be computed on
+	// every cell via reflect.PointerTo(t) inside the returned closure, which
+	// dominates the per-row hot path of FrameFromRows on wide result sets.
+	expectedType := reflect.PointerTo(t)
 	return func(in interface{}) (interface{}, error) {
-		inType := reflect.TypeOf(in)
-		if inType == reflect.PointerTo(t) {
-			n := reflect.ValueOf(in)
-
-			return n.Elem().Interface(), nil
+		if reflect.TypeOf(in) == expectedType {
+			return reflect.ValueOf(in).Elem().Interface(), nil
 		}
-
 		return in, nil
 	}
 }
