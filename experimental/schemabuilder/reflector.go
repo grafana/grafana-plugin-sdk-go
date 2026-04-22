@@ -367,12 +367,14 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 	}
 
 	// Save the entire schema as a single file for easy loading by the provider
-	current, err = provider.Get(apiVersion)
-	require.NoError(t, err)
-	raw, err := json.Marshal(current)
-	require.NoError(t, err)
-	err = os.WriteFile(path.Join(outdir, apiVersion+".json"), raw, 0600)
-	require.NoError(t, err)
+	if current.SettingsSchema != nil {
+		current, err = provider.Get(apiVersion)
+		require.NoError(t, err)
+		raw, err := json.Marshal(current)
+		require.NoError(t, err)
+		err = os.WriteFile(path.Join(outdir, apiVersion+".json"), raw, 0600)
+		require.NoError(t, err)
+	}
 }
 
 func maybeUpdateFile(t *testing.T, outfile string, value any, existing []byte) {
