@@ -1,8 +1,11 @@
 {
   "examples": {
-    "": {
+    "simple": {
       "description": "a sample",
-      "value": "invalid"
+      "value": {
+        "title": "example title",
+        "url": "http://theurl"
+      }
     }
   }
 }

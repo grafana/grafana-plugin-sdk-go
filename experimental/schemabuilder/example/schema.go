@@ -11,12 +11,7 @@ func newSchema() *pluginschema.PluginSchema {
 	schema := pluginschema.PluginSchema{
 		TargetAPIVersion: "v0alpha1",
 		SettingsSchema: &pluginschema.Settings{
-			Spec: &spec.Schema{
-				SchemaProps: spec.SchemaProps{
-					Description: "Test data does not require any explicit configuration",
-				},
-			},
-
+			Spec: &spec.Schema{},
 			SecureValues: []pluginschema.SecureValueInfo{
 				{
 					Key:         "aaa",
@@ -31,10 +26,13 @@ func newSchema() *pluginschema.PluginSchema {
 
 		SettingsExamples: &pluginschema.SettingsExamples{
 			Examples: map[string]*spec3.Example{
-				"": {
+				"simple": {
 					ExampleProps: spec3.ExampleProps{
 						Description: "a sample",
-						Value:       "invalid",
+						Value: map[string]any{
+							"title": "example title",
+							"url":   "http://theurl",
+						},
 					},
 				},
 			},

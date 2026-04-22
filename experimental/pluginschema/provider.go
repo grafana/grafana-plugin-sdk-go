@@ -62,21 +62,16 @@ func (s *PluginSchema) IsZero() bool {
 
 // This will read the schema from a single file named {prefix}{apiVersion}.json.
 // The file must contain the entire schema, including settings, routes, and query types/examples.
-func NewSchemaProvider(fss fs.FS, prefix string) (SchemaProvider, error) {
-	if prefix != "" && !strings.HasSuffix(prefix, "/") {
-		return nil, fmt.Errorf("the prefix must be a folder path ending with /")
-	}
-	return &schemaProvider{fs: fss, prefix: prefix}, nil
+func NewSchemaProvider(fss fs.FS) SchemaProvider {
+	return &schemaProvider{fs: fss}
 }
 
 type schemaProvider struct {
-	prefix string
-	fs     fs.FS
+	fs fs.FS
 }
 
 func (p *schemaProvider) Get(apiVersion string) (*PluginSchema, error) {
-	path := fmt.Sprintf("%s%s.json", p.prefix, apiVersion)
-	data, err := fs.ReadFile(p.fs, path)
+	data, err := fs.ReadFile(p.fs, apiVersion+".json")
 	if isNotExists(err) {
 		return nil, nil // does not exist
 	}
@@ -99,16 +94,12 @@ func (p *schemaProvider) Get(apiVersion string) (*PluginSchema, error) {
 // - {apiVersion}/query.examples.{yaml|json}
 // This allows for better organization of the schema, and avoids the need to have a single large file.
 // HOWEVER, the production provider will all be loaded from a single file.
-func NewCompositeFileSchemaProvider(fss fs.FS, prefix string) (SchemaProvider, error) {
-	if prefix != "" && !strings.HasSuffix(prefix, "/") {
-		return nil, fmt.Errorf("the prefix must be a folder path ending with /")
-	}
-	return &compositeProvider{fs: fss, prefix: prefix}, nil
+func NewCompositeFileSchemaProvider(fss fs.FS) SchemaProvider {
+	return &compositeProvider{fs: fss}
 }
 
 type compositeProvider struct {
-	prefix string
-	fs     fs.FS
+	fs fs.FS
 }
 
 func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
@@ -187,7 +178,7 @@ func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
 }
 
 func (p *compositeProvider) getYAMLorJSON(apiVersion, name string) ([]byte, error) {
-	path := fmt.Sprintf("%s%s/%s", p.prefix, apiVersion, name)
+	path := fmt.Sprintf("%s/%s", apiVersion, name)
 	data, err := fs.ReadFile(p.fs, path+".json")
 	if isNotExists(err) {
 		data, err = fs.ReadFile(p.fs, path+".yaml")

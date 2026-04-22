@@ -286,12 +286,19 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 	}
 
 	// Now check the other files
-	provider, err := pluginschema.NewCompositeFileSchemaProvider(os.DirFS(outdir), "")
-	require.NoError(t, err)
+	provider := pluginschema.NewCompositeFileSchemaProvider(os.DirFS(outdir))
 	current, err := provider.Get(apiVersion)
 	require.NoError(t, err)
 	if current == nil {
 		current = &pluginschema.PluginSchema{TargetAPIVersion: apiVersion}
+	}
+
+	// Make sure secure json is not defined in the spec
+	if !current.SettingsSchema.IsZero() {
+		_, ok := current.SettingsSchema.Spec.Properties["secureJsonData"]
+		if ok {
+			require.FailNow(t, "secureJsonData should not be defined on the spec, use the SecureValues field instead")
+		}
 	}
 
 	type fileChecker struct {
