@@ -8,7 +8,8 @@ type QueryExample struct {
 	// The example display name (shows up in swagger)
 	Name string `json:"name"`
 
-	// Query type matches the query type in the
+	// Query type matches the query type from QueryTypeDefinitions (query.types.json)
+	// The examples are then added to the swagger docs for this plugin
 	QueryType string `json:"queryType"`
 
 	// Optionally explain why the example is interesting

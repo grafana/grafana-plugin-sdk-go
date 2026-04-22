@@ -286,7 +286,8 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 	}
 
 	// Now check the other files
-	provider := pluginschema.NewSchemaProvider(os.DirFS(outdir), "")
+	provider, err := pluginschema.NewSchemaProvider(os.DirFS(outdir), "")
+	require.NoError(t, err)
 	current, err := provider.Get(apiVersion)
 	require.NoError(t, err)
 	if current == nil {
@@ -322,7 +323,7 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 			err = os.RemoveAll(base + ".yaml")
 			require.NoError(t, err)
 
-			err = os.RemoveAll(base + "json")
+			err = os.RemoveAll(base + ".json")
 			require.NoError(t, err)
 
 			require.Failf(t, "schema property removed: %s", tc.name)

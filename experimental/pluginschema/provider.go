@@ -66,11 +66,11 @@ func (s *PluginSchema) IsZero() bool {
 // - {apiVersion}/routes.{yaml|json}
 // - {apiVersion}/query.types.{yaml|json}
 // - {apiVersion}/query.examples.{yaml|json}
-func NewSchemaProvider(fss fs.FS, prefix string) SchemaProvider {
+func NewSchemaProvider(fss fs.FS, prefix string) (SchemaProvider, error) {
 	if prefix != "" && !strings.HasSuffix(prefix, "/") {
-		panic("the prefix must be a folder path ending with /")
+		return nil, fmt.Errorf("the prefix must be a folder path ending with /")
 	}
-	return &fsSpecProvider{fs: fss, prefix: prefix}
+	return &fsSpecProvider{fs: fss, prefix: prefix}, nil
 }
 
 type fsSpecProvider struct {
