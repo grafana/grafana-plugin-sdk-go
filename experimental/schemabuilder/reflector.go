@@ -31,8 +31,8 @@ type Builder struct {
 	reflector *jsonschema.Reflector // Needed to use comments
 
 	// discovered via reflection
-	query    []sdkapi.QueryTypeDefinition
-	examples sdkapi.QueryExamples
+	query         []sdkapi.QueryTypeDefinition
+	queryExamples sdkapi.QueryExamples
 
 	// Explicitly configured
 	settingsSchema   *pluginschema.Settings
@@ -176,7 +176,7 @@ func (b *Builder) AddQueries(inputs []QueryTypeInfo) error {
 				return fmt.Errorf("all examples require a name: %+v", example)
 			}
 			example.QueryType = name
-			b.examples.Examples = append(b.examples.Examples, example)
+			b.queryExamples.Examples = append(b.queryExamples.Examples, example)
 		}
 
 		// We need to be careful to only use draft-04 so that this is possible to use
@@ -277,21 +277,21 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 	maybeUpdateFile(t, outfile, defs, body)
 
 	outfile = filepath.Join(outdir, apiVersion, "query.examples.json")
-	if len(b.examples.Examples) > 0 {
+	if len(b.queryExamples.Examples) > 0 {
 		body, _ := os.ReadFile(outfile) // #nosec G304
-		maybeUpdateFile(t, outfile, b.examples, body)
+		maybeUpdateFile(t, outfile, b.queryExamples, body)
 	} else {
 		err = os.RemoveAll(outfile)
 		require.NoError(t, err)
 	}
 
 	// Now check the other files
-	provider, err := pluginschema.NewSchemaProvider(os.DirFS(outdir), "")
+	provider, err := pluginschema.NewCompositeFileSchemaProvider(os.DirFS(outdir), "")
 	require.NoError(t, err)
 	current, err := provider.Get(apiVersion)
 	require.NoError(t, err)
 	if current == nil {
-		current = &pluginschema.PluginSchema{APIVersion: apiVersion}
+		current = &pluginschema.PluginSchema{TargetAPIVersion: apiVersion}
 	}
 
 	type fileChecker struct {
@@ -309,9 +309,10 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 		new:  b.settingsExamples,
 		old:  current.SettingsExamples,
 	}, {
-		name: "routes",
-		new:  b.routes,
-		old:  current.Routes,
+		name:   "routes",
+		new:    b.routes,
+		old:    current.Routes,
+		asYAML: true,
 	}} {
 		// If the property does not exist, remove both the yaml and json snapshots
 		if tc.new == nil {
@@ -357,6 +358,14 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 			require.NoError(t, err)
 		}
 	}
+
+	// Save the entire schema as a single file for easy loading by the provider
+	current, err = provider.Get(apiVersion)
+	require.NoError(t, err)
+	raw, err := json.Marshal(current)
+	require.NoError(t, err)
+	err = os.WriteFile(path.Join(outdir, apiVersion+".json"), raw, 0600)
+	require.NoError(t, err)
 }
 
 func maybeUpdateFile(t *testing.T, outfile string, value any, existing []byte) {

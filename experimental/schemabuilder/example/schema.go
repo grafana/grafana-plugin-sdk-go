@@ -9,7 +9,7 @@ import (
 
 func newSchema() *pluginschema.PluginSchema {
 	schema := pluginschema.PluginSchema{
-		APIVersion: "v0alpha1",
+		TargetAPIVersion: "v0alpha1",
 		SettingsSchema: &pluginschema.Settings{
 			Spec: &spec.Schema{
 				SchemaProps: spec.SchemaProps{
