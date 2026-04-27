@@ -184,6 +184,20 @@ func (f *Field) Extend(i int) {
 	f.vector.Extend(i)
 }
 
+// Grow reserves capacity for at least n additional elements without changing
+// the Field's length. Use this before a sequence of Append calls when the
+// final size is known, to avoid repeated reallocation of the underlying slice.
+// It is a no-op if the existing capacity already fits.
+func (f *Field) Grow(n int) {
+	f.vector.Grow(n)
+}
+
+// Capacity returns the capacity of the Field's underlying vector. It is
+// primarily useful for verifying the effect of Grow.
+func (f *Field) Capacity() int {
+	return f.vector.Cap()
+}
+
 // At returns the the element at index idx of the Field.
 // It will panic if idx is out of range.
 func (f *Field) At(idx int) interface{} {

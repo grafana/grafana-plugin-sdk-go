@@ -48,6 +48,10 @@ func (v *genVector) Len() int {
 	return len(*v)
 }
 
+func (v *genVector) Cap() int {
+	return cap(*v)
+}
+
 func (v *genVector) CopyAt(i int) interface{} {
 	var g gen //nolint:staticcheck // S1021: generated code pattern
 	g = (*v)[i]
@@ -64,6 +68,17 @@ func (v *genVector) Type() FieldType {
 
 func (v *genVector) Extend(i int) {
 	*v = append(*v, make([]gen, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *genVector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]gen, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 // set the length to zero, but keep the same capacity
