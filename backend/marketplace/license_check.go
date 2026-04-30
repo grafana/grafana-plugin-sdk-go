@@ -73,11 +73,12 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	// Will return an error if the path is not found
 	val = os.Getenv("GF_MARKETPLACE_LICENSE_PATH")
 	if len(val) < 2 {
-		// TODO: marketplace: change file name to be plugin-specific
-		val = "license.jwt" // default license path
+		// TODO: path traversal etc
+		licenseFileName := "marketplace-" + pluginId + ".jwt"
+		val = licenseFileName // default license path
 		if !fileExists(val) {
 			homedir, _ := os.UserHomeDir()
-			val = filepath.Join(homedir, ".grafana", "license.jwt")
+			val = filepath.Join(homedir, ".grafana", licenseFileName)
 		}
 	}
 	backend.Logger.Debug("Loading license from file", "path", val)
