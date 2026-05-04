@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/marketplace/licensing"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
 
 // CheckMarketplaceLicense checks if a valid marketplace plugin license exists.
