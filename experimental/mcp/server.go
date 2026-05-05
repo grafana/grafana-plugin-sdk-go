@@ -6,6 +6,7 @@ package mcp
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net"
@@ -163,7 +164,101 @@ func (s *Server) buildSDKServer() *mcpsdk.Server {
 		Name:    s.opts.Name,
 		Version: s.opts.Version,
 	}, nil)
-	// tools, resources, prompts will be added in Task 8
+
+	for _, t := range s.Tools() {
+		t := t // capture
+		schema := t.InputSchema
+		if schema == nil {
+			// SDK requires a non-nil object schema; default to an empty object schema
+			schema = map[string]any{"type": "object"}
+		}
+		raw, err := json.Marshal(schema)
+		if err != nil {
+			log.DefaultLogger.Warn("failed to marshal tool input schema, skipping tool", "tool", t.Name, "err", err)
+			continue
+		}
+		sdkTool := &mcpsdk.Tool{
+			Name:        t.Name,
+			Description: t.Description,
+			InputSchema: json.RawMessage(raw),
+		}
+		srv.AddTool(sdkTool, func(ctx context.Context, req *mcpsdk.CallToolRequest) (*mcpsdk.CallToolResult, error) {
+			var args map[string]any
+			if len(req.Params.Arguments) > 0 {
+				if err := json.Unmarshal(req.Params.Arguments, &args); err != nil {
+					return &mcpsdk.CallToolResult{
+						IsError: true,
+						Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: err.Error()}},
+					}, nil
+				}
+			}
+			out, err := t.Handler(ctx, args)
+			if err != nil {
+				return &mcpsdk.CallToolResult{
+					IsError: true,
+					Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: err.Error()}},
+				}, nil
+			}
+			body, err := json.Marshal(out)
+			if err != nil {
+				return nil, err
+			}
+			return &mcpsdk.CallToolResult{
+				Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: string(body)}},
+			}, nil
+		})
+	}
+
+	for _, r := range s.Resources() {
+		r := r
+		sdkRes := &mcpsdk.Resource{
+			URI:         r.URI,
+			Name:        r.Name,
+			Description: r.Description,
+			MIMEType:    r.MIMEType,
+		}
+		srv.AddResource(sdkRes, func(ctx context.Context, _ *mcpsdk.ReadResourceRequest) (*mcpsdk.ReadResourceResult, error) {
+			body, mimeType, err := r.Reader(ctx)
+			if err != nil {
+				return nil, err
+			}
+			if mimeType == "" {
+				mimeType = r.MIMEType
+			}
+			return &mcpsdk.ReadResourceResult{
+				Contents: []*mcpsdk.ResourceContents{{
+					URI:      r.URI,
+					MIMEType: mimeType,
+					Text:     string(body),
+				}},
+			}, nil
+		})
+	}
+
+	for _, p := range s.Prompts() {
+		p := p
+		args := make([]*mcpsdk.PromptArgument, 0, len(p.Arguments))
+		for _, a := range p.Arguments {
+			args = append(args, &mcpsdk.PromptArgument{
+				Name:        a.Name,
+				Description: a.Description,
+				Required:    a.Required,
+			})
+		}
+		srv.AddPrompt(&mcpsdk.Prompt{
+			Name:        p.Name,
+			Description: p.Description,
+			Arguments:   args,
+		}, func(ctx context.Context, _ *mcpsdk.GetPromptRequest) (*mcpsdk.GetPromptResult, error) {
+			return &mcpsdk.GetPromptResult{
+				Messages: []*mcpsdk.PromptMessage{{
+					Role:    "user",
+					Content: &mcpsdk.TextContent{Text: p.Template},
+				}},
+			}, nil
+		})
+	}
+
 	return srv
 }
 

@@ -6,6 +6,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/mcp/mcptest"
+	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -63,4 +65,54 @@ func TestServer_Start_failsWhenAddrInUse(t *testing.T) {
 	s := NewServer(ServerOpts{Name: "x", Version: "0", Addr: occupier.Addr().String()})
 	err = s.Start(context.Background())
 	assert.Error(t, err)
+}
+
+func TestServer_buildSDKServer_listsRegisteredTools(t *testing.T) {
+	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	s.RegisterTool(Tool{
+		Name:        "ping",
+		Description: "pong",
+		Handler: func(ctx context.Context, args map[string]any) (any, error) {
+			return "pong", nil
+		},
+	})
+
+	sdk := s.buildSDKServer()
+	ctx := context.Background()
+	_, session, err := mcptest.NewClient(ctx, sdk)
+	require.NoError(t, err)
+	defer session.Close()
+
+	res, err := session.ListTools(ctx, nil)
+	require.NoError(t, err)
+	require.Len(t, res.Tools, 1)
+	assert.Equal(t, "ping", res.Tools[0].Name)
+}
+
+func TestServer_buildSDKServer_callsToolHandler(t *testing.T) {
+	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	s.RegisterTool(Tool{
+		Name:        "echo",
+		Description: "echo",
+		InputSchema: map[string]any{"type": "object"},
+		Handler: func(ctx context.Context, args map[string]any) (any, error) {
+			return args, nil
+		},
+	})
+
+	sdk := s.buildSDKServer()
+	ctx := context.Background()
+	_, session, err := mcptest.NewClient(ctx, sdk)
+	require.NoError(t, err)
+	defer session.Close()
+
+	res, err := session.CallTool(ctx, &mcpsdk.CallToolParams{
+		Name:      "echo",
+		Arguments: map[string]any{"hello": "world"},
+	})
+	require.NoError(t, err)
+	require.NotEmpty(t, res.Content)
+	textContent, ok := res.Content[0].(*mcpsdk.TextContent)
+	require.True(t, ok)
+	assert.Contains(t, textContent.Text, `"hello":"world"`)
 }
