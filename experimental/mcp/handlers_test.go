@@ -42,3 +42,31 @@ func TestServer_Bind_storesHandlers(t *testing.T) {
 	// Type assertion via accessors:
 	assert.Equal(t, h, s.QueryDataHandler())
 }
+
+func TestExecuteQueryTool_callsHandlerAndEncodesFrames(t *testing.T) {
+	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	h := &fakeHandler{}
+	s.BindQueryDataHandler(h)
+
+	args := map[string]any{
+		"owner":      "grafana",
+		"repository": "github-datasource",
+	}
+	out, err := s.executeQueryTool(context.Background(), "Pull_Requests", args)
+	require.NoError(t, err)
+	require.NotNil(t, out)
+
+	// Handler should have been called with a single DataQuery whose JSON body matches args.
+	require.NotNil(t, h.queryCalledWith)
+	require.Len(t, h.queryCalledWith.Queries, 1)
+	q := h.queryCalledWith.Queries[0]
+	assert.Equal(t, "Pull_Requests", q.QueryType)
+	assert.Equal(t, "A", q.RefID)
+	assert.JSONEq(t, `{"owner":"grafana","repository":"github-datasource"}`, string(q.JSON))
+}
+
+func TestExecuteQueryTool_errorsWhenHandlerNotBound(t *testing.T) {
+	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	_, err := s.executeQueryTool(context.Background(), "Pull_Requests", map[string]any{})
+	assert.Error(t, err)
+}

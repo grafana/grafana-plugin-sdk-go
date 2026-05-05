@@ -1,6 +1,13 @@
 package mcp
 
-import "github.com/grafana/grafana-plugin-sdk-go/backend"
+import (
+	"context"
+	"encoding/json"
+	"errors"
+	"fmt"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
+)
 
 // BindQueryDataHandler attaches the plugin's QueryDataHandler. Schema-driven
 // query tools registered via fromschema.RegisterQueryTools delegate to it.
@@ -51,4 +58,38 @@ func (s *Server) CheckHealthHandler() backend.CheckHealthHandler {
 		return nil
 	}
 	return s.checkHealthHandler.(backend.CheckHealthHandler)
+}
+
+// executeQueryTool is the shared handler for every query-type tool. It builds
+// a single-query QueryDataRequest with the given queryType discriminator and
+// the tool args as the JSON body, then JSON-encodes the resulting frames.
+func (s *Server) executeQueryTool(ctx context.Context, queryType string, args map[string]any) (any, error) {
+	h := s.QueryDataHandler()
+	if h == nil {
+		return nil, errors.New("no QueryDataHandler bound to MCP server")
+	}
+	body, err := json.Marshal(args)
+	if err != nil {
+		return nil, fmt.Errorf("marshal query args: %w", err)
+	}
+	req := &backend.QueryDataRequest{
+		Queries: []backend.DataQuery{{
+			RefID:     "A",
+			QueryType: queryType,
+			JSON:      body,
+		}},
+	}
+	resp, err := h.QueryData(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("QueryData failed: %w", err)
+	}
+	out := map[string]any{}
+	for refID, dr := range resp.Responses {
+		if dr.Error != nil {
+			out[refID] = map[string]any{"error": dr.Error.Error()}
+			continue
+		}
+		out[refID] = dr.Frames
+	}
+	return out, nil
 }
