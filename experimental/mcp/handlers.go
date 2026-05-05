@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/url"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
@@ -92,4 +94,101 @@ func (s *Server) executeQueryTool(ctx context.Context, queryType string, args ma
 		out[refID] = dr.Frames
 	}
 	return out, nil
+}
+
+// routeToolSpec describes how to translate tool args into a CallResourceRequest.
+// It is built once per tool by fromschema.RegisterRouteTools and reused on
+// every call.
+type routeToolSpec struct {
+	Method     string
+	Path       string   // OpenAPI-style path, may contain {param}
+	PathParams []string // names of path parameters in Path, e.g. {"owner","repo"}
+	QueryArgs  []string // tool arg names that go into the query string
+	BodyArg    string   // tool arg name (if any) whose value becomes the request body
+}
+
+// captureSender collects the first CallResourceResponse and is enough for v1.
+type captureSender struct{ resp *backend.CallResourceResponse }
+
+func (c *captureSender) Send(r *backend.CallResourceResponse) error {
+	if c.resp == nil {
+		c.resp = r
+	}
+	return nil
+}
+
+func (s *Server) executeRouteTool(ctx context.Context, spec routeToolSpec, args map[string]any) (any, error) {
+	h := s.CallResourceHandler()
+	if h == nil {
+		return nil, errors.New("no CallResourceHandler bound to MCP server")
+	}
+
+	// substitute path parameters
+	path := spec.Path
+	for _, p := range spec.PathParams {
+		v, ok := args[p]
+		if !ok {
+			return nil, fmt.Errorf("missing required path parameter %q", p)
+		}
+		path = strings.ReplaceAll(path, "{"+p+"}", fmt.Sprintf("%v", v))
+	}
+
+	// build query string from QueryArgs that are present in args
+	values := url.Values{}
+	for _, q := range spec.QueryArgs {
+		if v, ok := args[q]; ok && v != nil && v != "" {
+			values.Set(q, fmt.Sprintf("%v", v))
+		}
+	}
+
+	// body, if any
+	var body []byte
+	if spec.BodyArg != "" {
+		if v, ok := args[spec.BodyArg]; ok {
+			b, err := json.Marshal(v)
+			if err != nil {
+				return nil, fmt.Errorf("marshal request body: %w", err)
+			}
+			body = b
+		}
+	}
+
+	urlStr := path
+	if encoded := values.Encode(); encoded != "" {
+		urlStr = path + "?" + encoded
+	}
+
+	req := &backend.CallResourceRequest{
+		Method: spec.Method,
+		Path:   path,
+		URL:    urlStr,
+		Body:   body,
+	}
+	sender := &captureSender{}
+	if err := h.CallResource(ctx, req, sender); err != nil {
+		return nil, fmt.Errorf("CallResource failed: %w", err)
+	}
+	if sender.resp == nil {
+		return nil, errors.New("CallResource returned no response")
+	}
+	// try JSON decode; fall back to string body
+	if ct, _ := firstHeader(sender.resp.Headers, "Content-Type"); strings.HasPrefix(ct, "application/json") {
+		var decoded any
+		if err := json.Unmarshal(sender.resp.Body, &decoded); err == nil {
+			return decoded, nil
+		}
+	}
+	return string(sender.resp.Body), nil
+}
+
+func firstHeader(h map[string][]string, key string) (string, bool) {
+	if h == nil {
+		return "", false
+	}
+	for k, v := range h {
+		if strings.EqualFold(k, key) && len(v) > 0 {
+			return v[0], true
+		}
+	}
+	return "", false
 }

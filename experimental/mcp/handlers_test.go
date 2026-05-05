@@ -70,3 +70,43 @@ func TestExecuteQueryTool_errorsWhenHandlerNotBound(t *testing.T) {
 	_, err := s.executeQueryTool(context.Background(), "Pull_Requests", map[string]any{})
 	assert.Error(t, err)
 }
+
+func TestExecuteRouteTool_callsHandlerWithBuiltRequest(t *testing.T) {
+	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	h := &fakeHandler{}
+	s.BindCallResourceHandler(h)
+
+	out, err := s.executeRouteTool(context.Background(), routeToolSpec{
+		Method:     "GET",
+		Path:       "/labels",
+		PathParams: nil,
+		QueryArgs:  []string{"owner", "repository"},
+	}, map[string]any{
+		"owner":      "grafana",
+		"repository": "github-datasource",
+	})
+	require.NoError(t, err)
+	require.NotNil(t, out)
+	require.NotNil(t, h.resourceCalledWith)
+	assert.Equal(t, "GET", h.resourceCalledWith.Method)
+	assert.Equal(t, "/labels", h.resourceCalledWith.Path)
+	assert.Contains(t, h.resourceCalledWith.URL, "owner=grafana")
+	assert.Contains(t, h.resourceCalledWith.URL, "repository=github-datasource")
+}
+
+func TestExecuteRouteTool_substitutesPathParams(t *testing.T) {
+	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	h := &fakeHandler{}
+	s.BindCallResourceHandler(h)
+
+	_, err := s.executeRouteTool(context.Background(), routeToolSpec{
+		Method:     "GET",
+		Path:       "/repos/{owner}/{repo}/files",
+		PathParams: []string{"owner", "repo"},
+	}, map[string]any{
+		"owner": "grafana",
+		"repo":  "github-datasource",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "/repos/grafana/github-datasource/files", h.resourceCalledWith.Path)
+}
