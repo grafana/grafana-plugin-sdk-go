@@ -181,6 +181,25 @@ func (s *Server) executeRouteTool(ctx context.Context, spec routeToolSpec, args 
 	return string(sender.resp.Body), nil
 }
 
+// ExecuteHealthTool is the public entry point used by fromschema to delegate to
+// the bound CheckHealthHandler.
+func (s *Server) ExecuteHealthTool(ctx context.Context) (any, error) {
+	return s.executeHealthTool(ctx)
+}
+
+// ExecuteQueryTool is exported for fromschema.RegisterQueryTools.
+func (s *Server) ExecuteQueryTool(ctx context.Context, queryType string, args map[string]any) (any, error) {
+	return s.executeQueryTool(ctx, queryType, args)
+}
+
+// ExecuteRouteTool is exported for fromschema.RegisterRouteTools.
+func (s *Server) ExecuteRouteTool(ctx context.Context, spec RouteToolSpec, args map[string]any) (any, error) {
+	return s.executeRouteTool(ctx, routeToolSpec(spec), args)
+}
+
+// RouteToolSpec is the public mirror of routeToolSpec.
+type RouteToolSpec = routeToolSpec
+
 func (s *Server) executeHealthTool(ctx context.Context) (any, error) {
 	h := s.CheckHealthHandler()
 	if h == nil {
