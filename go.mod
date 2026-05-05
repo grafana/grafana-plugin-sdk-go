@@ -56,7 +56,10 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
 
-require github.com/go-openapi/jsonreference v0.21.5
+require (
+	github.com/go-openapi/jsonreference v0.21.5
+	github.com/modelcontextprotocol/go-sdk v1.6.0
+)
 
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
@@ -104,7 +107,6 @@ require (
 	github.com/mattn/go-colorable v0.1.14 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-runewidth v0.0.19 // indirect
-	github.com/modelcontextprotocol/go-sdk v1.6.0 // indirect
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 // indirect

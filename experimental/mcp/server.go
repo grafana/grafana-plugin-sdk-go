@@ -4,7 +4,28 @@
 // the gRPC server.
 package mcp
 
-import "sync"
+import (
+	"context"
+	"errors"
+	"fmt"
+	"net"
+	"net/http"
+	"os"
+	"path/filepath"
+	"sync"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
+)
+
+const (
+	// EnvAddr is the env var that overrides the configured Addr (and forces a
+	// specific bind address, ignoring auto-pick).
+	EnvAddr = "GF_PLUGIN_MCP_ADDR"
+	// AddrFile is written next to dist/standalone.txt with host:port when the
+	// listener is bound, so external tooling can find it.
+	AddrFile = "dist/mcp.addr"
+)
 
 // ServerOpts configures a Server.
 type ServerOpts struct {
@@ -27,6 +48,10 @@ type Server struct {
 	queryDataHandler    any // backend.QueryDataHandler - typed import in handlers.go
 	callResourceHandler any // backend.CallResourceHandler
 	checkHealthHandler  any // backend.CheckHealthHandler
+
+	// transport state, populated by Start
+	httpServer *http.Server
+	listenAddr string
 }
 
 // NewServer constructs an unstarted Server.
@@ -62,4 +87,101 @@ func (s *Server) Prompts() []Prompt {
 	out := make([]Prompt, len(s.prompts))
 	copy(out, s.prompts)
 	return out
+}
+
+// resolveAddr applies the priority order: env var > opts.Addr > auto-pick on 127.0.0.1.
+func (s *Server) resolveAddr() string {
+	if v := os.Getenv(EnvAddr); v != "" {
+		return v
+	}
+	if s.opts.Addr != "" {
+		return s.opts.Addr
+	}
+	return "127.0.0.1:0"
+}
+
+// Start binds the listener and serves the MCP HTTP transport. Non-blocking:
+// returns once the listener is accepted, or an error if binding failed.
+func (s *Server) Start(ctx context.Context) error {
+	if s.httpServer != nil {
+		return errors.New("MCP server already started")
+	}
+	addr := s.resolveAddr()
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return fmt.Errorf("MCP listen on %s: %w", addr, err)
+	}
+	s.listenAddr = listener.Addr().String()
+
+	// build the underlying MCP SDK server from our registered state
+	sdkServer := s.buildSDKServer()
+	handler := mcpsdk.NewStreamableHTTPHandler(func(*http.Request) *mcpsdk.Server { return sdkServer }, nil)
+
+	mux := http.NewServeMux()
+	mux.Handle("/mcp", handler)
+	mux.Handle("/mcp/", handler)
+
+	s.httpServer = &http.Server{Handler: mux}
+	go func() {
+		if err := s.httpServer.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
+			log.DefaultLogger.Error("MCP HTTP server stopped with error", "err", err)
+		}
+	}()
+
+	if err := s.writeAddrFile(); err != nil {
+		log.DefaultLogger.Warn("failed to write MCP addr file", "err", err)
+	}
+	if !isLoopback(s.listenAddr) {
+		log.DefaultLogger.Warn("MCP listener bound to non-loopback address; auth must be handled by a gateway", "addr", s.listenAddr)
+	}
+	log.DefaultLogger.Info("MCP server listening", "addr", s.listenAddr)
+	return nil
+}
+
+// Shutdown gracefully stops the HTTP server. Caller should pass a deadline.
+func (s *Server) Shutdown(ctx context.Context) error {
+	if s.httpServer == nil {
+		return nil
+	}
+	err := s.httpServer.Shutdown(ctx)
+	s.httpServer = nil
+	_ = os.Remove(AddrFile)
+	return err
+}
+
+// ListenAddr returns the bound address (host:port) or "" if not started.
+func (s *Server) ListenAddr() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.listenAddr
+}
+
+// buildSDKServer constructs the modelcontextprotocol/go-sdk Server from the
+// registered Tool/Resource/Prompt state. Called once per Start.
+func (s *Server) buildSDKServer() *mcpsdk.Server {
+	srv := mcpsdk.NewServer(&mcpsdk.Implementation{
+		Name:    s.opts.Name,
+		Version: s.opts.Version,
+	}, nil)
+	// tools, resources, prompts will be added in Task 8
+	return srv
+}
+
+func (s *Server) writeAddrFile() error {
+	if err := os.MkdirAll(filepath.Dir(AddrFile), 0o755); err != nil {
+		return err
+	}
+	return os.WriteFile(AddrFile, []byte(s.listenAddr+"\n"), 0o644)
+}
+
+func isLoopback(hostPort string) bool {
+	host, _, err := net.SplitHostPort(hostPort)
+	if err != nil {
+		return false
+	}
+	if host == "" || host == "127.0.0.1" || host == "::1" || host == "localhost" {
+		return true
+	}
+	ip := net.ParseIP(host)
+	return ip != nil && ip.IsLoopback()
 }
