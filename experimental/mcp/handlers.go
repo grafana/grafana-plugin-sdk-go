@@ -181,6 +181,28 @@ func (s *Server) executeRouteTool(ctx context.Context, spec routeToolSpec, args 
 	return string(sender.resp.Body), nil
 }
 
+func (s *Server) executeHealthTool(ctx context.Context) (any, error) {
+	h := s.CheckHealthHandler()
+	if h == nil {
+		return nil, errors.New("no CheckHealthHandler bound to MCP server")
+	}
+	res, err := h.CheckHealth(ctx, &backend.CheckHealthRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("CheckHealth failed: %w", err)
+	}
+	out := map[string]any{
+		"status":  res.Status.String(),
+		"message": res.Message,
+	}
+	if len(res.JSONDetails) > 0 {
+		var details any
+		if err := json.Unmarshal(res.JSONDetails, &details); err == nil {
+			out["details"] = details
+		}
+	}
+	return out, nil
+}
+
 func firstHeader(h map[string][]string, key string) (string, bool) {
 	if h == nil {
 		return "", false

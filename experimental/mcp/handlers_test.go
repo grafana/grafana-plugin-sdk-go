@@ -110,3 +110,15 @@ func TestExecuteRouteTool_substitutesPathParams(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "/repos/grafana/github-datasource/files", h.resourceCalledWith.Path)
 }
+
+func TestExecuteHealthTool_returnsCheckHealthResult(t *testing.T) {
+	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	h := &fakeHandler{}
+	s.BindCheckHealthHandler(h)
+
+	out, err := s.executeHealthTool(context.Background())
+	require.NoError(t, err)
+	m, ok := out.(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "OK", m["status"])
+}
