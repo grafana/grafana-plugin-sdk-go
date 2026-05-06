@@ -13,8 +13,12 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"sort"
+	"strings"
 	"sync"
+	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	mcpsdk "github.com/modelcontextprotocol/go-sdk/mcp"
 )
@@ -49,6 +53,10 @@ type Server struct {
 	queryDataHandler    any // backend.QueryDataHandler - typed import in handlers.go
 	callResourceHandler any // backend.CallResourceHandler
 	checkHealthHandler  any // backend.CheckHealthHandler
+
+	// pluginContexts maps datasource UID → PluginContext, populated by
+	// RegisterPluginContext as gRPC calls arrive from Grafana.
+	pluginContexts map[string]backend.PluginContext
 
 	// transport state, populated by Start
 	httpServer *http.Server
@@ -90,6 +98,57 @@ func (s *Server) Prompts() []Prompt {
 	return out
 }
 
+// RegisterPluginContext stores the PluginContext for the given datasource UID.
+// Called by the gRPC interception layer in datasource.Manage whenever Grafana
+// sends a request for that instance, so MCP tool calls can reuse the context.
+func (s *Server) RegisterPluginContext(uid string, pctx backend.PluginContext) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.pluginContexts == nil {
+		s.pluginContexts = make(map[string]backend.PluginContext)
+	}
+	s.pluginContexts[uid] = pctx
+}
+
+// LookupPluginContext returns the PluginContext for the given uid.
+// If uid is empty and exactly one datasource has been registered, that one is
+// returned (convenience for single-datasource setups). Otherwise an error is
+// returned listing the available UIDs.
+func (s *Server) LookupPluginContext(uid string) (backend.PluginContext, error) {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+
+	if uid != "" {
+		pctx, ok := s.pluginContexts[uid]
+		if !ok {
+			uids := s.registeredUIDs()
+			return backend.PluginContext{}, fmt.Errorf("no datasource instance registered for uid %q; registered: [%s]", uid, strings.Join(uids, ", "))
+		}
+		return pctx, nil
+	}
+
+	switch len(s.pluginContexts) {
+	case 0:
+		return backend.PluginContext{}, errors.New("no datasource instance registered yet; Grafana must call the plugin at least once before MCP tools can be used")
+	case 1:
+		for _, pctx := range s.pluginContexts {
+			return pctx, nil
+		}
+	}
+	uids := s.registeredUIDs()
+	return backend.PluginContext{}, fmt.Errorf("multiple datasource instances registered; pass datasource_uid (one of: %s)", strings.Join(uids, ", "))
+}
+
+// registeredUIDs returns a sorted list of registered datasource UIDs. Caller must hold mu.
+func (s *Server) registeredUIDs() []string {
+	uids := make([]string, 0, len(s.pluginContexts))
+	for uid := range s.pluginContexts {
+		uids = append(uids, uid)
+	}
+	sort.Strings(uids)
+	return uids
+}
+
 // resolveAddr applies the priority order: env var > opts.Addr > auto-pick on 127.0.0.1.
 func (s *Server) resolveAddr() string {
 	if v := os.Getenv(EnvAddr); v != "" {
@@ -122,7 +181,7 @@ func (s *Server) Start(ctx context.Context) error {
 	mux.Handle("/mcp", handler)
 	mux.Handle("/mcp/", handler)
 
-	s.httpServer = &http.Server{Handler: mux}
+	s.httpServer = &http.Server{Handler: logRequests(s.opts.Name, mux)}
 	go func() {
 		if err := s.httpServer.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			log.DefaultLogger.Error("MCP HTTP server stopped with error", "err", err)
@@ -172,6 +231,9 @@ func (s *Server) buildSDKServer() *mcpsdk.Server {
 			// SDK requires a non-nil object schema; default to an empty object schema
 			schema = map[string]any{"type": "object"}
 		}
+		if normalized, ok := normalizeJSONSchema(schema).(map[string]any); ok {
+			schema = normalized
+		}
 		raw, err := json.Marshal(schema)
 		if err != nil {
 			log.DefaultLogger.Warn("failed to marshal tool input schema, skipping tool", "tool", t.Name, "err", err)
@@ -183,9 +245,12 @@ func (s *Server) buildSDKServer() *mcpsdk.Server {
 			InputSchema: json.RawMessage(raw),
 		}
 		srv.AddTool(sdkTool, func(ctx context.Context, req *mcpsdk.CallToolRequest) (*mcpsdk.CallToolResult, error) {
+			start := time.Now()
+			log.DefaultLogger.Info("MCP tool call", "tool", t.Name)
 			var args map[string]any
 			if len(req.Params.Arguments) > 0 {
 				if err := json.Unmarshal(req.Params.Arguments, &args); err != nil {
+					log.DefaultLogger.Warn("MCP tool args decode failed", "tool", t.Name, "err", err, "duration_ms", time.Since(start).Milliseconds())
 					return &mcpsdk.CallToolResult{
 						IsError: true,
 						Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: err.Error()}},
@@ -194,6 +259,7 @@ func (s *Server) buildSDKServer() *mcpsdk.Server {
 			}
 			out, err := t.Handler(ctx, args)
 			if err != nil {
+				log.DefaultLogger.Error("MCP tool call failed", "tool", t.Name, "err", err, "duration_ms", time.Since(start).Milliseconds())
 				return &mcpsdk.CallToolResult{
 					IsError: true,
 					Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: err.Error()}},
@@ -201,8 +267,10 @@ func (s *Server) buildSDKServer() *mcpsdk.Server {
 			}
 			body, err := json.Marshal(out)
 			if err != nil {
+				log.DefaultLogger.Error("MCP tool result marshal failed", "tool", t.Name, "err", err, "duration_ms", time.Since(start).Milliseconds())
 				return nil, err
 			}
+			log.DefaultLogger.Info("MCP tool call ok", "tool", t.Name, "bytes", len(body), "duration_ms", time.Since(start).Milliseconds())
 			return &mcpsdk.CallToolResult{
 				Content: []mcpsdk.Content{&mcpsdk.TextContent{Text: string(body)}},
 			}, nil
@@ -267,6 +335,117 @@ func (s *Server) writeAddrFile() error {
 		return err
 	}
 	return os.WriteFile(AddrFile, []byte(s.listenAddr+"\n"), 0o644)
+}
+
+// normalizeJSONSchema strips legacy draft-04 keywords and rewrites them into
+// their JSON Schema draft 2020-12 equivalents. Anthropic's tool-use API strictly
+// validates input schemas against 2020-12; a draft-04 "$schema" declaration
+// alone is enough to trigger a 400 error. This walks the schema recursively
+// and removes "$schema"/"id" and converts the boolean form of
+// "exclusiveMinimum"/"exclusiveMaximum" into the 2020-12 numeric form.
+//
+// The original map is not mutated; nested maps and slices are copied as needed.
+func normalizeJSONSchema(in any) any {
+	switch v := in.(type) {
+	case map[string]any:
+		out := make(map[string]any, len(v))
+		for key, val := range v {
+			// drop draft-04-only metadata keywords
+			if key == "$schema" || key == "id" {
+				continue
+			}
+			out[key] = normalizeJSONSchema(val)
+		}
+		// draft-04: exclusiveMinimum/exclusiveMaximum were booleans modifying
+		// minimum/maximum. In 2020-12 they are numbers replacing minimum/maximum.
+		convertExclusive(out, "minimum", "exclusiveMinimum")
+		convertExclusive(out, "maximum", "exclusiveMaximum")
+		return out
+	case []any:
+		out := make([]any, len(v))
+		for i, item := range v {
+			out[i] = normalizeJSONSchema(item)
+		}
+		return out
+	default:
+		return in
+	}
+}
+
+// convertExclusive rewrites the legacy draft-04 boolean form of
+// exclusiveMinimum/exclusiveMaximum into the 2020-12 numeric form. If the
+// boolean is true, the numeric bound is moved to the exclusive key; if false
+// or absent, the boolean is simply dropped.
+func convertExclusive(m map[string]any, boundKey, exclusiveKey string) {
+	excl, ok := m[exclusiveKey]
+	if !ok {
+		return
+	}
+	b, isBool := excl.(bool)
+	if !isBool {
+		// already a number — leave it alone
+		return
+	}
+	if b {
+		if bound, hasBound := m[boundKey]; hasBound {
+			m[exclusiveKey] = bound
+			delete(m, boundKey)
+			return
+		}
+	}
+	delete(m, exclusiveKey)
+}
+
+// logRequests wraps an http.Handler and emits an info log for every request,
+// including method, path, status, response size, and duration. Errors at the
+// transport layer (status >= 500) are logged at error level.
+func logRequests(serverName string, next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		start := time.Now()
+		rec := &statusRecorder{ResponseWriter: w, status: http.StatusOK}
+		log.DefaultLogger.Info("MCP request", "server", serverName, "method", r.Method, "path", r.URL.Path, "remote", r.RemoteAddr)
+		next.ServeHTTP(rec, r)
+		dur := time.Since(start)
+		level := log.DefaultLogger.Info
+		if rec.status >= 500 {
+			level = log.DefaultLogger.Error
+		}
+		level("MCP response", "server", serverName, "method", r.Method, "path", r.URL.Path, "status", rec.status, "bytes", rec.bytes, "duration_ms", dur.Milliseconds())
+	})
+}
+
+// statusRecorder captures the response status code and byte count so that
+// logRequests can include them in its log line.
+type statusRecorder struct {
+	http.ResponseWriter
+	status      int
+	bytes       int
+	wroteHeader bool
+}
+
+func (r *statusRecorder) WriteHeader(status int) {
+	if !r.wroteHeader {
+		r.status = status
+		r.wroteHeader = true
+	}
+	r.ResponseWriter.WriteHeader(status)
+}
+
+func (r *statusRecorder) Write(b []byte) (int, error) {
+	if !r.wroteHeader {
+		r.wroteHeader = true
+	}
+	n, err := r.ResponseWriter.Write(b)
+	r.bytes += n
+	return n, err
+}
+
+// Flush implements http.Flusher so that streamable HTTP responses still flush
+// through the wrapper. The MCP SDK relies on this for SSE-style transport.
+func (r *statusRecorder) Flush() {
+	if f, ok := r.ResponseWriter.(http.Flusher); ok {
+		f.Flush()
+	}
 }
 
 func isLoopback(hostPort string) bool {

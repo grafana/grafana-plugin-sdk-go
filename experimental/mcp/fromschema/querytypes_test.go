@@ -76,6 +76,9 @@ func TestRegisterQueryTools_handlerCallsBoundQueryData(t *testing.T) {
 		},
 	}
 	s := mcp.NewServer(mcp.ServerOpts{Name: "x", Version: "0"})
+	s.RegisterPluginContext("test-uid", backend.PluginContext{
+		DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "test-uid"},
+	})
 	q := &queryOnly{}
 	s.BindQueryDataHandler(q)
 	fromschema.RegisterQueryTools(s, schema)

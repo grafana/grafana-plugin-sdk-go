@@ -48,6 +48,9 @@ func TestEndToEnd_registerStartCallTool(t *testing.T) {
 	}
 
 	srv := mcp.NewServer(mcp.ServerOpts{Name: "test-ds", Version: "1.0", Addr: "127.0.0.1:0"})
+	srv.RegisterPluginContext("test-uid", backend.PluginContext{
+		DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "test-uid"},
+	})
 	ds := &stubDS{}
 	srv.BindQueryDataHandler(ds)
 	srv.BindCallResourceHandler(ds)

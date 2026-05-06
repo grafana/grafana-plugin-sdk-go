@@ -12,6 +12,55 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestNormalizeJSONSchema_stripsDraft04Metadata(t *testing.T) {
+	in := map[string]any{
+		"$schema": "https://json-schema.org/draft-04/schema",
+		"id":      "legacy-id",
+		"type":    "object",
+		"properties": map[string]any{
+			"x": map[string]any{
+				"$schema": "https://json-schema.org/draft-04/schema",
+				"type":    "string",
+			},
+		},
+	}
+	out, ok := normalizeJSONSchema(in).(map[string]any)
+	require.True(t, ok)
+	assert.NotContains(t, out, "$schema")
+	assert.NotContains(t, out, "id")
+	props := out["properties"].(map[string]any)
+	assert.NotContains(t, props["x"].(map[string]any), "$schema")
+	// original input must remain untouched
+	assert.Contains(t, in, "$schema")
+}
+
+func TestNormalizeJSONSchema_convertsExclusiveBoolToNumeric(t *testing.T) {
+	in := map[string]any{
+		"type":             "number",
+		"minimum":          1.0,
+		"exclusiveMinimum": true,
+		"maximum":          10.0,
+		"exclusiveMaximum": false,
+	}
+	out, ok := normalizeJSONSchema(in).(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, 1.0, out["exclusiveMinimum"])
+	assert.NotContains(t, out, "minimum")
+	// exclusiveMaximum: false drops both the boolean and keeps maximum as-is
+	assert.NotContains(t, out, "exclusiveMaximum")
+	assert.Equal(t, 10.0, out["maximum"])
+}
+
+func TestNormalizeJSONSchema_leavesNumericExclusiveAlone(t *testing.T) {
+	in := map[string]any{
+		"type":             "number",
+		"exclusiveMinimum": 5.0,
+	}
+	out, ok := normalizeJSONSchema(in).(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, 5.0, out["exclusiveMinimum"])
+}
+
 func TestNewServer_returnsServerWithName(t *testing.T) {
 	s := NewServer(ServerOpts{Name: "test-plugin", Version: "1.0.0"})
 	assert.NotNil(t, s)

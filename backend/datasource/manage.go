@@ -69,12 +69,20 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		}()
 	}
 
+	// When an MCP server is present, wrap the gRPC handler so that every
+	// incoming Grafana call registers the datasource PluginContext. MCP tool
+	// calls then look up the context by UID instead of receiving an empty one.
+	grpcHandler := PluginHandler(handler)
+	if opts.MCPServer != nil {
+		grpcHandler = &contextCapture{inner: handler, mcpServer: opts.MCPServer}
+	}
+
 	return backend.Manage(pluginID, backend.ServeOpts{
-		CheckHealthHandler:      handler,
-		CallResourceHandler:     handler,
-		QueryDataHandler:        handler,
+		CheckHealthHandler:      grpcHandler,
+		CallResourceHandler:     grpcHandler,
+		QueryDataHandler:        grpcHandler,
 		QueryChunkedDataHandler: handler,
-		StreamHandler:           handler,
+		StreamHandler:           grpcHandler,
 		QueryConversionHandler:  opts.QueryConversionHandler,
 		AdmissionHandler:        opts.AdmissionHandler,
 		GRPCSettings:            opts.GRPCSettings,
@@ -114,4 +122,46 @@ type PluginHandler interface {
 // instance factory through datasource.Manage.
 func NewAutomanagementHandler(im instancemgmt.InstanceManager) PluginHandler {
 	return automanagement.NewManager(im)
+}
+
+// contextCapture wraps a PluginHandler and registers each datasource's
+// PluginContext with the MCP server as gRPC calls arrive from Grafana.
+// This lets MCP tool calls look up the context (including decrypted credentials)
+// by datasource UID without manual configuration.
+type contextCapture struct {
+	inner     PluginHandler
+	mcpServer *mcp.Server
+}
+
+func (c *contextCapture) capture(pctx backend.PluginContext) {
+	if pctx.DataSourceInstanceSettings != nil {
+		c.mcpServer.RegisterPluginContext(pctx.DataSourceInstanceSettings.UID, pctx)
+	}
+}
+
+func (c *contextCapture) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	c.capture(req.PluginContext)
+	return c.inner.QueryData(ctx, req)
+}
+
+func (c *contextCapture) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	c.capture(req.PluginContext)
+	return c.inner.CallResource(ctx, req, sender)
+}
+
+func (c *contextCapture) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	c.capture(req.PluginContext)
+	return c.inner.CheckHealth(ctx, req)
+}
+
+func (c *contextCapture) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
+	return c.inner.SubscribeStream(ctx, req)
+}
+
+func (c *contextCapture) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+	return c.inner.PublishStream(ctx, req)
+}
+
+func (c *contextCapture) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
+	return c.inner.RunStream(ctx, req, sender)
 }

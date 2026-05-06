@@ -77,6 +77,9 @@ func TestRegisterRouteTools_handlerCallsBoundCallResource(t *testing.T) {
 		},
 	}
 	s := mcp.NewServer(mcp.ServerOpts{Name: "x", Version: "0"})
+	s.RegisterPluginContext("test-uid", backend.PluginContext{
+		DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "test-uid"},
+	})
 	r := &resourceOnly{}
 	s.BindCallResourceHandler(r)
 	fromschema.RegisterRouteTools(s, schema)

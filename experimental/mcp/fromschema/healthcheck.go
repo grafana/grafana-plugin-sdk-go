@@ -16,9 +16,9 @@ func RegisterHealthCheckTool(s *mcp.Server) {
 	s.RegisterTool(mcp.Tool{
 		Name:        "check_health",
 		Description: "Run the datasource's health check",
-		InputSchema: map[string]any{"type": "object"},
-		Handler: func(ctx context.Context, _ map[string]any) (any, error) {
-			return s.ExecuteHealthTool(ctx)
+		InputSchema: addDatasourceUID(map[string]any{"type": "object"}),
+		Handler: func(ctx context.Context, args map[string]any) (any, error) {
+			return s.ExecuteHealthTool(ctx, args)
 		},
 	})
 }

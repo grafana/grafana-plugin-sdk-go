@@ -32,7 +32,7 @@ func RegisterQueryTools(s *mcp.Server, schema *pluginschema.PluginSchema) {
 		s.RegisterTool(mcp.Tool{
 			Name:        "query_" + discValue,
 			Description: fmt.Sprintf("Run a %s query against the datasource", discValue),
-			InputSchema: inputSchema,
+			InputSchema: addDatasourceUID(inputSchema),
 			Annotations: map[string]any{"queryType": queryType},
 			Handler: func(ctx context.Context, args map[string]any) (any, error) {
 				return s.ExecuteQueryTool(ctx, queryType, args)

@@ -65,10 +65,10 @@ func registerOpIfPresent(s *mcp.Server, method, path string, op *spec3.Operation
 		required = append(required, "body")
 	}
 
-	inputSchema := map[string]any{
+	inputSchema := addDatasourceUID(map[string]any{
 		"type":       "object",
 		"properties": inputProps,
-	}
+	})
 	if len(required) > 0 {
 		inputSchema["required"] = required
 	}

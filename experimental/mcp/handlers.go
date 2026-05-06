@@ -65,16 +65,23 @@ func (s *Server) CheckHealthHandler() backend.CheckHealthHandler {
 // executeQueryTool is the shared handler for every query-type tool. It builds
 // a single-query QueryDataRequest with the given queryType discriminator and
 // the tool args as the JSON body, then JSON-encodes the resulting frames.
+// It extracts "datasource_uid" from args (removing it before marshaling the query body)
+// and uses it to look up the PluginContext for the target datasource instance.
 func (s *Server) executeQueryTool(ctx context.Context, queryType string, args map[string]any) (any, error) {
 	h := s.QueryDataHandler()
 	if h == nil {
 		return nil, errors.New("no QueryDataHandler bound to MCP server")
+	}
+	pctx, args, err := s.extractPluginContext(args)
+	if err != nil {
+		return nil, err
 	}
 	body, err := json.Marshal(args)
 	if err != nil {
 		return nil, fmt.Errorf("marshal query args: %w", err)
 	}
 	req := &backend.QueryDataRequest{
+		PluginContext: pctx,
 		Queries: []backend.DataQuery{{
 			RefID:     "A",
 			QueryType: queryType,
@@ -122,6 +129,10 @@ func (s *Server) executeRouteTool(ctx context.Context, spec routeToolSpec, args 
 	if h == nil {
 		return nil, errors.New("no CallResourceHandler bound to MCP server")
 	}
+	pctx, args, err := s.extractPluginContext(args)
+	if err != nil {
+		return nil, err
+	}
 
 	// substitute path parameters
 	path := spec.Path
@@ -159,10 +170,11 @@ func (s *Server) executeRouteTool(ctx context.Context, spec routeToolSpec, args 
 	}
 
 	req := &backend.CallResourceRequest{
-		Method: spec.Method,
-		Path:   path,
-		URL:    urlStr,
-		Body:   body,
+		PluginContext: pctx,
+		Method:        spec.Method,
+		Path:          path,
+		URL:           urlStr,
+		Body:          body,
 	}
 	sender := &captureSender{}
 	if err := h.CallResource(ctx, req, sender); err != nil {
@@ -183,8 +195,8 @@ func (s *Server) executeRouteTool(ctx context.Context, spec routeToolSpec, args 
 
 // ExecuteHealthTool is the public entry point used by fromschema to delegate to
 // the bound CheckHealthHandler.
-func (s *Server) ExecuteHealthTool(ctx context.Context) (any, error) {
-	return s.executeHealthTool(ctx)
+func (s *Server) ExecuteHealthTool(ctx context.Context, args map[string]any) (any, error) {
+	return s.executeHealthTool(ctx, args)
 }
 
 // ExecuteQueryTool is exported for fromschema.RegisterQueryTools.
@@ -200,12 +212,16 @@ func (s *Server) ExecuteRouteTool(ctx context.Context, spec RouteToolSpec, args 
 // RouteToolSpec is the public mirror of routeToolSpec.
 type RouteToolSpec = routeToolSpec
 
-func (s *Server) executeHealthTool(ctx context.Context) (any, error) {
+func (s *Server) executeHealthTool(ctx context.Context, args map[string]any) (any, error) {
 	h := s.CheckHealthHandler()
 	if h == nil {
 		return nil, errors.New("no CheckHealthHandler bound to MCP server")
 	}
-	res, err := h.CheckHealth(ctx, &backend.CheckHealthRequest{})
+	pctx, _, err := s.extractPluginContext(args)
+	if err != nil {
+		return nil, err
+	}
+	res, err := h.CheckHealth(ctx, &backend.CheckHealthRequest{PluginContext: pctx})
 	if err != nil {
 		return nil, fmt.Errorf("CheckHealth failed: %w", err)
 	}
@@ -220,6 +236,25 @@ func (s *Server) executeHealthTool(ctx context.Context) (any, error) {
 		}
 	}
 	return out, nil
+}
+
+// extractPluginContext removes "datasource_uid" from args (so it is not sent
+// in the query body), looks up the matching PluginContext in the server's
+// registry, and returns it alongside the remaining args.
+func (s *Server) extractPluginContext(args map[string]any) (backend.PluginContext, map[string]any, error) {
+	uid, _ := args["datasource_uid"].(string)
+	// return a copy of args without datasource_uid
+	filtered := make(map[string]any, len(args))
+	for k, v := range args {
+		if k != "datasource_uid" {
+			filtered[k] = v
+		}
+	}
+	pctx, err := s.LookupPluginContext(uid)
+	if err != nil {
+		return backend.PluginContext{}, nil, err
+	}
+	return pctx, filtered, nil
 }
 
 func firstHeader(h map[string][]string, key string) (string, bool) {

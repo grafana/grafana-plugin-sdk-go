@@ -45,6 +45,9 @@ func TestServer_Bind_storesHandlers(t *testing.T) {
 
 func TestExecuteQueryTool_callsHandlerAndEncodesFrames(t *testing.T) {
 	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	s.RegisterPluginContext("test-uid", backend.PluginContext{
+		DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "test-uid"},
+	})
 	h := &fakeHandler{}
 	s.BindQueryDataHandler(h)
 
@@ -73,6 +76,9 @@ func TestExecuteQueryTool_errorsWhenHandlerNotBound(t *testing.T) {
 
 func TestExecuteRouteTool_callsHandlerWithBuiltRequest(t *testing.T) {
 	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	s.RegisterPluginContext("test-uid", backend.PluginContext{
+		DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "test-uid"},
+	})
 	h := &fakeHandler{}
 	s.BindCallResourceHandler(h)
 
@@ -96,6 +102,9 @@ func TestExecuteRouteTool_callsHandlerWithBuiltRequest(t *testing.T) {
 
 func TestExecuteRouteTool_substitutesPathParams(t *testing.T) {
 	s := NewServer(ServerOpts{Name: "x", Version: "0"})
+	s.RegisterPluginContext("test-uid", backend.PluginContext{
+		DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "test-uid"},
+	})
 	h := &fakeHandler{}
 	s.BindCallResourceHandler(h)
 
@@ -116,7 +125,10 @@ func TestExecuteHealthTool_returnsCheckHealthResult(t *testing.T) {
 	h := &fakeHandler{}
 	s.BindCheckHealthHandler(h)
 
-	out, err := s.executeHealthTool(context.Background())
+	s.RegisterPluginContext("test-uid", backend.PluginContext{
+		DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "test-uid"},
+	})
+	out, err := s.executeHealthTool(context.Background(), map[string]any{})
 	require.NoError(t, err)
 	m, ok := out.(map[string]any)
 	require.True(t, ok)
