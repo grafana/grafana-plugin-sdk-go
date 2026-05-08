@@ -1,7 +1,7 @@
 # These owners will be the default owners for everything in
 # the repo. Unless a later match takes precedence,
 # these will be requested for review when someone opens a pull request.
-* @grafana/plugins-platform-backend
+* @grafana/grafana-catalog
 /backend/gtime @grafana/oss-big-tent @grafana/observability-logs @grafana/partner-datasources
 /data/ @grafana/grafana-datasources-core-services
 /experimental/apis/datasource @grafana/grafana-datasources-core-services
