@@ -46,8 +46,8 @@ func (s *DatasourceConfigSchema) ToPluginSettings() (*pluginschema.Settings, err
 				jsonDataRequired = append(jsonDataRequired, f.Key)
 			}
 		} else {
-			rootProps[f.Key] = fieldToSpecSchema(f)
-			if f.Required {
+			placeInSection(rootProps, f)
+			if f.Required && f.Section == "" {
 				rootRequired = append(rootRequired, f.Key)
 			}
 		}
@@ -235,7 +235,7 @@ func valueTypeToJSONType(vt ValueType) string {
 		return "boolean"
 	case ArrayType:
 		return "array"
-	case ObjectType:
+	case ObjectType, MapType:
 		return "object"
 	default:
 		return "string"
