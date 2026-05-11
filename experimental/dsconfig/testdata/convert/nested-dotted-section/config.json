@@ -1,0 +1,17 @@
+{
+    "_comment": "Grafana storage model: dotted section paths produce nested jsonData objects. oauth2.endpoints.tokenUrl maps to jsonData.oauth2.endpoints.tokenUrl.",
+    "name": "My OAuth2 DS",
+    "type": "example-dotted-section",
+    "url": "https://api.example.com",
+    "jsonData": {
+        "oauth2": {
+            "endpoints": {
+                "tokenUrl": "https://auth.example.com/oauth2/token",
+                "authUrl": "https://auth.example.com/oauth2/authorize"
+            },
+            "clientId": "my-client-id"
+        },
+        "simple": "hello"
+    },
+    "secureJsonData": {}
+}

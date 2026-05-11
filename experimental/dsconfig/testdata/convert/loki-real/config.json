@@ -1,0 +1,34 @@
+{
+    "_comment": "Grafana storage model for Loki with derived fields linking to Tempo. url/basicAuth at root. derivedFields array, TLS booleans in jsonData. Secrets in secureJsonData.",
+    "name": "Loki Production",
+    "type": "loki",
+    "url": "https://loki.example.com",
+    "basicAuth": true,
+    "basicAuthUser": "grafana",
+    "jsonData": {
+        "maxLines": "1000",
+        "manageAlerts": true,
+        "timeout": 60,
+        "derivedFields": [
+            {
+                "matcherRegex": "traceID=(\\w+)",
+                "name": "TraceID",
+                "datasourceUid": "tempo-prod-uid",
+                "urlDisplayLabel": "View Trace",
+                "matcherType": "regex"
+            },
+            {
+                "matcherRegex": "(?:^| )requestId=(\\w+)",
+                "name": "RequestID",
+                "url": "https://logs.example.com/request/${__value.raw}",
+                "urlDisplayLabel": "View Request"
+            }
+        ],
+        "tlsAuth": false,
+        "tlsAuthWithCACert": false,
+        "tlsSkipVerify": false
+    },
+    "secureJsonData": {
+        "basicAuthPassword": "s3cret"
+    }
+}

@@ -1,0 +1,76 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-nested",
+    "pluginName": "Nested Object Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.derivedFields",
+            "key": "derivedFields",
+            "description": "Configure derived fields to link to other datasources",
+            "valueType": "array",
+            "target": "jsonData",
+            "item": {
+                "valueType": "object",
+                "fields": [
+                    {
+                        "id": "derivedFields.item.name",
+                        "key": "name",
+                        "description": "Display name of the derived field",
+                        "valueType": "string",
+                        "isItemField": true,
+                        "required": true
+                    },
+                    {
+                        "id": "derivedFields.item.matcherRegex",
+                        "key": "matcherRegex",
+                        "description": "Regex to match log line content",
+                        "valueType": "string",
+                        "isItemField": true,
+                        "required": true,
+                        "validations": [
+                            {
+                                "type": "length",
+                                "min": 1,
+                                "max": 500
+                            }
+                        ]
+                    },
+                    {
+                        "id": "derivedFields.item.url",
+                        "key": "url",
+                        "description": "URL template for the link",
+                        "valueType": "string",
+                        "semanticType": "url",
+                        "isItemField": true
+                    },
+                    {
+                        "id": "derivedFields.item.datasourceUid",
+                        "key": "datasourceUid",
+                        "description": "UID of the target datasource",
+                        "valueType": "string",
+                        "isItemField": true
+                    },
+                    {
+                        "id": "derivedFields.item.urlDisplayLabel",
+                        "key": "urlDisplayLabel",
+                        "description": "Label for the link",
+                        "valueType": "string",
+                        "isItemField": true
+                    }
+                ]
+            }
+        }
+    ]
+}

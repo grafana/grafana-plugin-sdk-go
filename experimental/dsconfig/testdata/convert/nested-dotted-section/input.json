@@ -1,0 +1,65 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-dotted-section",
+    "pluginName": "Dotted Section Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.oauth2.endpoints.tokenUrl",
+            "key": "tokenUrl",
+            "description": "OAuth2 token endpoint URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "jsonData",
+            "section": "oauth2.endpoints",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.oauth2.endpoints.authUrl",
+            "key": "authUrl",
+            "description": "OAuth2 authorization endpoint URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "jsonData",
+            "section": "oauth2.endpoints",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.oauth2.clientId",
+            "key": "clientId",
+            "description": "OAuth2 client ID",
+            "valueType": "string",
+            "target": "jsonData",
+            "section": "oauth2",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.simple",
+            "key": "simple",
+            "description": "A flat jsonData field with no section",
+            "valueType": "string",
+            "target": "jsonData",
+            "ui": {
+                "component": "input"
+            }
+        }
+    ]
+}

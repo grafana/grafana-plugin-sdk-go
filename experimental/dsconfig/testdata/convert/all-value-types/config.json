@@ -1,0 +1,17 @@
+{
+    "_comment": "Grafana storage model: all jsonData value types (string, number, boolean, array of strings)",
+    "name": "My Value Types DS",
+    "type": "example-valuetypes",
+    "url": "https://api.example.com",
+    "jsonData": {
+        "stringField": "hello",
+        "numberField": 42,
+        "booleanField": true,
+        "arrayField": [
+            "tag1",
+            "tag2",
+            "tag3"
+        ]
+    },
+    "secureJsonData": {}
+}

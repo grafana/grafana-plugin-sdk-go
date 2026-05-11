@@ -1,0 +1,17 @@
+{
+    "_comment": "Grafana storage model: fields spread across root, jsonData, and secureJsonData. basicAuth/basicAuthUser are root-level Grafana fields. TLS and timeout go in jsonData. Secrets go in secureJsonData.",
+    "name": "My Mixed DS",
+    "type": "example-mix",
+    "url": "https://api.example.com",
+    "basicAuth": true,
+    "basicAuthUser": "your_username",
+    "jsonData": {
+        "tlsSkipVerify": false,
+        "timeout": 60,
+        "serverName": "api.example.com"
+    },
+    "secureJsonData": {
+        "basicAuthPassword": "your_password",
+        "tlsCACert": "-----BEGIN CERTIFICATE-----\nMIIC...\n-----END CERTIFICATE-----"
+    }
+}

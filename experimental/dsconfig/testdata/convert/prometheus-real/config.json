@@ -1,0 +1,32 @@
+{
+    "_comment": "Grafana storage model for Prometheus. url/basicAuth/basicAuthUser at root. All query settings, enums, TLS flags, and exemplar destinations in jsonData. Secrets in secureJsonData.",
+    "name": "Mimir Production",
+    "type": "prometheus",
+    "url": "https://mimir.example.com/prometheus",
+    "basicAuth": true,
+    "basicAuthUser": "grafana",
+    "jsonData": {
+        "httpMethod": "POST",
+        "prometheusType": "Mimir",
+        "prometheusVersion": "2.9.1",
+        "cacheLevel": "High",
+        "defaultEditor": "builder",
+        "timeInterval": "15s",
+        "queryTimeout": "60s",
+        "disableMetricsLookup": false,
+        "incrementalQuerying": true,
+        "manageAlerts": true,
+        "exemplarTraceIdDestinations": [
+            {
+                "name": "traceID",
+                "datasourceUid": "tempo-prod-uid"
+            }
+        ],
+        "tlsAuth": false,
+        "tlsAuthWithCACert": false,
+        "tlsSkipVerify": false
+    },
+    "secureJsonData": {
+        "basicAuthPassword": "s3cret"
+    }
+}

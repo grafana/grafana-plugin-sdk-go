@@ -1,0 +1,124 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-mix",
+    "pluginName": "Mixed Targets Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "connection.basicAuth",
+            "key": "basicAuth",
+            "description": "Enable basic authentication",
+            "valueType": "boolean",
+            "target": "root",
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "connection.basicAuthUser",
+            "key": "basicAuthUser",
+            "description": "Basic auth username",
+            "valueType": "string",
+            "target": "root",
+            "dependsOn": "connection.basicAuth == true",
+            "requiredWhen": "connection.basicAuth == true"
+        },
+        {
+            "id": "jsonData.tlsSkipVerify",
+            "key": "tlsSkipVerify",
+            "description": "Skip TLS certificate verification",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "defaultValue": false,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "jsonData.timeout",
+            "key": "timeout",
+            "description": "Request timeout in seconds",
+            "valueType": "number",
+            "target": "jsonData",
+            "defaultValue": 30,
+            "validations": [
+                {
+                    "type": "range",
+                    "min": 1,
+                    "max": 300
+                }
+            ],
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.serverName",
+            "key": "serverName",
+            "description": "TLS server name for certificate validation",
+            "valueType": "string",
+            "semanticType": "hostname",
+            "target": "jsonData",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "secure.basicAuthPassword",
+            "key": "basicAuthPassword",
+            "description": "Basic auth password",
+            "valueType": "string",
+            "semanticType": "password",
+            "target": "secureJsonData",
+            "dependsOn": "connection.basicAuth == true"
+        },
+        {
+            "id": "secure.tlsCACert",
+            "key": "tlsCACert",
+            "description": "TLS CA certificate (PEM encoded)",
+            "valueType": "string",
+            "target": "secureJsonData",
+            "ui": {
+                "component": "textarea"
+            }
+        }
+    ],
+    "groups": [
+        {
+            "id": "connection",
+            "title": "Connection",
+            "fieldRefs": [
+                "connection.url"
+            ]
+        },
+        {
+            "id": "auth",
+            "title": "Authentication",
+            "fieldRefs": [
+                "connection.basicAuth",
+                "connection.basicAuthUser",
+                "secure.basicAuthPassword"
+            ]
+        },
+        {
+            "id": "tls",
+            "title": "TLS / SSL",
+            "fieldRefs": [
+                "jsonData.tlsSkipVerify",
+                "jsonData.serverName",
+                "secure.tlsCACert"
+            ]
+        }
+    ]
+}
