@@ -80,84 +80,110 @@ func (f *ConfigField) Validate() error {
 		return fmt.Errorf("field %s: invalid valueType %q", f.ID, f.ValueType)
 	}
 
+	if err := f.validateStructure(); err != nil {
+		return err
+	}
+	if err := f.validateEnums(); err != nil {
+		return err
+	}
+	if err := f.validateUI(); err != nil {
+		return err
+	}
+	if err := f.validateItem(); err != nil {
+		return err
+	}
+	if err := f.validateChildren(); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (f *ConfigField) validateStructure() error {
 	isVirtual := f.Kind == VirtualField
 	isItem := f.IsItemField != nil && *f.IsItemField
 
 	if !isVirtual && !isItem && f.Target == "" {
 		return fmt.Errorf("field %s: target is required for storage fields", f.ID)
 	}
-
 	if f.Section != "" && isItem {
 		return fmt.Errorf("field %s: section is not allowed on item fields", f.ID)
 	}
 	if f.Section != "" && isVirtual {
 		return fmt.Errorf("field %s: section is not allowed on virtual fields", f.ID)
 	}
-
 	if (f.ValueType == ArrayType || f.ValueType == MapType) && f.Item == nil {
 		return fmt.Errorf("field %s: item is required for array and map fields", f.ID)
 	}
-
 	if f.Storage != nil {
 		if err := f.Storage.Validate(); err != nil {
 			return fmt.Errorf("field %s: invalid storage mapping: %w", f.ID, err)
 		}
 	}
+	return nil
+}
 
+func (f *ConfigField) validateEnums() error {
 	if f.Kind != "" && !f.Kind.IsValid() {
 		return fmt.Errorf("field %s: invalid kind %q", f.ID, f.Kind)
 	}
-
 	if f.SemanticType != "" && !f.SemanticType.IsValid() {
 		return fmt.Errorf("field %s: invalid semanticType %q", f.ID, f.SemanticType)
 	}
-
 	if f.Lifecycle != "" && !f.Lifecycle.IsValid() {
 		return fmt.Errorf("field %s: invalid lifecycle %q", f.ID, f.Lifecycle)
 	}
-
-	if f.UI != nil {
-		if !f.UI.Component.IsValid() {
-			return fmt.Errorf("field %s: invalid ui component %q", f.ID, f.UI.Component)
-		}
-		if f.UI.Width != "" && !f.UI.Width.IsValid() {
-			return fmt.Errorf("field %s: invalid ui width %q", f.ID, f.UI.Width)
-		}
-		for i, opt := range f.UI.Options {
-			if !ValidateOptionValue(opt.Value, f.ValueType) {
-				return fmt.Errorf("field %s: ui option[%d] value type mismatch (expected %s)", f.ID, i, f.ValueType)
-			}
-		}
-	}
-
 	if f.Target != "" && !f.Target.IsValid() {
 		return fmt.Errorf("field %s: invalid target: %s", f.ID, f.Target)
 	}
+	return nil
+}
 
-	if f.Item != nil {
-		if !f.Item.ValueType.IsValid() {
-			return fmt.Errorf("field %s: invalid item valueType %q", f.ID, f.Item.ValueType)
-		}
-		if f.Item.ValueType != ObjectType && len(f.Item.Fields) > 0 {
-			return fmt.Errorf("field %s: item fields are only allowed when item valueType is object", f.ID)
-		}
-		for i := range f.Item.Fields {
-			sub := &f.Item.Fields[i]
-			if sub.IsItemField == nil || !*sub.IsItemField {
-				return fmt.Errorf("field %s: item field %s must have isItemField=true", f.ID, sub.ID)
-			}
-			if err := sub.Validate(); err != nil {
-				return fmt.Errorf("field %s: invalid item field %s: %w", f.ID, sub.ID, err)
-			}
+func (f *ConfigField) validateUI() error {
+	if f.UI == nil {
+		return nil
+	}
+	if !f.UI.Component.IsValid() {
+		return fmt.Errorf("field %s: invalid ui component %q", f.ID, f.UI.Component)
+	}
+	if f.UI.Width != "" && !f.UI.Width.IsValid() {
+		return fmt.Errorf("field %s: invalid ui width %q", f.ID, f.UI.Width)
+	}
+	for i, opt := range f.UI.Options {
+		if !ValidateOptionValue(opt.Value, f.ValueType) {
+			return fmt.Errorf("field %s: ui option[%d] value type mismatch (expected %s)", f.ID, i, f.ValueType)
 		}
 	}
+	return nil
+}
 
+func (f *ConfigField) validateItem() error {
+	if f.Item == nil {
+		return nil
+	}
+	if !f.Item.ValueType.IsValid() {
+		return fmt.Errorf("field %s: invalid item valueType %q", f.ID, f.Item.ValueType)
+	}
+	if f.Item.ValueType != ObjectType && len(f.Item.Fields) > 0 {
+		return fmt.Errorf("field %s: item fields are only allowed when item valueType is object", f.ID)
+	}
+	for i := range f.Item.Fields {
+		sub := &f.Item.Fields[i]
+		if sub.IsItemField == nil || !*sub.IsItemField {
+			return fmt.Errorf("field %s: item field %s must have isItemField=true", f.ID, sub.ID)
+		}
+		if err := sub.Validate(); err != nil {
+			return fmt.Errorf("field %s: invalid item field %s: %w", f.ID, sub.ID, err)
+		}
+	}
+	return nil
+}
+
+func (f *ConfigField) validateChildren() error {
 	for i := range f.Validations {
 		if err := f.Validations[i].Validate(); err != nil {
 			return fmt.Errorf("field %s: invalid validation rule: %w", f.ID, err)
 		}
 	}
-
 	for i := range f.Overrides {
 		for j := range f.Overrides[i].Validations {
 			if err := f.Overrides[i].Validations[j].Validate(); err != nil {
@@ -165,13 +191,11 @@ func (f *ConfigField) Validate() error {
 			}
 		}
 	}
-
 	for i := range f.Effects {
 		if err := f.Effects[i].Validate(); err != nil {
 			return fmt.Errorf("field %s: invalid effect[%d]: %w", f.ID, i, err)
 		}
 	}
-
 	return nil
 }
 

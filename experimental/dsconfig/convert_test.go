@@ -35,10 +35,10 @@ func TestToPluginSettings_Table(t *testing.T) {
 		}
 
 		t.Run(name, func(t *testing.T) {
-			inputBytes, err := os.ReadFile(filepath.Join(dir, "input.json"))
+			inputBytes, err := os.ReadFile(filepath.Join(dir, "input.json")) //nolint:gosec // test fixture
 			require.NoError(t, err)
 
-			expectedBytes, err := os.ReadFile(filepath.Join(dir, "output.json"))
+			expectedBytes, err := os.ReadFile(filepath.Join(dir, "output.json")) //nolint:gosec // test fixture
 			require.NoError(t, err)
 
 			var inputSchema dsconfig.DatasourceConfigSchema
