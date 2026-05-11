@@ -12,7 +12,6 @@ func BasicAuthFields() []ConfigField {
 			ID: "auth.basicAuth", Key: "basicAuth",
 			Label: "Basic Auth", Description: "Enable basic authentication",
 			ValueType: BooleanType, Target: RootTarget,
-			UI: &FieldUI{Component: UISwitch},
 		},
 		{
 			ID: "auth.basicAuthUser", Key: "basicAuthUser",
@@ -34,17 +33,14 @@ func TLSFields() []ConfigField {
 		{
 			ID: "tls.tlsAuth", Key: "tlsAuth",
 			Label: "TLS Client Authentication", ValueType: BooleanType, Target: JSONDataTarget,
-			UI: &FieldUI{Component: UISwitch},
 		},
 		{
 			ID: "tls.tlsAuthWithCACert", Key: "tlsAuthWithCACert",
 			Label: "With CA Cert", ValueType: BooleanType, Target: JSONDataTarget,
-			UI: &FieldUI{Component: UISwitch},
 		},
 		{
 			ID: "tls.tlsSkipVerify", Key: "tlsSkipVerify",
 			Label: "Skip TLS Verify", ValueType: BooleanType, Target: JSONDataTarget,
-			UI: &FieldUI{Component: UISwitch},
 		},
 		{
 			ID: "tls.serverName", Key: "serverName",
@@ -94,7 +90,6 @@ func CommonNetworkFields() []ConfigField {
 			ID: "network.oauthPassThru", Key: "oauthPassThru",
 			Label:     "Forward OAuth Identity",
 			ValueType: BooleanType, Target: JSONDataTarget,
-			UI: &FieldUI{Component: UISwitch},
 		},
 		{
 			ID: "network.pdcInjected", Key: "pdcInjected",
