@@ -1,5 +1,7 @@
 # Grafana Plugin SDK for Go
 
+test
+
 This SDK enables building [Grafana](https://github.com/grafana/grafana) backend plugins using Go.
 
 [![License](https://img.shields.io/github/license/grafana/grafana-plugin-sdk-go)](LICENSE)
