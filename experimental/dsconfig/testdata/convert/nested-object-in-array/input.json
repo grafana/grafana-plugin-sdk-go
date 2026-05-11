@@ -1,0 +1,93 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-nested-obj-array",
+    "pluginName": "Nested Object in Array Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.queries",
+            "key": "queries",
+            "description": "Metric query definitions",
+            "valueType": "array",
+            "target": "jsonData",
+            "item": {
+                "valueType": "object",
+                "fields": [
+                    {
+                        "id": "queries.item.name",
+                        "key": "name",
+                        "description": "Query display name",
+                        "valueType": "string",
+                        "isItemField": true,
+                        "required": true
+                    },
+                    {
+                        "id": "queries.item.enabled",
+                        "key": "enabled",
+                        "description": "Whether the query is active",
+                        "valueType": "boolean",
+                        "isItemField": true,
+                        "defaultValue": true
+                    },
+                    {
+                        "id": "queries.item.config",
+                        "key": "config",
+                        "description": "Query configuration",
+                        "valueType": "object",
+                        "isItemField": true,
+                        "item": {
+                            "valueType": "object",
+                            "fields": [
+                                {
+                                    "id": "queries.item.config.expr",
+                                    "key": "expr",
+                                    "description": "PromQL expression",
+                                    "valueType": "string",
+                                    "isItemField": true,
+                                    "required": true
+                                },
+                                {
+                                    "id": "queries.item.config.interval",
+                                    "key": "interval",
+                                    "description": "Evaluation interval",
+                                    "valueType": "string",
+                                    "semanticType": "duration",
+                                    "isItemField": true,
+                                    "defaultValue": "15s"
+                                },
+                                {
+                                    "id": "queries.item.config.labels",
+                                    "key": "labels",
+                                    "description": "Additional label matchers",
+                                    "valueType": "array",
+                                    "isItemField": true,
+                                    "item": {
+                                        "valueType": "string"
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                ]
+            },
+            "validations": [
+                {
+                    "type": "itemCount",
+                    "max": 50,
+                    "message": "Maximum 50 queries"
+                }
+            ]
+        }
+    ]
+}

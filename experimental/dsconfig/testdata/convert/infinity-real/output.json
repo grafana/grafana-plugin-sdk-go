@@ -1,0 +1,138 @@
+{
+    "spec": {
+        "type": "object",
+        "properties": {
+            "url": {
+                "description": "Base URL for requests",
+                "type": "string",
+                "format": "uri"
+            },
+            "basicAuth": {
+                "description": "Enable basic authentication",
+                "type": "boolean"
+            },
+            "basicAuthUser": {
+                "description": "Basic auth username",
+                "type": "string"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "auth_method": {
+                        "description": "Authentication method to use",
+                        "type": "string",
+                        "default": "none",
+                        "enum": [
+                            "none",
+                            "basicAuth",
+                            "apiKey",
+                            "bearerToken",
+                            "oauthPassThru",
+                            "digestAuth",
+                            "aws",
+                            "azureBlob",
+                            "oauth2"
+                        ]
+                    },
+                    "apiKeyKey": {
+                        "description": "Name of the header or query parameter for the API key",
+                        "type": "string"
+                    },
+                    "apiKeyType": {
+                        "description": "Where to send the API key",
+                        "type": "string",
+                        "default": "header",
+                        "enum": [
+                            "header",
+                            "query"
+                        ]
+                    },
+                    "oauth2": {
+                        "type": "object",
+                        "properties": {
+                            "client_id": {
+                                "description": "OAuth2 client ID",
+                                "type": "string"
+                            },
+                            "token_url": {
+                                "description": "OAuth2 token endpoint",
+                                "type": "string",
+                                "format": "uri"
+                            },
+                            "scopes": {
+                                "description": "OAuth2 scopes",
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "timeoutInSeconds": {
+                        "description": "Request timeout in seconds",
+                        "type": "number",
+                        "default": 60,
+                        "minimum": 1,
+                        "maximum": 600
+                    },
+                    "allowedHosts": {
+                        "description": "List of allowed request target hosts",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tlsSkipVerify": {
+                        "description": "Skip TLS certificate verification",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "tlsAuth": {
+                        "description": "Enable TLS client authentication",
+                        "type": "boolean"
+                    },
+                    "unsecuredQueryHandling": {
+                        "description": "Policy for unsecured queries",
+                        "type": "string",
+                        "default": "warn",
+                        "enum": [
+                            "warn",
+                            "allow",
+                            "deny"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "basicAuthPassword",
+            "description": "Basic auth password"
+        },
+        {
+            "key": "apiKeyValue",
+            "description": "API key value"
+        },
+        {
+            "key": "bearerToken",
+            "description": "Bearer token"
+        },
+        {
+            "key": "oauth2ClientSecret",
+            "description": "OAuth2 client secret"
+        },
+        {
+            "key": "tlsCACert",
+            "description": "TLS CA certificate"
+        },
+        {
+            "key": "tlsClientCert",
+            "description": "TLS client certificate"
+        },
+        {
+            "key": "tlsClientKey",
+            "description": "TLS client key"
+        }
+    ]
+}

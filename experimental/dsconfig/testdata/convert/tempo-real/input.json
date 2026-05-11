@@ -1,0 +1,333 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "tempo",
+    "pluginName": "Tempo",
+    "docURL": "https://grafana.com/docs/grafana/latest/datasources/tempo/",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "label": "URL",
+            "description": "Tempo server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input",
+                "placeholder": "http://localhost:3200"
+            }
+        },
+        {
+            "id": "auth.basicAuth",
+            "key": "basicAuth",
+            "label": "Basic Auth",
+            "description": "Enable basic authentication",
+            "valueType": "boolean",
+            "target": "root",
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "auth.basicAuthUser",
+            "key": "basicAuthUser",
+            "label": "User",
+            "description": "Basic auth username",
+            "valueType": "string",
+            "target": "root",
+            "dependsOn": "auth.basicAuth == true",
+            "requiredWhen": "auth.basicAuth == true",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.tracesToMetrics",
+            "key": "tracesToMetrics",
+            "label": "Trace to Metrics",
+            "description": "Configure trace-to-metrics links",
+            "valueType": "object",
+            "target": "jsonData",
+            "section": "tracesToMetrics",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.tracesToMetrics.datasourceUid",
+            "key": "datasourceUid",
+            "label": "Metrics Datasource",
+            "description": "Target metrics datasource for trace-to-metrics links",
+            "valueType": "string",
+            "semanticType": "datasourceUid",
+            "target": "jsonData",
+            "section": "tracesToMetrics",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.tracesToMetrics.spanStartTimeShift",
+            "key": "spanStartTimeShift",
+            "label": "Span Start Time Shift",
+            "description": "Shift start time for metrics queries",
+            "valueType": "string",
+            "semanticType": "duration",
+            "target": "jsonData",
+            "section": "tracesToMetrics",
+            "ui": {
+                "component": "input",
+                "placeholder": "-2m"
+            }
+        },
+        {
+            "id": "jsonData.tracesToMetrics.spanEndTimeShift",
+            "key": "spanEndTimeShift",
+            "label": "Span End Time Shift",
+            "description": "Shift end time for metrics queries",
+            "valueType": "string",
+            "semanticType": "duration",
+            "target": "jsonData",
+            "section": "tracesToMetrics",
+            "ui": {
+                "component": "input",
+                "placeholder": "2m"
+            }
+        },
+        {
+            "id": "jsonData.tracesToMetrics.queries",
+            "key": "queries",
+            "label": "Metric Queries",
+            "description": "Metric queries linked from traces",
+            "valueType": "array",
+            "target": "jsonData",
+            "section": "tracesToMetrics",
+            "item": {
+                "valueType": "object",
+                "fields": [
+                    {
+                        "id": "t2m.query.item.name",
+                        "key": "name",
+                        "description": "Query name",
+                        "valueType": "string",
+                        "isItemField": true
+                    },
+                    {
+                        "id": "t2m.query.item.query",
+                        "key": "query",
+                        "description": "PromQL query template",
+                        "valueType": "string",
+                        "semanticType": "query",
+                        "isItemField": true,
+                        "ui": {
+                            "component": "code",
+                            "language": "promql"
+                        }
+                    }
+                ]
+            }
+        },
+        {
+            "id": "jsonData.tracesToLogsV2.datasourceUid",
+            "key": "datasourceUid",
+            "label": "Logs Datasource",
+            "description": "Target Loki datasource for trace-to-log links",
+            "valueType": "string",
+            "semanticType": "datasourceUid",
+            "target": "jsonData",
+            "section": "tracesToLogsV2",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.tracesToLogsV2.filterByTraceID",
+            "key": "filterByTraceID",
+            "label": "Filter by Trace ID",
+            "description": "Filter logs by trace ID",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "section": "tracesToLogsV2",
+            "defaultValue": true,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "jsonData.tracesToLogsV2.filterBySpanID",
+            "key": "filterBySpanID",
+            "label": "Filter by Span ID",
+            "description": "Filter logs by span ID",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "section": "tracesToLogsV2",
+            "defaultValue": false,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "jsonData.tracesToLogsV2.customQuery",
+            "key": "customQuery",
+            "label": "Use Custom Query",
+            "description": "Use a custom LogQL query instead of default filtering",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "section": "tracesToLogsV2",
+            "defaultValue": false,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "jsonData.tracesToLogsV2.query",
+            "key": "query",
+            "label": "Custom Query",
+            "description": "Custom LogQL query for trace-to-logs",
+            "valueType": "string",
+            "semanticType": "query",
+            "target": "jsonData",
+            "section": "tracesToLogsV2",
+            "dependsOn": "jsonData.tracesToLogsV2.customQuery == true",
+            "ui": {
+                "component": "code",
+                "language": "logql"
+            }
+        },
+        {
+            "id": "jsonData.serviceMap.datasourceUid",
+            "key": "datasourceUid",
+            "label": "Service Map Datasource",
+            "description": "Prometheus datasource for service map",
+            "valueType": "string",
+            "semanticType": "datasourceUid",
+            "target": "jsonData",
+            "section": "serviceMap",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.nodeGraph.enabled",
+            "key": "enabled",
+            "label": "Enable Node Graph",
+            "description": "Enable node graph visualization",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "section": "nodeGraph",
+            "defaultValue": true,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "jsonData.streamingEnabled.search",
+            "key": "search",
+            "label": "Streaming Search",
+            "description": "Enable streaming for search queries",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "section": "streamingEnabled",
+            "defaultValue": true,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "tls.tlsSkipVerify",
+            "key": "tlsSkipVerify",
+            "description": "Skip TLS certificate verification",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "defaultValue": false,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "secure.basicAuthPassword",
+            "key": "basicAuthPassword",
+            "description": "Basic auth password",
+            "valueType": "string",
+            "semanticType": "password",
+            "target": "secureJsonData",
+            "dependsOn": "auth.basicAuth == true"
+        },
+        {
+            "id": "secure.tlsCACert",
+            "key": "tlsCACert",
+            "description": "TLS CA certificate",
+            "valueType": "string",
+            "target": "secureJsonData"
+        },
+        {
+            "id": "secure.tlsClientCert",
+            "key": "tlsClientCert",
+            "description": "TLS client certificate",
+            "valueType": "string",
+            "target": "secureJsonData"
+        },
+        {
+            "id": "secure.tlsClientKey",
+            "key": "tlsClientKey",
+            "description": "TLS client key",
+            "valueType": "string",
+            "target": "secureJsonData"
+        }
+    ],
+    "groups": [
+        {
+            "id": "connection",
+            "title": "Connection",
+            "fieldRefs": [
+                "connection.url"
+            ]
+        },
+        {
+            "id": "auth",
+            "title": "Authentication",
+            "fieldRefs": [
+                "auth.basicAuth",
+                "auth.basicAuthUser",
+                "secure.basicAuthPassword"
+            ]
+        },
+        {
+            "id": "tracesToMetrics",
+            "title": "Trace to Metrics",
+            "fieldRefs": [
+                "jsonData.tracesToMetrics.datasourceUid",
+                "jsonData.tracesToMetrics.spanStartTimeShift",
+                "jsonData.tracesToMetrics.spanEndTimeShift",
+                "jsonData.tracesToMetrics.queries"
+            ]
+        },
+        {
+            "id": "tracesToLogs",
+            "title": "Trace to Logs",
+            "fieldRefs": [
+                "jsonData.tracesToLogsV2.datasourceUid",
+                "jsonData.tracesToLogsV2.filterByTraceID",
+                "jsonData.tracesToLogsV2.filterBySpanID",
+                "jsonData.tracesToLogsV2.customQuery",
+                "jsonData.tracesToLogsV2.query"
+            ]
+        },
+        {
+            "id": "serviceMap",
+            "title": "Service Map",
+            "fieldRefs": [
+                "jsonData.serviceMap.datasourceUid"
+            ]
+        },
+        {
+            "id": "display",
+            "title": "Display",
+            "fieldRefs": [
+                "jsonData.nodeGraph.enabled",
+                "jsonData.streamingEnabled.search"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,124 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Loki server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "basicAuth": {
+                "description": "Enable basic authentication",
+                "type": "boolean"
+            },
+            "basicAuthUser": {
+                "description": "Basic auth username",
+                "type": "string"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "maxLines": {
+                        "description": "Maximum number of lines returned per query",
+                        "type": "string",
+                        "default": "1000"
+                    },
+                    "manageAlerts": {
+                        "description": "Manage alert rules for this datasource",
+                        "type": "boolean",
+                        "default": true
+                    },
+                    "timeout": {
+                        "description": "Query timeout in seconds",
+                        "type": "number",
+                        "minimum": 1,
+                        "maximum": 600
+                    },
+                    "derivedFields": {
+                        "description": "Derived fields create links from log lines to other datasources",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "matcherRegex",
+                                "name"
+                            ],
+                            "properties": {
+                                "matcherRegex": {
+                                    "description": "Regex to match and extract value from log line",
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                },
+                                "name": {
+                                    "description": "Display name for the derived field",
+                                    "type": "string"
+                                },
+                                "url": {
+                                    "description": "External link URL template",
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "urlDisplayLabel": {
+                                    "description": "Display label for the link",
+                                    "type": "string"
+                                },
+                                "datasourceUid": {
+                                    "description": "Internal datasource for trace lookup",
+                                    "type": "string"
+                                },
+                                "matcherType": {
+                                    "description": "Type of matcher",
+                                    "type": "string",
+                                    "enum": [
+                                        "label",
+                                        "regex"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "tlsAuth": {
+                        "description": "Enable TLS client authentication",
+                        "type": "boolean"
+                    },
+                    "tlsAuthWithCACert": {
+                        "description": "Enable TLS with CA certificate",
+                        "type": "boolean"
+                    },
+                    "tlsSkipVerify": {
+                        "description": "Skip TLS certificate verification",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "serverName": {
+                        "description": "Server name for TLS verification",
+                        "type": "string",
+                        "format": "hostname"
+                    }
+                }
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "basicAuthPassword",
+            "description": "Basic auth password"
+        },
+        {
+            "key": "tlsCACert",
+            "description": "TLS CA certificate"
+        },
+        {
+            "key": "tlsClientCert",
+            "description": "TLS client certificate"
+        },
+        {
+            "key": "tlsClientKey",
+            "description": "TLS client key"
+        }
+    ]
+}

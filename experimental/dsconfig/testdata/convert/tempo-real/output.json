@@ -1,0 +1,148 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Tempo server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "basicAuth": {
+                "description": "Enable basic authentication",
+                "type": "boolean"
+            },
+            "basicAuthUser": {
+                "description": "Basic auth username",
+                "type": "string"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "tracesToMetrics": {
+                        "type": "object",
+                        "properties": {
+                            "tracesToMetrics": {
+                                "description": "Configure trace-to-metrics links",
+                                "type": "object"
+                            },
+                            "datasourceUid": {
+                                "description": "Target metrics datasource for trace-to-metrics links",
+                                "type": "string"
+                            },
+                            "spanStartTimeShift": {
+                                "description": "Shift start time for metrics queries",
+                                "type": "string",
+                                "format": "duration"
+                            },
+                            "spanEndTimeShift": {
+                                "description": "Shift end time for metrics queries",
+                                "type": "string",
+                                "format": "duration"
+                            },
+                            "queries": {
+                                "description": "Metric queries linked from traces",
+                                "type": "array",
+                                "items": {
+                                    "type": "object",
+                                    "properties": {
+                                        "name": {
+                                            "description": "Query name",
+                                            "type": "string"
+                                        },
+                                        "query": {
+                                            "description": "PromQL query template",
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "tracesToLogsV2": {
+                        "type": "object",
+                        "properties": {
+                            "datasourceUid": {
+                                "description": "Target Loki datasource for trace-to-log links",
+                                "type": "string"
+                            },
+                            "filterByTraceID": {
+                                "description": "Filter logs by trace ID",
+                                "type": "boolean",
+                                "default": true
+                            },
+                            "filterBySpanID": {
+                                "description": "Filter logs by span ID",
+                                "type": "boolean",
+                                "default": false
+                            },
+                            "customQuery": {
+                                "description": "Use a custom LogQL query instead of default filtering",
+                                "type": "boolean",
+                                "default": false
+                            },
+                            "query": {
+                                "description": "Custom LogQL query for trace-to-logs",
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "serviceMap": {
+                        "type": "object",
+                        "properties": {
+                            "datasourceUid": {
+                                "description": "Prometheus datasource for service map",
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "nodeGraph": {
+                        "type": "object",
+                        "properties": {
+                            "enabled": {
+                                "description": "Enable node graph visualization",
+                                "type": "boolean",
+                                "default": true
+                            }
+                        }
+                    },
+                    "streamingEnabled": {
+                        "type": "object",
+                        "properties": {
+                            "search": {
+                                "description": "Enable streaming for search queries",
+                                "type": "boolean",
+                                "default": true
+                            }
+                        }
+                    },
+                    "tlsSkipVerify": {
+                        "description": "Skip TLS certificate verification",
+                        "type": "boolean",
+                        "default": false
+                    }
+                }
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "basicAuthPassword",
+            "description": "Basic auth password"
+        },
+        {
+            "key": "tlsCACert",
+            "description": "TLS CA certificate"
+        },
+        {
+            "key": "tlsClientCert",
+            "description": "TLS client certificate"
+        },
+        {
+            "key": "tlsClientKey",
+            "description": "TLS client key"
+        }
+    ]
+}

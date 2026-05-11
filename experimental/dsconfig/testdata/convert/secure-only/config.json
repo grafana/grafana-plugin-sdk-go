@@ -1,0 +1,12 @@
+{
+    "_comment": "Grafana storage model: only url at root, everything else in secureJsonData. No jsonData fields at all.",
+    "name": "My Secure DS",
+    "type": "example-secure",
+    "url": "https://vault.example.com",
+    "jsonData": {},
+    "secureJsonData": {
+        "apiKey": "key-123",
+        "apiSecret": "secret-456",
+        "encryptionKey": "enc-789"
+    }
+}

@@ -1,0 +1,13 @@
+{
+    "_comment": "Grafana storage model: auth fields depend on authType. When authType=basic, username goes to jsonData, password to secureJsonData. When authType=oauth, username becomes clientId (via override), password becomes clientSecret, and tokenUrl is added.",
+    "name": "My Auth DS",
+    "type": "example-overrides",
+    "url": "https://api.example.com",
+    "jsonData": {
+        "authType": "basic",
+        "username": "admin"
+    },
+    "secureJsonData": {
+        "password": "s3cret"
+    }
+}

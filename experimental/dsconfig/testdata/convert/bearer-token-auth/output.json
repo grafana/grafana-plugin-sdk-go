@@ -1,0 +1,35 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "API endpoint URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "authMethod": {
+                        "description": "Authentication method to use",
+                        "type": "string",
+                        "default": "no-auth",
+                        "enum": [
+                            "no-auth",
+                            "bearer-token"
+                        ]
+                    }
+                }
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "bearerToken",
+            "description": "Token used for Bearer authentication"
+        }
+    ]
+}

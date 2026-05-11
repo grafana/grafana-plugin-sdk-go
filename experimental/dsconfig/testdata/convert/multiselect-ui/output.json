@@ -1,0 +1,31 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "httpMethod": {
+                        "description": "HTTP method for requests",
+                        "type": "string",
+                        "default": "GET"
+                    },
+                    "enabledFeatures": {
+                        "description": "Optional features to enable",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

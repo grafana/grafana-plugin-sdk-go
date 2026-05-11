@@ -1,0 +1,70 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-multiselect",
+    "pluginName": "Multiselect UI Datasource",
+    "fields": [
+        {
+            "id": "url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "httpMethod",
+            "key": "httpMethod",
+            "description": "HTTP method for requests",
+            "valueType": "string",
+            "target": "jsonData",
+            "defaultValue": "GET",
+            "ui": {
+                "component": "radio",
+                "options": [
+                    {
+                        "label": "GET",
+                        "value": "GET"
+                    },
+                    {
+                        "label": "POST",
+                        "value": "POST"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "enabledFeatures",
+            "key": "enabledFeatures",
+            "description": "Optional features to enable",
+            "valueType": "array",
+            "target": "jsonData",
+            "item": {
+                "valueType": "string"
+            },
+            "ui": {
+                "component": "multiselect",
+                "options": [
+                    {
+                        "label": "Streaming",
+                        "value": "streaming"
+                    },
+                    {
+                        "label": "Caching",
+                        "value": "caching"
+                    },
+                    {
+                        "label": "Alerting",
+                        "value": "alerting"
+                    },
+                    {
+                        "label": "Annotations",
+                        "value": "annotations"
+                    }
+                ]
+            }
+        }
+    ]
+}

@@ -1,0 +1,409 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "yesoreyeram-infinity-datasource",
+    "pluginName": "Infinity",
+    "docURL": "https://grafana.com/docs/plugins/yesoreyeram-infinity-datasource/",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "label": "URL",
+            "description": "Base URL for requests",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "ui": {
+                "component": "input",
+                "placeholder": "https://api.example.com"
+            }
+        },
+        {
+            "id": "auth.basicAuth",
+            "key": "basicAuth",
+            "label": "Basic Auth",
+            "description": "Enable basic authentication",
+            "valueType": "boolean",
+            "target": "root",
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "auth.basicAuthUser",
+            "key": "basicAuthUser",
+            "label": "User",
+            "description": "Basic auth username",
+            "valueType": "string",
+            "target": "root",
+            "dependsOn": "auth.basicAuth == true",
+            "requiredWhen": "auth.basicAuth == true",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.auth_method",
+            "key": "auth_method",
+            "label": "Authentication Method",
+            "description": "Authentication method to use",
+            "valueType": "string",
+            "target": "jsonData",
+            "defaultValue": "none",
+            "validations": [
+                {
+                    "type": "allowedValues",
+                    "values": [
+                        "none",
+                        "basicAuth",
+                        "apiKey",
+                        "bearerToken",
+                        "oauthPassThru",
+                        "digestAuth",
+                        "aws",
+                        "azureBlob",
+                        "oauth2"
+                    ]
+                }
+            ],
+            "ui": {
+                "component": "select",
+                "options": [
+                    {
+                        "label": "No Auth",
+                        "value": "none"
+                    },
+                    {
+                        "label": "Basic Auth",
+                        "value": "basicAuth"
+                    },
+                    {
+                        "label": "API Key",
+                        "value": "apiKey"
+                    },
+                    {
+                        "label": "Bearer Token",
+                        "value": "bearerToken"
+                    },
+                    {
+                        "label": "Forward OAuth",
+                        "value": "oauthPassThru"
+                    },
+                    {
+                        "label": "Digest Auth",
+                        "value": "digestAuth"
+                    },
+                    {
+                        "label": "AWS",
+                        "value": "aws"
+                    },
+                    {
+                        "label": "Azure Blob",
+                        "value": "azureBlob"
+                    },
+                    {
+                        "label": "OAuth2",
+                        "value": "oauth2"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "jsonData.apiKeyKey",
+            "key": "apiKeyKey",
+            "label": "API Key Header/Param Name",
+            "description": "Name of the header or query parameter for the API key",
+            "valueType": "string",
+            "target": "jsonData",
+            "dependsOn": "jsonData.auth_method == 'apiKey'",
+            "requiredWhen": "jsonData.auth_method == 'apiKey'",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.apiKeyType",
+            "key": "apiKeyType",
+            "label": "API Key Type",
+            "description": "Where to send the API key",
+            "valueType": "string",
+            "target": "jsonData",
+            "defaultValue": "header",
+            "dependsOn": "jsonData.auth_method == 'apiKey'",
+            "validations": [
+                {
+                    "type": "allowedValues",
+                    "values": [
+                        "header",
+                        "query"
+                    ]
+                }
+            ],
+            "ui": {
+                "component": "radio",
+                "options": [
+                    {
+                        "label": "Header",
+                        "value": "header"
+                    },
+                    {
+                        "label": "Query Parameter",
+                        "value": "query"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "jsonData.oauth2.client_id",
+            "key": "client_id",
+            "label": "Client ID",
+            "description": "OAuth2 client ID",
+            "valueType": "string",
+            "target": "jsonData",
+            "section": "oauth2",
+            "dependsOn": "jsonData.auth_method == 'oauth2'",
+            "requiredWhen": "jsonData.auth_method == 'oauth2'",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.oauth2.token_url",
+            "key": "token_url",
+            "label": "Token URL",
+            "description": "OAuth2 token endpoint",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "jsonData",
+            "section": "oauth2",
+            "dependsOn": "jsonData.auth_method == 'oauth2'",
+            "requiredWhen": "jsonData.auth_method == 'oauth2'",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.oauth2.scopes",
+            "key": "scopes",
+            "label": "Scopes",
+            "description": "OAuth2 scopes",
+            "valueType": "array",
+            "target": "jsonData",
+            "section": "oauth2",
+            "dependsOn": "jsonData.auth_method == 'oauth2'",
+            "item": {
+                "valueType": "string"
+            },
+            "ui": {
+                "component": "list"
+            }
+        },
+        {
+            "id": "jsonData.timeoutInSeconds",
+            "key": "timeoutInSeconds",
+            "label": "Timeout",
+            "description": "Request timeout in seconds",
+            "valueType": "number",
+            "target": "jsonData",
+            "defaultValue": 60,
+            "validations": [
+                {
+                    "type": "range",
+                    "min": 1,
+                    "max": 600
+                }
+            ],
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.allowedHosts",
+            "key": "allowedHosts",
+            "label": "Allowed Hosts",
+            "description": "List of allowed request target hosts",
+            "valueType": "array",
+            "target": "jsonData",
+            "item": {
+                "valueType": "string"
+            },
+            "ui": {
+                "component": "list"
+            }
+        },
+        {
+            "id": "jsonData.tlsSkipVerify",
+            "key": "tlsSkipVerify",
+            "description": "Skip TLS certificate verification",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "defaultValue": false,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "jsonData.tlsAuth",
+            "key": "tlsAuth",
+            "description": "Enable TLS client authentication",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "jsonData.unsecuredQueryHandling",
+            "key": "unsecuredQueryHandling",
+            "label": "Unsecured Query Handling",
+            "description": "Policy for unsecured queries",
+            "valueType": "string",
+            "target": "jsonData",
+            "defaultValue": "warn",
+            "validations": [
+                {
+                    "type": "allowedValues",
+                    "values": [
+                        "warn",
+                        "allow",
+                        "deny"
+                    ]
+                }
+            ],
+            "ui": {
+                "component": "select",
+                "options": [
+                    {
+                        "label": "Warn",
+                        "value": "warn"
+                    },
+                    {
+                        "label": "Allow",
+                        "value": "allow"
+                    },
+                    {
+                        "label": "Deny",
+                        "value": "deny"
+                    }
+                ]
+            },
+            "tags": [
+                "security"
+            ]
+        },
+        {
+            "id": "secure.basicAuthPassword",
+            "key": "basicAuthPassword",
+            "description": "Basic auth password",
+            "valueType": "string",
+            "semanticType": "password",
+            "target": "secureJsonData",
+            "dependsOn": "jsonData.auth_method == 'basicAuth'"
+        },
+        {
+            "id": "secure.apiKeyValue",
+            "key": "apiKeyValue",
+            "description": "API key value",
+            "valueType": "string",
+            "semanticType": "token",
+            "target": "secureJsonData",
+            "dependsOn": "jsonData.auth_method == 'apiKey'",
+            "requiredWhen": "jsonData.auth_method == 'apiKey'"
+        },
+        {
+            "id": "secure.bearerToken",
+            "key": "bearerToken",
+            "description": "Bearer token",
+            "valueType": "string",
+            "semanticType": "token",
+            "target": "secureJsonData",
+            "dependsOn": "jsonData.auth_method == 'bearerToken'",
+            "requiredWhen": "jsonData.auth_method == 'bearerToken'"
+        },
+        {
+            "id": "secure.oauth2ClientSecret",
+            "key": "oauth2ClientSecret",
+            "description": "OAuth2 client secret",
+            "valueType": "string",
+            "semanticType": "password",
+            "target": "secureJsonData",
+            "dependsOn": "jsonData.auth_method == 'oauth2'",
+            "requiredWhen": "jsonData.auth_method == 'oauth2'"
+        },
+        {
+            "id": "secure.tlsCACert",
+            "key": "tlsCACert",
+            "description": "TLS CA certificate",
+            "valueType": "string",
+            "target": "secureJsonData"
+        },
+        {
+            "id": "secure.tlsClientCert",
+            "key": "tlsClientCert",
+            "description": "TLS client certificate",
+            "valueType": "string",
+            "target": "secureJsonData",
+            "dependsOn": "jsonData.tlsAuth == true"
+        },
+        {
+            "id": "secure.tlsClientKey",
+            "key": "tlsClientKey",
+            "description": "TLS client key",
+            "valueType": "string",
+            "target": "secureJsonData",
+            "dependsOn": "jsonData.tlsAuth == true"
+        }
+    ],
+    "groups": [
+        {
+            "id": "connection",
+            "title": "Connection",
+            "fieldRefs": [
+                "connection.url",
+                "jsonData.timeoutInSeconds",
+                "jsonData.allowedHosts"
+            ]
+        },
+        {
+            "id": "auth",
+            "title": "Authentication",
+            "fieldRefs": [
+                "auth.basicAuth",
+                "auth.basicAuthUser",
+                "jsonData.auth_method",
+                "jsonData.apiKeyKey",
+                "jsonData.apiKeyType",
+                "jsonData.oauth2.client_id",
+                "jsonData.oauth2.token_url",
+                "jsonData.oauth2.scopes"
+            ]
+        },
+        {
+            "id": "secure",
+            "title": "Secrets",
+            "fieldRefs": [
+                "secure.basicAuthPassword",
+                "secure.apiKeyValue",
+                "secure.bearerToken",
+                "secure.oauth2ClientSecret"
+            ]
+        },
+        {
+            "id": "tls",
+            "title": "TLS / SSL",
+            "fieldRefs": [
+                "jsonData.tlsSkipVerify",
+                "jsonData.tlsAuth",
+                "secure.tlsCACert",
+                "secure.tlsClientCert",
+                "secure.tlsClientKey"
+            ]
+        },
+        {
+            "id": "security",
+            "title": "Security",
+            "fieldRefs": [
+                "jsonData.unsecuredQueryHandling"
+            ]
+        }
+    ]
+}

@@ -1,0 +1,39 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri",
+                "pattern": "^https://",
+                "minLength": 10,
+                "maxLength": 2048
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "port": {
+                        "description": "Server port",
+                        "type": "number",
+                        "default": 443,
+                        "minimum": 1,
+                        "maximum": 65535
+                    },
+                    "tags": {
+                        "description": "Resource tags",
+                        "type": "array",
+                        "minItems": 1,
+                        "maxItems": 10,
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

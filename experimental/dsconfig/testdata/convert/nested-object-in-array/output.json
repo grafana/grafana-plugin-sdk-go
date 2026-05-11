@@ -1,0 +1,68 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "queries": {
+                        "description": "Metric query definitions",
+                        "type": "array",
+                        "maxItems": 50,
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "name"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Query display name",
+                                    "type": "string"
+                                },
+                                "enabled": {
+                                    "description": "Whether the query is active",
+                                    "type": "boolean",
+                                    "default": true
+                                },
+                                "config": {
+                                    "description": "Query configuration",
+                                    "type": "object",
+                                    "required": [
+                                        "expr"
+                                    ],
+                                    "properties": {
+                                        "expr": {
+                                            "description": "PromQL expression",
+                                            "type": "string"
+                                        },
+                                        "interval": {
+                                            "description": "Evaluation interval",
+                                            "type": "string",
+                                            "format": "duration",
+                                            "default": "15s"
+                                        },
+                                        "labels": {
+                                            "description": "Additional label matchers",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

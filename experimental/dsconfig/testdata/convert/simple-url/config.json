@@ -1,0 +1,8 @@
+{
+    "_comment": "Grafana storage model: root-level fields are stored directly on the datasource resource",
+    "name": "My Simple DS",
+    "type": "example-simple",
+    "url": "https://example.com/api",
+    "jsonData": {},
+    "secureJsonData": {}
+}

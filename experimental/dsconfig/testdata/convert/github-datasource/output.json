@@ -1,0 +1,59 @@
+{
+    "spec": {
+        "type": "object",
+        "properties": {
+            "url": {
+                "description": "GitHub API URL (only needed for Enterprise Server)",
+                "type": "string",
+                "format": "uri"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "githubPlan": {
+                        "description": "GitHub plan type",
+                        "type": "string",
+                        "default": "github-basic",
+                        "enum": [
+                            "github-basic",
+                            "github-enterprise-cloud",
+                            "github-enterprise-server"
+                        ]
+                    },
+                    "githubUrl": {
+                        "description": "The URL of the GitHub Enterprise Server instance",
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "selectedAuthType": {
+                        "description": "Authentication type",
+                        "type": "string",
+                        "default": "personal-access-token",
+                        "enum": [
+                            "personal-access-token",
+                            "github-app"
+                        ]
+                    },
+                    "appId": {
+                        "description": "The GitHub App ID",
+                        "type": "string"
+                    },
+                    "installationId": {
+                        "description": "The GitHub App installation ID",
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "accessToken",
+            "description": "Personal access token for GitHub API authentication"
+        },
+        {
+            "key": "privateKey",
+            "description": "Private key for GitHub App authentication (PEM format)"
+        }
+    ]
+}

@@ -1,0 +1,55 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "basicAuth": {
+                "description": "Enable basic authentication",
+                "type": "boolean"
+            },
+            "basicAuthUser": {
+                "description": "Basic auth username",
+                "type": "string"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "tlsSkipVerify": {
+                        "description": "Skip TLS certificate verification",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "timeout": {
+                        "description": "Request timeout in seconds",
+                        "type": "number",
+                        "default": 30,
+                        "minimum": 1,
+                        "maximum": 300
+                    },
+                    "serverName": {
+                        "description": "TLS server name for certificate validation",
+                        "type": "string",
+                        "format": "hostname"
+                    }
+                }
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "basicAuthPassword",
+            "description": "Basic auth password"
+        },
+        {
+            "key": "tlsCACert",
+            "description": "TLS CA certificate (PEM encoded)"
+        }
+    ]
+}
