@@ -2,7 +2,8 @@
 # the repo. Unless a later match takes precedence,
 # these will be requested for review when someone opens a pull request.
 * @grafana/grafana-catalog
-/backend/gtime @grafana/oss-big-tent @grafana/observability-logs @grafana/partner-datasources
+/backend/gtime @grafana/data-sources-plugins
 /data/ @grafana/grafana-datasources-core-services
+/data/sqlutil @grafana/data-sources-plugins
 /experimental/apis/datasource @grafana/grafana-datasources-core-services
-/data/sqlutil @grafana/oss-big-tent
+/experiemntal/dsconfig @grafana/data-sources-plugins
