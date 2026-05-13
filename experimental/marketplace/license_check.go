@@ -46,7 +46,7 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	jwks := os.Getenv("GF_MARKETPLACE_LICENSE_VALIDATION_KEY")
 	appUrl := os.Getenv("GF_MARKETPLACE_APP_URL")
 
-	backend.Logger.Debug("Validating plugin license")
+	backend.Logger.Debug("Validating marketplace plugin license")
 	val := os.Getenv("GF_MARKETPLACE_LICENSE_TEXT")
 	if len(val) > 0 {
 		backend.Logger.Debug("Parsing license token from $GF_MARKETPLACE_LICENSE_TEXT")
