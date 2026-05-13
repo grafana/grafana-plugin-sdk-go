@@ -129,10 +129,7 @@ func TestLoadTokenFromFile(t *testing.T) {
 }
 
 func TestLoadValidationKeys(t *testing.T) {
-	timeNow = func() time.Time {
-		return time.Date(2026, 06, 13, 0, 0, 0, 0, time.UTC)
-	}
-	t.Cleanup(restoreTime)
+	fixedTestTime(t, time.Date(2026, 06, 13, 0, 0, 0, 0, time.UTC))
 
 	useTestKey(t)
 

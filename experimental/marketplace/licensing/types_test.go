@@ -11,8 +11,7 @@ import (
 
 func TestLicenseTokenValidation(t *testing.T) {
 	bLicenses := map[string]struct{}{}
-	fixedTestTime()
-	t.Cleanup(restoreTime)
+	fixedTestTime(t, time.Date(2026, 06, 13, 0, 0, 0, 0, time.UTC))
 
 	tests := []struct {
 		name           string

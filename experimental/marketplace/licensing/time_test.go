@@ -1,13 +1,16 @@
 package licensing
 
-import "time"
+import (
+	"testing"
+	"time"
+)
 
-func fixedTestTime() {
+func fixedTestTime(tb testing.TB, fixedTime time.Time) {
+	tb.Helper()
 	timeNow = func() time.Time {
-		return time.Date(2019, 10, 11, 17, 30, 40, 0, time.UTC)
+		return fixedTime
 	}
-}
-
-func restoreTime() {
-	timeNow = time.Now
+	tb.Cleanup(func() {
+		timeNow = time.Now
+	})
 }
