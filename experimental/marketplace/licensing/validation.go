@@ -14,9 +14,7 @@ import (
 var logger = backend.Logger
 
 var (
-	errFileNotFound = func(tokenPath string) error {
-		return fmt.Errorf("license token file not found: %s", tokenPath)
-	}
+	errFileNotFound            = fmt.Errorf("license token file not found")
 	errLoadFailure             = fmt.Errorf("error loading license token")
 	errParsing                 = fmt.Errorf("error parsing license token")
 	errVerificationKeyNotFound = fmt.Errorf("license verification key not found")
@@ -41,7 +39,7 @@ func LoadToken(tokenPath, appUrl, validationKeys, pluginId string) *LicenseToken
 	if err != nil {
 		if os.IsNotExist(err) {
 			token.Status = NotFound
-			token.Error = errFileNotFound(tokenPath)
+			token.Error = fmt.Errorf("%w: %s", errFileNotFound, tokenPath)
 			return token
 		}
 
