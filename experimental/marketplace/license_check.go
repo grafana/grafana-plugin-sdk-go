@@ -43,9 +43,7 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	val := os.Getenv("GF_MARKETPLACE_LICENSE_TEXT")
 	if len(val) > 0 {
 		backend.Logger.Debug("Parsing license token from $GF_MARKETPLACE_LICENSE_TEXT")
-		tok := &licensing.LicenseToken{}
-		tok.Parse(val, appUrl, jwks, pluginId)
-		return tok
+		return licensing.LoadTokenFromValue(val, appUrl, jwks, pluginId)
 	}
 
 	// Will return an error if the path is not found
@@ -61,7 +59,7 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	}
 	backend.Logger.Debug("Loading license from file", "path", val)
 
-	return licensing.LoadToken(val, appUrl, jwks, pluginId)
+	return licensing.LoadTokenFromFile(val, appUrl, jwks, pluginId)
 }
 
 // runInvalidLicenseServer when we have an error, this will make it keep running, but returning errors

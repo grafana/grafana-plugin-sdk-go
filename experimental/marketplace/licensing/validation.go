@@ -30,8 +30,14 @@ var embeddedKeys = map[string]string{
 	"test": `{"kty":"RSA","kid":"test","alg":"RS512","n":"vEozbbwXShnXoz4kUKycW-awmd2wS3-Gy3peiH0jOn1wzwZJN9Nj2hkZ68BxuHFISMSKTrgC-vEF99kq6CocbxNl-xe5DWR-md4XFjGK1MCsINMp20UUgMCKy6pAQDYrZYT0JXeiDPrSnJbCDwTS6TrRscD10prNo54gS54yDSY5ds53W8O0TnbdjR-VPa5X91kqOzApZTJ0s40XNtHQSETylLD4N7j1BuSYFRm0xmodsSOFIE1Jl4ALuyugptM0F9np7qcLRvwLyHX4qRzBv0ua-9zOZSjIB3hBw4O8ViDYS0MAR92llPgtBngPZ1OZ4hyK09do7gNRXxFdURX9GHm5Lbf01f0SFDzYgXTVZV6wcN4NuSn823owvkcLoeeyIgY2MKYJxDHZCW5dLnNSkHkrOBxTGjTEiL_dX-M4NwqRh5wBZyvqNufQCJWcp-1Ft_zicYsNJNTU7mBG3rBKlMU_ZsMzr2QJjVUIyI0W7nHhI0ymtLWyHxmqHubxOhI7HuhT8dUBFj36K12vx24KxAKz2Vt17j9xw221KiP2q0R31qUYnzS4vIiR7Agz8BIp9XP8MR5GEhS2SQ9syK77bx_YqSbR3u2nofhmNh_5Hm8sZ46SeCdjUcl46Dv4aIiFcaXnpfqTf7d0iMA3ZCPRVIpQX6cRkMDJF-SMIS-Kovs","e":"AQAB"}`,
 }
 
-func LoadToken(tokenPath, appUrl, validationKeys, pluginId string) *LicenseToken {
-	token := &LicenseToken{}
+func LoadTokenFromValue(tokenStr, appUrl, validationKeys, pluginId string) *LicenseToken {
+	var token LicenseToken
+	token.Parse(tokenStr, appUrl, validationKeys, pluginId)
+	return &token
+}
+
+func LoadTokenFromFile(tokenPath, appUrl, validationKeys, pluginId string) *LicenseToken {
+	var token LicenseToken
 
 	// Can ignore gosec G304 since tokenPath is derived from a configuration parameter
 	// nolint:gosec
@@ -40,16 +46,15 @@ func LoadToken(tokenPath, appUrl, validationKeys, pluginId string) *LicenseToken
 		if os.IsNotExist(err) {
 			token.Status = NotFound
 			token.Error = fmt.Errorf("%w: %s", errFileNotFound, tokenPath)
-			return token
+			return &token
 		}
 
 		token.Status = Invalid
 		token.Error = fmt.Errorf("%w: %w", errLoadFailure, err)
-		return token
+		return &token
 	}
-
 	token.Parse(string(dat), appUrl, validationKeys, pluginId)
-	return token
+	return &token
 }
 
 func unwrapSignedJWT(keys map[string]string, parsed *jose.JSONWebSignature) ([]byte, error) {
