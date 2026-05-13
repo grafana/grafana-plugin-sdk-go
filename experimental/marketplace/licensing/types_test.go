@@ -1,7 +1,6 @@
 package licensing
 
 import (
-	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -11,11 +10,6 @@ import (
 )
 
 func TestLicenseTokenValidation(t *testing.T) {
-	const (
-		pluginID  = "grafana-marketplacetest-datasource"
-		productID = "marketplace-" + pluginID
-	)
-
 	appURL := "http://grafana.mycompany.com"
 	bLicenses := map[string]struct{}{}
 	fixedTestTime()
@@ -89,7 +83,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
-				Products:       []string{productID},
+				Products:       []string{testProductID},
 			},
 			appURL:         appURL,
 			bLicenses:      bLicenses,
@@ -104,7 +98,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
-				Products:       []string{productID},
+				Products:       []string{testProductID},
 			},
 			appURL:    appURL,
 			bLicenses: bLicenses,
@@ -118,7 +112,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
-				Products:       []string{productID},
+				Products:       []string{testProductID},
 			},
 			appURL:    appURL,
 			bLicenses: bLicenses,
@@ -132,7 +126,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
-				Products:       []string{productID},
+				Products:       []string{testProductID},
 			},
 			appURL:    "hmac:test",
 			bLicenses: bLicenses,
@@ -146,7 +140,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
-				Products:       []string{productID},
+				Products:       []string{testProductID},
 			},
 			appURL:    "",
 			bLicenses: bLicenses,
@@ -161,7 +155,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
-				Products:       []string{productID},
+				Products:       []string{testProductID},
 			},
 			appURL:    appURL,
 			bLicenses: map[string]struct{}{"12345": {}},
@@ -176,13 +170,13 @@ func TestLicenseTokenValidation(t *testing.T) {
 				useBlockedLicenseIds(t, tc.bLicenses)
 			}
 
-			ok := tc.token.validate(tc.appURL, pluginID)
+			ok := tc.token.validate(tc.appURL, testPluginID)
 
 			if tc.expErr != nil {
 				require.Equal(t, false, ok)
 				require.Equal(t, tc.status, tc.token.Status)
 				require.Error(t, tc.token.Error)
-				require.True(t, errors.Is(tc.token.Error, tc.expErr))
+				require.ErrorIs(t, tc.token.Error, tc.expErr)
 				if tc.expErrContains != "" {
 					require.Contains(t, tc.token.Error.Error(), tc.expErrContains)
 				}
@@ -191,7 +185,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 
 			assert.Equal(t, true, ok, "validate should return true")
 			assert.Equal(t, Valid, tc.token.Status)
-			assert.Nil(t, tc.token.Error)
+			assert.NoError(t, tc.token.Error)
 		})
 	}
 }
