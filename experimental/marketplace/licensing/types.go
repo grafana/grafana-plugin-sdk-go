@@ -173,11 +173,8 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 
 // validateSubject validates the licensed url
 func (token *LicenseToken) validateSubject(appURL string) error {
-	// older versions of Grafana don't provide appURL to plugins
-	// so we have to skip the validation in that case
-	// TODO: this should not be relevant for marketplace? They require latest Grafana.
 	if appURL == "" {
-		return nil
+		return errInvalidAppURL(token.Subject)
 	}
 
 	// if token subject is an hmac hash then appURL should also be a hash and we can just compare them directly
