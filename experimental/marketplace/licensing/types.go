@@ -2,11 +2,14 @@ package licensing
 
 import (
 	"crypto/subtle"
+	"encoding/json"
+	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/gobwas/glob"
+	jose "gopkg.in/go-jose/go-jose.v2"
 )
 
 type TokenStatus int
@@ -69,15 +72,56 @@ var (
 		return fmt.Errorf("license token expired at %v", expiredAt.UTC())
 	}
 
-	errMarketplacePluginNotIncluded = fmt.Errorf("license does not include the plugin id as a product")
-	ErrTokenNotFound                = fmt.Errorf("license token not found")
+	errMarketplacePluginNotIncluded = errors.New("license does not include the plugin id as a product")
+	ErrTokenNotFound                = errors.New("license token not found")
 	// generic error
-	errLicenseInvalid = fmt.Errorf("invalid license")
+	errLicenseInvalid = errors.New("invalid license")
 )
 
-// Validate validates the license against our licensing rules.
-func (token *LicenseToken) Validate(appURL, pluginId string) bool {
-	if err := token.ValidateSubject(appURL); err != nil {
+func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId string) bool {
+	token.Raw = tokenStr
+
+	parsed, err := jose.ParseSigned(token.Raw)
+	if err != nil {
+		token.Status = Invalid
+		token.Error = fmt.Errorf("%w: %w", errParsing, err)
+		return false
+	}
+
+	keys, err := keySet(validationKeys)
+	if err != nil {
+		token.Status = Invalid
+		token.Error = err
+		return false
+	}
+
+	payload, err := unwrapSignedJWT(keys, parsed)
+	if err != nil {
+		token.Status = Invalid
+		token.Error = err
+		return false
+	}
+
+	err = json.Unmarshal(payload, &token)
+	if err != nil {
+		token.Status = Invalid
+		token.Error = fmt.Errorf("%w: %w", errParsing, err)
+		return false
+	}
+
+	// Handle tokens with missing or invalid "update_days" field
+	// TODO: is this needed for marketplace?
+	if token.UpdateDays < 1 {
+		token.UpdateDays = 1
+	}
+
+	logger.Debug("license token parsed", "token", token)
+	return token.validate(appUrl, pluginId)
+}
+
+// validate validates the license against our licensing rules.
+func (token *LicenseToken) validate(appURL, pluginId string) bool {
+	if err := token.validateSubject(appURL); err != nil {
 		token.Status = InvalidSubject
 		token.Error = err
 		return false
@@ -127,10 +171,11 @@ func (token *LicenseToken) Validate(appURL, pluginId string) bool {
 	return true
 }
 
-// ValidateSubject validates the licensed url
-func (token *LicenseToken) ValidateSubject(appURL string) error {
+// validateSubject validates the licensed url
+func (token *LicenseToken) validateSubject(appURL string) error {
 	// older versions of Grafana don't provide appURL to plugins
 	// so we have to skip the validation in that case
+	// TODO: this should not be relevant for marketplace? They require latest Grafana.
 	if appURL == "" {
 		return nil
 	}

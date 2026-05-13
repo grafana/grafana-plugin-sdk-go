@@ -5,7 +5,7 @@ import (
 )
 
 func Manage(pluginID string, instanceFactory datasource.InstanceFactoryFunc, opts datasource.ManageOpts) error {
-	// TODO: implement
+	// TODO: PPT support: this will be implemented in a follow-up PR
 	/* flag.Parse() // Parse the flags so that we can check the value of -qtlv
 
 	// If -qtlv is set, then we should check the license on every request

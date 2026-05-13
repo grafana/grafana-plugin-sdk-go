@@ -13,13 +13,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
 
-// CheckMarketplaceLicense checks if a valid marketplace plugin license exists.
-//
-// Note that it will start a license error server `runInvalidLicenseServer`
-func CheckMarketplaceLicense() error {
-	return CheckMarketplacePluginLicense("")
-}
-
 func CheckMarketplacePluginLicense(pluginId string) error {
 	token := readPluginLicense(pluginId)
 	if token.Error != nil {
@@ -73,8 +66,9 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 
 // runInvalidLicenseServer when we have an error, this will make it keep running, but returning errors
 func runInvalidLicenseServer(pluginId string, verboseError error) error {
+	// TODO: correct URL/instructions in user-facing error message
 	//nolint:staticcheck // error to be used in grafana
-	err := fmt.Errorf("The Marketplace plugin %s is not available with your current subscription. To activate this data source, please upgrade your plan by visiting https://grafana.com/pricing", pluginId)
+	err := fmt.Errorf("The Marketplace plugin %s is not available with your current subscription. To activate this plugin, please upgrade your plan by visiting https://grafana.com/pricing", pluginId)
 	backend.Logger.Error("Marketplace License Error, starting error server", "err", err.Error(), "detailed error", verboseError.Error())
 	handler := &invalidLicenseHandler{
 		pluginId:     pluginId,

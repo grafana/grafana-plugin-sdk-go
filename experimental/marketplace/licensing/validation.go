@@ -52,46 +52,6 @@ func LoadToken(tokenPath, appUrl, validationKeys, pluginId string) *LicenseToken
 	return token
 }
 
-func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId string) bool {
-	token.Raw = tokenStr
-
-	parsed, err := jose.ParseSigned(token.Raw)
-	if err != nil {
-		token.Status = Invalid
-		token.Error = fmt.Errorf("%w: %w", errParsing, err)
-		return false
-	}
-
-	keys, err := keySet(validationKeys)
-	if err != nil {
-		token.Status = Invalid
-		token.Error = err
-		return false
-	}
-
-	payload, err := unwrapSignedJWT(keys, parsed)
-	if err != nil {
-		token.Status = Invalid
-		token.Error = err
-		return false
-	}
-
-	err = json.Unmarshal(payload, &token)
-	if err != nil {
-		token.Status = Invalid
-		token.Error = fmt.Errorf("%w: %w", errParsing, err)
-		return false
-	}
-
-	// Handle tokens with missing or invalid "update_days" field
-	if token.UpdateDays < 1 {
-		token.UpdateDays = 1
-	}
-
-	logger.Debug("license token parsed", "token", token)
-	return token.Validate(appUrl, pluginId)
-}
-
 func unwrapSignedJWT(keys map[string]string, parsed *jose.JSONWebSignature) ([]byte, error) {
 	if len(parsed.Signatures) < 1 {
 		return nil, fmt.Errorf("%w: %w", errParsing, errors.New("no signature found"))
