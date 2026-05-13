@@ -56,21 +56,11 @@ type LicenseToken struct {
 }
 
 var (
-	errInvalidAppURL = func(subject string) error {
-		return fmt.Errorf("licensed URL '%s' is invalid, please contact support", subject)
-	}
-	errNoMatchAppURL = func(appURL, subject string) error {
-		return fmt.Errorf("instance URL '%s' does not match licensed URL '%s'", appURL, subject)
-	}
-	errLicenseNotActiveYet = func(issuedAt time.Time) error {
-		return fmt.Errorf("license issue date is %v", issuedAt.UTC())
-	}
-	errLicenseExpired = func(expiredAt time.Time) error {
-		return fmt.Errorf("license expired at %v", expiredAt.UTC())
-	}
-	errTokenExpired = func(expiredAt time.Time) error {
-		return fmt.Errorf("license token expired at %v", expiredAt.UTC())
-	}
+	errInvalidAppURL       = errors.New("invalid licensed URL, please contact support")
+	errNoMatchAppURL       = errors.New("instance URL does not match licensed URL")
+	errLicenseNotActiveYet = errors.New("license is not active yet")
+	errLicenseExpired      = errors.New("license expired")
+	errTokenExpired        = errors.New("license token expired")
 
 	errMarketplacePluginNotIncluded = errors.New("license does not include the plugin id as a product")
 	ErrTokenNotFound                = errors.New("license token not found")
@@ -129,19 +119,19 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 
 	if time.Unix(token.LicenseIssued, 0).After(timeNow()) {
 		token.Status = Invalid
-		token.Error = errLicenseNotActiveYet(time.Unix(token.LicenseIssued, 0))
+		token.Error = fmt.Errorf("%w: license not active until %v", errLicenseNotActiveYet, time.Unix(token.LicenseIssued, 0))
 		return false
 	}
 
 	if time.Unix(token.LicenseExpires, 0).Before(timeNow()) {
 		token.Status = Expired
-		token.Error = errLicenseExpired(time.Unix(token.LicenseExpires, 0))
+		token.Error = fmt.Errorf("%w: license expired at %v", errLicenseExpired, time.Unix(token.LicenseExpires, 0))
 		return false
 	}
 
 	if time.Unix(token.Expires, 0).Before(timeNow()) {
 		token.Status = Expired
-		token.Error = errTokenExpired(time.Unix(token.Expires, 0))
+		token.Error = fmt.Errorf("%w: token expired at %v", errTokenExpired, time.Unix(token.Expires, 0))
 		return false
 	}
 
@@ -174,13 +164,13 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 // validateSubject validates the licensed url
 func (token *LicenseToken) validateSubject(appURL string) error {
 	if appURL == "" {
-		return errInvalidAppURL(token.Subject)
+		return fmt.Errorf("%w: %q", errInvalidAppURL, token.Subject)
 	}
 
 	// if token subject is an hmac hash then appURL should also be a hash and we can just compare them directly
 	if strings.HasPrefix(token.Subject, "hmac:") {
 		if subtle.ConstantTimeCompare([]byte(token.Subject), []byte(appURL)) != 1 {
-			return errNoMatchAppURL(appURL, token.Subject)
+			return fmt.Errorf("%w: instance %q, license %q", errNoMatchAppURL, appURL, token.Subject)
 		}
 
 		return nil
@@ -188,11 +178,11 @@ func (token *LicenseToken) validateSubject(appURL string) error {
 
 	g, err := glob.Compile(token.Subject, '.', '/', ':')
 	if err != nil {
-		return errInvalidAppURL(token.Subject)
+		return fmt.Errorf("%w: %q", errInvalidAppURL, token.Subject)
 	}
 
 	if !g.Match(appURL) {
-		return errNoMatchAppURL(appURL, token.Subject)
+		return fmt.Errorf("%w: instance %q, license %q", errNoMatchAppURL, appURL, token.Subject)
 	}
 
 	return nil
