@@ -41,21 +41,6 @@ func CheckMarketplacePluginLicense(pluginId string) error {
 	return nil
 }
 
-// TODO: marketplace: do we want to expose those to marketplace plugin developers as well?
-// Allow plugins to access the enterprise license token
-//
-// This allows more control over how to handle license evaluation
-/* func GetEnterpriseLicenceToken() *licensing.LicenseToken {
-	return readPluginLicense("")
-}
-
-// Allow plugins to access their plugin's enterprise license token
-//
-// This allows more control over how to handle license evaluation
-func GetEnterprisePluginLicenceToken(pluginId string) *licensing.LicenseToken {
-	return readPluginLicense(pluginId)
-} */
-
 // readPluginLicense looks for a license in environment variables and validates it
 func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	jwks := os.Getenv("GF_MARKETPLACE_LICENSE_VALIDATION_KEY")
