@@ -37,6 +37,7 @@ func CheckMarketplacePluginLicense(pluginId string) error {
 // readPluginLicense looks for a license in environment variables and validates it
 func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	jwks := os.Getenv("GF_MARKETPLACE_LICENSE_VALIDATION_KEY")
+	// TODO: re-use existing env var?
 	appUrl := os.Getenv("GF_MARKETPLACE_APP_URL")
 
 	backend.Logger.Debug("Validating marketplace plugin license")
