@@ -73,7 +73,7 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 
 // runInvalidLicenseServer when we have an error, this will make it keep running, but returning errors
 func runInvalidLicenseServer(pluginId string, verboseError error) error {
-	//lint:ignore ST1005 // error to be used in grafana
+	//nolint:staticcheck // error to be used in grafana
 	err := fmt.Errorf("The Marketplace plugin %s is not available with your current subscription. To activate this data source, please upgrade your plan by visiting https://grafana.com/pricing", pluginId)
 	backend.Logger.Error("Marketplace License Error, starting error server", "err", err.Error(), "detailed error", verboseError.Error())
 	handler := &invalidLicenseHandler{
@@ -105,7 +105,7 @@ func (h *invalidLicenseHandler) CheckHealth(ctx context.Context, req *backend.Ch
 // QueryData queries for data.
 func (h *invalidLicenseHandler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	result := backend.NewQueryDataResponse()
-	//lint:ignore ST1005 // error to be used in grafana
+	//nolint:staticcheck // error to be used in grafana
 	err := errors.Join(errors.New("Marketplace License Error"), h.err, h.verboseError)
 	for _, query := range req.Queries {
 		errResponse := backend.ErrDataResponse(backend.StatusUnauthorized, err.Error())

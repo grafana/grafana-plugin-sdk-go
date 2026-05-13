@@ -18,17 +18,17 @@ var (
 		return fmt.Errorf("license token file not found: %s", tokenPath)
 	}
 	errLoadFailure = func(err error) error {
-		return fmt.Errorf("error loading license token: %s", err)
+		return fmt.Errorf("error loading license token: %w", err)
 	}
 	errParsing = func(err error) error {
-		return fmt.Errorf("error parsing license token: %s", err)
+		return fmt.Errorf("error parsing license token: %w", err)
 	}
 	errVerificationKeyNotFound = fmt.Errorf("license verification key not found")
 	errLicenseVerificationKey  = func(err error) error {
-		return fmt.Errorf("error loading license verification key: %s", err)
+		return fmt.Errorf("error loading license verification key: %w", err)
 	}
 	errVerifyToken = func(err error) error {
-		return fmt.Errorf("error verifying license token: %s", err)
+		return fmt.Errorf("error verifying license token: %w", err)
 	}
 )
 
