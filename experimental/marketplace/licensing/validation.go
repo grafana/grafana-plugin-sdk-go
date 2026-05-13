@@ -53,8 +53,7 @@ func LoadTokenFromFile(tokenPath, appUrl, validationKeys, pluginId string) *Lice
 		token.Error = fmt.Errorf("%w: %w", errLoadFailure, err)
 		return &token
 	}
-	token.Parse(string(dat), appUrl, validationKeys, pluginId)
-	return &token
+	return LoadTokenFromValue(string(dat), appUrl, validationKeys, pluginId)
 }
 
 func unwrapSignedJWT(keys map[string]string, parsed *jose.JSONWebSignature) ([]byte, error) {
