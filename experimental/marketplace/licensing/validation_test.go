@@ -197,6 +197,7 @@ func TestLoadValidationKeys(t *testing.T) {
 }
 
 func createValidToken(t *testing.T) *LicenseToken {
+	t.Helper()
 	raw, err := os.ReadFile("./test-licenses/expired/license.jwt")
 	require.NoError(t, err)
 	return &LicenseToken{
@@ -220,10 +221,10 @@ func createValidToken(t *testing.T) *LicenseToken {
 	}
 }
 
-func useTestKey(t testing.TB) {
-	t.Helper()
+func useTestKey(tb testing.TB) {
+	tb.Helper()
 	embeddedKeys["tests"] = publicKey
-	t.Cleanup(func() {
+	tb.Cleanup(func() {
 		delete(embeddedKeys, "tests")
 	})
 }

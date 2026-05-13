@@ -189,11 +189,11 @@ func TestLicenseTokenValidation(t *testing.T) {
 	}
 }
 
-func useBlockedLicenseIds(t testing.TB, bl map[string]struct{}) {
-	t.Helper()
+func useBlockedLicenseIds(tb testing.TB, bl map[string]struct{}) {
+	tb.Helper()
 	origLicenses := bLIDs
 	bLIDs = bl
-	t.Cleanup(func() {
+	tb.Cleanup(func() {
 		bLIDs = origLicenses
 	})
 }
