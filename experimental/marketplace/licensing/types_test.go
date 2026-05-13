@@ -10,7 +10,6 @@ import (
 )
 
 func TestLicenseTokenValidation(t *testing.T) {
-	appURL := "http://grafana.mycompany.com"
 	bLicenses := map[string]struct{}{}
 	fixedTestTime()
 	t.Cleanup(restoreTime)

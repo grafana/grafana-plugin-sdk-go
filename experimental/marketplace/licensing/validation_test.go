@@ -5,13 +5,19 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 const (
 	testPluginID  = "grafana-marketplacetest-datasource"
 	testProductID = "marketplace-" + testPluginID
+	appURL        = "http://grafana.mycompany.com"
 )
+
+// Both the private key and the publicKey below have been generated using:
+// cd grafana-catalog-team/scripts/marketplace/genjwk
+// go run main.go -kid tests
 
 /*
 // Private key used for these tests encoded in PEM PKCS#8.
@@ -70,6 +76,7 @@ KIm/DaszoflMCyTppuEKIXNj/ex2M7zGlQmhnUb8l2I+g08Q7DV8NDiBsLc=
 `
 */
 
+// Public key of the private key above, returned by running the genjwk script above (priv-key.pub.json)
 var publicKey = `{"kty":"RSA","kid":"tests","alg":"RS512","n":"nyfvbGABIlwfGVxvS496I-Stp6RwPorLZ95lrv5VmxZD7yS2HeEd0wy_3E8rOC5kcHU3vAzpf2McDLNsQ1wlDSaBINSTirn3a9lxPASFII40PlzIMSNHXVSSphnz1UiMiZ3m-MiApC5S-zn4c6dz5ObHQ8Lp_8DLcWlYliTTiKwdnuRXN2mBQSKTMc7LlJK2F-FfVpzWNoAZWEJh-ZPp1rsN0d49pko7t5Fiepob_SbqaDonk3yuIhMLIp5l4G8LceiQga3KCsHo6O2yHB8WYloV95r1FbNr016VTm5JNuFgvFUWh2X_dOs-xvmtLvqcPIJHrZwW1vbrnZ9VXwWJj25qiYNaIWqvinFljeJ-WMFzS5n6EPvRTU5RcgWVAPBwfUEpyCaCdyvzcIBfXd2PDUzj-Ev-UOOL1Ewgg1j0EgqUP-TtwvTpUn6Zsz0XxGiDngogAP_0LJELHYgNUt0GtWogun9Keog5WPVbXm1GDeyfiGYt4WpjCf5-eco3YXOokCf5VgYhc_ZXhCbWQb1ZKyX8MVecqg2kEP2Ec92mC9Wx3DgSBEPzHs7gXhT1QeG5W58h7sNjRRExxx2szIQK41BenaYnUNdnI8ggx7b70FWlgXAEyfylycokIpnJpumL-BmkgcD_LNn8env1ecCjXhIs4yKdPJDM3AcZZQZlHPc","e":"AQAB"}`
 
 func TestLoadTokenFromFile(t *testing.T) {
@@ -91,7 +98,10 @@ func TestLoadTokenFromFile(t *testing.T) {
 			expErrContains: "no/such_license_file.jwt",
 		},
 		{
-			name:           "With a valid but expired token",
+			name: "With a valid but expired token",
+			// generated with:
+			// cd grafana-catalog-team/scripts/marketplace/genjwk
+			// go run main.go -company mycompany -priv-key ../genjwk/priv-key.json -products marketplace-grafana-marketplacetest-datasource -subject http://grafana.mycompany.com -expiry 1337
 			tokenPath:      "./test-licenses/expired/license.jwt",
 			status:         Expired,
 			expErr:         errLicenseExpired,
@@ -102,7 +112,7 @@ func TestLoadTokenFromFile(t *testing.T) {
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			token := LoadTokenFromFile(tc.tokenPath, "http://localhost:3000/", "", "")
+			token := LoadTokenFromFile(tc.tokenPath, appURL, "", testPluginID)
 
 			require.Equalf(t, tc.status, token.Status, "status should match expected. token error: %q", token.Error)
 
@@ -118,6 +128,74 @@ func TestLoadTokenFromFile(t *testing.T) {
 	}
 }
 
+func TestLoadValidationKeys(t *testing.T) {
+	timeNow = func() time.Time {
+		return time.Date(2026, 06, 13, 0, 0, 0, 0, time.UTC)
+	}
+	t.Cleanup(restoreTime)
+
+	useTestKey(t)
+
+	// expiry=2099-12-31 23:59:59, lid=10500
+	// Generated using:
+	// cd grafana-catalog-team/scripts/marketplace/genjwt
+	// go run main.go -company mycompany -priv-key ../genjwk/child.json -products marketplace-grafana-marketplacetest-datasource -lid 10500 -subject http://grafana.mycompany.com -expiry 4102444799
+	jwt := `eyJhbGciOiJSUzUxMiIsImtpZCI6ImNoaWxkIiwidHlwIjoiSldUIn0.eyJqdGkiOiIxOTA5Mjc5MjkwIiwiaXNzIjoiaHR0cHM6Ly9ncmFmYW5hLmNvbSIsInN1YiI6Imh0dHA6Ly9ncmFmYW5hLm15Y29tcGFueS5jb20iLCJpYXQiOjE3Nzg2ODcyMDUsImV4cCI6NDEwMjQ0NDc5OSwibmJmIjoxNzc4Njg3MjA1LCJsZXhwIjo0MTAyNDQ0Nzk5LCJsaWQiOiIxMDUwMCIsInByb2QiOlsibWFya2V0cGxhY2UtZ3JhZmFuYS1tYXJrZXRwbGFjZXRlc3QtZGF0YXNvdXJjZSJdLCJwcmljaW5nX21vZGVsIjoidXNhZ2UiLCJyZXZlbnVlX3NoYXJlX3BjdCI6NzAsImNvbXBhbnkiOiJteWNvbXBhbnkifQ.PSnttpyemQCk542B2xoYGGsrMtzuqJ9BGvL1YBE6WPTkcUSN2UkoCK7SJjnYibNMNnpTDuOSTZFeNj3hhuSZ3RZZK7fkk99yh4w_1rDDrUjciQxK5sLLsnVqrlO_3oh_0y8JL1ubRCxPG0bB4oKMwcu0oRhfbEfhuSmWSgPvfw5PEUYPDnGPy5eHjalcQE9Fv5ROQewdsl_pDNkpCZmvVI_oRrRz57v5CQAZHq5LUms1n_PK893hRksTfZIngv8LFhwa-txXGGfHWbZFL-ApflUkil3X2bUcUVtrDFVQbpLq1LNaDYucl-AOlLebE_bxmnbkOmdH3bp-KMe1evYZCKANSSUu5OWkYRhNvMLH65STREtI3TDDrcx3ho0av_fp3tW4LewBLzKBNQddDy8xwvwxwONbdrYP-I64rGLuKWg1m49u9EeCVKviCFVi4TrBrNJFQsAAoh9q2Z8lpEecoYBVd6RP8RYY7KCNN-sikQcOqE3GMGIqSFc4yFSw5w8tg-3qzbwesV5lC9MBz6V3rkVNfYnq_wgIl7voDApKymzy17z2xIz3hpKldOxLO9MVYXKa9x45jXLqJH0c_c_WLQarHQSb3tHOtfotplWjB2JkeTzhQvd1LCyC1Z-w52QtWE2HegWHhvaQQV2Tvzchlh1ZelWPxfTnUYn7_bJ3Olo`
+
+	// Generated using:
+	// cd grafana-catalog-team/scripts/marketplace/genjwk
+	// go run main.go -kid child -out child
+	// cd ../genjwks
+	// go run main.go -root-priv-key ../genjwk/priv-key.json ../genjwk/child.pub.json
+	//
+	// (requires grafana-catalog-team/scripts/marketplace/genjwk/priv-key.json to be in place with the correct private key,
+	// which is the content of the "privateKey" variable at the top of this file)
+	validJWKs := `eyJhbGciOiJSUzUxMiIsImtpZCI6InRlc3RzIiwidHlwIjoiSldUIn0.eyJrZXlzIjpbeyJrdHkiOiJSU0EiLCJraWQiOiJjaGlsZCIsImFsZyI6IlJTNTEyIiwibiI6IndZQThNVjZLbTlmODZtNEZ1UnFTazRTLVdQdExaZTI4Z3FqSmhCOWx2eGVTanBuRTEyRzJOU2NTSElKby1LVFB4MVJWSjJ5dXZpYU9ybmNUdzhkaUU2NExjNHM1RWgtLXRYZTJNSnh4WFozbUQ5SnBYQUhnOWlpaUdSNlJOakxDWWR1cU4tbTR2Q0xMTm4zNXJ5SV9rOUlRb3hEbE55cFFoNzBWZklYdkRpZXo1V2pJTFlicjlzdGxvNHM4eFdxZTRaUHktdHk5b3JrSUxucTh2ajdVYlBMSW91M1RZVGpnOTUtbTZJdktFNnQ4VGc0ZkFQbVgzZWZTcVlHWENWeEdEWjUzQ0lxVmhnZG90cTRjZndjRUpMbHdvdlh1bk13Z0VGMERiMUhmdVlYQmFlLUs5NW5pemk2MDY0OUNzcy1GTExsNGhmN2s1UTYzSWxRTkdtQzFZaEtTZ3VXT3dkNm9pVmZBTDdUT3pXTlNzcjZiMnJJcldpZUMxUWo1X1ZXMXlMejVoTVN2VGMzTFRBOHlxd1J0VnNPSE93V0wwMF9UcFJlNXh6UmNPM0MwSjVUdDNMNGtxN0pWT2tiUi0tMmNwNXdtcURIU2xkUEI5WGFfRVllWm45aG50SVFvWFdrb1pkbnhkLU1vcjdLaGdyWGtZTFcyeHE4MV9ZZkJEYmJVc0pDWGtVMUdWYXUyLTdQTWlyRm03VXE4V1d3Q0trRXBUQ1Nrd28tQUd0bG4wc08xOTRXOEtVZ1Nlb05HZXRiMTNpa2JvZUNLRE5mbUR1aFR6LWJIU1BPdzBWZHg5OWFIbEUwRnNpTl95RWFUbU4wOEdZNWY0MHpMdUxPMlYzUU5sdWg4N1duZkdMR3Y3ZV8xYVE3bFZWaFBDRTdFcEZtWklkT0dKaUhhN0s4IiwiZSI6IkFRQUIifV19.fI8Oc76MQ9IXiiK_Q6MozHtSNRMUSIri2uc5Md_iSeQPoD4iJK0wIqwqMaYlyhKNs41F6JnjuyjNjmt4nzKTMzlvbJSXxhGXP0cGStcG9joHDyg1R05HHFAuuc-lgKQwfbjqRt5PdHryOCpuyntAyCfgJFEQElsu9mfE1aisv5H3MJaUihvkVhjtRV_KHvBdYCu3T-w4ntU8cBpyiKu8h12gmMK-BbGRpWdpXBm7Iz8LL1CPVas71_1aKUAGtzGVc76c3mvolGzFF5ygVvZmptDK2UD3uDeALcjXTr0s3Lfmhsqpz1WMtSJBTEBTfXuNregsVS-I4pFJxyqo9XMnEG1p_hJondmSaY14VeHUJH6icu0DWRj5cn3xellqU36VhzOqZweNmRi9Yo444_3hkpEwp_gbcJqDOZpM0uz6jjdhnjyeAsKpHHZMLN3WJCkTuIhefd6cJMi5j6ir6-NJyhStjE0ZzjxmKD5OL42wrSdfoT71N3gt91BDkFs0w2J39304z70u8-7-av_Fpzz6aUvRi0EuTptXI2uEXbIBxGqUfYU6cSHgzFg8FaFXrb-k1pvudL8Eapom6KcbaNwDF84OVuQiijZZI0piG8RDxBDDq15VnCsk2c90mTToWL1cXXB-WD_EfqF4c8TXKQx6FbPWhjuI5Ams0I68AbnGGYw`
+
+	tests := []struct {
+		name        string
+		jwks        string
+		bLicenses   map[string]struct{}
+		expValidity bool
+	}{
+		{
+			name:        "empty",
+			jwks:        "",
+			bLicenses:   map[string]struct{}{},
+			expValidity: false,
+		},
+		{
+			name:        "valid jwks and valid jwt",
+			jwks:        validJWKs,
+			bLicenses:   map[string]struct{}{"12345": {}},
+			expValidity: true,
+		},
+		{
+			name: "valid jwks and revoked jwt",
+			jwks: validJWKs,
+			// `10500` must match the `lid` field in the decoded `jwt` above
+			bLicenses:   map[string]struct{}{"10500": {}},
+			expValidity: false,
+		},
+		{
+			name:        "invalid jwks",
+			jwks:        jwt,
+			bLicenses:   map[string]struct{}{"12345": {}},
+			expValidity: false,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if len(tc.bLicenses) != 0 {
+				useBlockedLicenseIds(t, tc.bLicenses)
+			}
+			token := &LicenseToken{}
+			status := token.Parse(jwt, appURL, tc.jwks, testPluginID)
+			assert.Equalf(t, tc.expValidity, status, "token validity should match expected. error: %q", token.Error)
+		})
+	}
+}
+
 func createValidToken(t *testing.T) *LicenseToken {
 	raw, err := os.ReadFile("./test-licenses/expired/license.jwt")
 	require.NoError(t, err)
@@ -127,7 +205,7 @@ func createValidToken(t *testing.T) *LicenseToken {
 		Error:           nil,
 		Id:              "14",
 		Issuer:          "http://raintank-dev:4000",
-		Subject:         "http://localhost:3000/",
+		Subject:         appURL,
 		Issued:          1539191907,
 		Expires:         1577854800,
 		LicenseIssued:   1539191759,
