@@ -174,3 +174,169 @@ removes the port/discovery problem, and lets PluginContext be built
 fresh per request rather than cached. The cost is a contract change
 on the Grafana side and a longer path to a first working version —
 which is exactly the cost we wanted to defer for the POC.
+
+---
+
+## 4. Bundled datasource plugins don't fit the current SDK entry point
+
+**Context.** The next plugins we want MCP support in are Loki,
+Prometheus, and MySQL. Unlike github-datasource and
+redshift-datasource, these ship bundled with Grafana — they live
+under `grafana/pkg/tsdb/{loki,prometheus,mysql}` and are linked
+directly into the Grafana binary rather than running as separate
+plugin processes.
+
+**Why this breaks the current wiring.** The SDK exposes MCP through
+`MCPServer` on `datasource.ManageOpts` in
+`backend/datasource/manage.go`. `Manage()` is what an external
+plugin's `main.go` calls to stand up its gRPC server, and it's also
+where the embedded MCP listener is started and where the
+`contextCapture` PluginContext-stashing hack lives. Bundled plugins
+never go through `Manage()` — they're registered into Grafana's
+in-process plugin registry as Go services. There's no `ManageOpts`
+to hang an `MCPServer` off, no separate process to host the
+listener, and no gRPC boundary to capture PluginContext from in the
+first place.
+
+**Why the standalone-HTTP shape is also wrong for bundled plugins.**
+Even if we plumbed `mcp.Server` directly into each bundled plugin's
+service constructor, three loopback ports inside one Grafana
+process gives us none of the (already weak) isolation benefit of
+the per-plugin-process model, makes the auth story worse rather
+than better (everything is inside Grafana's auth boundary already,
+but the MCP listener sits outside it), and multiplies the
+port/discovery problems from finding #3.
+
+**Options, ordered by how invasive they are.**
+
+1. **One shared MCP server owned by Grafana; bundled plugins
+   register into it.** Grafana stands up a single `mcp.Server` as a
+   service alongside its HTTP server. Each bundled plugin's
+   `ProvideService` calls the existing
+   `BindQueryData`/`BindCallResource`/`BindCheckHealth` against
+   that shared server, namespacing its tools by datasource type.
+   Requires exposing a public construct/start/stop surface on
+   `mcp.Server` that doesn't go through `datasource.Manage`, and
+   moving the auth boundary onto Grafana's existing middleware
+   (which also lets us drop the cached-PluginContext hack — Grafana
+   has the real one in-process). This is the natural convergence
+   point with finding #2 option 2 and finding #3 option 1.
+2. **gRPC contract first, bundled second.** If we land the
+   gRPC-contract direction from finding #3 before tackling bundled
+   plugins, bundled plugins ride along for free: Grafana terminates
+   MCP at its boundary and dispatches to whichever in-process or
+   out-of-process plugin owns the tool. Bundled plugins just need
+   to implement the new contract methods. Strictly better than
+   option 1 long-term, but blocked on the same contract change.
+3. **Unbundle Loki/Prometheus/MySQL.** Run them as external plugin
+   processes again so `datasource.Manage()` works as-is. Clean from
+   an SDK perspective, but a multi-quarter project and orthogonal
+   to MCP — not realistic as a way to extend the POC.
+
+**Recommendation for the next POC step.** Option 1: extract a
+Grafana-ownable surface from `mcp.Server` (constructor + lifecycle
+that doesn't assume `Manage()` is the caller), then wire it into
+Grafana's service graph and have one bundled plugin (Loki is
+probably the most useful) bind its handlers to it. That validates
+both the shared-server model and the Grafana-side auth path before
+we commit to a contract change.
+
+---
+
+## 5. grafana-assistant only consumes MCP tools, not resources
+
+**Observed.** When connecting our embedded MCP servers to
+grafana-assistant, only the registered tools were picked up and
+made available to the model. Resources registered via
+`mcp.Server.RegisterResource` (see `experimental/mcp/resources.go`)
+are exposed correctly over the MCP transport — `resources/list`
+and `resources/read` work when probed with a generic MCP client —
+but grafana-assistant never lists or reads them.
+
+**Implication.** Any datasource context we'd want to surface as a
+read-only, addressable blob (schema dumps, dashboards, saved
+queries, docs snippets) has to be modeled as a tool call rather
+than as an MCP resource if we want grafana-assistant to actually
+use it. That changes the design trade-off: resources are the more
+natural MCP shape for "here is some context, read it if you need
+it", but right now they're effectively dead weight for the
+assistant integration.
+
+**Open questions.**
+
+- Is this a deliberate choice on the grafana-assistant side
+  (tools-only by design), or a not-yet-implemented capability?
+- If it's the former, should the SDK keep encouraging resource
+  registration at all for the assistant use case, or steer
+  plugins toward tool-shaped equivalents?
+- Prompts (`experimental/mcp/prompts.go`) are in the same boat —
+  worth confirming whether they're consumed either.
+
+**Action.** Flagging with the grafana-assistant team to confirm
+intent and timeline. Until then, plugin authors targeting the
+assistant should prefer tools over resources for any context they
+want the model to reach.
+
+---
+
+## 6. Anthropic API rejects property keys containing `[` or `]`
+
+**Observed.** With the `mcp-from-openapi` server (port 7501) wired
+into grafana-assistant as the `datasource-information` built-in
+provider, every chat turn failed. The UI showed the generic:
+
+> There was an issue with your request. Please try again or contact
+> support if the problem persists.
+
+The assistant API logs had the real error:
+
+```
+POST "https://api.anthropic.com/v1/messages": 400 Bad Request
+tools.27.custom.input_schema.properties: Property keys should match
+pattern '^[a-zA-Z0-9_.-]{1,64}$'
+```
+
+The generic UI message comes from the assistant frontend's
+`createUserFriendlyErrorMessage` mapping any `bad_request`/`400`
+to that string
+(`apps/plugin/src/utils/errorMessages.ts`), so the underlying cause
+is only visible in the API container logs.
+
+**Root cause.** Anthropic's tool-use API enforces a stricter
+property-key pattern than JSON Schema itself does: keys in
+`input_schema.properties` must match `^[a-zA-Z0-9_.-]{1,64}$`. The
+OpenAPI→MCP generator preserves the wire-level parameter name
+verbatim, so Prometheus/Loki endpoints that take a repeated
+`match[]` query parameter end up with a property literally named
+`match[]`. The `[` and `]` characters are rejected, and Anthropic
+fails the entire `messages` request at the first offending tool
+(tool 27 in our case — only one is reported even though four tools
+share the same problem).
+
+Tools affected in the current `mcp-from-openapi` output:
+
+- `loki_proxy_get`
+- `prometheus_series`
+- `prometheus_labels`
+- `prometheus_label_values`
+
+**Fix.** Rename the JSON property to `match` (no brackets) in the
+generated `inputSchema.properties`, keep `type: array`, and mention
+the wire-level `match[]` name in the property description if it
+matters for the proxy step. The `[]` suffix is a Prometheus
+query-string serialization convention for repeated parameters, not
+a JSON property-naming convention — JSON Schema already expresses
+the multi-value semantics via `type: array`.
+
+If other OpenAPI specs we ingest carry parameter names with
+characters outside `[a-zA-Z0-9_.-]` (spaces, colons, slashes,
+parentheses, names longer than 64 chars, …), the generator should
+sanitize them at the same point: rewrite the key, remember the
+original on the side, and translate back when constructing the
+outgoing HTTP request. Doing this in the generator keeps the
+assistant API free of provider-specific tool-schema patching.
+
+**Related.** Same general shape as finding #1 (Anthropic enforces
+constraints beyond plain JSON Schema). The mitigation pattern is
+the same: normalize tool schemas at registration time so that
+upstream tool authors don't have to know Anthropic's exact rules.
