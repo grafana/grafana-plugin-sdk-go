@@ -49,8 +49,8 @@ github.com/felixge/httpsnoop v1.0.4 h1:NFTV2Zj1bL4mc9sqWACXbQFVBBg2W3GPvqp8/ESS2
 github.com/felixge/httpsnoop v1.0.4/go.mod h1:m8KPJKqk1gH5J9DgRY2ASl2lWCfGKXixSwevea8zH2U=
 github.com/fsnotify/fsnotify v1.4.7 h1:IXs+QLmnXW2CcXuY+8Mzv/fWEsPGWxqefPtCP5CnV9I=
 github.com/fsnotify/fsnotify v1.4.7/go.mod h1:jwhsz4b93w/PPRr/qN1Yymfu8t87LnFCMoQvtojpjFo=
-github.com/getkin/kin-openapi v0.136.0 h1:mJC/W0ZFnwGYkUUwujw+LmWGFuKcqHklJjpl8JAH5eE=
-github.com/getkin/kin-openapi v0.136.0/go.mod h1:f97ss9nLJZRi9fm0vSwKZa4KrPMltWnZf9peal6MBrs=
+github.com/getkin/kin-openapi v0.139.0 h1:pBFXcZJFwz9J1X64jzxlOoNgFm+TF7kNrs9+HJVN6Ic=
+github.com/getkin/kin-openapi v0.139.0/go.mod h1:NGxPfE4PwS/TRXEbyx2RrxDFPZvxcWw31Tw8XXjPZLs=
 github.com/go-logr/logr v1.2.2/go.mod h1:jdQByPbusPIv2/zmleS9BjJVeZ6kBagPoEUsqbVz/1A=
 github.com/go-logr/logr v1.3.0/go.mod h1:9T104GzyrTigFIr8wt5mBrctHMim0Nb2HLGrmQ40KvY=
 github.com/go-logr/logr v1.4.3 h1:CjnDlHq8ikf6E492q6eKboGOC0T8CDaOvkHCIg8idEI=
@@ -194,10 +194,10 @@ github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826 h1:RWengNIwukTxcDr9
 github.com/mohae/deepcopy v0.0.0-20170929034955-c48cc78d4826/go.mod h1:TaXosZuwdSHYgviHp1DAtfrULt5eUgsSMsZf+YrPgl8=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 h1:C3w9PqII01/Oq1c1nUAm88MOHcQC9l5mIlSMApZMrHA=
 github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822/go.mod h1:+n7T8mK8HuQTcFwEeznm/DIxMOiR9yIdICNftLE1DvQ=
-github.com/oasdiff/yaml v0.0.9 h1:zQOvd2UKoozsSsAknnWoDJlSK4lC0mpmjfDsfqNwX48=
-github.com/oasdiff/yaml v0.0.9/go.mod h1:8lvhgJG4xiKPj3HN5lDow4jZHPlx1i7dIwzkdAo6oAM=
-github.com/oasdiff/yaml3 v0.0.12 h1:75urAtPeDg2/iDEWwzNrLOWxI9N/dCh81nTTJtokt2M=
-github.com/oasdiff/yaml3 v0.0.12/go.mod h1:y5+oSEHCPT/DGrS++Wc/479ERge0zTFxaF8PbGKcg2o=
+github.com/oasdiff/yaml v0.1.0 h1:0bqZjfKc/8S9urj4JuwepX41WX9EoA6ifhU3SV06cXg=
+github.com/oasdiff/yaml v0.1.0/go.mod h1:kOlRmMdL2X3vucLCEQO5u61SU22RysnfXvcttrZA1O0=
+github.com/oasdiff/yaml3 v0.0.13 h1:06svmvOHOVBqF81+sY2EUScvUI/iS/vl2VIeUUxZQwg=
+github.com/oasdiff/yaml3 v0.0.13/go.mod h1:y5+oSEHCPT/DGrS++Wc/479ERge0zTFxaF8PbGKcg2o=
 github.com/oklog/run v1.1.0 h1:GEenZ1cK0+q0+wsJew9qUg/DyD8k3JzYsZAi5gYi2mA=
 github.com/oklog/run v1.1.0/go.mod h1:sVPdnTZT1zYwAJeCMu2Th4T21pA3FPOQRfWjQlk7DVU=
 github.com/oklog/ulid/v2 v2.1.1 h1:suPZ4ARWLOJLegGFiZZ1dFAkqzhMjL3J1TzI+5wHz8s=
