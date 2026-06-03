@@ -35,6 +35,12 @@ type InstanceDisposer interface {
 	Dispose()
 }
 
+// InstanceBusyChecker can check if an instance is currently busy.
+type InstanceBusyChecker interface {
+	// Busy returns true if the instance is currently busy
+	Busy() bool
+}
+
 // InstanceCallbackFunc defines the callback function of the InstanceManager.Do method.
 // The argument provided will of type Instance.
 type InstanceCallbackFunc interface{}
@@ -52,12 +58,20 @@ type InstanceManager interface {
 	// If Instance is cached and not updated provides as argument to fn. If Instance is not cached or
 	// updated, a new Instance is created and cached before provided as argument to fn.
 	Do(ctx context.Context, pluginContext backend.PluginContext, fn InstanceCallbackFunc) error
+
+	// Provider returns the underlying instance provider.
+	Provider() InstanceProvider
 }
 
 // CachedInstance a cached Instance.
 type CachedInstance struct {
 	PluginContext backend.PluginContext
 	instance      Instance
+}
+
+// Instance returns the cached instance.
+func (ci CachedInstance) Instance() Instance {
+	return ci.instance
 }
 
 // InstanceProvider defines an instance provider, providing instances.
@@ -133,12 +147,10 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			time.AfterFunc(im.disposeTTL, func() {
-				disposer.Dispose()
-				activeInstances.Dec()
+				safeDispose(ci.instance, disposer)
 			})
-		} else {
-			activeInstances.Dec()
 		}
+		activeInstances.Dec()
 	}
 
 	instance, err := im.provider.NewInstance(ctx, pluginContext)
@@ -166,6 +178,10 @@ func (im *instanceManager) Do(ctx context.Context, pluginContext backend.PluginC
 
 	callInstanceHandlerFunc(fn, instance)
 	return nil
+}
+
+func (im *instanceManager) Provider() InstanceProvider {
+	return im.provider
 }
 
 func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
