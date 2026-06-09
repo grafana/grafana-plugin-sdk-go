@@ -1,0 +1,1 @@
+{"results":{"A":{"status":200,"frames":[{"schema":{"refId":"A","meta":{"type":"directory-listing","typeVersion":[0,0]},"fields":[{"name":"name","type":"string","typeInfo":{"frame":"string"}},{"name":"media-type","type":"string","typeInfo":{"frame":"string"}}]},"data":{"values":[["logs","metrics","README.md"],["directory","directory","text/markdown"]]}}]}}}
