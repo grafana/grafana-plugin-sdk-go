@@ -1,0 +1,64 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-valuetypes",
+    "pluginName": "All Value Types Datasource",
+    "fields": [
+        {
+            "id": "url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "stringField",
+            "key": "stringField",
+            "description": "A string field",
+            "valueType": "string",
+            "target": "jsonData",
+            "defaultValue": "hello",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "numberField",
+            "key": "numberField",
+            "description": "A number field",
+            "valueType": "number",
+            "target": "jsonData",
+            "defaultValue": 42,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "booleanField",
+            "key": "booleanField",
+            "description": "A boolean field",
+            "valueType": "boolean",
+            "target": "jsonData",
+            "defaultValue": true,
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "arrayField",
+            "key": "arrayField",
+            "description": "A string array field",
+            "valueType": "array",
+            "target": "jsonData",
+            "item": {
+                "valueType": "string"
+            },
+            "ui": {
+                "component": "list"
+            }
+        }
+    ]
+}

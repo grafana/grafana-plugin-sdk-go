@@ -1,0 +1,65 @@
+{
+    "_comment": "Grafana storage model for Infinity datasource with API key auth. Shows auth_method discriminator, apiKey-specific fields in jsonData, secret in secureJsonData, plus allowedHosts array and security policy.",
+    "_scenario_apikey": {
+        "name": "Infinity (API Key)",
+        "type": "yesoreyeram-infinity-datasource",
+        "url": "https://api.example.com",
+        "basicAuth": false,
+        "jsonData": {
+            "auth_method": "apiKey",
+            "apiKeyKey": "X-API-Key",
+            "apiKeyType": "header",
+            "timeoutInSeconds": 60,
+            "allowedHosts": [
+                "api.example.com",
+                "cdn.example.com"
+            ],
+            "tlsSkipVerify": false,
+            "unsecuredQueryHandling": "warn"
+        },
+        "secureJsonData": {
+            "apiKeyValue": "sk-api-key-value"
+        }
+    },
+    "_scenario_oauth2": {
+        "name": "Infinity (OAuth2)",
+        "type": "yesoreyeram-infinity-datasource",
+        "url": "https://secure-api.example.com",
+        "basicAuth": false,
+        "jsonData": {
+            "auth_method": "oauth2",
+            "oauth2": {
+                "client_id": "my-client-id",
+                "token_url": "https://auth.example.com/oauth/token",
+                "scopes": [
+                    "read",
+                    "write"
+                ]
+            },
+            "timeoutInSeconds": 30,
+            "allowedHosts": [
+                "secure-api.example.com"
+            ],
+            "tlsSkipVerify": false,
+            "unsecuredQueryHandling": "deny"
+        },
+        "secureJsonData": {
+            "oauth2ClientSecret": "oauth-secret-value"
+        }
+    },
+    "_scenario_bearer": {
+        "name": "Infinity (Bearer)",
+        "type": "yesoreyeram-infinity-datasource",
+        "url": "https://api.example.com",
+        "basicAuth": false,
+        "jsonData": {
+            "auth_method": "bearerToken",
+            "timeoutInSeconds": 60,
+            "tlsSkipVerify": false,
+            "unsecuredQueryHandling": "warn"
+        },
+        "secureJsonData": {
+            "bearerToken": "eyJhbGciOi..."
+        }
+    }
+}

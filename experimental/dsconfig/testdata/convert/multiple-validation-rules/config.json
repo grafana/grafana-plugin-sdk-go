@@ -1,0 +1,14 @@
+{
+    "_comment": "Grafana storage model: url at root with pattern+length validation, port in jsonData with range validation, tags in jsonData with itemCount validation",
+    "name": "My Validated DS",
+    "type": "example-validations",
+    "url": "https://secure.example.com/api",
+    "jsonData": {
+        "port": 443,
+        "tags": [
+            "production",
+            "monitoring"
+        ]
+    },
+    "secureJsonData": {}
+}

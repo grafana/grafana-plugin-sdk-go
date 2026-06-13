@@ -1,0 +1,19 @@
+{
+    "_comment": "Grafana storage model: tracesToMetrics stored as array of objects in jsonData",
+    "name": "My Tempo DS",
+    "type": "example-array",
+    "url": "https://tempo.example.com",
+    "jsonData": {
+        "tracesToMetrics": [
+            {
+                "name": "Request Rate",
+                "query": "sum(rate(http_requests_total{service=\"$__service\"}[5m]))"
+            },
+            {
+                "name": "Error Rate",
+                "query": "sum(rate(http_requests_total{service=\"$__service\",status=~\"5..\"}[5m]))"
+            }
+        ]
+    },
+    "secureJsonData": {}
+}

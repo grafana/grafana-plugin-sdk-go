@@ -1,0 +1,59 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-virtual",
+    "pluginName": "Virtual Auth Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "description": "Datasource URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "auth.basicAuth",
+            "key": "basicAuth",
+            "description": "Enable basic authentication",
+            "valueType": "boolean",
+            "target": "root",
+            "ui": {
+                "component": "switch"
+            }
+        },
+        {
+            "id": "auth.basicAuthUser",
+            "key": "basicAuthUser",
+            "description": "Basic auth username",
+            "valueType": "string",
+            "target": "root",
+            "dependsOn": "auth.basicAuth == true",
+            "requiredWhen": "auth.basicAuth == true"
+        },
+        {
+            "id": "auth.basicAuthPassword",
+            "key": "basicAuthPassword",
+            "description": "Basic auth password",
+            "valueType": "string",
+            "semanticType": "password",
+            "target": "secureJsonData",
+            "dependsOn": "auth.basicAuth == true"
+        },
+        {
+            "id": "derived.authConfigured",
+            "key": "authConfigured",
+            "description": "Virtual field: true when basic auth user and password are both set",
+            "valueType": "boolean",
+            "kind": "virtual",
+            "lifecycle": "experimental",
+            "storage": {
+                "type": "computed",
+                "read": "auth.basicAuth == true && auth.basicAuthUser != ''"
+            }
+        }
+    ]
+}

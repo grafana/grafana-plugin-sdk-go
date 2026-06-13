@@ -1,0 +1,16 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Base URL of the datasource",
+                "type": "string",
+                "format": "uri",
+                "pattern": "^https?://"
+            }
+        }
+    }
+}

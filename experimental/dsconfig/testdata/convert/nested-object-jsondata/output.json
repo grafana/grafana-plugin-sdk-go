@@ -1,0 +1,56 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "derivedFields": {
+                        "description": "Configure derived fields to link to other datasources",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "name",
+                                "matcherRegex"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Display name of the derived field",
+                                    "type": "string"
+                                },
+                                "matcherRegex": {
+                                    "description": "Regex to match log line content",
+                                    "type": "string",
+                                    "minLength": 1,
+                                    "maxLength": 500
+                                },
+                                "url": {
+                                    "description": "URL template for the link",
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "datasourceUid": {
+                                    "description": "UID of the target datasource",
+                                    "type": "string"
+                                },
+                                "urlDisplayLabel": {
+                                    "description": "Label for the link",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

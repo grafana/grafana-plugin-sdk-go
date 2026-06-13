@@ -1,0 +1,163 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Prometheus server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "basicAuth": {
+                "description": "Enable basic authentication",
+                "type": "boolean"
+            },
+            "basicAuthUser": {
+                "description": "Basic auth username",
+                "type": "string"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "httpMethod": {
+                        "description": "HTTP method for querying Prometheus",
+                        "type": "string",
+                        "default": "POST",
+                        "enum": [
+                            "GET",
+                            "POST"
+                        ]
+                    },
+                    "prometheusType": {
+                        "description": "Type of Prometheus-compatible backend",
+                        "type": "string",
+                        "enum": [
+                            "Prometheus",
+                            "Mimir",
+                            "Cortex",
+                            "Thanos"
+                        ]
+                    },
+                    "prometheusVersion": {
+                        "description": "Prometheus server version",
+                        "type": "string"
+                    },
+                    "cacheLevel": {
+                        "description": "Browser cache level for queries",
+                        "type": "string",
+                        "default": "High",
+                        "enum": [
+                            "Low",
+                            "Medium",
+                            "High",
+                            "None"
+                        ]
+                    },
+                    "defaultEditor": {
+                        "description": "Default query editor mode",
+                        "type": "string",
+                        "default": "builder",
+                        "enum": [
+                            "code",
+                            "builder"
+                        ]
+                    },
+                    "timeInterval": {
+                        "description": "Set this to the typical scrape and evaluation interval",
+                        "type": "string",
+                        "format": "duration",
+                        "default": "15s"
+                    },
+                    "queryTimeout": {
+                        "description": "Set the Prometheus query timeout",
+                        "type": "string",
+                        "format": "duration",
+                        "default": "60s"
+                    },
+                    "disableMetricsLookup": {
+                        "description": "Disable metrics name completion and label lookup",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "incrementalQuerying": {
+                        "description": "Enable incremental querying to improve large-range query performance",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "manageAlerts": {
+                        "description": "Manage alert rules for this datasource",
+                        "type": "boolean",
+                        "default": true
+                    },
+                    "exemplarTraceIdDestinations": {
+                        "description": "Configure exemplar trace ID link destinations",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "name"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Label name containing the trace ID",
+                                    "type": "string"
+                                },
+                                "url": {
+                                    "description": "External URL template",
+                                    "type": "string",
+                                    "format": "uri"
+                                },
+                                "urlDisplayLabel": {
+                                    "description": "Display label for the link",
+                                    "type": "string"
+                                },
+                                "datasourceUid": {
+                                    "description": "Internal datasource UID for trace lookup",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "tlsAuth": {
+                        "description": "Enable TLS client authentication",
+                        "type": "boolean"
+                    },
+                    "tlsAuthWithCACert": {
+                        "description": "Enable TLS with CA certificate",
+                        "type": "boolean"
+                    },
+                    "tlsSkipVerify": {
+                        "description": "Skip TLS certificate verification",
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "serverName": {
+                        "description": "Server name for SNI and TLS verification",
+                        "type": "string",
+                        "format": "hostname"
+                    }
+                }
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "basicAuthPassword",
+            "description": "Basic auth password"
+        },
+        {
+            "key": "tlsCACert",
+            "description": "TLS CA certificate"
+        },
+        {
+            "key": "tlsClientCert",
+            "description": "TLS client certificate"
+        },
+        {
+            "key": "tlsClientKey",
+            "description": "TLS client key"
+        }
+    ]
+}

@@ -1,0 +1,31 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri"
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "apiKey",
+            "description": "API key",
+            "required": true
+        },
+        {
+            "key": "apiSecret",
+            "description": "API secret",
+            "required": true
+        },
+        {
+            "key": "encryptionKey",
+            "description": "Encryption key for data at rest"
+        }
+    ]
+}

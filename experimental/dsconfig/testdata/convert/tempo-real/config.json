@@ -1,0 +1,45 @@
+{
+    "_comment": "Grafana storage model for Tempo. Shows deeply nested jsonData with tracesToMetrics, tracesToLogsV2, serviceMap, nodeGraph, streamingEnabled sub-objects. Each sub-object has a datasourceUid referencing another datasource.",
+    "name": "Tempo Production",
+    "type": "tempo",
+    "url": "https://tempo.example.com",
+    "basicAuth": true,
+    "basicAuthUser": "grafana",
+    "jsonData": {
+        "tracesToMetrics": {
+            "datasourceUid": "prom-prod-uid",
+            "spanStartTimeShift": "-2m",
+            "spanEndTimeShift": "2m",
+            "queries": [
+                {
+                    "name": "Request Rate",
+                    "query": "sum(rate(http_requests_total{service=\"$__service\"}[5m]))"
+                },
+                {
+                    "name": "Error Rate",
+                    "query": "sum(rate(http_requests_total{service=\"$__service\",status=~\"5..\"}[5m]))"
+                }
+            ]
+        },
+        "tracesToLogsV2": {
+            "datasourceUid": "loki-prod-uid",
+            "filterByTraceID": true,
+            "filterBySpanID": false,
+            "customQuery": true,
+            "query": "{service=\"$__service\"} | traceID=\"$__trace.traceId\""
+        },
+        "serviceMap": {
+            "datasourceUid": "prom-prod-uid"
+        },
+        "nodeGraph": {
+            "enabled": true
+        },
+        "streamingEnabled": {
+            "search": true
+        },
+        "tlsSkipVerify": false
+    },
+    "secureJsonData": {
+        "basicAuthPassword": "s3cret"
+    }
+}

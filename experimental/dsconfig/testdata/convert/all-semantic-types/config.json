@@ -1,0 +1,14 @@
+{
+    "_comment": "Grafana storage model: url at root, hostname/timeout in jsonData, apiKey/password in secureJsonData. Each semantic type maps to a JSON Schema format.",
+    "name": "My Semantic DS",
+    "type": "example-semantic",
+    "url": "https://api.example.com",
+    "jsonData": {
+        "hostname": "api.example.com",
+        "timeout": "30s"
+    },
+    "secureJsonData": {
+        "apiKey": "sk-secret-key",
+        "password": "s3cret"
+    }
+}

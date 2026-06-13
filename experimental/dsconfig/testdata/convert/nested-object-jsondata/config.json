@@ -1,0 +1,25 @@
+{
+    "_comment": "Grafana storage model: derivedFields is an array of objects stored directly in jsonData",
+    "name": "My Loki DS",
+    "type": "example-nested",
+    "url": "https://loki.example.com",
+    "jsonData": {
+        "derivedFields": [
+            {
+                "name": "TraceID",
+                "matcherRegex": "traceID=(\\w+)",
+                "url": "https://tempo.example.com/trace/${__value.raw}",
+                "datasourceUid": "tempo-uid-123",
+                "urlDisplayLabel": "View Trace"
+            },
+            {
+                "name": "RequestID",
+                "matcherRegex": "requestId=(\\w+)",
+                "url": "",
+                "datasourceUid": "",
+                "urlDisplayLabel": "Request"
+            }
+        ]
+    },
+    "secureJsonData": {}
+}

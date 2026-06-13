@@ -1,0 +1,71 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-validations",
+    "pluginName": "Multiple Validations Datasource",
+    "fields": [
+        {
+            "id": "url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "validations": [
+                {
+                    "type": "pattern",
+                    "pattern": "^https://",
+                    "message": "Must use HTTPS"
+                },
+                {
+                    "type": "length",
+                    "min": 10,
+                    "max": 2048
+                }
+            ],
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "port",
+            "key": "port",
+            "description": "Server port",
+            "valueType": "number",
+            "target": "jsonData",
+            "defaultValue": 443,
+            "validations": [
+                {
+                    "type": "range",
+                    "min": 1,
+                    "max": 65535,
+                    "message": "Port must be between 1 and 65535"
+                }
+            ],
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "tags",
+            "key": "tags",
+            "description": "Resource tags",
+            "valueType": "array",
+            "target": "jsonData",
+            "item": {
+                "valueType": "string"
+            },
+            "validations": [
+                {
+                    "type": "itemCount",
+                    "min": 1,
+                    "max": 10,
+                    "message": "Must have 1-10 tags"
+                }
+            ],
+            "ui": {
+                "component": "list"
+            }
+        }
+    ]
+}

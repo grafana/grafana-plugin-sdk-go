@@ -1,0 +1,59 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-semantic",
+    "pluginName": "All Semantic Types Datasource",
+    "fields": [
+        {
+            "id": "url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "hostname",
+            "key": "hostname",
+            "description": "Server hostname",
+            "valueType": "string",
+            "semanticType": "hostname",
+            "target": "jsonData",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "timeout",
+            "key": "timeout",
+            "description": "Request timeout",
+            "valueType": "string",
+            "semanticType": "duration",
+            "target": "jsonData",
+            "defaultValue": "30s",
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "apiKey",
+            "key": "apiKey",
+            "description": "API key for authentication",
+            "valueType": "string",
+            "semanticType": "token",
+            "target": "secureJsonData",
+            "required": true
+        },
+        {
+            "id": "password",
+            "key": "password",
+            "description": "Account password",
+            "valueType": "string",
+            "semanticType": "password",
+            "target": "secureJsonData"
+        }
+    ]
+}

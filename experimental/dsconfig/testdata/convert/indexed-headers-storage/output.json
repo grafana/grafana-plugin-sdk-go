@@ -1,0 +1,42 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "httpHeaders": {
+                        "description": "Additional headers sent with every request",
+                        "type": "array",
+                        "maxItems": 10,
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "name"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Header name",
+                                    "type": "string",
+                                    "pattern": "^[A-Za-z][A-Za-z0-9-]*$"
+                                },
+                                "value": {
+                                    "description": "Header value (stored securely)",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

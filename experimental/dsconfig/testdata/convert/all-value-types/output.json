@@ -1,0 +1,41 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "stringField": {
+                        "description": "A string field",
+                        "type": "string",
+                        "default": "hello"
+                    },
+                    "numberField": {
+                        "description": "A number field",
+                        "type": "number",
+                        "default": 42
+                    },
+                    "booleanField": {
+                        "description": "A boolean field",
+                        "type": "boolean",
+                        "default": true
+                    },
+                    "arrayField": {
+                        "description": "A string array field",
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

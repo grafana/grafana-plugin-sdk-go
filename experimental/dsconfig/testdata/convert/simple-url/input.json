@@ -1,0 +1,28 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-simple",
+    "pluginName": "Simple URL Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "label": "URL",
+            "description": "Base URL of the datasource",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "validations": [
+                {
+                    "type": "pattern",
+                    "pattern": "^https?://",
+                    "message": "Must be a valid HTTP or HTTPS URL"
+                }
+            ],
+            "ui": {
+                "component": "input",
+                "placeholder": "https://example.com/api"
+            }
+        }
+    ]
+}

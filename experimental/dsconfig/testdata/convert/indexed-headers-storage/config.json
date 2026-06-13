@@ -1,0 +1,14 @@
+{
+    "_comment": "Grafana storage model: headers stored as indexed pairs. Header names go into jsonData as httpHeaderName1, httpHeaderName2. Header values go into secureJsonData as httpHeaderValue1, httpHeaderValue2. This is the legacy Grafana pattern for custom HTTP headers.",
+    "name": "My Headers DS",
+    "type": "example-headers",
+    "url": "https://api.example.com",
+    "jsonData": {
+        "httpHeaderName1": "X-Custom-Header",
+        "httpHeaderName2": "X-API-Token"
+    },
+    "secureJsonData": {
+        "httpHeaderValue1": "custom-value",
+        "httpHeaderValue2": "your-api-token"
+    }
+}

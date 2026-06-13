@@ -1,0 +1,42 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "hostname": {
+                        "description": "Server hostname",
+                        "type": "string",
+                        "format": "hostname"
+                    },
+                    "timeout": {
+                        "description": "Request timeout",
+                        "type": "string",
+                        "format": "duration",
+                        "default": "30s"
+                    }
+                }
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "apiKey",
+            "description": "API key for authentication",
+            "required": true
+        },
+        {
+            "key": "password",
+            "description": "Account password"
+        }
+    ]
+}

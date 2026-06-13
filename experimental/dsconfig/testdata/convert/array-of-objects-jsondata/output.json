@@ -1,0 +1,41 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "tracesToMetrics": {
+                        "description": "Link traces to metrics queries",
+                        "type": "array",
+                        "maxItems": 20,
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "name"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "description": "Query name",
+                                    "type": "string"
+                                },
+                                "query": {
+                                    "description": "PromQL query template",
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

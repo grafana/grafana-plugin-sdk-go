@@ -1,0 +1,14 @@
+{
+    "_comment": "Grafana storage model: radio select for httpMethod, multiselect for features — both stored in jsonData",
+    "name": "My Multiselect DS",
+    "type": "example-multiselect",
+    "url": "https://api.example.com",
+    "jsonData": {
+        "httpMethod": "POST",
+        "enabledFeatures": [
+            "streaming",
+            "caching"
+        ]
+    },
+    "secureJsonData": {}
+}

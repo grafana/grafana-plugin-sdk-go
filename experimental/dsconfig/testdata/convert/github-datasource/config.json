@@ -1,0 +1,30 @@
+{
+    "_comment": "Grafana storage model for GitHub datasource. Shows two scenarios: PAT auth with basic plan, and GitHub App auth with Enterprise Server. Fields like appId/installationId/githubUrl are conditionally required based on selectedAuthType and githubPlan.",
+    "_scenario_pat": {
+        "name": "GitHub (PAT)",
+        "type": "grafana-github-datasource",
+        "url": "",
+        "jsonData": {
+            "githubPlan": "github-basic",
+            "selectedAuthType": "personal-access-token"
+        },
+        "secureJsonData": {
+            "accessToken": "ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+        }
+    },
+    "_scenario_app_enterprise": {
+        "name": "GitHub Enterprise (App)",
+        "type": "grafana-github-datasource",
+        "url": "",
+        "jsonData": {
+            "githubPlan": "github-enterprise-server",
+            "githubUrl": "https://github.example.com",
+            "selectedAuthType": "github-app",
+            "appId": "12345",
+            "installationId": "67890"
+        },
+        "secureJsonData": {
+            "privateKey": "-----BEGIN RSA PRIVATE KEY-----\nMIIE...\n-----END RSA PRIVATE KEY-----"
+        }
+    }
+}

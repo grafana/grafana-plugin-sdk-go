@@ -1,0 +1,82 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-bearer",
+    "pluginName": "Bearer Token Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "label": "URL",
+            "description": "API endpoint URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "auth.method",
+            "key": "authMethod",
+            "label": "Authentication",
+            "description": "Authentication method to use",
+            "valueType": "string",
+            "target": "jsonData",
+            "defaultValue": "no-auth",
+            "validations": [
+                {
+                    "type": "allowedValues",
+                    "values": [
+                        "no-auth",
+                        "bearer-token"
+                    ]
+                }
+            ],
+            "ui": {
+                "component": "select",
+                "options": [
+                    {
+                        "label": "No Auth",
+                        "value": "no-auth"
+                    },
+                    {
+                        "label": "Bearer Token",
+                        "value": "bearer-token"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "auth.bearerToken",
+            "key": "bearerToken",
+            "label": "Bearer Token",
+            "description": "Token used for Bearer authentication",
+            "valueType": "string",
+            "semanticType": "token",
+            "target": "secureJsonData",
+            "dependsOn": "auth.method == 'bearer-token'",
+            "requiredWhen": "auth.method == 'bearer-token'",
+            "ui": {
+                "component": "input"
+            }
+        }
+    ],
+    "groups": [
+        {
+            "id": "connection",
+            "title": "Connection",
+            "fieldRefs": [
+                "connection.url"
+            ]
+        },
+        {
+            "id": "auth",
+            "title": "Authentication",
+            "fieldRefs": [
+                "auth.method",
+                "auth.bearerToken"
+            ]
+        }
+    ]
+}

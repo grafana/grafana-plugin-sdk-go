@@ -1,0 +1,29 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Datasource URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "basicAuth": {
+                "description": "Enable basic authentication",
+                "type": "boolean"
+            },
+            "basicAuthUser": {
+                "description": "Basic auth username",
+                "type": "string"
+            }
+        }
+    },
+    "secureValues": [
+        {
+            "key": "basicAuthPassword",
+            "description": "Basic auth password"
+        }
+    ]
+}

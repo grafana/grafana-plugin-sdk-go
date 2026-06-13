@@ -1,0 +1,57 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-array",
+    "pluginName": "Array of Objects Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "jsonData.tracesToMetrics",
+            "key": "tracesToMetrics",
+            "description": "Link traces to metrics queries",
+            "valueType": "array",
+            "target": "jsonData",
+            "item": {
+                "valueType": "object",
+                "fields": [
+                    {
+                        "id": "tracesToMetrics.item.name",
+                        "key": "name",
+                        "description": "Query name",
+                        "valueType": "string",
+                        "isItemField": true,
+                        "required": true
+                    },
+                    {
+                        "id": "tracesToMetrics.item.query",
+                        "key": "query",
+                        "description": "PromQL query template",
+                        "valueType": "string",
+                        "isItemField": true,
+                        "ui": {
+                            "component": "textarea",
+                            "rows": 3
+                        }
+                    }
+                ]
+            },
+            "validations": [
+                {
+                    "type": "itemCount",
+                    "max": 20,
+                    "message": "Maximum 20 trace-to-metric queries"
+                }
+            ]
+        }
+    ]
+}

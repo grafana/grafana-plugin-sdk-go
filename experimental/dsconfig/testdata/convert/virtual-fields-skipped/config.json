@@ -1,0 +1,12 @@
+{
+    "_comment": "Grafana storage model: basicAuth & basicAuthUser at root, password in secureJsonData. Virtual field authConfigured has no storage representation.",
+    "name": "My Virtual Auth DS",
+    "type": "example-virtual",
+    "url": "https://api.example.com",
+    "basicAuth": true,
+    "basicAuthUser": "admin",
+    "jsonData": {},
+    "secureJsonData": {
+        "basicAuthPassword": "s3cret"
+    }
+}

@@ -1,0 +1,121 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-overrides",
+    "pluginName": "Overrides Datasource",
+    "fields": [
+        {
+            "id": "connection.url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "auth.type",
+            "key": "authType",
+            "description": "Authentication type",
+            "valueType": "string",
+            "target": "jsonData",
+            "defaultValue": "none",
+            "validations": [
+                {
+                    "type": "allowedValues",
+                    "values": [
+                        "none",
+                        "basic",
+                        "oauth"
+                    ]
+                }
+            ],
+            "ui": {
+                "component": "select",
+                "options": [
+                    {
+                        "label": "None",
+                        "value": "none"
+                    },
+                    {
+                        "label": "Basic Auth",
+                        "value": "basic"
+                    },
+                    {
+                        "label": "OAuth",
+                        "value": "oauth"
+                    }
+                ]
+            }
+        },
+        {
+            "id": "auth.username",
+            "key": "username",
+            "description": "Username for authentication",
+            "valueType": "string",
+            "target": "jsonData",
+            "dependsOn": "auth.type == 'basic'",
+            "requiredWhen": "auth.type == 'basic'",
+            "overrides": [
+                {
+                    "when": "auth.type == 'oauth'",
+                    "description": "OAuth client ID",
+                    "placeholder": "client-id"
+                }
+            ],
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "auth.password",
+            "key": "password",
+            "description": "Password for authentication",
+            "valueType": "string",
+            "semanticType": "password",
+            "target": "secureJsonData",
+            "dependsOn": "auth.type != 'none'",
+            "requiredWhen": "auth.type == 'basic'",
+            "overrides": [
+                {
+                    "when": "auth.type == 'oauth'",
+                    "description": "OAuth client secret"
+                }
+            ]
+        },
+        {
+            "id": "auth.tokenUrl",
+            "key": "tokenUrl",
+            "description": "OAuth token endpoint URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "jsonData",
+            "dependsOn": "auth.type == 'oauth'",
+            "requiredWhen": "auth.type == 'oauth'",
+            "ui": {
+                "component": "input"
+            }
+        }
+    ],
+    "groups": [
+        {
+            "id": "connection",
+            "title": "Connection",
+            "fieldRefs": [
+                "connection.url"
+            ]
+        },
+        {
+            "id": "auth",
+            "title": "Authentication",
+            "fieldRefs": [
+                "auth.type",
+                "auth.username",
+                "auth.password",
+                "auth.tokenUrl"
+            ]
+        }
+    ]
+}

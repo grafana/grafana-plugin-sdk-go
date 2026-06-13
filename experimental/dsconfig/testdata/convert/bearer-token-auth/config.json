@@ -1,0 +1,12 @@
+{
+    "_comment": "Grafana storage model: auth method in jsonData, token in secureJsonData, url at root",
+    "name": "My Bearer DS",
+    "type": "example-bearer",
+    "url": "https://api.example.com",
+    "jsonData": {
+        "authMethod": "bearer-token"
+    },
+    "secureJsonData": {
+        "bearerToken": "sk-secret-token-value"
+    }
+}

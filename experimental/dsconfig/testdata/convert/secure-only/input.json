@@ -1,0 +1,44 @@
+{
+    "schemaVersion": "v1",
+    "pluginType": "example-secure",
+    "pluginName": "Secure Only Datasource",
+    "fields": [
+        {
+            "id": "url",
+            "key": "url",
+            "description": "Server URL",
+            "valueType": "string",
+            "semanticType": "url",
+            "target": "root",
+            "required": true,
+            "ui": {
+                "component": "input"
+            }
+        },
+        {
+            "id": "apiKey",
+            "key": "apiKey",
+            "description": "API key",
+            "valueType": "string",
+            "semanticType": "token",
+            "target": "secureJsonData",
+            "required": true
+        },
+        {
+            "id": "apiSecret",
+            "key": "apiSecret",
+            "description": "API secret",
+            "valueType": "string",
+            "semanticType": "password",
+            "target": "secureJsonData",
+            "required": true
+        },
+        {
+            "id": "encryptionKey",
+            "key": "encryptionKey",
+            "description": "Encryption key for data at rest",
+            "valueType": "string",
+            "target": "secureJsonData"
+        }
+    ]
+}

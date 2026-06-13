@@ -1,0 +1,51 @@
+{
+    "spec": {
+        "type": "object",
+        "required": [
+            "url"
+        ],
+        "properties": {
+            "url": {
+                "description": "Server URL",
+                "type": "string",
+                "format": "uri"
+            },
+            "jsonData": {
+                "type": "object",
+                "properties": {
+                    "oauth2": {
+                        "type": "object",
+                        "properties": {
+                            "endpoints": {
+                                "type": "object",
+                                "required": [
+                                    "tokenUrl"
+                                ],
+                                "properties": {
+                                    "tokenUrl": {
+                                        "description": "OAuth2 token endpoint URL",
+                                        "type": "string",
+                                        "format": "uri"
+                                    },
+                                    "authUrl": {
+                                        "description": "OAuth2 authorization endpoint URL",
+                                        "type": "string",
+                                        "format": "uri"
+                                    }
+                                }
+                            },
+                            "clientId": {
+                                "description": "OAuth2 client ID",
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "simple": {
+                        "description": "A flat jsonData field with no section",
+                        "type": "string"
+                    }
+                }
+            }
+        }
+    }
+}

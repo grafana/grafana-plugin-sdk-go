@@ -1,0 +1,32 @@
+{
+    "_comment": "Grafana storage model: queries is an array of objects in jsonData, each with a nested config object containing the actual PromQL expression, interval, and label matchers.",
+    "name": "My Nested Query DS",
+    "type": "example-nested-obj-array",
+    "url": "https://prometheus.example.com",
+    "jsonData": {
+        "queries": [
+            {
+                "name": "CPU Usage",
+                "enabled": true,
+                "config": {
+                    "expr": "rate(cpu_usage_total[5m])",
+                    "interval": "15s",
+                    "labels": [
+                        "job=\"api\"",
+                        "env=\"prod\""
+                    ]
+                }
+            },
+            {
+                "name": "Memory",
+                "enabled": false,
+                "config": {
+                    "expr": "process_resident_memory_bytes",
+                    "interval": "30s",
+                    "labels": []
+                }
+            }
+        ]
+    },
+    "secureJsonData": {}
+}
