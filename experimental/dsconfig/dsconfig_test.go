@@ -2,7 +2,6 @@ package dsconfig_test
 
 import (
 	"encoding/json"
-	"flag"
 	"os"
 	"path/filepath"
 	"strings"
@@ -12,8 +11,6 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/dsconfig"
 )
-
-var update = flag.Bool("update", false, "update golden files")
 
 func target(t dsconfig.TargetLocation) *dsconfig.TargetLocation { return &t }
 
@@ -85,8 +82,7 @@ func kitchenSinkSchema() *dsconfig.DatasourceConfigSchema {
 
 // TestConvertGolden is the drift guard: it converts the kitchen-sink schema and
 // compares the marshalled SDK PluginSchema against a committed golden file. Any
-// change in the converter shows up as a readable JSON diff. Run with -update to
-// regenerate the golden after an intentional change.
+// change in the converter shows up as a readable JSON diff.
 func TestConvertGolden(t *testing.T) {
 	schema, err := kitchenSinkSchema().NewPluginSchema("v0alpha1", nil)
 	require.NoError(t, err)
@@ -95,13 +91,8 @@ func TestConvertGolden(t *testing.T) {
 	require.NoError(t, err)
 
 	goldenPath := filepath.Join("testdata", "golden", "converted.json")
-	if *update {
-		require.NoError(t, os.MkdirAll(filepath.Dir(goldenPath), 0o755))
-		require.NoError(t, os.WriteFile(goldenPath, got, 0o644))
-	}
 
-	want, err := os.ReadFile(goldenPath)
-	require.NoError(t, err, "missing golden file; run: go test ./experimental/dsconfig -update")
+	want, err := os.ReadFile(goldenPath) //nolint:gosec // G304: goldenPath is built from constant path segments, not user input
 	require.JSONEq(t, string(want), string(got), "converter output drifted from golden; run -update if intended")
 }
 
