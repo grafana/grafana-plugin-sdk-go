@@ -30,21 +30,21 @@ type ConfigField struct {
 	DocURL      string `json:"docURL,omitempty"`
 
 	ValueType    ValueType    `json:"valueType"`
+	DefaultValue any          `json:"defaultValue,omitempty"`
 	SemanticType SemanticType `json:"semanticType,omitempty"`
 
 	// Target is the storage location (required for storage fields).
 	Target *TargetLocation `json:"target,omitempty"`
-
+	// Kind is the field kind: storage (default) or virtual.
+	Kind FieldKind `json:"kind,omitempty"`
 	// Section is the dotted path prefix within the target for nested objects.
 	// Example: for jsonData.oauth2.endpoints.tokenUrl, target="jsonData",
 	// section="oauth2.endpoints", key="tokenUrl".
 	Section string `json:"section,omitempty"`
-
-	// Kind is the field kind: storage (default) or virtual.
-	Kind FieldKind `json:"kind,omitempty"`
-
 	// IsItemField is true if the field is part of an array/object item schema.
 	IsItemField *bool `json:"isItemField,omitempty"`
+	// Item is the element schema (required when ValueType is array; optional for object).
+	Item *FieldItemSchema `json:"item,omitempty"`
 
 	// UI hints (used by the converter to derive enums from select/radio options).
 	UI *FieldUI `json:"ui,omitempty"`
@@ -57,11 +57,6 @@ type ConfigField struct {
 	Required     bool   `json:"required,omitempty"`
 	RequiredWhen string `json:"requiredWhen,omitempty"`
 	DisabledWhen string `json:"disabledWhen,omitempty"`
-
-	// Item is the element schema (required when ValueType is array; optional for object).
-	Item *FieldItemSchema `json:"item,omitempty"`
-
-	DefaultValue any `json:"defaultValue,omitempty"`
 }
 
 // FieldItemSchema defines the schema for array elements or object sub-fields.

@@ -90,10 +90,9 @@ func TestConvertGolden(t *testing.T) {
 	got, err := dsconfig.MarshalPluginSchema(schema)
 	require.NoError(t, err)
 
-	goldenPath := filepath.Join("testdata", "golden", "converted.json")
-
-	want, err := os.ReadFile(goldenPath) //nolint:gosec // G304: goldenPath is built from constant path segments, not user input
-	require.JSONEq(t, string(want), string(got), "converter output drifted from golden; run -update if intended")
+	want, err := os.ReadFile(filepath.Join("testdata", "golden", "converted.json"))
+	require.JSONEq(t, string(want), string(got), "converter output drifted from golden")
+	require.Nil(t, err)
 }
 
 // TestSecretsNeverLeakIntoSpec is a security invariant stated independently of
