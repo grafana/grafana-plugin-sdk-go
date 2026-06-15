@@ -1,0 +1,732 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "$id": "https://grafana.com/schemas/datasource-config-schema.json",
+    "title": "Datasource Configuration Schema",
+    "description": "Declarative schema for Grafana datasource configuration including UI, validation, behavior, relationships, and storage mapping.",
+    "type": "object",
+    "required": [
+        "schemaVersion",
+        "pluginType",
+        "pluginName",
+        "fields"
+    ],
+    "properties": {
+        "schemaVersion": {
+            "type": "string",
+            "description": "Version of this schema specification",
+            "examples": [
+                "v1"
+            ]
+        },
+        "pluginType": {
+            "type": "string",
+            "description": "Unique identifier of the datasource plugin. Typically plugin slug/id. Example : grafana-postgresql-datasource"
+        },
+        "pluginName": {
+            "type": "string",
+            "description": "Human readable name. Example : Google Sheets"
+        },
+        "docURL": {
+            "type": "string",
+            "format": "uri",
+            "description": "Documentation URL for the datasource plugin. Example : https://grafana.com/docs/plugins/grafana-bigquery-datasource"
+        },
+        "fields": {
+            "type": "array",
+            "description": "Source of truth for all config fields",
+            "items": {
+                "$ref": "#/definitions/ConfigField"
+            }
+        },
+        "groups": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/ConfigGroup"
+            }
+        },
+        "relationships": {
+            "type": "array",
+            "items": {
+                "$ref": "#/definitions/FieldRelationship"
+            }
+        }
+    },
+    "definitions": {
+        "ConfigField": {
+            "type": "object",
+            "title": "Config Field",
+            "required": [
+                "id",
+                "key",
+                "valueType"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "Globally unique identifier. Recommended format: dot-separated path (e.g. 'auth.method', 'httpHeaders.item.key')"
+                },
+                "key": {
+                    "type": "string",
+                    "description": "Local key"
+                },
+                "label": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "docURL": {
+                    "type": "string",
+                    "format": "uri"
+                },
+                "valueType": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "array",
+                        "object",
+                        "map",
+                        "any"
+                    ]
+                },
+                "semanticType": {
+                    "type": "string",
+                    "enum": [
+                        "url",
+                        "password",
+                        "token",
+                        "hostname",
+                        "duration",
+                        "datasourceUid",
+                        "query"
+                    ]
+                },
+                "target": {
+                    "type": "string",
+                    "enum": [
+                        "root",
+                        "jsonData",
+                        "secureJsonData"
+                    ],
+                    "description": "Storage location. Required for storage fields."
+                },
+                "section": {
+                    "type": "string",
+                    "description": "Dotted path prefix within the target for nested objects. Example: for jsonData.tracesToLogs.datasourceUid, target=jsonData, section=tracesToLogs, key=datasourceUid."
+                },
+                "kind": {
+                    "type": "string",
+                    "enum": [
+                        "storage",
+                        "virtual"
+                    ],
+                    "default": "storage"
+                },
+                "isItemField": {
+                    "type": "boolean",
+                    "description": "Must be true for fields inside array item schemas"
+                },
+                "lifecycle": {
+                    "type": "string",
+                    "enum": [
+                        "stable",
+                        "deprecated",
+                        "experimental"
+                    ]
+                },
+                "ui": {
+                    "$ref": "#/definitions/FieldUI"
+                },
+                "validations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FieldValidationRule"
+                    }
+                },
+                "dependsOn": {
+                    "type": "string"
+                },
+                "required": {
+                    "type": "boolean"
+                },
+                "requiredWhen": {
+                    "type": "string"
+                },
+                "disabledWhen": {
+                    "type": "string"
+                },
+                "overrides": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FieldOverride"
+                    }
+                },
+                "effects": {
+                    "type": "array",
+                    "description": "Declarative multi-field write side-effects. When this field's value matches a condition, the listed target fields are set to specified values.",
+                    "items": {
+                        "$ref": "#/definitions/FieldEffect"
+                    }
+                },
+                "item": {
+                    "$ref": "#/definitions/FieldItemSchema"
+                },
+                "repeatable": {
+                    "type": "boolean",
+                    "description": "Legacy indexed fields. Prefer indexedPair mapping.",
+                    "default": false
+                },
+                "pattern": {
+                    "type": "string",
+                    "description": "Pattern for repeatable fields (legacy)"
+                },
+                "storage": {
+                    "$ref": "#/definitions/StorageMapping"
+                },
+                "tags": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "examples": {
+                    "type": "array",
+                    "items": {}
+                },
+                "defaultValue": {}
+            },
+            "allOf": [
+                {
+                    "if": {
+                        "not": {
+                            "anyOf": [
+                                {
+                                    "properties": {
+                                        "kind": {
+                                            "const": "virtual"
+                                        }
+                                    },
+                                    "required": [
+                                        "kind"
+                                    ]
+                                },
+                                {
+                                    "properties": {
+                                        "isItemField": {
+                                            "const": true
+                                        }
+                                    },
+                                    "required": [
+                                        "isItemField"
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    "then": {
+                        "required": [
+                            "target"
+                        ]
+                    }
+                },
+                {
+                    "if": {
+                        "type": "object",
+                        "properties": {
+                            "valueType": {
+                                "enum": [
+                                    "array",
+                                    "map"
+                                ]
+                            }
+                        },
+                        "required": [
+                            "valueType"
+                        ]
+                    },
+                    "then": {
+                        "required": [
+                            "item"
+                        ]
+                    }
+                }
+            ]
+        },
+        "FieldItemSchema": {
+            "type": "object",
+            "required": [
+                "valueType"
+            ],
+            "properties": {
+                "valueType": {
+                    "type": "string",
+                    "enum": [
+                        "string",
+                        "number",
+                        "boolean",
+                        "array",
+                        "object",
+                        "map",
+                        "any"
+                    ]
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "allOf": [
+                            {
+                                "$ref": "#/definitions/ConfigField"
+                            },
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "isItemField": {
+                                        "const": true
+                                    }
+                                },
+                                "required": [
+                                    "isItemField"
+                                ]
+                            }
+                        ]
+                    }
+                }
+            }
+        },
+        "StorageMapping": {
+            "oneOf": [
+                {
+                    "$ref": "#/definitions/DirectMapping"
+                },
+                {
+                    "$ref": "#/definitions/IndexedPairMapping"
+                },
+                {
+                    "$ref": "#/definitions/ComputedMapping"
+                }
+            ]
+        },
+        "DirectMapping": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "const": "direct"
+                }
+            }
+        },
+        "IndexedPairMapping": {
+            "type": "object",
+            "required": [
+                "type",
+                "key",
+                "value"
+            ],
+            "properties": {
+                "type": {
+                    "const": "indexedPair"
+                },
+                "key": {
+                    "$ref": "#/definitions/MappingField"
+                },
+                "value": {
+                    "$ref": "#/definitions/MappingField"
+                },
+                "startIndex": {
+                    "type": "number"
+                }
+            }
+        },
+        "ComputedMapping": {
+            "type": "object",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "type": {
+                    "const": "computed"
+                },
+                "read": {
+                    "type": "string"
+                },
+                "write": {
+                    "type": "string"
+                }
+            },
+            "anyOf": [
+                {
+                    "required": [
+                        "read"
+                    ]
+                },
+                {
+                    "required": [
+                        "write"
+                    ]
+                }
+            ]
+        },
+        "MappingField": {
+            "type": "object",
+            "required": [
+                "target",
+                "pattern"
+            ],
+            "properties": {
+                "target": {
+                    "type": "string",
+                    "enum": [
+                        "root",
+                        "jsonData",
+                        "secureJsonData"
+                    ]
+                },
+                "pattern": {
+                    "type": "string"
+                }
+            }
+        },
+        "FieldUI": {
+            "type": "object",
+            "required": [
+                "component"
+            ],
+            "properties": {
+                "component": {
+                    "type": "string",
+                    "enum": [
+                        "input",
+                        "textarea",
+                        "select",
+                        "multiselect",
+                        "radio",
+                        "checkbox",
+                        "switch",
+                        "code",
+                        "keyvalue",
+                        "list"
+                    ]
+                },
+                "multiline": {
+                    "type": "boolean"
+                },
+                "rows": {
+                    "type": "number"
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FieldOption"
+                    }
+                },
+                "allowCustom": {
+                    "type": "boolean"
+                },
+                "width": {
+                    "type": "string",
+                    "enum": [
+                        "full",
+                        "half"
+                    ]
+                },
+                "placeholder": {
+                    "type": "string"
+                },
+                "language": {
+                    "type": "string",
+                    "description": "Language hint for code editor components. Example: promql, logql, traceql, sql, json."
+                }
+            }
+        },
+        "FieldValidationRule": {
+            "type": "object",
+            "title": "Field Validation Rule",
+            "description": "A single validation rule. Uses 'type' as discriminator.",
+            "required": [
+                "type"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string",
+                    "description": "Optional stable ID for docs, localization, and test snapshots."
+                },
+                "message": {
+                    "type": "string",
+                    "description": "Human-readable validation error message."
+                }
+            },
+            "oneOf": [
+                {
+                    "properties": {
+                        "type": {
+                            "const": "pattern"
+                        },
+                        "pattern": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "pattern"
+                    ]
+                },
+                {
+                    "properties": {
+                        "type": {
+                            "const": "range"
+                        },
+                        "min": {
+                            "type": "number"
+                        },
+                        "max": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ],
+                    "anyOf": [
+                        {
+                            "required": [
+                                "min"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "max"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "properties": {
+                        "type": {
+                            "const": "length"
+                        },
+                        "min": {
+                            "type": "number"
+                        },
+                        "max": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ],
+                    "anyOf": [
+                        {
+                            "required": [
+                                "min"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "max"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "properties": {
+                        "type": {
+                            "const": "itemCount"
+                        },
+                        "min": {
+                            "type": "number"
+                        },
+                        "max": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "type"
+                    ],
+                    "anyOf": [
+                        {
+                            "required": [
+                                "min"
+                            ]
+                        },
+                        {
+                            "required": [
+                                "max"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "properties": {
+                        "type": {
+                            "const": "allowedValues"
+                        },
+                        "values": {
+                            "type": "array",
+                            "items": {}
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "values"
+                    ]
+                },
+                {
+                    "properties": {
+                        "type": {
+                            "const": "custom"
+                        },
+                        "expression": {
+                            "type": "string"
+                        }
+                    },
+                    "required": [
+                        "type",
+                        "expression"
+                    ]
+                }
+            ]
+        },
+        "FieldOverride": {
+            "type": "object",
+            "required": [
+                "when"
+            ],
+            "properties": {
+                "when": {
+                    "type": "string"
+                },
+                "defaultValue": {},
+                "readOnly": {
+                    "type": "boolean",
+                    "description": "When true, the field is disabled/read-only while this override is active."
+                },
+                "description": {
+                    "type": "string"
+                },
+                "placeholder": {
+                    "type": "string"
+                },
+                "tooltip": {
+                    "type": "string"
+                },
+                "validations": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FieldValidationRule"
+                    }
+                },
+                "options": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/FieldOption"
+                    }
+                }
+            }
+        },
+        "FieldEffect": {
+            "type": "object",
+            "description": "Declares that when a field's value matches a condition, listed target fields should be set to specified values.",
+            "required": [
+                "when",
+                "set"
+            ],
+            "properties": {
+                "when": {
+                    "type": "string",
+                    "description": "CEL expression. Use 'value' to refer to the field's current value. Example: \"value == 'basic-auth'\""
+                },
+                "set": {
+                    "type": "object",
+                    "description": "Maps field IDs to the values they should be set to when the condition matches.",
+                    "minProperties": 1,
+                    "additionalProperties": true
+                }
+            }
+        },
+        "FieldOption": {
+            "type": "object",
+            "required": [
+                "label",
+                "value"
+            ],
+            "properties": {
+                "label": {
+                    "type": "string"
+                },
+                "value": {
+                    "not": {
+                        "type": "null"
+                    },
+                    "description": "Option value. Must not be null. Must match parent field valueType."
+                },
+                "description": {
+                    "type": "string"
+                }
+            }
+        },
+        "ConfigGroup": {
+            "type": "object",
+            "required": [
+                "id",
+                "title",
+                "fieldRefs"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "title": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "order": {
+                    "type": "number"
+                },
+                "optional": {
+                    "type": "boolean"
+                },
+                "fieldRefs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "FieldRelationship": {
+            "type": "object",
+            "required": [
+                "type",
+                "fields"
+            ],
+            "properties": {
+                "type": {
+                    "type": "string",
+                    "enum": [
+                        "pair",
+                        "group",
+                        "datasourceReference"
+                    ]
+                },
+                "fields": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "description": {
+                    "type": "string"
+                },
+                "targetPluginType": {
+                    "type": "string",
+                    "description": "Constrains the datasource UID to a specific plugin type. Only applicable when type is datasourceReference."
+                }
+            }
+        }
+    }
+}
