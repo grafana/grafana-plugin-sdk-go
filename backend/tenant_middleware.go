@@ -76,3 +76,8 @@ func (m *tenantIDMiddleware) ConvertObjects(ctx context.Context, req *Conversion
 	ctx = m.setup(ctx)
 	return m.BaseHandler.ConvertObjects(ctx, req)
 }
+
+func (m *tenantIDMiddleware) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	ctx = m.setup(ctx)
+	return m.BaseHandler.CallCustomRoute(ctx, req, sender)
+}

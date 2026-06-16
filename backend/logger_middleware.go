@@ -221,3 +221,16 @@ func (m *loggerMiddleware) ConvertObjects(ctx context.Context, req *ConversionRe
 
 	return resp, err
 }
+
+func (m *loggerMiddleware) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	if req == nil {
+		return m.BaseHandler.CallCustomRoute(ctx, req, sender)
+	}
+
+	err := m.logRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		innerErr := m.BaseHandler.CallCustomRoute(ctx, req, sender)
+		return RequestStatusFromError(innerErr), innerErr
+	})
+
+	return err
+}

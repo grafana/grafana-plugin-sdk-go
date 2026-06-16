@@ -543,3 +543,66 @@ message StatusResult {
   // +optional
   int32 code = 4;
 }
+
+//-----------------------------------------------------------------
+// CustomRoute -- EXPERIMENTAL and is subject to change until 12.??
+//-----------------------------------------------------------------
+
+// CustomRoute handles HTTP-style calls to custom routes or kind subresources
+// attached to a resource group/version.
+// See: https://github.com/grafana/grafana-app-sdk/blob/main/app/app.go (App.CallCustomRoute)
+service CustomRoute {
+  // CallCustomRoute handles a call to a custom route, streaming the response back to the caller.
+  rpc CallCustomRoute(CallCustomRouteRequest) returns (stream CallCustomRouteResponse);
+}
+
+// ResourceFullIdentifier fully identifies the resource a custom route is attached to.
+// It mirrors grafana-app-sdk resource.FullIdentifier. For a non-subresource route,
+// the runner provides all the information it can: in practice that often means either
+// Kind or Plural is present, but not necessarily both, and Name may be empty.
+message ResourceFullIdentifier {
+  string namespace = 1;
+  string name = 2;
+  string group = 3;
+  string version = 4;
+  string kind = 5;
+  string plural = 6;
+}
+
+// CallCustomRouteRequest is a request to a custom route or kind subresource.
+message CallCustomRouteRequest {
+  // NOTE: this may not include app or datasource instance settings depending on the request
+  PluginContext pluginContext = 1;
+
+  // Identifier fully identifies the resource the route is attached to.
+  ResourceFullIdentifier identifier = 2;
+
+  // Path is the path past the identifier information. For a subresource route this is
+  // the subresource (e.g. `bar` in `foos/foo/bar`); for a non-subresource route it is
+  // the path section past the namespace (or version, if the route is not namespaced).
+  string path = 3;
+
+  // Method is the forwarded HTTP method for the request.
+  string method = 4;
+
+  // URL is the full forwarded HTTP URL (useful for query parameters, host/protocol for redirects).
+  string url = 5;
+
+  // Headers are the forwarded HTTP headers for the request, if any.
+  map<string,StringList> headers = 6;
+
+  // Body is the forwarded HTTP body for the request, if any.
+  bytes body = 7;
+}
+
+// CallCustomRouteResponse is a (streamed) response from a custom route call.
+message CallCustomRouteResponse {
+  // Maps to raw HTTP status codes when passed over HTTP
+  int32 code = 1;
+
+  // Raw HTTP headers sent to the client
+  map<string,StringList> headers = 2;
+
+  // Raw HTTP body bytes sent to the client
+  bytes body = 3;
+}

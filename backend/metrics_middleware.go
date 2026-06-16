@@ -152,3 +152,10 @@ func (m *metricsMiddleware) ConvertObjects(ctx context.Context, req *ConversionR
 
 	return resp, err
 }
+
+func (m *metricsMiddleware) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	return m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		innerErr := m.BaseHandler.CallCustomRoute(ctx, req, sender)
+		return RequestStatusFromError(innerErr), innerErr
+	})
+}

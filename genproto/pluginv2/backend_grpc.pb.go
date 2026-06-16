@@ -864,3 +864,116 @@ var ResourceConversion_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "backend.proto",
 }
+
+const (
+	CustomRoute_CallCustomRoute_FullMethodName = "/pluginv2.CustomRoute/CallCustomRoute"
+)
+
+// CustomRouteClient is the client API for CustomRoute service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+//
+// CustomRoute handles HTTP-style calls to custom routes or kind subresources
+// attached to a resource group/version.
+// See: https://github.com/grafana/grafana-app-sdk/blob/main/app/app.go (App.CallCustomRoute)
+type CustomRouteClient interface {
+	// CallCustomRoute handles a call to a custom route, streaming the response back to the caller.
+	CallCustomRoute(ctx context.Context, in *CallCustomRouteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CallCustomRouteResponse], error)
+}
+
+type customRouteClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewCustomRouteClient(cc grpc.ClientConnInterface) CustomRouteClient {
+	return &customRouteClient{cc}
+}
+
+func (c *customRouteClient) CallCustomRoute(ctx context.Context, in *CallCustomRouteRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[CallCustomRouteResponse], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &CustomRoute_ServiceDesc.Streams[0], CustomRoute_CallCustomRoute_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[CallCustomRouteRequest, CallCustomRouteResponse]{ClientStream: stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CustomRoute_CallCustomRouteClient = grpc.ServerStreamingClient[CallCustomRouteResponse]
+
+// CustomRouteServer is the server API for CustomRoute service.
+// All implementations should embed UnimplementedCustomRouteServer
+// for forward compatibility.
+//
+// CustomRoute handles HTTP-style calls to custom routes or kind subresources
+// attached to a resource group/version.
+// See: https://github.com/grafana/grafana-app-sdk/blob/main/app/app.go (App.CallCustomRoute)
+type CustomRouteServer interface {
+	// CallCustomRoute handles a call to a custom route, streaming the response back to the caller.
+	CallCustomRoute(*CallCustomRouteRequest, grpc.ServerStreamingServer[CallCustomRouteResponse]) error
+}
+
+// UnimplementedCustomRouteServer should be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedCustomRouteServer struct{}
+
+func (UnimplementedCustomRouteServer) CallCustomRoute(*CallCustomRouteRequest, grpc.ServerStreamingServer[CallCustomRouteResponse]) error {
+	return status.Error(codes.Unimplemented, "method CallCustomRoute not implemented")
+}
+func (UnimplementedCustomRouteServer) testEmbeddedByValue() {}
+
+// UnsafeCustomRouteServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to CustomRouteServer will
+// result in compilation errors.
+type UnsafeCustomRouteServer interface {
+	mustEmbedUnimplementedCustomRouteServer()
+}
+
+func RegisterCustomRouteServer(s grpc.ServiceRegistrar, srv CustomRouteServer) {
+	// If the following call panics, it indicates UnimplementedCustomRouteServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&CustomRoute_ServiceDesc, srv)
+}
+
+func _CustomRoute_CallCustomRoute_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(CallCustomRouteRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CustomRouteServer).CallCustomRoute(m, &grpc.GenericServerStream[CallCustomRouteRequest, CallCustomRouteResponse]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type CustomRoute_CallCustomRouteServer = grpc.ServerStreamingServer[CallCustomRouteResponse]
+
+// CustomRoute_ServiceDesc is the grpc.ServiceDesc for CustomRoute service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var CustomRoute_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.CustomRoute",
+	HandlerType: (*CustomRouteServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "CallCustomRoute",
+			Handler:       _CustomRoute_CallCustomRoute_Handler,
+			ServerStreams: true,
+		},
+	},
+	Metadata: "backend.proto",
+}
