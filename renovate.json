@@ -16,7 +16,7 @@
     },
     {
       "groupName": "gRPC packages",
-      "matchPackageNames": ["google.golang.org/grpc", "google.golang.org/protobuf", "google.golang.org/genproto/**"]
+      "matchPackageNames": ["google.golang.org/grpc", "google.golang.org/protobuf", "google.golang.org/genproto/**", "github.com/grpc-ecosystem/**"]
     },
     {
       "groupName": "Prometheus packages",
@@ -25,10 +25,6 @@
     {
       "groupName": "HashiCorp packages",
       "matchPackageNames": ["github.com/hashicorp/**"]
-    },
-    {
-      "groupName": "grpc-ecosystem packages",
-      "matchPackageNames": ["github.com/grpc-ecosystem/**"]
     },
     {
       "groupName": "Kubernetes packages",
