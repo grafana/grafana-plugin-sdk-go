@@ -1,4 +1,5 @@
 {
+  "dependencyDashboard": false,
   "schedule": ["before 6am on the first day of the week"],
   "packageRules": [
     {
@@ -8,6 +9,30 @@
     {
       "groupName": "OpenTelemetry packages",
       "matchPackageNames": ["go.opentelemetry.io/**"]
+    },
+    {
+      "groupName": "go-openapi packages",
+      "matchPackageNames": ["github.com/go-openapi/**"]
+    },
+    {
+      "groupName": "gRPC packages",
+      "matchPackageNames": ["google.golang.org/grpc", "google.golang.org/protobuf", "google.golang.org/genproto/**"]
+    },
+    {
+      "groupName": "Prometheus packages",
+      "matchPackageNames": ["github.com/prometheus/**"]
+    },
+    {
+      "groupName": "HashiCorp packages",
+      "matchPackageNames": ["github.com/hashicorp/**"]
+    },
+    {
+      "groupName": "grpc-ecosystem packages",
+      "matchPackageNames": ["github.com/grpc-ecosystem/**"]
+    },
+    {
+      "groupName": "Kubernetes packages",
+      "matchPackageNames": ["k8s.io/**", "sigs.k8s.io/**"]
     }
   ],
   "github-actions": { "enabled": true, "groupName": "GitHub Actions" },
