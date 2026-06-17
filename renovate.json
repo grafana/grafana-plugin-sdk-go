@@ -3,6 +3,11 @@
   "schedule": ["before 6am on the first day of the week"],
   "packageRules": [
     {
+      "groupName": "All Go module dependencies",
+      "matchManagers": ["gomod"],
+      "matchUpdateTypes": ["minor", "patch", "digest"]
+    },
+    {
       "groupName": "Upstream packages",
       "matchPackageNames": ["golang.org/x/**"]
     },
