@@ -8,11 +8,11 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
 	github.com/elazarl/goproxy v1.8.4
 	github.com/getkin/kin-openapi v0.140.0
-	github.com/go-openapi/loads v0.23.3
-	github.com/go-openapi/spec v0.22.4
-	github.com/go-openapi/strfmt v0.26.1
-	github.com/go-openapi/swag/loading v0.26.0
-	github.com/go-openapi/validate v0.25.2
+	github.com/go-openapi/loads v0.24.0
+	github.com/go-openapi/spec v0.22.5
+	github.com/go-openapi/strfmt v0.26.3
+	github.com/go-openapi/swag/loading v0.26.1
+	github.com/go-openapi/validate v0.26.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/grafana/otel-profiling-go v0.5.1
@@ -56,7 +56,7 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
 
-require github.com/go-openapi/jsonreference v0.21.5
+require github.com/go-openapi/jsonreference v0.21.6
 
 require (
 	github.com/BurntSushi/toml v1.5.0 // indirect
@@ -73,18 +73,18 @@ require (
 	github.com/fatih/color v1.18.0 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-openapi/analysis v0.24.3 // indirect
-	github.com/go-openapi/errors v0.22.7 // indirect
-	github.com/go-openapi/jsonpointer v0.22.5 // indirect
+	github.com/go-openapi/analysis v0.25.2 // indirect
+	github.com/go-openapi/errors v0.22.8 // indirect
+	github.com/go-openapi/jsonpointer v0.23.1 // indirect
 	github.com/go-openapi/swag v0.23.0 // indirect
-	github.com/go-openapi/swag/conv v0.26.0 // indirect
-	github.com/go-openapi/swag/fileutils v0.25.5 // indirect
-	github.com/go-openapi/swag/jsonname v0.25.5 // indirect
-	github.com/go-openapi/swag/jsonutils v0.26.0 // indirect
-	github.com/go-openapi/swag/mangling v0.25.5 // indirect
-	github.com/go-openapi/swag/stringutils v0.25.5 // indirect
-	github.com/go-openapi/swag/typeutils v0.26.0 // indirect
-	github.com/go-openapi/swag/yamlutils v0.26.0 // indirect
+	github.com/go-openapi/swag/conv v0.26.1 // indirect
+	github.com/go-openapi/swag/fileutils v0.26.0 // indirect
+	github.com/go-openapi/swag/jsonname v0.26.1 // indirect
+	github.com/go-openapi/swag/jsonutils v0.26.1 // indirect
+	github.com/go-openapi/swag/mangling v0.26.1 // indirect
+	github.com/go-openapi/swag/stringutils v0.26.1 // indirect
+	github.com/go-openapi/swag/typeutils v0.26.1 // indirect
+	github.com/go-openapi/swag/yamlutils v0.26.1 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
 	github.com/goccy/go-json v0.10.6 // indirect
 	github.com/gogo/googleapis v1.4.1 // indirect
