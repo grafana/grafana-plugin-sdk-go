@@ -9,7 +9,7 @@ require (
 	github.com/elazarl/goproxy v1.8.4
 	github.com/getkin/kin-openapi v0.140.0
 	github.com/go-openapi/loads v0.24.0
-	github.com/go-openapi/spec v0.22.5
+	github.com/go-openapi/spec v0.22.6
 	github.com/go-openapi/strfmt v0.26.3
 	github.com/go-openapi/swag/loading v0.26.1
 	github.com/go-openapi/validate v0.26.0
