@@ -38,6 +38,9 @@ type Builder struct {
 	settingsSchema   *pluginschema.Settings
 	settingsExamples *pluginschema.SettingsExamples
 	routes           *pluginschema.Routes
+
+	// discovered via reflection (stored object kinds)
+	storedObjects *pluginschema.StoredObjectList
 }
 
 type CodePaths struct {
@@ -320,6 +323,10 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 		new:    b.routes,
 		old:    current.Routes,
 		asYAML: true,
+	}, {
+		name: "stored.objects",
+		new:  b.storedObjects,
+		old:  current.StoredObjects,
 	}} {
 		// If the property does not exist, remove both the yaml and json snapshots
 		if tc.new == nil {
@@ -366,8 +373,10 @@ func (b *Builder) UpdateProviderFiles(t *testing.T, apiVersion, outdir string) {
 		}
 	}
 
-	// Save the entire schema as a single file for easy loading by the provider
-	if current.SettingsSchema != nil {
+	// Save the entire schema as a single file for easy loading by the provider.
+	// The bundle is written whenever a field that the production
+	// pluginschema.NewSchemaProvider loader cares about is present.
+	if current.SettingsSchema != nil || !current.StoredObjects.IsZero() {
 		current, err = provider.Get(apiVersion)
 		require.NoError(t, err)
 		raw, err := json.Marshal(current)

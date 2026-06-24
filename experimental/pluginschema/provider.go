@@ -36,6 +36,10 @@ type PluginSchema struct {
 	// A list of example queries
 	// NOTE, this is only valid for DataSource plugins
 	QueryExamples *sdkapi.QueryExamples `json:"queryExamples,omitempty,omitzero"`
+
+	// Typed objects the plugin owns and persists. Grafana exposes these as
+	// CRUD subresources on the per-plugin api-server. EXPERIMENTAL.
+	StoredObjects *StoredObjectList `json:"storedObjects,omitempty,omitzero"`
 }
 
 // IsZero returns true if the schema is empty (nil or all fields are zero values)
@@ -56,6 +60,9 @@ func (s *PluginSchema) IsZero() bool {
 		return false
 	}
 	if s.QueryExamples != nil && len(s.QueryExamples.Examples) > 0 {
+		return false
+	}
+	if !s.StoredObjects.IsZero() {
 		return false
 	}
 	return true
@@ -162,6 +169,18 @@ func (p *compositeProvider) Get(apiVersion string) (*PluginSchema, error) {
 	if len(raw) > 0 {
 		schema.QueryExamples = &sdkapi.QueryExamples{}
 		if err = Load(raw, schema.QueryExamples); err != nil {
+			return nil, err
+		}
+	}
+
+	// StoredObjects
+	raw, err = p.getYAMLorJSON(apiVersion, "stored.objects")
+	if err != nil {
+		return nil, err
+	}
+	if len(raw) > 0 {
+		schema.StoredObjects = &StoredObjectList{}
+		if err = Load(raw, schema.StoredObjects); err != nil {
 			return nil, err
 		}
 	}
