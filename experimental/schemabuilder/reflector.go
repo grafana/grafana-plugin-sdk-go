@@ -222,6 +222,50 @@ func (b *Builder) SetRoutes(v *pluginschema.Routes) error {
 	return nil
 }
 
+// BuildArtifact assembles the in-memory PluginSchema for the given
+// apiVersion from the builder's declared content. No files are written.
+// Intended for callers that want to marshal the artifact directly (e.g. the
+// app.Manage print-schema path) rather than going through the
+// composite-provider sidecar files that Generate produces.
+func (b *Builder) BuildArtifact(apiVersion string) (*pluginschema.PluginSchema, error) {
+	if apiVersion == "" {
+		return nil, fmt.Errorf("apiVersion is required")
+	}
+	artifact := &pluginschema.PluginSchema{TargetAPIVersion: apiVersion}
+
+	if len(b.query) > 0 {
+		defs := sdkapi.QueryTypeDefinitionList{}
+		defs.Kind = "QueryTypeDefinitionList"
+		defs.APIVersion = "datasource.grafana.app/v0alpha1"
+		rv := fmt.Sprintf("%d", time.Now().UTC().UnixMilli())
+		defs.ResourceVersion = rv
+		creationTS := time.Now().UTC().Format(time.RFC3339)
+		for _, def := range b.query {
+			def.ResourceVersion = rv
+			def.CreationTimestamp = creationTS
+			defs.Items = append(defs.Items, def)
+		}
+		artifact.QueryTypes = &defs
+	}
+	if len(b.queryExamples.Examples) > 0 {
+		copyExamples := b.queryExamples
+		artifact.QueryExamples = &copyExamples
+	}
+	if !b.settingsSchema.IsZero() {
+		artifact.SettingsSchema = b.settingsSchema
+	}
+	if !b.settingsExamples.IsZero() {
+		artifact.SettingsExamples = b.settingsExamples
+	}
+	if b.routes != nil && !b.routes.IsZero() {
+		artifact.Routes = b.routes
+	}
+	if !b.storedObjects.IsZero() {
+		artifact.StoredObjects = b.storedObjects
+	}
+	return artifact, nil
+}
+
 // Update the schema definition file
 // When placed in `static/schema/query.types.json` folder of a plugin distribution,
 // it can be used to advertise various query types
