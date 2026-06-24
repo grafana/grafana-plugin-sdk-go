@@ -14,6 +14,24 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
 
+const (
+	// marketplaceLicenseValidationKeyEnv is the environment variable that holds the JWKS key
+	// used to validate marketplace plugin license tokens.
+	marketplaceLicenseValidationKeyEnv = "GF_MARKETPLACE_LICENSE_VALIDATION_KEY"
+
+	// marketplaceAppURLEnv is the environment variable that holds the Grafana app URL
+	// used when validating marketplace plugin license tokens.
+	marketplaceAppURLEnv = "GF_MARKETPLACE_APP_URL"
+
+	// marketplaceLicenseTextEnv is the environment variable that holds the raw license token text
+	// for a marketplace plugin.
+	marketplaceLicenseTextEnv = "GF_MARKETPLACE_LICENSE_TEXT"
+
+	// marketplaceLicensePathEnv is the environment variable that holds the file path to the
+	// marketplace plugin license JWT file.
+	marketplaceLicensePathEnv = "GF_MARKETPLACE_LICENSE_PATH"
+)
+
 var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
 func CheckMarketplacePluginLicense(pluginId string) error {
@@ -39,18 +57,18 @@ func CheckMarketplacePluginLicense(pluginId string) error {
 
 // readPluginLicense looks for a license in environment variables and validates it
 func readPluginLicense(pluginId string) *licensing.LicenseToken {
-	jwks := os.Getenv("GF_MARKETPLACE_LICENSE_VALIDATION_KEY")
-	appUrl := os.Getenv("GF_MARKETPLACE_APP_URL")
+	jwks := os.Getenv(marketplaceLicenseValidationKeyEnv)
+	appUrl := os.Getenv(marketplaceAppURLEnv)
 
 	backend.Logger.Debug("Validating marketplace plugin license")
-	val := os.Getenv("GF_MARKETPLACE_LICENSE_TEXT")
+	val := os.Getenv(marketplaceLicenseTextEnv)
 	if len(val) > 0 {
 		backend.Logger.Debug("Parsing license token from $GF_MARKETPLACE_LICENSE_TEXT")
 		return licensing.LoadTokenFromValue(val, appUrl, jwks, pluginId)
 	}
 
 	// Will return an error if the path is not found
-	val = os.Getenv("GF_MARKETPLACE_LICENSE_PATH")
+	val = os.Getenv(marketplaceLicensePathEnv)
 	if len(val) < 2 {
 		if !validPluginID.MatchString(pluginId) {
 			return &licensing.LicenseToken{
