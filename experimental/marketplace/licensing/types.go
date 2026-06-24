@@ -50,15 +50,18 @@ type LicenseToken struct {
 	IncludedViewers int64 `json:"included_viewers"`
 	IncludedUsers   int64 `json:"included_users"`
 
-	// TODO: not in design doc?
+	// TODO: For UI?
 	// LicenseExpiresWarnDays int64  `json:"lic_exp_warn_days"`
 	// TokenExpiresWarnDays   int64  `json:"tok_exp_warn_days"`
-	// UpdateDays             int64    `json:"update_days"`
+
+	UpdateDays int64 `json:"update_days"`
 
 	Products []string `json:"prod"`
 	Company  string   `json:"company"`
+
 	// TODO: not in design doc?
 	// Account string `json:"account,omitempty"`
+
 	Slug string `json:"slug"`
 }
 
@@ -105,10 +108,9 @@ func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId stri
 	}
 
 	// Handle tokens with missing or invalid "update_days" field
-	// TODO: is this needed for marketplace?
-	/* if token.UpdateDays < 1 {
+	if token.UpdateDays < 1 {
 		token.UpdateDays = 1
-	} */
+	}
 
 	logger.Debug("license token parsed", "token", token)
 	return token.validate(appUrl, pluginId)
