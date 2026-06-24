@@ -6,12 +6,15 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
+
+var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
 func CheckMarketplacePluginLicense(pluginId string) error {
 	token := readPluginLicense(pluginId)
@@ -37,7 +40,6 @@ func CheckMarketplacePluginLicense(pluginId string) error {
 // readPluginLicense looks for a license in environment variables and validates it
 func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	jwks := os.Getenv("GF_MARKETPLACE_LICENSE_VALIDATION_KEY")
-	// TODO: re-use existing env var?
 	appUrl := os.Getenv("GF_MARKETPLACE_APP_URL")
 
 	backend.Logger.Debug("Validating marketplace plugin license")
@@ -50,8 +52,14 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	// Will return an error if the path is not found
 	val = os.Getenv("GF_MARKETPLACE_LICENSE_PATH")
 	if len(val) < 2 {
-		// TODO: path traversal etc
-		licenseFileName := "marketplace-" + pluginId + ".jwt"
+		if !validPluginID.MatchString(pluginId) {
+			return &licensing.LicenseToken{
+				Status: licensing.Invalid,
+				Error:  fmt.Errorf("invalid marketplace plugin id %q", pluginId),
+			}
+		}
+		// filepath.Base strips any path separators, protecting against path traversal attacks
+		licenseFileName := filepath.Base("marketplace-" + pluginId + ".jwt")
 		val = licenseFileName // default license path
 		if !fileExists(val) {
 			homedir, _ := os.UserHomeDir()
