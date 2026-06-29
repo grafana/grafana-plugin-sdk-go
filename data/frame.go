@@ -294,6 +294,20 @@ func (f *Frame) Extend(i int) {
 	}
 }
 
+// SetRowCapacity reserves capacity for at least n additional rows on every
+// Field in the Frame without changing any Field's length. Use this before a
+// sequence of AppendRow calls when the final row count is known, to avoid
+// repeated reallocation of the underlying slices. It is a no-op for Fields
+// that already have enough capacity.
+func (f *Frame) SetRowCapacity(n int) {
+	for _, field := range f.Fields {
+		if field == nil {
+			continue
+		}
+		field.vector.Grow(n)
+	}
+}
+
 // ConcreteAt returns the concrete value at the specified fieldIdx and rowIdx.
 // A non-pointer type is returned regardless if the underlying type is a pointer
 // type or not. If the value is a nil pointer, the the zero value

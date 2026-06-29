@@ -71,12 +71,27 @@ func (v *nullablegenVector) Len() int {
 	return len(*v)
 }
 
+func (v *nullablegenVector) Cap() int {
+	return cap(*v)
+}
+
 func (v *nullablegenVector) Type() FieldType {
 	return vectorFieldType(v)
 }
 
 func (v *nullablegenVector) Extend(i int) {
 	*v = append(*v, make([]*gen, i)...)
+}
+
+// Grow reserves capacity for at least n additional elements without changing
+// the vector's length. It is a no-op if the existing capacity already fits.
+func (v *nullablegenVector) Grow(n int) {
+	if n <= 0 || cap(*v)-len(*v) >= n {
+		return
+	}
+	grown := make([]*gen, len(*v), len(*v)+n)
+	copy(grown, *v)
+	*v = grown
 }
 
 func (v *nullablegenVector) Insert(i int, val interface{}) {
