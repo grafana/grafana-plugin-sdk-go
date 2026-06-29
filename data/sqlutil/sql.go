@@ -69,10 +69,12 @@ func frameFromRows(rows *sql.Rows, rowLimit int64, capacity int, converters ...C
 	// Allocate scan and converted-value buffers once, outside the per-row loop.
 	// rows.Scan writes through the pointers in scannable; converters read those
 	// pointed-to values and emit converted values into converted before they are
-	// appended via frame.AppendRow. Both buffers are safe to reuse because the
-	// converters either return a value-copy (DefaultConverterFunc via
-	// reflect.Value.Interface()) or a pointer to a fresh local copy (the
-	// Null* converters), so no aliasing leaks across iterations.
+	// appended via frame.AppendRow. Reusing scannable means the storage each
+	// converter's `in` points at is overwritten every row, so converters must not
+	// return a value that aliases `in` — see the aliasing contract documented on
+	// FrameConverter. All built-in converters satisfy this (they return either a
+	// value-copy or a pointer to a fresh local copy). The converted buffer is
+	// always safe to reuse because frame.AppendRow consumes it before the next row.
 	scannable := scanRow.NewScannableRow()
 	converted := make([]interface{}, len(scannable))
 

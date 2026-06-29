@@ -7,6 +7,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/data/sqlutil"
 )
 
@@ -218,6 +219,67 @@ func frameFromRowsNoBufferReuse(rows *sql.Rows, rowLimit int) error {
 		}
 	}
 	return rows.Err()
+}
+
+// TestFrameFromRows_StringConverterNoAliasing is a regression guard for the
+// scan-buffer reuse optimization. Because the scan buffer is now allocated
+// once and reused across rows, a converter that returns a pointer *into* the
+// scanned value (rather than a pointer to a fresh copy) would make every
+// appended row alias the same address, so the whole column would collapse to
+// the last row's value.
+//
+// StringFrameConverter (the converter behind the ToConverters/StringConverter
+// path that the FrameFromRows doc comment explicitly recommends) is the
+// in-tree case: it derives its result from &ns.String. This test exercises
+// that path end-to-end with distinct per-row values and asserts each row keeps
+// its own value. It covers both the "no ReplaceFunc" path and a ConversionFunc
+// that returns its input pointer (a common in-place transform pattern).
+func TestFrameFromRows_StringConverterNoAliasing(t *testing.T) {
+	cases := []struct {
+		name string
+		conv sqlutil.StringConverter
+	}{
+		{
+			name: "no ConversionFunc and no ReplaceFunc",
+			conv: sqlutil.StringConverter{
+				Replacer: &sqlutil.StringFieldReplacer{
+					OutputFieldType: data.FieldTypeNullableString,
+				},
+			},
+		},
+		{
+			name: "passthrough ConversionFunc returning its input pointer",
+			conv: sqlutil.StringConverter{
+				ConversionFunc: func(in *string) (*string, error) { return in, nil },
+				Replacer: &sqlutil.StringFieldReplacer{
+					OutputFieldType: data.FieldTypeNullableString,
+				},
+			},
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			want := []string{"row0", "row1", "row2", "row3"}
+			rowData := make([][]interface{}, len(want))
+			for i, v := range want {
+				rowData[i] = []interface{}{v}
+			}
+			rows := makeSingleResultSet([]string{"val"}, rowData...) //nolint:rowserrcheck // FrameFromRows checks rows.Err() internally
+			t.Cleanup(func() { _ = rows.Close() })
+
+			frame, err := sqlutil.FrameFromRows(rows, -1, sqlutil.ToConverters(tc.conv)...)
+			require.NoError(t, err)
+			require.Equal(t, len(want), frame.Rows())
+
+			for i, w := range want {
+				got, ok := frame.Fields[0].At(i).(*string)
+				require.True(t, ok, "row %d should be a *string", i)
+				require.NotNil(t, got, "row %d should not be nil", i)
+				require.Equal(t, w, *got, "row %d must keep its own value, not alias another row (scan-buffer reuse aliasing regression)", i)
+			}
+		})
+	}
 }
 
 // TestFrameFromRowsWithCapacity_PresizesAllFields proves the end-to-end
