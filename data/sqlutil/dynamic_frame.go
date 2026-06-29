@@ -29,6 +29,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 	fields := make(map[int]Field)
 
 	var returnData [][]interface{}
+	defer func() { observeRowsScanned(int64(len(returnData))) }()
 
 	for {
 		for rows.Next() {
