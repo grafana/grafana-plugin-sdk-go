@@ -27,7 +27,7 @@ func TestAlertForwarderMiddleware(t *testing.T) {
 		)
 	}
 
-	t.Run("When no http headers in plugin request", func(t *testing.T) {
+	t.Run("When no FromAlert header in plugin request", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "/some/thing", nil)
 		require.NoError(t, err)
 
@@ -56,17 +56,16 @@ func TestAlertForwarderMiddleware(t *testing.T) {
 		})
 	})
 
-	t.Run("When HTTP headers in plugin request", func(t *testing.T) {
+	t.Run("When FromAlert header is present in plugin request", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "/some/thing", nil)
 		require.NoError(t, err)
 
+		// Only FromAlertHeaderName must be forwarded; other headers (OAuth, cookies,
+		// http_-prefixed, etc.) are the responsibility of headerMiddleware.
 		headers := map[string]string{
-			backend.FromAlertHeaderName:            "true",
-			backend.OAuthIdentityTokenHeaderName:   "bearer token",
-			backend.OAuthIdentityIDTokenHeaderName: "id-token",
-			"http_X-Custom":                        "custom-value",
-			backend.CookiesHeaderName:              "cookie1=; cookie2=; cookie3=",
-			otherHeader:                            "val",
+			backend.FromAlertHeaderName:          "true",
+			backend.OAuthIdentityTokenHeaderName: "bearer token",
+			otherHeader:                          "val",
 		}
 
 		crHeaders := map[string][]string{}
@@ -74,46 +73,33 @@ func TestAlertForwarderMiddleware(t *testing.T) {
 			crHeaders[k] = []string{v}
 		}
 
-		// QueryData and CheckHealth use getHTTPHeadersFromStringMap, which only
-		// exposes OAuth/cookie/http_-prefixed headers; the middleware additionally
-		// forwards the plain FromAlert. So otherHeader ("test") is dropped and
-		// http_X-Custom is exposed as X-Custom.
-		assertFiltered := func(t *testing.T, reqClone *http.Request) {
-			t.Helper()
-			require.Len(t, reqClone.Header, 5)
-			require.Equal(t, "true", reqClone.Header.Get(backend.FromAlertHeaderName))
-			require.Equal(t, "bearer token", reqClone.Header.Get(backend.OAuthIdentityTokenHeaderName))
-			require.Equal(t, "id-token", reqClone.Header.Get(backend.OAuthIdentityIDTokenHeaderName))
-			require.Equal(t, "custom-value", reqClone.Header.Get("X-Custom"))
-			require.Len(t, reqClone.Cookies(), 3)
-			require.Equal(t, "cookie1", reqClone.Cookies()[0].Name)
-			require.Equal(t, "cookie2", reqClone.Cookies()[1].Name)
-			require.Equal(t, "cookie3", reqClone.Cookies()[2].Name)
-		}
-
-		t.Run("Should forward headers when calling QueryData", func(t *testing.T) {
+		t.Run("Should forward only FromAlert header when calling QueryData", func(t *testing.T) {
 			cdt := newTest(t)
 			_, err = cdt.MiddlewareHandler.QueryData(req.Context(), &backend.QueryDataRequest{
 				PluginContext: pluginCtx,
 				Headers:       headers,
 			})
 			require.NoError(t, err)
-			assertFiltered(t, applyContextualMiddleware(t, cdt.QueryDataCtx, req))
+
+			reqClone := applyContextualMiddleware(t, cdt.QueryDataCtx, req)
+			require.Len(t, reqClone.Header, 1)
+			require.Equal(t, "true", reqClone.Header.Get(backend.FromAlertHeaderName))
 		})
 
-		t.Run("Should forward headers when calling CheckHealth", func(t *testing.T) {
+		t.Run("Should forward only FromAlert header when calling CheckHealth", func(t *testing.T) {
 			cdt := newTest(t)
 			_, err = cdt.MiddlewareHandler.CheckHealth(req.Context(), &backend.CheckHealthRequest{
 				PluginContext: pluginCtx,
 				Headers:       headers,
 			})
 			require.NoError(t, err)
-			assertFiltered(t, applyContextualMiddleware(t, cdt.CheckHealthCtx, req))
+
+			reqClone := applyContextualMiddleware(t, cdt.CheckHealthCtx, req)
+			require.Len(t, reqClone.Header, 1)
+			require.Equal(t, "true", reqClone.Header.Get(backend.FromAlertHeaderName))
 		})
 
-		// CallResourceRequest.GetHTTPHeaders() returns all headers unfiltered, so
-		// every header is forwarded (FromAlert is also set via the special-case).
-		t.Run("Should forward headers when calling CallResource", func(t *testing.T) {
+		t.Run("Should forward only FromAlert header when calling CallResource", func(t *testing.T) {
 			cdt := newTest(t)
 			err = cdt.MiddlewareHandler.CallResource(req.Context(), &backend.CallResourceRequest{
 				PluginContext: pluginCtx,
@@ -122,35 +108,8 @@ func TestAlertForwarderMiddleware(t *testing.T) {
 			require.NoError(t, err)
 
 			reqClone := applyContextualMiddleware(t, cdt.CallResourceCtx, req)
+			require.Len(t, reqClone.Header, 1)
 			require.Equal(t, "true", reqClone.Header.Get(backend.FromAlertHeaderName))
-			require.Equal(t, "bearer token", reqClone.Header.Get(backend.OAuthIdentityTokenHeaderName))
-			require.Equal(t, "id-token", reqClone.Header.Get(backend.OAuthIdentityIDTokenHeaderName))
-			require.Len(t, reqClone.Cookies(), 3)
-		})
-
-		t.Run("Should not overwrite an existing header", func(t *testing.T) {
-			cdt := newTest(t)
-			_, err = cdt.MiddlewareHandler.CheckHealth(req.Context(), &backend.CheckHealthRequest{
-				PluginContext: pluginCtx,
-				Headers:       headers,
-			})
-			require.NoError(t, err)
-
-			middlewares := httpclient.ContextualMiddlewareFromContext(cdt.CheckHealthCtx)
-			require.Len(t, middlewares, 1)
-
-			reqClone := req.Clone(req.Context())
-			// Pretend a preceding middleware already set this header.
-			reqClone.Header.Set(backend.OAuthIdentityTokenHeaderName, "bearer test-token")
-			res, err := middlewares[0].CreateMiddleware(httpclient.Options{}, finalRoundTripper).RoundTrip(reqClone)
-			require.NoError(t, err)
-			require.NoError(t, res.Body.Close())
-			require.Len(t, reqClone.Header, 5)
-			require.Equal(t, "true", reqClone.Header.Get(backend.FromAlertHeaderName))
-			require.Equal(t, "bearer test-token", reqClone.Header.Get(backend.OAuthIdentityTokenHeaderName))
-			require.Equal(t, "id-token", reqClone.Header.Get(backend.OAuthIdentityIDTokenHeaderName))
-			require.Equal(t, "custom-value", reqClone.Header.Get("X-Custom"))
-			require.Len(t, reqClone.Cookies(), 3)
 		})
 	})
 }
