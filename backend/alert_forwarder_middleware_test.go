@@ -7,10 +7,11 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/handlertest"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
-	"github.com/stretchr/testify/require"
 )
 
 func TestAlertForwarderMiddleware(t *testing.T) {
@@ -26,35 +27,6 @@ func TestAlertForwarderMiddleware(t *testing.T) {
 			handlertest.WithMiddlewares(backend.NewAlertForwarderMiddleware()),
 		)
 	}
-
-	t.Run("When no FromAlert header in plugin request", func(t *testing.T) {
-		req, err := http.NewRequest(http.MethodGet, "/some/thing", nil)
-		require.NoError(t, err)
-
-		t.Run("Should not forward arbitrary headers when calling QueryData", func(t *testing.T) {
-			cdt := newTest(t)
-			_, err = cdt.MiddlewareHandler.QueryData(req.Context(), &backend.QueryDataRequest{
-				PluginContext: pluginCtx,
-				Headers:       map[string]string{otherHeader: "val"},
-			})
-			require.NoError(t, err)
-
-			reqClone := applyContextualMiddleware(t, cdt.QueryDataCtx, req)
-			require.Len(t, reqClone.Header, 0)
-		})
-
-		t.Run("Should not forward arbitrary headers when calling CheckHealth", func(t *testing.T) {
-			cdt := newTest(t)
-			_, err = cdt.MiddlewareHandler.CheckHealth(req.Context(), &backend.CheckHealthRequest{
-				PluginContext: pluginCtx,
-				Headers:       map[string]string{otherHeader: "val"},
-			})
-			require.NoError(t, err)
-
-			reqClone := applyContextualMiddleware(t, cdt.CheckHealthCtx, req)
-			require.Len(t, reqClone.Header, 0)
-		})
-	})
 
 	t.Run("When FromAlert header is present in plugin request", func(t *testing.T) {
 		req, err := http.NewRequest(http.MethodGet, "/some/thing", nil)

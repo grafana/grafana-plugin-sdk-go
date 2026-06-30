@@ -33,24 +33,31 @@ func (m *AlertForwarderMiddleware) applyHeaders(ctx context.Context, pReq any) c
 		return ctx
 	}
 
+	var alertVal string
+	switch t := pReq.(type) {
+	case *QueryDataRequest:
+		if val, exists := t.Headers[FromAlertHeaderName]; exists {
+			alertVal = val
+		}
+	case *CallResourceRequest:
+		if vals, exists := t.Headers[FromAlertHeaderName]; exists && len(vals) > 0 {
+			alertVal = vals[0]
+		}
+	case *CheckHealthRequest:
+		if val, exists := t.Headers[FromAlertHeaderName]; exists {
+			alertVal = val
+		}
+	}
+
+	// Only register the middleware if the header is actually set.
+	if alertVal == "" {
+		return ctx
+	}
+
 	ctx = httpclient.WithContextualMiddleware(ctx,
 		httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
 			return httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-				switch t := pReq.(type) {
-				case *QueryDataRequest:
-					if val, exists := t.Headers[FromAlertHeaderName]; exists {
-						req.Header.Set(FromAlertHeaderName, val)
-					}
-				case *CallResourceRequest:
-					if val, exists := t.Headers[FromAlertHeaderName]; exists {
-						req.Header.Set(FromAlertHeaderName, val[0])
-					}
-				case *CheckHealthRequest:
-					if val, exists := t.Headers[FromAlertHeaderName]; exists {
-						req.Header.Set(FromAlertHeaderName, val)
-					}
-				}
-
+				req.Header.Set(FromAlertHeaderName, alertVal)
 				return next.RoundTrip(req)
 			})
 		}))
