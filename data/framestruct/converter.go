@@ -99,7 +99,7 @@ func (c *converter) toDataframe(name string, toConvert interface{}) (*data.Frame
 }
 
 func (c *converter) ensureValue(v reflect.Value) reflect.Value {
-	if v.Kind() == reflect.Ptr {
+	if v.Kind() == reflect.Ptr { //nolint:govet // inline analyzer false positive on reflect.Ptr alias
 		v = v.Elem()
 	}
 	return v

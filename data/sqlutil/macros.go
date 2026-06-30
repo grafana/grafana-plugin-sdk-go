@@ -217,8 +217,8 @@ func parseArgs(argString string) ([]string, int) {
 // Interpolate returns an interpolated query string given a backend.DataQuery
 func Interpolate(query *Query, macros Macros) (string, error) {
 	mergedMacros := Macros{}
-	maps.Copy(mergedMacros, DefaultMacros)
-	maps.Copy(mergedMacros, macros)
+	maps.Copy(mergedMacros, DefaultMacros) //nolint:govet // inline analyzer cannot inline maps.Copy (type parameter inference)
+	maps.Copy(mergedMacros, macros)        //nolint:govet // inline analyzer cannot inline maps.Copy (type parameter inference)
 	// sort macros so longer macros are applied first to prevent it from being
 	// overridden by a shorter macro that is a substring of the longer one
 	sortedMacroKeys := make([]string, 0, len(mergedMacros))
