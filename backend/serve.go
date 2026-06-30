@@ -435,11 +435,6 @@ func defaultHandlerMiddlewares() []HandlerMiddleware {
 		NewMetricsMiddleware(prometheus.DefaultRegisterer, "grafana", false),
 		NewLoggerMiddleware(Logger, nil),
 		newHeaderMiddleware(),
-		// Forwards the plain FromAlert key (excluded from GetHTTPHeaders) and the
-		// request HTTP headers ungated, restoring parity with core Grafana's
-		// in-process HTTPClientMiddleware (pkg/services/pluginsintegration/clientmiddleware/httpclient_middleware.go)
-		// for externalized plugins. Kept alongside newHeaderMiddleware (which gates GetHTTPHeaders on ForwardHTTPHeaders);
-		// both use "set only if not already set", so the overlap is redundant but harmless
 		NewAlertForwarderMiddleware(),
 		NewErrorSourceMiddleware(),
 	}

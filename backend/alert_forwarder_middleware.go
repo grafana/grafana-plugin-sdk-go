@@ -12,8 +12,10 @@ import (
 // Grafana.
 const FromAlertHeaderName = "FromAlert"
 
-// NewAlertForwarderMiddleware creates a new HandlerMiddleware
-// that will forward plugin request headers as outgoing HTTP headers.
+// NewAlertForwarderMiddleware returns a HandlerMiddleware that propagates the
+// "FromAlert" HTTP header from inbound plugin requests (QueryData, CallResource,
+// CheckHealth) to any outbound HTTP requests made by the plugin. This lets
+// downstream data sources detect that a query originates from the alerting engine.
 func NewAlertForwarderMiddleware() HandlerMiddleware {
 	return HandlerMiddlewareFunc(func(next Handler) Handler {
 		return &AlertForwarderMiddleware{
