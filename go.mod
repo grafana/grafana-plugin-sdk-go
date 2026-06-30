@@ -30,7 +30,7 @@ require (
 	github.com/olekukonko/tablewriter v1.1.4
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.23.2
-	github.com/prometheus/common v0.67.5
+	github.com/prometheus/common v0.69.0
 	github.com/stretchr/testify v1.11.1
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
 	github.com/urfave/cli v1.22.17
@@ -46,8 +46,8 @@ require (
 	golang.org/x/exp v0.0.0-20260112195511-716be5621a96
 	golang.org/x/net v0.55.0
 	golang.org/x/oauth2 v0.36.0
-	golang.org/x/sync v0.20.0
-	golang.org/x/sys v0.45.0
+	golang.org/x/sync v0.21.0
+	golang.org/x/sys v0.46.0
 	golang.org/x/text v0.37.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa
 	google.golang.org/grpc v1.81.1
@@ -116,7 +116,7 @@ require (
 	github.com/pierrec/lz4/v4 v4.1.27 // indirect
 	github.com/pmezard/go-difflib v1.0.1-0.20181226105442-5d4384ee4fb2 // indirect
 	github.com/prometheus/client_model v0.6.2 // indirect
-	github.com/prometheus/procfs v0.16.1 // indirect
+	github.com/prometheus/procfs v0.21.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
