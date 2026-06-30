@@ -58,7 +58,7 @@ func (rs *MockRows) Scan(dest ...interface{}) error {
 	for i, d := range dest {
 		foo := d.(*interface{})
 		val := reflect.ValueOf(foo)
-		if val.Kind() != reflect.Ptr {
+		if val.Kind() != reflect.Ptr { //nolint:govet // inline analyzer false positive on reflect.Ptr alias
 			panic("val must be a pointer")
 		}
 		val.Elem().Set(reflect.ValueOf(data[i]))
