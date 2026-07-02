@@ -84,7 +84,6 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	// server, tracing, and instance management is skipped.
 	if path := os.Getenv(envPrintSchemaPath); path != "" {
 		if err := printSchemaForOpts(pluginID, path, opts); err != nil {
-			log.Fatalln(err)
 			return err
 		}
 		os.Exit(0)
