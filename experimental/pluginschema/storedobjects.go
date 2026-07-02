@@ -53,6 +53,12 @@ type StoredObject struct {
 	// Spec is the schema for the object's spec field.
 	Spec *spec.Schema `json:"spec"`
 
+	// Status is the schema for the object's status subresource. When set,
+	// Grafana serves a /status subresource for the kind so background
+	// processes (e.g. a reconciler in the plugin backend) can report state
+	// without contending with user writes to spec.
+	Status *spec.Schema `json:"status,omitempty"`
+
 	// Validation, when non-empty, opts the kind into validating admission for
 	// the listed operations. Grafana routes those admission decisions to the
 	// plugin's backend.AdmissionHandler.ValidateAdmission over gRPC.
