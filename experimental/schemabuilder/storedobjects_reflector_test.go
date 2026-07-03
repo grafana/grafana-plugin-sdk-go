@@ -26,6 +26,14 @@ type clusterRuleSpec struct {
 	Enabled bool   `json:"enabled"`
 }
 
+type watchlistStatus struct {
+	// MatchCount is how many objects currently match the patterns.
+	MatchCount int `json:"matchCount"`
+
+	// LastEvaluated is when the patterns were last evaluated.
+	LastEvaluated string `json:"lastEvaluated"`
+}
+
 func newTestBuilder(t *testing.T) *Builder {
 	t.Helper()
 	b, err := NewSchemaBuilder(BuilderOptions{
@@ -62,11 +70,13 @@ func TestAddStoredObjects_RespectsExplicitFields(t *testing.T) {
 	b := newTestBuilder(t)
 
 	err := b.AddStoredObjects([]StoredObjectInfo{{
-		Name:     "ClusterRule",
-		Plural:   "clusterrules",
-		Singular: "clusterrule",
-		Scope:    pluginschema.ScopeCluster,
-		SpecType: reflect.TypeOf(clusterRuleSpec{}),
+		Name:       "ClusterRule",
+		Plural:     "clusterrules",
+		Singular:   "clusterrule",
+		Scope:      pluginschema.ScopeCluster,
+		SpecType:   reflect.TypeOf(clusterRuleSpec{}),
+		Validation: []pluginschema.Operation{pluginschema.OperationCreate, pluginschema.OperationUpdate},
+		Mutation:   []pluginschema.Operation{pluginschema.OperationDelete},
 	}})
 	require.NoError(t, err)
 	require.Len(t, b.storedObjects.Items, 1)
@@ -76,6 +86,45 @@ func TestAddStoredObjects_RespectsExplicitFields(t *testing.T) {
 	require.Equal(t, "clusterrules", got.Plural)
 	require.Equal(t, "clusterrule", got.Singular)
 	require.Equal(t, pluginschema.ScopeCluster, got.Scope)
+	require.Equal(t, []pluginschema.Operation{pluginschema.OperationCreate, pluginschema.OperationUpdate}, got.Validation)
+	require.Equal(t, []pluginschema.Operation{pluginschema.OperationDelete}, got.Mutation)
+}
+
+func TestAddStoredObjects_StatusSchema(t *testing.T) {
+	b := newTestBuilder(t)
+
+	err := b.AddStoredObjects([]StoredObjectInfo{
+		{
+			Name:       "Watchlist",
+			SpecType:   reflect.TypeOf(watchlistSpec{}),
+			StatusType: reflect.TypeOf(watchlistStatus{}),
+		},
+		{
+			Name:     "ClusterRule",
+			SpecType: reflect.TypeOf(clusterRuleSpec{}),
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, b.storedObjects.Items, 2)
+
+	withStatus := b.storedObjects.Items[0]
+	require.NotNil(t, withStatus.Status)
+	require.Contains(t, withStatus.Status.Properties, "matchCount")
+	require.Contains(t, withStatus.Status.Properties, "lastEvaluated")
+
+	withoutStatus := b.storedObjects.Items[1]
+	require.Nil(t, withoutStatus.Status)
+
+	raw, err := json.Marshal(b.storedObjects)
+	require.NoError(t, err)
+	require.Contains(t, string(raw), `"matchCount"`)
+
+	var items []map[string]json.RawMessage
+	var list map[string]json.RawMessage
+	require.NoError(t, json.Unmarshal(raw, &list))
+	require.NoError(t, json.Unmarshal(list["items"], &items))
+	require.Contains(t, items[0], "status")
+	require.NotContains(t, items[1], "status")
 }
 
 func TestAddStoredObjects_Append(t *testing.T) {

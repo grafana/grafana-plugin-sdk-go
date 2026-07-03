@@ -402,6 +402,16 @@ func (f ConvertFromProtobuf) AdmissionRequest(req *pluginv2.AdmissionRequest) *A
 	}
 }
 
+// StoredObjectEvent ...
+func (f ConvertFromProtobuf) StoredObjectEvent(ev *pluginv2.StoredObjectEvent) *StoredObjectEvent {
+	return &StoredObjectEvent{
+		PluginContext: f.PluginContext(ev.PluginContext),
+		Kind:          ev.Kind,
+		Type:          StoredObjectEventType(ev.Type),
+		ObjectBytes:   ev.Object,
+	}
+}
+
 // ConversionRequest ...
 func (f ConvertFromProtobuf) ConversionRequest(req *pluginv2.ConversionRequest) *ConversionRequest {
 	return &ConversionRequest{

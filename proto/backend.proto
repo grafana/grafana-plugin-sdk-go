@@ -522,6 +522,54 @@ message ConversionResponse {
   repeated RawObject objects = 3;
 }
 
+//-----------------------------------------------------------------
+// StoredObjectEvents -- EXPERIMENTAL and is subject to change
+//-----------------------------------------------------------------
+
+service StoredObjectEvents {
+  // Grafana opens this stream to a plugin that implements this service.
+  // The plugin's response stream carries subscription updates: each message
+  // is the full replacement set of stored object kinds the plugin currently
+  // wants change events for. The plugin stays silent until it wants at least
+  // one kind, so Grafana pushes nothing until the first non-empty
+  // subscription arrives; after that, an empty set pauses pushes without
+  // closing the stream. Grafana pushes events only for subscribed kinds, and
+  // only NEW events (no replay of existing objects).
+  rpc StreamStoredObjectEvents(stream StoredObjectEvent) returns (stream StoredObjectEventsSubscription);
+}
+
+// StoredObjectEvent describes a single change to a stored object.
+message StoredObjectEvent {
+  // EventType is the kind of change the event describes.
+  enum EventType {
+    UNKNOWN = 0;
+    CREATED = 1;
+    UPDATED = 2;
+    DELETED = 3;
+  }
+
+  // NOTE: this may not include app or datasource instance settings depending on the request
+  PluginContext pluginContext = 1;
+
+  // The declared object type name, e.g. "Watchlist"
+  string kind = 2;
+
+  // The kind of change that occurred
+  EventType type = 3;
+
+  // Object is the full JSON envelope after the change (the last-known state for deletes)
+  bytes object = 4;
+}
+
+// StoredObjectEventsSubscription is the full replacement set of stored object
+// kinds the plugin currently wants change events for. Sent by the plugin on
+// the StreamStoredObjectEvents response stream whenever its desired set
+// changes.
+message StoredObjectEventsSubscription {
+  // The declared object type names, e.g. "Watchlist".
+  repeated string kinds = 1;
+}
+
 // Status structure is copied from:
 // https://github.com/kubernetes/apimachinery/blob/v0.30.1/pkg/apis/meta/v1/generated.proto#L979
 message StatusResult {

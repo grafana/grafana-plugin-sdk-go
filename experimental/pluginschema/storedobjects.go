@@ -16,14 +16,14 @@ const (
 	ScopeCluster StoredObjectScope = "Cluster"
 )
 
-// AdmissionOperation is the name of an admission operation a plugin declares
-// it handles for a given stored object.
-type AdmissionOperation string
+// Operation is the name of a write operation a plugin declares it handles
+// for a given stored object.
+type Operation string
 
 const (
-	AdmissionOperationCreate AdmissionOperation = "CREATE"
-	AdmissionOperationUpdate AdmissionOperation = "UPDATE"
-	AdmissionOperationDelete AdmissionOperation = "DELETE"
+	OperationCreate Operation = "CREATE"
+	OperationUpdate Operation = "UPDATE"
+	OperationDelete Operation = "DELETE"
 )
 
 // StoredObject declares a typed object that the plugin persists. It is the
@@ -53,15 +53,21 @@ type StoredObject struct {
 	// Spec is the schema for the object's spec field.
 	Spec *spec.Schema `json:"spec"`
 
-	// Validation, when non-empty, opts the kind into validating admission for
-	// the listed operations. Grafana routes those admission decisions to the
-	// plugin's backend.AdmissionHandler.ValidateAdmission over gRPC.
-	Validation []AdmissionOperation `json:"validation,omitempty"`
+	// Status is the schema for the object's status subresource. When set,
+	// Grafana serves a /status subresource for the kind so background
+	// processes (e.g. a reconciler in the plugin backend) can report state
+	// without contending with user writes to spec.
+	Status *spec.Schema `json:"status,omitempty"`
 
-	// Mutation, when non-empty, opts the kind into mutating admission for the
-	// listed operations. Grafana routes those admission decisions to the
-	// plugin's backend.AdmissionHandler.MutateAdmission over gRPC.
-	Mutation []AdmissionOperation `json:"mutation,omitempty"`
+	// Validation, when non-empty, opts the kind into validating the listed
+	// write operations. Grafana routes those decisions to the plugin's
+	// backend.AdmissionHandler.ValidateAdmission over gRPC.
+	Validation []Operation `json:"validation,omitempty"`
+
+	// Mutation, when non-empty, opts the kind into mutating the listed write
+	// operations. Grafana routes those decisions to the plugin's
+	// backend.AdmissionHandler.MutateAdmission over gRPC.
+	Mutation []Operation `json:"mutation,omitempty"`
 }
 
 // StoredObjectList carries the declared stored objects in the plugin schema

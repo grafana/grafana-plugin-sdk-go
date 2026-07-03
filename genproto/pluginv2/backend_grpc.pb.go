@@ -864,3 +864,113 @@ var ResourceConversion_ServiceDesc = grpc.ServiceDesc{
 	Streams:  []grpc.StreamDesc{},
 	Metadata: "backend.proto",
 }
+
+const (
+	StoredObjectEvents_StreamStoredObjectEvents_FullMethodName = "/pluginv2.StoredObjectEvents/StreamStoredObjectEvents"
+)
+
+// StoredObjectEventsClient is the client API for StoredObjectEvents service.
+//
+// For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
+type StoredObjectEventsClient interface {
+	// Grafana opens this stream to a plugin that implements this service.
+	// The plugin's response stream carries subscription updates: each message
+	// is the full replacement set of stored object kinds the plugin currently
+	// wants change events for. The plugin stays silent until it wants at least
+	// one kind, so Grafana pushes nothing until the first non-empty
+	// subscription arrives; after that, an empty set pauses pushes without
+	// closing the stream. Grafana pushes events only for subscribed kinds, and
+	// only NEW events (no replay of existing objects).
+	StreamStoredObjectEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StoredObjectEvent, StoredObjectEventsSubscription], error)
+}
+
+type storedObjectEventsClient struct {
+	cc grpc.ClientConnInterface
+}
+
+func NewStoredObjectEventsClient(cc grpc.ClientConnInterface) StoredObjectEventsClient {
+	return &storedObjectEventsClient{cc}
+}
+
+func (c *storedObjectEventsClient) StreamStoredObjectEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StoredObjectEvent, StoredObjectEventsSubscription], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &StoredObjectEvents_ServiceDesc.Streams[0], StoredObjectEvents_StreamStoredObjectEvents_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[StoredObjectEvent, StoredObjectEventsSubscription]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type StoredObjectEvents_StreamStoredObjectEventsClient = grpc.BidiStreamingClient[StoredObjectEvent, StoredObjectEventsSubscription]
+
+// StoredObjectEventsServer is the server API for StoredObjectEvents service.
+// All implementations should embed UnimplementedStoredObjectEventsServer
+// for forward compatibility.
+type StoredObjectEventsServer interface {
+	// Grafana opens this stream to a plugin that implements this service.
+	// The plugin's response stream carries subscription updates: each message
+	// is the full replacement set of stored object kinds the plugin currently
+	// wants change events for. The plugin stays silent until it wants at least
+	// one kind, so Grafana pushes nothing until the first non-empty
+	// subscription arrives; after that, an empty set pauses pushes without
+	// closing the stream. Grafana pushes events only for subscribed kinds, and
+	// only NEW events (no replay of existing objects).
+	StreamStoredObjectEvents(grpc.BidiStreamingServer[StoredObjectEvent, StoredObjectEventsSubscription]) error
+}
+
+// UnimplementedStoredObjectEventsServer should be embedded to have
+// forward compatible implementations.
+//
+// NOTE: this should be embedded by value instead of pointer to avoid a nil
+// pointer dereference when methods are called.
+type UnimplementedStoredObjectEventsServer struct{}
+
+func (UnimplementedStoredObjectEventsServer) StreamStoredObjectEvents(grpc.BidiStreamingServer[StoredObjectEvent, StoredObjectEventsSubscription]) error {
+	return status.Error(codes.Unimplemented, "method StreamStoredObjectEvents not implemented")
+}
+func (UnimplementedStoredObjectEventsServer) testEmbeddedByValue() {}
+
+// UnsafeStoredObjectEventsServer may be embedded to opt out of forward compatibility for this service.
+// Use of this interface is not recommended, as added methods to StoredObjectEventsServer will
+// result in compilation errors.
+type UnsafeStoredObjectEventsServer interface {
+	mustEmbedUnimplementedStoredObjectEventsServer()
+}
+
+func RegisterStoredObjectEventsServer(s grpc.ServiceRegistrar, srv StoredObjectEventsServer) {
+	// If the following call panics, it indicates UnimplementedStoredObjectEventsServer was
+	// embedded by pointer and is nil.  This will cause panics if an
+	// unimplemented method is ever invoked, so we test this at initialization
+	// time to prevent it from happening at runtime later due to I/O.
+	if t, ok := srv.(interface{ testEmbeddedByValue() }); ok {
+		t.testEmbeddedByValue()
+	}
+	s.RegisterService(&StoredObjectEvents_ServiceDesc, srv)
+}
+
+func _StoredObjectEvents_StreamStoredObjectEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(StoredObjectEventsServer).StreamStoredObjectEvents(&grpc.GenericServerStream[StoredObjectEvent, StoredObjectEventsSubscription]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type StoredObjectEvents_StreamStoredObjectEventsServer = grpc.BidiStreamingServer[StoredObjectEvent, StoredObjectEventsSubscription]
+
+// StoredObjectEvents_ServiceDesc is the grpc.ServiceDesc for StoredObjectEvents service.
+// It's only intended for direct use with grpc.RegisterService,
+// and not to be introspected or modified (even as a copy)
+var StoredObjectEvents_ServiceDesc = grpc.ServiceDesc{
+	ServiceName: "pluginv2.StoredObjectEvents",
+	HandlerType: (*StoredObjectEventsServer)(nil),
+	Methods:     []grpc.MethodDesc{},
+	Streams: []grpc.StreamDesc{
+		{
+			StreamName:    "StreamStoredObjectEvents",
+			Handler:       _StoredObjectEvents_StreamStoredObjectEvents_Handler,
+			ServerStreams: true,
+			ClientStreams: true,
+		},
+	},
+	Metadata: "backend.proto",
+}

@@ -5,7 +5,10 @@ import (
 	"reflect"
 	"strings"
 
+	"k8s.io/kube-openapi/pkg/validation/spec"
+
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/storedobjects"
 )
 
 // StoredObjectInfo declares an input to AddStoredObjects. The Spec field's
@@ -30,13 +33,19 @@ type StoredObjectInfo struct {
 	// being added to the artifact.
 	SpecType reflect.Type
 
-	// Validation, when non-empty, opts the kind into validating admission
-	// for the listed operations.
-	Validation []pluginschema.AdmissionOperation
+	// StatusType is the Go type representing the object's status
+	// subresource. Optional. When set, the type is reflected into the
+	// artifact's status schema and Grafana serves a /status subresource
+	// for the kind.
+	StatusType reflect.Type
 
-	// Mutation, when non-empty, opts the kind into mutating admission for
-	// the listed operations.
-	Mutation []pluginschema.AdmissionOperation
+	// Validation, when non-empty, opts the kind into validating the listed
+	// write operations.
+	Validation []pluginschema.Operation
+
+	// Mutation, when non-empty, opts the kind into mutating the listed
+	// write operations.
+	Mutation []pluginschema.Operation
 }
 
 // AddStoredObjects reflects each declared object's spec type into an
@@ -50,19 +59,7 @@ func (b *Builder) AddStoredObjects(inputs []StoredObjectInfo) error {
 			return fmt.Errorf("stored object %q missing SpecType", info.Name)
 		}
 
-		schema := b.reflector.ReflectFromType(info.SpecType)
-		if schema == nil {
-			return fmt.Errorf("stored object %q: reflection returned nil schema", info.Name)
-		}
-		updateEnumDescriptions(schema)
-
-		// Stay on draft-04 so the generated schema round-trips through the
-		// OpenAPI loader Grafana uses, matching what AddQueries enforces.
-		schema.Version = draft04
-		schema.ID = ""
-		schema.Anchor = ""
-
-		spec, err := asJSONSchema(schema)
+		spec, err := b.reflectStoredObjectSchema(info.SpecType)
 		if err != nil {
 			return fmt.Errorf("stored object %q: %w", info.Name, err)
 		}
@@ -76,8 +73,15 @@ func (b *Builder) AddStoredObjects(inputs []StoredObjectInfo) error {
 			Validation: info.Validation,
 			Mutation:   info.Mutation,
 		}
+		if info.StatusType != nil {
+			status, err := b.reflectStoredObjectSchema(info.StatusType)
+			if err != nil {
+				return fmt.Errorf("stored object %q status: %w", info.Name, err)
+			}
+			obj.Status = status
+		}
 		if obj.Plural == "" {
-			obj.Plural = strings.ToLower(info.Name) + "s"
+			obj.Plural = storedobjects.PluralOf(info.Name)
 		}
 		if obj.Singular == "" {
 			obj.Singular = strings.ToLower(info.Name)
@@ -89,4 +93,22 @@ func (b *Builder) AddStoredObjects(inputs []StoredObjectInfo) error {
 		b.storedObjects.Items = append(b.storedObjects.Items, obj)
 	}
 	return nil
+}
+
+// reflectStoredObjectSchema reflects a Go type into the OpenAPI schema shape
+// stored objects carry in the artifact, applying the same draft-04
+// normalization AddQueries enforces so the schema round-trips through the
+// OpenAPI loader Grafana uses.
+func (b *Builder) reflectStoredObjectSchema(t reflect.Type) (*spec.Schema, error) {
+	schema := b.reflector.ReflectFromType(t)
+	if schema == nil {
+		return nil, fmt.Errorf("reflection returned nil schema")
+	}
+	updateEnumDescriptions(schema)
+
+	schema.Version = draft04
+	schema.ID = ""
+	schema.Anchor = ""
+
+	return asJSONSchema(schema)
 }

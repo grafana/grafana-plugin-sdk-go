@@ -431,6 +431,16 @@ func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.Adm
 	}
 }
 
+// StoredObjectEvent converts the SDK version of a StoredObjectEvent to the protobuf version.
+func (t ConvertToProtobuf) StoredObjectEvent(ev *StoredObjectEvent) *pluginv2.StoredObjectEvent {
+	return &pluginv2.StoredObjectEvent{
+		PluginContext: t.PluginContext(ev.PluginContext),
+		Kind:          ev.Kind,
+		Type:          pluginv2.StoredObjectEvent_EventType(ev.Type),
+		Object:        ev.ObjectBytes,
+	}
+}
+
 // ConversionRequest converts the SDK version of a ConversionRequest to the protobuf version.
 func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.ConversionRequest {
 	return &pluginv2.ConversionRequest{
