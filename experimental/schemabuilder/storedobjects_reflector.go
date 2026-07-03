@@ -8,6 +8,7 @@ import (
 	"k8s.io/kube-openapi/pkg/validation/spec"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/pluginschema"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/storedobjects"
 )
 
 // StoredObjectInfo declares an input to AddStoredObjects. The Spec field's
@@ -38,13 +39,18 @@ type StoredObjectInfo struct {
 	// for the kind.
 	StatusType reflect.Type
 
-	// Validation, when non-empty, opts the kind into validating admission
-	// for the listed operations.
-	Validation []pluginschema.AdmissionOperation
+	// Validation, when non-empty, opts the kind into validating the listed
+	// write operations.
+	Validation []pluginschema.Operation
 
-	// Mutation, when non-empty, opts the kind into mutating admission for
-	// the listed operations.
-	Mutation []pluginschema.AdmissionOperation
+	// Mutation, when non-empty, opts the kind into mutating the listed
+	// write operations.
+	Mutation []pluginschema.Operation
+
+	// Events, when true, opts the kind into change-event push: Grafana
+	// pushes change events for this kind to the plugin over the
+	// StoredObjectEvents gRPC stream.
+	Events bool
 }
 
 // AddStoredObjects reflects each declared object's spec type into an
@@ -71,6 +77,7 @@ func (b *Builder) AddStoredObjects(inputs []StoredObjectInfo) error {
 			Spec:       spec,
 			Validation: info.Validation,
 			Mutation:   info.Mutation,
+			Events:     info.Events,
 		}
 		if info.StatusType != nil {
 			status, err := b.reflectStoredObjectSchema(info.StatusType)
@@ -80,7 +87,7 @@ func (b *Builder) AddStoredObjects(inputs []StoredObjectInfo) error {
 			obj.Status = status
 		}
 		if obj.Plural == "" {
-			obj.Plural = strings.ToLower(info.Name) + "s"
+			obj.Plural = storedobjects.PluralOf(info.Name)
 		}
 		if obj.Singular == "" {
 			obj.Singular = strings.ToLower(info.Name)

@@ -60,6 +60,12 @@ type ManageOpts struct {
 	// Stateless conversion handler
 	ConversionHandler backend.ConversionHandler
 
+	// Stateless stored object event handler. If nil and Schema declares
+	// stored objects with Events, the SDK wires a default handler that feeds
+	// the experimental/storedobjects event broker, so instances can consume
+	// changes through Collection.Watch.
+	StoredObjectEventHandler backend.StoredObjectEventHandler
+
 	// Schema carries the plugin's typed declarations. Optional. When set,
 	// the SDK uses it for both build-time schema artifact generation (via
 	// GF_PLUGIN_PRINT_SCHEMA) and runtime admission auto-derivation.
@@ -97,20 +103,28 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		opts.AdmissionHandler = admissionHandlerFromStoredObjects(opts.Schema.StoredObjects)
 	}
 
+	// Auto-wire the broker-backed event handler when any declared stored
+	// object opts into events. An explicit handler always wins (same
+	// precedence as AdmissionHandler).
+	if opts.StoredObjectEventHandler == nil && opts.Schema != nil && anyStoredObjectDeclaresEvents(opts.Schema.StoredObjects) {
+		opts.StoredObjectEventHandler = brokerStoredObjectEventHandler{}
+	}
+
 	backend.SetupPluginEnvironment(pluginID)
 	if err := backend.SetupTracer(pluginID, opts.TracingOpts); err != nil {
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 	return backend.Manage(pluginID, backend.ServeOpts{
-		CheckHealthHandler:      handler,
-		CallResourceHandler:     handler,
-		QueryDataHandler:        handler,
-		QueryChunkedDataHandler: handler,
-		StreamHandler:           handler,
-		AdmissionHandler:        opts.AdmissionHandler,
-		ConversionHandler:       opts.ConversionHandler,
-		GRPCSettings:            opts.GRPCSettings,
+		CheckHealthHandler:       handler,
+		CallResourceHandler:      handler,
+		QueryDataHandler:         handler,
+		QueryChunkedDataHandler:  handler,
+		StreamHandler:            handler,
+		AdmissionHandler:         opts.AdmissionHandler,
+		ConversionHandler:        opts.ConversionHandler,
+		StoredObjectEventHandler: opts.StoredObjectEventHandler,
+		GRPCSettings:             opts.GRPCSettings,
 	})
 }
 

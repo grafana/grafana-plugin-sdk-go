@@ -1,10 +1,13 @@
-// Package storedobjects provides a small HTTP client that a plugin backend
-// can use to read and update its own stored objects — the typed objects the
-// plugin declares in its schema artifact and Grafana persists and serves at
-// /apis/<group>/<version>/namespaces/<namespace>/<plural> on its aggregated
-// API server. The intended consumer is a background goroutine started in the
-// app instance factory (and stopped in Dispose) that lists objects and writes
-// status.
+// Package storedobjects lets a plugin backend work with its own stored
+// objects — the typed objects the plugin declares in its schema artifact and
+// Grafana persists on the plugin's behalf. The contract is List, Get,
+// WriteStatus, and Watch on typed items; how Grafana stores objects and
+// delivers changes is an implementation detail of the platform and may change
+// without affecting this API.
+//
+// The intended consumer is a background goroutine started in the app instance
+// factory (and stopped in Dispose) that lists objects, reacts to change
+// events, and writes status.
 //
 // EXPERIMENTAL: this package is under active development and its API is
 // subject to breaking changes without notice.
@@ -21,6 +24,7 @@ import (
 	"net/url"
 	"strings"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/config"
 )
 
@@ -32,78 +36,48 @@ const defaultVersion = "v0alpha1"
 // the returned error, so a misbehaving server can't bloat logs.
 const maxErrorBodyBytes = 512
 
-// Metadata carries the common identifying fields of a stored object. Only
-// the fields a plugin backend typically needs are surfaced; anything else in
-// the wire metadata is dropped on decode.
-type Metadata struct {
-	// Name uniquely identifies the object within its namespace.
-	Name string `json:"name"`
-	// Namespace is the tenancy boundary the object lives in.
-	Namespace string `json:"namespace,omitempty"`
-	// ResourceVersion is the server-assigned opaque version, changed on
-	// every write. It is informational for this client: UpdateStatus uses a
-	// merge patch precisely so callers don't have to manage it.
-	ResourceVersion string `json:"resourceVersion,omitempty"`
-	// UID is the server-assigned unique identifier for the object's
-	// lifetime, stable across updates but not across delete/recreate.
-	UID string `json:"uid,omitempty"`
-	// Generation is incremented by the server on spec changes, and is the
-	// usual input for "have I already reconciled this?" checks.
-	Generation int64 `json:"generation,omitempty"`
-	// Labels are user-defined key/value pairs attached to the object.
-	Labels map[string]string `json:"labels,omitempty"`
-	// Annotations are user-defined key/value pairs attached to the object.
-	Annotations map[string]string `json:"annotations,omitempty"`
+// PluralOf derives the URL plural form of a declared object type name, e.g.
+// "Watchlist" becomes "watchlists". It is the single source of the derivation
+// shared by this client and the schema artifact builder.
+func PluralOf(name string) string {
+	return strings.ToLower(name) + "s"
 }
 
-// Object is the wire shape of a stored object. Spec and Status are kept raw
-// because the SDK cannot know the plugin's schema types; use SpecInto and
-// StatusInto to decode them into the plugin's own structs.
-type Object struct {
-	// APIVersion is "<group>/<version>", where the group is the plugin ID.
-	APIVersion string `json:"apiVersion,omitempty"`
-	// Kind is the declared stored object kind name.
-	Kind string `json:"kind,omitempty"`
-	// Metadata identifies the object.
-	Metadata Metadata `json:"metadata"`
-	// Spec is the desired state as written by the object's author.
-	Spec json.RawMessage `json:"spec,omitempty"`
-	// Status is the observed state as reported by the plugin backend.
-	Status json.RawMessage `json:"status,omitempty"`
-}
-
-// SpecInto decodes the object's spec into v, which follows the usual
-// json.Unmarshal rules (v must be a non-nil pointer).
-func (o *Object) SpecInto(v any) error {
-	if len(o.Spec) == 0 {
-		return errors.New("object has no spec")
+// namespaceForOrgID maps a Grafana org ID to the tenancy namespace its stored
+// objects live in: "default" for org 1, "org-<id>" otherwise. This mirrors
+// Grafana's on-prem namespace mapping only; Grafana Cloud stacks use a
+// stack-based namespace, which is why the request context's namespace is
+// always preferred when present.
+func namespaceForOrgID(orgID int64) string {
+	if orgID == 1 {
+		return "default"
 	}
-	return json.Unmarshal(o.Spec, v)
+	return fmt.Sprintf("org-%d", orgID)
 }
 
-// StatusInto decodes the object's status into v, which follows the usual
-// json.Unmarshal rules (v must be a non-nil pointer).
-func (o *Object) StatusInto(v any) error {
-	if len(o.Status) == 0 {
-		return errors.New("object has no status")
-	}
-	return json.Unmarshal(o.Status, v)
+// Item is a single stored object as seen by the plugin: its identifying name
+// and labels plus the typed spec (desired state, written by the object's
+// author) and status (observed state, written by the plugin backend).
+type Item[S, T any] struct {
+	// Name uniquely identifies the item within the client's org namespace.
+	Name string
+	// Labels are user-defined key/value pairs attached to the item.
+	Labels map[string]string
+	// Spec is the desired state.
+	Spec S
+	// Status is the observed state.
+	Status T
 }
 
-// List is a page of stored objects, decoded from the server's list envelope.
-type List struct {
-	// Items are the objects in the list.
-	Items []Object `json:"items"`
-}
-
-// Client reads and updates a plugin's own stored objects over the Grafana
-// HTTP API. It is safe for concurrent use.
+// Client accesses a plugin's own stored objects. It is safe for concurrent
+// use. Use NewCollection to get typed access to a declared object type.
 type Client struct {
-	baseURL    string
-	token      string
-	group      string
-	version    string
-	httpClient *http.Client
+	baseURL      string
+	token        string
+	group        string
+	version      string
+	orgNamespace string
+	httpClient   *http.Client
 }
 
 // ClientOpts configures a Client.
@@ -114,12 +88,14 @@ type ClientOpts struct {
 	// Token is the service-account token sent as a bearer token on every
 	// request. Required.
 	Token string
-	// Group is the API group of the plugin's stored objects, which is the
-	// plugin ID. Required.
+	// Group identifies the plugin's stored objects, which is the plugin ID.
+	// Required.
 	Group string
-	// Version is the API version of the plugin's stored objects, matching
+	// Version is the schema version of the plugin's stored objects, matching
 	// the schema artifact's targetApiVersion. Defaults to "v0alpha1".
 	Version string
+	// OrgNamespace is the tenancy boundary the client operates in. Required.
+	OrgNamespace string
 	// HTTPClient overrides the HTTP client used for requests. Defaults to
 	// http.DefaultClient.
 	HTTPClient *http.Client
@@ -136,6 +112,9 @@ func NewClient(opts ClientOpts) (*Client, error) {
 	if opts.Group == "" {
 		return nil, errors.New("storedobjects: Group is required")
 	}
+	if opts.OrgNamespace == "" {
+		return nil, errors.New("storedobjects: OrgNamespace is required")
+	}
 	version := opts.Version
 	if version == "" {
 		version = defaultVersion
@@ -145,21 +124,24 @@ func NewClient(opts ClientOpts) (*Client, error) {
 		httpClient = http.DefaultClient
 	}
 	return &Client{
-		baseURL:    strings.TrimRight(opts.AppURL, "/"),
-		token:      opts.Token,
-		group:      opts.Group,
-		version:    version,
-		httpClient: httpClient,
+		baseURL:      strings.TrimRight(opts.AppURL, "/"),
+		token:        opts.Token,
+		group:        opts.Group,
+		version:      version,
+		orgNamespace: opts.OrgNamespace,
+		httpClient:   httpClient,
 	}, nil
 }
 
 // NewClientFromContext creates a Client for the plugin's own stored objects
-// from the Grafana config that Grafana attaches to every plugin request
-// context. group is the plugin ID. The token comes from the plugin's
-// provisioned service account, which Grafana only supplies when its
-// externalServiceAccounts feature toggle is enabled; without it this returns
-// an error. Version defaults to "v0alpha1".
-func NewClientFromContext(ctx context.Context, group string) (*Client, error) {
+// from the request context Grafana attaches to every plugin request. The
+// group is the plugin ID and the org namespace comes from the request's
+// plugin context. The token comes from the plugin's provisioned service
+// account, which Grafana only supplies when its externalServiceAccounts
+// feature toggle is enabled; without it this returns an error. Version
+// defaults to "v0alpha1".
+func NewClientFromContext(ctx context.Context) (*Client, error) {
+	pluginCtx := backend.PluginConfigFromContext(ctx)
 	cfg := config.GrafanaConfigFromContext(ctx)
 	appURL, err := cfg.AppURL()
 	if err != nil {
@@ -169,79 +151,132 @@ func NewClientFromContext(ctx context.Context, group string) (*Client, error) {
 	if err != nil {
 		return nil, fmt.Errorf("storedobjects: %w", err)
 	}
+	orgNamespace := pluginCtx.Namespace
+	if orgNamespace == "" {
+		orgNamespace = namespaceForOrgID(pluginCtx.OrgID)
+	}
 	return NewClient(ClientOpts{
-		AppURL: appURL,
-		Token:  token,
-		Group:  group,
+		AppURL:       appURL,
+		Token:        token,
+		Group:        pluginCtx.PluginID,
+		OrgNamespace: orgNamespace,
 	})
 }
 
-// NamespaceForOrgID maps a Grafana org ID to the namespace its stored
-// objects live in: "default" for org 1, "org-<id>" otherwise. This mirrors
-// Grafana's on-prem namespace mapping only; Grafana Cloud stacks use a
-// stack-based namespace, so a production version of this would come from the
-// request context rather than a local computation.
-func NamespaceForOrgID(orgID int64) string {
-	if orgID == 1 {
-		return "default"
-	}
-	return fmt.Sprintf("org-%d", orgID)
+// objectEnvelope is the wire shape of a stored object. It stays unexported:
+// the dev-facing surface is Item, and the envelope exists only to decode
+// server responses and change events.
+type objectEnvelope struct {
+	Metadata struct {
+		Name   string            `json:"name"`
+		Labels map[string]string `json:"labels,omitempty"`
+	} `json:"metadata"`
+	Spec   json.RawMessage `json:"spec,omitempty"`
+	Status json.RawMessage `json:"status,omitempty"`
 }
 
-// List returns all stored objects of the given plural kind in a namespace.
-func (c *Client) List(ctx context.Context, namespace, plural string) (*List, error) {
-	list := &List{}
-	if err := c.do(ctx, http.MethodGet, c.collectionPath(namespace, plural), "", nil, list); err != nil {
+// listEnvelope is the wire shape of a list response.
+type listEnvelope struct {
+	Items []objectEnvelope `json:"items"`
+}
+
+// itemFromEnvelope decodes a wire envelope into a typed Item.
+func itemFromEnvelope[S, T any](env objectEnvelope) (Item[S, T], error) {
+	item := Item[S, T]{
+		Name:   env.Metadata.Name,
+		Labels: env.Metadata.Labels,
+	}
+	if len(env.Spec) > 0 {
+		if err := json.Unmarshal(env.Spec, &item.Spec); err != nil {
+			return item, fmt.Errorf("storedobjects: decode spec of %q: %w", item.Name, err)
+		}
+	}
+	if len(env.Status) > 0 {
+		if err := json.Unmarshal(env.Status, &item.Status); err != nil {
+			return item, fmt.Errorf("storedobjects: decode status of %q: %w", item.Name, err)
+		}
+	}
+	return item, nil
+}
+
+// Collection is typed access to one declared object type. S is the spec type
+// and T the status type declared in the plugin's schema.
+type Collection[S, T any] struct {
+	client *Client
+	name   string
+	plural string
+}
+
+// NewCollection returns typed access to the declared object type with the
+// given name, e.g. "Watchlist".
+func NewCollection[S, T any](c *Client, name string) *Collection[S, T] {
+	return &Collection[S, T]{
+		client: c,
+		name:   name,
+		plural: PluralOf(name),
+	}
+}
+
+// List returns all items of the collection's object type in the client's org
+// namespace.
+func (c *Collection[S, T]) List(ctx context.Context) ([]Item[S, T], error) {
+	env := &listEnvelope{}
+	if err := c.client.do(ctx, http.MethodGet, c.collectionPath(), "", nil, env); err != nil {
 		return nil, err
 	}
-	return list, nil
-}
-
-// Get returns a single stored object by name.
-func (c *Client) Get(ctx context.Context, namespace, plural, name string) (*Object, error) {
-	obj := &Object{}
-	if err := c.do(ctx, http.MethodGet, c.objectPath(namespace, plural, name), "", nil, obj); err != nil {
-		return nil, err
+	items := make([]Item[S, T], 0, len(env.Items))
+	for _, e := range env.Items {
+		item, err := itemFromEnvelope[S, T](e)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
 	}
-	return obj, nil
+	return items, nil
 }
 
-// UpdateStatus replaces the object's status with the given value and returns
-// the updated object. status is marshaled to JSON and sent as a merge patch
-// against the status subresource: a merge patch applies unconditionally, so
-// a background reconciler doesn't have to re-read the object and retry on
-// resourceVersion conflicts the way a full PUT would require.
-func (c *Client) UpdateStatus(ctx context.Context, namespace, plural, name string, status any) (*Object, error) {
+// Get returns a single item by name.
+func (c *Collection[S, T]) Get(ctx context.Context, name string) (Item[S, T], error) {
+	env := objectEnvelope{}
+	if err := c.client.do(ctx, http.MethodGet, c.itemPath(name), "", nil, &env); err != nil {
+		return Item[S, T]{}, err
+	}
+	return itemFromEnvelope[S, T](env)
+}
+
+// WriteStatus replaces the named item's status with the given value. The
+// status is sent as a merge patch, which applies unconditionally: a
+// background reconciler doesn't have to re-read the item and retry on write
+// conflicts the way a full replace would require.
+func (c *Collection[S, T]) WriteStatus(ctx context.Context, name string, status T) error {
 	raw, err := json.Marshal(status)
 	if err != nil {
-		return nil, fmt.Errorf("storedobjects: marshal status: %w", err)
+		return fmt.Errorf("storedobjects: marshal status: %w", err)
 	}
 	body, err := json.Marshal(map[string]json.RawMessage{"status": raw})
 	if err != nil {
-		return nil, fmt.Errorf("storedobjects: marshal status patch: %w", err)
+		return fmt.Errorf("storedobjects: marshal status patch: %w", err)
 	}
-	obj := &Object{}
-	path := c.objectPath(namespace, plural, name) + "/status"
-	if err := c.do(ctx, http.MethodPatch, path, "application/merge-patch+json", bytes.NewReader(body), obj); err != nil {
-		return nil, err
-	}
-	return obj, nil
+	env := objectEnvelope{}
+	path := c.itemPath(name) + "/status"
+	return c.client.do(ctx, http.MethodPatch, path, "application/merge-patch+json", bytes.NewReader(body), &env)
 }
 
-// collectionPath builds the URL for a kind's collection in a namespace.
-func (c *Client) collectionPath(namespace, plural string) string {
+// collectionPath builds the URL for the collection in the client's org
+// namespace.
+func (c *Collection[S, T]) collectionPath() string {
 	return fmt.Sprintf("%s/apis/%s/%s/namespaces/%s/%s",
-		c.baseURL,
-		url.PathEscape(c.group),
-		url.PathEscape(c.version),
-		url.PathEscape(namespace),
-		url.PathEscape(plural),
+		c.client.baseURL,
+		url.PathEscape(c.client.group),
+		url.PathEscape(c.client.version),
+		url.PathEscape(c.client.orgNamespace),
+		url.PathEscape(c.plural),
 	)
 }
 
-// objectPath builds the URL for a single named object.
-func (c *Client) objectPath(namespace, plural, name string) string {
-	return c.collectionPath(namespace, plural) + "/" + url.PathEscape(name)
+// itemPath builds the URL for a single named item.
+func (c *Collection[S, T]) itemPath(name string) string {
+	return c.collectionPath() + "/" + url.PathEscape(name)
 }
 
 // do performs an authenticated request and decodes a 2xx JSON response into

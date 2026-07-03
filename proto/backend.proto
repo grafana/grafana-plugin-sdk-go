@@ -522,6 +522,44 @@ message ConversionResponse {
   repeated RawObject objects = 3;
 }
 
+//-----------------------------------------------------------------
+// StoredObjectEvents -- EXPERIMENTAL and is subject to change
+//-----------------------------------------------------------------
+
+service StoredObjectEvents {
+  // Grafana opens this stream when the plugin's schema artifact declares
+  // Events for at least one stored object kind, and pushes change events
+  // for those kinds. Only new events are sent; existing objects are not
+  // replayed. The response is returned when Grafana closes the stream.
+  rpc StreamStoredObjectEvents(stream StoredObjectEvent) returns (StoredObjectEventsResponse);
+}
+
+// StoredObjectEvent describes a single change to a stored object.
+message StoredObjectEvent {
+  // EventType is the kind of change the event describes.
+  enum EventType {
+    UNKNOWN = 0;
+    CREATED = 1;
+    UPDATED = 2;
+    DELETED = 3;
+  }
+
+  // NOTE: this may not include app or datasource instance settings depending on the request
+  PluginContext pluginContext = 1;
+
+  // The declared object type name, e.g. "Watchlist"
+  string kind = 2;
+
+  // The kind of change that occurred
+  EventType type = 3;
+
+  // Object is the full JSON envelope after the change (the last-known state for deletes)
+  bytes object = 4;
+}
+
+// StoredObjectEventsResponse is returned when the event stream ends.
+message StoredObjectEventsResponse {}
+
 // Status structure is copied from:
 // https://github.com/kubernetes/apimachinery/blob/v0.30.1/pkg/apis/meta/v1/generated.proto#L979
 message StatusResult {

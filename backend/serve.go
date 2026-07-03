@@ -70,6 +70,11 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
 	ConversionHandler ConversionHandler
 
+	// StoredObjectEventHandler receives change events Grafana pushes for
+	// stored object kinds that declare Events in the plugin's schema artifact
+	// This is EXPERIMENTAL and is a subject to change
+	StoredObjectEventHandler StoredObjectEventHandler
+
 	// QueryConversionHandler converts queries between versions
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
 	QueryConversionHandler QueryConversionHandler
@@ -123,6 +128,14 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 
 	if opts.ConversionHandler != nil || opts.QueryConversionHandler != nil {
 		pluginOpts.ConversionServer = newConversionSDKAdapter(handler, opts.QueryConversionHandler)
+	}
+
+	// Event dispatch is wired directly rather than through the Handler
+	// middleware chain: the chain models request/response handlers, and
+	// widening the Handler interface for a one-way stream would ripple into
+	// every middleware for no benefit.
+	if opts.StoredObjectEventHandler != nil {
+		pluginOpts.StoredObjectEventsServer = newStoredObjectEventsSDKAdapter(opts.StoredObjectEventHandler)
 	}
 	return pluginOpts, nil
 }
@@ -273,6 +286,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "conversion")
 	}
 
+	if pluginOpts.StoredObjectEventsServer != nil {
+		pluginv2.RegisterStoredObjectEventsServer(server, pluginOpts.StoredObjectEventsServer)
+		plugKeys = append(plugKeys, "storedobjectevents")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -401,6 +419,11 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.ConversionServer != nil {
 		pluginv2.RegisterResourceConversionServer(server, pluginOpts.ConversionServer)
 		plugKeys = append(plugKeys, "conversion")
+	}
+
+	if pluginOpts.StoredObjectEventsServer != nil {
+		pluginv2.RegisterStoredObjectEventsServer(server, pluginOpts.StoredObjectEventsServer)
+		plugKeys = append(plugKeys, "storedobjectevents")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
