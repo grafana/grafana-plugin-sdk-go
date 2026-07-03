@@ -77,7 +77,6 @@ func TestAddStoredObjects_RespectsExplicitFields(t *testing.T) {
 		SpecType:   reflect.TypeOf(clusterRuleSpec{}),
 		Validation: []pluginschema.Operation{pluginschema.OperationCreate, pluginschema.OperationUpdate},
 		Mutation:   []pluginschema.Operation{pluginschema.OperationDelete},
-		Events:     true,
 	}})
 	require.NoError(t, err)
 	require.Len(t, b.storedObjects.Items, 1)
@@ -89,7 +88,6 @@ func TestAddStoredObjects_RespectsExplicitFields(t *testing.T) {
 	require.Equal(t, pluginschema.ScopeCluster, got.Scope)
 	require.Equal(t, []pluginschema.Operation{pluginschema.OperationCreate, pluginschema.OperationUpdate}, got.Validation)
 	require.Equal(t, []pluginschema.Operation{pluginschema.OperationDelete}, got.Mutation)
-	require.True(t, got.Events)
 }
 
 func TestAddStoredObjects_StatusSchema(t *testing.T) {

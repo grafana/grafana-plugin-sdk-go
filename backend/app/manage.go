@@ -8,6 +8,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/storedobjects"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/buildinfo"
 )
@@ -61,9 +62,11 @@ type ManageOpts struct {
 	ConversionHandler backend.ConversionHandler
 
 	// Stateless stored object event handler. If nil and Schema declares
-	// stored objects with Events, the SDK wires a default handler that feeds
-	// the experimental/storedobjects event broker, so instances can consume
-	// changes through Collection.Watch.
+	// stored objects, the SDK wires a default handler that feeds the
+	// experimental/storedobjects event broker, and the kinds subscribed to
+	// over the event stream follow the active Collection.Watch calls. If set
+	// explicitly, the SDK cannot know which kinds the handler wants, so it
+	// subscribes to ALL kinds declared in Schema.StoredObjects immediately.
 	StoredObjectEventHandler backend.StoredObjectEventHandler
 
 	// Schema carries the plugin's typed declarations. Optional. When set,
@@ -103,11 +106,19 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		opts.AdmissionHandler = admissionHandlerFromStoredObjects(opts.Schema.StoredObjects)
 	}
 
-	// Auto-wire the broker-backed event handler when any declared stored
-	// object opts into events. An explicit handler always wins (same
-	// precedence as AdmissionHandler).
-	if opts.StoredObjectEventHandler == nil && opts.Schema != nil && anyStoredObjectDeclaresEvents(opts.Schema.StoredObjects) {
+	// Register the StoredObjectEvents service whenever stored objects are
+	// declared: implementing the service is what signals event capability to
+	// Grafana; no events flow until something subscribes over the stream.
+	var eventSubscription backend.StoredObjectEventSubscription
+	switch {
+	case opts.StoredObjectEventHandler != nil:
+		// An explicit handler bypasses the broker, so the SDK cannot derive
+		// desired kinds from Collection.Watch calls; subscribe to every
+		// declared kind immediately instead.
+		eventSubscription = backend.NewStaticStoredObjectEventSubscription(declaredStoredObjectKinds(opts.Schema)...)
+	case opts.Schema != nil && len(opts.Schema.StoredObjects) > 0:
 		opts.StoredObjectEventHandler = brokerStoredObjectEventHandler{}
+		eventSubscription = storedobjects.DefaultKindSubscription()
 	}
 
 	backend.SetupPluginEnvironment(pluginID)
@@ -116,15 +127,16 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	}
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 	return backend.Manage(pluginID, backend.ServeOpts{
-		CheckHealthHandler:       handler,
-		CallResourceHandler:      handler,
-		QueryDataHandler:         handler,
-		QueryChunkedDataHandler:  handler,
-		StreamHandler:            handler,
-		AdmissionHandler:         opts.AdmissionHandler,
-		ConversionHandler:        opts.ConversionHandler,
-		StoredObjectEventHandler: opts.StoredObjectEventHandler,
-		GRPCSettings:             opts.GRPCSettings,
+		CheckHealthHandler:            handler,
+		CallResourceHandler:           handler,
+		QueryDataHandler:              handler,
+		QueryChunkedDataHandler:       handler,
+		StreamHandler:                 handler,
+		AdmissionHandler:              opts.AdmissionHandler,
+		ConversionHandler:             opts.ConversionHandler,
+		StoredObjectEventHandler:      opts.StoredObjectEventHandler,
+		StoredObjectEventSubscription: eventSubscription,
+		GRPCSettings:                  opts.GRPCSettings,
 	})
 }
 

@@ -71,9 +71,16 @@ type ServeOpts struct {
 	ConversionHandler ConversionHandler
 
 	// StoredObjectEventHandler receives change events Grafana pushes for
-	// stored object kinds that declare Events in the plugin's schema artifact
+	// the stored object kinds subscribed to over the StoredObjectEvents stream
 	// This is EXPERIMENTAL and is a subject to change
 	StoredObjectEventHandler StoredObjectEventHandler
+
+	// StoredObjectEventSubscription is the source of the kind set the plugin
+	// wants events for; the SDK sends Grafana a subscription update over the
+	// StoredObjectEvents stream whenever the set changes. If nil while a
+	// handler is set, the plugin never subscribes and no events arrive.
+	// This is EXPERIMENTAL and is a subject to change
+	StoredObjectEventSubscription StoredObjectEventSubscription
 
 	// QueryConversionHandler converts queries between versions
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
@@ -132,10 +139,10 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 
 	// Event dispatch is wired directly rather than through the Handler
 	// middleware chain: the chain models request/response handlers, and
-	// widening the Handler interface for a one-way stream would ripple into
+	// widening the Handler interface for an event stream would ripple into
 	// every middleware for no benefit.
 	if opts.StoredObjectEventHandler != nil {
-		pluginOpts.StoredObjectEventsServer = newStoredObjectEventsSDKAdapter(opts.StoredObjectEventHandler)
+		pluginOpts.StoredObjectEventsServer = newStoredObjectEventsSDKAdapter(opts.StoredObjectEventHandler, opts.StoredObjectEventSubscription)
 	}
 	return pluginOpts, nil
 }

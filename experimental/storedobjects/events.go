@@ -30,10 +30,12 @@ type Event[S, T any] struct {
 }
 
 // Watch returns a channel of change events for the collection's object type
-// in the client's org namespace, provided the plugin's schema declares Events
-// for the type. Only changes that happen after Grafana connects the event
-// stream are delivered; existing items are not replayed, so callers that need
-// current state should List first and then apply events.
+// in the client's org namespace. Watching is what subscribes the plugin to a
+// kind: when the first watcher for a kind appears, the SDK asks Grafana to
+// start pushing events for it, and when the last watcher's context ends the
+// kind is dropped from the subscription. Only changes that happen after the
+// subscription is active are delivered; existing items are not replayed, so
+// callers that need current state should List first and then apply events.
 //
 // The channel is closed when ctx is canceled. A consumer that falls behind
 // has its oldest pending events dropped rather than stalling delivery to
@@ -99,13 +101,28 @@ type subscription struct {
 // hold before the broker starts dropping its oldest events.
 const subscriberBuffer = 16
 
-// broker fans change events out to Watch subscriptions in-process.
+// broker fans change events out to Watch subscriptions in-process. It also
+// tracks, per kind across all namespaces, whether at least one watcher is
+// active: that per-kind view is what the serve layer sends Grafana as the
+// plugin's event subscription.
 type broker struct {
 	mu   sync.Mutex
 	subs map[*subscription]struct{}
+
+	// kindCounts counts active watchers per kind name. A kind is part of the
+	// desired subscription while its count is > 0.
+	kindCounts map[string]int
+
+	// kindWatchers are signaled (coalescing, non-blocking) whenever the set
+	// of kinds with at least one watcher changes.
+	kindWatchers map[chan struct{}]struct{}
 }
 
-var defaultBroker = &broker{subs: map[*subscription]struct{}{}}
+var defaultBroker = &broker{
+	subs:         map[*subscription]struct{}{},
+	kindCounts:   map[string]int{},
+	kindWatchers: map[chan struct{}]struct{}{},
+}
 
 func (b *broker) subscribe(namespace, name string) *subscription {
 	sub := &subscription{
@@ -115,6 +132,10 @@ func (b *broker) subscribe(namespace, name string) *subscription {
 	}
 	b.mu.Lock()
 	b.subs[sub] = struct{}{}
+	b.kindCounts[name]++
+	if b.kindCounts[name] == 1 {
+		b.notifyKindWatchersLocked()
+	}
 	b.mu.Unlock()
 	return sub
 }
@@ -122,7 +143,70 @@ func (b *broker) subscribe(namespace, name string) *subscription {
 func (b *broker) unsubscribe(sub *subscription) {
 	b.mu.Lock()
 	delete(b.subs, sub)
+	b.kindCounts[sub.name]--
+	if b.kindCounts[sub.name] <= 0 {
+		delete(b.kindCounts, sub.name)
+		b.notifyKindWatchersLocked()
+	}
 	b.mu.Unlock()
+}
+
+// notifyKindWatchersLocked signals every registered kind watcher without
+// blocking: each watcher channel has capacity one, so a pending signal is
+// enough to guarantee the watcher re-reads the set after the last change.
+func (b *broker) notifyKindWatchersLocked() {
+	for ch := range b.kindWatchers {
+		select {
+		case ch <- struct{}{}:
+		default:
+		}
+	}
+}
+
+func (b *broker) subscribedKinds() []string {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	kinds := make([]string, 0, len(b.kindCounts))
+	for kind := range b.kindCounts {
+		kinds = append(kinds, kind)
+	}
+	return kinds
+}
+
+func (b *broker) watchKinds() (<-chan struct{}, func()) {
+	ch := make(chan struct{}, 1)
+	b.mu.Lock()
+	b.kindWatchers[ch] = struct{}{}
+	b.mu.Unlock()
+	return ch, func() {
+		b.mu.Lock()
+		delete(b.kindWatchers, ch)
+		b.mu.Unlock()
+	}
+}
+
+// KindSubscription exposes the broker's per-kind watcher view in the shape
+// the serve layer consumes (it satisfies backend.StoredObjectEventSubscription
+// structurally, which keeps this package free of a backend dependency).
+type KindSubscription struct {
+	b *broker
+}
+
+// DefaultKindSubscription returns the desired-kind view of the process-wide
+// Watch broker.
+func DefaultKindSubscription() *KindSubscription {
+	return &KindSubscription{b: defaultBroker}
+}
+
+// Kinds returns the kinds that currently have at least one active watcher.
+func (s *KindSubscription) Kinds() []string {
+	return s.b.subscribedKinds()
+}
+
+// Changes registers a coalescing change-notification channel; receivers
+// re-read Kinds on every signal. The returned func unregisters it.
+func (s *KindSubscription) Changes() (<-chan struct{}, func()) {
+	return s.b.watchKinds()
 }
 
 func (b *broker) publish(namespace, name string, evtType EventType, objectJSON []byte) {

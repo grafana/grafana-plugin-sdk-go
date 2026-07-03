@@ -3,6 +3,7 @@ package storedobjects
 import (
 	"context"
 	"fmt"
+	"slices"
 	"testing"
 	"time"
 
@@ -102,6 +103,86 @@ func TestWatchClosesOnContextCancel(t *testing.T) {
 			}
 		}
 		return true
+	}, 5*time.Second, 10*time.Millisecond)
+}
+
+func TestBrokerTracksKindsAcrossNamespaces(t *testing.T) {
+	// Earlier tests' watchers unsubscribe asynchronously; wait for the kind
+	// set to drain so their teardown can't signal the channel mid-test.
+	require.Eventually(t, func() bool {
+		return len(defaultBroker.subscribedKinds()) == 0
+	}, 5*time.Second, 10*time.Millisecond)
+
+	changes, stop := defaultBroker.watchKinds()
+	defer stop()
+
+	waitSignal := func() {
+		t.Helper()
+		select {
+		case <-changes:
+		case <-time.After(5 * time.Second):
+			t.Fatal("timed out waiting for kind change notification")
+		}
+	}
+	requireNoSignal := func() {
+		t.Helper()
+		select {
+		case <-changes:
+			t.Fatal("unexpected kind change notification")
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
+
+	// First watcher for a kind changes the set and notifies.
+	sub1 := defaultBroker.subscribe("kind-track-a", "KindTrack")
+	waitSignal()
+	require.Contains(t, defaultBroker.subscribedKinds(), "KindTrack")
+
+	// A second watcher, even in another namespace, leaves the kind set
+	// unchanged: kinds are tracked across namespaces.
+	sub2 := defaultBroker.subscribe("kind-track-b", "KindTrack")
+	requireNoSignal()
+	require.Contains(t, defaultBroker.subscribedKinds(), "KindTrack")
+
+	// Dropping one of two watchers keeps the kind in the set.
+	defaultBroker.unsubscribe(sub2)
+	requireNoSignal()
+	require.Contains(t, defaultBroker.subscribedKinds(), "KindTrack")
+
+	// Dropping the last watcher removes the kind and notifies.
+	defaultBroker.unsubscribe(sub1)
+	waitSignal()
+	require.NotContains(t, defaultBroker.subscribedKinds(), "KindTrack")
+}
+
+func TestDefaultKindSubscriptionFollowsWatch(t *testing.T) {
+	kindSub := DefaultKindSubscription()
+
+	// Earlier tests' watchers unsubscribe asynchronously after their context
+	// ends; wait until the kind is gone so the notification below is the one
+	// this test's Watch triggers.
+	require.Eventually(t, func() bool {
+		return !slices.Contains(kindSub.Kinds(), "Watchlist")
+	}, 5*time.Second, 10*time.Millisecond)
+
+	changes, stop := kindSub.Changes()
+	defer stop()
+
+	ctx, cancel := context.WithCancel(context.Background())
+	coll := newWatchCollection(t, "kind-sub-watch")
+	_, err := coll.Watch(ctx)
+	require.NoError(t, err)
+
+	select {
+	case <-changes:
+	case <-time.After(5 * time.Second):
+		t.Fatal("timed out waiting for kind change notification")
+	}
+	require.Contains(t, kindSub.Kinds(), "Watchlist")
+
+	cancel()
+	require.Eventually(t, func() bool {
+		return !slices.Contains(kindSub.Kinds(), "Watchlist")
 	}, 5*time.Second, 10*time.Millisecond)
 }
 

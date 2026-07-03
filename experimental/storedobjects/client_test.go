@@ -80,29 +80,19 @@ func TestNewClientFromContext(t *testing.T) {
 		require.Equal(t, "stacks-123", c.orgNamespace)
 	})
 
-	t.Run("falls back to org-derived namespace", func(t *testing.T) {
+	t.Run("errors when namespace is missing", func(t *testing.T) {
 		ctx := backend.WithPluginContext(grafanaCtx(t), backend.PluginContext{
 			PluginID: "my-app",
-			OrgID:    1,
 		})
-		c, err := NewClientFromContext(ctx)
-		require.NoError(t, err)
-		require.Equal(t, "default", c.orgNamespace)
-
-		ctx = backend.WithPluginContext(grafanaCtx(t), backend.PluginContext{
-			PluginID: "my-app",
-			OrgID:    42,
-		})
-		c, err = NewClientFromContext(ctx)
-		require.NoError(t, err)
-		require.Equal(t, "org-42", c.orgNamespace)
+		_, err := NewClientFromContext(ctx)
+		require.ErrorContains(t, err, "no namespace")
 	})
 
 	t.Run("errors when token is missing", func(t *testing.T) {
 		ctx := config.WithGrafanaConfig(context.Background(), config.NewGrafanaCfg(map[string]string{
 			config.AppURL: "http://grafana:3000",
 		}))
-		ctx = backend.WithPluginContext(ctx, backend.PluginContext{PluginID: "my-app", OrgID: 1})
+		ctx = backend.WithPluginContext(ctx, backend.PluginContext{PluginID: "my-app", Namespace: "default"})
 		_, err := NewClientFromContext(ctx)
 		require.ErrorContains(t, err, "PluginAppClientSecret")
 	})

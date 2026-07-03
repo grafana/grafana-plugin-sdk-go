@@ -873,11 +873,15 @@ const (
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type StoredObjectEventsClient interface {
-	// Grafana opens this stream when the plugin's schema artifact declares
-	// Events for at least one stored object kind, and pushes change events
-	// for those kinds. Only new events are sent; existing objects are not
-	// replayed. The response is returned when Grafana closes the stream.
-	StreamStoredObjectEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[StoredObjectEvent, StoredObjectEventsResponse], error)
+	// Grafana opens this stream to a plugin that implements this service.
+	// The plugin's response stream carries subscription updates: each message
+	// is the full replacement set of stored object kinds the plugin currently
+	// wants change events for. The plugin stays silent until it wants at least
+	// one kind, so Grafana pushes nothing until the first non-empty
+	// subscription arrives; after that, an empty set pauses pushes without
+	// closing the stream. Grafana pushes events only for subscribed kinds, and
+	// only NEW events (no replay of existing objects).
+	StreamStoredObjectEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StoredObjectEvent, StoredObjectEventsSubscription], error)
 }
 
 type storedObjectEventsClient struct {
@@ -888,28 +892,32 @@ func NewStoredObjectEventsClient(cc grpc.ClientConnInterface) StoredObjectEvents
 	return &storedObjectEventsClient{cc}
 }
 
-func (c *storedObjectEventsClient) StreamStoredObjectEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[StoredObjectEvent, StoredObjectEventsResponse], error) {
+func (c *storedObjectEventsClient) StreamStoredObjectEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[StoredObjectEvent, StoredObjectEventsSubscription], error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	stream, err := c.cc.NewStream(ctx, &StoredObjectEvents_ServiceDesc.Streams[0], StoredObjectEvents_StreamStoredObjectEvents_FullMethodName, cOpts...)
 	if err != nil {
 		return nil, err
 	}
-	x := &grpc.GenericClientStream[StoredObjectEvent, StoredObjectEventsResponse]{ClientStream: stream}
+	x := &grpc.GenericClientStream[StoredObjectEvent, StoredObjectEventsSubscription]{ClientStream: stream}
 	return x, nil
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type StoredObjectEvents_StreamStoredObjectEventsClient = grpc.ClientStreamingClient[StoredObjectEvent, StoredObjectEventsResponse]
+type StoredObjectEvents_StreamStoredObjectEventsClient = grpc.BidiStreamingClient[StoredObjectEvent, StoredObjectEventsSubscription]
 
 // StoredObjectEventsServer is the server API for StoredObjectEvents service.
 // All implementations should embed UnimplementedStoredObjectEventsServer
 // for forward compatibility.
 type StoredObjectEventsServer interface {
-	// Grafana opens this stream when the plugin's schema artifact declares
-	// Events for at least one stored object kind, and pushes change events
-	// for those kinds. Only new events are sent; existing objects are not
-	// replayed. The response is returned when Grafana closes the stream.
-	StreamStoredObjectEvents(grpc.ClientStreamingServer[StoredObjectEvent, StoredObjectEventsResponse]) error
+	// Grafana opens this stream to a plugin that implements this service.
+	// The plugin's response stream carries subscription updates: each message
+	// is the full replacement set of stored object kinds the plugin currently
+	// wants change events for. The plugin stays silent until it wants at least
+	// one kind, so Grafana pushes nothing until the first non-empty
+	// subscription arrives; after that, an empty set pauses pushes without
+	// closing the stream. Grafana pushes events only for subscribed kinds, and
+	// only NEW events (no replay of existing objects).
+	StreamStoredObjectEvents(grpc.BidiStreamingServer[StoredObjectEvent, StoredObjectEventsSubscription]) error
 }
 
 // UnimplementedStoredObjectEventsServer should be embedded to have
@@ -919,7 +927,7 @@ type StoredObjectEventsServer interface {
 // pointer dereference when methods are called.
 type UnimplementedStoredObjectEventsServer struct{}
 
-func (UnimplementedStoredObjectEventsServer) StreamStoredObjectEvents(grpc.ClientStreamingServer[StoredObjectEvent, StoredObjectEventsResponse]) error {
+func (UnimplementedStoredObjectEventsServer) StreamStoredObjectEvents(grpc.BidiStreamingServer[StoredObjectEvent, StoredObjectEventsSubscription]) error {
 	return status.Error(codes.Unimplemented, "method StreamStoredObjectEvents not implemented")
 }
 func (UnimplementedStoredObjectEventsServer) testEmbeddedByValue() {}
@@ -943,11 +951,11 @@ func RegisterStoredObjectEventsServer(s grpc.ServiceRegistrar, srv StoredObjectE
 }
 
 func _StoredObjectEvents_StreamStoredObjectEvents_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(StoredObjectEventsServer).StreamStoredObjectEvents(&grpc.GenericServerStream[StoredObjectEvent, StoredObjectEventsResponse]{ServerStream: stream})
+	return srv.(StoredObjectEventsServer).StreamStoredObjectEvents(&grpc.GenericServerStream[StoredObjectEvent, StoredObjectEventsSubscription]{ServerStream: stream})
 }
 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
-type StoredObjectEvents_StreamStoredObjectEventsServer = grpc.ClientStreamingServer[StoredObjectEvent, StoredObjectEventsResponse]
+type StoredObjectEvents_StreamStoredObjectEventsServer = grpc.BidiStreamingServer[StoredObjectEvent, StoredObjectEventsSubscription]
 
 // StoredObjectEvents_ServiceDesc is the grpc.ServiceDesc for StoredObjectEvents service.
 // It's only intended for direct use with grpc.RegisterService,
@@ -960,6 +968,7 @@ var StoredObjectEvents_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "StreamStoredObjectEvents",
 			Handler:       _StoredObjectEvents_StreamStoredObjectEvents_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},

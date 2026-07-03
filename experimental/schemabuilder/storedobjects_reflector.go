@@ -46,11 +46,6 @@ type StoredObjectInfo struct {
 	// Mutation, when non-empty, opts the kind into mutating the listed
 	// write operations.
 	Mutation []pluginschema.Operation
-
-	// Events, when true, opts the kind into change-event push: Grafana
-	// pushes change events for this kind to the plugin over the
-	// StoredObjectEvents gRPC stream.
-	Events bool
 }
 
 // AddStoredObjects reflects each declared object's spec type into an
@@ -77,7 +72,6 @@ func (b *Builder) AddStoredObjects(inputs []StoredObjectInfo) error {
 			Spec:       spec,
 			Validation: info.Validation,
 			Mutation:   info.Mutation,
-			Events:     info.Events,
 		}
 		if info.StatusType != nil {
 			status, err := b.reflectStoredObjectSchema(info.StatusType)

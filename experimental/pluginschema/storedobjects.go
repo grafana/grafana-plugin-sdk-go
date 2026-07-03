@@ -68,11 +68,6 @@ type StoredObject struct {
 	// operations. Grafana routes those decisions to the plugin's
 	// backend.AdmissionHandler.MutateAdmission over gRPC.
 	Mutation []Operation `json:"mutation,omitempty"`
-
-	// Events, when true, opts the kind into change-event push: Grafana pushes
-	// change events for this kind to the plugin over the StoredObjectEvents
-	// gRPC stream.
-	Events bool `json:"events,omitempty"`
 }
 
 // StoredObjectList carries the declared stored objects in the plugin schema

@@ -5,24 +5,28 @@ import (
 	"fmt"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/schemabuilder"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/storedobjects"
 )
 
-func anyStoredObjectDeclaresEvents(stored []schemabuilder.StoredObjectInfo) bool {
-	for _, s := range stored {
-		if s.Events {
-			return true
-		}
+// declaredStoredObjectKinds returns the kind names declared in the schema.
+// Used to build the all-kinds subscription an explicit event handler gets.
+func declaredStoredObjectKinds(schema *Schema) []string {
+	if schema == nil {
+		return nil
 	}
-	return false
+	kinds := make([]string, 0, len(schema.StoredObjects))
+	for _, s := range schema.StoredObjects {
+		kinds = append(kinds, s.Name)
+	}
+	return kinds
 }
 
 // brokerStoredObjectEventHandler is the default StoredObjectEventHandler:
 // it feeds every event Grafana pushes over the plugin protocol into the
 // experimental/storedobjects broker, where Collection.Watch subscriptions
 // pick them up. Kept private for the same reason as the derived admission
-// handler; the entry point is declaring Events on Schema.StoredObjects.
+// handler; the entry point is calling Collection.Watch, which is also what
+// subscribes the plugin to the kind's events.
 type brokerStoredObjectEventHandler struct{}
 
 func (brokerStoredObjectEventHandler) HandleStoredObjectEvent(_ context.Context, event *backend.StoredObjectEvent) error {
@@ -39,14 +43,10 @@ func (brokerStoredObjectEventHandler) HandleStoredObjectEvent(_ context.Context,
 	}
 	namespace := event.PluginContext.Namespace
 	if namespace == "" {
-		// Mirrors the on-prem org-to-namespace derivation the
-		// storedobjects client falls back to, so events land on the same
-		// namespace a Watch subscribed with.
-		if event.PluginContext.OrgID == 1 {
-			namespace = "default"
-		} else {
-			namespace = fmt.Sprintf("org-%d", event.PluginContext.OrgID)
-		}
+		// Namespace is how events are routed to Watch subscribers; Grafana
+		// always sets it on pushed events, so an empty value is a protocol
+		// violation rather than something to derive around.
+		return fmt.Errorf("stored object event for %q has no namespace", event.Kind)
 	}
 	storedobjects.PublishEvent(namespace, event.Kind, evtType, event.ObjectBytes)
 	return nil

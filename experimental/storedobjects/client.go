@@ -43,18 +43,6 @@ func PluralOf(name string) string {
 	return strings.ToLower(name) + "s"
 }
 
-// namespaceForOrgID maps a Grafana org ID to the tenancy namespace its stored
-// objects live in: "default" for org 1, "org-<id>" otherwise. This mirrors
-// Grafana's on-prem namespace mapping only; Grafana Cloud stacks use a
-// stack-based namespace, which is why the request context's namespace is
-// always preferred when present.
-func namespaceForOrgID(orgID int64) string {
-	if orgID == 1 {
-		return "default"
-	}
-	return fmt.Sprintf("org-%d", orgID)
-}
-
 // Item is a single stored object as seen by the plugin: its identifying name
 // and labels plus the typed spec (desired state, written by the object's
 // author) and status (observed state, written by the plugin backend).
@@ -153,7 +141,10 @@ func NewClientFromContext(ctx context.Context) (*Client, error) {
 	}
 	orgNamespace := pluginCtx.Namespace
 	if orgNamespace == "" {
-		orgNamespace = namespaceForOrgID(pluginCtx.OrgID)
+		// Namespace is the tenancy contract for stored objects. Any Grafana
+		// new enough to serve them populates it, so an empty value means the
+		// feature isn't available rather than something to paper over.
+		return nil, fmt.Errorf("storedobjects: plugin context has no namespace; a newer Grafana version is required")
 	}
 	return NewClient(ClientOpts{
 		AppURL:       appURL,
@@ -298,7 +289,7 @@ func (c *Client) do(ctx context.Context, method, u, contentType string, body io.
 	if err != nil {
 		return fmt.Errorf("storedobjects: %s %s: %w", method, u, err)
 	}
-	defer resp.Body.Close() //nolint:errcheck
+	defer func() { _ = resp.Body.Close() }()
 
 	if resp.StatusCode < 200 || resp.StatusCode > 299 {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, maxErrorBodyBytes))

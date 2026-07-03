@@ -3,7 +3,10 @@ package backend
 import (
 	"context"
 	"io"
+	"slices"
+	"sync"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/require"
 	"google.golang.org/grpc"
@@ -57,6 +60,19 @@ func TestStoredObjectEventProtoRoundTrip(t *testing.T) {
 	require.True(t, proto.Equal(src, dst))
 }
 
+func TestStoredObjectEventsSubscriptionProtoRoundTrip(t *testing.T) {
+	src := &pluginv2.StoredObjectEventsSubscription{
+		Kinds: []string{"ClusterRule", "Watchlist"},
+	}
+
+	raw, err := proto.Marshal(src)
+	require.NoError(t, err)
+
+	dst := &pluginv2.StoredObjectEventsSubscription{}
+	require.NoError(t, proto.Unmarshal(raw, dst))
+	require.True(t, proto.Equal(src, dst))
+}
+
 func TestStoredObjectEventTypeString(t *testing.T) {
 	require.Equal(t, "UNKNOWN", StoredObjectEventUnknown.String())
 	require.Equal(t, "CREATED", StoredObjectEventCreated.String())
@@ -64,13 +80,16 @@ func TestStoredObjectEventTypeString(t *testing.T) {
 	require.Equal(t, "DELETED", StoredObjectEventDeleted.String())
 }
 
-// fakeEventStream implements the generated client-streaming server interface
-// so the adapter's receive loop can be driven without a real gRPC connection.
+// fakeEventStream implements the generated bidi stream server interface so
+// the adapter's receive and subscription-send loops can be driven without a
+// real gRPC connection.
 type fakeEventStream struct {
 	grpc.ServerStream
 	ctx    context.Context
 	events chan *pluginv2.StoredObjectEvent
-	closed bool
+
+	mu   sync.Mutex
+	sent []*pluginv2.StoredObjectEventsSubscription
 }
 
 func (s *fakeEventStream) Context() context.Context { return s.ctx }
@@ -87,9 +106,22 @@ func (s *fakeEventStream) Recv() (*pluginv2.StoredObjectEvent, error) {
 	}
 }
 
-func (s *fakeEventStream) SendAndClose(*pluginv2.StoredObjectEventsResponse) error {
-	s.closed = true
+func (s *fakeEventStream) Send(sub *pluginv2.StoredObjectEventsSubscription) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	s.sent = append(s.sent, sub)
 	return nil
+}
+
+// subscriptions returns the kind sets sent so far, in send order.
+func (s *fakeEventStream) subscriptions() [][]string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	out := make([][]string, 0, len(s.sent))
+	for _, sub := range s.sent {
+		out = append(out, sub.Kinds)
+	}
+	return out
 }
 
 type capturingEventHandler struct {
@@ -102,9 +134,43 @@ func (h *capturingEventHandler) HandleStoredObjectEvent(_ context.Context, event
 	return h.err
 }
 
+// fakeSubscription is a mutable StoredObjectEventSubscription for driving the
+// adapter's send loop in tests.
+type fakeSubscription struct {
+	mu      sync.Mutex
+	kinds   []string
+	changes chan struct{}
+}
+
+func newFakeSubscription(kinds ...string) *fakeSubscription {
+	return &fakeSubscription{kinds: kinds, changes: make(chan struct{}, 1)}
+}
+
+func (f *fakeSubscription) Kinds() []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	out := make([]string, len(f.kinds))
+	copy(out, f.kinds)
+	return out
+}
+
+func (f *fakeSubscription) Changes() (<-chan struct{}, func()) {
+	return f.changes, func() {}
+}
+
+func (f *fakeSubscription) set(kinds ...string) {
+	f.mu.Lock()
+	f.kinds = kinds
+	f.mu.Unlock()
+	select {
+	case f.changes <- struct{}{}:
+	default:
+	}
+}
+
 func TestStoredObjectEventsAdapterDispatchesUntilEOF(t *testing.T) {
 	handler := &capturingEventHandler{}
-	adapter := newStoredObjectEventsSDKAdapter(handler)
+	adapter := newStoredObjectEventsSDKAdapter(handler, nil)
 
 	stream := &fakeEventStream{
 		ctx:    context.Background(),
@@ -125,17 +191,18 @@ func TestStoredObjectEventsAdapterDispatchesUntilEOF(t *testing.T) {
 	close(stream.events)
 
 	require.NoError(t, adapter.StreamStoredObjectEvents(stream))
-	require.True(t, stream.closed)
 	require.Len(t, handler.events, 2)
 	require.Equal(t, StoredObjectEventCreated, handler.events[0].Type)
 	require.Equal(t, "Watchlist", handler.events[0].Kind)
 	require.Equal(t, "default", handler.events[0].PluginContext.Namespace)
 	require.Equal(t, StoredObjectEventDeleted, handler.events[1].Type)
+	// No subscription source: the plugin must stay silent on the stream.
+	require.Empty(t, stream.subscriptions())
 }
 
 func TestStoredObjectEventsAdapterPropagatesCancellation(t *testing.T) {
 	handler := &capturingEventHandler{}
-	adapter := newStoredObjectEventsSDKAdapter(handler)
+	adapter := newStoredObjectEventsSDKAdapter(handler, nil)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
@@ -146,13 +213,12 @@ func TestStoredObjectEventsAdapterPropagatesCancellation(t *testing.T) {
 
 	err := adapter.StreamStoredObjectEvents(stream)
 	require.ErrorIs(t, err, context.Canceled)
-	require.False(t, stream.closed)
 	require.Empty(t, handler.events)
 }
 
 func TestStoredObjectEventsAdapterStopsOnHandlerError(t *testing.T) {
 	handler := &capturingEventHandler{err: io.ErrUnexpectedEOF}
-	adapter := newStoredObjectEventsSDKAdapter(handler)
+	adapter := newStoredObjectEventsSDKAdapter(handler, nil)
 
 	stream := &fakeEventStream{
 		ctx:    context.Background(),
@@ -166,5 +232,69 @@ func TestStoredObjectEventsAdapterStopsOnHandlerError(t *testing.T) {
 
 	err := adapter.StreamStoredObjectEvents(stream)
 	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
-	require.False(t, stream.closed)
+}
+
+func TestStoredObjectEventsAdapterSendsInitialNonEmptySet(t *testing.T) {
+	handler := &capturingEventHandler{}
+	sub := newFakeSubscription("Watchlist", "ClusterRule")
+	adapter := newStoredObjectEventsSDKAdapter(handler, sub)
+
+	stream := &fakeEventStream{
+		ctx:    context.Background(),
+		events: make(chan *pluginv2.StoredObjectEvent),
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- adapter.StreamStoredObjectEvents(stream) }()
+
+	// The set desired at stream open is sent right away, sorted.
+	require.Eventually(t, func() bool {
+		subs := stream.subscriptions()
+		return len(subs) == 1 && slices.Equal(subs[0], []string{"ClusterRule", "Watchlist"})
+	}, 5*time.Second, 10*time.Millisecond)
+
+	close(stream.events)
+	require.NoError(t, <-done)
+}
+
+func TestStoredObjectEventsAdapterSubscriptionFlow(t *testing.T) {
+	handler := &capturingEventHandler{}
+	sub := newFakeSubscription()
+	adapter := newStoredObjectEventsSDKAdapter(handler, sub)
+
+	stream := &fakeEventStream{
+		ctx:    context.Background(),
+		events: make(chan *pluginv2.StoredObjectEvent),
+	}
+
+	done := make(chan error, 1)
+	go func() { done <- adapter.StreamStoredObjectEvents(stream) }()
+
+	// The desired set is empty at stream open: nothing may be sent until at
+	// least one kind is wanted.
+	time.Sleep(100 * time.Millisecond)
+	require.Empty(t, stream.subscriptions())
+
+	sub.set("Watchlist")
+	require.Eventually(t, func() bool {
+		subs := stream.subscriptions()
+		return len(subs) == 1 && slices.Equal(subs[0], []string{"Watchlist"})
+	}, 5*time.Second, 10*time.Millisecond)
+
+	// A change signal that leaves the set identical must not produce a
+	// duplicate update.
+	sub.set("Watchlist")
+	time.Sleep(100 * time.Millisecond)
+	require.Len(t, stream.subscriptions(), 1)
+
+	// After the first send, a transition to the empty set is sent: it pauses
+	// pushes without closing the stream.
+	sub.set()
+	require.Eventually(t, func() bool {
+		subs := stream.subscriptions()
+		return len(subs) == 2 && len(subs[1]) == 0
+	}, 5*time.Second, 10*time.Millisecond)
+
+	close(stream.events)
+	require.NoError(t, <-done)
 }

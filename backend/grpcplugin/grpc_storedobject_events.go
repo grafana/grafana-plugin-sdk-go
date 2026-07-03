@@ -42,7 +42,7 @@ type storedObjectEventsGRPCServer struct {
 	server StoredObjectEventsServer
 }
 
-func (s *storedObjectEventsGRPCServer) StreamStoredObjectEvents(stream grpc.ClientStreamingServer[pluginv2.StoredObjectEvent, pluginv2.StoredObjectEventsResponse]) error {
+func (s *storedObjectEventsGRPCServer) StreamStoredObjectEvents(stream grpc.BidiStreamingServer[pluginv2.StoredObjectEvent, pluginv2.StoredObjectEventsSubscription]) error {
 	return s.server.StreamStoredObjectEvents(stream)
 }
 
@@ -50,7 +50,7 @@ type storedObjectEventsGRPCClient struct {
 	client StoredObjectEventsClient
 }
 
-func (s *storedObjectEventsGRPCClient) StreamStoredObjectEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[pluginv2.StoredObjectEvent, pluginv2.StoredObjectEventsResponse], error) {
+func (s *storedObjectEventsGRPCClient) StreamStoredObjectEvents(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[pluginv2.StoredObjectEvent, pluginv2.StoredObjectEventsSubscription], error) {
 	return s.client.StreamStoredObjectEvents(ctx, opts...)
 }
 
