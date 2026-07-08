@@ -148,6 +148,17 @@ type Converter struct {
 	// InputColumnName is the case-sensitive name that must match the column that this converter matches
 	InputColumnName string
 
+	// InputTypeMatcher is an optional function that reports whether this converter applies to the
+	// column's database type name, as reported by sql.ColumnType.DatabaseTypeName (which may be
+	// empty for some drivers). It is consulted in addition to InputTypeName, InputTypeRegex and
+	// InputColumnName; the converter is selected if any of them match, and the first matching
+	// converter in the supplied slice wins. Use it for parameterized or nested types (e.g.
+	// ClickHouse "SimpleAggregateFunction(max, Float64)") where enumerating every permutation
+	// with InputTypeRegex is impractical. It is invoked once per column per result set, never per
+	// row, and is ignored by the Dynamic converter path. The database driver must be able to scan
+	// the wrapped type into this converter's InputScanType.
+	InputTypeMatcher func(dbType string) bool
+
 	// FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe
 	FrameConverter FrameConverter
 

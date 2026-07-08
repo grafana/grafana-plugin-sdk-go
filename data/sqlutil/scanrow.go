@@ -140,7 +140,8 @@ func (r *RowConverter) NewScannableRow() []any {
 
 func converterMatches(v Converter, dbType string, colName string) bool {
 	return (v.InputColumnName == colName && v.InputColumnName != "") ||
-		v.InputTypeName == dbType || (v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(dbType))
+		v.InputTypeName == dbType || (v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(dbType)) ||
+		(v.InputTypeMatcher != nil && v.InputTypeMatcher(dbType))
 }
 
 func columnType(colType *sql.ColumnType) *sql.ColumnType {

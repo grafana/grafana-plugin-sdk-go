@@ -7,6 +7,7 @@ import (
 	"errors"
 	"io"
 	"reflect"
+	"strings"
 	"sync"
 	"testing"
 
@@ -35,9 +36,10 @@ func (*baseRows) Close() error {
 type singleResultSet struct {
 	baseRows
 
-	rows       [][]interface{}
-	currentRow int
-	scanTypes  []reflect.Type
+	rows        [][]interface{}
+	currentRow  int
+	scanTypes   []reflect.Type
+	dbTypeNames []string
 }
 
 func (rows *singleResultSet) Next(dest []driver.Value) error {
@@ -57,6 +59,13 @@ func (rows *singleResultSet) ColumnTypeScanType(index int) reflect.Type {
 		return reflect.TypeFor[any]()
 	}
 	return rows.scanTypes[index]
+}
+
+func (rows *singleResultSet) ColumnTypeDatabaseTypeName(index int) string {
+	if index >= len(rows.dbTypeNames) {
+		return ""
+	}
+	return rows.dbTypeNames[index]
 }
 
 type multipleResultSets struct {
@@ -170,6 +179,24 @@ func makeSingleResultSetWithScanTypes(
 			rows:       data,
 			currentRow: -1,
 			scanTypes:  scanTypes,
+		},
+	}).Query("")
+	return rows
+}
+
+func makeSingleResultSetWithTypeNames(
+	columnNames []string,
+	dbTypeNames []string,
+	data ...[]interface{},
+) *sql.Rows {
+	rows, _ := sql.OpenDB(&fakeDB{
+		rows: &singleResultSet{
+			baseRows: baseRows{
+				columnNames: columnNames,
+			},
+			rows:        data,
+			currentRow:  -1,
+			dbTypeNames: dbTypeNames,
 		},
 	}).Query("")
 	return rows
@@ -541,6 +568,90 @@ func TestFrameFromRows(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestFrameFromRowsWithInputTypeMatcher(t *testing.T) {
+	// unwrap recursively strips ClickHouse-style wrapper types so a single
+	// converter per base type can match every wrapped permutation.
+	var unwrap func(dbType string) string
+	unwrap = func(dbType string) string {
+		const saf = "SimpleAggregateFunction("
+		const lc = "LowCardinality("
+		switch {
+		case strings.HasPrefix(dbType, lc) && strings.HasSuffix(dbType, ")"):
+			return unwrap(dbType[len(lc) : len(dbType)-1])
+		case strings.HasPrefix(dbType, saf) && strings.HasSuffix(dbType, ")"):
+			inner := dbType[len(saf) : len(dbType)-1]
+			depth := 0
+			for i, ch := range inner {
+				switch {
+				case ch == '(':
+					depth++
+				case ch == ')':
+					depth--
+				case ch == ',' && depth == 0:
+					return unwrap(strings.TrimSpace(inner[i+1:]))
+				}
+			}
+			return dbType
+		default:
+			return dbType
+		}
+	}
+	matcherFor := func(baseType string) func(string) bool {
+		return func(dbType string) bool {
+			return unwrap(dbType) == baseType
+		}
+	}
+
+	converters := []sqlutil.Converter{
+		{
+			Name:             "Float64",
+			InputScanType:    reflect.TypeOf(float64(0)),
+			InputTypeMatcher: matcherFor("Float64"),
+			FrameConverter: sqlutil.FrameConverter{
+				FieldType: data.FieldTypeFloat64,
+				ConverterFunc: func(in interface{}) (interface{}, error) {
+					return *(in.(*float64)), nil
+				},
+			},
+		},
+		{
+			Name:             "String",
+			InputScanType:    reflect.TypeOf(""),
+			InputTypeMatcher: matcherFor("String"),
+			FrameConverter: sqlutil.FrameConverter{
+				FieldType: data.FieldTypeString,
+				ConverterFunc: func(in interface{}) (interface{}, error) {
+					return *(in.(*string)), nil
+				},
+			},
+		},
+	}
+
+	rows := makeSingleResultSetWithTypeNames( //nolint:rowserrcheck
+		[]string{"saf", "nested", "lc", "plain"},
+		[]string{
+			"SimpleAggregateFunction(max, Float64)",
+			"SimpleAggregateFunction(anyLast, LowCardinality(Float64))",
+			"LowCardinality(String)",
+			"Float64",
+		},
+		[]interface{}{1.5, 2.5, "a", 3.5},
+		[]interface{}{4.5, 5.5, "b", 6.5},
+	)
+
+	frame, err := sqlutil.FrameFromRows(rows, 100, converters...)
+	require.NoError(t, err)
+	expected := &data.Frame{
+		Fields: []*data.Field{
+			data.NewField("saf", nil, []float64{1.5, 4.5}),
+			data.NewField("nested", nil, []float64{2.5, 5.5}),
+			data.NewField("lc", nil, []string{"a", "b"}),
+			data.NewField("plain", nil, []float64{3.5, 6.5}),
+		},
+	}
+	require.Equal(t, expected, frame)
 }
 
 func TestFrameFromRows_MultipleTimes(t *testing.T) {
