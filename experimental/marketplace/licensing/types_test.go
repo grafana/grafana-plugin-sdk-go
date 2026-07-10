@@ -146,7 +146,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			expErr:    errInvalidAppURL,
 		},
 		{
-			name: "With an blocked licenses ID",
+			name: "With a blocked license ID",
 			token: &LicenseToken{
 				LicenseId:      "12345",
 				Subject:        appURL,
