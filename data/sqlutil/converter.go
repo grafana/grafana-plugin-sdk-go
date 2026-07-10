@@ -15,13 +15,22 @@ import (
 var ErrorUnexpectedTypeConversion = errors.New("conversion error")
 
 // FrameConverter defines how to convert the scanned value into a value that can be put into a dataframe (OutputFieldType)
+//
+// Aliasing contract: FrameFromRows reuses a single scan buffer across all rows
+// for performance, so the storage that `in` points at is overwritten on every
+// row. A converter must therefore return either a value (not a pointer) or a
+// pointer to a freshly allocated copy. It must never return `in`, a pointer
+// into `*in`, or any pointer that otherwise aliases the scanned value — doing
+// so makes every appended row share one address and collapses the column to the
+// last row's value. The built-in converters all follow this rule.
 type FrameConverter struct {
 	// FieldType is the type that is created for the dataframe field.
 	// The returned value from `ConverterFunc` should match this type, otherwise the data package will panic.
 	FieldType data.FieldType
 	// ConverterFunc defines how to convert the scanned `InputScanType` to the supplied `FieldType`.
 	// `in` is always supplied as a pointer, as it is scanned as a pointer, even if `InputScanType` is not a pointer.
-	// For example, if `InputScanType` is `string`, then `in` is `*string`
+	// For example, if `InputScanType` is `string`, then `in` is `*string`.
+	// The returned value must not alias `in` (see the aliasing contract on FrameConverter).
 	ConverterFunc func(in interface{}) (interface{}, error)
 	// ConvertWithColumn is the same as ConverterFunc, but allows passing the column type
 	// useful when column attributes are needed during conversion
@@ -86,7 +95,14 @@ func StringFrameConverter(s StringConverter) FrameConverter {
 				return nil, nil
 			}
 
-			v := &ns.String
+			// Copy the scanned string into a fresh local. FrameFromRows reuses a
+			// single scan buffer across rows, so &ns.String points at storage that
+			// is overwritten on the next Scan. Returning that pointer (or one
+			// derived from it) would make every appended row alias the same address
+			// and collapse the column to the last row's value. Copying first makes
+			// the returned pointer unique per row.
+			str := ns.String
+			v := &str
 			if s.ConversionFunc != nil {
 				converted, err := s.ConversionFunc(v)
 				if err != nil {
@@ -144,14 +160,14 @@ type Converter struct {
 
 // DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
 func DefaultConverterFunc(t reflect.Type) func(in interface{}) (interface{}, error) {
+	// Precompute the expected pointer type once. This used to be computed on
+	// every cell via reflect.PointerTo(t) inside the returned closure, which
+	// dominates the per-row hot path of FrameFromRows on wide result sets.
+	expectedType := reflect.PointerTo(t)
 	return func(in interface{}) (interface{}, error) {
-		inType := reflect.TypeOf(in)
-		if inType == reflect.PointerTo(t) {
-			n := reflect.ValueOf(in)
-
-			return n.Elem().Interface(), nil
+		if reflect.TypeOf(in) == expectedType {
+			return reflect.ValueOf(in).Elem().Interface(), nil
 		}
-
 		return in, nil
 	}
 }

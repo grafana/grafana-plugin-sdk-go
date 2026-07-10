@@ -435,6 +435,7 @@ func defaultHandlerMiddlewares() []HandlerMiddleware {
 		NewMetricsMiddleware(prometheus.DefaultRegisterer, "grafana", false),
 		NewLoggerMiddleware(Logger, nil),
 		newHeaderMiddleware(),
+		NewAlertForwarderMiddleware(),
 		NewErrorSourceMiddleware(),
 	}
 }

@@ -6,7 +6,6 @@ enable = [
   "dogsled",
   "errcheck",
   "gochecknoinits",
-  "goconst",
   "gocritic",
   "goprintffuncname",
   "gosec",

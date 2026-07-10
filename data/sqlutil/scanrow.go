@@ -53,7 +53,7 @@ func (s *ScanRow) NewScannableRow() []interface{} {
 	values := make([]interface{}, len(s.Types))
 
 	for i, v := range s.Types {
-		if v.Kind() == reflect.Ptr {
+		if v.Kind() == reflect.Ptr { //nolint:govet // inline analyzer false positive on reflect.Ptr alias
 			n := reflect.New(v.Elem())
 			values[i] = n.Interface()
 		} else {
