@@ -2,6 +2,7 @@ package marketplace
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"os"
@@ -71,7 +72,7 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 
 	// Will return an error if the path is not found
 	val = os.Getenv(marketplaceLicensePathEnv)
-	if len(val) < 2 {
+	if len(val) == 0 {
 		if !validPluginID.MatchString(pluginId) {
 			return &licensing.LicenseToken{
 				Status: licensing.Invalid,
@@ -102,7 +103,7 @@ func runInvalidLicenseServer(pluginId string, verboseError error) error {
 		err:          err,
 		verboseError: verboseError,
 	}
-	return backend.Manage("invalid-license-server", backend.ServeOpts{
+	return backend.Manage(pluginId, backend.ServeOpts{
 		QueryDataHandler:   handler,
 		CheckHealthHandler: handler,
 	})
@@ -116,10 +117,21 @@ type invalidLicenseHandler struct {
 
 // CheckHealth checks if the plugin is running properly
 func (h *invalidLicenseHandler) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	details, err := json.Marshal(struct {
+		Message        string `json:"message"`
+		VerboseMessage string `json:"verboseMessage"`
+	}{
+		Message:        h.err.Error(),
+		VerboseMessage: strings.ReplaceAll(h.verboseError.Error(), "\n", " "),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("marshal marketplace license health details: %w", err)
+	}
+
 	return &backend.CheckHealthResult{
 		Status:      backend.HealthStatusError,
 		Message:     "Marketplace License Error",
-		JSONDetails: []byte(fmt.Sprintf(`{ "message": "%s",  "verboseMessage":"%s"  }`, h.err, strings.ReplaceAll(h.verboseError.Error(), "\n", " "))),
+		JSONDetails: details,
 	}, nil
 }
 
@@ -139,7 +151,7 @@ func (h *invalidLicenseHandler) QueryData(ctx context.Context, req *backend.Quer
 // try using it to prevent further errors.
 func fileExists(filename string) bool {
 	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
+	if err != nil {
 		return false
 	}
 	return !info.IsDir()

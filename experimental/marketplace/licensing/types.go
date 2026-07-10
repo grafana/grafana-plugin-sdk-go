@@ -100,7 +100,7 @@ func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId stri
 		return false
 	}
 
-	err = json.Unmarshal(payload, &token)
+	err = json.Unmarshal(payload, token)
 	if err != nil {
 		token.Status = Invalid
 		token.Error = fmt.Errorf("%w: %w", errParsing, err)
