@@ -79,7 +79,7 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 			}
 		}
 		// filepath.Base strips any path separators, protecting against path traversal attacks
-		licenseFileName := filepath.Base("marketplace-" + pluginId + ".jwt")
+		licenseFileName := filepath.Base("license-" + pluginId + ".jwt")
 		val = licenseFileName // default license path
 		if !fileExists(val) {
 			homedir, _ := os.UserHomeDir()
