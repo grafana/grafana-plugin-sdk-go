@@ -83,8 +83,9 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 		licenseFileName := filepath.Base("license-" + pluginId + ".jwt")
 		val = licenseFileName // default license path
 		if !fileExists(val) {
-			homedir, _ := os.UserHomeDir()
-			val = filepath.Join(homedir, ".grafana", licenseFileName)
+			if homedir, err := os.UserHomeDir(); err == nil && homedir != "" {
+				val = filepath.Join(homedir, ".grafana", licenseFileName)
+			}
 		}
 	}
 	backend.Logger.Debug("Loading license from file", "path", val)
