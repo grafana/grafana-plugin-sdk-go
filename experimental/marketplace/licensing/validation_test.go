@@ -2,6 +2,7 @@ package licensing
 
 import (
 	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -13,6 +14,7 @@ const (
 	testPluginID  = "grafana-marketplacetest-datasource"
 	testProductID = "marketplace-" + testPluginID
 	appURL        = "http://grafana.mycompany.com"
+	expiredJWT    = `eyJhbGciOiJSUzUxMiIsImtpZCI6InRlc3RzIiwidHlwIjoiSldUIn0.eyJqdGkiOiIxNzczODIxMTMxIiwiaXNzIjoiaHR0cHM6Ly9ncmFmYW5hLmNvbSIsInN1YiI6Imh0dHA6Ly9ncmFmYW5hLm15Y29tcGFueS5jb20iLCJpYXQiOjEzMzYsImV4cCI6MTMzNywibmJmIjoxMzM2LCJsZXhwIjoxMzM3LCJsaWQiOiIzMjcxMTA0OTYiLCJwcm9kIjpbIm1hcmtldHBsYWNlLWdyYWZhbmEtbWFya2V0cGxhY2V0ZXN0LWRhdGFzb3VyY2UiXSwicHJpY2luZ19tb2RlbCI6InVzYWdlIiwicmV2ZW51ZV9zaGFyZV9wY3QiOjcwLCJjb21wYW55IjoibXljb21wYW55In0.MVhD6BdpWZGYy69cghkDjNffO_Rn96MhLqTYLu1grzZTbaIvTpUmTKWaAvOtTqyUc6VOJuq3CcVoAPYpzcnI8DOoIIy4migF6tod1gKwPEFX3kKUDFRx-uN18mI0iYLeXESH7Y3xgISSPN6JOdVk4DCcKKmiTeDN84uTph6QF01tojan_N17y78t6x8GRfCWNap9uD8D96nrZABCteuGYklPOnzpGuNfqG7I8O7Fya5FkYfdo9NQHHHWsjir1QTU9DfPeeUqdVC0oC1Y88uKMbc4pyzw7Cx4dXb3seWdc7YJgarSWdyowpH4r8GZVpPyxpOD_wV9Y7dHW0yNtZagH1yNDoJeIaD18IfrMZoWKBWSGpcjn6Xq95opOx2uv_wNPVRBapH4pUP9VXUDZCA5YeZRara-fhBtVPM3pe2CwjCMVv1rHjhphF-QzMfvNY4WLvY1Ch2ZgiHAxSNvCTCgOO9tBDSF5ZdGBjm1CccTzswB4Q2FONT4IOWfrGZSUN4SesYreqKoVc1DtPb43NdZlr0XWx8frx6l6R-jjdteqGC513QBJlK8roI8bZRbAAj0tOatug5s8jnpbfa21bEefXwOaEwpvbzfMirRTy0Va1F134ojs6A_QqIuJiiMonCwtM68uNxdNi_fQoXAEoj5cO1I71wWJt7v6iKsdvfZBxs` // trufflehog:ignore
 )
 
 // Both the private key and the publicKey below have been generated using:
@@ -81,6 +83,8 @@ var publicKey = `{"kty":"RSA","kid":"tests","alg":"RS512","n":"nyfvbGABIlwfGVxvS
 
 func TestLoadTokenFromFile(t *testing.T) {
 	useTestKey(t)
+	expiredTokenPath := filepath.Join(t.TempDir(), "license.jwt")
+	require.NoError(t, os.WriteFile(expiredTokenPath, []byte(expiredJWT), 0o600))
 
 	tests := []struct {
 		name           string
@@ -102,7 +106,7 @@ func TestLoadTokenFromFile(t *testing.T) {
 			// generated with:
 			// cd grafana-catalog-team/scripts/marketplace/genjwk
 			// go run main.go -company mycompany -priv-key ../genjwk/priv-key.json -products marketplace-grafana-marketplacetest-datasource -subject http://grafana.mycompany.com -expiry 1337
-			tokenPath:      "./test-licenses/expired/license.jwt",
+			tokenPath:      expiredTokenPath,
 			status:         Expired,
 			expErr:         errLicenseExpired,
 			expErrContains: time.Unix(1577854800, 0).String(),
@@ -195,10 +199,8 @@ func TestLoadValidationKeys(t *testing.T) {
 
 func createValidToken(t *testing.T) *LicenseToken {
 	t.Helper()
-	raw, err := os.ReadFile("./test-licenses/expired/license.jwt")
-	require.NoError(t, err)
 	return &LicenseToken{
-		Raw:             string(raw),
+		Raw:             expiredJWT,
 		Status:          Valid,
 		Error:           nil,
 		Id:              "14",
