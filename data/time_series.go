@@ -227,7 +227,9 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		return nil, ErrorInputFieldsWithoutRowsWideSeries
 	}
 
-	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
+	wideTimeField := NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{})
+	wideTimeField.Config = longFrame.Fields[tsSchema.TimeIndex].Config
+	wideFrame := NewFrame(longFrame.Name, wideTimeField)
 	wideFrame.Meta = longFrame.Meta
 
 	sortKeys := make([]string, len(tsSchema.FactorIndices))
@@ -371,7 +373,7 @@ func (p *longRowProcessor) process(longRowIdx int) error {
 				// because some cells can be null
 				newWideField = NewFieldFromFieldType(longField.Type().NullableType(), p.wideFrameRowCounter+1)
 			}
-			newWideField.Name, newWideField.Labels = longField.Name, labels
+			newWideField.Name, newWideField.Labels, newWideField.Config = longField.Name, labels, longField.Config
 			p.wideFrame.Fields = append(p.wideFrame.Fields, newWideField)
 
 			fillVal, err := GetMissing(p.fillMissing, newWideField, p.wideFrameRowCounter-1)

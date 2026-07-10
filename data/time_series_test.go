@@ -1058,6 +1058,39 @@ func TestLongToWide(t *testing.T) {
 	}
 }
 
+func TestLongToWidePreservesFieldConfig(t *testing.T) {
+	valueConfig := &data.FieldConfig{
+		Unit: "short",
+		TypeConfig: &data.FieldTypeConfig{
+			Enum: &data.EnumFieldConfig{Text: []string{"INFO", "ERROR"}},
+		},
+	}
+	timeConfig := &data.FieldConfig{DisplayName: "Timestamp"}
+
+	long := data.NewFrame("logs",
+		data.NewField("Time", nil, []time.Time{
+			time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+			time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+		}).SetConfig(timeConfig),
+		data.NewField("severity", nil, []data.EnumItemIndex{0, 1}).SetConfig(valueConfig),
+		data.NewField("host", nil, []string{"a", "a"}),
+	)
+
+	wide, err := data.LongToWide(long, nil)
+	require.NoError(t, err)
+
+	require.Equal(t, timeConfig, wide.Fields[0].Config, "time field config should be preserved")
+
+	found := false
+	for _, f := range wide.Fields {
+		if f.Name == "severity" {
+			found = true
+			require.Equal(t, valueConfig, f.Config, "value field config (the enum name map) should be preserved")
+		}
+	}
+	require.True(t, found, "expected a wide severity field")
+}
+
 func TestLongToWideBool(t *testing.T) {
 	tests := []struct {
 		name          string
