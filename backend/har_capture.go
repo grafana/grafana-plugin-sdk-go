@@ -76,20 +76,22 @@ func drainRequestBody(req *http.Request) ([]byte, bool) {
 }
 
 // readAndRestoreBody reads up to maxCapturedBodyBytes of rc for capture and returns those bytes,
-// whether the body was longer than the cap (truncated), and a ReadCloser that hands the original
-// consumer the full body -- the captured prefix followed by the untouched, lazily-streamed remainder
-// -- so capture never buffers more than the cap regardless of how large the body is. When the read
-// fails partway (e.g. this SDK's ResponseLimitMiddleware deliberately errors past a size cap, or a
-// transient network error), the captured bytes are what was read so far and the replay reader
-// re-surfaces the same error after them, exactly what downstream would have observed. rc is closed
-// once the returned ReadCloser is closed (or immediately when there is no remainder to stream).
+// whether the captured bytes are NOT the complete body (sizeUnknown -- the body exceeded the cap, or
+// the read failed part-way, so its true size is unavailable), and a ReadCloser that hands the
+// original consumer the full body -- the captured prefix followed by the untouched, lazily-streamed
+// remainder -- so capture never buffers more than the cap regardless of how large the body is. When
+// the read fails partway (e.g. this SDK's ResponseLimitMiddleware deliberately errors past a size
+// cap, or a transient network error), the captured bytes are what was read so far and the replay
+// reader re-surfaces the same error after them, exactly what downstream would have observed. rc is
+// closed once the returned ReadCloser is closed (or immediately when there is no remainder to stream).
 func readAndRestoreBody(rc io.ReadCloser) ([]byte, bool, io.ReadCloser) {
 	// Read one byte past the cap so a full body (<= cap) can be told from a truncated one (> cap)
 	// without buffering the whole thing.
 	buf, err := io.ReadAll(io.LimitReader(rc, maxCapturedBodyBytes+1))
 	if err != nil {
+		// Read failed part-way: we hold a partial prefix and the true size is unavailable.
 		_ = rc.Close()
-		return buf, false, &errorReader{r: bytes.NewReader(buf), err: err}
+		return buf, true, &errorReader{r: bytes.NewReader(buf), err: err}
 	}
 	if int64(len(buf)) <= maxCapturedBodyBytes {
 		// Whole body fit within the cap; nothing left in rc.
