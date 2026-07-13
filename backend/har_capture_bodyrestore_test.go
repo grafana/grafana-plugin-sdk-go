@@ -1,9 +1,12 @@
 package backend
 
 import (
+	"bytes"
+	"encoding/base64"
 	"errors"
 	"io"
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 )
@@ -93,5 +96,66 @@ func TestBuildSDKHAREntry_multiValuedHeadersAndQuery(t *testing.T) {
 	}
 	if len(aValues) != 2 {
 		t.Errorf("both values of query param a must be captured, got %v", aValues)
+	}
+}
+
+// TestBuildSDKHAREntry_binaryBodyBase64 asserts a non-UTF-8 response body is base64-encoded with
+// encoding="base64", rather than corrupted to U+FFFD by json.Marshal.
+func TestBuildSDKHAREntry_binaryBodyBase64(t *testing.T) {
+	binary := []byte{0x00, 0x01, 0xff, 0xfe, 0x80}
+	req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(binary))}
+
+	entry := buildSDKHAREntry(req, nil, resp, time.Now(), time.Millisecond)
+
+	if entry.Response.Content.Encoding != "base64" {
+		t.Fatalf("non-UTF-8 body must be marked encoding=base64, got %q", entry.Response.Content.Encoding)
+	}
+	if entry.Response.Content.Text != base64.StdEncoding.EncodeToString(binary) {
+		t.Errorf("body not base64-encoded: %q", entry.Response.Content.Text)
+	}
+	if entry.Response.Content.Size != int64(len(binary)) {
+		t.Errorf("content size = %d, want %d (true byte length)", entry.Response.Content.Size, len(binary))
+	}
+}
+
+// TestSDKHARCaptureBuffer_totalSizeCap asserts that once the cumulative retained body budget is
+// exceeded, later entries keep their metadata/sizes but drop the body text.
+func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
+	buf := newSDKHARCaptureBuffer()
+	big := strings.Repeat("a", maxCapturedBodyBytes) // one per-body-capped chunk each
+
+	// Enough entries to blow past the total budget.
+	for i := 0; i < (maxCapturedTotalBytes/maxCapturedBodyBytes)+2; i++ {
+		req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(strings.NewReader(big))}
+		buf.addEntry(req, nil, resp, time.Now(), time.Millisecond)
+	}
+
+	var total int
+	var droppedText, keptTrueSize bool
+	for _, e := range buf.entries {
+		total += len(e.Response.Content.Text)
+		if e.Response.Content.Text == "" && e.Response.Content.Size == int64(len(big)) {
+			droppedText = true // metadata/size preserved, text dropped
+		}
+		if e.Response.Content.Size == int64(len(big)) {
+			keptTrueSize = true
+		}
+	}
+	if total > maxCapturedTotalBytes+2*maxCapturedBodyBytes {
+		t.Errorf("retained body text %d exceeds the cap budget", total)
+	}
+	if !droppedText {
+		t.Error("expected later entries to drop body text once over the total budget")
+	}
+	if !keptTrueSize {
+		t.Error("true body size must be preserved even when text is dropped")
 	}
 }

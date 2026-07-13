@@ -2,18 +2,31 @@ package backend
 
 import (
 	"bytes"
+	"encoding/base64"
 	"encoding/json"
 	"io"
 	"net/http"
 	"sync"
 	"time"
+	"unicode/utf8"
+)
+
+const (
+	// maxCapturedBodyBytes caps how much of any single request/response body is retained in the HAR
+	// (the true, uncapped size is still recorded in bodySize/content.size). maxCapturedTotalBytes
+	// caps the total retained across all entries in one request. Together they stop a heavy or
+	// high-traffic datasource -- exactly what an operator is diagnosing -- from ballooning plugin
+	// memory or pushing the __har__ response frame past the plugin<->core gRPC message size limit.
+	maxCapturedBodyBytes  = 8 << 20  // 8 MiB
+	maxCapturedTotalBytes = 32 << 20 // 32 MiB
 )
 
 // sdkHARCaptureBuffer collects HTTP request/response pairs in HAR 1.2 format in memory.
 // Used by the SDK HAR capture middleware to accumulate traffic from external plugin HTTP clients.
 type sdkHARCaptureBuffer struct {
-	mu      sync.Mutex
-	entries []sdkHAREntry
+	mu       sync.Mutex
+	entries  []sdkHAREntry
+	retained int64 // running total of retained body text bytes, for the total-size cap
 }
 
 func newSDKHARCaptureBuffer() *sdkHARCaptureBuffer {
@@ -23,8 +36,26 @@ func newSDKHARCaptureBuffer() *sdkHARCaptureBuffer {
 func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *http.Response, started time.Time, elapsed time.Duration) {
 	entry := buildSDKHAREntry(req, reqBody, resp, started, elapsed)
 	b.mu.Lock()
+	defer b.mu.Unlock()
+	// Enforce the cumulative retained-body budget: once the request's captured bodies exceed
+	// maxCapturedTotalBytes, keep the entry's metadata (headers, sizes, timings) but drop its body
+	// text so the __har__ frame can't grow without bound. Per-body truncation already happened in
+	// buildSDKHAREntry, so a single entry adds at most 2*maxCapturedBodyBytes here.
+	entryBytes := int64(len(entry.Response.Content.Text))
+	if entry.Request.PostData != nil {
+		entryBytes += int64(len(entry.Request.PostData.Text))
+	}
+	if b.retained >= maxCapturedTotalBytes {
+		entry.Response.Content.Text = ""
+		entry.Response.Content.Encoding = ""
+		if entry.Request.PostData != nil {
+			entry.Request.PostData.Text = ""
+			entry.Request.PostData.Encoding = ""
+		}
+	} else {
+		b.retained += entryBytes
+	}
 	b.entries = append(b.entries, entry)
-	b.mu.Unlock()
 }
 
 // drainRequestBody reads and returns the request body, restoring it so the request can still be
@@ -164,12 +195,32 @@ type sdkHARCache struct{}
 type sdkHARPostData struct {
 	MimeType string `json:"mimeType"`
 	Text     string `json:"text"`
+	// Encoding is "base64" when Text is a base64 encoding of a non-UTF-8 body. HAR 1.2 defines
+	// encoding only on response content, so this is an extension; canonical HAR parsers ignore it.
+	Encoding string `json:"encoding,omitempty"`
 }
 
 type sdkHARContent struct {
 	Size     int64  `json:"size"`
 	MimeType string `json:"mimeType"`
 	Text     string `json:"text"`
+	// Encoding is "base64" when Text is a base64 encoding of a non-UTF-8 body (HAR 1.2 content.encoding).
+	Encoding string `json:"encoding,omitempty"`
+}
+
+// encodeBody renders a body for a HAR text field. It base64-encodes when the bytes are not valid
+// UTF-8, so binary payloads (protobuf, images, ...) survive json.Marshal instead of being silently
+// corrupted to U+FFFD, and caps the retained bytes at maxCapturedBodyBytes. The caller records the
+// true, uncapped size separately (bodySize/content.size).
+func encodeBody(body []byte) (text, encoding string) {
+	keep := body
+	if len(keep) > maxCapturedBodyBytes {
+		keep = keep[:maxCapturedBodyBytes]
+	}
+	if utf8.Valid(keep) {
+		return string(keep), ""
+	}
+	return base64.StdEncoding.EncodeToString(keep), "base64"
 }
 
 type sdkHARTimings struct {
@@ -193,9 +244,11 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, st
 	var postData *sdkHARPostData
 	reqBodySize := int64(len(reqBody))
 	if len(reqBody) > 0 {
+		text, encoding := encodeBody(reqBody)
 		postData = &sdkHARPostData{
 			MimeType: req.Header.Get("Content-Type"),
-			Text:     string(reqBody),
+			Text:     text,
+			Encoding: encoding,
 		}
 	}
 
@@ -212,11 +265,13 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, st
 			// response the plugin actually receives (see readAndRestoreBody).
 			body, restored := readAndRestoreBody(resp.Body)
 			resp.Body = restored
+			text, encoding := encodeBody(body)
 			harResp.BodySize = int64(len(body))
 			harResp.Content = sdkHARContent{
 				Size:     int64(len(body)),
 				MimeType: resp.Header.Get("Content-Type"),
-				Text:     string(body),
+				Text:     text,
+				Encoding: encoding,
 			}
 		}
 	}
