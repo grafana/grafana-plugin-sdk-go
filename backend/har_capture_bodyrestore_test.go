@@ -144,6 +144,52 @@ func TestBuildSDKHAREntry_transportError(t *testing.T) {
 	}
 }
 
+// TestReadAndRestoreBody_capsCaptureButDeliversFullBody asserts a body larger than the per-body cap
+// is only partially buffered for capture, yet the original consumer still receives every byte.
+func TestReadAndRestoreBody_capsCaptureButDeliversFullBody(t *testing.T) {
+	full := bytes.Repeat([]byte("x"), maxCapturedBodyBytes+4096)
+
+	captured, truncated, restored := readAndRestoreBody(io.NopCloser(bytes.NewReader(full)))
+
+	if !truncated {
+		t.Fatal("a body larger than the cap must be reported as truncated")
+	}
+	if len(captured) != maxCapturedBodyBytes {
+		t.Errorf("captured %d bytes, want the cap %d (capture must not buffer the whole body)", len(captured), maxCapturedBodyBytes)
+	}
+
+	got, err := io.ReadAll(restored)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != len(full) {
+		t.Errorf("consumer received %d bytes, want the full %d", len(got), len(full))
+	}
+	if err := restored.Close(); err != nil {
+		t.Errorf("Close: %v", err)
+	}
+}
+
+// TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize asserts an over-cap response reports bodySize
+// -1 (HAR "unavailable") since the true length isn't known, while content still holds the prefix.
+func TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize(t *testing.T) {
+	full := bytes.Repeat([]byte("y"), maxCapturedBodyBytes+4096)
+	req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(full))}
+
+	entry := buildSDKHAREntry(req, nil, resp, nil, time.Now(), time.Millisecond)
+
+	if entry.Response.BodySize != -1 {
+		t.Errorf("truncated body bodySize = %d, want -1 (unknown)", entry.Response.BodySize)
+	}
+	if entry.Response.Content.Size != int64(maxCapturedBodyBytes) {
+		t.Errorf("content size = %d, want the captured prefix length %d", entry.Response.Content.Size, maxCapturedBodyBytes)
+	}
+}
+
 // TestSDKHARCaptureBuffer_totalSizeCap asserts that once the cumulative retained body budget is
 // exceeded, later entries keep their metadata/sizes but drop the body text.
 func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {

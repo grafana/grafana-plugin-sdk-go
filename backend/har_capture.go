@@ -12,11 +12,13 @@ import (
 )
 
 const (
-	// maxCapturedBodyBytes caps how much of any single request/response body is retained in the HAR
-	// (the true, uncapped size is still recorded in bodySize/content.size). maxCapturedTotalBytes
-	// caps the total retained across all entries in one request. Together they stop a heavy or
-	// high-traffic datasource -- exactly what an operator is diagnosing -- from ballooning plugin
-	// memory or pushing the __har__ response frame past the plugin<->core gRPC message size limit.
+	// maxCapturedBodyBytes caps how much of any single request/response body is read into memory and
+	// retained in the HAR; the untouched remainder is streamed on to the real consumer rather than
+	// buffered (see readAndRestoreBody), so capture never holds more than this per body.
+	// maxCapturedTotalBytes caps the total retained across all entries in one request. Together they
+	// stop a heavy or high-traffic datasource -- exactly what an operator is diagnosing -- from
+	// ballooning plugin memory or pushing the __har__ response frame past the plugin<->core gRPC
+	// message size limit.
 	maxCapturedBodyBytes  = 8 << 20  // 8 MiB
 	maxCapturedTotalBytes = 32 << 20 // 32 MiB
 )
@@ -58,32 +60,46 @@ func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *
 	b.entries = append(b.entries, entry)
 }
 
-// drainRequestBody reads and returns the request body, restoring it so the request can still be
-// sent. It must be called before the request is sent: a real http.Transport consumes (and closes)
-// req.Body while sending, so reading it afterwards yields nothing. Returns nil when there is no
-// body.
+// drainRequestBody reads and returns the request body (up to the capture cap), restoring it so the
+// request can still be sent. It must be called before the request is sent: a real http.Transport
+// consumes (and closes) req.Body while sending, so reading it afterwards yields nothing. Returns nil
+// when there is no body. (Request bodies are query payloads and rarely exceed the cap, so truncation
+// is not reflected in the request bodySize.)
 func drainRequestBody(req *http.Request) []byte {
 	if req == nil || req.Body == nil || req.Body == http.NoBody {
 		return nil
 	}
-	body, restored := readAndRestoreBody(req.Body)
+	body, _, restored := readAndRestoreBody(req.Body)
 	req.Body = restored
 	return body
 }
 
-// readAndRestoreBody reads rc fully for capture and returns the bytes read together with a
-// ReadCloser that replays them to the original consumer, so capture never alters what the plugin
-// sees. When the read fails partway (e.g. this SDK's ResponseLimitMiddleware deliberately errors
-// past a size cap, or a transient network error), the returned bytes are what was read so far and
-// the replay reader re-surfaces the same error after those bytes -- exactly what downstream would
-// have observed without capture. rc is closed.
-func readAndRestoreBody(rc io.ReadCloser) ([]byte, io.ReadCloser) {
-	body, err := io.ReadAll(rc)
-	_ = rc.Close()
+// readAndRestoreBody reads up to maxCapturedBodyBytes of rc for capture and returns those bytes,
+// whether the body was longer than the cap (truncated), and a ReadCloser that hands the original
+// consumer the full body -- the captured prefix followed by the untouched, lazily-streamed remainder
+// -- so capture never buffers more than the cap regardless of how large the body is. When the read
+// fails partway (e.g. this SDK's ResponseLimitMiddleware deliberately errors past a size cap, or a
+// transient network error), the captured bytes are what was read so far and the replay reader
+// re-surfaces the same error after them, exactly what downstream would have observed. rc is closed
+// once the returned ReadCloser is closed (or immediately when there is no remainder to stream).
+func readAndRestoreBody(rc io.ReadCloser) ([]byte, bool, io.ReadCloser) {
+	// Read one byte past the cap so a full body (<= cap) can be told from a truncated one (> cap)
+	// without buffering the whole thing.
+	buf, err := io.ReadAll(io.LimitReader(rc, maxCapturedBodyBytes+1))
 	if err != nil {
-		return body, &errorReader{r: bytes.NewReader(body), err: err}
+		_ = rc.Close()
+		return buf, false, &errorReader{r: bytes.NewReader(buf), err: err}
 	}
-	return body, io.NopCloser(bytes.NewReader(body))
+	if int64(len(buf)) <= maxCapturedBodyBytes {
+		// Whole body fit within the cap; nothing left in rc.
+		_ = rc.Close()
+		return buf, false, io.NopCloser(bytes.NewReader(buf))
+	}
+	// Body is larger than the cap: retain only the capped prefix for the HAR, but let the consumer
+	// read the full buffered head (buf, which is cap+1 bytes) followed by the untouched remainder
+	// streamed lazily from rc, so we never buffer the whole body.
+	captured := buf[:maxCapturedBodyBytes]
+	return captured, true, &bodyRemainder{r: io.MultiReader(bytes.NewReader(buf), rc), c: rc}
 }
 
 // errorReader replays buffered bytes and then returns err in place of io.EOF, reproducing a body
@@ -102,6 +118,16 @@ func (e *errorReader) Read(p []byte) (int, error) {
 }
 
 func (e *errorReader) Close() error { return nil }
+
+// bodyRemainder is a ReadCloser over a size-capped body: it replays the buffered prefix and streams
+// the untouched remainder, closing the underlying body on Close so the connection is released.
+type bodyRemainder struct {
+	r io.Reader
+	c io.Closer
+}
+
+func (b *bodyRemainder) Read(p []byte) (int, error) { return b.r.Read(p) }
+func (b *bodyRemainder) Close() error               { return b.c.Close() }
 
 func (b *sdkHARCaptureBuffer) len() int {
 	b.mu.Lock()
@@ -268,10 +294,15 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, rt
 		if resp.Body != nil {
 			// Always restore resp.Body -- even on a read error -- so capturing never truncates the
 			// response the plugin actually receives (see readAndRestoreBody).
-			body, restored := readAndRestoreBody(resp.Body)
+			body, truncated, restored := readAndRestoreBody(resp.Body)
 			resp.Body = restored
 			text, encoding := encodeBody(body)
+			// When the body exceeded the capture cap we hold only a prefix, so the true size is
+			// unknown: report -1 (HAR "unavailable") for bodySize; content.size is what we captured.
 			harResp.BodySize = int64(len(body))
+			if truncated {
+				harResp.BodySize = -1
+			}
 			harResp.Content = sdkHARContent{
 				Size:     int64(len(body)),
 				MimeType: resp.Header.Get("Content-Type"),
