@@ -139,6 +139,9 @@ func TestBuildSDKHAREntry_transportError(t *testing.T) {
 	if entry.Response.Status != 0 {
 		t.Errorf("no-response entry must have zero status, got %d", entry.Response.Status)
 	}
+	if entry.Response.BodySize != -1 {
+		t.Errorf("no-response entry must report bodySize -1 (unavailable), got %d", entry.Response.BodySize)
+	}
 	if !strings.Contains(entry.Comment, "connection refused") {
 		t.Errorf("transport error must be recorded in Comment, got %q", entry.Comment)
 	}

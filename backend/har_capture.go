@@ -12,13 +12,15 @@ import (
 )
 
 const (
-	// maxCapturedBodyBytes caps how much of any single request/response body is read into memory and
-	// retained in the HAR; the untouched remainder is streamed on to the real consumer rather than
-	// buffered (see readAndRestoreBody), so capture never holds more than this per body.
-	// maxCapturedTotalBytes caps the total retained across all entries in one request. Together they
-	// stop a heavy or high-traffic datasource -- exactly what an operator is diagnosing -- from
-	// ballooning plugin memory or pushing the __har__ response frame past the plugin<->core gRPC
-	// message size limit.
+	// maxCapturedBodyBytes caps how much of any single request/response body is read into memory for
+	// capture; the untouched remainder is streamed on to the real consumer rather than buffered (see
+	// readAndRestoreBody). maxCapturedTotalBytes caps the total body text retained across all entries
+	// in one request -- i.e. the size of the serialized __har__ frame -- keeping it well under the
+	// plugin<->core gRPC message size limit. Note this budget tracks retained HAR text only: while an
+	// over-cap body is still being streamed to the consumer, its capped head (up to
+	// maxCapturedBodyBytes) is also held transiently, so peak memory during capture can exceed the
+	// total budget by roughly that per concurrent over-cap response. Both are far below the
+	// unbounded full-body buffering capture would otherwise do.
 	maxCapturedBodyBytes  = 8 << 20  // 8 MiB
 	maxCapturedTotalBytes = 32 << 20 // 32 MiB
 )
@@ -287,7 +289,9 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 		}
 	}
 
-	harResp := sdkHARResponse{HeadersSize: -1}
+	// Default bodySize -1 ("unavailable" in HAR): when there is no response at all (a transport
+	// failure), an entry with bodySize 0 would misrepresent it as an empty body.
+	harResp := sdkHARResponse{HeadersSize: -1, BodySize: -1}
 	if resp != nil {
 		harResp.Status = resp.StatusCode
 		harResp.StatusText = resp.Status
@@ -295,6 +299,7 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 		harResp.Headers = sdkHeadersToNameValue(resp.Header)
 		harResp.Cookies = sdkCookies(resp.Cookies())
 		harResp.RedirectURL = resp.Header.Get("Location")
+		harResp.BodySize = 0 // have a response; 0 unless a body is read below
 		if resp.Body != nil {
 			// Always restore resp.Body -- even on a read error -- so capturing never truncates the
 			// response the plugin actually receives (see readAndRestoreBody).
