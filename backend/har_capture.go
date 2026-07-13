@@ -2,15 +2,12 @@ package backend
 
 import (
 	"bytes"
-	"context"
 	"encoding/json"
 	"io"
 	"net/http"
 	"sync"
 	"time"
 )
-
-type sdkHARCaptureKey struct{}
 
 // sdkHARCaptureBuffer collects HTTP request/response pairs in HAR 1.2 format in memory.
 // Used by the SDK HAR capture middleware to accumulate traffic from external plugin HTTP clients.
@@ -23,11 +20,6 @@ func newSDKHARCaptureBuffer() *sdkHARCaptureBuffer {
 	return &sdkHARCaptureBuffer{}
 }
 
-func withSDKHARCapture(ctx context.Context) (context.Context, *sdkHARCaptureBuffer) {
-	buf := newSDKHARCaptureBuffer()
-	return context.WithValue(ctx, sdkHARCaptureKey{}, buf), buf
-}
-
 func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *http.Response, started time.Time, elapsed time.Duration) {
 	entry := buildSDKHAREntry(req, reqBody, resp, started, elapsed)
 	b.mu.Lock()
@@ -38,19 +30,47 @@ func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *
 // drainRequestBody reads and returns the request body, restoring it so the request can still be
 // sent. It must be called before the request is sent: a real http.Transport consumes (and closes)
 // req.Body while sending, so reading it afterwards yields nothing. Returns nil when there is no
-// body or it can't be read.
+// body.
 func drainRequestBody(req *http.Request) []byte {
 	if req == nil || req.Body == nil || req.Body == http.NoBody {
 		return nil
 	}
-	body, err := io.ReadAll(req.Body)
-	if err != nil {
-		return nil
-	}
-	_ = req.Body.Close()
-	req.Body = io.NopCloser(bytes.NewReader(body))
+	body, restored := readAndRestoreBody(req.Body)
+	req.Body = restored
 	return body
 }
+
+// readAndRestoreBody reads rc fully for capture and returns the bytes read together with a
+// ReadCloser that replays them to the original consumer, so capture never alters what the plugin
+// sees. When the read fails partway (e.g. this SDK's ResponseLimitMiddleware deliberately errors
+// past a size cap, or a transient network error), the returned bytes are what was read so far and
+// the replay reader re-surfaces the same error after those bytes -- exactly what downstream would
+// have observed without capture. rc is closed.
+func readAndRestoreBody(rc io.ReadCloser) ([]byte, io.ReadCloser) {
+	body, err := io.ReadAll(rc)
+	_ = rc.Close()
+	if err != nil {
+		return body, &errorReader{r: bytes.NewReader(body), err: err}
+	}
+	return body, io.NopCloser(bytes.NewReader(body))
+}
+
+// errorReader replays buffered bytes and then returns err in place of io.EOF, reproducing a body
+// read that failed partway so capture doesn't hide the failure from the body's original consumer.
+type errorReader struct {
+	r   *bytes.Reader
+	err error
+}
+
+func (e *errorReader) Read(p []byte) (int, error) {
+	n, err := e.r.Read(p)
+	if err == io.EOF {
+		return n, e.err
+	}
+	return n, err
+}
+
+func (e *errorReader) Close() error { return nil }
 
 func (b *sdkHARCaptureBuffer) len() int {
 	b.mu.Lock()
@@ -165,7 +185,9 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, st
 	reqHeaders := sdkHeadersToNameValue(req.Header)
 	queryString := make([]sdkHARNameValue, 0, len(req.URL.Query()))
 	for k, vals := range req.URL.Query() {
-		queryString = append(queryString, sdkHARNameValue{Name: k, Value: vals[0]})
+		for _, v := range vals {
+			queryString = append(queryString, sdkHARNameValue{Name: k, Value: v})
+		}
 	}
 
 	var postData *sdkHARPostData
@@ -186,15 +208,15 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, st
 		harResp.Cookies = sdkCookies(resp.Cookies())
 		harResp.RedirectURL = resp.Header.Get("Location")
 		if resp.Body != nil {
-			body, err := io.ReadAll(resp.Body)
-			if err == nil {
-				resp.Body = io.NopCloser(bytes.NewReader(body))
-				harResp.BodySize = int64(len(body))
-				harResp.Content = sdkHARContent{
-					Size:     int64(len(body)),
-					MimeType: resp.Header.Get("Content-Type"),
-					Text:     string(body),
-				}
+			// Always restore resp.Body -- even on a read error -- so capturing never truncates the
+			// response the plugin actually receives (see readAndRestoreBody).
+			body, restored := readAndRestoreBody(resp.Body)
+			resp.Body = restored
+			harResp.BodySize = int64(len(body))
+			harResp.Content = sdkHARContent{
+				Size:     int64(len(body)),
+				MimeType: resp.Header.Get("Content-Type"),
+				Text:     string(body),
 			}
 		}
 	}
@@ -223,8 +245,9 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, st
 func sdkHeadersToNameValue(h http.Header) []sdkHARNameValue {
 	result := make([]sdkHARNameValue, 0, len(h))
 	for name, vals := range h {
-		if len(vals) > 0 {
-			result = append(result, sdkHARNameValue{Name: name, Value: vals[0]})
+		// Emit one entry per value so repeated headers (e.g. multiple Set-Cookie) are preserved.
+		for _, v := range vals {
+			result = append(result, sdkHARNameValue{Name: name, Value: v})
 		}
 	}
 	return result

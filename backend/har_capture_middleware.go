@@ -41,7 +41,7 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		return h.BaseHandler.QueryData(ctx, req)
 	}
 
-	ctx, buf := withSDKHARCapture(ctx)
+	buf := newSDKHARCaptureBuffer()
 
 	captureMW := httpclient.NamedMiddlewareFunc("sdk-har-capture", func(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 		return httpclient.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
