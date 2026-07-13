@@ -184,8 +184,10 @@ func TestHARCaptureMiddleware_capturesRequestBody(t *testing.T) {
 	assert.Equal(t, reqBody, postData["text"])
 }
 
-// TestHARCaptureMiddleware_appendsHARFrameOnQueryError asserts captured traffic is still returned
-// when QueryData fails -- a failing datasource call is exactly what diagnostics needs to capture.
+// TestHARCaptureMiddleware_appendsHARFrameOnQueryError asserts that when QueryData fails but traffic
+// was captured, the error is swallowed and carried inside the __har__ frame (queryError) instead of
+// returned. Returning a non-nil error would make the gRPC adapter discard the whole response, so the
+// captured traffic for a failed call would never reach Grafana.
 func TestHARCaptureMiddleware_appendsHARFrameOnQueryError(t *testing.T) {
 	wantErr := errors.New("datasource boom")
 	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
@@ -198,10 +200,13 @@ func TestHARCaptureMiddleware_appendsHARFrameOnQueryError(t *testing.T) {
 		Headers: map[string]string{"X-Grafana-HAR-Capture": "true"},
 	})
 
-	require.ErrorIs(t, err, wantErr, "the plugin's error must be preserved")
+	require.NoError(t, err, "error must be swallowed so the response survives the gRPC boundary")
 	require.NotNil(t, resp, "captured traffic must be returned even on error")
-	_, hasHARFrame := resp.Responses["__har__"]
-	assert.True(t, hasHARFrame, "expected __har__ frame despite QueryData error")
+	harResp, hasHARFrame := resp.Responses["__har__"]
+	require.True(t, hasHARFrame, "expected __har__ frame despite QueryData error")
+	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]interface{})
+	require.True(t, ok)
+	assert.Equal(t, wantErr.Error(), custom["queryError"], "the original error must be preserved in the frame")
 }
 
 // TestHARCaptureMiddleware_capturesFailedRoundTrip asserts a transport-level failure (no HTTP

@@ -47,14 +47,14 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		return httpclient.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 			// Capture the request body before RoundTrip: the transport drains r.Body while
 			// sending, so reading it afterwards would yield nothing for POST/PUT/PATCH calls.
-			reqBody := drainRequestBody(r)
+			reqBody, reqTruncated := drainRequestBody(r)
 			started := time.Now()
 			resp, err := next.RoundTrip(r)
 			elapsed := time.Since(started)
 			// Capture on failure too: a failed dial/timeout/TLS error is exactly the traffic a
 			// diagnostics tool needs to see. On error resp is nil, so the entry records the request
 			// and the error (in Comment) with a zero-status response.
-			buf.addEntry(r, reqBody, resp, err, started, elapsed)
+			buf.addEntry(r, reqBody, reqTruncated, resp, err, started, elapsed)
 			return resp, err
 		})
 	})
@@ -62,28 +62,35 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 
 	resp, err := h.BaseHandler.QueryData(ctx, req)
 
-	// Attach captured traffic even when QueryData returned an error: a failing datasource call is
-	// exactly the traffic diagnostics needs to see, so we must not discard the buffer on error.
-	// The plugin's own responses and error are preserved unchanged.
-	if buf.len() > 0 {
-		if harStr, serErr := buf.toHARString(); serErr == nil {
-			if resp == nil {
-				resp = &QueryDataResponse{Responses: make(Responses)}
-			}
-			if resp.Responses == nil {
-				resp.Responses = make(Responses)
-			}
-			harFrame := data.NewFrame(harResponseKey)
-			harFrame.Meta = &data.FrameMeta{
-				Custom: map[string]interface{}{
-					"har": harStr,
-				},
-			}
-			resp.Responses[harResponseKey] = DataResponse{
-				Frames: data.Frames{harFrame},
-			}
-		}
+	// Nothing captured: pass the plugin's result through untouched.
+	if buf.len() == 0 {
+		return resp, err
+	}
+	harStr, serErr := buf.toHARString()
+	if serErr != nil {
+		return resp, err
 	}
 
-	return resp, err
+	if resp == nil {
+		resp = &QueryDataResponse{Responses: make(Responses)}
+	}
+	if resp.Responses == nil {
+		resp.Responses = make(Responses)
+	}
+	custom := map[string]interface{}{"har": harStr}
+	if err != nil {
+		// Preserve the top-level error inside the frame. Returning a non-nil error here would make
+		// the SDK's gRPC adapter (data_adapter.go) discard the whole response -- including this
+		// __har__ frame -- so the captured traffic for a failed call would never reach Grafana. We
+		// instead carry the error across in the frame and return nil below; Grafana reads it back.
+		custom["queryError"] = err.Error()
+	}
+	harFrame := data.NewFrame(harResponseKey)
+	harFrame.Meta = &data.FrameMeta{Custom: custom}
+	resp.Responses[harResponseKey] = DataResponse{Frames: data.Frames{harFrame}}
+
+	// Return a nil error so the response (and the captured __har__ frame) survives the gRPC boundary.
+	// This only happens in capture mode (guarded by the X-Grafana-HAR-Capture header at the top), so
+	// normal query error semantics are unaffected; the original error is preserved in queryError.
+	return resp, nil
 }

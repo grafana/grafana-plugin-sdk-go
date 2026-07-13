@@ -47,7 +47,7 @@ func TestBuildSDKHAREntry_restoresBodyOnReadError(t *testing.T) {
 		Body:       &flakyBody{data: []byte("partial-body"), err: wantErr},
 	}
 
-	entry := buildSDKHAREntry(req, nil, resp, nil, time.Now(), time.Millisecond)
+	entry := buildSDKHAREntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
 
 	// The HAR entry captures whatever bytes were read before the error.
 	if entry.Response.Content.Text != "partial-body" {
@@ -74,7 +74,7 @@ func TestBuildSDKHAREntry_multiValuedHeadersAndQuery(t *testing.T) {
 	req.Header.Add("X-Multi", "one")
 	req.Header.Add("X-Multi", "two")
 
-	entry := buildSDKHAREntry(req, nil, &http.Response{Header: http.Header{}}, nil, time.Now(), time.Millisecond)
+	entry := buildSDKHAREntry(req, nil, false, &http.Response{Header: http.Header{}}, nil, time.Now(), time.Millisecond)
 
 	countHeader := func(pairs []sdkHARNameValue, name, value string) bool {
 		for _, p := range pairs {
@@ -109,7 +109,7 @@ func TestBuildSDKHAREntry_binaryBodyBase64(t *testing.T) {
 	}
 	resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(binary))}
 
-	entry := buildSDKHAREntry(req, nil, resp, nil, time.Now(), time.Millisecond)
+	entry := buildSDKHAREntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
 
 	if entry.Response.Content.Encoding != "base64" {
 		t.Fatalf("non-UTF-8 body must be marked encoding=base64, got %q", entry.Response.Content.Encoding)
@@ -131,7 +131,7 @@ func TestBuildSDKHAREntry_transportError(t *testing.T) {
 	}
 	rtErr := errors.New("dial tcp: connection refused")
 
-	entry := buildSDKHAREntry(req, nil, nil, rtErr, time.Now(), time.Millisecond)
+	entry := buildSDKHAREntry(req, nil, false, nil, rtErr, time.Now(), time.Millisecond)
 
 	if entry.Request.URL != "http://ds.example.com/q" {
 		t.Errorf("failed request must still be captured, got URL %q", entry.Request.URL)
@@ -180,7 +180,7 @@ func TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize(t *testing.T) {
 	}
 	resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(full))}
 
-	entry := buildSDKHAREntry(req, nil, resp, nil, time.Now(), time.Millisecond)
+	entry := buildSDKHAREntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
 
 	if entry.Response.BodySize != -1 {
 		t.Errorf("truncated body bodySize = %d, want -1 (unknown)", entry.Response.BodySize)
@@ -203,7 +203,7 @@ func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
 			t.Fatal(err)
 		}
 		resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(strings.NewReader(big))}
-		buf.addEntry(req, nil, resp, nil, time.Now(), time.Millisecond)
+		buf.addEntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
 	}
 
 	var total int

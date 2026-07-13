@@ -35,8 +35,8 @@ func newSDKHARCaptureBuffer() *sdkHARCaptureBuffer {
 	return &sdkHARCaptureBuffer{}
 }
 
-func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
-	entry := buildSDKHAREntry(req, reqBody, resp, rtErr, started, elapsed)
+func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
+	entry := buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed)
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	// Enforce the cumulative retained-body budget: once the request's captured bodies exceed
@@ -60,18 +60,17 @@ func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *
 	b.entries = append(b.entries, entry)
 }
 
-// drainRequestBody reads and returns the request body (up to the capture cap), restoring it so the
-// request can still be sent. It must be called before the request is sent: a real http.Transport
-// consumes (and closes) req.Body while sending, so reading it afterwards yields nothing. Returns nil
-// when there is no body. (Request bodies are query payloads and rarely exceed the cap, so truncation
-// is not reflected in the request bodySize.)
-func drainRequestBody(req *http.Request) []byte {
+// drainRequestBody reads and returns the request body (up to the capture cap) and whether it was
+// larger than the cap (truncated), restoring it so the request can still be sent. It must be called
+// before the request is sent: a real http.Transport consumes (and closes) req.Body while sending, so
+// reading it afterwards yields nothing. Returns nil when there is no body.
+func drainRequestBody(req *http.Request) ([]byte, bool) {
 	if req == nil || req.Body == nil || req.Body == http.NoBody {
-		return nil
+		return nil, false
 	}
-	body, _, restored := readAndRestoreBody(req.Body)
+	body, truncated, restored := readAndRestoreBody(req.Body)
 	req.Body = restored
-	return body
+	return body, truncated
 }
 
 // readAndRestoreBody reads up to maxCapturedBodyBytes of rc for capture and returns those bytes,
@@ -263,7 +262,7 @@ type sdkHARTimings struct {
 // from req.Body here, because by the time capture runs the transport has already drained the body.
 // rtErr is the RoundTrip error (nil on success): a transport-level failure (connection refused,
 // DNS/TLS error, timeout) leaves resp nil, and the entry records the error in Comment.
-func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) sdkHAREntry {
+func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) sdkHAREntry {
 	reqHeaders := sdkHeadersToNameValue(req.Header)
 	queryString := make([]sdkHARNameValue, 0, len(req.URL.Query()))
 	for k, vals := range req.URL.Query() {
@@ -274,6 +273,11 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, rt
 
 	var postData *sdkHARPostData
 	reqBodySize := int64(len(reqBody))
+	if reqTruncated {
+		// Only a capped prefix was read, so the true length is unknown: report -1 (HAR
+		// "unavailable"), symmetric with the response side.
+		reqBodySize = -1
+	}
 	if len(reqBody) > 0 {
 		text, encoding := encodeBody(reqBody)
 		postData = &sdkHARPostData{
