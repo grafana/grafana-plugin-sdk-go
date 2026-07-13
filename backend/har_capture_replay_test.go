@@ -38,7 +38,7 @@ func TestHARReplay_ThroughFixtureStorage(t *testing.T) {
 	capResp.Proto = "HTTP/1.1"
 
 	buf := newSDKHARCaptureBuffer()
-	buf.addEntry(capReq, capResp, time.Now(), 3*time.Millisecond)
+	buf.addEntry(capReq, []byte(reqBody), capResp, time.Now(), 3*time.Millisecond)
 	harStr, err := buf.toHARString()
 	if err != nil {
 		t.Fatal(err)
@@ -63,6 +63,7 @@ func TestHARReplay_ThroughFixtureStorage(t *testing.T) {
 	if resp == nil {
 		t.Fatal("fixture-proxy storage did NOT match/replay our HAR entry")
 	}
+	defer func() { _ = resp.Body.Close() }()
 	if resp.StatusCode != http.StatusOK {
 		t.Errorf("replayed status = %d, want 200", resp.StatusCode)
 	}

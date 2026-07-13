@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"testing"
@@ -34,7 +35,7 @@ func TestHARCaptureMiddleware_noHeader_passthrough(t *testing.T) {
 func TestHARCaptureMiddleware_withHeader_appendsHARFrame(t *testing.T) {
 	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
 	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		makeHTTPCall(ctx, t, "http://ds.example.com")
+		makeHTTPCall(ctx, t, http.MethodGet, "http://ds.example.com", nil)
 		return &backend.QueryDataResponse{Responses: backend.Responses{}}, nil
 	}
 
@@ -85,7 +86,7 @@ func TestHARCaptureMiddleware_oldPluginWithoutMiddleware_ignoresHeader(t *testin
 	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 		seenReq = req
 		// An old plugin may still make outbound HTTP calls; none should be captured.
-		makeHTTPCall(ctx, t, "http://ds.example.com")
+		makeHTTPCall(ctx, t, http.MethodGet, "http://ds.example.com", nil)
 		return &backend.QueryDataResponse{Responses: backend.Responses{"A": backend.DataResponse{}}}, nil
 	}
 
@@ -112,7 +113,7 @@ func TestHARCaptureMiddleware_nonTrueHeaderValues_noCapture(t *testing.T) {
 		t.Run("value="+value, func(t *testing.T) {
 			cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
 			cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-				makeHTTPCall(ctx, t, "http://ds.example.com")
+				makeHTTPCall(ctx, t, http.MethodGet, "http://ds.example.com", nil)
 				return &backend.QueryDataResponse{Responses: backend.Responses{}}, nil
 			}
 
@@ -131,7 +132,7 @@ func TestHARCaptureMiddleware_nonTrueHeaderValues_noCapture(t *testing.T) {
 func TestHARCaptureMiddleware_withHeader_preservesExistingResponses(t *testing.T) {
 	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
 	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-		makeHTTPCall(ctx, t, "http://ds.example.com")
+		makeHTTPCall(ctx, t, http.MethodGet, "http://ds.example.com", nil)
 		return &backend.QueryDataResponse{Responses: backend.Responses{
 			"A": {Error: nil},
 			"B": {Error: context.DeadlineExceeded},
@@ -155,11 +156,65 @@ func TestHARCaptureMiddleware_withHeader_preservesExistingResponses(t *testing.T
 	assert.ErrorIs(t, respB.Error, context.DeadlineExceeded)
 }
 
-// makeHTTPCall simulates a plugin making an outbound HTTP call using the contextual middleware chain.
-func makeHTTPCall(ctx context.Context, t *testing.T, url string) {
+// TestHARCaptureMiddleware_capturesRequestBody asserts the request body is captured for methods
+// that carry one: capture must read it before RoundTrip, since the transport drains r.Body while
+// sending (a GET-only test would not catch a regression here).
+func TestHARCaptureMiddleware_capturesRequestBody(t *testing.T) {
+	const reqBody = `{"query":"up"}`
+	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
+	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		makeHTTPCall(ctx, t, http.MethodPost, "http://ds.example.com/api/v1/query", bytes.NewBufferString(reqBody))
+		return &backend.QueryDataResponse{Responses: backend.Responses{}}, nil
+	}
+
+	resp, err := cdt.MiddlewareHandler.QueryData(context.Background(), &backend.QueryDataRequest{
+		Headers: map[string]string{"X-Grafana-HAR-Capture": "true"},
+	})
+	require.NoError(t, err)
+
+	harResp, ok := resp.Responses["__har__"]
+	require.True(t, ok, "expected __har__ frame in response")
+	custom := harResp.Frames[0].Meta.Custom.(map[string]interface{})
+	var doc map[string]interface{}
+	require.NoError(t, json.Unmarshal([]byte(custom["har"].(string)), &doc))
+	entries := doc["log"].(map[string]interface{})["entries"].([]interface{})
+	require.Len(t, entries, 1)
+	postData, ok := entries[0].(map[string]interface{})["request"].(map[string]interface{})["postData"].(map[string]interface{})
+	require.True(t, ok, "expected postData in captured request")
+	assert.Equal(t, reqBody, postData["text"])
+}
+
+// TestHARCaptureMiddleware_appendsHARFrameOnQueryError asserts captured traffic is still returned
+// when QueryData fails -- a failing datasource call is exactly what diagnostics needs to capture.
+func TestHARCaptureMiddleware_appendsHARFrameOnQueryError(t *testing.T) {
+	wantErr := errors.New("datasource boom")
+	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
+	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		makeHTTPCall(ctx, t, http.MethodGet, "http://ds.example.com", nil)
+		return nil, wantErr
+	}
+
+	resp, err := cdt.MiddlewareHandler.QueryData(context.Background(), &backend.QueryDataRequest{
+		Headers: map[string]string{"X-Grafana-HAR-Capture": "true"},
+	})
+
+	require.ErrorIs(t, err, wantErr, "the plugin's error must be preserved")
+	require.NotNil(t, resp, "captured traffic must be returned even on error")
+	_, hasHARFrame := resp.Responses["__har__"]
+	assert.True(t, hasHARFrame, "expected __har__ frame despite QueryData error")
+}
+
+// makeHTTPCall simulates a plugin making an outbound HTTP call using the contextual middleware
+// chain. The fake transport reads and discards the request body (as a real transport would), so
+// capture must read it before RoundTrip.
+func makeHTTPCall(ctx context.Context, t *testing.T, method, url string, body io.Reader) {
 	t.Helper()
 	mws := httpclient.ContextualMiddlewareFromContext(ctx)
 	var rt http.RoundTripper = httpclient.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		if r.Body != nil {
+			_, _ = io.ReadAll(r.Body)
+			_ = r.Body.Close()
+		}
 		return &http.Response{
 			StatusCode: 200,
 			Status:     "200 OK",
@@ -171,6 +226,9 @@ func makeHTTPCall(ctx context.Context, t *testing.T, url string) {
 	for _, mw := range mws {
 		rt = mw.CreateMiddleware(httpclient.Options{}, rt)
 	}
-	req, _ := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
-	_, _ = rt.RoundTrip(req)
+	req, _ := http.NewRequestWithContext(ctx, method, url, body)
+	resp, err := rt.RoundTrip(req)
+	if err == nil && resp != nil && resp.Body != nil {
+		_ = resp.Body.Close()
+	}
 }

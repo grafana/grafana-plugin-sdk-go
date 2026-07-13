@@ -45,11 +45,14 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 
 	captureMW := httpclient.NamedMiddlewareFunc("sdk-har-capture", func(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 		return httpclient.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+			// Capture the request body before RoundTrip: the transport drains r.Body while
+			// sending, so reading it afterwards would yield nothing for POST/PUT/PATCH calls.
+			reqBody := drainRequestBody(r)
 			started := time.Now()
 			resp, err := next.RoundTrip(r)
 			elapsed := time.Since(started)
 			if err == nil {
-				buf.addEntry(r, resp, started, elapsed)
+				buf.addEntry(r, reqBody, resp, started, elapsed)
 			}
 			return resp, err
 		})
@@ -57,35 +60,29 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	ctx = httpclient.WithContextualMiddleware(ctx, captureMW)
 
 	resp, err := h.BaseHandler.QueryData(ctx, req)
-	if err != nil {
-		return resp, err
+
+	// Attach captured traffic even when QueryData returned an error: a failing datasource call is
+	// exactly the traffic diagnostics needs to see, so we must not discard the buffer on error.
+	// The plugin's own responses and error are preserved unchanged.
+	if buf.len() > 0 {
+		if harStr, serErr := buf.toHARString(); serErr == nil {
+			if resp == nil {
+				resp = &QueryDataResponse{Responses: make(Responses)}
+			}
+			if resp.Responses == nil {
+				resp.Responses = make(Responses)
+			}
+			harFrame := data.NewFrame(harResponseKey)
+			harFrame.Meta = &data.FrameMeta{
+				Custom: map[string]interface{}{
+					"har": harStr,
+				},
+			}
+			resp.Responses[harResponseKey] = DataResponse{
+				Frames: data.Frames{harFrame},
+			}
+		}
 	}
 
-	if buf.len() == 0 {
-		return resp, nil
-	}
-
-	harStr, serErr := buf.toHARString()
-	if serErr != nil {
-		return resp, nil
-	}
-
-	if resp == nil {
-		resp = &QueryDataResponse{Responses: make(Responses)}
-	}
-	if resp.Responses == nil {
-		resp.Responses = make(Responses)
-	}
-
-	harFrame := data.NewFrame(harResponseKey)
-	harFrame.Meta = &data.FrameMeta{
-		Custom: map[string]interface{}{
-			"har": harStr,
-		},
-	}
-	resp.Responses[harResponseKey] = DataResponse{
-		Frames: data.Frames{harFrame},
-	}
-
-	return resp, nil
+	return resp, err
 }

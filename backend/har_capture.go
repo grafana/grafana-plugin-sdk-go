@@ -28,11 +28,28 @@ func withSDKHARCapture(ctx context.Context) (context.Context, *sdkHARCaptureBuff
 	return context.WithValue(ctx, sdkHARCaptureKey{}, buf), buf
 }
 
-func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, resp *http.Response, started time.Time, elapsed time.Duration) {
-	entry := buildSDKHAREntry(req, resp, started, elapsed)
+func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *http.Response, started time.Time, elapsed time.Duration) {
+	entry := buildSDKHAREntry(req, reqBody, resp, started, elapsed)
 	b.mu.Lock()
 	b.entries = append(b.entries, entry)
 	b.mu.Unlock()
+}
+
+// drainRequestBody reads and returns the request body, restoring it so the request can still be
+// sent. It must be called before the request is sent: a real http.Transport consumes (and closes)
+// req.Body while sending, so reading it afterwards yields nothing. Returns nil when there is no
+// body or it can't be read.
+func drainRequestBody(req *http.Request) []byte {
+	if req == nil || req.Body == nil || req.Body == http.NoBody {
+		return nil
+	}
+	body, err := io.ReadAll(req.Body)
+	if err != nil {
+		return nil
+	}
+	_ = req.Body.Close()
+	req.Body = io.NopCloser(bytes.NewReader(body))
+	return body
 }
 
 func (b *sdkHARCaptureBuffer) len() int {
@@ -141,7 +158,10 @@ type sdkHARTimings struct {
 	Receive float64 `json:"receive"`
 }
 
-func buildSDKHAREntry(req *http.Request, resp *http.Response, started time.Time, elapsed time.Duration) sdkHAREntry {
+// buildSDKHAREntry builds a HAR entry from the request/response pair. reqBody is the request body
+// captured before the request was sent (see drainRequestBody); it is passed in rather than read
+// from req.Body here, because by the time capture runs the transport has already drained the body.
+func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, started time.Time, elapsed time.Duration) sdkHAREntry {
 	reqHeaders := sdkHeadersToNameValue(req.Header)
 	queryString := make([]sdkHARNameValue, 0, len(req.URL.Query()))
 	for k, vals := range req.URL.Query() {
@@ -149,18 +169,11 @@ func buildSDKHAREntry(req *http.Request, resp *http.Response, started time.Time,
 	}
 
 	var postData *sdkHARPostData
-	var reqBodySize int64
-	if req.Body != nil {
-		body, err := io.ReadAll(req.Body)
-		if err == nil {
-			req.Body = io.NopCloser(bytes.NewReader(body))
-			reqBodySize = int64(len(body))
-			if len(body) > 0 {
-				postData = &sdkHARPostData{
-					MimeType: req.Header.Get("Content-Type"),
-					Text:     string(body),
-				}
-			}
+	reqBodySize := int64(len(reqBody))
+	if len(reqBody) > 0 {
+		postData = &sdkHARPostData{
+			MimeType: req.Header.Get("Content-Type"),
+			Text:     string(reqBody),
 		}
 	}
 

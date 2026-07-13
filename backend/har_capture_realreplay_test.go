@@ -32,8 +32,9 @@ func TestHARReplay_RealCapturedFile(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Build an incoming request mirroring the captured one and replay it.
-	incoming, err := http.NewRequest(e.Request.Method, e.Request.URL.String(), bytes.NewReader(body))
+	// Build an incoming request mirroring the captured one and replay it. The method/URL come from
+	// a local HAR fixture the developer points the test at, not from any live request.
+	incoming, err := http.NewRequest(e.Request.Method, e.Request.URL.String(), bytes.NewReader(body)) //nolint:gosec // G704: URL is from a local test fixture, not user input
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -43,6 +44,7 @@ func TestHARReplay_RealCapturedFile(t *testing.T) {
 	if resp == nil {
 		t.Fatalf("fixture storage did NOT replay captured request: %s %s", e.Request.Method, e.Request.URL)
 	}
+	defer func() { _ = resp.Body.Close() }()
 	got, _ := io.ReadAll(resp.Body)
 	t.Logf("REPLAYED %s %s -> status=%d, %d bytes of response body", e.Request.Method, e.Request.URL, resp.StatusCode, len(got))
 	if resp.StatusCode != http.StatusOK {

@@ -14,13 +14,16 @@ import (
 // TestHARParity_UnmarshalsIntoChromedpHAR verifies our hand-rolled HAR output parses into the
 // canonical chromedp/cdproto/har model (what experimental/e2e/storage + the E2E fixture proxy use).
 func TestHARParity_UnmarshalsIntoChromedpHAR(t *testing.T) {
-	req, err := http.NewRequest(http.MethodPost, "https://api.example.com/query?a=1&b=2", strings.NewReader(`{"x":1}`))
+	const reqBody = `{"x":1}`
+	req, err := http.NewRequest(http.MethodPost, "https://api.example.com/query?a=1&b=2", strings.NewReader(reqBody))
 	if err != nil {
 		t.Fatal(err)
 	}
 	req.Proto = "HTTP/1.1"
 	req.Header.Set("Content-Type", "application/json")
-	req.AddCookie(&http.Cookie{Name: "session", Value: "abc"})
+	// Secure/HttpOnly/SameSite are set only to satisfy gosec G124; they are response-cookie
+	// attributes and are dropped when this is serialized into the outgoing Cookie header.
+	req.AddCookie(&http.Cookie{Name: "session", Value: "abc", Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Content-Type", "application/json")
@@ -30,7 +33,7 @@ func TestHARParity_UnmarshalsIntoChromedpHAR(t *testing.T) {
 	resp.Proto = "HTTP/1.1"
 
 	buf := newSDKHARCaptureBuffer()
-	buf.addEntry(req, resp, time.Now(), 5*time.Millisecond)
+	buf.addEntry(req, []byte(reqBody), resp, time.Now(), 5*time.Millisecond)
 	s, err := buf.toHARString()
 	if err != nil {
 		t.Fatal(err)
