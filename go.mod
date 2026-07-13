@@ -1,13 +1,13 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
-go 1.26.4
+go 1.26.5
 
 require (
 	github.com/apache/arrow-go/v18 v18.6.0
 	github.com/cheekybits/genny v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
 	github.com/elazarl/goproxy v1.8.4
-	github.com/getkin/kin-openapi v0.140.0
+	github.com/getkin/kin-openapi v0.141.0
 	github.com/go-openapi/loads v0.24.0
 	github.com/go-openapi/spec v0.22.6
 	github.com/go-openapi/strfmt v0.26.3
@@ -16,7 +16,7 @@ require (
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/grafana/otel-profiling-go v0.6.0
-	github.com/grafana/pyroscope-go/godeltaprof v0.1.11
+	github.com/grafana/pyroscope-go/godeltaprof v0.1.12
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.3
 	github.com/hashicorp/go-hclog v1.6.3
@@ -50,7 +50,7 @@ require (
 	golang.org/x/sys v0.45.0
 	golang.org/x/text v0.37.0
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260526163538-3dc84a4a5aaa
-	google.golang.org/grpc v1.81.1
+	google.golang.org/grpc v1.82.0
 	google.golang.org/protobuf v1.36.11
 	k8s.io/kube-openapi v0.0.0-20260127142750-a19766b6e2d4 // @grafana/grafana-app-platform-squad
 	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
