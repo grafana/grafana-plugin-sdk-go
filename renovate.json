@@ -1,4 +1,11 @@
 {
+  "ignorePresets": [
+    "github>grafana/grafana-renovate-config//presets/base",
+    "github>grafana/grafana-renovate-config//presets/automerge",
+    "github>grafana/grafana-renovate-config//presets/labels",
+    "github>grafana/grafana-renovate-config//presets/npm"
+  ],
+  "extends": ["github>grafana/grafana-catalog-team//renovate/renovate"],
   "dependencyDashboard": false,
   "schedule": ["before 6am on the first day of the week"],
   "packageRules": [
@@ -38,7 +45,6 @@
   ],
   "github-actions": { "enabled": true, "groupName": "GitHub Actions" },
   "commitMessagePrefix": "chore(deps): ",
-  "minimumReleaseAge": "14 days",
   "rangeStrategy": "bump",
   "branchPrefix": "renovate/"
 }
