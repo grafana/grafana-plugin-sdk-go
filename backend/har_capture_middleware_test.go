@@ -15,6 +15,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/handlertest"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
 func TestHARCaptureMiddleware_noHeader_passthrough(t *testing.T) {
@@ -207,6 +208,34 @@ func TestHARCaptureMiddleware_appendsHARFrameOnQueryError(t *testing.T) {
 	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]interface{})
 	require.True(t, ok)
 	assert.Equal(t, wantErr.Error(), custom["queryError"], "the original error must be preserved in the frame")
+
+	// The failure must also be visible on the response itself, so the SDK's own middlewares
+	// (loggerMiddleware, metrics/tracing via RequestStatusFromQueryDataResponse) don't report the
+	// failed query as successful.
+	require.ErrorIs(t, harResp.Error, wantErr, "failure must be surfaced on the synthetic response")
+	assert.Equal(t, backend.RequestStatusError, backend.RequestStatusFromQueryDataResponse(resp, nil),
+		"status derived from the response must reflect the failure")
+}
+
+// TestHARCaptureMiddleware_doesNotClobberPluginHARRefID asserts that if a plugin already returned a
+// response under the reserved __har__ refID, capture skips rather than overwriting the real data.
+func TestHARCaptureMiddleware_doesNotClobberPluginHARRefID(t *testing.T) {
+	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
+	pluginFrame := data.NewFrame("real-data")
+	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		makeHTTPCall(ctx, t, http.MethodGet, "http://ds.example.com", nil)
+		return &backend.QueryDataResponse{Responses: backend.Responses{
+			"__har__": backend.DataResponse{Frames: data.Frames{pluginFrame}},
+		}}, nil
+	}
+
+	resp, err := cdt.MiddlewareHandler.QueryData(context.Background(), &backend.QueryDataRequest{
+		Headers: map[string]string{"X-Grafana-HAR-Capture": "true"},
+	})
+	require.NoError(t, err)
+	// The plugin's own __har__ response is preserved unchanged (not overwritten by the capture frame).
+	require.Len(t, resp.Responses["__har__"].Frames, 1)
+	assert.Equal(t, "real-data", resp.Responses["__har__"].Frames[0].Name)
 }
 
 // TestHARCaptureMiddleware_capturesFailedRoundTrip asserts a transport-level failure (no HTTP

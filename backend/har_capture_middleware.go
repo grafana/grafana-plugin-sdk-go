@@ -77,6 +77,14 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	if resp.Responses == nil {
 		resp.Responses = make(Responses)
 	}
+	// refIDs are user-controlled (panel query editor), so a plugin response could already occupy the
+	// reserved __har__ key. Don't clobber the panel's real data: skip attaching capture for this
+	// request and leave the plugin's result (and error) untouched.
+	if _, taken := resp.Responses[harResponseKey]; taken {
+		Logger.Warn("HAR capture: reserved __har__ refID already used by the plugin response; skipping capture frame to avoid overwriting real data")
+		return resp, err
+	}
+
 	custom := map[string]interface{}{"har": harStr}
 	if err != nil {
 		// Preserve the top-level error inside the frame. Returning a non-nil error here would make
@@ -87,10 +95,19 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	}
 	harFrame := data.NewFrame(harResponseKey)
 	harFrame.Meta = &data.FrameMeta{Custom: custom}
-	resp.Responses[harResponseKey] = DataResponse{Frames: data.Frames{harFrame}}
+	dr := DataResponse{Frames: data.Frames{harFrame}}
+	if err != nil {
+		// Also surface the failure on the synthetic response so the SDK's own middlewares
+		// (loggerMiddleware, and metrics/tracing via RequestStatusFromQueryDataResponse) still
+		// observe it. Otherwise the nil top-level error we return below -- needed so the response
+		// survives the gRPC boundary -- would make those middlewares log/report the failed query as
+		// successful. Grafana treats __har__ as synthetic and reads the error from queryError, not
+		// this field.
+		dr.Error = err
+	}
+	resp.Responses[harResponseKey] = dr
 
 	// Return a nil error so the response (and the captured __har__ frame) survives the gRPC boundary.
-	// This only happens in capture mode (guarded by the X-Grafana-HAR-Capture header at the top), so
-	// normal query error semantics are unaffected; the original error is preserved in queryError.
+	// Only in capture mode (header-gated); the failure is still visible via dr.Error / queryError.
 	return resp, nil
 }
