@@ -33,7 +33,7 @@ func TestHARParity_UnmarshalsIntoChromedpHAR(t *testing.T) {
 	resp.Proto = "HTTP/1.1"
 
 	buf := newSDKHARCaptureBuffer()
-	buf.addEntry(req, []byte(reqBody), resp, time.Now(), 5*time.Millisecond)
+	buf.addEntry(req, []byte(reqBody), resp, nil, time.Now(), 5*time.Millisecond)
 	s, err := buf.toHARString()
 	if err != nil {
 		t.Fatal(err)

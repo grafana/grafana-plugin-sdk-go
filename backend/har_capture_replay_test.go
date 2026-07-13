@@ -38,7 +38,7 @@ func TestHARReplay_ThroughFixtureStorage(t *testing.T) {
 	capResp.Proto = "HTTP/1.1"
 
 	buf := newSDKHARCaptureBuffer()
-	buf.addEntry(capReq, []byte(reqBody), capResp, time.Now(), 3*time.Millisecond)
+	buf.addEntry(capReq, []byte(reqBody), capResp, nil, time.Now(), 3*time.Millisecond)
 	harStr, err := buf.toHARString()
 	if err != nil {
 		t.Fatal(err)

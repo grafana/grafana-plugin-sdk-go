@@ -51,9 +51,10 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 			started := time.Now()
 			resp, err := next.RoundTrip(r)
 			elapsed := time.Since(started)
-			if err == nil {
-				buf.addEntry(r, reqBody, resp, started, elapsed)
-			}
+			// Capture on failure too: a failed dial/timeout/TLS error is exactly the traffic a
+			// diagnostics tool needs to see. On error resp is nil, so the entry records the request
+			// and the error (in Comment) with a zero-status response.
+			buf.addEntry(r, reqBody, resp, err, started, elapsed)
 			return resp, err
 		})
 	})

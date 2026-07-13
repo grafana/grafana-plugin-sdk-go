@@ -204,6 +204,34 @@ func TestHARCaptureMiddleware_appendsHARFrameOnQueryError(t *testing.T) {
 	assert.True(t, hasHARFrame, "expected __har__ frame despite QueryData error")
 }
 
+// TestHARCaptureMiddleware_capturesFailedRoundTrip asserts a transport-level failure (no HTTP
+// response) is still captured -- it's exactly the traffic a diagnostics tool needs to see.
+func TestHARCaptureMiddleware_capturesFailedRoundTrip(t *testing.T) {
+	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
+	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		mws := httpclient.ContextualMiddlewareFromContext(ctx)
+		var rt http.RoundTripper = httpclient.RoundTripperFunc(func(_ *http.Request) (*http.Response, error) {
+			return nil, errors.New("dial tcp: connection refused")
+		})
+		for _, mw := range mws {
+			rt = mw.CreateMiddleware(httpclient.Options{}, rt)
+		}
+		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, "http://ds.example.com", nil)
+		failResp, _ := rt.RoundTrip(req)
+		if failResp != nil && failResp.Body != nil {
+			_ = failResp.Body.Close()
+		}
+		return &backend.QueryDataResponse{Responses: backend.Responses{}}, nil
+	}
+
+	resp, err := cdt.MiddlewareHandler.QueryData(context.Background(), &backend.QueryDataRequest{
+		Headers: map[string]string{"X-Grafana-HAR-Capture": "true"},
+	})
+	require.NoError(t, err)
+	_, ok := resp.Responses["__har__"]
+	require.True(t, ok, "a failed outbound call must still produce a __har__ frame")
+}
+
 // makeHTTPCall simulates a plugin making an outbound HTTP call using the contextual middleware
 // chain. The fake transport reads and discards the request body (as a real transport would), so
 // capture must read it before RoundTrip.

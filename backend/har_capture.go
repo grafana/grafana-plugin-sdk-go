@@ -33,8 +33,8 @@ func newSDKHARCaptureBuffer() *sdkHARCaptureBuffer {
 	return &sdkHARCaptureBuffer{}
 }
 
-func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *http.Response, started time.Time, elapsed time.Duration) {
-	entry := buildSDKHAREntry(req, reqBody, resp, started, elapsed)
+func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
+	entry := buildSDKHAREntry(req, reqBody, resp, rtErr, started, elapsed)
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	// Enforce the cumulative retained-body budget: once the request's captured bodies exceed
@@ -151,6 +151,9 @@ type sdkHAREntry struct {
 	Response        sdkHARResponse `json:"response"`
 	Cache           sdkHARCache    `json:"cache"`
 	Timings         sdkHARTimings  `json:"timings"`
+	// Comment carries a transport-level error (connection refused, DNS/TLS failure, timeout) for a
+	// request that never produced an HTTP response; such entries have a zero-status response.
+	Comment string `json:"comment,omitempty"`
 }
 
 type sdkHARRequest struct {
@@ -232,7 +235,9 @@ type sdkHARTimings struct {
 // buildSDKHAREntry builds a HAR entry from the request/response pair. reqBody is the request body
 // captured before the request was sent (see drainRequestBody); it is passed in rather than read
 // from req.Body here, because by the time capture runs the transport has already drained the body.
-func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, started time.Time, elapsed time.Duration) sdkHAREntry {
+// rtErr is the RoundTrip error (nil on success): a transport-level failure (connection refused,
+// DNS/TLS error, timeout) leaves resp nil, and the entry records the error in Comment.
+func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) sdkHAREntry {
 	reqHeaders := sdkHeadersToNameValue(req.Header)
 	queryString := make([]sdkHARNameValue, 0, len(req.URL.Query()))
 	for k, vals := range req.URL.Query() {
@@ -276,6 +281,11 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, st
 		}
 	}
 
+	var comment string
+	if rtErr != nil {
+		comment = "transport error: " + rtErr.Error()
+	}
+
 	waitMs := float64(elapsed.Milliseconds())
 	return sdkHAREntry{
 		StartedDateTime: started.UTC().Format(time.RFC3339),
@@ -294,6 +304,7 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, resp *http.Response, st
 		Response: harResp,
 		Cache:    sdkHARCache{},
 		Timings:  sdkHARTimings{Send: 0, Wait: waitMs, Receive: 0},
+		Comment:  comment,
 	}
 }
 
