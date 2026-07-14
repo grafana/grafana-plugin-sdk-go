@@ -49,7 +49,7 @@ func (f GetterFunc) GetInfo() (Info, error) {
 var GetBuildInfo = GetterFunc(func() (Info, error) {
 	v := Info{}
 	if buildInfoJSON == "" {
-		return v, fmt.Errorf("build info was now set when this was compiled")
+		return v, fmt.Errorf("build info was not set when this was compiled")
 	}
 	err := json.Unmarshal([]byte(buildInfoJSON), &v)
 	return v, err
