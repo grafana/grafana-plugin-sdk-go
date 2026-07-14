@@ -27,20 +27,6 @@ const harResponseKey = "__har__"
 //     chain, so the header is simply an unused entry in QueryDataRequest.Headers and is ignored.
 //   - When it does act, it only adds the reserved "__har__" response and never modifies the
 //     responses produced by the plugin, so enabling capture cannot alter existing query results.
-//
-// The header is looked up via a raw map read (req.Headers[harCaptureRequestHeader]), not
-// req.GetHTTPHeader: Grafana core sets it with a plain, unprefixed map assignment
-// (req.Headers[harCaptureHeader] = "true" in clientmiddleware.HTTPCaptureMiddleware), the same
-// producer contract FromAlertHeaderName already relies on (see alert_forwarder_middleware.go).
-// req.GetHTTPHeader only surfaces Authorization/X-Id-Token/Cookie or "http_"-prefixed keys, so it
-// would never see this header and capture would silently never activate. req.Headers is nil-safe
-// to read directly (a nil map read returns the zero value, not a panic), so no separate nil check
-// is needed.
-//
-// The buffer/entry-building/redaction logic lives in backend/harcapture, which has no dependency
-// on this package, so it can be a standalone, independently testable package; this file stays in
-// package backend only because it implements HandlerMiddleware/Handler and is wired directly into
-// defaultHandlerMiddlewares below, which backend/harcapture cannot import back without a cycle.
 func newHARCaptureMiddleware() HandlerMiddleware {
 	return HandlerMiddlewareFunc(func(next Handler) Handler {
 		return &harCaptureHandler{BaseHandler: NewBaseHandler(next)}
@@ -52,6 +38,11 @@ type harCaptureHandler struct {
 }
 
 func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+	// Raw map read, not req.GetHTTPHeader: Grafana core sets this header with a plain, unprefixed
+	// map assignment (req.Headers[harCaptureHeader] = "true" in
+	// clientmiddleware.HTTPCaptureMiddleware), the same producer contract FromAlertHeaderName
+	// relies on (see alert_forwarder_middleware.go). GetHTTPHeader only surfaces
+	// Authorization/X-Id-Token/Cookie or "http_"-prefixed keys, so it would never see this header.
 	if req == nil || req.Headers[harCaptureRequestHeader] != "true" {
 		return h.BaseHandler.QueryData(ctx, req)
 	}
