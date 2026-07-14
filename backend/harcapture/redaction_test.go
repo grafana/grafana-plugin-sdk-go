@@ -65,7 +65,9 @@ func TestBuildSDKHAREntry_redactsCookieValues(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.AddCookie(&http.Cookie{Name: "session", Value: "super-secret-session-id"})
+	// Secure/HttpOnly/SameSite are set only to satisfy gosec G124; they are response-cookie
+	// attributes and are dropped when this is serialized into the outgoing Cookie header.
+	req.AddCookie(&http.Cookie{Name: "session", Value: "super-secret-session-id", Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 
 	rec := httptest.NewRecorder()
 	rec.Header().Set("Set-Cookie", "sid=another-secret-value")
