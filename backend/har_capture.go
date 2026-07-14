@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 	"unicode/utf8"
@@ -23,7 +24,50 @@ const (
 	// unbounded full-body buffering capture would otherwise do.
 	maxCapturedBodyBytes  = 8 << 20  // 8 MiB
 	maxCapturedTotalBytes = 32 << 20 // 32 MiB
+
+	// redactedValue replaces the value of anything capture treats as sensitive (see
+	// isSensitiveHeaderName, isSensitiveQueryParamName, and sdkCookies), so the __har__ frame -- which
+	// is returned to whoever enabled capture -- never carries datasource credentials.
+	redactedValue = "REDACTED"
 )
+
+// sensitiveHeaderNames are header names whose values are redacted before capture (matched
+// case-insensitively by isSensitiveHeaderName), since they routinely carry datasource credentials
+// (bearer tokens, API keys, session cookies). This is a defense-in-depth safety net, not a substitute
+// for redaction wherever the captured HAR is ultimately stored or displayed: it cannot be exhaustive,
+// since datasources are free to invent their own auth header names.
+var sensitiveHeaderNames = map[string]struct{}{
+	"authorization":       {},
+	"proxy-authorization": {},
+	"cookie":              {},
+	"set-cookie":          {},
+	"x-api-key":           {},
+}
+
+func isSensitiveHeaderName(name string) bool {
+	_, ok := sensitiveHeaderNames[strings.ToLower(name)]
+	return ok
+}
+
+// sensitiveQueryParamNames are query string parameter names whose values are redacted before
+// capture, since datasource URLs commonly carry credentials as query params (API keys, signed-URL
+// signatures) rather than headers. Matched case-insensitively by isSensitiveQueryParamName.
+var sensitiveQueryParamNames = map[string]struct{}{
+	"api_key":         {},
+	"apikey":          {},
+	"api-key":         {},
+	"access_token":    {},
+	"token":           {},
+	"sig":             {},
+	"signature":       {},
+	"x-amz-signature": {},
+	"key":             {},
+}
+
+func isSensitiveQueryParamName(name string) bool {
+	_, ok := sensitiveQueryParamNames[strings.ToLower(name)]
+	return ok
+}
 
 // sdkHARCaptureBuffer collects HTTP request/response pairs in HAR 1.2 format in memory.
 // Used by the SDK HAR capture middleware to accumulate traffic from external plugin HTTP clients.
@@ -270,7 +314,11 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 	reqHeaders := sdkHeadersToNameValue(req.Header)
 	queryString := make([]sdkHARNameValue, 0, len(req.URL.Query()))
 	for k, vals := range req.URL.Query() {
+		redact := isSensitiveQueryParamName(k)
 		for _, v := range vals {
+			if redact {
+				v = redactedValue
+			}
 			queryString = append(queryString, sdkHARNameValue{Name: k, Value: v})
 		}
 	}
@@ -350,23 +398,32 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 	}
 }
 
+// sdkHeadersToNameValue converts an http.Header into HAR name/value pairs, redacting the value of
+// any header in sensitiveHeaderNames (Authorization, Cookie, ...) so capture never surfaces
+// datasource credentials.
 func sdkHeadersToNameValue(h http.Header) []sdkHARNameValue {
 	result := make([]sdkHARNameValue, 0, len(h))
 	for name, vals := range h {
+		redact := isSensitiveHeaderName(name)
 		// Emit one entry per value so repeated headers (e.g. multiple Set-Cookie) are preserved.
 		for _, v := range vals {
+			if redact {
+				v = redactedValue
+			}
 			result = append(result, sdkHARNameValue{Name: name, Value: v})
 		}
 	}
 	return result
 }
 
-// sdkCookies converts parsed HTTP cookies into HAR cookie entries (name/value), matching the
-// e2e HAR storage output so captured traffic stays replayable by the E2E fixture proxy.
+// sdkCookies converts parsed HTTP cookies into HAR cookie entries, matching the e2e HAR storage
+// output so captured traffic stays replayable by the E2E fixture proxy. Values are always redacted:
+// unlike header names, cookie names aren't a reliable signal of sensitivity, and a cookie's value is
+// itself typically the credential (session ID, auth token), so there is no safe default to keep.
 func sdkCookies(cookies []*http.Cookie) []sdkHARCookie {
 	result := make([]sdkHARCookie, 0, len(cookies))
 	for _, c := range cookies {
-		result = append(result, sdkHARCookie{Name: c.Name, Value: c.Value})
+		result = append(result, sdkHARCookie{Name: c.Name, Value: redactedValue})
 	}
 	return result
 }

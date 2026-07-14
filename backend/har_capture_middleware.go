@@ -26,6 +26,13 @@ const harResponseKey = "__har__"
 //     chain, so the header is simply an unused entry in QueryDataRequest.Headers and is ignored.
 //   - When it does act, it only adds the reserved "__har__" response and never modifies the
 //     responses produced by the plugin, so enabling capture cannot alter existing query results.
+//
+// Redaction: authentication-shaped headers, cookies, and query params (Authorization, Cookie,
+// common API-key/token/signature param names -- see sensitiveHeaderNames and
+// sensitiveQueryParamNames in har_capture.go) are redacted before they reach the __har__ frame, since
+// that frame is returned to whoever enabled capture. This is a best-effort safety net, not a
+// substitute for callers restricting who may set the capture header and for redacting the stored
+// bundle further downstream: it can't cover datasource-specific auth schemes it doesn't know about.
 func newHARCaptureMiddleware() HandlerMiddleware {
 	return HandlerMiddlewareFunc(func(next Handler) Handler {
 		return &harCaptureHandler{BaseHandler: NewBaseHandler(next)}
