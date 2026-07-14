@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/harcapture"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
@@ -27,12 +28,19 @@ const harResponseKey = "__har__"
 //   - When it does act, it only adds the reserved "__har__" response and never modifies the
 //     responses produced by the plugin, so enabling capture cannot alter existing query results.
 //
-// Redaction: authentication-shaped headers, cookies, and query params (Authorization, Cookie,
-// common API-key/token/signature param names -- see sensitiveHeaderNames and
-// sensitiveQueryParamNames in har_capture.go) are redacted before they reach the __har__ frame, since
-// that frame is returned to whoever enabled capture. This is a best-effort safety net, not a
-// substitute for callers restricting who may set the capture header and for redacting the stored
-// bundle further downstream: it can't cover datasource-specific auth schemes it doesn't know about.
+// The header is looked up via a raw map read (req.Headers[harCaptureRequestHeader]), not
+// req.GetHTTPHeader: Grafana core sets it with a plain, unprefixed map assignment
+// (req.Headers[harCaptureHeader] = "true" in clientmiddleware.HTTPCaptureMiddleware), the same
+// producer contract FromAlertHeaderName already relies on (see alert_forwarder_middleware.go).
+// req.GetHTTPHeader only surfaces Authorization/X-Id-Token/Cookie or "http_"-prefixed keys, so it
+// would never see this header and capture would silently never activate. req.Headers is nil-safe
+// to read directly (a nil map read returns the zero value, not a panic), so no separate nil check
+// is needed.
+//
+// The buffer/entry-building/redaction logic lives in backend/harcapture, which has no dependency
+// on this package, so it can be a standalone, independently testable package; this file stays in
+// package backend only because it implements HandlerMiddleware/Handler and is wired directly into
+// defaultHandlerMiddlewares below, which backend/harcapture cannot import back without a cycle.
 func newHARCaptureMiddleware() HandlerMiddleware {
 	return HandlerMiddlewareFunc(func(next Handler) Handler {
 		return &harCaptureHandler{BaseHandler: NewBaseHandler(next)}
@@ -48,20 +56,20 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		return h.BaseHandler.QueryData(ctx, req)
 	}
 
-	buf := newSDKHARCaptureBuffer()
+	buf := harcapture.NewBuffer()
 
 	captureMW := httpclient.NamedMiddlewareFunc("sdk-har-capture", func(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
 		return httpclient.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 			// Capture the request body before RoundTrip: the transport drains r.Body while
 			// sending, so reading it afterwards would yield nothing for POST/PUT/PATCH calls.
-			reqBody, reqTruncated := drainRequestBody(r)
+			reqBody, reqTruncated := harcapture.DrainRequestBody(r)
 			started := time.Now()
 			resp, err := next.RoundTrip(r)
 			elapsed := time.Since(started)
 			// Capture on failure too: a failed dial/timeout/TLS error is exactly the traffic a
 			// diagnostics tool needs to see. On error resp is nil, so the entry records the request
 			// and the error (in Comment) with a zero-status response.
-			buf.addEntry(r, reqBody, reqTruncated, resp, err, started, elapsed)
+			buf.AddEntry(r, reqBody, reqTruncated, resp, err, started, elapsed)
 			return resp, err
 		})
 	})
@@ -70,10 +78,10 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	resp, err := h.BaseHandler.QueryData(ctx, req)
 
 	// Nothing captured: pass the plugin's result through untouched.
-	if buf.len() == 0 {
+	if buf.Len() == 0 {
 		return resp, err
 	}
-	harStr, serErr := buf.toHARString()
+	harStr, serErr := buf.ToHARString()
 	if serErr != nil {
 		return resp, err
 	}

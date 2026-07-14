@@ -1,4 +1,4 @@
-package backend
+package harcapture
 
 import (
 	"bytes"
@@ -196,7 +196,7 @@ func TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize(t *testing.T) {
 // TestSDKHARCaptureBuffer_totalSizeCap asserts that once the cumulative retained body budget is
 // exceeded, later entries keep their metadata/sizes but drop the body text.
 func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
-	buf := newSDKHARCaptureBuffer()
+	buf := NewBuffer()
 	big := strings.Repeat("a", maxCapturedBodyBytes) // one per-body-capped chunk each
 
 	// Enough entries to blow past the total budget.
@@ -206,7 +206,7 @@ func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
 			t.Fatal(err)
 		}
 		resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(strings.NewReader(big))}
-		buf.addEntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
+		buf.AddEntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
 	}
 
 	var total int

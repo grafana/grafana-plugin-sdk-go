@@ -1,4 +1,4 @@
-package backend
+package harcapture
 
 import (
 	"encoding/json"
@@ -32,9 +32,9 @@ func TestHARParity_UnmarshalsIntoChromedpHAR(t *testing.T) {
 	resp := rec.Result()
 	resp.Proto = "HTTP/1.1"
 
-	buf := newSDKHARCaptureBuffer()
-	buf.addEntry(req, []byte(reqBody), false, resp, nil, time.Now(), 5*time.Millisecond)
-	s, err := buf.toHARString()
+	buf := NewBuffer()
+	buf.AddEntry(req, []byte(reqBody), false, resp, nil, time.Now(), 5*time.Millisecond)
+	s, err := buf.ToHARString()
 	if err != nil {
 		t.Fatal(err)
 	}

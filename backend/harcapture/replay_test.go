@@ -1,4 +1,4 @@
-package backend
+package harcapture
 
 import (
 	"bytes"
@@ -37,9 +37,9 @@ func TestHARReplay_ThroughFixtureStorage(t *testing.T) {
 	capResp := rec.Result()
 	capResp.Proto = "HTTP/1.1"
 
-	buf := newSDKHARCaptureBuffer()
-	buf.addEntry(capReq, []byte(reqBody), false, capResp, nil, time.Now(), 3*time.Millisecond)
-	harStr, err := buf.toHARString()
+	buf := NewBuffer()
+	buf.AddEntry(capReq, []byte(reqBody), false, capResp, nil, time.Now(), 3*time.Millisecond)
+	harStr, err := buf.ToHARString()
 	if err != nil {
 		t.Fatal(err)
 	}

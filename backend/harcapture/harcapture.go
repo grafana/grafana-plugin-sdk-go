@@ -1,4 +1,4 @@
-package backend
+package harcapture
 
 import (
 	"bytes"
@@ -69,19 +69,19 @@ func isSensitiveQueryParamName(name string) bool {
 	return ok
 }
 
-// sdkHARCaptureBuffer collects HTTP request/response pairs in HAR 1.2 format in memory.
+// Buffer collects HTTP request/response pairs in HAR 1.2 format in memory.
 // Used by the SDK HAR capture middleware to accumulate traffic from external plugin HTTP clients.
-type sdkHARCaptureBuffer struct {
+type Buffer struct {
 	mu       sync.Mutex
 	entries  []sdkHAREntry
 	retained int64 // running total of retained body text bytes, for the total-size cap
 }
 
-func newSDKHARCaptureBuffer() *sdkHARCaptureBuffer {
-	return &sdkHARCaptureBuffer{}
+func NewBuffer() *Buffer {
+	return &Buffer{}
 }
 
-func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
+func (b *Buffer) AddEntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
 	entry := buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed)
 	b.mu.Lock()
 	defer b.mu.Unlock()
@@ -106,11 +106,11 @@ func (b *sdkHARCaptureBuffer) addEntry(req *http.Request, reqBody []byte, reqTru
 	b.entries = append(b.entries, entry)
 }
 
-// drainRequestBody reads and returns the request body (up to the capture cap) and whether it was
+// DrainRequestBody reads and returns the request body (up to the capture cap) and whether it was
 // larger than the cap (truncated), restoring it so the request can still be sent. It must be called
 // before the request is sent: a real http.Transport consumes (and closes) req.Body while sending, so
 // reading it afterwards yields nothing. Returns nil when there is no body.
-func drainRequestBody(req *http.Request) ([]byte, bool) {
+func DrainRequestBody(req *http.Request) ([]byte, bool) {
 	if req == nil || req.Body == nil || req.Body == http.NoBody {
 		return nil, false
 	}
@@ -176,13 +176,13 @@ type bodyRemainder struct {
 func (b *bodyRemainder) Read(p []byte) (int, error) { return b.r.Read(p) }
 func (b *bodyRemainder) Close() error               { return b.c.Close() }
 
-func (b *sdkHARCaptureBuffer) len() int {
+func (b *Buffer) Len() int {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	return len(b.entries)
 }
 
-func (b *sdkHARCaptureBuffer) toHARString() (string, error) {
+func (b *Buffer) ToHARString() (string, error) {
 	b.mu.Lock()
 	entries := make([]sdkHAREntry, len(b.entries))
 	copy(entries, b.entries)
@@ -306,7 +306,7 @@ type sdkHARTimings struct {
 }
 
 // buildSDKHAREntry builds a HAR entry from the request/response pair. reqBody is the request body
-// captured before the request was sent (see drainRequestBody); it is passed in rather than read
+// captured before the request was sent (see DrainRequestBody); it is passed in rather than read
 // from req.Body here, because by the time capture runs the transport has already drained the body.
 // rtErr is the RoundTrip error (nil on success): a transport-level failure (connection refused,
 // DNS/TLS error, timeout) leaves resp nil, and the entry records the error in Comment.
