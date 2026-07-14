@@ -15,9 +15,9 @@ func TestBuildSDKHAREntry_redactsSensitiveHeaders(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	req.Header.Set("Authorization", "Bearer super-secret-token")
-	req.Header.Set("Proxy-Authorization", "Basic dXNlcjpwYXNz")
-	req.Header.Set("X-Api-Key", "sk-live-abc123")
+	req.Header.Set("Authorization", "Bearer not-a-real-token-fixture")
+	req.Header.Set("Proxy-Authorization", "Basic not-a-real-credential-fixture")
+	req.Header.Set("X-Api-Key", "not-a-real-api-key-fixture")
 	req.Header.Set("X-Custom", "keep-me")
 
 	rec := httptest.NewRecorder()
@@ -67,10 +67,10 @@ func TestBuildSDKHAREntry_redactsCookieValues(t *testing.T) {
 	}
 	// Secure/HttpOnly/SameSite are set only to satisfy gosec G124; they are response-cookie
 	// attributes and are dropped when this is serialized into the outgoing Cookie header.
-	req.AddCookie(&http.Cookie{Name: "session", Value: "super-secret-session-id", Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
+	req.AddCookie(&http.Cookie{Name: "session", Value: "not-a-real-session-fixture", Secure: true, HttpOnly: true, SameSite: http.SameSiteStrictMode})
 
 	rec := httptest.NewRecorder()
-	rec.Header().Set("Set-Cookie", "sid=another-secret-value")
+	rec.Header().Set("Set-Cookie", "sid=not-a-real-session-fixture")
 	rec.WriteHeader(http.StatusOK)
 	resp := rec.Result()
 
@@ -95,7 +95,7 @@ func TestBuildSDKHAREntry_redactsCookieValues(t *testing.T) {
 // parameters (API keys, tokens, signed-URL signatures) are redacted, while ordinary params are left
 // untouched.
 func TestBuildSDKHAREntry_redactsSensitiveQueryParams(t *testing.T) {
-	req, err := http.NewRequest(http.MethodGet, "http://ds.example.com/query?api_key=sk-live-abc123&token=eyJhbGciOi&region=us-east-1", nil)
+	req, err := http.NewRequest(http.MethodGet, "http://ds.example.com/query?api_key=not-a-real-api-key-fixture&token=not-a-real-token-fixture&region=us-east-1", nil)
 	if err != nil {
 		t.Fatal(err)
 	}
