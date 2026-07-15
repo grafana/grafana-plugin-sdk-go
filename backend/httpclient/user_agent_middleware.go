@@ -15,23 +15,26 @@ func UserAgentMiddleware() Middleware {
 	info, err := buildinfo.GetBuildInfo.GetInfo()
 
 	if err != nil {
-		log.DefaultLogger.Error("failed to get plugin build info", "error", err)
+		log.DefaultLogger.Debug("failed to get plugin build info, HTTP requests will not have a user agent set", "error", err)
 
-		info = buildinfo.Info{
-			PluginID: "unknown-grafana-plugin",
-			Version:  "unknown",
-		}
+		return newUserAgentMiddleware("", "", false)
 	}
 
-	return newUserAgentMiddleware(info.PluginID, info.Version)
+	return newUserAgentMiddleware(info.PluginID, info.Version, true)
 }
 
-func newUserAgentMiddleware(pluginID string, version string) Middleware {
+func newUserAgentMiddleware(pluginID string, version string, haveVersionInfo bool) Middleware {
 	userAgent := pluginID + "/" + version
 
 	return NamedMiddlewareFunc(UserAgentMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
+		if !haveVersionInfo {
+			return next
+		}
+
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
-			req.Header.Set("User-Agent", userAgent)
+			if len(req.Header.Values("User-Agent")) == 0 {
+				req.Header.Set("User-Agent", userAgent)
+			}
 
 			return next.RoundTrip(req)
 		})
