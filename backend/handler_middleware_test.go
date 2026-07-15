@@ -21,6 +21,7 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 	var mutateAdmissionCalled bool
 	var validateAdmissionCalled bool
 	var convertObjectCalled bool
+	var callCustomRouteCalled bool
 
 	c := &handlertest.Handler{
 		QueryDataFunc: func(_ context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -62,6 +63,10 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 		ConvertObjectsFunc: func(_ context.Context, _ *backend.ConversionRequest) (*backend.ConversionResponse, error) {
 			convertObjectCalled = true
 			return nil, nil
+		},
+		CallCustomRouteFunc: func(_ context.Context, _ *backend.CallCustomRouteRequest, _ backend.CallCustomRouteResponseSender) error {
+			callCustomRouteCalled = true
+			return nil
 		},
 	}
 
@@ -111,6 +116,13 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 	_, _ = d.ConvertObjects(context.Background(), &backend.ConversionRequest{})
 	require.True(t, convertObjectCalled)
 
+	customRouteSender := backend.CallCustomRouteResponseSenderFunc(func(_ *backend.CallCustomRouteResponse) error {
+		return nil
+	})
+
+	_ = d.CallCustomRoute(context.Background(), &backend.CallCustomRouteRequest{}, customRouteSender)
+	require.True(t, callCustomRouteCalled)
+
 	require.Len(t, ctx.QueryDataCallChain, 4)
 	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.QueryDataCallChain)
 	require.Len(t, ctx.CallResourceCallChain, 4)
@@ -131,6 +143,8 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.ValidateAdmissionCallChain)
 	require.Len(t, ctx.ConvertObjectCallChain, 4)
 	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.ConvertObjectCallChain)
+	require.Len(t, ctx.CallCustomRouteCallChain, 4)
+	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.CallCustomRouteCallChain)
 }
 
 type MiddlewareScenarioContext struct {
@@ -146,6 +160,7 @@ type MiddlewareScenarioContext struct {
 	ValidateAdmissionCallChain []string
 	MutateAdmissionCallChain   []string
 	ConvertObjectCallChain     []string
+	CallCustomRouteCallChain   []string
 }
 
 func (ctx *MiddlewareScenarioContext) NewMiddleware(name string) backend.HandlerMiddleware {
@@ -239,4 +254,11 @@ func (m *TestMiddleware) ConvertObjects(ctx context.Context, req *backend.Conver
 	res, err := m.next.ConvertObjects(ctx, req)
 	m.sCtx.ConvertObjectCallChain = append(m.sCtx.ConvertObjectCallChain, fmt.Sprintf("after %s", m.Name))
 	return res, err
+}
+
+func (m *TestMiddleware) CallCustomRoute(ctx context.Context, req *backend.CallCustomRouteRequest, sender backend.CallCustomRouteResponseSender) error {
+	m.sCtx.CallCustomRouteCallChain = append(m.sCtx.CallCustomRouteCallChain, fmt.Sprintf("before %s", m.Name))
+	err := m.next.CallCustomRoute(ctx, req, sender)
+	m.sCtx.CallCustomRouteCallChain = append(m.sCtx.CallCustomRouteCallChain, fmt.Sprintf("after %s", m.Name))
+	return err
 }

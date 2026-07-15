@@ -160,6 +160,19 @@ func (h *MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionR
 	return h.handler.ConvertObjects(ctx, req)
 }
 
+func (h *MiddlewareHandler) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	if req == nil {
+		return errNilRequest
+	}
+
+	if sender == nil {
+		return errNilSender
+	}
+
+	ctx = h.setupContext(ctx, req.PluginContext, EndpointCallCustomRoute)
+	return h.handler.CallCustomRoute(ctx, req, sender)
+}
+
 func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handler) Handler {
 	next := finalHandler
 	for i := len(middlewares) - 1; i >= 0; i-- {

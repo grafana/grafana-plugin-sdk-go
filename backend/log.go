@@ -114,3 +114,8 @@ func (m *contextualLoggerMiddleware) ConvertObjects(ctx context.Context, req *Co
 	ctx = m.setup(ctx, req.PluginContext)
 	return m.BaseHandler.ConvertObjects(ctx, req)
 }
+
+func (m *contextualLoggerMiddleware) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	ctx = m.setup(ctx, req.PluginContext)
+	return m.BaseHandler.CallCustomRoute(ctx, req, sender)
+}

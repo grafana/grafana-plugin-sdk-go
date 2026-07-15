@@ -164,3 +164,12 @@ func (m *headerMiddleware) CheckHealth(ctx context.Context, req *CheckHealthRequ
 	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
 	return m.BaseHandler.CheckHealth(ctx, req)
 }
+
+func (m *headerMiddleware) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	if req == nil {
+		return m.BaseHandler.CallCustomRoute(ctx, req, sender)
+	}
+
+	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
+	return m.BaseHandler.CallCustomRoute(ctx, req, sender)
+}
