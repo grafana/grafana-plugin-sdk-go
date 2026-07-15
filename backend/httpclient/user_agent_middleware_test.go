@@ -9,6 +9,8 @@ import (
 
 func TestUserAgentMiddleware(t *testing.T) {
 	runTestCase := func(t *testing.T, requestHeaders http.Header) http.Header {
+		t.Helper()
+
 		ctx := &testContext{}
 		finalRoundTripper := ctx.createRoundTripper("final")
 		userAgent := newUserAgentMiddleware("test-plugin", "1.2.3", true)
