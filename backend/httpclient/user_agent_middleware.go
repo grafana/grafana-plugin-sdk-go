@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"fmt"
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
@@ -24,7 +25,7 @@ func UserAgentMiddleware() Middleware {
 }
 
 func newUserAgentMiddleware(pluginID string, version string, haveVersionInfo bool) Middleware {
-	userAgent := pluginID + "/" + version
+	userAgent := fmt.Sprintf("%s/%s (Grafana plugin)", pluginID, version)
 
 	return NamedMiddlewareFunc(UserAgentMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
 		if !haveVersionInfo {
