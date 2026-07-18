@@ -32,6 +32,11 @@ func (m *tenantIDMiddleware) QueryData(ctx context.Context, req *QueryDataReques
 	return m.BaseHandler.QueryData(ctx, req)
 }
 
+func (m *tenantIDMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	ctx = m.setup(ctx)
+	return m.BaseHandler.QueryChunkedData(ctx, req, w)
+}
+
 func (m *tenantIDMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	ctx = m.setup(ctx)
 	return m.BaseHandler.CallResource(ctx, req, sender)

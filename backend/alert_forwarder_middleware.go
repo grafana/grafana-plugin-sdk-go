@@ -39,6 +39,10 @@ func (m *AlertForwarderMiddleware) applyHeaders(ctx context.Context, pReq any) c
 		if val, exists := t.Headers[FromAlertHeaderName]; exists {
 			alertVal = val
 		}
+	case *QueryChunkedDataRequest:
+		if val, exists := t.Headers[FromAlertHeaderName]; exists {
+			alertVal = val
+		}
 	case *CallResourceRequest:
 		if vals, exists := t.Headers[FromAlertHeaderName]; exists && len(vals) > 0 {
 			alertVal = vals[0]
@@ -73,6 +77,15 @@ func (m *AlertForwarderMiddleware) QueryData(ctx context.Context, req *QueryData
 	ctx = m.applyHeaders(ctx, req)
 
 	return m.BaseHandler.QueryData(ctx, req)
+}
+
+func (m *AlertForwarderMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	if req == nil {
+		return m.BaseHandler.QueryChunkedData(ctx, req, w)
+	}
+
+	ctx = m.applyHeaders(ctx, req)
+	return m.BaseHandler.QueryChunkedData(ctx, req, w)
 }
 
 func (m *AlertForwarderMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {

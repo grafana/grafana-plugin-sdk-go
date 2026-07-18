@@ -48,6 +48,7 @@ func (c *chunkedDataWriter) WriteError(ctx context.Context, refID string, status
 	}
 	if err != nil {
 		chunk.Error = err.Error()
+		chunk.ErrorSource = string(ErrorResponseWithErrorSource(err).ErrorSource)
 	}
 	return c.write(chunk)
 }

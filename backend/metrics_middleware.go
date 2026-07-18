@@ -64,6 +64,13 @@ func (m *metricsMiddleware) QueryData(ctx context.Context, req *QueryDataRequest
 	return resp, err
 }
 
+func (m *metricsMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	return m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		err := m.BaseHandler.QueryChunkedData(ctx, req, w)
+		return RequestStatusFromError(err), err
+	})
+}
+
 func (m *metricsMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	return m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		innerErr := m.BaseHandler.CallResource(ctx, req, sender)

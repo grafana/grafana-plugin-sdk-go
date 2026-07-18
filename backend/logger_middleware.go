@@ -91,6 +91,17 @@ func (m *loggerMiddleware) QueryData(ctx context.Context, req *QueryDataRequest)
 	return resp, err
 }
 
+func (m *loggerMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	if req == nil {
+		return m.BaseHandler.QueryChunkedData(ctx, req, w)
+	}
+
+	return m.logRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		err := m.BaseHandler.QueryChunkedData(ctx, req, w)
+		return RequestStatusFromError(err), err
+	})
+}
+
 func (m *loggerMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	if req == nil {
 		return m.BaseHandler.CallResource(ctx, req, sender)

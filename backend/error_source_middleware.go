@@ -89,6 +89,10 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 	return resp, err
 }
 
+func (m *ErrorSourceMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	return m.handleDownstreamError(ctx, m.BaseHandler.QueryChunkedData(ctx, req, w))
+}
+
 func (m *ErrorSourceMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	err := m.BaseHandler.CallResource(ctx, req, sender)
 	return m.handleDownstreamError(ctx, err)

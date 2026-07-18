@@ -70,6 +70,13 @@ func (m *tracingMiddleware) QueryData(ctx context.Context, req *QueryDataRequest
 	return resp, err
 }
 
+func (m *tracingMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	return m.traceRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		err := m.BaseHandler.QueryChunkedData(ctx, req, w)
+		return RequestStatusFromError(err), err
+	})
+}
+
 func (m *tracingMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	return m.traceRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		innerErr := m.BaseHandler.CallResource(ctx, req, sender)
