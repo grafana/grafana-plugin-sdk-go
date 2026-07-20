@@ -1,18 +1,21 @@
 package httpclient
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 )
 
 func TestUserAgentMiddleware(t *testing.T) {
 	runTestCase := func(t *testing.T, requestHeaders http.Header) http.Header {
 		t.Helper()
 
-		ctx := &testContext{}
-		finalRoundTripper := ctx.createRoundTripper("final")
+		testCtx := &testContext{}
+		finalRoundTripper := testCtx.createRoundTripper("final")
 		userAgent := newUserAgentMiddleware("test-plugin", "1.2.3", true)
 		rt := userAgent.CreateMiddleware(Options{}, finalRoundTripper)
 		require.NotNil(t, rt)
@@ -20,7 +23,10 @@ func TestUserAgentMiddleware(t *testing.T) {
 		require.True(t, ok)
 		require.Equal(t, UserAgentMiddlewareName, middlewareName.MiddlewareName())
 
-		req, err := http.NewRequest(http.MethodGet, "http://", nil)
+		ua, err := useragent.New("4.5.6", "SomeOS", "x64")
+		require.NoError(t, err)
+		ctx := useragent.WithUserAgent(context.Background(), ua)
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://", nil)
 		require.NoError(t, err)
 		req.Header = requestHeaders
 
@@ -30,8 +36,8 @@ func TestUserAgentMiddleware(t *testing.T) {
 		if res.Body != nil {
 			require.NoError(t, res.Body.Close())
 		}
-		require.Len(t, ctx.callChain, 1)
-		require.ElementsMatch(t, []string{"final"}, ctx.callChain)
+		require.Len(t, testCtx.callChain, 1)
+		require.ElementsMatch(t, []string{"final"}, testCtx.callChain)
 
 		return req.Header
 	}
@@ -40,7 +46,7 @@ func TestUserAgentMiddleware(t *testing.T) {
 		headers := http.Header{}
 		finalHeaders := runTestCase(t, headers)
 		expectedHeaders := http.Header{
-			"User-Agent": []string{"test-plugin/1.2.3 (Grafana plugin)"},
+			"User-Agent": []string{"Grafana/4.5.6 (SomeOS; x64) test-plugin/1.2.3 (Grafana plugin)"},
 		}
 
 		require.Equal(t, expectedHeaders, finalHeaders)
@@ -52,7 +58,7 @@ func TestUserAgentMiddleware(t *testing.T) {
 		}
 		finalHeaders := runTestCase(t, headers)
 		expectedHeaders := http.Header{
-			"User-Agent": []string{"test-plugin/1.2.3 (Grafana plugin)"},
+			"User-Agent": []string{"Grafana/4.5.6 (SomeOS; x64) test-plugin/1.2.3 (Grafana plugin)"},
 			"X-Foo":      []string{"bar"},
 		}
 

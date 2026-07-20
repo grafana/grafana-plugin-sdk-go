@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/build/buildinfo"
 )
 
@@ -25,16 +26,18 @@ func UserAgentMiddleware() Middleware {
 }
 
 func newUserAgentMiddleware(pluginID string, version string, haveVersionInfo bool) Middleware {
-	userAgent := fmt.Sprintf("%s/%s (Grafana plugin)", pluginID, version)
+	userAgentSuffix := fmt.Sprintf(" %s/%s (Grafana plugin)", pluginID, version)
 
 	return NamedMiddlewareFunc(UserAgentMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
-		if !haveVersionInfo {
-			return next
-		}
-
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+			if !haveVersionInfo {
+				return next.RoundTrip(req)
+			}
+
+			baseUserAgent := useragent.FromContext(req.Context()).String()
+
 			if len(req.Header.Values("User-Agent")) == 0 {
-				req.Header.Set("User-Agent", userAgent)
+				req.Header.Set("User-Agent", baseUserAgent+userAgentSuffix)
 			}
 
 			return next.RoundTrip(req)
