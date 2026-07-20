@@ -11,13 +11,34 @@ import (
 )
 
 const harCaptureRequestHeader = "X-Grafana-HAR-Capture"
-const harResponseKey = "__har__"
+
+// harResponseRefIDPrefix is the reserved prefix for the synthetic capture response. The full refID
+// is namespaced by datasource UID (see harResponseRefID) so that when Grafana merges the responses
+// of a multi-datasource query into a single flat map, the capture frames from different datasources
+// do not collide. Grafana matches captured responses by this prefix.
+const harResponseRefIDPrefix = "__har__"
+
+// harResponseRefID returns the refID the capture frame is stored under, namespaced by datasource
+// UID: e.g. "__har__P1234". Namespacing is required because Grafana merges the per-datasource plugin
+// responses of a multi-datasource query into one flat map keyed by refID (query.go), with no
+// collision handling -- a single fixed refID would make all but one datasource's captured traffic
+// (and any stashed queryError) get silently overwritten. Falls back to the bare prefix when no
+// datasource UID is available (should not happen for a datasource query, but keeps this total).
+func harResponseRefID(req *QueryDataRequest) string {
+	if req != nil && req.PluginContext.DataSourceInstanceSettings != nil {
+		if uid := req.PluginContext.DataSourceInstanceSettings.UID; uid != "" {
+			return harResponseRefIDPrefix + uid
+		}
+	}
+	return harResponseRefIDPrefix
+}
 
 // newHARCaptureMiddleware returns a HandlerMiddleware that captures HTTP traffic
 // when the QueryDataRequest carries an X-Grafana-HAR-Capture header.
 //
-// On completion the captured HAR JSON is appended to the QueryDataResponse as a
-// special frame (refId "__har__") so Grafana can extract it across the GRPC boundary.
+// On completion the captured HAR JSON is appended to the QueryDataResponse as a special frame under
+// a datasource-namespaced refID (prefix "__har__", see harResponseRefID) so Grafana can extract it
+// across the GRPC boundary without cross-datasource collisions.
 //
 // Backward compatibility contract:
 //   - The middleware only acts when the X-Grafana-HAR-Capture header is exactly "true".
@@ -25,7 +46,7 @@ const harResponseKey = "__har__"
 //     it is a pure pass-through: no capture occurs and the response is returned unmodified.
 //   - Plugins built against an SDK that predates this middleware do not have it in their handler
 //     chain, so the header is simply an unused entry in QueryDataRequest.Headers and is ignored.
-//   - When it does act, it only adds the reserved "__har__" response and never modifies the
+//   - When it does act, it only adds the reserved "__har__"-prefixed response and never modifies the
 //     responses produced by the plugin, so enabling capture cannot alter existing query results.
 func newHARCaptureMiddleware() HandlerMiddleware {
 	return HandlerMiddlewareFunc(func(next Handler) Handler {
@@ -83,11 +104,12 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	if resp.Responses == nil {
 		resp.Responses = make(Responses)
 	}
+	harRefID := harResponseRefID(req)
 	// refIDs are user-controlled (panel query editor), so a plugin response could already occupy the
-	// reserved __har__ key. Don't clobber the panel's real data: skip attaching capture for this
+	// reserved refID. Don't clobber the panel's real data: skip attaching capture for this
 	// request and leave the plugin's result (and error) untouched.
-	if _, taken := resp.Responses[harResponseKey]; taken {
-		Logger.Warn("HAR capture: reserved __har__ refID already used by the plugin response; skipping capture frame to avoid overwriting real data")
+	if _, taken := resp.Responses[harRefID]; taken {
+		Logger.Warn("HAR capture: reserved refID already used by the plugin response; skipping capture frame to avoid overwriting real data", "refID", harRefID)
 		return resp, err
 	}
 
@@ -99,7 +121,7 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		// instead carry the error across in the frame and return nil below; Grafana reads it back.
 		custom["queryError"] = err.Error()
 	}
-	harFrame := data.NewFrame(harResponseKey)
+	harFrame := data.NewFrame(harRefID)
 	harFrame.Meta = &data.FrameMeta{Custom: custom}
 	dr := DataResponse{Frames: data.Frames{harFrame}}
 	if err != nil {
@@ -111,7 +133,7 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		// this field.
 		dr.Error = err
 	}
-	resp.Responses[harResponseKey] = dr
+	resp.Responses[harRefID] = dr
 
 	// Return a nil error so the response (and the captured __har__ frame) survives the gRPC boundary.
 	// Only in capture mode (header-gated); the failure is still visible via dr.Error / queryError.

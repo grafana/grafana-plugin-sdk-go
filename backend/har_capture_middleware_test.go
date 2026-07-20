@@ -62,6 +62,30 @@ func TestHARCaptureMiddleware_withHeader_appendsHARFrame(t *testing.T) {
 	assert.Len(t, log["entries"].([]interface{}), 1)
 }
 
+func TestHARCaptureMiddleware_withHeader_namespacesRefIDByDatasourceUID(t *testing.T) {
+	// When the request carries a datasource UID, the capture frame is stored under a namespaced
+	// refID ("__har__" + UID) so it can't collide with another datasource's frame when Grafana
+	// merges a multi-datasource query into one flat response map.
+	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
+	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		makeHTTPCall(ctx, t, http.MethodGet, "http://ds.example.com", nil)
+		return &backend.QueryDataResponse{Responses: backend.Responses{}}, nil
+	}
+
+	resp, err := cdt.MiddlewareHandler.QueryData(context.Background(), &backend.QueryDataRequest{
+		Headers:       map[string]string{"X-Grafana-HAR-Capture": "true"},
+		PluginContext: backend.PluginContext{DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "P1234"}},
+	})
+	require.NoError(t, err)
+
+	harResp, ok := resp.Responses["__har__P1234"]
+	require.True(t, ok, "expected capture frame under the datasource-namespaced refID __har__P1234")
+	require.Len(t, harResp.Frames, 1)
+	assert.Equal(t, "__har__P1234", harResp.Frames[0].Name)
+	_, bare := resp.Responses["__har__"]
+	assert.False(t, bare, "must not also use the bare __har__ refID when a UID is present")
+}
+
 func TestHARCaptureMiddleware_withHeader_noHTTPCalls_noFrame(t *testing.T) {
 	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
 	cdt.TestHandler.QueryDataFunc = func(_ context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
