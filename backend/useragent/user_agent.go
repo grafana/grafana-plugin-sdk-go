@@ -1,6 +1,7 @@
 package useragent
 
 import (
+	"context"
 	"errors"
 	"regexp"
 )
@@ -60,4 +61,27 @@ func (ua *UserAgent) GrafanaVersion() string {
 
 func (ua *UserAgent) String() string {
 	return "Grafana/" + ua.grafanaVersion + " (" + ua.os + "; " + ua.arch + ")"
+}
+
+type userAgentKey struct{}
+
+// FromContext returns user agent from context.
+func FromContext(ctx context.Context) *UserAgent {
+	v := ctx.Value(userAgentKey{})
+	if v == nil {
+		return Empty()
+	}
+
+	ua := v.(*UserAgent)
+	if ua == nil {
+		return Empty()
+	}
+
+	return ua
+}
+
+// WithUserAgent injects supplied user agent into context.
+func WithUserAgent(ctx context.Context, ua *UserAgent) context.Context {
+	ctx = context.WithValue(ctx, userAgentKey{}, ua)
+	return ctx
 }

@@ -3,6 +3,8 @@ package backend
 import (
 	"context"
 	"errors"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 )
 
 var (
@@ -49,7 +51,7 @@ func (h *MiddlewareHandler) setupContext(ctx context.Context, pluginCtx PluginCo
 	ctx = WithPluginContext(ctx, pluginCtx)
 	ctx = WithGrafanaConfig(ctx, pluginCtx.GrafanaConfig)
 	ctx = WithUser(ctx, pluginCtx.User)
-	ctx = WithUserAgent(ctx, pluginCtx.UserAgent)
+	ctx = useragent.WithUserAgent(ctx, pluginCtx.UserAgent)
 	return ctx
 }
 
