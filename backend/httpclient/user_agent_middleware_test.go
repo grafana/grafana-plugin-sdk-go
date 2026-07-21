@@ -46,7 +46,7 @@ func TestUserAgentMiddleware(t *testing.T) {
 		headers := http.Header{}
 		finalHeaders := runTestCase(t, headers)
 		expectedHeaders := http.Header{
-			"User-Agent": []string{"Grafana/4.5.6 (SomeOS; x64) test-plugin/1.2.3 (Grafana plugin)"},
+			"User-Agent": []string{"Grafana/4.5.6 (SomeOS; x64) test-plugin/1.2.3"},
 		}
 
 		require.Equal(t, expectedHeaders, finalHeaders)
@@ -58,7 +58,7 @@ func TestUserAgentMiddleware(t *testing.T) {
 		}
 		finalHeaders := runTestCase(t, headers)
 		expectedHeaders := http.Header{
-			"User-Agent": []string{"Grafana/4.5.6 (SomeOS; x64) test-plugin/1.2.3 (Grafana plugin)"},
+			"User-Agent": []string{"Grafana/4.5.6 (SomeOS; x64) test-plugin/1.2.3"},
 			"X-Foo":      []string{"bar"},
 		}
 

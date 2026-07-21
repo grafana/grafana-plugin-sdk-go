@@ -26,7 +26,7 @@ func UserAgentMiddleware() Middleware {
 }
 
 func newUserAgentMiddleware(pluginID string, version string, haveVersionInfo bool) Middleware {
-	userAgentSuffix := fmt.Sprintf(" %s/%s (Grafana plugin)", pluginID, version)
+	userAgentSuffix := fmt.Sprintf(" %s/%s", pluginID, version)
 
 	return NamedMiddlewareFunc(UserAgentMiddlewareName, func(opts Options, next http.RoundTripper) http.RoundTripper {
 		return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
