@@ -233,6 +233,7 @@ func DefaultMiddlewares() []Middleware {
 		DataSourceMetricsMiddleware(),
 		BasicAuthenticationMiddleware(),
 		CustomHeadersMiddleware(),
+		UserAgentMiddleware(),
 		ContextualMiddleware(),
 		ErrorSourceMiddleware(),
 		ResponseLimitMiddleware(0),

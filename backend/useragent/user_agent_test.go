@@ -1,6 +1,7 @@
 package useragent
 
 import (
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -130,4 +131,23 @@ func TestEmpty(t *testing.T) {
 	}
 	res := Empty()
 	require.Equal(t, expected, res)
+}
+
+func TestUserAgentFromContext(t *testing.T) {
+	ua, err := New("10.0.0", "test", "test")
+	require.NoError(t, err)
+
+	ctx := WithUserAgent(context.Background(), ua)
+	result := FromContext(ctx)
+
+	require.Equal(t, "10.0.0", result.GrafanaVersion())
+	require.Equal(t, "Grafana/10.0.0 (test; test)", result.String())
+}
+
+func TestUserAgentFromContext_NoUserAgent(t *testing.T) {
+	ctx := context.Background()
+
+	result := FromContext(ctx)
+	require.Equal(t, "0.0.0", result.GrafanaVersion())
+	require.Equal(t, "Grafana/0.0.0 (unknown; unknown)", result.String())
 }
