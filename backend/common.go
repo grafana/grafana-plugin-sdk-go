@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/config"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -142,6 +144,15 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (htt
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
 	cfg := GrafanaConfigFromContext(ctx)
+
+	if cfg.FeatureToggles().IsEnabled(featuretoggles.DatasourceForceTLS13) {
+		if opts.TLS == nil {
+			opts.TLS = &httpclient.TLSOptions{}
+		}
+		opts.TLS.MinVersion = tls.VersionTLS13
+		opts.TLS.MaxVersion = tls.VersionTLS13
+	}
+
 	proxy, err := cfg.Proxy()
 	if err != nil {
 		return opts, err
