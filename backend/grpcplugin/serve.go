@@ -15,14 +15,19 @@ type ServeOpts struct {
 	AdmissionServer   AdmissionServer
 	ConversionServer  ConversionServer
 
+	// V3Server serves the grafana.plugin.v3 API — the modern successor to the
+	// legacy pluginv2 (backend.proto) contract. Implementations embed
+	// UnimplementedV3Server and override the RPCs they support.
+	V3Server V3Server
+
 	// GRPCServer factory method for creating GRPC server.
 	// If nil, the default one will be used.
 	GRPCServer func(options []grpc.ServerOption) *grpc.Server
 }
 
-// Serve starts serving the plugin over gRPC.
-func Serve(opts ServeOpts) error {
-	versionedPlugins := make(map[int]plugin.PluginSet)
+// pluginSet builds the go-plugin PluginSet from the given options. It is shared
+// by Serve and by tests that exercise the go-plugin dispensing path in-process.
+func pluginSet(opts ServeOpts) plugin.PluginSet {
 	pSet := make(plugin.PluginSet)
 
 	if opts.DiagnosticsServer != nil {
@@ -61,6 +66,19 @@ func Serve(opts ServeOpts) error {
 		}
 	}
 
+	if opts.V3Server != nil {
+		pSet["v3-route"] = &routeGRPCPlugin{server: opts.V3Server}
+		pSet["v3-admission-control"] = &admissionControlGRPCPlugin{server: opts.V3Server}
+		pSet["v3-resource-conversion"] = &resourceConversionGRPCPlugin{server: opts.V3Server}
+	}
+
+	return pSet
+}
+
+// Serve starts serving the plugin over gRPC.
+func Serve(opts ServeOpts) error {
+	versionedPlugins := make(map[int]plugin.PluginSet)
+	pSet := pluginSet(opts)
 	versionedPlugins[ProtocolVersion] = pSet
 
 	if opts.GRPCServer == nil {

@@ -1,0 +1,55 @@
+edition = "2024";
+
+package grafana.plugin.v3;
+
+import "grafana/plugin/v3/common.proto";
+
+// ResourceConversionService can be used to convert resources between versions.
+// See: https://kubernetes.io/docs/tasks/extend-kubernetes/custom-resources/custom-resource-definition-versioning/#webhook-request-and-response
+service ResourceConversionService {
+  // ConvertObjects converts objects to a target version.
+  rpc ConvertObjects(ConvertObjectsRequest) returns (ConvertObjectsResponse);
+}
+
+// RawObject contains a resource serialized into a byte array with a content
+// type.
+message RawObject {
+  // raw is the serialized object.
+  bytes raw = 1;
+
+  // content_type is the media type of the raw object.
+  string content_type = 2;
+}
+
+// ConvertObjectsRequest supports converting objects from one version to
+// another.
+message ConvertObjectsRequest {
+  // the request api_version
+  GroupVersion api_version = 1;
+
+  // uid is an identifier for the individual request/response. It allows
+  // distinguishing instances of requests which are otherwise identical
+  // (parallel requests, etc). It is meant to track the round trip between the
+  // Kubernetes API server and the webhook, not the user request.
+  string uid = 2;
+
+  // objects to convert.
+  repeated RawObject objects = 3;
+
+  // target_version is the version to convert to.
+  GroupVersion target_version = 4;
+}
+
+// ConvertObjectsResponse contains the converted objects.
+message ConvertObjectsResponse {
+  // uid is an identifier for the individual request/response. This should be
+  // copied over from the corresponding request.uid.
+  string uid = 1;
+
+  // result contains extra detail into why a request was denied.
+  StatusResult result = 2;
+
+  // objects is the converted version of request.objects if result is
+  // successful, otherwise empty.
+  repeated RawObject objects = 3;
+}

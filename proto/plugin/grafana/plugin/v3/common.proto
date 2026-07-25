@@ -1,0 +1,37 @@
+edition = "2024";
+
+package grafana.plugin.v3;
+
+// GroupVersion represents the API group and version of a resource.
+message GroupVersion {
+  // For plugins, group is usually the plugin identifier
+  string group = 1;
+
+  // version eg v1, v2beta1, etc
+  string version = 2;
+}
+
+// StringList is a list of strings. It is used as a map value, since protobuf
+// does not allow a repeated value in a map directly.
+message StringList {
+  repeated string values = 1;
+}
+
+// StatusResult carries a machine- and human-readable description of the outcome
+// of an operation. It mirrors the Kubernetes meta/v1 Status shape:
+// https://github.com/kubernetes/apimachinery/blob/v0.30.1/pkg/apis/meta/v1/generated.proto#L979
+message StatusResult {
+  // status of the operation. One of: "Success" or "Failure".
+  string status = 1;
+
+  // message is a human-readable description of the status of this operation.
+  string message = 2;
+
+  // reason is a machine-readable description of why this operation is in the
+  // "Failure" status. If this value is empty there is no information available.
+  // A reason clarifies an HTTP status code but does not override it.
+  string reason = 3;
+
+  // code is a suggested HTTP return code for this status, 0 if not set.
+  int32 code = 4;
+}

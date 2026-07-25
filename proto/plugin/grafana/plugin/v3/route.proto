@@ -1,0 +1,44 @@
+edition = "2024";
+
+package grafana.plugin.v3;
+
+import "grafana/plugin/v3/common.proto";
+
+// RouteService enables HTTP-style requests over gRPC.
+// It mirrors the pluginv2 Resource service, but the request does not carry a
+// PluginContext.
+service RouteService {
+  // CallRoute issues an HTTP-style request and streams the response back.
+  rpc CallRoute(CallRouteRequest) returns (stream CallRouteResponse);
+}
+
+// CallRouteRequest is the request for RouteService.CallRoute.
+message CallRouteRequest {
+  // path is the request path.
+  string path = 1;
+
+  // method is the HTTP method.
+  string method = 2;
+
+  // url is the request URL.
+  string url = 3;
+
+  // headers are the raw HTTP request headers.
+  map<string, StringList> headers = 4;
+
+  // body is the raw HTTP request body.
+  bytes body = 5;
+}
+
+// CallRouteResponse is a streamed chunk of the response for
+// RouteService.CallRoute.
+message CallRouteResponse {
+  // code maps to raw HTTP status codes when passed over HTTP.
+  int32 code = 1;
+
+  // headers are the raw HTTP headers sent to the client.
+  map<string, StringList> headers = 2;
+
+  // body are the raw HTTP body bytes sent to the client.
+  bytes body = 3;
+}

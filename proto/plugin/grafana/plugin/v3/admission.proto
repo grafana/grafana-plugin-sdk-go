@@ -1,0 +1,105 @@
+edition = "2024";
+
+package grafana.plugin.v3;
+
+import "grafana/plugin/v3/common.proto";
+
+// AdmissionControlService is based on the Kubernetes admission webhook pattern.
+// It can be used to verify that objects are valid and to mutate them.
+// See: https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L41
+//
+// Unlike the pluginv2 AdmissionControl service, the requests here do not carry
+// a PluginContext.
+service AdmissionControlService {
+  // ValidateAdmission validates a resource; the response is a simple yes/no.
+  rpc ValidateAdmission(ValidateAdmissionRequest) returns (ValidateAdmissionResponse);
+
+  // MutateAdmission returns a modified copy of the request that can be saved,
+  // or a descriptive error.
+  rpc MutateAdmission(MutateAdmissionRequest) returns (MutateAdmissionResponse);
+}
+
+// Operation is the type of resource operation being checked for admission
+// control.
+// https://github.com/kubernetes/kubernetes/blob/v1.30.0/pkg/apis/admission/types.go#L158
+enum Operation {
+  OPERATION_UNSPECIFIED = 0;
+  OPERATION_CREATE = 1;
+  OPERATION_UPDATE = 2;
+  OPERATION_DELETE = 3;
+}
+
+// GroupVersionKind identifies the properties of an object.
+message GroupVersionKind {
+  string group = 1;
+  string version = 2;
+  string kind = 3;
+}
+
+// ValidateAdmissionRequest contains information from a Kubernetes admission
+// request and the decoded object(s).
+message ValidateAdmissionRequest {
+  // operation is the requested operation.
+  Operation operation = 1;
+
+  // kind is the object kind.
+  GroupVersionKind kind = 2;
+
+  // object_bytes is the object in the request, including the full metadata
+  // envelope.
+  bytes object_bytes = 3;
+
+  // old_object_bytes is the object as it currently exists in storage,
+  // including the full metadata envelope.
+  bytes old_object_bytes = 4;
+}
+
+// ValidateAdmissionResponse reports whether an object may be admitted.
+message ValidateAdmissionResponse {
+  // allowed indicates whether or not the admission request was permitted.
+  bool allowed = 1;
+
+  // result contains extra detail about why an admission request was denied.
+  // It is not consulted in any way when allowed is true.
+  StatusResult result = 2;
+
+  // warnings is a list of warning messages to return to the requesting client.
+  // Limit warnings to 120 characters if possible. Warnings over 256 characters
+  // and large numbers of warnings may be truncated.
+  repeated string warnings = 3;
+}
+
+// MutateAdmissionRequest contains information from a Kubernetes admission
+// request and the decoded object(s).
+message MutateAdmissionRequest {
+  // operation is the requested operation.
+  Operation operation = 1;
+
+  // kind is the object kind.
+  GroupVersionKind kind = 2;
+
+  // object_bytes is the object in the request, including the full metadata
+  // envelope.
+  bytes object_bytes = 3;
+
+  // old_object_bytes is the object as it currently exists in storage,
+  // including the full metadata envelope.
+  bytes old_object_bytes = 4;
+}
+
+// MutateAdmissionResponse returns a mutated copy of the object in a form that
+// can be admitted.
+message MutateAdmissionResponse {
+  // allowed indicates whether or not the admission request was permitted.
+  bool allowed = 1;
+
+  // result contains extra detail about why an admission request was denied.
+  // It is not consulted in any way when allowed is true.
+  StatusResult result = 2;
+
+  // warnings is a list of warning messages to return to the requesting client.
+  repeated string warnings = 3;
+
+  // object_bytes is the mutated object.
+  bytes object_bytes = 4;
+}
