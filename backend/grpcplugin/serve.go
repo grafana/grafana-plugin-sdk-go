@@ -18,6 +18,11 @@ type ServeOpts struct {
 	// V3Server serves the grafana.plugin.v3 API — the modern successor to the
 	// legacy pluginv2 (backend.proto) contract. Implementations embed
 	// UnimplementedV3Server and override the RPCs they support.
+	//
+	// V3 is additive: it can be set on its own or alongside the legacy *Server
+	// fields above, so a single plugin binary can serve both contracts at once
+	// and hosts can migrate to v3 incrementally. Each V3 service is dispensed
+	// under its own go-plugin name (see pluginSet).
 	V3Server V3Server
 
 	// GRPCServer factory method for creating GRPC server.
