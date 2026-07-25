@@ -47,25 +47,12 @@ func WithGrafanaConfig(ctx context.Context, cfg *config.GrafanaCfg) context.Cont
 	return config.WithGrafanaConfig(ctx, cfg)
 }
 
-type userAgentKey struct{}
-
-// UserAgentFromContext returns user agent from context.
+// Deprecated: use useragent.FromContext instead.
 func UserAgentFromContext(ctx context.Context) *useragent.UserAgent {
-	v := ctx.Value(userAgentKey{})
-	if v == nil {
-		return useragent.Empty()
-	}
-
-	ua := v.(*useragent.UserAgent)
-	if ua == nil {
-		return useragent.Empty()
-	}
-
-	return ua
+	return useragent.FromContext(ctx)
 }
 
-// WithUserAgent injects supplied user agent into context.
+// Deprecated: use useragent.WithUserAgent instead.
 func WithUserAgent(ctx context.Context, ua *useragent.UserAgent) context.Context {
-	ctx = context.WithValue(ctx, userAgentKey{}, ua)
-	return ctx
+	return useragent.WithUserAgent(ctx, ua)
 }
