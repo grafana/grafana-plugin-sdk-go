@@ -7,14 +7,17 @@ protobuf message in a hand-written SDK-native Go type as the legacy contract
 does. The intent is for this `grafana.plugin.v3` package to eventually replace
 most of that older contract.
 
+The v3 services does not include pluginContext and do not require instance management.  
+
 ## Services
 
 - `RouteService` — an HTTP-over-gRPC service ported from the legacy `Resource`
-  service (`CallResource` → `CallRoute`), without a `PluginContext`.
-- `AdmissionControlService` and `ResourceConversionService` — ported from the
-  legacy services of the same purpose, but **without a `PluginContext`** in
-  their requests, and renamed to satisfy the buf `STANDARD` lint rules
-  (`Service` suffix, per-RPC `<Method>Request`/`<Method>Response` messages).
+  service (`CallResource` → `CallRoute`)
+- `AdmissionControlService` — admission hooks invoked when an object is created,
+  updated, or deleted:
+  - `ValidateAdmission` — accept or reject the object
+  - `MutateAdmission` — return a modified copy of the object to store
+- `ResourceConversionService` — convert objects from one API version to another
 
 ## Conventions
 

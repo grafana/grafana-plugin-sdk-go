@@ -20,6 +20,15 @@ import (
 // pluginv3.RegisterRouteServiceServer directly — no SDK wrapper sits between the
 // plugin and the protobuf contract.
 func Example() {
+	if err := callRoute(); err != nil {
+		log.Fatal(err)
+	}
+	// Output: 200 hello from GET /status
+}
+
+// callRoute holds the fallible logic so that errors are returned (letting the
+// deferred cleanup run) rather than calling log.Fatal after a defer.
+func callRoute() error {
 	lis := bufconn.Listen(1024 * 1024)
 
 	srv := grpc.NewServer()
@@ -38,9 +47,9 @@ func Example() {
 		grpc.WithTransportCredentials(insecure.NewCredentials()),
 	)
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	client := pluginv3.NewRouteServiceClient(conn)
 	stream, err := client.CallRoute(context.Background(), pluginv3.CallRouteRequest_builder{
@@ -48,14 +57,14 @@ func Example() {
 		Path:   proto.String("/status"),
 	}.Build())
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	resp, err := stream.Recv()
 	if err != nil {
-		log.Fatal(err)
+		return err
 	}
 
 	fmt.Printf("%d %s\n", resp.GetCode(), resp.GetBody())
-	// Output: 200 hello from GET /status
+	return nil
 }
