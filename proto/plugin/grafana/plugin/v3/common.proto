@@ -11,6 +11,27 @@ message GroupVersion {
   string version = 2;
 }
 
+// ResourceObject 
+message ResourceObject {
+  // For plugins, group is usually the plugin identifier
+  GroupVersion api_version = 1;
+
+  // the type of object (eg, dashboards)
+  string resource = 2;
+
+  // tenant isolation
+  string namespace = 3;
+
+  // the identifier
+  string name = 4;
+
+  // the resource version -- changes here indicate that raw body has changed
+  string rv = 5;
+
+  // JSON raw resource
+  bytes raw = 6;
+}
+
 // StringList is a list of strings. It is used as a map value, since protobuf
 // does not allow a repeated value in a map directly.
 message StringList {

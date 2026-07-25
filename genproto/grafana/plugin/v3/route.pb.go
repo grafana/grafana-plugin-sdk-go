@@ -23,11 +23,12 @@ const (
 // CallRouteRequest is the request for RouteService.CallRoute.
 type CallRouteRequest struct {
 	state                  protoimpl.MessageState `protogen:"opaque.v1"`
-	xxx_hidden_Path        *string                `protobuf:"bytes,1,opt,name=path"`
-	xxx_hidden_Method      *string                `protobuf:"bytes,2,opt,name=method"`
-	xxx_hidden_Url         *string                `protobuf:"bytes,3,opt,name=url"`
-	xxx_hidden_Headers     map[string]*StringList `protobuf:"bytes,4,rep,name=headers" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	xxx_hidden_Body        []byte                 `protobuf:"bytes,5,opt,name=body"`
+	xxx_hidden_Parent      *ResourceObject        `protobuf:"bytes,1,opt,name=parent"`
+	xxx_hidden_Path        *string                `protobuf:"bytes,2,opt,name=path"`
+	xxx_hidden_Method      *string                `protobuf:"bytes,3,opt,name=method"`
+	xxx_hidden_Url         *string                `protobuf:"bytes,4,opt,name=url"`
+	xxx_hidden_Headers     map[string]*StringList `protobuf:"bytes,5,rep,name=headers" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	xxx_hidden_Body        []byte                 `protobuf:"bytes,6,opt,name=body"`
 	XXX_raceDetectHookData protoimpl.RaceDetectHookData
 	XXX_presence           [1]uint32
 	unknownFields          protoimpl.UnknownFields
@@ -57,6 +58,13 @@ func (x *CallRouteRequest) ProtoReflect() protoreflect.Message {
 		return ms
 	}
 	return mi.MessageOf(x)
+}
+
+func (x *CallRouteRequest) GetParent() *ResourceObject {
+	if x != nil {
+		return x.xxx_hidden_Parent
+	}
+	return nil
 }
 
 func (x *CallRouteRequest) GetPath() string {
@@ -103,19 +111,23 @@ func (x *CallRouteRequest) GetBody() []byte {
 	return nil
 }
 
+func (x *CallRouteRequest) SetParent(v *ResourceObject) {
+	x.xxx_hidden_Parent = v
+}
+
 func (x *CallRouteRequest) SetPath(v string) {
 	x.xxx_hidden_Path = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 0, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
 }
 
 func (x *CallRouteRequest) SetMethod(v string) {
 	x.xxx_hidden_Method = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
 }
 
 func (x *CallRouteRequest) SetUrl(v string) {
 	x.xxx_hidden_Url = &v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
 }
 
 func (x *CallRouteRequest) SetHeaders(v map[string]*StringList) {
@@ -127,60 +139,73 @@ func (x *CallRouteRequest) SetBody(v []byte) {
 		v = []byte{}
 	}
 	x.xxx_hidden_Body = v
-	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 5)
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+}
+
+func (x *CallRouteRequest) HasParent() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_Parent != nil
 }
 
 func (x *CallRouteRequest) HasPath() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 0)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
 }
 
 func (x *CallRouteRequest) HasMethod() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
 }
 
 func (x *CallRouteRequest) HasUrl() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
 }
 
 func (x *CallRouteRequest) HasBody() bool {
 	if x == nil {
 		return false
 	}
-	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+}
+
+func (x *CallRouteRequest) ClearParent() {
+	x.xxx_hidden_Parent = nil
 }
 
 func (x *CallRouteRequest) ClearPath() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 0)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
 	x.xxx_hidden_Path = nil
 }
 
 func (x *CallRouteRequest) ClearMethod() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
 	x.xxx_hidden_Method = nil
 }
 
 func (x *CallRouteRequest) ClearUrl() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
 	x.xxx_hidden_Url = nil
 }
 
 func (x *CallRouteRequest) ClearBody() {
-	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
 	x.xxx_hidden_Body = nil
 }
 
 type CallRouteRequest_builder struct {
 	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
 
+	// Depending where the route is mounted, the parent resource will be populated
+	Parent *ResourceObject
 	// path is the request path.
 	Path *string
 	// method is the HTTP method.
@@ -197,21 +222,22 @@ func (b0 CallRouteRequest_builder) Build() *CallRouteRequest {
 	m0 := &CallRouteRequest{}
 	b, x := &b0, m0
 	_, _ = b, x
+	x.xxx_hidden_Parent = b.Parent
 	if b.Path != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 0, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
 		x.xxx_hidden_Path = b.Path
 	}
 	if b.Method != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
 		x.xxx_hidden_Method = b.Method
 	}
 	if b.Url != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
 		x.xxx_hidden_Url = b.Url
 	}
 	x.xxx_hidden_Headers = b.Headers
 	if b.Body != nil {
-		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 5)
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
 		x.xxx_hidden_Body = b.Body
 	}
 	return m0
@@ -348,13 +374,14 @@ var File_grafana_plugin_v3_route_proto protoreflect.FileDescriptor
 
 const file_grafana_plugin_v3_route_proto_rawDesc = "" +
 	"\n" +
-	"\x1dgrafana/plugin/v3/route.proto\x12\x11grafana.plugin.v3\x1a\x1egrafana/plugin/v3/common.proto\"\x8b\x02\n" +
-	"\x10CallRouteRequest\x12\x12\n" +
-	"\x04path\x18\x01 \x01(\tR\x04path\x12\x16\n" +
-	"\x06method\x18\x02 \x01(\tR\x06method\x12\x10\n" +
-	"\x03url\x18\x03 \x01(\tR\x03url\x12J\n" +
-	"\aheaders\x18\x04 \x03(\v20.grafana.plugin.v3.CallRouteRequest.HeadersEntryR\aheaders\x12\x12\n" +
-	"\x04body\x18\x05 \x01(\fR\x04body\x1aY\n" +
+	"\x1dgrafana/plugin/v3/route.proto\x12\x11grafana.plugin.v3\x1a\x1egrafana/plugin/v3/common.proto\"\xc6\x02\n" +
+	"\x10CallRouteRequest\x129\n" +
+	"\x06parent\x18\x01 \x01(\v2!.grafana.plugin.v3.ResourceObjectR\x06parent\x12\x12\n" +
+	"\x04path\x18\x02 \x01(\tR\x04path\x12\x16\n" +
+	"\x06method\x18\x03 \x01(\tR\x06method\x12\x10\n" +
+	"\x03url\x18\x04 \x01(\tR\x03url\x12J\n" +
+	"\aheaders\x18\x05 \x03(\v20.grafana.plugin.v3.CallRouteRequest.HeadersEntryR\aheaders\x12\x12\n" +
+	"\x04body\x18\x06 \x01(\fR\x04body\x1aY\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x123\n" +
 	"\x05value\x18\x02 \x01(\v2\x1d.grafana.plugin.v3.StringListR\x05value:\x028\x01\"\xe3\x01\n" +
@@ -376,20 +403,22 @@ var file_grafana_plugin_v3_route_proto_goTypes = []any{
 	(*CallRouteResponse)(nil), // 1: grafana.plugin.v3.CallRouteResponse
 	nil,                       // 2: grafana.plugin.v3.CallRouteRequest.HeadersEntry
 	nil,                       // 3: grafana.plugin.v3.CallRouteResponse.HeadersEntry
-	(*StringList)(nil),        // 4: grafana.plugin.v3.StringList
+	(*ResourceObject)(nil),    // 4: grafana.plugin.v3.ResourceObject
+	(*StringList)(nil),        // 5: grafana.plugin.v3.StringList
 }
 var file_grafana_plugin_v3_route_proto_depIdxs = []int32{
-	2, // 0: grafana.plugin.v3.CallRouteRequest.headers:type_name -> grafana.plugin.v3.CallRouteRequest.HeadersEntry
-	3, // 1: grafana.plugin.v3.CallRouteResponse.headers:type_name -> grafana.plugin.v3.CallRouteResponse.HeadersEntry
-	4, // 2: grafana.plugin.v3.CallRouteRequest.HeadersEntry.value:type_name -> grafana.plugin.v3.StringList
-	4, // 3: grafana.plugin.v3.CallRouteResponse.HeadersEntry.value:type_name -> grafana.plugin.v3.StringList
-	0, // 4: grafana.plugin.v3.RouteService.CallRoute:input_type -> grafana.plugin.v3.CallRouteRequest
-	1, // 5: grafana.plugin.v3.RouteService.CallRoute:output_type -> grafana.plugin.v3.CallRouteResponse
-	5, // [5:6] is the sub-list for method output_type
-	4, // [4:5] is the sub-list for method input_type
-	4, // [4:4] is the sub-list for extension type_name
-	4, // [4:4] is the sub-list for extension extendee
-	0, // [0:4] is the sub-list for field type_name
+	4, // 0: grafana.plugin.v3.CallRouteRequest.parent:type_name -> grafana.plugin.v3.ResourceObject
+	2, // 1: grafana.plugin.v3.CallRouteRequest.headers:type_name -> grafana.plugin.v3.CallRouteRequest.HeadersEntry
+	3, // 2: grafana.plugin.v3.CallRouteResponse.headers:type_name -> grafana.plugin.v3.CallRouteResponse.HeadersEntry
+	5, // 3: grafana.plugin.v3.CallRouteRequest.HeadersEntry.value:type_name -> grafana.plugin.v3.StringList
+	5, // 4: grafana.plugin.v3.CallRouteResponse.HeadersEntry.value:type_name -> grafana.plugin.v3.StringList
+	0, // 5: grafana.plugin.v3.RouteService.CallRoute:input_type -> grafana.plugin.v3.CallRouteRequest
+	1, // 6: grafana.plugin.v3.RouteService.CallRoute:output_type -> grafana.plugin.v3.CallRouteResponse
+	6, // [6:7] is the sub-list for method output_type
+	5, // [5:6] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_grafana_plugin_v3_route_proto_init() }

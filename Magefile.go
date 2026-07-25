@@ -22,12 +22,20 @@ type Protobuf mg.Namespace
 
 // Generate generates protobuf files.
 func (Protobuf) Generate() error {
-	return sh.RunV("buf", "generate", "proto", "--template", "./proto/buf.gen.yaml")
+	// pluginv2 (backend.proto) lives in the proto/ module.
+	if err := sh.RunV("buf", "generate", "proto", "--template", "./proto/buf.gen.yaml"); err != nil {
+		return err
+	}
+	// The grafana.plugin.v3 API lives in its own workspace under proto/plugin.
+	return sh.RunV("buf", "generate", "proto/plugin", "--template", "./proto/plugin/buf.gen.yaml")
 }
 
 // Validate validate breaking changes in protobuf files.
 func (Protobuf) Validate() error {
-	return sh.RunV("buf", "breaking", "proto", "--against", "https://github.com/grafana/grafana-plugin-sdk-go.git#branch=main,subdir=proto")
+	if err := sh.RunV("buf", "breaking", "proto", "--against", "https://github.com/grafana/grafana-plugin-sdk-go.git#branch=main,subdir=proto"); err != nil {
+		return err
+	}
+	return sh.RunV("buf", "breaking", "proto/plugin", "--against", "https://github.com/grafana/grafana-plugin-sdk-go.git#branch=main,subdir=proto/plugin")
 }
 
 // Test runs the test suite.

@@ -45,8 +45,7 @@ message ValidateAdmissionRequest {
   // kind is the object kind.
   GroupVersionKind kind = 2;
 
-  // object_bytes is the object in the request, including the full metadata
-  // envelope.
+  // object_bytes is the object in the request, including the full metadata envelope.
   bytes object_bytes = 3;
 
   // old_object_bytes is the object as it currently exists in storage,
@@ -78,8 +77,7 @@ message MutateAdmissionRequest {
   // kind is the object kind.
   GroupVersionKind kind = 2;
 
-  // object_bytes is the object in the request, including the full metadata
-  // envelope.
+  // object_bytes is the object in the request, including the full metadata envelope.
   bytes object_bytes = 3;
 
   // old_object_bytes is the object as it currently exists in storage,

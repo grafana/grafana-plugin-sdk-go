@@ -134,6 +134,248 @@ func (b0 GroupVersion_builder) Build() *GroupVersion {
 	return m0
 }
 
+// ResourceObject
+type ResourceObject struct {
+	state                  protoimpl.MessageState `protogen:"opaque.v1"`
+	xxx_hidden_ApiVersion  *GroupVersion          `protobuf:"bytes,1,opt,name=api_version,json=apiVersion"`
+	xxx_hidden_Resource    *string                `protobuf:"bytes,2,opt,name=resource"`
+	xxx_hidden_Namespace   *string                `protobuf:"bytes,3,opt,name=namespace"`
+	xxx_hidden_Name        *string                `protobuf:"bytes,4,opt,name=name"`
+	xxx_hidden_Rv          *string                `protobuf:"bytes,5,opt,name=rv"`
+	xxx_hidden_Raw         []byte                 `protobuf:"bytes,6,opt,name=raw"`
+	XXX_raceDetectHookData protoimpl.RaceDetectHookData
+	XXX_presence           [1]uint32
+	unknownFields          protoimpl.UnknownFields
+	sizeCache              protoimpl.SizeCache
+}
+
+func (x *ResourceObject) Reset() {
+	*x = ResourceObject{}
+	mi := &file_grafana_plugin_v3_common_proto_msgTypes[1]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ResourceObject) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ResourceObject) ProtoMessage() {}
+
+func (x *ResourceObject) ProtoReflect() protoreflect.Message {
+	mi := &file_grafana_plugin_v3_common_proto_msgTypes[1]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+func (x *ResourceObject) GetApiVersion() *GroupVersion {
+	if x != nil {
+		return x.xxx_hidden_ApiVersion
+	}
+	return nil
+}
+
+func (x *ResourceObject) GetResource() string {
+	if x != nil {
+		if x.xxx_hidden_Resource != nil {
+			return *x.xxx_hidden_Resource
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *ResourceObject) GetNamespace() string {
+	if x != nil {
+		if x.xxx_hidden_Namespace != nil {
+			return *x.xxx_hidden_Namespace
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *ResourceObject) GetName() string {
+	if x != nil {
+		if x.xxx_hidden_Name != nil {
+			return *x.xxx_hidden_Name
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *ResourceObject) GetRv() string {
+	if x != nil {
+		if x.xxx_hidden_Rv != nil {
+			return *x.xxx_hidden_Rv
+		}
+		return ""
+	}
+	return ""
+}
+
+func (x *ResourceObject) GetRaw() []byte {
+	if x != nil {
+		return x.xxx_hidden_Raw
+	}
+	return nil
+}
+
+func (x *ResourceObject) SetApiVersion(v *GroupVersion) {
+	x.xxx_hidden_ApiVersion = v
+}
+
+func (x *ResourceObject) SetResource(v string) {
+	x.xxx_hidden_Resource = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 1, 6)
+}
+
+func (x *ResourceObject) SetNamespace(v string) {
+	x.xxx_hidden_Namespace = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 2, 6)
+}
+
+func (x *ResourceObject) SetName(v string) {
+	x.xxx_hidden_Name = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 3, 6)
+}
+
+func (x *ResourceObject) SetRv(v string) {
+	x.xxx_hidden_Rv = &v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 4, 6)
+}
+
+func (x *ResourceObject) SetRaw(v []byte) {
+	if v == nil {
+		v = []byte{}
+	}
+	x.xxx_hidden_Raw = v
+	protoimpl.X.SetPresent(&(x.XXX_presence[0]), 5, 6)
+}
+
+func (x *ResourceObject) HasApiVersion() bool {
+	if x == nil {
+		return false
+	}
+	return x.xxx_hidden_ApiVersion != nil
+}
+
+func (x *ResourceObject) HasResource() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 1)
+}
+
+func (x *ResourceObject) HasNamespace() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 2)
+}
+
+func (x *ResourceObject) HasName() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 3)
+}
+
+func (x *ResourceObject) HasRv() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 4)
+}
+
+func (x *ResourceObject) HasRaw() bool {
+	if x == nil {
+		return false
+	}
+	return protoimpl.X.Present(&(x.XXX_presence[0]), 5)
+}
+
+func (x *ResourceObject) ClearApiVersion() {
+	x.xxx_hidden_ApiVersion = nil
+}
+
+func (x *ResourceObject) ClearResource() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 1)
+	x.xxx_hidden_Resource = nil
+}
+
+func (x *ResourceObject) ClearNamespace() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 2)
+	x.xxx_hidden_Namespace = nil
+}
+
+func (x *ResourceObject) ClearName() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 3)
+	x.xxx_hidden_Name = nil
+}
+
+func (x *ResourceObject) ClearRv() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 4)
+	x.xxx_hidden_Rv = nil
+}
+
+func (x *ResourceObject) ClearRaw() {
+	protoimpl.X.ClearPresent(&(x.XXX_presence[0]), 5)
+	x.xxx_hidden_Raw = nil
+}
+
+type ResourceObject_builder struct {
+	_ [0]func() // Prevents comparability and use of unkeyed literals for the builder.
+
+	// For plugins, group is usually the plugin identifier
+	ApiVersion *GroupVersion
+	// the type of object (eg, dashboards)
+	Resource *string
+	// tenant isolation
+	Namespace *string
+	// the identifier
+	Name *string
+	// the resource version -- changes here indicate that raw body has changed
+	Rv *string
+	// JSON raw resource
+	Raw []byte
+}
+
+func (b0 ResourceObject_builder) Build() *ResourceObject {
+	m0 := &ResourceObject{}
+	b, x := &b0, m0
+	_, _ = b, x
+	x.xxx_hidden_ApiVersion = b.ApiVersion
+	if b.Resource != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 1, 6)
+		x.xxx_hidden_Resource = b.Resource
+	}
+	if b.Namespace != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 2, 6)
+		x.xxx_hidden_Namespace = b.Namespace
+	}
+	if b.Name != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 3, 6)
+		x.xxx_hidden_Name = b.Name
+	}
+	if b.Rv != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 4, 6)
+		x.xxx_hidden_Rv = b.Rv
+	}
+	if b.Raw != nil {
+		protoimpl.X.SetPresentNonAtomic(&(x.XXX_presence[0]), 5, 6)
+		x.xxx_hidden_Raw = b.Raw
+	}
+	return m0
+}
+
 // StringList is a list of strings. It is used as a map value, since protobuf
 // does not allow a repeated value in a map directly.
 type StringList struct {
@@ -145,7 +387,7 @@ type StringList struct {
 
 func (x *StringList) Reset() {
 	*x = StringList{}
-	mi := &file_grafana_plugin_v3_common_proto_msgTypes[1]
+	mi := &file_grafana_plugin_v3_common_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -157,7 +399,7 @@ func (x *StringList) String() string {
 func (*StringList) ProtoMessage() {}
 
 func (x *StringList) ProtoReflect() protoreflect.Message {
-	mi := &file_grafana_plugin_v3_common_proto_msgTypes[1]
+	mi := &file_grafana_plugin_v3_common_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -210,7 +452,7 @@ type StatusResult struct {
 
 func (x *StatusResult) Reset() {
 	*x = StatusResult{}
-	mi := &file_grafana_plugin_v3_common_proto_msgTypes[2]
+	mi := &file_grafana_plugin_v3_common_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -222,7 +464,7 @@ func (x *StatusResult) String() string {
 func (*StatusResult) ProtoMessage() {}
 
 func (x *StatusResult) ProtoReflect() protoreflect.Message {
-	mi := &file_grafana_plugin_v3_common_proto_msgTypes[2]
+	mi := &file_grafana_plugin_v3_common_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -383,7 +625,15 @@ const file_grafana_plugin_v3_common_proto_rawDesc = "" +
 	"\x1egrafana/plugin/v3/common.proto\x12\x11grafana.plugin.v3\">\n" +
 	"\fGroupVersion\x12\x14\n" +
 	"\x05group\x18\x01 \x01(\tR\x05group\x12\x18\n" +
-	"\aversion\x18\x02 \x01(\tR\aversion\"$\n" +
+	"\aversion\x18\x02 \x01(\tR\aversion\"\xc2\x01\n" +
+	"\x0eResourceObject\x12@\n" +
+	"\vapi_version\x18\x01 \x01(\v2\x1f.grafana.plugin.v3.GroupVersionR\n" +
+	"apiVersion\x12\x1a\n" +
+	"\bresource\x18\x02 \x01(\tR\bresource\x12\x1c\n" +
+	"\tnamespace\x18\x03 \x01(\tR\tnamespace\x12\x12\n" +
+	"\x04name\x18\x04 \x01(\tR\x04name\x12\x0e\n" +
+	"\x02rv\x18\x05 \x01(\tR\x02rv\x12\x10\n" +
+	"\x03raw\x18\x06 \x01(\fR\x03raw\"$\n" +
 	"\n" +
 	"StringList\x12\x16\n" +
 	"\x06values\x18\x01 \x03(\tR\x06values\"l\n" +
@@ -394,18 +644,20 @@ const file_grafana_plugin_v3_common_proto_rawDesc = "" +
 	"\x04code\x18\x04 \x01(\x05R\x04codeB\xd8\x01\n" +
 	"\x15com.grafana.plugin.v3B\vCommonProtoP\x01ZLgithub.com/grafana/grafana-plugin-sdk-go/genproto/grafana/plugin/v3;pluginv3\xa2\x02\x03GPX\xaa\x02\x11Grafana.Plugin.V3\xca\x02\x11Grafana\\Plugin\\V3\xe2\x02\x1dGrafana\\Plugin\\V3\\GPBMetadata\xea\x02\x13Grafana::Plugin::V3b\beditionsp\xe9\a"
 
-var file_grafana_plugin_v3_common_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_grafana_plugin_v3_common_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_grafana_plugin_v3_common_proto_goTypes = []any{
-	(*GroupVersion)(nil), // 0: grafana.plugin.v3.GroupVersion
-	(*StringList)(nil),   // 1: grafana.plugin.v3.StringList
-	(*StatusResult)(nil), // 2: grafana.plugin.v3.StatusResult
+	(*GroupVersion)(nil),   // 0: grafana.plugin.v3.GroupVersion
+	(*ResourceObject)(nil), // 1: grafana.plugin.v3.ResourceObject
+	(*StringList)(nil),     // 2: grafana.plugin.v3.StringList
+	(*StatusResult)(nil),   // 3: grafana.plugin.v3.StatusResult
 }
 var file_grafana_plugin_v3_common_proto_depIdxs = []int32{
-	0, // [0:0] is the sub-list for method output_type
-	0, // [0:0] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	0, // 0: grafana.plugin.v3.ResourceObject.api_version:type_name -> grafana.plugin.v3.GroupVersion
+	1, // [1:1] is the sub-list for method output_type
+	1, // [1:1] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_grafana_plugin_v3_common_proto_init() }
@@ -419,7 +671,7 @@ func file_grafana_plugin_v3_common_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_grafana_plugin_v3_common_proto_rawDesc), len(file_grafana_plugin_v3_common_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

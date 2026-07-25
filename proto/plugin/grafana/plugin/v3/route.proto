@@ -12,22 +12,46 @@ service RouteService {
   rpc CallRoute(CallRouteRequest) returns (stream CallRouteResponse);
 }
 
+// RouteResource is the resource object referenced by the requested path
+message RouteResource {
+  // The resource api version
+  GroupVersion api_version = 1;
+
+  // the type of object (eg, dashboards)
+  string resource = 2;
+
+  // tenant isolation
+  string namespace = 3;
+
+  // the identifier
+  string name = 4;
+
+  // the resource version -- changes here indicate that raw body has changed
+  string rv = 5;
+
+  // JSON raw resource
+  bytes raw = 6;
+}
+
 // CallRouteRequest is the request for RouteService.CallRoute.
 message CallRouteRequest {
+  // Depending where the route is mounted, the parent resource will be populated
+  RouteResource parent = 1;
+
   // path is the request path.
-  string path = 1;
+  string path = 2;
 
   // method is the HTTP method.
-  string method = 2;
+  string method = 3;
 
   // url is the request URL.
-  string url = 3;
+  string url = 4;
 
   // headers are the raw HTTP request headers.
-  map<string, StringList> headers = 4;
+  map<string, StringList> headers = 5;
 
   // body is the raw HTTP request body.
-  bytes body = 5;
+  bytes body = 6;
 }
 
 // CallRouteResponse is a streamed chunk of the response for
