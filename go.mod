@@ -7,7 +7,7 @@ require (
 	github.com/cheekybits/genny v1.0.0
 	github.com/chromedp/cdproto v0.0.0-20250803210736-d308e07a266d
 	github.com/elazarl/goproxy v1.8.4
-	github.com/getkin/kin-openapi v0.141.0
+	github.com/getkin/kin-openapi v0.144.0
 	github.com/go-openapi/loads v0.24.0
 	github.com/go-openapi/spec v0.22.6
 	github.com/go-openapi/strfmt v0.26.3
