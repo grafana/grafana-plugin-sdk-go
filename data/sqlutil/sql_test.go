@@ -654,6 +654,38 @@ func TestFrameFromRowsWithInputTypeMatcher(t *testing.T) {
 	require.Equal(t, expected, frame)
 }
 
+func TestFrameFromRowsConvertWithColumnReceivesColumnType(t *testing.T) {
+	var seenTypeNames []string
+	converter := sqlutil.Converter{
+		Name:          "String",
+		InputScanType: reflect.TypeOf(""),
+		InputTypeName: "TEST_TYPE",
+		FrameConverter: sqlutil.FrameConverter{
+			FieldType: data.FieldTypeString,
+			ConvertWithColumn: func(in interface{}, col sql.ColumnType) (interface{}, error) {
+				seenTypeNames = append(seenTypeNames, col.DatabaseTypeName())
+				return *(in.(*string)), nil
+			},
+		},
+	}
+
+	rows := makeSingleResultSetWithTypeNames( //nolint:rowserrcheck
+		[]string{"a"},
+		[]string{"TEST_TYPE"},
+		[]interface{}{"x"},
+		[]interface{}{"y"},
+	)
+
+	frame, err := sqlutil.FrameFromRows(rows, 100, converter)
+	require.NoError(t, err)
+	require.Equal(t, &data.Frame{
+		Fields: []*data.Field{
+			data.NewField("a", nil, []string{"x", "y"}),
+		},
+	}, frame)
+	require.Equal(t, []string{"TEST_TYPE", "TEST_TYPE"}, seenTypeNames)
+}
+
 func TestFrameFromRows_MultipleTimes(t *testing.T) {
 	ptr := func(s string) *string {
 		return &s
