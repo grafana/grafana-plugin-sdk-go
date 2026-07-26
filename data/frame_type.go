@@ -184,11 +184,11 @@ const KindLogs FrameTypeKind = "logs"
 type FrameTypeVersion [2]uint
 
 func (sv FrameTypeVersion) Less(osv FrameTypeVersion) bool {
-	return sv[0] < osv[0] || sv[1] < osv[1]
+	return sv[0] < osv[0] || (sv[0] == osv[0] && sv[1] < osv[1])
 }
 
 func (sv FrameTypeVersion) Greater(osv FrameTypeVersion) bool {
-	return sv[0] > osv[0] || sv[1] > osv[1]
+	return sv[0] > osv[0] || (sv[0] == osv[0] && sv[1] > osv[1])
 }
 
 func (sv FrameTypeVersion) String() string {
