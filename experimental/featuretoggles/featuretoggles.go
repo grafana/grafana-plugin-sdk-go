@@ -12,9 +12,10 @@ const (
 	// When enabled, instances will be automatically evicted from the cache after a certain TTL.
 	TTLInstanceManager = "ttlPluginInstanceManager"
 
-	// DatasourceForceTLS13 is a feature toggle that forces the datasource HTTP client to
+	// PluginsForceTLS13 is a feature toggle that forces the plugins (apps and data sources) HTTP client to
 	// use TLS 1.3 as both the minimum and maximum TLS version when connecting to a data source.
-	DatasourceForceTLS13 = "datasourceForceTls13"
+	// This will only be respected if the plugin does not directly set the TLS version.
+	PluginsForceTLS13 = "pluginsForceTls13"
 )
 
 // FeatureToggles can check if feature toggles are enabled on the Grafana instance.

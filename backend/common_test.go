@@ -75,6 +75,47 @@ func TestAppInstanceSettings(t *testing.T) {
 	})
 }
 
+func TestAppInstanceSettingsForceTLS13(t *testing.T) {
+	newCtxWithToggle := func(enabled bool) context.Context {
+		cfgMap := map[string]string{}
+		if enabled {
+			cfgMap[featuretoggles.EnabledFeatures] = featuretoggles.PluginsForceTLS13
+		}
+		return config.WithGrafanaConfig(context.Background(), config.NewGrafanaCfg(cfgMap))
+	}
+
+	t.Run("does not touch TLS options when toggle is disabled", func(t *testing.T) {
+		settings := &AppInstanceSettings{JSONData: []byte("{}")}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(false))
+		require.NoError(t, err)
+		require.Nil(t, opts.TLS)
+	})
+
+	t.Run("forces TLS 1.3 when toggle is enabled and no TLS options were set", func(t *testing.T) {
+		settings := &AppInstanceSettings{JSONData: []byte("{}")}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(true))
+		require.NoError(t, err)
+		require.NotNil(t, opts.TLS)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MinVersion)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MaxVersion)
+	})
+
+	t.Run("forces TLS 1.3 while preserving existing TLS options", func(t *testing.T) {
+		settings := &AppInstanceSettings{
+			JSONData:                []byte(`{ "tlsSkipVerify": true, "tlsAuthWithCACert": true, "serverName": "example.com" }`),
+			DecryptedSecureJSONData: map[string]string{"tlsCACert": "cacert"},
+		}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(true))
+		require.NoError(t, err)
+		require.NotNil(t, opts.TLS)
+		require.True(t, opts.TLS.InsecureSkipVerify)
+		require.Equal(t, "example.com", opts.TLS.ServerName)
+		require.Equal(t, "cacert", opts.TLS.CACertificate)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MinVersion)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MaxVersion)
+	})
+}
+
 func TestDataSourceInstanceSettings(t *testing.T) {
 	t.Run("HTTPClientOptions() should translate settings as expected", func(t *testing.T) {
 		tcs := []struct {
@@ -227,7 +268,7 @@ func TestDataSourceInstanceSettingsForceTLS13(t *testing.T) {
 	newCtxWithToggle := func(enabled bool) context.Context {
 		cfgMap := map[string]string{}
 		if enabled {
-			cfgMap[featuretoggles.EnabledFeatures] = featuretoggles.DatasourceForceTLS13
+			cfgMap[featuretoggles.EnabledFeatures] = featuretoggles.PluginsForceTLS13
 		}
 		return config.WithGrafanaConfig(context.Background(), config.NewGrafanaCfg(cfgMap))
 	}

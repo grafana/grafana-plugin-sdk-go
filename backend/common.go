@@ -47,14 +47,24 @@ type AppInstanceSettings struct {
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
-func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.Options, error) {
+func (s *AppInstanceSettings) HTTPClientOptions(ctx context.Context) (httpclient.Options, error) {
 	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
 	if err != nil {
 		return httpclient.Options{}, err
 	}
 
 	opts := httpSettings.HTTPClientOptions()
+
+	cfg := GrafanaConfigFromContext(ctx)
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
+
+	if cfg.FeatureToggles().IsEnabled(featuretoggles.PluginsForceTLS13) {
+		if opts.TLS == nil {
+			opts.TLS = &httpclient.TLSOptions{}
+		}
+		opts.TLS.MinVersion = tls.VersionTLS13
+		opts.TLS.MaxVersion = tls.VersionTLS13
+	}
 
 	return opts, nil
 }
@@ -145,7 +155,7 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (htt
 
 	cfg := GrafanaConfigFromContext(ctx)
 
-	if cfg.FeatureToggles().IsEnabled(featuretoggles.DatasourceForceTLS13) {
+	if cfg.FeatureToggles().IsEnabled(featuretoggles.PluginsForceTLS13) {
 		if opts.TLS == nil {
 			opts.TLS = &httpclient.TLSOptions{}
 		}
