@@ -53,10 +53,14 @@ type sdkHARQueryInfo struct {
 	// RefID ties the entry to the panel query that caused it. Empty for a statement the plugin ran
 	// outside a panel query (a schema or completion lookup).
 	RefID string `json:"refId,omitempty"`
-	// StatementTruncated and ArgsTruncated report that the capture point cut the statement or the
-	// arguments to fit its size bounds, so a reader can tell a long statement from a clipped one.
-	StatementTruncated bool `json:"statementTruncated,omitempty"`
-	ArgsTruncated      bool `json:"argsTruncated,omitempty"`
+	// Operation is the protocol-level operation, e.g. a MongoDB command name. It doubles as the entry's
+	// request method, and is repeated here so an analyzer does not have to read it back out of there.
+	Operation string `json:"operation,omitempty"`
+	// StatementTruncated, ArgsTruncated and ResultPayloadTruncated report that the capture point cut a
+	// field to fit its size bounds, so a reader can tell a long value from a clipped one.
+	StatementTruncated     bool `json:"statementTruncated,omitempty"`
+	ArgsTruncated          bool `json:"argsTruncated,omitempty"`
+	ResultPayloadTruncated bool `json:"resultPayloadTruncated,omitempty"`
 	// FrameCount and RowCount summarise what the plugin returned; RowCount is -1 when the capture
 	// point could not determine it.
 	FrameCount int `json:"frameCount"`
@@ -64,6 +68,9 @@ type sdkHARQueryInfo struct {
 	// Error is the error the query returned, or empty on success. It repeats the entry comment in a
 	// field an analyzer can read without string matching.
 	Error string `json:"error,omitempty"`
+	// Attributes is protocol-specific metadata the capture point supplied (a MongoDB database and
+	// connection ID, say), passed through untouched.
+	Attributes map[string]string `json:"attributes,omitempty"`
 }
 
 // querySummary is the response content of a query entry: the rows the datasource returned, plus what
@@ -98,8 +105,12 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 	if i.StatementTruncated {
 		statementSize = -1
 	}
+	statementMimeType := i.StatementMimeType
+	if statementMimeType == "" {
+		statementMimeType = queryMimeType
+	}
 	postData := &sdkHARPostData{
-		MimeType: queryMimeType,
+		MimeType: statementMimeType,
 		Text:     statement,
 		Encoding: encoding,
 		Params:   queryParams(i.Args),
@@ -110,7 +121,14 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 	// misread as an empty one.
 	resp := sdkHARResponse{Status: 0, HeadersSize: -1, BodySize: -1, Headers: []sdkHARNameValue{}, Cookies: []sdkHARCookie{}}
 	var comment string
-	if i.Err == "" {
+	switch {
+	case i.Err == "" && i.ResultPayload != "":
+		// A reply that is not a result set is carried verbatim, in its own media type: a MongoDB reply
+		// document is the evidence itself, and reshaping it into columns and rows would misreport it.
+		resp.Status = 200
+		resp.StatusText = "OK"
+		resp.Content, resp.BodySize = payloadContent(i)
+	case i.Err == "":
 		body := querySummary{
 			Columns:       i.ResultColumns,
 			Rows:          i.ResultRows,
@@ -145,12 +163,16 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 			MimeType: querySummaryMimeType,
 			Text:     string(summary),
 		}
-	} else {
+	default:
 		comment = "query error: " + i.Err
-		// A query can fail after the datasource already returned rows -- a conversion that choked on
-		// row 300, a result set that errored mid-stream. Those rows are the most direct evidence there
-		// is of what went wrong, so keep them. The status stays zero: the query did not complete, and
-		// claiming a 200 because some rows arrived would misreport it.
+		// A call can fail after the datasource already returned something -- a conversion that choked on
+		// row 300, a result set that errored mid-stream, a reply that arrived before a later command
+		// failed. That is the most direct evidence there is of what went wrong, so keep it. The status
+		// stays zero: the call did not complete, and claiming a 200 because part of it arrived would
+		// misreport it.
+		if i.ResultPayload != "" {
+			resp.Content, _ = payloadContent(i)
+		}
 		if len(i.ResultRows) > 0 {
 			partial, err := json.Marshal(querySummary{
 				Columns:       i.ResultColumns,
@@ -173,7 +195,7 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 		StartedDateTime: i.StartedAt.UTC().Format(time.RFC3339),
 		Time:            elapsedMs,
 		Request: sdkHARRequest{
-			Method: queryMethod,
+			Method: queryEntryMethod(i),
 			URL:    queryURL(i),
 			// No HTTP version, headers or cookies: this exchange never was an HTTP request, and
 			// inventing plausible-looking ones would make the capture lie about what was on the wire.
@@ -189,31 +211,79 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 		Timings:  sdkHARTimings{Send: 0, Wait: elapsedMs, Receive: 0},
 		Comment:  comment,
 		Query: &sdkHARQueryInfo{
-			Kind:               i.Kind,
-			DatasourceUID:      i.DatasourceUID,
-			DatasourceType:     i.DatasourceType,
-			DatasourceName:     i.DatasourceName,
-			RefID:              i.RefID,
-			StatementTruncated: i.StatementTruncated,
-			ArgsTruncated:      i.ArgsTruncated,
-			FrameCount:         i.FrameCount,
-			RowCount:           i.RowCount,
-			Error:              i.Err,
+			Kind:                   i.Kind,
+			DatasourceUID:          i.DatasourceUID,
+			DatasourceType:         i.DatasourceType,
+			DatasourceName:         i.DatasourceName,
+			RefID:                  i.RefID,
+			Operation:              i.Operation,
+			StatementTruncated:     i.StatementTruncated,
+			ArgsTruncated:          i.ArgsTruncated,
+			ResultPayloadTruncated: i.ResultPayloadTruncated,
+			FrameCount:             i.FrameCount,
+			RowCount:               i.RowCount,
+			Error:                  i.Err,
+			Attributes:             i.Attributes,
 		},
 	}
 }
 
-// queryMethod is the HAR request method of a query entry. HAR does not constrain the method string,
-// and a statement is neither a GET nor a POST, so name the operation for what it is rather than
-// dressing it up as an HTTP verb.
+// queryMethod is the default HAR request method of a query entry. HAR does not constrain the method
+// string, and a statement is neither a GET nor a POST, so name the operation for what it is rather
+// than dressing it up as an HTTP verb.
 const queryMethod = "QUERY"
 
-// queryURL builds the entry's URL. HAR requires one and there is no URL for a database call at this
-// seam -- the capture point sees the statement, not the driver's connection target -- so it addresses
-// the datasource that ran the statement instead: "sql://<type>/<uid>?refId=A". The scheme is taken
-// from the capture kind so a MongoDB or Redis capture point reads as "mongo://" or "redis://" without
-// this package having to know about it.
+// queryEntryMethod names the operation a query entry describes. A capture point that knows the
+// protocol-level operation (a MongoDB command name) supplies it, so the entry reads "find" rather than
+// a generic verb; otherwise the statement itself says what was done.
+func queryEntryMethod(i querycapture.Interaction) string {
+	if i.Operation != "" {
+		return i.Operation
+	}
+	return queryMethod
+}
+
+// payloadContent renders a non-tabular reply as the entry's response content, returning the content and
+// the body size to report. A clipped payload reports an unavailable size (-1), the convention an
+// over-cap HTTP body already uses; content.size stays what was actually retained.
+func payloadContent(i querycapture.Interaction) (sdkHARContent, int64) {
+	mimeType := i.ResultPayloadMimeType
+	if mimeType == "" {
+		mimeType = querySummaryMimeType
+	}
+	text, encoding := encodeBody([]byte(i.ResultPayload))
+	size := int64(len(i.ResultPayload))
+	bodySize := size
+	if i.ResultPayloadTruncated {
+		bodySize = -1
+	}
+	return sdkHARContent{Size: size, MimeType: mimeType, Text: text, Encoding: encoding}, bodySize
+}
+
+// queryURL builds the entry's URL. HAR requires one, so:
+//
+//   - When the capture point knows where the call went, that address is the URL, with the refID
+//     appended -- e.g. "mongodb://db.example.com:27017/orders?refId=A". This is the honest answer and
+//     the one a reader wants: which server answered.
+//   - Otherwise it addresses the datasource that ran the statement instead --
+//     "sql://<type>/<uid>?refId=A" -- because a SQL seam positioned at the statement never sees the
+//     driver's connection target. The scheme comes from the capture kind, so a MongoDB or Redis capture
+//     point reads as "mongodb://" or "redis://" without this package having to know about it.
+//
+// Credentials are the capture point's responsibility to strip before setting Target; this function
+// does not parse it, precisely so it cannot silently mangle an address it does not understand.
 func queryURL(i querycapture.Interaction) string {
+	if i.Target != "" {
+		if i.RefID == "" {
+			return i.Target
+		}
+		separator := "?"
+		if strings.Contains(i.Target, "?") {
+			separator = "&"
+		}
+		return i.Target + separator + url.Values{"refId": []string{i.RefID}}.Encode()
+	}
+
 	scheme := "query"
 	if kind, _, found := strings.Cut(i.Kind, "."); found && kind != "" {
 		scheme = kind

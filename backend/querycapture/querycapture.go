@@ -69,10 +69,24 @@ type Interaction struct {
 	// completion lookup.
 	RefID string
 
+	// Target is the address the call went to, e.g. "mongodb://db.example.com:27017".
+	// Credentials must be stripped by the capture point before it gets here. Empty
+	// when the capture point cannot see the connection's target, which is the case
+	// for a SQL seam that only sees the statement.
+	Target string
+	// Operation is the protocol-level operation, e.g. a MongoDB command name. Empty
+	// for a plain statement execution, where the statement itself says what was
+	// done.
+	Operation string
+
 	// Statement is the query as it was handed to the driver: after macro
 	// interpolation, which is the form the datasource actually saw. Truncated to
 	// MaxStatementBytes; StatementTruncated reports whether that happened.
 	Statement string
+	// StatementMimeType describes Statement for a consumer rendering it, e.g.
+	// "application/vnd.mongodb.extended-json" for a MongoDB command document.
+	// Empty means SQL text.
+	StatementMimeType string
 	// StatementTruncated reports whether Statement was cut to fit
 	// MaxStatementBytes.
 	StatementTruncated bool
@@ -107,6 +121,23 @@ type Interaction struct {
 	ResultRowsTruncated bool
 	ResultTotalRows     int
 
+	// ResultPayload is what came back when it is not a result set: a MongoDB reply
+	// document, a key-value response. It is the counterpart of ResultRows for a
+	// datasource whose answer has no rows and columns, and forcing such a reply into
+	// a tabular shape would misrepresent it. Bounded by the capture point, which
+	// reports clipping in ResultPayloadTruncated.
+	ResultPayload string
+	// ResultPayloadMimeType describes ResultPayload, e.g.
+	// "application/vnd.mongodb.extended-json". Empty means JSON.
+	ResultPayloadMimeType  string
+	ResultPayloadTruncated bool
+
+	// Attributes carries protocol-specific metadata that has no field of its own --
+	// a MongoDB database and connection ID, a warehouse name -- so a capture point
+	// can record what identifies its call without this package having to know about
+	// it. Rendered as-is by consumers; keys should be lowerCamelCase.
+	Attributes map[string]string
+
 	// Err is the error the call returned, or empty on success. A recorded
 	// failure is the most valuable case for diagnostics, so capture points
 	// record an Interaction on the error path too.
@@ -119,6 +150,8 @@ type Interaction struct {
 const (
 	// KindSQLQuery is a statement executed against a database/sql connection.
 	KindSQLQuery = "sql.query"
+	// KindMongoCommand is a command sent over the MongoDB wire protocol.
+	KindMongoCommand = "mongodb.command"
 	// KindHTTP is an HTTP round trip, as captured by the SDK's HAR middleware.
 	KindHTTP = "http"
 )

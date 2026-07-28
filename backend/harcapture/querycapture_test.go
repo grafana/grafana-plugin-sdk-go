@@ -42,16 +42,19 @@ type harDoc struct {
 			} `json:"response"`
 			Comment string `json:"comment"`
 			Query   *struct {
-				Kind               string `json:"kind"`
-				DatasourceUID      string `json:"datasourceUid"`
-				DatasourceType     string `json:"datasourceType"`
-				DatasourceName     string `json:"datasourceName"`
-				RefID              string `json:"refId"`
-				StatementTruncated bool   `json:"statementTruncated"`
-				ArgsTruncated      bool   `json:"argsTruncated"`
-				FrameCount         int    `json:"frameCount"`
-				RowCount           int    `json:"rowCount"`
-				Error              string `json:"error"`
+				Operation              string            `json:"operation"`
+				Attributes             map[string]string `json:"attributes"`
+				ResultPayloadTruncated bool              `json:"resultPayloadTruncated"`
+				Kind                   string            `json:"kind"`
+				DatasourceUID          string            `json:"datasourceUid"`
+				DatasourceType         string            `json:"datasourceType"`
+				DatasourceName         string            `json:"datasourceName"`
+				RefID                  string            `json:"refId"`
+				StatementTruncated     bool              `json:"statementTruncated"`
+				ArgsTruncated          bool              `json:"argsTruncated"`
+				FrameCount             int               `json:"frameCount"`
+				RowCount               int               `json:"rowCount"`
+				Error                  string            `json:"error"`
 			} `json:"_query"`
 		} `json:"entries"`
 	} `json:"log"`
@@ -322,4 +325,94 @@ func TestAddQueryInteraction_emptyResultIsDistinctFromUncaptured(t *testing.T) {
 	})
 	assert.NotContains(t, toDoc(t, uncaptured).Log.Entries[0].Response.Content.Text, "totalRows",
 		"an interaction with no result capture claims nothing about how many rows there were")
+}
+
+func TestAddQueryInteraction_nonTabularReplyIsCarriedVerbatim(t *testing.T) {
+	// A MongoDB reply is a document, not a result set. Reshaping it into columns and rows would
+	// misreport it, and labelling it as SQL would be worse, so it rides in its own media type.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:                  querycapture.KindMongoCommand,
+		Target:                "mongodb://db.example.com:27017",
+		Operation:             "find",
+		DatasourceUID:         "P1234",
+		RefID:                 "A",
+		Statement:             `{"find":"orders","filter":{"host":"host-a"}}`,
+		StatementMimeType:     "application/vnd.mongodb.extended-json",
+		ResultPayload:         `{"cursor":{"firstBatch":[{"host":"host-a"}]},"ok":1}`,
+		ResultPayloadMimeType: "application/vnd.mongodb.extended-json",
+		Attributes:            map[string]string{"database": "orders", "connectionId": "conn-7"},
+		RowCount:              -1,
+	})
+
+	doc := toDoc(t, b)
+	require.Len(t, doc.Log.Entries, 1)
+	e := doc.Log.Entries[0]
+
+	// The operation names the entry, and the address the call went to is the URL -- the honest answer to
+	// "which server replied", which a datasource-shaped URL cannot give.
+	assert.Equal(t, "find", e.Request.Method)
+	assert.Equal(t, "mongodb://db.example.com:27017?refId=A", e.Request.URL)
+	require.NotNil(t, e.Request.PostData)
+	assert.Equal(t, "application/vnd.mongodb.extended-json", e.Request.PostData.MimeType)
+
+	assert.Equal(t, 200, e.Response.Status)
+	assert.Equal(t, "application/vnd.mongodb.extended-json", e.Response.Content.MimeType)
+	assert.JSONEq(t, `{"cursor":{"firstBatch":[{"host":"host-a"}]},"ok":1}`, e.Response.Content.Text,
+		"the reply is the evidence and is carried verbatim, not summarised into counts")
+
+	require.NotNil(t, e.Query)
+	assert.Equal(t, querycapture.KindMongoCommand, e.Query.Kind)
+	assert.Equal(t, "find", e.Query.Operation)
+	assert.Equal(t, map[string]string{"database": "orders", "connectionId": "conn-7"}, e.Query.Attributes)
+}
+
+func TestAddQueryInteraction_failedCallKeepsItsReply(t *testing.T) {
+	// A reply that arrived before the call failed is the most direct evidence of what went wrong.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:          querycapture.KindMongoCommand,
+		Operation:     "aggregate",
+		Target:        "mongodb://db.example.com:27017",
+		ResultPayload: `{"ok":0,"errmsg":"unrecognized pipeline stage"}`,
+		Err:           "(Location40324) Unrecognized pipeline stage name: '$sortt'",
+	})
+
+	doc := toDoc(t, b)
+	e := doc.Log.Entries[0]
+	assert.Equal(t, 0, e.Response.Status, "the call did not complete, so the status stays zero")
+	assert.Contains(t, e.Response.Content.Text, "unrecognized pipeline stage")
+	assert.Contains(t, e.Comment, "query error: (Location40324)")
+}
+
+func TestAddQueryInteraction_clippedPayloadIsReported(t *testing.T) {
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:                   querycapture.KindMongoCommand,
+		Statement:              `{"find":"orders"}`,
+		ResultPayload:          `{"cursor":{"firstBatch":[{"a":1`,
+		ResultPayloadTruncated: true,
+	})
+
+	doc := toDoc(t, b)
+	e := doc.Log.Entries[0]
+	assert.Equal(t, int64(-1), e.Response.BodySize,
+		"a clipped payload reports an unavailable body size, as an over-cap HTTP body does")
+	require.NotNil(t, e.Query)
+	assert.True(t, e.Query.ResultPayloadTruncated)
+}
+
+func TestAddQueryInteraction_targetWithQueryStringKeepsBothParams(t *testing.T) {
+	// A target can legitimately carry its own query string; appending the refID must not produce a
+	// second "?" and a URL nothing can parse.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:      querycapture.KindMongoCommand,
+		Target:    "mongodb://db.example.com:27017/?replicaSet=rs0",
+		RefID:     "B",
+		Statement: `{"find":"orders"}`,
+	})
+
+	doc := toDoc(t, b)
+	assert.Equal(t, "mongodb://db.example.com:27017/?replicaSet=rs0&refId=B", doc.Log.Entries[0].Request.URL)
 }
