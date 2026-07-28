@@ -74,7 +74,8 @@ type sdkHARQueryInfo struct {
 
 // payloadBytes is the "_query" object's share of the buffer's retained-payload budget (see
 // Buffer.appendEntry): the bind arguments, which a bulk statement can make as large as the statement
-// itself, and the error. A nil receiver is an HTTP entry, which has no "_query".
+// itself, and the error. The rows live in the entry's Response.Content instead, so they are already
+// counted there. A nil receiver is an HTTP entry, which has no "_query".
 func (q *sdkHARQueryInfo) payloadBytes() int64 {
 	if q == nil {
 		return 0
@@ -97,8 +98,24 @@ func (q *sdkHARQueryInfo) dropPayload() {
 	q.ArgsTruncated = true
 }
 
-// querySummary is the response content of a query entry: what came back, counted rather than copied.
+// querySummary is the response content of a query entry: the rows the datasource returned, plus what
+// the plugin made of them.
+//
+// The rows are carried in full (up to querycapture.MaxResultBytes), the same way an HTTP entry carries
+// a response body, because they are the same evidence: without them a bundle can say what was asked
+// and what the plugin returned, but has no independent account of what the datasource sent -- which is
+// the difference between localizing a wrong-data report and merely describing it.
 type querySummary struct {
+	// Columns and Rows are the result set as the driver produced it, before conversion. A null cell is
+	// a SQL NULL, distinct from an empty string.
+	Columns []string    `json:"columns,omitempty"`
+	Rows    [][]*string `json:"rows,omitempty"`
+	// TotalRows is how many rows the datasource returned; it exceeds len(Rows) when RowsTruncated is
+	// set, so a reader can tell a short result from a clipped one. Omitted when unknown.
+	TotalRows     *int `json:"totalRows,omitempty"`
+	RowsTruncated bool `json:"rowsTruncated,omitempty"`
+	// FrameCount and RowCount are what the plugin returned, so the comparison the bundle exists for
+	// can be made inside a single object.
 	FrameCount int `json:"frameCount"`
 	RowCount   int `json:"rowCount"`
 }
@@ -125,15 +142,35 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 	resp := sdkHARResponse{Status: 0, HeadersSize: -1, BodySize: -1, Headers: []sdkHARNameValue{}, Cookies: []sdkHARCookie{}}
 	var comment string
 	if i.Err == "" {
-		summary, err := json.Marshal(querySummary{FrameCount: i.FrameCount, RowCount: i.RowCount})
+		body := querySummary{
+			Columns:       i.ResultColumns,
+			Rows:          i.ResultRows,
+			RowsTruncated: i.ResultRowsTruncated,
+			FrameCount:    i.FrameCount,
+			RowCount:      i.RowCount,
+		}
+		// Report the total only when the capture point actually determined it. A zero is ambiguous in a
+		// plain int -- "the datasource returned no rows" and "nobody filled this field in" look the
+		// same -- so a zero counts only alongside a captured result shape, which is proof the capture
+		// point ran and saw an empty result. Anything negative means "not determined" by contract.
+		if i.ResultTotalRows > 0 || (i.ResultTotalRows == 0 && i.ResultColumns != nil) {
+			total := i.ResultTotalRows
+			body.TotalRows = &total
+		}
+		summary, err := json.Marshal(body)
 		if err != nil {
-			// Cannot happen for two ints, but a capture must never be the reason a query looks broken:
-			// fall back to no content rather than dropping the entry.
+			// A capture must never be the reason a query looks broken: fall back to no content rather
+			// than dropping the entry or surfacing the failure as a query error.
 			summary = nil
 		}
 		resp.Status = 200
 		resp.StatusText = "OK"
 		resp.BodySize = int64(len(summary))
+		// A clipped result reports an unavailable body size, the same convention an over-cap HTTP
+		// response body uses; content.size stays what was actually retained.
+		if i.ResultRowsTruncated {
+			resp.BodySize = -1
+		}
 		resp.Content = sdkHARContent{
 			Size:     int64(len(summary)),
 			MimeType: querySummaryMimeType,
@@ -141,6 +178,26 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 		}
 	} else {
 		comment = "query error: " + i.Err
+		// A query can fail after the datasource already returned rows -- a conversion that choked on
+		// row 300, a result set that errored mid-stream. Those rows are the most direct evidence there
+		// is of what went wrong, so keep them. The status stays zero: the query did not complete, and
+		// claiming a 200 because some rows arrived would misreport it.
+		if len(i.ResultRows) > 0 {
+			partial, err := json.Marshal(querySummary{
+				Columns:       i.ResultColumns,
+				Rows:          i.ResultRows,
+				RowsTruncated: i.ResultRowsTruncated,
+				FrameCount:    i.FrameCount,
+				RowCount:      i.RowCount,
+			})
+			if err == nil {
+				resp.Content = sdkHARContent{
+					Size:     int64(len(partial)),
+					MimeType: querySummaryMimeType,
+					Text:     string(partial),
+				}
+			}
+		}
 	}
 
 	return sdkHAREntry{

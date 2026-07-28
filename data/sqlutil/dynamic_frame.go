@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/querycapture"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 )
@@ -107,11 +108,25 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 	return fieldList, returnData, nil
 }
 
-func frameDynamic(rows Rows, rowLimit int64, types []*sql.ColumnType, converters []Converter) (*data.Frame, error) {
+// frameDynamic builds a frame for a result set whose types are discovered from the data. It takes the
+// result capture (rather than reading it off a context) because it is only ever reached from
+// frameFromRows, which has already resolved it; a nil capture means capture is off.
+func frameDynamic(rows Rows, rowLimit int64, types []*sql.ColumnType, converters []Converter, resultCapture *querycapture.ResultCapture) (*data.Frame, error) {
 	// find data type(s) from the data
 	fields, rawRows, err := findDataTypes(rows, rowLimit, types)
 	if err != nil {
 		return nil, err
+	}
+
+	// Capture what the driver returned before the discovered converters touch it, matching the
+	// non-dynamic path. This path scans every row up front, so the rows are recorded here in one go
+	// rather than as they are scanned. Without this the dynamic framer would be a silent hole in the
+	// capture for the plugins that use it.
+	if resultCapture != nil {
+		resultCapture.SetColumns(columnNamesFromTypes(types))
+		for _, row := range rawRows {
+			captureScannedRow(resultCapture, row)
+		}
 	}
 
 	// if a converter is defined by column name, override data type that was found
