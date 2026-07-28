@@ -82,13 +82,19 @@ func NewBuffer() *Buffer {
 }
 
 func (b *Buffer) AddEntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
-	entry := buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed)
+	b.appendEntry(buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed))
+}
+
+// appendEntry adds an already-built entry under the buffer's cumulative retained-body budget. Every
+// producer goes through here -- HTTP round trips and non-HTTP query interactions alike -- so one
+// budget bounds the whole document whatever mix of traffic a request produced.
+func (b *Buffer) appendEntry(entry sdkHAREntry) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	// Enforce the cumulative retained-body budget: once the request's captured bodies exceed
 	// maxCapturedTotalBytes, keep the entry's metadata (headers, sizes, timings) but drop its body
-	// text so the __har__ frame can't grow without bound. Per-body truncation already happened in
-	// buildSDKHAREntry, so a single entry adds at most 2*maxCapturedBodyBytes here.
+	// text so the __har__ frame can't grow without bound. Per-body truncation already happened when
+	// the entry was built, so a single entry adds at most 2*maxCapturedBodyBytes here.
 	entryBytes := int64(len(entry.Response.Content.Text))
 	if entry.Request.PostData != nil {
 		entryBytes += int64(len(entry.Request.PostData.Text))
@@ -225,8 +231,14 @@ type sdkHAREntry struct {
 	Cache           sdkHARCache    `json:"cache"`
 	Timings         sdkHARTimings  `json:"timings"`
 	// Comment carries a transport-level error (connection refused, DNS/TLS failure, timeout) for a
-	// request that never produced an HTTP response; such entries have a zero-status response.
+	// request that never produced an HTTP response; such entries have a zero-status response. For a
+	// query entry it carries the query's own error, in the same shape.
 	Comment string `json:"comment,omitempty"`
+	// Query is set only on an entry that describes a non-HTTP datasource exchange (see
+	// AddQueryInteraction), and carries what has no HTTP counterpart: the capture kind, the datasource
+	// identity, the refID, truncation flags and the result summary. HAR reserves underscore-prefixed
+	// fields for extensions, so its presence keeps the document valid HAR.
+	Query *sdkHARQueryInfo `json:"_query,omitempty"`
 }
 
 type sdkHARRequest struct {
@@ -271,6 +283,10 @@ type sdkHARCache struct{}
 type sdkHARPostData struct {
 	MimeType string `json:"mimeType"`
 	Text     string `json:"text"`
+	// Params is the HAR postData params array. HTTP capture leaves it empty (a form body is already in
+	// Text); a query entry uses it for the statement's bind arguments, which is the spec's place for a
+	// body's parameters and where a HAR viewer displays them.
+	Params []sdkHARNameValue `json:"params,omitempty"`
 	// Encoding is "base64" when Text is a base64 encoding of a non-UTF-8 body. HAR 1.2 defines
 	// encoding only on response content, so this is an extension; canonical HAR parsers ignore it.
 	Encoding string `json:"encoding,omitempty"`
