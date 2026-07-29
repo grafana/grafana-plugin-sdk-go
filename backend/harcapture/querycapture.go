@@ -3,6 +3,7 @@ package harcapture
 import (
 	"encoding/json"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -136,13 +137,15 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 		Timings:  sdkHARTimings{Send: 0, Wait: elapsedMs, Receive: 0},
 		Comment:  comment,
 		Query: &sdkHARQueryInfo{
-			Version:            queryInfoVersion,
-			Kind:               i.Kind,
-			DatasourceUID:      i.DatasourceUID,
-			DatasourceType:     i.DatasourceType,
-			DatasourceName:     i.DatasourceName,
-			RefID:              i.RefID,
-			Args:               i.Args,
+			Version:        queryInfoVersion,
+			Kind:           i.Kind,
+			DatasourceUID:  i.DatasourceUID,
+			DatasourceType: i.DatasourceType,
+			DatasourceName: i.DatasourceName,
+			RefID:          i.RefID,
+			// Copied because the buffer outlives the Record call and ToHARString marshals outside the
+			// lock: a capture point that reuses its args slice would otherwise race the marshaller.
+			Args:               slices.Clone(i.Args),
 			StatementTruncated: i.StatementTruncated,
 			ArgsTruncated:      i.ArgsTruncated,
 			FrameCount:         i.FrameCount,
