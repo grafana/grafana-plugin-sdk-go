@@ -14,10 +14,9 @@ import (
 // bytes the plugin handed to the driver.
 const queryMimeType = "application/sql"
 
-// querySummaryMimeType labels the response content of a query entry. The content is a summary of what
-// the plugin got back (see querySummary), not the driver's raw reply: rows travel back to Grafana as
-// frames and are reported in the QueryData artifact, so duplicating them here would double the size of
-// a bundle to say the same thing twice.
+// querySummaryMimeType labels the response content of a query entry: the rows the datasource returned
+// plus the counts the plugin produced from them (see querySummary), rendered as JSON. It is also the
+// fallback for a ResultPayload whose capture point declared no media type.
 const querySummaryMimeType = "application/json"
 
 // AddQueryInteraction records a non-HTTP datasource exchange (a SQL statement, a native-protocol
