@@ -199,6 +199,7 @@ func (b *Buffer) ToHARString() (string, error) {
 			Version: "1.2",
 			Creator: sdkHARCreator{Name: "grafana-plugin-sdk-go", Version: "1.0"},
 			Entries: entries,
+			Format:  captureFormat,
 		},
 	}
 	raw, err := json.Marshal(doc)
@@ -212,10 +213,20 @@ type sdkHARDocument struct {
 	Log sdkHARLog `json:"log"`
 }
 
+// captureFormat identifies the dialect of an emitted document: HAR 1.2 for the HTTP entries, plus the
+// "_query" extension on entries that describe a non-HTTP datasource exchange. It is bumped when that
+// extension changes in a way a consumer has to know about.
+//
+// It exists so the artifact can be renamed, split or versioned later without a consumer having to
+// guess which shape it is holding.
+const captureFormat = "grafana-datasource-capture/1"
+
 type sdkHARLog struct {
 	Version string        `json:"version"`
 	Creator sdkHARCreator `json:"creator"`
 	Entries []sdkHAREntry `json:"entries"`
+	// Format is an extension field (see captureFormat); canonical HAR parsers ignore it.
+	Format string `json:"_format"`
 }
 
 type sdkHARCreator struct {
@@ -387,7 +398,7 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 
 	waitMs := float64(elapsed.Milliseconds())
 	return sdkHAREntry{
-		StartedDateTime: started.UTC().Format(time.RFC3339),
+		StartedDateTime: started.UTC().Format(time.RFC3339Nano),
 		Time:            waitMs,
 		Request: sdkHARRequest{
 			Method:      req.Method,

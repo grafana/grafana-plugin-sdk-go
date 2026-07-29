@@ -111,7 +111,7 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 	}
 
 	return sdkHAREntry{
-		StartedDateTime: i.StartedAt.UTC().Format(time.RFC3339),
+		StartedDateTime: i.StartedAt.UTC().Format(time.RFC3339Nano),
 		Time:            elapsedMs,
 		Request: sdkHARRequest{
 			Method: queryMethod,

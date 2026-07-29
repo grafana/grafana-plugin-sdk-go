@@ -15,6 +15,7 @@ import (
 // harDoc is the parsed shape of the emitted document, enough to assert on a query entry.
 type harDoc struct {
 	Log struct {
+		Format  string `json:"_format"`
 		Entries []struct {
 			StartedDateTime string  `json:"startedDateTime"`
 			Time            float64 `json:"time"`
@@ -120,6 +121,27 @@ func TestAddQueryInteraction_successEntry(t *testing.T) {
 	assert.Equal(t, 1, e.Query.FrameCount)
 	assert.Equal(t, 10, e.Query.RowCount)
 	assert.Empty(t, e.Query.Error)
+}
+
+func TestToHARString_declaresItsFormat(t *testing.T) {
+	// The document says which dialect it is, so the artifact can be renamed, split or versioned later
+	// without a consumer having to guess what it is holding.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{Kind: querycapture.KindSQLQuery, Statement: "SELECT 1"})
+
+	assert.Equal(t, "grafana-datasource-capture/1", toDoc(t, b).Log.Format)
+}
+
+func TestAddQueryInteraction_startedDateTimeKeepsSubSecondPrecision(t *testing.T) {
+	// The queries of one request run in parallel, one goroutine per refID, so second precision would
+	// collapse them onto one instant and lose the order they actually happened in.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:      querycapture.KindSQLQuery,
+		StartedAt: time.Date(2026, 7, 28, 10, 30, 0, 123456789, time.UTC),
+	})
+
+	assert.Equal(t, "2026-07-28T10:30:00.123456789Z", toDoc(t, b).Log.Entries[0].StartedDateTime)
 }
 
 func TestAddQueryInteraction_failedQueryIsRecorded(t *testing.T) {
