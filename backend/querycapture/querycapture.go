@@ -31,6 +31,13 @@
 //     that every non-HTTP capture point describes itself the same way and the
 //     host needs to understand only one shape.
 //
+// # Experimental
+//
+// This package is experimental and its API may change without the usual
+// deprecation cycle. It exists to serve Grafana's on-demand datasource
+// diagnostics, and the vocabulary is expected to move as capture points beyond
+// SQL are written against it.
+//
 // # Sensitive data
 //
 // Interactions carry the statement that was executed, its bind arguments and a
@@ -39,6 +46,18 @@
 // MaxArgsBytes) but do not redact them; redaction and retention are the
 // Recorder's responsibility, and a Recorder must not be installed on a path
 // where the result is not treated as sensitive.
+//
+// # Known limitations
+//
+// The size bounds below apply to a single Interaction. Nothing bounds their sum
+// across the queries of one request, which run in parallel, so peak memory
+// scales with the number of refIDs a panel sends. The Recorder bounds the
+// document it produces, not the captures feeding it.
+//
+// Capture is off unless a request asked for it, and in Grafana the path that
+// does the asking is feature-toggled, restricted to admins and on-prem only.
+// That is what makes these acceptable for now rather than limits worth
+// engineering around.
 package querycapture
 
 import (
