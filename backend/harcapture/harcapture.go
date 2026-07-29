@@ -283,10 +283,6 @@ type sdkHARCache struct{}
 type sdkHARPostData struct {
 	MimeType string `json:"mimeType"`
 	Text     string `json:"text"`
-	// Params is the HAR postData params array. HTTP capture leaves it empty (a form body is already in
-	// Text); a query entry uses it for the statement's bind arguments, which is the spec's place for a
-	// body's parameters and where a HAR viewer displays them.
-	Params []sdkHARNameValue `json:"params,omitempty"`
 	// Encoding is "base64" when Text is a base64 encoding of a non-UTF-8 body. HAR 1.2 defines
 	// encoding only on response content, so this is an extension; canonical HAR parsers ignore it.
 	Encoding string `json:"encoding,omitempty"`

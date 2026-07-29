@@ -152,8 +152,6 @@ const (
 	KindSQLQuery = "sql.query"
 	// KindMongoCommand is a command sent over the MongoDB wire protocol.
 	KindMongoCommand = "mongodb.command"
-	// KindHTTP is an HTTP round trip, as captured by the SDK's HAR middleware.
-	KindHTTP = "http"
 )
 
 // Size bounds a capture point applies before handing an Interaction to a

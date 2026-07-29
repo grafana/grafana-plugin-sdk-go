@@ -25,10 +25,8 @@ type harDoc struct {
 				PostData *struct {
 					MimeType string `json:"mimeType"`
 					Text     string `json:"text"`
-					Params   []struct {
-						Name  string `json:"name"`
-						Value string `json:"value"`
-					} `json:"params"`
+					// Params is raw so the test can assert the field is absent, not merely empty.
+					Params json.RawMessage `json:"params"`
 				} `json:"postData"`
 			} `json:"request"`
 			Response struct {
@@ -50,6 +48,7 @@ type harDoc struct {
 				DatasourceType         string            `json:"datasourceType"`
 				DatasourceName         string            `json:"datasourceName"`
 				RefID                  string            `json:"refId"`
+				Args                   []string          `json:"args"`
 				StatementTruncated     bool              `json:"statementTruncated"`
 				ArgsTruncated          bool              `json:"argsTruncated"`
 				FrameCount             int               `json:"frameCount"`
@@ -101,10 +100,11 @@ func TestAddQueryInteraction_successEntry(t *testing.T) {
 	assert.Equal(t, "SELECT host, value FROM metrics WHERE host = ?", e.Request.PostData.Text)
 	assert.Equal(t, int64(len("SELECT host, value FROM metrics WHERE host = ?")), e.Request.BodySize)
 
-	// Bind arguments ride in the spec's params array, positionally named.
-	require.Len(t, e.Request.PostData.Params, 1)
-	assert.Equal(t, "$1", e.Request.PostData.Params[0].Name)
-	assert.Equal(t, "host-a", e.Request.PostData.Params[0].Value)
+	// Bind arguments ride in the extension object rather than postData.params: HAR states params and
+	// text are mutually exclusive, and text is where the statement itself belongs.
+	assert.Nil(t, e.Request.PostData.Params, "postData carries the statement as text, so it must not also carry params")
+	require.NotNil(t, e.Query)
+	assert.Equal(t, []string{"host-a"}, e.Query.Args)
 
 	// A successful query is a 200 whose body counts what came back rather than repeating it.
 	assert.Equal(t, 200, e.Response.Status)

@@ -2,7 +2,6 @@ package harcapture
 
 import (
 	"encoding/json"
-	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -26,12 +25,9 @@ const querySummaryMimeType = "application/json"
 // AddEntry. It is what makes the capture usable for a datasource with no HTTP hop to wrap.
 //
 // The interaction is mapped, not translated: HAR is an HTTP format and a SQL query is not an HTTP
-// request, so the fields HTTP would fill are either honestly empty (no headers, no cookies, no HTTP
-// version) or carry the query's own equivalent -- the statement as the request body, the bind
-// arguments as postData params, the row/frame counts as the response content. Everything that has no
-// HTTP counterpart at all (the capture kind, the datasource identity, the refID, truncation flags)
-// goes in the "_query" extension field, which canonical HAR parsers ignore and a bundle analyzer can
-// read without parsing prose.
+// request, so the fields HTTP would fill are either empty or carry the query's own equivalent.
+// Everything that has no HTTP counterpart at all goes in the "_query" extension field, which canonical
+// HAR parsers ignore and a bundle analyzer can read without parsing prose.
 //
 // A failed query is recorded with a zero-status response and the error in the entry's comment, the
 // same shape AddEntry uses for a request that never produced an HTTP response. A failure is the most
@@ -56,6 +52,10 @@ type sdkHARQueryInfo struct {
 	// Operation is the protocol-level operation, e.g. a MongoDB command name. It doubles as the entry's
 	// request method, and is repeated here so an analyzer does not have to read it back out of there.
 	Operation string `json:"operation,omitempty"`
+	// Args are the statement's bind arguments, in the order the driver received them. They live here
+	// rather than in the entry's postData because HAR defines postData.params for a URL-encoded body and
+	// states that params and text are mutually exclusive -- and text is where the statement belongs.
+	Args []string `json:"args,omitempty"`
 	// StatementTruncated, ArgsTruncated and ResultPayloadTruncated report that the capture point cut a
 	// field to fit its size bounds, so a reader can tell a long value from a clipped one.
 	StatementTruncated     bool `json:"statementTruncated,omitempty"`
@@ -113,7 +113,6 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 		MimeType: statementMimeType,
 		Text:     statement,
 		Encoding: encoding,
-		Params:   queryParams(i.Args),
 	}
 
 	// Success is a 200 with a counted summary; a failure is a zero-status response, matching how
@@ -217,6 +216,7 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 			DatasourceName:         i.DatasourceName,
 			RefID:                  i.RefID,
 			Operation:              i.Operation,
+			Args:                   i.Args,
 			StatementTruncated:     i.StatementTruncated,
 			ArgsTruncated:          i.ArgsTruncated,
 			ResultPayloadTruncated: i.ResultPayloadTruncated,
@@ -300,22 +300,6 @@ func queryURL(i querycapture.Interaction) string {
 		u.RawQuery = url.Values{"refId": []string{i.RefID}}.Encode()
 	}
 	return u.String()
-}
-
-// queryParams renders bind arguments as HAR postData params, which is where the spec puts a request
-// body's parameters and therefore where a HAR viewer already shows them. Positional arguments are
-// named "$1", "$2", ... in the order the driver received them; a capture point that knows an
-// argument's name has already rendered it as "name=value" and that is kept as the param value, since
-// re-splitting it here would corrupt any value containing "=".
-func queryParams(args []string) []sdkHARNameValue {
-	if len(args) == 0 {
-		return nil
-	}
-	params := make([]sdkHARNameValue, 0, len(args))
-	for idx, a := range args {
-		params = append(params, sdkHARNameValue{Name: fmt.Sprintf("$%d", idx+1), Value: a})
-	}
-	return params
 }
 
 // bufferRecorder adapts a Buffer to the querycapture.Recorder interface, so a capture point can write
