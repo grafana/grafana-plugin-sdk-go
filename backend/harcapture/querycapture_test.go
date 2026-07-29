@@ -15,7 +15,6 @@ import (
 // harDoc is the parsed shape of the emitted document, enough to assert on a query entry.
 type harDoc struct {
 	Log struct {
-		Format  string `json:"_format"`
 		Entries []struct {
 			StartedDateTime string  `json:"startedDateTime"`
 			Time            float64 `json:"time"`
@@ -44,6 +43,7 @@ type harDoc struct {
 			} `json:"timings"`
 			Comment string `json:"comment"`
 			Query   *struct {
+				Version            int      `json:"version"`
 				Kind               string   `json:"kind"`
 				DatasourceUID      string   `json:"datasourceUid"`
 				DatasourceType     string   `json:"datasourceType"`
@@ -126,13 +126,42 @@ func TestAddQueryInteraction_successEntry(t *testing.T) {
 	assert.Empty(t, e.Query.Error)
 }
 
-func TestToHARString_declaresItsFormat(t *testing.T) {
-	// The document says which dialect it is, so the artifact can be renamed, split or versioned later
-	// without a consumer having to guess what it is holding.
+func TestAddQueryInteraction_declaresItsVersionPerEntry(t *testing.T) {
+	// The version rides on the entry, not the document: Grafana merges a bundle's HAR by concatenating
+	// the entries of every plugin that captured, so entries survive that merge verbatim while a
+	// log-level field is dropped -- and a single document-level version could not describe a mix of
+	// plugins built against different SDKs anyway.
 	b := NewBuffer()
 	b.AddQueryInteraction(querycapture.Interaction{Kind: querycapture.KindSQLQuery, Statement: "SELECT 1"})
 
-	assert.Equal(t, "grafana-datasource-capture/1", toDoc(t, b).Log.Format)
+	doc := toDoc(t, b)
+	require.Len(t, doc.Log.Entries, 1)
+	require.NotNil(t, doc.Log.Entries[0].Query)
+	assert.Equal(t, queryInfoVersion, doc.Log.Entries[0].Query.Version)
+}
+
+func TestToHARString_documentShapeIsPlainHAR(t *testing.T) {
+	// The log object stays canonical HAR 1.2, so nothing on the consuming side has to be taught a new
+	// document shape to carry query entries (see queryInfoVersion).
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{Kind: querycapture.KindSQLQuery, Statement: "SELECT 1"})
+
+	raw, err := b.ToHARString()
+	require.NoError(t, err)
+
+	var doc struct {
+		Log map[string]json.RawMessage `json:"log"`
+	}
+	require.NoError(t, json.Unmarshal([]byte(raw), &doc))
+	assert.ElementsMatch(t, []string{"version", "creator", "entries"}, keysOf(doc.Log))
+}
+
+func keysOf(m map[string]json.RawMessage) []string {
+	out := make([]string, 0, len(m))
+	for k := range m {
+		out = append(out, k)
+	}
+	return out
 }
 
 func TestAddQueryInteraction_startedDateTimeKeepsSubSecondPrecision(t *testing.T) {

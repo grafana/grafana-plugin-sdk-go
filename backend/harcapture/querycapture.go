@@ -34,9 +34,15 @@ func (b *Buffer) AddQueryInteraction(i querycapture.Interaction) {
 	b.appendEntry(buildQueryHAREntry(i))
 }
 
+// queryInfoVersion is the current schema version of the "_query" object, bumped when its shape
+// changes in a way a consumer has to know about.
+const queryInfoVersion = 1
+
 // sdkHARQueryInfo is the "_query" extension object on a query entry. HAR reserves underscore-prefixed
 // fields for extensions, so this travels in a standard HAR document that any viewer can still open.
 type sdkHARQueryInfo struct {
+	// Version is the schema version of this object (see queryInfoVersion).
+	Version int `json:"version"`
 	// Kind is the capture point that produced the entry, e.g. querycapture.KindSQLQuery.
 	Kind string `json:"kind"`
 	// DatasourceUID, DatasourceType and DatasourceName identify which datasource instance ran the
@@ -130,6 +136,7 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 		Timings:  sdkHARTimings{Send: 0, Wait: elapsedMs, Receive: 0},
 		Comment:  comment,
 		Query: &sdkHARQueryInfo{
+			Version:            queryInfoVersion,
 			Kind:               i.Kind,
 			DatasourceUID:      i.DatasourceUID,
 			DatasourceType:     i.DatasourceType,
