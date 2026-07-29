@@ -234,10 +234,7 @@ type sdkHAREntry struct {
 	// request that never produced an HTTP response; such entries have a zero-status response. For a
 	// query entry it carries the query's own error, in the same shape.
 	Comment string `json:"comment,omitempty"`
-	// Query is set only on an entry that describes a non-HTTP datasource exchange (see
-	// AddQueryInteraction), and carries what has no HTTP counterpart: the capture kind, the datasource
-	// identity, the refID, truncation flags and the result summary. HAR reserves underscore-prefixed
-	// fields for extensions, so its presence keeps the document valid HAR.
+	// Query is set only on an entry that describes a non-HTTP datasource exchange.
 	Query *sdkHARQueryInfo `json:"_query,omitempty"`
 }
 

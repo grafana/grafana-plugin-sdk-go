@@ -10,8 +10,7 @@ import (
 )
 
 // queryMimeType labels the statement carried in a query entry's postData. HAR has no notion of a
-// non-HTTP protocol, so the statement is modelled as the request body -- which is what it is: the
-// bytes the plugin handed to the driver.
+// non-HTTP protocol, so the statement is modelled as the request body.
 const queryMimeType = "application/sql"
 
 // querySummaryMimeType labels the response content of a query entry. The content is a summary of what
@@ -22,7 +21,7 @@ const querySummaryMimeType = "application/json"
 
 // AddQueryInteraction records a non-HTTP datasource exchange (a SQL statement, a native-protocol
 // command) as a HAR entry, so that it lands in the same document as the HTTP traffic captured by
-// AddEntry. It is what makes the capture usable for a datasource with no HTTP hop to wrap.
+// AddEntry.
 //
 // The interaction is mapped, not translated: HAR is an HTTP format and a SQL query is not an HTTP
 // request, so the fields HTTP would fill are either empty or carry the query's own equivalent.
@@ -30,8 +29,7 @@ const querySummaryMimeType = "application/json"
 // HAR parsers ignore and a bundle analyzer can read without parsing prose.
 //
 // A failed query is recorded with a zero-status response and the error in the entry's comment, the
-// same shape AddEntry uses for a request that never produced an HTTP response. A failure is the most
-// valuable case for diagnostics, so it must be visible rather than absent.
+// same shape AddEntry uses for a request that never produced an HTTP response.
 func (b *Buffer) AddQueryInteraction(i querycapture.Interaction) {
 	b.appendEntry(buildQueryHAREntry(i))
 }
@@ -51,7 +49,7 @@ type sdkHARQueryInfo struct {
 	RefID string `json:"refId,omitempty"`
 	// Args are the statement's bind arguments, in the order the driver received them. They live here
 	// rather than in the entry's postData because HAR defines postData.params for a URL-encoded body and
-	// states that params and text are mutually exclusive -- and text is where the statement belongs.
+	// states that params and text are mutually exclusive.
 	Args []string `json:"args,omitempty"`
 	// StatementTruncated and ArgsTruncated report that the capture point cut the statement or the
 	// arguments to fit its size bounds, so a reader can tell a long statement from a clipped one.
