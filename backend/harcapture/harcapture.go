@@ -325,6 +325,13 @@ type sdkHARTimings struct {
 	Receive float64 `json:"receive"`
 }
 
+// durationMs renders a duration for HAR's millisecond-valued time and timings fields, keeping the
+// fraction: a database/sql call over a pooled connection is routinely sub-millisecond, and truncating
+// would make it indistinguishable from an instantaneous one.
+func durationMs(d time.Duration) float64 {
+	return float64(d.Nanoseconds()) / float64(time.Millisecond)
+}
+
 // buildSDKHAREntry builds a HAR entry from the request/response pair. reqBody is the request body
 // captured before the request was sent (see DrainRequestBody); it is passed in rather than read
 // from req.Body here, because by the time capture runs the transport has already drained the body.
@@ -396,7 +403,7 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 		comment = "transport error: " + rtErr.Error()
 	}
 
-	waitMs := float64(elapsed.Milliseconds())
+	waitMs := durationMs(elapsed)
 	return sdkHAREntry{
 		StartedDateTime: started.UTC().Format(time.RFC3339Nano),
 		Time:            waitMs,

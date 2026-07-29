@@ -71,7 +71,7 @@ type querySummary struct {
 }
 
 func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
-	elapsedMs := float64(i.Duration.Milliseconds())
+	elapsedMs := durationMs(i.Duration)
 
 	statement, encoding := encodeBody([]byte(i.Statement))
 	// Report -1 ("unavailable" in HAR) when only a prefix of the statement was kept, symmetric with

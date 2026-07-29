@@ -39,6 +39,9 @@ type harDoc struct {
 					Size     int64  `json:"size"`
 				} `json:"content"`
 			} `json:"response"`
+			Timings struct {
+				Wait float64 `json:"wait"`
+			} `json:"timings"`
 			Comment string `json:"comment"`
 			Query   *struct {
 				Kind               string   `json:"kind"`
@@ -142,6 +145,21 @@ func TestAddQueryInteraction_startedDateTimeKeepsSubSecondPrecision(t *testing.T
 	})
 
 	assert.Equal(t, "2026-07-28T10:30:00.123456789Z", toDoc(t, b).Log.Entries[0].StartedDateTime)
+}
+
+func TestAddQueryInteraction_durationKeepsSubMillisecondPrecision(t *testing.T) {
+	// A query over a pooled connection often finishes inside a millisecond, which whole-millisecond
+	// truncation would report as instantaneous -- so a reader could not tell where a slow panel's time
+	// actually went.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:     querycapture.KindSQLQuery,
+		Duration: 750 * time.Microsecond,
+	})
+
+	e := toDoc(t, b).Log.Entries[0]
+	assert.Equal(t, 0.75, e.Time)
+	assert.Equal(t, 0.75, e.Timings.Wait)
 }
 
 func TestAddQueryInteraction_failedQueryIsRecorded(t *testing.T) {
