@@ -436,6 +436,7 @@ func defaultHandlerMiddlewares() []HandlerMiddleware {
 		NewLoggerMiddleware(Logger, nil),
 		newHeaderMiddleware(),
 		NewAlertForwarderMiddleware(),
+		newHARCaptureMiddleware(),
 		NewErrorSourceMiddleware(),
 	}
 }

@@ -91,6 +91,8 @@ func MakeScanRow(colTypes []*sql.ColumnType, colNames []string, converters ...Co
 
 		for _, v := range converters {
 			if converterMatches(v, colType.DatabaseTypeName(), colName) {
+				// v is a copy, so this does not mutate the caller's converter
+				v.colType = *colType
 				rc.append(colName, scanType(v, colType.ScanType()), v)
 				break
 			}
@@ -140,7 +142,8 @@ func (r *RowConverter) NewScannableRow() []any {
 
 func converterMatches(v Converter, dbType string, colName string) bool {
 	return (v.InputColumnName == colName && v.InputColumnName != "") ||
-		v.InputTypeName == dbType || (v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(dbType))
+		v.InputTypeName == dbType || (v.InputTypeRegex != nil && v.InputTypeRegex.MatchString(dbType)) ||
+		(v.InputTypeMatcher != nil && v.InputTypeMatcher(dbType))
 }
 
 func columnType(colType *sql.ColumnType) *sql.ColumnType {
