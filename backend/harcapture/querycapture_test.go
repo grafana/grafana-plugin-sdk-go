@@ -238,6 +238,54 @@ func TestAddQueryInteraction_truncationIsReported(t *testing.T) {
 	assert.True(t, e.Query.ArgsTruncated)
 }
 
+func TestAddQueryInteraction_argsAndErrorCountTowardTheTotalBudget(t *testing.T) {
+	// Bind arguments and the error are retained text just as a body is, so the budget that bounds the
+	// __har__ frame has to see them: uncounted, a request's arguments grow the frame past the cap.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:      querycapture.KindSQLQuery,
+		Statement: "SELECT * FROM t WHERE id IN (?, ?)",
+		Args:      []string{"host-a", "host-b"},
+		Err:       "code: 60, message: Unknown table expression identifier 't'",
+	})
+
+	// A failed query has no response content, so the retained total is exactly the statement, the
+	// arguments and the error.
+	want := len("SELECT * FROM t WHERE id IN (?, ?)") + len("host-a") + len("host-b") +
+		len("code: 60, message: Unknown table expression identifier 't'")
+	assert.Equal(t, int64(want), b.retained)
+}
+
+func TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget(t *testing.T) {
+	// Being counted is not enough: an over-budget entry has to shed its arguments too, or the frame
+	// grows by them anyway. Inspect the entries directly rather than the marshalled document, so the
+	// test doesn't serialize the whole budget.
+	b := NewBuffer()
+	statement := strings.Repeat("x", maxCapturedBodyBytes)
+	for i := 0; i < maxCapturedTotalBytes/maxCapturedBodyBytes; i++ {
+		b.AddQueryInteraction(querycapture.Interaction{
+			Kind: querycapture.KindSQLQuery, Statement: statement, Err: "boom",
+		})
+	}
+
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:      querycapture.KindSQLQuery,
+		Statement: statement,
+		Args:      []string{"host-a", "host-b"},
+		Err:       "code: 60, message: Unknown table expression identifier 't'",
+	})
+
+	last := b.entries[len(b.entries)-1]
+	require.NotNil(t, last.Request.PostData)
+	assert.Empty(t, last.Request.PostData.Text, "the statement is dropped over budget, as an HTTP body is")
+	require.NotNil(t, last.Query)
+	assert.Empty(t, last.Query.Args)
+	assert.True(t, last.Query.ArgsTruncated, "dropped arguments must not read as a statement that had none")
+	assert.Contains(t, last.Query.Error, "Unknown table expression",
+		"the error is kept: it is what makes an over-budget entry worth reading at all")
+	assert.LessOrEqual(t, b.retained, int64(maxCapturedTotalBytes))
+}
+
 func TestAddQueryInteraction_kindDrivesURLScheme(t *testing.T) {
 	// The scheme comes from the capture kind so a future non-SQL capture point reads correctly without
 	// this package knowing about it.
