@@ -152,9 +152,11 @@ type Recorder interface {
 
 // WithRecorder returns a context that activates capture for every capture point
 // reached under it. Passing a nil Recorder returns ctx unchanged, so a caller
-// can wire capture unconditionally and decide later whether to enable it.
+// can wire capture unconditionally and decide later whether to enable it. A nil
+// ctx is likewise returned unchanged, so that -- as with RecorderFromContext --
+// no part of this seam is the thing that panics.
 func WithRecorder(ctx context.Context, r Recorder) context.Context {
-	if r == nil {
+	if ctx == nil || r == nil {
 		return ctx
 	}
 	return context.WithValue(ctx, recorderContextKey{}, r)

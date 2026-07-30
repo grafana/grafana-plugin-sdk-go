@@ -48,6 +48,15 @@ func TestWithRecorder_nilIsNotCaptureOn(t *testing.T) {
 	require.False(t, ok)
 }
 
+func TestWithRecorder_nilContextDoesNotPanic(t *testing.T) {
+	// Symmetric with RecorderFromContext(nil): installing capture is host wiring, and no part of this
+	// seam should be the thing that turns a caller's nil context into a panic.
+	require.NotPanics(t, func() {
+		//nolint:staticcheck // deliberately exercising the nil-context case
+		require.Nil(t, WithRecorder(nil, &stubRecorder{}))
+	})
+}
+
 func TestWithRecorder_innermostRecorderWins(t *testing.T) {
 	// A host may install capture more than once on nested contexts (a dashboard-wide capture around a
 	// per-panel one); the closest one to the capture point is the one that receives the interaction.
