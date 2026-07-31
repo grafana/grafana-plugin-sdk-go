@@ -1,4 +1,9 @@
 version: v1
+build:
+  # grafana.plugin.v3 is a separate buf module rooted at proto/plugin; 
+  # its imports resolve against that root, not this one.
+  excludes:
+    - plugin
 breaking:
   use:
     - FILE

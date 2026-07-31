@@ -17,19 +17,19 @@ message RouteResource {
   // The resource api version
   GroupVersion api_version = 1;
 
-  // the type of object (eg, dashboards)
+  // the parent resource type (eg, dashboards)
   string resource = 2;
 
-  // tenant isolation
+  // tenant identifier
   string namespace = 3;
 
-  // the identifier
+  // The resource name when attached to a resource (ie, the route is a "subresource")
   string name = 4;
 
   // the resource version -- changes here indicate that raw body has changed
   string rv = 5;
 
-  // JSON raw resource
+  // JSON raw resource (when)
   bytes raw = 6;
 }
 
@@ -54,8 +54,8 @@ message CallRouteRequest {
   bytes body = 6;
 }
 
-// CallRouteResponse is a streamed chunk of the response for
-// RouteService.CallRoute.
+// CallRouteResponse is a streamed chunk of the response for RouteService.CallRoute.
+// The code and headers will only be used for the first stream chunk.
 message CallRouteResponse {
   // code maps to raw HTTP status codes when passed over HTTP.
   int32 code = 1;

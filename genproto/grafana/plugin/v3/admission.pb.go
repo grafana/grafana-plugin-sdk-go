@@ -363,8 +363,7 @@ type ValidateAdmissionRequest_builder struct {
 	Operation *Operation
 	// kind is the object kind.
 	Kind *GroupVersionKind
-	// object_bytes is the object in the request, including the full metadata
-	// envelope.
+	// object_bytes is the object in the request, including the full metadata envelope.
 	ObjectBytes []byte
 	// old_object_bytes is the object as it currently exists in storage,
 	// including the full metadata envelope.
@@ -660,8 +659,7 @@ type MutateAdmissionRequest_builder struct {
 	Operation *Operation
 	// kind is the object kind.
 	Kind *GroupVersionKind
-	// object_bytes is the object in the request, including the full metadata
-	// envelope.
+	// object_bytes is the object in the request, including the full metadata envelope.
 	ObjectBytes []byte
 	// old_object_bytes is the object as it currently exists in storage,
 	// including the full metadata envelope.
