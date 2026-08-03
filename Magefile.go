@@ -27,7 +27,10 @@ func (Protobuf) Generate() error {
 		return err
 	}
 	// The grafana.plugin.v3 API lives in its own workspace under proto/plugin.
-	return sh.RunV("buf", "generate", "proto/plugin", "--template", "./proto/plugin/buf.gen.yaml")
+	// Its template's out paths are relative to proto/plugin (so that `buf generate`
+	// also works when run from there), so -o has to match or the output lands
+	// outside the repository.
+	return sh.RunV("buf", "generate", "proto/plugin", "--template", "./proto/plugin/buf.gen.yaml", "-o", "proto/plugin")
 }
 
 // Validate validate breaking changes in protobuf files.

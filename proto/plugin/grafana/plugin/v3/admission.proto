@@ -11,12 +11,12 @@ import "grafana/plugin/v3/common.proto";
 // Unlike the pluginv2 AdmissionControl service, the requests here do not carry
 // a PluginContext.
 service AdmissionControlService {
-  // ValidateAdmission validates a resource; the response is a simple yes/no.
-  rpc ValidateAdmission(ValidateAdmissionRequest) returns (ValidateAdmissionResponse);
+  // ValidateObject validates a resource; the response is a simple yes/no.
+  rpc ValidateObject(ValidateAdmissionRequest) returns (ValidateAdmissionResponse);
 
-  // MutateAdmission returns a modified copy of the request that can be saved,
+  // MutateObject returns a modified copy of the request that can be saved,
   // or a descriptive error.
-  rpc MutateAdmission(MutateAdmissionRequest) returns (MutateAdmissionResponse);
+  rpc MutateObject(MutateAdmissionRequest) returns (MutateAdmissionResponse);
 }
 
 // Operation is the type of resource operation being checked for admission

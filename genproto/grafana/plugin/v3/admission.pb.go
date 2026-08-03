@@ -872,10 +872,10 @@ const file_grafana_plugin_v3_admission_proto_rawDesc = "" +
 	"\x15OPERATION_UNSPECIFIED\x10\x00\x12\x14\n" +
 	"\x10OPERATION_CREATE\x10\x01\x12\x14\n" +
 	"\x10OPERATION_UPDATE\x10\x02\x12\x14\n" +
-	"\x10OPERATION_DELETE\x10\x032\xf3\x01\n" +
-	"\x17AdmissionControlService\x12n\n" +
-	"\x11ValidateAdmission\x12+.grafana.plugin.v3.ValidateAdmissionRequest\x1a,.grafana.plugin.v3.ValidateAdmissionResponse\x12h\n" +
-	"\x0fMutateAdmission\x12).grafana.plugin.v3.MutateAdmissionRequest\x1a*.grafana.plugin.v3.MutateAdmissionResponseB\xdb\x01\n" +
+	"\x10OPERATION_DELETE\x10\x032\xed\x01\n" +
+	"\x17AdmissionControlService\x12k\n" +
+	"\x0eValidateObject\x12+.grafana.plugin.v3.ValidateAdmissionRequest\x1a,.grafana.plugin.v3.ValidateAdmissionResponse\x12e\n" +
+	"\fMutateObject\x12).grafana.plugin.v3.MutateAdmissionRequest\x1a*.grafana.plugin.v3.MutateAdmissionResponseB\xdb\x01\n" +
 	"\x15com.grafana.plugin.v3B\x0eAdmissionProtoP\x01ZLgithub.com/grafana/grafana-plugin-sdk-go/genproto/grafana/plugin/v3;pluginv3\xa2\x02\x03GPX\xaa\x02\x11Grafana.Plugin.V3\xca\x02\x11Grafana\\Plugin\\V3\xe2\x02\x1dGrafana\\Plugin\\V3\\GPBMetadata\xea\x02\x13Grafana::Plugin::V3b\beditionsp\xe9\a"
 
 var file_grafana_plugin_v3_admission_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
@@ -896,10 +896,10 @@ var file_grafana_plugin_v3_admission_proto_depIdxs = []int32{
 	0, // 3: grafana.plugin.v3.MutateAdmissionRequest.operation:type_name -> grafana.plugin.v3.Operation
 	1, // 4: grafana.plugin.v3.MutateAdmissionRequest.kind:type_name -> grafana.plugin.v3.GroupVersionKind
 	6, // 5: grafana.plugin.v3.MutateAdmissionResponse.result:type_name -> grafana.plugin.v3.StatusResult
-	2, // 6: grafana.plugin.v3.AdmissionControlService.ValidateAdmission:input_type -> grafana.plugin.v3.ValidateAdmissionRequest
-	4, // 7: grafana.plugin.v3.AdmissionControlService.MutateAdmission:input_type -> grafana.plugin.v3.MutateAdmissionRequest
-	3, // 8: grafana.plugin.v3.AdmissionControlService.ValidateAdmission:output_type -> grafana.plugin.v3.ValidateAdmissionResponse
-	5, // 9: grafana.plugin.v3.AdmissionControlService.MutateAdmission:output_type -> grafana.plugin.v3.MutateAdmissionResponse
+	2, // 6: grafana.plugin.v3.AdmissionControlService.ValidateObject:input_type -> grafana.plugin.v3.ValidateAdmissionRequest
+	4, // 7: grafana.plugin.v3.AdmissionControlService.MutateObject:input_type -> grafana.plugin.v3.MutateAdmissionRequest
+	3, // 8: grafana.plugin.v3.AdmissionControlService.ValidateObject:output_type -> grafana.plugin.v3.ValidateAdmissionResponse
+	5, // 9: grafana.plugin.v3.AdmissionControlService.MutateObject:output_type -> grafana.plugin.v3.MutateAdmissionResponse
 	8, // [8:10] is the sub-list for method output_type
 	6, // [6:8] is the sub-list for method input_type
 	6, // [6:6] is the sub-list for extension type_name

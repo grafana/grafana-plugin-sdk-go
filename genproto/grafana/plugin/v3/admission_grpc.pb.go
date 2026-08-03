@@ -19,8 +19,8 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdmissionControlService_ValidateAdmission_FullMethodName = "/grafana.plugin.v3.AdmissionControlService/ValidateAdmission"
-	AdmissionControlService_MutateAdmission_FullMethodName   = "/grafana.plugin.v3.AdmissionControlService/MutateAdmission"
+	AdmissionControlService_ValidateObject_FullMethodName = "/grafana.plugin.v3.AdmissionControlService/ValidateObject"
+	AdmissionControlService_MutateObject_FullMethodName   = "/grafana.plugin.v3.AdmissionControlService/MutateObject"
 )
 
 // AdmissionControlServiceClient is the client API for AdmissionControlService service.
@@ -34,11 +34,11 @@ const (
 // Unlike the pluginv2 AdmissionControl service, the requests here do not carry
 // a PluginContext.
 type AdmissionControlServiceClient interface {
-	// ValidateAdmission validates a resource; the response is a simple yes/no.
-	ValidateAdmission(ctx context.Context, in *ValidateAdmissionRequest, opts ...grpc.CallOption) (*ValidateAdmissionResponse, error)
-	// MutateAdmission returns a modified copy of the request that can be saved,
+	// ValidateObject validates a resource; the response is a simple yes/no.
+	ValidateObject(ctx context.Context, in *ValidateAdmissionRequest, opts ...grpc.CallOption) (*ValidateAdmissionResponse, error)
+	// MutateObject returns a modified copy of the request that can be saved,
 	// or a descriptive error.
-	MutateAdmission(ctx context.Context, in *MutateAdmissionRequest, opts ...grpc.CallOption) (*MutateAdmissionResponse, error)
+	MutateObject(ctx context.Context, in *MutateAdmissionRequest, opts ...grpc.CallOption) (*MutateAdmissionResponse, error)
 }
 
 type admissionControlServiceClient struct {
@@ -49,20 +49,20 @@ func NewAdmissionControlServiceClient(cc grpc.ClientConnInterface) AdmissionCont
 	return &admissionControlServiceClient{cc}
 }
 
-func (c *admissionControlServiceClient) ValidateAdmission(ctx context.Context, in *ValidateAdmissionRequest, opts ...grpc.CallOption) (*ValidateAdmissionResponse, error) {
+func (c *admissionControlServiceClient) ValidateObject(ctx context.Context, in *ValidateAdmissionRequest, opts ...grpc.CallOption) (*ValidateAdmissionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(ValidateAdmissionResponse)
-	err := c.cc.Invoke(ctx, AdmissionControlService_ValidateAdmission_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AdmissionControlService_ValidateObject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
 	return out, nil
 }
 
-func (c *admissionControlServiceClient) MutateAdmission(ctx context.Context, in *MutateAdmissionRequest, opts ...grpc.CallOption) (*MutateAdmissionResponse, error) {
+func (c *admissionControlServiceClient) MutateObject(ctx context.Context, in *MutateAdmissionRequest, opts ...grpc.CallOption) (*MutateAdmissionResponse, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(MutateAdmissionResponse)
-	err := c.cc.Invoke(ctx, AdmissionControlService_MutateAdmission_FullMethodName, in, out, cOpts...)
+	err := c.cc.Invoke(ctx, AdmissionControlService_MutateObject_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -80,11 +80,11 @@ func (c *admissionControlServiceClient) MutateAdmission(ctx context.Context, in 
 // Unlike the pluginv2 AdmissionControl service, the requests here do not carry
 // a PluginContext.
 type AdmissionControlServiceServer interface {
-	// ValidateAdmission validates a resource; the response is a simple yes/no.
-	ValidateAdmission(context.Context, *ValidateAdmissionRequest) (*ValidateAdmissionResponse, error)
-	// MutateAdmission returns a modified copy of the request that can be saved,
+	// ValidateObject validates a resource; the response is a simple yes/no.
+	ValidateObject(context.Context, *ValidateAdmissionRequest) (*ValidateAdmissionResponse, error)
+	// MutateObject returns a modified copy of the request that can be saved,
 	// or a descriptive error.
-	MutateAdmission(context.Context, *MutateAdmissionRequest) (*MutateAdmissionResponse, error)
+	MutateObject(context.Context, *MutateAdmissionRequest) (*MutateAdmissionResponse, error)
 }
 
 // UnimplementedAdmissionControlServiceServer should be embedded to have
@@ -94,11 +94,11 @@ type AdmissionControlServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedAdmissionControlServiceServer struct{}
 
-func (UnimplementedAdmissionControlServiceServer) ValidateAdmission(context.Context, *ValidateAdmissionRequest) (*ValidateAdmissionResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method ValidateAdmission not implemented")
+func (UnimplementedAdmissionControlServiceServer) ValidateObject(context.Context, *ValidateAdmissionRequest) (*ValidateAdmissionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ValidateObject not implemented")
 }
-func (UnimplementedAdmissionControlServiceServer) MutateAdmission(context.Context, *MutateAdmissionRequest) (*MutateAdmissionResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method MutateAdmission not implemented")
+func (UnimplementedAdmissionControlServiceServer) MutateObject(context.Context, *MutateAdmissionRequest) (*MutateAdmissionResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method MutateObject not implemented")
 }
 func (UnimplementedAdmissionControlServiceServer) testEmbeddedByValue() {}
 
@@ -120,38 +120,38 @@ func RegisterAdmissionControlServiceServer(s grpc.ServiceRegistrar, srv Admissio
 	s.RegisterService(&AdmissionControlService_ServiceDesc, srv)
 }
 
-func _AdmissionControlService_ValidateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdmissionControlService_ValidateObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(ValidateAdmissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdmissionControlServiceServer).ValidateAdmission(ctx, in)
+		return srv.(AdmissionControlServiceServer).ValidateObject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AdmissionControlService_ValidateAdmission_FullMethodName,
+		FullMethod: AdmissionControlService_ValidateObject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdmissionControlServiceServer).ValidateAdmission(ctx, req.(*ValidateAdmissionRequest))
+		return srv.(AdmissionControlServiceServer).ValidateObject(ctx, req.(*ValidateAdmissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
-func _AdmissionControlService_MutateAdmission_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+func _AdmissionControlService_MutateObject_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(MutateAdmissionRequest)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(AdmissionControlServiceServer).MutateAdmission(ctx, in)
+		return srv.(AdmissionControlServiceServer).MutateObject(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: AdmissionControlService_MutateAdmission_FullMethodName,
+		FullMethod: AdmissionControlService_MutateObject_FullMethodName,
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(AdmissionControlServiceServer).MutateAdmission(ctx, req.(*MutateAdmissionRequest))
+		return srv.(AdmissionControlServiceServer).MutateObject(ctx, req.(*MutateAdmissionRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -164,12 +164,12 @@ var AdmissionControlService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*AdmissionControlServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "ValidateAdmission",
-			Handler:    _AdmissionControlService_ValidateAdmission_Handler,
+			MethodName: "ValidateObject",
+			Handler:    _AdmissionControlService_ValidateObject_Handler,
 		},
 		{
-			MethodName: "MutateAdmission",
-			Handler:    _AdmissionControlService_MutateAdmission_Handler,
+			MethodName: "MutateObject",
+			Handler:    _AdmissionControlService_MutateObject_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

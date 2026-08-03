@@ -40,8 +40,8 @@ This module is an answer to three questions:
   service (`CallResource` → `CallRoute`)
 - `AdmissionControlService` — admission hooks invoked when an object is created,
   updated, or deleted:
-  - `ValidateAdmission` — accept or reject the object
-  - `MutateAdmission` — return a modified copy of the object to store
+  - `ValidateObject` — accept or reject the object
+  - `MutateObject` — return a modified copy of the object to store
 - `ResourceConversionService` — convert objects from one API version to another
 
 ## Conventions
@@ -71,7 +71,9 @@ go install google.golang.org/protobuf/cmd/protoc-gen-go@latest
 go install google.golang.org/grpc/cmd/protoc-gen-go-grpc@latest
 ```
 
-Then, from this directory:
+From the repository root, `mage protobuf:generate` regenerates both this module
+and the legacy `pluginv2` one. To run `buf` directly, do it from this directory,
+since the `out` paths in `buf.gen.yaml` are relative to it:
 
 ```sh
 buf lint
