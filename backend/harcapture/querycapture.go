@@ -58,9 +58,9 @@ type sdkHARQueryInfo struct {
 	// rather than in the entry's postData because HAR defines postData.params for a URL-encoded body and
 	// states that params and text are mutually exclusive.
 	Args []string `json:"args,omitempty"`
-	// StatementTruncated and ArgsTruncated report that the statement or the arguments were cut to fit a
-	// size bound -- the capture point's own, or the buffer's cumulative budget -- so a reader can tell a
-	// long statement from a clipped one.
+	// StatementTruncated and ArgsTruncated report that the statement or the arguments were cut to fit
+	// the capture point's own size bound (querycapture.MaxStatementBytes / MaxArgsBytes), so a reader
+	// can tell a long statement from a clipped one.
 	StatementTruncated bool `json:"statementTruncated,omitempty"`
 	ArgsTruncated      bool `json:"argsTruncated,omitempty"`
 	// FrameCount and RowCount summarise what the plugin returned; RowCount is -1 when the capture
@@ -70,31 +70,6 @@ type sdkHARQueryInfo struct {
 	// Error is the error the query returned, or empty on success. It repeats the entry comment in a
 	// field an analyzer can read without string matching.
 	Error string `json:"error,omitempty"`
-}
-
-// payloadBytes is the "_query" object's share of the buffer's retained-payload budget (see
-// Buffer.appendEntry): the bind arguments, which a bulk statement can make as large as the statement
-// itself, and the error. A nil receiver is an HTTP entry, which has no "_query".
-func (q *sdkHARQueryInfo) payloadBytes() int64 {
-	if q == nil {
-		return 0
-	}
-	n := int64(len(q.Error))
-	for _, a := range q.Args {
-		n += int64(len(a))
-	}
-	return n
-}
-
-// dropPayload drops the bind arguments, flagging them truncated so their absence does not read as a
-// statement that had none. The error stays: it is what makes an over-budget entry worth keeping at
-// all, and it is small next to the arguments it accompanies.
-func (q *sdkHARQueryInfo) dropPayload() {
-	if q == nil || len(q.Args) == 0 {
-		return
-	}
-	q.Args = nil
-	q.ArgsTruncated = true
 }
 
 // querySummary is the response content of a query entry: what came back, counted rather than copied.

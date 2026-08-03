@@ -147,18 +147,20 @@ func TestBuildSDKHAREntry_transportError(t *testing.T) {
 	}
 }
 
-// TestReadAndRestoreBody_capsCaptureButDeliversFullBody asserts a body larger than the per-body cap
-// is only partially buffered for capture, yet the original consumer still receives every byte.
-func TestReadAndRestoreBody_capsCaptureButDeliversFullBody(t *testing.T) {
-	full := bytes.Repeat([]byte("x"), maxCapturedBodyBytes+4096)
+// TestReadAndRestoreBody_deliversFullBody asserts the whole body is both captured and delivered to
+// the original consumer, unmodified. Size limiting is an independent, upstream concern (e.g.
+// httpclient.ResponseLimitMiddleware) -- see package doc -- not something readAndRestoreBody does
+// itself.
+func TestReadAndRestoreBody_deliversFullBody(t *testing.T) {
+	full := bytes.Repeat([]byte("x"), 1<<20)
 
 	captured, truncated, restored := readAndRestoreBody(io.NopCloser(bytes.NewReader(full)))
 
-	if !truncated {
-		t.Fatal("a body larger than the cap must be reported as truncated")
+	if truncated {
+		t.Fatal("a body that read to completion must not be reported as truncated")
 	}
-	if len(captured) != maxCapturedBodyBytes {
-		t.Errorf("captured %d bytes, want the cap %d (capture must not buffer the whole body)", len(captured), maxCapturedBodyBytes)
+	if len(captured) != len(full) {
+		t.Errorf("captured %d bytes, want the full %d", len(captured), len(full))
 	}
 
 	got, err := io.ReadAll(restored)
@@ -170,99 +172,5 @@ func TestReadAndRestoreBody_capsCaptureButDeliversFullBody(t *testing.T) {
 	}
 	if err := restored.Close(); err != nil {
 		t.Errorf("Close: %v", err)
-	}
-}
-
-// TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize asserts an over-cap response reports bodySize
-// -1 (HAR "unavailable") since the true length isn't known, while content still holds the prefix.
-func TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize(t *testing.T) {
-	full := bytes.Repeat([]byte("y"), maxCapturedBodyBytes+4096)
-	req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
-	if err != nil {
-		t.Fatal(err)
-	}
-	resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(bytes.NewReader(full))}
-
-	entry := buildSDKHAREntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
-
-	if entry.Response.BodySize != -1 {
-		t.Errorf("truncated body bodySize = %d, want -1 (unknown)", entry.Response.BodySize)
-	}
-	if entry.Response.Content.Size != int64(maxCapturedBodyBytes) {
-		t.Errorf("content size = %d, want the captured prefix length %d", entry.Response.Content.Size, maxCapturedBodyBytes)
-	}
-}
-
-// TestSDKHARCaptureBuffer_totalSizeCap asserts that once the cumulative retained body budget is
-// exhausted, later entries keep their metadata/sizes but drop the body text.
-func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
-	buf := NewBuffer()
-	big := strings.Repeat("a", maxCapturedBodyBytes) // one per-body-capped chunk each
-
-	// Enough entries to blow past the total budget.
-	for i := 0; i < (maxCapturedTotalBytes/maxCapturedBodyBytes)+2; i++ {
-		req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(strings.NewReader(big))}
-		buf.AddEntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
-	}
-
-	var total int
-	var droppedText, keptTrueSize bool
-	for _, e := range buf.entries {
-		total += len(e.Response.Content.Text)
-		if e.Response.Content.Text == "" && e.Response.Content.Size == int64(len(big)) {
-			droppedText = true // metadata/size preserved, text dropped
-		}
-		if e.Response.Content.Size == int64(len(big)) {
-			keptTrueSize = true
-		}
-	}
-	if total > maxCapturedTotalBytes {
-		t.Errorf("retained body text %d exceeds the cap budget %d", total, maxCapturedTotalBytes)
-	}
-	if !droppedText {
-		t.Error("expected later entries to drop body text once over the total budget")
-	}
-	if !keptTrueSize {
-		t.Error("true body size must be preserved even when text is dropped")
-	}
-}
-
-// TestSDKHARCaptureBuffer_totalSizeCapIsTight asserts that the budget bounds the document rather than
-// merely triggering on it: the entry that would take the total past the cap is trimmed itself, instead
-// of being retained whole and only trimming its successors. It is filled unevenly on purpose, so that
-// an entry lands astride the cap -- the case a mixed query-and-HTTP capture reaches easily, since the
-// two producers contribute entries of very different sizes.
-func TestSDKHARCaptureBuffer_totalSizeCapIsTight(t *testing.T) {
-	buf := NewBuffer()
-	addEntry := func(body string) {
-		req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
-		if err != nil {
-			t.Fatal(err)
-		}
-		resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(strings.NewReader(body))}
-		buf.AddEntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
-	}
-
-	// Leave the budget with less room than one full chunk, so the next entry straddles the cap.
-	big := strings.Repeat("a", maxCapturedBodyBytes)
-	for i := 0; i < (maxCapturedTotalBytes/maxCapturedBodyBytes)-1; i++ {
-		addEntry(big)
-	}
-	addEntry(strings.Repeat("b", 1024))
-	addEntry(big)
-
-	var total int
-	for _, e := range buf.entries {
-		total += len(e.Response.Content.Text)
-	}
-	if total > maxCapturedTotalBytes {
-		t.Errorf("retained body text %d exceeds the cap budget %d", total, maxCapturedTotalBytes)
-	}
-	if last := buf.entries[len(buf.entries)-1]; last.Response.Content.Text != "" {
-		t.Error("the entry that crosses the budget must drop its body text, not be retained whole")
 	}
 }

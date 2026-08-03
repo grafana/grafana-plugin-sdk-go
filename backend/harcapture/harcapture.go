@@ -13,18 +13,6 @@ import (
 )
 
 const (
-	// maxCapturedBodyBytes caps how much of any single request/response body is read into memory for
-	// capture; the untouched remainder is streamed on to the real consumer rather than buffered (see
-	// readAndRestoreBody). maxCapturedTotalBytes caps the total payload text retained across all entries
-	// in one request -- i.e. the size of the serialized __har__ frame -- keeping it well under the
-	// plugin<->core gRPC message size limit. Note this budget tracks retained HAR text only: while an
-	// over-cap body is still being streamed to the consumer, its capped head (up to
-	// maxCapturedBodyBytes) is also held transiently, so peak memory during capture can exceed the
-	// total budget by roughly that per concurrent over-cap response. Both are far below the
-	// unbounded full-body buffering capture would otherwise do.
-	maxCapturedBodyBytes  = 8 << 20  // 8 MiB
-	maxCapturedTotalBytes = 32 << 20 // 32 MiB
-
 	// redactedValue replaces the value of anything capture treats as sensitive (see
 	// isSensitiveHeaderName, isSensitiveQueryParamName, and sdkCookies), so the __har__ frame -- which
 	// is returned to whoever enabled capture -- never carries datasource credentials.
@@ -72,9 +60,8 @@ func isSensitiveQueryParamName(name string) bool {
 // Buffer collects HTTP request/response pairs in HAR 1.2 format in memory.
 // Used by the SDK HAR capture middleware to accumulate traffic from external plugin HTTP clients.
 type Buffer struct {
-	mu       sync.Mutex
-	entries  []sdkHAREntry
-	retained int64 // running total of retained payload bytes, for the total-size cap
+	mu      sync.Mutex
+	entries []sdkHAREntry
 }
 
 func NewBuffer() *Buffer {
@@ -85,51 +72,17 @@ func (b *Buffer) AddEntry(req *http.Request, reqBody []byte, reqTruncated bool, 
 	b.appendEntry(buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed))
 }
 
-// appendEntry adds an already-built entry under the buffer's cumulative retained-payload budget.
-// Every producer goes through here -- HTTP round trips and non-HTTP query interactions alike -- so
-// one budget bounds the whole document whatever mix of traffic a request produced.
+// appendEntry adds an already-built entry. Every producer goes through here -- HTTP round trips and
+// non-HTTP query interactions alike -- so both land in one document in the order they happened.
 func (b *Buffer) appendEntry(entry sdkHAREntry) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	// Enforce the cumulative retained-payload budget: an entry whose payload would take the request
-	// past maxCapturedTotalBytes keeps its metadata (headers, sizes, timings, error) but drops the
-	// payload itself, so the __har__ frame can't grow without bound. The check is on the sum rather
-	// than on what is already retained, so the entry that crosses the budget is trimmed too rather than
-	// kept whole.
-	payload := entry.payloadBytes()
-	if b.retained+payload > maxCapturedTotalBytes {
-		entry.dropPayload()
-	} else {
-		b.retained += payload
-	}
 	b.entries = append(b.entries, entry)
 }
 
-// payloadBytes is what an entry contributes to the buffer's retained-payload budget: everything that
-// carries data rather than describing it, whichever producer built the entry.
-func (e *sdkHAREntry) payloadBytes() int64 {
-	n := int64(len(e.Response.Content.Text))
-	if e.Request.PostData != nil {
-		n += int64(len(e.Request.PostData.Text))
-	}
-	return n + e.Query.payloadBytes()
-}
-
-// dropPayload clears an entry's payload, keeping what tells a reader the exchange happened and how it
-// went: headers, the true sizes, timings and any error.
-func (e *sdkHAREntry) dropPayload() {
-	e.Response.Content.Text = ""
-	e.Response.Content.Encoding = ""
-	if e.Request.PostData != nil {
-		e.Request.PostData.Text = ""
-		e.Request.PostData.Encoding = ""
-	}
-	e.Query.dropPayload()
-}
-
-// DrainRequestBody reads and returns the request body (up to the capture cap) and whether it was
-// larger than the cap (truncated), restoring it so the request can still be sent. It must be called
-// before the request is sent: a real http.Transport consumes (and closes) req.Body while sending, so
+// DrainRequestBody reads and returns the request body and whether the read failed partway through
+// (truncated), restoring it so the request can still be sent. It must be called before the request is
+// sent: a real http.Transport consumes (and closes) req.Body while sending, so
 // reading it afterwards yields nothing. Returns nil when there is no body.
 func DrainRequestBody(req *http.Request) ([]byte, bool) {
 	if req == nil || req.Body == nil || req.Body == http.NoBody {
@@ -140,34 +93,20 @@ func DrainRequestBody(req *http.Request) ([]byte, bool) {
 	return body, truncated
 }
 
-// readAndRestoreBody reads up to maxCapturedBodyBytes of rc for capture and returns those bytes,
-// whether the captured bytes are NOT the complete body (sizeUnknown -- the body exceeded the cap, or
-// the read failed part-way, so its true size is unavailable), and a ReadCloser that hands the
-// original consumer the full body -- the captured prefix followed by the untouched, lazily-streamed
-// remainder -- so capture never buffers more than the cap regardless of how large the body is. When
-// the read fails partway (e.g. this SDK's ResponseLimitMiddleware deliberately errors past a size
-// cap, or a transient network error), the captured bytes are what was read so far and the replay
-// reader re-surfaces the same error after them, exactly what downstream would have observed. rc is
-// closed once the returned ReadCloser is closed (or immediately when there is no remainder to stream).
+// readAndRestoreBody reads all of rc for capture and returns those bytes, whether the read failed
+// partway through (in which case the true size is unavailable), and a ReadCloser that hands the
+// original consumer the same bytes. Capture relies on an independent limit upstream (e.g.
+// httpclient.ResponseLimitMiddleware) to keep a response body from growing without bound -- see
+// package doc -- so a read failing partway here is that limit (or a transient network error), and the
+// captured bytes are what was read so far; the replay reader re-surfaces the same error after them,
+// exactly what downstream would have observed. rc is closed once read.
 func readAndRestoreBody(rc io.ReadCloser) ([]byte, bool, io.ReadCloser) {
-	// Read one byte past the cap so a full body (<= cap) can be told from a truncated one (> cap)
-	// without buffering the whole thing.
-	buf, err := io.ReadAll(io.LimitReader(rc, maxCapturedBodyBytes+1))
+	buf, err := io.ReadAll(rc)
+	_ = rc.Close()
 	if err != nil {
-		// Read failed part-way: we hold a partial prefix and the true size is unavailable.
-		_ = rc.Close()
 		return buf, true, &errorReader{r: bytes.NewReader(buf), err: err}
 	}
-	if int64(len(buf)) <= maxCapturedBodyBytes {
-		// Whole body fit within the cap; nothing left in rc.
-		_ = rc.Close()
-		return buf, false, io.NopCloser(bytes.NewReader(buf))
-	}
-	// Body is larger than the cap: retain only the capped prefix for the HAR, but let the consumer
-	// read the full buffered head (buf, which is cap+1 bytes) followed by the untouched remainder
-	// streamed lazily from rc, so we never buffer the whole body.
-	captured := buf[:maxCapturedBodyBytes]
-	return captured, true, &bodyRemainder{r: io.MultiReader(bytes.NewReader(buf), rc), c: rc}
+	return buf, false, io.NopCloser(bytes.NewReader(buf))
 }
 
 // errorReader replays buffered bytes and then returns err in place of io.EOF, reproducing a body
@@ -186,16 +125,6 @@ func (e *errorReader) Read(p []byte) (int, error) {
 }
 
 func (e *errorReader) Close() error { return nil }
-
-// bodyRemainder is a ReadCloser over a size-capped body: it replays the buffered prefix and streams
-// the untouched remainder, closing the underlying body on Close so the connection is released.
-type bodyRemainder struct {
-	r io.Reader
-	c io.Closer
-}
-
-func (b *bodyRemainder) Read(p []byte) (int, error) { return b.r.Read(p) }
-func (b *bodyRemainder) Close() error               { return b.c.Close() }
 
 func (b *Buffer) Len() int {
 	b.mu.Lock()
@@ -310,17 +239,12 @@ type sdkHARContent struct {
 
 // encodeBody renders a body for a HAR text field. It base64-encodes when the bytes are not valid
 // UTF-8, so binary payloads (protobuf, images, ...) survive json.Marshal instead of being silently
-// corrupted to U+FFFD, and caps the retained bytes at maxCapturedBodyBytes. The caller records the
-// true, uncapped size separately (bodySize/content.size).
+// corrupted to U+FFFD.
 func encodeBody(body []byte) (text, encoding string) {
-	keep := body
-	if len(keep) > maxCapturedBodyBytes {
-		keep = keep[:maxCapturedBodyBytes]
+	if utf8.Valid(body) {
+		return string(body), ""
 	}
-	if utf8.Valid(keep) {
-		return string(keep), ""
-	}
-	return base64.StdEncoding.EncodeToString(keep), "base64"
+	return base64.StdEncoding.EncodeToString(body), "base64"
 }
 
 type sdkHARTimings struct {
