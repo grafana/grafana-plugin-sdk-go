@@ -3,6 +3,8 @@
 # these will be requested for review when someone opens a pull request.
 * @grafana/grafana-catalog
 /backend/gtime @grafana/data-sources-plugins @grafana/observability-logs
+/backend/harcapture @grafana/data-sources-plugins
+/backend/querycapture @grafana/data-sources-plugins
 /data/ @grafana/grafana-datasources-core-services
 /data/sqlutil @grafana/data-sources-plugins
 /experimental/apis/datasource @grafana/grafana-datasources-core-services

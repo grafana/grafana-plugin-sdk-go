@@ -194,7 +194,7 @@ func TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize(t *testing.T) {
 }
 
 // TestSDKHARCaptureBuffer_totalSizeCap asserts that once the cumulative retained body budget is
-// exceeded, later entries keep their metadata/sizes but drop the body text.
+// exhausted, later entries keep their metadata/sizes but drop the body text.
 func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
 	buf := NewBuffer()
 	big := strings.Repeat("a", maxCapturedBodyBytes) // one per-body-capped chunk each
@@ -220,13 +220,49 @@ func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
 			keptTrueSize = true
 		}
 	}
-	if total > maxCapturedTotalBytes+2*maxCapturedBodyBytes {
-		t.Errorf("retained body text %d exceeds the cap budget", total)
+	if total > maxCapturedTotalBytes {
+		t.Errorf("retained body text %d exceeds the cap budget %d", total, maxCapturedTotalBytes)
 	}
 	if !droppedText {
 		t.Error("expected later entries to drop body text once over the total budget")
 	}
 	if !keptTrueSize {
 		t.Error("true body size must be preserved even when text is dropped")
+	}
+}
+
+// TestSDKHARCaptureBuffer_totalSizeCapIsTight asserts that the budget bounds the document rather than
+// merely triggering on it: the entry that would take the total past the cap is trimmed itself, instead
+// of being retained whole and only trimming its successors. It is filled unevenly on purpose, so that
+// an entry lands astride the cap -- the case a mixed query-and-HTTP capture reaches easily, since the
+// two producers contribute entries of very different sizes.
+func TestSDKHARCaptureBuffer_totalSizeCapIsTight(t *testing.T) {
+	buf := NewBuffer()
+	addEntry := func(body string) {
+		req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(strings.NewReader(body))}
+		buf.AddEntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
+	}
+
+	// Leave the budget with less room than one full chunk, so the next entry straddles the cap.
+	big := strings.Repeat("a", maxCapturedBodyBytes)
+	for i := 0; i < (maxCapturedTotalBytes/maxCapturedBodyBytes)-1; i++ {
+		addEntry(big)
+	}
+	addEntry(strings.Repeat("b", 1024))
+	addEntry(big)
+
+	var total int
+	for _, e := range buf.entries {
+		total += len(e.Response.Content.Text)
+	}
+	if total > maxCapturedTotalBytes {
+		t.Errorf("retained body text %d exceeds the cap budget %d", total, maxCapturedTotalBytes)
+	}
+	if last := buf.entries[len(buf.entries)-1]; last.Response.Content.Text != "" {
+		t.Error("the entry that crosses the budget must drop its body text, not be retained whole")
 	}
 }
