@@ -119,10 +119,11 @@ type Interaction struct {
 	// "" and NULL are different answers to a wrong-data question.
 	ResultColumns []string
 	ResultRows    [][]*string
-	// ResultRowsTruncated reports that ResultRows is a prefix, because the result
-	// exceeded MaxResultBytes. ResultTotalRows is how many rows the capture point
-	// saw in total (which may exceed len(ResultRows)), or -1 when it could not
-	// tell -- a capture point that never consumes the result set cannot count it.
+	// ResultRowsTruncated reports that the result exceeded MaxResultBytes, in
+	// which case ResultRows is empty rather than a partial result: a prefix of
+	// the result is not evidence of the whole result. ResultTotalRows is how many
+	// rows the capture point saw in total, or -1 when it could not tell -- a
+	// capture point that never consumes the result set cannot count it.
 	ResultRowsTruncated bool
 	ResultTotalRows     int
 
@@ -153,12 +154,14 @@ const (
 	MaxStatementBytes = 64 * 1024
 	// MaxArgsBytes caps the aggregate size of Interaction.Args.
 	MaxArgsBytes = 16 * 1024
-	// MaxResultBytes caps the rendered result rows of one Interaction. It matches
-	// the cap the HTTP capture applies to a single response body, deliberately: the
-	// rows a SQL datasource returns are the same evidence as the body an HTTP
-	// datasource returns, and there is no reason for one to be retained more
-	// generously than the other.
-	MaxResultBytes = 8 << 20
+	// MaxResultBytes caps the rendered result rows of one Interaction. Crossing it
+	// drops the rows entirely rather than keeping a prefix -- a partial result set
+	// answers the wrong-data question the capture exists for no better than none
+	// at all -- so ResultCapture reports a count instead. This is deliberately a
+	// single guardrail rather than an engineered budget: it matches the one
+	// ceiling grafana/grafana#129691 applies to the whole diagnostics bundle
+	// (1 GiB), rather than a separately-tuned number for this one path.
+	MaxResultBytes = 1 << 30
 )
 
 type recorderContextKey struct{}

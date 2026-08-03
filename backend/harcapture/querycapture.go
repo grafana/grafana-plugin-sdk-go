@@ -99,17 +99,17 @@ func (q *sdkHARQueryInfo) dropPayload() {
 // querySummary is the response content of a query entry: the rows the datasource returned, plus what
 // the plugin made of them.
 //
-// The rows are carried in full (up to querycapture.MaxResultBytes), the same way an HTTP entry carries
-// a response body, because they are the same evidence: without them a bundle can say what was asked
-// and what the plugin returned, but has no independent account of what the datasource sent -- which is
-// the difference between localizing a wrong-data report and merely describing it.
+// The rows are carried in full, up to querycapture.MaxResultBytes; past that, Rows is empty rather
+// than a prefix, and RowsTruncated says so, on the same reasoning the on-demand diagnostics bundle
+// applies to a whole artifact: a partial result answers a wrong-data report no better than none.
 type querySummary struct {
 	// Columns and Rows are the result set as the driver produced it, before conversion. A null cell is
-	// a SQL NULL, distinct from an empty string.
+	// a SQL NULL, distinct from an empty string. Rows is empty when RowsTruncated is set; Columns
+	// survives, since the shape alone is not the partial-result evidence this drops.
 	Columns []string    `json:"columns,omitempty"`
 	Rows    [][]*string `json:"rows,omitempty"`
-	// TotalRows is how many rows the datasource returned; it exceeds len(Rows) when RowsTruncated is
-	// set, so a reader can tell a short result from a clipped one. Omitted when unknown.
+	// TotalRows is how many rows the datasource returned, so a reader still learns how much there was
+	// even when RowsTruncated dropped the rows themselves. Omitted when unknown.
 	TotalRows     *int `json:"totalRows,omitempty"`
 	RowsTruncated bool `json:"rowsTruncated,omitempty"`
 	// FrameCount and RowCount are what the plugin returned, so the comparison the bundle exists for
@@ -164,8 +164,8 @@ func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
 		resp.Status = 200
 		resp.StatusText = "OK"
 		resp.BodySize = int64(len(summary))
-		// A clipped result reports an unavailable body size, the same convention an over-cap HTTP
-		// response body uses; content.size stays what was actually retained.
+		// A dropped result reports an unavailable body size, the same convention an over-cap HTTP
+		// response body uses; content.size stays what was actually retained (the counts alone).
 		if i.ResultRowsTruncated {
 			resp.BodySize = -1
 		}

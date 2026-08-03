@@ -363,13 +363,12 @@ func TestAddQueryInteraction_carriesReturnedRows(t *testing.T) {
 	assert.Equal(t, int64(len(e.Response.Content.Text)), e.Response.BodySize)
 }
 
-func TestAddQueryInteraction_clippedRowsAreReported(t *testing.T) {
+func TestAddQueryInteraction_droppedRowsAreReported(t *testing.T) {
 	b := NewBuffer()
 	b.AddQueryInteraction(querycapture.Interaction{
 		Kind:                querycapture.KindSQLQuery,
 		Statement:           "SELECT * FROM big",
 		ResultColumns:       []string{"host"},
-		ResultRows:          [][]*string{{strPtr("host-a")}},
 		ResultRowsTruncated: true,
 		ResultTotalRows:     900,
 		FrameCount:          1,
@@ -379,10 +378,12 @@ func TestAddQueryInteraction_clippedRowsAreReported(t *testing.T) {
 	doc := toDoc(t, b)
 	e := doc.Log.Entries[0]
 	assert.Equal(t, int64(-1), e.Response.BodySize,
-		"a clipped result reports an unavailable body size, the same as an over-cap HTTP body")
+		"a dropped result reports an unavailable body size, the same as an over-cap HTTP body")
 	assert.Contains(t, e.Response.Content.Text, `"rowsTruncated":true`)
+	assert.NotContains(t, e.Response.Content.Text, `"rows":`,
+		"a partial result is not evidence of the whole result, so no rows are reported at all")
 	assert.Contains(t, e.Response.Content.Text, `"totalRows":900`,
-		"the total says how much there was, so a prefix is not mistaken for the whole result")
+		"the total says how much there was, even though the rows themselves were dropped")
 }
 
 func TestAddQueryInteraction_unknownTotalIsOmitted(t *testing.T) {

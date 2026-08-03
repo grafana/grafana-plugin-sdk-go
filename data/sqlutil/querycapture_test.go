@@ -123,22 +123,17 @@ func TestFrameFromRowsWithContext_noCaptureOnContextIsUnchanged(t *testing.T) {
 func TestFrameFromRowsWithContext_boundedByMaxResultBytes(t *testing.T) {
 	// A pathological result must not be able to grow the capture without limit, and the capture must
 	// say so rather than presenting a prefix as the whole result.
-	wide := strings.Repeat("x", 1<<20) // 1 MiB per row
-	rowsData := make([][]interface{}, 0, 16)
-	for i := 0; i < 16; i++ {
-		rowsData = append(rowsData, []interface{}{wide})
-	}
-	rows := makeSingleResultSet([]string{"blob"}, rowsData...) //nolint:rowserrcheck
+	huge := strings.Repeat("x", querycapture.MaxResultBytes)
+	rows := makeSingleResultSet([]string{"blob"}, []interface{}{"host-a"}, []interface{}{huge}) //nolint:rowserrcheck
 
 	ctx, capture := captureCtx(t)
 	frame, err := sqlutil.FrameFromRowsWithContext(ctx, rows, -1, 0)
 	require.NoError(t, err)
-	assert.Equal(t, 16, frame.Fields[0].Len(),
+	assert.Equal(t, 2, frame.Fields[0].Len(),
 		"every row still reaches the frame; capture never drops data from the query")
 
 	got := capture.Result()
 	assert.True(t, got.Truncated)
-	assert.Equal(t, 16, got.TotalRows, "the total counts what the database returned, not what was kept")
-	assert.Less(t, len(got.Rows), 16)
-	assert.LessOrEqual(t, len(got.Rows)*(1<<20), querycapture.MaxResultBytes)
+	assert.Equal(t, 2, got.TotalRows, "the total counts what the database returned, not what was kept")
+	assert.Empty(t, got.Rows, "a partial result is not evidence of the whole result")
 }

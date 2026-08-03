@@ -26,20 +26,18 @@ func TestResultCapture_keepsRowsInOrder(t *testing.T) {
 	assert.Nil(t, got.Rows[1][1], "a NULL survives as a nil cell rather than becoming an empty string")
 }
 
-func TestResultCapture_boundsRetainedRowsAndKeepsCounting(t *testing.T) {
-	// Past the cap the capture must become "here is the beginning, and here is how much there was",
-	// never a prefix presented as the whole result.
+func TestResultCapture_dropsAllRowsPastTheCapButKeepsCounting(t *testing.T) {
+	// Past the cap the capture must become "here is how much there was", never a prefix presented as
+	// the whole result -- so every row is dropped, including the one already collected before the row
+	// that crosses the budget, not just the one that overran it.
 	c := NewResultCapture()
-	big := strings.Repeat("x", 1<<20)
-	for i := 0; i < 16; i++ {
-		c.AddRow([]*string{cell(big)})
-	}
+	c.AddRow([]*string{cell("host-a")})
+	c.AddRow([]*string{cell(strings.Repeat("x", MaxResultBytes))})
 
 	got := c.Result()
 	assert.True(t, got.Truncated)
-	assert.Equal(t, 16, got.TotalRows)
-	assert.Less(t, len(got.Rows), 16)
-	assert.LessOrEqual(t, len(got.Rows)*(1<<20), MaxResultBytes)
+	assert.Equal(t, 2, got.TotalRows)
+	assert.Empty(t, got.Rows, "a partial result is not evidence of the whole result")
 }
 
 func TestResultCapture_firstColumnsWin(t *testing.T) {

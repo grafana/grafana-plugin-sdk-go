@@ -53,9 +53,11 @@ func (c *ResultCapture) SetColumns(names []string) {
 // AddRow records one scanned row. Cells must not be retained by the caller after
 // the call -- AddRow takes ownership of the slice.
 //
-// Once MaxResultBytes is reached the row is counted but not kept, so the capture
-// degrades into "here is the beginning, and here is how much there was" rather than
-// silently presenting a prefix as the whole result.
+// Once MaxResultBytes would be exceeded, every row is discarded, not just the ones
+// past the cap: a prefix of the result is not evidence of the whole result, and
+// presenting one invites exactly the "did the database or the plugin get this
+// wrong" confusion the capture exists to resolve. Rows keeps counting either way,
+// so a reader still learns how much there was.
 func (c *ResultCapture) AddRow(cells []*string) {
 	if c == nil {
 		return
@@ -77,6 +79,7 @@ func (c *ResultCapture) AddRow(cells []*string) {
 	}
 	if c.bytes+size > MaxResultBytes {
 		c.truncated = true
+		c.rows = nil
 		return
 	}
 	c.bytes += size
@@ -87,10 +90,11 @@ func (c *ResultCapture) AddRow(cells []*string) {
 type CapturedResult struct {
 	// Columns are the result set's column names, empty when nothing was captured.
 	Columns []string
-	// Rows are the retained rows. A nil cell is a NULL.
+	// Rows are the retained rows. A nil cell is a NULL. Empty when Truncated, since
+	// a prefix of the result is not evidence of the whole result.
 	Rows [][]*string
-	// Truncated reports that Rows is a prefix, because the result exceeded
-	// MaxResultBytes.
+	// Truncated reports that the result exceeded MaxResultBytes, so Rows is empty
+	// rather than a partial result.
 	Truncated bool
 	// TotalRows is how many rows the capture point saw, which exceeds len(Rows)
 	// when Truncated is set. It is -1 when the capture point could not tell.
