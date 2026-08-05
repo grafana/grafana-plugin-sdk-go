@@ -260,9 +260,10 @@ func TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget(t *testing.T) {
 	// Being counted is not enough: an over-budget entry has to shed its arguments too, or the frame
 	// grows by them anyway. Inspect the entries directly rather than the marshalled document, so the
 	// test doesn't serialize the whole budget.
+	withCaptureLimits(t, 4096, 16384)
 	b := NewBuffer()
-	statement := strings.Repeat("x", maxCapturedBodyBytes)
-	for i := 0; i < maxCapturedTotalBytes/maxCapturedBodyBytes; i++ {
+	statement := strings.Repeat("x", int(maxCapturedBodyBytes))
+	for i := int64(0); i < maxCapturedTotalBytes/maxCapturedBodyBytes; i++ {
 		b.AddQueryInteraction(querycapture.Interaction{
 			Kind: querycapture.KindSQLQuery, Statement: statement, Err: "boom",
 		})

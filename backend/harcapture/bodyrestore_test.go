@@ -30,6 +30,18 @@ func (f *flakyBody) Read(p []byte) (int, error) {
 
 func (f *flakyBody) Close() error { return nil }
 
+// withCaptureLimits overrides the package's body/total capture caps for the duration of the test, so
+// cap-boundary tests exercise the capping algorithm against small fixtures rather than allocating and
+// copying data sized to the real multi-GiB production caps.
+func withCaptureLimits(t *testing.T, body, total int64) {
+	t.Helper()
+	origBody, origTotal := maxCapturedBodyBytes, maxCapturedTotalBytes
+	maxCapturedBodyBytes, maxCapturedTotalBytes = body, total
+	t.Cleanup(func() {
+		maxCapturedBodyBytes, maxCapturedTotalBytes = origBody, origTotal
+	})
+}
+
 // TestBuildSDKHAREntry_restoresBodyOnReadError asserts that capturing a response whose body read
 // fails still restores resp.Body, so the plugin's downstream consumer sees the same bytes and the
 // same error it would have without capture (capture must never truncate the real response).
@@ -150,14 +162,15 @@ func TestBuildSDKHAREntry_transportError(t *testing.T) {
 // TestReadAndRestoreBody_capsCaptureButDeliversFullBody asserts a body larger than the per-body cap
 // is only partially buffered for capture, yet the original consumer still receives every byte.
 func TestReadAndRestoreBody_capsCaptureButDeliversFullBody(t *testing.T) {
-	full := bytes.Repeat([]byte("x"), maxCapturedBodyBytes+4096)
+	withCaptureLimits(t, 4096, 16384)
+	full := bytes.Repeat([]byte("x"), int(maxCapturedBodyBytes)+4096)
 
 	captured, truncated, restored := readAndRestoreBody(io.NopCloser(bytes.NewReader(full)))
 
 	if !truncated {
 		t.Fatal("a body larger than the cap must be reported as truncated")
 	}
-	if len(captured) != maxCapturedBodyBytes {
+	if int64(len(captured)) != maxCapturedBodyBytes {
 		t.Errorf("captured %d bytes, want the cap %d (capture must not buffer the whole body)", len(captured), maxCapturedBodyBytes)
 	}
 
@@ -176,7 +189,8 @@ func TestReadAndRestoreBody_capsCaptureButDeliversFullBody(t *testing.T) {
 // TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize asserts an over-cap response reports bodySize
 // -1 (HAR "unavailable") since the true length isn't known, while content still holds the prefix.
 func TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize(t *testing.T) {
-	full := bytes.Repeat([]byte("y"), maxCapturedBodyBytes+4096)
+	withCaptureLimits(t, 4096, 16384)
+	full := bytes.Repeat([]byte("y"), int(maxCapturedBodyBytes)+4096)
 	req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
 	if err != nil {
 		t.Fatal(err)
@@ -196,11 +210,12 @@ func TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize(t *testing.T) {
 // TestSDKHARCaptureBuffer_totalSizeCap asserts that once the cumulative retained body budget is
 // exhausted, later entries keep their metadata/sizes but drop the body text.
 func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
+	withCaptureLimits(t, 4096, 16384)
 	buf := NewBuffer()
-	big := strings.Repeat("a", maxCapturedBodyBytes) // one per-body-capped chunk each
+	big := strings.Repeat("a", int(maxCapturedBodyBytes)) // one per-body-capped chunk each
 
 	// Enough entries to blow past the total budget.
-	for i := 0; i < (maxCapturedTotalBytes/maxCapturedBodyBytes)+2; i++ {
+	for i := int64(0); i < (maxCapturedTotalBytes/maxCapturedBodyBytes)+2; i++ {
 		req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
 		if err != nil {
 			t.Fatal(err)
@@ -220,7 +235,7 @@ func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
 			keptTrueSize = true
 		}
 	}
-	if total > maxCapturedTotalBytes {
+	if int64(total) > maxCapturedTotalBytes {
 		t.Errorf("retained body text %d exceeds the cap budget %d", total, maxCapturedTotalBytes)
 	}
 	if !droppedText {
@@ -237,6 +252,7 @@ func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
 // an entry lands astride the cap -- the case a mixed query-and-HTTP capture reaches easily, since the
 // two producers contribute entries of very different sizes.
 func TestSDKHARCaptureBuffer_totalSizeCapIsTight(t *testing.T) {
+	withCaptureLimits(t, 4096, 16384)
 	buf := NewBuffer()
 	addEntry := func(body string) {
 		req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
@@ -248,8 +264,8 @@ func TestSDKHARCaptureBuffer_totalSizeCapIsTight(t *testing.T) {
 	}
 
 	// Leave the budget with less room than one full chunk, so the next entry straddles the cap.
-	big := strings.Repeat("a", maxCapturedBodyBytes)
-	for i := 0; i < (maxCapturedTotalBytes/maxCapturedBodyBytes)-1; i++ {
+	big := strings.Repeat("a", int(maxCapturedBodyBytes))
+	for i := int64(0); i < (maxCapturedTotalBytes/maxCapturedBodyBytes)-1; i++ {
 		addEntry(big)
 	}
 	addEntry(strings.Repeat("b", 1024))
@@ -259,7 +275,7 @@ func TestSDKHARCaptureBuffer_totalSizeCapIsTight(t *testing.T) {
 	for _, e := range buf.entries {
 		total += len(e.Response.Content.Text)
 	}
-	if total > maxCapturedTotalBytes {
+	if int64(total) > maxCapturedTotalBytes {
 		t.Errorf("retained body text %d exceeds the cap budget %d", total, maxCapturedTotalBytes)
 	}
 	if last := buf.entries[len(buf.entries)-1]; last.Response.Content.Text != "" {

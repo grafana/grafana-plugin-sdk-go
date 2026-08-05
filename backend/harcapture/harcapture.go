@@ -12,24 +12,27 @@ import (
 	"unicode/utf8"
 )
 
-const (
-	// maxCapturedBodyBytes caps how much of any single request/response body is read into memory for
-	// capture; the untouched remainder is streamed on to the real consumer rather than buffered (see
-	// readAndRestoreBody). maxCapturedTotalBytes caps the total payload text retained across all entries
-	// in one request -- i.e. the size of the serialized __har__ frame -- keeping it well under the
-	// plugin<->core gRPC message size limit. Note this budget tracks retained HAR text only: while an
-	// over-cap body is still being streamed to the consumer, its capped head (up to
-	// maxCapturedBodyBytes) is also held transiently, so peak memory during capture can exceed the
-	// total budget by roughly that per concurrent over-cap response. Both are far below the
-	// unbounded full-body buffering capture would otherwise do.
-	maxCapturedBodyBytes  = 1 << 30 // 1 GiB
-	maxCapturedTotalBytes = 4 << 30 // 4 GiB
-
-	// redactedValue replaces the value of anything capture treats as sensitive (see
-	// isSensitiveHeaderName, isSensitiveQueryParamName, and sdkCookies), so the __har__ frame -- which
-	// is returned to whoever enabled capture -- never carries datasource credentials.
-	redactedValue = "REDACTED"
+// maxCapturedBodyBytes caps how much of any single request/response body is read into memory for
+// capture; the untouched remainder is streamed on to the real consumer rather than buffered (see
+// readAndRestoreBody). maxCapturedTotalBytes caps the total payload text retained across all entries
+// in one request -- i.e. the size of the serialized __har__ frame -- keeping it well under the
+// plugin<->core gRPC message size limit. Note this budget tracks retained HAR text only: while an
+// over-cap body is still being streamed to the consumer, its capped head (up to
+// maxCapturedBodyBytes) is also held transiently, so peak memory during capture can exceed the
+// total budget by roughly that per concurrent over-cap response. Both are far below the
+// unbounded full-body buffering capture would otherwise do.
+//
+// These are vars, not consts, so cap-boundary tests can shrink them for the duration of a test
+// instead of generating fixture data sized to the real multi-GiB caps.
+var (
+	maxCapturedBodyBytes  int64 = 1 << 30 // 1 GiB
+	maxCapturedTotalBytes int64 = 4 << 30 // 4 GiB
 )
+
+// redactedValue replaces the value of anything capture treats as sensitive (see
+// isSensitiveHeaderName, isSensitiveQueryParamName, and sdkCookies), so the __har__ frame -- which
+// is returned to whoever enabled capture -- never carries datasource credentials.
+const redactedValue = "REDACTED"
 
 // sensitiveHeaderNames are header names whose values are redacted before capture (matched
 // case-insensitively by isSensitiveHeaderName), since they routinely carry datasource credentials
@@ -314,7 +317,7 @@ type sdkHARContent struct {
 // true, uncapped size separately (bodySize/content.size).
 func encodeBody(body []byte) (text, encoding string) {
 	keep := body
-	if len(keep) > maxCapturedBodyBytes {
+	if int64(len(keep)) > maxCapturedBodyBytes {
 		keep = keep[:maxCapturedBodyBytes]
 	}
 	if utf8.Valid(keep) {
