@@ -19,14 +19,32 @@ const (
 	responseLimitEnvVar         = "GF_DATAPROXY_RESPONSE_LIMIT"
 )
 
+type responseLimitOverrideKey struct{}
+
+// WithResponseLimit returns a copy of parent that uses limit for downstream
+// response bodies. A non-positive limit leaves the existing response-limit
+// policy unchanged.
+//
+// The override is scoped to requests created with the returned context. It
+// takes precedence over Grafana configuration, the environment variable, and
+// the limit supplied to ResponseLimitMiddleware.
+func WithResponseLimit(parent context.Context, limit int64) context.Context {
+	if limit <= 0 {
+		return parent
+	}
+
+	return context.WithValue(parent, responseLimitOverrideKey{}, limit)
+}
+
 // ResponseLimitMiddleware limits the size of downstream response bodies.
 // When the limit is exceeded the response body returns ErrResponseBodyTooLarge and a
 // warning is logged with the datasource identifiers from opts.Labels.
 //
 // The limit is resolved per-request in the following priority order:
-//  1. GrafanaCfg.ResponseLimit() from the request context, set by WithGrafanaConfig
-//  2. GF_DATAPROXY_RESPONSE_LIMIT env var — read once at client construction
-//  3. The limit argument, if > 0
+//  1. WithResponseLimit override from the request context
+//  2. GrafanaCfg.ResponseLimit() from the request context, set by WithGrafanaConfig
+//  3. GF_DATAPROXY_RESPONSE_LIMIT env var — read once at client construction
+//  4. The limit argument, if > 0
 //
 // If none are set, limiting is disabled.
 func ResponseLimitMiddleware(limit int64) Middleware {
@@ -40,13 +58,13 @@ func ResponseLimitMiddleware(limit int64) Middleware {
 			return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 				effectiveLimit := resolveResponseLimit(req.Context(), envLimit, limit)
 
+				if effectiveLimit <= 0 {
+					return next.RoundTrip(req)
+				}
+
 				res, err := next.RoundTrip(req)
 				if err != nil {
 					return nil, err
-				}
-
-				if effectiveLimit <= 0 {
-					return res, nil
 				}
 
 				if res != nil && res.StatusCode != http.StatusSwitchingProtocols {
@@ -77,9 +95,13 @@ func parseEnvResponseLimit() int64 {
 }
 
 // resolveResponseLimit determines the effective limit for a request.
-// The per-request context value from GrafanaCfg wins if present, then the env var,
-// then the static limit argument. Returns 0 if none are set, which disables limiting.
+// The explicit request override wins if present, followed by the per-request
+// Grafana configuration value, the env var, and the static limit argument.
+// Returns 0 if none are set, which disables limiting.
 func resolveResponseLimit(ctx context.Context, envLimit, limit int64) int64 {
+	if limit, ok := ctx.Value(responseLimitOverrideKey{}).(int64); ok && limit > 0 {
+		return limit
+	}
 	if ctxLimit := config.GrafanaConfigFromContext(ctx).ResponseLimit(); ctxLimit > 0 {
 		return ctxLimit
 	}
