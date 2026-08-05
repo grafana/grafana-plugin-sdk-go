@@ -260,7 +260,7 @@ func TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget(t *testing.T) {
 	// Being counted is not enough: an over-budget entry has to shed its arguments too, or the frame
 	// grows by them anyway. Inspect the entries directly rather than the marshalled document, so the
 	// test doesn't serialize the whole budget.
-	withCaptureLimits(t, 4096, 16384)
+	withCaptureLimits(t)
 	b := NewBuffer()
 	statement := strings.Repeat("x", int(maxCapturedBodyBytes))
 	for i := int64(0); i < maxCapturedTotalBytes/maxCapturedBodyBytes; i++ {
@@ -284,7 +284,7 @@ func TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget(t *testing.T) {
 	assert.True(t, last.Query.ArgsTruncated, "dropped arguments must not read as a statement that had none")
 	assert.Contains(t, last.Query.Error, "Unknown table expression",
 		"the error is kept: it is what makes an over-budget entry worth reading at all")
-	assert.LessOrEqual(t, b.retained, int64(maxCapturedTotalBytes))
+	assert.LessOrEqual(t, b.retained, maxCapturedTotalBytes)
 }
 
 func TestAddQueryInteraction_kindDrivesURLScheme(t *testing.T) {
