@@ -133,9 +133,9 @@ const (
 // total across interactions.
 const (
 	// MaxStatementBytes caps Interaction.Statement.
-	MaxStatementBytes = 64 * 1024
+	MaxStatementBytes = 512 * 1024
 	// MaxArgsBytes caps the aggregate size of Interaction.Args.
-	MaxArgsBytes = 16 * 1024
+	MaxArgsBytes = 128 * 1024
 )
 
 type recorderContextKey struct{}

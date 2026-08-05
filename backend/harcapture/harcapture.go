@@ -22,8 +22,8 @@ const (
 	// maxCapturedBodyBytes) is also held transiently, so peak memory during capture can exceed the
 	// total budget by roughly that per concurrent over-cap response. Both are far below the
 	// unbounded full-body buffering capture would otherwise do.
-	maxCapturedBodyBytes  = 8 << 20  // 8 MiB
-	maxCapturedTotalBytes = 32 << 20 // 32 MiB
+	maxCapturedBodyBytes  = 1 << 30 // 1 GiB
+	maxCapturedTotalBytes = 4 << 30 // 4 GiB
 
 	// redactedValue replaces the value of anything capture treats as sensitive (see
 	// isSensitiveHeaderName, isSensitiveQueryParamName, and sdkCookies), so the __har__ frame -- which
