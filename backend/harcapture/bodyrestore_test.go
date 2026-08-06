@@ -32,7 +32,8 @@ func (f *flakyBody) Close() error { return nil }
 
 // withCaptureLimits overrides the package's body/total capture caps for the duration of the test, so
 // cap-boundary tests exercise the capping algorithm against small fixtures rather than allocating and
-// copying data sized to the real multi-GiB production caps.
+// copying data sized to the real caps. Must not be used by a test (or subtest) that calls
+// t.Parallel(): it mutates package-level vars with no synchronization.
 func withCaptureLimits(t *testing.T) {
 	t.Helper()
 	const body, total = 4096, 16384
