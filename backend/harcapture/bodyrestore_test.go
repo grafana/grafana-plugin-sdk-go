@@ -167,7 +167,7 @@ func TestReadAndRestoreBody_capsCaptureButDeliversFullBody(t *testing.T) {
 	withCaptureLimits(t)
 	full := bytes.Repeat([]byte("x"), int(maxCapturedBodyBytes)+4096)
 
-	captured, truncated, restored := readAndRestoreBody(io.NopCloser(bytes.NewReader(full)))
+	captured, truncated, restored := readAndRestoreBody(io.NopCloser(bytes.NewReader(full)), -1)
 
 	if !truncated {
 		t.Fatal("a body larger than the cap must be reported as truncated")
@@ -186,6 +186,50 @@ func TestReadAndRestoreBody_capsCaptureButDeliversFullBody(t *testing.T) {
 	if err := restored.Close(); err != nil {
 		t.Errorf("Close: %v", err)
 	}
+}
+
+// TestReadAndRestoreBody_knownContentLength asserts a known Content-Length only changes how the
+// capture buffer is pre-sized, never what is captured or delivered to the consumer -- including when
+// the declared length is itself larger than the cap (the buffer must still grow only to the cap, not
+// to the declared length).
+func TestReadAndRestoreBody_knownContentLength(t *testing.T) {
+	withCaptureLimits(t)
+
+	t.Run("within the cap", func(t *testing.T) {
+		body := []byte("hello world")
+		captured, truncated, restored := readAndRestoreBody(io.NopCloser(bytes.NewReader(body)), int64(len(body)))
+		if truncated {
+			t.Error("a body within the cap must not be reported as truncated")
+		}
+		if string(captured) != string(body) {
+			t.Errorf("captured %q, want %q", captured, body)
+		}
+		got, err := io.ReadAll(restored)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if string(got) != string(body) {
+			t.Errorf("consumer received %q, want %q", got, body)
+		}
+	})
+
+	t.Run("declared length past the cap", func(t *testing.T) {
+		full := bytes.Repeat([]byte("x"), int(maxCapturedBodyBytes)+4096)
+		captured, truncated, restored := readAndRestoreBody(io.NopCloser(bytes.NewReader(full)), int64(len(full)))
+		if !truncated {
+			t.Fatal("a body larger than the cap must be reported as truncated")
+		}
+		if int64(len(captured)) != maxCapturedBodyBytes {
+			t.Errorf("captured %d bytes, want the cap %d", len(captured), maxCapturedBodyBytes)
+		}
+		got, err := io.ReadAll(restored)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if len(got) != len(full) {
+			t.Errorf("consumer received %d bytes, want the full %d", len(got), len(full))
+		}
+	})
 }
 
 // TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize asserts an over-cap response reports bodySize

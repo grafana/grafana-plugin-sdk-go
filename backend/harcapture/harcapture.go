@@ -143,7 +143,7 @@ func DrainRequestBody(req *http.Request) ([]byte, bool) {
 	if req == nil || req.Body == nil || req.Body == http.NoBody {
 		return nil, false
 	}
-	body, truncated, restored := readAndRestoreBody(req.Body)
+	body, truncated, restored := readAndRestoreBody(req.Body, req.ContentLength)
 	req.Body = restored
 	return body, truncated
 }
@@ -157,13 +157,23 @@ func DrainRequestBody(req *http.Request) ([]byte, bool) {
 // cap, or a transient network error), the captured bytes are what was read so far and the replay
 // reader re-surfaces the same error after them, exactly what downstream would have observed. rc is
 // closed once the returned ReadCloser is closed (or immediately when there is no remainder to stream).
-func readAndRestoreBody(rc io.ReadCloser) ([]byte, bool, io.ReadCloser) {
-	// Grow the buffer to the cap up front instead of letting io.ReadAll's internal buffer double
-	// repeatedly as it fills: at the caps this SDK allows, that repeated doubling can transiently
-	// hold close to twice the final size in memory for no reason, on top of every later copy
-	// (encodeBody, json.Marshal) that already has to pay for the real size.
+//
+// contentLength is the body's declared Content-Length (-1/0 if unknown, matching http.Request/
+// http.Response's own convention) -- used only to size the capture buffer up front; it never changes
+// what is read or returned.
+func readAndRestoreBody(rc io.ReadCloser, contentLength int64) ([]byte, bool, io.ReadCloser) {
+	// Grow the buffer up front instead of letting io.Copy's internal buffer double repeatedly as it
+	// fills: at the caps this SDK allows, that repeated doubling can transiently hold close to twice
+	// the final size in memory for no reason, on top of every later copy (encodeBody, json.Marshal)
+	// that already has to pay for the real size. Only do this when contentLength is known (a chunked
+	// body reports -1): growing to the cap for every capture regardless of the real body size would
+	// itself waste memory on the common case of a small body.
 	var buf bytes.Buffer
-	buf.Grow(int(maxCapturedBodyBytes) + 1)
+	if contentLength > 0 {
+		// A declared length past the cap is truncated anyway, so cap the grow target too -- there is
+		// no reason to pre-allocate for bytes we already know we won't retain.
+		buf.Grow(int(min(contentLength, maxCapturedBodyBytes)) + 1)
+	}
 	// Read one byte past the cap so a full body (<= cap) can be told from a truncated one (> cap)
 	// without buffering the whole thing.
 	_, err := io.Copy(&buf, io.LimitReader(rc, maxCapturedBodyBytes+1))
@@ -399,7 +409,7 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 		if resp.Body != nil {
 			// Always restore resp.Body -- even on a read error -- so capturing never truncates the
 			// response the plugin actually receives (see readAndRestoreBody).
-			body, truncated, restored := readAndRestoreBody(resp.Body)
+			body, truncated, restored := readAndRestoreBody(resp.Body, resp.ContentLength)
 			resp.Body = restored
 			text, encoding := encodeBody(body)
 			// When the body exceeded the capture cap we hold only a prefix, so the true size is
