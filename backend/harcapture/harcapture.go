@@ -16,17 +16,22 @@ import (
 // capture; the untouched remainder is streamed on to the real consumer rather than buffered (see
 // readAndRestoreBody). maxCapturedTotalBytes caps the total payload text retained across all entries
 // in one request -- i.e. the size of the serialized __har__ frame -- keeping it well under the
-// plugin<->core gRPC message size limit. Note this budget tracks retained HAR text only: while an
-// over-cap body is still being streamed to the consumer, its capped head (up to
-// maxCapturedBodyBytes) is also held transiently, so peak memory during capture can exceed the
-// total budget by roughly that per concurrent over-cap response. Both are far below the
-// unbounded full-body buffering capture would otherwise do.
+// plugin<->core gRPC message size limit, which defaults to math.MaxInt32 (~2 GiB, see
+// GRPCSettings.MaxSendMsgSize) on the sending side. That limit bounds the serialized message, not the
+// retained bytes tracked here: json.Marshal can expand a payload considerably (e.g. every byte below
+// 0x20 becomes a 6-byte \u00XX escape), so maxCapturedTotalBytes leaves enough headroom below the gRPC
+// limit to absorb that worst case rather than tracking raw bytes 1:1 against it.
 //
-// These are vars, not consts, so cap-boundary tests can shrink them for the duration of a test
-// instead of generating fixture data sized to the real multi-GiB caps.
+// Note this budget tracks retained HAR text only: while an over-cap body is still being streamed to
+// the consumer, its capped head (up to maxCapturedBodyBytes) is also held transiently, so peak memory
+// during capture can exceed the total budget by roughly that per concurrent over-cap response. Both
+// are far below the unbounded full-body buffering capture would otherwise do.
+//
+// These are vars, not consts, so cap-boundary tests can shrink them for the duration of a test instead
+// of generating fixture data sized to the real caps.
 var (
-	maxCapturedBodyBytes  int64 = 1 << 30 // 1 GiB
-	maxCapturedTotalBytes int64 = 4 << 30 // 4 GiB
+	maxCapturedBodyBytes  int64 = 64 << 20  // 64 MiB
+	maxCapturedTotalBytes int64 = 256 << 20 // 256 MiB
 )
 
 // redactedValue replaces the value of anything capture treats as sensitive (see
@@ -153,24 +158,31 @@ func DrainRequestBody(req *http.Request) ([]byte, bool) {
 // reader re-surfaces the same error after them, exactly what downstream would have observed. rc is
 // closed once the returned ReadCloser is closed (or immediately when there is no remainder to stream).
 func readAndRestoreBody(rc io.ReadCloser) ([]byte, bool, io.ReadCloser) {
+	// Grow the buffer to the cap up front instead of letting io.ReadAll's internal buffer double
+	// repeatedly as it fills: at the caps this SDK allows, that repeated doubling can transiently
+	// hold close to twice the final size in memory for no reason, on top of every later copy
+	// (encodeBody, json.Marshal) that already has to pay for the real size.
+	var buf bytes.Buffer
+	buf.Grow(int(maxCapturedBodyBytes) + 1)
 	// Read one byte past the cap so a full body (<= cap) can be told from a truncated one (> cap)
 	// without buffering the whole thing.
-	buf, err := io.ReadAll(io.LimitReader(rc, maxCapturedBodyBytes+1))
+	_, err := io.Copy(&buf, io.LimitReader(rc, maxCapturedBodyBytes+1))
+	captured := buf.Bytes()
 	if err != nil {
 		// Read failed part-way: we hold a partial prefix and the true size is unavailable.
 		_ = rc.Close()
-		return buf, true, &errorReader{r: bytes.NewReader(buf), err: err}
+		return captured, true, &errorReader{r: bytes.NewReader(captured), err: err}
 	}
-	if int64(len(buf)) <= maxCapturedBodyBytes {
+	if int64(len(captured)) <= maxCapturedBodyBytes {
 		// Whole body fit within the cap; nothing left in rc.
 		_ = rc.Close()
-		return buf, false, io.NopCloser(bytes.NewReader(buf))
+		return captured, false, io.NopCloser(bytes.NewReader(captured))
 	}
 	// Body is larger than the cap: retain only the capped prefix for the HAR, but let the consumer
-	// read the full buffered head (buf, which is cap+1 bytes) followed by the untouched remainder
+	// read the full buffered head (captured, which is cap+1 bytes) followed by the untouched remainder
 	// streamed lazily from rc, so we never buffer the whole body.
-	captured := buf[:maxCapturedBodyBytes]
-	return captured, true, &bodyRemainder{r: io.MultiReader(bytes.NewReader(buf), rc), c: rc}
+	head := captured[:maxCapturedBodyBytes]
+	return head, true, &bodyRemainder{r: io.MultiReader(bytes.NewReader(captured), rc), c: rc}
 }
 
 // errorReader replays buffered bytes and then returns err in place of io.EOF, reproducing a body
