@@ -116,13 +116,21 @@ func (e *sdkHAREntry) payloadBytes() int64 {
 }
 
 // dropPayload clears an entry's payload, keeping what tells a reader the exchange happened and how it
-// went: headers, the true sizes, timings and any error.
+// went: headers, timings and any error. BodySize is set to -1 ("unavailable" in HAR) on whichever side
+// had a payload to drop, the same convention buildSDKHAREntry already uses when a single body exceeds
+// its own cap -- without this, an entry dropped for the buffer's cumulative budget looked identical to
+// one that genuinely had no body, and Content.Size kept reporting the pre-drop length next to an empty
+// Content.Text.
 func (e *sdkHAREntry) dropPayload() {
-	e.Response.Content.Text = ""
-	e.Response.Content.Encoding = ""
+	if e.Response.Content.Text != "" {
+		e.Response.Content.Text = ""
+		e.Response.Content.Encoding = ""
+		e.Response.BodySize = -1
+	}
 	if e.Request.PostData != nil {
 		e.Request.PostData.Text = ""
 		e.Request.PostData.Encoding = ""
+		e.Request.BodySize = -1
 	}
 	e.Query.dropPayload()
 }
