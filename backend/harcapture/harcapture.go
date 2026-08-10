@@ -15,7 +15,7 @@ import (
 const (
 	// maxCapturedBodyBytes caps how much of any single request/response body is read into memory for
 	// capture; the untouched remainder is streamed on to the real consumer rather than buffered (see
-	// readAndRestoreBody). maxCapturedTotalBytes caps the total body text retained across all entries
+	// readAndRestoreBody). maxCapturedTotalBytes caps the total payload text retained across all entries
 	// in one request -- i.e. the size of the serialized __har__ frame -- keeping it well under the
 	// plugin<->core gRPC message size limit. Note this budget tracks retained HAR text only: while an
 	// over-cap body is still being streamed to the consumer, its capped head (up to
@@ -74,7 +74,7 @@ func isSensitiveQueryParamName(name string) bool {
 type Buffer struct {
 	mu       sync.Mutex
 	entries  []sdkHAREntry
-	retained int64 // running total of retained body text bytes, for the total-size cap
+	retained int64 // running total of retained payload bytes, for the total-size cap
 }
 
 func NewBuffer() *Buffer {
@@ -82,28 +82,49 @@ func NewBuffer() *Buffer {
 }
 
 func (b *Buffer) AddEntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
-	entry := buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed)
+	b.appendEntry(buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed))
+}
+
+// appendEntry adds an already-built entry under the buffer's cumulative retained-payload budget.
+// Every producer goes through here -- HTTP round trips and non-HTTP query interactions alike -- so
+// one budget bounds the whole document whatever mix of traffic a request produced.
+func (b *Buffer) appendEntry(entry sdkHAREntry) {
 	b.mu.Lock()
 	defer b.mu.Unlock()
-	// Enforce the cumulative retained-body budget: once the request's captured bodies exceed
-	// maxCapturedTotalBytes, keep the entry's metadata (headers, sizes, timings) but drop its body
-	// text so the __har__ frame can't grow without bound. Per-body truncation already happened in
-	// buildSDKHAREntry, so a single entry adds at most 2*maxCapturedBodyBytes here.
-	entryBytes := int64(len(entry.Response.Content.Text))
-	if entry.Request.PostData != nil {
-		entryBytes += int64(len(entry.Request.PostData.Text))
-	}
-	if b.retained >= maxCapturedTotalBytes {
-		entry.Response.Content.Text = ""
-		entry.Response.Content.Encoding = ""
-		if entry.Request.PostData != nil {
-			entry.Request.PostData.Text = ""
-			entry.Request.PostData.Encoding = ""
-		}
+	// Enforce the cumulative retained-payload budget: an entry whose payload would take the request
+	// past maxCapturedTotalBytes keeps its metadata (headers, sizes, timings, error) but drops the
+	// payload itself, so the __har__ frame can't grow without bound. The check is on the sum rather
+	// than on what is already retained, so the entry that crosses the budget is trimmed too rather than
+	// kept whole.
+	payload := entry.payloadBytes()
+	if b.retained+payload > maxCapturedTotalBytes {
+		entry.dropPayload()
 	} else {
-		b.retained += entryBytes
+		b.retained += payload
 	}
 	b.entries = append(b.entries, entry)
+}
+
+// payloadBytes is what an entry contributes to the buffer's retained-payload budget: everything that
+// carries data rather than describing it, whichever producer built the entry.
+func (e *sdkHAREntry) payloadBytes() int64 {
+	n := int64(len(e.Response.Content.Text))
+	if e.Request.PostData != nil {
+		n += int64(len(e.Request.PostData.Text))
+	}
+	return n + e.Query.payloadBytes()
+}
+
+// dropPayload clears an entry's payload, keeping what tells a reader the exchange happened and how it
+// went: headers, the true sizes, timings and any error.
+func (e *sdkHAREntry) dropPayload() {
+	e.Response.Content.Text = ""
+	e.Response.Content.Encoding = ""
+	if e.Request.PostData != nil {
+		e.Request.PostData.Text = ""
+		e.Request.PostData.Encoding = ""
+	}
+	e.Query.dropPayload()
 }
 
 // DrainRequestBody reads and returns the request body (up to the capture cap) and whether it was
@@ -225,8 +246,11 @@ type sdkHAREntry struct {
 	Cache           sdkHARCache    `json:"cache"`
 	Timings         sdkHARTimings  `json:"timings"`
 	// Comment carries a transport-level error (connection refused, DNS/TLS failure, timeout) for a
-	// request that never produced an HTTP response; such entries have a zero-status response.
+	// request that never produced an HTTP response; such entries have a zero-status response. For a
+	// query entry it carries the query's own error, in the same shape.
 	Comment string `json:"comment,omitempty"`
+	// Query is set only on an entry that describes a non-HTTP datasource exchange.
+	Query *sdkHARQueryInfo `json:"_query,omitempty"`
 }
 
 type sdkHARRequest struct {
@@ -305,6 +329,13 @@ type sdkHARTimings struct {
 	Receive float64 `json:"receive"`
 }
 
+// durationMs renders a duration for HAR's millisecond-valued time and timings fields, keeping the
+// fraction: a database/sql call over a pooled connection is routinely sub-millisecond, and truncating
+// would make it indistinguishable from an instantaneous one.
+func durationMs(d time.Duration) float64 {
+	return float64(d.Nanoseconds()) / float64(time.Millisecond)
+}
+
 // buildSDKHAREntry builds a HAR entry from the request/response pair. reqBody is the request body
 // captured before the request was sent (see DrainRequestBody); it is passed in rather than read
 // from req.Body here, because by the time capture runs the transport has already drained the body.
@@ -376,9 +407,9 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 		comment = "transport error: " + rtErr.Error()
 	}
 
-	waitMs := float64(elapsed.Milliseconds())
+	waitMs := durationMs(elapsed)
 	return sdkHAREntry{
-		StartedDateTime: started.UTC().Format(time.RFC3339),
+		StartedDateTime: started.UTC().Format(time.RFC3339Nano),
 		Time:            waitMs,
 		Request: sdkHARRequest{
 			Method:      req.Method,

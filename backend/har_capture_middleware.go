@@ -7,6 +7,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/harcapture"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/querycapture"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -86,6 +87,15 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		})
 	})
 	ctx = httpclient.WithContextualMiddleware(ctx, captureMW)
+
+	// Activate non-HTTP capture on the same context and into the same buffer. A datasource that speaks
+	// its own protocol over a database/sql driver has no http.RoundTripper to wrap, so the middleware
+	// above never sees it; the recorder is the seam such a plugin reports through (see package
+	// querycapture). Sharing the buffer is what keeps SQL and HTTP evidence in one document instead of
+	// racing for the reserved refID -- which matters for the plugins whose driver is itself HTTP-backed
+	// (ClickHouse, BigQuery, Athena), since those produce both kinds at once. A plugin with no capture
+	// point never reads the recorder back, so this is inert for every plugin that predates the seam.
+	ctx = querycapture.WithRecorder(ctx, harcapture.NewRecorder(buf))
 
 	resp, err := h.BaseHandler.QueryData(ctx, req)
 

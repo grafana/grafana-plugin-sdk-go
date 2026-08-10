@@ -8,6 +8,7 @@ import (
 	"io"
 	"net/http"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -15,6 +16,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/handlertest"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/querycapture"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -317,4 +319,75 @@ func makeHTTPCall(ctx context.Context, t *testing.T, method, url string, body io
 	if err == nil && resp != nil && resp.Body != nil {
 		_ = resp.Body.Close()
 	}
+}
+
+// TestHARCaptureMiddleware_withHeader_capturesNonHTTPQuery covers the datasource kind the HTTP
+// middleware cannot see at all: one that speaks its own protocol over a database/sql driver and makes
+// no HTTP call. Such a plugin reports through the querycapture.Recorder the middleware installs, and
+// its statements must reach Grafana in the same __har__ frame as HTTP traffic would.
+func TestHARCaptureMiddleware_withHeader_capturesNonHTTPQuery(t *testing.T) {
+	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
+	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		// Stands in for sqlds' DBQuery.Run: capture is on, so report the statement that was executed.
+		rec, ok := querycapture.RecorderFromContext(ctx)
+		require.True(t, ok, "capture is on, so a recorder must be installed on the query context")
+		rec.Record(querycapture.Interaction{
+			Kind:           querycapture.KindSQLQuery,
+			StartedAt:      time.Now(),
+			Duration:       3 * time.Millisecond,
+			DatasourceUID:  "P1234",
+			DatasourceType: "grafana-clickhouse-datasource",
+			RefID:          "A",
+			Statement:      "SELECT host, avg(value) FROM metrics GROUP BY host",
+			FrameCount:     1,
+			RowCount:       2,
+		})
+		return &backend.QueryDataResponse{Responses: backend.Responses{"A": backend.DataResponse{}}}, nil
+	}
+
+	resp, err := cdt.MiddlewareHandler.QueryData(context.Background(), &backend.QueryDataRequest{
+		Headers:       map[string]string{"X-Grafana-HAR-Capture": "true"},
+		PluginContext: backend.PluginContext{DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "P1234"}},
+	})
+	require.NoError(t, err)
+
+	// The plugin's own response is untouched ...
+	_, hasA := resp.Responses["A"]
+	assert.True(t, hasA)
+
+	// ... and the recorded statement rides back in the reserved capture frame.
+	harResp, ok := resp.Responses["__har__P1234"]
+	require.True(t, ok, "expected a capture frame for a plugin that made no HTTP call but recorded SQL")
+	require.Len(t, harResp.Frames, 1)
+	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]interface{})
+	require.True(t, ok)
+	harStr, ok := custom["har"].(string)
+	require.True(t, ok)
+
+	var doc map[string]interface{}
+	require.NoError(t, json.Unmarshal([]byte(harStr), &doc))
+	entries := doc["log"].(map[string]interface{})["entries"].([]interface{})
+	require.Len(t, entries, 1)
+	entry := entries[0].(map[string]interface{})
+	request := entry["request"].(map[string]interface{})
+	assert.Equal(t, "QUERY", request["method"])
+	assert.Equal(t, "SELECT host, avg(value) FROM metrics GROUP BY host",
+		request["postData"].(map[string]interface{})["text"])
+	assert.Equal(t, "sql.query", entry["_query"].(map[string]interface{})["kind"])
+}
+
+// TestHARCaptureMiddleware_noHeader_noRecorder is the off-by-default half of the contract: with no
+// capture header there must be no recorder on the context, so a plugin's capture point stays a
+// pass-through and cannot leak statements into a response nobody asked to capture.
+func TestHARCaptureMiddleware_noHeader_noRecorder(t *testing.T) {
+	cdt := handlertest.NewHandlerMiddlewareTest(t, handlertest.WithMiddlewares(backend.NewHARCaptureMiddlewareForTest()))
+	var recorderPresent bool
+	cdt.TestHandler.QueryDataFunc = func(ctx context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		_, recorderPresent = querycapture.RecorderFromContext(ctx)
+		return &backend.QueryDataResponse{Responses: backend.Responses{}}, nil
+	}
+
+	_, err := cdt.MiddlewareHandler.QueryData(context.Background(), &backend.QueryDataRequest{})
+	require.NoError(t, err)
+	assert.False(t, recorderPresent)
 }
