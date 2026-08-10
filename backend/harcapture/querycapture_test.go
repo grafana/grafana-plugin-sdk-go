@@ -250,19 +250,21 @@ func TestAddQueryInteraction_argsAndErrorCountTowardTheTotalBudget(t *testing.T)
 	})
 
 	// A failed query has no response content, so the retained total is exactly the statement, the
-	// arguments and the error.
-	want := len("SELECT * FROM t WHERE id IN (?, ?)") + len("host-a") + len("host-b") +
-		len("code: 60, message: Unknown table expression identifier 't'")
-	assert.Equal(t, int64(want), b.retained)
+	// arguments and the error, each measured as jsonEscapedLen (see Buffer.maxTotalBytes), not raw
+	// length.
+	want := jsonEscapedLen("") + jsonEscapedLen("SELECT * FROM t WHERE id IN (?, ?)") +
+		jsonEscapedLen("host-a") + jsonEscapedLen("host-b") +
+		jsonEscapedLen("code: 60, message: Unknown table expression identifier 't'")
+	assert.Equal(t, want, b.retained)
 }
 
 func TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget(t *testing.T) {
 	// Being counted is not enough: an over-budget entry has to shed its arguments too, or the frame
 	// grows by them anyway. Inspect the entries directly rather than the marshalled document, so the
 	// test doesn't serialize the whole budget.
-	b := NewBuffer()
-	statement := strings.Repeat("x", maxCapturedBodyBytes)
-	for i := 0; i < maxCapturedTotalBytes/maxCapturedBodyBytes; i++ {
+	b := newBufferWithLimits(testMaxBodyBytes, testMaxTotalBytes)
+	statement := strings.Repeat("x", int(testMaxBodyBytes))
+	for i := int64(0); i < testMaxTotalBytes/testMaxBodyBytes; i++ {
 		b.AddQueryInteraction(querycapture.Interaction{
 			Kind: querycapture.KindSQLQuery, Statement: statement, Err: "boom",
 		})
@@ -283,7 +285,7 @@ func TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget(t *testing.T) {
 	assert.True(t, last.Query.ArgsTruncated, "dropped arguments must not read as a statement that had none")
 	assert.Contains(t, last.Query.Error, "Unknown table expression",
 		"the error is kept: it is what makes an over-budget entry worth reading at all")
-	assert.LessOrEqual(t, b.retained, int64(maxCapturedTotalBytes))
+	assert.LessOrEqual(t, b.retained, testMaxTotalBytes)
 }
 
 func TestAddQueryInteraction_kindDrivesURLScheme(t *testing.T) {

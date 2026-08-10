@@ -49,15 +49,22 @@
 //
 // # Known limitations
 //
-// The size bounds below apply to a single Interaction. Nothing bounds their sum
-// across the queries of one request, which run in parallel, so peak memory
-// scales with the number of refIDs a panel sends. The Recorder bounds the
-// document it produces, not the captures feeding it.
+// The size bounds below apply to a single Interaction; this interface itself
+// makes no guarantee about their sum across the queries of one request, which
+// run in parallel. In practice, the Recorder this SDK ships (backend/harcapture)
+// already closes that gap: every Interaction is folded into the same cumulative
+// retained-bytes budget that bounds HTTP capture (see Buffer.appendEntry and
+// TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget), so the retained
+// document cannot grow unbounded with refID count even though this package
+// does not enforce that itself. A capture point still pays to build each
+// Interaction's Statement/Args before handing it to Record, though, so
+// transient memory ahead of that budget check still scales with the number of
+// refIDs a panel sends.
 //
 // Capture is off unless a request asked for it, and in Grafana the path that
 // does the asking is feature-toggled, restricted to admins and on-prem only.
-// That is what makes these acceptable for now rather than limits worth
-// engineering around.
+// That is what makes the remaining gap acceptable for now rather than a limit
+// worth engineering around.
 package querycapture
 
 import (
