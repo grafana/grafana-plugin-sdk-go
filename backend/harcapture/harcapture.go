@@ -19,7 +19,10 @@ import (
 //
 // defaultMaxCapturedTotalBytes caps the total payload retained across one request's entries -- the
 // size of the serialized __har__ frame. It's measured in jsonEscapedLen, not raw bytes, since that's
-// what actually crosses the wire: json.Marshal can expand a byte into a 6-byte \u00XX escape.
+// what actually crosses the wire: json.Marshal can expand a byte into a 6-byte \u00XX escape. How
+// many full bodies fit is therefore content-dependent: escape-free text fits four, markup (whose <,
+// >, & all escape 6 bytes) fewer, and a single body dense in control characters can exceed the whole
+// budget escaped and have its payload dropped on arrival.
 //
 // Sizing: the __har__ frame rides the same plugin<->core gRPC message as the QueryDataResponse data
 // itself. Both directions of that hop default to ~2 GiB -- the plugin serve side leaves
