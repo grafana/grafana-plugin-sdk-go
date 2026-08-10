@@ -13,8 +13,7 @@ const (
 	TTLInstanceManager = "ttlPluginInstanceManager"
 
 	// PluginsForceTLS13 is a feature toggle that forces the plugins (apps and data sources) HTTP client to
-	// use TLS 1.3 as both the minimum and maximum TLS version when connecting to a data source.
-	// This will only be respected if the plugin does not directly set the TLS version.
+	// use TLS 1.3 as both the minimum and maximum TLS version when making requests from the plugin..
 	PluginsForceTLS13 = "pluginsForceTls13"
 )
 
