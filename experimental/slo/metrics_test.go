@@ -11,7 +11,7 @@ import (
 )
 
 func TestCheckHealthWithMetrics(t *testing.T) {
-	ds, err := test.NewDS()
+	ds, err := test.NewDS(t)
 	assert.Equal(t, nil, err)
 	req := health()
 	collector := &test.Collector{}
@@ -25,7 +25,7 @@ func TestCheckHealthWithMetrics(t *testing.T) {
 }
 
 func TestQueryWithMetrics(t *testing.T) {
-	ds, err := test.NewDS()
+	ds, err := test.NewDS(t)
 	assert.Equal(t, nil, err)
 	req := query()
 	collector := &test.Collector{}
@@ -38,7 +38,7 @@ func TestQueryWithMetrics(t *testing.T) {
 }
 
 func TestResourceWithMetrics(t *testing.T) {
-	ds, err := test.NewDS()
+	ds, err := test.NewDS(t)
 	assert.Equal(t, nil, err)
 	req := resource()
 	collector := &test.Collector{}
