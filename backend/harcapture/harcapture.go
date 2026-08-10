@@ -28,8 +28,9 @@ import (
 // override them -- but serialization transiently holds full extra copies of what is retained
 // (json.Marshal's output, then its string conversion), and the response data shares the message. 256
 // MiB post-escaping keeps the frame plus those copies comfortably under the ceiling. Peak memory can
-// also exceed the total by up to one body cap per concurrent over-cap response, since a capped head is
-// held transiently before being dropped.
+// also exceed the total by roughly two body caps live (~3x allocated) per concurrent over-cap
+// response: the capped head is held transiently before being dropped, and the capture buffer's growth
+// chain past the pre-grow clamp (see readAndRestoreBody) transiently holds copies of comparable size.
 //
 // Each Buffer holds its own copy of these caps (see NewBuffer), rather than reading package vars, so
 // a test can shrink them for one Buffer without a data race against any other test's Buffer.
@@ -109,6 +110,9 @@ func (b *Buffer) AddEntry(req *http.Request, reqBody []byte, reqTruncated bool, 
 // Every producer goes through here -- HTTP round trips and non-HTTP query interactions alike -- so
 // one budget bounds the whole document whatever mix of traffic a request produced.
 func (b *Buffer) appendEntry(entry sdkHAREntry) {
+	// Size the payload before taking the lock: payloadBytes is an O(n) scan over the entry's retained
+	// strings, and the entry is not shared until appended.
+	payload := entry.payloadBytes()
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	// Enforce the cumulative retained-payload budget: an entry whose payload would take the request
@@ -116,7 +120,6 @@ func (b *Buffer) appendEntry(entry sdkHAREntry) {
 	// itself, so the __har__ frame can't grow without bound. The check is on the sum rather than on
 	// what is already retained, so the entry that crosses the budget is trimmed too rather than kept
 	// whole.
-	payload := entry.payloadBytes()
 	if b.retained+payload > b.maxTotalBytes {
 		entry.dropPayload()
 	} else {
@@ -370,10 +373,10 @@ func encodeBody(body []byte, maxBodyBytes int64) (text, encoding string) {
 	return base64.StdEncoding.EncodeToString(keep), "base64"
 }
 
-// jsonEscapedLen returns a lower bound on how many bytes s occupies once json.Marshal encodes it as a
-// JSON string, including the wrapping quotes -- used to budget the aggregate retained-payload cap
-// against the actual serialized size instead of raw length (see Buffer.maxTotalBytes). It never
-// underestimates: every rune json.Marshal escapes is charged its real cost --
+// jsonEscapedLen estimates how many bytes s occupies once json.Marshal encodes it as a JSON string,
+// including the wrapping quotes -- used to budget the aggregate retained-payload cap against the
+// actual serialized size instead of raw length (see Buffer.maxTotalBytes). The estimate never falls
+// below the actual size: every rune json.Marshal escapes is charged its real cost --
 //   - 2 bytes for the short escapes: \" \\ \b \f \n \r \t
 //   - 6 bytes for \u00XX (every other byte below 0x20), for the HTML-unsafe runes Marshal always
 //     escapes regardless of content (<, >, &), for U+2028/U+2029 (also unconditional), and for a
