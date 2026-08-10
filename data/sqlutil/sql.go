@@ -79,6 +79,7 @@ func frameFromRows(rows *sql.Rows, rowLimit int64, capacity int, converters ...C
 	converted := make([]interface{}, len(scannable))
 
 	var i int64
+	defer func() { observeRowsScanned(i) }()
 
 outer:
 	for i < rowLimit {
