@@ -121,7 +121,7 @@ require (
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.2 // indirect
 	github.com/unknwon/com v1.0.1 // indirect
-	github.com/unknwon/log v0.0.0-20150304194804-e617c87089d3 // indirect
+	github.com/unknwon/log v0.0.0-20200308114134-929b1006e34a // indirect
 	github.com/wk8/go-ordered-map/v2 v2.1.8 // indirect
 	github.com/zeebo/xxh3 v1.1.0 // indirect
 	go.opentelemetry.io/auto/sdk v1.2.1 // indirect
