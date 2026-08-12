@@ -150,8 +150,8 @@ github.com/jhump/protoreflect v1.17.0 h1:qOEr613fac2lOuTgWN4tPAtLL7fUSbuJL5X5Xum
 github.com/jhump/protoreflect v1.17.0/go.mod h1:h9+vUUL38jiBzck8ck+6G/aeMX8Z4QUY/NiJPwPNi+8=
 github.com/json-iterator/go v1.1.12 h1:PV8peI4a0ysnczrg+LtxykD8LfKY9ML6u2jnxaEnrnM=
 github.com/json-iterator/go v1.1.12/go.mod h1:e30LSqwooZae/UwlEbR2852Gd8hjQvJoHmT4TnhNGBo=
-github.com/jszwedko/go-datemath v0.1.1-0.20230526204004-640a500621d6 h1:SwcnSwBR7X/5EHJQlXBockkJVIMRVt5yKaesBPMtyZQ=
-github.com/jszwedko/go-datemath v0.1.1-0.20230526204004-640a500621d6/go.mod h1:WrYiIuiXUMIvTDAQw97C+9l0CnBmCcvosPjN3XDqS/o=
+github.com/jszwedko/go-datemath v0.1.1-0.20260113213115-7f666eef0523 h1:yho2Mr8EZHU24v7/vMyMc3yPvbs9GDK7TtFRtuMPGqE=
+github.com/jszwedko/go-datemath v0.1.1-0.20260113213115-7f666eef0523/go.mod h1:WrYiIuiXUMIvTDAQw97C+9l0CnBmCcvosPjN3XDqS/o=
 github.com/jtolds/gls v4.2.1+incompatible h1:fSuqC+Gmlu6l/ZYAoZzx2pyucC8Xza35fpRVWLVmUEE=
 github.com/jtolds/gls v4.2.1+incompatible/go.mod h1:QJZ7F/aHp+rZTRtaJ1ow/lLfFfVYBRgL+9YlvaHOwJU=
 github.com/kisielk/errcheck v1.5.0/go.mod h1:pFxgyoBC7bSaBwPgfKdkLd5X25qrDl4LWUI2bnpBCr8=
