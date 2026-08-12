@@ -52,7 +52,7 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260720211330-0afa2a65878a
 	google.golang.org/grpc v1.82.1
 	google.golang.org/protobuf v1.36.11
-	k8s.io/kube-openapi v0.0.0-20260127142750-a19766b6e2d4 // @grafana/grafana-app-platform-squad
+	k8s.io/kube-openapi v0.0.0-20260721132016-d427ff9ee9ad // @grafana/grafana-app-platform-squad
 	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
 
@@ -132,6 +132,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20260720211330-0afa2a65878a // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
-	k8s.io/utils v0.0.0-20240711033017-18e509b52bc8 // indirect
+	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
 )
