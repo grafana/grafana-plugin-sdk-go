@@ -109,6 +109,24 @@ type Interaction struct {
 	FrameCount int
 	RowCount   int
 
+	// ResultColumns and ResultRows are what the datasource itself returned, as
+	// the driver handed it over and before any conversion the plugin applies. They
+	// are the reason this capture can localize a wrong-data report at all: without
+	// them the capture shows what was asked and the returned frames show what
+	// arrived, with no independent account of what the datasource actually sent.
+	//
+	// A nil cell is a NULL, which is why a row is []*string rather than []string:
+	// "" and NULL are different answers to a wrong-data question.
+	ResultColumns []string
+	ResultRows    [][]*string
+	// ResultRowsTruncated reports that the result exceeded MaxResultBytes, in
+	// which case ResultRows is empty rather than a partial result: a prefix of
+	// the result is not evidence of the whole result. ResultTotalRows is how many
+	// rows the capture point saw in total, or -1 when it could not tell -- a
+	// capture point that never consumes the result set cannot count it.
+	ResultRowsTruncated bool
+	ResultTotalRows     int
+
 	// Err is the error the call returned, or empty on success. A recorded
 	// failure is the most valuable case for diagnostics, so capture points
 	// record an Interaction on the error path too.
@@ -136,6 +154,14 @@ const (
 	MaxStatementBytes = 64 * 1024
 	// MaxArgsBytes caps the aggregate size of Interaction.Args.
 	MaxArgsBytes = 16 * 1024
+	// MaxResultBytes caps the rendered result rows of one Interaction. Crossing it
+	// drops the rows entirely rather than keeping a prefix -- a partial result set
+	// answers the wrong-data question the capture exists for no better than none
+	// at all -- so ResultCapture reports a count instead. This is deliberately a
+	// single guardrail rather than an engineered budget: it matches the one
+	// ceiling grafana/grafana#129691 applies to the whole diagnostics bundle
+	// (1 GiB), rather than a separately-tuned number for this one path.
+	MaxResultBytes = 1 << 30
 )
 
 type recorderContextKey struct{}

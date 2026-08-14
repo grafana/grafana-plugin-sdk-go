@@ -60,6 +60,8 @@ type harDoc struct {
 	} `json:"log"`
 }
 
+func strPtr(s string) *string { return &s }
+
 func toDoc(t *testing.T, b *Buffer) harDoc {
 	t.Helper()
 	raw, err := b.ToHARString()
@@ -326,4 +328,116 @@ func TestNewRecorder_nilBufferIsInert(t *testing.T) {
 	assert.NotPanics(t, func() {
 		NewRecorder(nil).Record(querycapture.Interaction{Kind: querycapture.KindSQLQuery})
 	})
+}
+
+func TestAddQueryInteraction_carriesReturnedRows(t *testing.T) {
+	// The rows the database returned are the evidence that makes a bundle able to localize a wrong-data
+	// report: without them, "the database returned the wrong rows" and "the plugin mangled correct rows"
+	// look identical. They ride in the response body, exactly where an HTTP entry carries its body.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:            querycapture.KindSQLQuery,
+		DatasourceUID:   "P1234",
+		Statement:       "SELECT host, value FROM metrics",
+		ResultColumns:   []string{"host", "value"},
+		ResultRows:      [][]*string{{strPtr("host-a"), strPtr("1")}, {strPtr("host-b"), nil}},
+		ResultTotalRows: 2,
+		FrameCount:      1,
+		RowCount:        1,
+	})
+
+	doc := toDoc(t, b)
+	require.Len(t, doc.Log.Entries, 1)
+	e := doc.Log.Entries[0]
+	assert.Equal(t, 200, e.Response.Status)
+	assert.Equal(t, "application/json", e.Response.Content.MimeType)
+	// A NULL stays null and is not flattened into an empty string; the plugin's own counts sit alongside
+	// the rows so the comparison can be made inside one object.
+	assert.JSONEq(t, `{
+		"columns": ["host","value"],
+		"rows": [["host-a","1"],["host-b",null]],
+		"totalRows": 2,
+		"frameCount": 1,
+		"rowCount": 1
+	}`, e.Response.Content.Text)
+	assert.Equal(t, int64(len(e.Response.Content.Text)), e.Response.BodySize)
+}
+
+func TestAddQueryInteraction_droppedRowsAreReported(t *testing.T) {
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:                querycapture.KindSQLQuery,
+		Statement:           "SELECT * FROM big",
+		ResultColumns:       []string{"host"},
+		ResultRowsTruncated: true,
+		ResultTotalRows:     900,
+		FrameCount:          1,
+		RowCount:            900,
+	})
+
+	doc := toDoc(t, b)
+	e := doc.Log.Entries[0]
+	assert.Equal(t, int64(-1), e.Response.BodySize,
+		"a dropped result reports an unavailable body size, the same as an over-cap HTTP body")
+	assert.Contains(t, e.Response.Content.Text, `"rowsTruncated":true`)
+	assert.NotContains(t, e.Response.Content.Text, `"rows":`,
+		"a partial result is not evidence of the whole result, so no rows are reported at all")
+	assert.Contains(t, e.Response.Content.Text, `"totalRows":900`,
+		"the total says how much there was, even though the rows themselves were dropped")
+}
+
+func TestAddQueryInteraction_unknownTotalIsOmitted(t *testing.T) {
+	// A capture point that hands back an unconsumed result set cannot count it (-1); claiming zero would
+	// assert an empty result that was never observed.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:            querycapture.KindSQLQuery,
+		Statement:       "SELECT 1",
+		ResultTotalRows: -1,
+		RowCount:        -1,
+	})
+
+	doc := toDoc(t, b)
+	assert.NotContains(t, doc.Log.Entries[0].Response.Content.Text, "totalRows")
+}
+
+func TestAddQueryInteraction_failedQueryKeepsPartialRows(t *testing.T) {
+	// A query that failed after the database had already returned rows: those rows are the most direct
+	// evidence of what went wrong, so they are kept -- while the status stays zero, because the query
+	// did not complete.
+	b := NewBuffer()
+	b.AddQueryInteraction(querycapture.Interaction{
+		Kind:            querycapture.KindSQLQuery,
+		Statement:       "SELECT host, value FROM metrics",
+		ResultColumns:   []string{"host", "value"},
+		ResultRows:      [][]*string{{strPtr("host-a"), strPtr("not-a-number")}},
+		ResultTotalRows: 1,
+		Err:             "converting driver.Value type string to a float64",
+	})
+
+	doc := toDoc(t, b)
+	e := doc.Log.Entries[0]
+	assert.Equal(t, 0, e.Response.Status)
+	assert.Contains(t, e.Comment, "query error: converting driver.Value")
+	assert.Contains(t, e.Response.Content.Text, "not-a-number")
+}
+
+func TestAddQueryInteraction_emptyResultIsDistinctFromUncaptured(t *testing.T) {
+	// Zero rows is an answer; "nobody recorded a result" is not. The two must not look alike.
+	emptyResult := NewBuffer()
+	emptyResult.AddQueryInteraction(querycapture.Interaction{
+		Kind:          querycapture.KindSQLQuery,
+		Statement:     "SELECT host FROM metrics WHERE 1 = 0",
+		ResultColumns: []string{"host"},
+	})
+	assert.Contains(t, toDoc(t, emptyResult).Log.Entries[0].Response.Content.Text, `"totalRows":0`,
+		"a capture point that ran and saw no rows reports zero")
+
+	uncaptured := NewBuffer()
+	uncaptured.AddQueryInteraction(querycapture.Interaction{
+		Kind:      querycapture.KindSQLQuery,
+		Statement: "SELECT host FROM metrics",
+	})
+	assert.NotContains(t, toDoc(t, uncaptured).Log.Entries[0].Response.Content.Text, "totalRows",
+		"an interaction with no result capture claims nothing about how many rows there were")
 }
