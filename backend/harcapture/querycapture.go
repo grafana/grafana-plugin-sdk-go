@@ -32,7 +32,7 @@ const querySummaryMimeType = "application/json"
 // A failed query is recorded with a zero-status response and the error in the entry's comment, the
 // same shape AddEntry uses for a request that never produced an HTTP response.
 func (b *Buffer) AddQueryInteraction(i querycapture.Interaction) {
-	b.appendEntry(buildQueryHAREntry(i, b.maxBodyBytes))
+	b.appendEntry(buildQueryHAREntry(i, b.maxBody()))
 }
 
 // queryInfoVersion is the current schema version of the "_query" object, bumped when its shape

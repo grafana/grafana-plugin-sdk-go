@@ -9,6 +9,8 @@ import (
 	"strings"
 	"testing"
 	"time"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/querycapture"
 )
 
 // flakyBody yields data and then returns err (not io.EOF), simulating a body whose read fails
@@ -321,5 +323,44 @@ func TestSDKHARCaptureBuffer_totalSizeCapIsTight(t *testing.T) {
 	}
 	if last := buf.entries[len(buf.entries)-1]; last.Response.Content.Text != "" {
 		t.Error("the entry that crosses the budget must drop its body text, not be retained whole")
+	}
+}
+
+// TestBuffer_zeroValueUsesDefaultCaps asserts that a Buffer built as its zero value (var b Buffer,
+// rather than through NewBuffer) still applies the default caps instead of the zero-value caps, which
+// would capture no body and drop every payload.
+func TestBuffer_zeroValueUsesDefaultCaps(t *testing.T) {
+	var buf Buffer
+	req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const body = "hello"
+	resp := &http.Response{Header: http.Header{}, Body: io.NopCloser(strings.NewReader(body))}
+	buf.AddEntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
+
+	if got := buf.entries[0].Response.Content.Text; got != body {
+		t.Errorf("zero-value Buffer must capture like NewBuffer(); got body text %q, want %q", got, body)
+	}
+}
+
+// TestSDKHARCaptureBuffer_retainedAccountsForDroppedError asserts that once an entry's payload is
+// dropped for being over the total budget, what dropPayload leaves behind (the query error, kept
+// because it's what makes an over-budget entry worth keeping) is still added to the running total --
+// otherwise repeated over-budget entries retain error text that the budget never accounts for.
+func TestSDKHARCaptureBuffer_retainedAccountsForDroppedError(t *testing.T) {
+	buf := newBufferWithLimits(testMaxBodyBytes, testMaxTotalBytes)
+	bigErr := strings.Repeat("e", int(testMaxTotalBytes))
+
+	// First entry alone already exceeds the total budget, so its payload is dropped on arrival but its
+	// error (small next to bigErr's own size once escaped) is kept.
+	buf.AddQueryInteraction(querycapture.Interaction{Kind: querycapture.KindSQLQuery, Statement: "SELECT 1", Err: bigErr})
+
+	var wantRetained int64
+	for _, e := range buf.entries {
+		wantRetained += e.payloadBytes()
+	}
+	if buf.retained != wantRetained {
+		t.Errorf("buf.retained = %d, want %d (sum of what entries actually retain)", buf.retained, wantRetained)
 	}
 }

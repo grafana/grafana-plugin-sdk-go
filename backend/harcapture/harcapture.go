@@ -93,7 +93,9 @@ type Buffer struct {
 	retained int64 // running total of retained payload bytes, for the total-size cap
 
 	// maxBodyBytes and maxTotalBytes are set once, at construction, and never modified afterwards, so
-	// reading them needs no synchronization of its own.
+	// reading them needs no synchronization of its own. Zero means "unset" (the zero-value Buffer{} is
+	// a valid, pre-NewBuffer construction some callers still use) and is resolved to the matching
+	// default by maxBody/maxTotal rather than read directly.
 	maxBodyBytes  int64
 	maxTotalBytes int64
 }
@@ -105,8 +107,22 @@ func NewBuffer() *Buffer {
 	}
 }
 
+func (b *Buffer) maxBody() int64 {
+	if b.maxBodyBytes == 0 {
+		return defaultMaxCapturedBodyBytes
+	}
+	return b.maxBodyBytes
+}
+
+func (b *Buffer) maxTotal() int64 {
+	if b.maxTotalBytes == 0 {
+		return defaultMaxCapturedTotalBytes
+	}
+	return b.maxTotalBytes
+}
+
 func (b *Buffer) AddEntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
-	b.appendEntry(buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed, b.maxBodyBytes))
+	b.appendEntry(buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed, b.maxBody()))
 }
 
 // appendEntry adds an already-built entry under the buffer's cumulative retained-payload budget.
@@ -123,8 +139,9 @@ func (b *Buffer) appendEntry(entry sdkHAREntry) {
 	// itself, so the __har__ frame can't grow without bound. The check is on the sum rather than on
 	// what is already retained, so the entry that crosses the budget is trimmed too rather than kept
 	// whole.
-	if b.retained+payload > b.maxTotalBytes {
+	if b.retained+payload > b.maxTotal() {
 		entry.dropPayload()
+		b.retained += entry.payloadBytes()
 	} else {
 		b.retained += payload
 	}
@@ -163,7 +180,7 @@ func (b *Buffer) DrainRequestBody(req *http.Request) ([]byte, bool) {
 	if req == nil || req.Body == nil || req.Body == http.NoBody {
 		return nil, false
 	}
-	body, truncated, restored := readAndRestoreBody(req.Body, req.ContentLength, b.maxBodyBytes)
+	body, truncated, restored := readAndRestoreBody(req.Body, req.ContentLength, b.maxBody())
 	req.Body = restored
 	return body, truncated
 }
