@@ -40,12 +40,12 @@ const (
 	testMaxTotalBytes int64 = 16384
 )
 
-// newBufferWithLimits returns a Buffer with testMaxBodyBytes and the given total cap instead of the
-// real defaults, for cap-boundary tests. Each Buffer holds its own caps (see NewBuffer), so unlike a
+// newBufferWithLimits returns a Buffer with testMaxBodyBytes and testMaxTotalBytes instead of the real
+// defaults, for cap-boundary tests. Each Buffer holds its own caps (see NewBuffer), so unlike a
 // package-level override this needs no cleanup and is safe alongside any other test's Buffer, parallel
 // or not.
-func newBufferWithLimits(maxTotalBytes int64) *Buffer {
-	return &Buffer{maxBodyBytes: testMaxBodyBytes, maxTotalBytes: maxTotalBytes}
+func newBufferWithLimits() *Buffer {
+	return &Buffer{maxBodyBytes: testMaxBodyBytes, maxTotalBytes: testMaxTotalBytes}
 }
 
 // TestBuildSDKHAREntry_restoresBodyOnReadError asserts that capturing a response whose body read
@@ -256,7 +256,7 @@ func TestBuildSDKHAREntry_truncatedBodyReportsUnknownSize(t *testing.T) {
 // TestSDKHARCaptureBuffer_totalSizeCap asserts that once the cumulative retained body budget is
 // exhausted, later entries keep their metadata/sizes but drop the body text.
 func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
-	buf := newBufferWithLimits(testMaxTotalBytes)
+	buf := newBufferWithLimits()
 	big := strings.Repeat("a", int(testMaxBodyBytes)) // one per-body-capped chunk each
 
 	// Enough entries to blow past the total budget.
@@ -297,7 +297,7 @@ func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
 // an entry lands astride the cap -- the case a mixed query-and-HTTP capture reaches easily, since the
 // two producers contribute entries of very different sizes.
 func TestSDKHARCaptureBuffer_totalSizeCapIsTight(t *testing.T) {
-	buf := newBufferWithLimits(testMaxTotalBytes)
+	buf := newBufferWithLimits()
 	addEntry := func(body string) {
 		req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
 		if err != nil {
@@ -350,7 +350,7 @@ func TestBuffer_zeroValueUsesDefaultCaps(t *testing.T) {
 // because it's what makes an over-budget entry worth keeping) is still added to the running total --
 // otherwise repeated over-budget entries retain error text that the budget never accounts for.
 func TestSDKHARCaptureBuffer_retainedAccountsForDroppedError(t *testing.T) {
-	buf := newBufferWithLimits(testMaxTotalBytes)
+	buf := newBufferWithLimits()
 	bigErr := strings.Repeat("e", int(testMaxTotalBytes))
 
 	// First entry alone already exceeds the total budget, so its payload is dropped on arrival but its

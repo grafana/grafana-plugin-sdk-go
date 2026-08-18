@@ -262,7 +262,7 @@ func TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget(t *testing.T) {
 	// Being counted is not enough: an over-budget entry has to shed its arguments too, or the frame
 	// grows by them anyway. Inspect the entries directly rather than the marshalled document, so the
 	// test doesn't serialize the whole budget.
-	b := newBufferWithLimits(testMaxTotalBytes)
+	b := newBufferWithLimits()
 	statement := strings.Repeat("x", int(testMaxBodyBytes))
 	for i := int64(0); i < testMaxTotalBytes/testMaxBodyBytes; i++ {
 		b.AddQueryInteraction(querycapture.Interaction{
