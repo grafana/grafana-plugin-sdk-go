@@ -8,7 +8,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20260804232424-e85f50dbfd32
 	github.com/elazarl/goproxy v1.9.0
 	github.com/getkin/kin-openapi v0.144.0
-	github.com/go-openapi/loads v0.25.0
+	github.com/go-openapi/loads v0.25.1
 	github.com/go-openapi/spec v0.22.9
 	github.com/go-openapi/strfmt v0.27.0
 	github.com/go-openapi/swag/loading v0.28.0
