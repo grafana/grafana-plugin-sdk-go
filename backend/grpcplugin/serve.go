@@ -1,9 +1,10 @@
 package grpcplugin
 
 import (
-	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	plugin "github.com/hashicorp/go-plugin"
 	"google.golang.org/grpc"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
 // ServeOpts contains options for serving plugins.
@@ -15,6 +16,9 @@ type ServeOpts struct {
 	AdmissionServer   AdmissionServer
 	ConversionServer  ConversionServer
 
+	// Attach custom plugins plugins to the gRPC server.
+	CustomPlugins plugin.PluginSet
+
 	// GRPCServer factory method for creating GRPC server.
 	// If nil, the default one will be used.
 	GRPCServer func(options []grpc.ServerOption) *grpc.Server
@@ -22,8 +26,10 @@ type ServeOpts struct {
 
 // Serve starts serving the plugin over gRPC.
 func Serve(opts ServeOpts) error {
-	versionedPlugins := make(map[int]plugin.PluginSet)
-	pSet := make(plugin.PluginSet)
+	pSet := opts.CustomPlugins
+	if pSet == nil {
+		pSet = make(plugin.PluginSet)
+	}
 
 	if opts.DiagnosticsServer != nil {
 		pSet["diagnostics"] = &DiagnosticsGRPCPlugin{
@@ -61,6 +67,7 @@ func Serve(opts ServeOpts) error {
 		}
 	}
 
+	versionedPlugins := make(map[int]plugin.PluginSet)
 	versionedPlugins[ProtocolVersion] = pSet
 
 	if opts.GRPCServer == nil {
