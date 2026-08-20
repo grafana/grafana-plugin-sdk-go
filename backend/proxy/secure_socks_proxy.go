@@ -242,7 +242,7 @@ func (p *cfgProxyWrapper) getTLSDialerFromFiles() (*tls.Dialer, error) {
 
 // SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`
 // to determine if the secure socks proxy should be enabled on it
-func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
+func SecureSocksProxyEnabledOnDS(jsonData map[string]any) bool {
 	res, enabled := jsonData["enableSecureSocksProxy"]
 	if !enabled {
 		return false
@@ -282,12 +282,14 @@ func (d *instrumentedSocksDialer) Dial(network, addr string) (net.Conn, error) {
 
 // DialContext -
 func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr string) (net.Conn, error) {
+	ctxLogger := log.DefaultLogger.FromContext(ctx)
 	if ctx.Err() != nil {
-		log.DefaultLogger.Debug("context cancelled or deadline exceeded, returning context error")
+		ctxLogger.Debug("context cancelled or deadline exceeded, returning context error")
 		return nil, ctx.Err()
 	}
 
 	start := time.Now()
+	slug := slugFromContext(ctx)
 	dialer, ok := d.dialer.(proxy.ContextDialer)
 	if !ok {
 		return nil, errors.New("unable to cast socks proxy dialer to context proxy dialer")
@@ -334,15 +336,50 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 		default:
 			code = "socks_unknown_error"
 		}
-		log.DefaultLogger.Error("received opErr from dialer", "network", n, "addr", addr, "opErr", opErr, "code", code)
 	default:
-		log.DefaultLogger.Error("received err from dialer", "network", n, "addr", addr, "err", err)
 		code = "dial_error"
 	}
 	if err != nil {
 		err = status.DownstreamError(err)
 	}
 
-	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType).Observe(time.Since(start).Seconds())
+	duration := time.Since(start)
+	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType).Observe(duration.Seconds())
+
+	if err != nil {
+		ctxLogger.Error("secure socks dial failed",
+			"eventName", "grafana-secure-socks-dial",
+			"network", n,
+			"addr", addr,
+			"code", code,
+			"slug", slug,
+			"duration", duration,
+			"error", err,
+		)
+	}
 	return c, err
+}
+
+func slugFromContext(ctx context.Context) string {
+	if slug := getContextualLogAttribute(log.ContextualAttributesFromContext(ctx), "slug"); slug != "" {
+		return slug
+	}
+	return getContextualLogAttribute(log.ContextualAttributesFromIncomingContext(ctx), "slug")
+}
+
+func getContextualLogAttribute(attrs []any, key string) string {
+	if len(attrs) < 2 {
+		return ""
+	}
+
+	for i := 0; i+1 < len(attrs); i += 2 {
+		if k, ok := attrs[i].(string); ok && k == key {
+			if v, ok := attrs[i+1].(string); ok {
+				return v
+			}
+			return ""
+		}
+	}
+
+	return ""
 }
