@@ -5,6 +5,8 @@ import (
 	"log"
 	"os"
 
+	"github.com/hashicorp/go-plugin"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
@@ -24,6 +26,9 @@ type ManageOpts struct {
 
 	// Stateless conversion handler
 	ConversionHandler backend.ConversionHandler
+
+	// Attach custom plugins plugins to the gRPC server.
+	ExtraPlugins plugin.PluginSet
 }
 
 // Manage starts serving the app over gPRC with automatic instance management.
@@ -53,5 +58,6 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		AdmissionHandler:        opts.AdmissionHandler,
 		ConversionHandler:       opts.ConversionHandler,
 		GRPCSettings:            opts.GRPCSettings,
+		ExtraPlugins:            opts.ExtraPlugins,
 	})
 }
