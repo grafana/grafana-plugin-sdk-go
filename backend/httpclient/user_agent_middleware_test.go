@@ -78,4 +78,26 @@ func TestUserAgentMiddleware(t *testing.T) {
 
 		require.Equal(t, expectedHeaders, finalHeaders)
 	})
+
+	t.Run("when no user agent is set on the request context", func(t *testing.T) {
+		testCtx := &testContext{}
+		finalRoundTripper := testCtx.createRoundTripper("final")
+		userAgent := newUserAgentMiddleware("test-plugin", "1.2.3", true)
+		rt := userAgent.CreateMiddleware(Options{}, finalRoundTripper)
+
+		req, err := http.NewRequestWithContext(context.Background(), http.MethodGet, "http://", nil)
+		require.NoError(t, err)
+
+		res, err := rt.RoundTrip(req)
+		require.NoError(t, err)
+		require.NotNil(t, res)
+		if res.Body != nil {
+			require.NoError(t, res.Body.Close())
+		}
+
+		expectedHeaders := http.Header{
+			"User-Agent": []string{"Grafana test-plugin/1.2.3"},
+		}
+		require.Equal(t, expectedHeaders, req.Header)
+	})
 }

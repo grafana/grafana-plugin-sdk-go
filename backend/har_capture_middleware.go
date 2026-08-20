@@ -75,7 +75,7 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		return httpclient.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 			// Capture the request body before RoundTrip: the transport drains r.Body while
 			// sending, so reading it afterwards would yield nothing for POST/PUT/PATCH calls.
-			reqBody, reqTruncated := harcapture.DrainRequestBody(r)
+			reqBody, reqTruncated := buf.DrainRequestBody(r)
 			started := time.Now()
 			resp, err := next.RoundTrip(r)
 			elapsed := time.Since(started)

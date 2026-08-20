@@ -1,4 +1,5 @@
 {
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "ignorePresets": [
     "github>grafana/grafana-renovate-config//presets/base",
     "github>grafana/grafana-renovate-config//presets/automerge",
@@ -6,44 +7,62 @@
     "github>grafana/grafana-renovate-config//presets/npm"
   ],
   "extends": ["github>grafana/grafana-catalog-team//renovate/renovate"],
-  "dependencyDashboard": false,
-  "schedule": ["before 6am on the first day of the week"],
   "packageRules": [
     {
-      "groupName": "All Go module dependencies",
-      "matchManagers": ["gomod"],
+      "description": "Go module families that have to move in lockstep. Restricted to non-major so a single breaking major cannot block every other update in the group: majors get their own individually judged PR.",
+      "groupName": "Upstream packages",
+      "matchPackageNames": ["golang.org/x/**"],
       "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     {
-      "groupName": "Upstream packages",
-      "matchPackageNames": ["golang.org/x/**"]
-    },
-    {
       "groupName": "OpenTelemetry packages",
-      "matchPackageNames": ["go.opentelemetry.io/**"]
+      "matchPackageNames": ["go.opentelemetry.io/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     {
       "groupName": "go-openapi packages",
-      "matchPackageNames": ["github.com/go-openapi/**"]
+      "matchPackageNames": ["github.com/go-openapi/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     {
       "groupName": "gRPC packages",
-      "matchPackageNames": ["google.golang.org/grpc", "google.golang.org/protobuf", "google.golang.org/genproto/**", "github.com/grpc-ecosystem/**"]
+      "matchPackageNames": [
+        "google.golang.org/grpc",
+        "google.golang.org/protobuf",
+        "google.golang.org/genproto/**",
+        "github.com/grpc-ecosystem/**"
+      ],
+      "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     {
       "groupName": "Prometheus packages",
-      "matchPackageNames": ["github.com/prometheus/**"]
+      "matchPackageNames": ["github.com/prometheus/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     {
       "groupName": "HashiCorp packages",
-      "matchPackageNames": ["github.com/hashicorp/**"]
+      "matchPackageNames": ["github.com/hashicorp/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     {
       "groupName": "Kubernetes packages",
-      "matchPackageNames": ["k8s.io/**", "sigs.k8s.io/**"]
+      "matchPackageNames": ["k8s.io/**", "sigs.k8s.io/**"],
+      "matchUpdateTypes": ["minor", "patch", "digest"]
+    },
+    {
+      "description": "Automerge: minor/major updates need an approval from the Claude gate workflow before GitHub auto-merge fires",
+      "matchUpdateTypes": ["minor", "major"],
+      "automerge": true,
+      "addLabels": ["claude-gate"]
+    },
+    {
+      "description": "Automerge: clear-cut updates get a direct bot approval, required CI checks still gate the merge",
+      "matchUpdateTypes": ["patch", "pin", "digest", "lockFileMaintenance"],
+      "automerge": true,
+      "addLabels": ["automerge-direct"]
     }
   ],
-  "github-actions": { "enabled": true, "groupName": "GitHub Actions" },
+  "github-actions": { "enabled": true },
   "commitMessagePrefix": "chore(deps): ",
   "rangeStrategy": "bump",
   "branchPrefix": "renovate/"
