@@ -12,6 +12,7 @@ type Handler interface {
 	StreamHandler
 	AdmissionHandler
 	ConversionHandler
+	CustomRouteHandler
 }
 
 var _ = Handler(&BaseHandler{})
@@ -74,6 +75,10 @@ func (m *BaseHandler) ConvertObjects(ctx context.Context, req *ConversionRequest
 	return m.next.ConvertObjects(ctx, req)
 }
 
+func (m *BaseHandler) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	return m.next.CallCustomRoute(ctx, req, sender)
+}
+
 // Handlers implements Handler.
 type Handlers struct {
 	QueryDataHandler
@@ -84,6 +89,7 @@ type Handlers struct {
 	StreamHandler
 	AdmissionHandler
 	ConversionHandler
+	CustomRouteHandler
 }
 
 var _ Handler = &Handlers{}

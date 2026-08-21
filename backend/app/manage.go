@@ -24,6 +24,9 @@ type ManageOpts struct {
 
 	// Stateless conversion handler
 	ConversionHandler backend.ConversionHandler
+
+	// Stateless custom route handler
+	CustomRouteHandler backend.CustomRouteHandler
 }
 
 // Manage starts serving the app over gPRC with automatic instance management.
@@ -52,6 +55,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		StreamHandler:           handler,
 		AdmissionHandler:        opts.AdmissionHandler,
 		ConversionHandler:       opts.ConversionHandler,
+		CustomRouteHandler:      opts.CustomRouteHandler,
 		GRPCSettings:            opts.GRPCSettings,
 	})
 }

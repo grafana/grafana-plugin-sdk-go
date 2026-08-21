@@ -133,3 +133,8 @@ func (m *ErrorSourceMiddleware) ConvertObjects(ctx context.Context, req *Convers
 	resp, err := m.BaseHandler.ConvertObjects(ctx, req)
 	return resp, m.handleDownstreamError(ctx, err)
 }
+
+func (m *ErrorSourceMiddleware) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	err := m.BaseHandler.CallCustomRoute(ctx, req, sender)
+	return m.handleDownstreamError(ctx, err)
+}

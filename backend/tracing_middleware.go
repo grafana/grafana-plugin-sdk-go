@@ -158,3 +158,10 @@ func (m *tracingMiddleware) ConvertObjects(ctx context.Context, req *ConversionR
 
 	return resp, err
 }
+
+func (m *tracingMiddleware) CallCustomRoute(ctx context.Context, req *CallCustomRouteRequest, sender CallCustomRouteResponseSender) error {
+	return m.traceRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
+		innerErr := m.BaseHandler.CallCustomRoute(ctx, req, sender)
+		return RequestStatusFromError(innerErr), innerErr
+	})
+}

@@ -74,6 +74,10 @@ type ServeOpts struct {
 	// This is EXPERIMENTAL and is a subject to change till Grafana 12
 	QueryConversionHandler QueryConversionHandler
 
+	// CustomRouteHandler handles calls to custom routes / kind subresources
+	// This is EXPERIMENTAL and is a subject to change till Grafana 12
+	CustomRouteHandler CustomRouteHandler
+
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 
@@ -90,6 +94,7 @@ func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
 		StreamHandler:           opts.StreamHandler,
 		AdmissionHandler:        opts.AdmissionHandler,
 		ConversionHandler:       opts.ConversionHandler,
+		CustomRouteHandler:      opts.CustomRouteHandler,
 	}
 
 	return HandlerFromMiddlewares(handlers, opts.HandlerMiddlewares...)
@@ -123,6 +128,10 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 
 	if opts.ConversionHandler != nil || opts.QueryConversionHandler != nil {
 		pluginOpts.ConversionServer = newConversionSDKAdapter(handler, opts.QueryConversionHandler)
+	}
+
+	if opts.CustomRouteHandler != nil {
+		pluginOpts.CustomRouteServer = newCustomRouteSDKAdapter(handler)
 	}
 	return pluginOpts, nil
 }
@@ -273,6 +282,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "conversion")
 	}
 
+	if pluginOpts.CustomRouteServer != nil {
+		pluginv2.RegisterCustomRouteServer(server, pluginOpts.CustomRouteServer)
+		plugKeys = append(plugKeys, "customRoute")
+	}
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -401,6 +415,11 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.ConversionServer != nil {
 		pluginv2.RegisterResourceConversionServer(server, pluginOpts.ConversionServer)
 		plugKeys = append(plugKeys, "conversion")
+	}
+
+	if pluginOpts.CustomRouteServer != nil {
+		pluginv2.RegisterCustomRouteServer(server, pluginOpts.CustomRouteServer)
+		plugKeys = append(plugKeys, "customRoute")
 	}
 
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly

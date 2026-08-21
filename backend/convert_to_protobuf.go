@@ -299,6 +299,56 @@ func (t ConvertToProtobuf) CallResourceRequest(req *CallResourceRequest) *plugin
 	return protoReq
 }
 
+// CallCustomRouteResponse converts the SDK version of a CallCustomRouteResponse to the protobuf version.
+func (t ConvertToProtobuf) CallCustomRouteResponse(resp *CallCustomRouteResponse) *pluginv2.CallCustomRouteResponse {
+	headers := map[string]*pluginv2.StringList{}
+
+	for key, values := range resp.Headers {
+		headers[key] = &pluginv2.StringList{Values: values}
+	}
+
+	return &pluginv2.CallCustomRouteResponse{
+		Headers: headers,
+		Code:    int32(resp.Status), // #nosec G115 -- HTTP status codes (100-599) always fit in int32
+		Body:    resp.Body,
+	}
+}
+
+// CallCustomRouteRequest converts the SDK version of a CallCustomRouteRequest to the protobuf version.
+func (t ConvertToProtobuf) CallCustomRouteRequest(req *CallCustomRouteRequest) *pluginv2.CallCustomRouteRequest {
+	protoReq := &pluginv2.CallCustomRouteRequest{
+		PluginContext: t.PluginContext(req.PluginContext),
+		Identifier:    t.ResourceFullIdentifier(&req.Identifier),
+		Path:          req.Path,
+		Method:        req.Method,
+		Url:           req.URL,
+		Body:          req.Body,
+	}
+	if req.Headers == nil {
+		return protoReq
+	}
+	protoReq.Headers = make(map[string]*pluginv2.StringList, len(req.Headers))
+	for k, values := range req.Headers {
+		protoReq.Headers[k] = &pluginv2.StringList{Values: values}
+	}
+	return protoReq
+}
+
+// ResourceFullIdentifier converts the SDK version of a FullIdentifier to the protobuf version.
+func (t ConvertToProtobuf) ResourceFullIdentifier(id *FullIdentifier) *pluginv2.ResourceFullIdentifier {
+	if id == nil {
+		return nil
+	}
+	return &pluginv2.ResourceFullIdentifier{
+		Namespace: id.Namespace,
+		Name:      id.Name,
+		Group:     id.Group,
+		Version:   id.Version,
+		Kind:      id.Kind,
+		Plural:    id.Plural,
+	}
+}
+
 // RunStreamRequest ...
 func (t ConvertToProtobuf) RunStreamRequest(req *RunStreamRequest) *pluginv2.RunStreamRequest {
 	protoReq := &pluginv2.RunStreamRequest{

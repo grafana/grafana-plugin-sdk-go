@@ -22,6 +22,7 @@ type Handler struct {
 	MutateAdmissionFunc   backend.MutateAdmissionFunc
 	ValidateAdmissionFunc backend.ValidateAdmissionFunc
 	ConvertObjectsFunc    backend.ConvertObjectsFunc
+	CallCustomRouteFunc   backend.CallCustomRouteHandlerFunc
 }
 
 func (h Handler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -112,6 +113,14 @@ func (h Handler) ConvertObjects(ctx context.Context, req *backend.ConversionRequ
 	return nil, nil
 }
 
+func (h Handler) CallCustomRoute(ctx context.Context, req *backend.CallCustomRouteRequest, sender backend.CallCustomRouteResponseSender) error {
+	if h.CallCustomRouteFunc != nil {
+		return h.CallCustomRouteFunc(ctx, req, sender)
+	}
+
+	return nil
+}
+
 type HandlerMiddlewareTest struct {
 	T                      *testing.T
 	TestHandler            *Handler
@@ -139,9 +148,12 @@ type HandlerMiddlewareTest struct {
 	ValidateAdmissionCtx   context.Context
 	ConvertObjectReq       *backend.ConversionRequest
 	ConvertObjectCtx       context.Context
+	CallCustomRouteReq     *backend.CallCustomRouteRequest
+	CallCustomRouteCtx     context.Context
 
 	// When CallResource is called, the sender will be called with these values
 	callResourceResponses      []*backend.CallResourceResponse
+	callCustomRouteResponses   []*backend.CallCustomRouteResponse
 	runStreamResponseBytes     [][]byte
 	runStreamResponseJSONBytes [][]byte
 }
@@ -234,6 +246,18 @@ func NewHandlerMiddlewareTest(t *testing.T, opts ...HandlerMiddlewareTestOption)
 			cdt.ConvertObjectCtx = ctx
 			return nil, nil
 		},
+		CallCustomRouteFunc: func(ctx context.Context, req *backend.CallCustomRouteRequest, sender backend.CallCustomRouteResponseSender) error {
+			cdt.CallCustomRouteReq = req
+			cdt.CallCustomRouteCtx = ctx
+			if cdt.callCustomRouteResponses != nil {
+				for _, r := range cdt.callCustomRouteResponses {
+					if err := sender.Send(r); err != nil {
+						return err
+					}
+				}
+			}
+			return nil
+		},
 	}
 
 	for _, opt := range opts {
@@ -269,6 +293,13 @@ func WithMiddlewares(middlewares ...backend.HandlerMiddleware) HandlerMiddleware
 func WithResourceResponses(responses []*backend.CallResourceResponse) HandlerMiddlewareTestOption {
 	return HandlerMiddlewareTestOption(func(cdt *HandlerMiddlewareTest) {
 		cdt.callResourceResponses = responses
+	})
+}
+
+// WithCustomRouteResponses can be used to make the test client send simulated custom route responses back over the sender stream.
+func WithCustomRouteResponses(responses []*backend.CallCustomRouteResponse) HandlerMiddlewareTestOption {
+	return HandlerMiddlewareTestOption(func(cdt *HandlerMiddlewareTest) {
+		cdt.callCustomRouteResponses = responses
 	})
 }
 

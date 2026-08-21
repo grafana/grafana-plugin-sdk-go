@@ -231,6 +231,54 @@ func (f ConvertFromProtobuf) CallResourceResponse(protoResp *pluginv2.CallResour
 	}
 }
 
+// CallCustomRouteRequest converts protobuf version of a CallCustomRouteRequest to the SDK version.
+func (f ConvertFromProtobuf) CallCustomRouteRequest(protoReq *pluginv2.CallCustomRouteRequest) *CallCustomRouteRequest {
+	headers := map[string][]string{}
+	for k, values := range protoReq.Headers {
+		headers[k] = values.Values
+	}
+
+	return &CallCustomRouteRequest{
+		PluginContext: f.PluginContext(protoReq.PluginContext),
+		Identifier:    f.ResourceFullIdentifier(protoReq.Identifier),
+		Path:          protoReq.Path,
+		Method:        protoReq.Method,
+		URL:           protoReq.Url,
+		Headers:       headers,
+		Body:          protoReq.Body,
+	}
+}
+
+// ResourceFullIdentifier converts protobuf version of a ResourceFullIdentifier to the SDK version.
+// The identifier is optional: a nil proto identifier maps to a zero-value FullIdentifier.
+func (f ConvertFromProtobuf) ResourceFullIdentifier(id *pluginv2.ResourceFullIdentifier) FullIdentifier {
+	if id == nil {
+		return FullIdentifier{}
+	}
+	return FullIdentifier{
+		Namespace: id.Namespace,
+		Name:      id.Name,
+		Group:     id.Group,
+		Version:   id.Version,
+		Kind:      id.Kind,
+		Plural:    id.Plural,
+	}
+}
+
+// CallCustomRouteResponse converts protobuf version of a CallCustomRouteResponse to the SDK version.
+func (f ConvertFromProtobuf) CallCustomRouteResponse(protoResp *pluginv2.CallCustomRouteResponse) *CallCustomRouteResponse {
+	headers := map[string][]string{}
+	for k, values := range protoResp.Headers {
+		headers[k] = values.Values
+	}
+
+	return &CallCustomRouteResponse{
+		Status:  int(protoResp.Code),
+		Body:    protoResp.Body,
+		Headers: headers,
+	}
+}
+
 // CheckHealthRequest converts protobuf version of a CheckHealthRequest to the SDK version.
 func (f ConvertFromProtobuf) CheckHealthRequest(protoReq *pluginv2.CheckHealthRequest) *CheckHealthRequest {
 	if protoReq.Headers == nil {
