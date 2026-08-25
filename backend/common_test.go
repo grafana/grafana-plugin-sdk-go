@@ -448,9 +448,9 @@ func TestProxyOptions(t *testing.T) {
 					BasicAuthUser:    "buser",
 				},
 				proxyClientCfg: &proxy.ClientCfg{
-					ClientCert:   "<client-cert>",
-					ClientKey:    "123abc",
-					RootCAs:      []string{"<root-ca-cert>"},
+					ClientCert:   "<client-cert>",            // nolint:staticcheck
+					ClientKey:    "123abc",                   // nolint:staticcheck
+					RootCAs:      []string{"<root-ca-cert>"}, // nolint:staticcheck
 					ProxyAddress: "10.1.2.3",
 					ServerName:   "grafana-server",
 				},
@@ -464,9 +464,9 @@ func TestProxyOptions(t *testing.T) {
 						Timeout:   time.Second * 10,
 					},
 					ClientCfg: &proxy.ClientCfg{
-						ClientCert:   "<client-cert>",
-						ClientKey:    "123abc",
-						RootCAs:      []string{"<root-ca-cert>"},
+						ClientCert:   "<client-cert>",            // nolint:staticcheck
+						ClientKey:    "123abc",                   // nolint:staticcheck
+						RootCAs:      []string{"<root-ca-cert>"}, // nolint:staticcheck
 						ProxyAddress: "10.1.2.3",
 						ServerName:   "grafana-server",
 					},
@@ -527,9 +527,9 @@ func TestProxyOptionsFromContext(t *testing.T) {
 					KeepAlive: time.Second * 15,
 				},
 				ClientCfg: &proxy.ClientCfg{
-					ClientCert:    "/path/to/client-cert",
-					ClientKey:     "/path/to/client-key",
-					RootCAs:       []string{"/path/to/root-ca"},
+					ClientCert:    "/path/to/client-cert",       // nolint:staticcheck
+					ClientKey:     "/path/to/client-key",        // nolint:staticcheck
+					RootCAs:       []string{"/path/to/root-ca"}, // nolint:staticcheck
 					ClientCertVal: "client-cert-contents",
 					ClientKeyVal:  "client-key-contents",
 					RootCAsVals:   []string{"root-ca-contents"},
@@ -575,9 +575,9 @@ func TestProxyOptionsFromContext(t *testing.T) {
 					KeepAlive: time.Second * 15,
 				},
 				ClientCfg: &proxy.ClientCfg{
-					ClientCert:    "/path/to/client-cert",
-					ClientKey:     "/path/to/client-key",
-					RootCAs:       []string{"/path/to/root-ca"},
+					ClientCert:    "/path/to/client-cert",       // nolint:staticcheck
+					ClientKey:     "/path/to/client-key",        // nolint:staticcheck
+					RootCAs:       []string{"/path/to/root-ca"}, // nolint:staticcheck
 					ClientCertVal: "client-cert-contents",
 					ClientKeyVal:  "client-key-contents",
 					RootCAsVals:   []string{"root-ca-contents"},

@@ -144,7 +144,7 @@ func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
 }
 
 var protoDataSourceInstanceSettings = &pluginv2.DataSourceInstanceSettings{
-	Id:                      2,
+	Id:                      2, // nolint:staticcheck
 	Uid:                     "uid 2",
 	Name:                    "bestData",
 	Url:                     "http://grafana.com",
