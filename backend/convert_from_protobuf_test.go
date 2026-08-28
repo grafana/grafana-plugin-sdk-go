@@ -60,6 +60,20 @@ func (rec *requireCounter) Equal(t *testing.T, expected, actual interface{}, msg
 
 var f ConvertFromProtobuf
 
+func TestConvertFromProtobufErrorSources(t *testing.T) {
+	health := f.CheckHealthResponse(&pluginv2.CheckHealthResponse{
+		Status:      pluginv2.CheckHealthResponse_ERROR,
+		ErrorSource: string(ErrorSourceDownstream),
+	})
+	require.Equal(t, ErrorSourceDownstream, health.ErrorSource)
+
+	resource := f.CallResourceResponse(&pluginv2.CallResourceResponse{
+		Code:        http.StatusInternalServerError,
+		ErrorSource: string(ErrorSourcePlugin),
+	})
+	require.Equal(t, ErrorSourcePlugin, resource.ErrorSource)
+}
+
 const unsetErrFmt = "%v type for %v has unset fields, %v of %v unset, set all fields for the test"
 
 func TestConvertFromProtobufUser(t *testing.T) {
