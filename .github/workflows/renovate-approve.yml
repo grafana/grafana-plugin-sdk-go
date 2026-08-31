@@ -256,9 +256,15 @@ jobs:
           fi
           printf '%s\n' "$verdict"
 
-          reviews=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json reviews)
-          changes_requested=$(jq '[.reviews[] | select(.state == "CHANGES_REQUESTED")] | length' <<<"$reviews")
-          bot_approved=$(jq '[.reviews[] | select((.author.login | startswith("grafana-plugins-platform-bot")) and .state == "APPROVED")] | length' <<<"$reviews")
+          # latestReviews, not reviews: `--json reviews` also asks GraphQL for
+          # reviews.nodes[].commit, which needs `contents: read`. The app token
+          # only carries `pull_requests: write`, so that query fails outright as
+          # soon as the PR has any review, including one a rebase dismissed.
+          # latestReviews leaves the commit field out and is the better question
+          # anyway: only a reviewer's current position should count here.
+          reviews=$(gh pr view "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --json latestReviews)
+          changes_requested=$(jq '[.latestReviews[] | select(.state == "CHANGES_REQUESTED")] | length' <<<"$reviews")
+          bot_approved=$(jq '[.latestReviews[] | select((.author.login | startswith("grafana-plugins-platform-bot")) and .state == "APPROVED")] | length' <<<"$reviews")
 
           case "$verdict" in
             "VERDICT: approve"*)
