@@ -282,6 +282,34 @@ func TestFrameFromRows_StringConverterNoAliasing(t *testing.T) {
 	}
 }
 
+// TestFrameFromRows_NullBoolConverterNoAliasing is a regression guard for the
+// same scan-buffer reuse hazard as TestFrameFromRows_StringConverterNoAliasing
+// above, but for NullBoolConverter. It used to derive its result from
+// &v.Bool, a pointer into the reused sql.NullBool scan buffer, which
+// collapsed every row in a boolean column to the last row's value. This test
+// drives distinct per-row boolean values through FrameFromRows end-to-end and
+// asserts each row keeps its own value at its own address.
+func TestFrameFromRows_NullBoolConverterNoAliasing(t *testing.T) {
+	want := []bool{true, false, true, false}
+	rowData := make([][]interface{}, len(want))
+	for i, v := range want {
+		rowData[i] = []interface{}{v}
+	}
+	rows := makeSingleResultSetWithTypeNames([]string{"flag"}, []string{"BOOLEAN"}, rowData...) //nolint:rowserrcheck // FrameFromRows checks rows.Err() internally
+	t.Cleanup(func() { _ = rows.Close() })
+
+	frame, err := sqlutil.FrameFromRows(rows, -1, sqlutil.NullBoolConverter)
+	require.NoError(t, err)
+	require.Equal(t, len(want), frame.Rows())
+
+	for i, w := range want {
+		got, ok := frame.Fields[0].At(i).(*bool)
+		require.True(t, ok, "row %d should be a *bool", i)
+		require.NotNil(t, got, "row %d should not be nil", i)
+		require.Equal(t, w, *got, "row %d must keep its own value, not alias another row (scan-buffer reuse aliasing regression)", i)
+	}
+}
+
 // TestFrameFromRowsWithCapacity_PresizesAllFields proves the end-to-end
 // capacity API (Fix 1 plumbed through FrameFromRowsWithCapacity).
 func TestFrameFromRowsWithCapacity_PresizesAllFields(t *testing.T) {

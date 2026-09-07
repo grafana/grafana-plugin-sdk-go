@@ -19,7 +19,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 
 	t.Run("Should use standard manager when feature toggle is disabled", func(t *testing.T) {
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -34,7 +34,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 
 	t.Run("Should use TTL manager when feature toggle is enabled", func(t *testing.T) {
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -49,7 +49,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 
 	t.Run("Should use standard manager when GrafanaConfig is nil", func(t *testing.T) {
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -62,7 +62,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 
 	t.Run("Should use TTL manager when feature toggle is enabled with other flags", func(t *testing.T) {
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -78,7 +78,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 	t.Run("Should delegate Get calls correctly", func(t *testing.T) {
 		// Test with TTL manager enabled
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -96,7 +96,7 @@ func TestInstanceManagerWrapper(t *testing.T) {
 	t.Run("Should delegate Do calls correctly", func(t *testing.T) {
 		// Test with standard manager (no feature toggle)
 		pCtx := backend.PluginContext{
-			OrgID: 2,
+			OrgID: 2, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},

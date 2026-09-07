@@ -26,7 +26,7 @@ func TestBuildSDKHAREntry_redactsSensitiveHeaders(t *testing.T) {
 	rec.WriteHeader(http.StatusOK)
 	resp := rec.Result()
 
-	entry := buildSDKHAREntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
+	entry := buildSDKHAREntry(req, nil, false, resp, nil, time.Now(), time.Millisecond, testMaxBodyBytes)
 
 	find := func(pairs []sdkHARNameValue, name string) (string, bool) {
 		for _, p := range pairs {
@@ -74,7 +74,7 @@ func TestBuildSDKHAREntry_redactsCookieValues(t *testing.T) {
 	rec.WriteHeader(http.StatusOK)
 	resp := rec.Result()
 
-	entry := buildSDKHAREntry(req, nil, false, resp, nil, time.Now(), time.Millisecond)
+	entry := buildSDKHAREntry(req, nil, false, resp, nil, time.Now(), time.Millisecond, testMaxBodyBytes)
 
 	if len(entry.Request.Cookies) != 1 || entry.Request.Cookies[0].Name != "session" {
 		t.Fatalf("request cookie not captured as expected: %+v", entry.Request.Cookies)
@@ -100,7 +100,7 @@ func TestBuildSDKHAREntry_redactsSensitiveQueryParams(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	entry := buildSDKHAREntry(req, nil, false, &http.Response{Header: http.Header{}}, nil, time.Now(), time.Millisecond)
+	entry := buildSDKHAREntry(req, nil, false, &http.Response{Header: http.Header{}}, nil, time.Now(), time.Millisecond, testMaxBodyBytes)
 
 	find := func(name string) (string, bool) {
 		for _, p := range entry.Request.QueryString {

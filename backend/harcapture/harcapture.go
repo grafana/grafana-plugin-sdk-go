@@ -12,24 +12,40 @@ import (
 	"unicode/utf8"
 )
 
+// defaultMaxCapturedBodyBytes caps how much of one request/response body capture reads into memory;
+// the untouched remainder streams straight to the real consumer (see readAndRestoreBody). Past the cap
+// the captured prefix is kept and the entry reports BodySize -1 (unavailable), so an over-cap body is
+// still evidence, just marked incomplete.
+//
+// defaultMaxCapturedTotalBytes caps the total payload retained across one request's entries -- the
+// size of the serialized __har__ frame. It's measured in jsonEscapedLen, not raw bytes, since that's
+// what actually crosses the wire: json.Marshal can expand a byte into a 6-byte \u00XX escape. How
+// many full bodies fit is therefore content-dependent: escape-free text fits four, markup (whose <,
+// >, & all escape 6 bytes) fewer, and a single body dense in control characters can exceed the whole
+// budget escaped and have its payload dropped on arrival.
+//
+// Sizing: the __har__ frame rides the same plugin<->core gRPC message as the QueryDataResponse data
+// itself. Both directions of that hop default to ~2 GiB -- the plugin serve side leaves
+// GRPCSettings.MaxSendMsgSize at math.MaxInt32, and the Grafana core side dials with go-plugin's
+// default call options (MaxCallRecvMsgSize(math.MaxInt32), go-plugin grpc_client.go) and does not
+// override them -- but serialization transiently holds full extra copies of what is retained
+// (json.Marshal's output, then its string conversion), and the response data shares the message. 256
+// MiB post-escaping keeps the frame plus those copies comfortably under the ceiling. Peak memory can
+// also exceed the total by roughly two body caps live (~3x allocated) per concurrent over-cap
+// response: the capped head is held transiently before being dropped, and the capture buffer's growth
+// chain past the pre-grow clamp (see readAndRestoreBody) transiently holds copies of comparable size.
+//
+// Each Buffer holds its own copy of these caps (see NewBuffer), rather than reading package vars, so
+// a test can shrink them for one Buffer without a data race against any other test's Buffer.
 const (
-	// maxCapturedBodyBytes caps how much of any single request/response body is read into memory for
-	// capture; the untouched remainder is streamed on to the real consumer rather than buffered (see
-	// readAndRestoreBody). maxCapturedTotalBytes caps the total payload text retained across all entries
-	// in one request -- i.e. the size of the serialized __har__ frame -- keeping it well under the
-	// plugin<->core gRPC message size limit. Note this budget tracks retained HAR text only: while an
-	// over-cap body is still being streamed to the consumer, its capped head (up to
-	// maxCapturedBodyBytes) is also held transiently, so peak memory during capture can exceed the
-	// total budget by roughly that per concurrent over-cap response. Both are far below the
-	// unbounded full-body buffering capture would otherwise do.
-	maxCapturedBodyBytes  = 8 << 20  // 8 MiB
-	maxCapturedTotalBytes = 32 << 20 // 32 MiB
-
-	// redactedValue replaces the value of anything capture treats as sensitive (see
-	// isSensitiveHeaderName, isSensitiveQueryParamName, and sdkCookies), so the __har__ frame -- which
-	// is returned to whoever enabled capture -- never carries datasource credentials.
-	redactedValue = "REDACTED"
+	defaultMaxCapturedBodyBytes  int64 = 64 << 20  // 64 MiB
+	defaultMaxCapturedTotalBytes int64 = 256 << 20 // 256 MiB, measured post-escaping (see jsonEscapedLen)
 )
+
+// redactedValue replaces the value of anything capture treats as sensitive (see
+// isSensitiveHeaderName, isSensitiveQueryParamName, and sdkCookies), so the __har__ frame -- which
+// is returned to whoever enabled capture -- never carries datasource credentials.
+const redactedValue = "REDACTED"
 
 // sensitiveHeaderNames are header names whose values are redacted before capture (matched
 // case-insensitively by isSensitiveHeaderName), since they routinely carry datasource credentials
@@ -75,42 +91,71 @@ type Buffer struct {
 	mu       sync.Mutex
 	entries  []sdkHAREntry
 	retained int64 // running total of retained payload bytes, for the total-size cap
+
+	// maxBodyBytes and maxTotalBytes are set once, at construction, and never modified afterwards, so
+	// reading them needs no synchronization of its own. Zero means "unset" (the zero-value Buffer{} is
+	// a valid, pre-NewBuffer construction some callers still use) and is resolved to the matching
+	// default by maxBody/maxTotal rather than read directly.
+	maxBodyBytes  int64
+	maxTotalBytes int64
 }
 
 func NewBuffer() *Buffer {
-	return &Buffer{}
+	return &Buffer{
+		maxBodyBytes:  defaultMaxCapturedBodyBytes,
+		maxTotalBytes: defaultMaxCapturedTotalBytes,
+	}
+}
+
+func (b *Buffer) maxBody() int64 {
+	if b.maxBodyBytes == 0 {
+		return defaultMaxCapturedBodyBytes
+	}
+	return b.maxBodyBytes
+}
+
+func (b *Buffer) maxTotal() int64 {
+	if b.maxTotalBytes == 0 {
+		return defaultMaxCapturedTotalBytes
+	}
+	return b.maxTotalBytes
 }
 
 func (b *Buffer) AddEntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) {
-	b.appendEntry(buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed))
+	b.appendEntry(buildSDKHAREntry(req, reqBody, reqTruncated, resp, rtErr, started, elapsed, b.maxBody()))
 }
 
 // appendEntry adds an already-built entry under the buffer's cumulative retained-payload budget.
 // Every producer goes through here -- HTTP round trips and non-HTTP query interactions alike -- so
 // one budget bounds the whole document whatever mix of traffic a request produced.
 func (b *Buffer) appendEntry(entry sdkHAREntry) {
+	// Size the payload before taking the lock: payloadBytes is an O(n) scan over the entry's retained
+	// strings, and the entry is not shared until appended.
+	payload := entry.payloadBytes()
 	b.mu.Lock()
 	defer b.mu.Unlock()
 	// Enforce the cumulative retained-payload budget: an entry whose payload would take the request
-	// past maxCapturedTotalBytes keeps its metadata (headers, sizes, timings, error) but drops the
-	// payload itself, so the __har__ frame can't grow without bound. The check is on the sum rather
-	// than on what is already retained, so the entry that crosses the budget is trimmed too rather than
-	// kept whole.
-	payload := entry.payloadBytes()
-	if b.retained+payload > maxCapturedTotalBytes {
+	// past maxTotalBytes keeps its metadata (headers, sizes, timings, error) but drops the payload
+	// itself, so the __har__ frame can't grow without bound. The check is on the sum rather than on
+	// what is already retained, so the entry that crosses the budget is trimmed too rather than kept
+	// whole.
+	if b.retained+payload > b.maxTotal() {
 		entry.dropPayload()
+		b.retained += entry.payloadBytes()
 	} else {
 		b.retained += payload
 	}
 	b.entries = append(b.entries, entry)
 }
 
-// payloadBytes is what an entry contributes to the buffer's retained-payload budget: everything that
-// carries data rather than describing it, whichever producer built the entry.
+// payloadBytes is what an entry contributes to the buffer's retained-payload budget. Measured as
+// jsonEscapedLen rather than raw length: the budget bounds the serialized __har__ frame that actually
+// crosses the plugin<->core gRPC boundary (see Buffer.maxTotalBytes), and json.Marshal's own escaping
+// is what determines that size, not how many bytes are held in memory before marshaling runs.
 func (e *sdkHAREntry) payloadBytes() int64 {
-	n := int64(len(e.Response.Content.Text))
+	n := jsonEscapedLen(e.Response.Content.Text)
 	if e.Request.PostData != nil {
-		n += int64(len(e.Request.PostData.Text))
+		n += jsonEscapedLen(e.Request.PostData.Text)
 	}
 	return n + e.Query.payloadBytes()
 }
@@ -127,47 +172,72 @@ func (e *sdkHAREntry) dropPayload() {
 	e.Query.dropPayload()
 }
 
-// DrainRequestBody reads and returns the request body (up to the capture cap) and whether it was
-// larger than the cap (truncated), restoring it so the request can still be sent. It must be called
-// before the request is sent: a real http.Transport consumes (and closes) req.Body while sending, so
-// reading it afterwards yields nothing. Returns nil when there is no body.
-func DrainRequestBody(req *http.Request) ([]byte, bool) {
+// DrainRequestBody reads and returns the request body (up to b's per-body capture cap) and whether
+// it was larger than the cap (truncated), restoring it so the request can still be sent. It must be
+// called before the request is sent: a real http.Transport consumes (and closes) req.Body while
+// sending, so reading it afterwards yields nothing. Returns nil when there is no body.
+func (b *Buffer) DrainRequestBody(req *http.Request) ([]byte, bool) {
 	if req == nil || req.Body == nil || req.Body == http.NoBody {
 		return nil, false
 	}
-	body, truncated, restored := readAndRestoreBody(req.Body)
+	body, truncated, restored := readAndRestoreBody(req.Body, req.ContentLength, b.maxBody())
 	req.Body = restored
 	return body, truncated
 }
 
-// readAndRestoreBody reads up to maxCapturedBodyBytes of rc for capture and returns those bytes,
-// whether the captured bytes are NOT the complete body (sizeUnknown -- the body exceeded the cap, or
-// the read failed part-way, so its true size is unavailable), and a ReadCloser that hands the
-// original consumer the full body -- the captured prefix followed by the untouched, lazily-streamed
-// remainder -- so capture never buffers more than the cap regardless of how large the body is. When
-// the read fails partway (e.g. this SDK's ResponseLimitMiddleware deliberately errors past a size
-// cap, or a transient network error), the captured bytes are what was read so far and the replay
-// reader re-surfaces the same error after them, exactly what downstream would have observed. rc is
-// closed once the returned ReadCloser is closed (or immediately when there is no remainder to stream).
-func readAndRestoreBody(rc io.ReadCloser) ([]byte, bool, io.ReadCloser) {
+// DrainRequestBody reads and returns the request body (up to the default per-body capture cap) and
+// whether it was larger than the cap, restoring it so the request can still be sent.
+//
+// Deprecated: use Buffer.DrainRequestBody, which applies the buffer's own caps.
+func DrainRequestBody(req *http.Request) ([]byte, bool) {
+	return NewBuffer().DrainRequestBody(req)
+}
+
+// readAndRestoreBody reads up to maxBodyBytes of rc for capture and returns those bytes, whether the
+// captured bytes are NOT the complete body (sizeUnknown -- the body exceeded the cap, or the read
+// failed part-way, so its true size is unavailable), and a ReadCloser that hands the original
+// consumer the full body -- the captured prefix followed by the untouched, lazily-streamed remainder
+// -- so capture never buffers more than the cap regardless of how large the body is. When the read
+// fails partway (e.g. this SDK's ResponseLimitMiddleware deliberately errors past a size cap, or a
+// transient network error), the captured bytes are what was read so far and the replay reader
+// re-surfaces the same error after them, exactly what downstream would have observed. rc is closed
+// once the returned ReadCloser is closed (or immediately when there is no remainder to stream).
+//
+// contentLength is the body's declared Content-Length (-1/0 if unknown, matching http.Request/
+// http.Response's own convention) -- used only to size the capture buffer up front; it never changes
+// what is read or returned.
+func readAndRestoreBody(rc io.ReadCloser, contentLength, maxBodyBytes int64) ([]byte, bool, io.ReadCloser) {
+	// Grow the buffer up front instead of letting io.Copy's internal buffer double repeatedly as it
+	// fills: that repeated doubling can transiently hold close to twice the final size in memory for
+	// no reason, on top of every later copy (encodeBody, json.Marshal) that already has to pay for the
+	// real size. Only do this when contentLength is known (a chunked body reports -1), and trust the
+	// declared length only up to preGrowLimitBytes: the header is unvalidated, so a lying or failed
+	// response must not be able to reserve the whole body cap before any bytes arrive. Larger honest
+	// bodies just pay a few doublings past the pre-grown size.
+	const preGrowLimitBytes = 4 << 20
+	var buf bytes.Buffer
+	if contentLength > 0 {
+		buf.Grow(int(min(contentLength, maxBodyBytes, preGrowLimitBytes)) + 1)
+	}
 	// Read one byte past the cap so a full body (<= cap) can be told from a truncated one (> cap)
 	// without buffering the whole thing.
-	buf, err := io.ReadAll(io.LimitReader(rc, maxCapturedBodyBytes+1))
+	_, err := io.Copy(&buf, io.LimitReader(rc, maxBodyBytes+1))
+	captured := buf.Bytes()
 	if err != nil {
 		// Read failed part-way: we hold a partial prefix and the true size is unavailable.
 		_ = rc.Close()
-		return buf, true, &errorReader{r: bytes.NewReader(buf), err: err}
+		return captured, true, &errorReader{r: bytes.NewReader(captured), err: err}
 	}
-	if int64(len(buf)) <= maxCapturedBodyBytes {
+	if int64(len(captured)) <= maxBodyBytes {
 		// Whole body fit within the cap; nothing left in rc.
 		_ = rc.Close()
-		return buf, false, io.NopCloser(bytes.NewReader(buf))
+		return captured, false, io.NopCloser(bytes.NewReader(captured))
 	}
 	// Body is larger than the cap: retain only the capped prefix for the HAR, but let the consumer
-	// read the full buffered head (buf, which is cap+1 bytes) followed by the untouched remainder
+	// read the full buffered head (captured, which is cap+1 bytes) followed by the untouched remainder
 	// streamed lazily from rc, so we never buffer the whole body.
-	captured := buf[:maxCapturedBodyBytes]
-	return captured, true, &bodyRemainder{r: io.MultiReader(bytes.NewReader(buf), rc), c: rc}
+	head := captured[:maxBodyBytes]
+	return head, true, &bodyRemainder{r: io.MultiReader(bytes.NewReader(captured), rc), c: rc}
 }
 
 // errorReader replays buffered bytes and then returns err in place of io.EOF, reproducing a body
@@ -310,17 +380,51 @@ type sdkHARContent struct {
 
 // encodeBody renders a body for a HAR text field. It base64-encodes when the bytes are not valid
 // UTF-8, so binary payloads (protobuf, images, ...) survive json.Marshal instead of being silently
-// corrupted to U+FFFD, and caps the retained bytes at maxCapturedBodyBytes. The caller records the
-// true, uncapped size separately (bodySize/content.size).
-func encodeBody(body []byte) (text, encoding string) {
+// corrupted to U+FFFD, and caps the retained bytes at maxBodyBytes. The caller records the true,
+// uncapped size separately (bodySize/content.size).
+func encodeBody(body []byte, maxBodyBytes int64) (text, encoding string) {
 	keep := body
-	if len(keep) > maxCapturedBodyBytes {
-		keep = keep[:maxCapturedBodyBytes]
+	if int64(len(keep)) > maxBodyBytes {
+		keep = keep[:maxBodyBytes]
 	}
 	if utf8.Valid(keep) {
 		return string(keep), ""
 	}
 	return base64.StdEncoding.EncodeToString(keep), "base64"
+}
+
+// jsonEscapedLen estimates how many bytes s occupies once json.Marshal encodes it as a JSON string,
+// including the wrapping quotes -- used to budget the aggregate retained-payload cap against the
+// actual serialized size instead of raw length (see Buffer.maxTotalBytes). The estimate never falls
+// below the actual size: every rune json.Marshal escapes is charged its real cost --
+//   - 2 bytes for the short escapes: \" \\ \b \f \n \r \t
+//   - 6 bytes for \u00XX (every other byte below 0x20), for the HTML-unsafe runes Marshal always
+//     escapes regardless of content (<, >, &), for U+2028/U+2029 (also unconditional), and for a
+//     malformed byte (encoded as �) -- charging 6 here even for a literal, validly-encoded
+//     U+FFFD character (which Marshal does NOT escape, and which costs only 3) is a deliberate
+//     over-estimate: telling the two apart isn't worth the complexity when erring high is safe.
+//   - its own byte length for everything else, since a valid, unescaped UTF-8 sequence passes through
+//     unchanged.
+//
+// Matched against encoding/json's actual escaping table (encode.go's appendString / tables.go's
+// htmlSafeSet) rather than assumed, since an incorrect table here would silently undercount.
+func jsonEscapedLen(s string) int64 {
+	n := int64(2) // the wrapping quotes
+	for _, r := range s {
+		switch r {
+		case '"', '\\', '\b', '\f', '\n', '\r', '\t':
+			n += 2
+		case '<', '>', '&', '\u2028', '\u2029', utf8.RuneError:
+			n += 6
+		default:
+			if r < 0x20 {
+				n += 6
+			} else {
+				n += int64(utf8.RuneLen(r))
+			}
+		}
+	}
+	return n
 }
 
 type sdkHARTimings struct {
@@ -341,7 +445,7 @@ func durationMs(d time.Duration) float64 {
 // from req.Body here, because by the time capture runs the transport has already drained the body.
 // rtErr is the RoundTrip error (nil on success): a transport-level failure (connection refused,
 // DNS/TLS error, timeout) leaves resp nil, and the entry records the error in Comment.
-func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration) sdkHAREntry {
+func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp *http.Response, rtErr error, started time.Time, elapsed time.Duration, maxBodyBytes int64) sdkHAREntry {
 	reqHeaders := sdkHeadersToNameValue(req.Header)
 	queryString := make([]sdkHARNameValue, 0, len(req.URL.Query()))
 	for k, vals := range req.URL.Query() {
@@ -362,7 +466,7 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 		reqBodySize = -1
 	}
 	if len(reqBody) > 0 {
-		text, encoding := encodeBody(reqBody)
+		text, encoding := encodeBody(reqBody, maxBodyBytes)
 		postData = &sdkHARPostData{
 			MimeType: req.Header.Get("Content-Type"),
 			Text:     text,
@@ -384,9 +488,9 @@ func buildSDKHAREntry(req *http.Request, reqBody []byte, reqTruncated bool, resp
 		if resp.Body != nil {
 			// Always restore resp.Body -- even on a read error -- so capturing never truncates the
 			// response the plugin actually receives (see readAndRestoreBody).
-			body, truncated, restored := readAndRestoreBody(resp.Body)
+			body, truncated, restored := readAndRestoreBody(resp.Body, resp.ContentLength, maxBodyBytes)
 			resp.Body = restored
-			text, encoding := encodeBody(body)
+			text, encoding := encodeBody(body, maxBodyBytes)
 			// When the body exceeded the capture cap we hold only a prefix, so the true size is
 			// unknown: report -1 (HAR "unavailable") for bodySize; content.size is what we captured.
 			harResp.BodySize = int64(len(body))

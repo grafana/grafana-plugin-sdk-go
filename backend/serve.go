@@ -14,6 +14,7 @@ import (
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/hashicorp/go-plugin"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -79,6 +80,9 @@ type ServeOpts struct {
 
 	// HandlerMiddlewares list of handler middlewares to decorate handlers with.
 	HandlerMiddlewares []HandlerMiddleware
+
+	// Attach custom plugins plugins to the gRPC server.
+	ExtraPlugins plugin.PluginSet
 }
 
 func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
@@ -103,6 +107,7 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 
 	pluginOpts := grpcplugin.ServeOpts{
 		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, handler),
+		ExtraPlugins:      opts.ExtraPlugins,
 	}
 
 	if opts.CallResourceHandler != nil {
