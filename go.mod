@@ -8,9 +8,9 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20260804232424-e85f50dbfd32
 	github.com/elazarl/goproxy v1.9.0
 	github.com/getkin/kin-openapi v0.144.0
-	github.com/go-openapi/loads v0.25.2
-	github.com/go-openapi/spec v0.22.11
-	github.com/go-openapi/strfmt v0.27.0
+	github.com/go-openapi/loads v0.25.3
+	github.com/go-openapi/spec v1.0.1
+	github.com/go-openapi/strfmt v0.27.2
 	github.com/go-openapi/swag/loading v0.29.1
 	github.com/go-openapi/validate v0.26.5
 	github.com/google/go-cmp v0.7.0
@@ -56,7 +56,7 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
 
-require github.com/go-openapi/jsonreference v1.0.1
+require github.com/go-openapi/jsonreference v1.0.2
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
@@ -72,9 +72,9 @@ require (
 	github.com/fatih/color v1.19.0 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-openapi/analysis v0.26.2 // indirect
+	github.com/go-openapi/analysis v1.0.0 // indirect
 	github.com/go-openapi/errors v0.22.8 // indirect
-	github.com/go-openapi/jsonpointer v1.0.0 // indirect
+	github.com/go-openapi/jsonpointer v1.0.1 // indirect
 	github.com/go-openapi/swag v0.29.1 // indirect
 	github.com/go-openapi/swag/cmdutils v0.29.1 // indirect
 	github.com/go-openapi/swag/conv v0.29.1 // indirect
