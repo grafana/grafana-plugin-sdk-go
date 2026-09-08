@@ -35,7 +35,7 @@ func TestHttpResourceHandler(t *testing.T) {
 
 		req := &backend.CallResourceRequest{
 			PluginContext: backend.PluginContext{
-				OrgID:    3,
+				OrgID:    3, // nolint:staticcheck
 				PluginID: "my-plugin",
 				User:     &backend.User{Name: "foobar", Email: "foo@bar.com", Login: "foo@bar.com"},
 				DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{
@@ -138,7 +138,7 @@ func TestHttpResourceHandler(t *testing.T) {
 		resourceHandler := New(httpHandler)
 		req := &backend.CallResourceRequest{
 			PluginContext: backend.PluginContext{
-				OrgID:    3,
+				OrgID:    3, // nolint:staticcheck
 				PluginID: "my-plugin",
 			},
 			Method: http.MethodPost,
@@ -189,7 +189,7 @@ func TestServeMuxHandler(t *testing.T) {
 
 		req := &backend.CallResourceRequest{
 			PluginContext: backend.PluginContext{
-				OrgID:    3,
+				OrgID:    3, // nolint:staticcheck
 				PluginID: "my-plugin",
 			},
 			Method: http.MethodGet,

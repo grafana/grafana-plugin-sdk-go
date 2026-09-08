@@ -2,12 +2,14 @@ package backend
 
 import (
 	"context"
+	"crypto/tls"
 	"testing"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/config"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -70,6 +72,47 @@ func TestAppInstanceSettings(t *testing.T) {
 				assert.Empty(t, secureJSONData)
 			}
 		}
+	})
+}
+
+func TestAppInstanceSettingsForceTLS13(t *testing.T) {
+	newCtxWithToggle := func(enabled bool) context.Context {
+		cfgMap := map[string]string{}
+		if enabled {
+			cfgMap[featuretoggles.EnabledFeatures] = featuretoggles.PluginsForceTLS13
+		}
+		return config.WithGrafanaConfig(context.Background(), config.NewGrafanaCfg(cfgMap))
+	}
+
+	t.Run("does not touch TLS options when toggle is disabled", func(t *testing.T) {
+		settings := &AppInstanceSettings{JSONData: []byte("{}")}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(false))
+		require.NoError(t, err)
+		require.Nil(t, opts.TLS)
+	})
+
+	t.Run("forces TLS 1.3 when toggle is enabled and no TLS options were set", func(t *testing.T) {
+		settings := &AppInstanceSettings{JSONData: []byte("{}")}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(true))
+		require.NoError(t, err)
+		require.NotNil(t, opts.TLS)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MinVersion)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MaxVersion)
+	})
+
+	t.Run("forces TLS 1.3 while preserving existing TLS options", func(t *testing.T) {
+		settings := &AppInstanceSettings{
+			JSONData:                []byte(`{ "tlsSkipVerify": true, "tlsAuthWithCACert": true, "serverName": "example.com" }`),
+			DecryptedSecureJSONData: map[string]string{"tlsCACert": "cacert"},
+		}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(true))
+		require.NoError(t, err)
+		require.NotNil(t, opts.TLS)
+		require.True(t, opts.TLS.InsecureSkipVerify)
+		require.Equal(t, "example.com", opts.TLS.ServerName)
+		require.Equal(t, "cacert", opts.TLS.CACertificate)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MinVersion)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MaxVersion)
 	})
 }
 
@@ -221,6 +264,47 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 	})
 }
 
+func TestDataSourceInstanceSettingsForceTLS13(t *testing.T) {
+	newCtxWithToggle := func(enabled bool) context.Context {
+		cfgMap := map[string]string{}
+		if enabled {
+			cfgMap[featuretoggles.EnabledFeatures] = featuretoggles.PluginsForceTLS13
+		}
+		return config.WithGrafanaConfig(context.Background(), config.NewGrafanaCfg(cfgMap))
+	}
+
+	t.Run("does not touch TLS options when toggle is disabled", func(t *testing.T) {
+		settings := &DataSourceInstanceSettings{JSONData: []byte("{}")}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(false))
+		require.NoError(t, err)
+		require.Nil(t, opts.TLS)
+	})
+
+	t.Run("forces TLS 1.3 when toggle is enabled and no TLS options were set", func(t *testing.T) {
+		settings := &DataSourceInstanceSettings{JSONData: []byte("{}")}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(true))
+		require.NoError(t, err)
+		require.NotNil(t, opts.TLS)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MinVersion)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MaxVersion)
+	})
+
+	t.Run("forces TLS 1.3 while preserving existing TLS options", func(t *testing.T) {
+		settings := &DataSourceInstanceSettings{
+			JSONData:                []byte(`{ "tlsSkipVerify": true, "tlsAuthWithCACert": true, "serverName": "example.com" }`),
+			DecryptedSecureJSONData: map[string]string{"tlsCACert": "cacert"},
+		}
+		opts, err := settings.HTTPClientOptions(newCtxWithToggle(true))
+		require.NoError(t, err)
+		require.NotNil(t, opts.TLS)
+		require.True(t, opts.TLS.InsecureSkipVerify)
+		require.Equal(t, "example.com", opts.TLS.ServerName)
+		require.Equal(t, "cacert", opts.TLS.CACertificate)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MinVersion)
+		require.Equal(t, uint16(tls.VersionTLS13), opts.TLS.MaxVersion)
+	})
+}
+
 func TestCustomOptions(t *testing.T) {
 	t.Run("Should be able to extract JSONData and SecureJSONData from custom options", func(t *testing.T) {
 		opts := &httpclient.Options{}
@@ -364,9 +448,9 @@ func TestProxyOptions(t *testing.T) {
 					BasicAuthUser:    "buser",
 				},
 				proxyClientCfg: &proxy.ClientCfg{
-					ClientCert:   "<client-cert>",
-					ClientKey:    "123abc",
-					RootCAs:      []string{"<root-ca-cert>"},
+					ClientCert:   "<client-cert>",            // nolint:staticcheck
+					ClientKey:    "123abc",                   // nolint:staticcheck
+					RootCAs:      []string{"<root-ca-cert>"}, // nolint:staticcheck
 					ProxyAddress: "10.1.2.3",
 					ServerName:   "grafana-server",
 				},
@@ -380,9 +464,9 @@ func TestProxyOptions(t *testing.T) {
 						Timeout:   time.Second * 10,
 					},
 					ClientCfg: &proxy.ClientCfg{
-						ClientCert:   "<client-cert>",
-						ClientKey:    "123abc",
-						RootCAs:      []string{"<root-ca-cert>"},
+						ClientCert:   "<client-cert>",            // nolint:staticcheck
+						ClientKey:    "123abc",                   // nolint:staticcheck
+						RootCAs:      []string{"<root-ca-cert>"}, // nolint:staticcheck
 						ProxyAddress: "10.1.2.3",
 						ServerName:   "grafana-server",
 					},
@@ -443,9 +527,9 @@ func TestProxyOptionsFromContext(t *testing.T) {
 					KeepAlive: time.Second * 15,
 				},
 				ClientCfg: &proxy.ClientCfg{
-					ClientCert:    "/path/to/client-cert",
-					ClientKey:     "/path/to/client-key",
-					RootCAs:       []string{"/path/to/root-ca"},
+					ClientCert:    "/path/to/client-cert",       // nolint:staticcheck
+					ClientKey:     "/path/to/client-key",        // nolint:staticcheck
+					RootCAs:       []string{"/path/to/root-ca"}, // nolint:staticcheck
 					ClientCertVal: "client-cert-contents",
 					ClientKeyVal:  "client-key-contents",
 					RootCAsVals:   []string{"root-ca-contents"},
@@ -491,9 +575,9 @@ func TestProxyOptionsFromContext(t *testing.T) {
 					KeepAlive: time.Second * 15,
 				},
 				ClientCfg: &proxy.ClientCfg{
-					ClientCert:    "/path/to/client-cert",
-					ClientKey:     "/path/to/client-key",
-					RootCAs:       []string{"/path/to/root-ca"},
+					ClientCert:    "/path/to/client-cert",       // nolint:staticcheck
+					ClientKey:     "/path/to/client-key",        // nolint:staticcheck
+					RootCAs:       []string{"/path/to/root-ca"}, // nolint:staticcheck
 					ClientCertVal: "client-cert-contents",
 					ClientKeyVal:  "client-key-contents",
 					RootCAsVals:   []string{"root-ca-contents"},

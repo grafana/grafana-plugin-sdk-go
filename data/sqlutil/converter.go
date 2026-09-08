@@ -369,7 +369,8 @@ var (
 					return (*bool)(nil), nil
 				}
 
-				return &v.Bool, nil
+				val := v.Bool
+				return &val, nil
 			},
 		},
 	}

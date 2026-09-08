@@ -128,9 +128,12 @@ func TestEmpty(t *testing.T) {
 		grafanaVersion: "0.0.0",
 		os:             "unknown",
 		arch:           "unknown",
+		unknown:        true,
 	}
 	res := Empty()
 	require.Equal(t, expected, res)
+	require.True(t, res.IsUnknown())
+	require.Equal(t, "Grafana/0.0.0 (unknown; unknown)", res.String())
 }
 
 func TestUserAgentFromContext(t *testing.T) {

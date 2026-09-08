@@ -18,6 +18,7 @@ type UserAgent struct {
 	grafanaVersion string
 	arch           string
 	os             string
+	unknown        bool
 }
 
 // New creates a new UserAgent.
@@ -46,17 +47,25 @@ func Parse(s string) (*UserAgent, error) {
 	}, nil
 }
 
-// Empty creates a new UserAgent with default values.
+// Empty creates a new UserAgent representing an unknown Grafana instance,
+// e.g. because none was provided by the Grafana instance that made the request.
 func Empty() *UserAgent {
 	return &UserAgent{
 		grafanaVersion: "0.0.0",
 		os:             "unknown",
 		arch:           "unknown",
+		unknown:        true,
 	}
 }
 
 func (ua *UserAgent) GrafanaVersion() string {
 	return ua.grafanaVersion
+}
+
+// IsUnknown returns true if this UserAgent represents an unknown Grafana instance (see Empty),
+// rather than one parsed from an actual Grafana-supplied user agent string.
+func (ua *UserAgent) IsUnknown() bool {
+	return ua.unknown
 }
 
 func (ua *UserAgent) String() string {

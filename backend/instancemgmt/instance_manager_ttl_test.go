@@ -14,7 +14,7 @@ import (
 func TestTTLInstanceManager(t *testing.T) {
 	ctx := context.Background()
 	pCtx := backend.PluginContext{
-		OrgID: 1,
+		OrgID: 1, // nolint:staticcheck
 		AppInstanceSettings: &backend.AppInstanceSettings{
 			Updated: time.Now(),
 		},
@@ -38,7 +38,7 @@ func TestTTLInstanceManager(t *testing.T) {
 
 		t.Run("When updating plugin context and getting instance", func(t *testing.T) {
 			pCtxUpdated := backend.PluginContext{
-				OrgID: 1,
+				OrgID: 1, // nolint:staticcheck
 				AppInstanceSettings: &backend.AppInstanceSettings{
 					Updated: time.Now(),
 				},
@@ -69,7 +69,7 @@ func TestTTLInstanceManager(t *testing.T) {
 func TestTTLInstanceManagerWithCustomTTL(t *testing.T) {
 	ctx := context.Background()
 	pCtx := backend.PluginContext{
-		OrgID: 1,
+		OrgID: 1, // nolint:staticcheck
 		AppInstanceSettings: &backend.AppInstanceSettings{
 			Updated: time.Now(),
 		},
@@ -155,7 +155,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 		tip := &testInstanceProvider{}
 		im := NewTTLInstanceManager(tip)
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -190,7 +190,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 	t.Run("Check possible race condition issues when re-creating instance on settings update", func(t *testing.T) {
 		ctx := context.Background()
 		initialPCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -201,7 +201,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 		instanceToDispose, _ := im.Get(ctx, initialPCtx)
 
 		updatedPCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -244,7 +244,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 		const delay = time.Millisecond * 50
 		ctx := context.Background()
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -265,7 +265,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 			// Creating instance with id#2 in cache
 			wg1.Done()
 			_, err := im.Get(ctx, backend.PluginContext{
-				OrgID: 2,
+				OrgID: 2, // nolint:staticcheck
 				AppInstanceSettings: &backend.AppInstanceSettings{
 					Updated: time.Now(),
 				},
@@ -291,7 +291,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 func TestTTLInstanceManagerDo(t *testing.T) {
 	ctx := context.Background()
 	pCtx := backend.PluginContext{
-		OrgID: 1,
+		OrgID: 1, // nolint:staticcheck
 		AppInstanceSettings: &backend.AppInstanceSettings{
 			Updated: time.Now(),
 		},

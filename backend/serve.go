@@ -14,6 +14,7 @@ import (
 
 	grpc_prometheus "github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus"
 	"github.com/grpc-ecosystem/go-grpc-middleware/v2/interceptors/recovery"
+	"github.com/hashicorp/go-plugin"
 	"github.com/prometheus/client_golang/prometheus"
 	"go.opentelemetry.io/contrib/instrumentation/google.golang.org/grpc/otelgrpc"
 	"go.opentelemetry.io/otel"
@@ -79,6 +80,9 @@ type ServeOpts struct {
 
 	// HandlerMiddlewares list of handler middlewares to decorate handlers with.
 	HandlerMiddlewares []HandlerMiddleware
+
+	// Attach custom plugins plugins to the gRPC server.
+	ExtraPlugins plugin.PluginSet
 }
 
 func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
@@ -103,6 +107,7 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 
 	pluginOpts := grpcplugin.ServeOpts{
 		DiagnosticsServer: newDiagnosticsSDKAdapter(prometheus.DefaultGatherer, handler),
+		ExtraPlugins:      opts.ExtraPlugins,
 	}
 
 	if opts.CallResourceHandler != nil {
@@ -273,6 +278,12 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "conversion")
 	}
 
+	extraKeys, err := registerExtraPlugins(server, pluginOpts.ExtraPlugins)
+	if err != nil {
+		return err
+	}
+	plugKeys = append(plugKeys, extraKeys...)
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -403,6 +414,12 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 		plugKeys = append(plugKeys, "conversion")
 	}
 
+	extraKeys, err := registerExtraPlugins(server, pluginOpts.ExtraPlugins)
+	if err != nil {
+		return nil, err
+	}
+	plugKeys = append(plugKeys, extraKeys...)
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Info("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", address)
@@ -439,4 +456,21 @@ func defaultHandlerMiddlewares() []HandlerMiddleware {
 		newHARCaptureMiddleware(),
 		NewErrorSourceMiddleware(),
 	}
+}
+
+func registerExtraPlugins(server *grpc.Server, extraPlugins plugin.PluginSet) ([]string, error) {
+	var names []string
+	for name, p := range extraPlugins {
+		gp, ok := p.(plugin.GRPCPlugin)
+		if !ok {
+			log.DefaultLogger.Warn("Skipping extra plugin that does not implement GRPCPlugin", "plugin", name)
+			continue
+		}
+		// No broker in standalone mode; plugins relying on it (e.g. Accept/Dial) will panic.
+		if err := gp.GRPCServer(nil, server); err != nil {
+			return nil, fmt.Errorf("register extra plugin %q: %w", name, err)
+		}
+		names = append(names, name)
+	}
+	return names, nil
 }
