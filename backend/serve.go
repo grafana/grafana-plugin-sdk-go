@@ -278,6 +278,12 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "conversion")
 	}
 
+	extraKeys, err := registerExtraPlugins(server, pluginOpts.ExtraPlugins)
+	if err != nil {
+		return err
+	}
+	plugKeys = append(plugKeys, extraKeys...)
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Debug("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", info.Address)
@@ -408,6 +414,12 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 		plugKeys = append(plugKeys, "conversion")
 	}
 
+	extraKeys, err := registerExtraPlugins(server, pluginOpts.ExtraPlugins)
+	if err != nil {
+		return nil, err
+	}
+	plugKeys = append(plugKeys, extraKeys...)
+
 	// Start the GRPC server and handle graceful shutdown to ensure we execute deferred functions correctly
 	log.DefaultLogger.Info("Standalone plugin server", "capabilities", plugKeys)
 	listener, err := net.Listen("tcp", address)
@@ -444,4 +456,21 @@ func defaultHandlerMiddlewares() []HandlerMiddleware {
 		newHARCaptureMiddleware(),
 		NewErrorSourceMiddleware(),
 	}
+}
+
+func registerExtraPlugins(server *grpc.Server, extraPlugins plugin.PluginSet) ([]string, error) {
+	var names []string
+	for name, p := range extraPlugins {
+		gp, ok := p.(plugin.GRPCPlugin)
+		if !ok {
+			log.DefaultLogger.Warn("Skipping extra plugin that does not implement GRPCPlugin", "plugin", name)
+			continue
+		}
+		// No broker in standalone mode; plugins relying on it (e.g. Accept/Dial) will panic.
+		if err := gp.GRPCServer(nil, server); err != nil {
+			return nil, fmt.Errorf("register extra plugin %q: %w", name, err)
+		}
+		names = append(names, name)
+	}
+	return names, nil
 }
