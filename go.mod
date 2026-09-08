@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
-go 1.26.5
+go 1.27.0
 
 require (
 	github.com/apache/arrow-go/v18 v18.7.0
@@ -8,6 +8,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20260804232424-e85f50dbfd32
 	github.com/elazarl/goproxy v1.9.0
 	github.com/getkin/kin-openapi v0.149.0
+	github.com/go-openapi/jsonreference v1.0.2
 	github.com/go-openapi/loads v0.25.3
 	github.com/go-openapi/spec v1.0.1
 	github.com/go-openapi/strfmt v0.27.2
@@ -52,11 +53,9 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260825221802-da73d73af1c5
 	google.golang.org/grpc v1.83.2
 	google.golang.org/protobuf v1.36.12
-	k8s.io/kube-openapi v0.0.0-20260821135717-be32def86098 // @grafana/grafana-app-platform-squad
+	k8s.io/kube-openapi v0.0.0-20260904170622-9ab3195f2a72 // @grafana/grafana-app-platform-squad
 	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
-
-require github.com/go-openapi/jsonreference v1.0.2
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
