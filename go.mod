@@ -56,7 +56,11 @@ require (
 	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
 
-require github.com/go-openapi/jsonreference v1.0.2
+require (
+	github.com/go-openapi/jsonreference v1.0.2
+	github.com/gobwas/glob v1.0.0
+	gopkg.in/go-jose/go-jose.v2 v2.6.3
+)
 
 require (
 	github.com/BurntSushi/toml v1.6.0 // indirect
@@ -127,6 +131,7 @@ require (
 	go.opentelemetry.io/proto/otlp v1.11.0 // indirect
 	go.yaml.in/yaml/v2 v2.4.4 // indirect
 	go.yaml.in/yaml/v3 v3.0.5 // indirect
+	golang.org/x/crypto v0.55.0 // indirect
 	google.golang.org/genproto/googleapis/api v0.0.0-20260825221802-da73d73af1c5 // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
