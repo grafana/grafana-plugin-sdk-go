@@ -111,7 +111,7 @@ func StringFrameConverter(s StringConverter) FrameConverter {
 				v = converted
 			}
 
-			if s.Replacer != nil && s.Replacer.ReplaceFunc != nil {
+			if s.Replacer.ReplaceFunc != nil {
 				return s.Replacer.ReplaceFunc(v)
 			}
 

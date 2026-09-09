@@ -276,15 +276,15 @@ var JSONValueToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
 	Converter: func(v interface{}) (interface{}, error) {
 		var ptr *float64
-		var err error
 		if v != nil {
 			fV, err := JSONValueToFloat64.Converter(v)
-			if err == nil {
-				vv := fV.(float64)
-				ptr = &vv
+			if err != nil {
+				return nil, err
 			}
+			vv := fV.(float64)
+			ptr = &vv
 		}
-		return ptr, err
+		return ptr, nil
 	},
 }
 
@@ -293,15 +293,15 @@ var JSONValueToNullableInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableInt64,
 	Converter: func(v interface{}) (interface{}, error) {
 		var ptr *int64
-		var err error
 		if v != nil {
 			fV, err := JSONValueToInt64.Converter(v)
-			if err == nil {
-				vv := fV.(int64)
-				ptr = &vv
+			if err != nil {
+				return nil, err
 			}
+			vv := fV.(int64)
+			ptr = &vv
 		}
-		return ptr, err
+		return ptr, nil
 	},
 }
 

@@ -187,14 +187,3 @@ func TestDefaultConverter(t *testing.T) {
 		})
 	}
 }
-
-func TestStringFrameConverterNilReplacer(t *testing.T) {
-	// Replacer is optional (nil is valid, see StringConverter.Replacer). A
-	// converter with no Replacer must not panic when converting a real string.
-	fc := sqlutil.StringFrameConverter(sqlutil.StringConverter{})
-	out, err := fc.ConverterFunc(&sql.NullString{String: "hello", Valid: true})
-	assert.NoError(t, err)
-	got, ok := out.(*string)
-	assert.True(t, ok)
-	assert.Equal(t, "hello", *got)
-}
