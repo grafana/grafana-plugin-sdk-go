@@ -41,8 +41,10 @@ func CheckMarketplacePluginLicense(pluginId string) error {
 	if token.Error != nil {
 		backend.Logger.Error("Marketplace License Error", "error", token.Error)
 		if token.Status == licensing.Expired {
-			grace := time.Unix(token.Expires, 0).Add(time.Hour * 24 * 14) // 2 weeks
-			if time.Now().Before(grace) {
+			// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
+			// token in case an on-prem instance loses internet connection
+			grace, ok := marketplaceLicenseGracePeriod(token, time.Now())
+			if ok {
 				backend.Logger.Error("The plugin will work until", "date", grace)
 				backend.Logger.Error("Update your instance soon to avoid any errors")
 				return nil
@@ -55,6 +57,11 @@ func CheckMarketplacePluginLicense(pluginId string) error {
 		return fmt.Errorf("you do not have a valid license for the marketplace plugin %s", pluginId)
 	}
 	return nil
+}
+
+func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time) (time.Time, bool) {
+	grace := time.Unix(token.LicenseExpires, 0).Add(14 * 24 * time.Hour)
+	return grace, now.Before(grace)
 }
 
 // readPluginLicense looks for a license in environment variables and validates it
