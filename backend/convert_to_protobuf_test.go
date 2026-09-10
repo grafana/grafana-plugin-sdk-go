@@ -97,6 +97,20 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 	}
 }
 
+func TestConvertToProtobufErrorSources(t *testing.T) {
+	health := ToProto().CheckHealthResponse(&CheckHealthResult{
+		Status:      HealthStatusError,
+		ErrorSource: ErrorSourceDownstream,
+	})
+	require.Equal(t, string(ErrorSourceDownstream), health.ErrorSource)
+
+	resource := ToProto().CallResourceResponse(&CallResourceResponse{
+		Status:      http.StatusInternalServerError,
+		ErrorSource: ErrorSourcePlugin,
+	})
+	require.Equal(t, string(ErrorSourcePlugin), resource.ErrorSource)
+}
+
 func TestConvertToProtobufStatus(t *testing.T) {
 	ar := ToProto().StatusResult(&StatusResult{
 		Status:  "a",

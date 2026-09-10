@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"testing"
@@ -91,6 +92,18 @@ func TestCallResource(t *testing.T) {
 		err = json.Unmarshal(resp.Body, &actualResponseData)
 		require.NoError(t, err)
 		require.Equal(t, data, actualResponseData)
+	})
+
+	t.Run("When call resource handler returns a sourced error it should preserve the source in gRPC metadata", func(t *testing.T) {
+		handler := &testCallResourceHandler{responseErr: DownstreamError(errors.New("BOOM"))}
+		adapter := newResourceSDKAdapter(handler)
+		testSender := newTestCallResourceServer()
+
+		err := adapter.CallResource(&pluginv2.CallResourceRequest{PluginContext: &pluginv2.PluginContext{}}, testSender)
+		require.Error(t, err)
+		source, ok := ErrorSourceFromGrpcStatusError(initErrorSource(context.Background()), err)
+		require.True(t, ok)
+		require.Equal(t, ErrorSourceDownstream, source)
 	})
 
 	t.Run("When call resource handler set should result in expected streaming response", func(t *testing.T) {

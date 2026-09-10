@@ -30,5 +30,5 @@ func (a *resourceSDKAdapter) CallResource(protoReq *pluginv2.CallResourceRequest
 
 	ctx := protoSrv.Context()
 	parsedReq := FromProto().CallResourceRequest(protoReq)
-	return a.callResourceHandler.CallResource(ctx, parsedReq, fn)
+	return enrichWithErrorSourceInfo(a.callResourceHandler.CallResource(ctx, parsedReq, fn))
 }
