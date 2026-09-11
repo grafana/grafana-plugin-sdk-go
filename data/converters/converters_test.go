@@ -1,6 +1,7 @@
 package converters_test
 
 import (
+	"encoding/json"
 	"fmt"
 	"testing"
 
@@ -46,4 +47,14 @@ func TestJSONConversions(t *testing.T) {
 	val, err = converters.JSONValueToFloat64.Converter("12.34")
 	require.NoError(t, err)
 	require.Equal(t, 12.34, val)
+}
+
+func TestJSONNullableConvertersPropagateError(t *testing.T) {
+	// An input the underlying converter rejects must surface the error, not
+	// be silently swallowed into a (nil, nil) null.
+	bad := json.Number("abc")
+	_, err := converters.JSONValueToNullableFloat64.Converter(bad)
+	require.Error(t, err)
+	_, err = converters.JSONValueToNullableInt64.Converter(bad)
+	require.Error(t, err)
 }
