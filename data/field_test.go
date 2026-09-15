@@ -80,7 +80,7 @@ func TestFieldLen(t *testing.T) {
 }
 
 func TestFieldNilAt(t *testing.T) {
-	f := data.NewField("value", nil, []*float64{nil, float64Ptr(1)})
+	f := data.NewField("value", nil, []*float64{nil, new(float64(1))})
 
 	require.True(t, f.NilAt(0))
 	require.False(t, f.At(0) == nil) // Why we have NilAt()

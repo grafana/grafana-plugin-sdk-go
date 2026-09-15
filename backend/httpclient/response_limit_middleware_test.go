@@ -8,12 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/stretchr/testify/require"
-)
 
-//go:fix inline
-func ptr[T any](v T) *T { return new(v) }
+	"github.com/grafana/grafana-plugin-sdk-go/config"
+)
 
 func TestResponseLimitMiddleware(t *testing.T) {
 	tcs := []struct {

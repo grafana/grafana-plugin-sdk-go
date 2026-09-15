@@ -66,7 +66,7 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile b
 	for idx, frame := range dr.Frames {
 		expectedFrame := saved.Frames[idx]
 		if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
-			errorString.WriteString(fmt.Sprintf("frame[%d] mismatch (-want +got):\n%s\n", idx, diff))
+			fmt.Fprintf(&errorString, "frame[%d] mismatch (-want +got):\n%s\n", idx, diff)
 		}
 	}
 

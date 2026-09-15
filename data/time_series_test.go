@@ -636,22 +636,22 @@ func TestLongToWide(t *testing.T) {
 					new(6.0),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
-					int64Ptr(3),
-					int64Ptr(3),
+					new(int64(1)),
+					new(int64(3)),
+					new(int64(3)),
+					new(int64(3)),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
 					nil,
 					nil,
-					int64Ptr(55),
-					int64Ptr(55),
+					new(int64(55)),
+					new(int64(55)),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2),
-					int64Ptr(4),
-					int64Ptr(4),
-					int64Ptr(6),
+					new(int64(2)),
+					new(int64(4)),
+					new(int64(4)),
+					new(int64(6)),
 				}),
 			).SetMeta(&data.FrameMeta{
 				Type:        data.FrameTypeTimeSeriesWide,
@@ -733,22 +733,22 @@ func TestLongToWide(t *testing.T) {
 					new(6.0),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
+					new(int64(1)),
+					new(int64(3)),
 					nil,
 					nil,
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
 					nil,
 					nil,
-					int64Ptr(55),
+					new(int64(55)),
 					nil,
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2),
-					int64Ptr(4),
+					new(int64(2)),
+					new(int64(4)),
 					nil,
-					int64Ptr(6),
+					new(int64(6)),
 				}),
 			).SetMeta(&data.FrameMeta{
 				Type:        data.FrameTypeTimeSeriesWide,
@@ -776,12 +776,12 @@ func TestLongToWide(t *testing.T) {
 					new(6.0),
 				}),
 				data.NewField("Values Ints", nil, []*int64{
-					int64Ptr(1),
-					int64Ptr(2),
-					int64Ptr(3),
-					int64Ptr(4),
-					int64Ptr(55),
-					int64Ptr(6),
+					new(int64(1)),
+					new(int64(2)),
+					new(int64(3)),
+					new(int64(4)),
+					new(int64(55)),
+					new(int64(6)),
 				}),
 
 				data.NewField("Animal Factor", nil, []string{
@@ -830,22 +830,22 @@ func TestLongToWide(t *testing.T) {
 					new(6.0),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
-					int64Ptr(-1),
-					int64Ptr(-1),
+					new(int64(1)),
+					new(int64(3)),
+					new(int64(-1)),
+					new(int64(-1)),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
-					int64Ptr(-1),
-					int64Ptr(-1),
-					int64Ptr(55),
-					int64Ptr(-1),
+					new(int64(-1)),
+					new(int64(-1)),
+					new(int64(55)),
+					new(int64(-1)),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2),
-					int64Ptr(4),
-					int64Ptr(-1),
-					int64Ptr(6),
+					new(int64(2)),
+					new(int64(4)),
+					new(int64(-1)),
+					new(int64(6)),
 				}),
 			).SetMeta(&data.FrameMeta{
 				Type:        data.FrameTypeTimeSeriesWide,
@@ -873,12 +873,12 @@ func TestLongToWide(t *testing.T) {
 					new(6.0),
 				}),
 				data.NewField("Values Ints", nil, []*int64{
-					int64Ptr(1),
-					int64Ptr(2),
-					int64Ptr(3),
-					int64Ptr(4),
-					int64Ptr(55),
-					int64Ptr(6),
+					new(int64(1)),
+					new(int64(2)),
+					new(int64(3)),
+					new(int64(4)),
+					new(int64(55)),
+					new(int64(6)),
 				}),
 
 				data.NewField("Animal Factor", nil, []string{
@@ -926,22 +926,22 @@ func TestLongToWide(t *testing.T) {
 					new(6.0),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
-					int64Ptr(3),
-					int64Ptr(3),
+					new(int64(1)),
+					new(int64(3)),
+					new(int64(3)),
+					new(int64(3)),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
 					nil,
 					nil,
-					int64Ptr(55),
-					int64Ptr(55),
+					new(int64(55)),
+					new(int64(55)),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2),
-					int64Ptr(4),
-					int64Ptr(4),
-					int64Ptr(6),
+					new(int64(2)),
+					new(int64(4)),
+					new(int64(4)),
+					new(int64(6)),
 				}),
 			).SetMeta(&data.FrameMeta{
 				Type:        data.FrameTypeTimeSeriesWide,
@@ -969,12 +969,12 @@ func TestLongToWide(t *testing.T) {
 					new(6.0),
 				}),
 				data.NewField("Values Ints", nil, []*int64{
-					int64Ptr(1),
-					int64Ptr(2),
-					int64Ptr(3),
-					int64Ptr(4),
-					int64Ptr(55),
-					int64Ptr(6),
+					new(int64(1)),
+					new(int64(2)),
+					new(int64(3)),
+					new(int64(4)),
+					new(int64(55)),
+					new(int64(6)),
 				}),
 
 				data.NewField("Animal Factor", nil, []string{
@@ -1022,22 +1022,22 @@ func TestLongToWide(t *testing.T) {
 					new(6.0),
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "cat", "Location": "Florida"}, []*int64{
-					int64Ptr(1),
-					int64Ptr(3),
+					new(int64(1)),
+					new(int64(3)),
 					nil,
 					nil,
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "pangolin", "Location": ""}, []*int64{
 					nil,
 					nil,
-					int64Ptr(55),
+					new(int64(55)),
 					nil,
 				}),
 				data.NewField(`Values Ints`, data.Labels{"Animal Factor": "sloth", "Location": "Central & South America"}, []*int64{
-					int64Ptr(2.0),
-					int64Ptr(4.0),
+					new(int64(2.0)),
+					new(int64(4.0)),
 					nil,
-					int64Ptr(6.0),
+					new(int64(6.0)),
 				}),
 			).SetMeta(&data.FrameMeta{
 				Type:        data.FrameTypeTimeSeriesWide,
@@ -1470,7 +1470,7 @@ func TestWideToLong(t *testing.T) {
 
 func TestFloatAt(t *testing.T) {
 	mixedFrame := data.NewFrame("",
-		data.NewField("", nil, []*int64{nil, int64Ptr(-5), int64Ptr(5)}),
+		data.NewField("", nil, []*int64{nil, new(int64(-5)), new(int64(5))}),
 		data.NewField("", nil, []*string{nil, new("-5"), new("5")}),
 		data.NewField("", nil, []*bool{nil, new(true), new(false)}),
 		data.NewField("", nil, []*time.Time{
@@ -1507,7 +1507,7 @@ func TestFloatAt(t *testing.T) {
 
 func TestNullabelFloatAt(t *testing.T) {
 	mixedFrame := data.NewFrame("",
-		data.NewField("", nil, []*int64{nil, int64Ptr(-5), int64Ptr(5)}),
+		data.NewField("", nil, []*int64{nil, new(int64(-5)), new(int64(5))}),
 		data.NewField("", nil, []*string{nil, new("-5"), new("5")}),
 		data.NewField("", nil, []*bool{nil, new(true), new(false)}),
 		data.NewField("", nil, []*time.Time{
@@ -1515,15 +1515,15 @@ func TestNullabelFloatAt(t *testing.T) {
 			new(time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC)),
 			new(time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC)),
 		}),
-		data.NewField("", nil, []*uint64{nil, uint64Ptr(12), uint64Ptr(math.MaxUint64)}),
+		data.NewField("", nil, []*uint64{nil, new(uint64(12)), new(uint64(math.MaxUint64))}),
 	)
 
 	expectedFloatFrame := data.NewFrame("",
-		data.NewField("", nil, []*float64{nil, float64Ptr(-5), float64Ptr(5)}),
-		data.NewField("", nil, []*float64{nil, float64Ptr(-5), float64Ptr(5)}),
-		data.NewField("", nil, []*float64{nil, float64Ptr(1), float64Ptr(0)}),
-		data.NewField("", nil, []*float64{nil, float64Ptr(1577934240000), float64Ptr(1577934270000)}),
-		data.NewField("", nil, []*float64{nil, float64Ptr(12), new(1.8446744073709552e+19)}), // Note: loss of precision.
+		data.NewField("", nil, []*float64{nil, new(float64(-5)), new(float64(5))}),
+		data.NewField("", nil, []*float64{nil, new(float64(-5)), new(float64(5))}),
+		data.NewField("", nil, []*float64{nil, new(float64(1)), new(float64(0))}),
+		data.NewField("", nil, []*float64{nil, new(float64(1577934240000)), new(float64(1577934270000))}),
+		data.NewField("", nil, []*float64{nil, new(float64(12)), new(1.8446744073709552e+19)}), // Note: loss of precision.
 	)
 
 	floatFrame := data.NewFrame("")
@@ -1556,11 +1556,11 @@ func TestNullabelFloatAtFromNonNullables(t *testing.T) {
 	)
 
 	expectedFloatFrame := data.NewFrame("",
-		data.NewField("", nil, []*float64{float64Ptr(0), float64Ptr(-5), float64Ptr(5)}),
-		data.NewField("", nil, []*float64{float64Ptr(0), float64Ptr(-5), float64Ptr(5)}),
-		data.NewField("", nil, []*float64{float64Ptr(0), float64Ptr(1), float64Ptr(0)}),
-		data.NewField("", nil, []*float64{new(-6.829751778871e+12), float64Ptr(1577934240000), float64Ptr(1577934270000)}),
-		data.NewField("", nil, []*float64{float64Ptr(0), float64Ptr(12), new(1.8446744073709552e+19)}), // Note: loss of precision.
+		data.NewField("", nil, []*float64{new(float64(0)), new(float64(-5)), new(float64(5))}),
+		data.NewField("", nil, []*float64{new(float64(0)), new(float64(-5)), new(float64(5))}),
+		data.NewField("", nil, []*float64{new(float64(0)), new(float64(1)), new(float64(0))}),
+		data.NewField("", nil, []*float64{new(-6.829751778871e+12), new(float64(1577934240000)), new(float64(1577934270000))}),
+		data.NewField("", nil, []*float64{new(float64(0)), new(float64(12)), new(1.8446744073709552e+19)}), // Note: loss of precision.
 	)
 
 	floatFrame := data.NewFrame("")

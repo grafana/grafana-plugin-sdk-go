@@ -93,7 +93,7 @@ func TestFieldTypeFor(t *testing.T) {
 		{item: new("foo"), want: data.FieldTypeNullableString},
 		{item: new(time.Unix(1, 1)), want: data.FieldTypeNullableTime},
 		{item: new(json.RawMessage(`{ "foo" : "bar" }`)), want: data.FieldTypeNullableJSON},
-		{item: pointer(data.EnumItemIndex(123)), want: data.FieldTypeNullableEnum},
+		{item: new(data.EnumItemIndex(123)), want: data.FieldTypeNullableEnum},
 		// untyped values
 		{item: nil, want: data.FieldTypeUnknown},
 		{item: 123, want: data.FieldTypeUnknown},
@@ -106,9 +106,4 @@ func TestFieldTypeFor(t *testing.T) {
 			require.Equal(t, tt.want, data.FieldTypeFor(tt.item))
 		})
 	}
-}
-
-//go:fix inline
-func pointer[T any](input T) *T {
-	return new(input)
 }
