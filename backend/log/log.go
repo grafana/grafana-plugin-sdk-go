@@ -20,11 +20,11 @@ const (
 
 // Logger is the main Logger interface.
 type Logger interface {
-	Debug(msg string, args ...interface{})
-	Info(msg string, args ...interface{})
-	Warn(msg string, args ...interface{})
-	Error(msg string, args ...interface{})
-	With(args ...interface{}) Logger
+	Debug(msg string, args ...any)
+	Info(msg string, args ...any)
+	Warn(msg string, args ...any)
+	Error(msg string, args ...any)
+	With(args ...any) Logger
 	Level() Level
 	FromContext(ctx context.Context) Logger
 }
@@ -58,19 +58,19 @@ type hclogWrapper struct {
 	logger hclog.Logger
 }
 
-func (l *hclogWrapper) Debug(msg string, args ...interface{}) {
+func (l *hclogWrapper) Debug(msg string, args ...any) {
 	l.logger.Debug(msg, args...)
 }
 
-func (l *hclogWrapper) Info(msg string, args ...interface{}) {
+func (l *hclogWrapper) Info(msg string, args ...any) {
 	l.logger.Info(msg, args...)
 }
 
-func (l *hclogWrapper) Warn(msg string, args ...interface{}) {
+func (l *hclogWrapper) Warn(msg string, args ...any) {
 	l.logger.Warn(msg, args...)
 }
 
-func (l *hclogWrapper) Error(msg string, args ...interface{}) {
+func (l *hclogWrapper) Error(msg string, args ...any) {
 	l.logger.Error(msg, args...)
 }
 
@@ -94,7 +94,7 @@ func (l *hclogWrapper) Level() Level {
 }
 
 // With creates a sub-logger that will always have the given key/value pairs.
-func (l *hclogWrapper) With(args ...interface{}) Logger {
+func (l *hclogWrapper) With(args ...any) Logger {
 	return &hclogWrapper{
 		logger: l.logger.With(args...),
 	}

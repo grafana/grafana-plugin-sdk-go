@@ -60,7 +60,7 @@ func TestParseHTTPSettings(t *testing.T) {
 			"httpHeaderValue2":  "SecretTwo",
 			"httpHeaderValue3":  "SecretThree",
 		}
-		var jsonMap map[string]interface{}
+		var jsonMap map[string]any
 		err := json.Unmarshal([]byte(jsonStr), &jsonMap)
 		require.NoError(t, err)
 		s, err := parseHTTPSettings([]byte(jsonStr), secureData)
@@ -146,7 +146,7 @@ func TestParseHTTPSettings(t *testing.T) {
 					SessionToken:  "sigV4SessionToken6",
 				},
 				Labels:        map[string]string{},
-				CustomOptions: map[string]interface{}{},
+				CustomOptions: map[string]any{},
 			}
 			require.Equal(t, expectedOpts, opts)
 		})

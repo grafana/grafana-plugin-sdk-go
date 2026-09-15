@@ -114,13 +114,13 @@ func TestTimeField(t *testing.T) {
 		Values []*time.Time
 	}{
 		{
-			Values: []*time.Time{timePtr(time.Unix(111, 0))},
+			Values: []*time.Time{new(time.Unix(111, 0))},
 		},
 		{
-			Values: []*time.Time{nil, timePtr(time.Unix(111, 0))},
+			Values: []*time.Time{nil, new(time.Unix(111, 0))},
 		},
 		{
-			Values: []*time.Time{nil, timePtr(time.Unix(111, 0)), nil},
+			Values: []*time.Time{nil, new(time.Unix(111, 0)), nil},
 		},
 		{
 			Values: make([]*time.Time, 10),

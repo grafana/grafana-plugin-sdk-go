@@ -48,11 +48,11 @@ func goldenDF() *data.Frame {
 			"Go Max",
 		}).SetConfig(&data.FieldConfig{}),
 		data.NewField("nullable_string_values", data.Labels{"aLabelKey": "aLabelValue", "bLabelKey": "bLabelValue"}, []*string{
-			stringPtr("Grafana"),
-			stringPtr("❤️"),
+			new("Grafana"),
+			new("❤️"),
 			nil,
-			stringPtr("🦥"),
-			stringPtr("update your unicode/font if no sloth, is 2019."),
+			new("🦥"),
+			new("update your unicode/font if no sloth, is 2019."),
 		}).SetConfig(nullableStringValuesFieldConfig),
 		data.NewField("int8_values", nil, []int8{
 			math.MinInt8,
@@ -163,7 +163,7 @@ func goldenDF() *data.Frame {
 			uint64Ptr(0),
 			uint64Ptr(0),
 			nil,
-			uint64Ptr(uint64(maxEcma6Int)),
+			new(uint64(maxEcma6Int)),
 			uint64Ptr(math.MaxUint64),
 		}),
 		data.NewField("float32_values", nil, []float32{
@@ -188,10 +188,10 @@ func goldenDF() *data.Frame {
 			0,
 		}),
 		data.NewField("nullable_float32_values_nans", nil, []*float32{
-			float32Ptr(float32(math.Inf(1))),
-			float32Ptr(float32(math.NaN())),
+			new(float32(math.Inf(1))),
+			new(float32(math.NaN())),
 			nil,
-			float32Ptr(float32(math.Inf(-1))),
+			new(float32(math.Inf(-1))),
 			float32Ptr(0),
 		}),
 		data.NewField("float64_values", nil, []float64{
@@ -210,17 +210,17 @@ func goldenDF() *data.Frame {
 		}),
 		data.NewField("nullable_float64_values", nil, []*float64{
 			float64Ptr(math.SmallestNonzeroFloat64),
-			float64Ptr(float64(minEcma6Int)),
+			new(float64(minEcma6Int)),
 			nil,
 			float64Ptr(math.MaxFloat64),
-			float64Ptr(float64(maxEcma6Int)),
+			new(float64(maxEcma6Int)),
 		}),
 		data.NewField("nullable_float64_values_nans", nil, []*float64{
-			float64Ptr(math.Inf(-1)),
+			new(math.Inf(-1)),
 			float64Ptr(0),
 			nil,
-			float64Ptr(math.NaN()),
-			float64Ptr(math.Inf(1)),
+			new(math.NaN()),
+			new(math.Inf(1)),
 		}),
 		data.NewField("bool_values", nil, []bool{
 			true,
@@ -230,11 +230,11 @@ func goldenDF() *data.Frame {
 			false,
 		}),
 		data.NewField("nullable_bool_values", nil, []*bool{
-			boolPtr(true),
-			boolPtr(false),
+			new(true),
+			new(false),
 			nil,
-			boolPtr(true),
-			boolPtr(false),
+			new(true),
+			new(false),
 		}),
 
 		data.NewField("timestamps", nil, []time.Time{
@@ -255,11 +255,11 @@ func goldenDF() *data.Frame {
 			time.Unix(0, math.MaxInt64),
 		}),
 		data.NewField("nullable_timestamps", nil, []*time.Time{
-			timePtr(time.Unix(0, 0)),
-			timePtr(time.Unix(1568039445, 0)),
+			new(time.Unix(0, 0)),
+			new(time.Unix(1568039445, 0)),
 			nil,
-			timePtr(time.Unix(0, maxEcma6Int)),
-			timePtr(time.Unix(0, math.MaxInt64)),
+			new(time.Unix(0, maxEcma6Int)),
+			new(time.Unix(0, math.MaxInt64)),
 		}),
 		data.NewField("json", nil, []json.RawMessage{
 			json.RawMessage("{\"a\":1}"),
@@ -269,11 +269,11 @@ func goldenDF() *data.Frame {
 			json.RawMessage("{\"e\":{\"f\":5}}"),
 		}),
 		data.NewField("nullable_json", nil, []*json.RawMessage{
-			jsonRawMessagePtr(json.RawMessage("{\"a\":1}")),
-			jsonRawMessagePtr(json.RawMessage("[1,2,3]")),
+			new(json.RawMessage("{\"a\":1}")),
+			new(json.RawMessage("[1,2,3]")),
 			nil,
-			jsonRawMessagePtr(json.RawMessage("[{\"c\":3},{\"d\":4}]")),
-			jsonRawMessagePtr(json.RawMessage("{\"e\":{\"f\":5}}")),
+			new(json.RawMessage("[{\"c\":3},{\"d\":4}]")),
+			new(json.RawMessage("{\"e\":{\"f\":5}}")),
 		}),
 		data.NewField("enum", nil, []data.EnumItemIndex{
 			1, 2, 2, 1, 1,
@@ -294,7 +294,7 @@ func goldenDF() *data.Frame {
 			(*data.EnumItemIndex)(uint16Ptr(0)),
 		}),
 	).SetMeta(&data.FrameMeta{
-		Custom:              map[string]interface{}{"Hi": "there"},
+		Custom:              map[string]any{"Hi": "there"},
 		ExecutedQueryString: "SELECT * FROM table",
 		Channel:             "sample/channel/name",
 		Stats: []data.QueryStat{
@@ -468,11 +468,11 @@ func TestFromRecordStringView(t *testing.T) {
 	want := data.NewFrame("",
 		data.NewField("sv", data.Labels{}, testStrings),
 		data.NewField("svn", data.Labels{}, []*string{
-			stringPtr("foo"),
-			stringPtr(""),
+			new("foo"),
+			new(""),
 			nil,
-			stringPtr("🦥"),
-			stringPtr("bar"),
+			new("🦥"),
+			new("bar"),
 		}),
 	)
 	if diff := cmp.Diff(want, got, data.FrameTestCompareOptions()...); diff != "" {

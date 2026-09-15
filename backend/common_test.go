@@ -32,8 +32,8 @@ func TestAppInstanceSettings(t *testing.T) {
 					},
 				},
 				expectedClientOptions: httpclient.Options{
-					CustomOptions: map[string]interface{}{
-						dataCustomOptionsKey: map[string]interface{}{
+					CustomOptions: map[string]any{
+						dataCustomOptionsKey: map[string]any{
 							"key": "value",
 						},
 						secureDataCustomOptionsKey: map[string]string{
@@ -150,8 +150,8 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 						"datasource_uid":  "uid1",
 						"datasource_type": "example-datasource",
 					},
-					CustomOptions: map[string]interface{}{
-						dataCustomOptionsKey: map[string]interface{}{},
+					CustomOptions: map[string]any{
+						dataCustomOptionsKey: map[string]any{},
 						secureDataCustomOptionsKey: map[string]string{
 							"basicAuthPassword": "bpwd",
 							"password":          "pwd",
@@ -183,8 +183,8 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 						"datasource_uid":  "uid2",
 						"datasource_type": "example-datasource-2",
 					},
-					CustomOptions: map[string]interface{}{
-						dataCustomOptionsKey: map[string]interface{}{},
+					CustomOptions: map[string]any{
+						dataCustomOptionsKey: map[string]any{},
 						secureDataCustomOptionsKey: map[string]string{
 							"basicAuthPassword": "bpwd",
 							"password":          "pwd",
@@ -200,8 +200,8 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 					},
 				},
 				expectedClientOptions: httpclient.Options{
-					CustomOptions: map[string]interface{}{
-						dataCustomOptionsKey: map[string]interface{}{
+					CustomOptions: map[string]any{
+						dataCustomOptionsKey: map[string]any{
 							"key": "value",
 						},
 						secureDataCustomOptionsKey: map[string]string{
@@ -223,8 +223,8 @@ func TestDataSourceInstanceSettings(t *testing.T) {
 							Username: "uid1",
 						},
 					},
-					CustomOptions: map[string]interface{}{
-						dataCustomOptionsKey: map[string]interface{}{
+					CustomOptions: map[string]any{
+						dataCustomOptionsKey: map[string]any{
 							"enableSecureSocksProxy": true,
 						},
 						secureDataCustomOptionsKey: map[string]string{},
@@ -308,7 +308,7 @@ func TestDataSourceInstanceSettingsForceTLS13(t *testing.T) {
 func TestCustomOptions(t *testing.T) {
 	t.Run("Should be able to extract JSONData and SecureJSONData from custom options", func(t *testing.T) {
 		opts := &httpclient.Options{}
-		expectedJSONData := map[string]interface{}{
+		expectedJSONData := map[string]any{
 			"key": "value",
 		}
 		expectedSecureJSONData := map[string]string{
@@ -328,12 +328,12 @@ func TestCustomOptions(t *testing.T) {
 
 	t.Run("Should be able to extract JSONData and SecureJSONData from custom options", func(t *testing.T) {
 		opts := &httpclient.Options{
-			CustomOptions: map[string]interface{}{},
+			CustomOptions: map[string]any{},
 		}
 		incorrectJSONData := map[string]string{
 			"key": "value",
 		}
-		incorrectSecureJSONData := map[string]interface{}{
+		incorrectSecureJSONData := map[string]any{
 			"sKey": "sValue",
 		}
 		opts.CustomOptions[dataCustomOptionsKey] = incorrectJSONData

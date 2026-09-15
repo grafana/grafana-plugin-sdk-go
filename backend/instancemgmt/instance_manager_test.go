@@ -83,7 +83,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		var createdInstances []*testInstance
 		mutex := new(sync.Mutex)
 		// Creating new instances because of updated context
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			go func() {
 				instance, _ := im.Get(ctx, pCtx)
 				mutex.Lock()
@@ -131,7 +131,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		var createdInstances []*testInstance
 		mutex := new(sync.Mutex)
 		// Creating new instances because of updated context
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			go func() {
 				instance, _ := im.Get(ctx, updatedPCtx)
 				mutex.Lock()
@@ -177,8 +177,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 		require.NoError(t, err)
 		var wg1, wg2 sync.WaitGroup
 		wg1.Add(1)
-		wg2.Add(1)
-		go func() {
+		wg2.Go(func() {
 			// Creating instance with id#2 in cache
 			wg1.Done()
 			_, err := im.Get(ctx, backend.PluginContext{
@@ -188,8 +187,7 @@ func TestInstanceManagerConcurrency(t *testing.T) {
 				},
 			})
 			require.NoError(t, err)
-			wg2.Done()
-		}()
+		})
 		// Waiting before thread 2 starts to get the instance, so thread 2 could qcquire the lock before thread 1
 		wg1.Wait()
 		// Getting existing instance with id#1 from cache
@@ -223,7 +221,7 @@ type testInstanceProvider struct {
 	delay time.Duration
 }
 
-func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (interface{}, error) {
+func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (any, error) {
 	return pluginContext.OrgID, nil // nolint:staticcheck
 }
 

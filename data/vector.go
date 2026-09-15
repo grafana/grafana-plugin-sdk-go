@@ -6,22 +6,22 @@ import (
 
 // vector represents a Field's collection of Elements.
 type vector interface {
-	Set(idx int, i interface{})
-	Append(i interface{})
+	Set(idx int, i any)
+	Append(i any)
 	Extend(i int)
 	// Grow reserves capacity for at least n additional elements without
 	// changing length. It is a no-op if the existing capacity already fits.
 	Grow(n int)
-	At(i int) interface{}
+	At(i int) any
 	NilAt(i int) bool
 	Len() int
 	Cap() int
 	Type() FieldType
-	PointerAt(i int) interface{}
-	CopyAt(i int) interface{}
-	ConcreteAt(i int) (val interface{}, ok bool)
-	SetConcrete(i int, val interface{})
-	Insert(i int, val interface{})
+	PointerAt(i int) any
+	CopyAt(i int) any
+	ConcreteAt(i int) (val any, ok bool)
+	SetConcrete(i int, val any)
+	Insert(i int, val any)
 	Delete(i int)
 	Clear()
 }

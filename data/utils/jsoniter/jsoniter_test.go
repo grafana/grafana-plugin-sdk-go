@@ -34,7 +34,7 @@ func TestRead(t *testing.T) {
 		read, err := jiter.Read()
 		require.NoError(t, err)
 		require.NotNil(t, read)
-		r := read.(map[string]interface{})
+		r := read.(map[string]any)
 		require.Equal(t, r["test"], float64(123))
 	})
 }

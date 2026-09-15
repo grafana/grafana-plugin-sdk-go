@@ -19,14 +19,12 @@ func TestAddReturnsSameInstance(t *testing.T) {
 	ready := make(chan struct{})
 	var wg sync.WaitGroup
 
-	for i := 0; i < numGoroutines; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range numGoroutines {
+		wg.Go(func() {
 			<-ready
 			f := testFiles.getOrAdd(testPath) // Call add() directly
 			results <- f
-		}()
+		})
 	}
 
 	close(ready)
@@ -48,7 +46,7 @@ func TestAddReturnsSameInstance(t *testing.T) {
 // A panic like "sync: RUnlock of unlocked RWMutex" indicates that rLock() and rUnlock()
 // got different *file instances due to a race in getOrAdd().
 func TestConcurrentLockUnlockPanic(t *testing.T) {
-	for run := 0; run < 10; run++ {
+	for range 10 {
 		testFiles := files{files: map[string]*file{}}
 		testPath := "/test/panic/repro.har"
 
@@ -58,10 +56,8 @@ func TestConcurrentLockUnlockPanic(t *testing.T) {
 		ready := make(chan struct{})
 		panics := make(chan any, numGoroutines)
 
-		for i := 0; i < numGoroutines; i++ {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
+		for range numGoroutines {
+			wg.Go(func() {
 				defer func() {
 					if r := recover(); r != nil {
 						panics <- r
@@ -70,7 +66,7 @@ func TestConcurrentLockUnlockPanic(t *testing.T) {
 				<-ready
 				testFiles.rLock(testPath)
 				testFiles.rUnlock(testPath)
-			}()
+			})
 		}
 
 		close(ready)

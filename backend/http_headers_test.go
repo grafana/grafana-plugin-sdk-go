@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"maps"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -192,9 +193,7 @@ func TestDeleteHTTPHeaderInStringMap(t *testing.T) {
 
 	for _, tc := range tcs {
 		headerMap := make(map[string]string, len(tc.input))
-		for k, v := range tc.input {
-			headerMap[k] = v
-		}
+		maps.Copy(headerMap, tc.input)
 
 		for _, key := range tc.deleteKeys {
 			deleteHTTPHeaderInStringMap(headerMap, key)

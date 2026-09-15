@@ -43,7 +43,7 @@ type instanceProvider struct {
 	factory InstanceFactoryFunc
 }
 
-func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error) {
+func (ip *instanceProvider) GetKey(ctx context.Context, pluginContext backend.PluginContext) (any, error) {
 	if pluginContext.AppInstanceSettings == nil {
 		return nil, errors.New("app instance settings cannot be nil")
 	}

@@ -15,7 +15,7 @@ func GetStringValueFromJSON(fpath string, key string) (string, error) {
 		return "", err
 	}
 
-	var result map[string]interface{}
+	var result map[string]any
 	err = json.Unmarshal(byteValue, &result)
 	if err != nil {
 		return "", err
