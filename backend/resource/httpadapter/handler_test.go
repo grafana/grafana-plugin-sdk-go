@@ -20,14 +20,14 @@ func TestHttpResourceHandler(t *testing.T) {
 				"X-Header-Out-1": {"A", "B"},
 				"X-Header-Out-2": {"C"},
 			},
-			responseData: map[string]interface{}{
+			responseData: map[string]any{
 				"message": "hello client",
 			},
 			responseStatus: http.StatusCreated,
 		}
 		resourceHandler := New(httpHandler)
 
-		jsonMap := map[string]interface{}{
+		jsonMap := map[string]any{
 			"message": "hello server",
 		}
 		reqBody, err := json.Marshal(&jsonMap)
@@ -73,7 +73,7 @@ func TestHttpResourceHandler(t *testing.T) {
 			defer func() { _ = httpHandler.req.Body.Close() }()
 			actualBodyBytes, err := io.ReadAll(httpHandler.req.Body)
 			require.NoError(t, err)
-			var actualJSONMap map[string]interface{}
+			var actualJSONMap map[string]any
 			err = json.Unmarshal(actualBodyBytes, &actualJSONMap)
 			require.NoError(t, err)
 			require.Contains(t, actualJSONMap, "message")
@@ -91,7 +91,7 @@ func TestHttpResourceHandler(t *testing.T) {
 			require.Equal(t, []string{"A", "B"}, resp.Headers["X-Header-Out-1"])
 			require.Contains(t, resp.Headers, "X-Header-Out-2")
 			require.Equal(t, []string{"C"}, resp.Headers["X-Header-Out-2"])
-			var actualJSONMap map[string]interface{}
+			var actualJSONMap map[string]any
 			err = json.Unmarshal(resp.Body, &actualJSONMap)
 			require.NoError(t, err)
 			require.Contains(t, actualJSONMap, "message")
@@ -205,7 +205,7 @@ func TestServeMuxHandler(t *testing.T) {
 type testHTTPHandler struct {
 	responseStatus  int
 	responseHeaders map[string][]string
-	responseData    map[string]interface{}
+	responseData    map[string]any
 	callerCount     int
 	req             *http.Request
 	writeErr        error

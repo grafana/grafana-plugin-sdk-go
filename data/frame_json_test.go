@@ -81,7 +81,7 @@ func TestGoldenFrameJSON(t *testing.T) {
 
 		found := f2.Fields[0]
 		require.Equal(t, size, found.Len())
-		for i := 0; i < size; i++ {
+		for i := range size {
 			// Lots of NaN flavors that are really the same
 			if expected.Type().Numeric() {
 				fA, _ := expected.NullableFloatAt(i)
@@ -185,7 +185,7 @@ func TestJSONNanoTime(t *testing.T) {
 		nanoFrame := data.NewFrame("frame_nano",
 			// 1 second and 10 ns
 			data.NewField("i", nil, []int64{1, 2}),
-			data.NewField("t", nil, []*time.Time{nil, timePtr(time.Unix(1, 10))}),
+			data.NewField("t", nil, []*time.Time{nil, new(time.Unix(1, 10))}),
 		)
 
 		nanoJSONBytes, err := json.Marshal(nanoFrame)
@@ -329,16 +329,14 @@ func TestFrameMarshalJSONConcurrent(t *testing.T) {
 	initialJSON, err := json.Marshal(f)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
-	for i := 0; i < 2; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			for j := 0; j < 100; j++ {
+	for range 2 {
+		wg.Go(func() {
+			for range 100 {
 				jsonData, err := json.Marshal(f)
 				require.NoError(t, err)
 				require.JSONEq(t, string(initialJSON), string(jsonData))
 			}
-		}()
+		})
 	}
 	wg.Wait()
 }

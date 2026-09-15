@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"maps"
 	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -95,9 +96,7 @@ func keySet(validationKeys string) (map[string]string, error) {
 	}
 
 	keys := make(map[string]string)
-	for keyID, value := range embeddedKeys {
-		keys[keyID] = value
-	}
+	maps.Copy(keys, embeddedKeys)
 
 	signed, err := jose.ParseSigned(validationKeys)
 	if err != nil {

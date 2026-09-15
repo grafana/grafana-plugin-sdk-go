@@ -289,7 +289,7 @@ func FindAndKillCurrentPlugin(dir string) {
 		return
 	}
 	currentPID := os.Getpid()
-	for _, txt := range strings.Fields(string(out)) {
+	for txt := range strings.FieldsSeq(string(out)) {
 		pid, err := strconv.Atoi(txt)
 		if err == nil {
 			// Do not kill the plugin process

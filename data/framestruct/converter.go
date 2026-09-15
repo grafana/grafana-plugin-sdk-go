@@ -24,7 +24,7 @@ type converter struct {
 }
 
 // ToDataFrame flattens an arbitrary struct or slice of structs into a *data.Frame
-func ToDataFrame(name string, toConvert interface{}, opts ...FramestructOption) (*data.Frame, error) {
+func ToDataFrame(name string, toConvert any, opts ...FramestructOption) (*data.Frame, error) {
 	cr := &converter{
 		fields:     make(map[string]*data.Field),
 		tags:       make([]string, 3),
@@ -44,7 +44,7 @@ func ToDataFrame(name string, toConvert interface{}, opts ...FramestructOption) 
 // for the type conversion. If this function delegates to a data.Framer, it
 // will use the data.Frame name defined by the type rather than passed to this
 // function
-func ToDataFrames(name string, toConvert interface{}, opts ...FramestructOption) (data.Frames, error) {
+func ToDataFrames(name string, toConvert any, opts ...FramestructOption) (data.Frames, error) {
 	framer, ok := toConvert.(data.Framer)
 	if ok {
 		return framer.Frames()
@@ -60,7 +60,7 @@ func ToDataFrames(name string, toConvert interface{}, opts ...FramestructOption)
 
 // FieldConverter is a function that takes the value of a field, converts it,
 // and returns the new value as an interface
-type FieldConverter func(interface{}) (interface{}, error)
+type FieldConverter func(any) (any, error)
 
 // FramestructOption takes a converter and applies some configuration to it
 //
@@ -85,7 +85,7 @@ func WithColumn0(fieldname string) FramestructOption {
 	}
 }
 
-func (c *converter) toDataframe(name string, toConvert interface{}) (*data.Frame, error) {
+func (c *converter) toDataframe(name string, toConvert any) (*data.Frame, error) {
 	v := c.ensureValue(reflect.ValueOf(toConvert))
 	if !supportedToplevelType(v) {
 		return nil, errors.New("unsupported type: can only convert structs, slices, and maps")
@@ -119,7 +119,7 @@ func (c *converter) handleValue(field reflect.Value, tags, fieldName string) err
 }
 
 func (c *converter) convertStruct(field reflect.Value, fieldName string) error {
-	_, ok := field.Interface().(time.Time)
+	_, ok := reflect.TypeAssert[time.Time](field)
 	if ok {
 		return c.upsertField(field, fieldName)
 	}
@@ -180,15 +180,15 @@ func exported(v reflect.Value) bool {
 	return v.CanInterface()
 }
 
-func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error {
+func (c *converter) convertMap(toConvert any, tags, prefix string) error {
 	c.anyMap = true
-	m, ok := toConvert.(map[string]interface{})
+	m, ok := toConvert.(map[string]any)
 	if !ok {
-		m = make(map[string]interface{})
+		m = make(map[string]any)
 		vals := reflect.ValueOf(toConvert).MapRange()
 		for vals.Next() {
 			k := vals.Key()
-			if _, ok := k.Interface().(string); !ok {
+			if _, ok := reflect.TypeAssert[string](k); !ok {
 				return errors.New("maps must have string keys")
 			}
 			m[k.String()] = vals.Value().Interface()
@@ -212,7 +212,7 @@ func (c *converter) convertMap(toConvert interface{}, tags, prefix string) error
 	return nil
 }
 
-func sortedKeys(m map[string]interface{}) []string {
+func sortedKeys(m map[string]any) []string {
 	keys := make([]string, len(m))
 
 	var idx int
@@ -247,7 +247,7 @@ func (c *converter) upsertField(v reflect.Value, fieldName string) error {
 	return nil
 }
 
-func (c *converter) convertField(v reflect.Value, fieldName string) (interface{}, error) {
+func (c *converter) convertField(v reflect.Value, fieldName string) (any, error) {
 	if converter, exists := c.converters[fieldName]; exists {
 		valueOf, err := converter(v.Interface())
 		if err != nil {
@@ -258,7 +258,7 @@ func (c *converter) convertField(v reflect.Value, fieldName string) (interface{}
 	return v.Interface(), nil
 }
 
-func (c *converter) appendToField(name string, value interface{}) {
+func (c *converter) appendToField(name string, value any) {
 	c.fields[name].Append(value)
 }
 

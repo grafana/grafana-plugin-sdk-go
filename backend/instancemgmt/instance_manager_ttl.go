@@ -29,7 +29,7 @@ func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceClean
 	cache := gocache.New(instanceTTL, instanceCleanupInterval)
 
 	// Set up the OnEvicted callback to dispose instances
-	cache.OnEvicted(func(key string, value interface{}) {
+	cache.OnEvicted(func(key string, value any) {
 		ci := value.(CachedInstance)
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			disposer.Dispose()
