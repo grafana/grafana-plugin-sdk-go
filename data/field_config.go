@@ -2,7 +2,9 @@ package data
 
 import (
 	"fmt"
+	"maps"
 	"math"
+	"slices"
 	"strconv"
 	"time"
 
@@ -158,6 +160,57 @@ func (fc *FieldConfig) SetMax(v float64) *FieldConfig {
 func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
 	fc.Filterable = &b
 	return fc
+}
+
+// clone copies fc, including its slices, maps and nested config structs. Values behind any and ValueMapping stay shared.
+func (fc *FieldConfig) clone() *FieldConfig {
+	if fc == nil {
+		return nil
+	}
+
+	c := *fc
+	if fc.Filterable != nil {
+		v := *fc.Filterable
+		c.Filterable = &v
+	}
+	if fc.Writeable != nil {
+		v := *fc.Writeable
+		c.Writeable = &v
+	}
+	if fc.Decimals != nil {
+		v := *fc.Decimals
+		c.Decimals = &v
+	}
+	if fc.Min != nil {
+		v := *fc.Min
+		c.Min = &v
+	}
+	if fc.Max != nil {
+		v := *fc.Max
+		c.Max = &v
+	}
+	c.Mappings = slices.Clone(fc.Mappings)
+	c.Color = maps.Clone(fc.Color)
+	c.Links = slices.Clone(fc.Links)
+	c.Custom = maps.Clone(fc.Custom)
+	if fc.Thresholds != nil {
+		t := *fc.Thresholds
+		t.Steps = slices.Clone(fc.Thresholds.Steps)
+		c.Thresholds = &t
+	}
+	if fc.TypeConfig != nil {
+		tc := *fc.TypeConfig
+		if fc.TypeConfig.Enum != nil {
+			e := *fc.TypeConfig.Enum
+			e.Text = slices.Clone(fc.TypeConfig.Enum.Text)
+			e.Color = slices.Clone(fc.TypeConfig.Enum.Color)
+			e.Icon = slices.Clone(fc.TypeConfig.Enum.Icon)
+			e.Description = slices.Clone(fc.TypeConfig.Enum.Description)
+			tc.Enum = &e
+		}
+		c.TypeConfig = &tc
+	}
+	return &c
 }
 
 // DataLink define what
