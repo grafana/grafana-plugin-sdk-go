@@ -53,6 +53,25 @@ func TestOpenFeature(t *testing.T) {
 		require.True(t, errors.Is(err, ErrOpenFeatureNotConfigured))
 	})
 
+	t.Run("it should return an error if the provider type is missing", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			OpenFeatureProviderURL: "http://localhost:3000",
+		})
+		_, err := cfg.OpenFeature()
+		require.ErrorContains(t, err, OpenFeatureProviderType)
+		require.False(t, errors.Is(err, ErrOpenFeatureNotConfigured), "a URL without a type is malformed discovery, not absent discovery")
+	})
+
+	t.Run("it should return unknown provider types as-is", func(t *testing.T) {
+		cfg := NewGrafanaCfg(map[string]string{
+			OpenFeatureProviderType: "some-future-provider",
+			OpenFeatureProviderURL:  "http://localhost:3000",
+		})
+		v, err := cfg.OpenFeature()
+		require.NoError(t, err)
+		require.Equal(t, "some-future-provider", v.ProviderType)
+	})
+
 	t.Run("it should not read the provider from the environment", func(t *testing.T) {
 		t.Setenv(OpenFeatureProviderURL, "http://localhost-env:3000")
 		cfg := NewGrafanaCfg(map[string]string{})
@@ -63,8 +82,9 @@ func TestOpenFeature(t *testing.T) {
 
 	t.Run("it should return an error if the cache TTL is not an integer", func(t *testing.T) {
 		cfg := NewGrafanaCfg(map[string]string{
-			OpenFeatureProviderURL: "http://localhost:3000",
-			OpenFeatureCacheTTL:    "30s",
+			OpenFeatureProviderType: "ofrep",
+			OpenFeatureProviderURL:  "http://localhost:3000",
+			OpenFeatureCacheTTL:     "30s",
 		})
 		_, err := cfg.OpenFeature()
 		require.ErrorContains(t, err, "integer number of seconds")
@@ -72,8 +92,9 @@ func TestOpenFeature(t *testing.T) {
 
 	t.Run("it should return an error if the cache TTL is negative", func(t *testing.T) {
 		cfg := NewGrafanaCfg(map[string]string{
-			OpenFeatureProviderURL: "http://localhost:3000",
-			OpenFeatureCacheTTL:    "-1",
+			OpenFeatureProviderType: "ofrep",
+			OpenFeatureProviderURL:  "http://localhost:3000",
+			OpenFeatureCacheTTL:     "-1",
 		})
 		_, err := cfg.OpenFeature()
 		require.ErrorContains(t, err, "non-negative")
@@ -81,8 +102,9 @@ func TestOpenFeature(t *testing.T) {
 
 	t.Run("it should return an error if the cache TTL does not fit in a duration", func(t *testing.T) {
 		cfg := NewGrafanaCfg(map[string]string{
-			OpenFeatureProviderURL: "http://localhost:3000",
-			OpenFeatureCacheTTL:    "10000000000",
+			OpenFeatureProviderType: "ofrep",
+			OpenFeatureProviderURL:  "http://localhost:3000",
+			OpenFeatureCacheTTL:     "10000000000",
 		})
 		_, err := cfg.OpenFeature()
 		require.ErrorContains(t, err, "does not fit in a time.Duration")
@@ -91,8 +113,9 @@ func TestOpenFeature(t *testing.T) {
 	t.Run("it should return an error if the context is not a JSON object of strings", func(t *testing.T) {
 		for _, v := range []string{"not-json", `{"stackId":123}`, `["a","b"]`} {
 			cfg := NewGrafanaCfg(map[string]string{
-				OpenFeatureProviderURL: "http://localhost:3000",
-				OpenFeatureContext:     v,
+				OpenFeatureProviderType: "ofrep",
+				OpenFeatureProviderURL:  "http://localhost:3000",
+				OpenFeatureContext:      v,
 			})
 			_, err := cfg.OpenFeature()
 			require.ErrorContains(t, err, "JSON object")
