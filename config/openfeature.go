@@ -70,11 +70,19 @@ type OpenFeatureConfig struct {
 //
 // It returns an error wrapping ErrOpenFeatureNotConfigured when the host has
 // not exposed a provider URL. A more recent version of Grafana may be
-// required.
+// required. Any other error means the host sent malformed discovery, for
+// example a provider URL without a provider type. Unknown provider type
+// values are returned as-is, so a newer host can advertise a new provider
+// type without breaking older plugins.
 func (c *GrafanaCfg) OpenFeature() (OpenFeatureConfig, error) {
 	url := c.config[OpenFeatureProviderURL]
 	if url == "" {
 		return OpenFeatureConfig{}, fmt.Errorf("%w: %s is empty or not set. A more recent version of Grafana may be required", ErrOpenFeatureNotConfigured, OpenFeatureProviderURL)
+	}
+
+	providerType := c.config[OpenFeatureProviderType]
+	if providerType == "" {
+		return OpenFeatureConfig{}, fmt.Errorf("%s is empty or not set although %s is set", OpenFeatureProviderType, OpenFeatureProviderURL)
 	}
 
 	ttl, err := parseOpenFeatureCacheTTL(c.config[OpenFeatureCacheTTL])
@@ -90,7 +98,7 @@ func (c *GrafanaCfg) OpenFeature() (OpenFeatureConfig, error) {
 	}
 
 	return OpenFeatureConfig{
-		ProviderType: c.config[OpenFeatureProviderType],
+		ProviderType: providerType,
 		URL:          url,
 		CacheTTL:     ttl,
 		ContextAttrs: contextAttrs,
