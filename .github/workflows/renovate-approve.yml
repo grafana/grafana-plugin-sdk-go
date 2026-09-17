@@ -83,8 +83,12 @@ jobs:
             # "Renovate approve" is excluded because a stale check run left on a
             # PR by the previous pull_request-triggered version would otherwise
             # block it forever.
-            checks=$(gh pr checks "$pr" --json name,bucket \
-              --jq '[.[] | select(.name != "Renovate approve") | .bucket] | unique' 2>/dev/null || echo '["pending"]')
+            checks_json=$(gh pr checks "$pr" --json name,bucket 2>/dev/null || echo 'null')
+            if [ "$checks_json" = "null" ]; then
+              checks='["pending"]'
+            else
+              checks=$(jq -c '[.[] | select(.name != "Renovate approve") | .bucket] | unique' <<<"$checks_json")
+            fi
 
             if jq -e 'length == 0' >/dev/null <<<"$checks"; then
               echo "PR #$pr: skipping, no checks reported yet"
@@ -104,6 +108,17 @@ jobs:
                 gh api -X POST "repos/$GH_REPO/actions/runs/$id/rerun" || true
               done
               echo "PR #$pr: skipping, waiting on the reruns"
+              continue
+            fi
+
+            # A failing renovate/artifacts means renovate could not build the
+            # lock file, so CI dies at install and the PR can never go green on
+            # its own. Hand it to the decide job to be labelled rather than
+            # skipping it silently, which is how these sat unnoticed for weeks.
+            if jq -e 'any(.[]; .name == "renovate/artifacts" and .bucket == "fail")' >/dev/null <<<"$checks_json"; then
+              echo "PR #$pr: blocked at $sha, renovate could not build the lock file"
+              selected=$(jq -c --argjson pr "$pr" --arg sha "$sha" \
+                '. + [{number: $pr, sha: $sha, mode: "blocked"}]' <<<"$selected")
               continue
             fi
 
@@ -163,6 +178,28 @@ jobs:
           PR_NUMBER: ${{ matrix.pr.number }}
         run: |
           gh pr review "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --approve --body "Automated approval: patch, pin, digest or lock file maintenance update with all CI checks green."
+
+      # renovate/artifacts failed, so renovate could not produce a valid lock
+      # file and no amount of waiting turns this PR green. Mark it the way a
+      # needs-human verdict does, so one filter finds everything waiting on a
+      # person. The comment carries the commit, so the next sweep reads it as
+      # judged instead of repeating this every hour.
+      - name: Flag update renovate could not build
+        if: matrix.pr.mode == 'blocked'
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+          PR_NUMBER: ${{ matrix.pr.number }}
+          HEAD_SHA: ${{ matrix.pr.sha }}
+        run: |
+          gh pr comment "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" \
+            --body "$(printf 'Needs human review: renovate could not build the lock file for this update, so CI cannot pass. The renovate/artifacts status has the reason, usually a peer dependency conflict or a major that needs a code change.\n\n<!-- renovate-approve: judged %s -->' "$HEAD_SHA")"
+          # Best-effort, as in the verdict step: a label failure must not fail
+          # the job, the comment above is what marks the commit as judged.
+          gh label create needs-manual-review --repo "$GITHUB_REPOSITORY" --force \
+            --description "Renovate gate: Claude declined to auto-approve, a human must decide" \
+            --color D93F0B 2>/dev/null || true
+          gh pr edit "$PR_NUMBER" --repo "$GITHUB_REPOSITORY" --add-label needs-manual-review ||
+            echo "Could not add the needs-manual-review label; continuing."
 
       # The default branch, not the PR head: Claude reads the repository's own
       # code to judge how the updated package is used, and gets the diff itself
