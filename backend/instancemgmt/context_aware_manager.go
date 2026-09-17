@@ -2,6 +2,7 @@ package instancemgmt
 
 import (
 	"context"
+	"sync"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
@@ -13,7 +14,6 @@ func NewInstanceManagerWrapper(provider InstanceProvider) InstanceManager {
 	return &instanceManagerWrapper{
 		provider:        provider,
 		standardManager: New(provider),
-		ttlManager:      NewTTLInstanceManager(provider),
 	}
 }
 
@@ -22,7 +22,21 @@ func NewInstanceManagerWrapper(provider InstanceProvider) InstanceManager {
 type instanceManagerWrapper struct {
 	provider        InstanceProvider
 	standardManager InstanceManager
-	ttlManager      InstanceManager
+
+	// ttlManager is constructed lazily: whether it's ever needed depends on
+	// per-request feature toggle state, which isn't known at construction
+	// time. Building it eagerly would spawn its cache's cleanup goroutine in
+	// every plugin process regardless of whether the toggle is ever enabled.
+	ttlManagerOnce sync.Once
+	ttlManager     InstanceManager
+}
+
+// getTTLManager returns the TTL instance manager, constructing it on first use.
+func (c *instanceManagerWrapper) getTTLManager() InstanceManager {
+	c.ttlManagerOnce.Do(func() {
+		c.ttlManager = NewTTLInstanceManager(c.provider)
+	})
+	return c.ttlManager
 }
 
 // selectManager returns the appropriate instance manager based on the feature toggle
@@ -32,7 +46,7 @@ func (c *instanceManagerWrapper) selectManager(_ context.Context, pluginContext 
 	if pluginContext.GrafanaConfig != nil {
 		featureToggles := pluginContext.GrafanaConfig.FeatureToggles()
 		if featureToggles.IsEnabled(featuretoggles.TTLInstanceManager) {
-			return c.ttlManager
+			return c.getTTLManager()
 		}
 	}
 
