@@ -52,16 +52,16 @@ func TestHARCaptureMiddleware_withHeader_appendsHARFrame(t *testing.T) {
 	require.Len(t, harResp.Frames, 1)
 	assert.Equal(t, "__har__", harResp.Frames[0].Name)
 
-	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]interface{})
+	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]any)
 	require.True(t, ok)
 	harStr, ok := custom["har"].(string)
 	require.True(t, ok)
 
-	var doc map[string]interface{}
+	var doc map[string]any
 	require.NoError(t, json.Unmarshal([]byte(harStr), &doc))
-	log := doc["log"].(map[string]interface{})
+	log := doc["log"].(map[string]any)
 	assert.Equal(t, "1.2", log["version"])
-	assert.Len(t, log["entries"].([]interface{}), 1)
+	assert.Len(t, log["entries"].([]any), 1)
 }
 
 func TestHARCaptureMiddleware_withHeader_namespacesRefIDByDatasourceUID(t *testing.T) {
@@ -201,12 +201,12 @@ func TestHARCaptureMiddleware_capturesRequestBody(t *testing.T) {
 
 	harResp, ok := resp.Responses["__har__"]
 	require.True(t, ok, "expected __har__ frame in response")
-	custom := harResp.Frames[0].Meta.Custom.(map[string]interface{})
-	var doc map[string]interface{}
+	custom := harResp.Frames[0].Meta.Custom.(map[string]any)
+	var doc map[string]any
 	require.NoError(t, json.Unmarshal([]byte(custom["har"].(string)), &doc))
-	entries := doc["log"].(map[string]interface{})["entries"].([]interface{})
+	entries := doc["log"].(map[string]any)["entries"].([]any)
 	require.Len(t, entries, 1)
-	postData, ok := entries[0].(map[string]interface{})["request"].(map[string]interface{})["postData"].(map[string]interface{})
+	postData, ok := entries[0].(map[string]any)["request"].(map[string]any)["postData"].(map[string]any)
 	require.True(t, ok, "expected postData in captured request")
 	assert.Equal(t, reqBody, postData["text"])
 }
@@ -231,7 +231,7 @@ func TestHARCaptureMiddleware_appendsHARFrameOnQueryError(t *testing.T) {
 	require.NotNil(t, resp, "captured traffic must be returned even on error")
 	harResp, hasHARFrame := resp.Responses["__har__"]
 	require.True(t, hasHARFrame, "expected __har__ frame despite QueryData error")
-	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]interface{})
+	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]any)
 	require.True(t, ok)
 	assert.Equal(t, wantErr.Error(), custom["queryError"], "the original error must be preserved in the frame")
 
@@ -359,21 +359,21 @@ func TestHARCaptureMiddleware_withHeader_capturesNonHTTPQuery(t *testing.T) {
 	harResp, ok := resp.Responses["__har__P1234"]
 	require.True(t, ok, "expected a capture frame for a plugin that made no HTTP call but recorded SQL")
 	require.Len(t, harResp.Frames, 1)
-	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]interface{})
+	custom, ok := harResp.Frames[0].Meta.Custom.(map[string]any)
 	require.True(t, ok)
 	harStr, ok := custom["har"].(string)
 	require.True(t, ok)
 
-	var doc map[string]interface{}
+	var doc map[string]any
 	require.NoError(t, json.Unmarshal([]byte(harStr), &doc))
-	entries := doc["log"].(map[string]interface{})["entries"].([]interface{})
+	entries := doc["log"].(map[string]any)["entries"].([]any)
 	require.Len(t, entries, 1)
-	entry := entries[0].(map[string]interface{})
-	request := entry["request"].(map[string]interface{})
+	entry := entries[0].(map[string]any)
+	request := entry["request"].(map[string]any)
 	assert.Equal(t, "QUERY", request["method"])
 	assert.Equal(t, "SELECT host, avg(value) FROM metrics GROUP BY host",
-		request["postData"].(map[string]interface{})["text"])
-	assert.Equal(t, "sql.query", entry["_query"].(map[string]interface{})["kind"])
+		request["postData"].(map[string]any)["text"])
+	assert.Equal(t, "sql.query", entry["_query"].(map[string]any)["kind"])
 }
 
 // TestHARCaptureMiddleware_noHeader_noRecorder is the off-by-default half of the contract: with no

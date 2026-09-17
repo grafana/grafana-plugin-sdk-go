@@ -20,15 +20,15 @@ func newgenVectorWithValues(s []gen) *genVector {
 	return (*genVector)(&v)
 }
 
-func (v *genVector) Set(idx int, i interface{}) {
+func (v *genVector) Set(idx int, i any) {
 	(*v)[idx] = i.(gen)
 }
 
-func (v *genVector) SetConcrete(idx int, i interface{}) {
+func (v *genVector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *genVector) Append(i interface{}) {
+func (v *genVector) Append(i any) {
 	*v = append(*v, i.(gen))
 }
 
@@ -36,11 +36,11 @@ func (v *genVector) NilAt(i int) bool {
 	return false
 }
 
-func (v *genVector) At(i int) interface{} {
+func (v *genVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *genVector) PointerAt(i int) interface{} {
+func (v *genVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -52,13 +52,13 @@ func (v *genVector) Cap() int {
 	return cap(*v)
 }
 
-func (v *genVector) CopyAt(i int) interface{} {
+func (v *genVector) CopyAt(i int) any {
 	var g gen //nolint:staticcheck // S1021: generated code pattern
 	g = (*v)[i]
 	return g
 }
 
-func (v *genVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *genVector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -86,7 +86,7 @@ func (v *genVector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *genVector) Insert(i int, val interface{}) {
+func (v *genVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

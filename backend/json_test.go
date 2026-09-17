@@ -96,11 +96,11 @@ func TestDataResponseMarshalJSONConcurrent(t *testing.T) {
 	initialJSON, err := json.Marshal(dr)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		wg.Add(1)
 		go func(dr backend.DataResponse) {
 			defer wg.Done()
-			for j := 0; j < 100; j++ {
+			for range 100 {
 				jsonData, err := json.Marshal(dr)
 				require.NoError(t, err)
 				require.JSONEq(t, string(initialJSON), string(jsonData))
@@ -116,11 +116,11 @@ func TestQueryDataResponseMarshalJSONConcurrent(t *testing.T) {
 	initialJSON, err := json.Marshal(qdr)
 	require.NoError(t, err)
 	var wg sync.WaitGroup
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		wg.Add(1)
 		go func(qdr *backend.QueryDataResponse) {
 			defer wg.Done()
-			for j := 0; j < 100; j++ {
+			for range 100 {
 				jsonData, err := json.Marshal(qdr)
 				require.NoError(t, err)
 				require.JSONEq(t, string(initialJSON), string(jsonData))

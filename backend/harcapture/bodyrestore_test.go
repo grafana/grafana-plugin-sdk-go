@@ -260,7 +260,7 @@ func TestSDKHARCaptureBuffer_totalSizeCap(t *testing.T) {
 	big := strings.Repeat("a", int(testMaxBodyBytes)) // one per-body-capped chunk each
 
 	// Enough entries to blow past the total budget.
-	for i := int64(0); i < (testMaxTotalBytes/testMaxBodyBytes)+2; i++ {
+	for range (testMaxTotalBytes / testMaxBodyBytes) + 2 {
 		req, err := http.NewRequest(http.MethodGet, "http://ds.example.com", nil)
 		if err != nil {
 			t.Fatal(err)
@@ -309,7 +309,7 @@ func TestSDKHARCaptureBuffer_totalSizeCapIsTight(t *testing.T) {
 
 	// Leave the budget with less room than one full chunk, so the next entry straddles the cap.
 	big := strings.Repeat("a", int(testMaxBodyBytes))
-	for i := int64(0); i < (testMaxTotalBytes/testMaxBodyBytes)-1; i++ {
+	for range (testMaxTotalBytes / testMaxBodyBytes) - 1 {
 		addEntry(big)
 	}
 	addEntry(strings.Repeat("b", 1024))

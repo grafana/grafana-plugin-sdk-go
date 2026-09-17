@@ -48,7 +48,7 @@ func (iter *Iterator) SetError(err error) {
 	iter.i.Error = err
 }
 
-func (iter *Iterator) Read() (interface{}, error) {
+func (iter *Iterator) Read() (any, error) {
 	return iter.i.Read(), iter.i.Error
 }
 
@@ -90,7 +90,7 @@ func (iter *Iterator) SkipAndReturnBytes() ([]byte, error) {
 	return iter.i.SkipAndReturnBytes(), iter.i.Error
 }
 
-func (iter *Iterator) ReadVal(obj interface{}) error {
+func (iter *Iterator) ReadVal(obj any) error {
 	iter.i.ReadVal(obj)
 	return iter.i.Error
 }
@@ -160,11 +160,11 @@ func (iter *Iterator) ReportError(op, msg string) error {
 	return iter.i.Error
 }
 
-func (iter *Iterator) Marshal(v interface{}) ([]byte, error) {
+func (iter *Iterator) Marshal(v any) ([]byte, error) {
 	return ConfigDefault.Marshal(v)
 }
 
-func (iter *Iterator) Unmarshal(data []byte, v interface{}) error {
+func (iter *Iterator) Unmarshal(data []byte, v any) error {
 	return ConfigDefault.Unmarshal(data, v)
 }
 

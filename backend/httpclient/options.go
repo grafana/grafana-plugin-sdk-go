@@ -41,7 +41,7 @@ type Options struct {
 	Header http.Header
 
 	// CustomOptions allows custom options to be provided.
-	CustomOptions map[string]interface{}
+	CustomOptions map[string]any
 
 	// Labels could be used by certain middlewares.
 	Labels map[string]string

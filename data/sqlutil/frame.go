@@ -19,12 +19,12 @@ func NewFrame(columns []string, converters ...Converter) *data.Frame {
 }
 
 // Append appends the row to the dataframe, using the converters to convert the scanned value into a value that can be put into a data.Frame
-func Append(frame *data.Frame, row []interface{}, converters ...Converter) error {
+func Append(frame *data.Frame, row []any, converters ...Converter) error {
 	if len(row) != len(converters) {
 		return errors.New("the number of rows must match the number of converters")
 	}
 
-	d := make([]interface{}, len(row))
+	d := make([]any, len(row))
 	for i, v := range row {
 		if converters[i].FrameConverter.ConvertWithColumn != nil {
 			value, err := converters[i].FrameConverter.ConvertWithColumn(v, converters[i].colType)

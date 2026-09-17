@@ -40,7 +40,7 @@ func ExampleNewFrameInputConverter() {
 	}
 	floatzFieldConverter := data.FieldConverter{ // a converter appropriate for our pretend API's Floatz type.
 		OutputFieldType: data.FieldTypeFloat64,
-		Converter: func(v interface{}) (interface{}, error) {
+		Converter: func(v any) (any, error) {
 			val, ok := v.(string)
 			if !ok { // or return some default value instead of erroring
 				return nil, fmt.Errorf("expected string input but got type %T", v)
@@ -50,7 +50,7 @@ func ExampleNewFrameInputConverter() {
 	}
 	timezFieldConverter := data.FieldConverter{ // a converter appropriate for our pretend API's Timez type.
 		OutputFieldType: data.FieldTypeTime,
-		Converter: func(v interface{}) (interface{}, error) {
+		Converter: func(v any) (any, error) {
 			val, ok := v.(string)
 			if !ok { // or return some default value instead of erroring
 				return nil, fmt.Errorf("expected string input but got type %T", v)

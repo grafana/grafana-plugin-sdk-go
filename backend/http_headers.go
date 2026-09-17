@@ -79,8 +79,8 @@ func getHTTPHeadersFromStringMap(headers map[string]string) http.Header {
 			httpHeaders.Set(k, v)
 		}
 
-		if strings.HasPrefix(k, httpHeaderPrefix) {
-			hKey := strings.TrimPrefix(k, httpHeaderPrefix)
+		if after, ok := strings.CutPrefix(k, httpHeaderPrefix); ok {
+			hKey := after
 			httpHeaders.Set(hKey, v)
 		}
 	}

@@ -20,14 +20,14 @@ func makeWideRows(tb testing.TB, cols, rows int) *sql.Rows {
 	tb.Helper()
 	colNames := make([]string, cols)
 	scanTypes := make([]reflect.Type, cols)
-	int64T := reflect.TypeOf(int64(0))
+	int64T := reflect.TypeFor[int64]()
 	for i := range colNames {
 		colNames[i] = string(rune('a' + i))
 		scanTypes[i] = int64T
 	}
-	data := make([][]interface{}, rows)
+	data := make([][]any, rows)
 	for r := range data {
-		row := make([]interface{}, cols)
+		row := make([]any, cols)
 		for c := range row {
 			row[c] = int64(r*cols + c)
 		}
@@ -42,7 +42,7 @@ func makeWideRows(tb testing.TB, cols, rows int) *sql.Rows {
 // outputs for every code path it covers.
 func TestDefaultConverterFunc_BehaviorPreserved(t *testing.T) {
 	t.Run("matching pointer type returns dereferenced value", func(t *testing.T) {
-		fn := sqlutil.DefaultConverterFunc(reflect.TypeOf(int64(0)))
+		fn := sqlutil.DefaultConverterFunc(reflect.TypeFor[int64]())
 		v := int64(42)
 		got, err := fn(&v)
 		require.NoError(t, err)
@@ -50,7 +50,7 @@ func TestDefaultConverterFunc_BehaviorPreserved(t *testing.T) {
 	})
 
 	t.Run("non-matching type passes through unchanged", func(t *testing.T) {
-		fn := sqlutil.DefaultConverterFunc(reflect.TypeOf(int64(0)))
+		fn := sqlutil.DefaultConverterFunc(reflect.TypeFor[int64]())
 		s := "not-an-int"
 		got, err := fn(&s)
 		require.NoError(t, err)
@@ -58,7 +58,7 @@ func TestDefaultConverterFunc_BehaviorPreserved(t *testing.T) {
 	})
 
 	t.Run("string column", func(t *testing.T) {
-		fn := sqlutil.DefaultConverterFunc(reflect.TypeOf(""))
+		fn := sqlutil.DefaultConverterFunc(reflect.TypeFor[string]())
 		s := "hello"
 		got, err := fn(&s)
 		require.NoError(t, err)
@@ -66,8 +66,8 @@ func TestDefaultConverterFunc_BehaviorPreserved(t *testing.T) {
 	})
 
 	t.Run("repeated calls are stable", func(t *testing.T) {
-		fn := sqlutil.DefaultConverterFunc(reflect.TypeOf(int64(0)))
-		for i := int64(0); i < 100; i++ {
+		fn := sqlutil.DefaultConverterFunc(reflect.TypeFor[int64]())
+		for i := range int64(100) {
 			v := i
 			got, err := fn(&v)
 			require.NoError(t, err)
@@ -85,10 +85,10 @@ func TestDefaultConverterFunc_BehaviorPreserved(t *testing.T) {
 // The actual ns/op proof lives in BenchmarkDefaultConverterFunc.
 func TestDefaultConverterFunc_PointerToCachedAcrossCalls(t *testing.T) {
 	const calls = 1000
-	t64 := reflect.TypeOf(int64(0))
+	t64 := reflect.TypeFor[int64]()
 	v := int64(7)
 
-	uncached := func(in interface{}) (interface{}, error) { //nolint:unparam // mirrors the shape of DefaultConverterFunc for apples-to-apples comparison
+	uncached := func(in any) (any, error) { //nolint:unparam // mirrors the shape of DefaultConverterFunc for apples-to-apples comparison
 		if reflect.TypeOf(in) == reflect.PointerTo(t64) {
 			return reflect.ValueOf(in).Elem().Interface(), nil
 		}
@@ -97,12 +97,12 @@ func TestDefaultConverterFunc_PointerToCachedAcrossCalls(t *testing.T) {
 	cached := sqlutil.DefaultConverterFunc(t64)
 
 	uncachedAllocs := testing.AllocsPerRun(3, func() {
-		for i := 0; i < calls; i++ {
+		for range calls {
 			_, _ = uncached(&v)
 		}
 	})
 	cachedAllocs := testing.AllocsPerRun(3, func() {
-		for i := 0; i < calls; i++ {
+		for range calls {
 			_, _ = cached(&v)
 		}
 	})
@@ -261,9 +261,9 @@ func TestFrameFromRows_StringConverterNoAliasing(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.name, func(t *testing.T) {
 			want := []string{"row0", "row1", "row2", "row3"}
-			rowData := make([][]interface{}, len(want))
+			rowData := make([][]any, len(want))
 			for i, v := range want {
-				rowData[i] = []interface{}{v}
+				rowData[i] = []any{v}
 			}
 			rows := makeSingleResultSet([]string{"val"}, rowData...) //nolint:rowserrcheck // FrameFromRows checks rows.Err() internally
 			t.Cleanup(func() { _ = rows.Close() })
@@ -291,9 +291,9 @@ func TestFrameFromRows_StringConverterNoAliasing(t *testing.T) {
 // asserts each row keeps its own value at its own address.
 func TestFrameFromRows_NullBoolConverterNoAliasing(t *testing.T) {
 	want := []bool{true, false, true, false}
-	rowData := make([][]interface{}, len(want))
+	rowData := make([][]any, len(want))
 	for i, v := range want {
-		rowData[i] = []interface{}{v}
+		rowData[i] = []any{v}
 	}
 	rows := makeSingleResultSetWithTypeNames([]string{"flag"}, []string{"BOOLEAN"}, rowData...) //nolint:rowserrcheck // FrameFromRows checks rows.Err() internally
 	t.Cleanup(func() { _ = rows.Close() })

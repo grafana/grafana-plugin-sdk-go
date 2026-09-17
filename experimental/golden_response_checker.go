@@ -60,18 +60,18 @@ func CheckGoldenDataResponse(path string, dr *backend.DataResponse, updateFile b
 		return errorAfterUpdate(fmt.Errorf("frame count mismatch (-want +got):\n%s", diff), path, dr, updateFile)
 	}
 
-	errorString := ""
+	var errorString strings.Builder
 
 	// Check each frame
 	for idx, frame := range dr.Frames {
 		expectedFrame := saved.Frames[idx]
 		if diff := cmp.Diff(expectedFrame, frame, data.FrameTestCompareOptions()...); diff != "" {
-			errorString += fmt.Sprintf("frame[%d] mismatch (-want +got):\n%s\n", idx, diff)
+			fmt.Fprintf(&errorString, "frame[%d] mismatch (-want +got):\n%s\n", idx, diff)
 		}
 	}
 
-	if len(errorString) > 0 {
-		return errorAfterUpdate(errors.New(errorString), path, dr, updateFile)
+	if len(errorString.String()) > 0 {
+		return errorAfterUpdate(errors.New(errorString.String()), path, dr, updateFile)
 	}
 
 	return nil // OK
@@ -151,22 +151,23 @@ func readGoldenFile(path string) (*backend.DataResponse, error) {
 // The golden file has a text description at the top and a binary response at the bottom
 // The text part is not used for testing, but aims to give a legible response format
 func writeGoldenFile(path string, dr *backend.DataResponse) error {
-	str := generateHeaderString(dr)
+	var str strings.Builder
+	str.WriteString(generateHeaderString(dr))
 
 	// Add the binary section flag
-	str += binaryDataSection
+	str.WriteString(binaryDataSection)
 
 	if dr.Error != nil {
-		str += "\nERROR=" + dr.Error.Error()
+		str.WriteString("\nERROR=" + dr.Error.Error())
 	}
 	for _, frame := range dr.Frames {
 		bytes, _ := frame.MarshalArrow()
 		encoded := base64.StdEncoding.EncodeToString(bytes)
-		str += "\nFRAME=" + encoded
+		str.WriteString("\nFRAME=" + encoded)
 	}
-	str += "\n"
+	str.WriteString("\n")
 
-	return os.WriteFile(path, []byte(str), 0600)
+	return os.WriteFile(path, []byte(str.String()), 0600)
 }
 
 const machineStr = "🌟 This was machine generated.  Do not edit. 🌟\n"

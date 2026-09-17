@@ -100,8 +100,7 @@ func WithDownstreamErrorSource(ctx context.Context) error {
 // Response returns an error DataResponse with error and source of the error if present.
 // If the error does not have a source, it keeps the ErrorSource empty.
 func ErrorResponseWithErrorSource(err error) DataResponse {
-	var e ErrorWithSource
-	if errors.As(err, &e) {
+	if e, ok := errors.AsType[ErrorWithSource](err); ok {
 		return DataResponse{
 			Error:       err,
 			ErrorSource: e.ErrorSource(),

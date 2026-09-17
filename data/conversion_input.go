@@ -22,7 +22,7 @@ type FieldConverter struct {
 
 // Converter is a function type for converting values in a Frame. It is the consumers responsibility
 // to the check the underlying interface types of the input and return types to avoid panics.
-type Converter func(v interface{}) (interface{}, error)
+type Converter func(v any) (any, error)
 
 // NewFrameInputConverter returns a FrameInputConverter which is used to create a Frame from data
 // that needs value conversions. The FrameInputConverter will create a new Frame with fields
@@ -44,7 +44,7 @@ func NewFrameInputConverter(fieldConvs []FieldConverter, rowLen int) (*FrameInpu
 // Converter is not nil, then the Converter function is called before setting the value (otherwise Frame.Set is called directly).
 // If an error is returned from the Converter function this function returns that error.
 // Like Frame.Set and Field.Set, it will panic if fieldIdx or rowIdx are out of range.
-func (fic *FrameInputConverter) Set(fieldIdx, rowIdx int, val interface{}) error {
+func (fic *FrameInputConverter) Set(fieldIdx, rowIdx int, val any) error {
 	if fic.fieldConverters[fieldIdx].Converter == nil {
 		fic.Frame.Set(fieldIdx, rowIdx, val)
 		return nil
