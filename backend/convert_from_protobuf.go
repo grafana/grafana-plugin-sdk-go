@@ -225,9 +225,10 @@ func (f ConvertFromProtobuf) CallResourceResponse(protoResp *pluginv2.CallResour
 	}
 
 	return &CallResourceResponse{
-		Status:  int(protoResp.Code),
-		Body:    protoResp.Body,
-		Headers: headers,
+		Status:      int(protoResp.Code),
+		Body:        protoResp.Body,
+		Headers:     headers,
+		ErrorSource: ErrorSource(protoResp.ErrorSource),
 	}
 }
 
@@ -257,6 +258,7 @@ func (f ConvertFromProtobuf) CheckHealthResponse(protoResp *pluginv2.CheckHealth
 		Status:      status,
 		Message:     protoResp.Message,
 		JSONDetails: protoResp.JsonDetails,
+		ErrorSource: ErrorSource(protoResp.ErrorSource),
 	}
 }
 
