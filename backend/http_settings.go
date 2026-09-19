@@ -47,7 +47,7 @@ type HTTPSettings struct {
 	SigV4SecretKey     string
 	SigV4SessionToken  string
 
-	JSONData       map[string]interface{}
+	JSONData       map[string]any
 	SecureJSONData map[string]string
 }
 
@@ -56,7 +56,7 @@ func (s *HTTPSettings) HTTPClientOptions() httpclient.Options {
 	opts := httpclient.Options{
 		Header:        s.Header,
 		Labels:        map[string]string{},
-		CustomOptions: map[string]interface{}{},
+		CustomOptions: map[string]any{},
 	}
 
 	opts.Timeouts = &httpclient.TimeoutOptions{
@@ -110,7 +110,7 @@ func parseHTTPSettings(jsonData json.RawMessage, secureJSONData map[string]strin
 		Header: http.Header{},
 	}
 
-	var dat map[string]interface{}
+	var dat map[string]any
 	if jsonData != nil {
 		if err := json.Unmarshal(jsonData, &dat); err != nil {
 			return nil, err

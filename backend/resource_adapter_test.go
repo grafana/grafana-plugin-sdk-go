@@ -30,7 +30,7 @@ func TestCallResource(t *testing.T) {
 	})
 
 	t.Run("When call resource handler set should provide expected request and return expected response", func(t *testing.T) {
-		data := map[string]interface{}{
+		data := map[string]any{
 			"message": "hello",
 		}
 		body, err := json.Marshal(&data)
@@ -73,7 +73,7 @@ func TestCallResource(t *testing.T) {
 		require.Equal(t, []string{"A", "B"}, handler.actualReq.Headers["X-Header-In-1"])
 		require.Contains(t, handler.actualReq.Headers, "X-Header-In-2")
 		require.Equal(t, []string{"C"}, handler.actualReq.Headers["X-Header-In-2"])
-		var actualRequestData map[string]interface{}
+		var actualRequestData map[string]any
 		err = json.Unmarshal(req.Body, &actualRequestData)
 		require.NoError(t, err)
 		require.Equal(t, data, actualRequestData)
@@ -87,7 +87,7 @@ func TestCallResource(t *testing.T) {
 		require.Equal(t, []string{"D", "E"}, resp.Headers["X-Header-Out-1"].Values)
 		require.Contains(t, resp.Headers, "X-Header-Out-2")
 		require.Equal(t, []string{"F"}, resp.Headers["X-Header-Out-2"].Values)
-		var actualResponseData map[string]interface{}
+		var actualResponseData map[string]any
 		err = json.Unmarshal(resp.Body, &actualResponseData)
 		require.NoError(t, err)
 		require.Equal(t, data, actualResponseData)
@@ -269,11 +269,11 @@ func (srv *testCallResourceServer) Context() context.Context {
 	return srv.ctx
 }
 
-func (srv *testCallResourceServer) SendMsg(_ interface{}) error {
+func (srv *testCallResourceServer) SendMsg(_ any) error {
 	return nil
 }
 
-func (srv *testCallResourceServer) RecvMsg(_ interface{}) error {
+func (srv *testCallResourceServer) RecvMsg(_ any) error {
 	return nil
 }
 

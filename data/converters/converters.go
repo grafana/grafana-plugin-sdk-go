@@ -10,7 +10,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-func toConversionError(expected string, v interface{}) error {
+func toConversionError(expected string, v any) error {
 	return fmt.Errorf(`expected %s input but got type %T for value "%v"`, expected, v, v)
 }
 
@@ -50,7 +50,7 @@ var StringNOOP = data.FieldConverter{
 // If the the input value is nil the output value is *string typed nil.
 var AnyToNullableString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableString,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var str *string
 		if v != nil {
 			s, ok := v.(string)
@@ -66,7 +66,7 @@ var AnyToNullableString = data.FieldConverter{
 // AnyToString converts any value into a string.
 var AnyToString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeString,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		s, ok := v.(string)
 		if ok {
 			return s, nil
@@ -78,7 +78,7 @@ var AnyToString = data.FieldConverter{
 // Float64ToNullableFloat64 returns an error if the input is not a float64.
 var Float64ToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *float64
 		if v == nil {
 			return ptr, nil
@@ -95,7 +95,7 @@ var Float64ToNullableFloat64 = data.FieldConverter{
 // Int64ToNullableInt64 returns an error if the input is not an int64.
 var Int64ToNullableInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableInt64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *int64
 		if v == nil {
 			return ptr, nil
@@ -112,7 +112,7 @@ var Int64ToNullableInt64 = data.FieldConverter{
 // Uint64ToNullableUInt64 returns an error if the input is not a uint64.
 var Uint64ToNullableUInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableUint64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *uint64
 		if v == nil {
 			return ptr, nil
@@ -129,7 +129,7 @@ var Uint64ToNullableUInt64 = data.FieldConverter{
 // BoolToNullableBool returns an error if the input is not a bool.
 var BoolToNullableBool = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableBool,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *bool
 		if v == nil {
 			return ptr, nil
@@ -161,7 +161,7 @@ func RFC3339StringToNullableTime(s string) (*time.Time, error) {
 // StringToNullableFloat64 parses a float64 value from a string.
 var StringToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *float64
 		if v == nil {
 			return ptr, nil
@@ -179,7 +179,7 @@ var StringToNullableFloat64 = data.FieldConverter{
 // Float64EpochSecondsToTime converts a numeric seconds to time.Time.
 var Float64EpochSecondsToTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeTime,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		fV, ok := v.(float64)
 		if !ok {
 			return nil, toConversionError("float64", v)
@@ -191,7 +191,7 @@ var Float64EpochSecondsToTime = data.FieldConverter{
 // Float64EpochMillisToTime convert numeric milliseconds to time.Time
 var Float64EpochMillisToTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeTime,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		fV, ok := v.(float64)
 		if !ok {
 			return nil, toConversionError("float64", v)
@@ -203,7 +203,7 @@ var Float64EpochMillisToTime = data.FieldConverter{
 // Boolean returns an error if the input is not a bool.
 var Boolean = data.FieldConverter{
 	OutputFieldType: data.FieldTypeBool,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		fV, ok := v.(bool)
 		if !ok {
 			return nil, toConversionError("bool", v)
@@ -215,7 +215,7 @@ var Boolean = data.FieldConverter{
 // JSONValueToFloat64 converts the values you will see in json to float64 (float64,int64,string)
 var JSONValueToFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeFloat64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		fV, ok := v.(float64)
 		if ok {
 			return fV, nil
@@ -246,7 +246,7 @@ var JSONValueToFloat64 = data.FieldConverter{
 // JSONValueToInt64 converts the values you will see in json to int64 (float64,int64,string)
 var JSONValueToInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeInt64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		iV, ok := v.(int64)
 		if ok {
 			return iV, nil
@@ -274,41 +274,41 @@ var JSONValueToInt64 = data.FieldConverter{
 // JSONValueToNullableFloat64 converts input to *float64
 var JSONValueToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *float64
-		var err error
 		if v != nil {
 			fV, err := JSONValueToFloat64.Converter(v)
-			if err == nil {
-				vv := fV.(float64)
-				ptr = &vv
+			if err != nil {
+				return nil, err
 			}
+			vv := fV.(float64)
+			ptr = &vv
 		}
-		return ptr, err
+		return ptr, nil
 	},
 }
 
 // JSONValueToNullableInt64 converts input to *int64
 var JSONValueToNullableInt64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableInt64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *int64
-		var err error
 		if v != nil {
 			fV, err := JSONValueToInt64.Converter(v)
-			if err == nil {
-				vv := fV.(int64)
-				ptr = &vv
+			if err != nil {
+				return nil, err
 			}
+			vv := fV.(int64)
+			ptr = &vv
 		}
-		return ptr, err
+		return ptr, nil
 	},
 }
 
 // Uint8ArrayToNullableString parses a string value from a []uint8.
 var Uint8ArrayToNullableString = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableString,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *string
 		if v == nil {
 			return ptr, nil

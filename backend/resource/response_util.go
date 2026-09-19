@@ -20,7 +20,7 @@ func SendPlainText(sender backend.CallResourceResponseSender, text string) error
 }
 
 // SendJSON sends a JSON response.
-func SendJSON(sender backend.CallResourceResponseSender, obj interface{}) error {
+func SendJSON(sender backend.CallResourceResponseSender, obj any) error {
 	body, err := json.Marshal(obj)
 	if err != nil {
 		return err

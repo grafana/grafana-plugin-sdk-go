@@ -311,7 +311,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			addNanos := func() {
 				if readNanos {
 					if nanos[fieldIndex] != nil {
-						for i := 0; i < size; i++ {
+						for i := range size {
 							t, ok := field.ConcreteAt(i)
 							if !ok {
 								continue
@@ -390,7 +390,7 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 	return nil
 }
 
-func getReplacementValue(key string, ft FieldType) interface{} {
+func getReplacementValue(key string, ft FieldType) any {
 	v := math.NaN()
 	switch key {
 	case "Inf":
@@ -404,7 +404,7 @@ func getReplacementValue(key string, ft FieldType) interface{} {
 	return v
 }
 
-func float64FromJSON(v interface{}) (float64, error) {
+func float64FromJSON(v any) (float64, error) {
 	fV, ok := v.(float64)
 	if ok {
 		return fV, nil
@@ -427,7 +427,7 @@ func float64FromJSON(v interface{}) (float64, error) {
 	return 0, fmt.Errorf("unable to convert float64 in json [%T]", v)
 }
 
-func int64FromJSON(v interface{}) (int64, error) {
+func int64FromJSON(v any) (int64, error) {
 	iV, ok := v.(int64)
 	if ok {
 		return iV, nil
@@ -515,7 +515,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		if ft == FieldTypeNullableJSON {
 			size := vals.Len()
 			nullable := newNullableJsonRawMessageVector(size)
-			for i := 0; i < size; i++ {
+			for i := range size {
 				v := vals.At(i).(json.RawMessage)
 				nullable.Set(i, &v)
 			}
@@ -526,13 +526,13 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 	}
 
 	// if it's not uint64 field, handle the array the old way
-	convert := func(v interface{}) (interface{}, error) {
+	convert := func(v any) (any, error) {
 		return v, nil
 	}
 
 	switch ft.NonNullableType() {
 	case FieldTypeTime:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			fV, ok := v.(float64)
 			if !ok {
 				return nil, fmt.Errorf("error reading time")
@@ -541,59 +541,59 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		}
 
 	case FieldTypeUint8:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			iV, err := int64FromJSON(v)
 			return uint8(iV), err // #nosec G115
 		}
 
 	case FieldTypeUint16: // enums and uint16 share the same backings
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			iV, err := int64FromJSON(v)
 			return uint16(iV), err // #nosec G115
 		}
 
 	case FieldTypeEnum: // enums and uint16 share the same backings
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			iV, err := int64FromJSON(v)
 			return EnumItemIndex(iV), err // #nosec G115
 		}
 
 	case FieldTypeUint32:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			iV, err := int64FromJSON(v)
 			return uint32(iV), err // #nosec G115
 		}
 	case FieldTypeInt8:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			iV, err := int64FromJSON(v)
 			return int8(iV), err // #nosec G115
 		}
 
 	case FieldTypeInt16:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			iV, err := int64FromJSON(v)
 			return int16(iV), err // #nosec G115
 		}
 
 	case FieldTypeInt32:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			iV, err := int64FromJSON(v)
 			return int32(iV), err // #nosec G115
 		}
 
 	case FieldTypeFloat32:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			fV, err := float64FromJSON(v)
 			return float32(fV), err
 		}
 
 	case FieldTypeFloat64:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			return float64FromJSON(v)
 		}
 
 	case FieldTypeString:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			str, ok := v.(string)
 			if ok {
 				return str, nil
@@ -602,13 +602,13 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		}
 
 	case FieldTypeBool:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			val := v.(bool)
 			return val, nil
 		}
 
 	case FieldTypeJSON:
-		convert = func(v interface{}) (interface{}, error) {
+		convert = func(v any) (any, error) {
 			r, ok := v.(json.RawMessage)
 			if ok {
 				return r, nil
@@ -617,7 +617,7 @@ func jsonValuesToVector(iter *jsoniter.Iterator, ft FieldType) (vector, error) {
 		}
 	}
 
-	arr := make([]interface{}, 0)
+	arr := make([]any, 0)
 	err := itere.ReadVal(&arr)
 	if err != nil {
 		return nil, err
@@ -993,7 +993,7 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
 
 		stream.WriteArrayStart()
-		for i := 0; i < rowCount; i++ {
+		for i := range rowCount {
 			if i > 0 {
 				stream.WriteRaw(",")
 			}
@@ -1238,7 +1238,7 @@ func writeArrowData(stream *jsoniter.Stream, record arrow.Record) error { //noli
 
 	stream.WriteObjectField("values")
 	stream.WriteArrayStart()
-	for fidx := 0; fidx < fieldCount; fidx++ {
+	for fidx := range fieldCount {
 		if fidx > 0 {
 			stream.WriteMore()
 		}
@@ -1313,7 +1313,7 @@ func writeArrowDataTIMESTAMP(stream *jsoniter.Stream, col arrow.Array) []int64 {
 	nsTime := make([]int64, count)
 	v := array.NewTimestampData(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -1351,7 +1351,7 @@ func readTimeVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 		arr = newTimeTimeVector(size)
 	}
 
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint8VectorJSON", "expected array")
 			return nil, iter.Error
@@ -1383,7 +1383,7 @@ func readJSONVectorJSON(iter *jsoniter.Iterator, nullable bool, size int) (vecto
 		arr = newJsonRawMessageVector(size)
 	}
 
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readJSONVectorJSON", "expected array")
 			return nil, iter.Error

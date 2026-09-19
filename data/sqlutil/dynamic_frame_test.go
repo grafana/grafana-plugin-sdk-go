@@ -13,11 +13,11 @@ func TestDynamicFrame(t *testing.T) {
 	types := []*sql.ColumnType{}
 	types = append(types, kind)
 	converters := []Converter{}
-	data := [][]interface{}{}
-	mockRow := []interface{}{}
+	data := [][]any{}
+	mockRow := []any{}
 	val := string("foo")
 	mockRow = append(mockRow, val)
-	mockRow2 := []interface{}{}
+	mockRow2 := []any{}
 	mockRow2 = append(mockRow2, "bar")
 	data = append(data, mockRow)
 	data = append(data, mockRow2)
@@ -44,7 +44,7 @@ func TestDynamicFrame(t *testing.T) {
 }
 
 type MockRows struct {
-	data  [][]interface{}
+	data  [][]any
 	index int
 }
 
@@ -53,10 +53,10 @@ func (rs *MockRows) Next() bool {
 	return rs.index < len(rs.data)
 }
 
-func (rs *MockRows) Scan(dest ...interface{}) error {
+func (rs *MockRows) Scan(dest ...any) error {
 	data := rs.data[rs.index]
 	for i, d := range dest {
-		foo := d.(*interface{})
+		foo := d.(*any)
 		val := reflect.ValueOf(foo)
 		if val.Kind() != reflect.Ptr { //nolint:govet // inline analyzer false positive on reflect.Ptr alias
 			panic("val must be a pointer")
@@ -71,8 +71,8 @@ func TestDynamicFrameShouldNotPanic(t *testing.T) {
 	types := []*sql.ColumnType{}
 	types = append(types, kind)
 	converters := []Converter{dynamic()}
-	data := [][]interface{}{}
-	mockRow := []interface{}{}
+	data := [][]any{}
+	mockRow := []any{}
 	val := string("foo")
 	mockRow = append(mockRow, val)
 	data = append(data, mockRow)

@@ -304,7 +304,7 @@ func (p *pluginQueryDataMulti) QueryData(ctx context.Context, req *backend.Query
 func (p *pluginQueryDataMulti) query(q backend.DataQuery) backend.DataResponse {
 	var frames data.Frames
 
-	for i := 0; i < framesPerResponse; i++ {
+	for i := range framesPerResponse {
 		frame := data.NewFrame("frame"+strconv.Itoa(i), data.NewField("value", nil, []int64{}))
 		for i := int64(1); i <= q.MaxDataPoints; i++ {
 			frame.AppendRow(i)
@@ -333,7 +333,7 @@ func (p *pluginQueryChunkedMulti) QueryChunkedData(ctx context.Context, req *bac
 }
 
 func (p *pluginQueryChunkedMulti) queryChunked(ctx context.Context, q backend.DataQuery, w backend.ChunkedDataWriter) error {
-	for i := 0; i < framesPerResponse; i++ {
+	for i := range framesPerResponse {
 		if err := p.writeFrameWithNumber(ctx, i, q, w); err != nil {
 			return err
 		}
