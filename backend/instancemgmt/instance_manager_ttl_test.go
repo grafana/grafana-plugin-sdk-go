@@ -149,6 +149,35 @@ func TestTTLInstanceManagerWithCustomTTL(t *testing.T) {
 	})
 }
 
+func TestTTLInstanceManagerDisposesExpiredInstanceOnReplacement(t *testing.T) {
+	ctx := context.Background()
+	pCtx := backend.PluginContext{
+		OrgID: 1, // nolint:staticcheck
+		AppInstanceSettings: &backend.AppInstanceSettings{
+			Updated: time.Now(),
+		},
+	}
+
+	ttl := 20 * time.Millisecond
+	// No cleanup sweep runs during the test, so the expired entry is still in the cache
+	// when the next Get replaces it.
+	cleanupInterval := time.Hour
+	im := newTTLInstanceManager(&testInstanceProvider{}, ttl, cleanupInterval)
+
+	first, err := im.Get(ctx, pCtx)
+	require.NoError(t, err)
+
+	time.Sleep(ttl + 10*time.Millisecond)
+
+	second, err := im.Get(ctx, pCtx)
+	require.NoError(t, err)
+	require.NotSame(t, first, second)
+
+	// OnEvicted disposes the instance and decrements the active-instances gauge in the same
+	// callback, so one Dispose call also means one decrement.
+	require.Equal(t, int64(1), first.(*testInstance).disposedTimes.Load(), "expired instance should be disposed when it is replaced")
+}
+
 func TestTTLInstanceManagerConcurrency(t *testing.T) {
 	t.Run("Check possible race condition issues when initially creating instance", func(t *testing.T) {
 		ctx := context.Background()
