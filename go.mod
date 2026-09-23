@@ -1,6 +1,6 @@
 module github.com/grafana/grafana-plugin-sdk-go
 
-go 1.26.5
+go 1.27.0
 
 require (
 	github.com/apache/arrow-go/v18 v18.8.0
@@ -8,11 +8,13 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20260912003405-686a5c723acc
 	github.com/elazarl/goproxy v1.9.1
 	github.com/getkin/kin-openapi v0.149.0
+	github.com/go-openapi/jsonreference v1.0.2
 	github.com/go-openapi/loads v0.25.3
 	github.com/go-openapi/spec v1.0.1
 	github.com/go-openapi/strfmt v0.27.2
 	github.com/go-openapi/swag/loading v0.29.2
 	github.com/go-openapi/validate v1.0.0
+	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
 	github.com/grafana/otel-profiling-go v0.6.0
@@ -52,14 +54,9 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20260911204522-f61a6ca850bd
 	google.golang.org/grpc v1.84.0
 	google.golang.org/protobuf v1.36.12
-	k8s.io/kube-openapi v0.0.0-20260821135717-be32def86098 // @grafana/grafana-app-platform-squad
-	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
-)
-
-require (
-	github.com/go-openapi/jsonreference v1.0.2
-	github.com/gobwas/glob v0.2.3
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
+	k8s.io/kube-openapi v0.0.0-20260911184034-7970a1e230da // @grafana/grafana-app-platform-squad
+	sigs.k8s.io/yaml v1.6.0 // @grafana/grafana-app-platform-squad
 )
 
 require (
