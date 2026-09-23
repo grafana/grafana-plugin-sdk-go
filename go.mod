@@ -59,7 +59,7 @@ require (
 require (
 	github.com/go-openapi/jsonreference v1.0.2
 	github.com/gobwas/glob v0.2.3
-	gopkg.in/go-jose/go-jose.v2 v2.6.3
+	gopkg.in/go-jose/go-jose.v4 v4.1.5
 )
 
 require (
