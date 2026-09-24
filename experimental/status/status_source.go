@@ -145,11 +145,11 @@ func IsDownstreamError(err error) bool {
 }
 
 // IsDownstreamHTTPError return true if provided error is an error with downstream source or
-// a HTTP timeout error or a cancelled error or a connection reset/refused error or dns not found error.
+// a HTTP timeout error or a cancelled error or a connection reset/refused error or a DNS error.
 func IsDownstreamHTTPError(err error) bool {
 	return IsDownstreamError(err) ||
 		isNetworkSyscallConnectionError(err) ||
-		isDNSNotFoundError(err) ||
+		isDNSError(err) ||
 		isTLSCertificateVerificationError(err) ||
 		isHTTPEOFError(err)
 }
@@ -178,13 +178,13 @@ func isNetworkSyscallConnectionError(err error) bool {
 	return false
 }
 
-func isDNSNotFoundError(err error) bool {
+// isDNSError returns true if err is a DNS resolution failure of any kind (not found,
+// timeout, server failure/SERVFAIL, temporary, etc). A failure to resolve the
+// downstream host's address is a problem with the downstream target or the caller's
+// network, not the plugin, regardless of which DNS error subtype the resolver reports.
+func isDNSError(err error) bool {
 	var dnsError *net.DNSError
-	if errors.As(err, &dnsError) && dnsError.IsNotFound {
-		return true
-	}
-
-	return false
+	return errors.As(err, &dnsError)
 }
 
 // isTLSCertificateVerificationError checks if the error is related to TLS certificate verification.

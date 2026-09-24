@@ -43,7 +43,7 @@ func IsDownstreamError(err error) bool {
 }
 
 // IsDownstreamError return true if provided error is an error with downstream source or
-// a HTTP timeout error or a cancelled error or a connection reset/refused error or dns not found error.
+// a HTTP timeout error or a cancelled error or a connection reset/refused error or a DNS error.
 func IsDownstreamHTTPError(err error) bool {
 	return status.IsDownstreamHTTPError(err)
 }

@@ -241,6 +241,16 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "DNS server misbehaving (SERVFAIL) error",
+			err:      &net.DNSError{Err: "server misbehaving", IsNotFound: false, IsTemporary: true},
+			expected: true,
+		},
+		{
+			name:     "DNS timeout error",
+			err:      &net.DNSError{Err: "i/o timeout", IsNotFound: false, IsTimeout: true},
+			expected: true,
+		},
+		{
 			name:     "wrapped *url.Error with UnknownAuthorityError",
 			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: &tls.CertificateVerificationError{Err: x509.UnknownAuthorityError{}}},
 			expected: true,
