@@ -45,6 +45,19 @@ func TestAlertForwarderMiddleware(t *testing.T) {
 			crHeaders[k] = []string{v}
 		}
 
+		t.Run("Should forward only FromAlert header when calling QueryChunkedData", func(t *testing.T) {
+			cdt := newTest(t)
+			err = cdt.MiddlewareHandler.QueryChunkedData(req.Context(), &backend.QueryChunkedDataRequest{
+				PluginContext: pluginCtx,
+				Headers:       headers,
+			}, nil)
+			require.NoError(t, err)
+
+			reqClone := applyContextualMiddleware(t, cdt.QueryChunkedDataCtx, req)
+			require.Len(t, reqClone.Header, 1)
+			require.Equal(t, "true", reqClone.Header.Get(backend.FromAlertHeaderName))
+		})
+
 		t.Run("Should forward only FromAlert header when calling QueryData", func(t *testing.T) {
 			cdt := newTest(t)
 			_, err = cdt.MiddlewareHandler.QueryData(req.Context(), &backend.QueryDataRequest{

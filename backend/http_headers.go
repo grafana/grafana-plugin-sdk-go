@@ -147,6 +147,15 @@ func (m *headerMiddleware) QueryData(ctx context.Context, req *QueryDataRequest)
 	return m.BaseHandler.QueryData(ctx, req)
 }
 
+func (m *headerMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	if req == nil {
+		return m.BaseHandler.QueryChunkedData(ctx, req, w)
+	}
+
+	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
+	return m.BaseHandler.QueryChunkedData(ctx, req, w)
+}
+
 func (m *headerMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	if req == nil {
 		return m.BaseHandler.CallResource(ctx, req, sender)

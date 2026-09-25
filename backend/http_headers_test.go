@@ -1,10 +1,16 @@
 package backend
 
 import (
+	"bytes"
+	"context"
+	"io"
 	"maps"
+	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
 func TestSetHTTPHeaderInStringMap(t *testing.T) {
@@ -204,4 +210,37 @@ func TestDeleteHTTPHeaderInStringMap(t *testing.T) {
 			require.Equal(t, v, headers.Get(k))
 		}
 	}
+}
+
+func TestHeaderMiddlewareQueryChunkedData(t *testing.T) {
+	const headerName = "X-Test-Header"
+	request := &QueryChunkedDataRequest{}
+	request.SetHTTPHeader(headerName, "test-value")
+
+	var handlerCtx context.Context
+	handler, err := HandlerFromMiddlewares(Handlers{
+		QueryChunkedDataHandler: QueryChunkedDataHandlerFunc(func(ctx context.Context, _ *QueryChunkedDataRequest, _ ChunkedDataWriter) error {
+			handlerCtx = ctx
+			return nil
+		}),
+	}, newHeaderMiddleware())
+	require.NoError(t, err)
+
+	require.NoError(t, handler.QueryChunkedData(context.Background(), request, nil))
+
+	middlewares := httpclient.ContextualMiddlewareFromContext(handlerCtx)
+	require.Len(t, middlewares, 1)
+
+	outgoingRequest, err := http.NewRequest(http.MethodGet, "http://example.com", nil)
+	require.NoError(t, err)
+	response, err := middlewares[0].CreateMiddleware(httpclient.Options{ForwardHTTPHeaders: true}, httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Request:    req,
+			Body:       io.NopCloser(bytes.NewReader(nil)),
+		}, nil
+	})).RoundTrip(outgoingRequest)
+	require.NoError(t, err)
+	require.NoError(t, response.Body.Close())
+	require.Equal(t, "test-value", outgoingRequest.Header.Get(headerName))
 }
