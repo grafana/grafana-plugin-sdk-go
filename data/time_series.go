@@ -214,6 +214,13 @@ func GetMissing(fillMissing *FillMissing, field *Field, previousRowIdx int) (any
 // With a conversion of Long to Wide, and then back to Long via WideToLong(), the outputted Long Frame
 // may not match the original inputted Long frame.
 func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
+	return LongToWideWithLimit(longFrame, fillMissing, 0)
+}
+
+// LongToWideWithLimit is LongToWide with a ceiling on the size of the wide Frame, in cells (rows times Fields).
+// It returns ErrorWideFrameTooLarge as soon as the Frame being built grows past cellLimit. A cellLimit of 0 or
+// less disables the ceiling.
+func LongToWideWithLimit(longFrame *Frame, fillMissing *FillMissing, cellLimit int64) (*Frame, error) {
 	tsSchema := longFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeLong {
 		return nil, fmt.Errorf("can not convert to wide series, expected long format series input but got %s series", tsSchema.Type)
@@ -251,6 +258,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		longFrame:                 longFrame,
 		tsSchema:                  tsSchema,
 		fillMissing:               fillMissing,
+		cellLimit:                 cellLimit,
 		seenFactors:               map[string]struct{}{},
 		valueFactorToWideFieldIdx: valueFactorToWideFieldIdx,
 	}
@@ -284,6 +292,7 @@ type longRowProcessor struct {
 	longFrame           *Frame
 	tsSchema            TimeSeriesSchema
 	fillMissing         *FillMissing
+	cellLimit           int64
 	// seen factor combinations
 	seenFactors map[string]struct{}
 	// value field idx and factors key -> fieldIdx of longFrame (for insertion)
@@ -393,6 +402,18 @@ func (p *longRowProcessor) process(longRowIdx int) error {
 		p.wideFrame.Set(wideFieldIdx, p.wideFrameRowCounter, p.longFrame.CopyAt(longFieldIdx, longRowIdx))
 	}
 
+	return p.checkCellLimit()
+}
+
+func (p *longRowProcessor) checkCellLimit() error {
+	if p.cellLimit <= 0 {
+		return nil
+	}
+	rows := int64(p.wideFrameRowCounter + 1)
+	fields := int64(len(p.wideFrame.Fields))
+	if fields > p.cellLimit/rows {
+		return fmt.Errorf("%w: %d rows and %d fields exceed the limit of %d cells", ErrorWideFrameTooLarge, rows, fields, p.cellLimit)
+	}
 	return nil
 }
 
