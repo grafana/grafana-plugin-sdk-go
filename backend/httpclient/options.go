@@ -69,7 +69,11 @@ type Options struct {
 	// included in backend.QueryDataRequest, backend.CallResourceRequest,
 	// backend.CheckHealthRequest, e.g. based on if Allowed cookies or
 	// Forward OAuth Identity is configured for the datasource or any
-	// other forwarded HTTP header from Grafana.
+	// other forwarded HTTP header from Grafana. If the datasource has
+	// both BasicAuth and Forward OAuth Identity configured, the
+	// Authorization header on the outbound request carries basic auth
+	// credentials by default. To forward OAuth tokens instead, set
+	// ConfigureMiddleware to ConfigureBasicAuthAfterContextualMiddleware.
 	ForwardHTTPHeaders bool
 }
 
