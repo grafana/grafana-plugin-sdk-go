@@ -183,6 +183,119 @@ func TestErrorSourceMiddleware(t *testing.T) {
 		require.Equal(t, backend.ErrorSourcePlugin, resp.Responses["A"].ErrorSource)
 		require.Equal(t, backend.ErrorSourceDownstream, resp.Responses["B"].ErrorSource)
 	})
+
+	t.Run("CheckHealth response with error sets error source", func(t *testing.T) {
+		for _, tc := range []struct {
+			name           string
+			responseSource backend.ErrorSource
+			expectedSource backend.ErrorSource
+		}{
+			{
+				name:           "explicit downstream source",
+				responseSource: backend.ErrorSourceDownstream,
+				expectedSource: backend.ErrorSourceDownstream,
+			},
+			{
+				name:           "missing source defaults to plugin",
+				expectedSource: backend.ErrorSourcePlugin,
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				cdt := handlertest.NewHandlerMiddlewareTest(t,
+					handlertest.WithMiddlewares(backend.NewErrorSourceMiddleware()),
+				)
+				cdt.TestHandler.CheckHealthFunc = func(ctx context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+					cdt.CheckHealthCtx = ctx
+					return &backend.CheckHealthResult{
+						Status:      backend.HealthStatusError,
+						ErrorSource: tc.responseSource,
+					}, nil
+				}
+
+				resp, err := cdt.MiddlewareHandler.CheckHealth(context.Background(), &backend.CheckHealthRequest{})
+				require.NoError(t, err)
+				require.Equal(t, tc.expectedSource, resp.ErrorSource)
+				require.Equal(t, tc.expectedSource, backend.ErrorSourceFromContext(cdt.CheckHealthCtx))
+			})
+		}
+	})
+
+	t.Run("CallResource response sets error source", func(t *testing.T) {
+		for _, tc := range []struct {
+			name           string
+			status         int
+			responseSource backend.ErrorSource
+			expectedSource backend.ErrorSource
+		}{
+			{
+				name:           "HTTP failure is inferred as downstream",
+				status:         500,
+				expectedSource: backend.ErrorSourceDownstream,
+			},
+			{
+				name:           "explicit plugin source takes precedence over HTTP status",
+				status:         500,
+				responseSource: backend.ErrorSourcePlugin,
+				expectedSource: backend.ErrorSourcePlugin,
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				cdt := handlertest.NewHandlerMiddlewareTest(t,
+					handlertest.WithMiddlewares(backend.NewErrorSourceMiddleware()),
+				)
+				cdt.TestHandler.CallResourceFunc = func(ctx context.Context, _ *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+					cdt.CallResourceCtx = ctx
+					return sender.Send(&backend.CallResourceResponse{
+						Status:      tc.status,
+						ErrorSource: tc.responseSource,
+					})
+				}
+
+				var resp *backend.CallResourceResponse
+				err := cdt.MiddlewareHandler.CallResource(context.Background(), &backend.CallResourceRequest{}, backend.CallResourceResponseSenderFunc(func(r *backend.CallResourceResponse) error {
+					resp = r
+					return nil
+				}))
+				require.NoError(t, err)
+				require.Equal(t, tc.expectedSource, resp.ErrorSource)
+				require.Equal(t, tc.expectedSource, backend.ErrorSourceFromContext(cdt.CallResourceCtx))
+			})
+		}
+	})
+
+	t.Run("CallResource plugin response takes precedence over downstream responses", func(t *testing.T) {
+		cdt := handlertest.NewHandlerMiddlewareTest(t,
+			handlertest.WithMiddlewares(backend.NewErrorSourceMiddleware()),
+		)
+		cdt.TestHandler.CallResourceFunc = func(ctx context.Context, _ *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+			cdt.CallResourceCtx = ctx
+			require.NoError(t, sender.Send(&backend.CallResourceResponse{Status: 500, ErrorSource: backend.ErrorSourceDownstream}))
+			return sender.Send(&backend.CallResourceResponse{Status: 500, ErrorSource: backend.ErrorSourcePlugin})
+		}
+
+		err := cdt.MiddlewareHandler.CallResource(context.Background(), &backend.CallResourceRequest{}, backend.CallResourceResponseSenderFunc(func(_ *backend.CallResourceResponse) error {
+			return nil
+		}))
+		require.NoError(t, err)
+		require.Equal(t, backend.ErrorSourcePlugin, backend.ErrorSourceFromContext(cdt.CallResourceCtx))
+	})
+
+	t.Run("CallResource terminal error takes precedence over response sources", func(t *testing.T) {
+		cdt := handlertest.NewHandlerMiddlewareTest(t,
+			handlertest.WithMiddlewares(backend.NewErrorSourceMiddleware()),
+		)
+		cdt.TestHandler.CallResourceFunc = func(ctx context.Context, _ *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+			cdt.CallResourceCtx = ctx
+			require.NoError(t, sender.Send(&backend.CallResourceResponse{Status: 500, ErrorSource: backend.ErrorSourceDownstream}))
+			return someErr
+		}
+
+		err := cdt.MiddlewareHandler.CallResource(context.Background(), &backend.CallResourceRequest{}, backend.CallResourceResponseSenderFunc(func(_ *backend.CallResourceResponse) error {
+			return nil
+		}))
+		require.ErrorIs(t, err, someErr)
+		require.Equal(t, backend.ErrorSourcePlugin, backend.ErrorSourceFromContext(cdt.CallResourceCtx))
+	})
 }
 
 func setupHandlersWithError(cdt *handlertest.HandlerMiddlewareTest, err error) {
