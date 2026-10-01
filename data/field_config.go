@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"time"
 
@@ -158,6 +159,27 @@ func (fc *FieldConfig) SetMax(v float64) *FieldConfig {
 func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
 	fc.Filterable = &b
 	return fc
+}
+
+// clone returns a copy of fc. TypeConfig is copied too so series do not share one enum name map.
+func (fc *FieldConfig) clone() *FieldConfig {
+	if fc == nil {
+		return nil
+	}
+	c := *fc
+	if fc.TypeConfig != nil {
+		tc := *fc.TypeConfig
+		if fc.TypeConfig.Enum != nil {
+			e := *fc.TypeConfig.Enum
+			e.Text = slices.Clone(e.Text)
+			e.Color = slices.Clone(e.Color)
+			e.Icon = slices.Clone(e.Icon)
+			e.Description = slices.Clone(e.Description)
+			tc.Enum = &e
+		}
+		c.TypeConfig = &tc
+	}
+	return &c
 }
 
 // DataLink define what
