@@ -1,19 +1,24 @@
 package marketplace
 
 import (
+	"flag"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 )
 
+var queryTimeLicenseValidation = flag.Bool("qtlv", false, "should validate marketplace license on every request")
+
+// Manage serves a marketplace data source with automatic instance management.
+// It blocks until the plugin is terminated.
+// By default, it validates the license once at startup. With -qtlv, it validates
+// the license supplied in incoming gRPC metadata before each request instead.
 func Manage(pluginID string, instanceFactory datasource.InstanceFactoryFunc, opts datasource.ManageOpts) error {
-	// TODO: PPT support: this will be implemented in a follow-up PR
-	/* flag.Parse() // Parse the flags so that we can check the value of -qtlv
+	flag.Parse()
 
-	// If -qtlv is set, then we should check the license on every request
 	if *queryTimeLicenseValidation {
-		return datasource.Manage(pluginID, enterpriseInstanceFactory(instanceFactory), opts)
-	} */
+		return datasource.Manage(pluginID, marketplaceInstanceFactory(instanceFactory), opts)
+	}
 
-	// If -qtlv is not set, then we should check the license once at startup
 	if err := CheckMarketplacePluginLicense(pluginID); err != nil {
 		return err
 	}
