@@ -1,9 +1,11 @@
 package build
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -198,6 +200,52 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_foobarbaz_windows_amd64.exe"), "-tags", "arrow_json_stdlib", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
 			wantErr:      assert.NoError,
 		},
+		{
+			name: "Debug keeps marketplace licensing enabled",
+			cfg: Config{
+				OS:             "linux",
+				Arch:           "amd64",
+				EnableDebug:    true,
+				Env:            map[string]string{"GOFLAGS": "-tags=marketplace_dev"},
+				PluginJSONPath: filepath.Join(tmpDir, "debug-datasource"),
+			},
+			pluginJSONCreate: func(t *testing.T) {
+				t.Helper()
+				createPluginJSON(t, filepath.Join(tmpDir, "debug-datasource"), "gpx_debug")
+			},
+			expectedCfg: Config{
+				OS:             "linux",
+				Arch:           "amd64",
+				EnableDebug:    true,
+				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "amd64", "GOFLAGS": "-tags=marketplace_dev", "GOOS": "linux"},
+				PluginJSONPath: filepath.Join(tmpDir, "debug-datasource"),
+			},
+			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_debug_linux_amd64"), "-tags", "arrow_json_stdlib", "-ldflags", "-extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "-gcflags=all=-N -l", "./pkg"},
+			wantErr:      assert.NoError,
+		},
+		{
+			name: "Marketplace development mode composes tags independently of debug mode",
+			cfg: Config{
+				OS:             "linux",
+				Arch:           "arm64",
+				MarketplaceDev: true,
+				Env:            make(map[string]string),
+				PluginJSONPath: filepath.Join(tmpDir, "marketplace-datasource"),
+			},
+			pluginJSONCreate: func(t *testing.T) {
+				t.Helper()
+				createPluginJSON(t, filepath.Join(tmpDir, "marketplace-datasource"), "gpx_marketplace")
+			},
+			expectedCfg: Config{
+				OS:             "linux",
+				Arch:           "arm64",
+				MarketplaceDev: true,
+				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "linux"},
+				PluginJSONPath: filepath.Join(tmpDir, "marketplace-datasource"),
+			},
+			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_marketplace_linux_arm64"), "-tags", "arrow_json_stdlib,marketplace_dev", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
+			wantErr:      assert.NoError,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -214,6 +262,114 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 			buildArg := strings.Join(args, " ")
 			expectedBuildArg := strings.Join(tc.expectedArgs, " ")
 			assert.Regexp(t, expectedBuildArg, buildArg, "getBuildBackendCmdInfo(%v)", tc.cfg)
+		})
+	}
+}
+
+func Test_getBuildBackendCmdInfoAllowsMarketplaceDevFromCallback(t *testing.T) {
+	originalBeforeBuild := beforeBuild
+	t.Cleanup(func() {
+		beforeBuild = originalBeforeBuild
+	})
+
+	pluginDir := filepath.Join(t.TempDir(), "callback-datasource")
+	createPluginJSON(t, pluginDir, "gpx_callback")
+
+	beforeBuild = func(cfg Config) (Config, error) {
+		cfg.MarketplaceDev = true
+		cfg.PluginJSONPath = pluginDir
+		return cfg, nil
+	}
+
+	cfg, args, err := getBuildBackendCmdInfo(newBuildConfig("linux", "arm64"))
+	require.NoError(t, err)
+	require.True(t, cfg.MarketplaceDev)
+	require.Contains(t, args, "arrow_json_stdlib,marketplace_dev")
+}
+
+func TestBuildTargetsSelectMarketplaceDevelopmentModeExplicitly(t *testing.T) {
+	originalBeforeBuild := beforeBuild
+	t.Cleanup(func() {
+		beforeBuild = originalBeforeBuild
+	})
+
+	productionOS := runtime.GOOS
+	productionArch := runtime.GOARCH
+	if runtime.GOOS == "darwin" {
+		productionArch = "arm64"
+	}
+
+	testErr := errors.New("stop before running go build")
+	tests := []struct {
+		name     string
+		run      func() error
+		expected Config
+	}{
+		{
+			name: "production backend",
+			run:  Build{}.Backend,
+			expected: Config{
+				OS:   productionOS,
+				Arch: productionArch,
+			},
+		},
+		{
+			name: "debug",
+			run:  Build{}.Debug,
+			expected: Config{
+				OS:          runtime.GOOS,
+				Arch:        runtime.GOARCH,
+				EnableDebug: true,
+			},
+		},
+		{
+			name: "custom platform",
+			run: func() error {
+				return Build{}.Custom("linux", "arm64")
+			},
+			expected: Config{
+				OS:   "linux",
+				Arch: "arm64",
+			},
+		},
+		{
+			name: "marketplace development current platform",
+			run:  Build{}.MarketplaceDev,
+			expected: Config{
+				OS:             runtime.GOOS,
+				Arch:           runtime.GOARCH,
+				EnableDebug:    true,
+				MarketplaceDev: true,
+			},
+		},
+		{
+			name: "marketplace development custom platform",
+			run: func() error {
+				return Build{}.MarketplaceDevFor("linux", "arm64")
+			},
+			expected: Config{
+				OS:             "linux",
+				Arch:           "arm64",
+				EnableDebug:    true,
+				MarketplaceDev: true,
+			},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var captured Config
+			beforeBuild = func(cfg Config) (Config, error) {
+				captured = cfg
+				return cfg, testErr
+			}
+
+			err := tt.run()
+			require.ErrorIs(t, err, testErr)
+			require.Equal(t, tt.expected.OS, captured.OS)
+			require.Equal(t, tt.expected.Arch, captured.Arch)
+			require.Equal(t, tt.expected.EnableDebug, captured.EnableDebug)
+			require.Equal(t, tt.expected.MarketplaceDev, captured.MarketplaceDev)
 		})
 	}
 }

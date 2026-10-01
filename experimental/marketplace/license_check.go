@@ -16,6 +16,11 @@ import (
 )
 
 const (
+	// developmentBuildMarker is a stable machine-readable marker embedded only in marketplace_dev binaries.
+	// The plugin-validator scans packaged backend executables for this literal, alongside the marketplace_dev
+	// Go build tag, to reject artifacts built with marketplace license checks disabled. Keep its value stable.
+	developmentBuildMarker = "GRAFANA_MARKETPLACE_DEV_BUILD_NO_LICENSE_CHECKS_V1"
+
 	// marketplaceLicenseValidationKeyEnv is the environment variable that holds a signed JWKS (JWS) token
 	// containing validation keys used to verify marketplace plugin license tokens.
 	// TODO: this is currently not passed to the plugin from Grafana.
@@ -40,7 +45,24 @@ var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 // the plugin's own ID unless it is nested, in which case it is the parent's ID.
 // pluginID is the ID of the running plugin.
 func checkMarketplacePluginLicense(pluginID, licensePluginID string) error {
-	token := readPluginLicense(licensePluginID)
+	return checkMarketplacePluginLicenseWithDeps(pluginID, licensePluginID, readPluginLicense, runInvalidLicenseServer)
+}
+
+func checkMarketplacePluginLicenseWithDeps(
+	pluginID, licensePluginID string,
+	loadToken func(string) *licensing.LicenseToken,
+	startInvalidLicenseServer func(string, string, error) error,
+) error {
+	if developmentLicenseBypass {
+		backend.Logger.Warn(
+			"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
+			"marker", developmentBuildMarker,
+			"pluginId", pluginID,
+		)
+		return nil
+	}
+
+	token := loadToken(licensePluginID)
 	if token.Error != nil {
 		backend.Logger.Error("Marketplace License Error", "error", token.Error)
 		if token.Status == licensing.Expired {
@@ -53,7 +75,7 @@ func checkMarketplacePluginLicense(pluginID, licensePluginID string) error {
 				return nil
 			}
 		}
-		if err := runInvalidLicenseServer(pluginID, licensePluginID, token.Error); err != nil {
+		if err := startInvalidLicenseServer(pluginID, licensePluginID, token.Error); err != nil {
 			backend.Logger.Error(err.Error())
 			os.Exit(1)
 		}
