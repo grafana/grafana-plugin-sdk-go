@@ -23,7 +23,7 @@ var (
 const defaultDisposeTTL = 5 * time.Second // Time to wait before disposing an instance
 
 // Instance is a marker interface for an instance.
-type Instance interface{}
+type Instance any
 
 // InstanceDisposer is implemented by an Instance that has a Dispose method,
 // which defines that the instance is disposable.
@@ -37,7 +37,7 @@ type InstanceDisposer interface {
 
 // InstanceCallbackFunc defines the callback function of the InstanceManager.Do method.
 // The argument provided will of type Instance.
-type InstanceCallbackFunc interface{}
+type InstanceCallbackFunc any
 
 // InstanceManager manages the lifecycle of instances.
 type InstanceManager interface {
@@ -63,7 +63,7 @@ type CachedInstance struct {
 // InstanceProvider defines an instance provider, providing instances.
 type InstanceProvider interface {
 	// GetKey returns a cache key to be used for caching an Instance.
-	GetKey(ctx context.Context, pluginContext backend.PluginContext) (interface{}, error)
+	GetKey(ctx context.Context, pluginContext backend.PluginContext) (any, error)
 
 	// NeedsUpdate returns whether a cached Instance have been updated.
 	NeedsUpdate(ctx context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool
@@ -168,7 +168,7 @@ func (im *instanceManager) Do(ctx context.Context, pluginContext backend.PluginC
 	return nil
 }
 
-func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance interface{}) {
+func callInstanceHandlerFunc(fn InstanceCallbackFunc, instance any) {
 	var params = []reflect.Value{}
 	params = append(params, reflect.ValueOf(instance))
 	reflect.ValueOf(fn).Call(params)

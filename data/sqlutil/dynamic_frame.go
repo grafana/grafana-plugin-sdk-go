@@ -24,20 +24,20 @@ func removeDynamicConverter(converters []Converter) (bool, []Converter) {
 	return isDynamic, filtered
 }
 
-func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field, [][]interface{}, error) {
+func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field, [][]any, error) {
 	var i int64
 	fields := make(map[int]Field)
 
-	var returnData [][]interface{}
+	var returnData [][]any
 
 	for {
 		for rows.Next() {
 			if i == rowLimit {
 				break
 			}
-			row := make([]interface{}, len(types))
+			row := make([]any, len(types))
 			for i := range row {
-				row[i] = new(interface{})
+				row[i] = new(any)
 			}
 			err := rows.Scan(row)
 			if err != nil {
@@ -52,7 +52,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 			}
 
 			for colIdx, col := range row {
-				val := *col.(*interface{})
+				val := *col.(*any)
 				var field Field
 				colType := types[colIdx]
 				switch val.(type) {
@@ -126,13 +126,13 @@ func frameDynamic(rows Rows, rowLimit int64, types []*sql.ColumnType, converters
 	frame := data.NewFrame("", frameFields...)
 
 	for _, row := range rawRows {
-		var rowData []interface{}
+		var rowData []any
 
 		for colIdx, col := range row {
 			field := fields[colIdx]
 
 			val := col
-			ptr, ok := col.(*interface{})
+			ptr, ok := col.(*any)
 			if ok {
 				val = *ptr
 			}
@@ -187,7 +187,7 @@ type ResultSetIterator interface {
 
 type RowIterator interface {
 	Next() bool
-	Scan(dest ...interface{}) error
+	Scan(dest ...any) error
 }
 
 type Rows struct {
@@ -205,6 +205,6 @@ func (rs Rows) Next() bool {
 	return rs.itr.Next()
 }
 
-func (rs Rows) Scan(dest []interface{}) error {
+func (rs Rows) Scan(dest []any) error {
 	return rs.itr.Scan(dest...)
 }

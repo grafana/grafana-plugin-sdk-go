@@ -25,10 +25,10 @@ func TestDefaultConverter(t *testing.T) {
 	suite := []Suite{
 		{
 			Name:     "non-nullable type",
-			Type:     reflect.TypeOf(int64(0)),
+			Type:     reflect.TypeFor[int64](),
 			Nullable: false,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(int64(0)),
+				InputScanType: reflect.TypeFor[int64](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeInt64,
 				},
@@ -36,10 +36,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "nullable int64",
-			Type:     reflect.TypeOf(int64(0)),
+			Type:     reflect.TypeFor[int64](),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullInt64{}),
+				InputScanType: reflect.TypeFor[sql.NullInt64](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeInt64.NullableType(),
 				},
@@ -47,10 +47,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "string",
-			Type:     reflect.TypeOf(""),
+			Type:     reflect.TypeFor[string](),
 			Nullable: false,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(""),
+				InputScanType: reflect.TypeFor[string](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeString,
 				},
@@ -58,10 +58,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "nullable string",
-			Type:     reflect.TypeOf(""),
+			Type:     reflect.TypeFor[string](),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullString{}),
+				InputScanType: reflect.TypeFor[sql.NullString](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeString.NullableType(),
 				},
@@ -69,10 +69,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "string",
-			Type:     reflect.TypeOf(time.Time{}),
+			Type:     reflect.TypeFor[time.Time](),
 			Nullable: false,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(time.Time{}),
+				InputScanType: reflect.TypeFor[time.Time](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeTime,
 				},
@@ -80,10 +80,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "nullable time",
-			Type:     reflect.TypeOf(time.Time{}),
+			Type:     reflect.TypeFor[time.Time](),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullTime{}),
+				InputScanType: reflect.TypeFor[sql.NullTime](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeTime.NullableType(),
 				},
@@ -94,7 +94,7 @@ func TestDefaultConverter(t *testing.T) {
 			Type:     reflect.TypeOf(false),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullBool{}),
+				InputScanType: reflect.TypeFor[sql.NullBool](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeBool.NullableType(),
 				},
@@ -102,10 +102,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "nullable sql bool",
-			Type:     reflect.TypeOf(sql.NullBool{}),
+			Type:     reflect.TypeFor[sql.NullBool](),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullBool{}),
+				InputScanType: reflect.TypeFor[sql.NullBool](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeBool.NullableType(),
 				},
@@ -113,10 +113,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "nullable sql float",
-			Type:     reflect.TypeOf(sql.NullFloat64{}),
+			Type:     reflect.TypeFor[sql.NullFloat64](),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullFloat64{}),
+				InputScanType: reflect.TypeFor[sql.NullFloat64](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeFloat64.NullableType(),
 				},
@@ -124,10 +124,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "nullable sql string",
-			Type:     reflect.TypeOf(sql.NullString{}),
+			Type:     reflect.TypeFor[sql.NullString](),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullString{}),
+				InputScanType: reflect.TypeFor[sql.NullString](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeString.NullableType(),
 				},
@@ -135,10 +135,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "nullable sql time",
-			Type:     reflect.TypeOf(sql.NullTime{}),
+			Type:     reflect.TypeFor[sql.NullTime](),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullTime{}),
+				InputScanType: reflect.TypeFor[sql.NullTime](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeTime.NullableType(),
 				},
@@ -146,10 +146,10 @@ func TestDefaultConverter(t *testing.T) {
 		},
 		{
 			Name:     "nullable sql time",
-			Type:     reflect.TypeOf(sql.NullInt64{}),
+			Type:     reflect.TypeFor[sql.NullInt64](),
 			Nullable: true,
 			Expected: sqlutil.Converter{
-				InputScanType: reflect.TypeOf(sql.NullInt64{}),
+				InputScanType: reflect.TypeFor[sql.NullInt64](),
 				FrameConverter: sqlutil.FrameConverter{
 					FieldType: data.FieldTypeInt64.NullableType(),
 				},

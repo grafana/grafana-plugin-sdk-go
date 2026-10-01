@@ -86,7 +86,7 @@ func validateOpenAPIv2Schema(t *testing.T, data []byte, file string) {
 	t.Helper()
 	// --- Stage 1: Check for disallowed top-level keys ---
 	// https://github.com/go-openapi/spec/blob/0201d0c/schema.go#L622 json.Unmarshal on `spec.Schema` gets rid of $schema - so need to unmarshall into a generic map
-	var genericMap map[string]interface{}
+	var genericMap map[string]any
 	if err := json.Unmarshal(data, &genericMap); err != nil {
 		require.NoError(t, err, file)
 	}

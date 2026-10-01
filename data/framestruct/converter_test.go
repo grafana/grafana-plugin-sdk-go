@@ -67,7 +67,7 @@ func TestStructs(t *testing.T) {
 
 	t.Run("it flattens structs with maps", func(t *testing.T) {
 		m := structWithMap{
-			map[string]interface{}{
+			map[string]any{
 				"Thing1": "foo",
 			},
 		}
@@ -152,7 +152,7 @@ func TestStructs(t *testing.T) {
 
 	t.Run("it returns an error when any struct contains a map with an unsupported type", func(t *testing.T) {
 		m := structWithMap{
-			map[string]interface{}{
+			map[string]any{
 				"Thing2": 36,
 			},
 		}
@@ -246,7 +246,7 @@ func TestSlices(t *testing.T) {
 	})
 
 	t.Run("it flattens a slice of maps", func(t *testing.T) {
-		maps := []map[string]interface{}{
+		maps := []map[string]any{
 			{
 				"Thing1": "foo",
 				"Thing2": int32(36),
@@ -278,7 +278,7 @@ func TestSlices(t *testing.T) {
 	})
 
 	t.Run("it flattens a slice of maps that are different sizes", func(t *testing.T) {
-		maps := []map[string]interface{}{
+		maps := []map[string]any{
 			{
 				"Thing1": "foo",
 				"Thing2": int32(36),
@@ -314,7 +314,7 @@ func TestSlices(t *testing.T) {
 	})
 
 	t.Run("it flattens a slice of maps that are different sizes even if col0 is not fully-defined", func(t *testing.T) {
-		maps := []map[string]interface{}{
+		maps := []map[string]any{
 			{
 				"Thing2": int32(36),
 			},
@@ -349,7 +349,7 @@ func TestSlices(t *testing.T) {
 	})
 
 	t.Run("it flattens a slice of maps that are different sizes even if col0 is not fully-defined (minimal)s", func(t *testing.T) {
-		maps := []map[string]interface{}{
+		maps := []map[string]any{
 			{
 				"b": true,
 			},
@@ -380,7 +380,7 @@ func TestSlices(t *testing.T) {
 
 	t.Run("it flattens a slice of maps that contains nil values", func(t *testing.T) {
 		// like the testcase above, just with "nil" instead of non-defined map keys.
-		maps := []map[string]interface{}{
+		maps := []map[string]any{
 			{
 				"Thing1": "foo",
 				"Thing2": int32(36),
@@ -420,7 +420,7 @@ func TestSlices(t *testing.T) {
 
 func TestMaps(t *testing.T) {
 	t.Run("it flattens a map", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "foo",
 			"Thing2": int32(36),
 			"Thing3": "baz",
@@ -466,10 +466,10 @@ func TestMaps(t *testing.T) {
 	})
 
 	t.Run("it flattens nested maps with dot-names", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "foo",
 			"Thing2": int32(36),
-			"Thing3": map[string]interface{}{
+			"Thing3": map[string]any{
 				"Thing4": true,
 				"Thing5": int32(100),
 			},
@@ -493,7 +493,7 @@ func TestMaps(t *testing.T) {
 	})
 
 	t.Run("it flattens maps with structs", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "foo",
 			"Thing2": int32(36),
 			"Thing3": nested3{
@@ -520,7 +520,7 @@ func TestMaps(t *testing.T) {
 	})
 
 	t.Run("it flattens maps with slices of structs", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "foo",
 			"Thing2": int32(36),
 			"Thing3": []nested3{{
@@ -547,11 +547,11 @@ func TestMaps(t *testing.T) {
 	})
 
 	t.Run("it returns an error when any map contains an unsupported type", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "foo",
 			"Thing2": int(36),
 			"Thing3": "baz",
-			"Thing4": map[string]interface{}{
+			"Thing4": map[string]any{
 				"Thing5": 37,
 			},
 		}
@@ -560,13 +560,13 @@ func TestMaps(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "unsupported type int", err.Error())
 
-		_, err = framestruct.ToDataFrame("results", []map[string]interface{}{m})
+		_, err = framestruct.ToDataFrame("results", []map[string]any{m})
 		require.Error(t, err)
 		require.Equal(t, "unsupported type int", err.Error())
 	})
 
 	t.Run("it returns an error when a map key is not a string", func(t *testing.T) {
-		m := map[float64]interface{}{
+		m := map[float64]any{
 			1.0: "foo",
 		}
 
@@ -576,7 +576,7 @@ func TestMaps(t *testing.T) {
 	})
 
 	t.Run("it returns an error when any map contains a struct with an unsupported type", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "foo",
 			"Thing2": int(36),
 			"Thing3": "baz",
@@ -587,13 +587,13 @@ func TestMaps(t *testing.T) {
 		require.Error(t, err)
 		require.Equal(t, "unsupported type int", err.Error())
 
-		_, err = framestruct.ToDataFrame("results", []map[string]interface{}{m})
+		_, err = framestruct.ToDataFrame("results", []map[string]any{m})
 		require.Error(t, err)
 		require.Equal(t, "unsupported type int", err.Error())
 	})
 
 	t.Run("it can't convert a map that contains a slice", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Foo": []string{"1", "2", "3"},
 		}
 
@@ -684,7 +684,7 @@ func TestStructTags(t *testing.T) {
 	t.Run("sets the column with col0 to be the 0th column", func(t *testing.T) {
 		m := structWithCol0{
 			Zed: "this would be last without tag",
-			Foo: map[string]interface{}{
+			Foo: map[string]any{
 				"aaa": "foo",
 				"bbb": "foo",
 				"ccc": "foo",
@@ -705,7 +705,7 @@ func TestStructTags(t *testing.T) {
 		strct := allStructTags{
 			Foo: barBaz{
 				Bar: "should be first",
-				Baz: map[string]interface{}{
+				Baz: map[string]any{
 					"aaa": "foo",
 					"bbb": "foo",
 					"ccc": "foo",
@@ -727,7 +727,7 @@ func TestStructTags(t *testing.T) {
 		strct := allStructTagsWhitespace{
 			Foo: barBazWhitespace{
 				Bar: "should be first",
-				Baz: map[string]interface{}{
+				Baz: map[string]any{
 					"aaa": "foo",
 					"bbb": "foo",
 					"ccc": "foo",
@@ -746,7 +746,7 @@ func TestStructTags(t *testing.T) {
 	})
 
 	t.Run("it omits parents with slices of structs", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "foo",
 			"Thing2": int32(36),
 			"Thing3": []nested2{{
@@ -816,7 +816,7 @@ func TestToDataFrames(t *testing.T) {
 		strct := allStructTags{
 			Foo: barBaz{
 				Bar: "should be first",
-				Baz: map[string]interface{}{
+				Baz: map[string]any{
 					"aaa": "foo",
 					"bbb": "foo",
 					"ccc": "foo",
@@ -840,7 +840,7 @@ func TestToDataFrames(t *testing.T) {
 
 func TestOptions(t *testing.T) {
 	t.Run("it can designate the 0th column", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"aaa": "foo",
 			"bbb": "foo",
 			"ccc": "foo",
@@ -862,11 +862,11 @@ func TestOptions(t *testing.T) {
 	})
 
 	t.Run("it can accept converters to convert values", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "1",
 		}
 
-		stringToInt := func(i interface{}) (interface{}, error) {
+		stringToInt := func(i any) (any, error) {
 			s, _ := i.(string)
 			num, _ := strconv.Atoi(s)
 			return int64(num), nil
@@ -885,11 +885,11 @@ func TestOptions(t *testing.T) {
 	})
 
 	t.Run("it returns an error when the converter returns an error", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "1",
 		}
 
-		toError := func(_ interface{}) (interface{}, error) {
+		toError := func(_ any) (any, error) {
 			return nil, errors.New("something bad")
 		}
 
@@ -902,11 +902,11 @@ func TestOptions(t *testing.T) {
 	})
 
 	t.Run("it works with ToDataFrames", func(t *testing.T) {
-		m := map[string]interface{}{
+		m := map[string]any{
 			"Thing1": "1",
 		}
 
-		stringToInt := func(i interface{}) (interface{}, error) {
+		stringToInt := func(i any) (any, error) {
 			s, _ := i.(string)
 			num, _ := strconv.Atoi(s)
 			return int64(num), nil
@@ -1013,12 +1013,12 @@ type pointerStruct struct {
 }
 
 type structWithMap struct {
-	Foo map[string]interface{}
+	Foo map[string]any
 }
 
 type structWithCol0 struct {
-	Zed string                 `frame:"zzz,,col0"`
-	Foo map[string]interface{} `frame:",omitparent"`
+	Zed string         `frame:"zzz,,col0"`
+	Foo map[string]any `frame:",omitparent"`
 }
 
 type allStructTags struct {
@@ -1026,8 +1026,8 @@ type allStructTags struct {
 }
 
 type barBaz struct {
-	Bar string                 `frame:"zzz,omitparent,col0"`
-	Baz map[string]interface{} `frame:",omitparent"`
+	Bar string         `frame:"zzz,omitparent,col0"`
+	Baz map[string]any `frame:",omitparent"`
 }
 
 type timeStruct struct {
@@ -1043,8 +1043,8 @@ type allStructTagsWhitespace struct {
 }
 
 type barBazWhitespace struct {
-	Bar string                 `frame:"zzz  ,  omitparent  ,  col0   "`
-	Baz map[string]interface{} `frame:"   ,omitparent"`
+	Bar string         `frame:"zzz  ,  omitparent  ,  col0   "`
+	Baz map[string]any `frame:"   ,omitparent"`
 }
 
 type mockFramer struct {
@@ -1057,7 +1057,7 @@ func (f *mockFramer) Frames() (data.Frames, error) {
 	return []*data.Frame{frame}, nil
 }
 
-func fromPointer(value interface{}) interface{} {
+func fromPointer(value any) any {
 	switch v := value.(type) {
 	case *int8:
 		return *v

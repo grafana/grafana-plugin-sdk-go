@@ -83,7 +83,7 @@ func clientCfgFromEnv() *ClientCfg {
 
 	var rootCAs []string
 	if value, ok := os.LookupEnv(PluginSecureSocksProxyRootCACertFilePathsEnvVarName); ok {
-		for _, rootCA := range strings.Split(value, " ") {
+		for rootCA := range strings.SplitSeq(value, " ") {
 			certPEMBlock, err := os.ReadFile(rootCA) // #nosec G304
 			if err != nil {
 				return nil

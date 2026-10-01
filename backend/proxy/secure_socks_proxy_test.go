@@ -183,23 +183,23 @@ func TestSecureSocksProxyEnabled(t *testing.T) {
 func TestSecureSocksProxyEnabledOnDS(t *testing.T) {
 	t.Run("Secure socks proxy should only be enabled when the json data contains enableSecureSocksProxy=true", func(t *testing.T) {
 		tests := []struct {
-			jsonData map[string]interface{}
+			jsonData map[string]any
 			enabled  bool
 		}{
 			{
-				jsonData: map[string]interface{}{},
+				jsonData: map[string]any{},
 				enabled:  false,
 			},
 			{
-				jsonData: map[string]interface{}{"enableSecureSocksProxy": "nonbool"},
+				jsonData: map[string]any{"enableSecureSocksProxy": "nonbool"},
 				enabled:  false,
 			},
 			{
-				jsonData: map[string]interface{}{"enableSecureSocksProxy": false},
+				jsonData: map[string]any{"enableSecureSocksProxy": false},
 				enabled:  false,
 			},
 			{
-				jsonData: map[string]interface{}{"enableSecureSocksProxy": true},
+				jsonData: map[string]any{"enableSecureSocksProxy": true},
 				enabled:  true,
 			},
 		}

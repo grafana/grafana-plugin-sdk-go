@@ -150,11 +150,11 @@ func (srv *testRunStreamServer) Context() context.Context {
 	return srv.ctx
 }
 
-func (srv *testRunStreamServer) SendMsg(_ interface{}) error {
+func (srv *testRunStreamServer) SendMsg(_ any) error {
 	return nil
 }
 
-func (srv *testRunStreamServer) RecvMsg(_ interface{}) error {
+func (srv *testRunStreamServer) RecvMsg(_ any) error {
 	return nil
 }
 

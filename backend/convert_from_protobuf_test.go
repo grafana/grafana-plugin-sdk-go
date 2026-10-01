@@ -52,7 +52,7 @@ type requireCounter struct {
 	Count int64
 }
 
-func (rec *requireCounter) Equal(t *testing.T, expected, actual interface{}, msgAngArgs ...interface{}) {
+func (rec *requireCounter) Equal(t *testing.T, expected, actual any, msgAngArgs ...any) {
 	t.Helper()
 	require.Equal(t, expected, actual, msgAngArgs...)
 	rec.Count++

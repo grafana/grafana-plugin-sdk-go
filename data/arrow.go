@@ -807,7 +807,7 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 
 // ToJSONString calls json.Marshal on val and returns it as a string. An
 // error is returned if json.Marshal errors.
-func toJSONString(val interface{}) (string, error) {
+func toJSONString(val any) (string, error) {
 	b, err := json.Marshal(val)
 	if err != nil {
 		return "", err

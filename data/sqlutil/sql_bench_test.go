@@ -23,7 +23,7 @@ func newInt64Field() *data.Field {
 // variant inlines the pre-optimization shape so the benchmark is self-
 // contained and can be diffed with benchstat in a single run.
 func BenchmarkDefaultConverterFunc(b *testing.B) {
-	t64 := reflect.TypeOf(int64(0))
+	t64 := reflect.TypeFor[int64]()
 	v := int64(42)
 
 	b.Run("cached", func(b *testing.B) {
@@ -36,7 +36,7 @@ func BenchmarkDefaultConverterFunc(b *testing.B) {
 	})
 
 	b.Run("uncached", func(b *testing.B) {
-		fn := func(in interface{}) (interface{}, error) { //nolint:unparam // mirrors the shape of DefaultConverterFunc for apples-to-apples comparison
+		fn := func(in any) (any, error) { //nolint:unparam // mirrors the shape of DefaultConverterFunc for apples-to-apples comparison
 			if reflect.TypeOf(in) == reflect.PointerTo(t64) {
 				return reflect.ValueOf(in).Elem().Interface(), nil
 			}
@@ -140,7 +140,7 @@ func BenchmarkFieldGrow_VsAppendGrowth(b *testing.B) {
 		for i := 0; i < b.N; i++ {
 			f := newInt64Field()
 			f.Grow(n)
-			for j := int64(0); j < n; j++ {
+			for j := range int64(n) {
 				f.Append(j)
 			}
 		}
@@ -151,7 +151,7 @@ func BenchmarkFieldGrow_VsAppendGrowth(b *testing.B) {
 		b.ResetTimer()
 		for i := 0; i < b.N; i++ {
 			f := newInt64Field()
-			for j := int64(0); j < n; j++ {
+			for j := range int64(n) {
 				f.Append(j)
 			}
 		}

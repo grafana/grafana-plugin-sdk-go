@@ -5,6 +5,7 @@ import (
 	"embed"
 	"fmt"
 	"log"
+	"maps"
 	"os"
 	"path"
 	"path/filepath"
@@ -175,9 +176,7 @@ func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
 	info.AppendFlags(flags)
 
 	if cfg.CustomVars != nil {
-		for k, v := range cfg.CustomVars {
-			flags[k] = v
-		}
+		maps.Copy(flags, cfg.CustomVars)
 	}
 
 	// Sort the flags to ensure a consistent build command

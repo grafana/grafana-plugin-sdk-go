@@ -12,6 +12,7 @@ enable = [
   "govet",
   "ineffassign",
   "misspell",
+  "modernize",
   "nakedret",
   "rowserrcheck",
   "copyloopvar",
@@ -27,3 +28,6 @@ enable = [
   "sqlclosecheck",
   "thelper",
 ]
+
+[linters.settings.modernize]
+disable = ["omitzero"]

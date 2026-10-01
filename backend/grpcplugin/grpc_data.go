@@ -35,7 +35,7 @@ func (p *DataGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) error 
 }
 
 // GRPCClient returns c as a data gRPC client.
-func (p *DataGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *DataGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (any, error) {
 	return &dataGRPCClient{client: pluginv2.NewDataClient(c)}, nil
 }
 

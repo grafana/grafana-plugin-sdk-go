@@ -59,7 +59,7 @@ func TestFieldTypeConversion(t *testing.T) {
 
 func TestFieldTypeFor(t *testing.T) {
 	tests := []struct {
-		item interface{}
+		item any
 		want data.FieldType
 	}{
 		// non null values
@@ -79,35 +79,31 @@ func TestFieldTypeFor(t *testing.T) {
 		{item: json.RawMessage(`{ "foo" : "bar" }`), want: data.FieldTypeJSON},
 		{item: data.EnumItemIndex(123), want: data.FieldTypeEnum},
 		// nullable values
-		{item: pointer(int8(123)), want: data.FieldTypeNullableInt8},
-		{item: pointer(int16(123)), want: data.FieldTypeNullableInt16},
-		{item: pointer(int32(123)), want: data.FieldTypeNullableInt32},
-		{item: pointer(int64(123)), want: data.FieldTypeNullableInt64},
-		{item: pointer(uint8(123)), want: data.FieldTypeNullableUint8},
-		{item: pointer(uint16(123)), want: data.FieldTypeNullableUint16},
-		{item: pointer(uint32(123)), want: data.FieldTypeNullableUint32},
-		{item: pointer(uint64(123)), want: data.FieldTypeNullableUint64},
-		{item: pointer(float32(123)), want: data.FieldTypeNullableFloat32},
-		{item: pointer(float64(123)), want: data.FieldTypeNullableFloat64},
-		{item: pointer(true), want: data.FieldTypeNullableBool},
-		{item: pointer("foo"), want: data.FieldTypeNullableString},
-		{item: pointer(time.Unix(1, 1)), want: data.FieldTypeNullableTime},
-		{item: pointer(json.RawMessage(`{ "foo" : "bar" }`)), want: data.FieldTypeNullableJSON},
-		{item: pointer(data.EnumItemIndex(123)), want: data.FieldTypeNullableEnum},
+		{item: new(int8(123)), want: data.FieldTypeNullableInt8},
+		{item: new(int16(123)), want: data.FieldTypeNullableInt16},
+		{item: new(int32(123)), want: data.FieldTypeNullableInt32},
+		{item: new(int64(123)), want: data.FieldTypeNullableInt64},
+		{item: new(uint8(123)), want: data.FieldTypeNullableUint8},
+		{item: new(uint16(123)), want: data.FieldTypeNullableUint16},
+		{item: new(uint32(123)), want: data.FieldTypeNullableUint32},
+		{item: new(uint64(123)), want: data.FieldTypeNullableUint64},
+		{item: new(float32(123)), want: data.FieldTypeNullableFloat32},
+		{item: new(float64(123)), want: data.FieldTypeNullableFloat64},
+		{item: new(true), want: data.FieldTypeNullableBool},
+		{item: new("foo"), want: data.FieldTypeNullableString},
+		{item: new(time.Unix(1, 1)), want: data.FieldTypeNullableTime},
+		{item: new(json.RawMessage(`{ "foo" : "bar" }`)), want: data.FieldTypeNullableJSON},
+		{item: new(data.EnumItemIndex(123)), want: data.FieldTypeNullableEnum},
 		// untyped values
 		{item: nil, want: data.FieldTypeUnknown},
 		{item: 123, want: data.FieldTypeUnknown},
-		{item: pointer(123), want: data.FieldTypeUnknown},
+		{item: new(123), want: data.FieldTypeUnknown},
 		{item: 123.456, want: data.FieldTypeFloat64},
-		{item: pointer(123.456), want: data.FieldTypeNullableFloat64},
+		{item: new(123.456), want: data.FieldTypeNullableFloat64},
 	}
 	for _, tt := range tests {
 		t.Run(tt.want.ItemTypeString(), func(t *testing.T) {
 			require.Equal(t, tt.want, data.FieldTypeFor(tt.item))
 		})
 	}
-}
-
-func pointer[T any](input T) *T {
-	return &input
 }

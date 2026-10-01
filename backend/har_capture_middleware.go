@@ -123,7 +123,7 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		return resp, err
 	}
 
-	custom := map[string]interface{}{"har": harStr}
+	custom := map[string]any{"har": harStr}
 	if err != nil {
 		// Preserve the top-level error inside the frame. Returning a non-nil error here would make
 		// the SDK's gRPC adapter (data_adapter.go) discard the whole response -- including this

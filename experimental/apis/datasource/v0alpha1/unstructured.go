@@ -44,14 +44,14 @@ func (u Unstructured) OpenAPIDefinition() openapi.OpenAPIDefinition {
 	}
 }
 
-func (u *Unstructured) UnstructuredContent() map[string]interface{} {
+func (u *Unstructured) UnstructuredContent() map[string]any {
 	if u.Object == nil {
-		return make(map[string]interface{})
+		return make(map[string]any)
 	}
 	return u.Object
 }
 
-func (u *Unstructured) SetUnstructuredContent(content map[string]interface{}) {
+func (u *Unstructured) SetUnstructuredContent(content map[string]any) {
 	u.Object = content
 }
 

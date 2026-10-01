@@ -2,6 +2,7 @@ package sqlutil
 
 import (
 	"fmt"
+	"slices"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -13,8 +14,8 @@ import (
 // due to that the selected query interval doesn't match the intervals of the data returned from
 // the query and therefore needs to be resampled.
 func getRowFillValues(f *data.Frame, tsSchema data.TimeSeriesSchema, currentTime time.Time,
-	fillMissing *data.FillMissing, intermediateRows []int, lastSeenRowIdx int) []interface{} {
-	vals := make([]interface{}, 0, len(f.Fields))
+	fillMissing *data.FillMissing, intermediateRows []int, lastSeenRowIdx int) []any {
+	vals := make([]any, 0, len(f.Fields))
 	for i, field := range f.Fields {
 		// if the current field is the time index of the series
 		// set the new value to be added to the new timestamp
@@ -28,13 +29,7 @@ func getRowFillValues(f *data.Frame, tsSchema data.TimeSeriesSchema, currentTime
 			continue
 		}
 
-		isValueField := false
-		for _, idx := range tsSchema.ValueIndices {
-			if i == idx {
-				isValueField = true
-				break
-			}
-		}
+		isValueField := slices.Contains(tsSchema.ValueIndices, i)
 
 		// if the current field is value Field
 		// set the new value to the last seen field value (if such exists)
@@ -42,7 +37,7 @@ func getRowFillValues(f *data.Frame, tsSchema data.TimeSeriesSchema, currentTime
 		// if the current field is string field)
 		// set the new value to be added to the last seen value (if such exists)
 		// if the Frame is wide then there should not be any string fields
-		var newVal interface{}
+		var newVal any
 		if isValueField {
 			if len(intermediateRows) > 0 {
 				// instead of setting the last seen
