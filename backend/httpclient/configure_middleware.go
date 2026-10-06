@@ -1,8 +1,11 @@
 package httpclient
 
+import "slices"
+
 // ConfigureBasicAuthAfterContextualMiddleware is a ConfigureMiddlewareFunc that moves
 // BasicAuthenticationMiddleware to run after ContextualMiddleware in the middleware chain.
 // If existingMiddleware doesn't contain both BasicAuthenticationMiddleware and
+// ContextualMiddleware, or if BasicAuthenticationMiddleware is already after
 // ContextualMiddleware, it's returned unmodified.
 //
 // DefaultMiddlewares applies BasicAuthenticationMiddleware before ContextualMiddleware, so a
@@ -12,28 +15,21 @@ package httpclient
 // Authorization header then wins, while basic authentication is still used as a fallback for
 // requests that don't carry a forwarded header.
 func ConfigureBasicAuthAfterContextualMiddleware(_ Options, existingMiddleware []Middleware) []Middleware {
-	var basic Middleware
-	contextualIdx := -1
-	out := make([]Middleware, 0, len(existingMiddleware))
-	for _, m := range existingMiddleware {
-		switch middlewareName(m) {
-		case BasicAuthenticationMiddlewareName:
-			basic = m
-			continue
-		case ContextualMiddlewareName:
-			contextualIdx = len(out)
-		}
-		out = append(out, m)
+	indexOf := func(name string) int {
+		return slices.IndexFunc(existingMiddleware, func(m Middleware) bool {
+			return middlewareName(m) == name
+		})
 	}
-	if basic == nil || contextualIdx == -1 {
+	basicIdx := indexOf(BasicAuthenticationMiddlewareName)
+	contextualIdx := indexOf(ContextualMiddlewareName)
+	if basicIdx == -1 || contextualIdx == -1 || basicIdx > contextualIdx {
 		return existingMiddleware
 	}
-	insertAt := contextualIdx + 1
-	reordered := make([]Middleware, 0, len(out)+1)
-	reordered = append(reordered, out[:insertAt]...)
-	reordered = append(reordered, basic)
-	reordered = append(reordered, out[insertAt:]...)
-	return reordered
+
+	reordered := slices.Clone(existingMiddleware)
+	basic := reordered[basicIdx]
+	reordered = slices.Delete(reordered, basicIdx, basicIdx+1)
+	return slices.Insert(reordered, contextualIdx, basic)
 }
 
 func middlewareName(m Middleware) string {
