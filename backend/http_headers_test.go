@@ -1,10 +1,15 @@
 package backend
 
 import (
+	"context"
 	"maps"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 )
 
 func TestSetHTTPHeaderInStringMap(t *testing.T) {
@@ -204,4 +209,64 @@ func TestDeleteHTTPHeaderInStringMap(t *testing.T) {
 			require.Equal(t, v, headers.Get(k))
 		}
 	}
+}
+
+func TestHeaderMiddlewareWithConfigureBasicAuthAfterContextualMiddleware(t *testing.T) {
+	newClient := func(t *testing.T) *http.Client {
+		t.Helper()
+
+		client, err := httpclient.New(httpclient.Options{
+			BasicAuth:           &httpclient.BasicAuthOptions{User: "user1", Password: "pwd"},
+			ForwardHTTPHeaders:  true,
+			ConfigureMiddleware: httpclient.ConfigureBasicAuthAfterContextualMiddleware,
+		})
+		require.NoError(t, err)
+		return client
+	}
+
+	t.Run("A forwarded Authorization header wins over configured basic auth", func(t *testing.T) {
+		received := runQueryDataThroughHeaderMiddleware(t, newClient(t), map[string]string{
+			"Authorization": "Bearer 123",
+		})
+
+		require.Equal(t, "Bearer 123", received.Get("Authorization"))
+	})
+
+	t.Run("Without a forwarded Authorization header, falls back to configured basic auth", func(t *testing.T) {
+		received := runQueryDataThroughHeaderMiddleware(t, newClient(t), nil)
+
+		user, password, ok := (&http.Request{Header: received}).BasicAuth()
+		require.True(t, ok)
+		require.Equal(t, "user1", user)
+		require.Equal(t, "pwd", password)
+	})
+}
+
+// runQueryDataThroughHeaderMiddleware sends a QueryDataRequest carrying headers through
+// NewHeaderMiddleware() and returns the headers the httptest.Server actually received.
+func runQueryDataThroughHeaderMiddleware(t *testing.T, client *http.Client, headers map[string]string) http.Header {
+	t.Helper()
+
+	var received http.Header
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		received = r.Header.Clone()
+		w.WriteHeader(http.StatusOK)
+	}))
+	t.Cleanup(server.Close)
+
+	handler := newHeaderMiddleware().CreateHandlerMiddleware(Handlers{
+		QueryDataHandler: QueryDataHandlerFunc(func(ctx context.Context, _ *QueryDataRequest) (*QueryDataResponse, error) {
+			req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
+			require.NoError(t, err)
+			res, err := client.Do(req)
+			require.NoError(t, err)
+			require.NoError(t, res.Body.Close())
+			return &QueryDataResponse{}, nil
+		}),
+	})
+
+	_, err := handler.QueryData(context.Background(), &QueryDataRequest{Headers: headers})
+	require.NoError(t, err)
+
+	return received
 }
