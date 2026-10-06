@@ -97,17 +97,14 @@ func (m *ErrorSourceMiddleware) CallResource(ctx context.Context, req *CallResou
 				resp.ErrorSource = ErrorSourceFromHTTPStatus(resp.Status)
 			}
 
-			switch resp.ErrorSource {
-			case ErrorSourcePlugin:
+			// A plugin error takes precedence over all downstream responses, regardless
+			// of the order in which the handler sends them.
+			if resp.ErrorSource == ErrorSourcePlugin {
 				hasPluginError = true
-				if err := WithErrorSource(ctx, ErrorSourcePlugin); err != nil {
+			}
+			if resp.ErrorSource.IsValid() && (!hasPluginError || resp.ErrorSource == ErrorSourcePlugin) {
+				if err := WithErrorSource(ctx, resp.ErrorSource); err != nil {
 					return err
-				}
-			case ErrorSourceDownstream:
-				if !hasPluginError {
-					if err := WithDownstreamErrorSource(ctx); err != nil {
-						return err
-					}
 				}
 			}
 		}
