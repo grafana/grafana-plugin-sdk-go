@@ -225,18 +225,16 @@ type ConfigureMiddlewareFunc func(opts Options, existingMiddleware []Middleware)
 
 // DefaultMiddlewares is the default middleware applied when creating
 // new HTTP clients and no middleware is provided.
-// TracingMiddleware, DataSourceMetricsMiddleware, CustomHeadersMiddleware,
-// UserAgentMiddleware, ContextualMiddleware, BasicAuthenticationMiddleware,
-// ErrorSourceMiddleware, and ResponseLimitMiddleware (defaulting to no limit)
-// are the default middlewares.
+// TracingMiddleware, BasicAuthenticationMiddleware and CustomHeadersMiddleware are
+// the default middlewares.
 func DefaultMiddlewares() []Middleware {
 	return []Middleware{
 		TracingMiddleware(nil),
 		DataSourceMetricsMiddleware(),
+		BasicAuthenticationMiddleware(),
 		CustomHeadersMiddleware(),
 		UserAgentMiddleware(),
 		ContextualMiddleware(),
-		BasicAuthenticationMiddleware(),
 		ErrorSourceMiddleware(),
 		ResponseLimitMiddleware(0),
 	}
