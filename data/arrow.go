@@ -908,7 +908,7 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 	return frame, nil
 }
 
-// newFileReader falls back to ipc.NewFileReader because ipc.NewMappedFileReader panics on dictionary-encoded input.
+// newFileReader falls back to ipc.NewFileReader because ipc.NewMappedFileReader panics on dictionary-encoded input (apache/arrow-go#1364).
 func newFileReader(b []byte) (r *ipc.FileReader, err error) {
 	defer func() {
 		if recover() != nil {
