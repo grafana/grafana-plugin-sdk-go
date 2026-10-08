@@ -1,10 +1,12 @@
 package data
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"strings"
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
@@ -12,7 +14,6 @@ import (
 	"github.com/apache/arrow-go/v18/arrow/arrio"
 	"github.com/apache/arrow-go/v18/arrow/ipc"
 	"github.com/apache/arrow-go/v18/arrow/memory"
-	"github.com/mattetti/filebuffer"
 )
 
 // keys added to arrow field metadata
@@ -22,44 +23,63 @@ const metadataKeyLabels = "labels" // labels serialized as JSON
 const metadataKeyTSType = "tstype" // typescript type
 const metadataKeyRefID = "refId"   // added to the table metadata
 
-// MarshalArrow converts the Frame to an arrow table and returns a byte
-// representation of that table.
+// MarshalArrow encodes the Frame as an Arrow IPC file with one record batch.
+// The returned slice has no spare capacity.
 // All fields of a Frame must be of the same length or an error is returned.
 func (f *Frame) MarshalArrow() ([]byte, error) {
-	table, err := FrameToArrowTable(f)
-	if err != nil {
+	var buf bytes.Buffer
+	if err := f.marshalArrow(&buf); err != nil {
 		return nil, err
 	}
-	defer table.Release()
+	return exactSizeCopy(buf.Bytes()), nil
+}
 
-	tableReader := array.NewTableReader(table, -1)
-	defer tableReader.Release()
-
-	// Arrow tables with the Go API are written to files, so we create a fake
-	// file buffer that the FileWriter can write to. In the future, and with
-	// streaming, I think will likely be using the Arrow message type some how.
-	fb := filebuffer.New(nil)
-
-	fw, err := ipc.NewFileWriter(fb, ipc.WithSchema(tableReader.Schema()))
+// marshalArrow writes the Frame to w as an Arrow IPC file with one record batch.
+func (f *Frame) marshalArrow(w io.Writer) error {
+	rec, err := frameToArrowRecord(f, memory.DefaultAllocator)
 	if err != nil {
-		return nil, err
+		return err
 	}
+	defer rec.Release()
 
-	for tableReader.Next() {
-		rec := tableReader.Record() //nolint:staticcheck // SA1019: Using deprecated Record() API for backwards compatibility
-
+	fw, err := ipc.NewFileWriter(w, ipc.WithSchema(rec.Schema()))
+	if err != nil {
+		return err
+	}
+	// A frame with no rows is encoded as schema and footer only, without a record batch.
+	if rec.NumRows() > 0 {
 		if err := fw.Write(rec); err != nil {
-			rec.Release()
-			return nil, err
+			return err
 		}
-		rec.Release()
 	}
+	return fw.Close()
+}
 
-	if err := fw.Close(); err != nil {
+func frameToArrowRecord(f *Frame, mem memory.Allocator) (arrow.RecordBatch, error) {
+	rows, err := f.RowLen()
+	if err != nil {
 		return nil, err
 	}
 
-	return fb.Buff.Bytes(), nil
+	arrowFields, err := buildArrowFields(f)
+	if err != nil {
+		return nil, err
+	}
+
+	schema, err := buildArrowSchema(f, arrowFields)
+	if err != nil {
+		return nil, err
+	}
+
+	arrays, err := buildArrowArrays(f, mem)
+	if err != nil {
+		return nil, err
+	}
+	rec := array.NewRecordBatch(schema, arrays, int64(rows))
+	for _, arr := range arrays {
+		arr.Release()
+	}
+	return rec, nil
 }
 
 // FrameToArrowTable creates a new arrow.Table from a data frame
@@ -81,16 +101,22 @@ func FrameToArrowTable(f *Frame) (arrow.Table, error) {
 		return nil, err
 	}
 
-	columns, err := buildArrowColumns(f, arrowFields)
+	arrays, err := buildArrowArrays(f, memory.DefaultAllocator)
 	if err != nil {
-		for _, col := range columns {
-			col.Release()
-		}
 		return nil, err
+	}
+	columns := make([]arrow.Column, len(arrays))
+	for i, arr := range arrays {
+		columns[i] = arrow.NewColumnFromArr(arrowFields[i], arr)
+		arr.Release()
 	}
 
 	// Create a table from the schema and columns.
-	return array.NewTable(schema, columns, -1), nil
+	table := array.NewTable(schema, columns, -1)
+	for i := range columns {
+		columns[i].Release()
+	}
+	return table, nil
 }
 
 // buildArrowFields builds Arrow field definitions from a Frame.
@@ -132,94 +158,96 @@ func buildArrowFields(f *Frame) ([]arrow.Field, error) {
 	return arrowFields, nil
 }
 
-// buildArrowColumns builds Arrow columns from a Frame.
+// buildArrowArrays builds one Arrow array per field. The caller releases the returned arrays.
 // nolint:gocyclo
-func buildArrowColumns(f *Frame, arrowFields []arrow.Field) ([]arrow.Column, error) {
-	pool := memory.NewGoAllocator()
-	columns := make([]arrow.Column, len(f.Fields))
+func buildArrowArrays(f *Frame, pool memory.Allocator) ([]arrow.Array, error) {
+	arrays := make([]arrow.Array, len(f.Fields))
 
 	for fieldIdx, field := range f.Fields {
 		switch v := field.vector.(type) {
 		case *int8Vector:
-			columns[fieldIdx] = *buildInt8Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildInt8Array(pool, v)
 		case *nullableInt8Vector:
-			columns[fieldIdx] = *buildNullableInt8Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableInt8Array(pool, v)
 
 		case *int16Vector:
-			columns[fieldIdx] = *buildInt16Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildInt16Array(pool, v)
 		case *nullableInt16Vector:
-			columns[fieldIdx] = *buildNullableInt16Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableInt16Array(pool, v)
 
 		case *int32Vector:
-			columns[fieldIdx] = *buildInt32Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildInt32Array(pool, v)
 		case *nullableInt32Vector:
-			columns[fieldIdx] = *buildNullableInt32Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableInt32Array(pool, v)
 
 		case *int64Vector:
-			columns[fieldIdx] = *buildInt64Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildInt64Array(pool, v)
 		case *nullableInt64Vector:
-			columns[fieldIdx] = *buildNullableInt64Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableInt64Array(pool, v)
 
 		case *uint8Vector:
-			columns[fieldIdx] = *buildUInt8Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildUInt8Array(pool, v)
 		case *nullableUint8Vector:
-			columns[fieldIdx] = *buildNullableUInt8Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableUInt8Array(pool, v)
 
 		case *uint16Vector:
-			columns[fieldIdx] = *buildUInt16Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildUInt16Array(pool, v)
 		case *nullableUint16Vector:
-			columns[fieldIdx] = *buildNullableUInt16Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableUInt16Array(pool, v)
 
 		case *uint32Vector:
-			columns[fieldIdx] = *buildUInt32Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildUInt32Array(pool, v)
 		case *nullableUint32Vector:
-			columns[fieldIdx] = *buildNullableUInt32Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableUInt32Array(pool, v)
 
 		case *uint64Vector:
-			columns[fieldIdx] = *buildUInt64Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildUInt64Array(pool, v)
 		case *nullableUint64Vector:
-			columns[fieldIdx] = *buildNullableUInt64Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableUInt64Array(pool, v)
 
 		case *stringVector:
-			columns[fieldIdx] = *buildStringColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildStringArray(pool, v)
 		case *nullableStringVector:
-			columns[fieldIdx] = *buildNullableStringColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableStringArray(pool, v)
 
 		case *float32Vector:
-			columns[fieldIdx] = *buildFloat32Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildFloat32Array(pool, v)
 		case *nullableFloat32Vector:
-			columns[fieldIdx] = *buildNullableFloat32Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableFloat32Array(pool, v)
 
 		case *float64Vector:
-			columns[fieldIdx] = *buildFloat64Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildFloat64Array(pool, v)
 		case *nullableFloat64Vector:
-			columns[fieldIdx] = *buildNullableFloat64Column(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableFloat64Array(pool, v)
 
 		case *boolVector:
-			columns[fieldIdx] = *buildBoolColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildBoolArray(pool, v)
 		case *nullableBoolVector:
-			columns[fieldIdx] = *buildNullableBoolColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableBoolArray(pool, v)
 
 		case *timeTimeVector:
-			columns[fieldIdx] = *buildTimeColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildTimeArray(pool, v)
 		case *nullableTimeTimeVector:
-			columns[fieldIdx] = *buildNullableTimeColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableTimeArray(pool, v)
 
 		case *jsonRawMessageVector:
-			columns[fieldIdx] = *buildJSONColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildJSONArray(pool, v)
 		case *nullableJsonRawMessageVector:
-			columns[fieldIdx] = *buildNullableJSONColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableJSONArray(pool, v)
 
 		case *enumVector:
-			columns[fieldIdx] = *buildEnumColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildEnumArray(pool, v)
 		case *nullableEnumVector:
-			columns[fieldIdx] = *buildNullableEnumColumn(pool, arrowFields[fieldIdx], v)
+			arrays[fieldIdx] = buildNullableEnumArray(pool, v)
 
 		default:
+			for _, arr := range arrays[:fieldIdx] {
+				arr.Release()
+			}
 			return nil, fmt.Errorf("unsupported field vector type for conversion to arrow: %T", v)
 		}
 	}
-	return columns, nil
+	return arrays, nil
 }
 
 // buildArrowSchema builds an Arrow schema for a Frame.
@@ -470,6 +498,7 @@ func initializeFrameField(field arrow.Field, idx int, nullable []bool, sdkField 
 }
 
 func populateFrameFieldsFromRecord(record arrow.Record, nullable []bool, frame *Frame) error { //nolint:staticcheck // SA1019: Using deprecated Record type for backwards compatibility
+	frame.SetRowCapacity(int(record.NumRows()))
 	for i := 0; i < len(frame.Fields); i++ {
 		col := record.Column(i)
 		if err := parseColumn(col, i, nullable, frame); err != nil {
@@ -500,20 +529,7 @@ func populateFrameFields(fR arrio.Reader, nullable []bool, frame *Frame) error {
 func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 	switch col.DataType().ID() {
 	case arrow.STRING:
-		v := array.NewStringData(col.Data())
-		for rIdx := 0; rIdx < col.Len(); rIdx++ {
-			if nullable[i] {
-				if v.IsNull(rIdx) {
-					var ns *string
-					frame.Fields[i].vector.Append(ns)
-					continue
-				}
-				rv := v.Value(rIdx)
-				frame.Fields[i].vector.Append(&rv)
-				continue
-			}
-			frame.Fields[i].vector.Append(v.Value(rIdx))
-		}
+		appendStrings(frame.Fields[i].vector, array.NewStringData(col.Data()), nullable[i])
 	case arrow.STRING_VIEW:
 		v := array.NewStringViewData(col.Data())
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
@@ -523,14 +539,18 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 					frame.Fields[i].vector.Append(ns)
 					continue
 				}
-				rv := v.Value(rIdx)
+				rv := strings.Clone(v.Value(rIdx))
 				frame.Fields[i].vector.Append(&rv)
 				continue
 			}
-			frame.Fields[i].vector.Append(v.Value(rIdx))
+			frame.Fields[i].vector.Append(strings.Clone(v.Value(rIdx)))
 		}
 	case arrow.INT8:
 		v := array.NewInt8Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*int8Vector); ok {
+			*vec = append(*vec, v.Int8Values()...)
+			break
+		}
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -546,6 +566,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.INT16:
 		v := array.NewInt16Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*int16Vector); ok {
+			*vec = append(*vec, v.Int16Values()...)
+			break
+		}
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -561,6 +585,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.INT32:
 		v := array.NewInt32Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*int32Vector); ok {
+			*vec = append(*vec, v.Int32Values()...)
+			break
+		}
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -576,6 +604,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.INT64:
 		v := array.NewInt64Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*int64Vector); ok {
+			*vec = append(*vec, v.Int64Values()...)
+			break
+		}
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -591,6 +623,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.UINT8:
 		v := array.NewUint8Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*uint8Vector); ok {
+			*vec = append(*vec, v.Uint8Values()...)
+			break
+		}
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -606,6 +642,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.UINT32:
 		v := array.NewUint32Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*uint32Vector); ok {
+			*vec = append(*vec, v.Uint32Values()...)
+			break
+		}
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -621,6 +661,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.UINT64:
 		v := array.NewUint64Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*uint64Vector); ok {
+			*vec = append(*vec, v.Uint64Values()...)
+			break
+		}
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if nullable[i] {
 				if v.IsNull(rIdx) {
@@ -636,6 +680,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.UINT16:
 		v := array.NewUint16Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*uint16Vector); ok {
+			*vec = append(*vec, v.Uint16Values()...)
+			break
+		}
 		for rIdx := 0; rIdx < col.Len(); rIdx++ {
 			if frame.Fields[i].Type().NullableType() == FieldTypeNullableEnum {
 				if nullable[i] {
@@ -665,6 +713,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.FLOAT32:
 		v := array.NewFloat32Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*float32Vector); ok {
+			*vec = append(*vec, v.Float32Values()...)
+			break
+		}
 		for vIdx, f := range v.Float32Values() {
 			if nullable[i] {
 				if v.IsNull(vIdx) {
@@ -680,6 +732,10 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.FLOAT64:
 		v := array.NewFloat64Data(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*float64Vector); ok {
+			*vec = append(*vec, v.Float64Values()...)
+			break
+		}
 		for vIdx, f := range v.Float64Values() {
 			if nullable[i] {
 				if v.IsNull(vIdx) {
@@ -695,6 +751,12 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.BOOL:
 		v := array.NewBooleanData(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*boolVector); ok {
+			for sIdx := 0; sIdx < col.Len(); sIdx++ {
+				*vec = append(*vec, v.Value(sIdx))
+			}
+			break
+		}
 		for sIdx := 0; sIdx < col.Len(); sIdx++ {
 			if nullable[i] {
 				if v.IsNull(sIdx) {
@@ -710,6 +772,12 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.TIMESTAMP:
 		v := array.NewTimestampData(col.Data())
+		if vec, ok := frame.Fields[i].vector.(*timeTimeVector); ok {
+			for _, ts := range v.TimestampValues() {
+				*vec = append(*vec, time.Unix(0, int64(ts)))
+			}
+			break
+		}
 		for vIdx, ts := range v.TimestampValues() {
 			t := time.Unix(0, int64(ts)) // nanosecond assumption
 			if nullable[i] {
@@ -725,18 +793,23 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 		}
 	case arrow.BINARY:
 		v := array.NewBinaryData(col.Data())
+		if v.Len() == 0 {
+			break
+		}
+		values := bytes.Clone(v.ValueBytes())
+		offsets := v.ValueOffsets()
 		for sIdx := 0; sIdx < v.Len(); sIdx++ {
+			if nullable[i] && v.IsNull(sIdx) {
+				var nb *json.RawMessage
+				frame.Fields[i].vector.Append(nb)
+				continue
+			}
+			start, end := offsets[sIdx]-offsets[0], offsets[sIdx+1]-offsets[0]
+			r := json.RawMessage(values[start:end:end])
 			if nullable[i] {
-				if v.IsNull(sIdx) {
-					var nb *json.RawMessage
-					frame.Fields[i].vector.Append(nb)
-					continue
-				}
-				r := json.RawMessage(v.Value(sIdx))
 				frame.Fields[i].vector.Append(&r)
 				continue
 			}
-			r := json.RawMessage(v.Value(sIdx))
 			frame.Fields[i].vector.Append(r)
 		}
 	default:
@@ -744,6 +817,36 @@ func parseColumn(col arrow.Array, i int, nullable []bool, frame *Frame) error {
 	}
 
 	return nil
+}
+
+// appendStrings copies the column's bytes once so the decoded strings do not alias the input.
+func appendStrings(vec vector, v *array.String, nullable bool) {
+	n := v.Len()
+	if n == 0 {
+		return
+	}
+	values := string(v.ValueBytes())
+	offsets := v.ValueOffsets()
+	value := func(r int) string { return values[offsets[r]-offsets[0] : offsets[r+1]-offsets[0]] }
+	if sv, ok := vec.(*stringVector); ok {
+		for r := range n {
+			*sv = append(*sv, value(r))
+		}
+		return
+	}
+	for r := range n {
+		if nullable && v.IsNull(r) {
+			var ns *string
+			vec.Append(ns)
+			continue
+		}
+		s := value(r)
+		if nullable {
+			vec.Append(&s)
+			continue
+		}
+		vec.Append(s)
+	}
 }
 
 func populateFrameFromSchema(schema *arrow.Schema, frame *Frame) error {
@@ -778,10 +881,10 @@ func FromArrowRecord(record arrow.Record) (*Frame, error) { //nolint:staticcheck
 	return frame, nil
 }
 
-// UnmarshalArrowFrame converts a byte representation of an arrow table to a Frame.
+// UnmarshalArrowFrame decodes an Arrow IPC file into a Frame.
+// The returned Frame does not retain b.
 func UnmarshalArrowFrame(b []byte) (*Frame, error) {
-	fB := filebuffer.New(b)
-	fR, err := ipc.NewFileReader(fB)
+	fR, err := newFileReader(b)
 	if err != nil {
 		return nil, err
 	}
@@ -803,6 +906,16 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 	}
 
 	return frame, nil
+}
+
+// newFileReader falls back to ipc.NewFileReader because ipc.NewMappedFileReader panics on dictionary-encoded input.
+func newFileReader(b []byte) (r *ipc.FileReader, err error) {
+	defer func() {
+		if recover() != nil {
+			r, err = ipc.NewFileReader(bytes.NewReader(b))
+		}
+	}()
+	return ipc.NewMappedFileReader(b)
 }
 
 // ToJSONString calls json.Marshal on val and returns it as a string. An
@@ -831,20 +944,27 @@ func UnmarshalArrowFrames(bFrames [][]byte) (Frames, error) {
 	return frames, nil
 }
 
-// MarshalArrow encodes Frames into a slice of []byte using *Frame's MarshalArrow method on each Frame.
-// If an error occurs [][]byte will be nil.
+// MarshalArrow encodes Frames into a slice of []byte, one Arrow IPC file per Frame.
+// Each returned slice has no spare capacity. If an error occurs [][]byte will be nil.
 // See UnmarshalArrowFrames for the inverse operation.
 func (frames Frames) MarshalArrow() ([][]byte, error) {
 	bs := make([][]byte, len(frames))
-	var err error
+	var buf bytes.Buffer
 	for i, frame := range frames {
 		if frame == nil {
 			return nil, errors.New("frame can not be nil")
 		}
-		bs[i], err = frame.MarshalArrow()
-		if err != nil {
+		buf.Reset()
+		if err := frame.marshalArrow(&buf); err != nil {
 			return nil, err
 		}
+		bs[i] = exactSizeCopy(buf.Bytes())
 	}
 	return bs, nil
+}
+
+func exactSizeCopy(b []byte) []byte {
+	out := make([]byte, len(b))
+	copy(out, b)
+	return out
 }

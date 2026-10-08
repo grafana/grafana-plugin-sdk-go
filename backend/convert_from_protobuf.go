@@ -142,34 +142,37 @@ func (f ConvertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 }
 
 // QueryDataResponse converts protobuf version of a QueryDataResponse to the SDK version.
+// It consumes protoRes. Each encoded frame is set to nil once decoded, so the caller must not reuse it.
 func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
 	qdr := &QueryDataResponse{
 		Responses: make(Responses, len(protoRes.Responses)),
 	}
-	var err error
 	for refID, res := range protoRes.Responses {
 		status := Status(res.Status)
 		if !status.IsValid() {
 			status = StatusUnknown
 		}
 
-		dr := DataResponse{Status: status}
+		dr := DataResponse{Status: status, Frames: make(data.Frames, len(res.Frames))}
 
 		switch res.Format {
 		case pluginv2.DataFrameFormat_ARROW:
-			dr.Frames, err = data.UnmarshalArrowFrames(res.Frames)
-			if err != nil {
-				return nil, err
-			}
-		case pluginv2.DataFrameFormat_JSON:
-			dr.Frames = make([]*data.Frame, len(res.Frames))
 			for i, b := range res.Frames {
-				var v *data.Frame
-				err = json.Unmarshal(b, &v)
+				frame, err := data.UnmarshalArrowFrame(b)
 				if err != nil {
 					return nil, err
 				}
-				dr.Frames[i] = v
+				dr.Frames[i] = frame
+				res.Frames[i] = nil
+			}
+		case pluginv2.DataFrameFormat_JSON:
+			for i, b := range res.Frames {
+				var frame *data.Frame
+				if err := json.Unmarshal(b, &frame); err != nil {
+					return nil, err
+				}
+				dr.Frames[i] = frame
+				res.Frames[i] = nil
 			}
 		default:
 			return nil, errors.New("unknown data frame format: " + res.Format.String())
