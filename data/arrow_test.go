@@ -2,6 +2,8 @@ package data_test
 
 import (
 	"bytes"
+	"crypto/sha256"
+	"encoding/hex"
 	"encoding/json"
 	"flag"
 	"math"
@@ -20,7 +22,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-var update = flag.Bool("update", true, "update .golden.arrow files")
+var update = flag.Bool("update", false, "update .golden.arrow files")
 
 const maxEcma6Int = 1<<53 - 1
 const minEcma6Int = -maxEcma6Int
@@ -476,6 +478,117 @@ func TestFromRecordStringView(t *testing.T) {
 		}),
 	)
 	if diff := cmp.Diff(want, got, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+}
+
+// TestMarshalArrowShapes pins each shape's bytes by digest and checks cap == len, encoder agreement and a non-aliasing round trip.
+func TestMarshalArrowShapes(t *testing.T) {
+	shapes := arrowTestFrames()
+	frames := make(data.Frames, len(shapes))
+	for i, shape := range shapes {
+		frames[i] = shape.frame
+	}
+	batch, err := frames.MarshalArrow()
+	require.NoError(t, err)
+	require.Len(t, batch, len(shapes))
+
+	for i, shape := range shapes {
+		t.Run(shape.name, func(t *testing.T) {
+			single, err := shape.frame.MarshalArrow()
+			require.NoError(t, err)
+			require.Equal(t, single, batch[i], "Frames.MarshalArrow and Frame.MarshalArrow differ")
+			require.Equal(t, len(single), cap(single), "Frame.MarshalArrow returned spare capacity")
+			require.Equal(t, len(batch[i]), cap(batch[i]), "Frames.MarshalArrow returned spare capacity")
+
+			sum := sha256.Sum256(single)
+			require.Equal(t, shape.sha256, hex.EncodeToString(sum[:]), "encoding changed")
+
+			got, err := data.UnmarshalArrowFrame(single)
+			require.NoError(t, err)
+			for k := range single {
+				single[k] = 0
+			}
+			if diff := cmp.Diff(shape.frame, got, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
+// TestUnmarshalArrowFrameV0297Encoding decodes the 4-byte validity bitmap variant that v0.297.0 wrote for small nullable string and JSON columns.
+func TestUnmarshalArrowFrameV0297Encoding(t *testing.T) {
+	b, err := os.ReadFile(filepath.Join("testdata", "nested_json.v0.297.0.arrow")) // #nosec G304 -- Test file is read from testdata directory
+	require.NoError(t, err)
+	got, err := data.UnmarshalArrowFrame(b)
+	require.NoError(t, err)
+	if diff := cmp.Diff(nestedJSONFrame(), got, data.FrameTestCompareOptions()...); diff != "" {
+		t.Errorf("Result mismatch (-want +got):\n%s", diff)
+	}
+}
+
+func TestUnmarshalArrowFrameInvalidInput(t *testing.T) {
+	valid, err := goldenDF().MarshalArrow()
+	require.NoError(t, err)
+
+	tests := []struct {
+		name  string
+		input []byte
+	}{
+		{name: "nil", input: nil},
+		{name: "empty", input: []byte{}},
+		{name: "magic only", input: []byte("ARROW1\x00\x00")},
+		{name: "truncated half", input: valid[:len(valid)/2]},
+		{name: "missing footer", input: valid[:len(valid)-10]},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			_, err := data.UnmarshalArrowFrame(tc.input)
+			require.Error(t, err)
+		})
+	}
+}
+
+func TestUnmarshalArrowFrameDictionaryInput(t *testing.T) {
+	mem := memory.DefaultAllocator
+	dt := &arrow.DictionaryType{IndexType: arrow.PrimitiveTypes.Int32, ValueType: arrow.BinaryTypes.String}
+	b := array.NewDictionaryBuilder(mem, dt).(*array.BinaryDictionaryBuilder)
+	defer b.Release()
+	require.NoError(t, b.AppendString("a"))
+	arr := b.NewArray()
+	defer arr.Release()
+
+	schema := arrow.NewSchema([]arrow.Field{{Name: "s", Type: dt}}, nil)
+	rec := array.NewRecordBatch(schema, []arrow.Array{arr}, 1)
+	defer rec.Release()
+
+	var buf bytes.Buffer
+	fw, err := ipc.NewFileWriter(&buf, ipc.WithSchema(schema))
+	require.NoError(t, err)
+	require.NoError(t, fw.Write(rec))
+	require.NoError(t, fw.Close())
+
+	_, err = data.UnmarshalArrowFrame(buf.Bytes())
+	require.EqualError(t, err, "unsupported conversion from arrow to sdk type for arrow type DICTIONARY")
+}
+
+func TestFrameToArrowTable(t *testing.T) {
+	df := goldenDF()
+	table, err := data.FrameToArrowTable(df)
+	require.NoError(t, err)
+	defer table.Release()
+
+	rows, err := df.RowLen()
+	require.NoError(t, err)
+	require.Equal(t, int64(rows), table.NumRows())
+	require.Equal(t, int64(len(df.Fields)), table.NumCols())
+
+	reader := array.NewTableReader(table, -1)
+	defer reader.Release()
+	require.True(t, reader.Next())
+	got, err := data.FromArrowRecord(reader.RecordBatch())
+	require.NoError(t, err)
+	if diff := cmp.Diff(df, got, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 }
