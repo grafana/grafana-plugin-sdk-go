@@ -62,7 +62,7 @@ func TestField_Grow_NoReallocOnAppend(t *testing.T) {
 	f.Grow(n)
 	capBefore := f.Capacity()
 
-	for i := int64(0); i < n; i++ {
+	for i := range int64(n) {
 		f.Append(i)
 	}
 
@@ -107,7 +107,7 @@ func TestFrame_SetRowCapacity_NoReallocOnAppendRow(t *testing.T) {
 	}
 
 	s := "x"
-	for i := int64(0); i < n; i++ {
+	for i := range int64(n) {
 		frame.AppendRow(i, &s)
 	}
 

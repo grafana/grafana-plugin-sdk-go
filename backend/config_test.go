@@ -65,9 +65,9 @@ func TestConfig(t *testing.T) {
 				}).FeatureToggles(),
 				expectedProxy: config.Proxy{
 					ClientCfg: &proxy.ClientCfg{
-						ClientCert:   "clientCert",
-						ClientKey:    "clientKey",
-						RootCAs:      []string{"rootCACert"},
+						ClientCert:   "clientCert",           // nolint:staticcheck
+						ClientKey:    "clientKey",            // nolint:staticcheck
+						RootCAs:      []string{"rootCACert"}, // nolint:staticcheck
 						ProxyAddress: "localhost:1234",
 						ServerName:   "localhost",
 					},
@@ -105,9 +105,9 @@ func TestConfig(t *testing.T) {
 				}).FeatureToggles(),
 				expectedProxy: config.Proxy{
 					ClientCfg: &proxy.ClientCfg{
-						ClientCert:   "clientCert",
-						ClientKey:    "clientKey",
-						RootCAs:      []string{"rootCACert"},
+						ClientCert:   "clientCert",           // nolint:staticcheck
+						ClientKey:    "clientKey",            // nolint:staticcheck
+						RootCAs:      []string{"rootCACert"}, // nolint:staticcheck
 						ProxyAddress: "localhost:1234",
 						ServerName:   "localhost",
 					},
@@ -130,9 +130,9 @@ func TestConfig(t *testing.T) {
 				}).FeatureToggles(),
 				expectedProxy: config.Proxy{
 					ClientCfg: &proxy.ClientCfg{
-						ClientCert:    "clientCert",
-						ClientKey:     "clientKey",
-						RootCAs:       []string{"rootCACert"},
+						ClientCert:    "clientCert",           // nolint:staticcheck
+						ClientKey:     "clientKey",            // nolint:staticcheck
+						RootCAs:       []string{"rootCACert"}, // nolint:staticcheck
 						ProxyAddress:  "localhost:1234",
 						ServerName:    "localhost",
 						AllowInsecure: true,
@@ -159,11 +159,11 @@ func TestConfig(t *testing.T) {
 				}).FeatureToggles(),
 				expectedProxy: config.Proxy{
 					ClientCfg: &proxy.ClientCfg{
-						ClientCert:    "./clientCert",
+						ClientCert:    "./clientCert", // nolint:staticcheck
 						ClientCertVal: "clientCert",
-						ClientKey:     "./clientKey",
+						ClientKey:     "./clientKey", // nolint:staticcheck
 						ClientKeyVal:  "clientKey",
-						RootCAs:       []string{"./rootCACert", "./rootCACert2"},
+						RootCAs:       []string{"./rootCACert", "./rootCACert2"}, // nolint:staticcheck
 						RootCAsVals:   []string{"rootCACert", "rootCACert2"},
 						ProxyAddress:  "localhost:1234",
 						ServerName:    "localhost",

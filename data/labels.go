@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"hash/fnv"
+	"maps"
 	"sort"
 	"strings"
 	"unsafe"
@@ -36,9 +37,7 @@ func (l Labels) Equals(arg Labels) bool {
 // Copy returns a copy of the labels.
 func (l Labels) Copy() Labels {
 	c := make(Labels, len(l))
-	for k, v := range l {
-		c[k] = v
-	}
+	maps.Copy(c, l)
 	return c
 }
 
@@ -131,7 +130,7 @@ func LabelsFromString(s string) (Labels, error) {
 	f := func(c rune) bool {
 		return c == '=' || c == '}' || c == '"' || c == '{'
 	}
-	for _, rawKV := range strings.Split(s, ", ") {
+	for rawKV := range strings.SplitSeq(s, ", ") {
 		// split kv string by = and delete {} and ""
 		// e.g {group="canary"} -> ["group" "canary"]
 		kV := strings.FieldsFunc(rawKV, f)

@@ -31,10 +31,10 @@ type FrameConverter struct {
 	// `in` is always supplied as a pointer, as it is scanned as a pointer, even if `InputScanType` is not a pointer.
 	// For example, if `InputScanType` is `string`, then `in` is `*string`.
 	// The returned value must not alias `in` (see the aliasing contract on FrameConverter).
-	ConverterFunc func(in interface{}) (interface{}, error)
+	ConverterFunc func(in any) (any, error)
 	// ConvertWithColumn is the same as ConverterFunc, but allows passing the column type
 	// useful when column attributes are needed during conversion
-	ConvertWithColumn func(in interface{}, col sql.ColumnType) (interface{}, error)
+	ConvertWithColumn func(in any, col sql.ColumnType) (any, error)
 }
 
 // StringConverter can be used to store types not supported by
@@ -66,14 +66,14 @@ type StringConverter struct {
 // This type is only here for backwards compatibility.
 type StringFieldReplacer struct {
 	OutputFieldType data.FieldType
-	ReplaceFunc     func(in *string) (interface{}, error)
+	ReplaceFunc     func(in *string) (any, error)
 }
 
 // ToConverter turns this StringConverter into a Converter, using the ScanType of string
 func (s StringConverter) ToConverter() Converter {
 	return Converter{
 		Name:           s.Name,
-		InputScanType:  reflect.TypeOf(sql.NullString{}),
+		InputScanType:  reflect.TypeFor[sql.NullString](),
 		InputTypeName:  s.InputTypeName,
 		FrameConverter: StringFrameConverter(s),
 	}
@@ -89,7 +89,7 @@ func StringFrameConverter(s StringConverter) FrameConverter {
 
 	return FrameConverter{
 		FieldType: f,
-		ConverterFunc: func(in interface{}) (interface{}, error) {
+		ConverterFunc: func(in any) (any, error) {
 			ns := in.(*sql.NullString)
 			if !ns.Valid {
 				return nil, nil
@@ -170,12 +170,12 @@ type Converter struct {
 }
 
 // DefaultConverterFunc assumes that the scanned value, in, is already a type that can be put into a dataframe.
-func DefaultConverterFunc(t reflect.Type) func(in interface{}) (interface{}, error) {
+func DefaultConverterFunc(t reflect.Type) func(in any) (any, error) {
 	// Precompute the expected pointer type once. This used to be computed on
 	// every cell via reflect.PointerTo(t) inside the returned closure, which
 	// dominates the per-row hot path of FrameFromRows on wide result sets.
 	expectedType := reflect.PointerTo(t)
-	return func(in interface{}) (interface{}, error) {
+	return func(in any) (any, error) {
 		if reflect.TypeOf(in) == expectedType {
 			return reflect.ValueOf(in).Elem().Interface(), nil
 		}
@@ -190,11 +190,11 @@ func NewDefaultConverter(name string, nullable bool, t reflect.Type) Converter {
 	if !strings.HasPrefix(kind, "sql.Null") && !data.ValidFieldType(slice) {
 		return Converter{
 			Name:          fmt.Sprintf("[%s] String converter", t),
-			InputScanType: reflect.TypeOf(sql.NullString{}),
+			InputScanType: reflect.TypeFor[sql.NullString](),
 			InputTypeName: name,
 			FrameConverter: FrameConverter{
 				FieldType: data.FieldTypeNullableString,
-				ConverterFunc: func(in interface{}) (interface{}, error) {
+				ConverterFunc: func(in any) (any, error) {
 					v := in.(*sql.NullString)
 
 					if !v.Valid {
@@ -238,11 +238,11 @@ var (
 	// NullStringConverter creates a *string using the scan type of `sql.NullString`
 	NullStringConverter = Converter{
 		Name:          "nullable string converter",
-		InputScanType: reflect.TypeOf(sql.NullString{}),
+		InputScanType: reflect.TypeFor[sql.NullString](),
 		InputTypeName: "STRING",
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableString,
-			ConverterFunc: func(n interface{}) (interface{}, error) {
+			ConverterFunc: func(n any) (any, error) {
 				v := n.(*sql.NullString)
 
 				if !v.Valid {
@@ -258,11 +258,11 @@ var (
 	// NullDecimalConverter creates a *float64 using the scan type of `sql.NullFloat64`
 	NullDecimalConverter = Converter{
 		Name:          "NULLABLE decimal converter",
-		InputScanType: reflect.TypeOf(sql.NullFloat64{}),
+		InputScanType: reflect.TypeFor[sql.NullFloat64](),
 		InputTypeName: "DOUBLE",
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableFloat64,
-			ConverterFunc: func(n interface{}) (interface{}, error) {
+			ConverterFunc: func(n any) (any, error) {
 				v := n.(*sql.NullFloat64)
 
 				if !v.Valid {
@@ -278,11 +278,11 @@ var (
 	// NullInt64Converter creates a *int64 using the scan type of `sql.NullInt64`
 	NullInt64Converter = Converter{
 		Name:          "NULLABLE int64 converter",
-		InputScanType: reflect.TypeOf(sql.NullInt64{}),
+		InputScanType: reflect.TypeFor[sql.NullInt64](),
 		InputTypeName: "INTEGER",
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableInt64,
-			ConverterFunc: func(n interface{}) (interface{}, error) {
+			ConverterFunc: func(n any) (any, error) {
 				v := n.(*sql.NullInt64)
 
 				if !v.Valid {
@@ -298,11 +298,11 @@ var (
 	// NullInt32Converter creates a *int32 using the scan type of `sql.NullInt32`
 	NullInt32Converter = Converter{
 		Name:          "NULLABLE int32 converter",
-		InputScanType: reflect.TypeOf(sql.NullInt32{}),
+		InputScanType: reflect.TypeFor[sql.NullInt32](),
 		InputTypeName: "INTEGER",
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableInt32,
-			ConverterFunc: func(n interface{}) (interface{}, error) {
+			ConverterFunc: func(n any) (any, error) {
 				v := n.(*sql.NullInt32)
 
 				if !v.Valid {
@@ -318,7 +318,7 @@ var (
 	// NullInt16Converter creates a *int16 using the scan type of `sql.NullInt16`
 	NullInt16Converter = Converter{
 		Name:          "NULLABLE int16 converter",
-		InputScanType: reflect.TypeOf(sql.NullInt16{}),
+		InputScanType: reflect.TypeFor[sql.NullInt16](),
 		InputTypeName: "INTEGER",
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableInt16,
@@ -338,11 +338,11 @@ var (
 	// NullTimeConverter creates a *time.time using the scan type of `sql.NullTime`
 	NullTimeConverter = Converter{
 		Name:          "NULLABLE time.Time converter",
-		InputScanType: reflect.TypeOf(sql.NullTime{}),
+		InputScanType: reflect.TypeFor[sql.NullTime](),
 		InputTypeName: "TIMESTAMP",
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableTime,
-			ConverterFunc: func(n interface{}) (interface{}, error) {
+			ConverterFunc: func(n any) (any, error) {
 				v := n.(*sql.NullTime)
 
 				if !v.Valid {
@@ -358,11 +358,11 @@ var (
 	// NullBoolConverter creates a *bool using the scan type of `sql.NullBool`
 	NullBoolConverter = Converter{
 		Name:          "nullable bool converter",
-		InputScanType: reflect.TypeOf(sql.NullBool{}),
+		InputScanType: reflect.TypeFor[sql.NullBool](),
 		InputTypeName: "BOOLEAN",
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableBool,
-			ConverterFunc: func(n interface{}) (interface{}, error) {
+			ConverterFunc: func(n any) (any, error) {
 				v := n.(*sql.NullBool)
 
 				if !v.Valid {
@@ -378,7 +378,7 @@ var (
 	// NullByteConverter creates a *string using the scan type of `sql.NullByte`
 	NullByteConverter = Converter{
 		Name:          "nullable byte converter",
-		InputScanType: reflect.TypeOf(sql.NullByte{}),
+		InputScanType: reflect.TypeFor[sql.NullByte](),
 		InputTypeName: "BYTE",
 		FrameConverter: FrameConverter{
 			FieldType: data.FieldTypeNullableString,
@@ -399,26 +399,26 @@ var (
 // NullConverters is a map of data type names (from reflect.TypeOf(...).String()) to converters
 // Converters supplied here are used as defaults for fields that do not have a supplied Converter
 var NullConverters = map[reflect.Type]Converter{
-	reflect.TypeOf(float64(0)):        NullDecimalConverter,
-	reflect.TypeOf(int64(0)):          NullInt64Converter,
-	reflect.TypeOf(int32(0)):          NullInt32Converter,
-	reflect.TypeOf(""):                NullStringConverter,
-	reflect.TypeOf(time.Time{}):       NullTimeConverter,
-	reflect.TypeOf(false):             NullBoolConverter,
-	reflect.TypeOf(sql.NullFloat64{}): NullDecimalConverter,
-	reflect.TypeOf(sql.NullTime{}):    NullTimeConverter,
-	reflect.TypeOf(sql.NullBool{}):    NullBoolConverter,
-	reflect.TypeOf(sql.NullInt64{}):   NullInt64Converter,
-	reflect.TypeOf(sql.NullInt32{}):   NullInt32Converter,
-	reflect.TypeOf(sql.NullInt16{}):   NullInt16Converter,
-	reflect.TypeOf(sql.NullByte{}):    NullByteConverter,
-	reflect.TypeOf(sql.NullString{}):  NullStringConverter,
+	reflect.TypeFor[float64]():         NullDecimalConverter,
+	reflect.TypeFor[int64]():           NullInt64Converter,
+	reflect.TypeFor[int32]():           NullInt32Converter,
+	reflect.TypeFor[string]():          NullStringConverter,
+	reflect.TypeFor[time.Time]():       NullTimeConverter,
+	reflect.TypeOf(false):              NullBoolConverter,
+	reflect.TypeFor[sql.NullFloat64](): NullDecimalConverter,
+	reflect.TypeFor[sql.NullTime]():    NullTimeConverter,
+	reflect.TypeFor[sql.NullBool]():    NullBoolConverter,
+	reflect.TypeFor[sql.NullInt64]():   NullInt64Converter,
+	reflect.TypeFor[sql.NullInt32]():   NullInt32Converter,
+	reflect.TypeFor[sql.NullInt16]():   NullInt16Converter,
+	reflect.TypeFor[sql.NullByte]():    NullByteConverter,
+	reflect.TypeFor[sql.NullString]():  NullStringConverter,
 }
 
 // IntOrFloatToNullableFloat64 returns an error if the input is not a variation of int or float.
 var IntOrFloatToNullableFloat64 = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableFloat64,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		var ptr *float64
 		if v == nil {
 			return ptr, nil
@@ -469,7 +469,7 @@ var IntOrFloatToNullableFloat64 = data.FieldConverter{
 // TimeToNullableTime returns an error if the input is not a time
 var TimeToNullableTime = data.FieldConverter{
 	OutputFieldType: data.FieldTypeNullableTime,
-	Converter: func(v interface{}) (interface{}, error) {
+	Converter: func(v any) (any, error) {
 		if v == nil {
 			return nil, nil
 		}
@@ -481,7 +481,7 @@ var TimeToNullableTime = data.FieldConverter{
 	},
 }
 
-func toConversionError(expected string, v interface{}) error {
+func toConversionError(expected string, v any) error {
 	return fmt.Errorf(`%w, expected %s input but got type %T for value "%v"`,
 		ErrorUnexpectedTypeConversion, expected, v, v)
 }

@@ -13,7 +13,7 @@ import (
 var Logger = log.DefaultLogger
 
 // NewLoggerWith creates a new logger with the given arguments.
-var NewLoggerWith = func(args ...interface{}) log.Logger {
+var NewLoggerWith = func(args ...any) log.Logger {
 	return log.New().With(args...)
 }
 

@@ -35,7 +35,7 @@ func (p *ResourceGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) er
 }
 
 // GRPCClient returns c as a resource gRPC client.
-func (p *ResourceGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *ResourceGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (any, error) {
 	return &resourceGRPCClient{client: pluginv2.NewResourceClient(c)}, nil
 }
 

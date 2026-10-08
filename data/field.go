@@ -64,7 +64,7 @@ type Fields []*Field
 //
 // If an unsupported values type is passed, NewField will panic.
 // nolint:gocyclo
-func NewField(name string, labels Labels, values interface{}) *Field {
+func NewField(name string, labels Labels, values any) *Field {
 	var vec vector
 	switch v := values.(type) {
 	case []int8:
@@ -141,7 +141,7 @@ func NewField(name string, labels Labels, values interface{}) *Field {
 // Set sets the Field's value at index idx to val.
 // It will panic if idx is out of range or if
 // the underlying type of val does not match the element type of the Field.
-func (f *Field) Set(idx int, val interface{}) {
+func (f *Field) Set(idx int, val any) {
 	f.vector.Set(idx, val)
 }
 
@@ -150,13 +150,13 @@ func (f *Field) Set(idx int, val interface{}) {
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable, then this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
-func (f *Field) SetConcrete(idx int, val interface{}) {
+func (f *Field) SetConcrete(idx int, val any) {
 	f.vector.SetConcrete(idx, val)
 }
 
 // Append appends element e to the Field.
 // it will panic if the underlying type of e does not match the element type of the Field.
-func (f *Field) Append(e interface{}) {
+func (f *Field) Append(e any) {
 	f.vector.Append(e)
 }
 
@@ -172,7 +172,7 @@ func (f *Field) AppendAll(f2 *Field) {
 	offset := f.Len()
 	f.Extend(n)
 
-	for i := 0; i < n; i++ {
+	for i := range n {
 		f.Set(offset+i, f2.CopyAt(i))
 	}
 }
@@ -200,7 +200,7 @@ func (f *Field) Capacity() int {
 
 // At returns the the element at index idx of the Field.
 // It will panic if idx is out of range.
-func (f *Field) At(idx int) interface{} {
+func (f *Field) At(idx int) any {
 	return f.vector.At(idx)
 }
 
@@ -229,7 +229,7 @@ func (f *Field) Type() FieldType {
 
 // PointerAt returns a pointer to the value at idx of the Field.
 // It will panic if idx is out of range.
-func (f *Field) PointerAt(idx int) interface{} {
+func (f *Field) PointerAt(idx int) any {
 	return f.vector.PointerAt(idx)
 }
 
@@ -238,7 +238,7 @@ func (f *Field) PointerAt(idx int) interface{} {
 // and inserts val at index idx of the Field.
 // If idx is equal to the Field length, then val will be appended.
 // It idx exceeds the Field length, this method will panic.
-func (f *Field) Insert(idx int, val interface{}) {
+func (f *Field) Insert(idx int, val any) {
 	f.vector.Insert(idx, val)
 }
 
@@ -249,7 +249,7 @@ func (f *Field) Delete(idx int) {
 
 // CopyAt returns a copy of the value of the specified index idx.
 // It will panic if idx is out of range.
-func (f *Field) CopyAt(idx int) interface{} {
+func (f *Field) CopyAt(idx int) any {
 	return f.vector.CopyAt(idx)
 }
 
@@ -257,7 +257,7 @@ func (f *Field) CopyAt(idx int) interface{} {
 // A non-pointer type is returned regardless if the underlying vector is a pointer
 // type or not. If the value is a pointer type, and is nil, then the zero value
 // is returned and ok will be false.
-func (f *Field) ConcreteAt(idx int) (val interface{}, ok bool) {
+func (f *Field) ConcreteAt(idx int) (val any, ok bool) {
 	return f.vector.ConcreteAt(idx)
 }
 

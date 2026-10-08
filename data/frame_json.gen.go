@@ -13,7 +13,7 @@ func writeArrowDataBinary(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 	v := array.NewBinaryData(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -37,7 +37,7 @@ func writeArrowDataUint8(stream *jsoniter.Stream, col arrow.Array) *fieldEntityL
 
 	v := array.NewUint8Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -53,7 +53,7 @@ func writeArrowDataUint8(stream *jsoniter.Stream, col arrow.Array) *fieldEntityL
 
 func readUint8VectorJSON(iter *jsoniter.Iterator, size int) (*uint8Vector, error) {
 	arr := newUint8Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint8VectorJSON", "expected array")
 			return nil, iter.Error
@@ -77,7 +77,7 @@ func readUint8VectorJSON(iter *jsoniter.Iterator, size int) (*uint8Vector, error
 
 func readNullableUint8VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUint8Vector, error) {
 	arr := newNullableUint8Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableUint8VectorJSON", "expected array")
 			return nil, iter.Error
@@ -104,7 +104,7 @@ func writeArrowDataUint16(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 	v := array.NewUint16Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -120,7 +120,7 @@ func writeArrowDataUint16(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 func readUint16VectorJSON(iter *jsoniter.Iterator, size int) (*uint16Vector, error) {
 	arr := newUint16Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint16VectorJSON", "expected array")
 			return nil, iter.Error
@@ -144,7 +144,7 @@ func readUint16VectorJSON(iter *jsoniter.Iterator, size int) (*uint16Vector, err
 
 func readNullableUint16VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUint16Vector, error) {
 	arr := newNullableUint16Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableUint16VectorJSON", "expected array")
 			return nil, iter.Error
@@ -171,7 +171,7 @@ func writeArrowDataUint32(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 	v := array.NewUint32Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -187,7 +187,7 @@ func writeArrowDataUint32(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 func readUint32VectorJSON(iter *jsoniter.Iterator, size int) (*uint32Vector, error) {
 	arr := newUint32Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint32VectorJSON", "expected array")
 			return nil, iter.Error
@@ -211,7 +211,7 @@ func readUint32VectorJSON(iter *jsoniter.Iterator, size int) (*uint32Vector, err
 
 func readNullableUint32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUint32Vector, error) {
 	arr := newNullableUint32Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableUint32VectorJSON", "expected array")
 			return nil, iter.Error
@@ -238,7 +238,7 @@ func writeArrowDataUint64(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 	v := array.NewUint64Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -254,7 +254,7 @@ func writeArrowDataUint64(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 func readUint64VectorJSON(iter *jsoniter.Iterator, size int) (*uint64Vector, error) {
 	arr := newUint64Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readUint64VectorJSON", "expected array")
 			return nil, iter.Error
@@ -278,7 +278,7 @@ func readUint64VectorJSON(iter *jsoniter.Iterator, size int) (*uint64Vector, err
 
 func readNullableUint64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableUint64Vector, error) {
 	arr := newNullableUint64Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableUint64VectorJSON", "expected array")
 			return nil, iter.Error
@@ -305,7 +305,7 @@ func writeArrowDataInt8(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLo
 
 	v := array.NewInt8Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -321,7 +321,7 @@ func writeArrowDataInt8(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLo
 
 func readInt8VectorJSON(iter *jsoniter.Iterator, size int) (*int8Vector, error) {
 	arr := newInt8Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readInt8VectorJSON", "expected array")
 			return nil, iter.Error
@@ -345,7 +345,7 @@ func readInt8VectorJSON(iter *jsoniter.Iterator, size int) (*int8Vector, error) 
 
 func readNullableInt8VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt8Vector, error) {
 	arr := newNullableInt8Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableInt8VectorJSON", "expected array")
 			return nil, iter.Error
@@ -372,7 +372,7 @@ func writeArrowDataInt16(stream *jsoniter.Stream, col arrow.Array) *fieldEntityL
 
 	v := array.NewInt16Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -388,7 +388,7 @@ func writeArrowDataInt16(stream *jsoniter.Stream, col arrow.Array) *fieldEntityL
 
 func readInt16VectorJSON(iter *jsoniter.Iterator, size int) (*int16Vector, error) {
 	arr := newInt16Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readInt16VectorJSON", "expected array")
 			return nil, iter.Error
@@ -412,7 +412,7 @@ func readInt16VectorJSON(iter *jsoniter.Iterator, size int) (*int16Vector, error
 
 func readNullableInt16VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt16Vector, error) {
 	arr := newNullableInt16Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableInt16VectorJSON", "expected array")
 			return nil, iter.Error
@@ -439,7 +439,7 @@ func writeArrowDataInt32(stream *jsoniter.Stream, col arrow.Array) *fieldEntityL
 
 	v := array.NewInt32Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -455,7 +455,7 @@ func writeArrowDataInt32(stream *jsoniter.Stream, col arrow.Array) *fieldEntityL
 
 func readInt32VectorJSON(iter *jsoniter.Iterator, size int) (*int32Vector, error) {
 	arr := newInt32Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readInt32VectorJSON", "expected array")
 			return nil, iter.Error
@@ -479,7 +479,7 @@ func readInt32VectorJSON(iter *jsoniter.Iterator, size int) (*int32Vector, error
 
 func readNullableInt32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt32Vector, error) {
 	arr := newNullableInt32Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableInt32VectorJSON", "expected array")
 			return nil, iter.Error
@@ -506,7 +506,7 @@ func writeArrowDataInt64(stream *jsoniter.Stream, col arrow.Array) *fieldEntityL
 
 	v := array.NewInt64Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -522,7 +522,7 @@ func writeArrowDataInt64(stream *jsoniter.Stream, col arrow.Array) *fieldEntityL
 
 func readInt64VectorJSON(iter *jsoniter.Iterator, size int) (*int64Vector, error) {
 	arr := newInt64Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readInt64VectorJSON", "expected array")
 			return nil, iter.Error
@@ -546,7 +546,7 @@ func readInt64VectorJSON(iter *jsoniter.Iterator, size int) (*int64Vector, error
 
 func readNullableInt64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableInt64Vector, error) {
 	arr := newNullableInt64Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableInt64VectorJSON", "expected array")
 			return nil, iter.Error
@@ -573,7 +573,7 @@ func writeArrowDataFloat32(stream *jsoniter.Stream, col arrow.Array) *fieldEntit
 
 	v := array.NewFloat32Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -599,7 +599,7 @@ func writeArrowDataFloat32(stream *jsoniter.Stream, col arrow.Array) *fieldEntit
 
 func readFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*float32Vector, error) {
 	arr := newFloat32Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readFloat32VectorJSON", "expected array")
 			return nil, iter.Error
@@ -623,7 +623,7 @@ func readFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*float32Vector, e
 
 func readNullableFloat32VectorJSON(iter *jsoniter.Iterator, size int) (*nullableFloat32Vector, error) {
 	arr := newNullableFloat32Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableFloat32VectorJSON", "expected array")
 			return nil, iter.Error
@@ -650,7 +650,7 @@ func writeArrowDataFloat64(stream *jsoniter.Stream, col arrow.Array) *fieldEntit
 
 	v := array.NewFloat64Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -676,7 +676,7 @@ func writeArrowDataFloat64(stream *jsoniter.Stream, col arrow.Array) *fieldEntit
 
 func readFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*float64Vector, error) {
 	arr := newFloat64Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readFloat64VectorJSON", "expected array")
 			return nil, iter.Error
@@ -700,7 +700,7 @@ func readFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*float64Vector, e
 
 func readNullableFloat64VectorJSON(iter *jsoniter.Iterator, size int) (*nullableFloat64Vector, error) {
 	arr := newNullableFloat64Vector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableFloat64VectorJSON", "expected array")
 			return nil, iter.Error
@@ -727,7 +727,7 @@ func writeArrowDataString(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 	v := array.NewStringData(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -743,7 +743,7 @@ func writeArrowDataString(stream *jsoniter.Stream, col arrow.Array) *fieldEntity
 
 func readStringVectorJSON(iter *jsoniter.Iterator, size int) (*stringVector, error) {
 	arr := newStringVector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readStringVectorJSON", "expected array")
 			return nil, iter.Error
@@ -767,7 +767,7 @@ func readStringVectorJSON(iter *jsoniter.Iterator, size int) (*stringVector, err
 
 func readNullableStringVectorJSON(iter *jsoniter.Iterator, size int) (*nullableStringVector, error) {
 	arr := newNullableStringVector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableStringVectorJSON", "expected array")
 			return nil, iter.Error
@@ -794,7 +794,7 @@ func writeArrowDataBool(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLo
 
 	v := array.NewBooleanData(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -810,7 +810,7 @@ func writeArrowDataBool(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLo
 
 func readBoolVectorJSON(iter *jsoniter.Iterator, size int) (*boolVector, error) {
 	arr := newBoolVector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readBoolVectorJSON", "expected array")
 			return nil, iter.Error
@@ -834,7 +834,7 @@ func readBoolVectorJSON(iter *jsoniter.Iterator, size int) (*boolVector, error) 
 
 func readNullableBoolVectorJSON(iter *jsoniter.Iterator, size int) (*nullableBoolVector, error) {
 	arr := newNullableBoolVector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableBoolVectorJSON", "expected array")
 			return nil, iter.Error
@@ -861,7 +861,7 @@ func writeArrowDataEnum(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLo
 
 	v := array.NewUint16Data(col.Data())
 	stream.WriteArrayStart()
-	for i := 0; i < count; i++ {
+	for i := range count {
 		if i > 0 {
 			stream.WriteRaw(",")
 		}
@@ -877,7 +877,7 @@ func writeArrowDataEnum(stream *jsoniter.Stream, col arrow.Array) *fieldEntityLo
 
 func readEnumVectorJSON(iter *jsoniter.Iterator, size int) (*enumVector, error) {
 	arr := newEnumVector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readEnumVectorJSON", "expected array")
 			return nil, iter.Error
@@ -901,7 +901,7 @@ func readEnumVectorJSON(iter *jsoniter.Iterator, size int) (*enumVector, error) 
 
 func readNullableEnumVectorJSON(iter *jsoniter.Iterator, size int) (*nullableEnumVector, error) {
 	arr := newNullableEnumVector(size)
-	for i := 0; i < size; i++ {
+	for i := range size {
 		if !iter.ReadArray() {
 			iter.ReportError("readNullableEnumVectorJSON", "expected array")
 			return nil, iter.Error

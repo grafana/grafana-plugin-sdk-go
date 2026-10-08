@@ -50,6 +50,13 @@
       "matchUpdateTypes": ["minor", "patch", "digest"]
     },
     {
+      "description": "A Go major bump is a new module path, so for an indirect dependency Renovate just swaps the require line for one that nothing resolves to (and often duplicates an existing entry), leaving a go.mod that fails `go mod tidy`. Only the direct requirer can move a major, so never open these.",
+      "matchManagers": ["gomod"],
+      "matchDepTypes": ["indirect"],
+      "matchUpdateTypes": ["major"],
+      "enabled": false
+    },
+    {
       "description": "Automerge: minor/major updates need an approval from the Claude gate workflow before GitHub auto-merge fires",
       "matchUpdateTypes": ["minor", "major"],
       "automerge": true,

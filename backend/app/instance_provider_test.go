@@ -32,7 +32,7 @@ func TestInstanceProvider(t *testing.T) {
 	t.Run("When app instance settings provided should return expected key", func(t *testing.T) {
 		key, err := ip.GetKey(context.Background(), backend.PluginContext{
 			PluginID:            testAppPluginID,
-			OrgID:               testOrgID,
+			OrgID:               testOrgID, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{},
 		})
 		require.NoError(t, err)
@@ -104,7 +104,7 @@ func TestInstanceProvider(t *testing.T) {
 	t.Run("When creating a new instance should return expected instance", func(t *testing.T) {
 		i, err := ip.NewInstance(context.Background(), backend.PluginContext{
 			PluginID:            testAppPluginID,
-			OrgID:               testOrgID,
+			OrgID:               testOrgID, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{},
 		})
 		require.NoError(t, err)

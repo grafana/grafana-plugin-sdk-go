@@ -23,15 +23,15 @@ func newUint8VectorWithValues(s []uint8) *uint8Vector {
 	return (*uint8Vector)(&v)
 }
 
-func (v *uint8Vector) Set(idx int, i interface{}) {
+func (v *uint8Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(uint8)
 }
 
-func (v *uint8Vector) SetConcrete(idx int, i interface{}) {
+func (v *uint8Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *uint8Vector) Append(i interface{}) {
+func (v *uint8Vector) Append(i any) {
 	*v = append(*v, i.(uint8))
 }
 
@@ -39,11 +39,11 @@ func (v *uint8Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *uint8Vector) At(i int) interface{} {
+func (v *uint8Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *uint8Vector) PointerAt(i int) interface{} {
+func (v *uint8Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -55,13 +55,13 @@ func (v *uint8Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *uint8Vector) CopyAt(i int) interface{} {
+func (v *uint8Vector) CopyAt(i int) any {
 	var g uint8 //nolint:staticcheck // S1021: uint8erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *uint8Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *uint8Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -89,7 +89,7 @@ func (v *uint8Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *uint8Vector) Insert(i int, val interface{}) {
+func (v *uint8Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -121,15 +121,15 @@ func newUint16VectorWithValues(s []uint16) *uint16Vector {
 	return (*uint16Vector)(&v)
 }
 
-func (v *uint16Vector) Set(idx int, i interface{}) {
+func (v *uint16Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(uint16)
 }
 
-func (v *uint16Vector) SetConcrete(idx int, i interface{}) {
+func (v *uint16Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *uint16Vector) Append(i interface{}) {
+func (v *uint16Vector) Append(i any) {
 	*v = append(*v, i.(uint16))
 }
 
@@ -137,11 +137,11 @@ func (v *uint16Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *uint16Vector) At(i int) interface{} {
+func (v *uint16Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *uint16Vector) PointerAt(i int) interface{} {
+func (v *uint16Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -153,13 +153,13 @@ func (v *uint16Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *uint16Vector) CopyAt(i int) interface{} {
+func (v *uint16Vector) CopyAt(i int) any {
 	var g uint16 //nolint:staticcheck // S1021: uint16erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *uint16Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *uint16Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -187,7 +187,7 @@ func (v *uint16Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *uint16Vector) Insert(i int, val interface{}) {
+func (v *uint16Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -219,15 +219,15 @@ func newUint32VectorWithValues(s []uint32) *uint32Vector {
 	return (*uint32Vector)(&v)
 }
 
-func (v *uint32Vector) Set(idx int, i interface{}) {
+func (v *uint32Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(uint32)
 }
 
-func (v *uint32Vector) SetConcrete(idx int, i interface{}) {
+func (v *uint32Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *uint32Vector) Append(i interface{}) {
+func (v *uint32Vector) Append(i any) {
 	*v = append(*v, i.(uint32))
 }
 
@@ -235,11 +235,11 @@ func (v *uint32Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *uint32Vector) At(i int) interface{} {
+func (v *uint32Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *uint32Vector) PointerAt(i int) interface{} {
+func (v *uint32Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -251,13 +251,13 @@ func (v *uint32Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *uint32Vector) CopyAt(i int) interface{} {
+func (v *uint32Vector) CopyAt(i int) any {
 	var g uint32 //nolint:staticcheck // S1021: uint32erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *uint32Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *uint32Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -285,7 +285,7 @@ func (v *uint32Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *uint32Vector) Insert(i int, val interface{}) {
+func (v *uint32Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -317,15 +317,15 @@ func newUint64VectorWithValues(s []uint64) *uint64Vector {
 	return (*uint64Vector)(&v)
 }
 
-func (v *uint64Vector) Set(idx int, i interface{}) {
+func (v *uint64Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(uint64)
 }
 
-func (v *uint64Vector) SetConcrete(idx int, i interface{}) {
+func (v *uint64Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *uint64Vector) Append(i interface{}) {
+func (v *uint64Vector) Append(i any) {
 	*v = append(*v, i.(uint64))
 }
 
@@ -333,11 +333,11 @@ func (v *uint64Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *uint64Vector) At(i int) interface{} {
+func (v *uint64Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *uint64Vector) PointerAt(i int) interface{} {
+func (v *uint64Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -349,13 +349,13 @@ func (v *uint64Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *uint64Vector) CopyAt(i int) interface{} {
+func (v *uint64Vector) CopyAt(i int) any {
 	var g uint64 //nolint:staticcheck // S1021: uint64erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *uint64Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *uint64Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -383,7 +383,7 @@ func (v *uint64Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *uint64Vector) Insert(i int, val interface{}) {
+func (v *uint64Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -415,15 +415,15 @@ func newInt8VectorWithValues(s []int8) *int8Vector {
 	return (*int8Vector)(&v)
 }
 
-func (v *int8Vector) Set(idx int, i interface{}) {
+func (v *int8Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(int8)
 }
 
-func (v *int8Vector) SetConcrete(idx int, i interface{}) {
+func (v *int8Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *int8Vector) Append(i interface{}) {
+func (v *int8Vector) Append(i any) {
 	*v = append(*v, i.(int8))
 }
 
@@ -431,11 +431,11 @@ func (v *int8Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *int8Vector) At(i int) interface{} {
+func (v *int8Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *int8Vector) PointerAt(i int) interface{} {
+func (v *int8Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -447,13 +447,13 @@ func (v *int8Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *int8Vector) CopyAt(i int) interface{} {
+func (v *int8Vector) CopyAt(i int) any {
 	var g int8 //nolint:staticcheck // S1021: int8erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *int8Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *int8Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -481,7 +481,7 @@ func (v *int8Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *int8Vector) Insert(i int, val interface{}) {
+func (v *int8Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -513,15 +513,15 @@ func newInt16VectorWithValues(s []int16) *int16Vector {
 	return (*int16Vector)(&v)
 }
 
-func (v *int16Vector) Set(idx int, i interface{}) {
+func (v *int16Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(int16)
 }
 
-func (v *int16Vector) SetConcrete(idx int, i interface{}) {
+func (v *int16Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *int16Vector) Append(i interface{}) {
+func (v *int16Vector) Append(i any) {
 	*v = append(*v, i.(int16))
 }
 
@@ -529,11 +529,11 @@ func (v *int16Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *int16Vector) At(i int) interface{} {
+func (v *int16Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *int16Vector) PointerAt(i int) interface{} {
+func (v *int16Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -545,13 +545,13 @@ func (v *int16Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *int16Vector) CopyAt(i int) interface{} {
+func (v *int16Vector) CopyAt(i int) any {
 	var g int16 //nolint:staticcheck // S1021: int16erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *int16Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *int16Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -579,7 +579,7 @@ func (v *int16Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *int16Vector) Insert(i int, val interface{}) {
+func (v *int16Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -611,15 +611,15 @@ func newInt32VectorWithValues(s []int32) *int32Vector {
 	return (*int32Vector)(&v)
 }
 
-func (v *int32Vector) Set(idx int, i interface{}) {
+func (v *int32Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(int32)
 }
 
-func (v *int32Vector) SetConcrete(idx int, i interface{}) {
+func (v *int32Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *int32Vector) Append(i interface{}) {
+func (v *int32Vector) Append(i any) {
 	*v = append(*v, i.(int32))
 }
 
@@ -627,11 +627,11 @@ func (v *int32Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *int32Vector) At(i int) interface{} {
+func (v *int32Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *int32Vector) PointerAt(i int) interface{} {
+func (v *int32Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -643,13 +643,13 @@ func (v *int32Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *int32Vector) CopyAt(i int) interface{} {
+func (v *int32Vector) CopyAt(i int) any {
 	var g int32 //nolint:staticcheck // S1021: int32erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *int32Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *int32Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -677,7 +677,7 @@ func (v *int32Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *int32Vector) Insert(i int, val interface{}) {
+func (v *int32Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -709,15 +709,15 @@ func newInt64VectorWithValues(s []int64) *int64Vector {
 	return (*int64Vector)(&v)
 }
 
-func (v *int64Vector) Set(idx int, i interface{}) {
+func (v *int64Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(int64)
 }
 
-func (v *int64Vector) SetConcrete(idx int, i interface{}) {
+func (v *int64Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *int64Vector) Append(i interface{}) {
+func (v *int64Vector) Append(i any) {
 	*v = append(*v, i.(int64))
 }
 
@@ -725,11 +725,11 @@ func (v *int64Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *int64Vector) At(i int) interface{} {
+func (v *int64Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *int64Vector) PointerAt(i int) interface{} {
+func (v *int64Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -741,13 +741,13 @@ func (v *int64Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *int64Vector) CopyAt(i int) interface{} {
+func (v *int64Vector) CopyAt(i int) any {
 	var g int64 //nolint:staticcheck // S1021: int64erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *int64Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *int64Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -775,7 +775,7 @@ func (v *int64Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *int64Vector) Insert(i int, val interface{}) {
+func (v *int64Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -807,15 +807,15 @@ func newFloat32VectorWithValues(s []float32) *float32Vector {
 	return (*float32Vector)(&v)
 }
 
-func (v *float32Vector) Set(idx int, i interface{}) {
+func (v *float32Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(float32)
 }
 
-func (v *float32Vector) SetConcrete(idx int, i interface{}) {
+func (v *float32Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *float32Vector) Append(i interface{}) {
+func (v *float32Vector) Append(i any) {
 	*v = append(*v, i.(float32))
 }
 
@@ -823,11 +823,11 @@ func (v *float32Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *float32Vector) At(i int) interface{} {
+func (v *float32Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *float32Vector) PointerAt(i int) interface{} {
+func (v *float32Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -839,13 +839,13 @@ func (v *float32Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *float32Vector) CopyAt(i int) interface{} {
+func (v *float32Vector) CopyAt(i int) any {
 	var g float32 //nolint:staticcheck // S1021: float32erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *float32Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *float32Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -873,7 +873,7 @@ func (v *float32Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *float32Vector) Insert(i int, val interface{}) {
+func (v *float32Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -905,15 +905,15 @@ func newFloat64VectorWithValues(s []float64) *float64Vector {
 	return (*float64Vector)(&v)
 }
 
-func (v *float64Vector) Set(idx int, i interface{}) {
+func (v *float64Vector) Set(idx int, i any) {
 	(*v)[idx] = i.(float64)
 }
 
-func (v *float64Vector) SetConcrete(idx int, i interface{}) {
+func (v *float64Vector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *float64Vector) Append(i interface{}) {
+func (v *float64Vector) Append(i any) {
 	*v = append(*v, i.(float64))
 }
 
@@ -921,11 +921,11 @@ func (v *float64Vector) NilAt(i int) bool {
 	return false
 }
 
-func (v *float64Vector) At(i int) interface{} {
+func (v *float64Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *float64Vector) PointerAt(i int) interface{} {
+func (v *float64Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -937,13 +937,13 @@ func (v *float64Vector) Cap() int {
 	return cap(*v)
 }
 
-func (v *float64Vector) CopyAt(i int) interface{} {
+func (v *float64Vector) CopyAt(i int) any {
 	var g float64 //nolint:staticcheck // S1021: float64erated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *float64Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *float64Vector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -971,7 +971,7 @@ func (v *float64Vector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *float64Vector) Insert(i int, val interface{}) {
+func (v *float64Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1003,15 +1003,15 @@ func newStringVectorWithValues(s []string) *stringVector {
 	return (*stringVector)(&v)
 }
 
-func (v *stringVector) Set(idx int, i interface{}) {
+func (v *stringVector) Set(idx int, i any) {
 	(*v)[idx] = i.(string)
 }
 
-func (v *stringVector) SetConcrete(idx int, i interface{}) {
+func (v *stringVector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *stringVector) Append(i interface{}) {
+func (v *stringVector) Append(i any) {
 	*v = append(*v, i.(string))
 }
 
@@ -1019,11 +1019,11 @@ func (v *stringVector) NilAt(i int) bool {
 	return false
 }
 
-func (v *stringVector) At(i int) interface{} {
+func (v *stringVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *stringVector) PointerAt(i int) interface{} {
+func (v *stringVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1035,13 +1035,13 @@ func (v *stringVector) Cap() int {
 	return cap(*v)
 }
 
-func (v *stringVector) CopyAt(i int) interface{} {
+func (v *stringVector) CopyAt(i int) any {
 	var g string //nolint:staticcheck // S1021: stringerated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *stringVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *stringVector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -1069,7 +1069,7 @@ func (v *stringVector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *stringVector) Insert(i int, val interface{}) {
+func (v *stringVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1101,15 +1101,15 @@ func newBoolVectorWithValues(s []bool) *boolVector {
 	return (*boolVector)(&v)
 }
 
-func (v *boolVector) Set(idx int, i interface{}) {
+func (v *boolVector) Set(idx int, i any) {
 	(*v)[idx] = i.(bool)
 }
 
-func (v *boolVector) SetConcrete(idx int, i interface{}) {
+func (v *boolVector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *boolVector) Append(i interface{}) {
+func (v *boolVector) Append(i any) {
 	*v = append(*v, i.(bool))
 }
 
@@ -1117,11 +1117,11 @@ func (v *boolVector) NilAt(i int) bool {
 	return false
 }
 
-func (v *boolVector) At(i int) interface{} {
+func (v *boolVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *boolVector) PointerAt(i int) interface{} {
+func (v *boolVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1133,13 +1133,13 @@ func (v *boolVector) Cap() int {
 	return cap(*v)
 }
 
-func (v *boolVector) CopyAt(i int) interface{} {
+func (v *boolVector) CopyAt(i int) any {
 	var g bool //nolint:staticcheck // S1021: boolerated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *boolVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *boolVector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -1167,7 +1167,7 @@ func (v *boolVector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *boolVector) Insert(i int, val interface{}) {
+func (v *boolVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1199,15 +1199,15 @@ func newTimeTimeVectorWithValues(s []time.Time) *timeTimeVector {
 	return (*timeTimeVector)(&v)
 }
 
-func (v *timeTimeVector) Set(idx int, i interface{}) {
+func (v *timeTimeVector) Set(idx int, i any) {
 	(*v)[idx] = i.(time.Time)
 }
 
-func (v *timeTimeVector) SetConcrete(idx int, i interface{}) {
+func (v *timeTimeVector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *timeTimeVector) Append(i interface{}) {
+func (v *timeTimeVector) Append(i any) {
 	*v = append(*v, i.(time.Time))
 }
 
@@ -1215,11 +1215,11 @@ func (v *timeTimeVector) NilAt(i int) bool {
 	return false
 }
 
-func (v *timeTimeVector) At(i int) interface{} {
+func (v *timeTimeVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *timeTimeVector) PointerAt(i int) interface{} {
+func (v *timeTimeVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1231,13 +1231,13 @@ func (v *timeTimeVector) Cap() int {
 	return cap(*v)
 }
 
-func (v *timeTimeVector) CopyAt(i int) interface{} {
+func (v *timeTimeVector) CopyAt(i int) any {
 	var g time.Time //nolint:staticcheck // S1021: timeTimeerated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *timeTimeVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *timeTimeVector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -1265,7 +1265,7 @@ func (v *timeTimeVector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *timeTimeVector) Insert(i int, val interface{}) {
+func (v *timeTimeVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1297,15 +1297,15 @@ func newJsonRawMessageVectorWithValues(s []json.RawMessage) *jsonRawMessageVecto
 	return (*jsonRawMessageVector)(&v)
 }
 
-func (v *jsonRawMessageVector) Set(idx int, i interface{}) {
+func (v *jsonRawMessageVector) Set(idx int, i any) {
 	(*v)[idx] = i.(json.RawMessage)
 }
 
-func (v *jsonRawMessageVector) SetConcrete(idx int, i interface{}) {
+func (v *jsonRawMessageVector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *jsonRawMessageVector) Append(i interface{}) {
+func (v *jsonRawMessageVector) Append(i any) {
 	*v = append(*v, i.(json.RawMessage))
 }
 
@@ -1313,11 +1313,11 @@ func (v *jsonRawMessageVector) NilAt(i int) bool {
 	return false
 }
 
-func (v *jsonRawMessageVector) At(i int) interface{} {
+func (v *jsonRawMessageVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *jsonRawMessageVector) PointerAt(i int) interface{} {
+func (v *jsonRawMessageVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1329,13 +1329,13 @@ func (v *jsonRawMessageVector) Cap() int {
 	return cap(*v)
 }
 
-func (v *jsonRawMessageVector) CopyAt(i int) interface{} {
+func (v *jsonRawMessageVector) CopyAt(i int) any {
 	var g json.RawMessage //nolint:staticcheck // S1021: jsonRawMessageerated code pattern  ;
 	g = (*v)[i]
 	return g
 }
 
-func (v *jsonRawMessageVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *jsonRawMessageVector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -1363,7 +1363,7 @@ func (v *jsonRawMessageVector) Clear() {
 	*v = (*v)[:0]
 }
 
-func (v *jsonRawMessageVector) Insert(i int, val interface{}) {
+func (v *jsonRawMessageVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

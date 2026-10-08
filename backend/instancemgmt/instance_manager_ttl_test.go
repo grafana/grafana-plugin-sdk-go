@@ -14,7 +14,7 @@ import (
 func TestTTLInstanceManager(t *testing.T) {
 	ctx := context.Background()
 	pCtx := backend.PluginContext{
-		OrgID: 1,
+		OrgID: 1, // nolint:staticcheck
 		AppInstanceSettings: &backend.AppInstanceSettings{
 			Updated: time.Now(),
 		},
@@ -38,7 +38,7 @@ func TestTTLInstanceManager(t *testing.T) {
 
 		t.Run("When updating plugin context and getting instance", func(t *testing.T) {
 			pCtxUpdated := backend.PluginContext{
-				OrgID: 1,
+				OrgID: 1, // nolint:staticcheck
 				AppInstanceSettings: &backend.AppInstanceSettings{
 					Updated: time.Now(),
 				},
@@ -69,7 +69,7 @@ func TestTTLInstanceManager(t *testing.T) {
 func TestTTLInstanceManagerWithCustomTTL(t *testing.T) {
 	ctx := context.Background()
 	pCtx := backend.PluginContext{
-		OrgID: 1,
+		OrgID: 1, // nolint:staticcheck
 		AppInstanceSettings: &backend.AppInstanceSettings{
 			Updated: time.Now(),
 		},
@@ -149,13 +149,42 @@ func TestTTLInstanceManagerWithCustomTTL(t *testing.T) {
 	})
 }
 
+func TestTTLInstanceManagerDisposesExpiredInstanceOnReplacement(t *testing.T) {
+	ctx := context.Background()
+	pCtx := backend.PluginContext{
+		OrgID: 1, // nolint:staticcheck
+		AppInstanceSettings: &backend.AppInstanceSettings{
+			Updated: time.Now(),
+		},
+	}
+
+	ttl := 20 * time.Millisecond
+	// No cleanup sweep runs during the test, so the expired entry is still in the cache
+	// when the next Get replaces it.
+	cleanupInterval := time.Hour
+	im := newTTLInstanceManager(&testInstanceProvider{}, ttl, cleanupInterval)
+
+	first, err := im.Get(ctx, pCtx)
+	require.NoError(t, err)
+
+	time.Sleep(ttl + 10*time.Millisecond)
+
+	second, err := im.Get(ctx, pCtx)
+	require.NoError(t, err)
+	require.NotSame(t, first, second)
+
+	// OnEvicted disposes the instance and decrements the active-instances gauge in the same
+	// callback, so one Dispose call also means one decrement.
+	require.Equal(t, int64(1), first.(*testInstance).disposedTimes.Load(), "expired instance should be disposed when it is replaced")
+}
+
 func TestTTLInstanceManagerConcurrency(t *testing.T) {
 	t.Run("Check possible race condition issues when initially creating instance", func(t *testing.T) {
 		ctx := context.Background()
 		tip := &testInstanceProvider{}
 		im := NewTTLInstanceManager(tip)
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -166,7 +195,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 		var createdInstances []*testInstance
 		mutex := new(sync.Mutex)
 		// Creating new instances concurrently
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			go func() {
 				instance, _ := im.Get(ctx, pCtx)
 				mutex.Lock()
@@ -190,7 +219,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 	t.Run("Check possible race condition issues when re-creating instance on settings update", func(t *testing.T) {
 		ctx := context.Background()
 		initialPCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -201,7 +230,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 		instanceToDispose, _ := im.Get(ctx, initialPCtx)
 
 		updatedPCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -213,7 +242,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 		var createdInstances []*testInstance
 		mutex := new(sync.Mutex)
 		// Creating new instances because of updated context
-		for i := 0; i < 10; i++ {
+		for range 10 {
 			go func() {
 				instance, _ := im.Get(ctx, updatedPCtx)
 				mutex.Lock()
@@ -244,7 +273,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 		const delay = time.Millisecond * 50
 		ctx := context.Background()
 		pCtx := backend.PluginContext{
-			OrgID: 1,
+			OrgID: 1, // nolint:staticcheck
 			AppInstanceSettings: &backend.AppInstanceSettings{
 				Updated: time.Now(),
 			},
@@ -260,19 +289,17 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 		require.NoError(t, err)
 		var wg1, wg2 sync.WaitGroup
 		wg1.Add(1)
-		wg2.Add(1)
-		go func() {
+		wg2.Go(func() {
 			// Creating instance with id#2 in cache
 			wg1.Done()
 			_, err := im.Get(ctx, backend.PluginContext{
-				OrgID: 2,
+				OrgID: 2, // nolint:staticcheck
 				AppInstanceSettings: &backend.AppInstanceSettings{
 					Updated: time.Now(),
 				},
 			})
 			require.NoError(t, err)
-			wg2.Done()
-		}()
+		})
 		// Waiting before thread 2 starts to get the instance, so thread 2 could acquire the lock before thread 1
 		wg1.Wait()
 		// Getting existing instance with id#1 from cache
@@ -291,7 +318,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 func TestTTLInstanceManagerDo(t *testing.T) {
 	ctx := context.Background()
 	pCtx := backend.PluginContext{
-		OrgID: 1,
+		OrgID: 1, // nolint:staticcheck
 		AppInstanceSettings: &backend.AppInstanceSettings{
 			Updated: time.Now(),
 		},

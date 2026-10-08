@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-func sliceFor(value interface{}) (interface{}, error) {
+func sliceFor(value any) (any, error) {
 	switch v := value.(type) {
 	case int8:
 		return []*int8{}, nil
@@ -65,7 +65,7 @@ func sliceFor(value interface{}) (interface{}, error) {
 	}
 }
 
-func toPointer(value interface{}) interface{} {
+func toPointer(value any) any {
 	switch v := value.(type) {
 	case int8:
 		return &v
@@ -132,7 +132,7 @@ func supportedToplevelType(v reflect.Value) bool {
 		}
 		return true
 	case reflect.Struct:
-		_, ok := v.Interface().(time.Time)
+		_, ok := reflect.TypeAssert[time.Time](v)
 		if ok {
 			return false // times are structs, but not toplevel ones
 		}

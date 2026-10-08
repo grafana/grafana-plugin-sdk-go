@@ -113,7 +113,7 @@ func (f *Frame) TimeSeriesSchema() TimeSeriesSchema {
 // float64ToType converts a float64 value to the specified field type.
 // This is useful if fill missing is enabled and fill missing mode is FillMissingValue,
 // for converting the fill missing value (float64) to the field type.
-func float64ToType(val float64, ftype FieldType) (interface{}, error) {
+func float64ToType(val float64, ftype FieldType) (any, error) {
 	switch ftype {
 	case FieldTypeInt8:
 		return int8(val), nil
@@ -170,11 +170,11 @@ func float64ToType(val float64, ftype FieldType) (interface{}, error) {
 }
 
 // GetMissing returns the value to be filled for a missing row field.
-func GetMissing(fillMissing *FillMissing, field *Field, previousRowIdx int) (interface{}, error) {
+func GetMissing(fillMissing *FillMissing, field *Field, previousRowIdx int) (any, error) {
 	if fillMissing == nil {
 		return nil, ErrFillMissingDisabled
 	}
-	var fillVal interface{}
+	var fillVal any
 	switch fillMissing.Mode {
 	case FillModeNull:
 	//	fillVal = nil
@@ -254,7 +254,7 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 		seenFactors:               map[string]struct{}{},
 		valueFactorToWideFieldIdx: valueFactorToWideFieldIdx,
 	}
-	for longRowIdx := 0; longRowIdx < longLen; longRowIdx++ { // loop over each row of longFrame
+	for longRowIdx := range longLen { // loop over each row of longFrame
 		if err := proc.process(longRowIdx); err != nil {
 			return nil, err
 		}
@@ -501,7 +501,7 @@ func WideToLong(wideFrame *Frame) (*Frame, error) {
 
 	// Populate data of longFrame from wideframe
 	longFrameCounter := 0
-	for wideRowIdx := 0; wideRowIdx < wideLen; wideRowIdx++ { // loop over each row of wideFrame
+	for wideRowIdx := range wideLen { // loop over each row of wideFrame
 		tm, ok := wideFrame.ConcreteAt(tsSchema.TimeIndex, wideRowIdx)
 		if !ok {
 			return nil, fmt.Errorf("time may not have nil values")

@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"errors"
+	"slices"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 )
@@ -164,8 +165,8 @@ func (h *MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionR
 
 func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handler) Handler {
 	next := finalHandler
-	for i := len(middlewares) - 1; i >= 0; i-- {
-		next = middlewares[i].CreateHandlerMiddleware(next)
+	for _, middleware := range slices.Backward(middlewares) {
+		next = middleware.CreateHandlerMiddleware(next)
 	}
 
 	return next

@@ -41,11 +41,10 @@ func NewRestClient(url string, headers map[string]string) Client {
 					Renegotiation: tls.RenegotiateFreelyAsClient,
 				},
 				Proxy: http.ProxyFromEnvironment,
-				Dial: (&net.Dialer{
+				DialContext: (&net.Dialer{
 					Timeout:   30 * time.Second,
 					KeepAlive: 30 * time.Second,
-					DualStack: true,
-				}).Dial,
+				}).DialContext,
 				TLSHandshakeTimeout:   10 * time.Second,
 				ExpectContinueTimeout: 1 * time.Second,
 				MaxIdleConns:          100,

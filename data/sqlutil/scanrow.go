@@ -49,8 +49,8 @@ func (s *ScanRow) Set(i int, name string, colType reflect.Type) {
 
 // NewScannableRow creates a slice where each element is usable in a call to `(database/sql.Rows).Scan`
 // aka a pointer
-func (s *ScanRow) NewScannableRow() []interface{} {
-	values := make([]interface{}, len(s.Types))
+func (s *ScanRow) NewScannableRow() []any {
+	values := make([]any, len(s.Types))
 
 	for i, v := range s.Types {
 		if v.Kind() == reflect.Ptr { //nolint:govet // inline analyzer false positive on reflect.Ptr alias

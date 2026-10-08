@@ -95,7 +95,7 @@ func NewTracerProvider(address string, samplerOpts SamplerOptions, opts tracing.
 // NewTextMapPropagator takes a string-like value and returns the corresponding propagation.TextMapPropagator.
 func NewTextMapPropagator(pf string) (propagation.TextMapPropagator, error) {
 	var propagators []propagation.TextMapPropagator
-	for _, propagatorString := range strings.Split(pf, ",") {
+	for propagatorString := range strings.SplitSeq(pf, ",") {
 		var propagator propagation.TextMapPropagator
 		switch PropagatorFormat(propagatorString) {
 		case PropagatorFormatW3C:

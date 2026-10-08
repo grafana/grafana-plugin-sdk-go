@@ -264,7 +264,7 @@ func TestAddQueryInteraction_argsAreDroppedOverTheTotalBudget(t *testing.T) {
 	// test doesn't serialize the whole budget.
 	b := newBufferWithLimits()
 	statement := strings.Repeat("x", int(testMaxBodyBytes))
-	for i := int64(0); i < testMaxTotalBytes/testMaxBodyBytes; i++ {
+	for range testMaxTotalBytes / testMaxBodyBytes {
 		b.AddQueryInteraction(querycapture.Interaction{
 			Kind: querycapture.KindSQLQuery, Statement: statement, Err: "boom",
 		})

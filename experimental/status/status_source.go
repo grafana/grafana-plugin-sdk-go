@@ -169,10 +169,8 @@ func isHTTPTimeoutError(err error) bool {
 }
 
 func isNetworkSyscallConnectionError(err error) bool {
-	var netErr *net.OpError
-	if errors.As(err, &netErr) {
-		var sysErr *os.SyscallError
-		if errors.As(netErr.Err, &sysErr) {
+	if netErr, ok := errors.AsType[*net.OpError](err); ok {
+		if sysErr, ok := errors.AsType[*os.SyscallError](netErr.Err); ok {
 			return errors.Is(sysErr.Err, syscall.ECONNRESET) || errors.Is(sysErr.Err, syscall.ECONNREFUSED) || errors.Is(sysErr.Err, syscall.EHOSTUNREACH) || errors.Is(sysErr.Err, syscall.ENETUNREACH)
 		}
 	}
@@ -205,13 +203,11 @@ func isTLSCertificateVerificationError(err error) bool {
 
 // isHTTPEOFError returns true if the error is an EOF error inside of url.Error or net.OpError, indicating the connection was closed prematurely by server
 func isHTTPEOFError(err error) bool {
-	var netErr *net.OpError
-	if errors.As(err, &netErr) {
+	if netErr, ok := errors.AsType[*net.OpError](err); ok {
 		return errors.Is(netErr.Err, io.EOF)
 	}
 
-	var urlErr *url.Error
-	if errors.As(err, &urlErr) {
+	if urlErr, ok := errors.AsType[*url.Error](err); ok {
 		return errors.Is(urlErr.Err, io.EOF)
 	}
 	return false
