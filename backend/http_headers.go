@@ -152,7 +152,13 @@ func (m *headerMiddleware) CallResource(ctx context.Context, req *CallResourceRe
 		return m.BaseHandler.CallResource(ctx, req, sender)
 	}
 
-	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
+	// Filter the copy used for automatic forwarding, leaving incoming headers available
+	// to the handler and allowing the HTTP client to choose its own response encoding.
+	headers := req.GetHTTPHeaders()
+	headers.Del("Accept-Encoding")
+	// The Grafana sign-in token is only intended for use within Grafana.
+	headers.Del(GrafanaUserSignInTokenHeaderName)
+	ctx = m.applyHeaders(ctx, headers)
 	return m.BaseHandler.CallResource(ctx, req, sender)
 }
 
