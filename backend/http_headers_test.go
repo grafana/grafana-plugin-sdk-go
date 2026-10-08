@@ -9,6 +9,8 @@ import (
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 	"github.com/stretchr/testify/require"
 )
 
@@ -29,7 +31,9 @@ func TestHeaderMiddlewareCallResource(t *testing.T) {
 					name = "forwarding disabled"
 				}
 				t.Run(name, func(t *testing.T) {
-					incoming := &CallResourceRequest{Headers: map[string][]string{
+					incoming := &CallResourceRequest{PluginContext: PluginContext{GrafanaConfig: config.NewGrafanaCfg(map[string]string{
+						featuretoggles.EnabledFeatures: featuretoggles.PluginsFilterForwardedHeaders,
+					})}, Headers: map[string][]string{
 						tc.keyCase("Accept-Encoding"): {"zstd", "br"},
 						tc.keyCase("X-Grafana-Id"):    {"synthetic-sign-in", "second-sign-in"},
 						tc.keyCase("Authorization"):   {"Bearer synthetic-access"},
@@ -134,12 +138,116 @@ func TestHeaderMiddlewareCallResourceConfiguredHeaders(t *testing.T) {
 		return nil
 	})}
 	middleware := newHeaderMiddleware().CreateHandlerMiddleware(handler)
-	require.NoError(t, middleware.CallResource(context.Background(), &CallResourceRequest{Headers: map[string][]string{
+	ctx := config.WithGrafanaConfig(context.Background(), config.NewGrafanaCfg(map[string]string{
+		featuretoggles.EnabledFeatures: featuretoggles.PluginsFilterForwardedHeaders,
+	}))
+	require.NoError(t, middleware.CallResource(ctx, &CallResourceRequest{Headers: map[string][]string{
 		"accept-encoding": {"zstd", "br"},
 		"x-grafana-id":    {"synthetic-sign-in"},
 		"authorization":   {"Bearer synthetic-access"},
 	}}, nil))
 	require.True(t, called)
+}
+
+func TestHeaderMiddlewareFilteringToggle(t *testing.T) {
+	for _, endpoint := range []string{"resource", "query", "health"} {
+		for _, tc := range []struct {
+			name    string
+			enabled bool
+			forward bool
+		}{
+			{name: "toggle disabled", forward: true},
+			{name: "toggle enabled", enabled: true, forward: true},
+			{name: "toggle disabled forwarding disabled"},
+			{name: "toggle enabled forwarding disabled", enabled: true},
+		} {
+			t.Run(endpoint+"/"+tc.name, func(t *testing.T) {
+				cfg := config.NewGrafanaCfg(nil)
+				if tc.enabled {
+					cfg = config.NewGrafanaCfg(map[string]string{
+						featuretoggles.EnabledFeatures: featuretoggles.PluginsFilterForwardedHeaders,
+					})
+				}
+				pluginCtx := PluginContext{GrafanaConfig: cfg}
+				incoming := http.Header{
+					"Accept-Encoding": {"zstd"},
+					"X-Grafana-Id":    {"synthetic-sign-in"},
+					"Authorization":   {"Bearer synthetic-access"},
+					"X-Id-Token":      {"synthetic-id"},
+					"Cookie":          {"synthetic=cookie"},
+					"Content-Type":    {"application/json"},
+					"Accept":          {"application/json"},
+					"X-Custom":        {"custom"},
+				}
+				// Query and health requests use the http_ prefix for arbitrary headers.
+				stringHeaders := make(map[string]string, len(incoming))
+				for key, values := range incoming {
+					stringHeaders[httpHeaderPrefix+strings.ToLower(key)] = values[0]
+				}
+				original := maps.Clone(stringHeaders)
+				called := false
+				checkOutgoing := func(ctx context.Context, req ForwardHTTPHeaders) {
+					called = true
+					require.Equal(t, incoming, req.GetHTTPHeaders())
+					var forwarded http.Header
+					transport := httpclient.ContextualMiddleware().CreateMiddleware(httpclient.Options{ForwardHTTPHeaders: tc.forward}, httpclient.RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
+						forwarded = req.Header.Clone()
+						return &http.Response{StatusCode: http.StatusOK, Body: io.NopCloser(strings.NewReader(""))}, nil
+					}))
+					outgoing, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://example.invalid/resource", nil)
+					require.NoError(t, err)
+					resp, err := transport.RoundTrip(outgoing)
+					require.NoError(t, err)
+					require.NoError(t, resp.Body.Close())
+					if !tc.forward {
+						require.Empty(t, forwarded)
+						return
+					}
+					if tc.enabled {
+						require.NotContains(t, forwarded, "Accept-Encoding")
+						require.NotContains(t, forwarded, "X-Grafana-Id")
+					} else {
+						require.Equal(t, "zstd", forwarded.Get("Accept-Encoding"))
+						require.Equal(t, "synthetic-sign-in", forwarded.Get("X-Grafana-Id"))
+					}
+					for _, key := range []string{"Authorization", "X-Id-Token", "Cookie", "Content-Type", "Accept", "X-Custom"} {
+						require.Equal(t, incoming.Values(key), forwarded.Values(key))
+					}
+				}
+				handlers := Handlers{
+					CallResourceHandler: CallResourceHandlerFunc(func(ctx context.Context, req *CallResourceRequest, _ CallResourceResponseSender) error {
+						checkOutgoing(ctx, req)
+						return nil
+					}),
+					QueryDataHandler: QueryDataHandlerFunc(func(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
+						checkOutgoing(ctx, req)
+						return &QueryDataResponse{}, nil
+					}),
+					CheckHealthHandler: CheckHealthHandlerFunc(func(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
+						checkOutgoing(ctx, req)
+						return &CheckHealthResult{}, nil
+					}),
+				}
+				middleware, err := HandlerFromMiddlewares(handlers, newHeaderMiddleware())
+				require.NoError(t, err)
+				switch endpoint {
+				case "resource":
+					req := &CallResourceRequest{PluginContext: pluginCtx, Headers: map[string][]string(incoming.Clone())}
+					sender := CallResourceResponseSenderFunc(func(*CallResourceResponse) error { return nil })
+					require.NoError(t, middleware.CallResource(context.Background(), req, sender))
+					require.Equal(t, incoming, http.Header(req.Headers))
+				case "query":
+					_, err = middleware.QueryData(context.Background(), &QueryDataRequest{PluginContext: pluginCtx, Headers: stringHeaders})
+					require.NoError(t, err)
+				case "health":
+					_, err = middleware.CheckHealth(context.Background(), &CheckHealthRequest{PluginContext: pluginCtx, Headers: stringHeaders})
+					require.NoError(t, err)
+				}
+				require.True(t, called)
+				require.Equal(t, original, stringHeaders)
+			})
+		}
+	}
 }
 
 func TestSetHTTPHeaderInStringMap(t *testing.T) {

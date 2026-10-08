@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 )
 
 const (
@@ -30,6 +31,13 @@ const (
 
 	httpHeaderPrefix = "http_"
 )
+
+// headersExcludedFromForwarding lets the plugin client negotiate response encoding
+// and keeps Grafana's internal sign-in token within Grafana.
+var headersExcludedFromForwarding = []string{
+	"Accept-Encoding",
+	GrafanaUserSignInTokenHeaderName,
+}
 
 // ForwardHTTPHeaders interface marking that forward of HTTP headers is supported.
 type ForwardHTTPHeaders interface {
@@ -116,6 +124,14 @@ type headerMiddleware struct {
 
 func (m headerMiddleware) applyHeaders(ctx context.Context, headers http.Header) context.Context {
 	if len(headers) > 0 {
+		if GrafanaConfigFromContext(ctx).FeatureToggles().IsEnabled(featuretoggles.PluginsFilterForwardedHeaders) {
+			// Only filter the forwarding copy; handlers retain their incoming headers.
+			headers = headers.Clone()
+			for _, header := range headersExcludedFromForwarding {
+				headers.Del(header)
+			}
+		}
+
 		ctx = httpclient.WithContextualMiddleware(ctx,
 			httpclient.MiddlewareFunc(func(opts httpclient.Options, next http.RoundTripper) http.RoundTripper {
 				if !opts.ForwardHTTPHeaders {
@@ -152,13 +168,7 @@ func (m *headerMiddleware) CallResource(ctx context.Context, req *CallResourceRe
 		return m.BaseHandler.CallResource(ctx, req, sender)
 	}
 
-	// Filter the copy used for automatic forwarding, leaving incoming headers available
-	// to the handler and allowing the HTTP client to choose its own response encoding.
-	headers := req.GetHTTPHeaders()
-	headers.Del("Accept-Encoding")
-	// The Grafana sign-in token is only intended for use within Grafana.
-	headers.Del(GrafanaUserSignInTokenHeaderName)
-	ctx = m.applyHeaders(ctx, headers)
+	ctx = m.applyHeaders(ctx, req.GetHTTPHeaders())
 	return m.BaseHandler.CallResource(ctx, req, sender)
 }
 
