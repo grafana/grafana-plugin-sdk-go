@@ -9,9 +9,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/google/go-cmp/cmp"
 	"github.com/mitchellh/reflectwalk"
 	"github.com/stretchr/testify/require"
 
+	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
@@ -706,6 +708,40 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 			require.Equal(t, tc.expectedErrorSource, rsp.Responses["A"].ErrorSource)
 		}
 	})
+}
+
+func TestConvertFromProtobufQueryDataResponseConsumesFrames(t *testing.T) {
+	frame := data.NewFrame("f",
+		data.NewField("time", nil, []time.Time{time.Unix(1, 0).UTC(), time.Unix(2, 0).UTC()}),
+		data.NewField("value", data.Labels{"a": "b"}, []float64{1, 2}),
+	)
+	frame.RefID = "A"
+
+	tests := []struct {
+		name   string
+		format DataFrameFormat
+	}{
+		{name: "arrow", format: DataFrameFormat_ARROW},
+		{name: "json", format: DataFrameFormat_JSON},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			protoRes, err := ToProto().QueryDataResponse(tc.format, &QueryDataResponse{
+				Responses: Responses{"A": {Frames: data.Frames{frame, frame}}},
+			})
+			require.NoError(t, err)
+
+			rsp, err := FromProto().QueryDataResponse(protoRes)
+			require.NoError(t, err)
+			require.Len(t, rsp.Responses["A"].Frames, 2)
+			for _, got := range rsp.Responses["A"].Frames {
+				if diff := cmp.Diff(frame, got, data.FrameTestCompareOptions()...); diff != "" {
+					t.Errorf("Result mismatch (-want +got):\n%s", diff)
+				}
+			}
+			require.Equal(t, [][]byte{nil, nil}, protoRes.Responses["A"].Frames)
+		})
+	}
 }
 
 // datasourceInstanceProtoFieldCountDelta returns the extra number of SDK fields that do not exist in the protobuf.
