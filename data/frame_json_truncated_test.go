@@ -71,3 +71,11 @@ func TestFrameJSONFieldWithoutType(t *testing.T) {
 		})
 	}
 }
+
+func TestFrameJSONMoreValuesThanFields(t *testing.T) {
+	body := `{"schema":{"fields":[{"name":"a","type":"number","typeInfo":{"frame":"float64"}}]},"data":{"values":[[1],[2],[3]]}}`
+	f := &data.Frame{}
+	var err error
+	require.NotPanics(t, func() { err = f.UnmarshalJSON([]byte(body)) })
+	require.ErrorContains(t, err, "more value arrays than the 1 fields in the schema")
+}

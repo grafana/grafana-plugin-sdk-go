@@ -332,6 +332,9 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			addNanos()
 			fieldIndex++
 			for iter.ReadArray() {
+				if fieldIndex >= len(frame.Fields) {
+					return fmt.Errorf("data has more value arrays than the %d fields in the schema", len(frame.Fields))
+				}
 				field = frame.Fields[fieldIndex]
 				vec, err = readVector(iter, field.Type(), size)
 				if err != nil {
