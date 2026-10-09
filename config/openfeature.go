@@ -11,15 +11,14 @@ import (
 
 const (
 	// OpenFeatureProviderURL is the per-request config key carrying the base
-	// URL of the OFREP-compatible endpoint exposed by the Grafana instance
-	// hosting the plugin. OpenFeature OFREP providers append
+	// URL of the OFREP-compatible endpoint that the Grafana instance hosting
+	// the plugin advertises. OpenFeature OFREP providers append
 	// /ofrep/v1/evaluate/flags[/{key}] to this URL when evaluating flags.
 	OpenFeatureProviderURL = "GF_INSTANCE_OPENFEATURE_PROVIDER_URL"
-	// OpenFeatureProviderType is the per-request config key carrying the type
-	// of OpenFeature provider the URL points at, as configured on the host:
-	// "static" (the host Grafana's built-in provider serving its own feature
-	// toggle configuration), "features-service" or "ofrep" (a remote
-	// provider).
+	// OpenFeatureProviderType is the per-request config key carrying the kind
+	// of endpoint the URL points at, such as "static" (the host Grafana's
+	// built-in provider serving its own feature toggle configuration), or
+	// "features-service" or "ofrep" (a remote OFREP service).
 	OpenFeatureProviderType = "GF_INSTANCE_OPENFEATURE_PROVIDER_TYPE"
 	// OpenFeatureCacheTTL is the per-request config key carrying the host's
 	// advisory TTL for caching flag evaluation results, expressed as an
@@ -29,8 +28,8 @@ const (
 	// 0 to demand that caching be disabled.
 	OpenFeatureCacheTTL = "GF_INSTANCE_OPENFEATURE_CACHE_TTL"
 	// OpenFeatureContext is the per-request config key carrying a JSON object
-	// of host-owned evaluation context attributes (for example stackId and
-	// slug on Grafana Cloud).
+	// of host-owned evaluation context attributes (for example namespace,
+	// stackId and slug).
 	OpenFeatureContext = "GF_INSTANCE_OPENFEATURE_CONTEXT"
 )
 
@@ -44,8 +43,8 @@ var ErrOpenFeatureNotConfigured = errors.New("OpenFeature provider discovery not
 // plugins instantiate their own OpenFeature provider and client, exactly as
 // they do on the frontend.
 type OpenFeatureConfig struct {
-	// ProviderType is the kind of provider URL points at: "static",
-	// "features-service" or "ofrep".
+	// ProviderType is the kind of endpoint URL points at, such as "static",
+	// "features-service" or "ofrep". Unknown values are returned as-is.
 	ProviderType string
 	// URL is the OFREP base URL. OFREP clients append
 	// /ofrep/v1/evaluate/flags[/{key}] to it when evaluating flags.
@@ -65,8 +64,9 @@ type OpenFeatureConfig struct {
 // available once a request has arrived: plugins should construct their
 // OpenFeature provider lazily on first use rather than at process start.
 //
-// Use PluginContext.Namespace together with ContextAttrs to build the
-// evaluation context.
+// Use PluginContext.Namespace as the targeting key, falling back to
+// ContextAttrs["namespace"] when it is empty, and merge ContextAttrs into the
+// evaluation context verbatim.
 //
 // It returns an error wrapping ErrOpenFeatureNotConfigured when the host has
 // not exposed a provider URL. A more recent version of Grafana may be
