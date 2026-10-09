@@ -1058,6 +1058,52 @@ func TestLongToWide(t *testing.T) {
 	}
 }
 
+func TestLongToWidePreservesFieldConfig(t *testing.T) {
+	valueConfig := &data.FieldConfig{
+		Unit: "short",
+		TypeConfig: &data.FieldTypeConfig{
+			Enum: &data.EnumFieldConfig{Text: []string{"INFO", "ERROR"}},
+		},
+	}
+	timeConfig := &data.FieldConfig{DisplayName: "Timestamp"}
+
+	long := data.NewFrame("logs",
+		data.NewField("Time", nil, []time.Time{
+			time.Date(2020, 1, 2, 3, 4, 0, 0, time.UTC),
+			time.Date(2020, 1, 2, 3, 4, 30, 0, time.UTC),
+		}).SetConfig(timeConfig),
+		data.NewField("severity", nil, []data.EnumItemIndex{0, 1}).SetConfig(valueConfig),
+		data.NewField("host", nil, []string{"a", "b"}),
+	)
+
+	wide, err := data.LongToWide(long, nil)
+	require.NoError(t, err)
+
+	require.Equal(t, timeConfig, wide.Fields[0].Config, "time field config should be preserved")
+	require.NotSame(t, timeConfig, wide.Fields[0].Config, "time field config should be a copy")
+
+	var severity []*data.Field
+	for _, f := range wide.Fields {
+		if f.Name == "severity" {
+			require.Equal(t, valueConfig, f.Config, "value field config (the enum name map) should be preserved")
+			severity = append(severity, f)
+		}
+	}
+	require.Len(t, severity, 2, "expected one wide severity field per host")
+
+	require.NotSame(t, valueConfig, severity[0].Config)
+	require.NotSame(t, severity[0].Config, severity[1].Config)
+	require.NotSame(t, valueConfig.TypeConfig, severity[0].Config.TypeConfig)
+	require.NotSame(t, severity[0].Config.TypeConfig, severity[1].Config.TypeConfig)
+
+	severity[0].Config.DisplayNameFromDS = "first series"
+	severity[0].Config.TypeConfig.Enum.Text[0] = "DEBUG"
+	require.Empty(t, severity[1].Config.DisplayNameFromDS)
+	require.Empty(t, valueConfig.DisplayNameFromDS)
+	require.Equal(t, []string{"INFO", "ERROR"}, severity[1].Config.TypeConfig.Enum.Text)
+	require.Equal(t, []string{"INFO", "ERROR"}, valueConfig.TypeConfig.Enum.Text)
+}
+
 func TestLongToWideBool(t *testing.T) {
 	tests := []struct {
 		name          string
