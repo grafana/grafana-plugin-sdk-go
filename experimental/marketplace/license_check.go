@@ -16,6 +16,11 @@ import (
 )
 
 const (
+	// developmentBuildMarker is a stable machine-readable marker embedded only in marketplace_dev binaries.
+	// The plugin-validator scans packaged backend executables for this literal, alongside the marketplace_dev
+	// Go build tag, to reject artifacts built with marketplace license checks disabled. Keep its value stable.
+	developmentBuildMarker = "GRAFANA_MARKETPLACE_DEV_BUILD_NO_LICENSE_CHECKS_V1"
+
 	// marketplaceLicenseValidationKeyEnv is the environment variable that holds a signed JWKS (JWS) token
 	// containing validation keys used to verify marketplace plugin license tokens.
 	// TODO: this is currently not passed to the plugin from Grafana.
@@ -37,7 +42,24 @@ const (
 var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
 func CheckMarketplacePluginLicense(pluginId string) error {
-	token := readPluginLicense(pluginId)
+	return checkMarketplacePluginLicense(pluginId, readPluginLicense, runInvalidLicenseServer)
+}
+
+func checkMarketplacePluginLicense(
+	pluginId string,
+	loadToken func(string) *licensing.LicenseToken,
+	startInvalidLicenseServer func(string, error) error,
+) error {
+	if developmentLicenseBypass {
+		backend.Logger.Warn(
+			"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
+			"marker", developmentBuildMarker,
+			"pluginId", pluginId,
+		)
+		return nil
+	}
+
+	token := loadToken(pluginId)
 	if token.Error != nil {
 		backend.Logger.Error("Marketplace License Error", "error", token.Error)
 		if token.Status == licensing.Expired {
@@ -50,7 +72,7 @@ func CheckMarketplacePluginLicense(pluginId string) error {
 				return nil
 			}
 		}
-		if err := runInvalidLicenseServer(pluginId, token.Error); err != nil {
+		if err := startInvalidLicenseServer(pluginId, token.Error); err != nil {
 			backend.Logger.Error(err.Error())
 			os.Exit(1)
 		}
