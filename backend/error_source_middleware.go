@@ -90,13 +90,52 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 }
 
 func (m *ErrorSourceMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
-	err := m.BaseHandler.CallResource(ctx, req, sender)
+	hasPluginError := false
+	sourceSender := CallResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
+		if resp != nil {
+			if !resp.ErrorSource.IsValid() && resp.Status >= 400 {
+				resp.ErrorSource = ErrorSourceFromHTTPStatus(resp.Status)
+			}
+
+			// A plugin error takes precedence over all downstream responses, regardless
+			// of the order in which the handler sends them.
+			if resp.ErrorSource == ErrorSourcePlugin {
+				hasPluginError = true
+			}
+			if resp.ErrorSource.IsValid() && (!hasPluginError || resp.ErrorSource == ErrorSourcePlugin) {
+				if err := WithErrorSource(ctx, resp.ErrorSource); err != nil {
+					return err
+				}
+			}
+		}
+
+		return sender.Send(resp)
+	})
+
+	err := m.BaseHandler.CallResource(ctx, req, sourceSender)
+	if err != nil && !IsDownstreamError(err) {
+		if innerErr := WithErrorSource(ctx, ErrorSourcePlugin); innerErr != nil {
+			return fmt.Errorf("failed to set plugin error source: %w", errors.Join(innerErr, err))
+		}
+	}
 	return m.handleDownstreamError(ctx, err)
 }
 
 func (m *ErrorSourceMiddleware) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
 	resp, err := m.BaseHandler.CheckHealth(ctx, req)
-	return resp, m.handleDownstreamError(ctx, err)
+	err = m.handleDownstreamError(ctx, err)
+	if err != nil || resp == nil || resp.Status == HealthStatusOk {
+		return resp, err
+	}
+
+	if !resp.ErrorSource.IsValid() {
+		resp.ErrorSource = ErrorSourcePlugin
+	}
+	if err := WithErrorSource(ctx, resp.ErrorSource); err != nil {
+		return resp, fmt.Errorf("failed to set health check error source: %w", err)
+	}
+
+	return resp, nil
 }
 
 func (m *ErrorSourceMiddleware) CollectMetrics(ctx context.Context, req *CollectMetricsRequest) (*CollectMetricsResult, error) {
