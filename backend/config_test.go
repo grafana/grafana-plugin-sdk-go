@@ -229,6 +229,20 @@ func TestUserFacingDefaultError(t *testing.T) {
 	})
 }
 
+func TestPluginsUserAgent(t *testing.T) {
+	t.Run("it should return the configured user agent", func(t *testing.T) {
+		cfg := config.NewGrafanaCfg(map[string]string{
+			config.PluginsUserAgent: "Grafana/4.5.6 my-fleet/1",
+		})
+		require.Equal(t, "Grafana/4.5.6 my-fleet/1", cfg.PluginsUserAgent())
+	})
+
+	t.Run("it should return an empty string if no user agent is configured", func(t *testing.T) {
+		cfg := config.NewGrafanaCfg(map[string]string{})
+		require.Empty(t, cfg.PluginsUserAgent())
+	})
+}
+
 func TestSql(t *testing.T) {
 	t.Run("it should return the configured sql default values", func(t *testing.T) {
 		cfg := config.NewGrafanaCfg(map[string]string{
