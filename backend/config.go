@@ -18,6 +18,7 @@ const (
 	ResponseLimit                    = config.ResponseLimit
 	AppClientSecret                  = config.AppClientSecret
 	LiveClientQueueMaxSize           = config.LiveClientQueueMaxSize
+	PluginsUserAgent                 = config.PluginsUserAgent
 )
 
 // Deprecated: Use the config package instead.
