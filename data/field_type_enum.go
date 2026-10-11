@@ -20,19 +20,19 @@ func newEnumVectorWithValues(s []EnumItemIndex) *enumVector {
 	return (*enumVector)(&v)
 }
 
-func (v *enumVector) Set(idx int, i interface{}) {
+func (v *enumVector) Set(idx int, i any) {
 	(*v)[idx] = i.(EnumItemIndex)
 }
 
-func (v *enumVector) SetConcrete(idx int, i interface{}) {
+func (v *enumVector) SetConcrete(idx int, i any) {
 	v.Set(idx, i)
 }
 
-func (v *enumVector) Append(i interface{}) {
+func (v *enumVector) Append(i any) {
 	*v = append(*v, i.(EnumItemIndex))
 }
 
-func (v *enumVector) At(i int) interface{} {
+func (v *enumVector) At(i int) any {
 	return (*v)[i]
 }
 
@@ -40,7 +40,7 @@ func (v *enumVector) NilAt(_ int) bool {
 	return false
 }
 
-func (v *enumVector) PointerAt(i int) interface{} {
+func (v *enumVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -52,11 +52,11 @@ func (v *enumVector) Cap() int {
 	return cap(*v)
 }
 
-func (v *enumVector) CopyAt(i int) interface{} {
+func (v *enumVector) CopyAt(i int) any {
 	return (*v)[i]
 }
 
-func (v *enumVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *enumVector) ConcreteAt(i int) (any, bool) {
 	return v.At(i), true
 }
 
@@ -77,7 +77,7 @@ func (v *enumVector) Grow(n int) {
 	*v = grown
 }
 
-func (v *enumVector) Insert(i int, val interface{}) {
+func (v *enumVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -112,7 +112,7 @@ func newNullableEnumVectorWithValues(s []*EnumItemIndex) *nullableEnumVector {
 	return (*nullableEnumVector)(&v)
 }
 
-func (v *nullableEnumVector) Set(idx int, i interface{}) {
+func (v *nullableEnumVector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -120,12 +120,12 @@ func (v *nullableEnumVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*EnumItemIndex)
 }
 
-func (v *nullableEnumVector) SetConcrete(idx int, i interface{}) {
+func (v *nullableEnumVector) SetConcrete(idx int, i any) {
 	val := i.(EnumItemIndex)
 	(*v)[idx] = &val
 }
 
-func (v *nullableEnumVector) Append(i interface{}) {
+func (v *nullableEnumVector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -133,7 +133,7 @@ func (v *nullableEnumVector) Append(i interface{}) {
 	*v = append(*v, i.(*EnumItemIndex))
 }
 
-func (v *nullableEnumVector) At(i int) interface{} {
+func (v *nullableEnumVector) At(i int) any {
 	return (*v)[i]
 }
 
@@ -141,7 +141,7 @@ func (v *nullableEnumVector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableEnumVector) CopyAt(i int) interface{} {
+func (v *nullableEnumVector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *EnumItemIndex
 		return g
@@ -150,7 +150,7 @@ func (v *nullableEnumVector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableEnumVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableEnumVector) ConcreteAt(i int) (any, bool) {
 	var g EnumItemIndex
 	val := (*v)[i]
 	if val == nil {
@@ -160,7 +160,7 @@ func (v *nullableEnumVector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableEnumVector) PointerAt(i int) interface{} {
+func (v *nullableEnumVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -189,7 +189,7 @@ func (v *nullableEnumVector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableEnumVector) Insert(i int, val interface{}) {
+func (v *nullableEnumVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

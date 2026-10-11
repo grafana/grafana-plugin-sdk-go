@@ -26,7 +26,7 @@ func ReloadPlugin() error {
 	_ = sh.RunV("pkill", "dlv")
 
 	// Wait for grafana to start plugin
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		time.Sleep(250 * time.Millisecond)
 		pids := findRunningPIDs(exeName)
 		if len(pids) > 1 {
@@ -69,7 +69,7 @@ func Debugger() error {
 
 	// Wait for grafana to start plugin
 	pid := -1
-	for i := 0; i < 20; i++ {
+	for range 20 {
 		pids := findRunningPIDs(exeName)
 		if len(pids) > 1 {
 			return fmt.Errorf("multiple instances already running")
@@ -126,7 +126,7 @@ func findRunningPIDs(exe string) []int {
 	if err != nil || out == "" {
 		return pids
 	}
-	for _, txt := range strings.Fields(out) {
+	for txt := range strings.FieldsSeq(out) {
 		pid, err := strconv.Atoi(txt)
 		if err == nil {
 			pids = append(pids, pid)

@@ -97,7 +97,7 @@ func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 	}
 
 	return &pluginv2.DataSourceInstanceSettings{
-		Id:                      s.ID,
+		Id:                      s.ID, // nolint:staticcheck
 		Uid:                     s.UID,
 		Name:                    s.Name,
 		Url:                     s.URL,

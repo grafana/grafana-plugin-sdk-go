@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"io"
+	"maps"
 	"net/http"
 	"net/url"
 	"strings"
@@ -53,9 +54,7 @@ func (h *httpResourceHandler) CallResource(ctx context.Context, req *backend.Cal
 		return err
 	}
 
-	for key, values := range req.Headers {
-		httpReq.Header[key] = values
-	}
+	maps.Copy(httpReq.Header, req.Headers)
 
 	writer := newResponseWriter(sender)
 	h.handler.ServeHTTP(writer, httpReq)

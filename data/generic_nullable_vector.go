@@ -14,7 +14,7 @@ func newNullablegenVectorWithValues(s []*gen) *nullablegenVector {
 	return (*nullablegenVector)(&v)
 }
 
-func (v *nullablegenVector) Set(idx int, i interface{}) {
+func (v *nullablegenVector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -22,12 +22,12 @@ func (v *nullablegenVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*gen)
 }
 
-func (v *nullablegenVector) SetConcrete(idx int, i interface{}) {
+func (v *nullablegenVector) SetConcrete(idx int, i any) {
 	val := i.(gen)
 	(*v)[idx] = &val
 }
 
-func (v *nullablegenVector) Append(i interface{}) {
+func (v *nullablegenVector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -39,11 +39,11 @@ func (v *nullablegenVector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullablegenVector) At(i int) interface{} {
+func (v *nullablegenVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullablegenVector) CopyAt(i int) interface{} {
+func (v *nullablegenVector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *gen
 		return g
@@ -53,7 +53,7 @@ func (v *nullablegenVector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullablegenVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullablegenVector) ConcreteAt(i int) (any, bool) {
 	var g gen
 	val := (*v)[i]
 	if val == nil {
@@ -63,7 +63,7 @@ func (v *nullablegenVector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullablegenVector) PointerAt(i int) interface{} {
+func (v *nullablegenVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -94,7 +94,7 @@ func (v *nullablegenVector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullablegenVector) Insert(i int, val interface{}) {
+func (v *nullablegenVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

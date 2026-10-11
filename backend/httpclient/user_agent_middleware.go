@@ -34,10 +34,14 @@ func newUserAgentMiddleware(pluginID string, version string, haveVersionInfo boo
 				return next.RoundTrip(req)
 			}
 
-			baseUserAgent := useragent.FromContext(req.Context()).String()
+			baseUserAgent := useragent.FromContext(req.Context())
 
 			if len(req.Header.Values("User-Agent")) == 0 {
-				req.Header.Set("User-Agent", baseUserAgent+userAgentSuffix)
+				if baseUserAgent.IsUnknown() {
+					req.Header.Set("User-Agent", "Grafana"+userAgentSuffix)
+				} else {
+					req.Header.Set("User-Agent", baseUserAgent.String()+userAgentSuffix)
+				}
 			}
 
 			return next.RoundTrip(req)

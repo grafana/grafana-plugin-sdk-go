@@ -76,7 +76,7 @@ func frameFromRows(rows *sql.Rows, rowLimit int64, capacity int, converters ...C
 	// value-copy or a pointer to a fresh local copy). The converted buffer is
 	// always safe to reuse because frame.AppendRow consumes it before the next row.
 	scannable := scanRow.NewScannableRow()
-	converted := make([]interface{}, len(scannable))
+	converted := make([]any, len(scannable))
 
 	var i int64
 
@@ -119,7 +119,7 @@ outer:
 // before passing them to frame.AppendRow. It exists so FrameFromRows can
 // reuse a single converted buffer across rows; the public Append function
 // allocates a fresh buffer per call and is preserved for back-compat.
-func appendConvertedRow(frame *data.Frame, scanned []interface{}, converted []interface{}, converters []Converter) error {
+func appendConvertedRow(frame *data.Frame, scanned []any, converted []any, converters []Converter) error {
 	for i, v := range scanned {
 		conv := &converters[i]
 		if conv.FrameConverter.ConvertWithColumn != nil {

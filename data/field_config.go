@@ -59,7 +59,7 @@ type FieldConfig struct {
 
 	// Map values to a display color
 	// NOTE: this interface is under development in the frontend... so simple map for now
-	Color map[string]interface{} `json:"color,omitempty"`
+	Color map[string]any `json:"color,omitempty"`
 
 	// The behavior when clicking on a result
 	Links []DataLink `json:"links,omitempty"`
@@ -71,7 +71,7 @@ type FieldConfig struct {
 	TypeConfig *FieldTypeConfig `json:"type,omitempty"`
 
 	// Panel Specific Values
-	Custom map[string]interface{} `json:"custom,omitempty"`
+	Custom map[string]any `json:"custom,omitempty"`
 }
 
 // FieldTypeConfig has type specific configs, only one should be active at a time

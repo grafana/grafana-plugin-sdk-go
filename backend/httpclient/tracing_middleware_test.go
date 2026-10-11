@@ -23,7 +23,7 @@ func TestTracingMiddlewareWithDefaultTracerDataRace(t *testing.T) {
 
 	mw := httpclient.TracingMiddleware(tracer)
 	done := make(chan struct{})
-	for i := 0; i < 2; i++ {
+	for range 2 {
 		go func() {
 			rt := mw.CreateMiddleware(httpclient.Options{}, nil)
 			require.NotNil(t, rt)

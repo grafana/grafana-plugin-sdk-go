@@ -35,7 +35,7 @@ func (p *DiagnosticsGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server)
 }
 
 // GRPCClient returns c as a diagnostics gRPC client.
-func (p *DiagnosticsGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *DiagnosticsGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (any, error) {
 	return &diagnosticsGRPCClient{client: pluginv2.NewDiagnosticsClient(c)}, nil
 }
 

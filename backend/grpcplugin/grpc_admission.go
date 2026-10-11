@@ -34,7 +34,7 @@ func (p *AdmissionGRPCPlugin) GRPCServer(_ *plugin.GRPCBroker, s *grpc.Server) e
 	return nil
 }
 
-func (p *AdmissionGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (interface{}, error) {
+func (p *AdmissionGRPCPlugin) GRPCClient(_ context.Context, _ *plugin.GRPCBroker, c *grpc.ClientConn) (any, error) {
 	return &admissionGRPCClient{client: pluginv2.NewAdmissionControlClient(c)}, nil
 }
 

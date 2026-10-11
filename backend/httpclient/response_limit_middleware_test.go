@@ -8,11 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/stretchr/testify/require"
-)
 
-func ptr[T any](v T) *T { return &v }
+	"github.com/grafana/grafana-plugin-sdk-go/config"
+)
 
 func TestResponseLimitMiddleware(t *testing.T) {
 	tcs := []struct {
@@ -35,12 +34,12 @@ func TestResponseLimitMiddleware(t *testing.T) {
 		{name: "invalid env var ignored", limit: 0, envLimit: "-1", expectedBodyLength: 5, expectedBody: "dummy"},
 		{name: "zero env var ignored", limit: 0, envLimit: "0", expectedBodyLength: 5, expectedBody: "dummy"},
 		// grafana config (context) priority
-		{name: "grafana config wins over env var", limit: 0, ctxLimit: ptr(int64(3)), envLimit: "1000000", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
-		{name: "grafana config 0 falls back to env var", limit: 0, ctxLimit: ptr(int64(0)), envLimit: "3", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
+		{name: "grafana config wins over env var", limit: 0, ctxLimit: new(int64(3)), envLimit: "1000000", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
+		{name: "grafana config 0 falls back to env var", limit: 0, ctxLimit: new(int64(0)), envLimit: "3", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
 		// explicit request override priority
-		{name: "request override wins over grafana config and env var", limit: 1, ctxLimit: ptr(int64(2)), requestLimit: ptr(int64(3)), envLimit: "4", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
-		{name: "zero request override leaves existing limit unchanged", limit: 1, requestLimit: ptr(int64(0)), expectedBodyLength: 1, expectedBody: "d", expectErr: true},
-		{name: "negative request override leaves existing limit unchanged", limit: 1, requestLimit: ptr(int64(-1)), expectedBodyLength: 1, expectedBody: "d", expectErr: true},
+		{name: "request override wins over grafana config and env var", limit: 1, ctxLimit: new(int64(2)), requestLimit: new(int64(3)), envLimit: "4", expectedBodyLength: 3, expectedBody: "dum", expectErr: true},
+		{name: "zero request override leaves existing limit unchanged", limit: 1, requestLimit: new(int64(0)), expectedBodyLength: 1, expectedBody: "d", expectErr: true},
+		{name: "negative request override leaves existing limit unchanged", limit: 1, requestLimit: new(int64(-1)), expectedBodyLength: 1, expectedBody: "d", expectErr: true},
 		{name: "no limit when nothing is set", limit: 0, expectedBodyLength: 5, expectedBody: "dummy"},
 	}
 	for _, tc := range tcs {

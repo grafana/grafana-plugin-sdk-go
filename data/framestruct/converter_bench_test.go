@@ -13,7 +13,7 @@ import (
 // during benchmarks
 var benchmarkResult *data.Frame
 
-func benchMarshal(b *testing.B, v interface{}) {
+func benchMarshal(b *testing.B, v any) {
 	b.Helper()
 	b.Run("marshal", func(b *testing.B) {
 		for i := 0; i < b.N; i++ {

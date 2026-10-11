@@ -18,13 +18,13 @@ func newLocker() *locker {
 // Lock locks named rw mutex with specified key for writing.
 // If the lock with the same key is already locked for reading or writing,
 // Lock blocks until the lock is available.
-func (lkr *locker) Lock(key interface{}) {
+func (lkr *locker) Lock(key any) {
 	lkr.loadOrStore(key).Lock()
 }
 
 // Unlock unlocks named rw mutex with specified key for writing. It is a run-time error if rw is
 // not locked for writing on entry to Unlock.
-func (lkr *locker) Unlock(key interface{}) {
+func (lkr *locker) Unlock(key any) {
 	lk, ok := lkr.load(key)
 	if !ok {
 		panic(fmt.Errorf("lock for key '%s' not initialized", key))
@@ -37,14 +37,14 @@ func (lkr *locker) Unlock(key interface{}) {
 // It should not be used for recursive read locking for the same key; a blocked Lock
 // call excludes new readers from acquiring the lock. See the
 // documentation on the golang RWMutex type.
-func (lkr *locker) RLock(key interface{}) {
+func (lkr *locker) RLock(key any) {
 	lkr.loadOrStore(key).RLock()
 }
 
 // RUnlock undoes a single RLock call for specified key;
 // it does not affect other simultaneous readers of locker for specified key.
 // It is a run-time error if locker for specified key is not locked for reading
-func (lkr *locker) RUnlock(key interface{}) {
+func (lkr *locker) RUnlock(key any) {
 	lk, ok := lkr.load(key)
 	if !ok {
 		panic(fmt.Errorf("lock for key '%s' not initialized", key))
@@ -52,7 +52,7 @@ func (lkr *locker) RUnlock(key interface{}) {
 	lk.RUnlock()
 }
 
-func (lkr *locker) load(key interface{}) (*sync.RWMutex, bool) {
+func (lkr *locker) load(key any) (*sync.RWMutex, bool) {
 	v, ok := lkr.locks.Load(key)
 	if !ok {
 		return nil, false
@@ -63,7 +63,7 @@ func (lkr *locker) load(key interface{}) (*sync.RWMutex, bool) {
 // loadOrStore returns the *sync.RWMutex for key, creating one if absent.
 // On a creation race, LoadOrStore ensures every caller for a given key
 // receives the same *sync.RWMutex; the losing mutex is discarded unlocked.
-func (lkr *locker) loadOrStore(key interface{}) *sync.RWMutex {
+func (lkr *locker) loadOrStore(key any) *sync.RWMutex {
 	if v, ok := lkr.locks.Load(key); ok {
 		return v.(*sync.RWMutex)
 	}

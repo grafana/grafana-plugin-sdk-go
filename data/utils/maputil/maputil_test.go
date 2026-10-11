@@ -8,32 +8,32 @@ import (
 func TestGetMap(t *testing.T) {
 	tests := []struct {
 		name           string
-		obj            map[string]interface{}
+		obj            map[string]any
 		key            string
-		expectedResult map[string]interface{}
+		expectedResult map[string]any
 		expectedError  string
 	}{
 		{
 			name: "ExistingKey",
-			obj: map[string]interface{}{
-				"key1": map[string]interface{}{
+			obj: map[string]any{
+				"key1": map[string]any{
 					"innerKey": "value",
 				},
 			},
 			key:            "key1",
-			expectedResult: map[string]interface{}{"innerKey": "value"},
+			expectedResult: map[string]any{"innerKey": "value"},
 			expectedError:  "",
 		},
 		{
 			name:           "NonExistingKey",
-			obj:            map[string]interface{}{},
+			obj:            map[string]any{},
 			key:            "key1",
 			expectedResult: nil,
 			expectedError:  "the field 'key1' should be set",
 		},
 		{
 			name: "InvalidType",
-			obj: map[string]interface{}{
+			obj: map[string]any{
 				"key1": "not an object",
 			},
 			key:            "key1",
@@ -68,32 +68,32 @@ func TestGetMap(t *testing.T) {
 func TestGetMapOptional(t *testing.T) {
 	tests := []struct {
 		name           string
-		obj            map[string]interface{}
+		obj            map[string]any
 		key            string
-		expectedResult map[string]interface{}
+		expectedResult map[string]any
 		expectedError  string
 	}{
 		{
 			name: "ExistingKeyMap",
-			obj: map[string]interface{}{
-				"key1": map[string]interface{}{
+			obj: map[string]any{
+				"key1": map[string]any{
 					"innerKey": "value",
 				},
 			},
 			key:            "key1",
-			expectedResult: map[string]interface{}{"innerKey": "value"},
+			expectedResult: map[string]any{"innerKey": "value"},
 			expectedError:  "",
 		},
 		{
 			name:           "ExistingKeyNonMap",
-			obj:            map[string]interface{}{"key1": "not an object"},
+			obj:            map[string]any{"key1": "not an object"},
 			key:            "key1",
 			expectedResult: nil,
 			expectedError:  "the field 'key1' should be an object",
 		},
 		{
 			name:           "NonExistingKey",
-			obj:            map[string]interface{}{},
+			obj:            map[string]any{},
 			key:            "key1",
 			expectedResult: nil,
 			expectedError:  "",
@@ -126,35 +126,35 @@ func TestGetMapOptional(t *testing.T) {
 func TestGetBool(t *testing.T) {
 	tests := []struct {
 		name           string
-		obj            map[string]interface{}
+		obj            map[string]any
 		key            string
 		expectedResult bool
 		expectedError  string
 	}{
 		{
 			name:           "ExistingKeyTrue",
-			obj:            map[string]interface{}{"key1": true},
+			obj:            map[string]any{"key1": true},
 			key:            "key1",
 			expectedResult: true,
 			expectedError:  "",
 		},
 		{
 			name:           "ExistingKeyFalse",
-			obj:            map[string]interface{}{"key1": false},
+			obj:            map[string]any{"key1": false},
 			key:            "key1",
 			expectedResult: false,
 			expectedError:  "",
 		},
 		{
 			name:           "NonExistingKey",
-			obj:            map[string]interface{}{},
+			obj:            map[string]any{},
 			key:            "key1",
 			expectedResult: false,
 			expectedError:  "the field 'key1' should be set",
 		},
 		{
 			name:           "InvalidType",
-			obj:            map[string]interface{}{"key1": "not a bool"},
+			obj:            map[string]any{"key1": "not a bool"},
 			key:            "key1",
 			expectedResult: false,
 			expectedError:  "the field 'key1' should be a bool",
@@ -187,35 +187,35 @@ func TestGetBool(t *testing.T) {
 func TestGetBoolOptional(t *testing.T) {
 	tests := []struct {
 		name           string
-		obj            map[string]interface{}
+		obj            map[string]any
 		key            string
 		expectedResult bool
 		expectedError  string
 	}{
 		{
 			name:           "ExistingKeyTrue",
-			obj:            map[string]interface{}{"key1": true},
+			obj:            map[string]any{"key1": true},
 			key:            "key1",
 			expectedResult: true,
 			expectedError:  "",
 		},
 		{
 			name:           "ExistingKeyFalse",
-			obj:            map[string]interface{}{"key1": false},
+			obj:            map[string]any{"key1": false},
 			key:            "key1",
 			expectedResult: false,
 			expectedError:  "",
 		},
 		{
 			name:           "NonExistingKey",
-			obj:            map[string]interface{}{},
+			obj:            map[string]any{},
 			key:            "key1",
 			expectedResult: false,
 			expectedError:  "",
 		},
 		{
 			name:           "InvalidType",
-			obj:            map[string]interface{}{"key1": "not a bool"},
+			obj:            map[string]any{"key1": "not a bool"},
 			key:            "key1",
 			expectedResult: false,
 			expectedError:  "the field 'key1' should be a bool",
@@ -248,28 +248,28 @@ func TestGetBoolOptional(t *testing.T) {
 func TestGetString(t *testing.T) {
 	tests := []struct {
 		name           string
-		obj            map[string]interface{}
+		obj            map[string]any
 		key            string
 		expectedResult string
 		expectedError  string
 	}{
 		{
 			name:           "ExistingKey",
-			obj:            map[string]interface{}{"key1": "value"},
+			obj:            map[string]any{"key1": "value"},
 			key:            "key1",
 			expectedResult: "value",
 			expectedError:  "",
 		},
 		{
 			name:           "NonExistingKey",
-			obj:            map[string]interface{}{},
+			obj:            map[string]any{},
 			key:            "key1",
 			expectedResult: "",
 			expectedError:  "the field 'key1' should be set",
 		},
 		{
 			name:           "InvalidType",
-			obj:            map[string]interface{}{"key1": 123},
+			obj:            map[string]any{"key1": 123},
 			key:            "key1",
 			expectedResult: "",
 			expectedError:  "the field 'key1' should be a string",
@@ -302,28 +302,28 @@ func TestGetString(t *testing.T) {
 func TestGetStringOptional(t *testing.T) {
 	tests := []struct {
 		name           string
-		obj            map[string]interface{}
+		obj            map[string]any
 		key            string
 		expectedResult string
 		expectedError  string
 	}{
 		{
 			name:           "ExistingKey",
-			obj:            map[string]interface{}{"key1": "value"},
+			obj:            map[string]any{"key1": "value"},
 			key:            "key1",
 			expectedResult: "value",
 			expectedError:  "",
 		},
 		{
 			name:           "NonExistingKey",
-			obj:            map[string]interface{}{},
+			obj:            map[string]any{},
 			key:            "key1",
 			expectedResult: "",
 			expectedError:  "",
 		},
 		{
 			name:           "InvalidType",
-			obj:            map[string]interface{}{"key1": 123},
+			obj:            map[string]any{"key1": 123},
 			key:            "key1",
 			expectedResult: "",
 			expectedError:  "the field 'key1' should be a string",

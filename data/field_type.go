@@ -121,7 +121,7 @@ func (p *FieldType) UnmarshalJSON(b []byte) error {
 // If the FieldType is not recognized, FieldTypeUnknown is returned.
 // For example, for an item of type *int8, FieldTypeNullableInt8 will be returned.
 // nolint:gocyclo
-func FieldTypeFor(item interface{}) FieldType {
+func FieldTypeFor(item any) FieldType {
 	switch item.(type) {
 	case int8:
 		return FieldTypeInt8
@@ -488,7 +488,7 @@ func (p FieldType) ItemTypeString() string {
 }
 
 // ValidFieldType returns if a primitive slice is a valid supported Field type.
-func ValidFieldType(t interface{}) bool {
+func ValidFieldType(t any) bool {
 	switch t.(type) {
 	// ints
 	case []int8:
