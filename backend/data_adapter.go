@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"strconv"
+	"sync/atomic"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/metadata"
 	grpcstatus "google.golang.org/grpc/status"
 
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
@@ -16,6 +19,10 @@ import (
 
 const (
 	errorSourceMetadataKey = "errorSource"
+
+	// ResponseSizeBytesTrailerKey is the gRPC trailer QueryChunkedData sets to the total
+	// size in bytes of the encoded frames it sent.
+	ResponseSizeBytesTrailerKey = "response-size-bytes"
 )
 
 // dataSDKAdapter adapter between low level plugin protocol and SDK interfaces.
@@ -60,9 +67,19 @@ func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest,
 
 	ctx := stream.Context()
 	parsedReq := FromProto().QueryChunkedDataRequest(req)
+
+	var sentBytes atomic.Int64
 	writer := NewChunkedDataWriter(parsedReq.Format, func(chunk *pluginv2.QueryChunkedDataResponse) error {
-		return stream.Send(chunk)
+		if err := stream.Send(chunk); err != nil {
+			return err
+		}
+		sentBytes.Add(int64(len(chunk.Frame)))
+		return nil
 	})
+	// The total is only known once the stream ends, so it goes out as a trailer.
+	defer func() {
+		stream.SetTrailer(metadata.Pairs(ResponseSizeBytesTrailerKey, strconv.FormatInt(sentBytes.Load(), 10)))
+	}()
 
 	err := a.queryChunkedDataHandler.QueryChunkedData(ctx, parsedReq, writer)
 	if err != nil {

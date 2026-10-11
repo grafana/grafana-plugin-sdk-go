@@ -244,6 +244,9 @@ func (t ConvertToProtobuf) QueryDataResponse(format DataFrameFormat, res *QueryD
 		if err != nil {
 			return nil, err
 		}
+		for _, frame := range pDR.Frames {
+			pDR.ResponseSizeBytes += int64(len(frame))
+		}
 
 		status := dr.Status
 		if dr.Error != nil {

@@ -97,6 +97,27 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 	}
 }
 
+func TestConvertToProtobufQueryDataResponseSetsResponseSizeBytes(t *testing.T) {
+	frames := data.Frames{
+		data.NewFrame("a", data.NewField("v", nil, []int64{1, 2, 3})),
+		data.NewFrame("b", data.NewField("v", nil, []int64{4, 5})),
+	}
+	res := &QueryDataResponse{Responses: Responses{"A": {Frames: frames}, "B": {}}}
+
+	for _, format := range []DataFrameFormat{DataFrameFormat_ARROW, DataFrameFormat_JSON} {
+		got, err := ToProto().QueryDataResponse(format, res)
+		require.NoError(t, err)
+
+		var want int64
+		for _, encoded := range got.Responses["A"].Frames {
+			want += int64(len(encoded))
+		}
+		require.Positive(t, want)
+		require.Equal(t, want, got.Responses["A"].ResponseSizeBytes, "format %v", format)
+		require.Zero(t, got.Responses["B"].ResponseSizeBytes, "a response with no frames has no size")
+	}
+}
+
 func TestConvertToProtobufStatus(t *testing.T) {
 	ar := ToProto().StatusResult(&StatusResult{
 		Status:  "a",

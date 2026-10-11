@@ -193,6 +193,9 @@ message DataResponse {
 
   // The frame format (default to arrow)
   DataFrameFormat format = 6;
+
+  // Total size in bytes of the encoded frames, so clients can read it without decoding them
+  int64 responseSizeBytes = 7;
 }
 
 message QueryChunkedDataRequest {
