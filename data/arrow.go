@@ -1,10 +1,12 @@
 package data
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/apache/arrow-go/v18/arrow"
@@ -22,6 +24,16 @@ const metadataKeyLabels = "labels" // labels serialized as JSON
 const metadataKeyTSType = "tstype" // typescript type
 const metadataKeyRefID = "refId"   // added to the table metadata
 
+// arrowBufferPool holds the scratch buffers MarshalArrow writes into. A frame is
+// encoded into a reused buffer and copied out at its exact size, so responses
+// with many small frames do not regrow a buffer per frame or keep the unused
+// capacity of each one alive. Buffers that grow past maxPooledArrowBuffer are
+// handed to the caller instead, so large frames are not copied.
+var arrowBufferPool = sync.Pool{New: func() any { return new(bytes.Buffer) }}
+
+// maxPooledArrowBuffer keeps buffers used for very large frames out of the pool.
+const maxPooledArrowBuffer = 64 << 10
+
 // MarshalArrow converts the Frame to an arrow table and returns a byte
 // representation of that table.
 // All fields of a Frame must be of the same length or an error is returned.
@@ -35,12 +47,16 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 	tableReader := array.NewTableReader(table, -1)
 	defer tableReader.Release()
 
-	// Arrow tables with the Go API are written to files, so we create a fake
-	// file buffer that the FileWriter can write to. In the future, and with
-	// streaming, I think will likely be using the Arrow message type some how.
-	fb := filebuffer.New(nil)
+	buf := arrowBufferPool.Get().(*bytes.Buffer)
+	buf.Reset()
+	returned := false
+	defer func() {
+		if !returned && buf.Cap() <= maxPooledArrowBuffer {
+			arrowBufferPool.Put(buf)
+		}
+	}()
 
-	fw, err := ipc.NewFileWriter(fb, ipc.WithSchema(tableReader.Schema()))
+	fw, err := ipc.NewFileWriter(buf, ipc.WithSchema(tableReader.Schema()))
 	if err != nil {
 		return nil, err
 	}
@@ -59,7 +75,11 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 		return nil, err
 	}
 
-	return fb.Buff.Bytes(), nil
+	if buf.Cap() > maxPooledArrowBuffer {
+		returned = true
+		return buf.Bytes(), nil
+	}
+	return bytes.Clone(buf.Bytes()), nil
 }
 
 // FrameToArrowTable creates a new arrow.Table from a data frame

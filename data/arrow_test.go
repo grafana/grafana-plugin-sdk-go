@@ -479,3 +479,30 @@ func TestFromRecordStringView(t *testing.T) {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
 }
+
+func TestMarshalArrowReusesBufferSafely(t *testing.T) {
+	small := data.NewFrame("small", data.NewField("v", data.Labels{"a": "b"}, []float64{1}))
+	big := data.NewFrame("big", data.NewField("s", nil, make([]string, 100000)))
+
+	want, err := small.MarshalArrow()
+	require.NoError(t, err)
+	bigBytes, err := big.MarshalArrow()
+	require.NoError(t, err)
+
+	for range 3 {
+		b, err := small.MarshalArrow()
+		require.NoError(t, err)
+		require.Equal(t, want, b)
+
+		_, err = big.MarshalArrow()
+		require.NoError(t, err)
+	}
+
+	// earlier results must not be overwritten by later calls
+	again, err := big.MarshalArrow()
+	require.NoError(t, err)
+	require.Equal(t, bigBytes, again)
+	frame, err := data.UnmarshalArrowFrame(want)
+	require.NoError(t, err)
+	require.Equal(t, small.Name, frame.Name)
+}
