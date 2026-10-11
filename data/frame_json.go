@@ -241,6 +241,9 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 		case jsonKeySchema:
 			schema := frameSchema{}
 			iter.ReadVal(&schema)
+			if iter.Error != nil {
+				return iter.Error
+			}
 			frame.Name = schema.Name
 			frame.RefID = schema.RefID
 			frame.Meta = schema.Meta
@@ -248,6 +251,10 @@ func readDataFrameJSON(frame *Frame, iter *jsoniter.Iterator) error {
 			// Create a new field for each object
 			for _, f := range schema.Fields {
 				ft := f.TypeInfo.Frame
+				if ft == FieldTypeUnknown {
+					iter.ReportError("bind schema", fmt.Sprintf("field %q has no type", f.Name))
+					return iter.Error
+				}
 				if f.TypeInfo.Nullable {
 					ft = ft.NullableType()
 				}
@@ -325,6 +332,9 @@ func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
 			addNanos()
 			fieldIndex++
 			for iter.ReadArray() {
+				if fieldIndex >= len(frame.Fields) {
+					return fmt.Errorf("data has more value arrays than the %d fields in the schema", len(frame.Fields))
+				}
 				field = frame.Fields[fieldIndex]
 				vec, err = readVector(iter, field.Type(), size)
 				if err != nil {
