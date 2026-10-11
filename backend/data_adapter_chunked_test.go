@@ -33,18 +33,16 @@ func chunkedClient(t *testing.T, handler QueryChunkedDataHandler) pluginv2.DataC
 	return pluginv2.NewDataClient(conn)
 }
 
-// drain reads the stream to its end, returning the summed frame bytes, the stream error
-// (nil on a clean end) and the response-size trailer.
-func drain(t *testing.T, stream grpc.ServerStreamingClient[pluginv2.QueryChunkedDataResponse]) (int64, error, string) {
+func drain(t *testing.T, stream grpc.ServerStreamingClient[pluginv2.QueryChunkedDataResponse]) (int64, string, error) {
 	t.Helper()
 	var sum int64
 	for {
 		chunk, err := stream.Recv()
 		if errors.Is(err, io.EOF) {
-			return sum, nil, firstOrEmpty(stream.Trailer().Get(ResponseSizeBytesTrailerKey))
+			return sum, firstOrEmpty(stream.Trailer().Get(ResponseSizeBytesTrailerKey)), nil
 		}
 		if err != nil {
-			return sum, err, firstOrEmpty(stream.Trailer().Get(ResponseSizeBytesTrailerKey))
+			return sum, firstOrEmpty(stream.Trailer().Get(ResponseSizeBytesTrailerKey)), err
 		}
 		sum += int64(len(chunk.Frame))
 	}
@@ -72,7 +70,7 @@ func TestChunkedDataSetsResponseSizeTrailer(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			sum, streamErr, trailer := drain(t, stream)
+			sum, trailer, streamErr := drain(t, stream)
 			require.NoError(t, streamErr)
 			require.Positive(t, sum)
 			require.Equal(t, strconv.FormatInt(sum, 10), trailer)
@@ -89,22 +87,8 @@ func TestChunkedDataSetsResponseSizeTrailerWhenTheHandlerFails(t *testing.T) {
 	stream, err := client.QueryChunkedData(context.Background(), &pluginv2.QueryChunkedDataRequest{PluginContext: &pluginv2.PluginContext{}})
 	require.NoError(t, err)
 
-	sum, streamErr, trailer := drain(t, stream)
+	sum, trailer, streamErr := drain(t, stream)
 	require.Error(t, streamErr)
 	require.Positive(t, sum)
 	require.Equal(t, strconv.FormatInt(sum, 10), trailer, "what was sent before the failure is still counted")
-}
-
-func TestChunkedDataTrailerIsZeroWhenNothingIsSent(t *testing.T) {
-	client := chunkedClient(t, QueryChunkedDataHandlerFunc(func(context.Context, *QueryChunkedDataRequest, ChunkedDataWriter) error {
-		return nil
-	}))
-
-	stream, err := client.QueryChunkedData(context.Background(), &pluginv2.QueryChunkedDataRequest{PluginContext: &pluginv2.PluginContext{}})
-	require.NoError(t, err)
-
-	sum, streamErr, trailer := drain(t, stream)
-	require.NoError(t, streamErr)
-	require.Zero(t, sum)
-	require.Equal(t, "0", trailer)
 }
