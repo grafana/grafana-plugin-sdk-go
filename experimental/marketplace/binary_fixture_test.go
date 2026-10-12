@@ -156,7 +156,8 @@ func buildFixture(t *testing.T, opts fixtureBuildOptions) string {
 	}
 	args = append(args, "./testdata/"+opts.packageID)
 
-	cmd := exec.Command("go", args...)
+	// The arguments come from test-controlled fixture options, not external input.
+	cmd := exec.Command("go", args...) // #nosec G204
 	cmd.Env = fixtureBuildEnvironment(opts.goos, opts.goarch, opts.goFlags)
 	output, err := cmd.CombinedOutput()
 	require.NoError(t, err, "go %s failed:\n%s", strings.Join(args, " "), output)
