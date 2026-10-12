@@ -36,8 +36,11 @@ const (
 
 var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
-func CheckMarketplacePluginLicense(pluginId string) error {
-	token := readPluginLicense(pluginId)
+// checkMarketplacePluginLicense validates the license for licensePluginID, which is
+// the plugin's own ID unless it is nested, in which case it is the parent's ID.
+// pluginID is the ID of the running plugin.
+func checkMarketplacePluginLicense(pluginID, licensePluginID string) error {
+	token := readPluginLicense(licensePluginID)
 	if token.Error != nil {
 		backend.Logger.Error("Marketplace License Error", "error", token.Error)
 		if token.Status == licensing.Expired {
@@ -50,11 +53,11 @@ func CheckMarketplacePluginLicense(pluginId string) error {
 				return nil
 			}
 		}
-		if err := runInvalidLicenseServer(pluginId, token.Error); err != nil {
+		if err := runInvalidLicenseServer(pluginID, licensePluginID, token.Error); err != nil {
 			backend.Logger.Error(err.Error())
 			os.Exit(1)
 		}
-		return fmt.Errorf("you do not have a valid license for the marketplace plugin %s", pluginId)
+		return fmt.Errorf("you do not have a valid license for the marketplace plugin %s", licensePluginID)
 	}
 	return nil
 }
@@ -65,7 +68,7 @@ func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time)
 }
 
 // readPluginLicense looks for a license in environment variables and validates it
-func readPluginLicense(pluginId string) *licensing.LicenseToken {
+func readPluginLicense(pluginID string) *licensing.LicenseToken {
 	jwks := os.Getenv(marketplaceLicenseValidationKeyEnv)
 	appUrl := os.Getenv(marketplaceAppURLEnv)
 
@@ -73,20 +76,20 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	val := os.Getenv(marketplaceLicenseTextEnv)
 	if len(val) > 0 {
 		backend.Logger.Debug("Parsing license token from $GF_MARKETPLACE_LICENSE_TEXT")
-		return licensing.LoadTokenFromValue(val, appUrl, jwks, pluginId)
+		return licensing.LoadTokenFromValue(val, appUrl, jwks, pluginID)
 	}
 
 	// Will return an error if the path is not found
 	val = os.Getenv(marketplaceLicensePathEnv)
 	if len(val) == 0 {
-		if !validPluginID.MatchString(pluginId) {
+		if !validPluginID.MatchString(pluginID) {
 			return &licensing.LicenseToken{
 				Status: licensing.Invalid,
-				Error:  fmt.Errorf("invalid marketplace plugin id %q", pluginId),
+				Error:  fmt.Errorf("invalid marketplace plugin id %q", pluginID),
 			}
 		}
 		// filepath.Base strips any path separators, protecting against path traversal attacks
-		licenseFileName := filepath.Base("license-" + pluginId + ".jwt")
+		licenseFileName := filepath.Base("license-" + pluginID + ".jwt")
 		val = licenseFileName // default license path
 		if !fileExists(val) {
 			if homedir, err := os.UserHomeDir(); err == nil && homedir != "" {
@@ -96,27 +99,33 @@ func readPluginLicense(pluginId string) *licensing.LicenseToken {
 	}
 	backend.Logger.Debug("Loading license from file", "path", val)
 
-	return licensing.LoadTokenFromFile(val, appUrl, jwks, pluginId)
+	return licensing.LoadTokenFromFile(val, appUrl, jwks, pluginID)
 }
 
-// runInvalidLicenseServer when we have an error, this will make it keep running, but returning errors
-func runInvalidLicenseServer(pluginId string, verboseError error) error {
+// invalidLicenseError builds the user-facing error for a missing or invalid license.
+func invalidLicenseError(licensePluginID string) error {
 	//nolint:staticcheck // error to be used in grafana
-	err := fmt.Errorf("The Marketplace plugin %s is not available with your current subscription. To activate this plugin, please purchase a license by visiting https://grafana.com/grafana/plugins/%s", pluginId, pluginId)
-	backend.Logger.Error("Marketplace License Error, starting error server", "err", err.Error(), "detailed error", verboseError.Error())
+	return fmt.Errorf("The Marketplace plugin %s is not available with your current subscription. To activate this plugin, please purchase a license by visiting https://grafana.com/grafana/plugins/%s", licensePluginID, licensePluginID)
+}
+
+// runInvalidLicenseServer when we have an error, this will make it keep running, but returning errors.
+// pluginID is the running plugin; licensePluginID is the ID the license is issued under.
+func runInvalidLicenseServer(pluginID, licensePluginID string, verboseError error) error {
+	err := invalidLicenseError(licensePluginID)
+	backend.Logger.Error("Marketplace License Error, starting error server", "err", err.Error(), "detailed error", verboseError.Error(), "pluginID", pluginID, "licensePluginID", licensePluginID)
 	handler := &invalidLicenseHandler{
-		pluginId:     pluginId,
+		pluginID:     pluginID,
 		err:          err,
 		verboseError: verboseError,
 	}
-	return backend.Manage(pluginId, backend.ServeOpts{
+	return backend.Manage(pluginID, backend.ServeOpts{
 		QueryDataHandler:   handler,
 		CheckHealthHandler: handler,
 	})
 }
 
 type invalidLicenseHandler struct {
-	pluginId     string
+	pluginID     string
 	err          error
 	verboseError error
 }
