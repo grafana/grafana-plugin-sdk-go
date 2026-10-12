@@ -15,7 +15,7 @@ require (
 	github.com/go-openapi/validate v1.0.0
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/grafana/otel-profiling-go v0.6.0
+	github.com/grafana/otel-profiling-go v0.7.0
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.12
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware/v2 v2.3.4
