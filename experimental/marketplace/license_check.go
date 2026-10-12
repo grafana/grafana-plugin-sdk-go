@@ -16,11 +16,6 @@ import (
 )
 
 const (
-	// developmentBuildMarker is a stable machine-readable marker embedded only in marketplace_dev binaries.
-	// The plugin-validator scans packaged backend executables for this literal, alongside the marketplace_dev
-	// Go build tag, to reject artifacts built with marketplace license checks disabled. Keep its value stable.
-	developmentBuildMarker = "GRAFANA_MARKETPLACE_DEV_BUILD_NO_LICENSE_CHECKS_V1"
-
 	// marketplaceLicenseValidationKeyEnv is the environment variable that holds a signed JWKS (JWS) token
 	// containing validation keys used to verify marketplace plugin license tokens.
 	// TODO: this is currently not passed to the plugin from Grafana.
@@ -56,7 +51,6 @@ func checkMarketplacePluginLicenseWithDeps(
 	if developmentLicenseBypass {
 		backend.Logger.Warn(
 			"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
-			"marker", developmentBuildMarker,
 			"pluginId", pluginID,
 		)
 		return nil

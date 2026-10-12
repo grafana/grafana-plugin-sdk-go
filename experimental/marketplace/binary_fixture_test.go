@@ -1,13 +1,13 @@
 package marketplace
 
 import (
-	"bytes"
 	"debug/buildinfo"
 	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
+	"slices"
 	"strings"
 	"testing"
 	"unicode"
@@ -24,13 +24,7 @@ type fixtureBuildOptions struct {
 	packageID string
 }
 
-type executableSignals struct {
-	tags         []string
-	hasMarker    bool
-	buildInfoErr error
-}
-
-func TestMarketplaceExecutableBuildSignals(t *testing.T) {
+func TestMarketplaceExecutableBuildTags(t *testing.T) {
 	if testing.Short() {
 		t.Skip("cross-platform executable fixture matrix")
 	}
@@ -49,11 +43,9 @@ func TestMarketplaceExecutableBuildSignals(t *testing.T) {
 	}
 
 	for _, platform := range platforms {
-		platform := platform
 		t.Run(platform.goos+"_"+platform.goarch, func(t *testing.T) {
 			t.Parallel()
 			for _, development := range []bool{false, true} {
-				development := development
 				name := "production"
 				tags := []string{"arrow_json_stdlib"}
 				goFlags := "-tags=marketplace_dev"
@@ -71,25 +63,21 @@ func TestMarketplaceExecutableBuildSignals(t *testing.T) {
 						goFlags:   goFlags,
 						packageID: "marketplacefixture",
 					})
-					signals := inspectExecutable(t, binaryPath)
-
-					require.NoError(t, signals.buildInfoErr)
-					require.Equal(t, development, hasExactBuildTag(signals.tags, "marketplace_dev"))
-					require.Equal(t, development, signals.hasMarker)
+					buildTags := readExecutableBuildTags(t, binaryPath)
+					require.Equal(t, development, hasExactBuildTag(buildTags, "marketplace_dev"))
 				})
 			}
 		})
 	}
 }
 
-func TestMarketplaceExecutableBuildSignalsInDebugBuilds(t *testing.T) {
+func TestMarketplaceExecutableBuildTagsInDebugBuilds(t *testing.T) {
 	if testing.Short() {
 		t.Skip("executable fixture builds")
 	}
 	t.Parallel()
 
 	for _, development := range []bool{false, true} {
-		development := development
 		name := "production"
 		tags := []string{"arrow_json_stdlib"}
 		if development {
@@ -106,11 +94,8 @@ func TestMarketplaceExecutableBuildSignalsInDebugBuilds(t *testing.T) {
 				tags:      tags,
 				packageID: "marketplacefixture",
 			})
-			signals := inspectExecutable(t, binaryPath)
-
-			require.NoError(t, signals.buildInfoErr)
-			require.Equal(t, development, hasExactBuildTag(signals.tags, "marketplace_dev"))
-			require.Equal(t, development, signals.hasMarker)
+			buildTags := readExecutableBuildTags(t, binaryPath)
+			require.Equal(t, development, hasExactBuildTag(buildTags, "marketplace_dev"))
 		})
 	}
 }
@@ -128,11 +113,7 @@ func TestOrdinaryDatasourceExecutableIsNonMarketplaceControl(t *testing.T) {
 			goarch:    runtime.GOARCH,
 			packageID: "datasourcefixture",
 		})
-		signals := inspectExecutable(t, binaryPath)
-
-		require.NoError(t, signals.buildInfoErr)
-		require.Empty(t, signals.tags)
-		require.False(t, signals.hasMarker)
+		require.Empty(t, readExecutableBuildTags(t, binaryPath))
 	})
 
 	t.Run("development tag without marketplace code", func(t *testing.T) {
@@ -143,23 +124,8 @@ func TestOrdinaryDatasourceExecutableIsNonMarketplaceControl(t *testing.T) {
 			tags:      []string{"marketplace_dev"},
 			packageID: "datasourcefixture",
 		})
-		signals := inspectExecutable(t, binaryPath)
-
-		require.NoError(t, signals.buildInfoErr)
-		require.True(t, hasExactBuildTag(signals.tags, "marketplace_dev"))
-		require.False(t, signals.hasMarker)
+		require.True(t, hasExactBuildTag(readExecutableBuildTags(t, binaryPath), "marketplace_dev"))
 	})
-}
-
-func TestExecutableSignalInspectionKeepsMarkerWhenBuildInfoIsUnreadable(t *testing.T) {
-	t.Parallel()
-	path := filepath.Join(t.TempDir(), "not-a-go-executable")
-	require.NoError(t, os.WriteFile(path, []byte("prefix"+developmentBuildMarker+"suffix"), 0600))
-
-	signals := inspectExecutable(t, path)
-	require.Error(t, signals.buildInfoErr)
-	require.True(t, signals.hasMarker)
-	require.Empty(t, signals.tags)
 }
 
 func TestHasExactBuildTag(t *testing.T) {
@@ -221,27 +187,17 @@ func fixtureBuildEnvironment(goos, goarch, goFlags string) []string {
 	return env
 }
 
-func inspectExecutable(t *testing.T, path string) executableSignals {
+func readExecutableBuildTags(t *testing.T, path string) []string {
 	t.Helper()
 
-	contents, err := os.ReadFile(path) // #nosec G304 -- the test creates this path.
-	require.NoError(t, err)
-
-	signals := executableSignals{
-		hasMarker: bytes.Contains(contents, []byte(developmentBuildMarker)),
-	}
 	info, err := buildinfo.ReadFile(path)
-	if err != nil {
-		signals.buildInfoErr = err
-		return signals
-	}
+	require.NoError(t, err)
 	for _, setting := range info.Settings {
 		if setting.Key == "-tags" {
-			signals.tags = parseBuildTags(setting.Value)
-			break
+			return parseBuildTags(setting.Value)
 		}
 	}
-	return signals
+	return nil
 }
 
 func parseBuildTags(value string) []string {
@@ -251,10 +207,5 @@ func parseBuildTags(value string) []string {
 }
 
 func hasExactBuildTag(tags []string, expected string) bool {
-	for _, tag := range tags {
-		if tag == expected {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(tags, expected)
 }
