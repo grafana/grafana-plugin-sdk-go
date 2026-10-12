@@ -24,23 +24,25 @@ const metadataKeyTSType = "tstype" // typescript type
 const metadataKeyRefID = "refId"   // added to the table metadata
 
 // MarshalArrow encodes the Frame as an Arrow IPC file with one record batch.
-// The returned slice has no spare capacity.
+// The returned slice has at most 12.5 percent spare capacity.
 // All fields of a Frame must be of the same length or an error is returned.
 func (f *Frame) MarshalArrow() ([]byte, error) {
 	var buf bytes.Buffer
 	if err := f.marshalArrow(&buf); err != nil {
 		return nil, err
 	}
-	return exactSizeCopy(buf.Bytes()), nil
+	return trimSlack(&buf), nil
 }
 
 // marshalArrow writes the Frame to w as an Arrow IPC file with one record batch.
-func (f *Frame) marshalArrow(w io.Writer) error {
+func (f *Frame) marshalArrow(w *bytes.Buffer) error {
 	rec, err := frameToArrowRecord(f, memory.DefaultAllocator)
 	if err != nil {
 		return err
 	}
 	defer rec.Release()
+
+	w.Grow(recordBodySize(rec))
 
 	fw, err := ipc.NewFileWriter(w, ipc.WithSchema(rec.Schema()))
 	if err != nil {
@@ -53,6 +55,19 @@ func (f *Frame) marshalArrow(w io.Writer) error {
 		}
 	}
 	return fw.Close()
+}
+
+// recordBodySize is the size of the buffers the record batch holds, a lower bound of its encoded size.
+func recordBodySize(rec arrow.RecordBatch) int {
+	size := 0
+	for _, col := range rec.Columns() {
+		for _, b := range col.Data().Buffers() {
+			if b != nil {
+				size += b.Len()
+			}
+		}
+	}
+	return size
 }
 
 func frameToArrowRecord(f *Frame, mem memory.Allocator) (arrow.RecordBatch, error) {
@@ -945,7 +960,7 @@ func UnmarshalArrowFrames(bFrames [][]byte) (Frames, error) {
 }
 
 // MarshalArrow encodes Frames into a slice of []byte, one Arrow IPC file per Frame.
-// Each returned slice has no spare capacity. If an error occurs [][]byte will be nil.
+// Each returned slice has at most 12.5 percent spare capacity. If an error occurs [][]byte will be nil.
 // See UnmarshalArrowFrames for the inverse operation.
 func (frames Frames) MarshalArrow() ([][]byte, error) {
 	bs := make([][]byte, len(frames))
@@ -958,9 +973,27 @@ func (frames Frames) MarshalArrow() ([][]byte, error) {
 		if err := frame.marshalArrow(&buf); err != nil {
 			return nil, err
 		}
+		if buf.Len() >= scratchReuseLimit {
+			bs[i] = trimSlack(&buf)
+			buf = bytes.Buffer{}
+			continue
+		}
 		bs[i] = exactSizeCopy(buf.Bytes())
 	}
 	return bs, nil
+}
+
+// scratchReuseLimit is the encoded size from which Frames.MarshalArrow hands the buffer to the caller instead of copying it.
+const scratchReuseLimit = 256 << 10
+
+// trimSlack returns the bytes of a buffer the caller no longer uses. It copies only when the
+// unused capacity is large, so a large frame is not held twice.
+func trimSlack(buf *bytes.Buffer) []byte {
+	b := buf.Bytes()
+	if cap(b)-len(b) <= len(b)/8 {
+		return b
+	}
+	return exactSizeCopy(b)
 }
 
 func exactSizeCopy(b []byte) []byte {
