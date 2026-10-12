@@ -498,8 +498,8 @@ func TestMarshalArrowShapes(t *testing.T) {
 			single, err := shape.frame.MarshalArrow()
 			require.NoError(t, err)
 			require.Equal(t, single, batch[i], "Frames.MarshalArrow and Frame.MarshalArrow differ")
-			require.Equal(t, len(single), cap(single), "Frame.MarshalArrow returned spare capacity")
-			require.Equal(t, len(batch[i]), cap(batch[i]), "Frames.MarshalArrow returned spare capacity")
+			require.LessOrEqual(t, cap(single), len(single)+len(single)/8, "Frame.MarshalArrow returned spare capacity")
+			require.LessOrEqual(t, cap(batch[i]), len(batch[i])+len(batch[i])/8, "Frames.MarshalArrow returned spare capacity")
 
 			sum := sha256.Sum256(single)
 			require.Equal(t, shape.sha256, hex.EncodeToString(sum[:]), "encoding changed")

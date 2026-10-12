@@ -85,3 +85,23 @@ func timeSeriesFrame(rows, labelCount int) *data.Frame {
 	}
 	return f
 }
+
+// logsFrame is a Loki-style response: per-row labels JSON, a time field, a log line and an id.
+func logsFrame(rows int) *data.Frame {
+	labels := make([]json.RawMessage, rows)
+	times := make([]time.Time, rows)
+	lines := make([]string, rows)
+	ids := make([]string, rows)
+	for i := range rows {
+		labels[i] = json.RawMessage(fmt.Sprintf(`{"app":"api","pod":"api-%d","namespace":"prod","level":"info"}`, i%50))
+		times[i] = time.Unix(1700000000+int64(i), 0).UTC()
+		lines[i] = fmt.Sprintf("level=info ts=%d caller=main.go:%d msg=%q %s", i, i%997, "request served", strings.Repeat("k=v ", 40))
+		ids[i] = fmt.Sprintf("%d_%08x", 1700000000+i, i)
+	}
+	return data.NewFrame("",
+		data.NewField("labels", nil, labels),
+		data.NewField("Time", nil, times),
+		data.NewField("Line", nil, lines),
+		data.NewField("id", nil, ids),
+	)
+}
