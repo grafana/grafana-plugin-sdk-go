@@ -226,22 +226,22 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 		{
 			name: "Marketplace development mode composes tags independently of debug mode",
 			cfg: Config{
-				OS:             "linux",
-				Arch:           "arm64",
-				MarketplaceDev: true,
-				Env:            make(map[string]string),
-				PluginJSONPath: filepath.Join(tmpDir, "marketplace-datasource"),
+				OS:                     "linux",
+				Arch:                   "arm64",
+				EnableDebugMarketplace: true,
+				Env:                    make(map[string]string),
+				PluginJSONPath:         filepath.Join(tmpDir, "marketplace-datasource"),
 			},
 			pluginJSONCreate: func(t *testing.T) {
 				t.Helper()
 				createPluginJSON(t, filepath.Join(tmpDir, "marketplace-datasource"), "gpx_marketplace")
 			},
 			expectedCfg: Config{
-				OS:             "linux",
-				Arch:           "arm64",
-				MarketplaceDev: true,
-				Env:            map[string]string{"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "linux"},
-				PluginJSONPath: filepath.Join(tmpDir, "marketplace-datasource"),
+				OS:                     "linux",
+				Arch:                   "arm64",
+				EnableDebugMarketplace: true,
+				Env:                    map[string]string{"CGO_ENABLED": "0", "GOARCH": "arm64", "GOOS": "linux"},
+				PluginJSONPath:         filepath.Join(tmpDir, "marketplace-datasource"),
 			},
 			expectedArgs: []string{"build", "-o", filepath.Join(defaultOutputBinaryPath, "gpx_marketplace_linux_arm64"), "-tags", "arrow_json_stdlib,marketplace_dev", "-ldflags", "-w -s -extldflags \"-static\" -X 'github.com/grafana/grafana-plugin-sdk-go/build/buildinfo.buildInfoJSON={.*}'", "./pkg"},
 			wantErr:      assert.NoError,
@@ -266,7 +266,7 @@ func Test_getBuildBackendCmdInfo(t *testing.T) {
 	}
 }
 
-func Test_getBuildBackendCmdInfoAllowsMarketplaceDevFromCallback(t *testing.T) {
+func Test_getBuildBackendCmdInfoAllowsEnableDebugMarketplaceFromCallback(t *testing.T) {
 	originalBeforeBuild := beforeBuild
 	t.Cleanup(func() {
 		beforeBuild = originalBeforeBuild
@@ -276,18 +276,18 @@ func Test_getBuildBackendCmdInfoAllowsMarketplaceDevFromCallback(t *testing.T) {
 	createPluginJSON(t, pluginDir, "gpx_callback")
 
 	beforeBuild = func(cfg Config) (Config, error) {
-		cfg.MarketplaceDev = true
+		cfg.EnableDebugMarketplace = true
 		cfg.PluginJSONPath = pluginDir
 		return cfg, nil
 	}
 
 	cfg, args, err := getBuildBackendCmdInfo(newBuildConfig("linux", "arm64"))
 	require.NoError(t, err)
-	require.True(t, cfg.MarketplaceDev)
+	require.True(t, cfg.EnableDebugMarketplace)
 	require.Contains(t, args, "arrow_json_stdlib,marketplace_dev")
 }
 
-func TestBuildTargetsSelectMarketplaceDevelopmentModeExplicitly(t *testing.T) {
+func TestBuildTargetsSelectEnableDebugMarketplaceelopmentModeExplicitly(t *testing.T) {
 	originalBeforeBuild := beforeBuild
 	t.Cleanup(func() {
 		beforeBuild = originalBeforeBuild
@@ -334,24 +334,24 @@ func TestBuildTargetsSelectMarketplaceDevelopmentModeExplicitly(t *testing.T) {
 		},
 		{
 			name: "marketplace development current platform",
-			run:  Build{}.MarketplaceDev,
+			run:  Build{}.DebugMarketplace,
 			expected: Config{
-				OS:             runtime.GOOS,
-				Arch:           runtime.GOARCH,
-				EnableDebug:    true,
-				MarketplaceDev: true,
+				OS:                     runtime.GOOS,
+				Arch:                   runtime.GOARCH,
+				EnableDebug:            true,
+				EnableDebugMarketplace: true,
 			},
 		},
 		{
 			name: "marketplace development custom platform",
 			run: func() error {
-				return Build{}.MarketplaceDevFor("linux", "arm64")
+				return Build{}.DebugMarketplaceFor("linux", "arm64")
 			},
 			expected: Config{
-				OS:             "linux",
-				Arch:           "arm64",
-				EnableDebug:    true,
-				MarketplaceDev: true,
+				OS:                     "linux",
+				Arch:                   "arm64",
+				EnableDebug:            true,
+				EnableDebugMarketplace: true,
 			},
 		},
 	}
@@ -369,7 +369,7 @@ func TestBuildTargetsSelectMarketplaceDevelopmentModeExplicitly(t *testing.T) {
 			require.Equal(t, tt.expected.OS, captured.OS)
 			require.Equal(t, tt.expected.Arch, captured.Arch)
 			require.Equal(t, tt.expected.EnableDebug, captured.EnableDebug)
-			require.Equal(t, tt.expected.MarketplaceDev, captured.MarketplaceDev)
+			require.Equal(t, tt.expected.EnableDebugMarketplace, captured.EnableDebugMarketplace)
 		})
 	}
 }

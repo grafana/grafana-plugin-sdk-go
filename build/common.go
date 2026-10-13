@@ -167,7 +167,7 @@ func getBuildBackendCmdInfo(cfg Config) (Config, []string, error) {
 	}
 
 	tags := []string{"arrow_json_stdlib"}
-	if cfg.MarketplaceDev {
+	if cfg.EnableDebugMarketplace {
 		tags = append(tags, "marketplace_dev")
 	}
 	args = append(args, "-tags", strings.Join(tags, ","))
@@ -293,16 +293,16 @@ func (Build) Debug() error {
 	return buildBackend(cfg)
 }
 
-// MarketplaceDev builds a debug version for the current platform without marketplace license checks.
-func (Build) MarketplaceDev() error {
-	return Build{}.MarketplaceDevFor(runtime.GOOS, runtime.GOARCH)
+// DebugMarketplace builds a debug version for the current platform without marketplace license checks.
+func (Build) DebugMarketplace() error {
+	return Build{}.DebugMarketplaceFor(runtime.GOOS, runtime.GOARCH)
 }
 
-// MarketplaceDevFor builds a debug version for the provided platform without marketplace license checks.
-func (Build) MarketplaceDevFor(os, arch string) error {
+// DebugMarketplaceFor builds a debug version for the provided platform without marketplace license checks.
+func (Build) DebugMarketplaceFor(os, arch string) error {
 	cfg := newBuildConfig(os, arch)
 	cfg.EnableDebug = true
-	cfg.MarketplaceDev = true
+	cfg.EnableDebugMarketplace = true
 	return buildBackend(cfg)
 }
 
