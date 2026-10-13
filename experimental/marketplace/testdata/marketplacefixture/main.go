@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace"
 )
@@ -14,7 +15,9 @@ func newDataSource(context.Context, backend.DataSourceInstanceSettings) (instanc
 }
 
 func main() {
-	if err := marketplace.Manage("marketplace-fixture", newDataSource, marketplace.ManageOpts{}); err != nil {
+	if err := datasource.Manage("marketplace-fixture", newDataSource, datasource.ManageOpts{
+		Licensing: marketplace.Licensing(marketplace.Opts{}),
+	}); err != nil {
 		backend.Logger.Error(err.Error())
 		os.Exit(1)
 	}

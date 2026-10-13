@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -132,4 +134,84 @@ func TestInvalidLicenseHandlerCheckHealthJSONDetails(t *testing.T) {
 	require.NoError(t, json.Unmarshal(result.JSONDetails, &details))
 	require.Equal(t, message, details.Message)
 	require.Equal(t, strings.ReplaceAll(verboseMessage, "\n", " "), details.VerboseMessage)
+}
+
+func newTestInvalidLicenseHandler() *invalidLicenseHandler {
+	return &invalidLicenseHandler{
+		pluginID:     "example-app",
+		err:          invalidLicenseError("example-app"),
+		verboseError: errors.New("license token file not found"),
+	}
+}
+
+func TestInvalidLicenseHandlerCallResource(t *testing.T) {
+	handler := newTestInvalidLicenseHandler()
+	var resp *backend.CallResourceResponse
+	err := handler.CallResource(context.Background(), &backend.CallResourceRequest{}, backend.CallResourceResponseSenderFunc(func(r *backend.CallResourceResponse) error {
+		resp = r
+		return nil
+	}))
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.Equal(t, http.StatusForbidden, resp.Status)
+	require.Equal(t, []string{"application/json"}, resp.Headers["Content-Type"])
+
+	var body struct {
+		Message string `json:"message"`
+	}
+	require.NoError(t, json.Unmarshal(resp.Body, &body))
+	require.Equal(t, handler.err.Error(), body.Message)
+}
+
+func TestInvalidLicenseHandlerQueryData(t *testing.T) {
+	handler := newTestInvalidLicenseHandler()
+	resp, err := handler.QueryData(context.Background(), &backend.QueryDataRequest{
+		Queries: []backend.DataQuery{{RefID: "A"}, {RefID: "B"}},
+	})
+	require.NoError(t, err)
+	require.Len(t, resp.Responses, 2)
+	for _, refID := range []string{"A", "B"} {
+		require.Equal(t, backend.StatusUnauthorized, resp.Responses[refID].Status)
+		require.ErrorContains(t, resp.Responses[refID].Error, handler.err.Error())
+	}
+}
+
+type recordingChunkedDataWriter struct {
+	backend.ChunkedDataWriter
+	errors map[string]error
+}
+
+func (w *recordingChunkedDataWriter) WriteError(_ context.Context, refID string, status backend.Status, err error) error {
+	if status != backend.StatusUnauthorized {
+		return fmt.Errorf("unexpected status %v", status)
+	}
+	w.errors[refID] = err
+	return nil
+}
+
+func TestInvalidLicenseHandlerQueryChunkedData(t *testing.T) {
+	handler := newTestInvalidLicenseHandler()
+	w := &recordingChunkedDataWriter{errors: map[string]error{}}
+	err := handler.QueryChunkedData(context.Background(), &backend.QueryChunkedDataRequest{
+		Queries: []backend.DataQuery{{RefID: "A"}, {RefID: "B"}},
+	}, w)
+	require.NoError(t, err)
+	require.Len(t, w.errors, 2)
+	for _, refID := range []string{"A", "B"} {
+		require.ErrorContains(t, w.errors[refID], handler.err.Error())
+	}
+}
+
+func TestInvalidLicenseHandlerStreams(t *testing.T) {
+	handler := newTestInvalidLicenseHandler()
+
+	subscribe, err := handler.SubscribeStream(context.Background(), &backend.SubscribeStreamRequest{})
+	require.NoError(t, err)
+	require.Equal(t, backend.SubscribeStreamStatusPermissionDenied, subscribe.Status)
+
+	publish, err := handler.PublishStream(context.Background(), &backend.PublishStreamRequest{})
+	require.NoError(t, err)
+	require.Equal(t, backend.PublishStreamStatusPermissionDenied, publish.Status)
+
+	require.ErrorIs(t, handler.RunStream(context.Background(), &backend.RunStreamRequest{}, nil), handler.err)
 }

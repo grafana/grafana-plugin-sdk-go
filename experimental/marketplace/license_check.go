@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -34,48 +35,50 @@ const (
 	marketplaceLicensePathEnv = "GF_MARKETPLACE_LICENSE_PATH"
 )
 
+// tokenLoader is a function that returns a license token for a given plugin ID.
+type tokenLoader func(pluginID string) *licensing.LicenseToken
+
 var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
-// checkMarketplacePluginLicense validates the license for licensePluginID, which is
-// the plugin's own ID unless it is nested, in which case it is the parent's ID.
+// applyMarketplaceLicense validates the license for licensePluginID, which is the
+// plugin's own ID unless it is nested, in which case it is the parent's ID.
 // pluginID is the ID of the running plugin.
-func checkMarketplacePluginLicense(pluginID, licensePluginID string) error {
-	return checkMarketplacePluginLicenseWithDeps(pluginID, licensePluginID, readPluginLicense, runInvalidLicenseServer)
-}
-
-func checkMarketplacePluginLicenseWithDeps(
+//
+// It returns serveOpts unchanged if the license is valid, or expired but within its
+// grace period. Otherwise it returns serve options that only return the license error.
+//
+// loadToken loads the license token for a plugin ID.
+// It is readPluginLicense in production, but can be overridden for testing.
+func applyMarketplaceLicense(
 	pluginID, licensePluginID string,
-	loadToken func(string) *licensing.LicenseToken,
-	startInvalidLicenseServer func(string, string, error) error,
-) error {
+	serveOpts backend.ServeOpts,
+	loadToken tokenLoader,
+) backend.ServeOpts {
 	if developmentLicenseBypass {
 		backend.Logger.Warn(
 			"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
 			"pluginId", pluginID,
 		)
-		return nil
+		return serveOpts
 	}
 
 	token := loadToken(licensePluginID)
-	if token.Error != nil {
-		backend.Logger.Error("Marketplace License Error", "error", token.Error)
-		if token.Status == licensing.Expired {
-			// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
-			// token in case an on-prem instance loses internet connection
-			grace, ok := marketplaceLicenseGracePeriod(token, time.Now())
-			if ok {
-				backend.Logger.Error("The plugin will work until", "date", grace)
-				backend.Logger.Error("Update your instance soon to avoid any errors")
-				return nil
-			}
-		}
-		if err := startInvalidLicenseServer(pluginID, licensePluginID, token.Error); err != nil {
-			backend.Logger.Error(err.Error())
-			os.Exit(1)
-		}
-		return fmt.Errorf("you do not have a valid license for the marketplace plugin %s", licensePluginID)
+	if token.Error == nil {
+		// License is valid
+		return serveOpts
 	}
-	return nil
+	backend.Logger.Error("Marketplace License Error", "error", token.Error)
+	if token.Status == licensing.Expired {
+		// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
+		// token in case an on-prem instance loses internet connection
+		grace, ok := marketplaceLicenseGracePeriod(token, time.Now())
+		if ok {
+			backend.Logger.Error("The plugin will work until", "date", grace)
+			backend.Logger.Error("Update your instance soon to avoid any errors")
+			return serveOpts
+		}
+	}
+	return invalidLicenseServeOpts(pluginID, licensePluginID, token.Error, serveOpts)
 }
 
 func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time) (time.Time, bool) {
@@ -83,7 +86,8 @@ func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time)
 	return grace, now.Before(grace)
 }
 
-// readPluginLicense looks for a license in environment variables and validates it
+// readPluginLicense looks for a license in environment variables and validates it.
+// It satisfies the tokenLoader type, so it can be passed to applyMarketplaceLicense.
 func readPluginLicense(pluginID string) *licensing.LicenseToken {
 	jwks := os.Getenv(marketplaceLicenseValidationKeyEnv)
 	appUrl := os.Getenv(marketplaceAppURLEnv)
@@ -124,20 +128,26 @@ func invalidLicenseError(licensePluginID string) error {
 	return fmt.Errorf("The Marketplace plugin %s is not available with your current subscription. To activate this plugin, please purchase a license by visiting https://grafana.com/grafana/plugins/%s", licensePluginID, licensePluginID)
 }
 
-// runInvalidLicenseServer when we have an error, this will make it keep running, but returning errors.
+// invalidLicenseServeOpts returns serve options whose handlers only return the license error.
+// Only GRPCSettings are kept from serveOpts: every other handler, ExtraPlugins included, is
+// dropped so that nothing is served without a license.
 // pluginID is the running plugin; licensePluginID is the ID the license is issued under.
-func runInvalidLicenseServer(pluginID, licensePluginID string, verboseError error) error {
+func invalidLicenseServeOpts(pluginID, licensePluginID string, verboseError error, serveOpts backend.ServeOpts) backend.ServeOpts {
 	err := invalidLicenseError(licensePluginID)
-	backend.Logger.Error("Marketplace License Error, starting error server", "err", err.Error(), "detailed error", verboseError.Error(), "pluginID", pluginID, "licensePluginID", licensePluginID)
+	backend.Logger.Error("Marketplace License Error, serving license errors only", "err", err.Error(), "detailed error", verboseError.Error(), "pluginID", pluginID, "licensePluginID", licensePluginID)
 	handler := &invalidLicenseHandler{
 		pluginID:     pluginID,
 		err:          err,
 		verboseError: verboseError,
 	}
-	return backend.Manage(pluginID, backend.ServeOpts{
-		QueryDataHandler:   handler,
-		CheckHealthHandler: handler,
-	})
+	return backend.ServeOpts{
+		CheckHealthHandler:      handler,
+		CallResourceHandler:     handler,
+		QueryDataHandler:        handler,
+		QueryChunkedDataHandler: handler,
+		StreamHandler:           handler,
+		GRPCSettings:            serveOpts.GRPCSettings,
+	}
 }
 
 type invalidLicenseHandler struct {
@@ -169,13 +179,63 @@ func (h *invalidLicenseHandler) CheckHealth(ctx context.Context, req *backend.Ch
 // QueryData queries for data.
 func (h *invalidLicenseHandler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
 	result := backend.NewQueryDataResponse()
-	//nolint:staticcheck // error to be used in grafana
-	err := errors.Join(errors.New("Marketplace License Error"), h.err, h.verboseError)
+	err := h.queryError()
 	for _, query := range req.Queries {
 		errResponse := backend.ErrDataResponse(backend.StatusUnauthorized, err.Error())
 		result.Responses[query.RefID] = errResponse
 	}
 	return result, nil
+}
+
+// QueryChunkedData returns the license error for every query.
+func (h *invalidLicenseHandler) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) error {
+	err := h.queryError()
+	for _, query := range req.Queries {
+		if writeErr := w.WriteError(ctx, query.RefID, backend.StatusUnauthorized, err); writeErr != nil {
+			return writeErr
+		}
+	}
+	return nil
+}
+
+// CallResource returns the license error for every resource call.
+// It responds with 403 Forbidden rather than 401 Unauthorized, so that the Grafana
+// frontend does not treat the response as an expired user session.
+func (h *invalidLicenseHandler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+	body, err := json.Marshal(struct {
+		Message string `json:"message"`
+	}{
+		Message: h.err.Error(),
+	})
+	if err != nil {
+		return fmt.Errorf("marshal marketplace license resource response: %w", err)
+	}
+	return sender.Send(&backend.CallResourceResponse{
+		Status:  http.StatusForbidden,
+		Headers: map[string][]string{"Content-Type": {"application/json"}},
+		Body:    body,
+	})
+}
+
+// SubscribeStream denies every stream subscription.
+func (h *invalidLicenseHandler) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
+	return &backend.SubscribeStreamResponse{Status: backend.SubscribeStreamStatusPermissionDenied}, nil
+}
+
+// PublishStream denies every stream publication.
+func (h *invalidLicenseHandler) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
+	return &backend.PublishStreamResponse{Status: backend.PublishStreamStatusPermissionDenied}, nil
+}
+
+// RunStream returns the license error for every stream.
+func (h *invalidLicenseHandler) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
+	return h.err
+}
+
+// queryError is the error returned for every data query.
+func (h *invalidLicenseHandler) queryError() error {
+	//nolint:staticcheck // error to be used in grafana
+	return errors.Join(errors.New("Marketplace License Error"), h.err, h.verboseError)
 }
 
 // fileExists checks if a file exists and is not a directory before we

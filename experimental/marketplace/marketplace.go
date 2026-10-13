@@ -1,46 +1,41 @@
 package marketplace
 
 import (
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// ManageOpts are the options for Manage.
-type ManageOpts struct {
+// Opts are the options for Licensing.
+type Opts struct {
 	// ParentPluginID is the ID of the parent plugin, for nested plugins.
 	// When set, the license is looked up and validated against this ID
 	// instead of the plugin's own ID. When empty, the plugin is assumed
 	// not to be nested and its own ID is used.
 	ParentPluginID string
-
-	// DatasourceOpts are passed through to datasource.Manage.
-	DatasourceOpts datasource.ManageOpts
 }
 
 // licensePluginID returns the plugin ID the license is issued under.
-func (o ManageOpts) licensePluginID(pluginID string) string {
+func (o Opts) licensePluginID(pluginID string) string {
 	if o.ParentPluginID != "" {
 		return o.ParentPluginID
 	}
 	return pluginID
 }
 
-// Manage checks the marketplace license and then serves the datasource plugin.
+// Licensing returns a decorator that enforces marketplace licensing. Set it as the
+// Licensing field of datasource.ManageOpts or app.ManageOpts:
 //
-// pluginID is the plugin's own ID, as in its plugin.json, and is used to serve
-// the plugin. opts.ParentPluginID, if set, is the ID of the parent plugin of a
-// nested plugin; it is used instead of pluginID for license lookup and validation.
-func Manage(pluginID string, instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) error {
-	// TODO: PPT support: this will be implemented in a follow-up PR
-	/* flag.Parse() // Parse the flags so that we can check the value of -qtlv
-
-	// If -qtlv is set, then we should check the license on every request
-	if *queryTimeLicenseValidation {
-		return datasource.Manage(pluginID, enterpriseInstanceFactory(instanceFactory), opts.DatasourceOpts)
-	} */
-
-	// If -qtlv is not set, then we should check the license once at startup
-	if err := checkMarketplacePluginLicense(pluginID, opts.licensePluginID(pluginID)); err != nil {
-		return err
+//	datasource.Manage("my-datasource", newDatasource, datasource.ManageOpts{
+//		Licensing: marketplace.Licensing(marketplace.Opts{}),
+//	})
+//
+// The license is checked once, when the plugin starts. With a valid license, or an
+// expired one still within its grace period, the plugin is served unchanged. Otherwise
+// the plugin is served with handlers that only return the license error.
+//
+// The license is looked up for the plugin's own ID, or for opts.ParentPluginID if set.
+func Licensing(opts Opts) backend.ServeOptsDecorator {
+	return func(pluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
+		// TODO: PPT support (-qtlv): validate the license on every request. This will be implemented in a follow-up PR.
+		return applyMarketplaceLicense(pluginID, opts.licensePluginID(pluginID), serveOpts, readPluginLicense), nil
 	}
-	return datasource.Manage(pluginID, instanceFactory, opts.DatasourceOpts)
 }
