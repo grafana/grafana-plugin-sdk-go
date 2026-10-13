@@ -287,7 +287,7 @@ func Test_getBuildBackendCmdInfoAllowsEnableDebugMarketplaceFromCallback(t *test
 	require.Contains(t, args, "arrow_json_stdlib,marketplace_dev")
 }
 
-func TestBuildTargetsSelectEnableDebugMarketplaceelopmentModeExplicitly(t *testing.T) {
+func TestBuildTargetsSelectEnableDebugMarketplaceDevelopmentModeExplicitly(t *testing.T) {
 	originalBeforeBuild := beforeBuild
 	t.Cleanup(func() {
 		beforeBuild = originalBeforeBuild
