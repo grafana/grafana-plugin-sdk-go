@@ -10,7 +10,6 @@ import (
 )
 
 //go:fix inline
-func cell(s string) *string { return new(s) }
 
 func TestResultCapture_keepsRowsInOrder(t *testing.T) {
 	c := NewResultCapture()

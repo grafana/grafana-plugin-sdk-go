@@ -94,4 +94,3 @@ func renderCell(v any) *string {
 }
 
 //go:fix inline
-func strPtr(s string) *string { return new(s) }

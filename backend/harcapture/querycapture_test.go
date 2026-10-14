@@ -61,7 +61,6 @@ type harDoc struct {
 }
 
 //go:fix inline
-func strPtr(s string) *string { return new(s) }
 
 func toDoc(t *testing.T, b *Buffer) harDoc {
 	t.Helper()
