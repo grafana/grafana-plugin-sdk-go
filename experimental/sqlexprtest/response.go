@@ -2,6 +2,7 @@ package sqlexprtest
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"slices"
@@ -34,9 +35,9 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs ...string) map[string
 		switch {
 		case !ok:
 			reports[refID] = &Report{RefID: refID, Mode: ModeNone, Findings: []Finding{{
-				Code: CodeMissingRefID, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
-				Message: "the response has no entry for this RefID. Grafana then treats the query as having no data, " +
-					"without an error. Return a DataResponse for every query, keyed by its RefID.",
+				Code: CodeMissingRefID, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: -1,
+				Message: "the response has no entry for this RefID, so SQL sees a table with no columns, without an error. " +
+					"Return a DataResponse for every query, keyed by its RefID.",
 			}}}
 		case dr.Error != nil:
 			reports[refID] = &Report{RefID: refID, Mode: ModeNone, Findings: []Finding{{
@@ -66,39 +67,67 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs ...string) map[string
 // CheckQueryData calls a QueryData handler the way SQL Expressions call it,
 // then checks the response for each query in req.
 //
-// It sends a copy of req with the [HeaderFromExpression] header set. A panic
-// in the handler becomes a [CodePanic] finding for every query, because a
-// panic fails the whole SQL Expression request. The returned error is the
-// handler's own error.
+// Grafana sends each SQL Expression input query in a request of its own, so
+// CheckQueryData calls the handler once per query, with a copy of req that
+// holds only that query and has the [HeaderFromExpression] header set. The
+// copies share req's PluginContext. A handler error becomes a
+// [CodeQueryError] finding, and a panic a [CodePanic] finding, for that query.
+// It returns an error only when req is nil.
 func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest) (map[string]*Report, error) {
-	r := *req
-	r.Headers = maps.Clone(req.Headers)
-	if r.Headers == nil {
-		r.Headers = map[string]string{}
-	}
-	r.SetHTTPHeader(HeaderFromExpression, "true")
-
-	refIDs := make([]string, len(req.Queries))
-	for i, q := range req.Queries {
-		refIDs[i] = q.RefID
+	if req == nil {
+		return nil, errors.New("sqlexprtest: nil QueryDataRequest")
 	}
 
-	resp, panicked, err := callQueryData(ctx, h, &r)
-	if panicked != nil {
-		reports := map[string]*Report{}
-		for _, refID := range refIDs {
-			reports[refID] = &Report{RefID: refID, Mode: ModeNone, Findings: []Finding{{
+	reports := map[string]*Report{}
+	for _, q := range req.Queries {
+		one := *req
+		one.Queries = []backend.DataQuery{q}
+		one.Headers = maps.Clone(req.Headers)
+		if one.Headers == nil {
+			one.Headers = map[string]string{}
+		}
+		one.SetHTTPHeader(HeaderFromExpression, "true")
+
+		resp, panicked, err := callQueryData(ctx, h, &one)
+		switch {
+		case panicked != nil:
+			reports[q.RefID] = &Report{RefID: q.RefID, Mode: ModeNone, Findings: []Finding{{
 				Code: CodePanic, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
 				Message: fmt.Sprintf("the QueryData handler panicked: %v. A panic fails the whole SQL Expression request, "+
 					"for every query in it. Return an error in the DataResponse instead.", panicked),
 			}}}
+		case err != nil:
+			reports[q.RefID] = &Report{RefID: q.RefID, Mode: ModeNone, Findings: []Finding{{
+				Code: CodeQueryError, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
+				Message: fmt.Sprintf("the QueryData handler returned an error: %v", err),
+			}}}
+		default:
+			reports[q.RefID] = checkOneResponse(resp, q.RefID)
 		}
-		return reports, nil
 	}
-	if err != nil {
-		return nil, err
+	return reports, nil
+}
+
+// checkOneResponse checks the response to a request for one query. Entries for
+// other RefIDs become an unexpected-refid finding on that query's report.
+func checkOneResponse(resp *backend.QueryDataResponse, refID string) *Report {
+	reports := CheckResponse(resp, refID)
+	r := reports[refID]
+	others := []string{}
+	for id := range reports {
+		if id != refID {
+			others = append(others, id)
+		}
 	}
-	return CheckResponse(resp, refIDs...), nil
+	slices.Sort(others)
+	for _, id := range others {
+		r.add(Finding{
+			Code: CodeUnexpectedRefID, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: -1, Field: id,
+			Message: fmt.Sprintf("the response to this query also has an entry for RefID %q, which this request did not ask for, "+
+				"so SQL never reads it. Key each DataResponse by its query's RefID.", id),
+		})
+	}
+	return r
 }
 
 func callQueryData(ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest) (resp *backend.QueryDataResponse, panicked any, err error) {
