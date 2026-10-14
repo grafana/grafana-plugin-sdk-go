@@ -9,13 +9,11 @@
 //
 // Use [Check] on the frames of one query, [CheckResponse] on a whole
 // QueryDataResponse, or [CheckQueryData] to call a plugin's QueryData handler
-// the way SQL Expressions call it. In tests, [AssertFrames] and
-// [AssertResponse] fail the test on findings at or above a severity.
+// the way SQL Expressions call it. In tests, [AssertFrames], [AssertResponse],
+// and [AssertQueryData] fail the test on findings at or above a severity.
 //
 //	func TestQueryWorksInSQLExpressions(t *testing.T) {
-//		resp, err := ds.QueryData(ctx, req)
-//		require.NoError(t, err)
-//		sqlexprtest.AssertResponse(t, resp, []string{"A"})
+//		sqlexprtest.AssertQueryData(t, ctx, ds, req)
 //	}
 //
 // Each [Finding] has a [Severity] and an [Owner]:

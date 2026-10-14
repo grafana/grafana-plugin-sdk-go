@@ -78,8 +78,36 @@ func TestCheckQueryData(t *testing.T) {
 	assert.Equal(t, "true", got.GetHTTPHeader(HeaderFromExpression))
 	assert.Equal(t, "true", got.Headers["FromAlert"], "keeps the request's headers")
 	assert.Empty(t, req.GetHTTPHeader(HeaderFromExpression), "does not change the caller's request")
+	require.Len(t, reports, 2)
 	assert.Empty(t, reports["A"].Findings)
-	assert.Equal(t, []Code{CodeMissingRefID}, codes(reports["B"]))
+	assert.Equal(t, []Code{CodeMissingRefID, CodeUnexpectedRefID}, codes(reports["B"]))
+	assert.Equal(t, "A", reports["B"].Findings[1].Field)
+}
+
+func TestCheckQueryDataSendsOneQueryPerRequest(t *testing.T) {
+	var got [][]string
+	h := handlerFunc(func(_ context.Context, r *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		ids := []string{}
+		resp := backend.NewQueryDataResponse()
+		for _, q := range r.Queries {
+			ids = append(ids, q.RefID)
+			resp.Responses[q.RefID] = backend.DataResponse{Frames: data.Frames{tableFrame()}}
+		}
+		got = append(got, ids)
+		return resp, nil
+	})
+
+	reports, err := CheckQueryData(context.Background(), h, request("A", "B"))
+
+	require.NoError(t, err)
+	assert.Equal(t, [][]string{{"A"}, {"B"}}, got)
+	assert.Empty(t, reports["A"].Findings)
+	assert.Empty(t, reports["B"].Findings)
+}
+
+func TestCheckQueryDataNilRequest(t *testing.T) {
+	_, err := CheckQueryData(context.Background(), handlerFunc(nil), nil)
+	require.Error(t, err)
 }
 
 func TestCheckQueryDataPanic(t *testing.T) {
@@ -102,6 +130,7 @@ func TestCheckQueryDataError(t *testing.T) {
 
 	reports, err := CheckQueryData(context.Background(), h, request("A"))
 
-	require.EqualError(t, err, "unavailable")
-	assert.Nil(t, reports)
+	require.NoError(t, err)
+	assert.Equal(t, []Code{CodeQueryError}, codes(reports["A"]))
+	assert.Contains(t, reports["A"].Findings[0].Message, "unavailable")
 }

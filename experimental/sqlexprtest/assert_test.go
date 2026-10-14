@@ -1,6 +1,7 @@
 package sqlexprtest
 
 import (
+	"context"
 	"fmt"
 	"testing"
 	"time"
@@ -69,4 +70,18 @@ func TestAssertResponse(t *testing.T) {
 
 	assert.Len(t, reports, 3)
 	assert.Len(t, rec.errors, 2, "one failure for A, one for the missing C")
+}
+
+func TestAssertQueryData(t *testing.T) {
+	rec := &recorder{TB: t}
+	h := handlerFunc(func(_ context.Context, r *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		resp := backend.NewQueryDataResponse()
+		resp.Responses[r.Queries[0].RefID] = backend.DataResponse{Frames: droppedFieldFrames()}
+		return resp, nil
+	})
+
+	reports := AssertQueryData(rec, context.Background(), h, request("A"))
+
+	assert.Len(t, reports, 1)
+	assert.Len(t, rec.errors, 1)
 }

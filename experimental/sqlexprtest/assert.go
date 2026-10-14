@@ -1,6 +1,7 @@
 package sqlexprtest
 
 import (
+	"context"
 	"maps"
 	"slices"
 	"testing"
@@ -76,4 +77,20 @@ func assertReport(tb testing.TB, r *Report, o options) {
 	if failed {
 		tb.Errorf("SQL Expressions input check failed:\n%s", r)
 	}
+}
+
+// AssertQueryData calls the handler with [CheckQueryData], and marks the test
+// as failed for each query with a finding at or above the FailOn severity.
+func AssertQueryData(tb testing.TB, ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...Option) map[string]*Report {
+	tb.Helper()
+	reports, err := CheckQueryData(ctx, h, req)
+	if err != nil {
+		tb.Errorf("SQL Expressions input check: %v", err)
+		return nil
+	}
+	o := newOptions(opts)
+	for _, refID := range slices.Sorted(maps.Keys(reports)) {
+		assertReport(tb, reports[refID], o)
+	}
+	return reports
 }
