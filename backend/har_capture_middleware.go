@@ -75,7 +75,7 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		return httpclient.RoundTripperFunc(func(r *http.Request) (*http.Response, error) {
 			// Capture the request body before RoundTrip: the transport drains r.Body while
 			// sending, so reading it afterwards would yield nothing for POST/PUT/PATCH calls.
-			reqBody, reqTruncated := harcapture.DrainRequestBody(r)
+			reqBody, reqTruncated := buf.DrainRequestBody(r)
 			started := time.Now()
 			resp, err := next.RoundTrip(r)
 			elapsed := time.Since(started)
@@ -123,7 +123,7 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		return resp, err
 	}
 
-	custom := map[string]interface{}{"har": harStr}
+	custom := map[string]any{"har": harStr}
 	if err != nil {
 		// Preserve the top-level error inside the frame. Returning a non-nil error here would make
 		// the SDK's gRPC adapter (data_adapter.go) discard the whole response -- including this

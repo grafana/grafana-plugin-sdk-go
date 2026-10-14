@@ -52,7 +52,7 @@ type requireCounter struct {
 	Count int64
 }
 
-func (rec *requireCounter) Equal(t *testing.T, expected, actual interface{}, msgAngArgs ...interface{}) {
+func (rec *requireCounter) Equal(t *testing.T, expected, actual any, msgAngArgs ...any) {
 	t.Helper()
 	require.Equal(t, expected, actual, msgAngArgs...)
 	rec.Count++
@@ -144,7 +144,7 @@ func TestConvertFromProtobufAppInstanceSettings(t *testing.T) {
 }
 
 var protoDataSourceInstanceSettings = &pluginv2.DataSourceInstanceSettings{
-	Id:                      2,
+	Id:                      2, // nolint:staticcheck
 	Uid:                     "uid 2",
 	Name:                    "bestData",
 	Url:                     "http://grafana.com",

@@ -2,6 +2,7 @@ package backend
 
 import (
 	"context"
+	"crypto/tls"
 	"encoding/json"
 	"time"
 
@@ -9,6 +10,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
 	"github.com/grafana/grafana-plugin-sdk-go/config"
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/tenant"
 )
 
@@ -45,14 +47,24 @@ type AppInstanceSettings struct {
 }
 
 // HTTPClientOptions creates httpclient.Options based on settings.
-func (s *AppInstanceSettings) HTTPClientOptions(_ context.Context) (httpclient.Options, error) {
+func (s *AppInstanceSettings) HTTPClientOptions(ctx context.Context) (httpclient.Options, error) {
 	httpSettings, err := parseHTTPSettings(s.JSONData, s.DecryptedSecureJSONData)
 	if err != nil {
 		return httpclient.Options{}, err
 	}
 
 	opts := httpSettings.HTTPClientOptions()
+
+	cfg := GrafanaConfigFromContext(ctx)
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
+
+	if cfg.FeatureToggles().IsEnabled(featuretoggles.PluginsForceTLS13) {
+		if opts.TLS == nil {
+			opts.TLS = &httpclient.TLSOptions{}
+		}
+		opts.TLS.MinVersion = tls.VersionTLS13
+		opts.TLS.MaxVersion = tls.VersionTLS13
+	}
 
 	return opts, nil
 }
@@ -142,6 +154,15 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (htt
 	setCustomOptionsFromHTTPSettings(&opts, httpSettings)
 
 	cfg := GrafanaConfigFromContext(ctx)
+
+	if cfg.FeatureToggles().IsEnabled(featuretoggles.PluginsForceTLS13) {
+		if opts.TLS == nil {
+			opts.TLS = &httpclient.TLSOptions{}
+		}
+		opts.TLS.MinVersion = tls.VersionTLS13
+		opts.TLS.MaxVersion = tls.VersionTLS13
+	}
+
 	proxy, err := cfg.Proxy()
 	if err != nil {
 		return opts, err
@@ -214,7 +235,7 @@ type PluginContext struct {
 }
 
 func setCustomOptionsFromHTTPSettings(opts *httpclient.Options, httpSettings *HTTPSettings) {
-	opts.CustomOptions = map[string]interface{}{}
+	opts.CustomOptions = map[string]any{}
 
 	if httpSettings.JSONData != nil {
 		opts.CustomOptions[dataCustomOptionsKey] = httpSettings.JSONData
@@ -266,7 +287,7 @@ func UserFromContext(ctx context.Context) *User {
 }
 
 // JSONDataFromHTTPClientOptions extracts JSON data from CustomOptions of httpclient.Options.
-func JSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[string]interface{}) {
+func JSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[string]any) {
 	if opts.CustomOptions == nil {
 		return
 	}
@@ -276,7 +297,7 @@ func JSONDataFromHTTPClientOptions(opts httpclient.Options) (res map[string]inte
 		return
 	}
 
-	jsonData, ok := val.(map[string]interface{})
+	jsonData, ok := val.(map[string]any)
 	if !ok {
 		return
 	}
@@ -315,7 +336,7 @@ func (s *DataSourceInstanceSettings) ProxyOptionsFromContext(ctx context.Context
 func (s *DataSourceInstanceSettings) ProxyOptions(clientCfg *proxy.ClientCfg) (*proxy.Options, error) {
 	opts := &proxy.Options{}
 
-	var dat map[string]interface{}
+	var dat map[string]any
 	if s.JSONData != nil {
 		if err := json.Unmarshal(s.JSONData, &dat); err != nil {
 			return nil, err

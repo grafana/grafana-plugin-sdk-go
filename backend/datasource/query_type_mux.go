@@ -3,6 +3,7 @@ package datasource
 import (
 	"context"
 	"fmt"
+	"maps"
 	"sync"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -107,9 +108,7 @@ func (mux *QueryTypeMux) QueryData(ctx context.Context, req *backend.QueryDataRe
 			return nil, err
 		}
 
-		for k, v := range qtResponse.Responses {
-			responses[k] = v
-		}
+		maps.Copy(responses, qtResponse.Responses)
 	}
 
 	return &backend.QueryDataResponse{

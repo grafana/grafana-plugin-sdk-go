@@ -30,7 +30,7 @@ const querySummaryMimeType = "application/json"
 // A failed query is recorded with a zero-status response and the error in the entry's comment, the
 // same shape AddEntry uses for a request that never produced an HTTP response.
 func (b *Buffer) AddQueryInteraction(i querycapture.Interaction) {
-	b.appendEntry(buildQueryHAREntry(i))
+	b.appendEntry(buildQueryHAREntry(i, b.maxBody()))
 }
 
 // queryInfoVersion is the current schema version of the "_query" object, bumped when its shape
@@ -73,14 +73,16 @@ type sdkHARQueryInfo struct {
 // payloadBytes is the "_query" object's share of the buffer's retained-payload budget (see
 // Buffer.appendEntry): the bind arguments, which a bulk statement can make as large as the statement
 // itself, and the error. The rows live in the entry's Response.Content instead, so they are already
-// counted there. A nil receiver is an HTTP entry, which has no "_query".
+// counted there. A nil receiver is an HTTP entry, which has no "_query". Measured as jsonEscapedLen
+// for the same reason as sdkHAREntry.payloadBytes -- the budget bounds the serialized size, not the
+// raw byte count.
 func (q *sdkHARQueryInfo) payloadBytes() int64 {
 	if q == nil {
 		return 0
 	}
-	n := int64(len(q.Error))
+	n := jsonEscapedLen(q.Error)
 	for _, a := range q.Args {
-		n += int64(len(a))
+		n += jsonEscapedLen(a)
 	}
 	return n
 }
@@ -118,10 +120,10 @@ type querySummary struct {
 	RowCount   int `json:"rowCount"`
 }
 
-func buildQueryHAREntry(i querycapture.Interaction) sdkHAREntry {
+func buildQueryHAREntry(i querycapture.Interaction, maxBodyBytes int64) sdkHAREntry {
 	elapsedMs := durationMs(i.Duration)
 
-	statement, encoding := encodeBody([]byte(i.Statement))
+	statement, encoding := encodeBody([]byte(i.Statement), maxBodyBytes)
 	// Report -1 ("unavailable" in HAR) when only a prefix of the statement was kept, symmetric with
 	// how an over-cap HTTP body is reported.
 	statementSize := int64(len(i.Statement))

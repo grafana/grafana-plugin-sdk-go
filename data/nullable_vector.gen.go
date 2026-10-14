@@ -23,7 +23,7 @@ func newNullableUint8VectorWithValues(s []*uint8) *nullableUint8Vector {
 	return (*nullableUint8Vector)(&v)
 }
 
-func (v *nullableUint8Vector) Set(idx int, i interface{}) {
+func (v *nullableUint8Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -31,12 +31,12 @@ func (v *nullableUint8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint8)
 }
 
-func (v *nullableUint8Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableUint8Vector) SetConcrete(idx int, i any) {
 	val := i.(uint8)
 	(*v)[idx] = &val
 }
 
-func (v *nullableUint8Vector) Append(i interface{}) {
+func (v *nullableUint8Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -48,11 +48,11 @@ func (v *nullableUint8Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableUint8Vector) At(i int) interface{} {
+func (v *nullableUint8Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableUint8Vector) CopyAt(i int) interface{} {
+func (v *nullableUint8Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *uint8
 		return g
@@ -62,7 +62,7 @@ func (v *nullableUint8Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableUint8Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableUint8Vector) ConcreteAt(i int) (any, bool) {
 	var g uint8
 	val := (*v)[i]
 	if val == nil {
@@ -72,7 +72,7 @@ func (v *nullableUint8Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableUint8Vector) PointerAt(i int) interface{} {
+func (v *nullableUint8Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -103,7 +103,7 @@ func (v *nullableUint8Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableUint8Vector) Insert(i int, val interface{}) {
+func (v *nullableUint8Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -140,7 +140,7 @@ func newNullableUint16VectorWithValues(s []*uint16) *nullableUint16Vector {
 	return (*nullableUint16Vector)(&v)
 }
 
-func (v *nullableUint16Vector) Set(idx int, i interface{}) {
+func (v *nullableUint16Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -148,12 +148,12 @@ func (v *nullableUint16Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint16)
 }
 
-func (v *nullableUint16Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableUint16Vector) SetConcrete(idx int, i any) {
 	val := i.(uint16)
 	(*v)[idx] = &val
 }
 
-func (v *nullableUint16Vector) Append(i interface{}) {
+func (v *nullableUint16Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -165,11 +165,11 @@ func (v *nullableUint16Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableUint16Vector) At(i int) interface{} {
+func (v *nullableUint16Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableUint16Vector) CopyAt(i int) interface{} {
+func (v *nullableUint16Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *uint16
 		return g
@@ -179,7 +179,7 @@ func (v *nullableUint16Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableUint16Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableUint16Vector) ConcreteAt(i int) (any, bool) {
 	var g uint16
 	val := (*v)[i]
 	if val == nil {
@@ -189,7 +189,7 @@ func (v *nullableUint16Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableUint16Vector) PointerAt(i int) interface{} {
+func (v *nullableUint16Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -220,7 +220,7 @@ func (v *nullableUint16Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableUint16Vector) Insert(i int, val interface{}) {
+func (v *nullableUint16Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -257,7 +257,7 @@ func newNullableUint32VectorWithValues(s []*uint32) *nullableUint32Vector {
 	return (*nullableUint32Vector)(&v)
 }
 
-func (v *nullableUint32Vector) Set(idx int, i interface{}) {
+func (v *nullableUint32Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -265,12 +265,12 @@ func (v *nullableUint32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint32)
 }
 
-func (v *nullableUint32Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableUint32Vector) SetConcrete(idx int, i any) {
 	val := i.(uint32)
 	(*v)[idx] = &val
 }
 
-func (v *nullableUint32Vector) Append(i interface{}) {
+func (v *nullableUint32Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -282,11 +282,11 @@ func (v *nullableUint32Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableUint32Vector) At(i int) interface{} {
+func (v *nullableUint32Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableUint32Vector) CopyAt(i int) interface{} {
+func (v *nullableUint32Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *uint32
 		return g
@@ -296,7 +296,7 @@ func (v *nullableUint32Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableUint32Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableUint32Vector) ConcreteAt(i int) (any, bool) {
 	var g uint32
 	val := (*v)[i]
 	if val == nil {
@@ -306,7 +306,7 @@ func (v *nullableUint32Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableUint32Vector) PointerAt(i int) interface{} {
+func (v *nullableUint32Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -337,7 +337,7 @@ func (v *nullableUint32Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableUint32Vector) Insert(i int, val interface{}) {
+func (v *nullableUint32Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -374,7 +374,7 @@ func newNullableUint64VectorWithValues(s []*uint64) *nullableUint64Vector {
 	return (*nullableUint64Vector)(&v)
 }
 
-func (v *nullableUint64Vector) Set(idx int, i interface{}) {
+func (v *nullableUint64Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -382,12 +382,12 @@ func (v *nullableUint64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*uint64)
 }
 
-func (v *nullableUint64Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableUint64Vector) SetConcrete(idx int, i any) {
 	val := i.(uint64)
 	(*v)[idx] = &val
 }
 
-func (v *nullableUint64Vector) Append(i interface{}) {
+func (v *nullableUint64Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -399,11 +399,11 @@ func (v *nullableUint64Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableUint64Vector) At(i int) interface{} {
+func (v *nullableUint64Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableUint64Vector) CopyAt(i int) interface{} {
+func (v *nullableUint64Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *uint64
 		return g
@@ -413,7 +413,7 @@ func (v *nullableUint64Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableUint64Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableUint64Vector) ConcreteAt(i int) (any, bool) {
 	var g uint64
 	val := (*v)[i]
 	if val == nil {
@@ -423,7 +423,7 @@ func (v *nullableUint64Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableUint64Vector) PointerAt(i int) interface{} {
+func (v *nullableUint64Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -454,7 +454,7 @@ func (v *nullableUint64Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableUint64Vector) Insert(i int, val interface{}) {
+func (v *nullableUint64Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -491,7 +491,7 @@ func newNullableInt8VectorWithValues(s []*int8) *nullableInt8Vector {
 	return (*nullableInt8Vector)(&v)
 }
 
-func (v *nullableInt8Vector) Set(idx int, i interface{}) {
+func (v *nullableInt8Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -499,12 +499,12 @@ func (v *nullableInt8Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int8)
 }
 
-func (v *nullableInt8Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableInt8Vector) SetConcrete(idx int, i any) {
 	val := i.(int8)
 	(*v)[idx] = &val
 }
 
-func (v *nullableInt8Vector) Append(i interface{}) {
+func (v *nullableInt8Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -516,11 +516,11 @@ func (v *nullableInt8Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableInt8Vector) At(i int) interface{} {
+func (v *nullableInt8Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableInt8Vector) CopyAt(i int) interface{} {
+func (v *nullableInt8Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *int8
 		return g
@@ -530,7 +530,7 @@ func (v *nullableInt8Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableInt8Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableInt8Vector) ConcreteAt(i int) (any, bool) {
 	var g int8
 	val := (*v)[i]
 	if val == nil {
@@ -540,7 +540,7 @@ func (v *nullableInt8Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableInt8Vector) PointerAt(i int) interface{} {
+func (v *nullableInt8Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -571,7 +571,7 @@ func (v *nullableInt8Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableInt8Vector) Insert(i int, val interface{}) {
+func (v *nullableInt8Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -608,7 +608,7 @@ func newNullableInt16VectorWithValues(s []*int16) *nullableInt16Vector {
 	return (*nullableInt16Vector)(&v)
 }
 
-func (v *nullableInt16Vector) Set(idx int, i interface{}) {
+func (v *nullableInt16Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -616,12 +616,12 @@ func (v *nullableInt16Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int16)
 }
 
-func (v *nullableInt16Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableInt16Vector) SetConcrete(idx int, i any) {
 	val := i.(int16)
 	(*v)[idx] = &val
 }
 
-func (v *nullableInt16Vector) Append(i interface{}) {
+func (v *nullableInt16Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -633,11 +633,11 @@ func (v *nullableInt16Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableInt16Vector) At(i int) interface{} {
+func (v *nullableInt16Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableInt16Vector) CopyAt(i int) interface{} {
+func (v *nullableInt16Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *int16
 		return g
@@ -647,7 +647,7 @@ func (v *nullableInt16Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableInt16Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableInt16Vector) ConcreteAt(i int) (any, bool) {
 	var g int16
 	val := (*v)[i]
 	if val == nil {
@@ -657,7 +657,7 @@ func (v *nullableInt16Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableInt16Vector) PointerAt(i int) interface{} {
+func (v *nullableInt16Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -688,7 +688,7 @@ func (v *nullableInt16Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableInt16Vector) Insert(i int, val interface{}) {
+func (v *nullableInt16Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -725,7 +725,7 @@ func newNullableInt32VectorWithValues(s []*int32) *nullableInt32Vector {
 	return (*nullableInt32Vector)(&v)
 }
 
-func (v *nullableInt32Vector) Set(idx int, i interface{}) {
+func (v *nullableInt32Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -733,12 +733,12 @@ func (v *nullableInt32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int32)
 }
 
-func (v *nullableInt32Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableInt32Vector) SetConcrete(idx int, i any) {
 	val := i.(int32)
 	(*v)[idx] = &val
 }
 
-func (v *nullableInt32Vector) Append(i interface{}) {
+func (v *nullableInt32Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -750,11 +750,11 @@ func (v *nullableInt32Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableInt32Vector) At(i int) interface{} {
+func (v *nullableInt32Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableInt32Vector) CopyAt(i int) interface{} {
+func (v *nullableInt32Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *int32
 		return g
@@ -764,7 +764,7 @@ func (v *nullableInt32Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableInt32Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableInt32Vector) ConcreteAt(i int) (any, bool) {
 	var g int32
 	val := (*v)[i]
 	if val == nil {
@@ -774,7 +774,7 @@ func (v *nullableInt32Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableInt32Vector) PointerAt(i int) interface{} {
+func (v *nullableInt32Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -805,7 +805,7 @@ func (v *nullableInt32Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableInt32Vector) Insert(i int, val interface{}) {
+func (v *nullableInt32Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -842,7 +842,7 @@ func newNullableInt64VectorWithValues(s []*int64) *nullableInt64Vector {
 	return (*nullableInt64Vector)(&v)
 }
 
-func (v *nullableInt64Vector) Set(idx int, i interface{}) {
+func (v *nullableInt64Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -850,12 +850,12 @@ func (v *nullableInt64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*int64)
 }
 
-func (v *nullableInt64Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableInt64Vector) SetConcrete(idx int, i any) {
 	val := i.(int64)
 	(*v)[idx] = &val
 }
 
-func (v *nullableInt64Vector) Append(i interface{}) {
+func (v *nullableInt64Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -867,11 +867,11 @@ func (v *nullableInt64Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableInt64Vector) At(i int) interface{} {
+func (v *nullableInt64Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableInt64Vector) CopyAt(i int) interface{} {
+func (v *nullableInt64Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *int64
 		return g
@@ -881,7 +881,7 @@ func (v *nullableInt64Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableInt64Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableInt64Vector) ConcreteAt(i int) (any, bool) {
 	var g int64
 	val := (*v)[i]
 	if val == nil {
@@ -891,7 +891,7 @@ func (v *nullableInt64Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableInt64Vector) PointerAt(i int) interface{} {
+func (v *nullableInt64Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -922,7 +922,7 @@ func (v *nullableInt64Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableInt64Vector) Insert(i int, val interface{}) {
+func (v *nullableInt64Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -959,7 +959,7 @@ func newNullableFloat32VectorWithValues(s []*float32) *nullableFloat32Vector {
 	return (*nullableFloat32Vector)(&v)
 }
 
-func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
+func (v *nullableFloat32Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -967,12 +967,12 @@ func (v *nullableFloat32Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*float32)
 }
 
-func (v *nullableFloat32Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableFloat32Vector) SetConcrete(idx int, i any) {
 	val := i.(float32)
 	(*v)[idx] = &val
 }
 
-func (v *nullableFloat32Vector) Append(i interface{}) {
+func (v *nullableFloat32Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -984,11 +984,11 @@ func (v *nullableFloat32Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableFloat32Vector) At(i int) interface{} {
+func (v *nullableFloat32Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableFloat32Vector) CopyAt(i int) interface{} {
+func (v *nullableFloat32Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *float32
 		return g
@@ -998,7 +998,7 @@ func (v *nullableFloat32Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableFloat32Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableFloat32Vector) ConcreteAt(i int) (any, bool) {
 	var g float32
 	val := (*v)[i]
 	if val == nil {
@@ -1008,7 +1008,7 @@ func (v *nullableFloat32Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableFloat32Vector) PointerAt(i int) interface{} {
+func (v *nullableFloat32Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1039,7 +1039,7 @@ func (v *nullableFloat32Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableFloat32Vector) Insert(i int, val interface{}) {
+func (v *nullableFloat32Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1076,7 +1076,7 @@ func newNullableFloat64VectorWithValues(s []*float64) *nullableFloat64Vector {
 	return (*nullableFloat64Vector)(&v)
 }
 
-func (v *nullableFloat64Vector) Set(idx int, i interface{}) {
+func (v *nullableFloat64Vector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -1084,12 +1084,12 @@ func (v *nullableFloat64Vector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*float64)
 }
 
-func (v *nullableFloat64Vector) SetConcrete(idx int, i interface{}) {
+func (v *nullableFloat64Vector) SetConcrete(idx int, i any) {
 	val := i.(float64)
 	(*v)[idx] = &val
 }
 
-func (v *nullableFloat64Vector) Append(i interface{}) {
+func (v *nullableFloat64Vector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -1101,11 +1101,11 @@ func (v *nullableFloat64Vector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableFloat64Vector) At(i int) interface{} {
+func (v *nullableFloat64Vector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableFloat64Vector) CopyAt(i int) interface{} {
+func (v *nullableFloat64Vector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *float64
 		return g
@@ -1115,7 +1115,7 @@ func (v *nullableFloat64Vector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableFloat64Vector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableFloat64Vector) ConcreteAt(i int) (any, bool) {
 	var g float64
 	val := (*v)[i]
 	if val == nil {
@@ -1125,7 +1125,7 @@ func (v *nullableFloat64Vector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableFloat64Vector) PointerAt(i int) interface{} {
+func (v *nullableFloat64Vector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1156,7 +1156,7 @@ func (v *nullableFloat64Vector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableFloat64Vector) Insert(i int, val interface{}) {
+func (v *nullableFloat64Vector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1193,7 +1193,7 @@ func newNullableStringVectorWithValues(s []*string) *nullableStringVector {
 	return (*nullableStringVector)(&v)
 }
 
-func (v *nullableStringVector) Set(idx int, i interface{}) {
+func (v *nullableStringVector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -1201,12 +1201,12 @@ func (v *nullableStringVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*string)
 }
 
-func (v *nullableStringVector) SetConcrete(idx int, i interface{}) {
+func (v *nullableStringVector) SetConcrete(idx int, i any) {
 	val := i.(string)
 	(*v)[idx] = &val
 }
 
-func (v *nullableStringVector) Append(i interface{}) {
+func (v *nullableStringVector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -1218,11 +1218,11 @@ func (v *nullableStringVector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableStringVector) At(i int) interface{} {
+func (v *nullableStringVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableStringVector) CopyAt(i int) interface{} {
+func (v *nullableStringVector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *string
 		return g
@@ -1232,7 +1232,7 @@ func (v *nullableStringVector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableStringVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableStringVector) ConcreteAt(i int) (any, bool) {
 	var g string
 	val := (*v)[i]
 	if val == nil {
@@ -1242,7 +1242,7 @@ func (v *nullableStringVector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableStringVector) PointerAt(i int) interface{} {
+func (v *nullableStringVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1273,7 +1273,7 @@ func (v *nullableStringVector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableStringVector) Insert(i int, val interface{}) {
+func (v *nullableStringVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1310,7 +1310,7 @@ func newNullableBoolVectorWithValues(s []*bool) *nullableBoolVector {
 	return (*nullableBoolVector)(&v)
 }
 
-func (v *nullableBoolVector) Set(idx int, i interface{}) {
+func (v *nullableBoolVector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -1318,12 +1318,12 @@ func (v *nullableBoolVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*bool)
 }
 
-func (v *nullableBoolVector) SetConcrete(idx int, i interface{}) {
+func (v *nullableBoolVector) SetConcrete(idx int, i any) {
 	val := i.(bool)
 	(*v)[idx] = &val
 }
 
-func (v *nullableBoolVector) Append(i interface{}) {
+func (v *nullableBoolVector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -1335,11 +1335,11 @@ func (v *nullableBoolVector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableBoolVector) At(i int) interface{} {
+func (v *nullableBoolVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableBoolVector) CopyAt(i int) interface{} {
+func (v *nullableBoolVector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *bool
 		return g
@@ -1349,7 +1349,7 @@ func (v *nullableBoolVector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableBoolVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableBoolVector) ConcreteAt(i int) (any, bool) {
 	var g bool
 	val := (*v)[i]
 	if val == nil {
@@ -1359,7 +1359,7 @@ func (v *nullableBoolVector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableBoolVector) PointerAt(i int) interface{} {
+func (v *nullableBoolVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1390,7 +1390,7 @@ func (v *nullableBoolVector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableBoolVector) Insert(i int, val interface{}) {
+func (v *nullableBoolVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1427,7 +1427,7 @@ func newNullableTimeTimeVectorWithValues(s []*time.Time) *nullableTimeTimeVector
 	return (*nullableTimeTimeVector)(&v)
 }
 
-func (v *nullableTimeTimeVector) Set(idx int, i interface{}) {
+func (v *nullableTimeTimeVector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -1435,12 +1435,12 @@ func (v *nullableTimeTimeVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*time.Time)
 }
 
-func (v *nullableTimeTimeVector) SetConcrete(idx int, i interface{}) {
+func (v *nullableTimeTimeVector) SetConcrete(idx int, i any) {
 	val := i.(time.Time)
 	(*v)[idx] = &val
 }
 
-func (v *nullableTimeTimeVector) Append(i interface{}) {
+func (v *nullableTimeTimeVector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -1452,11 +1452,11 @@ func (v *nullableTimeTimeVector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableTimeTimeVector) At(i int) interface{} {
+func (v *nullableTimeTimeVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableTimeTimeVector) CopyAt(i int) interface{} {
+func (v *nullableTimeTimeVector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *time.Time
 		return g
@@ -1466,7 +1466,7 @@ func (v *nullableTimeTimeVector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableTimeTimeVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableTimeTimeVector) ConcreteAt(i int) (any, bool) {
 	var g time.Time
 	val := (*v)[i]
 	if val == nil {
@@ -1476,7 +1476,7 @@ func (v *nullableTimeTimeVector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableTimeTimeVector) PointerAt(i int) interface{} {
+func (v *nullableTimeTimeVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1507,7 +1507,7 @@ func (v *nullableTimeTimeVector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableTimeTimeVector) Insert(i int, val interface{}) {
+func (v *nullableTimeTimeVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)
@@ -1544,7 +1544,7 @@ func newNullableJsonRawMessageVectorWithValues(s []*json.RawMessage) *nullableJs
 	return (*nullableJsonRawMessageVector)(&v)
 }
 
-func (v *nullableJsonRawMessageVector) Set(idx int, i interface{}) {
+func (v *nullableJsonRawMessageVector) Set(idx int, i any) {
 	if i == nil {
 		(*v)[idx] = nil
 		return
@@ -1552,12 +1552,12 @@ func (v *nullableJsonRawMessageVector) Set(idx int, i interface{}) {
 	(*v)[idx] = i.(*json.RawMessage)
 }
 
-func (v *nullableJsonRawMessageVector) SetConcrete(idx int, i interface{}) {
+func (v *nullableJsonRawMessageVector) SetConcrete(idx int, i any) {
 	val := i.(json.RawMessage)
 	(*v)[idx] = &val
 }
 
-func (v *nullableJsonRawMessageVector) Append(i interface{}) {
+func (v *nullableJsonRawMessageVector) Append(i any) {
 	if i == nil {
 		*v = append(*v, nil)
 		return
@@ -1569,11 +1569,11 @@ func (v *nullableJsonRawMessageVector) NilAt(i int) bool {
 	return (*v)[i] == nil
 }
 
-func (v *nullableJsonRawMessageVector) At(i int) interface{} {
+func (v *nullableJsonRawMessageVector) At(i int) any {
 	return (*v)[i]
 }
 
-func (v *nullableJsonRawMessageVector) CopyAt(i int) interface{} {
+func (v *nullableJsonRawMessageVector) CopyAt(i int) any {
 	if (*v)[i] == nil {
 		var g *json.RawMessage
 		return g
@@ -1583,7 +1583,7 @@ func (v *nullableJsonRawMessageVector) CopyAt(i int) interface{} {
 	return &g
 }
 
-func (v *nullableJsonRawMessageVector) ConcreteAt(i int) (interface{}, bool) {
+func (v *nullableJsonRawMessageVector) ConcreteAt(i int) (any, bool) {
 	var g json.RawMessage
 	val := (*v)[i]
 	if val == nil {
@@ -1593,7 +1593,7 @@ func (v *nullableJsonRawMessageVector) ConcreteAt(i int) (interface{}, bool) {
 	return g, true
 }
 
-func (v *nullableJsonRawMessageVector) PointerAt(i int) interface{} {
+func (v *nullableJsonRawMessageVector) PointerAt(i int) any {
 	return &(*v)[i]
 }
 
@@ -1624,7 +1624,7 @@ func (v *nullableJsonRawMessageVector) Grow(n int) {
 	*v = grown
 }
 
-func (v *nullableJsonRawMessageVector) Insert(i int, val interface{}) {
+func (v *nullableJsonRawMessageVector) Insert(i int, val any) {
 	switch {
 	case i < v.Len():
 		v.Extend(1)

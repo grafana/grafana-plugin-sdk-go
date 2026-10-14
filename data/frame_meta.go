@@ -26,7 +26,7 @@ type FrameMeta struct {
 	PathSeparator string `json:"pathSeparator,omitempty"`
 
 	// Custom datasource specific values.
-	Custom interface{} `json:"custom,omitempty"`
+	Custom any `json:"custom,omitempty"`
 
 	// Stats is an array of query result statistics.
 	Stats []QueryStat `json:"stats,omitempty"`

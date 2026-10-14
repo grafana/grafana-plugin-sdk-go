@@ -29,7 +29,7 @@ func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceClean
 	cache := gocache.New(instanceTTL, instanceCleanupInterval)
 
 	// Set up the OnEvicted callback to dispose instances
-	cache.OnEvicted(func(key string, value interface{}) {
+	cache.OnEvicted(func(key string, value any) {
 		ci := value.(CachedInstance)
 		if disposer, valid := ci.instance.(InstanceDisposer); valid {
 			disposer.Dispose()
@@ -85,9 +85,13 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 			im.refreshTTL(cacheKey, ci)
 			return ci.instance, nil
 		}
-
-		im.cache.Delete(cacheKey)
 	}
+
+	// Remove whatever is still stored under this key before replacing it. Get reports an
+	// expired entry as a miss but leaves it in the cache until the next cleanup sweep, and
+	// SetDefault would overwrite it without firing OnEvicted, so the old instance would
+	// never be disposed and the active-instances gauge would never be decremented.
+	im.cache.Delete(cacheKey)
 
 	instance, err := im.provider.NewInstance(ctx, pluginContext)
 	if err != nil {

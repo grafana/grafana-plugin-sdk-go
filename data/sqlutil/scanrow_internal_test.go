@@ -137,12 +137,12 @@ func TestConverterMatchesExistingPredicatesWithMatcher(t *testing.T) {
 func TestMakeScanRowMatcherPrecedence(t *testing.T) {
 	matcherConverter := Converter{
 		Name:             "matcher",
-		InputScanType:    reflect.TypeOf(""),
+		InputScanType:    reflect.TypeFor[string](),
 		InputTypeMatcher: func(string) bool { return true },
 	}
 	regexConverter := Converter{
 		Name:           "regex",
-		InputScanType:  reflect.TypeOf(""),
+		InputScanType:  reflect.TypeFor[string](),
 		InputTypeRegex: regexp.MustCompile(`.*`),
 	}
 

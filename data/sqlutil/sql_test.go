@@ -36,7 +36,7 @@ func (*baseRows) Close() error {
 type singleResultSet struct {
 	baseRows
 
-	rows        [][]interface{}
+	rows        [][]any
 	currentRow  int
 	scanTypes   []reflect.Type
 	dbTypeNames []string
@@ -71,7 +71,7 @@ func (rows *singleResultSet) ColumnTypeDatabaseTypeName(index int) string {
 type multipleResultSets struct {
 	baseRows
 
-	resultSets       [][][]interface{}
+	resultSets       [][][]any
 	currentResultSet int
 	currentRow       int
 	once             sync.Once
@@ -152,7 +152,7 @@ func (db *fakeDB) Driver() driver.Driver {
 
 func makeSingleResultSet(
 	columnNames []string,
-	data ...[]interface{},
+	data ...[]any,
 ) *sql.Rows {
 	rows, _ := sql.OpenDB(&fakeDB{
 		rows: &singleResultSet{
@@ -169,7 +169,7 @@ func makeSingleResultSet(
 func makeSingleResultSetWithScanTypes(
 	columnNames []string,
 	scanTypes []reflect.Type,
-	data ...[]interface{},
+	data ...[]any,
 ) *sql.Rows {
 	rows, _ := sql.OpenDB(&fakeDB{
 		rows: &singleResultSet{
@@ -187,7 +187,7 @@ func makeSingleResultSetWithScanTypes(
 func makeSingleResultSetWithTypeNames(
 	columnNames []string,
 	dbTypeNames []string,
-	data ...[]interface{},
+	data ...[]any,
 ) *sql.Rows {
 	rows, _ := sql.OpenDB(&fakeDB{
 		rows: &singleResultSet{
@@ -204,7 +204,7 @@ func makeSingleResultSetWithTypeNames(
 
 func makeMultipleResultSets(
 	columnNames []string,
-	resultSets ...[][]interface{},
+	resultSets ...[][]any,
 ) *sql.Rows {
 	rows, _ := sql.OpenDB(&fakeDB{
 		rows: &multipleResultSets{
@@ -239,13 +239,13 @@ func TestFrameFromRows(t *testing.T) {
 					"b",
 					"c",
 				},
-				[]interface{}{
+				[]any{
 					1, 2, 3,
 				},
-				[]interface{}{
+				[]any{
 					4, 5, 6,
 				},
-				[]interface{}{
+				[]any{
 					7, 8, 9,
 				},
 			),
@@ -268,13 +268,13 @@ func TestFrameFromRows(t *testing.T) {
 					"b",
 					"c",
 				},
-				[]interface{}{
+				[]any{
 					1, 2, 3,
 				},
-				[]interface{}{
+				[]any{
 					4, 5, 6,
 				},
-				[]interface{}{
+				[]any{
 					7, 8, 9,
 				},
 			),
@@ -297,13 +297,13 @@ func TestFrameFromRows(t *testing.T) {
 					"b",
 					"c",
 				},
-				[]interface{}{
+				[]any{
 					1, 2, 3,
 				},
-				[]interface{}{
+				[]any{
 					4, 5, 6,
 				},
-				[]interface{}{
+				[]any{
 					7, 8, 9,
 				},
 			),
@@ -334,7 +334,7 @@ func TestFrameFromRows(t *testing.T) {
 					"b",
 					"c",
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						1, 2, 3,
 					},
@@ -365,7 +365,7 @@ func TestFrameFromRows(t *testing.T) {
 					"b",
 					"c",
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						1, 2, 3,
 					},
@@ -396,7 +396,7 @@ func TestFrameFromRows(t *testing.T) {
 					"b",
 					"c",
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						1, 2, 3,
 					},
@@ -404,7 +404,7 @@ func TestFrameFromRows(t *testing.T) {
 						4, 5, 6,
 					},
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						7, 8, 9,
 					},
@@ -429,7 +429,7 @@ func TestFrameFromRows(t *testing.T) {
 					"b",
 					"c",
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						1, 2, 3,
 					},
@@ -437,7 +437,7 @@ func TestFrameFromRows(t *testing.T) {
 						4, 5, 6,
 					},
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						7, 8, 9,
 					},
@@ -462,7 +462,7 @@ func TestFrameFromRows(t *testing.T) {
 					"b",
 					"c",
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						1, 2, 3,
 					},
@@ -470,7 +470,7 @@ func TestFrameFromRows(t *testing.T) {
 						4, 5, 6,
 					},
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						7, 8, 9,
 					},
@@ -500,7 +500,7 @@ func TestFrameFromRows(t *testing.T) {
 			rows: makeSingleResultSetWithScanTypes( //nolint:rowserrcheck
 				[]string{"a"},
 				[]reflect.Type{nil},
-				[]interface{}{1},
+				[]any{1},
 			),
 			rowLimit:   100,
 			converters: nil,
@@ -511,7 +511,7 @@ func TestFrameFromRows(t *testing.T) {
 			rows: makeSingleResultSetWithScanTypes( //nolint:rowserrcheck
 				[]string{"a"},
 				[]reflect.Type{nil},
-				[]interface{}{1},
+				[]any{1},
 			),
 			rowLimit:   -1,
 			converters: nil,
@@ -607,22 +607,22 @@ func TestFrameFromRowsWithInputTypeMatcher(t *testing.T) {
 	converters := []sqlutil.Converter{
 		{
 			Name:             "Float64",
-			InputScanType:    reflect.TypeOf(float64(0)),
+			InputScanType:    reflect.TypeFor[float64](),
 			InputTypeMatcher: matcherFor("Float64"),
 			FrameConverter: sqlutil.FrameConverter{
 				FieldType: data.FieldTypeFloat64,
-				ConverterFunc: func(in interface{}) (interface{}, error) {
+				ConverterFunc: func(in any) (any, error) {
 					return *(in.(*float64)), nil
 				},
 			},
 		},
 		{
 			Name:             "String",
-			InputScanType:    reflect.TypeOf(""),
+			InputScanType:    reflect.TypeFor[string](),
 			InputTypeMatcher: matcherFor("String"),
 			FrameConverter: sqlutil.FrameConverter{
 				FieldType: data.FieldTypeString,
-				ConverterFunc: func(in interface{}) (interface{}, error) {
+				ConverterFunc: func(in any) (any, error) {
 					return *(in.(*string)), nil
 				},
 			},
@@ -637,8 +637,8 @@ func TestFrameFromRowsWithInputTypeMatcher(t *testing.T) {
 			"LowCardinality(String)",
 			"Float64",
 		},
-		[]interface{}{1.5, 2.5, "a", 3.5},
-		[]interface{}{4.5, 5.5, "b", 6.5},
+		[]any{1.5, 2.5, "a", 3.5},
+		[]any{4.5, 5.5, "b", 6.5},
 	)
 
 	frame, err := sqlutil.FrameFromRows(rows, 100, converters...)
@@ -658,11 +658,11 @@ func TestFrameFromRowsConvertWithColumnReceivesColumnType(t *testing.T) {
 	var seenTypeNames []string
 	converter := sqlutil.Converter{
 		Name:          "String",
-		InputScanType: reflect.TypeOf(""),
+		InputScanType: reflect.TypeFor[string](),
 		InputTypeName: "TEST_TYPE",
 		FrameConverter: sqlutil.FrameConverter{
 			FieldType: data.FieldTypeString,
-			ConvertWithColumn: func(in interface{}, col sql.ColumnType) (interface{}, error) {
+			ConvertWithColumn: func(in any, col sql.ColumnType) (any, error) {
 				seenTypeNames = append(seenTypeNames, col.DatabaseTypeName())
 				return *(in.(*string)), nil
 			},
@@ -672,8 +672,8 @@ func TestFrameFromRowsConvertWithColumnReceivesColumnType(t *testing.T) {
 	rows := makeSingleResultSetWithTypeNames( //nolint:rowserrcheck
 		[]string{"a"},
 		[]string{"TEST_TYPE"},
-		[]interface{}{"x"},
-		[]interface{}{"y"},
+		[]any{"x"},
+		[]any{"y"},
 	)
 
 	frame, err := sqlutil.FrameFromRows(rows, 100, converter)
@@ -705,13 +705,13 @@ func TestFrameFromRows_MultipleTimes(t *testing.T) {
 					"b",
 					"c",
 				},
-				[]interface{}{
+				[]any{
 					1, 2, 3,
 				},
-				[]interface{}{
+				[]any{
 					4, 5, 6,
 				},
-				[]interface{}{
+				[]any{
 					7, 8, 9,
 				},
 			),
@@ -773,7 +773,7 @@ func TestFrameFromRows_MultipleTimes(t *testing.T) {
 					"b",
 					"c",
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						1, 2, 3,
 					},
@@ -843,7 +843,7 @@ func TestFrameFromRows_MultipleTimes(t *testing.T) {
 					"b",
 					"c",
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						1, 2, 3,
 					},
@@ -851,7 +851,7 @@ func TestFrameFromRows_MultipleTimes(t *testing.T) {
 						4, 5, 6,
 					},
 				},
-				[][]interface{}{
+				[][]any{
 					{
 						7, 8, 9,
 					},

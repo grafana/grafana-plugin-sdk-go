@@ -242,7 +242,7 @@ func (p *cfgProxyWrapper) getTLSDialerFromFiles() (*tls.Dialer, error) {
 
 // SecureSocksProxyEnabledOnDS checks the datasource json data for `enableSecureSocksProxy`
 // to determine if the secure socks proxy should be enabled on it
-func SecureSocksProxyEnabledOnDS(jsonData map[string]interface{}) bool {
+func SecureSocksProxyEnabledOnDS(jsonData map[string]any) bool {
 	res, enabled := jsonData["enableSecureSocksProxy"]
 	if !enabled {
 		return false

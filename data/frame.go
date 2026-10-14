@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"math"
 	"reflect"
+	"slices"
 	"strings"
 
 	"github.com/google/go-cmp/cmp"
@@ -104,7 +105,7 @@ func (frames *Frames) UnmarshalJSON(b []byte) error {
 // The Frame's Fields must be initialized or AppendRow will panic.
 // The number of arguments must match the number of Fields in the Frame and each type must correspond
 // to the Field type or AppendRow will panic.
-func (f *Frame) AppendRow(vals ...interface{}) {
+func (f *Frame) AppendRow(vals ...any) {
 	for i, v := range vals {
 		f.Fields[i].vector.Append(v)
 	}
@@ -116,7 +117,7 @@ func (f *Frame) AppendRow(vals ...interface{}) {
 // and inserts the corresponding val at index rowIdx of the Field.
 // If rowIdx is equal to the Frame RowLen, then val will be appended.
 // If rowIdx exceeds the Field length, this method will panic.
-func (f *Frame) InsertRow(rowIdx int, vals ...interface{}) {
+func (f *Frame) InsertRow(rowIdx int, vals ...any) {
 	for i, v := range vals {
 		f.Fields[i].vector.Insert(rowIdx, v)
 	}
@@ -133,15 +134,15 @@ func (f *Frame) DeleteRow(rowIdx int) {
 
 // SetRow sets vals at the index rowIdx of the Frame.
 // SetRow calls each field's Set which sets the Field's value at index idx to val.
-func (f *Frame) SetRow(rowIdx int, vals ...interface{}) {
+func (f *Frame) SetRow(rowIdx int, vals ...any) {
 	for i, v := range vals {
 		f.Fields[i].vector.Set(rowIdx, v)
 	}
 }
 
 // RowCopy returns an interface slice that contains the values of each Field for the given rowIdx.
-func (f *Frame) RowCopy(rowIdx int) []interface{} {
-	vals := make([]interface{}, len(f.Fields))
+func (f *Frame) RowCopy(rowIdx int) []any {
+	vals := make([]any, len(f.Fields))
 	for i := range f.Fields {
 		vals[i] = f.CopyAt(i, rowIdx)
 	}
@@ -150,13 +151,13 @@ func (f *Frame) RowCopy(rowIdx int) []interface{} {
 
 // FilterRowsByField returns a copy of frame f (as per EmptyCopy()) that includes rows
 // where the filter returns true and no error. If filter returns an error, then an error is returned.
-func (f *Frame) FilterRowsByField(fieldIdx int, filter func(i interface{}) (bool, error)) (*Frame, error) {
+func (f *Frame) FilterRowsByField(fieldIdx int, filter func(i any) (bool, error)) (*Frame, error) {
 	filteredFrame := f.EmptyCopy()
 	rowLen, err := f.RowLen()
 	if err != nil {
 		return nil, err
 	}
-	for inRowIdx := 0; inRowIdx < rowLen; inRowIdx++ {
+	for inRowIdx := range rowLen {
 		match, err := filter(f.At(fieldIdx, inRowIdx))
 		if err != nil {
 			return nil, err
@@ -215,11 +216,8 @@ func (f *Frame) TypeIndices(fTypes ...FieldType) []int {
 	}
 	for fieldIdx, f := range f.Fields {
 		vecType := f.Type()
-		for _, fType := range fTypes {
-			if fType == vecType {
-				indices = append(indices, fieldIdx)
-				break
-			}
+		if slices.Contains(fTypes, vecType) {
+			indices = append(indices, fieldIdx)
 		}
 	}
 	return indices
@@ -261,20 +259,20 @@ func (f *Frame) NilAt(fieldIdx int, rowIdx int) bool {
 
 // At returns the value of the specified fieldIdx and rowIdx.
 // It will panic if either fieldIdx or rowIdx are out of range.
-func (f *Frame) At(fieldIdx int, rowIdx int) interface{} {
+func (f *Frame) At(fieldIdx int, rowIdx int) any {
 	return f.Fields[fieldIdx].vector.At(rowIdx)
 }
 
 // CopyAt returns a copy of the value of the specified fieldIdx and rowIdx.
 // It will panic if either fieldIdx or rowIdx are out of range.
-func (f *Frame) CopyAt(fieldIdx int, rowIdx int) interface{} {
+func (f *Frame) CopyAt(fieldIdx int, rowIdx int) any {
 	return f.Fields[fieldIdx].vector.CopyAt(rowIdx)
 }
 
 // Set sets the val at the specified fieldIdx and rowIdx.
 // It will panic if either fieldIdx or rowIdx are out of range or
 // if the underlying type of val does not match the element type of the Field.
-func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
+func (f *Frame) Set(fieldIdx int, rowIdx int, val any) {
 	f.Fields[fieldIdx].vector.Set(rowIdx, val)
 }
 
@@ -283,7 +281,7 @@ func (f *Frame) Set(fieldIdx int, rowIdx int, val interface{}) {
 // If the underlying FieldType is nullable it will set val as a pointer to val. If the FieldType
 // is not nullable this method behaves the same as the Set method.
 // It will panic if the underlying type of val does not match the element concrete type of the Field.
-func (f *Frame) SetConcrete(fieldIdx int, rowIdx int, val interface{}) {
+func (f *Frame) SetConcrete(fieldIdx int, rowIdx int, val any) {
 	f.Fields[fieldIdx].vector.SetConcrete(rowIdx, val)
 }
 
@@ -312,7 +310,7 @@ func (f *Frame) SetRowCapacity(n int) {
 // A non-pointer type is returned regardless if the underlying type is a pointer
 // type or not. If the value is a nil pointer, the the zero value
 // is returned and ok will be false.
-func (f *Frame) ConcreteAt(fieldIdx int, rowIdx int) (val interface{}, ok bool) {
+func (f *Frame) ConcreteAt(fieldIdx int, rowIdx int) (val any, ok bool) {
 	return f.Fields[fieldIdx].vector.ConcreteAt(rowIdx)
 }
 
@@ -442,8 +440,8 @@ func FrameTestCompareOptions() []cmp.Option {
 	})
 
 	rawjs := cmp.Comparer(func(x, y json.RawMessage) bool {
-		var a interface{}
-		var b interface{}
+		var a any
+		var b any
 		_ = json.Unmarshal([]byte(x), &a)
 		_ = json.Unmarshal([]byte(y), &b)
 
