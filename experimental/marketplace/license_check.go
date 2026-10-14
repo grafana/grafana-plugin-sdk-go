@@ -198,18 +198,10 @@ func (h *invalidLicenseHandler) QueryChunkedData(ctx context.Context, req *backe
 // It responds with 403 Forbidden rather than 401 Unauthorized, so that the Grafana
 // frontend does not treat the response as an expired user session.
 func (h *invalidLicenseHandler) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	body, err := json.Marshal(struct {
-		Message string `json:"message"`
-	}{
-		Message: h.err.Error(),
-	})
-	if err != nil {
-		return fmt.Errorf("marshal marketplace license resource response: %w", err)
-	}
 	return sender.Send(&backend.CallResourceResponse{
 		Status:  http.StatusForbidden,
-		Headers: map[string][]string{"Content-Type": {"application/json"}},
-		Body:    body,
+		Headers: map[string][]string{"Content-Type": {"text/plain; charset=utf-8"}},
+		Body:    []byte(h.err.Error()),
 	})
 }
 

@@ -154,13 +154,8 @@ func TestInvalidLicenseHandlerCallResource(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 	require.Equal(t, http.StatusForbidden, resp.Status)
-	require.Equal(t, []string{"application/json"}, resp.Headers["Content-Type"])
-
-	var body struct {
-		Message string `json:"message"`
-	}
-	require.NoError(t, json.Unmarshal(resp.Body, &body))
-	require.Equal(t, handler.err.Error(), body.Message)
+	require.Equal(t, []string{"text/plain; charset=utf-8"}, resp.Headers["Content-Type"])
+	require.Equal(t, handler.err.Error(), string(resp.Body))
 }
 
 func TestInvalidLicenseHandlerQueryData(t *testing.T) {
