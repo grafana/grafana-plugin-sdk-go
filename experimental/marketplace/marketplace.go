@@ -36,6 +36,6 @@ func (o Opts) licensePluginID(pluginID string) string {
 func Licensing(opts Opts) backend.ServeOptsDecorator {
 	return func(pluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
 		// TODO: PPT support (-qtlv): validate the license on every request. This will be implemented in a follow-up PR.
-		return applyMarketplaceLicense(pluginID, opts.licensePluginID(pluginID), serveOpts, readPluginLicense), nil
+		return checkMarketplacePluginLicense(pluginID, opts.licensePluginID(pluginID), serveOpts), nil
 	}
 }

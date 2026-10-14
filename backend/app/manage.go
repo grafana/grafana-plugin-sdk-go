@@ -50,6 +50,9 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 	}
 
 	backend.SetupPluginEnvironment(pluginID)
+	if err := backend.SetupTracer(pluginID, opts.TracingOpts); err != nil {
+		return fmt.Errorf("setup tracer: %w", err)
+	}
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
 	serveOpts := backend.ServeOpts{
 		CheckHealthHandler:      handler,
@@ -67,9 +70,6 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		if serveOpts, err = opts.Licensing(pluginID, serveOpts); err != nil {
 			return fmt.Errorf("licensing: %w", err)
 		}
-	}
-	if err := backend.SetupTracer(pluginID, opts.TracingOpts); err != nil {
-		return fmt.Errorf("setup tracer: %w", err)
 	}
 	return backend.Manage(pluginID, serveOpts)
 }

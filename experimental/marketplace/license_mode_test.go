@@ -59,7 +59,7 @@ func TestMarketplaceLicenseProductionModeEnforcesLicensing(t *testing.T) {
 			licenseErr := errors.New("missing license")
 			loadCalled := false
 
-			got := applyMarketplaceLicense(
+			got := checkMarketplacePluginLicenseWithDeps(
 				"example-datasource", licensePluginID, licensedServeOpts(),
 				func(pluginID string) *licensing.LicenseToken {
 					loadCalled = true
@@ -98,7 +98,7 @@ func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			serveOpts := licensedServeOpts()
-			got := applyMarketplaceLicense("example-app", "example-app", serveOpts, func(string) *licensing.LicenseToken {
+			got := checkMarketplacePluginLicenseWithDeps("example-app", "example-app", serveOpts, func(string) *licensing.LicenseToken {
 				return tt.token
 			})
 			if tt.licensed {

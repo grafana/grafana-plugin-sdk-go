@@ -16,7 +16,7 @@ func TestMarketplaceLicenseDevelopmentModeSkipsLicensing(t *testing.T) {
 	require.True(t, developmentLicenseBypass)
 
 	serveOpts := backend.ServeOpts{QueryDataHandler: &backend.BaseHandler{}}
-	got := applyMarketplaceLicense(
+	got := checkMarketplacePluginLicenseWithDeps(
 		"example-datasource", "parent-app", serveOpts,
 		func(string) *licensing.LicenseToken {
 			require.FailNow(t, "development mode loaded a license")

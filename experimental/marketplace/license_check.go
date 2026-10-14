@@ -35,24 +35,22 @@ const (
 	marketplaceLicensePathEnv = "GF_MARKETPLACE_LICENSE_PATH"
 )
 
-// tokenLoader is a function that returns a license token for a given plugin ID.
-type tokenLoader func(pluginID string) *licensing.LicenseToken
-
 var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
-// applyMarketplaceLicense validates the license for licensePluginID, which is the
-// plugin's own ID unless it is nested, in which case it is the parent's ID.
+// checkMarketplacePluginLicense validates the license for licensePluginID, which is
+// the plugin's own ID unless it is nested, in which case it is the parent's ID.
 // pluginID is the ID of the running plugin.
 //
 // It returns serveOpts unchanged if the license is valid, or expired but within its
 // grace period. Otherwise it returns serve options that only return the license error.
-//
-// loadToken loads the license token for a plugin ID.
-// It is readPluginLicense in production, but can be overridden for testing.
-func applyMarketplaceLicense(
+func checkMarketplacePluginLicense(pluginID, licensePluginID string, serveOpts backend.ServeOpts) backend.ServeOpts {
+	return checkMarketplacePluginLicenseWithDeps(pluginID, licensePluginID, serveOpts, readPluginLicense)
+}
+
+func checkMarketplacePluginLicenseWithDeps(
 	pluginID, licensePluginID string,
 	serveOpts backend.ServeOpts,
-	loadToken tokenLoader,
+	loadToken func(string) *licensing.LicenseToken,
 ) backend.ServeOpts {
 	if developmentLicenseBypass {
 		backend.Logger.Warn(
@@ -63,22 +61,21 @@ func applyMarketplaceLicense(
 	}
 
 	token := loadToken(licensePluginID)
-	if token.Error == nil {
-		// License is valid
-		return serveOpts
-	}
-	backend.Logger.Error("Marketplace License Error", "error", token.Error)
-	if token.Status == licensing.Expired {
-		// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
-		// token in case an on-prem instance loses internet connection
-		grace, ok := marketplaceLicenseGracePeriod(token, time.Now())
-		if ok {
-			backend.Logger.Error("The plugin will work until", "date", grace)
-			backend.Logger.Error("Update your instance soon to avoid any errors")
-			return serveOpts
+	if token.Error != nil {
+		backend.Logger.Error("Marketplace License Error", "error", token.Error)
+		if token.Status == licensing.Expired {
+			// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
+			// token in case an on-prem instance loses internet connection
+			grace, ok := marketplaceLicenseGracePeriod(token, time.Now())
+			if ok {
+				backend.Logger.Error("The plugin will work until", "date", grace)
+				backend.Logger.Error("Update your instance soon to avoid any errors")
+				return serveOpts
+			}
 		}
+		return invalidLicenseServeOpts(pluginID, licensePluginID, token.Error, serveOpts)
 	}
-	return invalidLicenseServeOpts(pluginID, licensePluginID, token.Error, serveOpts)
+	return serveOpts
 }
 
 func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time) (time.Time, bool) {
@@ -86,8 +83,7 @@ func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time)
 	return grace, now.Before(grace)
 }
 
-// readPluginLicense looks for a license in environment variables and validates it.
-// It satisfies the tokenLoader type, so it can be passed to applyMarketplaceLicense.
+// readPluginLicense looks for a license in environment variables and validates it
 func readPluginLicense(pluginID string) *licensing.LicenseToken {
 	jwks := os.Getenv(marketplaceLicenseValidationKeyEnv)
 	appUrl := os.Getenv(marketplaceAppURLEnv)
