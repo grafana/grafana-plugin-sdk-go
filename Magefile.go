@@ -32,12 +32,23 @@ func (Protobuf) Validate() error {
 
 // Test runs the test suite.
 func Test() error {
-	return sh.RunV("go", "test", "./...")
+	if err := sh.RunV("go", "test", "./..."); err != nil {
+		return err
+	}
+	return sh.RunV("go", "test", "-tags=marketplace_dev", "./experimental/marketplace")
 }
 
 // TestRace runs the test suite with the data race detector enabled.
 func TestRace() error {
-	return sh.RunV("go", "test", "-race", "./...")
+	for _, args := range [][]string{
+		{"test", "-race", "./..."},
+		{"test", "-race", "-tags=marketplace_dev", "./experimental/marketplace"},
+	} {
+		if err := sh.RunV("go", args...); err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func Lint() error {
@@ -63,7 +74,7 @@ func Drone() error {
 	return nil
 }
 
-var Aliases = map[string]interface{}{
+var Aliases = map[string]any{
 	"protobuf": Protobuf.Generate,
 }
 

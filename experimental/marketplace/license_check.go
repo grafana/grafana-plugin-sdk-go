@@ -40,7 +40,23 @@ var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 // the plugin's own ID unless it is nested, in which case it is the parent's ID.
 // pluginID is the ID of the running plugin.
 func checkMarketplacePluginLicense(pluginID, licensePluginID string) error {
-	token := readPluginLicense(licensePluginID)
+	return checkMarketplacePluginLicenseWithDeps(pluginID, licensePluginID, readPluginLicense, runInvalidLicenseServer)
+}
+
+func checkMarketplacePluginLicenseWithDeps(
+	pluginID, licensePluginID string,
+	loadToken func(string) *licensing.LicenseToken,
+	startInvalidLicenseServer func(string, string, error) error,
+) error {
+	if developmentLicenseBypass {
+		backend.Logger.Warn(
+			"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
+			"pluginId", pluginID,
+		)
+		return nil
+	}
+
+	token := loadToken(licensePluginID)
 	if token.Error != nil {
 		backend.Logger.Error("Marketplace License Error", "error", token.Error)
 		if token.Status == licensing.Expired {
@@ -53,7 +69,7 @@ func checkMarketplacePluginLicense(pluginID, licensePluginID string) error {
 				return nil
 			}
 		}
-		if err := runInvalidLicenseServer(pluginID, licensePluginID, token.Error); err != nil {
+		if err := startInvalidLicenseServer(pluginID, licensePluginID, token.Error); err != nil {
 			backend.Logger.Error(err.Error())
 			os.Exit(1)
 		}
