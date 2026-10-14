@@ -319,3 +319,89 @@ func TestCheckNumericRows(t *testing.T) {
 		assert.Equal(t, OwnerGrafana, r.Findings[0].Owner)
 	})
 }
+
+func TestCheckNumericMultiFirstField(t *testing.T) {
+	a := typed(data.FrameTypeNumericMulti, data.NewFrame("", data.NewField("a", nil, []float64{1, 2})))
+	b := typed(data.FrameTypeNumericMulti, data.NewFrame("", data.NewField("b", nil, []float64{1})))
+
+	r := Check(data.Frames{a, b})
+
+	assert.Equal(t, ModeNone, r.Mode)
+	assert.Equal(t, []Code{CodeInvalidShape}, codes(r))
+	assert.Equal(t, SeverityError, r.Worst())
+}
+
+func TestCheckEmptySeriesLabels(t *testing.T) {
+	series := func(host string, values []float64) *data.Frame {
+		times := make([]time.Time, len(values))
+		return typed(data.FrameTypeTimeSeriesMulti, data.NewFrame("",
+			data.NewField("time", nil, times),
+			data.NewField("cpu", data.Labels{"host": host}, values),
+		))
+	}
+
+	t.Run("every series empty", func(t *testing.T) {
+		r := Check(data.Frames{series("a", []float64{})})
+		assert.Equal(t, []string{"time", "__value__", "__metric_name__"}, columnNames(r))
+		assert.Equal(t, []Code{CodeMissingLabelColumn}, codes(r))
+		assert.Equal(t, "host", r.Findings[0].Field)
+	})
+
+	t.Run("another series has rows", func(t *testing.T) {
+		r := Check(data.Frames{series("a", []float64{}), series("b", []float64{1})})
+		assert.Equal(t, []string{"time", "__value__", "__metric_name__", "host"}, columnNames(r))
+		assert.Empty(t, r.Findings)
+	})
+
+	t.Run("wide keeps label columns", func(t *testing.T) {
+		frame := typed(data.FrameTypeTimeSeriesWide, data.NewFrame("",
+			data.NewField("time", nil, []time.Time{}),
+			data.NewField("cpu", data.Labels{"host": "a"}, []float64{}),
+		))
+		r := Check(data.Frames{frame})
+		assert.Equal(t, []string{"time", "__value__", "__metric_name__", "host"}, columnNames(r))
+		assert.Empty(t, r.Findings)
+	})
+}
+
+func TestCheckLabelKeysThatDifferByCase(t *testing.T) {
+	a := typed(data.FrameTypeTimeSeriesMulti, data.NewFrame("", data.NewField("time", nil, []time.Time{t0}), data.NewField("cpu", data.Labels{"Host": "a"}, []float64{1})))
+	b := typed(data.FrameTypeTimeSeriesMulti, data.NewFrame("", data.NewField("time", nil, []time.Time{t0}), data.NewField("cpu", data.Labels{"host": "b"}, []float64{2})))
+
+	r := Check(data.Frames{a, b})
+
+	assert.Equal(t, []Code{CodeDuplicateName}, codes(r))
+	assert.Equal(t, -1, r.Findings[0].Frame)
+}
+
+func TestCheckLaterFramesWithoutType(t *testing.T) {
+	first := typed(data.FrameTypeTimeSeriesMulti, data.NewFrame("", data.NewField("time", nil, []time.Time{t0}), data.NewField("cpu", nil, []float64{1})))
+	second := data.NewFrame("", data.NewField("time", nil, []time.Time{t0}), data.NewField("mem", nil, []float64{2}))
+
+	assert.Empty(t, Check(data.Frames{first, second}).Findings)
+}
+
+func TestCheckLargeFloatIsAdvice(t *testing.T) {
+	frame := typed(data.FrameTypeTable, data.NewFrame("", data.NewField("bytes", nil, []float64{1.5e300})))
+
+	r := Check(data.Frames{frame})
+
+	assert.Equal(t, []Code{CodeLargeIntegerInFloat}, codes(r))
+	assert.Equal(t, SeverityInfo, r.Worst())
+}
+
+func TestCheckTableWithLabels(t *testing.T) {
+	frame := typed(data.FrameTypeTable, data.NewFrame("", data.NewField("value", data.Labels{"host": "a"}, []float64{1})))
+
+	r := Check(data.Frames{frame})
+
+	assert.Equal(t, []Code{CodeUnsupportedType}, codes(r))
+	assert.Contains(t, r.Findings[0].Message, "passes through as a table, but this field has labels")
+}
+
+func TestSeverityNone(t *testing.T) {
+	r := Check(data.Frames{typed(data.FrameTypeTable, data.NewFrame("", data.NewField("v", nil, []float64{1})))})
+
+	assert.Equal(t, SeverityNone, r.Worst())
+	assert.Equal(t, "none", r.Worst().String())
+}

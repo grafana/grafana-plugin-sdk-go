@@ -11,8 +11,10 @@ import (
 type Severity int
 
 const (
+	// SeverityNone is what Report.Worst returns for a report with no findings.
+	SeverityNone Severity = iota - 1
 	// SeverityInfo is advice. Nothing is lost.
-	SeverityInfo Severity = iota
+	SeverityInfo
 	// SeverityWarning means SQL runs, but data is lost or changed without an error.
 	SeverityWarning
 	// SeverityError means the SQL Expression fails on this input.
@@ -21,6 +23,8 @@ const (
 
 func (s Severity) String() string {
 	switch s {
+	case SeverityNone:
+		return "none"
 	case SeverityInfo:
 		return "info"
 	case SeverityWarning:
@@ -76,8 +80,8 @@ const (
 	// CodeIntegerAsFloat: Grafana stores this integer value field as float64,
 	// and some values are too large to keep exactly.
 	CodeIntegerAsFloat Code = "integer-as-float"
-	// CodeLargeIntegerInFloat: a float field holds whole numbers at or above
-	// 2^53, which suggests integers already lost precision in the plugin.
+	// CodeLargeIntegerInFloat: a float field holds values at or above 2^53.
+	// If the source column is an integer, it may have lost precision in the plugin.
 	CodeLargeIntegerInFloat Code = "large-integer-in-float"
 	// CodeEnumField: SQL reads an enum field as a JSON number that holds the
 	// enum index, not the text.
@@ -86,6 +90,9 @@ const (
 	CodeDuplicateName Code = "duplicate-column-name"
 	// CodeGeneratedNameClash: a label key matches a column Grafana generates.
 	CodeGeneratedNameClash Code = "generated-name-clash"
+	// CodeMissingLabelColumn: only timeseries-multi series with no rows have
+	// this label, so SQL gets no column for it.
+	CodeMissingLabelColumn Code = "missing-label-column"
 )
 
 // Finding is one problem or piece of advice about a query's frames.
@@ -158,9 +165,10 @@ func (r *Report) Has(code Code) bool {
 	return false
 }
 
-// Worst returns the highest severity in the report, or -1 when it has no findings.
+// Worst returns the highest severity in the report, or SeverityNone when it
+// has no findings.
 func (r *Report) Worst() Severity {
-	worst := Severity(-1)
+	worst := SeverityNone
 	for _, f := range r.Findings {
 		worst = max(worst, f.Severity)
 	}
