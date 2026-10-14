@@ -95,6 +95,9 @@ func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backe
 func instanceKey(ctx context.Context, pluginContext backend.PluginContext) string {
 	dsID := pluginContext.DataSourceInstanceSettings.ID
 	tenantID := tenant.IDFromContext(ctx)
+	if tenantID == "" {
+		backend.Logger.FromContext(ctx).Warn("Missing tenantID in context", "dsID", dsID)
+	}
 	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
 
 	return fmt.Sprintf("%d#%s#%s", dsID, tenantID, proxyHash)
