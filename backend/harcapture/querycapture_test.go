@@ -60,7 +60,8 @@ type harDoc struct {
 	} `json:"log"`
 }
 
-func strPtr(s string) *string { return &s }
+//go:fix inline
+func strPtr(s string) *string { return new(s) }
 
 func toDoc(t *testing.T, b *Buffer) harDoc {
 	t.Helper()
@@ -342,7 +343,7 @@ func TestAddQueryInteraction_carriesReturnedRows(t *testing.T) {
 		DatasourceUID:   "P1234",
 		Statement:       "SELECT host, value FROM metrics",
 		ResultColumns:   []string{"host", "value"},
-		ResultRows:      [][]*string{{strPtr("host-a"), strPtr("1")}, {strPtr("host-b"), nil}},
+		ResultRows:      [][]*string{{new("host-a"), new("1")}, {new("host-b"), nil}},
 		ResultTotalRows: 2,
 		FrameCount:      1,
 		RowCount:        1,
@@ -412,7 +413,7 @@ func TestAddQueryInteraction_failedQueryKeepsPartialRows(t *testing.T) {
 		Kind:            querycapture.KindSQLQuery,
 		Statement:       "SELECT host, value FROM metrics",
 		ResultColumns:   []string{"host", "value"},
-		ResultRows:      [][]*string{{strPtr("host-a"), strPtr("not-a-number")}},
+		ResultRows:      [][]*string{{new("host-a"), new("not-a-number")}},
 		ResultTotalRows: 1,
 		Err:             "converting driver.Value type string to a float64",
 	})

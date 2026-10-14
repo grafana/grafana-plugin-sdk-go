@@ -9,13 +9,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func cell(s string) *string { return &s }
+//go:fix inline
+func cell(s string) *string { return new(s) }
 
 func TestResultCapture_keepsRowsInOrder(t *testing.T) {
 	c := NewResultCapture()
 	c.SetColumns([]string{"host", "value"})
-	c.AddRow([]*string{cell("host-a"), cell("1")})
-	c.AddRow([]*string{cell("host-b"), nil})
+	c.AddRow([]*string{new("host-a"), new("1")})
+	c.AddRow([]*string{new("host-b"), nil})
 
 	got := c.Result()
 	assert.Equal(t, []string{"host", "value"}, got.Columns)
@@ -31,8 +32,8 @@ func TestResultCapture_dropsAllRowsPastTheCapButKeepsCounting(t *testing.T) {
 	// the whole result -- so every row is dropped, including the one already collected before the row
 	// that crosses the budget, not just the one that overran it.
 	c := NewResultCapture()
-	c.AddRow([]*string{cell("host-a")})
-	c.AddRow([]*string{cell(strings.Repeat("x", MaxResultBytes))})
+	c.AddRow([]*string{new("host-a")})
+	c.AddRow([]*string{new(strings.Repeat("x", MaxResultBytes))})
 
 	got := c.Result()
 	assert.True(t, got.Truncated)
@@ -52,10 +53,10 @@ func TestResultCapture_firstColumnsWin(t *testing.T) {
 
 func TestResultCapture_resultIsACopy(t *testing.T) {
 	c := NewResultCapture()
-	c.AddRow([]*string{cell("host-a")})
+	c.AddRow([]*string{new("host-a")})
 
 	got := c.Result()
-	got.Rows[0][0] = cell("mutated")
+	got.Rows[0][0] = new("mutated")
 
 	assert.Equal(t, "host-a", *c.Result().Rows[0][0])
 }
@@ -66,7 +67,7 @@ func TestResultCapture_nilIsInert(t *testing.T) {
 	var c *ResultCapture
 	assert.NotPanics(t, func() {
 		c.SetColumns([]string{"host"})
-		c.AddRow([]*string{cell("host-a")})
+		c.AddRow([]*string{new("host-a")})
 	})
 	got := c.Result()
 	assert.Nil(t, got.Columns)
@@ -79,14 +80,12 @@ func TestResultCapture_concurrentUse(t *testing.T) {
 	// Scanning and reading back can happen on different goroutines. Run with -race.
 	c := NewResultCapture()
 	var wg sync.WaitGroup
-	for i := 0; i < 50; i++ {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
+	for range 50 {
+		wg.Go(func() {
 			c.SetColumns([]string{"host"})
-			c.AddRow([]*string{cell("host-a")})
+			c.AddRow([]*string{new("host-a")})
 			_ = c.Result()
-		}()
+		})
 	}
 	wg.Wait()
 

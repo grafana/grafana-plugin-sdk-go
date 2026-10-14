@@ -36,8 +36,8 @@ func captureCtx(t *testing.T) (context.Context, *querycapture.ResultCapture) {
 func TestFrameFromRowsWithContext_capturesReturnedRows(t *testing.T) {
 	rows := makeSingleResultSet( //nolint:rowserrcheck
 		[]string{"host", "value"},
-		[]interface{}{"host-a", int64(1)},
-		[]interface{}{"host-b", int64(2)},
+		[]any{"host-a", int64(1)},
+		[]any{"host-b", int64(2)},
 	)
 
 	ctx, capture := captureCtx(t)
@@ -59,14 +59,14 @@ func TestFrameFromRowsWithContext_capturesBeforeConverters(t *testing.T) {
 	// taken after conversion could not tell a database that returned the wrong value from a converter
 	// that mangled the right one. This converter rewrites every value, so the capture must disagree with
 	// the frame.
-	rows := makeSingleResultSet([]string{"host"}, []interface{}{"host-b"}) //nolint:rowserrcheck
+	rows := makeSingleResultSet([]string{"host"}, []any{"host-b"}) //nolint:rowserrcheck
 	mangling := sqlutil.Converter{
 		Name:             "mangle",
-		InputScanType:    reflect.TypeOf(""),
+		InputScanType:    reflect.TypeFor[string](),
 		InputTypeMatcher: func(string) bool { return true },
 		FrameConverter: sqlutil.FrameConverter{
 			FieldType: data.FieldTypeString,
-			ConverterFunc: func(interface{}) (interface{}, error) {
+			ConverterFunc: func(any) (any, error) {
 				return "host-a", nil
 			},
 		},
@@ -90,8 +90,8 @@ func TestFrameFromRowsWithContext_nullIsDistinctFromEmpty(t *testing.T) {
 	// "" and NULL are different answers to a wrong-data question, so they must not render alike.
 	rows := makeSingleResultSet( //nolint:rowserrcheck
 		[]string{"host"},
-		[]interface{}{nil},
-		[]interface{}{""},
+		[]any{nil},
+		[]any{""},
 	)
 
 	ctx, capture := captureCtx(t)
@@ -107,7 +107,7 @@ func TestFrameFromRowsWithContext_nullIsDistinctFromEmpty(t *testing.T) {
 
 func TestFrameFromRowsWithContext_noCaptureOnContextIsUnchanged(t *testing.T) {
 	// Capture is off by default and must not alter the frame in any way.
-	row := func() []interface{} { return []interface{}{"host-a", int64(1)} }
+	row := func() []any { return []any{"host-a", int64(1)} }
 	plainRows := makeSingleResultSet([]string{"host", "value"}, row()) //nolint:rowserrcheck
 	plain, err := sqlutil.FrameFromRows(plainRows, -1)
 	require.NoError(t, err)
@@ -124,7 +124,7 @@ func TestFrameFromRowsWithContext_boundedByMaxResultBytes(t *testing.T) {
 	// A pathological result must not be able to grow the capture without limit, and the capture must
 	// say so rather than presenting a prefix as the whole result.
 	huge := strings.Repeat("x", querycapture.MaxResultBytes)
-	rows := makeSingleResultSet([]string{"blob"}, []interface{}{"host-a"}, []interface{}{huge}) //nolint:rowserrcheck
+	rows := makeSingleResultSet([]string{"blob"}, []any{"host-a"}, []any{huge}) //nolint:rowserrcheck
 
 	ctx, capture := captureCtx(t)
 	frame, err := sqlutil.FrameFromRowsWithContext(ctx, rows, -1, 0)
