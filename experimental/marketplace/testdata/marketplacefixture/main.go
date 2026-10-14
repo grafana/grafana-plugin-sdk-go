@@ -10,8 +10,22 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace"
 )
 
+type fixtureDataSource struct{}
+
+func (fixtureDataSource) QueryData(_ context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+	resp := backend.NewQueryDataResponse()
+	for _, q := range req.Queries {
+		resp.Responses[q.RefID] = backend.DataResponse{}
+	}
+	return resp, nil
+}
+
+func (fixtureDataSource) CheckHealth(context.Context, *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+	return &backend.CheckHealthResult{Status: backend.HealthStatusOk, Message: "datasource fixture healthy"}, nil
+}
+
 func newDataSource(context.Context, backend.DataSourceInstanceSettings) (instancemgmt.Instance, error) {
-	return struct{}{}, nil
+	return fixtureDataSource{}, nil
 }
 
 func main() {
