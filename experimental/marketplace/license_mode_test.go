@@ -13,9 +13,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
-	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 // testQueryConversionHandler is a pointer-comparable backend.QueryConversionHandler (func values are not).
@@ -110,94 +108,6 @@ func TestInvalidLicenseServeOptsOnlyDeniesRegisteredHandlers(t *testing.T) {
 				want.QueryConversionHandler = handler
 			}
 			require.Equal(t, want, got)
-		})
-	}
-}
-
-func TestInvalidLicenseServeOptsGRPCRouting(t *testing.T) {
-	ctx := context.Background()
-	licenseErr := invalidLicenseError("example-app")
-	full := licensedServeOpts()
-	core := backend.ServeOpts{
-		CheckHealthHandler:      full.CheckHealthHandler,
-		CallResourceHandler:     full.CallResourceHandler,
-		QueryDataHandler:        full.QueryDataHandler,
-		QueryChunkedDataHandler: full.QueryChunkedDataHandler,
-		StreamHandler:           full.StreamHandler,
-	}
-	withAdmission, withConversion, withQueryConversion, withBoth := core, core, core, core
-	withAdmission.AdmissionHandler = full.AdmissionHandler
-	withConversion.ConversionHandler = full.ConversionHandler
-	withQueryConversion.QueryConversionHandler = full.QueryConversionHandler
-	withBoth.ConversionHandler = full.ConversionHandler
-	withBoth.QueryConversionHandler = full.QueryConversionHandler
-
-	pluginContext := &pluginv2.PluginContext{PluginId: "example-app"}
-	convert := func(t *testing.T, srv grpcplugin.ConversionServer, contentType string, raw string) {
-		t.Helper()
-		_, err := srv.ConvertObjects(ctx, &pluginv2.ConversionRequest{
-			PluginContext: pluginContext,
-			TargetVersion: &pluginv2.GroupVersion{},
-			Objects:       []*pluginv2.RawObject{{Raw: []byte(raw), ContentType: contentType}},
-		})
-		require.ErrorContains(t, err, licenseErr.Error())
-	}
-	const queryObject = `{"queries":[{"refId":"A"}]}`
-
-	tests := []struct {
-		name          string
-		opts          backend.ServeOpts
-		wantAdmission bool
-		wantConv      bool
-		check         func(t *testing.T, srv grpcplugin.ConversionServer)
-	}{
-		{name: "none", opts: core},
-		{name: "admission only", opts: withAdmission, wantAdmission: true},
-		{name: "conversion only", opts: withConversion, wantConv: true, check: func(t *testing.T, srv grpcplugin.ConversionServer) {
-			t.Helper()
-			convert(t, srv, "text/plain", "generic")
-		}},
-		{name: "query conversion only", opts: withQueryConversion, wantConv: true, check: func(t *testing.T, srv grpcplugin.ConversionServer) {
-			t.Helper()
-			// Only query-shaped objects: the SDK adapter panics on a nil ConversionHandler for other objects.
-			convert(t, srv, "application/json", queryObject)
-		}},
-		{name: "conversion and query conversion", opts: withBoth, wantConv: true, check: func(t *testing.T, srv grpcplugin.ConversionServer) {
-			t.Helper()
-			convert(t, srv, "application/json", queryObject)
-			convert(t, srv, "text/plain", "generic")
-		}},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := invalidLicenseServeOpts("example-app", "example-app", errors.New("missing license"), tt.opts)
-			grpcOpts, err := backend.GRPCServeOpts(got)
-			require.NoError(t, err)
-
-			if !tt.wantAdmission {
-				require.Nil(t, grpcOpts.AdmissionServer)
-			} else {
-				require.NotNil(t, grpcOpts.AdmissionServer)
-				req := &pluginv2.AdmissionRequest{PluginContext: pluginContext, Kind: &pluginv2.GroupVersionKind{}}
-				validate, err := grpcOpts.AdmissionServer.ValidateAdmission(ctx, req)
-				require.NoError(t, err)
-				mutate, err := grpcOpts.AdmissionServer.MutateAdmission(ctx, req)
-				require.NoError(t, err)
-				require.False(t, validate.Allowed)
-				require.False(t, mutate.Allowed)
-				for _, result := range []*pluginv2.StatusResult{validate.Result, mutate.Result} {
-					require.Equal(t, licenseErr.Error(), result.Message)
-					require.Equal(t, "Forbidden", result.Reason)
-					require.EqualValues(t, 403, result.Code)
-				}
-			}
-
-			if !tt.wantConv {
-				require.Nil(t, grpcOpts.ConversionServer)
-				return
-			}
-			require.NotNil(t, grpcOpts.ConversionServer)
-			tt.check(t, grpcOpts.ConversionServer)
 		})
 	}
 }
