@@ -197,6 +197,33 @@ func TestLoadValidationKeys(t *testing.T) {
 	}
 }
 
+func TestLoadExpiredTokenChecksEligibility(t *testing.T) {
+	useTestKey(t)
+	fixedTestTime(t, time.Unix(1338, 0))
+
+	tests := []struct {
+		name     string
+		pluginID string
+		blocked  map[string]struct{}
+		status   TokenStatus
+		expErr   error
+	}{
+		{"matching plugin", testPluginID, nil, Expired, errLicenseExpired},
+		{"other plugin", "other-plugin", nil, Invalid, errMarketplacePluginNotIncluded},
+		{"blocked license", testPluginID, map[string]struct{}{"327110496": {}}, Invalid, errLicenseInvalid},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.blocked != nil {
+				useBlockedLicenseIds(t, tc.blocked)
+			}
+			token := LoadTokenFromValue(expiredJWT, appURL, "", tc.pluginID)
+			require.Equal(t, tc.status, token.Status)
+			require.ErrorIs(t, token.Error, tc.expErr)
+		})
+	}
+}
+
 func createValidToken(t *testing.T) *LicenseToken {
 	t.Helper()
 	return &LicenseToken{
