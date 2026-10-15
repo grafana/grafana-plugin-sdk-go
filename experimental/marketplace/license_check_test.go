@@ -144,6 +144,44 @@ func newTestInvalidLicenseHandler() *invalidLicenseHandler {
 	}
 }
 
+func TestInvalidLicenseHandlerAdmission(t *testing.T) {
+	handler := newTestInvalidLicenseHandler()
+	validate, err := handler.ValidateAdmission(context.Background(), &backend.AdmissionRequest{})
+	require.NoError(t, err)
+	mutate, err := handler.MutateAdmission(context.Background(), &backend.AdmissionRequest{})
+	require.NoError(t, err)
+
+	for name, got := range map[string]struct {
+		allowed bool
+		result  *backend.StatusResult
+	}{
+		"validate": {validate.Allowed, validate.Result},
+		"mutate":   {mutate.Allowed, mutate.Result},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.False(t, got.allowed)
+			require.NotNil(t, got.result)
+			require.Equal(t, "Failure", got.result.Status)
+			require.Equal(t, "Forbidden", got.result.Reason)
+			require.EqualValues(t, http.StatusForbidden, got.result.Code)
+			require.Equal(t, handler.err.Error(), got.result.Message)
+			require.NotContains(t, got.result.Message, handler.verboseError.Error())
+		})
+	}
+}
+
+func TestInvalidLicenseHandlerConversion(t *testing.T) {
+	handler := newTestInvalidLicenseHandler()
+
+	objects, err := handler.ConvertObjects(context.Background(), &backend.ConversionRequest{})
+	require.Nil(t, objects)
+	require.ErrorIs(t, err, handler.err)
+
+	queries, err := handler.ConvertQueryDataRequest(context.Background(), &backend.QueryDataRequest{})
+	require.Nil(t, queries)
+	require.ErrorIs(t, err, handler.err)
+}
+
 func TestInvalidLicenseHandlerCallResource(t *testing.T) {
 	handler := newTestInvalidLicenseHandler()
 	var resp *backend.CallResourceResponse

@@ -125,8 +125,9 @@ func invalidLicenseError(licensePluginID string) error {
 }
 
 // invalidLicenseServeOpts returns serve options whose handlers only return the license error.
-// Only GRPCSettings are kept from serveOpts: every other handler, ExtraPlugins included, is
-// dropped so that nothing is served without a license.
+// Admission, conversion and query conversion get license-denying handlers only if the plugin
+// registered them, so Grafana keeps falling back on Unimplemented for the others. Apart from
+// GRPCSettings, everything else (middlewares, ExtraPlugins) is dropped.
 // pluginID is the running plugin; licensePluginID is the ID the license is issued under.
 func invalidLicenseServeOpts(pluginID, licensePluginID string, verboseError error, serveOpts backend.ServeOpts) backend.ServeOpts {
 	err := invalidLicenseError(licensePluginID)
@@ -136,7 +137,7 @@ func invalidLicenseServeOpts(pluginID, licensePluginID string, verboseError erro
 		err:          err,
 		verboseError: verboseError,
 	}
-	return backend.ServeOpts{
+	opts := backend.ServeOpts{
 		CheckHealthHandler:      handler,
 		CallResourceHandler:     handler,
 		QueryDataHandler:        handler,
@@ -144,12 +145,59 @@ func invalidLicenseServeOpts(pluginID, licensePluginID string, verboseError erro
 		StreamHandler:           handler,
 		GRPCSettings:            serveOpts.GRPCSettings,
 	}
+	if serveOpts.AdmissionHandler != nil {
+		opts.AdmissionHandler = handler
+	}
+	if serveOpts.ConversionHandler != nil {
+		opts.ConversionHandler = handler
+	}
+	if serveOpts.QueryConversionHandler != nil {
+		opts.QueryConversionHandler = handler
+	}
+	return opts
 }
+
+var (
+	_ backend.AdmissionHandler       = (*invalidLicenseHandler)(nil)
+	_ backend.ConversionHandler      = (*invalidLicenseHandler)(nil)
+	_ backend.QueryConversionHandler = (*invalidLicenseHandler)(nil)
+)
 
 type invalidLicenseHandler struct {
 	pluginID     string
 	err          error
 	verboseError error
+}
+
+// ValidateAdmission denies every admission request.
+func (h *invalidLicenseHandler) ValidateAdmission(_ context.Context, _ *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
+	return &backend.ValidationResponse{Allowed: false, Result: h.deniedResult()}, nil
+}
+
+// MutateAdmission denies every admission request.
+func (h *invalidLicenseHandler) MutateAdmission(_ context.Context, _ *backend.AdmissionRequest) (*backend.MutationResponse, error) {
+	return &backend.MutationResponse{Allowed: false, Result: h.deniedResult()}, nil
+}
+
+// deniedResult is the status returned for denied admission requests. Grafana maps Reason
+// "Forbidden" (metav1.StatusReasonForbidden) to a 403; the literal avoids a k8s dependency.
+func (h *invalidLicenseHandler) deniedResult() *backend.StatusResult {
+	return &backend.StatusResult{
+		Status:  "Failure",
+		Message: h.err.Error(),
+		Reason:  "Forbidden",
+		Code:    http.StatusForbidden,
+	}
+}
+
+// ConvertObjects fails every conversion request with the license error.
+func (h *invalidLicenseHandler) ConvertObjects(_ context.Context, _ *backend.ConversionRequest) (*backend.ConversionResponse, error) {
+	return nil, h.err
+}
+
+// ConvertQueryDataRequest fails every query conversion request with the license error.
+func (h *invalidLicenseHandler) ConvertQueryDataRequest(_ context.Context, _ *backend.QueryDataRequest) (*backend.QueryConversionResponse, error) {
+	return nil, h.err
 }
 
 // CheckHealth checks if the plugin is running properly
