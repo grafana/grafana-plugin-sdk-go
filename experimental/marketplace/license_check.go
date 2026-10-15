@@ -220,10 +220,13 @@ func (h *invalidLicenseHandler) RunStream(ctx context.Context, req *backend.RunS
 	return h.err
 }
 
-// queryError is the error returned for every data query.
+// queryError is the error returned for every data query. The verbose error is
+// left out on purpose: it can contain the license file path, instance URL,
+// licensed subject and expiry details, and query errors reach every viewer.
+// It stays in the plugin logs and in the health check details.
 func (h *invalidLicenseHandler) queryError() error {
 	//nolint:staticcheck // error to be used in grafana
-	return errors.Join(errors.New("Marketplace License Error"), h.err, h.verboseError)
+	return errors.Join(errors.New("Marketplace License Error"), h.err)
 }
 
 // fileExists checks if a file exists and is not a directory before we

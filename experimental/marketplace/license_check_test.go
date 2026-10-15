@@ -140,7 +140,7 @@ func newTestInvalidLicenseHandler() *invalidLicenseHandler {
 	return &invalidLicenseHandler{
 		pluginID:     "example-app",
 		err:          invalidLicenseError("example-app"),
-		verboseError: errors.New("license token file not found"),
+		verboseError: errors.New("license token file not found: /secret/path/license-example-app.jwt"),
 	}
 }
 
@@ -158,6 +158,15 @@ func TestInvalidLicenseHandlerCallResource(t *testing.T) {
 	require.Equal(t, handler.err.Error(), string(resp.Body))
 }
 
+func requireQueryLicenseError(t *testing.T, handler *invalidLicenseHandler, e error) {
+	t.Helper()
+	require.Error(t, e)
+	require.Contains(t, e.Error(), handler.err.Error())
+	require.Contains(t, e.Error(), "Marketplace License Error")
+	require.NotContains(t, e.Error(), handler.verboseError.Error())
+	require.NotContains(t, e.Error(), "/secret/path")
+}
+
 func TestInvalidLicenseHandlerQueryData(t *testing.T) {
 	handler := newTestInvalidLicenseHandler()
 	resp, err := handler.QueryData(context.Background(), &backend.QueryDataRequest{
@@ -167,7 +176,7 @@ func TestInvalidLicenseHandlerQueryData(t *testing.T) {
 	require.Len(t, resp.Responses, 2)
 	for _, refID := range []string{"A", "B"} {
 		require.Equal(t, backend.StatusUnauthorized, resp.Responses[refID].Status)
-		require.ErrorContains(t, resp.Responses[refID].Error, handler.err.Error())
+		requireQueryLicenseError(t, handler, resp.Responses[refID].Error)
 	}
 }
 
@@ -193,7 +202,7 @@ func TestInvalidLicenseHandlerQueryChunkedData(t *testing.T) {
 	require.NoError(t, err)
 	require.Len(t, w.errors, 2)
 	for _, refID := range []string{"A", "B"} {
-		require.ErrorContains(t, w.errors[refID], handler.err.Error())
+		requireQueryLicenseError(t, handler, w.errors[refID])
 	}
 }
 
