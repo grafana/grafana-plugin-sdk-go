@@ -10,8 +10,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// HeaderFromExpression is the header Grafana sets on QueryData requests that
-// come from server-side expressions, such as SQL Expressions.
+// HeaderFromExpression is the header Grafana declares to mark QueryData
+// requests that come from server-side expressions, such as SQL Expressions.
+// Some Grafana versions forward it only when the browser sends it, so a plugin
+// should not depend on it alone.
 const HeaderFromExpression = "X-Grafana-From-Expr"
 
 // CheckResponse checks every query in a QueryDataResponse. refIDs are the
