@@ -22,9 +22,9 @@ const (
 const maxExactInteger = 1 << 53
 
 // Check checks the frames that one query returned, as SQL Expressions read
-// them. It never returns nil.
-func Check(frames data.Frames) *Report {
-	r := &Report{Mode: ModeTable}
+// them. It uses only the [MinGrafana] option. It never returns nil.
+func Check(frames data.Frames, opts ...Option) *Report {
+	r := &Report{Mode: ModeTable, minGrafana: newOptions(opts).minGrafana}
 	if len(frames) == 0 {
 		r.add(Finding{
 			Code: CodeNoFrames, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: -1,
@@ -185,10 +185,16 @@ func checkFullLong(r *Report, frames data.Frames) {
 	}
 
 	r.Columns = fullLongColumns(timeSeries, acc)
-	checkGeneratedNameClash(r, acc.labelKeys)
-	// Generated columns come first; label keys that clash with them are
-	// reported above, so only compare the label columns with each other.
-	checkDuplicateNames(r, r.Columns[len(r.Columns)-len(acc.labelKeys):], -1)
+	// Generated columns come first, then one column per label key.
+	split := len(r.Columns) - len(acc.labelKeys)
+	generated, labels := r.Columns[:split], r.Columns[split:]
+	renames := checkGeneratedNameClash(r, generated, labels)
+	// Label keys that clash with generated columns are reported above, so
+	// only compare the label columns with each other.
+	checkDuplicateNames(r, labels, -1)
+	for i, name := range renames {
+		labels[i].Name = name
+	}
 	checkEmptySeriesLabels(r, acc)
 }
 
@@ -355,23 +361,54 @@ func fullLongColumns(timeSeries bool, acc fullLong) []Column {
 	return cols
 }
 
-// checkGeneratedNameClash reports label keys that match a column Grafana generates.
-func checkGeneratedNameClash(r *Report, labelKeys map[string]struct{}) {
-	generated := map[string]bool{timeColumn: true, valueColumn: true, metricColumn: true, displayColumn: true}
-	keys := make([]string, 0, len(labelKeys))
-	for k := range labelKeys {
-		if generated[strings.ToLower(k)] {
-			keys = append(keys, k)
-		}
+// checkGeneratedNameClash reports label keys that match, ignoring case, a
+// column Grafana generates. Grafana versions with the fix in grafanaFixes add
+// a "label_" prefix to such a label column until its name is unique. When
+// every supported version has the fix, it returns the new names, by index into
+// labels.
+func checkGeneratedNameClash(r *Report, generated, labels []Column) map[int]string {
+	fixedIn, fixed := r.fixedIn(CodeGeneratedNameClash)
+	isGenerated, taken := map[string]bool{}, map[string]bool{}
+	for _, c := range generated {
+		isGenerated[strings.ToLower(c.Name)] = true
+		taken[strings.ToLower(c.Name)] = true
 	}
-	sort.Strings(keys)
-	for _, k := range keys {
+	for _, c := range labels {
+		taken[strings.ToLower(c.Name)] = true
+	}
+
+	renames := map[int]string{}
+	for i, c := range labels {
+		if !isGenerated[strings.ToLower(c.Name)] {
+			continue
+		}
+		name := "label_" + c.Name
+		for taken[strings.ToLower(name)] {
+			name = "label_" + name
+		}
+		taken[strings.ToLower(name)] = true
+
+		if fixed {
+			renames[i] = name
+			r.add(Finding{
+				Code: CodeGeneratedNameClash, Severity: SeverityInfo, Owner: OwnerGrafana, Frame: -1, Field: c.Name, FixedIn: fixedIn,
+				Message: fmt.Sprintf("the label key %q matches a column Grafana generates, so Grafana names its column %q. "+
+					"Use that name in SQL, or rename the label.", c.Name, name),
+			})
+			continue
+		}
+		msg := fmt.Sprintf("the label key %q matches a column Grafana generates, "+
+			"so a SQL reference to it fails with an ambiguous column error. Rename the label.", c.Name)
+		if fixedIn != "" {
+			msg += fmt.Sprintf(" Grafana %s and later name the column %q, "+
+				"but the plugin supports older versions.", fixedIn, name)
+		}
 		r.add(Finding{
-			Code: CodeGeneratedNameClash, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: -1, Field: k,
-			Message: fmt.Sprintf("the label key %q matches a column Grafana generates, "+
-				"so a SQL reference to it fails with an ambiguous column error. Rename the label.", k),
+			Code: CodeGeneratedNameClash, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: -1, Field: c.Name, FixedIn: fixedIn,
+			Message: msg,
 		})
 	}
+	return renames
 }
 
 func checkIntegerAsFloat(r *Report, i int, f *data.Field) {

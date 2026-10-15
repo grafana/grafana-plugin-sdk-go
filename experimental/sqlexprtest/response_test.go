@@ -24,7 +24,7 @@ func TestCheckResponse(t *testing.T) {
 		"Z": {Frames: data.Frames{tableFrame()}},
 	}}
 
-	reports := CheckResponse(resp, "A", "B", "C")
+	reports := CheckResponse(resp, []string{"A", "B", "C"})
 
 	require.Len(t, reports, 4)
 	assert.Empty(t, reports["A"].Findings)
@@ -38,14 +38,14 @@ func TestCheckResponse(t *testing.T) {
 func TestCheckResponseWithoutRefIDs(t *testing.T) {
 	resp := &backend.QueryDataResponse{Responses: backend.Responses{"A": {Frames: data.Frames{tableFrame()}}}}
 
-	reports := CheckResponse(resp)
+	reports := CheckResponse(resp, nil)
 
 	require.Len(t, reports, 1)
 	assert.Empty(t, reports["A"].Findings)
 }
 
 func TestCheckResponseNil(t *testing.T) {
-	reports := CheckResponse(nil, "A")
+	reports := CheckResponse(nil, []string{"A"})
 
 	assert.Equal(t, []Code{CodeMissingRefID}, codes(reports["A"]))
 }

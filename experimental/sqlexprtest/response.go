@@ -18,11 +18,11 @@ const HeaderFromExpression = "X-Grafana-From-Expr"
 
 // CheckResponse checks every query in a QueryDataResponse. refIDs are the
 // RefIDs the request asked for. When refIDs is empty, it checks the RefIDs the
-// response has.
+// response has. It uses only the [MinGrafana] option.
 //
 // The result has one report per RefID, including RefIDs the response has but
 // no query asked for.
-func CheckResponse(resp *backend.QueryDataResponse, refIDs ...string) map[string]*Report {
+func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Option) map[string]*Report {
 	reports := map[string]*Report{}
 	var responses backend.Responses
 	if resp != nil {
@@ -47,7 +47,7 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs ...string) map[string
 				Message: fmt.Sprintf("the query failed: %v", dr.Error),
 			}}}
 		default:
-			r := Check(dr.Frames)
+			r := Check(dr.Frames, opts...)
 			r.RefID = refID
 			reports[refID] = r
 		}
@@ -74,8 +74,9 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs ...string) map[string
 // holds only that query and has the [HeaderFromExpression] header set. The
 // copies share req's PluginContext. A handler error becomes a
 // [CodeQueryError] finding, and a panic a [CodePanic] finding, for that query.
-// It returns an error only when req is nil.
-func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest) (map[string]*Report, error) {
+// It uses only the [MinGrafana] option, and returns an error only when req
+// is nil.
+func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...Option) (map[string]*Report, error) {
 	if req == nil {
 		return nil, errors.New("sqlexprtest: nil QueryDataRequest")
 	}
@@ -104,7 +105,7 @@ func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backen
 				Message: fmt.Sprintf("the QueryData handler returned an error: %v", err),
 			}}}
 		default:
-			reports[q.RefID] = checkOneResponse(resp, q.RefID)
+			reports[q.RefID] = checkOneResponse(resp, q.RefID, opts)
 		}
 	}
 	return reports, nil
@@ -112,8 +113,8 @@ func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backen
 
 // checkOneResponse checks the response to a request for one query. Entries for
 // other RefIDs become an unexpected-refid finding on that query's report.
-func checkOneResponse(resp *backend.QueryDataResponse, refID string) *Report {
-	reports := CheckResponse(resp, refID)
+func checkOneResponse(resp *backend.QueryDataResponse, refID string, opts []Option) *Report {
+	reports := CheckResponse(resp, []string{refID}, opts...)
 	r := reports[refID]
 	others := []string{}
 	for id := range reports {

@@ -30,6 +30,17 @@
 // do not run SQL and do not import Grafana. A [Report] also lists the columns
 // SQL will see, with their SQL types.
 //
+// When a Grafana release fixes a behavior that an OwnerGrafana finding
+// reports, the finding's FixedIn names that release. The check keeps
+// reporting it, because users of older Grafana versions still have the
+// behavior. Pass the oldest Grafana version the plugin supports, with
+// [MinGrafana] or [MinGrafanaFromPluginJSON], and the checks predict the fixed
+// behavior once every supported version has the fix:
+//
+//	opt, err := sqlexprtest.MinGrafanaFromPluginJSON("../src/plugin.json")
+//	require.NoError(t, err)
+//	sqlexprtest.AssertQueryData(t, ctx, ds, req, opt)
+//
 // This package is experimental. Its API and checks may change as Grafana's SQL
 // input handling changes.
 package sqlexprtest
