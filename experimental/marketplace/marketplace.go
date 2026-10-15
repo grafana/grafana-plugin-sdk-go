@@ -46,12 +46,14 @@ var queryTimeLicenseValidation = flag.Bool("qtlv", false,
 //
 // With the -qtlv flag the license is instead validated on every request, from the
 // "license" gRPC metadata that Grafana sends with it. Environment variables and license
-// files are ignored, and a request without valid license metadata is refused with the
-// same errors as above. In this mode:
+// files are ignored, and a request without valid license metadata is refused like above:
+// queries and conversions fail with the license error, and admission requests are denied
+// with a 403 result carrying it. In this mode:
 //   - ServeOpts.ExtraPlugins are not supported and make the decorator return an error,
 //     since they bypass the handler middlewares.
 //   - CollectMetrics is not checked.
-//   - Streams are only checked when they start (RunStream, SubscribeStream, PublishStream).
+//   - Each SubscribeStream and PublishStream call is checked, but RunStream is only checked
+//     when the stream starts, not while it runs.
 //
 // Builds with the marketplace_dev tag skip both kinds of checks.
 func Licensing(opts Opts) backend.ServeOptsDecorator {

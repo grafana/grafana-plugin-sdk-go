@@ -19,6 +19,7 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
+	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 // recordingHandler is a final handler that records which endpoints reached it.
@@ -92,6 +93,10 @@ func refusedCalls() []licensedCall {
 	isLicenseErr := func(err error) bool {
 		return err != nil && strings.Contains(err.Error(), "is not available with your current subscription")
 	}
+	isDeniedResult := func(allowed bool, res *backend.StatusResult) bool {
+		return !allowed && res != nil && res.Status == "Failure" && res.Code == http.StatusForbidden && res.Reason == "Forbidden" &&
+			strings.Contains(res.Message, "is not available with your current subscription")
+	}
 	return []licensedCall{
 		{"QueryData", func(ctx context.Context, h backend.Handler) (bool, error) {
 			resp, err := h.QueryData(ctx, &backend.QueryDataRequest{Queries: []backend.DataQuery{{RefID: "A"}, {RefID: "B"}}})
@@ -130,12 +135,12 @@ func refusedCalls() []licensedCall {
 			return isLicenseErr(err), nil
 		}},
 		{"ValidateAdmission", func(ctx context.Context, h backend.Handler) (bool, error) {
-			_, err := h.ValidateAdmission(ctx, &backend.AdmissionRequest{})
-			return isLicenseErr(err), nil
+			resp, err := h.ValidateAdmission(ctx, &backend.AdmissionRequest{})
+			return err == nil && resp != nil && isDeniedResult(resp.Allowed, resp.Result), err
 		}},
 		{"MutateAdmission", func(ctx context.Context, h backend.Handler) (bool, error) {
-			_, err := h.MutateAdmission(ctx, &backend.AdmissionRequest{})
-			return isLicenseErr(err), nil
+			resp, err := h.MutateAdmission(ctx, &backend.AdmissionRequest{})
+			return err == nil && resp != nil && isDeniedResult(resp.Allowed, resp.Result), err
 		}},
 		{"ConvertObjects", func(ctx context.Context, h backend.Handler) (bool, error) {
 			_, err := h.ConvertObjects(ctx, &backend.ConversionRequest{})
@@ -427,5 +432,74 @@ func TestRequestTimeMiddlewareChain(t *testing.T) {
 				}
 			})
 		}
+	}
+}
+
+func TestRequestTimeLicenseGRPCServeOpts(t *testing.T) {
+	const licenseMsg = "The Marketplace plugin parent-app is not available"
+	queryObject := &pluginv2.RawObject{Raw: []byte(`{"queries":[{"refId":"A"}]}`), ContentType: "application/json"}
+	genericObject := &pluginv2.RawObject{Raw: []byte("x"), ContentType: "text/plain"}
+
+	for _, tt := range []struct {
+		name      string
+		ctx       func(t *testing.T) context.Context
+		forwarded bool
+	}{
+		{"no metadata", func(t *testing.T) context.Context { t.Helper(); return t.Context() }, false},
+		{"invalid token", func(t *testing.T) context.Context { t.Helper(); return licenseCtx(t, "invalid") }, false},
+		{"valid token", func(t *testing.T) context.Context { t.Helper(); return licenseCtx(t, "valid") }, true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			final := &recordingHandler{}
+			conv := &countingConversion{}
+			opts, err := applyRequestTimeLicenseWithDeps("child-plugin", "parent-app", backend.ServeOpts{
+				AdmissionHandler:       final,
+				ConversionHandler:      final,
+				QueryConversionHandler: conv,
+			}, requestLicenseLoader((&fakeParser{}).parse))
+			require.NoError(t, err)
+			grpcOpts, err := backend.GRPCServeOpts(opts)
+			require.NoError(t, err)
+
+			ctx := tt.ctx(t)
+			pluginCtx := &pluginv2.PluginContext{PluginId: "child-plugin"}
+			admissionReq := &pluginv2.AdmissionRequest{PluginContext: pluginCtx, Kind: &pluginv2.GroupVersionKind{}}
+			convert := func(obj *pluginv2.RawObject) (*pluginv2.ConversionResponse, error) {
+				t.Helper()
+				return grpcOpts.ConversionServer.ConvertObjects(ctx, &pluginv2.ConversionRequest{
+					PluginContext: pluginCtx, TargetVersion: &pluginv2.GroupVersion{}, Objects: []*pluginv2.RawObject{obj},
+				})
+			}
+
+			validate, err := grpcOpts.AdmissionServer.ValidateAdmission(ctx, admissionReq)
+			require.NoError(t, err)
+			mutate, err := grpcOpts.AdmissionServer.MutateAdmission(ctx, admissionReq)
+			require.NoError(t, err)
+			_, queryErr := convert(queryObject)
+			_, genericErr := convert(genericObject)
+
+			if tt.forwarded {
+				require.True(t, validate.Allowed)
+				require.True(t, mutate.Allowed)
+				require.NoError(t, queryErr)
+				require.NoError(t, genericErr)
+				require.Equal(t, 1, conv.calls)
+				require.Equal(t, []string{"ValidateAdmission", "MutateAdmission", "ConvertObjects"}, final.calls)
+				return
+			}
+			for _, res := range []*pluginv2.StatusResult{validate.Result, mutate.Result} {
+				require.NotNil(t, res)
+				require.Equal(t, "Failure", res.Status)
+				require.EqualValues(t, http.StatusForbidden, res.Code)
+				require.Equal(t, "Forbidden", res.Reason)
+				require.Contains(t, res.Message, licenseMsg)
+			}
+			require.False(t, validate.Allowed)
+			require.False(t, mutate.Allowed)
+			require.ErrorContains(t, queryErr, licenseMsg)
+			require.ErrorContains(t, genericErr, licenseMsg)
+			require.Zero(t, conv.calls)
+			require.Empty(t, final.calls)
+		})
 	}
 }

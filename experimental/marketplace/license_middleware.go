@@ -125,21 +125,21 @@ func (m *licenseMiddleware) RunStream(ctx context.Context, req *backend.RunStrea
 
 func (m *licenseMiddleware) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
 	if h := m.refuse(ctx); h != nil {
-		return nil, h.err
+		return h.ValidateAdmission(ctx, req)
 	}
 	return m.BaseHandler.ValidateAdmission(ctx, req)
 }
 
 func (m *licenseMiddleware) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.MutationResponse, error) {
 	if h := m.refuse(ctx); h != nil {
-		return nil, h.err
+		return h.MutateAdmission(ctx, req)
 	}
 	return m.BaseHandler.MutateAdmission(ctx, req)
 }
 
 func (m *licenseMiddleware) ConvertObjects(ctx context.Context, req *backend.ConversionRequest) (*backend.ConversionResponse, error) {
 	if h := m.refuse(ctx); h != nil {
-		return nil, h.err
+		return h.ConvertObjects(ctx, req)
 	}
 	return m.BaseHandler.ConvertObjects(ctx, req)
 }
@@ -153,7 +153,7 @@ type licensedQueryConversionHandler struct {
 
 func (h *licensedQueryConversionHandler) ConvertQueryDataRequest(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryConversionResponse, error) {
 	if refused := h.middleware.refuse(ctx); refused != nil {
-		return nil, refused.err
+		return refused.ConvertQueryDataRequest(ctx, req)
 	}
 	return h.next.ConvertQueryDataRequest(ctx, req)
 }
