@@ -23,6 +23,7 @@ const (
 
 /*
 // Private key used for these tests encoded in PEM PKCS#8.
+// Its public key is registered only by useTestKey, not trusted by production.
 var privateKey = `
 -----BEGIN RSA PRIVATE KEY-----
 MIIJKAIBAAKCAgEAnyfvbGABIlwfGVxvS496I+Stp6RwPorLZ95lrv5VmxZD7yS2
@@ -74,8 +75,7 @@ S5tOTYxobk+DSaTZuAFlGmI5n6Upr2A8T3doRem6noWKXpl5soNdXoCyo9QlbePx
 ujzBpAOKRyroJbcnhVqaVExdYJD9Lm2hXYLQLXaVHf2HvGSQXvvf5qFAGinhDTdH
 9y6G1D1eoV+IctYl9/WQoJ1pVKR0Xwjm9H2fudfsqJSZARFVT7VpcxU0LhKnKXVg
 KIm/DaszoflMCyTppuEKIXNj/ex2M7zGlQmhnUb8l2I+g08Q7DV8NDiBsLc=
------END RSA PRIVATE KEY-----
-`
+-----END RSA PRIVATE KEY-----` // trufflehog:ignore
 */
 
 // Public key of the private key above, returned by running the genjwk script above (priv-key.pub.json)
