@@ -23,6 +23,7 @@ const (
 
 /*
 // Private key used for these tests encoded in PEM PKCS#8.
+// Its public key is registered only by useTestKey, not trusted by production.
 var privateKey = `
 -----BEGIN RSA PRIVATE KEY-----
 MIIJKAIBAAKCAgEAnyfvbGABIlwfGVxvS496I+Stp6RwPorLZ95lrv5VmxZD7yS2
@@ -74,8 +75,7 @@ S5tOTYxobk+DSaTZuAFlGmI5n6Upr2A8T3doRem6noWKXpl5soNdXoCyo9QlbePx
 ujzBpAOKRyroJbcnhVqaVExdYJD9Lm2hXYLQLXaVHf2HvGSQXvvf5qFAGinhDTdH
 9y6G1D1eoV+IctYl9/WQoJ1pVKR0Xwjm9H2fudfsqJSZARFVT7VpcxU0LhKnKXVg
 KIm/DaszoflMCyTppuEKIXNj/ex2M7zGlQmhnUb8l2I+g08Q7DV8NDiBsLc=
------END RSA PRIVATE KEY-----
-`
+-----END RSA PRIVATE KEY-----` // trufflehog:ignore
 */
 
 // Public key of the private key above, returned by running the genjwk script above (priv-key.pub.json)
@@ -193,6 +193,33 @@ func TestLoadValidationKeys(t *testing.T) {
 			token := &LicenseToken{}
 			status := token.Parse(jwt, appURL, tc.jwks, testPluginID)
 			assert.Equalf(t, tc.expValidity, status, "token validity should match expected. error: %q", token.Error)
+		})
+	}
+}
+
+func TestLoadExpiredTokenChecksEligibility(t *testing.T) {
+	useTestKey(t)
+	fixedTestTime(t, time.Unix(1338, 0))
+
+	tests := []struct {
+		name     string
+		pluginID string
+		blocked  map[string]struct{}
+		status   TokenStatus
+		expErr   error
+	}{
+		{"matching plugin", testPluginID, nil, Expired, errLicenseExpired},
+		{"other plugin", "other-plugin", nil, Invalid, errMarketplacePluginNotIncluded},
+		{"blocked license", testPluginID, map[string]struct{}{"327110496": {}}, Invalid, errLicenseInvalid},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			if tc.blocked != nil {
+				useBlockedLicenseIds(t, tc.blocked)
+			}
+			token := LoadTokenFromValue(expiredJWT, appURL, "", tc.pluginID)
+			require.Equal(t, tc.status, token.Status)
+			require.ErrorIs(t, token.Error, tc.expErr)
 		})
 	}
 }
