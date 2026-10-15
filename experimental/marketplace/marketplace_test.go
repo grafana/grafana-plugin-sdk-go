@@ -9,11 +9,11 @@ import (
 func TestLicensePluginID(t *testing.T) {
 	tests := []struct {
 		name     string
-		opts     ManageOpts
+		opts     Opts
 		expected string
 	}{
-		{"no parent uses own ID", ManageOpts{}, "child-plugin"},
-		{"parent overrides own ID", ManageOpts{ParentPluginID: "parent-app"}, "parent-app"},
+		{"no parent uses own ID", Opts{}, "child-plugin"},
+		{"parent overrides own ID", Opts{ParentPluginID: "parent-app"}, "parent-app"},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
