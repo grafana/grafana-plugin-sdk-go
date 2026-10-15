@@ -106,6 +106,9 @@ type Finding struct {
 	// Field is the field name the finding is about, if any.
 	Field   string
 	Message string
+	// FixedIn is the first Grafana version without the behavior an
+	// OwnerGrafana finding reports. It is empty when no release fixes it yet.
+	FixedIn string
 }
 
 func (f Finding) String() string {
@@ -118,7 +121,11 @@ func (f Finding) String() string {
 	case f.Field != "":
 		loc = fmt.Sprintf(" field %q:", f.Field)
 	}
-	return fmt.Sprintf("%s [%s, %s]%s %s", f.Severity, f.Code, f.Owner, loc, f.Message)
+	fixed := ""
+	if f.FixedIn != "" {
+		fixed = ", fixed in Grafana " + f.FixedIn
+	}
+	return fmt.Sprintf("%s [%s, %s%s]%s %s", f.Severity, f.Code, f.Owner, fixed, loc, f.Message)
 }
 
 // Mode is how Grafana turns a query's frames into a SQL table.
@@ -153,6 +160,10 @@ type Report struct {
 	// Columns lists the columns SQL will see. It is empty when Mode is ModeNone.
 	Columns  []Column
 	Findings []Finding
+
+	// minGrafana is the oldest Grafana version the plugin supports, or nil
+	// when it is not known.
+	minGrafana *version
 }
 
 // Has reports whether the report has a finding with the code.

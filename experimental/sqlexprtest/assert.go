@@ -11,11 +11,13 @@ import (
 )
 
 type options struct {
-	failOn Severity
-	ignore map[Code]bool
+	failOn     Severity
+	ignore     map[Code]bool
+	minGrafana *version
 }
 
-// Option changes what the Assert functions treat as a failure.
+// Option changes what the checks predict, with [MinGrafana], or what the
+// Assert functions treat as a failure, with [FailOn] and [Ignore].
 type Option func(*options)
 
 // FailOn fails the test on findings at or above s. The default is
@@ -47,7 +49,7 @@ func newOptions(opts []Option) options {
 // and prints the whole report. It returns the report.
 func AssertFrames(tb testing.TB, frames data.Frames, opts ...Option) *Report {
 	tb.Helper()
-	r := Check(frames)
+	r := Check(frames, opts...)
 	assertReport(tb, r, newOptions(opts))
 	return r
 }
@@ -58,7 +60,7 @@ func AssertFrames(tb testing.TB, frames data.Frames, opts ...Option) *Report {
 func AssertResponse(tb testing.TB, resp *backend.QueryDataResponse, refIDs []string, opts ...Option) map[string]*Report {
 	tb.Helper()
 	o := newOptions(opts)
-	reports := CheckResponse(resp, refIDs...)
+	reports := CheckResponse(resp, refIDs, opts...)
 	for _, refID := range slices.Sorted(maps.Keys(reports)) {
 		assertReport(tb, reports[refID], o)
 	}
@@ -83,7 +85,7 @@ func assertReport(tb testing.TB, r *Report, o options) {
 // as failed for each query with a finding at or above the FailOn severity.
 func AssertQueryData(tb testing.TB, ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...Option) map[string]*Report {
 	tb.Helper()
-	reports, err := CheckQueryData(ctx, h, req)
+	reports, err := CheckQueryData(ctx, h, req, opts...)
 	if err != nil {
 		tb.Errorf("SQL Expressions input check: %v", err)
 		return nil
