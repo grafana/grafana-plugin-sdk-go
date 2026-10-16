@@ -15,6 +15,7 @@ import (
 	"github.com/hashicorp/go-hclog"
 	plugin "github.com/hashicorp/go-plugin"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/metadata"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
@@ -30,7 +31,7 @@ type fixtureClients struct {
 
 // startFixture builds the fixture, starts it as a go-plugin subprocess without
 // any license available and returns gRPC clients for it.
-func startFixture(t *testing.T, packageID string, development bool) fixtureClients {
+func startFixture(t *testing.T, packageID string, development bool, args ...string) fixtureClients {
 	t.Helper()
 	tags := []string{"arrow_json_stdlib"}
 	if development {
@@ -39,7 +40,7 @@ func startFixture(t *testing.T, packageID string, development bool) fixtureClien
 	binary := buildFixture(t, fixtureBuildOptions{goos: runtime.GOOS, goarch: runtime.GOARCH, tags: tags, packageID: packageID})
 
 	home, workDir := t.TempDir(), t.TempDir()
-	cmd := exec.Command(binary) // #nosec G204 -- binary was built by this test
+	cmd := exec.Command(binary, args...) // #nosec G204 -- binary was built by this test
 	cmd.Dir = workDir
 	cmd.Env = append(cleanFixtureEnv(),
 		"HOME="+home,
@@ -111,10 +112,20 @@ func fixtureContext(appFixture bool) *pluginv2.PluginContext {
 	}
 }
 
-func callResource(t *testing.T, c grpcplugin.ResourceClient) (code int32, contentType, body string) {
+// callContext returns a timeout context, with the optional "license" gRPC metadata value set.
+func callContext(t *testing.T, license []string) context.Context {
 	t.Helper()
 	ctx, cancel := context.WithTimeout(context.Background(), runtimeCallTimeout)
-	defer cancel()
+	t.Cleanup(cancel)
+	if len(license) > 0 {
+		ctx = metadata.AppendToOutgoingContext(ctx, "license", license[0])
+	}
+	return ctx
+}
+
+func callResource(t *testing.T, c grpcplugin.ResourceClient, license ...string) (code int32, contentType, body string) {
+	t.Helper()
+	ctx := callContext(t, license)
 	stream, err := c.CallResource(ctx, &pluginv2.CallResourceRequest{PluginContext: fixtureContext(true), Path: "test", Method: "GET"})
 	require.NoError(t, err)
 	for {
@@ -133,10 +144,9 @@ func callResource(t *testing.T, c grpcplugin.ResourceClient) (code int32, conten
 	}
 }
 
-func checkHealth(t *testing.T, c grpcplugin.DiagnosticsClient, appFixture bool) *pluginv2.CheckHealthResponse {
+func checkHealth(t *testing.T, c grpcplugin.DiagnosticsClient, appFixture bool, license ...string) *pluginv2.CheckHealthResponse {
 	t.Helper()
-	ctx, cancel := context.WithTimeout(context.Background(), runtimeCallTimeout)
-	defer cancel()
+	ctx := callContext(t, license)
 	resp, err := c.CheckHealth(ctx, &pluginv2.CheckHealthRequest{PluginContext: fixtureContext(appFixture)})
 	require.NoError(t, err)
 	return resp
@@ -214,6 +224,77 @@ func TestRuntimeFixtureLicenseStates(t *testing.T) {
 				require.Equal(t, pluginv2.CheckHealthResponse_ERROR, health.Status)
 				require.Equal(t, "Marketplace License Error", health.Message)
 			}
+		})
+	}
+}
+
+// TestRuntimeFixtureQTLVLicenseStates runs the fixtures with -qtlv, which validates the
+// "license" gRPC metadata on every request and ignores env and files. No signing key is
+// available to mint a valid token here, so acceptance is covered by TestRequestTimeMiddlewareChain.
+func TestRuntimeFixtureQTLVLicenseStates(t *testing.T) {
+	if testing.Short() {
+		t.Skip("runtime executable fixture")
+	}
+	t.Parallel()
+
+	for name, license := range map[string][]string{
+		"no metadata":   nil,
+		"unparsable":    {"{"},
+		"garbage token": {`{"licenseToken":"garbage","appURL":"http://localhost:3000","validationKeys":""}`},
+	} {
+		t.Run("app production "+name, func(t *testing.T) {
+			t.Parallel()
+			c := startFixture(t, "appfixture", false, "-qtlv")
+			code, contentType, body := callResource(t, c.resource, license...)
+			require.Equal(t, int32(403), code)
+			require.Equal(t, "text/plain; charset=utf-8", contentType)
+			require.Contains(t, body, "marketplace-app-fixture")
+			health := checkHealth(t, c.diagnostics, true, license...)
+			require.Equal(t, pluginv2.CheckHealthResponse_ERROR, health.Status)
+			require.Equal(t, "Marketplace License Error", health.Message)
+		})
+	}
+
+	t.Run("app development", func(t *testing.T) {
+		t.Parallel()
+		c := startFixture(t, "appfixture", true, "-qtlv")
+		code, _, body := callResource(t, c.resource)
+		require.Equal(t, int32(200), code)
+		require.Equal(t, "app fixture resource", body)
+		health := checkHealth(t, c.diagnostics, true)
+		require.Equal(t, pluginv2.CheckHealthResponse_OK, health.Status)
+		require.Equal(t, "app fixture healthy", health.Message)
+	})
+
+	for _, development := range []bool{false, true} {
+		name := "datasource production"
+		if development {
+			name = "datasource development"
+		}
+		t.Run(name, func(t *testing.T) {
+			t.Parallel()
+			c := startFixture(t, "marketplacefixture", development, "-qtlv")
+			resp, err := c.data.QueryData(callContext(t, nil), &pluginv2.QueryDataRequest{
+				PluginContext: fixtureContext(false),
+				Queries: []*pluginv2.DataQuery{
+					{RefId: "A", TimeRange: &pluginv2.TimeRange{}},
+					{RefId: "B", TimeRange: &pluginv2.TimeRange{}},
+				},
+			})
+			require.NoError(t, err)
+			require.Len(t, resp.Responses, 2)
+			for _, refID := range []string{"A", "B"} {
+				r := resp.Responses[refID]
+				require.NotNil(t, r, refID)
+				if development {
+					require.Empty(t, r.Error, refID)
+				} else {
+					require.Equal(t, int32(401), r.Status, refID)
+				}
+			}
+			// The middleware must not block metrics collection.
+			_, err = c.diagnostics.CollectMetrics(callContext(t, nil), &pluginv2.CollectMetricsRequest{PluginContext: fixtureContext(false)})
+			require.NoError(t, err)
 		})
 	}
 }
