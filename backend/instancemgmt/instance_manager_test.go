@@ -222,8 +222,9 @@ func (ti *testInstance) Dispose() {
 }
 
 type testInstanceProvider struct {
-	delay       time.Duration
-	disposeGate <-chan struct{}
+	delay           time.Duration
+	disposeGate     <-chan struct{}
+	needsUpdateHook func(backend.PluginContext)
 }
 
 func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (any, error) {
@@ -231,6 +232,9 @@ func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend
 }
 
 func (tip *testInstanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
+	if tip.needsUpdateHook != nil {
+		tip.needsUpdateHook(pluginContext)
+	}
 	curUpdated := pluginContext.AppInstanceSettings.Updated
 	cachedUpdated := cachedInstance.PluginContext.AppInstanceSettings.Updated
 	return !curUpdated.Equal(cachedUpdated)

@@ -226,6 +226,60 @@ func TestTTLInstanceManagerDelaysDisposeOfReplacedInstance(t *testing.T) {
 	})
 }
 
+func TestTTLInstanceManagerRefreshDoesNotRestoreReplacedInstance(t *testing.T) {
+	ctx := context.Background()
+	pluginContextUpdatedAt := func(updated time.Time) backend.PluginContext {
+		return backend.PluginContext{
+			OrgID:               1, // nolint:staticcheck
+			AppInstanceSettings: &backend.AppInstanceSettings{Updated: updated},
+		}
+	}
+	initial := pluginContextUpdatedAt(time.Now())
+	updated := pluginContextUpdatedAt(time.Now().Add(time.Second))
+
+	inNeedsUpdate := make(chan struct{})
+	release := make(chan struct{})
+	provider := &testInstanceProvider{needsUpdateHook: func(pCtx backend.PluginContext) {
+		if pCtx.AppInstanceSettings.Updated.Equal(initial.AppInstanceSettings.Updated) {
+			close(inNeedsUpdate)
+			<-release
+		}
+	}}
+	im := newTTLInstanceManager(provider, time.Hour, time.Hour, time.Millisecond)
+	_, err := im.Get(ctx, initial)
+	require.NoError(t, err)
+
+	refreshed := make(chan error, 1)
+	go func() {
+		_, err := im.Get(ctx, initial)
+		refreshed <- err
+	}()
+	<-inNeedsUpdate
+
+	var (
+		replacement Instance
+		replaceErr  error
+	)
+	replaced := make(chan struct{})
+	go func() {
+		defer close(replaced)
+		replacement, replaceErr = im.Get(ctx, updated)
+	}()
+	// If the paused refresh holds no lock, the replacement finishes before it resumes.
+	select {
+	case <-replaced:
+	case <-time.After(100 * time.Millisecond):
+	}
+	close(release)
+	require.NoError(t, <-refreshed)
+	<-replaced
+	require.NoError(t, replaceErr)
+
+	cached, ok := im.(*instanceManagerWithTTL).cache.Get("1")
+	require.True(t, ok)
+	require.True(t, cached.(CachedInstance).instance == replacement, "a refresh must not put back an instance that a replacement evicted")
+}
+
 func TestTTLInstanceManagerConcurrency(t *testing.T) {
 	t.Run("Check possible race condition issues when initially creating instance", func(t *testing.T) {
 		ctx := context.Background()
