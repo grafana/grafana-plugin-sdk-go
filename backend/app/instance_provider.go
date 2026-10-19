@@ -91,6 +91,6 @@ func instanceKey(ctx context.Context, pluginContext backend.PluginContext) strin
 		return fmt.Sprintf("%s#%s", tID, defaultKey)
 	}
 
-	backend.Logger.FromContext(ctx).Warn("Missing tenantID in context", "namespace", pluginContext.Namespace, "pluginId", pluginContext.PluginID)
+	backend.Logger.FromContext(ctx).Debug("Missing tenantID in context", "namespace", pluginContext.Namespace, "pluginId", pluginContext.PluginID)
 	return defaultKey
 }
