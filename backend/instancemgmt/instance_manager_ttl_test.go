@@ -104,47 +104,33 @@ func TestTTLInstanceManagerWithCustomTTL(t *testing.T) {
 	})
 
 	t.Run("Instance accessed before TTL expiry returns same instance", func(t *testing.T) {
-		if testing.Short() {
-			t.Skip("Tests with Sleep")
-		}
-
-		instance, err := im.Get(ctx, pCtx)
+		manager := newTTLInstanceManager(tip, time.Hour, time.Hour)
+		instance, err := manager.Get(ctx, pCtx)
 		require.NoError(t, err)
 		require.NotNil(t, instance)
 
-		// Access instance before TTL expires
-		time.Sleep(ttl / 4) //  Wait 25% of TTL (well before expiry)
-		sameInstance, err := im.Get(ctx, pCtx)
+		// Access instance before TTL expires.
+		sameInstance, err := manager.Get(ctx, pCtx)
 		require.NoError(t, err)
 		require.Same(t, instance, sameInstance)
 		require.False(t, instance.(*testInstance).disposed.Load())
 	})
 
 	t.Run("Instance accessed before TTL expiry should reset TTL", func(t *testing.T) {
-		if testing.Short() {
-			t.Skip("Tests with Sleep")
-		}
-
-		instance, err := im.Get(ctx, pCtx)
+		manager := newTTLInstanceManager(tip, time.Hour, time.Hour).(*instanceManagerWithTTL)
+		instance, err := manager.Get(ctx, pCtx)
 		require.NoError(t, err)
-		require.NotNil(t, instance)
-
-		// Wait 7ms (70% of 10ms TTL) - close to expiry but not expired yet
-		time.Sleep(7 * time.Millisecond)
-
-		// Access instance before TTL expires - this should reset TTL
-		sameInstance, err := im.Get(ctx, pCtx)
+		key := "1"
+		item, ok := manager.cache.Get(key)
+		require.True(t, ok)
+		// Give the cached entry a shorter expiration, then verify that a hit
+		// restores the configured TTL without racing a millisecond janitor.
+		manager.cache.Set(key, item, time.Minute)
+		before := manager.cache.Items()[key].Expiration
+		sameInstance, err := manager.Get(ctx, pCtx)
 		require.NoError(t, err)
-		require.Same(t, instance, sameInstance)
-
-		// Now wait 5ms more (total 12ms from instance creation)
-		// Original TTL would have expired at 10ms, but reset TTL should be (7ms)+10ms = 17ms
-		// So at 12ms, we should still have the same instance
-		time.Sleep(5 * time.Millisecond)
-
-		stillSameInstance, err := im.Get(ctx, pCtx)
-		require.NoError(t, err)
-		require.Same(t, instance, stillSameInstance)
+		require.True(t, instance == sameInstance)
+		require.Greater(t, manager.cache.Items()[key].Expiration, before)
 		require.False(t, instance.(*testInstance).disposed.Load())
 	})
 }

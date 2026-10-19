@@ -28,9 +28,9 @@ type Instance any
 // InstanceDisposer is implemented by an Instance that has a Dispose method,
 // which defines that the instance is disposable.
 //
-// InstanceManager will call the Dispose method before an Instance is replaced
-// with a new Instance. This allows an Instance to clean up resources in use,
-// if any.
+// InstanceManager calls Dispose after an instance is replaced and its disposal
+// delay has elapsed. Requests using Acquire or Do also keep the instance alive
+// until they finish.
 type InstanceDisposer interface {
 	Dispose()
 }
@@ -41,7 +41,8 @@ type InstanceCallbackFunc any
 
 // InstanceManager manages the lifecycle of instances.
 type InstanceManager interface {
-	// Get returns an Instance.
+	// Get returns an Instance. Its lifetime is not tracked after Get returns;
+	// use Acquire or Do when the instance must remain alive during a request.
 	//
 	// If Instance is cached and not updated it's returned. If Instance is not cached or
 	// updated, a new Instance is created and cached before returned.
@@ -58,6 +59,7 @@ type InstanceManager interface {
 type CachedInstance struct {
 	PluginContext backend.PluginContext
 	instance      Instance
+	managed       *managedInstance
 }
 
 // InstanceProvider defines an instance provider, providing instances.
@@ -102,56 +104,75 @@ type instanceManager struct {
 }
 
 func (im *instanceManager) Get(ctx context.Context, pluginContext backend.PluginContext) (Instance, error) {
+	instance, _, err := im.get(ctx, pluginContext, false)
+	return instance, err
+}
+
+func (im *instanceManager) Acquire(ctx context.Context, pluginContext backend.PluginContext) (Instance, func(), error) {
+	return im.get(ctx, pluginContext, true)
+}
+
+func (im *instanceManager) get(ctx context.Context, pluginContext backend.PluginContext, tracked bool) (Instance, func(), error) {
 	cacheKey, err := im.provider.GetKey(ctx, pluginContext)
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-	// Double-checked locking for update/create criteria
+	// Pin the instance before releasing the key lock, so a concurrent swap
+	// cannot retire it between lookup and acquisition.
 	im.locker.RLock(cacheKey)
-	item, ok := im.cache.Load(cacheKey)
-	im.locker.RUnlock(cacheKey)
-
-	if ok {
+	if item, ok := im.cache.Load(cacheKey); ok {
 		ci := item.(CachedInstance)
-		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
-
-		if !needsUpdate {
-			return ci.instance, nil
+		if !im.provider.NeedsUpdate(ctx, pluginContext, ci) {
+			var release func()
+			if tracked {
+				release, _ = ci.managed.acquire()
+			}
+			im.locker.RUnlock(cacheKey)
+			return ci.instance, release, nil
 		}
 	}
+	im.locker.RUnlock(cacheKey)
 
 	im.locker.Lock(cacheKey)
 	defer im.locker.Unlock(cacheKey)
 
+	var previous *managedInstance
 	if item, ok := im.cache.Load(cacheKey); ok {
 		ci := item.(CachedInstance)
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
 
 		if !needsUpdate {
-			return ci.instance, nil
+			var release func()
+			if tracked {
+				release, _ = ci.managed.acquire()
+			}
+			return ci.instance, release, nil
 		}
-
-		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			time.AfterFunc(im.disposeTTL, func() {
-				disposer.Dispose()
-				activeInstances.Dec()
-			})
-		} else {
-			activeInstances.Dec()
-		}
+		previous = ci.managed
 	}
 
 	instance, err := im.provider.NewInstance(ctx, pluginContext)
 	if err != nil {
-		return nil, err
+		// Keep the previous instance cached and undisposed so a failed update doesn't strand it.
+		return nil, nil, err
+	}
+	managed := &managedInstance{instance: instance}
+	var release func()
+	if tracked {
+		release, _ = managed.acquire()
 	}
 	im.cache.Store(cacheKey, CachedInstance{
 		PluginContext: pluginContext,
 		instance:      instance,
+		managed:       managed,
 	})
 	activeInstances.Inc()
 
-	return instance, nil
+	if previous != nil {
+		previous.retire(im.disposeTTL)
+	}
+
+	return instance, release, nil
 }
 
 func (im *instanceManager) Do(ctx context.Context, pluginContext backend.PluginContext, fn InstanceCallbackFunc) error {
@@ -159,10 +180,11 @@ func (im *instanceManager) Do(ctx context.Context, pluginContext backend.PluginC
 		panic("fn cannot be nil")
 	}
 
-	instance, err := im.Get(ctx, pluginContext)
+	instance, release, err := im.Acquire(ctx, pluginContext)
 	if err != nil {
 		return err
 	}
+	defer release()
 
 	callInstanceHandlerFunc(fn, instance)
 	return nil

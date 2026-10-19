@@ -219,6 +219,7 @@ func (ti *testInstance) Dispose() {
 
 type testInstanceProvider struct {
 	delay time.Duration
+	err   error
 }
 
 func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (any, error) {
@@ -234,6 +235,9 @@ func (tip *testInstanceProvider) NeedsUpdate(_ context.Context, pluginContext ba
 func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext backend.PluginContext) (Instance, error) {
 	if tip.delay > 0 {
 		time.Sleep(tip.delay)
+	}
+	if tip.err != nil {
+		return nil, tip.err
 	}
 
 	ti := &testInstance{

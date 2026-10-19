@@ -2,7 +2,6 @@ package instancemgmt
 
 import (
 	"context"
-	"runtime"
 	"testing"
 	"time"
 
@@ -120,20 +119,10 @@ func TestInstanceManagerWrapper_LazilyConstructsTTLManager(t *testing.T) {
 	ctx := context.Background()
 	tip := &testInstanceProvider{}
 
-	runtime.Gosched()
-	before := runtime.NumGoroutine()
-
-	im := NewInstanceManagerWrapper(tip)
-
-	// The TTL manager's own cache spawns a background cleanup goroutine on
-	// construction. It should not be constructed at all until a plugin
-	// context actually selects it, so simply creating the wrapper -- as
-	// every datasource.Manage-based plugin does at startup, regardless of
-	// whether the TTL toggle is ever enabled for it -- must not spawn one.
-	time.Sleep(50 * time.Millisecond)
-	afterConstruction := runtime.NumGoroutine()
-	require.Equal(t, before, afterConstruction,
-		"constructing the instance manager wrapper should not spawn the TTL manager's cleanup goroutine")
+	im := NewInstanceManagerWrapper(tip).(*instanceManagerWrapper)
+	// Check the owned resource, not the process-wide goroutine count: other
+	// tests' cache janitors may exit at any time.
+	require.Nil(t, im.ttlManager)
 
 	pCtx := backend.PluginContext{
 		OrgID: 1, // nolint:staticcheck
@@ -145,15 +134,10 @@ func TestInstanceManagerWrapper_LazilyConstructsTTLManager(t *testing.T) {
 		}),
 	}
 
-	// Selecting the TTL manager repeatedly should construct it -- and its
-	// cleanup goroutine -- exactly once, not once per call.
+	first := im.selectManager(ctx, pCtx)
+	require.IsType(t, &instanceManagerWithTTL{}, first)
 	for range 10 {
-		manager := im.(*instanceManagerWrapper).selectManager(ctx, pCtx)
-		require.IsType(t, &instanceManagerWithTTL{}, manager)
+		require.Same(t, first, im.selectManager(ctx, pCtx))
 	}
-
-	time.Sleep(50 * time.Millisecond)
-	afterSelect := runtime.NumGoroutine()
-	require.Equal(t, before+1, afterSelect,
-		"selecting the TTL manager should construct its cleanup goroutine exactly once, regardless of how many times it's selected")
+	require.Same(t, first, im.ttlManager)
 }

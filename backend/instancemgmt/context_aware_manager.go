@@ -60,6 +60,12 @@ func (c *instanceManagerWrapper) Get(ctx context.Context, pluginContext backend.
 	return manager.Get(ctx, pluginContext)
 }
 
+// Acquire obtains an instance from the selected manager and pins its lifetime
+// until the returned release function is called.
+func (c *instanceManagerWrapper) Acquire(ctx context.Context, pluginContext backend.PluginContext) (Instance, func(), error) {
+	return Acquire(ctx, c.selectManager(ctx, pluginContext), pluginContext)
+}
+
 // Do provides an Instance as argument to fn using the appropriate manager based on feature toggles.
 func (c *instanceManagerWrapper) Do(ctx context.Context, pluginContext backend.PluginContext, fn InstanceCallbackFunc) error {
 	manager := c.selectManager(ctx, pluginContext)
