@@ -94,11 +94,14 @@ func (ip *instanceProvider) NewInstance(ctx context.Context, pluginContext backe
 
 func instanceKey(ctx context.Context, pluginContext backend.PluginContext) string {
 	settings := pluginContext.DataSourceInstanceSettings
-	tenantID := tenant.IDFromContext(ctx)
-	if tenantID == "" {
-		backend.Logger.FromContext(ctx).Warn("Missing tenantID in context", "dsID", dsID)
+	defaultKey := fmt.Sprintf("%d#%s#%s", settings.ID, settings.UID, pluginContext.GrafanaConfig.ProxyHash())
+	if pluginContext.Namespace != "" {
+		defaultKey = fmt.Sprintf("%s#%s", defaultKey, pluginContext.Namespace)
 	}
-	proxyHash := pluginContext.GrafanaConfig.ProxyHash()
+	if tID := tenant.IDFromContext(ctx); tID != "" {
+		return fmt.Sprintf("%s#%s", tID, defaultKey)
+	}
 
-	return fmt.Sprintf("%d#%s#%s#%s#%s", settings.ID, settings.UID, pluginContext.Namespace, tenantID, proxyHash)
+	backend.Logger.FromContext(ctx).Warn("Missing tenantID in context", "namespace", pluginContext.Namespace, "dsUid", settings.UID)
+	return defaultKey
 }

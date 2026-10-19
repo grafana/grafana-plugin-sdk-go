@@ -36,7 +36,7 @@ func TestInstanceProvider(t *testing.T) {
 			},
 		})
 		require.NoError(t, err)
-		require.Equal(t, "4####", key)
+		require.Equal(t, "4##", key)
 	})
 
 	t.Run("When UID, namespace and tenant ID are set, they should be part of the key", func(t *testing.T) {
@@ -45,7 +45,7 @@ func TestInstanceProvider(t *testing.T) {
 			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 4, UID: "ds-uid"},
 		})
 		require.NoError(t, err)
-		require.Equal(t, "4#ds-uid#stacks-123#123#", key)
+		require.Equal(t, "123#4#ds-uid##stacks-123", key)
 	})
 
 	t.Run("Without a tenant ID, data sources with the same ID and UID in different namespaces should get different keys", func(t *testing.T) {
@@ -90,7 +90,7 @@ func TestInstanceProvider(t *testing.T) {
 			GrafanaConfig:              cfg,
 		})
 		require.NoError(t, err)
-		require.Equal(t, fmt.Sprintf("5####%s", want), key)
+		require.Equal(t, fmt.Sprintf("5##%s", want), key)
 	})
 
 	t.Run("When PDC is configured but the key is empty, no problem", func(t *testing.T) {
@@ -102,7 +102,7 @@ func TestInstanceProvider(t *testing.T) {
 			GrafanaConfig:              cfg,
 		})
 		require.NoError(t, err)
-		require.Equal(t, "6####", key)
+		require.Equal(t, "6##", key)
 	})
 
 	t.Run("When PDC is configured but the key is not PEM-encoded, no problem", func(t *testing.T) {
@@ -114,7 +114,7 @@ func TestInstanceProvider(t *testing.T) {
 			GrafanaConfig:              cfg,
 		})
 		require.NoError(t, err)
-		require.Equal(t, "6####", key)
+		require.Equal(t, "6##", key)
 	})
 
 	t.Run("When both the configuration and updated field of current data source instance settings are equal to the cache, should return false", func(t *testing.T) {
