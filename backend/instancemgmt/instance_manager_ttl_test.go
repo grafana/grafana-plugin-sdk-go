@@ -21,7 +21,7 @@ func TestTTLInstanceManager(t *testing.T) {
 	}
 
 	tip := &testInstanceProvider{}
-	im := NewTTLInstanceManager(tip)
+	im := newTTLInstanceManager(tip, defaultInstanceTTL, defaultInstanceCleanupInterval, time.Millisecond)
 
 	t.Run("When getting instance should create a new instance", func(t *testing.T) {
 		instance, err := im.Get(ctx, pCtx)
@@ -78,7 +78,7 @@ func TestTTLInstanceManagerWithCustomTTL(t *testing.T) {
 	tip := &testInstanceProvider{}
 	ttl := 10 * time.Millisecond
 	cleanupInterval := 5 * time.Millisecond
-	im := newTTLInstanceManager(tip, ttl, cleanupInterval)
+	im := newTTLInstanceManager(tip, ttl, cleanupInterval, time.Millisecond)
 
 	t.Run("Instance should be evicted after TTL", func(t *testing.T) {
 		if testing.Short() {
@@ -162,7 +162,7 @@ func TestTTLInstanceManagerDisposesExpiredInstanceOnReplacement(t *testing.T) {
 	// No cleanup sweep runs during the test, so the expired entry is still in the cache
 	// when the next Get replaces it.
 	cleanupInterval := time.Hour
-	im := newTTLInstanceManager(&testInstanceProvider{}, ttl, cleanupInterval)
+	im := newTTLInstanceManager(&testInstanceProvider{}, ttl, cleanupInterval, time.Millisecond)
 
 	first, err := im.Get(ctx, pCtx)
 	require.NoError(t, err)
@@ -173,9 +173,57 @@ func TestTTLInstanceManagerDisposesExpiredInstanceOnReplacement(t *testing.T) {
 	require.NoError(t, err)
 	require.NotSame(t, first, second)
 
-	// OnEvicted disposes the instance and decrements the active-instances gauge in the same
-	// callback, so one Dispose call also means one decrement.
+	// The delayed dispose callback decrements the active-instances gauge too, so one Dispose
+	// call means one decrement.
+	first.(*testInstance).wg.Wait()
 	require.Equal(t, int64(1), first.(*testInstance).disposedTimes.Load(), "expired instance should be disposed when it is replaced")
+}
+
+func TestTTLInstanceManagerDelaysDisposeOfReplacedInstance(t *testing.T) {
+	ctx := context.Background()
+	pluginContextUpdatedAt := func(updated time.Time) backend.PluginContext {
+		return backend.PluginContext{
+			OrgID:               1, // nolint:staticcheck
+			AppInstanceSettings: &backend.AppInstanceSettings{Updated: updated},
+		}
+	}
+	initial := pluginContextUpdatedAt(time.Now())
+	updated := pluginContextUpdatedAt(time.Now().Add(time.Second))
+
+	t.Run("Replaced instance is not disposed before the dispose TTL", func(t *testing.T) {
+		im := newTTLInstanceManager(&testInstanceProvider{}, time.Hour, time.Hour, 100*time.Millisecond)
+		old, err := im.Get(ctx, initial)
+		require.NoError(t, err)
+
+		_, err = im.Get(ctx, updated)
+		require.NoError(t, err)
+		require.False(t, old.(*testInstance).disposed.Load(), "a request that already holds the replaced instance must still be able to use it")
+
+		old.(*testInstance).wg.Wait()
+		require.Equal(t, int64(1), old.(*testInstance).disposedTimes.Load())
+	})
+
+	t.Run("Replacing an instance does not wait for the old instance to be disposed", func(t *testing.T) {
+		gate := make(chan struct{})
+		im := newTTLInstanceManager(&testInstanceProvider{disposeGate: gate}, time.Hour, time.Hour, time.Millisecond)
+		old, err := im.Get(ctx, initial)
+		require.NoError(t, err)
+
+		replaced := make(chan error, 1)
+		go func() {
+			_, err := im.Get(ctx, updated)
+			replaced <- err
+		}()
+		select {
+		case err := <-replaced:
+			require.NoError(t, err)
+		case <-time.After(time.Second):
+			t.Error("Get blocked until the replaced instance was disposed")
+		}
+
+		close(gate)
+		old.(*testInstance).wg.Wait()
+	})
 }
 
 func TestTTLInstanceManagerConcurrency(t *testing.T) {
@@ -225,7 +273,7 @@ func TestTTLInstanceManagerConcurrency(t *testing.T) {
 			},
 		}
 		tip := &testInstanceProvider{}
-		im := NewTTLInstanceManager(tip)
+		im := newTTLInstanceManager(tip, defaultInstanceTTL, defaultInstanceCleanupInterval, time.Millisecond)
 		// Creating initial instance with old contexts
 		instanceToDispose, _ := im.Get(ctx, initialPCtx)
 
@@ -353,7 +401,7 @@ func TestTTLInstanceManagerPanicHandling(t *testing.T) {
 
 	t.Run("newTTLInstanceManager should panic with nil provider", func(t *testing.T) {
 		require.Panics(t, func() {
-			newTTLInstanceManager(nil, defaultInstanceTTL, defaultInstanceCleanupInterval)
+			newTTLInstanceManager(nil, defaultInstanceTTL, defaultInstanceCleanupInterval, defaultDisposeTTL)
 		})
 	})
 }

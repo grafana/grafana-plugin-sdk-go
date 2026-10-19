@@ -18,24 +18,26 @@ const (
 // NewTTLInstanceManager creates a new instance manager with TTL-based caching.
 // Instances will be automatically evicted from the cache after the specified TTL.
 func NewTTLInstanceManager(provider InstanceProvider) InstanceManager {
-	return newTTLInstanceManager(provider, defaultInstanceTTL, defaultInstanceCleanupInterval)
+	return newTTLInstanceManager(provider, defaultInstanceTTL, defaultInstanceCleanupInterval, defaultDisposeTTL)
 }
 
-func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceCleanupInterval time.Duration) InstanceManager {
+func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceCleanupInterval, disposeTTL time.Duration) InstanceManager {
 	if provider == nil {
 		panic("provider cannot be nil")
 	}
 
 	cache := gocache.New(instanceTTL, instanceCleanupInterval)
 
-	// Set up the OnEvicted callback to dispose instances
+	// Get evicts a live instance when it replaces it, so requests that already hold it get disposeTTL to finish.
 	cache.OnEvicted(func(key string, value any) {
 		ci := value.(CachedInstance)
-		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			disposer.Dispose()
-		}
 		backend.Logger.Debug("Evicted instance", "key", key)
-		activeInstances.Dec()
+		time.AfterFunc(disposeTTL, func() {
+			if disposer, valid := ci.instance.(InstanceDisposer); valid {
+				disposer.Dispose()
+			}
+			activeInstances.Dec()
+		})
 	})
 
 	return &instanceManagerWithTTL{
