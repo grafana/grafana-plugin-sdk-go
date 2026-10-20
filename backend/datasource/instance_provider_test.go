@@ -39,6 +39,38 @@ func TestInstanceProvider(t *testing.T) {
 		require.Equal(t, "4##", key)
 	})
 
+	t.Run("When UID, namespace and tenant ID are set, they should be part of the key", func(t *testing.T) {
+		key, err := ip.GetKey(backend.WithTenant(context.Background(), "123"), backend.PluginContext{
+			Namespace:                  "stacks-123",
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{ID: 4, UID: "ds-uid"},
+		})
+		require.NoError(t, err)
+		require.Equal(t, "123#4#ds-uid##stacks-123", key)
+	})
+
+	t.Run("Without a tenant ID, data sources with the same ID and UID in different namespaces should get different keys", func(t *testing.T) {
+		settings := &backend.DataSourceInstanceSettings{ID: 1, UID: "grafanacloud-prom"}
+		keyA, err := ip.GetKey(context.Background(), backend.PluginContext{Namespace: "stacks-1", DataSourceInstanceSettings: settings})
+		require.NoError(t, err)
+		keyB, err := ip.GetKey(context.Background(), backend.PluginContext{Namespace: "stacks-2", DataSourceInstanceSettings: settings})
+		require.NoError(t, err)
+		require.NotEqual(t, keyA, keyB)
+	})
+
+	t.Run("Data sources with no ID in the same namespace should get different keys", func(t *testing.T) {
+		keyA, err := ip.GetKey(context.Background(), backend.PluginContext{
+			Namespace:                  "stacks-1",
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "a"},
+		})
+		require.NoError(t, err)
+		keyB, err := ip.GetKey(context.Background(), backend.PluginContext{
+			Namespace:                  "stacks-1",
+			DataSourceInstanceSettings: &backend.DataSourceInstanceSettings{UID: "b"},
+		})
+		require.NoError(t, err)
+		require.NotEqual(t, keyA, keyB)
+	})
+
 	t.Run("When PDC is configured, datasource cache key should include its (so-called) hash", func(t *testing.T) {
 		// the value of Bytes below must be a multiple of three in length for this test
 		// to pass, but that's an artifact of how the target value is created. The code
