@@ -18,24 +18,26 @@ const (
 // NewTTLInstanceManager creates a new instance manager with TTL-based caching.
 // Instances will be automatically evicted from the cache after the specified TTL.
 func NewTTLInstanceManager(provider InstanceProvider) InstanceManager {
-	return newTTLInstanceManager(provider, defaultInstanceTTL, defaultInstanceCleanupInterval)
+	return newTTLInstanceManager(provider, defaultInstanceTTL, defaultInstanceCleanupInterval, defaultDisposeTTL)
 }
 
-func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceCleanupInterval time.Duration) InstanceManager {
+func newTTLInstanceManager(provider InstanceProvider, instanceTTL, instanceCleanupInterval, disposeTTL time.Duration) InstanceManager {
 	if provider == nil {
 		panic("provider cannot be nil")
 	}
 
 	cache := gocache.New(instanceTTL, instanceCleanupInterval)
 
-	// Set up the OnEvicted callback to dispose instances
+	// Get evicts a live instance when it replaces it, so requests that already hold it get disposeTTL to finish.
 	cache.OnEvicted(func(key string, value any) {
 		ci := value.(CachedInstance)
-		if disposer, valid := ci.instance.(InstanceDisposer); valid {
-			disposer.Dispose()
-		}
 		backend.Logger.Debug("Evicted instance", "key", key)
-		activeInstances.Dec()
+		time.AfterFunc(disposeTTL, func() {
+			if disposer, valid := ci.instance.(InstanceDisposer); valid {
+				disposer.Dispose()
+			}
+			activeInstances.Dec()
+		})
 	})
 
 	return &instanceManagerWithTTL{
@@ -62,16 +64,8 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 	} else {
 		cacheKey = fmt.Sprintf("%v", providerKey)
 	}
-	item, ok := im.cache.Get(cacheKey)
-	if ok {
-		ci := item.(CachedInstance)
-		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
-
-		if !needsUpdate {
-			// Refresh TTL without extra locking (go-cache is thread-safe)
-			im.refreshTTL(cacheKey, ci)
-			return ci.instance, nil
-		}
+	if instance, ok := im.reuseCachedInstance(ctx, cacheKey, pluginContext); ok {
+		return instance, nil
 	}
 
 	im.locker.Lock(cacheKey)
@@ -118,6 +112,23 @@ func (im *instanceManagerWithTTL) Do(ctx context.Context, pluginContext backend.
 
 	callInstanceHandlerFunc(fn, instance)
 	return nil
+}
+
+// reuseCachedInstance holds the read lock so that refreshTTL cannot put back an instance that a concurrent replacement evicted.
+func (im *instanceManagerWithTTL) reuseCachedInstance(ctx context.Context, cacheKey string, pluginContext backend.PluginContext) (Instance, bool) {
+	im.locker.RLock(cacheKey)
+	defer im.locker.RUnlock(cacheKey)
+
+	item, ok := im.cache.Get(cacheKey)
+	if !ok {
+		return nil, false
+	}
+	ci := item.(CachedInstance)
+	if im.provider.NeedsUpdate(ctx, pluginContext, ci) {
+		return nil, false
+	}
+	im.refreshTTL(cacheKey, ci)
+	return ci.instance, true
 }
 
 // refreshTTL updates the TTL of the cached instance by resetting its expiration time.
