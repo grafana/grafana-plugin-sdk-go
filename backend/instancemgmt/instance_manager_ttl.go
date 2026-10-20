@@ -64,7 +64,7 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 	} else {
 		cacheKey = fmt.Sprintf("%v", providerKey)
 	}
-	if instance, ok := im.currentInstance(ctx, cacheKey, pluginContext); ok {
+	if instance, ok := im.reuseCachedInstance(ctx, cacheKey, pluginContext); ok {
 		return instance, nil
 	}
 
@@ -114,8 +114,8 @@ func (im *instanceManagerWithTTL) Do(ctx context.Context, pluginContext backend.
 	return nil
 }
 
-// currentInstance holds the read lock so that refreshTTL cannot put back an instance that a concurrent replacement evicted.
-func (im *instanceManagerWithTTL) currentInstance(ctx context.Context, cacheKey string, pluginContext backend.PluginContext) (Instance, bool) {
+// reuseCachedInstance holds the read lock so that refreshTTL cannot put back an instance that a concurrent replacement evicted.
+func (im *instanceManagerWithTTL) reuseCachedInstance(ctx context.Context, cacheKey string, pluginContext backend.PluginContext) (Instance, bool) {
 	im.locker.RLock(cacheKey)
 	defer im.locker.RUnlock(cacheKey)
 
