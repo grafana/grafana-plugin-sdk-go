@@ -3,6 +3,7 @@
 package marketplace
 
 import (
+	"github.com/hashicorp/go-plugin"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -36,4 +37,21 @@ func TestMarketplaceLicenseDevelopmentModeIgnoresRuntimeInputs(t *testing.T) {
 	got, err := Licensing(Opts{ParentPluginID: "../invalid-parent-id"})("../invalid-plugin-id", serveOpts)
 	require.NoError(t, err)
 	require.Equal(t, serveOpts, got)
+}
+
+// Not parallel: it flips the package-level -qtlv flag.
+func TestMarketplaceLicenseDevelopmentModeSkipsQueryTimeValidation(t *testing.T) {
+	old := *queryTimeLicenseValidation
+	*queryTimeLicenseValidation = true
+	t.Cleanup(func() { *queryTimeLicenseValidation = old })
+
+	// ExtraPlugins would be rejected, and a middleware installed, if the bypass did not apply.
+	serveOpts := backend.ServeOpts{
+		QueryDataHandler: &backend.BaseHandler{},
+		ExtraPlugins:     plugin.PluginSet{"extra": nil},
+	}
+	got, err := Licensing(Opts{})("example-datasource", serveOpts)
+	require.NoError(t, err)
+	require.Equal(t, serveOpts, got)
+	require.Empty(t, got.HandlerMiddlewares)
 }
