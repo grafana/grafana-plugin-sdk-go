@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"errors"
+	"fmt"
 	"io"
 	"reflect"
 	"strings"
@@ -922,6 +923,60 @@ func TestFrameFromRows_MultipleTimes(t *testing.T) {
 			}
 
 			require.Equal(t, tt.frames, frames)
+		})
+	}
+}
+
+func TestFrameFromRowsDynamicRowLimit(t *testing.T) {
+	notice := func(limit int) []data.Notice {
+		return []data.Notice{{
+			Severity: data.NoticeSeverityWarning,
+			Text:     fmt.Sprintf("Results have been limited to %d because the SQL row limit was reached", limit),
+		}}
+	}
+	for _, tt := range []struct {
+		name        string
+		rows        *sql.Rows
+		rowLimit    int64
+		wantRows    int
+		wantNotices []data.Notice
+	}{
+		{
+			name:     "no limit keeps every row",
+			rows:     makeSingleResultSet([]string{"a"}, []any{1}, []any{2}, []any{3}), //nolint:rowserrcheck
+			rowLimit: -1,
+			wantRows: 3,
+		},
+		{
+			name:        "limit at the end of the first result set",
+			rows:        makeMultipleResultSets([]string{"a"}, [][]any{{1}, {2}}, [][]any{{3}}), //nolint:rowserrcheck
+			rowLimit:    2,
+			wantRows:    2,
+			wantNotices: notice(2),
+		},
+		{
+			name:        "limit inside the second result set",
+			rows:        makeMultipleResultSets([]string{"a"}, [][]any{{1}, {2}}, [][]any{{3}, {4}}), //nolint:rowserrcheck
+			rowLimit:    3,
+			wantRows:    3,
+			wantNotices: notice(3),
+		},
+		{
+			name:     "limit above the total keeps every row",
+			rows:     makeMultipleResultSets([]string{"a"}, [][]any{{1}, {2}}, [][]any{{3}}), //nolint:rowserrcheck
+			rowLimit: 100,
+			wantRows: 3,
+		},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			frame, err := sqlutil.FrameFromRows(tt.rows, tt.rowLimit, sqlutil.Converter{Dynamic: true})
+			require.NoError(t, err)
+			require.Equal(t, tt.wantRows, frame.Rows())
+			var notices []data.Notice
+			if frame.Meta != nil {
+				notices = frame.Meta.Notices
+			}
+			require.Equal(t, tt.wantNotices, notices)
 		})
 	}
 }
