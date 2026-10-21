@@ -113,6 +113,9 @@ type CheckHealthResult struct {
 
 	// JSONDetails the details of the healthcheck, if any, encoded as JSON bytes.
 	JSONDetails []byte
+
+	// ErrorSource the source of a health check error, if any.
+	ErrorSource ErrorSource
 }
 
 // CollectMetricsHandler handles metric collection.
