@@ -1,6 +1,7 @@
 package data
 
 import (
+	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -26,23 +27,27 @@ const metadataKeyRefID = "refId"   // added to the table metadata
 // representation of that table.
 // All fields of a Frame must be of the same length or an error is returned.
 func (f *Frame) MarshalArrow() ([]byte, error) {
+	var buf bytes.Buffer
+	if err := f.marshalArrow(&buf); err != nil {
+		return nil, err
+	}
+	return buf.Bytes(), nil
+}
+
+// marshalArrow writes one complete Arrow file to w.
+func (f *Frame) marshalArrow(w io.Writer) error {
 	table, err := FrameToArrowTable(f)
 	if err != nil {
-		return nil, err
+		return err
 	}
 	defer table.Release()
 
 	tableReader := array.NewTableReader(table, -1)
 	defer tableReader.Release()
 
-	// Arrow tables with the Go API are written to files, so we create a fake
-	// file buffer that the FileWriter can write to. In the future, and with
-	// streaming, I think will likely be using the Arrow message type some how.
-	fb := filebuffer.New(nil)
-
-	fw, err := ipc.NewFileWriter(fb, ipc.WithSchema(tableReader.Schema()))
+	fw, err := ipc.NewFileWriter(w, ipc.WithSchema(tableReader.Schema()))
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	for tableReader.Next() {
@@ -50,16 +55,12 @@ func (f *Frame) MarshalArrow() ([]byte, error) {
 
 		if err := fw.Write(rec); err != nil {
 			rec.Release()
-			return nil, err
+			return err
 		}
 		rec.Release()
 	}
 
-	if err := fw.Close(); err != nil {
-		return nil, err
-	}
-
-	return fb.Buff.Bytes(), nil
+	return fw.Close()
 }
 
 // FrameToArrowTable creates a new arrow.Table from a data frame
@@ -836,14 +837,26 @@ func UnmarshalArrowFrames(bFrames [][]byte) (Frames, error) {
 // See UnmarshalArrowFrames for the inverse operation.
 func (frames Frames) MarshalArrow() ([][]byte, error) {
 	bs := make([][]byte, len(frames))
-	var err error
+	// Reuse output storage only within this call. Limit the retained capacity
+	// so a large frame does not keep a large scratch buffer alive for the rest
+	// of the batch. Large outputs are transferred directly instead of copied.
+	const maxScratchCapacity = 64 * 1024
+	var buf bytes.Buffer
 	for i, frame := range frames {
 		if frame == nil {
 			return nil, errors.New("frame can not be nil")
 		}
-		bs[i], err = frame.MarshalArrow()
-		if err != nil {
+		if err := frame.marshalArrow(&buf); err != nil {
 			return nil, err
+		}
+		if buf.Cap() > maxScratchCapacity || i == len(frames)-1 {
+			// The last frame (including a single-frame batch) needs no copy.
+			bs[i] = buf.Bytes()
+			buf = bytes.Buffer{}
+		} else {
+			// Each output must own its bytes before the buffer is reused.
+			bs[i] = bytes.Clone(buf.Bytes())
+			buf.Reset()
 		}
 	}
 	return bs, nil
