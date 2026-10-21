@@ -30,7 +30,7 @@ func TestDynamicFrame(t *testing.T) {
 	}
 
 	_, converters = removeDynamicConverter(converters)
-	frame, err := frameDynamic(rows, 100, types, converters)
+	frame, err := frameDynamic(rows, 100, types, converters, nil)
 	assert.Nil(t, err)
 	assert.NotNil(t, frame)
 
@@ -85,7 +85,7 @@ func TestDynamicFrameShouldNotPanic(t *testing.T) {
 	}
 
 	_, converters = removeDynamicConverter(converters)
-	frame, err := frameDynamic(rows, 100, types, converters)
+	frame, err := frameDynamic(rows, 100, types, converters, nil)
 	assert.Nil(t, err)
 	assert.NotNil(t, frame)
 

@@ -1,11 +1,13 @@
 package sqlutil
 
 import (
+	"context"
 	"database/sql"
 	"fmt"
 	"math"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/querycapture"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -22,7 +24,7 @@ import (
 // The converter defines what type to use for scanning, what type to place in the data frame, and a function for converting from one to the other.
 // If you find yourself here after upgrading, you can continue to your StringConverters here by using the `ToConverters` function.
 func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*data.Frame, error) {
-	return frameFromRows(rows, rowLimit, 0, converters...)
+	return frameFromRows(context.Background(), rows, rowLimit, 0, converters...)
 }
 
 // FrameFromRowsWithCapacity is like FrameFromRows but reserves capacity for the
@@ -30,10 +32,21 @@ func FrameFromRows(rows *sql.Rows, rowLimit int64, converters ...Converter) (*da
 // large result sets. Pass the row count returned by the database (or an upper
 // bound). A capacity of 0 behaves identically to FrameFromRows.
 func FrameFromRowsWithCapacity(rows *sql.Rows, rowLimit int64, capacity int, converters ...Converter) (*data.Frame, error) {
-	return frameFromRows(rows, rowLimit, capacity, converters...)
+	return frameFromRows(context.Background(), rows, rowLimit, capacity, converters...)
 }
 
-func frameFromRows(rows *sql.Rows, rowLimit int64, capacity int, converters ...Converter) (*data.Frame, error) {
+// FrameFromRowsWithContext is FrameFromRowsWithCapacity plus diagnostics: when ctx carries a
+// querycapture.ResultCapture, every row is also recorded there as the driver returned it, before any
+// Converter runs. That is what lets a diagnostics bundle for a SQL datasource say what the datasource
+// sent, not only what the plugin made of it. With no capture on ctx it is identical to
+// FrameFromRowsWithCapacity, down to not touching the scan path.
+//
+// Pass a capacity of 0 for FrameFromRows behaviour.
+func FrameFromRowsWithContext(ctx context.Context, rows *sql.Rows, rowLimit int64, capacity int, converters ...Converter) (*data.Frame, error) {
+	return frameFromRows(ctx, rows, rowLimit, capacity, converters...)
+}
+
+func frameFromRows(ctx context.Context, rows *sql.Rows, rowLimit int64, capacity int, converters ...Converter) (*data.Frame, error) {
 	types, err := rows.ColumnTypes()
 	if err != nil {
 		return nil, err
@@ -44,16 +57,21 @@ func frameFromRows(rows *sql.Rows, rowLimit int64, capacity int, converters ...C
 		rowLimit = math.MaxInt64
 	}
 
+	resultCapture, capturing := querycapture.ResultCaptureFromContext(ctx)
+
 	// If there is a dynamic converter, we need to use the dynamic framer
 	// and remove the dynamic converter from the list of converters ( it is not valid, just a flag )
 	if isDynamic, converters := removeDynamicConverter(converters); isDynamic {
 		rows := Rows{itr: rows}
-		return frameDynamic(rows, rowLimit, types, converters)
+		return frameDynamic(rows, rowLimit, types, converters, resultCapture)
 	}
 
 	names, err := rows.Columns()
 	if err != nil {
 		return nil, err
+	}
+	if capturing {
+		resultCapture.SetColumns(names)
 	}
 
 	scanRow, err := MakeScanRow(types, names, converters...)
@@ -86,6 +104,12 @@ outer:
 		for rows.Next() {
 			if err := rows.Scan(scannable...); err != nil {
 				return nil, err
+			}
+
+			// Capture before conversion, and before appendConvertedRow can fail: a row the
+			// converters choke on is exactly the row a wrong-data investigation wants to see.
+			if capturing {
+				captureScannedRow(resultCapture, scannable)
 			}
 
 			if err := appendConvertedRow(frame, scannable, converted, scanRow.Converters); err != nil {
