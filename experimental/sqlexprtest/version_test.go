@@ -13,9 +13,11 @@ import (
 )
 
 // withFix pretends a Grafana release v fixed the behavior a check reports,
-// or, when v is empty, that no release fixed it yet.
-func withFix(t *testing.T, code Code, v string) {
+// or, when v is empty, that no release fixed it yet. Tests that mutate this
+// registry must not run in parallel with another test that calls Check.
+func withFix(t *testing.T, v string) {
 	t.Helper()
+	const code = CodeGeneratedNameClash
 	prev, had := grafanaFixes[code]
 	if v == "" {
 		delete(grafanaFixes, code)
@@ -33,12 +35,12 @@ func withFix(t *testing.T, code Code, v string) {
 
 func TestParseVersion(t *testing.T) {
 	for in, want := range map[string]version{
-		"13.3.0":     {13, 3, 0},
-		"v12.1.4":    {12, 1, 4},
-		"13.3.0-pre": {13, 3, 0},
-		"11.0.0+abc": {11, 0, 0},
-		"12":         {12, 0, 0},
-		"12.4":       {12, 4, 0},
+		"13.3.0":     {13, 3, 0, ""},
+		"v12.1.4":    {12, 1, 4, ""},
+		"13.3.0-pre": {13, 3, 0, "pre"},
+		"11.0.0+abc": {11, 0, 0, ""},
+		"12":         {12, 0, 0, ""},
+		"12.4":       {12, 4, 0, ""},
 	} {
 		got, err := parseVersion(in)
 		require.NoError(t, err, in)
@@ -56,11 +58,11 @@ func TestLowestVersion(t *testing.T) {
 		">=10.4.0 <12":              "10.4.0",
 		"^11.0.0":                   "11.0.0",
 		">=12.1.0 || >=10.4.0 <11":  "10.4.0",
-		">=11.6.0-0":                "11.6.0",
+		">=11.6.0-0":                "11.6.0-0",
 		"10.4.0":                    "10.4.0",
 		" >= 12.0.0":                "12.0.0",
 		">= 10.4.0 < 12":            "10.4.0",
-		"<12.0.0":                   "",
+		"<12.0.0":                   "0.0.0",
 		">=10.4.0 <11 || >=12.1.0 ": "10.4.0",
 	} {
 		got, err := lowestVersion(in)
@@ -92,7 +94,7 @@ func TestMinGrafanaFromPluginJSON(t *testing.T) {
 	})
 
 	t.Run("errors", func(t *testing.T) {
-		for _, content := range []string{`{}`, `{"dependencies": {"grafanaDependency": "<12"}}`, `not json`} {
+		for _, content := range []string{`{}`, `{"dependencies": {"grafanaDependency": "12.x"}}`, `not json`} {
 			_, err := MinGrafanaFromPluginJSON(write(t, content))
 			assert.Error(t, err, content)
 		}
@@ -110,7 +112,7 @@ func clashFrames() data.Frames {
 
 func TestCheckGeneratedNameClashFixedIn(t *testing.T) {
 	t.Run("no fix yet", func(t *testing.T) {
-		withFix(t, CodeGeneratedNameClash, "")
+		withFix(t, "")
 		r := Check(clashFrames(), MinGrafana("99.0.0"))
 		require.Equal(t, []Code{CodeGeneratedNameClash}, codes(r))
 		assert.Equal(t, SeverityWarning, r.Findings[0].Severity)
@@ -118,7 +120,7 @@ func TestCheckGeneratedNameClashFixedIn(t *testing.T) {
 		assert.Equal(t, []string{"time", "__value__", "__metric_name__", "label_time", "time"}, columnNames(r))
 	})
 
-	withFix(t, CodeGeneratedNameClash, "13.3.0")
+	withFix(t, "13.3.0")
 
 	for _, tc := range []struct {
 		name string
@@ -126,6 +128,7 @@ func TestCheckGeneratedNameClashFixedIn(t *testing.T) {
 	}{
 		{"no minimum version", nil},
 		{"older minimum version", []Option{MinGrafana("13.2.9")}},
+		{"prerelease minimum version", []Option{MinGrafana("13.3.0-pre")}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := Check(clashFrames(), tc.opts...)
@@ -139,7 +142,7 @@ func TestCheckGeneratedNameClashFixedIn(t *testing.T) {
 		})
 	}
 
-	for _, minimum := range []string{"13.3.0", "13.3.0-pre", "14.0.0"} {
+	for _, minimum := range []string{"13.3.0", "13.3.0+build.12", "14.0.0"} {
 		t.Run("fixed in every supported version "+minimum, func(t *testing.T) {
 			r := Check(clashFrames(), MinGrafana(minimum))
 			require.Equal(t, []Code{CodeGeneratedNameClash}, codes(r))
@@ -163,7 +166,7 @@ func TestCheckGeneratedNameClashOnlyWithColumnsGrafanaGenerates(t *testing.T) {
 }
 
 func TestAssertUsesMinGrafana(t *testing.T) {
-	withFix(t, CodeGeneratedNameClash, "13.3.0")
+	withFix(t, "13.3.0")
 
 	rec := &recorder{TB: t}
 	AssertFrames(rec, clashFrames())
