@@ -23,7 +23,7 @@ func ExampleCheck() {
 	r := sqlexprtest.Check(data.Frames{frame})
 	fmt.Println(r)
 	// Output:
-	// query "A": mode full-long, input type timeseries-wide
+	// query "A": mode full-long, input type timeseries-wide, rows 1
 	//   columns: time TIMESTAMP, __value__ DOUBLE, __metric_name__ TEXT, host TEXT
-	//   warning [dropped-field, grafana] frame 0 field "status": Grafana keeps only numeric value fields when it converts timeseries-wide for SQL, so this string field is dropped without an error. Return a table or long frame to keep it.
+	//   warning [dropped-field, grafana] frame 0 field "status": Grafana keeps only numeric value fields when it converts timeseries-wide for SQL, so field 1 (string) is dropped without an error. Return a table or long frame to keep it.
 }

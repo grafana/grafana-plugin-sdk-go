@@ -106,7 +106,7 @@ func TestCheckMissingType(t *testing.T) {
 	t.Run("several frames fail", func(t *testing.T) {
 		r := Check(data.Frames{plain(), plain()})
 		assert.Equal(t, ModeNone, r.Mode)
-		assert.Equal(t, []Code{CodeMissingType}, codes(r))
+		assert.Equal(t, []Code{CodeMultipleTableFrames}, codes(r))
 		assert.Equal(t, SeverityError, r.Worst())
 	})
 
@@ -119,7 +119,7 @@ func TestCheckMissingType(t *testing.T) {
 	})
 }
 
-func TestCheckUnsupportedType(t *testing.T) {
+func TestCheckNonConvertibleTypes(t *testing.T) {
 	logs := func() *data.Frame {
 		return typed(data.FrameTypeLogLines, data.NewFrame("", data.NewField("line", nil, []string{"x"})))
 	}
@@ -128,7 +128,7 @@ func TestCheckUnsupportedType(t *testing.T) {
 
 	r := Check(data.Frames{logs(), logs()})
 	assert.Equal(t, ModeNone, r.Mode)
-	assert.Equal(t, []Code{CodeUnsupportedType}, codes(r))
+	assert.Equal(t, []Code{CodeMultipleTableFrames}, codes(r))
 }
 
 func TestCheckTimeSeriesMulti(t *testing.T) {
@@ -160,11 +160,11 @@ func TestCheckNumericWide(t *testing.T) {
 
 	r = Check(data.Frames{frame(2)})
 	assert.Equal(t, ModeNone, r.Mode)
-	assert.Equal(t, []Code{CodeInvalidShape}, codes(r))
+	assert.Equal(t, []Code{CodeNumericRowCount}, codes(r))
 
 	r = Check(data.Frames{frame(1), frame(1)})
 	assert.Equal(t, ModeNone, r.Mode)
-	assert.Equal(t, []Code{CodeInvalidShape}, codes(r))
+	assert.Equal(t, []Code{CodeWideFrameCount}, codes(r))
 }
 
 func TestCheckDisplayNameColumn(t *testing.T) {
@@ -182,7 +182,7 @@ func TestCheckTimeField(t *testing.T) {
 		frame := typed(data.FrameTypeTimeSeriesMulti, data.NewFrame("", data.NewField("cpu", nil, []float64{1})))
 		r := Check(data.Frames{frame})
 		assert.Equal(t, ModeNone, r.Mode)
-		assert.Equal(t, []Code{CodeInvalidShape}, codes(r))
+		assert.Equal(t, []Code{CodeMissingTimeField}, codes(r))
 	})
 
 	t.Run("nullable", func(t *testing.T) {
@@ -250,7 +250,7 @@ func TestCheckIntegerPrecision(t *testing.T) {
 	t.Run("large whole float", func(t *testing.T) {
 		frame := typed(data.FrameTypeTable, data.NewFrame("",
 			data.NewField("id", nil, []*float64{nil, new(float64(big))}),
-			data.NewField("ratio", nil, []float64{0.5}),
+			data.NewField("ratio", nil, []float64{0.5, 0.5}),
 		))
 		r := Check(data.Frames{frame})
 		assert.Equal(t, []Code{CodeLargeIntegerInFloat}, codes(r))
@@ -294,10 +294,10 @@ func TestReportString(t *testing.T) {
 	frame.RefID = "A"
 	r := Check(data.Frames{frame})
 
-	assert.Equal(t, `query "A": mode table
+	assert.Equal(t, `query "A": mode table, rows 1
   columns: value DOUBLE
   info [missing-type, plugin] frame 0: the frame has no Meta.Type, so it passes through as a table. `+
-		`Set Meta.Type (for example table, timeseries-multi, or numeric-wide), so Grafana knows the shape.`, r.String())
+		`Set Meta.Type, for example to table, timeseries-multi or numeric-wide, so Grafana knows the shape.`, r.String())
 }
 
 func TestCheckNumericRows(t *testing.T) {
@@ -306,7 +306,7 @@ func TestCheckNumericRows(t *testing.T) {
 		b := typed(data.FrameTypeNumericMulti, data.NewFrame("", data.NewField("b", nil, []float64{1, 2, 3})))
 		r := Check(data.Frames{a, b})
 		assert.Equal(t, ModeFullLong, r.Mode)
-		assert.Equal(t, []Code{CodeInvalidShape}, codes(r))
+		assert.Equal(t, []Code{CodeNumericValuesTruncated}, codes(r))
 		assert.Equal(t, SeverityWarning, r.Worst())
 		assert.Equal(t, "b", r.Findings[0].Field)
 	})
@@ -315,7 +315,7 @@ func TestCheckNumericRows(t *testing.T) {
 		frame := typed(data.FrameTypeNumericWide, data.NewFrame("", data.NewField("a", nil, []float64{})))
 		r := Check(data.Frames{frame})
 		assert.Equal(t, ModeNone, r.Mode)
-		assert.Equal(t, []Code{CodeInvalidShape}, codes(r))
+		assert.Equal(t, []Code{CodeEmptyNumericField}, codes(r))
 		assert.Equal(t, OwnerGrafana, r.Findings[0].Owner)
 	})
 }
@@ -327,7 +327,7 @@ func TestCheckNumericMultiFirstField(t *testing.T) {
 	r := Check(data.Frames{a, b})
 
 	assert.Equal(t, ModeNone, r.Mode)
-	assert.Equal(t, []Code{CodeInvalidShape}, codes(r))
+	assert.Equal(t, []Code{CodeNumericRowCount}, codes(r))
 	assert.Equal(t, SeverityError, r.Worst())
 }
 
@@ -395,8 +395,8 @@ func TestCheckTableWithLabels(t *testing.T) {
 
 	r := Check(data.Frames{frame})
 
-	assert.Equal(t, []Code{CodeUnsupportedType}, codes(r))
-	assert.Contains(t, r.Findings[0].Message, "passes through as a table, but this field has labels")
+	assert.Equal(t, []Code{CodeLabelsOnTable}, codes(r))
+	assert.Contains(t, r.Findings[0].Message, "has labels, and a table can't hold labels")
 }
 
 func TestSeverityNone(t *testing.T) {

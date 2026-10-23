@@ -13,11 +13,11 @@ type Severity int
 const (
 	// SeverityNone is what Report.Worst returns for a report with no findings.
 	SeverityNone Severity = iota - 1
-	// SeverityInfo is advice. Nothing is lost.
+	// SeverityInfo is advice or expected normalization; it does not fail assertions by default.
 	SeverityInfo
-	// SeverityWarning means SQL runs, but data is lost or changed without an error.
+	// SeverityWarning means data may be lost or changed, or some SQL references may fail.
 	SeverityWarning
-	// SeverityError means the SQL Expression fails on this input.
+	// SeverityError means input conversion, schema inspection, or SQL row reading fails.
 	SeverityError
 )
 
@@ -55,45 +55,102 @@ const (
 	CodeQueryError Code = "query-error"
 	// CodeMissingRefID: the response has no entry for the query's RefID.
 	CodeMissingRefID Code = "missing-refid"
-	// CodeUnexpectedRefID: the response has an entry for a RefID no query asked for.
+	// CodeUnexpectedRefID: the response has an entry no query asked for.
 	CodeUnexpectedRefID Code = "unexpected-refid"
+	// CodeNilResponse: the handler returned a nil QueryDataResponse.
+	CodeNilResponse Code = "nil-response"
 	// CodePanic: the QueryData handler panicked.
 	CodePanic Code = "panic"
-	// CodeNoFrames: the query returned no frames, so SQL sees a table with no columns.
+	// CodeNoFrames: SQL receives a table with no columns.
 	CodeNoFrames Code = "no-frames"
 	// CodeNoFields: the query returned one frame with no fields.
 	CodeNoFields Code = "no-fields"
-	// CodeMissingType: a frame has no Meta.Type.
+	// CodeMissingType: an unlabeled frame passes through without Meta.Type.
 	CodeMissingType Code = "missing-type"
-	// CodeUnsupportedType: Grafana can't convert this Meta.Type, and the
-	// frames can't pass through as one table.
-	CodeUnsupportedType Code = "unsupported-type"
-	// CodeMixedTypes: frames of one query have different Meta.Type values.
+	// CodeMultipleTableFrames: several frames cannot pass through as one table.
+	CodeMultipleTableFrames Code = "multiple-table-frames"
+	// CodeLabelsOnTable: field labels prevent a frame from passing through as a table.
+	CodeLabelsOnTable Code = "labels-on-table"
+	// CodeMixedTypes: later frames declare a different type from the first frame.
 	CodeMixedTypes Code = "mixed-types"
-	// CodeInvalidShape: the frames don't match the shape their Meta.Type
-	// declares, so Grafana's conversion fails.
-	CodeInvalidShape Code = "invalid-shape"
-	// CodeNullableTime: a time series frame's only time field is nullable.
+	// CodeWideFrameCount: wide conversion requires exactly one frame.
+	CodeWideFrameCount Code = "wide-frame-count"
+	// CodeMissingTimeField: time series conversion requires a time field.
+	CodeMissingTimeField Code = "missing-time-field"
+	// CodeNullableTime: time series conversion has no non-nullable time field.
 	CodeNullableTime Code = "nullable-time"
-	// CodeDroppedField: Grafana drops this field when it converts the frames for SQL.
+	// CodeNumericRowCount: the first field used to count numeric rows has more than one row.
+	CodeNumericRowCount Code = "numeric-row-count"
+	// CodeNumericValuesTruncated: numeric conversion keeps only the first value of this field.
+	CodeNumericValuesTruncated Code = "numeric-values-truncated"
+	// CodeEmptyNumericField: numeric conversion panics on an empty value field.
+	CodeEmptyNumericField Code = "empty-numeric-field"
+	// CodeNilFrame: an input frame pointer is nil.
+	CodeNilFrame Code = "nil-frame"
+	// CodeNilField: an input field pointer is nil.
+	CodeNilField Code = "nil-field"
+	// CodeInvalidField: a field has no values array, as in a zero-value data.Field.
+	CodeInvalidField Code = "invalid-field"
+	// CodeUnequalFieldLengths: unequal lengths cause truncation or an input/SQL failure.
+	CodeUnequalFieldLengths Code = "unequal-field-lengths"
+	// CodeDroppedField: conversion drops this non-numeric value field.
 	CodeDroppedField Code = "dropped-field"
-	// CodeIntegerAsFloat: Grafana stores this integer value field as float64,
-	// and some values are too large to keep exactly.
+	// CodeDroppedLabel: conversion drops labels on the selected time field.
+	CodeDroppedLabel Code = "dropped-label"
+	// CodeIntegerAsFloat: integer values converted to float64 may lose precision.
 	CodeIntegerAsFloat Code = "integer-as-float"
-	// CodeLargeIntegerInFloat: a float field holds values at or above 2^53.
-	// If the source column is an integer, it may have lost precision in the plugin.
+	// CodeLargeIntegerInFloat: a float value may already have lost integer precision.
 	CodeLargeIntegerInFloat Code = "large-integer-in-float"
-	// CodeEnumField: SQL reads an enum field as a JSON number that holds the
-	// enum index, not the text.
+	// CodeNonfiniteAsNull: SQL reads NaN and infinities as NULL.
+	CodeNonfiniteAsNull Code = "nonfinite-as-null"
+	// CodeInvalidJSON: a JSON field contains malformed JSON values.
+	CodeInvalidJSON Code = "invalid-json"
+	// CodeEnumField: SQL reads enum indexes as JSON numbers rather than enum text.
 	CodeEnumField Code = "enum-field"
 	// CodeDuplicateName: two columns share a name, ignoring case.
 	CodeDuplicateName Code = "duplicate-column-name"
-	// CodeGeneratedNameClash: a label key matches a column Grafana generates.
+	// CodeGeneratedNameClash: a label key matches a generated column.
 	CodeGeneratedNameClash Code = "generated-name-clash"
-	// CodeMissingLabelColumn: only timeseries-multi series with no rows have
-	// this label, so SQL gets no column for it.
+	// CodeMissingLabelColumn: only empty multi-series values supply a label, so its column is lost.
 	CodeMissingLabelColumn Code = "missing-label-column"
 )
+
+// Codes returns a copy of the finding-code catalog, in declaration order.
+func Codes() []Code {
+	return []Code{
+		CodeQueryError,
+		CodeMissingRefID,
+		CodeUnexpectedRefID,
+		CodeNilResponse,
+		CodePanic,
+		CodeNoFrames,
+		CodeNoFields,
+		CodeMissingType,
+		CodeMultipleTableFrames,
+		CodeLabelsOnTable,
+		CodeMixedTypes,
+		CodeWideFrameCount,
+		CodeMissingTimeField,
+		CodeNullableTime,
+		CodeNumericRowCount,
+		CodeNumericValuesTruncated,
+		CodeEmptyNumericField,
+		CodeNilFrame,
+		CodeNilField,
+		CodeInvalidField,
+		CodeUnequalFieldLengths,
+		CodeDroppedField,
+		CodeDroppedLabel,
+		CodeIntegerAsFloat,
+		CodeLargeIntegerInFloat,
+		CodeNonfiniteAsNull,
+		CodeInvalidJSON,
+		CodeEnumField,
+		CodeDuplicateName,
+		CodeGeneratedNameClash,
+		CodeMissingLabelColumn,
+	}
+}
 
 // Finding is one problem or piece of advice about a query's frames.
 type Finding struct {
@@ -103,7 +160,8 @@ type Finding struct {
 	// Frame is the index of the frame the finding is about, or -1 when it is
 	// about the whole query.
 	Frame int
-	// Field is the field name the finding is about, if any.
+	// Field is the source field name, or a label/column name for generated tables.
+	// Messages include source field indexes when malformed inputs need an unambiguous location.
 	Field   string
 	Message string
 	// FixedIn is the first Grafana version without the behavior an
@@ -132,9 +190,10 @@ func (f Finding) String() string {
 type Mode string
 
 const (
-	// ModeNone: Grafana builds no table; the SQL Expression fails.
+	// ModeNone: input conversion fails or panics without producing a frame.
 	ModeNone Mode = "none"
 	// ModeTable: the frame passes through as a table, one column per field.
+	// Schema inspection or SQL row reading can still fail; see error findings.
 	ModeTable Mode = "table"
 	// ModeFullLong: Grafana converts numeric or time series frames into one
 	// long table with a row per value.
@@ -157,7 +216,12 @@ type Report struct {
 	// every frame of the query.
 	InputType data.FrameType
 	Mode      Mode
-	// Columns lists the columns SQL will see. It is empty when Mode is ModeNone.
+	// Rows is the converted frame row count. It is zero when Mode is ModeNone.
+	Rows int
+	// Columns describes the schema at the selected minimum version. A finding
+	// explains known schema changes in newer versions. It is empty for ModeNone.
+	// An uninitialized field has TypeUnknown and an empty SQLType because
+	// Grafana cannot inspect its schema; see the corresponding error finding.
 	Columns  []Column
 	Findings []Finding
 
@@ -191,6 +255,9 @@ func (r *Report) String() string {
 	fmt.Fprintf(&b, "query %q: mode %s", r.RefID, r.Mode)
 	if r.InputType != "" {
 		fmt.Fprintf(&b, ", input type %s", r.InputType)
+	}
+	if r.Mode != ModeNone {
+		fmt.Fprintf(&b, ", rows %d", r.Rows)
 	}
 	b.WriteString("\n")
 	if len(r.Columns) > 0 {
