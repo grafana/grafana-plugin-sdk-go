@@ -32,6 +32,9 @@ func TestCheckResponse(t *testing.T) {
 	assert.Equal(t, []Code{CodeQueryError}, codes(reports["B"]))
 	assert.Contains(t, reports["B"].Findings[0].Message, "boom")
 	assert.Equal(t, []Code{CodeMissingRefID}, codes(reports["C"]))
+	assert.Equal(t, ModeTable, reports["C"].Mode)
+	assert.Zero(t, reports["C"].Rows)
+	assert.Empty(t, reports["C"].Columns)
 	assert.Equal(t, []Code{CodeUnexpectedRefID}, codes(reports["Z"]))
 }
 
@@ -45,9 +48,19 @@ func TestCheckResponseWithoutRefIDs(t *testing.T) {
 }
 
 func TestCheckResponseNil(t *testing.T) {
-	reports := CheckResponse(nil, []string{"A"})
-
-	assert.Equal(t, []Code{CodeMissingRefID}, codes(reports["A"]))
+	for _, refIDs := range [][]string{{"A", "B"}, nil} {
+		reports := CheckResponse(nil, refIDs)
+		if len(refIDs) == 0 {
+			refIDs = []string{""}
+		}
+		require.Len(t, reports, len(refIDs))
+		for _, refID := range refIDs {
+			r := reports[refID]
+			assert.Equal(t, []Code{CodeNilResponse}, codes(r))
+			assert.Equal(t, ModeNone, r.Mode)
+			assert.Equal(t, SeverityError, r.Worst())
+		}
+	}
 }
 
 type handlerFunc func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error)
@@ -75,7 +88,7 @@ func TestCheckQueryData(t *testing.T) {
 	reports, err := CheckQueryData(context.Background(), h, req)
 
 	require.NoError(t, err)
-	assert.Equal(t, "true", got.GetHTTPHeader(HeaderFromExpression))
+	assert.Empty(t, got.GetHTTPHeader(HeaderFromExpression), "does not manufacture a header")
 	assert.Equal(t, "true", got.Headers["FromAlert"], "keeps the request's headers")
 	assert.Empty(t, req.GetHTTPHeader(HeaderFromExpression), "does not change the caller's request")
 	require.Len(t, reports, 2)
@@ -108,6 +121,76 @@ func TestCheckQueryDataSendsOneQueryPerRequest(t *testing.T) {
 func TestCheckQueryDataNilRequest(t *testing.T) {
 	_, err := CheckQueryData(context.Background(), handlerFunc(nil), nil)
 	require.Error(t, err)
+}
+
+func TestCheckQueryDataPreservesHeaders(t *testing.T) {
+	for _, value := range []string{"", "false", "true"} {
+		t.Run("expression header "+value, func(t *testing.T) {
+			req := request("A", "B")
+			if value != "" {
+				req.SetHTTPHeader(HeaderFromExpression, value)
+			}
+			calls := 0
+			h := handlerFunc(func(_ context.Context, one *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+				calls++
+				require.Equal(t, value, one.GetHTTPHeader(HeaderFromExpression))
+				require.Equal(t, "true", one.Headers["FromAlert"])
+				frames := data.Frames{data.NewFrame("", data.NewField("v", nil, []float64{1})), data.NewFrame("", data.NewField("v", nil, []float64{2}))}
+				if one.GetHTTPHeader(HeaderFromExpression) == "true" {
+					frames = data.Frames{tableFrame()}
+				}
+				one.Headers["FromAlert"] = "changed by handler"
+				one.SetHTTPHeader(HeaderFromExpression, "changed by handler")
+				return &backend.QueryDataResponse{Responses: backend.Responses{one.Queries[0].RefID: {Frames: frames}}}, nil
+			})
+			reports, err := CheckQueryData(t.Context(), h, req)
+			require.NoError(t, err)
+			require.Equal(t, 2, calls)
+			for _, refID := range []string{"A", "B"} {
+				if value == "true" {
+					assert.Equal(t, ModeTable, reports[refID].Mode)
+					assert.Empty(t, reports[refID].Findings)
+				} else {
+					assert.Equal(t, ModeNone, reports[refID].Mode)
+					assert.Equal(t, []Code{CodeMultipleTableFrames}, codes(reports[refID]))
+				}
+			}
+			assert.Equal(t, "true", req.Headers["FromAlert"])
+			assert.Equal(t, value, req.GetHTTPHeader(HeaderFromExpression))
+		})
+	}
+
+	t.Run("nil headers", func(t *testing.T) {
+		req := request("A")
+		req.Headers = nil
+		h := handlerFunc(func(_ context.Context, one *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+			require.Nil(t, one.Headers)
+			return &backend.QueryDataResponse{Responses: backend.Responses{"A": {Frames: data.Frames{tableFrame()}}}}, nil
+		})
+		_, err := CheckQueryData(t.Context(), h, req)
+		require.NoError(t, err)
+		assert.Nil(t, req.Headers)
+	})
+}
+
+func TestCheckQueryDataDuplicateRefIDs(t *testing.T) {
+	calls := 0
+	h := handlerFunc(func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		calls++
+		return nil, nil
+	})
+	reports, err := CheckQueryData(t.Context(), h, request("A", "B", "A"))
+	require.ErrorContains(t, err, `duplicate query RefID "A"`)
+	assert.Nil(t, reports)
+	assert.Zero(t, calls, "validate all RefIDs before executing any query")
+}
+
+func TestCheckQueryDataNilResponse(t *testing.T) {
+	h := handlerFunc(func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error) { return nil, nil })
+	reports, err := CheckQueryData(t.Context(), h, request("A"))
+	require.NoError(t, err)
+	assert.Equal(t, []Code{CodeNilResponse}, codes(reports["A"]))
+	assert.Equal(t, SeverityError, reports["A"].Worst())
 }
 
 func TestCheckQueryDataPanic(t *testing.T) {

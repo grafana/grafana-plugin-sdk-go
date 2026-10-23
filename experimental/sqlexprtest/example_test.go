@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/sqlexprtest"
 )
@@ -26,4 +27,12 @@ func ExampleCheck() {
 	// query "A": mode full-long, input type timeseries-wide, rows 1
 	//   columns: time TIMESTAMP, __value__ DOUBLE, __metric_name__ TEXT, host TEXT
 	//   warning [dropped-field, grafana] frame 0 field "status": Grafana keeps only numeric value fields when it converts timeseries-wide for SQL, so field 1 (string) is dropped without an error. Return a table or long frame to keep it.
+}
+
+func ExampleCheckResponse() {
+	response := &backend.QueryDataResponse{Responses: backend.Responses{}}
+	reports := sqlexprtest.CheckResponse(response, []string{"A"})
+	r := reports["A"]
+	fmt.Println(r.RefID, r.Mode, r.Rows, r.Has(sqlexprtest.CodeMissingRefID))
+	// Output: A table 0 true
 }

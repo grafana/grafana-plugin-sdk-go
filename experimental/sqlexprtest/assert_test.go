@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -54,8 +55,25 @@ func TestAssertFrames(t *testing.T) {
 
 	t.Run("Ignore", func(t *testing.T) {
 		rec := &recorder{TB: t}
-		AssertFrames(rec, droppedFieldFrames(), Ignore(CodeDroppedField))
+		r := AssertFrames(rec, droppedFieldFrames(), Ignore(CodeDroppedField))
 		assert.Empty(t, rec.errors)
+		assert.True(t, r.Has(CodeDroppedField), "ignoring a finding only suppresses the assertion")
+	})
+
+	t.Run("FailOn info fails advice", func(t *testing.T) {
+		rec := &recorder{TB: t}
+		r := AssertFrames(rec, data.Frames{data.NewFrame("", data.NewField("v", nil, []float64{1}))}, FailOn(SeverityInfo))
+		require.Len(t, rec.errors, 1)
+		assert.Equal(t, SeverityInfo, r.Worst())
+		assert.Contains(t, rec.errors[0], "missing-type")
+	})
+
+	t.Run("FailOn error still fails errors", func(t *testing.T) {
+		rec := &recorder{TB: t}
+		r := AssertFrames(rec, data.Frames{nil}, FailOn(SeverityError))
+		require.Len(t, rec.errors, 1)
+		assert.Equal(t, SeverityError, r.Worst())
+		assert.Contains(t, rec.errors[0], "nil-frame")
 	})
 }
 
@@ -84,4 +102,26 @@ func TestAssertQueryData(t *testing.T) {
 
 	assert.Len(t, reports, 1)
 	assert.Len(t, rec.errors, 1)
+}
+
+func TestIgnoreLeavesUnrelatedFailures(t *testing.T) {
+	rec := &recorder{TB: t}
+	resp := &backend.QueryDataResponse{Responses: backend.Responses{
+		"A": {Frames: droppedFieldFrames()},
+		"B": {Error: fmt.Errorf("query unavailable")},
+	}}
+	reports := AssertResponse(rec, resp, []string{"A", "B"}, Ignore(CodeDroppedField))
+	require.Len(t, rec.errors, 1)
+	assert.Contains(t, rec.errors[0], "query-error")
+	assert.True(t, reports["A"].Has(CodeDroppedField))
+	assert.True(t, reports["B"].Has(CodeQueryError))
+}
+
+func TestAssertQueryDataInvalidRequest(t *testing.T) {
+	for _, req := range []*backend.QueryDataRequest{nil, request("A", "A")} {
+		rec := &recorder{TB: t}
+		reports := AssertQueryData(rec, t.Context(), handlerFunc(nil), req)
+		assert.Nil(t, reports)
+		assert.Len(t, rec.errors, 1)
+	}
 }
