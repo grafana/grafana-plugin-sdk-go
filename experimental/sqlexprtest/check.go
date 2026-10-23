@@ -1,6 +1,7 @@
 package sqlexprtest
 
 import (
+	"encoding/json"
 	"fmt"
 	"math"
 	"sort"
@@ -34,6 +35,12 @@ func Check(frames data.Frames, opts ...Option) *Report {
 		return r
 	}
 
+	if frames[0] == nil {
+		r.Mode = ModeNone
+		r.add(Finding{Code: CodeNilFrame, Severity: SeverityError, Owner: OwnerPlugin, Frame: 0,
+			Message: "the first frame is nil, so Grafana panics when it reads the SQL input. Return a frame, not nil."})
+		return r
+	}
 	r.RefID = frames[0].RefID
 	r.InputType = frameType(frames[0])
 	if len(frames) == 1 && len(frames[0].Fields) == 0 {
@@ -50,7 +57,13 @@ func Check(frames data.Frames, opts ...Option) *Report {
 	} else {
 		checkTable(r, frames)
 	}
-	checkFloatPrecision(r, frames)
+	if r.Mode == ModeNone {
+		r.Rows = 0
+		r.Columns = nil
+	}
+	if r.Worst() < SeverityError {
+		checkValues(r, frames)
+	}
 	return r
 }
 
@@ -74,54 +87,104 @@ func convertible(t data.FrameType) bool {
 }
 
 func checkTable(r *Report, frames data.Frames) {
-	code, issue := CodeMissingType, "has no Meta.Type, so it passes through as a table"
-	if r.InputType != data.FrameTypeUnknown {
-		code, issue = CodeUnsupportedType, fmt.Sprintf("has Meta.Type %q, which passes through as a table", r.InputType)
-	}
-
 	if len(frames) > 1 {
 		r.Mode = ModeNone
-		r.add(Finding{
-			Code: code, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
-			Message: fmt.Sprintf("the query returned %d frames, and the first %s. "+
-				"Grafana passes only a single frame through as a table, so the SQL Expression fails. "+
-				"Merge the frames into one, or, if they are series, set Meta.Type to timeseries-multi or numeric-multi.", len(frames), issue),
-		})
+		r.add(Finding{Code: CodeMultipleTableFrames, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
+			Message: fmt.Sprintf("the query returned %d frames, but Grafana passes only one frame through as a table, so the SQL Expression fails. "+
+				"Merge them into one table. If they are series, set Meta.Type to timeseries-multi or numeric-multi.", len(frames))})
 		return
 	}
-
 	frame := frames[0]
-	for _, f := range frame.Fields {
+	for j, f := range frame.Fields {
+		if f == nil {
+			r.Mode = ModeNone
+			addNilField(r, 0, j)
+			return
+		}
 		if len(f.Labels) > 0 {
 			r.Mode = ModeNone
-			r.add(Finding{
-				Code: code, Severity: SeverityError, Owner: OwnerPlugin, Frame: 0, Field: f.Name,
-				Message: fmt.Sprintf("the frame %s, but this field has labels, which a table can't hold, "+
-					"so the SQL Expression fails. Move the labels into string fields, or, if the frame is a series, "+
-					"set Meta.Type to a time series or numeric type, so Grafana turns labels into columns.", issue),
-			})
+			r.add(Finding{Code: CodeLabelsOnTable, Severity: SeverityError, Owner: OwnerPlugin, Frame: 0, Field: f.Name,
+				Message: fmt.Sprintf("field %d has labels, and a table can't hold labels, so the SQL Expression fails. Move the labels into string fields. "+
+					"If the frame is a series, set Meta.Type to a time series or numeric type, so Grafana turns the labels into columns.", j)})
 			return
 		}
 	}
-
-	if r.InputType == data.FrameTypeUnknown {
-		r.add(Finding{
-			Code: CodeMissingType, Severity: SeverityInfo, Owner: OwnerPlugin, Frame: 0,
-			Message: "the frame has no Meta.Type, so it passes through as a table. " +
-				"Set Meta.Type (for example table, timeseries-multi, or numeric-wide), so Grafana knows the shape.",
-		})
-	}
-
-	for _, f := range frame.Fields {
+	r.Rows = frame.Rows()
+	for j, f := range frame.Fields {
+		if !initializedField(f) {
+			r.Columns = append(r.Columns, Column{Name: f.Name, Type: data.FieldTypeUnknown})
+			r.add(Finding{Code: CodeInvalidField, Severity: SeverityError, Owner: OwnerPlugin, Frame: 0, Field: f.Name,
+				Message: fmt.Sprintf("field %d has no values array, so Grafana panics when it reads the SQL schema. Create the field with data.NewField.", j)})
+			continue
+		}
 		r.Columns = append(r.Columns, Column{Name: f.Name, Type: f.Type(), SQLType: sqlType(f.Type())})
+		if f.Len() != r.Rows {
+			severity, consequence := SeverityWarning, "SQL reads only as many rows as field 0 has, so this field's last values are lost."
+			if f.Len() < r.Rows {
+				severity, consequence = SeverityError, "SQL panics when it reads past the end of this field."
+			}
+			r.add(Finding{Code: CodeUnequalFieldLengths, Severity: severity, Owner: OwnerPlugin, Frame: 0, Field: f.Name,
+				Message: fmt.Sprintf("field %d has %d values, and field 0 has %d. %s Return fields of equal length.", j, f.Len(), r.Rows, consequence)})
+		}
 		if f.Type() == data.FieldTypeEnum || f.Type() == data.FieldTypeNullableEnum {
-			r.add(Finding{
-				Code: CodeEnumField, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: 0, Field: f.Name,
-				Message: "SQL reads enum fields as a JSON number that holds the enum index, not the text. Use a string field.",
-			})
+			r.add(Finding{Code: CodeEnumField, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: 0, Field: f.Name,
+				Message: fmt.Sprintf("SQL reads field %d's enum values as JSON numbers, the enum index, not the text. Use a string field.", j)})
 		}
 	}
+	if r.InputType == data.FrameTypeUnknown {
+		r.add(Finding{Code: CodeMissingType, Severity: SeverityInfo, Owner: OwnerPlugin, Frame: 0,
+			Message: "the frame has no Meta.Type, so it passes through as a table. " +
+				"Set Meta.Type, for example to table, timeseries-multi or numeric-wide, so Grafana knows the shape."})
+	}
 	checkDuplicateNames(r, r.Columns, 0)
+}
+
+// RowLen can inspect private field storage without calling Type, which panics
+// on a zero-value Field. A one-field frame cannot have unequal field lengths.
+func initializedField(f *data.Field) bool {
+	_, err := data.NewFrame("", f).RowLen()
+	return err == nil
+}
+
+func addNilField(r *Report, frame, field int) {
+	r.add(Finding{Code: CodeNilField, Severity: SeverityError, Owner: OwnerPlugin, Frame: frame,
+		Message: fmt.Sprintf("field %d is nil, so Grafana panics when it converts the SQL input. Return a field, not nil.", field)})
+}
+
+func checkFullLongFrame(r *Report, i int, frame *data.Frame) bool {
+	if frame != nil {
+		return true
+	}
+	r.add(Finding{Code: CodeNilFrame, Severity: SeverityError, Owner: OwnerPlugin, Frame: i,
+		Message: "the frame is nil, so Grafana panics when it converts the SQL input. Return a frame, not nil."})
+	return false
+}
+
+func checkFullLongField(r *Report, i, j int, f *data.Field) bool {
+	if f == nil {
+		addNilField(r, i, j)
+		return false
+	}
+	if !initializedField(f) {
+		r.add(Finding{Code: CodeInvalidField, Severity: SeverityError, Owner: OwnerPlugin, Frame: i, Field: f.Name,
+			Message: fmt.Sprintf("field %d has no values array, so Grafana panics when it converts the SQL input. Create the field with data.NewField.", j)})
+		return false
+	}
+	return true
+}
+
+func checkFullLongPointers(r *Report, frames data.Frames) bool {
+	for i, frame := range frames {
+		if !checkFullLongFrame(r, i, frame) {
+			return false
+		}
+		for j, f := range frame.Fields {
+			if !checkFullLongField(r, i, j, f) {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 // checkDuplicateNames reports columns whose names match, ignoring case.
@@ -148,6 +211,7 @@ type fullLong struct {
 	// Grafana takes label columns from rows, so these keys get no column.
 	emptyLabelKeys map[string]struct{}
 	hasDisplay     bool
+	rows           int
 }
 
 func checkFullLong(r *Report, frames data.Frames) {
@@ -160,6 +224,10 @@ func checkFullLong(r *Report, frames data.Frames) {
 	acc := fullLong{labelKeys: map[string]struct{}{}, emptyLabelKeys: map[string]struct{}{}}
 	timeSeries := r.InputType == data.FrameTypeTimeSeriesMulti || r.InputType == data.FrameTypeTimeSeriesWide
 	for i, frame := range frames {
+		if !checkFullLongFrame(r, i, frame) {
+			r.Mode = ModeNone
+			return
+		}
 		// Grafana ignores the Meta of later frames, so a frame without a type is fine.
 		if t := frameType(frame); i > 0 && t != data.FrameTypeUnknown && t != r.InputType {
 			r.add(Finding{
@@ -171,12 +239,28 @@ func checkFullLong(r *Report, frames data.Frames) {
 
 		var timeField *data.Field
 		if timeSeries {
-			timeField = firstFieldOfType(frame, data.FieldTypeTime)
+			// Match the converter's search: malformed fields after the selected
+			// time field are visited only by its subsequent numeric-field loop.
+			for j, f := range frame.Fields {
+				if !checkFullLongField(r, i, j, f) {
+					r.Mode = ModeNone
+					return
+				}
+				if f.Type() == data.FieldTypeTime {
+					timeField = f
+					break
+				}
+			}
 			if timeField == nil {
 				addMissingTime(r, i, frame)
 				r.Mode = ModeNone
 				return
 			}
+		}
+		// Wide time series collects label metadata from all fields before rows.
+		if r.InputType == data.FrameTypeTimeSeriesWide && !checkFullLongPointers(r, frames) {
+			r.Mode = ModeNone
+			return
 		}
 		if !checkFullLongFields(r, i, frame, timeField, &acc) {
 			r.Mode = ModeNone
@@ -184,6 +268,7 @@ func checkFullLong(r *Report, frames data.Frames) {
 		}
 	}
 
+	r.Rows = acc.rows
 	r.Columns = fullLongColumns(timeSeries, acc)
 	// Generated columns come first, then one column per label key.
 	split := len(r.Columns) - len(acc.labelKeys)
@@ -191,10 +276,10 @@ func checkFullLong(r *Report, frames data.Frames) {
 	renames := checkGeneratedNameClash(r, generated, labels)
 	// Label keys that clash with generated columns are reported above, so
 	// only compare the label columns with each other.
-	checkDuplicateNames(r, labels, -1)
 	for i, name := range renames {
 		labels[i].Name = name
 	}
+	checkDuplicateNames(r, labels, -1)
 	checkEmptySeriesLabels(r, acc)
 }
 
@@ -223,22 +308,23 @@ func checkFullLongShape(r *Report, frames data.Frames) bool {
 	wide := r.InputType == data.FrameTypeNumericWide || r.InputType == data.FrameTypeTimeSeriesWide
 	if wide && len(frames) != 1 {
 		r.add(Finding{
-			Code: CodeInvalidShape, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
+			Code: CodeWideFrameCount, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
 			Message: fmt.Sprintf("Meta.Type %s allows one frame, but the query returned %d, so Grafana's conversion fails. "+
 				"Return one frame, or use the matching multi type.", r.InputType, len(frames)),
 		})
 		return false
 	}
-	if r.InputType == data.FrameTypeNumericMulti {
-		return checkNumericMultiFirstField(r, frames)
-	}
 	if r.InputType == data.FrameTypeNumericWide && frames[0].Rows() > 1 {
 		r.add(Finding{
-			Code: CodeInvalidShape, Severity: SeverityError, Owner: OwnerPlugin, Frame: 0,
+			Code: CodeNumericRowCount, Severity: SeverityError, Owner: OwnerPlugin, Frame: 0,
 			Message: fmt.Sprintf("Meta.Type numeric-wide allows at most one row, but the frame has %d, so Grafana's conversion fails. "+
 				"Use a time series type, or a table.", frames[0].Rows()),
 		})
 		return false
+	}
+	if r.InputType == data.FrameTypeNumericMulti {
+		// Numeric-multi visits every input field while merging to numeric-wide.
+		return checkFullLongPointers(r, frames) && checkNumericMultiFirstField(r, frames)
 	}
 	return true
 }
@@ -248,15 +334,15 @@ func checkFullLongShape(r *Report, frames data.Frames) bool {
 // then allows at most one row, counted on that first field.
 func checkNumericMultiFirstField(r *Report, frames data.Frames) bool {
 	for i, frame := range frames {
-		for _, f := range frame.Fields {
+		for j, f := range frame.Fields {
 			if !f.Type().Numeric() {
 				continue
 			}
 			if f.Len() > 1 {
 				r.add(Finding{
-					Code: CodeInvalidShape, Severity: SeverityError, Owner: OwnerPlugin, Frame: i, Field: f.Name,
-					Message: fmt.Sprintf("Meta.Type numeric-multi allows one value per field, but this field, the first numeric field, "+
-						"has %d, so Grafana's conversion fails. Use a time series type, or a table.", f.Len()),
+					Code: CodeNumericRowCount, Severity: SeverityError, Owner: OwnerPlugin, Frame: i, Field: f.Name,
+					Message: fmt.Sprintf("Meta.Type numeric-multi allows one value per field, but field %d, the first numeric field, "+
+						"has %d, so Grafana's conversion fails. Use a time series type, or a table.", j, f.Len()),
 				})
 				return false
 			}
@@ -270,13 +356,13 @@ func addMissingTime(r *Report, i int, frame *data.Frame) {
 	if f := firstFieldOfType(frame, data.FieldTypeNullableTime); f != nil {
 		r.add(Finding{
 			Code: CodeNullableTime, Severity: SeverityError, Owner: OwnerGrafana, Frame: i, Field: f.Name,
-			Message: "the frame's only time field is nullable ([]*time.Time). Grafana's time series conversion " +
+			Message: "the frame's time fields are all nullable ([]*time.Time). Grafana's time series conversion " +
 				"needs a non-nullable time field, so the SQL Expression fails. Use a []time.Time field.",
 		})
 		return
 	}
 	r.add(Finding{
-		Code: CodeInvalidShape, Severity: SeverityError, Owner: OwnerPlugin, Frame: i,
+		Code: CodeMissingTimeField, Severity: SeverityError, Owner: OwnerPlugin, Frame: i,
 		Message: fmt.Sprintf("Meta.Type %s needs a time field, but the frame has none, so Grafana's conversion fails.", r.InputType),
 	})
 }
@@ -284,16 +370,52 @@ func addMissingTime(r *Report, i int, frame *data.Frame) {
 // checkFullLongFields checks one frame's fields for the full-long
 // conversion. It returns false when the conversion fails.
 func checkFullLongFields(r *Report, i int, frame *data.Frame, timeField *data.Field, acc *fullLong) bool {
-	for _, f := range frame.Fields {
+	for j, f := range frame.Fields {
+		if !checkFullLongField(r, i, j, f) {
+			return false
+		}
 		switch {
 		case f == timeField:
-			continue
-		case f.Type().Numeric():
-			if timeField == nil && !checkNumericRows(r, i, f) {
-				return false
+			if len(f.Labels) > 0 {
+				keys := make([]string, 0, len(f.Labels))
+				for k := range f.Labels {
+					keys = append(keys, k)
+				}
+				sort.Strings(keys)
+				r.add(Finding{Code: CodeDroppedLabel, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: i, Field: f.Name,
+					Message: fmt.Sprintf("Grafana drops the labels %q on time field %d. "+
+						"Put series labels on the numeric value fields, or return them as string columns in a table or long frame.", keys, j)})
 			}
+		case f.Type().Numeric():
+			rows := 1
+			if timeField == nil {
+				if !checkNumericRows(r, i, j, f) {
+					return false
+				}
+			} else {
+				rows = f.Len()
+				if r.InputType == data.FrameTypeTimeSeriesWide {
+					rows = timeField.Len()
+				}
+				if f.Len() != timeField.Len() {
+					severity := SeverityWarning
+					consequence := "Grafana drops this field's last values."
+					if r.InputType == data.FrameTypeTimeSeriesMulti {
+						consequence = "Grafana ignores the timestamps after this field's last value."
+					}
+					if rows > f.Len() || rows > timeField.Len() {
+						severity, consequence = SeverityError, "Grafana panics when it reads past the end of the shorter field."
+					}
+					r.add(Finding{Code: CodeUnequalFieldLengths, Severity: severity, Owner: OwnerPlugin, Frame: i, Field: f.Name,
+						Message: fmt.Sprintf("numeric field %d has %d values, and the time field has %d. %s Return fields of equal length.", j, f.Len(), timeField.Len(), consequence)})
+					if severity == SeverityError {
+						return false
+					}
+				}
+			}
+			acc.rows += rows
 			keys := acc.labelKeys
-			if r.InputType == data.FrameTypeTimeSeriesMulti && f.Len() == 0 {
+			if r.InputType == data.FrameTypeTimeSeriesMulti && rows == 0 {
 				keys = acc.emptyLabelKeys
 			}
 			for k := range f.Labels {
@@ -302,14 +424,9 @@ func checkFullLongFields(r *Report, i int, frame *data.Frame, timeField *data.Fi
 			if f.Config != nil && f.Config.DisplayNameFromDS != "" {
 				acc.hasDisplay = true
 			}
-			checkIntegerAsFloat(r, i, f)
 		default:
-			r.add(Finding{
-				Code: CodeDroppedField, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: i, Field: f.Name,
-				Message: fmt.Sprintf("Grafana keeps only numeric value fields when it converts %s for SQL, "+
-					"so this %s field is dropped without an error. Return a table or long frame to keep it.",
-					r.InputType, f.Type().ItemTypeString()),
-			})
+			r.add(Finding{Code: CodeDroppedField, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: i, Field: f.Name,
+				Message: fmt.Sprintf("Grafana keeps only numeric value fields when it converts %s for SQL, so field %d (%s) is dropped without an error. Return a table or long frame to keep it.", r.InputType, j, f.Type().ItemTypeString())})
 		}
 	}
 	return true
@@ -318,20 +435,20 @@ func checkFullLongFields(r *Report, i int, frame *data.Frame, timeField *data.Fi
 // checkNumericRows checks that a numeric frame's value field has exactly one
 // row, because Grafana reads only the first value. It returns false when the
 // conversion fails.
-func checkNumericRows(r *Report, i int, f *data.Field) bool {
+func checkNumericRows(r *Report, i, fieldIndex int, f *data.Field) bool {
 	switch {
 	case f.Len() == 0:
 		r.add(Finding{
-			Code: CodeInvalidShape, Severity: SeverityError, Owner: OwnerGrafana, Frame: i, Field: f.Name,
-			Message: fmt.Sprintf("the field has no values, and Grafana fails the whole request when it converts an empty %s field for SQL. "+
-				"Return a table frame with zero rows instead.", r.InputType),
+			Code: CodeEmptyNumericField, Severity: SeverityError, Owner: OwnerGrafana, Frame: i, Field: f.Name,
+			Message: fmt.Sprintf("field %d has no values, and Grafana fails the whole request when it converts an empty %s field for SQL. "+
+				"Return a table frame with zero rows instead.", fieldIndex, r.InputType),
 		})
 		return false
 	case f.Len() > 1:
 		r.add(Finding{
-			Code: CodeInvalidShape, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: i, Field: f.Name,
-			Message: fmt.Sprintf("the field has %d values, but %s holds one value per field, and Grafana keeps only the first, without an error. "+
-				"Use a time series type for several values.", f.Len(), r.InputType),
+			Code: CodeNumericValuesTruncated, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: i, Field: f.Name,
+			Message: fmt.Sprintf("field %d has %d values, but %s holds one value per field, and Grafana keeps only the first, without an error. "+
+				"Use a time series type for several values.", fieldIndex, f.Len(), r.InputType),
 		})
 	}
 	return true
@@ -411,14 +528,14 @@ func checkGeneratedNameClash(r *Report, generated, labels []Column) map[int]stri
 	return renames
 }
 
-func checkIntegerAsFloat(r *Report, i int, f *data.Field) {
+func checkIntegerAsFloat(r *Report, i, fieldIndex int, f *data.Field, rows int) {
 	switch f.Type() {
 	case data.FieldTypeInt64, data.FieldTypeNullableInt64, data.FieldTypeUint64, data.FieldTypeNullableUint64:
 	default:
 		return
 	}
 	n, example := 0, ""
-	for j := range f.Len() {
+	for j := range rows {
 		v, ok := f.ConcreteAt(j)
 		if !ok {
 			continue
@@ -440,57 +557,91 @@ func checkIntegerAsFloat(r *Report, i int, f *data.Field) {
 	if n > 0 {
 		r.add(Finding{
 			Code: CodeIntegerAsFloat, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: i, Field: f.Name,
-			Message: fmt.Sprintf("Grafana stores numeric and time series values as float64, and %d values of this field "+
-				"are beyond 2^53, so they may lose precision (for example %s). Return a table or long frame to keep exact integers.", n, example),
+			Message: fmt.Sprintf("Grafana stores numeric and time series values as float64. %d values of field %d are beyond 2^53 "+
+				"and may lose precision, for example %s. Return a table or long frame to keep exact integers.", n, fieldIndex, example),
 		})
 	}
 }
 
-// checkFloatPrecision reports float fields with values at or above 2^53,
-// where float64 can't hold every integer. When the source column is an
-// integer, that means it may have lost precision in the plugin.
-func checkFloatPrecision(r *Report, frames data.Frames) {
+// checkValues runs only when conversion and SQL reading succeed. It checks
+// only the values SQL reads, not values Grafana drops.
+func checkValues(r *Report, frames data.Frames) {
 	for i, frame := range frames {
-		for _, f := range frame.Fields {
-			switch f.Type() {
-			case data.FieldTypeFloat64, data.FieldTypeNullableFloat64, data.FieldTypeFloat32, data.FieldTypeNullableFloat32:
-			default:
-				continue
+		for j, f := range frame.Fields {
+			rows := r.Rows
+			if r.Mode == ModeFullLong {
+				if !f.Type().Numeric() {
+					continue
+				}
+				switch r.InputType {
+				case data.FrameTypeNumericMulti, data.FrameTypeNumericWide:
+					rows = 1
+				case data.FrameTypeTimeSeriesMulti:
+					rows = f.Len()
+				case data.FrameTypeTimeSeriesWide:
+					rows = firstFieldOfType(frame, data.FieldTypeTime).Len()
+				}
+				checkIntegerAsFloat(r, i, j, f, rows)
 			}
-			if n := countLargeFloats(f); n > 0 {
-				r.add(Finding{
-					Code: CodeLargeIntegerInFloat, Severity: SeverityInfo, Owner: OwnerPlugin, Frame: i, Field: f.Name,
-					Message: fmt.Sprintf("%d values are at or above 2^53, where float64 can't hold every integer. "+
-						"If the source column is an integer, such as a BIGINT read through sqlutil's dynamic converter, "+
-						"the values may have lost precision before Grafana got them. Use an int64 field for integer columns.", n),
-				})
-			}
+			checkFieldValues(r, i, j, f, rows)
 		}
 	}
 }
 
-func countLargeFloats(f *data.Field) int {
-	n := 0
-	for j := range f.Len() {
-		v, ok := f.ConcreteAt(j)
+func checkFieldValues(r *Report, frameIndex, fieldIndex int, f *data.Field, rows int) {
+	t := f.Type().NonNullableType()
+	if t != data.FieldTypeFloat32 && t != data.FieldTypeFloat64 && t != data.FieldTypeJSON {
+		return
+	}
+	large, nonfinite, invalidJSON := 0, 0, 0
+	bits, threshold := 53, float64(maxExactInteger)
+	if t == data.FieldTypeFloat32 {
+		bits, threshold = 24, 1<<24
+	}
+	for row := range rows {
+		v, ok := f.ConcreteAt(row)
 		if !ok {
 			continue
 		}
 		var x float64
-		switch t := v.(type) {
+		switch v := v.(type) {
 		case float64:
-			x = t
+			x = v
 		case float32:
-			x = float64(t)
-		}
-		if math.IsInf(x, 0) || math.IsNaN(x) {
+			x = float64(v)
+		case json.RawMessage:
+			if v != nil && !json.Valid(v) {
+				invalidJSON++
+			}
 			continue
 		}
-		if math.Abs(x) >= maxExactInteger {
-			n++
+		if math.IsInf(x, 0) || math.IsNaN(x) {
+			nonfinite++
+			continue
+		}
+		if math.Abs(x) >= threshold {
+			large++
 		}
 	}
-	return n
+	if large > 0 {
+		workaround := "Use an int64 field for integer columns."
+		if r.Mode == ModeFullLong {
+			workaround = "Return int64 fields in a table or long frame. Wide and multi conversion stores every value as float64."
+		}
+		r.add(Finding{Code: CodeLargeIntegerInFloat, Severity: SeverityInfo, Owner: OwnerPlugin, Frame: frameIndex, Field: f.Name,
+			Message: fmt.Sprintf("%d values of field %d are at or above 2^%d, where %s can't hold every integer. "+
+				"If the source column is an integer, the values may have lost precision before Grafana got them. %s", large, fieldIndex, bits, t.ItemTypeString(), workaround)})
+	}
+	if nonfinite > 0 {
+		r.add(Finding{Code: CodeNonfiniteAsNull, Severity: SeverityInfo, Owner: OwnerGrafana, Frame: frameIndex, Field: f.Name,
+			Message: fmt.Sprintf("SQL reads %d NaN or infinite values in field %d as NULL. "+
+				"That changes COUNT(column), filters, and anything else that treats NULL differently.", nonfinite, fieldIndex)})
+	}
+	if invalidJSON > 0 {
+		r.add(Finding{Code: CodeInvalidJSON, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: frameIndex, Field: f.Name,
+			Message: fmt.Sprintf("field %d has %d values that aren't valid JSON. Grafana's SQL reader turns them into NULL without an error. "+
+				"Return valid JSON, and use the literal null for a JSON null.", fieldIndex, invalidJSON)})
+	}
 }
 
 func firstFieldOfType(frame *data.Frame, t data.FieldType) *data.Field {
