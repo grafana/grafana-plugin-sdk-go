@@ -21,13 +21,24 @@ const HeaderFromExpression = "X-Grafana-From-Expr"
 // response has. It uses only the [MinGrafana] option.
 //
 // The result has one report per RefID, including RefIDs the response has but
-// no query asked for.
+// no query asked for. A nil response gives an error report for each RefID in
+// refIDs, or one report under the RefID "" when refIDs is empty.
 func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Option) map[string]*Report {
 	reports := map[string]*Report{}
-	var responses backend.Responses
-	if resp != nil {
-		responses = resp.Responses
+	if resp == nil {
+		if len(refIDs) == 0 {
+			refIDs = []string{""}
+		}
+		for _, refID := range refIDs {
+			reports[refID] = &Report{RefID: refID, Mode: ModeNone, Findings: []Finding{{
+				Code: CodeNilResponse, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
+				Message: "the QueryData handler returned a nil response and no error, so Grafana has no results to read. " +
+					"Return a QueryDataResponse, or an error.",
+			}}}
+		}
+		return reports
 	}
+	responses := resp.Responses
 	if len(refIDs) == 0 {
 		refIDs = slices.Sorted(maps.Keys(responses))
 	}
@@ -36,7 +47,7 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Opt
 		dr, ok := responses[refID]
 		switch {
 		case !ok:
-			reports[refID] = &Report{RefID: refID, Mode: ModeNone, Findings: []Finding{{
+			reports[refID] = &Report{RefID: refID, Mode: ModeTable, Findings: []Finding{{
 				Code: CodeMissingRefID, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: -1,
 				Message: "the response has no entry for this RefID, so SQL sees a table with no columns, without an error. " +
 					"Return a DataResponse for every query, keyed by its RefID.",
@@ -71,14 +82,25 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Opt
 //
 // Grafana sends each SQL Expression input query in a request of its own, so
 // CheckQueryData calls the handler once per query, with a copy of req that
-// holds only that query and has the [HeaderFromExpression] header set. The
-// copies share req's PluginContext. A handler error becomes a
-// [CodeQueryError] finding, and a panic a [CodePanic] finding, for that query.
-// It uses only the [MinGrafana] option, and returns an error only when req
-// is nil.
+// holds only that query. It passes req's headers unchanged. To test a request
+// with the [HeaderFromExpression] header, set it on req. The copies share
+// req's PluginContext. It doesn't model the sseGroupByDatasource feature
+// flag, which sends a data source's queries in one request.
+//
+// A handler error becomes a [CodeQueryError] finding, and a panic a
+// [CodePanic] finding, for that query. It uses only the [MinGrafana] option.
+// It returns an error, without calling the handler, when req is nil or two
+// queries share a RefID.
 func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...Option) (map[string]*Report, error) {
 	if req == nil {
 		return nil, errors.New("sqlexprtest: nil QueryDataRequest")
+	}
+	seen := make(map[string]struct{}, len(req.Queries))
+	for _, q := range req.Queries {
+		if _, ok := seen[q.RefID]; ok {
+			return nil, fmt.Errorf("sqlexprtest: duplicate query RefID %q", q.RefID)
+		}
+		seen[q.RefID] = struct{}{}
 	}
 
 	reports := map[string]*Report{}
@@ -86,18 +108,14 @@ func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backen
 		one := *req
 		one.Queries = []backend.DataQuery{q}
 		one.Headers = maps.Clone(req.Headers)
-		if one.Headers == nil {
-			one.Headers = map[string]string{}
-		}
-		one.SetHTTPHeader(HeaderFromExpression, "true")
 
 		resp, panicked, err := callQueryData(ctx, h, &one)
 		switch {
 		case panicked != nil:
 			reports[q.RefID] = &Report{RefID: q.RefID, Mode: ModeNone, Findings: []Finding{{
 				Code: CodePanic, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
-				Message: fmt.Sprintf("the QueryData handler panicked: %v. A panic fails the whole SQL Expression request, "+
-					"for every query in it. Return an error in the DataResponse instead.", panicked),
+				Message: fmt.Sprintf("the QueryData handler panicked: %v. Grafana gets no response for this query, and the panic can fail the whole request. "+
+					"Return an error in the DataResponse instead.", panicked),
 			}}}
 		case err != nil:
 			reports[q.RefID] = &Report{RefID: q.RefID, Mode: ModeNone, Findings: []Finding{{
