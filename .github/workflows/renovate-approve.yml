@@ -213,7 +213,7 @@ jobs:
       - name: Claude review
         id: claude
         if: matrix.pr.mode == 'gated'
-        uses: anthropics/claude-code-action@f27be6b65a4652f08a2ba3cff79114829b588967 # v1.0.252
+        uses: anthropics/claude-code-action@a5a423f75c251dcbff8a74e99f83b2cb03c72bfa # v1.0.256
         with:
           # Workload identity federation: the workflow's GitHub OIDC token is
           # exchanged for a short-lived Anthropic token, no static API key.
