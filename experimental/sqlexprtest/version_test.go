@@ -1,6 +1,7 @@
 package sqlexprtest
 
 import (
+	"encoding/json"
 	"os"
 	"path/filepath"
 	"testing"
@@ -175,4 +176,34 @@ func TestAssertUsesMinGrafana(t *testing.T) {
 	rec = &recorder{TB: t}
 	AssertFrames(rec, clashFrames(), MinGrafana("13.3.0"))
 	assert.Empty(t, rec.errors, "every supported version has the fix, so the finding is advice")
+}
+
+// These checks go through the public manifest API: accepting an impossible
+// branch as a lower bound could enable a schema fix the manifest never allows.
+func TestPluginDependencyIntersectionsAndAlternatives(t *testing.T) {
+	for _, tc := range []struct{ dependency, minimum string }{
+		{"^12.0.0 >=13.0.0", ""},
+		{"~12.1.0 >=12.2.0", ""},
+		{"12.0.0 13.0.0", ""},
+		{">=12.0.0 <12.0.0 || >=13.0.0", "13.0.0"},
+		{"^12.0.0 >=13.0.0 || ~11.2.0", "11.2.0"},
+		{"~12.1.0 >=12.2.0 || >=10.0.0 <11", "10.0.0"},
+		{"12.0.0 13.0.0 || 11.0.0", "11.0.0"},
+		{">13.2.9", "13.2.10"},
+	} {
+		t.Run(tc.dependency, func(t *testing.T) {
+			path := filepath.Join(t.TempDir(), "plugin.json")
+			b, err := json.Marshal(map[string]any{"dependencies": map[string]string{"grafanaDependency": tc.dependency}})
+			require.NoError(t, err)
+			require.NoError(t, os.WriteFile(path, b, 0o600))
+			opt, err := MinGrafanaFromPluginJSON(path)
+			if tc.minimum == "" {
+				require.Error(t, err)
+				require.Nil(t, opt)
+				return
+			}
+			require.NoError(t, err)
+			assert.Equal(t, tc.minimum, newOptions([]Option{opt}).minGrafana.String())
+		})
+	}
 }

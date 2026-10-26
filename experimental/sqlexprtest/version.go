@@ -9,11 +9,10 @@ import (
 	"strings"
 )
 
-// grafanaFixes maps a check to the first Grafana version that no longer has
-// the behavior it reports. Every later release must also have the fix: a fix
-// that is backported to some release lines but not others can't be listed
-// here yet. FixedIn names the fix release. It doesn't mean the plugin's
-// minimum version has the fix.
+// grafanaFixes contains monotonic fixes: every release at or after the named
+// version must contain the fix. Backports with unfixed later releases need
+// release-range rules before they can be represented here. FixedIn names a
+// known fix; it does not mean the selected minimum contains that fix.
 var grafanaFixes = map[Code]string{}
 
 type version struct {
@@ -23,31 +22,43 @@ type version struct {
 
 var versionPattern = regexp.MustCompile(`^(0|[1-9][0-9]*)(?:\.(0|[1-9][0-9]*))?(?:\.(0|[1-9][0-9]*))?(?:-([0-9A-Za-z.-]+))?(?:\+([0-9A-Za-z.-]+))?$`)
 
-// parseVersion reads a version such as "13.3.0", "v13.3.0-pre", or "13". A
-// missing minor or patch is 0. Build metadata after "+" is ignored.
 func parseVersion(s string) (version, error) {
-	bad := fmt.Errorf("invalid Grafana version %q", s)
+	v, _, err := parseVersionParts(s)
+	return v, err
+}
+
+func parseVersionParts(s string) (version, int, error) {
+	bad := func() error {
+		return fmt.Errorf("invalid Grafana version %q", s)
+	}
 	m := versionPattern.FindStringSubmatch(strings.TrimPrefix(strings.TrimSpace(s), "v"))
-	// A prerelease or build suffix needs all three numbers, as in 13.3.0-pre.
 	if m == nil || m[3] == "" && (m[4] != "" || m[5] != "") {
-		return version{}, bad
+		return version{}, 0, bad()
 	}
 	var n [3]int
+	parts := 0
 	for i := range n {
 		if m[i+1] == "" {
 			break
 		}
 		var err error
-		if n[i], err = strconv.Atoi(m[i+1]); err != nil {
-			return version{}, bad
+		n[i], err = strconv.Atoi(m[i+1])
+		if err != nil {
+			return version{}, 0, bad()
+		}
+		parts++
+	}
+	for i, suffix := range m[4:6] {
+		if suffix == "" {
+			continue
+		}
+		for id := range strings.SplitSeq(suffix, ".") {
+			if id == "" || i == 0 && numericIdentifier(id) && len(id) > 1 && id[0] == '0' {
+				return version{}, 0, bad()
+			}
 		}
 	}
-	for _, suffix := range m[4:6] {
-		if suffix != "" && strings.Contains("."+suffix+".", "..") {
-			return version{}, bad
-		}
-	}
-	return version{n[0], n[1], n[2], m[4]}, nil
+	return version{n[0], n[1], n[2], m[4]}, parts, nil
 }
 
 func numericIdentifier(s string) bool {
@@ -59,7 +70,6 @@ func numericIdentifier(s string) bool {
 	return s != ""
 }
 
-// less orders versions as semver does: 13.3.0-pre comes before 13.3.0.
 func (v version) less(o version) bool {
 	if v.major != o.major {
 		return v.major < o.major
@@ -98,11 +108,18 @@ func (v version) String() string {
 	return s
 }
 
-// MinGrafana sets the oldest Grafana version the plugin supports. A
-// prerelease comes before its release, so a minimum of 13.3.0-pre does not
-// turn on a fix released in 13.3.0. Without MinGrafana, the checks assume the
-// plugin supports versions without any fix. MinGrafana panics if v is not a
-// version such as "12.3.0".
+func (v version) release() version {
+	v.prerelease = ""
+	return v
+}
+
+// MinGrafana sets the oldest Grafana version the plugin supports. Prereleases
+// precede the final release, so a minimum of 13.3.0-pre does not enable a fix in
+// 13.3.0. Build metadata does not affect precedence. Major-only and major.minor
+// versions are shorthand for zero minor/patch components.
+//
+// Without MinGrafana, checks assume versions without any fix are supported.
+// MinGrafana panics if v is not a valid version.
 func MinGrafana(v string) Option {
 	parsed, err := parseVersion(v)
 	if err != nil {
@@ -111,12 +128,12 @@ func MinGrafana(v string) Option {
 	return func(o *options) { o.minGrafana = &parsed }
 }
 
-// MinGrafanaFromPluginJSON reads the oldest Grafana version that the
-// grafanaDependency range in plugin.json allows, and returns it as a
-// [MinGrafana] option. It reads ranges such as ">=12.3.0", "^11.0.0",
-// "~12.1.0", ">=10.4.0 <12 || >=12.1.0", and a plain version. Other range
-// syntax, such as "12.x" or ">12.0.0", returns an error. Then pass the
-// version to MinGrafana yourself.
+// MinGrafanaFromPluginJSON reads the minimum allowed by grafanaDependency.
+// It supports exact/partial versions, < <= > >= = comparators, caret and tilde
+// ranges, whitespace intersections, and || alternatives. Prereleases require
+// an explicit prerelease comparator with the same major.minor.patch in their
+// alternative. Wildcards, hyphen ranges, and other syntax return an error;
+// callers can use MinGrafana after establishing the minimum themselves.
 func MinGrafanaFromPluginJSON(path string) (Option, error) {
 	b, err := os.ReadFile(path) // #nosec G304
 	if err != nil {
@@ -140,13 +157,96 @@ func MinGrafanaFromPluginJSON(path string) (Option, error) {
 	return func(o *options) { o.minGrafana = &v }, nil
 }
 
-// operatorSpace matches a range operator and the spaces after it, as in ">= 12.0.0".
 var operatorSpace = regexp.MustCompile(`([<>=^~]+)\s+`)
 
-// lowestVersion returns the lowest version a grafanaDependency range allows.
-// In each "||" alternative, the lowest version is the highest lower bound
-// (>=, ^, ~, =, or a plain version), or 0.0.0 when there is none. Upper
-// bounds (<, <=) only check that the alternative allows some version.
+type versionConstraint struct {
+	op string
+	v  version
+}
+
+func (c versionConstraint) allows(v version) bool {
+	switch c.op {
+	case ">=":
+		return !v.less(c.v)
+	case ">":
+		return c.v.less(v)
+	case "<=":
+		return !c.v.less(v)
+	case "<":
+		return v.less(c.v)
+	default:
+		return v == c.v
+	}
+}
+
+// nextComponent constructs the exclusive upper boundary for a partial,
+// caret, or tilde range. The -0 excludes prereleases of that next release too.
+func nextComponent(v version, component int) (version, error) {
+	n := [3]int{v.major, v.minor, v.patch}
+	if n[component] == int(^uint(0)>>1) {
+		return version{}, fmt.Errorf("version component too large in %q", v.String())
+	}
+	n[component]++
+	for i := component + 1; i < len(n); i++ {
+		n[i] = 0
+	}
+	return version{n[0], n[1], n[2], "0"}, nil
+}
+
+func parseConstraint(term string) ([]versionConstraint, version, error) {
+	op := ""
+	for _, prefix := range []string{">=", "<=", ">", "<", "=", "^", "~"} {
+		if rest, ok := strings.CutPrefix(term, prefix); ok {
+			op, term = prefix, rest
+			break
+		}
+	}
+	v, parts, err := parseVersionParts(term)
+	if err != nil {
+		return nil, version{}, err
+	}
+	original := v
+	bound := func(component int) ([]versionConstraint, version, error) {
+		upper, err := nextComponent(v, component)
+		return []versionConstraint{{">=", v}, {"<", upper}}, original, err
+	}
+	switch op {
+	case "", "=":
+		if parts < 3 {
+			return bound(parts - 1)
+		}
+		op = "="
+	case "~":
+		return bound(min(parts-1, 1))
+	case "^":
+		component := 0
+		if v.major == 0 && parts > 1 {
+			component = 1
+			if v.minor == 0 && parts > 2 {
+				component = 2
+			}
+		}
+		return bound(component)
+	case ">", "<=":
+		if parts < 3 {
+			upper, err := nextComponent(v, parts-1)
+			if err != nil {
+				return nil, version{}, err
+			}
+			if op == ">" {
+				op, v = ">=", upper.release()
+			} else {
+				op, v = "<", upper
+			}
+		}
+	case "<":
+		if parts < 3 {
+			v.prerelease = "0"
+		}
+	}
+	return []versionConstraint{{op, v}}, original, nil
+}
+
 func lowestVersion(r string) (version, error) {
 	var lowest *version
 	for alt := range strings.SplitSeq(operatorSpace.ReplaceAllString(r, "$1"), "||") {
@@ -154,49 +254,65 @@ func lowestVersion(r string) (version, error) {
 		if len(terms) == 0 {
 			return version{}, fmt.Errorf("grafanaDependency %q has an empty alternative", r)
 		}
-		var low version
-		var uppers []string
+		var constraints []versionConstraint
+		prereleases := map[version]bool{}
 		for _, term := range terms {
-			op, rest := splitOperator(term)
-			v, err := parseVersion(rest)
+			parsed, original, err := parseConstraint(term)
 			if err != nil {
 				return version{}, fmt.Errorf("grafanaDependency %q: %w", r, err)
 			}
-			switch op {
-			case ">=", "^", "~", "=", "":
-				if low.less(v) {
-					low = v
+			constraints = append(constraints, parsed...)
+			if original.prerelease != "" {
+				prereleases[original.release()] = true
+			}
+		}
+
+		// A minimum is either a stable lower boundary, or a prerelease at an
+		// explicitly admitted release. Upper-only alternatives include 0.0.0.
+		candidates := []version{{}}
+		for release := range prereleases {
+			release.prerelease = "0"
+			candidates = append(candidates, release)
+		}
+		for _, c := range constraints {
+			candidates = append(candidates, c.v.release())
+			if c.v.prerelease != "" {
+				candidate := c.v
+				if c.op == ">" {
+					candidate.prerelease += ".0"
 				}
-			case "<", "<=":
-				uppers = append(uppers, term)
-			default:
-				return version{}, fmt.Errorf("grafanaDependency %q: unsupported operator %q; use MinGrafana", r, op)
+				candidates = append(candidates, candidate)
+			} else if c.op == ">" {
+				next, err := nextComponent(c.v, 2)
+				if err != nil {
+					return version{}, fmt.Errorf("grafanaDependency %q: %w", r, err)
+				}
+				candidates = append(candidates, next.release())
 			}
 		}
-		for _, term := range uppers {
-			op, rest := splitOperator(term)
-			upper, _ := parseVersion(rest)
-			if op == "<" && !low.less(upper) || op == "<=" && upper.less(low) {
-				return version{}, fmt.Errorf("grafanaDependency %q: %q allows no versions", r, alt)
+		for _, candidate := range candidates {
+			if candidate.prerelease != "" && !prereleases[candidate.release()] {
+				continue
+			}
+			allowed := true
+			for _, c := range constraints {
+				if !c.allows(candidate) {
+					allowed = false
+					break
+				}
+			}
+			if allowed && (lowest == nil || candidate.less(*lowest)) {
+				v := candidate
+				lowest = &v
 			}
 		}
-		if lowest == nil || low.less(*lowest) {
-			lowest = &low
-		}
+	}
+	if lowest == nil {
+		return version{}, fmt.Errorf("grafanaDependency %q allows no versions", r)
 	}
 	return *lowest, nil
 }
 
-func splitOperator(term string) (string, string) {
-	i := strings.IndexFunc(term, func(c rune) bool { return !strings.ContainsRune("<>=^~!", c) })
-	if i < 0 {
-		return term, ""
-	}
-	return term[:i], term[i:]
-}
-
-// fixedIn returns the Grafana version that fixes the behavior a check
-// reports, and whether every version the plugin supports has the fix.
 func (r *Report) fixedIn(code Code) (string, bool) {
 	s, ok := grafanaFixes[code]
 	if !ok {
