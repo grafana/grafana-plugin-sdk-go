@@ -1,0 +1,27 @@
+apiVersion: 1
+datasources:
+  - name: SQL Expression TestData
+    uid: sqlexpr-testdata
+    type: grafana-testdata-datasource
+    access: proxy
+  - name: SQL Expression Prometheus
+    uid: sqlexpr-prometheus
+    type: prometheus
+    access: proxy
+    url: http://prometheus-fixture:9090
+    jsonData:
+      httpMethod: GET
+      prometheusType: Prometheus
+      prometheusVersion: 3.2.1
+      timeInterval: 1s
+  - name: SQL Expression PostgreSQL
+    uid: sqlexpr-postgres
+    type: grafana-postgresql-datasource
+    url: postgres:5432
+    user: sqlexprtest
+    jsonData:
+      database: sqlexprtest
+      sslmode: disable
+      postgresVersion: 1700
+    secureJsonData:
+      password: local-test-only
