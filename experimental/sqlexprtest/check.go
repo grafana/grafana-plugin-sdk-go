@@ -594,6 +594,7 @@ func checkFieldValues(r *Report, frameIndex, fieldIndex int, f *data.Field, rows
 		return
 	}
 	large, nonfinite, invalidJSON := 0, 0, 0
+	jsonOutOfRange, jsonRounded := 0, 0
 	bits, threshold := 53, float64(maxExactInteger)
 	if t == data.FieldTypeFloat32 {
 		bits, threshold = 24, 1<<24
@@ -612,6 +613,10 @@ func checkFieldValues(r *Report, frameIndex, fieldIndex int, f *data.Field, rows
 		case json.RawMessage:
 			if v != nil && !json.Valid(v) {
 				invalidJSON++
+			} else if v != nil {
+				outOfRange, rounded := checkJSONNumbers(v)
+				jsonOutOfRange += outOfRange
+				jsonRounded += rounded
 			}
 			continue
 		}
@@ -636,6 +641,16 @@ func checkFieldValues(r *Report, frameIndex, fieldIndex int, f *data.Field, rows
 		r.add(Finding{Code: CodeNonfiniteAsNull, Severity: SeverityInfo, Owner: OwnerGrafana, Frame: frameIndex, Field: f.Name,
 			Message: fmt.Sprintf("SQL reads %d NaN or infinite values in field %d as NULL. "+
 				"That changes COUNT(column), filters, and anything else that treats NULL differently.", nonfinite, fieldIndex)})
+	}
+	if jsonOutOfRange > 0 {
+		r.add(Finding{Code: CodeJSONNumberOutOfRange, Severity: SeverityError, Owner: OwnerGrafana, Frame: frameIndex, Field: f.Name,
+			Message: fmt.Sprintf("%d JSON values in field %d contain a number outside float64's finite range. Grafana decodes JSON numbers as float64, so SQL row reading fails. "+
+				"Encode those numbers as JSON strings to preserve them.", jsonOutOfRange, fieldIndex)})
+	}
+	if jsonRounded > 0 {
+		r.add(Finding{Code: CodeJSONIntegerAsFloat, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: frameIndex, Field: f.Name,
+			Message: fmt.Sprintf("%d integer JSON numbers in field %d change when Grafana decodes them as float64. "+
+				"Encode exact large integers as JSON strings, or expose them as int64 or uint64 table columns when they fit.", jsonRounded, fieldIndex)})
 	}
 	if invalidJSON > 0 {
 		r.add(Finding{Code: CodeInvalidJSON, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: frameIndex, Field: f.Name,

@@ -105,6 +105,10 @@ const (
 	CodeNonfiniteAsNull Code = "nonfinite-as-null"
 	// CodeInvalidJSON: a JSON field contains malformed JSON values.
 	CodeInvalidJSON Code = "invalid-json"
+	// CodeJSONNumberOutOfRange: a valid JSON number exceeds the SQL reader's float64 range.
+	CodeJSONNumberOutOfRange Code = "json-number-out-of-range"
+	// CodeJSONIntegerAsFloat: SQL rounds an integer JSON number when decoding it as float64.
+	CodeJSONIntegerAsFloat Code = "json-integer-as-float"
 	// CodeEnumField: SQL reads enum indexes as JSON numbers rather than enum text.
 	CodeEnumField Code = "enum-field"
 	// CodeDuplicateName: two columns share a name, ignoring case.
@@ -145,6 +149,8 @@ func Codes() []Code {
 		CodeLargeIntegerInFloat,
 		CodeNonfiniteAsNull,
 		CodeInvalidJSON,
+		CodeJSONNumberOutOfRange,
+		CodeJSONIntegerAsFloat,
 		CodeEnumField,
 		CodeDuplicateName,
 		CodeGeneratedNameClash,

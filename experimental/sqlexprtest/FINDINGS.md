@@ -31,6 +31,8 @@ Each row gives a small input that produces the finding, and how to fix it. Check
 | `large-integer-in-float` | A large float32 or float64 that may be a rounded integer. | Decode integer values into integer fields. A table or long frame keeps them as integers. The kit can't recover digits that were already lost. |
 | `nonfinite-as-null` | A numeric value that SQL reads is NaN or infinity. | Check that NULL is what you want, especially for `COUNT(column)` and filters. This finding is info. |
 | `invalid-json` | `json.RawMessage("{")`, or an empty byte slice that isn't nil. | Return valid JSON. SQL reads invalid JSON as NULL. A nil `RawMessage` and the JSON text `null` are both valid, and both mean JSON null. |
+| `json-number-out-of-range` | Valid JSON such as `{"n":1e400}` in a table field. | SQL row reading fails because Grafana decodes JSON numbers as float64. Encode these numbers as JSON strings. |
+| `json-integer-as-float` | JSON `{"n":9007199254740993}`, which SQL rounds to `9007199254740992`. | Encode exact large integers as JSON strings, or expose them as int64/uint64 table columns when they fit. Exactly representable large integers do not trigger this warning. |
 | `enum-field` | A table with enum indexes and text in the field config. | Return a string field if SQL should see the text. SQL reads enum indexes as JSON numbers. |
 | `duplicate-column-name` | Table columns `host` and `HOST`. | Give columns names that differ when case is ignored. |
 | `generated-name-clash` | A label key `time` clashes with the generated `time` column. | Rename the label. If a Grafana fix renames the column for your minimum version, use the new name. |
