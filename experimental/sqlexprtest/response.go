@@ -24,13 +24,14 @@ const HeaderFromExpression = "X-Grafana-From-Expr"
 // no query asked for. A nil response gives an error report for each RefID in
 // refIDs, or one report under the RefID "" when refIDs is empty.
 func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Option) map[string]*Report {
+	o := newOptions(opts)
 	reports := map[string]*Report{}
 	if resp == nil {
 		if len(refIDs) == 0 {
 			refIDs = []string{""}
 		}
 		for _, refID := range refIDs {
-			reports[refID] = &Report{RefID: refID, Mode: ModeNone, Findings: []Finding{{
+			reports[refID] = &Report{RefID: refID, minGrafana: o.minGrafana, Mode: ModeNone, Findings: []Finding{{
 				Code: CodeNilResponse, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
 				Message: "the QueryData handler returned a nil response and no error, so Grafana has no results to read. " +
 					"Return a QueryDataResponse, or an error.",
@@ -47,13 +48,13 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Opt
 		dr, ok := responses[refID]
 		switch {
 		case !ok:
-			reports[refID] = &Report{RefID: refID, Mode: ModeTable, Findings: []Finding{{
+			reports[refID] = &Report{RefID: refID, minGrafana: o.minGrafana, Mode: ModeTable, Findings: []Finding{{
 				Code: CodeMissingRefID, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: -1,
 				Message: "the response has no entry for this RefID, so SQL sees a table with no columns, without an error. " +
 					"Return a DataResponse for every query, keyed by its RefID.",
 			}}}
 		case dr.Error != nil:
-			reports[refID] = &Report{RefID: refID, Mode: ModeNone, Findings: []Finding{{
+			reports[refID] = &Report{RefID: refID, minGrafana: o.minGrafana, Mode: ModeNone, Findings: []Finding{{
 				Code: CodeQueryError, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
 				Message: fmt.Sprintf("the query failed: %v", dr.Error),
 			}}}
@@ -68,7 +69,7 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Opt
 		if _, ok := reports[refID]; ok {
 			continue
 		}
-		reports[refID] = &Report{RefID: refID, Mode: ModeNone, Findings: []Finding{{
+		reports[refID] = &Report{RefID: refID, minGrafana: o.minGrafana, Mode: ModeNone, Findings: []Finding{{
 			Code: CodeUnexpectedRefID, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: -1,
 			Message: "the response has an entry for this RefID, but no query asked for it, so SQL never reads it. " +
 				"Key each DataResponse by its query's RefID.",
@@ -103,6 +104,7 @@ func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backen
 		seen[q.RefID] = struct{}{}
 	}
 
+	o := newOptions(opts)
 	reports := map[string]*Report{}
 	for _, q := range req.Queries {
 		one := *req
@@ -112,13 +114,13 @@ func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backen
 		resp, panicked, err := callQueryData(ctx, h, &one)
 		switch {
 		case panicked != nil:
-			reports[q.RefID] = &Report{RefID: q.RefID, Mode: ModeNone, Findings: []Finding{{
+			reports[q.RefID] = &Report{RefID: q.RefID, minGrafana: o.minGrafana, Mode: ModeNone, Findings: []Finding{{
 				Code: CodePanic, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
 				Message: fmt.Sprintf("the QueryData handler panicked: %v. Grafana gets no response for this query, and the panic can fail the whole request. "+
 					"Return an error in the DataResponse instead.", panicked),
 			}}}
 		case err != nil:
-			reports[q.RefID] = &Report{RefID: q.RefID, Mode: ModeNone, Findings: []Finding{{
+			reports[q.RefID] = &Report{RefID: q.RefID, minGrafana: o.minGrafana, Mode: ModeNone, Findings: []Finding{{
 				Code: CodeQueryError, Severity: SeverityError, Owner: OwnerPlugin, Frame: -1,
 				Message: fmt.Sprintf("the QueryData handler returned an error: %v", err),
 			}}}

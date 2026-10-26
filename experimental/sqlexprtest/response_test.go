@@ -217,3 +217,29 @@ func TestCheckQueryDataError(t *testing.T) {
 	assert.Equal(t, []Code{CodeQueryError}, codes(reports["A"]))
 	assert.Contains(t, reports["A"].Findings[0].Message, "unavailable")
 }
+
+func TestReportsWithoutFramesKeepMinGrafana(t *testing.T) {
+	opt := MinGrafana("13.3.0")
+	resp := &backend.QueryDataResponse{Responses: backend.Responses{
+		"B": {Error: errors.New("unavailable")},
+		"C": {Frames: data.Frames{tableFrame()}},
+	}}
+	reports := CheckResponse(resp, []string{"A", "B"}, opt)
+	reports[""] = CheckResponse(nil, nil, opt)[""]
+	failing := handlerFunc(func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		return nil, errors.New("unavailable")
+	})
+	panicking := handlerFunc(func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		panic("no frames to read")
+	})
+	for name, h := range map[string]backend.QueryDataHandler{"error": failing, "panic": panicking} {
+		r, err := CheckQueryData(context.Background(), h, request("A"), opt)
+		require.NoError(t, err)
+		reports[name] = r["A"]
+	}
+
+	for name, r := range reports {
+		require.NotNil(t, r.minGrafana, name)
+		assert.Equal(t, "13.3.0", r.minGrafana.String(), name)
+	}
+}
