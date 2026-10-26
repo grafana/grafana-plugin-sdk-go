@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"maps"
 	"math"
 	"strconv"
 	"strings"
@@ -182,6 +183,51 @@ func TestSuiteAllowanceDoesNotCrossQueryBoundary(t *testing.T) {
 	assert.Len(t, r.Scenarios[0].Inputs[0].Allowed, 1)
 	assert.Empty(t, r.Scenarios[0].Inputs[1].Allowed)
 	assert.Contains(t, strings.Join(r.Scenarios[0].Problems, "\n"), `RefID "B"`)
+}
+
+func TestSuiteExtraResponseMatchesAcrossInputs(t *testing.T) {
+	both := &backend.QueryDataResponse{Responses: backend.Responses{
+		"A": {Frames: data.Frames{tableFrame()}}, "B": {Frames: data.Frames{tableFrame()}},
+	}}
+	h := handlerFunc(func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error) { return both, nil })
+	allow := []Allowance{{Code: CodeUnexpectedRefID, Reason: "the fixture also returns B"}}
+	for _, tc := range []struct {
+		name  string
+		input Input
+		want  map[string]Contract
+	}{
+		{"query data", QueryDataInput(h, request("A")), nil},
+		{"response", ResponseInput(both, []string{"A"}), nil},
+		{"response with contract for B", ResponseInput(both, []string{"A"}), map[string]Contract{"B": {Mode: ModeNone}}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			s := positiveScenario()
+			s.Input = tc.input
+			maps.Copy(s.Want, tc.want)
+			r, err := Evaluate(t.Context(), oneScenario(s))
+			require.NoError(t, err)
+			assert.True(t, r.HasFailures(), "the finding needs an allowance")
+			s.Allowances = allow
+			r, err = Evaluate(t.Context(), oneScenario(s))
+			require.NoError(t, err)
+			assert.True(t, r.Passed(), r.String())
+		})
+	}
+	t.Run("extra responses alone are not coverage", func(t *testing.T) {
+		s := positiveScenario()
+		s.Input = func(_ context.Context, opts ...Option) (map[string]*Report, error) {
+			reports := CheckResponse(both, []string{"C"}, opts...)
+			delete(reports, "C")
+			return reports, nil
+		}
+		s.Want = map[string]Contract{"A": {Mode: ModeNone}, "B": {Mode: ModeNone}}
+		s.Allowances = allow
+		r, err := Evaluate(t.Context(), oneScenario(s))
+		require.NoError(t, err)
+		assert.True(t, r.HasFailures())
+		assert.Contains(t, r.String(), "only reports for RefIDs that no query asked for")
+		assert.Equal(t, StatusFailed, r.Modes[0].Status)
+	})
 }
 
 func TestSuiteInputFailuresCannotPass(t *testing.T) {

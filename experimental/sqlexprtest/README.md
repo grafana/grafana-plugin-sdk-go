@@ -124,7 +124,7 @@ Consider these scenarios for each mode:
 - Upstream errors, missing RefIDs, paging and results that aren't ready yet.
 - The backend request with and without `HeaderFromExpression`. The kit passes your headers unchanged.
 
-A contract checks only what you set. An empty `Mode`, or a nil `Rows` or `Columns`, is not checked. A non-nil empty `Columns` slice checks that there are no columns. Each scenario must list a contract for every RefID it reports. A missing or extra report fails.
+A contract checks only what you set. An empty `Mode`, or a nil `Rows` or `Columns`, is not checked. A non-nil empty `Columns` slice checks that there are no columns. Each scenario must list a contract for every RefID it reports. A missing or extra report fails. A response for a RefID that no query asked for is the exception. It needs no contract, only an allowance for `unexpected-refid`, and it doesn't count as SQL input.
 
 `ExpectedFailure` marks a scenario that should fail, such as an upstream error. It still needs an allowance for the error's code. It doesn't count as a test with valid input.
 
