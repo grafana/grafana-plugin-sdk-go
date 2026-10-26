@@ -12,6 +12,7 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -334,6 +335,9 @@ func validateWireFrames(b []byte) error {
 				if err := validateWireNulls(arrays[0][i], vector, entities); err != nil {
 					return err
 				}
+				if err := validateWireIntegers(arrays[0][i], vector); err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -372,6 +376,47 @@ func validateWireNulls(schema, vector json.RawMessage, entities map[string][]int
 	for row, value := range values {
 		if bytes.Equal(bytes.TrimSpace(value), []byte("null")) && !specialRows[row] {
 			return errors.New("null value in a nonnullable field without a float entity")
+		}
+	}
+	return nil
+}
+
+// The SDK codec reads integer values through float64 and truncates them, so
+// 1.5 or 127.000000000000001 in an int8 field decodes as 1 or 127. Check each
+// number's text before decoding. Grafana writes integers as plain digits.
+func validateWireIntegers(schema, vector json.RawMessage) error {
+	var field struct {
+		TypeInfo struct {
+			Frame data.FieldType `json:"frame"`
+		} `json:"typeInfo"`
+	}
+	if err := json.Unmarshal(schema, &field); err != nil {
+		return err
+	}
+	var parse func(string) error
+	switch ft := field.TypeInfo.Frame.NonNullableType(); ft {
+	case data.FieldTypeInt8, data.FieldTypeInt16, data.FieldTypeInt32, data.FieldTypeInt64:
+		bits := map[data.FieldType]int{data.FieldTypeInt8: 8, data.FieldTypeInt16: 16, data.FieldTypeInt32: 32, data.FieldTypeInt64: 64}[ft]
+		parse = func(s string) error { _, err := strconv.ParseInt(s, 10, bits); return err }
+	case data.FieldTypeUint8, data.FieldTypeUint16, data.FieldTypeUint32, data.FieldTypeUint64:
+		bits := map[data.FieldType]int{data.FieldTypeUint8: 8, data.FieldTypeUint16: 16, data.FieldTypeUint32: 32, data.FieldTypeUint64: 64}[ft]
+		parse = func(s string) error { _, err := strconv.ParseUint(s, 10, bits); return err }
+	default:
+		return nil
+	}
+	decoder := json.NewDecoder(bytes.NewReader(vector))
+	decoder.UseNumber()
+	var values []any
+	if err := decoder.Decode(&values); err != nil {
+		return err
+	}
+	for row, value := range values {
+		number, ok := value.(json.Number)
+		if !ok {
+			continue // null, or a value the SDK codec rejects itself.
+		}
+		if err := parse(number.String()); err != nil {
+			return fmt.Errorf("row %d: %s is not a %s", row, number, field.TypeInfo.Frame)
 		}
 	}
 	return nil
