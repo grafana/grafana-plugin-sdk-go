@@ -141,6 +141,7 @@ allowance := sqlexprtest.Allowance{
 ```
 
 - `RefID`, `Frame` and `Field` are optional. When set, they must match exactly.
+- For `unexpected-refid`, `RefID` names the RefID that no query asked for. To allow only an extra `B`, set `RefID: "B"`. `B` needs no contract.
 - The first allowance that matches a finding is the one used.
 - Every allowance needs a reason. An allowance that matches nothing fails the test.
 - Allowed findings stay in the report.

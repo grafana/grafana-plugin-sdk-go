@@ -78,6 +78,8 @@ func compareContract(r *Report, c Contract) []string {
 // failure threshold do not consume allowances, so severity downgrades expose
 // obsolete suppressions.
 // Unmatched allowances fail the scenario, and matched findings remain visible.
+// For CodeUnexpectedRefID, RefID names the unexpected RefID, which needs no
+// contract.
 type Allowance struct {
 	Code   Code
 	RefID  string
@@ -94,7 +96,7 @@ func validateAllowances(allowances []Allowance, want map[string]Contract) error 
 		if strings.TrimSpace(allowance.Reason) == "" {
 			return fmt.Errorf("allowance %d needs a reason", i)
 		}
-		if allowance.RefID != "" {
+		if allowance.RefID != "" && allowance.Code != CodeUnexpectedRefID {
 			if _, exists := want[allowance.RefID]; !exists {
 				return fmt.Errorf("allowance %d refers to undeclared RefID %q", i, allowance.RefID)
 			}
@@ -107,6 +109,9 @@ func validateAllowances(allowances []Allowance, want map[string]Contract) error 
 }
 
 func matchAllowance(refID string, finding Finding, allowances []Allowance, used []bool) (int, bool) {
+	if finding.Code == CodeUnexpectedRefID {
+		refID = finding.Field
+	}
 	for i, a := range allowances {
 		if a.Code != finding.Code || a.RefID != "" && a.RefID != refID || a.Frame != nil && *a.Frame != finding.Frame || a.Field != nil && *a.Field != finding.Field {
 			continue
