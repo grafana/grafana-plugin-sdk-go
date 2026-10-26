@@ -62,6 +62,12 @@
 //	require.NoError(t, err)
 //	sqlexprtest.AssertQueryData(t, ctx, ds, req, opt)
 //
+// [AssertSuite] runs each scenario you list and checks its conversion mode,
+// columns, rows, and cells. Each [Allowance] needs a reason and fails when unused.
+// [SuiteReport] lists skipped, unsupported, and untested cases. Use encoding/json
+// to save it. The optional grafanatest subpackage runs queries against Grafana
+// and checks their results.
+//
 // This package is experimental. Its API and checks may change as Grafana's SQL
 // input handling changes.
 package sqlexprtest
