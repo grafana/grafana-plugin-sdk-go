@@ -173,7 +173,7 @@ func evaluateScenario(ctx context.Context, s Scenario, o options, opts []Option)
 		}
 	}
 	used := make([]bool, len(s.Allowances))
-	hadError := false
+	hadError, hadSQLInput := false, false
 	for _, refID := range slices.Sorted(maps.Keys(reports)) {
 		input, problems := evaluateReport(refID, reports[refID], s, o, used)
 		r.Inputs = append(r.Inputs, input)
@@ -181,6 +181,10 @@ func evaluateScenario(ctx context.Context, s Scenario, o options, opts []Option)
 		if input.Report != nil && input.Report.Worst() == SeverityError {
 			hadError = true
 		}
+		hadSQLInput = hadSQLInput || !isExtraResponse(input.Report)
+	}
+	if len(reports) > 0 && !hadSQLInput {
+		r.Problems = append(r.Problems, "input returned only reports for RefIDs that no query asked for")
 	}
 	if s.ExpectedFailure && !hadError {
 		r.Problems = append(r.Problems, "expected failure fixture produced no error finding")
@@ -194,6 +198,13 @@ func evaluateScenario(ctx context.Context, s Scenario, o options, opts []Option)
 		r.Status = StatusFailed
 	}
 	return r
+}
+
+// isExtraResponse reports whether r only says that the response has an entry
+// no query asked for. SQL never reads that entry, so it needs no contract and
+// doesn't count as SQL input. Its finding still needs an allowance.
+func isExtraResponse(r *Report) bool {
+	return r != nil && r.Mode == ModeNone && len(r.Findings) == 1 && r.Findings[0].Code == CodeUnexpectedRefID
 }
 
 func invokeInput(ctx context.Context, input Input, opts []Option) (reports map[string]*Report, err error) {
@@ -233,14 +244,15 @@ func evaluateReport(refID string, report *Report, s Scenario, o options, used []
 		problems = append(problems, fmt.Sprintf("RefID %q: report has invalid conversion mode %q; return a report produced by Check, CheckResponse, or CheckQueryData", refID, report.Mode))
 	}
 	input.Cells = report.Cells()
-	if report.Mode == ModeNone && !s.ExpectedFailure {
+	extra := isExtraResponse(report)
+	if report.Mode == ModeNone && !s.ExpectedFailure && !extra {
 		problems = append(problems, fmt.Sprintf("RefID %q: no SQL input was constructed for this successful-input scenario; correct the response", refID))
 	}
 	if contract, exists := s.Want[refID]; exists {
 		for _, problem := range compareContract(report, contract) {
 			problems = append(problems, fmt.Sprintf("RefID %q: %s", refID, problem))
 		}
-	} else {
+	} else if !extra {
 		problems = append(problems, fmt.Sprintf("unexpected report for RefID %q; declare its contract", refID))
 	}
 	for i, finding := range report.Findings {
