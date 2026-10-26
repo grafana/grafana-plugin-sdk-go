@@ -105,7 +105,7 @@ func checkTable(r *Report, frames data.Frames) {
 			r.Mode = ModeNone
 			r.add(Finding{Code: CodeLabelsOnTable, Severity: SeverityError, Owner: OwnerPlugin, Frame: 0, Field: f.Name,
 				Message: fmt.Sprintf("field %d has labels, and a table can't hold labels, so the SQL Expression fails. Move the labels into string fields. "+
-					"If the frame is a series, set Meta.Type to a time series or numeric type, so Grafana turns the labels into columns.", j)})
+					"If the frame matches a supported series shape, set Meta.Type to timeseries-wide, timeseries-multi, numeric-wide, or numeric-multi. Grafana converts those labels into columns.", j)})
 			return
 		}
 	}
