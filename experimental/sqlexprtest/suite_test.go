@@ -213,6 +213,40 @@ func TestSuiteExtraResponseMatchesAcrossInputs(t *testing.T) {
 			assert.True(t, r.Passed(), r.String())
 		})
 	}
+	t.Run("allowance names one extra RefID", func(t *testing.T) {
+		extra := &backend.QueryDataResponse{Responses: backend.Responses{
+			"A": {Frames: data.Frames{tableFrame()}}, "B": {Frames: data.Frames{tableFrame()}}, "C": {Frames: data.Frames{tableFrame()}},
+		}}
+		allowB := []Allowance{{Code: CodeUnexpectedRefID, RefID: "B", Reason: "the fixture also returns B"}}
+		for name, input := range map[string]Input{
+			"query data": QueryDataInput(handlerFunc(func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error) { return both, nil }), request("A")),
+			"response":   ResponseInput(both, []string{"A"}),
+		} {
+			s := positiveScenario()
+			s.Input, s.Allowances = input, allowB
+			r, err := Evaluate(t.Context(), oneScenario(s))
+			require.NoError(t, err, name)
+			assert.True(t, r.Passed(), "%s: %s", name, r)
+		}
+		for name, input := range map[string]Input{
+			"query data": QueryDataInput(handlerFunc(func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+				return extra, nil
+			}), request("A")),
+			"response": ResponseInput(extra, []string{"A"}),
+		} {
+			s := positiveScenario()
+			s.Input, s.Allowances = input, allowB
+			r, err := Evaluate(t.Context(), oneScenario(s))
+			require.NoError(t, err, name)
+			assert.True(t, r.HasFailures(), name)
+			assert.Contains(t, r.String(), `"C"`, name)
+		}
+		s := positiveScenario()
+		s.Allowances = allowB
+		r, err := Evaluate(t.Context(), oneScenario(s))
+		require.NoError(t, err)
+		assert.Contains(t, r.String(), "unused allowance 0")
+	})
 	t.Run("extra responses alone are not coverage", func(t *testing.T) {
 		s := positiveScenario()
 		s.Input = func(_ context.Context, opts ...Option) (map[string]*Report, error) {

@@ -70,7 +70,7 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Opt
 			continue
 		}
 		reports[refID] = &Report{RefID: refID, minGrafana: o.minGrafana, Mode: ModeNone, Findings: []Finding{{
-			Code: CodeUnexpectedRefID, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: -1,
+			Code: CodeUnexpectedRefID, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: -1, Field: refID,
 			Message: "the response has an entry for this RefID, but no query asked for it, so SQL never reads it. " +
 				"Key each DataResponse by its query's RefID.",
 		}}}
