@@ -420,6 +420,37 @@ func TestSuiteDeterministicJSONAndText(t *testing.T) {
 	assert.Contains(t, a.String(), "minimum none")
 }
 
+func TestReportJSON(t *testing.T) {
+	frame := typed(data.FrameTypeTable, data.NewFrame("", data.NewField("state", nil, []data.EnumItemIndex{0})))
+	frame.RefID = "A"
+	r := Check(data.Frames{frame})
+	b, err := json.Marshal(r)
+	require.NoError(t, err)
+	assert.JSONEq(t, `{
+		"refId": "A", "inputType": "table", "mode": "table", "rows": 1,
+		"columns": [{"name": "state", "type": "enum", "sqlType": "JSON"}],
+		"findings": [{"code": "enum-field", "severity": "warning", "owner": "grafana", "frame": 0, "field": "state",
+			"message": `+strconv.Quote(r.Findings[0].Message)+`, "fixedIn": "13.3.0"}]
+	}`, string(b))
+
+	var back Report
+	require.NoError(t, json.Unmarshal(b, &back))
+	assert.Equal(t, r.Findings, back.Findings)
+	assert.Equal(t, r.Columns, back.Columns)
+
+	for _, s := range []Severity{SeverityNone, SeverityInfo, SeverityWarning, SeverityError} {
+		var got Severity
+		text, err := s.MarshalText()
+		require.NoError(t, err)
+		require.NoError(t, got.UnmarshalText(text))
+		assert.Equal(t, s, got)
+	}
+	_, err = Severity(7).MarshalText()
+	assert.Error(t, err)
+	var got Severity
+	assert.Error(t, got.UnmarshalText([]byte("1")))
+}
+
 func TestReportCells(t *testing.T) {
 	frame := typed(data.FrameTypeTimeSeriesWide, data.NewFrame("", data.NewField("time", nil, make([]time.Time, 1000))))
 	for range 50 {

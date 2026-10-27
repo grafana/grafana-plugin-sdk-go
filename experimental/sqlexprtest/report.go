@@ -36,6 +36,28 @@ func (s Severity) String() string {
 	}
 }
 
+// MarshalText saves a severity by name, such as "warning", so JSON reports
+// stay readable if the constants change.
+func (s Severity) MarshalText() ([]byte, error) {
+	switch s {
+	case SeverityNone, SeverityInfo, SeverityWarning, SeverityError:
+		return []byte(s.String()), nil
+	default:
+		return nil, fmt.Errorf("unknown severity %d", int(s))
+	}
+}
+
+// UnmarshalText reads a severity name that MarshalText wrote.
+func (s *Severity) UnmarshalText(b []byte) error {
+	for _, v := range []Severity{SeverityNone, SeverityInfo, SeverityWarning, SeverityError} {
+		if string(b) == v.String() {
+			*s = v
+			return nil
+		}
+	}
+	return fmt.Errorf("unknown severity %q", b)
+}
+
 // Owner says where a finding is fixed.
 type Owner string
 
@@ -160,19 +182,19 @@ func Codes() []Code {
 
 // Finding is one problem or piece of advice about a query's frames.
 type Finding struct {
-	Code     Code
-	Severity Severity
-	Owner    Owner
+	Code     Code     `json:"code"`
+	Severity Severity `json:"severity"`
+	Owner    Owner    `json:"owner"`
 	// Frame is the index of the frame the finding is about, or -1 when it is
 	// about the whole query.
-	Frame int
+	Frame int `json:"frame"`
 	// Field is the source field name, or a label/column name for generated tables.
 	// Messages include source field indexes when malformed inputs need an unambiguous location.
-	Field   string
-	Message string
+	Field   string `json:"field,omitempty"`
+	Message string `json:"message"`
 	// FixedIn is the first Grafana version without the behavior an
 	// OwnerGrafana finding reports. It is empty when no release fixes it yet.
-	FixedIn string
+	FixedIn string `json:"fixedIn,omitempty"`
 }
 
 func (f Finding) String() string {
@@ -208,28 +230,28 @@ const (
 
 // Column is a column of the SQL table Grafana builds.
 type Column struct {
-	Name string
+	Name string `json:"name"`
 	// Type is the field type Grafana builds the column from.
-	Type data.FieldType
+	Type data.FieldType `json:"type"`
 	// SQLType is the column's SQL type, for example BIGINT or TEXT.
-	SQLType string
+	SQLType string `json:"sqlType"`
 }
 
 // Report is the result of checking one query's frames.
 type Report struct {
-	RefID string
+	RefID string `json:"refId"`
 	// InputType is the Meta.Type of the first frame, which Grafana uses for
 	// every frame of the query.
-	InputType data.FrameType
-	Mode      Mode
+	InputType data.FrameType `json:"inputType"`
+	Mode      Mode           `json:"mode"`
 	// Rows is the converted frame row count. It is zero when Mode is ModeNone.
-	Rows int
+	Rows int `json:"rows"`
 	// Columns describes the schema at the selected minimum version. A finding
 	// explains known schema changes in newer versions. It is empty for ModeNone.
 	// An uninitialized field has TypeUnknown and an empty SQLType because
 	// Grafana cannot inspect its schema; see the corresponding error finding.
-	Columns  []Column
-	Findings []Finding
+	Columns  []Column  `json:"columns"`
+	Findings []Finding `json:"findings"`
 
 	// minGrafana is the oldest Grafana version the plugin supports, or nil
 	// when it is not known.
