@@ -123,6 +123,18 @@ func TestCheckQueryDataNilRequest(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestCheckQueryDataNoQueries(t *testing.T) {
+	calls := 0
+	h := handlerFunc(func(context.Context, *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
+		calls++
+		return nil, nil
+	})
+	reports, err := CheckQueryData(t.Context(), h, request())
+	require.ErrorContains(t, err, "no queries")
+	assert.Nil(t, reports)
+	assert.Zero(t, calls)
+}
+
 func TestCheckQueryDataPreservesHeaders(t *testing.T) {
 	for _, value := range []string{"", "false", "true"} {
 		t.Run("expression header "+value, func(t *testing.T) {

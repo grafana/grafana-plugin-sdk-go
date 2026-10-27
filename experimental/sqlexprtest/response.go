@@ -90,11 +90,14 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Opt
 //
 // A handler error becomes a [CodeQueryError] finding, and a panic a
 // [CodePanic] finding, for that query. It uses only the [MinGrafana] option.
-// It returns an error, without calling the handler, when req is nil or two
-// queries share a RefID.
+// It returns an error, without calling the handler, when req is nil, has no
+// queries, or two queries share a RefID.
 func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...Option) (map[string]*Report, error) {
 	if req == nil {
 		return nil, errors.New("sqlexprtest: nil QueryDataRequest")
+	}
+	if len(req.Queries) == 0 {
+		return nil, errors.New("sqlexprtest: QueryDataRequest has no queries")
 	}
 	seen := make(map[string]struct{}, len(req.Queries))
 	for _, q := range req.Queries {

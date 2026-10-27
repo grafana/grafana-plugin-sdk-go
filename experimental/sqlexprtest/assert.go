@@ -57,10 +57,15 @@ func AssertFrames(tb testing.TB, frames data.Frames, opts ...Option) *Report {
 // AssertResponse checks a QueryDataResponse with [CheckResponse], and marks
 // the test as failed for each report with a finding at or above the FailOn
 // severity. Pass refIDs to also fail on queries missing from the response.
+// It fails when there is nothing to check: no refIDs and an empty response.
 func AssertResponse(tb testing.TB, resp *backend.QueryDataResponse, refIDs []string, opts ...Option) map[string]*Report {
 	tb.Helper()
 	o := newOptions(opts)
 	reports := CheckResponse(resp, refIDs, opts...)
+	if len(reports) == 0 {
+		tb.Errorf("SQL Expressions input check: the response has no queries to check. Pass the RefIDs the request asked for.")
+		return reports
+	}
 	for _, refID := range slices.Sorted(maps.Keys(reports)) {
 		assertReport(tb, reports[refID], o)
 	}
