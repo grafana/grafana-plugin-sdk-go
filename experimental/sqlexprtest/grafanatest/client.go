@@ -253,7 +253,8 @@ func decodeResult(b []byte, result *Result) (err error) {
 		}
 	}()
 
-	if err := validateWireFrames(b); err != nil {
+	times, err := validateWireFrames(b)
+	if err != nil {
 		return err
 	}
 	if err := json.Unmarshal(b, result); err != nil {
@@ -269,7 +270,24 @@ func decodeResult(b []byte, result *Result) (err error) {
 			}
 		}
 	}
+	for _, column := range times {
+		field := result.Results[column.refID].Frames[column.frame].Fields[column.field]
+		for row, value := range column.values {
+			if value != nil {
+				field.SetConcrete(row, *value)
+			}
+		}
+	}
 	return nil
+}
+
+// wireTimes holds the times of one time column, read from the wire without
+// the SDK codec. The codec converts milliseconds to nanoseconds in int64,
+// which overflows for dates outside 1677 to 2262.
+type wireTimes struct {
+	refID        string
+	frame, field int
+	values       []*time.Time
 }
 
 func hasQueryError(results map[string]QueryResult) bool {
@@ -283,20 +301,21 @@ func hasQueryError(results map[string]QueryResult) bool {
 
 // /api/ds/query returns complete frames. The SDK also accepts schema-only
 // fragments, so require the full wire shape before treating empty data as real.
-func validateWireFrames(b []byte) error {
+func validateWireFrames(b []byte) ([]wireTimes, error) {
 	var envelope struct {
 		Results map[string]*struct {
 			Frames []json.RawMessage `json:"frames"`
 		} `json:"results"`
 	}
 	if err := json.Unmarshal(b, &envelope); err != nil {
-		return err
+		return nil, err
 	}
-	for _, query := range envelope.Results {
+	var times []wireTimes
+	for refID, query := range envelope.Results {
 		if query == nil {
-			return errors.New("query result must be a non-null object")
+			return nil, errors.New("query result must be a non-null object")
 		}
-		for _, raw := range query.Frames {
+		for frameIndex, raw := range query.Frames {
 			var frame struct {
 				Schema struct {
 					Fields json.RawMessage `json:"fields"`
@@ -304,44 +323,53 @@ func validateWireFrames(b []byte) error {
 				Data struct {
 					Values   json.RawMessage    `json:"values"`
 					Entities []map[string][]int `json:"entities"`
+					Nanos    [][]int64          `json:"nanos"`
 				} `json:"data"`
 			}
 			if err := json.Unmarshal(raw, &frame); err != nil {
-				return err
+				return nil, err
 			}
 
 			var arrays [2][]json.RawMessage
 			for i, array := range []json.RawMessage{frame.Schema.Fields, frame.Data.Values} {
 				array = bytes.TrimSpace(array)
 				if len(array) == 0 || array[0] != '[' {
-					return errors.New("frame needs schema.fields and data.values arrays")
+					return nil, errors.New("frame needs schema.fields and data.values arrays")
 				}
 				if err := json.Unmarshal(array, &arrays[i]); err != nil {
-					return err
+					return nil, err
 				}
 			}
 			if len(arrays[0]) != len(arrays[1]) {
-				return errors.New("frame schema and value column counts differ")
+				return nil, errors.New("frame schema and value column counts differ")
 			}
 			for i, vector := range arrays[1] {
 				vector = bytes.TrimSpace(vector)
 				if len(vector) == 0 || vector[0] != '[' {
-					return errors.New("frame values must be arrays")
+					return nil, errors.New("frame values must be arrays")
 				}
 				var entities map[string][]int
 				if i < len(frame.Data.Entities) {
 					entities = frame.Data.Entities[i]
 				}
 				if err := validateWireNulls(arrays[0][i], vector, entities); err != nil {
-					return err
+					return nil, err
 				}
-				if err := validateWireIntegers(arrays[0][i], vector); err != nil {
-					return err
+				var nanos []int64
+				if i < len(frame.Data.Nanos) {
+					nanos = frame.Data.Nanos[i]
+				}
+				values, err := validateWireValues(arrays[0][i], vector, nanos)
+				if err != nil {
+					return nil, err
+				}
+				if values != nil {
+					times = append(times, wireTimes{refID: refID, frame: frameIndex, field: i, values: values})
 				}
 			}
 		}
 	}
-	return nil
+	return times, nil
 }
 
 // The SDK codec replaces null in nonnullable scalar vectors with Go zero
@@ -381,43 +409,96 @@ func validateWireNulls(schema, vector json.RawMessage, entities map[string][]int
 	return nil
 }
 
-// The SDK codec reads integer values through float64 and truncates them, so
-// 1.5 or 127.000000000000001 in an int8 field decodes as 1 or 127. Check each
-// number's text before decoding. Grafana writes integers as plain digits.
-func validateWireIntegers(schema, vector json.RawMessage) error {
+// The SDK codec converts some wrong JSON types without an error: "257" in an
+// int8 field becomes 1, 123 in a string field becomes "123", and 1e39 in a
+// float32 field becomes +Inf. It also reads integers through float64, so 1.5
+// becomes 1. Check that each value has the JSON type and range that Grafana
+// writes for the field. For a time field, also return its times.
+func validateWireValues(schema, vector json.RawMessage, nanos []int64) ([]*time.Time, error) {
 	var field struct {
 		TypeInfo struct {
 			Frame data.FieldType `json:"frame"`
 		} `json:"typeInfo"`
 	}
 	if err := json.Unmarshal(schema, &field); err != nil {
-		return err
-	}
-	var parse func(string) error
-	switch ft := field.TypeInfo.Frame.NonNullableType(); ft {
-	case data.FieldTypeInt8, data.FieldTypeInt16, data.FieldTypeInt32, data.FieldTypeInt64:
-		bits := map[data.FieldType]int{data.FieldTypeInt8: 8, data.FieldTypeInt16: 16, data.FieldTypeInt32: 32, data.FieldTypeInt64: 64}[ft]
-		parse = func(s string) error { _, err := strconv.ParseInt(s, 10, bits); return err }
-	case data.FieldTypeUint8, data.FieldTypeUint16, data.FieldTypeUint32, data.FieldTypeUint64:
-		bits := map[data.FieldType]int{data.FieldTypeUint8: 8, data.FieldTypeUint16: 16, data.FieldTypeUint32: 32, data.FieldTypeUint64: 64}[ft]
-		parse = func(s string) error { _, err := strconv.ParseUint(s, 10, bits); return err }
-	default:
-		return nil
+		return nil, err
 	}
 	decoder := json.NewDecoder(bytes.NewReader(vector))
 	decoder.UseNumber()
 	var values []any
 	if err := decoder.Decode(&values); err != nil {
-		return err
+		return nil, err
+	}
+	ft := field.TypeInfo.Frame.NonNullableType()
+	if ft == data.FieldTypeJSON {
+		return nil, nil
+	}
+	var times []*time.Time
+	if ft == data.FieldTypeTime {
+		times = make([]*time.Time, len(values))
 	}
 	for row, value := range values {
-		number, ok := value.(json.Number)
-		if !ok {
-			continue // null, or a value the SDK codec rejects itself.
+		if value == nil {
+			continue // validateWireNulls checks nulls.
 		}
-		if err := parse(number.String()); err != nil {
-			return fmt.Errorf("row %d: %s is not a %s", row, number, field.TypeInfo.Frame)
+		if err := validateWireValue(ft, value); err != nil {
+			return nil, fmt.Errorf("row %d: %w", row, err)
 		}
+		if times != nil {
+			ms, _ := strconv.ParseInt(string(value.(json.Number)), 10, 64)
+			t := time.UnixMilli(ms).UTC()
+			if row < len(nanos) {
+				t = t.Add(time.Duration(nanos[row]))
+			}
+			times[row] = &t
+		}
+	}
+	return times, nil
+}
+
+func validateWireValue(ft data.FieldType, value any) error {
+	bad := fmt.Errorf("%v is not a %s", value, ft)
+	switch ft {
+	case data.FieldTypeString:
+		if _, ok := value.(string); !ok {
+			return bad
+		}
+		return nil
+	case data.FieldTypeBool:
+		if _, ok := value.(bool); !ok {
+			return bad
+		}
+		return nil
+	}
+	number, ok := value.(json.Number)
+	if !ok {
+		return bad
+	}
+	var err error
+	switch ft {
+	case data.FieldTypeInt8:
+		_, err = strconv.ParseInt(string(number), 10, 8)
+	case data.FieldTypeInt16:
+		_, err = strconv.ParseInt(string(number), 10, 16)
+	case data.FieldTypeInt32:
+		_, err = strconv.ParseInt(string(number), 10, 32)
+	case data.FieldTypeInt64, data.FieldTypeTime:
+		_, err = strconv.ParseInt(string(number), 10, 64)
+	case data.FieldTypeUint8:
+		_, err = strconv.ParseUint(string(number), 10, 8)
+	case data.FieldTypeUint16, data.FieldTypeEnum:
+		_, err = strconv.ParseUint(string(number), 10, 16)
+	case data.FieldTypeUint32:
+		_, err = strconv.ParseUint(string(number), 10, 32)
+	case data.FieldTypeUint64:
+		_, err = strconv.ParseUint(string(number), 10, 64)
+	case data.FieldTypeFloat32:
+		_, err = strconv.ParseFloat(string(number), 32)
+	case data.FieldTypeFloat64:
+		_, err = strconv.ParseFloat(string(number), 64)
+	}
+	if err != nil {
+		return bad
 	}
 	return nil
 }
