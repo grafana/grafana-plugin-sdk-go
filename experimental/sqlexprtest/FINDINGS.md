@@ -33,9 +33,9 @@ Each row gives a small input that produces the finding, and how to fix it. Check
 | `invalid-json` | `json.RawMessage("{")`, or an empty byte slice that isn't nil. | Return valid JSON. SQL reads invalid JSON as NULL. A nil `RawMessage` and the JSON text `null` are both valid, and both mean JSON null. |
 | `json-number-out-of-range` | Valid JSON such as `{"n":1e400}` in a table field. | SQL row reading fails because Grafana decodes JSON numbers as float64. Encode these numbers as JSON strings. |
 | `json-integer-as-float` | JSON `{"n":9007199254740993}`, which SQL rounds to `9007199254740992`. | Encode exact large integers as JSON strings, or expose them as int64/uint64 table columns when they fit. Exactly representable large integers do not trigger this warning. |
-| `enum-field` | A table with enum indexes and text in the field config. | Return a string field if SQL should see the text. SQL reads enum indexes as JSON numbers. |
+| `enum-field` | A table with enum indexes and text in the field config. | Return a string field if SQL should see the text. Before Grafana 13.3.0, SQL reads enum indexes as JSON numbers. Grafana 13.3.0 and later read the enum text as `TEXT`. |
 | `duplicate-column-name` | Table columns `host` and `HOST`. | Give columns names that differ when case is ignored. |
-| `generated-name-clash` | A label key `time` clashes with the generated `time` column. | Rename the label. If a Grafana fix renames the column for your minimum version, use the new name. |
+| `generated-name-clash` | A label key `time` clashes with the generated `time` column. | Rename the label. Grafana 13.3.0 and later add a `label_` prefix to the label column. If your minimum version is 13.3.0 or later, use the new name. |
 | `missing-label-column` | Only an empty timeseries-multi series has the label `host`. | Return a shape that keeps the empty series' columns, such as wide, table or long. |
 
 More examples:
