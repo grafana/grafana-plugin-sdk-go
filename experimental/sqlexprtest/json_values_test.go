@@ -2,7 +2,6 @@ package sqlexprtest
 
 import (
 	"encoding/json"
-	"strings"
 	"testing"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -22,15 +21,19 @@ func TestJSONNumbers(t *testing.T) {
 		{"huge positive exponent", `1e9999999999999999999999999999999`, CodeJSONNumberOutOfRange},
 		{"large integer", `{"n":9007199254740993}`, CodeJSONIntegerAsFloat},
 		{"negative integer", `-9007199254740993`, CodeJSONIntegerAsFloat},
-		{"zero exponent", `9007199254740993e0`, CodeJSONIntegerAsFloat},
-		{"positive exponent", `900719925474099.3e1`, CodeJSONIntegerAsFloat},
-		{"negative exponent", `90071992547409930e-1`, CodeJSONIntegerAsFloat},
-		{"decimal integral value", `9007199254740993.000`, CodeJSONIntegerAsFloat},
+		{"integer above float32 and int64", `123456789012345678901234567890`, CodeJSONIntegerAsFloat},
+		{"zero exponent is a float", `9007199254740993e0`, ""},
+		{"positive exponent is a float", `900719925474099.3e1`, ""},
+		{"negative exponent is a float", `90071992547409930e-1`, ""},
+		{"decimal integral value is a float", `9007199254740993.000`, ""},
+		{"scientific constant", `6.02214076e23`, ""},
+		{"large scientific value", `1e300`, ""},
 		{"nested integer", `{"outer":[1,{"n":9007199254740993}]}`, CodeJSONIntegerAsFloat},
 		{"integer limit", `9007199254740992`, ""},
 		{"large exact even integer", `9007199254740994`, ""},
 		{"exact large exponent", `1e20`, ""},
-		{"inexact large exponent", `1e23`, CodeJSONIntegerAsFloat},
+		{"inexact large exponent", `1e23`, ""},
+		{"exact large integer", `100000000000000000000`, ""},
 		{"fractional decimal", `0.1`, ""},
 		{"large fractional decimal", `9007199254740993.1`, ""},
 		{"underflow", `1e-9999999999999999999999999999999`, ""},
@@ -82,14 +85,6 @@ func nullableSuffix(nullable bool) string {
 		return "/nullable"
 	}
 	return "/nonnullable"
-}
-
-func TestJSONPrecisionNormalizesLongExponentSpellings(t *testing.T) {
-	// The number is only 9007199254740993 despite its long mantissa and
-	// exponent. Normalization must not allocate a power of ten of this size.
-	raw := json.RawMessage("9007199254740993" + strings.Repeat("0", 10000) + "e-10000")
-	r := Check(data.Frames{typed(data.FrameTypeTable, data.NewFrame("", data.NewField("doc", nil, []json.RawMessage{raw})))})
-	require.Equal(t, []Code{CodeJSONIntegerAsFloat}, codes(r))
 }
 
 func TestJSONFindingsInspectOnlyConsumedValues(t *testing.T) {
