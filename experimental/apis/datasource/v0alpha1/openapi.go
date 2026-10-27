@@ -66,10 +66,8 @@ func schemaDataSourceRef(_ common.ReferenceCallback) common.OpenAPIDefinition {
 	p, ok := s.Properties["datasource"]
 	if !ok {
 		p = spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Type:                 []string{"object"},
-				AdditionalProperties: &spec.SchemaOrBool{Allows: true},
-			},
+			Type:                 []string{"object"},
+			AdditionalProperties: &spec.SchemaOrBool{Allows: true},
 		}
 	}
 	return common.OpenAPIDefinition{
