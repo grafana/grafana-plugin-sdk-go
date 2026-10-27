@@ -264,7 +264,19 @@ func TestCheckEnum(t *testing.T) {
 	r := Check(data.Frames{frame})
 
 	assert.Equal(t, []Code{CodeEnumField}, codes(r))
+	assert.Equal(t, "13.3.0", r.Findings[0].FixedIn)
+	assert.Contains(t, r.Findings[0].Message, "Grafana 13.3.0 and later read the enum text")
 	assert.Equal(t, "JSON", r.Columns[0].SQLType)
+
+	for _, minimum := range []string{"13.2.5", "13.3.0-pre"} {
+		r = Check(data.Frames{frame}, MinGrafana(minimum))
+		assert.Equal(t, []Code{CodeEnumField}, codes(r), minimum)
+		assert.Equal(t, "JSON", r.Columns[0].SQLType, minimum)
+	}
+
+	r = Check(data.Frames{frame}, MinGrafana("13.3.0"))
+	assert.Empty(t, codes(r))
+	assert.Equal(t, "TEXT", r.Columns[0].SQLType)
 }
 
 func TestCheckColumnNames(t *testing.T) {

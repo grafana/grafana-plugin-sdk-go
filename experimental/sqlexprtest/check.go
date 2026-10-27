@@ -110,6 +110,7 @@ func checkTable(r *Report, frames data.Frames) {
 		}
 	}
 	r.Rows = frame.Rows()
+	enumFixedIn, enumFixed := r.fixedIn(CodeEnumField)
 	for j, f := range frame.Fields {
 		if !initializedField(f) {
 			r.Columns = append(r.Columns, Column{Name: f.Name, Type: data.FieldTypeUnknown})
@@ -117,7 +118,12 @@ func checkTable(r *Report, frames data.Frames) {
 				Message: fmt.Sprintf("field %d has no values array, so Grafana panics when it reads the SQL schema. Create the field with data.NewField.", j)})
 			continue
 		}
-		r.Columns = append(r.Columns, Column{Name: f.Name, Type: f.Type(), SQLType: sqlType(f.Type())})
+		column := Column{Name: f.Name, Type: f.Type(), SQLType: sqlType(f.Type())}
+		isEnum := f.Type() == data.FieldTypeEnum || f.Type() == data.FieldTypeNullableEnum
+		if isEnum && enumFixed {
+			column.SQLType = "TEXT"
+		}
+		r.Columns = append(r.Columns, column)
 		if f.Len() != r.Rows {
 			severity, consequence := SeverityWarning, "SQL reads only as many rows as field 0 has, so this field's last values are lost."
 			if f.Len() < r.Rows {
@@ -126,9 +132,13 @@ func checkTable(r *Report, frames data.Frames) {
 			r.add(Finding{Code: CodeUnequalFieldLengths, Severity: severity, Owner: OwnerPlugin, Frame: 0, Field: f.Name,
 				Message: fmt.Sprintf("field %d has %d values, and field 0 has %d. %s Return fields of equal length.", j, f.Len(), r.Rows, consequence)})
 		}
-		if f.Type() == data.FieldTypeEnum || f.Type() == data.FieldTypeNullableEnum {
-			r.add(Finding{Code: CodeEnumField, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: 0, Field: f.Name,
-				Message: fmt.Sprintf("SQL reads field %d's enum values as JSON numbers, the enum index, not the text. Use a string field.", j)})
+		if isEnum && !enumFixed {
+			msg := fmt.Sprintf("SQL reads field %d's enum values as JSON numbers, the enum index, not the text. Use a string field.", j)
+			if enumFixedIn != "" {
+				msg += fmt.Sprintf(" Grafana %s and later read the enum text as TEXT, but the plugin supports older versions.", enumFixedIn)
+			}
+			r.add(Finding{Code: CodeEnumField, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: 0, Field: f.Name, FixedIn: enumFixedIn,
+				Message: msg})
 		}
 	}
 	if r.InputType == data.FrameTypeUnknown {
@@ -698,7 +708,8 @@ func sqlType(t data.FieldType) string {
 	case data.FieldTypeTime:
 		return "TIMESTAMP"
 	default:
-		// JSON, enum, and any other type become JSON.
+		// JSON, enum, and any other type become JSON. Grafana 13.3.0 and
+		// later read enums as TEXT; checkTable handles that.
 		return "JSON"
 	}
 }

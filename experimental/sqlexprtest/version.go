@@ -13,7 +13,10 @@ import (
 // version must contain the fix. Backports with unfixed later releases need
 // release-range rules before they can be represented here. FixedIn names a
 // known fix; it does not mean the selected minimum contains that fix.
-var grafanaFixes = map[Code]string{}
+var grafanaFixes = map[Code]string{
+	CodeEnumField:          "13.3.0",
+	CodeGeneratedNameClash: "13.3.0",
+}
 
 type version struct {
 	major, minor, patch int
