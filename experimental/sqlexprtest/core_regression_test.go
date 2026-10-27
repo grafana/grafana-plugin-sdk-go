@@ -38,6 +38,7 @@ func TestMalformedFramesFollowConversionRoute(t *testing.T) {
 		{"nil table field", data.Frames{table(nil)}, ModeNone, 0, CodeNilField, SeverityError, 0},
 		{"table storage fails during schema inspection", data.Frames{table(&data.Field{Name: "v"})}, ModeTable, 0, CodeInvalidField, SeverityError, 1},
 		{"later table storage", data.Frames{table(data.NewField("n", nil, []float64{1}), &data.Field{Name: "v"})}, ModeTable, 1, CodeInvalidField, SeverityError, 2},
+		{"first table storage before a longer field", data.Frames{table(&data.Field{Name: "v"}, data.NewField("n", nil, []float64{1, 2}))}, ModeTable, 0, CodeInvalidField, SeverityError, 2},
 		{"table shorter field", data.Frames{table(data.NewField("a", nil, []float64{1, 2}), data.NewField("b", nil, []float64{3}))}, ModeTable, 2, CodeUnequalFieldLengths, SeverityError, 2},
 		{"table longer field", data.Frames{table(data.NewField("a", nil, []float64{1}), data.NewField("b", nil, []float64{2, 3}))}, ModeTable, 1, CodeUnequalFieldLengths, SeverityWarning, 2},
 		{"multi too many values", data.Frames{series(data.FrameTypeTimeSeriesMulti, 1, 2)}, ModeNone, 0, CodeUnequalFieldLengths, SeverityError, 0},
