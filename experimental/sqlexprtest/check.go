@@ -110,6 +110,9 @@ func checkTable(r *Report, frames data.Frames) {
 		}
 	}
 	r.Rows = frame.Rows()
+	// An uninitialized field 0 has no row count to compare with; its
+	// invalid-field error already says why SQL fails.
+	rowsKnown := initializedField(frame.Fields[0])
 	enumFixedIn, enumFixed := r.fixedIn(CodeEnumField)
 	for j, f := range frame.Fields {
 		if !initializedField(f) {
@@ -124,7 +127,7 @@ func checkTable(r *Report, frames data.Frames) {
 			column.SQLType = "TEXT"
 		}
 		r.Columns = append(r.Columns, column)
-		if f.Len() != r.Rows {
+		if rowsKnown && f.Len() != r.Rows {
 			severity, consequence := SeverityWarning, "SQL reads only as many rows as field 0 has, so this field's last values are lost."
 			if f.Len() < r.Rows {
 				severity, consequence = SeverityError, "SQL panics when it reads past the end of this field."
