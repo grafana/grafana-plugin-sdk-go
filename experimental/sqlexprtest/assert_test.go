@@ -90,6 +90,16 @@ func TestAssertResponse(t *testing.T) {
 	assert.Len(t, rec.errors, 2, "one failure for A, one for the missing C")
 }
 
+func TestAssertResponseFailsWithNothingToCheck(t *testing.T) {
+	for _, resp := range []*backend.QueryDataResponse{{}, backend.NewQueryDataResponse()} {
+		rec := &recorder{TB: t}
+		reports := AssertResponse(rec, resp, nil)
+		assert.Empty(t, reports)
+		require.Len(t, rec.errors, 1)
+		assert.Contains(t, rec.errors[0], "no queries to check")
+	}
+}
+
 func TestAssertQueryData(t *testing.T) {
 	rec := &recorder{TB: t}
 	h := handlerFunc(func(_ context.Context, r *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -118,7 +128,7 @@ func TestIgnoreLeavesUnrelatedFailures(t *testing.T) {
 }
 
 func TestAssertQueryDataInvalidRequest(t *testing.T) {
-	for _, req := range []*backend.QueryDataRequest{nil, request("A", "A")} {
+	for _, req := range []*backend.QueryDataRequest{nil, request(), request("A", "A")} {
 		rec := &recorder{TB: t}
 		reports := AssertQueryData(rec, t.Context(), handlerFunc(nil), req)
 		assert.Nil(t, reports)
