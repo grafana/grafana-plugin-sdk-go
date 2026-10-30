@@ -31,10 +31,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 	var returnData [][]any
 
 	for {
-		for rows.Next() {
-			if i == rowLimit {
-				break
-			}
+		for i < rowLimit && rows.Next() {
 			row := make([]any, len(types))
 			for i := range row {
 				row[i] = new(any)
@@ -45,6 +42,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 			}
 
 			returnData = append(returnData, row)
+			i++
 
 			if len(fields) == len(types) {
 				// found all data types.  keep looping to load all the return data
@@ -82,8 +80,6 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 
 				fields[colIdx] = field
 			}
-
-			i++
 		}
 		if i == rowLimit || !rows.NextResultSet() {
 			break
@@ -145,6 +141,10 @@ func frameDynamic(rows Rows, rowLimit int64, types []*sql.ColumnType, converters
 			rowData = append(rowData, val)
 		}
 		frame.AppendRow(rowData...)
+	}
+
+	if rowLimit > 0 && int64(len(rawRows)) == rowLimit {
+		frame.AppendNotices(rowLimitNotice(rowLimit))
 	}
 
 	return frame, nil
