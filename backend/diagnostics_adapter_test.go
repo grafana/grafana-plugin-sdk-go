@@ -51,10 +51,12 @@ func TestCheckHealth(t *testing.T) {
 			status              HealthStatus
 			message             string
 			jsonDetails         []byte
+			errorSource         ErrorSource
 			err                 error
 			expectedStatus      pluginv2.CheckHealthResponse_HealthStatus
 			expectedMessage     string
 			expectedJSONDetails []byte
+			expectedErrorSource string
 			expectedError       bool
 		}{
 			{
@@ -77,9 +79,11 @@ func TestCheckHealth(t *testing.T) {
 				status:              HealthStatusError,
 				message:             "BOOM",
 				jsonDetails:         []byte(`{"error": "boom"}`),
+				errorSource:         ErrorSourceDownstream,
 				expectedStatus:      pluginv2.CheckHealthResponse_ERROR,
 				expectedMessage:     "BOOM",
 				expectedJSONDetails: []byte(`{"error": "boom"}`),
+				expectedErrorSource: "downstream",
 			},
 			{
 				err:           errors.New("BOOM"),
@@ -92,6 +96,7 @@ func TestCheckHealth(t *testing.T) {
 				status:      tc.status,
 				message:     tc.message,
 				jsonDetails: tc.jsonDetails,
+				errorSource: tc.errorSource,
 				err:         tc.err,
 			})
 
@@ -108,8 +113,22 @@ func TestCheckHealth(t *testing.T) {
 				require.Equal(t, tc.expectedStatus, res.Status)
 				require.Equal(t, tc.expectedMessage, res.Message)
 				require.Equal(t, tc.expectedJSONDetails, res.JsonDetails)
+				require.Equal(t, tc.expectedErrorSource, res.ErrorSource)
 			}
 		}
+	})
+
+	t.Run("When check health handler returns a sourced error it should preserve the source in gRPC metadata", func(t *testing.T) {
+		adapter := newDiagnosticsSDKAdapter(nil, &testCheckHealthHandler{
+			err: DownstreamError(errors.New("BOOM")),
+		})
+
+		res, err := adapter.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{PluginContext: &pluginv2.PluginContext{}})
+		require.Error(t, err)
+		require.Nil(t, res)
+		source, ok := ErrorSourceFromGrpcStatusError(initErrorSource(context.Background()), err)
+		require.True(t, ok)
+		require.Equal(t, ErrorSourceDownstream, source)
 	})
 
 	t.Run("When headers are present", func(t *testing.T) {
@@ -156,6 +175,7 @@ type testCheckHealthHandler struct {
 	status      HealthStatus
 	message     string
 	jsonDetails []byte
+	errorSource ErrorSource
 	err         error
 }
 
@@ -164,6 +184,7 @@ func (h *testCheckHealthHandler) CheckHealth(_ context.Context, _ *CheckHealthRe
 		Status:      h.status,
 		Message:     h.message,
 		JSONDetails: h.jsonDetails,
+		ErrorSource: h.errorSource,
 	}, h.err
 }
 
