@@ -106,20 +106,18 @@ func validateOpenAPIv2Schema(t *testing.T, data []byte, file string) {
 
 	// 2b. Create minimal valid swagger spec & marshal it to bytes.
 	swaggerBytes, err := json.Marshal(&spec.Swagger{
-		SwaggerProps: spec.SwaggerProps{
-			Swagger: "2.0",
-			Info: &spec.Info{
-				InfoProps: spec.InfoProps{
-					Title:   "example", // Placeholder, required
-					Version: "1.0",     // Placeholder, required
-				},
+		Swagger: "2.0",
+		Info: &spec.Info{
+			InfoProps: spec.InfoProps{
+				Title:   "example", // Placeholder, required
+				Version: "1.0",     // Placeholder, required
 			},
-			Paths: &spec.Paths{ // Required, can be empty
-				Paths: map[string]spec.PathItem{},
-			},
-			Definitions: spec.Definitions{
-				"SchemaToValidate": schema,
-			},
+		},
+		Paths: &spec.Paths{ // Required, can be empty
+			Paths: map[string]spec.PathItem{},
+		},
+		Definitions: spec.Definitions{
+			"SchemaToValidate": schema,
 		},
 	})
 	require.NoError(t, err, file)

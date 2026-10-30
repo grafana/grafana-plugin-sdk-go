@@ -49,11 +49,9 @@ func startFixture(t *testing.T, packageID string, development bool) fixtureClien
 	)
 
 	client := plugin.NewClient(&plugin.ClientConfig{
-		HandshakeConfig: plugin.HandshakeConfig{
-			ProtocolVersion:  grpcplugin.ProtocolVersion,
-			MagicCookieKey:   grpcplugin.MagicCookieKey,
-			MagicCookieValue: grpcplugin.MagicCookieValue,
-		},
+		ProtocolVersion:  grpcplugin.ProtocolVersion,
+		MagicCookieKey:   grpcplugin.MagicCookieKey,
+		MagicCookieValue: grpcplugin.MagicCookieValue,
 		Plugins: plugin.PluginSet{
 			"diagnostics": &grpcplugin.DiagnosticsGRPCPlugin{},
 			"resource":    &grpcplugin.ResourceGRPCPlugin{},
