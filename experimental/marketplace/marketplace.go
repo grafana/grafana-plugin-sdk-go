@@ -35,6 +35,8 @@ var queryTimeLicenseValidation = flag.Bool("qtlv", false,
 // "request", enables query-time license validation like the -qtlv flag.
 const marketplaceLicenseValidationModeEnv = "GF_MARKETPLACE_LICENSE_VALIDATION"
 
+const marketplaceLicenseValidationModeRequest = "request"
+
 // Licensing returns a decorator that enforces marketplace licensing. Set it as the
 // Licensing field of datasource.ManageOpts or app.ManageOpts:
 //
@@ -67,7 +69,7 @@ const marketplaceLicenseValidationModeEnv = "GF_MARKETPLACE_LICENSE_VALIDATION"
 func Licensing(opts Opts) backend.ServeOptsDecorator {
 	return func(pluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
 		licensePluginID := opts.licensePluginID(pluginID)
-		if *queryTimeLicenseValidation || os.Getenv(marketplaceLicenseValidationModeEnv) == "request" {
+		if *queryTimeLicenseValidation || os.Getenv(marketplaceLicenseValidationModeEnv) == marketplaceLicenseValidationModeRequest {
 			return applyRequestTimeLicense(pluginID, licensePluginID, serveOpts)
 		}
 		return checkMarketplacePluginLicense(pluginID, licensePluginID, serveOpts), nil
