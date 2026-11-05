@@ -57,7 +57,7 @@ func newLicenseMiddleware(pluginID, licensePluginID string, loadToken licenseTok
 // that answers the request with the license error.
 func (m *licenseMiddleware) ensureValidLicense(ctx context.Context) *invalidLicenseHandler {
 	token := m.loadToken(ctx, m.licensePluginID)
-	accepted, grace := acceptLicenseToken(token, time.Now())
+	accepted, grace := isTokenValidOrWithinGracePeriod(token, time.Now())
 	if accepted {
 		if token.Error != nil {
 			backend.Logger.FromContext(ctx).Debug("Marketplace license expired, the plugin will work until", "date", grace,

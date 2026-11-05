@@ -63,7 +63,7 @@ func checkMarketplacePluginLicenseWithDeps(
 	token := loadToken(licensePluginID)
 	if token.Error != nil {
 		backend.Logger.Error("Marketplace License Error", "error", token.Error)
-		accepted, grace := acceptLicenseToken(token, time.Now())
+		accepted, grace := isTokenValidOrWithinGracePeriod(token, time.Now())
 		if accepted {
 			backend.Logger.Error("The plugin will work until", "date", grace)
 			backend.Logger.Error("Update your instance soon to avoid any errors")
@@ -74,11 +74,11 @@ func checkMarketplacePluginLicenseWithDeps(
 	return serveOpts
 }
 
-// acceptLicenseToken decides whether a parsed token allows the plugin to be served at now.
+// isTokenValidOrWithinGracePeriod decides whether a parsed token allows the plugin to be served at now.
 // It is shared by startup and request-time validation. A token without error is accepted
 // with a zero grace deadline. An expired token is accepted, with its grace deadline, until
 // the grace period ends. Any other token with an error is refused.
-func acceptLicenseToken(token *licensing.LicenseToken, now time.Time) (accepted bool, grace time.Time) {
+func isTokenValidOrWithinGracePeriod(token *licensing.LicenseToken, now time.Time) (accepted bool, grace time.Time) {
 	if token.Error == nil {
 		return true, time.Time{}
 	}
