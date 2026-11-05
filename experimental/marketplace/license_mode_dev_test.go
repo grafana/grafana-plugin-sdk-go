@@ -39,19 +39,31 @@ func TestMarketplaceLicenseDevelopmentModeIgnoresRuntimeInputs(t *testing.T) {
 	require.Equal(t, serveOpts, got)
 }
 
-// Not parallel: it flips the package-level -qtlv flag.
+// Not parallel: it flips the package-level -qtlv flag and the mode environment variable.
 func TestMarketplaceLicenseDevelopmentModeSkipsQueryTimeValidation(t *testing.T) {
-	old := *queryTimeLicenseValidation
-	*queryTimeLicenseValidation = true
-	t.Cleanup(func() { *queryTimeLicenseValidation = old })
+	for _, tt := range []struct {
+		name string
+		flag bool
+		env  string
+	}{
+		{"flag", true, ""},
+		{"env", false, "request"},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			old := *queryTimeLicenseValidation
+			*queryTimeLicenseValidation = tt.flag
+			t.Cleanup(func() { *queryTimeLicenseValidation = old })
+			t.Setenv(marketplaceLicenseValidationModeEnv, tt.env)
 
-	// ExtraPlugins would be rejected, and a middleware installed, if the bypass did not apply.
-	serveOpts := backend.ServeOpts{
-		QueryDataHandler: &backend.BaseHandler{},
-		ExtraPlugins:     plugin.PluginSet{"extra": nil},
+			// ExtraPlugins would be rejected, and a middleware installed, if the bypass did not apply.
+			serveOpts := backend.ServeOpts{
+				QueryDataHandler: &backend.BaseHandler{},
+				ExtraPlugins:     plugin.PluginSet{"extra": nil},
+			}
+			got, err := Licensing(Opts{})("example-datasource", serveOpts)
+			require.NoError(t, err)
+			require.Equal(t, serveOpts, got)
+			require.Empty(t, got.HandlerMiddlewares)
+		})
 	}
-	got, err := Licensing(Opts{})("example-datasource", serveOpts)
-	require.NoError(t, err)
-	require.Equal(t, serveOpts, got)
-	require.Empty(t, got.HandlerMiddlewares)
 }

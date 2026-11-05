@@ -359,6 +359,7 @@ func TestLicensingQueryTimeModeSkipsStartupCheck(t *testing.T) {
 	// In startup mode this would replace every handler with invalidLicenseHandler.
 	t.Setenv(marketplaceLicenseTextEnv, "")
 	t.Setenv(marketplaceLicensePathEnv, filepath.Join(t.TempDir(), "missing.jwt"))
+	t.Setenv(marketplaceLicenseValidationModeEnv, "")
 	setQueryTimeLicenseValidation(t, true)
 
 	in := licensedServeOpts()
@@ -370,6 +371,65 @@ func TestLicensingQueryTimeModeSkipsStartupCheck(t *testing.T) {
 
 	_, err = Licensing(Opts{})("example-app", licensedServeOpts())
 	require.ErrorContains(t, err, "ExtraPlugins")
+}
+
+func TestLicensingModeSelection(t *testing.T) {
+	for _, tt := range []struct {
+		name    string
+		flag    bool
+		env     string
+		request bool
+	}{
+		{"neither", false, "", false},
+		{"flag only", true, "", true},
+		{"env only", false, "request", true},
+		{"flag and env", true, "request", true},
+		{"env startup", false, "startup", false},
+		{"env uppercase", false, "REQUEST", false},
+		{"env capitalized", false, "Request", false},
+		{"env leading space", false, " request", false},
+		{"env trailing space", false, "request ", false},
+		{"flag with other env", true, "startup", true},
+	} {
+		t.Run(tt.name, func(t *testing.T) {
+			// In startup mode this replaces every handler with invalidLicenseHandler.
+			t.Setenv(marketplaceLicenseTextEnv, "")
+			t.Setenv(marketplaceLicensePathEnv, filepath.Join(t.TempDir(), "missing.jwt"))
+			t.Setenv(marketplaceLicenseValidationModeEnv, tt.env)
+			setQueryTimeLicenseValidation(t, tt.flag)
+
+			final := &recordingHandler{}
+			in := backend.ServeOpts{CheckHealthHandler: final, QueryDataHandler: final}
+			got, err := Licensing(Opts{ParentPluginID: "parent-app"})("example-app", in)
+			require.NoError(t, err)
+
+			_, extraErr := Licensing(Opts{})("example-app", backend.ServeOpts{ExtraPlugins: plugin.PluginSet{"extra": nil}})
+			if !tt.request {
+				require.NoError(t, extraErr)
+				_, ok := got.CheckHealthHandler.(*invalidLicenseHandler)
+				require.True(t, ok, "CheckHealthHandler is %T", got.CheckHealthHandler)
+				require.Empty(t, got.HandlerMiddlewares)
+				return
+			}
+			require.ErrorContains(t, extraErr, "ExtraPlugins")
+			require.Same(t, final, got.CheckHealthHandler)
+			require.Same(t, final, got.QueryDataHandler)
+			require.Len(t, got.HandlerMiddlewares, 1)
+
+			// A request without license metadata is still denied.
+			h, err := got.HandlerWithMiddlewares()
+			require.NoError(t, err)
+			for _, call := range refusedCalls() {
+				if call.name != "CheckHealth" && call.name != "QueryData" {
+					continue
+				}
+				refused, err := call.invoke(t.Context(), h)
+				require.NoError(t, err, call.name)
+				require.True(t, refused, call.name)
+			}
+			require.Empty(t, final.calls)
+		})
+	}
 }
 
 func TestRequestTimeMiddlewareChain(t *testing.T) {

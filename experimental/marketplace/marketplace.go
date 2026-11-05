@@ -3,6 +3,7 @@ package marketplace
 import (
 	"errors"
 	"flag"
+	"os"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
@@ -30,6 +31,10 @@ func (o Opts) licensePluginID(pluginID string) string {
 var queryTimeLicenseValidation = flag.Bool("qtlv", false,
 	"Validate the marketplace license on every request, using the license sent by Grafana in the gRPC metadata, instead of once at startup")
 
+// marketplaceLicenseValidationModeEnv is the environment variable that, when set to exactly
+// "request", enables query-time license validation like the -qtlv flag.
+const marketplaceLicenseValidationModeEnv = "GF_MARKETPLACE_LICENSE_VALIDATION"
+
 // Licensing returns a decorator that enforces marketplace licensing. Set it as the
 // Licensing field of datasource.ManageOpts or app.ManageOpts:
 //
@@ -44,9 +49,12 @@ var queryTimeLicenseValidation = flag.Bool("qtlv", false,
 // grace period, the plugin is served unchanged. Otherwise the plugin is served with
 // handlers that only return the license error.
 //
-// With the -qtlv flag the license is instead validated on every request, from the
-// "license" gRPC metadata that Grafana sends with it. Environment variables and license
-// files are ignored, and a request without valid license metadata is refused like above:
+// With the -qtlv flag, or with the GF_MARKETPLACE_LICENSE_VALIDATION environment variable
+// set to exactly "request", the license is instead validated on every request, from the
+// "license" gRPC metadata that Grafana sends with it. When the variable is unset or has
+// another value, startup validation remains enabled unless -qtlv is set. With request
+// validation the license token environment variables and license files are ignored, and a
+// request without valid license metadata is refused like above:
 // queries and conversions fail with the license error, and admission requests are denied
 // with a 403 result carrying it. In this mode:
 //   - ServeOpts.ExtraPlugins are not supported and make the decorator return an error,
@@ -59,7 +67,7 @@ var queryTimeLicenseValidation = flag.Bool("qtlv", false,
 func Licensing(opts Opts) backend.ServeOptsDecorator {
 	return func(pluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
 		licensePluginID := opts.licensePluginID(pluginID)
-		if *queryTimeLicenseValidation {
+		if *queryTimeLicenseValidation || os.Getenv(marketplaceLicenseValidationModeEnv) == "request" {
 			return applyRequestTimeLicense(pluginID, licensePluginID, serveOpts)
 		}
 		return checkMarketplacePluginLicense(pluginID, licensePluginID, serveOpts), nil
@@ -84,7 +92,7 @@ func applyRequestTimeLicenseWithDeps(
 		return serveOpts, nil
 	}
 	if len(serveOpts.ExtraPlugins) > 0 {
-		return backend.ServeOpts{}, errors.New("marketplace: ExtraPlugins are not supported with query-time license validation (-qtlv)")
+		return backend.ServeOpts{}, errors.New("marketplace: ExtraPlugins are not supported with query-time license validation")
 	}
 
 	middleware := newLicenseMiddleware(pluginID, licensePluginID, loadToken)
