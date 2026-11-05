@@ -1,6 +1,7 @@
 package licensing
 
 import (
+	"errors"
 	"fmt"
 	"testing"
 	"time"
@@ -40,6 +41,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 				Subject:        appURL,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix() - 60,
+				Products:       []string{testProductID},
 			},
 			appURL:         appURL,
 			bLicenses:      bLicenses,
@@ -54,6 +56,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix() - 60,
+				Products:       []string{testProductID},
 			},
 			appURL:         appURL,
 			bLicenses:      bLicenses,
@@ -160,6 +163,64 @@ func TestLicenseTokenValidation(t *testing.T) {
 			status:    Invalid,
 			expErr:    errLicenseInvalid,
 		},
+		{
+			name: "With a non-matching product and an expired license",
+			token: &LicenseToken{
+				Subject:        appURL,
+				LicenseIssued:  timeNow().Unix(),
+				LicenseExpires: timeNow().Unix() - 60,
+				Expires:        timeNow().Unix(),
+				Products:       []string{"marketplace-other-plugin"},
+			},
+			appURL:    appURL,
+			bLicenses: bLicenses,
+			status:    Invalid,
+			expErr:    errMarketplacePluginNotIncluded,
+		},
+		{
+			name: "With a non-matching product and an expired token",
+			token: &LicenseToken{
+				Subject:        appURL,
+				LicenseIssued:  timeNow().Unix(),
+				LicenseExpires: timeNow().Unix(),
+				Expires:        timeNow().Unix() - 60,
+				Products:       []string{"marketplace-other-plugin"},
+			},
+			appURL:    appURL,
+			bLicenses: bLicenses,
+			status:    Invalid,
+			expErr:    errMarketplacePluginNotIncluded,
+		},
+		{
+			name: "With a blocked license ID and an expired license",
+			token: &LicenseToken{
+				LicenseId:      "12345",
+				Subject:        appURL,
+				LicenseIssued:  timeNow().Unix(),
+				LicenseExpires: timeNow().Unix() - 60,
+				Expires:        timeNow().Unix(),
+				Products:       []string{testProductID},
+			},
+			appURL:    appURL,
+			bLicenses: map[string]struct{}{"12345": {}},
+			status:    Invalid,
+			expErr:    errLicenseInvalid,
+		},
+		{
+			name: "With a blocked license ID and an expired token",
+			token: &LicenseToken{
+				LicenseId:      "12345",
+				Subject:        appURL,
+				LicenseIssued:  timeNow().Unix(),
+				LicenseExpires: timeNow().Unix(),
+				Expires:        timeNow().Unix() - 60,
+				Products:       []string{testProductID},
+			},
+			appURL:    appURL,
+			bLicenses: map[string]struct{}{"12345": {}},
+			status:    Invalid,
+			expErr:    errLicenseInvalid,
+		},
 	}
 
 	for _, tc := range tests {
@@ -175,6 +236,9 @@ func TestLicenseTokenValidation(t *testing.T) {
 				require.Equal(t, tc.status, tc.token.Status)
 				require.Error(t, tc.token.Error)
 				require.ErrorIs(t, tc.token.Error, tc.expErr)
+				if errors.Is(tc.expErr, errLicenseInvalid) {
+					require.Equal(t, errLicenseInvalid, tc.token.Error)
+				}
 				if tc.expErrContains != "" {
 					require.Contains(t, tc.token.Error.Error(), tc.expErrContains)
 				}

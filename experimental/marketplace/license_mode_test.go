@@ -149,6 +149,13 @@ func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 		LicenseExpires: time.Now().Add(-30 * 24 * time.Hour).Unix(),
 	}
 
+	invalidRecentlyExpired := &licensing.LicenseToken{
+		Status:         licensing.Invalid,
+		Error:          errors.New("plugin not included in license"),
+		Expires:        time.Now().Add(-24 * time.Hour).Unix(),
+		LicenseExpires: time.Now().Add(-24 * time.Hour).Unix(),
+	}
+
 	tests := []struct {
 		name     string
 		token    *licensing.LicenseToken
@@ -157,6 +164,7 @@ func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 		{"valid license", &licensing.LicenseToken{Status: licensing.Valid}, true},
 		{"expired license within grace period", expiredWithinGrace, true},
 		{"expired license after grace period", expiredAfterGrace, false},
+		{"invalid license with recent expiry gets no grace", invalidRecentlyExpired, false},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {

@@ -1,6 +1,7 @@
 package data_test
 
 import (
+	"fmt"
 	"math"
 	"testing"
 	"time"
@@ -1577,4 +1578,96 @@ func TestNullabelFloatAtFromNonNullables(t *testing.T) {
 	if diff := cmp.Diff(expectedFloatFrame, floatFrame, data.FrameTestCompareOptions()...); diff != "" {
 		t.Errorf("Result mismatch (-want +got):\n%s", diff)
 	}
+}
+
+func longFrameForWideLimit(timestamps, series int) *data.Frame {
+	base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	times := make([]time.Time, 0, timestamps*series)
+	labels := make([]string, 0, timestamps*series)
+	values := make([]float64, 0, timestamps*series)
+	for ts := range timestamps {
+		for s := range series {
+			times = append(times, base.Add(time.Duration(ts)*time.Second))
+			labels = append(labels, fmt.Sprintf("series-%d", s))
+			values = append(values, float64(s))
+		}
+	}
+	return data.NewFrame("long",
+		data.NewField("time", nil, times),
+		data.NewField("label", nil, labels),
+		data.NewField("value", nil, values),
+	)
+}
+
+func TestLongToWideWithLimit(t *testing.T) {
+	// 4 timestamps x 3 series x 1 value field pivots to 4 rows x (1 + 3) fields = 16 cells.
+	frame := longFrameForWideLimit(4, 3)
+
+	tests := []struct {
+		name  string
+		limit int64
+		err   error
+	}{
+		{name: "limit equal to the wide frame size passes", limit: 16},
+		{name: "limit one below the wide frame size fails", limit: 15, err: data.ErrorWideFrameTooLarge},
+		{name: "zero disables the limit", limit: 0},
+		{name: "negative disables the limit", limit: -1},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			wide, err := data.LongToWideWithLimit(frame, nil, tc.limit)
+			if tc.err != nil {
+				require.ErrorIs(t, err, tc.err)
+				require.Nil(t, wide)
+				return
+			}
+			require.NoError(t, err)
+			rows, err := wide.RowLen()
+			require.NoError(t, err)
+			require.Equal(t, 16, rows*len(wide.Fields))
+		})
+	}
+
+	t.Run("each value field adds a wide field per series", func(t *testing.T) {
+		base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+		frame := data.NewFrame("long",
+			data.NewField("time", nil, []time.Time{base, base.Add(time.Second)}),
+			data.NewField("label", nil, []string{"a", "a"}),
+			data.NewField("v1", nil, []float64{1, 2}),
+			data.NewField("v2", nil, []float64{3, 4}),
+		)
+		// 2 rows x (1 + 1 series x 2 value fields) = 6 cells.
+		_, err := data.LongToWideWithLimit(frame, nil, 6)
+		require.NoError(t, err)
+		_, err = data.LongToWideWithLimit(frame, nil, 5)
+		require.ErrorIs(t, err, data.ErrorWideFrameTooLarge)
+	})
+
+	t.Run("matches LongToWide under the limit", func(t *testing.T) {
+		fill := &data.FillMissing{Mode: data.FillModeNull}
+		want, err := data.LongToWide(frame, fill)
+		require.NoError(t, err)
+		got, err := data.LongToWideWithLimit(frame, fill, 1000)
+		require.NoError(t, err)
+		if diff := cmp.Diff(want, got, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("Result mismatch (-want +got):\n%s", diff)
+		}
+	})
+
+	t.Run("unsorted input reports the sort error", func(t *testing.T) {
+		base := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+		frame := data.NewFrame("long",
+			data.NewField("time", nil, []time.Time{base.Add(time.Second), base}),
+			data.NewField("label", nil, []string{"a", "b"}),
+			data.NewField("value", nil, []float64{1, 2}),
+		)
+		_, err := data.LongToWideWithLimit(frame, nil, 1000)
+		require.ErrorIs(t, err, data.ErrorSeriesUnsorted)
+	})
+
+	t.Run("a frame far past the limit fails", func(t *testing.T) {
+		// 200 timestamps x 200 series pivots to 200 x 201 = 40,200 cells.
+		_, err := data.LongToWideWithLimit(longFrameForWideLimit(200, 200), nil, 1000)
+		require.ErrorIs(t, err, data.ErrorWideFrameTooLarge)
+	})
 }

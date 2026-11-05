@@ -7,4 +7,5 @@ var (
 	ErrorSeriesUnsorted                   = errors.New("unable to process the data because it is not sorted in ascending order by time, please updated your query to sort the data by time if possible")
 	ErrorInputFieldsWithoutRows           = errors.New("can not convert to long series, input fields have no rows")
 	ErrorInputFieldsWithoutRowsWideSeries = errors.New("can not convert to wide series, input fields have no rows")
+	ErrorWideFrameTooLarge                = errors.New("unable to convert the data to wide series because the result is too large, add filters or aggregation to the query to reduce the number of timestamps or series")
 )

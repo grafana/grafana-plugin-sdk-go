@@ -123,18 +123,6 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 		return false
 	}
 
-	if time.Unix(token.LicenseExpires, 0).Before(timeNow()) {
-		token.Status = Expired
-		token.Error = fmt.Errorf("%w: license expired at %v", errLicenseExpired, time.Unix(token.LicenseExpires, 0))
-		return false
-	}
-
-	if time.Unix(token.Expires, 0).Before(timeNow()) {
-		token.Status = Expired
-		token.Error = fmt.Errorf("%w: token expired at %v", errTokenExpired, time.Unix(token.Expires, 0))
-		return false
-	}
-
 	if _, ok := bLIDs[token.LicenseId]; ok {
 		// for security purposes, we avoid returning that the licenses is blocked
 		// we will return that a generic invalid license error
@@ -153,6 +141,20 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 	if !found {
 		token.Status = Invalid
 		token.Error = errMarketplacePluginNotIncluded
+		return false
+	}
+
+	// Expired allows a grace period, so it must only be returned for tokens that
+	// passed the eligibility checks above.
+	if time.Unix(token.LicenseExpires, 0).Before(timeNow()) {
+		token.Status = Expired
+		token.Error = fmt.Errorf("%w: license expired at %v", errLicenseExpired, time.Unix(token.LicenseExpires, 0))
+		return false
+	}
+
+	if time.Unix(token.Expires, 0).Before(timeNow()) {
+		token.Status = Expired
+		token.Error = fmt.Errorf("%w: token expired at %v", errTokenExpired, time.Unix(token.Expires, 0))
 		return false
 	}
 
