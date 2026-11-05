@@ -26,6 +26,7 @@ func requestLicenseLoader(parse licenseParser) licenseTokenLoader {
 		if !ok {
 			return &licensing.LicenseToken{Status: licensing.NotFound, Error: errNoLicenseFound}
 		}
+		// parse also validates the license and sets LicenseToken.Error if it is invalid.
 		return parse(info.LicenseToken, info.AppURL, info.ValidationKeys, licensePluginID)
 	}
 }
@@ -52,9 +53,9 @@ func newLicenseMiddleware(pluginID, licensePluginID string, loadToken licenseTok
 	})
 }
 
-// refuse returns nil if the request in ctx is licensed. Otherwise it returns the handler
+// ensureValidLicense returns nil if the request in ctx is licensed. Otherwise it returns the handler
 // that answers the request with the license error.
-func (m *licenseMiddleware) refuse(ctx context.Context) *invalidLicenseHandler {
+func (m *licenseMiddleware) ensureValidLicense(ctx context.Context) *invalidLicenseHandler {
 	token := m.loadToken(ctx, m.licensePluginID)
 	accepted, grace := acceptLicenseToken(token, time.Now())
 	if accepted {
@@ -75,70 +76,70 @@ func (m *licenseMiddleware) refuse(ctx context.Context) *invalidLicenseHandler {
 }
 
 func (m *licenseMiddleware) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.QueryData(ctx, req)
 	}
 	return m.BaseHandler.QueryData(ctx, req)
 }
 
 func (m *licenseMiddleware) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) error {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.QueryChunkedData(ctx, req, w)
 	}
 	return m.BaseHandler.QueryChunkedData(ctx, req, w)
 }
 
 func (m *licenseMiddleware) CallResource(ctx context.Context, req *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.CallResource(ctx, req, sender)
 	}
 	return m.BaseHandler.CallResource(ctx, req, sender)
 }
 
 func (m *licenseMiddleware) CheckHealth(ctx context.Context, req *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.CheckHealth(ctx, req)
 	}
 	return m.BaseHandler.CheckHealth(ctx, req)
 }
 
 func (m *licenseMiddleware) SubscribeStream(ctx context.Context, req *backend.SubscribeStreamRequest) (*backend.SubscribeStreamResponse, error) {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.SubscribeStream(ctx, req)
 	}
 	return m.BaseHandler.SubscribeStream(ctx, req)
 }
 
 func (m *licenseMiddleware) PublishStream(ctx context.Context, req *backend.PublishStreamRequest) (*backend.PublishStreamResponse, error) {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.PublishStream(ctx, req)
 	}
 	return m.BaseHandler.PublishStream(ctx, req)
 }
 
 func (m *licenseMiddleware) RunStream(ctx context.Context, req *backend.RunStreamRequest, sender *backend.StreamSender) error {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.RunStream(ctx, req, sender)
 	}
 	return m.BaseHandler.RunStream(ctx, req, sender)
 }
 
 func (m *licenseMiddleware) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.ValidateAdmission(ctx, req)
 	}
 	return m.BaseHandler.ValidateAdmission(ctx, req)
 }
 
 func (m *licenseMiddleware) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.MutationResponse, error) {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.MutateAdmission(ctx, req)
 	}
 	return m.BaseHandler.MutateAdmission(ctx, req)
 }
 
 func (m *licenseMiddleware) ConvertObjects(ctx context.Context, req *backend.ConversionRequest) (*backend.ConversionResponse, error) {
-	if h := m.refuse(ctx); h != nil {
+	if h := m.ensureValidLicense(ctx); h != nil {
 		return h.ConvertObjects(ctx, req)
 	}
 	return m.BaseHandler.ConvertObjects(ctx, req)
@@ -152,7 +153,7 @@ type licensedQueryConversionHandler struct {
 }
 
 func (h *licensedQueryConversionHandler) ConvertQueryDataRequest(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryConversionResponse, error) {
-	if refused := h.middleware.refuse(ctx); refused != nil {
+	if refused := h.middleware.ensureValidLicense(ctx); refused != nil {
 		return refused.ConvertQueryDataRequest(ctx, req)
 	}
 	return h.next.ConvertQueryDataRequest(ctx, req)
