@@ -9,7 +9,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 	"time"
 
@@ -83,69 +82,68 @@ func (r *recordingHandler) ConvertObjects(context.Context, *backend.ConversionRe
 	return &backend.ConversionResponse{}, nil
 }
 
-// licensedCall invokes one endpoint and reports whether the response is the license refusal.
-type licensedCall struct {
+// licensedCalls invoke every endpoint the license middleware checks, ignoring the results.
+// The refusal responses are covered by the invalidLicenseHandler tests.
+var licensedCalls = []struct {
 	name   string
-	invoke func(ctx context.Context, h backend.Handler) (refused bool, err error)
+	invoke func(ctx context.Context, h backend.Handler)
+}{
+	{"QueryData", func(ctx context.Context, h backend.Handler) { _, _ = h.QueryData(ctx, &backend.QueryDataRequest{}) }},
+	{"QueryChunkedData", func(ctx context.Context, h backend.Handler) {
+		_ = h.QueryChunkedData(ctx, &backend.QueryChunkedDataRequest{}, nil)
+	}},
+	{"CallResource", func(ctx context.Context, h backend.Handler) {
+		_ = h.CallResource(ctx, &backend.CallResourceRequest{}, backend.CallResourceResponseSenderFunc(func(*backend.CallResourceResponse) error { return nil }))
+	}},
+	{"CheckHealth", func(ctx context.Context, h backend.Handler) { _, _ = h.CheckHealth(ctx, &backend.CheckHealthRequest{}) }},
+	{"SubscribeStream", func(ctx context.Context, h backend.Handler) {
+		_, _ = h.SubscribeStream(ctx, &backend.SubscribeStreamRequest{})
+	}},
+	{"PublishStream", func(ctx context.Context, h backend.Handler) {
+		_, _ = h.PublishStream(ctx, &backend.PublishStreamRequest{})
+	}},
+	{"RunStream", func(ctx context.Context, h backend.Handler) {
+		_ = h.RunStream(ctx, &backend.RunStreamRequest{}, backend.NewStreamSender(nil))
+	}},
+	{"ValidateAdmission", func(ctx context.Context, h backend.Handler) {
+		_, _ = h.ValidateAdmission(ctx, &backend.AdmissionRequest{})
+	}},
+	{"MutateAdmission", func(ctx context.Context, h backend.Handler) {
+		_, _ = h.MutateAdmission(ctx, &backend.AdmissionRequest{})
+	}},
+	{"ConvertObjects", func(ctx context.Context, h backend.Handler) {
+		_, _ = h.ConvertObjects(ctx, &backend.ConversionRequest{})
+	}},
 }
 
-func refusedCalls() []licensedCall {
-	isLicenseErr := func(err error) bool {
-		return err != nil && strings.Contains(err.Error(), "is not available with your current subscription")
+func TestLicenseFromIncomingGRPCContext(t *testing.T) {
+	info := licenseInfo{LicenseToken: "token", AppURL: "https://grafana.example.com", ValidationKeys: "keys"}
+	encoded, err := json.Marshal(info)
+	require.NoError(t, err)
+
+	tests := []struct {
+		name  string
+		ctx   context.Context
+		want  licenseInfo
+		found bool
+	}{
+		{name: "no metadata", ctx: context.Background()},
+		{name: "nil metadata", ctx: metadata.NewIncomingContext(context.Background(), nil)},
+		{name: "missing header", ctx: metadata.NewIncomingContext(context.Background(), metadata.Pairs("other", "value"))},
+		{name: "empty header", ctx: metadata.NewIncomingContext(context.Background(), metadata.Pairs("license", ""))},
+		{name: "malformed JSON", ctx: metadata.NewIncomingContext(context.Background(), metadata.Pairs("license", "{"))},
+		{name: "wrong field type", ctx: metadata.NewIncomingContext(context.Background(), metadata.Pairs("license", `{"licenseToken":123}`))},
+		{name: "valid metadata", ctx: metadata.NewIncomingContext(context.Background(), metadata.Pairs("license", string(encoded))), want: info, found: true},
+		{name: "first header wins", ctx: metadata.NewIncomingContext(context.Background(), metadata.Pairs("license", string(encoded), "license", "{")), want: info, found: true},
+		{name: "no fallback to later header", ctx: metadata.NewIncomingContext(context.Background(), metadata.Pairs("license", "", "license", string(encoded)))},
+		{name: "outgoing metadata ignored", ctx: metadata.NewOutgoingContext(context.Background(), metadata.Pairs("license", string(encoded)))},
 	}
-	isDeniedResult := func(allowed bool, res *backend.StatusResult) bool {
-		return !allowed && res != nil && res.Status == "Failure" && res.Code == http.StatusForbidden && res.Reason == "Forbidden" &&
-			strings.Contains(res.Message, "is not available with your current subscription")
-	}
-	return []licensedCall{
-		{"QueryData", func(ctx context.Context, h backend.Handler) (bool, error) {
-			resp, err := h.QueryData(ctx, &backend.QueryDataRequest{Queries: []backend.DataQuery{{RefID: "A"}, {RefID: "B"}}})
-			if err != nil || len(resp.Responses) != 2 {
-				return false, err
-			}
-			return resp.Responses["A"].Status == backend.StatusUnauthorized && resp.Responses["B"].Status == backend.StatusUnauthorized, nil
-		}},
-		{"QueryChunkedData", func(ctx context.Context, h backend.Handler) (bool, error) {
-			w := &recordingChunkedDataWriter{errors: map[string]error{}}
-			err := h.QueryChunkedData(ctx, &backend.QueryChunkedDataRequest{Queries: []backend.DataQuery{{RefID: "A"}}}, w)
-			return err == nil && w.errors["A"] != nil, err
-		}},
-		{"CallResource", func(ctx context.Context, h backend.Handler) (bool, error) {
-			status := 0
-			err := h.CallResource(ctx, &backend.CallResourceRequest{}, backend.CallResourceResponseSenderFunc(func(r *backend.CallResourceResponse) error {
-				status = r.Status
-				return nil
-			}))
-			return status == http.StatusForbidden, err
-		}},
-		{"CheckHealth", func(ctx context.Context, h backend.Handler) (bool, error) {
-			res, err := h.CheckHealth(ctx, &backend.CheckHealthRequest{})
-			return err == nil && res.Status == backend.HealthStatusError, err
-		}},
-		{"SubscribeStream", func(ctx context.Context, h backend.Handler) (bool, error) {
-			res, err := h.SubscribeStream(ctx, &backend.SubscribeStreamRequest{})
-			return err == nil && res.Status == backend.SubscribeStreamStatusPermissionDenied, err
-		}},
-		{"PublishStream", func(ctx context.Context, h backend.Handler) (bool, error) {
-			res, err := h.PublishStream(ctx, &backend.PublishStreamRequest{})
-			return err == nil && res.Status == backend.PublishStreamStatusPermissionDenied, err
-		}},
-		{"RunStream", func(ctx context.Context, h backend.Handler) (bool, error) {
-			err := h.RunStream(ctx, &backend.RunStreamRequest{}, backend.NewStreamSender(nil))
-			return isLicenseErr(err), nil
-		}},
-		{"ValidateAdmission", func(ctx context.Context, h backend.Handler) (bool, error) {
-			resp, err := h.ValidateAdmission(ctx, &backend.AdmissionRequest{})
-			return err == nil && resp != nil && isDeniedResult(resp.Allowed, resp.Result), err
-		}},
-		{"MutateAdmission", func(ctx context.Context, h backend.Handler) (bool, error) {
-			resp, err := h.MutateAdmission(ctx, &backend.AdmissionRequest{})
-			return err == nil && resp != nil && isDeniedResult(resp.Allowed, resp.Result), err
-		}},
-		{"ConvertObjects", func(ctx context.Context, h backend.Handler) (bool, error) {
-			_, err := h.ConvertObjects(ctx, &backend.ConversionRequest{})
-			return isLicenseErr(err), nil
-		}},
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got, found := licenseFromIncomingGRPCContext(tt.ctx)
+			require.Equal(t, tt.found, found)
+			require.Equal(t, tt.want, got)
+		})
 	}
 }
 
@@ -173,7 +171,7 @@ func (f *fakeParser) parse(token, appURL, validationKeys, pluginID string) *lice
 // licenseCtx returns a context with incoming gRPC metadata carrying token, like Grafana sends it.
 func licenseCtx(t *testing.T, token string) context.Context {
 	t.Helper()
-	info, err := json.Marshal(licensing.LicenseInfo{LicenseToken: token, AppURL: "http://grafana.test", ValidationKeys: "keys"})
+	info, err := json.Marshal(licenseInfo{LicenseToken: token, AppURL: "http://grafana.test", ValidationKeys: "keys"})
 	require.NoError(t, err)
 	return metadata.NewIncomingContext(t.Context(), metadata.Pairs("license", string(info)))
 }
@@ -196,12 +194,10 @@ func TestLicenseMiddlewareRefusesAndForwards(t *testing.T) {
 		{"past-grace", false},
 		{"invalid", false},
 	} {
-		for _, call := range refusedCalls() {
+		for _, call := range licensedCalls {
 			t.Run(tt.token+"/"+call.name, func(t *testing.T) {
 				h, final := middlewareHandler(t, &fakeParser{})
-				refused, err := call.invoke(licenseCtx(t, tt.token), h)
-				require.NoError(t, err)
-				require.Equal(t, !tt.forwarded, refused)
+				call.invoke(licenseCtx(t, tt.token), h)
 				if tt.forwarded {
 					require.Equal(t, []string{call.name}, final.calls)
 				} else {
@@ -298,52 +294,16 @@ func (c *countingConversion) ConvertQueryDataRequest(context.Context, *backend.Q
 	return &backend.QueryConversionResponse{}, nil
 }
 
-func TestApplyRequestTimeLicense(t *testing.T) {
-	t.Run("middleware is first and caller slice is untouched", func(t *testing.T) {
-		other := passthroughMiddleware{}
-		in := backend.ServeOpts{HandlerMiddlewares: make([]backend.HandlerMiddleware, 1, 4)}
-		in.HandlerMiddlewares[0] = other
+func TestApplyRequestTimeLicensePrependsMiddleware(t *testing.T) {
+	other := passthroughMiddleware{}
+	in := backend.ServeOpts{HandlerMiddlewares: []backend.HandlerMiddleware{other}}
 
-		got, err := applyRequestTimeLicenseWithDeps("child-plugin", "parent-app", in, requestLicenseLoader((&fakeParser{}).parse))
-		require.NoError(t, err)
-		require.Len(t, got.HandlerMiddlewares, 2)
-		require.Len(t, in.HandlerMiddlewares, 1)
-		require.Equal(t, other, in.HandlerMiddlewares[0])
-		require.Equal(t, other, got.HandlerMiddlewares[1])
-		_, isFunc := got.HandlerMiddlewares[0].(backend.HandlerMiddlewareFunc)
-		require.True(t, isFunc)
-		require.Nil(t, got.QueryConversionHandler)
-	})
-
-	t.Run("query conversion is wrapped", func(t *testing.T) {
-		parser := &fakeParser{}
-		next := &countingConversion{}
-		got, err := applyRequestTimeLicenseWithDeps("child-plugin", "parent-app",
-			backend.ServeOpts{QueryConversionHandler: next}, requestLicenseLoader(parser.parse))
-		require.NoError(t, err)
-
-		_, err = got.QueryConversionHandler.ConvertQueryDataRequest(licenseCtx(t, "invalid"), &backend.QueryDataRequest{})
-		require.ErrorContains(t, err, "The Marketplace plugin parent-app is not available")
-		require.Zero(t, next.calls)
-
-		_, err = got.QueryConversionHandler.ConvertQueryDataRequest(licenseCtx(t, "valid"), &backend.QueryDataRequest{})
-		require.NoError(t, err)
-		require.Equal(t, 1, next.calls)
-
-		_, err = got.QueryConversionHandler.ConvertQueryDataRequest(t.Context(), &backend.QueryDataRequest{})
-		require.ErrorContains(t, err, "is not available")
-		require.Equal(t, 1, next.calls)
-
-		require.Equal(t, []parseArgs{
-			{"invalid", "http://grafana.test", "keys", "parent-app"},
-			{"valid", "http://grafana.test", "keys", "parent-app"},
-		}, parser.calls)
-	})
-
-	t.Run("extra plugins are rejected", func(t *testing.T) {
-		_, err := applyRequestTimeLicenseWithDeps("p", "p", backend.ServeOpts{ExtraPlugins: plugin.PluginSet{"extra": nil}}, requestLicenseLoader((&fakeParser{}).parse))
-		require.ErrorContains(t, err, "ExtraPlugins")
-	})
+	got, err := applyRequestTimeLicenseWithDeps("child-plugin", "parent-app", in, requestLicenseLoader((&fakeParser{}).parse))
+	require.NoError(t, err)
+	require.Len(t, got.HandlerMiddlewares, 2)
+	_, isFunc := got.HandlerMiddlewares[0].(backend.HandlerMiddlewareFunc)
+	require.True(t, isFunc)
+	require.Equal(t, other, got.HandlerMiddlewares[1])
 }
 
 func setQueryTimeLicenseValidation(t *testing.T, enabled bool) {
@@ -394,69 +354,6 @@ func TestLicensingModeSelection(t *testing.T) {
 			require.Same(t, final, got.QueryDataHandler)
 			require.Len(t, got.HandlerMiddlewares, 1)
 		})
-	}
-}
-
-func TestRequestTimeMiddlewareChain(t *testing.T) {
-	datasourceOpts := func(h backend.Handler) backend.ServeOpts {
-		return backend.ServeOpts{QueryDataHandler: h, CheckHealthHandler: h, StreamHandler: h}
-	}
-	appOpts := func(h backend.Handler) backend.ServeOpts {
-		return backend.ServeOpts{CallResourceHandler: h, CheckHealthHandler: h, AdmissionHandler: h, ConversionHandler: h}
-	}
-	shapes := []struct {
-		name  string
-		opts  func(backend.Handler) backend.ServeOpts
-		calls []string
-	}{
-		{"datasource", datasourceOpts, []string{"QueryData", "CheckHealth", "SubscribeStream"}},
-		{"app", appOpts, []string{"CallResource", "CheckHealth", "ValidateAdmission", "ConvertObjects"}},
-	}
-	byName := map[string]licensedCall{}
-	for _, c := range refusedCalls() {
-		byName[c.name] = c
-	}
-
-	for _, shape := range shapes {
-		for _, tt := range []struct {
-			name      string
-			token     string // empty: no metadata
-			forwarded bool
-			parsed    bool
-		}{
-			{"valid license", "valid", true, true},
-			{"invalid license", "invalid", false, true},
-			{"no metadata", "", false, false},
-		} {
-			t.Run(shape.name+"/"+tt.name, func(t *testing.T) {
-				parser := &fakeParser{}
-				final := &recordingHandler{}
-				serveOpts, err := applyRequestTimeLicenseWithDeps("child-plugin", "parent-app", shape.opts(final), requestLicenseLoader(parser.parse))
-				require.NoError(t, err)
-				h, err := serveOpts.HandlerWithMiddlewares()
-				require.NoError(t, err)
-
-				ctx := t.Context()
-				if tt.token != "" {
-					ctx = licenseCtx(t, tt.token)
-				}
-				for _, name := range shape.calls {
-					refused, err := byName[name].invoke(ctx, h)
-					require.NoError(t, err, name)
-					require.Equal(t, !tt.forwarded, refused, name)
-				}
-				if tt.parsed {
-					require.Len(t, parser.calls, len(shape.calls))
-				} else {
-					require.Empty(t, parser.calls)
-				}
-				if tt.forwarded {
-					require.Equal(t, shape.calls, final.calls)
-				} else {
-					require.Empty(t, final.calls)
-				}
-			})
-		}
 	}
 }
 

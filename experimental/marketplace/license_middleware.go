@@ -2,14 +2,46 @@ package marketplace
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"time"
+
+	"google.golang.org/grpc/metadata"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
 
 var errNoLicenseFound = errors.New("no license found in the request metadata")
+
+const upstreamLicenseHeader = "license"
+
+// licenseInfo is the license information supplied by Grafana on each request.
+// Its metadata format matches the Grafana Enterprise SDK.
+type licenseInfo struct {
+	LicenseToken   string `json:"licenseToken"`
+	AppURL         string `json:"appURL"`
+	ValidationKeys string `json:"validationKeys"`
+}
+
+// licenseFromIncomingGRPCContext returns license info from incoming gRPC metadata.
+func licenseFromIncomingGRPCContext(ctx context.Context) (licenseInfo, bool) {
+	md, exists := metadata.FromIncomingContext(ctx)
+	if !exists {
+		return licenseInfo{}, false
+	}
+
+	values := md.Get(upstreamLicenseHeader)
+	if len(values) == 0 || values[0] == "" {
+		return licenseInfo{}, false
+	}
+
+	var info licenseInfo
+	if err := json.Unmarshal([]byte(values[0]), &info); err != nil {
+		return licenseInfo{}, false
+	}
+	return info, true
+}
 
 // licenseTokenLoader returns the token to validate for the request in ctx. It never returns nil.
 type licenseTokenLoader func(ctx context.Context, licensePluginID string) *licensing.LicenseToken
@@ -22,7 +54,7 @@ type licenseParser func(token, appURL, validationKeys, pluginID string) *licensi
 // an invalid token without calling parse. Environment variables and license files are never consulted.
 func requestLicenseLoader(parse licenseParser) licenseTokenLoader {
 	return func(ctx context.Context, licensePluginID string) *licensing.LicenseToken {
-		info, ok := licensing.LicenseFromIncomingGRPCContext(ctx)
+		info, ok := licenseFromIncomingGRPCContext(ctx)
 		if !ok {
 			return &licensing.LicenseToken{Status: licensing.NotFound, Error: errNoLicenseFound}
 		}

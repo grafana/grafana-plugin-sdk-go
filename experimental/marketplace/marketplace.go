@@ -68,6 +68,13 @@ const marketplaceLicenseValidationModeRequest = "request"
 // Builds with the marketplace_dev tag skip both kinds of checks.
 func Licensing(opts Opts) backend.ServeOptsDecorator {
 	return func(pluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
+		if developmentLicenseBypass {
+			backend.Logger.Warn(
+				"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
+				"pluginId", pluginID,
+			)
+			return serveOpts, nil
+		}
 		licensePluginID := opts.licensePluginID(pluginID)
 		if *queryTimeLicenseValidation || os.Getenv(marketplaceLicenseValidationModeEnv) == marketplaceLicenseValidationModeRequest {
 			return applyRequestTimeLicense(pluginID, licensePluginID, serveOpts)
@@ -86,13 +93,6 @@ func applyRequestTimeLicenseWithDeps(
 	serveOpts backend.ServeOpts,
 	loadToken licenseTokenLoader,
 ) (backend.ServeOpts, error) {
-	if developmentLicenseBypass {
-		backend.Logger.Warn(
-			"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
-			"pluginId", pluginID,
-		)
-		return serveOpts, nil
-	}
 	if len(serveOpts.ExtraPlugins) > 0 {
 		return backend.ServeOpts{}, errors.New("marketplace: ExtraPlugins are not supported with query-time license validation")
 	}

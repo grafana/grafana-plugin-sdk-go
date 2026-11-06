@@ -52,14 +52,6 @@ func checkMarketplacePluginLicenseWithDeps(
 	serveOpts backend.ServeOpts,
 	loadToken func(string) *licensing.LicenseToken,
 ) backend.ServeOpts {
-	if developmentLicenseBypass {
-		backend.Logger.Warn(
-			"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
-			"pluginId", pluginID,
-		)
-		return serveOpts
-	}
-
 	token := loadToken(licensePluginID)
 	if token.Error != nil {
 		backend.Logger.Error("Marketplace License Error", "error", token.Error)
