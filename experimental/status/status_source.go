@@ -225,8 +225,20 @@ func SourceFromContext(ctx context.Context) Source {
 	return DefaultSource
 }
 
-// InitSource initialize the source for the context.
+// InitSource initializes the source for the context. It is idempotent: if
+// ctx (or a parent of it) already carries a source -- e.g. because it was
+// derived from a context on which InitSource was already called, as happens
+// when a Handler built with HandlerFromMiddlewares is invoked from within
+// another, already-initialized middleware chain -- the existing value is
+// reused instead of being shadowed by a new one. Attaching a second,
+// independent *Source for the same logical request would let downstream
+// middlewares (e.g. ErrorSourceMiddleware) mutate a pointer that outer
+// middlewares reading the source afterwards (e.g. request/metrics
+// middlewares) can never observe, silently losing the propagated source.
 func InitSource(ctx context.Context) context.Context {
+	if _, ok := ctx.Value(sourceCtxKey{}).(*Source); ok {
+		return ctx
+	}
 	s := DefaultSource
 	return context.WithValue(ctx, sourceCtxKey{}, &s)
 }
