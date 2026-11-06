@@ -26,6 +26,7 @@ const (
 	ResponseLimit                    = "GF_RESPONSE_LIMIT"
 	AppClientSecret                  = "GF_PLUGIN_APP_CLIENT_SECRET" // nolint:gosec
 	LiveClientQueueMaxSize           = "GF_LIVE_CLIENT_QUEUE_MAX_SIZE"
+	PluginsUserAgent                 = "GF_HTTP_CLIENT_USER_AGENT"
 )
 
 // GrafanaCfg represents Grafana configuration
@@ -335,6 +336,15 @@ func (c *GrafanaCfg) ResponseLimit() int64 {
 		return 0
 	}
 	return i
+}
+
+// PluginsUserAgent returns the User-Agent configured in Grafana for outgoing plugin
+// HTTP requests, or an empty string if none is configured.
+//
+// Unlike AppURL, there is deliberately no environment variable fallback: the value
+// only comes from the request config, so missing plumbing is not masked.
+func (c *GrafanaCfg) PluginsUserAgent() string {
+	return c.config[PluginsUserAgent]
 }
 
 func (c *GrafanaCfg) PluginAppClientSecret() (string, error) {
