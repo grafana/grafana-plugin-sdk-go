@@ -110,3 +110,18 @@ func ErrorResponseWithErrorSource(err error) DataResponse {
 		Error: err,
 	}
 }
+
+// ErrorSourceFromError extracts an explicit source or classifies a cancellation
+// or timeout as downstream. Unclassified errors retain an unspecified source.
+func ErrorSourceFromError(err error) ErrorSource {
+	if e, ok := errors.AsType[ErrorWithSource](err); ok && e.ErrorSource() != "" {
+		return e.ErrorSource()
+	}
+	if IsDownstreamError(err) {
+		return ErrorSourceDownstream
+	}
+	if IsPluginError(err) {
+		return ErrorSourcePlugin
+	}
+	return ""
+}
