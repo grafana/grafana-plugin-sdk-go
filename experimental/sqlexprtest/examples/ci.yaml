@@ -19,7 +19,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        grafana: ['13.1.8', '13.2.4']
+        grafana: ['13.1.8', '13.2.4', '13.3.0']
     env:
       GRAFANA_VERSION: ${{ matrix.grafana }}
       SQLEXPRTEST_GRAFANA_VERSION: ${{ matrix.grafana }}
