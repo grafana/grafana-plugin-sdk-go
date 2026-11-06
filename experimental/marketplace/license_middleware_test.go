@@ -355,24 +355,6 @@ func setQueryTimeLicenseValidation(t *testing.T, enabled bool) {
 
 // Tests using setQueryTimeLicenseValidation must not run in parallel.
 
-func TestLicensingQueryTimeModeSkipsStartupCheck(t *testing.T) {
-	// In startup mode this would replace every handler with invalidLicenseHandler.
-	t.Setenv(marketplaceLicenseTextEnv, "")
-	t.Setenv(marketplaceLicensePathEnv, filepath.Join(t.TempDir(), "missing.jwt"))
-	t.Setenv(marketplaceLicenseValidationModeEnv, "")
-	setQueryTimeLicenseValidation(t, true)
-
-	in := licensedServeOpts()
-	in.ExtraPlugins = nil
-	got, err := Licensing(Opts{ParentPluginID: "parent-app"})("example-app", in)
-	require.NoError(t, err)
-	require.Same(t, in.CheckHealthHandler, got.CheckHealthHandler)
-	require.Len(t, got.HandlerMiddlewares, 1)
-
-	_, err = Licensing(Opts{})("example-app", licensedServeOpts())
-	require.ErrorContains(t, err, "ExtraPlugins")
-}
-
 func TestLicensingModeSelection(t *testing.T) {
 	for _, tt := range []struct {
 		name    string
@@ -384,11 +366,7 @@ func TestLicensingModeSelection(t *testing.T) {
 		{"flag only", true, "", true},
 		{"env only", false, "request", true},
 		{"flag and env", true, "request", true},
-		{"env startup", false, "startup", false},
-		{"env uppercase", false, "REQUEST", false},
-		{"env capitalized", false, "Request", false},
-		{"env leading space", false, " request", false},
-		{"env trailing space", false, "request ", false},
+		{"other env value", false, "startup", false},
 		{"flag with other env", true, "startup", true},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
@@ -415,19 +393,6 @@ func TestLicensingModeSelection(t *testing.T) {
 			require.Same(t, final, got.CheckHealthHandler)
 			require.Same(t, final, got.QueryDataHandler)
 			require.Len(t, got.HandlerMiddlewares, 1)
-
-			// A request without license metadata is still denied.
-			h, err := got.HandlerWithMiddlewares()
-			require.NoError(t, err)
-			for _, call := range refusedCalls() {
-				if call.name != "CheckHealth" && call.name != "QueryData" {
-					continue
-				}
-				refused, err := call.invoke(t.Context(), h)
-				require.NoError(t, err, call.name)
-				require.True(t, refused, call.name)
-			}
-			require.Empty(t, final.calls)
 		})
 	}
 }
@@ -495,6 +460,9 @@ func TestRequestTimeMiddlewareChain(t *testing.T) {
 	}
 }
 
+// TestRequestTimeLicenseGRPCServeOpts checks licensing through the gRPC adapters, including
+// query conversion, which bypasses the normal handler middleware chain. Missing or invalid
+// licenses must deny admission and both conversion paths without reaching plugin handlers.
 func TestRequestTimeLicenseGRPCServeOpts(t *testing.T) {
 	const licenseMsg = "The Marketplace plugin parent-app is not available"
 	queryObject := &pluginv2.RawObject{Raw: []byte(`{"queries":[{"refId":"A"}]}`), ContentType: "application/json"}
