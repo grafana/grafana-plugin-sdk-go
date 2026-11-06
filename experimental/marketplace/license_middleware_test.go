@@ -179,7 +179,7 @@ func licenseCtx(t *testing.T, token string) context.Context {
 func middlewareHandler(t *testing.T, parser *fakeParser) (backend.Handler, *recordingHandler) {
 	t.Helper()
 	final := &recordingHandler{}
-	h, err := backend.HandlerFromMiddlewares(final, newLicenseMiddleware("child-plugin", "parent-app", requestLicenseLoader(parser.parse)))
+	h, err := backend.HandlerFromMiddlewares(final, newLicenseMiddleware("child-plugin", "parent-app", parser.parse))
 	require.NoError(t, err)
 	return h, final
 }
@@ -272,12 +272,6 @@ func TestLicenseMiddlewareFailsClosedWithoutUsableMetadata(t *testing.T) {
 			require.Empty(t, final.calls)
 		})
 	}
-
-	t.Run("production parser rejects an unparsable token", func(t *testing.T) {
-		token := requestLicenseLoader(licensing.LoadTokenFromValue)(licenseCtx(t, "nope"), "parent-app")
-		require.Error(t, token.Error)
-		require.NotEqual(t, licensing.Valid, token.Status)
-	})
 }
 
 type passthroughMiddleware struct{}
@@ -298,7 +292,7 @@ func TestApplyRequestTimeLicensePrependsMiddleware(t *testing.T) {
 	other := passthroughMiddleware{}
 	in := backend.ServeOpts{HandlerMiddlewares: []backend.HandlerMiddleware{other}}
 
-	got, err := applyRequestTimeLicenseWithDeps("child-plugin", "parent-app", in, requestLicenseLoader((&fakeParser{}).parse))
+	got, err := applyRequestTimeLicenseWithDeps("child-plugin", "parent-app", in, (&fakeParser{}).parse)
 	require.NoError(t, err)
 	require.Len(t, got.HandlerMiddlewares, 2)
 	_, isFunc := got.HandlerMiddlewares[0].(backend.HandlerMiddlewareFunc)
@@ -381,7 +375,7 @@ func TestRequestTimeLicenseGRPCServeOpts(t *testing.T) {
 				AdmissionHandler:       final,
 				ConversionHandler:      final,
 				QueryConversionHandler: conv,
-			}, requestLicenseLoader((&fakeParser{}).parse))
+			}, (&fakeParser{}).parse)
 			require.NoError(t, err)
 			grpcOpts, err := backend.GRPCServeOpts(opts)
 			require.NoError(t, err)

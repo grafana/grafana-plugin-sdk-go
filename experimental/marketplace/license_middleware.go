@@ -43,25 +43,8 @@ func licenseFromIncomingGRPCContext(ctx context.Context) (licenseInfo, bool) {
 	return info, true
 }
 
-// licenseTokenLoader returns the token to validate for the request in ctx. It never returns nil.
-type licenseTokenLoader func(ctx context.Context, licensePluginID string) *licensing.LicenseToken
-
 // licenseParser parses and validates a license token, like licensing.LoadTokenFromValue.
 type licenseParser func(token, appURL, validationKeys, pluginID string) *licensing.LicenseToken
-
-// requestLicenseLoader returns a loader that reads the license gRPC metadata of the incoming
-// request and validates it with parse. It fails closed: missing or unparsable metadata yields
-// an invalid token without calling parse. Environment variables and license files are never consulted.
-func requestLicenseLoader(parse licenseParser) licenseTokenLoader {
-	return func(ctx context.Context, licensePluginID string) *licensing.LicenseToken {
-		info, ok := licenseFromIncomingGRPCContext(ctx)
-		if !ok {
-			return &licensing.LicenseToken{Status: licensing.NotFound, Error: errNoLicenseFound}
-		}
-		// parse also validates the license and sets LicenseToken.Error if it is invalid.
-		return parse(info.LicenseToken, info.AppURL, info.ValidationKeys, licensePluginID)
-	}
-}
 
 // licenseMiddleware validates the license on every request, and forwards the request to
 // the next handler only if it is valid. Otherwise it answers like startup mode does.
@@ -69,28 +52,35 @@ type licenseMiddleware struct {
 	backend.BaseHandler
 	pluginID        string
 	licensePluginID string
-	// loadToken is requestLicenseLoader(licensing.LoadTokenFromValue) in production;
+	// parse is licensing.LoadTokenFromValue in production;
 	// it is injectable so tests can override license validation.
-	loadToken licenseTokenLoader
+	parse licenseParser
 }
 
 // newLicenseMiddleware returns a middleware that validates the license of every request
 // against licensePluginID. pluginID is the ID of the running plugin.
-func newLicenseMiddleware(pluginID, licensePluginID string, loadToken licenseTokenLoader) backend.HandlerMiddleware {
+func newLicenseMiddleware(pluginID, licensePluginID string, parse licenseParser) backend.HandlerMiddleware {
 	return backend.HandlerMiddlewareFunc(func(next backend.Handler) backend.Handler {
 		return &licenseMiddleware{
 			BaseHandler:     backend.NewBaseHandler(next),
 			pluginID:        pluginID,
 			licensePluginID: licensePluginID,
-			loadToken:       loadToken,
+			parse:           parse,
 		}
 	})
 }
 
 // ensureValidLicense returns nil if the request in ctx is licensed. Otherwise it returns the handler
 // that answers the request with the license error.
+//
+// The license is read only from the request's gRPC metadata, never from environment variables
+// or license files. Missing or unparsable metadata is refused without calling parse.
 func (m *licenseMiddleware) ensureValidLicense(ctx context.Context) *invalidLicenseHandler {
-	token := m.loadToken(ctx, m.licensePluginID)
+	token := &licensing.LicenseToken{Status: licensing.NotFound, Error: errNoLicenseFound}
+	if info, ok := licenseFromIncomingGRPCContext(ctx); ok {
+		// parse also validates the license and sets LicenseToken.Error if it is invalid.
+		token = m.parse(info.LicenseToken, info.AppURL, info.ValidationKeys, m.licensePluginID)
+	}
 	accepted, grace := isTokenValidOrWithinGracePeriod(token, time.Now())
 	if accepted {
 		if token.Error != nil {
