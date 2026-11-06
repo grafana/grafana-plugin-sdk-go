@@ -184,6 +184,8 @@ func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 func TestLicensingWithoutLicenseServesLicenseErrors(t *testing.T) {
 	t.Setenv(marketplaceLicenseTextEnv, "")
 	t.Setenv(marketplaceLicensePathEnv, filepath.Join(t.TempDir(), "missing.jwt"))
+	t.Setenv(marketplaceLicenseValidationModeEnv, "")
+	setQueryTimeLicenseValidation(t, false)
 
 	for _, tt := range []struct {
 		name            string

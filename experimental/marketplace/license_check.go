@@ -52,30 +52,35 @@ func checkMarketplacePluginLicenseWithDeps(
 	serveOpts backend.ServeOpts,
 	loadToken func(string) *licensing.LicenseToken,
 ) backend.ServeOpts {
-	if developmentLicenseBypass {
-		backend.Logger.Warn(
-			"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
-			"pluginId", pluginID,
-		)
-		return serveOpts
-	}
-
 	token := loadToken(licensePluginID)
 	if token.Error != nil {
 		backend.Logger.Error("Marketplace License Error", "error", token.Error)
-		if token.Status == licensing.Expired {
-			// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
-			// token in case an on-prem instance loses internet connection
-			grace, ok := marketplaceLicenseGracePeriod(token, time.Now())
-			if ok {
-				backend.Logger.Error("The plugin will work until", "date", grace)
-				backend.Logger.Error("Update your instance soon to avoid any errors")
-				return serveOpts
-			}
+		accepted, grace := isTokenValidOrWithinGracePeriod(token, time.Now())
+		if accepted {
+			backend.Logger.Error("The plugin will work until", "date", grace)
+			backend.Logger.Error("Update your instance soon to avoid any errors")
+			return serveOpts
 		}
 		return invalidLicenseServeOpts(pluginID, licensePluginID, token.Error, serveOpts)
 	}
 	return serveOpts
+}
+
+// isTokenValidOrWithinGracePeriod decides whether a parsed token allows the plugin to be served at now.
+// It is shared by startup and request-time validation. A token without error is accepted
+// with a zero grace deadline. An expired token is accepted, with its grace deadline, until
+// the grace period ends. Any other token with an error is refused.
+func isTokenValidOrWithinGracePeriod(token *licensing.LicenseToken, now time.Time) (accepted bool, grace time.Time) {
+	if token.Error == nil {
+		return true, time.Time{}
+	}
+	if token.Status == licensing.Expired {
+		// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
+		// token in case an on-prem instance loses internet connection
+		grace, ok := marketplaceLicenseGracePeriod(token, now)
+		return ok, grace
+	}
+	return false, time.Time{}
 }
 
 func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time) (time.Time, bool) {
