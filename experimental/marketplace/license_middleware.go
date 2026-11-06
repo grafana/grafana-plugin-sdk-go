@@ -37,7 +37,9 @@ type licenseMiddleware struct {
 	backend.BaseHandler
 	pluginID        string
 	licensePluginID string
-	loadToken       licenseTokenLoader
+	// loadToken is requestLicenseLoader(licensing.LoadTokenFromValue) in production;
+	// it is injectable so tests can override license validation.
+	loadToken licenseTokenLoader
 }
 
 // newLicenseMiddleware returns a middleware that validates the license of every request
