@@ -190,9 +190,7 @@ func (b *Builder) AddQueries(inputs []QueryTypeInfo) error {
 		}
 
 		b.query = append(b.query, sdkapi.QueryTypeDefinition{
-			ObjectMeta: sdkapi.ObjectMeta{
-				Name: name,
-			},
+			Name: name,
 			Spec: sdkapi.QueryTypeDefinitionSpec{
 				Description:    info.Description,
 				Discriminators: info.Discriminators,

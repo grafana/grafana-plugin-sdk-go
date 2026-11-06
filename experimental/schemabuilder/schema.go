@@ -96,11 +96,9 @@ func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 	}
 
 	s := &spec.Schema{
-		SchemaProps: spec.SchemaProps{
-			Type:       []string{"object"},
-			Schema:     draft04,
-			Properties: make(map[string]spec.Schema),
-		},
+		Type:       []string{"object"},
+		Schema:     draft04,
+		Properties: make(map[string]spec.Schema),
 	}
 
 	// Single node -- just union the global and local properties
@@ -142,20 +140,18 @@ func GetQuerySchema(opts QuerySchemaOptions) (*spec.Schema, error) {
 // moves the schema the the query slot in a request
 func addRequestWrapper(s *spec.Schema) *spec.Schema {
 	return &spec.Schema{
-		SchemaProps: spec.SchemaProps{
-			Schema:               draft04,
-			Type:                 []string{"object"},
-			Required:             []string{"queries"},
-			AdditionalProperties: &spec.SchemaOrBool{Allows: false},
-			Properties: map[string]spec.Schema{
-				"from": *spec.StringProperty().WithDescription(
-					"From Start time in epoch timestamps in milliseconds or relative using Grafana time units."),
-				"to": *spec.StringProperty().WithDescription(
-					"To end time in epoch timestamps in milliseconds or relative using Grafana time units."),
-				"queries": *spec.ArrayProperty(s),
-				"debug":   *spec.BoolProperty(),
-				"$schema": *spec.StringProperty().WithDescription("helper"),
-			},
+		Schema:               draft04,
+		Type:                 []string{"object"},
+		Required:             []string{"queries"},
+		AdditionalProperties: &spec.SchemaOrBool{Allows: false},
+		Properties: map[string]spec.Schema{
+			"from": *spec.StringProperty().WithDescription(
+				"From Start time in epoch timestamps in milliseconds or relative using Grafana time units."),
+			"to": *spec.StringProperty().WithDescription(
+				"To end time in epoch timestamps in milliseconds or relative using Grafana time units."),
+			"queries": *spec.ArrayProperty(s),
+			"debug":   *spec.BoolProperty(),
+			"$schema": *spec.StringProperty().WithDescription("helper"),
 		},
 	}
 }
@@ -163,15 +159,13 @@ func addRequestWrapper(s *spec.Schema) *spec.Schema {
 // Pretends to be a panel object
 func addPanelWrapper(s *spec.Schema) *spec.Schema {
 	return &spec.Schema{
-		SchemaProps: spec.SchemaProps{
-			Schema:               draft04,
-			Type:                 []string{"object"},
-			Required:             []string{"targets", "type"},
-			AdditionalProperties: &spec.SchemaOrBool{Allows: true},
-			Properties: map[string]spec.Schema{
-				"type":    *spec.StringProperty().WithDescription("the panel type"),
-				"targets": *spec.ArrayProperty(s),
-			},
+		Schema:               draft04,
+		Type:                 []string{"object"},
+		Required:             []string{"targets", "type"},
+		AdditionalProperties: &spec.SchemaOrBool{Allows: true},
+		Properties: map[string]spec.Schema{
+			"type":    *spec.StringProperty().WithDescription("the panel type"),
+			"targets": *spec.ArrayProperty(s),
 		},
 	}
 }

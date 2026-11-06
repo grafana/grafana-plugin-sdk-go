@@ -24,20 +24,18 @@ func TestConversionsDefaults(t *testing.T) {
 
 func TestToBackendDataQueryJSON(t *testing.T) {
 	q := DataQuery{
-		CommonQueryProperties: CommonQueryProperties{
-			RefID: "A",
-			TimeRange: &TimeRange{
-				From: "12345678",
-				To:   "87654321",
-			},
-			Datasource: &DataSourceRef{
-				Type: "prometheus",
-				UID:  "hello-world",
-			},
-			QueryType:     "interesting",
-			MaxDataPoints: 42,
-			IntervalMS:    15.0,
+		RefID: "A",
+		TimeRange: &TimeRange{
+			From: "12345678",
+			To:   "87654321",
 		},
+		Datasource: &DataSourceRef{
+			Type: "prometheus",
+			UID:  "hello-world",
+		},
+		QueryType:     "interesting",
+		MaxDataPoints: 42,
+		IntervalMS:    15.0,
 	}
 
 	q.Set("key1", "value1")
