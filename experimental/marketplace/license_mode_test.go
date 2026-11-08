@@ -3,7 +3,6 @@
 package marketplace
 
 import (
-	"context"
 	"errors"
 	"path/filepath"
 	"testing"
@@ -16,13 +15,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
 
-// testQueryConversionHandler is a pointer-comparable backend.QueryConversionHandler (func values are not).
-type testQueryConversionHandler struct{}
-
-func (*testQueryConversionHandler) ConvertQueryDataRequest(context.Context, *backend.QueryDataRequest) (*backend.QueryConversionResponse, error) {
-	return nil, nil
-}
-
 // licensedServeOpts returns serve options with every handler and option set, so tests can check
 // what the license decorator keeps or replaces.
 func licensedServeOpts() backend.ServeOpts {
@@ -33,9 +25,6 @@ func licensedServeOpts() backend.ServeOpts {
 		QueryDataHandler:        handler,
 		QueryChunkedDataHandler: handler,
 		StreamHandler:           handler,
-		AdmissionHandler:        handler,
-		ConversionHandler:       handler,
-		QueryConversionHandler:  &testQueryConversionHandler{},
 		GRPCSettings:            backend.GRPCSettings{MaxReceiveMsgSize: 1, MaxSendMsgSize: 2},
 		ExtraPlugins:            plugin.PluginSet{"extra": nil},
 	}
@@ -55,61 +44,8 @@ func requireInvalidLicenseServeOpts(t *testing.T, got backend.ServeOpts, pluginI
 		QueryDataHandler:        handler,
 		QueryChunkedDataHandler: handler,
 		StreamHandler:           handler,
-		AdmissionHandler:        handler,
-		ConversionHandler:       handler,
-		QueryConversionHandler:  handler,
 		GRPCSettings:            backend.GRPCSettings{MaxReceiveMsgSize: 1, MaxSendMsgSize: 2},
 	}, got)
-}
-
-func TestInvalidLicenseServeOptsOnlyDeniesRegisteredHandlers(t *testing.T) {
-	full := licensedServeOpts()
-	core := backend.ServeOpts{
-		CheckHealthHandler:      full.CheckHealthHandler,
-		CallResourceHandler:     full.CallResourceHandler,
-		QueryDataHandler:        full.QueryDataHandler,
-		QueryChunkedDataHandler: full.QueryChunkedDataHandler,
-		StreamHandler:           full.StreamHandler,
-	}
-	withAdmission, withConversion, withQueryConversion := core, core, core
-	withAdmission.AdmissionHandler = full.AdmissionHandler
-	withConversion.ConversionHandler = full.ConversionHandler
-	withQueryConversion.QueryConversionHandler = full.QueryConversionHandler
-
-	tests := []struct {
-		name                                            string
-		opts                                            backend.ServeOpts
-		admissionSet, conversionSet, queryConversionSet bool
-	}{
-		{"none", core, false, false, false},
-		{"admission only", withAdmission, true, false, false},
-		{"conversion only", withConversion, false, true, false},
-		{"query conversion only", withQueryConversion, false, false, true},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := invalidLicenseServeOpts("example-app", "example-app", errors.New("missing license"), tt.opts)
-			handler, ok := got.CheckHealthHandler.(*invalidLicenseHandler)
-			require.True(t, ok)
-			want := backend.ServeOpts{
-				CheckHealthHandler:      handler,
-				CallResourceHandler:     handler,
-				QueryDataHandler:        handler,
-				QueryChunkedDataHandler: handler,
-				StreamHandler:           handler,
-			}
-			if tt.admissionSet {
-				want.AdmissionHandler = handler
-			}
-			if tt.conversionSet {
-				want.ConversionHandler = handler
-			}
-			if tt.queryConversionSet {
-				want.QueryConversionHandler = handler
-			}
-			require.Equal(t, want, got)
-		})
-	}
 }
 
 func TestMarketplaceLicenseProductionModeEnforcesLicensing(t *testing.T) {

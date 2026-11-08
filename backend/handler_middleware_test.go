@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/handlertest"
-	"github.com/stretchr/testify/require"
 )
 
 func TestHandlerFromMiddlewares(t *testing.T) {
@@ -18,9 +19,6 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 	var subscribeStreamCalled bool
 	var publishStreamCalled bool
 	var runStreamCalled bool
-	var mutateAdmissionCalled bool
-	var validateAdmissionCalled bool
-	var convertObjectCalled bool
 
 	c := &handlertest.Handler{
 		QueryDataFunc: func(_ context.Context, _ *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -50,18 +48,6 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 		RunStreamFunc: func(_ context.Context, _ *backend.RunStreamRequest, _ *backend.StreamSender) error {
 			runStreamCalled = true
 			return nil
-		},
-		MutateAdmissionFunc: func(_ context.Context, _ *backend.AdmissionRequest) (*backend.MutationResponse, error) {
-			mutateAdmissionCalled = true
-			return nil, nil
-		},
-		ValidateAdmissionFunc: func(_ context.Context, _ *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
-			validateAdmissionCalled = true
-			return nil, nil
-		},
-		ConvertObjectsFunc: func(_ context.Context, _ *backend.ConversionRequest) (*backend.ConversionResponse, error) {
-			convertObjectCalled = true
-			return nil, nil
 		},
 	}
 
@@ -102,15 +88,6 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 	_ = d.RunStream(context.Background(), &backend.RunStreamRequest{}, streamSender)
 	require.True(t, runStreamCalled)
 
-	_, _ = d.MutateAdmission(context.Background(), &backend.AdmissionRequest{})
-	require.True(t, mutateAdmissionCalled)
-
-	_, _ = d.ValidateAdmission(context.Background(), &backend.AdmissionRequest{})
-	require.True(t, validateAdmissionCalled)
-
-	_, _ = d.ConvertObjects(context.Background(), &backend.ConversionRequest{})
-	require.True(t, convertObjectCalled)
-
 	require.Len(t, ctx.QueryDataCallChain, 4)
 	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.QueryDataCallChain)
 	require.Len(t, ctx.CallResourceCallChain, 4)
@@ -125,27 +102,18 @@ func TestHandlerFromMiddlewares(t *testing.T) {
 	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.PublishStreamCallChain)
 	require.Len(t, ctx.RunStreamCallChain, 4)
 	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.RunStreamCallChain)
-	require.Len(t, ctx.MutateAdmissionCallChain, 4)
-	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.MutateAdmissionCallChain)
-	require.Len(t, ctx.ValidateAdmissionCallChain, 4)
-	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.ValidateAdmissionCallChain)
-	require.Len(t, ctx.ConvertObjectCallChain, 4)
-	require.EqualValues(t, []string{"before mw1", "before mw2", "after mw2", "after mw1"}, ctx.ConvertObjectCallChain)
 }
 
 type MiddlewareScenarioContext struct {
-	QueryDataCallChain         []string
-	QueryChunkedDataCallChain  []string
-	CallResourceCallChain      []string
-	CollectMetricsCallChain    []string
-	CheckHealthCallChain       []string
-	SubscribeStreamCallChain   []string
-	PublishStreamCallChain     []string
-	RunStreamCallChain         []string
-	InstanceSettingsCallChain  []string
-	ValidateAdmissionCallChain []string
-	MutateAdmissionCallChain   []string
-	ConvertObjectCallChain     []string
+	QueryDataCallChain        []string
+	QueryChunkedDataCallChain []string
+	CallResourceCallChain     []string
+	CollectMetricsCallChain   []string
+	CheckHealthCallChain      []string
+	SubscribeStreamCallChain  []string
+	PublishStreamCallChain    []string
+	RunStreamCallChain        []string
+	InstanceSettingsCallChain []string
 }
 
 func (ctx *MiddlewareScenarioContext) NewMiddleware(name string) backend.HandlerMiddleware {
@@ -218,25 +186,4 @@ func (m *TestMiddleware) RunStream(ctx context.Context, req *backend.RunStreamRe
 	err := m.next.RunStream(ctx, req, sender)
 	m.sCtx.RunStreamCallChain = append(m.sCtx.RunStreamCallChain, fmt.Sprintf("after %s", m.Name))
 	return err
-}
-
-func (m *TestMiddleware) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
-	m.sCtx.ValidateAdmissionCallChain = append(m.sCtx.ValidateAdmissionCallChain, fmt.Sprintf("before %s", m.Name))
-	res, err := m.next.ValidateAdmission(ctx, req)
-	m.sCtx.ValidateAdmissionCallChain = append(m.sCtx.ValidateAdmissionCallChain, fmt.Sprintf("after %s", m.Name))
-	return res, err
-}
-
-func (m *TestMiddleware) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.MutationResponse, error) {
-	m.sCtx.MutateAdmissionCallChain = append(m.sCtx.MutateAdmissionCallChain, fmt.Sprintf("before %s", m.Name))
-	res, err := m.next.MutateAdmission(ctx, req)
-	m.sCtx.MutateAdmissionCallChain = append(m.sCtx.MutateAdmissionCallChain, fmt.Sprintf("after %s", m.Name))
-	return res, err
-}
-
-func (m *TestMiddleware) ConvertObjects(ctx context.Context, req *backend.ConversionRequest) (*backend.ConversionResponse, error) {
-	m.sCtx.ConvertObjectCallChain = append(m.sCtx.ConvertObjectCallChain, fmt.Sprintf("before %s", m.Name))
-	res, err := m.next.ConvertObjects(ctx, req)
-	m.sCtx.ConvertObjectCallChain = append(m.sCtx.ConvertObjectCallChain, fmt.Sprintf("after %s", m.Name))
-	return res, err
 }

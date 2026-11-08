@@ -5,9 +5,10 @@ import (
 	"errors"
 	"testing"
 
+	"github.com/stretchr/testify/require"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/handlertest"
-	"github.com/stretchr/testify/require"
 )
 
 func TestErrorSourceMiddleware(t *testing.T) {
@@ -72,21 +73,6 @@ func TestErrorSourceMiddleware(t *testing.T) {
 				_, err = cdt.MiddlewareHandler.PublishStream(context.Background(), &backend.PublishStreamRequest{})
 				require.Error(t, err)
 				ss = backend.ErrorSourceFromContext(cdt.PublishStreamCtx)
-				require.Equal(t, tc.expErrorSource, ss)
-
-				_, err = cdt.MiddlewareHandler.ValidateAdmission(context.Background(), &backend.AdmissionRequest{})
-				require.Error(t, err)
-				ss = backend.ErrorSourceFromContext(cdt.ValidateAdmissionCtx)
-				require.Equal(t, tc.expErrorSource, ss)
-
-				_, err = cdt.MiddlewareHandler.MutateAdmission(context.Background(), &backend.AdmissionRequest{})
-				require.Error(t, err)
-				ss = backend.ErrorSourceFromContext(cdt.MutateAdmissionCtx)
-				require.Equal(t, tc.expErrorSource, ss)
-
-				_, err = cdt.MiddlewareHandler.ConvertObjects(context.Background(), &backend.ConversionRequest{})
-				require.Error(t, err)
-				ss = backend.ErrorSourceFromContext(cdt.ConvertObjectCtx)
 				require.Equal(t, tc.expErrorSource, ss)
 			})
 		}
@@ -213,17 +199,5 @@ func setupHandlersWithError(cdt *handlertest.HandlerMiddlewareTest, err error) {
 	cdt.TestHandler.RunStreamFunc = func(ctx context.Context, _ *backend.RunStreamRequest, _ *backend.StreamSender) error {
 		cdt.RunStreamCtx = ctx
 		return err
-	}
-	cdt.TestHandler.ValidateAdmissionFunc = func(ctx context.Context, _ *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
-		cdt.ValidateAdmissionCtx = ctx
-		return nil, err
-	}
-	cdt.TestHandler.MutateAdmissionFunc = func(ctx context.Context, _ *backend.AdmissionRequest) (*backend.MutationResponse, error) {
-		cdt.MutateAdmissionCtx = ctx
-		return nil, err
-	}
-	cdt.TestHandler.ConvertObjectsFunc = func(ctx context.Context, _ *backend.ConversionRequest) (*backend.ConversionResponse, error) {
-		cdt.ConvertObjectCtx = ctx
-		return nil, err
 	}
 }

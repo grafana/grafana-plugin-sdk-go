@@ -119,36 +119,3 @@ func (m *metricsMiddleware) RunStream(ctx context.Context, req *RunStreamRequest
 	})
 	return err
 }
-
-func (m *metricsMiddleware) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
-	var resp *ValidationResponse
-	err := m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = m.BaseHandler.ValidateAdmission(ctx, req)
-		return RequestStatusFromError(innerErr), innerErr
-	})
-
-	return resp, err
-}
-
-func (m *metricsMiddleware) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
-	var resp *MutationResponse
-	err := m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = m.BaseHandler.MutateAdmission(ctx, req)
-		return RequestStatusFromError(innerErr), innerErr
-	})
-
-	return resp, err
-}
-
-func (m *metricsMiddleware) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-	var resp *ConversionResponse
-	err := m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = m.BaseHandler.ConvertObjects(ctx, req)
-		return RequestStatusFromError(innerErr), innerErr
-	})
-
-	return resp, err
-}

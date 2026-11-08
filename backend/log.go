@@ -99,18 +99,3 @@ func (m *contextualLoggerMiddleware) RunStream(ctx context.Context, req *RunStre
 	ctx = m.setup(ctx, req.PluginContext)
 	return m.BaseHandler.RunStream(ctx, req, sender)
 }
-
-func (m *contextualLoggerMiddleware) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
-	ctx = m.setup(ctx, req.PluginContext)
-	return m.BaseHandler.ValidateAdmission(ctx, req)
-}
-
-func (m *contextualLoggerMiddleware) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
-	ctx = m.setup(ctx, req.PluginContext)
-	return m.BaseHandler.MutateAdmission(ctx, req)
-}
-
-func (m *contextualLoggerMiddleware) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-	ctx = m.setup(ctx, req.PluginContext)
-	return m.BaseHandler.ConvertObjects(ctx, req)
-}
