@@ -1,7 +1,6 @@
 package backend
 
 import (
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io/fs"
@@ -13,8 +12,6 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
-	"github.com/grafana/grafana-plugin-sdk-go/config"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
@@ -96,6 +93,20 @@ func TestConvertToProtobufQueryDataResponse(t *testing.T) {
 	}
 }
 
+func TestConvertToProtobufStatus(t *testing.T) {
+	ar := ToProto().StatusResult(&StatusResult{
+		Status:  "a",
+		Message: "b",
+		Reason:  "c",
+		Code:    234,
+	})
+	require.NotNil(t, ar)
+	require.Equal(t, "a", ar.Status)
+	require.Equal(t, "b", ar.Message)
+	require.Equal(t, "c", ar.Reason)
+	require.Equal(t, int32(234), ar.Code)
+}
+
 func TestInstanceSettingsConversion(t *testing.T) {
 	t.Run("DataSource", func(t *testing.T) {
 		before := &DataSourceInstanceSettings{
@@ -132,43 +143,4 @@ func TestInstanceSettingsConversion(t *testing.T) {
 		require.Equal(t, before.JSONData, after.JSONData)
 		require.Equal(t, before.DecryptedSecureJSONData, after.DecryptedSecureJSONData)
 	})
-}
-
-var testUserAgent, _ = useragent.New("7.0.0", "darwin", "amd64")
-
-var testPluginContext = PluginContext{
-	OrgID:         3,
-	PluginID:      "pluginID",
-	PluginVersion: "1.0.0",
-	User: &User{
-		Login: "login",
-		Name:  "name",
-		Email: "email",
-		Role:  "role",
-	},
-	AppInstanceSettings: &AppInstanceSettings{
-		Updated:                 time.Unix(1, 0),
-		JSONData:                []byte(`{"hello": "world"}`),
-		DecryptedSecureJSONData: map[string]string{"secret": "quiet"},
-		APIVersion:              "v1",
-	},
-	DataSourceInstanceSettings: &DataSourceInstanceSettings{
-		ID:                      1,
-		UID:                     "uid",
-		Type:                    "pluginID",
-		Name:                    "name",
-		URL:                     "http://example.com",
-		User:                    "user",
-		Database:                "database",
-		BasicAuthEnabled:        true,
-		BasicAuthUser:           "user",
-		JSONData:                json.RawMessage(`{"hello": "world"}`),
-		DecryptedSecureJSONData: map[string]string{"secret": "quiet"},
-		Updated:                 time.Unix(2, 0),
-		APIVersion:              "v1",
-	},
-	GrafanaConfig: config.NewGrafanaCfg(map[string]string{"key": "value"}),
-	UserAgent:     testUserAgent,
-	APIVersion:    "v1",
-	Namespace:     "org-6",
 }
