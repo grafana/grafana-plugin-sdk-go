@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
 
@@ -53,34 +54,37 @@ func checkMarketplacePluginLicenseWithDeps(
 	loadToken func(string) *licensing.LicenseToken,
 ) backend.ServeOpts {
 	token := loadToken(licensePluginID)
-	if token.Error != nil {
-		backend.Logger.Error("Marketplace License Error", "error", token.Error)
-		accepted, grace := isTokenValidOrWithinGracePeriod(token, time.Now())
-		if accepted {
-			backend.Logger.Error("The plugin will work until", "date", grace)
-			backend.Logger.Error("Update your instance soon to avoid any errors")
-			return serveOpts
-		}
-		return invalidLicenseServeOpts(pluginID, licensePluginID, token.Error, serveOpts)
+	if h := validateLicenseToken(token, pluginID, licensePluginID, backend.Logger); h != nil {
+		return invalidLicenseServeOpts(h, serveOpts)
 	}
 	return serveOpts
 }
 
-// isTokenValidOrWithinGracePeriod decides whether a parsed token allows the plugin to be served at now.
-// It is shared by startup and request-time validation. A token without error is accepted
-// with a zero grace deadline. An expired token is accepted, with its grace deadline, until
-// the grace period ends. Any other token with an error is refused.
-func isTokenValidOrWithinGracePeriod(token *licensing.LicenseToken, now time.Time) (accepted bool, grace time.Time) {
+// validateLicenseToken decides whether a parsed token allows the plugin to be served.
+// It is shared by startup and request-time validation. It returns nil if the token has no error,
+// or is expired but within its grace period (logging a warning). Otherwise it logs an error and
+// returns the handler that answers with the license error.
+func validateLicenseToken(token *licensing.LicenseToken, pluginID, licensePluginID string, logger log.Logger) *invalidLicenseHandler {
 	if token.Error == nil {
-		return true, time.Time{}
+		return nil
 	}
 	if token.Status == licensing.Expired {
 		// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
 		// token in case an on-prem instance loses internet connection
-		grace, ok := marketplaceLicenseGracePeriod(token, now)
-		return ok, grace
+		if grace, ok := marketplaceLicenseGracePeriod(token, time.Now()); ok {
+			logger.Warn("Marketplace license expired, update your instance soon to avoid any errors. The plugin will work until", "date", grace,
+				"error", token.Error, "pluginID", pluginID, "licensePluginID", licensePluginID)
+			return nil
+		}
 	}
-	return false, time.Time{}
+	h := &invalidLicenseHandler{
+		pluginID:     pluginID,
+		err:          invalidLicenseError(licensePluginID),
+		verboseError: token.Error,
+	}
+	logger.Error("Marketplace License Error, serving license errors only", "err", h.err.Error(),
+		"detailed error", token.Error.Error(), "pluginID", pluginID, "licensePluginID", licensePluginID)
+	return h
 }
 
 func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time) (time.Time, bool) {
@@ -129,19 +133,11 @@ func invalidLicenseError(licensePluginID string) error {
 	return fmt.Errorf("The Marketplace plugin %s is not available with your current subscription. To activate this plugin, please purchase a license by visiting https://grafana.com/grafana/plugins/%s", licensePluginID, licensePluginID)
 }
 
-// invalidLicenseServeOpts returns serve options whose handlers only return the license error.
+// invalidLicenseServeOpts returns serve options whose handlers are all h, which only returns the license error.
 // Admission, conversion and query conversion get license-denying handlers only if the plugin
 // registered them, so Grafana keeps falling back on Unimplemented for the others. Apart from
 // GRPCSettings, everything else (middlewares, ExtraPlugins) is dropped.
-// pluginID is the running plugin; licensePluginID is the ID the license is issued under.
-func invalidLicenseServeOpts(pluginID, licensePluginID string, verboseError error, serveOpts backend.ServeOpts) backend.ServeOpts {
-	err := invalidLicenseError(licensePluginID)
-	backend.Logger.Error("Marketplace License Error, serving license errors only", "err", err.Error(), "detailed error", verboseError.Error(), "pluginID", pluginID, "licensePluginID", licensePluginID)
-	handler := &invalidLicenseHandler{
-		pluginID:     pluginID,
-		err:          err,
-		verboseError: verboseError,
-	}
+func invalidLicenseServeOpts(handler *invalidLicenseHandler, serveOpts backend.ServeOpts) backend.ServeOpts {
 	opts := backend.ServeOpts{
 		CheckHealthHandler:      handler,
 		CallResourceHandler:     handler,

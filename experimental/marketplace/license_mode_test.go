@@ -88,7 +88,7 @@ func TestInvalidLicenseServeOptsOnlyDeniesRegisteredHandlers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := invalidLicenseServeOpts("example-app", "example-app", errors.New("missing license"), tt.opts)
+			got := invalidLicenseServeOpts(newTestInvalidLicenseHandler(), tt.opts)
 			handler, ok := got.CheckHealthHandler.(*invalidLicenseHandler)
 			require.True(t, ok)
 			want := backend.ServeOpts{

@@ -35,6 +35,8 @@ var queryTimeLicenseValidation = flag.Bool("qtlv", false,
 // "request", enables query-time license validation like the -qtlv flag.
 const marketplaceLicenseValidationModeEnv = "GF_MARKETPLACE_LICENSE_VALIDATION"
 
+// marketplaceLicenseValidationModeRequest is the expected value of the env var defined by
+// marketplaceLicenseValidationModeEnv (above) to enable query-time license validation.
 const marketplaceLicenseValidationModeRequest = "request"
 
 // Licensing returns a decorator that enforces marketplace licensing. Set it as the
@@ -68,6 +70,7 @@ const marketplaceLicenseValidationModeRequest = "request"
 // Builds with the marketplace_dev tag skip both kinds of checks.
 func Licensing(opts Opts) backend.ServeOptsDecorator {
 	return func(pluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
+		// developmentLicenseBypass can only be set at plugin build time
 		if developmentLicenseBypass {
 			backend.Logger.Warn(
 				"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
@@ -77,13 +80,15 @@ func Licensing(opts Opts) backend.ServeOptsDecorator {
 		}
 		licensePluginID := opts.licensePluginID(pluginID)
 		if *queryTimeLicenseValidation || os.Getenv(marketplaceLicenseValidationModeEnv) == marketplaceLicenseValidationModeRequest {
+			// Inject request-time license checks middleware
 			return applyRequestTimeLicense(pluginID, licensePluginID, serveOpts)
 		}
+		// Check license now: startup time license checks only
 		return checkMarketplacePluginLicense(pluginID, licensePluginID, serveOpts), nil
 	}
 }
 
-// applyRequestTimeLicense makes serveOpts validate the license of every request.
+// applyRequestTimeLicense makes serveOpts validate the license of every request by injecting the license checks middleware.
 func applyRequestTimeLicense(pluginID, licensePluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
 	return applyRequestTimeLicenseWithDeps(pluginID, licensePluginID, serveOpts, licensing.LoadTokenFromValue)
 }

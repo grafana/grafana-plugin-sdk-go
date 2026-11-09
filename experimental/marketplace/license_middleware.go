@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"time"
 
 	"google.golang.org/grpc/metadata"
 
@@ -81,22 +80,7 @@ func (m *licenseMiddleware) ensureValidLicense(ctx context.Context) *invalidLice
 		// parse also validates the license and sets LicenseToken.Error if it is invalid.
 		token = m.parse(info.LicenseToken, info.AppURL, info.ValidationKeys, m.licensePluginID)
 	}
-	accepted, grace := isTokenValidOrWithinGracePeriod(token, time.Now())
-	if accepted {
-		if token.Error != nil {
-			backend.Logger.FromContext(ctx).Debug("Marketplace license expired, the plugin will work until", "date", grace,
-				"error", token.Error, "pluginID", m.pluginID, "licensePluginID", m.licensePluginID)
-		}
-		return nil
-	}
-	h := &invalidLicenseHandler{
-		pluginID:     m.pluginID,
-		err:          invalidLicenseError(m.licensePluginID),
-		verboseError: token.Error,
-	}
-	backend.Logger.FromContext(ctx).Debug("Marketplace License Error, refusing request", "err", h.err.Error(),
-		"detailed error", token.Error.Error(), "pluginID", m.pluginID, "licensePluginID", m.licensePluginID)
-	return h
+	return validateLicenseToken(token, m.pluginID, m.licensePluginID, backend.Logger.FromContext(ctx))
 }
 
 func (m *licenseMiddleware) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
