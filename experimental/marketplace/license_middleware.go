@@ -69,8 +69,10 @@ func newLicenseMiddleware(pluginID, licensePluginID string, parse licenseParser)
 	})
 }
 
-// ensureValidLicense returns nil if the request in ctx is licensed. Otherwise it returns the handler
-// that answers the request with the license error.
+// ensureValidLicense returns nil if the request in ctx is licensed (or expired but within its grace
+// period): the caller then forwards the request to the next handler in the middleware chain.
+// Otherwise it returns the handler that answers the request with the license error, and the
+// request is not forwarded.
 //
 // The license is read only from the request's gRPC metadata, never from environment variables
 // or license files. Missing or unparsable metadata is refused without calling parse.
@@ -80,7 +82,10 @@ func (m *licenseMiddleware) ensureValidLicense(ctx context.Context) *invalidLice
 		// parse also validates the license and sets LicenseToken.Error if it is invalid.
 		token = m.parse(info.LicenseToken, info.AppURL, info.ValidationKeys, m.licensePluginID)
 	}
-	return validateLicenseToken(token, m.pluginID, m.licensePluginID, backend.Logger.FromContext(ctx))
+	if err := validateLicenseToken(token, m.pluginID, m.licensePluginID, backend.Logger.FromContext(ctx)); err != nil {
+		return newInvalidLicenseHandler(m.pluginID, m.licensePluginID, err)
+	}
+	return nil
 }
 
 func (m *licenseMiddleware) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {

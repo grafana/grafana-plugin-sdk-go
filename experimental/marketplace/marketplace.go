@@ -83,8 +83,9 @@ func Licensing(opts Opts) backend.ServeOptsDecorator {
 			// Inject request-time license checks middleware
 			return applyRequestTimeLicense(pluginID, licensePluginID, serveOpts)
 		}
-		// Check license now: startup time license checks only
-		return checkMarketplacePluginLicense(pluginID, licensePluginID, serveOpts), nil
+		// Startup-time mode: load and validate the license once, now, from env vars or the license file.
+		// If it is invalid, the plugin serves only license errors until it is restarted.
+		return applyStartupTimeLicense(pluginID, licensePluginID, serveOpts), nil
 	}
 }
 

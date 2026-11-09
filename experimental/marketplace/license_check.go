@@ -38,24 +38,24 @@ const (
 
 var validPluginID = regexp.MustCompile(`^[a-z0-9]+(-[a-z0-9]+)*$`)
 
-// checkMarketplacePluginLicense validates the license for licensePluginID, which is
+// applyStartupTimeLicense validates the license for licensePluginID, which is
 // the plugin's own ID unless it is nested, in which case it is the parent's ID.
 // pluginID is the ID of the running plugin.
 //
 // It returns serveOpts unchanged if the license is valid, or expired but within its
 // grace period. Otherwise it returns serve options that only return the license error.
-func checkMarketplacePluginLicense(pluginID, licensePluginID string, serveOpts backend.ServeOpts) backend.ServeOpts {
-	return checkMarketplacePluginLicenseWithDeps(pluginID, licensePluginID, serveOpts, readPluginLicense)
+func applyStartupTimeLicense(pluginID, licensePluginID string, serveOpts backend.ServeOpts) backend.ServeOpts {
+	return applyStartupTimeLicenseWithDeps(pluginID, licensePluginID, serveOpts, readPluginLicense)
 }
 
-func checkMarketplacePluginLicenseWithDeps(
+func applyStartupTimeLicenseWithDeps(
 	pluginID, licensePluginID string,
 	serveOpts backend.ServeOpts,
 	loadToken func(string) *licensing.LicenseToken,
 ) backend.ServeOpts {
 	token := loadToken(licensePluginID)
-	if h := validateLicenseToken(token, pluginID, licensePluginID, backend.Logger); h != nil {
-		return invalidLicenseServeOpts(h, serveOpts)
+	if err := validateLicenseToken(token, pluginID, licensePluginID, backend.Logger); err != nil {
+		return invalidLicenseServeOpts(newInvalidLicenseHandler(pluginID, licensePluginID, err), serveOpts)
 	}
 	return serveOpts
 }
@@ -63,8 +63,8 @@ func checkMarketplacePluginLicenseWithDeps(
 // validateLicenseToken decides whether a parsed token allows the plugin to be served.
 // It is shared by startup and request-time validation. It returns nil if the token has no error,
 // or is expired but within its grace period (logging a warning). Otherwise it logs an error and
-// returns the handler that answers with the license error.
-func validateLicenseToken(token *licensing.LicenseToken, pluginID, licensePluginID string, logger log.Logger) *invalidLicenseHandler {
+// returns the token's error.
+func validateLicenseToken(token *licensing.LicenseToken, pluginID, licensePluginID string, logger log.Logger) error {
 	if token.Error == nil {
 		return nil
 	}
@@ -77,14 +77,9 @@ func validateLicenseToken(token *licensing.LicenseToken, pluginID, licensePlugin
 			return nil
 		}
 	}
-	h := &invalidLicenseHandler{
-		pluginID:     pluginID,
-		err:          invalidLicenseError(licensePluginID),
-		verboseError: token.Error,
-	}
-	logger.Error("Marketplace License Error, serving license errors only", "err", h.err.Error(),
+	logger.Error("Marketplace License Error, serving license errors only", "err", invalidLicenseError(licensePluginID).Error(),
 		"detailed error", token.Error.Error(), "pluginID", pluginID, "licensePluginID", licensePluginID)
-	return h
+	return token.Error
 }
 
 func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time) (time.Time, bool) {
@@ -131,6 +126,16 @@ func readPluginLicense(pluginID string) *licensing.LicenseToken {
 func invalidLicenseError(licensePluginID string) error {
 	//nolint:staticcheck // error to be used in grafana
 	return fmt.Errorf("The Marketplace plugin %s is not available with your current subscription. To activate this plugin, please purchase a license by visiting https://grafana.com/grafana/plugins/%s", licensePluginID, licensePluginID)
+}
+
+// newInvalidLicenseHandler returns a handler that answers every request with the license error
+// for licensePluginID. verboseError is the detailed validation error, only shown in health check details.
+func newInvalidLicenseHandler(pluginID, licensePluginID string, verboseError error) *invalidLicenseHandler {
+	return &invalidLicenseHandler{
+		pluginID:     pluginID,
+		err:          invalidLicenseError(licensePluginID),
+		verboseError: verboseError,
+	}
 }
 
 // invalidLicenseServeOpts returns serve options whose handlers are all h, which only returns the license error.
