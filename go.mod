@@ -49,7 +49,7 @@ require (
 	golang.org/x/sync v0.24.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/text v0.43.0
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261026165753-2ffab32bce7e
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261104224025-d1e00e9f33ab
 	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12
 	k8s.io/kube-openapi v0.0.0-20260821135717-be32def86098 // @grafana/grafana-app-platform-squad
