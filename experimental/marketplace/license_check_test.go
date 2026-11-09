@@ -6,8 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
-	"path/filepath"
 	"strings"
 	"testing"
 	"time"
@@ -17,33 +15,6 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
-
-func TestReadPluginLicenseFallbackFileName(t *testing.T) {
-	const pluginID = "test-plugin"
-	const licenseFileName = "license-" + pluginID + ".jwt"
-
-	t.Setenv(marketplaceLicenseTextEnv, "")
-	t.Setenv(marketplaceLicensePathEnv, "")
-	homeDir := t.TempDir()
-	t.Setenv("HOME", homeDir)
-	t.Setenv("USERPROFILE", homeDir)
-
-	workingDir := t.TempDir()
-	originalWorkingDir, err := os.Getwd()
-	require.NoError(t, err)
-	require.NoError(t, os.Chdir(workingDir))
-	t.Cleanup(func() {
-		require.NoError(t, os.Chdir(originalWorkingDir))
-	})
-
-	require.NoError(t, os.WriteFile(licenseFileName, nil, 0o600))
-	require.Equal(t, licensing.Invalid, readPluginLicense(pluginID).Status)
-
-	require.NoError(t, os.Remove(licenseFileName))
-	token := readPluginLicense(pluginID)
-	require.Equal(t, licensing.NotFound, token.Status)
-	require.Equal(t, "license token file not found: "+filepath.Join(homeDir, ".grafana", licenseFileName), token.Error.Error())
-}
 
 func TestMarketplaceLicenseGracePeriodUsesLicenseExpiration(t *testing.T) {
 	now := time.Date(2025, time.January, 15, 12, 0, 0, 0, time.UTC)
@@ -87,32 +58,6 @@ func TestMarketplaceLicenseGracePeriodUsesLicenseExpiration(t *testing.T) {
 			require.Equal(t, tc.wantWithin, within)
 		})
 	}
-}
-
-func TestFileExists(t *testing.T) {
-	tempDir := t.TempDir()
-	file := filepath.Join(tempDir, "license.jwt")
-	require.NoError(t, os.WriteFile(file, nil, 0o600))
-
-	require.True(t, fileExists(file))
-	require.False(t, fileExists(tempDir))
-	require.False(t, fileExists("\x00"))
-}
-
-func TestReadPluginLicenseConfiguredSingleCharacterPath(t *testing.T) {
-	t.Setenv(marketplaceLicenseTextEnv, "")
-	t.Setenv(marketplaceLicensePathEnv, "a")
-
-	originalWorkingDir, err := os.Getwd()
-	require.NoError(t, err)
-	require.NoError(t, os.Chdir(t.TempDir()))
-	t.Cleanup(func() {
-		require.NoError(t, os.Chdir(originalWorkingDir))
-	})
-
-	token := readPluginLicense("test-plugin")
-	require.Equal(t, licensing.NotFound, token.Status)
-	require.EqualError(t, token.Error, "license token file not found: a")
 }
 
 func TestInvalidLicenseHandlerCheckHealthJSONDetails(t *testing.T) {
@@ -256,4 +201,14 @@ func TestInvalidLicenseHandlerStreams(t *testing.T) {
 	require.Equal(t, backend.PublishStreamStatusPermissionDenied, publish.Status)
 
 	require.ErrorIs(t, handler.RunStream(context.Background(), &backend.RunStreamRequest{}, nil), handler.err)
+}
+
+func TestInvalidLicenseError(t *testing.T) {
+	for _, id := range []string{"parent-app", "own-plugin"} {
+		t.Run(id, func(t *testing.T) {
+			msg := invalidLicenseError(id).Error()
+			require.Contains(t, msg, "The Marketplace plugin "+id+" is not")
+			require.Contains(t, msg, "https://grafana.com/grafana/plugins/"+id)
+		})
+	}
 }

@@ -171,3 +171,33 @@ func (h *licensedQueryConversionHandler) ConvertQueryDataRequest(ctx context.Con
 	}
 	return h.next.ConvertQueryDataRequest(ctx, req)
 }
+
+// applyRequestTimeLicense makes serveOpts validate the license of every request by injecting the license checks middleware.
+func applyRequestTimeLicense(pluginID, licensePluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
+	return applyRequestTimeLicenseWithDeps(pluginID, licensePluginID, serveOpts, licensing.LoadTokenFromValue)
+}
+
+func applyRequestTimeLicenseWithDeps(
+	pluginID, licensePluginID string,
+	serveOpts backend.ServeOpts,
+	parse licenseParser,
+) (backend.ServeOpts, error) {
+	if len(serveOpts.ExtraPlugins) > 0 {
+		return backend.ServeOpts{}, errors.New("marketplace: ExtraPlugins are not supported with query-time license validation")
+	}
+
+	middleware := newLicenseMiddleware(pluginID, licensePluginID, parse)
+	// Copy instead of prepending in place, so the caller's slice is not modified.
+	serveOpts.HandlerMiddlewares = append([]backend.HandlerMiddleware{middleware}, serveOpts.HandlerMiddlewares...)
+	if serveOpts.QueryConversionHandler != nil {
+		serveOpts.QueryConversionHandler = &licensedQueryConversionHandler{
+			next: serveOpts.QueryConversionHandler,
+			middleware: &licenseMiddleware{
+				pluginID:        pluginID,
+				licensePluginID: licensePluginID,
+				parse:           parse,
+			},
+		}
+	}
+	return serveOpts, nil
+}
