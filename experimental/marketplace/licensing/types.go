@@ -105,7 +105,13 @@ func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId stri
 		token.UpdateDays = 1
 	}
 
-	logger.Debug("license token parsed", "token", token)
+	logger.Debug(
+		"license token parsed",
+		"id", token.Id,
+		"licenseId", token.LicenseId,
+		"expires", time.Unix(token.Expires, 0),
+		"licenseExpires", time.Unix(token.LicenseExpires, 0),
+	)
 	return token.validate(appUrl, pluginId)
 }
 
