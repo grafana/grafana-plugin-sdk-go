@@ -88,7 +88,7 @@ func TestInvalidLicenseServeOptsOnlyDeniesRegisteredHandlers(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got := invalidLicenseServeOpts("example-app", "example-app", errors.New("missing license"), tt.opts)
+			got := invalidLicenseServeOpts(newTestInvalidLicenseHandler(), tt.opts)
 			handler, ok := got.CheckHealthHandler.(*invalidLicenseHandler)
 			require.True(t, ok)
 			want := backend.ServeOpts{
@@ -122,7 +122,7 @@ func TestMarketplaceLicenseProductionModeEnforcesLicensing(t *testing.T) {
 			licenseErr := errors.New("missing license")
 			loadCalled := false
 
-			got := checkMarketplacePluginLicenseWithDeps(
+			got := applyStartupTimeLicenseWithDeps(
 				"example-datasource", licensePluginID, licensedServeOpts(),
 				func(pluginID string) *licensing.LicenseToken {
 					loadCalled = true
@@ -169,7 +169,7 @@ func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			serveOpts := licensedServeOpts()
-			got := checkMarketplacePluginLicenseWithDeps("example-app", "example-app", serveOpts, func(string) *licensing.LicenseToken {
+			got := applyStartupTimeLicenseWithDeps("example-app", "example-app", serveOpts, func(string) *licensing.LicenseToken {
 				return tt.token
 			})
 			if tt.licensed {
@@ -184,6 +184,8 @@ func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 func TestLicensingWithoutLicenseServesLicenseErrors(t *testing.T) {
 	t.Setenv(marketplaceLicenseTextEnv, "")
 	t.Setenv(marketplaceLicensePathEnv, filepath.Join(t.TempDir(), "missing.jwt"))
+	t.Setenv(marketplaceLicenseValidationModeEnv, "")
+	setQueryTimeLicenseValidation(t, false)
 
 	for _, tt := range []struct {
 		name            string
