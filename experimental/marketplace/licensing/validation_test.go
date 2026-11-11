@@ -208,7 +208,7 @@ func TestLoadExpiredTokenChecksEligibility(t *testing.T) {
 		status   TokenStatus
 		expErr   error
 	}{
-		{"matching plugin", testPluginID, nil, Expired, errLicenseExpired},
+		{"matching plugin", testPluginID, nil, ExpiredInGracePeriod, errLicenseExpired},
 		{"other plugin", "other-plugin", nil, Invalid, errMarketplacePluginNotIncluded},
 		{"blocked license", testPluginID, map[string]struct{}{"327110496": {}}, Invalid, errLicenseInvalid},
 	}

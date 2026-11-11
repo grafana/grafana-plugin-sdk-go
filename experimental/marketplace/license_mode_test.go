@@ -139,7 +139,7 @@ func TestMarketplaceLicenseProductionModeEnforcesLicensing(t *testing.T) {
 
 func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 	expiredWithinGrace := &licensing.LicenseToken{
-		Status:         licensing.Expired,
+		Status:         licensing.ExpiredInGracePeriod,
 		Error:          errors.New("token expired"),
 		LicenseExpires: time.Now().Add(-24 * time.Hour).Unix(),
 	}
