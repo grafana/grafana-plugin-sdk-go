@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"maps"
 	"os"
+	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 
@@ -30,6 +31,11 @@ var embeddedKeys = map[string]string{
 	"ops-01":     `{"kty":"RSA","kid":"ops-01","alg":"RS512","n":"s4SrDRyR3oXgO1wsXsYqJUC44B8Zhnzi7XTqFHNiyd5i5Dqh4OPikLbRBNLrXQ-bI2y3zbrgXHJWEOEowOZplhB-KlI9CnifDBQY4SzQ_K2nLiOkNmb-V427HnYFIVH1LiSSDkAj7-flOqRKc9PiQImlwdLXwpoY1fV2yHKG0_cSxxNYK0Qfk6aO7jGOUlGFhdrW0E86SJYER-S0bUzFFuUTF4VqkK4j5SxA3oPVm6UHZInHHdyVtzj5YiZb-Nqw51WkNBVcZnOil9GYjXSPnPhKwtjDwk5JXs4PBiAIejzmQMf1Ah1IxO_jBThOlDsDbfREZaLag2VWb3sDwoPwrGnO2HzqHBHXdZeTgiesAODCTgv_tU97vNwt0XYPnrumsFapeJG2j505CWWbLDq9KiwBXnhIvzA1oiik2AXT4RwEcmQ2m-O9LcK8keSwCb7nGwY8SZn-rcJnGdsyDu45fvxxvrXo6n0R2Smy-X8fSbL50t0kj4p8pAp-nqjuMsQHaTwVhuWVTq5FZQDrR1Wv00xtcxBA4q2Yk0eKy9hNqzs50s74JwHx29AhPzMaNdwtcUEFH4guskGd-V_i97xKKe_lRvoh4jDwvnVCMWPvdZbT5UcxDI9kL4dyVYzvGdb7NonnrET5bASsp_f_4aK8zWWClbmwWJ53tjAYUwJ6eQk","e":"AQAB"}`,
 	"prod-01":    `{"kty":"RSA","kid":"prod-01","alg":"RS512","n":"yXFDjzKKnKCVBYOV3x5kUPbPT4NBUzclPSi5ixO1_vg8s1lHyOhA13hdPGeZlmjpnVp0WiIbC7yS6eIDGGUdgVCQyk-xAPayupVRZOZjSFzEXgOP4rO2AyYbdTS89hhR5f6JFhoYa6LgGJVCEtlZtQJ1wi_Li8mzZm7bDLZb0MU84DnGPpALAAcHTzn7hs1fT7e-wNjtj2ceEJpTtbuW-coaOmAuOl3pxaq7YqSd4nfIehqtPqmnE9oZrtjU666oZGV9TNq3DOmatWj2BKg9ocd129S2lBo-uyfG1dyaE3vBEQQhIlhuiyKFvl5ThPESU56FNOWGoEGg0Lbs_cpz8jLtsGgna_A9_jb3k0FCa6lmxnIDJkX1Oe9BA6Jm0NQLrzhpaZXAKptF9XIeJ5MvFJGMhhNFs7cHPabQeIoDaHy0a4tfvsD6UBYAm2TpJMtfSxqtbUr0AyuBDspcEw3f0U6jGm5QgG98ApYb1LPGhS8h-NM3IBDpRlPxReCQrLvrJwIpK7enPwH4mjram-shjJm0xgbqbJNxcsPdTYPfAwzsVdOIImxV6k2irD692e_UGxn1YBz-UOG5XCGTnWV0Y_Ac_YbhojozavBO3prGCCqwJMm-O4pZcPdYhjJj9IWuGJHOE0bVisBJyiqewT1X6srSZPQPUm17rW3w4e5LxPE","e":"AQAB"}`,
 }
+
+// deniedKeyIDs are the key IDs whose tokens and validation key bundles are never accepted, for example
+// because their private key leaked. It covers embedded keys and keys from validation key bundles,
+// so key IDs must never be reused. The value of each key is ignored.
+var deniedKeyIDs = map[string]struct{}{}
 
 func LoadTokenFromValue(tokenStr, appUrl, validationKeys, pluginId string) *LicenseToken {
 	var token LicenseToken
@@ -63,6 +69,10 @@ func unwrapSignedJWT(keys map[string]string, parsed *jose.JSONWebSignature) ([]b
 	}
 	signature := parsed.Signatures[0]
 
+	if _, denied := deniedKeyIDs[signature.Protected.KeyID]; denied {
+		// Like blocked licenses, report a generic error.
+		return nil, errLicenseInvalid
+	}
 	k, ok := keys[signature.Protected.KeyID]
 	if !ok {
 		return nil, errVerificationKeyNotFound
@@ -90,47 +100,82 @@ func unwrapSignedJWT(keys map[string]string, parsed *jose.JSONWebSignature) ([]b
 	return payload, nil
 }
 
-func keySet(validationKeys string) (map[string]string, error) {
+// keySet returns the embedded keys plus the keys of every bundle in validationKeys that can be verified.
+// Bundles that cannot be verified add no keys, so tokens signed by other keys still validate. They are only
+// logged at debug level: Grafana can send bundles signed by roots that older plugin builds do not embed, and
+// in request mode validationKeys is parsed on every request. Grafana reports bad bundles itself, with
+// VerifyValidationKeys.
+func keySet(validationKeys string) map[string]string {
 	if validationKeys == "" {
-		return embeddedKeys, nil
+		return embeddedKeys
 	}
+	keys, errs := loadKeySet(validationKeys)
+	for _, err := range errs {
+		backend.Logger.Debug("Ignoring marketplace license validation keys that cannot be verified", "error", err)
+	}
+	return keys
+}
 
-	keys := make(map[string]string)
-	maps.Copy(keys, embeddedKeys)
+// VerifyValidationKeys reports the bundles in validationKeys that cannot be verified, and are therefore
+// ignored when validating license tokens. It returns nil if validationKeys is empty.
+//
+// validationKeys holds one or more validation key bundles separated by commas. A bundle is a JWS whose
+// payload is a JWKS of additional public keys, signed by an embedded key.
+func VerifyValidationKeys(validationKeys string) error {
+	_, errs := loadKeySet(validationKeys)
+	return errors.Join(errs...)
+}
 
-	signed, err := jose.ParseSigned(validationKeys)
+// loadKeySet returns the embedded keys plus the keys of every bundle that can be verified, and an error for
+// each bundle that cannot. Bundles are verified only with embedded keys, so a bundle cannot add keys that
+// verify other bundles. A bundle key whose ID is already used keeps the existing key.
+func loadKeySet(validationKeys string) (map[string]string, []error) {
+	keys := maps.Clone(embeddedKeys)
+	var errs []error
+	for i, bundle := range strings.Split(validationKeys, ",") {
+		bundle = strings.TrimSpace(bundle)
+		if bundle == "" {
+			continue
+		}
+		bundleKeys, err := verifyBundle(bundle)
+		if err != nil {
+			errs = append(errs, fmt.Errorf("validation key bundle %d: %w", i+1, err))
+			continue
+		}
+		for _, key := range bundleKeys {
+			rawKey, err := json.Marshal(key)
+			if err != nil {
+				errs = append(errs, fmt.Errorf("validation key bundle %d: %w: %w", i+1, errLicenseVerificationKey, err))
+				continue
+			}
+			if other, exists := keys[key.KeyID]; exists {
+				// If duplicates were handled as an error, a bundle could not add a key next to the embedded keys.
+				backend.Logger.Debug("license validation key duplicate detected, using the existing key",
+					"keyID", key.KeyID,
+					"existing", other,
+					"provided", string(rawKey),
+				)
+				continue
+			}
+			keys[key.KeyID] = string(rawKey)
+		}
+	}
+	return keys, errs
+}
+
+// verifyBundle verifies a validation key bundle with the embedded keys and returns its keys.
+func verifyBundle(bundle string) ([]jose.JSONWebKey, error) {
+	signed, err := jose.ParseSigned(bundle)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %w", errLicenseVerificationKey, err)
 	}
-
-	jwks, err := unwrapSignedJWT(keys, signed)
+	jwks, err := unwrapSignedJWT(embeddedKeys, signed)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load custom validation key: %w", err)
 	}
-
 	keySet := jose.JSONWebKeySet{}
-	err = json.Unmarshal(jwks, &keySet)
-	if err != nil {
+	if err := json.Unmarshal(jwks, &keySet); err != nil {
 		return nil, fmt.Errorf("%w: %w", errLicenseVerificationKey, err)
 	}
-
-	for _, key := range keySet.Keys {
-		rawKey, err := json.Marshal(key)
-		if err != nil {
-			return nil, fmt.Errorf("%w: %w", errLicenseVerificationKey, err)
-		}
-		if other, exists := keys[key.KeyID]; exists {
-			// If duplicates was handled as an error, we couldn't
-			// add a new key to the static keys list.
-			backend.Logger.Debug("license validation key duplicate detected, using embedded",
-				"keyID", key.KeyID,
-				"embedded", other,
-				"provided", string(rawKey),
-			)
-			continue
-		}
-		keys[key.KeyID] = string(rawKey)
-	}
-
-	return keys, nil
+	return keySet.Keys, nil
 }

@@ -16,7 +16,8 @@ var errNoLicenseFound = errors.New("no license found in the request metadata")
 const upstreamLicenseHeader = "license"
 
 // licenseInfo is the license information supplied by Grafana on each request.
-// Its metadata format matches the Grafana Enterprise SDK.
+// Its metadata format matches the Grafana Enterprise SDK. ValidationKeys has the same format as the
+// GF_MARKETPLACE_LICENSE_VALIDATION_KEY environment variable.
 type licenseInfo struct {
 	LicenseToken   string `json:"licenseToken"`
 	AppURL         string `json:"appURL"`

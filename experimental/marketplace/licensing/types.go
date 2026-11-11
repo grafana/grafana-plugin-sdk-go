@@ -97,14 +97,7 @@ func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId stri
 		return false
 	}
 
-	keys, err := keySet(validationKeys)
-	if err != nil {
-		token.Status = Invalid
-		token.Error = err
-		return false
-	}
-
-	payload, err := unwrapSignedJWT(keys, parsed)
+	payload, err := unwrapSignedJWT(keySet(validationKeys), parsed)
 	if err != nil {
 		token.Status = Invalid
 		token.Error = err
