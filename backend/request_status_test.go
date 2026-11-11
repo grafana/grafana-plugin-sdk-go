@@ -178,3 +178,27 @@ func TestRequestStatusFromErrorString(t *testing.T) {
 		})
 	}
 }
+
+func TestRequestStatusFromHTTPStatus(t *testing.T) {
+	for code, expected := range map[int]RequestStatus{
+		200: RequestStatusOK,
+		204: RequestStatusOK,
+		302: RequestStatusOK,
+		399: RequestStatusOK,
+		400: RequestStatusError,
+		404: RequestStatusError,
+		500: RequestStatusError,
+		503: RequestStatusError,
+	} {
+		require.Equal(t, expected, RequestStatusFromHTTPStatus(code), "status code %d", code)
+	}
+}
+
+func TestRequestStatusFromCheckHealthResult(t *testing.T) {
+	require.Equal(t, RequestStatusOK, RequestStatusFromCheckHealthResult(&CheckHealthResult{Status: HealthStatusOk}, nil))
+	require.Equal(t, RequestStatusOK, RequestStatusFromCheckHealthResult(&CheckHealthResult{Status: HealthStatusUnknown}, nil))
+	require.Equal(t, RequestStatusOK, RequestStatusFromCheckHealthResult(nil, nil))
+	require.Equal(t, RequestStatusError, RequestStatusFromCheckHealthResult(&CheckHealthResult{Status: HealthStatusError}, nil))
+	require.Equal(t, RequestStatusError, RequestStatusFromCheckHealthResult(&CheckHealthResult{Status: HealthStatusOk}, errors.New("boom")))
+	require.Equal(t, RequestStatusCancelled, RequestStatusFromCheckHealthResult(nil, context.Canceled))
+}
