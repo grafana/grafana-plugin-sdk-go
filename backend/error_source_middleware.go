@@ -90,25 +90,21 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 }
 
 func (m *ErrorSourceMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
-	hasPluginError := false
+	// Mirror QueryData: default untagged error responses to plugin, record which
+	// sources were seen, and decide the request's source once the handler returns.
+	var hasPluginError, hasDownstreamError bool
 	sourceSender := CallResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
-		if resp != nil {
-			// As with QueryData, an error response without an explicit source is a
-			// plugin error. The response status is the plugin's own reply, not the
-			// downstream status, so it is not used to infer a source.
-			if !resp.ErrorSource.IsValid() && resp.Status >= 400 {
+		if resp != nil && resp.Status >= 400 {
+			// The response status is the plugin's own reply, not the downstream
+			// status, so it is not used to infer a source.
+			if !resp.ErrorSource.IsValid() {
 				resp.ErrorSource = ErrorSourcePlugin
 			}
 
-			// A plugin error takes precedence over all downstream responses, regardless
-			// of the order in which the handler sends them.
-			if resp.ErrorSource == ErrorSourcePlugin {
+			if resp.ErrorSource == ErrorSourceDownstream {
+				hasDownstreamError = true
+			} else {
 				hasPluginError = true
-			}
-			if resp.ErrorSource.IsValid() && (!hasPluginError || resp.ErrorSource == ErrorSourcePlugin) {
-				if err := WithErrorSource(ctx, resp.ErrorSource); err != nil {
-					return err
-				}
 			}
 		}
 
@@ -116,12 +112,21 @@ func (m *ErrorSourceMiddleware) CallResource(ctx context.Context, req *CallResou
 	})
 
 	err := m.BaseHandler.CallResource(ctx, req, sourceSender)
-	if err != nil && !IsDownstreamError(err) {
-		if innerErr := WithErrorSource(ctx, ErrorSourcePlugin); innerErr != nil {
-			return fmt.Errorf("failed to set plugin error source: %w", errors.Join(innerErr, err))
+	// A returned error decides the source on its own, as in QueryData.
+	err = m.handleDownstreamError(ctx, err)
+	if err != nil {
+		return err
+	}
+
+	// A plugin error has higher priority than a downstream error,
+	// so set to downstream only if there's no plugin error.
+	if hasDownstreamError && !hasPluginError {
+		if err := WithDownstreamErrorSource(ctx); err != nil {
+			return fmt.Errorf("failed to set downstream error source: %w", err)
 		}
 	}
-	return m.handleDownstreamError(ctx, err)
+
+	return nil
 }
 
 func (m *ErrorSourceMiddleware) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {

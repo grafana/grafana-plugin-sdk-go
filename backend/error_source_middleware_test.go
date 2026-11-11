@@ -307,6 +307,71 @@ func TestErrorSourceMiddleware(t *testing.T) {
 		require.ErrorIs(t, err, someErr)
 		require.Equal(t, backend.ErrorSourcePlugin, backend.ErrorSourceFromContext(cdt.CallResourceCtx))
 	})
+
+	t.Run("CallResource response source precedence", func(t *testing.T) {
+		for _, tc := range []struct {
+			name      string
+			responses []*backend.CallResourceResponse
+			err       error
+			expected  backend.ErrorSource
+		}{
+			{
+				name:      "downstream only",
+				responses: []*backend.CallResourceResponse{{Status: 502, ErrorSource: backend.ErrorSourceDownstream}},
+				expected:  backend.ErrorSourceDownstream,
+			},
+			{
+				name: "plugin before downstream",
+				responses: []*backend.CallResourceResponse{
+					{Status: 500, ErrorSource: backend.ErrorSourcePlugin},
+					{Status: 502, ErrorSource: backend.ErrorSourceDownstream},
+				},
+				expected: backend.ErrorSourcePlugin,
+			},
+			{
+				name: "untagged error after downstream",
+				responses: []*backend.CallResourceResponse{
+					{Status: 502, ErrorSource: backend.ErrorSourceDownstream},
+					{Status: 500},
+				},
+				expected: backend.ErrorSourcePlugin,
+			},
+			{
+				name:      "source on a success response is ignored",
+				responses: []*backend.CallResourceResponse{{Status: 200, ErrorSource: backend.ErrorSourceDownstream}},
+				expected:  backend.ErrorSourcePlugin,
+			},
+			{
+				name:      "returned downstream error",
+				responses: []*backend.CallResourceResponse{{Status: 500, ErrorSource: backend.ErrorSourcePlugin}},
+				err:       backend.DownstreamErrorf("upstream unavailable"),
+				expected:  backend.ErrorSourceDownstream,
+			},
+		} {
+			t.Run(tc.name, func(t *testing.T) {
+				cdt := handlertest.NewHandlerMiddlewareTest(t,
+					handlertest.WithMiddlewares(backend.NewErrorSourceMiddleware()),
+				)
+				cdt.TestHandler.CallResourceFunc = func(ctx context.Context, _ *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
+					cdt.CallResourceCtx = ctx
+					for _, r := range tc.responses {
+						require.NoError(t, sender.Send(r))
+					}
+					return tc.err
+				}
+
+				err := cdt.MiddlewareHandler.CallResource(context.Background(), &backend.CallResourceRequest{}, backend.CallResourceResponseSenderFunc(func(_ *backend.CallResourceResponse) error {
+					return nil
+				}))
+				if tc.err != nil {
+					require.ErrorIs(t, err, tc.err)
+				} else {
+					require.NoError(t, err)
+				}
+				require.Equal(t, tc.expected, backend.ErrorSourceFromContext(cdt.CallResourceCtx))
+			})
+		}
+	})
 }
 
 func setupHandlersWithError(cdt *handlertest.HandlerMiddlewareTest, err error) {
