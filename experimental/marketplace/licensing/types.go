@@ -10,8 +10,17 @@ import (
 
 	"github.com/gobwas/glob"
 	jose "gopkg.in/go-jose/go-jose.v2"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
+// GracePeriod is how long after its license expiration (lexp) an expired token is still accepted.
+// It keeps plugins working on instances that cannot renew their token, for example
+// on-prem instances that lost internet connection, while the problem is fixed.
+const GracePeriod = 14 * 24 * time.Hour
+
+// TokenStatus is the result of validating a license token. Like the token's Error, it reflects the time
+// the token was parsed, so parse tokens again rather than reusing old results.
 type TokenStatus int
 
 var (
@@ -22,18 +31,25 @@ var (
 )
 
 const (
+	// NotLoaded is the zero value: the token was not validated, and is never accepted.
 	NotLoaded TokenStatus = iota
+	// Valid means the token is authentic, licenses the plugin for this instance, and has not expired.
 	Valid
-	Loaded
-	Invalid
-	NotFound
+	// ExpiredInGracePeriod means the token is authentic and licenses the plugin, but the token or its
+	// license expired. It is still accepted until GraceDeadline.
+	ExpiredInGracePeriod
+	// Expired means the token is authentic and licenses the plugin, but expired and its grace period ended.
 	Expired
-	InvalidSubject
+	// Invalid means the token cannot be used: it is malformed, not authentic, or does not license
+	// the plugin for this instance. Error says why.
+	Invalid
+	// NotFound means there is no license token.
+	NotFound
 )
 
 type LicenseToken struct {
 	Raw    string      `json:"-"`
-	Status TokenStatus `json:"status"`
+	Status TokenStatus `json:"-"`
 	Error  error       `json:"-"`
 
 	Id             string `json:"jti"`
@@ -105,7 +121,7 @@ func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId stri
 		token.UpdateDays = 1
 	}
 
-	logger.Debug(
+	backend.Logger.Debug(
 		"license token parsed",
 		"id", token.Id,
 		"licenseId", token.LicenseId,
@@ -118,7 +134,7 @@ func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId stri
 // validate validates the license against our licensing rules.
 func (token *LicenseToken) validate(appURL, pluginId string) bool {
 	if err := token.validateSubject(appURL); err != nil {
-		token.Status = InvalidSubject
+		token.Status = Invalid
 		token.Error = err
 		return false
 	}
@@ -150,16 +166,17 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 		return false
 	}
 
-	// Expired allows a grace period, so it must only be returned for tokens that
-	// passed the eligibility checks above.
-	if time.Unix(token.LicenseExpires, 0).Before(timeNow()) {
-		token.Status = Expired
+	// The expired statuses allow a grace period and renewal, so they must only be returned for tokens
+	// that passed the eligibility checks above.
+	now := timeNow()
+	if time.Unix(token.LicenseExpires, 0).Before(now) {
+		token.Status = token.expiredStatus(now)
 		token.Error = fmt.Errorf("%w: license expired at %v", errLicenseExpired, time.Unix(token.LicenseExpires, 0))
 		return false
 	}
 
-	if time.Unix(token.Expires, 0).Before(timeNow()) {
-		token.Status = Expired
+	if time.Unix(token.Expires, 0).Before(now) {
+		token.Status = token.expiredStatus(now)
 		token.Error = fmt.Errorf("%w: token expired at %v", errTokenExpired, time.Unix(token.Expires, 0))
 		return false
 	}
@@ -167,6 +184,26 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 	token.Status = Valid
 	token.Error = nil
 	return true
+}
+
+// Accepted reports whether the token allows the plugin to be served: it is valid, or expired
+// within its grace period.
+func (token *LicenseToken) Accepted() bool {
+	return token.Status == Valid || token.Status == ExpiredInGracePeriod
+}
+
+// GraceDeadline returns the end of the grace period: the token is no longer accepted from this time.
+// It is based on the license expiration (lexp), not the token expiration (exp).
+func (token *LicenseToken) GraceDeadline() time.Time {
+	return time.Unix(token.LicenseExpires, 0).Add(GracePeriod)
+}
+
+// expiredStatus returns the status of an expired token at now.
+func (token *LicenseToken) expiredStatus(now time.Time) TokenStatus {
+	if now.Before(token.GraceDeadline()) {
+		return ExpiredInGracePeriod
+	}
+	return Expired
 }
 
 // validateSubject validates the licensed url

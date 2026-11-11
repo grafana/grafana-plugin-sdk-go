@@ -1,6 +1,7 @@
 package licensing
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"testing"
@@ -45,7 +46,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			},
 			appURL:         appURL,
 			bLicenses:      bLicenses,
-			status:         Expired,
+			status:         ExpiredInGracePeriod,
 			expErr:         errLicenseExpired,
 			expErrContains: time.Unix(timeNow().Add(-1*time.Minute).Unix(), 0).String(),
 		},
@@ -60,7 +61,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			},
 			appURL:         appURL,
 			bLicenses:      bLicenses,
-			status:         Expired,
+			status:         ExpiredInGracePeriod,
 			expErr:         errTokenExpired,
 			expErrContains: time.Unix(timeNow().Add(-1*time.Minute).Unix(), 0).String(),
 		},
@@ -88,7 +89,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			},
 			appURL:         appURL,
 			bLicenses:      bLicenses,
-			status:         InvalidSubject,
+			status:         Invalid,
 			expErr:         errNoMatchAppURL,
 			expErrContains: fmt.Sprintf("instance %q, license %q", appURL, "http://localhost:3000/"),
 		},
@@ -145,7 +146,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			},
 			appURL:    "",
 			bLicenses: bLicenses,
-			status:    InvalidSubject,
+			status:    Invalid,
 			expErr:    errInvalidAppURL,
 		},
 		{
@@ -259,4 +260,107 @@ func useBlockedLicenseIds(tb testing.TB, bl map[string]struct{}) {
 	tb.Cleanup(func() {
 		bLIDs = origLicenses
 	})
+}
+
+func TestAccepted(t *testing.T) {
+	for status, want := range map[TokenStatus]bool{
+		NotLoaded:            false,
+		Valid:                true,
+		ExpiredInGracePeriod: true,
+		Expired:              false,
+		Invalid:              false,
+		NotFound:             false,
+	} {
+		token := &LicenseToken{Status: status, LicenseExpires: time.Now().Unix()}
+		require.Equalf(t, want, token.Accepted(), "status %d", status)
+	}
+}
+
+func TestGraceDeadlineUsesLicenseExpiration(t *testing.T) {
+	licenseExpires := time.Date(2025, time.January, 1, 0, 0, 0, 0, time.UTC)
+	token := &LicenseToken{Expires: licenseExpires.Add(-30 * 24 * time.Hour).Unix(), LicenseExpires: licenseExpires.Unix()}
+	require.True(t, licenseExpires.Add(GracePeriod).Equal(token.GraceDeadline()))
+}
+
+func TestValidateExpiredTokenGracePeriod(t *testing.T) {
+	now := time.Date(2025, time.January, 15, 12, 0, 0, 0, time.UTC)
+	fixedTestTime(t, now)
+
+	tests := []struct {
+		name                    string
+		expires, licenseExpires time.Time
+		status                  TokenStatus
+		err                     error
+	}{
+		{"license expired within grace period", now.Add(time.Hour), now.Add(-24 * time.Hour), ExpiredInGracePeriod, errLicenseExpired},
+		{"license expired just before the grace deadline", now.Add(time.Hour), now.Add(-GracePeriod + time.Second), ExpiredInGracePeriod, errLicenseExpired},
+		{"license expired at the grace deadline", now.Add(time.Hour), now.Add(-GracePeriod), Expired, errLicenseExpired},
+		{"license expired after the grace period", now.Add(time.Hour), now.Add(-30 * 24 * time.Hour), Expired, errLicenseExpired},
+		{"token expired with an active license", now.Add(-time.Hour), now.Add(24 * time.Hour), ExpiredInGracePeriod, errTokenExpired},
+		{
+			// On-prem instances that lose internet connection cannot renew their short-lived token,
+			// so the grace period follows the license expiration, not the token expiration.
+			name:    "old token expiration within the license grace period",
+			expires: now.Add(-30 * 24 * time.Hour), licenseExpires: now.Add(-24 * time.Hour),
+			status: ExpiredInGracePeriod, err: errLicenseExpired,
+		},
+		{
+			name:    "recent token expiration after the license grace period",
+			expires: now.Add(-24 * time.Hour), licenseExpires: now.Add(-30 * 24 * time.Hour),
+			status: Expired, err: errLicenseExpired,
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			token := &LicenseToken{
+				Subject:        appURL,
+				Products:       []string{testProductID},
+				LicenseIssued:  now.Add(-60 * 24 * time.Hour).Unix(),
+				Expires:        tc.expires.Unix(),
+				LicenseExpires: tc.licenseExpires.Unix(),
+			}
+			require.False(t, token.validate(appURL, testPluginID))
+			require.Equal(t, tc.status, token.Status)
+			require.True(t, errors.Is(token.Error, tc.err), "error %v", token.Error)
+		})
+	}
+}
+
+// TestParsedTokensGracePeriod checks tokens parsed and validated by LoadTokenFromValue.
+func TestParsedTokensGracePeriod(t *testing.T) {
+	useTestKey(t)
+	// expiredJWT has exp and lexp 1337.
+	const licenseExpires = 1337
+	withinGrace := time.Unix(licenseExpires+1, 0)
+	afterGrace := time.Unix(licenseExpires, 0).Add(GracePeriod)
+
+	tests := []struct {
+		name     string
+		token    string
+		pluginID string
+		appURL   string
+		now      time.Time
+		status   TokenStatus
+	}{
+		{"expired within grace period", expiredJWT, testPluginID, appURL, withinGrace, ExpiredInGracePeriod},
+		{"expired after grace period", expiredJWT, testPluginID, appURL, afterGrace, Expired},
+		{"other plugin", expiredJWT, "other-plugin", appURL, withinGrace, Invalid},
+		{"other app URL", expiredJWT, testPluginID, "http://other.example.com", withinGrace, Invalid},
+		{"tampered signature", expiredJWT[:len(expiredJWT)-4] + "AAAA", testPluginID, appURL, withinGrace, Invalid},
+		{"malformed", "not-a-token", testPluginID, appURL, withinGrace, Invalid},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			fixedTestTime(t, tc.now)
+			token := LoadTokenFromValue(tc.token, tc.appURL, "", tc.pluginID)
+			require.Equalf(t, tc.status, token.Status, "error %v", token.Error)
+		})
+	}
+}
+
+// Parse unmarshals the verified payload into the token, so a claim must not be able to set its status.
+func TestTokenStatusIsNotAClaim(t *testing.T) {
+	var token LicenseToken
+	require.NoError(t, json.Unmarshal([]byte(`{"status": 1, "Status": 1}`), &token))
+	require.Equal(t, NotLoaded, token.Status)
 }

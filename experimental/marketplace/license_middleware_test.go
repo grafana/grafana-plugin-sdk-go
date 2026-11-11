@@ -161,7 +161,7 @@ func (f *fakeParser) parse(token, appURL, validationKeys, pluginID string) *lice
 	case "valid":
 		return &licensing.LicenseToken{Status: licensing.Valid}
 	case "grace":
-		return &licensing.LicenseToken{Status: licensing.Expired, Error: errors.New("token expired"), LicenseExpires: time.Now().Add(-24 * time.Hour).Unix()}
+		return &licensing.LicenseToken{Status: licensing.ExpiredInGracePeriod, Error: errors.New("token expired"), LicenseExpires: time.Now().Add(-24 * time.Hour).Unix()}
 	case "past-grace":
 		return &licensing.LicenseToken{Status: licensing.Expired, Error: errors.New("token expired"), LicenseExpires: time.Now().Add(-30 * 24 * time.Hour).Unix()}
 	}

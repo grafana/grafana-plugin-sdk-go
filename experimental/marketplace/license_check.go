@@ -7,38 +7,35 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
 )
 
+// errLicenseNotValidated is returned for a token that is neither accepted nor carries an error,
+// which only happens if it was never parsed.
+var errLicenseNotValidated = errors.New("license token was not validated")
+
 // validateLicenseToken decides whether a parsed token allows the plugin to be served.
-// It is shared by startup and request-time validation. It returns nil if the token has no error,
+// It is shared by startup and request-time validation. It returns nil if the token is valid,
 // or is expired but within its grace period (logging a warning). Otherwise it logs an error and
 // returns the token's error.
 func validateLicenseToken(token *licensing.LicenseToken, pluginID, licensePluginID string, logger log.Logger) error {
-	if token.Error == nil {
+	if token.Accepted() {
+		if token.Status == licensing.ExpiredInGracePeriod {
+			logger.Warn("Marketplace license expired, update your instance soon to avoid any errors. The plugin will work until", "date", token.GraceDeadline(),
+				"error", token.Error, "pluginID", pluginID, "licensePluginID", licensePluginID)
+		}
 		return nil
 	}
-	if token.Status == licensing.Expired {
-		// Use LicenseExpires instead of Expires for the grace period: still allows using a short-lived
-		// token in case an on-prem instance loses internet connection
-		if grace, ok := marketplaceLicenseGracePeriod(token, time.Now()); ok {
-			logger.Warn("Marketplace license expired, update your instance soon to avoid any errors. The plugin will work until", "date", grace,
-				"error", token.Error, "pluginID", pluginID, "licensePluginID", licensePluginID)
-			return nil
-		}
+	err := token.Error
+	if err == nil {
+		err = errLicenseNotValidated
 	}
 	logger.Error("Marketplace License Error, serving license errors only", "err", invalidLicenseError(licensePluginID).Error(),
-		"detailed error", token.Error.Error(), "pluginID", pluginID, "licensePluginID", licensePluginID)
-	return token.Error
-}
-
-func marketplaceLicenseGracePeriod(token *licensing.LicenseToken, now time.Time) (time.Time, bool) {
-	grace := time.Unix(token.LicenseExpires, 0).Add(14 * 24 * time.Hour)
-	return grace, now.Before(grace)
+		"detailed error", err.Error(), "pluginID", pluginID, "licensePluginID", licensePluginID)
+	return err
 }
 
 // invalidLicenseError builds the user-facing error for a missing or invalid license.

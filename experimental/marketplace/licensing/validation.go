@@ -12,8 +12,6 @@ import (
 	jose "gopkg.in/go-jose/go-jose.v2"
 )
 
-var logger = backend.Logger
-
 var (
 	errFileNotFound            = fmt.Errorf("license token file not found")
 	errLoadFailure             = fmt.Errorf("error loading license token")
@@ -85,7 +83,7 @@ func unwrapSignedJWT(keys map[string]string, parsed *jose.JSONWebSignature) ([]b
 		return nil, fmt.Errorf("%w: %w", errVerifyToken, err)
 	}
 
-	logger.Debug("license token validated",
+	backend.Logger.Debug("license token validated",
 		"headers", signature.Protected,
 		"keyID", jwk.KeyID,
 		"algorithm", jwk.Algorithm)
@@ -124,7 +122,7 @@ func keySet(validationKeys string) (map[string]string, error) {
 		if other, exists := keys[key.KeyID]; exists {
 			// If duplicates was handled as an error, we couldn't
 			// add a new key to the static keys list.
-			logger.Debug("license validation key duplicate detected, using embedded",
+			backend.Logger.Debug("license validation key duplicate detected, using embedded",
 				"keyID", key.KeyID,
 				"embedded", other,
 				"provided", string(rawKey),
