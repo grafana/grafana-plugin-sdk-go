@@ -93,8 +93,11 @@ func (m *ErrorSourceMiddleware) CallResource(ctx context.Context, req *CallResou
 	hasPluginError := false
 	sourceSender := CallResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
 		if resp != nil {
+			// As with QueryData, an error response without an explicit source is a
+			// plugin error. The response status is the plugin's own reply, not the
+			// downstream status, so it is not used to infer a source.
 			if !resp.ErrorSource.IsValid() && resp.Status >= 400 {
-				resp.ErrorSource = ErrorSourceFromHTTPStatus(resp.Status)
+				resp.ErrorSource = ErrorSourcePlugin
 			}
 
 			// A plugin error takes precedence over all downstream responses, regardless

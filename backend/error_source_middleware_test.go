@@ -228,12 +228,23 @@ func TestErrorSourceMiddleware(t *testing.T) {
 			expectedSource backend.ErrorSource
 		}{
 			{
-				name:           "HTTP failure is inferred as downstream",
+				name:           "untagged server error defaults to plugin",
 				status:         500,
+				expectedSource: backend.ErrorSourcePlugin,
+			},
+			{
+				name:           "untagged client error defaults to plugin",
+				status:         400,
+				expectedSource: backend.ErrorSourcePlugin,
+			},
+			{
+				name:           "explicit downstream source is kept",
+				status:         502,
+				responseSource: backend.ErrorSourceDownstream,
 				expectedSource: backend.ErrorSourceDownstream,
 			},
 			{
-				name:           "explicit plugin source takes precedence over HTTP status",
+				name:           "explicit plugin source is kept",
 				status:         500,
 				responseSource: backend.ErrorSourcePlugin,
 				expectedSource: backend.ErrorSourcePlugin,
