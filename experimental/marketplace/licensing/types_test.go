@@ -28,6 +28,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "When the license is not active yet",
 			token: &LicenseToken{
 				Subject:       appURL,
+				Issued:        timeNow().Unix() - 60,
 				LicenseIssued: timeNow().Unix() + 60,
 			},
 			appURL:         appURL,
@@ -40,8 +41,10 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "When the license has expired",
 			token: &LicenseToken{
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix() - 60,
+				Expires:        timeNow().Unix() - 60,
 				Products:       []string{testProductID},
 			},
 			appURL:         appURL,
@@ -54,6 +57,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "When the token has expired",
 			token: &LicenseToken{
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix() - 60,
@@ -69,6 +73,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "With a non-matching product",
 			token: &LicenseToken{
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
@@ -82,6 +87,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "With a non-matching url",
 			token: &LicenseToken{
 				Subject:        "http://localhost:3000/",
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
@@ -97,6 +103,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "With a valid token",
 			token: &LicenseToken{
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
@@ -111,6 +118,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "With a glob instance url",
 			token: &LicenseToken{
 				Subject:        "http*://grafana*.mycompany.com",
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
@@ -125,6 +133,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "With a hashed instance url",
 			token: &LicenseToken{
 				Subject:        "hmac:test",
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
@@ -139,6 +148,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "Without an instance url",
 			token: &LicenseToken{
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
@@ -154,6 +164,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			token: &LicenseToken{
 				LicenseId:      "12345",
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix(),
@@ -168,6 +179,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "With a non-matching product and an expired license",
 			token: &LicenseToken{
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix() - 60,
 				Expires:        timeNow().Unix(),
@@ -182,6 +194,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			name: "With a non-matching product and an expired token",
 			token: &LicenseToken{
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix() - 60,
@@ -197,6 +210,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			token: &LicenseToken{
 				LicenseId:      "12345",
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix() - 60,
 				Expires:        timeNow().Unix(),
@@ -212,6 +226,7 @@ func TestLicenseTokenValidation(t *testing.T) {
 			token: &LicenseToken{
 				LicenseId:      "12345",
 				Subject:        appURL,
+				Issued:         timeNow().Unix() - 60,
 				LicenseIssued:  timeNow().Unix(),
 				LicenseExpires: timeNow().Unix(),
 				Expires:        timeNow().Unix() - 60,
@@ -315,6 +330,7 @@ func TestValidateExpiredTokenGracePeriod(t *testing.T) {
 			token := &LicenseToken{
 				Subject:        appURL,
 				Products:       []string{testProductID},
+				Issued:         now.Add(-60 * 24 * time.Hour).Unix(),
 				LicenseIssued:  now.Add(-60 * 24 * time.Hour).Unix(),
 				Expires:        tc.expires.Unix(),
 				LicenseExpires: tc.licenseExpires.Unix(),
@@ -363,4 +379,38 @@ func TestTokenStatusIsNotAClaim(t *testing.T) {
 	var token LicenseToken
 	require.NoError(t, json.Unmarshal([]byte(`{"status": 1, "Status": 1}`), &token))
 	require.Equal(t, NotLoaded, token.Status)
+}
+
+func TestValidateRequiresIssuedAtAndExpiration(t *testing.T) {
+	now := time.Date(2025, time.January, 15, 12, 0, 0, 0, time.UTC)
+	fixedTestTime(t, now)
+	issuedAt, expires := now.Add(-time.Hour).Unix(), now.Add(time.Hour).Unix()
+
+	tests := []struct {
+		name                            string
+		issued, expires, licenseExpires int64
+		err                             error
+	}{
+		{"missing iat", 0, expires, expires, errMissingIssuedAt},
+		{"negative iat", -1, expires, expires, errMissingIssuedAt},
+		// Without the check, a missing exp would look expired since 1970 and get a grace period.
+		{"missing exp", issuedAt, 0, expires, errMissingExpiration},
+		{"negative exp", issuedAt, -1, expires, errMissingExpiration},
+		{"missing exp with an expired license", issuedAt, 0, now.Add(-24 * time.Hour).Unix(), errMissingExpiration},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			token := &LicenseToken{
+				Subject:        appURL,
+				Products:       []string{testProductID},
+				Issued:         tc.issued,
+				Expires:        tc.expires,
+				LicenseIssued:  issuedAt,
+				LicenseExpires: tc.licenseExpires,
+			}
+			require.False(t, token.validate(appURL, testPluginID))
+			require.Equal(t, Invalid, token.Status)
+			require.ErrorIs(t, token.Error, tc.err)
+		})
+	}
 }

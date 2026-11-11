@@ -81,6 +81,8 @@ var (
 	errLicenseExpired               = errors.New("license expired")
 	errTokenExpired                 = errors.New("license token expired")
 	errMarketplacePluginNotIncluded = errors.New("license does not include the marketplace plugin id as a product")
+	errMissingIssuedAt              = errors.New("license token has no issue time (iat)")
+	errMissingExpiration            = errors.New("license token has no expiration (exp)")
 	// generic error
 	errLicenseInvalid = errors.New("invalid license")
 )
@@ -163,6 +165,19 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 	if !found {
 		token.Status = Invalid
 		token.Error = errMarketplacePluginNotIncluded
+		return false
+	}
+
+	// Every token is issued with these claims. Without them, a token would be treated as expired
+	// and could get a grace period, and hosts could not order tokens or schedule their renewal.
+	if token.Issued <= 0 {
+		token.Status = Invalid
+		token.Error = errMissingIssuedAt
+		return false
+	}
+	if token.Expires <= 0 {
+		token.Status = Invalid
+		token.Error = errMissingExpiration
 		return false
 	}
 
