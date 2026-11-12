@@ -11,9 +11,9 @@ import (
 )
 
 const (
-	// marketplaceLicenseValidationKeyEnv is the environment variable that holds a signed JWKS (JWS) token
-	// containing validation keys used to verify marketplace plugin license tokens.
-	// TODO: this is currently not passed to the plugin from Grafana.
+	// marketplaceLicenseValidationKeyEnv is the environment variable that holds a validation key bundle: a signed
+	// JWKS (JWS) token containing validation keys used to verify marketplace plugin license tokens. See
+	// licensing.VerifyValidationKeys for the format; a bundle that cannot be verified is ignored.
 	marketplaceLicenseValidationKeyEnv = "GF_MARKETPLACE_LICENSE_VALIDATION_KEY"
 
 	// marketplaceAppURLEnv is the environment variable that holds the Grafana app URL

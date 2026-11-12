@@ -27,7 +27,7 @@ var (
 	timeNow = time.Now
 	// map for blocked licenses ids. We use this as indexed array, the value of each key is ignored
 	// this should be in sync with grafana-enterprise
-	bLIDs = map[string]struct{}{}
+	deniedLicenseIDs = map[string]struct{}{}
 )
 
 const (
@@ -97,14 +97,7 @@ func (token *LicenseToken) Parse(tokenStr, appUrl, validationKeys, pluginId stri
 		return false
 	}
 
-	keys, err := keySet(validationKeys)
-	if err != nil {
-		token.Status = Invalid
-		token.Error = err
-		return false
-	}
-
-	payload, err := unwrapSignedJWT(keys, parsed)
+	payload, err := unwrapSignedJWT(keySet(validationKeys), parsed)
 	if err != nil {
 		token.Status = Invalid
 		token.Error = err
@@ -147,7 +140,7 @@ func (token *LicenseToken) validate(appURL, pluginId string) bool {
 		return false
 	}
 
-	if _, ok := bLIDs[token.LicenseId]; ok {
+	if _, ok := deniedLicenseIDs[token.LicenseId]; ok {
 		// for security purposes, we avoid returning that the licenses is blocked
 		// we will return that a generic invalid license error
 		token.Status = Invalid

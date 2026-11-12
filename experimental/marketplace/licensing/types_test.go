@@ -270,10 +270,10 @@ func TestLicenseTokenValidation(t *testing.T) {
 
 func useBlockedLicenseIds(tb testing.TB, bl map[string]struct{}) {
 	tb.Helper()
-	origLicenses := bLIDs
-	bLIDs = bl
+	origLicenses := deniedLicenseIDs
+	deniedLicenseIDs = bl
 	tb.Cleanup(func() {
-		bLIDs = origLicenses
+		deniedLicenseIDs = origLicenses
 	})
 }
 
