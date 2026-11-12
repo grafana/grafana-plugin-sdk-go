@@ -20,7 +20,7 @@ type testKey struct {
 
 var generatedTestKeys = sync.OnceValue(func() map[string]testKey {
 	keys := map[string]testKey{}
-	for _, kid := range []string{"test-root", "test-untrusted-root", "test-child-1", "test-child-2"} {
+	for _, kid := range []string{"test-root", "test-untrusted-root", "test-child-1"} {
 		priv, err := rsa.GenerateKey(rand.Reader, 2048)
 		if err != nil {
 			panic(err)
@@ -30,10 +30,10 @@ var generatedTestKeys = sync.OnceValue(func() map[string]testKey {
 	return keys
 })
 
-func testKeys(t *testing.T) (root, untrustedRoot, child1, child2 testKey) {
+func testKeys(t *testing.T) (root, untrustedRoot, child1 testKey) {
 	t.Helper()
 	keys := generatedTestKeys()
-	return keys["test-root"], keys["test-untrusted-root"], keys["test-child-1"], keys["test-child-2"]
+	return keys["test-root"], keys["test-untrusted-root"], keys["test-child-1"]
 }
 
 func (k testKey) publicJWK(kid string) jose.JSONWebKey {
@@ -42,13 +42,18 @@ func (k testKey) publicJWK(kid string) jose.JSONWebKey {
 
 func (k testKey) sign(t *testing.T, payload []byte) string {
 	t.Helper()
+	compact, err := k.signed(t, payload).CompactSerialize()
+	require.NoError(t, err)
+	return compact
+}
+
+func (k testKey) signed(t *testing.T, payload []byte) *jose.JSONWebSignature {
+	t.Helper()
 	signer, err := jose.NewSigner(jose.SigningKey{Algorithm: jose.RS512, Key: jose.JSONWebKey{Key: k.priv, KeyID: k.kid}}, nil)
 	require.NoError(t, err)
 	signed, err := signer.Sign(payload)
 	require.NoError(t, err)
-	compact, err := signed.CompactSerialize()
-	require.NoError(t, err)
-	return compact
+	return signed
 }
 
 // token returns a currently valid license token for testPluginID signed by k.
@@ -77,6 +82,14 @@ func (k testKey) bundle(t *testing.T, keys ...jose.JSONWebKey) string {
 	return k.sign(t, jwks)
 }
 
+// jsonBundle returns a JSON-serialized validation key bundle with the public keys of keys, signed by k.
+func (k testKey) jsonBundle(t *testing.T, keys ...jose.JSONWebKey) string {
+	t.Helper()
+	jwks, err := json.Marshal(jose.JSONWebKeySet{Keys: keys})
+	require.NoError(t, err)
+	return k.signed(t, jwks).FullSerialize()
+}
+
 // trustEmbeddedKey adds k to the embedded keys for the duration of the test.
 func trustEmbeddedKey(t *testing.T, k testKey) {
 	t.Helper()
@@ -97,7 +110,7 @@ func denyKeyIDs(t *testing.T, kids ...string) {
 }
 
 func TestValidationKeyBundles(t *testing.T) {
-	root, untrustedRoot, child1, child2 := testKeys(t)
+	root, untrustedRoot, child1 := testKeys(t)
 	childBundle := root.bundle(t, child1.publicJWK(child1.kid))
 	// impostor signs with child1's private key under the embedded root's key ID.
 	impostor := testKey{kid: root.kid, priv: child1.priv}
@@ -112,7 +125,7 @@ func TestValidationKeyBundles(t *testing.T) {
 		"embedded key without bundles": {token: root, status: Valid},
 		"child key without bundles":    {token: child1, status: Invalid, err: errVerificationKeyNotFound},
 		"child key from a bundle":      {token: child1, validationKeys: childBundle, status: Valid},
-		"surrounding whitespace":       {token: child1, validationKeys: " " + childBundle + " , ", status: Valid},
+		"whitespace is ignored":        {token: child1, validationKeys: " " + childBundle[:20] + "\n" + childBundle[20:] + " ", status: Valid},
 		"malformed bundle is ignored":  {token: root, validationKeys: "not-a-bundle", status: Valid},
 		"bundle from an untrusted root is ignored": {
 			token: root, validationKeys: untrustedRoot.bundle(t, child1.publicJWK(child1.kid)), status: Valid,
@@ -120,11 +133,14 @@ func TestValidationKeyBundles(t *testing.T) {
 		"child key from an untrusted root": {
 			token: child1, validationKeys: untrustedRoot.bundle(t, child1.publicJWK(child1.kid)), status: Invalid, err: errVerificationKeyNotFound,
 		},
-		"other bundles are used when one is ignored": {
-			token: child1, validationKeys: "not-a-bundle," + untrustedRoot.bundle(t) + "," + childBundle, status: Valid,
+		"JSON-serialized bundle": {
+			token: child1, validationKeys: " " + root.jsonBundle(t, child1.publicJWK(child1.kid)), status: Valid,
 		},
-		"bundle keys cannot verify other bundles": {
-			token: child2, validationKeys: childBundle + "," + child1.bundle(t, child2.publicJWK(child2.kid)), status: Invalid, err: errVerificationKeyNotFound,
+		"JSON-serialized bundle from an untrusted root": {
+			token: child1, validationKeys: untrustedRoot.jsonBundle(t, child1.publicJWK(child1.kid)), status: Invalid, err: errVerificationKeyNotFound,
+		},
+		"comma-separated bundles are ignored": {
+			token: child1, validationKeys: childBundle + "," + childBundle, status: Invalid, err: errVerificationKeyNotFound,
 		},
 		"bundle key cannot replace an embedded key": {
 			token: impostor, validationKeys: root.bundle(t, child1.publicJWK(root.kid)), status: Invalid, err: errVerifyToken,
@@ -151,17 +167,15 @@ func TestValidationKeyBundles(t *testing.T) {
 }
 
 func TestVerifyValidationKeys(t *testing.T) {
-	root, untrustedRoot, child1, _ := testKeys(t)
+	root, untrustedRoot, child1 := testKeys(t)
 	trustEmbeddedKey(t, root)
 	childBundle := root.bundle(t, child1.publicJWK(child1.kid))
 
 	require.NoError(t, VerifyValidationKeys(""))
 	require.NoError(t, VerifyValidationKeys(childBundle))
-
-	err := VerifyValidationKeys("not-a-bundle," + childBundle + "," + untrustedRoot.bundle(t))
-	require.ErrorIs(t, err, errLicenseVerificationKey)
-	require.ErrorIs(t, err, errVerificationKeyNotFound)
-	require.Contains(t, err.Error(), "validation key bundle 1:")
-	require.NotContains(t, err.Error(), "validation key bundle 2:")
-	require.Contains(t, err.Error(), "validation key bundle 3:")
+	require.NoError(t, VerifyValidationKeys(root.jsonBundle(t, child1.publicJWK(child1.kid))))
+	require.ErrorIs(t, VerifyValidationKeys("not-a-bundle"), errLicenseVerificationKey)
+	require.ErrorIs(t, VerifyValidationKeys(childBundle+","+childBundle), errLicenseVerificationKey)
+	require.ErrorIs(t, VerifyValidationKeys(untrustedRoot.bundle(t)), errVerificationKeyNotFound)
+	require.ErrorIs(t, VerifyValidationKeys(untrustedRoot.jsonBundle(t)), errVerificationKeyNotFound)
 }

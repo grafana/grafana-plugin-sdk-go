@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"maps"
 	"os"
-	"strings"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 
@@ -100,67 +99,62 @@ func unwrapSignedJWT(keys map[string]string, parsed *jose.JSONWebSignature) ([]b
 	return payload, nil
 }
 
-// keySet returns the embedded keys plus the keys of every bundle in validationKeys that can be verified.
-// Bundles that cannot be verified add no keys, so tokens signed by other keys still validate. They are only
-// logged at debug level: Grafana can send bundles signed by roots that older plugin builds do not embed, and
+// keySet returns the embedded keys plus the keys of the validationKeys bundle, if it can be verified.
+// A bundle that cannot be verified adds no keys, so tokens signed by embedded keys still validate. It is only
+// logged at debug level: Grafana can send a bundle signed by a root that older plugin builds do not embed, and
 // in request mode validationKeys is parsed on every request. Grafana reports bad bundles itself, with
 // VerifyValidationKeys.
 func keySet(validationKeys string) map[string]string {
 	if validationKeys == "" {
 		return embeddedKeys
 	}
-	keys, errs := loadKeySet(validationKeys)
-	for _, err := range errs {
+	keys, err := loadKeySet(validationKeys)
+	if err != nil {
 		backend.Logger.Debug("Ignoring marketplace license validation keys that cannot be verified", "error", err)
+		return embeddedKeys
 	}
 	return keys
 }
 
-// VerifyValidationKeys reports the bundles in validationKeys that cannot be verified, and are therefore
+// VerifyValidationKeys returns an error if the validationKeys bundle cannot be verified, and is therefore
 // ignored when validating license tokens. It returns nil if validationKeys is empty.
 //
-// validationKeys holds one or more validation key bundles separated by commas. A bundle is a JWS whose
-// payload is a JWKS of additional public keys, signed by an embedded key.
+// validationKeys has the same format as in the Grafana Enterprise SDK: a single validation key bundle, which
+// is a JWS in compact or JSON serialization whose payload is a JWKS of additional public keys, signed by an
+// embedded key. Whitespace is ignored.
 func VerifyValidationKeys(validationKeys string) error {
-	_, errs := loadKeySet(validationKeys)
-	return errors.Join(errs...)
+	if validationKeys == "" {
+		return nil
+	}
+	_, err := loadKeySet(validationKeys)
+	return err
 }
 
-// loadKeySet returns the embedded keys plus the keys of every bundle that can be verified, and an error for
-// each bundle that cannot. Bundles are verified only with embedded keys, so a bundle cannot add keys that
-// verify other bundles. A bundle key whose ID is already used keeps the existing key.
-func loadKeySet(validationKeys string) (map[string]string, []error) {
-	keys := maps.Clone(embeddedKeys)
-	var errs []error
-	for i, bundle := range strings.Split(validationKeys, ",") {
-		bundle = strings.TrimSpace(bundle)
-		if bundle == "" {
-			continue
-		}
-		bundleKeys, err := verifyBundle(bundle)
-		if err != nil {
-			errs = append(errs, fmt.Errorf("validation key bundle %d: %w", i+1, err))
-			continue
-		}
-		for _, key := range bundleKeys {
-			rawKey, err := json.Marshal(key)
-			if err != nil {
-				errs = append(errs, fmt.Errorf("validation key bundle %d: %w: %w", i+1, errLicenseVerificationKey, err))
-				continue
-			}
-			if other, exists := keys[key.KeyID]; exists {
-				// If duplicates were handled as an error, a bundle could not add a key next to the embedded keys.
-				backend.Logger.Debug("license validation key duplicate detected, using the existing key",
-					"keyID", key.KeyID,
-					"existing", other,
-					"provided", string(rawKey),
-				)
-				continue
-			}
-			keys[key.KeyID] = string(rawKey)
-		}
+// loadKeySet returns the embedded keys plus the keys of bundle. The bundle is verified only with embedded keys,
+// and a bundle key whose ID is already used by an embedded key keeps the embedded key.
+func loadKeySet(bundle string) (map[string]string, error) {
+	bundleKeys, err := verifyBundle(bundle)
+	if err != nil {
+		return nil, err
 	}
-	return keys, errs
+	keys := maps.Clone(embeddedKeys)
+	for _, key := range bundleKeys {
+		rawKey, err := json.Marshal(key)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %w", errLicenseVerificationKey, err)
+		}
+		if other, exists := keys[key.KeyID]; exists {
+			// If duplicates were handled as an error, a bundle could not add a key next to the embedded keys.
+			backend.Logger.Debug("license validation key duplicate detected, using embedded",
+				"keyID", key.KeyID,
+				"embedded", other,
+				"provided", string(rawKey),
+			)
+			continue
+		}
+		keys[key.KeyID] = string(rawKey)
+	}
+	return keys, nil
 }
 
 // verifyBundle verifies a validation key bundle with the embedded keys and returns its keys.
