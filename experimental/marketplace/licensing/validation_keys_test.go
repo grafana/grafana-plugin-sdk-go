@@ -3,6 +3,7 @@ package licensing
 import (
 	"crypto/rand"
 	"crypto/rsa"
+	"encoding/base64"
 	"encoding/json"
 	"sync"
 	"testing"
@@ -178,4 +179,106 @@ func TestVerifyValidationKeys(t *testing.T) {
 	require.ErrorIs(t, VerifyValidationKeys(childBundle+","+childBundle), errLicenseVerificationKey)
 	require.ErrorIs(t, VerifyValidationKeys(untrustedRoot.bundle(t)), errVerificationKeyNotFound)
 	require.ErrorIs(t, VerifyValidationKeys(untrustedRoot.jsonBundle(t)), errVerificationKeyNotFound)
+}
+
+// TestForgedValidationKeyBundles checks that a bundle is only trusted with a valid signature by an embedded key.
+// Each forged bundle carries child1's public key: it must be ignored, so child1's tokens stay invalid while
+// tokens signed by the embedded root still validate.
+func TestForgedValidationKeyBundles(t *testing.T) {
+	root, untrustedRoot, child1 := testKeys(t)
+	trustEmbeddedKey(t, root)
+	jwks, err := json.Marshal(jose.JSONWebKeySet{Keys: []jose.JSONWebKey{child1.publicJWK(child1.kid)}})
+	require.NoError(t, err)
+
+	sign := func(opts *jose.SignerOptions, keys ...jose.SigningKey) *jose.JSONWebSignature {
+		t.Helper()
+		signer, err := jose.NewMultiSigner(keys, opts)
+		require.NoError(t, err)
+		signed, err := signer.Sign(jwks)
+		require.NoError(t, err)
+		return signed
+	}
+	compact := func(signed *jose.JSONWebSignature) string {
+		t.Helper()
+		bundle, err := signed.CompactSerialize()
+		require.NoError(t, err)
+		return bundle
+	}
+	rsaKey := func(k testKey, kid string) jose.SigningKey {
+		return jose.SigningKey{Algorithm: jose.RS512, Key: jose.JSONWebKey{Key: k.priv, KeyID: kid}}
+	}
+
+	// The protected header has no key ID; the embedded root's key ID is only in the unprotected header.
+	var unprotectedKeyID map[string]any
+	require.NoError(t, json.Unmarshal([]byte(sign(nil, jose.SigningKey{Algorithm: jose.RS512, Key: untrustedRoot.priv}).FullSerialize()), &unprotectedKeyID))
+	unprotectedKeyID["header"] = map[string]string{"kid": root.kid}
+	unprotectedKeyIDBundle, err := json.Marshal(unprotectedKeyID)
+	require.NoError(t, err)
+
+	b64 := base64.RawURLEncoding.EncodeToString
+	for name, tc := range map[string]struct {
+		bundle string
+		err    error
+	}{
+		"self-signed": {bundle: child1.bundle(t, child1.publicJWK(child1.kid)), err: errVerificationKeyNotFound},
+		"embedded root key ID, signed by another key": {
+			bundle: compact(sign(nil, rsaKey(untrustedRoot, root.kid))), err: errVerifyToken,
+		},
+		"embedded root key ID, JSON-serialized and signed by another key": {
+			bundle: sign(nil, rsaKey(untrustedRoot, root.kid)).FullSerialize(), err: errVerifyToken,
+		},
+		"alg none": {
+			bundle: b64([]byte(`{"alg":"none","kid":"`+root.kid+`"}`)) + "." + b64(jwks) + ".", err: errParsing,
+		},
+		"HMAC with the embedded root's public key as secret": {
+			bundle: compact(sign((&jose.SignerOptions{}).WithHeader("kid", root.kid), jose.SigningKey{Algorithm: jose.HS512, Key: []byte(embeddedKeys[root.kid])})),
+			err:    errParsing,
+		},
+		"key ID only in the unprotected header": {bundle: string(unprotectedKeyIDBundle), err: errVerificationKeyNotFound},
+		"attacker key embedded in the header": {
+			bundle: compact(sign((&jose.SignerOptions{EmbedJWK: true}).WithHeader("kid", root.kid), jose.SigningKey{Algorithm: jose.RS512, Key: untrustedRoot.priv})),
+			err:    errVerifyToken,
+		},
+		"several signatures, one by the embedded root": {
+			bundle: sign(nil, rsaKey(root, root.kid), rsaKey(untrustedRoot, untrustedRoot.kid)).FullSerialize(), err: errVerifyToken,
+		},
+	} {
+		t.Run(name, func(t *testing.T) {
+			require.ErrorIs(t, VerifyValidationKeys(tc.bundle), tc.err)
+
+			token := LoadTokenFromValue(child1.token(t), appURL, tc.bundle, testPluginID)
+			require.Equal(t, Invalid, token.Status)
+			require.ErrorIs(t, token.Error, errVerificationKeyNotFound)
+
+			token = LoadTokenFromValue(root.token(t), appURL, tc.bundle, testPluginID)
+			require.Equal(t, Valid, token.Status, "error: %v", token.Error)
+		})
+	}
+}
+
+func TestValidationKeyBundleWithMalformedKeySet(t *testing.T) {
+	root, _, _ := testKeys(t)
+	trustEmbeddedKey(t, root)
+	bundle := root.sign(t, []byte("not a JWKS"))
+
+	require.ErrorIs(t, VerifyValidationKeys(bundle), errLicenseVerificationKey)
+	token := LoadTokenFromValue(root.token(t), appURL, bundle, testPluginID)
+	require.Equal(t, Valid, token.Status, "error: %v", token.Error)
+}
+
+// TestValidationKeyBundleTrustIsPerCall checks that keys from a verified bundle are not remembered: they neither
+// validate later tokens without the bundle nor verify later bundles.
+func TestValidationKeyBundleTrustIsPerCall(t *testing.T) {
+	root, untrustedRoot, child1 := testKeys(t)
+	trustEmbeddedKey(t, root)
+	embeddedKeyIDs := len(embeddedKeys)
+
+	token := LoadTokenFromValue(child1.token(t), appURL, root.bundle(t, child1.publicJWK(child1.kid)), testPluginID)
+	require.Equal(t, Valid, token.Status, "error: %v", token.Error)
+	require.Len(t, embeddedKeys, embeddedKeyIDs)
+
+	token = LoadTokenFromValue(child1.token(t), appURL, "", testPluginID)
+	require.Equal(t, Invalid, token.Status)
+	require.ErrorIs(t, token.Error, errVerificationKeyNotFound)
+	require.ErrorIs(t, VerifyValidationKeys(child1.bundle(t, untrustedRoot.publicJWK(untrustedRoot.kid))), errVerificationKeyNotFound)
 }
