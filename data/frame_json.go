@@ -287,7 +287,7 @@ func readDataFramesJSON(frames *Frames, iter *jsoniter.Iterator) error {
 		}
 		*frames = append(*frames, frame)
 	}
-	return nil
+	return iter.Error
 }
 
 func readFrameData(iter *jsoniter.Iterator, frame *Frame) error {
@@ -1080,7 +1080,10 @@ func writeDataFrames(frames *Frames, stream *jsoniter.Stream) {
 		return
 	}
 	stream.WriteArrayStart()
-	for _, frame := range *frames {
+	for i, frame := range *frames {
+		if i > 0 {
+			stream.WriteMore()
+		}
 		stream.WriteVal(frame)
 	}
 	stream.WriteArrayEnd()
