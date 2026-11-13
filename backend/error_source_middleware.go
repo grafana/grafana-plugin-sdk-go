@@ -90,59 +90,58 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 }
 
 func (m *ErrorSourceMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
-	// Mirror QueryData: default untagged error responses to plugin, record which
-	// sources were seen, and decide the request's source once the handler returns.
 	var hasPluginError, hasDownstreamError bool
 	sourceSender := CallResourceResponseSenderFunc(func(resp *CallResourceResponse) error {
 		if resp != nil && resp.Status >= 400 {
-			// The response status is the plugin's own reply, not the downstream
-			// status, so it is not used to infer a source.
-			if !resp.ErrorSource.IsValid() {
-				resp.ErrorSource = ErrorSourcePlugin
+			// Only a downstream source is copied from ctx; an untagged response is
+			// left empty on the wire so hosts can tell "unset" from "plugin".
+			if !resp.ErrorSource.IsValid() && ErrorSourceFromContext(ctx) == ErrorSourceDownstream {
+				resp.ErrorSource = ErrorSourceDownstream
 			}
-
 			if resp.ErrorSource == ErrorSourceDownstream {
 				hasDownstreamError = true
 			} else {
 				hasPluginError = true
 			}
 		}
-
 		return sender.Send(resp)
 	})
 
 	err := m.BaseHandler.CallResource(ctx, req, sourceSender)
-	// A returned error decides the source on its own, as in QueryData.
 	err = m.handleDownstreamError(ctx, err)
 	if err != nil {
 		return err
 	}
 
-	// A plugin error has higher priority than a downstream error,
-	// so set to downstream only if there's no plugin error.
-	if hasDownstreamError && !hasPluginError {
+	// A plugin error has higher priority than a downstream error.
+	switch {
+	case hasPluginError:
+		if err := WithErrorSource(ctx, ErrorSourcePlugin); err != nil {
+			return fmt.Errorf("failed to set plugin error source: %w", err)
+		}
+	case hasDownstreamError:
 		if err := WithDownstreamErrorSource(ctx); err != nil {
 			return fmt.Errorf("failed to set downstream error source: %w", err)
 		}
 	}
-
 	return nil
 }
 
 func (m *ErrorSourceMiddleware) CheckHealth(ctx context.Context, req *CheckHealthRequest) (*CheckHealthResult, error) {
 	resp, err := m.BaseHandler.CheckHealth(ctx, req)
 	err = m.handleDownstreamError(ctx, err)
-	if err != nil || resp == nil || resp.Status == HealthStatusOk {
+	if err != nil || resp == nil || resp.Status != HealthStatusError {
 		return resp, err
 	}
 
-	if !resp.ErrorSource.IsValid() {
-		resp.ErrorSource = ErrorSourcePlugin
+	if !resp.ErrorSource.IsValid() && ErrorSourceFromContext(ctx) == ErrorSourceDownstream {
+		resp.ErrorSource = ErrorSourceDownstream
 	}
-	if err := WithErrorSource(ctx, resp.ErrorSource); err != nil {
-		return resp, fmt.Errorf("failed to set health check error source: %w", err)
+	if resp.ErrorSource.IsValid() {
+		if err := WithErrorSource(ctx, resp.ErrorSource); err != nil {
+			return resp, fmt.Errorf("failed to set health check error source: %w", err)
+		}
 	}
-
 	return resp, nil
 }
 
