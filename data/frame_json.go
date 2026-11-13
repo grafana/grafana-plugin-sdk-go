@@ -986,9 +986,10 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	stream.SetBuffer(slices.Grow(stream.Buffer(), rowCount*rowSizeHint(frame.Fields)))
 
 	w := &frameDataWriter{
-		stream:       stream,
-		fieldCount:   len(frame.Fields),
-		typedWriters: usesDefaultValueEncoders(stream),
+		stream:           stream,
+		fieldCount:       len(frame.Fields),
+		typedWriters:     usesDefaultValueEncoders(stream),
+		validatesRawJSON: stream.Pool() == jsoniter.ConfigCompatibleWithStandardLibrary,
 	}
 
 	stream.WriteObjectStart()
@@ -1043,12 +1044,13 @@ func usesDefaultValueEncoders(stream *jsoniter.Stream) bool {
 
 // frameDataWriter writes the values of a frame's fields and collects the entities and nanos that follow them.
 type frameDataWriter struct {
-	stream       *jsoniter.Stream
-	typedWriters bool
-	fieldCount   int
-	fidx         int
-	entities     []*fieldEntityLookup
-	hasNanos     []bool
+	stream           *jsoniter.Stream
+	typedWriters     bool
+	validatesRawJSON bool
+	fieldCount       int
+	fidx             int
+	entities         []*fieldEntityLookup
+	hasNanos         []bool
 }
 
 func (w *frameDataWriter) writeValues(f *Field) { //nolint:gocyclo // one case per vector type
@@ -1110,6 +1112,10 @@ func (w *frameDataWriter) writeValues(f *Field) { //nolint:gocyclo // one case p
 		writeJSONValues(stream, *v, ignoreIndex(stream.WriteBool))
 	case *nullableBoolVector:
 		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteBool))
+	case *jsonRawMessageVector:
+		writeJSONValues(stream, *v, w.writeRawJSON)
+	case *nullableJsonRawMessageVector:
+		writeNullableJSONValues(stream, *v, w.writeRawJSON)
 	default:
 		w.writeConcreteValues(f)
 	}
@@ -1164,6 +1170,42 @@ func (w *frameDataWriter) writeFloat32(i int, v float32) {
 	if !w.writeEntity(i, float64(v)) {
 		w.stream.WriteFloat32(v)
 	}
+}
+
+// writeRawJSON appends raw unchanged when the stream's config would write it unchanged, and lets the config write it otherwise.
+func (w *frameDataWriter) writeRawJSON(_ int, raw json.RawMessage) {
+	if w.validatesRawJSON && json.Valid(raw) && !hasLargeNumber(raw) {
+		w.stream.SetBuffer(append(w.stream.Buffer(), raw...))
+		return
+	}
+	w.stream.WriteVal(raw)
+}
+
+// hasLargeNumber reports whether valid JSON holds a number that can overflow float64, which jsoniter rejects and json.Valid accepts.
+func hasLargeNumber(raw []byte) bool {
+	inString, escaped := false, false
+	digits := 0
+	for _, c := range raw {
+		switch {
+		case escaped:
+			escaped = false
+		case inString:
+			escaped = c == '\\'
+			inString = c != '"'
+		case c == '"':
+			inString = true
+		case c >= '0' && c <= '9':
+			digits++
+			if digits >= 309 {
+				return true
+			}
+			continue
+		case (c == 'e' || c == 'E') && digits > 0:
+			return true
+		}
+		digits = 0
+	}
+	return false
 }
 
 // writeEntity writes null for NaN, -Inf and +Inf, which JSON cannot hold, and records the position for the consumer to restore.
