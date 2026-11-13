@@ -58,7 +58,7 @@ func TestMarketplaceLicenseProductionModeEnforcesLicensing(t *testing.T) {
 			licenseErr := errors.New("missing license")
 			loadCalled := false
 
-			got := checkMarketplacePluginLicenseWithDeps(
+			got := applyStartupTimeLicenseWithDeps(
 				"example-datasource", licensePluginID, licensedServeOpts(),
 				func(pluginID string) *licensing.LicenseToken {
 					loadCalled = true
@@ -75,7 +75,7 @@ func TestMarketplaceLicenseProductionModeEnforcesLicensing(t *testing.T) {
 
 func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 	expiredWithinGrace := &licensing.LicenseToken{
-		Status:         licensing.Expired,
+		Status:         licensing.ExpiredInGracePeriod,
 		Error:          errors.New("token expired"),
 		LicenseExpires: time.Now().Add(-24 * time.Hour).Unix(),
 	}
@@ -105,7 +105,7 @@ func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			serveOpts := licensedServeOpts()
-			got := checkMarketplacePluginLicenseWithDeps("example-app", "example-app", serveOpts, func(string) *licensing.LicenseToken {
+			got := applyStartupTimeLicenseWithDeps("example-app", "example-app", serveOpts, func(string) *licensing.LicenseToken {
 				return tt.token
 			})
 			if tt.licensed {
@@ -120,6 +120,8 @@ func TestMarketplaceLicenseProductionModeServesLicensedPlugin(t *testing.T) {
 func TestLicensingWithoutLicenseServesLicenseErrors(t *testing.T) {
 	t.Setenv(marketplaceLicenseTextEnv, "")
 	t.Setenv(marketplaceLicensePathEnv, filepath.Join(t.TempDir(), "missing.jwt"))
+	t.Setenv(marketplaceLicenseValidationModeEnv, "")
+	setQueryTimeLicenseValidation(t, false)
 
 	for _, tt := range []struct {
 		name            string

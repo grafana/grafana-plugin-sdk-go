@@ -1,6 +1,9 @@
 package marketplace
 
 import (
+	"flag"
+	"os"
+
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
@@ -21,6 +24,19 @@ func (o Opts) licensePluginID(pluginID string) string {
 	return pluginID
 }
 
+// queryTimeLicenseValidation is set by Grafana with -qtlv. It is registered at package
+// level because the flags are parsed before Licensing runs.
+var queryTimeLicenseValidation = flag.Bool("qtlv", false,
+	"Validate the marketplace license on every request, using the license sent by Grafana in the gRPC metadata, instead of once at startup")
+
+// marketplaceLicenseValidationModeEnv is the environment variable that, when set to exactly
+// "request", enables query-time license validation like the -qtlv flag.
+const marketplaceLicenseValidationModeEnv = "GF_MARKETPLACE_LICENSE_VALIDATION"
+
+// marketplaceLicenseValidationModeRequest is the expected value of the env var defined by
+// marketplaceLicenseValidationModeEnv (above) to enable query-time license validation.
+const marketplaceLicenseValidationModeRequest = "request"
+
 // Licensing returns a decorator that enforces marketplace licensing. Set it as the
 // Licensing field of datasource.ManageOpts or app.ManageOpts:
 //
@@ -28,14 +44,45 @@ func (o Opts) licensePluginID(pluginID string) string {
 //		Licensing: marketplace.Licensing(marketplace.Opts{}),
 //	})
 //
-// The license is checked once, when the plugin starts. With a valid license, or an
-// expired one still within its grace period, the plugin is served unchanged. Otherwise
-// the plugin is served with handlers that only return the license error.
-//
 // The license is looked up for the plugin's own ID, or for opts.ParentPluginID if set.
+//
+// By default the license is checked once, when the plugin starts, from the environment
+// variables or license files. With a valid license, or an expired one still within its
+// grace period, the plugin is served unchanged. Otherwise the plugin is served with
+// handlers that only return the license error.
+//
+// With the -qtlv flag, or with the GF_MARKETPLACE_LICENSE_VALIDATION environment variable
+// set to exactly "request", the license is instead validated on every request, from the
+// "license" gRPC metadata that Grafana sends with it. When the variable is unset or has
+// another value, startup validation remains enabled unless -qtlv is set. With request
+// validation the license token environment variables and license files are ignored, and a
+// request without valid license metadata is refused like above:
+// queries and conversions fail with the license error, and admission requests are denied
+// with a 403 result carrying it. In this mode:
+//   - ServeOpts.ExtraPlugins are not supported and make the decorator return an error,
+//     since they bypass the handler middlewares.
+//   - CollectMetrics is not checked.
+//   - Each SubscribeStream and PublishStream call is checked, but RunStream is only checked
+//     when the stream starts, not while it runs.
+//
+// Builds with the marketplace_dev tag skip both kinds of checks.
 func Licensing(opts Opts) backend.ServeOptsDecorator {
 	return func(pluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
-		// TODO: PPT support (-qtlv): validate the license on every request. This will be implemented in a follow-up PR.
-		return checkMarketplacePluginLicense(pluginID, opts.licensePluginID(pluginID), serveOpts), nil
+		// developmentLicenseBypass can only be set at plugin build time
+		if developmentLicenseBypass {
+			backend.Logger.Warn(
+				"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
+				"pluginId", pluginID,
+			)
+			return serveOpts, nil
+		}
+		licensePluginID := opts.licensePluginID(pluginID)
+		if *queryTimeLicenseValidation || os.Getenv(marketplaceLicenseValidationModeEnv) == marketplaceLicenseValidationModeRequest {
+			// Inject request-time license checks middleware
+			return applyRequestTimeLicense(pluginID, licensePluginID, serveOpts)
+		}
+		// Startup-time mode: load and validate the license once, now, from env vars or the license file.
+		// If it is invalid, the plugin serves only license errors until it is restarted.
+		return applyStartupTimeLicense(pluginID, licensePluginID, serveOpts), nil
 	}
 }

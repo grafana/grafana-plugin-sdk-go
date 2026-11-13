@@ -21,13 +21,3 @@ func TestLicensePluginID(t *testing.T) {
 		})
 	}
 }
-
-func TestInvalidLicenseError(t *testing.T) {
-	for _, id := range []string{"parent-app", "own-plugin"} {
-		t.Run(id, func(t *testing.T) {
-			msg := invalidLicenseError(id).Error()
-			require.Contains(t, msg, "The Marketplace plugin "+id+" is not")
-			require.Contains(t, msg, "https://grafana.com/grafana/plugins/"+id)
-		})
-	}
-}
