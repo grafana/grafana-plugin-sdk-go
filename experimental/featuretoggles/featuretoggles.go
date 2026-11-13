@@ -15,6 +15,11 @@ const (
 	// PluginsForceTLS13 is a feature toggle that forces the plugins (apps and data sources) HTTP client to
 	// use TLS 1.3 as both the minimum and maximum TLS version when making requests from the plugin..
 	PluginsForceTLS13 = "pluginsForceTls13"
+
+	// PluginsFilterForwardedHeaders excludes Accept-Encoding and X-Grafana-Id from
+	// automatic HTTP header forwarding for resource, query, and health requests.
+	// Disabled by default; explicit outgoing HTTP client headers are preserved.
+	PluginsFilterForwardedHeaders = "pluginsFilterForwardedHeaders"
 )
 
 // FeatureToggles can check if feature toggles are enabled on the Grafana instance.

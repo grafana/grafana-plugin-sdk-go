@@ -70,6 +70,8 @@ type Options struct {
 	// backend.CheckHealthRequest, e.g. based on if Allowed cookies or
 	// Forward OAuth Identity is configured for the datasource or any
 	// other forwarded HTTP header from Grafana.
+	// When the pluginsFilterForwardedHeaders Grafana feature toggle is enabled,
+	// automatic forwarding excludes Accept-Encoding and X-Grafana-Id.
 	ForwardHTTPHeaders bool
 }
 
