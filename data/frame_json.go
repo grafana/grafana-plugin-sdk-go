@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"io"
 	"math"
+	"slices"
 	"strconv"
 	"time"
 	"unsafe"
@@ -956,7 +957,7 @@ func writeDataFrameSchema(frame *Frame, stream *jsoniter.Stream) {
 				stream.WriteMore()
 			}
 			stream.WriteObjectField("labels")
-			stream.WriteVal(f.Labels)
+			writeLabelsJSON(f.Labels, stream)
 			started = true
 		}
 
@@ -982,97 +983,275 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 		return
 	}
 
+	stream.SetBuffer(slices.Grow(stream.Buffer(), rowCount*rowSizeHint(frame.Fields)))
+
+	w := &frameDataWriter{
+		stream:       stream,
+		fieldCount:   len(frame.Fields),
+		typedWriters: usesDefaultValueEncoders(stream),
+	}
+
 	stream.WriteObjectStart()
-
-	entities := make([]*fieldEntityLookup, len(frame.Fields))
-	entityCount := 0
-
-	nanos := make([][]int64, len(frame.Fields))
-	nsOffSetCount := 0
-
 	stream.WriteObjectField("values")
 	stream.WriteArrayStart()
 	for fidx, f := range frame.Fields {
 		if fidx > 0 {
 			stream.WriteMore()
 		}
-		isTime := f.Type().Time()
-		nsTime := make([]int64, rowCount)
-		var hasNSTime bool
-		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
-			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
-
-		stream.WriteArrayStart()
-		for i := range rowCount {
-			if i > 0 {
-				stream.WriteRaw(",")
-			}
-			if v, ok := f.ConcreteAt(i); ok {
-				switch {
-				case isTime:
-					t := v.(time.Time)
-					stream.WriteVal(t.UnixMilli())
-					msRes := t.Truncate(time.Millisecond)
-					ns := t.Sub(msRes).Nanoseconds()
-					if ns != 0 {
-						hasNSTime = true
-						nsTime[i] = ns
-					}
-				case isFloat:
-					// For float and nullable float we check whether a value is a special
-					// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
-					// information into a separate field to restore on a consumer side (setting
-					// null to the entity position in data). Since we are using f.ConcreteAt
-					// above the value is always float64 or float32 types, and never a *float64
-					// or *float32.
-					var f64 float64
-					switch vt := v.(type) {
-					case float64:
-						f64 = vt
-					case float32:
-						f64 = float64(vt)
-					default:
-						stream.Error = fmt.Errorf("unsupported float type: %T", v)
-						return
-					}
-					if entityType, found := isSpecialEntity(f64); found {
-						if entities[fidx] == nil {
-							entities[fidx] = &fieldEntityLookup{}
-						}
-						entities[fidx].add(entityType, i)
-						entityCount++
-						stream.WriteNil()
-					} else {
-						stream.WriteVal(v)
-					}
-				default:
-					stream.WriteVal(v)
-				}
-			} else {
-				stream.WriteNil()
-			}
-		}
-		stream.WriteArrayEnd()
-		if hasNSTime {
-			nanos[fidx] = nsTime
-			nsOffSetCount++
-		}
+		w.fidx = fidx
+		w.writeValues(f)
 	}
 	stream.WriteArrayEnd()
 
-	if entityCount > 0 {
+	if w.entities != nil {
 		stream.WriteMore()
 		stream.WriteObjectField("entities")
-		stream.WriteVal(entities)
+		stream.WriteVal(w.entities)
 	}
 
-	if nsOffSetCount > 0 {
+	if w.hasNanos != nil {
 		stream.WriteMore()
 		stream.WriteObjectField("nanos")
-		stream.WriteVal(nanos)
+		writeNanos(stream, frame.Fields, w.hasNanos)
 	}
 
 	stream.WriteObjectEnd()
+}
+
+// rowSizeHint is a rough JSON size of one row, so that a frame of numbers, times and booleans allocates its buffer once.
+// It is 0 when a field holds strings, JSON or enums, whose size cannot be estimated without writing them.
+func rowSizeHint(fields []*Field) int {
+	size := 0
+	for _, f := range fields {
+		switch f.Type().NonNullableType() {
+		case FieldTypeString, FieldTypeJSON, FieldTypeEnum:
+			return 0
+		case FieldTypeBool, FieldTypeInt8, FieldTypeUint8, FieldTypeInt16, FieldTypeUint16:
+			size += 7
+		default:
+			size += 16
+		}
+	}
+	return size
+}
+
+// usesDefaultValueEncoders reports whether the stream's config writes strings and floats exactly as the typed jsoniter Write methods do.
+func usesDefaultValueEncoders(stream *jsoniter.Stream) bool {
+	cfg := stream.Pool()
+	return cfg == jsoniter.ConfigCompatibleWithStandardLibrary || cfg == jsoniter.ConfigDefault
+}
+
+// frameDataWriter writes the values of a frame's fields and collects the entities and nanos that follow them.
+type frameDataWriter struct {
+	stream       *jsoniter.Stream
+	typedWriters bool
+	fieldCount   int
+	fidx         int
+	entities     []*fieldEntityLookup
+	hasNanos     []bool
+}
+
+func (w *frameDataWriter) writeValues(f *Field) { //nolint:gocyclo // one case per vector type
+	if !w.typedWriters {
+		w.writeConcreteValues(f)
+		return
+	}
+	stream := w.stream
+	switch v := f.vector.(type) {
+	case *timeTimeVector:
+		writeJSONValues(stream, *v, w.writeTime)
+	case *nullableTimeTimeVector:
+		writeNullableJSONValues(stream, *v, w.writeTime)
+	case *float64Vector:
+		writeJSONValues(stream, *v, w.writeFloat64)
+	case *nullableFloat64Vector:
+		writeNullableJSONValues(stream, *v, w.writeFloat64)
+	case *float32Vector:
+		writeJSONValues(stream, *v, w.writeFloat32)
+	case *nullableFloat32Vector:
+		writeNullableJSONValues(stream, *v, w.writeFloat32)
+	case *int8Vector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteInt8))
+	case *nullableInt8Vector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteInt8))
+	case *int16Vector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteInt16))
+	case *nullableInt16Vector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteInt16))
+	case *int32Vector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteInt32))
+	case *nullableInt32Vector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteInt32))
+	case *int64Vector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteInt64))
+	case *nullableInt64Vector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteInt64))
+	case *uint8Vector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteUint8))
+	case *nullableUint8Vector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteUint8))
+	case *uint16Vector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteUint16))
+	case *nullableUint16Vector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteUint16))
+	case *uint32Vector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteUint32))
+	case *nullableUint32Vector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteUint32))
+	case *uint64Vector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteUint64))
+	case *nullableUint64Vector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteUint64))
+	case *stringVector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteStringWithHTMLEscaped))
+	case *nullableStringVector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteStringWithHTMLEscaped))
+	case *boolVector:
+		writeJSONValues(stream, *v, ignoreIndex(stream.WriteBool))
+	case *nullableBoolVector:
+		writeNullableJSONValues(stream, *v, ignoreIndex(stream.WriteBool))
+	default:
+		w.writeConcreteValues(f)
+	}
+}
+
+func (w *frameDataWriter) writeConcreteValues(f *Field) {
+	w.stream.WriteArrayStart()
+	for i := range f.Len() {
+		if i > 0 {
+			w.stream.WriteRaw(",")
+		}
+		v, ok := f.ConcreteAt(i)
+		if !ok {
+			w.stream.WriteNil()
+			continue
+		}
+		switch vt := v.(type) {
+		case time.Time:
+			w.writeTime(i, vt)
+		case float64:
+			if !w.writeEntity(i, vt) {
+				w.stream.WriteVal(v)
+			}
+		case float32:
+			if !w.writeEntity(i, float64(vt)) {
+				w.stream.WriteVal(v)
+			}
+		default:
+			w.stream.WriteVal(v)
+		}
+	}
+	w.stream.WriteArrayEnd()
+}
+
+func (w *frameDataWriter) writeTime(_ int, t time.Time) {
+	w.stream.WriteInt64(t.UnixMilli())
+	if subMillisecondNanos(t) != 0 {
+		if w.hasNanos == nil {
+			w.hasNanos = make([]bool, w.fieldCount)
+		}
+		w.hasNanos[w.fidx] = true
+	}
+}
+
+func (w *frameDataWriter) writeFloat64(i int, v float64) {
+	if !w.writeEntity(i, v) {
+		w.stream.WriteFloat64(v)
+	}
+}
+
+func (w *frameDataWriter) writeFloat32(i int, v float32) {
+	if !w.writeEntity(i, float64(v)) {
+		w.stream.WriteFloat32(v)
+	}
+}
+
+// writeEntity writes null for NaN, -Inf and +Inf, which JSON cannot hold, and records the position for the consumer to restore.
+func (w *frameDataWriter) writeEntity(i int, v float64) bool {
+	entityType, found := isSpecialEntity(v)
+	if !found {
+		return false
+	}
+	if w.entities == nil {
+		w.entities = make([]*fieldEntityLookup, w.fieldCount)
+	}
+	if w.entities[w.fidx] == nil {
+		w.entities[w.fidx] = &fieldEntityLookup{}
+	}
+	w.entities[w.fidx].add(entityType, i)
+	w.stream.WriteNil()
+	return true
+}
+
+func subMillisecondNanos(t time.Time) int64 {
+	return t.Sub(t.Truncate(time.Millisecond)).Nanoseconds()
+}
+
+// writeNanos writes the sub-millisecond part of every time value, or null for a field that has none.
+func writeNanos(stream *jsoniter.Stream, fields []*Field, hasNanos []bool) {
+	stream.WriteArrayStart()
+	for fidx, f := range fields {
+		if fidx > 0 {
+			stream.WriteMore()
+		}
+		if !hasNanos[fidx] {
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteArrayStart()
+		switch v := f.vector.(type) {
+		case *timeTimeVector:
+			for i, t := range *v {
+				if i > 0 {
+					stream.WriteMore()
+				}
+				stream.WriteInt64(subMillisecondNanos(t))
+			}
+		case *nullableTimeTimeVector:
+			for i, t := range *v {
+				if i > 0 {
+					stream.WriteMore()
+				}
+				if t == nil {
+					stream.WriteInt64(0)
+				} else {
+					stream.WriteInt64(subMillisecondNanos(*t))
+				}
+			}
+		}
+		stream.WriteArrayEnd()
+	}
+	stream.WriteArrayEnd()
+}
+
+func writeJSONValues[T any](stream *jsoniter.Stream, values []T, write func(int, T)) {
+	stream.WriteArrayStart()
+	for i, v := range values {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		write(i, v)
+	}
+	stream.WriteArrayEnd()
+}
+
+func writeNullableJSONValues[T any](stream *jsoniter.Stream, values []*T, write func(int, T)) {
+	stream.WriteArrayStart()
+	for i, v := range values {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		if v == nil {
+			stream.WriteNil()
+		} else {
+			write(i, *v)
+		}
+	}
+	stream.WriteArrayEnd()
+}
+
+func ignoreIndex[T any](write func(T)) func(int, T) {
+	return func(_ int, v T) { write(v) }
 }
 
 func writeDataFrames(frames *Frames, stream *jsoniter.Stream) {

@@ -3,6 +3,7 @@ package backend_test
 import (
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"sync"
 	"testing"
@@ -11,6 +12,7 @@ import (
 	"github.com/google/go-cmp/cmp"
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/require"
 )
 
@@ -178,4 +180,44 @@ func TestQueryDataWithtRefID(t *testing.T) {
 func TestQueryDataWithoutResponses(t *testing.T) {
 	qdr := backend.NewQueryDataResponse()
 	testQueryDataResponseRoundtrip(t, qdr)
+}
+
+// BenchmarkQueryDataResponseEncode encodes responses the way grafana-server writes /api/ds/query responses.
+func BenchmarkQueryDataResponseEncode(b *testing.B) {
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	const rows = 1_000_000
+	times := make([]time.Time, rows)
+	values := make([]float64, rows)
+	for i := range rows {
+		times[i] = start.Add(time.Duration(i) * time.Second)
+		values[i] = 20 + float64(i%977)*0.0137
+	}
+	series := make(data.Frames, 0, 20_000)
+	for i := range 20_000 {
+		labels := data.Labels{
+			"__name__": "node_cpu_seconds_total", "cpu": fmt.Sprint(i % 64), "instance": fmt.Sprintf("10.0.%d.%d:9100", i/250, i%250),
+			"job": "node", "mode": "idle", "pod": fmt.Sprintf("node-exporter-%05d", i),
+		}
+		series = append(series, data.NewFrame("", data.NewField("Time", nil, times[:1]), data.NewField("Value", labels, values[:1])))
+	}
+
+	benchmarks := []struct {
+		name   string
+		frames data.Frames
+	}{
+		{"time_and_float64_1M_rows", data.Frames{data.NewFrame("", data.NewField("time", nil, times), data.NewField("value", nil, values))}},
+		{"single_row_series_20k", series},
+	}
+	for _, bm := range benchmarks {
+		qdr := backend.NewQueryDataResponse()
+		qdr.Responses["A"] = backend.DataResponse{Frames: bm.frames}
+		b.Run(bm.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for b.Loop() {
+				if err := jsoniter.ConfigCompatibleWithStandardLibrary.NewEncoder(io.Discard).Encode(qdr); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
 }

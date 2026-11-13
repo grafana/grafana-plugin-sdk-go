@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"hash/fnv"
 	"maps"
+	"slices"
 	"sort"
 	"strings"
 	"unsafe"
@@ -161,13 +162,12 @@ func (l Labels) MarshalJSON() ([]byte, error) {
 }
 
 func writeLabelsJSON(l Labels, stream *jsoniter.Stream) {
-	keys := make([]string, len(l))
-	i := 0
+	// A constant capacity keeps the key slice on the stack for up to 16 labels.
+	keys := make([]string, 0, 16)
 	for k := range l {
-		keys[i] = k
-		i++
+		keys = append(keys, k)
 	}
-	sort.Strings(keys)
+	slices.Sort(keys)
 
 	stream.WriteObjectStart()
 	for i, k := range keys {
