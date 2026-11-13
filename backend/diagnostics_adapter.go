@@ -49,7 +49,7 @@ func (a *diagnosticsSDKAdapter) CheckHealth(ctx context.Context, protoReq *plugi
 		parsedReq := FromProto().CheckHealthRequest(protoReq)
 		resp, err := a.checkHealthHandler.CheckHealth(ctx, parsedReq)
 		if err != nil {
-			return nil, err
+			return nil, enrichWithErrorSourceInfo(err)
 		}
 
 		return ToProto().CheckHealthResponse(resp), nil

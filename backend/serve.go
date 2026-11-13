@@ -85,6 +85,17 @@ type ServeOpts struct {
 	ExtraPlugins plugin.PluginSet
 }
 
+// ServeOptsDecorator receives the ServeOpts a plugin is about to be served with and returns the
+// ServeOpts to serve instead. pluginID is the plugin's own ID, as in its plugin.json.
+//
+// A decorator may return opts unchanged, or replace handlers, for example to serve only error
+// responses when the plugin is not licensed. It should return an error only when the plugin
+// cannot be served at all.
+//
+// This is EXPERIMENTAL and is subject to change. It exists for marketplace plugin licensing; see
+// the experimental/marketplace package.
+type ServeOptsDecorator func(pluginID string, opts ServeOpts) (ServeOpts, error)
+
 func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
 	handlers := Handlers{
 		CheckHealthHandler:      opts.CheckHealthHandler,

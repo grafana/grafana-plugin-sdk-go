@@ -12,6 +12,7 @@ import (
 func init() { //nolint:gochecknoinits
 	jsoniter.RegisterTypeEncoder("backend.DataResponse", &dataResponseCodec{})
 	jsoniter.RegisterTypeEncoder("backend.QueryDataResponse", &queryDataResponseCodec{})
+	jsoniter.RegisterTypeDecoder("backend.QueryDataResponse", &queryDataResponseCodec{})
 }
 
 type dataResponseCodec struct{}
@@ -39,9 +40,7 @@ func (codec *queryDataResponseCodec) Encode(ptr unsafe.Pointer, stream *jsoniter
 }
 
 func (codec *queryDataResponseCodec) Decode(ptr unsafe.Pointer, iter *jsoniter.Iterator) {
-	qdr := QueryDataResponse{}
-	readQueryDataResultsJSON(&qdr, iter)
-	*((*QueryDataResponse)(ptr)) = qdr
+	readQueryDataResultsJSON((*QueryDataResponse)(ptr), iter)
 }
 
 //-----------------------------------------------------------------

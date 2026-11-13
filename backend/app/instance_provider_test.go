@@ -39,6 +39,32 @@ func TestInstanceProvider(t *testing.T) {
 		require.Equal(t, "super-app-plugin#42", key)
 	})
 
+	t.Run("When namespace and tenant ID are set, they should be part of the key", func(t *testing.T) {
+		key, err := ip.GetKey(backend.WithTenant(context.Background(), "123"), backend.PluginContext{
+			PluginID:            testAppPluginID,
+			OrgID:               testOrgID, // nolint:staticcheck
+			Namespace:           "stacks-123",
+			AppInstanceSettings: &backend.AppInstanceSettings{},
+		})
+		require.NoError(t, err)
+		require.Equal(t, "123#super-app-plugin#42#stacks-123", key)
+	})
+
+	t.Run("Without a tenant ID, the same app and org in different namespaces should get different keys", func(t *testing.T) {
+		pCtx := backend.PluginContext{
+			PluginID:            testAppPluginID,
+			OrgID:               testOrgID, // nolint:staticcheck
+			AppInstanceSettings: &backend.AppInstanceSettings{},
+		}
+		pCtx.Namespace = "stacks-1"
+		keyA, err := ip.GetKey(context.Background(), pCtx)
+		require.NoError(t, err)
+		pCtx.Namespace = "stacks-2"
+		keyB, err := ip.GetKey(context.Background(), pCtx)
+		require.NoError(t, err)
+		require.NotEqual(t, keyA, keyB)
+	})
+
 	t.Run("When both the configuration and updated field of current app instance settings are equal to the cache, should return false", func(t *testing.T) {
 		cfg := map[string]string{
 			"foo": "bar",

@@ -1,46 +1,88 @@
 package marketplace
 
 import (
-	"github.com/grafana/grafana-plugin-sdk-go/backend/datasource"
+	"flag"
+	"os"
+
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// ManageOpts are the options for Manage.
-type ManageOpts struct {
+// Opts are the options for Licensing.
+type Opts struct {
 	// ParentPluginID is the ID of the parent plugin, for nested plugins.
 	// When set, the license is looked up and validated against this ID
 	// instead of the plugin's own ID. When empty, the plugin is assumed
 	// not to be nested and its own ID is used.
 	ParentPluginID string
-
-	// DatasourceOpts are passed through to datasource.Manage.
-	DatasourceOpts datasource.ManageOpts
 }
 
 // licensePluginID returns the plugin ID the license is issued under.
-func (o ManageOpts) licensePluginID(pluginID string) string {
+func (o Opts) licensePluginID(pluginID string) string {
 	if o.ParentPluginID != "" {
 		return o.ParentPluginID
 	}
 	return pluginID
 }
 
-// Manage checks the marketplace license and then serves the datasource plugin.
+// queryTimeLicenseValidation is set by Grafana with -qtlv. It is registered at package
+// level because the flags are parsed before Licensing runs.
+var queryTimeLicenseValidation = flag.Bool("qtlv", false,
+	"Validate the marketplace license on every request, using the license sent by Grafana in the gRPC metadata, instead of once at startup")
+
+// marketplaceLicenseValidationModeEnv is the environment variable that, when set to exactly
+// "request", enables query-time license validation like the -qtlv flag.
+const marketplaceLicenseValidationModeEnv = "GF_MARKETPLACE_LICENSE_VALIDATION"
+
+// marketplaceLicenseValidationModeRequest is the expected value of the env var defined by
+// marketplaceLicenseValidationModeEnv (above) to enable query-time license validation.
+const marketplaceLicenseValidationModeRequest = "request"
+
+// Licensing returns a decorator that enforces marketplace licensing. Set it as the
+// Licensing field of datasource.ManageOpts or app.ManageOpts:
 //
-// pluginID is the plugin's own ID, as in its plugin.json, and is used to serve
-// the plugin. opts.ParentPluginID, if set, is the ID of the parent plugin of a
-// nested plugin; it is used instead of pluginID for license lookup and validation.
-func Manage(pluginID string, instanceFactory datasource.InstanceFactoryFunc, opts ManageOpts) error {
-	// TODO: PPT support: this will be implemented in a follow-up PR
-	/* flag.Parse() // Parse the flags so that we can check the value of -qtlv
-
-	// If -qtlv is set, then we should check the license on every request
-	if *queryTimeLicenseValidation {
-		return datasource.Manage(pluginID, enterpriseInstanceFactory(instanceFactory), opts.DatasourceOpts)
-	} */
-
-	// If -qtlv is not set, then we should check the license once at startup
-	if err := checkMarketplacePluginLicense(pluginID, opts.licensePluginID(pluginID)); err != nil {
-		return err
+//	datasource.Manage("my-datasource", newDatasource, datasource.ManageOpts{
+//		Licensing: marketplace.Licensing(marketplace.Opts{}),
+//	})
+//
+// The license is looked up for the plugin's own ID, or for opts.ParentPluginID if set.
+//
+// By default the license is checked once, when the plugin starts, from the environment
+// variables or license files. With a valid license, or an expired one still within its
+// grace period, the plugin is served unchanged. Otherwise the plugin is served with
+// handlers that only return the license error.
+//
+// With the -qtlv flag, or with the GF_MARKETPLACE_LICENSE_VALIDATION environment variable
+// set to exactly "request", the license is instead validated on every request, from the
+// "license" gRPC metadata that Grafana sends with it. When the variable is unset or has
+// another value, startup validation remains enabled unless -qtlv is set. With request
+// validation the license token environment variables and license files are ignored, and a
+// request without valid license metadata is refused like above:
+// queries and conversions fail with the license error, and admission requests are denied
+// with a 403 result carrying it. In this mode:
+//   - ServeOpts.ExtraPlugins are not supported and make the decorator return an error,
+//     since they bypass the handler middlewares.
+//   - CollectMetrics is not checked.
+//   - Each SubscribeStream and PublishStream call is checked, but RunStream is only checked
+//     when the stream starts, not while it runs.
+//
+// Builds with the marketplace_dev tag skip both kinds of checks.
+func Licensing(opts Opts) backend.ServeOptsDecorator {
+	return func(pluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
+		// developmentLicenseBypass can only be set at plugin build time
+		if developmentLicenseBypass {
+			backend.Logger.Warn(
+				"Marketplace license checks are disabled in this development build. Do not distribute this executable.",
+				"pluginId", pluginID,
+			)
+			return serveOpts, nil
+		}
+		licensePluginID := opts.licensePluginID(pluginID)
+		if *queryTimeLicenseValidation || os.Getenv(marketplaceLicenseValidationModeEnv) == marketplaceLicenseValidationModeRequest {
+			// Inject request-time license checks middleware
+			return applyRequestTimeLicense(pluginID, licensePluginID, serveOpts)
+		}
+		// Startup-time mode: load and validate the license once, now, from env vars or the license file.
+		// If it is invalid, the plugin serves only license errors until it is restarted.
+		return applyStartupTimeLicense(pluginID, licensePluginID, serveOpts), nil
 	}
-	return datasource.Manage(pluginID, instanceFactory, opts.DatasourceOpts)
 }

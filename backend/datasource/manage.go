@@ -27,6 +27,11 @@ type ManageOpts struct {
 
 	// Stateless query conversion handler
 	QueryConversionHandler backend.QueryConversionHandler
+
+	// Licensing, if set, is applied to the serve options before the plugin is served.
+	// Use marketplace.Licensing from the experimental/marketplace package for marketplace plugins.
+	// This is EXPERIMENTAL and is subject to change.
+	Licensing backend.ServeOptsDecorator
 }
 
 // Manage starts serving the data source over gPRC with automatic instance management.
@@ -47,7 +52,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
-	return backend.Manage(pluginID, backend.ServeOpts{
+	serveOpts := backend.ServeOpts{
 		CheckHealthHandler:      handler,
 		CallResourceHandler:     handler,
 		QueryDataHandler:        handler,
@@ -57,5 +62,12 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		AdmissionHandler:        opts.AdmissionHandler,
 		GRPCSettings:            opts.GRPCSettings,
 		ConversionHandler:       opts.ConversionHandler,
-	})
+	}
+	if opts.Licensing != nil {
+		var err error
+		if serveOpts, err = opts.Licensing(pluginID, serveOpts); err != nil {
+			return fmt.Errorf("licensing: %w", err)
+		}
+	}
+	return backend.Manage(pluginID, serveOpts)
 }

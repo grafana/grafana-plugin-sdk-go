@@ -209,16 +209,22 @@ type testInstance struct {
 	disposed      atomic.Bool
 	disposedTimes atomic.Int64
 	wg            sync.WaitGroup
+	disposeGate   <-chan struct{}
 }
 
 func (ti *testInstance) Dispose() {
+	if ti.disposeGate != nil {
+		<-ti.disposeGate
+	}
 	ti.disposed.Store(true)
 	ti.disposedTimes.Add(1)
 	ti.wg.Done()
 }
 
 type testInstanceProvider struct {
-	delay time.Duration
+	delay           time.Duration
+	disposeGate     <-chan struct{}
+	needsUpdateHook func(backend.PluginContext)
 }
 
 func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend.PluginContext) (any, error) {
@@ -226,6 +232,9 @@ func (tip *testInstanceProvider) GetKey(_ context.Context, pluginContext backend
 }
 
 func (tip *testInstanceProvider) NeedsUpdate(_ context.Context, pluginContext backend.PluginContext, cachedInstance CachedInstance) bool {
+	if tip.needsUpdateHook != nil {
+		tip.needsUpdateHook(pluginContext)
+	}
 	curUpdated := pluginContext.AppInstanceSettings.Updated
 	cachedUpdated := cachedInstance.PluginContext.AppInstanceSettings.Updated
 	return !curUpdated.Equal(cachedUpdated)
@@ -237,8 +246,9 @@ func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext ba
 	}
 
 	ti := &testInstance{
-		orgID:   pluginContext.OrgID, // nolint:staticcheck
-		updated: pluginContext.AppInstanceSettings.Updated,
+		orgID:       pluginContext.OrgID, // nolint:staticcheck
+		updated:     pluginContext.AppInstanceSettings.Updated,
+		disposeGate: tip.disposeGate,
 	}
 	ti.wg.Add(1)
 

@@ -3,37 +3,28 @@
 package marketplace
 
 import (
-	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
-	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-func TestMarketplaceLicenseDevelopmentModeSkipsLicensing(t *testing.T) {
-	t.Parallel()
+func TestMarketplaceLicenseDevelopmentModeIgnoresRuntimeInputs(t *testing.T) {
 	require.True(t, developmentLicenseBypass)
 
-	err := checkMarketplacePluginLicenseWithDeps(
-		"example-datasource", "parent-app",
-		func(string) *licensing.LicenseToken {
-			require.FailNow(t, "development mode loaded a license")
-			return nil
-		},
-		func(string, string, error) error {
-			require.FailNow(t, "development mode started the invalid-license server")
-			return errors.New("unreachable")
-		},
-	)
-	require.NoError(t, err)
-}
+	for _, mode := range []string{"", marketplaceLicenseValidationModeRequest} {
+		t.Run("mode="+mode, func(t *testing.T) {
+			t.Setenv(marketplaceLicenseValidationModeEnv, mode)
+			t.Setenv(marketplaceLicenseTextEnv, "not-a-jwt")
+			t.Setenv(marketplaceLicensePathEnv, t.TempDir())
+			t.Setenv(marketplaceLicenseValidationKeyEnv, "not-a-jwks")
+			t.Setenv(marketplaceAppURLEnv, "://invalid")
 
-func TestMarketplaceLicenseDevelopmentModeIgnoresRuntimeInputs(t *testing.T) {
-	t.Setenv(marketplaceLicenseTextEnv, "not-a-jwt")
-	t.Setenv(marketplaceLicensePathEnv, t.TempDir())
-	t.Setenv(marketplaceLicenseValidationKeyEnv, "not-a-jwks")
-	t.Setenv(marketplaceAppURLEnv, "://invalid")
-
-	require.NoError(t, checkMarketplacePluginLicense("../invalid-plugin-id", "../invalid-parent-id"))
+			serveOpts := backend.ServeOpts{QueryDataHandler: &backend.BaseHandler{}}
+			got, err := Licensing(Opts{ParentPluginID: "../invalid-parent-id"})("../invalid-plugin-id", serveOpts)
+			require.NoError(t, err)
+			require.Equal(t, serveOpts, got)
+		})
+	}
 }

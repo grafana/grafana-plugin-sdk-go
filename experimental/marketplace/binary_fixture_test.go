@@ -77,26 +77,28 @@ func TestMarketplaceExecutableBuildTagsInDebugBuilds(t *testing.T) {
 	}
 	t.Parallel()
 
-	for _, development := range []bool{false, true} {
-		name := "production"
-		tags := []string{"arrow_json_stdlib"}
-		if development {
-			name = "development"
-			tags = append(tags, "marketplace_dev")
-		}
+	for _, packageID := range []string{"marketplacefixture", "appfixture"} {
+		for _, development := range []bool{false, true} {
+			name := "production"
+			tags := []string{"arrow_json_stdlib"}
+			if development {
+				name = "development"
+				tags = append(tags, "marketplace_dev")
+			}
 
-		t.Run(name, func(t *testing.T) {
-			t.Parallel()
-			binaryPath := buildFixture(t, fixtureBuildOptions{
-				goos:      runtime.GOOS,
-				goarch:    runtime.GOARCH,
-				debug:     true,
-				tags:      tags,
-				packageID: "marketplacefixture",
+			t.Run(packageID+"/"+name, func(t *testing.T) {
+				t.Parallel()
+				binaryPath := buildFixture(t, fixtureBuildOptions{
+					goos:      runtime.GOOS,
+					goarch:    runtime.GOARCH,
+					debug:     true,
+					tags:      tags,
+					packageID: packageID,
+				})
+				buildTags := readExecutableBuildTags(t, binaryPath)
+				require.Equal(t, development, hasExactBuildTag(buildTags, "marketplace_dev"))
 			})
-			buildTags := readExecutableBuildTags(t, binaryPath)
-			require.Equal(t, development, hasExactBuildTag(buildTags, "marketplace_dev"))
-		})
+		}
 	}
 }
 

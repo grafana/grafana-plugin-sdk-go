@@ -29,6 +29,11 @@ type ManageOpts struct {
 
 	// Attach custom plugins plugins to the gRPC server.
 	ExtraPlugins plugin.PluginSet
+
+	// Licensing, if set, is applied to the serve options before the plugin is served.
+	// Use marketplace.Licensing from the experimental/marketplace package for marketplace plugins.
+	// This is EXPERIMENTAL and is subject to change.
+	Licensing backend.ServeOptsDecorator
 }
 
 // Manage starts serving the app over gPRC with automatic instance management.
@@ -49,7 +54,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		return fmt.Errorf("setup tracer: %w", err)
 	}
 	handler := automanagement.NewManager(NewInstanceManager(instanceFactory))
-	return backend.Manage(pluginID, backend.ServeOpts{
+	serveOpts := backend.ServeOpts{
 		CheckHealthHandler:      handler,
 		CallResourceHandler:     handler,
 		QueryDataHandler:        handler,
@@ -59,5 +64,12 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		ConversionHandler:       opts.ConversionHandler,
 		GRPCSettings:            opts.GRPCSettings,
 		ExtraPlugins:            opts.ExtraPlugins,
-	})
+	}
+	if opts.Licensing != nil {
+		var err error
+		if serveOpts, err = opts.Licensing(pluginID, serveOpts); err != nil {
+			return fmt.Errorf("licensing: %w", err)
+		}
+	}
+	return backend.Manage(pluginID, serveOpts)
 }
