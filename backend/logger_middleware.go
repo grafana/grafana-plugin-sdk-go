@@ -97,8 +97,9 @@ func (m *loggerMiddleware) CallResource(ctx context.Context, req *CallResourceRe
 	}
 
 	err := m.logRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		innerErr := m.BaseHandler.CallResource(ctx, req, sender)
-		return RequestStatusFromError(innerErr), innerErr
+		capture := newCallResourceStatusCapturingSender(sender)
+		innerErr := m.BaseHandler.CallResource(ctx, req, capture)
+		return capture.requestStatus(innerErr), innerErr
 	})
 
 	return err
@@ -113,7 +114,7 @@ func (m *loggerMiddleware) CheckHealth(ctx context.Context, req *CheckHealthRequ
 	err := m.logRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		var innerErr error
 		resp, innerErr = m.BaseHandler.CheckHealth(ctx, req)
-		return RequestStatusFromError(innerErr), innerErr
+		return RequestStatusFromCheckHealthResult(resp, innerErr), innerErr
 	})
 
 	return resp, err
