@@ -299,10 +299,8 @@ func goldenDF() *data.Frame {
 		Channel:             "sample/channel/name",
 		Stats: []data.QueryStat{
 			{
-				FieldConfig: data.FieldConfig{
-					DisplayName: "sample",
-				},
-				Value: 1.234,
+				DisplayName: "sample",
+				Value:       1.234,
 			},
 		},
 	})
