@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/go-cmp/cmp"
+	jsoniter "github.com/json-iterator/go"
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -626,6 +627,41 @@ func TestJSON(t *testing.T) {
 				}
 			}
 		})
+	})
+
+	t.Run("Should keep every frame through Frames.MarshalJSON", func(t *testing.T) {
+		tests := []struct {
+			name    string
+			marshal func() ([]byte, error)
+		}{
+			{"Frames.MarshalJSON", frames.MarshalJSON},
+			{"json.Marshal of *Frames", func() ([]byte, error) { return json.Marshal(&frames) }},
+			{"jsoniter.Marshal of *Frames", func() ([]byte, error) { return jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(&frames) }},
+		}
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				b, err := tc.marshal()
+				if err != nil {
+					t.Fatal(err)
+				}
+				var got data.Frames
+				if err := got.UnmarshalJSON(b); err != nil {
+					t.Fatal(err)
+				}
+				if diff := cmp.Diff(frames, got, data.FrameTestCompareOptions()...); diff != "" {
+					t.Fatal(diff)
+				}
+			})
+		}
+	})
+
+	t.Run("Should return an error for a malformed array", func(t *testing.T) {
+		for _, in := range []string{`[{}{}]`, `[{}`} {
+			var got data.Frames
+			if err := got.UnmarshalJSON([]byte(in)); err == nil {
+				t.Errorf("UnmarshalJSON(%s) returned %d frames and no error", in, len(got))
+			}
+		}
 	})
 }
 
