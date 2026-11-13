@@ -21,12 +21,6 @@ type ManageOpts struct {
 	// TracingOpts contains settings for tracing setup.
 	TracingOpts tracing.Opts
 
-	// Stateless admission handler
-	AdmissionHandler backend.AdmissionHandler
-
-	// Stateless conversion handler
-	ConversionHandler backend.ConversionHandler
-
 	// Attach custom plugins plugins to the gRPC server.
 	ExtraPlugins plugin.PluginSet
 
@@ -60,8 +54,6 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		QueryDataHandler:        handler,
 		QueryChunkedDataHandler: handler,
 		StreamHandler:           handler,
-		AdmissionHandler:        opts.AdmissionHandler,
-		ConversionHandler:       opts.ConversionHandler,
 		GRPCSettings:            opts.GRPCSettings,
 		ExtraPlugins:            opts.ExtraPlugins,
 	}

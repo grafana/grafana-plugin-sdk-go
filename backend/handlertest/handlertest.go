@@ -11,17 +11,14 @@ var _ backend.Handler = &Handler{}
 
 // Handler a test handler implementing backend.Handler.
 type Handler struct {
-	QueryDataFunc         backend.QueryDataHandlerFunc
-	QueryChunkedDataFunc  backend.QueryChunkedDataHandlerFunc
-	CallResourceFunc      backend.CallResourceHandlerFunc
-	CheckHealthFunc       backend.CheckHealthHandlerFunc
-	CollectMetricsFunc    backend.CollectMetricsHandlerFunc
-	SubscribeStreamFunc   backend.SubscribeStreamHandlerFunc
-	PublishStreamFunc     backend.PublishStreamHandlerFunc
-	RunStreamFunc         backend.RunStreamHandlerFunc
-	MutateAdmissionFunc   backend.MutateAdmissionFunc
-	ValidateAdmissionFunc backend.ValidateAdmissionFunc
-	ConvertObjectsFunc    backend.ConvertObjectsFunc
+	QueryDataFunc        backend.QueryDataHandlerFunc
+	QueryChunkedDataFunc backend.QueryChunkedDataHandlerFunc
+	CallResourceFunc     backend.CallResourceHandlerFunc
+	CheckHealthFunc      backend.CheckHealthHandlerFunc
+	CollectMetricsFunc   backend.CollectMetricsHandlerFunc
+	SubscribeStreamFunc  backend.SubscribeStreamHandlerFunc
+	PublishStreamFunc    backend.PublishStreamHandlerFunc
+	RunStreamFunc        backend.RunStreamHandlerFunc
 }
 
 func (h Handler) QueryData(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryDataResponse, error) {
@@ -88,57 +85,27 @@ func (h Handler) RunStream(ctx context.Context, req *backend.RunStreamRequest, s
 	return nil
 }
 
-func (h Handler) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
-	if h.ValidateAdmissionFunc != nil {
-		return h.ValidateAdmissionFunc(ctx, req)
-	}
-
-	return nil, nil
-}
-
-func (h Handler) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.MutationResponse, error) {
-	if h.MutateAdmissionFunc != nil {
-		return h.MutateAdmissionFunc(ctx, req)
-	}
-
-	return nil, nil
-}
-
-func (h Handler) ConvertObjects(ctx context.Context, req *backend.ConversionRequest) (*backend.ConversionResponse, error) {
-	if h.ConvertObjectsFunc != nil {
-		return h.ConvertObjectsFunc(ctx, req)
-	}
-
-	return nil, nil
-}
-
 type HandlerMiddlewareTest struct {
-	T                      *testing.T
-	TestHandler            *Handler
-	Middlewares            []backend.HandlerMiddleware
-	MiddlewareHandler      *backend.MiddlewareHandler
-	QueryDataReq           *backend.QueryDataRequest
-	QueryDataCtx           context.Context
-	QueryChunkedDataReq    *backend.QueryChunkedDataRequest
-	QueryChunkedDataCtx    context.Context
-	CallResourceReq        *backend.CallResourceRequest
-	CallResourceCtx        context.Context
-	CheckHealthReq         *backend.CheckHealthRequest
-	CheckHealthCtx         context.Context
-	CollectMetricsReq      *backend.CollectMetricsRequest
-	CollectMetricsCtx      context.Context
-	SubscribeStreamReq     *backend.SubscribeStreamRequest
-	SubscribeStreamCtx     context.Context
-	PublishStreamReq       *backend.PublishStreamRequest
-	PublishStreamCtx       context.Context
-	RunStreamReq           *backend.RunStreamRequest
-	RunStreamCtx           context.Context
-	MutateAdmissionReq     *backend.AdmissionRequest
-	MutateAdmissionCtx     context.Context
-	ValidationAdmissionReq *backend.AdmissionRequest
-	ValidateAdmissionCtx   context.Context
-	ConvertObjectReq       *backend.ConversionRequest
-	ConvertObjectCtx       context.Context
+	T                   *testing.T
+	TestHandler         *Handler
+	Middlewares         []backend.HandlerMiddleware
+	MiddlewareHandler   *backend.MiddlewareHandler
+	QueryDataReq        *backend.QueryDataRequest
+	QueryDataCtx        context.Context
+	QueryChunkedDataReq *backend.QueryChunkedDataRequest
+	QueryChunkedDataCtx context.Context
+	CallResourceReq     *backend.CallResourceRequest
+	CallResourceCtx     context.Context
+	CheckHealthReq      *backend.CheckHealthRequest
+	CheckHealthCtx      context.Context
+	CollectMetricsReq   *backend.CollectMetricsRequest
+	CollectMetricsCtx   context.Context
+	SubscribeStreamReq  *backend.SubscribeStreamRequest
+	SubscribeStreamCtx  context.Context
+	PublishStreamReq    *backend.PublishStreamRequest
+	PublishStreamCtx    context.Context
+	RunStreamReq        *backend.RunStreamRequest
+	RunStreamCtx        context.Context
 
 	// When CallResource is called, the sender will be called with these values
 	callResourceResponses      []*backend.CallResourceResponse
@@ -218,21 +185,6 @@ func NewHandlerMiddlewareTest(t *testing.T, opts ...HandlerMiddlewareTestOption)
 			}
 
 			return nil
-		},
-		ValidateAdmissionFunc: func(ctx context.Context, ar *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
-			cdt.ValidationAdmissionReq = ar
-			cdt.ValidateAdmissionCtx = ctx
-			return nil, nil
-		},
-		MutateAdmissionFunc: func(ctx context.Context, ar *backend.AdmissionRequest) (*backend.MutationResponse, error) {
-			cdt.MutateAdmissionReq = ar
-			cdt.MutateAdmissionCtx = ctx
-			return nil, nil
-		},
-		ConvertObjectsFunc: func(ctx context.Context, cr *backend.ConversionRequest) (*backend.ConversionResponse, error) {
-			cdt.ConvertObjectReq = cr
-			cdt.ConvertObjectCtx = ctx
-			return nil, nil
 		},
 	}
 

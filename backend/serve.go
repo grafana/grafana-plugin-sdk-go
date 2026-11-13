@@ -63,18 +63,6 @@ type ServeOpts struct {
 	// StreamHandler handler for streaming queries.
 	StreamHandler StreamHandler
 
-	// AdmissionHandler validates resource storage
-	// This is EXPERIMENTAL and is a subject to change till Grafana 12
-	AdmissionHandler AdmissionHandler
-
-	// ConversionHandler converts resources between versions
-	// This is EXPERIMENTAL and is a subject to change till Grafana 12
-	ConversionHandler ConversionHandler
-
-	// QueryConversionHandler converts queries between versions
-	// This is EXPERIMENTAL and is a subject to change till Grafana 12
-	QueryConversionHandler QueryConversionHandler
-
 	// GRPCSettings settings for gPRC.
 	GRPCSettings GRPCSettings
 
@@ -103,8 +91,6 @@ func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
 		QueryDataHandler:        opts.QueryDataHandler,
 		QueryChunkedDataHandler: opts.QueryChunkedDataHandler,
 		StreamHandler:           opts.StreamHandler,
-		AdmissionHandler:        opts.AdmissionHandler,
-		ConversionHandler:       opts.ConversionHandler,
 	}
 
 	return HandlerFromMiddlewares(handlers, opts.HandlerMiddlewares...)
@@ -131,14 +117,6 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 
 	if opts.StreamHandler != nil {
 		pluginOpts.StreamServer = newStreamSDKAdapter(handler)
-	}
-
-	if opts.AdmissionHandler != nil {
-		pluginOpts.AdmissionServer = newAdmissionSDKAdapter(handler)
-	}
-
-	if opts.ConversionHandler != nil || opts.QueryConversionHandler != nil {
-		pluginOpts.ConversionServer = newConversionSDKAdapter(handler, opts.QueryConversionHandler)
 	}
 	return pluginOpts, nil
 }
@@ -279,16 +257,6 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 		plugKeys = append(plugKeys, "stream")
 	}
 
-	if pluginOpts.AdmissionServer != nil {
-		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
-		plugKeys = append(plugKeys, "admission")
-	}
-
-	if pluginOpts.ConversionServer != nil {
-		pluginv2.RegisterResourceConversionServer(server, pluginOpts.ConversionServer)
-		plugKeys = append(plugKeys, "conversion")
-	}
-
 	extraKeys, err := registerExtraPlugins(server, pluginOpts.ExtraPlugins)
 	if err != nil {
 		return err
@@ -413,16 +381,6 @@ func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
 	if pluginOpts.StreamServer != nil {
 		pluginv2.RegisterStreamServer(server, pluginOpts.StreamServer)
 		plugKeys = append(plugKeys, "stream")
-	}
-
-	if pluginOpts.AdmissionServer != nil {
-		pluginv2.RegisterAdmissionControlServer(server, pluginOpts.AdmissionServer)
-		plugKeys = append(plugKeys, "admission")
-	}
-
-	if pluginOpts.ConversionServer != nil {
-		pluginv2.RegisterResourceConversionServer(server, pluginOpts.ConversionServer)
-		plugKeys = append(plugKeys, "conversion")
 	}
 
 	extraKeys, err := registerExtraPlugins(server, pluginOpts.ExtraPlugins)

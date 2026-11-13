@@ -118,18 +118,3 @@ func (m *ErrorSourceMiddleware) RunStream(ctx context.Context, req *RunStreamReq
 	err := m.BaseHandler.RunStream(ctx, req, sender)
 	return m.handleDownstreamError(ctx, err)
 }
-
-func (m *ErrorSourceMiddleware) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
-	resp, err := m.BaseHandler.ValidateAdmission(ctx, req)
-	return resp, m.handleDownstreamError(ctx, err)
-}
-
-func (m *ErrorSourceMiddleware) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
-	resp, err := m.BaseHandler.MutateAdmission(ctx, req)
-	return resp, m.handleDownstreamError(ctx, err)
-}
-
-func (m *ErrorSourceMiddleware) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-	resp, err := m.BaseHandler.ConvertObjects(ctx, req)
-	return resp, m.handleDownstreamError(ctx, err)
-}

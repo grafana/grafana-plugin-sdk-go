@@ -15,8 +15,6 @@ type ServeOpts struct {
 	ResourceServer    ResourceServer
 	DataServer        DataServer
 	StreamServer      StreamServer
-	AdmissionServer   AdmissionServer
-	ConversionServer  ConversionServer
 
 	// Attach custom plugins plugins to the gRPC server.
 	ExtraPlugins plugin.PluginSet
@@ -55,18 +53,6 @@ func Serve(opts ServeOpts) error {
 	if opts.StreamServer != nil {
 		pSet["stream"] = &StreamGRPCPlugin{
 			StreamServer: opts.StreamServer,
-		}
-	}
-
-	if opts.AdmissionServer != nil {
-		pSet["admission"] = &AdmissionGRPCPlugin{
-			AdmissionServer: opts.AdmissionServer,
-		}
-	}
-
-	if opts.ConversionServer != nil {
-		pSet["conversion"] = &ConversionGRPCPlugin{
-			ConversionServer: opts.ConversionServer,
 		}
 	}
 

@@ -54,9 +54,7 @@ func applyStartupTimeLicenseWithDeps(
 }
 
 // invalidLicenseServeOpts returns serve options whose handlers are all h, which only returns the license error.
-// Admission, conversion and query conversion get license-denying handlers only if the plugin
-// registered them, so Grafana keeps falling back on Unimplemented for the others. Apart from
-// GRPCSettings, everything else (middlewares, ExtraPlugins) is dropped.
+// Apart from GRPCSettings, everything else (middlewares, ExtraPlugins) is dropped.
 func invalidLicenseServeOpts(handler *invalidLicenseHandler, serveOpts backend.ServeOpts) backend.ServeOpts {
 	opts := backend.ServeOpts{
 		CheckHealthHandler:      handler,
@@ -65,15 +63,6 @@ func invalidLicenseServeOpts(handler *invalidLicenseHandler, serveOpts backend.S
 		QueryChunkedDataHandler: handler,
 		StreamHandler:           handler,
 		GRPCSettings:            serveOpts.GRPCSettings,
-	}
-	if serveOpts.AdmissionHandler != nil {
-		opts.AdmissionHandler = handler
-	}
-	if serveOpts.ConversionHandler != nil {
-		opts.ConversionHandler = handler
-	}
-	if serveOpts.QueryConversionHandler != nil {
-		opts.QueryConversionHandler = handler
 	}
 	return opts
 }

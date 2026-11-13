@@ -373,6 +373,14 @@ func (t ConvertToProtobuf) CollectMetricsResult(res *CollectMetricsResult) *plug
 	}
 }
 
+// GrafanaConfig converts the SDK version of a GrafanaCfg to the protobuf version.
+func (t ConvertToProtobuf) GrafanaConfig(cfg *config.GrafanaCfg) map[string]string {
+	if cfg == nil {
+		return map[string]string{}
+	}
+	return cfg.Config()
+}
+
 // StatusResult converts the SDK version of a StatusResult to the protobuf version.
 func (t ConvertToProtobuf) StatusResult(s *StatusResult) *pluginv2.StatusResult {
 	if s == nil {
@@ -384,95 +392,4 @@ func (t ConvertToProtobuf) StatusResult(s *StatusResult) *pluginv2.StatusResult 
 		Reason:  s.Reason,
 		Code:    s.Code,
 	}
-}
-
-// GroupVersionKind converts the SDK version of a GroupVersionKind to the protobuf version.
-func (t ConvertToProtobuf) GroupVersionKind(req *GroupVersionKind) *pluginv2.GroupVersionKind {
-	return &pluginv2.GroupVersionKind{
-		Group:   req.Group,
-		Version: req.Version,
-		Kind:    req.Kind,
-	}
-}
-
-// GroupVersion converts the SDK version of a GroupVersion to the protobuf version.
-func (t ConvertToProtobuf) GroupVersion(req *GroupVersion) *pluginv2.GroupVersion {
-	return &pluginv2.GroupVersion{
-		Group:   req.Group,
-		Version: req.Version,
-	}
-}
-
-// RawObject converts the SDK version of a RawObject to the protobuf version.
-func (t ConvertToProtobuf) RawObject(req RawObject) *pluginv2.RawObject {
-	return &pluginv2.RawObject{
-		Raw:         req.Raw,
-		ContentType: req.ContentType,
-	}
-}
-
-// RawObjects converts the SDK version of a RawObject to the protobuf version.
-func (t ConvertToProtobuf) RawObjects(req []RawObject) []*pluginv2.RawObject {
-	objects := make([]*pluginv2.RawObject, len(req))
-	for i, o := range req {
-		objects[i] = t.RawObject(o)
-	}
-	return objects
-}
-
-// AdmissionRequest converts the SDK version of a AdmissionRequest to the protobuf version.
-func (t ConvertToProtobuf) AdmissionRequest(req *AdmissionRequest) *pluginv2.AdmissionRequest {
-	return &pluginv2.AdmissionRequest{
-		PluginContext:  t.PluginContext(req.PluginContext),
-		Operation:      pluginv2.AdmissionRequest_Operation(req.Operation),
-		Kind:           t.GroupVersionKind(&req.Kind),
-		ObjectBytes:    req.ObjectBytes,
-		OldObjectBytes: req.OldObjectBytes,
-	}
-}
-
-// ConversionRequest converts the SDK version of a ConversionRequest to the protobuf version.
-func (t ConvertToProtobuf) ConversionRequest(req *ConversionRequest) *pluginv2.ConversionRequest {
-	return &pluginv2.ConversionRequest{
-		PluginContext: t.PluginContext(req.PluginContext),
-		Uid:           req.UID,
-		TargetVersion: t.GroupVersion(&req.TargetVersion),
-		Objects:       t.RawObjects(req.Objects),
-	}
-}
-
-// MutationResponse converts the SDK version of a MutationResponse to the protobuf version.
-func (t ConvertToProtobuf) MutationResponse(rsp *MutationResponse) *pluginv2.MutationResponse {
-	return &pluginv2.MutationResponse{
-		Allowed:     rsp.Allowed,
-		Result:      t.StatusResult(rsp.Result),
-		Warnings:    rsp.Warnings,
-		ObjectBytes: rsp.ObjectBytes,
-	}
-}
-
-// ValidationResponse converts the SDK version of a ValidationResponse to the protobuf version.
-func (t ConvertToProtobuf) ValidationResponse(rsp *ValidationResponse) *pluginv2.ValidationResponse {
-	return &pluginv2.ValidationResponse{
-		Allowed:  rsp.Allowed,
-		Result:   t.StatusResult(rsp.Result),
-		Warnings: rsp.Warnings,
-	}
-}
-
-// ConversionResponse converts the SDK version of a ConversionResponse to the protobuf version.
-func (t ConvertToProtobuf) ConversionResponse(rsp *ConversionResponse) *pluginv2.ConversionResponse {
-	return &pluginv2.ConversionResponse{
-		Uid:     rsp.UID,
-		Result:  t.StatusResult(rsp.Result),
-		Objects: t.RawObjects(rsp.Objects),
-	}
-}
-
-// GrafanaConfig converts the SDK version of a GrafanaCfg to the protobuf version.
-func (t ConvertToProtobuf) GrafanaConfig(cfg *config.GrafanaCfg) map[string]string {
-	if cfg == nil {
-		return map[string]string{}
-	}
-	return cfg.Config()
 }
