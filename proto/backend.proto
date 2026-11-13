@@ -120,6 +120,9 @@ message CallResourceResponse {
 
   // Raw HTTP body bytes sent to the client
   bytes body = 3;
+
+  // Source of an error response
+  string errorSource = 4;
 }
 
 //-----------------------------------------------
@@ -272,6 +275,7 @@ message CheckHealthResponse {
   HealthStatus status = 1;
   string message = 2;
   bytes jsonDetails = 3;
+  string errorSource = 4;
 }
 
 //-----------------------------------------------------------------
