@@ -184,20 +184,56 @@ func TestErrorSourceMiddleware(t *testing.T) {
 		require.Equal(t, backend.ErrorSourceDownstream, resp.Responses["B"].ErrorSource)
 	})
 
-	t.Run("CheckHealth response with error sets error source", func(t *testing.T) {
+	t.Run("CheckHealth result sets error source", func(t *testing.T) {
 		for _, tc := range []struct {
 			name           string
+			status         backend.HealthStatus
 			responseSource backend.ErrorSource
-			expectedSource backend.ErrorSource
+			markDownstream bool
+			expectedWire   backend.ErrorSource
+			expectedCtx    backend.ErrorSource
 		}{
 			{
 				name:           "explicit downstream source",
+				status:         backend.HealthStatusError,
 				responseSource: backend.ErrorSourceDownstream,
-				expectedSource: backend.ErrorSourceDownstream,
+				expectedWire:   backend.ErrorSourceDownstream,
+				expectedCtx:    backend.ErrorSourceDownstream,
 			},
 			{
-				name:           "missing source defaults to plugin",
-				expectedSource: backend.ErrorSourcePlugin,
+				name:           "explicit plugin source overrides downstream marked on ctx",
+				status:         backend.HealthStatusError,
+				responseSource: backend.ErrorSourcePlugin,
+				markDownstream: true,
+				expectedWire:   backend.ErrorSourcePlugin,
+				expectedCtx:    backend.ErrorSourcePlugin,
+			},
+			{
+				name:         "untagged error result stays empty on the wire",
+				status:       backend.HealthStatusError,
+				expectedWire: "",
+				expectedCtx:  backend.ErrorSourcePlugin,
+			},
+			{
+				name:           "untagged error result takes downstream from ctx",
+				status:         backend.HealthStatusError,
+				markDownstream: true,
+				expectedWire:   backend.ErrorSourceDownstream,
+				expectedCtx:    backend.ErrorSourceDownstream,
+			},
+			{
+				name:           "unknown result is not treated as an error",
+				status:         backend.HealthStatusUnknown,
+				responseSource: backend.ErrorSourceDownstream,
+				expectedWire:   backend.ErrorSourceDownstream,
+				expectedCtx:    backend.ErrorSourcePlugin,
+			},
+			{
+				name:           "ok result is not treated as an error",
+				status:         backend.HealthStatusOk,
+				responseSource: backend.ErrorSourceDownstream,
+				expectedWire:   backend.ErrorSourceDownstream,
+				expectedCtx:    backend.ErrorSourcePlugin,
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
@@ -206,18 +242,33 @@ func TestErrorSourceMiddleware(t *testing.T) {
 				)
 				cdt.TestHandler.CheckHealthFunc = func(ctx context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
 					cdt.CheckHealthCtx = ctx
+					if tc.markDownstream {
+						require.NoError(t, backend.WithDownstreamErrorSource(ctx))
+					}
 					return &backend.CheckHealthResult{
-						Status:      backend.HealthStatusError,
+						Status:      tc.status,
 						ErrorSource: tc.responseSource,
 					}, nil
 				}
 
 				resp, err := cdt.MiddlewareHandler.CheckHealth(context.Background(), &backend.CheckHealthRequest{})
 				require.NoError(t, err)
-				require.Equal(t, tc.expectedSource, resp.ErrorSource)
-				require.Equal(t, tc.expectedSource, backend.ErrorSourceFromContext(cdt.CheckHealthCtx))
+				require.Equal(t, tc.expectedWire, resp.ErrorSource)
+				require.Equal(t, tc.expectedCtx, backend.ErrorSourceFromContext(cdt.CheckHealthCtx))
 			})
 		}
+	})
+
+	t.Run("CheckHealth untagged error result does not fail without an initialized error source", func(t *testing.T) {
+		mw := backend.NewErrorSourceMiddleware().CreateHandlerMiddleware(&handlertest.Handler{
+			CheckHealthFunc: func(_ context.Context, _ *backend.CheckHealthRequest) (*backend.CheckHealthResult, error) {
+				return &backend.CheckHealthResult{Status: backend.HealthStatusError}, nil
+			},
+		})
+
+		resp, err := mw.CheckHealth(context.Background(), &backend.CheckHealthRequest{})
+		require.NoError(t, err)
+		require.Equal(t, backend.ErrorSource(""), resp.ErrorSource)
 	})
 
 	t.Run("CallResource response sets error source", func(t *testing.T) {
@@ -225,29 +276,57 @@ func TestErrorSourceMiddleware(t *testing.T) {
 			name           string
 			status         int
 			responseSource backend.ErrorSource
-			expectedSource backend.ErrorSource
+			markDownstream bool
+			expectedWire   backend.ErrorSource
+			expectedCtx    backend.ErrorSource
 		}{
 			{
-				name:           "untagged server error defaults to plugin",
-				status:         500,
-				expectedSource: backend.ErrorSourcePlugin,
+				name:         "untagged server error stays empty on the wire",
+				status:       500,
+				expectedWire: "",
+				expectedCtx:  backend.ErrorSourcePlugin,
 			},
 			{
-				name:           "untagged client error defaults to plugin",
-				status:         400,
-				expectedSource: backend.ErrorSourcePlugin,
+				name:         "untagged client error stays empty on the wire",
+				status:       400,
+				expectedWire: "",
+				expectedCtx:  backend.ErrorSourcePlugin,
+			},
+			{
+				name:           "untagged error takes downstream from ctx",
+				status:         502,
+				markDownstream: true,
+				expectedWire:   backend.ErrorSourceDownstream,
+				expectedCtx:    backend.ErrorSourceDownstream,
+			},
+			{
+				name:           "success response is not tagged even when ctx is downstream",
+				status:         200,
+				markDownstream: true,
+				expectedWire:   "",
+				expectedCtx:    backend.ErrorSourceDownstream,
 			},
 			{
 				name:           "explicit downstream source is kept",
 				status:         502,
 				responseSource: backend.ErrorSourceDownstream,
-				expectedSource: backend.ErrorSourceDownstream,
+				expectedWire:   backend.ErrorSourceDownstream,
+				expectedCtx:    backend.ErrorSourceDownstream,
 			},
 			{
 				name:           "explicit plugin source is kept",
 				status:         500,
 				responseSource: backend.ErrorSourcePlugin,
-				expectedSource: backend.ErrorSourcePlugin,
+				expectedWire:   backend.ErrorSourcePlugin,
+				expectedCtx:    backend.ErrorSourcePlugin,
+			},
+			{
+				name:           "explicit plugin source overrides downstream marked on ctx",
+				status:         500,
+				responseSource: backend.ErrorSourcePlugin,
+				markDownstream: true,
+				expectedWire:   backend.ErrorSourcePlugin,
+				expectedCtx:    backend.ErrorSourcePlugin,
 			},
 		} {
 			t.Run(tc.name, func(t *testing.T) {
@@ -256,6 +335,9 @@ func TestErrorSourceMiddleware(t *testing.T) {
 				)
 				cdt.TestHandler.CallResourceFunc = func(ctx context.Context, _ *backend.CallResourceRequest, sender backend.CallResourceResponseSender) error {
 					cdt.CallResourceCtx = ctx
+					if tc.markDownstream {
+						require.NoError(t, backend.WithDownstreamErrorSource(ctx))
+					}
 					return sender.Send(&backend.CallResourceResponse{
 						Status:      tc.status,
 						ErrorSource: tc.responseSource,
@@ -268,8 +350,8 @@ func TestErrorSourceMiddleware(t *testing.T) {
 					return nil
 				}))
 				require.NoError(t, err)
-				require.Equal(t, tc.expectedSource, resp.ErrorSource)
-				require.Equal(t, tc.expectedSource, backend.ErrorSourceFromContext(cdt.CallResourceCtx))
+				require.Equal(t, tc.expectedWire, resp.ErrorSource)
+				require.Equal(t, tc.expectedCtx, backend.ErrorSourceFromContext(cdt.CallResourceCtx))
 			})
 		}
 	})
