@@ -1,6 +1,7 @@
 package backend
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -724,7 +725,49 @@ func TestConvertFromProtobufDataResponse(t *testing.T) {
 	})
 }
 
-func TestConvertFromProtobufQueryDataResponseConsumesFrames(t *testing.T) {
+func TestConvertFromProtobufQueryDataResponseKeepsFrames(t *testing.T) {
+	frame := data.NewFrame("f",
+		data.NewField("time", nil, []time.Time{time.Unix(1, 0).UTC(), time.Unix(2, 0).UTC()}),
+		data.NewField("value", data.Labels{"a": "b"}, []float64{1, 2}),
+	)
+	frame.RefID = "A"
+
+	tests := []struct {
+		name   string
+		format DataFrameFormat
+	}{
+		{name: "arrow", format: DataFrameFormat_ARROW},
+		{name: "json", format: DataFrameFormat_JSON},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			protoRes, err := ToProto().QueryDataResponse(tc.format, &QueryDataResponse{
+				Responses: Responses{"A": {Frames: data.Frames{frame, frame}}},
+			})
+			require.NoError(t, err)
+			want := make([][]byte, len(protoRes.Responses["A"].Frames))
+			for i, b := range protoRes.Responses["A"].Frames {
+				want[i] = bytes.Clone(b)
+			}
+
+			rsp, err := FromProto().QueryDataResponse(protoRes)
+			require.NoError(t, err)
+			require.Len(t, rsp.Responses["A"].Frames, 2)
+			for _, got := range rsp.Responses["A"].Frames {
+				if diff := cmp.Diff(frame, got, data.FrameTestCompareOptions()...); diff != "" {
+					t.Errorf("Result mismatch (-want +got):\n%s", diff)
+				}
+			}
+			for i, b := range protoRes.Responses["A"].Frames {
+				if !bytes.Equal(want[i], b) {
+					t.Errorf("encoded frame %d changed: %d bytes before, %d after", i, len(want[i]), len(b))
+				}
+			}
+		})
+	}
+}
+
+func TestConvertFromProtobufConsumeQueryDataResponse(t *testing.T) {
 	frame := data.NewFrame("f",
 		data.NewField("time", nil, []time.Time{time.Unix(1, 0).UTC(), time.Unix(2, 0).UTC()}),
 		data.NewField("value", data.Labels{"a": "b"}, []float64{1, 2}),
@@ -745,7 +788,7 @@ func TestConvertFromProtobufQueryDataResponseConsumesFrames(t *testing.T) {
 			})
 			require.NoError(t, err)
 
-			rsp, err := FromProto().QueryDataResponse(protoRes)
+			rsp, err := FromProto().ConsumeQueryDataResponse(protoRes)
 			require.NoError(t, err)
 			require.Len(t, rsp.Responses["A"].Frames, 2)
 			for _, got := range rsp.Responses["A"].Frames {

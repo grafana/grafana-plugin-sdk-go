@@ -142,8 +142,17 @@ func (f ConvertFromProtobuf) QueryDataRequest(protoReq *pluginv2.QueryDataReques
 }
 
 // QueryDataResponse converts protobuf version of a QueryDataResponse to the SDK version.
-// It consumes protoRes. Each encoded frame is set to nil once decoded, so the caller must not reuse it.
 func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
+	return queryDataResponseFromProto(protoRes, false)
+}
+
+// ConsumeQueryDataResponse converts protoRes like QueryDataResponse and sets each encoded frame in protoRes to nil once decoded,
+// so a caller that owns protoRes lets the encoded bytes be freed during the conversion.
+func (f ConvertFromProtobuf) ConsumeQueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
+	return queryDataResponseFromProto(protoRes, true)
+}
+
+func queryDataResponseFromProto(protoRes *pluginv2.QueryDataResponse, release bool) (*QueryDataResponse, error) {
 	qdr := &QueryDataResponse{
 		Responses: make(Responses, len(protoRes.Responses)),
 	}
@@ -163,7 +172,9 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 					return nil, err
 				}
 				dr.Frames[i] = frame
-				res.Frames[i] = nil
+				if release {
+					res.Frames[i] = nil
+				}
 			}
 		case pluginv2.DataFrameFormat_JSON:
 			for i, b := range res.Frames {
@@ -172,7 +183,9 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 					return nil, err
 				}
 				dr.Frames[i] = frame
-				res.Frames[i] = nil
+				if release {
+					res.Frames[i] = nil
+				}
 			}
 		default:
 			return nil, errors.New("unknown data frame format: " + res.Format.String())
