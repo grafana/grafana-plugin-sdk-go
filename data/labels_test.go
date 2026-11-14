@@ -55,6 +55,52 @@ func TestJSONReadWrite(t *testing.T) {
 	require.Equal(t, a0, out)
 }
 
+func TestJSONOmitEmpty(t *testing.T) {
+	type wrapper struct {
+		Labels data.Labels `json:"labels,omitempty"`
+	}
+
+	tests := []struct {
+		name     string
+		value    any
+		expected string
+	}{
+		{
+			name:     "nil labels are omitted",
+			value:    wrapper{},
+			expected: `{}`,
+		},
+		{
+			name:     "empty labels are omitted",
+			value:    wrapper{Labels: data.Labels{}},
+			expected: `{}`,
+		},
+		{
+			name:     "labels are written",
+			value:    wrapper{Labels: data.Labels{"a": "AAA"}},
+			expected: `{"labels":{"a":"AAA"}}`,
+		},
+		{
+			name:     "field without labels",
+			value:    &data.Field{Name: "value", Config: &data.FieldConfig{Unit: "ms"}},
+			expected: `{"name":"value","config":{"unit":"ms"}}`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := jsoniter.ConfigCompatibleWithStandardLibrary.Marshal(tt.value)
+			require.NoError(t, err)
+			require.JSONEq(t, tt.expected, string(b))
+
+			// The output should match encoding/json.
+			b, err = json.Marshal(tt.value)
+			require.NoError(t, err)
+			require.JSONEq(t, tt.expected, string(b))
+		})
+	}
+}
+
 func TestString(t *testing.T) {
 	a := data.Labels{"job": "prometheus", "group": "canary"}
 	result := a.String()

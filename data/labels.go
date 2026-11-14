@@ -183,8 +183,7 @@ func writeLabelsJSON(l Labels, stream *jsoniter.Stream) {
 type dataLabelsCodec struct{}
 
 func (codec *dataLabelsCodec) IsEmpty(ptr unsafe.Pointer) bool {
-	f := (*Frame)(ptr)
-	return f.Fields == nil && f.RefID == "" && f.Meta == nil
+	return len(*(*Labels)(ptr)) == 0
 }
 
 func (codec *dataLabelsCodec) Encode(ptr unsafe.Pointer, stream *jsoniter.Stream) {
