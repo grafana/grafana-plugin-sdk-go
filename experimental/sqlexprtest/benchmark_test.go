@@ -27,7 +27,7 @@ func BenchmarkSQLInputCheck(b *testing.B) {
 		b.ReportAllocs()
 		for b.Loop() {
 			r := sqlexprtest.Check(data.Frames{frame})
-			if r.Rows != 50000 || r.Cells() != 150000 {
+			if r.Rows != 50000 || len(r.Columns) != 3 {
 				b.Fatal(r)
 			}
 		}
