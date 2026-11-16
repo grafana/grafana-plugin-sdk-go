@@ -63,11 +63,25 @@ Test frontend query preparation in your existing browser end-to-end setup. Add y
 
 ## CI
 
-`ci.yaml` is a GitHub Actions template for this SDK's layout. It isn't an active workflow. When you copy it into a plugin:
+`ci.yaml` runs this SDK's examples. It isn't an active workflow. For a plugin repo, start from `ci.plugin.yaml`. It builds your plugin, loads it into the test stack with `compose.plugin.yaml`, and runs your tests against each Grafana version you list. To use it:
 
-1. Change the test package paths.
-2. Keep one fast job without containers, and one integration job that lists Grafana versions.
-3. Save the plugin and SDK revisions with the test results.
+1. Copy `ci.plugin.yaml` into `.github/workflows/`.
+2. Copy `compose.yaml`, `compose.plugin.yaml` and `provisioning/` into your repo.
+3. Set `PLUGIN_ID` to the id in your `plugin.json`.
+4. Provision a datasource for your plugin in `provisioning/datasources/`. Remove the example datasources you don't need.
+5. Change the test packages and the `-run` pattern to your SQL Expressions tests.
+6. Save the plugin and SDK revisions with the test results.
+
+The template assumes the create-plugin layout: `npm run build` and `mage build:linux` write the plugin to `dist/`. The overlay mounts `dist/` into Grafana and allows that one unsigned plugin.
+
+To run your plugin in the stack locally:
+
+```sh
+PLUGIN_ID=myorg-my-datasource PLUGIN_DIST=./dist \
+  docker compose -p sqlexprtest -f compose.yaml -f compose.plugin.yaml up -d --wait
+```
+
+`compose.yaml` pins PostgreSQL and the fake Prometheus server by digest. Grafana's image uses the tag from `GRAFANA_VERSION`, so the matrix can change it.
 
 To test this unreleased checkout from a plugin's module, use a local `replace`. Record the `replace` with the test results. It doesn't show whether a released SDK version has this package.
 

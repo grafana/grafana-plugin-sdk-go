@@ -25,7 +25,7 @@ services:
       prometheus-fixture:
         condition: service_started
   postgres:
-    image: postgres:17.11
+    image: postgres:17.11@sha256:ff87138949ad9a46f32ff23bd6852b52ce024a13dffe9b4087be98292cdd3b4f
     environment:
       POSTGRES_USER: sqlexprtest
       POSTGRES_PASSWORD: local-test-only
@@ -38,7 +38,7 @@ services:
       timeout: 3s
       retries: 30
   prometheus-fixture:
-    image: python:3.13.1-alpine3.21
+    image: python:3.13.18-alpine@sha256:9ef1a599f863231c3d91e941389bfdc4a2d6070557243d54df1a4e57015b960e
     command: ["python", "/fixture/prometheus.py"]
     volumes:
       - ./prometheus.py:/fixture/prometheus.py:ro

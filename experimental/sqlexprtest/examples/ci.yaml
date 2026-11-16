@@ -1,4 +1,5 @@
-# Copy into .github/workflows after adapting paths and the version matrix.
+# The template for this SDK's own examples. For a plugin repo, start from
+# ci.plugin.yaml instead.
 name: SQL Expressions compatibility
 on: [pull_request, workflow_dispatch]
 permissions:
@@ -7,10 +8,10 @@ jobs:
   unit:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
       - run: go test -race ./experimental/sqlexprtest/...
@@ -26,10 +27,10 @@ jobs:
       SQLEXPRTEST_GRAFANA_URL: http://127.0.0.1:13031
       SQLEXPRTEST_PILOTS: '1'
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
-      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: go.mod
       - run: docker compose -p sqlexprtest -f experimental/sqlexprtest/examples/compose.yaml up -d --wait

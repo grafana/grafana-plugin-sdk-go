@@ -1,0 +1,14 @@
+# Adds your plugin to the test stack. Use it with compose.yaml:
+#
+#   PLUGIN_ID=myorg-my-datasource PLUGIN_DIST=./dist \
+#     docker compose -f compose.yaml -f compose.plugin.yaml up -d --wait
+#
+# PLUGIN_DIST is the built plugin: plugin.json, the frontend bundle and the
+# backend binary for linux/amd64. Provision a datasource for it in
+# provisioning/datasources/.
+services:
+  grafana:
+    environment:
+      GF_PLUGINS_ALLOW_LOADING_UNSIGNED_PLUGINS: ${PLUGIN_ID:?set PLUGIN_ID to your plugin ID}
+    volumes:
+      - ${PLUGIN_DIST:?set PLUGIN_DIST to your built plugin}:/var/lib/grafana/plugins/${PLUGIN_ID}:ro
