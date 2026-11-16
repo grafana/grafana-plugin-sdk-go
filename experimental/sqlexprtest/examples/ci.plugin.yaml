@@ -1,0 +1,57 @@
+# A GitHub Actions template for a plugin repo. Copy it into .github/workflows,
+# along with compose.yaml, compose.plugin.yaml and the provisioning directory.
+# Then:
+#   - set PLUGIN_ID to the id in your plugin.json;
+#   - provision a datasource for your plugin in provisioning/datasources/;
+#   - list the Grafana versions your plugin supports in the matrix;
+#   - change the test packages and the -run pattern to your SQL Expressions tests.
+# It assumes the create-plugin layout: npm run build writes dist/, and mage
+# builds the backend into dist/.
+name: SQL Expressions compatibility
+on: [pull_request, workflow_dispatch]
+permissions:
+  contents: read
+env:
+  PLUGIN_ID: myorg-my-datasource
+jobs:
+  unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: go test -race ./pkg/...
+  integration:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        grafana: ['13.2.4', '13.3.0']
+    env:
+      GRAFANA_VERSION: ${{ matrix.grafana }}
+      SQLEXPRTEST_GRAFANA_VERSION: ${{ matrix.grafana }}
+      SQLEXPRTEST_GRAFANA_URL: http://127.0.0.1:13031
+      PLUGIN_DIST: ${{ github.workspace }}/dist
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - run: npm ci && npm run build
+      - uses: magefile/mage-action@a662bd8c29d8106879588cfff83b2faf6e6f59db # v4.0.0
+        with:
+          version: v1.17.2
+          args: build:linux
+      - run: docker compose -p sqlexprtest -f compose.yaml -f compose.plugin.yaml up -d --wait
+      - run: go test ./pkg/... -run SQLExpressions -v -count=1
+      - if: always()
+        run: docker compose -p sqlexprtest -f compose.yaml -f compose.plugin.yaml down --volumes
