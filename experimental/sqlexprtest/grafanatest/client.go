@@ -132,7 +132,7 @@ func (c *Client) Query(ctx context.Context, req Request) (*Result, error) {
 	}
 	var result Result
 	if err := decodeResult(b, &result); err != nil {
-		return nil, errors.New("grafanatest: query response is not valid typed frame JSON")
+		return nil, fmt.Errorf("grafanatest: query response is not valid typed frame JSON: %w", err)
 	}
 	if len(result.Results) == 0 {
 		return nil, fmt.Errorf("grafanatest: HTTP %d query response has no results", status)

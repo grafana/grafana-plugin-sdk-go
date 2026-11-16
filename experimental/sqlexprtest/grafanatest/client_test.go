@@ -220,3 +220,10 @@ func TestDecodeResultPreservesValidNullsAndFloatEntities(t *testing.T) {
 	require.NoError(t, decodeResult(wire, result))
 	require.Empty(t, CompareResult(result, map[string]Expectation{"B": {Frames: data.Frames{frame}}}))
 }
+
+func TestClientDecodeErrorKeepsCause(t *testing.T) {
+	body := `{"results":{"B":{"frames":[{"schema":{"fields":[{"name":"n"}]},"data":{"values":[[1]]}}]}}}`
+	_, err := (&Client{URL: serveResult(t, http.StatusOK, []byte(body)).URL}).Query(t.Context(), testRequest())
+	require.ErrorContains(t, err, "not valid typed frame JSON: ")
+	require.Error(t, errors.Unwrap(err))
+}
