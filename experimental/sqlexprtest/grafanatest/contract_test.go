@@ -32,7 +32,7 @@ func TestContractsDetectMutations(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			f := expected()
 			tc.mutate(f)
-			bad := Check(oneResult(f), map[string]Expectation{"B": {Frames: data.Frames{expected()}}})
+			bad := CompareResult(oneResult(f), map[string]Expectation{"B": {Frames: data.Frames{expected()}}})
 			found := false
 			for _, m := range bad {
 				if m.Kind == tc.kind {
@@ -48,15 +48,15 @@ func TestContractsDetectMutations(t *testing.T) {
 func TestContractsFailClosed(t *testing.T) {
 	f := data.NewFrame("", data.NewField("n", nil, []int64{1}))
 	r := oneResult(f)
-	require.NotEmpty(t, Check(nil, map[string]Expectation{"B": {Frames: data.Frames{f}}}))
-	require.NotEmpty(t, Check(r, nil))
-	require.NotEmpty(t, Check(r, map[string]Expectation{"B": {}}))
-	require.NotEmpty(t, Check(r, map[string]Expectation{"B": {Frames: data.Frames{f}, ErrorContains: "bad"}}))
-	require.NotEmpty(t, Check(r, map[string]Expectation{"C": {Frames: data.Frames{f}}}))
+	require.NotEmpty(t, CompareResult(nil, map[string]Expectation{"B": {Frames: data.Frames{f}}}))
+	require.NotEmpty(t, CompareResult(r, nil))
+	require.NotEmpty(t, CompareResult(r, map[string]Expectation{"B": {}}))
+	require.NotEmpty(t, CompareResult(r, map[string]Expectation{"B": {Frames: data.Frames{f}, ErrorContains: "bad"}}))
+	require.NotEmpty(t, CompareResult(r, map[string]Expectation{"C": {Frames: data.Frames{f}}}))
 	r.Results["A"] = QueryResult{Error: "source failed"}
-	require.NotEmpty(t, Check(r, map[string]Expectation{"B": {Frames: data.Frames{f}}}))
+	require.NotEmpty(t, CompareResult(r, map[string]Expectation{"B": {Frames: data.Frames{f}}}))
 	r.Results["A"] = QueryResult{Status: 500}
-	require.NotEmpty(t, Check(r, map[string]Expectation{"B": {Frames: data.Frames{f}}}))
+	require.NotEmpty(t, CompareResult(r, map[string]Expectation{"B": {Frames: data.Frames{f}}}))
 }
 
 func TestContractsNoticeAndTruncation(t *testing.T) {
@@ -64,10 +64,10 @@ func TestContractsNoticeAndTruncation(t *testing.T) {
 	f := data.NewFrame("", data.NewField("n", nil, []int64{1, 2}))
 	f.Meta = &data.FrameMeta{Notices: []data.Notice{notice}}
 	r := oneResult(f)
-	require.NotEmpty(t, Check(r, map[string]Expectation{"B": {Frames: data.Frames{f}}}))
-	require.Empty(t, Check(r, map[string]Expectation{"B": {Frames: data.Frames{f}, Notices: []data.Notice{notice}}}))
+	require.NotEmpty(t, CompareResult(r, map[string]Expectation{"B": {Frames: data.Frames{f}}}))
+	require.Empty(t, CompareResult(r, map[string]Expectation{"B": {Frames: data.Frames{f}, Notices: []data.Notice{notice}}}))
 	r.Results["A"] = QueryResult{Frames: data.Frames{f}}
-	require.NotEmpty(t, Check(r, map[string]Expectation{"B": {Frames: data.Frames{f}, Notices: []data.Notice{notice}}}))
+	require.NotEmpty(t, CompareResult(r, map[string]Expectation{"B": {Frames: data.Frames{f}, Notices: []data.Notice{notice}}}))
 }
 
 func TestJSONComparisonPreservesPrecision(t *testing.T) {

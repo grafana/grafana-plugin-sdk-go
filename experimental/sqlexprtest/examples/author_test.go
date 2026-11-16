@@ -80,7 +80,7 @@ func fixtureRequest(t *testing.T, model queryModel) *backend.QueryDataRequest {
 }
 
 func tableContract(rows int) sqlexprtest.Contract {
-	return sqlexprtest.Contract{Mode: sqlexprtest.ModeTable, Rows: &rows, Columns: []sqlexprtest.Column{
+	return sqlexprtest.Contract{Conversion: sqlexprtest.ModeTable, Rows: &rows, Columns: []sqlexprtest.Column{
 		{Name: "host", Type: data.FieldTypeString, SQLType: "TEXT"},
 		{Name: "bytes", Type: data.FieldTypeInt64, SQLType: "BIGINT"},
 	}}
@@ -94,7 +94,7 @@ func TestTableDatasourceSuite(t *testing.T) {
 		if empty {
 			rows = 0
 		}
-		suite.Scenarios = append(suite.Scenarios, sqlexprtest.Scenario{Name: fmt.Sprintf("empty=%t", empty), Mode: "table",
+		suite.Scenarios = append(suite.Scenarios, sqlexprtest.Scenario{Name: fmt.Sprintf("empty=%t", empty), QueryMode: "table",
 			Input: sqlexprtest.QueryDataInput(ds, fixtureRequest(t, queryModel{Mode: "table", Empty: empty})),
 			Want:  map[string]sqlexprtest.Contract{"A": tableContract(rows)},
 		})
@@ -115,9 +115,9 @@ func TestMetricsDatasourceSuite(t *testing.T) {
 		if empty {
 			rows = 0
 		}
-		suite.Scenarios = append(suite.Scenarios, sqlexprtest.Scenario{Name: fmt.Sprintf("empty=%t", empty), Mode: "metrics",
+		suite.Scenarios = append(suite.Scenarios, sqlexprtest.Scenario{Name: fmt.Sprintf("empty=%t", empty), QueryMode: "metrics",
 			Input: sqlexprtest.QueryDataInput(ds, fixtureRequest(t, queryModel{Mode: "metrics", Empty: empty})),
-			Want: map[string]sqlexprtest.Contract{"A": {Mode: sqlexprtest.ModeFullLong, Rows: &rows, MaxCells: 100, Columns: []sqlexprtest.Column{
+			Want: map[string]sqlexprtest.Contract{"A": {Conversion: sqlexprtest.ModeFullLong, Rows: &rows, MaxCells: 100, Columns: []sqlexprtest.Column{
 				{Name: "time", Type: data.FieldTypeTime, SQLType: "TIMESTAMP"},
 				{Name: "__value__", Type: data.FieldTypeNullableFloat64, SQLType: "DOUBLE"},
 				{Name: "__metric_name__", Type: data.FieldTypeString, SQLType: "TEXT"},
@@ -140,13 +140,13 @@ func TestPreparedQuerySuite(t *testing.T) {
 		if withHeader {
 			req.SetHTTPHeader(sqlexprtest.HeaderFromExpression, "true")
 		}
-		suite.Scenarios = append(suite.Scenarios, sqlexprtest.Scenario{Name: fmt.Sprintf("prepared with header=%t", withHeader), Mode: "prepared",
+		suite.Scenarios = append(suite.Scenarios, sqlexprtest.Scenario{Name: fmt.Sprintf("prepared with header=%t", withHeader), QueryMode: "prepared",
 			Input: sqlexprtest.QueryDataInput(ds, req), Want: map[string]sqlexprtest.Contract{"A": tableContract(1)},
 		})
 	}
-	suite.Scenarios = append(suite.Scenarios, sqlexprtest.Scenario{Name: "unprepared model is rejected", Mode: "prepared", ExpectedFailure: true,
+	suite.Scenarios = append(suite.Scenarios, sqlexprtest.Scenario{Name: "unprepared model is rejected", QueryMode: "prepared", ExpectedFailure: true,
 		Input:      sqlexprtest.QueryDataInput(ds, fixtureRequest(t, queryModel{Mode: "prepared"})),
-		Want:       map[string]sqlexprtest.Contract{"A": {Mode: sqlexprtest.ModeNone}},
+		Want:       map[string]sqlexprtest.Contract{"A": {Conversion: sqlexprtest.ModeNone}},
 		Allowances: []sqlexprtest.Allowance{{Code: sqlexprtest.CodeQueryError, RefID: "A", Reason: "Negative fixture verifies the backend rejects an unprepared query."}},
 	})
 	r := sqlexprtest.AssertSuite(t, t.Context(), suite)

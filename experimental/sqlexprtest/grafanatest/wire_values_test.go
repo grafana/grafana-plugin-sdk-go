@@ -90,7 +90,7 @@ func TestClientKeepsTimesOutsideNanosecondRange(t *testing.T) {
 						_, ok := result.Results["B"].Frames[0].Fields[position].ConcreteAt(1)
 						require.False(t, ok)
 					}
-					require.Empty(t, Check(result, map[string]Expectation{"B": {Frames: data.Frames{frame}}}))
+					require.Empty(t, CompareResult(result, map[string]Expectation{"B": {Frames: data.Frames{frame}}}))
 				})
 			}
 		}

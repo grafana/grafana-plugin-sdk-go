@@ -26,7 +26,7 @@ type QueryMode struct {
 // of the mode with valid input.
 type Scenario struct {
 	Name            string
-	Mode            string
+	QueryMode       string
 	Input           Input
 	Want            map[string]Contract
 	Allowances      []Allowance
@@ -110,7 +110,7 @@ func validateSuite(s Suite, o options) error {
 	seen := make(map[string]bool, len(s.Scenarios))
 	for _, scenario := range s.Scenarios {
 		if err := validateScenario(scenario, modes, seen); err != nil {
-			return fmt.Errorf("scenario %q/%q: %w", scenario.Mode, scenario.Name, err)
+			return fmt.Errorf("scenario %q/%q: %w", scenario.QueryMode, scenario.Name, err)
 		}
 	}
 	return nil
@@ -120,14 +120,14 @@ func validateScenario(s Scenario, modes map[string]QueryMode, seen map[string]bo
 	if strings.TrimSpace(s.Name) == "" {
 		return fmt.Errorf("name is required")
 	}
-	mode, exists := modes[s.Mode]
+	mode, exists := modes[s.QueryMode]
 	if !exists {
 		return fmt.Errorf("undeclared query mode")
 	}
 	if mode.UnsupportedReason != "" {
 		return fmt.Errorf("unsupported query modes cannot contain scenarios")
 	}
-	key := s.Mode + "\x00" + s.Name
+	key := s.QueryMode + "\x00" + s.Name
 	if seen[key] {
 		return fmt.Errorf("duplicate scenario name within query mode")
 	}
@@ -153,7 +153,7 @@ func validateScenario(s Scenario, modes map[string]QueryMode, seen map[string]bo
 }
 
 func evaluateScenario(ctx context.Context, s Scenario, o options, opts []CheckOption) ScenarioResult {
-	r := ScenarioResult{Name: s.Name, Mode: s.Mode, Status: StatusPassed, ExpectedFailure: s.ExpectedFailure}
+	r := ScenarioResult{Name: s.Name, Mode: s.QueryMode, Status: StatusPassed, ExpectedFailure: s.ExpectedFailure}
 	if s.SkipReason != "" {
 		r.Status, r.Reason = StatusSkipped, s.SkipReason
 		return r

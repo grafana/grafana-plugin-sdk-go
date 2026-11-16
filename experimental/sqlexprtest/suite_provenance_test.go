@@ -118,7 +118,7 @@ func TestSuiteResponseFailuresAtSelectedMinimum(t *testing.T) {
 			s := positiveScenario()
 			s.Name = tc.name
 			s.Input = ResponseInput(tc.response, []string{"A"})
-			s.Want = map[string]Contract{"A": {Mode: tc.mode, Rows: new(0)}}
+			s.Want = map[string]Contract{"A": {Conversion: tc.mode, Rows: new(0)}}
 			s.ExpectedFailure = tc.negative
 			s.Allowances = []Allowance{{Code: tc.code, RefID: "A", Reason: "deliberate missing/error response fixture"}}
 			suite := oneScenario(positiveScenario())
@@ -136,7 +136,7 @@ func TestSuiteRejectsNegativeReportedRows(t *testing.T) {
 	s.Input = func(context.Context, ...CheckOption) (map[string]*Report, error) {
 		return map[string]*Report{"A": {RefID: "A", Mode: ModeTable, Rows: -1}}, nil
 	}
-	s.Want = map[string]Contract{"A": {Mode: ModeTable}}
+	s.Want = map[string]Contract{"A": {Conversion: ModeTable}}
 	r, err := Evaluate(t.Context(), oneScenario(s))
 	require.NoError(t, err)
 	assert.False(t, r.Passed())

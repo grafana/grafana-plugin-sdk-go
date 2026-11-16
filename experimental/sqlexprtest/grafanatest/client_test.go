@@ -77,7 +77,7 @@ func TestClientTypedFramesAndSubpath(t *testing.T) {
 	require.Equal(t, "direct-api", result.ExecutionPath)
 	require.Equal(t, []string{"B"}, result.RequestedRefIDs)
 	require.Equal(t, int64(9007199254740993), result.Results["B"].Frames[0].Fields[0].At(0))
-	require.Empty(t, Check(result, map[string]Expectation{"B": {Frames: data.Frames{expected}}}))
+	require.Empty(t, CompareResult(result, map[string]Expectation{"B": {Frames: data.Frames{expected}}}))
 	require.Equal(t, http.Header{"Authorization": {"Bearer test-token"}}, headers)
 }
 
@@ -115,8 +115,8 @@ func TestClientPerQueryErrors(t *testing.T) {
 	result, err := (&Client{URL: s.URL}).Query(t.Context(), testRequest())
 	require.NoError(t, err)
 	require.Equal(t, http.StatusBadRequest, result.HTTPStatus)
-	require.Empty(t, Check(result, map[string]Expectation{"B": {ErrorContains: "host not found"}}))
-	require.NotEmpty(t, Check(result, map[string]Expectation{"B": {Frames: data.Frames{}}}))
+	require.Empty(t, CompareResult(result, map[string]Expectation{"B": {ErrorContains: "host not found"}}))
+	require.NotEmpty(t, CompareResult(result, map[string]Expectation{"B": {Frames: data.Frames{}}}))
 }
 
 func TestClientVersionAndLimit(t *testing.T) {
@@ -218,5 +218,5 @@ func TestDecodeResultPreservesValidNullsAndFloatEntities(t *testing.T) {
 	wire := responseJSON(t, map[string]QueryResult{"B": {Frames: data.Frames{frame}}})
 	result := &Result{GrafanaVersion: "13.3.0"}
 	require.NoError(t, decodeResult(wire, result))
-	require.Empty(t, Check(result, map[string]Expectation{"B": {Frames: data.Frames{frame}}}))
+	require.Empty(t, CompareResult(result, map[string]Expectation{"B": {Frames: data.Frames{frame}}}))
 }

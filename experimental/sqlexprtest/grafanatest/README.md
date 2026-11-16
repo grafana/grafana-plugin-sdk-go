@@ -54,7 +54,7 @@ Expected `[]int64` and `[]*int64` are different on purpose: `[]*int64` expects a
 
 To expect a failure, set `Expectation{ErrorContains: "missing_column"}` instead of `Frames`. This checks only the error. To test that SQL accepts your input, add queries that succeed. Set `Notices` only in a test that expects a limit or another warning. Never set both `Frames` and `ErrorContains`.
 
-`Check` returns the mismatches without failing a test. `AssertResult` reports them through `testing.TB`. You can save the result and the mismatches as JSON in CI. They hold query data and errors, so use test data that is safe to save.
+`CompareResult` returns the mismatches without failing a test. `AssertResult` reports them through `testing.TB`. You can save the result and the mismatches as JSON in CI. They hold query data and errors, so use test data that is safe to save.
 
 ## Run the included live tests
 

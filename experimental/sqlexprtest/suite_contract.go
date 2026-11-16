@@ -14,10 +14,10 @@ import (
 // limit. It doesn't check Grafana's limit, which counts all inputs together,
 // or the size of the SQL output.
 type Contract struct {
-	Mode     Mode
-	Columns  []Column
-	Rows     *int
-	MaxCells int64
+	Conversion Mode
+	Columns    []Column
+	Rows       *int
+	MaxCells   int64
 }
 
 // Cells returns the predicted input cells (rows multiplied by columns), or zero
@@ -34,13 +34,13 @@ func (r *Report) Cells() int64 {
 }
 
 func validateContract(c Contract) error {
-	if c.Mode != "" && c.Mode != ModeNone && c.Mode != ModeTable && c.Mode != ModeFullLong {
-		return fmt.Errorf("unknown conversion mode %q", c.Mode)
+	if c.Conversion != "" && c.Conversion != ModeNone && c.Conversion != ModeTable && c.Conversion != ModeFullLong {
+		return fmt.Errorf("unknown conversion mode %q", c.Conversion)
 	}
 	if c.Rows != nil && *c.Rows < 0 {
 		return fmt.Errorf("expected row count must not be negative")
 	}
-	if c.Mode == "" && c.Columns == nil && c.Rows == nil && c.MaxCells <= 0 {
+	if c.Conversion == "" && c.Columns == nil && c.Rows == nil && c.MaxCells <= 0 {
 		return fmt.Errorf("provide a mode, schema, row-count, or positive cell-limit expectation")
 	}
 	return nil
@@ -48,8 +48,8 @@ func validateContract(c Contract) error {
 
 func compareContract(r *Report, c Contract) []string {
 	var problems []string
-	if c.Mode != "" && r.Mode != c.Mode {
-		problems = append(problems, fmt.Sprintf("conversion mode: want %s, got %s", c.Mode, r.Mode))
+	if c.Conversion != "" && r.Mode != c.Conversion {
+		problems = append(problems, fmt.Sprintf("conversion mode: want %s, got %s", c.Conversion, r.Mode))
 	}
 	if c.Rows != nil && r.Rows != *c.Rows {
 		problems = append(problems, fmt.Sprintf("rows: want %d, got %d", *c.Rows, r.Rows))

@@ -18,8 +18,8 @@ import (
 )
 
 func positiveScenario() Scenario {
-	return Scenario{Name: "populated", Mode: "table", Input: FramesInput("A", data.Frames{tableFrame()}), Want: map[string]Contract{
-		"A": {Mode: ModeTable, Rows: new(1), Columns: []Column{{Name: "value", Type: data.FieldTypeFloat64, SQLType: "DOUBLE"}}},
+	return Scenario{Name: "populated", QueryMode: "table", Input: FramesInput("A", data.Frames{tableFrame()}), Want: map[string]Contract{
+		"A": {Conversion: ModeTable, Rows: new(1), Columns: []Column{{Name: "value", Type: data.FieldTypeFloat64, SQLType: "DOUBLE"}}},
 	}}
 }
 
@@ -34,13 +34,13 @@ func TestSuiteContracts(t *testing.T) {
 		fail string
 	}{
 		{"exact", positiveScenario().Want["A"], ""},
-		{"mode mismatch", Contract{Mode: ModeFullLong}, "conversion mode"},
+		{"mode mismatch", Contract{Conversion: ModeFullLong}, "conversion mode"},
 		{"row mismatch", Contract{Rows: new(0)}, "rows: want 0, got 1"},
 		{"empty schema is asserted", Contract{Columns: []Column{}}, "ordered columns"},
 		{"field type matters", Contract{Columns: []Column{{Name: "value", Type: data.FieldTypeInt64, SQLType: "DOUBLE"}}}, "ordered columns"},
 		{"SQL type matters", Contract{Columns: []Column{{Name: "value", Type: data.FieldTypeFloat64, SQLType: "BIGINT"}}}, "ordered columns"},
 		{"cell boundary", Contract{MaxCells: 1}, ""},
-		{"negative cell limit is unlimited", Contract{Mode: ModeTable, MaxCells: -1}, ""},
+		{"negative cell limit is unlimited", Contract{Conversion: ModeTable, MaxCells: -1}, ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s := positiveScenario()
@@ -73,7 +73,7 @@ func TestSuiteContracts(t *testing.T) {
 
 func TestSuiteInventoryDoesNotClaimSkippedOrNegativeCoverage(t *testing.T) {
 	s := Suite{Modes: []QueryMode{{Name: "table"}, {Name: "metrics"}, {Name: "browser", UnsupportedReason: "frames are constructed only in the browser"}, {Name: "logs"}}, Scenarios: []Scenario{
-		positiveScenario(), {Name: "capture", Mode: "logs", SkipReason: "fixture capture pending"},
+		positiveScenario(), {Name: "capture", QueryMode: "logs", SkipReason: "fixture capture pending"},
 	}}
 	r, err := Evaluate(t.Context(), s)
 	require.NoError(t, err)
@@ -82,16 +82,16 @@ func TestSuiteInventoryDoesNotClaimSkippedOrNegativeCoverage(t *testing.T) {
 	assert.True(t, r.HasFailures(), "undeclared fixture coverage fails")
 	s.Modes = append(s.Modes[:1], s.Modes[2:]...)
 	logs := positiveScenario()
-	logs.Mode = "logs"
+	logs.QueryMode = "logs"
 	s.Scenarios = append(s.Scenarios, logs)
 	r, err = Evaluate(t.Context(), s)
 	require.NoError(t, err)
 	assert.False(t, r.Passed(), "explicit exclusions still are not passes")
 	assert.False(t, r.HasFailures(), "optional skips do not fail a mode with positive coverage")
 	assert.Equal(t, StatusSkipped, r.Modes[2].Status)
-	negative := Scenario{Name: "upstream error", Mode: "table", ExpectedFailure: true,
+	negative := Scenario{Name: "upstream error", QueryMode: "table", ExpectedFailure: true,
 		Input: ResponseInput(&backend.QueryDataResponse{Responses: backend.Responses{"A": {Error: errors.New("upstream unavailable")}}}, []string{"A"}),
-		Want:  map[string]Contract{"A": {Mode: ModeNone}}, Allowances: []Allowance{{Code: CodeQueryError, RefID: "A", Reason: "intentional upstream failure"}},
+		Want:  map[string]Contract{"A": {Conversion: ModeNone}}, Allowances: []Allowance{{Code: CodeQueryError, RefID: "A", Reason: "intentional upstream failure"}},
 	}
 	r, err = Evaluate(t.Context(), oneScenario(negative))
 	require.NoError(t, err)
@@ -118,12 +118,12 @@ func TestSuiteInventoryDoesNotClaimSkippedOrNegativeCoverage(t *testing.T) {
 func TestSuiteCannotSkipAllPositiveCoverage(t *testing.T) {
 	for _, withNegative := range []bool{false, true} {
 		t.Run(strconv.FormatBool(withNegative), func(t *testing.T) {
-			suite := oneScenario(Scenario{Name: "capture", Mode: "table", SkipReason: "fixture capture pending"})
+			suite := oneScenario(Scenario{Name: "capture", QueryMode: "table", SkipReason: "fixture capture pending"})
 			if withNegative {
 				suite.Scenarios = append(suite.Scenarios, Scenario{
-					Name: "upstream error", Mode: "table", ExpectedFailure: true,
+					Name: "upstream error", QueryMode: "table", ExpectedFailure: true,
 					Input:      ResponseInput(&backend.QueryDataResponse{Responses: backend.Responses{"A": {Error: errors.New("upstream unavailable")}}}, []string{"A"}),
-					Want:       map[string]Contract{"A": {Mode: ModeNone}},
+					Want:       map[string]Contract{"A": {Conversion: ModeNone}},
 					Allowances: []Allowance{{Code: CodeQueryError, RefID: "A", Reason: "intentional upstream failure"}},
 				})
 			}
@@ -146,7 +146,7 @@ func TestSuiteScopedAllowances(t *testing.T) {
 	}
 	s := positiveScenario()
 	s.Input = input("new_field")
-	s.Want["A"] = Contract{Mode: ModeFullLong, Rows: new(1)}
+	s.Want["A"] = Contract{Conversion: ModeFullLong, Rows: new(1)}
 	s.Allowances = []Allowance{{Code: CodeDroppedField, RefID: "A", Frame: new(0), Field: new("status"), Reason: "status is not part of this mode's SQL contract"}}
 	r, err := Evaluate(t.Context(), oneScenario(s))
 	require.NoError(t, err)
@@ -175,7 +175,7 @@ func TestSuiteAllowanceDoesNotCrossQueryBoundary(t *testing.T) {
 	s.Input = ResponseInput(&backend.QueryDataResponse{Responses: backend.Responses{
 		"A": {Frames: droppedFieldFrames()}, "B": {Frames: droppedFieldFrames()},
 	}}, []string{"A", "B"})
-	s.Want = map[string]Contract{"A": {Mode: ModeFullLong}, "B": {Mode: ModeFullLong}}
+	s.Want = map[string]Contract{"A": {Conversion: ModeFullLong}, "B": {Conversion: ModeFullLong}}
 	s.Allowances = []Allowance{{Code: CodeDroppedField, RefID: "A", Field: new("state"), Reason: "A intentionally drops the status"}}
 	r, err := Evaluate(t.Context(), oneScenario(s))
 	require.NoError(t, err)
@@ -198,7 +198,7 @@ func TestSuiteExtraResponseMatchesAcrossInputs(t *testing.T) {
 	}{
 		{"query data", QueryDataInput(h, request("A")), nil},
 		{"response", ResponseInput(both, []string{"A"}), nil},
-		{"response with contract for B", ResponseInput(both, []string{"A"}), map[string]Contract{"B": {Mode: ModeNone}}},
+		{"response with contract for B", ResponseInput(both, []string{"A"}), map[string]Contract{"B": {Conversion: ModeNone}}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			s := positiveScenario()
@@ -254,7 +254,7 @@ func TestSuiteExtraResponseMatchesAcrossInputs(t *testing.T) {
 			delete(reports, "C")
 			return reports, nil
 		}
-		s.Want = map[string]Contract{"A": {Mode: ModeNone}, "B": {Mode: ModeNone}}
+		s.Want = map[string]Contract{"A": {Conversion: ModeNone}, "B": {Conversion: ModeNone}}
 		s.Allowances = allow
 		r, err := Evaluate(t.Context(), oneScenario(s))
 		require.NoError(t, err)
@@ -271,8 +271,12 @@ func TestSuiteInputFailuresCannotPass(t *testing.T) {
 		want  string
 	}{
 		{"empty", func(context.Context, ...CheckOption) (map[string]*Report, error) { return nil, nil }, "input returned no query reports"},
-		{"nil report", func(context.Context, ...CheckOption) (map[string]*Report, error) { return map[string]*Report{"A": nil}, nil }, "nil report"},
-		{"error", func(context.Context, ...CheckOption) (map[string]*Report, error) { return nil, errors.New("fixture failed") }, "fixture failed"},
+		{"nil report", func(context.Context, ...CheckOption) (map[string]*Report, error) {
+			return map[string]*Report{"A": nil}, nil
+		}, "nil report"},
+		{"error", func(context.Context, ...CheckOption) (map[string]*Report, error) {
+			return nil, errors.New("fixture failed")
+		}, "fixture failed"},
 		{"panic", func(context.Context, ...CheckOption) (map[string]*Report, error) { panic("fixture panicked") }, "scenario input panicked"},
 		{"wrong key", FramesInput("B", data.Frames{tableFrame()}), "missing report for requested RefID"},
 		{"extra report", ResponseInput(&backend.QueryDataResponse{Responses: backend.Responses{"A": {Frames: data.Frames{tableFrame()}}, "B": {Frames: data.Frames{tableFrame()}}}}, nil), "unexpected report for RefID"},
@@ -296,7 +300,10 @@ func TestSuiteInputFailuresCannotPass(t *testing.T) {
 		ctx, cancel := context.WithCancel(t.Context())
 		cancel()
 		s := positiveScenario()
-		s.Input = func(context.Context, ...CheckOption) (map[string]*Report, error) { t.Fatal("must not run"); return nil, nil }
+		s.Input = func(context.Context, ...CheckOption) (map[string]*Report, error) {
+			t.Fatal("must not run")
+			return nil, nil
+		}
 		r, err := Evaluate(ctx, oneScenario(s))
 		require.NoError(t, err)
 		assert.Contains(t, r.String(), "context canceled")
@@ -311,12 +318,12 @@ func TestSuiteConfigurationValidatedBeforeInputs(t *testing.T) {
 		{"empty inventory", func(s *Suite) { s.Modes = nil }},
 		{"duplicate mode", func(s *Suite) { s.Modes = append(s.Modes, s.Modes[0]) }},
 		{"duplicate scenario", func(s *Suite) { s.Scenarios = append(s.Scenarios, s.Scenarios[0]) }},
-		{"unknown mode", func(s *Suite) { s.Scenarios[1].Mode = "missing" }},
+		{"unknown mode", func(s *Suite) { s.Scenarios[1].QueryMode = "missing" }},
 		{"no input", func(s *Suite) { s.Scenarios[1].Input = nil }},
 		{"no expectations", func(s *Suite) { s.Scenarios[1].Want = nil }},
 		{"vacuous contract", func(s *Suite) { s.Scenarios[1].Want = map[string]Contract{"A": {}} }},
 		{"negative rows", func(s *Suite) { s.Scenarios[1].Want = map[string]Contract{"A": {Rows: new(-1)}} }},
-		{"unknown conversion", func(s *Suite) { s.Scenarios[1].Want = map[string]Contract{"A": {Mode: "magic"}} }},
+		{"unknown conversion", func(s *Suite) { s.Scenarios[1].Want = map[string]Contract{"A": {Conversion: "magic"}} }},
 		{"unknown code", func(s *Suite) { s.Scenarios[1].Allowances = []Allowance{{Code: "typo", Reason: "known issue"}} }},
 		{"no reason", func(s *Suite) { s.Scenarios[1].Allowances = []Allowance{{Code: CodeMissingType}} }},
 		{"wrong RefID", func(s *Suite) {
@@ -390,7 +397,7 @@ func TestSuiteFailureThreshold(t *testing.T) {
 	assert.Contains(t, r.String(), "unused allowance 0", "findings below the threshold no longer need an allowance")
 	s.Allowances = nil
 	s.Input = FramesInput("A", droppedFieldFrames())
-	s.Want["A"] = Contract{Mode: ModeFullLong}
+	s.Want["A"] = Contract{Conversion: ModeFullLong}
 	r, err = Evaluate(t.Context(), oneScenario(s), FailOn(SeverityError))
 	require.NoError(t, err)
 	assert.True(t, r.Passed(), r.String())
@@ -464,6 +471,6 @@ func TestReportCells(t *testing.T) {
 	assert.Zero(t, (&Report{Mode: ModeTable, Rows: 0, Columns: make([]Column, 2)}).Cells())
 	if strconv.IntSize == 64 {
 		assert.Equal(t, int64(math.MaxInt64), (&Report{Mode: ModeTable, Rows: math.MaxInt, Columns: make([]Column, 2)}).Cells())
-		assert.Contains(t, compareContract(&Report{Mode: ModeTable, Rows: math.MaxInt, Columns: make([]Column, 2)}, Contract{Mode: ModeTable}), "predicted cell count overflows int64")
+		assert.Contains(t, compareContract(&Report{Mode: ModeTable, Rows: math.MaxInt, Columns: make([]Column, 2)}, Contract{Conversion: ModeTable}), "predicted cell count overflows int64")
 	}
 }

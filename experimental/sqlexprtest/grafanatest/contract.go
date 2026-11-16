@@ -53,11 +53,11 @@ func (m Mismatch) String() string {
 	return where + " [" + m.Kind + "]: " + m.Detail
 }
 
-// Check compares actual SQL results with expectations. At least one expectation
+// CompareResult compares actual SQL results with expectations. At least one expectation
 // is required. Errors and notices on every returned query are checked, even if
 // only a SQL expression's values have an expectation. This prevents a healthy
 // result from masking a failed source query or output truncation.
-func Check(result *Result, expected map[string]Expectation) []Mismatch {
+func CompareResult(result *Result, expected map[string]Expectation) []Mismatch {
 	var bad []Mismatch
 	add := func(ref, kind, detail string) { bad = append(bad, Mismatch{ref, -1, "", -1, kind, detail}) }
 	if result == nil {
@@ -107,7 +107,7 @@ func Check(result *Result, expected map[string]Expectation) []Mismatch {
 // the query failed as expected, not that SQL accepts valid input.
 func AssertResult(tb testing.TB, result *Result, expected map[string]Expectation) []Mismatch {
 	tb.Helper()
-	bad := Check(result, expected)
+	bad := CompareResult(result, expected)
 	for _, m := range bad {
 		tb.Errorf("SQL Expression runtime contract: %s", m)
 	}
