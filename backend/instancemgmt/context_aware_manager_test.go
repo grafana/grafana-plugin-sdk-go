@@ -3,6 +3,7 @@ package instancemgmt
 import (
 	"context"
 	"runtime"
+	"strings"
 	"testing"
 	"time"
 
@@ -120,8 +121,7 @@ func TestInstanceManagerWrapper_LazilyConstructsTTLManager(t *testing.T) {
 	ctx := context.Background()
 	tip := &testInstanceProvider{}
 
-	runtime.Gosched()
-	before := runtime.NumGoroutine()
+	before := janitorGoroutines()
 
 	im := NewInstanceManagerWrapper(tip)
 
@@ -130,9 +130,7 @@ func TestInstanceManagerWrapper_LazilyConstructsTTLManager(t *testing.T) {
 	// context actually selects it, so simply creating the wrapper -- as
 	// every datasource.Manage-based plugin does at startup, regardless of
 	// whether the TTL toggle is ever enabled for it -- must not spawn one.
-	time.Sleep(50 * time.Millisecond)
-	afterConstruction := runtime.NumGoroutine()
-	require.Equal(t, before, afterConstruction,
+	require.Zero(t, newJanitorGoroutines(before),
 		"constructing the instance manager wrapper should not spawn the TTL manager's cleanup goroutine")
 
 	pCtx := backend.PluginContext{
@@ -152,8 +150,38 @@ func TestInstanceManagerWrapper_LazilyConstructsTTLManager(t *testing.T) {
 		require.IsType(t, &instanceManagerWithTTL{}, manager)
 	}
 
-	time.Sleep(50 * time.Millisecond)
-	afterSelect := runtime.NumGoroutine()
-	require.Equal(t, before+1, afterSelect,
+	require.Equal(t, 1, newJanitorGoroutines(before),
 		"selecting the TTL manager should construct its cleanup goroutine exactly once, regardless of how many times it's selected")
+	runtime.KeepAlive(im)
+}
+
+// janitorGoroutines returns the IDs of running go-cache janitor goroutines.
+// It tracks IDs, not a count, because a dropped cache's janitor exits whenever a GC runs its finalizer.
+func janitorGoroutines() map[string]bool {
+	buf := make([]byte, 1<<16)
+	for {
+		n := runtime.Stack(buf, true)
+		if n < len(buf) {
+			buf = buf[:n]
+			break
+		}
+		buf = make([]byte, 2*len(buf))
+	}
+	ids := map[string]bool{}
+	for g := range strings.SplitSeq(string(buf), "\n\n") {
+		if strings.Contains(g, "created by github.com/patrickmn/go-cache.runJanitor") {
+			ids[strings.Fields(g)[1]] = true
+		}
+	}
+	return ids
+}
+
+func newJanitorGoroutines(before map[string]bool) int {
+	n := 0
+	for id := range janitorGoroutines() {
+		if !before[id] {
+			n++
+		}
+	}
+	return n
 }
