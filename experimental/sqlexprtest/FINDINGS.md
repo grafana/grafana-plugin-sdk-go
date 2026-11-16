@@ -4,7 +4,7 @@ Each row gives a small input that produces the finding, and how to fix it. Check
 
 | Code | Example input | Fix |
 | --- | --- | --- |
-| `query-error` | The response for `A` has a `DataResponse.Error`. | Fix the query or the upstream error. For a test that expects the error, pass `Ignore(CodeQueryError)` to the Assert helper, or call `CheckResponse` and assert on the finding. |
+| `query-error` | The response for `A` has a `DataResponse.Error`. | Fix the query or the upstream error. For a test that expects the error, set `ExpectedFailure` on the suite scenario and add an allowance for this code. Outside a suite, pass `Ignore(CodeQueryError)` to the Assert helper. |
 | `missing-refid` | The request asks for `A`, but the response has only `B`. | Key every response by its query's RefID. SQL reads a missing `A` as a table with no columns. |
 | `unexpected-refid` | The request asks for `A`, and the response also has `B`. | Return results only for the queries in the request. SQL never reads `B`. |
 | `nil-response` | The handler returns `(nil, nil)`. | Return a `QueryDataResponse` or an error. |
@@ -42,3 +42,4 @@ More examples:
 
 - Small malformed inputs: `core_regression_test.go`.
 - Renamed columns and Grafana versions: `version_ranges_test.go`.
+- Fixed table and wide-metric shapes: the [author examples](examples/author_test.go).
