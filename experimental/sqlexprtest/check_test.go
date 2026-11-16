@@ -259,7 +259,9 @@ func TestCheckIntegerPrecision(t *testing.T) {
 }
 
 func TestCheckEnum(t *testing.T) {
-	frame := typed(data.FrameTypeTable, data.NewFrame("", data.NewField("state", nil, []data.EnumItemIndex{0})))
+	field := data.NewField("state", nil, []data.EnumItemIndex{0})
+	field.Config = &data.FieldConfig{TypeConfig: &data.FieldTypeConfig{Enum: &data.EnumFieldConfig{Text: []string{"ok"}}}}
+	frame := typed(data.FrameTypeTable, data.NewFrame("", field))
 
 	r := Check(data.Frames{frame})
 
@@ -277,6 +279,27 @@ func TestCheckEnum(t *testing.T) {
 	r = Check(data.Frames{frame}, MinGrafana("13.3.0"))
 	assert.Empty(t, codes(r))
 	assert.Equal(t, "TEXT", r.Columns[0].SQLType)
+}
+
+func TestCheckEnumWithoutText(t *testing.T) {
+	two := data.EnumItemIndex(2)
+	for name, field := range map[string]*data.Field{
+		"no enum config":   data.NewField("state", nil, []data.EnumItemIndex{0}),
+		"index past texts": data.NewField("state", nil, []*data.EnumItemIndex{nil, &two}),
+	} {
+		t.Run(name, func(t *testing.T) {
+			field.Config = &data.FieldConfig{TypeConfig: &data.FieldTypeConfig{Enum: &data.EnumFieldConfig{Text: []string{"ok", "down"}}}}
+			if name == "no enum config" {
+				field.Config = nil
+			}
+			r := Check(data.Frames{typed(data.FrameTypeTable, data.NewFrame("", field))}, MinGrafana("13.3.0"))
+
+			require.Equal(t, []Code{CodeEnumField}, codes(r))
+			assert.Equal(t, OwnerPlugin, r.Findings[0].Owner)
+			assert.Equal(t, SeverityWarning, r.Findings[0].Severity)
+			assert.Equal(t, "TEXT", r.Columns[0].SQLType)
+		})
+	}
 }
 
 func TestCheckColumnNames(t *testing.T) {

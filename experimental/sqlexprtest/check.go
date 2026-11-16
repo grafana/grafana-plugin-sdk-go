@@ -135,6 +135,9 @@ func checkTable(r *Report, frames data.Frames) {
 			r.add(Finding{Code: CodeUnequalFieldLengths, Severity: severity, Owner: OwnerPlugin, Frame: 0, Field: f.Name,
 				Message: fmt.Sprintf("field %d has %d values, and field 0 has %d. %s Return fields of equal length.", j, f.Len(), r.Rows, consequence)})
 		}
+		if isEnum && enumFixed {
+			checkEnumText(r, j, f)
+		}
 		if isEnum && !enumFixed {
 			msg := fmt.Sprintf("SQL reads field %d's enum values as JSON numbers, the enum index, not the text. Use a string field.", j)
 			if enumFixedIn != "" {
@@ -150,6 +153,34 @@ func checkTable(r *Report, frames data.Frames) {
 				"Set Meta.Type, for example to table, timeseries-multi or numeric-wide, so Grafana knows the shape."})
 	}
 	checkDuplicateNames(r, r.Columns, 0)
+}
+
+// checkEnumText reports enum values with no text in the field config. Grafana
+// versions that read enum text read those values as the index, such as "0".
+func checkEnumText(r *Report, j int, f *data.Field) {
+	var text []string
+	if f.Config != nil && f.Config.TypeConfig != nil && f.Config.TypeConfig.Enum != nil {
+		text = f.Config.TypeConfig.Enum.Text
+	}
+	for k := range f.Len() {
+		var idx data.EnumItemIndex
+		switch v := f.At(k).(type) {
+		case data.EnumItemIndex:
+			idx = v
+		case *data.EnumItemIndex:
+			if v == nil {
+				continue
+			}
+			idx = *v
+		}
+		if int(idx) < len(text) {
+			continue
+		}
+		r.add(Finding{Code: CodeEnumField, Severity: SeverityWarning, Owner: OwnerPlugin, Frame: 0, Field: f.Name,
+			Message: fmt.Sprintf("row %d of field %d has enum index %d, but the field config has %d enum texts, "+
+				"so SQL reads the index as the text %q. Add the text to Config.TypeConfig.Enum.Text, or use a string field.", k, j, idx, len(text), fmt.Sprint(idx))})
+		return
+	}
 }
 
 // RowLen can inspect private field storage without calling Type, which panics
