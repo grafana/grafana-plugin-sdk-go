@@ -23,8 +23,8 @@ const (
 const maxExactInteger = 1 << 53
 
 // Check checks the frames that one query returned, as SQL Expressions read
-// them. It uses only the [MinGrafana] option. It never returns nil.
-func Check(frames data.Frames, opts ...Option) *Report {
+// them. It never returns nil.
+func Check(frames data.Frames, opts ...CheckOption) *Report {
 	r := &Report{Mode: ModeTable, minGrafana: newOptions(opts).minGrafana}
 	if len(frames) == 0 {
 		r.add(Finding{

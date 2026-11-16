@@ -52,7 +52,7 @@ Test the frames your real handler returns when you can. Mock the upstream servic
 
 ## Choose what fails the test
 
-Pass `FailOn` and `Ignore` to the Assert helpers:
+`FailOn` and `Ignore` are `AssertOption` values. Pass them to the Assert helpers. `Check`, `CheckResponse` and `CheckQueryData` take only `CheckOption` values, such as `MinGrafana`, so passing `Ignore` to them doesn't compile:
 
 ```go
 sqlexprtest.AssertQueryData(t, ctx, ds, req,

@@ -95,7 +95,7 @@ func TestMinGrafanaFromPluginJSON(t *testing.T) {
 	t.Run("reads the lower bound", func(t *testing.T) {
 		opt, err := MinGrafanaFromPluginJSON(write(t, `{"dependencies": {"grafanaDependency": ">=12.3.0"}}`))
 		require.NoError(t, err)
-		assert.Equal(t, "12.3.0", newOptions([]Option{opt}).minGrafana.String())
+		assert.Equal(t, "12.3.0", newOptions([]CheckOption{opt}).minGrafana.String())
 	})
 
 	t.Run("errors", func(t *testing.T) {
@@ -131,11 +131,11 @@ func TestCheckGeneratedNameClashFixedIn(t *testing.T) {
 
 	for _, tc := range []struct {
 		name string
-		opts []Option
+		opts []CheckOption
 	}{
 		{"no minimum version", nil},
-		{"older minimum version", []Option{MinGrafana("13.2.9")}},
-		{"prerelease minimum version", []Option{MinGrafana("13.3.0-pre")}},
+		{"older minimum version", []CheckOption{MinGrafana("13.2.9")}},
+		{"prerelease minimum version", []CheckOption{MinGrafana("13.3.0-pre")}},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			r := Check(clashFrames(), tc.opts...)
@@ -209,7 +209,7 @@ func TestPluginDependencyIntersectionsAndAlternatives(t *testing.T) {
 				return
 			}
 			require.NoError(t, err)
-			assert.Equal(t, tc.minimum, newOptions([]Option{opt}).minGrafana.String())
+			assert.Equal(t, tc.minimum, newOptions([]CheckOption{opt}).minGrafana.String())
 		})
 	}
 }

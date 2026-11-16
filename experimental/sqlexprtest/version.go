@@ -125,12 +125,12 @@ func (v version) release() version {
 //
 // Without MinGrafana, checks assume versions without any fix are supported.
 // MinGrafana panics if v is not a valid version.
-func MinGrafana(v string) Option {
+func MinGrafana(v string) CheckOption {
 	parsed, err := parseVersion(v)
 	if err != nil {
 		panic("sqlexprtest: " + err.Error())
 	}
-	return func(o *options) { o.minGrafana = &parsed }
+	return checkOption(func(o *options) { o.minGrafana = &parsed })
 }
 
 // MinGrafanaFromPluginJSON reads the minimum allowed by grafanaDependency.
@@ -139,7 +139,7 @@ func MinGrafana(v string) Option {
 // an explicit prerelease comparator with the same major.minor.patch in their
 // alternative. Wildcards, hyphen ranges, and other syntax return an error;
 // callers can use MinGrafana after establishing the minimum themselves.
-func MinGrafanaFromPluginJSON(path string) (Option, error) {
+func MinGrafanaFromPluginJSON(path string) (CheckOption, error) {
 	b, err := os.ReadFile(path) // #nosec G304
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func MinGrafanaFromPluginJSON(path string) (Option, error) {
 	if err != nil {
 		return nil, fmt.Errorf("%s: %w", path, err)
 	}
-	return func(o *options) { o.minGrafana = &v }, nil
+	return checkOption(func(o *options) { o.minGrafana = &v }), nil
 }
 
 var operatorSpace = regexp.MustCompile(`([<>=^~]+)\s+`)

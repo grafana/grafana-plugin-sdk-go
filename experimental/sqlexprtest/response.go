@@ -19,12 +19,12 @@ const HeaderFromExpression = "X-Grafana-From-Expr"
 
 // CheckResponse checks every query in a QueryDataResponse. refIDs are the
 // RefIDs the request asked for. When refIDs is empty, it checks the RefIDs the
-// response has. It uses only the [MinGrafana] option.
+// response has.
 //
 // The result has one report per RefID, including RefIDs the response has but
 // no query asked for. A nil response gives an error report for each RefID in
 // refIDs, or one report under the RefID "" when refIDs is empty.
-func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Option) map[string]*Report {
+func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...CheckOption) map[string]*Report {
 	o := newOptions(opts)
 	reports := map[string]*Report{}
 	if resp == nil {
@@ -92,10 +92,10 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Opt
 // don't apply.
 //
 // A handler error becomes a [CodeQueryError] finding, and a panic a
-// [CodePanic] finding, for that query. It uses only the [MinGrafana] option.
+// [CodePanic] finding, for that query.
 // It returns an error, without calling the handler, when req is nil, has no
 // queries, or two queries share a RefID.
-func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...Option) (map[string]*Report, error) {
+func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...CheckOption) (map[string]*Report, error) {
 	if req == nil {
 		return nil, errors.New("sqlexprtest: nil QueryDataRequest")
 	}
@@ -139,7 +139,7 @@ func CheckQueryData(ctx context.Context, h backend.QueryDataHandler, req *backen
 
 // checkOneResponse checks the response to a request for one query. Entries for
 // other RefIDs become an unexpected-refid finding on that query's report.
-func checkOneResponse(resp *backend.QueryDataResponse, refID string, opts []Option) *Report {
+func checkOneResponse(resp *backend.QueryDataResponse, refID string, opts []CheckOption) *Report {
 	reports := CheckResponse(resp, []string{refID}, opts...)
 	r := reports[refID]
 	others := []string{}

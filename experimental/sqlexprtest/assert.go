@@ -16,40 +16,70 @@ type options struct {
 	minGrafana *version
 }
 
-// Option changes what the checks predict, with [MinGrafana], or what the
-// Assert functions treat as a failure, with [FailOn] and [Ignore].
-type Option func(*options)
+// AssertOption changes what the Assert functions treat as a failure, with
+// [FailOn] and [Ignore]. Every [CheckOption] is also an AssertOption.
+type AssertOption interface {
+	apply(*options)
+}
+
+// CheckOption changes what the checks predict, with [MinGrafana]. The Check
+// functions take only CheckOption values, so passing [FailOn] or [Ignore] to
+// them doesn't compile.
+type CheckOption interface {
+	AssertOption
+	checkOption()
+}
+
+type assertOption func(*options)
+
+func (f assertOption) apply(o *options) { f(o) }
+
+type checkOption func(*options)
+
+func (f checkOption) apply(o *options) { f(o) }
+func (checkOption) checkOption()       {}
 
 // FailOn fails the test on findings at or above s. The default is
 // SeverityWarning, so lost data fails the test, and advice does not.
-func FailOn(s Severity) Option {
-	return func(o *options) { o.failOn = s }
+func FailOn(s Severity) AssertOption {
+	return assertOption(func(o *options) { o.failOn = s })
 }
 
 // Ignore skips findings with these codes, for example a known Grafana
 // limitation the plugin accepts.
-func Ignore(codes ...Code) Option {
-	return func(o *options) {
+func Ignore(codes ...Code) AssertOption {
+	return assertOption(func(o *options) {
 		for _, c := range codes {
 			o.ignore[c] = true
 		}
-	}
+	})
 }
 
-func newOptions(opts []Option) options {
+func newOptions[T AssertOption](opts []T) options {
 	o := options{failOn: SeverityWarning, ignore: map[Code]bool{}}
 	for _, opt := range opts {
-		opt(&o)
+		opt.apply(&o)
 	}
 	return o
+}
+
+// checkOptions keeps the options that change what the checks predict.
+func checkOptions(opts []AssertOption) []CheckOption {
+	var out []CheckOption
+	for _, opt := range opts {
+		if c, ok := opt.(CheckOption); ok {
+			out = append(out, c)
+		}
+	}
+	return out
 }
 
 // AssertFrames checks one query's frames with [Check]. When a finding is at or
 // above the FailOn severity, it marks the test as failed, without stopping it,
 // and prints the whole report. It returns the report.
-func AssertFrames(tb testing.TB, frames data.Frames, opts ...Option) *Report {
+func AssertFrames(tb testing.TB, frames data.Frames, opts ...AssertOption) *Report {
 	tb.Helper()
-	r := Check(frames, opts...)
+	r := Check(frames, checkOptions(opts)...)
 	assertReport(tb, r, newOptions(opts))
 	return r
 }
@@ -58,10 +88,10 @@ func AssertFrames(tb testing.TB, frames data.Frames, opts ...Option) *Report {
 // the test as failed for each report with a finding at or above the FailOn
 // severity. Pass refIDs to also fail on queries missing from the response.
 // It fails when there is nothing to check: no refIDs and an empty response.
-func AssertResponse(tb testing.TB, resp *backend.QueryDataResponse, refIDs []string, opts ...Option) map[string]*Report {
+func AssertResponse(tb testing.TB, resp *backend.QueryDataResponse, refIDs []string, opts ...AssertOption) map[string]*Report {
 	tb.Helper()
 	o := newOptions(opts)
-	reports := CheckResponse(resp, refIDs, opts...)
+	reports := CheckResponse(resp, refIDs, checkOptions(opts)...)
 	if len(reports) == 0 {
 		tb.Errorf("SQL Expressions input check: the response has no queries to check. Pass the RefIDs the request asked for.")
 		return reports
@@ -88,9 +118,9 @@ func assertReport(tb testing.TB, r *Report, o options) {
 
 // AssertQueryData calls the handler with [CheckQueryData], and marks the test
 // as failed for each query with a finding at or above the FailOn severity.
-func AssertQueryData(tb testing.TB, ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...Option) map[string]*Report {
+func AssertQueryData(tb testing.TB, ctx context.Context, h backend.QueryDataHandler, req *backend.QueryDataRequest, opts ...AssertOption) map[string]*Report {
 	tb.Helper()
-	reports, err := CheckQueryData(ctx, h, req, opts...)
+	reports, err := CheckQueryData(ctx, h, req, checkOptions(opts)...)
 	if err != nil {
 		tb.Errorf("SQL Expressions input check: %v", err)
 		return nil

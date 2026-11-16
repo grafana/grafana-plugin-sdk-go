@@ -135,3 +135,14 @@ func TestAssertQueryDataInvalidRequest(t *testing.T) {
 		assert.Len(t, rec.errors, 1)
 	}
 }
+
+func TestOptionKinds(t *testing.T) {
+	_, failOnChecks := FailOn(SeverityError).(CheckOption)
+	_, ignoreChecks := Ignore(CodeMissingType).(CheckOption)
+	assert.False(t, failOnChecks)
+	assert.False(t, ignoreChecks)
+
+	opts := []AssertOption{FailOn(SeverityError), MinGrafana("13.3.0"), Ignore(CodeMissingType)}
+	assert.Len(t, checkOptions(opts), 1)
+	assert.Equal(t, "13.3.0", newOptions(checkOptions(opts)).minGrafana.String())
+}
