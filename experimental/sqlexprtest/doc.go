@@ -6,8 +6,8 @@
 // A response that works in a panel can still fail in SQL, or lose columns,
 // rows, or digits without an error. This package predicts what Grafana does
 // with a plugin's frames, so a plugin's own tests can catch those problems.
-// It does not import Grafana or run SQL. A parity test in Grafana runs the
-// same frames through Grafana's real code and checks that the two agree.
+// It does not import Grafana or run SQL, so it can drift from Grafana's real
+// conversion code. A parity test for Grafana is planned to catch that drift.
 //
 // Use [Check] on the frames of one query, [CheckResponse] on a whole
 // QueryDataResponse, or [CheckQueryData] to call a plugin's QueryData handler.
@@ -26,9 +26,13 @@
 // from failing the test, for every field and query, but the report still
 // lists it. [Codes] lists every finding code.
 //
-// Grafana sets the [HeaderFromExpression] header on some SQL Expression
-// requests but not all of them. If the plugin changes what it returns for that
-// header, test the request both with and without it.
+// Grafana sets the [HeaderFromExpression] header on SQL Expression requests
+// only in some versions and on some paths. If the plugin changes what it
+// returns for that header, test the request both with and without it.
+//
+// The predictions don't apply when Grafana's sseGroupByDatasource feature
+// flag is on. Grafana then converts grouped results with a different code
+// path.
 //
 // Each [Finding] has a code, a [Severity], and an [Owner]:
 //

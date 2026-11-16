@@ -10,10 +10,11 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 )
 
-// HeaderFromExpression is the header Grafana declares to mark QueryData
-// requests that come from server-side expressions, such as SQL Expressions.
-// Some Grafana versions forward it only when the browser sends it, so a plugin
-// should not depend on it alone.
+// HeaderFromExpression is the header Grafana sets to mark QueryData requests
+// that come from server-side expressions, such as SQL Expressions. Grafana
+// 13.3 and earlier forward it only when the browser sends it, and requests
+// through the query service don't have it, so a plugin should not depend on
+// it alone.
 const HeaderFromExpression = "X-Grafana-From-Expr"
 
 // CheckResponse checks every query in a QueryDataResponse. refIDs are the
@@ -86,7 +87,9 @@ func CheckResponse(resp *backend.QueryDataResponse, refIDs []string, opts ...Opt
 // holds only that query. It passes req's headers unchanged. To test a request
 // with the [HeaderFromExpression] header, set it on req. The copies share
 // req's PluginContext. It doesn't model the sseGroupByDatasource feature
-// flag, which sends a data source's queries in one request.
+// flag. With the flag on, Grafana sends a data source's queries in one request
+// and converts the results with a different code path, so the predictions
+// don't apply.
 //
 // A handler error becomes a [CodeQueryError] finding, and a panic a
 // [CodePanic] finding, for that query. It uses only the [MinGrafana] option.

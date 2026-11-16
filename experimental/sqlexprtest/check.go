@@ -526,7 +526,8 @@ func checkNumericRows(r *Report, i, fieldIndex int, f *data.Field) bool {
 	case f.Len() == 0:
 		r.add(Finding{
 			Code: CodeEmptyNumericField, Severity: SeverityError, Owner: OwnerGrafana, Frame: i, Field: f.Name,
-			Message: fmt.Sprintf("field %d has no values, and Grafana 13.3 and earlier fail the whole request when they convert an empty %s field for SQL. "+
+			Message: fmt.Sprintf("field %d has no values, so Grafana panics when it converts an empty %s field for SQL, and the SQL Expression fails. "+
+				"Grafana 13.3 and earlier also fail the rest of the request. "+
 				"Return a table frame with zero rows instead.", fieldIndex, r.InputType),
 		})
 		return false
