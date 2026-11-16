@@ -233,19 +233,61 @@ func checkFullLongPointers(r *Report, frames data.Frames) bool {
 
 // checkDuplicateNames reports columns whose names match, ignoring case.
 // frame is the frame the columns come from, or -1 for generated tables.
+// Grafana versions with the fix in grafanaFixes rename repeats instead.
 func checkDuplicateNames(r *Report, cols []Column, frame int) {
+	fixedIn, fixed := r.fixedIn(CodeDuplicateName)
+	if fixed {
+		renameDuplicateColumns(r, frame, fixedIn)
+		return
+	}
 	seen := map[string]string{}
 	for _, c := range cols {
 		key := strings.ToLower(c.Name)
 		if prev, ok := seen[key]; ok {
+			msg := fmt.Sprintf("columns %q and %q have the same name, ignoring case, "+
+				"so a SQL reference to either fails with an ambiguous column error. Give each field a unique name.", prev, c.Name)
+			if fixedIn != "" {
+				msg += fmt.Sprintf(" Grafana %s and later number repeated names instead, such as %q, "+
+					"but the plugin supports older versions.", fixedIn, c.Name+"_2")
+			}
 			r.add(Finding{
-				Code: CodeDuplicateName, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: frame, Field: c.Name,
-				Message: fmt.Sprintf("columns %q and %q have the same name, ignoring case, "+
-					"so a SQL reference to either fails with an ambiguous column error. Give each field a unique name.", prev, c.Name),
+				Code: CodeDuplicateName, Severity: SeverityWarning, Owner: OwnerGrafana, Frame: frame, Field: c.Name, FixedIn: fixedIn,
+				Message: msg,
 			})
 			continue
 		}
 		seen[key] = c.Name
+	}
+}
+
+// renameDuplicateColumns renames repeated column names the way Grafana does
+// when it builds the SQL schema: the second "host" becomes "host_2", the
+// third "host_3", skipping suffixes that another column already uses.
+func renameDuplicateColumns(r *Report, frame int, fixedIn string) {
+	taken := make(map[string]bool, len(r.Columns))
+	for _, c := range r.Columns {
+		taken[strings.ToLower(c.Name)] = true
+	}
+	seen := make(map[string]bool, len(r.Columns))
+	for i, c := range r.Columns {
+		name := c.Name
+		if seen[strings.ToLower(name)] {
+			for n := 2; ; n++ {
+				candidate := fmt.Sprintf("%s_%d", c.Name, n)
+				if !taken[strings.ToLower(candidate)] {
+					name = candidate
+					break
+				}
+			}
+			taken[strings.ToLower(name)] = true
+			r.add(Finding{
+				Code: CodeDuplicateName, Severity: SeverityInfo, Owner: OwnerGrafana, Frame: frame, Field: c.Name, FixedIn: fixedIn,
+				Message: fmt.Sprintf("column %q repeats an earlier name, ignoring case, so Grafana names it %q. "+
+					"Use that name in SQL, or give each field a unique name.", c.Name, name),
+			})
+			r.Columns[i].Name = name
+		}
+		seen[strings.ToLower(name)] = true
 	}
 }
 

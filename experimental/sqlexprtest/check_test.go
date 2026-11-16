@@ -409,6 +409,42 @@ func TestCheckLabelKeysThatDifferByCase(t *testing.T) {
 	assert.Equal(t, -1, r.Findings[0].Frame)
 }
 
+func TestCheckDuplicateNamesFixedIn(t *testing.T) {
+	table := typed(data.FrameTypeTable, data.NewFrame("",
+		data.NewField("host", nil, []string{"a"}),
+		data.NewField("HOST", nil, []string{"b"}),
+		data.NewField("host_2", nil, []string{"c"}),
+	))
+	labels := data.Frames{
+		typed(data.FrameTypeTimeSeriesMulti, data.NewFrame("", data.NewField("time", nil, []time.Time{t0}), data.NewField("cpu", data.Labels{"Host": "a"}, []float64{1}))),
+		typed(data.FrameTypeTimeSeriesMulti, data.NewFrame("", data.NewField("time", nil, []time.Time{t0}), data.NewField("cpu", data.Labels{"host": "b"}, []float64{2}))),
+	}
+
+	t.Run("older versions warn and name the fix", func(t *testing.T) {
+		r := Check(data.Frames{table}, MinGrafana("13.3.0"))
+		require.Equal(t, []Code{CodeDuplicateName}, codes(r))
+		assert.Equal(t, SeverityWarning, r.Findings[0].Severity)
+		assert.Equal(t, "13.4.0", r.Findings[0].FixedIn)
+		assert.Contains(t, r.Findings[0].Message, "Grafana 13.4.0 and later number repeated names")
+		assert.Equal(t, []string{"host", "HOST", "host_2"}, columnNames(r))
+	})
+
+	t.Run("fixed versions rename the repeat and skip taken suffixes", func(t *testing.T) {
+		r := Check(data.Frames{table}, MinGrafana("13.4.0"))
+		require.Equal(t, []Code{CodeDuplicateName}, codes(r))
+		assert.Equal(t, SeverityInfo, r.Findings[0].Severity)
+		assert.Equal(t, "HOST", r.Findings[0].Field)
+		assert.Equal(t, []string{"host", "HOST_3", "host_2"}, columnNames(r))
+	})
+
+	t.Run("fixed versions rename label columns", func(t *testing.T) {
+		r := Check(labels, MinGrafana("13.4.0"))
+		require.Equal(t, []Code{CodeDuplicateName}, codes(r))
+		assert.Equal(t, SeverityInfo, r.Worst())
+		assert.Equal(t, []string{"time", "__value__", "__metric_name__", "Host", "host_2"}, columnNames(r))
+	})
+}
+
 func TestCheckLaterFramesWithoutType(t *testing.T) {
 	first := typed(data.FrameTypeTimeSeriesMulti, data.NewFrame("", data.NewField("time", nil, []time.Time{t0}), data.NewField("cpu", nil, []float64{1})))
 	second := data.NewFrame("", data.NewField("time", nil, []time.Time{t0}), data.NewField("mem", nil, []float64{2}))

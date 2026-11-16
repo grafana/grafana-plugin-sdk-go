@@ -16,6 +16,8 @@ import (
 var grafanaFixes = map[Code]string{
 	CodeEnumField:          "13.3.0",
 	CodeGeneratedNameClash: "13.3.0",
+	// On Grafana main for 13.4.0, not yet released.
+	CodeDuplicateName: "13.4.0",
 }
 
 type version struct {

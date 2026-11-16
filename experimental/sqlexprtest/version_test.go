@@ -13,12 +13,16 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 )
 
-// withFix pretends a Grafana release v fixed the behavior a check reports,
-// or, when v is empty, that no release fixed it yet. Tests that mutate this
-// registry must not run in parallel with another test that calls Check.
+// withFix pretends a Grafana release v fixed generated-name-clash, or, when v
+// is empty, that no release fixed it yet. Tests that mutate this registry
+// must not run in parallel with another test that calls Check.
 func withFix(t *testing.T, v string) {
 	t.Helper()
-	const code = CodeGeneratedNameClash
+	withCodeFix(t, CodeGeneratedNameClash, v)
+}
+
+func withCodeFix(t *testing.T, code Code, v string) {
+	t.Helper()
 	prev, had := grafanaFixes[code]
 	if v == "" {
 		delete(grafanaFixes, code)
@@ -114,6 +118,8 @@ func clashFrames() data.Frames {
 func TestCheckGeneratedNameClashFixedIn(t *testing.T) {
 	t.Run("no fix yet", func(t *testing.T) {
 		withFix(t, "")
+		// The duplicate-name fix would number the second "time" column.
+		withCodeFix(t, CodeDuplicateName, "")
 		r := Check(clashFrames(), MinGrafana("99.0.0"))
 		require.Equal(t, []Code{CodeGeneratedNameClash}, codes(r))
 		assert.Equal(t, SeverityWarning, r.Findings[0].Severity)
