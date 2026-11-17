@@ -164,6 +164,7 @@ func (t ConvertToProtobuf) CheckHealthResponse(res *CheckHealthResult) *pluginv2
 		Status:      t.HealthStatus(res.Status),
 		Message:     res.Message,
 		JsonDetails: res.JSONDetails,
+		ErrorSource: string(res.ErrorSource),
 	}
 }
 
@@ -274,9 +275,10 @@ func (t ConvertToProtobuf) CallResourceResponse(resp *CallResourceResponse) *plu
 	}
 
 	return &pluginv2.CallResourceResponse{
-		Headers: headers,
-		Code:    int32(resp.Status), // #nosec G115 -- HTTP status codes (100-599) always fit in int32
-		Body:    resp.Body,
+		Headers:     headers,
+		Code:        int32(resp.Status), // #nosec G115 -- HTTP status codes (100-599) always fit in int32
+		Body:        resp.Body,
+		ErrorSource: string(resp.ErrorSource),
 	}
 }
 

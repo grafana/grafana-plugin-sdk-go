@@ -764,7 +764,9 @@ type CallResourceResponse struct {
 	// Raw HTTP headers sent to the client
 	Headers map[string]*StringList `protobuf:"bytes,2,rep,name=headers,proto3" json:"headers,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
 	// Raw HTTP body bytes sent to the client
-	Body          []byte `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	Body []byte `protobuf:"bytes,3,opt,name=body,proto3" json:"body,omitempty"`
+	// Source of an error response
+	ErrorSource   string `protobuf:"bytes,4,opt,name=errorSource,proto3" json:"errorSource,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -818,6 +820,13 @@ func (x *CallResourceResponse) GetBody() []byte {
 		return x.Body
 	}
 	return nil
+}
+
+func (x *CallResourceResponse) GetErrorSource() string {
+	if x != nil {
+		return x.ErrorSource
+	}
+	return ""
 }
 
 type TimeRange struct {
@@ -1485,6 +1494,7 @@ type CheckHealthResponse struct {
 	Status        CheckHealthResponse_HealthStatus `protobuf:"varint,1,opt,name=status,proto3,enum=pluginv2.CheckHealthResponse_HealthStatus" json:"status,omitempty"`
 	Message       string                           `protobuf:"bytes,2,opt,name=message,proto3" json:"message,omitempty"`
 	JsonDetails   []byte                           `protobuf:"bytes,3,opt,name=jsonDetails,proto3" json:"jsonDetails,omitempty"`
+	ErrorSource   string                           `protobuf:"bytes,4,opt,name=errorSource,proto3" json:"errorSource,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1538,6 +1548,13 @@ func (x *CheckHealthResponse) GetJsonDetails() []byte {
 		return x.JsonDetails
 	}
 	return nil
+}
+
+func (x *CheckHealthResponse) GetErrorSource() string {
+	if x != nil {
+		return x.ErrorSource
+	}
+	return ""
 }
 
 type SubscribeStreamRequest struct {
@@ -2110,11 +2127,12 @@ const file_backend_proto_rawDesc = "" +
 	"\x04body\x18\x06 \x01(\fR\x04body\x1aP\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
-	"\x05value\x18\x02 \x01(\v2\x14.pluginv2.StringListR\x05value:\x028\x01\"\xd7\x01\n" +
+	"\x05value\x18\x02 \x01(\v2\x14.pluginv2.StringListR\x05value:\x028\x01\"\xf9\x01\n" +
 	"\x14CallResourceResponse\x12\x12\n" +
 	"\x04code\x18\x01 \x01(\x05R\x04code\x12E\n" +
 	"\aheaders\x18\x02 \x03(\v2+.pluginv2.CallResourceResponse.HeadersEntryR\aheaders\x12\x12\n" +
-	"\x04body\x18\x03 \x01(\fR\x04body\x1aP\n" +
+	"\x04body\x18\x03 \x01(\fR\x04body\x12 \n" +
+	"\verrorSource\x18\x04 \x01(\tR\verrorSource\x1aP\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12*\n" +
 	"\x05value\x18\x02 \x01(\v2\x14.pluginv2.StringListR\x05value:\x028\x01\"K\n" +
@@ -2179,11 +2197,12 @@ const file_backend_proto_rawDesc = "" +
 	"\aheaders\x18\x02 \x03(\v2).pluginv2.CheckHealthRequest.HeadersEntryR\aheaders\x1a:\n" +
 	"\fHeadersEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
-	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xc5\x01\n" +
+	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xe7\x01\n" +
 	"\x13CheckHealthResponse\x12B\n" +
 	"\x06status\x18\x01 \x01(\x0e2*.pluginv2.CheckHealthResponse.HealthStatusR\x06status\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\x12 \n" +
-	"\vjsonDetails\x18\x03 \x01(\fR\vjsonDetails\".\n" +
+	"\vjsonDetails\x18\x03 \x01(\fR\vjsonDetails\x12 \n" +
+	"\verrorSource\x18\x04 \x01(\tR\verrorSource\".\n" +
 	"\fHealthStatus\x12\v\n" +
 	"\aUNKNOWN\x10\x00\x12\x06\n" +
 	"\x02OK\x10\x01\x12\t\n" +
