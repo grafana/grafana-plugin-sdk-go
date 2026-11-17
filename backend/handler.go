@@ -10,8 +10,6 @@ type Handler interface {
 	CallResourceHandler
 	CollectMetricsHandler
 	StreamHandler
-	AdmissionHandler
-	ConversionHandler
 }
 
 var _ = Handler(&BaseHandler{})
@@ -62,18 +60,6 @@ func (m BaseHandler) RunStream(ctx context.Context, req *RunStreamRequest, sende
 	return m.next.RunStream(ctx, req, sender)
 }
 
-func (m BaseHandler) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
-	return m.next.ValidateAdmission(ctx, req)
-}
-
-func (m *BaseHandler) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
-	return m.next.MutateAdmission(ctx, req)
-}
-
-func (m *BaseHandler) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-	return m.next.ConvertObjects(ctx, req)
-}
-
 // Handlers implements Handler.
 type Handlers struct {
 	QueryDataHandler
@@ -82,8 +68,6 @@ type Handlers struct {
 	CallResourceHandler
 	CollectMetricsHandler
 	StreamHandler
-	AdmissionHandler
-	ConversionHandler
 }
 
 var _ Handler = &Handlers{}

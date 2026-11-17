@@ -136,33 +136,6 @@ func (h *MiddlewareHandler) RunStream(ctx context.Context, req *RunStreamRequest
 	return h.handler.RunStream(ctx, req, sender)
 }
 
-func (h *MiddlewareHandler) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
-	if req == nil {
-		return nil, errNilRequest
-	}
-
-	ctx = h.setupContext(ctx, req.PluginContext, EndpointValidateAdmission)
-	return h.handler.ValidateAdmission(ctx, req)
-}
-
-func (h *MiddlewareHandler) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
-	if req == nil {
-		return nil, errNilRequest
-	}
-
-	ctx = h.setupContext(ctx, req.PluginContext, EndpointMutateAdmission)
-	return h.handler.MutateAdmission(ctx, req)
-}
-
-func (h *MiddlewareHandler) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-	if req == nil {
-		return nil, errNilRequest
-	}
-
-	ctx = h.setupContext(ctx, req.PluginContext, EndpointConvertObjects)
-	return h.handler.ConvertObjects(ctx, req)
-}
-
 func handlerFromMiddlewares(middlewares []HandlerMiddleware, finalHandler Handler) Handler {
 	next := finalHandler
 	for _, middleware := range slices.Backward(middlewares) {

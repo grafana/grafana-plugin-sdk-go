@@ -19,15 +19,6 @@ type ManageOpts struct {
 	// TracingOpts contains settings for tracing setup.
 	TracingOpts tracing.Opts
 
-	// Stateless admission handler
-	AdmissionHandler backend.AdmissionHandler
-
-	// Stateless conversion handler
-	ConversionHandler backend.ConversionHandler
-
-	// Stateless query conversion handler
-	QueryConversionHandler backend.QueryConversionHandler
-
 	// Licensing, if set, is applied to the serve options before the plugin is served.
 	// Use marketplace.Licensing from the experimental/marketplace package for marketplace plugins.
 	// This is EXPERIMENTAL and is subject to change.
@@ -58,10 +49,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		QueryDataHandler:        handler,
 		QueryChunkedDataHandler: handler,
 		StreamHandler:           handler,
-		QueryConversionHandler:  opts.QueryConversionHandler,
-		AdmissionHandler:        opts.AdmissionHandler,
 		GRPCSettings:            opts.GRPCSettings,
-		ConversionHandler:       opts.ConversionHandler,
 	}
 	if opts.Licensing != nil {
 		var err error

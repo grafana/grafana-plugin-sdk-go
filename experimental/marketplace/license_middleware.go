@@ -138,41 +138,6 @@ func (m *licenseMiddleware) RunStream(ctx context.Context, req *backend.RunStrea
 	return m.BaseHandler.RunStream(ctx, req, sender)
 }
 
-func (m *licenseMiddleware) ValidateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
-	if h := m.ensureValidLicense(ctx); h != nil {
-		return h.ValidateAdmission(ctx, req)
-	}
-	return m.BaseHandler.ValidateAdmission(ctx, req)
-}
-
-func (m *licenseMiddleware) MutateAdmission(ctx context.Context, req *backend.AdmissionRequest) (*backend.MutationResponse, error) {
-	if h := m.ensureValidLicense(ctx); h != nil {
-		return h.MutateAdmission(ctx, req)
-	}
-	return m.BaseHandler.MutateAdmission(ctx, req)
-}
-
-func (m *licenseMiddleware) ConvertObjects(ctx context.Context, req *backend.ConversionRequest) (*backend.ConversionResponse, error) {
-	if h := m.ensureValidLicense(ctx); h != nil {
-		return h.ConvertObjects(ctx, req)
-	}
-	return m.BaseHandler.ConvertObjects(ctx, req)
-}
-
-// licensedQueryConversionHandler validates the license before converting queries.
-// The SDK does not run QueryConversionHandler through the middleware chain.
-type licensedQueryConversionHandler struct {
-	next       backend.QueryConversionHandler
-	middleware *licenseMiddleware
-}
-
-func (h *licensedQueryConversionHandler) ConvertQueryDataRequest(ctx context.Context, req *backend.QueryDataRequest) (*backend.QueryConversionResponse, error) {
-	if refused := h.middleware.ensureValidLicense(ctx); refused != nil {
-		return refused.ConvertQueryDataRequest(ctx, req)
-	}
-	return h.next.ConvertQueryDataRequest(ctx, req)
-}
-
 // applyRequestTimeLicense makes serveOpts validate the license of every request by injecting the license checks middleware.
 func applyRequestTimeLicense(pluginID, licensePluginID string, serveOpts backend.ServeOpts) (backend.ServeOpts, error) {
 	return applyRequestTimeLicenseWithDeps(pluginID, licensePluginID, serveOpts, licensing.LoadTokenFromValue)
@@ -190,15 +155,5 @@ func applyRequestTimeLicenseWithDeps(
 	middleware := newLicenseMiddleware(pluginID, licensePluginID, parse)
 	// Copy instead of prepending in place, so the caller's slice is not modified.
 	serveOpts.HandlerMiddlewares = append([]backend.HandlerMiddleware{middleware}, serveOpts.HandlerMiddlewares...)
-	if serveOpts.QueryConversionHandler != nil {
-		serveOpts.QueryConversionHandler = &licensedQueryConversionHandler{
-			next: serveOpts.QueryConversionHandler,
-			middleware: &licenseMiddleware{
-				pluginID:        pluginID,
-				licensePluginID: licensePluginID,
-				parse:           parse,
-			},
-		}
-	}
 	return serveOpts, nil
 }

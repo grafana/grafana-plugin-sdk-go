@@ -69,14 +69,6 @@ func (s *AppInstanceSettings) HTTPClientOptions(ctx context.Context) (httpclient
 	return opts, nil
 }
 
-func (s *AppInstanceSettings) GVK() GroupVersionKind {
-	return GroupVersionKind{
-		Group:   "grafana-plugin-sdk-go", // raw protobuf
-		Version: s.APIVersion,
-		Kind:    "AppInstanceSettings",
-	}
-}
-
 // DataSourceInstanceSettings represents settings for a data source instance.
 //
 // In Grafana a data source instance is a data source plugin of certain
@@ -173,14 +165,6 @@ func (s *DataSourceInstanceSettings) HTTPClientOptions(ctx context.Context) (htt
 	}
 
 	return opts, nil
-}
-
-func (s *DataSourceInstanceSettings) GVK() GroupVersionKind {
-	return GroupVersionKind{
-		Group:   "grafana-plugin-sdk-go", // raw protobuf
-		Version: s.APIVersion,
-		Kind:    "DataSourceInstanceSettings",
-	}
 }
 
 // PluginContext holds contextual information about a plugin request, such as

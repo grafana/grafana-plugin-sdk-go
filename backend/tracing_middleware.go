@@ -125,36 +125,3 @@ func (m *tracingMiddleware) RunStream(ctx context.Context, req *RunStreamRequest
 	})
 	return err
 }
-
-func (m *tracingMiddleware) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
-	var resp *ValidationResponse
-	err := m.traceRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = m.BaseHandler.ValidateAdmission(ctx, req)
-		return RequestStatusFromError(innerErr), innerErr
-	})
-
-	return resp, err
-}
-
-func (m *tracingMiddleware) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
-	var resp *MutationResponse
-	err := m.traceRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = m.BaseHandler.MutateAdmission(ctx, req)
-		return RequestStatusFromError(innerErr), innerErr
-	})
-
-	return resp, err
-}
-
-func (m *tracingMiddleware) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-	var resp *ConversionResponse
-	err := m.traceRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		var innerErr error
-		resp, innerErr = m.BaseHandler.ConvertObjects(ctx, req)
-		return RequestStatusFromError(innerErr), innerErr
-	})
-
-	return resp, err
-}

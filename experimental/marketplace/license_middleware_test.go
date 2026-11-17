@@ -6,7 +6,6 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"net/http"
 	"os"
 	"path/filepath"
 	"testing"
@@ -18,7 +17,6 @@ import (
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/marketplace/licensing"
-	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
 // recordingHandler is a final handler that records which endpoints reached it.
@@ -67,21 +65,6 @@ func (r *recordingHandler) RunStream(context.Context, *backend.RunStreamRequest,
 	return nil
 }
 
-func (r *recordingHandler) ValidateAdmission(context.Context, *backend.AdmissionRequest) (*backend.ValidationResponse, error) {
-	r.calls = append(r.calls, "ValidateAdmission")
-	return &backend.ValidationResponse{Allowed: true}, nil
-}
-
-func (r *recordingHandler) MutateAdmission(context.Context, *backend.AdmissionRequest) (*backend.MutationResponse, error) {
-	r.calls = append(r.calls, "MutateAdmission")
-	return &backend.MutationResponse{Allowed: true}, nil
-}
-
-func (r *recordingHandler) ConvertObjects(context.Context, *backend.ConversionRequest) (*backend.ConversionResponse, error) {
-	r.calls = append(r.calls, "ConvertObjects")
-	return &backend.ConversionResponse{}, nil
-}
-
 // licensedCalls invoke every endpoint the license middleware checks, ignoring the results.
 // The refusal responses are covered by the invalidLicenseHandler tests.
 var licensedCalls = []struct {
@@ -104,15 +87,6 @@ var licensedCalls = []struct {
 	}},
 	{"RunStream", func(ctx context.Context, h backend.Handler) {
 		_ = h.RunStream(ctx, &backend.RunStreamRequest{}, backend.NewStreamSender(nil))
-	}},
-	{"ValidateAdmission", func(ctx context.Context, h backend.Handler) {
-		_, _ = h.ValidateAdmission(ctx, &backend.AdmissionRequest{})
-	}},
-	{"MutateAdmission", func(ctx context.Context, h backend.Handler) {
-		_, _ = h.MutateAdmission(ctx, &backend.AdmissionRequest{})
-	}},
-	{"ConvertObjects", func(ctx context.Context, h backend.Handler) {
-		_, _ = h.ConvertObjects(ctx, &backend.ConversionRequest{})
 	}},
 }
 
@@ -280,14 +254,6 @@ func (passthroughMiddleware) CreateHandlerMiddleware(next backend.Handler) backe
 	return next
 }
 
-// countingConversion is a QueryConversionHandler that counts the calls that reach it.
-type countingConversion struct{ calls int }
-
-func (c *countingConversion) ConvertQueryDataRequest(context.Context, *backend.QueryDataRequest) (*backend.QueryConversionResponse, error) {
-	c.calls++
-	return &backend.QueryConversionResponse{}, nil
-}
-
 func TestApplyRequestTimeLicensePrependsMiddleware(t *testing.T) {
 	other := passthroughMiddleware{}
 	in := backend.ServeOpts{HandlerMiddlewares: []backend.HandlerMiddleware{other}}
@@ -347,78 +313,6 @@ func TestLicensingModeSelection(t *testing.T) {
 			require.Same(t, final, got.CheckHealthHandler)
 			require.Same(t, final, got.QueryDataHandler)
 			require.Len(t, got.HandlerMiddlewares, 1)
-		})
-	}
-}
-
-// TestRequestTimeLicenseGRPCServeOpts checks licensing through the gRPC adapters, including
-// query conversion, which bypasses the normal handler middleware chain. Missing or invalid
-// licenses must deny admission and both conversion paths without reaching plugin handlers.
-func TestRequestTimeLicenseGRPCServeOpts(t *testing.T) {
-	const licenseMsg = "The Marketplace plugin parent-app is not available"
-	queryObject := &pluginv2.RawObject{Raw: []byte(`{"queries":[{"refId":"A"}]}`), ContentType: "application/json"}
-	genericObject := &pluginv2.RawObject{Raw: []byte("x"), ContentType: "text/plain"}
-
-	for _, tt := range []struct {
-		name      string
-		ctx       func(t *testing.T) context.Context
-		forwarded bool
-	}{
-		{"no metadata", func(t *testing.T) context.Context { t.Helper(); return t.Context() }, false},
-		{"invalid token", func(t *testing.T) context.Context { t.Helper(); return licenseCtx(t, "invalid") }, false},
-		{"valid token", func(t *testing.T) context.Context { t.Helper(); return licenseCtx(t, "valid") }, true},
-	} {
-		t.Run(tt.name, func(t *testing.T) {
-			final := &recordingHandler{}
-			conv := &countingConversion{}
-			opts, err := applyRequestTimeLicenseWithDeps("child-plugin", "parent-app", backend.ServeOpts{
-				AdmissionHandler:       final,
-				ConversionHandler:      final,
-				QueryConversionHandler: conv,
-			}, (&fakeParser{}).parse)
-			require.NoError(t, err)
-			grpcOpts, err := backend.GRPCServeOpts(opts)
-			require.NoError(t, err)
-
-			ctx := tt.ctx(t)
-			pluginCtx := &pluginv2.PluginContext{PluginId: "child-plugin"}
-			admissionReq := &pluginv2.AdmissionRequest{PluginContext: pluginCtx, Kind: &pluginv2.GroupVersionKind{}}
-			convert := func(obj *pluginv2.RawObject) (*pluginv2.ConversionResponse, error) {
-				t.Helper()
-				return grpcOpts.ConversionServer.ConvertObjects(ctx, &pluginv2.ConversionRequest{
-					PluginContext: pluginCtx, TargetVersion: &pluginv2.GroupVersion{}, Objects: []*pluginv2.RawObject{obj},
-				})
-			}
-
-			validate, err := grpcOpts.AdmissionServer.ValidateAdmission(ctx, admissionReq)
-			require.NoError(t, err)
-			mutate, err := grpcOpts.AdmissionServer.MutateAdmission(ctx, admissionReq)
-			require.NoError(t, err)
-			_, queryErr := convert(queryObject)
-			_, genericErr := convert(genericObject)
-
-			if tt.forwarded {
-				require.True(t, validate.Allowed)
-				require.True(t, mutate.Allowed)
-				require.NoError(t, queryErr)
-				require.NoError(t, genericErr)
-				require.Equal(t, 1, conv.calls)
-				require.Equal(t, []string{"ValidateAdmission", "MutateAdmission", "ConvertObjects"}, final.calls)
-				return
-			}
-			for _, res := range []*pluginv2.StatusResult{validate.Result, mutate.Result} {
-				require.NotNil(t, res)
-				require.Equal(t, "Failure", res.Status)
-				require.EqualValues(t, http.StatusForbidden, res.Code)
-				require.Equal(t, "Forbidden", res.Reason)
-				require.Contains(t, res.Message, licenseMsg)
-			}
-			require.False(t, validate.Allowed)
-			require.False(t, mutate.Allowed)
-			require.ErrorContains(t, queryErr, licenseMsg)
-			require.ErrorContains(t, genericErr, licenseMsg)
-			require.Zero(t, conv.calls)
-			require.Empty(t, final.calls)
 		})
 	}
 }

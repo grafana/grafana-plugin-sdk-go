@@ -61,18 +61,3 @@ func (m *tenantIDMiddleware) RunStream(ctx context.Context, req *RunStreamReques
 	ctx = m.setup(ctx)
 	return m.BaseHandler.RunStream(ctx, req, sender)
 }
-
-func (m *tenantIDMiddleware) ValidateAdmission(ctx context.Context, req *AdmissionRequest) (*ValidationResponse, error) {
-	ctx = m.setup(ctx)
-	return m.BaseHandler.ValidateAdmission(ctx, req)
-}
-
-func (m *tenantIDMiddleware) MutateAdmission(ctx context.Context, req *AdmissionRequest) (*MutationResponse, error) {
-	ctx = m.setup(ctx)
-	return m.BaseHandler.MutateAdmission(ctx, req)
-}
-
-func (m *tenantIDMiddleware) ConvertObjects(ctx context.Context, req *ConversionRequest) (*ConversionResponse, error) {
-	ctx = m.setup(ctx)
-	return m.BaseHandler.ConvertObjects(ctx, req)
-}
