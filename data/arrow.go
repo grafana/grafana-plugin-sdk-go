@@ -899,7 +899,7 @@ func FromArrowRecord(record arrow.Record) (*Frame, error) { //nolint:staticcheck
 // UnmarshalArrowFrame decodes an Arrow IPC file into a Frame.
 // The returned Frame does not retain b.
 func UnmarshalArrowFrame(b []byte) (*Frame, error) {
-	fR, err := newFileReader(b)
+	fR, err := ipc.NewMappedFileReader(b)
 	if err != nil {
 		return nil, err
 	}
@@ -921,16 +921,6 @@ func UnmarshalArrowFrame(b []byte) (*Frame, error) {
 	}
 
 	return frame, nil
-}
-
-// newFileReader falls back to ipc.NewFileReader because ipc.NewMappedFileReader panics on dictionary-encoded input (apache/arrow-go#1364).
-func newFileReader(b []byte) (r *ipc.FileReader, err error) {
-	defer func() {
-		if recover() != nil {
-			r, err = ipc.NewFileReader(bytes.NewReader(b))
-		}
-	}()
-	return ipc.NewMappedFileReader(b)
 }
 
 // ToJSONString calls json.Marshal on val and returns it as a string. An
