@@ -1246,20 +1246,34 @@ func (x *QueryChunkedDataRequest) GetFormat() DataFrameFormat {
 	return DataFrameFormat_ARROW
 }
 
+// QueryChunkedDataResponse is one chunk of a QueryChunkedData stream.
+//
+// A chunk with a frame belongs to the frame with the key (refId, frameId). The first chunk
+// of a key starts a new frame and carries its schema, name, and metadata. Each later chunk
+// of the same key appends its rows to that frame. Chunks of different keys can alternate,
+// so the chunks A, B, A of one refId make two frames. The frames of a refId are in the
+// order of their first chunks.
+//
+// A chunk without a frame carries only the error, the status, and the error source of its
+// refId. It does not make a frame, and the frames before it stay in the response.
 type QueryChunkedDataResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	RefId string                 `protobuf:"bytes,1,opt,name=refId,proto3" json:"refId,omitempty"`
-	// Frame identifier that links multiple responses together. When an identifier appears the first time,
-	// the frame must include both metadata and rows. Subsequent responses with the same identifier
-	// will only include rows and must match the original frame structure.
+	// Frame identifier within the refId. Each chunk with a frame must have one.
+	// A receiver treats a frame chunk without an identifier as a separate frame
+	// that no later chunk can extend.
 	FrameId string `protobuf:"bytes,2,opt,name=frameId,proto3" json:"frameId,omitempty"`
-	// Encoded frame -- the format is determined by the format parameter
+	// Encoded frame -- the format is determined by the format parameter.
+	// In JSON, a later chunk of a frame has only the data, without the schema.
+	// In Arrow, each chunk is a complete Arrow file. Its fields must match the fields
+	// of the first chunk, and receivers ignore its name and metadata.
 	Frame []byte `protobuf:"bytes,3,opt,name=frame,proto3" json:"frame,omitempty"`
 	// Error message
 	Error string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	// When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
 	// The status codes should match values from standard HTTP status codes
 	// If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
+	// A frame chunk does not replace the status of an earlier error chunk.
 	Status int32 `protobuf:"varint,5,opt,name=status,proto3" json:"status,omitempty"`
 	// Error source
 	ErrorSource string `protobuf:"bytes,6,opt,name=errorSource,proto3" json:"errorSource,omitempty"`

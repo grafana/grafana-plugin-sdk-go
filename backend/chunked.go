@@ -17,12 +17,15 @@ type ChunkedDataCallback = func(chunk *pluginv2.QueryChunkedDataResponse) error
 // back to the client in chunks.
 type ChunkedDataWriter interface {
 	// WriteFrame writes a data frame (f) for the given query refID.
-	// The first time the frameID is written, the metadata and rows will be included.
-	// Subsequent calls with the same frameID will append the rows to the existing frame
-	// with a matching frameID. The metadata structure must match the initial request.
+	// The frameID identifies one logical frame within the refID, and it must not be empty.
+	// The first call with a frameID sends the schema, the metadata and the rows.
+	// Later calls with the same frameID append their rows to that frame, so they must have
+	// the same fields. The receiver ignores the name and the metadata of later calls.
+	// Calls for different frameIDs can alternate.
 	WriteFrame(ctx context.Context, refID string, frameID string, f *data.Frame) error
 
 	// WriteError writes an error associated with the specified refID.
+	// The frames that were written before the error stay in the response.
 	WriteError(ctx context.Context, refID string, status Status, err error) error
 }
 
@@ -32,9 +35,16 @@ func NewChunkedDataWriter(format DataFrameFormat, write ChunkedDataCallback) Chu
 
 type chunkedDataWriter struct {
 	mu     sync.Mutex
-	sent   map[string]bool
+	sent   map[sentKey]bool
 	format DataFrameFormat
 	write  ChunkedDataCallback
+}
+
+// sentKey identifies a frame that the writer already sent. A joined string can collide,
+// for example ("a-b", "c") and ("a", "b-c").
+type sentKey struct {
+	refID   string
+	frameID string
 }
 
 // WriteError implements [ChunkedDataWriter].
@@ -81,11 +91,11 @@ func (c *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameI
 
 	case DataFrameFormat_JSON:
 		if c.sent == nil {
-			c.sent = make(map[string]bool)
+			c.sent = make(map[sentKey]bool)
 		}
 		// Only send the schema the first time we see the frame identifier
 		include := data.IncludeDataOnly
-		key := fmt.Sprintf("%s-%s", refID, frameID)
+		key := sentKey{refID: refID, frameID: frameID}
 		if !c.sent[key] {
 			include = data.IncludeAll
 			c.sent[key] = true
