@@ -3,7 +3,6 @@ package backend
 import (
 	"context"
 	"errors"
-	"net/http"
 
 	"google.golang.org/genproto/googleapis/rpc/errdetails"
 	"google.golang.org/grpc"
@@ -53,9 +52,8 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 // and passing them to the registered QueryChunkedDataHandler.
 func (a *dataSDKAdapter) QueryChunkedData(req *pluginv2.QueryChunkedDataRequest, stream grpc.ServerStreamingServer[pluginv2.QueryChunkedDataResponse]) error {
 	if a.queryChunkedDataHandler == nil {
-		return stream.Send(&pluginv2.QueryChunkedDataResponse{
-			Status: http.StatusNotImplemented,
-		})
+		// Grafana falls back to QueryData when it gets Unimplemented.
+		return grpcstatus.Error(codes.Unimplemented, "QueryChunkedData not implemented")
 	}
 
 	ctx := stream.Context()

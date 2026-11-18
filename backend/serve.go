@@ -112,7 +112,13 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 	}
 
 	if opts.QueryDataHandler != nil {
-		pluginOpts.DataServer = newDataSDKAdapter(handler, handler)
+		// The middleware handler always implements QueryChunkedData, so the adapter
+		// must get nil when the plugin has no QueryChunkedDataHandler.
+		var queryChunkedDataHandler QueryChunkedDataHandler
+		if opts.QueryChunkedDataHandler != nil {
+			queryChunkedDataHandler = handler
+		}
+		pluginOpts.DataServer = newDataSDKAdapter(handler, queryChunkedDataHandler)
 	}
 
 	if opts.StreamHandler != nil {

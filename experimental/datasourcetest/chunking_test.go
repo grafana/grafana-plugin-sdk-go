@@ -188,6 +188,38 @@ func TestChunkingNotImplemented(t *testing.T) {
 	}
 }
 
+// TestChunkingWithoutHandler verifies that the QueryChunkedData method returns an Unimplemented gRPC status code
+// error when the ServeOpts of the plugin have no QueryChunkedDataHandler.
+func TestChunkingWithoutHandler(t *testing.T) {
+	port, err := testutil.GetFreePort()
+	require.NoError(t, err)
+	addr := "127.0.0.1:" + strconv.Itoa(port)
+
+	// Reset prometheus registry to avoid conflicts between tests
+	prometheus.DefaultRegisterer = prometheus.NewRegistry()
+
+	s, err := backend.TestStandaloneServe(backend.ServeOpts{QueryDataHandler: &pluginQueryData{}}, addr)
+	require.NoError(t, err)
+	tp := TestPlugin{Server: newTestPluginServer(s)}
+	defer func() {
+		if err := tp.Shutdown(); err != nil {
+			t.Error("failed to shutdown plugin", err)
+		}
+	}()
+	tp.Client, err = newTestPluginClient(addr)
+	require.NoError(t, err)
+
+	ctx := context.Background()
+	queries := []backend.DataQuery{{RefID: "A", MaxDataPoints: 1}}
+
+	_, err = tp.Client.QueryChunkedData(ctx, &backend.QueryChunkedDataRequest{Queries: queries})
+	require.Equal(t, codes.Unimplemented, status.Code(err), err)
+
+	resp, err := tp.Client.QueryData(ctx, &backend.QueryDataRequest{Queries: queries})
+	require.NoError(t, err)
+	require.Contains(t, resp.Responses, "A")
+}
+
 // newTestPlugin creates a new test plugin instance
 func newTestPlugin[T instancemgmt.Instance](t *testing.T, inst T) TestPlugin {
 	t.Helper()
