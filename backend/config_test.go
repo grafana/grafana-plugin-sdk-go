@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/pem"
 	"fmt"
+	"maps"
 	mathrand "math/rand"
 	"os"
 	"testing"
@@ -501,4 +502,46 @@ func BenchmarkProxyHash(b *testing.B) {
 		}
 	}
 	fmt.Printf("This should be about one in 64: %f\n", float64(count)/float64(b.N))
+}
+
+func TestGrafanaCfg_Equal(t *testing.T) {
+	const (
+		certPath = proxy.PluginSecureSocksProxyClientCert // nolint:staticcheck
+		keyPath  = proxy.PluginSecureSocksProxyClientKey  // nolint:staticcheck
+		caPath   = proxy.PluginSecureSocksProxyRootCAs    // nolint:staticcheck
+		certVal  = proxy.PluginSecureSocksProxyClientCertContents
+		keyVal   = proxy.PluginSecureSocksProxyClientKeyContents
+		caVals   = proxy.PluginSecureSocksProxyRootCAsContents
+	)
+	withContents := map[string]string{certVal: "cert", keyVal: "key", caVals: "ca"}
+	with := func(base map[string]string, extra map[string]string) map[string]string {
+		m := make(map[string]string, len(base)+len(extra))
+		maps.Copy(m, base)
+		maps.Copy(m, extra)
+		return m
+	}
+	paths := map[string]string{certPath: "/certs/client.crt", keyPath: "/certs/client.key", caPath: "/certs/ca.crt"}
+	otherPaths := map[string]string{certPath: "/other/client.crt", keyPath: "/other/client.key", caPath: "/other/ca.crt"}
+
+	tcs := []struct {
+		name  string
+		a, b  map[string]string
+		equal bool
+	}{
+		{name: "identical configs", a: with(withContents, paths), b: with(withContents, paths), equal: true},
+		{name: "different file paths with root CA contents on both sides", a: with(withContents, paths), b: with(withContents, otherPaths), equal: true},
+		{name: "file paths on one side only with root CA contents on both sides", a: with(withContents, paths), b: withContents, equal: true},
+		{name: "different file paths without root CA contents", a: with(map[string]string{certVal: "cert", keyVal: "key"}, paths), b: with(map[string]string{certVal: "cert", keyVal: "key"}, otherPaths), equal: false},
+		{name: "different file paths with root CA contents on one side only", a: with(withContents, paths), b: with(map[string]string{certVal: "cert", keyVal: "key"}, otherPaths), equal: false},
+		{name: "different root CA contents", a: with(withContents, paths), b: with(with(withContents, map[string]string{caVals: "other-ca"}), paths), equal: false},
+		{name: "another key differs alongside ignored file paths", a: with(withContents, paths), b: with(with(withContents, otherPaths), map[string]string{"GF_APP_URL": "http://localhost:3000"}), equal: false},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			a, b := NewGrafanaCfg(tc.a), NewGrafanaCfg(tc.b)
+			require.Equal(t, tc.equal, a.Equal(b))
+			require.Equal(t, tc.equal, b.Equal(a))
+		})
+	}
 }
