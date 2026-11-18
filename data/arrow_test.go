@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"math"
 	"os"
 	"path/filepath"
@@ -545,6 +546,23 @@ func TestUnmarshalArrowFrameInvalidInput(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			_, err := data.UnmarshalArrowFrame(tc.input)
 			require.Error(t, err)
+		})
+	}
+}
+
+func TestUnmarshalArrowFrameUnalignedInput(t *testing.T) {
+	encoded, err := goldenDF().MarshalArrow()
+	require.NoError(t, err)
+
+	for offset := 1; offset < 8; offset++ {
+		t.Run(fmt.Sprintf("offset %d", offset), func(t *testing.T) {
+			input := make([]byte, offset+len(encoded))[offset:]
+			copy(input, encoded)
+			got, err := data.UnmarshalArrowFrame(input)
+			require.NoError(t, err)
+			if diff := cmp.Diff(goldenDF(), got, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("Result mismatch (-want +got):\n%s", diff)
+			}
 		})
 	}
 }
