@@ -19,6 +19,10 @@ func ErrorSourceRoundTripper(_ Options, next http.RoundTripper) http.RoundTrippe
 	return RoundTripperFunc(func(req *http.Request) (*http.Response, error) {
 		res, err := next.RoundTrip(req)
 		if err != nil && status.IsDownstreamHTTPError(err) {
+			// Also record the source on the request context so it survives a
+			// plugin that discards the error value (see the SOCKS proxy dialer).
+			// The error is ignored on purpose: the context may carry no error source.
+			_ = status.WithDownstreamSource(req.Context())
 			return res, status.DownstreamError(err)
 		}
 

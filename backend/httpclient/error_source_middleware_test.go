@@ -1,6 +1,7 @@
 package httpclient
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -53,5 +54,37 @@ func TestErrorSourceMiddleware(t *testing.T) {
 		}
 		require.True(t, status.IsDownstreamError(err))
 		require.ErrorIs(t, err, someErr)
+	})
+
+	t.Run("With downstream HTTP error the request context source is set to downstream", func(t *testing.T) {
+		ctx := &testContext{}
+		finalRoundTripper := ctx.createRoundTripperWithError(&net.DNSError{IsNotFound: true})
+		rt := ErrorSourceMiddleware().CreateMiddleware(Options{}, finalRoundTripper)
+
+		reqCtx := status.InitSource(context.Background())
+		req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, "http://", nil)
+		require.NoError(t, err)
+		resp, err := rt.RoundTrip(req)
+		require.Error(t, err)
+		if resp.Body != nil {
+			require.NoError(t, resp.Body.Close())
+		}
+		require.Equal(t, status.SourceDownstream, status.SourceFromContext(reqCtx))
+	})
+
+	t.Run("With non-downstream HTTP error the request context source is not changed", func(t *testing.T) {
+		ctx := &testContext{}
+		finalRoundTripper := ctx.createRoundTripperWithError(errors.New("some error"))
+		rt := ErrorSourceMiddleware().CreateMiddleware(Options{}, finalRoundTripper)
+
+		reqCtx := status.InitSource(context.Background())
+		req, err := http.NewRequestWithContext(reqCtx, http.MethodGet, "http://", nil)
+		require.NoError(t, err)
+		resp, err := rt.RoundTrip(req)
+		require.Error(t, err)
+		if resp.Body != nil {
+			require.NoError(t, resp.Body.Close())
+		}
+		require.Equal(t, status.SourcePlugin, status.SourceFromContext(reqCtx))
 	})
 }
