@@ -22,6 +22,8 @@ type ErrorSourceMiddleware struct {
 	BaseHandler
 }
 
+var _ QueryChunkedDataHandler = ErrorSourceMiddleware{}
+
 func (m *ErrorSourceMiddleware) handleDownstreamError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
@@ -41,7 +43,7 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 	return m.setQueryErrorSources(ctx, resp, err)
 }
 
-func (m *ErrorSourceMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+func (m ErrorSourceMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
 	observer, writer := observeChunkedQuery(w, "")
 	err := m.BaseHandler.QueryChunkedData(ctx, req, writer)
 	_, err = m.setQueryErrorSources(ctx, &observer.result, err)
