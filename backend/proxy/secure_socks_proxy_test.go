@@ -21,6 +21,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/proxy"
+
+	"github.com/grafana/grafana-plugin-sdk-go/experimental/status"
 )
 
 func TestNewSecureSocksProxyContextDialerInsecureProxy(t *testing.T) {
@@ -362,6 +364,51 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 		assert.Nil(t, c)
 		assert.NotNil(t, err)
 		assert.Equal(t, "custom error", err.Error())
+	})
+
+	t.Run("marks the request context as downstream if dialer errors", func(t *testing.T) {
+		t.Parallel()
+		md := fakeConn{}
+		md.withError(errors.New("socks connect tcp proxy:1080->db:1433: unknown error host unreachable"))
+		d := newInstrumentedSocksDialer(md, "name", "type")
+
+		cd, ok := d.(proxy.ContextDialer)
+		require.True(t, ok)
+
+		ctx := status.InitSource(context.Background())
+		require.Equal(t, status.SourcePlugin, status.SourceFromContext(ctx))
+
+		_, err := cd.DialContext(ctx, "n", "addr")
+		require.Error(t, err)
+		assert.True(t, status.IsDownstreamError(err))
+		assert.Equal(t, status.SourceDownstream, status.SourceFromContext(ctx))
+	})
+
+	t.Run("does not change the request context source if the dial succeeds", func(t *testing.T) {
+		t.Parallel()
+		d := newInstrumentedSocksDialer(fakeConn{}, "name", "type")
+
+		cd, ok := d.(proxy.ContextDialer)
+		require.True(t, ok)
+
+		ctx := status.InitSource(context.Background())
+		_, err := cd.DialContext(ctx, "n", "addr")
+		require.NoError(t, err)
+		assert.Equal(t, status.SourcePlugin, status.SourceFromContext(ctx))
+	})
+
+	t.Run("does not panic if the context has no error source", func(t *testing.T) {
+		t.Parallel()
+		md := fakeConn{}
+		md.withError(errors.New("custom error"))
+		d := newInstrumentedSocksDialer(md, "name", "type")
+
+		cd, ok := d.(proxy.ContextDialer)
+		require.True(t, ok)
+
+		_, err := cd.DialContext(context.Background(), "n", "addr")
+		require.Error(t, err)
+		assert.True(t, status.IsDownstreamError(err))
 	})
 }
 

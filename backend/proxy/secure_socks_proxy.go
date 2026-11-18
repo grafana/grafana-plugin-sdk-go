@@ -341,6 +341,13 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 	}
 	if err != nil {
 		err = status.DownstreamError(err)
+		// Also record the source on the request context. Plugins commonly turn a
+		// connection error into a message (for example in a health check result)
+		// and discard the error value, which loses the source above. The context
+		// survives that, and the SDK error source middleware reads it back.
+		// The error is ignored on purpose: it only means the context carries no
+		// error source (for example a background context), which is harmless.
+		_ = status.WithDownstreamSource(ctx)
 	}
 
 	secureSocksRequestsDuration.WithLabelValues(code, d.datasourceName, d.datasourceType).Observe(time.Since(start).Seconds())
