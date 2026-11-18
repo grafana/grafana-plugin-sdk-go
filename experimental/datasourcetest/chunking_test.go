@@ -840,8 +840,8 @@ func (p *pluginQueryChunkedError) QueryChunkedData(ctx context.Context, req *bac
 	return nil
 }
 
-// TestMergeStatus verifies how the status, the error, and the error source of a sequence of chunks combine.
-func TestMergeStatus(t *testing.T) {
+// TestAccumulateMergesStatus verifies how the status, the error, and the error source of a sequence of chunks combine.
+func TestAccumulateMergesStatus(t *testing.T) {
 	frameChunk := func(status backend.Status) *pluginv2.QueryChunkedDataResponse {
 		return &pluginv2.QueryChunkedDataResponse{RefId: "A", Status: int32(status)} //nolint:gosec // HTTP status codes fit in int32
 	}
@@ -907,10 +907,10 @@ func TestMergeStatus(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			rsp := backend.DataResponse{Status: backend.StatusOK}
-			for _, chunk := range tt.chunks {
-				mergeStatus(&rsp, chunk)
-			}
+			// The chunks have no frame, so the format of the accumulator does not matter.
+			got, err := AccumulateArrow(chunkSeq(tt.chunks))
+			require.NoError(t, err)
+			rsp := got.Responses["A"]
 			require.Equal(t, tt.status, rsp.Status)
 			require.Equal(t, tt.errorSource, rsp.ErrorSource)
 			if tt.err == "" {
