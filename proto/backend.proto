@@ -235,13 +235,14 @@ message QueryChunkedDataResponse {
   // of the first chunk, and receivers ignore its name and metadata.
   bytes frame = 3;
 
-  // Error message
+  // Error message. A later error replaces the earlier error of the refId,
+  // together with its own status and error source.
   string error = 4;
 
   // When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
   // The status codes should match values from standard HTTP status codes
   // If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
-  // A frame chunk does not replace the status of an earlier error chunk.
+  // Only a chunk with an error can replace a status that is not 2xx.
   int32 status = 5;
 
   // Error source

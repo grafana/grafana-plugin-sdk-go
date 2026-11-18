@@ -47,20 +47,7 @@ func accumulate(
 		if !ok {
 			rsp.Status = backend.StatusOK
 		}
-
-		// Frame chunks carry 200, so they must not replace the status of an earlier error.
-		if chunk.Status != 0 && (chunk.Error != "" || rsp.Error == nil) {
-			rsp.Status = backend.Status(chunk.Status)
-		}
-		if chunk.Error != "" {
-			rsp.Error = errors.New(chunk.Error)
-			if chunk.Status == 0 && rsp.Status == backend.StatusOK {
-				rsp.Status = backend.StatusInternal
-			}
-		}
-		if chunk.ErrorSource != "" {
-			rsp.ErrorSource = backend.ErrorSource(chunk.ErrorSource)
-		}
+		mergeStatus(&rsp, chunk)
 
 		// A chunk from WriteError has no frame, and its format is not set.
 		if len(chunk.Frame) > 0 {
@@ -90,6 +77,24 @@ func accumulate(
 	}
 
 	return &backend.QueryDataResponse{Responses: responses}, nil
+}
+
+// mergeStatus applies the status, the error, and the error source of a chunk to rsp. An error replaces the
+// earlier error together with its own status and error source, and an error without a status means 500. Only a
+// chunk with an error can replace a status that is not 2xx, so a frame chunk with 200 keeps an earlier failure.
+func mergeStatus(rsp *backend.DataResponse, chunk *pluginv2.QueryChunkedDataResponse) {
+	if chunk.Error != "" {
+		rsp.Error = errors.New(chunk.Error)
+		rsp.ErrorSource = backend.ErrorSource(chunk.ErrorSource)
+		rsp.Status = backend.Status(chunk.Status)
+		if chunk.Status == 0 {
+			rsp.Status = backend.StatusInternal
+		}
+		return
+	}
+	if chunk.Status != 0 && rsp.Status >= 200 && rsp.Status < 300 {
+		rsp.Status = backend.Status(chunk.Status)
+	}
 }
 
 // appendArrowRows appends the rows of an Arrow chunk to frame. Each Arrow chunk has its own schema, so the

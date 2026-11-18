@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"iter"
-	"net/http"
 	"strconv"
 	"testing"
 
@@ -436,13 +435,13 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 
 	tests := []struct {
 		name string
-		// write sends the chunks in order. rawFrame sends a frame chunk without a frame ID, which the writer rejects.
-		write func(w backend.ChunkedDataWriter, rawFrame func(refID string, f *data.Frame)) error
+		// write sends the chunks in order. raw sends a frame chunk that the writer cannot send.
+		write func(w backend.ChunkedDataWriter, raw func(rawChunk)) error
 		want  map[string]result
 	}{
 		{
 			name: "one frame in many chunks",
-			write: func(w backend.ChunkedDataWriter, _ func(string, *data.Frame)) error {
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
 				return errors.Join(
 					w.WriteFrame(ctx, "A", "1", frame("table", 1, 2)),
 					w.WriteFrame(ctx, "A", "1", frame("table", 3)),
@@ -455,7 +454,7 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 		},
 		{
 			name: "many frames for one refID",
-			write: func(w backend.ChunkedDataWriter, _ func(string, *data.Frame)) error {
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
 				return errors.Join(
 					w.WriteFrame(ctx, "A", "1", frame("series1", 1)),
 					w.WriteFrame(ctx, "A", "2", frame("series2", 2)),
@@ -473,7 +472,7 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 		},
 		{
 			name: "alternating frame IDs",
-			write: func(w backend.ChunkedDataWriter, _ func(string, *data.Frame)) error {
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
 				return errors.Join(
 					w.WriteFrame(ctx, "A", "x", frame("x", 1)),
 					w.WriteFrame(ctx, "A", "y", frame("y", 10)),
@@ -486,7 +485,7 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 		},
 		{
 			name: "same frame ID for two refIDs",
-			write: func(w backend.ChunkedDataWriter, _ func(string, *data.Frame)) error {
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
 				return errors.Join(
 					w.WriteFrame(ctx, "A", "1", frame("a", 1)),
 					w.WriteFrame(ctx, "B", "1", frame("b", 2)),
@@ -500,9 +499,9 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 		},
 		{
 			name: "frames without a frame ID",
-			write: func(_ backend.ChunkedDataWriter, rawFrame func(string, *data.Frame)) error {
-				rawFrame("A", frame("first", 1))
-				rawFrame("A", frame("second", 2))
+			write: func(_ backend.ChunkedDataWriter, raw func(rawChunk)) error {
+				raw(rawChunk{refID: "A", status: backend.StatusOK, frame: frame("first", 1)})
+				raw(rawChunk{refID: "A", status: backend.StatusOK, frame: frame("second", 2)})
 				return nil
 			},
 			want: map[string]result{
@@ -511,7 +510,7 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 		},
 		{
 			name: "error after frames",
-			write: func(w backend.ChunkedDataWriter, _ func(string, *data.Frame)) error {
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
 				return errors.Join(
 					w.WriteFrame(ctx, "A", "1", frame("table", 1)),
 					w.WriteFrame(ctx, "A", "1", frame("table", 2)),
@@ -529,7 +528,7 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 		},
 		{
 			name: "only an error",
-			write: func(w backend.ChunkedDataWriter, _ func(string, *data.Frame)) error {
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
 				return errors.Join(
 					w.WriteError(ctx, "A", backend.StatusUnauthorized, errBadQuery),
 				)
@@ -540,7 +539,7 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 		},
 		{
 			name: "frame after an error",
-			write: func(w backend.ChunkedDataWriter, _ func(string, *data.Frame)) error {
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
 				return errors.Join(
 					w.WriteError(ctx, "A", backend.StatusBadRequest, errBadQuery),
 					w.WriteFrame(ctx, "A", "1", frame("table", 1)),
@@ -557,13 +556,60 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 		},
 		{
 			name: "error without a status",
-			write: func(w backend.ChunkedDataWriter, _ func(string, *data.Frame)) error {
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
 				return errors.Join(
 					w.WriteError(ctx, "A", 0, errPlugin),
 				)
 			},
 			want: map[string]result{
 				"A": {status: backend.StatusInternal, err: errPlugin.Error(), errorSource: backend.ErrorSourceFromError(errPlugin)},
+			},
+		},
+		{
+			name: "error without a status after an error",
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
+				return errors.Join(
+					w.WriteError(ctx, "A", backend.StatusBadRequest, errBadQuery),
+					w.WriteError(ctx, "A", 0, errPlugin),
+				)
+			},
+			// The status and the error source of the first error do not stay.
+			want: map[string]result{
+				"A": {status: backend.StatusInternal, err: errPlugin.Error(), errorSource: backend.ErrorSourceFromError(errPlugin)},
+			},
+		},
+		{
+			name: "failure status without an error before a frame",
+			write: func(w backend.ChunkedDataWriter, _ func(rawChunk)) error {
+				return errors.Join(
+					w.WriteError(ctx, "A", backend.StatusUnauthorized, nil),
+					w.WriteFrame(ctx, "A", "1", frame("table", 1)),
+				)
+			},
+			want: map[string]result{
+				"A": {frames: data.Frames{wantFrame("A", "table", 1)}, status: backend.StatusUnauthorized},
+			},
+		},
+		{
+			name: "frame with a failure status before another frame",
+			write: func(_ backend.ChunkedDataWriter, raw func(rawChunk)) error {
+				raw(rawChunk{refID: "A", frameID: "1", status: backend.StatusUnauthorized, frame: frame("table", 1)})
+				raw(rawChunk{refID: "A", frameID: "1", status: backend.StatusOK, continuation: true, frame: frame("table", 2)})
+				return nil
+			},
+			want: map[string]result{
+				"A": {frames: data.Frames{wantFrame("A", "table", 1, 2)}, status: backend.StatusUnauthorized},
+			},
+		},
+		{
+			name: "frames without a status",
+			write: func(_ backend.ChunkedDataWriter, raw func(rawChunk)) error {
+				raw(rawChunk{refID: "A", frameID: "1", frame: frame("table", 1)})
+				raw(rawChunk{refID: "A", frameID: "1", continuation: true, frame: frame("table", 2)})
+				return nil
+			},
+			want: map[string]result{
+				"A": {frames: data.Frames{wantFrame("A", "table", 1, 2)}, status: backend.StatusOK},
 			},
 		},
 	}
@@ -585,8 +631,8 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 					chunks = append(chunks, chunk)
 					return nil
 				})
-				require.NoError(t, tt.write(w, func(refID string, fr *data.Frame) {
-					chunks = append(chunks, frameChunkWithoutID(t, f.format, refID, fr))
+				require.NoError(t, tt.write(w, func(c rawChunk) {
+					chunks = append(chunks, encodeRawChunk(t, f.format, c))
 				}))
 
 				got, err := f.accumulate(chunkSeq(chunks))
@@ -716,26 +762,39 @@ func chunkSeq(chunks []*pluginv2.QueryChunkedDataResponse) iter.Seq2[*pluginv2.Q
 	}
 }
 
-// frameChunkWithoutID encodes a frame chunk without a frame ID. The SDK writer rejects an empty frame ID, but a
-// receiver must still accept one from other producers.
-func frameChunkWithoutID(t *testing.T, format backend.DataFrameFormat, refID string, f *data.Frame) *pluginv2.QueryChunkedDataResponse {
+// rawChunk is a frame chunk that the SDK writer cannot send, because it has no frame ID or a status other than 200.
+// Other producers can send such chunks, so the receivers must accept them.
+type rawChunk struct {
+	refID   string
+	frameID string
+	status  backend.Status
+	// continuation leaves out the schema in JSON, as the writer does for a later chunk of a frame.
+	continuation bool
+	frame        *data.Frame
+}
+
+func encodeRawChunk(t *testing.T, format backend.DataFrameFormat, c rawChunk) *pluginv2.QueryChunkedDataResponse {
 	t.Helper()
-	f.SetRefID(refID)
+	c.frame.SetRefID(c.refID)
 
 	var b []byte
 	var err error
-	if format == backend.DataFrameFormat_JSON {
-		b, err = data.FrameToJSON(f, data.IncludeAll)
-	} else {
-		b, err = f.MarshalArrow()
+	switch {
+	case format == backend.DataFrameFormat_ARROW:
+		b, err = c.frame.MarshalArrow()
+	case c.continuation:
+		b, err = data.FrameToJSON(c.frame, data.IncludeDataOnly)
+	default:
+		b, err = data.FrameToJSON(c.frame, data.IncludeAll)
 	}
 	require.NoError(t, err)
 
 	return &pluginv2.QueryChunkedDataResponse{
-		RefId:  refID,
-		Frame:  b,
-		Status: http.StatusOK,
-		Format: pluginv2.DataFrameFormat(format),
+		RefId:   c.refID,
+		FrameId: c.frameID,
+		Frame:   b,
+		Status:  int32(c.status), //nolint:gosec // HTTP status codes fit in int32
+		Format:  pluginv2.DataFrameFormat(format),
 	}
 }
 
@@ -779,4 +838,86 @@ func (p *pluginQueryChunkedError) QueryChunkedData(ctx context.Context, req *bac
 		}
 	}
 	return nil
+}
+
+// TestMergeStatus verifies how the status, the error, and the error source of a sequence of chunks combine.
+func TestMergeStatus(t *testing.T) {
+	frameChunk := func(status backend.Status) *pluginv2.QueryChunkedDataResponse {
+		return &pluginv2.QueryChunkedDataResponse{RefId: "A", Status: int32(status)} //nolint:gosec // HTTP status codes fit in int32
+	}
+	errorChunk := func(status backend.Status, msg string, source backend.ErrorSource) *pluginv2.QueryChunkedDataResponse {
+		return &pluginv2.QueryChunkedDataResponse{RefId: "A", Status: int32(status), Error: msg, ErrorSource: string(source)} //nolint:gosec // HTTP status codes fit in int32
+	}
+
+	tests := []struct {
+		name        string
+		chunks      []*pluginv2.QueryChunkedDataResponse
+		status      backend.Status
+		err         string
+		errorSource backend.ErrorSource
+	}{
+		{
+			name:   "no status",
+			chunks: []*pluginv2.QueryChunkedDataResponse{frameChunk(0), frameChunk(0)},
+			status: backend.StatusOK,
+		},
+		{
+			name:   "failure without an error, then 200",
+			chunks: []*pluginv2.QueryChunkedDataResponse{frameChunk(backend.StatusUnauthorized), frameChunk(backend.StatusOK)},
+			status: backend.StatusUnauthorized,
+		},
+		{
+			name:   "two failures without an error",
+			chunks: []*pluginv2.QueryChunkedDataResponse{frameChunk(backend.StatusUnauthorized), frameChunk(backend.StatusForbidden)},
+			status: backend.StatusUnauthorized,
+		},
+		{
+			name:   "error without a status",
+			chunks: []*pluginv2.QueryChunkedDataResponse{errorChunk(0, "failed", "")},
+			status: backend.StatusInternal,
+			err:    "failed",
+		},
+		{
+			name:        "error, then 200",
+			chunks:      []*pluginv2.QueryChunkedDataResponse{errorChunk(backend.StatusBadRequest, "bad query", backend.ErrorSourceDownstream), frameChunk(backend.StatusOK)},
+			status:      backend.StatusBadRequest,
+			err:         "bad query",
+			errorSource: backend.ErrorSourceDownstream,
+		},
+		{
+			name:   "error, then a failure without an error",
+			chunks: []*pluginv2.QueryChunkedDataResponse{errorChunk(backend.StatusBadRequest, "bad query", ""), frameChunk(backend.StatusForbidden)},
+			status: backend.StatusBadRequest,
+			err:    "bad query",
+		},
+		{
+			name:   "error with a status, then an error without a status or a source",
+			chunks: []*pluginv2.QueryChunkedDataResponse{errorChunk(backend.StatusBadRequest, "bad query", backend.ErrorSourceDownstream), errorChunk(0, "failed", "")},
+			status: backend.StatusInternal,
+			err:    "failed",
+		},
+		{
+			name:        "failure without an error, then an error without a status",
+			chunks:      []*pluginv2.QueryChunkedDataResponse{frameChunk(backend.StatusUnauthorized), errorChunk(0, "failed", backend.ErrorSourcePlugin)},
+			status:      backend.StatusInternal,
+			err:         "failed",
+			errorSource: backend.ErrorSourcePlugin,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			rsp := backend.DataResponse{Status: backend.StatusOK}
+			for _, chunk := range tt.chunks {
+				mergeStatus(&rsp, chunk)
+			}
+			require.Equal(t, tt.status, rsp.Status)
+			require.Equal(t, tt.errorSource, rsp.ErrorSource)
+			if tt.err == "" {
+				require.NoError(t, rsp.Error)
+			} else {
+				require.EqualError(t, rsp.Error, tt.err)
+			}
+		})
+	}
 }

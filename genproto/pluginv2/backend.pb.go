@@ -1268,12 +1268,13 @@ type QueryChunkedDataResponse struct {
 	// In Arrow, each chunk is a complete Arrow file. Its fields must match the fields
 	// of the first chunk, and receivers ignore its name and metadata.
 	Frame []byte `protobuf:"bytes,3,opt,name=frame,proto3" json:"frame,omitempty"`
-	// Error message
+	// Error message. A later error replaces the earlier error of the refId,
+	// together with its own status and error source.
 	Error string `protobuf:"bytes,4,opt,name=error,proto3" json:"error,omitempty"`
 	// When errors exist or a non 2XX status, clients will be passed a 207 HTTP error code in /ds/query
 	// The status codes should match values from standard HTTP status codes
 	// If not set explicitly, it will be marshaled to 200 if no error exists, or 500 if one does
-	// A frame chunk does not replace the status of an earlier error chunk.
+	// Only a chunk with an error can replace a status that is not 2xx.
 	Status int32 `protobuf:"varint,5,opt,name=status,proto3" json:"status,omitempty"`
 	// Error source
 	ErrorSource string `protobuf:"bytes,6,opt,name=errorSource,proto3" json:"errorSource,omitempty"`
