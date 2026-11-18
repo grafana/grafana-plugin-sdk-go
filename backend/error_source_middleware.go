@@ -44,7 +44,7 @@ func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataReq
 }
 
 func (m ErrorSourceMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
-	observer, writer := observeChunkedQuery(w, "")
+	observer, writer := recordChunkedErrors(w)
 	err := m.BaseHandler.QueryChunkedData(ctx, req, writer)
 	_, err = m.setQueryErrorSources(ctx, &observer.result, err)
 	return err

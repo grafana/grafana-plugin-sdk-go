@@ -71,10 +71,10 @@ func (m *tracingMiddleware) QueryData(ctx context.Context, req *QueryDataRequest
 }
 
 func (m *tracingMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
-	observer, writer := observeChunkedQuery(w, "")
+	observer, writer := recordChunkedErrors(w)
 	return m.traceRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		err := m.BaseHandler.QueryChunkedData(ctx, req, writer)
-		return RequestStatusFromQueryDataResponse(&observer.result, err), err
+		return observer.requestStatus(err), err
 	})
 }
 

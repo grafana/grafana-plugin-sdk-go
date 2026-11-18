@@ -3,92 +3,91 @@ package backend
 import (
 	"context"
 	"sync"
-	"sync/atomic"
 
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/genproto/pluginv2"
 )
 
-// Each query call retains only its last error per refID. Capture mode tracks
-// the reserved refID instead. Neither mode retains frame data.
-type chunkedQueryObserver struct {
-	ChunkedDataWriter
-	mu             sync.Mutex
-	result         QueryDataResponse
-	captureRefID   string
-	captureRefUsed atomic.Bool
-}
-
 type rawChunkSink interface {
 	OnChunk(*pluginv2.QueryChunkedDataResponse) error
 }
 
-type sourcedErrorSink interface {
-	WriteErrorWithSource(context.Context, string, Status, error, ErrorSource) error
+type observeWrite func(refID string, status Status, err error, source ErrorSource)
+
+type observedChunkWriter struct {
+	ChunkedDataWriter
+	observe observeWrite
+	errorMu sync.Mutex
 }
 
 type rawQueryObserver struct {
-	*chunkedQueryObserver
+	*observedChunkWriter
 	raw rawChunkSink
 }
 
-func observeChunkedQuery(w ChunkedDataWriter, captureRefID string) (*chunkedQueryObserver, ChunkedDataWriter) {
-	observer := &chunkedQueryObserver{ChunkedDataWriter: w, captureRefID: captureRefID}
+func observeChunkedWrites(w ChunkedDataWriter, observe observeWrite) ChunkedDataWriter {
+	writer := &observedChunkWriter{ChunkedDataWriter: w, observe: observe}
 	// A host can select a different transport when the writer accepts encoded chunks.
 	if raw, ok := w.(rawChunkSink); ok {
-		return observer, &rawQueryObserver{observer, raw}
+		return &rawQueryObserver{writer, raw}
 	}
-	return observer, observer
+	return writer
 }
 
-func (w *chunkedQueryObserver) markRef(refID string) {
-	if w.captureRefID != "" && refID == w.captureRefID {
-		w.captureRefUsed.Store(true)
-	}
+// ObserveChunkedErrors calls onError before forwarding each typed or encoded error to w.
+// The callback receives the supplied status and the error source, if known.
+// It runs once per error write, even if forwarding fails. Error writes run in delivery order.
+// The callback must not write another error through the returned writer.
+// The returned writer supports OnChunk only when w supports it.
+func ObserveChunkedErrors(w ChunkedDataWriter, onError func(refID string, status Status, err error, source ErrorSource)) ChunkedDataWriter {
+	return observeChunkedWrites(w, func(refID string, status Status, err error, source ErrorSource) {
+		if err == nil {
+			return
+		}
+		if !source.IsValid() {
+			source = ErrorSourceFromError(err)
+		}
+		onError(refID, status, err, source)
+	})
 }
 
-// Hold the lock until the write returns so failures for the same refID stay in wire order.
-func (w *chunkedQueryObserver) recordError(refID string, status Status, err error, source ErrorSource, send func() error) error {
-	w.markRef(refID)
-	if err == nil || w.captureRefID != "" {
-		return send()
-	}
-	w.mu.Lock()
-	defer w.mu.Unlock()
-	if w.result.Responses == nil {
-		w.result.Responses = make(Responses)
-	}
-	if !source.IsValid() {
-		source = ErrorSourceFromError(err)
+type chunkedQueryErrors struct {
+	result QueryDataResponse
+}
+
+func recordChunkedErrors(w ChunkedDataWriter) (*chunkedQueryErrors, ChunkedDataWriter) {
+	errs := &chunkedQueryErrors{}
+	return errs, ObserveChunkedErrors(w, errs.record)
+}
+
+func (r *chunkedQueryErrors) record(refID string, status Status, err error, source ErrorSource) {
+	if r.result.Responses == nil {
+		r.result.Responses = make(Responses)
 	}
 	if !status.IsValid() {
 		status = statusFromError(err)
 	}
-	w.result.Responses[refID] = DataResponse{Error: err, Status: status, ErrorSource: source}
-	return send()
+	r.result.Responses[refID] = DataResponse{Error: err, Status: status, ErrorSource: source}
 }
 
-func (w *chunkedQueryObserver) WriteFrame(ctx context.Context, refID, frameID string, f *data.Frame) error {
-	w.markRef(refID)
+// Read the result only after the handler returns and all writes finish.
+func (r *chunkedQueryErrors) requestStatus(err error) RequestStatus {
+	return RequestStatusFromQueryDataResponse(&r.result, err)
+}
+
+func (w *observedChunkWriter) WriteFrame(ctx context.Context, refID, frameID string, f *data.Frame) error {
+	w.observe(refID, 0, nil, "")
 	return w.ChunkedDataWriter.WriteFrame(ctx, refID, frameID, f)
 }
 
-func (w *chunkedQueryObserver) WriteError(ctx context.Context, refID string, status Status, err error) error {
-	return w.recordError(refID, status, err, "", func() error {
-		return w.ChunkedDataWriter.WriteError(ctx, refID, status, err)
-	})
-}
-
-func (w *chunkedQueryObserver) WriteErrorWithSource(ctx context.Context, refID string, status Status, err error, source ErrorSource) error {
-	return w.recordError(refID, status, err, source, func() error {
-		if next, ok := w.ChunkedDataWriter.(sourcedErrorSink); ok {
-			return next.WriteErrorWithSource(ctx, refID, status, err, source)
-		}
-		if err != nil && source.IsValid() {
-			err = NewErrorWithSource(err, source)
-		}
-		return w.ChunkedDataWriter.WriteError(ctx, refID, status, err)
-	})
+func (w *observedChunkWriter) WriteError(ctx context.Context, refID string, status Status, err error) error {
+	if err != nil {
+		// Keep error observations in delivery order, including calls to OnChunk.
+		w.errorMu.Lock()
+		defer w.errorMu.Unlock()
+	}
+	w.observe(refID, status, err, "")
+	return w.ChunkedDataWriter.WriteError(ctx, refID, status, err)
 }
 
 // The wire carries error text. Keep that text for logs and use the same
@@ -101,11 +100,12 @@ func (e rawQueryError) Is(target error) bool {
 }
 
 func (w *rawQueryObserver) OnChunk(c *pluginv2.QueryChunkedDataResponse) error {
+	var err error
 	if c.GetError() != "" {
-		return w.recordError(c.RefId, Status(c.Status), rawQueryError(c.Error), ErrorSource(c.ErrorSource), func() error {
-			return w.raw.OnChunk(c)
-		})
+		w.errorMu.Lock()
+		defer w.errorMu.Unlock()
+		err = rawQueryError(c.Error)
 	}
-	w.markRef(c.GetRefId())
+	w.observe(c.GetRefId(), Status(c.GetStatus()), err, ErrorSource(c.GetErrorSource()))
 	return w.raw.OnChunk(c)
 }

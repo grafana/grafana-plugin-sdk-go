@@ -99,13 +99,13 @@ func (m *loggerMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunk
 	if req == nil {
 		return m.BaseHandler.QueryChunkedData(ctx, req, w)
 	}
-	observer, writer := observeChunkedQuery(w, "")
+	observer, writer := recordChunkedErrors(w)
 	return m.logRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		err := m.BaseHandler.QueryChunkedData(ctx, req, writer)
 		if err == nil {
 			m.logQueryErrors(ctx, &observer.result)
 		}
-		return RequestStatusFromQueryDataResponse(&observer.result, err), err
+		return observer.requestStatus(err), err
 	})
 }
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/harcapture"
@@ -90,7 +91,7 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	// reserved refID. Don't clobber the panel's real data: skip attaching capture for this
 	// request and leave the plugin's result (and error) untouched.
 	if _, taken := resp.Responses[harRefID]; taken {
-		Logger.Warn("HAR capture: reserved refID already used by the plugin response; skipping capture frame to avoid overwriting real data", "refID", harRefID)
+		warnHARRefIDCollision(harRefID)
 		return resp, err
 	}
 
@@ -109,6 +110,10 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	// Return a nil error so the response (and the captured __har__ frame) survives the gRPC boundary.
 	// Only in capture mode (header-gated); the failure is still visible via dr.Error / queryError.
 	return resp, nil
+}
+
+func warnHARRefIDCollision(refID string) {
+	Logger.Warn("HAR capture: reserved refID already used by the plugin response; skipping capture frame to avoid overwriting real data", "refID", refID)
 }
 
 func withQueryCapture(ctx context.Context) (context.Context, *harcapture.Buffer) {
@@ -166,13 +171,19 @@ func (h *harCaptureHandler) QueryChunkedData(ctx context.Context, req *QueryChun
 	}
 	ctx, buf := withQueryCapture(ctx)
 	refID := harResponseRefID(req.PluginContext)
-	observer, writer := observeChunkedQuery(w, refID)
+	var collision atomic.Bool
+	writer := observeChunkedWrites(w, func(id string, _ Status, _ error, _ ErrorSource) {
+		if id == refID {
+			collision.Store(true)
+		}
+	})
 	err := h.BaseHandler.QueryChunkedData(ctx, req, writer)
-	if observer.captureRefUsed.Load() {
-		return err
-	}
 	f := queryCaptureFrame(buf, refID, err)
 	if f == nil {
+		return err
+	}
+	if collision.Load() {
+		warnHARRefIDCollision(refID)
 		return err
 	}
 	// A raw receiver can reject typed writes. Encode the synthetic response just

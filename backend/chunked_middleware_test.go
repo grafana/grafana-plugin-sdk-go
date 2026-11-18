@@ -3,6 +3,8 @@ package backend
 import (
 	"context"
 	"errors"
+	"net/http"
+	"net/http/httptest"
 	"strconv"
 	"sync"
 	"testing"
@@ -14,6 +16,7 @@ import (
 	"go.opentelemetry.io/otel/sdk/trace/tracetest"
 	"google.golang.org/grpc/metadata"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/httpclient"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/querycapture"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
@@ -30,6 +33,43 @@ func (l *queryLog) FromContext(context.Context) log.Logger { return l }
 func (l *queryLog) Debug(msg string, _ ...any)             { l.messages = append(l.messages, msg) }
 func (l *queryLog) Error(msg string, _ ...any)             { l.messages = append(l.messages, msg) }
 func (l *queryLog) Info(msg string, _ ...any)              { l.messages = append(l.messages, msg) }
+
+func (l *queryLog) Warn(msg string, _ ...any) { l.messages = append(l.messages, msg) }
+
+func TestChunkedQueryForwardsHTTPHeaders(t *testing.T) {
+	for _, tc := range []struct {
+		name                string
+		forward             bool
+		headers             map[string]string
+		wantAuth, wantAlert string
+	}{
+		{"identity and alert", true, map[string]string{"Authorization": "Bearer test", FromAlertHeaderName: "true"}, "Bearer test", "true"},
+		{"alert without identity forwarding", false, map[string]string{"Authorization": "Bearer test", FromAlertHeaderName: "true"}, "", "true"},
+		{"no headers", true, nil, "", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				if r.Header.Get("Authorization") != tc.wantAuth || r.Header.Get(FromAlertHeaderName) != tc.wantAlert {
+					t.Errorf("unexpected forwarded headers: %v", r.Header)
+				}
+				w.WriteHeader(http.StatusNoContent)
+			}))
+			t.Cleanup(server.Close)
+			client, err := httpclient.New(httpclient.Options{ForwardHTTPHeaders: tc.forward})
+			require.NoError(t, err)
+			plugin := Handlers{QueryChunkedDataHandler: QueryChunkedDataHandlerFunc(func(ctx context.Context, _ *QueryChunkedDataRequest, _ ChunkedDataWriter) error {
+				req, err := http.NewRequestWithContext(ctx, http.MethodGet, server.URL, nil)
+				require.NoError(t, err)
+				resp, err := client.Do(req)
+				require.NoError(t, err)
+				return resp.Body.Close()
+			})}
+			chain, err := HandlerFromMiddlewares(plugin, newHeaderMiddleware(), NewAlertForwarderMiddleware())
+			require.NoError(t, err)
+			require.NoError(t, chain.QueryChunkedData(t.Context(), &QueryChunkedDataRequest{Headers: tc.headers}, nil))
+		})
+	}
+}
 
 func TestChunkedQueryInstrumentation(t *testing.T) {
 	downstream := DownstreamError(errors.New("query failed"))
@@ -113,6 +153,13 @@ func TestChunkedQueryCapture(t *testing.T) {
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			const refID = "__har__uid"
+			var captureLog *queryLog
+			if tc.collision {
+				previous := Logger
+				captureLog = &queryLog{Logger: log.NewNullLogger()}
+				Logger = captureLog
+				t.Cleanup(func() { Logger = previous })
+			}
 			ctx := t.Context()
 			plugin := Handlers{QueryChunkedDataHandler: QueryChunkedDataHandlerFunc(func(ctx context.Context, _ *QueryChunkedDataRequest, w ChunkedDataWriter) error {
 				recorder, ok := querycapture.RecorderFromContext(ctx)
@@ -141,6 +188,8 @@ func TestChunkedQueryCapture(t *testing.T) {
 			require.Equal(t, refID, chunks[0].RefId)
 			if tc.collision {
 				require.Equal(t, "own", chunks[0].FrameId)
+				require.Len(t, captureLog.messages, 1)
+				require.Contains(t, captureLog.messages[0], "reserved refID")
 				return
 			}
 			var f data.Frame
@@ -193,7 +242,7 @@ func TestChunkedQueryObserverConcurrentWrites(t *testing.T) {
 		written = append(written, c)
 		return nil
 	})
-	observer, writer := observeChunkedQuery(sink, "")
+	observer, writer := recordChunkedErrors(sink)
 	require.NotImplements(t, (*rawChunkSink)(nil), writer)
 	var workers sync.WaitGroup
 	for i := range queries {
@@ -210,6 +259,13 @@ func TestChunkedQueryObserverConcurrentWrites(t *testing.T) {
 	}
 	workers.Wait()
 	require.Len(t, written, 2*queries)
+	for _, chunk := range written {
+		want := ErrorSourceDownstream
+		if chunk.Error == "last" {
+			want = ErrorSourcePlugin
+		}
+		require.Equal(t, string(want), chunk.ErrorSource)
+	}
 	require.Len(t, observer.result.Responses, queries)
 	for _, response := range observer.result.Responses {
 		require.EqualError(t, response.Error, "last")
@@ -219,10 +275,36 @@ func TestChunkedQueryObserverConcurrentWrites(t *testing.T) {
 
 func TestRawQueryErrorKeepsCancellationAndMessage(t *testing.T) {
 	sink := &rawTestSink{}
-	observer, writer := observeChunkedQuery(sink, "")
+	observer, writer := recordChunkedErrors(sink)
 	chunk := &pluginv2.QueryChunkedDataResponse{RefId: "A", Error: "request: context canceled", ErrorSource: "downstream"}
 	require.NoError(t, writer.(rawChunkSink).OnChunk(chunk))
 	require.Same(t, chunk, sink.chunks[0])
 	require.EqualError(t, observer.result.Responses["A"].Error, chunk.Error)
-	require.Equal(t, RequestStatusCancelled, RequestStatusFromQueryDataResponse(&observer.result, nil))
+	require.Equal(t, RequestStatusCancelled, observer.requestStatus(nil))
+}
+
+func TestObserveChunkedErrors(t *testing.T) {
+	sendErr := errors.New("send failed")
+	var writes, observed []string
+	sink := NewChunkedDataWriter(DataFrameFormat_JSON, func(chunk *pluginv2.QueryChunkedDataResponse) error {
+		writes = append(writes, chunk.RefId)
+		if chunk.Error != "" {
+			require.Equal(t, []string{chunk.RefId}, observed)
+			return sendErr
+		}
+		return nil
+	})
+	queryErr := PluginError(context.Canceled)
+	writer := ObserveChunkedErrors(sink, func(refID string, status Status, err error, source ErrorSource) {
+		observed = append(observed, refID)
+		require.Equal(t, queryErr, err)
+		require.Equal(t, StatusBadRequest, status)
+		require.Equal(t, ErrorSourcePlugin, source)
+	})
+	require.NotImplements(t, (*rawChunkSink)(nil), writer)
+	require.NoError(t, writer.WriteFrame(t.Context(), "A", "frame", data.NewFrame("A")))
+	require.NoError(t, writer.WriteError(t.Context(), "A", StatusOK, nil))
+	require.ErrorIs(t, writer.WriteError(t.Context(), "B", StatusBadRequest, queryErr), sendErr)
+	require.Equal(t, []string{"A", "A", "B"}, writes)
+	require.Equal(t, []string{"B"}, observed)
 }
