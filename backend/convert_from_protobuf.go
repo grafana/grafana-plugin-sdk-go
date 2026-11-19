@@ -147,7 +147,7 @@ func (f ConvertFromProtobuf) QueryDataResponse(protoRes *pluginv2.QueryDataRespo
 }
 
 // ConsumeQueryDataResponse converts protoRes like QueryDataResponse and sets each encoded frame in protoRes to nil once decoded,
-// so a caller that owns protoRes lets the encoded bytes be freed during the conversion.
+// so a caller that owns protoRes lets the bytes be freed early. After an error, protoRes is partly consumed and must not be reused.
 func (f ConvertFromProtobuf) ConsumeQueryDataResponse(protoRes *pluginv2.QueryDataResponse) (*QueryDataResponse, error) {
 	return queryDataResponseFromProto(protoRes, true)
 }
