@@ -2,7 +2,9 @@ package backend
 
 import (
 	"context"
+	"errors"
 	"net/http"
+	"sync/atomic"
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/harcapture"
@@ -25,9 +27,9 @@ const harResponseRefIDPrefix = "__har__"
 // collision handling -- a single fixed refID would make all but one datasource's captured traffic
 // (and any stashed queryError) get silently overwritten. Falls back to the bare prefix when no
 // datasource UID is available (should not happen for a datasource query, but keeps this total).
-func harResponseRefID(req *QueryDataRequest) string {
-	if req != nil && req.PluginContext.DataSourceInstanceSettings != nil {
-		if uid := req.PluginContext.DataSourceInstanceSettings.UID; uid != "" {
+func harResponseRefID(pc PluginContext) string {
+	if pc.DataSourceInstanceSettings != nil {
+		if uid := pc.DataSourceInstanceSettings.UID; uid != "" {
 			return harResponseRefIDPrefix + uid
 		}
 	}
@@ -69,6 +71,52 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 		return h.BaseHandler.QueryData(ctx, req)
 	}
 
+	ctx, buf := withQueryCapture(ctx)
+
+	resp, err := h.BaseHandler.QueryData(ctx, req)
+
+	harRefID := harResponseRefID(req.PluginContext)
+	harFrame := queryCaptureFrame(buf, harRefID, err)
+	if harFrame == nil {
+		return resp, err
+	}
+
+	if resp == nil {
+		resp = &QueryDataResponse{Responses: make(Responses)}
+	}
+	if resp.Responses == nil {
+		resp.Responses = make(Responses)
+	}
+	// refIDs are user-controlled (panel query editor), so a plugin response could already occupy the
+	// reserved refID. Don't clobber the panel's real data: skip attaching capture for this
+	// request and leave the plugin's result (and error) untouched.
+	if _, taken := resp.Responses[harRefID]; taken {
+		warnHARRefIDCollision(harRefID)
+		return resp, err
+	}
+
+	dr := DataResponse{Frames: data.Frames{harFrame}}
+	if err != nil {
+		// Also surface the failure on the synthetic response so the SDK's own middlewares
+		// (loggerMiddleware, and metrics/tracing via RequestStatusFromQueryDataResponse) still
+		// observe it. Otherwise the nil top-level error we return below -- needed so the response
+		// survives the gRPC boundary -- would make those middlewares log/report the failed query as
+		// successful. Grafana treats __har__ as synthetic and reads the error from queryError, not
+		// this field.
+		dr.Error = err
+	}
+	resp.Responses[harRefID] = dr
+
+	// Return a nil error so the response (and the captured __har__ frame) survives the gRPC boundary.
+	// Only in capture mode (header-gated); the failure is still visible via dr.Error / queryError.
+	return resp, nil
+}
+
+func warnHARRefIDCollision(refID string) {
+	Logger.Warn("HAR capture: reserved refID already used by the plugin response; skipping capture frame to avoid overwriting real data", "refID", refID)
+}
+
+func withQueryCapture(ctx context.Context) (context.Context, *harcapture.Buffer) {
 	buf := harcapture.NewBuffer()
 
 	captureMW := httpclient.NamedMiddlewareFunc("sdk-har-capture", func(_ httpclient.Options, next http.RoundTripper) http.RoundTripper {
@@ -97,55 +145,60 @@ func (h *harCaptureHandler) QueryData(ctx context.Context, req *QueryDataRequest
 	// point never reads the recorder back, so this is inert for every plugin that predates the seam.
 	ctx = querycapture.WithRecorder(ctx, harcapture.NewRecorder(buf))
 
-	resp, err := h.BaseHandler.QueryData(ctx, req)
+	return ctx, buf
+}
 
-	// Nothing captured: pass the plugin's result through untouched.
+func queryCaptureFrame(buf *harcapture.Buffer, refID string, err error) *data.Frame {
 	if buf.Len() == 0 {
-		return resp, err
+		return nil
 	}
-	harStr, serErr := buf.ToHARString()
-	if serErr != nil {
-		return resp, err
+	payload, encodeErr := buf.ToHARString()
+	if encodeErr != nil {
+		return nil
 	}
-
-	if resp == nil {
-		resp = &QueryDataResponse{Responses: make(Responses)}
-	}
-	if resp.Responses == nil {
-		resp.Responses = make(Responses)
-	}
-	harRefID := harResponseRefID(req)
-	// refIDs are user-controlled (panel query editor), so a plugin response could already occupy the
-	// reserved refID. Don't clobber the panel's real data: skip attaching capture for this
-	// request and leave the plugin's result (and error) untouched.
-	if _, taken := resp.Responses[harRefID]; taken {
-		Logger.Warn("HAR capture: reserved refID already used by the plugin response; skipping capture frame to avoid overwriting real data", "refID", harRefID)
-		return resp, err
-	}
-
-	custom := map[string]any{"har": harStr}
+	custom := map[string]any{"har": payload}
 	if err != nil {
-		// Preserve the top-level error inside the frame. Returning a non-nil error here would make
-		// the SDK's gRPC adapter (data_adapter.go) discard the whole response -- including this
-		// __har__ frame -- so the captured traffic for a failed call would never reach Grafana. We
-		// instead carry the error across in the frame and return nil below; Grafana reads it back.
 		custom["queryError"] = err.Error()
 	}
-	harFrame := data.NewFrame(harRefID)
-	harFrame.Meta = &data.FrameMeta{Custom: custom}
-	dr := DataResponse{Frames: data.Frames{harFrame}}
-	if err != nil {
-		// Also surface the failure on the synthetic response so the SDK's own middlewares
-		// (loggerMiddleware, and metrics/tracing via RequestStatusFromQueryDataResponse) still
-		// observe it. Otherwise the nil top-level error we return below -- needed so the response
-		// survives the gRPC boundary -- would make those middlewares log/report the failed query as
-		// successful. Grafana treats __har__ as synthetic and reads the error from queryError, not
-		// this field.
-		dr.Error = err
-	}
-	resp.Responses[harRefID] = dr
+	f := data.NewFrame(refID)
+	f.Meta = &data.FrameMeta{Custom: custom}
+	return f
+}
 
-	// Return a nil error so the response (and the captured __har__ frame) survives the gRPC boundary.
-	// Only in capture mode (header-gated); the failure is still visible via dr.Error / queryError.
-	return resp, nil
+func (h *harCaptureHandler) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	if req == nil || req.Headers[harCaptureRequestHeader] != "true" {
+		return h.BaseHandler.QueryChunkedData(ctx, req, w)
+	}
+	ctx, buf := withQueryCapture(ctx)
+	refID := harResponseRefID(req.PluginContext)
+	var collision atomic.Bool
+	writer := observeChunkedWrites(w, func(id string, _ Status, _ error, _ ErrorSource) {
+		if id == refID {
+			collision.Store(true)
+		}
+	})
+	err := h.BaseHandler.QueryChunkedData(ctx, req, writer)
+	f := queryCaptureFrame(buf, refID, err)
+	if f == nil {
+		return err
+	}
+	if collision.Load() {
+		warnHARRefIDCollision(refID)
+		return err
+	}
+	// A raw receiver can reject typed writes. Encode the synthetic response just
+	// like a plugin response before sending it through that receiver.
+	if raw, ok := w.(rawChunkSink); ok {
+		w = NewChunkedDataWriter(req.Format, raw.OnChunk)
+	}
+	if writeErr := w.WriteFrame(ctx, refID, refID, f); writeErr != nil {
+		return errors.Join(err, writeErr)
+	}
+	if err != nil {
+		// Keep the capture frame readable when the query itself fails.
+		if writeErr := w.WriteError(ctx, refID, statusFromError(err), err); writeErr != nil {
+			return errors.Join(err, writeErr)
+		}
+	}
+	return nil
 }
