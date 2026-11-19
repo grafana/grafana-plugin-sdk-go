@@ -22,6 +22,8 @@ type ErrorSourceMiddleware struct {
 	BaseHandler
 }
 
+var _ QueryChunkedDataHandler = ErrorSourceMiddleware{}
+
 func (m *ErrorSourceMiddleware) handleDownstreamError(ctx context.Context, err error) error {
 	if err == nil {
 		return nil
@@ -38,6 +40,17 @@ func (m *ErrorSourceMiddleware) handleDownstreamError(ctx context.Context, err e
 
 func (m *ErrorSourceMiddleware) QueryData(ctx context.Context, req *QueryDataRequest) (*QueryDataResponse, error) {
 	resp, err := m.BaseHandler.QueryData(ctx, req)
+	return m.setQueryErrorSources(ctx, resp, err)
+}
+
+func (m ErrorSourceMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	observer, writer := recordChunkedErrors(w)
+	err := m.BaseHandler.QueryChunkedData(ctx, req, writer)
+	_, err = m.setQueryErrorSources(ctx, &observer.result, err)
+	return err
+}
+
+func (m *ErrorSourceMiddleware) setQueryErrorSources(ctx context.Context, resp *QueryDataResponse, err error) (*QueryDataResponse, error) {
 	// we want to always process the error here first before checking anything else
 	// because we want the opportunity to set the error source in the context.
 	err = m.handleDownstreamError(ctx, err)

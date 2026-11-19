@@ -70,6 +70,10 @@ func (m *contextualLoggerMiddleware) QueryData(ctx context.Context, req *QueryDa
 	return m.BaseHandler.QueryData(ctx, req)
 }
 
+func (m *contextualLoggerMiddleware) QueryChunkedData(ctx context.Context, req *QueryChunkedDataRequest, w ChunkedDataWriter) error {
+	return m.BaseHandler.QueryChunkedData(m.setup(ctx, req.PluginContext), req, w)
+}
+
 func (m *contextualLoggerMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	ctx = m.setup(ctx, req.PluginContext)
 	return m.BaseHandler.CallResource(ctx, req, sender)
