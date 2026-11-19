@@ -56,8 +56,14 @@ type InstanceManager interface {
 
 // CachedInstance a cached Instance.
 type CachedInstance struct {
+	// PluginContext is the plugin context the instance was created with. Its GrafanaConfig is a digest, see config.GrafanaCfg.Digest.
 	PluginContext backend.PluginContext
 	instance      Instance
+}
+
+func newCachedInstance(pluginContext backend.PluginContext, instance Instance) CachedInstance {
+	pluginContext.GrafanaConfig = pluginContext.GrafanaConfig.Digest()
+	return CachedInstance{PluginContext: pluginContext, instance: instance}
 }
 
 // InstanceProvider defines an instance provider, providing instances.
@@ -145,10 +151,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 	if err != nil {
 		return nil, err
 	}
-	im.cache.Store(cacheKey, CachedInstance{
-		PluginContext: pluginContext,
-		instance:      instance,
-	})
+	im.cache.Store(cacheKey, newCachedInstance(pluginContext, instance))
 	activeInstances.Inc()
 
 	return instance, nil
