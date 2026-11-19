@@ -91,10 +91,7 @@ func (im *instanceManagerWithTTL) Get(ctx context.Context, pluginContext backend
 	if err != nil {
 		return nil, err
 	}
-	im.cache.SetDefault(cacheKey, CachedInstance{
-		PluginContext: pluginContext,
-		instance:      instance,
-	})
+	im.cache.SetDefault(cacheKey, newCachedInstance(pluginContext, instance))
 	activeInstances.Inc()
 
 	return instance, nil
