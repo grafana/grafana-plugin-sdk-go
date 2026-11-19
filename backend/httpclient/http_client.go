@@ -90,7 +90,21 @@ func GetTransport(opts ...Options) (http.RoundTripper, error) {
 		return nil, err
 	}
 
-	return roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport)
+	rt, err := roundTripperFromMiddlewares(clientOpts, clientOpts.Middlewares, transport)
+	if err != nil || rt == http.RoundTripper(transport) {
+		return rt, err
+	}
+	return &middlewareTransport{RoundTripper: rt, transport: transport}, nil
+}
+
+// middlewareTransport keeps CloseIdleConnections working, because http.Client calls it only on a Transport that has the method.
+type middlewareTransport struct {
+	http.RoundTripper
+	transport *http.Transport
+}
+
+func (t *middlewareTransport) CloseIdleConnections() {
+	t.transport.CloseIdleConnections()
 }
 
 // NewHTTPTransport returns a new HTTP Transport, based off the definition in
