@@ -3,6 +3,7 @@ package data
 import (
 	"fmt"
 	"math"
+	"slices"
 	"strconv"
 	"time"
 
@@ -160,6 +161,84 @@ func (fc *FieldConfig) SetFilterable(b bool) *FieldConfig {
 	return fc
 }
 
+// clone returns a deep copy of fc so wide series built from one long field do not share mutable config.
+func (fc *FieldConfig) clone() *FieldConfig {
+	if fc == nil {
+		return nil
+	}
+	c := *fc
+	c.Filterable = clonePtr(fc.Filterable)
+	c.Writeable = clonePtr(fc.Writeable)
+	c.Decimals = clonePtr(fc.Decimals)
+	c.Min = clonePtr(fc.Min)
+	c.Max = clonePtr(fc.Max)
+	c.Mappings = fc.Mappings.clone()
+	if fc.Thresholds != nil {
+		t := *fc.Thresholds
+		t.Steps = slices.Clone(t.Steps)
+		c.Thresholds = &t
+	}
+	c.Color = cloneJSONMap(fc.Color)
+	if fc.Links != nil {
+		c.Links = make([]DataLink, len(fc.Links))
+		for i, l := range fc.Links {
+			c.Links[i] = l.clone()
+		}
+	}
+	if fc.TypeConfig != nil {
+		tc := *fc.TypeConfig
+		if fc.TypeConfig.Enum != nil {
+			e := *fc.TypeConfig.Enum
+			e.Text = slices.Clone(e.Text)
+			e.Color = slices.Clone(e.Color)
+			e.Icon = slices.Clone(e.Icon)
+			e.Description = slices.Clone(e.Description)
+			tc.Enum = &e
+		}
+		c.TypeConfig = &tc
+	}
+	c.Custom = cloneJSONMap(fc.Custom)
+	return &c
+}
+
+func clonePtr[T any](p *T) *T {
+	if p == nil {
+		return nil
+	}
+	v := *p
+	return &v
+}
+
+// cloneJSONValue deep copies the maps and slices JSON decoding produces. Other values are returned as is.
+func cloneJSONValue(v any) any {
+	switch v := v.(type) {
+	case map[string]any:
+		return cloneJSONMap(v)
+	case []any:
+		if v == nil {
+			return v
+		}
+		out := make([]any, len(v))
+		for i, e := range v {
+			out[i] = cloneJSONValue(e)
+		}
+		return out
+	default:
+		return v
+	}
+}
+
+func cloneJSONMap(m map[string]any) map[string]any {
+	if m == nil {
+		return nil
+	}
+	out := make(map[string]any, len(m))
+	for k, v := range m {
+		out[k] = cloneJSONValue(v)
+	}
+	return out
+}
+
 // DataLink define what
 type DataLink struct { //revive:disable-line
 	Title       string            `json:"title,omitempty"`
@@ -176,6 +255,24 @@ type InternalDataLink struct {
 	ExplorePanelsState *ExplorePanelsState         `json:"panelsState,omitempty"`
 	Transformations    *[]LinkTransformationConfig `json:"transformations,omitempty"`
 	Range              *TimeRange                  `json:"timeRange,omitempty"`
+}
+
+func (l DataLink) clone() DataLink {
+	if l.Internal != nil {
+		in := *l.Internal
+		in.Query = cloneJSONValue(in.Query)
+		if in.ExplorePanelsState != nil {
+			ps := ExplorePanelsState(cloneJSONValue(*in.ExplorePanelsState))
+			in.ExplorePanelsState = &ps
+		}
+		if in.Transformations != nil {
+			t := slices.Clone(*in.Transformations)
+			in.Transformations = &t
+		}
+		in.Range = clonePtr(in.Range)
+		l.Internal = &in
+	}
+	return l
 }
 
 // This is an object constructed with the keys as the values of the enum VisType and the value being a bag of properties

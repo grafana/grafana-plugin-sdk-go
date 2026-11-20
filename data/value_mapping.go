@@ -3,6 +3,7 @@ package data
 import (
 	"encoding/json"
 	"fmt"
+	"maps"
 	"strings"
 
 	jsoniter "github.com/json-iterator/go"
@@ -107,6 +108,42 @@ func (m *ValueMappings) UnmarshalJSON(b []byte) error {
 
 	*m = mappings
 	return iter.Error
+}
+
+func (m ValueMappings) clone() ValueMappings {
+	if m == nil {
+		return nil
+	}
+	out := make(ValueMappings, len(m))
+	for i, v := range m {
+		switch v := v.(type) {
+		case ValueMapper:
+			out[i] = maps.Clone(v)
+		case *ValueMapper:
+			if v != nil {
+				c := maps.Clone(*v)
+				out[i] = &c
+			} else {
+				out[i] = v
+			}
+		case RangeValueMapper:
+			v.From, v.To = clonePtr(v.From), clonePtr(v.To)
+			out[i] = v
+		case *RangeValueMapper:
+			if v != nil {
+				c := *v
+				c.From, c.To = clonePtr(v.From), clonePtr(v.To)
+				out[i] = &c
+			} else {
+				out[i] = v
+			}
+		case *SpecialValueMapper:
+			out[i] = clonePtr(v)
+		default:
+			out[i] = v
+		}
+	}
+	return out
 }
 
 // ValueMapper converts one set of strings to another
