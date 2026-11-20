@@ -594,7 +594,7 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 			name: "frame with a failure status before another frame",
 			write: func(_ backend.ChunkedDataWriter, raw func(rawChunk)) error {
 				raw(rawChunk{refID: "A", frameID: "1", status: backend.StatusUnauthorized, frame: frame("table", 1)})
-				raw(rawChunk{refID: "A", frameID: "1", status: backend.StatusOK, continuation: true, frame: frame("table", 2)})
+				raw(rawChunk{refID: "A", frameID: "1", status: backend.StatusOK, dataOnly: true, frame: frame("table", 2)})
 				return nil
 			},
 			want: map[string]result{
@@ -605,7 +605,7 @@ func TestAccumulateFrameIDRule(t *testing.T) {
 			name: "frames without a status",
 			write: func(_ backend.ChunkedDataWriter, raw func(rawChunk)) error {
 				raw(rawChunk{refID: "A", frameID: "1", frame: frame("table", 1)})
-				raw(rawChunk{refID: "A", frameID: "1", continuation: true, frame: frame("table", 2)})
+				raw(rawChunk{refID: "A", frameID: "1", dataOnly: true, frame: frame("table", 2)})
 				return nil
 			},
 			want: map[string]result{
@@ -718,8 +718,8 @@ func TestAccumulateJoinsContinuedFrames(t *testing.T) {
 	frame := func(meta *data.FrameMeta, fields ...*data.Field) *data.Frame {
 		return data.NewFrame("series", fields...).SetMeta(meta)
 	}
-	continues := func(frameID string) *data.FrameMeta {
-		return &data.FrameMeta{Continues: &data.FrameContinuation{FrameID: frameID, FillValue: &fillValue}}
+	continues := func(frameID string, fields ...int) *data.FrameMeta {
+		return &data.FrameMeta{Continues: &data.FrameContinuation{FrameID: frameID, Fields: fields, FillValue: &fillValue}}
 	}
 	withRefID := func(f *data.Frame, refID string) *data.Frame {
 		f.RefID = refID
@@ -747,10 +747,10 @@ func TestAccumulateJoinsContinuedFrames(t *testing.T) {
 				w.WriteFrame(ctx, "B", "1", frame(nil, series("a", 100))),
 				w.WriteFrame(ctx, "A", "x", data.NewFrame("other", data.NewField("count", nil, []int64{7}))),
 				w.WriteFrame(ctx, "A", "1", frame(nil, series("a", 3))),
-				w.WriteFrame(ctx, "A", "2", frame(continues("1"), series("a", 4), series("b", 40))),
+				w.WriteFrame(ctx, "A", "2", frame(continues("1", 0, -1), series("a", 4), series("b", 40))),
 				// The receiver ignores the meta of a later chunk, so this chunk does not join again.
-				w.WriteFrame(ctx, "A", "2", frame(continues("1"), series("a", 5), series("b", 50))),
-				w.WriteFrame(ctx, "A", "3", frame(continues("2"), series("a", 6), series("b", 60), series("c", 600))),
+				w.WriteFrame(ctx, "A", "2", frame(continues("1", 0, -1), series("a", 5), series("b", 50))),
+				w.WriteFrame(ctx, "A", "3", frame(continues("2", 0, 1, -1), series("a", 6), series("b", 60), series("c", 600))),
 			))
 
 			got, err := f.accumulate(chunkSeq(chunks))
@@ -775,18 +775,48 @@ func TestAccumulateJoinsContinuedFrames(t *testing.T) {
 			}
 		})
 
-		t.Run(f.name+" with an unknown earlier frame", func(t *testing.T) {
-			var chunks []*pluginv2.QueryChunkedDataResponse
-			w := backend.NewChunkedDataWriter(f.format, func(chunk *pluginv2.QueryChunkedDataResponse) error {
-				chunks = append(chunks, chunk)
-				return nil
+		// The SDK writer rejects these streams, so the test sends raw chunks.
+		for _, tc := range []struct {
+			name   string
+			chunks []rawChunk
+			err    string
+		}{
+			{
+				name: "unknown earlier frame",
+				chunks: []rawChunk{
+					{refID: "A", frameID: "1", frame: frame(nil, series("a", 1))},
+					{refID: "A", frameID: "2", frame: frame(continues("9", 0, -1), series("a", 2), series("b", 3))},
+				},
+				err: `frame "2" of refID "A" continues the unknown frame "9"`,
+			},
+			{
+				name: "chunk of a continued frame",
+				chunks: []rawChunk{
+					{refID: "A", frameID: "1", frame: frame(nil, series("a", 1))},
+					{refID: "A", frameID: "2", frame: frame(continues("1", 0, -1), series("a", 2), series("b", 3))},
+					{refID: "A", frameID: "1", dataOnly: true, frame: frame(nil, series("a", 4))},
+				},
+				err: `frame "1" of refID "A" was continued by frame "2", so it takes no more chunks`,
+			},
+			{
+				name: "second continuation of a frame",
+				chunks: []rawChunk{
+					{refID: "A", frameID: "1", frame: frame(nil, series("a", 1))},
+					{refID: "A", frameID: "2", frame: frame(continues("1", 0, -1), series("a", 2), series("b", 3))},
+					{refID: "A", frameID: "3", frame: frame(continues("1", 0, -1), series("a", 4), series("c", 5))},
+				},
+				err: `frame "3" of refID "A" continues frame "1", which frame "2" already continued`,
+			},
+		} {
+			t.Run(f.name+" "+tc.name, func(t *testing.T) {
+				chunks := make([]*pluginv2.QueryChunkedDataResponse, len(tc.chunks))
+				for i, c := range tc.chunks {
+					chunks[i] = encodeRawChunk(t, f.format, c)
+				}
+				_, err := f.accumulate(chunkSeq(chunks))
+				require.EqualError(t, err, tc.err)
 			})
-			require.NoError(t, w.WriteFrame(ctx, "A", "1", frame(nil, series("a", 1))))
-			require.NoError(t, w.WriteFrame(ctx, "A", "2", frame(continues("9"), series("a", 2), series("b", 3))))
-
-			_, err := f.accumulate(chunkSeq(chunks))
-			require.EqualError(t, err, `frame "2" of refID "A" continues the unknown frame "9"`)
-		})
+		}
 	}
 }
 
@@ -851,9 +881,9 @@ type rawChunk struct {
 	refID   string
 	frameID string
 	status  backend.Status
-	// continuation leaves out the schema in JSON, as the writer does for a later chunk of a frame.
-	continuation bool
-	frame        *data.Frame
+	// dataOnly leaves out the schema in JSON, as the writer does for a later chunk of a frame.
+	dataOnly bool
+	frame    *data.Frame
 }
 
 func encodeRawChunk(t *testing.T, format backend.DataFrameFormat, c rawChunk) *pluginv2.QueryChunkedDataResponse {
@@ -865,7 +895,7 @@ func encodeRawChunk(t *testing.T, format backend.DataFrameFormat, c rawChunk) *p
 	switch {
 	case format == backend.DataFrameFormat_ARROW:
 		b, err = c.frame.MarshalArrow()
-	case c.continuation:
+	case c.dataOnly:
 		b, err = data.FrameToJSON(c.frame, data.IncludeDataOnly)
 	default:
 		b, err = data.FrameToJSON(c.frame, data.IncludeAll)

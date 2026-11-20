@@ -447,12 +447,20 @@
                         "frameId": {
                             "type": "string"
                         },
+                        "fields": {
+                            "type": "array",
+                            "items": {
+                                "type": "integer",
+                                "minimum": -1
+                            }
+                        },
                         "fillValue": {
                             "type": "number"
                         }
                     },
                     "required": [
-                        "frameId"
+                        "frameId",
+                        "fields"
                     ]
                 }
             },

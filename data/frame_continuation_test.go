@@ -22,8 +22,8 @@ func TestJoinContinuation(t *testing.T) {
 	series := func(name string, values any) *data.Field {
 		return data.NewField("value", data.Labels{"metric": name}, values)
 	}
-	continues := func(fillValue *float64) *data.FrameMeta {
-		return &data.FrameMeta{Continues: &data.FrameContinuation{FrameID: "1", FillValue: fillValue}}
+	continues := func(fillValue *float64, fields ...int) *data.FrameMeta {
+		return &data.FrameMeta{Continues: &data.FrameContinuation{FrameID: "1", Fields: fields, FillValue: fillValue}}
 	}
 	earlierMeta := &data.FrameMeta{ExecutedQueryString: "SELECT 1"}
 	fill := 7.5
@@ -44,7 +44,7 @@ func TestJoinContinuation(t *testing.T) {
 				data.NewField("time", nil, times(2)),
 				series("a", []*float64{new(3.0)}),
 				series("b", []*float64{new(4.0)}),
-			).SetMeta(continues(nil)),
+			).SetMeta(continues(nil, 0, 1, -1)),
 			want: data.NewFrame("frame",
 				data.NewField("time", nil, times(0, 1, 2)),
 				series("a", []*float64{new(1.0), new(2.0), new(3.0)}),
@@ -64,7 +64,7 @@ func TestJoinContinuation(t *testing.T) {
 				series("b", []*float64{new(4.0)}),
 				series("c", []*float64{new(5.0)}),
 				series("d", []*float64{new(6.0)}),
-			).SetMeta(continues(nil)),
+			).SetMeta(continues(nil, 0, -1, 1, -1, 2)),
 			want: data.NewFrame("frame",
 				data.NewField("time", nil, times(0, 1)),
 				series("a", []*float64{nil, new(3.0)}),
@@ -85,7 +85,7 @@ func TestJoinContinuation(t *testing.T) {
 				series("b", []float64{4}),
 				series("c", []*float64{new(5.0)}),
 				series("d", []int64{6}),
-			).SetMeta(continues(&fill)),
+			).SetMeta(continues(&fill, 0, 1, -1, -1, -1)),
 			want: data.NewFrame("frame",
 				data.NewField("time", nil, times(0, 1, 2)),
 				series("a", []float64{1, 2, 3}),
@@ -104,7 +104,7 @@ func TestJoinContinuation(t *testing.T) {
 				data.NewField("time", nil, times(1)),
 				series("a", []float64{2}),
 				series("b", []float64{3}),
-			).SetMeta(continues(nil)),
+			).SetMeta(continues(nil, 0, 1, -1)),
 			want: data.NewFrame("frame",
 				data.NewField("time", nil, times(0, 1)),
 				series("a", []float64{1, 2}),
@@ -112,7 +112,7 @@ func TestJoinContinuation(t *testing.T) {
 			),
 		},
 		{
-			name: "fields with the same name and labels match in order",
+			name: "the mapping decides, not the names",
 			earlier: data.NewFrame("frame",
 				data.NewField("value", nil, []int64{1}),
 				data.NewField("value", nil, []int64{2}),
@@ -121,11 +121,25 @@ func TestJoinContinuation(t *testing.T) {
 				data.NewField("value", nil, []int64{3}),
 				data.NewField("value", nil, []int64{4}),
 				data.NewField("value", nil, []int64{5}),
-			).SetMeta(continues(nil)),
+			).SetMeta(continues(nil, 1, 0, -1)),
 			want: data.NewFrame("frame",
-				data.NewField("value", nil, []int64{1, 3}),
-				data.NewField("value", nil, []int64{2, 4}),
+				data.NewField("value", nil, []int64{2, 3}),
+				data.NewField("value", nil, []int64{1, 4}),
 				data.NewField("value", nil, []int64{0, 5}),
+			),
+		},
+		{
+			name: "label sets that print the same",
+			earlier: data.NewFrame("frame",
+				data.NewField("value", data.Labels{"a": "1, b=2"}, []int64{1}),
+			),
+			next: data.NewFrame("frame",
+				data.NewField("value", data.Labels{"a": "1", "b": "2"}, []int64{2}),
+				data.NewField("value", data.Labels{"a": "1, b=2"}, []int64{3}),
+			).SetMeta(continues(nil, -1, 0)),
+			want: data.NewFrame("frame",
+				data.NewField("value", data.Labels{"a": "1", "b": "2"}, []int64{0, 2}),
+				data.NewField("value", data.Labels{"a": "1, b=2"}, []int64{1, 3}),
 			),
 		},
 		{
@@ -138,7 +152,7 @@ func TestJoinContinuation(t *testing.T) {
 				data.NewField("time", nil, times(0)),
 				series("a", []*float64{new(1.0)}),
 				series("b", []*float64{new(2.0)}),
-			).SetMeta(continues(&fill)),
+			).SetMeta(continues(&fill, 0, 1, -1)),
 			want: data.NewFrame("frame",
 				data.NewField("time", nil, times(0)),
 				series("a", []*float64{new(1.0)}),
@@ -158,8 +172,13 @@ func TestJoinContinuation(t *testing.T) {
 }
 
 func TestJoinContinuationErrors(t *testing.T) {
-	continues := &data.FrameMeta{Continues: &data.FrameContinuation{FrameID: "1"}}
+	continues := func(fields ...int) *data.FrameMeta {
+		return &data.FrameMeta{Continues: &data.FrameContinuation{FrameID: "1", Fields: fields}}
+	}
 	oneField := func() *data.Frame { return data.NewFrame("frame", data.NewField("a", nil, []int64{1})) }
+	twoFields := func() *data.Frame {
+		return data.NewFrame("frame", data.NewField("a", nil, []int64{1}), data.NewField("b", nil, []int64{2}))
+	}
 
 	tests := []struct {
 		name string
@@ -175,41 +194,54 @@ func TestJoinContinuationErrors(t *testing.T) {
 			err:     "the frame does not continue an earlier frame",
 		},
 		{
-			name:    "other field type",
+			name:    "mapping with fewer entries than fields",
 			earlier: oneField,
-			next:    data.NewFrame("frame", data.NewField("a", nil, []float64{2})).SetMeta(continues),
-			err:     `field "a" has type []int64 in the earlier frame and []float64 in the continuing frame`,
+			next:    data.NewFrame("frame", data.NewField("a", nil, []int64{2}), data.NewField("b", nil, []int64{3})).SetMeta(continues(0)),
+			err:     "continues.fields has length 1, and the field count of the frame is 2",
 		},
 		{
-			name: "field of the earlier frame is missing",
-			earlier: func() *data.Frame {
-				return data.NewFrame("frame",
-					data.NewField("a", nil, []int64{1}),
-					data.NewField("b", data.Labels{"metric": "x"}, []int64{2}),
-				)
-			},
-			next: data.NewFrame("frame", data.NewField("a", nil, []int64{3})).SetMeta(continues),
-			err:  `field "b" metric=x of the earlier frame is missing in the continuing frame`,
+			name:    "index past the fields of the earlier frame",
+			earlier: oneField,
+			next:    data.NewFrame("frame", data.NewField("a", nil, []int64{2})).SetMeta(continues(3)),
+			err:     "field 0 maps to index 3, and the field count of the earlier frame is 1",
+		},
+		{
+			name:    "index below -1",
+			earlier: oneField,
+			next:    data.NewFrame("frame", data.NewField("a", nil, []int64{2})).SetMeta(continues(-2)),
+			err:     "field 0 maps to index -2, and the field count of the earlier frame is 1",
+		},
+		{
+			name:    "two fields map to the same field",
+			earlier: twoFields,
+			next:    data.NewFrame("frame", data.NewField("a", nil, []int64{3}), data.NewField("b", nil, []int64{4})).SetMeta(continues(0, 0)),
+			err:     "fields 0 and 1 map to the same field 0 of the earlier frame",
+		},
+		{
+			name:    "other field type",
+			earlier: oneField,
+			next:    data.NewFrame("frame", data.NewField("a", nil, []float64{2})).SetMeta(continues(0)),
+			err:     "field 0 has type []float64, and field 0 of the earlier frame has type []int64",
+		},
+		{
+			name:    "field of the earlier frame without a field in the continuing frame",
+			earlier: twoFields,
+			next:    data.NewFrame("frame", data.NewField("a", nil, []int64{3}), data.NewField("c", nil, []int64{4})).SetMeta(continues(0, -1)),
+			err:     "field 1 of the earlier frame has no field in the continuing frame",
 		},
 		{
 			name: "earlier frame with fields of different lengths",
 			earlier: func() *data.Frame {
-				return data.NewFrame("frame",
-					data.NewField("a", nil, []int64{1}),
-					data.NewField("b", nil, []int64{2, 3}),
-				)
+				return data.NewFrame("frame", data.NewField("a", nil, []int64{1}), data.NewField("b", nil, []int64{2, 3}))
 			},
-			next: data.NewFrame("frame", data.NewField("a", nil, []int64{4})).SetMeta(continues),
+			next: data.NewFrame("frame", data.NewField("a", nil, []int64{4})).SetMeta(continues(0)),
 			err:  "earlier frame:",
 		},
 		{
 			name:    "continuing frame with fields of different lengths",
 			earlier: oneField,
-			next: data.NewFrame("frame",
-				data.NewField("a", nil, []int64{2}),
-				data.NewField("b", nil, []int64{3, 4}),
-			).SetMeta(continues),
-			err: "continuing frame:",
+			next:    data.NewFrame("frame", data.NewField("a", nil, []int64{2}), data.NewField("b", nil, []int64{3, 4})).SetMeta(continues(0, -1)),
+			err:     "continuing frame:",
 		},
 	}
 
@@ -223,6 +255,32 @@ func TestJoinContinuationErrors(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestJoinContinuationWithLimit(t *testing.T) {
+	earlier := func() *data.Frame {
+		return data.NewFrame("frame", data.NewField("a", nil, []int64{1, 2, 3}))
+	}
+	// The joined frame has 4 rows and 2 fields, so 8 cells.
+	next := func() *data.Frame {
+		return data.NewFrame("frame", data.NewField("a", nil, []int64{4}), data.NewField("b", nil, []int64{5})).
+			SetMeta(&data.FrameMeta{Continues: &data.FrameContinuation{FrameID: "1", Fields: []int{0, -1}}})
+	}
+
+	t.Run("a limit below the joined size fails", func(t *testing.T) {
+		got := earlier()
+		require.ErrorIs(t, data.JoinContinuationWithLimit(got, next(), 7), data.ErrorWideFrameTooLarge)
+		if diff := cmp.Diff(earlier(), got, data.FrameTestCompareOptions()...); diff != "" {
+			t.Errorf("earlier frame changed on an error (-before +after):\n%s", diff)
+		}
+	})
+
+	t.Run("a limit equal to the joined size passes", func(t *testing.T) {
+		got := earlier()
+		require.NoError(t, data.JoinContinuationWithLimit(got, next(), 8))
+		require.Len(t, got.Fields, 2)
+		require.Equal(t, 4, got.Fields[1].Len())
+	})
 }
 
 // TestJoinContinuationMatchesLongToWide shows that a long series converted in two parts and joined gives the frame
@@ -243,6 +301,19 @@ func TestJoinContinuationMatchesLongToWide(t *testing.T) {
 			}
 		}
 		return frame
+	}
+	// fieldMapping gives the index of each field of next in earlier, as a producer that knows its series does.
+	fieldMapping := func(earlier, next *data.Frame) []int {
+		mapping := make([]int, len(next.Fields))
+		for i, nf := range next.Fields {
+			mapping[i] = -1
+			for j, ef := range earlier.Fields {
+				if ef.Name == nf.Name && ef.Labels.Equals(nf.Labels) {
+					mapping[i] = j
+				}
+			}
+		}
+		return mapping
 	}
 
 	tests := []struct {
@@ -268,7 +339,7 @@ func TestJoinContinuationMatchesLongToWide(t *testing.T) {
 			next.Meta = &data.FrameMeta{
 				Type:        data.FrameTypeTimeSeriesWide,
 				TypeVersion: data.FrameTypeVersion{0, 1},
-				Continues:   &data.FrameContinuation{FrameID: "1", FillValue: tt.fillValue},
+				Continues:   &data.FrameContinuation{FrameID: "1", Fields: fieldMapping(earlier, next), FillValue: tt.fillValue},
 			}
 
 			require.NoError(t, data.JoinContinuation(earlier, next))
@@ -282,13 +353,13 @@ func TestJoinContinuationMatchesLongToWide(t *testing.T) {
 func TestFrameContinuationRoundTrip(t *testing.T) {
 	fillValue := 1.5
 	frame := data.NewFrame("frame", data.NewField("value", nil, []int64{1})).SetMeta(&data.FrameMeta{
-		Continues: &data.FrameContinuation{FrameID: "1", FillValue: &fillValue},
+		Continues: &data.FrameContinuation{FrameID: "1", Fields: []int{-1}, FillValue: &fillValue},
 	})
 
 	t.Run("json", func(t *testing.T) {
 		b, err := frame.MarshalJSON()
 		require.NoError(t, err)
-		require.Contains(t, string(b), `"continues":{"frameId":"1","fillValue":1.5}`)
+		require.Contains(t, string(b), `"continues":{"frameId":"1","fields":[-1],"fillValue":1.5}`)
 		got := &data.Frame{}
 		require.NoError(t, got.UnmarshalJSON(b))
 		require.Equal(t, frame.Meta, got.Meta)
