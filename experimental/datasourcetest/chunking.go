@@ -77,7 +77,20 @@ func accumulate(
 				if err != nil {
 					return nil, err
 				}
-				rsp.Frames = append(rsp.Frames, frame)
+				if frame.Meta != nil && frame.Meta.Continues != nil {
+					earlierID := frame.Meta.Continues.FrameID
+					earlier, ok := frames[frameKey{refID: chunk.RefId, frameID: earlierID}]
+					if !ok {
+						return nil, fmt.Errorf("frame %q of refID %q continues the unknown frame %q", chunk.FrameId, chunk.RefId, earlierID)
+					}
+					if err := data.JoinContinuation(earlier, frame); err != nil {
+						return nil, fmt.Errorf("joining frame %q of refID %q to frame %q: %w", chunk.FrameId, chunk.RefId, earlierID, err)
+					}
+					// Later chunks of this frame ID append to the joined frame, which is already in the response.
+					frame = earlier
+				} else {
+					rsp.Frames = append(rsp.Frames, frame)
+				}
 				// Without a frame ID, later chunks cannot refer to this frame.
 				if chunk.FrameId != "" {
 					frames[key] = frame

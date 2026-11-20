@@ -58,6 +58,11 @@ type FrameMeta struct {
 	// with streaming data with frequent updates.
 	// Example: TraceID in Tempo, table name + primary key in SQL
 	UniqueRowIDFields []int `json:"uniqueRowIdFields,omitempty"`
+
+	// Experimental: Continues is set on the first chunk of a frame in a chunked response, when the frame
+	// continues an earlier frame of the same refId with more fields. A receiver that builds the full
+	// response joins the two frames with JoinContinuation.
+	Continues *FrameContinuation `json:"continues,omitempty"`
 }
 
 // Should be kept in sync with grafana/packages/grafana-data/src/types/data.ts#PreferredVisualisationType

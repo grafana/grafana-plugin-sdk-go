@@ -439,6 +439,21 @@
                         "type": "integer",
                         "minimum": 0
                     }
+                },
+                "continues": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                        "frameId": {
+                            "type": "string"
+                        },
+                        "fillValue": {
+                            "type": "number"
+                        }
+                    },
+                    "required": [
+                        "frameId"
+                    ]
                 }
             },
             "title": "Meta"

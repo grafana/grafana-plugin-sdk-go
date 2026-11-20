@@ -707,6 +707,89 @@ func TestAccumulateRejectsMismatchedFields(t *testing.T) {
 	}
 }
 
+// TestAccumulateJoinsContinuedFrames verifies that a frame with Meta.Continues joins the earlier frame, at the
+// position of the earlier frame.
+func TestAccumulateJoinsContinuedFrames(t *testing.T) {
+	ctx := context.Background()
+	fillValue := 0.5
+	series := func(metric string, values ...float64) *data.Field {
+		return data.NewField("value", data.Labels{"metric": metric}, values)
+	}
+	frame := func(meta *data.FrameMeta, fields ...*data.Field) *data.Frame {
+		return data.NewFrame("series", fields...).SetMeta(meta)
+	}
+	continues := func(frameID string) *data.FrameMeta {
+		return &data.FrameMeta{Continues: &data.FrameContinuation{FrameID: frameID, FillValue: &fillValue}}
+	}
+	withRefID := func(f *data.Frame, refID string) *data.Frame {
+		f.RefID = refID
+		return f
+	}
+
+	formats := []struct {
+		name       string
+		format     backend.DataFrameFormat
+		accumulate func(iter.Seq2[*pluginv2.QueryChunkedDataResponse, error]) (*backend.QueryDataResponse, error)
+	}{
+		{name: "arrow", format: backend.DataFrameFormat_ARROW, accumulate: AccumulateArrow},
+		{name: "json", format: backend.DataFrameFormat_JSON, accumulate: AccumulateJSON},
+	}
+
+	for _, f := range formats {
+		t.Run(f.name, func(t *testing.T) {
+			var chunks []*pluginv2.QueryChunkedDataResponse
+			w := backend.NewChunkedDataWriter(f.format, func(chunk *pluginv2.QueryChunkedDataResponse) error {
+				chunks = append(chunks, chunk)
+				return nil
+			})
+			require.NoError(t, errors.Join(
+				w.WriteFrame(ctx, "A", "1", frame(nil, series("a", 1, 2))),
+				w.WriteFrame(ctx, "B", "1", frame(nil, series("a", 100))),
+				w.WriteFrame(ctx, "A", "x", data.NewFrame("other", data.NewField("count", nil, []int64{7}))),
+				w.WriteFrame(ctx, "A", "1", frame(nil, series("a", 3))),
+				w.WriteFrame(ctx, "A", "2", frame(continues("1"), series("a", 4), series("b", 40))),
+				// The receiver ignores the meta of a later chunk, so this chunk does not join again.
+				w.WriteFrame(ctx, "A", "2", frame(continues("1"), series("a", 5), series("b", 50))),
+				w.WriteFrame(ctx, "A", "3", frame(continues("2"), series("a", 6), series("b", 60), series("c", 600))),
+			))
+
+			got, err := f.accumulate(chunkSeq(chunks))
+			require.NoError(t, err)
+
+			want := map[string]data.Frames{
+				"A": {
+					withRefID(frame(nil,
+						series("a", 1, 2, 3, 4, 5, 6),
+						series("b", 0.5, 0.5, 0.5, 40, 50, 60),
+						series("c", 0.5, 0.5, 0.5, 0.5, 0.5, 600),
+					), "A"),
+					withRefID(data.NewFrame("other", data.NewField("count", nil, []int64{7})), "A"),
+				},
+				"B": {withRefID(frame(nil, series("a", 100)), "B")},
+			}
+			require.Len(t, got.Responses, len(want))
+			for refID, frames := range want {
+				if diff := cmp.Diff(frames, got.Responses[refID].Frames, data.FrameTestCompareOptions()...); diff != "" {
+					t.Errorf("frames of refID %s mismatch (-want +got):\n%s", refID, diff)
+				}
+			}
+		})
+
+		t.Run(f.name+" with an unknown earlier frame", func(t *testing.T) {
+			var chunks []*pluginv2.QueryChunkedDataResponse
+			w := backend.NewChunkedDataWriter(f.format, func(chunk *pluginv2.QueryChunkedDataResponse) error {
+				chunks = append(chunks, chunk)
+				return nil
+			})
+			require.NoError(t, w.WriteFrame(ctx, "A", "1", frame(nil, series("a", 1))))
+			require.NoError(t, w.WriteFrame(ctx, "A", "2", frame(continues("9"), series("a", 2), series("b", 3))))
+
+			_, err := f.accumulate(chunkSeq(chunks))
+			require.EqualError(t, err, `frame "2" of refID "A" continues the unknown frame "9"`)
+		})
+	}
+}
+
 // TestQueryChunkedDataErrorAfterFrames verifies that QueryData and QueryChunkedData return the same response when
 // an error follows the frames of a query.
 func TestQueryChunkedDataErrorAfterFrames(t *testing.T) {

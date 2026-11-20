@@ -22,6 +22,8 @@ type ChunkedDataWriter interface {
 	// Later calls with the same frameID append their rows to that frame, so they must have
 	// the same fields. The receiver ignores the name and the metadata of later calls.
 	// Calls for different frameIDs can alternate.
+	// To add fields to a frame, write a new frameID with all the fields, and set
+	// f.Meta.Continues.FrameID to the earlier frameID in its first call.
 	WriteFrame(ctx context.Context, refID string, frameID string, f *data.Frame) error
 
 	// WriteError writes an error associated with the specified refID.
