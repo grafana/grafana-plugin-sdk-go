@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/useragent"
+	"github.com/grafana/grafana-plugin-sdk-go/config"
 )
 
 func TestUserAgentMiddleware(t *testing.T) {
@@ -99,5 +100,63 @@ func TestUserAgentMiddleware(t *testing.T) {
 			"User-Agent": []string{"Grafana test-plugin/1.2.3"},
 		}
 		require.Equal(t, expectedHeaders, req.Header)
+	})
+}
+
+func TestUserAgentMiddleware_ConfiguredUserAgent(t *testing.T) {
+	roundTrip := func(t *testing.T, haveVersionInfo bool, configured string, requestHeaders http.Header) http.Header {
+		t.Helper()
+
+		testCtx := &testContext{}
+		rt := newUserAgentMiddleware("test-plugin", "1.2.3", haveVersionInfo).CreateMiddleware(Options{}, testCtx.createRoundTripper("final"))
+
+		ua, err := useragent.New("4.5.6", "SomeOS", "x64")
+		require.NoError(t, err)
+		ctx := useragent.WithUserAgent(context.Background(), ua)
+		ctx = config.WithGrafanaConfig(ctx, config.NewGrafanaCfg(map[string]string{
+			config.PluginsUserAgent: configured,
+		}))
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://", nil)
+		require.NoError(t, err)
+		if requestHeaders != nil {
+			req.Header = requestHeaders
+		}
+
+		res, err := rt.RoundTrip(req)
+		require.NoError(t, err)
+		if res.Body != nil {
+			require.NoError(t, res.Body.Close())
+		}
+		return req.Header
+	}
+
+	t.Run("uses the configured user agent as the prefix", func(t *testing.T) {
+		headers := roundTrip(t, true, "Grafana/4.5.6 my-fleet/1", nil)
+		require.Equal(t, "Grafana/4.5.6 my-fleet/1 test-plugin/1.2.3", headers.Get("User-Agent"))
+	})
+
+	t.Run("sets the configured user agent when the plugin has no build info", func(t *testing.T) {
+		headers := roundTrip(t, false, "Grafana/4.5.6 my-fleet/1", nil)
+		require.Equal(t, "Grafana/4.5.6 my-fleet/1", headers.Get("User-Agent"))
+	})
+
+	t.Run("does not override a User-Agent already on the request", func(t *testing.T) {
+		headers := roundTrip(t, true, "Grafana/4.5.6 my-fleet/1", http.Header{"User-Agent": []string{"foo"}})
+		require.Equal(t, "foo", headers.Get("User-Agent"))
+	})
+
+	t.Run("falls back to the context user agent when the value is empty", func(t *testing.T) {
+		headers := roundTrip(t, true, "", nil)
+		require.Equal(t, "Grafana/4.5.6 (SomeOS; x64) test-plugin/1.2.3", headers.Get("User-Agent"))
+	})
+
+	t.Run("ignores a value with control characters", func(t *testing.T) {
+		headers := roundTrip(t, true, "Grafana/4.5.6\r\nX-Injected: 1", nil)
+		require.Equal(t, "Grafana/4.5.6 (SomeOS; x64) test-plugin/1.2.3", headers.Get("User-Agent"))
+	})
+
+	t.Run("leaves the header unset with no build info and nothing configured", func(t *testing.T) {
+		headers := roundTrip(t, false, "", nil)
+		require.Empty(t, headers.Get("User-Agent"))
 	})
 }
