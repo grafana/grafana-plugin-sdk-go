@@ -230,6 +230,14 @@ func TestJoinContinuationErrors(t *testing.T) {
 			err:     "field 1 of the earlier frame has no field in the continuing frame",
 		},
 		{
+			name: "row identity index past the fields of the earlier frame",
+			earlier: func() *data.Frame {
+				return oneField().SetMeta(&data.FrameMeta{UniqueRowIDFields: []int{2}})
+			},
+			next: data.NewFrame("frame", data.NewField("a", nil, []int64{2})).SetMeta(continues(0)),
+			err:  "uniqueRowIdFields has index 2, and the field count of the earlier frame is 1",
+		},
+		{
 			name: "earlier frame with fields of different lengths",
 			earlier: func() *data.Frame {
 				return data.NewFrame("frame", data.NewField("a", nil, []int64{1}), data.NewField("b", nil, []int64{2, 3}))
@@ -255,6 +263,26 @@ func TestJoinContinuationErrors(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestJoinContinuationMovesRowIdentity verifies that UniqueRowIDFields points at the same fields after the join puts
+// the fields in a new order.
+func TestJoinContinuationMovesRowIdentity(t *testing.T) {
+	earlierMeta := &data.FrameMeta{UniqueRowIDFields: []int{0}}
+	earlier := data.NewFrame("frame",
+		data.NewField("id", nil, []int64{1}),
+		data.NewField("value", nil, []float64{10}),
+	).SetMeta(earlierMeta)
+	next := data.NewFrame("frame",
+		data.NewField("added", nil, []float64{30}),
+		data.NewField("id", nil, []int64{2}),
+		data.NewField("value", nil, []float64{20}),
+	).SetMeta(&data.FrameMeta{Continues: &data.FrameContinuation{FrameID: "1", Fields: []int{-1, 0, 1}}})
+
+	require.NoError(t, data.JoinContinuation(earlier, next))
+	require.Equal(t, []int{1}, earlier.Meta.UniqueRowIDFields)
+	require.Equal(t, "id", earlier.Fields[earlier.Meta.UniqueRowIDFields[0]].Name)
+	require.Equal(t, []int{0}, earlierMeta.UniqueRowIDFields, "the join must not change a meta that other frames can share")
 }
 
 func TestJoinContinuationWithLimit(t *testing.T) {

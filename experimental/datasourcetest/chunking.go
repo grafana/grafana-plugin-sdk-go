@@ -82,7 +82,8 @@ func accumulate(
 				if err != nil {
 					return nil, err
 				}
-				if frame.Meta != nil && frame.Meta.Continues != nil {
+				// A chunk without a frame ID is a separate frame, so it does not continue a frame.
+				if chunk.FrameId != "" && frame.Meta != nil && frame.Meta.Continues != nil {
 					earlierID := frame.Meta.Continues.FrameID
 					earlierKey := frameKey{refID: chunk.RefId, frameID: earlierID}
 					if by, ok := continued[earlierKey]; ok {

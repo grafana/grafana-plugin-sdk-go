@@ -42,8 +42,9 @@ func JoinContinuation(earlier, next *Frame) error {
 // Continues.Fields maps each field of next to a field of earlier, or marks it as new. In the rows of
 // earlier, a new field gets Continues.FillValue, or the zero value of its type. After the join, earlier
 // has the fields in the order of next, followed by the rows of next. earlier keeps its name and meta,
-// and it keeps its rows without a copy. The function validates the mapping and the size before it
-// allocates, and on an error earlier does not change.
+// and Meta.UniqueRowIDFields moves to the new field order. earlier keeps its rows without a copy. The
+// function validates the mapping and the size before it allocates, and on an error earlier does not
+// change.
 func JoinContinuationWithLimit(earlier, next *Frame, cellLimit int64) error {
 	if next.Meta == nil || next.Meta.Continues == nil {
 		return errors.New("the frame does not continue an earlier frame")
@@ -85,6 +86,13 @@ func JoinContinuationWithLimit(earlier, next *Frame, cellLimit int64) error {
 			return fmt.Errorf("field %d of the earlier frame has no field in the continuing frame", j)
 		}
 	}
+	if earlier.Meta != nil {
+		for _, j := range earlier.Meta.UniqueRowIDFields {
+			if j < 0 || j >= len(earlier.Fields) {
+				return fmt.Errorf("uniqueRowIdFields has index %d, and the field count of the earlier frame is %d", j, len(earlier.Fields))
+			}
+		}
+	}
 
 	if cellLimit > 0 && (int64(earlierRows)+int64(nextRows))*int64(len(next.Fields)) > cellLimit {
 		return ErrorWideFrameTooLarge
@@ -102,6 +110,15 @@ func JoinContinuationWithLimit(earlier, next *Frame, cellLimit int64) error {
 		fields[i].AppendAll(nf)
 	}
 	earlier.Fields = fields
+	if earlier.Meta != nil && len(earlier.Meta.UniqueRowIDFields) > 0 {
+		// The meta can be shared with other frames, so the join changes a copy.
+		meta := *earlier.Meta
+		meta.UniqueRowIDFields = make([]int, len(earlier.Meta.UniqueRowIDFields))
+		for k, j := range earlier.Meta.UniqueRowIDFields {
+			meta.UniqueRowIDFields[k] = mappedFrom[j]
+		}
+		earlier.Meta = &meta
+	}
 	return nil
 }
 

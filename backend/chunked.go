@@ -125,6 +125,10 @@ func (c *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameI
 		return err
 	}
 
+	// The state changes only after the write, so that a failed write can be sent again with the schema.
+	if err := c.write(chunk); err != nil {
+		return err
+	}
 	if c.sent == nil {
 		c.sent = make(map[sentKey]bool)
 	}
@@ -135,6 +139,5 @@ func (c *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameI
 		}
 		c.continued[sentKey{refID: refID, frameID: continues.FrameID}] = frameID
 	}
-
-	return c.write(chunk)
+	return nil
 }

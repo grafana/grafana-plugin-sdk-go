@@ -820,6 +820,44 @@ func TestAccumulateJoinsContinuedFrames(t *testing.T) {
 	}
 }
 
+// TestAccumulateKeepsFramesWithoutIDSeparate verifies that a frame without a frame ID stays a separate frame, also
+// when its meta has Continues, and that the earlier frame still takes chunks.
+func TestAccumulateKeepsFramesWithoutIDSeparate(t *testing.T) {
+	series := func(metric string, values ...float64) *data.Field {
+		return data.NewField("value", data.Labels{"metric": metric}, values)
+	}
+	withoutID := func() *data.Frame {
+		return data.NewFrame("series", series("a", 2), series("b", 3)).SetMeta(&data.FrameMeta{
+			Continues: &data.FrameContinuation{FrameID: "1", Fields: []int{0, -1}},
+		})
+	}
+
+	for name, format := range map[string]backend.DataFrameFormat{"arrow": backend.DataFrameFormat_ARROW, "json": backend.DataFrameFormat_JSON} {
+		accumulate := AccumulateArrow
+		if format == backend.DataFrameFormat_JSON {
+			accumulate = AccumulateJSON
+		}
+		t.Run(name, func(t *testing.T) {
+			chunks := []*pluginv2.QueryChunkedDataResponse{
+				encodeRawChunk(t, format, rawChunk{refID: "A", frameID: "1", frame: data.NewFrame("series", series("a", 1))}),
+				encodeRawChunk(t, format, rawChunk{refID: "A", frame: withoutID()}),
+				encodeRawChunk(t, format, rawChunk{refID: "A", frameID: "1", dataOnly: true, frame: data.NewFrame("series", series("a", 4))}),
+			}
+
+			got, err := accumulate(chunkSeq(chunks))
+			require.NoError(t, err)
+
+			first := data.NewFrame("series", series("a", 1, 4))
+			first.RefID = "A"
+			separate := withoutID()
+			separate.RefID = "A"
+			if diff := cmp.Diff(data.Frames{first, separate}, got.Responses["A"].Frames, data.FrameTestCompareOptions()...); diff != "" {
+				t.Errorf("frames mismatch (-want +got):\n%s", diff)
+			}
+		})
+	}
+}
+
 // TestQueryChunkedDataErrorAfterFrames verifies that QueryData and QueryChunkedData return the same response when
 // an error follows the frames of a query.
 func TestQueryChunkedDataErrorAfterFrames(t *testing.T) {

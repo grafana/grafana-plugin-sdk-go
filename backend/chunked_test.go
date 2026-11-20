@@ -3,6 +3,7 @@ package backend
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -71,6 +72,49 @@ func TestChunkedDataWriterContinuedFrames(t *testing.T) {
 			require.EqualError(t, w.WriteFrame(ctx, "A", "4", frame(&data.FrameContinuation{FrameID: "9", Fields: []int{0}}, a())),
 				`frame "4" of refID "A" continues frame "9", which was not written`)
 			require.Equal(t, 4, chunks)
+		})
+	}
+}
+
+// TestChunkedDataWriterKeepsStateWhenWriteFails verifies that a failed write does not retire the earlier frame,
+// and that a retry of the continuing frame sends its schema again.
+func TestChunkedDataWriterKeepsStateWhenWriteFails(t *testing.T) {
+	ctx := context.Background()
+	a := func() *data.Field { return data.NewField("a", nil, []int64{1}) }
+	b := func() *data.Field { return data.NewField("b", nil, []int64{2}) }
+	continuing := func() *data.Frame {
+		return data.NewFrame("frame", a(), b()).SetMeta(&data.FrameMeta{
+			Continues: &data.FrameContinuation{FrameID: "1", Fields: []int{0, -1}},
+		})
+	}
+	errRejected := errors.New("rejected")
+
+	for name, format := range map[string]DataFrameFormat{"arrow": DataFrameFormat_ARROW, "json": DataFrameFormat_JSON} {
+		t.Run(name, func(t *testing.T) {
+			var chunks []*pluginv2.QueryChunkedDataResponse
+			rejectNext := false
+			w := NewChunkedDataWriter(format, func(chunk *pluginv2.QueryChunkedDataResponse) error {
+				if rejectNext {
+					rejectNext = false
+					return errRejected
+				}
+				chunks = append(chunks, chunk)
+				return nil
+			})
+
+			require.NoError(t, w.WriteFrame(ctx, "A", "1", data.NewFrame("frame", a())))
+			rejectNext = true
+			require.ErrorIs(t, w.WriteFrame(ctx, "A", "2", continuing()), errRejected)
+			// Frame 1 is not continued yet, so it still takes rows.
+			require.NoError(t, w.WriteFrame(ctx, "A", "1", data.NewFrame("frame", a())))
+			require.NoError(t, w.WriteFrame(ctx, "A", "2", continuing()))
+
+			require.Len(t, chunks, 3)
+			if format == DataFrameFormat_JSON {
+				var keys map[string]json.RawMessage
+				require.NoError(t, json.Unmarshal(chunks[2].Frame, &keys))
+				require.Contains(t, keys, "schema", "the retried first chunk of frame 2 must have the schema")
+			}
 		})
 	}
 }
