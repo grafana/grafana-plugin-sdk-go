@@ -130,3 +130,46 @@ func TestLabelsFingerprintString(t *testing.T) {
 		})
 	}
 }
+
+func TestLabelsFromStringEdgeCases(t *testing.T) {
+	tests := []struct {
+		name   string
+		input  string
+		expect data.Labels
+	}{
+		{"empty braces", `{}`, data.Labels{}},
+		{"empty value", `{group="", job="prometheus"}`, data.Labels{"group": "", "job": "prometheus"}},
+		{"empty value without quotes", `group=, job=prometheus`, data.Labels{"group": "", "job": "prometheus"}},
+		{"equals sign in value", `{url="http://localhost/?a=b"}`, data.Labels{"url": "http://localhost/?a=b"}},
+		{"equals sign in unquoted value", `query=a=b, job=prometheus`, data.Labels{"query": "a=b", "job": "prometheus"}},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result, err := data.LabelsFromString(tt.input)
+			require.NoError(t, err)
+			require.Equal(t, tt.expect, result)
+		})
+	}
+
+	t.Run("string output parses back", func(t *testing.T) {
+		in := data.Labels{"empty": "", "query": "a=b"}
+		out, err := data.LabelsFromString(in.String())
+		require.NoError(t, err)
+		require.Equal(t, in, out)
+	})
+
+	t.Run("JSON output of empty labels parses back", func(t *testing.T) {
+		b, err := json.Marshal(data.Labels{})
+		require.NoError(t, err)
+		out, err := data.LabelsFromString(string(b))
+		require.NoError(t, err)
+		require.Empty(t, out)
+	})
+
+	t.Run("missing key is rejected", func(t *testing.T) {
+		_, err := data.LabelsFromString(`{="value"}`)
+		require.Error(t, err)
+		_, err = data.LabelsFromString(`justakey`)
+		require.Error(t, err)
+	})
+}
