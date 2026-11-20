@@ -71,21 +71,9 @@ func (c *GrafanaCfg) Get(key string) string {
 	return c.config[key]
 }
 
+// FeatureToggles returns the feature toggles that Grafana enables for the plugin.
 func (c *GrafanaCfg) FeatureToggles() FeatureToggles {
-	features, exists := c.config[featuretoggles.EnabledFeatures]
-	if !exists || features == "" {
-		return FeatureToggles{}
-	}
-
-	fs := strings.Split(features, ",")
-	enabledFeatures := make(map[string]struct{}, len(fs))
-	for _, f := range fs {
-		enabledFeatures[f] = struct{}{}
-	}
-
-	return FeatureToggles{
-		enabled: enabledFeatures,
-	}
+	return FeatureToggles{enabled: c.config[featuretoggles.EnabledFeatures]}
 }
 
 func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
@@ -181,14 +169,26 @@ func (c *GrafanaCfg) ProxyHash() string {
 
 // FeatureToggles represents Grafana feature toggles.
 type FeatureToggles struct {
-	// enabled is a set-like map of feature flags that are enabled.
-	enabled map[string]struct{}
+	// enabled is the comma-separated list of enabled feature flags.
+	enabled string
 }
 
-// IsEnabled returns true if feature f is contained in ft.enabled.
+// IsEnabled returns true if feature f is one of the names in ft.enabled.
 func (ft FeatureToggles) IsEnabled(f string) bool {
-	_, exists := ft.enabled[f]
-	return exists
+	if ft.enabled == "" {
+		return false
+	}
+	rest := ft.enabled
+	for {
+		name, after, found := strings.Cut(rest, ",")
+		if name == f {
+			return true
+		}
+		if !found {
+			return false
+		}
+		rest = after
+	}
 }
 
 // Proxy represents Grafana PDC proxy configuration.
