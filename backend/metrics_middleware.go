@@ -74,8 +74,9 @@ func (m *metricsMiddleware) QueryChunkedData(ctx context.Context, req *QueryChun
 
 func (m *metricsMiddleware) CallResource(ctx context.Context, req *CallResourceRequest, sender CallResourceResponseSender) error {
 	return m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
-		innerErr := m.BaseHandler.CallResource(ctx, req, sender)
-		return RequestStatusFromError(innerErr), innerErr
+		capture := newCallResourceStatusCapturingSender(sender)
+		innerErr := m.BaseHandler.CallResource(ctx, req, capture)
+		return capture.requestStatus(innerErr), innerErr
 	})
 }
 
@@ -84,7 +85,7 @@ func (m *metricsMiddleware) CheckHealth(ctx context.Context, req *CheckHealthReq
 	err := m.instrumentRequest(ctx, req.PluginContext, func(ctx context.Context) (RequestStatus, error) {
 		var innerErr error
 		resp, innerErr = m.BaseHandler.CheckHealth(ctx, req)
-		return RequestStatusFromError(innerErr), innerErr
+		return RequestStatusFromCheckHealthResult(resp, innerErr), innerErr
 	})
 
 	return resp, err
