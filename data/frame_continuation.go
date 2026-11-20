@@ -102,12 +102,10 @@ func JoinContinuationWithLimit(earlier, next *Frame, cellLimit int64) error {
 	for i, j := range continues.Fields {
 		if j == -1 {
 			fields[i] = newContinuedField(next.Fields[i], earlierRows, continues.FillValue)
-		} else {
-			fields[i] = earlier.Fields[j]
+			continue
 		}
-	}
-	for i, nf := range next.Fields {
-		fields[i].AppendAll(nf)
+		fields[i] = earlier.Fields[j]
+		fields[i].AppendAll(next.Fields[i])
 	}
 	earlier.Fields = fields
 	if earlier.Meta != nil && len(earlier.Meta.UniqueRowIDFields) > 0 {
@@ -122,23 +120,25 @@ func JoinContinuationWithLimit(earlier, next *Frame, cellLimit int64) error {
 	return nil
 }
 
-// newContinuedField returns a field with the schema of template and length rows of the fill value.
-func newContinuedField(template *Field, length int, fillValue *float64) *Field {
-	f := NewFieldFromFieldType(template.Type(), length)
-	f.Name = template.Name
-	f.Labels = template.Labels
-	f.Config = template.Config
-	if fillValue == nil || length == 0 {
-		return f
+// newContinuedField returns a new field with the schema and the rows of next, after earlierRows rows of
+// the fill value. It allocates the field at its final length, so that the join does not grow it and
+// copy the earlier rows again.
+func newContinuedField(next *Field, earlierRows int, fillValue *float64) *Field {
+	f := NewFieldFromFieldType(next.Type(), earlierRows+next.Len())
+	f.Name = next.Name
+	f.Labels = next.Labels
+	f.Config = next.Config
+	if fillValue != nil && earlierRows > 0 {
+		// LongToWide also gives all earlier rows one value, and keeps the zero value when the fill value
+		// does not convert to the type of the field.
+		if v, err := GetMissing(&FillMissing{Mode: FillModeValue, Value: *fillValue}, f, -1); err == nil {
+			for i := range earlierRows {
+				f.Set(i, v)
+			}
+		}
 	}
-	// LongToWide also gives all earlier rows one value, and keeps the zero value when the fill value
-	// does not convert to the type of the field.
-	v, err := GetMissing(&FillMissing{Mode: FillModeValue, Value: *fillValue}, f, -1)
-	if err != nil {
-		return f
-	}
-	for i := range length {
-		f.Set(i, v)
+	for i := range next.Len() {
+		f.Set(earlierRows+i, next.CopyAt(i))
 	}
 	return f
 }
