@@ -2,6 +2,7 @@ package datasource
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"maps"
 	"sync"
@@ -117,53 +118,56 @@ func (mux *QueryTypeMux) QueryData(ctx context.Context, req *backend.QueryDataRe
 }
 
 // Process chunked data query
-func (mux *QueryTypeMux) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) (err error) {
+func (mux *QueryTypeMux) QueryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, w backend.ChunkedDataWriter) error {
+	// Each goroutine sets only the error of its own query, so the goroutines share no variable.
+	errs := make([]error, len(req.Queries))
 	var wg sync.WaitGroup
-	for _, q := range req.Queries {
+	for i, q := range req.Queries {
 		wg.Go(func() {
-			// When the query type has an explicit chunker, use that
-			chunker, ok := mux.c[q.QueryType]
-			if ok {
-				if e := chunker(ctx, &backend.QueryChunkedDataRequest{
-					PluginContext: req.PluginContext,
-					Headers:       req.Headers,
-					Queries:       []backend.DataQuery{q},
-				}, w); e != nil {
-					err = e // error returned from parent function
-				}
-				return
-			}
-
-			// Fallback to individual query handlers
-			_, handler := mux.getHandler(q.QueryType)
-			rsp, e := handler.QueryData(ctx, &backend.QueryDataRequest{
-				PluginContext: req.PluginContext,
-				Headers:       req.Headers,
-				Queries:       []backend.DataQuery{q},
-			})
-			if e != nil {
-				err = e // error returned from parent function
-				return
-			}
-
-			for k, v := range rsp.Responses {
-				for i, f := range v.Frames {
-					f.RefID = k
-					if e := w.WriteFrame(ctx, k, fmt.Sprintf("f%d", i), f); err != nil {
-						err = e // error returned from parent function
-					}
-				}
-
-				if v.Error != nil || (v.Status.IsValid() && v.Status != backend.StatusOK) {
-					if e := w.WriteError(ctx, k, v.Status, v.Error); e != nil {
-						err = e // error returned from parent function
-					}
-				}
-			}
+			errs[i] = mux.queryChunkedData(ctx, req, q, w)
 		})
 	}
 	wg.Wait()
-	return err
+	return errors.Join(errs...)
+}
+
+func (mux *QueryTypeMux) queryChunkedData(ctx context.Context, req *backend.QueryChunkedDataRequest, q backend.DataQuery, w backend.ChunkedDataWriter) error {
+	// When the query type has an explicit chunker, use that
+	if chunker, ok := mux.c[q.QueryType]; ok {
+		return chunker(ctx, &backend.QueryChunkedDataRequest{
+			PluginContext: req.PluginContext,
+			Headers:       req.Headers,
+			Queries:       []backend.DataQuery{q},
+		}, w)
+	}
+
+	// Fallback to individual query handlers
+	_, handler := mux.getHandler(q.QueryType)
+	rsp, err := handler.QueryData(ctx, &backend.QueryDataRequest{
+		PluginContext: req.PluginContext,
+		Headers:       req.Headers,
+		Queries:       []backend.DataQuery{q},
+	})
+	if err != nil {
+		return err
+	}
+
+	// After a failed write, the receiver gets nothing more, so the query stops.
+	for k, v := range rsp.Responses {
+		for i, f := range v.Frames {
+			f.RefID = k
+			if err := w.WriteFrame(ctx, k, fmt.Sprintf("f%d", i), f); err != nil {
+				return err
+			}
+		}
+
+		if v.Error != nil || (v.Status.IsValid() && v.Status != backend.StatusOK) {
+			if err := w.WriteError(ctx, k, v.Status, v.Error); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (mux *QueryTypeMux) getHandler(queryType string) (string, backend.QueryDataHandler) {
