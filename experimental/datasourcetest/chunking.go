@@ -37,6 +37,8 @@ func accumulate(
 
 	responses := backend.Responses{}
 	frames := make(map[frameKey]*data.Frame)
+	// continued has the frame ID that continued each frame. A continued frame takes no more chunks.
+	continued := make(map[frameKey]string)
 
 	for chunk, err := range chunks {
 		if err != nil {
@@ -68,6 +70,9 @@ func accumulate(
 			}
 
 			key := frameKey{refID: chunk.RefId, frameID: chunk.FrameId}
+			if by, ok := continued[key]; ok {
+				return nil, fmt.Errorf("frame %q of refID %q was continued by frame %q, so it takes no more chunks", chunk.FrameId, chunk.RefId, by)
+			}
 			if frame, ok := frames[key]; ok {
 				if err := appendRows(frame, chunk.Frame); err != nil {
 					return nil, fmt.Errorf("appending rows to frame %q of refID %q: %w", chunk.FrameId, chunk.RefId, err)
@@ -77,7 +82,26 @@ func accumulate(
 				if err != nil {
 					return nil, err
 				}
-				rsp.Frames = append(rsp.Frames, frame)
+				// A chunk without a frame ID is a separate frame, so it does not continue a frame.
+				if chunk.FrameId != "" && frame.Meta != nil && frame.Meta.Continues != nil {
+					earlierID := frame.Meta.Continues.FrameID
+					earlierKey := frameKey{refID: chunk.RefId, frameID: earlierID}
+					if by, ok := continued[earlierKey]; ok {
+						return nil, fmt.Errorf("frame %q of refID %q continues frame %q, which frame %q already continued", chunk.FrameId, chunk.RefId, earlierID, by)
+					}
+					earlier, ok := frames[earlierKey]
+					if !ok {
+						return nil, fmt.Errorf("frame %q of refID %q continues the unknown frame %q", chunk.FrameId, chunk.RefId, earlierID)
+					}
+					if err := data.JoinContinuation(earlier, frame); err != nil {
+						return nil, fmt.Errorf("joining frame %q of refID %q to frame %q: %w", chunk.FrameId, chunk.RefId, earlierID, err)
+					}
+					continued[earlierKey] = chunk.FrameId
+					// Later chunks of this frame ID append to the joined frame, which is already in the response.
+					frame = earlier
+				} else {
+					rsp.Frames = append(rsp.Frames, frame)
+				}
 				// Without a frame ID, later chunks cannot refer to this frame.
 				if chunk.FrameId != "" {
 					frames[key] = frame

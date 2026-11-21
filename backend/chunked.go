@@ -22,6 +22,8 @@ type ChunkedDataWriter interface {
 	// Later calls with the same frameID append their rows to that frame, so they must have
 	// the same fields. The receiver ignores the name and the metadata of later calls.
 	// Calls for different frameIDs can alternate.
+	// To add fields to a frame, write a new frameID with all the fields, and set
+	// f.Meta.Continues in its first call. The earlier frameID then takes no more calls.
 	WriteFrame(ctx context.Context, refID string, frameID string, f *data.Frame) error
 
 	// WriteError writes an error associated with the specified refID.
@@ -34,10 +36,12 @@ func NewChunkedDataWriter(format DataFrameFormat, write ChunkedDataCallback) Chu
 }
 
 type chunkedDataWriter struct {
-	mu     sync.Mutex
-	sent   map[sentKey]bool
-	format DataFrameFormat
-	write  ChunkedDataCallback
+	mu   sync.Mutex
+	sent map[sentKey]bool
+	// continued has the frame ID that continued each frame.
+	continued map[sentKey]string
+	format    DataFrameFormat
+	write     ChunkedDataCallback
 }
 
 // sentKey identifies a frame that the writer already sent. A joined string can collide,
@@ -76,6 +80,25 @@ func (c *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameI
 		return fmt.Errorf("missing frame identifier")
 	}
 
+	key := sentKey{refID: refID, frameID: frameID}
+	if by, ok := c.continued[key]; ok {
+		return fmt.Errorf("frame %q of refID %q was continued by frame %q, so it takes no more rows", frameID, refID, by)
+	}
+	first := !c.sent[key]
+	var continues *data.FrameContinuation
+	if first && f.Meta != nil {
+		continues = f.Meta.Continues
+	}
+	if continues != nil {
+		earlier := sentKey{refID: refID, frameID: continues.FrameID}
+		if !c.sent[earlier] {
+			return fmt.Errorf("frame %q of refID %q continues frame %q, which was not written", frameID, refID, continues.FrameID)
+		}
+		if by, ok := c.continued[earlier]; ok {
+			return fmt.Errorf("frame %q of refID %q continues frame %q, which frame %q already continued", frameID, refID, continues.FrameID, by)
+		}
+	}
+
 	f.SetRefID(refID)
 
 	chunk := &pluginv2.QueryChunkedDataResponse{
@@ -90,15 +113,10 @@ func (c *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameI
 		chunk.Frame, err = f.MarshalArrow()
 
 	case DataFrameFormat_JSON:
-		if c.sent == nil {
-			c.sent = make(map[sentKey]bool)
-		}
 		// Only send the schema the first time we see the frame identifier
 		include := data.IncludeDataOnly
-		key := sentKey{refID: refID, frameID: frameID}
-		if !c.sent[key] {
+		if first {
 			include = data.IncludeAll
-			c.sent[key] = true
 		}
 		chunk.Frame, err = data.FrameToJSON(f, include)
 	}
@@ -107,5 +125,19 @@ func (c *chunkedDataWriter) WriteFrame(ctx context.Context, refID string, frameI
 		return err
 	}
 
-	return c.write(chunk)
+	// The state changes only after the write, so that a failed write can be sent again with the schema.
+	if err := c.write(chunk); err != nil {
+		return err
+	}
+	if c.sent == nil {
+		c.sent = make(map[sentKey]bool)
+	}
+	c.sent[key] = true
+	if continues != nil {
+		if c.continued == nil {
+			c.continued = make(map[sentKey]string)
+		}
+		c.continued[sentKey{refID: refID, frameID: continues.FrameID}] = frameID
+	}
+	return nil
 }

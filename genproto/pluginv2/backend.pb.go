@@ -1254,6 +1254,16 @@ func (x *QueryChunkedDataRequest) GetFormat() DataFrameFormat {
 // so the chunks A, B, A of one refId make two frames. The frames of a refId are in the
 // order of their first chunks.
 //
+// The first chunk of a key can continue an earlier frame of the same refId, when the frame
+// needs more fields than the earlier frame has, for example for a new series in a wide time
+// series. Its metadata then has `continues` (data.FrameMeta.Continues) with the frame ID of
+// the earlier frame, and the index of each field in the earlier frame, or -1 for a new field.
+// A receiver that builds the full response joins the two frames with data.JoinContinuation.
+// The result is one frame at the position of the earlier frame, with the fields of the new
+// frame. Only a chunk with a frame ID can continue a frame. A frame can be continued only
+// once, and its key takes no more chunks after that. A receiver that only forwards chunks
+// does not join them.
+//
 // A chunk without a frame carries only the error, the status, and the error source of its
 // refId. It does not make a frame, and the frames before it stay in the response.
 type QueryChunkedDataResponse struct {
