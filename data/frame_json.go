@@ -837,6 +837,10 @@ const (
 	entityNegativeInf = "-Inf"
 )
 
+func (f *fieldEntityLookup) count() int {
+	return len(f.NaN) + len(f.Inf) + len(f.NegInf)
+}
+
 func (f *fieldEntityLookup) add(str string, idx int) {
 	switch str {
 	case entityPositiveInf:
@@ -990,70 +994,38 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	nanos := make([][]int64, len(frame.Fields))
 	nsOffSetCount := 0
 
+	// The typed writers match the output of these configs only. Any other config, for example one without
+	// HTML escaping, takes the generic path.
+	pool := stream.Pool()
+	typed := pool == jsoniter.ConfigCompatibleWithStandardLibrary || pool == jsoniter.ConfigDefault
+
 	stream.WriteObjectField("values")
 	stream.WriteArrayStart()
 	for fidx, f := range frame.Fields {
 		if fidx > 0 {
 			stream.WriteMore()
 		}
-		isTime := f.Type().Time()
-		nsTime := make([]int64, rowCount)
-		var hasNSTime bool
-		isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
-			f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
 
 		stream.WriteArrayStart()
-		for i := range rowCount {
-			if i > 0 {
-				stream.WriteRaw(",")
-			}
-			if v, ok := f.ConcreteAt(i); ok {
-				switch {
-				case isTime:
-					t := v.(time.Time)
-					stream.WriteVal(t.UnixMilli())
-					msRes := t.Truncate(time.Millisecond)
-					ns := t.Sub(msRes).Nanoseconds()
-					if ns != 0 {
-						hasNSTime = true
-						nsTime[i] = ns
-					}
-				case isFloat:
-					// For float and nullable float we check whether a value is a special
-					// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
-					// information into a separate field to restore on a consumer side (setting
-					// null to the entity position in data). Since we are using f.ConcreteAt
-					// above the value is always float64 or float32 types, and never a *float64
-					// or *float32.
-					var f64 float64
-					switch vt := v.(type) {
-					case float64:
-						f64 = vt
-					case float32:
-						f64 = float64(vt)
-					default:
-						stream.Error = fmt.Errorf("unsupported float type: %T", v)
-						return
-					}
-					if entityType, found := isSpecialEntity(f64); found {
-						if entities[fidx] == nil {
-							entities[fidx] = &fieldEntityLookup{}
-						}
-						entities[fidx].add(entityType, i)
-						entityCount++
-						stream.WriteNil()
-					} else {
-						stream.WriteVal(v)
-					}
-				default:
-					stream.WriteVal(v)
-				}
-			} else {
-				stream.WriteNil()
+		var lookup *fieldEntityLookup
+		var nsTime []int64
+		handled := false
+		if typed {
+			lookup, nsTime, handled = writeTypedFieldValues(stream, f.vector, rowCount)
+		}
+		if !handled {
+			lookup, nsTime = writeFieldValues(stream, f, rowCount)
+			if stream.Error != nil {
+				return
 			}
 		}
 		stream.WriteArrayEnd()
-		if hasNSTime {
+
+		if lookup != nil {
+			entities[fidx] = lookup
+			entityCount += lookup.count()
+		}
+		if nsTime != nil {
 			nanos[fidx] = nsTime
 			nsOffSetCount++
 		}
@@ -1073,6 +1045,188 @@ func writeDataFrameData(frame *Frame, stream *jsoniter.Stream) {
 	}
 
 	stream.WriteObjectEnd()
+}
+
+// writeFieldValues writes the values of f through the generic, boxing path.
+func writeFieldValues(stream *jsoniter.Stream, f *Field, rowCount int) (*fieldEntityLookup, []int64) {
+	isTime := f.Type().Time()
+	var nsTime []int64
+	var lookup *fieldEntityLookup
+	isFloat := f.Type() == FieldTypeFloat64 || f.Type() == FieldTypeNullableFloat64 ||
+		f.Type() == FieldTypeFloat32 || f.Type() == FieldTypeNullableFloat32
+
+	for i := range rowCount {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		v, ok := f.ConcreteAt(i)
+		if !ok {
+			stream.WriteNil()
+			continue
+		}
+		switch {
+		case isTime:
+			t := v.(time.Time)
+			stream.WriteVal(t.UnixMilli())
+			nsTime = recordNanos(nsTime, t, i, rowCount)
+		case isFloat:
+			// For float and nullable float we check whether a value is a special
+			// entity (NaN, -Inf, +Inf) not supported by JSON spec, we then encode this
+			// information into a separate field to restore on a consumer side (setting
+			// null to the entity position in data). Since we are using f.ConcreteAt
+			// above the value is always float64 or float32 types, and never a *float64
+			// or *float32.
+			var f64 float64
+			switch vt := v.(type) {
+			case float64:
+				f64 = vt
+			case float32:
+				f64 = float64(vt)
+			default:
+				stream.Error = fmt.Errorf("unsupported float type: %T", v)
+				return lookup, nsTime
+			}
+			if entityType, found := isSpecialEntity(f64); found {
+				if lookup == nil {
+					lookup = &fieldEntityLookup{}
+				}
+				lookup.add(entityType, i)
+				stream.WriteNil()
+			} else {
+				stream.WriteVal(v)
+			}
+		default:
+			stream.WriteVal(v)
+		}
+	}
+	return lookup, nsTime
+}
+
+// recordNanos stores the sub-millisecond part of t at idx, allocating nsTime on first use.
+func recordNanos(nsTime []int64, t time.Time, idx, rowCount int) []int64 {
+	ns := int64(t.Nanosecond() % int(time.Millisecond))
+	if ns == 0 {
+		return nsTime
+	}
+	if nsTime == nil {
+		nsTime = make([]int64, rowCount)
+	}
+	nsTime[idx] = ns
+	return nsTime
+}
+
+// writeTypedFieldValues writes the values of the most common vector types without boxing each value.
+// It reports false for any other vector, which the caller writes through [writeFieldValues].
+func writeTypedFieldValues(stream *jsoniter.Stream, vec vector, rowCount int) (*fieldEntityLookup, []int64, bool) {
+	switch v := vec.(type) {
+	case *float64Vector:
+		return writeFloat64s(stream, rowCount, func(i int) (float64, bool) { return (*v)[i], true }), nil, true
+	case *nullableFloat64Vector:
+		return writeFloat64s(stream, rowCount, func(i int) (float64, bool) {
+			p := (*v)[i]
+			if p == nil {
+				return 0, false
+			}
+			return *p, true
+		}), nil, true
+	case *int64Vector:
+		for i, n := range *v {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			stream.WriteInt64(n)
+		}
+		return nil, nil, true
+	case *nullableInt64Vector:
+		for i, p := range *v {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			if p == nil {
+				stream.WriteNil()
+				continue
+			}
+			stream.WriteInt64(*p)
+		}
+		return nil, nil, true
+	case *stringVector:
+		for i, str := range *v {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			stream.WriteStringWithHTMLEscaped(str)
+		}
+		return nil, nil, true
+	case *nullableStringVector:
+		for i, p := range *v {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			if p == nil {
+				stream.WriteNil()
+				continue
+			}
+			stream.WriteStringWithHTMLEscaped(*p)
+		}
+		return nil, nil, true
+	case *boolVector:
+		for i, b := range *v {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			stream.WriteBool(b)
+		}
+		return nil, nil, true
+	case *timeTimeVector:
+		var nsTime []int64
+		for i, t := range *v {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			stream.WriteInt64(t.UnixMilli())
+			nsTime = recordNanos(nsTime, t, i, rowCount)
+		}
+		return nil, nsTime, true
+	case *nullableTimeTimeVector:
+		var nsTime []int64
+		for i, p := range *v {
+			if i > 0 {
+				stream.WriteRaw(",")
+			}
+			if p == nil {
+				stream.WriteNil()
+				continue
+			}
+			stream.WriteInt64(p.UnixMilli())
+			nsTime = recordNanos(nsTime, *p, i, rowCount)
+		}
+		return nil, nsTime, true
+	}
+	return nil, nil, false
+}
+
+func writeFloat64s(stream *jsoniter.Stream, rowCount int, at func(i int) (float64, bool)) *fieldEntityLookup {
+	var lookup *fieldEntityLookup
+	for i := range rowCount {
+		if i > 0 {
+			stream.WriteRaw(",")
+		}
+		f64, ok := at(i)
+		if !ok {
+			stream.WriteNil()
+			continue
+		}
+		if entityType, found := isSpecialEntity(f64); found {
+			if lookup == nil {
+				lookup = &fieldEntityLookup{}
+			}
+			lookup.add(entityType, i)
+			stream.WriteNil()
+			continue
+		}
+		stream.WriteFloat64(f64)
+	}
+	return lookup
 }
 
 func writeDataFrames(frames *Frames, stream *jsoniter.Stream) {
