@@ -18,6 +18,8 @@ const (
 	ResponseLimit                    = config.ResponseLimit
 	AppClientSecret                  = config.AppClientSecret
 	LiveClientQueueMaxSize           = config.LiveClientQueueMaxSize
+	DialBreakerFailures              = config.DialBreakerFailures
+	DialBreakerOpenFor               = config.DialBreakerOpenFor
 )
 
 // Deprecated: Use the config package instead.
