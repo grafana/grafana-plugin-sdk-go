@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"strings"
 	"syscall"
 
 	grpccodes "google.golang.org/grpc/codes"
@@ -145,11 +146,12 @@ func IsDownstreamError(err error) bool {
 }
 
 // IsDownstreamHTTPError return true if provided error is an error with downstream source or
-// a HTTP timeout error or a cancelled error or a connection reset/refused error or dns not found error.
+// a HTTP timeout error or a cancelled error or a connection reset/refused error, a DNS error or an unsupported URL scheme error.
 func IsDownstreamHTTPError(err error) bool {
 	return IsDownstreamError(err) ||
 		isNetworkSyscallConnectionError(err) ||
-		isDNSNotFoundError(err) ||
+		isDNSError(err) ||
+		isUnsupportedProtocolSchemeError(err) ||
 		isTLSCertificateVerificationError(err) ||
 		isHTTPEOFError(err)
 }
@@ -178,13 +180,16 @@ func isNetworkSyscallConnectionError(err error) bool {
 	return false
 }
 
-func isDNSNotFoundError(err error) bool {
-	var dnsError *net.DNSError
-	if errors.As(err, &dnsError) && dnsError.IsNotFound {
-		return true
-	}
+func isDNSError(err error) bool {
+	_, ok := errors.AsType[*net.DNSError](err)
+	return ok
+}
 
-	return false
+// isUnsupportedProtocolSchemeError matches the error that [net/http] returns for an empty or unknown
+// URL scheme. The standard library gives it no type, so the message is the only signal.
+func isUnsupportedProtocolSchemeError(err error) bool {
+	urlErr, ok := errors.AsType[*url.Error](err)
+	return ok && strings.HasPrefix(urlErr.Err.Error(), "unsupported protocol scheme")
 }
 
 // isTLSCertificateVerificationError checks if the error is related to TLS certificate verification.

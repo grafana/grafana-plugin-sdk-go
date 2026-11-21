@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
 	"net/url"
 	"os"
 	"syscall"
@@ -241,6 +242,26 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "DNS temporary failure",
+			err:      &net.DNSError{Err: "server misbehaving", IsTemporary: true},
+			expected: true,
+		},
+		{
+			name:     "DNS timeout",
+			err:      &net.DNSError{Err: "i/o timeout", IsTimeout: true},
+			expected: true,
+		},
+		{
+			name:     "wrapped *url.Error with DNS server misbehaving",
+			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: &net.OpError{Op: "dial", Err: &net.DNSError{Err: "server misbehaving", Name: "example.com"}}},
+			expected: true,
+		},
+		{
+			name:     "unsupported protocol scheme",
+			err:      &url.Error{Op: "Get", URL: "", Err: errors.New(`unsupported protocol scheme ""`)},
+			expected: true,
+		},
+		{
 			name:     "wrapped *url.Error with UnknownAuthorityError",
 			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: &tls.CertificateVerificationError{Err: x509.UnknownAuthorityError{}}},
 			expected: true,
@@ -356,4 +377,14 @@ func (d *fakeNetworkError) Timeout() bool {
 
 func (d *fakeNetworkError) Temporary() bool {
 	return d.temporary
+}
+
+func TestIsDownstreamHTTPErrorEmptyURL(t *testing.T) {
+	client := &http.Client{}
+	req, err := http.NewRequest(http.MethodGet, "", nil)
+	require.NoError(t, err)
+
+	_, err = client.Do(req) //nolint:bodyclose // the request fails before a response exists
+	require.Error(t, err)
+	assert.True(t, status.IsDownstreamHTTPError(err), "IsDownstreamHTTPError(%v)", err)
 }
