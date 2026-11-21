@@ -88,6 +88,7 @@ func (c *GrafanaCfg) FeatureToggles() FeatureToggles {
 	}
 }
 
+// Equal reports whether c and c2 hold the same configuration, ignoring keys that neither config can use.
 func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	if c == nil && c2 == nil {
 		return true
@@ -96,15 +97,38 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 		return false
 	}
 
-	if len(c.config) != len(c2.config) {
-		return false
-	}
+	ignored := unusedKeys(c, c2)
 	for k, v1 := range c.config {
+		if _, skip := ignored[k]; skip {
+			continue
+		}
 		if v2, ok := c2.config[k]; !ok || v1 != v2 {
 			return false
 		}
 	}
+	for k := range c2.config {
+		if _, skip := ignored[k]; skip {
+			continue
+		}
+		if _, ok := c.config[k]; !ok {
+			return false
+		}
+	}
 	return true
+}
+
+// pdcFilePathKeys are the deprecated PDC certificate paths, which the proxy dialer reads only when no root CA contents are set.
+var pdcFilePathKeys = map[string]struct{}{
+	proxy.PluginSecureSocksProxyClientCert: {}, // nolint:staticcheck
+	proxy.PluginSecureSocksProxyClientKey:  {}, // nolint:staticcheck
+	proxy.PluginSecureSocksProxyRootCAs:    {}, // nolint:staticcheck
+}
+
+func unusedKeys(c, c2 *GrafanaCfg) map[string]struct{} {
+	if c.Get(proxy.PluginSecureSocksProxyRootCAsContents) != "" && c2.Get(proxy.PluginSecureSocksProxyRootCAsContents) != "" {
+		return pdcFilePathKeys
+	}
+	return nil
 }
 
 // Diff returns the names of config fields that differ between this config and c2.
