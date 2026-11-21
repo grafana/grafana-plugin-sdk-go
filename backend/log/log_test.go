@@ -4,6 +4,7 @@ import (
 	"context"
 	"testing"
 
+	hclog "github.com/hashicorp/go-hclog"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -18,6 +19,29 @@ func TestLogLevelWarn(t *testing.T) {
 	logger := NewWithLevel(Warn)
 	level := logger.Level()
 	assert.Equal(t, level, Warn)
+}
+
+func TestLogLevelFromEnv(t *testing.T) {
+	tests := []struct {
+		env  string
+		want hclog.Level
+	}{
+		{env: "", want: hclog.Debug},
+		{env: "trace", want: hclog.Trace},
+		{env: "debug", want: hclog.Debug},
+		{env: "info", want: hclog.Info},
+		{env: "warn", want: hclog.Warn},
+		{env: " WARN ", want: hclog.Warn},
+		{env: "error", want: hclog.Error},
+		{env: "off", want: hclog.Debug},
+		{env: "verbose", want: hclog.Debug},
+	}
+	for _, tc := range tests {
+		t.Run("env="+tc.env, func(t *testing.T) {
+			t.Setenv(PluginLogLevelEnv, tc.env)
+			assert.Equal(t, tc.want, New().(*hclogWrapper).logger.GetLevel())
+		})
+	}
 }
 
 func TestLogFromContext(t *testing.T) {
