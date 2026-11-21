@@ -21,6 +21,7 @@ const (
 type dataSDKAdapter struct {
 	queryDataHandler        QueryDataHandler
 	queryChunkedDataHandler QueryChunkedDataHandler
+	releaseFrames           bool
 }
 
 // newDataSDKAdapter creates a new adapter between the plugin protocol and SDK interfaces.
@@ -45,7 +46,7 @@ func (a *dataSDKAdapter) QueryData(ctx context.Context, req *pluginv2.QueryDataR
 		return nil, errors.New("both response and error are nil, but one must be provided")
 	}
 
-	return ToProto().QueryDataResponse(parsedReq.Format, resp)
+	return queryDataResponseToProto(parsedReq.Format, resp, a.releaseFrames)
 }
 
 // QueryChunkedData handles incoming gRPC stream data requests by converting them to SDK format
