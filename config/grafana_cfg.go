@@ -9,7 +9,6 @@ import (
 	"os"
 	"strconv"
 	"strings"
-	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
@@ -27,8 +26,6 @@ const (
 	ResponseLimit                    = "GF_RESPONSE_LIMIT"
 	AppClientSecret                  = "GF_PLUGIN_APP_CLIENT_SECRET" // nolint:gosec
 	LiveClientQueueMaxSize           = "GF_LIVE_CLIENT_QUEUE_MAX_SIZE"
-	DialBreakerFailures              = "GF_DATAPROXY_DIAL_BREAKER_FAILURES"
-	DialBreakerOpenFor               = "GF_DATAPROXY_DIAL_BREAKER_OPEN_FOR"
 )
 
 // GrafanaCfg represents Grafana configuration
@@ -338,24 +335,6 @@ func (c *GrafanaCfg) ResponseLimit() int64 {
 		return 0
 	}
 	return i
-}
-
-// DialBreakerFailures returns the number of dial timeouts in a row that opens a dial breaker, or 0 when it is not set or not a positive integer.
-func (c *GrafanaCfg) DialBreakerFailures() int {
-	n, err := strconv.Atoi(c.config[DialBreakerFailures])
-	if err != nil || n < 0 {
-		return 0
-	}
-	return n
-}
-
-// DialBreakerOpenFor returns how long an open dial breaker fails requests, or 0 when it is not set or not a positive duration.
-func (c *GrafanaCfg) DialBreakerOpenFor() time.Duration {
-	d, err := time.ParseDuration(c.config[DialBreakerOpenFor])
-	if err != nil || d < 0 {
-		return 0
-	}
-	return d
 }
 
 func (c *GrafanaCfg) PluginAppClientSecret() (string, error) {

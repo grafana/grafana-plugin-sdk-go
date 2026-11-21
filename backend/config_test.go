@@ -8,7 +8,6 @@ import (
 	mathrand "math/rand"
 	"os"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -502,30 +501,4 @@ func BenchmarkProxyHash(b *testing.B) {
 		}
 	}
 	fmt.Printf("This should be about one in 64: %f\n", float64(count)/float64(b.N))
-}
-
-func TestDialBreakerConfig(t *testing.T) {
-	tests := []struct {
-		name         string
-		cfg          map[string]string
-		wantFailures int
-		wantOpenFor  time.Duration
-	}{
-		{name: "missing", cfg: map[string]string{}},
-		{name: "set", cfg: map[string]string{config.DialBreakerFailures: "5", config.DialBreakerOpenFor: "15s"}, wantFailures: 5, wantOpenFor: 15 * time.Second},
-		{name: "zero", cfg: map[string]string{config.DialBreakerFailures: "0", config.DialBreakerOpenFor: "0s"}},
-		{name: "negative", cfg: map[string]string{config.DialBreakerFailures: "-1", config.DialBreakerOpenFor: "-5s"}},
-		{name: "invalid", cfg: map[string]string{config.DialBreakerFailures: "five", config.DialBreakerOpenFor: "10"}},
-	}
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			cfg := config.NewGrafanaCfg(tc.cfg)
-			if got := cfg.DialBreakerFailures(); got != tc.wantFailures {
-				t.Errorf("DialBreakerFailures() = %d, want %d", got, tc.wantFailures)
-			}
-			if got := cfg.DialBreakerOpenFor(); got != tc.wantOpenFor {
-				t.Errorf("DialBreakerOpenFor() = %s, want %s", got, tc.wantOpenFor)
-			}
-		})
-	}
 }
