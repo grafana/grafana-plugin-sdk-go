@@ -218,8 +218,8 @@ func LongToWide(longFrame *Frame, fillMissing *FillMissing) (*Frame, error) {
 }
 
 // LongToWideWithLimit is LongToWide with a ceiling on the size of the wide Frame, in cells (rows times Fields).
-// It returns ErrorWideFrameTooLarge as soon as the Frame being built grows past cellLimit. A cellLimit of 0 or
-// less disables the ceiling.
+// It returns ErrorWideFrameTooLarge when the wide Frame would be larger than cellLimit, before it builds the Frame
+// when the input allows that check. A cellLimit of 0 or less disables the ceiling.
 func LongToWideWithLimit(longFrame *Frame, fillMissing *FillMissing, cellLimit int64) (*Frame, error) {
 	tsSchema := longFrame.TimeSeriesSchema()
 	if tsSchema.Type != TimeSeriesTypeLong {
@@ -232,6 +232,12 @@ func LongToWideWithLimit(longFrame *Frame, fillMissing *FillMissing, cellLimit i
 	}
 	if longLen == 0 {
 		return nil, ErrorInputFieldsWithoutRowsWideSeries
+	}
+
+	if cellLimit > 0 {
+		if rows, fields, ok := wideShape(longFrame, tsSchema, longLen); ok && fields > cellLimit/rows {
+			return nil, fmt.Errorf("%w: %d rows and %d fields exceed the limit of %d cells", ErrorWideFrameTooLarge, rows, fields, cellLimit)
+		}
 	}
 
 	wideFrame := NewFrame(longFrame.Name, NewField(longFrame.Fields[tsSchema.TimeIndex].Name, nil, []time.Time{}))
@@ -685,5 +691,91 @@ func SortWideFrameFields(frame *Frame, keys ...string) error {
 	// restore the time index back as the first field
 	frame.Fields = append(Fields{timeIndexField}, frame.Fields...)
 
+	return nil
+}
+
+// wideShape counts the rows and Fields of the wide Frame that longFrame converts to, without building it.
+// ok is false when the input is unsorted, has a null, or has a factor that is not a string or bool, so the
+// conversion reports those errors itself.
+func wideShape(longFrame *Frame, tsSchema TimeSeriesSchema, longLen int) (rows, fields int64, ok bool) {
+	timeOf := typedTimeAt(longFrame.Fields[tsSchema.TimeIndex])
+	factorOf := make([]func(int) (string, bool), len(tsSchema.FactorIndices))
+	for i, idx := range tsSchema.FactorIndices {
+		if factorOf[i] = typedFactorAt(longFrame.Fields[idx]); factorOf[i] == nil {
+			return 0, 0, false
+		}
+	}
+	seen := make(map[string]struct{})
+	var key []byte
+	var last time.Time
+	for i := range longLen {
+		t, present := timeOf(i)
+		if !present {
+			return 0, 0, false
+		}
+		switch {
+		case i == 0 || t.After(last):
+			rows++
+			last = t
+		case t.Before(last):
+			return 0, 0, false
+		}
+		key = key[:0]
+		for _, factor := range factorOf {
+			s, present := factor(i)
+			if !present {
+				return 0, 0, false
+			}
+			key = strconv.AppendInt(key, int64(len(s)), 10)
+			key = append(key, ':')
+			key = append(key, s...)
+		}
+		if _, dup := seen[string(key)]; !dup {
+			seen[string(key)] = struct{}{}
+		}
+	}
+	return rows, 1 + int64(len(tsSchema.ValueIndices))*int64(len(seen)), true
+}
+
+func typedTimeAt(f *Field) func(int) (time.Time, bool) {
+	switch v := f.vector.(type) {
+	case *timeTimeVector:
+		return func(i int) (time.Time, bool) { return (*v)[i], true }
+	case *nullableTimeTimeVector:
+		return func(i int) (time.Time, bool) {
+			if p := (*v)[i]; p != nil {
+				return *p, true
+			}
+			return time.Time{}, false
+		}
+	}
+	return func(i int) (time.Time, bool) {
+		val, ok := f.ConcreteAt(i)
+		t, isTime := val.(time.Time)
+		return t, ok && isTime
+	}
+}
+
+func typedFactorAt(f *Field) func(int) (string, bool) {
+	switch v := f.vector.(type) {
+	case *stringVector:
+		return func(i int) (string, bool) { return (*v)[i], true }
+	case *nullableStringVector:
+		return func(i int) (string, bool) {
+			if p := (*v)[i]; p != nil {
+				return *p, true
+			}
+			return "", false
+		}
+	case *boolVector:
+		return func(i int) (string, bool) { return strconv.FormatBool((*v)[i]), true }
+	case *nullableBoolVector:
+		return func(i int) (string, bool) {
+			if p := (*v)[i]; p != nil {
+				return strconv.FormatBool(*p), true
+			}
+			return "", false
+		}
+	}
 	return nil
 }
