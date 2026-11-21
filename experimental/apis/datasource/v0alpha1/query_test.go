@@ -9,11 +9,9 @@ import (
 
 func TestSerializeAdditionalQueryFieldsOrdered(t *testing.T) {
 	q := DataQuery{
-		CommonQueryProperties: CommonQueryProperties{
-			RefID:         "A",
-			MaxDataPoints: 10,
-			IntervalMS:    500,
-		},
+		RefID:         "A",
+		MaxDataPoints: 10,
+		IntervalMS:    500,
 		additional: map[string]any{
 			"utcOffsetSec": 3600,
 			"exemplar":     false,
