@@ -112,6 +112,16 @@ func writeDataFrameDataReference(frame *Frame, stream *jsoniter.Stream) {
 	stream.WriteObjectEnd()
 }
 
+var edgeTimes = []time.Time{
+	{},
+	time.Unix(0, 0),
+	time.Unix(0, 999_999),
+	time.Unix(-1, 1),
+	time.Date(-5, time.January, 1, 0, 0, 0, 123_456_789, time.UTC),
+	time.Date(9999, time.December, 31, 23, 59, 59, 999_999_999, time.UTC),
+	time.Unix(1_700_000_000, 1_000_001).In(time.FixedZone("x", 5*3600+1800)),
+}
+
 //nolint:gocyclo,gosec // test data generator, overflow conversions are intended
 func randomFrame(rng *rand.Rand, rows int) *Frame {
 	types := []FieldType{
@@ -164,6 +174,9 @@ func randomFrame(rng *rand.Rand, rows int) *Frame {
 				v = time.Unix(rng.Int63n(4e9)-1e9, rng.Int63n(1e9)).UTC()
 				if rng.Intn(2) == 0 {
 					v = time.UnixMilli(rng.Int63n(4e12) - 1e12)
+				}
+				if rng.Intn(8) == 0 {
+					v = edgeTimes[rng.Intn(len(edgeTimes))]
 				}
 			case FieldTypeJSON:
 				v = json.RawMessage(`{"a":1}`)
