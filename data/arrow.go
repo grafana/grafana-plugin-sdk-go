@@ -953,15 +953,30 @@ func UnmarshalArrowFrames(bFrames [][]byte) (Frames, error) {
 // Each returned slice has at most 12.5 percent spare capacity. If an error occurs [][]byte will be nil.
 // See UnmarshalArrowFrames for the inverse operation.
 func (frames Frames) MarshalArrow() ([][]byte, error) {
-	bs := make([][]byte, len(frames))
-	var buf bytes.Buffer
-	for i, frame := range frames {
+	return frames.marshalArrow(false)
+}
+
+// MarshalArrowAndRelease encodes Frames like MarshalArrow, and sets each element of frames to nil once it is encoded,
+// so a frame can be garbage collected while the rest are encoded. If a frame is nil, it returns an error and releases nothing.
+func (frames Frames) MarshalArrowAndRelease() ([][]byte, error) {
+	return frames.marshalArrow(true)
+}
+
+func (frames Frames) marshalArrow(release bool) ([][]byte, error) {
+	for _, frame := range frames {
 		if frame == nil {
 			return nil, errors.New("frame can not be nil")
 		}
+	}
+	bs := make([][]byte, len(frames))
+	var buf bytes.Buffer
+	for i, frame := range frames {
 		buf.Reset()
 		if err := frame.marshalArrow(&buf); err != nil {
 			return nil, err
+		}
+		if release {
+			frames[i] = nil
 		}
 		if buf.Len() >= scratchReuseLimit {
 			bs[i] = trimSlack(&buf)

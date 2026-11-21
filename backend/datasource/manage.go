@@ -19,6 +19,10 @@ type ManageOpts struct {
 	// TracingOpts contains settings for tracing setup.
 	TracingOpts tracing.Opts
 
+	// ReleaseQueryDataFrames sets the frames of each QueryData response to nil once the SDK has encoded them.
+	// See [backend.ServeOpts.ReleaseQueryDataFrames].
+	ReleaseQueryDataFrames bool
+
 	// Licensing, if set, is applied to the serve options before the plugin is served.
 	// Use marketplace.Licensing from the experimental/marketplace package for marketplace plugins.
 	// This is EXPERIMENTAL and is subject to change.
@@ -50,6 +54,7 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		QueryChunkedDataHandler: handler,
 		StreamHandler:           handler,
 		GRPCSettings:            opts.GRPCSettings,
+		ReleaseQueryDataFrames:  opts.ReleaseQueryDataFrames,
 	}
 	if opts.Licensing != nil {
 		var err error
