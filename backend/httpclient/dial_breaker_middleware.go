@@ -115,7 +115,7 @@ func (b *dialBreaker) record(ctx context.Context, start time.Time, probe bool, e
 	if !isDialTimeout(err) {
 		if !b.openUntil.IsZero() {
 			dialBreakerTransitions.WithLabelValues("close").Inc()
-			log.DefaultLogger.FromContext(ctx).Info("dial breaker closed")
+			log.DefaultLogger.FromContext(ctx).Warn("dial breaker closed")
 		}
 		b.consecutive = 0
 		b.openUntil = time.Time{}
