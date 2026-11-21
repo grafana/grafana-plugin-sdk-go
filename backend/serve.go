@@ -132,8 +132,10 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 // The default options are:
 //   - default middlewares (see defaultGRPCMiddlewares)
 //   - otel grpc stats handler (see otelgrpc.NewServerHandler)
+//   - the QueryData response codec (see queryDataCodecOption)
 func grpcServerOptions(serveOpts ServeOpts, customOpts ...grpc.ServerOption) []grpc.ServerOption {
 	options := defaultGRPCMiddlewares(serveOpts)
+	options = append(options, queryDataCodecOption())
 	options = append(options, customOpts...)
 	return options
 }
