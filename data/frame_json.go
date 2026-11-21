@@ -1104,7 +1104,7 @@ func writeFieldValues(stream *jsoniter.Stream, f *Field, rowCount int) (*fieldEn
 
 // recordNanos stores the sub-millisecond part of t at idx, allocating nsTime on first use.
 func recordNanos(nsTime []int64, t time.Time, idx, rowCount int) []int64 {
-	ns := t.Sub(t.Truncate(time.Millisecond)).Nanoseconds()
+	ns := int64(t.Nanosecond() % int(time.Millisecond))
 	if ns == 0 {
 		return nsTime
 	}
