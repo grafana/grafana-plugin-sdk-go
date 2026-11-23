@@ -3,6 +3,7 @@ package log
 
 import (
 	"context"
+	"os"
 
 	hclog "github.com/hashicorp/go-hclog"
 )
@@ -29,9 +30,20 @@ type Logger interface {
 	FromContext(ctx context.Context) Logger
 }
 
-// New creates a new logger.
+// PluginLogLevelEnv is the GF_PLUGIN_LOG_LEVEL environment variable, which sets the level of the loggers that New creates.
+const PluginLogLevelEnv = "GF_PLUGIN_LOG_LEVEL"
+
+// New creates a new logger at the level in PluginLogLevelEnv (trace, debug, info, warn or error), or at Debug when it is unset or unknown.
 func New() Logger {
-	return NewWithLevel(Debug)
+	return NewWithLevel(levelFromEnv())
+}
+
+func levelFromEnv() Level {
+	level := hclog.LevelFromString(os.Getenv(PluginLogLevelEnv))
+	if level == hclog.NoLevel || level == hclog.Off {
+		return Debug
+	}
+	return Level(level)
 }
 
 // NewWithLevel creates a new logger at the Level defined.
