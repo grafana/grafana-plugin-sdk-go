@@ -201,16 +201,20 @@ func isTLSCertificateVerificationError(err error) bool {
 		errors.As(err, &tlsError)
 }
 
-// isHTTPEOFError returns true if the error is an EOF error inside of url.Error or net.OpError, indicating the connection was closed prematurely by server
+// isHTTPEOFError returns true if the error is an EOF or unexpected EOF error inside of url.Error or net.OpError, indicating the connection was closed prematurely by server
 func isHTTPEOFError(err error) bool {
 	if netErr, ok := errors.AsType[*net.OpError](err); ok {
-		return errors.Is(netErr.Err, io.EOF)
+		return isEOF(netErr.Err)
 	}
 
 	if urlErr, ok := errors.AsType[*url.Error](err); ok {
-		return errors.Is(urlErr.Err, io.EOF)
+		return isEOF(urlErr.Err)
 	}
 	return false
+}
+
+func isEOF(err error) bool {
+	return errors.Is(err, io.EOF) || errors.Is(err, io.ErrUnexpectedEOF)
 }
 
 type sourceCtxKey struct{}
