@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend"
 	"github.com/grafana/grafana-plugin-sdk-go/data"
 	"github.com/grafana/grafana-plugin-sdk-go/data/converters"
 )
@@ -45,6 +46,7 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 			}
 
 			returnData = append(returnData, row)
+			i++
 
 			if len(fields) == len(types) {
 				// found all data types.  keep looping to load all the return data
@@ -82,8 +84,6 @@ func findDataTypes(rows Rows, rowLimit int64, types []*sql.ColumnType) ([]Field,
 
 				fields[colIdx] = field
 			}
-
-			i++
 		}
 		if i == rowLimit || !rows.NextResultSet() {
 			break
@@ -147,6 +147,14 @@ func frameDynamic(rows Rows, rowLimit int64, types []*sql.ColumnType, converters
 		frame.AppendRow(rowData...)
 	}
 
+	if rowLimit > 0 && int64(len(rawRows)) == rowLimit {
+		frame.AppendNotices(rowLimitNotice(rowLimit))
+	}
+
+	if err := rows.iteratorErr(); err != nil {
+		return frame, backend.DownstreamError(err)
+	}
+
 	return frame, nil
 }
 
@@ -207,4 +215,11 @@ func (rs Rows) Next() bool {
 
 func (rs Rows) Scan(dest []any) error {
 	return rs.itr.Scan(dest...)
+}
+
+func (rs Rows) iteratorErr() error {
+	if itr, has := rs.itr.(interface{ Err() error }); has {
+		return itr.Err()
+	}
+	return nil
 }
