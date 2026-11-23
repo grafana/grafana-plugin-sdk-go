@@ -6,9 +6,11 @@ import (
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"hash/maphash"
 	"os"
 	"strconv"
 	"strings"
+	"unique"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
@@ -31,6 +33,90 @@ const (
 // GrafanaCfg represents Grafana configuration
 type GrafanaCfg struct {
 	config map[string]string
+	// hashes is non-nil only in a Digest.
+	hashes map[unique.Handle[string]]uint64
+}
+
+var valueSeed = maphash.MakeSeed()
+
+// Digest returns a GrafanaCfg that is Equal to c but keeps a hash of each value in place of the value.
+// Its getters return zero values. Diff still names the keys that differ.
+func (c *GrafanaCfg) Digest() *GrafanaCfg {
+	if c == nil || c.hashes != nil {
+		return c
+	}
+	hashes := make(map[unique.Handle[string]]uint64, len(c.config))
+	for k, v := range c.config {
+		hashes[unique.Make(k)] = maphash.String(valueSeed, v)
+	}
+	return &GrafanaCfg{hashes: hashes}
+}
+
+func (c *GrafanaCfg) valueHashes() map[string]uint64 {
+	if c == nil {
+		return nil
+	}
+	hashes := make(map[string]uint64, max(len(c.config), len(c.hashes)))
+	for k, v := range c.config {
+		hashes[k] = maphash.String(valueSeed, v)
+	}
+	for k, h := range c.hashes {
+		hashes[k.Value()] = h
+	}
+	return hashes
+}
+
+var emptyValueHash = maphash.String(valueSeed, "")
+
+func (c *GrafanaCfg) hasValue(key string) bool {
+	if c.hashes == nil {
+		return c.config[key] != ""
+	}
+	h, ok := c.hashes[unique.Make(key)]
+	return ok && h != emptyValueHash
+}
+
+func (c *GrafanaCfg) valueHash(key string, handle unique.Handle[string]) (uint64, bool) {
+	if c.hashes != nil {
+		h, ok := c.hashes[handle]
+		return h, ok
+	}
+	v, ok := c.config[key]
+	return maphash.String(valueSeed, v), ok
+}
+
+func (c *GrafanaCfg) keptKeys(ignored map[string]struct{}) int {
+	if len(ignored) == 0 {
+		return len(c.config) + len(c.hashes)
+	}
+	n := 0
+	for k := range c.config {
+		if _, skip := ignored[k]; !skip {
+			n++
+		}
+	}
+	for k := range c.hashes {
+		if _, skip := ignored[k.Value()]; !skip {
+			n++
+		}
+	}
+	return n
+}
+
+// digestEqual compares the counts of kept keys, so finding each kept key of d in c proves that the key sets are the same.
+func digestEqual(d, c *GrafanaCfg, ignored map[string]struct{}) bool {
+	kept := 0
+	for k, h := range d.hashes {
+		key := k.Value()
+		if _, skip := ignored[key]; skip {
+			continue
+		}
+		kept++
+		if h2, ok := c.valueHash(key, k); !ok || h2 != h {
+			return false
+		}
+	}
+	return kept == c.keptKeys(ignored)
 }
 
 type configKey struct{}
@@ -98,6 +184,12 @@ func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
 	}
 
 	ignored := unusedKeys(c, c2)
+	if c.hashes != nil {
+		return digestEqual(c, c2, ignored)
+	}
+	if c2.hashes != nil {
+		return digestEqual(c2, c, ignored)
+	}
 	for k, v1 := range c.config {
 		if _, skip := ignored[k]; skip {
 			continue
@@ -125,7 +217,7 @@ var pdcFilePathKeys = map[string]struct{}{
 }
 
 func unusedKeys(c, c2 *GrafanaCfg) map[string]struct{} {
-	if c.Get(proxy.PluginSecureSocksProxyRootCAsContents) != "" && c2.Get(proxy.PluginSecureSocksProxyRootCAsContents) != "" {
+	if c.hasValue(proxy.PluginSecureSocksProxyRootCAsContents) && c2.hasValue(proxy.PluginSecureSocksProxyRootCAsContents) {
 		return pdcFilePathKeys
 	}
 	return nil
@@ -137,6 +229,9 @@ func unusedKeys(c, c2 *GrafanaCfg) map[string]struct{} {
 func (c *GrafanaCfg) Diff(c2 *GrafanaCfg) []string {
 	if c == nil && c2 == nil {
 		return []string{}
+	}
+	if (c != nil && c.hashes != nil) || (c2 != nil && c2.hashes != nil) {
+		return diffHashes(c.valueHashes(), c2.valueHashes())
 	}
 	if c == nil {
 		var keys []string
@@ -170,6 +265,21 @@ func (c *GrafanaCfg) Diff(c2 *GrafanaCfg) []string {
 		}
 	}
 
+	return changed
+}
+
+func diffHashes(h1, h2 map[string]uint64) []string {
+	changed := []string{}
+	for k, v1 := range h1 {
+		if v2, ok := h2[k]; !ok || v1 != v2 {
+			changed = append(changed, k)
+		}
+	}
+	for k := range h2 {
+		if _, ok := h1[k]; !ok {
+			changed = append(changed, k)
+		}
+	}
 	return changed
 }
 

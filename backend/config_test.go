@@ -542,6 +542,9 @@ func TestGrafanaCfg_Equal(t *testing.T) {
 			a, b := NewGrafanaCfg(tc.a), NewGrafanaCfg(tc.b)
 			require.Equal(t, tc.equal, a.Equal(b))
 			require.Equal(t, tc.equal, b.Equal(a))
+			require.Equal(t, tc.equal, a.Digest().Equal(b), "digest and full")
+			require.Equal(t, tc.equal, b.Equal(a.Digest()), "full and digest")
+			require.Equal(t, tc.equal, a.Digest().Equal(b.Digest()), "digest and digest")
 		})
 	}
 }
