@@ -147,3 +147,18 @@ func TestTimeField(t *testing.T) {
 		})
 	}
 }
+
+func TestFieldFloatAtTimeOutsideNanoRange(t *testing.T) {
+	// UnixNano overflows outside of roughly the years 1678-2262.
+	future := time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)
+
+	f := data.NewField("t", nil, []time.Time{future})
+	v, err := f.FloatAt(0)
+	require.NoError(t, err)
+	require.Equal(t, float64(future.UnixMilli()), v)
+
+	nf := data.NewField("t", nil, []*time.Time{&future})
+	nv, err := nf.NullableFloatAt(0)
+	require.NoError(t, err)
+	require.Equal(t, float64(future.UnixMilli()), *nv)
+}

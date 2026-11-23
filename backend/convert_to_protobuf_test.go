@@ -158,3 +158,29 @@ func TestInstanceSettingsConversion(t *testing.T) {
 		require.Equal(t, before.DecryptedSecureJSONData, after.DecryptedSecureJSONData)
 	})
 }
+
+func TestConvertTimeRangeOutsideNanoRange(t *testing.T) {
+	// UnixNano overflows outside of roughly the years 1678-2262.
+	tr := TimeRange{
+		From: time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC),
+		To:   time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC),
+	}
+
+	pb := ToProto().TimeRange(tr)
+	require.Equal(t, tr.From.UnixMilli(), pb.FromEpochMS)
+	require.Equal(t, tr.To.UnixMilli(), pb.ToEpochMS)
+
+	back := FromProto().TimeRange(pb)
+	require.True(t, tr.From.Equal(back.From), "from: %s != %s", tr.From, back.From)
+	require.True(t, tr.To.Equal(back.To), "to: %s != %s", tr.To, back.To)
+}
+
+func TestConvertZeroTimesRoundTrip(t *testing.T) {
+	pb := ToProto().TimeRange(TimeRange{})
+	back := FromProto().TimeRange(pb)
+	require.True(t, back.From.IsZero())
+	require.True(t, back.To.IsZero())
+
+	s := FromProto().DataSourceInstanceSettings(ToProto().DataSourceInstanceSettings(&DataSourceInstanceSettings{}), "x")
+	require.True(t, s.Updated.IsZero())
+}

@@ -402,3 +402,19 @@ func TestTimeRange(t *testing.T) {
 		})
 	})
 }
+
+func TestTimeRangeEpochOutsideNanoRange(t *testing.T) {
+	// UnixNano overflows outside of roughly the years 1678-2262.
+	future := time.Date(3000, 1, 1, 0, 0, 0, 0, time.UTC)
+	past := time.Date(1000, 1, 1, 0, 0, 0, 0, time.UTC)
+	tr := TimeRange{
+		From: strconv.FormatInt(past.UnixMilli(), 10),
+		To:   strconv.FormatInt(future.UnixMilli(), 10),
+		Now:  time.Now(),
+	}
+
+	require.Equal(t, past.UnixMilli(), tr.GetFromAsMsEpoch())
+	require.Equal(t, future.UnixMilli(), tr.GetToAsMsEpoch())
+	require.Equal(t, past.Unix(), tr.GetFromAsSecondsEpoch())
+	require.Equal(t, future.Unix(), tr.GetToAsSecondsEpoch())
+}
