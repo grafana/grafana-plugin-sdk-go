@@ -8,6 +8,8 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"os"
 	"syscall"
@@ -281,6 +283,21 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			expected: true,
 		},
 		{
+			name:     "url io.ErrUnexpectedEOF error",
+			err:      &url.Error{Op: "Get", URL: "https://example.com", Err: io.ErrUnexpectedEOF},
+			expected: true,
+		},
+		{
+			name:     "net op io.ErrUnexpectedEOF error",
+			err:      &net.OpError{Err: io.ErrUnexpectedEOF},
+			expected: true,
+		},
+		{
+			name:     "io.ErrUnexpectedEOF error",
+			err:      io.ErrUnexpectedEOF,
+			expected: false,
+		},
+		{
 			name:     "wrapped url io.EOF error",
 			err:      fmt.Errorf("wrapped: %w", &url.Error{Op: "Get", URL: "https://example.com", Err: io.EOF}),
 			expected: true,
@@ -330,6 +347,29 @@ func TestIsDownstreamHTTPError(t *testing.T) {
 			}
 		})
 	}
+}
+
+func TestIsDownstreamHTTPErrorServerClosesMidResponse(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		hj, ok := w.(http.Hijacker)
+		if !ok {
+			t.Error("response writer does not support hijacking")
+			return
+		}
+		conn, buf, err := hj.Hijack()
+		if err != nil {
+			t.Errorf("hijack: %v", err)
+			return
+		}
+		_, _ = buf.WriteString("HTTP/1.1 200 OK\r\n")
+		_ = buf.Flush()
+		_ = conn.Close()
+	}))
+	t.Cleanup(srv.Close)
+
+	_, err := srv.Client().Get(srv.URL) //nolint:bodyclose,noctx // the request fails before a response exists
+	require.ErrorIs(t, err, io.ErrUnexpectedEOF)
+	assert.True(t, status.IsDownstreamHTTPError(err), "IsDownstreamHTTPError(%v)", err)
 }
 
 var _ net.Error = &fakeNetworkError{}
