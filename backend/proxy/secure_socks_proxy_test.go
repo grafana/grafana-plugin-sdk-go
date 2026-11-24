@@ -8,6 +8,7 @@ import (
 	"crypto/x509/pkix"
 	"encoding/pem"
 	"errors"
+	"io"
 	"io/fs"
 	"math/big"
 	"net"
@@ -18,6 +19,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/net/proxy"
@@ -410,6 +413,160 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 		require.Error(t, err)
 		assert.True(t, status.IsDownstreamError(err))
 	})
+
+	t.Run("distinguishes proxy dial connection refused from SOCKS5 reply codes", func(t *testing.T) {
+		// Start a minimal mock SOCKS5 server that returns a configurable reply byte.
+		startMockSocksServer := func(t *testing.T, replyByte byte) string {
+			t.Helper()
+			ln, err := net.Listen("tcp", "127.0.0.1:0")
+			require.NoError(t, err)
+			t.Cleanup(func() { _ = ln.Close() })
+
+			go func() {
+				for {
+					conn, err := ln.Accept()
+					if err != nil {
+						return
+					}
+					go func(c net.Conn) {
+						defer func() { _ = c.Close() }()
+						// Read method greeting: VER, NMETHODS, METHODS...
+						hdr := make([]byte, 2)
+						if _, err := io.ReadFull(c, hdr); err != nil {
+							return
+						}
+						methods := make([]byte, hdr[1])
+						if _, err := io.ReadFull(c, methods); err != nil {
+							return
+						}
+						// Respond: VER=5, METHOD=0 (no auth)
+						if _, err := c.Write([]byte{0x05, 0x00}); err != nil {
+							return
+						}
+						// Read connect request header: VER, CMD, RSV, ATYP
+						reqHdr := make([]byte, 4)
+						if _, err := io.ReadFull(c, reqHdr); err != nil {
+							return
+						}
+						switch reqHdr[3] {
+						case 0x01: // IPv4 + port
+							_, _ = io.ReadFull(c, make([]byte, 4+2))
+						case 0x03: // FQDN len + FQDN + port
+							lenBuf := make([]byte, 1)
+							if _, err := io.ReadFull(c, lenBuf); err != nil {
+								return
+							}
+							_, _ = io.ReadFull(c, make([]byte, int(lenBuf[0])+2))
+						case 0x04: // IPv6 + port
+							_, _ = io.ReadFull(c, make([]byte, 16+2))
+						}
+						// Send SOCKS5 reply with the configured reply byte.
+						_, _ = c.Write([]byte{0x05, replyByte, 0x00, 0x01, 0, 0, 0, 0, 0, 0})
+					}(conn)
+				}
+			}()
+			return ln.Addr().String()
+		}
+
+		// Find a closed local port so dialing the SOCKS proxy itself returns ECONNREFUSED.
+		closedLn, err := net.Listen("tcp", "127.0.0.1:0")
+		require.NoError(t, err)
+		closedAddr := closedLn.Addr().String()
+		require.NoError(t, closedLn.Close())
+
+		tests := []struct {
+			name         string
+			proxyAddr    string
+			expectedCode string
+		}{
+			{
+				name:         "SOCKS5 reply 02 connection not allowed by ruleset",
+				proxyAddr:    startMockSocksServer(t, 0x02),
+				expectedCode: "2",
+			},
+			{
+				name:         "SOCKS5 reply 05 connection refused from agent",
+				proxyAddr:    startMockSocksServer(t, 0x05),
+				expectedCode: "5",
+			},
+			{
+				name:         "TCP ECONNREFUSED dialing SOCKS proxy itself",
+				proxyAddr:    closedAddr,
+				expectedCode: "dial_error",
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				dsName := "test-" + tc.name
+				dsType := "test-socks-code"
+
+				socksDialer, err := proxy.SOCKS5("tcp", tc.proxyAddr, nil, &net.Dialer{Timeout: time.Second})
+				require.NoError(t, err)
+				d := newInstrumentedSocksDialer(socksDialer, dsName, dsType).(proxy.ContextDialer)
+
+				before := getSocksDurationSampleCount(t, tc.expectedCode, dsName, dsType)
+				conn, err := d.DialContext(context.Background(), "tcp", "example.com:80")
+				assert.Nil(t, conn)
+				require.Error(t, err)
+
+				after := getSocksDurationSampleCount(t, tc.expectedCode, dsName, dsType)
+				assert.Equal(t, before+1, after, "expected metric code %q to be incremented", tc.expectedCode)
+			})
+		}
+	})
+
+	t.Run("preserves timeout, EOF, and canceled metric codes on proxy dial errors", func(t *testing.T) {
+		tests := []struct {
+			name         string
+			err          error
+			expectedCode string
+		}{
+			{
+				name:         "EOF",
+				err:          &net.OpError{Op: "socks connect", Net: "tcp", Err: io.EOF},
+				expectedCode: "eof_error",
+			},
+			{
+				name:         "i/o timeout on proxy dial",
+				err:          &net.OpError{Op: "socks connect", Net: "tcp", Err: &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("i/o timeout")}},
+				expectedCode: "io_timeout_error",
+			},
+			{
+				name:         "context canceled on proxy dial",
+				err:          &net.OpError{Op: "socks connect", Net: "tcp", Err: &net.OpError{Op: "dial", Net: "tcp", Err: context.Canceled}},
+				expectedCode: "context_canceled_error",
+			},
+			{
+				name:         "operation was canceled on proxy dial",
+				err:          &net.OpError{Op: "socks connect", Net: "tcp", Err: &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("operation was canceled")}},
+				expectedCode: "context_canceled_error",
+			},
+		}
+
+		for _, tc := range tests {
+			t.Run(tc.name, func(t *testing.T) {
+				dsName := "test-" + tc.name
+				dsType := "test-socks-special"
+				md := fakeConn{err: tc.err}
+				d := newInstrumentedSocksDialer(md, dsName, dsType).(proxy.ContextDialer)
+
+				before := getSocksDurationSampleCount(t, tc.expectedCode, dsName, dsType)
+				_, err := d.DialContext(context.Background(), "tcp", "example.com:80")
+				require.Error(t, err)
+				assert.Equal(t, before+1, getSocksDurationSampleCount(t, tc.expectedCode, dsName, dsType))
+			})
+		}
+	})
+}
+
+func getSocksDurationSampleCount(t *testing.T, code, dsName, dsType string) uint64 {
+	t.Helper()
+	observer, err := secureSocksRequestsDuration.GetMetricWithLabelValues(code, dsName, dsType)
+	require.NoError(t, err)
+	metric := &dto.Metric{}
+	require.NoError(t, observer.(prometheus.Histogram).Write(metric))
+	return metric.GetHistogram().GetSampleCount()
 }
 
 func Test_getTLSDialer(t *testing.T) {
