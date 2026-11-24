@@ -12,11 +12,9 @@ import (
 func TestSchemaSupport(t *testing.T) {
 	val := JSONSchema{
 		Spec: &spec.Schema{
-			SchemaProps: spec.SchemaProps{
-				Description: "hello",
-				Schema:      draft04,
-				ID:          "something",
-			},
+			Description: "hello",
+			Schema:      draft04,
+			ID:          "something",
 		},
 	}
 	jj, err := json.MarshalIndent(val, "", "")

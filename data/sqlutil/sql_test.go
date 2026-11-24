@@ -156,11 +156,9 @@ func makeSingleResultSet(
 ) *sql.Rows {
 	rows, _ := sql.OpenDB(&fakeDB{
 		rows: &singleResultSet{
-			baseRows: baseRows{
-				columnNames: columnNames,
-			},
-			rows:       data,
-			currentRow: -1,
+			columnNames: columnNames,
+			rows:        data,
+			currentRow:  -1,
 		},
 	}).Query("")
 	return rows
@@ -173,12 +171,10 @@ func makeSingleResultSetWithScanTypes(
 ) *sql.Rows {
 	rows, _ := sql.OpenDB(&fakeDB{
 		rows: &singleResultSet{
-			baseRows: baseRows{
-				columnNames: columnNames,
-			},
-			rows:       data,
-			currentRow: -1,
-			scanTypes:  scanTypes,
+			columnNames: columnNames,
+			rows:        data,
+			currentRow:  -1,
+			scanTypes:   scanTypes,
 		},
 	}).Query("")
 	return rows
@@ -191,9 +187,7 @@ func makeSingleResultSetWithTypeNames(
 ) *sql.Rows {
 	rows, _ := sql.OpenDB(&fakeDB{
 		rows: &singleResultSet{
-			baseRows: baseRows{
-				columnNames: columnNames,
-			},
+			columnNames: columnNames,
 			rows:        data,
 			currentRow:  -1,
 			dbTypeNames: dbTypeNames,
@@ -208,9 +202,7 @@ func makeMultipleResultSets(
 ) *sql.Rows {
 	rows, _ := sql.OpenDB(&fakeDB{
 		rows: &multipleResultSets{
-			baseRows: baseRows{
-				columnNames: columnNames,
-			},
+			columnNames:      columnNames,
 			resultSets:       resultSets,
 			currentResultSet: -1,
 			currentRow:       -1,
