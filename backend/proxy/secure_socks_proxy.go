@@ -303,8 +303,24 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 	case errors.As(err, &opErr):
 		unknownCode := socksUnknownError.FindStringSubmatch(err.Error())
 
+		// Distinguish transport-level dial errors to the SOCKS proxy server itself
+		// (e.g. TCP ECONNREFUSED to PDC Distributor) from SOCKS5 reply codes returned
+		// by the proxy/agent (e.g. "unknown error connection refused" -> code "5").
+		var innerOpErr *net.OpError
+		isProxyDialErr := opErr.Op == "dial" || (errors.As(opErr.Err, &innerOpErr) && innerOpErr.Op == "dial")
+
 		// Socks errors defined here: https://cs.opensource.google/go/x/net/+/refs/tags/v0.15.0:internal/socks/socks.go;l=40-63
 		switch {
+		case strings.HasSuffix(err.Error(), "EOF"):
+			code = "eof_error"
+		case strings.HasSuffix(err.Error(), "i/o timeout"):
+			code = "io_timeout_error"
+		case strings.HasSuffix(err.Error(), "context canceled"):
+			code = "context_canceled_error"
+		case strings.HasSuffix(err.Error(), "operation was canceled"):
+			code = "context_canceled_error"
+		case isProxyDialErr:
+			code = "dial_error"
 		case strings.Contains(err.Error(), "general SOCKS server failure"):
 			code = "1"
 		case strings.Contains(err.Error(), "connection not allowed by ruleset"):
@@ -321,14 +337,6 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 			code = "7"
 		case strings.Contains(err.Error(), "address type not supported"):
 			code = "8"
-		case strings.HasSuffix(err.Error(), "EOF"):
-			code = "eof_error"
-		case strings.HasSuffix(err.Error(), "i/o timeout"):
-			code = "io_timeout_error"
-		case strings.HasSuffix(err.Error(), "context canceled"):
-			code = "context_canceled_error"
-		case strings.HasSuffix(err.Error(), "operation was canceled"):
-			code = "context_canceled_error"
 		case len(unknownCode) > 1:
 			code = unknownCode[1]
 		default:
