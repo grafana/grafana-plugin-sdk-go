@@ -304,8 +304,8 @@ func (d *instrumentedSocksDialer) DialContext(ctx context.Context, n, addr strin
 		unknownCode := socksUnknownError.FindStringSubmatch(err.Error())
 
 		// Distinguish transport-level dial errors to the SOCKS proxy server itself
-		// (e.g. TCP ECONNREFUSED to PDC Distributor) from SOCKS5 reply codes returned
-		// by the proxy/agent (e.g. "unknown error connection refused" -> code "5").
+		// (e.g. TCP ECONNREFUSED to the SOCKS proxy server) from SOCKS5 reply codes
+		// returned by the proxy (e.g. "unknown error connection refused" -> code "5").
 		var innerOpErr *net.OpError
 		isProxyDialErr := opErr.Op == "dial" || (errors.As(opErr.Err, &innerOpErr) && innerOpErr.Op == "dial")
 

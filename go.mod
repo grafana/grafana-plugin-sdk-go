@@ -32,6 +32,7 @@ require (
 	github.com/olekukonko/tablewriter v1.1.5
 	github.com/patrickmn/go-cache v2.1.0+incompatible
 	github.com/prometheus/client_golang v1.25.0
+	github.com/prometheus/client_model v0.6.3
 	github.com/prometheus/common v0.74.0
 	github.com/stretchr/testify v1.12.1
 	github.com/unknwon/bra v0.0.0-20200517080246-1e3013ecaff8
@@ -114,7 +115,6 @@ require (
 	github.com/olekukonko/ll v0.1.9 // indirect
 	github.com/pandatix/go-abnf v0.5.5 // indirect
 	github.com/pierrec/lz4/v4 v4.1.33 // indirect
-	github.com/prometheus/client_model v0.6.3 // indirect
 	github.com/prometheus/procfs v0.23.0 // indirect
 	github.com/russross/blackfriday/v2 v2.1.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect

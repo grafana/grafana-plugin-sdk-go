@@ -19,6 +19,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus"
 	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -414,15 +415,6 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 	})
 
 	t.Run("distinguishes proxy dial connection refused from SOCKS5 reply codes", func(t *testing.T) {
-		getSampleCount := func(code, dsName, dsType string) uint64 {
-			t.Helper()
-			observer, err := secureSocksRequestsDuration.GetMetricWithLabelValues(code, dsName, dsType)
-			require.NoError(t, err)
-			metric := &dto.Metric{}
-			require.NoError(t, observer.(interface{ Write(*dto.Metric) error }).Write(metric))
-			return metric.GetHistogram().GetSampleCount()
-		}
-
 		// Start a minimal mock SOCKS5 server that returns a configurable reply byte.
 		startMockSocksServer := func(t *testing.T, replyByte byte) string {
 			t.Helper()
@@ -513,27 +505,18 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 				require.NoError(t, err)
 				d := newInstrumentedSocksDialer(socksDialer, dsName, dsType).(proxy.ContextDialer)
 
-				before := getSampleCount(tc.expectedCode, dsName, dsType)
+				before := getSocksDurationSampleCount(t, tc.expectedCode, dsName, dsType)
 				conn, err := d.DialContext(context.Background(), "tcp", "example.com:80")
 				assert.Nil(t, conn)
 				require.Error(t, err)
 
-				after := getSampleCount(tc.expectedCode, dsName, dsType)
+				after := getSocksDurationSampleCount(t, tc.expectedCode, dsName, dsType)
 				assert.Equal(t, before+1, after, "expected metric code %q to be incremented", tc.expectedCode)
 			})
 		}
 	})
 
 	t.Run("preserves timeout, EOF, and canceled metric codes on proxy dial errors", func(t *testing.T) {
-		getSampleCount := func(code, dsName, dsType string) uint64 {
-			t.Helper()
-			observer, err := secureSocksRequestsDuration.GetMetricWithLabelValues(code, dsName, dsType)
-			require.NoError(t, err)
-			metric := &dto.Metric{}
-			require.NoError(t, observer.(interface{ Write(*dto.Metric) error }).Write(metric))
-			return metric.GetHistogram().GetSampleCount()
-		}
-
 		tests := []struct {
 			name         string
 			err          error
@@ -554,6 +537,11 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 				err:          &net.OpError{Op: "socks connect", Net: "tcp", Err: &net.OpError{Op: "dial", Net: "tcp", Err: context.Canceled}},
 				expectedCode: "context_canceled_error",
 			},
+			{
+				name:         "operation was canceled on proxy dial",
+				err:          &net.OpError{Op: "socks connect", Net: "tcp", Err: &net.OpError{Op: "dial", Net: "tcp", Err: errors.New("operation was canceled")}},
+				expectedCode: "context_canceled_error",
+			},
 		}
 
 		for _, tc := range tests {
@@ -563,13 +551,22 @@ func TestInstrumentedSocksDialer(t *testing.T) {
 				md := fakeConn{err: tc.err}
 				d := newInstrumentedSocksDialer(md, dsName, dsType).(proxy.ContextDialer)
 
-				before := getSampleCount(tc.expectedCode, dsName, dsType)
+				before := getSocksDurationSampleCount(t, tc.expectedCode, dsName, dsType)
 				_, err := d.DialContext(context.Background(), "tcp", "example.com:80")
 				require.Error(t, err)
-				assert.Equal(t, before+1, getSampleCount(tc.expectedCode, dsName, dsType))
+				assert.Equal(t, before+1, getSocksDurationSampleCount(t, tc.expectedCode, dsName, dsType))
 			})
 		}
 	})
+}
+
+func getSocksDurationSampleCount(t *testing.T, code, dsName, dsType string) uint64 {
+	t.Helper()
+	observer, err := secureSocksRequestsDuration.GetMetricWithLabelValues(code, dsName, dsType)
+	require.NoError(t, err)
+	metric := &dto.Metric{}
+	require.NoError(t, observer.(prometheus.Histogram).Write(metric))
+	return metric.GetHistogram().GetSampleCount()
 }
 
 func Test_getTLSDialer(t *testing.T) {
