@@ -211,6 +211,8 @@ func (t ConvertToProtobuf) QueryChunkedDataRequest(req *QueryChunkedDataRequest)
 // QueryDataResponse converts the SDK version of a QueryDataResponse to the protobuf version.
 // It will set the RefID on the frames to the RefID key in Responses if a Frame's
 // RefId property is an empty string.
+// With DataFrameFormat_JSON, a DataResponse is encoded as JSON only if every frame has at most 16 rows and no string
+// or JSON field, and as Arrow otherwise. The Format of each returned DataResponse is the format of its frames.
 func (t ConvertToProtobuf) QueryDataResponse(format DataFrameFormat, res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
 	pQDR := &pluginv2.QueryDataResponse{
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
@@ -225,10 +227,14 @@ func (t ConvertToProtobuf) QueryDataResponse(format DataFrameFormat, res *QueryD
 			}
 		}
 		var err error
-		pDR := pluginv2.DataResponse{
-			Format: pluginv2.DataFrameFormat(format),
+		frameFormat := format
+		if format == DataFrameFormat_JSON && !jsonSuitsFrames(dr.Frames) {
+			frameFormat = DataFrameFormat_ARROW
 		}
-		switch format {
+		pDR := pluginv2.DataResponse{
+			Format: pluginv2.DataFrameFormat(frameFormat),
+		}
+		switch frameFormat {
 		case DataFrameFormat_ARROW:
 			pDR.Frames, err = dr.Frames.MarshalArrow()
 		case DataFrameFormat_JSON:
