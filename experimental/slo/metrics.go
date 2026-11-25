@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/instancemgmt"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promauto"
 )
@@ -142,13 +143,16 @@ type MetricsWrapper struct {
 	healthcheckHandler backend.CheckHealthHandler
 	queryDataHandler   backend.QueryDataHandler
 	resourceHandler    backend.CallResourceHandler
+	disposer           instancemgmt.InstanceDisposer
 	Metrics            Collector
 }
+
+var _ instancemgmt.InstanceDisposer = (*MetricsWrapper)(nil)
 
 // NewMetricsWrapper creates a new MetricsWrapper instance
 func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings, c ...Collector) *MetricsWrapper {
 	collector := NewMetrics(s.Name, s.Type)
-	if len(c) > 0 {
+	if len(c) > 0 && c[0] != nil {
 		collector = c[0]
 	}
 	wrapper := &MetricsWrapper{
@@ -165,7 +169,17 @@ func NewMetricsWrapper(plugin any, s backend.DataSourceInstanceSettings, c ...Co
 	if r, ok := plugin.(backend.CallResourceHandler); ok {
 		wrapper.resourceHandler = r
 	}
+	if d, ok := plugin.(instancemgmt.InstanceDisposer); ok {
+		wrapper.disposer = d
+	}
 	return wrapper
+}
+
+// Dispose forwards Dispose to the wrapped plugin instance, if it implements instancemgmt.InstanceDisposer
+func (ds *MetricsWrapper) Dispose() {
+	if ds.disposer != nil {
+		ds.disposer.Dispose()
+	}
 }
 
 // QueryData calls the QueryDataHandler and collects metrics
