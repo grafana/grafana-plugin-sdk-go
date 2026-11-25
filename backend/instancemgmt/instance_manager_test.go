@@ -2,11 +2,13 @@ package instancemgmt
 
 import (
 	"context"
+	"errors"
 	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
 
+	dto "github.com/prometheus/client_model/go"
 	"github.com/stretchr/testify/require"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
@@ -64,6 +66,45 @@ func TestInstanceManager(t *testing.T) {
 			})
 		})
 	})
+}
+
+func TestInstanceManagerFailedRebuild(t *testing.T) {
+	ctx := context.Background()
+	newPluginContext := func() backend.PluginContext {
+		return backend.PluginContext{
+			OrgID: 1, // nolint:staticcheck
+			AppInstanceSettings: &backend.AppInstanceSettings{
+				Updated: time.Now(),
+			},
+		}
+	}
+
+	tip := &testInstanceProvider{}
+	im := newInstanceManager(tip, time.Millisecond)
+
+	gaugeBefore := gaugeValue(t)
+	instance, err := im.Get(ctx, newPluginContext())
+	require.NoError(t, err)
+	require.Equal(t, gaugeBefore+1, gaugeValue(t))
+
+	tip.newInstanceErr = errors.New("bad settings")
+	for i := 0; i < 3; i++ {
+		_, err = im.Get(ctx, newPluginContext())
+		require.Error(t, err)
+	}
+	time.Sleep(20 * time.Millisecond)
+
+	require.False(t, instance.(*testInstance).disposed.Load(), "stale instance must not be disposed by failed rebuilds")
+	require.Equal(t, gaugeBefore+1, gaugeValue(t), "failed rebuilds must not change the gauge")
+
+	tip.newInstanceErr = nil
+	newInstance, err := im.Get(ctx, newPluginContext())
+	require.NoError(t, err)
+	require.NotSame(t, instance, newInstance)
+	instance.(*testInstance).wg.Wait()
+	require.Equal(t, int64(1), instance.(*testInstance).disposedTimes.Load())
+	time.Sleep(20 * time.Millisecond)
+	require.Equal(t, gaugeBefore+1, gaugeValue(t))
 }
 
 func TestInstanceManagerConcurrency(t *testing.T) {
@@ -222,6 +263,7 @@ func (ti *testInstance) Dispose() {
 }
 
 type testInstanceProvider struct {
+	newInstanceErr  error
 	delay           time.Duration
 	disposeGate     <-chan struct{}
 	needsUpdateHook func(backend.PluginContext)
@@ -244,6 +286,9 @@ func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext ba
 	if tip.delay > 0 {
 		time.Sleep(tip.delay)
 	}
+	if tip.newInstanceErr != nil {
+		return nil, tip.newInstanceErr
+	}
 
 	ti := &testInstance{
 		orgID:       pluginContext.OrgID, // nolint:staticcheck
@@ -253,4 +298,11 @@ func (tip *testInstanceProvider) NewInstance(_ context.Context, pluginContext ba
 	ti.wg.Add(1)
 
 	return ti, nil
+}
+
+func gaugeValue(t *testing.T) float64 {
+	t.Helper()
+	m := &dto.Metric{}
+	require.NoError(t, activeInstances.Write(m))
+	return m.GetGauge().GetValue()
 }
