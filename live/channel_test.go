@@ -97,6 +97,26 @@ func TestParseChannel_IsValid(t *testing.T) {
 			isValid: false,
 		},
 		{
+			name:    "invalid_scope_has_symbols_between_upper_and_lower_case",
+			id:      "a[b/test/path",
+			isValid: false,
+		},
+		{
+			name:    "invalid_namespace_has_caret_or_backtick",
+			id:      "grafana/te^st`/path",
+			isValid: false,
+		},
+		{
+			name:    "invalid_path_has_backslash",
+			id:      "grafana/test/pa\\th",
+			isValid: false,
+		},
+		{
+			name:    "valid_underscore_and_mixed_case",
+			id:      "Plugin_X/Name_1-z/Path_A=z.9",
+			isValid: true,
+		},
+		{
 			name:    "scope_watch_dashboards",
 			id:      "watch/dashboard.grafana.app/dashboards",
 			isValid: true,
