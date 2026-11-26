@@ -212,6 +212,11 @@ func (t ConvertToProtobuf) QueryChunkedDataRequest(req *QueryChunkedDataRequest)
 // It will set the RefID on the frames to the RefID key in Responses if a Frame's
 // RefId property is an empty string.
 func (t ConvertToProtobuf) QueryDataResponse(format DataFrameFormat, res *QueryDataResponse) (*pluginv2.QueryDataResponse, error) {
+	return queryDataResponseToProto(format, res, false)
+}
+
+// queryDataResponseToProto converts res, and sets each of its frames to nil once encoded when release is true.
+func queryDataResponseToProto(format DataFrameFormat, res *QueryDataResponse, release bool) (*pluginv2.QueryDataResponse, error) {
 	pQDR := &pluginv2.QueryDataResponse{
 		Responses: make(map[string]*pluginv2.DataResponse, len(res.Responses)),
 	}
@@ -230,14 +235,21 @@ func (t ConvertToProtobuf) QueryDataResponse(format DataFrameFormat, res *QueryD
 		}
 		switch format {
 		case DataFrameFormat_ARROW:
-			pDR.Frames, err = dr.Frames.MarshalArrow()
+			if release {
+				pDR.Frames, err = dr.Frames.MarshalArrowAndRelease()
+			} else {
+				pDR.Frames, err = dr.Frames.MarshalArrow()
+			}
 		case DataFrameFormat_JSON:
-			for _, f := range dr.Frames {
+			for i, f := range dr.Frames {
 				raw, err := f.MarshalJSON()
 				if err != nil {
 					return nil, err
 				}
 				pDR.Frames = append(pDR.Frames, raw)
+				if release {
+					dr.Frames[i] = nil
+				}
 			}
 		default:
 			return nil, errors.New("unsupported data frame format")

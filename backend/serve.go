@@ -71,6 +71,11 @@ type ServeOpts struct {
 
 	// Attach custom plugins plugins to the gRPC server.
 	ExtraPlugins plugin.PluginSet
+
+	// ReleaseQueryDataFrames sets the frames of each QueryData response to nil once the SDK has encoded them,
+	// so their memory can be freed while the response is sent. Set it only if the plugin keeps no reference to a
+	// response after QueryData returns.
+	ReleaseQueryDataFrames bool
 }
 
 // ServeOptsDecorator receives the ServeOpts a plugin is about to be served with and returns the
@@ -118,7 +123,9 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 		if opts.QueryChunkedDataHandler != nil {
 			queryChunkedDataHandler = handler
 		}
-		pluginOpts.DataServer = newDataSDKAdapter(handler, queryChunkedDataHandler)
+		dataServer := newDataSDKAdapter(handler, queryChunkedDataHandler)
+		dataServer.releaseFrames = opts.ReleaseQueryDataFrames
+		pluginOpts.DataServer = dataServer
 	}
 
 	if opts.StreamHandler != nil {
@@ -132,8 +139,10 @@ func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
 // The default options are:
 //   - default middlewares (see defaultGRPCMiddlewares)
 //   - otel grpc stats handler (see otelgrpc.NewServerHandler)
+//   - the QueryData response codec (see queryDataCodecOption)
 func grpcServerOptions(serveOpts ServeOpts, customOpts ...grpc.ServerOption) []grpc.ServerOption {
 	options := defaultGRPCMiddlewares(serveOpts)
+	options = append(options, queryDataCodecOption())
 	options = append(options, customOpts...)
 	return options
 }
