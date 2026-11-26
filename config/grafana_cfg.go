@@ -13,6 +13,7 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/proxy"
 	"github.com/grafana/grafana-plugin-sdk-go/experimental/featuretoggles"
+	"github.com/grafana/grafana-plugin-sdk-go/internal/togglelist"
 )
 
 const (
@@ -73,7 +74,7 @@ func (c *GrafanaCfg) Get(key string) string {
 
 // FeatureToggles returns the feature toggles that Grafana enables for the plugin.
 func (c *GrafanaCfg) FeatureToggles() FeatureToggles {
-	return FeatureToggles{enabled: c.config[featuretoggles.EnabledFeatures]}
+	return FeatureToggles{enabled: togglelist.New(c.config[featuretoggles.EnabledFeatures])}
 }
 
 func (c *GrafanaCfg) Equal(c2 *GrafanaCfg) bool {
@@ -169,26 +170,12 @@ func (c *GrafanaCfg) ProxyHash() string {
 
 // FeatureToggles represents Grafana feature toggles.
 type FeatureToggles struct {
-	// enabled is the comma-separated list of enabled feature flags.
-	enabled string
+	enabled togglelist.List
 }
 
-// IsEnabled returns true if feature f is one of the names in ft.enabled.
+// IsEnabled returns true if feature f is one of the enabled feature toggles.
 func (ft FeatureToggles) IsEnabled(f string) bool {
-	if ft.enabled == "" {
-		return false
-	}
-	rest := ft.enabled
-	for {
-		name, after, found := strings.Cut(rest, ",")
-		if name == f {
-			return true
-		}
-		if !found {
-			return false
-		}
-		rest = after
-	}
+	return ft.enabled.Contains(f)
 }
 
 // Proxy represents Grafana PDC proxy configuration.
