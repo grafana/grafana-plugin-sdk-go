@@ -123,6 +123,7 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 	im.locker.Lock(cacheKey)
 	defer im.locker.Unlock(cacheKey)
 
+	var stale *CachedInstance
 	if item, ok := im.cache.Load(cacheKey); ok {
 		ci := item.(CachedInstance)
 		needsUpdate := im.provider.NeedsUpdate(ctx, pluginContext, ci)
@@ -130,8 +131,18 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		if !needsUpdate {
 			return ci.instance, nil
 		}
+		stale = &ci
+	}
 
-		if disposer, valid := ci.instance.(InstanceDisposer); valid {
+	instance, err := im.provider.NewInstance(ctx, pluginContext)
+	if err != nil {
+		// Keep the stale instance cached and active. It is disposed once, after a
+		// replacement has been created, so failed attempts do not skew the gauge.
+		return nil, err
+	}
+
+	if stale != nil {
+		if disposer, valid := stale.instance.(InstanceDisposer); valid {
 			time.AfterFunc(im.disposeTTL, func() {
 				disposer.Dispose()
 				activeInstances.Dec()
@@ -139,11 +150,6 @@ func (im *instanceManager) Get(ctx context.Context, pluginContext backend.Plugin
 		} else {
 			activeInstances.Dec()
 		}
-	}
-
-	instance, err := im.provider.NewInstance(ctx, pluginContext)
-	if err != nil {
-		return nil, err
 	}
 	im.cache.Store(cacheKey, CachedInstance{
 		PluginContext: pluginContext,
