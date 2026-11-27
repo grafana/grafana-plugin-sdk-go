@@ -335,3 +335,32 @@ func TestParse(t *testing.T) {
 		})
 	}
 }
+
+func TestParseDurationOverflow(t *testing.T) {
+	// 292y is the largest whole number of years that fits in a time.Duration.
+	d, err := ParseDuration("292y")
+	require.NoError(t, err)
+	require.Positive(t, d)
+
+	for _, inp := range []string{"293y", "300y", "999999999y", "9999999999d", "999999999999w", "9999999999999M"} {
+		t.Run(inp, func(t *testing.T) {
+			d, err := ParseDuration(inp)
+			require.Error(t, err)
+			require.Zero(t, d)
+		})
+	}
+}
+
+func TestParseIntervalStringToTimeDurationOverflow(t *testing.T) {
+	d, err := ParseIntervalStringToTimeDuration("9223372036")
+	require.NoError(t, err)
+	require.Positive(t, d)
+
+	for _, inp := range []string{"9223372037", "99999999999", "<99999999999>"} {
+		t.Run(inp, func(t *testing.T) {
+			d, err := ParseIntervalStringToTimeDuration(inp)
+			require.Error(t, err)
+			require.Zero(t, d)
+		})
+	}
+}

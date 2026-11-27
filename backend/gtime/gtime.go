@@ -3,6 +3,7 @@ package gtime
 import (
 	"errors"
 	"fmt"
+	"math"
 	"regexp"
 	"strconv"
 	"time"
@@ -60,18 +61,24 @@ func ParseDuration(inp string) (time.Duration, error) {
 	const year = time.Duration(float64(day) * daysInAYear)
 	const month = time.Duration(float64(year) / 12)
 
+	var unit time.Duration
 	switch period {
 	case "d":
-		return dur * day, nil
+		unit = day
 	case "w":
-		return dur * week, nil
+		unit = week
 	case "M":
-		return dur * month, nil
+		unit = month
 	case "y":
-		return dur * year, nil
+		unit = year
+	default:
+		return 0, backend.DownstreamError(fmt.Errorf("invalid duration %q", inp))
 	}
 
-	return 0, backend.DownstreamError(fmt.Errorf("invalid duration %q", inp))
+	if dur > math.MaxInt64/unit {
+		return 0, backend.DownstreamError(fmt.Errorf("duration %q overflows", inp))
+	}
+	return dur * unit, nil
 }
 
 func parse(inp string) (time.Duration, string, error) {
@@ -209,6 +216,9 @@ func ParseIntervalStringToTimeDuration(interval string) (time.Duration, error) {
 		num, err := strconv.ParseInt(interval, 10, 64)
 		if err != nil {
 			return 0, err
+		}
+		if num > math.MaxInt64/int64(time.Second) {
+			return 0, backend.DownstreamError(fmt.Errorf("interval %q overflows", interval))
 		}
 		return time.Duration(num) * time.Second, nil
 	}
