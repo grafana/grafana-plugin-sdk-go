@@ -10,6 +10,12 @@ func buildStringArray(pool memory.Allocator, vec *stringVector) arrow.Array {
 	builder := array.NewStringBuilder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
+	dataSize := 0
+	for _, v := range *vec {
+		dataSize += len(v)
+	}
+	builder.ReserveData(dataSize)
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -22,6 +28,14 @@ func buildNullableStringArray(pool memory.Allocator, vec *nullableStringVector) 
 	builder := array.NewStringBuilder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
+	dataSize := 0
+	for _, v := range *vec {
+		if v != nil {
+			dataSize += len(*v)
+		}
+	}
+	builder.ReserveData(dataSize)
 
 	for _, v := range *vec {
 		if v == nil {
@@ -38,6 +52,7 @@ func buildInt8Array(pool memory.Allocator, vec *int8Vector) arrow.Array {
 	builder := array.NewInt8Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -50,6 +65,7 @@ func buildNullableInt8Array(pool memory.Allocator, vec *nullableInt8Vector) arro
 	builder := array.NewInt8Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -66,6 +82,7 @@ func buildInt16Array(pool memory.Allocator, vec *int16Vector) arrow.Array {
 	builder := array.NewInt16Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -78,6 +95,7 @@ func buildNullableInt16Array(pool memory.Allocator, vec *nullableInt16Vector) ar
 	builder := array.NewInt16Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -94,6 +112,7 @@ func buildInt32Array(pool memory.Allocator, vec *int32Vector) arrow.Array {
 	builder := array.NewInt32Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -106,6 +125,7 @@ func buildNullableInt32Array(pool memory.Allocator, vec *nullableInt32Vector) ar
 	builder := array.NewInt32Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -122,6 +142,7 @@ func buildInt64Array(pool memory.Allocator, vec *int64Vector) arrow.Array {
 	builder := array.NewInt64Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -134,6 +155,7 @@ func buildNullableInt64Array(pool memory.Allocator, vec *nullableInt64Vector) ar
 	builder := array.NewInt64Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -150,6 +172,7 @@ func buildUInt8Array(pool memory.Allocator, vec *uint8Vector) arrow.Array {
 	builder := array.NewUint8Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -162,6 +185,7 @@ func buildNullableUInt8Array(pool memory.Allocator, vec *nullableUint8Vector) ar
 	builder := array.NewUint8Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -178,6 +202,7 @@ func buildUInt16Array(pool memory.Allocator, vec *uint16Vector) arrow.Array {
 	builder := array.NewUint16Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -190,6 +215,7 @@ func buildNullableUInt16Array(pool memory.Allocator, vec *nullableUint16Vector) 
 	builder := array.NewUint16Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -206,6 +232,7 @@ func buildUInt32Array(pool memory.Allocator, vec *uint32Vector) arrow.Array {
 	builder := array.NewUint32Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -218,6 +245,7 @@ func buildNullableUInt32Array(pool memory.Allocator, vec *nullableUint32Vector) 
 	builder := array.NewUint32Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -234,6 +262,7 @@ func buildUInt64Array(pool memory.Allocator, vec *uint64Vector) arrow.Array {
 	builder := array.NewUint64Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -246,6 +275,7 @@ func buildNullableUInt64Array(pool memory.Allocator, vec *nullableUint64Vector) 
 	builder := array.NewUint64Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -262,6 +292,7 @@ func buildFloat32Array(pool memory.Allocator, vec *float32Vector) arrow.Array {
 	builder := array.NewFloat32Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -274,6 +305,7 @@ func buildNullableFloat32Array(pool memory.Allocator, vec *nullableFloat32Vector
 	builder := array.NewFloat32Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -290,6 +322,7 @@ func buildFloat64Array(pool memory.Allocator, vec *float64Vector) arrow.Array {
 	builder := array.NewFloat64Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -302,6 +335,7 @@ func buildNullableFloat64Array(pool memory.Allocator, vec *nullableFloat64Vector
 	builder := array.NewFloat64Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -318,6 +352,7 @@ func buildBoolArray(pool memory.Allocator, vec *boolVector) arrow.Array {
 	builder := array.NewBooleanBuilder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -330,6 +365,7 @@ func buildNullableBoolArray(pool memory.Allocator, vec *nullableBoolVector) arro
 	builder := array.NewBooleanBuilder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -348,6 +384,7 @@ func buildTimeArray(pool memory.Allocator, vec *timeTimeVector) arrow.Array {
 	})
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(arrow.Timestamp((v).UnixNano()))
@@ -362,6 +399,7 @@ func buildNullableTimeArray(pool memory.Allocator, vec *nullableTimeTimeVector) 
 	})
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -378,6 +416,12 @@ func buildJSONArray(pool memory.Allocator, vec *jsonRawMessageVector) arrow.Arra
 	builder := array.NewBinaryBuilder(pool, &arrow.BinaryType{})
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
+	dataSize := 0
+	for _, v := range *vec {
+		dataSize += len(v)
+	}
+	builder.ReserveData(dataSize)
 
 	for _, v := range *vec {
 		builder.Append(v)
@@ -390,6 +434,14 @@ func buildNullableJSONArray(pool memory.Allocator, vec *nullableJsonRawMessageVe
 	builder := array.NewBinaryBuilder(pool, &arrow.BinaryType{})
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
+	dataSize := 0
+	for _, v := range *vec {
+		if v != nil {
+			dataSize += len(*v)
+		}
+	}
+	builder.ReserveData(dataSize)
 
 	for _, v := range *vec {
 		if v == nil {
@@ -406,6 +458,7 @@ func buildNullableEnumArray(pool memory.Allocator, vec *nullableEnumVector) arro
 	builder := array.NewUint16Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		if v == nil {
@@ -422,6 +475,7 @@ func buildEnumArray(pool memory.Allocator, vec *enumVector) arrow.Array {
 	builder := array.NewUint16Builder(pool)
 	builder.Reserve(len(*vec))
 	defer builder.Release()
+	builder.Reserve(len(*vec))
 
 	for _, v := range *vec {
 		builder.Append(uint16(v))
