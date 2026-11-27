@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/go-plugin"
 
 	"github.com/grafana/grafana-plugin-sdk-go/backend"
+	"github.com/grafana/grafana-plugin-sdk-go/backend/auth"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/automanagement"
 	"github.com/grafana/grafana-plugin-sdk-go/internal/buildinfo"
@@ -28,6 +29,14 @@ type ManageOpts struct {
 	// Use marketplace.Licensing from the experimental/marketplace package for marketplace plugins.
 	// This is EXPERIMENTAL and is subject to change.
 	Licensing backend.ServeOptsDecorator
+
+	// HandlerMiddlewares wrap the app's handlers. They run after the SDK's
+	// default middlewares and token check, so they see the caller's AuthInfo.
+	HandlerMiddlewares []backend.HandlerMiddleware
+
+	// Authentication configures how access tokens are checked. The zero value
+	// uses the environment (see auth.Settings.Resolve).
+	Authentication auth.Settings
 }
 
 // Manage starts serving the app over gPRC with automatic instance management.
@@ -56,6 +65,8 @@ func Manage(pluginID string, instanceFactory InstanceFactoryFunc, opts ManageOpt
 		StreamHandler:           handler,
 		GRPCSettings:            opts.GRPCSettings,
 		ExtraPlugins:            opts.ExtraPlugins,
+		HandlerMiddlewares:      opts.HandlerMiddlewares,
+		Authentication:          opts.Authentication,
 	}
 	if opts.Licensing != nil {
 		var err error

@@ -22,6 +22,7 @@ import (
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 
+	"github.com/grafana/grafana-plugin-sdk-go/backend/auth"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/grpcplugin"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 	"github.com/grafana/grafana-plugin-sdk-go/backend/tracing"
@@ -71,6 +72,10 @@ type ServeOpts struct {
 
 	// Attach custom plugins plugins to the gRPC server.
 	ExtraPlugins plugin.PluginSet
+
+	// Authentication configures how access tokens are checked. Manage fills it
+	// in from the environment (see auth.Settings.Resolve).
+	Authentication auth.Settings
 }
 
 // ServeOptsDecorator receives the ServeOpts a plugin is about to be served with and returns the
@@ -151,16 +156,21 @@ func defaultGRPCMiddlewares(opts ServeOpts) []grpc.ServerOption {
 	srvMetrics := grpc_prometheus.NewServerMetrics(grpc_prometheus.WithServerHandlingTimeHistogram())
 	prometheus.MustRegister(srvMetrics)
 
+	// Checks the access token on plugin protocol v3 requests.
+	reqAuth := auth.NewRequestAuthenticator(opts.Authentication)
+
 	grpcMiddlewares := []grpc.ServerOption{
 		grpc.MaxRecvMsgSize(opts.GRPCSettings.MaxReceiveMsgSize),
 		grpc.StatsHandler(otelgrpc.NewServerHandler()),
 		grpc.ChainUnaryInterceptor(
 			srvMetrics.UnaryServerInterceptor(),
 			recovery.UnaryServerInterceptor(recovery.WithRecoveryHandler(handlePanic)),
+			reqAuth.UnaryServerInterceptor(),
 		),
 		grpc.ChainStreamInterceptor(
 			srvMetrics.StreamServerInterceptor(),
 			recovery.StreamServerInterceptor(recovery.WithRecoveryHandler(handlePanic)),
+			reqAuth.StreamServerInterceptor(),
 		),
 	}
 	if opts.GRPCSettings.MaxSendMsgSize > 0 {
@@ -307,6 +317,11 @@ func GracefulStandaloneServe(dsopts ServeOpts, info standalone.ServerSettings) e
 }
 
 // Manage runs the plugin in either standalone mode, dummy locator or normal (hashicorp) mode.
+//
+// Manage checks the access token on plugin protocol v2 calls that have one,
+// and on every plugin protocol v3 request (see the auth package). Handlers get
+// the caller with types.AuthInfoFrom. Invalid signing keys in the environment
+// make Manage fail.
 func Manage(pluginID string, serveOpts ServeOpts) error {
 	defer func() {
 		tp, ok := otel.GetTracerProvider().(tracerprovider.TracerProvider)
@@ -322,12 +337,10 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 		}
 	}()
 
-	if serveOpts.HandlerMiddlewares == nil {
-		serveOpts.HandlerMiddlewares = make([]HandlerMiddleware, 0)
+	serveOpts, err := withAuthentication(pluginID, serveOpts, defaultHandlerMiddlewares)
+	if err != nil {
+		return err
 	}
-
-	middlewares := defaultHandlerMiddlewares()
-	serveOpts.HandlerMiddlewares = append(middlewares, serveOpts.HandlerMiddlewares...)
 
 	if s, enabled := standalone.ServerModeEnabled(pluginID); enabled {
 		// Run the standalone GRPC server
@@ -348,12 +361,10 @@ func Manage(pluginID string, serveOpts ServeOpts) error {
 // TestStandaloneServe starts a gRPC server that is not managed by hashicorp.
 // The function returns the gRPC server which should be closed by the consumer.
 func TestStandaloneServe(opts ServeOpts, address string) (*grpc.Server, error) {
-	if opts.HandlerMiddlewares == nil {
-		opts.HandlerMiddlewares = make([]HandlerMiddleware, 0)
+	opts, err := withAuthentication("", opts, defaultHandlerMiddlewares)
+	if err != nil {
+		return nil, err
 	}
-
-	middlewares := defaultHandlerMiddlewares()
-	opts.HandlerMiddlewares = append(middlewares, opts.HandlerMiddlewares...)
 
 	pluginOpts, err := GRPCServeOpts(opts)
 	if err != nil {

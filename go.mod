@@ -8,6 +8,7 @@ require (
 	github.com/chromedp/cdproto v0.0.0-20260922220944-a19bff23514f
 	github.com/elazarl/goproxy v1.9.4
 	github.com/getkin/kin-openapi v0.153.0
+	github.com/go-jose/go-jose/v4 v4.1.9
 	github.com/go-openapi/jsonreference v1.0.3
 	github.com/go-openapi/loads v0.25.4
 	github.com/go-openapi/spec v1.0.1
@@ -17,6 +18,8 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
+	github.com/grafana/authlib v0.0.0-20261123164828-55facb65d32c
+	github.com/grafana/authlib/types v0.0.0-20261123164828-55facb65d32c
 	github.com/grafana/otel-profiling-go v0.7.0
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.12
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.1
@@ -46,7 +49,7 @@ require (
 	go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracegrpc v1.47.0
 	go.opentelemetry.io/otel/sdk v1.47.0
 	go.opentelemetry.io/otel/trace v1.47.0
-	golang.org/x/exp v0.0.0-20261014143641-f0251eb4aa3e
+	golang.org/x/exp v0.0.0-20261113113407-e3970619a1a4
 	golang.org/x/net v0.63.0
 	golang.org/x/oauth2 v0.38.0
 	golang.org/x/sync v0.25.0
@@ -96,7 +99,8 @@ require (
 	github.com/google/flatbuffers v25.12.19+incompatible // indirect
 	github.com/google/gnostic-models v0.7.1 // indirect
 	github.com/gorilla/mux v1.8.1 // indirect
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0 // indirect
+	github.com/grafana/dskit v0.0.0-20260108123158-1a1acfb6ef2e // indirect
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.34.0 // indirect
 	github.com/hashicorp/yamux v0.1.2 // indirect
 	github.com/jaegertracing/jaeger-idl v0.14.0 // indirect
 	github.com/klauspost/compress v1.20.3 // indirect
@@ -130,7 +134,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	go.yaml.in/yaml/v4 v4.0.0 // indirect
 	golang.org/x/crypto v0.59.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20261026165753-2ffab32bce7e // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20261118221215-c8830f628b3f // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect
