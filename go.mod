@@ -5,7 +5,7 @@ go 1.27.3
 require (
 	github.com/apache/arrow-go/v18 v18.9.0
 	github.com/cheekybits/genny v1.0.0
-	github.com/chromedp/cdproto v0.0.0-20260922220944-a19bff23514f
+	github.com/chromedp/cdproto v0.160.9
 	github.com/elazarl/goproxy v1.9.4
 	github.com/getkin/kin-openapi v0.153.0
 	github.com/go-jose/go-jose/v4 v4.1.9
@@ -75,6 +75,7 @@ require (
 	github.com/cpuguy83/go-md2man/v2 v2.0.7 // indirect
 	github.com/emicklei/go-restful/v3 v3.14.0 // indirect
 	github.com/fatih/color v1.19.0 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260213210345-44df1a37e875 // indirect
 	github.com/go-logr/logr v1.4.4 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
 	github.com/go-openapi/analysis v1.0.2 // indirect
