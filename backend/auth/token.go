@@ -6,8 +6,6 @@ import (
 	"fmt"
 	"log/slog"
 
-	"github.com/go-jose/go-jose/v4"
-	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/grafana/authlib/authn"
 	"github.com/grafana/authlib/types"
 	"google.golang.org/grpc/codes"
@@ -30,11 +28,13 @@ const (
 )
 
 // AuthenticateAccessToken checks token with authenticator, and returns ctx
-// with the caller's AuthInfo. Unlike authlib's AuthInfo, it keeps the token
-// (GetAccessToken), so clients can exchange it to act on the caller's behalf.
+// with the caller's AuthInfo. Authenticators must retain the access token in
+// AuthInfo.GetAccessToken so clients can exchange it to act on the caller's
+// behalf. Formatting or logging the returned AuthInfo omits the token.
 //
 // An invalid token returns a codes.Unauthenticated error. A failure of the
 // authenticator itself, such as fetching signing keys, returns codes.Internal.
+// Cancellation and timeouts return codes.Canceled and codes.DeadlineExceeded.
 func AuthenticateAccessToken(ctx context.Context, authenticator authn.Authenticator, token string) (context.Context, error) {
 	if authenticator == nil {
 		return nil, status.Error(codes.FailedPrecondition, "plugin has no authenticator configured")
@@ -44,6 +44,17 @@ func AuthenticateAccessToken(ctx context.Context, authenticator authn.Authentica
 	}
 	info, err := authenticator.Authenticate(ctx, authn.NewGRPCTokenProvider(metadata.Pairs(AccessTokenMetadataKey, token)))
 	if err != nil {
+		// Key retrieval can discard the underlying context error. Check the
+		// request context as well, and never expose an authenticator's error text.
+		if ctx.Err() != nil {
+			return nil, status.FromContextError(ctx.Err()).Err()
+		}
+		if errors.Is(err, context.Canceled) {
+			return nil, status.FromContextError(context.Canceled).Err()
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, status.FromContextError(context.DeadlineExceeded).Err()
+		}
 		if isInvalidTokenErr(err) {
 			return nil, status.Error(codes.Unauthenticated, "invalid access token")
 		}
@@ -52,49 +63,12 @@ func AuthenticateAccessToken(ctx context.Context, authenticator authn.Authentica
 	if info == nil {
 		return nil, status.Error(codes.Unauthenticated, "authenticator returned no identity")
 	}
-	return types.WithAuthInfo(ctx, &authenticatedAuthInfo{AuthInfo: info, accessToken: token}), nil
+	return types.WithAuthInfo(ctx, &authenticatedAuthInfo{AuthInfo: info}), nil
 }
 
-// invalidTokenErrs are go-jose errors about the token itself, which authlib
-// does not mark as unauthenticated.
-var invalidTokenErrs = []error{
-	jose.ErrCryptoFailure, // Signature mismatch, including a key of the wrong type.
-	jwt.ErrNotValidYet,
-	jwt.ErrIssuedInTheFuture,
-	jwt.ErrExpired,
-	jwt.ErrInvalidAudience,
-	jwt.ErrInvalidIssuer,
-	jwt.ErrInvalidSubject,
-	jwt.ErrInvalidID,
-	jwt.ErrInvalidClaims,
-	jwt.ErrInvalidContentType,
-	jwt.ErrUnmarshalAudience,
-	jwt.ErrUnmarshalNumericDate,
-}
-
-// isInvalidTokenErr reports whether err is caused by a bad token, rather than
-// by the plugin, such as failing to fetch signing keys.
-func isInvalidTokenErr(err error) bool {
-	if authn.IsUnauthenticatedErr(err) {
-		return true
-	}
-	for _, target := range invalidTokenErrs {
-		if errors.Is(err, target) {
-			return true
-		}
-	}
-	return false
-}
-
-// authenticatedAuthInfo is an AuthInfo that keeps its access token. Printing
-// or logging it leaves the token out.
+// authenticatedAuthInfo wraps an AuthInfo to omit tokens when printing or logging.
 type authenticatedAuthInfo struct {
 	types.AuthInfo
-	accessToken string
-}
-
-func (a *authenticatedAuthInfo) GetAccessToken() string {
-	return a.accessToken
 }
 
 func (a *authenticatedAuthInfo) String() string {

@@ -71,7 +71,8 @@ func (s Settings) Resolve(pluginID string) (Settings, error) {
 //     signing keys, each with a key ID.
 //
 // Tokens must be signed by one of the keys and have one of audiences as an
-// audience. If neither variable is set, it returns ErrNoSigningKeys.
+// audience. Empty audiences are ignored; at least one non-empty audience is
+// required. If neither variable is set, it returns ErrNoSigningKeys.
 func NewAuthenticatorFromEnv(audiences ...string) (authn.Authenticator, error) {
 	keysURL := GetEnv(EnvVarGrafanaJWKSURL)
 	keysJSON := GetEnv(EnvVarGrafanaJWKS)
@@ -81,8 +82,16 @@ func NewAuthenticatorFromEnv(audiences ...string) (authn.Authenticator, error) {
 	if keysURL != "" && keysJSON != "" {
 		return nil, fmt.Errorf("set only one of %s and %s", EnvVarGrafanaJWKSURL, EnvVarGrafanaJWKS)
 	}
+	// Copy the accepted audiences so callers cannot change the verifier's policy
+	// by reusing their slice. Empty entries do not identify a plugin or API group.
+	allowedAudiences := make([]string, 0, len(audiences))
+	for _, audience := range audiences {
+		if audience != "" {
+			allowedAudiences = append(allowedAudiences, audience)
+		}
+	}
 	// Without audiences, the verifier would accept any audience.
-	if len(audiences) == 0 {
+	if len(allowedAudiences) == 0 {
 		return nil, errors.New("a plugin ID or API group is required as the access token audience")
 	}
 
@@ -100,7 +109,7 @@ func NewAuthenticatorFromEnv(audiences ...string) (authn.Authenticator, error) {
 		keys = static
 	}
 
-	verifier := authn.NewAccessTokenVerifier(authn.VerifierConfig{AllowedAudiences: audiences}, keys)
+	verifier := authn.NewAccessTokenVerifier(authn.VerifierConfig{AllowedAudiences: allowedAudiences}, keys)
 	return authn.NewAccessTokenAuthenticator(verifier), nil
 }
 

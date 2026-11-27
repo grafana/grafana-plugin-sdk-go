@@ -15,7 +15,9 @@ import (
 	"github.com/go-jose/go-jose/v4/jwt"
 	"github.com/grafana/authlib/authn"
 	"github.com/stretchr/testify/require"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
+	"google.golang.org/grpc/status"
 )
 
 func TestNewAuthenticatorFromEnvVerifiesSignedAccessTokens(t *testing.T) {
@@ -108,6 +110,7 @@ func TestNewAuthenticatorFromEnvConfiguration(t *testing.T) {
 		{name: "encryption key", jwks: testJWKS(t, encryption), audiences: audiences, wantErr: "not a signing key"},
 		{name: "duplicate key ID", jwks: testJWKS(t, public, public), audiences: audiences, wantErr: "duplicate key ID"},
 		{name: "no audience", url: "https://auth.example.com/v1/jwks", wantErr: "a plugin ID or API group is required"},
+		{name: "empty audience", jwks: validJWKS, audiences: []string{""}, wantErr: "a plugin ID or API group is required"},
 	} {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Setenv(EnvVarGrafanaJWKSURL, tt.url)
@@ -133,6 +136,27 @@ func TestNewAuthenticatorFromEnvConfiguration(t *testing.T) {
 	authenticator, err := NewAuthenticatorFromEnv(audiences...)
 	require.NoError(t, err)
 	require.NotNil(t, authenticator)
+}
+
+func TestNewAuthenticatorFromEnvOwnsAudiences(t *testing.T) {
+	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	require.NoError(t, err)
+	t.Setenv(EnvVarGrafanaJWKSURL, "")
+	t.Setenv(EnvVarGrafanaJWKS, testJWKS(t, jose.JSONWebKey{Key: &key.PublicKey, KeyID: "test"}))
+	audiences := []string{"example-app", ""}
+	authenticator, err := NewAuthenticatorFromEnv(audiences...)
+	require.NoError(t, err)
+	require.Equal(t, []string{"example-app", ""}, audiences, "the caller's slice must not be modified")
+	audiences[0] = "other-app"
+
+	for _, audience := range []string{"example-app", "other-app", ""} {
+		_, err := AuthenticateAccessToken(context.Background(), authenticator, signTestToken(t, key, "test", audience))
+		if audience == "example-app" {
+			require.NoError(t, err)
+		} else {
+			require.Equal(t, codes.Unauthenticated, status.Code(err), audience)
+		}
+	}
 }
 
 func TestSettingsResolve(t *testing.T) {
