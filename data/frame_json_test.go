@@ -288,6 +288,82 @@ func TestJSONFrames(t *testing.T) {
 	}
 }
 
+func TestFrameJSONValuesFollowJSONIterConfig(t *testing.T) {
+	frame := data.NewFrame("",
+		data.NewField("s", nil, []string{"<a&b>"}),
+		data.NewField("f", nil, []float32{1.0000001}),
+	)
+	tests := []struct {
+		name string
+		cfg  jsoniter.API
+		want string
+	}{
+		{"standard library", jsoniter.ConfigCompatibleWithStandardLibrary, `"values":[["\u003ca\u0026b\u003e"],[1.0000001]]`},
+		{"default", jsoniter.ConfigDefault, `"values":[["\u003ca\u0026b\u003e"],[1.0000001]]`},
+		{"no HTML escaping", jsoniter.Config{EscapeHTML: false}.Froze(), `"values":[["<a&b>"],[1.0000001]]`},
+		{"fastest", jsoniter.ConfigFastest, `"values":[["<a&b>"],[1]]`},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			b, err := tt.cfg.Marshal(frame)
+			require.NoError(t, err)
+			require.Contains(t, string(b), tt.want)
+		})
+	}
+}
+
+func BenchmarkFrameToJSONShapes(b *testing.B) {
+	const rows = 100_000
+	start := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC)
+	times := make([]time.Time, rows)
+	nanoTimes := make([]*time.Time, rows)
+	values := make([]float64, rows)
+	nullableValues := make([]*float64, rows)
+	names := make([]string, rows)
+	counts := make([]int64, rows)
+	flags := make([]bool, rows)
+	lines := make([]string, rows)
+	for i := range rows {
+		times[i] = start.Add(time.Duration(i) * time.Second)
+		values[i] = 20 + float64(i%977)*0.0137
+		if i%20 != 0 {
+			t := times[i].Add(time.Duration(i%1000) * time.Microsecond)
+			nanoTimes[i] = &t
+			v := values[i]
+			if i%997 == 0 {
+				v = math.NaN()
+			}
+			nullableValues[i] = &v
+		}
+		names[i] = fmt.Sprintf(`host-%d "quoted" <tag>`, i%50)
+		counts[i] = int64(i*31) - 1_000_000
+		flags[i] = i%3 == 0
+		lines[i] = `level=info msg="request served" ` + strings.Repeat("key=value ", 30+i%25)
+	}
+	labels := data.Labels{"__name__": "node_cpu_seconds_total", "cpu": "3", "instance": "10.0.0.1:9100", "job": "node", "mode": "idle", "namespace": "monitoring"}
+
+	benchmarks := []struct {
+		name  string
+		frame *data.Frame
+	}{
+		{"time_and_float64", data.NewFrame("", data.NewField("time", nil, times), data.NewField("value", nil, values))},
+		{"nullable_with_nanos_and_nan", data.NewFrame("", data.NewField("time", nil, nanoTimes), data.NewField("value", nil, nullableValues))},
+		{"table", data.NewFrame("", data.NewField("name", nil, names), data.NewField("count", nil, counts), data.NewField("flag", nil, flags))},
+		{"log_lines", data.NewFrame("", data.NewField("time", nil, times), data.NewField("line", nil, lines))},
+		{"single_row_with_labels", data.NewFrame("", data.NewField("time", nil, times[:1]), data.NewField("value", labels, values[:1]))},
+	}
+	for _, bm := range benchmarks {
+		b.Run(bm.name, func(b *testing.B) {
+			b.ReportAllocs()
+			for b.Loop() {
+				if _, err := data.FrameToJSON(bm.frame, data.IncludeAll); err != nil {
+					b.Fatal(err)
+				}
+			}
+		})
+	}
+}
+
 func BenchmarkFrameToJSON(b *testing.B) {
 	f := goldenDF()
 	b.ReportAllocs()
