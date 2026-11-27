@@ -46,12 +46,20 @@ func serverTestTokens(t *testing.T) (authn.Authenticator, func(namespace, audien
 	return authn.NewAccessTokenAuthenticator(verifier), sign
 }
 
-func TestVerifies(t *testing.T) {
-	authenticator, _ := serverTestTokens(t)
-	require.True(t, NewRequestAuthenticator(Settings{Authenticator: authenticator}).Verifies())
-	require.True(t, NewRequestAuthenticator(Settings{Authenticator: authenticator, InsecureSkipAuthentication: true}).Verifies())
-	require.False(t, NewRequestAuthenticator(Settings{InsecureSkipAuthentication: true}).Verifies())
-	require.False(t, NewRequestAuthenticator(Settings{}).Verifies())
+func TestTrimBearer(t *testing.T) {
+	for header, want := range map[string]string{
+		"":             "",
+		"  ":           "",
+		"abc":          "abc",
+		" abc ":        "abc",
+		"Bearer abc":   "abc",
+		"bearer abc":   "abc",
+		"BEARER  abc ": "abc",
+		"Bearer":       "Bearer",
+		"Bearerabc":    "Bearerabc",
+	} {
+		require.Equal(t, want, trimBearer(header), header)
+	}
 }
 
 func TestServerInterceptors(t *testing.T) {
@@ -78,11 +86,11 @@ func TestServerInterceptors(t *testing.T) {
 		{name: "invalid token", settings: Settings{Authenticator: authenticator}, method: v3Method, ctx: incoming(AccessTokenMetadataKey, "not-a-jwt"), want: codes.Unauthenticated},
 		{name: "token for another audience", settings: Settings{Authenticator: authenticator}, method: v3Method, ctx: incoming(AccessTokenMetadataKey, sign("stacks-1", "other-app")), want: codes.Unauthenticated},
 		{name: "two tokens", settings: Settings{Authenticator: authenticator}, method: v3Method, ctx: incoming(AccessTokenMetadataKey, token, AccessTokenMetadataKey, token), want: codes.Unauthenticated},
-		{name: "a separate ID token", settings: Settings{Authenticator: authenticator}, method: v3Method, ctx: incoming(AccessTokenMetadataKey, token, IDTokenMetadataKey, "id"), want: codes.Unauthenticated},
+		{name: "a separate ID token", settings: Settings{Authenticator: authenticator}, method: v3Method, ctx: incoming(AccessTokenMetadataKey, token, idTokenMetadataKey, "id"), want: codes.Unauthenticated},
 		{name: "no authenticator rejects requests", settings: Settings{}, method: v3Method, ctx: incoming(AccessTokenMetadataKey, token), want: codes.FailedPrecondition},
 		{name: "insecure without a token", settings: Settings{InsecureSkipAuthentication: true}, method: v3Method, ctx: context.Background()},
 		{name: "insecure with an unverified token", settings: Settings{InsecureSkipAuthentication: true}, method: v3Method, ctx: incoming(AccessTokenMetadataKey, sign("stacks-2", "other-app")), identity: true},
-		{name: "insecure with a separate ID token", settings: Settings{InsecureSkipAuthentication: true}, method: v3Method, ctx: incoming(IDTokenMetadataKey, "id"), want: codes.Unauthenticated},
+		{name: "insecure with a separate ID token", settings: Settings{InsecureSkipAuthentication: true}, method: v3Method, ctx: incoming(idTokenMetadataKey, "id"), want: codes.Unauthenticated},
 		{name: "insecure does not apply with an authenticator", settings: Settings{Authenticator: authenticator, InsecureSkipAuthentication: true}, method: v3Method, ctx: context.Background(), want: codes.Unauthenticated},
 		{name: "v2 methods are left to the handler middleware", settings: Settings{}, method: v2Method, ctx: incoming(AccessTokenMetadataKey, token)},
 	} {

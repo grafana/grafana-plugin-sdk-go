@@ -12,42 +12,32 @@ import (
 	"github.com/grafana/authlib/authn"
 )
 
-// ErrNoSigningKeys is returned by NewAuthenticatorFromEnv when neither
-// EnvVarGrafanaJWKSURL nor EnvVarGrafanaJWKS is set.
+// ErrNoSigningKeys means neither EnvVarGrafanaJWKSURL nor EnvVarGrafanaJWKS is set.
 var ErrNoSigningKeys = errors.New("no signing keys provided: set " + EnvVarGrafanaJWKSURL + " or " + EnvVarGrafanaJWKS)
 
-// Settings configure how a plugin authenticates the requests it serves.
-//
-// The plugin SDK authenticates every plugin protocol v2 call that carries an
-// access token in its X-Access-Token header (see AccessTokenHeader), and every
-// plugin protocol v3 request, which carries one in its x-access-token gRPC
-// metadata. The handler's context then carries the caller's AuthInfo (see
-// types.AuthInfoFrom), which keeps the token, so the handler can act on behalf
-// of the caller.
+// Settings configure how a plugin checks access tokens.
 type Settings struct {
-	// Authenticator verifies access tokens, for example
-	// authn.NewAccessTokenAuthenticator. If nil, Resolve builds one from
+	// Authenticator checks access tokens. If nil, Resolve builds one from
 	// EnvVarGrafanaJWKSURL or EnvVarGrafanaJWKS.
 	Authenticator authn.Authenticator
 
-	// Audiences are the access token audiences the authenticator Resolve builds
-	// accepts, besides the plugin ID, such as the API group an app serves.
+	// Audiences are accepted as token audiences, as well as the plugin ID,
+	// by the authenticator Resolve builds. For example, an app's API group.
 	Audiences []string
 
-	// InsecureSkipAuthentication serves requests without verifying them when
-	// there is no Authenticator. A request's access token is parsed without
-	// checking its signature, audience or namespace, so handlers get the
-	// identity the token claims. Requests without a token are served with no
-	// identity. Resolve also sets it from EnvVarInsecureSkipAuthentication.
-	// Use it only for local development.
+	// InsecureSkipAuthentication, when there is no Authenticator, accepts
+	// tokens without checking them, so callers can claim any identity.
+	// Requests without a token have no identity. Resolve also sets it from
+	// EnvVarInsecureSkipAuthentication. Use it only for local development.
 	InsecureSkipAuthentication bool
 }
 
-// Resolve returns s completed from the environment: InsecureSkipAuthentication
-// is set when EnvVarInsecureSkipAuthentication is "true", and without an
-// Authenticator, one is built with NewAuthenticatorFromEnv, accepting pluginID
-// and s.Audiences as audiences. Without signing keys in the environment the
-// Authenticator stays nil. Invalid signing keys are an error.
+// Resolve fills in s from the environment:
+//   - InsecureSkipAuthentication is set if EnvVarInsecureSkipAuthentication is "true".
+//   - If Authenticator is nil, it is built with NewAuthenticatorFromEnv, for
+//     pluginID and s.Audiences. It stays nil if no signing keys are set.
+//
+// Invalid signing keys return an error.
 func (s Settings) Resolve(pluginID string) (Settings, error) {
 	if os.Getenv(EnvVarInsecureSkipAuthentication) == "true" {
 		s.InsecureSkipAuthentication = true
@@ -74,29 +64,24 @@ func (s Settings) Resolve(pluginID string) (Settings, error) {
 	return s, nil
 }
 
-// NewAuthenticatorFromEnv builds an authenticator for access tokens from
-// environment variables.
+// NewAuthenticatorFromEnv builds an access token authenticator from the
+// signing keys in exactly one of:
+//   - GF_JWKS_URL: an http or https URL that serves the keys (JWKS).
+//   - GF_JWKS: the keys themselves, as a JWKS JSON document. They must be public
+//     signing keys, each with a key ID.
 //
-// Picks up the signing keys from exactly one of:
-//   - GF_JWKS_URL, the JWKS endpoint of the service that signs access tokens
-//   - GF_JWKS, the JWKS itself, as a JSON document
-//
-// Access tokens must be signed by one of those keys and have one of audiences
-// as an audience. The URL must be an absolute http or https URL, so in-cluster
-// endpoints served over plain http work. An explicit JWKS must contain only
-// public signing keys, each with a key ID. Without either variable, the error is
-// ErrNoSigningKeys.
+// Tokens must be signed by one of the keys and have one of audiences as an
+// audience. If neither variable is set, it returns ErrNoSigningKeys.
 func NewAuthenticatorFromEnv(audiences ...string) (authn.Authenticator, error) {
 	keysURL := GetEnv(EnvVarGrafanaJWKSURL)
 	keysJSON := GetEnv(EnvVarGrafanaJWKS)
 	if keysURL == "" && keysJSON == "" {
 		return nil, ErrNoSigningKeys
 	}
-	// Two sources of trusted keys would be ambiguous.
 	if keysURL != "" && keysJSON != "" {
 		return nil, fmt.Errorf("set only one of %s and %s", EnvVarGrafanaJWKSURL, EnvVarGrafanaJWKS)
 	}
-	// An empty audience list would make the verifier skip the audience check.
+	// Without audiences, the verifier would accept any audience.
 	if len(audiences) == 0 {
 		return nil, errors.New("a plugin ID or API group is required as the access token audience")
 	}
@@ -160,7 +145,7 @@ func parseSigningKeys(raw string) (staticKeys, error) {
 		case key.KeyID == "":
 			return nil, fmt.Errorf("key %d has no key ID", i)
 		case !key.IsPublic():
-			// A private key in the environment would let anyone who reads it sign tokens.
+			// Anyone who can read a private key could sign tokens with it.
 			return nil, fmt.Errorf("key %q is not a public key", key.KeyID)
 		case !key.Valid():
 			return nil, fmt.Errorf("key %q is invalid", key.KeyID)

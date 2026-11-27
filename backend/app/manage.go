@@ -30,12 +30,12 @@ type ManageOpts struct {
 	// This is EXPERIMENTAL and is subject to change.
 	Licensing backend.ServeOptsDecorator
 
-	// HandlerMiddlewares decorate the app's handlers, inside the SDK's default
-	// middlewares and its authentication, so they see the caller's AuthInfo.
+	// HandlerMiddlewares wrap the app's handlers. They run after the SDK's
+	// default middlewares and token check, so they see the caller's AuthInfo.
 	HandlerMiddlewares []backend.HandlerMiddleware
 
-	// Authentication configures how the app's requests are authenticated; see
-	// backend.Manage. The zero value reads the environment.
+	// Authentication configures how access tokens are checked. The zero value
+	// uses the environment (see auth.Settings.Resolve).
 	Authentication auth.Settings
 }
 

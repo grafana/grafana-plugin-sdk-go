@@ -14,27 +14,24 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/log"
 )
 
-// V3MethodPrefix prefixes the full gRPC method names of the plugin protocol v3
-// services, which a plugin serves through backend.ServeOpts.ExtraPlugins. The
-// server interceptors authenticate these methods only.
-const V3MethodPrefix = "/grafana.plugin.v3."
+// v3MethodPrefix starts the gRPC method name of every plugin protocol v3
+// request. The interceptors only check these: v3 sends the token in gRPC
+// metadata, while v2 sends it in the request headers, which the backend
+// package checks in a handler middleware.
+const v3MethodPrefix = "/grafana.plugin.v3."
 
-// RequestAuthenticator authenticates the requests a plugin serves, with
-// resolved Settings (see Settings.Resolve). The plugin SDK makes one for every
-// plugin it serves.
+// RequestAuthenticator checks the access tokens on the requests a plugin
+// serves.
 type RequestAuthenticator struct {
-	// authenticator parses access tokens; nil when none can be.
+	// authenticator reads tokens. It is nil when none is configured.
 	authenticator authn.Authenticator
-	// verifies is set when authenticator verifies tokens, rather than only
-	// parsing them for InsecureSkipAuthentication.
+	// verifies is false when tokens are only parsed, for
+	// InsecureSkipAuthentication.
 	verifies bool
 }
 
-// NewRequestAuthenticator returns a RequestAuthenticator for s. With
-// s.Authenticator, tokens are verified. Otherwise, with
-// s.InsecureSkipAuthentication, they are parsed without being verified.
-// Without either, plugin protocol v3 requests are rejected, and plugin
-// protocol v2 calls are served with no identity (see AuthenticateHeader).
+// NewRequestAuthenticator returns a RequestAuthenticator for s, which should
+// already be resolved (see Settings.Resolve).
 func NewRequestAuthenticator(s Settings) *RequestAuthenticator {
 	switch {
 	case s.Authenticator != nil:
@@ -46,40 +43,25 @@ func NewRequestAuthenticator(s Settings) *RequestAuthenticator {
 	}
 }
 
-// Verifies reports whether tokens are verified, rather than parsed without
-// verification for InsecureSkipAuthentication. Only then should the services
-// check a request's API group and namespaces against the caller's AuthInfo.
-func (a *RequestAuthenticator) Verifies() bool {
-	return a.verifies
-}
-
-// AuthenticateHeader returns ctx with the AuthInfo of the caller whose access
-// token header carries, the value of a plugin protocol v2 call's
-// AccessTokenHeader. A "Bearer " prefix is accepted.
+// AuthenticateHeader checks the token in a plugin protocol v2 call's
+// AccessTokenHeader, with or without a "Bearer " prefix, and returns ctx with
+// the caller's AuthInfo.
 //
-// A call without a token is let through with no identity: Grafana sends a
-// token only on the calls it makes on behalf of a caller, such as the health
-// and resource calls of an app's settings. A token that does not verify fails
-// the call. A verified token must cover namespace, or carry a namespace if
-// namespace is empty.
-//
-// A token that cannot be verified, because the plugin has no authenticator,
-// is ignored with a warning: the call is let through with no identity, as
-// without a token, so that plugins Grafana sends tokens to keep working until
-// they are given signing keys.
+//   - No token: the call has no identity. Grafana only sends tokens on calls
+//     made for a user, such as an app's settings health and resource calls.
+//   - A valid token: it must cover namespace (or have a namespace, if
+//     namespace is empty).
+//   - An invalid token: the call fails.
+//   - A token but no authenticator: a warning is logged and the call has no
+//     identity.
 func (a *RequestAuthenticator) AuthenticateHeader(ctx context.Context, namespace, header string) (context.Context, error) {
-	token := strings.TrimSpace(header)
-	if len(token) > len("Bearer ") && strings.EqualFold(token[:len("Bearer ")], "Bearer ") {
-		token = strings.TrimSpace(token[len("Bearer "):])
-	}
+	token := trimBearer(header)
 	if token == "" {
-		log.DefaultLogger.FromContext(ctx).Debug("plugin v2 call without an access token; it is served without the caller's identity", "namespace", namespace)
 		return ctx, nil
 	}
 	if a.authenticator == nil {
-		// TODO: reject the call once every plugin Grafana sends tokens to
-		// has signing keys; its handler now acts as the plugin, not the caller.
-		log.DefaultLogger.FromContext(ctx).Warn("plugin v2 call with an access token, but no authenticator configured to verify it; it is served without the caller's identity: set "+EnvVarGrafanaJWKSURL+" or "+EnvVarGrafanaJWKS,
+		// TODO: fail the call once every plugin that gets tokens has signing keys.
+		log.DefaultLogger.FromContext(ctx).Warn("Ignoring the access token: no authenticator is configured; set "+EnvVarGrafanaJWKSURL+" or "+EnvVarGrafanaJWKS,
 			"namespace", namespace)
 		return ctx, nil
 	}
@@ -89,49 +71,45 @@ func (a *RequestAuthenticator) AuthenticateHeader(ctx context.Context, namespace
 	}
 	if a.verifies {
 		info, _ := types.AuthInfoFrom(ctx)
-		if namespace == "" {
-			if info.GetNamespace() == "" {
-				return nil, status.Error(codes.PermissionDenied, "access token does not cover the requested namespace")
-			}
-		} else if !types.NamespaceMatches(info.GetNamespace(), namespace) {
+		tokenNamespace := info.GetNamespace()
+		if (namespace == "" && tokenNamespace == "") || (namespace != "" && !types.NamespaceMatches(tokenNamespace, namespace)) {
 			return nil, status.Error(codes.PermissionDenied, "access token does not cover the requested namespace")
 		}
 	}
 	return ctx, nil
 }
 
-// AuthenticateMetadata returns ctx with the AuthInfo of the caller whose
-// access token the incoming gRPC metadata of ctx carries, as for a plugin
-// protocol v3 request. The request needs a single access token and no
-// separate ID token; without verification, a request with neither is served
-// with no identity. Without an authenticator, every request is rejected.
+// AuthenticateMetadata checks the token in a plugin protocol v3 request's
+// gRPC metadata, and returns ctx with the caller's AuthInfo.
 //
-// The services check the request's API group and namespaces against the
-// AuthInfo, as only they can read the request.
+// The request needs exactly one access token and no ID token. Without an
+// authenticator, every request fails. With InsecureSkipAuthentication, a
+// request without tokens has no identity.
+//
+// The v3 services still need to check the request's API group and
+// namespaces, which only they can read.
 func (a *RequestAuthenticator) AuthenticateMetadata(ctx context.Context) (context.Context, error) {
 	if a.authenticator == nil {
 		return nil, status.Error(codes.FailedPrecondition, "plugin has no authenticator configured; set "+EnvVarGrafanaJWKSURL+" or "+EnvVarGrafanaJWKS)
 	}
 	md, _ := metadata.FromIncomingContext(ctx)
 	tokens := md.Get(AccessTokenMetadataKey)
-	idTokens := md.Get(IDTokenMetadataKey)
+	idTokens := md.Get(idTokenMetadataKey)
 	if !a.verifies && len(tokens) == 0 && len(idTokens) == 0 {
-		// Without verification, a request without a token has no identity.
 		return ctx, nil
 	}
-	// Delegation has one source of identity: the exchanged access token.
-	// Reject ambiguous credentials before invoking even a custom authenticator.
+	// The exchanged access token must be the only identity.
 	if len(tokens) != 1 || tokens[0] == "" || len(idTokens) != 0 {
 		return nil, status.Error(codes.Unauthenticated, "a single access token and no separate ID token are required")
 	}
 	return AuthenticateAccessToken(ctx, a.authenticator, tokens[0])
 }
 
-// UnaryServerInterceptor authenticates plugin protocol v3 unary requests with
-// AuthenticateMetadata. Other methods pass through.
+// UnaryServerInterceptor checks plugin protocol v3 unary requests with
+// AuthenticateMetadata. Other requests pass through.
 func (a *RequestAuthenticator) UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
-		if !strings.HasPrefix(info.FullMethod, V3MethodPrefix) {
+		if !strings.HasPrefix(info.FullMethod, v3MethodPrefix) {
 			return handler(ctx, req)
 		}
 		ctx, err := a.AuthenticateMetadata(ctx)
@@ -142,11 +120,11 @@ func (a *RequestAuthenticator) UnaryServerInterceptor() grpc.UnaryServerIntercep
 	}
 }
 
-// StreamServerInterceptor authenticates plugin protocol v3 streaming requests
-// with AuthenticateMetadata. Other methods pass through.
+// StreamServerInterceptor checks plugin protocol v3 streaming requests with
+// AuthenticateMetadata. Other requests pass through.
 func (a *RequestAuthenticator) StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(srv any, stream grpc.ServerStream, info *grpc.StreamServerInfo, handler grpc.StreamHandler) error {
-		if !strings.HasPrefix(info.FullMethod, V3MethodPrefix) {
+		if !strings.HasPrefix(info.FullMethod, v3MethodPrefix) {
 			return handler(srv, stream)
 		}
 		ctx, err := a.AuthenticateMetadata(stream.Context())
@@ -157,6 +135,7 @@ func (a *RequestAuthenticator) StreamServerInterceptor() grpc.StreamServerInterc
 	}
 }
 
+// authenticatedServerStream is a stream with the caller's AuthInfo in its context.
 type authenticatedServerStream struct {
 	grpc.ServerStream
 	ctx context.Context
@@ -164,4 +143,15 @@ type authenticatedServerStream struct {
 
 func (s *authenticatedServerStream) Context() context.Context {
 	return s.ctx
+}
+
+// trimBearer returns the token in header, without spaces or a "Bearer " prefix
+// (in any case).
+func trimBearer(header string) string {
+	token := strings.TrimSpace(header)
+	const prefix = "Bearer "
+	if len(token) > len(prefix) && strings.EqualFold(token[:len(prefix)], prefix) {
+		token = strings.TrimSpace(token[len(prefix):])
+	}
+	return token
 }

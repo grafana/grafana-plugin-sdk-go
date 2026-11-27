@@ -1,6 +1,3 @@
-// Package auth authenticates the requests a plugin serves with the access
-// tokens Grafana sends on behalf of their callers. The plugin SDK applies it to
-// every plugin protocol v2 and v3 request; see Settings.
 package auth
 
 import (
@@ -19,28 +16,25 @@ import (
 )
 
 const (
-	// AccessTokenHeader is the header in which Grafana sends a plugin protocol
-	// v2 call the caller's access token, exchanged for the plugin.
+	// AccessTokenHeader is the header that carries the caller's access token on
+	// a plugin protocol v2 call.
 	AccessTokenHeader = "X-Access-Token"
 
-	// AccessTokenMetadataKey is the gRPC metadata key in which Grafana sends a
-	// plugin protocol v3 request the caller's access token.
+	// AccessTokenMetadataKey is the gRPC metadata key that carries the caller's
+	// access token on a plugin protocol v3 request.
 	AccessTokenMetadataKey = "x-access-token"
 
-	// IDTokenMetadataKey is the gRPC metadata key of an ID token. Plugin
-	// protocol v3 requests are rejected if they carry one besides the access
-	// token, since delegation has one source of identity.
-	IDTokenMetadataKey = "x-id-token"
+	// idTokenMetadataKey is the gRPC metadata key for an ID token. A v3 request
+	// that has one is rejected: the access token must be the only identity.
+	idTokenMetadataKey = "x-id-token"
 )
 
-// AuthenticateAccessToken verifies token with authenticator, and returns ctx
-// carrying the caller's AuthInfo. That AuthInfo keeps the token
-// (GetAccessToken), which authlib's does not, so that clients can exchange it to
-// act on behalf of the caller.
+// AuthenticateAccessToken checks token with authenticator, and returns ctx
+// with the caller's AuthInfo. Unlike authlib's AuthInfo, it keeps the token
+// (GetAccessToken), so clients can exchange it to act on the caller's behalf.
 //
-// A token that does not verify is a codes.Unauthenticated status error; a
-// failure of the authenticator itself, such as fetching signing keys, is
-// codes.Internal.
+// An invalid token returns a codes.Unauthenticated error. A failure of the
+// authenticator itself, such as fetching signing keys, returns codes.Internal.
 func AuthenticateAccessToken(ctx context.Context, authenticator authn.Authenticator, token string) (context.Context, error) {
 	if authenticator == nil {
 		return nil, status.Error(codes.FailedPrecondition, "plugin has no authenticator configured")
@@ -58,14 +52,11 @@ func AuthenticateAccessToken(ctx context.Context, authenticator authn.Authentica
 	if info == nil {
 		return nil, status.Error(codes.Unauthenticated, "authenticator returned no identity")
 	}
-	// Keep the token only after successful authentication so downstream
-	// clients can exchange it without losing the caller's identity or
-	// delegation chain.
 	return types.WithAuthInfo(ctx, &authenticatedAuthInfo{AuthInfo: info, accessToken: token}), nil
 }
 
-// invalidTokenErrs are errors about the token itself that authlib passes on
-// from go-jose without marking them as unauthenticated.
+// invalidTokenErrs are go-jose errors about the token itself, which authlib
+// does not mark as unauthenticated.
 var invalidTokenErrs = []error{
 	jose.ErrCryptoFailure, // Signature mismatch, including a key of the wrong type.
 	jwt.ErrNotValidYet,
@@ -81,8 +72,8 @@ var invalidTokenErrs = []error{
 	jwt.ErrUnmarshalNumericDate,
 }
 
-// isInvalidTokenErr reports whether err is the caller's fault, rather than a
-// failure of the plugin such as fetching signing keys.
+// isInvalidTokenErr reports whether err is caused by a bad token, rather than
+// by the plugin, such as failing to fetch signing keys.
 func isInvalidTokenErr(err error) bool {
 	if authn.IsUnauthenticatedErr(err) {
 		return true
@@ -95,8 +86,8 @@ func isInvalidTokenErr(err error) bool {
 	return false
 }
 
-// authenticatedAuthInfo preserves the verified token for onward delegation.
-// Its formatting methods omit the token, so logging the identity is safe.
+// authenticatedAuthInfo is an AuthInfo that keeps its access token. Printing
+// or logging it leaves the token out.
 type authenticatedAuthInfo struct {
 	types.AuthInfo
 	accessToken string

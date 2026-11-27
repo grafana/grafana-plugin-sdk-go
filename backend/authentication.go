@@ -7,11 +7,10 @@ import (
 	"github.com/grafana/grafana-plugin-sdk-go/backend/auth"
 )
 
-// withAuthentication resolves opts.Authentication for pluginID (see
-// auth.Settings.Resolve), and returns opts with the handler middlewares from
-// defaults, then the middleware that authenticates plugin protocol v2 calls,
-// then opts' own middlewares. The gRPC server authenticates plugin protocol v3
-// requests with the same settings (see defaultGRPCMiddlewares).
+// withAuthentication resolves opts.Authentication from the environment, and
+// sets the handler middlewares to: defaults, then the v2 token check, then the
+// plugin's own. The gRPC server checks v3 requests with the same settings (see
+// defaultGRPCMiddlewares).
 func withAuthentication(pluginID string, opts ServeOpts, defaults func() []HandlerMiddleware) (ServeOpts, error) {
 	settings, err := opts.Authentication.Resolve(pluginID)
 	if err != nil {
@@ -22,12 +21,11 @@ func withAuthentication(pluginID string, opts ServeOpts, defaults func() []Handl
 	switch {
 	case settings.Authenticator != nil:
 	case settings.InsecureSkipAuthentication:
-		// Anything that can reach the plugin can then claim any identity, so make that visible.
-		Logger.Warn("requests are not verified: callers can claim any identity; use this only for local development", "pluginId", pluginID)
+		Logger.Warn("Access tokens are not checked: callers can claim any identity; use this only for local development", "pluginId", pluginID)
 	case len(opts.ExtraPlugins) > 0:
-		Logger.Warn("no authenticator configured: plugin protocol v3 requests will be rejected; set "+auth.EnvVarGrafanaJWKSURL+" or "+auth.EnvVarGrafanaJWKS+"; for local development, set "+auth.EnvVarInsecureSkipAuthentication+"=true", "pluginId", pluginID)
+		Logger.Warn("No authenticator configured: plugin protocol v3 requests will be rejected; set "+auth.EnvVarGrafanaJWKSURL+" or "+auth.EnvVarGrafanaJWKS+"; for local development, set "+auth.EnvVarInsecureSkipAuthentication+"=true", "pluginId", pluginID)
 	default:
-		Logger.Debug("no authenticator configured: calls with an access token are served without the caller's identity", "pluginId", pluginID)
+		Logger.Debug("No authenticator configured: access tokens will be ignored", "pluginId", pluginID)
 	}
 
 	middlewares := append(defaults(), newAuthenticationMiddleware(auth.NewRequestAuthenticator(settings)))
@@ -35,12 +33,10 @@ func withAuthentication(pluginID string, opts ServeOpts, defaults func() []Handl
 	return opts, nil
 }
 
-// newAuthenticationMiddleware authenticates every plugin protocol v2 call that
-// carries request headers (QueryData, QueryChunkedData, CheckHealth,
-// CallResource, and the stream calls) with the access token in its
-// auth.AccessTokenHeader (see auth.RequestAuthenticator.AuthenticateHeader).
-// The handler's context then carries the caller's AuthInfo. CollectMetrics has
-// no headers to carry a token, and passes through unchanged.
+// newAuthenticationMiddleware checks the access token on every plugin protocol
+// v2 call that has headers (see auth.RequestAuthenticator.AuthenticateHeader),
+// and gives the handler the caller's AuthInfo. CollectMetrics has no headers,
+// so it passes through.
 func newAuthenticationMiddleware(a *auth.RequestAuthenticator) HandlerMiddleware {
 	return HandlerMiddlewareFunc(func(next Handler) Handler {
 		return &authenticationMiddleware{BaseHandler: NewBaseHandler(next), auth: a}
