@@ -69,8 +69,8 @@ func (c Channel) String() string {
 }
 
 var (
-	scopeNamespacePattern = regexp.MustCompile(`^[A-z0-9_\-\.]*$`)
-	pathPattern           = regexp.MustCompile(`^[A-z0-9_\-/=.]*$`)
+	scopeNamespacePattern = regexp.MustCompile(`^[A-Za-z0-9_\-\.]*$`)
+	pathPattern           = regexp.MustCompile(`^[A-Za-z0-9_\-/=.]*$`)
 )
 
 // IsValid checks if all parts of the Channel are valid.
