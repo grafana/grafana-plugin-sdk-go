@@ -47,7 +47,7 @@ func (f ConvertFromProtobuf) AppInstanceSettings(proto *pluginv2.AppInstanceSett
 	return &AppInstanceSettings{
 		JSONData:                proto.JsonData,
 		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
-		Updated:                 time.Unix(0, proto.LastUpdatedMS*int64(time.Millisecond)),
+		Updated:                 time.UnixMilli(proto.LastUpdatedMS),
 		APIVersion:              proto.ApiVersion,
 	}
 }
@@ -70,7 +70,7 @@ func (f ConvertFromProtobuf) DataSourceInstanceSettings(proto *pluginv2.DataSour
 		BasicAuthUser:           proto.BasicAuthUser,
 		JSONData:                proto.JsonData,
 		DecryptedSecureJSONData: proto.DecryptedSecureJsonData,
-		Updated:                 time.Unix(0, proto.LastUpdatedMS*int64(time.Millisecond)),
+		Updated:                 time.UnixMilli(proto.LastUpdatedMS),
 		APIVersion:              proto.ApiVersion,
 	}
 }
@@ -106,8 +106,8 @@ func (f ConvertFromProtobuf) PluginContext(proto *pluginv2.PluginContext) Plugin
 // TimeRange converts protobuf version of a TimeRange to the SDK version.
 func (f ConvertFromProtobuf) TimeRange(proto *pluginv2.TimeRange) TimeRange {
 	return TimeRange{
-		From: time.Unix(0, proto.FromEpochMS*int64(time.Millisecond)),
-		To:   time.Unix(0, proto.ToEpochMS*int64(time.Millisecond)),
+		From: time.UnixMilli(proto.FromEpochMS),
+		To:   time.UnixMilli(proto.ToEpochMS),
 	}
 }
 

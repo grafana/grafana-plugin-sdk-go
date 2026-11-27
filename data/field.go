@@ -413,13 +413,13 @@ func (f *Field) FloatAt(idx int) (float64, error) {
 		return 1, nil
 
 	case FieldTypeTime:
-		return float64(f.At(idx).(time.Time).UnixNano() / int64(time.Millisecond)), nil
+		return float64(f.At(idx).(time.Time).UnixMilli()), nil
 	case FieldTypeNullableTime:
 		t := f.At(idx).(*time.Time)
 		if t == nil {
 			return math.NaN(), nil
 		}
-		return float64(t.UnixNano() / int64(time.Millisecond)), nil
+		return float64(t.UnixMilli()), nil
 	}
 	return 0, fmt.Errorf("unsupported field type %T", f.Type())
 }
@@ -543,7 +543,7 @@ func (f *Field) NullableFloatAt(idx int) (*float64, error) {
 		if t == nil {
 			return nil, nil
 		}
-		f := float64(t.UnixNano() / int64(time.Millisecond))
+		f := float64(t.UnixMilli())
 		return &f, nil
 	}
 	return nil, fmt.Errorf("unsupported field type %T", f.Type())

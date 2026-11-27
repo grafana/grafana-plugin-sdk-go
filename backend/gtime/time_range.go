@@ -29,7 +29,7 @@ func NewTimeRange(from, to string) TimeRange {
 
 // GetFromAsMsEpoch parses start of time range and returns result in milliseconds epoch or the Unix epoch 0 equivalent if it fails.
 func (tr TimeRange) GetFromAsMsEpoch() int64 {
-	return tr.MustGetFrom().UnixNano() / int64(time.Millisecond)
+	return tr.MustGetFrom().UnixMilli()
 }
 
 // GetFromAsSecondsEpoch parses start of time range and returns result in seconds epoch or the Unix epoch 0 equivalent if it fails.
@@ -44,7 +44,7 @@ func (tr TimeRange) GetFromAsTimeUTC() time.Time {
 
 // GetToAsMsEpoch parses end of time range and returns result in milliseconds epoch or the Unix epoch 0 equivalent if it fails.
 func (tr TimeRange) GetToAsMsEpoch() int64 {
-	return tr.MustGetTo().UnixNano() / int64(time.Millisecond)
+	return tr.MustGetTo().UnixMilli()
 }
 
 // GetToAsSecondsEpoch parses end of time range and returns result in seconds epoch or the Unix epoch 0 equivalent if it fails.

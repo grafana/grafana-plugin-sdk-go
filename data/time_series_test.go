@@ -1560,7 +1560,7 @@ func TestNullabelFloatAtFromNonNullables(t *testing.T) {
 		data.NewField("", nil, []*float64{new(float64(0)), new(float64(-5)), new(float64(5))}),
 		data.NewField("", nil, []*float64{new(float64(0)), new(float64(-5)), new(float64(5))}),
 		data.NewField("", nil, []*float64{new(float64(0)), new(float64(1)), new(float64(0))}),
-		data.NewField("", nil, []*float64{new(-6.829751778871e+12), new(float64(1577934240000)), new(float64(1577934270000))}),
+		data.NewField("", nil, []*float64{new(float64(time.Date(0, 0, 0, 0, 0, 0, 0, time.UTC).UnixMilli())), new(float64(1577934240000)), new(float64(1577934270000))}),
 		data.NewField("", nil, []*float64{new(float64(0)), new(float64(12)), new(1.8446744073709552e+19)}), // Note: loss of precision.
 	)
 

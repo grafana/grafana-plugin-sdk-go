@@ -2,7 +2,6 @@ package backend
 
 import (
 	"errors"
-	"time"
 
 	"google.golang.org/protobuf/proto"
 
@@ -47,7 +46,7 @@ func (t ConvertToProtobuf) AppInstanceSettings(s *AppInstanceSettings) *pluginv2
 	return &pluginv2.AppInstanceSettings{
 		JsonData:                s.JSONData,
 		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
-		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
+		LastUpdatedMS:           s.Updated.UnixMilli(),
 		ApiVersion:              s.APIVersion,
 	}
 }
@@ -107,7 +106,7 @@ func (t ConvertToProtobuf) DataSourceInstanceSettings(s *DataSourceInstanceSetti
 		BasicAuthUser:           s.BasicAuthUser,
 		JsonData:                s.JSONData,
 		DecryptedSecureJsonData: s.DecryptedSecureJSONData,
-		LastUpdatedMS:           s.Updated.UnixNano() / int64(time.Millisecond),
+		LastUpdatedMS:           s.Updated.UnixMilli(),
 		ApiVersion:              s.APIVersion,
 	}
 }
@@ -140,8 +139,8 @@ func (t ConvertToProtobuf) PluginContext(pluginCtx PluginContext) *pluginv2.Plug
 // TimeRange converts the SDK version of a TimeRange to the protobuf version.
 func (t ConvertToProtobuf) TimeRange(tr TimeRange) *pluginv2.TimeRange {
 	return &pluginv2.TimeRange{
-		FromEpochMS: tr.From.UnixNano() / int64(time.Millisecond),
-		ToEpochMS:   tr.To.UnixNano() / int64(time.Millisecond),
+		FromEpochMS: tr.From.UnixMilli(),
+		ToEpochMS:   tr.To.UnixMilli(),
 	}
 }
 
