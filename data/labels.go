@@ -127,23 +127,37 @@ func LabelsFromString(s string) (Labels, error) {
 		}
 	}
 
-	f := func(c rune) bool {
-		return c == '=' || c == '}' || c == '"' || c == '{'
+	// strip the surrounding braces of the prometheus style, e.g. {group="canary"}
+	if strings.HasPrefix(s, "{") && strings.HasSuffix(s, "}") {
+		s = s[1 : len(s)-1]
+		if strings.TrimSpace(s) == "" {
+			return labels, nil
+		}
 	}
+
 	for rawKV := range strings.SplitSeq(s, ", ") {
-		// split kv string by = and delete {} and ""
-		// e.g {group="canary"} -> ["group" "canary"]
-		kV := strings.FieldsFunc(rawKV, f)
-		if len(kV) != 2 {
+		// split on the first = only, so the value can contain more of them
+		key, value, ok := strings.Cut(rawKV, "=")
+		if !ok {
 			return nil, fmt.Errorf(`invalid label key=value pair "%v"`, rawKV)
 		}
-		key := kV[0]
-		value := kV[1]
 
-		labels[key] = value
+		key = trimQuotes(key)
+		if key == "" {
+			return nil, fmt.Errorf(`invalid label key=value pair "%v"`, rawKV)
+		}
+		labels[key] = trimQuotes(value)
 	}
 
 	return labels, nil
+}
+
+// trimQuotes removes one pair of surrounding double quotes, if present.
+func trimQuotes(s string) string {
+	if len(s) >= 2 && strings.HasPrefix(s, `"`) && strings.HasSuffix(s, `"`) {
+		return s[1 : len(s)-1]
+	}
+	return s
 }
 
 // MarshalJSON marshals Labels to JSON.
