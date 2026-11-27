@@ -18,8 +18,8 @@ require (
 	github.com/gobwas/glob v0.2.3
 	github.com/google/go-cmp v0.7.0
 	github.com/google/uuid v1.6.0
-	github.com/grafana/authlib v0.0.0-20261120113603-423cd15e9545
-	github.com/grafana/authlib/types v0.0.0-20261120113603-423cd15e9545
+	github.com/grafana/authlib v0.0.0-20261123164828-55facb65d32c
+	github.com/grafana/authlib/types v0.0.0-20261123164828-55facb65d32c
 	github.com/grafana/otel-profiling-go v0.7.0
 	github.com/grafana/pyroscope-go/godeltaprof v0.1.12
 	github.com/grpc-ecosystem/go-grpc-middleware/providers/prometheus v1.1.1
@@ -134,7 +134,7 @@ require (
 	go.yaml.in/yaml/v3 v3.0.6 // indirect
 	go.yaml.in/yaml/v4 v4.0.0 // indirect
 	golang.org/x/crypto v0.59.0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20261110000943-09e21b237f2c // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20261118221215-c8830f628b3f // indirect
 	gopkg.in/fsnotify/fsnotify.v1 v1.4.7 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 	k8s.io/utils v0.0.0-20260707023825-cf1189d6abe3 // indirect

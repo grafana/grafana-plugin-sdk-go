@@ -129,10 +129,10 @@ github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e h1:JKmoR8x90Iww1
 github.com/gopherjs/gopherjs v0.0.0-20181103185306-d547d1d9531e/go.mod h1:wJfORRmW1u3UXTncJ5qlYoELFm8eSnnEO6hX4iZ3EWY=
 github.com/gorilla/mux v1.8.1 h1:TuBL49tXwgrFYWhqrNgrUNEY92u81SPhu7sTdzQEiWY=
 github.com/gorilla/mux v1.8.1/go.mod h1:AKf9I4AEqPTmMytcMc0KkNouC66V3BtZ4qD5fmWSiMQ=
-github.com/grafana/authlib v0.0.0-20261120113603-423cd15e9545 h1:a3QPmwwRg21XC7Wa5QVwQLY00Y0evUvyNN6Y71GDviU=
-github.com/grafana/authlib v0.0.0-20261120113603-423cd15e9545/go.mod h1:byN2GJCn9fWuMtyHujH3u7VNX7HLOBVssbD24ukTZdM=
-github.com/grafana/authlib/types v0.0.0-20261120113603-423cd15e9545 h1:i3aNB3oqkz8NCLMgAppYal2dDKNl30nnhX/iYwp/AB8=
-github.com/grafana/authlib/types v0.0.0-20261120113603-423cd15e9545/go.mod h1:SbL0IDzpCoLNCEPRzj+YxQnWfelyKagbjcjVS5gkyuw=
+github.com/grafana/authlib v0.0.0-20261123164828-55facb65d32c h1:MSxqg7o0itJcu9ukBc6iaIBt52bjzD0hXkf/Y9yzLaU=
+github.com/grafana/authlib v0.0.0-20261123164828-55facb65d32c/go.mod h1:BwSyHk1l6QG/MR/hzJ+SYQKQrDyro6gOTQ3IAw5H2gA=
+github.com/grafana/authlib/types v0.0.0-20261123164828-55facb65d32c h1:9E7P5g8Yb/9nVJBc+6V6lz+NlmNcH2JW7DsDobHyPcE=
+github.com/grafana/authlib/types v0.0.0-20261123164828-55facb65d32c/go.mod h1:SbL0IDzpCoLNCEPRzj+YxQnWfelyKagbjcjVS5gkyuw=
 github.com/grafana/dskit v0.0.0-20260108123158-1a1acfb6ef2e h1:zP30ZbtnWjy0KJxToqCLARauAtgFD+TAEB/sk4IBb9s=
 github.com/grafana/dskit v0.0.0-20260108123158-1a1acfb6ef2e/go.mod h1:Tl9i4F2CPp3cOiXo06JObTh05tENG/NV/ombn2XOY7Y=
 github.com/grafana/otel-profiling-go v0.7.0 h1:Q6CBLSgAnYmNQNNrj4ipG0S/K/K8iazA9E4kYRzZf0I=
@@ -357,8 +357,8 @@ golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543/go.mod h1:I/5z698sn9Ka8T
 golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1/go.mod h1:I/5z698sn9Ka8TeJc9MKroUUfqBBauWjQqLJ2OPfmY0=
 gonum.org/v1/gonum v0.17.0 h1:VbpOemQlsSMrYmn7T2OUvQ4dqxQXU+ouZFQsZOx50z4=
 gonum.org/v1/gonum v0.17.0/go.mod h1:El3tOrEuMpv2UdMrbNlKEh9vd86bmQ6vqIcDwxEOc1E=
-google.golang.org/genproto/googleapis/api v0.0.0-20261110000943-09e21b237f2c h1:ofk4SEqvpf6M5VWh88xRp42IYgdVOh7gffebnDj3OqU=
-google.golang.org/genproto/googleapis/api v0.0.0-20261110000943-09e21b237f2c/go.mod h1:OzYcNQzaMRKcOFRMtyLzG/cfW1SmS2eh+7UmOLLFblk=
+google.golang.org/genproto/googleapis/api v0.0.0-20261118221215-c8830f628b3f h1:7CbYDSDM5xqpq8v2tNm+Q057COf1lvA0gorVk+304tY=
+google.golang.org/genproto/googleapis/api v0.0.0-20261118221215-c8830f628b3f/go.mod h1:CPxXEEQ1S9iJmInAF/8MNc8tKWnya8I8Kni9Zh2hV0M=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20261118221215-c8830f628b3f h1:aDW6Vb2T1K0xbAgW+ED8iz39WlgjjX/OKiNh6tXv/+g=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20261118221215-c8830f628b3f/go.mod h1:OaIUM3+LpYcK2GXM4FTmhWoIq371Owdr+Cc7/BsYHHc=
 google.golang.org/grpc v1.85.0 h1:BPBCfuVRQ1qvBhKDOq9uvQllMvO59rKsYhXpp7Dd8vw=
