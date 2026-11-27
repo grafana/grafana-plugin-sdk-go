@@ -57,8 +57,13 @@ type ForwardHTTPHeaders interface {
 
 func setHTTPHeaderInStringMap(headers map[string]string, key string, value string) {
 	if headers == nil {
-		headers = map[string]string{}
+		return
 	}
+
+	// Keys are case-insensitive, so drop every existing spelling of this
+	// header first; otherwise several entries could survive and which one
+	// wins on read would depend on map iteration order.
+	deleteHTTPHeaderInStringMap(headers, key)
 
 	headers[fmt.Sprintf("%s%s", httpHeaderPrefix, key)] = value
 }
@@ -93,7 +98,6 @@ func deleteHTTPHeaderInStringMap(headers map[string]string, key string) {
 		if textproto.CanonicalMIMEHeaderKey(k) == textproto.CanonicalMIMEHeaderKey(key) ||
 			textproto.CanonicalMIMEHeaderKey(k) == textproto.CanonicalMIMEHeaderKey(fmt.Sprintf("%s%s", httpHeaderPrefix, key)) {
 			delete(headers, k)
-			break
 		}
 	}
 }

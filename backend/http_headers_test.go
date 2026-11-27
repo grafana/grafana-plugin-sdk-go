@@ -205,3 +205,36 @@ func TestDeleteHTTPHeaderInStringMap(t *testing.T) {
 		}
 	}
 }
+
+func TestSetHTTPHeaderInStringMapReplacesCaseInsensitively(t *testing.T) {
+	headerMap := map[string]string{
+		"Authorization": "raw",
+	}
+
+	setHTTPHeaderInStringMap(headerMap, "x-custom", "first")
+	setHTTPHeaderInStringMap(headerMap, "X-Custom", "second")
+	setHTTPHeaderInStringMap(headerMap, "authorization", "new")
+
+	// Run repeatedly: before the fix the winner depended on map iteration order.
+	for range 50 {
+		headers := getHTTPHeadersFromStringMap(headerMap)
+		require.Equal(t, "second", headers.Get("X-Custom"))
+		require.Equal(t, "new", headers.Get("Authorization"))
+	}
+	require.Len(t, headerMap, 2)
+}
+
+func TestDeleteHTTPHeaderInStringMapRemovesAllSpellings(t *testing.T) {
+	headerMap := map[string]string{
+		"Authorization":      "raw",
+		"http_authorization": "prefixed",
+		"http_X-Custom":      "a",
+		"http_x-custom":      "b",
+		"http_X-Other":       "keep",
+	}
+
+	deleteHTTPHeaderInStringMap(headerMap, "Authorization")
+	deleteHTTPHeaderInStringMap(headerMap, "x-custom")
+
+	require.Equal(t, map[string]string{"http_X-Other": "keep"}, headerMap)
+}
