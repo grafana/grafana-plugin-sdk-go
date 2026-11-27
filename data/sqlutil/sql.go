@@ -94,10 +94,7 @@ outer:
 
 			i++
 			if i == rowLimit {
-				frame.AppendNotices(data.Notice{
-					Severity: data.NoticeSeverityWarning,
-					Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
-				})
+				frame.AppendNotices(rowLimitNotice(rowLimit))
 				break outer
 			}
 		}
@@ -138,4 +135,11 @@ func appendConvertedRow(frame *data.Frame, scanned []any, converted []any, conve
 	}
 	frame.AppendRow(converted...)
 	return nil
+}
+
+func rowLimitNotice(rowLimit int64) data.Notice {
+	return data.Notice{
+		Severity: data.NoticeSeverityWarning,
+		Text:     fmt.Sprintf("Results have been limited to %v because the SQL row limit was reached", rowLimit),
+	}
 }
