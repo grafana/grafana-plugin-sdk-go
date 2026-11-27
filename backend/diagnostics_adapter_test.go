@@ -35,6 +35,33 @@ func TestCollectMetrcis(t *testing.T) {
 	require.Contains(t, mfs, "go_goroutines")
 }
 
+func TestGRPCServeOptsCheckHealth(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		handler CheckHealthHandler
+		status  pluginv2.CheckHealthResponse_HealthStatus
+	}{
+		{name: "no handler", status: pluginv2.CheckHealthResponse_OK},
+		{
+			name: "custom handler",
+			handler: CheckHealthHandlerFunc(func(context.Context, *CheckHealthRequest) (*CheckHealthResult, error) {
+				return &CheckHealthResult{Status: HealthStatusError}, nil
+			}),
+			status: pluginv2.CheckHealthResponse_ERROR,
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			opts, err := GRPCServeOpts(ServeOpts{CheckHealthHandler: tc.handler})
+			require.NoError(t, err)
+			res, err := opts.DiagnosticsServer.CheckHealth(context.Background(), &pluginv2.CheckHealthRequest{
+				PluginContext: &pluginv2.PluginContext{},
+			})
+			require.NoError(t, err)
+			require.Equal(t, tc.status, res.Status)
+		})
+	}
+}
+
 func TestCheckHealth(t *testing.T) {
 	t.Run("When check health handler not set should use default implementation", func(t *testing.T) {
 		adapter := &diagnosticsSDKAdapter{}

@@ -90,8 +90,14 @@ type ServeOpts struct {
 type ServeOptsDecorator func(pluginID string, opts ServeOpts) (ServeOpts, error)
 
 func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
+	checkHealthHandler := opts.CheckHealthHandler
+	if checkHealthHandler == nil {
+		// Supply a default because middleware may forward to a nil handler.
+		checkHealthHandler = CheckHealthHandlerFunc(defaultCheckHealth)
+	}
+
 	handlers := Handlers{
-		CheckHealthHandler:      opts.CheckHealthHandler,
+		CheckHealthHandler:      checkHealthHandler,
 		CallResourceHandler:     opts.CallResourceHandler,
 		QueryDataHandler:        opts.QueryDataHandler,
 		QueryChunkedDataHandler: opts.QueryChunkedDataHandler,
@@ -99,6 +105,10 @@ func (opts ServeOpts) HandlerWithMiddlewares() (Handler, error) {
 	}
 
 	return HandlerFromMiddlewares(handlers, opts.HandlerMiddlewares...)
+}
+
+func defaultCheckHealth(context.Context, *CheckHealthRequest) (*CheckHealthResult, error) {
+	return &CheckHealthResult{Status: HealthStatusOk}, nil
 }
 
 func GRPCServeOpts(opts ServeOpts) (grpcplugin.ServeOpts, error) {
