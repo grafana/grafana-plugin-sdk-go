@@ -229,14 +229,35 @@ func (token *LicenseToken) validateSubject(appURL string) error {
 		return nil
 	}
 
-	g, err := glob.Compile(token.Subject, '.', '/', ':')
-	if err != nil {
-		return fmt.Errorf("%w: %q", errInvalidAppURL, token.Subject)
+	// Match the scheme, authority and path separately, so a ** in the host cannot match
+	// across the path and accept a URL on another host, like https://evil.com/x.acme.com/.
+	subjectParts := splitURL(token.Subject)
+	var globs [len(subjectParts)]glob.Glob
+	for i, part := range subjectParts {
+		g, err := glob.Compile(part, '.', '/', ':')
+		if err != nil {
+			return fmt.Errorf("%w: %q", errInvalidAppURL, token.Subject)
+		}
+		globs[i] = g
 	}
 
-	if !g.Match(appURL) {
-		return fmt.Errorf("%w: instance %q, license %q", errNoMatchAppURL, appURL, token.Subject)
+	for i, part := range splitURL(appURL) {
+		if !globs[i].Match(part) {
+			return fmt.Errorf("%w: instance %q, license %q", errNoMatchAppURL, appURL, token.Subject)
+		}
 	}
 
 	return nil
+}
+
+// splitURL splits a URL, or a URL glob pattern, into its scheme, its authority (host and port),
+// and the rest (path, query and fragment, starting with "/"). It does not use net/url because
+// patterns like http*:// are not valid URLs.
+func splitURL(s string) [3]string {
+	scheme, rest, _ := strings.Cut(s, "://")
+	authority, path := rest, ""
+	if i := strings.IndexByte(rest, '/'); i >= 0 {
+		authority, path = rest[:i], rest[i:]
+	}
+	return [3]string{scheme, authority, path}
 }

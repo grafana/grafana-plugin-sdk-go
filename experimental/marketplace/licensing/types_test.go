@@ -268,6 +268,65 @@ func TestLicenseTokenValidation(t *testing.T) {
 	}
 }
 
+func TestValidateSubject(t *testing.T) {
+	tests := []struct {
+		subject string
+		appURL  string
+		match   bool
+	}{
+		{"https://grafana.acme.com/", "https://grafana.acme.com/", true},
+		{"https://grafana.acme.com/", "https://other.acme.com/", false},
+		{"https://grafana.acme.com/", "https://grafana.acme.com", false},
+		{"http*://grafana*.mycompany.com", "https://grafana-prod.mycompany.com", true},
+
+		// * matches a single host label.
+		{"https://*.acme.com/", "https://a.acme.com/", true},
+		{"https://*.acme.com/", "https://a.b.acme.com/", false},
+
+		// ** matches any number of host labels.
+		{"https://**.acme.com/", "https://a.acme.com/", true},
+		{"https://**.acme.com/", "https://a.b.acme.com/", true},
+		{"https://**.acme.com/", "https://a.b.c.acme.com/", true},
+		{"https://**.acme.com/", "https://acme.com/", false},
+		{"https://**.acme.com/", "https://a.acme.com:3000/", false},
+		{"https://**.acme.com/", "http://a.acme.com/", false},
+		{"https://**.acme.com/", "https://a.acme.com/grafana/", false},
+
+		// ** in the host cannot match across the path or the scheme.
+		{"https://**.acme.com/", "https://evil.com/x.acme.com/", false},
+		{"https://**.acme.com/", "https://evil.com/a/b.acme.com/", false},
+		{"**://a.acme.com/", "https://evil.com/://a.acme.com/", false},
+
+		// Brace alternatives inside the host can list several domains.
+		{"https://**.{domain-a.com,domain-b.com}/", "https://x.domain-a.com/", true},
+		{"https://**.{domain-a.com,domain-b.com}/", "https://x.y.domain-b.com/", true},
+		{"https://**.{domain-a.com,domain-b.com}/", "https://domain-a.com/", false},
+		{"https://**.{domain-a.com,domain-b.com}/", "https://x.domain-c.com/", false},
+		{"https://**.{domain-a.com,domain-b.com}/", "https://evil.com/x.domain-a.com/", false},
+		{"https://{**.domain-a.com,grafana.domain-b.com}/", "https://grafana.domain-b.com/", true},
+		{"https://{**.domain-a.com,grafana.domain-b.com}/", "https://x.domain-b.com/", false},
+
+		// ** in the path cannot match the host.
+		{"https://grafana.acme.com/**", "https://grafana.acme.com/a/b/", true},
+		{"https://grafana.acme.com/**", "https://grafana.acme.com.evil.com/a/", false},
+	}
+	for _, tc := range tests {
+		t.Run(tc.subject+" "+tc.appURL, func(t *testing.T) {
+			err := (&LicenseToken{Subject: tc.subject}).validateSubject(tc.appURL)
+			if tc.match {
+				require.NoError(t, err)
+			} else {
+				require.ErrorIs(t, err, errNoMatchAppURL)
+			}
+		})
+	}
+}
+
+func TestValidateSubjectInvalidPattern(t *testing.T) {
+	err := (&LicenseToken{Subject: "https://[.acme.com/"}).validateSubject("https://a.acme.com/")
+	require.ErrorIs(t, err, errInvalidAppURL)
+}
+
 func useBlockedLicenseIds(tb testing.TB, bl map[string]struct{}) {
 	tb.Helper()
 	origLicenses := deniedLicenseIDs
